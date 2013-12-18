@@ -1,0 +1,2 @@
+Benchmark HashMap+Counter cache2k/CLOCK cache2k/CP+ cache2k/ARC EHCache Infinispan Guava
+Hits 0.051 0.068 0.064 0.173 0.603 1.942 0.848 

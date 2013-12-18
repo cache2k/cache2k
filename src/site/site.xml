@@ -1,0 +1,124 @@
+<!--
+  #%L
+  cache2k parent
+  %%
+  Copyright (C) 2000 - 2013 headissue GmbH, Munich
+  %%
+  This program is free software: you can redistribute it and/or modify
+  it under the terms of the GNU General Public License as
+  published by the Free Software Foundation, either version 3 of the 
+  License, or (at your option) any later version.
+  
+  This program is distributed in the hope that it will be useful,
+  but WITHOUT ANY WARRANTY; without even the implied warranty of
+  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+  GNU General Public License for more details.
+  
+  You should have received a copy of the GNU General Public 
+  License along with this program.  If not, see
+  <http://www.gnu.org/licenses/gpl-3.0.html>.
+  #L%
+  -->
+<project>
+  <skin>
+    <groupId>com.headissue.maven</groupId>
+    <artifactId>reflow-maven-skin</artifactId>
+    <version>1.0.0.1</version>
+  </skin>
+
+  <publishDate position="bottom" format="yyyy-MM-dd" />
+  <version position="bottom" />
+
+  <custom>
+    <reflowSkin>
+      <theme>site</theme> <!-- = bootswatch-readable, downloaded -->
+
+      <localjQuery>true</localjQuery>
+      <smoothScroll>true</smoothScroll>
+      <highlightJs>true</highlightJs>
+      <highlightJsLocal>true</highlightJsLocal>
+      <highlightJsTheme>github</highlightJsTheme>
+
+      <!-- head/title is something like "Benchmarks - cache2k" -->
+      <titleTemplate>%2$s - cache2k</titleTemplate>
+      <!-- enable bootstrap inverse navbars -->
+      <navbarInverse>true</navbarInverse>
+      <!-- don't have attribution in the page frame, we put it on the credits page -->
+      <skinAttribution>false</skinAttribution>
+      <!-- this should fix links in a multi module project
+           see: http://andriusvelykis.github.io/reflow-maven-skin/skin/multi-module.html
+      -->
+      <!--<absoluteResourceURL>http:////localhost/~jeans/cache2k</absoluteResourceURL>-->
+
+      <!-- the brand display top left -->
+      <brand>
+        <name>
+          <![CDATA[
+            <img src="img/cache2k-logo.svg" alt="cache2k" title="cache2k"/>
+          ]]>
+        </name>
+        <href>http://cache2k.org</href>
+      </brand>
+      <slogan position="bannerLeft">
+        High performance and elegant Java in-memory caching.
+      </slogan>
+
+      <!-- Only put documentation in the top nav together with links, defined in body below. ;jw -->
+      <topNav>Documentation</topNav>
+
+      <!-- subnav top/sidebar -->
+      <toc>sidebar</toc>
+
+      <breadcrumbs>false</breadcrumbs>
+
+      <bottomNav maxSpan="9" >
+        <column>Main</column>
+        <column>Contribute</column>
+        <column>Documentation</column>
+        <!--<column>reports</column>-->
+      </bottomNav>
+    </reflowSkin>
+  </custom>
+
+  <body>
+    <head>
+      <link href="./css/bootswatch.css" rel="stylesheet" />
+      <link rel="author" href="http://www.headissue.com"/>
+      <link rel="icon" type="image/png" href="./favicon.png" />
+
+      <!-- Piwik -->
+      <script type="text/javascript">
+        var _paq = _paq || [];
+        _paq.push(["trackPageView"]);
+        _paq.push(["enableLinkTracking"]);
+
+        (function() {
+          var u=(("https:" == document.location.protocol) ? "https" : "http") + "://z.h7e.eu/";
+          _paq.push(["setTrackerUrl", u+"piwik.php"]);
+          _paq.push(["setSiteId", "4"]);
+          var d=document, g=d.createElement("script"), s=d.getElementsByTagName("script")[0]; g.type="text/javascript";
+          g.defer=true; g.async=true; g.src=u+"piwik.js"; s.parentNode.insertBefore(g,s);
+        })();
+      </script>
+      <!-- End Piwik Code -->
+    </head>
+    <links>
+      <item name="GitHub project" href="https://github.com/headissue/cache2k" />
+      <item name="Benchmarks" href="benchmarks.html" />
+    </links>
+
+    <menu name="Main" inherit="top">
+      <item name="Home" href="index.html" />
+      <item name="Benchmarks" href="benchmarks.html" />
+      <item name="Changes" href="changes-report.html" />
+    </menu>
+    <menu name="Contribute" inherit="bottom">
+      <item name="Issues on GitHub" href="https://github.com/headissue/cache2k/issues" />
+      <item name="GitHub Project" href="https://github.com/headissue/cache2k" />
+    </menu>
+    <menu name="Documentation" inherit="bottom">
+      <item name="cache2k API" href="./cache2k-api/apidocs/index.html" />
+    </menu>
+    <!--<menu name="Maven documentation" ref="reports" inherit="bottom"/>-->
+  </body>
+</project>

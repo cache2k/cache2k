@@ -1,0 +1,234 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0
+                             http://maven.apache.org/maven-v4_0_0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+
+  <groupId>org.cache2k</groupId>
+  <artifactId>cache2k-parent</artifactId>
+  <packaging>pom</packaging>
+  <version>0.18-SNAPSHOT</version>
+  <name>cache2k parent</name>
+  <inceptionYear>2000</inceptionYear>
+  <url>http://cache2k.org</url>
+  <organization>
+    <name>headissue GmbH, Munich</name>
+    <url>http://headissue.com</url>
+  </organization>
+
+  <modules>
+    <module>api</module>
+    <module>jmx-api</module>
+    <module>core</module>
+  </modules>
+
+  <dependencies>
+    <!-- JSR-305 defect annotations, just as @Nullable -->
+    <dependency>
+      <groupId>com.google.code.findbugs</groupId>
+      <artifactId>jsr305</artifactId>
+      <version>1.3.9</version>
+      <scope>compile</scope>
+    </dependency>
+    <dependency>
+      <groupId>junit</groupId>
+      <artifactId>junit</artifactId>
+      <version>4.11</version>
+      <scope>test</scope>
+    </dependency>
+  </dependencies>
+
+  <build>
+    <pluginManagement>
+      <plugins>
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-compiler-plugin</artifactId>
+          <configuration>
+            <source>1.7</source>
+            <target>1.7</target>
+          </configuration>
+        </plugin>
+
+        <plugin>
+          <groupId>org.codehaus.mojo</groupId>
+          <artifactId>license-maven-plugin</artifactId>
+          <version>1.5</version>
+          <configuration>
+            <licenseName>gpl_v3</licenseName>
+          </configuration>
+        </plugin>
+      </plugins>
+    </pluginManagement>
+
+
+    <extensions>
+      <!-- Needed for scpexe deploy -->
+      <extension>
+        <groupId>org.apache.maven.wagon</groupId>
+        <artifactId>wagon-ssh-external</artifactId>
+      </extension>
+    </extensions>
+  </build>
+
+  <distributionManagement>
+    <repository>
+      <id>headissue.public</id>
+      <name>headissue public repository</name>
+      <url>${h7e.public.deploy.url}</url>
+    </repository>
+    <snapshotRepository>
+      <id>headissue.snapshot</id>
+      <name>Internal Snapshot Repository</name>
+      <url>${h7e.snapshot.deploy.url}</url>
+    </snapshotRepository>
+    <site>
+      <id>cache2k</id>
+      <url>file:/tmp/cache2k-site</url>
+    </site>
+  </distributionManagement>
+
+  <issueManagement>
+    <system>GitHub</system>
+    <url>https://github.com/headissue/cache2k/issues</url>
+  </issueManagement>
+
+  <properties>
+    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+  </properties>
+
+
+  <profiles>
+
+    <!-- profile for site build of cache2k.org -->
+    <profile>
+      <id>site</id>
+
+      <repositories>
+        <repository>
+          <id>headissue.public</id>
+          <name>headissue public maven repository</name>
+          <url>https://www.headissue.com/maven</url>
+          <layout>default</layout>
+        </repository>
+      </repositories>
+
+      <pluginRepositories>
+        <pluginRepository>
+          <id>headissue.public</id>
+          <name>headissue public maven repository</name>
+          <url>https://www.headissue.com/maven</url>
+          <layout>default</layout>
+        </pluginRepository>
+      </pluginRepositories>
+
+      <reporting>
+        <plugins>
+          <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-project-info-reports-plugin</artifactId>
+            <version>2.7</version>
+            <reportSets>
+              <reportSet>
+                <reports>
+                  <!-- maybe switch something on later ... jw -->
+                  <!-- Remove unwanted reports here -->
+                  <!--<report>index</report>-->
+                  <!--<report>summary</report>-->
+                  <!-- <report>dependencies</report> -->
+                  <!-- <report>dependency-convergence</report> -->
+                  <!--<report>project-team</report>-->
+                  <!--<report>mailing-list</report>-->
+                  <!--<report>cim</report>-->
+                  <!--<report>issue-tracking</report>-->
+                  <!-- <report>license</report> -->
+                  <!--<report>scm</report>-->
+                  <!-- <report>modules</report> -->
+                  <!-- <report>plugins</report> -->
+                </reports>
+              </reportSet>
+            </reportSets>
+          </plugin>
+          <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-javadoc-plugin</artifactId>
+            <version>2.9.1</version>
+            <configuration>
+              <!-- no aggregation, we want to have docs on the API package alone -->
+              <aggregate>false</aggregate>
+              <!--
+              <source>${maven.compile.source}</source>
+              <encoding>${commons.encoding}</encoding>
+              <docEncoding>${commons.docEncoding}</docEncoding>
+              -->
+              <linksource>true</linksource>
+              <links>
+                <link>http://docs.oracle.com/javase/7/docs/api/</link>
+              </links>
+              <quiet>true</quiet>
+              <bottom>
+                <![CDATA[<a href="http://cache2k.org" target="_blank">cache2k</a> API documentation. Copyright &#169; {inceptionYear}&#x2013;{currentYear} <a href="http://headissue.com" target="_blank">headissue GmbH, Munich</a>.]]>
+              </bottom>
+            </configuration>
+            <reportSets>
+              <reportSet>
+                <id>html</id>
+                <reports>
+                  <report>javadoc</report>
+                </reports>
+              </reportSet>
+            </reportSets>
+          </plugin>
+          <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-changes-plugin</artifactId>
+            <version>2.9</version>
+            <reportSets>
+              <reportSet>
+                <reports>
+                  <report>changes-report</report>
+                </reports>
+              </reportSet>
+            </reportSets>
+          </plugin>
+        </plugins>
+      </reporting>
+
+      <build>
+        <pluginManagement>
+          <plugins>
+            <plugin>
+              <groupId>org.apache.maven.plugins</groupId>
+              <artifactId>maven-site-plugin</artifactId>
+              <version>3.3</version>
+              <configuration>
+                <stagingSiteURL>file:${env.HOME}/public_html/cache2k</stagingSiteURL>
+              </configuration>
+              <dependencies>
+                <dependency>
+                  <groupId>org.apache.maven.doxia</groupId>
+                  <artifactId>doxia-module-markdown</artifactId>
+                  <version>1.4</version>
+                </dependency>
+
+                <dependency>
+                  <groupId>com.headissue.maven</groupId>
+                  <artifactId>reflow-velocity-tools</artifactId>
+                  <version>1.0.0.1</version>
+                </dependency>
+                <!-- Reflow skin requires Velocity >= 1.7  -->
+                <dependency>
+                  <groupId>org.apache.velocity</groupId>
+                  <artifactId>velocity</artifactId>
+                  <version>1.7</version>
+                </dependency>
+              </dependencies>
+            </plugin>
+          </plugins>
+        </pluginManagement>
+      </build>
+    </profile>
+
+  </profiles>
+
+</project>

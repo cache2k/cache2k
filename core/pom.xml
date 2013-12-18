@@ -1,0 +1,38 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+  
+  <parent>
+    <groupId>org.cache2k</groupId>
+    <artifactId>cache2k-parent</artifactId>
+    <version>0.18-SNAPSHOT</version>
+  </parent>
+
+  <artifactId>cache2k-core</artifactId>
+  <version>0.18-SNAPSHOT</version>
+  <name>cache2k core package</name>
+
+  <dependencies>
+      <dependency>
+          <groupId>${project.groupId}</groupId>
+          <artifactId>cache2k-api</artifactId>
+          <version>${project.version}</version>
+      </dependency>
+      <dependency>
+          <groupId>${project.groupId}</groupId>
+          <artifactId>cache2k-jmx-api</artifactId>
+          <version>${project.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>commons-logging</groupId>
+        <artifactId>commons-logging</artifactId>
+        <version>1.1.2</version>
+      </dependency>
+
+      <dependency>
+        <groupId>com.carrotsearch</groupId>
+        <artifactId>junit-benchmarks</artifactId>
+        <version>0.7.0</version>
+        <scope>test</scope>
+     </dependency>
+  </dependencies>
+</project>

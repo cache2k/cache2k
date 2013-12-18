@@ -1,0 +1,6 @@
+Benchmark cache2k/CLOCK cache2k/CP+ cache2k/ARC EHCache Infinispan Guava
+Eff90 0.139 0.159 0.264 1.184 1.145 0.473 
+Eff95 0.122 0.13 0.245 0.965 1.118 0.416 
+Hits 0.068 0.064 0.173 0.603 1.942 0.848 
+Miss 0.627 0.764 0.641 5.111 4.208 1.337 
+Random 0.403 0.501 0.492 2.822 2.643 0.861 

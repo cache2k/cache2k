@@ -1,0 +1,2880 @@
+<!--
+  #%L
+  cache2k parent
+  %%
+  Copyright (C) 2000 - 2013 headissue GmbH, Munich
+  %%
+  This program is free software: you can redistribute it and/or modify
+  it under the terms of the GNU General Public License as
+  published by the Free Software Foundation, either version 3 of the 
+  License, or (at your option) any later version.
+  
+  This program is distributed in the hope that it will be useful,
+  but WITHOUT ANY WARRANTY; without even the implied warranty of
+  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+  GNU General Public License for more details.
+  
+  You should have received a copy of the GNU General Public 
+  License along with this program.  If not, see
+  <http://www.gnu.org/licenses/gpl-3.0.html>.
+  #L%
+  -->
+<benchmark-results tstamp="2013-12-18T16:43:18.713+0100">
+
+	<testname classname="org.cache2k.benchmark.ClockCacheWithExpiryBenchmark" name="benchmarkRandom"
+		 benchmark-rounds="3" warmup-rounds="2"
+		 round-avg="0.443" round-stddev="0.009"
+		 gc-avg="0" gc-stddev="0"
+		 gc-invocations="2" gc-time="0.005"
+		 benchmark-time-total="1.328" warmup-time-total="13.933"
+		 threads="1"/>
+
+	<testname classname="org.cache2k.benchmark.ClockCacheWithExpiryBenchmark" name="benchmarkMulti2_600"
+		 benchmark-rounds="1" warmup-rounds="0"
+		 round-avg="0.298" round-stddev="0"
+		 gc-avg="0" gc-stddev="0"
+		 gc-invocations="0" gc-time="0"
+		 benchmark-time-total="0.299" warmup-time-total="0"
+		 threads="1"/>
+
+	<testname classname="org.cache2k.benchmark.ClockCacheWithExpiryBenchmark" name="benchmarkWeb12_1200"
+		 benchmark-rounds="1" warmup-rounds="0"
+		 round-avg="0.813" round-stddev="0"
+		 gc-avg="0" gc-stddev="0"
+		 gc-invocations="1" gc-time="0.004"
+		 benchmark-time-total="0.815" warmup-time-total="0"
+		 threads="1"/>
+
+	<testname classname="org.cache2k.benchmark.ClockCacheWithExpiryBenchmark" name="benchmarkWeb12_3000"
+		 benchmark-rounds="1" warmup-rounds="0"
+		 round-avg="1.124" round-stddev="0"
+		 gc-avg="0" gc-stddev="0"
+		 gc-invocations="0" gc-time="0"
+		 benchmark-time-total="1.124" warmup-time-total="0"
+		 threads="1"/>
+
+	<testname classname="org.cache2k.benchmark.ClockCacheWithExpiryBenchmark" name="benchmarkSprite_100"
+		 benchmark-rounds="1" warmup-rounds="0"
+		 round-avg="0.472" round-stddev="0"
+		 gc-avg="0" gc-stddev="0"
+		 gc-invocations="0" gc-time="0"
+		 benchmark-time-total="0.472" warmup-time-total="0"
+		 threads="1"/>
+
+	<testname classname="org.cache2k.benchmark.ClockCacheWithExpiryBenchmark" name="benchmarkSprite_200"
+		 benchmark-rounds="1" warmup-rounds="0"
+		 round-avg="0.5" round-stddev="0"
+		 gc-avg="0" gc-stddev="0"
+		 gc-invocations="0" gc-time="0"
+		 benchmark-time-total="0.501" warmup-time-total="0"
+		 threads="1"/>
+
+	<testname classname="org.cache2k.benchmark.ClockCacheWithExpiryBenchmark" name="benchmarkSprite_400"
+		 benchmark-rounds="1" warmup-rounds="0"
+		 round-avg="0.532" round-stddev="0"
+		 gc-avg="0.001" gc-stddev="0"
+		 gc-invocations="0" gc-time="0"
+		 benchmark-time-total="0.532" warmup-time-total="0.001"
+		 threads="1"/>
+
+	<testname classname="org.cache2k.benchmark.ClockCacheWithExpiryBenchmark" name="benchmarkSprite_600"
+		 benchmark-rounds="1" warmup-rounds="0"
+		 round-avg="0.453" round-stddev="0"
+		 gc-avg="0" gc-stddev="0"
+		 gc-invocations="0" gc-time="0"
+		 benchmark-time-total="0.453" warmup-time-total="0"
+		 threads="1"/>
+
+	<testname classname="org.cache2k.benchmark.ClockCacheWithExpiryBenchmark" name="benchmarkSprite_800"
+		 benchmark-rounds="1" warmup-rounds="0"
+		 round-avg="0.481" round-stddev="0"
+		 gc-avg="0" gc-stddev="0"
+		 gc-invocations="0" gc-time="0"
+		 benchmark-time-total="0.481" warmup-time-total="0"
+		 threads="1"/>
+
+	<testname classname="org.cache2k.benchmark.ClockCacheWithExpiryBenchmark" name="benchmarkGlimpse_500"
+		 benchmark-rounds="1" warmup-rounds="0"
+		 round-avg="0.046" round-stddev="0"
+		 gc-avg="0" gc-stddev="0"
+		 gc-invocations="0" gc-time="0"
+		 benchmark-time-total="0.046" warmup-time-total="0"
+		 threads="1"/>
+
+	<testname classname="org.cache2k.benchmark.ClockCacheWithExpiryBenchmark" name="benchmarkSprite_1000"
+		 benchmark-rounds="1" warmup-rounds="0"
+		 round-avg="0.44" round-stddev="0"
+		 gc-avg="0" gc-stddev="0"
+		 gc-invocations="1" gc-time="0.003"
+		 benchmark-time-total="0.44" warmup-time-total="0"
+		 threads="1"/>
+
+	<testname classname="org.cache2k.benchmark.ClockCacheWithExpiryBenchmark" name="benchmarkWeb07_75"
+		 benchmark-rounds="1" warmup-rounds="0"
+		 round-avg="0.483" round-stddev="0"
+		 gc-avg="0" gc-stddev="0"
+		 gc-invocations="0" gc-time="0"
+		 benchmark-time-total="0.483" warmup-time-total="0"
+		 threads="1"/>
+
+	<testname classname="org.cache2k.benchmark.ClockCacheWithExpiryBenchmark" name="benchmarkWeb12_75"
+		 benchmark-rounds="1" warmup-rounds="0"
+		 round-avg="0.458" round-stddev="0"
+		 gc-avg="0" gc-stddev="0"
+		 gc-invocations="0" gc-time="0"
+		 benchmark-time-total="0.459" warmup-time-total="0"
+		 threads="1"/>
+
+	<testname classname="org.cache2k.benchmark.ClockCacheWithExpiryBenchmark" name="benchmarkHits"
+		 benchmark-rounds="3" warmup-rounds="2"
+		 round-avg="0.04" round-stddev="0.001"
+		 gc-avg="0" gc-stddev="0"
+		 gc-invocations="0" gc-time="0"
+		 benchmark-time-total="0.119" warmup-time-total="1.14"
+		 threads="1"/>
+
+	<testname classname="org.cache2k.benchmark.ClockCacheWithExpiryBenchmark" name="benchmarkMiss"
+		 benchmark-rounds="3" warmup-rounds="2"
+		 round-avg="0.9" round-stddev="0.034"
+		 gc-avg="0" gc-stddev="0"
+		 gc-invocations="4" gc-time="0.239"
+		 benchmark-time-total="2.701" warmup-time-total="21.471"
+		 threads="1"/>
+
+	<testname classname="org.cache2k.benchmark.ClockCacheWithExpiryBenchmark" name="benchmarkCpp_100"
+		 benchmark-rounds="1" warmup-rounds="0"
+		 round-avg="0.015" round-stddev="0"
+		 gc-avg="0" gc-stddev="0"
+		 gc-invocations="0" gc-time="0"
+		 benchmark-time-total="0.015" warmup-time-total="0"
+		 threads="1"/>
+
+	<testname classname="org.cache2k.benchmark.ClockCacheWithExpiryBenchmark" name="benchmarkCpp_300"
+		 benchmark-rounds="1" warmup-rounds="0"
+		 round-avg="0.012" round-stddev="0"
+		 gc-avg="0" gc-stddev="0"
+		 gc-invocations="0" gc-time="0"
+		 benchmark-time-total="0.012" warmup-time-total="0"
+		 threads="1"/>
+
+	<testname classname="org.cache2k.benchmark.ClockCacheWithExpiryBenchmark" name="benchmarkCpp_500"
+		 benchmark-rounds="1" warmup-rounds="0"
+		 round-avg="0.012" round-stddev="0"
+		 gc-avg="0" gc-stddev="0"
+		 gc-invocations="0" gc-time="0"
+		 benchmark-time-total="0.012" warmup-time-total="0"
+		 threads="1"/>
+
+	<testname classname="org.cache2k.benchmark.ClockCacheWithExpiryBenchmark" name="benchmarkWeb07_300"
+		 benchmark-rounds="1" warmup-rounds="0"
+		 round-avg="0.563" round-stddev="0"
+		 gc-avg="0" gc-stddev="0"
+		 gc-invocations="0" gc-time="0"
+		 benchmark-time-total="0.563" warmup-time-total="0"
+		 threads="1"/>
+
+	<testname classname="org.cache2k.benchmark.ClockCacheWithExpiryBenchmark" name="benchmarkWeb12_300"
+		 benchmark-rounds="1" warmup-rounds="0"
+		 round-avg="0.558" round-stddev="0"
+		 gc-avg="0" gc-stddev="0"
+		 gc-invocations="0" gc-time="0"
+		 benchmark-time-total="0.558" warmup-time-total="0"
+		 threads="1"/>
+
+	<testname classname="org.cache2k.benchmark.ClockCacheWithExpiryBenchmark" name="testReplacement1"
+		 benchmark-rounds="1" warmup-rounds="0"
+		 round-avg="0.011" round-stddev="0"
+		 gc-avg="0" gc-stddev="0"
+		 gc-invocations="0" gc-time="0"
+		 benchmark-time-total="0.011" warmup-time-total="0"
+		 threads="1"/>
+
+	<testname classname="org.cache2k.benchmark.ClockCacheWithExpiryBenchmark" name="testSize1000"
+		 benchmark-rounds="1" warmup-rounds="0"
+		 round-avg="0.008" round-stddev="0"
+		 gc-avg="0" gc-stddev="0"
+		 gc-invocations="0" gc-time="0"
+		 benchmark-time-total="0.008" warmup-time-total="0"
+		 threads="1"/>
+
+	<testname classname="org.cache2k.benchmark.ClockCacheWithExpiryBenchmark" name="testSimple1"
+		 benchmark-rounds="1" warmup-rounds="0"
+		 round-avg="0" round-stddev="0"
+		 gc-avg="0" gc-stddev="0"
+		 gc-invocations="0" gc-time="0"
+		 benchmark-time-total="0" warmup-time-total="0"
+		 threads="1"/>
+
+	<testname classname="org.cache2k.benchmark.ClockCacheWithExpiryBenchmark" name="testSimple2"
+		 benchmark-rounds="1" warmup-rounds="0"
+		 round-avg="0" round-stddev="0"
+		 gc-avg="0" gc-stddev="0"
+		 gc-invocations="0" gc-time="0"
+		 benchmark-time-total="0" warmup-time-total="0"
+		 threads="1"/>
+
+	<testname classname="org.cache2k.benchmark.ClockCacheWithExpiryBenchmark" name="benchmarkEff90"
+		 benchmark-rounds="3" warmup-rounds="2"
+		 round-avg="0.15" round-stddev="0.027"
+		 gc-avg="0" gc-stddev="0"
+		 gc-invocations="1" gc-time="0.059"
+		 benchmark-time-total="0.451" warmup-time-total="4.27"
+		 threads="1"/>
+
+	<testname classname="org.cache2k.benchmark.ClockCacheWithExpiryBenchmark" name="benchmarkEff95"
+		 benchmark-rounds="3" warmup-rounds="2"
+		 round-avg="0.098" round-stddev="0"
+		 gc-avg="0" gc-stddev="0"
+		 gc-invocations="0" gc-time="0"
+		 benchmark-time-total="0.295" warmup-time-total="3.406"
+		 threads="1"/>
+
+	<testname classname="org.cache2k.benchmark.ClockCacheWithExpiryBenchmark" name="benchmarkWeb07_1200"
+		 benchmark-rounds="1" warmup-rounds="0"
+		 round-avg="0.884" round-stddev="0"
+		 gc-avg="0" gc-stddev="0"
+		 gc-invocations="0" gc-time="0"
+		 benchmark-time-total="0.884" warmup-time-total="0"
+		 threads="1"/>
+
+	<testname classname="org.cache2k.benchmark.ClockCacheWithExpiryBenchmark" name="benchmarkWeb07_3000"
+		 benchmark-rounds="1" warmup-rounds="0"
+		 round-avg="1.476" round-stddev="0"
+		 gc-avg="0" gc-stddev="0"
+		 gc-invocations="0" gc-time="0"
+		 benchmark-time-total="1.476" warmup-time-total="0"
+		 threads="1"/>
+
+	<testname classname="org.cache2k.benchmark.ClockCacheWithExpiryBenchmark" name="benchmarkMulti2_1800"
+		 benchmark-rounds="1" warmup-rounds="0"
+		 round-avg="0.251" round-stddev="0"
+		 gc-avg="0" gc-stddev="0"
+		 gc-invocations="0" gc-time="0"
+		 benchmark-time-total="0.251" warmup-time-total="0"
+		 threads="1"/>
+
+	<testname classname="org.cache2k.benchmark.ClockCacheWithExpiryBenchmark" name="benchmarkMulti2_3000"
+		 benchmark-rounds="1" warmup-rounds="0"
+		 round-avg="0.186" round-stddev="0"
+		 gc-avg="0" gc-stddev="0"
+		 gc-invocations="0" gc-time="0"
+		 benchmark-time-total="0.186" warmup-time-total="0"
+		 threads="1"/>
+
+	<testname classname="org.cache2k.benchmark.ClockCacheWithExpiryBenchmark" name="benchmarkTotalRandom_100"
+		 benchmark-rounds="1" warmup-rounds="0"
+		 round-avg="8.385" round-stddev="0"
+		 gc-avg="0" gc-stddev="0"
+		 gc-invocations="2" gc-time="0.143"
+		 benchmark-time-total="8.385" warmup-time-total="0"
+		 threads="1"/>
+
+	<testname classname="org.cache2k.benchmark.ClockCacheWithExpiryBenchmark" name="benchmarkTotalRandom_200"
+		 benchmark-rounds="1" warmup-rounds="0"
+		 round-avg="10.964" round-stddev="0"
+		 gc-avg="0" gc-stddev="0"
+		 gc-invocations="3" gc-time="0.172"
+		 benchmark-time-total="10.964" warmup-time-total="0"
+		 threads="1"/>
+
+	<testname classname="org.cache2k.benchmark.ClockCacheWithExpiryBenchmark" name="benchmarkTotalRandom_350"
+		 benchmark-rounds="1" warmup-rounds="0"
+		 round-avg="10.217" round-stddev="0"
+		 gc-avg="0" gc-stddev="0"
+		 gc-invocations="2" gc-time="0.055"
+		 benchmark-time-total="10.217" warmup-time-total="0"
+		 threads="1"/>
+
+	<testname classname="org.cache2k.benchmark.ClockCacheWithExpiryBenchmark" name="benchmarkTotalRandom_500"
+		 benchmark-rounds="1" warmup-rounds="0"
+		 round-avg="0.472" round-stddev="0"
+		 gc-avg="0" gc-stddev="0"
+		 gc-invocations="0" gc-time="0"
+		 benchmark-time-total="0.473" warmup-time-total="0"
+		 threads="1"/>
+
+	<testname classname="org.cache2k.benchmark.ClockCacheWithExpiryBenchmark" name="benchmarkTotalRandom_800"
+		 benchmark-rounds="1" warmup-rounds="0"
+		 round-avg="6.126" round-stddev="0"
+		 gc-avg="0" gc-stddev="0"
+		 gc-invocations="2" gc-time="0.049"
+		 benchmark-time-total="6.126" warmup-time-total="0"
+		 threads="1"/>
+
+	<testname classname="org.cache2k.benchmark.ClockCacheWithExpiryBenchmark" name="benchmarkCpp_20"
+		 benchmark-rounds="1" warmup-rounds="0"
+		 round-avg="0.014" round-stddev="0"
+		 gc-avg="0" gc-stddev="0"
+		 gc-invocations="0" gc-time="0"
+		 benchmark-time-total="0.014" warmup-time-total="0"
+		 threads="1"/>
+
+	<testname classname="org.cache2k.benchmark.ClockCacheWithExpiryBenchmark" name="benchmarkCpp_35"
+		 benchmark-rounds="1" warmup-rounds="0"
+		 round-avg="0.019" round-stddev="0"
+		 gc-avg="0" gc-stddev="0"
+		 gc-invocations="0" gc-time="0"
+		 benchmark-time-total="0.019" warmup-time-total="0"
+		 threads="1"/>
+
+	<testname classname="org.cache2k.benchmark.ClockCacheWithExpiryBenchmark" name="benchmarkCpp_50"
+		 benchmark-rounds="1" warmup-rounds="0"
+		 round-avg="0.024" round-stddev="0"
+		 gc-avg="0" gc-stddev="0"
+		 gc-invocations="0" gc-time="0"
+		 benchmark-time-total="0.024" warmup-time-total="0"
+		 threads="1"/>
+
+	<testname classname="org.cache2k.benchmark.ClockCacheWithExpiryBenchmark" name="benchmarkCpp_80"
+		 benchmark-rounds="1" warmup-rounds="0"
+		 round-avg="0.021" round-stddev="0"
+		 gc-avg="0" gc-stddev="0"
+		 gc-invocations="0" gc-time="0"
+		 benchmark-time-total="0.021" warmup-time-total="0"
+		 threads="1"/>
+
+	<testname classname="org.cache2k.benchmark.ArcCacheWithExpiryBenchmark" name="benchmarkRandom"
+		 benchmark-rounds="3" warmup-rounds="2"
+		 round-avg="0.617" round-stddev="0.129"
+		 gc-avg="0" gc-stddev="0"
+		 gc-invocations="1" gc-time="0.176"
+		 benchmark-time-total="1.852" warmup-time-total="1.496"
+		 threads="1"/>
+
+	<testname classname="org.cache2k.benchmark.ArcCacheWithExpiryBenchmark" name="benchmarkMulti2_600"
+		 benchmark-rounds="1" warmup-rounds="0"
+		 round-avg="0.02" round-stddev="0"
+		 gc-avg="0" gc-stddev="0"
+		 gc-invocations="0" gc-time="0"
+		 benchmark-time-total="0.02" warmup-time-total="0"
+		 threads="1"/>
+
+	<testname classname="org.cache2k.benchmark.ArcCacheWithExpiryBenchmark" name="benchmarkWeb12_1200"
+		 benchmark-rounds="1" warmup-rounds="0"
+		 round-avg="0.019" round-stddev="0"
+		 gc-avg="0" gc-stddev="0"
+		 gc-invocations="0" gc-time="0"
+		 benchmark-time-total="0.019" warmup-time-total="0"
+		 threads="1"/>
+
+	<testname classname="org.cache2k.benchmark.ArcCacheWithExpiryBenchmark" name="benchmarkWeb12_3000"
+		 benchmark-rounds="1" warmup-rounds="0"
+		 round-avg="0.019" round-stddev="0"
+		 gc-avg="0" gc-stddev="0"
+		 gc-invocations="0" gc-time="0"
+		 benchmark-time-total="0.019" warmup-time-total="0"
+		 threads="1"/>
+
+	<testname classname="org.cache2k.benchmark.ArcCacheWithExpiryBenchmark" name="benchmarkSprite_100"
+		 benchmark-rounds="1" warmup-rounds="0"
+		 round-avg="0.049" round-stddev="0"
+		 gc-avg="0" gc-stddev="0"
+		 gc-invocations="0" gc-time="0"
+		 benchmark-time-total="0.049" warmup-time-total="0"
+		 threads="1"/>
+
+	<testname classname="org.cache2k.benchmark.ArcCacheWithExpiryBenchmark" name="benchmarkSprite_200"
+		 benchmark-rounds="1" warmup-rounds="0"
+		 round-avg="0.032" round-stddev="0"
+		 gc-avg="0" gc-stddev="0"
+		 gc-invocations="0" gc-time="0"
+		 benchmark-time-total="0.032" warmup-time-total="0"
+		 threads="1"/>
+
+	<testname classname="org.cache2k.benchmark.ArcCacheWithExpiryBenchmark" name="benchmarkSprite_400"
+		 benchmark-rounds="1" warmup-rounds="0"
+		 round-avg="0.023" round-stddev="0"
+		 gc-avg="0" gc-stddev="0"
+		 gc-invocations="0" gc-time="0"
+		 benchmark-time-total="0.023" warmup-time-total="0"
+		 threads="1"/>
+
+	<testname classname="org.cache2k.benchmark.ArcCacheWithExpiryBenchmark" name="benchmarkSprite_600"
+		 benchmark-rounds="1" warmup-rounds="0"
+		 round-avg="0.019" round-stddev="0"
+		 gc-avg="0" gc-stddev="0"
+		 gc-invocations="0" gc-time="0"
+		 benchmark-time-total="0.019" warmup-time-total="0"
+		 threads="1"/>
+
+	<testname classname="org.cache2k.benchmark.ArcCacheWithExpiryBenchmark" name="benchmarkSprite_800"
+		 benchmark-rounds="1" warmup-rounds="0"
+		 round-avg="0.016" round-stddev="0"
+		 gc-avg="0" gc-stddev="0"
+		 gc-invocations="0" gc-time="0"
+		 benchmark-time-total="0.016" warmup-time-total="0"
+		 threads="1"/>
+
+	<testname classname="org.cache2k.benchmark.ArcCacheWithExpiryBenchmark" name="benchmarkGlimpse_500"
+		 benchmark-rounds="1" warmup-rounds="0"
+		 round-avg="0.004" round-stddev="0"
+		 gc-avg="0" gc-stddev="0"
+		 gc-invocations="0" gc-time="0"
+		 benchmark-time-total="0.004" warmup-time-total="0"
+		 threads="1"/>
+
+	<testname classname="org.cache2k.benchmark.ArcCacheWithExpiryBenchmark" name="benchmarkSprite_1000"
+		 benchmark-rounds="1" warmup-rounds="0"
+		 round-avg="0.015" round-stddev="0"
+		 gc-avg="0" gc-stddev="0"
+		 gc-invocations="0" gc-time="0"
+		 benchmark-time-total="0.015" warmup-time-total="0"
+		 threads="1"/>
+
+	<testname classname="org.cache2k.benchmark.ArcCacheWithExpiryBenchmark" name="benchmarkWeb07_75"
+		 benchmark-rounds="1" warmup-rounds="0"
+		 round-avg="0.021" round-stddev="0"
+		 gc-avg="0" gc-stddev="0"
+		 gc-invocations="0" gc-time="0"
+		 benchmark-time-total="0.022" warmup-time-total="0"
+		 threads="1"/>
+
+	<testname classname="org.cache2k.benchmark.ArcCacheWithExpiryBenchmark" name="benchmarkWeb12_75"
+		 benchmark-rounds="1" warmup-rounds="0"
+		 round-avg="0.025" round-stddev="0"
+		 gc-avg="0" gc-stddev="0"
+		 gc-invocations="0" gc-time="0"
+		 benchmark-time-total="0.025" warmup-time-total="0"
+		 threads="1"/>
+
+	<testname classname="org.cache2k.benchmark.ArcCacheWithExpiryBenchmark" name="benchmarkHits"
+		 benchmark-rounds="3" warmup-rounds="2"
+		 round-avg="0.197" round-stddev="0.044"
+		 gc-avg="0" gc-stddev="0"
+		 gc-invocations="2" gc-time="0.079"
+		 benchmark-time-total="0.592" warmup-time-total="0.33"
+		 threads="1"/>
+
+	<testname classname="org.cache2k.benchmark.ArcCacheWithExpiryBenchmark" name="benchmarkMiss"
+		 benchmark-rounds="3" warmup-rounds="2"
+		 round-avg="1.532" round-stddev="0.479"
+		 gc-avg="0" gc-stddev="0"
+		 gc-invocations="4" gc-time="1.985"
+		 benchmark-time-total="4.597" warmup-time-total="1.759"
+		 threads="1"/>
+
+	<testname classname="org.cache2k.benchmark.ArcCacheWithExpiryBenchmark" name="benchmarkCpp_100"
+		 benchmark-rounds="1" warmup-rounds="0"
+		 round-avg="0.003" round-stddev="0"
+		 gc-avg="0" gc-stddev="0"
+		 gc-invocations="0" gc-time="0"
+		 benchmark-time-total="0.003" warmup-time-total="0"
+		 threads="1"/>
+
+	<testname classname="org.cache2k.benchmark.ArcCacheWithExpiryBenchmark" name="benchmarkCpp_300"
+		 benchmark-rounds="1" warmup-rounds="0"
+		 round-avg="0.002" round-stddev="0"
+		 gc-avg="0" gc-stddev="0"
+		 gc-invocations="0" gc-time="0"
+		 benchmark-time-total="0.002" warmup-time-total="0"
+		 threads="1"/>
+
+	<testname classname="org.cache2k.benchmark.ArcCacheWithExpiryBenchmark" name="benchmarkCpp_500"
+		 benchmark-rounds="1" warmup-rounds="0"
+		 round-avg="0.003" round-stddev="0"
+		 gc-avg="0" gc-stddev="0"
+		 gc-invocations="0" gc-time="0"
+		 benchmark-time-total="0.003" warmup-time-total="0"
+		 threads="1"/>
+
+	<testname classname="org.cache2k.benchmark.ArcCacheWithExpiryBenchmark" name="benchmarkWeb07_300"
+		 benchmark-rounds="1" warmup-rounds="0"
+		 round-avg="0.02" round-stddev="0"
+		 gc-avg="0" gc-stddev="0"
+		 gc-invocations="0" gc-time="0"
+		 benchmark-time-total="0.02" warmup-time-total="0"
+		 threads="1"/>
+
+	<testname classname="org.cache2k.benchmark.ArcCacheWithExpiryBenchmark" name="benchmarkWeb12_300"
+		 benchmark-rounds="1" warmup-rounds="0"
+		 round-avg="0.024" round-stddev="0"
+		 gc-avg="0" gc-stddev="0"
+		 gc-invocations="0" gc-time="0"
+		 benchmark-time-total="0.024" warmup-time-total="0"
+		 threads="1"/>
+
+	<testname classname="org.cache2k.benchmark.ArcCacheWithExpiryBenchmark" name="testReplacement1"
+		 benchmark-rounds="1" warmup-rounds="0"
+		 round-avg="0.002" round-stddev="0"
+		 gc-avg="0" gc-stddev="0"
+		 gc-invocations="0" gc-time="0"
+		 benchmark-time-total="0.002" warmup-time-total="0"
+		 threads="1"/>
+
+	<testname classname="org.cache2k.benchmark.ArcCacheWithExpiryBenchmark" name="testSize1000"
+		 benchmark-rounds="1" warmup-rounds="0"
+		 round-avg="0.002" round-stddev="0"
+		 gc-avg="0" gc-stddev="0"
+		 gc-invocations="0" gc-time="0"
+		 benchmark-time-total="0.002" warmup-time-total="0"
+		 threads="1"/>
+
+	<testname classname="org.cache2k.benchmark.ArcCacheWithExpiryBenchmark" name="testSimple1"
+		 benchmark-rounds="1" warmup-rounds="0"
+		 round-avg="0.001" round-stddev="0"
+		 gc-avg="0" gc-stddev="0"
+		 gc-invocations="0" gc-time="0"
+		 benchmark-time-total="0.001" warmup-time-total="0"
+		 threads="1"/>
+
+	<testname classname="org.cache2k.benchmark.ArcCacheWithExpiryBenchmark" name="testSimple2"
+		 benchmark-rounds="1" warmup-rounds="0"
+		 round-avg="0" round-stddev="0"
+		 gc-avg="0" gc-stddev="0"
+		 gc-invocations="0" gc-time="0"
+		 benchmark-time-total="0" warmup-time-total="0"
+		 threads="1"/>
+
+	<testname classname="org.cache2k.benchmark.ArcCacheWithExpiryBenchmark" name="benchmarkEff90"
+		 benchmark-rounds="3" warmup-rounds="2"
+		 round-avg="0.486" round-stddev="0.245"
+		 gc-avg="0" gc-stddev="0"
+		 gc-invocations="1" gc-time="0.344"
+		 benchmark-time-total="1.458" warmup-time-total="0.904"
+		 threads="1"/>
+
+	<testname classname="org.cache2k.benchmark.ArcCacheWithExpiryBenchmark" name="benchmarkEff95"
+		 benchmark-rounds="3" warmup-rounds="2"
+		 round-avg="0.28" round-stddev="0.013"
+		 gc-avg="0" gc-stddev="0"
+		 gc-invocations="0" gc-time="0"
+		 benchmark-time-total="0.841" warmup-time-total="0.695"
+		 threads="1"/>
+
+	<testname classname="org.cache2k.benchmark.ArcCacheWithExpiryBenchmark" name="benchmarkWeb07_1200"
+		 benchmark-rounds="1" warmup-rounds="0"
+		 round-avg="0.019" round-stddev="0"
+		 gc-avg="0" gc-stddev="0"
+		 gc-invocations="0" gc-time="0"
+		 benchmark-time-total="0.019" warmup-time-total="0"
+		 threads="1"/>
+
+	<testname classname="org.cache2k.benchmark.ArcCacheWithExpiryBenchmark" name="benchmarkWeb07_3000"
+		 benchmark-rounds="1" warmup-rounds="0"
+		 round-avg="0.019" round-stddev="0"
+		 gc-avg="0" gc-stddev="0"
+		 gc-invocations="0" gc-time="0"
+		 benchmark-time-total="0.019" warmup-time-total="0"
+		 threads="1"/>
+
+	<testname classname="org.cache2k.benchmark.ArcCacheWithExpiryBenchmark" name="benchmarkMulti2_1800"
+		 benchmark-rounds="1" warmup-rounds="0"
+		 round-avg="0.006" round-stddev="0"
+		 gc-avg="0" gc-stddev="0"
+		 gc-invocations="0" gc-time="0"
+		 benchmark-time-total="0.006" warmup-time-total="0"
+		 threads="1"/>
+
+	<testname classname="org.cache2k.benchmark.ArcCacheWithExpiryBenchmark" name="benchmarkMulti2_3000"
+		 benchmark-rounds="1" warmup-rounds="0"
+		 round-avg="0.349" round-stddev="0"
+		 gc-avg="0" gc-stddev="0"
+		 gc-invocations="2" gc-time="0.344"
+		 benchmark-time-total="0.35" warmup-time-total="0"
+		 threads="1"/>
+
+	<testname classname="org.cache2k.benchmark.ArcCacheWithExpiryBenchmark" name="benchmarkTotalRandom_100"
+		 benchmark-rounds="1" warmup-rounds="0"
+		 round-avg="0.947" round-stddev="0"
+		 gc-avg="0" gc-stddev="0"
+		 gc-invocations="1" gc-time="0.042"
+		 benchmark-time-total="0.947" warmup-time-total="0"
+		 threads="1"/>
+
+	<testname classname="org.cache2k.benchmark.ArcCacheWithExpiryBenchmark" name="benchmarkTotalRandom_200"
+		 benchmark-rounds="1" warmup-rounds="0"
+		 round-avg="0.938" round-stddev="0"
+		 gc-avg="0" gc-stddev="0"
+		 gc-invocations="2" gc-time="0.091"
+		 benchmark-time-total="0.938" warmup-time-total="0"
+		 threads="1"/>
+
+	<testname classname="org.cache2k.benchmark.ArcCacheWithExpiryBenchmark" name="benchmarkTotalRandom_350"
+		 benchmark-rounds="1" warmup-rounds="0"
+		 round-avg="0.837" round-stddev="0"
+		 gc-avg="0" gc-stddev="0"
+		 gc-invocations="1" gc-time="0.108"
+		 benchmark-time-total="0.837" warmup-time-total="0"
+		 threads="1"/>
+
+	<testname classname="org.cache2k.benchmark.ArcCacheWithExpiryBenchmark" name="benchmarkTotalRandom_500"
+		 benchmark-rounds="1" warmup-rounds="0"
+		 round-avg="0.665" round-stddev="0"
+		 gc-avg="0" gc-stddev="0"
+		 gc-invocations="1" gc-time="0.058"
+		 benchmark-time-total="0.665" warmup-time-total="0"
+		 threads="1"/>
+
+	<testname classname="org.cache2k.benchmark.ArcCacheWithExpiryBenchmark" name="benchmarkTotalRandom_800"
+		 benchmark-rounds="1" warmup-rounds="0"
+		 round-avg="0.4" round-stddev="0"
+		 gc-avg="0" gc-stddev="0"
+		 gc-invocations="0" gc-time="0"
+		 benchmark-time-total="0.4" warmup-time-total="0"
+		 threads="1"/>
+
+	<testname classname="org.cache2k.benchmark.ArcCacheWithExpiryBenchmark" name="benchmarkCpp_20"
+		 benchmark-rounds="1" warmup-rounds="0"
+		 round-avg="0.004" round-stddev="0"
+		 gc-avg="0" gc-stddev="0"
+		 gc-invocations="0" gc-time="0"
+		 benchmark-time-total="0.004" warmup-time-total="0"
+		 threads="1"/>
+
+	<testname classname="org.cache2k.benchmark.ArcCacheWithExpiryBenchmark" name="benchmarkCpp_35"
+		 benchmark-rounds="1" warmup-rounds="0"
+		 round-avg="0.004" round-stddev="0"
+		 gc-avg="0" gc-stddev="0"
+		 gc-invocations="0" gc-time="0"
+		 benchmark-time-total="0.004" warmup-time-total="0"
+		 threads="1"/>
+
+	<testname classname="org.cache2k.benchmark.ArcCacheWithExpiryBenchmark" name="benchmarkCpp_50"
+		 benchmark-rounds="1" warmup-rounds="0"
+		 round-avg="0.004" round-stddev="0"
+		 gc-avg="0" gc-stddev="0"
+		 gc-invocations="0" gc-time="0"
+		 benchmark-time-total="0.004" warmup-time-total="0"
+		 threads="1"/>
+
+	<testname classname="org.cache2k.benchmark.ArcCacheWithExpiryBenchmark" name="benchmarkCpp_80"
+		 benchmark-rounds="1" warmup-rounds="0"
+		 round-avg="0.003" round-stddev="0"
+		 gc-avg="0" gc-stddev="0"
+		 gc-invocations="0" gc-time="0"
+		 benchmark-time-total="0.003" warmup-time-total="0"
+		 threads="1"/>
+
+	<testname classname="org.cache2k.benchmark.HashMapReferenceBenchmark" name="benchmarkHashMapHit"
+		 benchmark-rounds="10" warmup-rounds="2"
+		 round-avg="0.05" round-stddev="0.007"
+		 gc-avg="0" gc-stddev="0"
+		 gc-invocations="2" gc-time="0.002"
+		 benchmark-time-total="0.497" warmup-time-total="0.113"
+		 threads="1"/>
+
+	<testname classname="org.cache2k.benchmark.ArcCacheBenchmark" name="benchmarkRandom"
+		 benchmark-rounds="3" warmup-rounds="2"
+		 round-avg="0.492" round-stddev="0.006"
+		 gc-avg="0" gc-stddev="0"
+		 gc-invocations="1" gc-time="0.003"
+		 benchmark-time-total="1.478" warmup-time-total="0.841"
+		 threads="1"/>
+
+	<testname classname="org.cache2k.benchmark.ArcCacheBenchmark" name="benchmarkMulti2_600"
+		 benchmark-rounds="1" warmup-rounds="0"
+		 round-avg="0.006" round-stddev="0"
+		 gc-avg="0" gc-stddev="0"
+		 gc-invocations="0" gc-time="0"
+		 benchmark-time-total="0.006" warmup-time-total="0"
+		 threads="1"/>
+
+	<testname classname="org.cache2k.benchmark.ArcCacheBenchmark" name="benchmarkWeb12_1200"
+		 benchmark-rounds="1" warmup-rounds="0"
+		 round-avg="0.017" round-stddev="0"
+		 gc-avg="0" gc-stddev="0"
+		 gc-invocations="0" gc-time="0"
+		 benchmark-time-total="0.017" warmup-time-total="0"
+		 threads="1"/>
+
+	<testname classname="org.cache2k.benchmark.ArcCacheBenchmark" name="benchmarkWeb12_3000"
+		 benchmark-rounds="1" warmup-rounds="0"
+		 round-avg="0.015" round-stddev="0"
+		 gc-avg="0" gc-stddev="0"
+		 gc-invocations="0" gc-time="0"
+		 benchmark-time-total="0.015" warmup-time-total="0"
+		 threads="1"/>
+
+	<testname classname="org.cache2k.benchmark.ArcCacheBenchmark" name="benchmarkSprite_100"
+		 benchmark-rounds="1" warmup-rounds="0"
+		 round-avg="0.032" round-stddev="0"
+		 gc-avg="0" gc-stddev="0"
+		 gc-invocations="0" gc-time="0"
+		 benchmark-time-total="0.032" warmup-time-total="0"
+		 threads="1"/>
+
+	<testname classname="org.cache2k.benchmark.ArcCacheBenchmark" name="benchmarkSprite_200"
+		 benchmark-rounds="1" warmup-rounds="0"
+		 round-avg="0.026" round-stddev="0"
+		 gc-avg="0" gc-stddev="0"
+		 gc-invocations="0" gc-time="0"
+		 benchmark-time-total="0.026" warmup-time-total="0"
+		 threads="1"/>
+
+	<testname classname="org.cache2k.benchmark.ArcCacheBenchmark" name="benchmarkSprite_400"
+		 benchmark-rounds="1" warmup-rounds="0"
+		 round-avg="0.019" round-stddev="0"
+		 gc-avg="0" gc-stddev="0"
+		 gc-invocations="0" gc-time="0"
+		 benchmark-time-total="0.019" warmup-time-total="0"
+		 threads="1"/>
+
+	<testname classname="org.cache2k.benchmark.ArcCacheBenchmark" name="benchmarkSprite_600"
+		 benchmark-rounds="1" warmup-rounds="0"
+		 round-avg="0.016" round-stddev="0"
+		 gc-avg="0" gc-stddev="0"
+		 gc-invocations="0" gc-time="0"
+		 benchmark-time-total="0.016" warmup-time-total="0"
+		 threads="1"/>
+
+	<testname classname="org.cache2k.benchmark.ArcCacheBenchmark" name="benchmarkSprite_800"
+		 benchmark-rounds="1" warmup-rounds="0"
+		 round-avg="0.014" round-stddev="0"
+		 gc-avg="0" gc-stddev="0"
+		 gc-invocations="0" gc-time="0"
+		 benchmark-time-total="0.014" warmup-time-total="0"
+		 threads="1"/>
+
+	<testname classname="org.cache2k.benchmark.ArcCacheBenchmark" name="benchmarkGlimpse_500"
+		 benchmark-rounds="1" warmup-rounds="0"
+		 round-avg="0.003" round-stddev="0"
+		 gc-avg="0" gc-stddev="0"
+		 gc-invocations="0" gc-time="0"
+		 benchmark-time-total="0.003" warmup-time-total="0"
+		 threads="1"/>
+
+	<testname classname="org.cache2k.benchmark.ArcCacheBenchmark" name="benchmarkSprite_1000"
+		 benchmark-rounds="1" warmup-rounds="0"
+		 round-avg="0.015" round-stddev="0"
+		 gc-avg="0" gc-stddev="0"
+		 gc-invocations="0" gc-time="0"
+		 benchmark-time-total="0.015" warmup-time-total="0"
+		 threads="1"/>
+
+	<testname classname="org.cache2k.benchmark.ArcCacheBenchmark" name="benchmarkWeb07_75"
+		 benchmark-rounds="1" warmup-rounds="0"
+		 round-avg="0.026" round-stddev="0"
+		 gc-avg="0" gc-stddev="0"
+		 gc-invocations="0" gc-time="0"
+		 benchmark-time-total="0.026" warmup-time-total="0"
+		 threads="1"/>
+
+	<testname classname="org.cache2k.benchmark.ArcCacheBenchmark" name="benchmarkWeb12_75"
+		 benchmark-rounds="1" warmup-rounds="0"
+		 round-avg="0.028" round-stddev="0"
+		 gc-avg="0" gc-stddev="0"
+		 gc-invocations="0" gc-time="0"
+		 benchmark-time-total="0.028" warmup-time-total="0"
+		 threads="1"/>
+
+	<testname classname="org.cache2k.benchmark.ArcCacheBenchmark" name="benchmarkHits"
+		 benchmark-rounds="3" warmup-rounds="2"
+		 round-avg="0.173" round-stddev="0.005"
+		 gc-avg="0" gc-stddev="0"
+		 gc-invocations="1" gc-time="0.003"
+		 benchmark-time-total="0.518" warmup-time-total="0.396"
+		 threads="1"/>
+
+	<testname classname="org.cache2k.benchmark.ArcCacheBenchmark" name="benchmarkMiss"
+		 benchmark-rounds="3" warmup-rounds="2"
+		 round-avg="0.641" round-stddev="0.006"
+		 gc-avg="0" gc-stddev="0"
+		 gc-invocations="2" gc-time="0.007"
+		 benchmark-time-total="1.923" warmup-time-total="1.335"
+		 threads="1"/>
+
+	<testname classname="org.cache2k.benchmark.ArcCacheBenchmark" name="benchmarkCpp_100"
+		 benchmark-rounds="1" warmup-rounds="0"
+		 round-avg="0.003" round-stddev="0"
+		 gc-avg="0" gc-stddev="0"
+		 gc-invocations="0" gc-time="0"
+		 benchmark-time-total="0.003" warmup-time-total="0"
+		 threads="1"/>
+
+	<testname classname="org.cache2k.benchmark.ArcCacheBenchmark" name="benchmarkCpp_300"
+		 benchmark-rounds="1" warmup-rounds="0"
+		 round-avg="0.002" round-stddev="0"
+		 gc-avg="0" gc-stddev="0"
+		 gc-invocations="0" gc-time="0"
+		 benchmark-time-total="0.002" warmup-time-total="0"
+		 threads="1"/>
+
+	<testname classname="org.cache2k.benchmark.ArcCacheBenchmark" name="benchmarkCpp_500"
+		 benchmark-rounds="1" warmup-rounds="0"
+		 round-avg="0.002" round-stddev="0"
+		 gc-avg="0" gc-stddev="0"
+		 gc-invocations="0" gc-time="0"
+		 benchmark-time-total="0.002" warmup-time-total="0"
+		 threads="1"/>
+
+	<testname classname="org.cache2k.benchmark.ArcCacheBenchmark" name="benchmarkWeb07_300"
+		 benchmark-rounds="1" warmup-rounds="0"
+		 round-avg="0.016" round-stddev="0"
+		 gc-avg="0" gc-stddev="0"
+		 gc-invocations="0" gc-time="0"
+		 benchmark-time-total="0.016" warmup-time-total="0"
+		 threads="1"/>
+
+	<testname classname="org.cache2k.benchmark.ArcCacheBenchmark" name="benchmarkWeb12_300"
+		 benchmark-rounds="1" warmup-rounds="0"
+		 round-avg="0.02" round-stddev="0"
+		 gc-avg="0" gc-stddev="0"
+		 gc-invocations="0" gc-time="0"
+		 benchmark-time-total="0.02" warmup-time-total="0"
+		 threads="1"/>
+
+	<testname classname="org.cache2k.benchmark.ArcCacheBenchmark" name="testReplacement1"
+		 benchmark-rounds="1" warmup-rounds="0"
+		 round-avg="0.002" round-stddev="0"
+		 gc-avg="0" gc-stddev="0"
+		 gc-invocations="0" gc-time="0"
+		 benchmark-time-total="0.002" warmup-time-total="0"
+		 threads="1"/>
+
+	<testname classname="org.cache2k.benchmark.ArcCacheBenchmark" name="testSize1000"
+		 benchmark-rounds="1" warmup-rounds="0"
+		 round-avg="0.002" round-stddev="0"
+		 gc-avg="0" gc-stddev="0"
+		 gc-invocations="0" gc-time="0"
+		 benchmark-time-total="0.002" warmup-time-total="0"
+		 threads="1"/>
+
+	<testname classname="org.cache2k.benchmark.ArcCacheBenchmark" name="testSimple1"
+		 benchmark-rounds="1" warmup-rounds="0"
+		 round-avg="0" round-stddev="0"
+		 gc-avg="0" gc-stddev="0"
+		 gc-invocations="0" gc-time="0"
+		 benchmark-time-total="0" warmup-time-total="0"
+		 threads="1"/>
+
+	<testname classname="org.cache2k.benchmark.ArcCacheBenchmark" name="testSimple2"
+		 benchmark-rounds="1" warmup-rounds="0"
+		 round-avg="0" round-stddev="0"
+		 gc-avg="0" gc-stddev="0"
+		 gc-invocations="0" gc-time="0"
+		 benchmark-time-total="0.001" warmup-time-total="0"
+		 threads="1"/>
+
+	<testname classname="org.cache2k.benchmark.ArcCacheBenchmark" name="benchmarkEff90"
+		 benchmark-rounds="3" warmup-rounds="2"
+		 round-avg="0.264" round-stddev="0.001"
+		 gc-avg="0" gc-stddev="0"
+		 gc-invocations="0" gc-time="0"
+		 benchmark-time-total="0.792" warmup-time-total="0.538"
+		 threads="1"/>
+
+	<testname classname="org.cache2k.benchmark.ArcCacheBenchmark" name="benchmarkEff95"
+		 benchmark-rounds="3" warmup-rounds="2"
+		 round-avg="0.245" round-stddev="0"
+		 gc-avg="0" gc-stddev="0"
+		 gc-invocations="0" gc-time="0"
+		 benchmark-time-total="0.736" warmup-time-total="0.5"
+		 threads="1"/>
+
+	<testname classname="org.cache2k.benchmark.ArcCacheBenchmark" name="benchmarkWeb07_1200"
+		 benchmark-rounds="1" warmup-rounds="0"
+		 round-avg="0.016" round-stddev="0"
+		 gc-avg="0" gc-stddev="0"
+		 gc-invocations="0" gc-time="0"
+		 benchmark-time-total="0.016" warmup-time-total="0"
+		 threads="1"/>
+
+	<testname classname="org.cache2k.benchmark.ArcCacheBenchmark" name="benchmarkWeb07_3000"
+		 benchmark-rounds="1" warmup-rounds="0"
+		 round-avg="0.016" round-stddev="0"
+		 gc-avg="0" gc-stddev="0"
+		 gc-invocations="0" gc-time="0"
+		 benchmark-time-total="0.016" warmup-time-total="0"
+		 threads="1"/>
+
+	<testname classname="org.cache2k.benchmark.ArcCacheBenchmark" name="benchmarkMulti2_1800"
+		 benchmark-rounds="1" warmup-rounds="0"
+		 round-avg="0.006" round-stddev="0"
+		 gc-avg="0" gc-stddev="0"
+		 gc-invocations="0" gc-time="0"
+		 benchmark-time-total="0.006" warmup-time-total="0"
+		 threads="1"/>
+
+	<testname classname="org.cache2k.benchmark.ArcCacheBenchmark" name="benchmarkMulti2_3000"
+		 benchmark-rounds="1" warmup-rounds="0"
+		 round-avg="0.005" round-stddev="0"
+		 gc-avg="0" gc-stddev="0"
+		 gc-invocations="0" gc-time="0"
+		 benchmark-time-total="0.005" warmup-time-total="0"
+		 threads="1"/>
+
+	<testname classname="org.cache2k.benchmark.ArcCacheBenchmark" name="benchmarkTotalRandom_100"
+		 benchmark-rounds="1" warmup-rounds="0"
+		 round-avg="0.71" round-stddev="0"
+		 gc-avg="0" gc-stddev="0"
+		 gc-invocations="1" gc-time="0.008"
+		 benchmark-time-total="0.71" warmup-time-total="0"
+		 threads="1"/>
+
+	<testname classname="org.cache2k.benchmark.ArcCacheBenchmark" name="benchmarkTotalRandom_200"
+		 benchmark-rounds="1" warmup-rounds="0"
+		 round-avg="0.667" round-stddev="0"
+		 gc-avg="0" gc-stddev="0"
+		 gc-invocations="1" gc-time="0.002"
+		 benchmark-time-total="0.667" warmup-time-total="0"
+		 threads="1"/>
+
+	<testname classname="org.cache2k.benchmark.ArcCacheBenchmark" name="benchmarkTotalRandom_350"
+		 benchmark-rounds="1" warmup-rounds="0"
+		 round-avg="0.575" round-stddev="0"
+		 gc-avg="0" gc-stddev="0"
+		 gc-invocations="0" gc-time="0"
+		 benchmark-time-total="0.575" warmup-time-total="0"
+		 threads="1"/>
+
+	<testname classname="org.cache2k.benchmark.ArcCacheBenchmark" name="benchmarkTotalRandom_500"
+		 benchmark-rounds="1" warmup-rounds="0"
+		 round-avg="0.497" round-stddev="0"
+		 gc-avg="0" gc-stddev="0"
+		 gc-invocations="1" gc-time="0.005"
+		 benchmark-time-total="0.497" warmup-time-total="0"
+		 threads="1"/>
+
+	<testname classname="org.cache2k.benchmark.ArcCacheBenchmark" name="benchmarkTotalRandom_800"
+		 benchmark-rounds="1" warmup-rounds="0"
+		 round-avg="0.348" round-stddev="0"
+		 gc-avg="0" gc-stddev="0"
+		 gc-invocations="0" gc-time="0"
+		 benchmark-time-total="0.348" warmup-time-total="0"
+		 threads="1"/>
+
+	<testname classname="org.cache2k.benchmark.ArcCacheBenchmark" name="benchmarkCpp_20"
+		 benchmark-rounds="1" warmup-rounds="0"
+		 round-avg="0.003" round-stddev="0"
+		 gc-avg="0" gc-stddev="0"
+		 gc-invocations="0" gc-time="0"
+		 benchmark-time-total="0.003" warmup-time-total="0"
+		 threads="1"/>
+
+	<testname classname="org.cache2k.benchmark.ArcCacheBenchmark" name="benchmarkCpp_35"
+		 benchmark-rounds="1" warmup-rounds="0"
+		 round-avg="0.003" round-stddev="0"
+		 gc-avg="0" gc-stddev="0"
+		 gc-invocations="0" gc-time="0"
+		 benchmark-time-total="0.003" warmup-time-total="0"
+		 threads="1"/>
+
+	<testname classname="org.cache2k.benchmark.ArcCacheBenchmark" name="benchmarkCpp_50"
+		 benchmark-rounds="1" warmup-rounds="0"
+		 round-avg="0.003" round-stddev="0"
+		 gc-avg="0" gc-stddev="0"
+		 gc-invocations="0" gc-time="0"
+		 benchmark-time-total="0.003" warmup-time-total="0"
+		 threads="1"/>
+
+	<testname classname="org.cache2k.benchmark.ArcCacheBenchmark" name="benchmarkCpp_80"
+		 benchmark-rounds="1" warmup-rounds="0"
+		 round-avg="0.003" round-stddev="0"
+		 gc-avg="0" gc-stddev="0"
+		 gc-invocations="0" gc-time="0"
+		 benchmark-time-total="0.003" warmup-time-total="0"
+		 threads="1"/>
+
+	<testname classname="org.cache2k.benchmark.LruCacheBenchmark" name="benchmarkRandom"
+		 benchmark-rounds="3" warmup-rounds="2"
+		 round-avg="0.447" round-stddev="0.007"
+		 gc-avg="0" gc-stddev="0"
+		 gc-invocations="1" gc-time="0.004"
+		 benchmark-time-total="1.341" warmup-time-total="0.791"
+		 threads="1"/>
+
+	<testname classname="org.cache2k.benchmark.LruCacheBenchmark" name="benchmarkMulti2_600"
+		 benchmark-rounds="1" warmup-rounds="0"
+		 round-avg="0.006" round-stddev="0"
+		 gc-avg="0" gc-stddev="0"
+		 gc-invocations="0" gc-time="0"
+		 benchmark-time-total="0.006" warmup-time-total="0"
+		 threads="1"/>
+
+	<testname classname="org.cache2k.benchmark.LruCacheBenchmark" name="benchmarkWeb12_1200"
+		 benchmark-rounds="1" warmup-rounds="0"
+		 round-avg="0.014" round-stddev="0"
+		 gc-avg="0" gc-stddev="0"
+		 gc-invocations="0" gc-time="0"
+		 benchmark-time-total="0.014" warmup-time-total="0"
+		 threads="1"/>
+
+	<testname classname="org.cache2k.benchmark.LruCacheBenchmark" name="benchmarkWeb12_3000"
+		 benchmark-rounds="1" warmup-rounds="0"
+		 round-avg="0.014" round-stddev="0"
+		 gc-avg="0" gc-stddev="0"
+		 gc-invocations="0" gc-time="0"
+		 benchmark-time-total="0.014" warmup-time-total="0"
+		 threads="1"/>
+
+	<testname classname="org.cache2k.benchmark.LruCacheBenchmark" name="benchmarkSprite_100"
+		 benchmark-rounds="1" warmup-rounds="0"
+		 round-avg="0.027" round-stddev="0"
+		 gc-avg="0" gc-stddev="0"
+		 gc-invocations="0" gc-time="0"
+		 benchmark-time-total="0.027" warmup-time-total="0"
+		 threads="1"/>
+
+	<testname classname="org.cache2k.benchmark.LruCacheBenchmark" name="benchmarkSprite_200"
+		 benchmark-rounds="1" warmup-rounds="0"
+		 round-avg="0.023" round-stddev="0"
+		 gc-avg="0" gc-stddev="0"
+		 gc-invocations="0" gc-time="0"
+		 benchmark-time-total="0.023" warmup-time-total="0"
+		 threads="1"/>
+
+	<testname classname="org.cache2k.benchmark.LruCacheBenchmark" name="benchmarkSprite_400"
+		 benchmark-rounds="1" warmup-rounds="0"
+		 round-avg="0.017" round-stddev="0"
+		 gc-avg="0" gc-stddev="0"
+		 gc-invocations="0" gc-time="0"
+		 benchmark-time-total="0.017" warmup-time-total="0"
+		 threads="1"/>
+
+	<testname classname="org.cache2k.benchmark.LruCacheBenchmark" name="benchmarkSprite_600"
+		 benchmark-rounds="1" warmup-rounds="0"
+		 round-avg="0.015" round-stddev="0"
+		 gc-avg="0" gc-stddev="0"
+		 gc-invocations="0" gc-time="0"
+		 benchmark-time-total="0.015" warmup-time-total="0"
+		 threads="1"/>
+
+	<testname classname="org.cache2k.benchmark.LruCacheBenchmark" name="benchmarkSprite_800"
+		 benchmark-rounds="1" warmup-rounds="0"
+		 round-avg="0.013" round-stddev="0"
+		 gc-avg="0" gc-stddev="0"
+		 gc-invocations="0" gc-time="0"
+		 benchmark-time-total="0.013" warmup-time-total="0"
+		 threads="1"/>
+
+	<testname classname="org.cache2k.benchmark.LruCacheBenchmark" name="benchmarkGlimpse_500"
+		 benchmark-rounds="1" warmup-rounds="0"
+		 round-avg="0.002" round-stddev="0"
+		 gc-avg="0" gc-stddev="0"
+		 gc-invocations="0" gc-time="0"
+		 benchmark-time-total="0.002" warmup-time-total="0"
+		 threads="1"/>
+
+	<testname classname="org.cache2k.benchmark.LruCacheBenchmark" name="benchmarkSprite_1000"
+		 benchmark-rounds="1" warmup-rounds="0"
+		 round-avg="0.013" round-stddev="0"
+		 gc-avg="0" gc-stddev="0"
+		 gc-invocations="0" gc-time="0"
+		 benchmark-time-total="0.013" warmup-time-total="0"
+		 threads="1"/>
+
+	<testname classname="org.cache2k.benchmark.LruCacheBenchmark" name="benchmarkWeb07_75"
+		 benchmark-rounds="1" warmup-rounds="0"
+		 round-avg="0.017" round-stddev="0"
+		 gc-avg="0" gc-stddev="0"
+		 gc-invocations="0" gc-time="0"
+		 benchmark-time-total="0.017" warmup-time-total="0"
+		 threads="1"/>
+
+	<testname classname="org.cache2k.benchmark.LruCacheBenchmark" name="benchmarkWeb12_75"
+		 benchmark-rounds="1" warmup-rounds="0"
+		 round-avg="0.019" round-stddev="0"
+		 gc-avg="0" gc-stddev="0"
+		 gc-invocations="0" gc-time="0"
+		 benchmark-time-total="0.019" warmup-time-total="0"
+		 threads="1"/>
+
+	<testname classname="org.cache2k.benchmark.LruCacheBenchmark" name="benchmarkHits"
+		 benchmark-rounds="3" warmup-rounds="2"
+		 round-avg="0.192" round-stddev="0.006"
+		 gc-avg="0" gc-stddev="0"
+		 gc-invocations="1" gc-time="0.005"
+		 benchmark-time-total="0.577" warmup-time-total="0.382"
+		 threads="1"/>
+
+	<testname classname="org.cache2k.benchmark.LruCacheBenchmark" name="benchmarkMiss"
+		 benchmark-rounds="3" warmup-rounds="2"
+		 round-avg="0.642" round-stddev="0.01"
+		 gc-avg="0" gc-stddev="0"
+		 gc-invocations="1" gc-time="0.004"
+		 benchmark-time-total="1.925" warmup-time-total="1.278"
+		 threads="1"/>
+
+	<testname classname="org.cache2k.benchmark.LruCacheBenchmark" name="benchmarkCpp_100"
+		 benchmark-rounds="1" warmup-rounds="0"
+		 round-avg="0.002" round-stddev="0"
+		 gc-avg="0" gc-stddev="0"
+		 gc-invocations="0" gc-time="0"
+		 benchmark-time-total="0.002" warmup-time-total="0"
+		 threads="1"/>
+
+	<testname classname="org.cache2k.benchmark.LruCacheBenchmark" name="benchmarkCpp_300"
+		 benchmark-rounds="1" warmup-rounds="0"
+		 round-avg="0.002" round-stddev="0"
+		 gc-avg="0" gc-stddev="0"
+		 gc-invocations="0" gc-time="0"
+		 benchmark-time-total="0.002" warmup-time-total="0"
+		 threads="1"/>
+
+	<testname classname="org.cache2k.benchmark.LruCacheBenchmark" name="benchmarkCpp_500"
+		 benchmark-rounds="1" warmup-rounds="0"
+		 round-avg="0.006" round-stddev="0"
+		 gc-avg="0" gc-stddev="0"
+		 gc-invocations="0" gc-time="0"
+		 benchmark-time-total="0.006" warmup-time-total="0"
+		 threads="1"/>
+
+	<testname classname="org.cache2k.benchmark.LruCacheBenchmark" name="benchmarkWeb07_300"
+		 benchmark-rounds="1" warmup-rounds="0"
+		 round-avg="0.014" round-stddev="0"
+		 gc-avg="0" gc-stddev="0"
+		 gc-invocations="0" gc-time="0"
+		 benchmark-time-total="0.014" warmup-time-total="0"
+		 threads="1"/>
+
+	<testname classname="org.cache2k.benchmark.LruCacheBenchmark" name="benchmarkWeb12_300"
+		 benchmark-rounds="1" warmup-rounds="0"
+		 round-avg="0.016" round-stddev="0"
+		 gc-avg="0" gc-stddev="0"
+		 gc-invocations="0" gc-time="0"
+		 benchmark-time-total="0.016" warmup-time-total="0"
+		 threads="1"/>
+
+	<testname classname="org.cache2k.benchmark.LruCacheBenchmark" name="testReplacement1"
+		 benchmark-rounds="1" warmup-rounds="0"
+		 round-avg="0.001" round-stddev="0"
+		 gc-avg="0" gc-stddev="0"
+		 gc-invocations="0" gc-time="0"
+		 benchmark-time-total="0.001" warmup-time-total="0"
+		 threads="1"/>
+
+	<testname classname="org.cache2k.benchmark.LruCacheBenchmark" name="testSize1000"
+		 benchmark-rounds="1" warmup-rounds="0"
+		 round-avg="0.001" round-stddev="0"
+		 gc-avg="0" gc-stddev="0"
+		 gc-invocations="0" gc-time="0"
+		 benchmark-time-total="0.001" warmup-time-total="0"
+		 threads="1"/>
+
+	<testname classname="org.cache2k.benchmark.LruCacheBenchmark" name="testSimple1"
+		 benchmark-rounds="1" warmup-rounds="0"
+		 round-avg="0" round-stddev="0"
+		 gc-avg="0" gc-stddev="0"
+		 gc-invocations="0" gc-time="0"
+		 benchmark-time-total="0" warmup-time-total="0"
+		 threads="1"/>
+
+	<testname classname="org.cache2k.benchmark.LruCacheBenchmark" name="testSimple2"
+		 benchmark-rounds="1" warmup-rounds="0"
+		 round-avg="0" round-stddev="0"
+		 gc-avg="0" gc-stddev="0"
+		 gc-invocations="0" gc-time="0"
+		 benchmark-time-total="0" warmup-time-total="0"
+		 threads="1"/>
+
+	<testname classname="org.cache2k.benchmark.LruCacheBenchmark" name="benchmarkEff90"
+		 benchmark-rounds="3" warmup-rounds="2"
+		 round-avg="0.257" round-stddev="0.002"
+		 gc-avg="0" gc-stddev="0"
+		 gc-invocations="1" gc-time="0.004"
+		 benchmark-time-total="0.77" warmup-time-total="0.513"
+		 threads="1"/>
+
+	<testname classname="org.cache2k.benchmark.LruCacheBenchmark" name="benchmarkEff95"
+		 benchmark-rounds="3" warmup-rounds="2"
+		 round-avg="0.245" round-stddev="0.006"
+		 gc-avg="0" gc-stddev="0"
+		 gc-invocations="0" gc-time="0"
+		 benchmark-time-total="0.735" warmup-time-total="0.487"
+		 threads="1"/>
+
+	<testname classname="org.cache2k.benchmark.LruCacheBenchmark" name="benchmarkWeb07_1200"
+		 benchmark-rounds="1" warmup-rounds="0"
+		 round-avg="0.014" round-stddev="0"
+		 gc-avg="0" gc-stddev="0"
+		 gc-invocations="0" gc-time="0"
+		 benchmark-time-total="0.014" warmup-time-total="0"
+		 threads="1"/>
+
+	<testname classname="org.cache2k.benchmark.LruCacheBenchmark" name="benchmarkWeb07_3000"
+		 benchmark-rounds="1" warmup-rounds="0"
+		 round-avg="0.013" round-stddev="0"
+		 gc-avg="0" gc-stddev="0"
+		 gc-invocations="0" gc-time="0"
+		 benchmark-time-total="0.013" warmup-time-total="0"
+		 threads="1"/>
+
+	<testname classname="org.cache2k.benchmark.LruCacheBenchmark" name="benchmarkMulti2_1800"
+		 benchmark-rounds="1" warmup-rounds="0"
+		 round-avg="0.005" round-stddev="0"
+		 gc-avg="0" gc-stddev="0"
+		 gc-invocations="0" gc-time="0"
+		 benchmark-time-total="0.005" warmup-time-total="0"
+		 threads="1"/>
+
+	<testname classname="org.cache2k.benchmark.LruCacheBenchmark" name="benchmarkMulti2_3000"
+		 benchmark-rounds="1" warmup-rounds="0"
+		 round-avg="0.005" round-stddev="0"
+		 gc-avg="0" gc-stddev="0"
+		 gc-invocations="0" gc-time="0"
+		 benchmark-time-total="0.005" warmup-time-total="0"
+		 threads="1"/>
+
+	<testname classname="org.cache2k.benchmark.LruCacheBenchmark" name="benchmarkTotalRandom_100"
+		 benchmark-rounds="1" warmup-rounds="0"
+		 round-avg="0.627" round-stddev="0"
+		 gc-avg="0" gc-stddev="0"
+		 gc-invocations="1" gc-time="0.004"
+		 benchmark-time-total="0.627" warmup-time-total="0"
+		 threads="1"/>
+
+	<testname classname="org.cache2k.benchmark.LruCacheBenchmark" name="benchmarkTotalRandom_200"
+		 benchmark-rounds="1" warmup-rounds="0"
+		 round-avg="0.577" round-stddev="0"
+		 gc-avg="0" gc-stddev="0"
+		 gc-invocations="0" gc-time="0"
+		 benchmark-time-total="0.577" warmup-time-total="0"
+		 threads="1"/>
+
+	<testname classname="org.cache2k.benchmark.LruCacheBenchmark" name="benchmarkTotalRandom_350"
+		 benchmark-rounds="1" warmup-rounds="0"
+		 round-avg="0.501" round-stddev="0"
+		 gc-avg="0" gc-stddev="0"
+		 gc-invocations="0" gc-time="0"
+		 benchmark-time-total="0.501" warmup-time-total="0"
+		 threads="1"/>
+
+	<testname classname="org.cache2k.benchmark.LruCacheBenchmark" name="benchmarkTotalRandom_500"
+		 benchmark-rounds="1" warmup-rounds="0"
+		 round-avg="0.454" round-stddev="0"
+		 gc-avg="0" gc-stddev="0"
+		 gc-invocations="1" gc-time="0.003"
+		 benchmark-time-total="0.454" warmup-time-total="0"
+		 threads="1"/>
+
+	<testname classname="org.cache2k.benchmark.LruCacheBenchmark" name="benchmarkTotalRandom_800"
+		 benchmark-rounds="1" warmup-rounds="0"
+		 round-avg="0.31" round-stddev="0"
+		 gc-avg="0" gc-stddev="0"
+		 gc-invocations="0" gc-time="0"
+		 benchmark-time-total="0.31" warmup-time-total="0"
+		 threads="1"/>
+
+	<testname classname="org.cache2k.benchmark.LruCacheBenchmark" name="benchmarkCpp_20"
+		 benchmark-rounds="1" warmup-rounds="0"
+		 round-avg="0.003" round-stddev="0"
+		 gc-avg="0" gc-stddev="0"
+		 gc-invocations="0" gc-time="0"
+		 benchmark-time-total="0.003" warmup-time-total="0"
+		 threads="1"/>
+
+	<testname classname="org.cache2k.benchmark.LruCacheBenchmark" name="benchmarkCpp_35"
+		 benchmark-rounds="1" warmup-rounds="0"
+		 round-avg="0.003" round-stddev="0"
+		 gc-avg="0" gc-stddev="0"
+		 gc-invocations="0" gc-time="0"
+		 benchmark-time-total="0.003" warmup-time-total="0"
+		 threads="1"/>
+
+	<testname classname="org.cache2k.benchmark.LruCacheBenchmark" name="benchmarkCpp_50"
+		 benchmark-rounds="1" warmup-rounds="0"
+		 round-avg="0.002" round-stddev="0"
+		 gc-avg="0" gc-stddev="0"
+		 gc-invocations="0" gc-time="0"
+		 benchmark-time-total="0.002" warmup-time-total="0"
+		 threads="1"/>
+
+	<testname classname="org.cache2k.benchmark.LruCacheBenchmark" name="benchmarkCpp_80"
+		 benchmark-rounds="1" warmup-rounds="0"
+		 round-avg="0.004" round-stddev="0"
+		 gc-avg="0" gc-stddev="0"
+		 gc-invocations="0" gc-time="0"
+		 benchmark-time-total="0.004" warmup-time-total="0"
+		 threads="1"/>
+
+	<testname classname="org.cache2k.benchmark.DateFormattingBenchmark" name="testWithCacheNewFormatter"
+		 benchmark-rounds="3" warmup-rounds="2"
+		 round-avg="0.076" round-stddev="0.009"
+		 gc-avg="0" gc-stddev="0"
+		 gc-invocations="1" gc-time="0.024"
+		 benchmark-time-total="0.228" warmup-time-total="0.257"
+		 threads="1"/>
+
+	<testname classname="org.cache2k.benchmark.DateFormattingBenchmark" name="testWithoutCache"
+		 benchmark-rounds="3" warmup-rounds="2"
+		 round-avg="1.233" round-stddev="0.027"
+		 gc-avg="0" gc-stddev="0"
+		 gc-invocations="8" gc-time="0.155"
+		 benchmark-time-total="3.7" warmup-time-total="2.788"
+		 threads="1"/>
+
+	<testname classname="org.cache2k.benchmark.DateFormattingBenchmark" name="testAssociativeCache"
+		 benchmark-rounds="3" warmup-rounds="2"
+		 round-avg="0.086" round-stddev="0.002"
+		 gc-avg="0" gc-stddev="0"
+		 gc-invocations="1" gc-time="0.003"
+		 benchmark-time-total="0.258" warmup-time-total="0.207"
+		 threads="1"/>
+
+	<testname classname="org.cache2k.benchmark.DateFormattingBenchmark" name="testWithCacheSingleFormatter"
+		 benchmark-rounds="3" warmup-rounds="2"
+		 round-avg="0.053" round-stddev="0.002"
+		 gc-avg="0" gc-stddev="0"
+		 gc-invocations="1" gc-time="0.005"
+		 benchmark-time-total="0.159" warmup-time-total="0.118"
+		 threads="1"/>
+
+	<testname classname="org.cache2k.benchmark.DateFormattingBenchmark" name="testWithCacheAndKeyObject"
+		 benchmark-rounds="3" warmup-rounds="2"
+		 round-avg="0.062" round-stddev="0.001"
+		 gc-avg="0" gc-stddev="0"
+		 gc-invocations="0" gc-time="0"
+		 benchmark-time-total="0.185" warmup-time-total="0.144"
+		 threads="1"/>
+
+	<testname classname="org.cache2k.benchmark.ClockProPlusCacheWithExpiryBenchmark" name="benchmarkRandom"
+		 benchmark-rounds="3" warmup-rounds="2"
+		 round-avg="0.63" round-stddev="0.009"
+		 gc-avg="0" gc-stddev="0"
+		 gc-invocations="2" gc-time="0.006"
+		 benchmark-time-total="1.889" warmup-time-total="1.346"
+		 threads="1"/>
+
+	<testname classname="org.cache2k.benchmark.ClockProPlusCacheWithExpiryBenchmark" name="benchmarkMulti2_600"
+		 benchmark-rounds="1" warmup-rounds="0"
+		 round-avg="0.019" round-stddev="0"
+		 gc-avg="0" gc-stddev="0"
+		 gc-invocations="0" gc-time="0"
+		 benchmark-time-total="0.019" warmup-time-total="0"
+		 threads="1"/>
+
+	<testname classname="org.cache2k.benchmark.ClockProPlusCacheWithExpiryBenchmark" name="benchmarkWeb12_1200"
+		 benchmark-rounds="1" warmup-rounds="0"
+		 round-avg="0.048" round-stddev="0"
+		 gc-avg="0" gc-stddev="0"
+		 gc-invocations="0" gc-time="0"
+		 benchmark-time-total="0.048" warmup-time-total="0"
+		 threads="1"/>
+
+	<testname classname="org.cache2k.benchmark.ClockProPlusCacheWithExpiryBenchmark" name="benchmarkWeb12_3000"
+		 benchmark-rounds="1" warmup-rounds="0"
+		 round-avg="0.041" round-stddev="0"
+		 gc-avg="0" gc-stddev="0"
+		 gc-invocations="0" gc-time="0"
+		 benchmark-time-total="0.041" warmup-time-total="0"
+		 threads="1"/>
+
+	<testname classname="org.cache2k.benchmark.ClockProPlusCacheWithExpiryBenchmark" name="benchmarkSprite_100"
+		 benchmark-rounds="1" warmup-rounds="0"
+		 round-avg="0.055" round-stddev="0"
+		 gc-avg="0" gc-stddev="0"
+		 gc-invocations="0" gc-time="0"
+		 benchmark-time-total="0.055" warmup-time-total="0"
+		 threads="1"/>
+
+	<testname classname="org.cache2k.benchmark.ClockProPlusCacheWithExpiryBenchmark" name="benchmarkSprite_200"
+		 benchmark-rounds="1" warmup-rounds="0"
+		 round-avg="0.049" round-stddev="0"
+		 gc-avg="0" gc-stddev="0"
+		 gc-invocations="0" gc-time="0"
+		 benchmark-time-total="0.049" warmup-time-total="0"
+		 threads="1"/>
+
+	<testname classname="org.cache2k.benchmark.ClockProPlusCacheWithExpiryBenchmark" name="benchmarkSprite_400"
+		 benchmark-rounds="1" warmup-rounds="0"
+		 round-avg="0.022" round-stddev="0"
+		 gc-avg="0" gc-stddev="0"
+		 gc-invocations="0" gc-time="0"
+		 benchmark-time-total="0.022" warmup-time-total="0"
+		 threads="1"/>
+
+	<testname classname="org.cache2k.benchmark.ClockProPlusCacheWithExpiryBenchmark" name="benchmarkSprite_600"
+		 benchmark-rounds="1" warmup-rounds="0"
+		 round-avg="0.014" round-stddev="0"
+		 gc-avg="0" gc-stddev="0"
+		 gc-invocations="0" gc-time="0"
+		 benchmark-time-total="0.014" warmup-time-total="0"
+		 threads="1"/>
+
+	<testname classname="org.cache2k.benchmark.ClockProPlusCacheWithExpiryBenchmark" name="benchmarkSprite_800"
+		 benchmark-rounds="1" warmup-rounds="0"
+		 round-avg="0.011" round-stddev="0"
+		 gc-avg="0" gc-stddev="0"
+		 gc-invocations="0" gc-time="0"
+		 benchmark-time-total="0.011" warmup-time-total="0"
+		 threads="1"/>
+
+	<testname classname="org.cache2k.benchmark.ClockProPlusCacheWithExpiryBenchmark" name="benchmarkGlimpse_500"
+		 benchmark-rounds="1" warmup-rounds="0"
+		 round-avg="0.004" round-stddev="0"
+		 gc-avg="0" gc-stddev="0"
+		 gc-invocations="0" gc-time="0"
+		 benchmark-time-total="0.004" warmup-time-total="0"
+		 threads="1"/>
+
+	<testname classname="org.cache2k.benchmark.ClockProPlusCacheWithExpiryBenchmark" name="benchmarkSprite_1000"
+		 benchmark-rounds="1" warmup-rounds="0"
+		 round-avg="0.013" round-stddev="0"
+		 gc-avg="0" gc-stddev="0"
+		 gc-invocations="0" gc-time="0"
+		 benchmark-time-total="0.013" warmup-time-total="0"
+		 threads="1"/>
+
+	<testname classname="org.cache2k.benchmark.ClockProPlusCacheWithExpiryBenchmark" name="benchmarkWeb07_75"
+		 benchmark-rounds="1" warmup-rounds="0"
+		 round-avg="0.028" round-stddev="0"
+		 gc-avg="0" gc-stddev="0"
+		 gc-invocations="0" gc-time="0"
+		 benchmark-time-total="0.028" warmup-time-total="0"
+		 threads="1"/>
+
+	<testname classname="org.cache2k.benchmark.ClockProPlusCacheWithExpiryBenchmark" name="benchmarkWeb12_75"
+		 benchmark-rounds="1" warmup-rounds="0"
+		 round-avg="0.032" round-stddev="0"
+		 gc-avg="0" gc-stddev="0"
+		 gc-invocations="0" gc-time="0"
+		 benchmark-time-total="0.032" warmup-time-total="0"
+		 threads="1"/>
+
+	<testname classname="org.cache2k.benchmark.ClockProPlusCacheWithExpiryBenchmark" name="benchmarkHits"
+		 benchmark-rounds="3" warmup-rounds="2"
+		 round-avg="0.068" round-stddev="0.006"
+		 gc-avg="0" gc-stddev="0"
+		 gc-invocations="1" gc-time="0.002"
+		 benchmark-time-total="0.205" warmup-time-total="0.137"
+		 threads="1"/>
+
+	<testname classname="org.cache2k.benchmark.ClockProPlusCacheWithExpiryBenchmark" name="benchmarkMiss"
+		 benchmark-rounds="3" warmup-rounds="2"
+		 round-avg="1.015" round-stddev="0.028"
+		 gc-avg="0" gc-stddev="0"
+		 gc-invocations="4" gc-time="0.014"
+		 benchmark-time-total="3.044" warmup-time-total="2.124"
+		 threads="1"/>
+
+	<testname classname="org.cache2k.benchmark.ClockProPlusCacheWithExpiryBenchmark" name="benchmarkCpp_100"
+		 benchmark-rounds="1" warmup-rounds="0"
+		 round-avg="0.003" round-stddev="0"
+		 gc-avg="0" gc-stddev="0"
+		 gc-invocations="0" gc-time="0"
+		 benchmark-time-total="0.003" warmup-time-total="0"
+		 threads="1"/>
+
+	<testname classname="org.cache2k.benchmark.ClockProPlusCacheWithExpiryBenchmark" name="benchmarkCpp_300"
+		 benchmark-rounds="1" warmup-rounds="0"
+		 round-avg="0.002" round-stddev="0"
+		 gc-avg="0" gc-stddev="0"
+		 gc-invocations="0" gc-time="0"
+		 benchmark-time-total="0.002" warmup-time-total="0"
+		 threads="1"/>
+
+	<testname classname="org.cache2k.benchmark.ClockProPlusCacheWithExpiryBenchmark" name="benchmarkCpp_500"
+		 benchmark-rounds="1" warmup-rounds="0"
+		 round-avg="0.002" round-stddev="0"
+		 gc-avg="0" gc-stddev="0"
+		 gc-invocations="0" gc-time="0"
+		 benchmark-time-total="0.002" warmup-time-total="0"
+		 threads="1"/>
+
+	<testname classname="org.cache2k.benchmark.ClockProPlusCacheWithExpiryBenchmark" name="benchmarkWeb07_300"
+		 benchmark-rounds="1" warmup-rounds="0"
+		 round-avg="0.021" round-stddev="0"
+		 gc-avg="0" gc-stddev="0"
+		 gc-invocations="0" gc-time="0"
+		 benchmark-time-total="0.021" warmup-time-total="0"
+		 threads="1"/>
+
+	<testname classname="org.cache2k.benchmark.ClockProPlusCacheWithExpiryBenchmark" name="benchmarkWeb12_300"
+		 benchmark-rounds="1" warmup-rounds="0"
+		 round-avg="0.021" round-stddev="0"
+		 gc-avg="0" gc-stddev="0"
+		 gc-invocations="0" gc-time="0"
+		 benchmark-time-total="0.021" warmup-time-total="0"
+		 threads="1"/>
+
+	<testname classname="org.cache2k.benchmark.ClockProPlusCacheWithExpiryBenchmark" name="testReplacement1"
+		 benchmark-rounds="1" warmup-rounds="0"
+		 round-avg="0.002" round-stddev="0"
+		 gc-avg="0" gc-stddev="0"
+		 gc-invocations="0" gc-time="0"
+		 benchmark-time-total="0.002" warmup-time-total="0"
+		 threads="1"/>
+
+	<testname classname="org.cache2k.benchmark.ClockProPlusCacheWithExpiryBenchmark" name="testSize1000"
+		 benchmark-rounds="1" warmup-rounds="0"
+		 round-avg="0.001" round-stddev="0"
+		 gc-avg="0" gc-stddev="0"
+		 gc-invocations="0" gc-time="0"
+		 benchmark-time-total="0.001" warmup-time-total="0"
+		 threads="1"/>
+
+	<testname classname="org.cache2k.benchmark.ClockProPlusCacheWithExpiryBenchmark" name="testSimple1"
+		 benchmark-rounds="1" warmup-rounds="0"
+		 round-avg="0" round-stddev="0"
+		 gc-avg="0" gc-stddev="0"
+		 gc-invocations="0" gc-time="0"
+		 benchmark-time-total="0" warmup-time-total="0"
+		 threads="1"/>
+
+	<testname classname="org.cache2k.benchmark.ClockProPlusCacheWithExpiryBenchmark" name="testSimple2"
+		 benchmark-rounds="1" warmup-rounds="0"
+		 round-avg="0" round-stddev="0"
+		 gc-avg="0" gc-stddev="0"
+		 gc-invocations="0" gc-time="0"
+		 benchmark-time-total="0" warmup-time-total="0"
+		 threads="1"/>
+
+	<testname classname="org.cache2k.benchmark.ClockProPlusCacheWithExpiryBenchmark" name="benchmarkEff90"
+		 benchmark-rounds="3" warmup-rounds="2"
+		 round-avg="0.19" round-stddev="0.004"
+		 gc-avg="0" gc-stddev="0"
+		 gc-invocations="1" gc-time="0.013"
+		 benchmark-time-total="0.571" warmup-time-total="0.406"
+		 threads="1"/>
+
+	<testname classname="org.cache2k.benchmark.ClockProPlusCacheWithExpiryBenchmark" name="benchmarkEff95"
+		 benchmark-rounds="3" warmup-rounds="2"
+		 round-avg="0.153" round-stddev="0.006"
+		 gc-avg="0" gc-stddev="0"
+		 gc-invocations="0" gc-time="0"
+		 benchmark-time-total="0.459" warmup-time-total="0.294"
+		 threads="1"/>
+
+	<testname classname="org.cache2k.benchmark.ClockProPlusCacheWithExpiryBenchmark" name="benchmarkWeb07_1200"
+		 benchmark-rounds="1" warmup-rounds="0"
+		 round-avg="0.02" round-stddev="0"
+		 gc-avg="0" gc-stddev="0"
+		 gc-invocations="0" gc-time="0"
+		 benchmark-time-total="0.02" warmup-time-total="0"
+		 threads="1"/>
+
+	<testname classname="org.cache2k.benchmark.ClockProPlusCacheWithExpiryBenchmark" name="benchmarkWeb07_3000"
+		 benchmark-rounds="1" warmup-rounds="0"
+		 round-avg="0.021" round-stddev="0"
+		 gc-avg="0" gc-stddev="0"
+		 gc-invocations="0" gc-time="0"
+		 benchmark-time-total="0.021" warmup-time-total="0"
+		 threads="1"/>
+
+	<testname classname="org.cache2k.benchmark.ClockProPlusCacheWithExpiryBenchmark" name="benchmarkMulti2_1800"
+		 benchmark-rounds="1" warmup-rounds="0"
+		 round-avg="0.006" round-stddev="0"
+		 gc-avg="0" gc-stddev="0"
+		 gc-invocations="0" gc-time="0"
+		 benchmark-time-total="0.006" warmup-time-total="0"
+		 threads="1"/>
+
+	<testname classname="org.cache2k.benchmark.ClockProPlusCacheWithExpiryBenchmark" name="benchmarkMulti2_3000"
+		 benchmark-rounds="1" warmup-rounds="0"
+		 round-avg="0.005" round-stddev="0"
+		 gc-avg="0" gc-stddev="0"
+		 gc-invocations="0" gc-time="0"
+		 benchmark-time-total="0.006" warmup-time-total="0"
+		 threads="1"/>
+
+	<testname classname="org.cache2k.benchmark.ClockProPlusCacheWithExpiryBenchmark" name="benchmarkTotalRandom_100"
+		 benchmark-rounds="1" warmup-rounds="0"
+		 round-avg="1.275" round-stddev="0"
+		 gc-avg="0" gc-stddev="0"
+		 gc-invocations="1" gc-time="0.004"
+		 benchmark-time-total="1.275" warmup-time-total="0"
+		 threads="1"/>
+
+	<testname classname="org.cache2k.benchmark.ClockProPlusCacheWithExpiryBenchmark" name="benchmarkTotalRandom_200"
+		 benchmark-rounds="1" warmup-rounds="0"
+		 round-avg="1.368" round-stddev="0"
+		 gc-avg="0" gc-stddev="0"
+		 gc-invocations="1" gc-time="0.003"
+		 benchmark-time-total="1.368" warmup-time-total="0"
+		 threads="1"/>
+
+	<testname classname="org.cache2k.benchmark.ClockProPlusCacheWithExpiryBenchmark" name="benchmarkTotalRandom_350"
+		 benchmark-rounds="1" warmup-rounds="0"
+		 round-avg="1.284" round-stddev="0"
+		 gc-avg="0" gc-stddev="0"
+		 gc-invocations="1" gc-time="0.004"
+		 benchmark-time-total="1.284" warmup-time-total="0"
+		 threads="1"/>
+
+	<testname classname="org.cache2k.benchmark.ClockProPlusCacheWithExpiryBenchmark" name="benchmarkTotalRandom_500"
+		 benchmark-rounds="1" warmup-rounds="0"
+		 round-avg="0.645" round-stddev="0"
+		 gc-avg="0" gc-stddev="0"
+		 gc-invocations="0" gc-time="0"
+		 benchmark-time-total="0.645" warmup-time-total="0"
+		 threads="1"/>
+
+	<testname classname="org.cache2k.benchmark.ClockProPlusCacheWithExpiryBenchmark" name="benchmarkTotalRandom_800"
+		 benchmark-rounds="1" warmup-rounds="0"
+		 round-avg="0.313" round-stddev="0"
+		 gc-avg="0" gc-stddev="0"
+		 gc-invocations="1" gc-time="0.002"
+		 benchmark-time-total="0.313" warmup-time-total="0"
+		 threads="1"/>
+
+	<testname classname="org.cache2k.benchmark.ClockProPlusCacheWithExpiryBenchmark" name="benchmarkCpp_20"
+		 benchmark-rounds="1" warmup-rounds="0"
+		 round-avg="0.004" round-stddev="0"
+		 gc-avg="0" gc-stddev="0"
+		 gc-invocations="0" gc-time="0"
+		 benchmark-time-total="0.003" warmup-time-total="0.001"
+		 threads="1"/>
+
+	<testname classname="org.cache2k.benchmark.ClockProPlusCacheWithExpiryBenchmark" name="benchmarkCpp_35"
+		 benchmark-rounds="1" warmup-rounds="0"
+		 round-avg="0.004" round-stddev="0"
+		 gc-avg="0" gc-stddev="0"
+		 gc-invocations="0" gc-time="0"
+		 benchmark-time-total="0.004" warmup-time-total="0"
+		 threads="1"/>
+
+	<testname classname="org.cache2k.benchmark.ClockProPlusCacheWithExpiryBenchmark" name="benchmarkCpp_50"
+		 benchmark-rounds="1" warmup-rounds="0"
+		 round-avg="0.003" round-stddev="0"
+		 gc-avg="0" gc-stddev="0"
+		 gc-invocations="0" gc-time="0"
+		 benchmark-time-total="0.003" warmup-time-total="0"
+		 threads="1"/>
+
+	<testname classname="org.cache2k.benchmark.ClockProPlusCacheWithExpiryBenchmark" name="benchmarkCpp_80"
+		 benchmark-rounds="1" warmup-rounds="0"
+		 round-avg="0.002" round-stddev="0"
+		 gc-avg="0" gc-stddev="0"
+		 gc-invocations="0" gc-time="0"
+		 benchmark-time-total="0.002" warmup-time-total="0"
+		 threads="1"/>
+
+	<testname classname="org.cache2k.benchmark.HashMapBenchmark" name="benchmarkRandom"
+		 benchmark-rounds="3" warmup-rounds="2"
+		 round-avg="2.661" round-stddev="0.039"
+		 gc-avg="0" gc-stddev="0"
+		 gc-invocations="1" gc-time="0.003"
+		 benchmark-time-total="7.982" warmup-time-total="5.363"
+		 threads="1"/>
+
+	<testname classname="org.cache2k.benchmark.HashMapBenchmark" name="benchmarkMulti2_600"
+		 benchmark-rounds="1" warmup-rounds="0"
+		 round-avg="0.032" round-stddev="0"
+		 gc-avg="0" gc-stddev="0"
+		 gc-invocations="0" gc-time="0"
+		 benchmark-time-total="0.032" warmup-time-total="0"
+		 threads="1"/>
+
+	<testname classname="org.cache2k.benchmark.HashMapBenchmark" name="benchmarkWeb12_1200"
+		 benchmark-rounds="1" warmup-rounds="0"
+		 round-avg="0.124" round-stddev="0"
+		 gc-avg="0" gc-stddev="0"
+		 gc-invocations="0" gc-time="0"
+		 benchmark-time-total="0.124" warmup-time-total="0"
+		 threads="1"/>
+
+	<testname classname="org.cache2k.benchmark.HashMapBenchmark" name="benchmarkWeb12_3000"
+		 benchmark-rounds="1" warmup-rounds="0"
+		 round-avg="0.213" round-stddev="0"
+		 gc-avg="0" gc-stddev="0"
+		 gc-invocations="0" gc-time="0"
+		 benchmark-time-total="0.213" warmup-time-total="0"
+		 threads="1"/>
+
+	<testname classname="org.cache2k.benchmark.HashMapBenchmark" name="benchmarkSprite_100"
+		 benchmark-rounds="1" warmup-rounds="0"
+		 round-avg="0.058" round-stddev="0"
+		 gc-avg="0" gc-stddev="0"
+		 gc-invocations="0" gc-time="0"
+		 benchmark-time-total="0.058" warmup-time-total="0"
+		 threads="1"/>
+
+	<testname classname="org.cache2k.benchmark.HashMapBenchmark" name="benchmarkSprite_200"
+		 benchmark-rounds="1" warmup-rounds="0"
+		 round-avg="0.07" round-stddev="0"
+		 gc-avg="0" gc-stddev="0"
+		 gc-invocations="0" gc-time="0"
+		 benchmark-time-total="0.07" warmup-time-total="0"
+		 threads="1"/>
+
+	<testname classname="org.cache2k.benchmark.HashMapBenchmark" name="benchmarkSprite_400"
+		 benchmark-rounds="1" warmup-rounds="0"
+		 round-avg="0.078" round-stddev="0"
+		 gc-avg="0" gc-stddev="0"
+		 gc-invocations="0" gc-time="0"
+		 benchmark-time-total="0.078" warmup-time-total="0"
+		 threads="1"/>
+
+	<testname classname="org.cache2k.benchmark.HashMapBenchmark" name="benchmarkSprite_600"
+		 benchmark-rounds="1" warmup-rounds="0"
+		 round-avg="0.064" round-stddev="0"
+		 gc-avg="0" gc-stddev="0"
+		 gc-invocations="0" gc-time="0"
+		 benchmark-time-total="0.064" warmup-time-total="0"
+		 threads="1"/>
+
+	<testname classname="org.cache2k.benchmark.HashMapBenchmark" name="benchmarkSprite_800"
+		 benchmark-rounds="1" warmup-rounds="0"
+		 round-avg="0.064" round-stddev="0"
+		 gc-avg="0" gc-stddev="0"
+		 gc-invocations="0" gc-time="0"
+		 benchmark-time-total="0.064" warmup-time-total="0"
+		 threads="1"/>
+
+	<testname classname="org.cache2k.benchmark.HashMapBenchmark" name="benchmarkGlimpse_500"
+		 benchmark-rounds="1" warmup-rounds="0"
+		 round-avg="0.009" round-stddev="0"
+		 gc-avg="0" gc-stddev="0"
+		 gc-invocations="0" gc-time="0"
+		 benchmark-time-total="0.009" warmup-time-total="0"
+		 threads="1"/>
+
+	<testname classname="org.cache2k.benchmark.HashMapBenchmark" name="benchmarkSprite_1000"
+		 benchmark-rounds="1" warmup-rounds="0"
+		 round-avg="0.058" round-stddev="0"
+		 gc-avg="0" gc-stddev="0"
+		 gc-invocations="0" gc-time="0"
+		 benchmark-time-total="0.058" warmup-time-total="0"
+		 threads="1"/>
+
+	<testname classname="org.cache2k.benchmark.HashMapBenchmark" name="benchmarkWeb07_75"
+		 benchmark-rounds="1" warmup-rounds="0"
+		 round-avg="0.026" round-stddev="0"
+		 gc-avg="0" gc-stddev="0"
+		 gc-invocations="0" gc-time="0"
+		 benchmark-time-total="0.026" warmup-time-total="0"
+		 threads="1"/>
+
+	<testname classname="org.cache2k.benchmark.HashMapBenchmark" name="benchmarkWeb12_75"
+		 benchmark-rounds="1" warmup-rounds="0"
+		 round-avg="0.032" round-stddev="0"
+		 gc-avg="0" gc-stddev="0"
+		 gc-invocations="0" gc-time="0"
+		 benchmark-time-total="0.032" warmup-time-total="0"
+		 threads="1"/>
+
+	<testname classname="org.cache2k.benchmark.HashMapBenchmark" name="benchmarkHits"
+		 benchmark-rounds="3" warmup-rounds="2"
+		 round-avg="0.051" round-stddev="0.001"
+		 gc-avg="0" gc-stddev="0"
+		 gc-invocations="0" gc-time="0"
+		 benchmark-time-total="0.153" warmup-time-total="0.099"
+		 threads="1"/>
+
+	<testname classname="org.cache2k.benchmark.HashMapBenchmark" name="benchmarkMiss"
+		 benchmark-rounds="3" warmup-rounds="2"
+		 round-avg="4.836" round-stddev="0.061"
+		 gc-avg="0" gc-stddev="0"
+		 gc-invocations="2" gc-time="0.003"
+		 benchmark-time-total="14.507" warmup-time-total="9.538"
+		 threads="1"/>
+
+	<testname classname="org.cache2k.benchmark.HashMapBenchmark" name="benchmarkCpp_100"
+		 benchmark-rounds="1" warmup-rounds="0"
+		 round-avg="0.002" round-stddev="0"
+		 gc-avg="0" gc-stddev="0"
+		 gc-invocations="0" gc-time="0"
+		 benchmark-time-total="0.002" warmup-time-total="0"
+		 threads="1"/>
+
+	<testname classname="org.cache2k.benchmark.HashMapBenchmark" name="benchmarkCpp_300"
+		 benchmark-rounds="1" warmup-rounds="0"
+		 round-avg="0.002" round-stddev="0"
+		 gc-avg="0" gc-stddev="0"
+		 gc-invocations="0" gc-time="0"
+		 benchmark-time-total="0.002" warmup-time-total="0"
+		 threads="1"/>
+
+	<testname classname="org.cache2k.benchmark.HashMapBenchmark" name="benchmarkCpp_500"
+		 benchmark-rounds="1" warmup-rounds="0"
+		 round-avg="0.002" round-stddev="0"
+		 gc-avg="0" gc-stddev="0"
+		 gc-invocations="0" gc-time="0"
+		 benchmark-time-total="0.002" warmup-time-total="0"
+		 threads="1"/>
+
+	<testname classname="org.cache2k.benchmark.HashMapBenchmark" name="benchmarkWeb07_300"
+		 benchmark-rounds="1" warmup-rounds="0"
+		 round-avg="0.05" round-stddev="0"
+		 gc-avg="0" gc-stddev="0"
+		 gc-invocations="0" gc-time="0"
+		 benchmark-time-total="0.05" warmup-time-total="0"
+		 threads="1"/>
+
+	<testname classname="org.cache2k.benchmark.HashMapBenchmark" name="benchmarkWeb12_300"
+		 benchmark-rounds="1" warmup-rounds="0"
+		 round-avg="0.056" round-stddev="0"
+		 gc-avg="0" gc-stddev="0"
+		 gc-invocations="0" gc-time="0"
+		 benchmark-time-total="0.056" warmup-time-total="0"
+		 threads="1"/>
+
+	<testname classname="org.cache2k.benchmark.HashMapBenchmark" name="testReplacement1"
+		 benchmark-rounds="1" warmup-rounds="0"
+		 round-avg="0.001" round-stddev="0"
+		 gc-avg="0" gc-stddev="0"
+		 gc-invocations="0" gc-time="0"
+		 benchmark-time-total="0.001" warmup-time-total="0"
+		 threads="1"/>
+
+	<testname classname="org.cache2k.benchmark.HashMapBenchmark" name="testSize1000"
+		 benchmark-rounds="1" warmup-rounds="0"
+		 round-avg="0" round-stddev="0"
+		 gc-avg="0" gc-stddev="0"
+		 gc-invocations="0" gc-time="0"
+		 benchmark-time-total="0" warmup-time-total="0"
+		 threads="1"/>
+
+	<testname classname="org.cache2k.benchmark.HashMapBenchmark" name="testSimple1"
+		 benchmark-rounds="1" warmup-rounds="0"
+		 round-avg="0" round-stddev="0"
+		 gc-avg="0" gc-stddev="0"
+		 gc-invocations="0" gc-time="0"
+		 benchmark-time-total="0" warmup-time-total="0"
+		 threads="1"/>
+
+	<testname classname="org.cache2k.benchmark.HashMapBenchmark" name="testSimple2"
+		 benchmark-rounds="1" warmup-rounds="0"
+		 round-avg="0" round-stddev="0"
+		 gc-avg="0" gc-stddev="0"
+		 gc-invocations="0" gc-time="0"
+		 benchmark-time-total="0" warmup-time-total="0"
+		 threads="1"/>
+
+	<testname classname="org.cache2k.benchmark.HashMapBenchmark" name="benchmarkEff90"
+		 benchmark-rounds="3" warmup-rounds="2"
+		 round-avg="0.676" round-stddev="0"
+		 gc-avg="0" gc-stddev="0"
+		 gc-invocations="0" gc-time="0"
+		 benchmark-time-total="2.027" warmup-time-total="1.37"
+		 threads="1"/>
+
+	<testname classname="org.cache2k.benchmark.HashMapBenchmark" name="benchmarkEff95"
+		 benchmark-rounds="3" warmup-rounds="2"
+		 round-avg="0.494" round-stddev="0.003"
+		 gc-avg="0" gc-stddev="0"
+		 gc-invocations="1" gc-time="0.002"
+		 benchmark-time-total="1.481" warmup-time-total="0.965"
+		 threads="1"/>
+
+	<testname classname="org.cache2k.benchmark.HashMapBenchmark" name="benchmarkWeb07_1200"
+		 benchmark-rounds="1" warmup-rounds="0"
+		 round-avg="0.144" round-stddev="0"
+		 gc-avg="0" gc-stddev="0"
+		 gc-invocations="0" gc-time="0"
+		 benchmark-time-total="0.144" warmup-time-total="0"
+		 threads="1"/>
+
+	<testname classname="org.cache2k.benchmark.HashMapBenchmark" name="benchmarkWeb07_3000"
+		 benchmark-rounds="1" warmup-rounds="0"
+		 round-avg="0.298" round-stddev="0"
+		 gc-avg="0" gc-stddev="0"
+		 gc-invocations="0" gc-time="0"
+		 benchmark-time-total="0.298" warmup-time-total="0"
+		 threads="1"/>
+
+	<testname classname="org.cache2k.benchmark.HashMapBenchmark" name="benchmarkMulti2_1800"
+		 benchmark-rounds="1" warmup-rounds="0"
+		 round-avg="0.06" round-stddev="0"
+		 gc-avg="0" gc-stddev="0"
+		 gc-invocations="0" gc-time="0"
+		 benchmark-time-total="0.06" warmup-time-total="0"
+		 threads="1"/>
+
+	<testname classname="org.cache2k.benchmark.HashMapBenchmark" name="benchmarkMulti2_3000"
+		 benchmark-rounds="1" warmup-rounds="0"
+		 round-avg="0.045" round-stddev="0"
+		 gc-avg="0" gc-stddev="0"
+		 gc-invocations="0" gc-time="0"
+		 benchmark-time-total="0.045" warmup-time-total="0"
+		 threads="1"/>
+
+	<testname classname="org.cache2k.benchmark.HashMapBenchmark" name="benchmarkTotalRandom_100"
+		 benchmark-rounds="1" warmup-rounds="0"
+		 round-avg="1.511" round-stddev="0"
+		 gc-avg="0" gc-stddev="0"
+		 gc-invocations="0" gc-time="0"
+		 benchmark-time-total="1.511" warmup-time-total="0"
+		 threads="1"/>
+
+	<testname classname="org.cache2k.benchmark.HashMapBenchmark" name="benchmarkTotalRandom_200"
+		 benchmark-rounds="1" warmup-rounds="0"
+		 round-avg="2.152" round-stddev="0"
+		 gc-avg="0" gc-stddev="0"
+		 gc-invocations="0" gc-time="0"
+		 benchmark-time-total="2.152" warmup-time-total="0"
+		 threads="1"/>
+
+	<testname classname="org.cache2k.benchmark.HashMapBenchmark" name="benchmarkTotalRandom_350"
+		 benchmark-rounds="1" warmup-rounds="0"
+		 round-avg="2.234" round-stddev="0"
+		 gc-avg="0" gc-stddev="0"
+		 gc-invocations="1" gc-time="0.002"
+		 benchmark-time-total="2.234" warmup-time-total="0"
+		 threads="1"/>
+
+	<testname classname="org.cache2k.benchmark.HashMapBenchmark" name="benchmarkTotalRandom_500"
+		 benchmark-rounds="1" warmup-rounds="0"
+		 round-avg="2.651" round-stddev="0"
+		 gc-avg="0" gc-stddev="0"
+		 gc-invocations="0" gc-time="0"
+		 benchmark-time-total="2.651" warmup-time-total="0"
+		 threads="1"/>
+
+	<testname classname="org.cache2k.benchmark.HashMapBenchmark" name="benchmarkTotalRandom_800"
+		 benchmark-rounds="1" warmup-rounds="0"
+		 round-avg="1.313" round-stddev="0"
+		 gc-avg="0" gc-stddev="0"
+		 gc-invocations="0" gc-time="0"
+		 benchmark-time-total="1.313" warmup-time-total="0"
+		 threads="1"/>
+
+	<testname classname="org.cache2k.benchmark.HashMapBenchmark" name="benchmarkCpp_20"
+		 benchmark-rounds="1" warmup-rounds="0"
+		 round-avg="0.003" round-stddev="0"
+		 gc-avg="0" gc-stddev="0"
+		 gc-invocations="0" gc-time="0"
+		 benchmark-time-total="0.003" warmup-time-total="0"
+		 threads="1"/>
+
+	<testname classname="org.cache2k.benchmark.HashMapBenchmark" name="benchmarkCpp_35"
+		 benchmark-rounds="1" warmup-rounds="0"
+		 round-avg="0.003" round-stddev="0"
+		 gc-avg="0" gc-stddev="0"
+		 gc-invocations="0" gc-time="0"
+		 benchmark-time-total="0.003" warmup-time-total="0"
+		 threads="1"/>
+
+	<testname classname="org.cache2k.benchmark.HashMapBenchmark" name="benchmarkCpp_50"
+		 benchmark-rounds="1" warmup-rounds="0"
+		 round-avg="0.002" round-stddev="0"
+		 gc-avg="0" gc-stddev="0"
+		 gc-invocations="0" gc-time="0"
+		 benchmark-time-total="0.003" warmup-time-total="0"
+		 threads="1"/>
+
+	<testname classname="org.cache2k.benchmark.HashMapBenchmark" name="benchmarkCpp_80"
+		 benchmark-rounds="1" warmup-rounds="0"
+		 round-avg="0.003" round-stddev="0"
+		 gc-avg="0" gc-stddev="0"
+		 gc-invocations="0" gc-time="0"
+		 benchmark-time-total="0.003" warmup-time-total="0"
+		 threads="1"/>
+
+	<testname classname="org.cache2k.benchmark.LruSt030709CacheBenchmark" name="benchmarkRandom"
+		 benchmark-rounds="3" warmup-rounds="2"
+		 round-avg="0.237" round-stddev="0.002"
+		 gc-avg="0" gc-stddev="0"
+		 gc-invocations="0" gc-time="0"
+		 benchmark-time-total="0.71" warmup-time-total="0.529"
+		 threads="1"/>
+
+	<testname classname="org.cache2k.benchmark.LruSt030709CacheBenchmark" name="benchmarkMulti2_600"
+		 benchmark-rounds="1" warmup-rounds="0"
+		 round-avg="0.008" round-stddev="0"
+		 gc-avg="0" gc-stddev="0"
+		 gc-invocations="0" gc-time="0"
+		 benchmark-time-total="0.009" warmup-time-total="0"
+		 threads="1"/>
+
+	<testname classname="org.cache2k.benchmark.LruSt030709CacheBenchmark" name="benchmarkWeb12_1200"
+		 benchmark-rounds="1" warmup-rounds="0"
+		 round-avg="0.012" round-stddev="0"
+		 gc-avg="0" gc-stddev="0"
+		 gc-invocations="0" gc-time="0"
+		 benchmark-time-total="0.012" warmup-time-total="0"
+		 threads="1"/>
+
+	<testname classname="org.cache2k.benchmark.LruSt030709CacheBenchmark" name="benchmarkWeb12_3000"
+		 benchmark-rounds="1" warmup-rounds="0"
+		 round-avg="0.009" round-stddev="0"
+		 gc-avg="0" gc-stddev="0"
+		 gc-invocations="0" gc-time="0"
+		 benchmark-time-total="0.009" warmup-time-total="0"
+		 threads="1"/>
+
+	<testname classname="org.cache2k.benchmark.LruSt030709CacheBenchmark" name="benchmarkSprite_100"
+		 benchmark-rounds="1" warmup-rounds="0"
+		 round-avg="0.019" round-stddev="0"
+		 gc-avg="0" gc-stddev="0"
+		 gc-invocations="0" gc-time="0"
+		 benchmark-time-total="0.019" warmup-time-total="0"
+		 threads="1"/>
+
+	<testname classname="org.cache2k.benchmark.LruSt030709CacheBenchmark" name="benchmarkSprite_200"
+		 benchmark-rounds="1" warmup-rounds="0"
+		 round-avg="0.017" round-stddev="0"
+		 gc-avg="0" gc-stddev="0"
+		 gc-invocations="0" gc-time="0"
+		 benchmark-time-total="0.017" warmup-time-total="0"
+		 threads="1"/>
+
+	<testname classname="org.cache2k.benchmark.LruSt030709CacheBenchmark" name="benchmarkSprite_400"
+		 benchmark-rounds="1" warmup-rounds="0"
+		 round-avg="0.009" round-stddev="0"
+		 gc-avg="0" gc-stddev="0"
+		 gc-invocations="0" gc-time="0"
+		 benchmark-time-total="0.009" warmup-time-total="0"
+		 threads="1"/>
+
+	<testname classname="org.cache2k.benchmark.LruSt030709CacheBenchmark" name="benchmarkSprite_600"
+		 benchmark-rounds="1" warmup-rounds="0"
+		 round-avg="0.008" round-stddev="0"
+		 gc-avg="0" gc-stddev="0"
+		 gc-invocations="0" gc-time="0"
+		 benchmark-time-total="0.008" warmup-time-total="0"
+		 threads="1"/>
+
+	<testname classname="org.cache2k.benchmark.LruSt030709CacheBenchmark" name="benchmarkSprite_800"
+		 benchmark-rounds="1" warmup-rounds="0"
+		 round-avg="0.006" round-stddev="0"
+		 gc-avg="0" gc-stddev="0"
+		 gc-invocations="0" gc-time="0"
+		 benchmark-time-total="0.006" warmup-time-total="0"
+		 threads="1"/>
+
+	<testname classname="org.cache2k.benchmark.LruSt030709CacheBenchmark" name="benchmarkGlimpse_500"
+		 benchmark-rounds="1" warmup-rounds="0"
+		 round-avg="0.001" round-stddev="0"
+		 gc-avg="0" gc-stddev="0"
+		 gc-invocations="0" gc-time="0"
+		 benchmark-time-total="0.001" warmup-time-total="0"
+		 threads="1"/>
+
+	<testname classname="org.cache2k.benchmark.LruSt030709CacheBenchmark" name="benchmarkSprite_1000"
+		 benchmark-rounds="1" warmup-rounds="0"
+		 round-avg="0.006" round-stddev="0"
+		 gc-avg="0" gc-stddev="0"
+		 gc-invocations="0" gc-time="0"
+		 benchmark-time-total="0.006" warmup-time-total="0"
+		 threads="1"/>
+
+	<testname classname="org.cache2k.benchmark.LruSt030709CacheBenchmark" name="benchmarkWeb07_75"
+		 benchmark-rounds="1" warmup-rounds="0"
+		 round-avg="0.012" round-stddev="0"
+		 gc-avg="0" gc-stddev="0"
+		 gc-invocations="0" gc-time="0"
+		 benchmark-time-total="0.012" warmup-time-total="0"
+		 threads="1"/>
+
+	<testname classname="org.cache2k.benchmark.LruSt030709CacheBenchmark" name="benchmarkWeb12_75"
+		 benchmark-rounds="1" warmup-rounds="0"
+		 round-avg="0.012" round-stddev="0"
+		 gc-avg="0" gc-stddev="0"
+		 gc-invocations="0" gc-time="0"
+		 benchmark-time-total="0.012" warmup-time-total="0"
+		 threads="1"/>
+
+	<testname classname="org.cache2k.benchmark.LruSt030709CacheBenchmark" name="benchmarkHits"
+		 benchmark-rounds="3" warmup-rounds="2"
+		 round-avg="0.069" round-stddev="0.001"
+		 gc-avg="0" gc-stddev="0"
+		 gc-invocations="1" gc-time="0.002"
+		 benchmark-time-total="0.207" warmup-time-total="0.148"
+		 threads="1"/>
+
+	<testname classname="org.cache2k.benchmark.LruSt030709CacheBenchmark" name="benchmarkMiss"
+		 benchmark-rounds="3" warmup-rounds="2"
+		 round-avg="0.376" round-stddev="0.003"
+		 gc-avg="0" gc-stddev="0"
+		 gc-invocations="2" gc-time="0.005"
+		 benchmark-time-total="1.129" warmup-time-total="0.764"
+		 threads="1"/>
+
+	<testname classname="org.cache2k.benchmark.LruSt030709CacheBenchmark" name="benchmarkCpp_100"
+		 benchmark-rounds="1" warmup-rounds="0"
+		 round-avg="0.002" round-stddev="0"
+		 gc-avg="0" gc-stddev="0"
+		 gc-invocations="0" gc-time="0"
+		 benchmark-time-total="0.002" warmup-time-total="0"
+		 threads="1"/>
+
+	<testname classname="org.cache2k.benchmark.LruSt030709CacheBenchmark" name="benchmarkCpp_300"
+		 benchmark-rounds="1" warmup-rounds="0"
+		 round-avg="0.001" round-stddev="0"
+		 gc-avg="0" gc-stddev="0"
+		 gc-invocations="0" gc-time="0"
+		 benchmark-time-total="0.001" warmup-time-total="0"
+		 threads="1"/>
+
+	<testname classname="org.cache2k.benchmark.LruSt030709CacheBenchmark" name="benchmarkCpp_500"
+		 benchmark-rounds="1" warmup-rounds="0"
+		 round-avg="0.001" round-stddev="0"
+		 gc-avg="0" gc-stddev="0"
+		 gc-invocations="0" gc-time="0"
+		 benchmark-time-total="0.001" warmup-time-total="0"
+		 threads="1"/>
+
+	<testname classname="org.cache2k.benchmark.LruSt030709CacheBenchmark" name="benchmarkWeb07_300"
+		 benchmark-rounds="1" warmup-rounds="0"
+		 round-avg="0.009" round-stddev="0"
+		 gc-avg="0" gc-stddev="0"
+		 gc-invocations="0" gc-time="0"
+		 benchmark-time-total="0.009" warmup-time-total="0"
+		 threads="1"/>
+
+	<testname classname="org.cache2k.benchmark.LruSt030709CacheBenchmark" name="benchmarkWeb12_300"
+		 benchmark-rounds="1" warmup-rounds="0"
+		 round-avg="0.01" round-stddev="0"
+		 gc-avg="0" gc-stddev="0"
+		 gc-invocations="0" gc-time="0"
+		 benchmark-time-total="0.01" warmup-time-total="0"
+		 threads="1"/>
+
+	<testname classname="org.cache2k.benchmark.LruSt030709CacheBenchmark" name="testReplacement1"
+		 benchmark-rounds="1" warmup-rounds="0"
+		 round-avg="0.001" round-stddev="0"
+		 gc-avg="0" gc-stddev="0"
+		 gc-invocations="0" gc-time="0"
+		 benchmark-time-total="0.001" warmup-time-total="0"
+		 threads="1"/>
+
+	<testname classname="org.cache2k.benchmark.LruSt030709CacheBenchmark" name="testSize1000"
+		 benchmark-rounds="1" warmup-rounds="0"
+		 round-avg="0.001" round-stddev="0"
+		 gc-avg="0" gc-stddev="0"
+		 gc-invocations="0" gc-time="0"
+		 benchmark-time-total="0.001" warmup-time-total="0"
+		 threads="1"/>
+
+	<testname classname="org.cache2k.benchmark.LruSt030709CacheBenchmark" name="testSimple1"
+		 benchmark-rounds="1" warmup-rounds="0"
+		 round-avg="0" round-stddev="0"
+		 gc-avg="0" gc-stddev="0"
+		 gc-invocations="0" gc-time="0"
+		 benchmark-time-total="0" warmup-time-total="0"
+		 threads="1"/>
+
+	<testname classname="org.cache2k.benchmark.LruSt030709CacheBenchmark" name="testSimple2"
+		 benchmark-rounds="1" warmup-rounds="0"
+		 round-avg="0" round-stddev="0"
+		 gc-avg="0" gc-stddev="0"
+		 gc-invocations="0" gc-time="0"
+		 benchmark-time-total="0" warmup-time-total="0"
+		 threads="1"/>
+
+	<testname classname="org.cache2k.benchmark.LruSt030709CacheBenchmark" name="benchmarkEff90"
+		 benchmark-rounds="3" warmup-rounds="2"
+		 round-avg="0.123" round-stddev="0.001"
+		 gc-avg="0" gc-stddev="0"
+		 gc-invocations="0" gc-time="0"
+		 benchmark-time-total="0.368" warmup-time-total="0.246"
+		 threads="1"/>
+
+	<testname classname="org.cache2k.benchmark.LruSt030709CacheBenchmark" name="benchmarkEff95"
+		 benchmark-rounds="3" warmup-rounds="2"
+		 round-avg="0.111" round-stddev="0.001"
+		 gc-avg="0" gc-stddev="0"
+		 gc-invocations="0" gc-time="0"
+		 benchmark-time-total="0.333" warmup-time-total="0.227"
+		 threads="1"/>
+
+	<testname classname="org.cache2k.benchmark.LruSt030709CacheBenchmark" name="benchmarkWeb07_1200"
+		 benchmark-rounds="1" warmup-rounds="0"
+		 round-avg="0.008" round-stddev="0"
+		 gc-avg="0" gc-stddev="0"
+		 gc-invocations="0" gc-time="0"
+		 benchmark-time-total="0.008" warmup-time-total="0"
+		 threads="1"/>
+
+	<testname classname="org.cache2k.benchmark.LruSt030709CacheBenchmark" name="benchmarkWeb07_3000"
+		 benchmark-rounds="1" warmup-rounds="0"
+		 round-avg="0.007" round-stddev="0"
+		 gc-avg="0" gc-stddev="0"
+		 gc-invocations="0" gc-time="0"
+		 benchmark-time-total="0.007" warmup-time-total="0"
+		 threads="1"/>
+
+	<testname classname="org.cache2k.benchmark.LruSt030709CacheBenchmark" name="benchmarkMulti2_1800"
+		 benchmark-rounds="1" warmup-rounds="0"
+		 round-avg="0.003" round-stddev="0"
+		 gc-avg="0" gc-stddev="0"
+		 gc-invocations="0" gc-time="0"
+		 benchmark-time-total="0.003" warmup-time-total="0"
+		 threads="1"/>
+
+	<testname classname="org.cache2k.benchmark.LruSt030709CacheBenchmark" name="benchmarkMulti2_3000"
+		 benchmark-rounds="1" warmup-rounds="0"
+		 round-avg="0.002" round-stddev="0"
+		 gc-avg="0" gc-stddev="0"
+		 gc-invocations="0" gc-time="0"
+		 benchmark-time-total="0.002" warmup-time-total="0"
+		 threads="1"/>
+
+	<testname classname="org.cache2k.benchmark.LruSt030709CacheBenchmark" name="benchmarkTotalRandom_100"
+		 benchmark-rounds="1" warmup-rounds="0"
+		 round-avg="0.376" round-stddev="0"
+		 gc-avg="0" gc-stddev="0"
+		 gc-invocations="1" gc-time="0.002"
+		 benchmark-time-total="0.376" warmup-time-total="0"
+		 threads="1"/>
+
+	<testname classname="org.cache2k.benchmark.LruSt030709CacheBenchmark" name="benchmarkTotalRandom_200"
+		 benchmark-rounds="1" warmup-rounds="0"
+		 round-avg="0.335" round-stddev="0"
+		 gc-avg="0" gc-stddev="0"
+		 gc-invocations="0" gc-time="0"
+		 benchmark-time-total="0.335" warmup-time-total="0"
+		 threads="1"/>
+
+	<testname classname="org.cache2k.benchmark.LruSt030709CacheBenchmark" name="benchmarkTotalRandom_350"
+		 benchmark-rounds="1" warmup-rounds="0"
+		 round-avg="0.284" round-stddev="0"
+		 gc-avg="0" gc-stddev="0"
+		 gc-invocations="0" gc-time="0"
+		 benchmark-time-total="0.284" warmup-time-total="0"
+		 threads="1"/>
+
+	<testname classname="org.cache2k.benchmark.LruSt030709CacheBenchmark" name="benchmarkTotalRandom_500"
+		 benchmark-rounds="1" warmup-rounds="0"
+		 round-avg="0.254" round-stddev="0"
+		 gc-avg="0" gc-stddev="0"
+		 gc-invocations="1" gc-time="0.004"
+		 benchmark-time-total="0.254" warmup-time-total="0"
+		 threads="1"/>
+
+	<testname classname="org.cache2k.benchmark.LruSt030709CacheBenchmark" name="benchmarkTotalRandom_800"
+		 benchmark-rounds="1" warmup-rounds="0"
+		 round-avg="0.157" round-stddev="0"
+		 gc-avg="0" gc-stddev="0"
+		 gc-invocations="0" gc-time="0"
+		 benchmark-time-total="0.157" warmup-time-total="0"
+		 threads="1"/>
+
+	<testname classname="org.cache2k.benchmark.LruSt030709CacheBenchmark" name="benchmarkCpp_20"
+		 benchmark-rounds="1" warmup-rounds="0"
+		 round-avg="0.002" round-stddev="0"
+		 gc-avg="0" gc-stddev="0"
+		 gc-invocations="0" gc-time="0"
+		 benchmark-time-total="0.002" warmup-time-total="0"
+		 threads="1"/>
+
+	<testname classname="org.cache2k.benchmark.LruSt030709CacheBenchmark" name="benchmarkCpp_35"
+		 benchmark-rounds="1" warmup-rounds="0"
+		 round-avg="0.002" round-stddev="0"
+		 gc-avg="0" gc-stddev="0"
+		 gc-invocations="0" gc-time="0"
+		 benchmark-time-total="0.002" warmup-time-total="0"
+		 threads="1"/>
+
+	<testname classname="org.cache2k.benchmark.LruSt030709CacheBenchmark" name="benchmarkCpp_50"
+		 benchmark-rounds="1" warmup-rounds="0"
+		 round-avg="0.002" round-stddev="0"
+		 gc-avg="0" gc-stddev="0"
+		 gc-invocations="0" gc-time="0"
+		 benchmark-time-total="0.002" warmup-time-total="0"
+		 threads="1"/>
+
+	<testname classname="org.cache2k.benchmark.LruSt030709CacheBenchmark" name="benchmarkCpp_80"
+		 benchmark-rounds="1" warmup-rounds="0"
+		 round-avg="0.001" round-stddev="0"
+		 gc-avg="0" gc-stddev="0"
+		 gc-invocations="0" gc-time="0"
+		 benchmark-time-total="0.002" warmup-time-total="0"
+		 threads="1"/>
+
+	<testname classname="org.cache2k.benchmark.ClockProPlusCacheBenchmark" name="benchmarkRandom"
+		 benchmark-rounds="3" warmup-rounds="2"
+		 round-avg="0.501" round-stddev="0.002"
+		 gc-avg="0" gc-stddev="0"
+		 gc-invocations="1" gc-time="0.003"
+		 benchmark-time-total="1.503" warmup-time-total="1.015"
+		 threads="1"/>
+
+	<testname classname="org.cache2k.benchmark.ClockProPlusCacheBenchmark" name="benchmarkMulti2_600"
+		 benchmark-rounds="1" warmup-rounds="0"
+		 round-avg="0.006" round-stddev="0"
+		 gc-avg="0" gc-stddev="0"
+		 gc-invocations="0" gc-time="0"
+		 benchmark-time-total="0.007" warmup-time-total="0"
+		 threads="1"/>
+
+	<testname classname="org.cache2k.benchmark.ClockProPlusCacheBenchmark" name="benchmarkWeb12_1200"
+		 benchmark-rounds="1" warmup-rounds="0"
+		 round-avg="0.013" round-stddev="0"
+		 gc-avg="0" gc-stddev="0"
+		 gc-invocations="0" gc-time="0"
+		 benchmark-time-total="0.013" warmup-time-total="0"
+		 threads="1"/>
+
+	<testname classname="org.cache2k.benchmark.ClockProPlusCacheBenchmark" name="benchmarkWeb12_3000"
+		 benchmark-rounds="1" warmup-rounds="0"
+		 round-avg="0.018" round-stddev="0"
+		 gc-avg="0" gc-stddev="0"
+		 gc-invocations="0" gc-time="0"
+		 benchmark-time-total="0.018" warmup-time-total="0"
+		 threads="1"/>
+
+	<testname classname="org.cache2k.benchmark.ClockProPlusCacheBenchmark" name="benchmarkSprite_100"
+		 benchmark-rounds="1" warmup-rounds="0"
+		 round-avg="0.038" round-stddev="0"
+		 gc-avg="0" gc-stddev="0"
+		 gc-invocations="0" gc-time="0"
+		 benchmark-time-total="0.038" warmup-time-total="0"
+		 threads="1"/>
+
+	<testname classname="org.cache2k.benchmark.ClockProPlusCacheBenchmark" name="benchmarkSprite_200"
+		 benchmark-rounds="1" warmup-rounds="0"
+		 round-avg="0.049" round-stddev="0"
+		 gc-avg="0" gc-stddev="0"
+		 gc-invocations="0" gc-time="0"
+		 benchmark-time-total="0.049" warmup-time-total="0"
+		 threads="1"/>
+
+	<testname classname="org.cache2k.benchmark.ClockProPlusCacheBenchmark" name="benchmarkSprite_400"
+		 benchmark-rounds="1" warmup-rounds="0"
+		 round-avg="0.02" round-stddev="0"
+		 gc-avg="0" gc-stddev="0"
+		 gc-invocations="0" gc-time="0"
+		 benchmark-time-total="0.02" warmup-time-total="0"
+		 threads="1"/>
+
+	<testname classname="org.cache2k.benchmark.ClockProPlusCacheBenchmark" name="benchmarkSprite_600"
+		 benchmark-rounds="1" warmup-rounds="0"
+		 round-avg="0.014" round-stddev="0"
+		 gc-avg="0" gc-stddev="0"
+		 gc-invocations="0" gc-time="0"
+		 benchmark-time-total="0.014" warmup-time-total="0"
+		 threads="1"/>
+
+	<testname classname="org.cache2k.benchmark.ClockProPlusCacheBenchmark" name="benchmarkSprite_800"
+		 benchmark-rounds="1" warmup-rounds="0"
+		 round-avg="0.011" round-stddev="0"
+		 gc-avg="0" gc-stddev="0"
+		 gc-invocations="0" gc-time="0"
+		 benchmark-time-total="0.011" warmup-time-total="0"
+		 threads="1"/>
+
+	<testname classname="org.cache2k.benchmark.ClockProPlusCacheBenchmark" name="benchmarkGlimpse_500"
+		 benchmark-rounds="1" warmup-rounds="0"
+		 round-avg="0.004" round-stddev="0"
+		 gc-avg="0" gc-stddev="0"
+		 gc-invocations="0" gc-time="0"
+		 benchmark-time-total="0.004" warmup-time-total="0"
+		 threads="1"/>
+
+	<testname classname="org.cache2k.benchmark.ClockProPlusCacheBenchmark" name="benchmarkSprite_1000"
+		 benchmark-rounds="1" warmup-rounds="0"
+		 round-avg="0.011" round-stddev="0"
+		 gc-avg="0" gc-stddev="0"
+		 gc-invocations="0" gc-time="0"
+		 benchmark-time-total="0.011" warmup-time-total="0"
+		 threads="1"/>
+
+	<testname classname="org.cache2k.benchmark.ClockProPlusCacheBenchmark" name="benchmarkWeb07_75"
+		 benchmark-rounds="1" warmup-rounds="0"
+		 round-avg="0.023" round-stddev="0"
+		 gc-avg="0" gc-stddev="0"
+		 gc-invocations="0" gc-time="0"
+		 benchmark-time-total="0.023" warmup-time-total="0"
+		 threads="1"/>
+
+	<testname classname="org.cache2k.benchmark.ClockProPlusCacheBenchmark" name="benchmarkWeb12_75"
+		 benchmark-rounds="1" warmup-rounds="0"
+		 round-avg="0.028" round-stddev="0"
+		 gc-avg="0" gc-stddev="0"
+		 gc-invocations="0" gc-time="0"
+		 benchmark-time-total="0.028" warmup-time-total="0"
+		 threads="1"/>
+
+	<testname classname="org.cache2k.benchmark.ClockProPlusCacheBenchmark" name="benchmarkHits"
+		 benchmark-rounds="3" warmup-rounds="2"
+		 round-avg="0.064" round-stddev="0"
+		 gc-avg="0" gc-stddev="0"
+		 gc-invocations="0" gc-time="0"
+		 benchmark-time-total="0.193" warmup-time-total="0.135"
+		 threads="1"/>
+
+	<testname classname="org.cache2k.benchmark.ClockProPlusCacheBenchmark" name="benchmarkMiss"
+		 benchmark-rounds="3" warmup-rounds="2"
+		 round-avg="0.764" round-stddev="0.006"
+		 gc-avg="0" gc-stddev="0"
+		 gc-invocations="2" gc-time="0.003"
+		 benchmark-time-total="2.293" warmup-time-total="1.525"
+		 threads="1"/>
+
+	<testname classname="org.cache2k.benchmark.ClockProPlusCacheBenchmark" name="benchmarkCpp_100"
+		 benchmark-rounds="1" warmup-rounds="0"
+		 round-avg="0.002" round-stddev="0"
+		 gc-avg="0" gc-stddev="0"
+		 gc-invocations="0" gc-time="0"
+		 benchmark-time-total="0.002" warmup-time-total="0"
+		 threads="1"/>
+
+	<testname classname="org.cache2k.benchmark.ClockProPlusCacheBenchmark" name="benchmarkCpp_300"
+		 benchmark-rounds="1" warmup-rounds="0"
+		 round-avg="0.001" round-stddev="0"
+		 gc-avg="0" gc-stddev="0"
+		 gc-invocations="0" gc-time="0"
+		 benchmark-time-total="0.001" warmup-time-total="0"
+		 threads="1"/>
+
+	<testname classname="org.cache2k.benchmark.ClockProPlusCacheBenchmark" name="benchmarkCpp_500"
+		 benchmark-rounds="1" warmup-rounds="0"
+		 round-avg="0.001" round-stddev="0"
+		 gc-avg="0" gc-stddev="0"
+		 gc-invocations="0" gc-time="0"
+		 benchmark-time-total="0.001" warmup-time-total="0"
+		 threads="1"/>
+
+	<testname classname="org.cache2k.benchmark.ClockProPlusCacheBenchmark" name="benchmarkWeb07_300"
+		 benchmark-rounds="1" warmup-rounds="0"
+		 round-avg="0.017" round-stddev="0"
+		 gc-avg="0" gc-stddev="0"
+		 gc-invocations="0" gc-time="0"
+		 benchmark-time-total="0.017" warmup-time-total="0"
+		 threads="1"/>
+
+	<testname classname="org.cache2k.benchmark.ClockProPlusCacheBenchmark" name="benchmarkWeb12_300"
+		 benchmark-rounds="1" warmup-rounds="0"
+		 round-avg="0.018" round-stddev="0"
+		 gc-avg="0" gc-stddev="0"
+		 gc-invocations="0" gc-time="0"
+		 benchmark-time-total="0.018" warmup-time-total="0"
+		 threads="1"/>
+
+	<testname classname="org.cache2k.benchmark.ClockProPlusCacheBenchmark" name="testReplacement1"
+		 benchmark-rounds="1" warmup-rounds="0"
+		 round-avg="0.001" round-stddev="0"
+		 gc-avg="0" gc-stddev="0"
+		 gc-invocations="0" gc-time="0"
+		 benchmark-time-total="0.001" warmup-time-total="0"
+		 threads="1"/>
+
+	<testname classname="org.cache2k.benchmark.ClockProPlusCacheBenchmark" name="testSize1000"
+		 benchmark-rounds="1" warmup-rounds="0"
+		 round-avg="0.001" round-stddev="0"
+		 gc-avg="0" gc-stddev="0"
+		 gc-invocations="0" gc-time="0"
+		 benchmark-time-total="0.001" warmup-time-total="0"
+		 threads="1"/>
+
+	<testname classname="org.cache2k.benchmark.ClockProPlusCacheBenchmark" name="testSimple1"
+		 benchmark-rounds="1" warmup-rounds="0"
+		 round-avg="0" round-stddev="0"
+		 gc-avg="0" gc-stddev="0"
+		 gc-invocations="0" gc-time="0"
+		 benchmark-time-total="0" warmup-time-total="0"
+		 threads="1"/>
+
+	<testname classname="org.cache2k.benchmark.ClockProPlusCacheBenchmark" name="testSimple2"
+		 benchmark-rounds="1" warmup-rounds="0"
+		 round-avg="0" round-stddev="0"
+		 gc-avg="0" gc-stddev="0"
+		 gc-invocations="0" gc-time="0"
+		 benchmark-time-total="0" warmup-time-total="0"
+		 threads="1"/>
+
+	<testname classname="org.cache2k.benchmark.ClockProPlusCacheBenchmark" name="benchmarkEff90"
+		 benchmark-rounds="3" warmup-rounds="2"
+		 round-avg="0.159" round-stddev="0.001"
+		 gc-avg="0" gc-stddev="0"
+		 gc-invocations="0" gc-time="0"
+		 benchmark-time-total="0.477" warmup-time-total="0.329"
+		 threads="1"/>
+
+	<testname classname="org.cache2k.benchmark.ClockProPlusCacheBenchmark" name="benchmarkEff95"
+		 benchmark-rounds="3" warmup-rounds="2"
+		 round-avg="0.13" round-stddev="0.002"
+		 gc-avg="0" gc-stddev="0"
+		 gc-invocations="0" gc-time="0"
+		 benchmark-time-total="0.389" warmup-time-total="0.262"
+		 threads="1"/>
+
+	<testname classname="org.cache2k.benchmark.ClockProPlusCacheBenchmark" name="benchmarkWeb07_1200"
+		 benchmark-rounds="1" warmup-rounds="0"
+		 round-avg="0.013" round-stddev="0"
+		 gc-avg="0" gc-stddev="0"
+		 gc-invocations="0" gc-time="0"
+		 benchmark-time-total="0.013" warmup-time-total="0"
+		 threads="1"/>
+
+	<testname classname="org.cache2k.benchmark.ClockProPlusCacheBenchmark" name="benchmarkWeb07_3000"
+		 benchmark-rounds="1" warmup-rounds="0"
+		 round-avg="0.013" round-stddev="0"
+		 gc-avg="0" gc-stddev="0"
+		 gc-invocations="0" gc-time="0"
+		 benchmark-time-total="0.013" warmup-time-total="0"
+		 threads="1"/>
+
+	<testname classname="org.cache2k.benchmark.ClockProPlusCacheBenchmark" name="benchmarkMulti2_1800"
+		 benchmark-rounds="1" warmup-rounds="0"
+		 round-avg="0.005" round-stddev="0"
+		 gc-avg="0" gc-stddev="0"
+		 gc-invocations="0" gc-time="0"
+		 benchmark-time-total="0.005" warmup-time-total="0"
+		 threads="1"/>
+
+	<testname classname="org.cache2k.benchmark.ClockProPlusCacheBenchmark" name="benchmarkMulti2_3000"
+		 benchmark-rounds="1" warmup-rounds="0"
+		 round-avg="0.006" round-stddev="0"
+		 gc-avg="0" gc-stddev="0"
+		 gc-invocations="0" gc-time="0"
+		 benchmark-time-total="0.006" warmup-time-total="0"
+		 threads="1"/>
+
+	<testname classname="org.cache2k.benchmark.ClockProPlusCacheBenchmark" name="benchmarkTotalRandom_100"
+		 benchmark-rounds="1" warmup-rounds="0"
+		 round-avg="1.043" round-stddev="0"
+		 gc-avg="0" gc-stddev="0"
+		 gc-invocations="1" gc-time="0.002"
+		 benchmark-time-total="1.043" warmup-time-total="0"
+		 threads="1"/>
+
+	<testname classname="org.cache2k.benchmark.ClockProPlusCacheBenchmark" name="benchmarkTotalRandom_200"
+		 benchmark-rounds="1" warmup-rounds="0"
+		 round-avg="1.166" round-stddev="0"
+		 gc-avg="0" gc-stddev="0"
+		 gc-invocations="1" gc-time="0.002"
+		 benchmark-time-total="1.166" warmup-time-total="0"
+		 threads="1"/>
+
+	<testname classname="org.cache2k.benchmark.ClockProPlusCacheBenchmark" name="benchmarkTotalRandom_350"
+		 benchmark-rounds="1" warmup-rounds="0"
+		 round-avg="1.081" round-stddev="0"
+		 gc-avg="0" gc-stddev="0"
+		 gc-invocations="0" gc-time="0"
+		 benchmark-time-total="1.081" warmup-time-total="0"
+		 threads="1"/>
+
+	<testname classname="org.cache2k.benchmark.ClockProPlusCacheBenchmark" name="benchmarkTotalRandom_500"
+		 benchmark-rounds="1" warmup-rounds="0"
+		 round-avg="0.512" round-stddev="0"
+		 gc-avg="0" gc-stddev="0"
+		 gc-invocations="0" gc-time="0"
+		 benchmark-time-total="0.512" warmup-time-total="0"
+		 threads="1"/>
+
+	<testname classname="org.cache2k.benchmark.ClockProPlusCacheBenchmark" name="benchmarkTotalRandom_800"
+		 benchmark-rounds="1" warmup-rounds="0"
+		 round-avg="0.271" round-stddev="0"
+		 gc-avg="0" gc-stddev="0"
+		 gc-invocations="0" gc-time="0"
+		 benchmark-time-total="0.271" warmup-time-total="0"
+		 threads="1"/>
+
+	<testname classname="org.cache2k.benchmark.ClockProPlusCacheBenchmark" name="benchmarkCpp_20"
+		 benchmark-rounds="1" warmup-rounds="0"
+		 round-avg="0.003" round-stddev="0"
+		 gc-avg="0" gc-stddev="0"
+		 gc-invocations="0" gc-time="0"
+		 benchmark-time-total="0.003" warmup-time-total="0"
+		 threads="1"/>
+
+	<testname classname="org.cache2k.benchmark.ClockProPlusCacheBenchmark" name="benchmarkCpp_35"
+		 benchmark-rounds="1" warmup-rounds="0"
+		 round-avg="0.003" round-stddev="0"
+		 gc-avg="0" gc-stddev="0"
+		 gc-invocations="0" gc-time="0"
+		 benchmark-time-total="0.003" warmup-time-total="0"
+		 threads="1"/>
+
+	<testname classname="org.cache2k.benchmark.ClockProPlusCacheBenchmark" name="benchmarkCpp_50"
+		 benchmark-rounds="1" warmup-rounds="0"
+		 round-avg="0.002" round-stddev="0"
+		 gc-avg="0" gc-stddev="0"
+		 gc-invocations="0" gc-time="0"
+		 benchmark-time-total="0.002" warmup-time-total="0"
+		 threads="1"/>
+
+	<testname classname="org.cache2k.benchmark.ClockProPlusCacheBenchmark" name="benchmarkCpp_80"
+		 benchmark-rounds="1" warmup-rounds="0"
+		 round-avg="0.003" round-stddev="0"
+		 gc-avg="0" gc-stddev="0"
+		 gc-invocations="0" gc-time="0"
+		 benchmark-time-total="0.003" warmup-time-total="0"
+		 threads="1"/>
+
+	<testname classname="org.cache2k.benchmark.ClockCacheBenchmark" name="benchmarkRandom"
+		 benchmark-rounds="3" warmup-rounds="2"
+		 round-avg="0.403" round-stddev="0.003"
+		 gc-avg="0" gc-stddev="0"
+		 gc-invocations="1" gc-time="0.001"
+		 benchmark-time-total="1.209" warmup-time-total="0.821"
+		 threads="1"/>
+
+	<testname classname="org.cache2k.benchmark.ClockCacheBenchmark" name="benchmarkMulti2_600"
+		 benchmark-rounds="1" warmup-rounds="0"
+		 round-avg="0.005" round-stddev="0"
+		 gc-avg="0" gc-stddev="0"
+		 gc-invocations="0" gc-time="0"
+		 benchmark-time-total="0.005" warmup-time-total="0"
+		 threads="1"/>
+
+	<testname classname="org.cache2k.benchmark.ClockCacheBenchmark" name="benchmarkWeb12_1200"
+		 benchmark-rounds="1" warmup-rounds="0"
+		 round-avg="0.012" round-stddev="0"
+		 gc-avg="0" gc-stddev="0"
+		 gc-invocations="0" gc-time="0"
+		 benchmark-time-total="0.012" warmup-time-total="0"
+		 threads="1"/>
+
+	<testname classname="org.cache2k.benchmark.ClockCacheBenchmark" name="benchmarkWeb12_3000"
+		 benchmark-rounds="1" warmup-rounds="0"
+		 round-avg="0.011" round-stddev="0"
+		 gc-avg="0" gc-stddev="0"
+		 gc-invocations="0" gc-time="0"
+		 benchmark-time-total="0.011" warmup-time-total="0"
+		 threads="1"/>
+
+	<testname classname="org.cache2k.benchmark.ClockCacheBenchmark" name="benchmarkSprite_100"
+		 benchmark-rounds="1" warmup-rounds="0"
+		 round-avg="0.029" round-stddev="0"
+		 gc-avg="0" gc-stddev="0"
+		 gc-invocations="0" gc-time="0"
+		 benchmark-time-total="0.029" warmup-time-total="0"
+		 threads="1"/>
+
+	<testname classname="org.cache2k.benchmark.ClockCacheBenchmark" name="benchmarkSprite_200"
+		 benchmark-rounds="1" warmup-rounds="0"
+		 round-avg="0.024" round-stddev="0"
+		 gc-avg="0" gc-stddev="0"
+		 gc-invocations="0" gc-time="0"
+		 benchmark-time-total="0.024" warmup-time-total="0"
+		 threads="1"/>
+
+	<testname classname="org.cache2k.benchmark.ClockCacheBenchmark" name="benchmarkSprite_400"
+		 benchmark-rounds="1" warmup-rounds="0"
+		 round-avg="0.016" round-stddev="0"
+		 gc-avg="0" gc-stddev="0"
+		 gc-invocations="0" gc-time="0"
+		 benchmark-time-total="0.016" warmup-time-total="0"
+		 threads="1"/>
+
+	<testname classname="org.cache2k.benchmark.ClockCacheBenchmark" name="benchmarkSprite_600"
+		 benchmark-rounds="1" warmup-rounds="0"
+		 round-avg="0.009" round-stddev="0"
+		 gc-avg="0" gc-stddev="0"
+		 gc-invocations="0" gc-time="0"
+		 benchmark-time-total="0.009" warmup-time-total="0"
+		 threads="1"/>
+
+	<testname classname="org.cache2k.benchmark.ClockCacheBenchmark" name="benchmarkSprite_800"
+		 benchmark-rounds="1" warmup-rounds="0"
+		 round-avg="0.008" round-stddev="0"
+		 gc-avg="0" gc-stddev="0"
+		 gc-invocations="0" gc-time="0"
+		 benchmark-time-total="0.008" warmup-time-total="0"
+		 threads="1"/>
+
+	<testname classname="org.cache2k.benchmark.ClockCacheBenchmark" name="benchmarkGlimpse_500"
+		 benchmark-rounds="1" warmup-rounds="0"
+		 round-avg="0.003" round-stddev="0"
+		 gc-avg="0" gc-stddev="0"
+		 gc-invocations="0" gc-time="0"
+		 benchmark-time-total="0.003" warmup-time-total="0"
+		 threads="1"/>
+
+	<testname classname="org.cache2k.benchmark.ClockCacheBenchmark" name="benchmarkSprite_1000"
+		 benchmark-rounds="1" warmup-rounds="0"
+		 round-avg="0.008" round-stddev="0"
+		 gc-avg="0" gc-stddev="0"
+		 gc-invocations="0" gc-time="0"
+		 benchmark-time-total="0.008" warmup-time-total="0"
+		 threads="1"/>
+
+	<testname classname="org.cache2k.benchmark.ClockCacheBenchmark" name="benchmarkWeb07_75"
+		 benchmark-rounds="1" warmup-rounds="0"
+		 round-avg="0.015" round-stddev="0"
+		 gc-avg="0" gc-stddev="0"
+		 gc-invocations="0" gc-time="0"
+		 benchmark-time-total="0.015" warmup-time-total="0"
+		 threads="1"/>
+
+	<testname classname="org.cache2k.benchmark.ClockCacheBenchmark" name="benchmarkWeb12_75"
+		 benchmark-rounds="1" warmup-rounds="0"
+		 round-avg="0.018" round-stddev="0"
+		 gc-avg="0" gc-stddev="0"
+		 gc-invocations="0" gc-time="0"
+		 benchmark-time-total="0.018" warmup-time-total="0"
+		 threads="1"/>
+
+	<testname classname="org.cache2k.benchmark.ClockCacheBenchmark" name="benchmarkHits"
+		 benchmark-rounds="3" warmup-rounds="2"
+		 round-avg="0.068" round-stddev="0"
+		 gc-avg="0" gc-stddev="0"
+		 gc-invocations="0" gc-time="0"
+		 benchmark-time-total="0.205" warmup-time-total="0.136"
+		 threads="1"/>
+
+	<testname classname="org.cache2k.benchmark.ClockCacheBenchmark" name="benchmarkMiss"
+		 benchmark-rounds="3" warmup-rounds="2"
+		 round-avg="0.627" round-stddev="0.085"
+		 gc-avg="0" gc-stddev="0"
+		 gc-invocations="1" gc-time="0.001"
+		 benchmark-time-total="1.881" warmup-time-total="1.313"
+		 threads="1"/>
+
+	<testname classname="org.cache2k.benchmark.ClockCacheBenchmark" name="benchmarkCpp_100"
+		 benchmark-rounds="1" warmup-rounds="0"
+		 round-avg="0.002" round-stddev="0"
+		 gc-avg="0" gc-stddev="0"
+		 gc-invocations="0" gc-time="0"
+		 benchmark-time-total="0.002" warmup-time-total="0"
+		 threads="1"/>
+
+	<testname classname="org.cache2k.benchmark.ClockCacheBenchmark" name="benchmarkCpp_300"
+		 benchmark-rounds="1" warmup-rounds="0"
+		 round-avg="0.002" round-stddev="0"
+		 gc-avg="0" gc-stddev="0"
+		 gc-invocations="0" gc-time="0"
+		 benchmark-time-total="0.002" warmup-time-total="0"
+		 threads="1"/>
+
+	<testname classname="org.cache2k.benchmark.ClockCacheBenchmark" name="benchmarkCpp_500"
+		 benchmark-rounds="1" warmup-rounds="0"
+		 round-avg="0.004" round-stddev="0"
+		 gc-avg="0" gc-stddev="0"
+		 gc-invocations="0" gc-time="0"
+		 benchmark-time-total="0.004" warmup-time-total="0"
+		 threads="1"/>
+
+	<testname classname="org.cache2k.benchmark.ClockCacheBenchmark" name="benchmarkWeb07_300"
+		 benchmark-rounds="1" warmup-rounds="0"
+		 round-avg="0.013" round-stddev="0"
+		 gc-avg="0" gc-stddev="0"
+		 gc-invocations="0" gc-time="0"
+		 benchmark-time-total="0.013" warmup-time-total="0"
+		 threads="1"/>
+
+	<testname classname="org.cache2k.benchmark.ClockCacheBenchmark" name="benchmarkWeb12_300"
+		 benchmark-rounds="1" warmup-rounds="0"
+		 round-avg="0.018" round-stddev="0"
+		 gc-avg="0" gc-stddev="0"
+		 gc-invocations="0" gc-time="0"
+		 benchmark-time-total="0.018" warmup-time-total="0"
+		 threads="1"/>
+
+	<testname classname="org.cache2k.benchmark.ClockCacheBenchmark" name="testReplacement1"
+		 benchmark-rounds="1" warmup-rounds="0"
+		 round-avg="0.001" round-stddev="0"
+		 gc-avg="0" gc-stddev="0"
+		 gc-invocations="0" gc-time="0"
+		 benchmark-time-total="0.001" warmup-time-total="0"
+		 threads="1"/>
+
+	<testname classname="org.cache2k.benchmark.ClockCacheBenchmark" name="testSize1000"
+		 benchmark-rounds="1" warmup-rounds="0"
+		 round-avg="0.001" round-stddev="0"
+		 gc-avg="0" gc-stddev="0"
+		 gc-invocations="0" gc-time="0"
+		 benchmark-time-total="0.001" warmup-time-total="0"
+		 threads="1"/>
+
+	<testname classname="org.cache2k.benchmark.ClockCacheBenchmark" name="testSimple1"
+		 benchmark-rounds="1" warmup-rounds="0"
+		 round-avg="0" round-stddev="0"
+		 gc-avg="0" gc-stddev="0"
+		 gc-invocations="0" gc-time="0"
+		 benchmark-time-total="0" warmup-time-total="0"
+		 threads="1"/>
+
+	<testname classname="org.cache2k.benchmark.ClockCacheBenchmark" name="testSimple2"
+		 benchmark-rounds="1" warmup-rounds="0"
+		 round-avg="0" round-stddev="0"
+		 gc-avg="0" gc-stddev="0"
+		 gc-invocations="0" gc-time="0"
+		 benchmark-time-total="0" warmup-time-total="0"
+		 threads="1"/>
+
+	<testname classname="org.cache2k.benchmark.ClockCacheBenchmark" name="benchmarkEff90"
+		 benchmark-rounds="3" warmup-rounds="2"
+		 round-avg="0.139" round-stddev="0"
+		 gc-avg="0" gc-stddev="0"
+		 gc-invocations="0" gc-time="0"
+		 benchmark-time-total="0.416" warmup-time-total="0.287"
+		 threads="1"/>
+
+	<testname classname="org.cache2k.benchmark.ClockCacheBenchmark" name="benchmarkEff95"
+		 benchmark-rounds="3" warmup-rounds="2"
+		 round-avg="0.122" round-stddev="0.009"
+		 gc-avg="0" gc-stddev="0"
+		 gc-invocations="1" gc-time="0.005"
+		 benchmark-time-total="0.366" warmup-time-total="0.235"
+		 threads="1"/>
+
+	<testname classname="org.cache2k.benchmark.ClockCacheBenchmark" name="benchmarkWeb07_1200"
+		 benchmark-rounds="1" warmup-rounds="0"
+		 round-avg="0.011" round-stddev="0"
+		 gc-avg="0" gc-stddev="0"
+		 gc-invocations="0" gc-time="0"
+		 benchmark-time-total="0.011" warmup-time-total="0"
+		 threads="1"/>
+
+	<testname classname="org.cache2k.benchmark.ClockCacheBenchmark" name="benchmarkWeb07_3000"
+		 benchmark-rounds="1" warmup-rounds="0"
+		 round-avg="0.01" round-stddev="0"
+		 gc-avg="0" gc-stddev="0"
+		 gc-invocations="0" gc-time="0"
+		 benchmark-time-total="0.01" warmup-time-total="0"
+		 threads="1"/>
+
+	<testname classname="org.cache2k.benchmark.ClockCacheBenchmark" name="benchmarkMulti2_1800"
+		 benchmark-rounds="1" warmup-rounds="0"
+		 round-avg="0.004" round-stddev="0"
+		 gc-avg="0" gc-stddev="0"
+		 gc-invocations="0" gc-time="0"
+		 benchmark-time-total="0.004" warmup-time-total="0"
+		 threads="1"/>
+
+	<testname classname="org.cache2k.benchmark.ClockCacheBenchmark" name="benchmarkMulti2_3000"
+		 benchmark-rounds="1" warmup-rounds="0"
+		 round-avg="0.003" round-stddev="0"
+		 gc-avg="0" gc-stddev="0"
+		 gc-invocations="0" gc-time="0"
+		 benchmark-time-total="0.003" warmup-time-total="0"
+		 threads="1"/>
+
+	<testname classname="org.cache2k.benchmark.ClockCacheBenchmark" name="benchmarkTotalRandom_100"
+		 benchmark-rounds="1" warmup-rounds="0"
+		 round-avg="0.614" round-stddev="0"
+		 gc-avg="0" gc-stddev="0"
+		 gc-invocations="0" gc-time="0"
+		 benchmark-time-total="0.614" warmup-time-total="0"
+		 threads="1"/>
+
+	<testname classname="org.cache2k.benchmark.ClockCacheBenchmark" name="benchmarkTotalRandom_200"
+		 benchmark-rounds="1" warmup-rounds="0"
+		 round-avg="0.558" round-stddev="0"
+		 gc-avg="0" gc-stddev="0"
+		 gc-invocations="0" gc-time="0"
+		 benchmark-time-total="0.558" warmup-time-total="0"
+		 threads="1"/>
+
+	<testname classname="org.cache2k.benchmark.ClockCacheBenchmark" name="benchmarkTotalRandom_350"
+		 benchmark-rounds="1" warmup-rounds="0"
+		 round-avg="0.477" round-stddev="0"
+		 gc-avg="0" gc-stddev="0"
+		 gc-invocations="1" gc-time="0.002"
+		 benchmark-time-total="0.477" warmup-time-total="0"
+		 threads="1"/>
+
+	<testname classname="org.cache2k.benchmark.ClockCacheBenchmark" name="benchmarkTotalRandom_500"
+		 benchmark-rounds="1" warmup-rounds="0"
+		 round-avg="0.389" round-stddev="0"
+		 gc-avg="0" gc-stddev="0"
+		 gc-invocations="0" gc-time="0"
+		 benchmark-time-total="0.389" warmup-time-total="0"
+		 threads="1"/>
+
+	<testname classname="org.cache2k.benchmark.ClockCacheBenchmark" name="benchmarkTotalRandom_800"
+		 benchmark-rounds="1" warmup-rounds="0"
+		 round-avg="0.212" round-stddev="0"
+		 gc-avg="0" gc-stddev="0"
+		 gc-invocations="0" gc-time="0"
+		 benchmark-time-total="0.212" warmup-time-total="0"
+		 threads="1"/>
+
+	<testname classname="org.cache2k.benchmark.ClockCacheBenchmark" name="benchmarkCpp_20"
+		 benchmark-rounds="1" warmup-rounds="0"
+		 round-avg="0.003" round-stddev="0"
+		 gc-avg="0" gc-stddev="0"
+		 gc-invocations="0" gc-time="0"
+		 benchmark-time-total="0.003" warmup-time-total="0"
+		 threads="1"/>
+
+	<testname classname="org.cache2k.benchmark.ClockCacheBenchmark" name="benchmarkCpp_35"
+		 benchmark-rounds="1" warmup-rounds="0"
+		 round-avg="0.003" round-stddev="0"
+		 gc-avg="0" gc-stddev="0"
+		 gc-invocations="0" gc-time="0"
+		 benchmark-time-total="0.003" warmup-time-total="0"
+		 threads="1"/>
+
+	<testname classname="org.cache2k.benchmark.ClockCacheBenchmark" name="benchmarkCpp_50"
+		 benchmark-rounds="1" warmup-rounds="0"
+		 round-avg="0.003" round-stddev="0"
+		 gc-avg="0" gc-stddev="0"
+		 gc-invocations="0" gc-time="0"
+		 benchmark-time-total="0.003" warmup-time-total="0"
+		 threads="1"/>
+
+	<testname classname="org.cache2k.benchmark.ClockCacheBenchmark" name="benchmarkCpp_80"
+		 benchmark-rounds="1" warmup-rounds="0"
+		 round-avg="0.002" round-stddev="0"
+		 gc-avg="0" gc-stddev="0"
+		 gc-invocations="0" gc-time="0"
+		 benchmark-time-total="0.002" warmup-time-total="0"
+		 threads="1"/>
+
+</benchmark-results>
