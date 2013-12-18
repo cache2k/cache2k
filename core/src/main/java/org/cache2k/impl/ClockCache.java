@@ -66,7 +66,7 @@ public class ClockCache<K, T> extends BaseCache<ClockCache.Entry, K, T> {
   }
 
   /**
-   * First lookup in the hash unsychronized, if missed, do synchronize and
+   * First lookup in the hash unsynchronized, if missed, do synchronize and
    * try again.
    */
   @Override
