@@ -40,19 +40,22 @@ import java.util.Set;
  */
 public class CacheManagerImpl extends CacheManager {
   
-  static Log log = LogFactory.getLog(CacheManager.class);
 
   static List<CacheLifeCycleListener> lifeCycleListeners = new ArrayList<>();
 
   static {
+    lifeCycleListeners.add(new JmxSupport());
   }
 
+  private Log log;
   private String name;
   private Map<String, BaseCache> cacheNames = new HashMap<>();
   private Set<Cache> caches = new HashSet<>();
+  private int disambiguationCounter = 1;
 
   public CacheManagerImpl() {
-    name = "default";
+    name = getDefaultName();
+    log = LogFactory.getLog(CacheManager.class.getName() + '.' + name);
   }
 
   private void sendCreatedEvent(Cache c) {
@@ -67,9 +70,37 @@ public class CacheManagerImpl extends CacheManager {
     }
   }
 
+  /**
+   * Don't accept a cache name with too weird characters. Rather then escaping the
+   * name, so we can use it for JMX, it is better to just reject it.
+   */
+  private void checkName(String s) {
+    for (char c : s.toCharArray()) {
+      if (c == '.' ||
+          c == '-') {
+        continue;
+      }
+      if (!Character.isJavaIdentifierPart(c)) {
+        throw new CacheUsageExcpetion(
+          "Cache name contains illegal chars: '" + c + "', name=\"" + s + "\"");
+      }
+    }
+  }
+
   /* called by builder */
   public synchronized void newCache(Cache c) {
     BaseCache bc = (BaseCache) c;
+    String _requestedName = c.getName();
+    String _name = _requestedName;
+    while (cacheNames.containsKey(_name)) {
+      _name = _requestedName + "$$" + (disambiguationCounter++);
+    }
+    if (!_requestedName.equals(_name)) {
+      log.warn("duplicate name, disambiguating: " + _requestedName + " -> " + _name);
+      bc.setName(_name);
+    }
+    checkName(_name);
+
     caches.add(c);
     sendCreatedEvent(c);
     bc.setCacheManager(this);

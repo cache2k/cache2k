@@ -27,7 +27,7 @@ package org.cache2k;
  * Interface to the cache2k cache implementation. To obtain a cache
  * instance use the {@link CacheBuilder}
  *
- * @see CacheBuilder
+ * @see CacheBuilder to create a new cache
  * @author Jens Wilke
  */
 public interface Cache<K, T> extends KeyValueSource<K,T> {
@@ -45,9 +45,10 @@ public interface Cache<K, T> extends KeyValueSource<K,T> {
   public abstract T get(K key);
 
   /**
-   * Retrieve an object the same way as get() would do. If there is a valid
-   * object in the cache or a request carried out for the same object, return
-   * immediately.
+   * Triggers a prefetch and returns immediately. If the entry is in the cache
+   * already and still fresh nothing will happen. If the entry is not in the cache
+   * or expired a fetch will be triggered. The fetch will take place with the same
+   * thread pool then the one used for background refresh.
    */
   public abstract void prefetch(K key);
 

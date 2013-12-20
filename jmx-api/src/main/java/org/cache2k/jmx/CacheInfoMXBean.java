@@ -25,12 +25,22 @@ package org.cache2k.jmx;
 import java.util.Date;
 
 /**
+ * Exposed statistics via JMX from a cache.
+ *
  * @author Jens Wilke; created: 2013-07-16
  */
 @SuppressWarnings("unused")
 public interface CacheInfoMXBean {
 
+  /**
+   * The current number of entries within the cache, starting with 0.
+   */
   int getSize();
+
+  /**
+   * The configured maximum number of entries in the cache.
+   */
+  int getMaximumSize();
 
   /**
    * How often data was requested from the cache. In multi threading scenarios this
@@ -47,14 +57,13 @@ public interface CacheInfoMXBean {
   long getMissCnt();
 
   /**
-   * Counter for the event that we crated a new cache entry. Either upon
-   * a client get request or a put operation.
+   * How many new cache entries are created. This counts a cache miss on get()
+   * or a put().
    */
   long getNewEntryCnt();
 
   /**
-   * Counter for the event that data was fetched from the underlying storage,
-   * either on client request or upon a background refresh.
+   * How many times the data was fetched from the cache source.
    */
   long getFetchCnt();
 
@@ -63,9 +72,15 @@ public interface CacheInfoMXBean {
    */
   long getRefreshCnt();
 
-
+  /**
+   * Counter how many times a refresh submit failed, meaning that there were
+   * not enough thread resources available.
+   */
   long getRefreshSubmitFailedCnt();
 
+  /**
+   * How many times we had a hit on a refreshed entry.
+   */
   long getRefreshHitCnt();
 
   /**
@@ -78,42 +93,106 @@ public interface CacheInfoMXBean {
    */
   long getExpiredCnt();
 
+  /**
+   * An entry was evicted from the cache because of size limits.
+   */
   long getEvictedCnt();
 
-  long getPrefetchCnt();
-
+  /**
+   * Number of calls to put().
+   */
   long getPutCnt();
 
-  long getKeyMismatchCnt();
+  /**
+   * Number of key mutations occurred. This should be always 0, otherwise it is an indicator
+   * that the hash keys objects are modified by the application after usage within a cache
+   * request.
+   */
+  long getKeyMutationCnt();
 
-  double getDataHitRate();
+  /**
+   * The percentage of cache accesses the cache delivered data directly instead of fetching it.
+   */
+  double getHitRate();
 
-  double getCacheHitRate();
+  /**
+   * Value between 100 and 0 to help evaluate the quality of the hashing function. 100 means perfect.
+   * This metric takes into account the collision to size ratio, the longest collision size
+   * and the collision to slot ratio. The value reads 0 if the longest collision size gets more
+   * then 20.
+   */
+  int getHashQuality();
 
-  double getHashQuality();
+  /**
+   * Number of hashcode collisions within the cache. E.g. the hashCode: 2, 3, 3, 4, 4, 4 will
+   * mean three collisions.
+   */
+  int getHashCollisionCnt();
 
-  int getCollisionCnt();
+  /**
+   * Number of collision slots within the cache. E.g. the hashCode: 2, 3, 3, 4, 4, 4 will mean two
+   * collision slots.
+   */
+  int getHashCollisionsSlotCnt();
 
-  int getCollisionsSlotCnt();
+  /**
+   * The number of entries of the collision slot with the most collisions. Either 0, 2 or more.
+   */
+  int getHashLongestCollisionSize();
 
-  int getLongestCollisionSize();
+  /**
+   * Milliseconds per fetch.
+   */
+  int getMillisPerFetch();
 
-  int getMsecsPerFetch();
-
+  /**
+   * Total number of time spent fetching entries from the cache source.
+   */
   long getFetchMillis();
 
+  /**
+   * Amount of memory the cache
+   */
   int getMemoryUsage();
 
+  /**
+   * Implementation class of the cache which controls the eviction strategy.
+   */
   String getImplementation();
 
+  /**
+   * The cache checks some internal values for correctness. If this does not start with
+   * "0.", then please raise a bug.
+   */
   String getIntegrityDescriptor();
 
-  Date getCreated();
+  /**
+   * Time of last meaningful cache operation. This is when the cache changed its
+   * structure or data was modified. Basically this means everything except a
+   * straight cache hit, that puts no effort on the cache.
+   */
+  Date getLastOperationTime();
 
-  Date getCleared();
+  /**
+   * Time when cache object was created.
+   */
+  Date getCreatedTime();
 
-  Date getInfoCreated();
+  /**
+   * Time when cache object was cleared.
+   */
+  Date getClearedTime();
 
-  int getInfoCreatedDetlaMs();
+  /**
+   * Time when the cache information was created for JMX. Some of the values may
+   * take processing time. The cache does not always return the latest values
+   * if the object is requested very often.
+   */
+  Date getInfoCreatedTime();
+
+  /**
+   * Milliseconds needed to provide the data.
+   */
+  int getInfoCreatedDetlaMillis();
 
 }

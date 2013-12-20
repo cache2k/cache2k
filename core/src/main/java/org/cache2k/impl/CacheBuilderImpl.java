@@ -47,8 +47,11 @@ public class CacheBuilderImpl<K, T> extends CacheBuilder<K, T> {
         int idx = e.getClassName().lastIndexOf('.');
         String _simpleClassName = e.getClassName().substring(idx + 1);
         String _methodName = e.getMethodName();
+        if (_methodName.equals("<init>")) {
+          _methodName = "INIT";
+        }
         if (_methodName != null && _methodName.length() > 0) {
-          return _simpleClassName + "." + _methodName + ":" + e.getLineNumber();
+          return _simpleClassName + "." + _methodName + "" + "." + e.getLineNumber();
         }
       }
     }
@@ -106,9 +109,6 @@ public class CacheBuilderImpl<K, T> extends CacheBuilder<K, T> {
         _cache = (Cache<K, T>) cls.newInstance();
       }
       configureViaSetters(_cache);
-      if (_cache instanceof BaseCache) {
-        ((BaseCache) _cache).init();
-      }
       return _cache;
     } catch (Exception e) {
       throw new IllegalArgumentException("Not able to instantiate cache implementation", e);
@@ -127,6 +127,9 @@ public class CacheBuilderImpl<K, T> extends CacheBuilder<K, T> {
     if (_cache instanceof BaseCache) {
       CacheManagerImpl cm = (CacheManagerImpl) CacheManager.getInstance();
       cm.newCache(_cache);
+    }
+    if (_cache instanceof BaseCache) {
+      ((BaseCache) _cache).init();
     }
     return _cache;
   }

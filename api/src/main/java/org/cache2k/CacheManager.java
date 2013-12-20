@@ -22,6 +22,8 @@ package org.cache2k;
  * #L%
  */
 
+import javax.naming.Context;
+import javax.naming.InitialContext;
 import java.util.Iterator;
 
 /**
@@ -30,6 +32,39 @@ import java.util.Iterator;
 public abstract class CacheManager implements Iterable<Cache> {
 
   private static CacheManager defaultManager;
+  private static String defaultName = "default";
+
+  static {
+    try {
+      Context ctx = new InitialContext();
+      ctx = (Context) ctx.lookup("java:comp/env");
+      String _name =
+        (String) ctx.lookup("org.cache2k.CacheManager.defaultName");
+      if (_name != null) {
+        defaultName = _name;
+      }
+    } catch (Exception ignore) {
+    }
+  }
+
+  /**
+   * Name of the default cache manager, which is "default" by default. It is also possible
+   * to set the default manager name via JNDI context "java:comp/env" and name
+   * "org.cache2k.CacheManager.defaultName".
+   */
+  public static String getDefaultName() {
+    return defaultName;
+  }
+
+  /**
+   * Reset the manager name once on application startup.
+   */
+  public static void setDefaultName(String defaultName) {
+    if (defaultManager != null) {
+      throw new IllegalStateException("default CacheManager already created");
+    }
+    CacheManager.defaultName = defaultName;
+  }
 
   /**
    * Get the default cache manager for the class loader

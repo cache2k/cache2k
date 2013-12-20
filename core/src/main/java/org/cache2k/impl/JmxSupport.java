@@ -35,29 +35,12 @@ import java.lang.management.ManagementFactory;
  */
 public class JmxSupport implements CacheLifeCycleListener {
 
-  private static String sanitizeJmxName(String s) {
-    StringBuilder sb = new StringBuilder();
-    for (char c : s.toCharArray()) {
-      switch (c) {
-        case ':': sb.append('.'); break;
-        case '_': sb.append('_'); break;
-        case '<': break;
-        case '>': break;
-        default:
-          if (Character.isJavaIdentifierPart(c)) {
-            sb.append(c);
-          }
-      }
-    }
-    return sb.toString();
-  }
-
   private static String standardName(CacheManager cm, Cache c) {
     return
       "com.cache2k" + ":" +
       "type=Cache" +
-      ",manager=" + sanitizeJmxName(cm.getName()) +
-      ",name=" + sanitizeJmxName(c.getName());
+      ",manager=" + cm.getName() +
+      ",name=" + c.getName();
   }
 
   @Override
@@ -69,7 +52,7 @@ public class JmxSupport implements CacheLifeCycleListener {
         mbs.registerMBean(((BaseCache) c).getMXBean(),
           new ObjectName(_name));
       } catch (Exception e) {
-        throw new RuntimeException("Error registering JMX bean, name='" + _name + "'", e);
+        throw new CacheUsageExcpetion("Error registering JMX bean, name='" + _name + "'", e);
       }
     }
   }
@@ -78,11 +61,12 @@ public class JmxSupport implements CacheLifeCycleListener {
   public void cacheDestroyed(CacheManager cm, Cache c) {
     MBeanServer mbs = ManagementFactory.getPlatformMBeanServer();
     if (c instanceof BaseCache) {
+      String _name = standardName(cm, c);
       try {
-        mbs.unregisterMBean(new ObjectName(standardName(cm, c)));
+        mbs.unregisterMBean(new ObjectName(_name));
       } catch (InstanceNotFoundException ignore) {
       } catch (Exception e) {
-        throw new RuntimeException("Error registering JMX bean", e);
+        throw new CacheUsageExcpetion("Error deregistering JMX bean, name='" + _name + "'", e);
       }
     }
   }

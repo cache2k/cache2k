@@ -77,6 +77,7 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
   protected Info info;
   protected long clearedTime;
   protected long startedTime;
+  protected long touchedTime;
   protected int timerCancelCount = 0;
   protected long keyMismatch = 0;
   protected long putCnt = 0;
@@ -97,7 +98,7 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
 
   protected final Object lock = this;
 
-  protected Log log;
+  private Log lazyLog = null;
   protected CacheRefreshThreadPool refreshPool;
 
   protected Hash<E> mainHashCtrl;
@@ -111,9 +112,20 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
 
   protected Timer timer;
 
+  /**
+   * Lazy construct a log when needed, normally a cache logs nothing.
+   */
+  protected Log getLog() {
+    if (lazyLog == null) {
+      return lazyLog =
+        LogFactory.getLog(Cache.class.getName() + '.' + name);
+    }
+    return lazyLog;
+  }
+
   /** called via reflection from CacheBuilder */
   public void setCacheConfig(CacheConfig c) {
-    if (log != null) {
+    if (name != null) {
       throw new IllegalStateException("already configured");
     }
     setName(c.getName());
@@ -160,7 +172,6 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
       n = this.getClass().getSimpleName() + "#" + cacheCnt++;
     }
     name = n;
-    log = LogFactory.getLog(this.getClass().getName() + "." + name);
   }
 
   /**
@@ -175,7 +186,7 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
     }
     maxLinger = s * 1000;
     if (s == 0) {
-      log.warn("Expiry time set to 0, which means no caching!");
+      getLog().warn("Expiry time set to 0, which means no caching!");
     }
   }
 
@@ -193,8 +204,8 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
    * registers it with the resource monitor.
    */
   public void init() {
-    if (log == null) {
-      throw new IllegalArgumentException("Cache not configured, e.g. via setCacheConfig()");
+    if (name == null) {
+      name = "" + cacheCnt++;
     }
     if (maxSize == 0) {
       throw new IllegalArgumentException("maxElements must be >0");
@@ -202,7 +213,7 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
     clear();
     initTimer();
     if (refreshPool != null && timer == null) {
-      log.warn("background refresh is enabled, but elements are eternal");
+      getLog().warn("background refresh is enabled, but elements are eternal");
       refreshPool.destroy();
       refreshPool = null;
     }
@@ -230,6 +241,7 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
       mainHash = mainHashCtrl.init((Class<E>) newEntry().getClass());
       refreshHash = refreshHashCtrl.init((Class<E>) newEntry().getClass());
       clearedTime = System.currentTimeMillis();
+      touchedTime = clearedTime;
       if (startedTime == 0) { startedTime = clearedTime; }
       if (timer != null) {
         timer.cancel();
@@ -574,17 +586,17 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
       final int _SUPPRESS_COUNT = 777;
       if (keyMismatch % _SUPPRESS_COUNT ==  0) {
         if (keyMismatch > 0) {
-          log.fatal("Key mismatch! " + (_SUPPRESS_COUNT - 1) + " more errors suppressed");
+          getLog().fatal("Key mismatch! " + (_SUPPRESS_COUNT - 1) + " more errors suppressed");
         }
-        log.fatal("Key mismatch! Key hashcode changed! keyClass=" + e.key.getClass().getName());
+        getLog().fatal("Key mismatch! Key hashcode changed! keyClass=" + e.key.getClass().getName());
         String s;
         try {
           s = e.key.toString();
           if (s != null) {
-            log.fatal("Key mismatch! key.toString(): " + s);
+            getLog().fatal("Key mismatch! key.toString(): " + s);
           }
         } catch (Throwable t) {
-          log.fatal("Key mismatch! key.toString() threw exception", t);
+          getLog().fatal("Key mismatch! key.toString() threw exception", t);
         }
       }
       keyMismatch++;
@@ -640,6 +652,7 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
   }
 
   protected final void insert(E e, T v, long t0, long t, boolean _updateStatistics) {
+    touchedTime = t;
     long _nextRefreshTime = 77;
     if (maxLinger >= 0) {
       if (e.isVirgin() || e.hasException()) {
@@ -689,6 +702,7 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
   protected void timerEvent(final E e) {
     synchronized (lock) {
       CHECK_COUNTER_INVARIANTS();
+      touchedTime = e.nextRefreshTime;
       if (e.task == null) {
         return;
       }
@@ -711,7 +725,7 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
                 synchronized (lock) {
                   CHECK_COUNTER_INVARIANTS();
                   refreshSubmitFailedCnt++;
-                  log.warn("Refresh exception", ex);
+                  getLog().warn("Refresh exception", ex);
                   expireEntry(e);
                 }
               }
@@ -938,11 +952,22 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
           (info.creationTime + info.creationDeltaMs * 17 + 333 > t)) {
         return info;
       }
+      info = getLatestInfo(t);
+    }
+    return info;
+  }
+
+  public final Info getLatestInfo() {
+    return getLatestInfo(System.currentTimeMillis());
+  }
+
+  private Info getLatestInfo(long t) {
+    synchronized (lock) {
       info = new Info();
       info.creationTime = t;
       info.creationDeltaMs = (int) (System.currentTimeMillis() - t);
+      return info;
     }
-    return info;
   }
 
   public final CacheMXBean getMXBean() {
@@ -975,18 +1000,19 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
         + "refreshSubmitFailedCnt=" + fo.getRefreshSubmitFailedCnt() + ", "
         + "refreshHitCnt=" + fo.getRefreshHitCnt() + ", "
         + "putCnt=" + fo.getPutCnt() + ", "
+        + "putNewEntryCnt=" + fo.getPutNewEntryCnt() + ", "
         + "expiredCnt=" + fo.getExpiredCnt() + ", "
         + "evictedCnt=" + fo.getEvictedCnt() + ", "
-        + "keyMismatch=" + fo.getKeyMismatchCnt() + ", "
-        + "dataHitRate=" + fo.getDataHitString() + ", "
-        + "cacheHitRate=" + fo.getCacheHitString() + ", "
+        + "keyMutationCnt=" + fo.getKeyMutationCnt() + ", "
+        + "hitRate=" + fo.getDataHitString() + ", "
         + "collisionCnt=" + fo.getCollisionCnt() + ", "
         + "collisionSlotCnt=" + fo.getCollisionSlotCnt() + ", "
         + "longestCollisionSize=" + fo.getLongestCollisionSize() + ", "
-        + "hashQuality=" + fo.getHashQualityString() + ", "
+        + "hashQuality=" + fo.getHashQualityInteger() + ", "
         + "msecs/fetch=" + (fo.getMsecsPerFetch() >= 0 ? fo.getMsecsPerFetch() : "-")  + ", "
         + "created=" + (new java.sql.Timestamp(fo.getStarted())) + ", "
         + "cleared=" + (new java.sql.Timestamp(fo.getCleared())) + ", "
+        + "touched=" + (new java.sql.Timestamp(fo.getTouched())) + ", "
         + "infoCreated=" + (new java.sql.Timestamp(fo.getInfoCreated())) + ", "
         + "infoCreationDeltaMs=" + fo.getInfoCreationDeltaMs() + ", "
         + "impl=\"" + getClass().getSimpleName() + "\""
@@ -1036,19 +1062,72 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
     public long getRefreshHitCnt() { return refreshHitCnt; }
     public long getExpiredCnt() { return BaseCache.this.getExpiredCnt(); }
     public long getEvictedCnt() { return evictedCnt; }
+    public long getPutNewEntryCnt() { return putNewEntryCnt; }
     public long getPutCnt() { return putCnt; }
-    public long getKeyMismatchCnt() { return keyMismatch; }
+    public long getKeyMutationCnt() { return keyMismatch; }
     public double getDataHitRate() { return usageCnt == 0 ? 0 : (usageCnt - missCnt) * 100D / usageCnt; }
     public String getDataHitString() { return percentString(getDataHitRate()); }
-    public double getCacheHitRate() { return usageCnt == 0 ? 0 : (usageCnt - newEntryCnt + putCnt) * 100D / usageCnt; }
-    public String getCacheHitString() { return percentString(getCacheHitRate()); }
-    public double getHashQuality() {
-      if (size == 0) { return 100D; }
+    public double getEntryHitRate() { return usageCnt == 0 ? 0 : (usageCnt - newEntryCnt + putCnt) * 100D / usageCnt; }
+    public String getEntryHitString() { return percentString(getEntryHitRate()); }
+    /** How many items will be accessed with collision */
+    public int getCollisionPercentage() {
       return
-            (size - collisionInfo.collisionSlotCnt -
-                    (collisionInfo.collisionCnt - collisionInfo.collisionSlotCnt) * 3 -
-                    collisionInfo.longestCollisionSize * 7 ) * 100D / size; }
-    public String getHashQualityString() { return percentString(getHashQuality()); }
+        (size - collisionInfo.collisionCnt) * 100 / size;
+    }
+    /** 100 means each collision has its own slot */
+    public int getSlotsPercentage() {
+      return collisionInfo.collisionSlotCnt * 100 / collisionInfo.collisionCnt;
+    }
+    public int getHq0() {
+      return Math.max(0, 105 - collisionInfo.longestCollisionSize * 5) ;
+    }
+    public int getHq1() {
+      final int _metricPercentageBase = 60;
+      int m =
+        getCollisionPercentage() * ( 100 - _metricPercentageBase) / 100 + _metricPercentageBase;
+      m = Math.min(100, m);
+      m = Math.max(0, m);
+      return m;
+    }
+    public int getHq2() {
+      final int _metricPercentageBase = 80;
+      int m =
+        getSlotsPercentage() * ( 100 - _metricPercentageBase) / 100 + _metricPercentageBase;
+      m = Math.min(100, m);
+      m = Math.max(0, m);
+      return m;
+    }
+    public int getHashQualityInteger() {
+      if (size == 0 || collisionInfo.collisionSlotCnt == 0) {
+        return 100;
+      }
+      int _metric0 = getHq0();
+      int _metric1 = getHq1();
+      int _metric2 = getHq2();
+      if (_metric1 < _metric0) {
+        int v = _metric0;
+        _metric0 = _metric1;
+        _metric1 = v;
+      }
+      if (_metric2 < _metric0) {
+        int v = _metric0;
+        _metric0 = _metric2;
+        _metric2 = v;
+      }
+      if (_metric2 < _metric1) {
+        int v = _metric1;
+        _metric1 = _metric2;
+        _metric2 = v;
+      }
+      if (_metric0 <= 0) {
+        return 0;
+      }
+      _metric0 = _metric0 + ((_metric1 - 50) * 5 / _metric0);
+      _metric0 = _metric0 + ((_metric2 - 50) * 2 / _metric0);
+      _metric0 = Math.max(0, _metric0);
+      _metric0 = Math.min(100, _metric0);
+      return _metric0;
+    }
     public int getMsecsPerFetch() { return fetchCnt == 0 ? -1 : (int) (fetchMillis / fetchCnt); }
     public long getFetchMillis() { return fetchMillis; }
     public int getCollisionCnt() { return collisionInfo.collisionCnt; }
@@ -1057,6 +1136,7 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
     public String getIntegrityDescriptor() { return integrityState.getStateDescriptor(); }
     public long getStarted() { return startedTime; }
     public long getCleared() { return clearedTime; }
+    public long getTouched() { return touchedTime; }
     public long getInfoCreated() { return creationTime; }
     public int getInfoCreationDeltaMs() { return creationDeltaMs; }
 
@@ -1067,6 +1147,11 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
     @Override
     public int getSize() {
       return getInfo().getSize();
+    }
+
+    @Override
+    public int getMaximumSize() {
+      return maxSize;
     }
 
     @Override
@@ -1115,13 +1200,8 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
     }
 
     @Override
-    public long getPrefetchCnt() {
-      return -1;
-    }
-
-    @Override
-    public long getKeyMismatchCnt() {
-      return getInfo().getKeyMismatchCnt();
+    public long getKeyMutationCnt() {
+      return getInfo().getKeyMutationCnt();
     }
 
     @Override
@@ -1130,37 +1210,32 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
     }
 
     @Override
-    public double getDataHitRate() {
+    public double getHitRate() {
       return getInfo().getDataHitRate();
     }
 
     @Override
-    public double getCacheHitRate() {
-      return getInfo().getCacheHitRate();
+    public int getHashQuality() {
+      return getInfo().getHashQualityInteger();
     }
 
     @Override
-    public double getHashQuality() {
-      return getInfo().getHashQuality();
-    }
-
-    @Override
-    public int getCollisionCnt() {
+    public int getHashCollisionCnt() {
       return getInfo().getCollisionCnt();
     }
 
     @Override
-    public int getCollisionsSlotCnt() {
+    public int getHashCollisionsSlotCnt() {
       return getInfo().getCollisionSlotCnt();
     }
 
     @Override
-    public int getLongestCollisionSize() {
+    public int getHashLongestCollisionSize() {
       return getInfo().getLongestCollisionSize();
     }
 
     @Override
-    public int getMsecsPerFetch() {
+    public int getMillisPerFetch() {
       return getInfo().getMsecsPerFetch();
     }
 
@@ -1175,33 +1250,38 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
     }
 
     @Override
-    public String getImplementation() {
-      return getInfo().getImplementation();
-    }
-
-    @Override
     public String getIntegrityDescriptor() {
       return getInfo().getIntegrityDescriptor();
     }
 
     @Override
-    public Date getCreated() {
+    public Date getCreatedTime() {
       return new Date(getInfo().getStarted());
     }
 
     @Override
-    public Date getCleared() {
+    public Date getClearedTime() {
       return new Date(getInfo().getCleared());
     }
 
     @Override
-    public Date getInfoCreated() {
+    public Date getLastOperationTime() {
+      return new Date(getInfo().getTouched());
+    }
+
+    @Override
+    public Date getInfoCreatedTime() {
       return new Date(getInfo().getInfoCreated());
     }
 
     @Override
-    public int getInfoCreatedDetlaMs() {
+    public int getInfoCreatedDetlaMillis() {
       return getInfo().getInfoCreationDeltaMs();
+    }
+
+    @Override
+    public String getImplementation() {
+      return getInfo().getImplementation();
     }
 
     public void clear() {
