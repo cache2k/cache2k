@@ -143,7 +143,7 @@ public interface CacheInfoMXBean {
   /**
    * Milliseconds per fetch.
    */
-  int getMillisPerFetch();
+  double getMillisPerFetch();
 
   /**
    * Total number of time spent fetching entries from the cache source.
@@ -194,5 +194,15 @@ public interface CacheInfoMXBean {
    * Milliseconds needed to provide the data.
    */
   int getInfoCreatedDetlaMillis();
+
+  /**
+   * Single health value from 0 meaning good, 1 meaning warning, and 2 meaning red alert.
+   */
+  int getHealth();
+
+  /**
+   * String with additional statistics from the cache implementation.
+   */
+  String getExtraStatistics();
 
 }

@@ -23,21 +23,21 @@ package org.cache2k.jmx;
  */
 
 /**
- * Adds actions to the cache mx bean.
- *
- * @author Jens Wilke; created: 2013-07-15
+ * @author Jens Wilke; created: 2013-12-20
  */
 @SuppressWarnings("unused")
-public interface CacheMXBean extends CacheInfoMXBean {
+public interface CacheManagerMXBean {
 
   /**
-   * Clears the cache contents.
+   * Combined health of all caches.
+   *
+   * @see org.cache2k.jmx.CacheInfoMXBean#getHealth()
+   */
+  int getHealth();
+
+  /**
+   * Clear all associated caches.
    */
   void clear();
-
-  /**
-   * Clear the timing statistics for value fetching.
-   */
-  void clearTimingStatistics();
 
 }

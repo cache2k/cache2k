@@ -42,9 +42,10 @@ public class CacheManagerImpl extends CacheManager {
   
 
   static List<CacheLifeCycleListener> lifeCycleListeners = new ArrayList<>();
+  static JmxSupport jmxSupport;
 
   static {
-    lifeCycleListeners.add(new JmxSupport());
+    lifeCycleListeners.add(jmxSupport = new JmxSupport());
   }
 
   private Log log;
@@ -56,6 +57,7 @@ public class CacheManagerImpl extends CacheManager {
   public CacheManagerImpl() {
     name = getDefaultName();
     log = LogFactory.getLog(CacheManager.class.getName() + '.' + name);
+    jmxSupport.registerManager(this);
   }
 
   private void sendCreatedEvent(Cache c) {
@@ -120,21 +122,33 @@ public class CacheManagerImpl extends CacheManager {
   }
 
   @Override
-  public Iterator<Cache> iterator() {
+  public synchronized Iterator<Cache> iterator() {
+    checkClosed();
     return caches.iterator();
   }
 
   @Override
-  public void clear() {
+  public synchronized void clear() {
+    checkClosed();
     for (Cache c : caches) {
       c.clear();
     }
   }
 
   @Override
-  public void destroy() {
-    for (Cache c : caches) {
-      c.destroy();
+  public synchronized void destroy() {
+    if (caches != null) {
+      for (Cache c : caches) {
+        c.destroy();
+      }
+      jmxSupport.unregisterManager(this);
+      caches = null;
+    }
+  }
+
+  private void checkClosed() {
+    if (caches == null) {
+      throw new IllegalStateException("CacheManager already closed");
     }
   }
 

@@ -24,6 +24,7 @@ package org.cache2k.impl;
 
 import org.cache2k.Cache;
 import org.cache2k.CacheManager;
+import org.cache2k.jmx.CacheManagerMXBean;
 
 import javax.management.InstanceNotFoundException;
 import javax.management.MBeanServer;
@@ -34,14 +35,6 @@ import java.lang.management.ManagementFactory;
  * This
  */
 public class JmxSupport implements CacheLifeCycleListener {
-
-  private static String standardName(CacheManager cm, Cache c) {
-    return
-      "com.cache2k" + ":" +
-      "type=Cache" +
-      ",manager=" + cm.getName() +
-      ",name=" + c.getName();
-  }
 
   @Override
   public void cacheCreated(CacheManager cm, Cache c) {
@@ -70,5 +63,69 @@ public class JmxSupport implements CacheLifeCycleListener {
       }
     }
   }
+
+  public void registerManager(CacheManager m) {
+    MBeanServer mbs = ManagementFactory.getPlatformMBeanServer();
+    String _name = cacheManagerName(m);
+    try {
+      mbs.registerMBean(new ManagerMBean((CacheManagerImpl) m),new ObjectName(_name));
+    } catch (Exception e) {
+      throw new CacheUsageExcpetion("Error registering JMX bean, name='" + _name + "'", e);
+    }
+  }
+
+  public void unregisterManager(CacheManager m) {
+    MBeanServer mbs = ManagementFactory.getPlatformMBeanServer();
+    String _name = cacheManagerName(m);
+    try {
+      mbs.unregisterMBean(new ObjectName(_name));
+    } catch (InstanceNotFoundException ignore) {
+    } catch (Exception e) {
+      throw new CacheUsageExcpetion("Error deregistering JMX bean, name='" + _name + "'", e);
+    }
+  }
+
+
+  public static class ManagerMBean implements CacheManagerMXBean {
+
+    CacheManagerImpl manager;
+
+    public ManagerMBean(CacheManagerImpl manager) {
+      this.manager = manager;
+    }
+
+    @Override
+    public int getHealth() {
+      int v = 0;
+      for (Cache c : manager) {
+        if (c instanceof BaseCache) {
+          v = Math.max(v, ((BaseCache) c).getInfo().getHealth());
+        }
+      }
+      return v;
+    }
+
+    @Override
+    public void clear() {
+      manager.clear();
+    }
+  }
+
+
+  private static String cacheManagerName(CacheManager cm) {
+    return
+      "com.cache2k" + ":" +
+      "type=CacheManager" +
+      ",name=" + cm.getName();
+  }
+
+  private static String standardName(CacheManager cm, Cache c) {
+    return
+      "com.cache2k" + ":" +
+      "type=Cache" +
+      ",manager=" + cm.getName() +
+      ",name=" + c.getName();
+  }
+
 
 }

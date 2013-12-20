@@ -4,8 +4,6 @@ A poor mans issue tracker.
 
 ### Prio A / for 1.0
 
-  * basic statistics and JMX support
-  * JMX: cache manager, health, clearTimingStatistics
   * explain/check null support
   * API/implementation: transaction support for use as database cache, for the lock free cache implementations
   * exceptions: stick to old data when intermediate exceptions occur

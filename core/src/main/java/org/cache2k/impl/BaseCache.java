@@ -79,7 +79,7 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
   protected long startedTime;
   protected long touchedTime;
   protected int timerCancelCount = 0;
-  protected long keyMismatch = 0;
+  protected long keyMutationCount = 0;
   protected long putCnt = 0;
   protected long putNewEntryCnt = 0;
   protected long removeCnt = 0;
@@ -248,6 +248,13 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
         timer = null;
         initTimer();
       }
+    }
+  }
+
+  public void clearTimingStatistics() {
+    synchronized (lock) {
+      fetchCnt = 0;
+      fetchMillis = 0;
     }
   }
 
@@ -584,8 +591,8 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
   private void checkForHashCodeChange(Entry e) {
     if (modifiedHash(e.key.hashCode()) != e.hashCode) {
       final int _SUPPRESS_COUNT = 777;
-      if (keyMismatch % _SUPPRESS_COUNT ==  0) {
-        if (keyMismatch > 0) {
+      if (keyMutationCount % _SUPPRESS_COUNT ==  0) {
+        if (keyMutationCount > 0) {
           getLog().fatal("Key mismatch! " + (_SUPPRESS_COUNT - 1) + " more errors suppressed");
         }
         getLog().fatal("Key mismatch! Key hashcode changed! keyClass=" + e.key.getClass().getName());
@@ -599,7 +606,7 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
           getLog().fatal("Key mismatch! key.toString() threw exception", t);
         }
       }
-      keyMismatch++;
+      keyMutationCount++;
     }
   }
 
@@ -1009,7 +1016,7 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
         + "collisionSlotCnt=" + fo.getCollisionSlotCnt() + ", "
         + "longestCollisionSize=" + fo.getLongestCollisionSize() + ", "
         + "hashQuality=" + fo.getHashQualityInteger() + ", "
-        + "msecs/fetch=" + (fo.getMsecsPerFetch() >= 0 ? fo.getMsecsPerFetch() : "-")  + ", "
+        + "msecs/fetch=" + (fo.getMillisPerFetch() >= 0 ? fo.getMillisPerFetch() : "-")  + ", "
         + "created=" + (new java.sql.Timestamp(fo.getStarted())) + ", "
         + "cleared=" + (new java.sql.Timestamp(fo.getCleared())) + ", "
         + "touched=" + (new java.sql.Timestamp(fo.getTouched())) + ", "
@@ -1034,10 +1041,15 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
     long missCnt = fetchCnt - refreshCnt + peekMissCnt;
     long usageCnt = getHitCnt() + missCnt;
     CollisionInfo collisionInfo;
+    String extraStatistics;
     {
       collisionInfo = new CollisionInfo();
       Hash.calcHashCollisionInfo(collisionInfo, mainHash);
       Hash.calcHashCollisionInfo(collisionInfo, refreshHash);
+      extraStatistics = BaseCache.this.getExtraStatistics();
+      if (extraStatistics.startsWith(", ")) {
+        extraStatistics = extraStatistics.substring(2);
+      }
     }
 
     IntegrityState integrityState = getIntegrityState();
@@ -1064,7 +1076,7 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
     public long getEvictedCnt() { return evictedCnt; }
     public long getPutNewEntryCnt() { return putNewEntryCnt; }
     public long getPutCnt() { return putCnt; }
-    public long getKeyMutationCnt() { return keyMismatch; }
+    public long getKeyMutationCnt() { return keyMutationCount; }
     public double getDataHitRate() { return usageCnt == 0 ? 0 : (usageCnt - missCnt) * 100D / usageCnt; }
     public String getDataHitString() { return percentString(getDataHitRate()); }
     public double getEntryHitRate() { return usageCnt == 0 ? 0 : (usageCnt - newEntryCnt + putCnt) * 100D / usageCnt; }
@@ -1128,7 +1140,7 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
       _metric0 = Math.min(100, _metric0);
       return _metric0;
     }
-    public int getMsecsPerFetch() { return fetchCnt == 0 ? -1 : (int) (fetchMillis / fetchCnt); }
+    public double getMillisPerFetch() { return fetchCnt == 0 ? -1 : (fetchMillis * 1D / fetchCnt); }
     public long getFetchMillis() { return fetchMillis; }
     public int getCollisionCnt() { return collisionInfo.collisionCnt; }
     public int getCollisionSlotCnt() { return collisionInfo.collisionSlotCnt; }
@@ -1139,6 +1151,20 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
     public long getTouched() { return touchedTime; }
     public long getInfoCreated() { return creationTime; }
     public int getInfoCreationDeltaMs() { return creationDeltaMs; }
+    public int getHealth() {
+      if (integrityState.getStateFlags() > 0 ||
+          getHashQualityInteger() < 5) {
+        return 2;
+      }
+      if (getHashQualityInteger() < 30 ||
+        getKeyMutationCnt() > 0) {
+        return 1;
+      }
+      return 0;
+    }
+    public String getExtraStatistics() {
+      return extraStatistics;
+    }
 
   }
 
@@ -1235,8 +1261,8 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
     }
 
     @Override
-    public int getMillisPerFetch() {
-      return getInfo().getMsecsPerFetch();
+    public double getMillisPerFetch() {
+      return getInfo().getMillisPerFetch();
     }
 
     @Override
@@ -1288,6 +1314,20 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
       BaseCache.this.clear();
     }
 
+    @Override
+    public void clearTimingStatistics() {
+      BaseCache.this.clearTimingStatistics();
+    }
+
+    @Override
+    public int getHealth() {
+      return getInfo().getHealth();
+    }
+
+    @Override
+    public String getExtraStatistics() {
+      return getInfo().getExtraStatistics();
+    }
   }
 
 
