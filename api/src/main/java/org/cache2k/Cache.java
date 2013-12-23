@@ -23,6 +23,10 @@ package org.cache2k;
  * #L%
  */
 
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+
 /**
  * Interface to the cache2k cache implementation. To obtain a cache
  * instance use the {@link CacheBuilder}
@@ -45,12 +49,30 @@ public interface Cache<K, T> extends KeyValueSource<K,T> {
   public abstract T get(K key);
 
   /**
-   * Triggers a prefetch and returns immediately. If the entry is in the cache
-   * already and still fresh nothing will happen. If the entry is not in the cache
-   * or expired a fetch will be triggered. The fetch will take place with the same
-   * thread pool then the one used for background refresh.
+   * Signals the intend to call a get on the same key in the near future.
+   *
+   * <p/>Triggers a prefetch and returns immediately. If the entry is in
+   * the cache already and still fresh nothing will happen. If the entry
+   * is not in the cache or expired a fetch will be triggered. The fetch
+   * will take place with the same thread pool then the one used
+   * for background refresh.
    */
   public abstract void prefetch(K key);
+
+  /**
+   * Signals the intend to call get on the set of keys in the near future.
+   *
+   * <p/>Without threads: Issues a bulk fetch on the set of keys not in
+   * the cache.
+   *
+   * <p/>With threads: If a thread is available than start the
+   * fetch operation on the missing key mappings and return after the
+   * keys are locked for data fetch within the fetch. A sequential get
+   * on a key will stall until the value is loaded.
+   */
+  public abstract void prefetch(Set<K> keys);
+
+  public abstract void prefetch(List<K> keys, int _startIndex, int _afterEndIndex);
 
   /**
    * Returns the value if it is mapped within the cache.
@@ -67,6 +89,43 @@ public interface Cache<K, T> extends KeyValueSource<K,T> {
    * Remove the object mapped to key from the cache.
    */
   public abstract void remove(K key);
+
+  /**
+   * Remove the mappings for the keys atomically. Missing keys
+   * will be ignored.
+   *
+   * <p/>Fetches in flight, aka gets started before this method
+   * call but not yet finished, will be ignored. This is important
+   * since this call is used for transaction commits and the key
+   * may be locked within the database.
+   */
+  public abstract void removeAllAtOnce(Set<K> key);
+
+  /**
+   * Disclaimer: This method is here to be able to support known coding similar
+   * to JSR107. Do not use it. Just use prefetch() and the normal Cache.get().
+   * Since Cache.get() is almost as fast as a HashMap there is no need to
+   * build up mini-caches. The caller code will also look much cleaner.
+   *
+   * <p/>Bulk get: gets all values associated with the keys. If an exception
+   * happened during the fetch of any key, this exception will be thrown wrapped
+   * into a {@link PropagatedCacheException}. If more exceptions exist, the
+   * selection is arbitrary.
+   *
+   * <p/>The cache source does not need to support the bulk operation. It is
+   * neither guaranteed that the bulk get is called on the cache source if it
+   * exists.
+   *
+   * <p/>The operation may be split into chunks. It is not guaranteed that an
+   * atomically snapshot of the values will be returned.
+   *
+   * <p/>In contrast to JSR107 the following guarantees are met
+   * if the operation returns without exception: map.size() == keys.size()
+   *
+   * @exception PropagatedCacheException if there an exception happened
+   *            during fetch of any key.
+   */
+  public Map<K, T> getAll(Set<? extends K> keys);
 
   /**
    * Free all resources and remove the cache from the CacheManager.

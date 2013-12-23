@@ -70,13 +70,14 @@ public abstract class CacheManager implements Iterable<Cache> {
    * Get the default cache manager for the class loader
    */
   public synchronized static CacheManager getInstance() {
-    if (defaultManager == null) {
-      try {
-        defaultManager = (CacheManager)
-          Class.forName("org.cache2k.impl.CacheManagerImpl").newInstance();
-      } catch (Exception e) {
-        throw new LinkageError("cache2k implementaiton not found, cache2k-core.jar missing?", e);
-      }
+    if (defaultManager != null && !defaultManager.isDestroyed()) {
+      return defaultManager;
+    }
+    try {
+      defaultManager = (CacheManager)
+        Class.forName("org.cache2k.impl.CacheManagerImpl").newInstance();
+    } catch (Exception e) {
+      throw new LinkageError("cache2k implementation not found, cache2k-core.jar missing?", e);
     }
     return defaultManager;
   }
@@ -92,5 +93,7 @@ public abstract class CacheManager implements Iterable<Cache> {
    * Destroy all caches associated to this cache manager.
    */
   public abstract void destroy();
+
+  public abstract boolean isDestroyed();
 
 }

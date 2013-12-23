@@ -28,7 +28,7 @@ package org.cache2k.impl;
  * @author Jens Wilke; created: 2013-07-12
  */
 @SuppressWarnings("unchecked")
-public class ClockProPlusCache<K, T> extends BaseCache<ClockProPlusCache.Entry, K, T> {
+public class ClockProPlusCache<K, T> extends LockFreeCache<ClockProPlusCache.Entry, K, T> {
 
   long hotHits;
   long coldHits;
@@ -90,21 +90,6 @@ public class ClockProPlusCache<K, T> extends BaseCache<ClockProPlusCache.Entry, 
       handGhost = null;
       ghostHashCtrl = new Hash<>();
       ghostHash = ghostHashCtrl.init(Entry.class);
-    }
-  }
-
-  @Override
-  protected final Entry lookupOrNewEntrySynchronizing(K key) {
-    int hc = modifiedHash(key.hashCode());
-    Entry e = Hash.lookup(mainHash, key, hc);
-    if (e != null) {
-      recordHit(e);
-      return e;
-    }
-    synchronized (lock) {
-      e = lookupEntry(key, hc);
-      if (e == null) { return newEntry(key, hc); }
-      return e;
     }
   }
 

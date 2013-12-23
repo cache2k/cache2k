@@ -30,11 +30,9 @@ import javax.annotation.Nullable;
  * of a read-through cache may choose this simple interface for requesting data
  * only, rather to use the full blown cache interface.
  *
- * <p/>TODO: come up with a better name?
- *
  * @author Jens Wilke; created: 2013-12-17
  */
-public interface KeyValueSource<K, T> {
+public interface KeyValueSource<K, T> extends CacheSource<K, T> {
 
   /**
    * Returns object mapped to key

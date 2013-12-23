@@ -28,7 +28,7 @@ package org.cache2k.impl;
  *
  * @author Jens Wilke; created: 2013-12-01
  */
-public class ClockCache<K, T> extends BaseCache<ClockCache.Entry, K, T> {
+public class ClockCache<K, T> extends LockFreeCache<ClockCache.Entry, K, T> {
 
   long hits;
   int runCnt;
@@ -37,8 +37,6 @@ public class ClockCache<K, T> extends BaseCache<ClockCache.Entry, K, T> {
   int size;
 
   Entry hand;
-
-  Object lastEvictedKey;
 
   @Override
   public long getHitCnt() {
@@ -62,25 +60,6 @@ public class ClockCache<K, T> extends BaseCache<ClockCache.Entry, K, T> {
       super.clear();
       size = 0;
       hand = null;
-    }
-  }
-
-  /**
-   * First lookup in the hash unsynchronized, if missed, do synchronize and
-   * try again.
-   */
-  @Override
-  protected final Entry lookupOrNewEntrySynchronizing(K key) {
-    int hc = modifiedHash(key.hashCode());
-    Entry e = BaseCache.Hash.lookup(mainHash, key, hc);
-    if (e != null) {
-      recordHit(e);
-      return e;
-    }
-    synchronized (lock) {
-      e = lookupEntry(key, hc);
-      if (e == null) { return newEntry(key, hc); }
-      return e;
     }
   }
 
@@ -133,7 +112,6 @@ public class ClockCache<K, T> extends BaseCache<ClockCache.Entry, K, T> {
     _evictedEntry = hand;
     hand = (Entry) removeFromCyclicList(hand);
     size--;
-    lastEvictedKey = _evictedEntry.key;
     scanCnt += _scanCnt;
     removeEntryFromCache(_evictedEntry);
   }

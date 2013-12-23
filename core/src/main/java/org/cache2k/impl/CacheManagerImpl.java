@@ -180,8 +180,14 @@ public class CacheManagerImpl extends CacheManager {
         c.destroy();
       }
       jmxSupport.unregisterManager(this);
+      CacheManager.getInstance();
       caches = null;
     }
+  }
+
+  @Override
+  public boolean isDestroyed() {
+    return caches == null;
   }
 
   private void checkClosed() {

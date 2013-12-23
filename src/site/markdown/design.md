@@ -33,6 +33,31 @@ All new or extra features are not allowed to slow down the cache hit case.
 The core cache functionality should come in a tiny jar, so it is not much
 hassle and overhead to include it.
 
+## peek() and get()
+
+Cache.get() returns a value from the cache, or retrieves it from the cache source.
+The method Cache.peek() just returns a value from the cache, or null if no
+data was available. In a JSR107 cache implementation there is a single method for both. If no data source
+is present, Cache.get() returns null for an unmapped value.
+
+Since the caller intentions are different as well as different semantics are
+needed it is better to split the two methods. The code inside the cache
+is cleaner because the presence of the cache source does not need to be checked
+to alter the semantics. Furthermore the behaviour of peek() may be useful if
+a cache source is present.
+
+Right now there is a getAll() but no corresponding peekAll(), since the bulk
+operations only make sense in read-through operation.
+
+## Bulk API and JSR107 getAll()
+
+After implementing the getAll() JSR107 on top of C2K I came to the conclusion that
+it has to die again. Its still in the implementation but not exposed by the API.
+
+
+
+
+
 
 
 

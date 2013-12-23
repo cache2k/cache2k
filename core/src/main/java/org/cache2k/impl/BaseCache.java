@@ -36,11 +36,15 @@ import org.apache.commons.logging.LogFactory;
 
 import java.lang.reflect.Array;
 import java.security.SecureRandom;
+import java.util.AbstractMap;
+import java.util.AbstractSet;
 import java.util.Arrays;
 import java.util.BitSet;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 import java.util.Random;
 import java.util.Set;
@@ -99,6 +103,7 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
   protected long refreshHitCnt = 0;
   protected long newEntryCnt = 0;
   protected long refreshSubmitFailedCnt = 0;
+  protected int maximumBulkFetchSize = 100;
 
   protected final Object lock = this;
 
@@ -110,6 +115,10 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
 
   protected Hash<E> refreshHashCtrl;
   protected E[] refreshHash;
+
+  protected Hash<E> txHashCtrl;
+  protected E[] txHash;
+
 
   protected ExperimentalBulkCacheSource<K, T> experimentalBulkCacheSource;
   protected HashSet<K> bulkKeysCurrentlyRetrieved;
@@ -242,8 +251,10 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
       }
       mainHashCtrl = new Hash<>();
       refreshHashCtrl = new Hash<>();
+      txHashCtrl = new Hash<>();
       mainHash = mainHashCtrl.init((Class<E>) newEntry().getClass());
       refreshHash = refreshHashCtrl.init((Class<E>) newEntry().getClass());
+      txHash = txHashCtrl.init((Class<E>) newEntry().getClass());
       clearedTime = System.currentTimeMillis();
       touchedTime = clearedTime;
       if (startedTime == 0) { startedTime = clearedTime; }
@@ -397,17 +408,37 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
 
 
 
+  /**
+   * Record an entry hit.
+   */
   protected abstract void recordHit(E e);
 
+  /**
+   * New cache entry, put it in the replacement algorithm structure
+   */
   protected abstract void insertIntoReplcamentList(E e);
 
+  /**
+   * Entry object factory. Return an entry of the proper entry subtype for
+   * the replacement/eviction algorithm.
+   */
   protected abstract E newEntry();
 
   /**
-   * Search for an entry to evict and call {@link #removeEntryFromCache(BaseCache.Entry)}
-   * Precondictions: size > 0, evict was increased.
+   * Find entry to evict and call {@link #removeEntryFromCache(BaseCache.Entry)}.
+   * Also remove it from the replacement structures.
+   * precondition met: size > 0, evict was increased. Either this or evictSomeEntries()
+   * needs to be implemented.
    */
   protected abstract void evictEntry();
+
+  /**
+   * Evict at least one entry. Increase evictedCnt accordingly.
+   */
+  protected void evictSomeEntries() {
+    evictEntry();
+    evictedCnt++;
+  }
 
   /**
    * Precondition: Replacement list entry count == getSize()
@@ -426,11 +457,14 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
   protected E checkForGhost(K key, int hc) { return null; }
 
   /**
-   * Returns object mapped to key
+   * Implement unsynchronized lookup if it is supported by the eviction.
+   * If a null is returned the lookup is redone synchronized.
    */
+  protected E lookupEntryUnsynchronized(K key, int hc) { return null; }
+
   @Override
   public T get(K key) {
-    E e = lookupOrNewEntrySynchronizing(key);
+    E e = lookupOrNewEntrySynchronized(key);
     if (!e.isFetched()) {
       synchronized (e) {
         if (!e.isFetched()) {
@@ -441,21 +475,32 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
     return returnValue(e);
   }
 
-  /**
-   * Same as get but only returns the object if it is in the cache, null
-   * otherwise. No request to the layer below is made.
-   */
   @Override
   public T peek(K key) {
-    Entry e;
-    synchronized (lock) {
-      e = lookupEntry(key, modifiedHash(key.hashCode()));
+    int hc = modifiedHash(key.hashCode());
+    do {
+      Entry e = lookupEntryUnsynchronized(key, hc);
+      if (e == null) {
+        synchronized (lock) {
+          e = lookupEntry(key, hc);
+          if (e == null) {
+            e = Hash.lookup(txHash, key, hc);
+            if (e != null) {
+              synchronized (e) {
+                continue;
+              }
+            }
+          }
+        }
+      }
       if (e != null && e.isFetched()) {
         return returnValue(e);
       }
-      peekMissCnt++;
-    }
-    return null;
+      synchronized (lock) {
+        peekMissCnt++;
+      }
+      return null;
+    } while (true);
   }
 
   @Override
@@ -494,18 +539,99 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
   }
 
   @Override
-  public void prefetch(K key) {
+  public void prefetch(final K key) {
+    if (refreshPool == null ||
+        lookupEntrySynchronized(key) != null) {
+      return;
+    }
+    Runnable r = new Runnable() {
+      @Override
+      public void run() {
+        get(key);
+      }
+    };
+    refreshPool.submit(r);
   }
 
-  protected E lookupOrNewEntrySynchronizing(K key) {
-    synchronized (lock) {
-      int hc = modifiedHash(key.hashCode());
-      E e = lookupEntry(key, hc);
-      if (e == null) {
-        e = newEntry(key, hc);
-      }
-      return e;
+  public void prefetch(final List<K> keys, final int _startIndex, final int _endIndexExclusive) {
+    if (keys.size() == 0 || _startIndex == _endIndexExclusive) {
+      return;
     }
+    if (keys.size() <= _endIndexExclusive) {
+      throw new IndexOutOfBoundsException("end > size");
+    }
+    if (_startIndex > _endIndexExclusive) {
+      throw new IndexOutOfBoundsException("start > end");
+    }
+    if (_startIndex > 0) {
+      throw new IndexOutOfBoundsException("end < 0");
+    }
+    Set<K> ks = new AbstractSet<K>() {
+      @Override
+      public Iterator<K> iterator() {
+        return new Iterator<K>() {
+          int idx = _startIndex;
+          @Override
+          public boolean hasNext() {
+            return idx < _endIndexExclusive;
+          }
+
+          @Override
+          public K next() {
+            return keys.get(idx++);
+          }
+
+          @Override
+          public void remove() {
+            throw new UnsupportedOperationException();
+          }
+        };
+      }
+
+      @Override
+      public int size() {
+        return _endIndexExclusive - _startIndex;
+      }
+    };
+    prefetch(ks);
+  }
+
+  @Override
+  public void prefetch(final Set<K> keys) {
+    if (refreshPool == null) {
+      getAll(keys);
+      return;
+    }
+    boolean _complete = true;
+    for (K k : keys) {
+      if (lookupEntryUnsynchronized(k, modifiedHash(k.hashCode())) == null) {
+        _complete = false; break;
+      }
+    }
+    if (_complete) {
+      return;
+    }
+    Runnable r = new Runnable() {
+      @Override
+      public void run() {
+        getAll(keys);
+      }
+    };
+    refreshPool.submit(r);
+  }
+
+  protected E lookupOrNewEntrySynchronized(K key) {
+    int hc = modifiedHash(key.hashCode());
+    E e = lookupEntryUnsynchronized(key, hc);
+    if (e == null) {
+      synchronized (lock) {
+        e = lookupEntry(key, hc);
+        if (e == null) {
+          e = newEntry(key, hc);
+        }
+      }
+    }
+    return e;
   }
 
   protected T returnValue(Entry<E, K,T> e) {
@@ -521,6 +647,17 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
     E e = Hash.lookup(mainHash, key, hc);
     if (e == null) {
       return Hash.lookup(refreshHash, key, hc);
+    }
+    return e;
+  }
+
+  protected E lookupEntrySynchronized(K key) {
+    int hc = modifiedHash(key.hashCode());
+    E e = lookupEntryUnsynchronized(key, hc);
+    if (e != null) {
+      synchronized (lock) {
+        e = lookupEntry(key, hc);
+      }
     }
     return e;
   }
@@ -559,14 +696,6 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
     mainHash = mainHashCtrl.insert(mainHash, e);
     newEntryCnt++;
     return e;
-  }
-
-  /**
-   * Evict at least one entry. Increase evictedCnt accordingly.
-   */
-  protected void evictSomeEntries() {
-    evictEntry();
-    evictedCnt++;
   }
 
   /**
@@ -779,20 +908,98 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
   }
 
 
-  void putAtOnce(E[] _replacementList) {
+  @Override
+  public void removeAllAtOnce(Set<K> _keys) {
     synchronized (lock) {
-      E[] _existingEntries =
-        (E[]) new Entry[_replacementList.length];
-
+      for (K key : _keys) {
+        int hc = modifiedHash(key.hashCode());
+        E e = lookupEntryWoUsageRecording(key, hc);
+        if (e != null) {
+          removeEntryFromCacheAndReplacementList(e);
+          removeCnt++;
+        }
+      }
     }
   }
 
 
 
 
-  /** JSR107 convenience */
+
+
+  /**
+   * Idea: just return a map and do not do any thing
+   * If we have prefetch threads, do a prefetch!
+   */
+  public Map<K, T> getAllFast(final Set<? extends K> _keys) {
+    final Set<Map.Entry<K, T>> set =
+      new AbstractSet<Map.Entry<K, T>>() {
+        @Override
+        public Iterator<Map.Entry<K, T>> iterator() {
+          return new Iterator<Map.Entry<K, T>>() {
+            Iterator<? extends K> keyIterator = _keys.iterator();
+            @Override
+            public boolean hasNext() {
+              return keyIterator.hasNext();
+            }
+
+            @Override
+            public Map.Entry<K, T> next() {
+              final K key = keyIterator.next();
+              return new Map.Entry<K, T>(){
+                @Override
+                public K getKey() {
+                  return key;
+                }
+
+                @Override
+                public T getValue() {
+                  return get(key);
+                }
+
+                @Override
+                public T setValue(T value) {
+                  throw new UnsupportedOperationException();
+                }
+              };
+            }
+
+            @Override
+            public void remove() {
+              throw new UnsupportedOperationException();
+            }
+          };
+        }
+        @Override
+        public int size() {
+          return _keys.size();
+        }
+      };
+    return new AbstractMap<K, T>() {
+      @Override
+      public T get(Object key) {
+        if (containsKey(key)) {
+          return get(key);
+        }
+        return null;
+      }
+
+      @Override
+      public boolean containsKey(Object key) {
+        return _keys.contains(key);
+      }
+
+      @Override
+      public Set<Entry<K, T>> entrySet() {
+        return set;
+      }
+    };
+  }
+
+
+  /** JSR107 convenience getAll from array */
   public Map<K, T> getAll(K[] _keys) {
-    return getAll(new HashSet<K>(Arrays.asList(_keys)));
+    return getAll(new HashSet<>(Arrays.asList(_keys)));
   }
 
   /**
@@ -822,8 +1029,8 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
     E[] _entries = (E[]) new Entry[_keys.length];
     boolean _mayDeadlock;
     synchronized (lock) {
-      boolean _allFetched = checkAndCreateEntries(_keys, _result, _fetched, _entries, s, e);
-      if (_allFetched) {
+      int _fetchCount = checkAndCreateEntries(_keys, _result, _fetched, _entries, s, e);
+      if (_fetchCount == 0) {
         return;
       }
       _mayDeadlock = checkForDeadLockOrExceptions(_entries, s, e);
@@ -833,8 +1040,11 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
     }
     if (!_mayDeadlock) {
       try {
-        long t = System.currentTimeMillis();
-        fetchBulkLoop(_entries, _keys, _result, _fetched, s, e - 1, e, t);
+        for (int i = s; i < e; i += maximumBulkFetchSize) {
+          long t = System.currentTimeMillis();
+          int _endIdx = Math.min(e, i + maximumBulkFetchSize);
+          fetchBulkLoop(_entries, _keys, _result, _fetched, i, _endIdx - 1, _endIdx, t);
+        }
         return;
       } catch (Exception ex) {
         getLog().info("bulk get failed", ex);
@@ -956,27 +1166,26 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
    * lookup entries or create new ones if needed, already fill the result
    * if the entry was fetched
    */
-  private boolean checkAndCreateEntries(K[] _keys, T[] _result, BitSet _fetched, Entry[] _entries, int s, int e) {
-    boolean _allFetched = true;
+  private int checkAndCreateEntries(K[] _keys, T[] _result, BitSet _fetched, Entry[] _entries, int s, int e) {
+    int _fetchCount = e - s;
     for (int i = s; i < e; i++) {
-      if (_fetched.get(i)) { continue; }
+      if (_fetched.get(i)) { _fetchCount--; continue; }
       K key = _keys[i];
       int hc = modifiedHash(key.hashCode());
       Entry<E,K,T> _entry = lookupEntry(key, hc);
       if (_entry == null) {
         _entries[i] = newEntry(key, hc);
-        _allFetched = false;
       } else {
         if (_entry.isFetched()) {
           _result[i] = _entry.getValue();
           _fetched.set(i);
+          _fetchCount--;
         } else {
           _entries[i] = _entry;
-          _allFetched = false;
         }
       }
     }
-    return _allFetched;
+    return _fetchCount;
   }
 
 
@@ -1022,8 +1231,7 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
       return new IntegrityState()
         .checkEquals("newEntryCnt == getFetchesBecauseOfNewEntries() + getFetchesInFlight() + putNewEntryCnt",
           newEntryCnt, getFetchesBecauseOfNewEntries() + getFetchesInFlight() + putNewEntryCnt)
-        .checkLessOrEquals("getFetchedInFlight() <= Runtime.getRuntime().availableProcessors()",
-          getFetchesInFlight(), Runtime.getRuntime().availableProcessors())
+         .checkLessOrEquals("getFetchedInFlight() <= 100", getFetchesInFlight(), 100)
         .checkEquals("newEntryCnt == getSize() + evictedCnt + expiredRemoveCnt + removeCnt", newEntryCnt, getSize() + evictedCnt + expiredRemoveCnt + removeCnt)
         .checkEquals("newEntryCnt == getSize() + evictedCnt + getExpiredCnt() - expiredKeptCnt + removeCnt", newEntryCnt, getSize() + evictedCnt + getExpiredCnt() - expiredKeptCnt + removeCnt)
         .checkEquals("mainHashCtrl.size == Hash.calcEntryCount(mainHash)", mainHashCtrl.size, Hash.calcEntryCount(mainHash))
