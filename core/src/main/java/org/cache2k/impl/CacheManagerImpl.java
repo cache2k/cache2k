@@ -139,6 +139,44 @@ public class CacheManagerImpl extends CacheManager {
   public synchronized void destroy() {
     if (caches != null) {
       for (Cache c : caches) {
+        if (c instanceof BaseCache) {
+          ((BaseCache) c).destroyCancelTimer();
+        }
+      }
+      boolean _onging = false;
+      int _tryMillis = 3000;
+      long _later = System.currentTimeMillis() + _tryMillis;
+      do {
+        for (Cache c : caches) {
+          if (c instanceof BaseCache) {
+            BaseCache bc = ((BaseCache) c);
+            if (bc.destroyRefreshOngoing()) {
+              _onging = true;
+            }
+          }
+        }
+        if (!_onging) {
+          break;
+        }
+        try {
+          Thread.sleep(7);
+        } catch (Exception ignore) {
+        }
+      } while (System.currentTimeMillis() < _later);
+      if (_onging) {
+        for (Cache c : caches) {
+          if (c instanceof BaseCache) {
+            BaseCache bc = ((BaseCache) c);
+            if (bc.destroyRefreshOngoing()) {
+              bc.getLog().info("fetches ongoing, terminating...");
+              bc.getLog().info(bc.toString());
+            }
+          }
+        }
+      }
+      Set<Cache> _caches = new HashSet<>();
+      _caches.addAll(caches);
+      for (Cache c : _caches) {
         c.destroy();
       }
       jmxSupport.unregisterManager(this);

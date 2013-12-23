@@ -31,9 +31,9 @@ public interface CacheManagerMXBean {
   /**
    * Combined health of all caches.
    *
-   * @see org.cache2k.jmx.CacheInfoMXBean#getHealth()
+   * @see org.cache2k.jmx.CacheInfoMXBean#getAlert()
    */
-  int getHealth();
+  int getAlert();
 
   /**
    * Clear all associated caches.

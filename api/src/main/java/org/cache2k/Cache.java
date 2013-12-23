@@ -69,8 +69,16 @@ public interface Cache<K, T> extends KeyValueSource<K,T> {
   public abstract void remove(K key);
 
   /**
-   * Free all reasources and deregister the cache from the cache manager.
+   * Free all resources and remove the cache from the CacheManager.
    */
   public abstract void destroy();
+
+  /**
+   * Returns information about the caches internal information. Calling toString()
+   * on the cache object is an expansive operation, since internal statistics are
+   * collected and other thread users need to be locked out, to have a consistent
+   * view.
+   */
+  public String toString();
 
 }

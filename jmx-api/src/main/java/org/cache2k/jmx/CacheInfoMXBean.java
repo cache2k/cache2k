@@ -198,7 +198,7 @@ public interface CacheInfoMXBean {
   /**
    * Single health value from 0 meaning good, 1 meaning warning, and 2 meaning red alert.
    */
-  int getHealth();
+  int getAlert();
 
   /**
    * String with additional statistics from the cache implementation.

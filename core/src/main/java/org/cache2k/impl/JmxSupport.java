@@ -95,7 +95,7 @@ public class JmxSupport implements CacheLifeCycleListener {
     }
 
     @Override
-    public int getHealth() {
+    public int getAlert() {
       int v = 0;
       for (Cache c : manager) {
         if (c instanceof BaseCache) {

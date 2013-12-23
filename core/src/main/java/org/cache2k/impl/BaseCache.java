@@ -36,10 +36,14 @@ import org.apache.commons.logging.LogFactory;
 
 import java.lang.reflect.Array;
 import java.security.SecureRandom;
+import java.util.Arrays;
 import java.util.BitSet;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Random;
+import java.util.Set;
 import java.util.Timer;
 import java.util.TimerTask;
 
@@ -258,6 +262,20 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
     }
   }
 
+  void destroyCancelTimer() {
+    synchronized (lock) {
+      if (timer != null) {
+        timer.cancel();
+      }
+    }
+  }
+
+  boolean destroyRefreshOngoing() {
+    synchronized (lock) {
+      return getFetchesInFlight() > 0;
+    }
+  }
+
   /**
    * Free all resources.
    */
@@ -446,10 +464,12 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
     synchronized (lock) {
       putCnt++;
       int hc = modifiedHash(key.hashCode());
-      e = lookupEntryWoUsageRecording(key, hc);
+      e = lookupEntry(key, hc);
       if (e == null) {
         e = newEntry(key, hc);
         putNewEntryCnt++;
+      } else {
+        e.setReputState();
       }
     }
     long t = System.currentTimeMillis();
@@ -496,7 +516,7 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
     return v;
   }
 
-  /** Used by remove() and poke() */
+  /** Used by remove() and put() */
   protected E lookupEntryWoUsageRecording(K key, int hc) {
     E e = Hash.lookup(mainHash, key, hc);
     if (e == null) {
@@ -525,7 +545,6 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
    * Insert new entry in all structures (hash and replacement list). Evict an
    * entry we reached the maximum size.
    */
-
   protected E newEntry(K key, int hc) {
     if (getSize() >= maxSize) {
       evictSomeEntries();
@@ -569,7 +588,7 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
       mainHashCtrl.remove(mainHash, e) || refreshHashCtrl.remove(refreshHash, e);
     checkForHashCodeChange(e);
     if (e.isFetched()) {
-      e.setRemovedState(true);
+      e.setRemovedState();
     }
     if (e.task != null) {
       e.task.cancel();
@@ -660,7 +679,7 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
 
   protected final void insert(E e, T v, long t0, long t, boolean _updateStatistics) {
     touchedTime = t;
-    long _nextRefreshTime = 77;
+    long _nextRefreshTime = Entry.FETCHED_STATE;
     if (maxLinger >= 0) {
       if (e.isVirgin() || e.hasException()) {
         _nextRefreshTime = calcNextRefreshTime(null, v, 0L, t0);
@@ -680,7 +699,7 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
         }
       }
       if (e.isRemovedFromReplacementList()) {
-        e.setFetched(true);
+        e.setFetchedState();
         e.value = v;
         return;
       }
@@ -699,7 +718,7 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
     if (_nextRefreshTime > 10) {
       e.nextRefreshTime = _nextRefreshTime;
     } else {
-      e.setFetchNextTimeState(true);
+      e.setFetchNextTimeState();
     }
   }
 
@@ -760,6 +779,39 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
   }
 
 
+  void putAtOnce(E[] _replacementList) {
+    synchronized (lock) {
+      E[] _existingEntries =
+        (E[]) new Entry[_replacementList.length];
+
+    }
+  }
+
+
+
+
+  /** JSR107 convenience */
+  public Map<K, T> getAll(K[] _keys) {
+    return getAll(new HashSet<K>(Arrays.asList(_keys)));
+  }
+
+  /**
+   * JSR107 bulk interface
+   */
+  public Map<K, T> getAll(Set<? extends K> _keys) {
+    K[] ka = (K[]) new Object[_keys.size()];
+    int i = 0;
+    for (K k : _keys) {
+      ka[i++] = k;
+    }
+    T[] va = (T[]) new Object[ka.length];
+    getBulk(ka, va, new BitSet(), 0, ka.length);
+    Map<K,T> m = new HashMap<>();
+    for (i = 0; i < ka.length; i++) {
+      m.put(ka[i], va[i]);
+    }
+    return m;
+  }
 
   /**
    * Retrieve
@@ -785,6 +837,7 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
         fetchBulkLoop(_entries, _keys, _result, _fetched, s, e - 1, e, t);
         return;
       } catch (Exception ex) {
+        getLog().info("bulk get failed", ex);
       } finally {
         freeBulkKeyRetrievalMarkers(_entries);
       }
@@ -805,25 +858,59 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
    * @param i working index starting with e-1
    */
   final long fetchBulkLoop(E[] ea, K[] k, T[] r, BitSet _fetched, int s, int i, int end, long t) {
-    for (; i > s; i--) {
+    for (; i >= s; i--) {
       E e = ea[i];
-      if (ea[i] == null) { continue; }
+      if (e == null) { continue; }
       if (!e.isFetched()) {
         synchronized (e) {
           if (!e.isFetched()) {
             r[i] = null;
             _fetched.set(i, false);
             long t2 = fetchBulkLoop(ea, k, r, _fetched, s, i - 1, end, t);
-            insertFetched(e, r[i], t, t2);
+            if (!e.isFetched()) {
+              insertFetched(e, r[i], t, t2);
+            }
             return t2;
+          } else {
           }
         }
       }
       r[i] = (T) e.getValue();
       _fetched.set(i);
     }
-    experimentalBulkCacheSource.getBulk(k, r, _fetched, s, end);
-    return System.currentTimeMillis();
+    if (experimentalBulkCacheSource == null) {
+      sequentialFetch(ea, k, r, _fetched, s, end);
+      return 0;
+    } else {
+      try {
+        experimentalBulkCacheSource.getBulk(k, r, _fetched, s, end);
+      } catch (Throwable _ouch) {
+        T v = (T) new ExceptionWrapper(_ouch);
+        for (i = s; i < end; i++) {
+          Entry e = ea[i];
+          if (!e.isFetched()) {
+            e.value = v;
+            r[i] = v;
+          }
+        }
+      }
+      return System.currentTimeMillis();
+    }
+  }
+
+  final void sequentialFetch(E[] ea, K[] _keys, T[] _result, BitSet _fetched, int s, int end) {
+    for (int i = s; i < end; i++) {
+      E e = ea[i];
+      if (e == null) { continue; }
+      if (!e.isFetched()) {
+        synchronized (e) {
+          if (!e.isFetched()) {
+            fetch(e);
+          }
+          _result[i] = (T) e.getValue();
+        }
+      }
+    }
   }
 
   final void sequentialGetFallBack(K[] _keys, T[] _result, BitSet _fetched, int s, int e) {
@@ -865,7 +952,10 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
     return false;
   }
 
-  /** lookup entries or create new ones if needed, already fill the result if the entry was fetched */
+  /**
+   * lookup entries or create new ones if needed, already fill the result
+   * if the entry was fetched
+   */
   private boolean checkAndCreateEntries(K[] _keys, T[] _result, BitSet _fetched, Entry[] _entries, int s, int e) {
     boolean _allFetched = true;
     for (int i = s; i < e; i++) {
@@ -931,14 +1021,16 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
     synchronized (lock) {
       return new IntegrityState()
         .checkEquals("newEntryCnt == getFetchesBecauseOfNewEntries() + getFetchesInFlight() + putNewEntryCnt",
-              newEntryCnt, getFetchesBecauseOfNewEntries() + getFetchesInFlight() + putNewEntryCnt)
+          newEntryCnt, getFetchesBecauseOfNewEntries() + getFetchesInFlight() + putNewEntryCnt)
+        .checkLessOrEquals("getFetchedInFlight() <= Runtime.getRuntime().availableProcessors()",
+          getFetchesInFlight(), Runtime.getRuntime().availableProcessors())
         .checkEquals("newEntryCnt == getSize() + evictedCnt + expiredRemoveCnt + removeCnt", newEntryCnt, getSize() + evictedCnt + expiredRemoveCnt + removeCnt)
         .checkEquals("newEntryCnt == getSize() + evictedCnt + getExpiredCnt() - expiredKeptCnt + removeCnt", newEntryCnt, getSize() + evictedCnt + getExpiredCnt() - expiredKeptCnt + removeCnt)
         .checkEquals("mainHashCtrl.size == Hash.calcEntryCount(mainHash)", mainHashCtrl.size, Hash.calcEntryCount(mainHash))
         .checkEquals("refreshHashCtrl.size == Hash.calcEntryCount(refreshHash)", refreshHashCtrl.size, Hash.calcEntryCount(refreshHash))
         .checkLessOrEquals("size <= maxElements", getSize(), maxSize)
         .checkLessOrEquals("bulkKeysCurrentlyRetrieved.size() <= getSize()",
-                bulkKeysCurrentlyRetrieved == null ? 0 : bulkKeysCurrentlyRetrieved.size(), getSize());
+          bulkKeysCurrentlyRetrieved == null ? 0 : bulkKeysCurrentlyRetrieved.size(), getSize());
     }
   }
 
@@ -951,6 +1043,7 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
       }
     }
   }
+
 
   public final Info getInfo() {
     synchronized (lock) {
@@ -990,9 +1083,7 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
   @Override
   public String toString() {
     synchronized (lock) {
-      Info fo = new Info();
-      fo.creationTime = System.currentTimeMillis();
-      fo.creationDeltaMs = 0;
+      Info fo = getLatestInfo();
       return "Cache{" + name + "}"
         + "("
         + "size=" + fo.getSize() + ", "
@@ -1063,6 +1154,8 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
     public String getImplementation() { return BaseCache.this.getClass().getSimpleName(); }
     public int getSize() { return size; }
     public int getMaxSize() { return maxSize; }
+
+    public long getReadUsageCnt() { return usageCnt - (putCnt - putNewEntryCnt); }
     public long getUsageCnt() { return usageCnt; }
     public long getMissCnt() { return missCnt; }
     public long getNewEntryCnt() { return newEntryCnt; }
@@ -1077,9 +1170,12 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
     public long getPutNewEntryCnt() { return putNewEntryCnt; }
     public long getPutCnt() { return putCnt; }
     public long getKeyMutationCnt() { return keyMutationCount; }
-    public double getDataHitRate() { return usageCnt == 0 ? 0 : (usageCnt - missCnt) * 100D / usageCnt; }
+    public double getDataHitRate() {
+      long cnt = getReadUsageCnt();
+      return cnt == 0 ? 100 : (cnt - missCnt) * 100D / cnt;
+    }
     public String getDataHitString() { return percentString(getDataHitRate()); }
-    public double getEntryHitRate() { return usageCnt == 0 ? 0 : (usageCnt - newEntryCnt + putCnt) * 100D / usageCnt; }
+    public double getEntryHitRate() { return usageCnt == 0 ? 100 : (usageCnt - newEntryCnt + putCnt) * 100D / usageCnt; }
     public String getEntryHitString() { return percentString(getEntryHitRate()); }
     /** How many items will be accessed with collision */
     public int getCollisionPercentage() {
@@ -1320,7 +1416,7 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
     }
 
     @Override
-    public int getHealth() {
+    public int getAlert() {
       return getInfo().getHealth();
     }
 
@@ -1539,6 +1635,14 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
 
   public static class Entry<E extends Entry, K, T> {
 
+    static final int FETCHED_STATE = 10;
+    static final int REMOVED_STATE = 12;
+    static final int REFRESH_STATE = 11;
+    static final int REPUT_STATE = 13;
+    static final int EXPIRED_STATE = 4;
+    static final int FETCH_NEXT_TIME_STATE = 3;
+    static final int VIRGIN_STATE = 0;
+
     public TimerTask task;
     public long fetchedTime;
     public long nextRefreshTime;
@@ -1579,7 +1683,7 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
     }
 
     public final boolean isVirgin() {
-      return nextRefreshTime == 0;
+      return nextRefreshTime == VIRGIN_STATE;
     }
 
     /**
@@ -1590,7 +1694,7 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
      * it is really removed.
      */
     public final boolean isRemovedState() {
-      boolean b = nextRefreshTime == 12;
+      boolean b = nextRefreshTime == REMOVED_STATE;
       return b;
     }
 
@@ -1599,36 +1703,44 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
     }
 
     public final boolean isFetched() {
-      return nextRefreshTime >= 10;
+      return nextRefreshTime >= FETCHED_STATE;
     }
 
-    public void setFetched(boolean v) {
-      nextRefreshTime = v ? 10 : -1;
+    public void setFetchedState() {
+      nextRefreshTime = FETCHED_STATE;
     }
 
     /** Entry is kept in the cache but has expired */
     public void setExpiredState() {
-      nextRefreshTime = 4;
+      nextRefreshTime = EXPIRED_STATE;
     }
 
     public boolean isExpiredState() {
-      return nextRefreshTime == 4;
+      return nextRefreshTime == EXPIRED_STATE;
     }
 
-    public void setRemovedState(boolean v) {
-      nextRefreshTime = v ? 12 : 0;
+    public void setRemovedState() {
+      nextRefreshTime = REMOVED_STATE;
     }
 
-    public void setFetchNextTimeState(boolean v) {
-      nextRefreshTime = v ? 3 : 0;
+    public void setFetchNextTimeState() {
+      nextRefreshTime = FETCH_NEXT_TIME_STATE;
     }
 
     public void setGettingRefresh() {
-      nextRefreshTime = 11;
+      nextRefreshTime = REFRESH_STATE;
     }
 
     public boolean isGettingRefresh() {
-      return nextRefreshTime == 11;
+      return nextRefreshTime == REFRESH_STATE;
+    }
+
+    public boolean isBeeingReput() {
+      return nextRefreshTime == REPUT_STATE;
+    }
+
+    public void setReputState() {
+      nextRefreshTime = REPUT_STATE;
     }
 
     public boolean hasException() {
