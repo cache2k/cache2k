@@ -17,7 +17,7 @@ A poor mans issue tracker.
   * JMX support
   * noname caches/generated names and garbage collection?
   * special integer key variant
-  * prefetch: correct implementation
+  * prefetch: correct implementation / don't increment usage / counter for evicted non-used entries?
   * clean API package / SPI for implementation?
 
 ### Prio B
