@@ -63,7 +63,11 @@ import java.util.TimerTask;
 public abstract class BaseCache<E extends BaseCache.Entry, K, T>
   implements Cache<K, T>, CanCheckIntegrity {
 
-  static final Random SEED_RANDOM = new SecureRandom();
+  static int HASH_INITIAL_SIZE = 64;
+  static int HASH_LOAD_PERCENT = 64;
+
+
+  static final Random SEED_RANDOM = new Random(new SecureRandom().nextLong());
   static int cacheCnt = 0;
 
   protected int hashSeed = SEED_RANDOM.nextInt();
@@ -130,7 +134,7 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
    */
   protected Log getLog() {
     if (lazyLog == null) {
-      return lazyLog =
+      lazyLog =
         LogFactory.getLog(Cache.class.getName() + '.' + name);
     }
     return lazyLog;
@@ -856,7 +860,6 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
    */
   protected void timerEvent(final E e) {
     synchronized (lock) {
-      CHECK_COUNTER_INVARIANTS();
       touchedTime = e.nextRefreshTime;
       if (e.task == null) {
         return;
@@ -878,7 +881,6 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
                 fetch(e);
               } catch (Exception ex) {
                 synchronized (lock) {
-                  CHECK_COUNTER_INVARIANTS();
                   refreshSubmitFailedCnt++;
                   getLog().warn("Refresh exception", ex);
                   expireEntry(e);
@@ -925,76 +927,6 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
 
 
 
-
-
-  /**
-   * Idea: just return a map and do not do any thing
-   * If we have prefetch threads, do a prefetch!
-   */
-  public Map<K, T> getAllFast(final Set<? extends K> _keys) {
-    final Set<Map.Entry<K, T>> set =
-      new AbstractSet<Map.Entry<K, T>>() {
-        @Override
-        public Iterator<Map.Entry<K, T>> iterator() {
-          return new Iterator<Map.Entry<K, T>>() {
-            Iterator<? extends K> keyIterator = _keys.iterator();
-            @Override
-            public boolean hasNext() {
-              return keyIterator.hasNext();
-            }
-
-            @Override
-            public Map.Entry<K, T> next() {
-              final K key = keyIterator.next();
-              return new Map.Entry<K, T>(){
-                @Override
-                public K getKey() {
-                  return key;
-                }
-
-                @Override
-                public T getValue() {
-                  return get(key);
-                }
-
-                @Override
-                public T setValue(T value) {
-                  throw new UnsupportedOperationException();
-                }
-              };
-            }
-
-            @Override
-            public void remove() {
-              throw new UnsupportedOperationException();
-            }
-          };
-        }
-        @Override
-        public int size() {
-          return _keys.size();
-        }
-      };
-    return new AbstractMap<K, T>() {
-      @Override
-      public T get(Object key) {
-        if (containsKey(key)) {
-          return get(key);
-        }
-        return null;
-      }
-
-      @Override
-      public boolean containsKey(Object key) {
-        return _keys.contains(key);
-      }
-
-      @Override
-      public Set<Entry<K, T>> entrySet() {
-        return set;
-      }
-    };
-  }
 
 
   /** JSR107 convenience getAll from array */
@@ -1188,20 +1120,6 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
     return _fetchCount;
   }
 
-
-
-
-  protected boolean ENTRY_LOCK_HOLD(Entry e) {
-    return true;
-  }
-
-  protected boolean BIG_LOCK_HOLD() {
-    return true;
-  }
-
-  protected boolean CHECK_COUNTER_INVARIANTS() {
-    return true;
-  }
 
 
   public abstract long getHitCnt();
@@ -1647,6 +1565,8 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
    * "rehash" the incoming integer hash codes to overcome weak hash code
    * implementations. We expect good results for integers also.
    * Also add a random seed to the hash to protect against attacks on hashes.
+   * This is actually a slightly reduced version of the java.util.HashMap
+   * hash modification.
    */
   protected final int modifiedHash(int h) {
     h ^= hashSeed;
@@ -1821,8 +1741,8 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
 
     public E[] init(Class<E> _entryType) {
       size = 0;
-      maxFill = 40;
-      return (E[]) Array.newInstance(_entryType, 64);
+      maxFill = HASH_INITIAL_SIZE * HASH_LOAD_PERCENT / 100;
+      return (E[]) Array.newInstance(_entryType, HASH_INITIAL_SIZE);
     }
 
   }
