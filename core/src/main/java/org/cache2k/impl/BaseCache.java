@@ -72,7 +72,6 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
 
   protected int hashSeed = SEED_RANDOM.nextInt();
 
-
   /** Maximum amount of elements in cache */
   protected int maxSize = 5000;
 
@@ -122,7 +121,6 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
 
   protected Hash<E> txHashCtrl;
   protected E[] txHash;
-
 
   protected ExperimentalBulkCacheSource<K, T> experimentalBulkCacheSource;
   protected HashSet<K> bulkKeysCurrentlyRetrieved;
@@ -214,7 +212,6 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
   public void setCacheManager(CacheManagerImpl cm) {
     manager = cm;
   }
-
 
   /**
    * Registers the cache in a global set for the clearAllCaches function and
@@ -313,7 +310,6 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
     }
   }
 
-
   protected void removeFromList(final E e) {
     e.prev.next = e.next;
     e.next.prev = e.prev;
@@ -344,7 +340,6 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
     removeFromList(e);
     insertInList(_head, e);
   }
-
 
   protected final E insertIntoTailCyclicList(final E _head, final E e) {
     if (_head == null) {
@@ -408,9 +403,6 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
     } while (e != _head);
     return true;
   }
-
-
-
 
   /**
    * Record an entry hit.
@@ -909,7 +901,6 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
     }
   }
 
-
   @Override
   public void removeAllAtOnce(Set<K> _keys) {
     synchronized (lock) {
@@ -923,10 +914,6 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
       }
     }
   }
-
-
-
-
 
 
   /** JSR107 convenience getAll from array */
@@ -1119,8 +1106,6 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
     }
     return _fetchCount;
   }
-
-
 
   public abstract long getHitCnt();
 
@@ -1552,10 +1537,6 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
     }
   }
 
-
-
-
-
   static class CollisionInfo {
     int collisionCnt; int collisionSlotCnt; int longestCollisionSize;
   }
@@ -1728,7 +1709,6 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
     }
 
 
-
     public E[] insert(E[] _hashTable, Entry _entry) {
       size++;
       insertWoExpand(_hashTable, _entry);
@@ -1746,8 +1726,6 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
     }
 
   }
-
-
 
   protected class MyTimerTask extends TimerTask {
     E entry;

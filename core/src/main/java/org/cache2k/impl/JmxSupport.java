@@ -85,7 +85,6 @@ public class JmxSupport implements CacheLifeCycleListener {
     }
   }
 
-
   public static class ManagerMBean implements CacheManagerMXBean {
 
     CacheManagerImpl manager;
@@ -111,7 +110,6 @@ public class JmxSupport implements CacheLifeCycleListener {
     }
   }
 
-
   private static String cacheManagerName(CacheManager cm) {
     return
       "com.cache2k" + ":" +
@@ -126,6 +124,5 @@ public class JmxSupport implements CacheLifeCycleListener {
       ",manager=" + cm.getName() +
       ",name=" + c.getName();
   }
-
 
 }

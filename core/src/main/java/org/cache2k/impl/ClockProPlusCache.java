@@ -43,7 +43,6 @@ public class ClockProPlusCache<K, T> extends LockFreeCache<ClockProPlusCache.Ent
   int cold24hCnt;
   int coldScanCnt;
 
-
   int coldSize;
   int hotSize;
   int staleSize;
@@ -252,7 +251,6 @@ public class ClockProPlusCache<K, T> extends LockFreeCache<ClockProPlusCache.Ent
       }
       _coldSize--;
 
-
       if (!_evictedEntry.isStale()) {
         break;
       }
@@ -316,7 +314,6 @@ public class ClockProPlusCache<K, T> extends LockFreeCache<ClockProPlusCache.Ent
     return cnt;
   }
 
-
   long countHotColdHits(boolean _status) {
     if (handCold == null) {
       return 0;
@@ -344,8 +341,6 @@ public class ClockProPlusCache<K, T> extends LockFreeCache<ClockProPlusCache.Ent
     } while (e != handCold);
     return cnt;
   }
-
-
 
   @Override
   protected IntegrityState getIntegrityState() {
