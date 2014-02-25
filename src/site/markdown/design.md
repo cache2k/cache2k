@@ -1,5 +1,10 @@
 Documentation of design decisions and rationale.
 
+## Clean API in separate module
+
+The API is provided in a separate module. This way a clean API is defined and
+breakages will be avoided.
+
 ## Statistics are not optional, but build in
 
 The cache2k implementations have a fixed set of build-in statistics. There is

@@ -110,7 +110,6 @@
     <menu name="Main" inherit="top">
       <item name="Home" href="index.html" />
       <item name="Benchmarks" href="benchmarks.html" />
-      <item name="Changes" href="changes-report.html" />
     </menu>
     <menu name="Contribute" inherit="bottom">
       <item name="Issues on GitHub" href="https://github.com/headissue/cache2k/issues" />

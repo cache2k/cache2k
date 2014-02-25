@@ -6,6 +6,8 @@ the name cache2k.
 
 ## News
 
+  * **Version 0.19, 2014-02-25**: JMX support enabled, bulk API enhancements,
+    simple transaction support, see [Version 0.19 release notes](0/19.html)
   * **Version 0.18, 2013-12-18**: Initial open source release
 
 ## Status
