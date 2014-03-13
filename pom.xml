@@ -4,17 +4,54 @@
                              http://maven.apache.org/maven-v4_0_0.xsd">
   <modelVersion>4.0.0</modelVersion>
 
+  <parent>
+    <groupId>org.sonatype.oss</groupId>
+    <artifactId>oss-parent</artifactId>
+    <version>9</version>
+  </parent>
+
   <groupId>org.cache2k</groupId>
   <artifactId>cache2k-parent</artifactId>
   <packaging>pom</packaging>
   <version>0.20-SNAPSHOT</version>
   <name>cache2k parent</name>
-  <inceptionYear>2000</inceptionYear>
+  <description>cache2k is a well engineered high performance in-memory Java cache. It implements
+    latest eviction algorithms and coding techniques to achieve performance about 10 times better
+    then existing cache solutions. cache2k comes with a clean and concise API. The API is currently
+    still evolving until version 1.0 is reached.
+  </description>
   <url>http://cache2k.org</url>
+  <inceptionYear>2000</inceptionYear>
   <organization>
     <name>headissue GmbH, Munich</name>
     <url>http://headissue.com</url>
   </organization>
+
+  <issueManagement>
+    <system>GitHub</system>
+    <url>https://github.com/headissue/cache2k/issues</url>
+  </issueManagement>
+
+  <licenses>
+    <license>
+      <name>GNU General Public License (GPL)</name>
+      <url>http://www.gnu.org/licenses/gpl.txt</url>
+      <distribution>repo</distribution>
+    </license>
+  </licenses>
+
+  <scm>
+    <connection>scm:git:git@github.com:headissue/cache2k.git</connection>
+    <developerConnection>scm:git:git@github.com:headissue/cache2k.git</developerConnection>
+    <url>https://github.com/headissue/cache2k.git</url>
+  </scm>
+
+  <developers>
+    <developer>
+      <name>Jens Wilke</name>
+      <timezone>+1</timezone>
+    </developer>
+  </developers>
 
   <modules>
     <module>api</module>
@@ -118,6 +155,7 @@
   </build>
 
   <distributionManagement>
+    <!-- switched to maven central
     <repository>
       <id>headissue.public</id>
       <name>headissue public repository</name>
@@ -128,16 +166,12 @@
       <name>Internal Snapshot Repository</name>
       <url>${h7e.snapshot.deploy.url}</url>
     </snapshotRepository>
+    -->
     <site>
       <id>cache2k</id>
       <url>file:/tmp/cache2k-site</url>
     </site>
   </distributionManagement>
-
-  <issueManagement>
-    <system>GitHub</system>
-    <url>https://github.com/headissue/cache2k/issues</url>
-  </issueManagement>
 
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -274,6 +308,39 @@
         </pluginManagement>
       </build>
     </profile>
+
+    <!-- sign artifact, see:
+         https://docs.sonatype.org/display/Repository/How+To+Generate+PGP+Signatures+With+Maven
+         -->
+    <!-- this is build in the sonatype parent pom
+    <profile>
+      <id>release-sign-artifacts</id>
+      <activation>
+        <property>
+          <name>performRelease</name>
+          <value>true</value>
+        </property>
+      </activation>
+      <build>
+        <plugins>
+          <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-gpg-plugin</artifactId>
+            <version>1.1</version>
+            <executions>
+              <execution>
+                <id>sign-artifacts</id>
+                <phase>verify</phase>
+                <goals>
+                  <goal>sign</goal>
+                </goals>
+              </execution>
+            </executions>
+          </plugin>
+        </plugins>
+      </build>
+    </profile>
+    -->
 
   </profiles>
 
