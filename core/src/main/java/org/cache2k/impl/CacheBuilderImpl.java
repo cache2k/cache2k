@@ -22,6 +22,7 @@ package org.cache2k.impl;
  * #L%
  */
 
+import org.cache2k.BulkCacheSource;
 import org.cache2k.ExperimentalBulkCacheSource;
 import org.cache2k.Cache;
 import org.cache2k.CacheBuilder;
@@ -65,6 +66,7 @@ public class CacheBuilderImpl<K, T> extends CacheBuilder<K, T> {
     if (CacheSourceWithMetaInfo.class.isAssignableFrom(c)) { return cacheSourceWithMetaInfo; }
     if (CacheConfig.class.isAssignableFrom(c)) { return config; }
     if (ExperimentalBulkCacheSource.class.isAssignableFrom(c)) { return experimentalBulkCacheSource; }
+    if (BulkCacheSource.class.isAssignableFrom(c)) { return bulkCacheSource; }
     return null;
   }
 

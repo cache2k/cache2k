@@ -22,9 +22,12 @@ package org.cache2k.impl;
  * #L%
  */
 
+import org.cache2k.BulkCacheSource;
+import org.cache2k.CacheEntry;
 import org.cache2k.ExperimentalBulkCacheSource;
 import org.cache2k.Cache;
 import org.cache2k.CacheConfig;
+import org.cache2k.MutableCacheEntry;
 import org.cache2k.jmx.CacheMXBean;
 import org.cache2k.CacheSourceWithMetaInfo;
 import org.cache2k.CacheSource;
@@ -36,6 +39,7 @@ import org.apache.commons.logging.LogFactory;
 
 import java.lang.reflect.Array;
 import java.security.SecureRandom;
+import java.util.AbstractList;
 import java.util.AbstractMap;
 import java.util.AbstractSet;
 import java.util.Arrays;
@@ -123,6 +127,9 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
   protected E[] txHash;
 
   protected ExperimentalBulkCacheSource<K, T> experimentalBulkCacheSource;
+
+  protected BulkCacheSource<K, T> bulkCacheSource;
+
   protected HashSet<K> bulkKeysCurrentlyRetrieved;
 
   protected Timer timer;
@@ -179,6 +186,50 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
     experimentalBulkCacheSource = g;
   }
 
+  public void setBulkCacheSource(BulkCacheSource<K, T> s) {
+    bulkCacheSource = s;
+    if (source == null) {
+      source = new CacheSourceWithMetaInfo<K, T>() {
+        @Override
+        public T get(final K key, final long _currentTime, final T _previousValue, final long _timeLastFetched) throws Throwable {
+          final CacheEntry<K, T> entry = new CacheEntry<K, T>() {
+            @Override
+            public K getKey() {
+              return key;
+            }
+
+            @Override
+            public T getValue() {
+              return _previousValue;
+            }
+
+            @Override
+            public Throwable getException() {
+              return null;
+            }
+
+            @Override
+            public long getLastModification() {
+              return _timeLastFetched;
+            }
+          };
+          List<CacheEntry<K, T>> _entryList = new AbstractList<CacheEntry<K, T>>() {
+            @Override
+            public CacheEntry<K, T> get(int index) {
+              return entry;
+            }
+
+            @Override
+            public int size() {
+              return 1;
+            }
+          };
+          return bulkCacheSource.getValues(_entryList, _currentTime).get(0);
+        }
+      };
+    }
+  }
+
   /**
    * Set the name and configure a logging, used within cache construction.
    */
@@ -227,7 +278,11 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
     clear();
     initTimer();
     if (refreshPool != null && timer == null) {
-      getLog().warn("background refresh is enabled, but elements are eternal");
+      if (maxLinger == 0) {
+        getLog().warn("Background refresh is enabled, but elements are fetched always. Disable background refresh.");
+      } else {
+        getLog().warn("Background refresh is enabled, but elements are eternal. Disable background refresh.");
+      }
       refreshPool.destroy();
       refreshPool = null;
     }
@@ -235,7 +290,7 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
 
   /** add or remove a timer */
   private synchronized void initTimer() {
-    if (timer == null && maxLinger > 0) {
+    if (timer == null && maxLinger > 0 || refreshController != null) {
       timer = new Timer(name, true);
       return;
     }
@@ -462,9 +517,21 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
   public T get(K key) {
     E e = lookupOrNewEntrySynchronized(key);
     if (!e.isFetched()) {
-      synchronized (e) {
-        if (!e.isFetched()) {
-          fetch(e);
+      if (e.needsTimeCheck()) {
+        long t = System.currentTimeMillis();
+        if (t < -e.nextRefreshTime) {
+          return returnValue(e);
+        }
+        synchronized (e) {
+          if (!e.isFetched()) {
+            fetch(e);
+          }
+        }
+      } else {
+        synchronized (e) {
+          if (!e.isFetched()) {
+            fetch(e);
+          }
         }
       }
     }
@@ -756,12 +823,12 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
 
   /**
    * Time when the element should be fetched again from the underlying storage.
-   * If 0 then the object should not be cached at all.
+   * If 0 then the object should not be cached at all. -1 means no expiry.
    */
   protected long calcNextRefreshTime(
      T _oldObject, T _newObject, long _lastUpdate, long now) {
     RefreshController<T> lc = refreshController;
-    long _tMaximum = maxLinger + now;
+    long _tMaximum = maxLinger >= 0 ? maxLinger + now : Long.MAX_VALUE;
     long t = _tMaximum;
     if (lc != null && !(_newObject instanceof ExceptionWrapper)) {
       t = lc.calculateNextRefreshTime(_oldObject, _newObject, _lastUpdate, now);
@@ -769,13 +836,16 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
         t = _tMaximum;
       }
     }
+    if (t == -1) {
+      return -1;
+    }
     if (t <= now) {
       return 0;
     }
     return t;
   }
 
-  protected void fetch(E e) {
+  protected void fetch(final E e) {
     long t0 = System.currentTimeMillis();
     T v;
     try {
@@ -804,8 +874,8 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
 
   protected final void insert(E e, T v, long t0, long t, boolean _updateStatistics) {
     touchedTime = t;
-    long _nextRefreshTime = Entry.FETCHED_STATE;
-    if (maxLinger >= 0) {
+    long _nextRefreshTime = maxLinger == 0 ? Entry.FETCH_NEXT_TIME_STATE : Entry.FETCHED_STATE;
+    if (timer != null) {
       if (e.isVirgin() || e.hasException()) {
         _nextRefreshTime = calcNextRefreshTime(null, v, 0L, t0);
       } else {
@@ -833,18 +903,25 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
       }
       e.fetchedTime = t;
       e.value = v;
-      if (timer != null && _nextRefreshTime > 0) {
-        MyTimerTask tt = new MyTimerTask();
-        tt.entry = e;
-        timer.schedule(tt, new Date(_nextRefreshTime));
-        e.task = tt;
+      if (timer != null && _nextRefreshTime > Entry.EXPIRY_TIME_MIN) {
+        long _timerTime = _nextRefreshTime - 4;
+        if (_timerTime < t) {
+          _nextRefreshTime = -_nextRefreshTime;
+        } else {
+          MyTimerTask tt = new MyTimerTask();
+          tt.entry = e;
+          timer.schedule(tt, new Date(_timerTime));
+          e.task = tt;
+        }
+      } else {
+        if (_nextRefreshTime == 0) {
+          _nextRefreshTime = Entry.FETCH_NEXT_TIME_STATE;
+        } else if (_nextRefreshTime == -1) {
+          _nextRefreshTime = Entry.FETCHED_STATE;
+        }
       }
     }
-    if (_nextRefreshTime > 10) {
-      e.nextRefreshTime = _nextRefreshTime;
-    } else {
-      e.setFetchNextTimeState();
-    }
+    e.nextRefreshTime = _nextRefreshTime;
   }
 
   /**
@@ -852,7 +929,6 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
    */
   protected void timerEvent(final E e) {
     synchronized (lock) {
-      touchedTime = e.nextRefreshTime;
       if (e.task == null) {
         return;
       }
@@ -891,8 +967,14 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
 
   protected void expireEntry(E e) {
     if (keepAfterExpired) {
+      synchronized (e) {
+        if (e.hasExpiryTime()) {
+          e.nextRefreshTime = -e.nextRefreshTime;
+        } else {
+          e.setExpiredState();
+        }
+      }
       expiredKeptCnt++;
-      e.setExpiredState();
     } else {
       if (!e.isRemovedFromReplacementList()) {
         expiredRemoveCnt++;
@@ -924,7 +1006,7 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
   /**
    * JSR107 bulk interface
    */
-  public Map<K, T> getAll(Set<? extends K> _keys) {
+  public Map<K, T> getAll(final Set<? extends K> _keys) {
     K[] ka = (K[]) new Object[_keys.size()];
     int i = 0;
     for (K k : _keys) {
@@ -932,11 +1014,67 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
     }
     T[] va = (T[]) new Object[ka.length];
     getBulk(ka, va, new BitSet(), 0, ka.length);
-    Map<K,T> m = new HashMap<>();
-    for (i = 0; i < ka.length; i++) {
-      m.put(ka[i], va[i]);
-    }
-    return m;
+    return new AbstractMap<K, T>() {
+      @Override
+      public T get(Object key) {
+        if (containsKey(key)) {
+          return BaseCache.this.get((K) key);
+        }
+        return null;
+      }
+
+      @Override
+      public boolean containsKey(Object key) {
+        return _keys.contains(key);
+      }
+
+      @Override
+      public Set<Entry<K, T>> entrySet() {
+        return new AbstractSet<Entry<K, T>>() {
+          @Override
+          public Iterator<Entry<K, T>> iterator() {
+            return new Iterator<Entry<K, T>>() {
+              Iterator<? extends K> it = _keys.iterator();
+              @Override
+              public boolean hasNext() {
+                return it.hasNext();
+              }
+
+              @Override
+              public Entry<K, T> next() {
+                final K k = it.next();
+                final T t = BaseCache.this.get(k);
+                return new Entry<K, T>() {
+                  @Override
+                  public K getKey() {
+                    return k;
+                  }
+
+                  @Override
+                  public T getValue() {
+                    return t;
+                  }
+
+                  @Override
+                  public T setValue(T value) {
+                    throw new UnsupportedOperationException();
+                  }
+                };
+              }
+
+              @Override
+              public void remove() {
+              }
+            };
+          }
+
+          @Override
+          public int size() {
+            return _keys.size();
+          }
+        };
+      }
+    };
   }
 
   /**
@@ -986,7 +1124,7 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
    * @param end end index, exclusive
    * @param i working index starting with e-1
    */
-  final long fetchBulkLoop(E[] ea, K[] k, T[] r, BitSet _fetched, int s, int i, int end, long t) {
+  final long fetchBulkLoop(final E[] ea, K[] k, T[] r, BitSet _fetched, int s, int i, int end, long t) {
     for (; i >= s; i--) {
       E e = ea[i];
       if (e == null) { continue; }
@@ -1007,9 +1145,53 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
       r[i] = (T) e.getValue();
       _fetched.set(i);
     }
-    if (experimentalBulkCacheSource == null) {
+    int _needsFetchCnt = 0;
+    for (i = s; i < end; i++) {
+      if (!_fetched.get(i)) {
+        _needsFetchCnt++;
+      }
+    }
+    if (_needsFetchCnt == 0) {
+      return 0;
+    }
+    if (experimentalBulkCacheSource == null && bulkCacheSource == null) {
       sequentialFetch(ea, k, r, _fetched, s, end);
       return 0;
+    } if (bulkCacheSource != null) {
+      final int[] _index = new int[_needsFetchCnt];
+      int idx = 0;
+      for (i = s; i < end; i++) {
+        if (!_fetched.get(i)) {
+          _index[idx++] = i;
+        }
+      }
+      List<CacheEntry<K, T>> _entries = new AbstractList<CacheEntry<K,T>>() {
+        @Override
+        public CacheEntry<K, T> get(int index) {
+          return ea[_index[index]];
+        }
+
+        @Override
+        public int size() {
+          return _index.length;
+        }
+      };
+      try {
+        List<T> _resultList = bulkCacheSource.getValues(_entries, t);
+        if (_resultList.size() != _index.length) {
+          throw new CacheUsageExcpetion("bulk source returned list with wrong length");
+        }
+        for (i = 0; i < _index.length; i++) {
+          r[_index[i]] = _resultList.get(i);
+        }
+      } catch (Throwable _ouch) {
+        T v = (T) new ExceptionWrapper(_ouch);
+        for (i = s; i < end; i++) {
+          if (!_fetched.get(i)) {
+            r[i] = v;
+          }
+        }
+      }
     } else {
       try {
         experimentalBulkCacheSource.getBulk(k, r, _fetched, s, end);
@@ -1018,13 +1200,12 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
         for (i = s; i < end; i++) {
           Entry e = ea[i];
           if (!e.isFetched()) {
-            e.value = v;
             r[i] = v;
           }
         }
       }
-      return System.currentTimeMillis();
     }
+    return System.currentTimeMillis();
   }
 
   final void sequentialFetch(E[] ea, K[] _keys, T[] _result, BitSet _fetched, int s, int end) {
@@ -1739,7 +1920,7 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
 
   final static InitialValuePleaseComplainToJens INITIAL_VALUE = new InitialValuePleaseComplainToJens();
 
-  public static class Entry<E extends Entry, K, T> {
+  public static class Entry<E extends Entry, K, T> implements MutableCacheEntry<K,T> {
 
     static final int FETCHED_STATE = 10;
     static final int REMOVED_STATE = 12;
@@ -1748,9 +1929,14 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
     static final int EXPIRED_STATE = 4;
     static final int FETCH_NEXT_TIME_STATE = 3;
     static final int VIRGIN_STATE = 0;
+    static final int EXPIRY_TIME_MIN = 20;
 
     public TimerTask task;
     public long fetchedTime;
+    /**
+     * Contains the next time a refresh has to occur. Low values have a special meaning, see defined constants.
+     * Negative values means the refresh time was expired, and we need to check the time.
+     */
     public long nextRefreshTime;
 
     public K key;
@@ -1805,7 +1991,7 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
     }
 
     public final boolean isFetchNextTimeState() {
-      return nextRefreshTime == 3;
+      return nextRefreshTime == FETCH_NEXT_TIME_STATE;
     }
 
     public final boolean isFetched() {
@@ -1849,6 +2035,10 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
       nextRefreshTime = REPUT_STATE;
     }
 
+    public boolean needsTimeCheck() {
+      return nextRefreshTime < 0;
+    }
+
     public boolean hasException() {
       return value instanceof ExceptionWrapper;
     }
@@ -1867,6 +2057,25 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
     public T getValue() {
       if (value instanceof ExceptionWrapper) { return null; }
       return value;
+    }
+
+    public boolean hasExpiryTime() {
+      return nextRefreshTime > EXPIRY_TIME_MIN;
+    }
+
+    @Override
+    public void setValue(T v) {
+      value = v;
+    }
+
+    @Override
+    public K getKey() {
+      return key;
+    }
+
+    @Override
+    public long getLastModification() {
+      return fetchedTime;
     }
 
 

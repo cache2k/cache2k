@@ -2,7 +2,7 @@ package org.cache2k;
 
 /*
  * #%L
- * cache2k api only package
+ * cache2k API only package
  * %%
  * Copyright (C) 2000 - 2014 headissue GmbH, Munich
  * %%
@@ -29,9 +29,8 @@ public interface MutableEntry<K, T> {
 
   T getValue();
   K getKey();
-  Throwable getException();
   void setValue(T v);
   void setException(Throwable ex);
-  long lastModification();
+  long getLastModification();
 
 }

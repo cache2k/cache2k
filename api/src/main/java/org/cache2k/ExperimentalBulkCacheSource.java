@@ -3,7 +3,7 @@ package org.cache2k;
 
 /*
  * #%L
- * cache2k api only package
+ * cache2k API only package
  * %%
  * Copyright (C) 2000 - 2014 headissue GmbH, Munich
  * %%

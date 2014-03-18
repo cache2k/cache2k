@@ -2,7 +2,7 @@ package org.cache2k;
 
 /*
  * #%L
- * cache2k api only package
+ * cache2k API only package
  * %%
  * Copyright (C) 2000 - 2014 headissue GmbH, Munich
  * %%
@@ -115,10 +115,23 @@ public class CacheConfig {
     return expirySeconds;
   }
 
+  public boolean isEternal() {
+    return expirySeconds == -1 || expirySeconds == Integer.MAX_VALUE;
+  }
+
   /**
-   * Time to pass until an entry is expired and will not be returned by the cache any
-   * more. 0 means expiry is immediately. -1 or {@link Integer#MAX_VALUE} means
-   * no expiry.
+   * Set cache entry don't expiry by time.
+   */
+  public void setEternal(boolean v) {
+    if (v) {
+      this.expirySeconds = -1;
+    }
+  }
+
+  /**
+   * Time to pass until an entry is expired. Expiry means that an entry is not returned by the
+   * cache any more. 0 means expiry is immediately (no caching). -1 or {@link Integer#MAX_VALUE}
+   * means no expiry, this is identical to setEternal(true).
    */
   public void setExpirySeconds(int expirySeconds) {
     this.expirySeconds = expirySeconds;

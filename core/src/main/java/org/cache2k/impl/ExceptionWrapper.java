@@ -37,4 +37,8 @@ public class ExceptionWrapper {
     return exception;
   }
 
+  public String toString() {
+    return exception.toString();
+  }
+
 }

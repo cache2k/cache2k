@@ -3,7 +3,7 @@ package org.cache2k;
 
 /*
  * #%L
- * cache2k api only package
+ * cache2k API only package
  * %%
  * Copyright (C) 2000 - 2014 headissue GmbH, Munich
  * %%
@@ -30,6 +30,7 @@ import javax.annotation.Nullable;
  * An interface to get a value by a key.
  * 
  * @author Jens Wilke
+ * @see CacheSourceWithMetaInfo alternative cache source with more information
  */
 public interface CacheSource<K, T> {
 

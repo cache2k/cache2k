@@ -10,9 +10,13 @@ A poor mans issue tracker.
   * improve thread usage and memory footprint for expiry timer
   * Rethink on cache manager, SPI, maybe take a look on jsr107 for this
 
+  * Benchmark with more than one thead:
+    Example: http://sourceforge.net/p/nitrocache/blog/2012/05/performance-benchmark-nitrocache--ehcache--infinispan--jcs--cach4j
+
 #### Details
 
   * expiry/refresh: Implement sharp expiry and background refresh
+  * change cache size during operation: maximumSize / capacity JMX setting
   * RefreshController: Rename? Add key!
   * explain/check null support
   * exceptions: stick to old data when intermediate exceptions occur
@@ -29,6 +33,13 @@ A poor mans issue tracker.
   * prefetch: correct implementation / don't increment usage / counter for evicted non-used entries?
   * clean API package / SPI for implementation?
   * getEntry()
+  * remove commons-logging dependency?
+  * Memory size estimation, check this:
+    * http://codespot.net/2012/01/04/measuring-java-object-sizes/?relatedposts_exclude=382
+    * http://marxsoftware.blogspot.de/2011/12/estimating-java-object-sizes-with.html
+    * http://stackoverflow.com/questions/690805/any-java-caches-that-can-limit-memory-usage-of-in-memory-cache-not-just-instanc?rq=1
+  * cache feature comparison: e.g.ehcache synchronuous write
+  * exceptions: fetchExceptions counter in statistic!
 
 ### Prio B
 

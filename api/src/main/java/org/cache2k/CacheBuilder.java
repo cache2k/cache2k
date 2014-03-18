@@ -2,7 +2,7 @@ package org.cache2k;
 
 /*
  * #%L
- * cache2k api only package
+ * cache2k API only package
  * %%
  * Copyright (C) 2000 - 2014 headissue GmbH, Munich
  * %%
@@ -66,6 +66,7 @@ public abstract class CacheBuilder<K,T> implements Cloneable {
   protected CacheSourceWithMetaInfo cacheSourceWithMetaInfo;
   protected RefreshController refreshController;
   protected ExperimentalBulkCacheSource experimentalBulkCacheSource;
+  protected BulkCacheSource bulkCacheSource;
 
   /** Builder is constructed from prototype */
   protected void ctor(Class<K> _keyType, Class<T> _valueType, @Nullable Class<?> _entryType) {
@@ -119,6 +120,11 @@ public abstract class CacheBuilder<K,T> implements Cloneable {
     return this;
   }
 
+  public CacheBuilder<K, T> eternal(boolean v) {
+    config.setEternal(v);
+    return this;
+  }
+
   public CacheBuilder<K, T> expirySecs(int v) {
     config.setExpirySeconds(v);
     return this;
@@ -136,6 +142,11 @@ public abstract class CacheBuilder<K,T> implements Cloneable {
 
   public CacheBuilder<K, T> source(ExperimentalBulkCacheSource<K, T> g) {
     experimentalBulkCacheSource = g;
+    return this;
+  }
+
+  public CacheBuilder<K, T> source(BulkCacheSource<K, T> g) {
+    bulkCacheSource = g;
     return this;
   }
 

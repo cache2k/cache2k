@@ -2,7 +2,7 @@ package org.cache2k;
 
 /*
  * #%L
- * cache2k api only package
+ * cache2k API only package
  * %%
  * Copyright (C) 2000 - 2014 headissue GmbH, Munich
  * %%
@@ -23,10 +23,10 @@ package org.cache2k;
  */
 
 /**
- * Interface for use with {@link EntryRefreshController}
+ * Interface for use with {@link ValueRefreshController}
  *
  * @author Jens Wilke; created: 2013-05-02
- * @see EntryRefreshController
+ * @see ValueRefreshController
  */
 public interface ValueWithNextRefreshTime {
 
