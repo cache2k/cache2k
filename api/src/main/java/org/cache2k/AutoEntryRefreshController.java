@@ -30,6 +30,7 @@ import javax.annotation.Nullable;
  * is fetched from the object. If not, the default linger time is used by the cache.
  *
  * @author Jens Wilke; created: 2013-05-02
+ * @deprecated
  */
 public final class AutoEntryRefreshController<T> implements RefreshController<T> {
 

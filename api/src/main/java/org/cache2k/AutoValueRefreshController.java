@@ -26,22 +26,24 @@ import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
 /**
- * Fetch time of next refresh from the value object itself. The value object
- * needs to implement {@link ValueWithNextRefreshTime}.
+ * If object implements {@link org.cache2k.ValueWithNextRefreshTime} than the next refresh time
+ * is fetched from the object. If not, the default linger time is used by the cache.
  *
  * @author Jens Wilke; created: 2013-05-02
- * @see ValueWithNextRefreshTime
  */
-public class ValueRefreshController<T> implements RefreshController<T> {
+public final class AutoValueRefreshController<T> implements RefreshController<T> {
 
-  public static final ValueRefreshController INSTANCE = new ValueRefreshController();
+  public static final AutoValueRefreshController INSTANCE = new AutoValueRefreshController();
 
   @Override
   public long calculateNextRefreshTime(
     @Nullable T _oldObject,
     @Nonnull T _newObject,
     long _timeOfLastRefresh, long now) {
-    return ((ValueWithNextRefreshTime) _newObject).getNextRefreshTime();
+    if (_newObject instanceof ValueWithNextRefreshTime) {
+      return ((ValueWithNextRefreshTime) _newObject).getNextRefreshTime();
+    }
+    return Long.MAX_VALUE;
   }
 
 }
