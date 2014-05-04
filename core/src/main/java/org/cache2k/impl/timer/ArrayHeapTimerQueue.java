@@ -34,6 +34,9 @@ package org.cache2k.impl.timer;
  */
 public class ArrayHeapTimerQueue extends TimerTaskQueue {
 
+  int[] lapse = new int[77];
+  long maxLapse = 0;
+
   /**
    * Array to implement a priority queue based on a binary heap. The code
    * is inspired by {@link java.util.Timer}. Another implementation
@@ -254,6 +257,9 @@ public class ArrayHeapTimerQueue extends TimerTaskQueue {
               queue.removeMin();
             }
           }
+          if (_nextEvent < t) {
+            recordLapse(_nextEvent, t);
+          }
         }
         if (_nextEvent <= t) {
           runEntry(e);
@@ -261,6 +267,18 @@ public class ArrayHeapTimerQueue extends TimerTaskQueue {
         }
         long _waitTime = _nextEvent - t;
         waitUntilTimeout(_waitTime);
+      }
+    }
+
+    private void recordLapse(long _nextEvent, long now) {
+      long d = now - _nextEvent;
+      if (queue.maxLapse < d) {
+        queue.maxLapse = d;
+      }
+      int idx = (int) d / 7;
+      int[] ia = queue.lapse;
+      if (ia.length < idx) {
+        ia[idx]++;
       }
     }
 
