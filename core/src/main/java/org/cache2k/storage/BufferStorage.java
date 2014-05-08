@@ -53,12 +53,14 @@ import java.util.TreeSet;
  * test: different descriptor corruption
  * test: entries rewrite
  * test: etc...
+ * what to do about incompatible classes?
  * multiple files, >2GB support?
  * get total persisted storage
  * eviction
  * clear
  * iterate all / process
  * expire / purge entries
+ * compaction? truncate file?
  *
  * add some more detailed warning about the buffer that cannot be written
 
@@ -432,6 +434,10 @@ public class BufferStorage {
     }
     if (s == null) {
       s = new FreeSlot(pos, _neededSpace);
+    }
+    if (tunables.extensionSize >= 2) {
+      s.size += tunables.extensionSize - 1;
+      s.size -= s.size % tunables.extensionSize;
     }
     file.setLength(s.getNextPosition());
     resetBufferFromFile();
@@ -1180,6 +1186,13 @@ public class BufferStorage {
 
   }
 
+  /**
+   * Some parameters factored out, which may be modified if needed.
+   * All these parameters have no effect on the written data format.
+   * Usually there is no need to change some of the values. This
+   * is basically provided for documentary reason and to have all
+   * "magic values" in a central place.
+   */
   public static class Tunables {
 
     /**
@@ -1192,6 +1205,13 @@ public class BufferStorage {
     public int rewriteCompleteFactor = 3;
 
     public int rewritePartialFactor = 2;
+
+    /**
+     * The storage is expanded by the given increment, if set to 0 it
+     * is only expanded by the object size, each time to space is needed.
+     * Allocating space for each object separately is a big power drain.
+     */
+    public int extensionSize = 4096;
 
   }
 
