@@ -6,6 +6,7 @@ the name cache2k.
 
 ## News
 
+  * **Version 0.19.1, 2014-03-13**: Rerelease, now on Maven Central!
   * **Version 0.19, 2014-02-25**: JMX support enabled, bulk API enhancements,
     simple transaction support, see [Version 0.19 release notes](0/19.html)
   * **Version 0.18, 2013-12-18**: Initial open source release
@@ -81,7 +82,7 @@ polish the API and semantics one after another. See our [todo list](todo.html)
 
 ## Integrating cache2k in your project
 
-If you use maven, add to your project pom:
+chacke2k is on maven central. If you use maven, add to your project pom:
 
 ```xml
 <dependencies>
@@ -97,15 +98,6 @@ If you use maven, add to your project pom:
       <scope>runtime</scope>
   </dependency>
 </dependencies>
-
-<repositories>
-  <repository>
-    <id>headissue.public</id>
-    <name>headissue public maven repository</name>
-    <url>https://www.headissue.com/maven</url>
-    <layout>default</layout>
-  </repository>
-</repositories>
 ```
 
 Please replace `${cache2k-version}` with the latest version.

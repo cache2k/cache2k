@@ -22,56 +22,189 @@ package org.cache2k.storage;
  * #L%
  */
 
-import java.io.DataInput;
+import org.cache2k.impl.ExceptionWrapper;
+
 import java.io.DataOutput;
-import java.io.DataOutputStream;
+import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.ObjectInput;
 import java.io.ObjectOutput;
-import java.io.ObjectOutputStream;
+import java.io.RandomAccessFile;
+import java.io.Serializable;
 import java.nio.ByteBuffer;
+import java.nio.channels.FileChannel;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.TreeMap;
+import java.util.TreeSet;
 
 /* TODO: BufferStorage features...
-
+ * test: different descriptor corruption
+ * test: entries rewrite
+ * test: etc...
+ * multiple files, >2GB support?
+ * get total persisted storage
  * eviction
  * clear
- * bulk?
+ * iterate all / process
+ * expire / purge entries
+ *
+ * add some more detailed warning about the buffer that cannot be written
 
+ * bulk?
  */
 
 /**
+ * Implements a robust storage on a file or a byte buffer.
+ *
+ * <p>
+ * The storage tries to be robust and does not require a clean shutdown, so it
+ * will survive machine crashes. In this case it uses the latest data possible that
+ * is known to be intact. The amount of data loss can be controlled by specifying
+ * a commit interval.
+ * </p>
+ *
  * @author Jens Wilke; created: 2014-03-27
  */
 public class BufferStorage {
 
-  /**
-   * Write the key to the buffer. If we use memory buffer for a off heap
-   * cache, we don't need this
-   */
-  boolean writeKey;
-  Marshaller marshaller;
-  ByteBuffer buffer;
-  Map<Object, StorageEntry> inUpdateMap = new HashMap<>();
-  TreeMap<Integer, FreeSlot> freeMap = new TreeMap<>();
-  Map<Object, BufferEntry> values = new LinkedHashMap<>();
+  /** Number of bytes we used for on disk disk checksum of our descriptor */
+  final static int CHECKSUM_BYTES = 16;
 
-  long concurrentUpdateCount = 0;
+  final static int DESCRIPTOR_COUNT = 2;
+
+  final static String DESCRIPTOR_MAGIC = "CACHE2K STORAGE 00";
+
+  final static Marshaller DESCRIPTOR_MARSHALLER = new StandardMarshaller();
+
+  boolean dataLost = false;
+  Tunables tunables = new Tunables();
+  Marshaller keyMarshaller = new StandardMarshaller();
+  Marshaller valueMarshaller = new StandardMarshaller();
+  Marshaller universalMarshaller = new StandardMarshaller();
+  Marshaller exceptionMarshaller = new StandardMarshaller();
+  RandomAccessFile file;
+  ByteBuffer buffer;
+  final TreeSet<FreeSlot> freeSet = new TreeSet<>();
+  TreeMap<Long, FreeSlot> pos2slot = new TreeMap<>();
+  final Map<Object, BufferEntry> values = new LinkedHashMap<>();
+
+  final Object commitLock = new Object();
+
+  /** buffer entries added since last commit */
+  HashMap<Object, BufferEntry> newBufferEntries;
+
+  /** entries deleted since last commit */
+  HashMap<Object, BufferEntry> deletedBufferEntries;
+
+  /**
+   * Entries still needed originating from the earliest index file. Every commit
+   * entries will be removed that are newly written. Each commit also
+   * partially rewrites some of the entries here to make the file redundant.
+   */
+  HashMap<Object, BufferEntry> entriesInEarliestIndex;
+
+  /**
+   * All entries committed to the current index file. Updated within commit phase.
+   * This is used to fill up {@link #entriesInEarliestIndex} when starting a
+   * new index file.
+   */
+  HashMap<Object, BufferEntry> committedEntries;
+
+  /**
+   * List of entry that got rewritten or deleted. The storage space will
+   * be freed after a commit.
+   */
+  ArrayList<BufferEntry> spaceToFree;
+
+  List<BufferEntry> freeSecondNextCommit = null;
+
+  List<BufferEntry> freeNextCommit = null;
+
+  /**
+   * Counter of entries committed to the current index. This is more
+   * then the size of {@link #committedEntries} since entries for
+   * the same key may be written multiple times. This counter is used
+   * to determine to start a new index file within
+   * {@link org.cache2k.storage.BufferStorage.KeyIndexWriter#checkStartNewIndex()}
+   */
+  int committedEntriesCount;
+
+  BufferDescriptor descriptor;
+  String fileName;
+
   long missCount = 0;
   long hitCount = 0;
   long putCount = 0;
+  long freeSpace = 0;
 
-  public StorageEntry getEntry(Object key, long now, StorageEntry _previousFetchedEntry) {
+  public BufferStorage(String _fileName) throws IOException, ClassNotFoundException {
+    fileName = _fileName;
+    reopen();
+  }
+
+  public void reopen() throws IOException, ClassNotFoundException {
+    file = new RandomAccessFile(fileName + ".img", "rw");
+    resetBufferFromFile();
+    values.clear();
+    newBufferEntries = new HashMap<>();
+    deletedBufferEntries = new HashMap<>();
+    spaceToFree = new ArrayList<>();
+    entriesInEarliestIndex = new HashMap<>();
+    committedEntries = new HashMap<>();
+    BufferDescriptor d = readLatestIntactBufferDescriptor();
+    if (d == null) {
+      if (buffer.capacity() > 0) {
+        dataLost = true;
+      }
+      initializeFreeSpaceMap();
+      descriptor = new BufferDescriptor();
+      descriptor.storageCreated = System.currentTimeMillis();
+    } else {
+      descriptor = d;
+      readIndex();
+    }
+  }
+
+  public void close() throws IOException, ClassNotFoundException {
+    commit();
+    fastClose();
+  }
+
+  private void resetBufferFromFile() throws IOException {
+    buffer =
+      file.getChannel().map(
+        FileChannel.MapMode.READ_WRITE,
+        0, file.length());
+  }
+
+  /**
+   * Close immediately without doing a commit.
+   */
+  public void fastClose() throws IOException {
+    synchronized(values) {
+      values.clear();
+      pos2slot.clear();
+      buffer = null;
+      file.close();
+    }
+  }
+
+  public StorageEntry getEntry(Object key)
+    throws IOException, ClassNotFoundException {
     BufferEntry be;
     synchronized(values) {
-      StorageEntry e = inUpdateMap.get(key);
-      if (e != null) {
-        concurrentUpdateCount++;
-        return e;
-      }
       be = values.get(key);
       if (be == null) {
         missCount++;
@@ -79,175 +212,746 @@ public class BufferStorage {
       }
       hitCount++;
     }
-    try {
-      be.lock();
-      ByteBuffer bb = buffer.duplicate();
-      bb.position(be.position);
-      MyEntry e = new MyEntry();
-      e.createdOrUpdated = bb.getLong();
-      e.expiryTime = bb.getLong();
-      e.lastUsed = bb.getLong();
-      e.maxIdleTime = bb.getLong();
-      bb.limit(be.position - MyEntry.TIMING_BYTES + be.size);
-      e.value = marshaller.unmarshall(bb);
-      e.key = key;
-      return e;
-    } finally {
-      be.unlock();
+    return returnEntry(be);
+  }
+
+  public boolean contains(Object key) throws IOException, ClassNotFoundException {
+    synchronized(values) {
+      if (!values.containsKey(key)) {
+        missCount++;
+        return false;
+      }
+      hitCount++;
+      return true;
     }
   }
 
-  public void putEntry(StorageEntry e) throws Exception {
-    byte[] _marshalledValue = marshaller.marshall(e.getValueOrException());
-    byte[] _marshalledKey = null;
-    int _expectedSize = _marshalledValue.length + MyEntry.TIMING_BYTES;
-    if (writeKey) {
-      _marshalledKey = marshaller.marshall(e.getKey());
-      _expectedSize += _marshalledKey.length;
-    }
-    int pos;
-    BufferEntry _bufferEntry = null;
+  public StorageEntry remove(Object key) throws IOException, ClassNotFoundException {
+    BufferEntry be;
     synchronized(values) {
-       _bufferEntry = values.remove(e.getKey());
-      if (_bufferEntry != null) {
-        inUpdateMap.put(e.getKey(), e);
+      be = values.remove(key);
+      if (be == null) {
+        missCount++;
+        return null;
       }
+      deletedBufferEntries.put(key, be);
+      newBufferEntries.remove(key);
+      spaceToFree.add(be);
+      hitCount++;
     }
-    if (_bufferEntry != null) {
-      _bufferEntry.waitUnlocked();
-      synchronized(freeMap) {
-        freeBufferSpace(_bufferEntry);
-        pos = findEmptyPosition(_expectedSize);
-      }
-    } else {
-      synchronized(freeMap) {
-        pos = findEmptyPosition(_expectedSize);
-      }
-    }
+    return returnEntry(be);
+  }
+
+  private MyEntry returnEntry(BufferEntry be) throws IOException, ClassNotFoundException {
     ByteBuffer bb = buffer.duplicate();
-    bb.position(pos);
-    bb.putLong(e.getCreatedOrUpdated());
-    bb.putLong(e.getExpiryTime());
-    bb.putLong(e.getLastUsed());
-    bb.putLong(e.getMaxIdleTime());
-    bb.put(_marshalledValue);
-    if (writeKey) {
-      bb.put(_marshalledKey);
+    bb.position((int) be.position);
+    MyEntry e = new MyEntry();
+    e.key = be.key;
+    e.readMetaInfo(bb, descriptor.storageCreated);
+    int _type = e.getTypeNumber();
+    if (_type == TYPE_NULL) {
+      return e;
     }
+    bb.limit((int) (be.position + be.size));
+    if (_type == TYPE_VALUE) {
+      e.value = valueMarshaller.unmarshall(bb);
+    } else {
+      e.value = new ExceptionWrapper((Throwable) exceptionMarshaller.unmarshall(bb));
+    }
+    return e;
+  }
+
+  final static byte[] ZERO_LENGTH_BYTE_ARRAY = new byte[0];
+
+  /**
+   * Store a new entry. To achieve robustness without implementing a WAL there
+   * is no update in place. Each entry gets a newly allocated space. The freed
+   * space will be available for reallocation until the index is committed twice.
+   * BTW: there is a theoretical race condition in this, because there is no
+   * real protection against the case that the read is reading an in between
+   * reallocated space. However, this will only be a problem if the read
+   * fails to get CPU time for several seconds.
+   */
+  public void putEntry(StorageEntry e) throws IOException {
+    Object o = e.getValueOrException();
+    byte[] _marshalledValue = ZERO_LENGTH_BYTE_ARRAY;
+    int _neededSize = 0;
+    byte _type;
+    if (o == null) {
+      _type = TYPE_NULL;
+    } else {
+      if (o instanceof ExceptionWrapper) {
+        _type = TYPE_EXCEPTION;
+        _marshalledValue = exceptionMarshaller.marshall(((ExceptionWrapper) o).getException());
+      } else if (valueMarshaller.supports(o)) {
+        _type = TYPE_VALUE;
+        _marshalledValue = valueMarshaller.marshall(o);
+      } else {
+        _type = TYPE_UNIVERSAL;
+        _marshalledValue = universalMarshaller.marshall(o);
+      }
+      _neededSize = _marshalledValue.length;
+    }
+    _neededSize += MyEntry.calculateMetaInfoSize(e, descriptor.storageCreated, _type);
+    ByteBuffer bb;
+    BufferEntry _newEntry;
+    synchronized(freeSet) {
+      FreeSlot s = reservePosition(_neededSize);
+      bb = buffer.duplicate();
+      bb.position((int) s.position);
+      MyEntry.writeMetaInfo(bb, e, descriptor.storageCreated, _type);
+      int _usedSize = (int) (bb.position() - s.position) + _marshalledValue.length;
+      _newEntry = new BufferEntry(e.getKey(), s.position, _usedSize);
+      s.size -=  _usedSize;
+      if (s.size > 0) {
+        freeSpace += s.size;
+        s.position += _usedSize;
+        freeSet.add(s);
+        pos2slot.put(s.position, s);
+      }
+    }
+    bb.put(_marshalledValue);
     synchronized(values) {
-      inUpdateMap.remove(e.getKey());
-      BufferEntry be =
-        new BufferEntry(e.getKey(), pos, _expectedSize);
-      values.put(e.getKey(), be);
+      BufferEntry be = values.get(e.getKey());
+      if (be != null) {
+        spaceToFree.add(be);
+      }
+      newBufferEntries.put(e.getKey(), _newEntry);
+      values.put(e.getKey(), _newEntry);
       putCount++;
     }
   }
 
-  int findEmptyPosition(int _expectedSize) {
-    FreeSlot s = findFreeSlot(_expectedSize);
+  /**
+   *
+   */
+  FreeSlot reservePosition(int _size) throws IOException {
+    FreeSlot s = findFreeSlot(_size);
     if (s == null) {
-      s = extendBuffer(_expectedSize);
+      s = extendBuffer(_size);
     }
-    FreeSlot s2 = new FreeSlot(s.position + _expectedSize, s.size - _expectedSize);
-    freeMap.put(s2.size, s2);
-    return s.position;
+    return s;
   }
 
+  final FreeSlot reusedFreeSlotUnderLock = new FreeSlot(0, 0);
+
+  /**
+   * Find a slot which size is greater then the needed size and
+   * remove it from the free space map.
+   */
   FreeSlot findFreeSlot(int size) {
-    Map.Entry<Integer, FreeSlot>  e = freeMap.ceilingEntry(size);
-    if (e != null) {
-      return freeMap.remove(e.getKey());
+    reusedFreeSlotUnderLock.size = size;
+    FreeSlot s = freeSet.ceiling(reusedFreeSlotUnderLock);
+    if (s != null) {
+      freeSet.remove(s);
+      freeSpace -= s.size;
+      pos2slot.remove(s.position);
+      return s;
     }
     return null;
   }
-
-  void freeBufferSpace(BufferEntry e) {
-    Map.Entry<Integer,FreeSlot> me = freeMap.lowerEntry(e.position);
-    FreeSlot s;
-    if (me != null && me.getValue().getNextPosition() == e.position) {
-      s = me.getValue();
-      s.size += e.size;
-    } else {
-      s = new FreeSlot(e.position, e.size);
-      freeMap.put(e.position, s);
+  
+  long calcSize(Collection<BufferEntry> set) {
+    long v = 0;
+    if (set != null) {
+      for (BufferEntry e: set) {
+        v += e.size;
+      }
     }
-    int _nextPosition = s.getNextPosition();
-    me = freeMap.ceilingEntry(_nextPosition);
-    if (me != null && me.getKey() == _nextPosition) {
-      s.size += me.getValue().size;
-      freeMap.remove(_nextPosition);
+    return v;
+  }
+
+  long calculateUsedSpace() {
+    long s = 0;
+    s += calcSize(values.values());
+    s += calcSize(spaceToFree);
+    s += calcSize(freeSecondNextCommit);
+    s += calcSize(freeNextCommit);
+    return s;
+  }
+
+  long calculateFreeSpace() {
+    long s = 0;
+    for (FreeSlot fs : freeSet) {
+      s += fs.size;
     }
+    return s;
   }
 
-  /** just allocate as many as needed by now */
-  FreeSlot extendBuffer(int _neededSpace) {
-    int pos = buffer.limit();
-    buffer.limit(pos + _neededSpace);
-    return new FreeSlot(pos, _neededSpace);
+  public int getEntryCount() {
+    return values.size();
   }
 
-  void writeBufferEntry(ObjectOutput out, BufferEntry e) throws IOException {
-    out.writeInt(e.position);
-    out.writeInt(e.size);
-    out.writeObject(e.key);
+  public long getFreeSpace() {
+    return freeSpace;
   }
 
-  BufferEntry readBufferEntry(ObjectInput di) throws IOException, ClassNotFoundException {
-    BufferEntry e = new BufferEntry();
-    e.position = di.readInt();
-    e.size = di.readInt();
-    e.key = di.readObject();
-    return e;
+  public long getTotalValueSpace() {
+    return buffer.capacity();
+  }
+
+  public int getUncommittedEntryCount() {
+    return newBufferEntries.size() + deletedBufferEntries.size();
   }
 
   /**
-   * Recalculate the slots of empty space, by iterating over all buffer entry
-   * and cutting out the allocated areas
+   * Flag there was a problem at the last startup and probably some data was lost.
+   * This is an indicator for an unclean shutdown, crash, etc.
    */
-  void recalculateFreeSpaceMap() {
-    freeMap = new TreeMap<>();
-    freeMap.put(0, new FreeSlot(0, buffer.capacity()));
-    for (BufferEntry e : values.values()) {
-      Map.Entry<Integer, FreeSlot> me = freeMap.ceilingEntry(e.position);
-      if (me == null) {
-        throw new IllegalStateException("data structure mismatch, never happens");
-      }
-      if (me.getKey() == e.position) {
-        FreeSlot s = freeMap.remove(me.getKey());
-        if (s.size > e.size) {
-          s.position += e.size;
-          s.size -= e.size;
-          freeMap.put(s.position, s);
-        }
+  public boolean isDataLost() {
+    return dataLost;
+  }
+
+  public int getFreeSpaceInLargestFreeSlot() {
+    if (freeSet.size() == 0) {
+      return 0;
+    }
+    return freeSet.last().size;
+  }
+
+  /**
+   * Called when there is no more space available. Allocates new space and
+   * returns the area in a free slot. The free slot needs to be inserted
+   * in the maps by the caller.
+   */
+  FreeSlot extendBuffer(int _neededSpace) throws IOException {
+    int pos = (int) file.length();
+    Map.Entry<Long, FreeSlot> e = pos2slot.floorEntry((long) pos);
+    FreeSlot s = null;
+    if (e != null) {
+      s = e.getValue();
+      if (s.getNextPosition() == pos) {
+        freeSet.remove(s);
+        pos2slot.remove(s.position);
+        _neededSpace -= s.size;
+        freeSpace -= s.size;
+        s.size += _neededSpace;
       } else {
-        FreeSlot s = me.getValue();
-        if (s.getNextPosition() > (e.position + e.size)) {
-          FreeSlot s2 = new FreeSlot();
-          s2.position = e.position + e.size;
-          s2.size = s.getNextPosition() - s2.position;
-          freeMap.put(s2.position, s2);
-          s.size -= s2.size + e.size;
-        } else {
-          s.size -= e.size;
+        s = null;
+      }
+    }
+    if (s == null) {
+      s = new FreeSlot(pos, _neededSpace);
+    }
+    file.setLength(s.getNextPosition());
+    resetBufferFromFile();
+    return s;
+  }
+
+  void readIndex() throws IOException, ClassNotFoundException {
+    descriptor = readLatestIntactBufferDescriptor();
+    if (descriptor == null) {
+      return;
+    }
+    KeyIndexReader r = new KeyIndexReader();
+    r.readKeyIndex();
+    recalculateFreeSpaceMapAndRemoveDeletedEntries();
+  }
+
+  BufferDescriptor readLatestIntactBufferDescriptor() throws IOException, ClassNotFoundException {
+    BufferDescriptor bd = null;
+    for (int i = 0; i < DESCRIPTOR_COUNT; i++) {
+      try {
+        BufferDescriptor bd2 = readDesicptor(i);
+        if (bd2 != null && (bd == null || bd.descriptorVersion < bd2.descriptorVersion)) {
+          bd = bd2;
+        }
+      } catch (IOException ex) {
+      }
+    }
+    return bd;
+  }
+
+  BufferDescriptor readDesicptor(int idx) throws IOException, ClassNotFoundException {
+    File f = new File(fileName + "-" + idx + ".dsc");
+    if (!f.exists()) {
+      return null;
+    }
+    RandomAccessFile raf = new RandomAccessFile(f, "r");
+    try {
+      for (int i = 0; i < DESCRIPTOR_MAGIC.length(); i++) {
+        if (DESCRIPTOR_MAGIC.charAt(i) != raf.read()) {
+          return null;
         }
       }
+      byte[] _checkSumFirstBytes = new byte[CHECKSUM_BYTES];
+      raf.read(_checkSumFirstBytes);
+      byte[] _serializedDescriptorObject = new byte[(int) (raf.length() - raf.getFilePointer())];
+      raf.read(_serializedDescriptorObject);
+      byte[] _refSum = calcCheckSum(_serializedDescriptorObject);
+      for (int i = 0; i < CHECKSUM_BYTES; i++) {
+        if (_checkSumFirstBytes[i] != _refSum[i]) {
+          return null;
+        }
+      }
+      BufferDescriptor d = (BufferDescriptor) DESCRIPTOR_MARSHALLER.unmarshall(_serializedDescriptorObject);
+      return d;
+    } finally {
+      raf.close();
     }
   }
 
-  static class FreeSlot {
+  void writeDescriptor() throws IOException {
+    int idx = (int) (descriptor.descriptorVersion % DESCRIPTOR_COUNT);
+    RandomAccessFile raf = new RandomAccessFile(fileName + "-" + idx + ".dsc", "rw");
+    raf.setLength(0);
+    for (int i = 0; i < DESCRIPTOR_MAGIC.length(); i++) {
+      raf.write(DESCRIPTOR_MAGIC.charAt(i));
+    }
+    byte[] _serializedDescriptorObject = DESCRIPTOR_MARSHALLER.marshall(descriptor);
+    byte[] _checkSum = calcCheckSum(_serializedDescriptorObject);
+    raf.write(_checkSum, 0, CHECKSUM_BYTES);
+    raf.write(_serializedDescriptorObject);
+    raf.close();
+    descriptor.descriptorVersion++;
+  }
 
+  /**
+   * Recalculate the slots of empty space, by iterating over all buffer entries
+   * and cutting out the allocated areas
+   */
+  void recalculateFreeSpaceMapAndRemoveDeletedEntries() {
+    synchronized (freeSet) {
+      initializeFreeSpaceMap();
+      TreeMap<Long, FreeSlot> _pos2slot = pos2slot;
+      HashSet<Object> _deletedKey = new HashSet<>();
+      for (BufferEntry e : values.values()) {
+        if (e.position < 0) {
+          _deletedKey.add(e.key);
+          continue;
+        }
+        allocateEntrySpace(e, _pos2slot);
+      }
+      for (Object k : _deletedKey) {
+        values.remove(k);
+      }
+      rebuildFreeSet();
+    }
+  }
+
+  /**
+   * Rebuild the free set from the elements in {@ link pos2slot}
+   */
+  private void rebuildFreeSet() {
+    TreeMap<Long, FreeSlot> _pos2slot = pos2slot;
+    Set<FreeSlot> m = freeSet;
+    m.clear();
+    for (FreeSlot s : _pos2slot.values()) {
+      m.add(s);
+    }
+  }
+
+  private void initializeFreeSpaceMap() {
+    freeSpace = buffer.capacity();
+    FreeSlot s = new FreeSlot(0, buffer.capacity());
+    pos2slot = new TreeMap<>();
+    pos2slot.put(s.position, s);
+    freeSet.clear();
+    freeSet.add(s);
+  }
+
+  /**
+   * Used to rebuild the free space map. Entry has already got a position.
+   * The used space will be removed of the free space map.
+   */
+  static void allocateEntrySpace(BufferEntry e, TreeMap<Long, FreeSlot> _pos2slot) {
+    Map.Entry<Long, FreeSlot> me = _pos2slot.floorEntry(e.position);
+    if (me == null) {
+      throw new IllegalStateException("data structure mismatch, internal error");
+    }
+    FreeSlot s = _pos2slot.remove(me.getKey());
+    if (s.position < e.position) {
+      FreeSlot _preceding = new FreeSlot();
+      _preceding.position = s.position;
+      _preceding.size = (int) (e.position - s.position);
+      _pos2slot.put(_preceding.position, _preceding);
+      s.size -= _preceding.size;
+    }
+    if (s.size > e.size) {
+      s.position = e.size + e.position;
+      s.size -= e.size;
+      _pos2slot.put(s.position, s);
+    }
+  }
+
+  /**
+   * Used to rebuild the free space map. The entry was deleted or rewritten
+   * now the space needs to be freed. Actually we can just put a slot with
+   * position and size of the entry in the map, but we better merge it with
+   * neighboring slots.
+   */
+  static void freeEntrySpace(BufferEntry e, TreeMap<Long, FreeSlot> _pos2slot, Set<FreeSlot> _freeSet) {
+    FreeSlot s = _pos2slot.get(e.size + e.position);
+    if (s != null) {
+      _pos2slot.remove(s.position);
+      _freeSet.remove(s);
+      s.position = e.position;
+      s.size += e.size;
+    } else {
+      s = new FreeSlot(e.position, e.size);
+    }
+    Map.Entry<Long, FreeSlot> me = _pos2slot.lowerEntry(e.position);
+    if (me != null && me.getValue().getNextPosition() == e.position) {
+      FreeSlot s2 = _pos2slot.remove(me.getKey());
+      _freeSet.remove(s2);
+      s2.size += s.size;
+      s = s2;
+    }
+    _pos2slot.put(s.position, s);
+    _freeSet.add(s);
+  }
+
+  /**
+   * Write key to object index to disk for all modified entries. The implementation only works
+   * single threaded.
+   *
+   * @throws IOException
+   */
+  public void commit() throws IOException {
+    synchronized (commitLock) {
+      KeyIndexWriter _writer;
+      synchronized (values) {
+        if (newBufferEntries.size() == 0 && deletedBufferEntries.size() == 0) {
+          return;
+        }
+        _writer = new KeyIndexWriter();
+        _writer.newEntries = newBufferEntries;
+        _writer.deletedEntries = deletedBufferEntries;
+        _writer.spaceToFree = spaceToFree;
+        spaceToFree = new ArrayList<>();
+        newBufferEntries = new HashMap<>();
+        deletedBufferEntries = new HashMap<>();
+      }
+      _writer.write();
+      writeDescriptor();
+      _writer.freeSpace();
+    }
+  }
+
+  /**
+    * Don't write out the oldest entries that we also have in our updated lists.
+    */
+   static void sortOut(Map<Object, BufferEntry> map, Set<Object> _keys) {
+     for (Object k: _keys) {
+       map.remove(k);
+     }
+   }
+
+  class KeyIndexWriter {
+
+    RandomAccessFile randomAccessFile;
+    HashMap<Object, BufferEntry> newEntries;
+    HashMap<Object, BufferEntry> deletedEntries;
+    HashMap<Object, BufferEntry> rewriteEntries = new HashMap<>();
+    List<BufferEntry> spaceToFree = null;
+    int indexFileNo;
     int position;
+
+    boolean forceNewFile = false;
+
+    void write() throws IOException {
+      indexFileNo = descriptor.lastIndexFile;
+      checkForEntriesToRewrite();
+      checkStartNewIndex();
+      if (forceNewFile) {
+        entriesInEarliestIndex = committedEntries;
+        committedEntries = new HashMap<>();
+        committedEntriesCount = 0;
+      }
+      try {
+        openFile();
+        writeIndexChunk();
+      } finally {
+        if (randomAccessFile != null) {
+          randomAccessFile.close();
+        }
+      }
+      updateCommittedEntries();
+      descriptor.lastKeyIndexPosition = position;
+      descriptor.lastIndexFile = indexFileNo;
+    }
+
+    void writeIndexChunk() throws IOException {
+      IndexChunkDescriptor d = new IndexChunkDescriptor();
+      d.lastIndexFile = descriptor.lastIndexFile;
+      d.lastKeyIndexPosition = descriptor.lastKeyIndexPosition;
+      d.elementCount = newEntries.size() + deletedEntries.size() + rewriteEntries.size();
+      d.write(randomAccessFile);
+      FileOutputStream out = new FileOutputStream(randomAccessFile.getFD());
+      ObjectOutput oos = keyMarshaller.startOutput(out);
+      for (BufferEntry e : newEntries.values()) {
+        e.write(oos);
+      }
+      for (BufferEntry e : deletedEntries.values()) {
+        e.writeDeleted(oos);
+      }
+      for (BufferEntry e : rewriteEntries.values()) {
+        e.write(oos);
+      }
+      oos.close();
+      out.close();
+    }
+
+    void openFile() throws IOException {
+      if (descriptor.lastIndexFile < 0 || forceNewFile) {
+        position = 0;
+        indexFileNo = 0;
+        String _name = generateIndexFileName(indexFileNo);
+        randomAccessFile = new RandomAccessFile(_name, "rw");
+        randomAccessFile.seek(0);
+        randomAccessFile.setLength(0);
+      } else {
+        String _name = generateIndexFileName(indexFileNo);
+        randomAccessFile = new RandomAccessFile(_name, "rw");
+        position = (int) randomAccessFile.length();
+        randomAccessFile.seek(position);
+      }
+    }
+
+    /**
+     * Partially/fully rewrite the entries within {@link #entriesInEarliestIndex}
+     * to be able to remove the earliest index file in the future.
+     */
+    private void checkForEntriesToRewrite() {
+      if (entriesInEarliestIndex.size() > 0) {
+        sortOut(entriesInEarliestIndex, newEntries.keySet());
+        sortOut(entriesInEarliestIndex, deletedEntries.keySet());
+        int _writeCnt = newEntries.size() + deletedEntries.size();
+        if (_writeCnt * tunables.rewriteCompleteFactor >= entriesInEarliestIndex.size()) {
+          rewriteEntries = entriesInEarliestIndex;
+          entriesInEarliestIndex = new HashMap<>();
+        } else {
+          rewriteEntries = new HashMap<>();
+          int cnt = _writeCnt * tunables.rewritePartialFactor;
+          Iterator<BufferEntry> it = entriesInEarliestIndex.values().iterator();
+          while (cnt > 0 && it.hasNext()) {
+            BufferEntry e = it.next();
+            rewriteEntries.put(e.key, e);
+            cnt--;
+          }
+          sortOut(entriesInEarliestIndex, rewriteEntries.keySet());
+        }
+      }
+    }
+
+    /**
+     * Should we start writing a new index file?
+     */
+    void checkStartNewIndex() {
+      if (committedEntriesCount * tunables.indexFileEntryCapacityFactor
+        > committedEntries.size()) {
+        forceNewFile = true;
+      }
+    }
+
+    void updateCommittedEntries() {
+      committedEntriesCount -= committedEntries.size();
+      committedEntries.putAll(newEntries);
+      for (Object k : deletedEntries.keySet()) {
+        committedEntries.put(k, new BufferEntry(k, 0, -1));
+      }
+      committedEntries.putAll(rewriteEntries);
+      committedEntriesCount += committedEntries.size();
+    }
+
+    /**
+     * Free the used space.
+     */
+    void freeSpace() {
+      List<BufferEntry> _freeNow = freeNextCommit;
+      freeNextCommit = freeSecondNextCommit;
+      freeSecondNextCommit = spaceToFree;
+      if (_freeNow != null) {
+        final Set<FreeSlot> _freeSet = freeSet;
+        synchronized (_freeSet) {
+          TreeMap<Long, FreeSlot> _pos2slot = pos2slot;
+          for (BufferEntry e : _freeNow) {
+            freeEntrySpace(e, _pos2slot, _freeSet);
+            freeSpace += e.size;
+          }
+        }
+      }
+    }
+
+  }
+
+  String generateIndexFileName(int _fileNo) {
+    return fileName + "-" + _fileNo + ".idx";
+  }
+
+  class KeyIndexReader {
+
+    int currentlyReadingIndexFile = -1802;
+    RandomAccessFile randomAccessFile;
+    ByteBuffer indexBuffer;
+    Set<Object> readKeys = new HashSet<>();
+
+    void readKeyIndex() throws IOException, ClassNotFoundException {
+      entriesInEarliestIndex = committedEntries = new HashMap<>();
+      int _fileNo = descriptor.lastIndexFile;
+      int _keyPosition = descriptor.lastKeyIndexPosition;
+      for (;;) {
+        IndexChunkDescriptor d = readChunk(_fileNo, _keyPosition);
+        if (values.size() >= descriptor.elementCount) {
+          break;
+        }
+        _fileNo = d.lastIndexFile;
+        _keyPosition = d.lastKeyIndexPosition;
+      }
+      if (randomAccessFile != null) {
+        randomAccessFile.close();
+      }
+      if (entriesInEarliestIndex == committedEntries) {
+        entriesInEarliestIndex = new HashMap<>();
+      }
+      deleteEarlierIndex(_fileNo);
+    }
+
+    void openFile(int _fileNo) throws IOException {
+      if (randomAccessFile != null) {
+        randomAccessFile.close();
+      }
+      entriesInEarliestIndex = new HashMap<>();
+      randomAccessFile = new RandomAccessFile(generateIndexFileName(_fileNo), "r");
+      indexBuffer = randomAccessFile.getChannel().map(FileChannel.MapMode.READ_ONLY, 0, randomAccessFile.length());
+      currentlyReadingIndexFile = _fileNo;
+    }
+
+    IndexChunkDescriptor readChunk(int _fileNo, int _position)
+      throws IOException, ClassNotFoundException {
+      if (currentlyReadingIndexFile != _fileNo) {
+        openFile(_fileNo);
+      }
+      indexBuffer.position(_position);
+      IndexChunkDescriptor d = new IndexChunkDescriptor();
+      d.read(indexBuffer);
+      ObjectInput in = keyMarshaller.startInput(new ByteBufferInputStream(indexBuffer));
+      int cnt = d.elementCount;
+      do {
+        BufferEntry e = new BufferEntry();
+        e.read(in);
+        if (!readKeys.contains(e.key)) {
+          readKeys.add(e.key);
+          entriesInEarliestIndex.put(e.key, e);
+          if (!e.isDeleted()) {
+            values.put(e.key, e);
+          }
+        } else {
+          System.err.println("Seen, skipping: " + e);
+        }
+        cnt--;
+      } while (cnt > 0);
+      in.close();
+      return d;
+    }
+
+    /**
+     * Remove an earlier index during the read phase. If an index read
+     * fails, we may have the option to use an older version.
+     */
+    void deleteEarlierIndex(int _fileNo) {
+      if (_fileNo > 0) {
+        String n = generateIndexFileName(_fileNo - 1);
+        File f = new File(n);
+        if (f.exists()) {
+          f.delete();
+        }
+      }
+    }
+
+  }
+
+  /**
+   * Calculates an sha1 checksum used for the descriptor. Expected
+   * to be always at least {@link #CHECKSUM_BYTES} bytes long.
+   */
+  byte[] calcCheckSum(byte[] ba) throws IOException {
+    try {
+      MessageDigest md = MessageDigest.getInstance("sha1");
+      byte[] out = md.digest(ba);
+      return out;
+    } catch (NoSuchAlgorithmException ex) {
+      throw new IOException("sha1 missing, never happens?!");
+    }
+  }
+
+  static class BufferDescriptor implements Serializable {
+
+    boolean clean = false;
+    int lastIndexFile = -1;
+    int lastKeyIndexPosition = -1;
+    int elementCount = 0;
+    int freeSpace = 0;
+    long storageCreated;
+    long descriptorVersion = 0;
+    long writtenTime;
+    long highestExpiryTime;
+
+    String keyType;
+    String keyMarshallerType;
+    String valueType;
+    String valueMarshallerType;
+
+    @Override
+    public String toString() {
+      return "BufferDescriptor{" +
+        "clean=" + clean +
+        ", lastIndexFile=" + lastIndexFile +
+        ", lastKeyIndexPosition=" + lastKeyIndexPosition +
+        ", elementCount=" + elementCount +
+        ", freeSpace=" + freeSpace +
+        ", descriptorVersion=" + descriptorVersion +
+        ", writtenTime=" + writtenTime +
+        ", highestExpiryTime=" + highestExpiryTime +
+        ", keyType='" + keyType + '\'' +
+        ", keyMarshallerType='" + keyMarshallerType + '\'' +
+        ", valueType='" + valueType + '\'' +
+        ", valueMarshallerType='" + valueMarshallerType + '\'' +
+        '}';
+    }
+  }
+
+  static class IndexChunkDescriptor {
+    int lastIndexFile;
+    int lastKeyIndexPosition;
+    int elementCount;
+
+    void read(ByteBuffer buf) {
+      lastIndexFile = buf.getInt();
+      lastKeyIndexPosition = buf.getInt();
+      elementCount = buf.getInt();
+    }
+
+    void write(DataOutput buf) throws IOException {
+      buf.writeInt(lastIndexFile);
+      buf.writeInt(lastKeyIndexPosition);
+      buf.writeInt(elementCount);
+    }
+  }
+
+  static class FreeSlot implements Comparable<FreeSlot> {
+
+    long position;
     int size;
 
     FreeSlot() { }
 
-    FreeSlot(int position, int size) {
+    FreeSlot(long position, int size) {
       this.position = position;
       this.size = size;
     }
 
-    int getNextPosition() {
+    long getNextPosition() {
       return position + size;
+    }
+
+    @Override
+    public int compareTo(FreeSlot o) {
+      int d = size - o.size;
+      if (d != 0) {
+        return d;
+      }
+      return (position < o.position) ? -1 : ((position == o.position) ? 0 : 1);
     }
 
   }
@@ -255,44 +959,116 @@ public class BufferStorage {
   static class BufferEntry {
 
     Object key;
-    final static int BUFFER_ENTRY_BYTES = 4 * 2;
-    int position;
-    int size;
-
-    int readCnt;
+    long position;
+    int size; // size or -1 if deleted
 
     BufferEntry() {
     }
 
-    BufferEntry(Object key, int position, int size) {
+    BufferEntry(Object key, long position, int size) {
       this.key = key;
       this.position = position;
       this.size = size;
     }
 
-    public synchronized boolean isLocked() {
-       return readCnt > 0;
+    void write(ObjectOutput out) throws IOException {
+      out.writeLong(position);
+      out.writeInt(size);
+      out.writeObject(key);
     }
 
-    public synchronized void lock() {
-       readCnt++;
+    void writeDeleted(ObjectOutput out) throws IOException {
+      out.writeLong(0);
+      out.writeInt(-1);
+      out.writeObject(key);
     }
 
-    public synchronized void unlock() {
-       readCnt--;
-       if (readCnt == 0) {
-         notifyAll();
-       }
+    /**
+     * marks if this key mapping was deleted, so later index entries should not be used.
+     * this is never set for in-memory deleted objects.
+     */
+    boolean isDeleted() {
+      return size < 0;
     }
 
-    public synchronized void waitUnlocked() {
-      while (readCnt > 0) {
-        try {
-          wait();
-        } catch (InterruptedException e) {
-        }
-      }
+    void read(ObjectInput in) throws IOException, ClassNotFoundException {
+      position = in.readLong();
+      size = in.readInt();
+      key = in.readObject();
     }
+
+    @Override
+    public String toString() {
+      return "IndexEntry{" +
+        "key=" + key +
+        ", position=" + position +
+        ", size=" + size +
+        '}';
+    }
+  }
+
+  final static int TYPE_MASK = 0x03;
+  final static int TYPE_NULL = 0;
+  /** Value is marshalled with the value marshaller */
+  final static int TYPE_VALUE = 1;
+  final static int TYPE_EXCEPTION = 2;
+  /** Value is marshalled with the universal marshaller */
+  final static int TYPE_UNIVERSAL = 3;
+  final static int FLAG_HAS_EXPIRY_TIME = 4;
+  final static int FLAG_HAS_LAST_USED = 8;
+  final static int FLAG_HAS_MAX_IDLE_TIME = 16;
+  final static int FLAG_HAS_CREATED_OR_UPDATED = 32;
+
+  public static long readCompressedLong(ByteBuffer b) {
+    short s = b.getShort();
+    if (s >= 0) {
+      return s;
+    }
+    long v = s & 0x7fff;
+    s = b.getShort();
+    if (s >= 0) {
+      return v | s << 15;
+    }
+    v |= (s & 0x07fff) << 15;
+    s = b.getShort();
+    if (s >= 0) {
+      return v | s << 30;
+    }
+    v |= (s & 0x07fff) << 30;
+    s = b.getShort();
+    if (s >= 0) {
+      return v | s << 45;
+    }
+    v |= (s & 0x07fff) << 45;
+    s = b.getShort();
+    return v | s << 60;
+  }
+
+  /**
+   * Write a long as multiple short values. The msb in the short means
+   * that there is another short coming. No support for negative values,
+   * when a negative value comes in this method will not terminate
+   * and produce a buffer overflow.
+   */
+  public static void writeCompressedLong(ByteBuffer b, long v) {
+    long s = v & 0x07fff;
+    while (s != v) {
+      b.putShort((short) (s | 0x8000));
+      v >>>= 15;
+      s = v & 0x07fff;
+    }
+    b.putShort((short) v);
+  }
+
+  public static int calculateCompressedLongSize(long v) {
+    int cnt = 1;
+    long s = v & 0x07fff;
+    while (s != v) {
+      cnt++;
+      v >>>= 15;
+      s = v & 0x07fff;
+    }
+    return cnt << 1;
   }
 
   static class MyEntry implements StorageEntry {
@@ -300,11 +1076,16 @@ public class BufferStorage {
     Object key;
     Object value;
 
-    final static int TIMING_BYTES = 8 * 4;
+    final static int META_INFO_MAX_BYTES = 8 * 4 + 1;
+    int flags;
     long createdOrUpdated;
     long expiryTime;
     long lastUsed;
     long maxIdleTime;
+
+    public int getTypeNumber() {
+      return flags & TYPE_MASK;
+    }
 
     @Override
     public Object getKey() {
@@ -335,6 +1116,83 @@ public class BufferStorage {
     public long getMaxIdleTime() {
       return maxIdleTime;
     }
+
+    void readMetaInfo(ByteBuffer bb, long _timeReference) {
+      flags = bb.get();
+      if ((flags & FLAG_HAS_CREATED_OR_UPDATED) > 0) {
+        createdOrUpdated = readCompressedLong(bb) + _timeReference;
+      }
+      if ((flags & FLAG_HAS_EXPIRY_TIME) > 0) {
+        expiryTime = readCompressedLong(bb) + _timeReference;
+      }
+      if ((flags & FLAG_HAS_LAST_USED) > 0) {
+        lastUsed = readCompressedLong(bb) + _timeReference;
+      }
+      if ((flags & FLAG_HAS_MAX_IDLE_TIME) > 0) {
+        maxIdleTime = readCompressedLong(bb);
+      }
+    }
+
+    static void writeMetaInfo(ByteBuffer bb, StorageEntry e, long _timeReference, int _type) {
+      int _flags =
+        _type |
+        (e.getExpiryTime() != 0 ? FLAG_HAS_EXPIRY_TIME : 0) |
+        (e.getLastUsed() != 0 ? FLAG_HAS_LAST_USED : 0) |
+        (e.getMaxIdleTime() != 0 ? FLAG_HAS_MAX_IDLE_TIME : 0) |
+        (e.getCreatedOrUpdated() != 0 ? FLAG_HAS_CREATED_OR_UPDATED : 0);
+      bb.put((byte) _flags);
+      if ((_flags & FLAG_HAS_CREATED_OR_UPDATED) > 0) {
+         writeCompressedLong(bb, e.getCreatedOrUpdated() - _timeReference);
+      }
+      if ((_flags & FLAG_HAS_EXPIRY_TIME) > 0) {
+        writeCompressedLong(bb, e.getExpiryTime() - _timeReference);
+      }
+      if ((_flags & FLAG_HAS_LAST_USED) > 0) {
+        writeCompressedLong(bb, e.getLastUsed() - _timeReference);
+      }
+      if ((_flags & FLAG_HAS_MAX_IDLE_TIME) > 0) {
+        writeCompressedLong(bb, e.getMaxIdleTime());
+      }
+    }
+
+    static int calculateMetaInfoSize(StorageEntry e, long _timeReference, int _type) {
+      int _flags =
+        _type |
+        (e.getExpiryTime() != 0 ? FLAG_HAS_EXPIRY_TIME : 0) |
+        (e.getLastUsed() != 0 ? FLAG_HAS_LAST_USED : 0) |
+        (e.getMaxIdleTime() != 0 ? FLAG_HAS_MAX_IDLE_TIME : 0) |
+        (e.getCreatedOrUpdated() != 0 ? FLAG_HAS_CREATED_OR_UPDATED : 0);
+      int cnt = 1;
+      if ((_flags & FLAG_HAS_CREATED_OR_UPDATED) > 0) {
+        cnt += calculateCompressedLongSize(e.getCreatedOrUpdated() - _timeReference);
+      }
+      if ((_flags & FLAG_HAS_EXPIRY_TIME) > 0) {
+        cnt += calculateCompressedLongSize(e.getExpiryTime() - _timeReference);
+      }
+      if ((_flags & FLAG_HAS_LAST_USED) > 0) {
+        cnt += calculateCompressedLongSize(e.getLastUsed() - _timeReference);
+      }
+      if ((_flags & FLAG_HAS_MAX_IDLE_TIME) > 0) {
+        cnt += calculateCompressedLongSize(e.getMaxIdleTime());
+      }
+      return cnt;
+    }
+
+  }
+
+  public static class Tunables {
+
+    /**
+     * After more then two index entries are written to an index file,
+     * a new index file is started. Old entries are rewritten time after time
+     * to make the last file redundant and to free the disk space.
+     */
+    public int indexFileEntryCapacityFactor = 2;
+
+    public int rewriteCompleteFactor = 3;
+
+    public int rewritePartialFactor = 2;
+
   }
 
 }

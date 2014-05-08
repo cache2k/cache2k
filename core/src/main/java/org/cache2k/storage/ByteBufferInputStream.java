@@ -24,31 +24,37 @@ package org.cache2k.storage;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.ObjectInput;
-import java.io.ObjectOutput;
-import java.io.OutputStream;
 import java.nio.ByteBuffer;
 
 /**
- * @author Jens Wilke; created: 2014-03-27
+ * InputStream wrapper that reads directly from a bytebuffer.
+ *
+ * Credits: inspired by the stackoverflow question and adapted to my coding style.
+ *
+ * @author Jens Wilke; created: 2014-03-28
  */
-public interface Marshaller {
+public class ByteBufferInputStream extends InputStream {
 
-  byte[] marshall(Object o) throws IOException;
+  ByteBuffer byteBuffer;
 
-  Object unmarshall(byte[] ba) throws IOException, ClassNotFoundException;
+  public ByteBufferInputStream(ByteBuffer buf) {
+    byteBuffer = buf;
+}
 
-  Object unmarshall(ByteBuffer b) throws IOException, ClassNotFoundException;
+  public int read() throws IOException {
+    if (!byteBuffer.hasRemaining()) {
+      return -1;
+    }
+    return byteBuffer.get() & 0x0ff;
+  }
 
-  /**
-   * True if the marshaller is able to marshall this object. A specialized
-   * marshaller is allowed to return false. In this case a fallback is done
-   * to a default marshaller, which supports every object type.
-   */
-  boolean supports(Object o);
-
-  ObjectOutput startOutput(OutputStream out) throws IOException;
-
-  ObjectInput startInput(InputStream in) throws IOException;
+  public int read(byte[] bytes, int off, int len) throws IOException {
+    if (!byteBuffer.hasRemaining()) {
+      return -1;
+    }
+    len = Math.min(len, byteBuffer.remaining());
+    byteBuffer.get(bytes, off, len);
+    return len;
+  }
 
 }
