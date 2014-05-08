@@ -515,12 +515,20 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
 
   @Override
   public T get(K key) {
+    return returnValue(getEntryInternal(key));
+  }
+
+  public CacheEntry<K, T> getEntry(K key) {
+    return getEntryInternal(key);
+  }
+
+  protected Entry<E, K, T> getEntryInternal(K key) {
     E e = lookupOrNewEntrySynchronized(key);
     if (!e.isFetched()) {
       if (e.needsTimeCheck()) {
         long t = System.currentTimeMillis();
         if (t < -e.nextRefreshTime) {
-          return returnValue(e);
+          return e;
         }
         synchronized (e) {
           if (!e.isFetched()) {
@@ -535,7 +543,7 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
         }
       }
     }
-    return returnValue(e);
+    return e;
   }
 
   @Override
@@ -2078,6 +2086,14 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
       return fetchedTime;
     }
 
+
+    /**
+     * Cache entries always have the object identity as equals method.
+     */
+    @Override
+    public final boolean equals(Object obj) {
+      return this == obj;
+    }
 
   }
 
