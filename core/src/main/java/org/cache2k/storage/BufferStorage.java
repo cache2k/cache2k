@@ -83,8 +83,9 @@ public class BufferStorage implements CacheStorage {
   ByteBuffer buffer;
   final TreeSet<FreeSlot> freeSet = new TreeSet<>();
   TreeMap<Long, FreeSlot> pos2slot = new TreeMap<>();
-  final Map<Object, BufferEntry> values = new LinkedHashMap<>();
+  Map<Object, BufferEntry> values;
 
+  final Object valuesLock = new Object();
   final Object commitLock = new Object();
 
   /** buffer entries added since last commit */
@@ -129,21 +130,58 @@ public class BufferStorage implements CacheStorage {
   BufferDescriptor descriptor;
   String fileName;
 
+  /**
+   * capacity is by default unlimited.
+   */
+  int entryCapacity = Integer.MAX_VALUE;
+  long bytesCapacity;
+
   long missCount = 0;
   long hitCount = 0;
   long putCount = 0;
   long freeSpace = 0;
+
+  public BufferStorage(Tunables t, String _fileName) throws IOException, ClassNotFoundException {
+    fileName = _fileName;
+    tunables = t;
+    reopen();
+  }
 
   public BufferStorage(String _fileName) throws IOException, ClassNotFoundException {
     fileName = _fileName;
     reopen();
   }
 
+  public BufferStorage() {
+  }
+
+  public void setFileName(String v) {
+    fileName = v;
+  }
+
   public void reopen() throws IOException {
     try {
       file = new RandomAccessFile(fileName + ".img", "rw");
       resetBufferFromFile();
-      values.clear();
+      if (values != null) {
+        values.clear();
+      }
+      if (entryCapacity == Integer.MAX_VALUE) {
+        values = new HashMap<>();
+      } else {
+        values = new LinkedHashMap<Object, BufferEntry>(100, .75F, true) {
+
+          @Override
+          protected boolean removeEldestEntry(Map.Entry<Object, BufferEntry> _eldest) {
+            if (getEntryCount() > entryCapacity) {
+              reallyRemove(_eldest.getValue());
+              return true;
+            }
+            return false;
+          }
+
+        };
+      }
       newBufferEntries = new HashMap<>();
       deletedBufferEntries = new HashMap<>();
       spaceToFree = new ArrayList<>();
@@ -202,7 +240,7 @@ public class BufferStorage implements CacheStorage {
    * Close immediately without doing a commit.
    */
   public void fastClose() throws IOException {
-    synchronized(values) {
+    synchronized (valuesLock) {
       values.clear();
       pos2slot.clear();
       buffer = null;
@@ -214,7 +252,7 @@ public class BufferStorage implements CacheStorage {
   public StorageEntry get(Object key)
     throws IOException, ClassNotFoundException {
     BufferEntry be;
-    synchronized(values) {
+    synchronized (valuesLock) {
       be = values.get(key);
       if (be == null) {
         missCount++;
@@ -226,7 +264,7 @@ public class BufferStorage implements CacheStorage {
   }
 
   public boolean contains(Object key) throws IOException {
-    synchronized(values) {
+    synchronized (valuesLock) {
       if (!values.containsKey(key)) {
         missCount++;
         return false;
@@ -238,18 +276,25 @@ public class BufferStorage implements CacheStorage {
 
   public StorageEntry remove(Object key) throws IOException, ClassNotFoundException {
     BufferEntry be;
-    synchronized(values) {
+    synchronized (valuesLock) {
       be = values.remove(key);
       if (be == null) {
         missCount++;
         return null;
       }
-      deletedBufferEntries.put(key, be);
-      newBufferEntries.remove(key);
-      spaceToFree.add(be);
+      reallyRemove(be);
       hitCount++;
     }
     return returnEntry(be);
+  }
+
+  /**
+   * Called by remove and when an eviction needs to be done.
+   */
+  private void reallyRemove(BufferEntry be) {
+    deletedBufferEntries.put(be.key, be);
+    newBufferEntries.remove(be.key);
+    spaceToFree.add(be);
   }
 
   private MyEntry returnEntry(BufferEntry be) throws IOException, ClassNotFoundException {
@@ -282,11 +327,12 @@ public class BufferStorage implements CacheStorage {
    * reallocated space. However, this will only be a problem if the read
    * fails to get CPU time for several seconds.
    */
-  public void put(StorageEntry e) throws IOException {
+  public boolean put(StorageEntry e) throws IOException, ClassNotFoundException {
     Object o = e.getValueOrException();
     byte[] _marshalledValue = ZERO_LENGTH_BYTE_ARRAY;
     int _neededSize = 0;
     byte _type;
+    boolean _overwritten = false;
     if (o == null) {
       _type = TYPE_NULL;
     } else {
@@ -321,15 +367,17 @@ public class BufferStorage implements CacheStorage {
       }
     }
     bb.put(_marshalledValue);
-    synchronized(values) {
+    synchronized (valuesLock) {
       BufferEntry be = values.get(e.getKey());
       if (be != null) {
+        _overwritten = true;
         spaceToFree.add(be);
       }
       newBufferEntries.put(e.getKey(), _newEntry);
       values.put(e.getKey(), _newEntry);
       putCount++;
     }
+    return _overwritten;
   }
 
   /**
@@ -388,6 +436,7 @@ public class BufferStorage implements CacheStorage {
     return s;
   }
 
+  @Override
   public int getEntryCount() {
     return values.size();
   }
@@ -498,8 +547,8 @@ public class BufferStorage implements CacheStorage {
           return null;
         }
       }
-      BufferDescriptor d = (BufferDescriptor) DESCRIPTOR_MARSHALLER.unmarshall(_serializedDescriptorObject);
-      return d;
+      return
+        (BufferDescriptor) DESCRIPTOR_MARSHALLER.unmarshall(_serializedDescriptorObject);
     } finally {
       raf.close();
     }
@@ -544,7 +593,7 @@ public class BufferStorage implements CacheStorage {
   }
 
   /**
-   * Rebuild the free set from the elements in {@ link pos2slot}
+   * Rebuild the free set from the elements in {@link #pos2slot}
    */
   private void rebuildFreeSet() {
     TreeMap<Long, FreeSlot> _pos2slot = pos2slot;
@@ -624,7 +673,7 @@ public class BufferStorage implements CacheStorage {
   public void commit() throws IOException {
     synchronized (commitLock) {
       KeyIndexWriter _writer;
-      synchronized (values) {
+      synchronized (valuesLock) {
         if (newBufferEntries.size() == 0 && deletedBufferEntries.size() == 0) {
           return;
         }
@@ -889,6 +938,21 @@ public class BufferStorage implements CacheStorage {
     }
   }
 
+  @Override
+  public void setEntryCapacity(int entryCapacity) {
+    this.entryCapacity = entryCapacity;
+  }
+
+  @Override
+  public int getEntryCapacity() {
+    return this.entryCapacity;
+  }
+
+  @Override
+  public void setBytesCapacity(long bytesCapacity) {
+    this.bytesCapacity = bytesCapacity;
+  }
+
   static class BufferDescriptor implements Serializable {
 
     boolean clean = false;
@@ -1090,7 +1154,6 @@ public class BufferStorage implements CacheStorage {
     Object key;
     Object value;
 
-    final static int META_INFO_MAX_BYTES = 8 * 4 + 1;
     int flags;
     long createdOrUpdated;
     long expiryTime;

@@ -116,8 +116,12 @@ public interface Cache<K, T> extends KeyValueSource<K,T> {
    * neither guaranteed that the bulk get is called on the cache source if it
    * exists.
    *
-   * <p/>The operation may be split into chunks. It is not guaranteed that an
-   * atomically snapshot of the values will be returned.
+   * <p/>The operation may be split into chunks and not performed atomically.
+   * The entries that are processed within a chunk will be locked, to avoid
+   * multiple fetches from the cache source. In this operation there is the
+   * potential for deadlocks, so deadlocks need to be detected and avoided.
+   * One possible solution to avoid deadlocks, is to fall back to single
+   * get operations.
    *
    * <p/>In contrast to JSR107 the following guarantees are met
    * if the operation returns without exception: map.size() == keys.size()

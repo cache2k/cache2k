@@ -2,6 +2,15 @@
 
 A poor mans issue tracker.
 
+### persistence
+
+  * eviction call from memory cache!
+  * marshaller registry / provider factory...
+  * marshaller prioritization?
+  * more than 2gb?
+  * off-heap persistence
+  * flags for passivation and in-mem capacity, etc.
+
 ### Prio A / for 1.0
 
   * API freeze, for usage as in-memory cache

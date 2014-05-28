@@ -33,12 +33,40 @@ import java.io.IOException;
 public interface CacheStorage extends Closeable {
 
   /**
+   * Sets the maximum number of entries in the storage.
+   * This configuration maybe called during runtime. If the
+   * size exceeds the capacity the last recently used entries will
+   * be removed.
+   */
+  public void setEntryCapacity(int v);
+
+  /**
+   * Storage capacity in bytes used on the storage media. There
+   * is no exact guarantee that the storage implementation will met this
+   * constraint exactly.
+   */
+  public void setBytesCapacity(long v);
+
+  public int getEntryCapacity();
+
+  /**
    * Retrieve the entry from the storage. If there is no mapping for the
    * key, null is returned.
    */
   public StorageEntry get(Object key) throws IOException, ClassNotFoundException;
 
-  public void put(StorageEntry e) throws IOException;
+  /**
+   * Stores the entry in the storage. The entry instance is solely for transferring
+   * the data, no reference may be hold within the storage to it. The callee takes
+   * care that the entry data is consistent during the put method call.
+   *
+   * The cache may do redundant calls. The storage can detect this by comparing
+   * the modified timestamp with its own data and already write the data to
+   * the storage if there was
+   *
+   * @return true, if this entry was present in the storage before and got overwritten
+   */
+  public boolean put(StorageEntry e) throws IOException, ClassNotFoundException;
 
   public StorageEntry remove(Object key) throws IOException, ClassNotFoundException;
 
@@ -54,5 +82,7 @@ public interface CacheStorage extends Closeable {
    * to close have no effect.
    */
   public void close() throws IOException;
+
+  public int getEntryCount();
 
 }

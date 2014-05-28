@@ -36,7 +36,11 @@ import org.cache2k.PropagatedCacheException;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.cache2k.storage.BufferStorage;
+import org.cache2k.storage.CacheStorage;
+import org.cache2k.storage.StorageEntry;
 
+import java.io.IOException;
 import java.lang.reflect.Array;
 import java.security.SecureRandom;
 import java.util.AbstractList;
@@ -45,7 +49,6 @@ import java.util.AbstractSet;
 import java.util.Arrays;
 import java.util.BitSet;
 import java.util.Date;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
@@ -134,6 +137,8 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
 
   protected Timer timer;
 
+  protected StorageAdapter storage;
+
   /**
    * Lazy construct a log when needed, normally a cache logs nothing.
    */
@@ -157,6 +162,10 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
     }
     setExpirySeconds(c.getExpirySeconds());
     keepAfterExpired = c.isKeepDataAfterExpired();
+
+    if (c.isPersistent()) {
+      storage = new StorageAdapter();
+    }
   }
 
   /** called via reflection from CacheBuilder */
@@ -276,6 +285,10 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
       throw new IllegalArgumentException("maxElements must be >0");
     }
     clear();
+    if (storage != null) {
+      bulkCacheSource = null;
+      storage.open();
+    }
     initTimer();
     if (refreshPool != null && timer == null) {
       if (maxLinger == 0) {
@@ -477,9 +490,12 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
 
   /**
    * Find entry to evict and call {@link #removeEntryFromCache(BaseCache.Entry)}.
-   * Also remove it from the replacement structures.
-   * precondition met: size > 0, evict was increased. Either this or evictSomeEntries()
-   * needs to be implemented.
+   * Also remove it from the replacement structures. {@link  #evictedCnt} is not
+   * updated within the method.
+   *
+   * <p>Precondition: sizeBefore > 0. Postcondition: sizeAfter = sizeBefore - 1.
+   *
+   * <p>Either this or evictSomeEntries() needs to be implemented.
    */
   protected abstract void evictEntry();
 
@@ -530,16 +546,10 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
         if (t < -e.nextRefreshTime) {
           return e;
         }
-        synchronized (e) {
-          if (!e.isFetched()) {
-            fetch(e);
-          }
-        }
-      } else {
-        synchronized (e) {
-          if (!e.isFetched()) {
-            fetch(e);
-          }
+      }
+      synchronized (e) {
+        if (!e.isFetched()) {
+          fetch(e);
         }
       }
     }
@@ -549,30 +559,36 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
   @Override
   public T peek(K key) {
     int hc = modifiedHash(key.hashCode());
-    do {
-      Entry e = lookupEntryUnsynchronized(key, hc);
-      if (e == null) {
-        synchronized (lock) {
-          e = lookupEntry(key, hc);
-          if (e == null) {
-            e = Hash.lookup(txHash, key, hc);
-            if (e != null) {
-              synchronized (e) {
-                continue;
-              }
-            }
-          }
+    E e = lookupEntryUnsynchronized(key, hc);
+    if (e == null) {
+      synchronized (lock) {
+        e = lookupEntry(key, hc);
+        if (e == null && storage != null) {
+          e = newEntry(key, hc);
         }
       }
-      if (e != null && e.isFetched()) {
+    }
+    if (e != null) {
+      if (e.isVirgin() && storage != null) {
+        synchronized (e) {
+          fetchWithStorage(e, true);
+        }
+      }
+      if (!e.isFetched()) {
+        if (e.needsTimeCheck()) {
+          long t = System.currentTimeMillis();
+          if (t < -e.nextRefreshTime) {
+            return returnValue(e);
+          }
+        }
+      } else {
         return returnValue(e);
       }
-      synchronized (lock) {
-        peekMissCnt++;
-      }
-      return null;
-    } while (true);
+    }
+    peekMissCnt++;
+    return null;
   }
+
 
   @Override
   public void put(K key, T value) {
@@ -595,16 +611,38 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
   }
 
   /**
-   * Remove the object mapped to key from the cache.
+   * Remove the object mapped to a key from the cache.
+   *
+   * <p>Operation with storage: If there is no entry within the cache there may
+   * be one in the storage, so we need to send the remove to the storage. However,
+   * if a remove() and a get() is going on in parallel it may happen that the entry
+   * gets removed from the storage and added again by the tail part of get(). To
+   * keep the cache and the storage consistent it must be ensured that this thread
+   * is the only one working on the entry.
    */
   @Override
   public void remove(K key) {
-    synchronized (lock) {
-      int hc = modifiedHash(key.hashCode());
-      E e = lookupEntryWoUsageRecording(key, hc);
-      if (e != null) {
-        removeEntryFromCacheAndReplacementList(e);
-        removeCnt++;
+    int hc = modifiedHash(key.hashCode());
+    E e = lookupEntryUnsynchronized(key, hc);
+    if (e == null) {
+      synchronized (lock) {
+        e = lookupEntry(key, hc);
+        if (e == null && storage != null) {
+          e = newEntry(key, hc);
+        }
+      }
+    }
+    if (e != null) {
+      synchronized (e) {
+        if (!e.isRemovedFromReplacementList()) {
+          synchronized (lock) {
+            removeEntryFromCacheAndReplacementList(e);
+            removeCnt++;
+          }
+          if (storage != null) {
+            storage.remove(key);
+          }
+        }
       }
     }
   }
@@ -770,9 +808,8 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
   }
 
   /**
-   * Called when eviction or expiry of an entry happens. Remove it from the
+   * Called when expiry of an entry happens. Remove it from the
    * main cache, refresh cache and from the (lru) list. Also cancel the timer.
-   *
    * Called under big lock.
    */
   protected void removeEntryFromCacheAndReplacementList(E e) {
@@ -781,7 +818,9 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
   }
 
   /**
-   * Remove entry from the cache hash and stop/reset the time if a timer was started.
+   * Called from eviction policy to remove entry from the cache, if evicted. The
+   * entry is already removed from the replacement list. stop/reset timer, if needed.
+   * Called under big lock.
    */
   protected void removeEntryFromCache(E e) {
     boolean f =
@@ -798,6 +837,9 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
         timerCancelCount = 0;
       }
       e.task = null;
+    }
+    if (storage != null) {
+      storage.evict(e);
     }
   }
 
@@ -832,6 +874,8 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
   /**
    * Time when the element should be fetched again from the underlying storage.
    * If 0 then the object should not be cached at all. -1 means no expiry.
+   *
+   * @param _newObject might be a fetched value or an exception wrapped into the {@link ExceptionWrapper}
    */
   protected long calcNextRefreshTime(
      T _oldObject, T _newObject, long _lastUpdate, long now) {
@@ -854,17 +898,64 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
   }
 
   protected void fetch(final E e) {
+    if (storage != null) {
+      fetchWithStorage(e, false);
+    } else {
+      fetchWithoutStorage(e);
+    }
+  }
+
+  /**
+   *
+   * @param e
+   * @param _peekOnly if true it means don't fetch the data from the source
+   */
+  protected void fetchWithStorage(E e, boolean _peekOnly) {
+    if (!e.isVirgin()) {
+      if (!_peekOnly) {
+        fetchWithoutStorage(e);
+      }
+      return;
+    }
+    StorageEntry se = storage.get(e.key);
+    if (se == null) {
+      if (!_peekOnly) {
+        fetchWithoutStorage(e);
+      }
+      return;
+    }
     long t0 = System.currentTimeMillis();
+    T v = (T) se.getValueOrException();
+    long _nextRefreshTime = maxLinger == 0 ? Entry.FETCH_NEXT_TIME_STATE : Entry.FETCHED_STATE;
+    if (timer != null) {
+      _nextRefreshTime = calcNextRefreshTime(null, v, 0L, se.getCreatedOrUpdated());
+    }
+    e.setLastModificationFromStorage(se.getCreatedOrUpdated());
+    if ((_nextRefreshTime > Entry.EXPIRY_TIME_MIN && _nextRefreshTime <= t0) ||
+        (timer == null && maxLinger == 0)) {
+      if (!_peekOnly) {
+        e.value = se.getValueOrException();
+        e.nextRefreshTime = _nextRefreshTime;
+        fetchWithoutStorage(e);
+      }
+      return;
+    }
+    insert(e, (T) se.getValueOrException(), t0, t0, false, _nextRefreshTime);
+  }
+
+  protected void fetchWithoutStorage(E e) {
     T v;
+    long t0 = System.currentTimeMillis();
     try {
       if (e.isVirgin() || e.hasException()) {
         if (source == null) {
           throw new CacheUsageExcpetion("source not set");
         }
-        v = source.get((K) e.key, t0, null, e.fetchedTime);
+        v = source.get((K) e.key, t0, null, e.getLastModification());
       } else {
-        v = source.get((K) e.key, t0, (T) e.getValue(), e.fetchedTime);
+        v = source.get((K) e.key, t0, (T) e.getValue(), e.getLastModification());
       }
+      e.setLastModification(t0);
     } catch (Throwable _ouch) {
       v = (T) new ExceptionWrapper(_ouch);
     }
@@ -877,19 +968,27 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
   }
 
   protected final void insertOnPut(E e, T v, long t0, long t) {
+    e.setLastModification(t0);
     insert(e, v, t0, t, false);
   }
 
+  /**
+   * Calculate the next refresh time if a timer / expiry is needed and call insert.
+   */
   protected final void insert(E e, T v, long t0, long t, boolean _updateStatistics) {
-    touchedTime = t;
     long _nextRefreshTime = maxLinger == 0 ? Entry.FETCH_NEXT_TIME_STATE : Entry.FETCHED_STATE;
     if (timer != null) {
       if (e.isVirgin() || e.hasException()) {
         _nextRefreshTime = calcNextRefreshTime(null, v, 0L, t0);
       } else {
-        _nextRefreshTime = calcNextRefreshTime((T) e.getValue(), v, e.fetchedTime, t0);
+        _nextRefreshTime = calcNextRefreshTime((T) e.getValue(), v, e.getLastModification(), t0);
       }
     }
+    insert(e,v,t0,t,_updateStatistics, _nextRefreshTime);
+  }
+
+  protected final void insert(E e, T v, long t0, long t, boolean _updateStatistics, long _nextRefreshTime) {
+    touchedTime = t;
     synchronized (lock) {
       if (_updateStatistics) {
         fetchCnt++;
@@ -909,7 +1008,6 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
       if (e.task != null) {
         e.task.cancel();
       }
-      e.fetchedTime = t;
       e.value = v;
       if (timer != null && _nextRefreshTime > Entry.EXPIRY_TIME_MIN) {
         long _timerTime = _nextRefreshTime - 4;
@@ -930,6 +1028,9 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
       }
     }
     e.nextRefreshTime = _nextRefreshTime;
+    if (storage != null && e.isDirty()) {
+      storage.put(e);
+    }
   }
 
   /**
@@ -989,6 +1090,28 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
         removeEntryFromCacheAndReplacementList(e);
       }
     }
+  }
+
+  public Iterator<Entry> iterateAllLocalEntries() {
+    final HashEntryIterator _hashIterator = new HashEntryIterator(mainHash, refreshHash);
+    return new Iterator<Entry>() {
+      Entry entry;
+      @Override
+      public boolean hasNext() {
+        entry = _hashIterator.nextEntry();
+        return entry != null;
+      }
+
+      @Override
+      public Entry next() {
+        return entry;
+      }
+
+      @Override
+      public void remove() {
+        throw new UnsupportedOperationException();
+      }
+    };
   }
 
   @Override
@@ -1928,7 +2051,8 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
 
   final static InitialValuePleaseComplainToJens INITIAL_VALUE = new InitialValuePleaseComplainToJens();
 
-  public static class Entry<E extends Entry, K, T> implements MutableCacheEntry<K,T> {
+  public static class Entry<E extends Entry, K, T>
+    implements MutableCacheEntry<K,T>, StorageEntry {
 
     static final int FETCHED_STATE = 10;
     static final int REMOVED_STATE = 12;
@@ -1940,7 +2064,14 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
     static final int EXPIRY_TIME_MIN = 20;
 
     public TimerTask task;
-    public long fetchedTime;
+
+    /**
+     * Time the entry was last updated by put or by fetching it from the cache source.
+     * The time is the time in millis times 2. A set bit 1 means the entry is fetched from
+     * the storage and not modified since then.
+     */
+    private long fetchedTime;
+
     /**
      * Contains the next time a refresh has to occur. Low values have a special meaning, see defined constants.
      * Negative values means the refresh time was expired, and we need to check the time.
@@ -1967,6 +2098,18 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
     public E next;
     /** Lru list: pointer to previous element or list head */
     public E prev;
+
+    public void setLastModification(long t) {
+      fetchedTime = t << 1;
+    }
+
+    public boolean isDirty() {
+      return (fetchedTime & 1) == 0;
+    }
+
+    public void setLastModificationFromStorage(long t) {
+      fetchedTime = t << 1 | 1;
+    }
 
     /** Reset next as a marker for {@link #isRemovedFromReplacementList()} */
     public final void removedFromList() {
@@ -2083,7 +2226,56 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
 
     @Override
     public long getLastModification() {
-      return fetchedTime;
+      return fetchedTime >> 1;
+    }
+
+    public long getExpiryTime() {
+      if (hasExpiryTime()) {
+        return nextRefreshTime;
+      }
+      return 0;
+    }
+
+    /**
+     * Used for the storage interface.
+     *
+     * @see StorageEntry
+     */
+    @Override
+    public Object getValueOrException() {
+      return value;
+    }
+
+    /**
+     * Used for the storage interface.
+     *
+     * @see StorageEntry
+     */
+    @Override
+    public long getCreatedOrUpdated() {
+      return getLastModification();
+    }
+
+    /**
+     * Used for the storage interface.
+     *
+     * @see StorageEntry
+     * @deprectated Always returns 0, only to fulfill the {@link StorageEntry} interface
+     */
+    @Override
+    public long getLastUsed() {
+      return 0;
+    }
+
+    /**
+     * Used for the storage interface.
+     *
+     * @see StorageEntry
+     * @deprectated Always returns 0, only to fulfill the {@link StorageEntry} interface
+     */
+    @Override
+    public long getMaxIdleTime() {
+      return 0;
     }
 
 
@@ -2093,6 +2285,151 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
     @Override
     public final boolean equals(Object obj) {
       return this == obj;
+    }
+
+  }
+
+  class StorageAdapter {
+
+    CacheStorage storage;
+    boolean storeAllways = true;
+    boolean storeOnEvict = false;
+    boolean storeOnShutdown = false;
+    long storageErrorCount = 0;
+    Set<Object> deletedKeys = new HashSet<Object>();
+
+    public void open() {
+      String _fileName =
+        "cache2k-storage:" + manager.getName() + ":" + name;
+      try {
+        BufferStorage s = new BufferStorage();
+        s.setFileName(_fileName);
+        s.setEntryCapacity(maxSize);
+        s.reopen();
+        storage = s;
+      } catch (Exception ex) {
+        getLog().warn("error initializing storage, running in-memory", ex);
+      }
+    }
+
+    /**
+     * Store entry on cache put. Entry must be locked, since we use the
+     * entry directly for handing it over to the storage, it is not
+     * allowed to change. If storeAlways is switched on the entry will
+     * be in memory and in the storage after this operation.
+     */
+    public void put(Entry e) {
+      if (storeOnShutdown) {
+        synchronized (deletedKeys) {
+          deletedKeys.remove(e.getKey());
+        }
+        return;
+      }
+      if (!e.isDirty()) {
+        return;
+      }
+      try {
+        storage.put(e);
+      } catch (Exception ex) {
+        ex.printStackTrace();
+        storageErrorCount++;
+      }
+    }
+
+    public StorageEntry get(Object k) {
+      if (storeOnShutdown) {
+        synchronized (deletedKeys) {
+          if (deletedKeys.contains(k)) {
+            return null;
+          }
+        }
+      }
+      try {
+        return storage.get(k);
+      } catch (Exception ex) {
+        ex.printStackTrace();
+        storageErrorCount++;
+      }
+      return null;
+    }
+
+    /**
+     * Entry is evicted from memory cache either because of a expiry or a
+     * eviction.
+     */
+    public void evict(Entry e) {
+      if (storeOnEvict) {
+        putIfDirty(e);
+      }
+    }
+
+    private void putIfDirty(Entry e) {
+      try {
+        if (e.isDirty()) {
+          storage.put(e);
+        }
+      } catch (Exception ex) {
+        ex.printStackTrace();
+        storageErrorCount++;
+      }
+    }
+
+    /**
+     * Send remove to the storage in case of {@link #storeOnEvict} and {@link #storeOnShutdown}
+     */
+    public void remove(Object key) {
+      if (storeOnShutdown) {
+        synchronized (deletedKeys) {
+          deletedKeys.remove(key);
+        }
+        return;
+      }
+      try {
+        storage.remove(key);
+      } catch (Exception ex) {
+        ex.printStackTrace();
+        storageErrorCount++;
+      }
+    }
+
+    public void shutdown() {
+      if (storeOnShutdown) {
+        Iterator<Entry> it = iterateAllLocalEntries();
+        while (it.hasNext()) {
+          Entry e = it.next();
+          putIfDirty(e);
+        }
+      }
+      try {
+        storage.close();
+      } catch (IOException ex) {
+        ex.printStackTrace();
+        storageErrorCount++;
+      }
+
+    }
+
+    /**
+     * Calculates the cache size, depending on the persistence configuration
+     */
+    public int getTotalEntryCount() {
+      if (storeAllways) {
+        return storage.getEntryCount();
+      }
+      int size = storage.getEntryCount();
+      Iterator<Entry> it = iterateAllLocalEntries();
+      try {
+        while (it.hasNext()) {
+          Entry e = it.next();
+          if (!storage.contains(e.getKey())) {
+            size++;
+          }
+        }
+      } catch (IOException ex) {
+        ex.printStackTrace();
+        storageErrorCount++;
+      }
+      return size;
     }
 
   }

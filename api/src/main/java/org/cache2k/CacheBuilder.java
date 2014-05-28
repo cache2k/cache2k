@@ -125,6 +125,11 @@ public abstract class CacheBuilder<K,T> implements Cloneable {
     return this;
   }
 
+  public CacheBuilder<K, T> persistent(boolean v) {
+    config.setPersistent(v);
+    return this;
+  }
+
   public CacheBuilder<K, T> expirySecs(int v) {
     config.setExpirySeconds(v);
     return this;

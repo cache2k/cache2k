@@ -40,6 +40,7 @@ public class CacheConfig {
   private boolean backgroundRefresh = true;
   private int expirySeconds = 10 * 60;
   private boolean keepDataAfterExpired = true;
+  private boolean persistent = false;
 
   public String getName() {
     return name;
@@ -158,4 +159,11 @@ public class CacheConfig {
     this.implementation = cacheImplementation;
   }
 
+  public boolean isPersistent() {
+    return persistent;
+  }
+
+  public void setPersistent(boolean persistent) {
+    this.persistent = persistent;
+  }
 }

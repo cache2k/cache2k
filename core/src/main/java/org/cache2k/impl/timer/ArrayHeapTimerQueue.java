@@ -275,11 +275,12 @@ public class ArrayHeapTimerQueue extends TimerTaskQueue {
       if (queue.maxLapse < d) {
         queue.maxLapse = d;
       }
-      int idx = (int) d / 7;
+      int idx = (int) (d / 7);
       int[] ia = queue.lapse;
-      if (ia.length < idx) {
-        ia[idx]++;
+      if (idx < 0 || idx >= ia.length) {
+        idx = ia.length - 1;
       }
+      ia[idx]++;
     }
 
     private void waitUntilTimeout(long _waitTime) {
