@@ -49,23 +49,6 @@ import java.util.Set;
 import java.util.TreeMap;
 import java.util.TreeSet;
 
-/* TODO: BufferStorage features...
- * test: different descriptor corruption
- * test: entries rewrite
- * test: etc...
- * what to do about incompatible classes?
- * multiple files, >2GB support?
- * get total persisted storage
- * eviction
- * clear
- * iterate all / process
- * expire / purge entries
- * compaction? truncate file?
- *
- * add some more detailed warning about the buffer that cannot be written
-
- * bulk?
- */
 
 /**
  * Implements a robust storage on a file or a byte buffer.
@@ -79,7 +62,7 @@ import java.util.TreeSet;
  *
  * @author Jens Wilke; created: 2014-03-27
  */
-public class BufferStorage {
+public class BufferStorage implements CacheStorage {
 
   /** Number of bytes we used for on disk disk checksum of our descriptor */
   final static int CHECKSUM_BYTES = 16;
@@ -156,32 +139,56 @@ public class BufferStorage {
     reopen();
   }
 
-  public void reopen() throws IOException, ClassNotFoundException {
-    file = new RandomAccessFile(fileName + ".img", "rw");
-    resetBufferFromFile();
-    values.clear();
-    newBufferEntries = new HashMap<>();
-    deletedBufferEntries = new HashMap<>();
-    spaceToFree = new ArrayList<>();
-    entriesInEarliestIndex = new HashMap<>();
-    committedEntries = new HashMap<>();
-    BufferDescriptor d = readLatestIntactBufferDescriptor();
-    if (d == null) {
-      if (buffer.capacity() > 0) {
-        dataLost = true;
+  public void reopen() throws IOException {
+    try {
+      file = new RandomAccessFile(fileName + ".img", "rw");
+      resetBufferFromFile();
+      values.clear();
+      newBufferEntries = new HashMap<>();
+      deletedBufferEntries = new HashMap<>();
+      spaceToFree = new ArrayList<>();
+      entriesInEarliestIndex = new HashMap<>();
+      committedEntries = new HashMap<>();
+      BufferDescriptor d = readLatestIntactBufferDescriptor();
+      if (d == null) {
+        if (buffer.capacity() > 0) {
+          dataLost = true;
+        }
+        initializeFreeSpaceMap();
+        descriptor = new BufferDescriptor();
+        descriptor.storageCreated = System.currentTimeMillis();
+      } else {
+        descriptor = d;
+        readIndex();
       }
-      initializeFreeSpaceMap();
-      descriptor = new BufferDescriptor();
-      descriptor.storageCreated = System.currentTimeMillis();
-    } else {
-      descriptor = d;
-      readIndex();
+    } catch (ClassNotFoundException e) {
+      throw new IOException(e);
     }
   }
 
-  public void close() throws IOException, ClassNotFoundException {
-    commit();
-    fastClose();
+  public void close() throws IOException {
+    synchronized (commitLock) {
+      if (file == null) {
+        return;
+      }
+      commit();
+      fastClose();
+    }
+  }
+
+  public void clear() throws IOException {
+    synchronized (commitLock) {
+      if (file != null) {
+        fastClose();
+      }
+      for (int i = 0; i < DESCRIPTOR_COUNT; i++) {
+        new File(fileName + "-" + i + ".dsc").delete();
+      }
+      for (int i = descriptor.lastIndexFile; i >= 0; i--) {
+        new File(fileName + "-" + i + ".idx").delete();
+      }
+      reopen();
+    }
   }
 
   private void resetBufferFromFile() throws IOException {
@@ -200,10 +207,11 @@ public class BufferStorage {
       pos2slot.clear();
       buffer = null;
       file.close();
+      file = null;
     }
   }
 
-  public StorageEntry getEntry(Object key)
+  public StorageEntry get(Object key)
     throws IOException, ClassNotFoundException {
     BufferEntry be;
     synchronized(values) {
@@ -217,7 +225,7 @@ public class BufferStorage {
     return returnEntry(be);
   }
 
-  public boolean contains(Object key) throws IOException, ClassNotFoundException {
+  public boolean contains(Object key) throws IOException {
     synchronized(values) {
       if (!values.containsKey(key)) {
         missCount++;
@@ -274,7 +282,7 @@ public class BufferStorage {
    * reallocated space. However, this will only be a problem if the read
    * fails to get CPU time for several seconds.
    */
-  public void putEntry(StorageEntry e) throws IOException {
+  public void put(StorageEntry e) throws IOException {
     Object o = e.getValueOrException();
     byte[] _marshalledValue = ZERO_LENGTH_BYTE_ARRAY;
     int _neededSize = 0;
