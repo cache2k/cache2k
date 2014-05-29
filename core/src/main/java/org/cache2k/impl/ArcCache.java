@@ -26,7 +26,14 @@ package org.cache2k.impl;
 /**
  * Adaptive Replacement Cache implementation for cache2k. The algorithm itself is patented by IBM, so the
  * implementation will probably never be available or used as default eviction algorithm. This implementation
- * will be removed from the cache2k core package before 1.0.
+ * may be removed from the cache2k core package before 1.0.
+ *
+ * <p/>The implemented algorithm changed from cache2k version 0.19 to 0.20. Within version 0.20
+ * the eviction is separated from the general cache access, because of the consequent entry locking
+ * scheme an entry that is accessed, is always present in the cache. This means, the eviction is
+ * postponed to the end of the cache operation. The ARC algorithm was augmented to reflect this.
+ * This means for a cache operation that a newly inserted cache entry is also a candidate
+ * for eviction at the end of the operation.
  *
  * @see <a href="http://www.usenix.org/event/fast03/tech/full_papers/megiddo/megiddo.pdf‎">A Self-Tuning, Low Overhead Replacement Cache</a>
  * @see <a href="http://en.wikipedia.org/wiki/Adaptive_replacement_cache">Wikipedia: Adaptive Replacement Cache</a>
@@ -90,19 +97,19 @@ public class ArcCache<K, T> extends BaseCache<ArcCache.Entry, K, T> {
   protected Entry checkForGhost(K key, int hc) {
     Entry e = b1HashCtrl.remove(b1Hash, key, hc);
     if (e != null) {
-      removeEntryFromReplacementList(e);
-      b1Hit();
+      removeFromList(e);
+      b1HitAdaption();
       insertT2(e);
       return e;
     }
     e = b2HashCtrl.remove(b2Hash, key, hc);
     if (e != null) {
-      removeEntryFromReplacementList(e);
-      b2Hit();
+      removeFromList(e);
+      b2HitAdaption();
       insertT2(e);
       return e;
     }
-    allMiss();
+    allMissEvictGhots();
     return null;
   }
 
@@ -115,7 +122,7 @@ public class ArcCache<K, T> extends BaseCache<ArcCache.Entry, K, T> {
     e.withinT2 = false;
   }
 
-  private void b1Hit() {
+  private void b1HitAdaption() {
     int _b1Size = b1HashCtrl.size + 1;
     int _b2Size = b2HashCtrl.size;
     int _delta = _b1Size >= _b2Size ? 1 : _b2Size / _b1Size;
@@ -123,7 +130,7 @@ public class ArcCache<K, T> extends BaseCache<ArcCache.Entry, K, T> {
     b2HitPreferenceForEviction = false;
   }
 
-  private void b2Hit() {
+  private void b2HitAdaption() {
     int _b1Size = b1HashCtrl.size;
     int _b2Size = b2HashCtrl.size + 1;
     int _delta = _b2Size >= _b1Size ? 1 : _b1Size / _b2Size;
@@ -148,22 +155,28 @@ public class ArcCache<K, T> extends BaseCache<ArcCache.Entry, K, T> {
   }
 
   /**
-   * Called when no entry was hit within t1 or b2.
+   * Called when no entry was hit within t1 or b2. This checks whether we need to
+   * remove some entries from the b1 and b2 lists.
    */
-  private void allMiss() {
+  private void allMissEvictGhots() {
     if ((t1Size + b1HashCtrl.size) >= maxSize) {
-      if (t1Size < maxSize) {
+      if (b1HashCtrl.size > 0) {
         Entry e = b1Head.prev;
-        removeEntryFromReplacementList(e);
+        removeFromList(e);
         boolean f = b1HashCtrl.remove(b1Hash, e);
       } else {
+        if (b2HashCtrl.size >= maxSize) {
+          Entry e = b2Head.prev;
+          removeFromList(e);
+          boolean f = b2HashCtrl.remove(b2Hash, e);
+        }
       }
     } else {
       int _totalCnt = getSize() + b1HashCtrl.size + b2HashCtrl.size;
       if (_totalCnt >= maxSize) {
-        if (_totalCnt == maxSize * 2) {
+        if (_totalCnt >= maxSize * 2) {
           Entry e = b2Head.prev;
-          removeEntryFromReplacementList(e);
+          removeFromList(e);
           boolean f = b2HashCtrl.remove(b2Hash, e);
         }
       }
@@ -172,10 +185,16 @@ public class ArcCache<K, T> extends BaseCache<ArcCache.Entry, K, T> {
 
   @Override
   protected Entry findEvictionCandidate() {
+    Entry e;
     if (b2HitPreferenceForEviction) {
-      return replaceB2Hit();
+      e = replaceB2Hit();
+    } else {
+      e = replace();
     }
-    return replace();
+    if (b1HashCtrl.size + b2HashCtrl.size > maxSize) {
+      allMissEvictGhots();
+    }
+    return e;
   }
 
   private Entry replace() {
@@ -224,7 +243,9 @@ public class ArcCache<K, T> extends BaseCache<ArcCache.Entry, K, T> {
   protected String getExtraStatistics() {
     return  ", arcP=" + arcP + ", "
           + "t1Size=" + t1Size + ", "
-          + "t2Size=" + (mainHashCtrl.size - t1Size);
+          + "t2Size=" + (mainHashCtrl.size - t1Size) + ", "
+          + "b1Size=" + b1HashCtrl.size + ", "
+          + "b2Size=" + b2HashCtrl.size ;
   }
 
   @Override
@@ -232,11 +253,13 @@ public class ArcCache<K, T> extends BaseCache<ArcCache.Entry, K, T> {
     return super.getIntegrityState()
       .check("getSize() == getHashEntryCount()", getSize() == getHashEntryCount())
       .check("getSize() == getListEntryCount()", getSize() == getListEntryCount())
-      .check("t1Size == getListEntryCount(t1Head)", t1Size == getListEntryCount(t1Head))
-      .check("getSize() - t1Size == getListEntryCount(t2Head)", getSize() - t1Size == getListEntryCount(t2Head))
-      .check("getSize() + b1HashCtrl.size + b2HashCtrl.size <= maxElements * 2", getSize() + b1HashCtrl.size + b2HashCtrl.size <= maxSize * 2)
-      .check("b1HashCtrl.size == getListEntryCount(b1Head)", b1HashCtrl.size == getListEntryCount(b1Head))
-      .check("b2HashCtrl.size == getListEntryCount(b2Head)", b2HashCtrl.size == getListEntryCount(b2Head));
+      .checkEquals("t1Size == getListEntryCount(t1Head)", t1Size, getListEntryCount(t1Head))
+      .checkEquals("getSize() - t1Size == getListEntryCount(t2Head)", getSize() - t1Size, getListEntryCount(t2Head))
+      .checkLessOrEquals(
+        "b1HashCtrl.size + b2HashCtrl.size <= maxSize",
+        b1HashCtrl.size + b2HashCtrl.size, maxSize)
+      .checkEquals("b1HashCtrl.size == getListEntryCount(b1Head)", b1HashCtrl.size, getListEntryCount(b1Head))
+      .checkEquals("b2HashCtrl.size == getListEntryCount(b2Head)", b2HashCtrl.size, getListEntryCount(b2Head));
   }
 
   /** An entry in the hash table */

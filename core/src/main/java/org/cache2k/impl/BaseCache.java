@@ -473,13 +473,13 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
     }
   }
 
-  protected final void removeFromList(final E e) {
+  protected static final void removeFromList(final Entry e) {
     e.prev.next = e.next;
     e.next.prev = e.prev;
     e.removedFromList();
   }
 
-  protected final void insertInList(final Entry _head, final Entry e) {
+  protected static final void insertInList(final Entry _head, final Entry e) {
     e.prev = _head;
     e.next = _head.next;
     e.next.prev = e;
