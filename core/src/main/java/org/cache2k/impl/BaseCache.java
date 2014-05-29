@@ -64,6 +64,10 @@ import java.util.TimerTask;
  * LRU list (a simple double linked list), and a fast timer.
  * The variants implement different eviction strategies.
  *
+ * <p/>Locking: The cache has a single structure lock obtained via {@link #lock} and also
+ * locks on each entry for operations on it. Though, operations that happen on a
+ * single entry get serialized.
+ *
  * @author Jens Wilke; created: 2013-07-09
  */
 @SuppressWarnings("unchecked")
@@ -84,7 +88,6 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
 
   /** Time in milliseconds we keep an element */
   protected int maxLinger = 10 * 60 * 1000;
-  protected boolean keepAfterExpired;
   protected String name;
   protected CacheManagerImpl manager;
   protected CacheSourceWithMetaInfo<K, T> source;
@@ -93,6 +96,7 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
   protected RefreshController<T> refreshController;
 
   protected Info info;
+
   protected long clearedTime;
   protected long startedTime;
   protected long touchedTime;
@@ -121,7 +125,13 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
    */
   protected int evictedButInHashCnt = 0;
 
-  protected final Object lock = this;
+  /**
+   * Structure lock of the cache. Every operation that needs a consistent structure
+   * of the cache or modifies it needs to synchronize on this. Since this is a global
+   * lock, locking on it should be avoided and any operation under the lock should be
+   * quick.
+   */
+  protected final Object lock = new Object();
 
   private Log lazyLog = null;
   protected CacheRefreshThreadPool refreshPool;
@@ -153,6 +163,28 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
 
   protected StorageAdapter storage;
 
+  private int featureBits = 0;
+
+  private static final int SHARP_TIMEOUT_FEATURE = 1 << 0;
+  private static final int KEEP_AFTER_EXPIRED = 1 << 1;
+  protected static final int FEATURE_BIT_NUMBER_FOR_SUBCLASS = 8;
+
+  protected final boolean hasSharpTimeout() {
+    return (featureBits & SHARP_TIMEOUT_FEATURE) > 0;
+  }
+
+  protected final boolean hasKeepAfterExpired() {
+    return (featureBits & KEEP_AFTER_EXPIRED) > 0;
+  }
+
+  protected final void setFeatureBit(int _bitmask, boolean _flag) {
+    if (_flag) {
+      featureBits |= _bitmask;
+    } else {
+      featureBits &= ~_bitmask;
+    }
+  }
+
   /**
    * Enabling background refresh means also serving expired values.
    */
@@ -182,7 +214,7 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
       refreshPool = CacheRefreshThreadPool.getInstance();
     }
     setExpirySeconds(c.getExpirySeconds());
-    keepAfterExpired = c.isKeepDataAfterExpired();
+    setFeatureBit(KEEP_AFTER_EXPIRED, c.isKeepDataAfterExpired());
 
     if (c.isPersistent()) {
       storage = new StorageAdapter();
@@ -299,38 +331,48 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
    * registers it with the resource monitor.
    */
   public void init() {
-    if (name == null) {
-      name = "" + cacheCnt++;
-    }
-    if (maxSize == 0) {
-      throw new IllegalArgumentException("maxElements must be >0");
-    }
-    if (storage != null) {
-      bulkCacheSource = null;
-      storage.open();
-    }
-    initializeMemoryCache();
-    initTimer();
-    if (refreshPool != null && timer == null) {
-      if (maxLinger == 0) {
-        getLog().warn("Background refresh is enabled, but elements are fetched always. Disable background refresh.");
-      } else {
-        getLog().warn("Background refresh is enabled, but elements are eternal. Disable background refresh.");
+    synchronized (lock) {
+      if (name == null) {
+        name = "" + cacheCnt++;
       }
-      refreshPool.destroy();
-      refreshPool = null;
+      if (maxSize == 0) {
+        throw new IllegalArgumentException("maxElements must be >0");
+      }
+      if (storage != null) {
+        bulkCacheSource = null;
+        storage.open();
+      }
+      initializeMemoryCache();
+      initTimer();
+      if (refreshPool != null && timer == null) {
+        if (maxLinger == 0) {
+          getLog().warn("Background refresh is enabled, but elements are fetched always. Disable background refresh.");
+        } else {
+          getLog().warn("Background refresh is enabled, but elements are eternal. Disable background refresh.");
+        }
+        refreshPool.destroy();
+        refreshPool = null;
+      }
     }
   }
 
-  /** add or remove a timer */
-  private synchronized void initTimer() {
-    if (timer == null && maxLinger > 0 || refreshController != null) {
-      timer = new Timer(name, true);
-      return;
-    }
-    if (timer != null && maxLinger <= 0) {
-      timer.cancel();
-      timer = null;
+  private boolean isNeedingTimer() {
+    return maxLinger > 0 || refreshController != null;
+  }
+
+  /**
+   * Either add a timer or remove the timer if needed or not needed.
+   */
+  private void initTimer() {
+    if (isNeedingTimer()) {
+      if (timer == null) {
+        timer = new Timer(name, true);
+      }
+    } else {
+      if (timer != null) {
+        timer.cancel();
+        timer = null;
+      }
     }
   }
 
@@ -537,7 +579,17 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
 
 
   /**
-   * Find an entry that should be evicted. Called within big lock. Postcondition: entry is still in replacement list.
+   * Find an entry that should be evicted. Called within structure lock.
+   * The replacement algorithm can actually remove the entry from the replacement
+   * list or keep it in the replacement list, this is detected via
+   * {@link org.cache2k.impl.BaseCache.Entry#isRemovedFromReplacementList()} by the
+   * basic cache implementation. The entry is finally removed from the cache hash
+   * later in time.
+   *
+   * <p/>Rationale: Within the structure lock we can check for an eviction candidate
+   * and may remove it from the list. However, we cannot process additional operations or
+   * events which affect the entry. For this, we need to acquire the lock on the entry
+   * first.
    */
   protected E findEvictionCandidate() {
     return null;
@@ -545,7 +597,7 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
 
 
   /**
-   * Precondition: Replacement list entry count == getSize().
+   *
    */
   protected void removeEntryFromReplacementList(E e) {
     removeFromList(e);
@@ -577,7 +629,7 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
 
   protected Entry<E, K, T> getEntryInternal(K key) {
     E e = lookupOrNewEntrySynchronized(key);
-    if (!e.isFetched()) {
+    if (!e.isDataValid()) {
       if (e.needsTimeCheck()) {
         long t = System.currentTimeMillis();
         if (t < -e.nextRefreshTime) {
@@ -585,7 +637,7 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
         }
       }
       synchronized (e) {
-        if (!e.isFetched()) {
+        if (!e.isDataValid()) {
           fetch(e);
         }
       }
@@ -594,7 +646,7 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
     return e;
   }
 
-  protected void evictEventually() {
+  protected final void evictEventually() {
     while (evictionNeeded) {
       E e = null;
       synchronized (lock) {
@@ -603,13 +655,11 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
           if (e.isRemovedFromReplacementList()) {
             evictedButInHashCnt++;
           }
-        } else {
-          evictionNeeded = false;
         }
       }
-      if (e != null) {
+      if  (e != null) {
         synchronized (e) {
-          if (!e.isRemovedState()) {
+          if (!e.isRemovedState() && !e.isRemovedNonValidState()) {
             synchronized (lock) {
               if (e.isRemovedFromReplacementList()) {
                 removeEntryFromHash(e);
@@ -618,6 +668,7 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
                 removeEntry(e);
               }
               evictedCnt++;
+              evictionNeeded = getSize() > maxSize;
             }
             if (storage != null) {
               storage.evictOrExpire(e);
@@ -652,7 +703,7 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
         }
       }
       evictEventually();
-      if (!e.isFetched()) {
+      if (!e.isDataValid()) {
         if (e.needsTimeCheck()) {
           long t = System.currentTimeMillis();
           if (t < -e.nextRefreshTime) {
@@ -866,6 +917,7 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
     return null;
   }
 
+
   /**
    * Insert new entry in all structures (hash and replacement list). Evict an
    * entry we reached the maximum size.
@@ -898,12 +950,11 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
    * Called under big lock.
    */
   private void removeEntryFromHash(E e) {
+
     boolean f =
       mainHashCtrl.remove(mainHash, e) || refreshHashCtrl.remove(refreshHash, e);
     checkForHashCodeChange(e);
-    if (e.isFetched()) {
-      e.setRemovedState();
-    }
+
     if (e.task != null) {
       e.task.cancel();
       timerCancelCount++;
@@ -912,6 +963,11 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
         timerCancelCount = 0;
       }
       e.task = null;
+    }
+    if (e.isDataValid()) {
+      e.setRemovedState();
+    } else {
+      e.setRemovedNonValidState();
     }
   }
 
@@ -952,21 +1008,24 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
   protected long calcNextRefreshTime(
      T _oldObject, T _newObject, long _lastUpdate, long now) {
     RefreshController<T> lc = refreshController;
-    long _tMaximum = maxLinger >= 0 ? maxLinger + now : Long.MAX_VALUE;
-    long t = _tMaximum;
     if (lc != null && !(_newObject instanceof ExceptionWrapper)) {
-      t = lc.calculateNextRefreshTime(_oldObject, _newObject, _lastUpdate, now);
-      if (t > _tMaximum) {
-        t = _tMaximum;
+      long t = lc.calculateNextRefreshTime(_oldObject, _newObject, _lastUpdate, now);
+      if (maxLinger > 0) {
+        long _tMaximum = maxLinger + now;
+        if (t > _tMaximum) {
+          return _tMaximum;
+        }
+        if (t < -1 && -t > _tMaximum) {
+          return -_tMaximum;
+        }
       }
+      return t;
     }
-    if (t == -1) {
-      return -1;
+    if (maxLinger > 0) {
+      return maxLinger + now;
+    } else {
+      return maxLinger;
     }
-    if (t <= now) {
-      return 0;
-    }
-    return t;
   }
 
   protected void fetch(final E e) {
@@ -1087,14 +1146,24 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
         return;
       }
       e.value = v;
-      if (timer != null && _nextRefreshTime > Entry.EXPIRY_TIME_MIN) {
-        long _timerTime = _nextRefreshTime - 4;
-        if (_timerTime < t) {
+      if (hasSharpTimeout() || _nextRefreshTime > Entry.EXPIRY_TIME_MIN) {
+        _nextRefreshTime = -_nextRefreshTime;
+      }
+      if (timer != null &&
+        (_nextRefreshTime > Entry.EXPIRY_TIME_MIN || _nextRefreshTime < -1)) {
+        if (_nextRefreshTime < -1) {
           _nextRefreshTime = -_nextRefreshTime;
+          long _timerTime = _nextRefreshTime - 3;
+          if (_timerTime >= t) {
+            MyTimerTask tt = new MyTimerTask();
+            tt.entry = e;
+            timer.schedule(tt, new Date(_timerTime));
+            e.task = tt;
+          }
         } else {
           MyTimerTask tt = new MyTimerTask();
           tt.entry = e;
-          timer.schedule(tt, new Date(_timerTime));
+          timer.schedule(tt, new Date(_nextRefreshTime));
           e.task = tt;
         }
       } else {
@@ -1104,7 +1173,8 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
           _nextRefreshTime = Entry.FETCHED_STATE;
         }
       }
-    }
+    } // synchronized (lock)
+
     e.nextRefreshTime = _nextRefreshTime;
     if (storage != null && e.isDirty()) {
       storage.put(e);
@@ -1133,26 +1203,40 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
           Runnable r = new Runnable() {
             @Override
             public void run() {
-              synchronized (e) {
-                if (e.isRemovedFromReplacementList()) { return; }
                 try {
-                  e.setGettingRefresh();
-                  fetch(e);
+                  synchronized (e) {
+                    if (e.isRemovedFromReplacementList()) { return; }
+                    e.setGettingRefresh();
+                    fetch(e);
+                  }
                 } catch (Exception ex) {
                   synchronized (lock) {
                     refreshSubmitFailedCnt++;
-                    getLog().warn("Refresh exception", ex);
-                    expireEntry(e);
                   }
+                  getLog().warn("Refresh exception", ex);
+                  expireEntry(e);
                 }
-              }
-            }
+             }
           };
           boolean _submitOkay = refreshPool.submit(r);
           if (_submitOkay) { return; }
           refreshSubmitFailedCnt++;
         }
 
+      }
+
+    } else {
+      long t = System.currentTimeMillis();
+      if (t < e.nextRefreshTime && e.nextRefreshTime > Entry.EXPIRY_TIME_MIN) {
+        synchronized (e) {
+          t = System.currentTimeMillis();
+          if (t < e.nextRefreshTime && e.nextRefreshTime > Entry.EXPIRY_TIME_MIN) {
+            e.nextRefreshTime = -e.nextRefreshTime;
+            return;
+          }
+          expireEntry(e);
+          return;
+        }
       }
     }
     expireEntry(e);
@@ -1168,7 +1252,7 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
         storage.evictOrExpire(e);
       }
       synchronized (lock) {
-        if (keepAfterExpired) {
+        if (hasKeepAfterExpired()) {
           expiredKeptCnt++;
         } else {
           removeEntry(e);
@@ -1335,13 +1419,13 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
     for (; i >= s; i--) {
       E e = ea[i];
       if (e == null) { continue; }
-      if (!e.isFetched()) {
+      if (!e.isDataValid()) {
         synchronized (e) {
-          if (!e.isFetched()) {
+          if (!e.isDataValid()) {
             r[i] = null;
             _fetched.set(i, false);
             long t2 = fetchBulkLoop(ea, k, r, _fetched, s, i - 1, end, t);
-            if (!e.isFetched()) {
+            if (!e.isDataValid()) {
               insertFetched(e, r[i], t, t2);
             }
             return t2;
@@ -1406,7 +1490,7 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
         T v = (T) new ExceptionWrapper(_ouch);
         for (i = s; i < end; i++) {
           Entry e = ea[i];
-          if (!e.isFetched()) {
+          if (!e.isDataValid()) {
             r[i] = v;
           }
         }
@@ -1419,9 +1503,9 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
     for (int i = s; i < end; i++) {
       E e = ea[i];
       if (e == null) { continue; }
-      if (!e.isFetched()) {
+      if (!e.isDataValid()) {
         synchronized (e) {
-          if (!e.isFetched()) {
+          if (!e.isDataValid()) {
             fetch(e);
           }
           _result[i] = (T) e.getValue();
@@ -1483,7 +1567,7 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
       if (_entry == null) {
         _entries[i] = newEntry(key, hc);
       } else {
-        if (_entry.isFetched()) {
+        if (_entry.isDataValid()) {
           _result[i] = _entry.getValue();
           _fetched.set(i);
           _fetchCount--;
@@ -2134,8 +2218,13 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
     static final int REMOVED_STATE = 12;
     static final int REFRESH_STATE = 11;
     static final int REPUT_STATE = 13;
+
     static final int EXPIRED_STATE = 4;
+
+    /** Logically the same as immediatly expired */
     static final int FETCH_NEXT_TIME_STATE = 3;
+
+    static private final int REMOVED_NON_VALID_STATE = 2;
     static final int VIRGIN_STATE = 0;
     static final int EXPIRY_TIME_MIN = 20;
 
@@ -2206,7 +2295,8 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
     }
 
     /**
-     * Entry was removed before, however the entry contains still valid data.
+     * Entry was removed before, however the entry contains still valid data,
+     * so {@link #isDataValid()} is also true.
      * This state is state may not be terminal. When an parallel get is going on
      * it will change to just isFetched or isFetchNextTime even if it was
      * removed. Use {@link #isRemovedFromReplacementList()} as a flag whether
@@ -2221,7 +2311,15 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
       return nextRefreshTime == FETCH_NEXT_TIME_STATE;
     }
 
-    public final boolean isFetched() {
+    /**
+     * The entry value was fetched and is valid, which means it can be
+     * returned by the cache. If a valid an entry with {@link #isDataValid()}
+     * true gets removed from the cache the data is still valid. This is
+     * because a concurrent get needs to return the data. There is also
+     * the chance that an entry is removed by eviction, or is never inserted
+     * to the cache, before the get returns it.
+     */
+    public final boolean isDataValid() {
       return nextRefreshTime >= FETCHED_STATE;
     }
 
@@ -2234,12 +2332,24 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
       nextRefreshTime = EXPIRED_STATE;
     }
 
+    /**
+     * The entry expired, but still in the cache. This may happen if
+     * {@link org.cache2k.impl.BaseCache#hasKeepAfterExpired()} is true.
+     */
     public boolean isExpiredState() {
       return nextRefreshTime == EXPIRED_STATE;
     }
 
     public void setRemovedState() {
       nextRefreshTime = REMOVED_STATE;
+    }
+
+    public void setRemovedNonValidState() {
+      nextRefreshTime = REMOVED_NON_VALID_STATE;
+    }
+
+    public boolean isRemovedNonValidState() {
+      return nextRefreshTime == REMOVED_NON_VALID_STATE;
     }
 
     public void setFetchNextTimeState() {
@@ -2355,6 +2465,16 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
     }
 
 
+    @Override
+    public String toString() {
+      return "Entry{" +
+        "fetchedTime=" + fetchedTime +
+        ", nextRefreshTime=" + nextRefreshTime +
+        ", key=" + key +
+        ", value=" + value +
+        '}';
+    }
+
     /**
      * Cache entries always have the object identity as equals method.
      */
@@ -2375,6 +2495,7 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
     Set<Object> deletedKeys = new HashSet<Object>();
 
     public void open() {
+
       String _fileName =
         "cache2k-storage:" + manager.getName() + ":" + name;
       try {

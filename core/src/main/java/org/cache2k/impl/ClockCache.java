@@ -83,12 +83,15 @@ public class ClockCache<K, T> extends LockFreeCache<ClockCache.Entry, K, T> {
 
   @Override
   protected Entry newEntry() {
-    return new Entry();
+    Entry e = new Entry();
+    e.hitCnt = 1;
+    hits -= e.hitCnt;
+    return e;
   }
 
 
   /**
-   * Run to evict and entry.
+   * Run to evict an entry.
    */
   @Override
   protected Entry findEvictionCandidate() {
@@ -115,7 +118,7 @@ public class ClockCache<K, T> extends LockFreeCache<ClockCache.Entry, K, T> {
   protected IntegrityState getIntegrityState() {
     synchronized (lock) {
       return super.getIntegrityState()
-              .checkEquals("getListSize() == getSize()", (getListSize()), getSize())
+              .checkEquals("getListSize() + evictedButInHashCnt == getSize()", getListSize() + evictedButInHashCnt, getSize())
               .check("checkCyclicListIntegrity(handCold)", checkCyclicListIntegrity(hand))
               .checkEquals("getCyclicListEntryCount(handCold) == coldSize", getCyclicListEntryCount(hand), size);
     }
