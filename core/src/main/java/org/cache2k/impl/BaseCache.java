@@ -117,11 +117,17 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
   protected long refreshHitCnt = 0;
   protected long newEntryCnt = 0;
   protected long refreshSubmitFailedCnt = 0;
+
+  /**
+   * A newly inserted entry was removed by the eviction without the fetch to complete.
+   */
+  protected long newEntryRemovedCnt = 0;
+
   protected int maximumBulkFetchSize = 100;
 
   /**
    * Needed to correct the counter invariants, because during eviction the entry
-   * might be removed from the cache, but still in the hash.
+   * might be removed from the replacement list, but still in the hash.
    */
   protected int evictedButInHashCnt = 0;
 
@@ -628,8 +634,11 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
   }
 
   protected Entry<E, K, T> getEntryInternal(K key) {
-    E e = lookupOrNewEntrySynchronized(key);
-    if (!e.isDataValid()) {
+    for (;;) {
+      E e = lookupOrNewEntrySynchronized(key);
+      if (e.isDataValid()) {
+        return e;
+      }
       if (e.needsTimeCheck()) {
         long t = System.currentTimeMillis();
         if (t < -e.nextRefreshTime) {
@@ -638,12 +647,15 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
       }
       synchronized (e) {
         if (!e.isDataValid()) {
+          if (e.isRemovedNonValidState()) {
+            continue;
+          }
           fetch(e);
         }
       }
       evictEventually();
+      return e;
     }
-    return e;
   }
 
   protected final void evictEventually() {
@@ -953,6 +965,9 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
 
     boolean f =
       mainHashCtrl.remove(mainHash, e) || refreshHashCtrl.remove(refreshHash, e);
+    if (!f) {
+      System.err.println(e);
+    }
     checkForHashCodeChange(e);
 
     if (e.task != null) {
@@ -967,6 +982,9 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
     if (e.isDataValid()) {
       e.setRemovedState();
     } else {
+      if (e.isVirgin()) {
+        newEntryRemovedCnt++;
+      }
       e.setRemovedNonValidState();
     }
   }
@@ -1139,11 +1157,6 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
       }
       if (e.task != null) {
         e.task.cancel();
-      }
-      if (e.isRemovedFromReplacementList()) {
-        e.setFetchedState();
-        e.value = v;
-        return;
       }
       e.value = v;
       if (hasSharpTimeout() || _nextRefreshTime > Entry.EXPIRY_TIME_MIN) {
@@ -1741,7 +1754,7 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
     public long getReadUsageCnt() { return usageCnt - (putCnt - putNewEntryCnt); }
     public long getUsageCnt() { return usageCnt; }
     public long getMissCnt() { return missCnt; }
-    public long getNewEntryCnt() { return newEntryCnt; }
+    public long getNewEntryCnt() { return newEntryCnt - newEntryRemovedCnt; }
     public long getFetchCnt() { return fetchCnt; }
     public int getFetchesInFlightCnt() { return getFetchesInFlight(); }
     public long getBulkGetCnt() { return bulkGetCnt; }
@@ -1749,7 +1762,7 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
     public long getRefreshSubmitFailedCnt() { return refreshSubmitFailedCnt; }
     public long getRefreshHitCnt() { return refreshHitCnt; }
     public long getExpiredCnt() { return BaseCache.this.getExpiredCnt(); }
-    public long getEvictedCnt() { return evictedCnt; }
+    public long getEvictedCnt() { return evictedCnt - newEntryRemovedCnt; }
     public long getPutNewEntryCnt() { return putNewEntryCnt; }
     public long getPutCnt() { return putCnt; }
     public long getKeyMutationCnt() { return keyMutationCount; }
@@ -2207,9 +2220,9 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
     }
   }
 
-  static class InitialValuePleaseComplainToJens { }
+  static class InitialValueInEntryNeverReturned { }
 
-  final static InitialValuePleaseComplainToJens INITIAL_VALUE = new InitialValuePleaseComplainToJens();
+  final static InitialValueInEntryNeverReturned INITIAL_VALUE = new InitialValueInEntryNeverReturned();
 
   public static class Entry<E extends Entry, K, T>
     implements MutableCacheEntry<K,T>, StorageEntry {
@@ -2241,10 +2254,11 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
      * Contains the next time a refresh has to occur. Low values have a special meaning, see defined constants.
      * Negative values means the refresh time was expired, and we need to check the time.
      */
-    public long nextRefreshTime;
+    public volatile long nextRefreshTime;
 
     public K key;
-    public T value = (T) INITIAL_VALUE;
+
+    public volatile T value = (T) INITIAL_VALUE;
 
     /**
      * Hash implementation: the calculated, modified hash code, retrieved from the key when the entry is

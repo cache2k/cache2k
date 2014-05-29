@@ -109,7 +109,6 @@ public class ClockProPlusCache<K, T> extends LockFreeCache<ClockProPlusCache.Ent
 
   private void insertCopyIntoGhosts(Entry e) {
     Entry<K,T> e2 = new Entry<>();
-    e2.value = (T) INITIAL_GHOST_VALUE;
     e2.key = (K) e.key;
     e2.hashCode = e.hashCode;
     ghostHash = ghostHashCtrl.insert(ghostHash, e2);
@@ -184,10 +183,6 @@ public class ClockProPlusCache<K, T> extends LockFreeCache<ClockProPlusCache.Ent
     hotSize--;
     return _coldCandidate;
   }
-
-  static class InitialGhostValuePleaseComplain { }
-  final static InitialGhostValuePleaseComplain INITIAL_GHOST_VALUE =
-          new InitialGhostValuePleaseComplain();
 
   private void decreaseColdSpace() {
     if (hotMaxFix) { return; }
