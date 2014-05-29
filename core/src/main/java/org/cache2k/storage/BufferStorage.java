@@ -39,6 +39,7 @@ import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -46,7 +47,6 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.TreeMap;
 import java.util.TreeSet;
 
 
@@ -59,6 +59,9 @@ import java.util.TreeSet;
  * is known to be intact. The amount of data loss can be controlled by specifying
  * a commit interval.
  * </p>
+ *
+ * <p/>Possible optimizations: Specialized data structures / tree set, because the tree set
+ * is essentially a map with a dummy object.
  *
  * @author Jens Wilke; created: 2014-03-27
  */
@@ -81,8 +84,11 @@ public class BufferStorage implements CacheStorage {
   Marshaller exceptionMarshaller = new StandardMarshaller();
   RandomAccessFile file;
   ByteBuffer buffer;
+
   final TreeSet<FreeSlot> freeSet = new TreeSet<>();
-  TreeMap<Long, FreeSlot> pos2slot = new TreeMap<>();
+
+  /** Locked via feeSet */
+  TreeSet<FreeSlot> pos2slot = new TreeSet<>(new PositionOrder());
   Map<Object, BufferEntry> values;
 
   final Object valuesLock = new Object();
@@ -366,7 +372,7 @@ public class BufferStorage implements CacheStorage {
         freeSpace += s.size;
         s.position += _usedSize;
         freeSet.add(s);
-        pos2slot.put(s.position, s);
+        pos2slot.add(s);
       }
     }
     bb.put(_marshalledValue);
@@ -406,7 +412,7 @@ public class BufferStorage implements CacheStorage {
     if (s != null) {
       freeSet.remove(s);
       freeSpace -= s.size;
-      pos2slot.remove(s.position);
+      pos2slot.remove(s);
       return s;
     }
     return null;
@@ -480,21 +486,15 @@ public class BufferStorage implements CacheStorage {
    */
   FreeSlot extendBuffer(int _neededSpace) throws IOException {
     int pos = (int) file.length();
-    Map.Entry<Long, FreeSlot> e = pos2slot.floorEntry((long) pos);
-    FreeSlot s = null;
-    if (e != null) {
-      s = e.getValue();
-      if (s.getNextPosition() == pos) {
-        freeSet.remove(s);
-        pos2slot.remove(s.position);
-        _neededSpace -= s.size;
-        freeSpace -= s.size;
-        s.size += _neededSpace;
-      } else {
-        s = null;
-      }
-    }
-    if (s == null) {
+    reusedFreeSlotUnderLock.position = pos;
+    FreeSlot s = pos2slot.floor(reusedFreeSlotUnderLock);
+    if (s != null && s.getNextPosition() == pos) {
+      freeSet.remove(s);
+      pos2slot.remove(s);
+      _neededSpace -= s.size;
+      freeSpace -= s.size;
+      s.size += _neededSpace;
+    } else {
       s = new FreeSlot(pos, _neededSpace);
     }
     if (tunables.extensionSize >= 2) {
@@ -581,7 +581,7 @@ public class BufferStorage implements CacheStorage {
   void recalculateFreeSpaceMapAndRemoveDeletedEntries() {
     synchronized (freeSet) {
       initializeFreeSpaceMap();
-      TreeMap<Long, FreeSlot> _pos2slot = pos2slot;
+      TreeSet<FreeSlot> _pos2slot = pos2slot;
       HashSet<Object> _deletedKey = new HashSet<>();
       for (BufferEntry e : values.values()) {
         if (e.position < 0) {
@@ -601,10 +601,10 @@ public class BufferStorage implements CacheStorage {
    * Rebuild the free set from the elements in {@link #pos2slot}
    */
   private void rebuildFreeSet() {
-    TreeMap<Long, FreeSlot> _pos2slot = pos2slot;
+    TreeSet<FreeSlot> _pos2slot = pos2slot;
     Set<FreeSlot> m = freeSet;
     m.clear();
-    for (FreeSlot s : _pos2slot.values()) {
+    for (FreeSlot s : _pos2slot) {
       m.add(s);
     }
   }
@@ -612,8 +612,8 @@ public class BufferStorage implements CacheStorage {
   private void initializeFreeSpaceMap() {
     freeSpace = buffer.capacity();
     FreeSlot s = new FreeSlot(0, buffer.capacity());
-    pos2slot = new TreeMap<>();
-    pos2slot.put(s.position, s);
+    pos2slot = new TreeSet<>(new PositionOrder());
+    pos2slot.add(s);
     freeSet.clear();
     freeSet.add(s);
   }
@@ -622,23 +622,24 @@ public class BufferStorage implements CacheStorage {
    * Used to rebuild the free space map. Entry has already got a position.
    * The used space will be removed of the free space map.
    */
-  static void allocateEntrySpace(BufferEntry e, TreeMap<Long, FreeSlot> _pos2slot) {
-    Map.Entry<Long, FreeSlot> me = _pos2slot.floorEntry(e.position);
-    if (me == null) {
+  void allocateEntrySpace(BufferEntry e, TreeSet<FreeSlot> _pos2slot) {
+    reusedFreeSlotUnderLock.position = e.position;
+    FreeSlot s = _pos2slot.floor(reusedFreeSlotUnderLock);
+    if (s == null) {
       throw new IllegalStateException("data structure mismatch, internal error");
     }
-    FreeSlot s = _pos2slot.remove(me.getKey());
+    _pos2slot.remove(s);
     if (s.position < e.position) {
       FreeSlot _preceding = new FreeSlot();
       _preceding.position = s.position;
       _preceding.size = (int) (e.position - s.position);
-      _pos2slot.put(_preceding.position, _preceding);
+      _pos2slot.add(_preceding);
       s.size -= _preceding.size;
     }
     if (s.size > e.size) {
       s.position = e.size + e.position;
       s.size -= e.size;
-      _pos2slot.put(s.position, s);
+      _pos2slot.add(s);
     }
   }
 
@@ -648,24 +649,26 @@ public class BufferStorage implements CacheStorage {
    * position and size of the entry in the map, but we better merge it with
    * neighboring slots.
    */
-  static void freeEntrySpace(BufferEntry e, TreeMap<Long, FreeSlot> _pos2slot, Set<FreeSlot> _freeSet) {
-    FreeSlot s = _pos2slot.get(e.size + e.position);
-    if (s != null) {
-      _pos2slot.remove(s.position);
+  void freeEntrySpace(BufferEntry e, TreeSet<FreeSlot> _pos2slot, Set<FreeSlot> _freeSet) {
+    reusedFreeSlotUnderLock.position = (e.size + e.position);
+    FreeSlot s = _pos2slot.ceiling(reusedFreeSlotUnderLock);
+    if (s != null && s.position == reusedFreeSlotUnderLock.position) {
+      _pos2slot.remove(s);
       _freeSet.remove(s);
       s.position = e.position;
       s.size += e.size;
     } else {
       s = new FreeSlot(e.position, e.size);
     }
-    Map.Entry<Long, FreeSlot> me = _pos2slot.lowerEntry(e.position);
-    if (me != null && me.getValue().getNextPosition() == e.position) {
-      FreeSlot s2 = _pos2slot.remove(me.getKey());
+    reusedFreeSlotUnderLock.position = (e.position);
+    FreeSlot s2 = _pos2slot.lower(reusedFreeSlotUnderLock);
+    if (s2 != null && s2.getNextPosition() == e.position) {
+      _pos2slot.remove(s2);
       _freeSet.remove(s2);
       s2.size += s.size;
       s = s2;
     }
-    _pos2slot.put(s.position, s);
+    _pos2slot.add(s);
     _freeSet.add(s);
   }
 
@@ -833,7 +836,7 @@ public class BufferStorage implements CacheStorage {
       if (_freeNow != null) {
         final Set<FreeSlot> _freeSet = freeSet;
         synchronized (_freeSet) {
-          TreeMap<Long, FreeSlot> _pos2slot = pos2slot;
+          TreeSet<FreeSlot> _pos2slot = pos2slot;
           for (BufferEntry e : _freeNow) {
             freeEntrySpace(e, _pos2slot, _freeSet);
             freeSpace += e.size;
@@ -1026,6 +1029,9 @@ public class BufferStorage implements CacheStorage {
     }
   }
 
+  /**
+   * Describes an area of free space in the storage. The comparison is by size.
+   */
   static class FreeSlot implements Comparable<FreeSlot> {
 
     long position;
@@ -1051,6 +1057,27 @@ public class BufferStorage implements CacheStorage {
       return (position < o.position) ? -1 : ((position == o.position) ? 0 : 1);
     }
 
+    @Override
+    public String toString() {
+      return "FreeSlot{" +
+        "position=" + position +
+        ", size=" + size +
+        '}';
+    }
+
+  }
+
+  static class PositionOrder implements Comparator<FreeSlot> {
+    @Override
+    public int compare(FreeSlot o1, FreeSlot o2) {
+      if (o1.position < o2.position) {
+        return -1;
+      }
+      if (o1.position > o2.position) {
+        return 1;
+      }
+      return 0;
+    }
   }
 
   static class BufferEntry {
