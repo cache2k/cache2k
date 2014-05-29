@@ -215,17 +215,20 @@ public class BufferStorage implements CacheStorage {
   }
 
   public void clear() throws IOException {
-    synchronized (commitLock) {
-      if (file != null) {
-        fastClose();
+    synchronized (valuesLock) {
+      synchronized (commitLock) {
+        if (file != null) {
+          fastClose();
+        }
+        for (int i = 0; i < DESCRIPTOR_COUNT; i++) {
+          new File(fileName + "-" + i + ".dsc").delete();
+        }
+        for (int i = descriptor.lastIndexFile; i >= 0; i--) {
+          new File(fileName + "-" + i + ".idx").delete();
+        }
+        reopen();
+        System.err.println("cleared!!!");
       }
-      for (int i = 0; i < DESCRIPTOR_COUNT; i++) {
-        new File(fileName + "-" + i + ".dsc").delete();
-      }
-      for (int i = descriptor.lastIndexFile; i >= 0; i--) {
-        new File(fileName + "-" + i + ".idx").delete();
-      }
-      reopen();
     }
   }
 
@@ -438,7 +441,9 @@ public class BufferStorage implements CacheStorage {
 
   @Override
   public int getEntryCount() {
-    return values.size();
+    synchronized (valuesLock) {
+      return values.size();
+    }
   }
 
   public long getFreeSpace() {
@@ -684,6 +689,7 @@ public class BufferStorage implements CacheStorage {
         spaceToFree = new ArrayList<>();
         newBufferEntries = new HashMap<>();
         deletedBufferEntries = new HashMap<>();
+        descriptor.entryCount = getEntryCount();
       }
       _writer.write();
       writeDescriptor();
@@ -855,7 +861,7 @@ public class BufferStorage implements CacheStorage {
       int _keyPosition = descriptor.lastKeyIndexPosition;
       for (;;) {
         IndexChunkDescriptor d = readChunk(_fileNo, _keyPosition);
-        if (values.size() >= descriptor.elementCount) {
+        if (readCompleted()) {
           break;
         }
         _fileNo = d.lastIndexFile;
@@ -868,6 +874,16 @@ public class BufferStorage implements CacheStorage {
         entriesInEarliestIndex = new HashMap<>();
       }
       deleteEarlierIndex(_fileNo);
+    }
+
+    /**
+     * We read until capacity limit is reached or all stored index entries
+     * are read. The capacity may be lower then before.
+     */
+    private boolean readCompleted() {
+      return
+        values.size() >= descriptor.entryCount ||
+        values.size() >= entryCapacity;
     }
 
     void openFile(int _fileNo) throws IOException {
@@ -898,6 +914,9 @@ public class BufferStorage implements CacheStorage {
           entriesInEarliestIndex.put(e.key, e);
           if (!e.isDeleted()) {
             values.put(e.key, e);
+          }
+          if (readCompleted()) {
+            break;
           }
         } else {
           System.err.println("Seen, skipping: " + e);
@@ -958,7 +977,7 @@ public class BufferStorage implements CacheStorage {
     boolean clean = false;
     int lastIndexFile = -1;
     int lastKeyIndexPosition = -1;
-    int elementCount = 0;
+    int entryCount = 0;
     int freeSpace = 0;
     long storageCreated;
     long descriptorVersion = 0;
@@ -976,7 +995,7 @@ public class BufferStorage implements CacheStorage {
         "clean=" + clean +
         ", lastIndexFile=" + lastIndexFile +
         ", lastKeyIndexPosition=" + lastKeyIndexPosition +
-        ", elementCount=" + elementCount +
+        ", elementCount=" + entryCount +
         ", freeSpace=" + freeSpace +
         ", descriptorVersion=" + descriptorVersion +
         ", writtenTime=" + writtenTime +

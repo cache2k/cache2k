@@ -115,6 +115,12 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
   protected long refreshSubmitFailedCnt = 0;
   protected int maximumBulkFetchSize = 100;
 
+  /**
+   * Needed to correct the counter invariants, because during eviction the entry
+   * might be removed from the cache, but still in the hash.
+   */
+  protected int evictedButInHashCnt = 0;
+
   protected final Object lock = this;
 
   private Log lazyLog = null;
@@ -137,7 +143,22 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
 
   protected Timer timer;
 
+  /**
+   * Flag during operation that indicated, that the cache is full and eviction needs
+   * to be done. Eviction is only allowed to happen after the entry is fetched, so
+   * at the end of an cache operation that increased the entry count we check whether
+   * something needs to be evicted.
+   */
+  protected boolean evictionNeeded = false;
+
   protected StorageAdapter storage;
+
+  /**
+   * Enabling background refresh means also serving expired values.
+   */
+  protected final boolean hasBackgroundRefreshAndServesExpiredValues() {
+    return refreshPool != null;
+  }
 
   /**
    * Lazy construct a log when needed, normally a cache logs nothing.
@@ -284,11 +305,11 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
     if (maxSize == 0) {
       throw new IllegalArgumentException("maxElements must be >0");
     }
-    clear();
     if (storage != null) {
       bulkCacheSource = null;
       storage.open();
     }
+    clear();
     initTimer();
     if (refreshPool != null && timer == null) {
       if (maxLinger == 0) {
@@ -332,6 +353,9 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
         timer = null;
         initTimer();
       }
+      if (storage != null) {
+        storage.clear();
+      }
     }
   }
 
@@ -374,6 +398,9 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
       if (manager != null) {
         manager.cacheDestroyed(this);
         manager = null;
+      }
+      if (storage != null) {
+        storage.shutdown();
       }
     }
   }
@@ -488,24 +515,14 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
    */
   protected abstract E newEntry();
 
-  /**
-   * Find entry to evict and call {@link #removeEntryFromCache(BaseCache.Entry)}.
-   * Also remove it from the replacement structures. {@link  #evictedCnt} is not
-   * updated within the method.
-   *
-   * <p>Precondition: sizeBefore > 0. Postcondition: sizeAfter = sizeBefore - 1.
-   *
-   * <p>Either this or evictSomeEntries() needs to be implemented.
-   */
-  protected abstract void evictEntry();
 
   /**
-   * Evict at least one entry. Increase evictedCnt accordingly.
+   * Find an entry that should be evicted. Called within big lock.
    */
-  protected void evictSomeEntries() {
-    evictEntry();
-    evictedCnt++;
+  protected E findEvictionCandidate() {
+    return null;
   }
+
 
   /**
    * Precondition: Replacement list entry count == getSize()
@@ -552,8 +569,48 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
           fetch(e);
         }
       }
+      evictEventually();
     }
     return e;
+  }
+
+  protected void evictEventually() {
+    while (evictionNeeded) {
+      E e = null;
+      synchronized (lock) {
+        if (getSize() > maxSize) {
+          e = findEvictionCandidate();
+          if (e.isRemovedFromReplacementList()) {
+            evictedButInHashCnt++;
+          }
+        } else {
+          evictionNeeded = false;
+        }
+      }
+      if (e != null) {
+        synchronized (e) {
+          if (!e.isRemovedState()) {
+            synchronized (lock) {
+              if (e.isRemovedFromReplacementList()) {
+                removeEntryFromHash(e);
+                evictedButInHashCnt--;
+              } else {
+                removeEntry(e);
+              }
+              evictedCnt++;
+            }
+            if (storage != null) {
+              storage.evictOrExpire(e);
+            }
+          }
+        }
+      }
+    }
+  }
+
+  protected void removeEntry(E e) {
+    removeEntryFromHash(e);
+    removeEntryFromReplacementList(e);
   }
 
   @Override
@@ -574,6 +631,7 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
           fetchWithStorage(e, true);
         }
       }
+      evictEventually();
       if (!e.isFetched()) {
         if (e.needsTimeCheck()) {
           long t = System.currentTimeMillis();
@@ -608,6 +666,7 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
     synchronized (e) {
       insertOnPut(e, value, t, t);
     }
+    evictEventually();
   }
 
   /**
@@ -636,7 +695,7 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
       synchronized (e) {
         if (!e.isRemovedFromReplacementList()) {
           synchronized (lock) {
-            removeEntryFromCacheAndReplacementList(e);
+            removeEntry(e);
             removeCnt++;
           }
           if (storage != null) {
@@ -793,7 +852,7 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
    */
   protected E newEntry(K key, int hc) {
     if (getSize() >= maxSize) {
-      evictSomeEntries();
+      evictionNeeded = true;
     }
     E e = checkForGhost(key, hc);
     if (e == null) {
@@ -812,17 +871,13 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
    * main cache, refresh cache and from the (lru) list. Also cancel the timer.
    * Called under big lock.
    */
-  protected void removeEntryFromCacheAndReplacementList(E e) {
-    removeEntryFromCache(e);
-    removeEntryFromReplacementList(e);
-  }
 
   /**
    * Called from eviction policy to remove entry from the cache, if evicted. The
    * entry is already removed from the replacement list. stop/reset timer, if needed.
    * Called under big lock.
    */
-  protected void removeEntryFromCache(E e) {
+  private void removeEntryFromHash(E e) {
     boolean f =
       mainHashCtrl.remove(mainHash, e) || refreshHashCtrl.remove(refreshHash, e);
     checkForHashCodeChange(e);
@@ -837,9 +892,6 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
         timerCancelCount = 0;
       }
       e.task = null;
-    }
-    if (storage != null) {
-      storage.evict(e);
     }
   }
 
@@ -934,11 +986,17 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
     if ((_nextRefreshTime > Entry.EXPIRY_TIME_MIN && _nextRefreshTime <= t0) ||
         (timer == null && maxLinger == 0)) {
       if (!_peekOnly) {
-        e.value = se.getValueOrException();
-        e.nextRefreshTime = _nextRefreshTime;
-        fetchWithoutStorage(e);
+        if (!hasBackgroundRefreshAndServesExpiredValues()) {
+          e.value = se.getValueOrException();
+          e.setExpiredState();
+          fetchWithoutStorage(e);
+          return;
+        }
+      } else {
+        if (!hasBackgroundRefreshAndServesExpiredValues()) {
+          return;
+        }
       }
-      return;
     }
     insert(e, (T) se.getValueOrException(), t0, t0, false, _nextRefreshTime);
   }
@@ -1037,57 +1095,65 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
    * When the time has come remove the entry from the cache.
    */
   protected void timerEvent(final E e) {
-    synchronized (lock) {
-      if (e.task == null) {
-        return;
-      }
-      if (refreshPool != null && mainHashCtrl.remove(mainHash, e)) {
-        refreshHash = refreshHashCtrl.insert(refreshHash, e);
-        if (e.hashCode != modifiedHash(e.key.hashCode())) {
-          expiredRemoveCnt++;
-          removeEntryFromCacheAndReplacementList(e);
+    if (e.isRemovedFromReplacementList()) {
+      return;
+    }
+    if (refreshPool != null) {
+      synchronized (lock) {
+        if (e.task == null) {
           return;
         }
-        Runnable r = new Runnable() {
-          @Override
-          public void run() {
-            synchronized (e) {
-              if (e.isRemovedFromReplacementList()) { return; }
-              try {
-                e.setGettingRefresh();
-                fetch(e);
-              } catch (Exception ex) {
-                synchronized (lock) {
-                  refreshSubmitFailedCnt++;
-                  getLog().warn("Refresh exception", ex);
-                  expireEntry(e);
+        if (mainHashCtrl.remove(mainHash, e)) {
+          refreshHash = refreshHashCtrl.insert(refreshHash, e);
+          if (e.hashCode != modifiedHash(e.key.hashCode())) {
+            expiredRemoveCnt++;
+            removeEntryFromHash(e);
+            return;
+          }
+          Runnable r = new Runnable() {
+            @Override
+            public void run() {
+              synchronized (e) {
+                if (e.isRemovedFromReplacementList()) { return; }
+                try {
+                  e.setGettingRefresh();
+                  fetch(e);
+                } catch (Exception ex) {
+                  synchronized (lock) {
+                    refreshSubmitFailedCnt++;
+                    getLog().warn("Refresh exception", ex);
+                    expireEntry(e);
+                  }
                 }
               }
             }
-          }
-        };
-        boolean _submitOkay = refreshPool.submit(r);
-        if (_submitOkay) { return; }
-        refreshSubmitFailedCnt++;
+          };
+          boolean _submitOkay = refreshPool.submit(r);
+          if (_submitOkay) { return; }
+          refreshSubmitFailedCnt++;
+        }
+
       }
-      expireEntry(e);
     }
+    expireEntry(e);
   }
 
   protected void expireEntry(E e) {
-    if (keepAfterExpired) {
-      synchronized (e) {
-        if (e.hasExpiryTime()) {
-          e.nextRefreshTime = -e.nextRefreshTime;
-        } else {
-          e.setExpiredState();
-        }
+    synchronized (e) {
+      if (e.isRemovedState() || e.isExpiredState()) {
+        return;
       }
-      expiredKeptCnt++;
-    } else {
-      if (!e.isRemovedFromReplacementList()) {
-        expiredRemoveCnt++;
-        removeEntryFromCacheAndReplacementList(e);
+      e.setExpiredState();
+      if (storage != null) {
+        storage.evictOrExpire(e);
+      }
+      synchronized (lock) {
+        if (keepAfterExpired) {
+          expiredKeptCnt++;
+        } else {
+          removeEntry(e);
+          expiredRemoveCnt++;
+        }
       }
     }
   }
@@ -1116,16 +1182,6 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
 
   @Override
   public void removeAllAtOnce(Set<K> _keys) {
-    synchronized (lock) {
-      for (K key : _keys) {
-        int hc = modifiedHash(key.hashCode());
-        E e = lookupEntryWoUsageRecording(key, hc);
-        if (e != null) {
-          removeEntryFromCacheAndReplacementList(e);
-          removeCnt++;
-        }
-      }
-    }
   }
 
 
@@ -1451,7 +1507,7 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
         .checkEquals("newEntryCnt == getSize() + evictedCnt + getExpiredCnt() - expiredKeptCnt + removeCnt", newEntryCnt, getSize() + evictedCnt + getExpiredCnt() - expiredKeptCnt + removeCnt)
         .checkEquals("mainHashCtrl.size == Hash.calcEntryCount(mainHash)", mainHashCtrl.size, Hash.calcEntryCount(mainHash))
         .checkEquals("refreshHashCtrl.size == Hash.calcEntryCount(refreshHash)", refreshHashCtrl.size, Hash.calcEntryCount(refreshHash))
-        .checkLessOrEquals("size <= maxElements", getSize(), maxSize)
+        .check("!!evictionNeeded | (getSize() <= maxSize)", !!evictionNeeded | (getSize() <= maxSize))
         .checkLessOrEquals("bulkKeysCurrentlyRetrieved.size() <= getSize()",
           bulkKeysCurrentlyRetrieved == null ? 0 : bulkKeysCurrentlyRetrieved.size(), getSize());
     }
@@ -2357,9 +2413,13 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
      * Entry is evicted from memory cache either because of a expiry or a
      * eviction.
      */
-    public void evict(Entry e) {
+    public void evictOrExpire(Entry e) {
       if (storeOnEvict) {
         putIfDirty(e);
+        return;
+      }
+      if (storeAllways && storage.getEntryCapacity() <= maxSize) {
+        remove(e.getKey());
       }
     }
 
@@ -2407,6 +2467,15 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
         storageErrorCount++;
       }
 
+    }
+
+    public void clear() {
+      try {
+        storage.clear();
+      } catch (IOException ex) {
+        ex.printStackTrace();
+        storageErrorCount++;
+      }
     }
 
     /**

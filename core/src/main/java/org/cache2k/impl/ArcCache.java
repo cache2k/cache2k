@@ -78,10 +78,6 @@ public class ArcCache<K, T> extends BaseCache<ArcCache.Entry, K, T> {
   }
 
   /** Emtpy, done by replace / checkForGhost. */
-  @Override
-  protected void evictEntry() {
-    evictedCnt--;
-  }
 
   @Override
   protected Entry<K, T> newEntry() {
@@ -109,8 +105,8 @@ public class ArcCache<K, T> extends BaseCache<ArcCache.Entry, K, T> {
   }
 
   @Override
-  protected void removeEntryFromCacheAndReplacementList(Entry e) {
-    super.removeEntryFromCacheAndReplacementList(e);
+  protected void removeEntry(Entry e) {
+    super.removeEntry(e);
     if (!e.withinT2) {
       t1Size--;
     }
@@ -141,7 +137,7 @@ public class ArcCache<K, T> extends BaseCache<ArcCache.Entry, K, T> {
         boolean f = b1HashCtrl.remove(b1Hash, e);
         replace();
       } else {
-        removeEntryFromCacheAndReplacementList(t1Head.prev);
+        removeEntry(t1Head.prev);
         evictedCnt++;
       }
     } else {
@@ -149,7 +145,7 @@ public class ArcCache<K, T> extends BaseCache<ArcCache.Entry, K, T> {
       if (_totalCnt >= maxSize) {
         if (_totalCnt == maxSize * 2) {
           Entry e = b2Head.prev;
-          removeEntryFromReplacementList(e);
+          removeEntry(e);
           boolean f = b2HashCtrl.remove(b2Hash, e);
         }
         replace();
@@ -176,13 +172,13 @@ public class ArcCache<K, T> extends BaseCache<ArcCache.Entry, K, T> {
   private void replace(boolean _fromT1) {
     if (_fromT1) {
       Entry<K,T> e = t1Head.prev;
-      removeEntryFromCacheAndReplacementList(e);
+      removeEntry(e);
       e = cloneGhost(e);
       insertInList(b1Head, e);
       b1Hash = b1HashCtrl.insert(b1Hash, e);
     } else {
       Entry<K,T> e = t2Head.prev;
-      removeEntryFromCacheAndReplacementList(e);
+      removeEntry(e);
       e = cloneGhost(e);
       insertInList(b2Head, e);
       b2Hash = b2HashCtrl.insert(b2Hash, e);

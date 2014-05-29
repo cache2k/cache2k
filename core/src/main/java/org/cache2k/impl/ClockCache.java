@@ -88,15 +88,12 @@ public class ClockCache<K, T> extends LockFreeCache<ClockCache.Entry, K, T> {
     return new Entry();
   }
 
-  @Override
-  protected void evictEntry() {
-    runHand();
-  }
 
   /**
-   * Run to evict an entry.
+   * Run to evict and entry.
    */
-  protected void runHand() {
+  @Override
+  protected Entry findEvictionCandidate() {
     runCnt++;
     int _scanCnt = 1;
     Entry _evictedEntry;
@@ -113,7 +110,7 @@ public class ClockCache<K, T> extends LockFreeCache<ClockCache.Entry, K, T> {
     hand = (Entry) removeFromCyclicList(hand);
     size--;
     scanCnt += _scanCnt;
-    removeEntryFromCache(_evictedEntry);
+    return _evictedEntry;
   }
 
   @Override

@@ -55,9 +55,10 @@ public class LruCache<K, T> extends BaseCache<LruCache.Entry, K, T> {
     return new Entry<K, T>();
   }
 
+
   @Override
-  protected void evictEntry() {
-    removeEntryFromCacheAndReplacementList(head.prev);
+  protected Entry findEvictionCandidate() {
+    return head.prev;
   }
 
   @Override

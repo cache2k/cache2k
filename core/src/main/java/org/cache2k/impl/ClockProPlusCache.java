@@ -141,10 +141,6 @@ public class ClockProPlusCache<K, T> extends LockFreeCache<ClockProPlusCache.Ent
     return new Entry();
   }
 
-  @Override
-  protected void evictEntry() {
-    runHandCold();
-  }
 
 
 
@@ -206,10 +202,10 @@ public class ClockProPlusCache<K, T> extends LockFreeCache<ClockProPlusCache.Ent
   }
 
   /**
-   * Run to evict a page.
+   * Run hand cold.
    * Promote reference cold to hot or unreferenced test to cold
    */
-  protected void runHandCold() {
+  protected Entry findEvictionCandidate() {
     hotSizeSum += hotMax;
     coldRunCnt++;
     Entry<K,T> _hand = handCold;
@@ -268,7 +264,7 @@ public class ClockProPlusCache<K, T> extends LockFreeCache<ClockProPlusCache.Ent
     coldScanCnt += _scanCnt;
     coldSize = _coldSize;
     handCold = _hand;
-    removeEntryFromCache(_evictedEntry);
+    return _evictedEntry;
   }
 
   protected void runHandGhost() {
@@ -350,7 +346,7 @@ public class ClockProPlusCache<K, T> extends LockFreeCache<ClockProPlusCache.Ent
                       ghostHashCtrl.size, Hash.calcEntryCount(ghostHash))
               .check("hotMax <= maxElements", hotMax <= maxSize)
               .check("hotSize <= hotMax", hotSize <= hotMax)
-              .checkEquals("getListSize() == getSize()", (getListSize()) , getSize())
+              .checkEquals("getSize() == (getListSize() + evictedButInHashCnt) ", getSize(),  getListSize() + evictedButInHashCnt)
               .check("checkCyclicListIntegrity(handHot)", checkCyclicListIntegrity(handHot))
               .check("checkCyclicListIntegrity(handCold)", checkCyclicListIntegrity(handCold))
               .check("checkCyclicListIntegrity(handGhost)", checkCyclicListIntegrity(handGhost))

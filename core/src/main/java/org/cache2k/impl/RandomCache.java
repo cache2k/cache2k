@@ -48,7 +48,7 @@ public class RandomCache<K, T> extends LockFreeCache<BaseCache.Entry, K, T> {
    * Start at arbitrary hash slot and evict the next best entry.
    */
   @Override
-  protected void evictEntry() {
+  protected Entry findEvictionCandidate() {
     Entry[] h0 = mainHash;
     Entry[] h1 = refreshHash;
     int idx = evictionIndex % (h0.length + h1.length);
@@ -72,7 +72,7 @@ public class RandomCache<K, T> extends LockFreeCache<BaseCache.Entry, K, T> {
       evictionIndex = -evictionIndex;
     }
     h0[idx].removedFromList();
-    removeEntryFromCache(h0[idx]);
+    return h0[idx];
   }
 
   @Override
