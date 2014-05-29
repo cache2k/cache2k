@@ -63,3 +63,8 @@ A poor mans issue tracker.
 ### Prio C
 
   * implement maintenance to shrink hash table size?
+
+### Things to look on
+
+  * GridGain
+  * hazelcast

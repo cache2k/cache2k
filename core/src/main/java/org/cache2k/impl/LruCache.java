@@ -62,11 +62,9 @@ public class LruCache<K, T> extends BaseCache<LruCache.Entry, K, T> {
   }
 
   @Override
-  public void clear() {
-    synchronized (lock) {
-      super.clear();
-      head = new Entry<K,T>().shortCircuit();
-    }
+  protected void initializeMemoryCache() {
+    super.initializeMemoryCache();
+    head = new Entry<K,T>().shortCircuit();
   }
 
   @Override

@@ -52,6 +52,7 @@ public class HashEntryIterator {
       if (idx >= hash.length) {
         idx = 0;
         hash = hash2;
+        hash2 = null;
         if (hash == null) {
           return null;
         }

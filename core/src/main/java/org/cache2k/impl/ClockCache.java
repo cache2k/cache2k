@@ -55,12 +55,10 @@ public class ClockCache<K, T> extends LockFreeCache<ClockCache.Entry, K, T> {
   }
 
   @Override
-  public void clear() {
-    synchronized (lock) {
-      super.clear();
-      size = 0;
-      hand = null;
-    }
+  protected void initializeMemoryCache() {
+    super.initializeMemoryCache();
+    size = 0;
+    hand = null;
   }
 
   @Override

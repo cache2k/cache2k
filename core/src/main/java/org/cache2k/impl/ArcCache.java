@@ -54,6 +54,8 @@ public class ArcCache<K, T> extends BaseCache<ArcCache.Entry, K, T> {
   Entry<K,T> b1Head;
   Entry<K,T> b2Head;
 
+  boolean b2HitPreferenceForEviction;
+
   @Override
   public long getHitCnt() {
     return t2Hit + t1Hit;
@@ -105,11 +107,11 @@ public class ArcCache<K, T> extends BaseCache<ArcCache.Entry, K, T> {
   }
 
   @Override
-  protected void removeEntry(Entry e) {
-    super.removeEntry(e);
+  protected void removeEntryFromReplacementList(Entry e) {
     if (!e.withinT2) {
       t1Size--;
     }
+    super.removeEntryFromReplacementList(e);
     e.withinT2 = false;
   }
 
@@ -118,7 +120,7 @@ public class ArcCache<K, T> extends BaseCache<ArcCache.Entry, K, T> {
     int _b2Size = b2HashCtrl.size;
     int _delta = _b1Size >= _b2Size ? 1 : _b2Size / _b1Size;
     arcP = Math.min(arcP + _delta, maxSize);
-    replace();
+    b2HitPreferenceForEviction = false;
   }
 
   private void b2Hit() {
@@ -126,31 +128,7 @@ public class ArcCache<K, T> extends BaseCache<ArcCache.Entry, K, T> {
     int _b2Size = b2HashCtrl.size + 1;
     int _delta = _b2Size >= _b1Size ? 1 : _b1Size / _b2Size;
     arcP = Math.max(arcP - _delta, 0);
-    replaceB2Hit();
-  }
-
-  private void allMiss() {
-    if ((t1Size + b1HashCtrl.size) == maxSize) {
-      if (t1Size < maxSize) {
-        Entry e = b1Head.prev;
-        removeEntryFromReplacementList(e);
-        boolean f = b1HashCtrl.remove(b1Hash, e);
-        replace();
-      } else {
-        removeEntry(t1Head.prev);
-        evictedCnt++;
-      }
-    } else {
-      int _totalCnt = getSize() + b1HashCtrl.size + b2HashCtrl.size;
-      if (_totalCnt >= maxSize) {
-        if (_totalCnt == maxSize * 2) {
-          Entry e = b2Head.prev;
-          removeEntry(e);
-          boolean f = b2HashCtrl.remove(b2Hash, e);
-        }
-        replace();
-      }
-    }
+    b2HitPreferenceForEviction = true;
   }
 
   private void insertT2(Entry<K, T> e) {
@@ -169,45 +147,73 @@ public class ArcCache<K, T> extends BaseCache<ArcCache.Entry, K, T> {
     return e2;
   }
 
-  private void replace(boolean _fromT1) {
-    if (_fromT1) {
-      Entry<K,T> e = t1Head.prev;
-      removeEntry(e);
-      e = cloneGhost(e);
-      insertInList(b1Head, e);
-      b1Hash = b1HashCtrl.insert(b1Hash, e);
+  /**
+   * Called when no entry was hit within t1 or b2.
+   */
+  private void allMiss() {
+    if ((t1Size + b1HashCtrl.size) >= maxSize) {
+      if (t1Size < maxSize) {
+        Entry e = b1Head.prev;
+        removeEntryFromReplacementList(e);
+        boolean f = b1HashCtrl.remove(b1Hash, e);
+      } else {
+      }
     } else {
-      Entry<K,T> e = t2Head.prev;
-      removeEntry(e);
-      e = cloneGhost(e);
-      insertInList(b2Head, e);
-      b2Hash = b2HashCtrl.insert(b2Hash, e);
+      int _totalCnt = getSize() + b1HashCtrl.size + b2HashCtrl.size;
+      if (_totalCnt >= maxSize) {
+        if (_totalCnt == maxSize * 2) {
+          Entry e = b2Head.prev;
+          removeEntryFromReplacementList(e);
+          boolean f = b2HashCtrl.remove(b2Hash, e);
+        }
+      }
     }
-    evictedCnt++;
-  }
-
-  private void replace() {
-    replace((t1Size > arcP) || getT2Size() == 0);
-  }
-
-  private void replaceB2Hit() {
-    replace((t1Size >= arcP && t1Size > 0) || getT2Size() == 0);
   }
 
   @Override
-  public void clear() {
-    synchronized (lock) {
-      super.clear();
-      t1Size = 0;
-      b1HashCtrl = new Hash<>();
-      b2HashCtrl = new Hash<>();
-      b1Hash = b1HashCtrl.init(Entry.class);
-      b2Hash = b2HashCtrl.init(Entry.class);
-      t1Head = new Entry<K,T>().shortCircuit();
-      t2Head = new Entry<K,T>().shortCircuit();
-      b1Head = new Entry<K,T>().shortCircuit();
-      b2Head = new Entry<K,T>().shortCircuit();
+  protected Entry findEvictionCandidate() {
+    if (b2HitPreferenceForEviction) {
+      return replaceB2Hit();
     }
+    return replace();
+  }
+
+  private Entry replace() {
+    return replace((t1Size > arcP) || getT2Size() == 0);
+  }
+
+  private Entry replaceB2Hit() {
+    return replace((t1Size >= arcP && t1Size > 0) || getT2Size() == 0);
+  }
+
+  private Entry<K,T> replace(boolean _fromT1) {
+    Entry<K,T> e;
+    if (_fromT1) {
+      e = t1Head.prev;
+      Entry<K,T> e2 = cloneGhost(e);
+      insertInList(b1Head, e2);
+      b1Hash = b1HashCtrl.insert(b1Hash, e2);
+    } else {
+      e = t2Head.prev;
+      Entry<K,T> e2 = cloneGhost(e);
+      insertInList(b2Head, e2);
+      b2Hash = b2HashCtrl.insert(b2Hash, e2);
+    }
+    return e;
+  }
+
+  @Override
+  protected void initializeMemoryCache() {
+    super.initializeMemoryCache();
+    t1Size = 0;
+    b1HashCtrl = new Hash<>();
+    b2HashCtrl = new Hash<>();
+    b1Hash = b1HashCtrl.init(Entry.class);
+    b2Hash = b2HashCtrl.init(Entry.class);
+    t1Head = new Entry<K,T>().shortCircuit();
+    t2Head = new Entry<K,T>().shortCircuit();
+    b1Head = new Entry<K,T>().shortCircuit();
+    b2Head = new Entry<K,T>().shortCircuit();
   }
 
   final int getListEntryCount() {

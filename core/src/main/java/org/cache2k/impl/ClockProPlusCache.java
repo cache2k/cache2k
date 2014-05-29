@@ -75,21 +75,19 @@ public class ClockProPlusCache<K, T> extends LockFreeCache<ClockProPlusCache.Ent
   }
 
   @Override
-  public void clear() {
-    synchronized (lock) {
-      super.clear();
-      ghostMax = maxSize;
-      hotMax = maxSize * 50 / 100;
-      hotMaxFix = false;
-      coldSize = 0;
-      hotSize = 0;
-      staleSize = 0;
-      handCold = null;
-      handHot = null;
-      handGhost = null;
-      ghostHashCtrl = new Hash<>();
-      ghostHash = ghostHashCtrl.init(Entry.class);
-    }
+  protected void initializeMemoryCache() {
+    super.initializeMemoryCache();
+    ghostMax = maxSize;
+    hotMax = maxSize * 50 / 100;
+    hotMaxFix = false;
+    coldSize = 0;
+    hotSize = 0;
+    staleSize = 0;
+    handCold = null;
+    handHot = null;
+    handGhost = null;
+    ghostHashCtrl = new Hash<>();
+    ghostHash = ghostHashCtrl.init(Entry.class);
   }
 
   /**

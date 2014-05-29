@@ -309,7 +309,7 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
       bulkCacheSource = null;
       storage.open();
     }
-    clear();
+    initializeMemoryCache();
     initTimer();
     if (refreshPool != null && timer == null) {
       if (maxLinger == 0) {
@@ -334,28 +334,48 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
     }
   }
 
-  public void clear() {
+  /**
+   * Clear may be called during operation, e.g. to reset all the cache content. We must make sure
+   * that there is no ongoing operation when we send the clear to the storage. That is because the
+   * storage implementation has a guarantee that there is only one storage operation ongoing for
+   * one entry or key at any time. Clear, of course affects all entries.
+   */
+  private final void processClearWithStorage() {
+
+  }
+
+  public final void clear() {
+    if (storage != null) {
+      processClearWithStorage();
+      return;
+    }
     synchronized (lock) {
+      Iterator<Entry> it = iterateAllLocalEntries();
+      while (it.hasNext()) {
+        Entry e = it.next();
+        e.removedFromList();
+      }
       if (mainHashCtrl != null) {
         removeCnt += getSize();
       }
-      mainHashCtrl = new Hash<>();
-      refreshHashCtrl = new Hash<>();
-      txHashCtrl = new Hash<>();
-      mainHash = mainHashCtrl.init((Class<E>) newEntry().getClass());
-      refreshHash = refreshHashCtrl.init((Class<E>) newEntry().getClass());
-      txHash = txHashCtrl.init((Class<E>) newEntry().getClass());
-      clearedTime = System.currentTimeMillis();
-      touchedTime = clearedTime;
-      if (startedTime == 0) { startedTime = clearedTime; }
-      if (timer != null) {
-        timer.cancel();
-        timer = null;
-        initTimer();
-      }
-      if (storage != null) {
-        storage.clear();
-      }
+      initializeMemoryCache();
+    }
+  }
+
+  protected void initializeMemoryCache() {
+    mainHashCtrl = new Hash<>();
+    refreshHashCtrl = new Hash<>();
+    txHashCtrl = new Hash<>();
+    mainHash = mainHashCtrl.init((Class<E>) newEntry().getClass());
+    refreshHash = refreshHashCtrl.init((Class<E>) newEntry().getClass());
+    txHash = txHashCtrl.init((Class<E>) newEntry().getClass());
+    clearedTime = System.currentTimeMillis();
+    touchedTime = clearedTime;
+    if (startedTime == 0) { startedTime = clearedTime; }
+    if (timer != null) {
+      timer.cancel();
+      timer = null;
+      initTimer();
     }
   }
 
@@ -405,7 +425,7 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
     }
   }
 
-  protected void removeFromList(final E e) {
+  protected final void removeFromList(final E e) {
     e.prev.next = e.next;
     e.next.prev = e.prev;
     e.removedFromList();
@@ -517,7 +537,7 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
 
 
   /**
-   * Find an entry that should be evicted. Called within big lock.
+   * Find an entry that should be evicted. Called within big lock. Postcondition: entry is still in replacement list.
    */
   protected E findEvictionCandidate() {
     return null;
@@ -525,7 +545,7 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
 
 
   /**
-   * Precondition: Replacement list entry count == getSize()
+   * Precondition: Replacement list entry count == getSize().
    */
   protected void removeEntryFromReplacementList(E e) {
     removeFromList(e);
@@ -1058,13 +1078,13 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
           fetchedExpiredCnt++;
         }
       }
+      if (e.task != null) {
+        e.task.cancel();
+      }
       if (e.isRemovedFromReplacementList()) {
         e.setFetchedState();
         e.value = v;
         return;
-      }
-      if (e.task != null) {
-        e.task.cancel();
       }
       e.value = v;
       if (timer != null && _nextRefreshTime > Entry.EXPIRY_TIME_MIN) {
