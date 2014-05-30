@@ -389,6 +389,17 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
    * one entry or key at any time. Clear, of course affects all entries.
    */
   private final void processClearWithStorage() {
+    synchronized (lock) {
+      if (touchedTime == 0 ||
+        (touchedTime == clearedTime && getSize() == 0)) {
+        storage.clear();
+        initializeMemoryCache();
+        clearedTime = System.currentTimeMillis();
+        touchedTime = clearedTime;
+        return;
+      }
+    }
+    throw new UnsupportedOperationException("concurrent clear impl missing");
 
   }
 
@@ -407,6 +418,8 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
         removeCnt += getSize();
       }
       initializeMemoryCache();
+      clearedTime = System.currentTimeMillis();
+      touchedTime = clearedTime;
     }
   }
 
@@ -417,8 +430,6 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
     mainHash = mainHashCtrl.init((Class<E>) newEntry().getClass());
     refreshHash = refreshHashCtrl.init((Class<E>) newEntry().getClass());
     txHash = txHashCtrl.init((Class<E>) newEntry().getClass());
-    clearedTime = System.currentTimeMillis();
-    touchedTime = clearedTime;
     if (startedTime == 0) { startedTime = clearedTime; }
     if (timer != null) {
       timer.cancel();

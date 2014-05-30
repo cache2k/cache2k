@@ -73,12 +73,17 @@ public interface CacheStorage extends Closeable {
   public boolean contains(Object key) throws IOException;
 
   /**
-   * Remove all entries from the cache and free resources.
+   * Remove all entries from the cache and free resources. This operation is called
+   * when there is no other operation concurrently going on on this storage instance.
+   *
+   * <p/>When a Cache.clear() is initiated there is no obligation to send a
+   * CacheStorage.clear() to the persisted storage. Alternatively, all objects can
+   * be removed via remove().
    */
   public void clear() throws IOException;
 
   /**
-   * Write everything  to disk and free all resources. Multiple calls
+   * Write everything to disk and free all in-memory resources. Multiple calls
    * to close have no effect.
    */
   public void close() throws IOException;
