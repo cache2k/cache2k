@@ -22,12 +22,14 @@ package org.cache2k.impl;
  * #L%
  */
 
+import java.util.Iterator;
+
 /**
  * Iterator over all hash table entries of two hashes.
  *
  * @author Jens Wilke; created: 2013-12-21
  */
-public class HashEntryIterator {
+public class HashEntryIterator implements Iterator<BaseCache.Entry> {
 
   BaseCache.Entry lastEntry = null;
   BaseCache.Entry[] hash;
@@ -60,6 +62,21 @@ public class HashEntryIterator {
       e = hash[idx];
     } while (e == null);
     return lastEntry = e;
+  }
+
+  @Override
+  public boolean hasNext() {
+    return nextEntry() != null;
+  }
+
+  @Override
+  public BaseCache.Entry next() {
+    return lastEntry;
+  }
+
+  @Override
+  public void remove() {
+    throw new UnsupportedOperationException();
   }
 
 }

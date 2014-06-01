@@ -216,7 +216,11 @@ public class BufferStorage implements CacheStorage {
         return;
       }
       commit();
+      boolean _empty = (values.size() == 0);
       fastClose();
+      if (_empty) {
+        removeFiles();
+      }
     }
   }
 
@@ -226,16 +230,24 @@ public class BufferStorage implements CacheStorage {
         if (file != null) {
           fastClose();
         }
-        for (int i = 0; i < DESCRIPTOR_COUNT; i++) {
-          new File(fileName + "-" + i + ".dsc").delete();
-        }
-        for (int i = descriptor.lastIndexFile; i >= 0; i--) {
-          new File(fileName + "-" + i + ".idx").delete();
-        }
+        removeFiles();
         reopen();
-        System.err.println("cleared!!!");
       }
     }
+  }
+
+  /**
+   * When no entry is in the storage or when clear is
+   * called, then remove all files from the filesystem.
+   */
+  private void removeFiles() {
+    for (int i = 0; i < DESCRIPTOR_COUNT; i++) {
+      new File(fileName + "-" + i + ".dsc").delete();
+    }
+    for (int i = descriptor.lastIndexFile; i >= 0; i--) {
+      new File(fileName + "-" + i + ".idx").delete();
+    }
+    new File(fileName + ".img").delete();
   }
 
   private void resetBufferFromFile() throws IOException {

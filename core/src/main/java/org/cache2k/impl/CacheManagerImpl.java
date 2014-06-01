@@ -27,6 +27,7 @@ import org.apache.commons.logging.LogFactory;
 import org.cache2k.Cache;
 import org.cache2k.CacheManager;
 
+import java.lang.reflect.Proxy;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -34,6 +35,8 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.logging.Logger;
 
 /**
  * @author Jens Wilke; created: 2013-07-01

@@ -35,8 +35,7 @@ public interface CacheStorage extends Closeable {
   /**
    * Sets the maximum number of entries in the storage.
    * This configuration maybe called during runtime. If the
-   * size exceeds the capacity the last recently used entries will
-   * be removed.
+   * size exceeds the capacity entries are evicted.
    */
   public void setEntryCapacity(int v);
 
@@ -74,7 +73,7 @@ public interface CacheStorage extends Closeable {
 
   /**
    * Remove all entries from the cache and free resources. This operation is called
-   * when there is no other operation concurrently going on on this storage instance.
+   * when there is no other operation concurrently executed on this storage instance.
    *
    * <p/>When a Cache.clear() is initiated there is no obligation to send a
    * CacheStorage.clear() to the persisted storage. Alternatively, all objects can

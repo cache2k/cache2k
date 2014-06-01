@@ -49,6 +49,7 @@ import java.util.AbstractSet;
 import java.util.Arrays;
 import java.util.BitSet;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
@@ -60,7 +61,7 @@ import java.util.TimerTask;
 
 /**
  * Foundation for all cache variants. All common functionality is in here.
- * For a (in-memory) cache we need three things: a fast hash table implementation, a
+ * For a (in-memory) cache we need three things: a fast hash table implementation, an
  * LRU list (a simple double linked list), and a fast timer.
  * The variants implement different eviction strategies.
  *
@@ -97,7 +98,7 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
 
   protected Info info;
 
-  protected long clearedTime;
+  protected long clearedTime = 0;
   protected long startedTime;
   protected long touchedTime;
   protected int timerCancelCount = 0;
@@ -223,7 +224,7 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
     setFeatureBit(KEEP_AFTER_EXPIRED, c.isKeepDataAfterExpired());
 
     if (c.isPersistent()) {
-      storage = new StorageAdapter();
+      storage = new PassingStorageAdapter();
     }
   }
 
@@ -399,8 +400,49 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
         return;
       }
     }
-    throw new UnsupportedOperationException("concurrent clear impl missing");
+    StorageClearTask t = new StorageClearTask();
+    t.mainHashCopy = mainHash;
+    t.refreshHashCopy = refreshHash;
+    t.storageCopy = storage;
+    t.buffer = new BufferStorageAdapter();
+    synchronized (lock) {
+      if (storage instanceof BufferStorageAdapter) {
+        return;
+      }
+      clearLocalCache();
+      storage = t.buffer;
+      Thread th = new Thread(t);
+      th.setName("cache2k-clear:" + getName() + ":" + th.getId());
+      th.setDaemon(true);
+      th.start();
+    }
+  }
 
+  class StorageClearTask implements Runnable {
+
+    E[] mainHashCopy;
+    E[] refreshHashCopy;
+    StorageAdapter storageCopy;
+    BufferStorageAdapter buffer;
+
+    @Override
+    public void run() {
+      waitForEntryOperations();
+      storageCopy.clear();
+      buffer.transfer(storageCopy);
+      synchronized (lock) {
+        storage = storageCopy;
+      }
+    }
+
+    private void waitForEntryOperations() {
+      Iterator<Entry> it =
+        new HashEntryIterator(mainHashCopy, refreshHashCopy);
+      while (it.hasNext()) {
+        Entry e = it.next();
+        synchronized (e) { }
+      }
+    }
   }
 
   public final void clear() {
@@ -408,15 +450,18 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
       processClearWithStorage();
       return;
     }
+    clearLocalCache();
+  }
+
+  private void clearLocalCache() {
     synchronized (lock) {
       Iterator<Entry> it = iterateAllLocalEntries();
       while (it.hasNext()) {
         Entry e = it.next();
         e.removedFromList();
+        cancelExpiryTimer(e);
       }
-      if (mainHashCtrl != null) {
-        removeCnt += getSize();
-      }
+      removeCnt += getSize();
       initializeMemoryCache();
       clearedTime = System.currentTimeMillis();
       touchedTime = clearedTime;
@@ -707,6 +752,14 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
     removeEntryFromReplacementList(e);
   }
 
+  /**
+   * Return the entry, if it is in the cache, without invoking the
+   * cache source.
+   *
+   * <p>The cache storage is asked whether the entry is present.
+   * If the entry is not present, this result is cached in the local
+   * cache.
+   */
   @Override
   public T peek(K key) {
     int hc = modifiedHash(key.hashCode());
@@ -753,7 +806,9 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
         e = newEntry(key, hc);
         putNewEntryCnt++;
       } else {
-        e.setReputState();
+        if (e.isDataValid()) {
+          e.setReputState();
+        }
       }
     }
     long t = System.currentTimeMillis();
@@ -973,14 +1028,22 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
    * Called under big lock.
    */
   private void removeEntryFromHash(E e) {
-
     boolean f =
       mainHashCtrl.remove(mainHash, e) || refreshHashCtrl.remove(refreshHash, e);
-    if (!f) {
-      System.err.println(e);
-    }
     checkForHashCodeChange(e);
 
+    cancelExpiryTimer(e);
+    if (e.isDataValid()) {
+      e.setRemovedState();
+    } else {
+      if (e.isVirgin()) {
+        newEntryRemovedCnt++;
+      }
+      e.setRemovedNonValidState();
+    }
+  }
+
+  private void cancelExpiryTimer(Entry e) {
     if (e.task != null) {
       e.task.cancel();
       timerCancelCount++;
@@ -989,14 +1052,6 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
         timerCancelCount = 0;
       }
       e.task = null;
-    }
-    if (e.isDataValid()) {
-      e.setRemovedState();
-    } else {
-      if (e.isVirgin()) {
-        newEntryRemovedCnt++;
-      }
-      e.setRemovedNonValidState();
     }
   }
 
@@ -1287,25 +1342,7 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
   }
 
   public Iterator<Entry> iterateAllLocalEntries() {
-    final HashEntryIterator _hashIterator = new HashEntryIterator(mainHash, refreshHash);
-    return new Iterator<Entry>() {
-      Entry entry;
-      @Override
-      public boolean hasNext() {
-        entry = _hashIterator.nextEntry();
-        return entry != null;
-      }
-
-      @Override
-      public Entry next() {
-        return entry;
-      }
-
-      @Override
-      public void remove() {
-        throw new UnsupportedOperationException();
-      }
-    };
+    return new HashEntryIterator(mainHash, refreshHash);
   }
 
   @Override
@@ -2510,10 +2547,181 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
 
   }
 
-  class StorageAdapter {
+  static abstract class StorageAdapter {
+
+    public abstract void open();
+    public abstract void shutdown();
+    public abstract void clear();
+    public abstract void put(StorageEntry e);
+    public abstract StorageEntry get(Object key);
+    public abstract void remove(Object key);
+    public abstract void evictOrExpire(Entry e);
+
+  }
+
+  /**
+   * Buffers storage operations in a simple hash map.
+   * This can be used to decouple the storage implementation from
+   * the cache during operations that may take a longer time.
+   *
+   * <p/>By decoupling we still have fast concurrent access on the cache
+   * while the storage "does its thing". This is now just used for the clear()
+   * operation, so it is assumed that the initial state of the storage is
+   * empty. A possible extention would be to decouple any operation but the
+   * get().
+   */
+  static class BufferStorageAdapter extends StorageAdapter {
+
+    Map<Object, StorageEntry> key2entry = new HashMap<>();
+    StorageAdapter forwardingStorage;
+    boolean gotShutdown = false;
+
+    @Override
+    public void open() { }
+
+    @Override
+    public void shutdown() {
+      gotShutdown = true;
+    }
+
+    @Override
+    public synchronized void clear() {
+      if (forwardingStorage != null) {
+        throw new IllegalStateException();
+      }
+      key2entry.clear();
+    }
+
+    @Override
+    public synchronized void put(StorageEntry e) {
+      if (forwardingStorage != null) {
+        forwardingStorage.put(e);
+        return;
+      }
+      key2entry.put(e.getKey(), new CopyStorageEntry(e));
+    }
+
+    @Override
+    public synchronized StorageEntry get(Object key) {
+      if (forwardingStorage != null) {
+        return forwardingStorage.get(key);
+      }
+      return key2entry.get(key);
+    }
+
+    @Override
+    public synchronized void remove(Object key) {
+      if (forwardingStorage != null) {
+        remove(key);
+        return;
+      }
+      Object x = key2entry.remove(key);
+    }
+
+    @Override
+    public synchronized void evictOrExpire(Entry e) {
+      if (forwardingStorage != null) {
+        evictOrExpire(e);
+        return;
+      }
+      key2entry.remove(e.getKey());
+    }
+
+    public void transfer(StorageAdapter _forwardingStroage) {
+      Set<StorageEntry> _processed = new HashSet<>();
+      Set<StorageEntry> _unprocessed = new HashSet<>();
+      Set<StorageEntry> _toRemoveAgain = new HashSet<>();
+      while (true) {
+        synchronized (this) {
+          _unprocessed.clear();
+          _toRemoveAgain.clear();
+          for (StorageEntry e : key2entry.values()) {
+            if (!_processed.contains(e)) {
+              _unprocessed.add(e);
+            }
+          }
+          for (StorageEntry e : _processed) {
+            if (!key2entry.containsKey(e.getKey())) {
+              _toRemoveAgain.add(e);
+            }
+          }
+          if (_toRemoveAgain.size() == 0 && _processed.size() == 0) {
+            forwardingStorage = _forwardingStroage;
+            if (gotShutdown) {
+              _forwardingStroage.shutdown();
+            }
+            return;
+          }
+        }
+        int cnt = 0;
+        for (StorageEntry e : _toRemoveAgain) {
+          _forwardingStroage.remove(e.getKey());
+          _processed.remove(e);
+        }
+        for (StorageEntry e : _unprocessed) {
+          _forwardingStroage.put(e);
+          _processed.add(e);
+        }
+      }
+
+    }
+
+  }
+
+  static class CopyStorageEntry implements StorageEntry {
+
+    Object key;
+    Object value;
+    long expiryTime;
+    long createdOrUpdated;
+    long lastUsed;
+    long maxIdleTime;
+
+    CopyStorageEntry(StorageEntry e) {
+      key = e.getKey();
+      value = e.getValueOrException();
+      expiryTime = e.getExpiryTime();
+      createdOrUpdated = e.getCreatedOrUpdated();
+      lastUsed = e.getLastUsed();
+      maxIdleTime = e.getMaxIdleTime();
+    }
+
+    @Override
+    public Object getKey() {
+      return key;
+    }
+
+    @Override
+    public Object getValueOrException() {
+      return value;
+    }
+
+    @Override
+    public long getCreatedOrUpdated() {
+      return createdOrUpdated;
+    }
+
+    @Override
+    public long getExpiryTime() {
+      return expiryTime;
+    }
+
+    @Override
+    public long getLastUsed() {
+      return lastUsed;
+    }
+
+    @Override
+    public long getMaxIdleTime() {
+      return maxIdleTime;
+    }
+
+  }
+
+  class PassingStorageAdapter extends StorageAdapter {
 
     CacheStorage storage;
-    boolean storeAllways = true;
+    boolean storeAlways = true;
     boolean storeOnEvict = false;
     boolean storeOnShutdown = false;
     long storageErrorCount = 0;
@@ -2540,14 +2748,11 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
      * allowed to change. If storeAlways is switched on the entry will
      * be in memory and in the storage after this operation.
      */
-    public void put(Entry e) {
+    public void put(StorageEntry e) {
       if (storeOnShutdown) {
         synchronized (deletedKeys) {
           deletedKeys.remove(e.getKey());
         }
-        return;
-      }
-      if (!e.isDirty()) {
         return;
       }
       try {
@@ -2584,7 +2789,7 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
         putIfDirty(e);
         return;
       }
-      if (storeAllways && storage.getEntryCapacity() <= maxSize) {
+      if (storeAlways && storage.getEntryCapacity() <= maxSize) {
         remove(e.getKey());
       }
     }
@@ -2648,7 +2853,7 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
      * Calculates the cache size, depending on the persistence configuration
      */
     public int getTotalEntryCount() {
-      if (storeAllways) {
+      if (storeAlways) {
         return storage.getEntryCount();
       }
       int size = storage.getEntryCount();
