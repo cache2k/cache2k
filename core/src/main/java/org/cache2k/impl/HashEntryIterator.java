@@ -41,6 +41,9 @@ public class HashEntryIterator implements Iterator<BaseCache.Entry> {
   }
 
   final BaseCache.Entry nextEntry() {
+    if (hash == null) {
+      return null;
+    }
     int idx = 0;
     if (lastEntry != null) {
       if (lastEntry.another != null) {
