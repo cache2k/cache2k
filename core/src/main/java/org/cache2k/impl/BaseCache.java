@@ -37,7 +37,7 @@ import org.cache2k.PropagatedCacheException;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.cache2k.storage.BufferStorage;
+import org.cache2k.storage.DirectFileStorage;
 import org.cache2k.storage.CacheStorage;
 import org.cache2k.storage.CacheStorageContext;
 import org.cache2k.storage.MarshallerFactory;
@@ -106,6 +106,7 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
   protected long startedTime;
   protected long touchedTime;
   protected int timerCancelCount = 0;
+
   protected long keyMutationCount = 0;
   protected long putCnt = 0;
   protected long putNewEntryCnt = 0;
@@ -165,8 +166,8 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
   protected Timer timer;
 
   /**
-   * Flag during operation that indicated, that the cache is full and eviction needs
-   * to be done. Eviction is only allowed to happen after the entry is fetched, so
+   * Flag during operation that indicates, that the cache is full and eviction needs
+   * to be done. Eviction is only allowed to happen after an entry is fetched, so
    * at the end of an cache operation that increased the entry count we check whether
    * something needs to be evicted.
    */
@@ -2794,10 +2795,9 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
     public void open() {
 
       try {
-        BufferStorage s = new BufferStorage();
+        DirectFileStorage s = new DirectFileStorage();
         s.setEntryCapacity(maxSize);
         s.open(context, config);
-        s.reopen();
         storage = s;
       } catch (Exception ex) {
         getLog().warn("error initializing storage, running in-memory", ex);

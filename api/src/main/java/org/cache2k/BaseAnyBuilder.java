@@ -23,10 +23,27 @@ package org.cache2k;
  */
 
 /**
+ * Base builder which defines top level methods
+ * delegating to the root configuration builder.
+ *
  * @author Jens Wilke; created: 2014-04-19
  */
-public abstract interface BeanBuilder<T> {
+public abstract class BaseAnyBuilder<T, C> {
 
-  T createConfiguration();
+  protected RootAnyBuilder<T> root;
+
+  public StorageConfiguration.Builder<T> addPersistence() { return root.addPersistence(); }
+
+  public StorageConfiguration.Builder<T> addStore() { return root.addStore();}
+
+  public abstract C createConfiguration();
+
+  public T build() {
+    return root.build();
+  }
+
+  void setRoot(RootAnyBuilder<T> root) {
+    this.root = root;
+  }
 
 }

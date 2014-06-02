@@ -41,10 +41,10 @@ public class CacheConfig {
   private int maxSize = 2000;
   private int maxSizeHighBound = Integer.MAX_VALUE;
   private int maxSizeLowBound = 0;
+  private int heapEntryCapacity = 0;
   private boolean backgroundRefresh = true;
   private int expirySeconds = 10 * 60;
   private boolean keepDataAfterExpired = true;
-  private boolean persistent = false;
   private List<Object> moduleConfiguration;
 
   public String getName() {
@@ -156,20 +156,32 @@ public class CacheConfig {
     this.keepDataAfterExpired = v;
   }
 
+  public int getHeapEntryCapacity() {
+    return heapEntryCapacity;
+  }
+
+  /**
+   * Maximum number of entries that the cache keeps in the heap.
+   * Only relevant if a storage modules is defined.
+   */
+  public void setHeapEntryCapacity(int v) {
+    this.heapEntryCapacity = v;
+  }
+
+  public List<Object> getModuleConfiguration() {
+    return moduleConfiguration;
+  }
+
+  public void setModuleConfiguration(List<Object> moduleConfiguration) {
+    this.moduleConfiguration = moduleConfiguration;
+  }
+
   public Class<?> getImplementation() {
     return implementation;
   }
 
   public void setImplementation(Class<?> cacheImplementation) {
     this.implementation = cacheImplementation;
-  }
-
-  public boolean isPersistent() {
-    return persistent;
-  }
-
-  public void setPersistent(boolean persistent) {
-    this.persistent = persistent;
   }
 
   public void addModuleConfiguration(Object o) {

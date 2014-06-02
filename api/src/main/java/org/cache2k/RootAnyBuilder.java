@@ -22,6 +22,8 @@ package org.cache2k;
  * #L%
  */
 
+import org.cache2k.spi.Cache2kCoreProvider;
+
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -33,22 +35,29 @@ import java.util.List;
  *
  * @author Jens Wilke; created: 2014-04-19
  */
-public abstract class ConfigurationOrCacheBuilder<T> implements BeanBuilder<CacheConfig> {
+public abstract class RootAnyBuilder<T> extends BaseAnyBuilder<T, CacheConfig> {
 
-  private static final List<BeanBuilder> EMPTY = Collections.emptyList();
+  private static final List<BaseAnyBuilder> EMPTY = Collections.emptyList();
 
-  private List<BeanBuilder> modules = EMPTY;
+  private List<BaseAnyBuilder> modules = EMPTY;
   protected CacheConfig config;
 
-  @SuppressWarnings("unchecked")
+  @Override @SuppressWarnings("unchecked")
+  public StorageConfiguration.Builder<T> addPersistence() {
+    StorageConfiguration.Builder<T> b = addModule(new StorageConfiguration.Builder());
+    b.implementation(Cache2kCoreProvider.get().getDefaultPersistenceStoreImplementation());
+    return b;
+  }
+
+  @Override @SuppressWarnings("unchecked")
   public StorageConfiguration.Builder<T> addStore() {
     return
-      newModule(new StorageConfiguration.Builder());
+      addModule(new StorageConfiguration.Builder());
   }
 
   @Override
   public CacheConfig createConfiguration() {
-    for (BeanBuilder bb : modules) {
+    for (BaseAnyBuilder bb : modules) {
       config.addModuleConfiguration(bb.createConfiguration());
     }
     return config;
@@ -60,13 +69,13 @@ public abstract class ConfigurationOrCacheBuilder<T> implements BeanBuilder<Cach
   public abstract T build();
 
   @SuppressWarnings("unchecked")
-  private <B extends ModuleBaseConfigurationBuilder> B newModule(B m) {
+  private <B extends BaseAnyBuilder> B addModule(B _moduleBuilder) {
     if (modules == EMPTY) {
       modules = new ArrayList<>();
     }
-    modules.add((BeanBuilder) m);
-    m.setRoot(this);
-    return m;
+    modules.add(_moduleBuilder);
+    _moduleBuilder.setRoot(this);
+    return _moduleBuilder;
   }
 
 }

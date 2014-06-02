@@ -23,8 +23,10 @@ package org.cache2k.storage;
  */
 
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.ServiceLoader;
+import java.util.Set;
 
 /**
  * Singleton which provides a top level MarshallerFactory which
@@ -47,8 +49,20 @@ public class Marshallers implements MarshallerFactory {
     return instance;
   }
 
+  private Set<MarshallerFactory> factorySet = new HashSet<>();
   private Map<Class<?>, MarshallerFactory> type2factory = new HashMap<>();
   private Map<Class<?>, MarshallerFactory> factoryType2factory = new HashMap<>();
+
+  /**
+   * Directly register a marshallerfactory. This is an alternative to the automatic
+   * discovery via the service loader. Useful to provide a marshaller for a
+   * custom bean and register it within the class load (static constructor section).
+   */
+  public synchronized void registerMarshallerFactory(MarshallerFactory f) {
+    factorySet.add(f);
+    type2factory.clear();
+    factoryType2factory.clear();
+  }
 
   @Override
   public Class<?> getType() {
@@ -61,12 +75,12 @@ public class Marshallers implements MarshallerFactory {
   }
 
   @Override
-  public Marshaller createMarshaller(Class<?> _type) {
+  public synchronized Marshaller createMarshaller(Class<?> _type) {
     return resolveFactory(_type).createMarshaller(_type);
   }
 
   @Override
-  public Marshaller createMarshaller(Parameters c) {
+  public synchronized Marshaller createMarshaller(Parameters c) {
     if (c.getMarshallerFactory() != null) {
       MarshallerFactory f = factoryType2factory.get(c.getMarshallerFactory());
       if (f == null) {
@@ -93,6 +107,9 @@ public class Marshallers implements MarshallerFactory {
       return f;
     }
     for (MarshallerFactory i : loader) {
+      factorySet.add(i);
+    }
+    for (MarshallerFactory i : factorySet) {
       if (i.getType().isAssignableFrom(_type)) {
         if (f == null || f.getPriority() < i.getPriority()) {
           f = i;

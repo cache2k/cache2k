@@ -1,8 +1,8 @@
-package org.cache2k;
+package org.cache2k.impl;
 
 /*
  * #%L
- * cache2k API only package
+ * cache2k core package
  * %%
  * Copyright (C) 2000 - 2014 headissue GmbH, Munich
  * %%
@@ -22,32 +22,22 @@ package org.cache2k;
  * #L%
  */
 
+import org.cache2k.spi.Cache2kCoreProvider;
+import org.cache2k.storage.DirectFileStorage;
+
 /**
- * Base builder for sub modules, which defines top level methods
- * delegating to the root configuration builder.
- *
- * @author Jens Wilke; created: 2014-04-19
+ * @author Jens Wilke; created: 2014-04-20
  */
-public class ModuleBaseConfigurationBuilder<T> {
+public class Cache2kCoreProviderImpl extends Cache2kCoreProvider {
 
-  private ConfigurationOrCacheBuilder<T> root;
-
-  public ModuleBaseConfigurationBuilder() {
+  @Override
+  public Class<?> getBuilderImplementation() {
+    return CacheBuilderImpl.class;
   }
 
-  public ModuleBaseConfigurationBuilder(ConfigurationOrCacheBuilder<T> root) {
-    this.root = root;
+  @Override
+  public Class<?> getDefaultPersistenceStoreImplementation() {
+    return DirectFileStorage.class;
   }
 
-  public StorageConfiguration.Builder<T> addStore() {
-    return root.addStore();
-  }
-
-  public T build() {
-    return root.build();
-  }
-
-  void setRoot(ConfigurationOrCacheBuilder<T> root) {
-    this.root = root;
-  }
 }

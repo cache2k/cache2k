@@ -34,10 +34,22 @@ public interface CacheStorageContext {
 
   String getCacheName();
 
+  /**
+   * Type of the cache key. The storage can use this information to optimize its
+   * operation or completely ignore it.
+   */
   Class<?> getKeyType();
 
+  /**
+   * Type of the cache value. The storage can use this information to optimize its
+   * operation or completely ignore it.
+   */
   Class<?> getValueType();
 
+  /**
+   * A marshaller factory the storage may use.
+   *
+   */
   MarshallerFactory getMarshallerFactory();
 
   void requestMaintenanceCall(int _intervalMillis);

@@ -22,6 +22,8 @@ package org.cache2k;
  * #L%
  */
 
+import org.cache2k.spi.Cache2kCoreProvider;
+
 import javax.annotation.Nullable;
 import java.util.Collection;
 
@@ -29,15 +31,17 @@ import java.util.Collection;
  * @author Jens Wilke; created: 2013-06-25
  */
 public abstract class CacheBuilder<K,T>
-  extends ConfigurationOrCacheBuilder<Cache<K,T>> implements Cloneable {
+  extends RootAnyBuilder<Cache<K,T>> implements Cloneable {
 
   private static CacheBuilder PROTO;
 
   static {
     try {
-      PROTO = (CacheBuilder) Class.forName("org.cache2k.impl.CacheBuilderImpl").newInstance();
+      Cache2kCoreProvider _provider = Cache2kCoreProvider.get();
+      PROTO =
+        (CacheBuilder) _provider.getBuilderImplementation().newInstance();
     } catch (Exception ex) {
-      throw new LinkageError("cache2k-core module missing", ex);
+      throw new LinkageError("cache2k-core module missing, no builder prototype", ex);
     }
   }
 
@@ -125,8 +129,8 @@ public abstract class CacheBuilder<K,T>
     return this;
   }
 
-  public CacheBuilder<K, T> persistent(boolean v) {
-    config.setPersistent(v);
+  public CacheBuilder<K, T> heapEntryCapacity(int v) {
+    config.setHeapEntryCapacity(v);
     return this;
   }
 

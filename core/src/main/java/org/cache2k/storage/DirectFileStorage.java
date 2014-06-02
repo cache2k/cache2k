@@ -65,7 +65,7 @@ import java.util.TreeSet;
  *
  * @author Jens Wilke; created: 2014-03-27
  */
-public class BufferStorage implements CacheStorage {
+public class DirectFileStorage implements CacheStorage {
 
   /** Number of bytes we used for on disk disk checksum of our descriptor */
   final static int CHECKSUM_BYTES = 16;
@@ -133,7 +133,7 @@ public class BufferStorage implements CacheStorage {
    * then the size of {@link #committedEntries} since entries for
    * the same key may be written multiple times. This counter is used
    * to determine to start a new index file within
-   * {@link org.cache2k.storage.BufferStorage.KeyIndexWriter#checkStartNewIndex()}
+   * {@link DirectFileStorage.KeyIndexWriter#checkStartNewIndex()}
    */
   int committedEntriesCount;
 
@@ -153,37 +153,28 @@ public class BufferStorage implements CacheStorage {
 
   CacheStorageContext context;
 
-  public BufferStorage(Tunables t, String _fileName) throws IOException, ClassNotFoundException {
-    fileName = _fileName;
+  public DirectFileStorage(Tunables t) throws IOException, ClassNotFoundException {
     tunables = t;
-    reopen();
   }
 
-  public BufferStorage(String _fileName) throws IOException, ClassNotFoundException {
-    fileName = _fileName;
-    reopen();
-  }
-
-  public BufferStorage() {
+  public DirectFileStorage() {
   }
 
   @Override
   public void open(CacheStorageContext ctx, StorageConfiguration cfg) throws IOException {
     context = ctx;
-    fileName =
-      "cache2k-storage:" + ctx.getManagerName() + ":" + ctx.getCacheName();
-    if (cfg.getLocation() != null) {
-      File f = new File(cfg.getLocation());
-      if (!f.isDirectory()) {
-        throw new IllegalArgumentException("location is not directory");
+    if (fileName == null) {
+      fileName =
+        "cache2k-storage:" + ctx.getManagerName() + ":" + ctx.getCacheName();
+      if (cfg.getLocation() != null) {
+        File f = new File(cfg.getLocation());
+        if (!f.isDirectory()) {
+          throw new IllegalArgumentException("location is not directory");
+        }
+        fileName = f.getPath() + File.separator + fileName;
       }
-      fileName = f.getPath() + File.pathSeparator + fileName;
     }
     reopen();
-  }
-
-  public void setFileName(String v) {
-    fileName = v;
   }
 
   public void reopen() throws IOException {
@@ -1368,7 +1359,7 @@ public class BufferStorage implements CacheStorage {
   public static class Tunables {
 
     /**
-     * After more then two index entries are written to an index file,
+     * After more then factor two index entries are written to an index file,
      * a new index file is started. Old entries are rewritten time after time
      * to make the last file redundant and to free the disk space.
      */

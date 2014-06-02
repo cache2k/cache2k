@@ -2,6 +2,16 @@
 
 A poor mans issue tracker.
 
+### tiny bits, just noted
+
+  * ConfiguraitonOrCacheBuilder -> AnyBuilderBase
+  * ConfigurationBuilder
+
+### configuration
+
+  * XML configuration
+  * configuration templates / default configuration (e.g. for addPersistence())
+
 ### persistence
 
   * eviction call from memory cache!

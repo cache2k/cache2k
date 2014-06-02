@@ -45,6 +45,40 @@ public class StorageConfiguration {
 
   int syncInterval;
 
+  Object extendedConfiguration;
+
+  public void setPurgeOnStartup(boolean purgeOnStartup) {
+    this.purgeOnStartup = purgeOnStartup;
+  }
+
+  public void setIgnoreModifications(boolean ignoreModifications) {
+    this.ignoreModifications = ignoreModifications;
+  }
+
+  public void setImplementation(Class<?> implementation) {
+    this.implementation = implementation;
+  }
+
+  public void setPassivation(boolean passivation) {
+    this.passivation = passivation;
+  }
+
+  public void setLocation(String location) {
+    this.location = location;
+  }
+
+  public void setEntryCapacity(int entryCapacity) {
+    this.entryCapacity = entryCapacity;
+  }
+
+  public void setBytesCapacity(int bytesCapacity) {
+    this.bytesCapacity = bytesCapacity;
+  }
+
+  public void setSyncInterval(int syncInterval) {
+    this.syncInterval = syncInterval;
+  }
+
   public boolean isPurgeOnStartup() {
     return purgeOnStartup;
   }
@@ -80,11 +114,19 @@ public class StorageConfiguration {
     return syncInterval;
   }
 
+  public Object getExtendedConfiguration() {
+    return extendedConfiguration;
+  }
+
+  public void setExtendedConfiguration(Object extendedConfiguration) {
+    this.extendedConfiguration = extendedConfiguration;
+  }
+
   public static class Builder<T>
-    extends ModuleBaseConfigurationBuilder<T>
-    implements BeanBuilder<StorageConfiguration> {
+    extends BaseAnyBuilder<T, StorageConfiguration> {
 
     private StorageConfiguration config = new StorageConfiguration();
+    private BaseAnyBuilder<?, ?> extendedConfigurationBuilder = null;
 
     public Builder<T> implementation(Class<?> _impl) {
       config.implementation = _impl;
@@ -126,7 +168,21 @@ public class StorageConfiguration {
       return this;
     }
 
+    public <B extends BaseAnyBuilder<T, ?>> B extendedConfiguraton(Class<B> c) {
+      try {
+        B b = c.newInstance();
+        b.setRoot(root);
+        return b;
+      } catch (InstantiationException | IllegalAccessException e) {
+        throw new RuntimeException();
+      }
+    }
+
     public StorageConfiguration createConfiguration() {
+      if (extendedConfigurationBuilder != null) {
+        config.setExtendedConfiguration(
+          extendedConfigurationBuilder.createConfiguration());
+      }
       return config;
     }
 
