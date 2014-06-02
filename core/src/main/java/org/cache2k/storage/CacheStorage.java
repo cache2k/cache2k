@@ -22,6 +22,8 @@ package org.cache2k.storage;
  * #L%
  */
 
+import org.cache2k.StorageConfiguration;
+
 import java.io.Closeable;
 import java.io.IOException;
 
@@ -32,21 +34,7 @@ import java.io.IOException;
  */
 public interface CacheStorage extends Closeable {
 
-  /**
-   * Sets the maximum number of entries in the storage.
-   * This configuration maybe called during runtime. If the
-   * size exceeds the capacity entries are evicted.
-   */
-  public void setEntryCapacity(int v);
-
-  /**
-   * Storage capacity in bytes used on the storage media. There
-   * is no exact guarantee that the storage implementation will met this
-   * constraint exactly.
-   */
-  public void setBytesCapacity(long v);
-
-  public int getEntryCapacity();
+  public void open(CacheStorageContext ctx, StorageConfiguration cfg) throws IOException;
 
   /**
    * Retrieve the entry from the storage. If there is no mapping for the
@@ -86,6 +74,31 @@ public interface CacheStorage extends Closeable {
    * to close have no effect.
    */
   public void close() throws IOException;
+
+  /**
+   * Called by the cache at regular intervals, but only if data was
+   * changed.
+   */
+
+  /**
+   * Called by the cache to remove expired entries.
+   */
+
+  /**
+   * Sets the maximum number of entries in the storage.
+   * This configuration maybe called during runtime. If the
+   * size exceeds the capacity entries are evicted.
+   */
+  public void setEntryCapacity(int v);
+
+  /**
+   * Storage capacity in bytes used on the storage media. There
+   * is no exact guarantee that the storage implementation will met this
+   * constraint exactly.
+   */
+  public void setBytesCapacity(long v);
+
+  public int getEntryCapacity();
 
   public int getEntryCount();
 

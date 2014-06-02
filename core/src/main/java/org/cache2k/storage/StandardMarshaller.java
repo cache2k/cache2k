@@ -85,4 +85,9 @@ public class StandardMarshaller implements Marshaller {
     return new ObjectInputStream(in);
   }
 
+  @Override
+  public MarshallerFactory.Parameters getFactoryParameters() {
+    return new MarshallerFactory.Parameters(this.getClass());
+  }
+
 }

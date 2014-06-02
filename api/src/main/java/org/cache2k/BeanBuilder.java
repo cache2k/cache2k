@@ -1,8 +1,8 @@
-package org.cache2k.storage;
+package org.cache2k;
 
 /*
  * #%L
- * cache2k core package
+ * cache2k API only package
  * %%
  * Copyright (C) 2000 - 2014 headissue GmbH, Munich
  * %%
@@ -23,32 +23,10 @@ package org.cache2k.storage;
  */
 
 /**
- * @author Jens Wilke; created: 2014-03-27
+ * @author Jens Wilke; created: 2014-04-19
  */
-public interface StorageEntry {
+public abstract interface BeanBuilder<T> {
 
-  /** Key of the stored entry */
-  Object getKey();
-
-  /** Value of the stored entry */
-  Object getValueOrException();
-
-  /** Time the entry was last fetched or created from the original source */
-  long getCreatedOrUpdated();
-
-  /** Time when the entry is expired and needs to be refreshed */
-  long getExpiryTime();
-
-  /**
-   * Time of last access in millis. Needed, if there is a idle expiry
-   * configured. Is 0 if not used.
-   */
-  long getLastUsed();
-
-  /**
-   * Milliseconds after last used time after this entry gets expired.
-   * Is 0 if not used.
-   */
-  long getMaxIdleTime();
+  T createConfiguration();
 
 }

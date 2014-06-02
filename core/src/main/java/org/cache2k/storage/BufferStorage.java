@@ -22,6 +22,7 @@ package org.cache2k.storage;
  * #L%
  */
 
+import org.cache2k.StorageConfiguration;
 import org.cache2k.impl.ExceptionWrapper;
 
 import java.io.DataOutput;
@@ -60,8 +61,7 @@ import java.util.TreeSet;
  * a commit interval.
  * </p>
  *
- * <p/>Possible optimizations: Specialized data structures / tree set, because the tree set
- * is essentially a map with a dummy object.
+ * <p/>Possible optimizations: More specialized data structures, compaction.
  *
  * @author Jens Wilke; created: 2014-03-27
  */
@@ -76,12 +76,16 @@ public class BufferStorage implements CacheStorage {
 
   final static Marshaller DESCRIPTOR_MARSHALLER = new StandardMarshaller();
 
+  final static Marshaller DEFAULT_MARSHALLER = DESCRIPTOR_MARSHALLER;
+
+  final static Tunables DEFAULT_TUNABLES = new Tunables();
+
   boolean dataLost = false;
-  Tunables tunables = new Tunables();
-  Marshaller keyMarshaller = new StandardMarshaller();
-  Marshaller valueMarshaller = new StandardMarshaller();
-  Marshaller universalMarshaller = new StandardMarshaller();
-  Marshaller exceptionMarshaller = new StandardMarshaller();
+  Tunables tunables = DEFAULT_TUNABLES;
+  Marshaller keyMarshaller = DEFAULT_MARSHALLER;
+  Marshaller valueMarshaller = DEFAULT_MARSHALLER;
+  Marshaller universalMarshaller = DEFAULT_MARSHALLER;
+  Marshaller exceptionMarshaller = DEFAULT_MARSHALLER;
   RandomAccessFile file;
   ByteBuffer buffer;
 
@@ -147,6 +151,8 @@ public class BufferStorage implements CacheStorage {
   long putCount = 0;
   long freeSpace = 0;
 
+  CacheStorageContext context;
+
   public BufferStorage(Tunables t, String _fileName) throws IOException, ClassNotFoundException {
     fileName = _fileName;
     tunables = t;
@@ -159,6 +165,21 @@ public class BufferStorage implements CacheStorage {
   }
 
   public BufferStorage() {
+  }
+
+  @Override
+  public void open(CacheStorageContext ctx, StorageConfiguration cfg) throws IOException {
+    context = ctx;
+    fileName =
+      "cache2k-storage:" + ctx.getManagerName() + ":" + ctx.getCacheName();
+    if (cfg.getLocation() != null) {
+      File f = new File(cfg.getLocation());
+      if (!f.isDirectory()) {
+        throw new IllegalArgumentException("location is not directory");
+      }
+      fileName = f.getPath() + File.pathSeparator + fileName;
+    }
+    reopen();
   }
 
   public void setFileName(String v) {
@@ -201,8 +222,19 @@ public class BufferStorage implements CacheStorage {
         initializeFreeSpaceMap();
         descriptor = new BufferDescriptor();
         descriptor.storageCreated = System.currentTimeMillis();
+        CacheStorageContext ctx = context;
+        keyMarshaller = ctx.getMarshallerFactory().createMarshaller(ctx.getKeyType());
+        valueMarshaller = ctx.getMarshallerFactory().createMarshaller(ctx.getValueType());
+        exceptionMarshaller = ctx.getMarshallerFactory().createMarshaller(Throwable.class);
       } else {
         descriptor = d;
+        MarshallerFactory _factory = context.getMarshallerFactory();
+        keyMarshaller =
+          _factory.createMarshaller(d.keyMarshallerParameters);
+        valueMarshaller =
+          _factory.createMarshaller(d.valueMarshallerParameters);
+        exceptionMarshaller =
+          _factory.createMarshaller(d.exceptionMarshallerParameters);
         readIndex();
       }
     } catch (ClassNotFoundException e) {
@@ -707,6 +739,13 @@ public class BufferStorage implements CacheStorage {
         descriptor.entryCount = getEntryCount();
       }
       _writer.write();
+      if (descriptor.keyMarshallerParameters == null) {
+        descriptor.keyMarshallerParameters = keyMarshaller.getFactoryParameters();
+        descriptor.valueMarshallerParameters = valueMarshaller.getFactoryParameters();
+        descriptor.exceptionMarshallerParameters = exceptionMarshaller.getFactoryParameters();
+        descriptor.keyType = context.getKeyType().getName();
+        descriptor.valueType = context.getValueType().getName();
+      }
       writeDescriptor();
       _writer.freeSpace();
     }
@@ -998,6 +1037,10 @@ public class BufferStorage implements CacheStorage {
     long descriptorVersion = 0;
     long writtenTime;
     long highestExpiryTime;
+
+    MarshallerFactory.Parameters keyMarshallerParameters;
+    MarshallerFactory.Parameters valueMarshallerParameters;
+    MarshallerFactory.Parameters exceptionMarshallerParameters;
 
     String keyType;
     String keyMarshallerType;

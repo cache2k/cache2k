@@ -118,6 +118,7 @@ public class CacheBuilderImpl<K, T> extends CacheBuilder<K, T> {
   }
 
   public Cache<K, T> build() {
+    config = createConfiguration();
     if (config.getName() == null) {
       config.setName(deriveNameFromStackTrace());
     }

@@ -23,32 +23,27 @@ package org.cache2k.storage;
  */
 
 /**
- * @author Jens Wilke; created: 2014-03-27
+ * Expose the needed information and interactions with a cache
+ * to a cache storage.
+ *
+ * @author Jens Wilke; created: 2014-04-19
  */
-public interface StorageEntry {
+public interface CacheStorageContext {
 
-  /** Key of the stored entry */
-  Object getKey();
+  String getManagerName();
 
-  /** Value of the stored entry */
-  Object getValueOrException();
+  String getCacheName();
 
-  /** Time the entry was last fetched or created from the original source */
-  long getCreatedOrUpdated();
+  Class<?> getKeyType();
 
-  /** Time when the entry is expired and needs to be refreshed */
-  long getExpiryTime();
+  Class<?> getValueType();
 
-  /**
-   * Time of last access in millis. Needed, if there is a idle expiry
-   * configured. Is 0 if not used.
-   */
-  long getLastUsed();
+  MarshallerFactory getMarshallerFactory();
 
-  /**
-   * Milliseconds after last used time after this entry gets expired.
-   * Is 0 if not used.
-   */
-  long getMaxIdleTime();
+  void requestMaintenanceCall(int _intervalMillis);
+
+  void notifyEvicted(StorageEntry e);
+
+  void notifyExpired(StorageEntry e);
 
 }

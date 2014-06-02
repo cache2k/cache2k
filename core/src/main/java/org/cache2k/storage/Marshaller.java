@@ -51,4 +51,11 @@ public interface Marshaller {
 
   ObjectInput startInput(InputStream in) throws IOException;
 
+  /**
+   *
+   *
+   * @return parameters for the factory or null if the marshaller type is sufficient.
+   */
+  MarshallerFactory.Parameters getFactoryParameters();
+
 }

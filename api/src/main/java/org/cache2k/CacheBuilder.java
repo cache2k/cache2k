@@ -28,7 +28,8 @@ import java.util.Collection;
 /**
  * @author Jens Wilke; created: 2013-06-25
  */
-public abstract class CacheBuilder<K,T> implements Cloneable {
+public abstract class CacheBuilder<K,T>
+  extends ConfigurationOrCacheBuilder<Cache<K,T>> implements Cloneable {
 
   private static CacheBuilder PROTO;
 
@@ -36,7 +37,7 @@ public abstract class CacheBuilder<K,T> implements Cloneable {
     try {
       PROTO = (CacheBuilder) Class.forName("org.cache2k.impl.CacheBuilderImpl").newInstance();
     } catch (Exception ex) {
-      throw new LinkageError("cache2k-core implementation missing", ex);
+      throw new LinkageError("cache2k-core module missing", ex);
     }
   }
 
@@ -61,7 +62,6 @@ public abstract class CacheBuilder<K,T> implements Cloneable {
     return cb;
   }
 
-  protected CacheConfig config;
   protected CacheSource cacheSource;
   protected CacheSourceWithMetaInfo cacheSourceWithMetaInfo;
   protected RefreshController refreshController;
@@ -165,8 +165,9 @@ public abstract class CacheBuilder<K,T> implements Cloneable {
     return this;
   }
 
+  @Deprecated
   public CacheConfig getConfig() {
-    return config;
+    return createConfiguration();
   }
 
 

@@ -22,6 +22,10 @@ package org.cache2k;
  * #L%
  */
 
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+
 /**
  * Cache configuration. Adheres to bean standard.
  *
@@ -41,6 +45,7 @@ public class CacheConfig {
   private int expirySeconds = 10 * 60;
   private boolean keepDataAfterExpired = true;
   private boolean persistent = false;
+  private List<Object> moduleConfiguration;
 
   public String getName() {
     return name;
@@ -166,4 +171,25 @@ public class CacheConfig {
   public void setPersistent(boolean persistent) {
     this.persistent = persistent;
   }
+
+  public void addModuleConfiguration(Object o) {
+    if (moduleConfiguration == null) {
+      moduleConfiguration = new ArrayList<>();
+    }
+    moduleConfiguration.add(o);
+  }
+
+  public List<StorageConfiguration> getStorageModules() {
+    if (moduleConfiguration == null) {
+      return Collections.emptyList();
+    }
+    ArrayList<StorageConfiguration> l = new ArrayList<>();
+    for (Object o : moduleConfiguration) {
+      if (o instanceof StorageConfiguration) {
+        l.add((StorageConfiguration) o);
+      }
+    }
+    return l;
+  }
+
 }

@@ -23,32 +23,27 @@ package org.cache2k.storage;
  */
 
 /**
- * @author Jens Wilke; created: 2014-03-27
+ * @author Jens Wilke; created: 2014-04-19
  */
-public interface StorageEntry {
+public class SerializingMarshallerFactory implements MarshallerFactory {
 
-  /** Key of the stored entry */
-  Object getKey();
+  @Override
+  public Class<?> getType() {
+    return Object.class;
+  }
 
-  /** Value of the stored entry */
-  Object getValueOrException();
+  @Override
+  public int getPriority() {
+    return 0;
+  }
 
-  /** Time the entry was last fetched or created from the original source */
-  long getCreatedOrUpdated();
+  @Override
+  public Marshaller createMarshaller(Class<?> _type) {
+    return new StandardMarshaller();
+  }
 
-  /** Time when the entry is expired and needs to be refreshed */
-  long getExpiryTime();
-
-  /**
-   * Time of last access in millis. Needed, if there is a idle expiry
-   * configured. Is 0 if not used.
-   */
-  long getLastUsed();
-
-  /**
-   * Milliseconds after last used time after this entry gets expired.
-   * Is 0 if not used.
-   */
-  long getMaxIdleTime();
-
+  @Override
+  public Marshaller createMarshaller(Parameters c) {
+    return new StandardMarshaller();
+  }
 }

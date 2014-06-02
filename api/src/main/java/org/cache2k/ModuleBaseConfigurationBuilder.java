@@ -1,8 +1,8 @@
-package org.cache2k.storage;
+package org.cache2k;
 
 /*
  * #%L
- * cache2k core package
+ * cache2k API only package
  * %%
  * Copyright (C) 2000 - 2014 headissue GmbH, Munich
  * %%
@@ -23,32 +23,31 @@ package org.cache2k.storage;
  */
 
 /**
- * @author Jens Wilke; created: 2014-03-27
+ * Base builder for sub modules, which defines top level methods
+ * delegating to the root configuration builder.
+ *
+ * @author Jens Wilke; created: 2014-04-19
  */
-public interface StorageEntry {
+public class ModuleBaseConfigurationBuilder<T> {
 
-  /** Key of the stored entry */
-  Object getKey();
+  private ConfigurationOrCacheBuilder<T> root;
 
-  /** Value of the stored entry */
-  Object getValueOrException();
+  public ModuleBaseConfigurationBuilder() {
+  }
 
-  /** Time the entry was last fetched or created from the original source */
-  long getCreatedOrUpdated();
+  public ModuleBaseConfigurationBuilder(ConfigurationOrCacheBuilder<T> root) {
+    this.root = root;
+  }
 
-  /** Time when the entry is expired and needs to be refreshed */
-  long getExpiryTime();
+  public StorageConfiguration.Builder<T> addStore() {
+    return root.addStore();
+  }
 
-  /**
-   * Time of last access in millis. Needed, if there is a idle expiry
-   * configured. Is 0 if not used.
-   */
-  long getLastUsed();
+  public T build() {
+    return root.build();
+  }
 
-  /**
-   * Milliseconds after last used time after this entry gets expired.
-   * Is 0 if not used.
-   */
-  long getMaxIdleTime();
-
+  void setRoot(ConfigurationOrCacheBuilder<T> root) {
+    this.root = root;
+  }
 }

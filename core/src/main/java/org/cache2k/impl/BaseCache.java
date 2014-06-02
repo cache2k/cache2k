@@ -28,6 +28,7 @@ import org.cache2k.ExperimentalBulkCacheSource;
 import org.cache2k.Cache;
 import org.cache2k.CacheConfig;
 import org.cache2k.MutableCacheEntry;
+import org.cache2k.StorageConfiguration;
 import org.cache2k.jmx.CacheMXBean;
 import org.cache2k.CacheSourceWithMetaInfo;
 import org.cache2k.CacheSource;
@@ -38,6 +39,9 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.cache2k.storage.BufferStorage;
 import org.cache2k.storage.CacheStorage;
+import org.cache2k.storage.CacheStorageContext;
+import org.cache2k.storage.MarshallerFactory;
+import org.cache2k.storage.Marshallers;
 import org.cache2k.storage.StorageEntry;
 
 import java.io.IOException;
@@ -223,8 +227,15 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
     setExpirySeconds(c.getExpirySeconds());
     setFeatureBit(KEEP_AFTER_EXPIRED, c.isKeepDataAfterExpired());
 
+    /*
     if (c.isPersistent()) {
       storage = new PassingStorageAdapter();
+    }
+    -*/
+    List<StorageConfiguration> _stores = c.getStorageModules();
+    if (_stores.size() == 1) {
+      storage = new PassingStorageAdapter(c, _stores.get(0));
+    } else {
     }
   }
 
@@ -2718,6 +2729,49 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
 
   }
 
+  class StorageContext implements CacheStorageContext {
+
+    Class<?> keyType;
+    Class<?> valueType;
+
+    @Override
+    public String getManagerName() {
+      return manager.getName();
+    }
+
+    @Override
+    public String getCacheName() {
+      return getName();
+    }
+
+    @Override
+    public Class<?> getKeyType() {
+      return keyType;
+    }
+
+    @Override
+    public Class<?> getValueType() {
+      return valueType;
+    }
+
+    @Override
+    public MarshallerFactory getMarshallerFactory() {
+      return Marshallers.getInstance();
+    }
+
+    @Override
+    public void requestMaintenanceCall(int _intervalMillis) {
+    }
+
+    @Override
+    public void notifyEvicted(StorageEntry e) {
+    }
+
+    @Override
+    public void notifyExpired(StorageEntry e) {
+    }
+  }
+
   class PassingStorageAdapter extends StorageAdapter {
 
     CacheStorage storage;
@@ -2726,15 +2780,23 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
     boolean storeOnShutdown = false;
     long storageErrorCount = 0;
     Set<Object> deletedKeys = new HashSet<Object>();
+    StorageContext context;
+    StorageConfiguration config;
+
+    public PassingStorageAdapter(CacheConfig _cacheConfig,
+                                 StorageConfiguration _storageConfig) {
+      context = new StorageContext();
+      context.keyType = _cacheConfig.getKeyType();
+      context.valueType = _cacheConfig.getValueType();
+      config = _storageConfig;
+    }
 
     public void open() {
 
-      String _fileName =
-        "cache2k-storage:" + manager.getName() + ":" + name;
       try {
         BufferStorage s = new BufferStorage();
-        s.setFileName(_fileName);
         s.setEntryCapacity(maxSize);
+        s.open(context, config);
         s.reopen();
         storage = s;
       } catch (Exception ex) {
