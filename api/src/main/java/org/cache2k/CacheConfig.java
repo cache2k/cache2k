@@ -41,7 +41,7 @@ public class CacheConfig {
   private int maxSize = 2000;
   private int maxSizeHighBound = Integer.MAX_VALUE;
   private int maxSizeLowBound = 0;
-  private int heapEntryCapacity = 0;
+  private int heapEntryCapacity = -1;
   private boolean backgroundRefresh = true;
   private int expirySeconds = 10 * 60;
   private boolean keepDataAfterExpired = true;
