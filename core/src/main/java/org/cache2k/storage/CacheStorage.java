@@ -39,6 +39,9 @@ public interface CacheStorage extends Closeable {
   /**
    * Retrieve the entry from the storage. If there is no mapping for the
    * key, null is returned.
+   *
+   * <p>An exception on get is not severe. The cache will try other sources or
+   * return null.
    */
   public StorageEntry get(Object key) throws IOException, ClassNotFoundException;
 
@@ -47,16 +50,21 @@ public interface CacheStorage extends Closeable {
    * the data, no reference may be hold within the storage to it. The callee takes
    * care that the entry data is consistent during the put method call.
    *
-   * The cache may do redundant calls. The storage can detect this by comparing
-   * the modified timestamp with its own data and already write the data to
-   * the storage if there was
+   * <p>An exception on put is severe. The storage will be disconnected from the cache.
    *
    * @return true, if this entry was present in the storage before and got overwritten
+   * @throws IOException may be thrown if hope is lost
    */
-  public boolean put(StorageEntry e) throws IOException, ClassNotFoundException;
+  public void put(StorageEntry e) throws IOException, ClassNotFoundException;
 
   public StorageEntry remove(Object key) throws IOException, ClassNotFoundException;
 
+  /**
+   * Returns true if there is a mapping for the key.
+   *
+   * <p>An exception on contains is not severe. The cache will try other sources or
+   * return null.
+   */
   public boolean contains(Object key) throws IOException;
 
   /**

@@ -174,6 +174,7 @@ public class DirectFileStorage implements CacheStorage {
         fileName = f.getPath() + File.separator + fileName;
       }
     }
+    entryCapacity = cfg.getEntryCapacity();
     reopen();
   }
 
@@ -181,9 +182,6 @@ public class DirectFileStorage implements CacheStorage {
     try {
       file = new RandomAccessFile(fileName + ".img", "rw");
       resetBufferFromFile();
-      if (values != null) {
-        values.clear();
-      }
       if (entryCapacity == Integer.MAX_VALUE) {
         values = new HashMap<>();
       } else {
@@ -239,7 +237,7 @@ public class DirectFileStorage implements CacheStorage {
         return;
       }
       commit();
-      boolean _empty = (values.size() == 0);
+      boolean _empty = values.size() == 0;
       fastClose();
       if (_empty) {
         removeFiles();
@@ -371,7 +369,7 @@ public class DirectFileStorage implements CacheStorage {
    * reallocated space. However, this will only be a problem if the read
    * fails to get CPU time for several seconds.
    */
-  public boolean put(StorageEntry e) throws IOException, ClassNotFoundException {
+  public void put(StorageEntry e) throws IOException, ClassNotFoundException {
     Object o = e.getValueOrException();
     byte[] _marshalledValue = ZERO_LENGTH_BYTE_ARRAY;
     int _neededSize = 0;
@@ -421,7 +419,6 @@ public class DirectFileStorage implements CacheStorage {
       values.put(e.getKey(), _newEntry);
       putCount++;
     }
-    return _overwritten;
   }
 
   /**
@@ -958,6 +955,7 @@ public class DirectFileStorage implements CacheStorage {
           readKeys.add(e.key);
           entriesInEarliestIndex.put(e.key, e);
           if (!e.isDeleted()) {
+            System.err.println("read back: " + e.key);
             values.put(e.key, e);
           }
           if (readCompleted()) {
