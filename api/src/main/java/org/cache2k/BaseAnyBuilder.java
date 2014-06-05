@@ -38,6 +38,10 @@ public abstract class BaseAnyBuilder<T, C> {
 
   public abstract C createConfiguration();
 
+  public RootAnyBuilder<T> root() {
+    return root;
+  }
+
   public T build() {
     return root.build();
   }

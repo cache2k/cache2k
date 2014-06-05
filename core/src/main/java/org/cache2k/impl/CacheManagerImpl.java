@@ -98,7 +98,7 @@ public class CacheManagerImpl extends CacheManager {
     String _requestedName = c.getName();
     String _name = _requestedName;
     while (cacheNames.containsKey(_name)) {
-      _name = _requestedName + "$$" + (disambiguationCounter++);
+      _name = _requestedName + "~" + Integer.toString(disambiguationCounter++, 36);
     }
     if (!_requestedName.equals(_name)) {
       log.warn("duplicate name, disambiguating: " + _requestedName + " -> " + _name);
@@ -128,6 +128,11 @@ public class CacheManagerImpl extends CacheManager {
   public synchronized Iterator<Cache> iterator() {
     checkClosed();
     return caches.iterator();
+  }
+
+  @Override
+  public Cache getCache(String name) {
+    return cacheNames.get(name);
   }
 
   @Override

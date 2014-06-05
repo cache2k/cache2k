@@ -51,6 +51,22 @@ public class CacheConfig {
     return name;
   }
 
+  /**
+   * Sets the name of a cache. If a name is not specified the caching framework
+   * provides a name for the cache.
+   *
+   * <p>If a name is specified it must be ensured it is unique within the cache
+   * manager. A unique name may consist of a namespace and a counter, e.g.
+   * "com.company.application.AssetCache-1".
+   *
+   * <p>Allowed characters for a cache name, are URL non-reserved characters,
+   * these are: [A-Z], [a-z], [0-9] and [~-_.-], see RFC3986. The reason for
+   * restricting the characters in names, is that the names may be used to derive
+   * other resource names from it, e.g. for file based storage.
+   *
+   * <p>For brevity within log messages and other displays the cache name may be
+   * shortened if the manager name is included as prefix.
+   */
   public void setName(String name) {
     this.name = name;
   }

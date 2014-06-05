@@ -86,6 +86,8 @@ public abstract class CacheManager implements Iterable<Cache> {
 
   public abstract Iterator<Cache> iterator();
 
+  public abstract Cache getCache(String name);
+
   /** Clear all caches associated to this cache manager */
   public abstract void clear();
 

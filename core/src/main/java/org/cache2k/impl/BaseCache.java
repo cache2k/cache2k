@@ -333,9 +333,6 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
       return;
     }
     maxLinger = s * 1000;
-    if (s == 0) {
-      getLog().warn("Expiry time set to 0, which means no caching!");
-    }
   }
 
   public String getName() {
@@ -1142,6 +1139,7 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
       if (!_peekOnly) {
         fetchWithoutStorage(e);
       }
+      touchedTime = System.currentTimeMillis();
       return;
     }
     long t0 = System.currentTimeMillis();

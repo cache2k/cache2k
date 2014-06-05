@@ -374,7 +374,6 @@ public class DirectFileStorage implements CacheStorage {
     byte[] _marshalledValue = ZERO_LENGTH_BYTE_ARRAY;
     int _neededSize = 0;
     byte _type;
-    boolean _overwritten = false;
     if (o == null) {
       _type = TYPE_NULL;
     } else {
@@ -412,7 +411,6 @@ public class DirectFileStorage implements CacheStorage {
     synchronized (valuesLock) {
       BufferEntry be = values.get(e.getKey());
       if (be != null) {
-        _overwritten = true;
         spaceToFree.add(be);
       }
       newBufferEntries.put(e.getKey(), _newEntry);
@@ -955,14 +953,11 @@ public class DirectFileStorage implements CacheStorage {
           readKeys.add(e.key);
           entriesInEarliestIndex.put(e.key, e);
           if (!e.isDeleted()) {
-            System.err.println("read back: " + e.key);
             values.put(e.key, e);
           }
           if (readCompleted()) {
             break;
           }
-        } else {
-          System.err.println("Seen, skipping: " + e);
         }
         cnt--;
       } while (cnt > 0);
