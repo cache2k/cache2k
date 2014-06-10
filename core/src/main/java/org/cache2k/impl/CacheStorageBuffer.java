@@ -34,16 +34,34 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * Record cache operation during a storage clear.
+ * Record cache operations during a storage clear.
  *
  * <p/>By decoupling we still have fast concurrent access on the cache
  * while the storage "does its thing". This is now just used for the clear()
  * operation, so it is assumed that the initial state of the storage is
  * empty.
-
+ *
+ * <p/>If the requests come in faster than the storage can handle it
+ * we will  end up queuing up requests forever (... and run out of
+ * heap space). So when starting the transfer we slow down in taking
+ * new entries.
+ *
+ * <p/>A problem is, that the storage is only operated single threaded.
+ *
  * @author Jens Wilke; created: 2014-04-20
  */
 public class CacheStorageBuffer implements CacheStorage {
+
+  long operationsCnt = 0;
+  long operationsAtTransferStart = 0;
+  long sentOperationsCnt = 0;
+  long sendingStart = 0;
+
+  /** Average time for one storage operation in microseconds */
+  long microRate = 0;
+
+  /** Added up rest of microseconds to wait */
+  long microWaitRest = 0;
 
   List<Op> operations = new ArrayList<>();
   Map<Object, StorageEntry> key2entry = new HashMap<>();
@@ -51,61 +69,83 @@ public class CacheStorageBuffer implements CacheStorage {
   CacheStorage forwardingStorage;
 
   @Override
+  public void close() throws IOException {
+    synchronized (this) {
+      if (forwardingStorage != null) {
+        forwardingStorage.close();
+      }
+      addOp(new OpClose());
+    }
+  }
+
+  @Override
   public void open(CacheStorageContext ctx, StorageConfiguration cfg) throws IOException {
   }
 
   @Override
-  public synchronized void close() throws IOException {
-    if (forwardingStorage != null) {
-      forwardingStorage.close();
+  public void clear() throws IOException {
+    synchronized (this) {
+      if (forwardingStorage != null) {
+        forwardingStorage.clear();
+      }
+      key2entry.clear();
+      addOp(new OpClear());
     }
-    operations.add(new OpClose());
+    throttle();
   }
 
   @Override
-  public synchronized void clear() throws IOException {
-    if (forwardingStorage != null) {
-      forwardingStorage.clear();
+  public void put(StorageEntry e) throws IOException, ClassNotFoundException {
+    synchronized (this) {
+      if (forwardingStorage != null) {
+        forwardingStorage.put(e);
+      }
+      e = new CopyStorageEntry(e);
+      key2entry.put(e.getKey(), e);
+      addOp(new OpPut(e));
     }
-    key2entry.clear();
-    operations.add(new OpClear());
+    throttle();
   }
 
   @Override
-  public synchronized void put(StorageEntry e) throws IOException, ClassNotFoundException {
-    if (forwardingStorage != null) {
-      forwardingStorage.put(e);
+  public StorageEntry get(Object key) throws IOException, ClassNotFoundException {
+    StorageEntry e;
+    synchronized (this) {
+      if (forwardingStorage != null) {
+        return forwardingStorage.get(key);
+      }
+      addOp(new OpGet(key));
+      e = key2entry.get(key);
     }
-    e = new CopyStorageEntry(e);
-    key2entry.put(e.getKey(), e);
-    operations.add(new OpPut(e));
+    throttle();
+    return e;
   }
 
   @Override
-  public synchronized StorageEntry get(Object key) throws IOException, ClassNotFoundException {
-    if (forwardingStorage != null) {
-      return forwardingStorage.get(key);
+  public StorageEntry remove(Object key) throws IOException, ClassNotFoundException {
+    StorageEntry e;
+    synchronized (this) {
+      if (forwardingStorage != null) {
+        forwardingStorage.remove(key);
+      }
+      addOp(new OpRemove(key));
+      e = key2entry.remove(key);
     }
-    operations.add(new OpGet(key));
-    return key2entry.get(key);
-  }
-
-  @Override
-  public synchronized StorageEntry remove(Object key) throws IOException, ClassNotFoundException {
-    if (forwardingStorage != null) {
-      forwardingStorage.remove(key);
-    }
-    operations.add(new OpRemove(key));
-    return key2entry.remove(key);
+    throttle();
+    return e;
   }
 
   @Override
   public boolean contains(Object key) throws IOException {
-    if (forwardingStorage != null) {
-      forwardingStorage.contains(key);
+    boolean b;
+    synchronized (this) {
+      if (forwardingStorage != null) {
+        forwardingStorage.contains(key);
+      }
+      addOp(new OpContains(key));
+      b = key2entry.containsKey(key);
     }
-    operations.add(new OpContains(key));
-    return key2entry.containsKey(key);
+    return b;
   }
 
   @Override
@@ -128,7 +168,44 @@ public class CacheStorageBuffer implements CacheStorage {
     return key2entry.size();
   }
 
+  private void addOp(Op op) {
+    operationsCnt++;
+    operations.add(op);
+  }
+
+  /**
+   * Throttle
+   */
+  private void throttle() {
+    if (sentOperationsCnt == 0) {
+      return;
+    }
+    long _waitMicros;
+    synchronized (this) {
+      if (operationsCnt % 7 == 0) {
+        long _factor = 1000000;
+        long _refilledSinceTransferStart = operationsCnt - operationsAtTransferStart;
+        if (_refilledSinceTransferStart > sentOperationsCnt) {
+          _factor = _refilledSinceTransferStart * 1000000 / sentOperationsCnt;
+        }
+        long _delta = System.currentTimeMillis() - sendingStart;
+        microRate = _delta * _factor / sentOperationsCnt;
+      }
+      _waitMicros = microRate + microRate * 3 / 100 + microWaitRest;
+      microWaitRest = _waitMicros % 1000000;
+    }
+    try {
+      long _millis = _waitMicros / 1000000;
+      Thread.sleep(_millis);
+    } catch (InterruptedException e) {
+    }
+  }
+
   public void transfer(CacheStorage _target) throws IOException, ClassNotFoundException {
+    synchronized (this) {
+      sendingStart = System.currentTimeMillis();
+      operationsAtTransferStart = operationsCnt;
+    }
     List<Op> _workList;
     while (true) {
       synchronized (this) {
@@ -140,6 +217,7 @@ public class CacheStorageBuffer implements CacheStorage {
         operations = new ArrayList<>();
       }
       for (Op op : _workList) {
+        sentOperationsCnt++;
         op.execute(_target);
       }
     }
@@ -165,6 +243,10 @@ public class CacheStorageBuffer implements CacheStorage {
       _target.put(entry);
     }
 
+    @Override
+    public String toString() {
+      return "OpPut(key=" + entry.getKey() + ", value=" + entry.getValueOrException() + ")";
+    }
   }
 
   static class OpRemove extends Op {
@@ -178,6 +260,11 @@ public class CacheStorageBuffer implements CacheStorage {
     @Override
     void execute(CacheStorage _target) throws IOException, ClassNotFoundException {
       _target.remove(key);
+    }
+
+    @Override
+    public String toString() {
+      return "OpRemove(key=" + key + ")";
     }
 
   }
@@ -195,6 +282,11 @@ public class CacheStorageBuffer implements CacheStorage {
       _target.contains(key);
     }
 
+    @Override
+    public String toString() {
+      return "OpContains(key=" + key + ")";
+    }
+
   }
 
   static class OpGet extends Op {
@@ -210,6 +302,11 @@ public class CacheStorageBuffer implements CacheStorage {
       _target.get(key);
     }
 
+    @Override
+    public String toString() {
+      return "OpGet(key=" + key + ")";
+    }
+
   }
 
   static class OpClose extends Op {
@@ -219,6 +316,11 @@ public class CacheStorageBuffer implements CacheStorage {
       _target.close();
     }
 
+    @Override
+    public String toString() {
+      return "OpClose";
+    }
+
   }
 
   static class OpClear extends Op {
@@ -226,6 +328,11 @@ public class CacheStorageBuffer implements CacheStorage {
     @Override
     void execute(CacheStorage _target) throws IOException {
       _target.clear();
+    }
+
+    @Override
+    public String toString() {
+      return "OpClear";
     }
 
   }

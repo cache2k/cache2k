@@ -200,13 +200,6 @@ public class CacheConfig {
     this.implementation = cacheImplementation;
   }
 
-  public void addModuleConfiguration(Object o) {
-    if (moduleConfiguration == null) {
-      moduleConfiguration = new ArrayList<>();
-    }
-    moduleConfiguration.add(o);
-  }
-
   public List<StorageConfiguration> getStorageModules() {
     if (moduleConfiguration == null) {
       return Collections.emptyList();

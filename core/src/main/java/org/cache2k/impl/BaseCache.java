@@ -164,6 +164,11 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
 
   protected Timer timer;
 
+  /** Wait for this thread before shutdown */
+  protected Thread clearThread;
+
+  protected boolean shutdownInitiated = false;
+
   /**
    * Flag during operation that indicates, that the cache is full and eviction needs
    * to be done. Eviction is only allowed to happen after an entry is fetched, so
@@ -402,6 +407,9 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
    */
   private final void processClearWithStorage() {
     synchronized (lock) {
+      if (shutdownInitiated) {
+        throw new IllegalStateException("cache closed");
+      }
       if (touchedTime == 0 ||
         (touchedTime == clearedTime && getSize() == 0)) {
         storage.clearPrepare();
@@ -415,11 +423,15 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
     StorageClearTask t = new StorageClearTask();
     t.mainHashCopy = mainHash;
     t.refreshHashCopy = refreshHash;
+    t.storage = storage;
     synchronized (lock) {
+      if (shutdownInitiated) {
+        throw new IllegalStateException("cache closed");
+      }
       boolean f = storage.clearPrepare();
       if (!f) { return; }
       clearLocalCache();
-      Thread th = new Thread(t);
+      Thread th = clearThread =  new Thread(t);
       th.setName("cache2k-clear:" + getName() + ":" + th.getId());
       th.setDaemon(true);
       th.start();
@@ -430,11 +442,13 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
 
     E[] mainHashCopy;
     E[] refreshHashCopy;
+    StorageAdapter storage;
 
     @Override
     public void run() {
       waitForEntryOperations();
       storage.clearProceed();
+      clearThread = null;
     }
 
     private void waitForEntryOperations() {
@@ -457,6 +471,9 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
 
   private void clearLocalCache() {
     synchronized (lock) {
+      if (shutdownInitiated) {
+        throw new IllegalStateException("cache closed");
+      }
       Iterator<Entry> it = iterateAllLocalEntries();
       while (it.hasNext()) {
         Entry e = it.next();
@@ -511,6 +528,22 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
    */
   public void destroy() {
     synchronized (lock) {
+      shutdownInitiated = true;
+    }
+    Thread th = clearThread;
+    if (th != null) {
+      try {
+        th.join();
+      } catch (InterruptedException e) {
+      }
+    }
+    if (storage != null) {
+      storage.shutdown();
+    }
+    synchronized (lock) {
+      storage = null;
+    }
+    synchronized (lock) {
       if (timer != null) {
         timer.cancel();
         timer = null;
@@ -525,10 +558,8 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
         manager.cacheDestroyed(this);
         manager = null;
       }
-      if (storage != null) {
-        storage.shutdown();
-      }
     }
+    System.err.println("destroyed " + name);
   }
 
   protected static void removeFromList(final Entry e) {
@@ -718,32 +749,33 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
 
   protected final void evictEventually() {
     while (evictionNeeded) {
-      E e = null;
+      E e;
       synchronized (lock) {
-        if (getSize() > maxSize) {
-          e = findEvictionCandidate();
-          if (e.isRemovedFromReplacementList()) {
-            evictedButInHashCnt++;
-          }
+        if (getSize() <= maxSize) {
+          evictionNeeded = false;
+          return;
+        }
+        e = findEvictionCandidate();
+        if (e.isRemovedFromReplacementList()) {
+          evictedButInHashCnt++;
         }
       }
-      if  (e != null) {
-        synchronized (e) {
-          if (!e.isRemovedState() && !e.isRemovedNonValidState()) {
-            synchronized (lock) {
-              if (e.isRemovedFromReplacementList()) {
-                removeEntryFromHash(e);
-                evictedButInHashCnt--;
-              } else {
-                removeEntry(e);
-              }
-              evictedCnt++;
-              evictionNeeded = getSize() > maxSize;
-            }
-            if (storage != null && e.isDataValid()) {
-              storage.evict(e);
-            }
+      synchronized (e) {
+        if (e.isRemovedState() || e.isRemovedNonValidState()) {
+          continue;
+        }
+        synchronized (lock) {
+          if (e.isRemovedFromReplacementList()) {
+            removeEntryFromHash(e);
+            evictedButInHashCnt--;
+          } else {
+            removeEntry(e);
           }
+          evictedCnt++;
+          evictionNeeded = getSize() > maxSize;
+        }
+        if (storage != null && e.isDataValid()) {
+          storage.evict(e);
         }
       }
     }
@@ -2657,8 +2689,8 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
       try {
          storage.put(e);
       } catch (Exception ex) {
-        ex.printStackTrace();
         storageErrorCount++;
+        throw new CacheStorageException("cache put", ex);
       }
     }
 
@@ -2674,10 +2706,9 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
         StorageEntry e = storage.get(k);
         return e;
       } catch (Exception ex) {
-        ex.printStackTrace();
         storageErrorCount++;
+        throw new CacheStorageException("cache get", ex);
       }
-      return null;
     }
 
     public void evict(Entry e) {
@@ -2700,8 +2731,8 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
           storage.put(e);
         }
       } catch (Exception ex) {
-        ex.printStackTrace();
         storageErrorCount++;
+        throw new CacheStorageException("cache put", ex);
       }
     }
 
@@ -2715,8 +2746,8 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
       try {
         storage.remove(key);
       } catch (Exception ex) {
-        ex.printStackTrace();
         storageErrorCount++;
+        throw new CacheStorageException("cache remove", ex);
       }
     }
 

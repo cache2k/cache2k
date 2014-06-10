@@ -57,9 +57,11 @@ public abstract class RootAnyBuilder<T> extends BaseAnyBuilder<T, CacheConfig> {
 
   @Override
   public CacheConfig createConfiguration() {
+    List<Object> _moduleConfiguration = new ArrayList<>();
     for (BaseAnyBuilder bb : modules) {
-      config.addModuleConfiguration(bb.createConfiguration());
+      _moduleConfiguration.add(bb.createConfiguration());
     }
+    config.setModuleConfiguration(_moduleConfiguration);
     return config;
   }
 

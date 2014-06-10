@@ -175,6 +175,11 @@ public abstract class CacheBuilder<K,T>
   }
 
 
+  /**
+   * Builds a cache with the specified configuration parameters.
+   * The builder reused to build caches with similar or identical
+   * configuration. The builder is not thread safe.
+   */
   public abstract Cache<K, T> build();
 
 }
