@@ -4,6 +4,8 @@ A poor mans issue tracker.
 
 ### tiny bits, just noted
 
+  * CacheStorageStressTest .implementation(ClockProPlusCache.class)
+  * dito with .implementation(ClockCache.class)
   * ConfiguraitonOrCacheBuilder -> AnyBuilderBase
   * ConfigurationBuilder
 

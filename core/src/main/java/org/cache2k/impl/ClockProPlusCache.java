@@ -92,13 +92,12 @@ public class ClockProPlusCache<K, T> extends LockFreeCache<ClockProPlusCache.Ent
 
   /**
    * We are called e.g. from the timer event to remove the entry.
-   * The idea is to search our replacement lists to remove the entry.
-   * This yields correct sizes, but the algorithm here is not
-   * very effective and might be error prone.
+   * Eviction does not call this entry, because the findCandidate evicts
+   * directly.
    *
-   * Better idea: Keep the entry in the lists bot just mark it
-   * until it is moved out alone (has no hits any more). However,
-   * we need to have a size correction.
+   * <p>The entry may be in the cold or the hot clock. For removing it
+   * we need to know in what clock it resided, to decrement the size counter.
+   *
    */
   @Override
   protected void removeEntryFromReplacementList(Entry e) {
@@ -377,7 +376,12 @@ public class ClockProPlusCache<K, T> extends LockFreeCache<ClockProPlusCache.Ent
     int hitCnt;
     boolean hot;
 
-    public boolean isStale() {
+    @Override
+    public final boolean isRemovedFromReplacementList() {
+      return isStale() || super.isRemovedFromReplacementList();
+    }
+
+    public final boolean isStale() {
       return key == STALE_MARKER;
     }
 

@@ -35,8 +35,13 @@ public class RandomCache<K, T> extends LockFreeCache<BaseCache.Entry, K, T> {
   protected void recordHit(Entry entry) { }
 
   @Override
-  protected void insertIntoReplcamentList(Entry entry) {
-    entry.next = entry;
+  protected void removeEntryFromReplacementList(Entry e) {
+    e.next = null;
+  }
+
+  @Override
+  protected void insertIntoReplcamentList(Entry e) {
+    e.next = e;
   }
 
   @Override

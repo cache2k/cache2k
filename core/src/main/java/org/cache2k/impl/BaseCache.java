@@ -600,7 +600,7 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
     _head.next = e;
   }
 
-  protected final int getListEntryCount(final Entry _head) {
+  protected static final int getListEntryCount(final Entry _head) {
     Entry e = _head.next;
     int cnt = 0;
     while (e != _head) {
@@ -613,12 +613,12 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
     return cnt;
   }
 
-  protected final void moveToFront(final E _head, final E e) {
+  protected static final <E extends Entry> void moveToFront(final E _head, final E e) {
     removeFromList(e);
     insertInList(_head, e);
   }
 
-  protected final E insertIntoTailCyclicList(final E _head, final E e) {
+  protected static final <E extends Entry> E insertIntoTailCyclicList(final E _head, final E e) {
     if (_head == null) {
       return (E) e.shortCircuit();
     }
@@ -2436,7 +2436,7 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
     }
 
     /** Check that this entry is removed from the list, may be used in assertions. */
-    public final boolean isRemovedFromReplacementList() {
+    public boolean isRemovedFromReplacementList() {
       return next == null;
     }
 

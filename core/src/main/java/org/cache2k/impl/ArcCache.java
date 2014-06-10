@@ -155,7 +155,7 @@ public class ArcCache<K, T> extends BaseCache<ArcCache.Entry, K, T> {
   }
 
   /**
-   * Called when no entry was hit within t1 or b2. This checks whether we need to
+   * Called when no entry was hit within b1 or b2. This checks whether we need to
    * remove some entries from the b1 and b2 lists.
    */
   private void allMissEvictGhots() {
@@ -172,13 +172,17 @@ public class ArcCache<K, T> extends BaseCache<ArcCache.Entry, K, T> {
         }
       }
     } else {
-      int _totalCnt = getSize() + b1HashCtrl.size + b2HashCtrl.size;
+      int _totalCnt = b1HashCtrl.size + b2HashCtrl.size;
       if (_totalCnt >= maxSize) {
-        if (_totalCnt >= maxSize * 2) {
-          Entry e = b2Head.prev;
+        if (b2HashCtrl.size == 0) {
+          Entry e = b1Head.prev;
           removeFromList(e);
-          boolean f = b2HashCtrl.remove(b2Hash, e);
+          boolean f = b1HashCtrl.remove(b1Hash, e);
+          return;
         }
+        Entry e = b2Head.prev;
+        removeFromList(e);
+        boolean f = b2HashCtrl.remove(b2Hash, e);
       }
     }
   }
