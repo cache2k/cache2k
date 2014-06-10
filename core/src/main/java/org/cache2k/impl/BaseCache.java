@@ -124,24 +124,30 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
   protected long refreshHitCnt = 0;
   protected long newEntryCnt = 0;
 
-  /**
-   * peek() initiates a storage read which returns null. => newEntryCnt++, storageMissCnt++
-   */
-  protected long storageMissCnt = 0;
   protected long refreshSubmitFailedCnt = 0;
-
-  /**
-   * A newly inserted entry was removed by the eviction without the fetch to complete.
-   */
-  protected long virginEvictCnt = 0;
-
-  protected int maximumBulkFetchSize = 100;
 
   /**
    * Needed to correct the counter invariants, because during eviction the entry
    * might be removed from the replacement list, but still in the hash.
    */
   protected int evictedButInHashCnt = 0;
+
+  /**
+   * peek() initiates a storage read which returns null. => newEntryCnt++, storageMissCnt++
+   */
+  protected long storageMissCnt = 0;
+
+  /**
+   * A newly inserted entry was removed by the eviction without the fetch to complete.
+   */
+  protected long virginEvictCnt = 0;
+
+  /**
+   * New inserted but evicted before fetch could be started
+   */
+  protected long virginForFetchLostCnt = 0;
+
+  protected int maximumBulkFetchSize = 100;
 
   /**
    * Structure lock of the cache. Every operation that needs a consistent structure
@@ -801,8 +807,8 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
   }
 
   protected void removeEntry(E e) {
-    removeEntryFromHash(e);
     removeEntryFromReplacementList(e);
+    removeEntryFromHash(e);
   }
 
   /**
@@ -992,6 +998,10 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
     refreshPool.submit(r);
   }
 
+  /**
+   * Lookup or create a new entry. The new entry is created, because we need
+   * it for locking within the data fetch.
+   */
   protected E lookupOrNewEntrySynchronized(K key) {
     int hc = modifiedHash(key.hashCode());
     E e = lookupEntryUnsynchronized(key, hc);
@@ -1000,6 +1010,7 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
         e = lookupEntry(key, hc);
         if (e == null) {
           e = newEntry(key, hc);
+          e.setVirginForFetchState();
         }
       }
     }
@@ -1078,8 +1089,7 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
    */
 
   /**
-   * Called from eviction policy to remove entry from the cache, if evicted. The
-   * entry is already removed from the replacement list. stop/reset timer, if needed.
+   * The entry is already removed from the replacement list. stop/reset timer, if needed.
    * Called under big lock.
    */
   private void removeEntryFromHash(E e) {
@@ -1093,6 +1103,9 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
     } else {
       if (e.isVirgin()) {
         virginEvictCnt++;
+      }
+      if (e.isVirginForFetchState()) {
+        virginForFetchLostCnt++;
       }
       e.setRemovedNonValidState();
     }
@@ -1728,14 +1741,14 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
   }
 
   public int getFetchesInFlight() {
-    return (int) (newEntryCnt - putNewEntryCnt - getFetchesBecauseOfNewEntries());
+    return (int) (newEntryCnt - putNewEntryCnt - virginForFetchLostCnt - getFetchesBecauseOfNewEntries());
   }
 
   protected IntegrityState getIntegrityState() {
     synchronized (lock) {
       return new IntegrityState()
-        .checkEquals("newEntryCnt == getFetchesBecauseOfNewEntries() + getFetchesInFlight() + putNewEntryCnt",
-          newEntryCnt, getFetchesBecauseOfNewEntries() + getFetchesInFlight() + putNewEntryCnt)
+        .checkEquals("newEntryCnt - virginForFetchLostCnt == getFetchesBecauseOfNewEntries() + getFetchesInFlight() + putNewEntryCnt",
+          newEntryCnt - virginForFetchLostCnt, getFetchesBecauseOfNewEntries() + getFetchesInFlight() + putNewEntryCnt)
         .checkLessOrEquals("getFetchesInFlight() <= 100", getFetchesInFlight(), 100)
         .checkEquals("newEntryCnt == getSize() + evictedCnt + expiredRemoveCnt + removeCnt", newEntryCnt, getSize() + evictedCnt + expiredRemoveCnt + removeCnt)
         .checkEquals("newEntryCnt == getSize() + evictedCnt + getExpiredCnt() - expiredKeptCnt + removeCnt", newEntryCnt, getSize() + evictedCnt + getExpiredCnt() - expiredKeptCnt + removeCnt)
@@ -1806,6 +1819,7 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
         + "fetchCnt=" + fo.getFetchCnt() + ", "
         + "storageMissCnt=" + storageMissCnt + ", "
         + "virginEvictCnt=" + virginEvictCnt + ", "
+        + "virginForFetchLostCnt=" + virginForFetchLostCnt + ", "
         + "fetchesInFlightCnt=" + fo.getFetchesInFlightCnt() + ", "
         + "newEntryCnt=" + fo.getNewEntryCnt() + ", "
         + "bulkGetCnt=" + fo.getBulkGetCnt() + ", "
@@ -1845,6 +1859,7 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
     long creationTime;
     int creationDeltaMs;
     long missCnt = fetchCnt - refreshCnt + peekMissCnt;
+    long newEntryCnt = BaseCache.this.newEntryCnt - virginForFetchLostCnt;
     long usageCnt = getHitCnt() + missCnt;
     CollisionInfo collisionInfo;
     String extraStatistics;
@@ -1883,7 +1898,7 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
     public long getRefreshSubmitFailedCnt() { return refreshSubmitFailedCnt; }
     public long getRefreshHitCnt() { return refreshHitCnt; }
     public long getExpiredCnt() { return BaseCache.this.getExpiredCnt(); }
-    public long getEvictedCnt() { return evictedCnt; }
+    public long getEvictedCnt() { return evictedCnt - virginForFetchLostCnt; }
     public long getPutNewEntryCnt() { return putNewEntryCnt; }
     public long getPutCnt() { return putCnt; }
     public long getKeyMutationCnt() { return keyMutationCount; }
@@ -2362,6 +2377,7 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
     static final int FETCH_NEXT_TIME_STATE = 3;
 
     static private final int REMOVED_NON_VALID_STATE = 2;
+    static private final int VIRGIN_FOR_FETCH_STATE = 1;
     static final int VIRGIN_STATE = 0;
     static final int EXPIRY_TIME_MIN = 20;
 
@@ -2429,7 +2445,18 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
     }
 
     public final boolean isVirgin() {
-      return nextRefreshTime == VIRGIN_STATE;
+      return
+        nextRefreshTime == VIRGIN_STATE ||
+        nextRefreshTime == VIRGIN_FOR_FETCH_STATE;
+    }
+
+    public final boolean isVirginForFetchState() {
+      boolean b = nextRefreshTime == VIRGIN_FOR_FETCH_STATE;
+      return b;
+    }
+
+    public final void setVirginForFetchState() {
+      nextRefreshTime = VIRGIN_FOR_FETCH_STATE;
     }
 
     /**
