@@ -65,7 +65,7 @@ import java.util.TreeSet;
  *
  * @author Jens Wilke; created: 2014-03-27
  */
-public class DirectFileStorage implements CacheStorage {
+public class ImageFileStorage implements CacheStorage {
 
   /** Number of bytes we used for on disk disk checksum of our descriptor */
   final static int CHECKSUM_BYTES = 16;
@@ -133,7 +133,7 @@ public class DirectFileStorage implements CacheStorage {
    * then the size of {@link #committedEntries} since entries for
    * the same key may be written multiple times. This counter is used
    * to determine to start a new index file within
-   * {@link DirectFileStorage.KeyIndexWriter#checkStartNewIndex()}
+   * {@link ImageFileStorage.KeyIndexWriter#checkStartNewIndex()}
    */
   int committedEntriesCount;
 
@@ -155,11 +155,11 @@ public class DirectFileStorage implements CacheStorage {
 
   CacheStorageContext context;
 
-  public DirectFileStorage(Tunables t) throws IOException, ClassNotFoundException {
+  public ImageFileStorage(Tunables t) throws IOException, ClassNotFoundException {
     tunables = t;
   }
 
-  public DirectFileStorage() {
+  public ImageFileStorage() {
   }
 
   @Override

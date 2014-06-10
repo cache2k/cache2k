@@ -37,7 +37,7 @@ import org.cache2k.PropagatedCacheException;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.cache2k.storage.DirectFileStorage;
+import org.cache2k.storage.ImageFileStorage;
 import org.cache2k.storage.CacheStorage;
 import org.cache2k.storage.CacheStorageContext;
 import org.cache2k.storage.MarshallerFactory;
@@ -2712,7 +2712,7 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
     public void open() {
 
       try {
-        DirectFileStorage s = new DirectFileStorage();
+        ImageFileStorage s = new ImageFileStorage();
         s.open(context, config);
         storage = s;
         if (config.isPassivation()) {
