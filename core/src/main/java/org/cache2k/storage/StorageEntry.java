@@ -36,7 +36,7 @@ public interface StorageEntry {
   /** Time the entry was last fetched or created from the original source */
   long getCreatedOrUpdated();
 
-  /** Time when the entry is expired and needs to be refreshed */
+  /** Time when the entry is expired and needs to be refreshed. Is 0 if not used. */
   long getExpiryTime();
 
   /**

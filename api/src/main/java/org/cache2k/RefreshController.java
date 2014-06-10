@@ -40,11 +40,15 @@ public abstract interface RefreshController<T> {
    * default can be assumed for the expiry, the cache will use the
    * configured expiry time.
    *
+   * <p>The cache may call the method a second (or more) times, if the
+   * expiry time needs a recalculation. The reason for this is to react on
+   * possible configuration changes properly. This may happen when an entry
+   * is read back from storage.
+   *
    * @param _oldObject the value currently in the cache. null if it is not
    *                   in the cache, is a null value (null is supported for values)
    *                   or the previous fetch operation yielded in an exception.
-   * @param _timeOfLastRefresh time of the last cache refresh, a put or a fetch
-   *                           from the cache source.
+   * @param _timeOfLastRefresh time of the last cache refresh, by put or from the cache source.
    * @param _newObject the value which will be put in the cache.
    * @param now this is the current time in millis. If a cache source was used to
    *            fetch the value, this is the time before the fetch was started.

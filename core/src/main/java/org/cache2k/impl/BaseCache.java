@@ -115,18 +115,25 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
   protected long evictedCnt = 0;
   protected long refreshCnt = 0;
   protected long peekMissCnt = 0;
+
   protected long fetchCnt = 0;
+
   protected long fetchedExpiredCnt = 0;
   protected long bulkGetCnt = 0;
   protected long fetchMillis = 0;
   protected long refreshHitCnt = 0;
   protected long newEntryCnt = 0;
+
+  /**
+   * peek() initiates a storage read which returns null. => newEntryCnt++, storageMissCnt++
+   */
+  protected long storageMissCnt = 0;
   protected long refreshSubmitFailedCnt = 0;
 
   /**
    * A newly inserted entry was removed by the eviction without the fetch to complete.
    */
-  protected long newEntryRemovedCnt = 0;
+  protected long virginEvictCnt = 0;
 
   protected int maximumBulkFetchSize = 100;
 
@@ -241,6 +248,10 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
     -*/
     List<StorageConfiguration> _stores = c.getStorageModules();
     if (_stores.size() == 1) {
+      StorageConfiguration cfg = _stores.get(0);
+      if (cfg.getEntryCapacity() < 0) {
+        cfg.setEntryCapacity(c.getMaxSize());
+      }
       storage = new PassingStorageAdapter(c, _stores.get(0));
     } else {
     }
@@ -424,17 +435,26 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
     t.mainHashCopy = mainHash;
     t.refreshHashCopy = refreshHash;
     t.storage = storage;
-    synchronized (lock) {
-      if (shutdownInitiated) {
-        throw new IllegalStateException("cache closed");
+    while (true) {
+      try {
+        Thread.sleep(3);
+      } catch (InterruptedException e) {
       }
-      boolean f = storage.clearPrepare();
-      if (!f) { return; }
-      clearLocalCache();
-      Thread th = clearThread =  new Thread(t);
-      th.setName("cache2k-clear:" + getName() + ":" + th.getId());
-      th.setDaemon(true);
-      th.start();
+      synchronized (lock) {
+        if (shutdownInitiated) {
+          throw new IllegalStateException("cache closed");
+        }
+        boolean f = storage.clearPrepare();
+        if (!f) {
+          continue;
+        }
+        clearLocalCache();
+        Thread th = clearThread =  new Thread(t);
+        th.setName("cache2k-clear:" + getName() + ":" + th.getId());
+        th.setDaemon(true);
+        th.start();
+        break;
+      }
     }
   }
 
@@ -559,7 +579,6 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
         manager = null;
       }
     }
-    System.err.println("destroyed " + name);
   }
 
   protected static void removeFromList(final Entry e) {
@@ -806,23 +825,25 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
         }
       }
     }
-    if (e != null) {
-      if (e.isVirgin() && storage != null) {
-        synchronized (e) {
-          fetchWithStorage(e, true);
+    if (e == null) {
+      peekMissCnt++;
+      return null;
+    }
+    if (e.isVirgin() && storage != null) {
+      synchronized (e) {
+        fetchWithStorage(e, false);
+      }
+    }
+    evictEventually();
+    if (!e.isDataValid()) {
+      if (e.needsTimeCheck()) {
+        long t = System.currentTimeMillis();
+        if (t < -e.nextRefreshTime) {
+          return returnValue(e);
         }
       }
-      evictEventually();
-      if (!e.isDataValid()) {
-        if (e.needsTimeCheck()) {
-          long t = System.currentTimeMillis();
-          if (t < -e.nextRefreshTime) {
-            return returnValue(e);
-          }
-        }
-      } else {
-        return returnValue(e);
-      }
+    } else {
+      return returnValue(e);
     }
     peekMissCnt++;
     return null;
@@ -1071,7 +1092,7 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
       e.setRemovedState();
     } else {
       if (e.isVirgin()) {
-        newEntryRemovedCnt++;
+        virginEvictCnt++;
       }
       e.setRemovedNonValidState();
     }
@@ -1148,9 +1169,9 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
 
   protected void fetch(final E e) {
     if (storage != null) {
-      fetchWithStorage(e, false);
+      fetchWithStorage(e, true);
     } else {
-      fetchWithoutStorage(e);
+      fetchFromSource(e);
     }
   }
 
@@ -1159,47 +1180,56 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
    * @param e
    * @param _peekOnly if true it means don't fetch the data from the source
    */
-  protected void fetchWithStorage(E e, boolean _peekOnly) {
+  protected void fetchWithStorage(E e, boolean _needsFetch) {
     if (!e.isVirgin()) {
-      if (!_peekOnly) {
-        fetchWithoutStorage(e);
+      if (_needsFetch) {
+        fetchFromSource(e);
       }
       return;
     }
     StorageEntry se = storage.get(e.key);
     if (se == null) {
-      if (!_peekOnly) {
-        fetchWithoutStorage(e);
+      if (_needsFetch) {
+        fetchFromSource(e);
+        return;
       }
       touchedTime = System.currentTimeMillis();
+      e.setStorageMiss();
+      synchronized (lock) {
+        storageMissCnt++;
+      }
       return;
     }
+    e.setLastModificationFromStorage(se.getCreatedOrUpdated());
     long t0 = System.currentTimeMillis();
     T v = (T) se.getValueOrException();
     long _nextRefreshTime = maxLinger == 0 ? Entry.FETCH_NEXT_TIME_STATE : Entry.FETCHED_STATE;
-    if (timer != null) {
+    long _expiryTimeFromStorage = se.getExpiryTime();
+    boolean _expired = (_expiryTimeFromStorage > 0 && _expiryTimeFromStorage <= t0);
+    if (!_expired && timer != null) {
       _nextRefreshTime = calcNextRefreshTime(null, v, 0L, se.getCreatedOrUpdated());
+      _expired = _nextRefreshTime > Entry.EXPIRY_TIME_MIN && _nextRefreshTime <= t0;
     }
-    e.setLastModificationFromStorage(se.getCreatedOrUpdated());
-    if ((_nextRefreshTime > Entry.EXPIRY_TIME_MIN && _nextRefreshTime <= t0) ||
-        (timer == null && maxLinger == 0)) {
-      if (!_peekOnly) {
-        if (!hasBackgroundRefreshAndServesExpiredValues()) {
-          e.value = se.getValueOrException();
-          e.setExpiredState();
-          fetchWithoutStorage(e);
-          return;
-        }
+    boolean _fetchAlways = timer == null && maxLinger == 0;
+    if (_expired || _fetchAlways) {
+      if (_needsFetch) {
+        e.value = se.getValueOrException();
+        e.setExpiredState();
+        fetchFromSource(e);
+        return;
       } else {
-        if (!hasBackgroundRefreshAndServesExpiredValues()) {
-          return;
+        touchedTime = System.currentTimeMillis();
+        e.setStorageMiss();
+        synchronized (lock) {
+          storageMissCnt++;
         }
+        return;
       }
     }
-    insert(e, (T) se.getValueOrException(), t0, t0, false, _nextRefreshTime);
+    insert(e, (T) se.getValueOrException(), t0, t0, true, _nextRefreshTime);
   }
 
-  protected void fetchWithoutStorage(E e) {
+  protected void fetchFromSource(E e) {
     T v;
     long t0 = System.currentTimeMillis();
     try {
@@ -1690,8 +1720,11 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
     return expiredRemoveCnt + expiredKeptCnt;
   }
 
+  /**
+   * For peek no fetch is counted if there is a storage miss, hence the extra counter.
+   */
   public long getFetchesBecauseOfNewEntries() {
-    return fetchCnt - fetchedExpiredCnt - refreshCnt;
+    return storageMissCnt + fetchCnt - fetchedExpiredCnt - refreshCnt;
   }
 
   public int getFetchesInFlight() {
@@ -1703,7 +1736,7 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
       return new IntegrityState()
         .checkEquals("newEntryCnt == getFetchesBecauseOfNewEntries() + getFetchesInFlight() + putNewEntryCnt",
           newEntryCnt, getFetchesBecauseOfNewEntries() + getFetchesInFlight() + putNewEntryCnt)
-         .checkLessOrEquals("getFetchedInFlight() <= 100", getFetchesInFlight(), 100)
+        .checkLessOrEquals("getFetchesInFlight() <= 100", getFetchesInFlight(), 100)
         .checkEquals("newEntryCnt == getSize() + evictedCnt + expiredRemoveCnt + removeCnt", newEntryCnt, getSize() + evictedCnt + expiredRemoveCnt + removeCnt)
         .checkEquals("newEntryCnt == getSize() + evictedCnt + getExpiredCnt() - expiredKeptCnt + removeCnt", newEntryCnt, getSize() + evictedCnt + getExpiredCnt() - expiredKeptCnt + removeCnt)
         .checkEquals("mainHashCtrl.size == Hash.calcEntryCount(mainHash)", mainHashCtrl.size, Hash.calcEntryCount(mainHash))
@@ -1771,6 +1804,8 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
         + "usageCnt=" + fo.getUsageCnt() + ", "
         + "missCnt=" + fo.getMissCnt() + ", "
         + "fetchCnt=" + fo.getFetchCnt() + ", "
+        + "storageMissCnt=" + storageMissCnt + ", "
+        + "virginEvictCnt=" + virginEvictCnt + ", "
         + "fetchesInFlightCnt=" + fo.getFetchesInFlightCnt() + ", "
         + "newEntryCnt=" + fo.getNewEntryCnt() + ", "
         + "bulkGetCnt=" + fo.getBulkGetCnt() + ", "
@@ -1813,6 +1848,8 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
     long usageCnt = getHitCnt() + missCnt;
     CollisionInfo collisionInfo;
     String extraStatistics;
+    int fetchesInFlight = BaseCache.this.getFetchesInFlight();
+
     {
       collisionInfo = new CollisionInfo();
       Hash.calcHashCollisionInfo(collisionInfo, mainHash);
@@ -1838,15 +1875,15 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
     public long getReadUsageCnt() { return usageCnt - (putCnt - putNewEntryCnt); }
     public long getUsageCnt() { return usageCnt; }
     public long getMissCnt() { return missCnt; }
-    public long getNewEntryCnt() { return newEntryCnt - newEntryRemovedCnt; }
+    public long getNewEntryCnt() { return newEntryCnt; }
     public long getFetchCnt() { return fetchCnt; }
-    public int getFetchesInFlightCnt() { return getFetchesInFlight(); }
+    public int getFetchesInFlightCnt() { return fetchesInFlight; }
     public long getBulkGetCnt() { return bulkGetCnt; }
     public long getRefreshCnt() { return refreshCnt; }
     public long getRefreshSubmitFailedCnt() { return refreshSubmitFailedCnt; }
     public long getRefreshHitCnt() { return refreshHitCnt; }
     public long getExpiredCnt() { return BaseCache.this.getExpiredCnt(); }
-    public long getEvictedCnt() { return evictedCnt - newEntryRemovedCnt; }
+    public long getEvictedCnt() { return evictedCnt; }
     public long getPutNewEntryCnt() { return putNewEntryCnt; }
     public long getPutCnt() { return putCnt; }
     public long getKeyMutationCnt() { return keyMutationCount; }
@@ -2316,6 +2353,9 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
     static final int REFRESH_STATE = 11;
     static final int REPUT_STATE = 13;
 
+    /** Storage was checked, no data available */
+    static final int STORAGE_MISS = 5;
+
     static final int EXPIRED_STATE = 4;
 
     /** Logically the same as immediatly expired */
@@ -2425,6 +2465,14 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
       nextRefreshTime = FETCHED_STATE;
     }
 
+    public void setStorageMiss() {
+      nextRefreshTime = STORAGE_MISS;
+    }
+
+    public boolean isStorageMiss() {
+      return nextRefreshTime == STORAGE_MISS;
+    }
+
     /** Entry is kept in the cache but has expired */
     public void setExpiredState() {
       nextRefreshTime = EXPIRED_STATE;
@@ -2513,6 +2561,9 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
       return fetchedTime >> 1;
     }
 
+    /**
+     * Expiry time or 0.
+     */
     public long getExpiryTime() {
       if (hasExpiryTime()) {
         return nextRefreshTime;
@@ -2786,13 +2837,14 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
       try {
         copyForClearing.clear();
         ((CacheStorageBuffer) storage).transfer(copyForClearing);
+      } catch (IOException | ClassNotFoundException ex) {
+        ex.printStackTrace();
+        storageErrorCount++;
+      } finally {
         synchronized (lock) {
           storage = copyForClearing;
           copyForClearing = null;
         }
-      } catch (IOException | ClassNotFoundException ex) {
-        ex.printStackTrace();
-        storageErrorCount++;
       }
     }
 

@@ -221,7 +221,6 @@ public class CacheStorageBuffer implements CacheStorage {
         op.execute(_target);
       }
     }
-
   }
 
   static abstract class Op {

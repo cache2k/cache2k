@@ -120,9 +120,9 @@ public class DirectFileStorage implements CacheStorage {
 
   /**
    * List of entry that got rewritten or deleted. The storage space will
-   * be freed after a commit.
+   * be freed after a commit. Protected by: valuesLock
    */
-  ArrayList<BufferEntry> spaceToFree;
+  List<BufferEntry> spaceToFree;
 
   List<BufferEntry> freeSecondNextCommit = null;
 
@@ -149,6 +149,8 @@ public class DirectFileStorage implements CacheStorage {
   long missCount = 0;
   long hitCount = 0;
   long putCount = 0;
+  long evictCount = 0;
+  long removeCount = 0;
   long freeSpace = 0;
 
   CacheStorageContext context;
@@ -190,7 +192,7 @@ public class DirectFileStorage implements CacheStorage {
           @Override
           protected boolean removeEldestEntry(Map.Entry<Object, BufferEntry> _eldest) {
             if (getEntryCount() > entryCapacity) {
-              reallyRemove(_eldest.getValue());
+              evict(_eldest.getValue());
               return true;
             }
             return false;
@@ -201,34 +203,48 @@ public class DirectFileStorage implements CacheStorage {
       newBufferEntries = new HashMap<>();
       deletedBufferEntries = new HashMap<>();
       spaceToFree = new ArrayList<>();
+      freeSecondNextCommit = null;
+      freeNextCommit = null;
       entriesInEarliestIndex = new HashMap<>();
       committedEntries = new HashMap<>();
       BufferDescriptor d = readLatestIntactBufferDescriptor();
+      if (d != null) {
+        try {
+          descriptor = d;
+          initializeFromDisk();
+        } catch (IOException ex) {
+          System.err.println(fileName + " got IOException: " + ex);
+          descriptor = d = null;
+        }
+      }
       if (d == null) {
         if (buffer.capacity() > 0) {
           dataLost = true;
         }
-        initializeFreeSpaceMap();
-        descriptor = new BufferDescriptor();
-        descriptor.storageCreated = System.currentTimeMillis();
-        CacheStorageContext ctx = context;
-        keyMarshaller = ctx.getMarshallerFactory().createMarshaller(ctx.getKeyType());
-        valueMarshaller = ctx.getMarshallerFactory().createMarshaller(ctx.getValueType());
-        exceptionMarshaller = ctx.getMarshallerFactory().createMarshaller(Throwable.class);
-      } else {
-        descriptor = d;
-        MarshallerFactory _factory = context.getMarshallerFactory();
-        keyMarshaller =
-          _factory.createMarshaller(d.keyMarshallerParameters);
-        valueMarshaller =
-          _factory.createMarshaller(d.valueMarshallerParameters);
-        exceptionMarshaller =
-          _factory.createMarshaller(d.exceptionMarshallerParameters);
-        readIndex();
+        initializeNewStorage();
       }
     } catch (ClassNotFoundException e) {
       throw new IOException(e);
     }
+
+  }
+
+  private void initializeFromDisk() throws IOException, ClassNotFoundException {
+    MarshallerFactory _factory = context.getMarshallerFactory();
+    keyMarshaller = _factory.createMarshaller(descriptor.keyMarshallerParameters);
+    valueMarshaller = _factory.createMarshaller(descriptor.valueMarshallerParameters);
+    exceptionMarshaller = _factory.createMarshaller(descriptor.exceptionMarshallerParameters);
+    readIndex();
+  }
+
+  private void initializeNewStorage() {
+    descriptor = new BufferDescriptor();
+    descriptor.storageCreated = System.currentTimeMillis();
+    initializeFreeSpaceMap();
+    CacheStorageContext ctx = context;
+    keyMarshaller = ctx.getMarshallerFactory().createMarshaller(ctx.getKeyType());
+    valueMarshaller = ctx.getMarshallerFactory().createMarshaller(ctx.getValueType());
+    exceptionMarshaller = ctx.getMarshallerFactory().createMarshaller(Throwable.class);
   }
 
   public void close() throws IOException {
@@ -237,23 +253,41 @@ public class DirectFileStorage implements CacheStorage {
         return;
       }
       commit();
-      boolean _empty = values.size() == 0;
-      fastClose();
-      if (_empty) {
-        removeFiles();
+      synchronized (values) {
+        synchronized (freeSet) {
+          boolean _empty = values.size() == 0;
+          fastClose();
+          if (_empty) {
+            removeFiles();
+          }
+        }
       }
     }
   }
 
+  /**
+   * Remove the files. We do no synchronize here, since cache guarantees we are alone.
+   */
   public void clear() throws IOException {
-    synchronized (valuesLock) {
-      synchronized (commitLock) {
-        if (file != null) {
-          fastClose();
+    long _counters = putCount + missCount + hitCount + removeCount + evictCount;
+    synchronized (commitLock) {
+      synchronized (valuesLock) {
+        synchronized (pos2slot) {
+          if (file != null) {
+            fastClose();
+          }
+          removeFiles();
+          reopen();
         }
-        removeFiles();
-        reopen();
       }
+    }
+    try {
+      Thread.sleep(7);
+    } catch (InterruptedException e) {
+    }
+    long _counters2 = putCount + missCount + hitCount + removeCount + evictCount;
+    if (_counters2 != _counters) {
+      throw new IllegalStateException("detected operations while clearing.");
     }
   }
 
@@ -283,11 +317,14 @@ public class DirectFileStorage implements CacheStorage {
    */
   public void fastClose() throws IOException {
     synchronized (valuesLock) {
-      values.clear();
-      pos2slot.clear();
+      values = null;
+      pos2slot = null;
       buffer = null;
       file.close();
       file = null;
+      spaceToFree = null;
+      freeSecondNextCommit = null;
+      freeNextCommit = null;
     }
   }
 
@@ -321,11 +358,10 @@ public class DirectFileStorage implements CacheStorage {
     synchronized (valuesLock) {
       be = values.remove(key);
       if (be == null) {
-        missCount++;
         return null;
       }
       reallyRemove(be);
-      hitCount++;
+      removeCount++;
     }
     return returnEntry(be);
   }
@@ -337,6 +373,11 @@ public class DirectFileStorage implements CacheStorage {
     deletedBufferEntries.put(be.key, be);
     newBufferEntries.remove(be.key);
     spaceToFree.add(be);
+  }
+
+  private void evict(BufferEntry be) {
+    reallyRemove(be);
+    evictCount++;
   }
 
   private MyEntry returnEntry(BufferEntry be) throws IOException, ClassNotFoundException {
@@ -413,6 +454,7 @@ public class DirectFileStorage implements CacheStorage {
       if (be != null) {
         spaceToFree.add(be);
       }
+      deletedBufferEntries.remove(e.getKey());
       newBufferEntries.put(e.getKey(), _newEntry);
       values.put(e.getKey(), _newEntry);
       putCount++;
@@ -458,20 +500,18 @@ public class DirectFileStorage implements CacheStorage {
     return v;
   }
 
-  long calculateUsedSpace() {
+  long calculateSpaceToFree() {
     long s = 0;
-    s += calcSize(values.values());
     s += calcSize(spaceToFree);
     s += calcSize(freeSecondNextCommit);
     s += calcSize(freeNextCommit);
     return s;
   }
 
-  long calculateFreeSpace() {
+  long calculateUsedSpace() {
     long s = 0;
-    for (FreeSlot fs : freeSet) {
-      s += fs.size;
-    }
+    s += calcSize(values.values());
+    s += calculateSpaceToFree();
     return s;
   }
 
@@ -537,10 +577,6 @@ public class DirectFileStorage implements CacheStorage {
   }
 
   void readIndex() throws IOException, ClassNotFoundException {
-    descriptor = readLatestIntactBufferDescriptor();
-    if (descriptor == null) {
-      return;
-    }
     KeyIndexReader r = new KeyIndexReader();
     r.readKeyIndex();
     recalculateFreeSpaceMapAndRemoveDeletedEntries();
@@ -653,6 +689,7 @@ public class DirectFileStorage implements CacheStorage {
    * The used space will be removed of the free space map.
    */
   void allocateEntrySpace(BufferEntry e, TreeSet<FreeSlot> _pos2slot) {
+    freeSpace -= e.size;
     reusedFreeSlotUnderLock.position = e.position;
     FreeSlot s = _pos2slot.floor(reusedFreeSlotUnderLock);
     if (s == null) {
@@ -888,6 +925,61 @@ public class DirectFileStorage implements CacheStorage {
     return fileName + "-" + _fileNo + ".idx";
   }
 
+  /**
+   * Calculates an sha1 checksum used for the descriptor. Expected
+   * to be always at least {@link #CHECKSUM_BYTES} bytes long.
+   */
+  byte[] calcCheckSum(byte[] ba) throws IOException {
+    try {
+      MessageDigest md = MessageDigest.getInstance("sha1");
+      byte[] out = md.digest(ba);
+      return out;
+    } catch (NoSuchAlgorithmException ex) {
+      throw new IOException("sha1 missing, never happens?!");
+    }
+  }
+
+  @Override
+  public void setEntryCapacity(int entryCapacity) {
+    this.entryCapacity = entryCapacity;
+  }
+
+  @Override
+  public int getEntryCapacity() {
+    return this.entryCapacity;
+  }
+
+  @Override
+  public void setBytesCapacity(long bytesCapacity) {
+    this.bytesCapacity = bytesCapacity;
+  }
+
+  public long getUsedSpace() {
+    return getTotalValueSpace() - freeSpace;
+  }
+
+  @Override
+  public String toString() {
+    return "DirectFileStorage(" + fileName + ", " +
+      "entryCapacity=" + entryCapacity + ", " +
+      "entryCnt=" + values.size() + ", " +
+      "totalSpace=" + getTotalValueSpace() + ", " +
+      "usedSpace=" + getUsedSpace() + ", " +
+      "calculatedUsedSpace=" + calculateUsedSpace() + ", " +
+      "freeSpace=" + freeSpace + ", " +
+      "spaceToFree=" + calculateSpaceToFree() + ", " +
+      "freeSlots=" + freeSet.size() + ", " +
+      "smallestSlot=" + (freeSet.size() > 0 ? freeSet.first().size : -1) + ", " +
+      "largestSlot=" + (freeSet.size() > 0 ? freeSet.last().size : -1) + ", " +
+      "lastIndexNo=" + descriptor.lastIndexFile +", "+
+      "hitCnt=" + hitCount + ", " +
+      "missCnt=" + missCount + ", " +
+      "putCnt=" + putCount + ", " +
+      "evictCnt=" + evictCount + ", " +
+      "removeCnt=" + removeCount + ", " +
+      "bufferDescriptor=" + descriptor + ")";
+  }
+
   class KeyIndexReader {
 
     int currentlyReadingIndexFile = -1802;
@@ -979,35 +1071,6 @@ public class DirectFileStorage implements CacheStorage {
       }
     }
 
-  }
-
-  /**
-   * Calculates an sha1 checksum used for the descriptor. Expected
-   * to be always at least {@link #CHECKSUM_BYTES} bytes long.
-   */
-  byte[] calcCheckSum(byte[] ba) throws IOException {
-    try {
-      MessageDigest md = MessageDigest.getInstance("sha1");
-      byte[] out = md.digest(ba);
-      return out;
-    } catch (NoSuchAlgorithmException ex) {
-      throw new IOException("sha1 missing, never happens?!");
-    }
-  }
-
-  @Override
-  public void setEntryCapacity(int entryCapacity) {
-    this.entryCapacity = entryCapacity;
-  }
-
-  @Override
-  public int getEntryCapacity() {
-    return this.entryCapacity;
-  }
-
-  @Override
-  public void setBytesCapacity(long bytesCapacity) {
-    this.bytesCapacity = bytesCapacity;
   }
 
   static class BufferDescriptor implements Serializable {

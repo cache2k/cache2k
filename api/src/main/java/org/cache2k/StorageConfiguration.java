@@ -35,11 +35,11 @@ public class StorageConfiguration {
 
   Class<?> implementation;
 
-  boolean passivation;
+  boolean passivation = false;
 
   String location;
 
-  int entryCapacity;
+  int entryCapacity = -1;
 
   int bytesCapacity;
 
@@ -67,6 +67,10 @@ public class StorageConfiguration {
     this.location = location;
   }
 
+  /**
+   * Capacity limit for the number of entries. Default is -1, capacity is
+   * limited by other means.
+   */
   public void setEntryCapacity(int entryCapacity) {
     this.entryCapacity = entryCapacity;
   }
