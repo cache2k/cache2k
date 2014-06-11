@@ -25,28 +25,36 @@ package org.cache2k.impl.timer;
 /**
  * @author Jens Wilke; created: 2014-03-22
  */
-public class GlobalExpiryTimer extends TimerTaskQueue {
+public class GlobalTimerService extends TimerService {
+
+  private static TimerService queue;
+
+  public static TimerService getInstance() {
+    if (queue  == null) {
+      queue = new GlobalTimerService("<global>", Runtime.getRuntime().availableProcessors() * 2);
+    }
+    return queue;
+  }
 
   int racyRoundRobinCounter = 0;
   ArrayHeapTimerQueue[] timerQueues;
 
-  public GlobalExpiryTimer(String _managerName, int _threadCount) {
+  public GlobalTimerService(String _managerName, int _threadCount) {
     timerQueues = new ArrayHeapTimerQueue[_threadCount];
     for (int i = 0; i < timerQueues.length; i++) {
       timerQueues[i] =
-        new ArrayHeapTimerQueue("cache2k-timer-" + _managerName + "-" + i);
+        new ArrayHeapTimerQueue("cache2k-timer:" + _managerName + ":thread-" + i);
     }
   }
 
-  public <T> TimerTask<T> addTimer(TimerListener<T> l, T _payload, long t) {
+  public <T> CancelHandle add(TimerPayloadListener<T> l, T _payload, long t) {
     racyRoundRobinCounter = (racyRoundRobinCounter + 1) % timerQueues.length;
-    return timerQueues[racyRoundRobinCounter].addTimer(l, _payload, t);
+    return timerQueues[racyRoundRobinCounter].add(l, _payload, t);
   }
 
-  @Override
-  public void schedulePurge() {
+  public CancelHandle add(TimerListener l, long t) {
     racyRoundRobinCounter = (racyRoundRobinCounter + 1) % timerQueues.length;
-    timerQueues[racyRoundRobinCounter].schedulePurge();
+    return timerQueues[racyRoundRobinCounter].add(l, t);
   }
 
   @Override
@@ -81,6 +89,15 @@ public class GlobalExpiryTimer extends TimerTaskQueue {
     long v = 0;
     for (int i = 0; i < timerQueues.length; i++) {
       v += timerQueues[i].getPurgeCount();
+    }
+    return v;
+  }
+
+  @Override
+  public long getCancelCount() {
+    long v = 0;
+    for (int i = 0; i < timerQueues.length; i++) {
+      v += timerQueues[i].getCancelCount();
     }
     return v;
   }

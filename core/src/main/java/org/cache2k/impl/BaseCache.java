@@ -29,10 +29,9 @@ import org.cache2k.Cache;
 import org.cache2k.CacheConfig;
 import org.cache2k.MutableCacheEntry;
 import org.cache2k.StorageConfiguration;
-import org.cache2k.impl.timer.GlobalExpiryTimer;
-import org.cache2k.impl.timer.TimerListener;
-import org.cache2k.impl.timer.TimerTask;
-import org.cache2k.impl.timer.TimerTaskQueue;
+import org.cache2k.impl.timer.GlobalTimerService;
+import org.cache2k.impl.timer.TimerPayloadListener;
+import org.cache2k.impl.timer.TimerService;
 import org.cache2k.jmx.CacheMXBean;
 import org.cache2k.CacheSourceWithMetaInfo;
 import org.cache2k.CacheSource;
@@ -199,7 +198,7 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
 
   protected StorageAdapter storage;
 
-  protected TimerTaskQueue timerService = GlobalExpiryTimer.getInstance();
+  protected TimerService timerService = GlobalTimerService.getInstance();
 
   private int featureBits = 0;
 
@@ -2737,7 +2736,7 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
     StorageContext context;
     StorageConfiguration config;
     ExecutorService executor = Executors.newSingleThreadExecutor();
-    TimerTask<Void> flushTimer;
+    TimerService.CancelHandle flushTimerHandle;
     boolean needsFlush;
     Future<Void> executingFlush;
 
@@ -2786,13 +2785,12 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
     }
 
     void checkStartFlushTimer() {
-      if (flushTimer != null) {
-        needsFlush = true;
+      needsFlush = true;
+      if (flushTimerHandle != null) {
         return;
       }
       synchronized (this) {
-        if (flushTimer != null) {
-          needsFlush = true;
+        if (flushTimerHandle != null) {
           return;
         }
         scheduleTimer();
@@ -2801,17 +2799,17 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
 
     private void scheduleTimer() {
       if (1 == 1) return;
-      if (flushTimer != null) {
-        flushTimer.cancel();
+      if (flushTimerHandle != null) {
+        flushTimerHandle.cancel();
       }
-      TimerListener<Void> l = new TimerListener<Void>() {
+      TimerPayloadListener<Void> l = new TimerPayloadListener<Void>() {
         @Override
-        public void timerEvent(Void _payload, long _time) {
+        public void fire(Void _payload, long _time) {
           flush();
         }
       };
       long _fireTime = System.currentTimeMillis() + config.getSyncInterval();
-      flushTimer = timerService.addTimer(l, null, _fireTime);
+      flushTimerHandle = timerService.add(l, null, _fireTime);
     }
 
     public StorageEntry get(Object k) {
@@ -2892,6 +2890,9 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
               synchronized (this) {
                 if (needsFlush) {
                   scheduleTimer();
+                } else {
+                  flushTimerHandle.cancel();
+                  flushTimerHandle = null;
                 }
               }
               return null;

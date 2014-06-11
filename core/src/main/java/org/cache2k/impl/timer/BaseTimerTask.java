@@ -25,25 +25,18 @@ package org.cache2k.impl.timer;
 /**
 * @author Jens Wilke; created: 2014-03-23
 */
-public class TimerTask<T> {
+public abstract class BaseTimerTask implements TimerService.CancelHandle {
 
   long time;
-  T payload;
-  TimerListener listener;
+
+  protected BaseTimerTask(long time) {
+    this.time = time;
+  }
+
+  protected abstract boolean fire(long now);
 
   public long getTime() {
     return time;
-  }
-
-  /**
-   * Cancel the timer execution. This is a fast and unsynchronized method.
-   */
-  public void cancel() {
-    listener = null;
-  }
-
-  public boolean isCancelled() {
-    return listener == null;
   }
 
 }

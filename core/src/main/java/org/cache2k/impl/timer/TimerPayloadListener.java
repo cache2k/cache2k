@@ -23,25 +23,11 @@ package org.cache2k.impl.timer;
  */
 
 /**
- * Generic interface of a timer service.
- *
  * @author Jens Wilke; created: 2014-03-23
+ * @param <T> type of the payload object that the timer carries
  */
-public abstract class TimerTaskQueue {
+public interface TimerPayloadListener<T> {
 
-  public abstract <T> TimerTask<T> addTimer(TimerListener<T> l, T _payload, long _fireTime);
-
-  /**
-   * Schedule a cleanup of the timers internal data structures.
-   */
-  public abstract void schedulePurge();
-
-  /**
-   * Return the tasks in the timer queue including the cancelled.
-   */
-  public abstract int getQueueSize();
-  public abstract long getEventsDelivered();
-  public abstract long getEventsScheduled();
-  public abstract long getPurgeCount();
+  void fire(T _payload, long _time);
 
 }

@@ -23,7 +23,8 @@ package org.cache2k.impl;
  */
 
 import org.cache2k.StorageConfiguration;
-import org.cache2k.impl.timer.TimerTask;
+import org.cache2k.impl.timer.BaseTimerTask;
+import org.cache2k.impl.timer.TimerService;
 import org.cache2k.storage.CacheStorage;
 import org.cache2k.storage.CacheStorageContext;
 import org.cache2k.storage.StorageEntry;
@@ -63,7 +64,7 @@ public class CacheStorageBuffer implements CacheStorage {
 
   /** Added up rest of microseconds to wait */
   long microWaitRest = 0;
-  TimerTask<Void> tt;
+  TimerService.CancelHandle tt;
 
   List<Op> operations = new ArrayList<>();
   Map<Object, StorageEntry> key2entry = new HashMap<>();

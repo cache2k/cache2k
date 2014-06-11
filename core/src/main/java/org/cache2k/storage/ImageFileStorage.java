@@ -50,6 +50,8 @@ import java.util.Queue;
 import java.util.Set;
 
 import org.cache2k.storage.FreeSpaceMap.Slot;
+import org.cache2k.util.TunableConstants;
+import org.cache2k.util.TunableConstantsFactory;
 
 /**
  * Implements a robust storage on a file or a byte buffer.
@@ -78,10 +80,8 @@ public class ImageFileStorage implements CacheStorage {
 
   final static Marshaller DEFAULT_MARSHALLER = DESCRIPTOR_MARSHALLER;
 
-  final static Tunables DEFAULT_TUNABLES = new Tunables();
-
   boolean dataLost = false;
-  Tunables tunables = DEFAULT_TUNABLES;
+  Tunables tunableConstants = TunableConstantsFactory.get(Tunables.class);
   Marshaller keyMarshaller = DEFAULT_MARSHALLER;
   Marshaller valueMarshaller = DEFAULT_MARSHALLER;
   Marshaller universalMarshaller = DEFAULT_MARSHALLER;
@@ -144,7 +144,7 @@ public class ImageFileStorage implements CacheStorage {
   CacheStorageContext context;
 
   public ImageFileStorage(Tunables t) throws IOException, ClassNotFoundException {
-    tunables = t;
+    tunableConstants = t;
   }
 
   public ImageFileStorage() {
@@ -518,9 +518,9 @@ public class ImageFileStorage implements CacheStorage {
     } else {
       s = new Slot(_length, _neededSpace);
     }
-    if (tunables.extensionSize >= 2) {
-      s.size += tunables.extensionSize - 1;
-      s.size -= s.size % tunables.extensionSize;
+    if (tunableConstants.extensionSize >= 2) {
+      s.size += tunableConstants.extensionSize - 1;
+      s.size -= s.size % tunableConstants.extensionSize;
     }
     file.setLength(s.getNextPosition());
     resetBufferFromFile();
@@ -695,7 +695,6 @@ public class ImageFileStorage implements CacheStorage {
         }
       }
       updateCommittedEntries();
-      System.err.println("wrote: " + position + "/" + indexFileNo);
       descriptor.indexEntries +=
         totalEntriesToWrite();
       descriptor.lastKeyIndexPosition = position;
@@ -752,12 +751,12 @@ public class ImageFileStorage implements CacheStorage {
         sortOut(entriesInEarliestIndex, newEntries.keySet());
         sortOut(entriesInEarliestIndex, deletedEntries.keySet());
         int _writeCnt = newEntries.size() + deletedEntries.size();
-        if (_writeCnt * tunables.rewriteCompleteFactor >= entriesInEarliestIndex.size()) {
+        if (_writeCnt * tunableConstants.rewriteCompleteFactor >= entriesInEarliestIndex.size()) {
           rewriteEntries = entriesInEarliestIndex;
           entriesInEarliestIndex = new HashMap<>();
         } else {
           rewriteEntries = new HashMap<>();
-          int cnt = _writeCnt * tunables.rewritePartialFactor;
+          int cnt = _writeCnt * tunableConstants.rewritePartialFactor;
           Iterator<BufferEntry> it = entriesInEarliestIndex.values().iterator();
           while (cnt > 0 && it.hasNext()) {
             BufferEntry e = it.next();
@@ -774,7 +773,7 @@ public class ImageFileStorage implements CacheStorage {
      */
     void checkStartNewIndex() {
       int _totalEntriesInIndexFile = descriptor.indexEntries + totalEntriesToWrite();
-      if (_totalEntriesInIndexFile > descriptor.entryCount * tunables.indexFileFactor) {
+      if (_totalEntriesInIndexFile > descriptor.entryCount * tunableConstants.indexFileFactor) {
         forceNewFile = true;
       }
     }
@@ -794,7 +793,7 @@ public class ImageFileStorage implements CacheStorage {
       slotsToFreeQueue.add(workerFreeSlots);
       SlotBucket b = slotsToFreeQueue.peek();
       long _before = freeMap.getFreeSpace();
-      while ((b.time + tunables.freeSpaceAfterMillis) <= timestamp) {
+      while ((b.time + tunableConstants.freeSpaceAfterMillis) <= timestamp) {
         b = slotsToFreeQueue.remove();
         synchronized (freeMap) {
           for (Slot s : b) {
@@ -917,7 +916,6 @@ public class ImageFileStorage implements CacheStorage {
 
     IndexChunkDescriptor readChunk(int _fileNo, long _position)
       throws IOException, ClassNotFoundException {
-      System.err.println("read chunk: " + _fileNo + ", " + _position);
       if (currentlyReadingIndexFile != _fileNo) {
         openFile(_fileNo);
       }
@@ -930,7 +928,6 @@ public class ImageFileStorage implements CacheStorage {
       do {
         BufferEntry e = new BufferEntry();
         e.read(in);
-        System.err.println(e);
         if (!readKeys.contains(e.key)) {
           readKeys.add(e.key);
           entriesInEarliestIndex.put(e.key, e);
@@ -1287,7 +1284,7 @@ public class ImageFileStorage implements CacheStorage {
    * is basically provided for documentary reason and to have all
    * "magic values" in a central place.
    */
-  public static class Tunables {
+  public static class Tunables implements TunableConstants {
 
     /**
      * Factor of the entry count in the storage to limit the index

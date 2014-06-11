@@ -23,10 +23,39 @@ package org.cache2k.impl.timer;
  */
 
 /**
- * @author Jens Wilke; created: 2014-04-27
- */
-public interface TimerListener {
+* @author Jens Wilke; created: 2014-03-23
+*/
+public final class PayloadTask<T> extends BaseTimerTask {
 
-  void fire(long _requestedTime);
+  T payload;
+  TimerPayloadListener<T> listener;
+
+  public PayloadTask(long time, T payload, TimerPayloadListener<T> listener) {
+    super(time);
+    this.payload = payload;
+    this.listener = listener;
+  }
+
+  protected boolean fire(long now) {
+    final TimerPayloadListener<T> l = listener;
+    final T pl = payload;
+    if (l != null && pl != null) {
+      l.fire(pl, time);
+      return true;
+    }
+    return false;
+  }
+
+  /**
+   * Cancel the timer execution.
+   */
+  public void cancel() {
+    listener = null;
+    payload = null;
+  }
+
+  public boolean isCancelled() {
+    return listener == null;
+  }
 
 }

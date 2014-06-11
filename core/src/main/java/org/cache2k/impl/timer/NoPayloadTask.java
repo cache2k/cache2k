@@ -25,8 +25,33 @@ package org.cache2k.impl.timer;
 /**
  * @author Jens Wilke; created: 2014-04-27
  */
-public interface TimerListener {
+public final class NoPayloadTask extends BaseTimerTask {
 
-  void fire(long _requestedTime);
+  TimerListener listener;
+
+  public NoPayloadTask(long time, TimerListener listener) {
+    super(time);
+    this.listener = listener;
+  }
+
+  @Override
+  protected boolean fire(long now) {
+    TimerListener l = listener;
+    if (l != null) {
+      l.fire(now);
+      return true;
+    }
+    return false;
+  }
+
+  @Override
+  public void cancel() {
+    listener = null;
+  }
+
+  @Override
+  public boolean isCancelled() {
+    return listener == null;
+  }
 
 }
