@@ -23,6 +23,7 @@ package org.cache2k.impl;
  */
 
 import org.cache2k.StorageConfiguration;
+import org.cache2k.impl.timer.TimerTask;
 import org.cache2k.storage.CacheStorage;
 import org.cache2k.storage.CacheStorageContext;
 import org.cache2k.storage.StorageEntry;
@@ -62,11 +63,33 @@ public class CacheStorageBuffer implements CacheStorage {
 
   /** Added up rest of microseconds to wait */
   long microWaitRest = 0;
+  TimerTask<Void> tt;
 
   List<Op> operations = new ArrayList<>();
   Map<Object, StorageEntry> key2entry = new HashMap<>();
 
   CacheStorage forwardingStorage;
+
+  /**
+   * Stall this thread until the op is executed. However, the
+   * op is doing nothing and just notifies us. The flush
+   * on the storage can run in parallel with other tasks.
+   * This method is only allowed to finish when the flush is done.
+   */
+  @Override
+  public void flush(long now, final FlushContext ctx) throws Exception {
+    synchronized (this) {
+      if (forwardingStorage != null) {
+        forwardingStorage.flush(now, ctx);
+      }
+      Op op = new OpFlush();
+      addOp(op);
+      synchronized (op) {
+        op.wait();
+      }
+      forwardingStorage.flush(System.currentTimeMillis(), ctx);
+    }
+  }
 
   @Override
   public void close() throws IOException {
@@ -201,7 +224,7 @@ public class CacheStorageBuffer implements CacheStorage {
     }
   }
 
-  public void transfer(CacheStorage _target) throws IOException, ClassNotFoundException {
+  public void transfer(CacheStorage _target) throws Exception {
     synchronized (this) {
       sendingStart = System.currentTimeMillis();
       operationsAtTransferStart = operationsCnt;
@@ -225,7 +248,7 @@ public class CacheStorageBuffer implements CacheStorage {
 
   static abstract class Op {
 
-    abstract void execute(CacheStorage _target) throws IOException, ClassNotFoundException;
+    abstract void execute(CacheStorage _target) throws Exception;
 
   }
 
@@ -238,7 +261,7 @@ public class CacheStorageBuffer implements CacheStorage {
     }
 
     @Override
-    void execute(CacheStorage _target) throws IOException, ClassNotFoundException {
+    void execute(CacheStorage _target) throws Exception {
       _target.put(entry);
     }
 
@@ -257,7 +280,7 @@ public class CacheStorageBuffer implements CacheStorage {
     }
 
     @Override
-    void execute(CacheStorage _target) throws IOException, ClassNotFoundException {
+    void execute(CacheStorage _target) throws Exception {
       _target.remove(key);
     }
 
@@ -277,7 +300,7 @@ public class CacheStorageBuffer implements CacheStorage {
     }
 
     @Override
-    void execute(CacheStorage _target) throws IOException {
+    void execute(CacheStorage _target) throws Exception {
       _target.contains(key);
     }
 
@@ -297,7 +320,7 @@ public class CacheStorageBuffer implements CacheStorage {
     }
 
     @Override
-    void execute(CacheStorage _target) throws IOException, ClassNotFoundException {
+    void execute(CacheStorage _target) throws Exception {
       _target.get(key);
     }
 
@@ -311,7 +334,7 @@ public class CacheStorageBuffer implements CacheStorage {
   static class OpClose extends Op {
 
     @Override
-    void execute(CacheStorage _target) throws IOException {
+    void execute(CacheStorage _target) throws Exception {
       _target.close();
     }
 
@@ -325,13 +348,29 @@ public class CacheStorageBuffer implements CacheStorage {
   static class OpClear extends Op {
 
     @Override
-    void execute(CacheStorage _target) throws IOException {
+    void execute(CacheStorage _target) throws Exception {
       _target.clear();
     }
 
     @Override
     public String toString() {
       return "OpClear";
+    }
+
+  }
+
+  static class OpFlush extends Op {
+
+    @Override
+    void execute(CacheStorage _target) throws Exception {
+      synchronized (this) {
+        notify();
+      }
+    }
+
+    @Override
+    public String toString() {
+      return "OpFlush";
     }
 
   }

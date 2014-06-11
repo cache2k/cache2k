@@ -78,6 +78,14 @@ public interface CacheStorage extends Closeable {
   public void clear() throws IOException;
 
   /**
+   * Flush any unwritten information to disk. This is a long running operation
+   * in the current thread. There are concurrent read and write going on.
+   * The flush thread may be interrupted and should check its interrupt
+   * status at save points.
+   */
+  public void flush(long now, FlushContext ctx) throws Exception;
+
+  /**
    * Write everything to disk and free all in-memory resources. Multiple calls
    * to close have no effect.
    */
@@ -109,5 +117,15 @@ public interface CacheStorage extends Closeable {
   public int getEntryCapacity();
 
   public int getEntryCount();
+
+  public static interface FlushContext {
+
+  }
+
+  public static interface PurgeContext {
+
+  }
+
+  public static final FlushContext DEFAULT_FLUSH_CONTEXT = new FlushContext() { };
 
 }

@@ -43,7 +43,7 @@ public class StorageConfiguration {
 
   int bytesCapacity;
 
-  int syncInterval;
+  long syncInterval;
 
   Object extendedConfiguration;
 
@@ -79,8 +79,8 @@ public class StorageConfiguration {
     this.bytesCapacity = bytesCapacity;
   }
 
-  public void setSyncInterval(int syncInterval) {
-    this.syncInterval = syncInterval;
+  public void setSyncInterval(long v, TimeUnit u) {
+    this.syncInterval = u.toMillis(v);
   }
 
   public boolean isPurgeOnStartup() {
@@ -114,7 +114,7 @@ public class StorageConfiguration {
   /**
    * Sync interval in milliseconds.
    */
-  public int getSyncInterval() {
+  public long getSyncInterval() {
     return syncInterval;
   }
 

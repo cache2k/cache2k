@@ -26,6 +26,8 @@ import java.util.Comparator;
 import java.util.TreeSet;
 
 /**
+ * Holds areas of free space (slots).
+ *
  * @author Jens Wilke; created: 2014-04-25
  */
 public class FreeSpaceMap {

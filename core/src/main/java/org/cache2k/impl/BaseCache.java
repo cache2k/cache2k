@@ -29,6 +29,10 @@ import org.cache2k.Cache;
 import org.cache2k.CacheConfig;
 import org.cache2k.MutableCacheEntry;
 import org.cache2k.StorageConfiguration;
+import org.cache2k.impl.timer.GlobalExpiryTimer;
+import org.cache2k.impl.timer.TimerListener;
+import org.cache2k.impl.timer.TimerTask;
+import org.cache2k.impl.timer.TimerTaskQueue;
 import org.cache2k.jmx.CacheMXBean;
 import org.cache2k.CacheSourceWithMetaInfo;
 import org.cache2k.CacheSource;
@@ -60,7 +64,10 @@ import java.util.Map;
 import java.util.Random;
 import java.util.Set;
 import java.util.Timer;
-import java.util.TimerTask;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 
 /**
  * Foundation for all cache variants. All common functionality is in here.
@@ -191,6 +198,8 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
   protected boolean evictionNeeded = false;
 
   protected StorageAdapter storage;
+
+  protected TimerTaskQueue timerService = GlobalExpiryTimer.getInstance();
 
   private int featureBits = 0;
 
@@ -2348,7 +2357,7 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
 
   }
 
-  protected class MyTimerTask extends TimerTask {
+  protected class MyTimerTask extends java.util.TimerTask {
     E entry;
 
     public void run() {
@@ -2381,7 +2390,7 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
     static final int VIRGIN_STATE = 0;
     static final int EXPIRY_TIME_MIN = 20;
 
-    public TimerTask task;
+    public BaseCache.MyTimerTask task;
 
     /**
      * Time the entry was last updated by put or by fetching it from the cache source.
@@ -2727,6 +2736,10 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
     Set<Object> deletedKeys = null;
     StorageContext context;
     StorageConfiguration config;
+    ExecutorService executor = Executors.newSingleThreadExecutor();
+    TimerTask<Void> flushTimer;
+    boolean needsFlush;
+    Future<Void> executingFlush;
 
     public PassingStorageAdapter(CacheConfig _cacheConfig,
                                  StorageConfiguration _storageConfig) {
@@ -2737,8 +2750,7 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
     }
 
     public void open() {
-
-      try {
+     try {
         ImageFileStorage s = new ImageFileStorage();
         s.open(context, config);
         storage = s;
@@ -2765,11 +2777,41 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
         return;
       }
       try {
-         storage.put(e);
+        storage.put(e);
+        checkStartFlushTimer();
       } catch (Exception ex) {
         storageErrorCount++;
         throw new CacheStorageException("cache put", ex);
       }
+    }
+
+    void checkStartFlushTimer() {
+      if (flushTimer != null) {
+        needsFlush = true;
+        return;
+      }
+      synchronized (this) {
+        if (flushTimer != null) {
+          needsFlush = true;
+          return;
+        }
+        scheduleTimer();
+      }
+    }
+
+    private void scheduleTimer() {
+      if (1 == 1) return;
+      if (flushTimer != null) {
+        flushTimer.cancel();
+      }
+      TimerListener<Void> l = new TimerListener<Void>() {
+        @Override
+        public void timerEvent(Void _payload, long _time) {
+          flush();
+        }
+      };
+      long _fireTime = System.currentTimeMillis() + config.getSyncInterval();
+      flushTimer = timerService.addTimer(l, null, _fireTime);
     }
 
     public StorageEntry get(Object k) {
@@ -2807,6 +2849,7 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
       try {
         if (e.isDirty()) {
           storage.put(e);
+          checkStartFlushTimer();
         }
       } catch (Exception ex) {
         storageErrorCount++;
@@ -2823,13 +2866,50 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
       }
       try {
         storage.remove(key);
+        checkStartFlushTimer();
       } catch (Exception ex) {
         storageErrorCount++;
         throw new CacheStorageException("cache remove", ex);
       }
     }
 
+    public Future<Void> flush() {
+      try {
+        storage.flush(System.currentTimeMillis(), CacheStorage.DEFAULT_FLUSH_CONTEXT);
+      } catch (Exception ex) { }
+      if (1 == 1) return null;
+
+      synchronized (this) {
+        final Future<Void> _previousFlush = executingFlush;
+          Callable<Void> c=  new Callable<Void>() {
+            @Override
+            public Void call() throws Exception {
+              if (_previousFlush != null) {
+                _previousFlush.get();
+              }
+              storage.flush(System.currentTimeMillis(), CacheStorage.DEFAULT_FLUSH_CONTEXT);
+              executingFlush = null;
+              synchronized (this) {
+                if (needsFlush) {
+                  scheduleTimer();
+                }
+              }
+              return null;
+            }
+          };
+        Future<Void> x = executor.submit(c);
+        try {
+          x.get();
+        } catch (Exception ex) { }
+        return executingFlush = executor.submit(c);
+      }
+
+    }
+
     public void shutdown() {
+      if (storage == null) {
+        return;
+      }
       try {
         if (passivation) {
           Iterator<Entry> it = iterateAllLocalEntries();
@@ -2843,12 +2923,31 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
             }
           }
         }
-        storage.close();
-      } catch (IOException | ClassNotFoundException ex) {
-        ex.printStackTrace();
+        synchronized (this) {
+          final CacheStorage _storage = storage;
+          storage = null;
+          final Future<Void> _previousFlush = executingFlush;
+          Callable<Void> c=  new Callable<Void>() {
+            @Override
+            public Void call() throws Exception {
+              if (_previousFlush != null) {
+                try {
+                  _previousFlush.cancel(true);
+                  _previousFlush.get();
+                } catch (Exception ex) {
+                }
+              }
+              _storage.flush(System.currentTimeMillis(), CacheStorage.DEFAULT_FLUSH_CONTEXT);
+              _storage.close();
+              return null;
+            }
+          };
+          Future<Void> f = executor.submit(c);
+          f.get();
+        }
+      } catch (Exception ex) {
         storageErrorCount++;
       }
-
     }
 
     public boolean clearPrepare() {
@@ -2864,7 +2963,7 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
       try {
         copyForClearing.clear();
         ((CacheStorageBuffer) storage).transfer(copyForClearing);
-      } catch (IOException | ClassNotFoundException ex) {
+      } catch (Exception ex) {
         ex.printStackTrace();
         storageErrorCount++;
       } finally {

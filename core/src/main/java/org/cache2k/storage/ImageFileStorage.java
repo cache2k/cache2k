@@ -51,7 +51,6 @@ import java.util.Set;
 
 import org.cache2k.storage.FreeSpaceMap.Slot;
 
-
 /**
  * Implements a robust storage on a file or a byte buffer.
  *
@@ -113,7 +112,7 @@ public class ImageFileStorage implements CacheStorage {
   /**
    * All entries committed to the current index file. Updated within commit phase.
    * This is used to fill up {@link #entriesInEarliestIndex} when starting a
-   * new index file.
+   * new index file. committedEntries is subset of values.
    */
   HashMap<Object, BufferEntry> committedEntries;
 
@@ -126,15 +125,6 @@ public class ImageFileStorage implements CacheStorage {
    * Protected by commitLock
    */
   Queue<SlotBucket> slotsToFreeQueue = new ArrayDeque<>();
-
-  /**
-   * Counter of entries committed to the current index. This is more
-   * then the size of {@link #committedEntries} since entries for
-   * the same key may be written multiple times. This counter is used
-   * to determine to start a new index file within
-   * {@link org.cache2k.storage.ImageFileStorage.CommitWorker#checkStartNewIndex()}
-   */
-  int committedEntriesCount;
 
   BufferDescriptor descriptor;
   String fileName;
@@ -253,14 +243,11 @@ public class ImageFileStorage implements CacheStorage {
       if (file == null) {
         return;
       }
-      commit();
-      synchronized (values) {
-        synchronized (freeMap) {
-          boolean _empty = values.size() == 0;
-          fastClose();
-          if (_empty) {
-            removeFiles();
-          }
+      synchronized (valuesLock) {
+        boolean _empty = values.size() == 0;
+        fastClose();
+        if (_empty) {
+          removeFiles();
         }
       }
     }
@@ -624,6 +611,10 @@ public class ImageFileStorage implements CacheStorage {
     }
   }
 
+  public void flush(long now, FlushContext ctx) throws IOException {
+    commit(now);
+  }
+
   public void commit() throws IOException {
     commit(0);
   }
@@ -667,11 +658,11 @@ public class ImageFileStorage implements CacheStorage {
   /**
     * Don't write out the oldest entries that we also have in our updated lists.
     */
-   static void sortOut(Map<Object, BufferEntry> map, Set<Object> _keys) {
-     for (Object k: _keys) {
-       map.remove(k);
-     }
-   }
+  static void sortOut(Map<Object, BufferEntry> map, Set<Object> _keys) {
+    for (Object k: _keys) {
+      map.remove(k);
+    }
+  }
 
   class CommitWorker {
 
@@ -682,7 +673,7 @@ public class ImageFileStorage implements CacheStorage {
     HashMap<Object, BufferEntry> rewriteEntries = new HashMap<>();
     SlotBucket workerFreeSlots;
     int indexFileNo;
-    int position;
+    long position;
 
     boolean forceNewFile = false;
 
@@ -693,7 +684,7 @@ public class ImageFileStorage implements CacheStorage {
       if (forceNewFile) {
         entriesInEarliestIndex = committedEntries;
         committedEntries = new HashMap<>();
-        committedEntriesCount = 0;
+        descriptor.indexEntries = 0;
       }
       try {
         openFile();
@@ -704,15 +695,22 @@ public class ImageFileStorage implements CacheStorage {
         }
       }
       updateCommittedEntries();
+      System.err.println("wrote: " + position + "/" + indexFileNo);
+      descriptor.indexEntries +=
+        totalEntriesToWrite();
       descriptor.lastKeyIndexPosition = position;
       descriptor.lastIndexFile = indexFileNo;
+    }
+
+    private int totalEntriesToWrite() {
+      return newEntries.size() + deletedEntries.size() + rewriteEntries.size();
     }
 
     void writeIndexChunk() throws IOException {
       IndexChunkDescriptor d = new IndexChunkDescriptor();
       d.lastIndexFile = descriptor.lastIndexFile;
       d.lastKeyIndexPosition = descriptor.lastKeyIndexPosition;
-      d.elementCount = newEntries.size() + deletedEntries.size() + rewriteEntries.size();
+      d.elementCount = totalEntriesToWrite();
       d.write(randomAccessFile);
       FileOutputStream out = new FileOutputStream(randomAccessFile.getFD());
       ObjectOutput oos = keyMarshaller.startOutput(out);
@@ -730,9 +728,9 @@ public class ImageFileStorage implements CacheStorage {
     }
 
     void openFile() throws IOException {
-      if (descriptor.lastIndexFile < 0 || forceNewFile) {
+      if (indexFileNo == -1 || forceNewFile) {
         position = 0;
-        indexFileNo = 0;
+        indexFileNo++;
         String _name = generateIndexFileName(indexFileNo);
         randomAccessFile = new RandomAccessFile(_name, "rw");
         randomAccessFile.seek(0);
@@ -740,7 +738,7 @@ public class ImageFileStorage implements CacheStorage {
       } else {
         String _name = generateIndexFileName(indexFileNo);
         randomAccessFile = new RandomAccessFile(_name, "rw");
-        position = (int) randomAccessFile.length();
+        position = randomAccessFile.length();
         randomAccessFile.seek(position);
       }
     }
@@ -775,20 +773,18 @@ public class ImageFileStorage implements CacheStorage {
      * Should we start writing a new index file?
      */
     void checkStartNewIndex() {
-      if (committedEntriesCount * tunables.indexFileEntryCapacityFactor
-        > committedEntries.size()) {
+      int _totalEntriesInIndexFile = descriptor.indexEntries + totalEntriesToWrite();
+      if (_totalEntriesInIndexFile > descriptor.entryCount * tunables.indexFileFactor) {
         forceNewFile = true;
       }
     }
 
     void updateCommittedEntries() {
-      committedEntriesCount -= committedEntries.size();
       committedEntries.putAll(newEntries);
       for (Object k : deletedEntries.keySet()) {
         committedEntries.put(k, new BufferEntry(k, 0, -1));
       }
       committedEntries.putAll(rewriteEntries);
-      committedEntriesCount += committedEntries.size();
     }
     /**
      * Free the used space.
@@ -881,7 +877,7 @@ public class ImageFileStorage implements CacheStorage {
     void readKeyIndex() throws IOException, ClassNotFoundException {
       entriesInEarliestIndex = committedEntries = new HashMap<>();
       int _fileNo = descriptor.lastIndexFile;
-      int _keyPosition = descriptor.lastKeyIndexPosition;
+      long _keyPosition = descriptor.lastKeyIndexPosition;
       for (;;) {
         IndexChunkDescriptor d = readChunk(_fileNo, _keyPosition);
         if (readCompleted()) {
@@ -919,19 +915,22 @@ public class ImageFileStorage implements CacheStorage {
       currentlyReadingIndexFile = _fileNo;
     }
 
-    IndexChunkDescriptor readChunk(int _fileNo, int _position)
+    IndexChunkDescriptor readChunk(int _fileNo, long _position)
       throws IOException, ClassNotFoundException {
+      System.err.println("read chunk: " + _fileNo + ", " + _position);
       if (currentlyReadingIndexFile != _fileNo) {
         openFile(_fileNo);
       }
-      indexBuffer.position(_position);
+      indexBuffer.position((int) _position);
       IndexChunkDescriptor d = new IndexChunkDescriptor();
       d.read(indexBuffer);
       ObjectInput in = keyMarshaller.startInput(new ByteBufferInputStream(indexBuffer));
       int cnt = d.elementCount;
+      int _readCnt = readKeys.size();
       do {
         BufferEntry e = new BufferEntry();
         e.read(in);
+        System.err.println(e);
         if (!readKeys.contains(e.key)) {
           readKeys.add(e.key);
           entriesInEarliestIndex.put(e.key, e);
@@ -945,6 +944,9 @@ public class ImageFileStorage implements CacheStorage {
         cnt--;
       } while (cnt > 0);
       in.close();
+      if (_readCnt == readKeys.size()) {
+        throw new IOException("no new data, at index: " + _fileNo + "/" + _position);
+      }
       return d;
     }
 
@@ -968,7 +970,9 @@ public class ImageFileStorage implements CacheStorage {
 
     boolean clean = false;
     int lastIndexFile = -1;
-    int lastKeyIndexPosition = -1;
+    long lastKeyIndexPosition = -1;
+    /** Count of entries in the last index */
+    int indexEntries = 0;
     int entryCount = 0;
     int freeSpace = 0;
     long storageCreated;
@@ -1006,18 +1010,18 @@ public class ImageFileStorage implements CacheStorage {
 
   static class IndexChunkDescriptor {
     int lastIndexFile;
-    int lastKeyIndexPosition;
+    long lastKeyIndexPosition;
     int elementCount;
 
     void read(ByteBuffer buf) {
       lastIndexFile = buf.getInt();
-      lastKeyIndexPosition = buf.getInt();
+      lastKeyIndexPosition = buf.getLong();
       elementCount = buf.getInt();
     }
 
     void write(DataOutput buf) throws IOException {
       buf.writeInt(lastIndexFile);
-      buf.writeInt(lastKeyIndexPosition);
+      buf.writeLong(lastKeyIndexPosition);
       buf.writeInt(elementCount);
     }
   }
@@ -1286,11 +1290,12 @@ public class ImageFileStorage implements CacheStorage {
   public static class Tunables {
 
     /**
-     * After more then factor two index entries are written to an index file,
-     * a new index file is started. Old entries are rewritten time after time
-     * to make the last file redundant and to free the disk space.
+     * Factor of the entry count in the storage to limit the index
+     * file size. After the limit a new file is started.
+     * Old entries are rewritten time after time to make the last
+     * file redundant and to free the disk space.
      */
-    public int indexFileEntryCapacityFactor = 2;
+    public int indexFileFactor = 3;
 
     public int rewriteCompleteFactor = 3;
 
