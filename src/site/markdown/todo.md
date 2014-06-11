@@ -2,11 +2,15 @@
 
 A poor mans issue tracker.
 
-### tiny bits, just noted
+### Warmups
+
+  * StroageAdapter extra
+  * extract LRU operations from BaseCache
+
+###
 
   * CacheStorageStressTest .implementation(ClockProPlusCache.class)
   * dito with .implementation(ClockCache.class)
-  * ConfiguraitonOrCacheBuilder -> AnyBuilderBase
   * ConfigurationBuilder
 
 ### configuration
@@ -16,9 +20,7 @@ A poor mans issue tracker.
 
 ### persistence
 
-  * eviction call from memory cache!
-  * marshaller registry / provider factory...
-  * marshaller prioritization?
+  * eviction call from memory cache?
   * more than 2gb?
   * off-heap persistence
   * flags for passivation and in-mem capacity, etc.

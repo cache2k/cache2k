@@ -40,7 +40,6 @@ import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -48,7 +47,8 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.TreeSet;
+
+import org.cache2k.storage.FreeSpaceMap.Slot;
 
 
 /**
@@ -89,10 +89,8 @@ public class ImageFileStorage implements CacheStorage {
   RandomAccessFile file;
   ByteBuffer buffer;
 
-  final TreeSet<FreeSlot> freeSet = new TreeSet<>();
+  public FreeSpaceMap freeMap = new FreeSpaceMap();
 
-  /** Locked via feeSet */
-  TreeSet<FreeSlot> pos2slot = new TreeSet<>(new PositionOrder());
   Map<Object, BufferEntry> values;
 
   final Object valuesLock = new Object();
@@ -151,8 +149,6 @@ public class ImageFileStorage implements CacheStorage {
   long putCount = 0;
   long evictCount = 0;
   long removeCount = 0;
-  long freeSpace = 0;
-
   CacheStorageContext context;
 
   public ImageFileStorage(Tunables t) throws IOException, ClassNotFoundException {
@@ -181,9 +177,14 @@ public class ImageFileStorage implements CacheStorage {
   }
 
   public void reopen() throws IOException {
+    if (freeMap == null) { freeMap = new FreeSpaceMap(); }
     try {
       file = new RandomAccessFile(fileName + ".img", "rw");
       resetBufferFromFile();
+      synchronized (freeMap) {
+        freeMap.init();
+        freeMap.freeSpace(0, (int) file.length());
+      }
       if (entryCapacity == Integer.MAX_VALUE) {
         values = new HashMap<>();
       } else {
@@ -237,10 +238,9 @@ public class ImageFileStorage implements CacheStorage {
     readIndex();
   }
 
-  private void initializeNewStorage() {
+  private void initializeNewStorage() throws IOException {
     descriptor = new BufferDescriptor();
     descriptor.storageCreated = System.currentTimeMillis();
-    initializeFreeSpaceMap();
     CacheStorageContext ctx = context;
     keyMarshaller = ctx.getMarshallerFactory().createMarshaller(ctx.getKeyType());
     valueMarshaller = ctx.getMarshallerFactory().createMarshaller(ctx.getValueType());
@@ -254,7 +254,7 @@ public class ImageFileStorage implements CacheStorage {
       }
       commit();
       synchronized (values) {
-        synchronized (freeSet) {
+        synchronized (freeMap) {
           boolean _empty = values.size() == 0;
           fastClose();
           if (_empty) {
@@ -272,7 +272,7 @@ public class ImageFileStorage implements CacheStorage {
     long _counters = putCount + missCount + hitCount + removeCount + evictCount;
     synchronized (commitLock) {
       synchronized (valuesLock) {
-        synchronized (pos2slot) {
+        synchronized (freeMap) {
           if (file != null) {
             fastClose();
           }
@@ -318,7 +318,7 @@ public class ImageFileStorage implements CacheStorage {
   public void fastClose() throws IOException {
     synchronized (valuesLock) {
       values = null;
-      pos2slot = null;
+      freeMap = null;
       buffer = null;
       file.close();
       file = null;
@@ -433,20 +433,16 @@ public class ImageFileStorage implements CacheStorage {
     _neededSize += MyEntry.calculateMetaInfoSize(e, descriptor.storageCreated, _type);
     ByteBuffer bb;
     BufferEntry _newEntry;
-    synchronized(freeSet) {
-      FreeSlot s = reservePosition(_neededSize);
-      bb = buffer.duplicate();
-      bb.position((int) s.position);
-      MyEntry.writeMetaInfo(bb, e, descriptor.storageCreated, _type);
-      int _usedSize = (int) (bb.position() - s.position) + _marshalledValue.length;
-      _newEntry = new BufferEntry(e.getKey(), s.position, _usedSize);
+    FreeSpaceMap.Slot s = reserveSpace(_neededSize);
+    bb = buffer.duplicate();
+    bb.position((int) s.position);
+    MyEntry.writeMetaInfo(bb, e, descriptor.storageCreated, _type);
+    int _usedSize = (int) (bb.position() - s.position) + _marshalledValue.length;
+    _newEntry = new BufferEntry(e.getKey(), s.position, _usedSize);
+    if (s.size != _usedSize) {
       s.size -=  _usedSize;
-      if (s.size > 0) {
-        freeSpace += s.size;
-        s.position += _usedSize;
-        freeSet.add(s);
-        pos2slot.add(s);
-      }
+      s.position += _usedSize;
+      freeMap.put(s);
     }
     bb.put(_marshalledValue);
     synchronized (valuesLock) {
@@ -460,36 +456,6 @@ public class ImageFileStorage implements CacheStorage {
       putCount++;
     }
   }
-
-  /**
-   *
-   */
-  FreeSlot reservePosition(int _size) throws IOException {
-    FreeSlot s = findFreeSlot(_size);
-    if (s == null) {
-      s = extendBuffer(_size);
-    }
-    return s;
-  }
-
-  final FreeSlot reusedFreeSlotUnderLock = new FreeSlot(0, 0);
-
-  /**
-   * Find a slot which size is greater then the needed size and
-   * remove it from the free space map.
-   */
-  FreeSlot findFreeSlot(int size) {
-    reusedFreeSlotUnderLock.size = size;
-    FreeSlot s = freeSet.ceiling(reusedFreeSlotUnderLock);
-    if (s != null) {
-      freeSet.remove(s);
-      freeSpace -= s.size;
-      pos2slot.remove(s);
-      return s;
-    }
-    return null;
-  }
-  
   long calcSize(Collection<BufferEntry> set) {
     long v = 0;
     if (set != null) {
@@ -523,7 +489,7 @@ public class ImageFileStorage implements CacheStorage {
   }
 
   public long getFreeSpace() {
-    return freeSpace;
+    return freeMap.getFreeSpace();
   }
 
   public long getTotalValueSpace() {
@@ -542,30 +508,27 @@ public class ImageFileStorage implements CacheStorage {
     return dataLost;
   }
 
-  public int getFreeSpaceInLargestFreeSlot() {
-    if (freeSet.size() == 0) {
-      return 0;
-    }
-    return freeSet.last().size;
-  }
-
   /**
    * Called when there is no more space available. Allocates new space and
    * returns the area in a free slot. The free slot needs to be inserted
    * in the maps by the caller.
    */
-  FreeSlot extendBuffer(int _neededSpace) throws IOException {
-    int pos = (int) file.length();
-    reusedFreeSlotUnderLock.position = pos;
-    FreeSlot s = pos2slot.floor(reusedFreeSlotUnderLock);
-    if (s != null && s.getNextPosition() == pos) {
-      freeSet.remove(s);
-      pos2slot.remove(s);
+  Slot reserveSpace(int _neededSpace) throws IOException {
+    Slot s = null;
+    long _length = 0;
+    synchronized (freeMap) {
+      s = freeMap.findFree(_neededSpace);
+      if (s != null) {
+        return s;
+      }
+      _length = file.length();
+      s = freeMap.reserveSlotEndingAt(_length);
+    }
+    if (s != null) {
       _neededSpace -= s.size;
-      freeSpace -= s.size;
       s.size += _neededSpace;
     } else {
-      s = new FreeSlot(pos, _neededSpace);
+      s = new Slot(_length, _neededSpace);
     }
     if (tunables.extensionSize >= 2) {
       s.size += tunables.extensionSize - 1;
@@ -645,98 +608,19 @@ public class ImageFileStorage implements CacheStorage {
    * and cutting out the allocated areas
    */
   void recalculateFreeSpaceMapAndRemoveDeletedEntries() {
-    synchronized (freeSet) {
-      initializeFreeSpaceMap();
-      TreeSet<FreeSlot> _pos2slot = pos2slot;
+    synchronized (freeMap) {
       HashSet<Object> _deletedKey = new HashSet<>();
       for (BufferEntry e : values.values()) {
         if (e.position < 0) {
           _deletedKey.add(e.key);
           continue;
         }
-        allocateEntrySpace(e, _pos2slot);
+        freeMap.allocateSpace(e.position, e.size);
       }
       for (Object k : _deletedKey) {
         values.remove(k);
       }
-      rebuildFreeSet();
     }
-  }
-
-  /**
-   * Rebuild the free set from the elements in {@link #pos2slot}
-   */
-  private void rebuildFreeSet() {
-    TreeSet<FreeSlot> _pos2slot = pos2slot;
-    Set<FreeSlot> m = freeSet;
-    m.clear();
-    for (FreeSlot s : _pos2slot) {
-      m.add(s);
-    }
-  }
-
-  private void initializeFreeSpaceMap() {
-    freeSpace = buffer.capacity();
-    FreeSlot s = new FreeSlot(0, buffer.capacity());
-    pos2slot = new TreeSet<>(new PositionOrder());
-    pos2slot.add(s);
-    freeSet.clear();
-    freeSet.add(s);
-  }
-
-  /**
-   * Used to rebuild the free space map. Entry has already got a position.
-   * The used space will be removed of the free space map.
-   */
-  void allocateEntrySpace(BufferEntry e, TreeSet<FreeSlot> _pos2slot) {
-    freeSpace -= e.size;
-    reusedFreeSlotUnderLock.position = e.position;
-    FreeSlot s = _pos2slot.floor(reusedFreeSlotUnderLock);
-    if (s == null) {
-      throw new IllegalStateException("data structure mismatch, internal error");
-    }
-    _pos2slot.remove(s);
-    if (s.position < e.position) {
-      FreeSlot _preceding = new FreeSlot();
-      _preceding.position = s.position;
-      _preceding.size = (int) (e.position - s.position);
-      _pos2slot.add(_preceding);
-      s.size -= _preceding.size;
-    }
-    if (s.size > e.size) {
-      s.position = e.size + e.position;
-      s.size -= e.size;
-      _pos2slot.add(s);
-    }
-  }
-
-  /**
-   * Used to rebuild the free space map. The entry was deleted or rewritten
-   * now the space needs to be freed. Actually we can just put a slot with
-   * position and size of the entry in the map, but we better merge it with
-   * neighboring slots.
-   */
-  void freeEntrySpace(BufferEntry e, TreeSet<FreeSlot> _pos2slot, Set<FreeSlot> _freeSet) {
-    reusedFreeSlotUnderLock.position = (e.size + e.position);
-    FreeSlot s = _pos2slot.ceiling(reusedFreeSlotUnderLock);
-    if (s != null && s.position == reusedFreeSlotUnderLock.position) {
-      _pos2slot.remove(s);
-      _freeSet.remove(s);
-      s.position = e.position;
-      s.size += e.size;
-    } else {
-      s = new FreeSlot(e.position, e.size);
-    }
-    reusedFreeSlotUnderLock.position = (e.position);
-    FreeSlot s2 = _pos2slot.lower(reusedFreeSlotUnderLock);
-    if (s2 != null && s2.getNextPosition() == e.position) {
-      _pos2slot.remove(s2);
-      _freeSet.remove(s2);
-      s2.size += s.size;
-      s = s2;
-    }
-    _pos2slot.add(s);
-    _freeSet.add(s);
   }
 
   /**
@@ -908,12 +792,9 @@ public class ImageFileStorage implements CacheStorage {
       freeNextCommit = freeSecondNextCommit;
       freeSecondNextCommit = spaceToFree;
       if (_freeNow != null) {
-        final Set<FreeSlot> _freeSet = freeSet;
-        synchronized (_freeSet) {
-          TreeSet<FreeSlot> _pos2slot = pos2slot;
+        synchronized (freeMap) {
           for (BufferEntry e : _freeNow) {
-            freeEntrySpace(e, _pos2slot, _freeSet);
-            freeSpace += e.size;
+            freeMap.freeSpace(e.position, e.size);
           }
         }
       }
@@ -955,7 +836,7 @@ public class ImageFileStorage implements CacheStorage {
   }
 
   public long getUsedSpace() {
-    return getTotalValueSpace() - freeSpace;
+    return getTotalValueSpace() - getFreeSpace();
   }
 
   @Override
@@ -966,11 +847,11 @@ public class ImageFileStorage implements CacheStorage {
       "totalSpace=" + getTotalValueSpace() + ", " +
       "usedSpace=" + getUsedSpace() + ", " +
       "calculatedUsedSpace=" + calculateUsedSpace() + ", " +
-      "freeSpace=" + freeSpace + ", " +
+      "freeSpace=" + freeMap.getFreeSpace() + ", " +
       "spaceToFree=" + calculateSpaceToFree() + ", " +
-      "freeSlots=" + freeSet.size() + ", " +
-      "smallestSlot=" + (freeSet.size() > 0 ? freeSet.first().size : -1) + ", " +
-      "largestSlot=" + (freeSet.size() > 0 ? freeSet.last().size : -1) + ", " +
+      "freeSlots=" + freeMap.getSlotCount() + ", " +
+      "smallestSlot=" + freeMap.getSizeOfSmallestSlot() + ", " +
+      "largestSlot=" + freeMap.getSizeOfLargestSlot() + ", " +
       "lastIndexNo=" + descriptor.lastIndexFile +", "+
       "hitCnt=" + hitCount + ", " +
       "missCnt=" + missCount + ", " +
@@ -1128,57 +1009,6 @@ public class ImageFileStorage implements CacheStorage {
       buf.writeInt(lastIndexFile);
       buf.writeInt(lastKeyIndexPosition);
       buf.writeInt(elementCount);
-    }
-  }
-
-  /**
-   * Describes an area of free space in the storage. The comparison is by size.
-   */
-  static class FreeSlot implements Comparable<FreeSlot> {
-
-    long position;
-    int size;
-
-    FreeSlot() { }
-
-    FreeSlot(long position, int size) {
-      this.position = position;
-      this.size = size;
-    }
-
-    long getNextPosition() {
-      return position + size;
-    }
-
-    @Override
-    public int compareTo(FreeSlot o) {
-      int d = size - o.size;
-      if (d != 0) {
-        return d;
-      }
-      return (position < o.position) ? -1 : ((position == o.position) ? 0 : 1);
-    }
-
-    @Override
-    public String toString() {
-      return "FreeSlot{" +
-        "position=" + position +
-        ", size=" + size +
-        '}';
-    }
-
-  }
-
-  static class PositionOrder implements Comparator<FreeSlot> {
-    @Override
-    public int compare(FreeSlot o1, FreeSlot o2) {
-      if (o1.position < o2.position) {
-        return -1;
-      }
-      if (o1.position > o2.position) {
-        return 1;
-      }
-      return 0;
     }
   }
 
