@@ -37,6 +37,7 @@ import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -44,8 +45,8 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
-import java.util.List;
 import java.util.Map;
+import java.util.Queue;
 import java.util.Set;
 
 import org.cache2k.storage.FreeSpaceMap.Slot;
@@ -117,21 +118,21 @@ public class ImageFileStorage implements CacheStorage {
   HashMap<Object, BufferEntry> committedEntries;
 
   /**
-   * List of entry that got rewritten or deleted. The storage space will
-   * be freed after a commit. Protected by: valuesLock
+   *
    */
-  List<BufferEntry> spaceToFree;
+  SlotBucket justUnusedSlots = new SlotBucket();
 
-  List<BufferEntry> freeSecondNextCommit = null;
-
-  List<BufferEntry> freeNextCommit = null;
+  /**
+   * Protected by commitLock
+   */
+  Queue<SlotBucket> slotsToFreeQueue = new ArrayDeque<>();
 
   /**
    * Counter of entries committed to the current index. This is more
    * then the size of {@link #committedEntries} since entries for
    * the same key may be written multiple times. This counter is used
    * to determine to start a new index file within
-   * {@link ImageFileStorage.KeyIndexWriter#checkStartNewIndex()}
+   * {@link org.cache2k.storage.ImageFileStorage.CommitWorker#checkStartNewIndex()}
    */
   int committedEntriesCount;
 
@@ -149,6 +150,7 @@ public class ImageFileStorage implements CacheStorage {
   long putCount = 0;
   long evictCount = 0;
   long removeCount = 0;
+  long freedLastCommit = 0;
   CacheStorageContext context;
 
   public ImageFileStorage(Tunables t) throws IOException, ClassNotFoundException {
@@ -203,9 +205,8 @@ public class ImageFileStorage implements CacheStorage {
       }
       newBufferEntries = new HashMap<>();
       deletedBufferEntries = new HashMap<>();
-      spaceToFree = new ArrayList<>();
-      freeSecondNextCommit = null;
-      freeNextCommit = null;
+      justUnusedSlots = new SlotBucket();
+      slotsToFreeQueue = new ArrayDeque<>();
       entriesInEarliestIndex = new HashMap<>();
       committedEntries = new HashMap<>();
       BufferDescriptor d = readLatestIntactBufferDescriptor();
@@ -322,9 +323,8 @@ public class ImageFileStorage implements CacheStorage {
       buffer = null;
       file.close();
       file = null;
-      spaceToFree = null;
-      freeSecondNextCommit = null;
-      freeNextCommit = null;
+      justUnusedSlots = null;
+      slotsToFreeQueue = null;
     }
   }
 
@@ -372,7 +372,7 @@ public class ImageFileStorage implements CacheStorage {
   private void reallyRemove(BufferEntry be) {
     deletedBufferEntries.put(be.key, be);
     newBufferEntries.remove(be.key);
-    spaceToFree.add(be);
+    justUnusedSlots.add(be);
   }
 
   private void evict(BufferEntry be) {
@@ -448,7 +448,7 @@ public class ImageFileStorage implements CacheStorage {
     synchronized (valuesLock) {
       BufferEntry be = values.get(e.getKey());
       if (be != null) {
-        spaceToFree.add(be);
+        justUnusedSlots.add(be);
       }
       deletedBufferEntries.remove(e.getKey());
       newBufferEntries.put(e.getKey(), _newEntry);
@@ -456,6 +456,7 @@ public class ImageFileStorage implements CacheStorage {
       putCount++;
     }
   }
+
   long calcSize(Collection<BufferEntry> set) {
     long v = 0;
     if (set != null) {
@@ -467,10 +468,10 @@ public class ImageFileStorage implements CacheStorage {
   }
 
   long calculateSpaceToFree() {
-    long s = 0;
-    s += calcSize(spaceToFree);
-    s += calcSize(freeSecondNextCommit);
-    s += calcSize(freeNextCommit);
+    long s = justUnusedSlots.getSpaceToFree();
+    for (SlotBucket b : slotsToFreeQueue) {
+      s += b.getSpaceToFree();
+    }
     return s;
   }
 
@@ -623,29 +624,34 @@ public class ImageFileStorage implements CacheStorage {
     }
   }
 
+  public void commit() throws IOException {
+    commit(0);
+  }
+
   /**
    * Write key to object index to disk for all modified entries. The implementation only works
    * single threaded.
    *
    * @throws IOException
    */
-  public void commit() throws IOException {
+  public void commit(long now) throws IOException {
     synchronized (commitLock) {
-      KeyIndexWriter _writer;
+      CommitWorker _worker;
       synchronized (valuesLock) {
         if (newBufferEntries.size() == 0 && deletedBufferEntries.size() == 0) {
           return;
         }
-        _writer = new KeyIndexWriter();
-        _writer.newEntries = newBufferEntries;
-        _writer.deletedEntries = deletedBufferEntries;
-        _writer.spaceToFree = spaceToFree;
-        spaceToFree = new ArrayList<>();
+        _worker = new CommitWorker();
+        _worker.timestamp = now;
+        _worker.newEntries = newBufferEntries;
+        _worker.deletedEntries = deletedBufferEntries;
+        _worker.workerFreeSlots = justUnusedSlots;
+        justUnusedSlots = new SlotBucket();
         newBufferEntries = new HashMap<>();
         deletedBufferEntries = new HashMap<>();
         descriptor.entryCount = getEntryCount();
       }
-      _writer.write();
+      _worker.write();
       if (descriptor.keyMarshallerParameters == null) {
         descriptor.keyMarshallerParameters = keyMarshaller.getFactoryParameters();
         descriptor.valueMarshallerParameters = valueMarshaller.getFactoryParameters();
@@ -654,7 +660,7 @@ public class ImageFileStorage implements CacheStorage {
         descriptor.valueType = context.getValueType().getName();
       }
       writeDescriptor();
-      _writer.freeSpace();
+      _worker.freeSpace();
     }
   }
 
@@ -667,13 +673,14 @@ public class ImageFileStorage implements CacheStorage {
      }
    }
 
-  class KeyIndexWriter {
+  class CommitWorker {
 
+    long timestamp;
     RandomAccessFile randomAccessFile;
     HashMap<Object, BufferEntry> newEntries;
     HashMap<Object, BufferEntry> deletedEntries;
     HashMap<Object, BufferEntry> rewriteEntries = new HashMap<>();
-    List<BufferEntry> spaceToFree = null;
+    SlotBucket workerFreeSlots;
     int indexFileNo;
     int position;
 
@@ -783,21 +790,24 @@ public class ImageFileStorage implements CacheStorage {
       committedEntries.putAll(rewriteEntries);
       committedEntriesCount += committedEntries.size();
     }
-
     /**
      * Free the used space.
      */
     void freeSpace() {
-      List<BufferEntry> _freeNow = freeNextCommit;
-      freeNextCommit = freeSecondNextCommit;
-      freeSecondNextCommit = spaceToFree;
-      if (_freeNow != null) {
+      workerFreeSlots.time = timestamp;
+      slotsToFreeQueue.add(workerFreeSlots);
+      SlotBucket b = slotsToFreeQueue.peek();
+      long _before = freeMap.getFreeSpace();
+      while ((b.time + tunables.freeSpaceAfterMillis) <= timestamp) {
+        b = slotsToFreeQueue.remove();
         synchronized (freeMap) {
-          for (BufferEntry e : _freeNow) {
-            freeMap.freeSpace(e.position, e.size);
+          for (Slot s : b) {
+            freeMap.freeSpace(s);
           }
         }
+        b = slotsToFreeQueue.peek();
       }
+      freedLastCommit = _before - freeMap.getFreeSpace();
     }
 
   }
@@ -1235,6 +1245,37 @@ public class ImageFileStorage implements CacheStorage {
 
   }
 
+  public static class SlotBucket implements Iterable<Slot> {
+
+    long time;
+    Collection<Slot> slots = new ArrayList<>();
+
+    public void add(BufferEntry be) {
+      add(be.position, be.size);
+    }
+
+    public void add(Slot s) {
+      slots.add(s);
+    }
+
+    public void add(long _position, int _size) {
+      add(new Slot(_position, _size));
+    }
+
+    public long getSpaceToFree() {
+      long n = 0;
+      for (Slot s : slots) {
+        n += s.size;
+      }
+      return n;
+    }
+
+    @Override
+    public Iterator<Slot> iterator() {
+      return slots.iterator();
+    }
+  }
+
   /**
    * Some parameters factored out, which may be modified if needed.
    * All these parameters have no effect on the written data format.
@@ -1261,6 +1302,13 @@ public class ImageFileStorage implements CacheStorage {
      * Allocating space for each object separately is a big power drain.
      */
     public int extensionSize = 4096;
+
+    /**
+     * Time after unused space is finally freed and maybe reused.
+     * We cannot reuse space immediately or do an update in place, since
+     * there may be ongoing read requests.
+     */
+    public int freeSpaceAfterMillis = 15 * 1000;
 
   }
 

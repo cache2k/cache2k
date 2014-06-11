@@ -105,6 +105,10 @@ public class FreeSpaceMap {
     }
   }
 
+  public void freeSpace(Slot s) {
+    freeSpace(s.position, s.size);
+  }
+
   /**
    * Free the space. Not just put the slot in but try to merge it.
    */
@@ -186,14 +190,14 @@ public class FreeSpaceMap {
     long position;
     int size;
 
-    Slot() { }
+    public Slot() { }
 
-    Slot(long position, int size) {
-      this.position = position;
-      this.size = size;
+    public Slot(long _position, int _size) {
+      this.position = _position;
+      this.size = _size;
     }
 
-    long getNextPosition() {
+    public long getNextPosition() {
       return position + size;
     }
 

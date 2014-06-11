@@ -4,6 +4,7 @@ A poor mans issue tracker.
 
 ### Warmups
 
+
   * StroageAdapter extra
   * extract LRU operations from BaseCache
 
@@ -20,6 +21,7 @@ A poor mans issue tracker.
 
 ### persistence
 
+  * reuse space by time interval!!!!
   * eviction call from memory cache?
   * more than 2gb?
   * off-heap persistence
