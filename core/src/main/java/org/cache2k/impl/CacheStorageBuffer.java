@@ -23,7 +23,6 @@ package org.cache2k.impl;
  */
 
 import org.cache2k.StorageConfiguration;
-import org.cache2k.impl.timer.BaseTimerTask;
 import org.cache2k.impl.timer.TimerService;
 import org.cache2k.storage.CacheStorage;
 import org.cache2k.storage.CacheStorageContext;
@@ -170,6 +169,11 @@ public class CacheStorageBuffer implements CacheStorage {
       b = key2entry.containsKey(key);
     }
     return b;
+  }
+
+  @Override
+  public void visit(EntryVisitor v, VisitContext ctx) {
+    throw new UnsupportedOperationException();
   }
 
   @Override

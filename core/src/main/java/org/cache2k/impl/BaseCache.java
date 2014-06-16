@@ -2757,6 +2757,7 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
           deletedKeys = new HashSet<>();
           passivation = true;
         }
+       getLog().info("open " + storage);
       } catch (Exception ex) {
         getLog().warn("error initializing storage, running in-memory", ex);
       }
@@ -2786,6 +2787,9 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
 
     void checkStartFlushTimer() {
       needsFlush = true;
+      if (config.getSyncInterval() <= 0) {
+        return;
+      }
       if (flushTimerHandle != null) {
         return;
       }
@@ -2798,7 +2802,6 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
     }
 
     private void scheduleTimer() {
-      if (1 == 1) return;
       if (flushTimerHandle != null) {
         flushTimerHandle.cancel();
       }
@@ -2875,8 +2878,6 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
       try {
         storage.flush(System.currentTimeMillis(), CacheStorage.DEFAULT_FLUSH_CONTEXT);
       } catch (Exception ex) { }
-      if (1 == 1) return null;
-
       synchronized (this) {
         final Future<Void> _previousFlush = executingFlush;
           Callable<Void> c=  new Callable<Void>() {
@@ -2886,8 +2887,9 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
                 _previousFlush.get();
               }
               storage.flush(System.currentTimeMillis(), CacheStorage.DEFAULT_FLUSH_CONTEXT);
+              getLog().info("flush " + storage);
               executingFlush = null;
-              synchronized (this) {
+              synchronized (PassingStorageAdapter.this) {
                 if (needsFlush) {
                   scheduleTimer();
                 } else {
@@ -2898,13 +2900,9 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
               return null;
             }
           };
-        Future<Void> x = executor.submit(c);
-        try {
-          x.get();
-        } catch (Exception ex) { }
+
         return executingFlush = executor.submit(c);
       }
-
     }
 
     public void shutdown() {
@@ -2939,6 +2937,7 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
                 }
               }
               _storage.flush(System.currentTimeMillis(), CacheStorage.DEFAULT_FLUSH_CONTEXT);
+              getLog().info("close " + storage);
               _storage.close();
               return null;
             }

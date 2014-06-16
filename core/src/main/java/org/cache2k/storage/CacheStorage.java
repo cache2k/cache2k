@@ -26,6 +26,7 @@ import org.cache2k.StorageConfiguration;
 
 import java.io.Closeable;
 import java.io.IOException;
+import java.util.concurrent.ExecutorService;
 
 /**
  * An interface for persistent or off-heap storage for a cache.
@@ -78,18 +79,21 @@ public interface CacheStorage extends Closeable {
   public void clear() throws IOException;
 
   /**
-   * Flush any unwritten information to disk. This is a long running operation
-   * in the current thread. There are concurrent read and write going on.
-   * The flush thread may be interrupted and should check its interrupt
-   * status at save points.
+   * Flush any unwritten information to disk. The method to returns when the flush
+   * is finished and everything is written. Concurrent read/write operations
+   * may go on during the flush.
    */
   public void flush(long now, FlushContext ctx) throws Exception;
 
   /**
-   * Write everything to disk and free all in-memory resources. Multiple calls
-   * to close have no effect.
+   * Free all resources and stop operations immediately.
    */
   public void close() throws IOException;
+
+  /**
+   * Visit all stored entries.
+   */
+  public void visit(EntryVisitor v, VisitContext ctx) throws Exception;
 
   /**
    * Called by the cache at regular intervals, but only if data was
@@ -127,5 +131,38 @@ public interface CacheStorage extends Closeable {
   }
 
   public static final FlushContext DEFAULT_FLUSH_CONTEXT = new FlushContext() { };
+
+  interface VisitContext {
+
+    /**
+     * True if entries should have metadata. If false, only the key will be set.
+     * Storage implementations may ignore this and always send the metadata.
+     */
+    boolean needMetaData();
+
+    /**
+     * True if entries should have the value field set with the storage contents.
+     * Storage implementations may ignore this and always send the metadata.
+     */
+    boolean needValue();
+
+    /**
+     * A private executor service for this operation to run in multiple threads.
+     */
+    ExecutorService getExecutorService();
+
+    /**
+     * True if the operation should stop immediately. Used e.g. during
+     * application shutdown.
+     */
+    boolean shouldStop();
+
+  }
+
+  interface EntryVisitor {
+
+    void visit(StorageEntry e);
+
+  }
 
 }

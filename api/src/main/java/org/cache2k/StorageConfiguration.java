@@ -43,7 +43,7 @@ public class StorageConfiguration {
 
   int bytesCapacity;
 
-  long syncInterval;
+  long syncInterval = 7 * 1000;
 
   Object extendedConfiguration;
 
@@ -177,7 +177,7 @@ public class StorageConfiguration {
         B b = c.newInstance();
         b.setRoot(root);
         return b;
-      } catch (InstantiationException | IllegalAccessException e) {
+      } catch (Exception e) {
         throw new RuntimeException();
       }
     }

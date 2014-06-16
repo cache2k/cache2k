@@ -82,7 +82,8 @@ public class CacheManagerImpl extends CacheManager {
   private void checkName(String s) {
     for (char c : s.toCharArray()) {
       if (c == '.' ||
-          c == '-') {
+          c == '-' ||
+          c == '~') {
         continue;
       }
       if (!Character.isJavaIdentifierPart(c)) {

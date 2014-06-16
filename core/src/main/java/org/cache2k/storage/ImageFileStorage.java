@@ -48,6 +48,9 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Queue;
 import java.util.Set;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicReference;
 
 import org.cache2k.storage.FreeSpaceMap.Slot;
 import org.cache2k.util.TunableConstants;
@@ -823,6 +826,43 @@ public class ImageFileStorage implements CacheStorage {
     } catch (NoSuchAlgorithmException ex) {
       throw new IOException("sha1 missing, never happens?!");
     }
+  }
+
+  @Override
+  public void visit(final EntryVisitor v, final VisitContext ctx) throws Exception {
+    ArrayList<BufferEntry> _allEntries;
+    synchronized (valuesLock) {
+      _allEntries = new ArrayList<>(values.size());
+      for (BufferEntry e : values.values()) {
+        _allEntries.add(e);
+      }
+      _allEntries.addAll(values.values());
+    }
+    ExecutorService ex = ctx.getExecutorService();
+    for (BufferEntry e : _allEntries) {
+      if (ctx.shouldStop()) {
+        break;
+      }
+      final BufferEntry be = e;
+      final AtomicReference<Exception> _threadException = new AtomicReference<>();
+      Runnable r = new Runnable() {
+        @Override
+        public void run() {
+          try {
+            v.visit(returnEntry(be));
+          } catch (Exception ex) {
+            _threadException.set(ex);
+          }
+        }
+      };
+      ex.execute(r);
+    }
+    if (ctx.shouldStop()) {
+      ex.shutdownNow();
+    } else {
+      ex.shutdown();
+    }
+    ex.awaitTermination(Long.MAX_VALUE, TimeUnit.MILLISECONDS);
   }
 
   @Override

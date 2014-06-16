@@ -204,7 +204,7 @@ public class CacheConfig {
     if (moduleConfiguration == null) {
       return Collections.emptyList();
     }
-    ArrayList<StorageConfiguration> l = new ArrayList<>();
+    ArrayList<StorageConfiguration> l = new ArrayList<StorageConfiguration>();
     for (Object o : moduleConfiguration) {
       if (o instanceof StorageConfiguration) {
         l.add((StorageConfiguration) o);

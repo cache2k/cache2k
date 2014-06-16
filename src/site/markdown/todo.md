@@ -4,28 +4,27 @@ A poor mans issue tracker.
 
 ### Warmups
 
-
   * StroageAdapter extra
   * extract LRU operations from BaseCache
 
-###
+### Storage and persistence
 
-  * CacheStorageStressTest .implementation(ClockProPlusCache.class)
-  * dito with .implementation(ClockCache.class)
+  * Test storage with .implementation(ClockProPlusCache.class), .implementation(ClockCache.class)
   * ConfigurationBuilder
+  * more than 2gb?
+  * off-heap persistence
+  * flags for passivation and in-mem capacity, etc.
+
+#### Integration targets
+
+  * MapDb
+  * BabuDb
+  * LevelDb
 
 ### configuration
 
   * XML configuration
   * configuration templates / default configuration (e.g. for addPersistence())
-
-### persistence
-
-  * reuse space by time interval!!!!
-  * eviction call from memory cache?
-  * more than 2gb?
-  * off-heap persistence
-  * flags for passivation and in-mem capacity, etc.
 
 ### Prio A / for 1.0
 
