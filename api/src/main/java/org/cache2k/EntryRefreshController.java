@@ -28,4 +28,7 @@ package org.cache2k;
  * @deprecated
  */
 public class EntryRefreshController<T> extends ValueRefreshController<T> {
+
+  public static final EntryRefreshController INSTANCE = new EntryRefreshController();
+
 }

@@ -22,6 +22,8 @@ package org.cache2k.impl.timer;
  * #L%
  */
 
+import org.cache2k.util.Log;
+
 import javax.annotation.Nonnull;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -38,11 +40,11 @@ import java.util.logging.Logger;
  */
 public class ArrayHeapTimerQueue extends TimerService {
 
-  static Logger log = Logger.getLogger(ArrayHeapTimerQueue.class.getName());
-
   final static int MAXIMUM_ADDS_UNTIL_PURGE = 76543;
   final static int LAPSE_RESOLUTION = 10;
   final static int LAPSE_SIZE = 50;
+
+  Log log;
 
   int[] lapse = new int[LAPSE_SIZE];
   long maxLapse = 0;
@@ -76,6 +78,7 @@ public class ArrayHeapTimerQueue extends TimerService {
 
   public ArrayHeapTimerQueue(String _threadName) {
     threadName = _threadName;
+    log = Log.getLog(ArrayHeapTimerQueue.class.getName() + ":" + _threadName);
   }
 
   public NoPayloadTask add(@Nonnull TimerListener _listener, long _fireTime) {
@@ -124,6 +127,11 @@ public class ArrayHeapTimerQueue extends TimerService {
       }
       return cancelCount + inQueue.cancelCount;
     }
+  }
+
+  @Override
+  public long getFireExceptionCount() {
+    return fireExceptionCount;
   }
 
   void addTimerEvent(BaseTimerTask e) {
@@ -211,7 +219,7 @@ public class ArrayHeapTimerQueue extends TimerService {
         }
       } catch (Throwable ex) {
         queue.fireExceptionCount++;
-        log.log(Level.WARNING, "timer event caused exception", ex);
+        queue.log.warn("timer event caused exception", ex);
       }
     }
 

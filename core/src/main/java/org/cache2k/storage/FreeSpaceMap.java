@@ -42,7 +42,7 @@ public class FreeSpaceMap {
     pos2slot = new TreeSet<>(new PositionOrder());
   }
 
-  public synchronized void put(Slot s) {
+  public void put(Slot s) {
     freeSpace += s.size;
     freeSet.add(s);
     pos2slot.add(s);
@@ -51,7 +51,7 @@ public class FreeSpaceMap {
   /**
    * Get the slot that ends at the position exclusive or: start + size = pos
    */
-  public synchronized Slot reserveSlotEndingAt(long pos) {
+  public Slot reserveSlotEndingAt(long pos) {
     reusedFreeSlotUnderLock.position = pos;
     Slot s = pos2slot.floor(reusedFreeSlotUnderLock);
     if (s != null && s.getNextPosition() == pos) {
@@ -138,15 +138,21 @@ public class FreeSpaceMap {
     freeSet.add(s);
   }
 
-  public long getFreeSpace() { return freeSpace; }
+  public long getFreeSpace() {
+    return freeSpace;
+  }
 
   /**
    * Calculate the free space for an integrity check.
    */
-  public long calculateFreeSpace() {
+  private long calculateFreeSpace() {
     long s = 0;
     Slot _prev = null;
     for (Slot fs : pos2slot) {
+      boolean f = !(_prev != null) || _prev.getNextPosition() <= fs.position;
+      if (!f) {
+        System.err.println(fs);
+      }
       s += fs.size;
       _prev = fs;
     }

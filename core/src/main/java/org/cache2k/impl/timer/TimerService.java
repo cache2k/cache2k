@@ -46,6 +46,7 @@ public abstract class TimerService {
   public abstract long getEventsScheduled();
   public abstract long getPurgeCount();
   public abstract long getCancelCount();
+  public abstract long getFireExceptionCount();
 
   public interface CancelHandle {
 

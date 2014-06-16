@@ -102,4 +102,13 @@ public class GlobalTimerService extends TimerService {
     return v;
   }
 
+  @Override
+  public long getFireExceptionCount() {
+    long v = 0;
+    for (int i = 0; i < timerQueues.length; i++) {
+      v += timerQueues[i].getFireExceptionCount();
+    }
+    return v;
+  }
+
 }

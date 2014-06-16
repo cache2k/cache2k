@@ -429,7 +429,9 @@ public class ImageFileStorage implements CacheStorage {
     if (s.size != _usedSize) {
       s.size -=  _usedSize;
       s.position += _usedSize;
-      freeMap.put(s);
+      synchronized (freeMap) {
+        freeMap.put(s);
+      }
     }
     bb.put(_marshalledValue);
     synchronized (valuesLock) {
@@ -502,29 +504,27 @@ public class ImageFileStorage implements CacheStorage {
    * in the maps by the caller.
    */
   Slot reserveSpace(int _neededSpace) throws IOException {
-    Slot s = null;
-    long _length = 0;
     synchronized (freeMap) {
-      s = freeMap.findFree(_neededSpace);
+      Slot s = freeMap.findFree(_neededSpace);
       if (s != null) {
         return s;
       }
-      _length = file.length();
+      long _length = file.length();
       s = freeMap.reserveSlotEndingAt(_length);
+      if (s != null) {
+        _neededSpace -= s.size;
+        s.size += _neededSpace;
+      } else {
+        s = new Slot(_length, _neededSpace);
+      }
+      if (tunableConstants.extensionSize >= 2) {
+        s.size += tunableConstants.extensionSize - 1;
+        s.size -= s.size % tunableConstants.extensionSize;
+      }
+      file.setLength(s.getNextPosition());
+      resetBufferFromFile();
+      return s;
     }
-    if (s != null) {
-      _neededSpace -= s.size;
-      s.size += _neededSpace;
-    } else {
-      s = new Slot(_length, _neededSpace);
-    }
-    if (tunableConstants.extensionSize >= 2) {
-      s.size += tunableConstants.extensionSize - 1;
-      s.size -= s.size % tunableConstants.extensionSize;
-    }
-    file.setLength(s.getNextPosition());
-    resetBufferFromFile();
-    return s;
   }
 
   void readIndex() throws IOException, ClassNotFoundException {
