@@ -44,12 +44,14 @@ public class HashEntryIterator implements Iterator<BaseCache.Entry> {
     if (hash == null) {
       return null;
     }
-    int idx = 0;
+    int idx;
     if (lastEntry != null) {
       if (lastEntry.another != null) {
         return lastEntry = lastEntry.another;
       }
       idx = BaseCache.Hash.index(hash, lastEntry.hashCode);
+    } else {
+      idx = -1;
     }
     BaseCache.Entry e;
     do {
