@@ -30,7 +30,6 @@ import org.cache2k.CacheConfig;
 import org.cache2k.MutableCacheEntry;
 import org.cache2k.StorageConfiguration;
 import org.cache2k.impl.timer.GlobalTimerService;
-import org.cache2k.impl.timer.TimerPayloadListener;
 import org.cache2k.impl.timer.TimerService;
 import org.cache2k.jmx.CacheMXBean;
 import org.cache2k.CacheSourceWithMetaInfo;
@@ -40,14 +39,8 @@ import org.cache2k.PropagatedCacheException;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.cache2k.storage.ImageFileStorage;
-import org.cache2k.storage.CacheStorage;
-import org.cache2k.storage.CacheStorageContext;
-import org.cache2k.storage.MarshallerFactory;
-import org.cache2k.storage.Marshallers;
 import org.cache2k.storage.StorageEntry;
 
-import java.io.IOException;
 import java.lang.reflect.Array;
 import java.security.SecureRandom;
 import java.util.AbstractList;
@@ -63,10 +56,6 @@ import java.util.Map;
 import java.util.Random;
 import java.util.Set;
 import java.util.Timer;
-import java.util.concurrent.Callable;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
 
 /**
  * Foundation for all cache variants. All common functionality is in here.
@@ -82,7 +71,7 @@ import java.util.concurrent.Future;
  */
 @SuppressWarnings({"unchecked", "SynchronizationOnLocalVariableOrMethodParameter"})
 public abstract class BaseCache<E extends BaseCache.Entry, K, T>
-  implements Cache<K, T>, CanCheckIntegrity {
+  implements Cache<K, T>, CanCheckIntegrity, Iterable<CacheEntry<K, T>> {
 
   static int HASH_INITIAL_SIZE = 64;
   static int HASH_LOAD_PERCENT = 64;
@@ -266,7 +255,7 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
       if (cfg.getEntryCapacity() < 0) {
         cfg.setEntryCapacity(c.getMaxSize());
       }
-      storage = new PassingStorageAdapter(c, _stores.get(0));
+      storage = new PassingStorageAdapter(this, c, _stores.get(0));
     } else {
     }
   }
@@ -390,7 +379,7 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
         bulkCacheSource = null;
         storage.open();
       }
-      initializeMemoryCache();
+      initializeHeapCache();
       initTimer();
       if (refreshPool != null && timer == null) {
         if (maxLinger == 0) {
@@ -436,10 +425,10 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
         throw new IllegalStateException("cache closed");
       }
       if (touchedTime == 0 ||
-        (touchedTime == clearedTime && getSize() == 0)) {
+        (touchedTime == clearedTime && getLocalSize() == 0)) {
         storage.clearPrepare();
         storage.clearProceed();
-        initializeMemoryCache();
+        initializeHeapCache();
         clearedTime = System.currentTimeMillis();
         touchedTime = clearedTime;
         return;
@@ -514,14 +503,14 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
         e.removedFromList();
         cancelExpiryTimer(e);
       }
-      removeCnt += getSize();
-      initializeMemoryCache();
+      removeCnt += getLocalSize();
+      initializeHeapCache();
       clearedTime = System.currentTimeMillis();
       touchedTime = clearedTime;
     }
   }
 
-  protected void initializeMemoryCache() {
+  protected void initializeHeapCache() {
     mainHashCtrl = new Hash<>();
     refreshHashCtrl = new Hash<>();
     txHashCtrl = new Hash<>();
@@ -593,6 +582,32 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
         manager = null;
       }
     }
+  }
+
+  @Override
+  public Iterator<CacheEntry<K, T>> iterator() {
+    if (storage == null) {
+      synchronized (lock) {
+        return new IteratorEntry2Entry(iterateAllLocalEntries());
+      }
+    }
+    return new IteratorEntry2Entry(storage.iterateAll());
+  }
+
+  class IteratorEntry2Entry implements Iterator<CacheEntry<K, T>> {
+
+    Iterator<Entry> iterator;
+
+    IteratorEntry2Entry(Iterator<Entry> it) { iterator = it; }
+
+    @Override
+    public boolean hasNext() { return iterator.hasNext(); }
+
+    @Override
+    public CacheEntry<K, T> next() { return returnEntry(iterator.next()); }
+
+    @Override
+    public void remove() { throw new UnsupportedOperationException(); }
   }
 
   protected static void removeFromList(final Entry e) {
@@ -751,24 +766,37 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
     return returnValue(getEntryInternal(key));
   }
 
-  public CacheEntry<K, T> getEntry(K key) {
-    return getEntryInternal(key);
+  /**
+   * Wrap entry in a separate object instance. We can return the entry directly, however we need
+   * lock on the entry object.
+   */
+  protected CacheEntry<K, T> returnEntry(final Entry<E, K, T> e) {
+    CacheEntry<K,T> ce = new CacheEntry<K, T>() {
+      @Override
+      public K getKey() { return e.getKey(); }
+
+      @Override
+      public T getValue() { return e.getValue(); }
+
+      @Override
+      public Throwable getException() { return e.getException(); }
+
+      @Override
+      public long getLastModification() { return e.getLastModification(); }
+    };
+    return ce;
   }
 
-  protected Entry<E, K, T> getEntryInternal(K key) {
+  public CacheEntry<K, T> getEntry(K key) {
+    return returnEntry(getEntryInternal(key));
+  }
+
+  protected E getEntryInternal(K key) {
     for (;;) {
       E e = lookupOrNewEntrySynchronized(key);
-      if (e.isDataValid()) {
-        return e;
-      }
-      if (e.needsTimeCheck()) {
-        long t = System.currentTimeMillis();
-        if (t < -e.nextRefreshTime) {
-          return e;
-        }
-      }
+      if (e.hasFreshData()) { return e; }
       synchronized (e) {
-        if (!e.isDataValid()) {
+        if (!e.isDataValidState()) {
           if (e.isRemovedNonValidState()) {
             continue;
           }
@@ -780,11 +808,34 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
     }
   }
 
+  /**
+   * Insert the storage entry in the heap cache and return it. Used when storage entries
+   * are queried. We need to whether the entry is present meanwhile, get the entry lock
+   * and maybe fetch it from the source. Doubles with {@link #getEntryInternal(Object)}
+   * except we do not need to retrieve the data from the storage again.
+   */
+  protected Entry insertEntryFromStorage(StorageEntry se, boolean _needsFetch) {
+    for (;;) {
+      E e = lookupOrNewEntrySynchronized((K) se.getKey());
+      if (e.hasFreshData()) { return e; }
+      synchronized (e) {
+        if (!e.isDataValidState()) {
+          if (e.isRemovedNonValidState()) {
+            continue;
+          }
+          insertEntryFromStorage(se, e, _needsFetch);
+        }
+      }
+      evictEventually();
+      return e;
+    }
+  }
+
   protected final void evictEventually() {
     while (evictionNeeded) {
       E e;
       synchronized (lock) {
-        if (getSize() <= maxSize) {
+        if (getLocalSize() <= maxSize) {
           evictionNeeded = false;
           return;
         }
@@ -805,9 +856,9 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
             removeEntry(e);
           }
           evictedCnt++;
-          evictionNeeded = getSize() > maxSize;
+          evictionNeeded = getLocalSize() > maxSize;
         }
-        if (storage != null && e.isDataValid()) {
+        if (storage != null && e.isDataValidState()) {
           storage.evict(e);
         }
       }
@@ -830,37 +881,35 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
   @Override
   public T peek(K key) {
     int hc = modifiedHash(key.hashCode());
-    E e = lookupEntryUnsynchronized(key, hc);
-    if (e == null) {
-      synchronized (lock) {
-        e = lookupEntry(key, hc);
-        if (e == null && storage != null) {
-          e = newEntry(key, hc);
+    for (;;) {
+      E e = lookupEntryUnsynchronized(key, hc);
+      if (e == null) {
+        synchronized (lock) {
+          e = lookupEntry(key, hc);
+          if (e == null && storage != null) {
+            e = newEntry(key, hc);
+          }
         }
       }
-    }
-    if (e == null) {
+      if (e == null) {
+        peekMissCnt++;
+        return null;
+      }
+      if (e.isVirgin() && storage != null) {
+        synchronized (e) {
+          if (e.isRemovedState() || e.isRemovedNonValidState()) {
+            continue;
+          }
+          fetchWithStorage(e, false);
+        }
+      }
+      evictEventually();
+      if (e.hasFreshData()) {
+        return returnValue(e);
+      }
       peekMissCnt++;
       return null;
     }
-    if (e.isVirgin() && storage != null) {
-      synchronized (e) {
-        fetchWithStorage(e, false);
-      }
-    }
-    evictEventually();
-    if (!e.isDataValid()) {
-      if (e.needsTimeCheck()) {
-        long t = System.currentTimeMillis();
-        if (t < -e.nextRefreshTime) {
-          return returnValue(e);
-        }
-      }
-    } else {
-      return returnValue(e);
-    }
-    peekMissCnt++;
-    return null;
   }
 
 
@@ -875,7 +924,7 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
         e = newEntry(key, hc);
         putNewEntryCnt++;
       } else {
-        if (e.isDataValid()) {
+        if (e.isDataValidState()) {
           e.setReputState();
         }
       }
@@ -1075,7 +1124,7 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
    * entry we reached the maximum size.
    */
   protected E newEntry(K key, int hc) {
-    if (getSize() >= maxSize) {
+    if (getLocalSize() >= maxSize) {
       evictionNeeded = true;
     }
     E e = checkForGhost(key, hc);
@@ -1106,7 +1155,7 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
     checkForHashCodeChange(e);
 
     cancelExpiryTimer(e);
-    if (e.isDataValid()) {
+    if (e.isDataValidState()) {
       e.setRemovedState();
     } else {
       if (e.isVirgin()) {
@@ -1221,6 +1270,10 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
       }
       return;
     }
+    insertEntryFromStorage(se, e, _needsFetch);
+  }
+
+  protected void insertEntryFromStorage(StorageEntry se, E e, boolean _needsFetch) {
     e.setLastModificationFromStorage(se.getCreatedOrUpdated());
     long t0 = System.currentTimeMillis();
     T v = (T) se.getValueOrException();
@@ -1427,7 +1480,7 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
     }
   }
 
-  public Iterator<Entry> iterateAllLocalEntries() {
+  protected Iterator<Entry> iterateAllLocalEntries() {
     return new HashEntryIterator(mainHash, refreshHash);
   }
 
@@ -1567,13 +1620,13 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
     for (; i >= s; i--) {
       E e = ea[i];
       if (e == null) { continue; }
-      if (!e.isDataValid()) {
+      if (!e.isDataValidState()) {
         synchronized (e) {
-          if (!e.isDataValid()) {
+          if (!e.isDataValidState()) {
             r[i] = null;
             _fetched.set(i, false);
             long t2 = fetchBulkLoop(ea, k, r, _fetched, s, i - 1, end, t);
-            if (!e.isDataValid()) {
+            if (!e.isDataValidState()) {
               insertFetched(e, r[i], t, t2);
             }
             return t2;
@@ -1638,7 +1691,7 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
         T v = (T) new ExceptionWrapper(_ouch);
         for (i = s; i < end; i++) {
           Entry e = ea[i];
-          if (!e.isDataValid()) {
+          if (!e.isDataValidState()) {
             r[i] = v;
           }
         }
@@ -1651,9 +1704,9 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
     for (int i = s; i < end; i++) {
       E e = ea[i];
       if (e == null) { continue; }
-      if (!e.isDataValid()) {
+      if (!e.isDataValidState()) {
         synchronized (e) {
-          if (!e.isDataValid()) {
+          if (!e.isDataValidState()) {
             fetch(e);
           }
           _result[i] = (T) e.getValue();
@@ -1715,7 +1768,7 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
       if (_entry == null) {
         _entries[i] = newEntry(key, hc);
       } else {
-        if (_entry.isDataValid()) {
+        if (_entry.isDataValidState()) {
           _result[i] = _entry.getValue();
           _fetched.set(i);
           _fetchCount--;
@@ -1729,12 +1782,21 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
 
   public abstract long getHitCnt();
 
-  protected final int getHashEntryCount() {
+  protected final int calculateHashEntryCount() {
     return Hash.calcEntryCount(mainHash) + Hash.calcEntryCount(refreshHash);
   }
 
-  public int getSize() {
+  protected final int getLocalSize() {
     return mainHashCtrl.size + refreshHashCtrl.size;
+  }
+
+  public final int getTotalEntryCount() {
+    synchronized (lock) {
+      if (storage != null) {
+        return storage.getTotalEntryCount();
+      }
+      return getLocalSize();
+    }
   }
 
   public long getExpiredCnt() {
@@ -1758,13 +1820,13 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
         .checkEquals("newEntryCnt - virginForFetchLostCnt == getFetchesBecauseOfNewEntries() + getFetchesInFlight() + putNewEntryCnt",
           newEntryCnt - virginForFetchLostCnt, getFetchesBecauseOfNewEntries() + getFetchesInFlight() + putNewEntryCnt)
         .checkLessOrEquals("getFetchesInFlight() <= 100", getFetchesInFlight(), 100)
-        .checkEquals("newEntryCnt == getSize() + evictedCnt + expiredRemoveCnt + removeCnt", newEntryCnt, getSize() + evictedCnt + expiredRemoveCnt + removeCnt)
-        .checkEquals("newEntryCnt == getSize() + evictedCnt + getExpiredCnt() - expiredKeptCnt + removeCnt", newEntryCnt, getSize() + evictedCnt + getExpiredCnt() - expiredKeptCnt + removeCnt)
+        .checkEquals("newEntryCnt == getSize() + evictedCnt + expiredRemoveCnt + removeCnt", newEntryCnt, getLocalSize() + evictedCnt + expiredRemoveCnt + removeCnt)
+        .checkEquals("newEntryCnt == getSize() + evictedCnt + getExpiredCnt() - expiredKeptCnt + removeCnt", newEntryCnt, getLocalSize() + evictedCnt + getExpiredCnt() - expiredKeptCnt + removeCnt)
         .checkEquals("mainHashCtrl.size == Hash.calcEntryCount(mainHash)", mainHashCtrl.size, Hash.calcEntryCount(mainHash))
         .checkEquals("refreshHashCtrl.size == Hash.calcEntryCount(refreshHash)", refreshHashCtrl.size, Hash.calcEntryCount(refreshHash))
-        .check("!!evictionNeeded | (getSize() <= maxSize)", !!evictionNeeded | (getSize() <= maxSize))
+        .check("!!evictionNeeded | (getSize() <= maxSize)", !!evictionNeeded | (getLocalSize() <= maxSize))
         .checkLessOrEquals("bulkKeysCurrentlyRetrieved.size() <= getSize()",
-          bulkKeysCurrentlyRetrieved == null ? 0 : bulkKeysCurrentlyRetrieved.size(), getSize());
+          bulkKeysCurrentlyRetrieved == null ? 0 : bulkKeysCurrentlyRetrieved.size(), getLocalSize());
     }
   }
 
@@ -1863,7 +1925,7 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
    */
   public class Info {
 
-    int size = BaseCache.this.getSize();
+    int size = BaseCache.this.getLocalSize();
     long creationTime;
     int creationDeltaMs;
     long missCnt = fetchCnt - refreshCnt + peekMissCnt;
@@ -2469,7 +2531,7 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
 
     /**
      * Entry was removed before, however the entry contains still valid data,
-     * so {@link #isDataValid()} is also true.
+     * so {@link #isDataValidState()} is also true.
      * This state is state may not be terminal. When an parallel get is going on
      * it will change to just isFetched or isFetchNextTime even if it was
      * removed. Use {@link #isRemovedFromReplacementList()} as a flag whether
@@ -2486,14 +2548,28 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
 
     /**
      * The entry value was fetched and is valid, which means it can be
-     * returned by the cache. If a valid an entry with {@link #isDataValid()}
+     * returned by the cache. If a valid an entry with {@link #isDataValidState()}
      * true gets removed from the cache the data is still valid. This is
      * because a concurrent get needs to return the data. There is also
      * the chance that an entry is removed by eviction, or is never inserted
      * to the cache, before the get returns it.
      */
-    public final boolean isDataValid() {
+    public final boolean isDataValidState() {
       return nextRefreshTime >= FETCHED_STATE;
+    }
+
+    /**
+     * Returns true if the entry has a valid value and is fresh / not expired.
+     */
+    public final boolean hasFreshData() {
+      if (isDataValidState()) {
+        return true;
+      }
+      if (needsTimeCheck()) {
+        long t = System.currentTimeMillis();
+        return t < -nextRefreshTime;
+      }
+      return false;
     }
 
     public void setFetchedState() {
@@ -2665,336 +2741,6 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
     @Override
     public final boolean equals(Object obj) {
       return this == obj;
-    }
-
-  }
-
-  static abstract class StorageAdapter {
-
-    public abstract void open();
-    public abstract void shutdown();
-    public abstract boolean clearPrepare();
-    public abstract void clearProceed();
-    public abstract void put(Entry e);
-    public abstract StorageEntry get(Object key);
-    public abstract void remove(Object key);
-    public abstract void evict(Entry e);
-    public abstract void expire(Entry e);
-
-  }
-
-  class StorageContext implements CacheStorageContext {
-
-    Class<?> keyType;
-    Class<?> valueType;
-
-    @Override
-    public String getManagerName() {
-      return manager.getName();
-    }
-
-    @Override
-    public String getCacheName() {
-      return getName();
-    }
-
-    @Override
-    public Class<?> getKeyType() {
-      return keyType;
-    }
-
-    @Override
-    public Class<?> getValueType() {
-      return valueType;
-    }
-
-    @Override
-    public MarshallerFactory getMarshallerFactory() {
-      return Marshallers.getInstance();
-    }
-
-    @Override
-    public void requestMaintenanceCall(int _intervalMillis) {
-    }
-
-    @Override
-    public void notifyEvicted(StorageEntry e) {
-    }
-
-    @Override
-    public void notifyExpired(StorageEntry e) {
-    }
-  }
-
-  class PassingStorageAdapter extends StorageAdapter {
-
-    CacheStorage storage;
-    CacheStorage copyForClearing;
-    boolean passivation = false;
-    long storageErrorCount = 0;
-    Set<Object> deletedKeys = null;
-    StorageContext context;
-    StorageConfiguration config;
-    ExecutorService executor = Executors.newSingleThreadExecutor();
-    TimerService.CancelHandle flushTimerHandle;
-    boolean needsFlush;
-    Future<Void> executingFlush;
-
-    public PassingStorageAdapter(CacheConfig _cacheConfig,
-                                 StorageConfiguration _storageConfig) {
-      context = new StorageContext();
-      context.keyType = _cacheConfig.getKeyType();
-      context.valueType = _cacheConfig.getValueType();
-      config = _storageConfig;
-    }
-
-    public void open() {
-     try {
-        ImageFileStorage s = new ImageFileStorage();
-        s.open(context, config);
-        storage = s;
-        if (config.isPassivation()) {
-          deletedKeys = new HashSet<>();
-          passivation = true;
-        }
-       getLog().info("open " + storage);
-      } catch (Exception ex) {
-        getLog().warn("error initializing storage, running in-memory", ex);
-      }
-    }
-
-    /**
-     * Store entry on cache put. Entry must be locked, since we use the
-     * entry directly for handing it over to the storage, it is not
-     * allowed to change. If storeAlways is switched on the entry will
-     * be in memory and in the storage after this operation.
-     */
-    public void put(Entry e) {
-      if (deletedKeys != null) {
-        synchronized (deletedKeys) {
-          deletedKeys.remove(e.getKey());
-        }
-        return;
-      }
-      try {
-        storage.put(e);
-        checkStartFlushTimer();
-      } catch (Exception ex) {
-        storageErrorCount++;
-        throw new CacheStorageException("cache put", ex);
-      }
-    }
-
-    void checkStartFlushTimer() {
-      needsFlush = true;
-      if (config.getSyncInterval() <= 0) {
-        return;
-      }
-      if (flushTimerHandle != null) {
-        return;
-      }
-      synchronized (this) {
-        if (flushTimerHandle != null) {
-          return;
-        }
-        scheduleTimer();
-      }
-    }
-
-    private void scheduleTimer() {
-      if (flushTimerHandle != null) {
-        flushTimerHandle.cancel();
-      }
-      TimerPayloadListener<Void> l = new TimerPayloadListener<Void>() {
-        @Override
-        public void fire(Void _payload, long _time) {
-          flush();
-        }
-      };
-      long _fireTime = System.currentTimeMillis() + config.getSyncInterval();
-      flushTimerHandle = timerService.add(l, null, _fireTime);
-    }
-
-    public StorageEntry get(Object k) {
-      if (deletedKeys != null) {
-        synchronized (deletedKeys) {
-          if (deletedKeys.contains(k)) {
-            return null;
-          }
-        }
-      }
-      try {
-        StorageEntry e = storage.get(k);
-        return e;
-      } catch (Exception ex) {
-        storageErrorCount++;
-        throw new CacheStorageException("cache get", ex);
-      }
-    }
-
-    public void evict(Entry e) {
-      if (passivation) {
-        putIfDirty(e);
-      }
-    }
-
-    /**
-     * Entry is evicted from memory cache either because of an expiry or an
-     * eviction.
-     */
-    public void expire(Entry e) {
-      remove(e.getKey());
-    }
-
-    private void putIfDirty(Entry e) {
-      try {
-        if (e.isDirty()) {
-          storage.put(e);
-          checkStartFlushTimer();
-        }
-      } catch (Exception ex) {
-        storageErrorCount++;
-        throw new CacheStorageException("cache put", ex);
-      }
-    }
-
-    public void remove(Object key) {
-      if (deletedKeys != null) {
-        synchronized (deletedKeys) {
-          deletedKeys.remove(key);
-        }
-        return;
-      }
-      try {
-        storage.remove(key);
-        checkStartFlushTimer();
-      } catch (Exception ex) {
-        storageErrorCount++;
-        throw new CacheStorageException("cache remove", ex);
-      }
-    }
-
-    public Future<Void> flush() {
-      try {
-        storage.flush(System.currentTimeMillis(), CacheStorage.DEFAULT_FLUSH_CONTEXT);
-      } catch (Exception ex) { }
-      synchronized (this) {
-        final Future<Void> _previousFlush = executingFlush;
-          Callable<Void> c=  new Callable<Void>() {
-            @Override
-            public Void call() throws Exception {
-              if (_previousFlush != null) {
-                _previousFlush.get();
-              }
-              storage.flush(System.currentTimeMillis(), CacheStorage.DEFAULT_FLUSH_CONTEXT);
-              getLog().info("flush " + storage);
-              executingFlush = null;
-              synchronized (PassingStorageAdapter.this) {
-                if (needsFlush) {
-                  scheduleTimer();
-                } else {
-                  flushTimerHandle.cancel();
-                  flushTimerHandle = null;
-                }
-              }
-              return null;
-            }
-          };
-
-        return executingFlush = executor.submit(c);
-      }
-    }
-
-    public void shutdown() {
-      if (storage == null) {
-        return;
-      }
-      try {
-        if (passivation) {
-          Iterator<Entry> it = iterateAllLocalEntries();
-          while (it.hasNext()) {
-            Entry e = it.next();
-            putIfDirty(e);
-          }
-          if (deletedKeys != null) {
-            for (Object k : deletedKeys) {
-              storage.remove(k);
-            }
-          }
-        }
-        synchronized (this) {
-          final CacheStorage _storage = storage;
-          storage = null;
-          final Future<Void> _previousFlush = executingFlush;
-          Callable<Void> c=  new Callable<Void>() {
-            @Override
-            public Void call() throws Exception {
-              if (_previousFlush != null) {
-                try {
-                  _previousFlush.cancel(true);
-                  _previousFlush.get();
-                } catch (Exception ex) {
-                }
-              }
-              _storage.flush(System.currentTimeMillis(), CacheStorage.DEFAULT_FLUSH_CONTEXT);
-              getLog().info("close " + storage);
-              _storage.close();
-              return null;
-            }
-          };
-          Future<Void> f = executor.submit(c);
-          f.get();
-        }
-      } catch (Exception ex) {
-        storageErrorCount++;
-      }
-    }
-
-    public boolean clearPrepare() {
-      if (copyForClearing != null) {
-        return false;
-      }
-      copyForClearing = storage;
-      storage = new CacheStorageBuffer();
-      return true;
-    }
-
-    public void clearProceed() {
-      try {
-        copyForClearing.clear();
-        ((CacheStorageBuffer) storage).transfer(copyForClearing);
-      } catch (Exception ex) {
-        ex.printStackTrace();
-        storageErrorCount++;
-      } finally {
-        synchronized (lock) {
-          storage = copyForClearing;
-          copyForClearing = null;
-        }
-      }
-    }
-
-    /**
-     * Calculates the cache size, depending on the persistence configuration
-     */
-    public int getTotalEntryCount() {
-      if (!passivation) {
-        return storage.getEntryCount();
-      }
-      int size = storage.getEntryCount();
-      Iterator<Entry> it = iterateAllLocalEntries();
-      try {
-        while (it.hasNext()) {
-          Entry e = it.next();
-          if (!storage.contains(e.getKey())) {
-            size++;
-          }
-        }
-      } catch (IOException ex) {
-        ex.printStackTrace();
-        storageErrorCount++;
-      }
-      return size;
     }
 
   }

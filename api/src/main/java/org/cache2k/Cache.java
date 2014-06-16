@@ -34,7 +34,7 @@ import java.util.Set;
  * @see CacheBuilder to create a new cache
  * @author Jens Wilke
  */
-public interface Cache<K, T> extends KeyValueSource<K,T> {
+public interface Cache<K, T> extends KeyValueSource<K,T>, Iterable<CacheEntry<K, T>>  {
 
   public abstract String getName();
 
@@ -130,6 +130,20 @@ public interface Cache<K, T> extends KeyValueSource<K,T> {
    *            during fetch of any key.
    */
   public Map<K, T> getAll(Set<? extends K> keys);
+
+  /**
+   * Number of entries the cache hold in total. When iterating the entries
+   * the cache will always return a less or equal number of entries compared
+   * to this value. The reason for this is, that identical entries may exist
+   * in different storage layers, or may be expired already. The method is
+   * of limited use, though.
+   *
+   * <p>Idea: If there is no expiry and passivation into storage configured, this
+   * value could have defined semantics. Otherwise throw an exception?
+   *
+   * <p>Its open for decision whether this is included in the final API.
+   */
+  public abstract int getTotalEntryCount();
 
   /**
    * Free all resources and remove the cache from the CacheManager.

@@ -144,7 +144,7 @@ public class ArcCache<K, T> extends BaseCache<ArcCache.Entry, K, T> {
   }
 
   int getT2Size() {
-    return getSize() - t1Size;
+    return getLocalSize() - t1Size;
   }
 
   Entry cloneGhost(Entry e) {
@@ -226,8 +226,8 @@ public class ArcCache<K, T> extends BaseCache<ArcCache.Entry, K, T> {
   }
 
   @Override
-  protected void initializeMemoryCache() {
-    super.initializeMemoryCache();
+  protected void initializeHeapCache() {
+    super.initializeHeapCache();
     t1Size = 0;
     b1HashCtrl = new Hash<>();
     b2HashCtrl = new Hash<>();
@@ -255,10 +255,10 @@ public class ArcCache<K, T> extends BaseCache<ArcCache.Entry, K, T> {
   @Override
   protected IntegrityState getIntegrityState() {
     return super.getIntegrityState()
-      .check("getSize() == getHashEntryCount()", getSize() == getHashEntryCount())
-      .check("getSize() == getListEntryCount()", getSize() == getListEntryCount())
+      .check("getSize() == getHashEntryCount()", getLocalSize() == calculateHashEntryCount())
+      .check("getSize() == getListEntryCount()", getLocalSize() == getListEntryCount())
       .checkEquals("t1Size == getListEntryCount(t1Head)", t1Size, getListEntryCount(t1Head))
-      .checkEquals("getSize() - t1Size == getListEntryCount(t2Head)", getSize() - t1Size, getListEntryCount(t2Head))
+      .checkEquals("getSize() - t1Size == getListEntryCount(t2Head)", getLocalSize() - t1Size, getListEntryCount(t2Head))
       .checkLessOrEquals(
         "b1HashCtrl.size + b2HashCtrl.size <= maxSize",
         b1HashCtrl.size + b2HashCtrl.size, maxSize)

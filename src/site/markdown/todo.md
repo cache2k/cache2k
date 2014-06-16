@@ -65,6 +65,10 @@ A poor mans issue tracker.
   * cache feature comparison: e.g.ehcache synchronuous write
   * exceptions: fetchExceptions counter in statistic!
 
+### Things to fix
+
+  * Iterator misses entries when a hashtable expand happens
+
 ### Prio B
 
   * jcache / jsr107 support?

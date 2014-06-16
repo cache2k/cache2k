@@ -75,8 +75,8 @@ public class ClockProPlusCache<K, T> extends LockFreeCache<ClockProPlusCache.Ent
   }
 
   @Override
-  protected void initializeMemoryCache() {
-    super.initializeMemoryCache();
+  protected void initializeHeapCache() {
+    super.initializeHeapCache();
     ghostMax = maxSize;
     hotMax = maxSize * 50 / 100;
     hotMaxFix = false;
@@ -338,7 +338,7 @@ public class ClockProPlusCache<K, T> extends LockFreeCache<ClockProPlusCache.Ent
                       ghostHashCtrl.size, Hash.calcEntryCount(ghostHash))
               .check("hotMax <= maxElements", hotMax <= maxSize)
               .check("hotSize <= hotMax", hotSize <= hotMax)
-              .checkEquals("getSize() == (getListSize() + evictedButInHashCnt) ", getSize(),  getListSize() + evictedButInHashCnt)
+              .checkEquals("getSize() == (getListSize() + evictedButInHashCnt) ", getLocalSize(),  getListSize() + evictedButInHashCnt)
               .check("checkCyclicListIntegrity(handHot)", checkCyclicListIntegrity(handHot))
               .check("checkCyclicListIntegrity(handCold)", checkCyclicListIntegrity(handCold))
               .check("checkCyclicListIntegrity(handGhost)", checkCyclicListIntegrity(handGhost))

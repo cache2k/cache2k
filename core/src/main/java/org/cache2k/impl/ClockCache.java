@@ -55,8 +55,8 @@ public class ClockCache<K, T> extends LockFreeCache<ClockCache.Entry, K, T> {
   }
 
   @Override
-  protected void initializeMemoryCache() {
-    super.initializeMemoryCache();
+  protected void initializeHeapCache() {
+    super.initializeHeapCache();
     size = 0;
     hand = null;
   }
@@ -119,7 +119,7 @@ public class ClockCache<K, T> extends LockFreeCache<ClockCache.Entry, K, T> {
   protected IntegrityState getIntegrityState() {
     synchronized (lock) {
       return super.getIntegrityState()
-              .checkEquals("getListSize() + evictedButInHashCnt == getSize()", getListSize() + evictedButInHashCnt, getSize())
+              .checkEquals("getListSize() + evictedButInHashCnt == getSize()", getListSize() + evictedButInHashCnt, getLocalSize())
               .check("checkCyclicListIntegrity(hand)", checkCyclicListIntegrity(hand))
               .checkEquals("getCyclicListEntryCount(hand) == size", getCyclicListEntryCount(hand), size);
     }

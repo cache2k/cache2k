@@ -62,8 +62,8 @@ public class LruCache<K, T> extends BaseCache<LruCache.Entry, K, T> {
   }
 
   @Override
-  protected void initializeMemoryCache() {
-    super.initializeMemoryCache();
+  protected void initializeHeapCache() {
+    super.initializeHeapCache();
     head = new Entry<K,T>().shortCircuit();
   }
 
@@ -71,7 +71,7 @@ public class LruCache<K, T> extends BaseCache<LruCache.Entry, K, T> {
   protected IntegrityState getIntegrityState() {
     synchronized (lock) {
       return super.getIntegrityState()
-        .checkEquals("size = list entry count", getSize() , getListEntryCount(head));
+        .checkEquals("size = list entry count", getLocalSize() , getListEntryCount(head));
     }
   }
 

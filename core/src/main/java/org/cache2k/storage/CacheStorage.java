@@ -93,7 +93,7 @@ public interface CacheStorage extends Closeable {
   /**
    * Visit all stored entries.
    */
-  public void visit(EntryVisitor v, VisitContext ctx) throws Exception;
+  public void visit(EntryVisitor v, EntryFilter f, VisitContext ctx) throws Exception;
 
   /**
    * Called by the cache at regular intervals, but only if data was
@@ -131,6 +131,12 @@ public interface CacheStorage extends Closeable {
   }
 
   public static final FlushContext DEFAULT_FLUSH_CONTEXT = new FlushContext() { };
+
+  interface EntryFilter {
+
+     boolean shouldInclude(Object _key);
+
+  }
 
   interface VisitContext {
 

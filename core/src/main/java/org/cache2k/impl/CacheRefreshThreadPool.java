@@ -27,6 +27,7 @@ import java.util.concurrent.SynchronousQueue;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * Provides a shared thread pool used by all caches for background refreshes of expired
@@ -89,11 +90,11 @@ public class CacheRefreshThreadPool {
 
   static class MyThreadFactory implements ThreadFactory {
 
-    int count = 0;
+    AtomicInteger count = new AtomicInteger();
 
     @Override
     public synchronized Thread newThread(Runnable r) {
-      Thread t = new Thread(r, "cache refresh #" + count++);
+      Thread t = new Thread(r, "cache-refresh-" + count.incrementAndGet());
       t.setDaemon(true);
       return t;
     }

@@ -394,7 +394,8 @@ public class ImageFileStorage implements CacheStorage {
   /**
    * Store a new entry. To achieve robustness without implementing a WAL there
    * is no update in place. Each entry gets a newly allocated space. The freed
-   * space will be available for reallocation until the index is committed twice.
+   * space will be made available later in time.
+   *
    * BTW: there is a theoretical race condition in this, because there is no
    * real protection against the case that the read is reading an in between
    * reallocated space. However, this will only be a problem if the read
@@ -829,14 +830,15 @@ public class ImageFileStorage implements CacheStorage {
   }
 
   @Override
-  public void visit(final EntryVisitor v, final VisitContext ctx) throws Exception {
+  public void visit(final EntryVisitor v, final EntryFilter f, final VisitContext ctx) throws Exception {
     ArrayList<BufferEntry> _allEntries;
     synchronized (valuesLock) {
       _allEntries = new ArrayList<>(values.size());
       for (BufferEntry e : values.values()) {
-        _allEntries.add(e);
+        if (f == null || f.shouldInclude(e.key)) {
+          _allEntries.add(e);
+        }
       }
-      _allEntries.addAll(values.values());
     }
     ExecutorService ex = ctx.getExecutorService();
     for (BufferEntry e : _allEntries) {

@@ -172,8 +172,23 @@ public class CacheStorageBuffer implements CacheStorage {
   }
 
   @Override
-  public void visit(EntryVisitor v, VisitContext ctx) {
-    throw new UnsupportedOperationException();
+  public void visit(EntryVisitor v, EntryFilter f, VisitContext ctx) throws Exception {
+    List<StorageEntry> l;
+    synchronized (this) {
+      if (forwardingStorage != null) {
+        forwardingStorage.visit(v, f, ctx);
+      }
+      l = new ArrayList<>(key2entry.size());
+      for (StorageEntry e : key2entry.values()) {
+        if (f == null || f.shouldInclude(e.getKey())) {
+          l.add(e);
+        }
+      }
+    }
+    for (StorageEntry e : l) {
+      if (ctx.shouldStop()) { return; }
+      v.visit(e);
+    }
   }
 
   @Override
