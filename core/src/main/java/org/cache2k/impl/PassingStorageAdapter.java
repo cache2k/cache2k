@@ -106,7 +106,7 @@ class PassingStorageAdapter extends StorageAdapter {
    * be in memory and in the storage after this operation.
    */
   public void put(BaseCache.Entry e) {
-    if (deletedKeys != null) {
+    if (passivation) {
       synchronized (deletedKeys) {
         deletedKeys.remove(e.getKey());
       }
@@ -167,6 +167,12 @@ class PassingStorageAdapter extends StorageAdapter {
     }
   }
 
+  /**
+   * If passivation is not enabled, then we need to do nothing here since, the
+   * entry was transferred to the storage on the {@link #put(org.cache2k.impl.BaseCache.Entry)}
+   * operation. With passivation enabled, the entries need to be transferred when evicted from
+   * the heap.
+   */
   public void evict(BaseCache.Entry e) {
     if (passivation) {
       putIfDirty(e);
@@ -220,9 +226,9 @@ class PassingStorageAdapter extends StorageAdapter {
     synchronized (cache.lock) {
       it.localIteration = cache.iterateAllLocalEntries();
       if (!passivation) {
-        it.totalEntryCount = storage.getEntryCount();
+        it.maximumEntriesToIterate = storage.getEntryCount();
       } else {
-        it.totalEntryCount = -1;
+        it.maximumEntriesToIterate = Integer.MAX_VALUE;
       }
 
     }
@@ -290,7 +296,7 @@ class PassingStorageAdapter extends StorageAdapter {
 
     HashSet<Object> keysIterated = new HashSet<>();
     Iterator<BaseCache.Entry> localIteration;
-    int totalEntryCount;
+    int maximumEntriesToIterate;
     BaseCache.Entry entry;
     BlockingQueue<BaseCache.Entry> queue;
     Runnable runnable;
@@ -306,7 +312,7 @@ class PassingStorageAdapter extends StorageAdapter {
           return true;
         }
         localIteration = null;
-        if (keysIterated.size() >= totalEntryCount) {
+        if (keysIterated.size() >= maximumEntriesToIterate) {
           queue = null;
         } else {
           executor.submit(runnable);
@@ -315,7 +321,6 @@ class PassingStorageAdapter extends StorageAdapter {
       if (queue != null) {
         try {
           entry = queue.take();
-          System.err.println(entry);
           if (entry != LAST_ENTRY) {
             return true;
           }

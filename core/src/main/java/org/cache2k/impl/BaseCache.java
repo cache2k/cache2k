@@ -2765,6 +2765,7 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
         ", nextRefreshTime=" + nextRefreshTime +
         ", key=" + key +
         ", value=" + value +
+        ", dirty=" + isDirty() +
         '}';
     }
 
