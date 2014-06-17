@@ -37,18 +37,13 @@ import org.cache2k.util.TunableConstants;
 
 import java.util.HashSet;
 import java.util.Iterator;
-import java.util.Queue;
 import java.util.Set;
 import java.util.concurrent.ArrayBlockingQueue;
-import java.util.concurrent.BlockingDeque;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
-import java.util.concurrent.LinkedBlockingDeque;
-import java.util.concurrent.LinkedBlockingQueue;
-import java.util.concurrent.RejectedExecutionHandler;
 import java.util.concurrent.SynchronousQueue;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.ThreadPoolExecutor;
@@ -239,9 +234,7 @@ class PassingStorageAdapter extends StorageAdapter {
         CacheStorage.EntryVisitor v = new CacheStorage.EntryVisitor() {
           @Override
           public void visit(StorageEntry se) throws InterruptedException {
-
             BaseCache.Entry e = cache.insertEntryFromStorage(se, true);
-            System.err.println("visit: " + se + " -> " + e);
             _queue.put(e);
           }
         };
@@ -249,7 +242,6 @@ class PassingStorageAdapter extends StorageAdapter {
           @Override
           public boolean shouldInclude(Object _key) {
             boolean b = !it.keysIterated.contains(_key);
-            System.err.println("shouldInclude: " + _key + " -> " +b);
             return b;
           }
         };
