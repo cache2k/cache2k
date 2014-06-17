@@ -261,6 +261,7 @@ class PassingStorageAdapter extends StorageAdapter {
         try {
           storage.visit(v, f, ctx);
         } catch (Exception ex) {
+          ex.printStackTrace();
         }
         _queue.addFirst(LAST_ENTRY);
       }
@@ -298,7 +299,8 @@ class PassingStorageAdapter extends StorageAdapter {
       }
       if (queue != null) {
         try {
-         entry = queue.takeFirst();
+          entry = queue.takeFirst();
+          System.err.println(entry);
           if (entry != LAST_ENTRY) {
             return true;
           }
