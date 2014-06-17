@@ -584,27 +584,56 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
     }
   }
 
-  @Override
-  public Iterator<CacheEntry<K, T>> iterator() {
+  /**
+   * Complete iteration of all entries in the cache, including
+   * storage / persisted entries. The iteration may include expired
+   * entries or entries with no valid data.
+   */
+  protected Iterator<Entry> iterateLocalAndStorage() {
     if (storage == null) {
       synchronized (lock) {
-        return new IteratorEntry2Entry(iterateAllLocalEntries());
+        return iterateAllLocalEntries();
       }
+    } else {
+      return storage.iterateAll();
     }
-    return new IteratorEntry2Entry(storage.iterateAll());
   }
 
-  class IteratorEntry2Entry implements Iterator<CacheEntry<K, T>> {
+  @Override
+  public Iterator<CacheEntry<K, T>> iterator() {
+    return new IteratorFilterEntry2Entry(iterateLocalAndStorage());
+  }
+
+  /**
+   * Filter out non valid entries and wrap each entry with a cache
+   * entry object.
+   */
+  class IteratorFilterEntry2Entry implements Iterator<CacheEntry<K, T>> {
 
     Iterator<Entry> iterator;
+    Entry entry;
 
-    IteratorEntry2Entry(Iterator<Entry> it) { iterator = it; }
+    IteratorFilterEntry2Entry(Iterator<Entry> it) { iterator = it; }
+
+    /**
+     * Between hasNext() and next() an entry may be evicted or expired.
+     * In practise we have to deliver a next entry if we return hasNext() with
+     * true, furthermore, there should be no big gap between the calls to
+     * hasNext() and next().
+     */
+    @Override
+    public boolean hasNext() {
+      while (iterator.hasNext()) {
+        entry = iterator.next();
+        if (entry.hasFreshData()) {
+          return true;
+        }
+      }
+      return false;
+    }
 
     @Override
-    public boolean hasNext() { return iterator.hasNext(); }
-
-    @Override
-    public CacheEntry<K, T> next() { return returnEntry(iterator.next()); }
+    public CacheEntry<K, T> next() { return returnEntry(entry); }
 
     @Override
     public void remove() { throw new UnsupportedOperationException(); }
@@ -1480,7 +1509,11 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
     }
   }
 
-  protected Iterator<Entry> iterateAllLocalEntries() {
+  /**
+   * Returns all cache entries within the heap cache. Entries that
+   * are expires or contain no valid data are not filtered out.
+   */
+  final protected Iterator<Entry> iterateAllLocalEntries() {
     return new HashEntryIterator(mainHash, refreshHash);
   }
 

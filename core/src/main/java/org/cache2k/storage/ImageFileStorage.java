@@ -45,10 +45,13 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Queue;
 import java.util.Set;
+import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -841,23 +844,25 @@ public class ImageFileStorage implements CacheStorage {
       }
     }
     ExecutorService ex = ctx.getExecutorService();
+    final AtomicReference<Exception> _threadException = new AtomicReference<>();
+    List<Future<?>> l = new ArrayList<>();
     for (BufferEntry e : _allEntries) {
       if (ctx.shouldStop()) {
         break;
       }
       final BufferEntry be = e;
-      final AtomicReference<Exception> _threadException = new AtomicReference<>();
-      Runnable r = new Runnable() {
+      Callable<Object> r = new Callable<Object>() {
         @Override
-        public void run() {
+        public Object call() {
           try {
             v.visit(returnEntry(be));
           } catch (Exception ex) {
             _threadException.set(ex);
           }
+          return be.key;
         }
       };
-      ex.execute(r);
+      ex.submit(r);
     }
     if (ctx.shouldStop()) {
       ex.shutdownNow();
@@ -865,6 +870,10 @@ public class ImageFileStorage implements CacheStorage {
       ex.shutdown();
     }
     ex.awaitTermination(Long.MAX_VALUE, TimeUnit.MILLISECONDS);
+
+    if (_threadException.get() != null) {
+      throw new IOException("visit thread exception", _threadException.get());
+    }
   }
 
   @Override

@@ -35,21 +35,25 @@ import java.util.List;
  *
  * @author Jens Wilke; created: 2014-04-19
  */
+@SuppressWarnings("unchecked")
 public abstract class RootAnyBuilder<T> extends BaseAnyBuilder<T, CacheConfig> {
 
   private static final List<BaseAnyBuilder> EMPTY = Collections.emptyList();
 
   private List<BaseAnyBuilder> modules = EMPTY;
   protected CacheConfig config;
+  StorageConfiguration.Builder<T> persistence;
 
-  @Override @SuppressWarnings("unchecked")
-  public StorageConfiguration.Builder<T> addPersistence() {
-    StorageConfiguration.Builder<T> b = addModule(new StorageConfiguration.Builder());
-    b.implementation(Cache2kCoreProvider.get().getDefaultPersistenceStoreImplementation());
-    return b;
+  @Override
+  public StorageConfiguration.Builder<T> persistence() {
+    if (persistence == null) {
+      persistence = addModule(new StorageConfiguration.Builder());
+      persistence.implementation(Cache2kCoreProvider.get().getDefaultPersistenceStoreImplementation());
+    }
+    return persistence;
   }
 
-  @Override @SuppressWarnings("unchecked")
+  @Override
   public StorageConfiguration.Builder<T> addStore() {
     return
       addModule(new StorageConfiguration.Builder());

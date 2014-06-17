@@ -132,21 +132,23 @@ public interface Cache<K, T> extends KeyValueSource<K,T>, Iterable<CacheEntry<K,
   public Map<K, T> getAll(Set<? extends K> keys);
 
   /**
-   * Number of entries the cache hold in total. When iterating the entries
-   * the cache will always return a less or equal number of entries compared
-   * to this value. The reason for this is, that identical entries may exist
-   * in different storage layers, or may be expired already. The method is
-   * of limited use, though.
+   * Number of entries the cache holds in total. When iterating the entries
+   * the cache will always return less or an identical number of entries.
+   * The reason for this is, that duplicate entries may exist in different
+   * storage layers (typically in heap and in persistent storage), or may be
+   * expired already.
    *
-   * <p>Idea: If there is no expiry and passivation into storage configured, this
-   * value could have defined semantics. Otherwise throw an exception?
+   * <p>The method has more statistical value and the result depends on the
+   * actual configuration of the cache.
    *
-   * <p>Its open for decision whether this is included in the final API.
+   * <p>TODO-API: Keep this for the final API?
    */
   public abstract int getTotalEntryCount();
 
   /**
    * Free all resources and remove the cache from the CacheManager.
+   *
+   * <p>TODO-API: rename to close()
    */
   public abstract void destroy();
 

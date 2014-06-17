@@ -167,7 +167,7 @@ public interface CacheStorage extends Closeable {
 
   interface EntryVisitor {
 
-    void visit(StorageEntry e);
+    void visit(StorageEntry e) throws InterruptedException;
 
   }
 

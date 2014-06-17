@@ -33,16 +33,22 @@ import org.cache2k.storage.ImageFileStorage;
 import org.cache2k.storage.MarshallerFactory;
 import org.cache2k.storage.Marshallers;
 import org.cache2k.storage.StorageEntry;
+import org.cache2k.util.TunableConstants;
 
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.Queue;
 import java.util.Set;
+import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingDeque;
+import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.LinkedBlockingDeque;
+import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.RejectedExecutionHandler;
 import java.util.concurrent.SynchronousQueue;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.ThreadPoolExecutor;
@@ -58,6 +64,9 @@ import java.util.concurrent.atomic.AtomicInteger;
 @SuppressWarnings({"unchecked", "SynchronizeOnNonFinalField"})
 class PassingStorageAdapter extends StorageAdapter {
 
+  private final Tunables DEFAULT_TUNABLES = new Tunables();
+
+  private Tunables tunables = DEFAULT_TUNABLES;
   private BaseCache cache;
   CacheStorage storage;
   CacheStorage copyForClearing;
@@ -208,6 +217,11 @@ class PassingStorageAdapter extends StorageAdapter {
   @Override
   public Iterator<BaseCache.Entry> iterateAll() {
     final CompleteIterator it = new CompleteIterator();
+    if (tunables.iterationQueueCapacity > 0) {
+      it.queue = new ArrayBlockingQueue<>(tunables.iterationQueueCapacity);
+    } else {
+      it.queue = new SynchronousQueue<>();
+    }
     synchronized (cache.lock) {
       it.localIteration = cache.iterateAllLocalEntries();
       if (!passivation) {
@@ -221,12 +235,14 @@ class PassingStorageAdapter extends StorageAdapter {
     it.runnable = new Runnable() {
       @Override
       public void run() {
-        final BlockingDeque<BaseCache.Entry> _queue = it.queue;
+        final BlockingQueue<BaseCache.Entry> _queue = it.queue;
         CacheStorage.EntryVisitor v = new CacheStorage.EntryVisitor() {
           @Override
-          public void visit(StorageEntry se) {
+          public void visit(StorageEntry se) throws InterruptedException {
+
             BaseCache.Entry e = cache.insertEntryFromStorage(se, true);
-            _queue.addFirst(e);
+            System.err.println("visit: " + se + " -> " + e);
+            _queue.put(e);
           }
         };
         CacheStorage.EntryFilter f = new CacheStorage.EntryFilter() {
@@ -262,8 +278,15 @@ class PassingStorageAdapter extends StorageAdapter {
           storage.visit(v, f, ctx);
         } catch (Exception ex) {
           ex.printStackTrace();
+          _queue.clear();
         }
-        _queue.addFirst(LAST_ENTRY);
+        for (;;) {
+          try {
+            _queue.put(LAST_ENTRY);
+             break;
+          } catch (InterruptedException ex) {
+          }
+        }
       }
     };
     return it;
@@ -277,7 +300,7 @@ class PassingStorageAdapter extends StorageAdapter {
     Iterator<BaseCache.Entry> localIteration;
     int totalEntryCount;
     BaseCache.Entry entry;
-    BlockingDeque<BaseCache.Entry> queue = new LinkedBlockingDeque<>();
+    BlockingQueue<BaseCache.Entry> queue;
     Runnable runnable;
     ExecutorService executor;
 
@@ -299,7 +322,7 @@ class PassingStorageAdapter extends StorageAdapter {
       }
       if (queue != null) {
         try {
-          entry = queue.takeFirst();
+          entry = queue.take();
           System.err.println(entry);
           if (entry != LAST_ENTRY) {
             return true;
@@ -380,7 +403,7 @@ class PassingStorageAdapter extends StorageAdapter {
         final CacheStorage _storage = storage;
         storage = null;
         final Future<Void> _previousFlush = executingFlush;
-        Callable<Void> c=  new Callable<Void>() {
+        Callable<Void> c = new Callable<Void>() {
           @Override
           public Void call() throws Exception {
             if (_previousFlush != null) {
@@ -490,11 +513,12 @@ class PassingStorageAdapter extends StorageAdapter {
 
   ExecutorService createOperationExecutor() {
     return
-      new ThreadPoolExecutor(0, Runtime.getRuntime().availableProcessors() * 123 / 100,
+      new ThreadPoolExecutor(
+        0, Runtime.getRuntime().availableProcessors() * 123 / 100,
         21, TimeUnit.SECONDS,
         new SynchronousQueue<Runnable>(),
         THREAD_FACTORY,
-        new ThreadPoolExecutor.AbortPolicy());
+        new ThreadPoolExecutor.CallerRunsPolicy());
   }
 
   static final ThreadFactory THREAD_FACTORY = new MyThreadFactory();
@@ -505,11 +529,35 @@ class PassingStorageAdapter extends StorageAdapter {
     AtomicInteger count = new AtomicInteger();
 
     @Override
-    public synchronized Thread newThread(Runnable r) {
+    public Thread newThread(Runnable r) {
       Thread t = new Thread(r, "cache2k-storage#" + count.incrementAndGet());
-      t.setDaemon(true);
+      if (t.isDaemon()) {
+        t.setDaemon(false);
+      }
+      if (t.getPriority() != Thread.NORM_PRIORITY) {
+        t.setPriority(Thread.NORM_PRIORITY);
+      }
       return t;
     }
+
+  }
+
+  public static class Tunables implements TunableConstants {
+
+    /**
+     * If the iteration client needs more time then the read threads,
+     * the queue fills up. When the capacity is reached the reading
+     * threads block until the client is requesting the next entry.
+     *
+     * <p>A low number makes sense here just to make sure that the read threads are
+     * not waiting if the iterator client is doing some processing. We should
+     * never put a large number here, to keep overall memory capacity control
+     * within the cache and don't introduce additional buffers.
+     *
+     * <p>When the value is 0 a {@link java.util.concurrent.SynchronousQueue}
+     * is used.
+     */
+    public int iterationQueueCapacity = 3;
 
   }
 

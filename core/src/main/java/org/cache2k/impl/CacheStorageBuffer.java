@@ -35,19 +35,23 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * Record cache operations during a storage clear.
+ * Record cache operations during a storage clear and playback later.
  *
  * <p/>By decoupling we still have fast concurrent access on the cache
- * while the storage "does its thing". This is now just used for the clear()
- * operation, so it is assumed that the initial state of the storage is
- * empty.
+ * while the storage "does its thing" and remove files, etc. This is
+ * now just used for the clear() operation, so it is assumed that
+ * the initial state of the storage is empty.
  *
- * <p/>If the requests come in faster than the storage can handle it
- * we will  end up queuing up requests forever (... and run out of
- * heap space). So when starting the transfer we slow down in taking
- * new entries.
+ * <p/>After playback starts, and if the requests come in faster than
+ * the storage can handle it we will end up queuing up requests forever,
+ * which means we will loose the cache properties and run out of heap space.
+ * To avoid this, we slow down the acceptance of new requests as soon as
+ * the storage playback starts.
  *
- * <p/>A problem is, that the storage is only operated single threaded.
+ * <p/>Right now, the storage is only operated single threaded by the buffer
+ * playback.
+ *
+ * <p>TODO-C: Multi threaded storage playback
  *
  * @author Jens Wilke; created: 2014-04-20
  */
@@ -63,7 +67,6 @@ public class CacheStorageBuffer implements CacheStorage {
 
   /** Added up rest of microseconds to wait */
   long microWaitRest = 0;
-  TimerService.CancelHandle tt;
 
   List<Op> operations = new ArrayList<>();
   Map<Object, StorageEntry> key2entry = new HashMap<>();
@@ -173,6 +176,7 @@ public class CacheStorageBuffer implements CacheStorage {
 
   @Override
   public void visit(EntryVisitor v, EntryFilter f, VisitContext ctx) throws Exception {
+    System.err.println("buffer after clear: visit");
     List<StorageEntry> l;
     synchronized (this) {
       if (forwardingStorage != null) {
