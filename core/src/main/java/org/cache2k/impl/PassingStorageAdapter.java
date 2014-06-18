@@ -233,15 +233,16 @@ class PassingStorageAdapter extends StorageAdapter {
 
     }
     it.executor = executor;
+    final long now = System.currentTimeMillis();
     it.runnable = new Runnable() {
       @Override
       public void run() {
-        final BlockingQueue<BaseCache.Entry> _queue = it.queue;
+        final BlockingQueue<StorageEntry> _queue = it.queue;
         CacheStorage.EntryVisitor v = new CacheStorage.EntryVisitor() {
           @Override
           public void visit(StorageEntry se) throws InterruptedException {
-            BaseCache.Entry e = cache.insertEntryFromStorage(se, true);
-            _queue.put(e);
+            if (se.getExpiryTime() != 0 && se.getExpiryTime() <= now) { return; }
+            _queue.put(se);
           }
         };
         CacheStorage.EntryFilter f = new CacheStorage.EntryFilter() {
@@ -292,13 +293,13 @@ class PassingStorageAdapter extends StorageAdapter {
 
   static final BaseCache.Entry LAST_ENTRY = new BaseCache.Entry();
 
-  static class CompleteIterator implements Iterator<BaseCache.Entry> {
+  class CompleteIterator implements Iterator<BaseCache.Entry> {
 
     HashSet<Object> keysIterated = new HashSet<>();
     Iterator<BaseCache.Entry> localIteration;
     int maximumEntriesToIterate;
-    BaseCache.Entry entry;
-    BlockingQueue<BaseCache.Entry> queue;
+    StorageEntry entry;
+    BlockingQueue<StorageEntry> queue;
     Runnable runnable;
     ExecutorService executor;
 
@@ -331,9 +332,15 @@ class PassingStorageAdapter extends StorageAdapter {
       return false;
     }
 
+    /**
+     * {@link BaseCache#insertEntryFromStorage(org.cache2k.storage.StorageEntry, boolean)}
+     * could be executed here or within the separate read thread. Since the eviction cannot run
+     * in parallel it is slightly better to do it here. This way the operation takes place on
+     * the same thread and cache trashing on the CPUs will be reduced.
+     */
     @Override
     public BaseCache.Entry next() {
-      return entry;
+      return cache.insertEntryFromStorage(entry, false);
     }
 
     @Override

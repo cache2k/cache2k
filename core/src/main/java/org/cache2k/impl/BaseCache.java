@@ -839,9 +839,12 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
 
   /**
    * Insert the storage entry in the heap cache and return it. Used when storage entries
-   * are queried. We need to whether the entry is present meanwhile, get the entry lock
+   * are queried. We need to check whether the entry is present meanwhile, get the entry lock
    * and maybe fetch it from the source. Doubles with {@link #getEntryInternal(Object)}
    * except we do not need to retrieve the data from the storage again.
+   *
+   * @param _needsFetch if true the entry is fetched from CacheSource when expired.
+   * @return a cache entry is always returned, however, it may be outdated
    */
   protected Entry insertEntryFromStorage(StorageEntry se, boolean _needsFetch) {
     for (;;) {
