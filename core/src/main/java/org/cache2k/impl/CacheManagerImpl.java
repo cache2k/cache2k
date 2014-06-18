@@ -26,6 +26,7 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.cache2k.Cache;
 import org.cache2k.CacheManager;
+import org.cache2k.impl.threading.GlobalPooledExecutor;
 
 import java.lang.reflect.Proxy;
 import java.util.ArrayList;
@@ -56,6 +57,7 @@ public class CacheManagerImpl extends CacheManager {
   private Map<String, BaseCache> cacheNames = new HashMap<>();
   private Set<Cache> caches = new HashSet<>();
   private int disambiguationCounter = 1;
+  private GlobalPooledExecutor threadPool;
 
   public CacheManagerImpl() {
     name = getDefaultName();
@@ -177,7 +179,7 @@ public class CacheManagerImpl extends CacheManager {
           if (c instanceof BaseCache) {
             BaseCache bc = ((BaseCache) c);
             if (bc.destroyRefreshOngoing()) {
-              bc.getLog().info("fetches ongoing, terminating...");
+              bc.getLog().info("fetches ongoing, terminating anyway...");
               bc.getLog().info(bc.toString());
             }
           }
@@ -188,6 +190,9 @@ public class CacheManagerImpl extends CacheManager {
       for (Cache c : _caches) {
         c.destroy();
       }
+      if (threadPool != null) {
+        threadPool.close();
+      }
       jmxSupport.unregisterManager(this);
       CacheManager.getInstance();
       caches = null;
@@ -197,6 +202,24 @@ public class CacheManagerImpl extends CacheManager {
   @Override
   public boolean isDestroyed() {
     return caches == null;
+  }
+
+  /**
+   * Lazy creation of thread pool, usable for all caches managed by the cache
+   * manager.
+   */
+  public synchronized GlobalPooledExecutor getThreadPool() {
+    if (threadPool == null) {
+      threadPool = new GlobalPooledExecutor("cache2k/" + name + "#");
+    }
+    return threadPool;
+  }
+
+  /**
+   * Only return thread pool if created before. For JMX bean access.
+   */
+  public GlobalPooledExecutor getThreadPoolEventually() {
+    return threadPool;
   }
 
   private void checkClosed() {

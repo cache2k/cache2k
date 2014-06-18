@@ -81,15 +81,19 @@ public class CacheBuilderImpl<K, T> extends CacheBuilder<K, T> {
     return null;
   }
 
-  void configureViaSetters(Object o) throws Exception {
-    for (Method m : o.getClass().getMethods()) {
-      Class<?>[] ps = m.getParameterTypes();
-      if (ps != null && ps.length == 1 && m.getName().startsWith(("set"))) {
-        Object p = getConstructorParameter(ps[0]);
-        if (p != null) {
-          m.invoke(o, p);
+  void configureViaSetters(Object o) {
+    try {
+      for (Method m : o.getClass().getMethods()) {
+        Class<?>[] ps = m.getParameterTypes();
+        if (ps != null && ps.length == 1 && m.getName().startsWith(("set"))) {
+          Object p = getConstructorParameter(ps[0]);
+          if (p != null) {
+            m.invoke(o, p);
+          }
         }
       }
+    } catch (Exception ex) {
+      throw new IllegalArgumentException("Unable to configure cache", ex);
     }
   }
 
@@ -110,7 +114,6 @@ public class CacheBuilderImpl<K, T> extends CacheBuilder<K, T> {
       } else {
         _cache = (Cache<K, T>) cls.newInstance();
       }
-      configureViaSetters(_cache);
       return _cache;
     } catch (Exception e) {
       throw new IllegalArgumentException("Not able to instantiate cache implementation", e);
@@ -127,8 +130,13 @@ public class CacheBuilderImpl<K, T> extends CacheBuilder<K, T> {
       _implClass = config.getImplementation();
     }
     Cache<K,T> _cache = constructImplementationAndFillParameters(_implClass);
+    CacheManagerImpl cm = null;
     if (_cache instanceof BaseCache) {
-      CacheManagerImpl cm = (CacheManagerImpl) CacheManager.getInstance();
+      cm = (CacheManagerImpl) CacheManager.getInstance();
+      ((BaseCache) _cache).setCacheManager(cm);
+    }
+    configureViaSetters(_cache);
+    if (cm != null) {
       cm.newCache(_cache);
     }
     if (_cache instanceof BaseCache) {

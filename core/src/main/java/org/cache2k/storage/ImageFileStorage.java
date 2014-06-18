@@ -845,7 +845,6 @@ public class ImageFileStorage implements CacheStorage {
     }
     ExecutorService ex = ctx.getExecutorService();
     final AtomicReference<Exception> _threadException = new AtomicReference<>();
-    List<Future<?>> l = new ArrayList<>();
     for (BufferEntry e : _allEntries) {
       if (ctx.shouldStop()) {
         break;
@@ -864,13 +863,7 @@ public class ImageFileStorage implements CacheStorage {
       };
       ex.submit(r);
     }
-    if (ctx.shouldStop()) {
-      ex.shutdownNow();
-    } else {
-      ex.shutdown();
-    }
-    ex.awaitTermination(Long.MAX_VALUE, TimeUnit.MILLISECONDS);
-
+    ctx.awaitTermination();
     if (_threadException.get() != null) {
       throw new IOException("visit thread exception", _threadException.get());
     }

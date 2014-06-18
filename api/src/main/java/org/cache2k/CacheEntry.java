@@ -27,12 +27,14 @@ package org.cache2k;
  */
 public interface CacheEntry<K, T> {
 
-  public K getKey();
+  K getKey();
 
-  public T getValue();
+  T getValue();
 
-  public Throwable getException();
+  Throwable getException();
 
-  public long getLastModification();
+  long getLastModification();
+
+  String toString();
 
 }

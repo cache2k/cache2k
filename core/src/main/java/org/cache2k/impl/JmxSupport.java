@@ -24,6 +24,7 @@ package org.cache2k.impl;
 
 import org.cache2k.Cache;
 import org.cache2k.CacheManager;
+import org.cache2k.impl.threading.GlobalPooledExecutor;
 import org.cache2k.jmx.CacheManagerMXBean;
 
 import javax.management.InstanceNotFoundException;
@@ -101,7 +102,29 @@ public class JmxSupport implements CacheLifeCycleListener {
           v = Math.max(v, ((BaseCache) c).getInfo().getHealth());
         }
       }
+      GlobalPooledExecutor ex = manager.getThreadPoolEventually();
+      if (ex != null && ex.wasHardLimitReached()) {
+        v = Math.max(v, 1);
+      }
       return v;
+    }
+
+    @Override
+    public int getThreadsInPool() {
+      GlobalPooledExecutor ex = manager.getThreadPoolEventually();
+      if (ex != null) {
+        return ex.getThreadInUseCount();
+      }
+      return 0;
+    }
+
+    @Override
+    public int getPeakThreadsInPool() {
+      GlobalPooledExecutor ex = manager.getThreadPoolEventually();
+      if (ex != null) {
+        return ex.getPeakThreadCount();
+      }
+      return 0;
     }
 
     @Override

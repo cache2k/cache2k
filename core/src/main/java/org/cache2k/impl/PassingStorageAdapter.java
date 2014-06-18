@@ -25,6 +25,7 @@ package org.cache2k.impl;
 import org.apache.commons.logging.Log;
 import org.cache2k.CacheConfig;
 import org.cache2k.StorageConfiguration;
+import org.cache2k.impl.threading.LimitedPooledExecutor;
 import org.cache2k.impl.timer.TimerPayloadListener;
 import org.cache2k.impl.timer.TimerService;
 import org.cache2k.storage.CacheStorage;
@@ -70,7 +71,7 @@ class PassingStorageAdapter extends StorageAdapter {
   Set<Object> deletedKeys = null;
   StorageContext context;
   StorageConfiguration config;
-  ExecutorService executor = Executors.newCachedThreadPool();
+  ExecutorService executor;
   TimerService.CancelHandle flushTimerHandle;
   boolean needsFlush;
   Future<Void> executingFlush;
@@ -82,6 +83,11 @@ class PassingStorageAdapter extends StorageAdapter {
     context.keyType = _cacheConfig.getKeyType();
     context.valueType = _cacheConfig.getValueType();
     config = _storageConfig;
+    if (tunables.useManagerThreadPool) {
+      executor = new LimitedPooledExecutor(cache.manager.getThreadPool());
+    } else {
+      executor = Executors.newCachedThreadPool();
+    }
   }
 
   public void open() {
@@ -232,76 +238,114 @@ class PassingStorageAdapter extends StorageAdapter {
       }
 
     }
-    it.executor = executor;
-    final long now = System.currentTimeMillis();
-    it.runnable = new Runnable() {
-      @Override
-      public void run() {
-        final BlockingQueue<StorageEntry> _queue = it.queue;
-        CacheStorage.EntryVisitor v = new CacheStorage.EntryVisitor() {
-          @Override
-          public void visit(StorageEntry se) throws InterruptedException {
-            if (se.getExpiryTime() != 0 && se.getExpiryTime() <= now) { return; }
-            _queue.put(se);
-          }
-        };
-        CacheStorage.EntryFilter f = new CacheStorage.EntryFilter() {
-          @Override
-          public boolean shouldInclude(Object _key) {
-            boolean b = !it.keysIterated.contains(_key);
-            return b;
-          }
-        };
-        final CacheStorage.VisitContext ctx = new CacheStorage.VisitContext() {
-          @Override
-          public boolean needMetaData() {
-            return true;
-          }
+    it.executorForStorageCall = executor;
+    long now = System.currentTimeMillis();
+    it.runnable = new StorageVisitCallable(now, it);
+    return it;
+  }
 
-          @Override
-          public boolean needValue() {
-            return true;
-          }
+  class StorageVisitCallable implements Callable<Void>, LimitedPooledExecutor.NeverRunInCallingTask {
 
-          @Override
-          public ExecutorService getExecutorService() {
-            return createOperationExecutor();
-          }
+    long now;
+    CompleteIterator it;
 
-          @Override
-          public boolean shouldStop() {
-            return false;
-          }
-        };
-        try {
-          storage.visit(v, f, ctx);
-        } catch (Exception ex) {
-          ex.printStackTrace();
-          _queue.clear();
+    StorageVisitCallable(long now, CompleteIterator it) {
+      this.now = now;
+      this.it = it;
+    }
+
+    @Override
+    public Void call() {
+      final BlockingQueue<StorageEntry> _queue = it.queue;
+      CacheStorage.EntryVisitor v = new CacheStorage.EntryVisitor() {
+        @Override
+        public void visit(StorageEntry se) throws InterruptedException {
+          if (se.getExpiryTime() != 0 && se.getExpiryTime() <= now) { return; }
+          _queue.put(se);
         }
-        for (;;) {
-          try {
-            _queue.put(LAST_ENTRY);
-             break;
-          } catch (InterruptedException ex) {
-          }
+      };
+      CacheStorage.EntryFilter f = new CacheStorage.EntryFilter() {
+        @Override
+        public boolean shouldInclude(Object _key) {
+          boolean b = !it.keysIterated.contains(_key);
+          return b;
+        }
+      };
+      try {
+        storage.visit(v, f, it);
+      } catch (Exception ex) {
+        ex.printStackTrace();
+        _queue.clear();
+      }
+      try {
+        it.awaitTermination();
+      } catch (InterruptedException ex) {
+      }
+      for (;;) {
+        try {
+          _queue.put(LAST_ENTRY);
+           break;
+        } catch (InterruptedException ex) {
         }
       }
-    };
-    return it;
+      return null;
+    }
+
   }
 
   static final BaseCache.Entry LAST_ENTRY = new BaseCache.Entry();
 
-  class CompleteIterator implements Iterator<BaseCache.Entry> {
+  class CompleteIterator implements Iterator<BaseCache.Entry>, CacheStorage.VisitContext {
 
     HashSet<Object> keysIterated = new HashSet<>();
     Iterator<BaseCache.Entry> localIteration;
     int maximumEntriesToIterate;
     StorageEntry entry;
     BlockingQueue<StorageEntry> queue;
-    Runnable runnable;
-    ExecutorService executor;
+    Callable<Void> runnable;
+    ExecutorService executorForStorageCall;
+    ExecutorService executorForVisitThread;
+
+    @Override
+    public boolean needMetaData() {
+      return true;
+    }
+
+    @Override
+    public boolean needValue() {
+      return true;
+    }
+
+    @Override
+    public boolean shouldStop() {
+      return false;
+    }
+
+    @Override
+    public ExecutorService getExecutorService() {
+      if (executorForVisitThread == null) {
+        if (tunables.useManagerThreadPool) {
+          executorForVisitThread = new LimitedPooledExecutor(cache.manager.getThreadPool());
+        } else {
+          executorForVisitThread = createOperationExecutor();
+        }
+      }
+      return executorForVisitThread;
+    }
+
+    @Override
+    public void awaitTermination() throws InterruptedException {
+      if (executorForVisitThread != null) {
+        if (!executorForVisitThread.isTerminated()) {
+          if (shouldStop()) {
+            executorForVisitThread.shutdownNow();
+          } else {
+            executorForVisitThread.shutdown();
+          }
+          executorForVisitThread.awaitTermination(Long.MAX_VALUE, TimeUnit.MILLISECONDS);
+        }
+      }
+    }
 
     @Override
     public boolean hasNext() {
@@ -316,7 +360,7 @@ class PassingStorageAdapter extends StorageAdapter {
         if (keysIterated.size() >= maximumEntriesToIterate) {
           queue = null;
         } else {
-          executor.submit(runnable);
+          executorForStorageCall.submit(runnable);
         }
       }
       if (queue != null) {
@@ -562,6 +606,8 @@ class PassingStorageAdapter extends StorageAdapter {
      * is used.
      */
     public int iterationQueueCapacity = 3;
+
+    public boolean useManagerThreadPool = true;
 
   }
 

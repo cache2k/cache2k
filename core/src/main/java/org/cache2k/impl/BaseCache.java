@@ -812,6 +812,16 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
 
       @Override
       public long getLastModification() { return e.getLastModification(); }
+
+      @Override
+      public String toString() {
+        return "CacheEntry(" +
+          "key=" + getKey() + ", " +
+          "value=" + getValue() + ", " +
+          ((getException() != null) ? "exception=" + e.getException() + ", " : "") +
+          "lastModification='" + (new java.sql.Timestamp(getLastModification())) + "')";
+      }
+
     };
     return ce;
   }

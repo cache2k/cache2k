@@ -154,8 +154,24 @@ public interface CacheStorage extends Closeable {
 
     /**
      * A private executor service for this operation to run in multiple threads.
+     * The use of {@link ExecutorService#awaitTermination(long, java.util.concurrent.TimeUnit)} ()}
+     * waits only for threads started within the visit operation. Multiple calls to
+     * this method return the identical instance.
+     *
+     * <p>Remark: The methods
+     * {@link java.util.concurrent.ExecutorService#invokeAll(java.util.Collection, long, java.util.concurrent.TimeUnit)},
+     * {@link java.util.concurrent.ExecutorService#invokeAny(java.util.Collection)},
+     * {@link java.util.concurrent.ExecutorService#invokeAny(java.util.Collection, long, java.util.concurrent.TimeUnit)}
+     * are or may not be supported by the provided implementation.
      */
     ExecutorService getExecutorService();
+
+    /**
+     * If threads are started by using {@link #getExecutorService()} waits for termination
+     * or tries to stop threads immediately if {@link #shouldStop()} is true. This is also done
+     * automatically when the visit method exists.
+     */
+    void awaitTermination() throws InterruptedException;
 
     /**
      * True if the operation should stop immediately. Used e.g. during
