@@ -21,9 +21,9 @@
   -->
 <project>
   <skin>
-    <groupId>com.headissue.maven</groupId>
+    <groupId>lt.velykis.maven.skins</groupId>
     <artifactId>reflow-maven-skin</artifactId>
-    <version>1.0.0.1</version>
+    <version>1.1.1</version>
   </skin>
 
   <publishDate position="bottom" format="yyyy-MM-dd" />
@@ -33,11 +33,10 @@
     <reflowSkin>
       <theme>site</theme> <!-- = bootswatch-readable, downloaded -->
 
-      <localjQuery>true</localjQuery>
       <smoothScroll>true</smoothScroll>
       <highlightJs>true</highlightJs>
-      <highlightJsLocal>true</highlightJsLocal>
       <highlightJsTheme>github</highlightJsTheme>
+      <localResources>true</localResources>
 
       <!-- head/title is something like "Benchmarks - cache2k Java caching" -->
       <titleTemplate>%2$s - cache2k Java caching</titleTemplate>
@@ -77,30 +76,34 @@
         <column>Documentation</column>
         <!--<column>reports</column>-->
       </bottomNav>
+
+      <endContent>
+        <!-- Piwik -->
+        <script type="text/javascript">
+          var _paq = _paq || [];
+          _paq.push(["trackPageView"]);
+          _paq.push(["enableLinkTracking"]);
+
+          (function() {
+            var u=(("https:" == document.location.protocol) ? "https" : "http") + "://z.h7e.eu/";
+            _paq.push(["setTrackerUrl", u+"piwik.php"]);
+            _paq.push(["setSiteId", "4"]);
+            var d=document, g=d.createElement("script"), s=d.getElementsByTagName("script")[0]; g.type="text/javascript";
+            g.defer=true; g.async=true; g.src=u+"piwik.js"; s.parentNode.insertBefore(g,s);
+          })();
+        </script>
+        <!-- End Piwik Code -->
+      </endContent>
     </reflowSkin>
   </custom>
 
   <body>
     <head>
-      <link href="/css/bootswatch.css" rel="stylesheet" />
+      <link href="$resourcePath/css/bootswatch.css" rel="stylesheet" />
       <link rel="author" href="http://www.headissue.com"/>
       <link rel="icon" type="image/png" href="/favicon.png" />
-
-      <!-- Piwik -->
-      <script type="text/javascript">
-        var _paq = _paq || [];
-        _paq.push(["trackPageView"]);
-        _paq.push(["enableLinkTracking"]);
-
-        (function() {
-          var u=(("https:" == document.location.protocol) ? "https" : "http") + "://z.h7e.eu/";
-          _paq.push(["setTrackerUrl", u+"piwik.php"]);
-          _paq.push(["setSiteId", "4"]);
-          var d=document, g=d.createElement("script"), s=d.getElementsByTagName("script")[0]; g.type="text/javascript";
-          g.defer=true; g.async=true; g.src=u+"piwik.js"; s.parentNode.insertBefore(g,s);
-        })();
-      </script>
-      <!-- End Piwik Code -->
+      <link rel="stylesheet" href="$resourcePath/css/github.min.css" />
+      <script src="$resourcePath/js/highlight.min.js"></script>
     </head>
     <links>
       <item name="GitHub project" href="https://github.com/headissue/cache2k" />
