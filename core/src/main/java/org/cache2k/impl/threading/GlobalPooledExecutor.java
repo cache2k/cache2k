@@ -221,9 +221,10 @@ public class GlobalPooledExecutor {
   private static class Task<V> implements Future<V> {
 
     ProgressNotifier progressNotifier;
-    boolean done = false;
+    int state = 0;
     V result;
     Exception exception;
+
     Callable<V> callable;
 
     Task() { }
@@ -233,17 +234,29 @@ public class GlobalPooledExecutor {
       progressNotifier = _progressNotifier;
     }
 
+    synchronized Callable<V> start() {
+      if (state == 0) {
+        state = 1;
+        return callable;
+      }
+      return null;
+    }
+
     synchronized void done(V _result, Exception ex) {
       result = _result;
       exception = ex;
-      done = true;
-      notify();
+      state = 2;
+      notifyAll();
     }
 
     @Override
     public synchronized boolean cancel(boolean mayInterruptIfRunning) {
-      boolean f = callable != null;
-      callable = null;
+      boolean f = callable != null && state == 0;
+      if (f) {
+        callable = null;
+        state = 2;
+        notifyAll();
+      }
       return f;
     }
 
@@ -254,12 +267,12 @@ public class GlobalPooledExecutor {
 
     @Override
     public boolean isDone() {
-      return done;
+      return state == 2;
     }
 
     @Override
     public synchronized V get() throws InterruptedException, ExecutionException {
-      while (!done) {
+      while (!isDone()) {
         wait();
       }
       return result;
@@ -267,9 +280,9 @@ public class GlobalPooledExecutor {
 
     @Override
     public synchronized V get(long timeout, TimeUnit unit) throws InterruptedException, ExecutionException, TimeoutException {
-      if (!done) {
+      if (!isDone()) {
         wait(unit.toMillis(timeout));
-        if (!done) {
+        if (!isDone()) {
           throw new TimeoutException();
         }
       }
@@ -336,7 +349,8 @@ public class GlobalPooledExecutor {
           if (t != null) {
             t.progressNotifier.taskStarted();
             try {
-              Object _result = t.callable.call();
+              Callable c = t.start();
+              Object _result = c.call();
               t.done(_result, null);
               t.progressNotifier.taskFinished();
             } catch (Exception ex) {
