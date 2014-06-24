@@ -57,6 +57,7 @@ public class LimitedPooledExecutor implements ExecutorService {
   private MyNotifier notifier;
   private boolean shutdown = false;
   private Tunables tunables;
+  private ExceptionListener exceptionListener;
 
   public LimitedPooledExecutor(GlobalPooledExecutor gpe) {
     this(gpe, TUNABLES);
@@ -68,6 +69,10 @@ public class LimitedPooledExecutor implements ExecutorService {
     tunables = t;
   }
 
+  public void setExceptionListener(ExceptionListener exceptionListener) {
+    this.exceptionListener = exceptionListener;
+  }
+
   @Override
   public void shutdown() {
     shutdown = true;
@@ -75,7 +80,7 @@ public class LimitedPooledExecutor implements ExecutorService {
 
   /**
    * Identical to {@link #shutdown}. Since we hand over everything to the
-   * gobal executor, implementing this would mean we need to keep track of
+   * global executor, implementing this would mean we need to keep track of
    * out submitted task and finished tasks. Since we have no long running tasks
    * there is no real benefit to implement this.
    */
@@ -235,7 +240,7 @@ public class LimitedPooledExecutor implements ExecutorService {
     throw new UnsupportedOperationException();
   }
 
-  static class MyNotifier implements GlobalPooledExecutor.ProgressNotifier {
+  class MyNotifier implements GlobalPooledExecutor.ProgressNotifier {
 
     int counter;
     int threadLimit;
@@ -255,6 +260,14 @@ public class LimitedPooledExecutor implements ExecutorService {
 
     @Override
     public synchronized void taskFinished() { counter--; notify(); }
+
+    @Override
+    public synchronized void taskFinishedWithException(Exception ex) {
+      counter--; notify();
+      if (exceptionListener != null) {
+        exceptionListener.exceptionWasThrown(ex);
+      }
+    }
 
     public synchronized void waitUntilNextFinished() throws InterruptedException {
       wait();
@@ -396,6 +409,12 @@ public class LimitedPooledExecutor implements ExecutorService {
    * the Callable.
    */
   public static interface NeverRunInCallingTask {
+
+  }
+
+  public static interface ExceptionListener {
+
+    void exceptionWasThrown(Exception ex);
 
   }
 

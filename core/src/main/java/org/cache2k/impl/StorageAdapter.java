@@ -29,7 +29,7 @@ import java.util.Iterator;
 /**
 * @author Jens Wilke; created: 2014-05-08
 */
-abstract class StorageAdapter {
+public abstract class StorageAdapter {
 
   public abstract void open();
   public abstract void shutdown();
@@ -42,5 +42,7 @@ abstract class StorageAdapter {
   public abstract void expire(BaseCache.Entry e);
   public abstract Iterator<BaseCache.Entry> iterateAll();
   public abstract int getTotalEntryCount();
+  /** 0 means no alert, 1 orange, 2, red alert */
+  public abstract int getAlert();
 
 }

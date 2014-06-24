@@ -49,6 +49,7 @@ import java.util.concurrent.SynchronousQueue;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
@@ -186,8 +187,7 @@ class PassingStorageAdapter extends StorageAdapter {
   }
 
   /**
-   * Entry is evicted from memory cache either because of an expiry or an
-   * eviction.
+   * Entry is evicted from memory cache either because of an expiry.
    */
   public void expire(BaseCache.Entry e) {
     remove(e.getKey());
@@ -244,6 +244,69 @@ class PassingStorageAdapter extends StorageAdapter {
     return it;
   }
 
+  public void expire() {
+    long now = System.currentTimeMillis();
+    boolean _unsupported = false;
+    try {
+      CacheStorage.ExpireContext ctx = new MyExpireContext();
+      storage.expire(ctx, now);
+    } catch (UnsupportedOperationException ex) {
+      _unsupported = true;
+    } catch (Exception ex) {
+      ex.printStackTrace();
+    }
+    if (_unsupported) {
+      expireByVisit(now);
+    }
+  }
+
+  void expireByVisit(final long now) {
+    CacheStorage.EntryFilter f = new CacheStorage.EntryFilter() {
+      @Override
+      public boolean shouldInclude(Object _key) {
+        return true;
+      }
+    };
+    CacheStorage.VisitContext ctx = new BaseVisitContext() {
+      @Override
+      public boolean needMetaData() {
+        return true;
+      }
+
+      @Override
+      public boolean needValue() {
+        return false;
+      }
+    };
+    final AtomicBoolean _modified = new AtomicBoolean();
+    CacheStorage.EntryVisitor v = new CacheStorage.EntryVisitor() {
+      @Override
+      public void visit(StorageEntry e) throws Exception {
+        if (e.getExpiryTime() < now) {
+          storage.remove(e.getKey());
+          remove(e.getKey());
+          _modified.set(true);
+        }
+      }
+    };
+    try {
+      storage.visit(ctx, f, v);
+    } catch (Exception ex) {
+      ex.printStackTrace();
+    }
+    if (_modified.get()) {
+      checkStartFlushTimer();
+    }
+  }
+
+  abstract class BaseVisitContext extends MyMultiThreadContext implements CacheStorage.VisitContext {
+
+  }
+
+  class MyExpireContext extends MyMultiThreadContext implements CacheStorage.ExpireContext  {
+
+  }
+
   class StorageVisitCallable implements Callable<Void>, LimitedPooledExecutor.NeverRunInCallingTask {
 
     long now;
@@ -272,20 +335,21 @@ class PassingStorageAdapter extends StorageAdapter {
         }
       };
       try {
-        storage.visit(v, f, it);
+        storage.visit(it, f, v);
       } catch (Exception ex) {
-        ex.printStackTrace();
+        it.abortOnException(ex);
         _queue.clear();
-      }
-      try {
-        it.awaitTermination();
-      } catch (InterruptedException ex) {
-      }
-      for (;;) {
+      } finally {
         try {
-          _queue.put(LAST_ENTRY);
-           break;
+          it.awaitTermination();
         } catch (InterruptedException ex) {
+        }
+        for (; ; ) {
+          try {
+            _queue.put(LAST_ENTRY);
+            break;
+          } catch (InterruptedException ex) {
+          }
         }
       }
       return null;
@@ -295,37 +359,24 @@ class PassingStorageAdapter extends StorageAdapter {
 
   static final BaseCache.Entry LAST_ENTRY = new BaseCache.Entry();
 
-  class CompleteIterator implements Iterator<BaseCache.Entry>, CacheStorage.VisitContext {
+  class MyMultiThreadContext implements CacheStorage.MultiThreadedContext {
 
-    HashSet<Object> keysIterated = new HashSet<>();
-    Iterator<BaseCache.Entry> localIteration;
-    int maximumEntriesToIterate;
-    StorageEntry entry;
-    BlockingQueue<StorageEntry> queue;
-    Callable<Void> runnable;
-    ExecutorService executorForStorageCall;
     ExecutorService executorForVisitThread;
-
-    @Override
-    public boolean needMetaData() {
-      return true;
-    }
-
-    @Override
-    public boolean needValue() {
-      return true;
-    }
-
-    @Override
-    public boolean shouldStop() {
-      return false;
-    }
+    boolean abortFlag;
+    Exception abortException;
 
     @Override
     public ExecutorService getExecutorService() {
       if (executorForVisitThread == null) {
         if (tunables.useManagerThreadPool) {
-          executorForVisitThread = new LimitedPooledExecutor(cache.manager.getThreadPool());
+          LimitedPooledExecutor ex = new LimitedPooledExecutor(cache.manager.getThreadPool());
+          ex.setExceptionListener(new LimitedPooledExecutor.ExceptionListener() {
+            @Override
+            public void exceptionWasThrown(Exception ex) {
+              abortOnException(ex);
+            }
+          });
+          executorForVisitThread = ex;
         } else {
           executorForVisitThread = createOperationExecutor();
         }
@@ -348,6 +399,43 @@ class PassingStorageAdapter extends StorageAdapter {
     }
 
     @Override
+    public void abortOnException(Exception ex) {
+      if (abortException == null) {
+        abortException = ex;
+      }
+      abortFlag = true;
+    }
+
+    @Override
+    public boolean shouldStop() {
+      return abortFlag;
+    }
+
+  }
+
+  class CompleteIterator
+    extends MyMultiThreadContext
+    implements Iterator<BaseCache.Entry>, CacheStorage.VisitContext {
+
+    HashSet<Object> keysIterated = new HashSet<>();
+    Iterator<BaseCache.Entry> localIteration;
+    int maximumEntriesToIterate;
+    StorageEntry entry;
+    BlockingQueue<StorageEntry> queue;
+    Callable<Void> runnable;
+    ExecutorService executorForStorageCall;
+
+    @Override
+    public boolean needMetaData() {
+      return true;
+    }
+
+    @Override
+    public boolean needValue() {
+      return true;
+    }
+
+    @Override
     public boolean hasNext() {
       if (localIteration != null) {
         boolean b = localIteration.hasNext();
@@ -364,6 +452,9 @@ class PassingStorageAdapter extends StorageAdapter {
         }
       }
       if (queue != null) {
+        if (abortException != null) {
+          throw new StorageIterationException(abortException);
+        }
         try {
           entry = queue.take();
           if (entry != LAST_ENTRY) {
@@ -393,16 +484,31 @@ class PassingStorageAdapter extends StorageAdapter {
     }
   }
 
+  static class StorageIterationException extends CacheStorageException {
+
+    StorageIterationException(Throwable cause) {
+      super(cause);
+    }
+
+  }
+
+  class MyFlushContext
+    extends MyMultiThreadContext
+    implements CacheStorage.FlushContext {
+
+  }
+
   public Future<Void> flush() {
     synchronized (this) {
       final Future<Void> _previousFlush = executingFlush;
-        Callable<Void> c=  new Callable<Void>() {
+        Callable<Void> c = new Callable<Void>() {
           @Override
           public Void call() throws Exception {
             if (_previousFlush != null) {
               _previousFlush.get();
             }
-            storage.flush(System.currentTimeMillis(), CacheStorage.DEFAULT_FLUSH_CONTEXT);
+            CacheStorage.FlushContext ctx = new MyFlushContext();
+            storage.flush(ctx, System.currentTimeMillis());
             getLog().info("flush " + storage);
             executingFlush = null;
             synchronized (this) {
@@ -415,6 +521,7 @@ class PassingStorageAdapter extends StorageAdapter {
                 }
               }
             }
+            ctx.awaitTermination();
             return null;
           }
         };
@@ -461,8 +568,10 @@ class PassingStorageAdapter extends StorageAdapter {
               } catch (Exception ex) {
               }
             }
-            _storage.flush(System.currentTimeMillis(), CacheStorage.DEFAULT_FLUSH_CONTEXT);
-            getLog().info("close " + storage);
+            CacheStorage.FlushContext ctx = new MyFlushContext();
+            _storage.flush(ctx, System.currentTimeMillis());
+            ctx.awaitTermination();
+            getLog().info("storage close, state: " + storage);
             _storage.close();
             return null;
           }
@@ -497,6 +606,18 @@ class PassingStorageAdapter extends StorageAdapter {
         copyForClearing = null;
       }
     }
+  }
+
+  /**
+   * orange alert level if buffer is active, so we get alerted if storage
+   * clear isn't finished.
+   */
+  @Override
+  public int getAlert() {
+    if (copyForClearing != null) {
+      return 1;
+    }
+    return 0;
   }
 
   /**

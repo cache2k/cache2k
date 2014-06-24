@@ -2096,9 +2096,15 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
     public long getInfoCreated() { return creationTime; }
     public int getInfoCreationDeltaMs() { return creationDeltaMs; }
     public int getHealth() {
+      if (storage != null && storage.getAlert() == 2) {
+        return 2;
+      }
       if (integrityState.getStateFlags() > 0 ||
           getHashQualityInteger() < 5) {
         return 2;
+      }
+      if (storage != null && storage.getAlert() == 1) {
+        return 1;
       }
       if (getHashQualityInteger() < 30 ||
         getKeyMutationCnt() > 0) {

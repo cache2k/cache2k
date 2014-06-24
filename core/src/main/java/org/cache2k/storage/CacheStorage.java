@@ -35,16 +35,16 @@ import java.util.concurrent.ExecutorService;
  */
 public interface CacheStorage extends Closeable {
 
-  public void open(CacheStorageContext ctx, StorageConfiguration cfg) throws IOException;
+  public void open(CacheStorageContext ctx, StorageConfiguration cfg) throws Exception;
 
   /**
    * Retrieve the entry from the storage. If there is no mapping for the
    * key, null is returned.
    *
-   * <p>An exception on get is not severe. The cache will try other sources or
-   * return null.
+   * <p>Depending on the cache configuration,  an exception on get is not severe.
+   * The cache will try other sources or return null.
    */
-  public StorageEntry get(Object key) throws IOException, ClassNotFoundException;
+  public StorageEntry get(Object key) throws Exception;
 
   /**
    * Stores the entry in the storage. The entry instance is solely for transferring
@@ -56,9 +56,9 @@ public interface CacheStorage extends Closeable {
    * @return true, if this entry was present in the storage before and got overwritten
    * @throws IOException may be thrown if hope is lost
    */
-  public void put(StorageEntry e) throws IOException, ClassNotFoundException;
+  public void put(StorageEntry e) throws Exception;
 
-  public StorageEntry remove(Object key) throws IOException, ClassNotFoundException;
+  public StorageEntry remove(Object key) throws Exception;
 
   /**
    * Returns true if there is a mapping for the key.
@@ -66,7 +66,7 @@ public interface CacheStorage extends Closeable {
    * <p>An exception on contains is not severe. The cache will try other sources or
    * return null.
    */
-  public boolean contains(Object key) throws IOException;
+  public boolean contains(Object key) throws Exception;
 
   /**
    * Remove all entries from the cache and free resources. This operation is called
@@ -76,24 +76,44 @@ public interface CacheStorage extends Closeable {
    * CacheStorage.clear() to the persisted storage. Alternatively, all objects can
    * be removed via remove().
    */
-  public void clear() throws IOException;
+  public void clear() throws Exception;
 
   /**
-   * Flush any unwritten information to disk. The method to returns when the flush
-   * is finished and everything is written. Concurrent read/write operations
-   * may go on during the flush.
+   * Flush any unwritten information to disk. The method returns when the flush
+   * is finished and everything is written. The cache is not protecting the
+   * storage from concurrent read/write operation.
+   *
+   * <p/>A flush is initiated by client request or on regular intervals.
    */
-  public void flush(long now, FlushContext ctx) throws Exception;
+  public void flush(FlushContext ctx, long now) throws Exception;
 
   /**
    * Free all resources and stop operations immediately.
+   *
+   * <p>Rationale: We need to declare an IOException here to be compatible with the
+   * closable interface. This means that other exceptions need to be rethrown, if
+   * needed. It would be more consistent to declare IOException instead of Exception
+   * throughout. However, needing to rethrow exceptions in the get/put operations
+   * is more expansive and leads to boilerplate code.
    */
   public void close() throws IOException;
 
   /**
    * Visit all stored entries.
    */
-  public void visit(EntryVisitor v, EntryFilter f, VisitContext ctx) throws Exception;
+  public void visit(VisitContext ctx, EntryFilter f, EntryVisitor v) throws Exception;
+
+  /**
+   * Expire all entries which have an expiry time before or equal to the
+   * given time. The time may be not identical to the current time, if the
+   * cache wants to keep some entries that are yet expired, e.g. if a cachesource
+   * is present and a scheme like if-modified-since is supported by it.
+   *
+   * @throws java.lang.UnsupportedOperationException thrown by the storage if this
+   *   operation is not supported. The cache will fall back to a generic approach
+   *   via {@link #visit}
+   */
+  public void expire(ExpireContext ctx, long _expireTime) throws Exception;
 
   /**
    * Called by the cache at regular intervals, but only if data was
@@ -122,35 +142,7 @@ public interface CacheStorage extends Closeable {
 
   public int getEntryCount();
 
-  public static interface FlushContext {
-
-  }
-
-  public static interface PurgeContext {
-
-  }
-
-  public static final FlushContext DEFAULT_FLUSH_CONTEXT = new FlushContext() { };
-
-  interface EntryFilter {
-
-     boolean shouldInclude(Object _key);
-
-  }
-
-  interface VisitContext {
-
-    /**
-     * True if entries should have metadata. If false, only the key will be set.
-     * Storage implementations may ignore this and always send the metadata.
-     */
-    boolean needMetaData();
-
-    /**
-     * True if entries should have the value field set with the storage contents.
-     * Storage implementations may ignore this and always send the metadata.
-     */
-    boolean needValue();
+  public static interface MultiThreadedContext {
 
     /**
      * A private executor service for this operation to run in multiple threads.
@@ -158,7 +150,10 @@ public interface CacheStorage extends Closeable {
      * waits only for threads started within the visit operation. Multiple calls to
      * this method return the identical instance.
      *
-     * <p>Remark: The methods
+     * <p>When using {@link java.util.concurrent.Callable} a thrown exception in within the
+     * task leads to an abort of the operation, see {@link #abortOnException(Exception)}.
+     *
+     * <p>The methods
      * {@link java.util.concurrent.ExecutorService#invokeAll(java.util.Collection, long, java.util.concurrent.TimeUnit)},
      * {@link java.util.concurrent.ExecutorService#invokeAny(java.util.Collection)},
      * {@link java.util.concurrent.ExecutorService#invokeAny(java.util.Collection, long, java.util.concurrent.TimeUnit)}
@@ -179,11 +174,53 @@ public interface CacheStorage extends Closeable {
      */
     boolean shouldStop();
 
+    /**
+     * If an exception cannot be handled, this method aborts the operation and
+     * propagates the exception to the operation client. Multiple exceptions can
+     * occur, since the operation is multi thread. Only the first is propagated.
+     * After this method is called {@link #shouldStop()} is true.
+     */
+    void abortOnException(Exception ex);
+
+  }
+
+  public static interface FlushContext extends MultiThreadedContext {
+
+  }
+
+  public static interface ExpireContext extends MultiThreadedContext {
+
+  }
+
+  public static interface PurgeContext extends MultiThreadedContext {
+
+  }
+
+  interface EntryFilter {
+
+     boolean shouldInclude(Object _key);
+
+  }
+
+  interface VisitContext extends MultiThreadedContext {
+
+    /**
+     * True if entries should have metadata. If false, only the key will be set.
+     * Storage implementations may ignore this and always send the metadata.
+     */
+    boolean needMetaData();
+
+    /**
+     * True if entries should have the value field set with the storage contents.
+     * Storage implementations may ignore this and always send the metadata.
+     */
+    boolean needValue();
+
   }
 
   interface EntryVisitor {
 
-    void visit(StorageEntry e) throws InterruptedException;
+    void visit(StorageEntry e) throws Exception;
 
   }
 

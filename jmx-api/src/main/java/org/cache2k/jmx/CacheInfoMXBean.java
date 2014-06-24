@@ -196,7 +196,10 @@ public interface CacheInfoMXBean {
   int getInfoCreatedDetlaMillis();
 
   /**
-   * Single health value from 0 meaning good, 1 meaning warning, and 2 meaning red alert.
+   * Single health value from 0 meaning good, 1 meaning warning, and 2 meaning failure.
+   * Some operations may cause a warning alert level and then, after a few seconds,
+   * when everything is back to normal, reset it. A monitoring trigger, should
+   * have a delay (e.g. 30 seconds) before escalating to the operations team.
    */
   int getAlert();
 

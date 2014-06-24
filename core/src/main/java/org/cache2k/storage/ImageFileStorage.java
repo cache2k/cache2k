@@ -45,15 +45,11 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.Queue;
 import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Future;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicReference;
 
 import org.cache2k.storage.FreeSpaceMap.Slot;
 import org.cache2k.util.TunableConstants;
@@ -618,7 +614,7 @@ public class ImageFileStorage implements CacheStorage {
     }
   }
 
-  public void flush(long now, FlushContext ctx) throws IOException {
+  public void flush(FlushContext ctx, long now) throws IOException {
     commit(now);
   }
 
@@ -833,7 +829,7 @@ public class ImageFileStorage implements CacheStorage {
   }
 
   @Override
-  public void visit(final EntryVisitor v, final EntryFilter f, final VisitContext ctx) throws Exception {
+  public void visit(final VisitContext ctx, final EntryFilter f, final EntryVisitor v) throws Exception {
     ArrayList<BufferEntry> _allEntries;
     synchronized (valuesLock) {
       _allEntries = new ArrayList<>(values.size());
@@ -844,7 +840,6 @@ public class ImageFileStorage implements CacheStorage {
       }
     }
     ExecutorService ex = ctx.getExecutorService();
-    final AtomicReference<Exception> _threadException = new AtomicReference<>();
     for (BufferEntry e : _allEntries) {
       if (ctx.shouldStop()) {
         break;
@@ -852,21 +847,18 @@ public class ImageFileStorage implements CacheStorage {
       final BufferEntry be = e;
       Callable<Object> r = new Callable<Object>() {
         @Override
-        public Object call() {
-          try {
-            v.visit(returnEntry(be));
-          } catch (Exception ex) {
-            _threadException.set(ex);
-          }
+        public Object call() throws Exception {
+          v.visit(returnEntry(be));
           return be.key;
         }
       };
       ex.submit(r);
     }
-    ctx.awaitTermination();
-    if (_threadException.get() != null) {
-      throw new IOException("visit thread exception", _threadException.get());
-    }
+  }
+
+  @Override
+  public void expire(ExpireContext ctx, long _expireTime) throws Exception {
+    throw new UnsupportedOperationException();
   }
 
   @Override

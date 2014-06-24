@@ -23,7 +23,6 @@ package org.cache2k.impl;
  */
 
 import org.cache2k.StorageConfiguration;
-import org.cache2k.impl.timer.TimerService;
 import org.cache2k.storage.CacheStorage;
 import org.cache2k.storage.CacheStorageContext;
 import org.cache2k.storage.StorageEntry;
@@ -78,19 +77,22 @@ public class CacheStorageBuffer implements CacheStorage {
    * op is doing nothing and just notifies us. The flush
    * on the storage can run in parallel with other tasks.
    * This method is only allowed to finish when the flush is done.
+   *
+   * <p/>TODO-C: avoid timer flushes after clear buffering is still active?
    */
   @Override
-  public void flush(long now, final FlushContext ctx) throws Exception {
+  public void flush(final FlushContext ctx, long now) throws Exception {
     synchronized (this) {
       if (forwardingStorage != null) {
-        forwardingStorage.flush(now, ctx);
+        forwardingStorage.flush(ctx, now);
+        return;
       }
       Op op = new OpFlush();
       addOp(op);
       synchronized (op) {
         op.wait();
       }
-      forwardingStorage.flush(System.currentTimeMillis(), ctx);
+      forwardingStorage.flush(ctx, System.currentTimeMillis());
     }
   }
 
@@ -99,9 +101,15 @@ public class CacheStorageBuffer implements CacheStorage {
     synchronized (this) {
       if (forwardingStorage != null) {
         forwardingStorage.close();
+        return;
       }
       addOp(new OpClose());
     }
+  }
+
+  /** Simply do nothing. Next time, next chance */
+  @Override
+  public void expire(ExpireContext ctx, long _expireTime) throws Exception {
   }
 
   @Override
@@ -109,10 +117,11 @@ public class CacheStorageBuffer implements CacheStorage {
   }
 
   @Override
-  public void clear() throws IOException {
+  public void clear() throws Exception {
     synchronized (this) {
       if (forwardingStorage != null) {
         forwardingStorage.clear();
+        return;
       }
       key2entry.clear();
       addOp(new OpClear());
@@ -121,10 +130,11 @@ public class CacheStorageBuffer implements CacheStorage {
   }
 
   @Override
-  public void put(StorageEntry e) throws IOException, ClassNotFoundException {
+  public void put(StorageEntry e) throws Exception {
     synchronized (this) {
       if (forwardingStorage != null) {
         forwardingStorage.put(e);
+        return;
       }
       e = new CopyStorageEntry(e);
       key2entry.put(e.getKey(), e);
@@ -134,7 +144,7 @@ public class CacheStorageBuffer implements CacheStorage {
   }
 
   @Override
-  public StorageEntry get(Object key) throws IOException, ClassNotFoundException {
+  public StorageEntry get(Object key) throws Exception {
     StorageEntry e;
     synchronized (this) {
       if (forwardingStorage != null) {
@@ -148,11 +158,11 @@ public class CacheStorageBuffer implements CacheStorage {
   }
 
   @Override
-  public StorageEntry remove(Object key) throws IOException, ClassNotFoundException {
+  public StorageEntry remove(Object key) throws Exception {
     StorageEntry e;
     synchronized (this) {
       if (forwardingStorage != null) {
-        forwardingStorage.remove(key);
+        return forwardingStorage.remove(key);
       }
       addOp(new OpRemove(key));
       e = key2entry.remove(key);
@@ -162,11 +172,11 @@ public class CacheStorageBuffer implements CacheStorage {
   }
 
   @Override
-  public boolean contains(Object key) throws IOException {
+  public boolean contains(Object key) throws Exception {
     boolean b;
     synchronized (this) {
       if (forwardingStorage != null) {
-        forwardingStorage.contains(key);
+        return forwardingStorage.contains(key);
       }
       addOp(new OpContains(key));
       b = key2entry.containsKey(key);
@@ -175,12 +185,11 @@ public class CacheStorageBuffer implements CacheStorage {
   }
 
   @Override
-  public void visit(EntryVisitor v, EntryFilter f, VisitContext ctx) throws Exception {
-    System.err.println("buffer after clear: visit");
+  public void visit(VisitContext ctx, EntryFilter f, EntryVisitor v) throws Exception {
     List<StorageEntry> l;
     synchronized (this) {
       if (forwardingStorage != null) {
-        forwardingStorage.visit(v, f, ctx);
+        forwardingStorage.visit(ctx, f, v);
       }
       l = new ArrayList<>(key2entry.size());
       for (StorageEntry e : key2entry.values()) {

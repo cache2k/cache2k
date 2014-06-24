@@ -120,6 +120,12 @@ public class GlobalPooledExecutor {
     return execute(c, n, Long.MAX_VALUE);
   }
 
+  /**
+   * @param _timeoutMillis 0 means immediately timeout, if no space is available
+   *
+   * @throws InterruptedException
+   * @throws TimeoutException
+   */
   public <V> Future<V> execute(Callable<V> c, ProgressNotifier n, long _timeoutMillis)
     throws InterruptedException, TimeoutException {
     if (closed) {
@@ -208,6 +214,7 @@ public class GlobalPooledExecutor {
 
     void taskStarted();
     void taskFinished();
+    void taskFinishedWithException(Exception ex);
 
   }
 
@@ -216,6 +223,7 @@ public class GlobalPooledExecutor {
     ProgressNotifier progressNotifier;
     boolean done = false;
     V result;
+    Exception exception;
     Callable<V> callable;
 
     Task() { }
@@ -225,8 +233,9 @@ public class GlobalPooledExecutor {
       progressNotifier = _progressNotifier;
     }
 
-    synchronized void done(V _result) {
+    synchronized void done(V _result, Exception ex) {
       result = _result;
+      exception = ex;
       done = true;
       notify();
     }
@@ -258,9 +267,11 @@ public class GlobalPooledExecutor {
 
     @Override
     public synchronized V get(long timeout, TimeUnit unit) throws InterruptedException, ExecutionException, TimeoutException {
-      wait(unit.toMillis(timeout));
       if (!done) {
-        throw new TimeoutException();
+        wait(unit.toMillis(timeout));
+        if (!done) {
+          throw new TimeoutException();
+        }
       }
       return result;
     }
@@ -324,8 +335,14 @@ public class GlobalPooledExecutor {
           }
           if (t != null) {
             t.progressNotifier.taskStarted();
-            t.done(t.callable.call());
-            t.progressNotifier.taskFinished();
+            try {
+              Object _result = t.callable.call();
+              t.done(_result, null);
+              t.progressNotifier.taskFinished();
+            } catch (Exception ex) {
+              t.done(null, ex);
+              t.progressNotifier.taskFinishedWithException(ex);
+            }
           } else {
             break;
           }
@@ -348,6 +365,9 @@ public class GlobalPooledExecutor {
 
     @Override
     public void taskFinished() { }
+
+    @Override
+    public void taskFinishedWithException(Exception ex) { }
 
   }
 

@@ -25,22 +25,29 @@ package org.cache2k.impl.timer;
 import org.cache2k.util.Log;
 
 import javax.annotation.Nonnull;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 /**
  * Timer queue based on the {@link org.cache2k.impl.BaseCache.Entry#nextRefreshTime} field.
- * Earlier implementations used {@link java.util.Timer} which had three
- * disadvantages: first, per cache entry two additional objects are created,
- * the task and the lock object. Per timer a thread is needed. To
+ * Earlier implementations used {@link java.util.Timer} which has some
+ * disadvantages: per cache entry two additional objects are created,
+ * the task and the lock object. Per one timer a thread is needed. To
  * insert a timer task with exact time value a java.util.Date object is
- * needed.
+ * needed. A purge/cleanup of cancelled tasks is not done automatically.
+ *
+ * <p/>In situations with scarce memory, a lot of evictions may occur, which
+ * causes a lot of timer cancellations. This is the reason why this timer implementation
+ * does a purge of cancelled tasks automatically in a regular interval.
+ * During the purge is done, timer events still can run in parallel. Only the
+ * new timer events will be held up until the purge ist finished.
+ *
+ * <p/>Remark: Yes, this class is a little over engineered. After three make
+ * overs it finally works as expected...
  *
  * @author Jens Wilke; created: 2014-03-21
  */
 public class ArrayHeapTimerQueue extends TimerService {
 
-  final static int MAXIMUM_ADDS_UNTIL_PURGE = 76543;
+  final static int MAXIMUM_ADDS_UNTIL_PURGE = 54321;
   final static int LAPSE_RESOLUTION = 10;
   final static int LAPSE_SIZE = 50;
 
@@ -74,7 +81,6 @@ public class ArrayHeapTimerQueue extends TimerService {
 
   Queue inQueue = new Queue();
   Queue outQueue = inQueue;
-  Queue purgeQueue = null;
 
   public ArrayHeapTimerQueue(String _threadName) {
     threadName = _threadName;
@@ -95,10 +101,11 @@ public class ArrayHeapTimerQueue extends TimerService {
 
   @Override
   public int getQueueSize() {
+    Queue q = inQueue;
+    if (q == outQueue) {
+      return q.size;
+    }
     synchronized (lock) {
-      if (inQueue == outQueue) {
-        return inQueue.size;
-      }
       return inQueue.size + outQueue.size;
     }
   }
@@ -154,116 +161,147 @@ public class ArrayHeapTimerQueue extends TimerService {
       thread = new MyThread();
       thread.setName(threadName);
       thread.setDaemon(true);
-      thread.queue = this;
+      thread.timer = this;
       thread.start();
     }
   }
 
   /**
    * Cleans cancelled timer tasks from the priority queue. We do
-   * this just in one thread that calls us, but without holding up
-   * event delivery or other threads. When a purge occurs we work
-   * with two queues. One for added timer tasks and one for delivered
-   * timer tasks. The added timer tasks will be appended to the
-   * the out queue after the purge is finished. Of course, the
-   * delivery of new timer task is delayed after the purge is finished
-   * which should not be a big problem.
+   * this just in the thread that calls us, but without holding up
+   * event delivery . When a purge occurs we work with two queues.
+   * One for added timer tasks and one for delivered
+   * timer tasks. Newly added timer tasks will be appended to the
+   * the out queue after the purge is finished. Thus, the delivery of
+   * new timer tasks is delayed after the purge is finished.
+   *
+   * <p/>One tricky thing is to catch up with tasks that fired during
+   * the purge from the out queue. This is achieved by skipping to the
+   * time of the task that will fire next and by the ensurance that the
+   * timer thread will always process events of the same time within
+   * one synchronized block.
    */
   void performPurge() {
-    Queue _purgee;
+    Queue _purgeQ;
+    int _queueSizeBefore;
     synchronized (lock) {
       if (inQueue != outQueue || inQueue.size == 0) {
         return;
       }
       addedWithoutPurge = Integer.MIN_VALUE;
       cancelCount += inQueue.cancelCount;
-      _purgee = purgeQueue = inQueue.copy();
+      outQueue.cancelCount = 0;
+      _purgeQ = outQueue.copy();
       inQueue = new Queue();
+      _queueSizeBefore = outQueue.size;
     }
-    _purgee.purge();
+    _purgeQ.purge();
     synchronized (lock) {
-      BaseTimerTask _nextTimerTaskInQueue = outQueue.getNextNotCancelledMin();
-      if (_nextTimerTaskInQueue == null) {
-        cancelCount += _purgee.cancelCount;
-        _purgee = new Queue();
-      } else {
-        BaseTimerTask t;
-        while ((t = _purgee.getMin()) != _nextTimerTaskInQueue) {
-          _purgee.removeMin();
+      boolean _somethingFired = outQueue.size != _queueSizeBefore;
+      if (_somethingFired) {
+        BaseTimerTask _nextTimerTaskInQueue = outQueue.getNextNotCancelledMin();
+        if (_nextTimerTaskInQueue == null) {
+
+          cancelCount += outQueue.cancelCount;
+          _purgeQ = new Queue();
+        } else {
+          long _forwardUntilTime = _nextTimerTaskInQueue.getTime();
+          BaseTimerTask t;
+          BaseTimerTask _previousSkippedTask = null;
+          while ((t = _purgeQ.getMin()).getTime() != _forwardUntilTime) {
+            if (t.isCancelled()) {
+              _purgeQ.cancelCount++;
+            }
+            _purgeQ.removeMin();
+            _previousSkippedTask = t;
+          }
         }
       }
       BaseTimerTask t;
       while ((t = inQueue.getNextNotCancelledMin()) != null) {
         inQueue.removeMin();
-        _purgee.addQueue(t);
+        _purgeQ.addQueue(t);
       }
       cancelCount += inQueue.cancelCount;
-      inQueue = outQueue = _purgee;
+      inQueue = outQueue = _purgeQ;
       addedWithoutPurge = 0;
       startThread();
+      lock.notify();
+      purgeCount++;
     }
   }
 
   static class MyThread extends Thread {
 
-    ArrayHeapTimerQueue queue;
+    ArrayHeapTimerQueue timer;
     long cancelCount;
 
     void fireTask(BaseTimerTask e) {
       try {
         boolean f = e.fire(e.getTime());
         if (f) {
-          queue.eventsDelivered++;
+          timer.eventsDelivered++;
         } else {
           cancelCount++;
         }
       } catch (Throwable ex) {
-        queue.fireExceptionCount++;
-        queue.log.warn("timer event caused exception", ex);
+        timer.fireExceptionCount++;
+        timer.log.warn("timer event caused exception", ex);
       }
     }
 
     void loop() {
-      long _nextEvent;
+      long _fireTime;
       long t = System.currentTimeMillis();
       BaseTimerTask e;
       for (;;) {
-        synchronized (queue.lock) {
-          e = queue.outQueue.getNextNotCancelledMin();
-          if (e == null) {
-            queue.thread = null;
-            queue.cancelCount += cancelCount;
-            break;
-          }
-          _nextEvent = e.getTime();
-          if (_nextEvent <= t) {
-            queue.outQueue.removeMin();
-          } else {
-            t = System.currentTimeMillis();
-            if (_nextEvent <= t) {
-              queue.outQueue.removeMin();
+        boolean _fires;
+        synchronized (timer.lock) {
+          Queue q = timer.outQueue;
+          for (;;) {
+            e = q.getNextNotCancelledMin();
+            if (e == null) {
+              timer.thread = null;
+              timer.cancelCount += cancelCount;
+              return;
             }
-          }
-          if (_nextEvent < t) {
-            recordLapse(_nextEvent, t);
-          }
-        }
-        if (_nextEvent <= t) {
+            _fires = false;
+            _fireTime = e.getTime();
+            if (_fireTime > t) {
+              t = System.currentTimeMillis();
+            }
+            if (_fireTime <= t) {
+              if (_fireTime < t) { // missed timely execution?
+                recordLapse(_fireTime, t);
+              }
+              q.removeMin();
+              BaseTimerTask _next = q.getMin();
+              boolean _fireWithinLock = _next != null && _fireTime == _next.getTime();
+              if (_fireWithinLock) {
+                fireTask(e);
+                continue;
+              }
+              _fires = true;
+            }
+            break;
+          } // inner for loop
+        } // synchronized
+        if (_fires) {
           fireTask(e);
-          continue;
+        } else {
+          long _waitTime = _fireTime - t;
+          waitUntilTimeout(_waitTime);
         }
-        long _waitTime = _nextEvent - t;
-        waitUntilTimeout(_waitTime);
-      }
+      } // outer loop
     }
 
     private void recordLapse(long _nextEvent, long now) {
       long d = now - _nextEvent;
-      if (queue.maxLapse < d) {
-        queue.maxLapse = d;
+      if (timer.maxLapse < d) {
+        timer.maxLapse = d;
       }
       int idx = (int) (d / LAPSE_RESOLUTION);
-      int[] ia = queue.lapse;
+      int[] ia = timer.lapse;
       if (idx < 0 || idx >= ia.length) {
         idx = ia.length - 1;
       }
@@ -272,9 +310,9 @@ public class ArrayHeapTimerQueue extends TimerService {
 
     private void waitUntilTimeout(long _waitTime) {
       try {
-        synchronized (queue.lock) {
-          queue.lock.wait(_waitTime);
-          queue.wakeupCount++;
+        synchronized (timer.lock) {
+          timer.lock.wait(_waitTime);
+          timer.wakeupCount++;
         }
       } catch (InterruptedException ex) {
       }
@@ -282,7 +320,11 @@ public class ArrayHeapTimerQueue extends TimerService {
 
     @Override
     public void run() {
-      loop();
+      try {
+        loop();
+      } catch (Throwable t) {
+        t.printStackTrace();
+      }
     }
 
   }
@@ -316,6 +358,7 @@ public class ArrayHeapTimerQueue extends TimerService {
       return queue[1];
     }
 
+
     void removeMin() {
       queue[1] = queue[size];
       queue[size--] = null;
@@ -342,15 +385,19 @@ public class ArrayHeapTimerQueue extends TimerService {
 
     void purge() {
       BaseTimerTask[] q = queue;
-      for (int i = 1; i <= size; i++) {
-        while (q[i] != null && q[i].isCancelled()) {
+      int _size = size;
+      for (int i = 1; i <= _size; ) {
+        if (q[i].isCancelled()) {
           cancelCount++;
-          q[i] = q[size];
-          q[size] = null;
-          size--;
+          q[i] = q[_size];
+          q[_size] = null;
+          _size--;
+        } else {
+          i++;
         }
       }
-      for (int i = size/2; i >= 1; i--) {
+      size = _size;
+      for (int i = size / 2; i >= 1; i--) {
         sink(i);
       }
     }
