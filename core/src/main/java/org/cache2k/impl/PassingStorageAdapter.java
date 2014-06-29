@@ -611,64 +611,88 @@ class PassingStorageAdapter extends StorageAdapter {
     return null;
   }
 
-  /** Disconnect storage so cache can wait for entry operations to finish */
+  /**
+   * Disconnect storage so cache can wait for all entry operations to finish.
+   */
   public void disconnectStorageForClear() {
-    ClearStorageBuffer _buffer = new ClearStorageBuffer();
-    _buffer.originalStorage = storage;
-    storage = _buffer;
-    System.err.println("storage disconnected: " + storage);
+    synchronized (this) {
+      ClearStorageBuffer _buffer = new ClearStorageBuffer();
+      _buffer.nextStorage = storage;
+      storage = _buffer;
+      if (_buffer.nextStorage instanceof ClearStorageBuffer) {
+        ClearStorageBuffer _ongoingClear = (ClearStorageBuffer) _buffer.nextStorage;
+        if (_ongoingClear.clearThreadFuture != null) {
+          _ongoingClear.shouldStop = true;
+        }
+      }
+    }
   }
 
+  /**
+   * Called in a (maybe) separate thread after disconnect. Cache
+   * already is doing operations meanwhile and the storage operations
+   * are buffered. Here we have multiple race conditions. A clear() exists
+   * immediately but the storage is still working on the first clear.
+   * All previous clear processes will be cancelled and the last one may
+   * will. However, this method is not necessarily executed in the order
+   * the clear or the disconnect took place. This is checked also.
+   */
   public Future<Void> clearWithoutOngoingEntryOperations() {
-    System.err.println("storage clear starts for: " + storage);
-    final ClearStorageBuffer _buffer = (ClearStorageBuffer) storage;
-    ClearStorageBuffer _previousBuffer = null;
-    if (_buffer.getNextForwardingStorage() instanceof ClearStorageBuffer) {
-      _previousBuffer = (ClearStorageBuffer) _buffer.getNextForwardingStorage();
-      _buffer.originalStorage = _buffer.getFinalOriginalStorage();
-      _previousBuffer.shouldStop = true;
-    }
-    final Future<Void> _awaitPreviousClear = _previousBuffer != null ? _previousBuffer.clearThreadFuture : null;
-    if (_awaitPreviousClear != null) {
-      _awaitPreviousClear.cancel(false);
-    }
-    Callable<Void> c = new LimitedPooledExecutor.NeverRunInCallingTask<Void>() {
-      @Override
-      public Void call() throws Exception {
-        try {
-          if (_awaitPreviousClear != null) {
-            _awaitPreviousClear.get();
-          }
-        } catch (Exception ex) {
-          log.warn("exception during waiting for previous clear", ex);
-          disableOnFailure(ex);
-          throw new CacheStorageException(ex);
-        }
-        try {
-          _buffer.originalStorage.clear();
-        } catch (Exception ex) {
-          log.warn("exception during clear", ex);
-          disableOnFailure(ex);
-          throw new CacheStorageException(ex);
-        }
-        synchronized (cache.lock) {
-          _buffer.startTransfer();
-        }
-        try {
-          _buffer.transfer();
-        } catch (Exception ex) {
-          log.warn("exception during clear, operations replay", ex);
-          disableOnFailure(ex);
-          throw new CacheStorageException(ex);
-        }
-        synchronized (cache.lock) {
-          storage = _buffer.originalStorage;
-        }
-        return null;
+    synchronized (this) {
+      final ClearStorageBuffer _buffer = (ClearStorageBuffer) storage;
+      if (_buffer.clearThreadFuture != null) {
+        return _buffer.clearThreadFuture;
       }
-    };
-    _buffer.clearThreadFuture = executor.submit(c);
-    return _buffer.clearThreadFuture;
+      ClearStorageBuffer _previousBuffer = null;
+      if (_buffer.getNextStorage() instanceof ClearStorageBuffer) {
+        _previousBuffer = (ClearStorageBuffer) _buffer.getNextStorage();
+        _buffer.nextStorage = _buffer.getOriginalStorage();
+      }
+      final ClearStorageBuffer _waitingBufferStack = _previousBuffer;
+      Callable<Void> c = new LimitedPooledExecutor.NeverRunInCallingTask<Void>() {
+        @Override
+        public Void call() throws Exception {
+          try {
+            if (_waitingBufferStack != null) {
+              _waitingBufferStack.waitForAll();
+            }
+          } catch (Exception ex) {
+            log.warn("exception during waiting for previous clear", ex);
+            disableOnFailure(ex);
+            throw new CacheStorageException(ex);
+          }
+          synchronized (this) {
+            if (_buffer.shouldStop) {
+              return null;
+            }
+          }
+          try {
+            _buffer.getOriginalStorage().clear();
+          } catch (Exception ex) {
+            log.warn("exception during clear", ex);
+            disableOnFailure(ex);
+            throw new CacheStorageException(ex);
+          }
+          synchronized (this) {
+            _buffer.startTransfer();
+          }
+          try {
+            _buffer.transfer();
+          } catch (Exception ex) {
+            log.warn("exception during clear, operations replay", ex);
+            disableOnFailure(ex);
+            throw new CacheStorageException(ex);
+          }
+          synchronized (this) {
+            if (_buffer.shouldStop) { return null; }
+            storage = _buffer.getOriginalStorage();
+          }
+          return null;
+        }
+      };
+      _buffer.clearThreadFuture = executor.submit(c);
+      return _buffer.clearThreadFuture;
+    }
   }
 
   public void disableOnFailure(Throwable ex) {

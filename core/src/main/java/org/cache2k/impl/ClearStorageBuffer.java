@@ -80,7 +80,7 @@ public class ClearStorageBuffer implements CacheStorage {
 
   CacheStorage forwardStorage;
 
-  CacheStorage originalStorage;
+  CacheStorage nextStorage;
 
   Future<Void> clearThreadFuture;
 
@@ -114,7 +114,7 @@ public class ClearStorageBuffer implements CacheStorage {
         throw new CacheStorageException(exception);
       }
     }
-    originalStorage.flush(ctx, System.currentTimeMillis());
+    nextStorage.flush(ctx, System.currentTimeMillis());
   }
 
   @Override
@@ -312,7 +312,7 @@ public class ClearStorageBuffer implements CacheStorage {
   }
 
   public void transfer() throws Exception {
-    CacheStorage _target = originalStorage;
+    CacheStorage _target = getOriginalStorage();
     List<Op> _workList;
     while (true) {
       synchronized (this) {
@@ -320,7 +320,7 @@ public class ClearStorageBuffer implements CacheStorage {
           return;
         }
         if (operations.size() == 0) {
-          forwardStorage = originalStorage;
+          forwardStorage = nextStorage;
           return;
         }
         _workList = operations;
@@ -344,21 +344,30 @@ public class ClearStorageBuffer implements CacheStorage {
     for (Op op : operations) {
       op.notifyAll();
     }
-    CacheStorage _storage = originalStorage;
+    CacheStorage _storage = nextStorage;
     if (_storage instanceof ClearStorageBuffer) {
       ((ClearStorageBuffer) _storage).disableOnFailure(t);
     }
   }
 
-  CacheStorage getFinalOriginalStorage() {
-    if (originalStorage instanceof ClearStorageBuffer) {
-      return ((ClearStorageBuffer) originalStorage).getFinalOriginalStorage();
+  CacheStorage getOriginalStorage() {
+    if (nextStorage instanceof ClearStorageBuffer) {
+      return ((ClearStorageBuffer) nextStorage).getOriginalStorage();
     }
-    return originalStorage;
+    return nextStorage;
   }
 
-  CacheStorage getNextForwardingStorage() {
-    return originalStorage;
+  void waitForAll() throws Exception {
+    if (clearThreadFuture != null && !clearThreadFuture.isDone()) {
+      clearThreadFuture.get();
+    }
+    if (nextStorage instanceof ClearStorageBuffer) {
+      ((ClearStorageBuffer) nextStorage).waitForAll();
+    }
+  }
+
+  CacheStorage getNextStorage() {
+    return nextStorage;
   }
 
   static abstract class Op {

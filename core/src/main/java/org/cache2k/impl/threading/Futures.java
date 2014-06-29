@@ -42,6 +42,11 @@ public class Futures {
       add(_top);
     }
 
+    @SafeVarargs
+    public WaitforAllFuture(final Future<V>... _top) {
+      for (Future<V> f : _top) { add(f); }
+    }
+
     /**
      * Add a new future to the list. The future methods will also
      * call the additional future to check status or to wait for
@@ -128,5 +133,73 @@ public class Futures {
       }
     }
 
+  }
+
+  public static class FinishedFuture<V> implements Future<V> {
+
+    V result;
+
+    public FinishedFuture(V result) {
+      this.result = result;
+    }
+
+    @Override
+    public boolean cancel(boolean mayInterruptIfRunning) {
+      return false;
+    }
+
+    @Override
+    public boolean isCancelled() {
+      return false;
+    }
+
+    @Override
+    public boolean isDone() {
+      return true;
+    }
+
+    @Override
+    public V get() {
+      return result;
+    }
+
+    @Override
+    public V get(long timeout, TimeUnit unit)  {
+      return result;
+    }
+  }
+
+  public static class ExceptionFuture<V> implements Future<V> {
+
+    private Exception exception;
+
+    public ExceptionFuture(Exception exception) {
+      this.exception = exception;
+    }
+
+    @Override
+    public boolean cancel(boolean mayInterruptIfRunning) {
+      return false;
+    }
+
+    @Override
+    public boolean isCancelled() {
+      return false;
+    }
+
+    @Override
+    public boolean isDone() {
+      return true;
+    }
+
+    @Override
+    public V get() throws ExecutionException {
+      throw new ExecutionException(exception);
+    }
+
+    @Override
+    public V get(long timeout, TimeUnit unit) throws ExecutionException {
+      throw new ExecutionException(exception);
+    }
   }
 }

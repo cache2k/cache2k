@@ -124,9 +124,9 @@ public class LimitedPooledExecutor implements ExecutorService {
       notifier.taskSubmitted();
       return f;
     } catch (InterruptedException ex) {
-      return new ExceptionFuture<>(ex);
+      return new Futures.ExceptionFuture<>(ex);
     } catch (TimeoutException ex) {
-      return new ExceptionFuture<>(ex);
+      return new Futures.ExceptionFuture<>(ex);
     }
   }
 
@@ -139,9 +139,9 @@ public class LimitedPooledExecutor implements ExecutorService {
     notifier.taskStarted();
     try {
       T _result = c.call();
-      return new FinishedFuture<>(_result);
+      return new Futures.FinishedFuture<>(_result);
     } catch (Exception ex) {
-      return new ExceptionFuture<>(ex);
+      return new Futures.ExceptionFuture<>(ex);
     } finally {
       notifier.taskFinished();
     }
@@ -333,74 +333,6 @@ public class LimitedPooledExecutor implements ExecutorService {
       }
     }
 
-  }
-
-  static class FinishedFuture<V> implements Future<V> {
-
-    V result;
-
-    FinishedFuture(V result) {
-      this.result = result;
-    }
-
-    @Override
-    public boolean cancel(boolean mayInterruptIfRunning) {
-      return false;
-    }
-
-    @Override
-    public boolean isCancelled() {
-      return false;
-    }
-
-    @Override
-    public boolean isDone() {
-      return true;
-    }
-
-    @Override
-    public V get() {
-      return result;
-    }
-
-    @Override
-    public V get(long timeout, TimeUnit unit)  {
-      return result;
-    }
-  }
-
-  static class ExceptionFuture<V> implements Future<V> {
-
-    Exception exception;
-
-    ExceptionFuture(Exception exception) {
-      this.exception = exception;
-    }
-
-    @Override
-    public boolean cancel(boolean mayInterruptIfRunning) {
-      return false;
-    }
-
-    @Override
-    public boolean isCancelled() {
-      return false;
-    }
-
-    @Override
-    public boolean isDone() {
-      return true;
-    }
-
-    @Override
-    public V get() throws ExecutionException {
-      throw new ExecutionException(exception);
-    }
-
-    @Override
-    public V get(long timeout, TimeUnit unit) throws ExecutionException {
-      throw new ExecutionException(exception);
-    }
   }
 
   /**
