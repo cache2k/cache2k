@@ -262,7 +262,7 @@ public class LimitedPooledExecutor implements ExecutorService {
     public synchronized void taskFinished() { counter--; notify(); }
 
     @Override
-    public synchronized void taskFinishedWithException(Exception ex) {
+    public synchronized void taskFinishedWithException(Throwable ex) {
       counter--; notify();
       if (exceptionListener != null) {
         exceptionListener.exceptionWasThrown(ex);
@@ -408,13 +408,13 @@ public class LimitedPooledExecutor implements ExecutorService {
    * calling task to continue after the submit and a new thread for
    * the Callable.
    */
-  public static interface NeverRunInCallingTask {
+  public static interface NeverRunInCallingTask<V> extends Callable<V> {
 
   }
 
   public static interface ExceptionListener {
 
-    void exceptionWasThrown(Exception ex);
+    void exceptionWasThrown(Throwable ex);
 
   }
 

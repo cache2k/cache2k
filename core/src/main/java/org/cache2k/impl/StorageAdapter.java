@@ -25,6 +25,7 @@ package org.cache2k.impl;
 import org.cache2k.storage.StorageEntry;
 
 import java.util.Iterator;
+import java.util.concurrent.Future;
 
 /**
 * @author Jens Wilke; created: 2014-05-08
@@ -33,8 +34,9 @@ public abstract class StorageAdapter {
 
   public abstract void open();
   public abstract void shutdown();
-  public abstract boolean clearPrepare();
-  public abstract void clearProceed();
+  public abstract Future<Void> checkStorageStillUnconnectedForClear();
+  public abstract void disconnectStorageForClear();
+  public abstract Future<Void> clearWithoutOngoingEntryOperations();
   public abstract void put(BaseCache.Entry e);
   public abstract StorageEntry get(Object key);
   public abstract void remove(Object key);
@@ -44,5 +46,14 @@ public abstract class StorageAdapter {
   public abstract int getTotalEntryCount();
   /** 0 means no alert, 1 orange, 2, red alert */
   public abstract int getAlert();
+  public abstract void disableOnFailure(Throwable t);
+
+  /** Implemented by a storage user, a cache or aggregator */
+  static interface Parent {
+
+    /** Change the storage implementation to another one or null for a disconnect */
+    void resetStorage(StorageAdapter s);
+
+  }
 
 }

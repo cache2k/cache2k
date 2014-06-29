@@ -23,34 +23,31 @@ package org.cache2k.impl;
  */
 
 /**
-* @author Jens Wilke; created: 2013-07-14
-*/
-public class CacheIntegrityError extends CacheInternalError {
+ * An internal error condition in the cache was detected that actually
+ * never is supposed to happen. If you get this error or subclasses of it,
+ * please file a bug report.
+ *
+ * @author Jens Wilke; created: 2014-06-03
+ */
+public class CacheInternalError extends Error {
 
-  String cacheStatistics;
-  String failingChecksString;
-  String stateDescriptor;
-
-  public CacheIntegrityError(
-          String stateDescriptor,
-          String failingChecksString,
-          String cacheStatistics) {
-    super(stateDescriptor + ", " + failingChecksString + ", " + cacheStatistics);
-    this.cacheStatistics = cacheStatistics;
-    this.failingChecksString = failingChecksString;
-    this.stateDescriptor = stateDescriptor;
+  public CacheInternalError() {
   }
 
-  public String getCacheStatistics() {
-    return cacheStatistics;
+  public CacheInternalError(String message) {
+    super(message);
   }
 
-  public String getFailingChecksString() {
-    return failingChecksString;
+  public CacheInternalError(String message, Throwable cause) {
+    super(message, cause);
   }
 
-  public String getStateDescriptor() {
-    return stateDescriptor;
+  public CacheInternalError(Throwable cause) {
+    super(cause);
+  }
+
+  public CacheInternalError(String message, Throwable cause, boolean enableSuppression, boolean writableStackTrace) {
+    super(message, cause, enableSuppression, writableStackTrace);
   }
 
 }

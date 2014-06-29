@@ -30,7 +30,7 @@ import java.util.logging.Logger;
 
 /**
  * cache2k has only sparse logging. The direct use of java.util.logging was
- * examined. However, a thread name is missing within the output and
+ * examined. However, a thread name is missing within the output and it
  * is not properly recorded. To have the chance to redirect any
  * logging to the framework of choice, the log output is channeled
  * through this class.
@@ -60,7 +60,7 @@ public abstract class Log {
     ServiceLoader<LogFactory> loader = ServiceLoader.load(LogFactory.class);
     for (LogFactory lf : loader) {
       logFactory = lf;
-      getLog(Log.class.getName()).debug("Using: " + logFactory);
+      getLog(Log.class.getName()).debug("New instance, using: " + logFactory);
       return getLog(s);
     }
     try {
@@ -72,7 +72,7 @@ public abstract class Log {
           return new CommonsLogger(cl.getInstance(s));
         }
       };
-      getLog(Log.class.getName()).debug("Using: " + logFactory);
+      getLog(Log.class.getName()).debug("New instance, using: " + logFactory);
       return getLog(s);
     } catch (Exception ex) {
       ex.printStackTrace();
@@ -83,10 +83,13 @@ public abstract class Log {
         return new JdkLogger(Logger.getLogger(s));
       }
     };
-    getLog(Log.class.getName()).debug("Using: " + logFactory);
+    getLog(Log.class.getName()).debug("New instance, using: " + logFactory);
     return getLog(s);
   }
 
+  /**
+   * Redirects log output, this is used for testing purposes.
+   */
   public static synchronized void registerSuppression(String s, Log l) {
     loggers.put(s, l);
   }
@@ -185,6 +188,9 @@ public abstract class Log {
     }
   }
 
+  /**
+   * Log implementation that can be used to count suppressed log outputs.
+   */
   public static class SuppressionCounter extends Log {
 
     AtomicInteger debugCount = new AtomicInteger();

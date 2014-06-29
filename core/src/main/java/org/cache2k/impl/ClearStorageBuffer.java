@@ -32,6 +32,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.Future;
 
 /**
  * Record cache operations during a storage clear and playback later.
@@ -47,6 +48,11 @@ import java.util.Map;
  * To avoid this, we slow down the acceptance of new requests as soon as
  * the storage playback starts.
  *
+ * <p/>The normal operations like (get, put and remove) fill the playback
+ * queue. They also check within the lock whether the storage is online again.
+ * This is needed to make the reconnect of the storage atomically. It must
+ * be assured that all operations are sent and that the order is kept intact.
+ *
  * <p/>Right now, the storage is only operated single threaded by the buffer
  * playback.
  *
@@ -54,7 +60,7 @@ import java.util.Map;
  *
  * @author Jens Wilke; created: 2014-04-20
  */
-public class CacheStorageBuffer implements CacheStorage {
+public class ClearStorageBuffer implements CacheStorage {
 
   long operationsCnt = 0;
   long operationsAtTransferStart = 0;
@@ -67,10 +73,18 @@ public class CacheStorageBuffer implements CacheStorage {
   /** Added up rest of microseconds to wait */
   long microWaitRest = 0;
 
+  boolean shouldStop = false;
+
   List<Op> operations = new ArrayList<>();
   Map<Object, StorageEntry> key2entry = new HashMap<>();
 
-  CacheStorage forwardingStorage;
+  CacheStorage forwardStorage;
+
+  CacheStorage originalStorage;
+
+  Future<Void> clearThreadFuture;
+
+  Throwable exception;
 
   /**
    * Stall this thread until the op is executed. However, the
@@ -82,28 +96,38 @@ public class CacheStorageBuffer implements CacheStorage {
    */
   @Override
   public void flush(final FlushContext ctx, long now) throws Exception {
+    Op op = null;
+    boolean _forward;
     synchronized (this) {
-      if (forwardingStorage != null) {
-        forwardingStorage.flush(ctx, now);
-        return;
+      _forward = forwardStorage != null;
+      if (!_forward) {
+        op = new OpFlush();
+        addOp(op);
       }
-      Op op = new OpFlush();
-      addOp(op);
-      synchronized (op) {
-        op.wait();
-      }
-      forwardingStorage.flush(ctx, System.currentTimeMillis());
     }
+    if (_forward) {
+      forwardStorage.flush(ctx, now);
+    }
+    synchronized (op) {
+      op.wait();
+      if (exception != null) {
+        throw new CacheStorageException(exception);
+      }
+    }
+    originalStorage.flush(ctx, System.currentTimeMillis());
   }
 
   @Override
   public void close() throws IOException {
+    boolean _forward;
     synchronized (this) {
-      if (forwardingStorage != null) {
-        forwardingStorage.close();
-        return;
+      _forward = forwardStorage != null;
+      if (!_forward) {
+        addOp(new OpClose());
       }
-      addOp(new OpClose());
+    }
+    if (_forward) {
+      forwardStorage.close();
     }
   }
 
@@ -118,89 +142,108 @@ public class CacheStorageBuffer implements CacheStorage {
 
   @Override
   public void clear() throws Exception {
-    synchronized (this) {
-      if (forwardingStorage != null) {
-        forwardingStorage.clear();
-        return;
-      }
-      key2entry.clear();
-      addOp(new OpClear());
-    }
-    throttle();
+    throw new IllegalStateException("never called");
   }
 
   @Override
   public void put(StorageEntry e) throws Exception {
+    boolean _forward;
     synchronized (this) {
-      if (forwardingStorage != null) {
-        forwardingStorage.put(e);
-        return;
+      _forward = forwardStorage != null;
+      if (!_forward) {
+        e = new CopyStorageEntry(e);
+        key2entry.put(e.getKey(), e);
+        addOp(new OpPut(e));
       }
-      e = new CopyStorageEntry(e);
-      key2entry.put(e.getKey(), e);
-      addOp(new OpPut(e));
     }
-    throttle();
+    if (_forward) {
+      forwardStorage.put(e);
+    } else {
+      throttle();
+    }
   }
 
   @Override
   public StorageEntry get(Object key) throws Exception {
-    StorageEntry e;
+    boolean _forward;
+    StorageEntry e = null;
     synchronized (this) {
-      if (forwardingStorage != null) {
-        return forwardingStorage.get(key);
+      _forward = forwardStorage != null;
+      if (!_forward) {
+        addOp(new OpGet(key));
+        e = key2entry.get(key);
       }
-      addOp(new OpGet(key));
-      e = key2entry.get(key);
     }
-    throttle();
+    if (_forward) {
+      e = forwardStorage.get(key);
+    } else {
+      throttle();
+    }
     return e;
   }
 
   @Override
   public StorageEntry remove(Object key) throws Exception {
-    StorageEntry e;
+    StorageEntry e = null;
+    boolean _forward;
     synchronized (this) {
-      if (forwardingStorage != null) {
-        return forwardingStorage.remove(key);
+      _forward = forwardStorage != null;
+      if (!_forward) {
+        addOp(new OpRemove(key));
+        e = key2entry.remove(key);
       }
-      addOp(new OpRemove(key));
-      e = key2entry.remove(key);
     }
-    throttle();
+    if (_forward) {
+      e = forwardStorage.remove(key);
+    } else {
+      throttle();
+    }
     return e;
   }
 
   @Override
   public boolean contains(Object key) throws Exception {
-    boolean b;
+    boolean b = false;
+    boolean _forward;
     synchronized (this) {
-      if (forwardingStorage != null) {
-        return forwardingStorage.contains(key);
+      _forward = forwardStorage != null;
+      if (!_forward) {
+        addOp(new OpContains(key));
+        b = key2entry.containsKey(key);
       }
-      addOp(new OpContains(key));
-      b = key2entry.containsKey(key);
+    }
+    if (_forward) {
+      b = forwardStorage.contains(key);
+    } else {
+      throttle();
     }
     return b;
   }
 
   @Override
   public void visit(VisitContext ctx, EntryFilter f, EntryVisitor v) throws Exception {
-    List<StorageEntry> l;
+    List<StorageEntry> l = null;
+    boolean _forward;
     synchronized (this) {
-      if (forwardingStorage != null) {
-        forwardingStorage.visit(ctx, f, v);
-      }
-      l = new ArrayList<>(key2entry.size());
-      for (StorageEntry e : key2entry.values()) {
-        if (f == null || f.shouldInclude(e.getKey())) {
-          l.add(e);
+      _forward = forwardStorage != null;
+      if (!_forward) {
+        l = new ArrayList<>(key2entry.size());
+        for (StorageEntry e : key2entry.values()) {
+          if (f == null || f.shouldInclude(e.getKey())) {
+            l.add(e);
+          }
         }
       }
     }
-    for (StorageEntry e : l) {
-      if (ctx.shouldStop()) { return; }
-      v.visit(e);
+    if (_forward) {
+      forwardStorage.visit(ctx, f, v);
+    } else {
+      for (StorageEntry e : l) {
+        if (ctx.shouldStop()) {
+          return;
+        }
+        v.visit(e);
+      }
     }
   }
 
@@ -257,16 +300,27 @@ public class CacheStorageBuffer implements CacheStorage {
     }
   }
 
-  public void transfer(CacheStorage _target) throws Exception {
+  public void startTransfer() {
     synchronized (this) {
       sendingStart = System.currentTimeMillis();
       operationsAtTransferStart = operationsCnt;
     }
+  }
+
+  public boolean isTransferringToStorage() {
+    return sendingStart > 0;
+  }
+
+  public void transfer() throws Exception {
+    CacheStorage _target = originalStorage;
     List<Op> _workList;
     while (true) {
       synchronized (this) {
+        if (shouldStop) {
+          return;
+        }
         if (operations.size() == 0) {
-          forwardingStorage = _target;
+          forwardStorage = originalStorage;
           return;
         }
         _workList = operations;
@@ -275,8 +329,36 @@ public class CacheStorageBuffer implements CacheStorage {
       for (Op op : _workList) {
         sentOperationsCnt++;
         op.execute(_target);
+        if (shouldStop) {
+          if (exception != null) {
+            throw new CacheStorageException(exception);
+          }
+        }
       }
     }
+  }
+
+  public void disableOnFailure(Throwable t) {
+    exception = t;
+    shouldStop = true;
+    for (Op op : operations) {
+      op.notifyAll();
+    }
+    CacheStorage _storage = originalStorage;
+    if (_storage instanceof ClearStorageBuffer) {
+      ((ClearStorageBuffer) _storage).disableOnFailure(t);
+    }
+  }
+
+  CacheStorage getFinalOriginalStorage() {
+    if (originalStorage instanceof ClearStorageBuffer) {
+      return ((ClearStorageBuffer) originalStorage).getFinalOriginalStorage();
+    }
+    return originalStorage;
+  }
+
+  CacheStorage getNextForwardingStorage() {
+    return originalStorage;
   }
 
   static abstract class Op {

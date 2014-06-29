@@ -180,7 +180,7 @@ public interface CacheStorage extends Closeable {
      * occur, since the operation is multi thread. Only the first is propagated.
      * After this method is called {@link #shouldStop()} is true.
      */
-    void abortOnException(Exception ex);
+    void abortOnException(Throwable ex);
 
   }
 

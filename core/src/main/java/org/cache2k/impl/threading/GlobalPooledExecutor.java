@@ -214,7 +214,7 @@ public class GlobalPooledExecutor {
 
     void taskStarted();
     void taskFinished();
-    void taskFinishedWithException(Exception ex);
+    void taskFinishedWithException(Throwable ex);
 
   }
 
@@ -223,7 +223,7 @@ public class GlobalPooledExecutor {
     ProgressNotifier progressNotifier;
     int state = 0;
     V result;
-    Exception exception;
+    Throwable exception;
 
     Callable<V> callable;
 
@@ -242,7 +242,7 @@ public class GlobalPooledExecutor {
       return null;
     }
 
-    synchronized void done(V _result, Exception ex) {
+    synchronized void done(V _result, Throwable ex) {
       result = _result;
       exception = ex;
       state = 2;
@@ -274,6 +274,12 @@ public class GlobalPooledExecutor {
     public synchronized V get() throws InterruptedException, ExecutionException {
       while (!isDone()) {
         wait();
+        if (exception != null) {
+          throw new ExecutionException(exception);
+        }
+      }
+      if (exception != null) {
+        throw new ExecutionException(exception);
       }
       return result;
     }
@@ -285,6 +291,9 @@ public class GlobalPooledExecutor {
         if (!isDone()) {
           throw new TimeoutException();
         }
+      }
+      if (exception != null) {
+        throw new ExecutionException(exception);
       }
       return result;
     }
@@ -353,7 +362,7 @@ public class GlobalPooledExecutor {
               Object _result = c.call();
               t.done(_result, null);
               t.progressNotifier.taskFinished();
-            } catch (Exception ex) {
+            } catch (Throwable ex) {
               t.done(null, ex);
               t.progressNotifier.taskFinishedWithException(ex);
             }
@@ -381,7 +390,7 @@ public class GlobalPooledExecutor {
     public void taskFinished() { }
 
     @Override
-    public void taskFinishedWithException(Exception ex) { }
+    public void taskFinishedWithException(Throwable ex) { }
 
   }
 

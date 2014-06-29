@@ -29,6 +29,8 @@ import org.cache2k.Cache;
 import org.cache2k.CacheConfig;
 import org.cache2k.MutableCacheEntry;
 import org.cache2k.StorageConfiguration;
+import org.cache2k.impl.threading.Futures;
+import org.cache2k.impl.threading.LimitedPooledExecutor;
 import org.cache2k.impl.timer.GlobalTimerService;
 import org.cache2k.impl.timer.TimerService;
 import org.cache2k.jmx.CacheMXBean;
@@ -37,9 +39,8 @@ import org.cache2k.CacheSource;
 import org.cache2k.RefreshController;
 import org.cache2k.PropagatedCacheException;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
 import org.cache2k.storage.StorageEntry;
+import org.cache2k.util.Log;
 
 import java.lang.reflect.Array;
 import java.security.SecureRandom;
@@ -56,6 +57,9 @@ import java.util.Map;
 import java.util.Random;
 import java.util.Set;
 import java.util.Timer;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Future;
+import java.util.concurrent.FutureTask;
 
 /**
  * Foundation for all cache variants. All common functionality is in here.
@@ -71,7 +75,7 @@ import java.util.Timer;
  */
 @SuppressWarnings({"unchecked", "SynchronizationOnLocalVariableOrMethodParameter"})
 public abstract class BaseCache<E extends BaseCache.Entry, K, T>
-  implements Cache<K, T>, CanCheckIntegrity, Iterable<CacheEntry<K, T>> {
+  implements Cache<K, T>, CanCheckIntegrity, Iterable<CacheEntry<K, T>>, StorageAdapter.Parent {
 
   static int HASH_INITIAL_SIZE = 64;
   static int HASH_LOAD_PERCENT = 64;
@@ -152,7 +156,6 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
    */
   protected final Object lock = new Object();
 
-  private Log lazyLog = null;
   protected CacheRefreshThreadPool refreshPool;
 
   protected Hash<E> mainHashCtrl;
@@ -172,8 +175,8 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
 
   protected Timer timer;
 
-  /** Wait for this thread before shutdown */
-  protected Thread clearThread;
+  /** Stuff that we need to wait for before shutdown may complete */
+  protected Futures.WaitforAllFuture<?> shutdownWaitFuture;
 
   protected boolean shutdownInitiated = false;
 
@@ -219,14 +222,28 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
   }
 
   /**
-   * Lazy construct a log when needed, normally a cache logs nothing.
+   * Returns name of the cache with manager name.
+   */
+  protected String getCompleteName() {
+    if (manager != null) {
+      return manager.getName() + ":" + name;
+    }
+    return name;
+  }
+
+  /**
+   * Normally a cache itself logs nothing, so just construct when needed.
    */
   protected Log getLog() {
-    if (lazyLog == null) {
-      lazyLog =
-        LogFactory.getLog(Cache.class.getName() + '.' + name);
+    return
+      Log.getLog(Cache.class.getName() + '/' + getCompleteName());
+  }
+
+  @Override
+  public void resetStorage(StorageAdapter s) {
+    synchronized (lock) {
+      storage = s;
     }
-    return lazyLog;
   }
 
   /** called via reflection from CacheBuilder */
@@ -383,9 +400,9 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
       initTimer();
       if (refreshPool != null && timer == null) {
         if (maxLinger == 0) {
-          getLog().warn("Background refresh is enabled, but elements are fetched always. Disable background refresh.");
+          getLog().warn("Background refresh is enabled, but elements are fetched always. Disable background refresh!");
         } else {
-          getLog().warn("Background refresh is enabled, but elements are eternal. Disable background refresh.");
+          getLog().warn("Background refresh is enabled, but elements are eternal. Disable background refresh!");
         }
         refreshPool.destroy();
         refreshPool = null;
@@ -420,58 +437,74 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
    * one entry or key at any time. Clear, of course affects all entries.
    */
   private final void processClearWithStorage() {
-    synchronized (lock) {
-      if (shutdownInitiated) {
-        throw new IllegalStateException("cache closed");
-      }
-      if (touchedTime == 0 ||
-        (touchedTime == clearedTime && getLocalSize() == 0)) {
-        storage.clearPrepare();
-        storage.clearProceed();
-        initializeHeapCache();
-        clearedTime = System.currentTimeMillis();
-        touchedTime = clearedTime;
-        return;
-      }
-    }
+    Future<?> _waitFuture = null;
     StorageClearTask t = new StorageClearTask();
-    t.mainHashCopy = mainHash;
-    t.refreshHashCopy = refreshHash;
-    t.storage = storage;
-    while (true) {
-      try {
-        Thread.sleep(3);
-      } catch (InterruptedException e) {
+    boolean _untouchedHeapCache;
+    synchronized (lock) {
+      _untouchedHeapCache = touchedTime == clearedTime && getLocalSize() == 0;
+      if (storage.checkStorageStillUnconnectedForClear() == null) {
+        t.mainHashCopy = mainHash;
+        t.refreshHashCopy = refreshHash;
       }
-      synchronized (lock) {
-        if (shutdownInitiated) {
-          throw new IllegalStateException("cache closed");
-        }
-        boolean f = storage.clearPrepare();
-        if (!f) {
-          continue;
-        }
-        clearLocalCache();
-        Thread th = clearThread =  new Thread(t);
-        th.setName("cache2k-clear:" + getName() + ":" + th.getId());
-        th.setDaemon(true);
-        th.start();
-        break;
+      t.storage = storage;
+      t.storage.disconnectStorageForClear();
+    }
+    try {
+      if (_untouchedHeapCache) {
+        FutureTask<Future<Void>> f = new FutureTask<>(t);
+        updateShutdownWaitFuture(f);
+        f.run();
+        _waitFuture = f.get();
+        updateShutdownWaitFuture(_waitFuture);
+      } else {
+        updateShutdownWaitFuture(manager.getThreadPool().execute(t));
+      }
+    } catch (Exception ex) {
+      throw new CacheStorageException(ex);
+    }
+    clearLocalCache();
+    if (_waitFuture != null) {
+      try {
+        _waitFuture.get();
+      } catch (InterruptedException e) {
+      } catch (ExecutionException e) {
+        throw new CacheStorageException(e);
       }
     }
   }
 
-  class StorageClearTask implements Runnable {
+  protected void updateShutdownWaitFuture(Future<?> f) {
+    synchronized (lock) {
+      if (shutdownWaitFuture == null || shutdownWaitFuture.isDone()) {
+        shutdownWaitFuture = new Futures.WaitforAllFuture(f);
+      } else {
+        shutdownWaitFuture.add((Future) f);
+      }
+    }
+  }
+
+  class StorageClearTask implements LimitedPooledExecutor.NeverRunInCallingTask<Future<Void>> {
 
     E[] mainHashCopy;
     E[] refreshHashCopy;
     StorageAdapter storage;
 
     @Override
-    public void run() {
-      waitForEntryOperations();
-      storage.clearProceed();
-      clearThread = null;
+    public Future<Void> call() {
+      try {
+        if (mainHashCopy != null) {
+          waitForEntryOperations();
+        }
+        Future<Void> f = storage.clearWithoutOngoingEntryOperations();
+        updateShutdownWaitFuture(f);
+        storage = null;
+        return f;
+      } catch (Throwable t) {
+        getLog().warn("clear exception, when signalling storage", t);
+        storage.disableOnFailure(t);
+        BaseCache.this.storage = new FailureStorageAdapter(t);
+        throw t;
+      }
     }
 
     private void waitForEntryOperations() {
@@ -485,6 +518,9 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
   }
 
   public final void clear() {
+    if (shutdownInitiated) {
+      throw new IllegalStateException("cache closed");
+    }
     if (storage != null) {
       processClearWithStorage();
       return;
@@ -492,7 +528,7 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
     clearLocalCache();
   }
 
-  private void clearLocalCache() {
+  protected final void clearLocalCache() {
     synchronized (lock) {
       if (shutdownInitiated) {
         throw new IllegalStateException("cache closed");
@@ -553,12 +589,13 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
     synchronized (lock) {
       shutdownInitiated = true;
     }
-    Thread th = clearThread;
-    if (th != null) {
-      try {
-        th.join();
-      } catch (InterruptedException e) {
+    try {
+      Future<?> _future = shutdownWaitFuture;
+      if (_future != null) {
+        _future.get();
       }
+    } catch (Exception ex) {
+      throw new RuntimeException(ex);
     }
     if (storage != null) {
       storage.shutdown();
@@ -1230,20 +1267,16 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
    */
   private void checkForHashCodeChange(Entry e) {
     if (modifiedHash(e.key.hashCode()) != e.hashCode) {
-      final int _SUPPRESS_COUNT = 777;
-      if (keyMutationCount % _SUPPRESS_COUNT ==  0) {
-        if (keyMutationCount > 0) {
-          getLog().fatal("Key mismatch! " + (_SUPPRESS_COUNT - 1) + " more errors suppressed");
-        }
-        getLog().fatal("Key mismatch! Key hashcode changed! keyClass=" + e.key.getClass().getName());
+      if (keyMutationCount ==  0) {
+        getLog().warn("Key mismatch! Key hashcode changed! keyClass=" + e.key.getClass().getName());
         String s;
         try {
           s = e.key.toString();
           if (s != null) {
-            getLog().fatal("Key mismatch! key.toString(): " + s);
+            getLog().warn("Key mismatch! key.toString(): " + s);
           }
         } catch (Throwable t) {
-          getLog().fatal("Key mismatch! key.toString() threw exception", t);
+          getLog().warn("Key mismatch! key.toString() threw exception", t);
         }
       }
       keyMutationCount++;
@@ -1641,8 +1674,6 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
           fetchBulkLoop(_entries, _keys, _result, _fetched, i, _endIdx - 1, _endIdx, t);
         }
         return;
-      } catch (Exception ex) {
-        getLog().info("bulk get failed", ex);
       } finally {
         freeBulkKeyRetrievalMarkers(_entries);
       }
@@ -1872,7 +1903,8 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
         .checkEquals("refreshHashCtrl.size == Hash.calcEntryCount(refreshHash)", refreshHashCtrl.size, Hash.calcEntryCount(refreshHash))
         .check("!!evictionNeeded | (getSize() <= maxSize)", !!evictionNeeded | (getLocalSize() <= maxSize))
         .checkLessOrEquals("bulkKeysCurrentlyRetrieved.size() <= getSize()",
-          bulkKeysCurrentlyRetrieved == null ? 0 : bulkKeysCurrentlyRetrieved.size(), getLocalSize());
+          bulkKeysCurrentlyRetrieved == null ? 0 : bulkKeysCurrentlyRetrieved.size(), getLocalSize())
+        .check("storage => storage.getAlert() < 2", storage == null || storage.getAlert() < 2);
     }
   }
 
