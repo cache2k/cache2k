@@ -4,7 +4,7 @@ A poor mans issue tracker.
 
 ### Warmups
 
-  * StroageAdapter extra
+  * contains()
   * extract LRU operations from BaseCache
 
 ### Storage and persistence

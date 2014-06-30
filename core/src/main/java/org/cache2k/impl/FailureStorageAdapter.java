@@ -22,6 +22,7 @@ package org.cache2k.impl;
  * #L%
  */
 
+import org.cache2k.ClosableIterator;
 import org.cache2k.storage.StorageEntry;
 
 import java.util.Iterator;
@@ -39,7 +40,7 @@ public class FailureStorageAdapter extends StorageAdapter {
   }
 
   void throwException() {
-    throw new CacheStorageException("unrecoverable failure", exception);
+    throw new CacheStorageException("unrecoverable failure in past", exception);
   }
 
   @Override
@@ -53,9 +54,9 @@ public class FailureStorageAdapter extends StorageAdapter {
   }
 
   @Override
-  public Future<Void> checkStorageStillUnconnectedForClear() {
+  public boolean checkStorageStillDisconnectedForClear() {
     throwException();
-    return null;
+    return false;
   }
 
   @Override
@@ -64,7 +65,7 @@ public class FailureStorageAdapter extends StorageAdapter {
   }
 
   @Override
-  public Future<Void> clearWithoutOngoingEntryOperations() {
+  public Future<Void> startClearingAndReconnection() {
     throwException();
     return null;
   }
@@ -99,7 +100,7 @@ public class FailureStorageAdapter extends StorageAdapter {
   }
 
   @Override
-  public Iterator<BaseCache.Entry> iterateAll() {
+  public ClosableIterator<BaseCache.Entry> iterateAll() {
     throwException();
     return null;
   }
@@ -115,7 +116,7 @@ public class FailureStorageAdapter extends StorageAdapter {
   }
 
   @Override
-  public void disableOnFailure(Throwable t) {
+  public void disable(Throwable t) {
   }
 
 }

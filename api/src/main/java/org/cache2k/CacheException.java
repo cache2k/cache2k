@@ -23,17 +23,29 @@ package org.cache2k;
  */
 
 /**
- * If a cache receives an exception when fetching a value via the
- * cache source it may propagate the exception wrapped into this
- * one to the caller. Whether propagation occurs depends on the
- * configuration and whether if there is no valid data present.
+ * Base class of all cache exceptions.
  *
- * @author Jens Wilke
+ * @author Jens Wilke; created: 2014-06-07
  */
-public class PropagatedCacheException extends CacheException {
+public class CacheException extends RuntimeException {
 
-  public PropagatedCacheException(Throwable ex) {
-    super(ex);
+  public CacheException() {
+  }
+
+  public CacheException(String message) {
+    super(message);
+  }
+
+  public CacheException(String message, Throwable cause) {
+    super(message, cause);
+  }
+
+  public CacheException(Throwable cause) {
+    super(cause);
+  }
+
+  public CacheException(String message, Throwable cause, boolean enableSuppression, boolean writableStackTrace) {
+    super(message, cause, enableSuppression, writableStackTrace);
   }
 
 }

@@ -22,6 +22,7 @@ package org.cache2k.impl;
  * #L%
  */
 
+import org.cache2k.ClosableIterator;
 import org.cache2k.storage.StorageEntry;
 
 import java.util.Iterator;
@@ -34,25 +35,37 @@ public abstract class StorageAdapter {
 
   public abstract void open();
   public abstract void shutdown();
-  public abstract Future<Void> checkStorageStillUnconnectedForClear();
+  public abstract boolean checkStorageStillDisconnectedForClear();
   public abstract void disconnectStorageForClear();
-  public abstract Future<Void> clearWithoutOngoingEntryOperations();
+
+  /** Starts the parallel clearing process, returns immediatly */
+  public abstract Future<Void> startClearingAndReconnection();
+
   public abstract void put(BaseCache.Entry e);
   public abstract StorageEntry get(Object key);
   public abstract void remove(Object key);
   public abstract void evict(BaseCache.Entry e);
   public abstract void expire(BaseCache.Entry e);
-  public abstract Iterator<BaseCache.Entry> iterateAll();
+  public abstract ClosableIterator<BaseCache.Entry> iterateAll();
+
+  /**
+   * Return the total number of entries within the heap and
+   * the storage. Should apply simple calculations to give and exact
+   * number. No heavy operation e.g. checking for duplicates.
+   *
+   * @see org.cache2k.Cache#getTotalEntryCount()
+   */
   public abstract int getTotalEntryCount();
+
   /** 0 means no alert, 1 orange, 2, red alert */
   public abstract int getAlert();
-  public abstract void disableOnFailure(Throwable t);
+  public abstract void disable(Throwable t);
 
   /** Implemented by a storage user, a cache or aggregator */
   static interface Parent {
 
     /** Change the storage implementation to another one or null for a disconnect */
-    void resetStorage(StorageAdapter s);
+    void resetStorage(StorageAdapter _current, StorageAdapter _new);
 
   }
 

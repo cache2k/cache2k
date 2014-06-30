@@ -24,6 +24,8 @@ package org.cache2k.impl;
 
 import org.cache2k.BulkCacheSource;
 import org.cache2k.CacheEntry;
+import org.cache2k.CacheException;
+import org.cache2k.ClosableIterator;
 import org.cache2k.ExperimentalBulkCacheSource;
 import org.cache2k.Cache;
 import org.cache2k.CacheConfig;
@@ -41,6 +43,7 @@ import org.cache2k.PropagatedCacheException;
 
 import org.cache2k.storage.StorageEntry;
 import org.cache2k.util.Log;
+import org.cache2k.util.TunableConstants;
 
 import java.lang.reflect.Array;
 import java.security.SecureRandom;
@@ -240,9 +243,9 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
   }
 
   @Override
-  public void resetStorage(StorageAdapter s) {
+  public void resetStorage(StorageAdapter _from, StorageAdapter to) {
     synchronized (lock) {
-      storage = s;
+      storage = to;
     }
   }
 
@@ -442,9 +445,9 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
     boolean _untouchedHeapCache;
     synchronized (lock) {
       _untouchedHeapCache = touchedTime == clearedTime && getLocalSize() == 0;
-      if (storage.checkStorageStillUnconnectedForClear() == null) {
-        t.mainHashCopy = mainHash;
-        t.refreshHashCopy = refreshHash;
+      if (!storage.checkStorageStillDisconnectedForClear()) {
+        t.allLocalEntries = iterateAllLocalEntries();
+        t.allLocalEntries.setStopOnClear(false);
       }
       t.storage = storage;
       t.storage.disconnectStorageForClear();
@@ -485,31 +488,31 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
 
   class StorageClearTask implements LimitedPooledExecutor.NeverRunInCallingTask<Future<Void>> {
 
-    E[] mainHashCopy;
-    E[] refreshHashCopy;
+    ClosableConcurrentHashEntryIterator<Entry> allLocalEntries;
     StorageAdapter storage;
 
     @Override
     public Future<Void> call() {
       try {
-        if (mainHashCopy != null) {
+        if (allLocalEntries != null) {
           waitForEntryOperations();
         }
-        Future<Void> f = storage.clearWithoutOngoingEntryOperations();
+        Future<Void> f = storage.startClearingAndReconnection();
         updateShutdownWaitFuture(f);
         storage = null;
         return f;
       } catch (Throwable t) {
+        if (allLocalEntries != null) {
+          allLocalEntries.close();
+        }
         getLog().warn("clear exception, when signalling storage", t);
-        storage.disableOnFailure(t);
-        BaseCache.this.storage = new FailureStorageAdapter(t);
+        storage.disable(t);
         throw t;
       }
     }
 
     private void waitForEntryOperations() {
-      Iterator<Entry> it =
-        new HashEntryIterator(mainHashCopy, refreshHashCopy);
+      Iterator<Entry> it = allLocalEntries;
       while (it.hasNext()) {
         Entry e = it.next();
         synchronized (e) { }
@@ -517,10 +520,14 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
     }
   }
 
-  public final void clear() {
+  protected void checkClosed() {
     if (shutdownInitiated) {
-      throw new IllegalStateException("cache closed");
+      throw new CacheClosedException();
     }
+  }
+
+  public final void clear() {
+    checkClosed();
     if (storage != null) {
       processClearWithStorage();
       return;
@@ -530,9 +537,7 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
 
   protected final void clearLocalCache() {
     synchronized (lock) {
-      if (shutdownInitiated) {
-        throw new IllegalStateException("cache closed");
-      }
+      checkClosed();
       Iterator<Entry> it = iterateAllLocalEntries();
       while (it.hasNext()) {
         Entry e = it.next();
@@ -547,6 +552,10 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
   }
 
   protected void initializeHeapCache() {
+    if (mainHashCtrl != null) {
+      mainHashCtrl.cleared();
+      refreshHashCtrl.cleared();
+    }
     mainHashCtrl = new Hash<>();
     refreshHashCtrl = new Hash<>();
     txHashCtrl = new Hash<>();
@@ -587,7 +596,12 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
    */
   public void destroy() {
     synchronized (lock) {
+      if (shutdownInitiated) {
+        return;
+      }
       shutdownInitiated = true;
+      mainHashCtrl.close();
+      refreshHashCtrl.close();
     }
     try {
       Future<?> _future = shutdownWaitFuture;
@@ -595,7 +609,7 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
         _future.get();
       }
     } catch (Exception ex) {
-      throw new RuntimeException(ex);
+      throw new CacheException(ex);
     }
     if (storage != null) {
       storage.shutdown();
@@ -626,7 +640,7 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
    * storage / persisted entries. The iteration may include expired
    * entries or entries with no valid data.
    */
-  protected Iterator<Entry> iterateLocalAndStorage() {
+  protected ClosableIterator<Entry> iterateLocalAndStorage() {
     if (storage == null) {
       synchronized (lock) {
         return iterateAllLocalEntries();
@@ -637,7 +651,7 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
   }
 
   @Override
-  public Iterator<CacheEntry<K, T>> iterator() {
+  public ClosableIterator<CacheEntry<K, T>> iterator() {
     return new IteratorFilterEntry2Entry(iterateLocalAndStorage());
   }
 
@@ -645,12 +659,12 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
    * Filter out non valid entries and wrap each entry with a cache
    * entry object.
    */
-  class IteratorFilterEntry2Entry implements Iterator<CacheEntry<K, T>> {
+  class IteratorFilterEntry2Entry implements ClosableIterator<CacheEntry<K, T>> {
 
-    Iterator<Entry> iterator;
+    ClosableIterator<Entry> iterator;
     Entry entry;
 
-    IteratorFilterEntry2Entry(Iterator<Entry> it) { iterator = it; }
+    IteratorFilterEntry2Entry(ClosableIterator<Entry> it) { iterator = it; }
 
     /**
      * Between hasNext() and next() an entry may be evicted or expired.
@@ -670,10 +684,20 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
     }
 
     @Override
+    public void close() throws Exception {
+      if (iterator != null) {
+        iterator.close();
+        iterator = null;
+      }
+    }
+
+    @Override
     public CacheEntry<K, T> next() { return returnEntry(entry); }
 
     @Override
-    public void remove() { throw new UnsupportedOperationException(); }
+    public void remove() {
+      BaseCache.this.remove((K) entry.getKey());
+    }
   }
 
   protected static void removeFromList(final Entry e) {
@@ -1559,8 +1583,10 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
    * Returns all cache entries within the heap cache. Entries that
    * are expires or contain no valid data are not filtered out.
    */
-  final protected Iterator<Entry> iterateAllLocalEntries() {
-    return new HashEntryIterator(mainHash, refreshHash);
+  final protected ClosableConcurrentHashEntryIterator<Entry> iterateAllLocalEntries() {
+    return
+      new ClosableConcurrentHashEntryIterator(
+        mainHashCtrl, mainHash, refreshHashCtrl, refreshHash);
   }
 
   @Override
@@ -2355,6 +2381,7 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
 
     public int size = 0;
     public int maxFill = 0;
+    private int suppressExpandCount;
 
     public static int index(Entry[] _hashTable, int _hashCode) {
       return _hashCode & (_hashTable.length - 1);
@@ -2374,6 +2401,19 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
       return null;
     }
 
+    public static boolean contains(Entry[] _hashTable, Object key, int _hashCode) {
+      int i = index(_hashTable, _hashCode);
+      Entry e = _hashTable[i];
+      while (e != null) {
+        if (e.hashCode == _hashCode &&
+            key.equals(e.key)) {
+          return true;
+        }
+        e = e.another;
+      }
+      return false;
+    }
+
 
     public static void insertWoExpand(Entry[] _hashTable, Entry e) {
       int i = index(_hashTable, e.hashCode);
@@ -2381,7 +2421,7 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
       _hashTable[i] = e;
     }
 
-    public static void rehash(Entry[] a1, Entry[] a2) {
+    private static void rehash(Entry[] a1, Entry[] a2) {
       for (Entry e : a1) {
         while (e != null) {
           Entry _next = e.another;
@@ -2391,7 +2431,7 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
       }
     }
 
-    public static <E extends Entry> E[] expandHash(E[] _hashTable) {
+    private static <E extends Entry> E[] expandHash(E[] _hashTable) {
       E[] a2 = (E[]) Array.newInstance(
               _hashTable.getClass().getComponentType(),
               _hashTable.length * 2);
@@ -2457,7 +2497,8 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
 
     /**
      * Remove entry from the hash. We never shrink the hash table, so
-     * the array keeps identical.
+     * the array keeps identical. After this remove operatoin the entry
+     * object may be inserted in another hash.
      */
     public E remove(E[] _hashTable, Object key, int hc) {
       int i = index(_hashTable, hc);
@@ -2468,6 +2509,9 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
       if (e.hashCode == hc && key.equals(e.key)) {
         _hashTable[i] = (E) e.another;
         size--;
+        if (suppressExpandCount > 0) {
+          e = e.clone();
+        }
         return (E) e;
       }
       Entry _another = e.another;
@@ -2475,6 +2519,9 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
         if (_another.hashCode == hc && key.equals(_another.key)) {
           e.another = _another.another;
           size--;
+          if (suppressExpandCount > 0) {
+            _another = _another.clone();
+          }
           return (E) _another;
         }
         e = _another;
@@ -2487,12 +2534,61 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
     public E[] insert(E[] _hashTable, Entry _entry) {
       size++;
       insertWoExpand(_hashTable, _entry);
-      if (size >= maxFill) {
-        maxFill = maxFill * 2;
-        return expandHash(_hashTable);
+      synchronized (this) {
+        if (size >= maxFill && suppressExpandCount == 0) {
+          maxFill = maxFill * 2;
+          return expandHash(_hashTable);
+        }
+        return _hashTable;
       }
-      return _hashTable;
     }
+
+    /**
+     * Usage/reference counter for iterations to suspend expand
+     * until the iteration finished. This is needed for correctness
+     * of the iteration, if an expand is done during the iteration
+     * process, the iterations returns duplicate entries or not
+     * all entries.
+     *
+     * <p>Failing to operate the increment/decrement in balance will
+     * mean that hash table expands are blocked forever, which is a
+     * serious error condition. Typical problems arise by thrown
+     * exceptions during an iteration.
+     */
+    public synchronized void incrementSuppressExpandCount() {
+      suppressExpandCount++;
+    }
+
+    public synchronized void decrementSuppressExpandCount() {
+      suppressExpandCount--;
+    }
+
+    /**
+     * The cache with this hash was cleared and the hash table is no longer
+     * in used. Signal to iterations to abort.
+     */
+    public void cleared() {
+      if (size >= 0) {
+        size = -1;
+      }
+    }
+
+    /**
+     * Cache was closed. Inform operations/iterators on the hash.
+     */
+    public void close() { size = -2; }
+
+    /**
+     * Operations should terminate
+     */
+    public boolean isCleared() { return size == -1; }
+
+    /**
+     * Operations should terminate and throw a {@link org.cache2k.impl.CacheClosedException}
+     */
+    public boolean isClosed() { return size == -2; }
+
+    public boolean shouldAbort() { return size < 0; }
 
     public E[] init(Class<E> _entryType) {
       size = 0;
@@ -2515,7 +2611,7 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
   final static InitialValueInEntryNeverReturned INITIAL_VALUE = new InitialValueInEntryNeverReturned();
 
   public static class Entry<E extends Entry, K, T>
-    implements MutableCacheEntry<K,T>, StorageEntry {
+    implements MutableCacheEntry<K,T>, StorageEntry, Cloneable {
 
     static final int FETCHED_STATE = 10;
     static final int REMOVED_STATE = 12;
@@ -2815,6 +2911,7 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
         "fetchedTime=" + fetchedTime +
         ", nextRefreshTime=" + nextRefreshTime +
         ", key=" + key +
+        ", mHC=" + hashCode +
         ", value=" + value +
         ", dirty=" + isDirty() +
         '}';
@@ -2827,6 +2924,22 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
     public final boolean equals(Object obj) {
       return this == obj;
     }
+
+    /**
+     * The entry clone operation always does a shallow copy.
+     */
+    public final E clone() {
+      try {
+        Object o = super.clone();
+        return (E) o;
+      } catch (CloneNotSupportedException e) {
+        throw new CacheInternalError("never happens");
+      }
+    }
+
+  }
+
+  public static class Tunables implements TunableConstants {
 
   }
 

@@ -11,74 +11,48 @@ A cache can have more than one storage configured.
 
 ## Error handling
 
-A storage implementation may propagate exceptions to the cache, in the case,
-that nothing useful can be done. Depending on the usage scenario or the data
-that is stored within the storage, it may be a serious problem or no problem
-if a storage operation fails. Thus, the error handling can be tweaked to fit
- the scenario.
- 
-According with the cache properties a get operation may return data or not, so if
- a storage operations fails, there is the option to ignore this, since there
- is no guarantee that the cache stored the data, or to propagate this.
- 
-The situation is different for a put or a remove operation. If the operation
-fails and the storage is returning the old data, the cache properties are not
-met.
+A storage implementations may throw exceptions and leave it to the
+general error handling mechanism to do something useful. Depending on
+ the situation the exception will be propagated to the application or
+ not.
 
 ### Default handling mode
 
-The idea of the default handling is that it goes with the cache paradigm
-"there are no guarantees". A failed operation which can be mitigated 
-is logged but not propagated. The error count is incremented and 
-the JMX alert goes to orange level.
+The idea of the default handling is that it goes with the cache paradigm. 
+A read operation may return an entry or not, even when an entry was 
+stored before. In the event of an exception the problem just gets counted 
+and logged and no entry will be returned.
 
-
-A storage exception is considered fatal, always. If something fails,
-the storage will be switched off, which means, that the cache runs
-only with the heap if no other storage is available.
-
-Switching off the storage has two reasons: The data of the storage is
-not touched any more, so the situation can be investigated by the operator,
-if needed. Second, the application may run within the heap cache safely,
- whereas with continuous storage exceptions the application performance
- properties may change dramatically.
-
-### Unreliable handling mode
-
-Can be used if the storage implementation does not work reliable, e.g. if
-a network connection is needed. A failed operation is logged on debug level
- but not propagated.
-
-A storage exception is considered non-fatal if the operation was not critical.
+Cache mutations are more difficult. After a successful cache put the new entry
+  mut be returned or no entry. Returning the previous entry would be a failure.
 
 ### Reliable handling mode
 
-Used when critical data is stored. Errors are propagated and JMX alert goes
-to red level. When reliable handling is expected, the application will gets the
-exceptions so it may or will stop operating at once.
+This mode can be used when critical data is stored. If a mutation is not 
+successful an exceptions is propagated to the application.
 
 ### Overview per cache operation
 
-FIXME: do we keep the three modes?
+| Storage operation | Default mode                                |  Reliable mode    |
+  ----------------- | ------------------------------------------- | ----------------- |
+| open              | disable and ignore                          | disable and propagate, cache unusable |
+| put               | mitigate and ignore / disable and propagate | disable and propagate, cache unusable |
+| get               | ignore                                      | disable and propagate, cache unusable |
+| remove            | disable and propagate                       | disable and propagate, cache unusable |
+| contains          | ignore                                      | disable and propagate, cache unusable |
+| flush             | disable and ignore                          | disable and propagate, cache unusable |
+| expire            | disable and ignore                          | disable and propagate, cache unusable |
+| iterate/visit     | disable and ignore                          | disable and propagate, cache unusable |
 
-| Storage operation | Default mode    | Unreliable mode   | Reliable mode              |
-  ----------------- | --------------- | ----------------- | -------------------------- |
-| open              | log and disable | log and disable   | log, disable and propagate |
-| put               | mitigate, count and ignore or disable | count and ignore  | log, disable and propagate |
-| get               | count and ignore | count and ignore  | log, disable and propagate |
-| remove            | count and ignore | count and ignore  | log, disable and propagate |
-| contains          | count and ignore | count and ignore  | log, disable and propagate |
-| get               | count and ignore | count and ignore  | log, disable and propagate |
-| flush             | log and disable | log and disable   | log, disable and propagate |
-| expire            | log and disable | count and ignore  | log, disable and propagate |
-| iterate/visit     | log and disable | count and ignore  | log, disable and propagate |
-
-- *log and disable*:  
+- *disable and ignore*: Storage module is disabled, cache continues operation without storage interaction
+- *disable and propagate*: Storage module disabled, exceptions will be propagated to the application
+- *cache unusable*: Complete cache is unusable and will throw exceptions
+- *mitigate and ignore*: If put() fails, try to remove the entry, if this works ignore the problem
+- *ignore*: Just count the error. get() returns null
 
 ## Monitoring
 
 General counters?
-
 
 A cache clear operation will return immediately and not hold up any other operations while the
 storage implementation may need some time to cleanup, e.g. if 1TB of files need to be

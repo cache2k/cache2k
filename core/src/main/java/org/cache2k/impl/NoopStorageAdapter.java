@@ -22,18 +22,24 @@ package org.cache2k.impl;
  * #L%
  */
 
+import org.cache2k.ClosableIterator;
+import org.cache2k.impl.threading.Futures;
 import org.cache2k.storage.StorageEntry;
 
+import java.util.Collections;
 import java.util.Iterator;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
 
 /**
  * @author Jens Wilke; created: 2014-06-02
  */
 public class NoopStorageAdapter extends StorageAdapter {
+
+  BaseCache cache;
+
+  public NoopStorageAdapter(BaseCache cache) {
+    this.cache = cache;
+  }
 
   @Override
   public void open() {
@@ -44,8 +50,8 @@ public class NoopStorageAdapter extends StorageAdapter {
   }
 
   @Override
-  public Future<Void> checkStorageStillUnconnectedForClear() {
-    return null;
+  public boolean checkStorageStillDisconnectedForClear() {
+    return true;
   }
 
   @Override
@@ -54,39 +60,12 @@ public class NoopStorageAdapter extends StorageAdapter {
   }
 
   @Override
-  public Future<Void> clearWithoutOngoingEntryOperations() {
-    return new Future<Void>() {
-      @Override
-      public boolean cancel(boolean mayInterruptIfRunning) {
-        return false;
-      }
-
-      @Override
-      public boolean isCancelled() {
-        return false;
-      }
-
-      @Override
-      public boolean isDone() {
-        return true;
-      }
-
-      @Override
-      public Void get() throws InterruptedException, ExecutionException {
-        return null;
-      }
-
-      @Override
-      public Void get(long timeout, TimeUnit unit) throws InterruptedException, ExecutionException, TimeoutException {
-        return null;
-      }
-    };
+  public Future<Void> startClearingAndReconnection() {
+    return new Futures.FinishedFuture<>(null);
   }
 
   @Override
-  public void put(BaseCache.Entry e) {
-
-  }
+  public void put(BaseCache.Entry e) { }
 
   @Override
   public StorageEntry get(Object key) {
@@ -94,37 +73,49 @@ public class NoopStorageAdapter extends StorageAdapter {
   }
 
   @Override
-  public void remove(Object key) {
-
-  }
+  public void remove(Object key) { }
 
   @Override
-  public void evict(BaseCache.Entry e) {
-
-  }
+  public void evict(BaseCache.Entry e) { }
 
   @Override
-  public void expire(BaseCache.Entry e) {
-
-  }
+  public void expire(BaseCache.Entry e) { }
 
   @Override
-  public void disableOnFailure(Throwable t) {
+  public void disable(Throwable t) { }
 
-  }
-
+  @SuppressWarnings("unchecked")
   @Override
-  public Iterator<BaseCache.Entry> iterateAll() {
-    return null;
+  public ClosableIterator<BaseCache.Entry> iterateAll() {
+    return new EmptyClosableIterator<>();
   }
 
   @Override
   public int getTotalEntryCount() {
-    return 0;
+    synchronized (cache.lock) {
+      return cache.getLocalSize();
+    }
   }
 
   @Override
   public int getAlert() {
     return 0;
   }
+
+  static class EmptyClosableIterator<E> implements ClosableIterator<E> {
+
+    @Override
+    public void close() { }
+
+    @Override
+    public boolean hasNext() { return false; }
+
+    @Override
+    public E next() { return null; }
+
+    @Override
+    public void remove() { }
+
+  }
+
 }

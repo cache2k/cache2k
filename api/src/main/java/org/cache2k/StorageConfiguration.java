@@ -29,6 +29,8 @@ import java.util.concurrent.TimeUnit;
  */
 public class StorageConfiguration {
 
+  boolean reliable;
+
   boolean purgeOnStartup;
 
   boolean ignoreModifications;
@@ -46,6 +48,14 @@ public class StorageConfiguration {
   long syncInterval = 7 * 1000;
 
   Object extendedConfiguration;
+
+  public boolean isReliable() {
+    return reliable;
+  }
+
+  public void setReliable(boolean reliable) {
+    this.reliable = reliable;
+  }
 
   public void setPurgeOnStartup(boolean purgeOnStartup) {
     this.purgeOnStartup = purgeOnStartup;

@@ -33,7 +33,7 @@ import java.util.concurrent.ExecutorService;
  *
  * @author Jens Wilke; created: 2014-04-03
  */
-public interface CacheStorage extends Closeable {
+public interface CacheStorage {
 
   public void open(CacheStorageContext ctx, StorageConfiguration cfg) throws Exception;
 
@@ -51,9 +51,9 @@ public interface CacheStorage extends Closeable {
    * the data, no reference may be hold within the storage to it. The callee takes
    * care that the entry data is consistent during the put method call.
    *
-   * <p>An exception on put is severe. The storage will be disconnected from the cache.
+   * <p/>If a put operation fails an implementation should try to remove an
+   * existing entry bound to the key and then throw the exception.
    *
-   * @return true, if this entry was present in the storage before and got overwritten
    * @throws IOException may be thrown if hope is lost
    */
   public void put(StorageEntry e) throws Exception;
@@ -89,14 +89,8 @@ public interface CacheStorage extends Closeable {
 
   /**
    * Free all resources and stop operations immediately.
-   *
-   * <p>Rationale: We need to declare an IOException here to be compatible with the
-   * closable interface. This means that other exceptions need to be rethrown, if
-   * needed. It would be more consistent to declare IOException instead of Exception
-   * throughout. However, needing to rethrow exceptions in the get/put operations
-   * is more expansive and leads to boilerplate code.
    */
-  public void close() throws IOException;
+  public void close() throws Exception;
 
   /**
    * Visit all stored entries.

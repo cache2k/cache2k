@@ -240,7 +240,7 @@ public class ImageFileStorage implements CacheStorage {
     exceptionMarshaller = ctx.getMarshallerFactory().createMarshaller(Throwable.class);
   }
 
-  public void close() throws IOException {
+  public void close() throws Exception {
     synchronized (commitLock) {
       if (file == null) {
         return;

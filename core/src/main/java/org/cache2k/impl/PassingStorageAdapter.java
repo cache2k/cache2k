@@ -24,6 +24,7 @@ package org.cache2k.impl;
 
 import org.cache2k.Cache;
 import org.cache2k.CacheConfig;
+import org.cache2k.ClosableIterator;
 import org.cache2k.StorageConfiguration;
 import org.cache2k.impl.threading.LimitedPooledExecutor;
 import org.cache2k.impl.timer.TimerPayloadListener;
@@ -43,6 +44,7 @@ import java.util.Set;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
@@ -57,7 +59,10 @@ import java.util.concurrent.atomic.AtomicInteger;
  * Passes cache operation to the storage layer. Implements common
  * services for the storage layer. This class heavily interacts
  * with the base cache and contains mostly everything special
- * needed if a storage is defined.
+ * needed if a storage is defined. This means the design is not
+ * perfectly layered, in some cases the
+ * e.g. the get operation does interacts with the
+ * underlying storage, wheres iterate
  *
  * @author Jens Wilke; created: 2014-05-08
  */
@@ -70,7 +75,7 @@ class PassingStorageAdapter extends StorageAdapter {
   private BaseCache cache;
   CacheStorage storage;
   boolean passivation = false;
-  long storageErrorCount = 0;
+  long errorCount = 0;
   Set<Object> deletedKeys = null;
   StorageContext context;
   StorageConfiguration config;
@@ -79,10 +84,12 @@ class PassingStorageAdapter extends StorageAdapter {
   boolean needsFlush;
   Future<Void> executingFlush;
   Log log;
+  StorageAdapter.Parent parent;
 
   public PassingStorageAdapter(BaseCache _cache, CacheConfig _cacheConfig,
                                StorageConfiguration _storageConfig) {
     cache = _cache;
+    parent = _cache;
     context = new StorageContext(_cache);
     context.keyType = _cacheConfig.getKeyType();
     context.valueType = _cacheConfig.getValueType();
@@ -103,26 +110,28 @@ class PassingStorageAdapter extends StorageAdapter {
   }
 
   public void open() {
-   try {
+    try {
       ImageFileStorage s = new ImageFileStorage();
       s.open(context, config);
       storage = s;
       if (config.isPassivation()) {
-        deletedKeys = new HashSet<>();
-        passivation = true;
+      deletedKeys = new HashSet<>();
+      passivation = true;
       }
-     logLifecycleOperation("opened, state: " + storage);
+      logLifecycleOperation("opened, state: " + storage);
     } catch (Exception ex) {
-
-      cache.getLog().warn("error initializing storage, running in-memory", ex);
+      if (config.isReliable()) {
+        disableAndThrow("error initializing, disabled", ex);
+      } else {
+        disable("error initializing, disabled", ex);
+      }
     }
   }
 
   /**
    * Store entry on cache put. Entry must be locked, since we use the
    * entry directly for handing it over to the storage, it is not
-   * allowed to change. If storeAlways is switched on the entry will
-   * be in memory and in the storage after this operation.
+   * allowed to change.
    */
   public void put(BaseCache.Entry e) {
     if (passivation) {
@@ -131,12 +140,28 @@ class PassingStorageAdapter extends StorageAdapter {
       }
       return;
     }
+    doPut(e);
+  }
+
+  private void doPut(BaseCache.Entry e) {
     try {
       storage.put(e);
       checkStartFlushTimer();
     } catch (Exception ex) {
-      storageErrorCount++;
-      throw new CacheStorageException("cache put", ex);
+      if (config.isReliable()) {
+        disableAndThrow("exception in storage.put()", ex);
+      } else {
+        errorCount++;
+        try {
+          if (!storage.contains(e.getKey())) {
+            return;
+          }
+          storage.remove(e.getKey());
+        } catch (Exception ex2) {
+          ex.addSuppressed(ex2);
+          disableAndThrow("exception in storage.put(), mitigation failed, entry state unknown", ex);
+        }
+      }
     }
   }
 
@@ -181,8 +206,11 @@ class PassingStorageAdapter extends StorageAdapter {
     try {
       return storage.get(k);
     } catch (Exception ex) {
-      storageErrorCount++;
-      throw new CacheStorageException("cache get", ex);
+      errorCount++;
+      if (config.isReliable()) {
+        throw new CacheStorageException("cache get", ex);
+      }
+      return null;
     }
   }
 
@@ -194,7 +222,7 @@ class PassingStorageAdapter extends StorageAdapter {
    */
   public void evict(BaseCache.Entry e) {
     if (passivation) {
-      putIfDirty(e);
+      putEventually(e);
     }
   }
 
@@ -205,15 +233,24 @@ class PassingStorageAdapter extends StorageAdapter {
     remove(e.getKey());
   }
 
-  private void putIfDirty(BaseCache.Entry e) {
+  /**
+   * Store it in the storage if needed, that is if it is dirty
+   * or if the entry is not yet in the storage. When an off heap
+   * and persistent storage is aggregated, evicted entries will
+   * be put to the off heap storage, but not into the persistent
+   * storage again.
+   */
+  private void putEventually(BaseCache.Entry e) {
+    boolean f;
     try {
-      if (e.isDirty()) {
-        storage.put(e);
-        checkStartFlushTimer();
-      }
+      f = e.isDirty() || !storage.contains(e.getKey());
     } catch (Exception ex) {
-      storageErrorCount++;
-      throw new CacheStorageException("cache put", ex);
+      errorCount++;
+      disable("storage.contains(), unknown state", ex);
+      throw new CacheStorageException("", ex);
+    }
+    if (f) {
+      doPut(e);
     }
   }
 
@@ -228,13 +265,12 @@ class PassingStorageAdapter extends StorageAdapter {
       storage.remove(key);
       checkStartFlushTimer();
     } catch (Exception ex) {
-      storageErrorCount++;
-      throw new CacheStorageException("cache remove", ex);
+      disableAndThrow("storage.remove()", ex);
     }
   }
 
   @Override
-  public Iterator<BaseCache.Entry> iterateAll() {
+  public ClosableIterator<BaseCache.Entry> iterateAll() {
     final CompleteIterator it = new CompleteIterator();
     if (tunables.iterationQueueCapacity > 0) {
       it.queue = new ArrayBlockingQueue<>(tunables.iterationQueueCapacity);
@@ -243,6 +279,8 @@ class PassingStorageAdapter extends StorageAdapter {
     }
     synchronized (cache.lock) {
       it.localIteration = cache.iterateAllLocalEntries();
+      it.localIteration.setKeepIterated(true);
+      it.keepHashCtrlForClearDetection = cache.mainHashCtrl;
       if (!passivation) {
         it.maximumEntriesToIterate = storage.getEntryCount();
       } else {
@@ -265,7 +303,7 @@ class PassingStorageAdapter extends StorageAdapter {
     } catch (UnsupportedOperationException ex) {
       _unsupported = true;
     } catch (Exception ex) {
-      ex.printStackTrace();
+      disable("expire exception", ex);
     }
     if (_unsupported) {
       expireByVisit(now);
@@ -304,7 +342,7 @@ class PassingStorageAdapter extends StorageAdapter {
     try {
       storage.visit(ctx, f, v);
     } catch (Exception ex) {
-      ex.printStackTrace();
+      disable("visit exception", ex);
     }
     if (_modified.get()) {
       checkStartFlushTimer();
@@ -342,8 +380,7 @@ class PassingStorageAdapter extends StorageAdapter {
       CacheStorage.EntryFilter f = new CacheStorage.EntryFilter() {
         @Override
         public boolean shouldInclude(Object _key) {
-          boolean b = !it.keysIterated.contains(_key);
-          return b;
+          return !BaseCache.Hash.contains(it.keysIterated, _key, cache.modifiedHash(_key.hashCode()));
         }
       };
       try {
@@ -356,7 +393,7 @@ class PassingStorageAdapter extends StorageAdapter {
           it.awaitTermination();
         } catch (InterruptedException ex) {
         }
-        for (; ; ) {
+        for (;;) {
           try {
             _queue.put(LAST_ENTRY);
             break;
@@ -427,14 +464,16 @@ class PassingStorageAdapter extends StorageAdapter {
 
   class CompleteIterator
     extends MyMultiThreadContext
-    implements Iterator<BaseCache.Entry>, CacheStorage.VisitContext {
+    implements ClosableIterator<BaseCache.Entry>, CacheStorage.VisitContext {
 
-    HashSet<Object> keysIterated = new HashSet<>();
-    Iterator<BaseCache.Entry> localIteration;
+    BaseCache.Hash keepHashCtrlForClearDetection;
+    BaseCache.Entry[] keysIterated;
+    ClosableConcurrentHashEntryIterator localIteration;
     int maximumEntriesToIterate;
     StorageEntry entry;
     BlockingQueue<StorageEntry> queue;
     Callable<Void> runnable;
+    Future<Void> futureToCheckAbnormalTermination;
     ExecutorService executorForStorageCall;
 
     @Override
@@ -452,29 +491,55 @@ class PassingStorageAdapter extends StorageAdapter {
       if (localIteration != null) {
         boolean b = localIteration.hasNext();
         if (b) {
-          entry = localIteration.next();
-          keysIterated.add(entry.getKey());
+          BaseCache.Entry e;
+          entry = e = localIteration.next();
           return true;
         }
-        localIteration = null;
-        if (keysIterated.size() >= maximumEntriesToIterate) {
+        if (localIteration.iteratedCtl.size >= maximumEntriesToIterate) {
           queue = null;
         } else {
-          executorForStorageCall.submit(runnable);
+          keysIterated = localIteration.iterated;
+          futureToCheckAbnormalTermination =
+            executorForStorageCall.submit(runnable);
         }
+        localIteration = null;
       }
       if (queue != null) {
         if (abortException != null) {
+          queue = null;
           throw new StorageIterationException(abortException);
         }
+        if (cache.shutdownInitiated) {
+          throw new CacheClosedException();
+        }
+        if (keepHashCtrlForClearDetection.isCleared()) {
+          close();
+          return false;
+        }
         try {
-          entry = queue.take();
+          for (;;) {
+            entry = queue.poll(1234, TimeUnit.MILLISECONDS);
+            if (entry == null) {
+              if (!futureToCheckAbnormalTermination.isDone()) {
+                continue;
+              }
+              futureToCheckAbnormalTermination.get();
+            }
+            break;
+          }
           if (entry != LAST_ENTRY) {
             return true;
           }
-        } catch (InterruptedException ex) {
+        } catch (InterruptedException _ignore) {
+        } catch (ExecutionException ex) {
+          if (abortException == null) {
+            abortException = ex;
+          }
         }
         queue = null;
+        if (abortException != null) {
+          throw new CacheStorageException(abortException);
+        }
       }
       return false;
     }
@@ -494,6 +559,20 @@ class PassingStorageAdapter extends StorageAdapter {
     public void remove() {
       throw new UnsupportedOperationException();
     }
+
+    @Override
+    public void close() {
+      if (localIteration != null) {
+        localIteration.close();
+        localIteration = null;
+      }
+      if (executorForStorageCall != null) {
+        executorForStorageCall.shutdownNow();
+        executorForStorageCall = null;
+        queue = null;
+      }
+    }
+
   }
 
   static class StorageIterationException extends CacheStorageException {
@@ -516,28 +595,27 @@ class PassingStorageAdapter extends StorageAdapter {
         Callable<Void> c = new Callable<Void>() {
           @Override
           public Void call() throws Exception {
-            if (_previousFlush != null) {
-              _previousFlush.get();
-            }
-            CacheStorage.FlushContext ctx = new MyFlushContext();
-            storage.flush(ctx, System.currentTimeMillis());
-            log.debug("flushed, state: " + storage);
-            executingFlush = null;
-            synchronized (this) {
-              if (needsFlush) {
-                scheduleTimer();
-              } else {
-                if (flushTimerHandle != null) {
-                  flushTimerHandle.cancel();
-                  flushTimerHandle = null;
-                }
+          if (_previousFlush != null) {
+            _previousFlush.get();
+          }
+          CacheStorage.FlushContext ctx = new MyFlushContext();
+          storage.flush(ctx, System.currentTimeMillis());
+          log.debug("flushed, state: " + storage);
+          executingFlush = null;
+          synchronized (this) {
+            if (needsFlush) {
+              scheduleTimer();
+            } else {
+              if (flushTimerHandle != null) {
+                flushTimerHandle.cancel();
+                flushTimerHandle = null;
               }
             }
-            ctx.awaitTermination();
-            return null;
+          }
+          ctx.awaitTermination();
+          return null;
           }
         };
-
       return executingFlush = executor.submit(c);
     }
   }
@@ -554,7 +632,9 @@ class PassingStorageAdapter extends StorageAdapter {
         }
         while (it.hasNext()) {
           BaseCache.Entry e = it.next();
-          putIfDirty(e);
+          synchronized (e) {
+            putEventually(e);
+          }
         }
         if (deletedKeys != null) {
           for (Object k : deletedKeys) {
@@ -563,17 +643,14 @@ class PassingStorageAdapter extends StorageAdapter {
         }
       }
       final CacheStorage _storage = storage;
-      for (;;) {
-        synchronized (this) {
-          if (_storage == null) {
-            return;
-          }
-          if  (storage instanceof ClearStorageBuffer) {
-            throw new CacheInternalError("Clear is supposed to be in shutdown wait task queue");
-          }
-          storage = null;
-          break;
+      synchronized (this) {
+        if (_storage == null) {
+          return;
         }
+        if  (storage instanceof ClearStorageBuffer) {
+          throw new CacheInternalError("Clear is supposed to be in shutdown wait task queue");
+        }
+        storage = null;
       }
       final Future<Void> _previousFlush = executingFlush;
       Callable<Void> c = new Callable<Void>() {
@@ -597,18 +674,21 @@ class PassingStorageAdapter extends StorageAdapter {
       Future<Void> f = executor.submit(c);
       f.get();
     } catch (Exception ex) {
-      storageErrorCount++;
+      errorCount++;
     }
   }
 
-  public Future<Void> checkStorageStillUnconnectedForClear() {
+  /**
+   * True means actually no operations started on the storage again, yet
+   */
+  public boolean checkStorageStillDisconnectedForClear() {
     if (storage instanceof ClearStorageBuffer) {
       ClearStorageBuffer _buffer = (ClearStorageBuffer) storage;
       if (!_buffer.isTransferringToStorage()) {
-        return ((ClearStorageBuffer) storage).clearThreadFuture;
+        return true;
       }
     }
-    return null;
+    return false;
   }
 
   /**
@@ -637,7 +717,7 @@ class PassingStorageAdapter extends StorageAdapter {
    * will. However, this method is not necessarily executed in the order
    * the clear or the disconnect took place. This is checked also.
    */
-  public Future<Void> clearWithoutOngoingEntryOperations() {
+  public Future<Void> startClearingAndReconnection() {
     synchronized (this) {
       final ClearStorageBuffer _buffer = (ClearStorageBuffer) storage;
       if (_buffer.clearThreadFuture != null) {
@@ -657,8 +737,7 @@ class PassingStorageAdapter extends StorageAdapter {
               _waitingBufferStack.waitForAll();
             }
           } catch (Exception ex) {
-            log.warn("exception during waiting for previous clear", ex);
-            disableOnFailure(ex);
+            disable("exception during waiting for previous clear", ex);
             throw new CacheStorageException(ex);
           }
           synchronized (this) {
@@ -669,18 +748,16 @@ class PassingStorageAdapter extends StorageAdapter {
           try {
             _buffer.getOriginalStorage().clear();
           } catch (Exception ex) {
-            log.warn("exception during clear", ex);
-            disableOnFailure(ex);
+            disable("exception during clear", ex);
             throw new CacheStorageException(ex);
           }
-          synchronized (this) {
+          synchronized (cache.lock) {
             _buffer.startTransfer();
           }
           try {
             _buffer.transfer();
           } catch (Exception ex) {
-            log.warn("exception during clear, operations replay", ex);
-            disableOnFailure(ex);
+            disable("exception during clear, operations replay", ex);
             throw new CacheStorageException(ex);
           }
           synchronized (this) {
@@ -695,12 +772,36 @@ class PassingStorageAdapter extends StorageAdapter {
     }
   }
 
-  public void disableOnFailure(Throwable ex) {
-    CacheStorage _storage = storage;
-    if  (_storage instanceof ClearStorageBuffer) {
-      ((ClearStorageBuffer) _storage).disableOnFailure(ex);
+  public void disableAndThrow(String _logMessage, Throwable ex) {
+    errorCount++;
+    disable(_logMessage, ex);
+    throw new CacheStorageException(_logMessage, ex);
+  }
+
+  public void disable(String _logMessage, Throwable ex) {
+    log.warn(_logMessage, ex);
+    disable(ex);
+  }
+
+  public void disable(Throwable ex) {
+    if (storage == null) { return; }
+    synchronized (cache.lock) {
+      synchronized (this) {
+        if (storage == null) { return; }
+        CacheStorage _storage = storage;
+        if (_storage instanceof ClearStorageBuffer) {
+          ClearStorageBuffer _buffer = (ClearStorageBuffer) _storage;
+          _buffer.disableOnFailure(ex);
+        }
+        try {
+          _storage.close();
+        } catch (Exception _ignore) {
+        }
+
+        storage = null;
+        parent.resetStorage(this, new NoopStorageAdapter(cache));
+      }
     }
-    storage = null;
   }
 
   /**
@@ -709,6 +810,9 @@ class PassingStorageAdapter extends StorageAdapter {
    */
   @Override
   public int getAlert() {
+    if (errorCount > 0) {
+      return 1;
+    }
     if (storage instanceof ClearStorageBuffer) {
       return 1;
     }

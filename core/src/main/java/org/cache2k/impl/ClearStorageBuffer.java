@@ -118,7 +118,7 @@ public class ClearStorageBuffer implements CacheStorage {
   }
 
   @Override
-  public void close() throws IOException {
+  public void close() throws Exception {
     boolean _forward;
     synchronized (this) {
       _forward = forwardStorage != null;

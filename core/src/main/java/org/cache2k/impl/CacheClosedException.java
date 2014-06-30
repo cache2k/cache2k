@@ -1,8 +1,8 @@
-package org.cache2k;
+package org.cache2k.impl;
 
 /*
  * #%L
- * cache2k API only package
+ * cache2k core package
  * %%
  * Copyright (C) 2000 - 2014 headissue GmbH, Munich
  * %%
@@ -23,17 +23,12 @@ package org.cache2k;
  */
 
 /**
- * If a cache receives an exception when fetching a value via the
- * cache source it may propagate the exception wrapped into this
- * one to the caller. Whether propagation occurs depends on the
- * configuration and whether if there is no valid data present.
+ * Consistently this exception is thrown, when an operation detects that the
+ * cache is closed. It is a subtype of {@link java.lang.IllegalStateException}
+ * and not a {@link org.cache2k.CacheException} since the JSR107 defines
+ * it.
  *
- * @author Jens Wilke
+ * @author Jens Wilke; created: 2014-06-07
  */
-public class PropagatedCacheException extends CacheException {
-
-  public PropagatedCacheException(Throwable ex) {
-    super(ex);
-  }
-
+public class CacheClosedException extends IllegalStateException {
 }

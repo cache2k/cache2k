@@ -34,6 +34,7 @@ import java.util.Set;
  * @see CacheBuilder to create a new cache
  * @author Jens Wilke
  */
+@SuppressWarnings("UnusedDeclaration")
 public interface Cache<K, T> extends KeyValueSource<K,T>, Iterable<CacheEntry<K, T>>  {
 
   public abstract String getName();
@@ -144,6 +145,24 @@ public interface Cache<K, T> extends KeyValueSource<K,T>, Iterable<CacheEntry<K,
    * <p>TODO-API: Keep this for the final API?
    */
   public abstract int getTotalEntryCount();
+
+  /**
+   * Iterate all entries in the cache.
+   *
+   * <p>Contract: All entries present in the cache by the call of the method call will
+   * be iterated if not removed during the iteration goes on. The iteration may or may not
+   * iterate entries inserted during the iteration is in progress. The iteration never
+   * iterates duplicate entries.
+   *
+   * <p>The iteration is usable fully concurrently. Concurrent operation will not be
+   * influenced. Mutations of the cache, like remove or put, will not stop the iteration.
+   *
+   * <p>The iterator holds resources. If an iteration is aborted, the resources should
+   * be freed by calling {@link org.cache2k.ClosableIterator#close}, e.g. with a
+   * try with resources pattern.
+   */
+  @Override
+  ClosableIterator<CacheEntry<K, T>> iterator();
 
   /**
    * Free all resources and remove the cache from the CacheManager.
