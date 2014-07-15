@@ -44,6 +44,7 @@ public class CacheConfig {
   private int heapEntryCapacity = -1;
   private boolean backgroundRefresh = true;
   private int expirySeconds = 10 * 60;
+  private long expiryMillis  = -1;
   private boolean keepDataAfterExpired = true;
   private List<Object> moduleConfiguration;
 
@@ -157,6 +158,17 @@ public class CacheConfig {
    */
   public void setExpirySeconds(int expirySeconds) {
     this.expirySeconds = expirySeconds;
+  }
+
+  public long getExpiryMillis() {
+    return expiryMillis;
+  }
+
+  /**
+   * If set, takes precedence before second resolution expiry.
+   */
+  public void setExpiryMillis(long expiryMillis) {
+    this.expiryMillis = expiryMillis;
   }
 
   public boolean isKeepDataAfterExpired() {

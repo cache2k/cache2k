@@ -129,6 +129,12 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
   protected long refreshSubmitFailedCnt = 0;
 
   /**
+   * An exception that should not have happened and was not thrown to the
+   * application. Only used for the refresh thread yet.
+   */
+  protected long internalExceptionCnt = 0;
+
+  /**
    * Needed to correct the counter invariants, because during eviction the entry
    * might be removed from the replacement list, but still in the hash.
    */
@@ -179,7 +185,7 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
   protected Timer timer;
 
   /** Stuff that we need to wait for before shutdown may complete */
-  protected Futures.WaitforAllFuture<?> shutdownWaitFuture;
+  protected Futures.WaitForAllFuture<?> shutdownWaitFuture;
 
   protected boolean shutdownInitiated = false;
 
@@ -262,7 +268,11 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
     if (c.isBackgroundRefresh()) {
       refreshPool = CacheRefreshThreadPool.getInstance();
     }
-    setExpirySeconds(c.getExpirySeconds());
+    if (c.getExpiryMillis() > 0) {
+      maxLinger = c.getExpirySeconds();
+    } else {
+      setExpirySeconds(c.getExpirySeconds());
+    }
     setFeatureBit(KEEP_AFTER_EXPIRED, c.isKeepDataAfterExpired());
     /*
     if (c.isPersistent()) {
@@ -479,7 +489,7 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
   protected void updateShutdownWaitFuture(Future<?> f) {
     synchronized (lock) {
       if (shutdownWaitFuture == null || shutdownWaitFuture.isDone()) {
-        shutdownWaitFuture = new Futures.WaitforAllFuture(f);
+        shutdownWaitFuture = new Futures.WaitForAllFuture(f);
       } else {
         shutdownWaitFuture.add((Future) f);
       }
@@ -1019,22 +1029,28 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
   @Override
   public void put(K key, T value) {
     E e;
-    synchronized (lock) {
-      putCnt++;
-      int hc = modifiedHash(key.hashCode());
-      e = lookupEntry(key, hc);
-      if (e == null) {
-        e = newEntry(key, hc);
-        putNewEntryCnt++;
-      } else {
-        if (e.isDataValidState()) {
-          e.setReputState();
+    for (;;) {
+      synchronized (lock) {
+        putCnt++;
+        int hc = modifiedHash(key.hashCode());
+        e = lookupEntry(key, hc);
+        if (e == null) {
+          e = newEntry(key, hc);
+          putNewEntryCnt++;
+        } else {
+          if (e.isDataValidState()) {
+            e.setReputState();
+          }
         }
       }
-    }
-    long t = System.currentTimeMillis();
-    synchronized (e) {
-      insertOnPut(e, value, t, t);
+      long t = System.currentTimeMillis();
+      synchronized (e) {
+        if (e.isRemovedState() || e.isRemovedNonValidState()) {
+          continue;
+        }
+        insertOnPut(e, value, t, t);
+      }
+      break;
     }
     evictEventually();
   }
@@ -1526,9 +1542,9 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
                     e.setGettingRefresh();
                     fetch(e);
                   }
-                } catch (Exception ex) {
+                } catch (Throwable ex) {
                   synchronized (lock) {
-                    refreshSubmitFailedCnt++;
+                    internalExceptionCnt++;
                   }
                   getLog().warn("Refresh exception", ex);
                   expireEntry(e);
@@ -1730,6 +1746,7 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
             _fetched.set(i, false);
             long t2 = fetchBulkLoop(ea, k, r, _fetched, s, i - 1, end, t);
             if (!e.isDataValidState()) {
+              e.setLastModification(t);
               insertFetched(e, r[i], t, t2);
             }
             return t2;
@@ -2004,7 +2021,6 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
         + "putNewEntryCnt=" + fo.getPutNewEntryCnt() + ", "
         + "expiredCnt=" + fo.getExpiredCnt() + ", "
         + "evictedCnt=" + fo.getEvictedCnt() + ", "
-        + "keyMutationCnt=" + fo.getKeyMutationCnt() + ", "
         + "hitRate=" + fo.getDataHitString() + ", "
         + "collisionCnt=" + fo.getCollisionCnt() + ", "
         + "collisionSlotCnt=" + fo.getCollisionSlotCnt() + ", "
@@ -2014,6 +2030,8 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
         + "created=" + (new java.sql.Timestamp(fo.getStarted())) + ", "
         + "cleared=" + (new java.sql.Timestamp(fo.getCleared())) + ", "
         + "touched=" + (new java.sql.Timestamp(fo.getTouched())) + ", "
+        + "internalExceptionCnt=" + fo.getInternalExceptionCnt() + ", "
+        + "keyMutationCnt=" + fo.getKeyMutationCnt() + ", "
         + "infoCreated=" + (new java.sql.Timestamp(fo.getInfoCreated())) + ", "
         + "infoCreationDeltaMs=" + fo.getInfoCreationDeltaMs() + ", "
         + "impl=\"" + getClass().getSimpleName() + "\""
@@ -2069,6 +2087,7 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
     public int getFetchesInFlightCnt() { return fetchesInFlight; }
     public long getBulkGetCnt() { return bulkGetCnt; }
     public long getRefreshCnt() { return refreshCnt; }
+    public long getInternalExceptionCnt() { return internalExceptionCnt; }
     public long getRefreshSubmitFailedCnt() { return refreshSubmitFailedCnt; }
     public long getRefreshHitCnt() { return refreshHitCnt; }
     public long getExpiredCnt() { return BaseCache.this.getExpiredCnt(); }
@@ -2165,7 +2184,8 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
         return 1;
       }
       if (getHashQualityInteger() < 30 ||
-        getKeyMutationCnt() > 0) {
+        getKeyMutationCnt() > 0 ||
+        getInternalExceptionCnt() > 0) {
         return 1;
       }
       return 0;
@@ -2509,9 +2529,6 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
       if (e.hashCode == hc && key.equals(e.key)) {
         _hashTable[i] = (E) e.another;
         size--;
-        if (suppressExpandCount > 0) {
-          e = e.clone();
-        }
         return (E) e;
       }
       Entry _another = e.another;

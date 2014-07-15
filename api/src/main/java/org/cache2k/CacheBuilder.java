@@ -26,6 +26,7 @@ import org.cache2k.spi.Cache2kCoreProvider;
 
 import javax.annotation.Nullable;
 import java.util.Collection;
+import java.util.concurrent.TimeUnit;
 
 /**
  * @author Jens Wilke; created: 2013-06-25
@@ -136,6 +137,11 @@ public abstract class CacheBuilder<K,T>
 
   public CacheBuilder<K, T> expirySecs(int v) {
     config.setExpirySeconds(v);
+    return this;
+  }
+
+  public CacheBuilder<K, T> expiryMillis(long v) {
+    config.setExpiryMillis(v);
     return this;
   }
 

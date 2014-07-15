@@ -56,24 +56,29 @@ import org.cache2k.ClosableIterator;
 public class ClosableConcurrentHashEntryIterator<E extends BaseCache.Entry>
   implements ClosableIterator<E> {
 
+  int iteratedCountLastRun;
   BaseCache.Entry lastEntry = null;
   BaseCache.Hash<E> hashCtl;
   BaseCache.Hash<E> hashCtl2;
-  BaseCache.Hash<BaseCache.Entry> iteratedCtl = new BaseCache.Hash<>();
-  BaseCache.Entry[] iterated;
   BaseCache.Entry[] hash;
   BaseCache.Entry[] hash2;
+  BaseCache.Hash<E> hashCtlCopy;
+  BaseCache.Hash<E> hashCtl2Copy;
+  BaseCache.Entry[] hashCopy;
+  BaseCache.Entry[] hash2Copy;
+  BaseCache.Hash<BaseCache.Entry> iteratedCtl = new BaseCache.Hash<>();
+  BaseCache.Entry[] iterated;
   boolean keepIterated = false;
   boolean stopOnClear = true;
 
   public ClosableConcurrentHashEntryIterator(
-    BaseCache.Hash<E> hashCtl, E[] hash,
-    BaseCache.Hash<E> hashCtl2, E[] hash2) {
-    this.hash = hash;
-    this.hash2 = hash2;
-    this.hashCtl = hashCtl;
-    this.hashCtl2 = hashCtl2;
-    hashCtl.incrementSuppressExpandCount();
+    BaseCache.Hash<E> _hashCtl, E[] _hash,
+    BaseCache.Hash<E> _hashCtl2, E[] _hash2) {
+    hashCopy = hash = _hash;
+    hash2Copy = hash2 = _hash2;
+    hashCtlCopy = hashCtl = _hashCtl;
+    hashCtl2Copy = hashCtl2 = _hashCtl2;
+    _hashCtl.incrementSuppressExpandCount();
     iterated = iteratedCtl.init(BaseCache.Entry.class);
   }
 
@@ -142,8 +147,15 @@ public class ClosableConcurrentHashEntryIterator<E extends BaseCache.Entry>
     hashCtl2 = null;
     if (hash == null) {
       lastEntry = null;
-      close();
-      return true;
+      if (iteratedCountLastRun == iteratedCtl.size) {
+        close();
+        return true;
+      }
+      iteratedCountLastRun = iteratedCtl.size;
+      hash = hashCopy;
+      hash2 = hash2Copy;
+      hashCtl = hashCtlCopy;
+      hashCtl2 = hashCtl2Copy;
     }
     hashCtl.incrementSuppressExpandCount();
     return false;
@@ -180,10 +192,10 @@ public class ClosableConcurrentHashEntryIterator<E extends BaseCache.Entry>
   public void close() {
     if (hashCtl != null) {
       hashCtl.decrementSuppressExpandCount();
-      hashCtl = null;
-      hash = null;
-      hashCtl2 = null;
-      hash2 = null;
+      hashCtl = hashCtl2 = null;
+      hash = hash2 = null;
+      hashCtlCopy = hashCtl2Copy = null;
+      hashCopy = hash2Copy = null;
       lastEntry = null;
       if (!keepIterated) {
         iterated = null;

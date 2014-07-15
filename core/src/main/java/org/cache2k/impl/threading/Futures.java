@@ -43,16 +43,16 @@ public class Futures {
    *
    * <p/>The get method call will throw Exceptions from the added futures.
    */
-  public static class WaitforAllFuture<V> implements Future<V> {
+  public static class WaitForAllFuture<V> implements Future<V> {
 
     List<Future<V>> futureList = new LinkedList<>();
 
-    public WaitforAllFuture(Future<V> _top) {
+    public WaitForAllFuture(Future<V> _top) {
       add(_top);
     }
 
     @SafeVarargs
-    public WaitforAllFuture(final Future<V>... _top) {
+    public WaitForAllFuture(final Future<V>... _top) {
       for (Future<V> f : _top) { add(f); }
     }
 

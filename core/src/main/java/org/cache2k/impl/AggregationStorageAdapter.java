@@ -71,7 +71,7 @@ public class AggregationStorageAdapter extends StorageAdapter implements Storage
 
   @Override
   public Future<Void> startClearingAndReconnection() {
-    Futures.WaitforAllFuture<Void> _waitForAllFuture = new Futures.WaitforAllFuture<>();
+    Futures.WaitForAllFuture<Void> _waitForAllFuture = new Futures.WaitForAllFuture<>();
     for (StorageAdapter a : storages) {
       _waitForAllFuture.add(a.startClearingAndReconnection());
     }
