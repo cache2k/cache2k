@@ -22,13 +22,13 @@ package org.cache2k.impl;
  * #L%
  */
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
 import org.cache2k.Cache;
 import org.cache2k.CacheManager;
 import org.cache2k.impl.threading.GlobalPooledExecutor;
+import org.cache2k.util.Log;
 
-import java.lang.reflect.Proxy;
+import java.io.IOException;
+import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -36,15 +36,14 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.ThreadPoolExecutor;
-import java.util.logging.Logger;
+import java.util.jar.Manifest;
 
 /**
  * @author Jens Wilke; created: 2013-07-01
  */
 public class CacheManagerImpl extends CacheManager {
   
-
+  static final String META_INF_MANIFEST_MF = "/META-INF/MANIFEST.MF";
   static List<CacheLifeCycleListener> lifeCycleListeners = new ArrayList<>();
   static JmxSupport jmxSupport;
 
@@ -61,8 +60,23 @@ public class CacheManagerImpl extends CacheManager {
 
   public CacheManagerImpl() {
     name = getDefaultName();
-    log = LogFactory.getLog(CacheManager.class.getName() + '.' + name);
+    log = Log.getLog(CacheManager.class.getName() + '.' + name);
     jmxSupport.registerManager(this);
+    String _buildNumber = null;
+    String _version = null;
+    try {
+      InputStream in = this.getClass().getResourceAsStream(META_INF_MANIFEST_MF);
+      Manifest m = new Manifest(in);
+      _version = m.getMainAttributes().getValue("Implementation-Version");
+      _buildNumber = m.getMainAttributes().getValue("Implementation-Build");
+    } catch (IOException _ignore) {
+    }
+    StringBuilder sb = new StringBuilder();
+    sb.append("org.cache2k manager starting. ");
+    sb.append("name="); sb.append(name);
+    sb.append(", version="); sb.append(_version);
+    sb.append(", build="); sb.append(_buildNumber);
+    log.info(sb.toString());
   }
 
   private void sendCreatedEvent(Cache c) {

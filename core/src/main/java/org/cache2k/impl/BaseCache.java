@@ -572,7 +572,9 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
     mainHash = mainHashCtrl.init((Class<E>) newEntry().getClass());
     refreshHash = refreshHashCtrl.init((Class<E>) newEntry().getClass());
     txHash = txHashCtrl.init((Class<E>) newEntry().getClass());
-    if (startedTime == 0) { startedTime = clearedTime; }
+    if (startedTime == 0) {
+      startedTime = System.currentTimeMillis();
+    }
     if (timer != null) {
       timer.cancel();
       timer = null;
@@ -1993,6 +1995,13 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
 
   protected String getExtraStatistics() { return ""; }
 
+  static String timestampToString(long t) {
+    if (t == 0) {
+      return "-";
+    }
+    return (new java.sql.Timestamp(t)).toString();
+  }
+
   /**
    * Return status information. The status collection is time consuming, so this
    * is an expensive operation.
@@ -2027,12 +2036,12 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
         + "longestCollisionSize=" + fo.getLongestCollisionSize() + ", "
         + "hashQuality=" + fo.getHashQualityInteger() + ", "
         + "msecs/fetch=" + (fo.getMillisPerFetch() >= 0 ? fo.getMillisPerFetch() : "-")  + ", "
-        + "created=" + (new java.sql.Timestamp(fo.getStarted())) + ", "
-        + "cleared=" + (new java.sql.Timestamp(fo.getCleared())) + ", "
-        + "touched=" + (new java.sql.Timestamp(fo.getTouched())) + ", "
+        + "created=" + timestampToString(fo.getStarted()) + ", "
+        + "cleared=" + timestampToString(fo.getCleared()) + ", "
+        + "touched=" + timestampToString(fo.getTouched()) + ", "
         + "internalExceptionCnt=" + fo.getInternalExceptionCnt() + ", "
         + "keyMutationCnt=" + fo.getKeyMutationCnt() + ", "
-        + "infoCreated=" + (new java.sql.Timestamp(fo.getInfoCreated())) + ", "
+        + "infoCreated=" + timestampToString(fo.getInfoCreated()) + ", "
         + "infoCreationDeltaMs=" + fo.getInfoCreationDeltaMs() + ", "
         + "impl=\"" + getClass().getSimpleName() + "\""
         + getExtraStatistics() + ", "
