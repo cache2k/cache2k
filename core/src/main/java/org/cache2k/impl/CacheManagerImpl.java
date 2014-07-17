@@ -25,7 +25,7 @@ package org.cache2k.impl;
 import org.cache2k.Cache;
 import org.cache2k.CacheManager;
 import org.cache2k.impl.threading.GlobalPooledExecutor;
-import org.cache2k.util.Log;
+import org.cache2k.impl.util.Log;
 
 import java.io.IOException;
 import java.io.InputStream;

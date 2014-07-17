@@ -22,7 +22,7 @@ package org.cache2k.impl.threading;
  * #L%
  */
 
-import org.cache2k.util.TunableConstants;
+import org.cache2k.impl.util.TunableConstants;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -51,22 +51,22 @@ import java.util.concurrent.TimeoutException;
  */
 public class LimitedPooledExecutor implements ExecutorService {
 
-  private static final Tunables TUNABLES = new Tunables();
+  private static final Tunable TUNABLE = new Tunable();
 
   private GlobalPooledExecutor globalPooledExecutor;
   private MyNotifier notifier;
   private boolean shutdown = false;
-  private Tunables tunables;
+  private Tunable tunable;
   private ExceptionListener exceptionListener;
 
   public LimitedPooledExecutor(GlobalPooledExecutor gpe) {
-    this(gpe, TUNABLES);
+    this(gpe, TUNABLE);
   }
 
-  public LimitedPooledExecutor(GlobalPooledExecutor gpe, Tunables t) {
+  public LimitedPooledExecutor(GlobalPooledExecutor gpe, Tunable t) {
     globalPooledExecutor = gpe;
     notifier = new MyNotifier(t.maxThreadCount);
-    tunables = t;
+    tunable = t;
   }
 
   public void setExceptionListener(ExceptionListener exceptionListener) {
@@ -174,7 +174,7 @@ public class LimitedPooledExecutor implements ExecutorService {
   @Override
   public <T> List<Future<T>> invokeAll(Collection<? extends Callable<T>> _tasks)
     throws InterruptedException {
-    if (!tunables.enableUntested) {
+    if (!tunable.enableUntested) {
       throw new UnsupportedOperationException("untested code");
     }
     List<Future<T>> _list = new ArrayList<>();
@@ -194,7 +194,7 @@ public class LimitedPooledExecutor implements ExecutorService {
   public <T> List<Future<T>> invokeAll(
     Collection<? extends Callable<T>> _tasks, long _timeout, TimeUnit _unit)
     throws InterruptedException {
-    if (!tunables.enableUntested) {
+    if (!tunable.enableUntested) {
       throw new UnsupportedOperationException("untested code");
     }
     long now = System.currentTimeMillis();
@@ -350,7 +350,7 @@ public class LimitedPooledExecutor implements ExecutorService {
 
   }
 
-  public static class Tunables implements TunableConstants {
+  public static class Tunable extends TunableConstants {
 
     /**
      * For now we use the available processor count as limit throughout.

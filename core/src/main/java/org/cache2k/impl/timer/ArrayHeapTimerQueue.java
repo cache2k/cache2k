@@ -22,7 +22,7 @@ package org.cache2k.impl.timer;
  * #L%
  */
 
-import org.cache2k.util.Log;
+import org.cache2k.impl.util.Log;
 
 import javax.annotation.Nonnull;
 

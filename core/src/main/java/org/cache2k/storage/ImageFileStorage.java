@@ -52,8 +52,8 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 
 import org.cache2k.storage.FreeSpaceMap.Slot;
-import org.cache2k.util.TunableConstants;
-import org.cache2k.util.TunableConstantsFactory;
+import org.cache2k.impl.util.TunableConstants;
+import org.cache2k.impl.util.TunableFactory;
 
 /**
  * Implements a robust storage on a file or a byte buffer.
@@ -83,7 +83,7 @@ public class ImageFileStorage implements CacheStorage {
   final static Marshaller DEFAULT_MARSHALLER = DESCRIPTOR_MARSHALLER;
 
   boolean dataLost = false;
-  Tunables tunableConstants = TunableConstantsFactory.get(Tunables.class);
+  Tunable tunable = TunableFactory.get(Tunable.class);
   Marshaller keyMarshaller = DEFAULT_MARSHALLER;
   Marshaller valueMarshaller = DEFAULT_MARSHALLER;
   Marshaller universalMarshaller = DEFAULT_MARSHALLER;
@@ -145,8 +145,8 @@ public class ImageFileStorage implements CacheStorage {
   long freedLastCommit = 0;
   CacheStorageContext context;
 
-  public ImageFileStorage(Tunables t) throws IOException, ClassNotFoundException {
-    tunableConstants = t;
+  public ImageFileStorage(Tunable t) throws IOException, ClassNotFoundException {
+    tunable = t;
   }
 
   public ImageFileStorage() {
@@ -155,6 +155,9 @@ public class ImageFileStorage implements CacheStorage {
   @Override
   public void open(CacheStorageContext ctx, StorageConfiguration cfg) throws IOException {
     context = ctx;
+    if (ctx.getProperties() != null) {
+      tunable = TunableFactory.get(ctx.getProperties(), Tunable.class);
+    }
     if (fileName == null) {
       fileName =
         "cache2k-storage:" + ctx.getManagerName() + ":" + ctx.getCacheName();
@@ -520,9 +523,9 @@ public class ImageFileStorage implements CacheStorage {
       } else {
         s = new Slot(_length, _neededSpace);
       }
-      if (tunableConstants.extensionSize >= 2) {
-        s.size += tunableConstants.extensionSize - 1;
-        s.size -= s.size % tunableConstants.extensionSize;
+      if (tunable.extensionSize >= 2) {
+        s.size += tunable.extensionSize - 1;
+        s.size -= s.size % tunable.extensionSize;
       }
       file.setLength(s.getNextPosition());
       resetBufferFromFile();
@@ -754,12 +757,12 @@ public class ImageFileStorage implements CacheStorage {
         sortOut(entriesInEarliestIndex, newEntries.keySet());
         sortOut(entriesInEarliestIndex, deletedEntries.keySet());
         int _writeCnt = newEntries.size() + deletedEntries.size();
-        if (_writeCnt * tunableConstants.rewriteCompleteFactor >= entriesInEarliestIndex.size()) {
+        if (_writeCnt * tunable.rewriteCompleteFactor >= entriesInEarliestIndex.size()) {
           rewriteEntries = entriesInEarliestIndex;
           entriesInEarliestIndex = new HashMap<>();
         } else {
           rewriteEntries = new HashMap<>();
-          int cnt = _writeCnt * tunableConstants.rewritePartialFactor;
+          int cnt = _writeCnt * tunable.rewritePartialFactor;
           Iterator<BufferEntry> it = entriesInEarliestIndex.values().iterator();
           while (cnt > 0 && it.hasNext()) {
             BufferEntry e = it.next();
@@ -776,7 +779,7 @@ public class ImageFileStorage implements CacheStorage {
      */
     void checkStartNewIndex() {
       int _totalEntriesInIndexFile = descriptor.indexEntries + totalEntriesToWrite();
-      if (_totalEntriesInIndexFile > descriptor.entryCount * tunableConstants.indexFileFactor) {
+      if (_totalEntriesInIndexFile > descriptor.entryCount * tunable.indexFileFactor) {
         forceNewFile = true;
       }
     }
@@ -796,7 +799,7 @@ public class ImageFileStorage implements CacheStorage {
       slotsToFreeQueue.add(workerFreeSlots);
       SlotBucket b = slotsToFreeQueue.peek();
       long _before = freeMap.getFreeSpace();
-      while ((b.time + tunableConstants.freeSpaceAfterMillis) <= timestamp) {
+      while ((b.time + tunable.freeSpaceAfterMillis) <= timestamp) {
         b = slotsToFreeQueue.remove();
         synchronized (freeMap) {
           for (Slot s : b) {
@@ -1320,7 +1323,7 @@ public class ImageFileStorage implements CacheStorage {
    * is basically provided for documentary reason and to have all
    * "magic values" in a central place.
    */
-  public static class Tunables implements TunableConstants {
+  public static class Tunable extends TunableConstants {
 
     /**
      * Factor of the entry count in the storage to limit the index

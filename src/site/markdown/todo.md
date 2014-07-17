@@ -14,6 +14,7 @@ A poor mans issue tracker.
   * more than 2gb?
   * off-heap persistence
   * flags for passivation and in-mem capacity, etc.
+  * 
 
 #### Integration targets
 
@@ -34,12 +35,19 @@ A poor mans issue tracker.
   * improve thread usage and memory footprint for expiry timer
   * Rethink on cache manager, SPI, maybe take a look on jsr107 for this
 
-  * Benchmark with more than one thead:
+  * Benchmark with more than one thread:
     Example: http://sourceforge.net/p/nitrocache/blog/2012/05/performance-benchmark-nitrocache--ehcache--infinispan--jcs--cach4j
+    
+### JSR107
+
+Things in JSR107 we don't have yet.
+
+  * Listeners
+  * Factories for loader, expiry, etc.
 
 #### Details
 
-  * expiry/refresh: Implement sharp expiry and background refresh
+  * expiry/refresh: Implement sharp expiry and background refresh, refresh ahead of time with different now?
   * change cache size during operation: maximumSize / capacity JMX setting
   * RefreshController: Rename? Add key!
   * explain/check null support

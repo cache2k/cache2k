@@ -42,8 +42,9 @@ import org.cache2k.RefreshController;
 import org.cache2k.PropagatedCacheException;
 
 import org.cache2k.storage.StorageEntry;
-import org.cache2k.util.Log;
-import org.cache2k.util.TunableConstants;
+import org.cache2k.impl.util.Log;
+import org.cache2k.impl.util.TunableConstants;
+import org.cache2k.impl.util.TunableFactory;
 
 import java.lang.reflect.Array;
 import java.security.SecureRandom;
@@ -80,14 +81,20 @@ import java.util.concurrent.FutureTask;
 public abstract class BaseCache<E extends BaseCache.Entry, K, T>
   implements Cache<K, T>, CanCheckIntegrity, Iterable<CacheEntry<K, T>>, StorageAdapter.Parent {
 
-  static int HASH_INITIAL_SIZE = 64;
-  static int HASH_LOAD_PERCENT = 64;
-
-
   static final Random SEED_RANDOM = new Random(new SecureRandom().nextLong());
   static int cacheCnt = 0;
 
-  protected int hashSeed = SEED_RANDOM.nextInt();
+  protected static final Tunable TUNABLE = TunableFactory.get(Tunable.class);
+
+  protected int hashSeed;
+
+  {
+    if (TUNABLE.disableHashRandomization) {
+      hashSeed = TUNABLE.hashSeed;
+    } else {
+      hashSeed = SEED_RANDOM.nextInt();
+    }
+  }
 
   /** Maximum amount of elements in cache */
   protected int maxSize = 5000;
@@ -2618,8 +2625,8 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
 
     public E[] init(Class<E> _entryType) {
       size = 0;
-      maxFill = HASH_INITIAL_SIZE * HASH_LOAD_PERCENT / 100;
-      return (E[]) Array.newInstance(_entryType, HASH_INITIAL_SIZE);
+      maxFill = TUNABLE.initialHashSize * TUNABLE.hashLoadPercent / 100;
+      return (E[]) Array.newInstance(_entryType, TUNABLE.initialHashSize);
     }
 
   }
@@ -2965,7 +2972,31 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
 
   }
 
-  public static class Tunables implements TunableConstants {
+  public static class Tunable extends TunableConstants {
+
+    /**
+     * Size of the hash table before inserting the first entry. Must be power
+     * of two. Default: 64.
+     */
+    public int initialHashSize = 64;
+
+    /**
+     * Fill percentage limit. When this is reached the hash table will get
+     * expanded. Default: 64.
+     */
+    public int hashLoadPercent = 64;
+
+    /**
+     * The hash code will randomized by default. This is a countermeasure
+     * against from outside that know the hash function.
+     */
+    public boolean disableHashRandomization = false;
+
+    /**
+     * Seed used when randomization is disabled. Default: 0.
+     */
+    public int hashSeed = 0;
+
 
   }
 

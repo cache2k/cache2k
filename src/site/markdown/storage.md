@@ -1,4 +1,4 @@
-h# External (out of heap) data storage
+# External (out of heap) data storage
 
 ## Introduction
 
@@ -8,6 +8,19 @@ remote/network storage. All storage variants, share common properties and
 therefore a common part of their configuration.
 
 A cache can have more than one storage configured.
+
+## Features
+
+### Offline clear()
+
+Caches may be cleared during operation. A storage need some time to proceed
+with the clear operation, e.g. when 1TB of files need to be deleted.
+A cache.clear() initiates a storage clear, but continues operation and
+buffers all storage requests, until the storage is ready.
+
+### Storage aggregation
+
+
 
 ## Error handling
 
@@ -64,3 +77,4 @@ storage implementation may need some time to cleanup, e.g. if 1TB of files need 
 ## Logging
 
 
+## 

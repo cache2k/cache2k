@@ -35,11 +35,13 @@ import org.cache2k.storage.ImageFileStorage;
 import org.cache2k.storage.MarshallerFactory;
 import org.cache2k.storage.Marshallers;
 import org.cache2k.storage.StorageEntry;
-import org.cache2k.util.Log;
-import org.cache2k.util.TunableConstants;
+import org.cache2k.impl.util.Log;
+import org.cache2k.impl.util.TunableConstants;
+import org.cache2k.impl.util.TunableFactory;
 
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.Properties;
 import java.util.Set;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
@@ -69,9 +71,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 @SuppressWarnings({"unchecked", "SynchronizeOnNonFinalField"})
 class PassingStorageAdapter extends StorageAdapter {
 
-  private final Tunables DEFAULT_TUNABLES = new Tunables();
-
-  private Tunables tunables = DEFAULT_TUNABLES;
+  private Tunable tunable = TunableFactory.get(Tunable.class);
   private BaseCache cache;
   CacheStorage storage;
   boolean passivation = false;
@@ -94,7 +94,7 @@ class PassingStorageAdapter extends StorageAdapter {
     context.keyType = _cacheConfig.getKeyType();
     context.valueType = _cacheConfig.getValueType();
     config = _storageConfig;
-    if (tunables.useManagerThreadPool) {
+    if (tunable.useManagerThreadPool) {
       executor = new LimitedPooledExecutor(cache.manager.getThreadPool());
     } else {
       executor = Executors.newCachedThreadPool();
@@ -272,8 +272,8 @@ class PassingStorageAdapter extends StorageAdapter {
   @Override
   public ClosableIterator<BaseCache.Entry> iterateAll() {
     final CompleteIterator it = new CompleteIterator();
-    if (tunables.iterationQueueCapacity > 0) {
-      it.queue = new ArrayBlockingQueue<>(tunables.iterationQueueCapacity);
+    if (tunable.iterationQueueCapacity > 0) {
+      it.queue = new ArrayBlockingQueue<>(tunable.iterationQueueCapacity);
     } else {
       it.queue = new SynchronousQueue<>();
     }
@@ -417,7 +417,7 @@ class PassingStorageAdapter extends StorageAdapter {
     @Override
     public ExecutorService getExecutorService() {
       if (executorForVisitThread == null) {
-        if (tunables.useManagerThreadPool) {
+        if (tunable.useManagerThreadPool) {
           LimitedPooledExecutor ex = new LimitedPooledExecutor(cache.manager.getThreadPool());
           ex.setExceptionListener(new LimitedPooledExecutor.ExceptionListener() {
             @Override
@@ -841,6 +841,11 @@ class PassingStorageAdapter extends StorageAdapter {
     }
 
     @Override
+    public Properties getProperties() {
+      return null;
+    }
+
+    @Override
     public String getManagerName() {
       return cache.manager.getName();
     }
@@ -910,7 +915,7 @@ class PassingStorageAdapter extends StorageAdapter {
 
   }
 
-  public static class Tunables implements TunableConstants {
+  public static class Tunable extends TunableConstants {
 
     /**
      * If the iteration client needs more time then the read threads,

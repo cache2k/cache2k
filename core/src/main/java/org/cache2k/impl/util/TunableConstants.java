@@ -1,4 +1,4 @@
-package org.cache2k.util;
+package org.cache2k.impl.util;
 
 /*
  * #%L
@@ -23,9 +23,9 @@ package org.cache2k.util;
  */
 
 /**
- * Marker interface of all classes that contain code constants. For each
- * implementation class these constants a centralized within a class. The
- * rationale behind this is explained in the following.
+ * Base class of all classes that contain code constants. For each
+ * cache2k implementation class constants a centralized within an inner class.
+ * The rationale behind this is explained in the following.
  *
  * <p/>Wisely chosen constants are sometimes buried within the code.
  * These are the so called "magic numbers". So lets give them a default
@@ -41,10 +41,22 @@ package org.cache2k.util;
  * de-tuning.
  *
  * <p/>If there is a constant need to change a constant, please open a change
- * request. Either it is better to change the tuable constant to a real parameter
+ * request. Either it is better to change the tunable constant to a real parameter
  * or a assign it to another value which fits the general purpose better.
  *
  * @author Jens Wilke; created: 2014-04-27
  */
-public interface TunableConstants {
+public class TunableConstants implements Cloneable {
+
+  @SuppressWarnings("CloneDoesntDeclareCloneNotSupportedException")
+  @Override
+  public  Object clone() {
+    try {
+      Object o = super.clone();
+      return o;
+    } catch (CloneNotSupportedException e) {
+      throw new UnsupportedOperationException("never happens", e);
+    }
+  }
+
 }

@@ -22,7 +22,8 @@ package org.cache2k.impl.threading;
  * #L%
  */
 
-import org.cache2k.util.TunableConstants;
+import org.cache2k.impl.util.TunableConstants;
+import org.cache2k.impl.util.TunableFactory;
 
 import java.security.SecureRandom;
 import java.util.Random;
@@ -61,7 +62,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 public class GlobalPooledExecutor {
 
   private static final Task<?> CLOSE_TASK = new Task<>();
-  private static final Tunables TUNABLES = new Tunables();
+  private static final Tunable TUNABLE = TunableFactory.get(Tunable.class);
   private static final ProgressNotifier DUMMY_NOTIFIER = new DummyNotifier();
 
   private int peakThreadCount = -1;
@@ -70,7 +71,7 @@ public class GlobalPooledExecutor {
   private int diedThreadCount;
   private BlockingQueue<Task<?>> taskQueue;
   private boolean closed;
-  private Tunables tunables;
+  private Tunable tunable;
   private ThreadFactory factory;
 
   /**
@@ -78,21 +79,21 @@ public class GlobalPooledExecutor {
    * @param _name used for the thread name prefix.
    */
   public GlobalPooledExecutor(String _name) {
-    this(TUNABLES, _name);
+    this(TUNABLE, _name);
   }
 
   GlobalPooledExecutor() {
     this((String) null);
   }
 
-  GlobalPooledExecutor(Tunables t) {
+  GlobalPooledExecutor(Tunable t) {
     this(t, null);
   }
 
-  GlobalPooledExecutor(Tunables t, String _threadNamePrefix) {
-    tunables = t;
-    taskQueue = new ArrayBlockingQueue<>(tunables.queueSize);
-    factory = tunables.threadFactoryFactory.newThreadFactory(_threadNamePrefix);
+  GlobalPooledExecutor(Tunable t, String _threadNamePrefix) {
+    tunable = t;
+    taskQueue = new ArrayBlockingQueue<>(tunable.queueSize);
+    factory = tunable.threadFactoryFactory.newThreadFactory(_threadNamePrefix);
   }
 
   public void execute(Runnable r) throws InterruptedException, TimeoutException  {
@@ -137,7 +138,7 @@ public class GlobalPooledExecutor {
       if (taskQueue.size() == 0) {
         return queue(t, _timeoutMillis);
       }
-      if (cnt >= tunables.hardLimitThreadCount) {
+      if (cnt >= tunable.hardLimitThreadCount) {
         return queue(t, _timeoutMillis);
       }
     }
@@ -202,8 +203,9 @@ public class GlobalPooledExecutor {
     return diedThreadCount;
   }
 
+  /** Used for alerting. */
   public boolean wasHardLimitReached() {
-    return peakThreadCount >= tunables.hardLimitThreadCount;
+    return peakThreadCount >= tunable.hardLimitThreadCount;
   }
 
   public int getPeakThreadCount() {
@@ -342,8 +344,8 @@ public class GlobalPooledExecutor {
   private class ExecutorThread implements Runnable {
 
     int waitTime =
-      (tunables.randomizeIdleTime ? delayRandom.nextInt(tunables.randomIdleTimeMillis) : 0) +
-      tunables.idleTimeMillis;
+      (tunable.randomizeIdleTime ? delayRandom.nextInt(tunable.randomIdleTimeMillis) : 0) +
+      tunable.idleTimeMillis;
 
     @Override
     public void run() {
@@ -394,7 +396,7 @@ public class GlobalPooledExecutor {
 
   }
 
-  public static class Tunables implements TunableConstants {
+  public static class Tunable extends TunableConstants {
 
     /**
      * Waiting task queue size. Must be greater 0. The executor always

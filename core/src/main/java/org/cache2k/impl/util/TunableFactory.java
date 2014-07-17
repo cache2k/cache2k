@@ -1,4 +1,4 @@
-package org.cache2k.util;
+package org.cache2k.impl.util;
 
 /*
  * #%L
@@ -22,6 +22,8 @@ package org.cache2k.util;
  * #L%
  */
 
+import org.cache2k.impl.CacheInternalError;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.lang.reflect.Field;
@@ -30,60 +32,70 @@ import java.util.Map;
 import java.util.Properties;
 
 /**
- * Returns a tunables instance after applying changes. Configuration
- * changes will be taken from the system properties or a provided
- * by properties file.
+ * Provides an instance of a tunable after applying changes taken
+ * from configuration file or system properties.
  *
  * @see TunableConstants
  * @author Jens Wilke; created: 2014-04-27
  */
-public final class TunableConstantsFactory {
+public final class TunableFactory {
 
-  public final static String GLOBAL_TUNING_FILE_NAME = "/org/cache2k/tuning.properties";
+  public final static String DEFAULT_TUNING_FILE_NAME =
+    "/org/cache2k/default-tuning.properties";
+
+  public final static String CUSTOM_TUNING_FILE_NAME =
+    "/org/cache2k/tuning.properties";
 
   public final static String TUNE_MARKER = "org.cache2k.tuning";
 
   private static Map<Class<?>, Object> map;
 
-  private static Properties globalProperties;
+  private static Properties defaultProperties;
+
+  private static Properties customProperties;
 
   /**
    * Reload the tunable configuration from the system properties
    * and the configuration file.
    */
-  public static void reload() {
+  public static synchronized void reload() {
     map = new HashMap<>();
-    globalProperties = null;
-    InputStream in = TunableConstants.class.getResourceAsStream(GLOBAL_TUNING_FILE_NAME);
-    if (in != null) {
-      try {
-        globalProperties = new Properties();
-        globalProperties.load(in);
-        in.close();
-      } catch (IOException ex) {
-        throw new IllegalArgumentException(ex);
-      }
-    }
-
+    customProperties = loadFile(CUSTOM_TUNING_FILE_NAME);
+    defaultProperties = loadFile(DEFAULT_TUNING_FILE_NAME);
   }
 
-  public static <T extends TunableConstants> T get(Properties p, Class<T> c) {
-    if (map == null) {
-      reload();
+  static Properties loadFile(final String _fileName) {
+    InputStream in =
+      TunableConstants.class.getResourceAsStream(_fileName);
+    if (in != null) {
+      try {
+        Properties p = new Properties();
+        p.load(in);
+        in.close();
+        return p;
+      } catch (IOException ex) {
+        throw new CacheInternalError("tuning properties not readable", ex);
+      }
     }
-    T cfg;
-    try {
-      cfg = c.newInstance();
-    } catch (Exception ex) {
-      throw new IllegalArgumentException("cannot instantiate tunables", ex);
+    return null;
+  }
+
+  public synchronized static <T extends TunableConstants> T get(Properties p, Class<T> c) {
+    T cfg = getDefault(c);
+    if (p != null
+      && p.containsKey(TUNE_MARKER)
+      && p.containsKey(cfg.getClass().getName() + ".tuning")) {
+      cfg = (T) cfg.clone();
+      apply(p, cfg);
     }
-    apply(globalProperties, cfg);
-    apply(System.getProperties(), cfg);
-    apply(p, cfg);
     return cfg;
   }
 
-  public static <T extends TunableConstants> T get(Class<T> c) {
+  public synchronized static <T extends TunableConstants> T get(Class<T> c) {
+    return getDefault(c);
+  }
+
+  private static <T extends TunableConstants> T getDefault(Class<T> c) {
     if (map == null) {
       reload();
     }
@@ -93,9 +105,10 @@ public final class TunableConstantsFactory {
       try {
         cfg = c.newInstance();
       } catch (Exception ex) {
-        throw new IllegalArgumentException("cannot instantiate tunables", ex);
+        throw new CacheInternalError("cannot instantiate tunables", ex);
       }
-      apply(globalProperties, cfg);
+      apply(defaultProperties, cfg);
+      apply(customProperties, cfg);
       apply(System.getProperties(), cfg);
       map.put(c, cfg);
     }
@@ -106,19 +119,22 @@ public final class TunableConstantsFactory {
     if (p == null) {
       return;
     }
-    if (!p.containsKey(TUNE_MARKER)) {
-      return;
-    }
-    if (!p.containsKey(cfg.getClass().getName() + ".tuning")) {
-      return;
-    }
     try {
       for (Field f : cfg.getClass().getFields()) {
-        String _propName = cfg.getClass().getName() + "." + f.getName();
+        String _propName =
+          cfg.getClass().getName().replace('$', '.') + "." + f.getName();
         String o = p.getProperty(_propName);
         if (o != null) {
           if (f.getType() == Boolean.TYPE) {
-            f.set(cfg, Boolean.valueOf(o));
+            o = o.toLowerCase();
+            if (
+              "off".equals(o) ||
+              "false".equals(o) ||
+              "disable".equals(o)) {
+              f.set(cfg, false);
+            } else {
+              f.set(cfg, true);
+            }
           }
           if (f.getType() == Integer.TYPE) {
             f.set(cfg, Integer.valueOf(o));
@@ -129,7 +145,7 @@ public final class TunableConstantsFactory {
         }
       }
     } catch (Exception ex) {
-      throw new IllegalArgumentException(ex);
+      throw new CacheInternalError("error applying tuning setup", ex);
     }
   }
 

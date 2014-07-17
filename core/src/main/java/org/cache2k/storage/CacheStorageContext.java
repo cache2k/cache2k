@@ -22,6 +22,8 @@ package org.cache2k.storage;
  * #L%
  */
 
+import java.util.Properties;
+
 /**
  * Expose the needed information and interactions with a cache
  * to a cache storage.
@@ -29,6 +31,8 @@ package org.cache2k.storage;
  * @author Jens Wilke; created: 2014-04-19
  */
 public interface CacheStorageContext {
+
+  Properties getProperties();
 
   String getManagerName();
 
