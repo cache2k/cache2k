@@ -26,11 +26,13 @@ import org.cache2k.Cache;
 import org.cache2k.CacheConfig;
 import org.cache2k.ClosableIterator;
 import org.cache2k.StorageConfiguration;
+import org.cache2k.impl.threading.Futures;
 import org.cache2k.impl.threading.LimitedPooledExecutor;
 import org.cache2k.impl.timer.TimerListener;
 import org.cache2k.impl.timer.TimerService;
 import org.cache2k.storage.CacheStorage;
 import org.cache2k.storage.CacheStorageContext;
+import org.cache2k.storage.FlushableStorage;
 import org.cache2k.storage.ImageFileStorage;
 import org.cache2k.storage.MarshallerFactory;
 import org.cache2k.storage.Marshallers;
@@ -39,6 +41,7 @@ import org.cache2k.impl.util.Log;
 import org.cache2k.impl.util.TunableConstants;
 import org.cache2k.impl.util.TunableFactory;
 
+import javax.annotation.Nonnull;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Properties;
@@ -50,6 +53,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
+import java.util.concurrent.FutureTask;
 import java.util.concurrent.SynchronousQueue;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.ThreadPoolExecutor;
@@ -81,9 +85,11 @@ class PassingStorageAdapter extends StorageAdapter {
   StorageConfiguration config;
   ExecutorService executor;
 
+  long flushIntervalMillis = 0;
   TimerService.CancelHandle flushTimerHandle;
-  boolean needsFlush;
-  Future<Void> executingFlush;
+
+  @Nonnull
+  Future<Void> lastExecutingFlush = new Futures.FinishedFuture<>();
 
   Log log;
   StorageAdapter.Parent parent;
@@ -116,9 +122,13 @@ class PassingStorageAdapter extends StorageAdapter {
       ImageFileStorage s = new ImageFileStorage();
       s.open(context, config);
       storage = s;
+      flushIntervalMillis = config.getFlushIntervalMillis();
+      if (!(storage instanceof FlushableStorage)) {
+        flushIntervalMillis = -1;
+      }
       if (config.isPassivation()) {
-      deletedKeys = new HashSet<>();
-      passivation = true;
+        deletedKeys = new HashSet<>();
+        passivation = true;
       }
       logLifecycleOperation("opened, state: " + storage);
     } catch (Exception ex) {
@@ -148,6 +158,7 @@ class PassingStorageAdapter extends StorageAdapter {
   private void doPut(BaseCache.Entry e) {
     try {
       storage.put(e);
+      e.isDirty();
       checkStartFlushTimer();
     } catch (Exception ex) {
       if (config.isReliable()) {
@@ -558,21 +569,12 @@ class PassingStorageAdapter extends StorageAdapter {
 
   /**
    * Start timer to flush data or do nothing if flush already scheduled.
-   *
-   * <p/>Not totally race free.
    */
   private void checkStartFlushTimer() {
-    if (config.getFlushInterval() <= 0) {
-      return;
-    }
-    if (flushTimerHandle != null) {
+    if (flushIntervalMillis <= 0) {
       return;
     }
     synchronized (this) {
-      if (executingFlush != null) {
-        needsFlush = true;
-        return;
-      }
       if (flushTimerHandle != null) {
         return;
       }
@@ -581,106 +583,159 @@ class PassingStorageAdapter extends StorageAdapter {
   }
 
   private void scheduleFlushTimer() {
-    if (flushTimerHandle != null) {
-      flushTimerHandle.cancel();
-    }
     TimerListener l = new TimerListener() {
       @Override
       public void fire(long _time) {
-        flush();
+        onFlushTimerEvent();
       }
     };
-    long _fireTime = System.currentTimeMillis() + config.getFlushInterval();
+    long _fireTime = System.currentTimeMillis() + config.getFlushIntervalMillis();
     flushTimerHandle = cache.timerService.add(l, _fireTime);
-    needsFlush = false;
   }
 
-  public Future<Void> flush() {
+  protected void onFlushTimerEvent() {
     synchronized (this) {
-      final Future<Void> _previousFlush = executingFlush;
-        Callable<Void> c = new Callable<Void>() {
-          @Override
-          public Void call() throws Exception {
-          if (_previousFlush != null) {
-            _previousFlush.get();
-          }
-          CacheStorage.FlushContext ctx = new MyFlushContext();
-          storage.flush(ctx, System.currentTimeMillis());
-          log.debug("flushed, state: " + storage);
-          executingFlush = null;
-          synchronized (this) {
-            if (needsFlush) {
-              scheduleFlushTimer();
-            } else {
-              if (flushTimerHandle != null) {
-                flushTimerHandle.cancel();
-                flushTimerHandle = null;
-              }
-            }
-          }
-          ctx.awaitTermination();
-          return null;
-          }
-        };
-      return executingFlush = executor.submit(c);
-    }
-  }
-
-  public void shutdown() {
-    if (storage == null) {
-      return;
-    }
-    try {
-      if (passivation) {
-        Iterator<BaseCache.Entry> it;
-        synchronized (cache.lock) {
-          it = cache.iterateAllLocalEntries();
-        }
-        while (it.hasNext()) {
-          BaseCache.Entry e = it.next();
-          synchronized (e) {
-            putEventually(e);
-          }
-        }
-        if (deletedKeys != null) {
-          for (Object k : deletedKeys) {
-            storage.remove(k);
-          }
-        }
+      flushTimerHandle.cancel();
+      flushTimerHandle = null;
+      if (storage instanceof ClearStorageBuffer ||
+        (!lastExecutingFlush.isDone())) {
+        checkStartFlushTimer();
+        return;
       }
-      final CacheStorage _storage = storage;
-      synchronized (this) {
-        if (_storage == null) {
-          return;
-        }
-        if  (storage instanceof ClearStorageBuffer) {
-          throw new CacheInternalError("Clear is supposed to be in shutdown wait task queue");
-        }
-        storage = null;
-      }
-      final Future<Void> _previousFlush = executingFlush;
-      Callable<Void> c = new Callable<Void>() {
+      Callable<Void> c = new LimitedPooledExecutor.NeverRunInCallingTask<Void>() {
         @Override
         public Void call() throws Exception {
-          if (_previousFlush != null) {
-            try {
-              _previousFlush.cancel(true);
-              _previousFlush.get();
-            } catch (Exception ex) {
-            }
-          }
-          CacheStorage.FlushContext ctx = new MyFlushContext();
-          _storage.flush(ctx, System.currentTimeMillis());
-          ctx.awaitTermination();
-          logLifecycleOperation("about to close, state: " + _storage);
-          _storage.close();
+          doStorageFlush();
           return null;
         }
       };
-      Future<Void> f = executor.submit(c);
-      f.get();
+      lastExecutingFlush = executor.submit(c);
+    }
+  }
+
+  /**
+   * Initiate flush on the storage. If a concurrent flush is going on, wait for
+   * it until initiating a new one.
+   */
+  public void flush() {
+    synchronized (this) {
+      if (flushTimerHandle != null) {
+        flushTimerHandle.cancel();
+        flushTimerHandle = null;
+      }
+    }
+    Callable<Void> c = new Callable<Void>() {
+      @Override
+      public Void call() throws Exception {
+        doStorageFlush();
+        return null;
+      }
+    };
+    FutureTask<Void> _inThreadFlush = new FutureTask<>(c);
+    boolean _anotherFlushSubmittedNotByUs = false;
+    for (;;) {
+      if (!lastExecutingFlush.isDone()) {
+        try {
+          lastExecutingFlush.get();
+          if (_anotherFlushSubmittedNotByUs) {
+            return;
+          }
+        } catch (Exception ex) {
+          disableAndThrow("flush execution", ex);
+        }
+      }
+      synchronized (this) {
+        if (!lastExecutingFlush.isDone()) {
+          _anotherFlushSubmittedNotByUs = true;
+          continue;
+        }
+        lastExecutingFlush = _inThreadFlush;
+      }
+      _inThreadFlush.run();
+      break;
+    }
+  }
+
+  private void doStorageFlush() throws Exception {
+    FlushableStorage.FlushContext ctx = new MyFlushContext();
+    FlushableStorage _storage = (FlushableStorage) storage;
+    _storage.flush(ctx, System.currentTimeMillis());
+    log.info("flushed, state: " + storage);
+  }
+
+  /** may be executed more than once */
+  public synchronized Future<Void> cancelTimerJobs() {
+    if (flushIntervalMillis >= 0) {
+      flushIntervalMillis = -1;
+    }
+    if (flushTimerHandle != null) {
+      flushTimerHandle.cancel();
+      flushTimerHandle = null;
+    }
+    if (!lastExecutingFlush.isDone()) {
+      lastExecutingFlush.cancel(false);
+      return lastExecutingFlush;
+    }
+    return new Futures.FinishedFuture<>();
+  }
+
+  public Future<Void> shutdown() {
+    if (storage instanceof ClearStorageBuffer) {
+      throw new CacheInternalError("Clear is supposed to be in shutdown wait task queue");
+    }
+    Callable<Void> _closeTaskChain = new Callable<Void>() {
+      @Override
+      public Void call() throws Exception {
+        if (config.isFlushOnClose()) {
+          flush();
+        } else {
+          Future<Void> _previousFlush = lastExecutingFlush;
+          if (_previousFlush != null) {
+            _previousFlush.cancel(true);
+            _previousFlush.get();
+          }
+        }
+        logLifecycleOperation("closing, state: " + storage);
+        storage.close();
+        return null;
+      }
+    };
+    if (passivation) {
+      final Callable<Void> _before = _closeTaskChain;
+      _closeTaskChain = new Callable<Void>() {
+        @Override
+        public Void call() throws Exception {
+          passivateHeapEntriesOnShutdown();
+          executor.submit(_before);
+          return null;
+        }
+      };
+    }
+    return executor.submit(_closeTaskChain);
+  }
+
+  /**
+   * Iterate through the heap entries and store them in the storage.
+   */
+  private void passivateHeapEntriesOnShutdown() {
+    Iterator<BaseCache.Entry> it;
+    try {
+      synchronized (cache.lock) {
+        it = cache.iterateAllLocalEntries();
+      }
+      while (it.hasNext()) {
+        BaseCache.Entry e = it.next();
+        synchronized (e) {
+          putEventually(e);
+        }
+      }
+      if (deletedKeys != null) {
+        for (Object k : deletedKeys) {
+          storage.remove(k);
+        }
+      }
     } catch (Exception ex) {
-      errorCount++;
+      rethrow("shutdown passivation", ex);
     }
   }
 
@@ -781,7 +836,7 @@ class PassingStorageAdapter extends StorageAdapter {
   public void disableAndThrow(String _logMessage, Throwable ex) {
     errorCount++;
     disable(_logMessage, ex);
-    throw new CacheStorageException(_logMessage, ex);
+    rethrow(_logMessage, ex);
   }
 
   public void disable(String _logMessage, Throwable ex) {
@@ -838,7 +893,7 @@ class PassingStorageAdapter extends StorageAdapter {
 
   class MyFlushContext
     extends MyMultiThreadContext
-    implements CacheStorage.FlushContext {
+    implements FlushableStorage.FlushContext {
 
   }
 

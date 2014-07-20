@@ -23,6 +23,7 @@ package org.cache2k.impl;
  */
 
 import org.cache2k.ClosableIterator;
+import org.cache2k.impl.threading.Futures;
 import org.cache2k.storage.StorageEntry;
 
 import java.util.Iterator;
@@ -40,16 +41,11 @@ public class FailureStorageAdapter extends StorageAdapter {
   }
 
   void throwException() {
-    throw new CacheStorageException("unrecoverable failure in past", exception);
+    rethrow("failure in past", exception);
   }
 
   @Override
   public void open() {
-
-  }
-
-  @Override
-  public void shutdown() {
 
   }
 
@@ -117,6 +113,17 @@ public class FailureStorageAdapter extends StorageAdapter {
 
   @Override
   public void disable(Throwable t) {
+  }
+
+  @Override
+  public Future<Void> cancelTimerJobs() {
+    return new Futures.FinishedFuture<>();
+  }
+
+  @Override
+  public Future<Void> shutdown() {
+    return new Futures.ExceptionFuture<>(
+      buildThrowable("shutdown impossible, exception in past", exception));
   }
 
 }

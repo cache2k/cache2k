@@ -46,7 +46,13 @@ public class NoopStorageAdapter extends StorageAdapter {
   }
 
   @Override
-  public void shutdown() {
+  public Future<Void> cancelTimerJobs() {
+    return null;
+  }
+
+  @Override
+  public Future<Void> shutdown() {
+   return new Futures.FinishedFuture<>();
   }
 
   @Override

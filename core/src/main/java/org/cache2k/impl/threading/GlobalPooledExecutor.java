@@ -26,6 +26,7 @@ import org.cache2k.impl.util.TunableConstants;
 import org.cache2k.impl.util.TunableFactory;
 
 import java.security.SecureRandom;
+import java.util.Properties;
 import java.util.Random;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
@@ -79,7 +80,7 @@ public class GlobalPooledExecutor {
    * @param _name used for the thread name prefix.
    */
   public GlobalPooledExecutor(String _name) {
-    this(TUNABLE, _name);
+    this(TUNABLE, null, _name);
   }
 
   GlobalPooledExecutor() {
@@ -87,13 +88,13 @@ public class GlobalPooledExecutor {
   }
 
   GlobalPooledExecutor(Tunable t) {
-    this(t, null);
+    this(t, null, null);
   }
 
-  GlobalPooledExecutor(Tunable t, String _threadNamePrefix) {
+  GlobalPooledExecutor(Tunable t, Properties _managerProperties, String _threadNamePrefix) {
     tunable = t;
     taskQueue = new ArrayBlockingQueue<>(tunable.queueSize);
-    factory = tunable.threadFactoryFactory.newThreadFactory(_threadNamePrefix);
+    factory = tunable.threadFactoryProvider.newThreadFactory(_managerProperties, _threadNamePrefix);
   }
 
   public void execute(Runnable r) throws InterruptedException, TimeoutException  {
@@ -138,7 +139,7 @@ public class GlobalPooledExecutor {
       if (taskQueue.size() == 0) {
         return queue(t, _timeoutMillis);
       }
-      if (cnt >= tunable.hardLimitThreadCount) {
+      if (!tunable.disableHardLimit && cnt >= tunable.hardLimitThreadCount) {
         return queue(t, _timeoutMillis);
       }
     }
@@ -204,8 +205,8 @@ public class GlobalPooledExecutor {
   }
 
   /** Used for alerting. */
-  public boolean wasHardLimitReached() {
-    return peakThreadCount >= tunable.hardLimitThreadCount;
+  public boolean wasWarningLimitReached() {
+    return peakThreadCount >= tunable.warningLimitThreadCount;
   }
 
   public int getPeakThreadCount() {
@@ -326,17 +327,20 @@ public class GlobalPooledExecutor {
 
   }
 
-  public interface ThreadFactoryFactory {
+  public interface ThreadFactoryProvider {
 
-    ThreadFactory newThreadFactory(String namePrefix);
+    /**
+     * Construct a new thread factory for the pool.
+     */
+    ThreadFactory newThreadFactory(Properties _managerProperties, String namePrefix);
 
   }
 
-  public static class DefaultThreadFactoryFactory
-    implements ThreadFactoryFactory {
+  public static class DefaultThreadFactoryProvider
+    implements ThreadFactoryProvider {
 
     @Override
-    public ThreadFactory newThreadFactory(String _namePrefix) {
+    public ThreadFactory newThreadFactory(Properties _managerProperties, String _namePrefix) {
       return new GlobalThreadFactory(_namePrefix);
     }
   }
@@ -422,9 +426,24 @@ public class GlobalPooledExecutor {
      */
     public boolean randomizeIdleTime = true;
 
-    public int hardLimitThreadCount = 100;
+    /**
+     * No more threads than this limit are created. When this limit is reached the
+     * submission of new tasks stalls until a thread becomes available again.
+     * The default is 100 threads per processor. This value is rather high.
+     */
+    public int hardLimitThreadCount = 100 * Runtime.getRuntime().availableProcessors();
 
-    public ThreadFactoryFactory threadFactoryFactory = new DefaultThreadFactoryFactory();
+    /**
+     * Can be needed for applications which need a high thread count.
+     */
+    public boolean disableHardLimit = false;
+
+    /**
+     * When the this maximum thread count was reached once, a orange alert is issued.
+     */
+    public int warningLimitThreadCount = 33 * Runtime.getRuntime().availableProcessors();
+
+    public ThreadFactoryProvider threadFactoryProvider = new DefaultThreadFactoryProvider();
 
   }
 

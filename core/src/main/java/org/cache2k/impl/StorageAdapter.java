@@ -22,6 +22,7 @@ package org.cache2k.impl;
  * #L%
  */
 
+import org.cache2k.CacheException;
 import org.cache2k.ClosableIterator;
 import org.cache2k.storage.StorageEntry;
 
@@ -34,7 +35,13 @@ import java.util.concurrent.Future;
 public abstract class StorageAdapter {
 
   public abstract void open();
-  public abstract void shutdown();
+
+  /**
+   * Cancel all schedules timer jobs in the storage.
+   */
+  public abstract Future<Void> cancelTimerJobs();
+
+  public abstract Future<Void> shutdown();
   public abstract boolean checkStorageStillDisconnectedForClear();
   public abstract void disconnectStorageForClear();
 
@@ -67,6 +74,20 @@ public abstract class StorageAdapter {
     /** Change the storage implementation to another one or null for a disconnect */
     void resetStorage(StorageAdapter _current, StorageAdapter _new);
 
+  }
+
+  protected static Throwable buildThrowable(String txt, Throwable ex) {
+    if (ex instanceof Error || ex.getCause() instanceof Error) {
+      return new CacheInternalError(txt, ex);
+    }
+    return new CacheStorageException(txt, ex);
+  }
+
+  protected static void rethrow(String txt, Throwable ex) {
+    if (ex instanceof Error || ex.getCause() instanceof Error) {
+      throw new CacheInternalError(txt, ex);
+    }
+    throw new CacheStorageException(txt, ex);
   }
 
 }

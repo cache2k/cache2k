@@ -23,7 +23,9 @@ package org.cache2k.impl;
  */
 
 import org.cache2k.Cache;
+import org.cache2k.CacheException;
 import org.cache2k.CacheManager;
+import org.cache2k.impl.threading.Futures;
 import org.cache2k.impl.threading.GlobalPooledExecutor;
 import org.cache2k.impl.util.Log;
 
@@ -36,6 +38,9 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 import java.util.jar.Manifest;
 
 /**
@@ -160,41 +165,51 @@ public class CacheManagerImpl extends CacheManager {
     }
   }
 
+  /**
+   * The shutdown takes place in two phases. First all caches are notified to
+   * cancel their scheduled timer jobs, after that the shutdown is done. Cancelling
+   * the timer jobs first is needed, because there may be cache stacking and
+   * a timer job of one cache may call an already closed cache.
+   *
+   * <p/>Rationale exception handling: Exceptions on shutdown just could silently
+   * ignored, because a shutdown is done any way. Exceptions could be happened
+   * long before in a parallel task, shutdown is the last point where this could
+   * be propagated to the application. Silently ignoring is bad anyway, because
+   * this will cause that serious problems keep undetected. The exception and
+   * error handling within the cache tries everything that exceptions will be
+   * routed through as early and directly as possible.
+   */
   @Override
   public synchronized void destroy() {
+    List<Throwable> _suppressedExceptions = new ArrayList<>();
     if (caches != null) {
+      Futures.WaitForAllFuture<Void> _wait = new Futures.WaitForAllFuture<>();
       for (Cache c : caches) {
         if (c instanceof BaseCache) {
-          ((BaseCache) c).destroyCancelTimer();
-        }
-      }
-      boolean _onging = false;
-      int _tryMillis = 3000;
-      long _later = System.currentTimeMillis() + _tryMillis;
-      do {
-        for (Cache c : caches) {
-          if (c instanceof BaseCache) {
-            BaseCache bc = ((BaseCache) c);
-            if (bc.destroyRefreshOngoing()) {
-              _onging = true;
-            }
+          try {
+            Future<Void> f = ((BaseCache) c).cancelTimerJobs();
+            _wait.add(f);
+          } catch (Throwable t) {
+            _suppressedExceptions.add(t);
           }
         }
-        if (!_onging) {
-          break;
-        }
-        try {
-          Thread.sleep(7);
-        } catch (Exception ignore) {
-        }
-      } while (System.currentTimeMillis() < _later);
-      if (_onging) {
+      }
+      try {
+        _wait.get(3000, TimeUnit.MILLISECONDS);
+      } catch (Exception ex) {
+        _suppressedExceptions.add(ex);
+      }
+      if (!_wait.isDone()) {
         for (Cache c : caches) {
           if (c instanceof BaseCache) {
-            BaseCache bc = ((BaseCache) c);
-            if (bc.destroyRefreshOngoing()) {
-              bc.getLog().info("fetches ongoing, terminating anyway...");
-              bc.getLog().info(bc.toString());
+            BaseCache bc = (BaseCache) c;
+            try {
+              Future<Void> f = bc.cancelTimerJobs();
+              if (!f.isDone()) {
+                bc.getLog().info("fetches ongoing, terminating anyway...");
+              }
+            } catch (Throwable t) {
+              _suppressedExceptions.add(t);
             }
           }
         }
@@ -202,14 +217,66 @@ public class CacheManagerImpl extends CacheManager {
       Set<Cache> _caches = new HashSet<>();
       _caches.addAll(caches);
       for (Cache c : _caches) {
-        c.destroy();
+        try {
+          c.destroy();
+        } catch (Throwable t) {
+          _suppressedExceptions.add(t);
+        }
       }
-      if (threadPool != null) {
-        threadPool.close();
+      try {
+        if (threadPool != null) {
+            threadPool.close();
+        }
+        jmxSupport.unregisterManager(this);
+        CacheManager.getInstance();
+        caches = null;
+      } catch (Throwable t) {
+        _suppressedExceptions.add(t);
       }
-      jmxSupport.unregisterManager(this);
-      CacheManager.getInstance();
-      caches = null;
+    }
+    eventuallyThrowException(_suppressedExceptions);
+  }
+
+  /**
+   * Throw exception if the list contains exceptions. The the thrown exception
+   * all exceptions get added as suppressed exceptions. The main cause of the
+   * exception will be the first detected error or the first detected
+   * exception.
+   *
+   * @throws org.cache2k.impl.CacheInternalError if list contains an error
+   * @throws org.cache2k.CacheException if list does not contain an error
+   */
+  private void eventuallyThrowException(List<Throwable> _suppressedExceptions) {
+    if (_suppressedExceptions.size() > 0) {
+      Throwable _error = null;
+      for (Throwable t : _suppressedExceptions) {
+        if (t instanceof Error) { _error = t; }
+        if (t instanceof ExecutionException &&
+          ((ExecutionException) t).getCause() instanceof Error) {
+          _error = t;
+        }
+      }
+      Throwable _throwNow;
+      String _text = "shutdown";
+      if (_suppressedExceptions.size() > 1) {
+        _text = " (" + _suppressedExceptions.size() + " exceptions)";
+      }
+      if (_error != null) {
+        _throwNow = new CacheInternalError(_text, _error);
+      } else {
+        _throwNow = new CacheException(_text, _suppressedExceptions.get(0));
+        _suppressedExceptions.remove(0);
+      }
+      for (Throwable t : _suppressedExceptions) {
+        if (t != _error) {
+          _throwNow.addSuppressed(t);
+        }
+      }
+      if (_error != null) {
+        throw (Error) _throwNow;
+      } else {
+        throw (RuntimeException) _throwNow;
+      }
     }
   }
 

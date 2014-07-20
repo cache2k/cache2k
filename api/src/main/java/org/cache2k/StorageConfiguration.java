@@ -49,6 +49,8 @@ public class StorageConfiguration {
 
   Object extendedConfiguration;
 
+  boolean flushOnClose = false;
+
   public boolean isReliable() {
     return reliable;
   }
@@ -124,7 +126,7 @@ public class StorageConfiguration {
   /**
    * Sync interval in milliseconds.
    */
-  public long getFlushInterval() {
+  public long getFlushIntervalMillis() {
     return syncInterval;
   }
 
@@ -134,6 +136,18 @@ public class StorageConfiguration {
 
   public void setExtendedConfiguration(Object extendedConfiguration) {
     this.extendedConfiguration = extendedConfiguration;
+  }
+
+  public boolean isFlushOnClose() {
+    return flushOnClose;
+  }
+
+  /**
+   * When closing flush data, if the storage does need this.
+   * The parameter is false by default. We prefer no delay on closing.
+   */
+  public void setFlushOnClose(boolean f) {
+    this.flushOnClose = f;
   }
 
   public static class Builder<T>
@@ -159,6 +173,11 @@ public class StorageConfiguration {
 
     public Builder<T> purgeOnStartup(boolean f) {
       config.purgeOnStartup = f;
+      return this;
+    }
+
+    public Builder<T> flushOnClose(boolean f) {
+      config.flushOnClose = f;
       return this;
     }
 

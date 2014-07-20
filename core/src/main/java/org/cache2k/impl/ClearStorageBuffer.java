@@ -25,6 +25,7 @@ package org.cache2k.impl;
 import org.cache2k.StorageConfiguration;
 import org.cache2k.storage.CacheStorage;
 import org.cache2k.storage.CacheStorageContext;
+import org.cache2k.storage.FlushableStorage;
 import org.cache2k.storage.StorageEntry;
 
 import java.io.IOException;
@@ -60,7 +61,7 @@ import java.util.concurrent.Future;
  *
  * @author Jens Wilke; created: 2014-04-20
  */
-public class ClearStorageBuffer implements CacheStorage {
+public class ClearStorageBuffer implements CacheStorage, FlushableStorage {
 
   long operationsCnt = 0;
   long operationsAtTransferStart = 0;
@@ -91,11 +92,9 @@ public class ClearStorageBuffer implements CacheStorage {
    * op is doing nothing and just notifies us. The flush
    * on the storage can run in parallel with other tasks.
    * This method is only allowed to finish when the flush is done.
-   *
-   * <p/>TODO-C: avoid timer flushes after clear buffering is still active?
    */
   @Override
-  public void flush(final FlushContext ctx, long now) throws Exception {
+  public void flush(final FlushableStorage.FlushContext ctx, long now) throws Exception {
     Op op = null;
     boolean _forward;
     synchronized (this) {
@@ -106,7 +105,7 @@ public class ClearStorageBuffer implements CacheStorage {
       }
     }
     if (_forward) {
-      forwardStorage.flush(ctx, now);
+      ((FlushableStorage) forwardStorage).flush(ctx, now);
     }
     synchronized (op) {
       op.wait();
@@ -114,7 +113,7 @@ public class ClearStorageBuffer implements CacheStorage {
         throw new CacheStorageException(exception);
       }
     }
-    nextStorage.flush(ctx, System.currentTimeMillis());
+    ((FlushableStorage) forwardStorage).flush(ctx, System.currentTimeMillis());
   }
 
   @Override
@@ -465,20 +464,6 @@ public class ClearStorageBuffer implements CacheStorage {
     @Override
     public String toString() {
       return "OpClose";
-    }
-
-  }
-
-  static class OpClear extends Op {
-
-    @Override
-    void execute(CacheStorage _target) throws Exception {
-      _target.clear();
-    }
-
-    @Override
-    public String toString() {
-      return "OpClear";
     }
 
   }

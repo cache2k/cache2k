@@ -103,7 +103,7 @@ public class JmxSupport implements CacheLifeCycleListener {
         }
       }
       GlobalPooledExecutor ex = manager.getThreadPoolEventually();
-      if (ex != null && ex.wasHardLimitReached()) {
+      if (ex != null && ex.wasWarningLimitReached()) {
         v = Math.max(v, 1);
       }
       return v;

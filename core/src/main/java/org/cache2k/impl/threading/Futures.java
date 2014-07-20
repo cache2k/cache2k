@@ -60,6 +60,7 @@ public class Futures {
      * Add a new future to the list for Futures we should wait for.
      */
     public synchronized void add(Future<V> f) {
+      if (f == null) { return; }
       futureList.add(f);
     }
 
@@ -179,6 +180,9 @@ public class Futures {
 
     V result;
 
+    public FinishedFuture() {
+    }
+
     public FinishedFuture(V result) {
       this.result = result;
     }
@@ -211,9 +215,9 @@ public class Futures {
 
   public static class ExceptionFuture<V> implements Future<V> {
 
-    private Exception exception;
+    private Throwable exception;
 
-    public ExceptionFuture(Exception exception) {
+    public ExceptionFuture(Throwable exception) {
       this.exception = exception;
     }
 
@@ -241,5 +245,52 @@ public class Futures {
     public V get(long timeout, TimeUnit unit) throws ExecutionException {
       throw new ExecutionException(exception);
     }
+
   }
+
+  public static abstract class BusyWaitFuture<V> implements Future<V> {
+
+    private int spinMillis = 123;
+    private V result = null;
+
+    protected BusyWaitFuture() { }
+
+    protected BusyWaitFuture(V _defaultResult) {
+      this.result = _defaultResult;
+    }
+
+    protected BusyWaitFuture(int spinMillis, V _defaultResult) {
+      this.spinMillis = spinMillis;
+      this.result = _defaultResult;
+    }
+
+    protected V getResult() { return result; }
+
+    @Override
+    public boolean cancel(boolean mayInterruptIfRunning) { return false; }
+
+    @Override
+    public boolean isCancelled() { return false; }
+
+    @Override
+    public abstract boolean isDone();
+
+    /** Just busy wait for running fetches. We have no notification for this. */
+    @Override
+    public V get() throws InterruptedException, ExecutionException {
+      while (!isDone()) { Thread.sleep(spinMillis); }
+      return getResult();
+    }
+
+    @Override
+    public V get(long timeout, TimeUnit unit) throws InterruptedException, ExecutionException, TimeoutException {
+      long _maxMillis = unit.toMillis(timeout) + System.currentTimeMillis();
+      if (_maxMillis < 0) { return get(); }
+      while (!isDone() && System.currentTimeMillis() < _maxMillis) { Thread.sleep(123); }
+      if (!isDone()) { throw new TimeoutException(); }
+      return getResult();
+    }
+
+  }
+
 }

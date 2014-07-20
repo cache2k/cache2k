@@ -24,7 +24,6 @@ package org.cache2k.storage;
 
 import org.cache2k.StorageConfiguration;
 
-import java.io.Closeable;
 import java.io.IOException;
 import java.util.concurrent.ExecutorService;
 
@@ -77,15 +76,6 @@ public interface CacheStorage {
    * be removed via remove().
    */
   public void clear() throws Exception;
-
-  /**
-   * Flush any unwritten information to disk. The method returns when the flush
-   * is finished and everything is written. The cache is not protecting the
-   * storage from concurrent read/write operation.
-   *
-   * <p/>A flush is initiated by client request or on regular intervals.
-   */
-  public void flush(FlushContext ctx, long now) throws Exception;
 
   /**
    * Free all resources and stop operations immediately.
@@ -175,10 +165,6 @@ public interface CacheStorage {
      * After this method is called {@link #shouldStop()} is true.
      */
     void abortOnException(Throwable ex);
-
-  }
-
-  public static interface FlushContext extends MultiThreadedContext {
 
   }
 

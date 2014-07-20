@@ -63,6 +63,15 @@ successful an exceptions is propagated to the application.
 - *mitigate and ignore*: If put() fails, try to remove the entry, if this works ignore the problem
 - *ignore*: Just count the error. get() returns null
 
+### Future Improvements
+
+Support for shaky storage should be better. A network connected storage should be able to
+ allow temporary exceptions and get back online later. Ideas:
+ 
+   * Queue in storage operations and play back the changes when the storage becomes online later. 
+     This is essentially an asynchronous operation mode. 
+   * For put: Pin the entry in the heap cache and just schedule a redo.
+
 ## Monitoring
 
 General counters?

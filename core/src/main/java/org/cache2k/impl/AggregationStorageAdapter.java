@@ -47,10 +47,12 @@ public class AggregationStorageAdapter extends StorageAdapter implements Storage
   }
 
   @Override
-  public void shutdown() {
+  public Future<Void> shutdown() {
+    Futures.WaitForAllFuture<Void> _waitForAll = new Futures.WaitForAllFuture<>();
     for (StorageAdapter a : storages) {
-      a.shutdown();
+      _waitForAll.add(a.shutdown());
     }
+    return _waitForAll;
   }
 
   @Override
@@ -201,6 +203,18 @@ public class AggregationStorageAdapter extends StorageAdapter implements Storage
         storages = sa;
       }
     }
+  }
+
+  @Override
+  public Future<Void> cancelTimerJobs() {
+    Futures.WaitForAllFuture<Void> w = new Futures.WaitForAllFuture<>();
+    for (StorageAdapter s : storages) {
+      Future<Void> f = s.cancelTimerJobs();
+      if (f != null) {
+        w.add(f);
+      }
+    }
+    return w;
   }
 
 }

@@ -596,17 +596,24 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
     }
   }
 
-  void destroyCancelTimer() {
+  Future<Void> cancelTimerJobs() {
     synchronized (lock) {
       if (timer != null) {
         timer.cancel();
       }
-    }
-  }
-
-  boolean destroyRefreshOngoing() {
-    synchronized (lock) {
-      return getFetchesInFlight() > 0;
+      Future<Void> _waitFuture = new Futures.BusyWaitFuture<Void>() {
+        @Override
+        public boolean isDone() {
+          return getFetchesInFlight() == 0;
+        }
+      };
+      if (storage != null) {
+        Future<Void> f = storage.cancelTimerJobs();
+        if (f != null) {
+          _waitFuture = new Futures.WaitForAllFuture(_waitFuture, f);
+        }
+      }
+      return _waitFuture;
     }
   }
 
@@ -630,8 +637,16 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
     } catch (Exception ex) {
       throw new CacheException(ex);
     }
+    Future<Void> _waitForStorage = null;
     if (storage != null) {
-      storage.shutdown();
+      _waitForStorage = storage.shutdown();
+    }
+    if (_waitForStorage != null) {
+      try {
+        _waitForStorage.get();
+      } catch (Exception ex) {
+        StorageAdapter.rethrow("shutdown", ex);
+      }
     }
     synchronized (lock) {
       storage = null;
@@ -1520,6 +1535,7 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
     e.nextRefreshTime = _nextRefreshTime;
     if (storage != null && e.isDirty()) {
       storage.put(e);
+      e.resetDirty();
     }
   }
 
@@ -2711,6 +2727,10 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
 
     public void setLastModificationFromStorage(long t) {
       fetchedTime = t << 1 | 1;
+    }
+
+    public void resetDirty() {
+      fetchedTime = fetchedTime >> 1 << 1;
     }
 
     /** Reset next as a marker for {@link #isRemovedFromReplacementList()} */

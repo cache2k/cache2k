@@ -69,7 +69,7 @@ import org.cache2k.impl.util.TunableFactory;
  *
  * @author Jens Wilke; created: 2014-03-27
  */
-public class ImageFileStorage implements CacheStorage {
+public class ImageFileStorage implements CacheStorage, FlushableStorage {
 
   /** Number of bytes we used for on disk disk checksum of our descriptor */
   final static int CHECKSUM_BYTES = 16;
