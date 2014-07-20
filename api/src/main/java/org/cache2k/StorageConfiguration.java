@@ -124,7 +124,7 @@ public class StorageConfiguration {
   /**
    * Sync interval in milliseconds.
    */
-  public long getSyncInterval() {
+  public long getFlushInterval() {
     return syncInterval;
   }
 

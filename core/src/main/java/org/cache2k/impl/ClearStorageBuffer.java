@@ -133,7 +133,7 @@ public class ClearStorageBuffer implements CacheStorage {
 
   /** Simply do nothing. Next time, next chance */
   @Override
-  public void expire(ExpireContext ctx, long _expireTime) throws Exception {
+  public void purge(PurgeContext ctx, long _expireTime) throws Exception {
   }
 
   @Override

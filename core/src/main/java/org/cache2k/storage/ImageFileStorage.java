@@ -543,7 +543,7 @@ public class ImageFileStorage implements CacheStorage {
     BufferDescriptor bd = null;
     for (int i = 0; i < DESCRIPTOR_COUNT; i++) {
       try {
-        BufferDescriptor bd2 = readDesicptor(i);
+        BufferDescriptor bd2 = readDescriptor(i);
         if (bd2 != null && (bd == null || bd.descriptorVersion < bd2.descriptorVersion)) {
           bd = bd2;
         }
@@ -553,7 +553,7 @@ public class ImageFileStorage implements CacheStorage {
     return bd;
   }
 
-  BufferDescriptor readDesicptor(int idx) throws IOException, ClassNotFoundException {
+  BufferDescriptor readDescriptor(int idx) throws IOException, ClassNotFoundException {
     File f = new File(fileName + "-" + idx + ".dsc");
     if (!f.exists()) {
       return null;
@@ -860,7 +860,7 @@ public class ImageFileStorage implements CacheStorage {
   }
 
   @Override
-  public void expire(ExpireContext ctx, long _expireTime) throws Exception {
+  public void purge(PurgeContext ctx, long _expireTime) throws Exception {
     throw new UnsupportedOperationException();
   }
 

@@ -100,14 +100,14 @@ public interface CacheStorage {
   /**
    * Expire all entries which have an expiry time before or equal to the
    * given time. The time may be not identical to the current time, if the
-   * cache wants to keep some entries that are yet expired, e.g. if a cachesource
+   * cache wants to keep some entries that are yet expired, e.g. if a CacheSource
    * is present and a scheme like if-modified-since is supported by it.
    *
    * @throws java.lang.UnsupportedOperationException thrown by the storage if this
    *   operation is not supported. The cache will fall back to a generic approach
    *   via {@link #visit}
    */
-  public void expire(ExpireContext ctx, long _expireTime) throws Exception;
+  public void purge(PurgeContext ctx, long _expireTime) throws Exception;
 
   /**
    * Called by the cache at regular intervals, but only if data was
@@ -145,7 +145,7 @@ public interface CacheStorage {
      * this method return the identical instance.
      *
      * <p>When using {@link java.util.concurrent.Callable} a thrown exception in within the
-     * task leads to an abort of the operation, see {@link #abortOnException(Exception)}.
+     * task leads to an abort of the operation, see {@link #abortOnException(Throwable)}.
      *
      * <p>The methods
      * {@link java.util.concurrent.ExecutorService#invokeAll(java.util.Collection, long, java.util.concurrent.TimeUnit)},
@@ -179,10 +179,6 @@ public interface CacheStorage {
   }
 
   public static interface FlushContext extends MultiThreadedContext {
-
-  }
-
-  public static interface ExpireContext extends MultiThreadedContext {
 
   }
 

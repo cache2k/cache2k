@@ -27,7 +27,7 @@ import org.cache2k.CacheConfig;
 import org.cache2k.ClosableIterator;
 import org.cache2k.StorageConfiguration;
 import org.cache2k.impl.threading.LimitedPooledExecutor;
-import org.cache2k.impl.timer.TimerPayloadListener;
+import org.cache2k.impl.timer.TimerListener;
 import org.cache2k.impl.timer.TimerService;
 import org.cache2k.storage.CacheStorage;
 import org.cache2k.storage.CacheStorageContext;
@@ -80,9 +80,11 @@ class PassingStorageAdapter extends StorageAdapter {
   StorageContext context;
   StorageConfiguration config;
   ExecutorService executor;
+
   TimerService.CancelHandle flushTimerHandle;
   boolean needsFlush;
   Future<Void> executingFlush;
+
   Log log;
   StorageAdapter.Parent parent;
 
@@ -163,36 +165,6 @@ class PassingStorageAdapter extends StorageAdapter {
         }
       }
     }
-  }
-
-  void checkStartFlushTimer() {
-    needsFlush = true;
-    if (config.getSyncInterval() <= 0) {
-      return;
-    }
-    if (flushTimerHandle != null) {
-      return;
-    }
-    synchronized (this) {
-      if (flushTimerHandle != null) {
-        return;
-      }
-      scheduleTimer();
-    }
-  }
-
-  private void scheduleTimer() {
-    if (flushTimerHandle != null) {
-      flushTimerHandle.cancel();
-    }
-    TimerPayloadListener<Void> l = new TimerPayloadListener<Void>() {
-      @Override
-      public void fire(Void _payload, long _time) {
-        flush();
-      }
-    };
-    long _fireTime = System.currentTimeMillis() + config.getSyncInterval();
-    flushTimerHandle = cache.timerService.add(l, null, _fireTime);
   }
 
   public StorageEntry get(Object k) {
@@ -294,16 +266,17 @@ class PassingStorageAdapter extends StorageAdapter {
     return it;
   }
 
-  public void expire() {
+  public void purge() {
     long now = System.currentTimeMillis();
     boolean _unsupported = false;
     try {
-      CacheStorage.ExpireContext ctx = new MyExpireContext();
-      storage.expire(ctx, now);
+      CacheStorage.PurgeContext ctx = new MyPurgeContext();
+      storage.purge(ctx, now);
     } catch (UnsupportedOperationException ex) {
       _unsupported = true;
     } catch (Exception ex) {
       disable("expire exception", ex);
+      return;
     }
     if (_unsupported) {
       expireByVisit(now);
@@ -353,7 +326,7 @@ class PassingStorageAdapter extends StorageAdapter {
 
   }
 
-  class MyExpireContext extends MyMultiThreadContext implements CacheStorage.ExpireContext  {
+  class MyPurgeContext extends MyMultiThreadContext implements CacheStorage.PurgeContext  {
 
   }
 
@@ -583,10 +556,43 @@ class PassingStorageAdapter extends StorageAdapter {
 
   }
 
-  class MyFlushContext
-    extends MyMultiThreadContext
-    implements CacheStorage.FlushContext {
+  /**
+   * Start timer to flush data or do nothing if flush already scheduled.
+   *
+   * <p/>Not totally race free.
+   */
+  private void checkStartFlushTimer() {
+    if (config.getFlushInterval() <= 0) {
+      return;
+    }
+    if (flushTimerHandle != null) {
+      return;
+    }
+    synchronized (this) {
+      if (executingFlush != null) {
+        needsFlush = true;
+        return;
+      }
+      if (flushTimerHandle != null) {
+        return;
+      }
+      scheduleFlushTimer();
+    }
+  }
 
+  private void scheduleFlushTimer() {
+    if (flushTimerHandle != null) {
+      flushTimerHandle.cancel();
+    }
+    TimerListener l = new TimerListener() {
+      @Override
+      public void fire(long _time) {
+        flush();
+      }
+    };
+    long _fireTime = System.currentTimeMillis() + config.getFlushInterval();
+    flushTimerHandle = cache.timerService.add(l, _fireTime);
+    needsFlush = false;
   }
 
   public Future<Void> flush() {
@@ -604,7 +610,7 @@ class PassingStorageAdapter extends StorageAdapter {
           executingFlush = null;
           synchronized (this) {
             if (needsFlush) {
-              scheduleTimer();
+              scheduleFlushTimer();
             } else {
               if (flushTimerHandle != null) {
                 flushTimerHandle.cancel();
@@ -828,6 +834,12 @@ class PassingStorageAdapter extends StorageAdapter {
       return storage.getEntryCount();
     }
     return storage.getEntryCount() + cache.getLocalSize();
+  }
+
+  class MyFlushContext
+    extends MyMultiThreadContext
+    implements CacheStorage.FlushContext {
+
   }
 
   static class StorageContext implements CacheStorageContext {
