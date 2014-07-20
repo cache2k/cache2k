@@ -40,6 +40,8 @@ import java.util.Properties;
  */
 public final class TunableFactory {
 
+  static Log log = Log.getLog(TunableFactory.class);
+
   public final static String DEFAULT_TUNING_FILE_NAME =
     "/org/cache2k/default-tuning.properties";
 
@@ -119,9 +121,10 @@ public final class TunableFactory {
     if (p == null) {
       return;
     }
+    String _propName = null;
     try {
       for (Field f : cfg.getClass().getFields()) {
-        String _propName =
+        _propName =
           cfg.getClass().getName().replace('$', '.') + "." + f.getName();
         String o = p.getProperty(_propName);
         if (o != null) {
@@ -135,17 +138,37 @@ public final class TunableFactory {
             } else {
               f.set(cfg, true);
             }
-          }
-          if (f.getType() == Integer.TYPE) {
+            if (log.isDebugEnabled()) {
+              log.debug(_propName + "=" + f.get(cfg));
+            }
+          } else if (f.getType() == Integer.TYPE) {
             f.set(cfg, Integer.valueOf(o));
-          }
-          if (f.getType() == String.class) {
+            if (log.isDebugEnabled()) {
+              log.debug(_propName + "=" + f.get(cfg));
+            }
+          } else if (f.getType() == String.class) {
             f.set(cfg, o);
+            if (log.isDebugEnabled()) {
+              log.debug(_propName + "=" + f.get(cfg));
+            }
+          } else if (f.getType().isInterface()) {
+            Class<?> c = Class.forName(o);
+            Object _instance = c.newInstance();
+            f.set(cfg, _instance);
+            if (log.isDebugEnabled()) {
+              log.debug(_propName + "=" + c.getName());
+            }
+          } else {
+            throw new CacheInternalError("no policy to change this tunable type");
           }
         }
       }
     } catch (Exception ex) {
-      throw new CacheInternalError("error applying tuning setup", ex);
+      if (_propName != null) {
+        throw new CacheInternalError("error applying tuning setup, property=" + _propName, ex);
+      } else {
+        throw new CacheInternalError("error applying tuning setup" , ex);
+      }
     }
   }
 

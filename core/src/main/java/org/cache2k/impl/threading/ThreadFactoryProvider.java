@@ -1,4 +1,4 @@
-package org.cache2k.impl.util;
+package org.cache2k.impl.threading;
 
 /*
  * #%L
@@ -22,14 +22,20 @@ package org.cache2k.impl.util;
  * #L%
  */
 
-/**
- * Service provider interface to implement to reroute cache2k logging to
- * another log implementation.
- *
- * @author Jens Wilke; created: 2014-04-27
- */
-public interface LogFactory {
+import java.util.Properties;
+import java.util.concurrent.ThreadFactory;
 
-  Log getLog(String s);
+/**
+ * Provider interface for a thread factory. This makes it possible to change
+ * the thread factory via the {@link org.cache2k.impl.util.TunableConstants}.
+ *
+ * @author Jens Wilke; created: 2014-06-10
+ */
+public interface ThreadFactoryProvider {
+
+  /**
+   * Construct a new thread factory for the pool.
+   */
+  ThreadFactory newThreadFactory(Properties _managerProperties, String namePrefix);
 
 }

@@ -36,7 +36,6 @@ import java.util.concurrent.Future;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
-import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * A thread pool to be shared amount several client caches for different purposes.
@@ -299,49 +298,6 @@ public class GlobalPooledExecutor {
         throw new ExecutionException(exception);
       }
       return result;
-    }
-  }
-
-  /**
-   * Factory which names the threads uniquely.
-   */
-  public static class GlobalThreadFactory implements ThreadFactory {
-
-    AtomicInteger threadCount = new AtomicInteger();
-    String prefix = "cache2k#";
-
-    public GlobalThreadFactory(String _threadNamePrefix) {
-      if (_threadNamePrefix != null) {
-        this.prefix = _threadNamePrefix;
-      }
-    }
-
-    @Override
-    public Thread newThread(Runnable r) {
-      int id = threadCount.getAndIncrement();
-      Thread thr = new Thread(r);
-      thr.setName(prefix + Integer.toString(id, 36));
-      thr.setDaemon(true);
-      return thr;
-    }
-
-  }
-
-  public interface ThreadFactoryProvider {
-
-    /**
-     * Construct a new thread factory for the pool.
-     */
-    ThreadFactory newThreadFactory(Properties _managerProperties, String namePrefix);
-
-  }
-
-  public static class DefaultThreadFactoryProvider
-    implements ThreadFactoryProvider {
-
-    @Override
-    public ThreadFactory newThreadFactory(Properties _managerProperties, String _namePrefix) {
-      return new GlobalThreadFactory(_namePrefix);
     }
   }
 

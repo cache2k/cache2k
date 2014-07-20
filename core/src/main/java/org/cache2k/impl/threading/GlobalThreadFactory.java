@@ -1,4 +1,4 @@
-package org.cache2k.impl.util;
+package org.cache2k.impl.threading;
 
 /*
  * #%L
@@ -22,14 +22,32 @@ package org.cache2k.impl.util;
  * #L%
  */
 
-/**
- * Service provider interface to implement to reroute cache2k logging to
- * another log implementation.
- *
- * @author Jens Wilke; created: 2014-04-27
- */
-public interface LogFactory {
+import java.util.concurrent.ThreadFactory;
+import java.util.concurrent.atomic.AtomicInteger;
 
-  Log getLog(String s);
+/**
+ * Factory which names the threads uniquely.
+ *
+ * @author Jens Wilke; created: 2014-06-10
+ */
+public class GlobalThreadFactory implements ThreadFactory {
+
+  AtomicInteger threadCount = new AtomicInteger();
+  String prefix = "cache2k#";
+
+  public GlobalThreadFactory(String _threadNamePrefix) {
+    if (_threadNamePrefix != null) {
+      this.prefix = _threadNamePrefix;
+    }
+  }
+
+  @Override
+  public Thread newThread(Runnable r) {
+    int id = threadCount.getAndIncrement();
+    Thread thr = new Thread(r);
+    thr.setName(prefix + Integer.toString(id, 36));
+    thr.setDaemon(true);
+    return thr;
+  }
 
 }

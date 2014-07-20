@@ -47,6 +47,10 @@ public abstract class Log {
 
   static LogFactory logFactory;
 
+  public static Log getLog(Class<?> _class) {
+    return getLog(_class.getName());
+  }
+
   public static synchronized Log getLog(String s) {
     Log l = loggers.get(s);
     if (l != null) {

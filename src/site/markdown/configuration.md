@@ -49,6 +49,9 @@ Here is an example of tuning properties:
     
     # allow much more threads on our big iron server
     org.cache2k.impl.threading.GlobalPooledExecutor.Tunable.hardLimitThreadCount=2000
+    
+    # Change the thread factory provider for the global thread pool
+    org.cache2k.impl.threading.GlobalPooledExecutor.Tunable.threadFactoryProvider=com.example.MyThreadFactoryProvider    
 
 All property names and semantics can be derived from the implementation Java Doc
  by descend to the subclasses of 
