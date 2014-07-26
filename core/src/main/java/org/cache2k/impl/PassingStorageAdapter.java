@@ -284,18 +284,13 @@ class PassingStorageAdapter extends StorageAdapter {
 
   public void purge() {
     long now = System.currentTimeMillis();
-    boolean _unsupported = false;
     try {
       CacheStorage.PurgeContext ctx = new MyPurgeContext();
       storage.purge(ctx, now);
     } catch (UnsupportedOperationException ex) {
-      _unsupported = true;
+      expireByVisit(now);
     } catch (Exception ex) {
       disable("expire exception", ex);
-      return;
-    }
-    if (_unsupported) {
-      expireByVisit(now);
     }
   }
 

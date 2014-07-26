@@ -40,7 +40,7 @@ public interface StorageEntry {
   long getExpiryTime();
 
   /**
-   * Time of last access in millis. Needed, if there is a idle expiry
+   * Time of last access in millis. Needed, if there is an idle expiry
    * configured. Is 0 if not used.
    */
   long getLastUsed();

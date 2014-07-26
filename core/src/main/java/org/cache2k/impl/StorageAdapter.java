@@ -52,6 +52,10 @@ public abstract class StorageAdapter {
   public abstract StorageEntry get(Object key);
   public abstract void remove(Object key);
   public abstract void evict(BaseCache.Entry e);
+
+  /**
+   * TODO: Relly needed?
+   */
   public abstract void expire(BaseCache.Entry e);
   public abstract ClosableIterator<BaseCache.Entry> iterateAll();
 

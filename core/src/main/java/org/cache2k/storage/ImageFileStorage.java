@@ -398,10 +398,11 @@ public class ImageFileStorage implements CacheStorage, FlushableStorage {
    * is no update in place. Each entry gets a newly allocated space. The freed
    * space will be made available later in time.
    *
-   * BTW: there is a theoretical race condition in this, because there is no
-   * real protection against the case that the read is reading an in between
-   * reallocated space. However, this will only be a problem if the read
-   * fails to get CPU time for several seconds.
+   * <p/>Parallel reads on the same storage entry still read on the now
+   * freed space. This is okay since the space will be reallocated later in
+   * time. There is no real protection against a put and get race. However,
+   * we only get in trouble if the get will need several seconds to
+   * finish.
    */
   public void put(StorageEntry e) throws IOException, ClassNotFoundException {
     Object o = e.getValueOrException();
