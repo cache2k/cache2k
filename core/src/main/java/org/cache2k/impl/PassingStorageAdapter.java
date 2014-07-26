@@ -36,6 +36,7 @@ import org.cache2k.storage.FlushableStorage;
 import org.cache2k.storage.ImageFileStorage;
 import org.cache2k.storage.MarshallerFactory;
 import org.cache2k.storage.Marshallers;
+import org.cache2k.storage.OffHeapStorage;
 import org.cache2k.storage.StorageEntry;
 import org.cache2k.impl.util.Log;
 import org.cache2k.impl.util.TunableConstants;
@@ -126,7 +127,7 @@ class PassingStorageAdapter extends StorageAdapter {
       if (!(storage instanceof FlushableStorage)) {
         flushIntervalMillis = -1;
       }
-      if (config.isPassivation()) {
+      if (config.isPassivation() || storage instanceof OffHeapStorage) {
         deletedKeys = new HashSet<>();
         passivation = true;
       }
@@ -224,17 +225,21 @@ class PassingStorageAdapter extends StorageAdapter {
    * storage again.
    */
   private void putEventually(BaseCache.Entry e) {
-    boolean f;
-    try {
-      f = e.isDirty() || !storage.contains(e.getKey());
-    } catch (Exception ex) {
-      errorCount++;
-      disable("storage.contains(), unknown state", ex);
-      throw new CacheStorageException("", ex);
+    if (!e.isDirty()) {
+      if (!(storage instanceof OffHeapStorage)) {
+        return;
+      }
+      try {
+        if (storage.contains(e.getKey())) {
+          return;
+        }
+      } catch (Exception ex) {
+        errorCount++;
+        disable("storage.contains(), unknown state", ex);
+        throw new CacheStorageException("", ex);
+      }
     }
-    if (f) {
-      doPut(e);
-    }
+    doPut(e);
   }
 
   public void remove(Object key) {
@@ -700,7 +705,7 @@ class PassingStorageAdapter extends StorageAdapter {
         return null;
       }
     };
-    if (passivation) {
+    if (passivation && !(storage instanceof OffHeapStorage)) {
       final Callable<Void> _before = _closeTaskChain;
       _closeTaskChain = new Callable<Void>() {
         @Override

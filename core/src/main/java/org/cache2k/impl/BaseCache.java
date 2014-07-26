@@ -1387,7 +1387,8 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
   /**
    *
    * @param e
-   * @param _peekOnly if true it means don't fetch the data from the source
+   * @param _needsFetch true if value needs to be fetched from the cache source.
+   *                   This is false, when the we only need to peek for an value already mapped.
    */
   protected void fetchWithStorage(E e, boolean _needsFetch) {
     if (!e.isVirgin()) {
@@ -2568,9 +2569,6 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
         if (_another.hashCode == hc && key.equals(_another.key)) {
           e.another = _another.another;
           size--;
-          if (suppressExpandCount > 0) {
-            _another = _another.clone();
-          }
           return (E) _another;
         }
         e = _another;
@@ -2660,7 +2658,7 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
   final static InitialValueInEntryNeverReturned INITIAL_VALUE = new InitialValueInEntryNeverReturned();
 
   public static class Entry<E extends Entry, K, T>
-    implements MutableCacheEntry<K,T>, StorageEntry, Cloneable {
+    implements MutableCacheEntry<K,T>, StorageEntry {
 
     static final int FETCHED_STATE = 10;
     static final int REMOVED_STATE = 12;
@@ -2976,18 +2974,6 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
     @Override
     public final boolean equals(Object obj) {
       return this == obj;
-    }
-
-    /**
-     * The entry clone operation always does a shallow copy.
-     */
-    public final E clone() {
-      try {
-        Object o = super.clone();
-        return (E) o;
-      } catch (CloneNotSupportedException e) {
-        throw new CacheInternalError("never happens");
-      }
     }
 
   }
