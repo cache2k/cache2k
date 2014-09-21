@@ -276,7 +276,10 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
       refreshPool = CacheRefreshThreadPool.getInstance();
     }
     if (c.getExpiryMillis() > 0) {
-      maxLinger = c.getExpirySeconds();
+      if (c.getExpiryMillis() > Integer.MAX_VALUE) {
+        throw new IllegalStateException("expiry time milliseconds exceeds Integer.MAX_VALUE");
+      }
+      maxLinger = (int) c.getExpiryMillis();
     } else {
       setExpirySeconds(c.getExpirySeconds());
     }
@@ -1418,8 +1421,8 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
     long t0 = System.currentTimeMillis();
     T v = (T) se.getValueOrException();
     long _nextRefreshTime = maxLinger == 0 ? Entry.FETCH_NEXT_TIME_STATE : Entry.FETCHED_STATE;
-    long _expiryTimeFromStorage = se.getExpiryTime();
-    boolean _expired = (_expiryTimeFromStorage > 0 && _expiryTimeFromStorage <= t0);
+    long _expiryTimeFromStorage = se.getValueExpiryTime();
+    boolean _expired = _expiryTimeFromStorage != 0 && _expiryTimeFromStorage <= t0;
     if (!_expired && timer != null) {
       _nextRefreshTime = calcNextRefreshTime(null, v, 0L, se.getCreatedOrUpdated());
       _expired = _nextRefreshTime > Entry.EXPIRY_TIME_MIN && _nextRefreshTime <= t0;
@@ -2670,7 +2673,7 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
 
     static final int EXPIRED_STATE = 4;
 
-    /** Logically the same as immediatly expired */
+    /** Logically the same as immediately expired */
     static final int FETCH_NEXT_TIME_STATE = 3;
 
     static private final int REMOVED_NON_VALID_STATE = 2;
@@ -2906,7 +2909,7 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
     /**
      * Expiry time or 0.
      */
-    public long getExpiryTime() {
+    public long getValueExpiryTime() {
       if (hasExpiryTime()) {
         return nextRefreshTime;
       }
@@ -2940,27 +2943,15 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
      * @deprectated Always returns 0, only to fulfill the {@link StorageEntry} interface
      */
     @Override
-    public long getLastUsed() {
+    public long getEntryExpiryTime() {
       return 0;
     }
-
-    /**
-     * Used for the storage interface.
-     *
-     * @see StorageEntry
-     * @deprectated Always returns 0, only to fulfill the {@link StorageEntry} interface
-     */
-    @Override
-    public long getMaxIdleTime() {
-      return 0;
-    }
-
 
     @Override
     public String toString() {
       return "Entry{" +
-        "fetchedTime=" + fetchedTime +
-        ", nextRefreshTime=" + nextRefreshTime +
+        "createdOrUpdate =" + getCreatedOrUpdated() +
+        ", valueExpiryTime =" + getValueExpiryTime() +
         ", key=" + key +
         ", mHC=" + hashCode +
         ", value=" + value +

@@ -33,19 +33,30 @@ import java.util.List;
  * This is the configuration builder functionality we need for the cache builder
  * as well.
  *
+ * @param <B> builder type, e.g. {@link CacheBuilder}
+ *
  * @author Jens Wilke; created: 2014-04-19
+
  */
 @SuppressWarnings("unchecked")
-public abstract class RootAnyBuilder<T> extends BaseAnyBuilder<T, CacheConfig> {
+abstract class RootAnyBuilder<B, T> extends BaseAnyBuilder<B, T, CacheConfig> {
 
-  private static final List<BaseAnyBuilder> EMPTY = Collections.emptyList();
-
-  private List<BaseAnyBuilder> modules = EMPTY;
+  private List<BaseAnyBuilder> modules = Collections.emptyList();
   protected CacheConfig config;
-  StorageConfiguration.Builder<T> persistence;
+  StorageConfiguration.Builder<B, T> persistence;
+
+  public B backgroundRefresh(boolean f) {
+    config.setBackgroundRefresh(f);
+    return (B) this;
+  }
+
+  public B sharpExpiry(boolean f) {
+    config.setSharpExpiry(f);
+    return (B) this;
+  }
 
   @Override
-  public StorageConfiguration.Builder<T> persistence() {
+  public StorageConfiguration.Builder<B, T> persistence() {
     if (persistence == null) {
       persistence = addModule(new StorageConfiguration.Builder());
       persistence.implementation(Cache2kCoreProvider.get().getDefaultPersistenceStoreImplementation());
@@ -54,14 +65,14 @@ public abstract class RootAnyBuilder<T> extends BaseAnyBuilder<T, CacheConfig> {
   }
 
   @Override
-  public StorageConfiguration.Builder<T> addStore() {
+  public StorageConfiguration.Builder<B, T> addStore() {
     return
       addModule(new StorageConfiguration.Builder());
   }
 
   @Override
   public CacheConfig createConfiguration() {
-    List<Object> _moduleConfiguration = new ArrayList<Object>();
+    List<Object> _moduleConfiguration = new ArrayList<>();
     for (BaseAnyBuilder bb : modules) {
       _moduleConfiguration.add(bb.createConfiguration());
     }
@@ -76,8 +87,8 @@ public abstract class RootAnyBuilder<T> extends BaseAnyBuilder<T, CacheConfig> {
 
   @SuppressWarnings("unchecked")
   private <B extends BaseAnyBuilder> B addModule(B _moduleBuilder) {
-    if (modules == EMPTY) {
-      modules = new ArrayList<BaseAnyBuilder>();
+    if (modules.size() == 0) {
+      modules = new ArrayList<>();
     }
     modules.add(_moduleBuilder);
     _moduleBuilder.setRoot(this);

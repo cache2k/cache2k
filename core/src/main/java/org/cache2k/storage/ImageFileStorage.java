@@ -55,6 +55,9 @@ import org.cache2k.storage.FreeSpaceMap.Slot;
 import org.cache2k.impl.util.TunableConstants;
 import org.cache2k.impl.util.TunableFactory;
 
+import javax.annotation.concurrent.GuardedBy;
+
+
 /**
  * Implements a robust storage on a file or a byte buffer.
  *
@@ -69,7 +72,8 @@ import org.cache2k.impl.util.TunableFactory;
  *
  * @author Jens Wilke; created: 2014-03-27
  */
-public class ImageFileStorage implements CacheStorage, FlushableStorage {
+public class ImageFileStorage
+  implements CacheStorage, FlushableStorage, EntryExpiryUpdateableStorage {
 
   /** Number of bytes we used for on disk disk checksum of our descriptor */
   final static int CHECKSUM_BYTES = 16;
@@ -93,30 +97,31 @@ public class ImageFileStorage implements CacheStorage, FlushableStorage {
 
   public FreeSpaceMap freeMap = new FreeSpaceMap();
 
-  Map<Object, BufferEntry> values;
+  @GuardedBy("valuesLock")
+  Map<Object, HeapEntry> values;
 
   final Object valuesLock = new Object();
   final Object commitLock = new Object();
 
   /** buffer entries added since last commit */
-  HashMap<Object, BufferEntry> newBufferEntries;
+  HashMap<Object, HeapEntry> newBufferEntries;
 
   /** entries deleted since last commit */
-  HashMap<Object, BufferEntry> deletedBufferEntries;
+  HashMap<Object, HeapEntry> deletedBufferEntries;
 
   /**
    * Entries still needed originating from the earliest index file. Every commit
    * entries will be removed that are newly written. Each commit also
    * partially rewrites some of the entries here to make the file redundant.
    */
-  HashMap<Object, BufferEntry> entriesInEarliestIndex;
+  HashMap<Object, HeapEntry> entriesInEarliestIndex;
 
   /**
    * All entries committed to the current index file. Updated within commit phase.
    * This is used to fill up {@link #entriesInEarliestIndex} when starting a
    * new index file. committedEntries is subset of values.
    */
-  HashMap<Object, BufferEntry> committedEntries;
+  HashMap<Object, HeapEntry> committedEntries;
 
   /**
    *
@@ -185,10 +190,10 @@ public class ImageFileStorage implements CacheStorage, FlushableStorage {
       if (entryCapacity == Integer.MAX_VALUE) {
         values = new HashMap<>();
       } else {
-        values = new LinkedHashMap<Object, BufferEntry>(100, .75F, true) {
+        values = new LinkedHashMap<Object, HeapEntry>(100, .75F, true) {
 
           @Override
-          protected boolean removeEldestEntry(Map.Entry<Object, BufferEntry> _eldest) {
+          protected boolean removeEldestEntry(Map.Entry<Object, HeapEntry> _eldest) {
             if (getEntryCount() > entryCapacity) {
               evict(_eldest.getValue());
               return true;
@@ -322,7 +327,7 @@ public class ImageFileStorage implements CacheStorage, FlushableStorage {
 
   public StorageEntry get(Object key)
     throws IOException, ClassNotFoundException {
-    BufferEntry be;
+    HeapEntry be;
     synchronized (valuesLock) {
       be = values.get(key);
       if (be == null) {
@@ -346,7 +351,7 @@ public class ImageFileStorage implements CacheStorage, FlushableStorage {
   }
 
   public StorageEntry remove(Object key) throws IOException, ClassNotFoundException {
-    BufferEntry be;
+    HeapEntry be;
     synchronized (valuesLock) {
       be = values.remove(key);
       if (be == null) {
@@ -361,24 +366,25 @@ public class ImageFileStorage implements CacheStorage, FlushableStorage {
   /**
    * Called by remove and when an eviction needs to be done.
    */
-  private void reallyRemove(BufferEntry be) {
+  private void reallyRemove(HeapEntry be) {
     deletedBufferEntries.put(be.key, be);
     newBufferEntries.remove(be.key);
     justUnusedSlots.add(be);
   }
 
-  private void evict(BufferEntry be) {
+  private void evict(HeapEntry be) {
     reallyRemove(be);
     evictCount++;
   }
 
-  private MyEntry returnEntry(BufferEntry be) throws IOException, ClassNotFoundException {
+  private DiskEntry returnEntry(HeapEntry be) throws IOException, ClassNotFoundException {
     ByteBuffer bb = buffer.duplicate();
     bb.position((int) be.position);
-    MyEntry e = new MyEntry();
+    DiskEntry e = new DiskEntry();
+    e.entryExpiryTime = be.entryExpireTime;
     e.key = be.key;
     e.readMetaInfo(bb, descriptor.storageCreated);
-    int _type = e.getTypeNumber();
+    int _type = e.getValueTypeNumber();
     if (_type == TYPE_NULL) {
       return e;
     }
@@ -424,15 +430,15 @@ public class ImageFileStorage implements CacheStorage, FlushableStorage {
       }
       _neededSize = _marshalledValue.length;
     }
-    _neededSize += MyEntry.calculateMetaInfoSize(e, descriptor.storageCreated, _type);
+    _neededSize += DiskEntry.calculateMetaInfoSize(e, descriptor.storageCreated, _type);
     ByteBuffer bb;
-    BufferEntry _newEntry;
+    HeapEntry _newEntry;
     FreeSpaceMap.Slot s = reserveSpace(_neededSize);
     bb = buffer.duplicate();
     bb.position((int) s.position);
-    MyEntry.writeMetaInfo(bb, e, descriptor.storageCreated, _type);
+    DiskEntry.writeMetaInfo(bb, e, descriptor.storageCreated, _type);
     int _usedSize = (int) (bb.position() - s.position) + _marshalledValue.length;
-    _newEntry = new BufferEntry(e.getKey(), s.position, _usedSize);
+    _newEntry = new HeapEntry(e.getKey(), s.position, _usedSize, e.getEntryExpiryTime());
     if (s.size != _usedSize) {
       s.size -=  _usedSize;
       s.position += _usedSize;
@@ -442,7 +448,7 @@ public class ImageFileStorage implements CacheStorage, FlushableStorage {
     }
     bb.put(_marshalledValue);
     synchronized (valuesLock) {
-      BufferEntry be = values.get(e.getKey());
+      HeapEntry be = values.get(e.getKey());
       if (be != null) {
         justUnusedSlots.add(be);
       }
@@ -453,10 +459,10 @@ public class ImageFileStorage implements CacheStorage, FlushableStorage {
     }
   }
 
-  long calcSize(Collection<BufferEntry> set) {
+  long calcSize(Collection<HeapEntry> set) {
     long v = 0;
     if (set != null) {
-      for (BufferEntry e: set) {
+      for (HeapEntry e: set) {
         v += e.size;
       }
     }
@@ -605,7 +611,7 @@ public class ImageFileStorage implements CacheStorage, FlushableStorage {
   void recalculateFreeSpaceMapAndRemoveDeletedEntries() {
     synchronized (freeMap) {
       HashSet<Object> _deletedKey = new HashSet<>();
-      for (BufferEntry e : values.values()) {
+      for (HeapEntry e : values.values()) {
         if (e.position < 0) {
           _deletedKey.add(e.key);
           continue;
@@ -665,7 +671,7 @@ public class ImageFileStorage implements CacheStorage, FlushableStorage {
   /**
     * Don't write out the oldest entries that we also have in our updated lists.
     */
-  static void sortOut(Map<Object, BufferEntry> map, Set<Object> _keys) {
+  static void sortOut(Map<Object, HeapEntry> map, Set<Object> _keys) {
     for (Object k: _keys) {
       map.remove(k);
     }
@@ -675,9 +681,9 @@ public class ImageFileStorage implements CacheStorage, FlushableStorage {
 
     long timestamp;
     RandomAccessFile randomAccessFile;
-    HashMap<Object, BufferEntry> newEntries;
-    HashMap<Object, BufferEntry> deletedEntries;
-    HashMap<Object, BufferEntry> rewriteEntries = new HashMap<>();
+    HashMap<Object, HeapEntry> newEntries;
+    HashMap<Object, HeapEntry> deletedEntries;
+    HashMap<Object, HeapEntry> rewriteEntries = new HashMap<>();
     SlotBucket workerFreeSlots;
     int indexFileNo;
     long position;
@@ -720,13 +726,13 @@ public class ImageFileStorage implements CacheStorage, FlushableStorage {
       d.write(randomAccessFile);
       FileOutputStream out = new FileOutputStream(randomAccessFile.getFD());
       ObjectOutput oos = keyMarshaller.startOutput(out);
-      for (BufferEntry e : newEntries.values()) {
+      for (HeapEntry e : newEntries.values()) {
         e.write(oos);
       }
-      for (BufferEntry e : deletedEntries.values()) {
+      for (HeapEntry e : deletedEntries.values()) {
         e.writeDeleted(oos);
       }
-      for (BufferEntry e : rewriteEntries.values()) {
+      for (HeapEntry e : rewriteEntries.values()) {
         e.write(oos);
       }
       oos.close();
@@ -764,9 +770,9 @@ public class ImageFileStorage implements CacheStorage, FlushableStorage {
         } else {
           rewriteEntries = new HashMap<>();
           int cnt = _writeCnt * tunable.rewritePartialFactor;
-          Iterator<BufferEntry> it = entriesInEarliestIndex.values().iterator();
+          Iterator<HeapEntry> it = entriesInEarliestIndex.values().iterator();
           while (cnt > 0 && it.hasNext()) {
-            BufferEntry e = it.next();
+            HeapEntry e = it.next();
             rewriteEntries.put(e.key, e);
             cnt--;
           }
@@ -788,10 +794,11 @@ public class ImageFileStorage implements CacheStorage, FlushableStorage {
     void updateCommittedEntries() {
       committedEntries.putAll(newEntries);
       for (Object k : deletedEntries.keySet()) {
-        committedEntries.put(k, new BufferEntry(k, 0, -1));
+        committedEntries.put(k, new HeapEntry(k, 0, -1, 0));
       }
       committedEntries.putAll(rewriteEntries);
     }
+
     /**
      * Free the used space.
      */
@@ -834,21 +841,21 @@ public class ImageFileStorage implements CacheStorage, FlushableStorage {
 
   @Override
   public void visit(final VisitContext ctx, final EntryFilter f, final EntryVisitor v) throws Exception {
-    ArrayList<BufferEntry> _allEntries;
+    ArrayList<HeapEntry> _allEntries;
     synchronized (valuesLock) {
       _allEntries = new ArrayList<>(values.size());
-      for (BufferEntry e : values.values()) {
+      for (HeapEntry e : values.values()) {
         if (f == null || f.shouldInclude(e.key)) {
           _allEntries.add(e);
         }
       }
     }
     ExecutorService ex = ctx.getExecutorService();
-    for (BufferEntry e : _allEntries) {
+    for (HeapEntry e : _allEntries) {
       if (ctx.shouldStop()) {
         break;
       }
-      final BufferEntry be = e;
+      final HeapEntry be = e;
       Callable<Object> r = new Callable<Object>() {
         @Override
         public Object call() throws Exception {
@@ -861,7 +868,19 @@ public class ImageFileStorage implements CacheStorage, FlushableStorage {
   }
 
   @Override
-  public void purge(PurgeContext ctx, long _expireTime) throws Exception {
+  public void updateEntryExpireTime(Object key, long _millis) throws Exception {
+    synchronized (valuesLock) {
+      HeapEntry e = values.get(key);
+      if (e != null) {
+        e.entryExpireTime = _millis;
+      }
+    }
+  }
+
+  @Override
+  public void purge(PurgeContext ctx,
+                    long _valueExpireTime,
+                    long _entryExpireTime) throws Exception {
     throw new UnsupportedOperationException();
   }
 
@@ -966,8 +985,7 @@ public class ImageFileStorage implements CacheStorage, FlushableStorage {
       int cnt = d.elementCount;
       int _readCnt = readKeys.size();
       do {
-        BufferEntry e = new BufferEntry();
-        e.read(in);
+        HeapEntry e = new HeapEntry(in);
         if (!readKeys.contains(e.key)) {
           readKeys.add(e.key);
           entriesInEarliestIndex.put(e.key, e);
@@ -1015,7 +1033,6 @@ public class ImageFileStorage implements CacheStorage, FlushableStorage {
     long storageCreated;
     long descriptorVersion = 0;
     long writtenTime;
-    long highestExpiryTime;
 
     MarshallerFactory.Parameters keyMarshallerParameters;
     MarshallerFactory.Parameters valueMarshallerParameters;
@@ -1036,7 +1053,6 @@ public class ImageFileStorage implements CacheStorage, FlushableStorage {
         ", freeSpace=" + freeSpace +
         ", descriptorVersion=" + descriptorVersion +
         ", writtenTime=" + writtenTime +
-        ", highestExpiryTime=" + highestExpiryTime +
         ", keyType='" + keyType + '\'' +
         ", keyMarshallerType='" + keyMarshallerType + '\'' +
         ", valueType='" + valueType + '\'' +
@@ -1063,31 +1079,42 @@ public class ImageFileStorage implements CacheStorage, FlushableStorage {
     }
   }
 
-  static class BufferEntry {
+  /**
+   * Entry data kept in the java heap.
+   */
+  static class HeapEntry {
 
     Object key;
     long position;
     int size; // size or -1 if deleted
+    long entryExpireTime;
 
-    BufferEntry() {
+    HeapEntry(ObjectInput in) throws IOException, ClassNotFoundException {
+      position = in.readLong();
+      size = in.readInt();
+      key = in.readObject();
+      entryExpireTime = in.readLong();
     }
 
-    BufferEntry(Object key, long position, int size) {
+    HeapEntry(Object key, long position, int size, long entryExpireTime) {
       this.key = key;
       this.position = position;
       this.size = size;
+      this.entryExpireTime = entryExpireTime;
     }
 
     void write(ObjectOutput out) throws IOException {
       out.writeLong(position);
       out.writeInt(size);
       out.writeObject(key);
+      out.writeLong(entryExpireTime);
     }
 
     void writeDeleted(ObjectOutput out) throws IOException {
       out.writeLong(0);
       out.writeInt(-1);
       out.writeObject(key);
+      out.writeLong(0);
     }
 
     /**
@@ -1096,12 +1123,6 @@ public class ImageFileStorage implements CacheStorage, FlushableStorage {
      */
     boolean isDeleted() {
       return size < 0;
-    }
-
-    void read(ObjectInput in) throws IOException, ClassNotFoundException {
-      position = in.readLong();
-      size = in.readInt();
-      key = in.readObject();
     }
 
     @Override
@@ -1121,9 +1142,8 @@ public class ImageFileStorage implements CacheStorage, FlushableStorage {
   final static int TYPE_EXCEPTION = 2;
   /** Value is marshalled with the universal marshaller */
   final static int TYPE_UNIVERSAL = 3;
-  final static int FLAG_HAS_EXPIRY_TIME = 4;
+  final static int FLAG_HAS_VALUE_EXPIRY_TIME = 4;
   final static int FLAG_HAS_LAST_USED = 8;
-  final static int FLAG_HAS_MAX_IDLE_TIME = 16;
   final static int FLAG_HAS_CREATED_OR_UPDATED = 32;
 
   public static long readCompressedLong(ByteBuffer b) {
@@ -1178,18 +1198,22 @@ public class ImageFileStorage implements CacheStorage, FlushableStorage {
     return cnt << 1;
   }
 
-  static class MyEntry implements StorageEntry {
+  /**
+   * This object represents the data that is written and read from the disk.
+   */
+  static class DiskEntry implements StorageEntry {
 
     Object key;
     Object value;
 
     int flags;
-    long createdOrUpdated;
-    long expiryTime;
-    long lastUsed;
-    long maxIdleTime;
 
-    public int getTypeNumber() {
+    /* set from the buffer entry */
+    long valueExpiryTime;
+    long createdOrUpdated;
+    long entryExpiryTime;
+
+    public int getValueTypeNumber() {
       return flags & TYPE_MASK;
     }
 
@@ -1209,18 +1233,13 @@ public class ImageFileStorage implements CacheStorage, FlushableStorage {
     }
 
     @Override
-    public long getExpiryTime() {
-      return expiryTime;
+    public long getValueExpiryTime() {
+      return valueExpiryTime;
     }
 
     @Override
-    public long getLastUsed() {
-      return lastUsed;
-    }
-
-    @Override
-    public long getMaxIdleTime() {
-      return maxIdleTime;
+    public long getEntryExpiryTime() {
+      return entryExpiryTime;
     }
 
     void readMetaInfo(ByteBuffer bb, long _timeReference) {
@@ -1228,58 +1247,36 @@ public class ImageFileStorage implements CacheStorage, FlushableStorage {
       if ((flags & FLAG_HAS_CREATED_OR_UPDATED) > 0) {
         createdOrUpdated = readCompressedLong(bb) + _timeReference;
       }
-      if ((flags & FLAG_HAS_EXPIRY_TIME) > 0) {
-        expiryTime = readCompressedLong(bb) + _timeReference;
-      }
-      if ((flags & FLAG_HAS_LAST_USED) > 0) {
-        lastUsed = readCompressedLong(bb) + _timeReference;
-      }
-      if ((flags & FLAG_HAS_MAX_IDLE_TIME) > 0) {
-        maxIdleTime = readCompressedLong(bb);
+      if ((flags & FLAG_HAS_VALUE_EXPIRY_TIME) > 0) {
+        valueExpiryTime = readCompressedLong(bb) + _timeReference;
       }
     }
 
     static void writeMetaInfo(ByteBuffer bb, StorageEntry e, long _timeReference, int _type) {
       int _flags =
         _type |
-        (e.getExpiryTime() != 0 ? FLAG_HAS_EXPIRY_TIME : 0) |
-        (e.getLastUsed() != 0 ? FLAG_HAS_LAST_USED : 0) |
-        (e.getMaxIdleTime() != 0 ? FLAG_HAS_MAX_IDLE_TIME : 0) |
+        (e.getEntryExpiryTime() != 0 ? FLAG_HAS_LAST_USED : 0) |
         (e.getCreatedOrUpdated() != 0 ? FLAG_HAS_CREATED_OR_UPDATED : 0);
       bb.put((byte) _flags);
       if ((_flags & FLAG_HAS_CREATED_OR_UPDATED) > 0) {
          writeCompressedLong(bb, e.getCreatedOrUpdated() - _timeReference);
       }
-      if ((_flags & FLAG_HAS_EXPIRY_TIME) > 0) {
-        writeCompressedLong(bb, e.getExpiryTime() - _timeReference);
-      }
-      if ((_flags & FLAG_HAS_LAST_USED) > 0) {
-        writeCompressedLong(bb, e.getLastUsed() - _timeReference);
-      }
-      if ((_flags & FLAG_HAS_MAX_IDLE_TIME) > 0) {
-        writeCompressedLong(bb, e.getMaxIdleTime());
+      if ((_flags & FLAG_HAS_VALUE_EXPIRY_TIME) > 0) {
+        writeCompressedLong(bb, e.getValueExpiryTime() - _timeReference);
       }
     }
 
     static int calculateMetaInfoSize(StorageEntry e, long _timeReference, int _type) {
       int _flags =
         _type |
-        (e.getExpiryTime() != 0 ? FLAG_HAS_EXPIRY_TIME : 0) |
-        (e.getLastUsed() != 0 ? FLAG_HAS_LAST_USED : 0) |
-        (e.getMaxIdleTime() != 0 ? FLAG_HAS_MAX_IDLE_TIME : 0) |
+        (e.getValueExpiryTime() != 0 ? FLAG_HAS_VALUE_EXPIRY_TIME : 0) |
         (e.getCreatedOrUpdated() != 0 ? FLAG_HAS_CREATED_OR_UPDATED : 0);
       int cnt = 1;
       if ((_flags & FLAG_HAS_CREATED_OR_UPDATED) > 0) {
         cnt += calculateCompressedLongSize(e.getCreatedOrUpdated() - _timeReference);
       }
-      if ((_flags & FLAG_HAS_EXPIRY_TIME) > 0) {
-        cnt += calculateCompressedLongSize(e.getExpiryTime() - _timeReference);
-      }
-      if ((_flags & FLAG_HAS_LAST_USED) > 0) {
-        cnt += calculateCompressedLongSize(e.getLastUsed() - _timeReference);
-      }
-      if ((_flags & FLAG_HAS_MAX_IDLE_TIME) > 0) {
-        cnt += calculateCompressedLongSize(e.getMaxIdleTime());
+      if ((_flags & FLAG_HAS_VALUE_EXPIRY_TIME) > 0) {
+        cnt += calculateCompressedLongSize(e.getValueExpiryTime() - _timeReference);
       }
       return cnt;
     }
@@ -1291,7 +1288,7 @@ public class ImageFileStorage implements CacheStorage, FlushableStorage {
     long time;
     Collection<Slot> slots = new ArrayList<>();
 
-    public void add(BufferEntry be) {
+    public void add(HeapEntry be) {
       add(be.position, be.size);
     }
 

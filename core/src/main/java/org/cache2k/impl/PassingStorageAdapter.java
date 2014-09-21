@@ -286,7 +286,7 @@ class PassingStorageAdapter extends StorageAdapter {
     long now = System.currentTimeMillis();
     try {
       CacheStorage.PurgeContext ctx = new MyPurgeContext();
-      storage.purge(ctx, now);
+      storage.purge(ctx, now, now);
     } catch (UnsupportedOperationException ex) {
       expireByVisit(now);
     } catch (Exception ex) {
@@ -316,7 +316,7 @@ class PassingStorageAdapter extends StorageAdapter {
     CacheStorage.EntryVisitor v = new CacheStorage.EntryVisitor() {
       @Override
       public void visit(StorageEntry e) throws Exception {
-        if (e.getExpiryTime() < now) {
+        if (e.getValueExpiryTime() < now) {
           storage.remove(e.getKey());
           remove(e.getKey());
           _modified.set(true);
@@ -357,7 +357,7 @@ class PassingStorageAdapter extends StorageAdapter {
       CacheStorage.EntryVisitor v = new CacheStorage.EntryVisitor() {
         @Override
         public void visit(StorageEntry se) throws InterruptedException {
-          if (se.getExpiryTime() != 0 && se.getExpiryTime() <= now) { return; }
+          if (se.getValueExpiryTime() != 0 && se.getValueExpiryTime() <= now) { return; }
           _queue.put(se);
         }
       };

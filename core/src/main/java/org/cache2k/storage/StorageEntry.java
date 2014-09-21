@@ -36,19 +36,24 @@ public interface StorageEntry {
   /** Time the entry was last fetched or created from the original source */
   long getCreatedOrUpdated();
 
-  /** Time when the entry is expired and needs to be refreshed. Is 0 if not used. */
-  long getExpiryTime();
+  /**
+   * Time when the value is expired and is not allowed to be returned any more.
+   * The storage needs to store this value. The storage may purge entries with
+   * the time exceeded, but should not do so because entries with expired
+   * values may be kept for a longer period. Is 0 if not used.
+   *
+   * @see CacheStorage#purge(org.cache2k.storage.CacheStorage.PurgeContext, long, long)
+   */
+  long getValueExpiryTime();
 
   /**
-   * Time of last access in millis. Needed, if there is an idle expiry
-   * configured. Is 0 if not used.
+   * Expiry time of the storage entry. After reaching this time, the entry should
+   * be purged by the storage. The entry expiry time will get updated by
+   * the the cache when the value is not expired and the entry is still
+   * accessed.
+   *
+   * @see CacheStorage#purge(org.cache2k.storage.CacheStorage.PurgeContext, long, long)
    */
-  long getLastUsed();
-
-  /**
-   * Milliseconds after last used time after this entry gets expired.
-   * Is 0 if not used.
-   */
-  long getMaxIdleTime();
+  long getEntryExpiryTime();
 
 }

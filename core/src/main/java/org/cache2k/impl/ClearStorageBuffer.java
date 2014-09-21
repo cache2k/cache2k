@@ -132,7 +132,7 @@ public class ClearStorageBuffer implements CacheStorage, FlushableStorage {
 
   /** Simply do nothing. Next time, next chance */
   @Override
-  public void purge(PurgeContext ctx, long _expireTime) throws Exception {
+  public void purge(PurgeContext ctx, long _valueExpireTime, long _entryExpireTime) throws Exception {
   }
 
   @Override
@@ -496,10 +496,9 @@ public class ClearStorageBuffer implements CacheStorage, FlushableStorage {
     CopyStorageEntry(StorageEntry e) {
       key = e.getKey();
       value = e.getValueOrException();
-      expiryTime = e.getExpiryTime();
+      expiryTime = e.getValueExpiryTime();
       createdOrUpdated = e.getCreatedOrUpdated();
-      lastUsed = e.getLastUsed();
-      maxIdleTime = e.getMaxIdleTime();
+      lastUsed = e.getEntryExpiryTime();
     }
 
     @Override
@@ -518,18 +517,13 @@ public class ClearStorageBuffer implements CacheStorage, FlushableStorage {
     }
 
     @Override
-    public long getExpiryTime() {
+    public long getValueExpiryTime() {
       return expiryTime;
     }
 
     @Override
-    public long getLastUsed() {
+    public long getEntryExpiryTime() {
       return lastUsed;
-    }
-
-    @Override
-    public long getMaxIdleTime() {
-      return maxIdleTime;
     }
 
   }

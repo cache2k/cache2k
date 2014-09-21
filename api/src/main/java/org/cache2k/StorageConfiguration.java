@@ -150,13 +150,13 @@ public class StorageConfiguration {
     this.flushOnClose = f;
   }
 
-  public static class Builder<T>
-    extends BaseAnyBuilder<T, StorageConfiguration> {
+  public static class Builder<B, T>
+    extends BaseAnyBuilder<B, T, StorageConfiguration> {
 
     private StorageConfiguration config = new StorageConfiguration();
-    private BaseAnyBuilder<?, ?> extendedConfigurationBuilder = null;
+    private BaseAnyBuilder<?, ?, ?> extendedConfigurationBuilder = null;
 
-    public Builder<T> implementation(Class<?> _impl) {
+    public Builder<B, T> implementation(Class<?> _impl) {
       config.implementation = _impl;
       return this;
     }
@@ -166,44 +166,44 @@ public class StorageConfiguration {
      * memory any more. E.g. when an entry gets evicted it is
      * stored.
      */
-    public Builder<T> passivation(boolean f) {
+    public Builder<B, T> passivation(boolean f) {
       config.passivation = f;
       return this;
     }
 
-    public Builder<T> purgeOnStartup(boolean f) {
+    public Builder<B, T> purgeOnStartup(boolean f) {
       config.purgeOnStartup = f;
       return this;
     }
 
-    public Builder<T> flushOnClose(boolean f) {
+    public Builder<B, T> flushOnClose(boolean f) {
       config.flushOnClose = f;
       return this;
     }
 
-    public Builder<T> location(String s) {
+    public Builder<B, T> location(String s) {
       config.location = s;
       return this;
     }
 
-    public Builder<T> entryCapacity(int v) {
+    public Builder<B, T> entryCapacity(int v) {
       config.entryCapacity = v;
       return this;
     }
 
-    public Builder<T> bytesCapacity(int v) {
+    public Builder<B, T> bytesCapacity(int v) {
       config.bytesCapacity = v;
       return this;
     }
 
-    public Builder<T> syncInterval(int v, TimeUnit u) {
+    public Builder<B, T> syncInterval(int v, TimeUnit u) {
       config.syncInterval = (int) u.toMillis(v);
       return this;
     }
 
-    public <B extends BaseAnyBuilder<T, ?>> B extendedConfiguraton(Class<B> c) {
+    public <EB extends BaseAnyBuilder<B, T, ?>> EB extendedConfiguraton(Class<EB> c) {
       try {
-        B b = c.newInstance();
+        EB b = c.newInstance();
         b.setRoot(root);
         return b;
       } catch (Exception e) {

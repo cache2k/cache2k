@@ -46,6 +46,7 @@ public class CacheConfig {
   private int expirySeconds = 10 * 60;
   private long expiryMillis  = -1;
   private boolean keepDataAfterExpired = true;
+  private boolean sharpExpiry = false;
   private List<Object> moduleConfiguration;
 
   public String getName() {
@@ -177,11 +178,25 @@ public class CacheConfig {
 
   /**
    * Expired data is kept in the cache until the entry is evicted by the replacement
-   * algorithm. This consumes memory, but if the data needs to be fetched again previous
+   * algorithm. This consumes memory, but if the data is accessed again the previous
    * data can be used by the cache source for optimizing, e.g. for a get if-modified-since.
+   *
+   * @see org.cache2k.CacheSourceWithMetaInfo
    */
   public void setKeepDataAfterExpired(boolean v) {
     this.keepDataAfterExpired = v;
+  }
+
+  public boolean isSharpExpiry() {
+    return sharpExpiry;
+  }
+
+  /**
+   *
+   * @param sharpExpiry
+   */
+  public void setSharpExpiry(boolean sharpExpiry) {
+    this.sharpExpiry = sharpExpiry;
   }
 
   public int getHeapEntryCapacity() {

@@ -23,24 +23,17 @@ package org.cache2k.storage;
  */
 
 /**
- * Optional interface for a {@link CacheStorage} if the storage to flush any
- * unwritten data and make it persistent.
+ * Storage supports an efficient way to update the expiry time of
+ * an entry.
  *
- * @author Jens Wilke; created: 2014-06-09
+ * @author Jens Wilke; created: 2014-06-12
  */
-public interface FlushableStorage extends CacheStorage {
+public interface EntryExpiryUpdateableStorage extends CacheStorage {
 
   /**
-   * Flush any unwritten information to disk. The method returns when the flush
-   * is finished and everything is written. The cache is not protecting the
-   * storage from concurrent read/write operation.
-   *
-   * <p/>A flush is initiated by client request or on regular intervals.
+   * Update the expiry time of a stored entry. If the entry is not
+   * existing, the method returns without exception.
    */
-  public void flush(FlushableStorage.FlushContext ctx, long now) throws Exception;
-
-  interface FlushContext extends CacheStorage.MultiThreadedContext {
-
-  }
+  public void updateEntryExpireTime(Object key, long _millis) throws Exception;
 
 }
