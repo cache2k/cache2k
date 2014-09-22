@@ -29,11 +29,14 @@ package org.cache2k;
  * @author Jens Wilke; created: 2014-04-19
  * @param <T> build target type, either cache or configuration
  * @param <C> configuration bean type
- * @param <B> builder type, also defines build target type
+ * @param <R> root builder type, also defines build target type
  */
-public abstract class BaseAnyBuilder<B, T, C> {
+public abstract class BaseAnyBuilder<R extends RootAnyBuilder<R, T>, T, C>
+  implements AnyBuilder<R, T, C> {
 
-  protected RootAnyBuilder<B, T> root;
+  protected R root;
+
+  BaseAnyBuilder() { }
 
   /**
    * Adds persistence to the cache or returns a previous added persistence storage
@@ -42,13 +45,11 @@ public abstract class BaseAnyBuilder<B, T, C> {
    * cache contains data that is costly to reproduce and/or needs a big
    * amount of storage which is not available within the java heap.
    */
-  public StorageConfiguration.Builder<B, T> persistence() { return root.persistence(); }
-
-  public StorageConfiguration.Builder<B, T> addStore() { return root.addStore();}
+  public StorageConfiguration.Builder<R, T, ?> persistence() { return root.persistence(); }
 
   public abstract C createConfiguration();
 
-  public RootAnyBuilder<B, T> root() {
+  public R root() {
     return root;
   }
 
@@ -56,7 +57,7 @@ public abstract class BaseAnyBuilder<B, T, C> {
     return root.build();
   }
 
-  void setRoot(RootAnyBuilder<B, T> root) {
+  void setRoot(R root) {
     this.root = root;
   }
 

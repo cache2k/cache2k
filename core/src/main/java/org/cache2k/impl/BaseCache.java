@@ -210,9 +210,8 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
 
   private int featureBits = 0;
 
-  private static final int SHARP_TIMEOUT_FEATURE = 1 << 0;
-  private static final int KEEP_AFTER_EXPIRED = 1 << 1;
-  protected static final int FEATURE_BIT_NUMBER_FOR_SUBCLASS = 8;
+  private static final int SHARP_TIMEOUT_FEATURE = 1;
+  private static final int KEEP_AFTER_EXPIRED = 2;
 
   protected final boolean hasSharpTimeout() {
     return (featureBits & SHARP_TIMEOUT_FEATURE) > 0;
@@ -296,7 +295,8 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
         cfg.setEntryCapacity(c.getMaxSize());
       }
       storage = new PassingStorageAdapter(this, c, _stores.get(0));
-    } else {
+    } else if (_stores.size() > 1) {
+      throw new UnsupportedOperationException("no aggregation support yet");
     }
   }
 

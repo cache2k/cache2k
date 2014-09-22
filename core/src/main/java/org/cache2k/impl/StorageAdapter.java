@@ -22,11 +22,9 @@ package org.cache2k.impl;
  * #L%
  */
 
-import org.cache2k.CacheException;
 import org.cache2k.ClosableIterator;
 import org.cache2k.storage.StorageEntry;
 
-import java.util.Iterator;
 import java.util.concurrent.Future;
 
 /**

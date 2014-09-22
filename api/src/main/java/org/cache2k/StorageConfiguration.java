@@ -22,12 +22,16 @@ package org.cache2k;
  * #L%
  */
 
+import org.cache2k.spi.SingleProviderResolver;
+import org.cache2k.spi.StorageImplementation;
+import org.cache2k.storage.SimpleSingleFileStorage;
+
 import java.util.concurrent.TimeUnit;
 
 /**
  * @author Jens Wilke; created: 2014-04-18
  */
-public class StorageConfiguration {
+public class StorageConfiguration<EX> {
 
   boolean reliable;
 
@@ -35,7 +39,7 @@ public class StorageConfiguration {
 
   boolean ignoreModifications;
 
-  Class<?> implementation;
+  Class<? extends StorageImplementation> implementation = SimpleSingleFileStorage.class;
 
   boolean passivation = false;
 
@@ -47,7 +51,7 @@ public class StorageConfiguration {
 
   long syncInterval = 7 * 1000;
 
-  Object extendedConfiguration;
+  EX extraConfiguration;
 
   boolean flushOnClose = false;
 
@@ -67,8 +71,8 @@ public class StorageConfiguration {
     this.ignoreModifications = ignoreModifications;
   }
 
-  public void setImplementation(Class<?> implementation) {
-    this.implementation = implementation;
+  public void setImplementation(Class<? extends StorageImplementation> c) {
+    implementation = c;
   }
 
   public void setPassivation(boolean passivation) {
@@ -130,12 +134,12 @@ public class StorageConfiguration {
     return syncInterval;
   }
 
-  public Object getExtendedConfiguration() {
-    return extendedConfiguration;
+  public EX getExtraConfiguration() {
+    return extraConfiguration;
   }
 
-  public void setExtendedConfiguration(Object extendedConfiguration) {
-    this.extendedConfiguration = extendedConfiguration;
+  public void setExtraConfiguration(EX extraConfiguration) {
+    this.extraConfiguration = extraConfiguration;
   }
 
   public boolean isFlushOnClose() {
@@ -150,71 +154,72 @@ public class StorageConfiguration {
     this.flushOnClose = f;
   }
 
-  public static class Builder<B, T>
-    extends BaseAnyBuilder<B, T, StorageConfiguration> {
+  public static class Builder<R extends RootAnyBuilder<R, T>, T, E>
+    extends BaseAnyBuilder<R, T, StorageConfiguration> {
 
-    private StorageConfiguration config = new StorageConfiguration();
-    private BaseAnyBuilder<?, ?, ?> extendedConfigurationBuilder = null;
-
-    public Builder<B, T> implementation(Class<?> _impl) {
-      config.implementation = _impl;
-      return this;
-    }
+    private StorageConfiguration<Object> config = new StorageConfiguration();
+    private AnyBuilder<R, T, ?> extraConfigurationBuilder = null;
 
     /**
      * Only store entries in the storage that don't live in the
      * memory any more. E.g. when an entry gets evicted it is
      * stored.
      */
-    public Builder<B, T> passivation(boolean f) {
+    public Builder<R, T, E> passivation(boolean f) {
       config.passivation = f;
       return this;
     }
 
-    public Builder<B, T> purgeOnStartup(boolean f) {
+    public Builder<R, T, E> purgeOnStartup(boolean f) {
       config.purgeOnStartup = f;
       return this;
     }
 
-    public Builder<B, T> flushOnClose(boolean f) {
+    public Builder<R, T, E> flushOnClose(boolean f) {
       config.flushOnClose = f;
       return this;
     }
 
-    public Builder<B, T> location(String s) {
+    public Builder<R, T, E> location(String s) {
       config.location = s;
       return this;
     }
 
-    public Builder<B, T> entryCapacity(int v) {
+    public Builder<R, T, E> entryCapacity(int v) {
       config.entryCapacity = v;
       return this;
     }
 
-    public Builder<B, T> bytesCapacity(int v) {
+    public Builder<R, T, E> bytesCapacity(int v) {
       config.bytesCapacity = v;
       return this;
     }
 
-    public Builder<B, T> syncInterval(int v, TimeUnit u) {
+    public Builder<R, T, E> syncInterval(int v, TimeUnit u) {
       config.syncInterval = (int) u.toMillis(v);
       return this;
     }
 
-    public <EB extends BaseAnyBuilder<B, T, ?>> EB extendedConfiguraton(Class<EB> c) {
-      try {
-        EB b = c.newInstance();
-        b.setRoot(root);
-        return b;
-      } catch (Exception e) {
-        throw new RuntimeException();
-      }
+    public <AB extends AnyBuilder<R, T, ?>> Builder<R, T, AB> implementation(
+      Class<? extends StorageImplementation<R, T, AB, ?>> c) {
+      StorageImplementation<R, T, AB, ?> imp = SingleProviderResolver.getInstance().resolve(c);
+      config.setImplementation(c);
+      extraConfigurationBuilder = imp.createConfigurationBuilder(root());
+      return (Builder<R, T, AB>) this;
     }
 
+    public E extra() {
+      if (extraConfigurationBuilder == null) {
+        throw new IllegalArgumentException("storage implementation has no extra configuration");
+      }
+      return (E) extraConfigurationBuilder;
+    }
+
+    @Override
     public StorageConfiguration createConfiguration() {
-      if (extendedConfigurationBuilder != null) {
-        config.setExtendedConfiguration(
-          extendedConfigurationBuilder.createConfiguration());
+      if (extraConfigurationBuilder != null) {
+        config.setExtraConfiguration(
+          extraConfigurationBuilder.createConfiguration());
       }
       return config;
     }

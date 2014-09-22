@@ -30,8 +30,10 @@ import org.cache2k.impl.threading.Futures;
 import org.cache2k.impl.threading.LimitedPooledExecutor;
 import org.cache2k.impl.timer.TimerListener;
 import org.cache2k.impl.timer.TimerService;
+import org.cache2k.spi.SingleProviderResolver;
 import org.cache2k.storage.CacheStorage;
 import org.cache2k.storage.CacheStorageContext;
+import org.cache2k.storage.CacheStorageProvider;
 import org.cache2k.storage.FlushableStorage;
 import org.cache2k.storage.ImageFileStorage;
 import org.cache2k.storage.MarshallerFactory;
@@ -120,9 +122,9 @@ class PassingStorageAdapter extends StorageAdapter {
 
   public void open() {
     try {
-      ImageFileStorage s = new ImageFileStorage();
-      s.open(context, config);
-      storage = s;
+      CacheStorageProvider<?> pr = (CacheStorageProvider)
+        SingleProviderResolver.getInstance().resolve(config.getImplementation());
+      storage = pr.create(context, config);
       flushIntervalMillis = config.getFlushIntervalMillis();
       if (!(storage instanceof FlushableStorage)) {
         flushIntervalMillis = -1;

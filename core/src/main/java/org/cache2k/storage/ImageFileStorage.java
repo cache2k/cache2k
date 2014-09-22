@@ -22,6 +22,7 @@ package org.cache2k.storage;
  * #L%
  */
 
+import org.cache2k.RootAnyBuilder;
 import org.cache2k.StorageConfiguration;
 import org.cache2k.impl.ExceptionWrapper;
 
@@ -1348,6 +1349,19 @@ public class ImageFileStorage
      * there may be ongoing read requests.
      */
     public int freeSpaceAfterMillis = 15 * 1000;
+
+  }
+
+  public static class Provider<R extends RootAnyBuilder<R, T>, T>
+    extends CacheStorageBaseWithVoidConfig<R, T>
+    implements SimpleSingleFileStorage<R, T> {
+
+    @Override
+    public ImageFileStorage create(CacheStorageContext ctx, StorageConfiguration cfg) throws IOException {
+      ImageFileStorage img = new ImageFileStorage();
+      img.open(ctx, cfg);
+      return img;
+    }
 
   }
 

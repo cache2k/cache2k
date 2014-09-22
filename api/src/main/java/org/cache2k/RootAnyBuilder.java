@@ -22,8 +22,6 @@ package org.cache2k;
  * #L%
  */
 
-import org.cache2k.spi.Cache2kCoreProvider;
-
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -33,41 +31,37 @@ import java.util.List;
  * This is the configuration builder functionality we need for the cache builder
  * as well.
  *
- * @param <B> builder type, e.g. {@link CacheBuilder}
- *
  * @author Jens Wilke; created: 2014-04-19
-
  */
 @SuppressWarnings("unchecked")
-abstract class RootAnyBuilder<B, T> extends BaseAnyBuilder<B, T, CacheConfig> {
+public abstract class RootAnyBuilder<R extends RootAnyBuilder<R, T>, T>
+  extends BaseAnyBuilder<R, T, CacheConfig> {
 
   private List<BaseAnyBuilder> modules = Collections.emptyList();
   protected CacheConfig config;
-  StorageConfiguration.Builder<B, T> persistence;
+  StorageConfiguration.Builder<R, T, ?> persistence;
 
-  public B backgroundRefresh(boolean f) {
-    config.setBackgroundRefresh(f);
-    return (B) this;
+  /** Closed for extension */
+  RootAnyBuilder() {
+    root =  (R) this;
   }
 
-  public B sharpExpiry(boolean f) {
+  public R backgroundRefresh(boolean f) {
+    config.setBackgroundRefresh(f);
+    return (R) this;
+  }
+
+  public R sharpExpiry(boolean f) {
     config.setSharpExpiry(f);
-    return (B) this;
+    return (R) this;
   }
 
   @Override
-  public StorageConfiguration.Builder<B, T> persistence() {
+  public StorageConfiguration.Builder<R, T, ?> persistence() {
     if (persistence == null) {
       persistence = addModule(new StorageConfiguration.Builder());
-      persistence.implementation(Cache2kCoreProvider.get().getDefaultPersistenceStoreImplementation());
     }
     return persistence;
-  }
-
-  @Override
-  public StorageConfiguration.Builder<B, T> addStore() {
-    return
-      addModule(new StorageConfiguration.Builder());
   }
 
   @Override
