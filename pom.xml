@@ -298,6 +298,13 @@
       </build>
     </profile>
 
+    <profile>
+      <id>android</id>
+      <modules>
+        <module>android-test</module>
+      </modules>
+    </profile>
+
     <!-- sign artifact, see:
          https://docs.sonatype.org/display/Repository/How+To+Generate+PGP+Signatures+With+Maven
          -->
