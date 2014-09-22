@@ -2,6 +2,11 @@
 
 A poor mans issue tracker.
 
+### Next
+
+  * storage purge
+  * review isDirty() handling
+
 ### Warmups
 
   * contains()
@@ -13,8 +18,10 @@ A poor mans issue tracker.
   * ConfigurationBuilder
   * more than 2gb?
   * off-heap persistence
+  * storage with MapDb
+  * storage with rest interface?
   * flags for passivation and in-mem capacity, etc.
-  * 
+  * developer description for storage
 
 #### Integration targets
 
@@ -26,6 +33,11 @@ A poor mans issue tracker.
 
   * XML configuration
   * configuration templates / default configuration (e.g. for addPersistence())
+
+### Ongoing tiny bits
+
+  * RefreshController: Rename? Add key!, what to do with exception?, 
+    Use the CacheEntry instead of the long parameter list.
 
 ### Prio A / for 1.0
 
@@ -49,7 +61,6 @@ Things in JSR107 we don't have yet.
 
   * expiry/refresh: Implement sharp expiry and background refresh, refresh ahead of time with different now?
   * change cache size during operation: maximumSize / capacity JMX setting
-  * RefreshController: Rename? Add key!
   * explain/check null support
   * exceptions: stick to old data when intermediate exceptions occur
   * API: typing / K or ? extends K
