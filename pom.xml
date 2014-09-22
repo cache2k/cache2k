@@ -56,13 +56,6 @@
   </modules>
 
   <dependencies>
-    <!-- JSR-305 defect annotations, just as @Nullable -->
-    <dependency>
-      <groupId>com.google.code.findbugs</groupId>
-      <artifactId>jsr305</artifactId>
-      <version>1.3.9</version>
-      <scope>compile</scope>
-    </dependency>
     <dependency>
       <groupId>junit</groupId>
       <artifactId>junit</artifactId>

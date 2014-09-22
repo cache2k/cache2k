@@ -22,7 +22,6 @@ package org.cache2k;
  * #L%
  */
 
-import javax.annotation.Nullable;
 import java.util.Collection;
 
 /**
@@ -68,7 +67,7 @@ public abstract class CacheBuilder<K,T> implements Cloneable {
   protected ExperimentalBulkCacheSource experimentalBulkCacheSource;
 
   /** Builder is constructed from prototype */
-  protected void ctor(Class<K> _keyType, Class<T> _valueType, @Nullable Class<?> _entryType) {
+  protected void ctor(Class<K> _keyType, Class<T> _valueType, Class<?> _entryType) {
     config = new CacheConfig();
     config.setValueType(_valueType);
     config.setKeyType(_keyType);
