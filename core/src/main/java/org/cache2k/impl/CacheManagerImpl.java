@@ -41,7 +41,7 @@ import java.util.Set;
 public class CacheManagerImpl extends CacheManager {
   
 
-  static List<CacheLifeCycleListener> lifeCycleListeners = new ArrayList<>();
+  static List<CacheLifeCycleListener> lifeCycleListeners = new ArrayList<CacheLifeCycleListener>();
   static JmxSupport jmxSupport;
 
   static {
@@ -50,8 +50,8 @@ public class CacheManagerImpl extends CacheManager {
 
   private Log log;
   private String name;
-  private Map<String, BaseCache> cacheNames = new HashMap<>();
-  private Set<Cache> caches = new HashSet<>();
+  private Map<String, BaseCache> cacheNames = new HashMap<String, BaseCache>();
+  private Set<Cache> caches = new HashSet<Cache>();
   private int disambiguationCounter = 1;
 
   public CacheManagerImpl() {
@@ -174,7 +174,7 @@ public class CacheManagerImpl extends CacheManager {
           }
         }
       }
-      Set<Cache> _caches = new HashSet<>();
+      Set<Cache> _caches = new HashSet<Cache>();
       _caches.addAll(caches);
       for (Cache c : _caches) {
         c.destroy();

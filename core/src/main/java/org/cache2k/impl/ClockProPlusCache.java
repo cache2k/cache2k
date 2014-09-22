@@ -87,7 +87,7 @@ public class ClockProPlusCache<K, T> extends LockFreeCache<ClockProPlusCache.Ent
       handCold = null;
       handHot = null;
       handGhost = null;
-      ghostHashCtrl = new Hash<>();
+      ghostHashCtrl = new Hash<Entry>();
       ghostHash = ghostHashCtrl.init(Entry.class);
     }
   }
@@ -110,7 +110,7 @@ public class ClockProPlusCache<K, T> extends LockFreeCache<ClockProPlusCache.Ent
   }
 
   private void insertCopyIntoGhosts(Entry e) {
-    Entry<K,T> e2 = new Entry<>();
+    Entry<K,T> e2 = new Entry<K, T>();
     e2.value = (T) INITIAL_GHOST_VALUE;
     e2.key = (K) e.key;
     e2.hashCode = e.hashCode;

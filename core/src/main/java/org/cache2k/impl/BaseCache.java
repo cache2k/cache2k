@@ -250,9 +250,9 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
       if (mainHashCtrl != null) {
         removeCnt += getSize();
       }
-      mainHashCtrl = new Hash<>();
-      refreshHashCtrl = new Hash<>();
-      txHashCtrl = new Hash<>();
+      mainHashCtrl = new Hash<E>();
+      refreshHashCtrl = new Hash<E>();
+      txHashCtrl = new Hash<E>();
       mainHash = mainHashCtrl.init((Class<E>) newEntry().getClass());
       refreshHash = refreshHashCtrl.init((Class<E>) newEntry().getClass());
       txHash = txHashCtrl.init((Class<E>) newEntry().getClass());
@@ -918,7 +918,7 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
 
   /** JSR107 convenience getAll from array */
   public Map<K, T> getAll(K[] _keys) {
-    return getAll(new HashSet<>(Arrays.asList(_keys)));
+    return getAll(new HashSet<K>(Arrays.asList(_keys)));
   }
 
   /**
@@ -932,7 +932,7 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
     }
     T[] va = (T[]) new Object[ka.length];
     getBulk(ka, va, new BitSet(), 0, ka.length);
-    Map<K,T> m = new HashMap<>();
+    Map<K,T> m = new HashMap<K, T>();
     for (i = 0; i < ka.length; i++) {
       m.put(ka[i], va[i]);
     }
@@ -1061,7 +1061,7 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
 
   private boolean checkForDeadLockOrExceptions(Entry[] _entries, int s, int e) {
     if (bulkKeysCurrentlyRetrieved == null) {
-      bulkKeysCurrentlyRetrieved = new HashSet<>();
+      bulkKeysCurrentlyRetrieved = new HashSet<K>();
     }
     for (int i = s; i < e; i++) {
       Entry _entry = _entries[i];

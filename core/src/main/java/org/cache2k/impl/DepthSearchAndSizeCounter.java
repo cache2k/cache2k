@@ -67,15 +67,15 @@ public class DepthSearchAndSizeCounter {
   int objectCount;
   int counter;
 
-  HashMap<Integer, SeenEntry> seen = new HashMap<>();
-  Set<SeenEntry> next = new HashSet<>();
+  HashMap<Integer, SeenEntry> seen = new HashMap<Integer, SeenEntry>();
+  Set<SeenEntry> next = new HashSet<SeenEntry>();
 
   /**
    * Array of hash entries seen twice or more times. Top level objects will always be
    * counted once. Secondary entries, will never be counted, since we cannot know
    * if they are exclusive to the hash or not.
    * */
-  Set<SeenEntry> eleminate = new HashSet<>();
+  Set<SeenEntry> eleminate = new HashSet<SeenEntry>();
 
   boolean commonObjects = false;
   boolean circles = false;
@@ -97,13 +97,13 @@ public class DepthSearchAndSizeCounter {
     SeenEntry e = null;
     try {
       Iterator<SeenEntry> it = next.iterator();
-      next = new HashSet<>();
-      eleminate = new HashSet<>();
+      next = new HashSet<SeenEntry>();
+      eleminate = new HashSet<SeenEntry>();
       while (it.hasNext()) {
         descend(e = it.next());
       }
     } catch (Exception ex) {
-      List<Class<?>> _path = new ArrayList<>();
+      List<Class<?>> _path = new ArrayList<Class<?>>();
       while (e != null) {
         _path.add(0, e.object.getClass());
         e = e.via;
@@ -257,7 +257,7 @@ public class DepthSearchAndSizeCounter {
   static class SeenEntry {
 
     SeenEntry via;
-    Set<SeenEntry> transitive = new HashSet<>();
+    Set<SeenEntry> transitive = new HashSet<SeenEntry>();
     Object object;
     int referenceCount = 1;
     int bytes;
