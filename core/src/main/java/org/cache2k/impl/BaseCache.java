@@ -1507,19 +1507,20 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
         e.task.cancel();
       }
       e.value = v;
-      if (hasSharpTimeout() || _nextRefreshTime > Entry.EXPIRY_TIME_MIN) {
+      if (hasSharpTimeout() && _nextRefreshTime > Entry.EXPIRY_TIME_MIN) {
         _nextRefreshTime = -_nextRefreshTime;
       }
       if (timer != null &&
         (_nextRefreshTime > Entry.EXPIRY_TIME_MIN || _nextRefreshTime < -1)) {
         if (_nextRefreshTime < -1) {
-          _nextRefreshTime = -_nextRefreshTime;
-          long _timerTime = _nextRefreshTime - 3;
+          long _timerTime =
+            -_nextRefreshTime - TUNABLE.sharpExpirySafetyGapMillis;
           if (_timerTime >= t) {
             MyTimerTask tt = new MyTimerTask();
             tt.entry = e;
             timer.schedule(tt, new Date(_timerTime));
             e.task = tt;
+            _nextRefreshTime = -_nextRefreshTime;
           }
         } else {
           MyTimerTask tt = new MyTimerTask();
@@ -1532,6 +1533,7 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
           _nextRefreshTime = Entry.FETCH_NEXT_TIME_STATE;
         } else if (_nextRefreshTime == -1) {
           _nextRefreshTime = Entry.FETCHED_STATE;
+        } else {
         }
       }
     } // synchronized (lock)
@@ -1546,7 +1548,7 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
   /**
    * When the time has come remove the entry from the cache.
    */
-  protected void timerEvent(final E e) {
+  protected void timerEvent(final E e, long _executionTime) {
     if (e.isRemovedFromReplacementList()) {
       return;
     }
@@ -2652,7 +2654,7 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
     E entry;
 
     public void run() {
-      timerEvent(entry);
+      timerEvent(entry, scheduledExecutionTime());
     }
   }
 
@@ -2800,8 +2802,8 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
         return true;
       }
       if (needsTimeCheck()) {
-        long t = System.currentTimeMillis();
-        return t < -nextRefreshTime;
+        long now = System.currentTimeMillis();
+        return now < -nextRefreshTime;
       }
       return false;
     }
@@ -2993,6 +2995,18 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
      * Seed used when randomization is disabled. Default: 0.
      */
     public int hashSeed = 0;
+
+    /**
+     * When sharp expiry is enabled, the expiry timer goes
+     * before the actual expiry to switch back to a time checking
+     * scheme when the get method is invoked. This prevents
+     * that an expired value gets served by the cache if the time
+     * is too late. A recent GC should not produce more then 200
+     * milliseconds stall. If longer GC stalls are expected, this
+     * value needs to be changed. A value of LONG.MaxValue
+     * suppresses the timer usage completely.
+     */
+    public long sharpExpirySafetyGapMillis = 666;
 
 
   }
