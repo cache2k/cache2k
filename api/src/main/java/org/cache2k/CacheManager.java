@@ -22,8 +22,6 @@ package org.cache2k;
  * #L%
  */
 
-import javax.naming.Context;
-import javax.naming.InitialContext;
 import java.util.Iterator;
 
 /**
@@ -33,19 +31,6 @@ public abstract class CacheManager implements Iterable<Cache> {
 
   private static CacheManager defaultManager;
   private static String defaultName = "default";
-
-  static {
-    try {
-      Context ctx = new InitialContext();
-      ctx = (Context) ctx.lookup("java:comp/env");
-      String _name =
-        (String) ctx.lookup("org.cache2k.CacheManager.defaultName");
-      if (_name != null) {
-        defaultName = _name;
-      }
-    } catch (Exception ignore) {
-    }
-  }
 
   /**
    * Name of the default cache manager, which is "default" by default. It is also possible
