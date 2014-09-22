@@ -35,7 +35,7 @@ public abstract class CacheBuilder<K,T> implements Cloneable {
     try {
       PROTO = (CacheBuilder) Class.forName("org.cache2k.impl.CacheBuilderImpl").newInstance();
     } catch (Exception ex) {
-      throw new LinkageError("cache2k-core implementation missing", ex);
+      throw new Error("cache2k-core implementation missing", ex);
     }
   }
 

@@ -62,7 +62,7 @@ public abstract class CacheManager implements Iterable<Cache> {
       defaultManager = (CacheManager)
         Class.forName("org.cache2k.impl.CacheManagerImpl").newInstance();
     } catch (Exception e) {
-      throw new LinkageError("cache2k implementation not found, cache2k-core.jar missing?", e);
+      throw new Error("cache2k implementation not found, cache2k-core.jar missing?", e);
     }
     return defaultManager;
   }
