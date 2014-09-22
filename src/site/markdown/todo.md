@@ -14,30 +14,21 @@ A poor mans issue tracker.
 
 ### Storage and persistence
 
+  * passivation, entry dirty bit and storage aggregation
   * Test storage with .implementation(ClockProPlusCache.class), .implementation(ClockCache.class)
-  * ConfigurationBuilder
   * more than 2gb?
   * off-heap persistence
-  * storage with MapDb
+  * storage with MapDb, BabuDb, LevelDb
   * storage with rest interface?
   * flags for passivation and in-mem capacity, etc.
   * developer description for storage
-
-#### Integration targets
-
-  * MapDb
-  * BabuDb
-  * LevelDb
+  * Storage aggregation
+  * async storage
 
 ### configuration
 
   * XML configuration
   * configuration templates / default configuration (e.g. for addPersistence())
-
-### Ongoing tiny bits
-
-  * RefreshController: Rename? Add key!, what to do with exception?, 
-    Use the CacheEntry instead of the long parameter list.
 
 ### Prio A / for 1.0
 
@@ -59,6 +50,8 @@ Things in JSR107 we don't have yet.
 
 #### Details
 
+  * RefreshController: Rename? Add key!, what to do with exception?, 
+    Use the CacheEntry instead of the long parameter list.
   * expiry/refresh: Implement sharp expiry and background refresh, refresh ahead of time with different now?
   * change cache size during operation: maximumSize / capacity JMX setting
   * explain/check null support
@@ -84,10 +77,6 @@ Things in JSR107 we don't have yet.
   * cache feature comparison: e.g.ehcache synchronuous write
   * exceptions: fetchExceptions counter in statistic!
 
-### Things to fix
-
-  * Iterator misses entries when a hashtable expand happens
-
 ### Prio B
 
   * jcache / jsr107 support?
@@ -104,5 +93,11 @@ Things in JSR107 we don't have yet.
 
 ### Things to look on
 
+#### Distributed caching
+
+The interesting question is, what is the "core
+
   * GridGain
   * hazelcast
+  * infinispan
+   
