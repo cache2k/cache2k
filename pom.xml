@@ -52,7 +52,6 @@
 
   <modules>
     <module>api</module>
-    <module>jmx-api</module>
     <module>core</module>
   </modules>
 

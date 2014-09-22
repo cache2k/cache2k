@@ -42,11 +42,6 @@ public class CacheManagerImpl extends CacheManager {
   
 
   static List<CacheLifeCycleListener> lifeCycleListeners = new ArrayList<CacheLifeCycleListener>();
-  static JmxSupport jmxSupport;
-
-  static {
-    lifeCycleListeners.add(jmxSupport = new JmxSupport());
-  }
 
   private Log log;
   private String name;
@@ -57,7 +52,6 @@ public class CacheManagerImpl extends CacheManager {
   public CacheManagerImpl() {
     name = getDefaultName();
     log = LogFactory.getLog(CacheManager.class.getName() + '.' + name);
-    jmxSupport.registerManager(this);
   }
 
   private void sendCreatedEvent(Cache c) {
@@ -179,7 +173,6 @@ public class CacheManagerImpl extends CacheManager {
       for (Cache c : _caches) {
         c.destroy();
       }
-      jmxSupport.unregisterManager(this);
       CacheManager.getInstance();
       caches = null;
     }
