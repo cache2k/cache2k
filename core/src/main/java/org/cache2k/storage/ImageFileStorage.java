@@ -879,13 +879,6 @@ public class ImageFileStorage
   }
 
   @Override
-  public void purge(PurgeContext ctx,
-                    long _valueExpireTime,
-                    long _entryExpireTime) throws Exception {
-    throw new UnsupportedOperationException();
-  }
-
-  @Override
   public void setEntryCapacity(int entryCapacity) {
     this.entryCapacity = entryCapacity;
   }

@@ -88,29 +88,6 @@ public interface CacheStorage {
   public void visit(VisitContext ctx, EntryFilter f, EntryVisitor v) throws Exception;
 
   /**
-   * Expire all entries which have an expiry time before or equal to the
-   * given time. The time for the value expiry may be not identical to the
-   * current time, if the cache wants to keep some entries that are yet
-   * expired, e.g. if a CacheSource is present and a scheme like
-   * if-modified-since is supported by it.
-   *
-   * <p/>The storage implementation may choose to implement only one or no
-   * expiry variant by time.
-   *
-   * @param ctx Provides a multi-threaded context. Thread resources for purge
-   *            operations may be more limited or may have lower priority.
-   * @param _valueExpiryTime request to remove entries with with lower value
-   *           {@link StorageEntry#getEntryExpiryTime()}
-   * @param _entryExpiryTime request to remove entries with with lower value
-   *           {@link StorageEntry#getEntryExpiryTime()}
-   *
-   * @throws java.lang.UnsupportedOperationException thrown by the storage if this
-   *   operation is not supported. The cache will fall back to a generic approach
-   *   via {@link #visit}
-   */
-  public void purge(PurgeContext ctx, long _valueExpiryTime, long _entryExpiryTime) throws Exception;
-
-  /**
    * Called by the cache at regular intervals, but only if data was
    * changed.
    */
@@ -176,10 +153,6 @@ public interface CacheStorage {
      * After this method is called {@link #shouldStop()} is true.
      */
     void abortOnException(Throwable ex);
-
-  }
-
-  public static interface PurgeContext extends MultiThreadedContext {
 
   }
 

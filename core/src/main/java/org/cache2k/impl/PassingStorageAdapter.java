@@ -35,10 +35,10 @@ import org.cache2k.storage.CacheStorage;
 import org.cache2k.storage.CacheStorageContext;
 import org.cache2k.storage.CacheStorageProvider;
 import org.cache2k.storage.FlushableStorage;
-import org.cache2k.storage.ImageFileStorage;
 import org.cache2k.storage.MarshallerFactory;
 import org.cache2k.storage.Marshallers;
 import org.cache2k.storage.OffHeapStorage;
+import org.cache2k.storage.PurgeableStorage;
 import org.cache2k.storage.StorageEntry;
 import org.cache2k.impl.util.Log;
 import org.cache2k.impl.util.TunableConstants;
@@ -286,17 +286,19 @@ class PassingStorageAdapter extends StorageAdapter {
 
   public void purge() {
     long now = System.currentTimeMillis();
-    try {
-      CacheStorage.PurgeContext ctx = new MyPurgeContext();
-      storage.purge(ctx, now, now);
-    } catch (UnsupportedOperationException ex) {
-      expireByVisit(now);
-    } catch (Exception ex) {
-      disable("expire exception", ex);
+    if (storage instanceof PurgeableStorage) {
+      try {
+        PurgeableStorage.PurgeContext ctx = new MyPurgeContext();
+        ((PurgeableStorage) storage).purge(ctx, now, now);
+      } catch (Exception ex) {
+         disable("expire exception", ex);
+      }
+    } else {
+      purgeByVisit(now);
     }
   }
 
-  void expireByVisit(final long now) {
+  void purgeByVisit(final long now) {
     CacheStorage.EntryFilter f = new CacheStorage.EntryFilter() {
       @Override
       public boolean shouldInclude(Object _key) {
@@ -339,7 +341,7 @@ class PassingStorageAdapter extends StorageAdapter {
 
   }
 
-  class MyPurgeContext extends MyMultiThreadContext implements CacheStorage.PurgeContext  {
+  class MyPurgeContext extends MyMultiThreadContext implements PurgeableStorage.PurgeContext {
 
   }
 

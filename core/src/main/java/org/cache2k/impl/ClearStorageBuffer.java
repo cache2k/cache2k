@@ -26,6 +26,7 @@ import org.cache2k.StorageConfiguration;
 import org.cache2k.storage.CacheStorage;
 import org.cache2k.storage.CacheStorageContext;
 import org.cache2k.storage.FlushableStorage;
+import org.cache2k.storage.PurgeableStorage;
 import org.cache2k.storage.StorageEntry;
 
 import java.io.IOException;
@@ -61,7 +62,7 @@ import java.util.concurrent.Future;
  *
  * @author Jens Wilke; created: 2014-04-20
  */
-public class ClearStorageBuffer implements CacheStorage, FlushableStorage {
+public class ClearStorageBuffer implements CacheStorage, FlushableStorage, PurgeableStorage {
 
   long operationsCnt = 0;
   long operationsAtTransferStart = 0;
@@ -116,6 +117,12 @@ public class ClearStorageBuffer implements CacheStorage, FlushableStorage {
     ((FlushableStorage) forwardStorage).flush(ctx, System.currentTimeMillis());
   }
 
+  /**
+   * Does nothing. We were cleared lately anyway. Next purge may go to the storage.
+   */
+  @Override
+  public void purge(PurgeContext ctx, long _valueExpiryTime, long _entryExpiryTime) { }
+
   @Override
   public void close() throws Exception {
     boolean _forward;
@@ -128,11 +135,6 @@ public class ClearStorageBuffer implements CacheStorage, FlushableStorage {
     if (_forward) {
       forwardStorage.close();
     }
-  }
-
-  /** Simply do nothing. Next time, next chance */
-  @Override
-  public void purge(PurgeContext ctx, long _valueExpireTime, long _entryExpireTime) throws Exception {
   }
 
   @Override
