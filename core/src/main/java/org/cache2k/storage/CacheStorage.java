@@ -22,8 +22,6 @@ package org.cache2k.storage;
  * #L%
  */
 
-import org.cache2k.StorageConfiguration;
-
 import java.io.IOException;
 import java.util.concurrent.ExecutorService;
 
@@ -33,8 +31,6 @@ import java.util.concurrent.ExecutorService;
  * @author Jens Wilke; created: 2014-04-03
  */
 public interface CacheStorage {
-
-  public void open(CacheStorageContext ctx, StorageConfiguration cfg) throws Exception;
 
   /**
    * Retrieve the entry from the storage. If there is no mapping for the
@@ -57,7 +53,7 @@ public interface CacheStorage {
    */
   public void put(StorageEntry e) throws Exception;
 
-  public StorageEntry remove(Object key) throws Exception;
+  public void remove(Object key) throws Exception;
 
   /**
    * Returns true if there is a mapping for the key.
@@ -86,31 +82,6 @@ public interface CacheStorage {
    * Visit all stored entries.
    */
   public void visit(VisitContext ctx, EntryFilter f, EntryVisitor v) throws Exception;
-
-  /**
-   * Called by the cache at regular intervals, but only if data was
-   * changed.
-   */
-
-  /**
-   * Called by the cache to remove expired entries.
-   */
-
-  /**
-   * Sets the maximum number of entries in the storage.
-   * This configuration maybe called during runtime. If the
-   * size exceeds the capacity entries are evicted.
-   */
-  public void setEntryCapacity(int v);
-
-  /**
-   * Storage capacity in bytes used on the storage media. There
-   * is no exact guarantee that the storage implementation will met this
-   * constraint exactly.
-   */
-  public void setBytesCapacity(long v);
-
-  public int getEntryCapacity();
 
   public int getEntryCount();
 

@@ -141,8 +141,6 @@ public class ImageFileStorage
    * capacity is by default unlimited.
    */
   int entryCapacity = Integer.MAX_VALUE;
-  long bytesCapacity;
-
   long missCount = 0;
   long hitCount = 0;
   long putCount = 0;
@@ -158,7 +156,6 @@ public class ImageFileStorage
   public ImageFileStorage() {
   }
 
-  @Override
   public void open(CacheStorageContext ctx, StorageConfiguration cfg) throws IOException {
     context = ctx;
     if (ctx.getProperties() != null) {
@@ -351,17 +348,17 @@ public class ImageFileStorage
     }
   }
 
-  public StorageEntry remove(Object key) throws IOException, ClassNotFoundException {
+  public void remove(Object key) throws IOException, ClassNotFoundException {
     HeapEntry be;
     synchronized (valuesLock) {
       be = values.remove(key);
       if (be == null) {
-        return null;
+        return;
       }
       reallyRemove(be);
       removeCount++;
     }
-    return returnEntry(be);
+    returnEntry(be);
   }
 
   /**
@@ -878,21 +875,6 @@ public class ImageFileStorage
     }
   }
 
-  @Override
-  public void setEntryCapacity(int entryCapacity) {
-    this.entryCapacity = entryCapacity;
-  }
-
-  @Override
-  public int getEntryCapacity() {
-    return this.entryCapacity;
-  }
-
-  @Override
-  public void setBytesCapacity(long bytesCapacity) {
-    this.bytesCapacity = bytesCapacity;
-  }
-
   public long getUsedSpace() {
     return getTotalValueSpace() - getFreeSpace();
   }
@@ -1345,9 +1327,9 @@ public class ImageFileStorage
 
   }
 
-  public static class Provider<R extends RootAnyBuilder<R, T>, T>
-    extends CacheStorageBaseWithVoidConfig<R, T>
-    implements SimpleSingleFileStorage<R, T> {
+  public static class Provider
+    extends CacheStorageBaseWithVoidConfig
+    implements SimpleSingleFileStorage {
 
     @Override
     public ImageFileStorage create(CacheStorageContext ctx, StorageConfiguration cfg) throws IOException {

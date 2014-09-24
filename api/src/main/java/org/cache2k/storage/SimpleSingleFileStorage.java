@@ -22,14 +22,12 @@ package org.cache2k.storage;
  * #L%
  */
 
-import org.cache2k.RootAnyBuilder;
 import org.cache2k.spi.StorageImplementation;
 import org.cache2k.spi.VoidConfigBuilder;
 
 /**
  * @author Jens Wilke; created: 2014-06-21
  */
-public interface SimpleSingleFileStorage<R extends RootAnyBuilder<R, T>, T>
-  extends StorageImplementation<R, T, VoidConfigBuilder<R, T>, Void> {
+public interface SimpleSingleFileStorage extends StorageImplementation<VoidConfigBuilder> {
 
 }

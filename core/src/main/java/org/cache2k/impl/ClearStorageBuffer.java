@@ -138,10 +138,6 @@ public class ClearStorageBuffer implements CacheStorage, FlushableStorage, Purge
   }
 
   @Override
-  public void open(CacheStorageContext ctx, StorageConfiguration cfg) throws IOException {
-  }
-
-  @Override
   public void clear() throws Exception {
     throw new IllegalStateException("never called");
   }
@@ -184,7 +180,7 @@ public class ClearStorageBuffer implements CacheStorage, FlushableStorage, Purge
   }
 
   @Override
-  public StorageEntry remove(Object key) throws Exception {
+  public void remove(Object key) throws Exception {
     StorageEntry e = null;
     boolean _forward;
     synchronized (this) {
@@ -195,11 +191,10 @@ public class ClearStorageBuffer implements CacheStorage, FlushableStorage, Purge
       }
     }
     if (_forward) {
-      e = forwardStorage.remove(key);
+      forwardStorage.remove(key);
     } else {
       throttle();
     }
-    return e;
   }
 
   @Override
@@ -246,21 +241,6 @@ public class ClearStorageBuffer implements CacheStorage, FlushableStorage, Purge
         v.visit(e);
       }
     }
-  }
-
-  @Override
-  public void setEntryCapacity(int v) {
-
-  }
-
-  @Override
-  public void setBytesCapacity(long v) {
-
-  }
-
-  @Override
-  public int getEntryCapacity() {
-    return -1;
   }
 
   @Override
