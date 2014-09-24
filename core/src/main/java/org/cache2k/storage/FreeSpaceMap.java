@@ -63,6 +63,13 @@ public class FreeSpaceMap {
     return null;
   }
 
+  public Slot getHighestSlot() {
+    if (pos2slot.size() > 0) {
+      return pos2slot.last();
+    }
+    return null;
+  }
+
   final Slot reusedFreeSlotUnderLock = new Slot(0, 0);
 
   /**
@@ -79,6 +86,10 @@ public class FreeSpaceMap {
       return s;
     }
     return null;
+  }
+
+  public void allocateSpace(Slot s) {
+    allocateSpace(s.position, s.size);
   }
 
   /**
@@ -203,6 +214,14 @@ public class FreeSpaceMap {
     public Slot(long _position, int _size) {
       this.position = _position;
       this.size = _size;
+    }
+
+    public long getPosition() {
+      return position;
+    }
+
+    public int getSize() {
+      return size;
     }
 
     public long getNextPosition() {

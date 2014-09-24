@@ -22,7 +22,6 @@ package org.cache2k.storage;
  * #L%
  */
 
-import org.cache2k.RootAnyBuilder;
 import org.cache2k.StorageConfiguration;
 import org.cache2k.impl.ExceptionWrapper;
 
@@ -96,7 +95,7 @@ public class ImageFileStorage
   RandomAccessFile file;
   ByteBuffer buffer;
 
-  public FreeSpaceMap freeMap = new FreeSpaceMap();
+  public final FreeSpaceMap freeMap = new FreeSpaceMap();
 
   @GuardedBy("valuesLock")
   Map<Object, HeapEntry> values;
@@ -176,8 +175,7 @@ public class ImageFileStorage
     reopen();
   }
 
-  public void reopen() throws IOException {
-    if (freeMap == null) { freeMap = new FreeSpaceMap(); }
+  private void reopen() throws IOException {
     try {
       file = new RandomAccessFile(fileName + ".img", "rw");
       resetBufferFromFile();
@@ -226,7 +224,6 @@ public class ImageFileStorage
     } catch (ClassNotFoundException e) {
       throw new IOException(e);
     }
-
   }
 
   private void initializeFromDisk() throws IOException, ClassNotFoundException {
@@ -279,7 +276,7 @@ public class ImageFileStorage
     }
     try {
       Thread.sleep(7);
-    } catch (InterruptedException e) {
+    } catch (InterruptedException ignore) {
     }
     long _counters2 = putCount + missCount + hitCount + removeCount + evictCount;
     if (_counters2 != _counters) {
@@ -314,7 +311,7 @@ public class ImageFileStorage
   public void fastClose() throws IOException {
     synchronized (valuesLock) {
       values = null;
-      freeMap = null;
+      freeMap.init();
       buffer = null;
       file.close();
       file = null;
@@ -357,7 +354,7 @@ public class ImageFileStorage
       }
       reallyRemove(be);
       removeCount++;
-    }
+     }
     returnEntry(be);
   }
 
@@ -502,7 +499,7 @@ public class ImageFileStorage
   }
 
   /**
-   * Flag there was a problem at the last startup and probably some data was lost.
+   * Flag if there was a problem at the last startup and probably some data was lost.
    * This is an indicator for an unclean shutdown, crash, etc.
    */
   public boolean isDataLost() {
@@ -622,21 +619,13 @@ public class ImageFileStorage
     }
   }
 
-  public void flush(FlushContext ctx, long now) throws IOException {
-    commit(now);
-  }
-
-  public void commit() throws IOException {
-    commit(0);
-  }
-
   /**
    * Write key to object index to disk for all modified entries. The implementation only works
    * single threaded.
    *
    * @throws IOException
    */
-  public void commit(long now) throws IOException {
+  public void flush(FlushContext ctx, long now) throws IOException {
     synchronized (commitLock) {
       CommitWorker _worker;
       synchronized (valuesLock) {
@@ -664,6 +653,7 @@ public class ImageFileStorage
       writeDescriptor();
       _worker.freeSpace();
     }
+    truncateFile();
   }
 
   /**
@@ -871,6 +861,23 @@ public class ImageFileStorage
       HeapEntry e = values.get(key);
       if (e != null) {
         e.entryExpireTime = _millis;
+      }
+    }
+  }
+
+  /**
+   * Truncate the file, if there is a trailing free slot. There is no compactions.
+   * This is not perfect, but good enough. There should always some fluctuations
+   * in the entries so at some time there will be free space at the end of the file.
+   */
+  private void truncateFile() throws IOException {
+    Slot s;
+    synchronized (freeMap) {
+      s = freeMap.getHighestSlot();
+      if (s != null && s.getNextPosition() == file.length()) {
+        freeMap.allocateSpace(s);
+        file.setLength(s.getPosition());
+        resetBufferFromFile();
       }
     }
   }
