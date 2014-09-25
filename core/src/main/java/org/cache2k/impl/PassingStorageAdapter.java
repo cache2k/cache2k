@@ -89,8 +89,8 @@ public class PassingStorageAdapter extends StorageAdapter {
   ExecutorService executor;
 
   long flushIntervalMillis = 0;
+  Object flushLock = new Object();
   TimerService.CancelHandle flushTimerHandle;
-
   @Nonnull
   Future<Void> lastExecutingFlush = new Futures.FinishedFuture<>();
 
@@ -577,7 +577,7 @@ public class PassingStorageAdapter extends StorageAdapter {
     if (flushIntervalMillis <= 0) {
       return;
     }
-    synchronized (this) {
+    synchronized (flushLock) {
       if (flushTimerHandle != null) {
         return;
       }
@@ -597,7 +597,7 @@ public class PassingStorageAdapter extends StorageAdapter {
   }
 
   protected void onFlushTimerEvent() {
-    synchronized (this) {
+    synchronized (flushLock) {
       flushTimerHandle.cancel();
       flushTimerHandle = null;
       if (storage instanceof ClearStorageBuffer ||
@@ -621,7 +621,7 @@ public class PassingStorageAdapter extends StorageAdapter {
    * it until initiating a new one.
    */
   public void flush() {
-    synchronized (this) {
+    synchronized (flushLock) {
       if (flushTimerHandle != null) {
         flushTimerHandle.cancel();
         flushTimerHandle = null;
