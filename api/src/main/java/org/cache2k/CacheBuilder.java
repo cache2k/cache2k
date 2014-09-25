@@ -31,7 +31,7 @@ import java.util.Collection;
  * @author Jens Wilke; created: 2013-06-25
  */
 public abstract class CacheBuilder<K,T>
-  extends RootAnyBuilder<CacheBuilder, K, T> implements Cloneable {
+  extends RootAnyBuilder<K, T> implements Cloneable {
 
   private static CacheBuilder PROTOTYPE;
 

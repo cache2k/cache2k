@@ -30,7 +30,7 @@ import java.util.List;
  * @author Jens Wilke; created: 2014-04-19
  */
 @SuppressWarnings("unchecked")
-public abstract class RootAnyBuilder<R extends RootAnyBuilder, K, T>
+public abstract class RootAnyBuilder<K, T>
   extends BaseAnyBuilder<K, T, CacheConfig> {
 
   private List<BaseAnyBuilder> modules = Collections.emptyList();
@@ -40,14 +40,14 @@ public abstract class RootAnyBuilder<R extends RootAnyBuilder, K, T>
   /** Closed for extension */
   RootAnyBuilder() { }
 
-  public R backgroundRefresh(boolean f) {
+  public CacheBuilder<K,T> backgroundRefresh(boolean f) {
     config.setBackgroundRefresh(f);
-    return (R) this;
+    return (CacheBuilder<K,T>) this;
   }
 
-  public R sharpExpiry(boolean f) {
+  public CacheBuilder<K,T> sharpExpiry(boolean f) {
     config.setSharpExpiry(f);
-    return (R) this;
+    return (CacheBuilder<K,T>) this;
   }
 
   @Override
