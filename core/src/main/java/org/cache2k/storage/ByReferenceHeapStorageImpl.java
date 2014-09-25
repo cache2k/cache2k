@@ -29,11 +29,12 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 
 /**
- * Simple storage implementation, just uses a hashmap.
+ * Simple storage implementation, just uses a hashmap. Usable for testing and as a
+ * tiny storage implementation example.
  *
  * @author Jens Wilke; created: 2014-06-21
  */
-public class ReferenceHeapStorageImpl implements CacheStorage {
+public class ByReferenceHeapStorageImpl implements CacheStorage {
 
   StorageConfiguration<Void> config;
   CacheStorageContext context;
@@ -147,11 +148,11 @@ public class ReferenceHeapStorageImpl implements CacheStorage {
   }
 
   public static class Provider
-    extends CacheStorageBaseWithVoidConfig implements ReferenceHeapStorage {
+    extends CacheStorageProviderWithVoidConfig implements ByReferenceHeapStorage {
 
     @Override
-    public ReferenceHeapStorageImpl create(CacheStorageContext ctx, StorageConfiguration<Void> cfg) {
-      ReferenceHeapStorageImpl st = new ReferenceHeapStorageImpl();
+    public ByReferenceHeapStorageImpl create(CacheStorageContext ctx, StorageConfiguration<Void> cfg) {
+      ByReferenceHeapStorageImpl st = new ByReferenceHeapStorageImpl();
       st.open(ctx, cfg);
       return st;
     }

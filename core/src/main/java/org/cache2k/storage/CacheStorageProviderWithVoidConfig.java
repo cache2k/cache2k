@@ -30,13 +30,13 @@ import org.cache2k.spi.VoidConfigBuilder;
 /**
  * @author Jens Wilke; created: 2014-06-21
  */
-public abstract class CacheStorageBaseWithVoidConfig
+public abstract class CacheStorageProviderWithVoidConfig
   implements
     StorageImplementation<VoidConfigBuilder>,
     CacheStorageProvider<Void> {
 
   /** Needs sub classing */
-  protected CacheStorageBaseWithVoidConfig() { }
+  protected CacheStorageProviderWithVoidConfig() { }
 
   @Override
   public <K, T> VoidConfigBuilder<K, T> createConfigurationBuilder(CacheBuilder<K, T> _rootBuilder) {

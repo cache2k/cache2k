@@ -30,6 +30,6 @@ import org.cache2k.spi.VoidConfigBuilder;
  *
  * @author Jens Wilke; created: 2014-06-21
  */
-public interface ReferenceHeapStorage extends StorageImplementation<VoidConfigBuilder> {
+public interface ByReferenceHeapStorage extends StorageImplementation<VoidConfigBuilder> {
 
 }

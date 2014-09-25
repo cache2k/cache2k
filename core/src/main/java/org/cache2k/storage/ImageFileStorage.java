@@ -1335,7 +1335,7 @@ public class ImageFileStorage
   }
 
   public static class Provider
-    extends CacheStorageBaseWithVoidConfig
+    extends CacheStorageProviderWithVoidConfig
     implements SimpleSingleFileStorage {
 
     @Override
