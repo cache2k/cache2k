@@ -55,7 +55,8 @@ public class SingleProviderResolver {
    *
    * @param c the provider interface that it is implemented
    * @param <T> type of provider interface
-   * @return cached instance of the provider
+   *
+   * @return cached instance of the provider, never null
    * @throws java.lang.LinkageError if none ore more then one providers are present.
    */
   public <T> T resolve(Class<T> c) {
