@@ -23,8 +23,7 @@ package org.cache2k.storage;
  */
 
 /**
- * Storage supports an efficient way to update the expiry time of
- * an entry.
+ * Storage supports an efficient way to update the expiry time of an entry.
  *
  * @author Jens Wilke; created: 2014-06-12
  */

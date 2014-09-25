@@ -26,7 +26,7 @@ import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
 /**
- * If object implements {@link ValueWithNextRefreshTime} than the next refresh time
+ * If object implements {@link ValueWithNextRefreshTime} then the next refresh time
  * is fetched from the object. If not, the default linger time is used by the cache.
  *
  * @author Jens Wilke; created: 2013-05-02

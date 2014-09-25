@@ -29,7 +29,7 @@ import java.util.Set;
 
 /**
  * Interface to the cache2k cache implementation. To obtain a cache
- * instance use the {@link CacheBuilder}
+ * instance use the {@link CacheBuilder}.
  *
  * @see CacheBuilder to create a new cache
  * @author Jens Wilke
@@ -45,12 +45,12 @@ public interface Cache<K, T> extends KeyValueSource<K,T>, Iterable<CacheEntry<K,
   public abstract void clear();
 
   /**
-   * Returns object mapped to key
+   * Returns object in the cache that is mapped to the key.
    */
   public abstract T get(K key);
 
   /**
-   * Signals the intend to call a get on the same key in the near future.
+   * Signals the intent to call a get on the same key in the near future.
    *
    * <p/>Triggers a prefetch and returns immediately. If the entry is in
    * the cache already and still fresh nothing will happen. If the entry
@@ -95,10 +95,8 @@ public interface Cache<K, T> extends KeyValueSource<K,T>, Iterable<CacheEntry<K,
    * Remove the mappings for the keys atomically. Missing keys
    * will be ignored.
    *
-   * <p/>Fetches in flight, aka gets started before this method
-   * call but not yet finished, will be ignored. This is important
-   * since this call is used for transaction commits and the key
-   * may be locked within the database.
+   * <p/>Parallel fetches from the cache source, that are currently
+   * ongoing for some of the given keys, will be ignored.
    */
   public abstract void removeAllAtOnce(Set<K> key);
 
@@ -119,16 +117,17 @@ public interface Cache<K, T> extends KeyValueSource<K,T>, Iterable<CacheEntry<K,
    *
    * <p/>The operation may be split into chunks and not performed atomically.
    * The entries that are processed within a chunk will be locked, to avoid
-   * multiple fetches from the cache source. In this operation there is the
-   * potential for deadlocks, so deadlocks need to be detected and avoided.
-   * One possible solution to avoid deadlocks, is to fall back to single
-   * get operations.
+   * duplicate fetches from the cache source. To avoid deadlocks there is a
+   * fallback non-bulk operation if a fetch is ongoing and the keys overlap.
    *
    * <p/>In contrast to JSR107 the following guarantees are met
    * if the operation returns without exception: map.size() == keys.size()
    *
-   * @exception PropagatedCacheException if there an exception happened
-   *            during fetch of any key.
+   * <p/>Exception handling: The method may terminate normal, even if a cache
+   * fetch via cache source failed. In this case the exception will be thrown
+   * when the value is requested from the map.
+   *
+   * @exception PropagatedCacheException may be thrown if the fetch fails.
    */
   public Map<K, T> getAll(Set<? extends K> keys);
 
@@ -172,8 +171,8 @@ public interface Cache<K, T> extends KeyValueSource<K,T>, Iterable<CacheEntry<K,
   public abstract void destroy();
 
   /**
-   * Returns information about the caches internal information. Calling toString()
-   * on the cache object is an expansive operation, since internal statistics are
+   * Returns information about the caches internal information. Calling {@link #toString}
+   * on the cache object is an expensive operation, since internal statistics are
    * collected and other thread users need to be locked out, to have a consistent
    * view.
    */

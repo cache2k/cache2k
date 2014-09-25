@@ -31,9 +31,9 @@ package org.cache2k;
 public interface ValueWithNextRefreshTime {
 
   /**
-   * Return time of next refresh (expiry time). If 0 is returned, this means
-   * entry expires immediately, or is always fetched from the source. If
-   * {@link Long#MAX_VALUE} is returned it means there is no specific expiry time
+   * Return time of next refresh (expiry time). A return value of 0 means the
+   * entry expires immediately, or is always fetched from the source. A return value of
+   * {@link Long#MAX_VALUE} means there is no specific expiry time
    * known or needed. In this case a reasonable default can be assumed for
    * the expiry, the cache will use the configured expiry time.
    */

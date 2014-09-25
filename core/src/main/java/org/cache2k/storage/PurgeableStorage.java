@@ -28,9 +28,9 @@ package org.cache2k.storage;
 public interface PurgeableStorage {
 
   /**
-   * Expire all entries which have an expiry time before or equal to the
+   * Removes all entries which have an expiry time before or equal to the
    * given time. The time for the value expiry may be not identical to the
-   * current time, if the cache wants to keep some entries that are yet
+   * current time, if the cache wants to keep some entries that are recently
    * expired, e.g. if a CacheSource is present and a scheme like
    * if-modified-since is supported by it.
    *
@@ -39,9 +39,9 @@ public interface PurgeableStorage {
    *
    * @param ctx Provides a multi-threaded context. Thread resources for purge
    *            operations may be more limited or may have lower priority.
-   * @param _valueExpiryTime request to remove entries with with lower value
-   *           {@link StorageEntry#getEntryExpiryTime()}
-   * @param _entryExpiryTime request to remove entries with with lower value
+   * @param _valueExpiryTime request to remove entries with lower value of
+   *           {@link StorageEntry#getValueExpiryTime()}
+   * @param _entryExpiryTime request to remove entries with with lower value of
    *           {@link StorageEntry#getEntryExpiryTime()}
    *
    */

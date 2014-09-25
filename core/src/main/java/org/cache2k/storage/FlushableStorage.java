@@ -23,8 +23,8 @@ package org.cache2k.storage;
  */
 
 /**
- * Optional interface for a {@link CacheStorage} if the storage to flush any
- * unwritten data and make it persistent.
+ * Optional interface for a {@link CacheStorage} if the storage needs to flush any
+ * unwritten data to make it persistent.
  *
  * @author Jens Wilke; created: 2014-06-09
  */
@@ -33,9 +33,10 @@ public interface FlushableStorage extends CacheStorage {
   /**
    * Flush any unwritten information to disk. The method returns when the flush
    * is finished and everything is written. The cache is not protecting the
-   * storage from concurrent read/write operation.
+   * storage from concurrent read/write operation while the flush is performed.
    *
-   * <p/>A flush is initiated by client request or on regular intervals.
+   * <p/>A flush is initiated by client request or on regular intervals after a
+   * modification has happened.
    */
   public void flush(FlushableStorage.FlushContext ctx, long now) throws Exception;
 

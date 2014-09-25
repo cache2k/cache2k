@@ -161,7 +161,6 @@ public class PassingStorageAdapter extends StorageAdapter {
   private void doPut(BaseCache.Entry e) {
     try {
       storage.put(e);
-      e.isDirty();
       checkStartFlushTimer();
     } catch (Exception ex) {
       if (config.isReliable()) {

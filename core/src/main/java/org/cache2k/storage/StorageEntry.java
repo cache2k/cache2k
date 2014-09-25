@@ -39,8 +39,7 @@ public interface StorageEntry {
   /**
    * Time when the value is expired and is not allowed to be returned any more.
    * The storage needs to store this value. The storage may purge entries with
-   * the time exceeded, but should not do so because entries with expired
-   * values may be kept for a longer period. Is 0 if not used.
+   * the time exceeded. Returns 0 if not used.
    *
    * @see CacheStorage#purge(org.cache2k.storage.CacheStorage.PurgeContext, long, long)
    */
@@ -50,7 +49,7 @@ public interface StorageEntry {
    * Expiry time of the storage entry. After reaching this time, the entry should
    * be purged by the storage. The entry expiry time will get updated by
    * the the cache when the value is not expired and the entry is still
-   * accessed.
+   * accessed. Returns 0 if not used.
    *
    * @see CacheStorage#purge(org.cache2k.storage.CacheStorage.PurgeContext, long, long)
    */

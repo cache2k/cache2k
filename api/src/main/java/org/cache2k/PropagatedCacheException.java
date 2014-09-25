@@ -26,7 +26,7 @@ package org.cache2k;
  * If a cache receives an exception when fetching a value via the
  * cache source it may propagate the exception wrapped into this
  * one to the caller. Whether propagation occurs depends on the
- * configuration and whether if there is no valid data present.
+ * configuration and on the presence of valid data.
  *
  * @author Jens Wilke
  */

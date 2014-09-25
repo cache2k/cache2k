@@ -57,6 +57,7 @@ Things in JSR107 we don't have yet.
   * explain/check null support
   * exceptions: stick to old data when intermediate exceptions occur
   * API: typing / K or ? extends K
+  * API: typing for get(), see:    http://stackoverflow.com/questions/857420/what-are-the-reasons-why-map-getobject-key-is-not-fully-generic
   * API/implementation: transaction support for use as database cache, for the lock free cache implementations
   * expiry/refresh: explain behaviour and API description
   * final bulk source API
@@ -115,4 +116,3 @@ The interesting question is, what is the "core
   * javaranch caching article, at: http://www.coderanch.com/how-to/java/CachingStrategies
   * WikiPedia?
 
-  

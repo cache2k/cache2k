@@ -31,11 +31,11 @@ public interface BulkCacheSource<K, T> {
 
   /**
    * Retrieve the values for the given cache entries. The cache
-   * entries are used the retrieve the key. If an exceptions is
-   * throw this may effect all entries, that have currently no
-   * valid or expired data.
+   * entry list contains all keys for the entries to retrieve.
+   * If an exception is thrown this may affect all entries, that
+   * have currently no valid or expired data.
    *
-   * <p/>Contract: Entry key is never null. Returned list must be
+   * <p/>The entry key is never null. Returned list must be
    * of identical length then entries list.
    *
    * @param entries list of entries / keys we want the data for

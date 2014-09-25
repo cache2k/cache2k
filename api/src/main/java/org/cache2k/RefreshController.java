@@ -33,10 +33,10 @@ import javax.annotation.Nullable;
 public abstract interface RefreshController<T> {
 
   /**
-   * Return time of next refresh (expiry time) in milliseconds since epoch.
+   * Returns the time of next refresh (expiry time) in milliseconds since epoch.
    * If 0 is returned, this means entry expires immediately, or is always
    * fetched from the source. If {@link Long#MAX_VALUE} is returned it means
-   * there is no specific expiry time known or needed. In this case a reasonable
+   * there is no specific expiry time known or needed. In case a reasonable
    * default can be assumed for the expiry, the cache will use the
    * configured expiry time.
    *

@@ -27,10 +27,6 @@ import java.util.Collections;
 import java.util.List;
 
 /**
- * For easy of use it is possible to create a cache the direct way with a builder.
- * This is the configuration builder functionality we need for the cache builder
- * as well.
- *
  * @author Jens Wilke; created: 2014-04-19
  */
 @SuppressWarnings("unchecked")
