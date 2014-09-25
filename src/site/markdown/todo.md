@@ -76,6 +76,10 @@ Things in JSR107 we don't have yet.
     * http://stackoverflow.com/questions/690805/any-java-caches-that-can-limit-memory-usage-of-in-memory-cache-not-just-instanc?rq=1
   * cache feature comparison: e.g.ehcache synchronuous write
   * exceptions: fetchExceptions counter in statistic!
+  * speedup locking? don't use synchronized, but we need volatile then. see:
+    http://stackoverflow.com/questions/4633866/is-volatile-expensive
+    http://lmax-exchange.github.io/disruptor/
+    
 
 ### Prio B
 
@@ -100,4 +104,15 @@ The interesting question is, what is the "core
   * GridGain
   * hazelcast
   * infinispan
-   
+  
+### Marketing 
+
+  * InfoQ
+  * DZone
+  * JavaCodeGeeks
+  * java.net
+  * reddit
+  * javaranch caching article, at: http://www.coderanch.com/how-to/java/CachingStrategies
+  * WikiPedia?
+
+  
