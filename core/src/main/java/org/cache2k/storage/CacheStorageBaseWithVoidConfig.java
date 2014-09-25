@@ -22,6 +22,7 @@ package org.cache2k.storage;
  * #L%
  */
 
+import org.cache2k.CacheBuilder;
 import org.cache2k.RootAnyBuilder;
 import org.cache2k.spi.StorageImplementation;
 import org.cache2k.spi.VoidConfigBuilder;
@@ -38,8 +39,8 @@ public abstract class CacheStorageBaseWithVoidConfig
   protected CacheStorageBaseWithVoidConfig() { }
 
   @Override
-  public <R extends RootAnyBuilder<R, ?>> VoidConfigBuilder<R, ?> createConfigurationBuilder(R _rootBuilder) {
-    return (VoidConfigBuilder<R, ?>) new VoidConfigBuilder(_rootBuilder);
+  public <K, T> VoidConfigBuilder<K, T> createConfigurationBuilder(CacheBuilder<K, T> _rootBuilder) {
+    return (VoidConfigBuilder<K, T>) new VoidConfigBuilder(_rootBuilder);
   }
 
 }

@@ -76,7 +76,7 @@ import java.util.concurrent.atomic.AtomicInteger;
  * @author Jens Wilke; created: 2014-05-08
  */
 @SuppressWarnings({"unchecked", "SynchronizeOnNonFinalField"})
-class PassingStorageAdapter extends StorageAdapter {
+public class PassingStorageAdapter extends StorageAdapter {
 
   private Tunable tunable = TunableFactory.get(Tunable.class);
   private BaseCache cache;
@@ -893,6 +893,10 @@ class PassingStorageAdapter extends StorageAdapter {
       return storage.getEntryCount();
     }
     return storage.getEntryCount() + cache.getLocalSize();
+  }
+
+  public CacheStorage getImplementation() {
+    return storage;
   }
 
   class MyFlushContext

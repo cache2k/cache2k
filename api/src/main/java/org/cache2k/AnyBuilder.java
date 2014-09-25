@@ -29,7 +29,7 @@ package org.cache2k;
  * P parent builder
  *
  */
-public interface AnyBuilder<R extends AnyBuilder, T, C> {
+public interface AnyBuilder<K, T, C> {
 
   /**
    * Create the configuration of this submodule (not the complete
@@ -40,13 +40,13 @@ public interface AnyBuilder<R extends AnyBuilder, T, C> {
   /**
    * Goes back to the root builder, to add more configuration nodes.
    */
-  R root();
+  CacheBuilder<K, T> root();
 
   /**
    * Builds the instance which is the target of nested builders. This
    * is either a {@link Cache} or a {@link CacheConfig}. The method is
    * always identical to root().build().
    */
-  T build();
+  Cache<K, T> build();
 
 }

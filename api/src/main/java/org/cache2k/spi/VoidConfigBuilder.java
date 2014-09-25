@@ -23,6 +23,8 @@ package org.cache2k.spi;
  */
 
 import org.cache2k.AnyBuilder;
+import org.cache2k.Cache;
+import org.cache2k.CacheBuilder;
 import org.cache2k.RootAnyBuilder;
 
 /**
@@ -31,11 +33,11 @@ import org.cache2k.RootAnyBuilder;
  *
  * @author Jens Wilke; created: 2014-06-21
  */
-public class VoidConfigBuilder<R extends RootAnyBuilder<R,T>, T> implements AnyBuilder<R, T, Void> {
+public class VoidConfigBuilder<K, T> implements AnyBuilder<K, T, Void> {
 
-  private R root;
+  private CacheBuilder<K, T> root;
 
-  public VoidConfigBuilder(R root) {
+  public VoidConfigBuilder(CacheBuilder<K, T> root) {
     this.root = root;
   }
 
@@ -45,12 +47,12 @@ public class VoidConfigBuilder<R extends RootAnyBuilder<R,T>, T> implements AnyB
   }
 
   @Override
-  public R root() {
+  public CacheBuilder<K, T> root() {
     return root;
   }
 
   @Override
-  public T build() {
+  public Cache<K, T> build() {
     return root.build();
   }
 

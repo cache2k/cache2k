@@ -34,17 +34,15 @@ import java.util.List;
  * @author Jens Wilke; created: 2014-04-19
  */
 @SuppressWarnings("unchecked")
-public abstract class RootAnyBuilder<R extends RootAnyBuilder<R, T>, T>
-  extends BaseAnyBuilder<R, T, CacheConfig> {
+public abstract class RootAnyBuilder<R extends RootAnyBuilder, K, T>
+  extends BaseAnyBuilder<K, T, CacheConfig> {
 
   private List<BaseAnyBuilder> modules = Collections.emptyList();
   protected CacheConfig config;
-  StorageConfiguration.Builder<R, T, ?> persistence;
+  StorageConfiguration.Builder<K, T, ?> persistence;
 
   /** Closed for extension */
-  RootAnyBuilder() {
-    root =  (R) this;
-  }
+  RootAnyBuilder() { }
 
   public R backgroundRefresh(boolean f) {
     config.setBackgroundRefresh(f);
@@ -57,7 +55,7 @@ public abstract class RootAnyBuilder<R extends RootAnyBuilder<R, T>, T>
   }
 
   @Override
-  public StorageConfiguration.Builder<R, T, ?> persistence() {
+  public StorageConfiguration.Builder<K, T, ?> persistence() {
     if (persistence == null) {
       persistence = addModule(new StorageConfiguration.Builder());
     }
@@ -74,18 +72,13 @@ public abstract class RootAnyBuilder<R extends RootAnyBuilder<R, T>, T>
     return config;
   }
 
-  /**
-   * Either builds the configuration object or a cache.
-   */
-  public abstract T build();
-
   @SuppressWarnings("unchecked")
   private <B extends BaseAnyBuilder> B addModule(B _moduleBuilder) {
     if (modules.size() == 0) {
       modules = new ArrayList<>();
     }
     modules.add(_moduleBuilder);
-    _moduleBuilder.setRoot(this);
+    _moduleBuilder.setRoot(root);
     return _moduleBuilder;
   }
 

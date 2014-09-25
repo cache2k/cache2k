@@ -22,7 +22,6 @@ package org.cache2k.storage;
  * #L%
  */
 
-import org.cache2k.RootAnyBuilder;
 import org.cache2k.StorageConfiguration;
 
 import java.util.HashMap;
@@ -110,8 +109,8 @@ public class ReferenceHeapStorageImpl implements CacheStorage {
   }
 
   @Override
-  public int getEntryCount() {
-    return 0;
+  public synchronized int getEntryCount() {
+    return entries.size();
   }
 
   static class HeapEntry implements StorageEntry {

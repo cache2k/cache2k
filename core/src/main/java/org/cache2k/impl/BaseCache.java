@@ -402,6 +402,8 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
     manager = cm;
   }
 
+  public StorageAdapter getStorage() { return storage; }
+
   /**
    * Registers the cache in a global set for the clearAllCaches function and
    * registers it with the resource monitor.

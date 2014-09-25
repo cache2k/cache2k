@@ -154,62 +154,62 @@ public class StorageConfiguration<EX> {
     this.flushOnClose = f;
   }
 
-  public static class Builder<R extends RootAnyBuilder<R, T>, T, OPT_EXTRA_CONFIG>
-    extends BaseAnyBuilder<R, T, StorageConfiguration> {
+  public static class Builder<K, T, OPT_EXTRA_CONFIG>
+    extends BaseAnyBuilder<K, T, StorageConfiguration> {
 
     private StorageConfiguration<Object> config = new StorageConfiguration();
-    private AnyBuilder<R, T, ?> extraConfigurationBuilder = null;
+    private AnyBuilder<K, T, ?> extraConfigurationBuilder = null;
 
     /**
      * Only store entries in the storage that don't live in the
      * memory any more. E.g. when an entry gets evicted it is
      * stored.
      */
-    public Builder<R, T, OPT_EXTRA_CONFIG> passivation(boolean f) {
+    public Builder<K, T, OPT_EXTRA_CONFIG> passivation(boolean f) {
       config.passivation = f;
       return this;
     }
 
-    public Builder<R, T, OPT_EXTRA_CONFIG> purgeOnStartup(boolean f) {
+    public Builder<K, T, OPT_EXTRA_CONFIG> purgeOnStartup(boolean f) {
       config.purgeOnStartup = f;
       return this;
     }
 
-    public Builder<R, T, OPT_EXTRA_CONFIG> flushOnClose(boolean f) {
+    public Builder<K, T, OPT_EXTRA_CONFIG> flushOnClose(boolean f) {
       config.flushOnClose = f;
       return this;
     }
 
-    public Builder<R, T, OPT_EXTRA_CONFIG> location(String s) {
+    public Builder<K, T, OPT_EXTRA_CONFIG> location(String s) {
       config.location = s;
       return this;
     }
 
-    public Builder<R, T, OPT_EXTRA_CONFIG> entryCapacity(int v) {
+    public Builder<K, T, OPT_EXTRA_CONFIG> entryCapacity(int v) {
       config.entryCapacity = v;
       return this;
     }
 
-    public Builder<R, T, OPT_EXTRA_CONFIG> bytesCapacity(int v) {
+    public Builder<K, T, OPT_EXTRA_CONFIG> bytesCapacity(int v) {
       config.bytesCapacity = v;
       return this;
     }
 
-    public Builder<R, T, OPT_EXTRA_CONFIG> syncInterval(int v, TimeUnit u) {
+    public Builder<K, T, OPT_EXTRA_CONFIG> syncInterval(int v, TimeUnit u) {
       config.syncInterval = (int) u.toMillis(v);
       return this;
     }
 
 
-    public <EXTRA_CONFIG_BUILDER extends AnyBuilder<R, T, ?>> Builder<R, T, EXTRA_CONFIG_BUILDER> implementation(
+    public <EXTRA_CONFIG_BUILDER extends AnyBuilder<K, T, ?>> Builder<K, T, EXTRA_CONFIG_BUILDER> implementation(
       Class<? extends StorageImplementation<EXTRA_CONFIG_BUILDER>> c) {
       StorageImplementation<EXTRA_CONFIG_BUILDER> imp = SingleProviderResolver.getInstance().resolve(c);
       config.setImplementation(c);
       extraConfigurationBuilder = imp.createConfigurationBuilder(root());
-      return (Builder<R, T, EXTRA_CONFIG_BUILDER>) this;
+      return (Builder<K, T, EXTRA_CONFIG_BUILDER>) this;
     }
 
-    public <EXTRA_CONFIG_BUILDER extends AnyBuilder<R, T, ?>> EXTRA_CONFIG_BUILDER extra(
+    public <EXTRA_CONFIG_BUILDER extends AnyBuilder<K, T, ?>> EXTRA_CONFIG_BUILDER extra(
       Class<? extends StorageImplementation<EXTRA_CONFIG_BUILDER>> c) {
       StorageImplementation<EXTRA_CONFIG_BUILDER> imp = SingleProviderResolver.getInstance().resolve(c);
       config.setImplementation(c);

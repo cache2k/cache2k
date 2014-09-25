@@ -31,7 +31,7 @@ import java.util.Collection;
  * @author Jens Wilke; created: 2013-06-25
  */
 public abstract class CacheBuilder<K,T>
-  extends RootAnyBuilder<CacheBuilder<K, T>, Cache<K,T>> implements Cloneable {
+  extends RootAnyBuilder<CacheBuilder, K, T> implements Cloneable {
 
   private static CacheBuilder PROTOTYPE;
 
@@ -74,6 +74,7 @@ public abstract class CacheBuilder<K,T>
 
   /** Builder is constructed from prototype */
   protected void ctor(Class<K> _keyType, Class<T> _valueType, @Nullable Class<?> _entryType) {
+    root = this;
     config = new CacheConfig();
     config.setValueType(_valueType);
     config.setKeyType(_keyType);
