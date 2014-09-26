@@ -31,5 +31,5 @@ package org.cache2k.storage;
  *
  * @author Jens Wilke; created: 2014-06-11
  */
-public interface OffHeapStorage {
+public interface TransientStorageClass {
 }

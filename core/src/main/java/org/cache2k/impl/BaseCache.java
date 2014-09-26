@@ -25,6 +25,7 @@ package org.cache2k.impl;
 import org.cache2k.BulkCacheSource;
 import org.cache2k.CacheEntry;
 import org.cache2k.CacheException;
+import org.cache2k.CacheMisconfigurationException;
 import org.cache2k.ClosableIterator;
 import org.cache2k.ExperimentalBulkCacheSource;
 import org.cache2k.Cache;
@@ -423,6 +424,10 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
       }
       initializeHeapCache();
       initTimer();
+      if (refreshPool != null &&
+        source == null) {
+        throw new CacheMisconfigurationException("backgroundRefresh, but no source");
+      }
       if (refreshPool != null && timer == null) {
         if (maxLinger == 0) {
           getLog().warn("Background refresh is enabled, but elements are fetched always. Disable background refresh!");
@@ -619,6 +624,18 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
         }
       }
       return _waitFuture;
+    }
+  }
+
+  public void purge() {
+    if (storage != null) {
+      storage.purge();
+    }
+  }
+
+  public void flush() {
+    if (storage != null) {
+      storage.flush();
     }
   }
 
@@ -1584,8 +1601,12 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
                 }
              }
           };
+          System.err.println("hoo");
           boolean _submitOkay = refreshPool.submit(r);
-          if (_submitOkay) { return; }
+          if (_submitOkay) {
+            System.err.println("moo");
+            return;
+          }
           refreshSubmitFailedCnt++;
         }
 
@@ -1614,7 +1635,7 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
         return;
       }
       e.setExpiredState();
-      if (storage != null) {
+      if (storage != null && !hasKeepAfterExpired()) {
         storage.expire(e);
       }
       synchronized (lock) {

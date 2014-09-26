@@ -47,6 +47,20 @@ public class AggregationStorageAdapter extends StorageAdapter implements Storage
   }
 
   @Override
+  public void flush() {
+    for (StorageAdapter a : storages) {
+      a.flush();
+    }
+  }
+
+  @Override
+  public void purge() {
+    for (StorageAdapter a : storages) {
+      a.purge();
+    }
+  }
+
+  @Override
   public Future<Void> shutdown() {
     Futures.WaitForAllFuture<Void> _waitForAll = new Futures.WaitForAllFuture<>();
     for (StorageAdapter a : storages) {

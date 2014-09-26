@@ -50,6 +50,16 @@ public class FailureStorageAdapter extends StorageAdapter {
   }
 
   @Override
+  public void flush() {
+    throwException();
+  }
+
+  @Override
+  public void purge() {
+    throwException();
+  }
+
+  @Override
   public boolean checkStorageStillDisconnectedForClear() {
     throwException();
     return false;

@@ -43,11 +43,34 @@ public interface PurgeableStorage {
    *           {@link StorageEntry#getValueExpiryTime()}
    * @param _entryExpiryTime request to remove entries with with lower value of
    *           {@link StorageEntry#getEntryExpiryTime()}
-   *
+   * @return statistical result of the operation, if nothing was done null.
    */
-  public void purge(PurgeContext ctx, long _valueExpiryTime, long _entryExpiryTime) throws Exception;
+  public PurgeResult purge(PurgeContext ctx, long _valueExpiryTime, long _entryExpiryTime) throws Exception;
 
   public static interface PurgeContext extends CacheStorage.MultiThreadedContext {
+
+  }
+
+  /**
+   * Statistics
+   */
+  public static interface PurgeResult {
+
+    /**
+     * Free space reclaimed. -1 if not supported
+     */
+    long getBytesFreed();
+
+    /**
+     * Number of entries purged
+     */
+    int getEntriesPurged();
+
+    /**
+     * Number of entries scanned. This may be less than the total number
+     * of entries in the storage, if a partial purge is done.
+     */
+    int getEntriesScanned();
 
   }
 

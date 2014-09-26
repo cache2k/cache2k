@@ -37,7 +37,7 @@ import org.cache2k.storage.CacheStorageProvider;
 import org.cache2k.storage.FlushableStorage;
 import org.cache2k.storage.MarshallerFactory;
 import org.cache2k.storage.Marshallers;
-import org.cache2k.storage.OffHeapStorage;
+import org.cache2k.storage.TransientStorageClass;
 import org.cache2k.storage.PurgeableStorage;
 import org.cache2k.storage.StorageEntry;
 import org.cache2k.impl.util.Log;
@@ -61,7 +61,6 @@ import java.util.concurrent.SynchronousQueue;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
@@ -93,6 +92,8 @@ public class PassingStorageAdapter extends StorageAdapter {
   TimerService.CancelHandle flushTimerHandle;
   @Nonnull
   Future<Void> lastExecutingFlush = new Futures.FinishedFuture<>();
+
+  Object purgeRunningLock = new Object();
 
   Log log;
   StorageAdapter.Parent parent;
@@ -129,7 +130,7 @@ public class PassingStorageAdapter extends StorageAdapter {
       if (!(storage instanceof FlushableStorage)) {
         flushIntervalMillis = -1;
       }
-      if (config.isPassivation() || storage instanceof OffHeapStorage) {
+      if (config.isPassivation() || storage instanceof TransientStorageClass) {
         deletedKeys = new HashSet<>();
         passivation = true;
       }
@@ -212,10 +213,13 @@ public class PassingStorageAdapter extends StorageAdapter {
   }
 
   /**
-   * Entry is evicted from memory cache either because of an expiry.
+   * An expired entry was removed from the memory cache and
+   * can also be removed from the storage. For the moment, this
+   * does nothing, since we cannot do the removal in the calling
+   * thread and decoupling yields bad race conditions.
+   * Expired entries in the storage are remove by the purge run.
    */
   public void expire(BaseCache.Entry e) {
-    remove(e.getKey());
   }
 
   /**
@@ -227,7 +231,7 @@ public class PassingStorageAdapter extends StorageAdapter {
    */
   private void putEventually(BaseCache.Entry e) {
     if (!e.isDirty()) {
-      if (!(storage instanceof OffHeapStorage)) {
+      if (!(storage instanceof TransientStorageClass)) {
         return;
       }
       try {
@@ -284,20 +288,30 @@ public class PassingStorageAdapter extends StorageAdapter {
   }
 
   public void purge() {
-    long now = System.currentTimeMillis();
-    if (storage instanceof PurgeableStorage) {
-      try {
-        PurgeableStorage.PurgeContext ctx = new MyPurgeContext();
-        ((PurgeableStorage) storage).purge(ctx, now, now);
-      } catch (Exception ex) {
-         disable("expire exception", ex);
+    synchronized (purgeRunningLock) {
+      long now = System.currentTimeMillis();
+      PurgeableStorage.PurgeResult res;
+      if (storage instanceof PurgeableStorage) {
+        try {
+          PurgeableStorage.PurgeContext ctx = new MyPurgeContext();
+          res = ((PurgeableStorage) storage).purge(ctx, now, now);
+        } catch (Exception ex) {
+          disable("expire exception", ex);
+          return;
+        }
+      } else {
+        res = purgeByVisit(now);
       }
-    } else {
-      purgeByVisit(now);
+      if (log.isInfoEnabled()) {
+        log.info("purge: " +
+          "scanned=" + res.getEntriesScanned() + ", " +
+          "purged=" + res.getEntriesPurged() + ", " +
+          "freedBytes=" + res.getBytesFreed());
+      }
     }
   }
 
-  void purgeByVisit(final long now) {
+  PurgeableStorage.PurgeResult purgeByVisit(final long now) {
     CacheStorage.EntryFilter f = new CacheStorage.EntryFilter() {
       @Override
       public boolean shouldInclude(Object _key) {
@@ -315,14 +329,16 @@ public class PassingStorageAdapter extends StorageAdapter {
         return false;
       }
     };
-    final AtomicBoolean _modified = new AtomicBoolean();
+    final AtomicInteger _scanCount = new AtomicInteger();
+    final AtomicInteger _purgeCount = new AtomicInteger();
     CacheStorage.EntryVisitor v = new CacheStorage.EntryVisitor() {
       @Override
       public void visit(StorageEntry e) throws Exception {
+        _scanCount.incrementAndGet();
         if (e.getValueExpiryTime() < now) {
           storage.remove(e.getKey());
           remove(e.getKey());
-          _modified.set(true);
+          _purgeCount.incrementAndGet();
         }
       }
     };
@@ -331,9 +347,25 @@ public class PassingStorageAdapter extends StorageAdapter {
     } catch (Exception ex) {
       disable("visit exception", ex);
     }
-    if (_modified.get()) {
+    if (_purgeCount.get() > 0) {
       checkStartFlushTimer();
     }
+    return new PurgeableStorage.PurgeResult() {
+      @Override
+      public long getBytesFreed() {
+        return -1;
+      }
+
+      @Override
+      public int getEntriesPurged() {
+        return _purgeCount.get();
+      }
+
+      @Override
+      public int getEntriesScanned() {
+        return _scanCount.get();
+      }
+    };
   }
 
   abstract class BaseVisitContext extends MyMultiThreadContext implements CacheStorage.VisitContext {
@@ -703,7 +735,7 @@ public class PassingStorageAdapter extends StorageAdapter {
         return null;
       }
     };
-    if (passivation && !(storage instanceof OffHeapStorage)) {
+    if (passivation && !(storage instanceof TransientStorageClass)) {
       final Callable<Void> _before = _closeTaskChain;
       _closeTaskChain = new Callable<Void>() {
         @Override

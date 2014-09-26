@@ -110,6 +110,11 @@ public abstract class CacheBuilder<K,T>
     return this;
   }
 
+  public CacheBuilder<K, T> keepDataAfterExpired(boolean v) {
+    config.setKeepDataAfterExpired(v);
+    return this;
+  }
+
   public CacheBuilder<K, T> maxSize(int v) {
     config.setMaxSize(v);
     return this;

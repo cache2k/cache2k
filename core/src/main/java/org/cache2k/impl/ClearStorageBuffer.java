@@ -121,7 +121,7 @@ public class ClearStorageBuffer implements CacheStorage, FlushableStorage, Purge
    * Does nothing. We were cleared lately anyway. Next purge may go to the storage.
    */
   @Override
-  public void purge(PurgeContext ctx, long _valueExpiryTime, long _entryExpiryTime) { }
+  public PurgeResult purge(PurgeContext ctx, long _valueExpiryTime, long _entryExpiryTime) { return null; }
 
   @Override
   public void close() throws Exception {

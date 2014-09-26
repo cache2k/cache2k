@@ -164,6 +164,18 @@ public interface Cache<K, T> extends KeyValueSource<K,T>, Iterable<CacheEntry<K,
   ClosableIterator<CacheEntry<K, T>> iterator();
 
   /**
+   * Remove persistent entries, that are not longer needed. Only has an effect
+   * if a storage is defined.
+   */
+  public abstract void purge();
+
+  /**
+   * Ensure that any transient data is stored in the persistence storage.
+   * Nothing will be done if no persistent storage is configured.
+   */
+  public abstract void flush();
+
+  /**
    * Free all resources and remove the cache from the CacheManager.
    *
    * <p>TODO-API: rename to close()
