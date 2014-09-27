@@ -1437,14 +1437,14 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
 
   protected void insertEntryFromStorage(StorageEntry se, E e, boolean _needsFetch) {
     e.setLastModificationFromStorage(se.getCreatedOrUpdated());
-    long t0 = System.currentTimeMillis();
+    long now = System.currentTimeMillis();
     T v = (T) se.getValueOrException();
     long _nextRefreshTime = maxLinger == 0 ? Entry.FETCH_NEXT_TIME_STATE : Entry.FETCHED_STATE;
     long _expiryTimeFromStorage = se.getValueExpiryTime();
-    boolean _expired = _expiryTimeFromStorage != 0 && _expiryTimeFromStorage <= t0;
+    boolean _expired = _expiryTimeFromStorage != 0 && _expiryTimeFromStorage <= now;
     if (!_expired && timer != null) {
       _nextRefreshTime = calcNextRefreshTime(null, v, 0L, se.getCreatedOrUpdated());
-      _expired = _nextRefreshTime > Entry.EXPIRY_TIME_MIN && _nextRefreshTime <= t0;
+      _expired = _nextRefreshTime > Entry.EXPIRY_TIME_MIN && _nextRefreshTime <= now;
     }
     boolean _fetchAlways = timer == null && maxLinger == 0;
     if (_expired || _fetchAlways) {
@@ -1454,7 +1454,7 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
         fetchFromSource(e);
         return;
       } else {
-        touchedTime = System.currentTimeMillis();
+        touchedTime = now;
         e.setStorageMiss();
         synchronized (lock) {
           storageMissCnt++;
@@ -1462,17 +1462,17 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
         return;
       }
     }
-    insert(e, (T) se.getValueOrException(), t0, t0, true, _nextRefreshTime);
+    insert(e, (T) se.getValueOrException(), now, now, true, _nextRefreshTime);
   }
 
   protected void fetchFromSource(E e) {
     T v;
     long t0 = System.currentTimeMillis();
     try {
+      if (source == null) {
+        throw new CacheUsageExcpetion("source not set");
+      }
       if (e.isVirgin() || e.hasException()) {
-        if (source == null) {
-          throw new CacheUsageExcpetion("source not set");
-        }
         v = source.get((K) e.key, t0, null, e.getLastModification());
       } else {
         v = source.get((K) e.key, t0, (T) e.getValue(), e.getLastModification());
@@ -2973,8 +2973,9 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
     @Override
     public String toString() {
       return "Entry{" +
-        "createdOrUpdate =" + getCreatedOrUpdated() +
-        ", valueExpiryTime =" + getValueExpiryTime() +
+        "createdOrUpdate=" + getCreatedOrUpdated() +
+        ", valueExpiryTime=" + getValueExpiryTime() +
+        ", entryExpiryTime=" + getEntryExpiryTime() +
         ", key=" + key +
         ", mHC=" + hashCode +
         ", value=" + value +
