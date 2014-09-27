@@ -22,6 +22,7 @@ package org.cache2k.impl.threading;
  * #L%
  */
 
+import org.cache2k.impl.util.Log;
 import org.cache2k.impl.util.TunableConstants;
 import org.cache2k.impl.util.TunableFactory;
 
@@ -73,6 +74,7 @@ public class GlobalPooledExecutor {
   private boolean closed;
   private Tunable tunable;
   private ThreadFactory factory;
+  private Log log = Log.getLog(GlobalPooledExecutor.class);
 
   /**
    *
@@ -334,7 +336,7 @@ public class GlobalPooledExecutor {
         }
       } catch (InterruptedException ex) {
       } catch (Throwable ex) {
-        ex.printStackTrace();
+        log.warn("unexpected exception", ex);
       } finally {
         synchronized (GlobalPooledExecutor.this) {
           diedThreadCount++;
