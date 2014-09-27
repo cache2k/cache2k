@@ -26,7 +26,7 @@ import java.io.IOException;
 import java.util.concurrent.ExecutorService;
 
 /**
- * An interface for persistent or off-heap storage for a cache.
+ * An interface for persistent or off heap storage for a cache.
  *
  * @author Jens Wilke; created: 2014-04-03
  */
@@ -79,7 +79,13 @@ public interface CacheStorage {
   public void close() throws Exception;
 
   /**
-   * Visit all stored entries.
+   * Iterate over all stored entries and call the entry visitor. It is generally safe to
+   * return expired entries. If {@link org.cache2k.storage.PurgeableStorage} is not
+   * implemented, returning expired entries is a must, to support the generic purge
+   * algorithm.
+   *
+   * <p/>If the {@link ExecutorService} is used, the method may return immediately without
+   * the waiting for all threads to finish. This is done by the caller, when needed.
    */
   public void visit(VisitContext ctx, EntryFilter f, EntryVisitor v) throws Exception;
 

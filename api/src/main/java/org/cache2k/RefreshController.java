@@ -50,7 +50,7 @@ public abstract interface RefreshController<T> {
    *                   or the previous fetch operation yielded in an exception.
    * @param _timeOfLastRefresh time of the last cache refresh, by put or from the cache source.
    * @param _newObject the value which will be put in the cache.
-   * @param now this is the current time in millis. If a cache source was used to
+   * @param _fetchTime this is the current time in millis. If a cache source was used to
    *            fetch the value, this is the time before the fetch was started.
    * @return time of next refresh in millis. 0 if it should not be cached at all.
    */
@@ -58,6 +58,6 @@ public abstract interface RefreshController<T> {
     @Nullable T _oldObject,
     @Nonnull T _newObject,
     long _timeOfLastRefresh,
-    long now);
+    long _fetchTime);
 
 }
