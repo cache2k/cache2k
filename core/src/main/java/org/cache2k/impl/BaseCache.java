@@ -1601,10 +1601,8 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
                 }
              }
           };
-          System.err.println("hoo");
           boolean _submitOkay = refreshPool.submit(r);
           if (_submitOkay) {
-            System.err.println("moo");
             return;
           }
           refreshSubmitFailedCnt++;
