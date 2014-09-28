@@ -304,7 +304,7 @@ public class PassingStorageAdapter extends StorageAdapter {
           return;
         }
       } else {
-        res = purgeByVisit(now);
+        res = purgeByVisit(now, now);
       }
       if (log.isInfoEnabled()) {
         long t = System.currentTimeMillis();
@@ -318,7 +318,9 @@ public class PassingStorageAdapter extends StorageAdapter {
     }
   }
 
-  PurgeableStorage.PurgeResult purgeByVisit(final long now) {
+  PurgeableStorage.PurgeResult purgeByVisit(
+      final long _valueExpiryTime,
+      final long _entryExpireTime) {
     CacheStorage.EntryFilter f = new CacheStorage.EntryFilter() {
       @Override
       public boolean shouldInclude(Object _key) {
@@ -342,7 +344,8 @@ public class PassingStorageAdapter extends StorageAdapter {
       @Override
       public void visit(StorageEntry e) throws Exception {
         _scanCount.incrementAndGet();
-        if (e.getValueExpiryTime() < now) {
+        if ((e.getEntryExpiryTime() > 0 && e.getEntryExpiryTime() < _entryExpireTime) ||
+            (e.getValueExpiryTime() > 0 && e.getValueExpiryTime() < _valueExpiryTime)) {
           storage.remove(e.getKey());
           remove(e.getKey());
           _purgeCount.incrementAndGet();
