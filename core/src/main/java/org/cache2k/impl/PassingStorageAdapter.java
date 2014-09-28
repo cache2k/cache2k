@@ -342,7 +342,6 @@ public class PassingStorageAdapter extends StorageAdapter {
       @Override
       public void visit(StorageEntry e) throws Exception {
         _scanCount.incrementAndGet();
-        System.err.println(e);
         if (e.getValueExpiryTime() < now) {
           storage.remove(e.getKey());
           remove(e.getKey());
