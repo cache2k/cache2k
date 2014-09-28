@@ -205,6 +205,10 @@ public class PassingStorageAdapter extends StorageAdapter {
    * entry was transferred to the storage on the {@link #put(org.cache2k.impl.BaseCache.Entry)}
    * operation. With passivation enabled, the entries need to be transferred when evicted from
    * the heap.
+   *
+   * <p/>The storage operation is done in the calling thread, which should be a client thread.
+   * The cache client will be throttled until the I/O operation is finished. This is what we
+   * want in general. To decouple it, we need to implement async storage I/O support.
    */
   public void evict(BaseCache.Entry e) {
     if (passivation) {
@@ -303,10 +307,13 @@ public class PassingStorageAdapter extends StorageAdapter {
         res = purgeByVisit(now);
       }
       if (log.isInfoEnabled()) {
-        log.info("purge: " +
+        long t = System.currentTimeMillis();
+        log.info("purge (force): " +
+          "runtimeMillis=" + (t - now) + ", " +
           "scanned=" + res.getEntriesScanned() + ", " +
-          "purged=" + res.getEntriesPurged() + ", " +
-          "freedBytes=" + res.getBytesFreed());
+          "purged=" + res.getEntriesPurged() +
+          (res.getBytesFreed() >=0 ? ", " + "freedBytes=" + res.getBytesFreed() : ""));
+
       }
     }
   }
@@ -335,6 +342,7 @@ public class PassingStorageAdapter extends StorageAdapter {
       @Override
       public void visit(StorageEntry e) throws Exception {
         _scanCount.incrementAndGet();
+        System.err.println(e);
         if (e.getValueExpiryTime() < now) {
           storage.remove(e.getKey());
           remove(e.getKey());
@@ -344,6 +352,7 @@ public class PassingStorageAdapter extends StorageAdapter {
     };
     try {
       storage.visit(ctx, f, v);
+      ctx.awaitTermination();
     } catch (Exception ex) {
       disable("visit exception", ex);
     }
@@ -461,7 +470,24 @@ public class PassingStorageAdapter extends StorageAdapter {
           } else {
             executorForVisitThread.shutdown();
           }
-          executorForVisitThread.awaitTermination(Long.MAX_VALUE, TimeUnit.MILLISECONDS);
+          boolean _terminated = false;
+          if (tunable.terminationInfoSeconds > 0) {
+            _terminated = executorForVisitThread.awaitTermination(
+                tunable.terminationInfoSeconds, TimeUnit.SECONDS);
+          }
+          if (!_terminated) {
+            if (log.isInfoEnabled() && tunable.terminationInfoSeconds > 0) {
+              log.info(
+                  "still waiting for thread termination after " +
+                      tunable.terminationInfoSeconds + " seconds," +
+                      " waiting for " + tunable.terminationTimeoutSeconds + " seconds");
+            }
+            _terminated = executorForVisitThread.awaitTermination(
+                tunable.terminationTimeoutSeconds - tunable.terminationTimeoutSeconds, TimeUnit.SECONDS);
+            if (!_terminated) {
+              log.warn("threads not terminated after " + tunable.terminationTimeoutSeconds + " seconds");
+            }
+          }
         }
       }
     }
@@ -1039,6 +1065,17 @@ public class PassingStorageAdapter extends StorageAdapter {
     public int iterationQueueCapacity = 3;
 
     public boolean useManagerThreadPool = true;
+
+    /**
+     * Thread termination writes a info log message, if we still wait for termination.
+     * Set to 0 to disable. Default: 5
+     */
+    public int terminationInfoSeconds = 5;
+
+    /**
+     * Maximum time to await the termination of all executor threads. Default: 2000
+     */
+    public int terminationTimeoutSeconds = 200;
 
   }
 

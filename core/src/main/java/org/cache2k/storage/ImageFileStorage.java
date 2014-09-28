@@ -833,6 +833,7 @@ public class ImageFileStorage
     synchronized (valuesLock) {
       _allEntries = new ArrayList<>(values.size());
       for (HeapEntry e : values.values()) {
+
         if (f == null || f.shouldInclude(e.key)) {
           _allEntries.add(e);
         }
@@ -1126,7 +1127,7 @@ public class ImageFileStorage
   /** Value is marshalled with the universal marshaller */
   final static int TYPE_UNIVERSAL = 3;
   final static int FLAG_HAS_VALUE_EXPIRY_TIME = 4;
-  final static int FLAG_HAS_LAST_USED = 8;
+  final static int FLAG_HAS_ENTRY_EXPIRY_TIME = 8;
   final static int FLAG_HAS_CREATED_OR_UPDATED = 32;
 
   public static long readCompressedLong(ByteBuffer b) {
@@ -1137,28 +1138,26 @@ public class ImageFileStorage
     long v = s & 0x7fff;
     s = b.getShort();
     if (s >= 0) {
-      return v | s << 15;
+      return v | (long) s << 15;
     }
-    v |= (s & 0x07fff) << 15;
+    v |= ((long) s & 0x07fff) << 15;
     s = b.getShort();
     if (s >= 0) {
-      return v | s << 30;
+      return v | (long) s << 30;
     }
-    v |= (s & 0x07fff) << 30;
+    v |= ((long) s & 0x07fff) << 30;
     s = b.getShort();
     if (s >= 0) {
-      return v | s << 45;
+      return v | (long) s << 45;
     }
-    v |= (s & 0x07fff) << 45;
+    v |= ((long) s & 0x07fff) << 45;
     s = b.getShort();
-    return v | s << 60;
+    return v | (long) s << 60;
   }
 
   /**
    * Write a long as multiple short values. The msb in the short means
-   * that there is another short coming. No support for negative values,
-   * when a negative value comes in this method will not terminate
-   * and produce a buffer overflow.
+   * that there is another short coming.
    */
   public static void writeCompressedLong(ByteBuffer b, long v) {
     long s = v & 0x07fff;
@@ -1229,39 +1228,78 @@ public class ImageFileStorage
       flags = bb.get();
       if ((flags & FLAG_HAS_CREATED_OR_UPDATED) > 0) {
         createdOrUpdated = readCompressedLong(bb) + _timeReference;
+        if ((flags & FLAG_HAS_VALUE_EXPIRY_TIME) > 0) {
+          valueExpiryTime = readCompressedLong(bb) + createdOrUpdated;
+        }
+        if ((flags & FLAG_HAS_ENTRY_EXPIRY_TIME) > 0) {
+          entryExpiryTime = readCompressedLong(bb) + createdOrUpdated;
+        }
+        return;
       }
       if ((flags & FLAG_HAS_VALUE_EXPIRY_TIME) > 0) {
         valueExpiryTime = readCompressedLong(bb) + _timeReference;
+      }
+      if ((flags & FLAG_HAS_ENTRY_EXPIRY_TIME) > 0) {
+        entryExpiryTime = readCompressedLong(bb) + _timeReference;
       }
     }
 
     static void writeMetaInfo(ByteBuffer bb, StorageEntry e, long _timeReference, int _type) {
       int _flags =
         _type |
-        (e.getEntryExpiryTime() != 0 ? FLAG_HAS_LAST_USED : 0) |
-        (e.getCreatedOrUpdated() != 0 ? FLAG_HAS_CREATED_OR_UPDATED : 0);
+        (e.getEntryExpiryTime() != 0 ? FLAG_HAS_ENTRY_EXPIRY_TIME : 0) |
+        (e.getCreatedOrUpdated() != 0 ? FLAG_HAS_CREATED_OR_UPDATED : 0) |
+        (e.getValueExpiryTime() != 0 ? FLAG_HAS_VALUE_EXPIRY_TIME : 0) ;
       bb.put((byte) _flags);
       if ((_flags & FLAG_HAS_CREATED_OR_UPDATED) > 0) {
-         writeCompressedLong(bb, e.getCreatedOrUpdated() - _timeReference);
+        writeCompressedLong(bb, e.getCreatedOrUpdated() - _timeReference);
+        if ((_flags & FLAG_HAS_VALUE_EXPIRY_TIME) > 0) {
+          writeCompressedLong(bb, e.getValueExpiryTime() - e.getCreatedOrUpdated());
+        }
+        if ((_flags & FLAG_HAS_ENTRY_EXPIRY_TIME) > 0) {
+          writeCompressedLong(bb, e.getEntryExpiryTime() - e.getCreatedOrUpdated());
+        }
+        return;
       }
       if ((_flags & FLAG_HAS_VALUE_EXPIRY_TIME) > 0) {
         writeCompressedLong(bb, e.getValueExpiryTime() - _timeReference);
+      }
+      if ((_flags & FLAG_HAS_ENTRY_EXPIRY_TIME) > 0) {
+        writeCompressedLong(bb, e.getEntryExpiryTime() - _timeReference);
       }
     }
 
     static int calculateMetaInfoSize(StorageEntry e, long _timeReference, int _type) {
       int _flags =
         _type |
+        (e.getEntryExpiryTime() != 0 ? FLAG_HAS_ENTRY_EXPIRY_TIME : 0) |
         (e.getValueExpiryTime() != 0 ? FLAG_HAS_VALUE_EXPIRY_TIME : 0) |
         (e.getCreatedOrUpdated() != 0 ? FLAG_HAS_CREATED_OR_UPDATED : 0);
       int cnt = 1;
       if ((_flags & FLAG_HAS_CREATED_OR_UPDATED) > 0) {
         cnt += calculateCompressedLongSize(e.getCreatedOrUpdated() - _timeReference);
+        if ((_flags & FLAG_HAS_VALUE_EXPIRY_TIME) > 0) {
+          cnt += calculateCompressedLongSize(e.getValueExpiryTime() - e.getCreatedOrUpdated());
+        }
+        if ((_flags & FLAG_HAS_ENTRY_EXPIRY_TIME) > 0) {
+          cnt += calculateCompressedLongSize(e.getEntryExpiryTime() - e.getCreatedOrUpdated());
+        }
+        return cnt;
       }
       if ((_flags & FLAG_HAS_VALUE_EXPIRY_TIME) > 0) {
         cnt += calculateCompressedLongSize(e.getValueExpiryTime() - _timeReference);
       }
+      if ((_flags & FLAG_HAS_ENTRY_EXPIRY_TIME) > 0) {
+        cnt += calculateCompressedLongSize(e.getEntryExpiryTime() - _timeReference);
+      }
       return cnt;
+    }
+
+    public String toString() {
+      return
+          "DiskEntry(key=\"" + key + "\"" + ", " +
+          "valueExpiryTime=" + valueExpiryTime + ", " +
+          "entryExpiryTime=" + entryExpiryTime + ")";
     }
 
   }
