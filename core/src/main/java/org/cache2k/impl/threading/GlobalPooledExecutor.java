@@ -327,6 +327,7 @@ public class GlobalPooledExecutor {
               t.done(_result, null);
               t.progressNotifier.taskFinished();
             } catch (Throwable ex) {
+              log.warn("exception in thread", ex);
               t.done(null, ex);
               t.progressNotifier.taskFinishedWithException(ex);
             }
