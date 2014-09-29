@@ -284,6 +284,7 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
       setExpirySeconds(c.getExpirySeconds());
     }
     setFeatureBit(KEEP_AFTER_EXPIRED, c.isKeepDataAfterExpired());
+    setFeatureBit(SHARP_TIMEOUT_FEATURE, c.isSharpExpiry());
     /*
     if (c.isPersistent()) {
       storage = new PassingStorageAdapter();
