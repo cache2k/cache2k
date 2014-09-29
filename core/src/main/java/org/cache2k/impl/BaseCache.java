@@ -971,9 +971,13 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
    * except we do not need to retrieve the data from the storage again.
    *
    * @param _needsFetch if true the entry is fetched from CacheSource when expired.
+   * @param _actionUnderLockWhenInserted called when the got the entry lock and the
+   *                                     entry made it to the cache
    * @return a cache entry is always returned, however, it may be outdated
    */
-  protected Entry insertEntryFromStorage(StorageEntry se, boolean _needsFetch) {
+  protected Entry insertEntryFromStorage(
+      StorageEntry se, boolean _needsFetch,
+      EntryAction _actionUnderLockWhenInserted) {
     for (;;) {
       E e = lookupOrNewEntrySynchronized((K) se.getKey());
       if (e.hasFreshData()) { return e; }
@@ -983,6 +987,9 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
             continue;
           }
           insertEntryFromStorage(se, e, _needsFetch);
+          if (_actionUnderLockWhenInserted != null) {
+            _actionUnderLockWhenInserted.run(e);
+          }
         }
       }
       evictEventually();
@@ -2990,6 +2997,12 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
     public final boolean equals(Object obj) {
       return this == obj;
     }
+
+  }
+
+  public static abstract class EntryAction {
+
+    public abstract void run(Entry e);
 
   }
 

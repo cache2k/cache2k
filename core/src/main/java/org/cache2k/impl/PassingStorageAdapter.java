@@ -318,6 +318,12 @@ public class PassingStorageAdapter extends StorageAdapter {
     }
   }
 
+  /**
+   * Use visit and iterate over all entries in the storage.
+   * It is not possible to remove the entry directly from the storage, since
+   * this would introduce a race. To avoid this, the entry is inserted
+   * in the heap cache and the removal is done under the entry lock.
+   */
   PurgeableStorage.PurgeResult purgeByVisit(
       final long _valueExpiryTime,
       final long _entryExpireTime) {
@@ -342,13 +348,22 @@ public class PassingStorageAdapter extends StorageAdapter {
     final AtomicInteger _purgeCount = new AtomicInteger();
     CacheStorage.EntryVisitor v = new CacheStorage.EntryVisitor() {
       @Override
-      public void visit(StorageEntry e) throws Exception {
+      public void visit(final StorageEntry _storageEntry) throws Exception {
         _scanCount.incrementAndGet();
-        if ((e.getEntryExpiryTime() > 0 && e.getEntryExpiryTime() < _entryExpireTime) ||
-            (e.getValueExpiryTime() > 0 && e.getValueExpiryTime() < _valueExpiryTime)) {
-          storage.remove(e.getKey());
-          remove(e.getKey());
+        if ((_storageEntry.getEntryExpiryTime() > 0 && _storageEntry.getEntryExpiryTime() < _entryExpireTime) ||
+            (_storageEntry.getValueExpiryTime() > 0 && _storageEntry.getValueExpiryTime() < _valueExpiryTime)) {
           _purgeCount.incrementAndGet();
+          BaseCache.EntryAction _action = new BaseCache.EntryAction() {
+            @Override
+            public void run(BaseCache.Entry e) {
+              try {
+                storage.remove(_storageEntry.getKey());
+              } catch (Exception ex) {
+                disable("storage.remove()", ex);
+              }
+            }
+          };
+          cache.insertEntryFromStorage(_storageEntry, false, _action);
         }
       }
     };
@@ -591,15 +606,9 @@ public class PassingStorageAdapter extends StorageAdapter {
       return false;
     }
 
-    /**
-     * {@link BaseCache#insertEntryFromStorage(org.cache2k.storage.StorageEntry, boolean)}
-     * could be executed here or within the separate read thread. Since the eviction cannot run
-     * in parallel it is slightly better to do it here. This way the operation takes place on
-     * the same thread and cache trashing on the CPUs will be reduced.
-     */
     @Override
     public BaseCache.Entry next() {
-      return cache.insertEntryFromStorage(entry, false);
+      return cache.insertEntryFromStorage(entry, false, null);
     }
 
     @Override
