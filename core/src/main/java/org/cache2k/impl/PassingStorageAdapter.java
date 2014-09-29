@@ -353,9 +353,9 @@ public class PassingStorageAdapter extends StorageAdapter {
         if ((_storageEntry.getEntryExpiryTime() > 0 && _storageEntry.getEntryExpiryTime() < _entryExpireTime) ||
             (_storageEntry.getValueExpiryTime() > 0 && _storageEntry.getValueExpiryTime() < _valueExpiryTime)) {
           _purgeCount.incrementAndGet();
-          BaseCache.EntryAction _action = new BaseCache.EntryAction() {
+          Runnable _action = new Runnable() {
             @Override
-            public void run(BaseCache.Entry e) {
+            public void run() {
               try {
                 storage.remove(_storageEntry.getKey());
               } catch (Exception ex) {
@@ -363,7 +363,7 @@ public class PassingStorageAdapter extends StorageAdapter {
               }
             }
           };
-          cache.insertEntryFromStorage(_storageEntry, false, _action);
+          cache.lockAndRunForPurge(_storageEntry.getKey(), _action);
         }
       }
     };
@@ -399,6 +399,11 @@ public class PassingStorageAdapter extends StorageAdapter {
   }
 
   class MyPurgeContext extends MyMultiThreadContext implements PurgeableStorage.PurgeContext {
+
+    @Override
+    public void lockAndRun(Object key, Runnable _action) {
+      cache.lockAndRunForPurge(key, _action);
+    }
 
   }
 
@@ -608,7 +613,7 @@ public class PassingStorageAdapter extends StorageAdapter {
 
     @Override
     public BaseCache.Entry next() {
-      return cache.insertEntryFromStorage(entry, false, null);
+      return cache.insertEntryFromStorage(entry, false);
     }
 
     @Override

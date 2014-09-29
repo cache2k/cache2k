@@ -971,13 +971,9 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
    * except we do not need to retrieve the data from the storage again.
    *
    * @param _needsFetch if true the entry is fetched from CacheSource when expired.
-   * @param _actionUnderLockWhenInserted called when the got the entry lock and the
-   *                                     entry made it to the cache
    * @return a cache entry is always returned, however, it may be outdated
    */
-  protected Entry insertEntryFromStorage(
-      StorageEntry se, boolean _needsFetch,
-      EntryAction _actionUnderLockWhenInserted) {
+  protected Entry insertEntryFromStorage(StorageEntry se, boolean _needsFetch) {
     for (;;) {
       E e = lookupOrNewEntrySynchronized((K) se.getKey());
       if (e.hasFreshData()) { return e; }
@@ -987,13 +983,34 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
             continue;
           }
           insertEntryFromStorage(se, e, _needsFetch);
-          if (_actionUnderLockWhenInserted != null) {
-            _actionUnderLockWhenInserted.run(e);
-          }
         }
       }
       evictEventually();
       return e;
+    }
+  }
+
+  /**
+   * Insert a cache entry for the given key and run action under the entry
+   * lock. If the cache entry has fresh data, we do not run the action.
+   * Called from storage. The entry referenced by the key is expired and
+   * will be purged.
+   */
+  protected void lockAndRunForPurge(Object key, Runnable _action) {
+    for (;;) {
+      E e = lookupOrNewEntrySynchronized((K) key);
+      if (e.hasFreshData()) { return; }
+      synchronized (e) {
+        if (!e.isDataValidState()) {
+          if (e.isRemovedNonValidState()) {
+            continue;
+          }
+          _action.run();
+          if (e.isVirgin()) {
+            evictEntryFromHeap(e);
+          }
+        }
+      }
     }
   }
 
@@ -1014,20 +1031,24 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
         if (e.isRemovedState() || e.isRemovedNonValidState()) {
           continue;
         }
-        synchronized (lock) {
-          if (e.isRemovedFromReplacementList()) {
-            removeEntryFromHash(e);
-            evictedButInHashCnt--;
-          } else {
-            removeEntry(e);
-          }
-          evictedCnt++;
-          evictionNeeded = getLocalSize() > maxSize;
-        }
+        evictEntryFromHeap(e);
         if (storage != null && e.isDataValidState()) {
           storage.evict(e);
         }
       }
+    }
+  }
+
+  private void evictEntryFromHeap(E e) {
+    synchronized (lock) {
+      if (e.isRemovedFromReplacementList()) {
+        removeEntryFromHash(e);
+        evictedButInHashCnt--;
+      } else {
+        removeEntry(e);
+      }
+      evictedCnt++;
+      evictionNeeded = getLocalSize() > maxSize;
     }
   }
 
@@ -2997,12 +3018,6 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
     public final boolean equals(Object obj) {
       return this == obj;
     }
-
-  }
-
-  public static abstract class EntryAction {
-
-    public abstract void run(Entry e);
 
   }
 

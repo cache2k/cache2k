@@ -5,6 +5,7 @@ A poor mans issue tracker.
 ### Next
 
   * storage purge
+  * purge: purge fullscan counter, purgedEntry counter...
   * review isDirty() handling
 
 ### Warmups

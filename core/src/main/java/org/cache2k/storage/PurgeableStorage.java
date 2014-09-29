@@ -49,6 +49,14 @@ public interface PurgeableStorage {
 
   public static interface PurgeContext extends CacheStorage.MultiThreadedContext {
 
+    /**
+     * Runs the action under the entry lock for the key. The actual purge
+     * needs to be done within the runnable to avoid races. This is important
+     * if the storage relies on the entry locking of the cache and has no
+     * locking for the entry I/O itself.
+     */
+    void lockAndRun(Object key, Runnable _action);
+
   }
 
   /**
