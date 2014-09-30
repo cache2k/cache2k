@@ -4,8 +4,11 @@ A poor mans issue tracker.
 
 ### Next
 
+  * reset() dirty?
   * storage purge
+  * purge: schedule a purge
   * purge: purge fullscan counter, purgedEntry counter...
+  * Optimize purge: partial purge, start with least recently used
   * review isDirty() handling
 
 ### Warmups
