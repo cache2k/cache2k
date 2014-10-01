@@ -245,7 +245,7 @@ public class ImageFileStorage
 
   public void close() throws Exception {
     synchronized (commitLock) {
-      if (file == null) {
+      if (isClosed()) {
         return;
       }
       synchronized (valuesLock) {
@@ -627,6 +627,9 @@ public class ImageFileStorage
    */
   public void flush(FlushContext ctx, long now) throws IOException {
     synchronized (commitLock) {
+      if (isClosed()) {
+        throw new IllegalStateException("storage closed");
+      }
       CommitWorker _worker;
       synchronized (valuesLock) {
         if (newBufferEntries.size() == 0 && deletedBufferEntries.size() == 0) {
@@ -654,6 +657,10 @@ public class ImageFileStorage
       _worker.freeSpace();
     }
     truncateFile();
+  }
+
+  public boolean isClosed() {
+    return file == null;
   }
 
   /**
@@ -889,24 +896,29 @@ public class ImageFileStorage
 
   @Override
   public String toString() {
-    return "DirectFileStorage(" + fileName + ", " +
-      "entryCapacity=" + entryCapacity + ", " +
-      "entryCnt=" + values.size() + ", " +
-      "totalSpace=" + getTotalValueSpace() + ", " +
-      "usedSpace=" + getUsedSpace() + ", " +
-      "calculatedUsedSpace=" + calculateUsedSpace() + ", " +
-      "freeSpace=" + freeMap.getFreeSpace() + ", " +
-      "spaceToFree=" + calculateSpaceToFree() + ", " +
-      "freeSlots=" + freeMap.getSlotCount() + ", " +
-      "smallestSlot=" + freeMap.getSizeOfSmallestSlot() + ", " +
-      "largestSlot=" + freeMap.getSizeOfLargestSlot() + ", " +
-      "lastIndexNo=" + descriptor.lastIndexFile +", "+
-      "hitCnt=" + hitCount + ", " +
-      "missCnt=" + missCount + ", " +
-      "putCnt=" + putCount + ", " +
-      "evictCnt=" + evictCount + ", " +
-      "removeCnt=" + removeCount + ", " +
-      "bufferDescriptor=" + descriptor + ")";
+    synchronized (commitLock) {
+      if (isClosed()) {
+        return "DirectFileStorage(fileName=" + fileName + ", CLOSED)";
+      }
+      return "DirectFileStorage(fileName=" + fileName + ", " +
+          "entryCapacity=" + entryCapacity + ", " +
+          "entryCnt=" + values.size() + ", " +
+          "totalSpace=" + getTotalValueSpace() + ", " +
+          "usedSpace=" + getUsedSpace() + ", " +
+          "calculatedUsedSpace=" + calculateUsedSpace() + ", " +
+          "freeSpace=" + freeMap.getFreeSpace() + ", " +
+          "spaceToFree=" + calculateSpaceToFree() + ", " +
+          "freeSlots=" + freeMap.getSlotCount() + ", " +
+          "smallestSlot=" + freeMap.getSizeOfSmallestSlot() + ", " +
+          "largestSlot=" + freeMap.getSizeOfLargestSlot() + ", " +
+          "lastIndexNo=" + descriptor.lastIndexFile + ", " +
+          "hitCnt=" + hitCount + ", " +
+          "missCnt=" + missCount + ", " +
+          "putCnt=" + putCount + ", " +
+          "evictCnt=" + evictCount + ", " +
+          "removeCnt=" + removeCount + ", " +
+          "bufferDescriptor=" + descriptor + ")";
+    }
   }
 
   class KeyIndexReader {
