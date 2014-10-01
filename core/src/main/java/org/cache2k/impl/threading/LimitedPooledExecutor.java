@@ -112,16 +112,12 @@ public class LimitedPooledExecutor implements ExecutorService {
 
   @Override
   public <T> Future<T> submit(Callable<T> c) {
-    if (c instanceof NeverRunInCallingTask) {
-      notifier.stallIfLimitReached();
-    } else {
-      if (notifier.isLimitReached()) {
-        return stallAndRunInCallingThread(c);
-      }
+    if (notifier.isLimitReached() && ! (c instanceof NeverRunInCallingTask)) {
+      return stallAndRunInCallingThread(c);
     }
+    notifier.stallAndCountSubmit();
     try {
       Future<T> f = globalPooledExecutor.execute(c, notifier);
-      notifier.taskSubmitted();
       return f;
     } catch (InterruptedException ex) {
       return new Futures.ExceptionFuture<>(ex);
@@ -135,7 +131,7 @@ public class LimitedPooledExecutor implements ExecutorService {
    * the callers thread.
    */
   private <T> Future<T> stallAndRunInCallingThread(Callable<T> c) {
-    notifier.taskSubmitted();
+    notifier.taskSubmittedNoStall();
     notifier.taskStarted();
     try {
       T _result = c.call();
@@ -180,9 +176,8 @@ public class LimitedPooledExecutor implements ExecutorService {
     List<Future<T>> _list = new ArrayList<>();
     try {
       for (Callable<T> c : _tasks) {
-        notifier.stallIfLimitReached();
+        notifier.stallAndCountSubmit();
         Future<T> f = globalPooledExecutor.execute(c, notifier);
-        notifier.taskSubmitted();
         _list.add(f);
       }
     } catch (TimeoutException ex) {
@@ -206,13 +201,12 @@ public class LimitedPooledExecutor implements ExecutorService {
         if (_restTimeout <= 0) {
           break;
         }
-        notifier.stallIfLimitReached(_restTimeout);
-        _restTimeout = _timeoutMillis - (System.currentTimeMillis() - now);
-        if (_restTimeout <= 0) {
+        boolean _success = notifier.stallAndCountSubmit(_restTimeout);
+        if (!_success) {
           break;
         }
         Future<T> f = globalPooledExecutor.execute(c, notifier, _restTimeout);
-        notifier.taskSubmitted();
+        _restTimeout = _timeoutMillis - (System.currentTimeMillis() - now);
         _list.add(f);
       }
     } catch (TimeoutException ex) {
@@ -249,17 +243,21 @@ public class LimitedPooledExecutor implements ExecutorService {
       threadLimit = _threadLimit;
     }
 
-    public boolean isTerminated() {
+    public synchronized boolean isTerminated() {
       return counter == 0;
     }
 
-    public synchronized void taskSubmitted() { counter++; }
+    public synchronized void taskSubmittedNoStall() {
+      counter++;
+    }
 
     @Override
     public void taskStarted() { }
 
     @Override
-    public synchronized void taskFinished() { counter--; notify(); }
+    public synchronized void taskFinished() {
+      counter--; notify();
+    }
 
     @Override
     public synchronized void taskFinishedWithException(Throwable ex) {
@@ -304,14 +302,20 @@ public class LimitedPooledExecutor implements ExecutorService {
       }
     }
 
-    public void stallIfLimitReached(long _millis) {
+    public boolean stallAndCountSubmit(long _millis) {
       long t = System.currentTimeMillis();
       long _maxTime = t + _millis;
       if (_maxTime < 0) {
-        stallIfLimitReached();
-        return;
+        stallAndCountSubmit();
+        return true;
       }
-      while (isLimitReached() && t < _maxTime) {
+      while (true) {
+        if (isReady()) {
+          return true;
+        }
+        if (t >= _maxTime) {
+          return false;
+        }
         try {
           waitUntilNextFinished(Math.max(_maxTime - t, 0));
           t = System.currentTimeMillis();
@@ -320,12 +324,20 @@ public class LimitedPooledExecutor implements ExecutorService {
       }
     }
 
+    private synchronized boolean isReady() {
+      if (counter < threadLimit) {
+        counter++;
+        return true;
+      }
+      return false;
+    }
+
     private boolean isLimitReached() {
       return counter >= threadLimit;
     }
 
-    public void stallIfLimitReached() {
-      while (isLimitReached()) {
+    public void stallAndCountSubmit() {
+      while (!isReady()) {
         try {
           waitUntilNextFinished();
         } catch (InterruptedException ex) {
@@ -357,7 +369,7 @@ public class LimitedPooledExecutor implements ExecutorService {
      * This may have adverse effects, e.g. if a storage on hard disk is
      * starting to many requests in parallel. See outer class documentation.
      */
-    public int maxThreadCount = Runtime.getRuntime().availableProcessors();
+    public int maxThreadCount = 5; // Runtime.getRuntime().availableProcessors() - 1;
 
     /**
      * Enables yet untested code. Default false.
