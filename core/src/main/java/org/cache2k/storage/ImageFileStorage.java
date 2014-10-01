@@ -845,11 +845,11 @@ public class ImageFileStorage
         break;
       }
       final HeapEntry be = e;
-      Callable<Object> r = new Callable<Object>() {
+      Callable<Void> r = new Callable<Void>() {
         @Override
-        public Object call() throws Exception {
+        public Void call() throws Exception {
           v.visit(returnEntry(be));
-          return be.key;
+          return null;
         }
       };
       ex.submit(r);
