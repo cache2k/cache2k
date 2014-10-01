@@ -502,7 +502,7 @@ public class PassingStorageAdapter extends StorageAdapter {
               log.info(
                   "still waiting for thread termination after " +
                       tunable.terminationInfoSeconds + " seconds," +
-                      " waiting for " + tunable.terminationTimeoutSeconds + " seconds");
+                      " keep waiting for " + tunable.terminationTimeoutSeconds + " seconds...");
             }
             _terminated = executorForVisitThread.awaitTermination(
                 tunable.terminationTimeoutSeconds - tunable.terminationTimeoutSeconds, TimeUnit.SECONDS);
@@ -512,10 +512,13 @@ public class PassingStorageAdapter extends StorageAdapter {
           }
         }
       }
+      if (abortException != null) {
+        throw new RuntimeException("execution exception", abortException);
+      }
     }
 
     @Override
-    public void abortOnException(Throwable ex) {
+    public synchronized void abortOnException(Throwable ex) {
       if (abortException == null) {
         abortException = ex;
       }
