@@ -998,7 +998,9 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
    * will be purged.
    */
   protected void lockAndRunForPurge(Object key, Runnable _action) {
+    int _spinCount = TUNABLE.maximumEntryLockSpins;
     for (;;) {
+      if (_spinCount-- <= 0) { throw new CacheLockSpinsExceededError(); }
       E e = lookupOrNewEntrySynchronized((K) key);
       if (e.hasFreshData()) { return; }
       synchronized (e) {
@@ -1012,6 +1014,7 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
           }
         }
       }
+      break;
     }
   }
 
@@ -3023,6 +3026,14 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
   }
 
   public static class Tunable extends TunableConstants {
+
+    /**
+     * Limits the number of spins until an entry lock is expected to
+     * succeed. The limit is to detect deadlock issues during development
+     * and testing. It is set to an arbitrary high value to result in
+     * an exception after about one second of spinning.
+     */
+    public int maximumEntryLockSpins = 3; //  333333;
 
     /**
      * Size of the hash table before inserting the first entry. Must be power
