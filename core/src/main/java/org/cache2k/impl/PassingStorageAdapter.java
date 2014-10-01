@@ -505,7 +505,7 @@ public class PassingStorageAdapter extends StorageAdapter {
                       " keep waiting for " + tunable.terminationTimeoutSeconds + " seconds...");
             }
             _terminated = executorForVisitThread.awaitTermination(
-                tunable.terminationTimeoutSeconds - tunable.terminationTimeoutSeconds, TimeUnit.SECONDS);
+                tunable.terminationTimeoutSeconds - tunable.terminationInfoSeconds, TimeUnit.SECONDS);
             if (!_terminated) {
               log.warn("threads not terminated after " + tunable.terminationTimeoutSeconds + " seconds");
             }
