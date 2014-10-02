@@ -745,16 +745,18 @@ public class PassingStorageAdapter extends StorageAdapter {
 
   /** may be executed more than once */
   public synchronized Future<Void> cancelTimerJobs() {
-    if (flushIntervalMillis >= 0) {
-      flushIntervalMillis = -1;
-    }
-    if (flushTimerHandle != null) {
-      flushTimerHandle.cancel();
-      flushTimerHandle = null;
-    }
-    if (!lastExecutingFlush.isDone()) {
-      lastExecutingFlush.cancel(false);
-      return lastExecutingFlush;
+    synchronized (flushLock) {
+      if (flushIntervalMillis >= 0) {
+        flushIntervalMillis = -1;
+      }
+      if (flushTimerHandle != null) {
+        flushTimerHandle.cancel();
+        flushTimerHandle = null;
+      }
+      if (!lastExecutingFlush.isDone()) {
+        lastExecutingFlush.cancel(false);
+        return lastExecutingFlush;
+      }
     }
     return new Futures.FinishedFuture<>();
   }
