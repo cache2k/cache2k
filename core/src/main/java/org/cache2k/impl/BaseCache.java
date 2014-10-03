@@ -65,6 +65,8 @@ import java.util.Timer;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.FutureTask;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
 /**
  * Foundation for all cache variants. All common functionality is in here.
@@ -607,6 +609,10 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
     }
   }
 
+  /**
+   * Preparation for shutdown. Cancel all pending timer jobs e.g. for
+   * expiry/refresh or flushing the storage.
+   */
   Future<Void> cancelTimerJobs() {
     synchronized (lock) {
       if (timer != null) {
@@ -615,7 +621,9 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
       Future<Void> _waitFuture = new Futures.BusyWaitFuture<Void>() {
         @Override
         public boolean isDone() {
-          return getFetchesInFlight() == 0;
+          synchronized (lock) {
+            return getFetchesInFlight() == 0;
+          }
         }
       };
       if (storage != null) {
@@ -649,6 +657,18 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
         return;
       }
       shutdownInitiated = true;
+    }
+    Future<Void> _await = cancelTimerJobs();
+    try {
+      _await.get(TUNABLE.waitForTimerJobsSeconds, TimeUnit.SECONDS);
+    } catch (TimeoutException ex) {
+      getLog().warn(
+          "timeout waiting for timer jobs termination" +
+          " (" + TUNABLE.waitForTimerJobsSeconds + " seconds)");
+    } catch (Exception ex) {
+      getLog().warn("exception waiting for timer jobs termination", ex);
+    }
+    synchronized (lock) {
       mainHashCtrl.close();
       refreshHashCtrl.close();
     }
@@ -953,7 +973,7 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
       E e = lookupOrNewEntrySynchronized(key);
       if (e.hasFreshData()) { return e; }
       synchronized (e) {
-        if (!e.isDataValidState()) {
+        if (!e.hasFreshData()) {
           if (e.isRemovedNonValidState()) {
             continue;
           }
@@ -1035,10 +1055,14 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
         if (e.isRemovedState() || e.isRemovedNonValidState()) {
           continue;
         }
-        evictEntryFromHeap(e);
-        if (storage != null && e.isDataValidState()) {
+
+        boolean _shouldStore =
+          (storage != null) &&
+          ((hasKeepAfterExpired() && (e.getValueExpiryTime() > 0)) || e.hasFreshData());
+        if (_shouldStore) {
           storage.evict(e);
         }
+        evictEntryFromHeap(e);
       }
     }
   }
@@ -1071,8 +1095,10 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
    */
   @Override
   public T peek(K key) {
-    int hc = modifiedHash(key.hashCode());
+    final int hc = modifiedHash(key.hashCode());
+    int _spinCount = TUNABLE.maximumEntryLockSpins;
     for (;;) {
+      if (_spinCount-- <= 0) { throw new CacheLockSpinsExceededError(); }
       E e = lookupEntryUnsynchronized(key, hc);
       if (e == null) {
         synchronized (lock) {
@@ -1103,24 +1129,53 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
     }
   }
 
-
   @Override
-  public void put(K key, T value) {
-    E e;
+  public boolean putIfAbsent(K key, T value) {
+    int _spinCount = TUNABLE.maximumEntryLockSpins;
+    final int hc = modifiedHash(key.hashCode());
+    boolean _success = false;
     for (;;) {
-      synchronized (lock) {
-        putCnt++;
-        int hc = modifiedHash(key.hashCode());
-        e = lookupEntry(key, hc);
-        if (e == null) {
-          e = newEntry(key, hc);
-          putNewEntryCnt++;
-        } else {
-          if (e.isDataValidState()) {
-            e.setReputState();
+      if (_spinCount-- <= 0) { throw new CacheLockSpinsExceededError(); }
+      E e = lookupEntryUnsynchronized(key, hc);
+      if (e == null) {
+        synchronized (lock) {
+          e = lookupEntry(key, hc);
+          if (e == null) {
+            e = newEntry(key, hc);
+            putNewEntryCnt++;
           }
         }
       }
+      synchronized (e) {
+        if (e.isRemovedState() || e.isRemovedNonValidState()) {
+          continue;
+        }
+        if (e.isVirgin() && storage != null) {
+          fetchWithStorage(e, false);
+        }
+        long t = System.currentTimeMillis();
+        if (!e.hasFreshData(t)) {
+          insertOnPut(e, value, t, t);
+          synchronized (lock) {
+            putCnt++;
+          }
+          _success = true;
+        }
+      }
+      break;
+    }
+    evictEventually();
+    return _success;
+  }
+
+
+  @Override
+  public void put(K key, T value) {
+    int _spinCount = TUNABLE.maximumEntryLockSpins;
+    E e;
+    for (;;) {
+      if (_spinCount-- <= 0) { throw new CacheLockSpinsExceededError(); }
+      e = insertEntryForPut(key);
       long t = System.currentTimeMillis();
       synchronized (e) {
         if (e.isRemovedState() || e.isRemovedNonValidState()) {
@@ -1131,6 +1186,24 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
       break;
     }
     evictEventually();
+  }
+
+  private E insertEntryForPut(K key) {
+    E e;
+    synchronized (lock) {
+      putCnt++;
+      int hc = modifiedHash(key.hashCode());
+      e = lookupEntry(key, hc);
+      if (e == null) {
+        e = newEntry(key, hc);
+        putNewEntryCnt++;
+      } else {
+        if (e.isDataValidState()) {
+          e.setReputState();
+        }
+      }
+    }
+    return e;
   }
 
   /**
@@ -1457,9 +1530,9 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
         fetchFromSource(e);
         return;
       }
-      touchedTime = System.currentTimeMillis();
       e.setStorageMiss();
       synchronized (lock) {
+        touchedTime = System.currentTimeMillis();
         storageMissCnt++;
       }
       return;
@@ -1486,9 +1559,9 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
         fetchFromSource(e);
         return;
       } else {
-        touchedTime = now;
         e.setStorageMiss();
         synchronized (lock) {
+          touchedTime = now;
           storageMissCnt++;
         }
         return;
@@ -2786,7 +2859,7 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
     }
 
     public void resetDirty() {
-      fetchedTime = fetchedTime >> 1 << 1;
+      fetchedTime = fetchedTime << 1 >> 1;
     }
 
     /** Reset next as a marker for {@link #isRemovedFromReplacementList()} */
@@ -2842,20 +2915,37 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
      * because a concurrent get needs to return the data. There is also
      * the chance that an entry is removed by eviction, or is never inserted
      * to the cache, before the get returns it.
+     *
+     * <p/>Even if this is true, the data may be expired. Use hasFreshData() to
+     * make sure to get not expired data.
      */
     public final boolean isDataValidState() {
-      return nextRefreshTime >= FETCHED_STATE;
+      return nextRefreshTime >= FETCHED_STATE || nextRefreshTime < 0;
     }
 
     /**
      * Returns true if the entry has a valid value and is fresh / not expired.
      */
     public final boolean hasFreshData() {
-      if (isDataValidState()) {
+      if (nextRefreshTime >= FETCHED_STATE) {
         return true;
       }
       if (needsTimeCheck()) {
         long now = System.currentTimeMillis();
+        boolean f = now < -nextRefreshTime;
+        return f;
+      }
+      return false;
+    }
+
+    /**
+     * Same as {@link #hasFreshData}, optimization if current time is known.
+     */
+    public final boolean hasFreshData(long now) {
+      if (nextRefreshTime >= FETCHED_STATE) {
+        return true;
+      }
+      if (needsTimeCheck()) {
         return now < -nextRefreshTime;
       }
       return false;
@@ -2942,9 +3032,6 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
       return value;
     }
 
-    public boolean hasExpiryTime() {
-      return nextRefreshTime > EXPIRY_TIME_MIN;
-    }
 
     @Override
     public void setValue(T v) {
@@ -2965,7 +3052,9 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
      * Expiry time or 0.
      */
     public long getValueExpiryTime() {
-      if (hasExpiryTime()) {
+      if (nextRefreshTime < 0) {
+        return -nextRefreshTime;
+      } else if (nextRefreshTime > EXPIRY_TIME_MIN) {
         return nextRefreshTime;
       }
       return 0;
@@ -3006,6 +3095,7 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
     public String toString() {
       return "Entry{" +
         "createdOrUpdate=" + getCreatedOrUpdated() +
+        ", nextRefreshTime=" + nextRefreshTime +
         ", valueExpiryTime=" + getValueExpiryTime() +
         ", entryExpiryTime=" + getEntryExpiryTime() +
         ", key=" + key +
@@ -3027,13 +3117,15 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
 
   public static class Tunable extends TunableConstants {
 
+    public int waitForTimerJobsSeconds = 3;
+
     /**
      * Limits the number of spins until an entry lock is expected to
      * succeed. The limit is to detect deadlock issues during development
      * and testing. It is set to an arbitrary high value to result in
      * an exception after about one second of spinning.
      */
-    public int maximumEntryLockSpins = 3; //  333333;
+    public int maximumEntryLockSpins = 333333;
 
     /**
      * Size of the hash table before inserting the first entry. Must be power

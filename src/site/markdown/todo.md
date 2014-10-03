@@ -4,6 +4,7 @@ A poor mans issue tracker.
 
 ### Next
 
+  * add lock spin exceeded to all spins
   * reset() dirty?
   * storage purge
   * purge: schedule a purge
@@ -13,6 +14,7 @@ A poor mans issue tracker.
 
 ### Warmups
 
+  * Consistent exceptions on cache methods after close()
   * contains()
   * extract LRU operations from BaseCache
 
@@ -63,6 +65,7 @@ Things in JSR107 we don't have yet.
   * API: typing / K or ? extends K
   * API: typing for get(), see:    http://stackoverflow.com/questions/857420/what-are-the-reasons-why-map-getobject-key-is-not-fully-generic
   * API/implementation: transaction support for use as database cache, for the lock free cache implementations
+  * API: destroy -> close
   * expiry/refresh: explain behaviour and API description
   * final bulk source API
   * reorganize timer. currently one timer thread is used per cache.
