@@ -31,7 +31,7 @@ public class GlobalTimerService extends TimerService {
 
   public static TimerService getInstance() {
     if (queue  == null) {
-      queue = new GlobalTimerService("<global>", Runtime.getRuntime().availableProcessors() * 2);
+      queue = new GlobalTimerService(null, Runtime.getRuntime().availableProcessors() * 2);
     }
     return queue;
   }
@@ -40,10 +40,14 @@ public class GlobalTimerService extends TimerService {
   ArrayHeapTimerQueue[] timerQueues;
 
   public GlobalTimerService(String _managerName, int _threadCount) {
+    String _separator = "-";
+    if (_managerName != null) {
+      _separator = ":" + _managerName + ":";
+    }
     timerQueues = new ArrayHeapTimerQueue[_threadCount];
     for (int i = 0; i < timerQueues.length; i++) {
       timerQueues[i] =
-        new ArrayHeapTimerQueue("cache2k-timer:" + _managerName + ":thread-" + i);
+        new ArrayHeapTimerQueue("cache2k" + _separator + "timer-" + i);
     }
   }
 

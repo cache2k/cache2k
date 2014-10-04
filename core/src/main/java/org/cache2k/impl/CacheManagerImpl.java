@@ -291,7 +291,11 @@ public class CacheManagerImpl extends CacheManager {
    */
   public synchronized GlobalPooledExecutor getThreadPool() {
     if (threadPool == null) {
-      threadPool = new GlobalPooledExecutor("cache2k/" + name + "#");
+      String _prefix = "cache2k-pool-";
+      if (!DEFAULT_MANAGER_NAME.equals(name)) {
+        _prefix = "cache2k:" + name + ":pool-";
+      }
+      threadPool = new GlobalPooledExecutor(_prefix);
     }
     return threadPool;
   }

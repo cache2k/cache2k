@@ -33,7 +33,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 public class GlobalThreadFactory implements ThreadFactory {
 
   AtomicInteger threadCount = new AtomicInteger();
-  String prefix = "cache2k#";
+  String prefix = "cache2k-";
 
   public GlobalThreadFactory(String _threadNamePrefix) {
     if (_threadNamePrefix != null) {

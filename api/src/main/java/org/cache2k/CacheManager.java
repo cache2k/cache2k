@@ -31,8 +31,10 @@ import java.util.Iterator;
  */
 public abstract class CacheManager implements Iterable<Cache> {
 
+  protected final static String DEFAULT_MANAGER_NAME = "default";
+
   private static CacheManager defaultManager;
-  private static String defaultName = "default";
+  private static String defaultName = DEFAULT_MANAGER_NAME;
 
   static {
     try {
