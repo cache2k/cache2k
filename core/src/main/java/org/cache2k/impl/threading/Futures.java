@@ -164,7 +164,8 @@ public class Futures {
         }
         if (_needsGet != null) {
           long now = System.currentTimeMillis();
-          if (now <= _maxTime) {
+          long _waitTime = _maxTime - now;
+          if (_waitTime <= 0) {
             throw new TimeoutException();
           }
           _needsGet.get(_maxTime - now, TimeUnit.MILLISECONDS);
@@ -286,7 +287,7 @@ public class Futures {
     public V get(long timeout, TimeUnit unit) throws InterruptedException, ExecutionException, TimeoutException {
       long _maxMillis = unit.toMillis(timeout) + System.currentTimeMillis();
       if (_maxMillis < 0) { return get(); }
-      while (!isDone() && System.currentTimeMillis() < _maxMillis) { Thread.sleep(123); }
+      while (!isDone() && System.currentTimeMillis() < _maxMillis) { Thread.sleep(spinMillis); }
       if (!isDone()) { throw new TimeoutException(); }
       return getResult();
     }
