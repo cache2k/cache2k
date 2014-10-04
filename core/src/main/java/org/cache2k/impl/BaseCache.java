@@ -1006,7 +1006,7 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
       if (e.hasFreshData()) { return e; }
       synchronized (e) {
         if (!e.hasFreshData()) {
-          if (e.isRemovedNonValidState() || e.isRemovedState()) {
+          if (e.isRemovedState()) {
             continue;
           }
           fetch(e);
@@ -1034,7 +1034,7 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
       if (e.hasFreshData()) { return e; }
       synchronized (e) {
         if (!e.isDataValidState()) {
-          if (e.isRemovedNonValidState()) {
+          if (e.isRemovedState()) {
             continue;
           }
           insertEntryFromStorage(se, e, _needsFetch);
@@ -1059,7 +1059,7 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
       if (e.hasFreshData()) { return; }
       synchronized (e) {
         if (!e.isDataValidState()) {
-          if (e.isRemovedNonValidState()) {
+          if (e.isRemovedState()) {
             continue;
           }
           _action.run();
@@ -1086,7 +1086,7 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
         }
       }
       synchronized (e) {
-        if (e.isRemovedState() || e.isRemovedNonValidState()) {
+        if (e.isRemovedState()) {
           continue;
         }
 
@@ -1151,7 +1151,7 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
         synchronized (e) {
           _hasFreshData = e.hasFreshData();
           if (!_hasFreshData) {
-            if (e.isRemovedState() || e.isRemovedNonValidState()) {
+            if (e.isRemovedState()) {
               continue;
             }
             fetchWithStorage(e, false);
@@ -1202,7 +1202,7 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
         }
       }
       synchronized (e) {
-        if (e.isRemovedState() || e.isRemovedNonValidState()) {
+        if (e.isRemovedState()) {
           continue;
         }
         if (e.isVirgin() && storage != null) {
@@ -1234,7 +1234,7 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
       e = insertEntryForPut(key);
       long t = System.currentTimeMillis();
       synchronized (e) {
-        if (e.isRemovedState() || e.isRemovedNonValidState()) {
+        if (e.isRemovedState()) {
           continue;
         }
         insertOnPut(e, value, t, t);
@@ -1481,12 +1481,12 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
 
     cancelExpiryTimer(e);
     if (e.isDataValidState()) {
-      e.setRemovedNonValidState();
+      e.setRemovedState();
     } else {
       if (e.isVirgin()) {
         virginEvictCnt++;
       }
-      e.setRemovedNonValidState();
+      e.setRemovedState();
     }
   }
 
@@ -2873,8 +2873,6 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
     implements MutableCacheEntry<K,T>, StorageEntry {
 
     static final int FETCHED_STATE = 10;
-    static final int REMOVED_STATE = 12;
-
     static final int REFRESH_STATE = 11;
     static final int REPUT_STATE = 13;
 
@@ -2889,7 +2887,7 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
     /** Logically the same as immediately expired */
     static final int FETCH_NEXT_TIME_STATE = 3;
 
-    static private final int REMOVED_NON_VALID_STATE = 2;
+    static private final int REMOVED_STATE = 2;
     static final int VIRGIN_STATE = 0;
     static final int EXPIRY_TIME_MIN = 20;
 
@@ -2963,19 +2961,6 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
     public final boolean isVirgin() {
       return
         nextRefreshTime == VIRGIN_STATE;
-    }
-
-    /**
-     * Entry was removed before, however the entry contains still valid data,
-     * so {@link #isDataValidState()} is also true.
-     * This state is state may not be terminal. When an parallel get is going on
-     * it will change to just isFetched or isFetchNextTime even if it was
-     * removed. Use {@link #isRemovedFromReplacementList()} as a flag whether
-     * it is really removed.
-     */
-    public final boolean isRemovedState() {
-      boolean b = nextRefreshTime == REMOVED_STATE;
-      return b;
     }
 
     public final boolean isFetchNextTimeState() {
@@ -3062,12 +3047,8 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
       nextRefreshTime = REMOVED_STATE;
     }
 
-    public void setRemovedNonValidState() {
-      nextRefreshTime = REMOVED_NON_VALID_STATE;
-    }
-
-    public boolean isRemovedNonValidState() {
-      return nextRefreshTime == REMOVED_NON_VALID_STATE;
+    public boolean isRemovedState() {
+      return nextRefreshTime == REMOVED_STATE;
     }
 
     public void setFetchNextTimeState() {
