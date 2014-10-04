@@ -76,10 +76,28 @@ public interface Cache<K, T> extends KeyValueSource<K,T>, Iterable<CacheEntry<K,
   public abstract void prefetch(List<K> keys, int _startIndex, int _afterEndIndex);
 
   /**
-   * Returns the value if it is mapped within the cache.
+   * Returns the value if it is mapped within the cache and not expired, or null.
    * No request on the cache source is made.
+   *
+   * @throws org.cache2k.PropagatedCacheException if an exception happened
+   *         when the value was fetched by the cache source
    */
   public abstract T peek(K key);
+
+  /**
+   * Returns a mapped entry from the cache or null. If an entry is expired, null
+   * is also returned. Multiple calls for the same key may return different instances.
+   *
+   * <p/>If an exception was thrown during fetching the entry via the cache source,
+   * method does not follow the same schema of rethrowing the exception like in get()
+   * and peek(), instead the exception can be retrieved via,
+   * {@link org.cache2k.CacheEntry#getException()}
+   *
+   * <p/>The reason for the existence of this method is, that in the presence of
+   * null values it cannot be determined by peek() and get() if there is a mapping
+   * or a null value.
+   */
+  public abstract CacheEntry<K, T> peekEntry(K key);
 
   /**
    * Set object value for the key

@@ -23,6 +23,8 @@ package org.cache2k;
  */
 
 /**
+ * Wraps an application exception.
+ *
  * If a cache receives an exception when fetching a value via the
  * cache source it may propagate the exception wrapped into this
  * one to the caller. Whether propagation occurs depends on the

@@ -4,6 +4,7 @@ A poor mans issue tracker.
 
 ### Next
 
+  * fetchWithStorage, get rid of flag
   * purge thread for timer thread decoupling
   * add lock spin exceeded to all spins
   * reset() dirty?, review isDirty() handling
@@ -11,6 +12,8 @@ A poor mans issue tracker.
   * purge: schedule a purge
   * purge: purge fullscan counter, purgedEntry counter...
   * Optimize purge: partial purge, start with least recently used
+  * getEntry()
+  * different timeout for exceptions, refresh controller 
 
 ### Warmups
 
@@ -33,6 +36,9 @@ A poor mans issue tracker.
   * async storage
 
 ### robustness
+
+fetchesInFlight, does not go up consistently for refreshes. Also should count all entries that
+do I/O with the storage.
 
 tests with a faulty storage? disable() working in all conditions?
 

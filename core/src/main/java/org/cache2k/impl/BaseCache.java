@@ -179,11 +179,6 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
    */
   protected long virginEvictCnt = 0;
 
-  /**
-   * New inserted but evicted before fetch could be started
-   */
-  protected long XXvirginForFetchLostCnt = 0;
-
   protected int maximumBulkFetchSize = 100;
 
   /**
@@ -966,10 +961,13 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
   }
 
   /**
-   * Wrap entry in a separate object instance. We can return the entry directly, however we need
-   * lock on the entry object.
+   * Wrap entry in a separate object instance. We can return the entry directly, however we lock on
+   * the entry object.
    */
   protected CacheEntry<K, T> returnEntry(final Entry<E, K, T> e) {
+    if (e == null) {
+      return null;
+    }
     CacheEntry<K,T> ce = new CacheEntry<K, T>() {
       @Override
       public K getKey() { return e.getKey(); }
@@ -1001,7 +999,9 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
   }
 
   protected E getEntryInternal(K key) {
+    int _spinCount = TUNABLE.maximumEntryLockSpins;
     for (;;) {
+      if (_spinCount-- <= 0) { throw new CacheLockSpinsExceededError(); }
       E e = lookupOrNewEntrySynchronized(key);
       if (e.hasFreshData()) { return e; }
       synchronized (e) {
@@ -1027,7 +1027,9 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
    * @return a cache entry is always returned, however, it may be outdated
    */
   protected Entry insertEntryFromStorage(StorageEntry se, boolean _needsFetch) {
+    int _spinCount = TUNABLE.maximumEntryLockSpins;
     for (;;) {
+      if (_spinCount-- <= 0) { throw new CacheLockSpinsExceededError(); }
       E e = lookupOrNewEntrySynchronized((K) se.getKey());
       if (e.hasFreshData()) { return e; }
       synchronized (e) {
@@ -1125,8 +1127,7 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
    * If the entry is not present, this result is cached in the local
    * cache.
    */
-  @Override
-  public T peek(K key) {
+  protected E peekEntryInternal(K key) {
     final int hc = modifiedHash(key.hashCode());
     int _spinCount = TUNABLE.maximumEntryLockSpins;
     for (;;) {
@@ -1144,21 +1145,41 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
         peekMissCnt++;
         return null;
       }
-      if (e.isVirgin() && storage != null) {
+      if (e.hasFreshData()) { return e; }
+      boolean _hasFreshData = false;
+      if (storage != null) {
         synchronized (e) {
-          if (e.isRemovedState() || e.isRemovedNonValidState()) {
-            continue;
+          _hasFreshData = e.hasFreshData();
+          if (!_hasFreshData) {
+            if (e.isRemovedState() || e.isRemovedNonValidState()) {
+              continue;
+            }
+            fetchWithStorage(e, false);
+            _hasFreshData = e.hasFreshData();
           }
-          fetchWithStorage(e, false);
         }
       }
       evictEventually();
-      if (e.hasFreshData()) {
-        return returnValue(e);
+      if (_hasFreshData) {
+        return e;
       }
       peekHitNotFreshCnt++;
       return null;
     }
+  }
+
+  @Override
+  public T peek(K key) {
+    E e = peekEntryInternal(key);
+    if (e != null) {
+      return returnValue(e);
+    }
+    return null;
+  }
+
+  @Override
+  public CacheEntry<K, T> peekEntry(K key) {
+    return returnEntry(peekEntryInternal(key));
   }
 
   @Override
@@ -1460,7 +1481,7 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
 
     cancelExpiryTimer(e);
     if (e.isDataValidState()) {
-      e.setRemovedState();
+      e.setRemovedNonValidState();
     } else {
       if (e.isVirgin()) {
         virginEvictCnt++;
@@ -2144,7 +2165,7 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
       return new IntegrityState()
         .checkEquals(
             "newEntryCnt - virginEvictCnt == " +
-            "getFetchesBecauseOfNewEntries() + getFetchesInFlight() + putNewEntryCnt + loadNonFreshCnt + loadHitCnt",
+                "getFetchesBecauseOfNewEntries() + getFetchesInFlight() + putNewEntryCnt + loadNonFreshCnt + loadHitCnt",
             newEntryCnt - virginEvictCnt,
             getFetchesBecauseOfNewEntries() + getFetchesInFlight() + putNewEntryCnt + loadNonFreshCnt + loadHitCnt)
         .checkLessOrEquals("getFetchesInFlight() <= 100", getFetchesInFlight(), 100)
@@ -2853,6 +2874,7 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
 
     static final int FETCHED_STATE = 10;
     static final int REMOVED_STATE = 12;
+
     static final int REFRESH_STATE = 11;
     static final int REPUT_STATE = 13;
 
