@@ -323,7 +323,9 @@ public class ClearStorageBuffer implements CacheStorage, FlushableStorage, Purge
     exception = t;
     shouldStop = true;
     for (Op op : operations) {
-      op.notifyAll();
+      synchronized (op) {
+        op.notifyAll();
+      }
     }
     CacheStorage _storage = nextStorage;
     if (_storage instanceof ClearStorageBuffer) {

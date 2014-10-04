@@ -44,7 +44,6 @@ public abstract class LockFreeCache<E extends BaseCache.Entry, K, T>
       e = lookupEntry(key, hc);
       if (e == null) {
         e = newEntry(key, hc);
-        e.setVirginForFetchState();
         return e;
       }
       return e;

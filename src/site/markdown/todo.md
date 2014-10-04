@@ -4,16 +4,17 @@ A poor mans issue tracker.
 
 ### Next
 
+  * purge thread for timer thread decoupling
   * add lock spin exceeded to all spins
-  * reset() dirty?
+  * reset() dirty?, review isDirty() handling
   * storage purge
   * purge: schedule a purge
   * purge: purge fullscan counter, purgedEntry counter...
   * Optimize purge: partial purge, start with least recently used
-  * review isDirty() handling
 
 ### Warmups
 
+  * factor out triggered job
   * Consistent exceptions on cache methods after close()
   * contains()
   * extract LRU operations from BaseCache
@@ -30,6 +31,38 @@ A poor mans issue tracker.
   * developer description for storage
   * Storage aggregation
   * async storage
+
+### robustness
+
+tests with a faulty storage? disable() working in all conditions?
+
+Multi threaded tests with storage, to make sure no entry operation takes place.
+
+WARNING: exception during clear
+java.lang.IllegalStateException: detected operations while clearing.
+	at org.cache2k.storage.ImageFileStorage.clear(ImageFileStorage.java:305)
+	at org.cache2k.impl.PassingStorageAdapter$10.call(PassingStorageAdapter.java:960)
+	at org.cache2k.impl.PassingStorageAdapter$10.call(PassingStorageAdapter.java:942)
+	at org.cache2k.impl.threading.GlobalPooledExecutor$ExecutorThread.run(GlobalPooledExecutor.java:318)
+	at java.lang.Thread.run(Thread.java:744)
+
+destroy(): we need to consistently check if cache is in shutdown phase after obtaining the lock.
+there may be fetches or storage operations ongoing. E.g.:
+
+WARNING: Refresh exception
+java.lang.IllegalStateException: Timer already cancelled.
+	at java.util.Timer.sched(Timer.java:397)
+	at java.util.Timer.schedule(Timer.java:208)
+	at org.cache2k.impl.BaseCache.insert(BaseCache.java:2074)
+	at org.cache2k.impl.BaseCache.insert(BaseCache.java:2001)
+	at org.cache2k.impl.BaseCache.insertFetched(BaseCache.java:1977)
+	at org.cache2k.impl.BaseCache.fetchFromSource(BaseCache.java:1973)
+	at org.cache2k.impl.BaseCache.fetchWithStorage(BaseCache.java:1868)
+	at org.cache2k.impl.BaseCache.fetch(BaseCache.java:1849)
+	at org.cache2k.impl.BaseCache$8.run(BaseCache.java:2167)
+	at java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1145)
+	at java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:615)
+	at java.lang.Thread.run(Thread.java:744)
 
 ### configuration
 
