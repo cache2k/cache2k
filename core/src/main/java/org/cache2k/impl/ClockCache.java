@@ -49,7 +49,7 @@ public class ClockCache<K, T> extends LockFreeCache<ClockCache.Entry, K, T> {
     Entry _head = e;
     do {
       cnt += e.hitCnt;
-      e = (Entry) e.next;
+      e = (Entry) e.prev;
     } while (e != _head);
     return cnt;
   }
@@ -78,16 +78,15 @@ public class ClockCache<K, T> extends LockFreeCache<ClockCache.Entry, K, T> {
 
   @Override
   protected void insertIntoReplcamentList(Entry e) {
+    e.hitCnt = 1;
+    hits--;
     size++;
     hand = insertIntoTailCyclicList(hand, e);
   }
 
   @Override
   protected Entry newEntry() {
-    Entry e = new Entry();
-    e.hitCnt = 1;
-    hits -= e.hitCnt;
-    return e;
+    return new Entry();
   }
 
 
