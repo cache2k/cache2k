@@ -95,6 +95,7 @@ public class ImageFileStorage
   RandomAccessFile file;
   ByteBuffer buffer;
 
+  @GuardedBy("freeMap")
   public final FreeSpaceMap freeMap = new FreeSpaceMap();
 
   @GuardedBy("valuesLock")
@@ -131,6 +132,7 @@ public class ImageFileStorage
   /**
    * Protected by commitLock
    */
+  @GuardedBy("commitLock")
   Queue<SlotBucket> slotsToFreeQueue = new ArrayDeque<>();
 
   BufferDescriptor descriptor;
@@ -803,16 +805,18 @@ public class ImageFileStorage
       slotsToFreeQueue.add(workerFreeSlots);
       SlotBucket b = slotsToFreeQueue.peek();
       long _before = freeMap.getFreeSpace();
+      long _freed = 0;
       while ((b.time + tunable.freeSpaceAfterMillis) <= timestamp) {
         b = slotsToFreeQueue.remove();
         synchronized (freeMap) {
           for (Slot s : b) {
             freeMap.freeSpace(s);
+            _freed += s.getSize();
           }
         }
         b = slotsToFreeQueue.peek();
       }
-      freedLastCommit = _before - freeMap.getFreeSpace();
+      freedLastCommit = _freed;
     }
 
   }
@@ -909,14 +913,17 @@ public class ImageFileStorage
     if (_freeMapCopy == null || _valuesCopy == null) {
       return "DirectFileStorage(fileName=" + fileName + ", UNKOWN)";
     }
+    long _spaceToFree = 0;
+    synchronized (commitLock) {
+      _spaceToFree = calculateSpaceToFree();
+    }
     return "DirectFileStorage(fileName=" + fileName + ", " +
         "entryCapacity=" + entryCapacity + ", " +
         "entryCnt=" + _valuesCopy.size() + ", " +
         "totalSpace=" + getTotalValueSpace() + ", " +
         "usedSpace=" + getUsedSpace() + ", " +
-        "calculatedUsedSpace=" + calculateUsedSpace() + ", " +
         "freeSpace=" + _freeMapCopy.getFreeSpace() + ", " +
-        "spaceToFree=" + calculateSpaceToFree() + ", " +
+        "spaceToFree=" + _spaceToFree + ", " +
         "freeSlots=" + _freeMapCopy.getSlotCount() + ", " +
         "smallestSlot=" + _freeMapCopy.getSizeOfSmallestSlot() + ", " +
         "largestSlot=" + _freeMapCopy.getSizeOfLargestSlot() + ", " +
