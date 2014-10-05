@@ -648,6 +648,7 @@ public class ImageFileStorage
         deletedBufferEntries = new HashMap<>();
         descriptor.entryCount = getEntryCount();
       }
+      file.getChannel().force(false);
       _worker.write();
       if (descriptor.keyMarshallerParameters == null) {
         descriptor.keyMarshallerParameters = keyMarshaller.getFactoryParameters();
@@ -889,6 +890,7 @@ public class ImageFileStorage
       if (s != null && s.getNextPosition() == file.length()) {
         freeMap.allocateSpace(s);
         file.setLength(s.getPosition());
+        file.getChannel().force(true);
         resetBufferFromFile();
       }
     }
