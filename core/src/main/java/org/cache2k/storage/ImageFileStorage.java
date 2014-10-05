@@ -706,9 +706,9 @@ public class ImageFileStorage
         }
       }
       updateCommittedEntries();
-      descriptor.indexEntries +=
-        totalEntriesToWrite();
+      descriptor.indexEntries += totalEntriesToWrite();
       descriptor.lastKeyIndexPosition = position;
+
       descriptor.lastIndexFile = indexFileNo;
     }
 
@@ -804,7 +804,6 @@ public class ImageFileStorage
       workerFreeSlots.time = timestamp;
       slotsToFreeQueue.add(workerFreeSlots);
       SlotBucket b = slotsToFreeQueue.peek();
-      long _before = freeMap.getFreeSpace();
       long _freed = 0;
       while ((b.time + tunable.freeSpaceAfterMillis) <= timestamp) {
         b = slotsToFreeQueue.remove();
