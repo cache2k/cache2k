@@ -4,6 +4,7 @@ A poor mans issue tracker.
 
 ### Next
 
+  * drop the usage of jsr305 style annotations. this is useful, however, this is no finished standard.
   * fetchWithStorage, get rid of flag
   * purge thread for timer thread decoupling
   * add lock spin exceeded to all spins
@@ -11,6 +12,7 @@ A poor mans issue tracker.
   * storage purge
   * purge: schedule a purge
   * purge: purge fullscan counter, purgedEntry counter...
+  * storage: special marshallers for int, long, string
   * Optimize purge: partial purge, start with least recently used
   * getEntry()
   * different timeout for exceptions, refresh controller 
