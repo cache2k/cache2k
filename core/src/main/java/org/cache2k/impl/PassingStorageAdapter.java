@@ -311,7 +311,8 @@ public class PassingStorageAdapter extends StorageAdapter {
         log.info("purge (force): " +
           "runtimeMillis=" + (t - now) + ", " +
           "scanned=" + res.getEntriesScanned() + ", " +
-          "purged=" + res.getEntriesPurged() +
+          "purged=" + res.getEntriesPurged() + ", " +
+          "until=" + now +
           (res.getBytesFreed() >=0 ? ", " + "freedBytes=" + res.getBytesFreed() : ""));
 
       }
@@ -352,12 +353,16 @@ public class PassingStorageAdapter extends StorageAdapter {
         _scanCount.incrementAndGet();
         if ((_storageEntry.getEntryExpiryTime() > 0 && _storageEntry.getEntryExpiryTime() < _entryExpireTime) ||
             (_storageEntry.getValueExpiryTime() > 0 && _storageEntry.getValueExpiryTime() < _valueExpiryTime)) {
-          _purgeCount.incrementAndGet();
           Runnable _action = new Runnable() {
             @Override
             public void run() {
               try {
-                storage.remove(_storageEntry.getKey());
+                StorageEntry e2 = storage.get(_storageEntry.getKey());
+                if (_storageEntry.getEntryExpiryTime() == e2.getEntryExpiryTime() &&
+                    _storageEntry.getValueExpiryTime() == e2.getValueExpiryTime()) {
+                  storage.remove(_storageEntry.getKey());
+                  _purgeCount.incrementAndGet();
+                }
               } catch (Exception ex) {
                 disable("storage.remove()", ex);
               }
