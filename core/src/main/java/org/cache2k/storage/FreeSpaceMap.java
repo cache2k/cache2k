@@ -160,10 +160,6 @@ public class FreeSpaceMap {
     long s = 0;
     Slot _prev = null;
     for (Slot fs : pos2slot) {
-      boolean f = !(_prev != null) || _prev.getNextPosition() <= fs.position;
-      if (!f) {
-        System.err.println(fs);
-      }
       s += fs.size;
       _prev = fs;
     }
