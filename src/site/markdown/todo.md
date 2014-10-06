@@ -15,7 +15,11 @@ A poor mans issue tracker.
   * storage: special marshallers for int, long, string
   * Optimize purge: partial purge, start with least recently used
   * getEntry()
-  * different timeout for exceptions, refresh controller 
+  * different timeout for exceptions, refresh controller
+  * Closable, close() and closeAsync()
+  * Flushable, flush() and flushAsync()
+  * clear() and clearAsync() ?
+  * purge() and purgeAsync() ?
 
 ### Warmups
 
