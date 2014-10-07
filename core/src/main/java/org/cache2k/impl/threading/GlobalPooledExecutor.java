@@ -398,7 +398,7 @@ public class GlobalPooledExecutor {
     public boolean disableHardLimit = false;
 
     /**
-     * When the this maximum thread count was reached once, a orange alert is issued.
+     * When this maximum thread count was reached once, an orange alert is issued.
      */
     public int warningLimitThreadCount = 33 * Runtime.getRuntime().availableProcessors();
 
