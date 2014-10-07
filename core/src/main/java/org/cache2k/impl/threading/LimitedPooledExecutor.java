@@ -369,7 +369,7 @@ public class LimitedPooledExecutor implements ExecutorService {
      * This may have adverse effects, e.g. if a storage on hard disk is
      * starting to many requests in parallel. See outer class documentation.
      */
-    public int maxThreadCount = 5; // Runtime.getRuntime().availableProcessors() - 1;
+    public int maxThreadCount = Runtime.getRuntime().availableProcessors() - 1;
 
     /**
      * Enables yet untested code. Default false.
