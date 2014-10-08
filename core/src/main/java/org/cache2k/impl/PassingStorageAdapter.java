@@ -865,7 +865,8 @@ public class PassingStorageAdapter extends StorageAdapter {
    * will. However, this method is not necessarily executed in the order
    * the clear or the disconnect took place. This is checked also.
    */
-  public Future<Void> startClearingAndReconnection() {
+  public Future<Void> clearAndReconnect() {
+    FutureTask<Void> f;
     synchronized (this) {
       final ClearStorageBuffer _buffer = (ClearStorageBuffer) storage;
       if (_buffer.clearThreadFuture != null) {
@@ -915,9 +916,10 @@ public class PassingStorageAdapter extends StorageAdapter {
           return null;
         }
       };
-      _buffer.clearThreadFuture = executor.submit(c);
-      return _buffer.clearThreadFuture;
+      _buffer.clearThreadFuture = f = new FutureTask<Void>(c);
     }
+    f.run();
+    return f;
   }
 
   public void disableAndThrow(String _logMessage, Throwable ex) {

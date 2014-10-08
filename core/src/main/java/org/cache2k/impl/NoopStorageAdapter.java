@@ -72,7 +72,7 @@ public class NoopStorageAdapter extends StorageAdapter {
   }
 
   @Override
-  public Future<Void> startClearingAndReconnection() {
+  public Future<Void> clearAndReconnect() {
     return new Futures.FinishedFuture<>(null);
   }
 

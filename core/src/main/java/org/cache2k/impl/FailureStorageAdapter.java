@@ -71,7 +71,7 @@ public class FailureStorageAdapter extends StorageAdapter {
   }
 
   @Override
-  public Future<Void> startClearingAndReconnection() {
+  public Future<Void> clearAndReconnect() {
     throwException();
     return null;
   }

@@ -483,8 +483,7 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
    * storage implementation has a guarantee that there is only one storage operation ongoing for
    * one entry or key at any time. Clear, of course, affects all entries.
    */
-  private final void processClearWithStorage() {
-    Future<?> _waitFuture = null;
+  private void processClearWithStorage() {
     StorageClearTask t = new StorageClearTask();
     boolean _untouchedHeapCache;
     synchronized (lock) {
@@ -498,11 +497,9 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
     }
     try {
       if (_untouchedHeapCache) {
-        FutureTask<Future<Void>> f = new FutureTask<>(t);
+        FutureTask<Void> f = new FutureTask<>(t);
         updateShutdownWaitFuture(f);
         f.run();
-        _waitFuture = f.get();
-        updateShutdownWaitFuture(_waitFuture);
       } else {
         updateShutdownWaitFuture(manager.getThreadPool().execute(t));
       }
@@ -510,14 +507,6 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
       throw new CacheStorageException(ex);
     }
     clearLocalCache();
-    if (_waitFuture != null) {
-      try {
-        _waitFuture.get();
-      } catch (InterruptedException e) {
-      } catch (ExecutionException e) {
-        throw new CacheStorageException(e);
-      }
-    }
   }
 
   protected void updateShutdownWaitFuture(Future<?> f) {
@@ -530,21 +519,20 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
     }
   }
 
-  class StorageClearTask implements LimitedPooledExecutor.NeverRunInCallingTask<Future<Void>> {
+  class StorageClearTask implements LimitedPooledExecutor.NeverRunInCallingTask<Void> {
 
     ClosableConcurrentHashEntryIterator<Entry> allLocalEntries;
     StorageAdapter storage;
 
     @Override
-    public Future<Void> call() {
+    public Void call() {
       try {
         if (allLocalEntries != null) {
           waitForEntryOperations();
         }
-        Future<Void> f = storage.startClearingAndReconnection();
-        updateShutdownWaitFuture(f);
+        storage.clearAndReconnect();
         storage = null;
-        return f;
+        return null;
       } catch (Throwable t) {
         if (allLocalEntries != null) {
           allLocalEntries.close();

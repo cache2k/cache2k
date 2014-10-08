@@ -50,6 +50,7 @@ public class ArrayHeapTimerQueue extends TimerService {
   final static int MAXIMUM_ADDS_UNTIL_PURGE = 54321;
   final static int LAPSE_RESOLUTION = 10;
   final static int LAPSE_SIZE = 50;
+  final static long KEEP_THREAD_WAITING_MILLIS = 17 * 1000;
 
   Log log;
 
@@ -225,8 +226,10 @@ public class ArrayHeapTimerQueue extends TimerService {
       cancelCount += inQueue.cancelCount;
       inQueue = outQueue = _purgeQ;
       addedWithoutPurge = 0;
-      startThread();
-      lock.notify();
+      if (inQueue.size > 0) {
+        startThread();
+        lock.notify();
+      }
       purgeCount++;
     }
   }
@@ -261,9 +264,14 @@ public class ArrayHeapTimerQueue extends TimerService {
           for (;;) {
             e = q.getNextNotCancelledMin();
             if (e == null) {
-              timer.thread = null;
-              timer.cancelCount += cancelCount;
-              return;
+              waitUntilTimeout(KEEP_THREAD_WAITING_MILLIS);
+              q = timer.outQueue;
+              e = q.getNextNotCancelledMin();
+              if ( e == null) {
+                timer.thread = null;
+                timer.cancelCount += cancelCount;
+                return;
+              }
             }
             _fires = false;
             _fireTime = e.getTime();
