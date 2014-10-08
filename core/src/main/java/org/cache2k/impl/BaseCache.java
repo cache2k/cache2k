@@ -63,7 +63,7 @@ import java.util.Map;
 import java.util.Random;
 import java.util.Set;
 import java.util.Timer;
-import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Executor;
 import java.util.concurrent.Future;
 import java.util.concurrent.FutureTask;
 import java.util.concurrent.TimeUnit;
@@ -455,6 +455,13 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
         refreshPool = null;
       }
     }
+  }
+
+  /**
+   * Executor for evictoins / expiry from within timer callback. Never blocks.
+   */
+  private Executor getEvictionExecutor() {
+    return manager.getEvictionExecutor();
   }
 
   private boolean isNeedingTimer() {
@@ -1737,19 +1744,30 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
         if (mainHashCtrl.remove(mainHash, e)) {
           refreshHash = refreshHashCtrl.insert(refreshHash, e);
           if (e.hashCode != modifiedHash(e.key.hashCode())) {
-            expiredRemoveCnt++;
-            removeEntryFromHash(e);
+            Runnable r = new Runnable() {
+              @Override
+              public void run() {
+                synchronized (lock) {
+                  synchronized (e) {
+                    if (!e.isRemovedState()) {
+                      expiredRemoveCnt++;
+                      removeEntryFromHash(e);
+                    }
+                  }
+                }
+              }
+            };
+            getEvictionExecutor().execute(r);
             return;
           }
           Runnable r = new Runnable() {
             @Override
             public void run() {
+              synchronized (e) {
                 try {
-                  synchronized (e) {
-                    if (e.isRemovedFromReplacementList()) { return; }
-                    e.setGettingRefresh();
-                    fetch(e);
-                  }
+                  if (e.isRemovedFromReplacementList()) { return; }
+                  e.setGettingRefresh();
+                  fetch(e);
                 } catch (Throwable ex) {
                   synchronized (lock) {
                     internalExceptionCnt++;
@@ -1757,6 +1775,7 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
                   getLog().warn("Refresh exception", ex);
                   expireEntry(e);
                 }
+              }
              }
           };
           boolean _submitOkay = refreshPool.submit(r);
@@ -1769,20 +1788,39 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
       }
 
     } else {
-      long t = System.currentTimeMillis();
-      if (t < e.nextRefreshTime && e.nextRefreshTime > Entry.EXPIRY_TIME_MIN) {
-        synchronized (e) {
-          t = System.currentTimeMillis();
-          if (t < e.nextRefreshTime && e.nextRefreshTime > Entry.EXPIRY_TIME_MIN) {
-            e.nextRefreshTime = -e.nextRefreshTime;
-            return;
+      if (_executionTime < e.nextRefreshTime && e.nextRefreshTime > Entry.EXPIRY_TIME_MIN) {
+        Runnable r = new Runnable() {
+          @Override
+          public void run() {
+            synchronized (e) {
+              if (!e.isRemovedState()) {
+                long t = System.currentTimeMillis();
+                if (t < e.nextRefreshTime && e.nextRefreshTime > Entry.EXPIRY_TIME_MIN) {
+                  e.nextRefreshTime = -e.nextRefreshTime;
+                  return;
+                } else if (t >= e.nextRefreshTime) {
+                  expireEntry(e);
+                }
+              }
+            }
           }
-          expireEntry(e);
-          return;
-        }
+        };
+        getEvictionExecutor().execute(r);
+        return;
       }
     }
-    expireEntry(e);
+    Runnable r = new Runnable() {
+      @Override
+      public void run() {
+        synchronized (e) {
+          long t = System.currentTimeMillis();
+          if (t >= e.nextRefreshTime) {
+            expireEntry(e);
+          }
+        }
+      }
+    };
+    getEvictionExecutor().execute(r);
   }
 
   protected void expireEntry(E e) {

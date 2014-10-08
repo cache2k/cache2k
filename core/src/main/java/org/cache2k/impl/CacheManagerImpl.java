@@ -38,9 +38,14 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
+import java.util.concurrent.ThreadFactory;
+import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.jar.Manifest;
 
 /**
@@ -62,6 +67,8 @@ public class CacheManagerImpl extends CacheManager {
   private Set<Cache> caches = new HashSet<>();
   private int disambiguationCounter = 1;
   private GlobalPooledExecutor threadPool;
+  private AtomicInteger evictionThreadCount = new AtomicInteger();
+  private ExecutorService evictionExecutor;
 
   public CacheManagerImpl() {
     name = getDefaultName();
@@ -285,19 +292,46 @@ public class CacheManagerImpl extends CacheManager {
     return caches == null;
   }
 
+  private String getThreadNamePrefix() {
+    if (!DEFAULT_MANAGER_NAME.equals(name)) {
+      return "cache2k:" + name + ":";
+    }
+    return "cache2k-";
+  }
+
   /**
    * Lazy creation of thread pool, usable for all caches managed by the cache
    * manager.
    */
   public synchronized GlobalPooledExecutor getThreadPool() {
     if (threadPool == null) {
-      String _prefix = "cache2k-pool-";
-      if (!DEFAULT_MANAGER_NAME.equals(name)) {
-        _prefix = "cache2k:" + name + ":pool-";
-      }
-      threadPool = new GlobalPooledExecutor(_prefix);
+      threadPool = new GlobalPooledExecutor(getThreadNamePrefix() + "pool-");
     }
     return threadPool;
+  }
+
+  public ExecutorService createEvictionExecutor() {
+    ThreadFactory _threadFactory = new ThreadFactory() {
+      @Override
+      public Thread newThread(Runnable r) {
+        String _name =
+            getThreadNamePrefix() + "eviction-" + evictionThreadCount.incrementAndGet();
+        Thread t = new Thread(r, _name);
+        t.setDaemon(true);
+        return t;
+      }
+    };
+    return
+      new ThreadPoolExecutor(
+        0, Integer.MAX_VALUE, 17, TimeUnit.SECONDS,
+        new ArrayBlockingQueue<Runnable>(Runtime.getRuntime().availableProcessors() * 2), _threadFactory);
+  }
+
+  public ExecutorService getEvictionExecutor() {
+    if (evictionExecutor == null) {
+      evictionExecutor = createEvictionExecutor();
+    }
+    return evictionExecutor;
   }
 
   /**
