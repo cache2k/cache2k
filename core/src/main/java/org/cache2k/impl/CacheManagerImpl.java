@@ -316,7 +316,7 @@ public class CacheManagerImpl extends CacheManager {
       public Thread newThread(Runnable r) {
         String _name =
             getThreadNamePrefix() + "eviction-" + evictionThreadCount.incrementAndGet();
-        Thread t = new Thread(r, _name);
+        Thread t = new Thread(new ExceptionWrapper(r), _name);
         t.setDaemon(true);
         return t;
       }
@@ -325,6 +325,26 @@ public class CacheManagerImpl extends CacheManager {
       new ThreadPoolExecutor(
         0, Integer.MAX_VALUE, 17, TimeUnit.SECONDS,
         new ArrayBlockingQueue<Runnable>(Runtime.getRuntime().availableProcessors() * 2), _threadFactory);
+  }
+
+  class ExceptionWrapper implements Runnable {
+
+    Runnable runnable;
+
+    ExceptionWrapper(Runnable runnable) {
+      this.runnable = runnable;
+    }
+
+    @Override
+    public void run() {
+      try {
+        runnable.run();
+      } catch (CacheClosedException ignore) {
+       } catch (Throwable t) {
+        log.warn("Exception in thread \"" + Thread.currentThread().getName() + "\"", t);
+      }
+    }
+
   }
 
   public ExecutorService getEvictionExecutor() {

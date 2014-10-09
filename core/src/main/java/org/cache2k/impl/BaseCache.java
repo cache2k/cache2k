@@ -494,6 +494,7 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
     StorageClearTask t = new StorageClearTask();
     boolean _untouchedHeapCache;
     synchronized (lock) {
+      checkClosed();
       _untouchedHeapCache = touchedTime == clearedTime && getLocalSize() == 0;
       if (!storage.checkStorageStillDisconnectedForClear()) {
         t.allLocalEntries = iterateAllLocalEntries();
@@ -560,7 +561,7 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
   }
 
   protected void checkClosed() {
-    if (shutdownInitiated) {
+    if (isClosed()) {
       throw new CacheClosedException();
     }
   }
@@ -655,6 +656,10 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
     if (storage != null) {
       storage.flush();
     }
+  }
+
+  protected boolean isClosed() {
+    return shutdownInitiated;
   }
 
   /**
@@ -1666,6 +1671,7 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
 
   protected final void insert(E e, T v, long t0, long t, boolean _updateStatistics, long _nextRefreshTime) {
     synchronized (lock) {
+      checkClosed();
       touchedTime = t;
 
       if (_updateStatistics) {
@@ -1735,6 +1741,7 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
     }
     if (refreshPool != null) {
       synchronized (lock) {
+        if (isClosed()) { return; }
         if (e.task == null) {
           return;
         }
@@ -1765,9 +1772,12 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
             public void run() {
               synchronized (e) {
                 try {
-                  if (e.isRemovedFromReplacementList()) { return; }
+                  if (e.isRemovedFromReplacementList()) {
+                    return;
+                  }
                   e.setGettingRefresh();
                   fetch(e);
+                } catch (CacheClosedException ignore) {
                 } catch (Throwable ex) {
                   synchronized (lock) {
                     internalExceptionCnt++;
@@ -1833,6 +1843,7 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
         storage.expire(e);
       }
       synchronized (lock) {
+        checkClosed();
         if (hasKeepAfterExpired()) {
           expiredKeptCnt++;
         } else {
