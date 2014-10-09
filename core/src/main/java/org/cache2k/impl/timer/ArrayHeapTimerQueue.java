@@ -253,10 +253,11 @@ public class ArrayHeapTimerQueue extends TimerService {
       }
     }
 
-    void loop() {
+    int loop() {
       long _fireTime;
       long t = System.currentTimeMillis();
       BaseTimerTask e;
+      int fireCnt = 0;
       for (;;) {
         boolean _fires;
         synchronized (timer.lock) {
@@ -264,14 +265,7 @@ public class ArrayHeapTimerQueue extends TimerService {
           for (;;) {
             e = q.getNextNotCancelledMin();
             if (e == null) {
-              waitUntilTimeout(KEEP_THREAD_WAITING_MILLIS);
-              q = timer.outQueue;
-              e = q.getNextNotCancelledMin();
-              if ( e == null) {
-                timer.thread = null;
-                timer.cancelCount += cancelCount;
-                return;
-              }
+              return fireCnt;
             }
             _fires = false;
             _fireTime = e.getTime();
@@ -287,6 +281,7 @@ public class ArrayHeapTimerQueue extends TimerService {
               boolean _fireWithinLock = _next != null && _fireTime == _next.getTime();
               if (_fireWithinLock) {
                 fireTask(e);
+                fireCnt++;
                 continue;
               }
               _fires = true;
@@ -296,6 +291,7 @@ public class ArrayHeapTimerQueue extends TimerService {
         } // synchronized
         if (_fires) {
           fireTask(e);
+          fireCnt++;
         } else {
           long _waitTime = _fireTime - t;
           waitUntilTimeout(_waitTime);
@@ -329,7 +325,11 @@ public class ArrayHeapTimerQueue extends TimerService {
     @Override
     public void run() {
       try {
-        loop();
+        while (loop() > 0) {
+          waitUntilTimeout(KEEP_THREAD_WAITING_MILLIS);
+        }
+        timer.thread = null;
+        timer.cancelCount += cancelCount;
       } catch (Throwable t) {
         t.printStackTrace();
       }
