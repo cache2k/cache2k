@@ -1509,7 +1509,7 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
    * the item is evicted very fast.
    */
   private void checkForHashCodeChange(Entry e) {
-    if (modifiedHash(e.key.hashCode()) != e.hashCode) {
+    if (modifiedHash(e.key.hashCode()) != e.hashCode && !e.isStale()) {
       if (keyMutationCount ==  0) {
         getLog().warn("Key mismatch! Key hashcode changed! keyClass=" + e.key.getClass().getName());
         String s;
@@ -2902,9 +2902,16 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
     }
   }
 
-  static class InitialValueInEntryNeverReturned { }
+  static class InitialValueInEntryNeverReturned extends Object { }
 
   final static InitialValueInEntryNeverReturned INITIAL_VALUE = new InitialValueInEntryNeverReturned();
+
+  static class StaleMarker {
+    @Override
+    public boolean equals(Object o) { return false; }
+  }
+
+  final static StaleMarker STALE_MARKER_KEY = new StaleMarker();
 
   public static class Entry<E extends Entry, K, T>
     implements MutableCacheEntry<K,T>, StorageEntry {
@@ -2988,7 +2995,7 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
 
     /** Check that this entry is removed from the list, may be used in assertions. */
     public boolean isRemovedFromReplacementList() {
-      return next == null;
+      return isStale () || next == null;
     }
 
     public E shortCircuit() {
@@ -3110,6 +3117,14 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
 
     public boolean needsTimeCheck() {
       return nextRefreshTime < 0;
+    }
+
+    public boolean isStale() {
+      return STALE_MARKER_KEY == key;
+    }
+
+    public void setStale() {
+      key = (K) STALE_MARKER_KEY;
     }
 
     public boolean hasException() {

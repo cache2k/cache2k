@@ -102,7 +102,7 @@ public class ClockProPlusCache<K, T> extends LockFreeCache<ClockProPlusCache.Ent
   @Override
   protected void removeEntryFromReplacementList(Entry e) {
     staleSize++;
-    e.setStale(true);
+    e.setStale();
     insertCopyIntoGhosts(e);
   }
 
@@ -367,35 +367,10 @@ public class ClockProPlusCache<K, T> extends LockFreeCache<ClockProPlusCache.Ent
            ", hot24hCnt=" + hot24hCnt;
   }
 
-  static class StaleMarker { }
-
-  static final Object STALE_MARKER = new StaleMarker();
-
   static class Entry<K, T> extends BaseCache.Entry<Entry, K, T> {
 
     int hitCnt;
     boolean hot;
-
-    @Override
-    public final boolean isRemovedFromReplacementList() {
-      return isStale() || super.isRemovedFromReplacementList();
-    }
-
-    public final boolean isStale() {
-      return key == STALE_MARKER;
-    }
-
-    /**
-     * We use the key to mark the entry as stale, this means it is removed
-     * from the list, but still in the list. We cannot use the value
-     * or the time entries for this mark, since a fetch may be going on in parallel
-     * and than reset these again.
-     */
-    public void setStale(boolean v) {
-      if (v) {
-        key = (K) STALE_MARKER;
-      }
-    }
 
   }
 

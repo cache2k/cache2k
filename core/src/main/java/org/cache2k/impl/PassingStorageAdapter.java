@@ -768,7 +768,7 @@ public class PassingStorageAdapter extends StorageAdapter {
 
   public Future<Void> shutdown() {
     if (storage instanceof ClearStorageBuffer) {
-      throw new CacheInternalError("Clear is supposed to be in shutdown wait task queue");
+      throw new CacheInternalError("Clear is supposed to be in shutdown wait task queue, so shutdown waits for it.");
     }
     Callable<Void> _closeTaskChain = new Callable<Void>() {
       @Override
