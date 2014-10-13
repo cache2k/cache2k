@@ -121,6 +121,8 @@ public class CacheManagerImpl extends CacheManager {
     }
   }
 
+  static class StackTrace extends Exception { }
+
   /* called by builder */
   public synchronized void newCache(Cache c) {
     BaseCache bc = (BaseCache) c;
@@ -130,7 +132,7 @@ public class CacheManagerImpl extends CacheManager {
       _name = _requestedName + "~" + Integer.toString(disambiguationCounter++, 36);
     }
     if (!_requestedName.equals(_name)) {
-      log.warn("duplicate name, disambiguating: " + _requestedName + " -> " + _name);
+      log.warn("duplicate name, disambiguating: " + _requestedName + " -> " + _name, new StackTrace());
       bc.setName(_name);
     }
     checkName(_name);
