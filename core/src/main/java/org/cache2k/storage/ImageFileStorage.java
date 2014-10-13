@@ -115,11 +115,11 @@ public class ImageFileStorage
    * entries will be removed that are newly written. Each commit also
    * partially rewrites some of the entries here to make the file redundant.
    */
-  HashMap<Object, HeapEntry> entriesInEarliestIndex;
+  HashMap<Object, HeapEntry> entriesInEarlierIndex;
 
   /**
    * All entries committed to the current index file. Updated within commit phase.
-   * This is used to fill up {@link #entriesInEarliestIndex} when starting a
+   * This is used to fill up {@link #entriesInEarlierIndex} when starting a
    * new index file. committedEntries is subset of values.
    */
   HashMap<Object, HeapEntry> committedEntries;
@@ -205,7 +205,7 @@ public class ImageFileStorage
       deletedBufferEntries = new HashMap<>();
       justUnusedSlots = new SlotBucket();
       slotsToFreeQueue = new ArrayDeque<>();
-      entriesInEarliestIndex = new HashMap<>();
+      entriesInEarlierIndex = createEarlierIndexEntryHash();
       committedEntries = new HashMap<>();
       BufferDescriptor d = readLatestIntactBufferDescriptor();
       if (d != null) {
@@ -292,13 +292,20 @@ public class ImageFileStorage
    * called, then remove all files from the filesystem.
    */
   private void removeFiles() {
+    boolean _ignore;
     for (int i = 0; i < DESCRIPTOR_COUNT; i++) {
-      new File(fileName + "-" + i + ".dsc").delete();
+      _ignore = new File(fileName + "-" + i + ".dsc").delete();
     }
-    for (int i = descriptor.lastIndexFile; i >= 0; i--) {
-      new File(fileName + "-" + i + ".idx").delete();
-    }
-    new File(fileName + ".img").delete();
+    int idx = descriptor.lastIndexFile;
+    boolean _deleted;
+    do {
+      _deleted = new File(fileName + "-" + idx + ".idx").delete();
+      idx--;
+      if (idx <= 0) {
+        idx = tunable.highestIndexNumber;
+      }
+    } while (_deleted);
+    _ignore = new File(fileName + ".img").delete();
   }
 
   private void resetBufferFromFile() throws IOException {
@@ -630,6 +637,7 @@ public class ImageFileStorage
    */
   public void flush(FlushContext ctx, long now) throws IOException {
     synchronized (commitLock) {
+      byte _earliestIndexBefore = descriptor.earliestIndexFile;
       if (isClosed()) {
         throw new IllegalStateException("storage closed");
       }
@@ -659,6 +667,10 @@ public class ImageFileStorage
       }
       writeDescriptor();
       _worker.freeSpace();
+      if (_earliestIndexBefore >= 0 &&
+          _earliestIndexBefore != descriptor.earliestIndexFile) {
+        boolean _ignore = new File(generateIndexFileName(_earliestIndexBefore)).delete();
+      }
     }
     truncateFile();
   }
@@ -684,7 +696,7 @@ public class ImageFileStorage
     HashMap<Object, HeapEntry> deletedEntries;
     HashMap<Object, HeapEntry> rewriteEntries = new HashMap<>();
     SlotBucket workerFreeSlots;
-    int indexFileNo;
+    byte indexFileNo;
     long position;
 
     boolean forceNewFile = false;
@@ -694,7 +706,10 @@ public class ImageFileStorage
       checkForEntriesToRewrite();
       checkStartNewIndex();
       if (forceNewFile) {
-        entriesInEarliestIndex = committedEntries;
+        for (HeapEntry e : committedEntries.values()) {
+          e.indexFileNumber = indexFileNo;
+          entriesInEarlierIndex.put(e.key, e);
+        }
         committedEntries = new HashMap<>();
         descriptor.indexEntries = 0;
       }
@@ -707,10 +722,17 @@ public class ImageFileStorage
         }
       }
       updateCommittedEntries();
+      sortOut(entriesInEarlierIndex, committedEntries.keySet());
       descriptor.indexEntries += totalEntriesToWrite();
       descriptor.lastKeyIndexPosition = position;
-
       descriptor.lastIndexFile = indexFileNo;
+      Iterator<HeapEntry> it = entriesInEarlierIndex.values().iterator();
+      if (it.hasNext()) {
+        HeapEntry _earliestEntry = it.next();
+        descriptor.earliestIndexFile = _earliestEntry.indexFileNumber;
+      } else {
+        descriptor.earliestIndexFile = indexFileNo;
+      }
     }
 
     private int totalEntriesToWrite() {
@@ -741,7 +763,11 @@ public class ImageFileStorage
     void openFile() throws IOException {
       if (indexFileNo == -1 || forceNewFile) {
         position = 0;
-        indexFileNo++;
+        if (indexFileNo == tunable.highestIndexNumber) {
+          indexFileNo = 0;
+        } else {
+          indexFileNo++;
+        }
         String _name = generateIndexFileName(indexFileNo);
         randomAccessFile = new RandomAccessFile(_name, "rw");
         randomAccessFile.seek(0);
@@ -755,27 +781,28 @@ public class ImageFileStorage
     }
 
     /**
-     * Partially/fully rewrite the entries within {@link #entriesInEarliestIndex}
+     * Partially/fully rewrite the entries within {@link #entriesInEarlierIndex}
      * to be able to remove the earliest index file in the future.
      */
     private void checkForEntriesToRewrite() {
-      if (entriesInEarliestIndex.size() > 0) {
-        sortOut(entriesInEarliestIndex, newEntries.keySet());
-        sortOut(entriesInEarliestIndex, deletedEntries.keySet());
+      if (entriesInEarlierIndex.size() > 0) {
+        sortOut(entriesInEarlierIndex, newEntries.keySet());
+        sortOut(entriesInEarlierIndex, deletedEntries.keySet());
+        System.err.println(entriesInEarlierIndex);
         int _writeCnt = newEntries.size() + deletedEntries.size();
-        if (_writeCnt * tunable.rewriteCompleteFactor >= entriesInEarliestIndex.size()) {
-          rewriteEntries = entriesInEarliestIndex;
-          entriesInEarliestIndex = new HashMap<>();
+        if (_writeCnt * tunable.rewriteCompleteFactor >= entriesInEarlierIndex.size()) {
+          rewriteEntries = entriesInEarlierIndex;
+          entriesInEarlierIndex = createEarlierIndexEntryHash();
         } else {
           rewriteEntries = new HashMap<>();
           int cnt = _writeCnt * tunable.rewritePartialFactor;
-          Iterator<HeapEntry> it = entriesInEarliestIndex.values().iterator();
+          Iterator<HeapEntry> it = entriesInEarlierIndex.values().iterator();
           while (cnt > 0 && it.hasNext()) {
             HeapEntry e = it.next();
             rewriteEntries.put(e.key, e);
             cnt--;
           }
-          sortOut(entriesInEarliestIndex, rewriteEntries.keySet());
+          sortOut(entriesInEarlierIndex, rewriteEntries.keySet());
         }
       }
     }
@@ -821,7 +848,11 @@ public class ImageFileStorage
 
   }
 
-  String generateIndexFileName(int _fileNo) {
+  private LinkedHashMap<Object, HeapEntry> createEarlierIndexEntryHash() {
+    return new LinkedHashMap<>(8, 0.75F, true);
+  }
+
+  String generateIndexFileName(byte _fileNo) {
     return fileName + "-" + _fileNo + ".idx";
   }
 
@@ -845,7 +876,6 @@ public class ImageFileStorage
     synchronized (valuesLock) {
       _allEntries = new ArrayList<>(values.size());
       for (HeapEntry e : values.values()) {
-
         if (f == null || f.shouldInclude(e.key)) {
           _allEntries.add(e);
         }
@@ -938,19 +968,26 @@ public class ImageFileStorage
 
   class KeyIndexReader {
 
-    int currentlyReadingIndexFile = -1802;
+    byte currentlyReadingIndexFile = -1;
     RandomAccessFile randomAccessFile;
     ByteBuffer indexBuffer;
     Set<Object> readKeys = new HashSet<>();
 
     void readKeyIndex() throws IOException, ClassNotFoundException {
-      entriesInEarliestIndex = committedEntries = new HashMap<>();
-      int _fileNo = descriptor.lastIndexFile;
+      entriesInEarlierIndex = new LinkedHashMap<>();
+      committedEntries = new HashMap<>();
+      byte _fileNo = descriptor.lastIndexFile;
       long _keyPosition = descriptor.lastKeyIndexPosition;
       for (;;) {
         IndexChunkDescriptor d = readChunk(_fileNo, _keyPosition);
         if (readCompleted()) {
           break;
+        }
+        if (_fileNo != d.lastIndexFile) {
+          for (HeapEntry e : committedEntries.values()) {
+            e.indexFileNumber = _fileNo;
+            entriesInEarlierIndex.put(e.key, e);
+          }
         }
         _fileNo = d.lastIndexFile;
         _keyPosition = d.lastKeyIndexPosition;
@@ -958,10 +995,9 @@ public class ImageFileStorage
       if (randomAccessFile != null) {
         randomAccessFile.close();
       }
-      if (entriesInEarliestIndex == committedEntries) {
-        entriesInEarliestIndex = new HashMap<>();
+      if (entriesInEarlierIndex == committedEntries) {
+        entriesInEarlierIndex = new HashMap<>();
       }
-      deleteEarlierIndex(_fileNo);
     }
 
     /**
@@ -974,17 +1010,17 @@ public class ImageFileStorage
         values.size() >= entryCapacity;
     }
 
-    void openFile(int _fileNo) throws IOException {
+    void openFile(byte _fileNo) throws IOException {
       if (randomAccessFile != null) {
         randomAccessFile.close();
       }
-      entriesInEarliestIndex = new HashMap<>();
+      entriesInEarlierIndex = new HashMap<>();
       randomAccessFile = new RandomAccessFile(generateIndexFileName(_fileNo), "r");
       indexBuffer = randomAccessFile.getChannel().map(FileChannel.MapMode.READ_ONLY, 0, randomAccessFile.length());
       currentlyReadingIndexFile = _fileNo;
     }
 
-    IndexChunkDescriptor readChunk(int _fileNo, long _position)
+    IndexChunkDescriptor readChunk(byte _fileNo, long _position)
       throws IOException, ClassNotFoundException {
       if (currentlyReadingIndexFile != _fileNo) {
         openFile(_fileNo);
@@ -998,8 +1034,9 @@ public class ImageFileStorage
       do {
         HeapEntry e = new HeapEntry(in);
         if (!readKeys.contains(e.key)) {
+          e.indexFileNumber = _fileNo;
           readKeys.add(e.key);
-          entriesInEarliestIndex.put(e.key, e);
+          entriesInEarlierIndex.put(e.key, e);
           if (!e.isDeleted()) {
             values.put(e.key, e);
           }
@@ -1016,26 +1053,13 @@ public class ImageFileStorage
       return d;
     }
 
-    /**
-     * Remove an earlier index during the read phase. If an index read
-     * fails, we may have the option to use an older version.
-     */
-    void deleteEarlierIndex(int _fileNo) {
-      if (_fileNo > 0) {
-        String n = generateIndexFileName(_fileNo - 1);
-        File f = new File(n);
-        if (f.exists()) {
-          f.delete();
-        }
-      }
-    }
-
   }
 
   static class BufferDescriptor implements Serializable {
 
     boolean clean = false;
-    int lastIndexFile = -1;
+    byte lastIndexFile = -1;
+    byte earliestIndexFile = -1;
     long lastKeyIndexPosition = -1;
     /** Count of entries in the last index */
     int indexEntries = 0;
@@ -1059,6 +1083,7 @@ public class ImageFileStorage
       return "BufferDescriptor{" +
         "clean=" + clean +
         ", lastIndexFile=" + lastIndexFile +
+        ", earliestIndexFile=" + earliestIndexFile +
         ", lastKeyIndexPosition=" + lastKeyIndexPosition +
         ", elementCount=" + entryCount +
         ", freeSpace=" + freeSpace +
@@ -1073,18 +1098,18 @@ public class ImageFileStorage
   }
 
   static class IndexChunkDescriptor {
-    int lastIndexFile;
+    byte lastIndexFile;
     long lastKeyIndexPosition;
     int elementCount;
 
     void read(ByteBuffer buf) {
-      lastIndexFile = buf.getInt();
+      lastIndexFile = buf.get();
       lastKeyIndexPosition = buf.getLong();
       elementCount = buf.getInt();
     }
 
     void write(DataOutput buf) throws IOException {
-      buf.writeInt(lastIndexFile);
+      buf.write(lastIndexFile);
       buf.writeLong(lastKeyIndexPosition);
       buf.writeInt(elementCount);
     }
@@ -1099,6 +1124,7 @@ public class ImageFileStorage
     long position;
     int size; // size or -1 if deleted
     long entryExpireTime;
+    byte indexFileNumber = -1;
 
     HeapEntry(ObjectInput in) throws IOException, ClassNotFoundException {
       position = in.readLong();
@@ -1107,11 +1133,11 @@ public class ImageFileStorage
       entryExpireTime = in.readLong();
     }
 
-    HeapEntry(Object key, long position, int size, long entryExpireTime) {
-      this.key = key;
-      this.position = position;
-      this.size = size;
-      this.entryExpireTime = entryExpireTime;
+    HeapEntry(Object _key, long _position, int _size, long _entryExpireTime) {
+      key = _key;
+      position = _position;
+      size = _size;
+      entryExpireTime = _entryExpireTime;
     }
 
     void write(ObjectOutput out) throws IOException {
@@ -1382,6 +1408,8 @@ public class ImageFileStorage
     public int rewriteCompleteFactor = 3;
 
     public int rewritePartialFactor = 2;
+
+    public byte highestIndexNumber = 127;
 
     /**
      * The storage is expanded by the given increment, if set to 0 it
