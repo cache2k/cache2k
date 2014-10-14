@@ -43,7 +43,11 @@ public class StorageConfiguration<EX> {
 
   boolean passivation = false;
 
+  boolean readOnly = false;
+
   String location;
+
+  String storageName;
 
   int entryCapacity = -1;
 
@@ -154,6 +158,22 @@ public class StorageConfiguration<EX> {
     this.flushOnClose = f;
   }
 
+  public String getStorageName() {
+    return storageName;
+  }
+
+  public void setStorageName(String v) {
+    storageName = v;
+  }
+
+  public boolean isReadOnly() {
+    return readOnly;
+  }
+
+  public void setReadOnly(boolean readOnly) {
+    this.readOnly = readOnly;
+  }
+
   public static class Builder<K, T, OPT_EXTRA_CONFIG>
     extends BaseAnyBuilder<K, T, StorageConfiguration> {
 
@@ -170,6 +190,11 @@ public class StorageConfiguration<EX> {
       return this;
     }
 
+    public Builder<K, T, OPT_EXTRA_CONFIG> reliable(boolean f) {
+      config.reliable = f;
+      return this;
+    }
+
     public Builder<K, T, OPT_EXTRA_CONFIG> purgeOnStartup(boolean f) {
       config.purgeOnStartup = f;
       return this;
@@ -177,6 +202,11 @@ public class StorageConfiguration<EX> {
 
     public Builder<K, T, OPT_EXTRA_CONFIG> flushOnClose(boolean f) {
       config.flushOnClose = f;
+      return this;
+    }
+
+    public Builder<K, T, OPT_EXTRA_CONFIG> readOnly(boolean f) {
+      config.readOnly = f;
       return this;
     }
 
@@ -197,6 +227,11 @@ public class StorageConfiguration<EX> {
 
     public Builder<K, T, OPT_EXTRA_CONFIG> syncInterval(int v, TimeUnit u) {
       config.syncInterval = (int) u.toMillis(v);
+      return this;
+    }
+
+    public Builder<K, T, OPT_EXTRA_CONFIG> storageName(String s) {
+      config.storageName = s;
       return this;
     }
 

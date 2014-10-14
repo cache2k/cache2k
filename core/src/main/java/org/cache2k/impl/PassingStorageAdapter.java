@@ -45,6 +45,7 @@ import org.cache2k.impl.util.TunableConstants;
 import org.cache2k.impl.util.TunableFactory;
 
 import javax.annotation.Nonnull;
+import java.io.NotSerializableException;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Properties;
@@ -112,6 +113,7 @@ public class PassingStorageAdapter extends StorageAdapter {
       executor = Executors.newCachedThreadPool();
     }
     log = Log.getLog(Cache.class.getName() + ".storage/" + cache.getCompleteName());
+    context.log = log;
   }
 
   /**
@@ -164,21 +166,29 @@ public class PassingStorageAdapter extends StorageAdapter {
       storage.put(e);
       checkStartFlushTimer();
     } catch (Exception ex) {
-      if (config.isReliable()) {
+      if (config.isReliable() || ex instanceof NotSerializableException) {
         disableAndThrow("exception in storage.put()", ex);
       } else {
-        errorCount++;
+        storageUnreliableError(ex);
         try {
           if (!storage.contains(e.getKey())) {
             return;
           }
           storage.remove(e.getKey());
+          checkStartFlushTimer();
         } catch (Exception ex2) {
           ex.addSuppressed(ex2);
           disableAndThrow("exception in storage.put(), mitigation failed, entry state unknown", ex);
         }
       }
     }
+  }
+
+  void storageUnreliableError(Throwable ex) {
+    if (errorCount == 0) {
+      log.warn("Storage exception, only first exception is logged, see error counter (reliable=false)", ex);
+    }
+    errorCount++;
   }
 
   public StorageEntry get(Object k) {
@@ -192,7 +202,7 @@ public class PassingStorageAdapter extends StorageAdapter {
     try {
       return storage.get(k);
     } catch (Exception ex) {
-      errorCount++;
+      storageUnreliableError(ex);
       if (config.isReliable()) {
         throw new CacheStorageException("cache get", ex);
       }
@@ -243,9 +253,7 @@ public class PassingStorageAdapter extends StorageAdapter {
           return;
         }
       } catch (Exception ex) {
-        errorCount++;
-        disable("storage.contains(), unknown state", ex);
-        throw new CacheStorageException("", ex);
+        disableAndThrow("storage.contains(), unknown state", ex);
       }
     }
     doPut(e);
@@ -924,7 +932,7 @@ public class PassingStorageAdapter extends StorageAdapter {
 
   public void disableAndThrow(String _logMessage, Throwable ex) {
     errorCount++;
-    disable(_logMessage, ex);
+    disable(ex);
     rethrow(_logMessage, ex);
   }
 
@@ -945,7 +953,7 @@ public class PassingStorageAdapter extends StorageAdapter {
         }
         try {
           _storage.close();
-        } catch (Exception _ignore) {
+        } catch (Throwable _ignore) {
         }
 
         storage = null;
@@ -992,6 +1000,7 @@ public class PassingStorageAdapter extends StorageAdapter {
 
   static class StorageContext implements CacheStorageContext {
 
+    Log log;
     BaseCache cache;
     Class<?> keyType;
     Class<?> valueType;
@@ -1028,6 +1037,11 @@ public class PassingStorageAdapter extends StorageAdapter {
     @Override
     public MarshallerFactory getMarshallerFactory() {
       return Marshallers.getInstance();
+    }
+
+    @Override
+    public Log getLog() {
+      return log;
     }
 
     @Override

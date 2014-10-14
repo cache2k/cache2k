@@ -95,14 +95,28 @@ public class FreeSpaceMap {
   /**
    * Used to rebuild the free space map. Entry has already got a position.
    * The used space will be removed of the free space map.
+   *
+   * @throws java.lang.IllegalArgumentException if space is not available
    */
   public void allocateSpace(long _position, int _size) {
     freeSpace -= _size;
+    if (freeSpace < 0) {
+      throw new IllegalArgumentException("no free space.");
+    }
     reusedFreeSlotUnderLock.position = _position;
     Slot s = pos2slot.floor(reusedFreeSlotUnderLock);
+    if (s == null) {
+      throw new IllegalArgumentException("no free space, no slot");
+    }
     pos2slot.remove(s);
     freeSet.remove(s);
+    if (s.size < _size) {
+      throw new IllegalArgumentException("no free space, small slot");
+    }
     if (s.position < _position) {
+      if (s.getNextPosition() < (_position + _size)) {
+        throw new IllegalArgumentException("no free space, premature slot end");
+      }
       Slot _preceding = new Slot();
       _preceding.position = s.position;
       _preceding.size = (int) (_position - s.position);

@@ -22,6 +22,8 @@ package org.cache2k.storage;
  * #L%
  */
 
+import org.cache2k.impl.util.Log;
+
 import java.util.Properties;
 
 /**
@@ -31,6 +33,8 @@ import java.util.Properties;
  * @author Jens Wilke; created: 2014-04-19
  */
 public interface CacheStorageContext {
+
+  Log getLog();
 
   Properties getProperties();
 

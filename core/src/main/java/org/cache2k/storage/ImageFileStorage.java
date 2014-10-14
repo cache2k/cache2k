@@ -27,6 +27,7 @@ import org.cache2k.impl.ExceptionWrapper;
 
 import java.io.DataOutput;
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.ObjectInput;
@@ -34,6 +35,7 @@ import java.io.ObjectOutput;
 import java.io.RandomAccessFile;
 import java.io.Serializable;
 import java.nio.ByteBuffer;
+import java.nio.ReadOnlyBufferException;
 import java.nio.channels.FileChannel;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
@@ -125,18 +127,19 @@ public class ImageFileStorage
   HashMap<Object, HeapEntry> committedEntries;
 
   /**
-   *
+   *protected by valuesLock
    */
   SlotBucket justUnusedSlots = new SlotBucket();
 
   /**
    * Protected by commitLock
    */
-  @GuardedBy("commitLock")
   Queue<SlotBucket> slotsToFreeQueue = new ArrayDeque<>();
 
   BufferDescriptor descriptor;
   String fileName;
+
+  boolean readOnly;
 
   /**
    * capacity is by default unlimited.
@@ -162,28 +165,40 @@ public class ImageFileStorage
     if (ctx.getProperties() != null) {
       tunable = TunableFactory.get(ctx.getProperties(), Tunable.class);
     }
+    if (cfg.getStorageName() != null) {
+      fileName = cfg.getStorageName();
+    }
     if (fileName == null) {
       fileName =
-        "cache2k-storage:" + ctx.getManagerName() + ":" + ctx.getCacheName();
-      if (cfg.getLocation() != null) {
-        File f = new File(cfg.getLocation());
-        if (!f.isDirectory()) {
-          throw new IllegalArgumentException("location is not directory");
-        }
-        fileName = f.getPath() + File.separator + fileName;
+          "cache2k-storage:" + ctx.getManagerName() + ":" + ctx.getCacheName();
+    }
+    if (cfg.getLocation() != null && cfg.getLocation().length() > 0) {
+      File f = new File(cfg.getLocation());
+      if (!f.isDirectory()) {
+        throw new IllegalArgumentException("location is not directory");
       }
+      fileName = f.getPath() + File.separator + fileName;
     }
     entryCapacity = cfg.getEntryCapacity();
+    readOnly = cfg.isReadOnly();
     reopen();
   }
 
   private void reopen() throws IOException {
     try {
-      file = new RandomAccessFile(fileName + ".img", "rw");
+      if (readOnly) {
+        file = null;
+        try {
+          file = new RandomAccessFile(fileName + ".img", "r");
+        } catch (FileNotFoundException ignore) {
+        }
+      } else {
+        file = new RandomAccessFile(fileName + ".img", "rw");
+      }
       resetBufferFromFile();
       synchronized (freeMap) {
         freeMap.init();
-        freeMap.freeSpace(0, (int) file.length());
+        freeMap.freeSpace(0, (int) getFileLength());
       }
       if (entryCapacity == Integer.MAX_VALUE) {
         values = new HashMap<>();
@@ -228,6 +243,13 @@ public class ImageFileStorage
     }
   }
 
+  private long getFileLength() throws IOException {
+    if (file == null) {
+      return 0;
+    }
+    return file.length();
+  }
+
   private void initializeFromDisk() throws IOException, ClassNotFoundException {
     MarshallerFactory _factory = context.getMarshallerFactory();
     keyMarshaller = _factory.createMarshaller(descriptor.keyMarshallerParameters);
@@ -265,18 +287,11 @@ public class ImageFileStorage
    */
   public void clear() throws IOException {
     long _counters = putCount + missCount + hitCount + removeCount + evictCount;
-
-    synchronized (commitLock) {
-      synchronized (valuesLock) {
-        synchronized (freeMap) {
-          if (file != null) {
-            fastClose();
-          }
-          removeFiles();
-          reopen();
-        }
-      }
+    if (file != null) {
+      fastClose();
     }
+    removeFiles();
+    reopen();
     try {
       Thread.sleep(7);
     } catch (InterruptedException ignore) {
@@ -309,10 +324,21 @@ public class ImageFileStorage
   }
 
   private void resetBufferFromFile() throws IOException {
-    buffer =
-      file.getChannel().map(
-        FileChannel.MapMode.READ_WRITE,
-        0, file.length());
+    if (!readOnly) {
+      buffer =
+          file.getChannel().map(
+              FileChannel.MapMode.READ_WRITE,
+              0, file.length());
+    } else {
+      if (file == null) {
+        buffer = ByteBuffer.allocate(0);
+      } else {
+        buffer =
+            file.getChannel().map(
+                FileChannel.MapMode.READ_ONLY,
+                0, file.length());
+      }
+    }
   }
 
   /**
@@ -527,6 +553,9 @@ public class ImageFileStorage
       if (s != null) {
         return s;
       }
+      if (readOnly) {
+        throw new ReadOnlyBufferException();
+      }
       long _length = file.length();
       s = freeMap.reserveSlotEndingAt(_length);
       if (s != null) {
@@ -655,6 +684,7 @@ public class ImageFileStorage
         newBufferEntries = new HashMap<>();
         deletedBufferEntries = new HashMap<>();
         descriptor.entryCount = getEntryCount();
+        descriptor.writtenTime = now;
       }
       file.getChannel().force(false);
       _worker.write();
@@ -671,8 +701,8 @@ public class ImageFileStorage
           _earliestIndexBefore != descriptor.earliestIndexFile) {
         boolean _ignore = new File(generateIndexFileName(_earliestIndexBefore)).delete();
       }
+      truncateFile();
     }
-    truncateFile();
   }
 
   public boolean isClosed() {
@@ -788,7 +818,6 @@ public class ImageFileStorage
       if (entriesInEarlierIndex.size() > 0) {
         sortOut(entriesInEarlierIndex, newEntries.keySet());
         sortOut(entriesInEarlierIndex, deletedEntries.keySet());
-        System.err.println(entriesInEarlierIndex);
         int _writeCnt = newEntries.size() + deletedEntries.size();
         if (_writeCnt * tunable.rewriteCompleteFactor >= entriesInEarlierIndex.size()) {
           rewriteEntries = entriesInEarlierIndex;
@@ -909,7 +938,7 @@ public class ImageFileStorage
   }
 
   /**
-   * Truncate the file, if there is a trailing free slot. There is no compactions.
+   * Truncate the file, if there is a trailing free slot. There are no compactions.
    * This is not perfect, but good enough. There should always some fluctuations
    * in the entries so at some time there will be free space at the end of the file.
    */
@@ -919,6 +948,7 @@ public class ImageFileStorage
       s = freeMap.getHighestSlot();
       if (s != null && s.getNextPosition() == file.length()) {
         freeMap.allocateSpace(s);
+        context.getLog().info("Truncating file from size " + file.length() + " to " + s.getPosition());
         file.setLength(s.getPosition());
         file.getChannel().force(true);
         resetBufferFromFile();
@@ -944,9 +974,11 @@ public class ImageFileStorage
     if (_freeMapCopy == null || _valuesCopy == null) {
       return "DirectFileStorage(fileName=" + fileName + ", UNKOWN)";
     }
-    long _spaceToFree = 0;
+    long _spaceToFree;
     synchronized (commitLock) {
-      _spaceToFree = calculateSpaceToFree();
+      synchronized (valuesLock) {
+        _spaceToFree = calculateSpaceToFree();
+      }
     }
     return "DirectFileStorage(fileName=" + fileName + ", " +
         "entryCapacity=" + entryCapacity + ", " +
