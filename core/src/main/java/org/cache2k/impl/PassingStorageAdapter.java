@@ -781,7 +781,7 @@ public class PassingStorageAdapter extends StorageAdapter {
     Callable<Void> _closeTaskChain = new Callable<Void>() {
       @Override
       public Void call() throws Exception {
-        if (config.isFlushOnClose()) {
+        if (config.isFlushOnClose() || config.isReliable()) {
           flush();
         } else {
           Future<Void> _previousFlush = lastExecutingFlush;

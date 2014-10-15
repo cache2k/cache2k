@@ -59,16 +59,32 @@ public class StorageConfiguration<EX> {
 
   boolean flushOnClose = false;
 
+  /**
+   * @see Builder#reliable
+   */
   public boolean isReliable() {
     return reliable;
   }
 
+  /**
+   * @see Builder#reliable
+   */
   public void setReliable(boolean reliable) {
     this.reliable = reliable;
   }
 
+  /**
+   * @see Builder#purgeOnStartup
+   */
   public void setPurgeOnStartup(boolean purgeOnStartup) {
     this.purgeOnStartup = purgeOnStartup;
+  }
+
+  /**
+   * @see Builder#purgeOnStartup
+   */
+  public boolean isPurgeOnStartup() {
+    return purgeOnStartup;
   }
 
   public void setIgnoreModifications(boolean ignoreModifications) {
@@ -101,10 +117,6 @@ public class StorageConfiguration<EX> {
 
   public void setSyncInterval(long v, TimeUnit u) {
     this.syncInterval = u.toMillis(v);
-  }
-
-  public boolean isPurgeOnStartup() {
-    return purgeOnStartup;
   }
 
   public boolean isIgnoreModifications() {
@@ -190,6 +202,10 @@ public class StorageConfiguration<EX> {
       return this;
     }
 
+    /**
+     * False means single storage errors may be ignored.
+     * True will propagate errors and flush the contents on shutdown.
+     */
     public Builder<K, T, OPT_EXTRA_CONFIG> reliable(boolean f) {
       config.reliable = f;
       return this;
@@ -200,11 +216,21 @@ public class StorageConfiguration<EX> {
       return this;
     }
 
+    /**
+     * Flush contents on close. The default is off.
+     *
+     * <p>All defaults will be towards a "cache alike" behavior, not a
+     * reliable storage behavior.
+     */
     public Builder<K, T, OPT_EXTRA_CONFIG> flushOnClose(boolean f) {
       config.flushOnClose = f;
       return this;
     }
 
+    /**
+     * Switch storage to read only mode, e.g. to examine the contents.
+     * This parameter is not supported by all storage implementations.
+     */
     public Builder<K, T, OPT_EXTRA_CONFIG> readOnly(boolean f) {
       config.readOnly = f;
       return this;
