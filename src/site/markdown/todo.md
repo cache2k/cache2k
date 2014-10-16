@@ -4,6 +4,8 @@ A poor mans issue tracker.
 
 ### Next
 
+  * Better formatting: msecs/fetch=833.2831546786805
+  * have totalFetchMillis and totalFetches as JMX value
   * storage entryExpireTime -> int
   * storage: statistics counters
   * file storage: more than one marshaller                                                                                                                                                                                                                                                                                                                                          
