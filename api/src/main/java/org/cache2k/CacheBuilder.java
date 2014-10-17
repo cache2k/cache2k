@@ -23,6 +23,7 @@ package org.cache2k;
  */
 
 import org.cache2k.spi.Cache2kCoreProvider;
+import org.cache2k.spi.SingleProviderResolver;
 
 import javax.annotation.Nullable;
 import java.util.Collection;
@@ -37,11 +38,11 @@ public abstract class CacheBuilder<K,T>
 
   static {
     try {
-      Cache2kCoreProvider _provider = Cache2kCoreProvider.get();
-      PROTOTYPE =
-        (CacheBuilder) _provider.getBuilderImplementation().newInstance();
+      Cache2kCoreProvider _provider =
+        SingleProviderResolver.getInstance().resolve(Cache2kCoreProvider.class);
+      PROTOTYPE = _provider.getBuilderImplementation().newInstance();
     } catch (Exception ex) {
-      throw new LinkageError("cache2k-core module missing, no builder prototype", ex);
+      throw new Error("cache2k-core module missing, no builder prototype", ex);
     }
   }
 

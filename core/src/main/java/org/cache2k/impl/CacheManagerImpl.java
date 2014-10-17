@@ -37,6 +37,7 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.ServiceLoader;
 import java.util.Set;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.ExecutionException;
@@ -54,11 +55,16 @@ import java.util.jar.Manifest;
 public class CacheManagerImpl extends CacheManager {
   
   static final String META_INF_MANIFEST_MF = "/META-INF/MANIFEST.MF";
-  static List<CacheLifeCycleListener> lifeCycleListeners = new ArrayList<CacheLifeCycleListener>();
-  static JmxSupport jmxSupport;
+  static List<CacheLifeCycleListener> cacheLifeCycleListeners = new ArrayList<CacheLifeCycleListener>();
+  static List<CacheManagerLifeCycleListener> cacheManagerLifeCycleListeners = new ArrayList<CacheManagerLifeCycleListener>();
 
   static {
-    lifeCycleListeners.add(jmxSupport = new JmxSupport());
+    for (CacheLifeCycleListener l : ServiceLoader.load(CacheLifeCycleListener.class)) {
+      cacheLifeCycleListeners.add(l);
+    }
+    for (CacheManagerLifeCycleListener l : ServiceLoader.load(CacheManagerLifeCycleListener.class)) {
+      cacheManagerLifeCycleListeners.add(l);
+    }
   }
 
   private Log log;
@@ -71,9 +77,12 @@ public class CacheManagerImpl extends CacheManager {
   private ExecutorService evictionExecutor;
 
   public CacheManagerImpl() {
-    name = getDefaultName();
+    this(getDefaultName());
+  }
+
+  public CacheManagerImpl(String _name) {
+    name = _name;
     log = Log.getLog(CacheManager.class.getName() + '.' + name);
-    jmxSupport.registerManager(this);
     String _buildNumber = null;
     String _version = null;
     try {
@@ -89,16 +98,19 @@ public class CacheManagerImpl extends CacheManager {
     sb.append(", version="); sb.append(_version);
     sb.append(", build="); sb.append(_buildNumber);
     log.info(sb.toString());
+    for (CacheManagerLifeCycleListener lc : cacheManagerLifeCycleListeners) {
+      lc.managerCreated(this);
+    }
   }
 
   private void sendCreatedEvent(Cache c) {
-    for (CacheLifeCycleListener e : lifeCycleListeners) {
+    for (CacheLifeCycleListener e : cacheLifeCycleListeners) {
       e.cacheCreated(this, c);
     }
   }
 
   private void sendDestroyedEvent(Cache c) {
-    for (CacheLifeCycleListener e : lifeCycleListeners) {
+    for (CacheLifeCycleListener e : cacheLifeCycleListeners) {
       e.cacheDestroyed(this, c);
     }
   }
@@ -236,8 +248,9 @@ public class CacheManagerImpl extends CacheManager {
         if (threadPool != null) {
             threadPool.close();
         }
-        jmxSupport.unregisterManager(this);
-        CacheManager.getInstance();
+        for (CacheManagerLifeCycleListener lc : cacheManagerLifeCycleListeners) {
+          lc.managerDestroyed(this);
+        }
         caches = null;
       } catch (Throwable t) {
         _suppressedExceptions.add(t);

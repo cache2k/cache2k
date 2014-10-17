@@ -1,8 +1,8 @@
-package org.cache2k.impl;
+package org.cache2k.ee.impl;
 
 /*
  * #%L
- * cache2k core package
+ * cache2k for enterprise environments
  * %%
  * Copyright (C) 2000 - 2014 headissue GmbH, Munich
  * %%
@@ -24,8 +24,11 @@ package org.cache2k.impl;
 
 import org.cache2k.Cache;
 import org.cache2k.CacheManager;
-import org.cache2k.impl.threading.GlobalPooledExecutor;
-import org.cache2k.jmx.CacheManagerMXBean;
+import org.cache2k.impl.BaseCache;
+import org.cache2k.impl.CacheLifeCycleListener;
+import org.cache2k.impl.CacheManagerImpl;
+import org.cache2k.impl.CacheManagerLifeCycleListener;
+import org.cache2k.impl.CacheUsageExcpetion;
 
 import javax.management.InstanceNotFoundException;
 import javax.management.MBeanServer;
@@ -33,9 +36,9 @@ import javax.management.ObjectName;
 import java.lang.management.ManagementFactory;
 
 /**
- * This
+ * Adds optional support for JMX.
  */
-public class JmxSupport implements CacheLifeCycleListener {
+public class JmxSupport implements CacheLifeCycleListener, CacheManagerLifeCycleListener {
 
   @Override
   public void cacheCreated(CacheManager cm, Cache c) {
@@ -43,8 +46,9 @@ public class JmxSupport implements CacheLifeCycleListener {
     if (c instanceof BaseCache) {
       String _name = standardName(cm, c);
       try {
-        mbs.registerMBean(((BaseCache) c).getMXBean(),
-          new ObjectName(_name));
+         mbs.registerMBean(
+           new CacheMXBeanImpl((BaseCache) c),
+           new ObjectName(_name));
       } catch (Exception e) {
         throw new CacheUsageExcpetion("Error registering JMX bean, name='" + _name + "'", e);
       }
@@ -65,17 +69,19 @@ public class JmxSupport implements CacheLifeCycleListener {
     }
   }
 
-  public void registerManager(CacheManager m) {
+  @Override
+  public void managerCreated(CacheManager m) {
     MBeanServer mbs = ManagementFactory.getPlatformMBeanServer();
     String _name = cacheManagerName(m);
     try {
-      mbs.registerMBean(new ManagerMBean((CacheManagerImpl) m),new ObjectName(_name));
+      mbs.registerMBean(new ManagerMXBeanImpl((CacheManagerImpl) m),new ObjectName(_name));
     } catch (Exception e) {
       throw new CacheUsageExcpetion("Error registering JMX bean, name='" + _name + "'", e);
     }
   }
 
-  public void unregisterManager(CacheManager m) {
+  @Override
+  public void managerDestroyed(CacheManager m) {
     MBeanServer mbs = ManagementFactory.getPlatformMBeanServer();
     String _name = cacheManagerName(m);
     try {
@@ -86,63 +92,16 @@ public class JmxSupport implements CacheLifeCycleListener {
     }
   }
 
-  public static class ManagerMBean implements CacheManagerMXBean {
-
-    CacheManagerImpl manager;
-
-    public ManagerMBean(CacheManagerImpl manager) {
-      this.manager = manager;
-    }
-
-    @Override
-    public int getAlert() {
-      int v = 0;
-      for (Cache c : manager) {
-        if (c instanceof BaseCache) {
-          v = Math.max(v, ((BaseCache) c).getInfo().getHealth());
-        }
-      }
-      GlobalPooledExecutor ex = manager.getThreadPoolEventually();
-      if (ex != null && ex.wasWarningLimitReached()) {
-        v = Math.max(v, 1);
-      }
-      return v;
-    }
-
-    @Override
-    public int getThreadsInPool() {
-      GlobalPooledExecutor ex = manager.getThreadPoolEventually();
-      if (ex != null) {
-        return ex.getThreadInUseCount();
-      }
-      return 0;
-    }
-
-    @Override
-    public int getPeakThreadsInPool() {
-      GlobalPooledExecutor ex = manager.getThreadPoolEventually();
-      if (ex != null) {
-        return ex.getPeakThreadCount();
-      }
-      return 0;
-    }
-
-    @Override
-    public void clear() {
-      manager.clear();
-    }
-  }
-
   private static String cacheManagerName(CacheManager cm) {
     return
-      "com.cache2k" + ":" +
+      "org.cache2k" + ":" +
       "type=CacheManager" +
       ",name=" + cm.getName();
   }
 
   private static String standardName(CacheManager cm, Cache c) {
     return
-      "com.cache2k" + ":" +
+      "org.cache2k" + ":" +
       "type=Cache" +
       ",manager=" + cm.getName() +
       ",name=" + c.getName();

@@ -22,22 +22,17 @@ package org.cache2k.impl;
  * #L%
  */
 
-import org.cache2k.spi.Cache2kCoreProvider;
-import org.cache2k.storage.ImageFileStorage;
+import org.cache2k.CacheManager;
 
 /**
- * @author Jens Wilke; created: 2014-04-20
+ * Service provider interface to hook in manager extensions.
+ *
+ * @author Jens Wilke; created: 2014-10-09
  */
-public class Cache2kCoreProviderImpl extends Cache2kCoreProvider {
+public interface CacheManagerLifeCycleListener {
 
-  @Override
-  public Class<CacheBuilderImpl> getBuilderImplementation() {
-    return CacheBuilderImpl.class;
-  }
+  void managerCreated(CacheManager m);
 
-  @Override
-  public Class<?> getDefaultPersistenceStoreImplementation() {
-    return ImageFileStorage.class;
-  }
+  void managerDestroyed(CacheManager m);
 
 }

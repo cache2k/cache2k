@@ -78,8 +78,7 @@ public abstract class Log {
       };
       getLog(Log.class.getName()).debug("New instance, using: " + logFactory);
       return getLog(s);
-    } catch (Exception ex) {
-      ex.printStackTrace();
+    } catch (NoClassDefFoundError ignore) {
     }
     logFactory = new LogFactory() {
       @Override

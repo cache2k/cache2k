@@ -1,8 +1,8 @@
-package org.cache2k.impl;
+package org.cache2k.spi;
 
 /*
  * #%L
- * cache2k core package
+ * cache2k API only package
  * %%
  * Copyright (C) 2000 - 2014 headissue GmbH, Munich
  * %%
@@ -22,22 +22,15 @@ package org.cache2k.impl;
  * #L%
  */
 
-import org.cache2k.spi.Cache2kCoreProvider;
-import org.cache2k.storage.ImageFileStorage;
-
 /**
- * @author Jens Wilke; created: 2014-04-20
+ * Interface for a generic cache2k extension. The extension
+ * {@link #register()} gets called before the first cache manager
+ * is constructed.
+ *
+ * @author Jens Wilke; created: 2014-10-10
  */
-public class Cache2kCoreProviderImpl extends Cache2kCoreProvider {
+public interface Cache2kExtensionProvider {
 
-  @Override
-  public Class<CacheBuilderImpl> getBuilderImplementation() {
-    return CacheBuilderImpl.class;
-  }
-
-  @Override
-  public Class<?> getDefaultPersistenceStoreImplementation() {
-    return ImageFileStorage.class;
-  }
+  void register();
 
 }

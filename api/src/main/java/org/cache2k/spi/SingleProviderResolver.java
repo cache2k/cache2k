@@ -22,63 +22,100 @@ package org.cache2k.spi;
  * #L%
  */
 
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.LineNumberReader;
 import java.util.HashMap;
-import java.util.Iterator;
-import java.util.ServiceLoader;
+import java.util.Map;
 
 /**
  * Resolves a service provider by its interface. This is used for the cache2k
- * internal providers. It is assumed that there is only a single provider
- * present for each interface.
+ * internal providers.
+ *
+ * <p/>This class is in principle similar to the {@link java.util.ServiceLoader}.
+ * The design is a little bit simpler, because there is always one provider for each
+ * interface. We cannot use the original ServiceLoader, since it is not working on
+ * android.
  *
  * @author Jens Wilke; created: 2014-06-19
+ * @see <a href="https://code.google.com/p/android/issues/detail?id=59658">android service loader issue</a>
  */
 public class SingleProviderResolver {
 
-  static SingleProviderResolver instance;
+  static Map<ClassLoader, SingleProviderResolver> loader2resolver =
+      new HashMap<ClassLoader, SingleProviderResolver>();
 
   public static SingleProviderResolver getInstance() {
-    if (instance == null) {
-      instance = new SingleProviderResolver();
-    }
-    return instance;
+    return getInstance(Thread.currentThread().getContextClassLoader());
   }
 
-  private SingleProviderResolver() { }
+  public synchronized static SingleProviderResolver getInstance(ClassLoader cl) {
+    SingleProviderResolver r = loader2resolver.get(cl);
+    if (r == null) {
+      r = new SingleProviderResolver(cl);
+      loader2resolver.put(cl, r);
+    }
+    return r;
+  }
 
+  private ClassLoader classLoader;
   private HashMap<Class<?>, Object> type2instance = new HashMap<Class<?>, Object>();
+
+  private SingleProviderResolver(ClassLoader cl) {
+    classLoader = cl;
+  }
 
   /**
    * Return a provider for this interface. If a provider previously was
-   * resolved, the instance was cached and is returned. No provider
-   * or more then one provider is considered a severe error.
+   * resolved, a cached instance is returned.
    *
-   * @param c the provider interface that it is implemented
+   * @param c the provider interface that is implemented
    * @param <T> type of provider interface
    *
    * @return cached instance of the provider, never null
-   * @throws java.lang.LinkageError if none ore more then one providers are present.
+   * @throws java.lang.LinkageError if no provider is found.
    */
   public <T> T resolve(Class<T> c) {
     if (c == null) {
-      throw new LinkageError("requested provider interface is null");
+      throw new Error("requested provider interface is null");
     }
     @SuppressWarnings("unchecked")
     T obj = (T) type2instance.get(c);
     if (obj == null) {
-      ServiceLoader<T> l = ServiceLoader.load(c);
-      Iterator<T> it = l.iterator();
-      if (!it.hasNext()) {
-         throw new LinkageError("Provider missing for: " + c.getName());
-      }
-      obj = it.next();
-      if (it.hasNext()) {
-         throw new LinkageError("Multiple providers for: " + c.getName() + ". " +
-           "Got:  " + obj.getClass().getName() + ", " + it.next().getClass().getName());
-      }
+      obj = loadProvider(c);
       type2instance.put(c, obj);
     }
     return obj;
+  }
+
+  @SuppressWarnings("unchecked")
+  <T> T loadProvider(Class<T> c) {
+    try {
+      String _className = readFile("org/cache2k/services/" + c.getName());
+      if (_className == null) {
+        throw new LinkageError("Provider missing for: " + c.getName());
+      }
+      return (T) classLoader.loadClass(_className).newInstance();
+    } catch (Exception e) {
+      throw new LinkageError("Error instantiating " + c.getName() + ", got " +e.toString());
+    }
+  }
+
+  String readFile(String _name) throws IOException {
+    InputStream in = classLoader.getResourceAsStream(_name);
+    if (in == null) {
+      throw new IOException("Class resource file not found: " + _name);
+    }
+    LineNumberReader r = new LineNumberReader(new InputStreamReader(in));
+    String l = r.readLine();
+    while (l != null) {
+      if (!l.startsWith("#")) {
+        return l;
+      }
+      l = r.readLine();
+    }
+    return null;
   }
 
 }

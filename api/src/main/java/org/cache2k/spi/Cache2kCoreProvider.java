@@ -22,6 +22,8 @@ package org.cache2k.spi;
  * #L%
  */
 
+import org.cache2k.CacheBuilder;
+
 import java.util.ServiceLoader;
 
 /**
@@ -40,24 +42,7 @@ import java.util.ServiceLoader;
  */
 public abstract class Cache2kCoreProvider {
 
-  private static Cache2kCoreProvider instance = null;
-
-  public static Cache2kCoreProvider get() {
-    if (instance != null) {
-      return instance;
-    }
-    ServiceLoader<Cache2kCoreProvider> loader =
-        ServiceLoader.load(Cache2kCoreProvider.class);
-    for (Cache2kCoreProvider p : loader) {
-      instance = p;
-    }
-    if (instance == null) {
-      throw new LinkageError("cache2k-core module not available");
-    }
-    return instance;
-  }
-
-  public abstract Class<?> getBuilderImplementation();
+  public abstract Class<? extends CacheBuilder> getBuilderImplementation();
 
   public abstract Class<?> getDefaultPersistenceStoreImplementation();
 

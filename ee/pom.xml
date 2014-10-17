@@ -1,0 +1,40 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0
+                             http://maven.apache.org/maven-v4_0_0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+  
+  <parent>
+    <groupId>org.cache2k</groupId>
+    <artifactId>cache2k-parent</artifactId>
+    <version>0.20-SNAPSHOT</version>
+  </parent>
+
+  <artifactId>cache2k-ee</artifactId>
+  <version>0.20-SNAPSHOT</version>
+  <name>cache2k for enterprise environments</name>
+
+  <description>
+    This package adds features relevant within enterprise applications.
+    Mainly JMX.
+  </description>
+
+  <dependencies>
+    <dependency>
+      <artifactId>cache2k-core</artifactId>
+      <version>${project.version}</version>
+      <groupId>${project.groupId}</groupId>
+    </dependency>
+    <dependency>
+      <artifactId>cache2k-jmx-api</artifactId>
+      <version>${project.version}</version>
+      <groupId>${project.groupId}</groupId>
+    </dependency>
+    <dependency>
+      <artifactId>cache2k-api</artifactId>
+      <version>${project.version}</version>
+      <groupId>${project.groupId}</groupId>
+    </dependency>
+  </dependencies>
+
+</project>

@@ -1,8 +1,8 @@
-package org.cache2k.impl;
+package org.cache2k.ee.impl;
 
 /*
  * #%L
- * cache2k core package
+ * cache2k for enterprise environments
  * %%
  * Copyright (C) 2000 - 2014 headissue GmbH, Munich
  * %%
@@ -22,22 +22,29 @@ package org.cache2k.impl;
  * #L%
  */
 
-import org.cache2k.spi.Cache2kCoreProvider;
-import org.cache2k.storage.ImageFileStorage;
+import org.cache2k.CacheManager;
+import org.cache2k.spi.Cache2kExtensionProvider;
+
+import javax.naming.Context;
+import javax.naming.InitialContext;
 
 /**
- * @author Jens Wilke; created: 2014-04-20
+ * @author Jens Wilke; created: 2014-10-10
  */
-public class Cache2kCoreProviderImpl extends Cache2kCoreProvider {
+public class JndiDefaultNameProvider implements Cache2kExtensionProvider {
 
   @Override
-  public Class<CacheBuilderImpl> getBuilderImplementation() {
-    return CacheBuilderImpl.class;
-  }
-
-  @Override
-  public Class<?> getDefaultPersistenceStoreImplementation() {
-    return ImageFileStorage.class;
+  public void register() {
+    try {
+      Context ctx = new InitialContext();
+      ctx = (Context) ctx.lookup("java:comp/env");
+      String _name =
+        (String) ctx.lookup("org.cache2k.CacheManager.defaultName");
+      if (_name != null) {
+        CacheManager.setDefaultName(_name);
+      }
+    } catch (Exception ignore) {
+    }
   }
 
 }
