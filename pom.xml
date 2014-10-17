@@ -377,6 +377,13 @@
       </build>
     </profile>
 
+    <profile>
+      <id>android</id>
+      <modules>
+        <module>android-test</module>
+      </modules>
+    </profile>
+
   </profiles>
 
 </project>
