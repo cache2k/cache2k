@@ -46,7 +46,7 @@ public class SingleProviderResolver {
 
   private SingleProviderResolver() { }
 
-  private HashMap<Class<?>, Object> type2instance = new HashMap<>();
+  private HashMap<Class<?>, Object> type2instance = new HashMap<Class<?>, Object>();
 
   /**
    * Return a provider for this interface. If a provider previously was

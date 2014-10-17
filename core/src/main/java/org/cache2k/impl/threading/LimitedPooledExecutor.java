@@ -120,9 +120,9 @@ public class LimitedPooledExecutor implements ExecutorService {
       Future<T> f = globalPooledExecutor.execute(c, notifier);
       return f;
     } catch (InterruptedException ex) {
-      return new Futures.ExceptionFuture<>(ex);
+      return new Futures.ExceptionFuture<T>(ex);
     } catch (TimeoutException ex) {
-      return new Futures.ExceptionFuture<>(ex);
+      return new Futures.ExceptionFuture<T>(ex);
     }
   }
 
@@ -135,9 +135,9 @@ public class LimitedPooledExecutor implements ExecutorService {
     notifier.taskStarted();
     try {
       T _result = c.call();
-      return new Futures.FinishedFuture<>(_result);
+      return new Futures.FinishedFuture<T>(_result);
     } catch (Exception ex) {
-      return new Futures.ExceptionFuture<>(ex);
+      return new Futures.ExceptionFuture<T>(ex);
     } finally {
       notifier.taskFinished();
     }
@@ -173,7 +173,7 @@ public class LimitedPooledExecutor implements ExecutorService {
     if (!tunable.enableUntested) {
       throw new UnsupportedOperationException("untested code");
     }
-    List<Future<T>> _list = new ArrayList<>();
+    List<Future<T>> _list = new ArrayList<Future<T>>();
     try {
       for (Callable<T> c : _tasks) {
         notifier.stallAndCountSubmit();
@@ -194,7 +194,7 @@ public class LimitedPooledExecutor implements ExecutorService {
     }
     long now = System.currentTimeMillis();
     long _timeoutMillis = _unit.toMillis(_timeout);
-    List<Future<T>> _list = new ArrayList<>();
+    List<Future<T>> _list = new ArrayList<Future<T>>();
     try {
       for (Callable<T> c : _tasks) {
         long _restTimeout = _timeoutMillis - (System.currentTimeMillis() - now);

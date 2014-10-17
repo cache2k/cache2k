@@ -62,7 +62,7 @@ import java.util.concurrent.TimeoutException;
  */
 public class GlobalPooledExecutor {
 
-  private static final Task<?> CLOSE_TASK = new Task<>();
+  private static final Task<?> CLOSE_TASK = new Task<Object>();
   private static final Tunable TUNABLE = TunableFactory.get(Tunable.class);
   private static final ProgressNotifier DUMMY_NOTIFIER = new DummyNotifier();
 
@@ -94,7 +94,7 @@ public class GlobalPooledExecutor {
 
   GlobalPooledExecutor(Tunable t, Properties _managerProperties, String _threadNamePrefix) {
     tunable = t;
-    taskQueue = new ArrayBlockingQueue<>(tunable.queueSize);
+    taskQueue = new ArrayBlockingQueue<Task<?>>(tunable.queueSize);
     factory = tunable.threadFactoryProvider.newThreadFactory(_managerProperties, _threadNamePrefix);
   }
 
@@ -134,7 +134,7 @@ public class GlobalPooledExecutor {
     if (closed) {
       throw new IllegalStateException("pool was shut down");
     }
-    Task<V> t = new Task<>(c, n);
+    Task<V> t = new Task<V>(c, n);
     int cnt = getThreadInUseCount();
     if (cnt > 0) {
       if (taskQueue.size() == 0) {

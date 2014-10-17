@@ -66,7 +66,7 @@ public class ClosableConcurrentHashEntryIterator<E extends BaseCache.Entry>
   BaseCache.Hash<E> hashCtl2Copy;
   BaseCache.Entry[] hashCopy;
   BaseCache.Entry[] hash2Copy;
-  BaseCache.Hash<BaseCache.Entry> iteratedCtl = new BaseCache.Hash<>();
+  BaseCache.Hash<BaseCache.Entry> iteratedCtl = new BaseCache.Hash<BaseCache.Entry>();
   BaseCache.Entry[] iterated;
   boolean keepIterated = false;
   boolean stopOnClear = true;

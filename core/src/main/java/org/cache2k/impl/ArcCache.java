@@ -90,7 +90,7 @@ public class ArcCache<K, T> extends BaseCache<ArcCache.Entry, K, T> {
 
   @Override
   protected Entry<K, T> newEntry() {
-    return new Entry<>();
+    return new Entry<K, T>();
   }
 
   @Override
@@ -229,8 +229,8 @@ public class ArcCache<K, T> extends BaseCache<ArcCache.Entry, K, T> {
   protected void initializeHeapCache() {
     super.initializeHeapCache();
     t1Size = 0;
-    b1HashCtrl = new Hash<>();
-    b2HashCtrl = new Hash<>();
+    b1HashCtrl = new Hash<Entry>();
+    b2HashCtrl = new Hash<Entry>();
     b1Hash = b1HashCtrl.init(Entry.class);
     b2Hash = b2HashCtrl.init(Entry.class);
     t1Head = new Entry<K,T>().shortCircuit();

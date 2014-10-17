@@ -60,7 +60,7 @@ public abstract class RootAnyBuilder<K, T>
 
   @Override
   public CacheConfig createConfiguration() {
-    List<Object> _moduleConfiguration = new ArrayList<>();
+    List<Object> _moduleConfiguration = new ArrayList<Object>();
     for (BaseAnyBuilder bb : modules) {
       _moduleConfiguration.add(bb.createConfiguration());
     }
@@ -71,7 +71,7 @@ public abstract class RootAnyBuilder<K, T>
   @SuppressWarnings("unchecked")
   private <B extends BaseAnyBuilder> B addModule(B _moduleBuilder) {
     if (modules.size() == 0) {
-      modules = new ArrayList<>();
+      modules = new ArrayList<BaseAnyBuilder>();
     }
     modules.add(_moduleBuilder);
     _moduleBuilder.setRoot(root);

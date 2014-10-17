@@ -77,8 +77,8 @@ public class ClearStorageBuffer implements CacheStorage, FlushableStorage, Purge
 
   boolean shouldStop = false;
 
-  List<Op> operations = new ArrayList<>();
-  Map<Object, StorageEntry> key2entry = new HashMap<>();
+  List<Op> operations = new ArrayList<Op>();
+  Map<Object, StorageEntry> key2entry = new HashMap<Object, StorageEntry>();
 
   CacheStorage forwardStorage;
 
@@ -223,7 +223,7 @@ public class ClearStorageBuffer implements CacheStorage, FlushableStorage, Purge
     synchronized (this) {
       _forward = forwardStorage != null;
       if (!_forward) {
-        l = new ArrayList<>(key2entry.size());
+        l = new ArrayList<StorageEntry>(key2entry.size());
         for (StorageEntry e : key2entry.values()) {
           if (f == null || f.shouldInclude(e.getKey())) {
             l.add(e);
@@ -305,7 +305,7 @@ public class ClearStorageBuffer implements CacheStorage, FlushableStorage, Purge
           return;
         }
         _workList = operations;
-        operations = new ArrayList<>();
+        operations = new ArrayList<Op>();
       }
       for (Op op : _workList) {
         sentOperationsCnt++;

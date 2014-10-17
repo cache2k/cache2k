@@ -61,7 +61,7 @@ public final class TunableFactory {
    * and the configuration file.
    */
   public static synchronized void reload() {
-    map = new HashMap<>();
+    map = new HashMap<Class<?>, Object>();
     customProperties = loadFile(CUSTOM_TUNING_FILE_NAME);
     defaultProperties = loadFile(DEFAULT_TUNING_FILE_NAME);
   }

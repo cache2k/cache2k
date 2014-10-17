@@ -45,7 +45,7 @@ public class Futures {
    */
   public static class WaitForAllFuture<V> implements Future<V> {
 
-    List<Future<V>> futureList = new LinkedList<>();
+    List<Future<V>> futureList = new LinkedList<Future<V>>();
 
     public WaitForAllFuture(Future<V> _top) {
       add(_top);

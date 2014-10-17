@@ -38,8 +38,8 @@ public class FreeSpaceMap {
 
   public void init() {
     freeSpace = 0;
-    freeSet = new TreeSet<>();
-    pos2slot = new TreeSet<>(new PositionOrder());
+    freeSet = new TreeSet<Slot>();
+    pos2slot = new TreeSet<Slot>(new PositionOrder());
   }
 
   public void put(Slot s) {

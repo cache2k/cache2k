@@ -45,7 +45,7 @@ public class ByReferenceHeapStorageImpl implements CacheStorage {
     config = cfg;
     final int entryCapacity = cfg.getEntryCapacity();
     if (entryCapacity == Integer.MAX_VALUE) {
-      entries = new HashMap<>();
+      entries = new HashMap<Object, HeapEntry>();
     } else {
       entries = new LinkedHashMap<Object, HeapEntry>(100, .75F, true) {
 

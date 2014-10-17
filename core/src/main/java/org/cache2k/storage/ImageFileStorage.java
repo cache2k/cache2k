@@ -134,7 +134,7 @@ public class ImageFileStorage
   /**
    * Protected by commitLock
    */
-  Queue<SlotBucket> slotsToFreeQueue = new ArrayDeque<>();
+  Queue<SlotBucket> slotsToFreeQueue = new ArrayDeque<SlotBucket>();
 
   BufferDescriptor descriptor;
   String fileName;
@@ -201,7 +201,7 @@ public class ImageFileStorage
         freeMap.freeSpace(0, (int) getFileLength());
       }
       if (entryCapacity == Integer.MAX_VALUE) {
-        values = new HashMap<>();
+        values = new HashMap<Object, HeapEntry>();
       } else {
         values = new LinkedHashMap<Object, HeapEntry>(100, .75F, true) {
 
@@ -216,12 +216,12 @@ public class ImageFileStorage
 
         };
       }
-      newBufferEntries = new HashMap<>();
-      deletedBufferEntries = new HashMap<>();
+      newBufferEntries = new HashMap<Object, HeapEntry>();
+      deletedBufferEntries = new HashMap<Object, HeapEntry>();
       justUnusedSlots = new SlotBucket();
-      slotsToFreeQueue = new ArrayDeque<>();
+      slotsToFreeQueue = new ArrayDeque<SlotBucket>();
       entriesInEarlierIndex = createEarlierIndexEntryHash();
-      committedEntries = new HashMap<>();
+      committedEntries = new HashMap<Object, HeapEntry>();
       BufferDescriptor d = readLatestIntactBufferDescriptor();
       if (d != null) {
         try {
@@ -644,7 +644,7 @@ public class ImageFileStorage
    */
   void recalculateFreeSpaceMapAndRemoveDeletedEntries() {
     synchronized (freeMap) {
-      HashSet<Object> _deletedKey = new HashSet<>();
+      HashSet<Object> _deletedKey = new HashSet<Object>();
       for (HeapEntry e : values.values()) {
         if (e.position < 0) {
           _deletedKey.add(e.key);
@@ -681,8 +681,8 @@ public class ImageFileStorage
         _worker.deletedEntries = deletedBufferEntries;
         _worker.workerFreeSlots = justUnusedSlots;
         justUnusedSlots = new SlotBucket();
-        newBufferEntries = new HashMap<>();
-        deletedBufferEntries = new HashMap<>();
+        newBufferEntries = new HashMap<Object, HeapEntry>();
+        deletedBufferEntries = new HashMap<Object, HeapEntry>();
         descriptor.entryCount = getEntryCount();
         descriptor.writtenTime = now;
       }
@@ -724,7 +724,7 @@ public class ImageFileStorage
     RandomAccessFile randomAccessFile;
     HashMap<Object, HeapEntry> newEntries;
     HashMap<Object, HeapEntry> deletedEntries;
-    HashMap<Object, HeapEntry> rewriteEntries = new HashMap<>();
+    HashMap<Object, HeapEntry> rewriteEntries = new HashMap<Object, HeapEntry>();
     SlotBucket workerFreeSlots;
     byte indexFileNo;
     long position;
@@ -740,7 +740,7 @@ public class ImageFileStorage
           e.indexFileNumber = indexFileNo;
           entriesInEarlierIndex.put(e.key, e);
         }
-        committedEntries = new HashMap<>();
+        committedEntries = new HashMap<Object, HeapEntry>();
         descriptor.indexEntries = 0;
       }
       try {
@@ -823,7 +823,7 @@ public class ImageFileStorage
           rewriteEntries = entriesInEarlierIndex;
           entriesInEarlierIndex = createEarlierIndexEntryHash();
         } else {
-          rewriteEntries = new HashMap<>();
+          rewriteEntries = new HashMap<Object, HeapEntry>();
           int cnt = _writeCnt * tunable.rewritePartialFactor;
           Iterator<HeapEntry> it = entriesInEarlierIndex.values().iterator();
           while (cnt > 0 && it.hasNext()) {
@@ -878,7 +878,7 @@ public class ImageFileStorage
   }
 
   private LinkedHashMap<Object, HeapEntry> createEarlierIndexEntryHash() {
-    return new LinkedHashMap<>(8, 0.75F, true);
+    return new LinkedHashMap<Object, HeapEntry>(8, 0.75F, true);
   }
 
   String generateIndexFileName(byte _fileNo) {
@@ -903,7 +903,7 @@ public class ImageFileStorage
   public void visit(final VisitContext ctx, final EntryFilter f, final EntryVisitor v) throws Exception {
     ArrayList<HeapEntry> _allEntries;
     synchronized (valuesLock) {
-      _allEntries = new ArrayList<>(values.size());
+      _allEntries = new ArrayList<HeapEntry>(values.size());
       for (HeapEntry e : values.values()) {
         if (f == null || f.shouldInclude(e.key)) {
           _allEntries.add(e);
@@ -1003,11 +1003,11 @@ public class ImageFileStorage
     byte currentlyReadingIndexFile = -1;
     RandomAccessFile randomAccessFile;
     ByteBuffer indexBuffer;
-    Set<Object> readKeys = new HashSet<>();
+    Set<Object> readKeys = new HashSet<Object>();
 
     void readKeyIndex() throws IOException, ClassNotFoundException {
-      entriesInEarlierIndex = new LinkedHashMap<>();
-      committedEntries = new HashMap<>();
+      entriesInEarlierIndex = new LinkedHashMap<Object, HeapEntry>();
+      committedEntries = new HashMap<Object, HeapEntry>();
       byte _fileNo = descriptor.lastIndexFile;
       long _keyPosition = descriptor.lastKeyIndexPosition;
       for (;;) {
@@ -1028,7 +1028,7 @@ public class ImageFileStorage
         randomAccessFile.close();
       }
       if (entriesInEarlierIndex == committedEntries) {
-        entriesInEarlierIndex = new HashMap<>();
+        entriesInEarlierIndex = new HashMap<Object, HeapEntry>();
       }
     }
 
@@ -1046,7 +1046,7 @@ public class ImageFileStorage
       if (randomAccessFile != null) {
         randomAccessFile.close();
       }
-      entriesInEarlierIndex = new HashMap<>();
+      entriesInEarlierIndex = new HashMap<Object, HeapEntry>();
       randomAccessFile = new RandomAccessFile(generateIndexFileName(_fileNo), "r");
       indexBuffer = randomAccessFile.getChannel().map(FileChannel.MapMode.READ_ONLY, 0, randomAccessFile.length());
       currentlyReadingIndexFile = _fileNo;
@@ -1392,7 +1392,7 @@ public class ImageFileStorage
   public static class SlotBucket implements Iterable<Slot> {
 
     long time;
-    Collection<Slot> slots = new ArrayList<>();
+    Collection<Slot> slots = new ArrayList<Slot>();
 
     public void add(HeapEntry be) {
       add(be.position, be.size);

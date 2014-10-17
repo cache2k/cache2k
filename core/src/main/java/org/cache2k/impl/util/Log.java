@@ -43,7 +43,7 @@ import java.util.logging.Logger;
  */
 public abstract class Log {
 
-  static WeakHashMap<String, Log> loggers = new WeakHashMap<>();
+  static WeakHashMap<String, Log> loggers = new WeakHashMap<String, Log>();
 
   static LogFactory logFactory;
 

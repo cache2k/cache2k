@@ -92,7 +92,7 @@ public class PassingStorageAdapter extends StorageAdapter {
   Object flushLock = new Object();
   TimerService.CancelHandle flushTimerHandle;
   @Nonnull
-  Future<Void> lastExecutingFlush = new Futures.FinishedFuture<>();
+  Future<Void> lastExecutingFlush = new Futures.FinishedFuture<Void>();
 
   Object purgeRunningLock = new Object();
 
@@ -133,7 +133,7 @@ public class PassingStorageAdapter extends StorageAdapter {
         flushIntervalMillis = -1;
       }
       if (config.isPassivation() || storage instanceof TransientStorageClass) {
-        deletedKeys = new HashSet<>();
+        deletedKeys = new HashSet<Object>();
         passivation = true;
       }
       logLifecycleOperation("opened, state: " + storage);
@@ -278,9 +278,9 @@ public class PassingStorageAdapter extends StorageAdapter {
   public ClosableIterator<BaseCache.Entry> iterateAll() {
     final CompleteIterator it = new CompleteIterator();
     if (tunable.iterationQueueCapacity > 0) {
-      it.queue = new ArrayBlockingQueue<>(tunable.iterationQueueCapacity);
+      it.queue = new ArrayBlockingQueue<StorageEntry>(tunable.iterationQueueCapacity);
     } else {
-      it.queue = new SynchronousQueue<>();
+      it.queue = new SynchronousQueue<StorageEntry>();
     }
     synchronized (cache.lock) {
       it.localIteration = cache.iterateAllLocalEntries();
@@ -724,7 +724,7 @@ public class PassingStorageAdapter extends StorageAdapter {
         return null;
       }
     };
-    FutureTask<Void> _inThreadFlush = new FutureTask<>(c);
+    FutureTask<Void> _inThreadFlush = new FutureTask<Void>(c);
     boolean _anotherFlushSubmittedNotByUs = false;
     for (;;) {
       if (!lastExecutingFlush.isDone()) {
@@ -771,7 +771,7 @@ public class PassingStorageAdapter extends StorageAdapter {
         return lastExecutingFlush;
       }
     }
-    return new Futures.FinishedFuture<>();
+    return new Futures.FinishedFuture<Void>();
   }
 
   public Future<Void> shutdown() {

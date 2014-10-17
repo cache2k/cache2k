@@ -54,7 +54,7 @@ import java.util.jar.Manifest;
 public class CacheManagerImpl extends CacheManager {
   
   static final String META_INF_MANIFEST_MF = "/META-INF/MANIFEST.MF";
-  static List<CacheLifeCycleListener> lifeCycleListeners = new ArrayList<>();
+  static List<CacheLifeCycleListener> lifeCycleListeners = new ArrayList<CacheLifeCycleListener>();
   static JmxSupport jmxSupport;
 
   static {
@@ -63,8 +63,8 @@ public class CacheManagerImpl extends CacheManager {
 
   private Log log;
   private String name;
-  private Map<String, BaseCache> cacheNames = new HashMap<>();
-  private Set<Cache> caches = new HashSet<>();
+  private Map<String, BaseCache> cacheNames = new HashMap<String, BaseCache>();
+  private Set<Cache> caches = new HashSet<Cache>();
   private int disambiguationCounter = 1;
   private GlobalPooledExecutor threadPool;
   private AtomicInteger evictionThreadCount = new AtomicInteger();
@@ -190,9 +190,9 @@ public class CacheManagerImpl extends CacheManager {
    */
   @Override
   public synchronized void destroy() {
-    List<Throwable> _suppressedExceptions = new ArrayList<>();
+    List<Throwable> _suppressedExceptions = new ArrayList<Throwable>();
     if (caches != null) {
-      Futures.WaitForAllFuture<Void> _wait = new Futures.WaitForAllFuture<>();
+      Futures.WaitForAllFuture<Void> _wait = new Futures.WaitForAllFuture<Void>();
       for (Cache c : caches) {
         if (c instanceof BaseCache) {
           try {
@@ -223,7 +223,7 @@ public class CacheManagerImpl extends CacheManager {
           }
         }
       }
-      Set<Cache> _caches = new HashSet<>();
+      Set<Cache> _caches = new HashSet<Cache>();
       _caches.addAll(caches);
       for (Cache c : _caches) {
         try {

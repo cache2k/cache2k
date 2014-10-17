@@ -127,12 +127,12 @@ public class FailureStorageAdapter extends StorageAdapter {
 
   @Override
   public Future<Void> cancelTimerJobs() {
-    return new Futures.FinishedFuture<>();
+    return new Futures.FinishedFuture<Void>();
   }
 
   @Override
   public Future<Void> shutdown() {
-    return new Futures.ExceptionFuture<>(
+    return new Futures.ExceptionFuture<Void>(
       buildThrowable("shutdown impossible, exception in past", exception));
   }
 

@@ -52,7 +52,7 @@ public class NoopStorageAdapter extends StorageAdapter {
 
   @Override
   public Future<Void> shutdown() {
-   return new Futures.FinishedFuture<>();
+   return new Futures.FinishedFuture<Void>();
   }
 
   @Override
@@ -73,7 +73,7 @@ public class NoopStorageAdapter extends StorageAdapter {
 
   @Override
   public Future<Void> clearAndReconnect() {
-    return new Futures.FinishedFuture<>(null);
+    return new Futures.FinishedFuture<Void>(null);
   }
 
   @Override
@@ -99,7 +99,7 @@ public class NoopStorageAdapter extends StorageAdapter {
   @SuppressWarnings("unchecked")
   @Override
   public ClosableIterator<BaseCache.Entry> iterateAll() {
-    return new EmptyClosableIterator<>();
+    return new EmptyClosableIterator<BaseCache.Entry>();
   }
 
   @Override

@@ -95,7 +95,7 @@ public class ArrayHeapTimerQueue extends TimerService {
   }
 
   public <T> PayloadTask<T> add(@Nonnull TimerPayloadListener<T> _listener, T _payload, long _fireTime) {
-    PayloadTask<T> e2 = new PayloadTask<>(_fireTime, _payload, _listener);
+    PayloadTask<T> e2 = new PayloadTask<T>(_fireTime, _payload, _listener);
     addTimerEvent(e2);
     return e2;
   }

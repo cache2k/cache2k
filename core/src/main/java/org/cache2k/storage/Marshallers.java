@@ -49,9 +49,9 @@ public class Marshallers implements MarshallerFactory {
     return instance;
   }
 
-  private Set<MarshallerFactory> factorySet = new HashSet<>();
-  private Map<Class<?>, MarshallerFactory> type2factory = new HashMap<>();
-  private Map<Class<?>, MarshallerFactory> factoryType2factory = new HashMap<>();
+  private Set<MarshallerFactory> factorySet = new HashSet<MarshallerFactory>();
+  private Map<Class<?>, MarshallerFactory> type2factory = new HashMap<Class<?>, MarshallerFactory>();
+  private Map<Class<?>, MarshallerFactory> factoryType2factory = new HashMap<Class<?>, MarshallerFactory>();
 
   /**
    * Directly register a marshallerfactory. This is an alternative to the automatic
@@ -86,7 +86,7 @@ public class Marshallers implements MarshallerFactory {
       if (f == null) {
         try {
           f = (MarshallerFactory) c.getMarshallerFactory().newInstance();
-        } catch (InstantiationException | IllegalAccessException e) {
+        } catch (Exception e) {
           throw new IllegalArgumentException(e);
         }
         factoryType2factory.put(c.getMarshallerFactory(), f);
@@ -96,7 +96,7 @@ public class Marshallers implements MarshallerFactory {
     try {
       Marshaller m = (Marshaller) c.getMarshallerType().newInstance();
       return m;
-    } catch (InstantiationException | IllegalAccessException e) {
+    } catch (Exception e) {
       throw new IllegalArgumentException(e);
     }
   }
