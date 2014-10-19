@@ -64,7 +64,6 @@ public class CacheBuilderImpl<K, T> extends CacheBuilder<K, T> {
     if (RefreshController.class.isAssignableFrom(c)) { return refreshController; }
     if (CacheSource.class.isAssignableFrom(c)) { return cacheSource; }
     if (CacheSourceWithMetaInfo.class.isAssignableFrom(c)) { return cacheSourceWithMetaInfo; }
-    if (CacheConfig.class.isAssignableFrom(c)) { return config; }
     if (ExperimentalBulkCacheSource.class.isAssignableFrom(c)) { return experimentalBulkCacheSource; }
     if (BulkCacheSource.class.isAssignableFrom(c)) { return bulkCacheSource; }
     return null;
@@ -81,7 +80,37 @@ public class CacheBuilderImpl<K, T> extends CacheBuilder<K, T> {
     return null;
   }
 
+  /**
+   * The generic wiring code is not working on android.
+   * Explicitly call the wiring methods.
+   */
+  @SuppressWarnings("unchecked")
+  void confiugreViaSettersDirect(BaseCache c) {
+    if (cacheSource != null) {
+      c.setSource(cacheSource);
+    }
+    if (cacheSourceWithMetaInfo != null) {
+      c.setSource(cacheSourceWithMetaInfo);
+    }
+    if (refreshController != null) {
+      c.setRefreshController(refreshController);
+    }
+    if (bulkCacheSource != null) {
+      c.setBulkCacheSource(bulkCacheSource);
+    }
+    if (config != null) {
+      c.setCacheConfig(config);
+    }
+    if (experimentalBulkCacheSource != null) {
+      c.setExperimentalBulkCacheSource(experimentalBulkCacheSource);
+    }
+  }
+
   void configureViaSetters(Object o) {
+    if (o instanceof BaseCache) {
+      confiugreViaSettersDirect((BaseCache) o);
+      return;
+    }
     try {
       for (Method m : o.getClass().getMethods()) {
         Class<?>[] ps = m.getParameterTypes();
