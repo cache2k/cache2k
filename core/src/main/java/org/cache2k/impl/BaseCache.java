@@ -787,7 +787,7 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
     }
 
     @Override
-    public void close() throws Exception {
+    public void close() {
       if (iterator != null) {
         iterator.close();
         iterator = null;

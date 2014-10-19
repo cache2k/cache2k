@@ -22,10 +22,23 @@ package org.cache2k;
  * #L%
  */
 
+import java.io.Closeable;
 import java.util.Iterator;
 
 /**
+ * After the usage of the iterator close should be called to free resources.
+ * The cache also alters the hash table operations for the life of the iterator
+ * and switches back to normal after the iteration is finished.
+ *
  * @author Jens Wilke; created: 2014-06-07
  */
-public interface ClosableIterator<E> extends Iterator<E>, AutoCloseable {
+public interface ClosableIterator<E> extends Iterator<E>, Closeable {
+
+  /**
+   * Immediately free resources held by the iterator. Overrides {@link java.io.Closeable#close()}
+   * since no checked exceptions are thrown by the method.
+   */
+  @Override
+  public void close();
+
 }
