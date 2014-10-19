@@ -23,9 +23,6 @@ package org.cache2k;
  * #L%
  */
 
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
-
 /**
  * An interface to get a value by a key.
  * 
@@ -34,6 +31,6 @@ import javax.annotation.Nullable;
  */
 public interface CacheSource<K, T> {
 
-  public @Nullable T get(@Nonnull K o) throws Throwable;
+  public T get(K o) throws Throwable;
 
 }

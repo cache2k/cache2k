@@ -24,8 +24,6 @@ package org.cache2k.impl.timer;
 
 import org.cache2k.impl.util.Log;
 
-import javax.annotation.Nonnull;
-
 /**
  * Timer queue based on the {@link org.cache2k.impl.BaseCache.Entry#nextRefreshTime} field.
  * Earlier implementations used {@link java.util.Timer} which has some
@@ -88,13 +86,13 @@ public class ArrayHeapTimerQueue extends TimerService {
     log = Log.getLog(ArrayHeapTimerQueue.class.getName() + ":" + _threadName);
   }
 
-  public NoPayloadTask add(@Nonnull TimerListener _listener, long _fireTime) {
+  public NoPayloadTask add(TimerListener _listener, long _fireTime) {
     NoPayloadTask e2 = new NoPayloadTask(_fireTime, _listener);
     addTimerEvent(e2);
     return e2;
   }
 
-  public <T> PayloadTask<T> add(@Nonnull TimerPayloadListener<T> _listener, T _payload, long _fireTime) {
+  public <T> PayloadTask<T> add(TimerPayloadListener<T> _listener, T _payload, long _fireTime) {
     PayloadTask<T> e2 = new PayloadTask<T>(_fireTime, _payload, _listener);
     addTimerEvent(e2);
     return e2;

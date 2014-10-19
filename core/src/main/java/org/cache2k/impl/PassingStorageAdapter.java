@@ -44,7 +44,6 @@ import org.cache2k.impl.util.Log;
 import org.cache2k.impl.util.TunableConstants;
 import org.cache2k.impl.util.TunableFactory;
 
-import javax.annotation.Nonnull;
 import java.io.NotSerializableException;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -91,7 +90,6 @@ public class PassingStorageAdapter extends StorageAdapter {
   long flushIntervalMillis = 0;
   Object flushLock = new Object();
   TimerService.CancelHandle flushTimerHandle;
-  @Nonnull
   Future<Void> lastExecutingFlush = new Futures.FinishedFuture<Void>();
 
   Object purgeRunningLock = new Object();

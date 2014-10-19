@@ -22,9 +22,6 @@ package org.cache2k;
  * #L%
  */
 
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
-
 /**
  * Simple interface to return a value selected by a key object. Cache users
  * of a read-through cache may choose this simple interface for requesting data
@@ -37,6 +34,6 @@ public interface KeyValueSource<K, T> extends CacheSource<K, T> {
   /**
    * Returns object mapped to key
    */
-  public abstract @Nullable T get(@Nonnull K key);
+  public abstract T get(K key);
 
 }

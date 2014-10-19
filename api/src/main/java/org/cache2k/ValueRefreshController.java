@@ -22,9 +22,6 @@ package org.cache2k;
  * #L%
  */
 
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
-
 /**
  * Fetch time of next refresh from the value object itself. The value object
  * needs to implement {@link ValueWithNextRefreshTime}.
@@ -38,8 +35,8 @@ public class ValueRefreshController<T> implements RefreshController<T> {
 
   @Override
   public long calculateNextRefreshTime(
-    @Nullable T _oldObject,
-    @Nonnull T _newObject,
+    T _oldObject,
+    T _newObject,
     long _timeOfLastRefresh, long now) {
     return ((ValueWithNextRefreshTime) _newObject).getNextRefreshTime();
   }

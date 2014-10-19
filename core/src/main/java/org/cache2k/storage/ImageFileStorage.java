@@ -57,8 +57,6 @@ import org.cache2k.storage.FreeSpaceMap.Slot;
 import org.cache2k.impl.util.TunableConstants;
 import org.cache2k.impl.util.TunableFactory;
 
-import javax.annotation.concurrent.GuardedBy;
-
 
 /**
  * Implements a robust storage on a file or a byte buffer.
@@ -97,10 +95,8 @@ public class ImageFileStorage
   RandomAccessFile file;
   ByteBuffer buffer;
 
-  @GuardedBy("freeMap")
   public final FreeSpaceMap freeMap = new FreeSpaceMap();
 
-  @GuardedBy("valuesLock")
   Map<Object, HeapEntry> values;
 
   final Object valuesLock = new Object();

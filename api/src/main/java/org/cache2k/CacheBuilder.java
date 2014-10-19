@@ -25,7 +25,6 @@ package org.cache2k;
 import org.cache2k.spi.Cache2kCoreProvider;
 import org.cache2k.spi.SingleProviderResolver;
 
-import javax.annotation.Nullable;
 import java.util.Collection;
 
 /**
@@ -74,7 +73,7 @@ public abstract class CacheBuilder<K,T>
   protected BulkCacheSource bulkCacheSource;
 
   /** Builder is constructed from prototype */
-  protected void ctor(Class<K> _keyType, Class<T> _valueType, @Nullable Class<?> _entryType) {
+  protected void ctor(Class<K> _keyType, Class<T> _valueType, Class<?> _entryType) {
     root = this;
     config = new CacheConfig();
     config.setValueType(_valueType);

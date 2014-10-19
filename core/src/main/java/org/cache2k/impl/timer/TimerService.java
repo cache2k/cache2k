@@ -22,8 +22,6 @@ package org.cache2k.impl.timer;
  * #L%
  */
 
-import javax.annotation.Nonnull;
-
 /**
  * Generic interface of a timer service.
  *
@@ -34,9 +32,9 @@ public abstract class TimerService {
   /**
    * Add a timer that fires at the specified time.
    */
-  public abstract <T> CancelHandle add(@Nonnull TimerListener _listener, long _fireTime);
+  public abstract <T> CancelHandle add(TimerListener _listener, long _fireTime);
 
-  public abstract <T> CancelHandle add(@Nonnull TimerPayloadListener<T> _listener, T _payload, long _fireTime);
+  public abstract <T> CancelHandle add(TimerPayloadListener<T> _listener, T _payload, long _fireTime);
 
   /**
    * Return the tasks in the timer queue including the cancelled.

@@ -22,9 +22,6 @@ package org.cache2k;
  * #L%
  */
 
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
-
 /**
  * If an object implements {@link org.cache2k.ValueWithNextRefreshTime} then the next refresh time
  * is fetched from the object. If not, the default linger time is used by the cache.
@@ -37,8 +34,8 @@ public final class AutoValueRefreshController<T> implements RefreshController<T>
 
   @Override
   public long calculateNextRefreshTime(
-    @Nullable T _oldObject,
-    @Nonnull T _newObject,
+    T _oldObject,
+    T _newObject,
     long _timeOfLastRefresh, long now) {
     if (_newObject instanceof ValueWithNextRefreshTime) {
       return ((ValueWithNextRefreshTime) _newObject).getNextRefreshTime();

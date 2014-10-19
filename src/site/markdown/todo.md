@@ -9,7 +9,6 @@ A poor mans issue tracker.
   * storage entryExpireTime -> int
   * storage: statistics counters
   * file storage: more than one marshaller                                                                                                                                                                                                                                                                                                                                          
-  * drop the usage of jsr305 style annotations. this is useful, however, this is no finished standard.
   * fetchWithStorage, get rid of flag
   * purge thread for timer thread decoupling
   * add lock spin exceeded to all spins

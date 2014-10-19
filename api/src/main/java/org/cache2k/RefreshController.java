@@ -22,9 +22,6 @@ package org.cache2k;
  * #L%
  */
 
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
-
 /**
  * Calculates the time when the object needs to be updated next.
  * 
@@ -55,8 +52,8 @@ public abstract interface RefreshController<T> {
    * @return time of next refresh in millis. 0 if it should not be cached at all.
    */
   public abstract long calculateNextRefreshTime(
-    @Nullable T _oldObject,
-    @Nonnull T _newObject,
+    T _oldObject,
+    T _newObject,
     long _timeOfLastRefresh,
     long _fetchTime);
 
