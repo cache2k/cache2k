@@ -73,6 +73,7 @@ public abstract class CacheBuilder<K,T>
   protected RefreshController refreshController;
   protected ExperimentalBulkCacheSource experimentalBulkCacheSource;
   protected BulkCacheSource bulkCacheSource;
+  protected ExceptionExpiryCalculator exceptionExpiryCalculator;
 
   /** Builder is constructed from prototype */
   protected void ctor(Class<K> _keyType, Class<T> _valueType, Class<?> _entryType) {
@@ -127,8 +128,22 @@ public abstract class CacheBuilder<K,T>
     return this;
   }
 
+  /**
+   * Keep entries forever. Default is false. By default the cache uses an expiry time
+   * of 10 minutes.
+   */
   public CacheBuilder<K, T> eternal(boolean v) {
     config.setEternal(v);
+    return this;
+  }
+
+  /**
+   * If an exceptions gets thrown by the cache source, suppress it if there is
+   * a previous value. When this is active, and an exception was suppressed
+   * the expiry is determined by the exception expiry settings. Default: true
+   */
+  public CacheBuilder<K, T> suppressExceptions(boolean v) {
+    config.setSuppressExceptions(v);
     return this;
   }
 
@@ -144,6 +159,15 @@ public abstract class CacheBuilder<K,T>
    */
   public CacheBuilder<K, T> expiryDuration(long v, TimeUnit u) {
     config.setExpiryMillis(u.toMillis(v));
+    return this;
+  }
+
+  /**
+   * Separate timeout in the case an exception was thrown in the cache source.
+   * By default 10% of the normal expiry is used.
+   */
+  public CacheBuilder<K, T> exceptionExpiryDuration(long v, TimeUnit u) {
+    config.setExceptionExpiryMillis(u.toMillis(v));
     return this;
   }
 
@@ -188,6 +212,11 @@ public abstract class CacheBuilder<K,T>
    */
   public CacheBuilder<K, T> entryExpiryCalculator(EntryExpiryCalculator c) {
     entryExpiryCalculator = c;
+    return this;
+  }
+
+  public CacheBuilder<K, T> exceptionExpiryCalculator(ExceptionExpiryCalculator c) {
+    exceptionExpiryCalculator = c;
     return this;
   }
 

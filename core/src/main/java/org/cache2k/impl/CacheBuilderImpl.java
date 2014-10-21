@@ -98,6 +98,10 @@ public class CacheBuilderImpl<K, T> extends CacheBuilder<K, T> {
     if (entryExpiryCalculator != null) {
       c.setEntryExpiryCalculator(entryExpiryCalculator);
     }
+    if (exceptionExpiryCalculator != null) {
+      c.setExceptionExpiryCalculator(exceptionExpiryCalculator);
+    }
+
     if (bulkCacheSource != null) {
       c.setBulkCacheSource(bulkCacheSource);
     }

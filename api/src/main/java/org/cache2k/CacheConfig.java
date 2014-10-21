@@ -44,9 +44,11 @@ public class CacheConfig {
   private int heapEntryCapacity = -1;
   private boolean backgroundRefresh = false;
   private long expiryMillis  = 10 * 60 * 1000;
+  private long exceptionExpiryMillis = -1;
   private boolean keepDataAfterExpired = true;
   private boolean sharpExpiry = false;
   private List<Object> moduleConfiguration;
+  private boolean suppressExceptions = true;
 
   public String getName() {
     return name;
@@ -177,6 +179,17 @@ public class CacheConfig {
     this.expiryMillis = expiryMillis;
   }
 
+  public long getExceptionExpiryMillis() {
+    return exceptionExpiryMillis;
+  }
+
+  /**
+   * @see org.cache2k.CacheBuilder#exceptionExpiryDuration
+   */
+  public void setExceptionExpiryMillis(long v) {
+    exceptionExpiryMillis = v;
+  }
+
   public boolean isKeepDataAfterExpired() {
     return keepDataAfterExpired;
   }
@@ -201,6 +214,17 @@ public class CacheConfig {
    */
   public void setSharpExpiry(boolean sharpExpiry) {
     this.sharpExpiry = sharpExpiry;
+  }
+
+  public boolean isSuppressExceptions() {
+    return suppressExceptions;
+  }
+
+  /**
+   * @see CacheBuilder#suppressExceptions(boolean)
+   */
+  public void setSuppressExceptions(boolean suppressExceptions) {
+    this.suppressExceptions = suppressExceptions;
   }
 
   public int getHeapEntryCapacity() {

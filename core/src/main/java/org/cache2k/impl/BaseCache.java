@@ -28,6 +28,7 @@ import org.cache2k.CacheException;
 import org.cache2k.CacheMisconfigurationException;
 import org.cache2k.ClosableIterator;
 import org.cache2k.EntryExpiryCalculator;
+import org.cache2k.ExceptionExpiryCalculator;
 import org.cache2k.ExperimentalBulkCacheSource;
 import org.cache2k.Cache;
 import org.cache2k.CacheConfig;
@@ -117,14 +118,19 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
   /** Maximum amount of elements in cache */
   protected int maxSize = 5000;
 
-  /** Time in milliseconds we keep an element */
-  protected long maxLinger = 10 * 60 * 1000;
   protected String name;
   protected CacheManagerImpl manager;
   protected CacheSourceWithMetaInfo<K, T> source;
   /** Statistics */
 
+  /** Time in milliseconds we keep an element */
+  protected long maxLinger = 10 * 60 * 1000;
+
+  protected long exceptionMaxLinger = 1 * 60 * 1000;
+
   protected EntryExpiryCalculator<K, T> entryExpiryCalculator;
+
+  protected ExceptionExpiryCalculator<K> exceptionExpiryCalculator;
 
   protected Info info;
 
@@ -243,6 +249,7 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
 
   private static final int SHARP_TIMEOUT_FEATURE = 1;
   private static final int KEEP_AFTER_EXPIRED = 2;
+  private static final int SUPPRESS_EXCEPTIONS = 4;
 
   protected final boolean hasSharpTimeout() {
     return (featureBits & SHARP_TIMEOUT_FEATURE) > 0;
@@ -250,6 +257,10 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
 
   protected final boolean hasKeepAfterExpired() {
     return (featureBits & KEEP_AFTER_EXPIRED) > 0;
+  }
+
+  protected final boolean hasSuppressExceptions() {
+    return (featureBits & SUPPRESS_EXCEPTIONS) > 0;
   }
 
   protected final void setFeatureBit(int _bitmask, boolean _flag) {
@@ -308,11 +319,22 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
     long _expiryMillis  = c.getExpiryMillis();
     if (_expiryMillis == Long.MAX_VALUE || _expiryMillis < 0) {
       maxLinger = -1;
-    } else if (c.getExpiryMillis() >= 0) {
-      maxLinger = c.getExpiryMillis();
+    } else if (_expiryMillis >= 0) {
+      maxLinger = _expiryMillis;
+    }
+    long _exceptionExpiryMillis = c.getExceptionExpiryMillis();
+    if (_exceptionExpiryMillis == -1) {
+      if (maxLinger == -1) {
+        exceptionMaxLinger = -1;
+      } else {
+        exceptionMaxLinger = maxLinger / 10;
+      }
+    } else {
+      exceptionMaxLinger = _exceptionExpiryMillis;
     }
     setFeatureBit(KEEP_AFTER_EXPIRED, c.isKeepDataAfterExpired());
     setFeatureBit(SHARP_TIMEOUT_FEATURE, c.isSharpExpiry());
+    setFeatureBit(SUPPRESS_EXCEPTIONS, c.isSuppressExceptions());
     /*
     if (c.isPersistent()) {
       storage = new PassingStorageAdapter();
@@ -338,6 +360,10 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
 
   public void setEntryExpiryCalculator(EntryExpiryCalculator<K, T> v) {
     entryExpiryCalculator = v;
+  }
+
+  public void setExceptionExpiryCalculator(ExceptionExpiryCalculator<K> v) {
+    exceptionExpiryCalculator = v;
   }
 
   /** called via reflection from CacheBuilder */
@@ -495,8 +521,10 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
     return manager.getEvictionExecutor();
   }
 
-  private boolean isNeedingTimer() {
-    return maxLinger > 0 || entryExpiryCalculator != null;
+  boolean isNeedingTimer() {
+    return
+        maxLinger > 0 || entryExpiryCalculator != null ||
+        exceptionMaxLinger > 0 || exceptionExpiryCalculator != null;
   }
 
   /**
@@ -1563,33 +1591,56 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
    *
    * @param _newObject might be a fetched value or an exception wrapped into the {@link ExceptionWrapper}
    */
-  public static <K, T>  long calcNextRefreshTime(
-      K _key, T _newObject, long now, Entry _entry, EntryExpiryCalculator<K, T> ec, long _maxLinger) {
-    if (_maxLinger == 0) {
+  static <K, T>  long calcNextRefreshTime(
+      K _key, T _newObject, long now, Entry _entry,
+      EntryExpiryCalculator<K, T> ec, long _maxLinger,
+      ExceptionExpiryCalculator<K> _exceptionEc, long _exceptionMaxLinger) {
+    if (!(_newObject instanceof ExceptionWrapper)) {
+      if (_maxLinger == 0) {
+        return 0;
+      }
+      if (ec != null) {
+        long t = ec.calculateExpiryTime(_key, _newObject, now, _entry);
+        return limitExpiryToMaxLinger(now, _maxLinger, t);
+      }
+      if (_maxLinger > 0) {
+        return _maxLinger + now;
+      } else {
+        return _maxLinger;
+      }
+    }
+    if (_exceptionMaxLinger == 0) {
       return 0;
     }
-    if (ec != null && !(_newObject instanceof ExceptionWrapper)) {
-      long t = ec.calculateExpiryTime(_key, _newObject, now, _entry);
-      if (_maxLinger > 0) {
-        long _tMaximum = _maxLinger + now;
-        if (t > _tMaximum) {
-          return _tMaximum;
-        }
-        if (t < -1 && -t > _tMaximum) {
-          return -_tMaximum;
-        }
-      }
-      return t;
+    if (_exceptionEc != null) {
+      long t = _exceptionEc.calculateExpiryTime(_key, ((ExceptionWrapper) _newObject).getException(), now);
+      return limitExpiryToMaxLinger(now, _exceptionMaxLinger, t);
     }
-    if (_maxLinger > 0) {
-      return _maxLinger + now;
+    if (_exceptionMaxLinger > 0) {
+      return _exceptionMaxLinger + now;
     } else {
-      return _maxLinger;
+      return _exceptionMaxLinger;
     }
   }
 
+  static long limitExpiryToMaxLinger(long now, long _maxLinger, long t) {
+    if (_maxLinger > 0) {
+      long _tMaximum = _maxLinger + now;
+      if (t > _tMaximum) {
+        return _tMaximum;
+      }
+      if (t < -1 && -t > _tMaximum) {
+        return -_tMaximum;
+      }
+    }
+    return t;
+  }
+
   protected long calcNextRefreshTime(K _key, T _newObject, long now, Entry _entry) {
-    return calcNextRefreshTime(_key, _newObject, now, _entry, entryExpiryCalculator, maxLinger);
+    return calcNextRefreshTime(
+      _key, _newObject, now, _entry,
+      entryExpiryCalculator, maxLinger,
+      exceptionExpiryCalculator, exceptionMaxLinger);
   }
 
   protected void fetch(final E e) {
@@ -1701,6 +1752,9 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
         _nextRefreshTime = calcNextRefreshTime((K) e.getKey(), v, t0, null);
       } else {
         _nextRefreshTime = calcNextRefreshTime((K) e.getKey(), v, t0, e);
+        if (hasSuppressExceptions() && v instanceof ExceptionWrapper) {
+          v = (T) e.getValue();
+        }
       }
     }
     insert(e,v,t0,t,_updateStatistics, _nextRefreshTime);

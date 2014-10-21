@@ -4,14 +4,16 @@ A poor mans issue tracker.
 
 ### 0.20
 
+  * counter for exceptions
+  * keep calculator name or rename to policy
   * contains()
-  * better expiry calculator
-  * different timeout for exceptions, refresh controller
   * Closable, close() and closeAsync()
   * New benchmark
+  * documentation update?
 
 ### Next
 
+  * description for exception handling: policy, exception counter, suppressed exceptions, exceptions and bulk requests
   * Better formatting: msecs/fetch=833.2831546786805
   * have totalFetchMillis and totalFetches as JMX value
   * getEntry()

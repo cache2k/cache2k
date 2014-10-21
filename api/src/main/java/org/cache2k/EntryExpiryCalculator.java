@@ -46,8 +46,9 @@ public interface EntryExpiryCalculator<K, T> {
    * @param _key the cache key
    * @param _value the value to be cached, may be null
    * @param _fetchTime this is the current time in millis. If a cache source was used to
-   *            fetch the value, this is the time before the fetch was started.
+   *                   fetch the value, this is the time before the fetch was started.
    * @param _oldEntry entry representing the current mapping, if there is a value present.
+   *                  If the current entry holds an exception, this is null.
    *
    * @return time the time of expiry in millis since epoch. 0 if it should not be cached.
    *              By default expiry itself happens lenient, zero or some milliseconds after
