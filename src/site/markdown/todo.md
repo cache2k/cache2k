@@ -105,6 +105,8 @@ java.lang.IllegalStateException: Timer already cancelled.
 
 Things in JSR107 we don't have yet.
 
+  * class loader support
+  * we need XML configuration, since JCache does not define a complete cache configuration  
   * Listeners
   * Factories for loader, expiry, etc.
 
