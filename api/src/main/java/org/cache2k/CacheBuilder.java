@@ -26,6 +26,7 @@ import org.cache2k.spi.Cache2kCoreProvider;
 import org.cache2k.spi.SingleProviderResolver;
 
 import java.util.Collection;
+import java.util.concurrent.TimeUnit;
 
 /**
  * @author Jens Wilke; created: 2013-06-25
@@ -66,6 +67,7 @@ public abstract class CacheBuilder<K,T>
     return cb;
   }
 
+  protected EntryExpiryCalculator entryExpiryCalculator;
   protected CacheSource cacheSource;
   protected CacheSourceWithMetaInfo cacheSourceWithMetaInfo;
   protected RefreshController refreshController;
@@ -135,11 +137,27 @@ public abstract class CacheBuilder<K,T>
     return this;
   }
 
-  public CacheBuilder<K, T> expirySecs(int v) {
-    config.setExpirySeconds(v);
+  /**
+   * Set the time duration after an entry expires. To switch off time
+   * based expiry use {@link #eternal(boolean)}. A value of 0 effectively
+   * disables the cache.
+   */
+  public CacheBuilder<K, T> expiryDuration(long v, TimeUnit u) {
+    config.setExpiryMillis(u.toMillis(v));
     return this;
   }
 
+  /**
+   * @deprecated since 0.20, please use {@link #expiryDuration}
+   */
+  public CacheBuilder<K, T> expirySecs(int v) {
+    config.setExpiryMillis(v * 1000);
+    return this;
+  }
+
+  /**
+   * @deprecated since 0.20, please use {@link #expiryDuration}
+   */
   public CacheBuilder<K, T> expiryMillis(long v) {
     config.setExpiryMillis(v);
     return this;
@@ -165,6 +183,17 @@ public abstract class CacheBuilder<K,T>
     return this;
   }
 
+  /**
+   * Set expiry calculator to use.
+   */
+  public CacheBuilder<K, T> entryExpiryCalculator(EntryExpiryCalculator c) {
+    entryExpiryCalculator = c;
+    return this;
+  }
+
+  /**
+   * @deprecated since 0.20, please use {@link #entryExpiryCalculator}
+   */
   public CacheBuilder<K, T> refreshController(RefreshController c) {
     refreshController = c;
     return this;

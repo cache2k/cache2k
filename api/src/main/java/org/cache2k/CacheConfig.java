@@ -43,8 +43,7 @@ public class CacheConfig {
   private int maxSizeLowBound = 0;
   private int heapEntryCapacity = -1;
   private boolean backgroundRefresh = false;
-  private int expirySeconds = 10 * 60;
-  private long expiryMillis  = -1;
+  private long expiryMillis  = 10 * 60 * 1000;
   private boolean keepDataAfterExpired = true;
   private boolean sharpExpiry = false;
   private List<Object> moduleConfiguration;
@@ -135,12 +134,8 @@ public class CacheConfig {
     this.valueType = valueType;
   }
 
-  public int getExpirySeconds() {
-    return expirySeconds;
-  }
-
   public boolean isEternal() {
-    return expirySeconds == -1 || expirySeconds == Integer.MAX_VALUE;
+    return expiryMillis == -1 || expiryMillis == Long.MAX_VALUE;
   }
 
   /**
@@ -148,17 +143,25 @@ public class CacheConfig {
    */
   public void setEternal(boolean v) {
     if (v) {
-      this.expirySeconds = -1;
+      this.expiryMillis = -1;
     }
   }
 
   /**
-   * Time to pass until an entry is expired. Expiry means that an entry is not returned by the
-   * cache any more. 0 means expiry is immediately (no caching). -1 or {@link Integer#MAX_VALUE}
-   * means no expiry, this is identical to setEternal(true).
+   * @depcrecated use {@link #setExpiryMillis}
    */
-  public void setExpirySeconds(int expirySeconds) {
-    this.expirySeconds = expirySeconds;
+  public void setExpirySeconds(int v) {
+    if (v == -1 || v == Integer.MAX_VALUE) {
+      expiryMillis = -1;
+    }
+    expiryMillis = v * 1000;
+  }
+
+  public int getExpirySeconds() {
+    if (isEternal()) {
+      return -1;
+    }
+    return (int) (expiryMillis / 1000);
   }
 
   public long getExpiryMillis() {
@@ -166,7 +169,9 @@ public class CacheConfig {
   }
 
   /**
-   * If set, takes precedence before second resolution expiry.
+   * The expiry value of all entries. If an entry specific expiry calculation is
+   * determined this is the maximum expiry time. A value of -1 switches expiry off, that
+   * means entries are kept for an eternal time, a value of 0 switches caching off.
    */
   public void setExpiryMillis(long expiryMillis) {
     this.expiryMillis = expiryMillis;
@@ -192,8 +197,7 @@ public class CacheConfig {
   }
 
   /**
-   *
-   * @param sharpExpiry
+   * @see CacheBuilder#sharpExpiry(boolean)
    */
   public void setSharpExpiry(boolean sharpExpiry) {
     this.sharpExpiry = sharpExpiry;

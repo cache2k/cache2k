@@ -27,11 +27,14 @@ import org.cache2k.CacheEntry;
 import org.cache2k.CacheException;
 import org.cache2k.CacheMisconfigurationException;
 import org.cache2k.ClosableIterator;
+import org.cache2k.EntryExpiryCalculator;
 import org.cache2k.ExperimentalBulkCacheSource;
 import org.cache2k.Cache;
 import org.cache2k.CacheConfig;
 import org.cache2k.MutableCacheEntry;
+import org.cache2k.RefreshController;
 import org.cache2k.StorageConfiguration;
+import org.cache2k.ValueWithExpiryTime;
 import org.cache2k.impl.threading.Futures;
 import org.cache2k.impl.threading.LimitedPooledExecutor;
 import org.cache2k.impl.timer.GlobalTimerService;
@@ -39,7 +42,6 @@ import org.cache2k.impl.timer.TimerService;
 import org.cache2k.impl.util.ThreadDump;
 import org.cache2k.CacheSourceWithMetaInfo;
 import org.cache2k.CacheSource;
-import org.cache2k.RefreshController;
 import org.cache2k.PropagatedCacheException;
 
 import org.cache2k.storage.StorageEntry;
@@ -89,6 +91,19 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
 
   protected static final Tunable TUNABLE = TunableFactory.get(Tunable.class);
 
+  /**
+   * Instance of expiry calculator that extracts the expiry time from the value.
+   */
+  final static EntryExpiryCalculator<?, ValueWithExpiryTime> ENTRY_EXPIRY_CALCULATOR_FROM_VALUE = new
+    EntryExpiryCalculator<Object, ValueWithExpiryTime>() {
+      @Override
+      public long calculateExpiryTime(
+          Object _key, ValueWithExpiryTime _value, long _fetchTime,
+          CacheEntry<Object, ValueWithExpiryTime> _oldEntry) {
+        return _value.getCacheExpiryTime();
+      }
+    };
+
   protected int hashSeed;
 
   {
@@ -103,13 +118,13 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
   protected int maxSize = 5000;
 
   /** Time in milliseconds we keep an element */
-  protected int maxLinger = 10 * 60 * 1000;
+  protected long maxLinger = 10 * 60 * 1000;
   protected String name;
   protected CacheManagerImpl manager;
   protected CacheSourceWithMetaInfo<K, T> source;
   /** Statistics */
 
-  protected RefreshController<T> refreshController;
+  protected EntryExpiryCalculator<K, T> entryExpiryCalculator;
 
   protected Info info;
 
@@ -290,13 +305,11 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
     if (c.isBackgroundRefresh()) {
       refreshPool = CacheRefreshThreadPool.getInstance();
     }
-    if (c.getExpiryMillis() > 0) {
-      if (c.getExpiryMillis() > Integer.MAX_VALUE) {
-        throw new IllegalStateException("expiry time milliseconds exceeds Integer.MAX_VALUE");
-      }
-      maxLinger = (int) c.getExpiryMillis();
-    } else {
-      setExpirySeconds(c.getExpirySeconds());
+    long _expiryMillis  = c.getExpiryMillis();
+    if (_expiryMillis == Long.MAX_VALUE || _expiryMillis < 0) {
+      maxLinger = -1;
+    } else if (c.getExpiryMillis() >= 0) {
+      maxLinger = c.getExpiryMillis();
     }
     setFeatureBit(KEEP_AFTER_EXPIRED, c.isKeepDataAfterExpired());
     setFeatureBit(SHARP_TIMEOUT_FEATURE, c.isSharpExpiry());
@@ -315,11 +328,30 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
     } else if (_stores.size() > 1) {
       throw new UnsupportedOperationException("no aggregation support yet");
     }
+    if (ValueWithExpiryTime.class.isAssignableFrom(c.getValueType()) &&
+        entryExpiryCalculator == null)  {
+      entryExpiryCalculator =
+        (EntryExpiryCalculator<K, T>)
+        ENTRY_EXPIRY_CALCULATOR_FROM_VALUE;
+    }
+  }
+
+  public void setEntryExpiryCalculator(EntryExpiryCalculator<K, T> v) {
+    entryExpiryCalculator = v;
   }
 
   /** called via reflection from CacheBuilder */
-  public void setRefreshController(RefreshController<T> lc) {
-    refreshController = lc;
+  public void setRefreshController(final RefreshController<T> lc) {
+    entryExpiryCalculator = new EntryExpiryCalculator<K, T>() {
+      @Override
+      public long calculateExpiryTime(K _key, T _value, long _fetchTime, CacheEntry<K, T> _oldEntry) {
+        if (_oldEntry != null) {
+          return lc.calculateNextRefreshTime(_oldEntry.getValue(), _value, _oldEntry.getLastModification(), _fetchTime);
+        } else {
+          return lc.calculateNextRefreshTime(null, _value, 0L, _fetchTime);
+        }
+      }
+    };
   }
 
   @SuppressWarnings("unused")
@@ -464,7 +496,7 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
   }
 
   private boolean isNeedingTimer() {
-    return maxLinger > 0 || refreshController != null;
+    return maxLinger > 0 || entryExpiryCalculator != null;
   }
 
   /**
@@ -1531,13 +1563,15 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
    *
    * @param _newObject might be a fetched value or an exception wrapped into the {@link ExceptionWrapper}
    */
-  protected long calcNextRefreshTime(
-     T _oldObject, T _newObject, long _lastUpdate, long now) {
-    RefreshController<T> lc = refreshController;
-    if (lc != null && !(_newObject instanceof ExceptionWrapper)) {
-      long t = lc.calculateNextRefreshTime(_oldObject, _newObject, _lastUpdate, now);
-      if (maxLinger > 0) {
-        long _tMaximum = maxLinger + now;
+  public static <K, T>  long calcNextRefreshTime(
+      K _key, T _newObject, long now, Entry _entry, EntryExpiryCalculator<K, T> ec, long _maxLinger) {
+    if (_maxLinger == 0) {
+      return 0;
+    }
+    if (ec != null && !(_newObject instanceof ExceptionWrapper)) {
+      long t = ec.calculateExpiryTime(_key, _newObject, now, _entry);
+      if (_maxLinger > 0) {
+        long _tMaximum = _maxLinger + now;
         if (t > _tMaximum) {
           return _tMaximum;
         }
@@ -1547,11 +1581,15 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
       }
       return t;
     }
-    if (maxLinger > 0) {
-      return maxLinger + now;
+    if (_maxLinger > 0) {
+      return _maxLinger + now;
     } else {
-      return maxLinger;
+      return _maxLinger;
     }
+  }
+
+  protected long calcNextRefreshTime(K _key, T _newObject, long now, Entry _entry) {
+    return calcNextRefreshTime(_key, _newObject, now, _entry, entryExpiryCalculator, maxLinger);
   }
 
   protected void fetch(final E e) {
@@ -1602,7 +1640,7 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
     long _expiryTimeFromStorage = se.getValueExpiryTime();
     boolean _expired = _expiryTimeFromStorage != 0 && _expiryTimeFromStorage <= now;
     if (!_expired && timer != null) {
-      _nextRefreshTime = calcNextRefreshTime(null, v, 0L, se.getCreatedOrUpdated());
+      _nextRefreshTime = calcNextRefreshTime((K) se.getKey(), v, se.getCreatedOrUpdated(), null);
       _expired = _nextRefreshTime > Entry.EXPIRY_TIME_MIN && _nextRefreshTime <= now;
     }
     boolean _fetchAlways = timer == null && maxLinger == 0;
@@ -1660,9 +1698,9 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
     long _nextRefreshTime = maxLinger == 0 ? Entry.FETCH_NEXT_TIME_STATE : Entry.FETCHED_STATE;
     if (timer != null) {
       if (e.isVirgin() || e.hasException()) {
-        _nextRefreshTime = calcNextRefreshTime(null, v, 0L, t0);
+        _nextRefreshTime = calcNextRefreshTime((K) e.getKey(), v, t0, null);
       } else {
-        _nextRefreshTime = calcNextRefreshTime((T) e.getValue(), v, e.getLastModification(), t0);
+        _nextRefreshTime = calcNextRefreshTime((K) e.getKey(), v, t0, e);
       }
     }
     insert(e,v,t0,t,_updateStatistics, _nextRefreshTime);

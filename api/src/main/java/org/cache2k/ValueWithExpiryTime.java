@@ -23,12 +23,35 @@ package org.cache2k;
  */
 
 /**
- * Interface for use with {@link org.cache2k.AutoEntryRefreshController}
+ * Interface to add to a value object if it is possible to derive the
+ * expiry time from the value. If no explicit expiry calculator is set
+ * and this interface is detected on the value, the expiry requested
+ * from the value by the cache.
  *
- * @author Jens Wilke; created: 2013-05-02
- * @deprecated Replaces bye {@link org.cache2k.ValueWithExpiryTime}
+ * @author Jens Wilke; created: 2014-10-15
+ * @since 0.20
  */
-public interface ValueWithNextRefreshTime {
+public interface ValueWithExpiryTime {
+
+  /**
+   * Instance of an expiry calculator that uses the expiry value from the value
+   * object, or returns the maximum value, if the interface is not implemented
+   * by the value. This is useful if a cache contains different types of objects
+   * which may need expiry at a specified time or not.
+   *
+   * @since 0.20
+   */
+  public final EntryExpiryCalculator<?, ?> AUTO_EXPIRY = new EntryExpiryCalculator<Object, Object>() {
+    @Override
+    public long calculateExpiryTime(
+        Object _key, Object _value, long _fetchTime,
+        CacheEntry<Object, Object> _oldEntry) {
+      if (_value instanceof ValueWithExpiryTime) {
+        return ((ValueWithExpiryTime) _value).getCacheExpiryTime();
+      }
+      return Long.MAX_VALUE;
+    }
+  };
 
   /**
    * Return time of next refresh (expiry time). A return value of 0 means the
@@ -36,7 +59,9 @@ public interface ValueWithNextRefreshTime {
    * {@link Long#MAX_VALUE} means there is no specific expiry time
    * known or needed. In this case a reasonable default can be assumed for
    * the expiry, the cache will use the configured expiry time.
+   *
+   * @since 0.20
    */
-  public long getNextRefreshTime();
+  long getCacheExpiryTime();
 
 }

@@ -2,25 +2,19 @@
 
 A poor mans issue tracker.
 
+### 0.20
+
+  * contains()
+  * better expiry calculator
+  * different timeout for exceptions, refresh controller
+  * Closable, close() and closeAsync()
+  * New benchmark
+
 ### Next
 
   * Better formatting: msecs/fetch=833.2831546786805
   * have totalFetchMillis and totalFetches as JMX value
-  * storage entryExpireTime -> int
-  * storage: statistics counters
-  * file storage: more than one marshaller                                                                                                                                                                                                                                                                                                                                          
-  * fetchWithStorage, get rid of flag
-  * purge thread for timer thread decoupling
-  * add lock spin exceeded to all spins
-  * reset() dirty?, review isDirty() handling
-  * storage purge
-  * purge: schedule a purge
-  * purge: purge fullscan counter, purgedEntry counter...
-  * storage: special marshallers for int, long, string
-  * Optimize purge: partial purge, start with least recently used
   * getEntry()
-  * different timeout for exceptions, refresh controller
-  * Closable, close() and closeAsync()
   * Flushable, flush() and flushAsync()
   * clear() and clearAsync() ?
   * purge() and purgeAsync() ?
@@ -28,12 +22,21 @@ A poor mans issue tracker.
 ### Warmups
 
   * factor out triggered job
-  * Consistent exceptions on cache methods after close()
   * contains()
   * extract LRU operations from BaseCache
 
 ### Storage and persistence
 
+  * fetchWithStorage, get rid of flag
+  * reset() dirty?, review isDirty() handling
+  * purge thread for timer thread decoupling
+  * storage: special marshallers for int, long, string
+  * Optimize purge: partial purge, start with least recently used
+  * storage entryExpireTime -> int
+  * storage: statistics counters
+  * file storage: more than one marshaller                                                                                                                                                                                                                                                                                                                                          
+  * purge: schedule a purge
+  * purge: purge fullscan counter, purgedEntry counter...
   * passivation, entry dirty bit and storage aggregation
   * Test storage with .implementation(ClockProPlusCache.class), .implementation(ClockCache.class)
   * more than 2gb?
@@ -136,7 +139,7 @@ Things in JSR107 we don't have yet.
   * speedup locking? don't use synchronized, but we need volatile then. see:
     http://stackoverflow.com/questions/4633866/is-volatile-expensive
     http://lmax-exchange.github.io/disruptor/
-    
+  * cpu cache line: http://openjdk.java.net/jeps/142
 
 ### Prio B
 

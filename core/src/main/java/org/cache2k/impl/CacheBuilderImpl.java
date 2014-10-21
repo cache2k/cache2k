@@ -95,14 +95,17 @@ public class CacheBuilderImpl<K, T> extends CacheBuilder<K, T> {
     if (refreshController != null) {
       c.setRefreshController(refreshController);
     }
+    if (entryExpiryCalculator != null) {
+      c.setEntryExpiryCalculator(entryExpiryCalculator);
+    }
     if (bulkCacheSource != null) {
       c.setBulkCacheSource(bulkCacheSource);
     }
-    if (config != null) {
-      c.setCacheConfig(config);
-    }
     if (experimentalBulkCacheSource != null) {
       c.setExperimentalBulkCacheSource(experimentalBulkCacheSource);
+    }
+    if (config != null) {
+      c.setCacheConfig(config);
     }
   }
 

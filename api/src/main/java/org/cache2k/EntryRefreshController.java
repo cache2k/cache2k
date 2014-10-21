@@ -27,8 +27,15 @@ package org.cache2k;
  *
  * @deprecated
  */
-public class EntryRefreshController<T> extends ValueRefreshController<T> {
+public class EntryRefreshController<T> {
 
   public static final EntryRefreshController INSTANCE = new EntryRefreshController();
+
+  public long calculateNextRefreshTime(
+    T _oldObject,
+    T _newObject,
+    long _timeOfLastRefresh, long now) {
+    return ((ValueWithNextRefreshTime) _newObject).getNextRefreshTime();
+  }
 
 }
