@@ -78,7 +78,7 @@ public class SingleProviderResolver {
    */
   public <T> T resolve(Class<T> c) {
     if (c == null) {
-      throw new Error("requested provider interface is null");
+      throw new NullPointerException("requested provider interface is null");
     }
     @SuppressWarnings("unchecked")
     T obj = (T) type2instance.get(c);
