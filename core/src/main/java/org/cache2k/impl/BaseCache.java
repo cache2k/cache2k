@@ -1296,6 +1296,9 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
         if (e.isRemovedState()) {
           continue;
         }
+        if (e.isDataValidState()) {
+          e.setReputState();
+        }
         insertOnPut(e, value, t, t);
       }
       break;
@@ -1312,10 +1315,6 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
       if (e == null) {
         e = newEntry(key, hc);
         putNewEntryCnt++;
-      } else {
-        if (e.isDataValidState()) {
-          e.setReputState();
-        }
       }
     }
     return e;
