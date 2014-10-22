@@ -626,7 +626,6 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
   }
 
   public final void clear() {
-    checkClosed();
     if (storage != null) {
       processClearWithStorage();
       return;
@@ -1244,22 +1243,10 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
   @Override
   public boolean putIfAbsent(K key, T value) {
     int _spinCount = TUNABLE.maximumEntryLockSpins;
-    final int hc = modifiedHash(key.hashCode());
     boolean _success = false;
     for (;;) {
       if (_spinCount-- <= 0) { throw new CacheLockSpinsExceededError(); }
-      E e = lookupEntryUnsynchronized(key, hc);
-      if (e == null) {
-        synchronized (lock) {
-          e = lookupEntry(key, hc);
-          if (e == null) {
-            e = newEntry(key, hc);
-            if (storage == null) {
-              putNewEntryCnt++;
-            }
-          }
-        }
-      }
+      E e = lookupOrNewEntrySynchronized(key);
       synchronized (e) {
         if (e.isRemovedState()) {
           continue;
@@ -1272,7 +1259,6 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
           insertOnPut(e, value, t, t);
           synchronized (lock) {
             peekHitNotFreshCnt++;
-            putCnt++;
           }
           _success = true;
         }
@@ -1290,9 +1276,9 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
     E e;
     for (;;) {
       if (_spinCount-- <= 0) { throw new CacheLockSpinsExceededError(); }
-      e = insertEntryForPut(key);
-      long t = System.currentTimeMillis();
+      e = lookupOrNewEntrySynchronized(key);
       synchronized (e) {
+        long t = System.currentTimeMillis();
         if (e.isRemovedState()) {
           continue;
         }
@@ -1304,20 +1290,6 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
       break;
     }
     evictEventually();
-  }
-
-  private E insertEntryForPut(K key) {
-    E e;
-    synchronized (lock) {
-      putCnt++;
-      int hc = modifiedHash(key.hashCode());
-      e = lookupEntry(key, hc);
-      if (e == null) {
-        e = newEntry(key, hc);
-        putNewEntryCnt++;
-      }
-    }
-    return e;
   }
 
   /**
@@ -1448,6 +1420,7 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
     E e = lookupEntryUnsynchronized(key, hc);
     if (e == null) {
       synchronized (lock) {
+        checkClosed();
         e = lookupEntry(key, hc);
         if (e == null) {
           e = newEntry(key, hc);
@@ -1463,15 +1436,6 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
       throw new PropagatedCacheException(((ExceptionWrapper) v).getException());
     }
     return v;
-  }
-
-  /** Used by remove() and put() */
-  protected E lookupEntryWoUsageRecording(K key, int hc) {
-    E e = Hash.lookup(mainHash, key, hc);
-    if (e == null) {
-      return Hash.lookup(refreshHash, key, hc);
-    }
-    return e;
   }
 
   protected E lookupEntrySynchronized(K key) {
@@ -1709,7 +1673,7 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
         return;
       }
     }
-    insert(e, (T) se.getValueOrException(), 0, now, true, _nextRefreshTime);
+    insert(e, (T) se.getValueOrException(), 0, now, INSERT_STAT_UPDATE, _nextRefreshTime);
   }
 
   protected void fetchFromSource(E e) {
@@ -1733,18 +1697,18 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
   }
 
   protected final void insertFetched(E e, T v, long t0, long t) {
-    insert(e, v, t0, t, true);
+    insert(e, v, t0, t, INSERT_STAT_UPDATE);
   }
 
   protected final void insertOnPut(E e, T v, long t0, long t) {
     e.setLastModification(t0);
-    insert(e, v, t0, t, false);
+    insert(e, v, t0, t, INSERT_STAT_PUT);
   }
 
   /**
    * Calculate the next refresh time if a timer / expiry is needed and call insert.
    */
-  protected final void insert(E e, T v, long t0, long t, boolean _updateStatistics) {
+  protected final void insert(E e, T v, long t0, long t, byte _updateStatistics) {
     long _nextRefreshTime = maxLinger == 0 ? Entry.FETCH_NEXT_TIME_STATE : Entry.FETCHED_STATE;
     if (timer != null) {
       if (e.isVirgin() || e.hasException()) {
@@ -1756,15 +1720,19 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
         }
       }
     }
-    insert(e,v,t0,t,_updateStatistics, _nextRefreshTime);
+    insert(e,v,t0,t, _updateStatistics, _nextRefreshTime);
   }
 
-  protected final void insert(E e, T v, long t0, long t, boolean _updateStatistics, long _nextRefreshTime) {
+  final static byte INSERT_STAT_NO_UPDATE = 0;
+  final static byte INSERT_STAT_UPDATE = 1;
+  final static byte INSERT_STAT_PUT = 2;
+
+  protected final void insert(E e, T v, long t0, long t, byte _updateStatistics, long _nextRefreshTime) {
     synchronized (lock) {
       checkClosed();
       touchedTime = t;
 
-      if (_updateStatistics) {
+      if (_updateStatistics == INSERT_STAT_UPDATE) {
         if (t0 == 0) {
           loadHitCnt++;
         } else {
@@ -1778,6 +1746,11 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
           } else if (!e.isVirgin()) {
             fetchButHitCnt++;
           }
+        }
+      } else if (_updateStatistics == INSERT_STAT_PUT) {
+        putCnt++;
+        if (e.isVirgin()) {
+          putNewEntryCnt++;
         }
       }
       if (e.task != null) {
@@ -1946,7 +1919,7 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
 
   /**
    * Returns all cache entries within the heap cache. Entries that
-   * are expires or contain no valid data are not filtered out.
+   * are expired or contain no valid data are not filtered out.
    */
   final protected ClosableConcurrentHashEntryIterator<Entry> iterateAllLocalEntries() {
     return
