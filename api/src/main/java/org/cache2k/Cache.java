@@ -109,7 +109,7 @@ public interface Cache<K, T> extends KeyValueSource<K,T>, Iterable<CacheEntry<K,
   /**
    * Remove the object mapped to key from the cache.
    */
-  public abstract void remove(K key);
+  public abstract boolean remove(K key);
 
   /**
    * Remove the mappings for the keys atomically. Missing keys

@@ -1159,19 +1159,30 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
   private void evictEntryFromHeap(E e) {
     synchronized (lock) {
       if (e.isRemovedFromReplacementList()) {
-        removeEntryFromHash(e);
-        evictedButInHashCnt--;
+        if (removeEntryFromHash(e)) {
+          evictedButInHashCnt--;
+          evictedCnt++;
+        }
       } else {
-        removeEntry(e);
-        evictedCnt++;
+        if (removeEntry(e)) {
+          evictedCnt++;
+        }
       }
       evictionNeeded = getLocalSize() > maxSize;
     }
   }
 
-  protected void removeEntry(E e) {
-    removeEntryFromReplacementList(e);
-    removeEntryFromHash(e);
+  /**
+   * Remove the entry from the hash and the replacement list.
+   * There is a race condition to catch: The eviction may run
+   * in a parallel thread and may have already selected this
+   * entry.
+   */
+  protected boolean removeEntry(E e) {
+    if (!e.isRemovedFromReplacementList()) {
+      removeEntryFromReplacementList(e);
+    }
+    return removeEntryFromHash(e);
   }
 
   /**
@@ -1299,25 +1310,45 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
    * is the only one working on the entry.
    */
   @Override
-  public void remove(K key) {
-    E e;
+  public boolean remove(K key) {
     if (storage == null) {
-      e = lookupEntrySynchronized(key);
-    } else {
-      e = lookupOrNewEntrySynchronized(key);
-    }
-    if (e != null) {
-      synchronized (e) {
-        if (!e.isRemovedState()) {
-          synchronized (lock) {
-            removeEntry(e);
-            removedCnt++;
+      E e = lookupEntrySynchronized(key);
+      if (e != null) {
+        synchronized (e) {
+          if (!e.isRemovedState()) {
+            synchronized (lock) {
+              boolean f = e.hasFreshData();
+              if (removeEntry(e)) {
+                removedCnt++;
+                return f;
+              }
+              return false;
+            }
           }
-        } else if (storage != null) {
         }
-        if (storage != null) {
-          storage.remove(key);
+      }
+      return false;
+    }
+    int _spinCount = TUNABLE.maximumEntryLockSpins;
+    for (;;) {
+      if (_spinCount-- <= 0) { throw new CacheLockSpinsExceededError(); }
+      E e = lookupOrNewEntrySynchronized(key);
+      synchronized (e) {
+        if (e.isRemovedState()) { continue; }
+        fetchWithStorage(e, false);
+        boolean _hasFreshData = e.hasFreshData();
+        boolean _storageRemove = true;
+        storage.remove(key);
+        boolean _heapRemove;
+        synchronized (lock) {
+          if (removeEntry(e)) {
+            removedCnt++;
+            _heapRemove = true;
+          } else {
+            _heapRemove = false;
+          }
         }
+        return _hasFreshData && (_heapRemove || _storageRemove);
       }
     }
   }
@@ -1434,7 +1465,7 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
   protected E lookupEntrySynchronized(K key) {
     int hc = modifiedHash(key.hashCode());
     E e = lookupEntryUnsynchronized(key, hc);
-    if (e != null) {
+    if (e == null) {
       synchronized (lock) {
         e = lookupEntry(key, hc);
       }
@@ -1489,20 +1520,15 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
    * The entry is already removed from the replacement list. stop/reset timer, if needed.
    * Called under big lock.
    */
-  private void removeEntryFromHash(E e) {
-    boolean f =
-      mainHashCtrl.remove(mainHash, e) || refreshHashCtrl.remove(refreshHash, e);
+  private boolean removeEntryFromHash(E e) {
+    boolean f = mainHashCtrl.remove(mainHash, e) || refreshHashCtrl.remove(refreshHash, e);
     checkForHashCodeChange(e);
-
     cancelExpiryTimer(e);
-    if (e.isDataValidState()) {
-      e.setRemovedState();
-    } else {
-      if (e.isVirgin()) {
-        virginEvictCnt++;
-      }
-      e.setRemovedState();
+    if (e.isVirgin()) {
+      virginEvictCnt++;
     }
+    e.setRemovedState();
+    return f;
   }
 
   private void cancelExpiryTimer(Entry e) {
@@ -1812,9 +1838,8 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
               public void run() {
                 synchronized (lock) {
                   synchronized (e) {
-                    if (!e.isRemovedState()) {
+                    if (!e.isRemovedState() && removeEntryFromHash(e)) {
                       expiredRemoveCnt++;
-                      removeEntryFromHash(e);
                     }
                   }
                 }
@@ -1903,8 +1928,9 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
         if (hasKeepAfterExpired()) {
           expiredKeptCnt++;
         } else {
-          removeEntry(e);
-          expiredRemoveCnt++;
+          if (removeEntry(e)) {
+            expiredRemoveCnt++;
+          }
         }
       }
     }
