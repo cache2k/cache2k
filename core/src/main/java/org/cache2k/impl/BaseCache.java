@@ -217,9 +217,6 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
   protected Hash<E> refreshHashCtrl;
   protected E[] refreshHash;
 
-  protected Hash<E> txHashCtrl;
-  protected E[] txHash;
-
   protected ExperimentalBulkCacheSource<K, T> experimentalBulkCacheSource;
 
   protected BulkCacheSource<K, T> bulkCacheSource;
@@ -658,10 +655,8 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
     }
     mainHashCtrl = new Hash<E>();
     refreshHashCtrl = new Hash<E>();
-    txHashCtrl = new Hash<E>();
     mainHash = mainHashCtrl.init((Class<E>) newEntry().getClass());
     refreshHash = refreshHashCtrl.init((Class<E>) newEntry().getClass());
-    txHash = txHashCtrl.init((Class<E>) newEntry().getClass());
     if (startedTime == 0) {
       startedTime = System.currentTimeMillis();
     }
@@ -1270,7 +1265,6 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
     evictEventually();
     return _success;
   }
-
 
   @Override
   public void put(K key, T value) {
