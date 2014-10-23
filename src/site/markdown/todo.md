@@ -13,10 +13,13 @@ A poor mans issue tracker.
 
 ### Next
 
+  * Statistics: removeCnt with storage is "wrong", there are heap entries for loaded/checked storage
+  * test exceptions within expiry policy
+  * stress test with evictions
   * description for exception handling: policy, exception counter, suppressed exceptions, exceptions and bulk requests
   * Better formatting: msecs/fetch=833.2831546786805
   * have totalFetchMillis and totalFetches as JMX value
-  * getEntry()
+  * peekEntry/iterator, make sure the entry values are consistent. modification time and value may be updated independently
   * Flushable, flush() and flushAsync()
   * clear() and clearAsync() ?
   * purge() and purgeAsync() ?
