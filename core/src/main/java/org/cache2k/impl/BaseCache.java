@@ -996,7 +996,7 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
   }
 
   /**
-   * Check whether we have an entry in an the ghost table
+   * Check whether we have an entry in the ghost table
    * remove it from ghost and insert it into the replacement list.
    * null if nothing there. This may also do an optional eviction
    * if the size limit of the cache is reached, because some replacement
