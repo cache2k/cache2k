@@ -81,8 +81,8 @@ public class ByReferenceHeapStorageImpl implements CacheStorage {
   }
 
   @Override
-  public synchronized void remove(Object key) throws Exception {
-    entries.remove(key);
+  public synchronized boolean remove(Object key) throws Exception {
+    return entries.remove(key) != null;
   }
 
   @Override

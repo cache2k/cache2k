@@ -180,7 +180,7 @@ public class ClearStorageBuffer implements CacheStorage, FlushableStorage, Purge
   }
 
   @Override
-  public void remove(Object key) throws Exception {
+  public boolean remove(Object key) throws Exception {
     StorageEntry e = null;
     boolean _forward;
     synchronized (this) {
@@ -191,10 +191,11 @@ public class ClearStorageBuffer implements CacheStorage, FlushableStorage, Purge
       }
     }
     if (_forward) {
-      forwardStorage.remove(key);
+      return forwardStorage.remove(key);
     } else {
       throttle();
     }
+    return e != null;
   }
 
   @Override

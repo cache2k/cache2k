@@ -257,19 +257,24 @@ public class PassingStorageAdapter extends StorageAdapter {
     doPut(e);
   }
 
-  public void remove(Object key) {
-    if (deletedKeys != null) {
-      synchronized (deletedKeys) {
-        deletedKeys.remove(key);
-      }
-      return;
-    }
+  public boolean remove(Object key) {
     try {
-      storage.remove(key);
+      if (deletedKeys != null) {
+        synchronized (deletedKeys) {
+          if (!deletedKeys.contains(key) && storage.contains(key)) {
+            deletedKeys.add(key);
+            return true;
+          }
+          return false;
+        }
+      }
+      boolean f = storage.remove(key);
       checkStartFlushTimer();
+      return f;
     } catch (Exception ex) {
       disableAndThrow("storage.remove()", ex);
     }
+    return false;
   }
 
   @Override

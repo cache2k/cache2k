@@ -1337,8 +1337,7 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
         if (e.isRemovedState()) { continue; }
         fetchWithStorage(e, false);
         boolean _hasFreshData = e.hasFreshData();
-        boolean _storageRemove = true;
-        storage.remove(key);
+        boolean _storageRemove = storage.remove(key);
         boolean _heapRemove;
         synchronized (lock) {
           if (removeEntry(e)) {

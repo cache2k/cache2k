@@ -50,7 +50,7 @@ public abstract class StorageAdapter {
 
   public abstract void put(BaseCache.Entry e);
   public abstract StorageEntry get(Object key);
-  public abstract void remove(Object key);
+  public abstract boolean remove(Object key);
   public abstract void evict(BaseCache.Entry e);
 
   /**

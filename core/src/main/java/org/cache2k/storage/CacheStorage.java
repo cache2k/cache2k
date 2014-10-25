@@ -53,7 +53,7 @@ public interface CacheStorage {
    */
   public void put(StorageEntry e) throws Exception;
 
-  public void remove(Object key) throws Exception;
+  public boolean remove(Object key) throws Exception;
 
   /**
    * Returns true if there is a mapping for the key.

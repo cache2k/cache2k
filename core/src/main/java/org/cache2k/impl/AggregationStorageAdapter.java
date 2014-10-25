@@ -122,10 +122,12 @@ public class AggregationStorageAdapter extends StorageAdapter implements Storage
   }
 
   @Override
-  public void remove(Object key) {
+  public boolean remove(Object key) {
+    boolean f = false;
     for (StorageAdapter a : storages) {
-      a.remove(key);
+      f |= a.remove(key);
     }
+    return f;
   }
 
   @Override

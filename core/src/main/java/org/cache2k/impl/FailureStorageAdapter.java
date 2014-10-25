@@ -89,8 +89,9 @@ public class FailureStorageAdapter extends StorageAdapter {
   }
 
   @Override
-  public void remove(Object key) {
+  public boolean remove(Object key) {
     throwException();
+    return false;
   }
 
   @Override

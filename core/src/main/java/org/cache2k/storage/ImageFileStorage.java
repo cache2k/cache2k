@@ -377,17 +377,17 @@ public class ImageFileStorage
     }
   }
 
-  public void remove(Object key) throws IOException, ClassNotFoundException {
+  public boolean remove(Object key) throws IOException, ClassNotFoundException {
     HeapEntry be;
     synchronized (valuesLock) {
       be = values.remove(key);
       if (be == null) {
-        return;
+        return false;
       }
       reallyRemove(be);
       removeCount++;
-     }
-    returnEntry(be);
+    }
+    return true;
   }
 
   /**

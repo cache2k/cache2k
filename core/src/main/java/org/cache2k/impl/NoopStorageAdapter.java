@@ -85,7 +85,7 @@ public class NoopStorageAdapter extends StorageAdapter {
   }
 
   @Override
-  public void remove(Object key) { }
+  public boolean remove(Object key) { return false; }
 
   @Override
   public void evict(BaseCache.Entry e) { }
