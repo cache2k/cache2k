@@ -34,8 +34,8 @@ import java.util.List;
 public class CacheConfig {
 
   private String name;
-  private Class<?> keyType;
-  private Class<?> valueType;
+  private Class<?> keyType = Object.class;
+  private Class<?> valueType = Object.class;
   private Class<?> entryType;
   private Class<?> implementation;
   private int maxSize = 2000;
@@ -117,6 +117,7 @@ public class CacheConfig {
   }
 
   public void setKeyType(Class<?> keyType) {
+    if (keyType == null) { throw new NullPointerException("null key type not allowed"); }
     this.keyType = keyType;
   }
 
@@ -133,6 +134,7 @@ public class CacheConfig {
   }
 
   public void setValueType(Class<?> valueType) {
+    if (valueType == null) { throw new NullPointerException("null value type not allowed"); }
     this.valueType = valueType;
   }
 
