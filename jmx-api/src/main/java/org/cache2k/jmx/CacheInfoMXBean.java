@@ -111,6 +111,17 @@ public interface CacheInfoMXBean {
   long getKeyMutationCnt();
 
   /**
+   * Number of exceptions thrown by the {@link org.cache2k.CacheSource}.
+   */
+  long getFetchExceptionCnt();
+
+  /**
+   * Number of exceptions thrown by the CacheSource that were ignored and
+   * the previous data value got returned.
+   */
+  long getSuppressedExceptionCnt();
+
+  /**
    * The percentage of cache accesses the cache delivered data directly instead of fetching it.
    */
   double getHitRate();

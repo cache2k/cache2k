@@ -4,22 +4,20 @@ A poor mans issue tracker.
 
 ### 0.20
 
-  * counter for exceptions
-  * keep calculator name or rename to policy
-  * contains()
-  * Closable, close() and closeAsync()
-  * New benchmark
   * documentation update?
 
 ### Next
 
+  * contains()
+  * Closable, close() and closeAsync()
+  * New benchmark
   * Statistics: removeCnt with storage is "wrong", there are heap entries for loaded/checked storage
   * test exceptions within expiry policy
   * stress test with evictions
   * description for exception handling: policy, exception counter, suppressed exceptions, exceptions and bulk requests
   * Better formatting: msecs/fetch=833.2831546786805
   * have totalFetchMillis and totalFetches as JMX value
-  * peekEntry/iterator, make sure the entry values are consistent. modification time and value may be updated independently
+  * peekEntry/iterator, make sure the entry values are consistent/immutable. modification time and value may be updated independently
   * Flushable, flush() and flushAsync()
   * clear() and clearAsync() ?
   * purge() and purgeAsync() ?
@@ -115,12 +113,9 @@ Things in JSR107 we don't have yet.
 
 #### Details
 
-  * RefreshController: Rename? Add key!, what to do with exception?, 
-    Use the CacheEntry instead of the long parameter list.
   * expiry/refresh: Implement sharp expiry and background refresh, refresh ahead of time with different now?
   * change cache size during operation: maximumSize / capacity JMX setting
   * explain/check null support
-  * exceptions: stick to old data when intermediate exceptions occur
   * API: typing / K or ? extends K
   * API: typing for get(), see:    http://stackoverflow.com/questions/857420/what-are-the-reasons-why-map-getobject-key-is-not-fully-generic
   * API/implementation: transaction support for use as database cache, for the lock free cache implementations
@@ -134,15 +129,12 @@ Things in JSR107 we don't have yet.
   * noname caches/generated names and garbage collection?
   * special integer key variant
   * prefetch: correct implementation / don't increment usage / counter for evicted non-used entries?
-  * clean API package / SPI for implementation?
   * getEntry()
-  * remove commons-logging dependency?
   * Memory size estimation, check this:
     * http://codespot.net/2012/01/04/measuring-java-object-sizes/?relatedposts_exclude=382
     * http://marxsoftware.blogspot.de/2011/12/estimating-java-object-sizes-with.html
     * http://stackoverflow.com/questions/690805/any-java-caches-that-can-limit-memory-usage-of-in-memory-cache-not-just-instanc?rq=1
   * cache feature comparison: e.g.ehcache synchronuous write
-  * exceptions: fetchExceptions counter in statistic!
   * speedup locking? don't use synchronized, but we need volatile then. see:
     http://stackoverflow.com/questions/4633866/is-volatile-expensive
     http://lmax-exchange.github.io/disruptor/
@@ -179,6 +171,6 @@ The interesting question is, what is the "core
   * JavaCodeGeeks
   * java.net
   * reddit
+  * ycombinator
   * javaranch caching article, at: http://www.coderanch.com/how-to/java/CachingStrategies
   * WikiPedia?
-

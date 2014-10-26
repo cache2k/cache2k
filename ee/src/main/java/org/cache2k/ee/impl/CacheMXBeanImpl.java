@@ -102,6 +102,16 @@ public class CacheMXBeanImpl implements CacheMXBean {
   }
 
   @Override
+  public long getFetchExceptionCnt() {
+    return getInfo().getFetchExceptionCnt();
+  }
+
+  @Override
+  public long getSuppressedExceptionCnt() {
+    return getInfo().getSuppressedExceptionCnt();
+  }
+
+  @Override
   public long getPutCnt() {
     return getInfo().getPutCnt();
   }

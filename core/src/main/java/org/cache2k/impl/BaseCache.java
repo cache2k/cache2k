@@ -147,6 +147,8 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
   protected long expiredRemoveCnt = 0;
   protected long evictedCnt = 0;
   protected long refreshCnt = 0;
+  protected long suppressedExceptionCnt = 0;
+  protected long fetchExceptionCnt = 0;
   /* that is a miss, but a hit was already counted. */
   protected long peekHitNotFreshCnt = 0;
   /* no heap hash hit */
@@ -1733,9 +1735,6 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
         _nextRefreshTime = calcNextRefreshTime((K) e.getKey(), v, t0, null);
       } else {
         _nextRefreshTime = calcNextRefreshTime((K) e.getKey(), v, t0, e);
-        if (hasSuppressExceptions() && v instanceof ExceptionWrapper) {
-          v = (T) e.getValue();
-        }
       }
     }
     insert(e,v,t0,t, _updateStatistics, _nextRefreshTime);
@@ -1749,11 +1748,17 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
     synchronized (lock) {
       checkClosed();
       touchedTime = t;
-
       if (_updateStatistics == INSERT_STAT_UPDATE) {
         if (t0 == 0) {
           loadHitCnt++;
         } else {
+          if (v instanceof ExceptionWrapper) {
+            if (hasSuppressExceptions() && e.getValue() != INITIAL_VALUE && !e.hasException()) {
+              v = (T) e.getValue();
+              suppressedExceptionCnt++;
+            }
+            fetchExceptionCnt++;
+          }
           fetchCnt++;
           fetchMillis += t - t0;
           if (e.isGettingRefresh()) {
@@ -2384,6 +2389,8 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
         + "created=" + timestampToString(fo.getStarted()) + ", "
         + "cleared=" + timestampToString(fo.getCleared()) + ", "
         + "touched=" + timestampToString(fo.getTouched()) + ", "
+        + "fetchExceptionCnt=" + fo.getFetchExceptionCnt() + ", "
+        + "suppressedExceptionCnt=" + fo.getSuppressedExceptionCnt() + ", "
         + "internalExceptionCnt=" + fo.getInternalExceptionCnt() + ", "
         + "keyMutationCnt=" + fo.getKeyMutationCnt() + ", "
         + "infoCreated=" + timestampToString(fo.getInfoCreated()) + ", "
@@ -2449,6 +2456,8 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
     public long getRefreshCnt() { return refreshCnt; }
     public long getInternalExceptionCnt() { return internalExceptionCnt; }
     public long getRefreshSubmitFailedCnt() { return refreshSubmitFailedCnt; }
+    public long getSuppressedExceptionCnt() { return suppressedExceptionCnt; }
+    public long getFetchExceptionCnt() { return fetchExceptionCnt; }
     public long getRefreshHitCnt() { return refreshHitCnt; }
     public long getExpiredCnt() { return BaseCache.this.getExpiredCnt(); }
     public long getEvictedCnt() { return evictedCnt - virginEvictCnt; }
