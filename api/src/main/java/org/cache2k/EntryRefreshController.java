@@ -27,7 +27,7 @@ package org.cache2k;
  *
  * @deprecated
  */
-public class EntryRefreshController<T> {
+public class EntryRefreshController<T> implements RefreshController<T> {
 
   public static final EntryRefreshController INSTANCE = new EntryRefreshController();
 
