@@ -1,12 +1,6 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
   <modelVersion>4.0.0</modelVersion>
 
-  <parent>
-    <groupId>org.sonatype.oss</groupId>
-    <artifactId>oss-parent</artifactId>
-    <version>9</version>
-  </parent>
-
   <groupId>org.cache2k</groupId>
   <artifactId>cache2k-parent</artifactId>
   <packaging>pom</packaging>
@@ -341,14 +335,48 @@
       </build>
     </profile>
 
-    <!-- sign artifact, see:
-         https://docs.sonatype.org/display/Repository/How+To+Generate+PGP+Signatures+With+Maven
-         -->
-    <!-- override sonatype key signing to configure correct key name  -->
+    <!--
+         Profile is used to deploy an internal pre release for integration tests with the
+         rest of the headissue software.
+    -->
+    <profile>
+      <id>headissue-release</id>
+      <distributionManagement>
+        <repository>
+          <id>headissue.public</id>
+          <name>headissue public repository</name>
+          <url>${h7e.release.deploy.url}</url>
+        </repository>
+        <snapshotRepository>
+          <id>headissue.snapshot</id>
+          <name>Internal Snapshot Repository</name>
+          <url>${h7e.snapshot.deploy.url}</url>
+        </snapshotRepository>
+      </distributionManagement>
+    </profile>
+
+    <!-- profile used for the oss release via sonatype. This is taken from
+         oss-parent-9.pom -->
     <profile>
       <id>sonatype-oss-release</id>
+      <distributionManagement>
+        <snapshotRepository>
+          <id>sonatype-nexus-snapshots</id>
+          <name>Sonatype Nexus Snapshots</name>
+          <url>https://oss.sonatype.org/content/repositories/snapshots/</url>
+        </snapshotRepository>
+        <repository>
+          <id>sonatype-nexus-staging</id>
+          <name>Nexus Release Repository</name>
+          <url>https://oss.sonatype.org/service/local/staging/deploy/maven2/</url>
+        </repository>
+      </distributionManagement>
       <build>
         <plugins>
+          <!-- sign artifact, see:
+               https://docs.sonatype.org/display/Repository/How+To+Generate+PGP+Signatures+With+Maven
+               override sonatype key signing to configure correct key name
+               -->
           <plugin>
             <groupId>org.apache.maven.plugins</groupId>
             <artifactId>maven-gpg-plugin</artifactId>
