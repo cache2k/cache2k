@@ -76,4 +76,11 @@ public class ManagerMXBeanImpl implements CacheManagerMXBean {
   public void clear() {
     manager.clear();
   }
+
+  @Override
+  public String getVersion() { return manager.getVersion(); }
+
+  @Override
+  public String getBuildNumber() { return manager.getBuildNumber(); }
+
 }

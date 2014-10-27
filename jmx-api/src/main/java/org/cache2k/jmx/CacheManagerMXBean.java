@@ -44,4 +44,8 @@ public interface CacheManagerMXBean {
    */
   void clear();
 
+  String getVersion();
+
+  String getBuildNumber();
+
 }

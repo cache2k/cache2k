@@ -31,6 +31,7 @@ import org.cache2k.impl.util.Log;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -54,7 +55,6 @@ import java.util.jar.Manifest;
  */
 public class CacheManagerImpl extends CacheManager {
   
-  static final String META_INF_MANIFEST_MF = "/META-INF/MANIFEST.MF";
   static List<CacheLifeCycleListener> cacheLifeCycleListeners = new ArrayList<CacheLifeCycleListener>();
   static List<CacheManagerLifeCycleListener> cacheManagerLifeCycleListeners = new ArrayList<CacheManagerLifeCycleListener>();
 
@@ -75,6 +75,8 @@ public class CacheManagerImpl extends CacheManager {
   private GlobalPooledExecutor threadPool;
   private AtomicInteger evictionThreadCount = new AtomicInteger();
   private ExecutorService evictionExecutor;
+  private String version;
+  private String buildNumber;
 
   public CacheManagerImpl() {
     this(getDefaultName());
@@ -86,10 +88,15 @@ public class CacheManagerImpl extends CacheManager {
     String _buildNumber = null;
     String _version = null;
     try {
-      InputStream in = this.getClass().getResourceAsStream(META_INF_MANIFEST_MF);
-      Manifest m = new Manifest(in);
-      _version = m.getMainAttributes().getValue("Implementation-Version");
-      _buildNumber = m.getMainAttributes().getValue("Implementation-Build");
+      Class _myClass = this.getClass();
+      String _classPath = _myClass.getResource(_myClass.getSimpleName() + ".class").toString();
+      if (_classPath != null && _classPath.startsWith("jar")) {
+        String _manifestUrl =
+            _classPath.substring(0, _classPath.lastIndexOf("!") + 1) + "/META-INF/MANIFEST.MF";
+        Manifest m = new Manifest(new URL(_manifestUrl).openStream());
+        version = _version = m.getMainAttributes().getValue("Implementation-Version");
+        buildNumber = _buildNumber = m.getMainAttributes().getValue("Implementation-Build");
+      }
     } catch (IOException _ignore) {
     }
     StringBuilder sb = new StringBuilder();
@@ -380,6 +387,14 @@ public class CacheManagerImpl extends CacheManager {
     if (caches == null) {
       throw new IllegalStateException("CacheManager already closed");
     }
+  }
+
+  public String getVersion() {
+    return version;
+  }
+
+  public String getBuildNumber() {
+    return buildNumber;
   }
 
 }
