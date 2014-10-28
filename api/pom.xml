@@ -23,15 +23,4 @@
     still evolving until version 1.0 is reached.
   </description>
 
-  <dependencies>
-    <!-- FIXME: intellij says annotation processor cannot be run because of cycle....
-    <dependency>
-      <groupId>${project.groupId}</groupId>
-      <artifactId>cache2k-core</artifactId>
-      <version>${project.version}</version>
-      <scope>runtime</scope>
-    </dependency>
-    -->
-  </dependencies>
-
 </project>
