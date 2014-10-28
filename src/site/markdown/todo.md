@@ -6,6 +6,12 @@ A poor mans issue tracker.
 
   * documentation update?
 
+### 0.22
+
+Planned API breaking changes in this release:
+
+  * void remove(key) -> boolean remove(key) 
+
 ### Next
 
   * contains()

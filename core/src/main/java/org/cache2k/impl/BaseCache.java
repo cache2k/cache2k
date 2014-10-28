@@ -1311,8 +1311,7 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
    * keep the cache and the storage consistent it must be ensured that this thread
    * is the only one working on the entry.
    */
-  @Override
-  public boolean remove(K key) {
+  public boolean removeWithFlag(K key) {
     if (storage == null) {
       E e = lookupEntrySynchronized(key);
       if (e != null) {
@@ -1352,6 +1351,11 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
         return _hasFreshData && (_heapRemove || _storageRemove);
       }
     }
+  }
+
+  @Override
+  public void remove(K key) {
+    removeWithFlag(key);
   }
 
   @Override
