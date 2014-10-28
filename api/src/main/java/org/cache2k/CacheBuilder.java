@@ -235,7 +235,7 @@ public abstract class CacheBuilder<K,T>
 
   @Deprecated
   public CacheConfig getConfig() {
-    return createConfiguration();
+    return null;
   }
 
 
