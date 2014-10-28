@@ -8,6 +8,7 @@
     <groupId>org.cache2k</groupId>
     <artifactId>cache2k-parent</artifactId>
     <version>0.20-SNAPSHOT</version>
+    <relativePath>../pom.xml</relativePath>
   </parent>
 
   <artifactId>cache2k-api</artifactId>
@@ -22,5 +23,25 @@
     then existing cache solutions. cache2k comes with a clean and concise API. The API is currently
     still evolving until version 1.0 is reached.
   </description>
+
+  <build>
+    <plugins>
+      <!-- print a clirr report with:  mvn clirr:check -->
+      <plugin>
+        <groupId>org.codehaus.mojo</groupId>
+        <artifactId>clirr-maven-plugin</artifactId>
+        <version>2.6.1</version>
+        <configuration>
+          <comparisonArtifacts>
+            <comparisonArtifact>
+              <groupId>org.cache2k</groupId>
+              <artifactId>cache2k-api</artifactId>
+              <version>0.19.1</version>
+            </comparisonArtifact>
+          </comparisonArtifacts>
+        </configuration>
+      </plugin>
+    </plugins>
+  </build>
 
 </project>
