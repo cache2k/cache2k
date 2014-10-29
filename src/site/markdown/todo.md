@@ -99,6 +99,7 @@ java.lang.IllegalStateException: Timer already cancelled.
 
 ### Prio A / for 1.0
 
+  * Review JavaDocs, switch to markdown in javadoc? interesting:  http://plugins.jetbrains.com/plugin/7253?pr=idea
   * API freeze, for usage as in-memory cache
   * improve documentation
   * make low overhead replacement algorithm standard (post LRU...)
