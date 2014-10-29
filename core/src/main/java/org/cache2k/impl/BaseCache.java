@@ -3162,6 +3162,11 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
 
   public static class Tunable extends TunableConstants {
 
+    /**
+     * Implementation class to use by default.
+     */
+    public Class<? extends BaseCache> defaultImplementation = LruCache.class;
+
     public int waitForTimerJobsSeconds = 5;
 
     /**

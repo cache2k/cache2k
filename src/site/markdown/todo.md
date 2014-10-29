@@ -59,6 +59,8 @@ Planned API breaking changes in this release:
 
 ### robustness
 
+  * CP+: Why too much entries: size=4003, maxSize=4000
+
 fetchesInFlight, does not go up consistently for refreshes. Also should count all entries that
 do I/O with the storage.
 

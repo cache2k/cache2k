@@ -151,10 +151,9 @@ public final class TunableFactory {
             if (log.isDebugEnabled()) {
               log.debug(_propName + "=" + f.get(cfg));
             }
-          } else if (f.getType().isInterface()) {
+          } else if (f.getType() == Class.class) {
             Class<?> c = Class.forName(o);
-            Object _instance = c.newInstance();
-            f.set(cfg, _instance);
+            f.set(cfg, c);
             if (log.isDebugEnabled()) {
               log.debug(_propName + "=" + c.getName());
             }

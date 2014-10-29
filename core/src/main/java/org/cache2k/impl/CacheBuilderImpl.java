@@ -161,7 +161,7 @@ public class CacheBuilderImpl<K, T> extends CacheBuilder<K, T> {
     if (config.getName() == null) {
       config.setName(deriveNameFromStackTrace());
     }
-    Class<?> _implClass = LruCache.class;
+    Class<?> _implClass = BaseCache.TUNABLE.defaultImplementation;
     if (config.getImplementation() != null) {
       _implClass = config.getImplementation();
     }
