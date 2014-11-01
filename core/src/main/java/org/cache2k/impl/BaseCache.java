@@ -77,8 +77,8 @@ import java.util.concurrent.TimeoutException;
  * LRU list (a simple double linked list), and a fast timer.
  * The variants implement different eviction strategies.
  *
- * <p/>Locking: The cache has a single structure lock obtained via {@link #lock} and also
- * locks on each entry for operations on it. Though, operations that happen on a
+ * <p>Locking: The cache has a single structure lock obtained via {@link #lock} and also
+ * locks on each entry for operations on it. Though, mutation operations that happen on a
  * single entry get serialized.
  *
  * @author Jens Wilke; created: 2013-07-09
@@ -2729,7 +2729,7 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
 
     /**
      * Remove entry from the hash. We never shrink the hash table, so
-     * the array keeps identical. After this remove operatoin the entry
+     * the array keeps identical. After this remove operation the entry
      * object may be inserted in another hash.
      */
     public E remove(E[] _hashTable, Object key, int hc) {
