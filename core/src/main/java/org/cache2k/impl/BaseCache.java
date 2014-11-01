@@ -2638,7 +2638,7 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
       Entry e = _hashTable[i];
       while (e != null) {
         if (e.hashCode == _hashCode &&
-            key.equals(e.key)) {
+            (key == e.key || key.equals(e.key))) {
           return true;
         }
         e = e.another;
