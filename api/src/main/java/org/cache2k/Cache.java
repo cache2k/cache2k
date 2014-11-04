@@ -173,8 +173,11 @@ public interface Cache<K, T> extends KeyValueSource<K,T>, Iterable<CacheEntry<K,
    * iterate entries inserted during the iteration is in progress. The iteration never
    * iterates duplicate entries.
    *
-   * <p>The iteration is usable fully concurrently. Concurrent operation will not be
+   * <p>The iteration is usable concurrently. Concurrent operations will not be
    * influenced. Mutations of the cache, like remove or put, will not stop the iteration.
+   *
+   * <p>The iterator itself is not thread safe. Calls to one iterator instance from
+   * different threads need to be properly synchronized.
    *
    * <p>The iterator holds resources. If an iteration is aborted, the resources should
    * be freed by calling {@link org.cache2k.ClosableIterator#close}, e.g. with a
