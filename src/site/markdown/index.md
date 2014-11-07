@@ -6,6 +6,8 @@ the name cache2k.
 
 ## News
 
+  * **Version 0.20, 2014-11-05**: Revised configuration, iterator, improved 
+    exception handling, see [Version 0.20 release notes](0/20.html)
   * **Version 0.19.1, 2014-03-13**: Rerelease, now on Maven Central!
   * **Version 0.19, 2014-02-25**: JMX support enabled, bulk API enhancements,
     simple transaction support, see [Version 0.19 release notes](0/19.html)
@@ -15,6 +17,49 @@ the name cache2k.
 
 We use every cache2k release within production environments. However, some of the basic features
 are still evolving and there may be API breaking changes until we reach version 1.0.
+
+## Integrating cache2k in your project
+
+chacke2k is on maven central. If you use maven, add to your project pom:
+
+```xml
+<dependencies>
+  <dependency>
+    <groupId>org.cache2k</groupId>
+    <artifactId>cache2k-api</artifactId>
+    <version>${cache2k-version}</version>
+  </dependency>
+  <dependency>
+      <groupId>org.cache2k</groupId>
+      <artifactId>cache2k-core</artifactId>
+      <version>${cache2k-version}</version>
+      <scope>runtime</scope>
+  </dependency>
+</dependencies>
+```
+
+Please replace `${cache2k-version}` with the latest version. The cache2k-core 
+module is compatible with Java 6 environments including android.
+
+For Java enterprise applications, add this to your dependencies: 
+
+```xml
+<dependencies>
+  <dependency>
+    <groupId>org.cache2k</groupId>
+    <artifactId>cache2k-api</artifactId>
+    <version>${cache2k-version}</version>
+  </dependency>
+  <dependency>
+      <groupId>org.cache2k</groupId>
+      <artifactId>cache2k-ee</artifactId>
+      <version>${cache2k-version}</version>
+      <scope>runtime</scope>
+  </dependency>
+</dependencies>
+```
+
+This will add JMX support.  
 
 ## Getting started
 
@@ -68,7 +113,7 @@ presence of the cache source does not change this behaviour.
 The main aim is to get a small footprint core cache implementation which does
 
  * Fast
- * Event faster with lock free cache access (experimental), see [the benchmarks page](benchmarks.html)
+ * Even faster with lock free cache access (experimental), see [the benchmarks page](benchmarks.html)
  * Exception support
  * Null value support
  * Expiry/update on time
@@ -79,28 +124,6 @@ The main aim is to get a small footprint core cache implementation which does
 
 Since it is fresh open source, we will put up a detailed description of each feature as well
 polish the API and semantics one after another. See our [todo list](todo.html)
-
-## Integrating cache2k in your project
-
-chacke2k is on maven central. If you use maven, add to your project pom:
-
-```xml
-<dependencies>
-  <dependency>
-    <groupId>org.cache2k</groupId>
-    <artifactId>cache2k-api</artifactId>
-    <version>${cache2k-version}</version>
-  </dependency>
-  <dependency>
-      <groupId>org.cache2k</groupId>
-      <artifactId>cache2k-core</artifactId>
-      <version>${cache2k-version}</version>
-      <scope>runtime</scope>
-  </dependency>
-</dependencies>
-```
-
-Please replace `${cache2k-version}` with the latest version.
 
 ## Feedback
 
