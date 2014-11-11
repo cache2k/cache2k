@@ -6,8 +6,10 @@ the name cache2k.
 
 ## News
 
-  * **Version 0.20, 2014-11-05**: Revised configuration, iterator, improved 
-    exception handling, see [Version 0.20 release notes](0/20.html)
+  * **Version 0.20, 2014-11-11**: Revised configuration, iterator, improved 
+    exception handling, android compatible core module, see [Version 0.20 release notes](0/20.html)
+  * **Version 0.19.2, 2014-09-23**: Rerelease of 0.19, compatible to android. 
+    JMX support is dropped in this version. JMX support will be available in an extra jar in the future. 
   * **Version 0.19.1, 2014-03-13**: Rerelease, now on Maven Central!
   * **Version 0.19, 2014-02-25**: JMX support enabled, bulk API enhancements,
     simple transaction support, see [Version 0.19 release notes](0/19.html)
