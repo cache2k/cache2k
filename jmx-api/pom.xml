@@ -4,11 +4,11 @@
   <parent>
     <groupId>org.cache2k</groupId>
     <artifactId>cache2k-parent</artifactId>
-    <version>0.20</version>
+    <version>0.21-SNAPSHOT</version>
   </parent>
 
   <artifactId>cache2k-jmx-api</artifactId>
-  <version>0.20</version>
+  <version>0.21-SNAPSHOT</version>
   <name>cache2k jmx api definitions</name>
 
   <description>
