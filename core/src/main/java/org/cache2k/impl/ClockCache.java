@@ -97,7 +97,7 @@ public class ClockCache<K, T> extends LockFreeCache<ClockCache.Entry, K, T> {
   protected Entry findEvictionCandidate() {
     runCnt++;
     int _scanCnt = 1;
-    Entry _evictedEntry;
+
     while (hand.hitCnt > 0) {
       _scanCnt++;
       hits += hand.hitCnt;
@@ -107,11 +107,10 @@ public class ClockCache<K, T> extends LockFreeCache<ClockCache.Entry, K, T> {
     if (_scanCnt > size) {
       scan24hCnt++;
     }
-    _evictedEntry = hand;
-    hand = (Entry) removeFromCyclicList(hand);
-    size--;
     scanCnt += _scanCnt;
-    return _evictedEntry;
+    Entry _evictionCandidate = hand;
+    hand = (Entry) hand.next;
+    return _evictionCandidate;
   }
 
   @Override

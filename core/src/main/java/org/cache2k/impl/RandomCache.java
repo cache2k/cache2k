@@ -36,7 +36,7 @@ public class RandomCache<K, T> extends LockFreeCache<BaseCache.Entry, K, T> {
 
   @Override
   protected void removeEntryFromReplacementList(Entry e) {
-    e.next = null;
+    e.removedFromList();
   }
 
   @Override
@@ -76,7 +76,6 @@ public class RandomCache<K, T> extends LockFreeCache<BaseCache.Entry, K, T> {
     if (evictionIndex < 0) {
       evictionIndex = -evictionIndex;
     }
-    h0[idx].removedFromList();
     return h0[idx];
   }
 

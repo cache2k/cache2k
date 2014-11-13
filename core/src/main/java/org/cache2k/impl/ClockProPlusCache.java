@@ -42,6 +42,7 @@ public class ClockProPlusCache<K, T> extends LockFreeCache<ClockProPlusCache.Ent
   int coldRunCnt;
   int cold24hCnt;
   int coldScanCnt;
+  int directRemoveCnt;
 
   int coldSize;
   int hotSize;
@@ -101,8 +102,19 @@ public class ClockProPlusCache<K, T> extends LockFreeCache<ClockProPlusCache.Ent
    */
   @Override
   protected void removeEntryFromReplacementList(Entry e) {
-    staleSize++;
-    e.setStale();
+
+    if (handCold.prev == e) {
+      if (handHot == e) {
+        handCold = handHot = removeFromCyclicList(handCold, e);
+      } else {
+        handCold = removeFromCyclicList(handCold, e);
+      }
+      coldSize--;
+      directRemoveCnt++;
+    } else {
+      staleSize++;
+      e.setStale();
+    }
     insertCopyIntoGhosts(e);
   }
 
@@ -203,7 +215,6 @@ public class ClockProPlusCache<K, T> extends LockFreeCache<ClockProPlusCache.Ent
     Entry<K,T> _hand = handCold;
     int _scanCnt = 1;
     int _coldSize = coldSize;
-    Entry<K, T> _evictedEntry;
     do {
       if (!_hand.hot && _hand.hitCnt == 0) {
         decreaseColdSpace();
@@ -232,20 +243,18 @@ public class ClockProPlusCache<K, T> extends LockFreeCache<ClockProPlusCache.Ent
         _coldSize++;
       }
 
-      _evictedEntry = _hand;
-      _hand = (Entry<K,T>) removeFromCyclicList(_hand);
-      if (handHot == _evictedEntry) {
-        handHot = _hand;
-      }
-      _coldSize--;
-
-      if (!_evictedEntry.isStale()) {
+      if (!_hand.isStale()) {
         break;
       }
+      if (_hand == handHot) {
+        _hand = handHot = (Entry<K, T>) removeFromCyclicList(_hand);
+      } else {
+        _hand = (Entry<K, T>) removeFromCyclicList(_hand);
+      }
+      _coldSize--;
       staleSize--;
       _scanCnt--;
     } while(true);
-    insertCopyIntoGhosts(_evictedEntry);
     if (_scanCnt > coldSize) {
       cold24hCnt++;
     }
@@ -255,8 +264,8 @@ public class ClockProPlusCache<K, T> extends LockFreeCache<ClockProPlusCache.Ent
     }
     coldScanCnt += _scanCnt;
     coldSize = _coldSize;
-    handCold = _hand;
-    return _evictedEntry;
+    handCold = _hand.next;
+    return _hand;
   }
 
   protected void runHandGhost() {
@@ -364,7 +373,8 @@ public class ClockProPlusCache<K, T> extends LockFreeCache<ClockProPlusCache.Ent
            ", cold24hCnt=" + cold24hCnt +
            ", hotRunCnt=" + hotRunCnt +
            ", hotScanCnt=" + hotScanCnt +
-           ", hot24hCnt=" + hot24hCnt;
+           ", hot24hCnt=" + hot24hCnt +
+           ", directRemoveCnt=" + directRemoveCnt;
   }
 
   static class Entry<K, T> extends BaseCache.Entry<Entry, K, T> {

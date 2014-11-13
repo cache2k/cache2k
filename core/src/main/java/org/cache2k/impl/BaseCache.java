@@ -974,11 +974,10 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
 
   /**
    * Find an entry that should be evicted. Called within structure lock.
-   * The replacement algorithm can actually remove the entry from the replacement
-   * list or keep it in the replacement list, this is detected via
-   * {@link org.cache2k.impl.BaseCache.Entry#isRemovedFromReplacementList()} by the
-   * basic cache implementation. The entry is finally removed from the cache hash
-   * later in time.
+   * After doing some checks the cache will call {@link #removeEntryFromReplacementList(org.cache2k.impl.BaseCache.Entry)}
+   * if this entry will be really evicted. Pinned entries may be skipped. A
+   * good eviction algorithm returns another candidate on sequential calls, even
+   * if the candidate was not removed.
    *
    * <p/>Rationale: Within the structure lock we can check for an eviction candidate
    * and may remove it from the list. However, we cannot process additional operations or
@@ -1138,9 +1137,6 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
           return;
         }
         e = findEvictionCandidate();
-        if (e.isRemovedFromReplacementList()) {
-          evictedButInHashCnt++;
-        }
       }
       synchronized (e) {
         if (e.isRemovedState()) {
