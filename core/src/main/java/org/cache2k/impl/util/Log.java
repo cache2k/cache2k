@@ -107,7 +107,11 @@ public abstract class Log {
 
   public abstract void debug(String s);
 
+  public abstract void debug(String s, Throwable ex);
+
   public abstract void info(String s);
+
+  public abstract void info(String s, Throwable ex);
 
   public abstract void warn(String s);
 
@@ -134,6 +138,16 @@ public abstract class Log {
     @Override
     public void debug(String s) {
       cLog.debug(s);
+    }
+
+    @Override
+    public void debug(String s, Throwable ex) {
+      cLog.debug(s, ex);
+    }
+
+    @Override
+    public void info(String s, Throwable ex) {
+      cLog.info(s);
     }
 
     @Override
@@ -176,8 +190,18 @@ public abstract class Log {
     }
 
     @Override
+    public void debug(String s, Throwable ex) {
+      logger.log(Level.FINE, s, ex);
+    }
+
+    @Override
     public void info(String s) {
       logger.log(Level.INFO, s);
+    }
+
+    @Override
+    public void info(String s, Throwable ex) {
+      logger.log(Level.INFO, s, ex);
     }
 
     @Override
@@ -213,6 +237,16 @@ public abstract class Log {
     @Override
     public void debug(String s) {
       debugCount.incrementAndGet();
+    }
+
+    @Override
+    public void debug(String s, Throwable ex) {
+      debugCount.incrementAndGet();
+    }
+
+    @Override
+    public void info(String s, Throwable ex) {
+      infoCount.incrementAndGet();
     }
 
     @Override
