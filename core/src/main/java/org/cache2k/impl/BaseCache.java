@@ -71,6 +71,8 @@ import java.util.concurrent.FutureTask;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
+import static org.cache2k.impl.util.Util.*;
+
 /**
  * Foundation for all cache variants. All common functionality is in here.
  * For a (in-memory) cache we need three things: a fast hash table implementation, an
@@ -1043,7 +1045,7 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
           "key=" + getKey() + ", " +
           "value=" + getValue() + ", " +
           ((getException() != null) ? "exception=" + e.getException() + ", " : "") +
-          "lastModification='" + (new java.sql.Timestamp(getLastModification())) + "')";
+          "lastModification='" + (formatMillis(getLastModification())) + "')";
       }
 
     };
@@ -2345,7 +2347,7 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
     if (t == 0) {
       return "-";
     }
-    return (new java.sql.Timestamp(t)).toString();
+    return formatMillis(t);
   }
 
   /**
