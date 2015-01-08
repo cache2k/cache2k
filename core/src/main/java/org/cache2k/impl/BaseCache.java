@@ -1460,7 +1460,14 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
   protected T returnValue(Entry<E, K,T> e) {
     T v = e.value;
     if (v instanceof ExceptionWrapper) {
-      throw new PropagatedCacheException(((ExceptionWrapper) v).getException());
+      ExceptionWrapper w = (ExceptionWrapper) v;
+      if (w.additionalExceptionMessage == null) {
+        synchronized (e) {
+          long t = e.getValueExpiryTime();
+          w.additionalExceptionMessage = "(expiry=" + (t > 0 ? formatMillis(t) : "none") + ") " + w.getException();
+        }
+      }
+      throw new PropagatedCacheException(w.additionalExceptionMessage, w.getException());
     }
     return v;
   }
@@ -1762,8 +1769,8 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
               Log log = getLog();
               if (log.isDebugEnabled()) {
                 log.debug(
-                  "caught exception, expires at: " + formatMillis(_nextRefreshTime),
-                  ((ExceptionWrapper) v).getException());
+                    "caught exception, expires at: " + formatMillis(_nextRefreshTime),
+                    ((ExceptionWrapper) v).getException());
               }
             }
             fetchExceptionCnt++;

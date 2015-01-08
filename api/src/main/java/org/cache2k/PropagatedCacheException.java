@@ -34,6 +34,10 @@ package org.cache2k;
  */
 public class PropagatedCacheException extends CacheException {
 
+  public PropagatedCacheException(String _message, Throwable ex) {
+    super(_message, ex);
+  }
+
   public PropagatedCacheException(Throwable ex) {
     super(ex);
   }

@@ -23,14 +23,24 @@ package org.cache2k.impl;
  */
 
 /**
+ * We use instances of the exception wrapper for the value field in the entry.
+ * This way we can store exceptions without needing additional memory, if no exceptions
+ * happen.
+ *
  * @author Jens Wilke; created: 2013-07-12
  */
 public class ExceptionWrapper {
 
   Throwable exception;
 
-  public ExceptionWrapper(Throwable exception) {
-    this.exception = exception;
+  /**
+   * Store an additional exception message with the expiry time.
+   * Gets lazily set as soon as an exception is thrown.
+   */
+  transient String additionalExceptionMessage = null;
+
+  public ExceptionWrapper(Throwable ex) {
+    exception = ex;
   }
 
   public Throwable getException() {
