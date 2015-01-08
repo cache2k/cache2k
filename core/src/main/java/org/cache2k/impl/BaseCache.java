@@ -1758,6 +1758,13 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
             if (hasSuppressExceptions() && e.getValue() != INITIAL_VALUE && !e.hasException()) {
               v = (T) e.getValue();
               suppressedExceptionCnt++;
+            } else {
+              Log log = getLog();
+              if (log.isDebugEnabled()) {
+                log.debug(
+                  "caught exception, expires at: " + formatMillis(_nextRefreshTime),
+                  ((ExceptionWrapper) v).getException());
+              }
             }
             fetchExceptionCnt++;
           }
@@ -3164,6 +3171,12 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
      * Implementation class to use by default.
      */
     public Class<? extends BaseCache> defaultImplementation = LruCache.class;
+
+    /**
+     * Log exceptions from the source just as they happen. The log goes to the debug output
+     * of the cache log, debug level of the cache log must be enabled also.
+     */
+    public boolean logSourceExceptions = false;
 
     public int waitForTimerJobsSeconds = 5;
 
