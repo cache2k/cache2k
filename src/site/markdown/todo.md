@@ -5,17 +5,23 @@ A poor mans issue tracker.
 ### 0.20
 
   * documentation update?
-
-### 0.22
-
-Planned API breaking changes in this release:
-
-  * void remove(key) -> boolean remove(key) 
-
-### Next
+  
+### 0.21
 
   * contains()
   * Closable, close() and closeAsync()
+
+### 0.22
+
+API cleanup
+
+Planned API breaking changes in this release:
+  
+  * void remove(key) -> boolean remove(key)
+  * remove deprecated methods
+
+### Next
+
   * New benchmark
   * Statistics: removeCnt with storage is "wrong", there are heap entries for loaded/checked storage
   * test exceptions within expiry policy
