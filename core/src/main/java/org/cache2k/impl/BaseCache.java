@@ -225,8 +225,6 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
 
   protected BulkCacheSource<K, T> bulkCacheSource;
 
-  protected HashSet<K> bulkKeysCurrentlyRetrieved;
-
   protected Timer timer;
 
   /** Stuff that we need to wait for before shutdown may complete */
@@ -2056,130 +2054,9 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
    */
   @SuppressWarnings("unused")
   public void getBulk(K[] _keys, T[] _result, BitSet _fetched, int s, int e) {
-
-    E[] _entries = (E[]) new Entry[_keys.length];
-    boolean _mayDeadlock;
-    synchronized (lock) {
-      int _fetchCount = checkAndCreateEntries(_keys, _result, _fetched, _entries, s, e);
-      if (_fetchCount == 0) {
-        return;
-      }
-      _mayDeadlock = checkForDeadLockOrExceptions(_entries, s, e);
-      if (!_mayDeadlock) {
-        bulkGetCnt++;
-      }
-    }
-    if (!_mayDeadlock) {
-      try {
-        for (int i = s; i < e; i += maximumBulkFetchSize) {
-          long t = System.currentTimeMillis();
-          int _endIdx = Math.min(e, i + maximumBulkFetchSize);
-          fetchBulkLoop(_entries, _keys, _result, _fetched, i, _endIdx - 1, _endIdx, t);
-        }
-        return;
-      } finally {
-        freeBulkKeyRetrievalMarkers(_entries);
-      }
-    }
     sequentialGetFallBack(_keys, _result, _fetched, s, e);
   }
 
-
-  /**
-   * This is called recursively to synchronize on each hash entry.
-   *
-   * this implementation may deadlock if called on the same data concurrently and in different order.
-   * for reason we keep track of all keys that are currently retrieved via bulk request and
-   * fall back to the sequential get if needed.
-   *
-   * @param s start index
-   * @param end end index, exclusive
-   * @param i working index starting with e-1
-   */
-  final long fetchBulkLoop(final E[] ea, K[] k, T[] r, BitSet _fetched, int s, int i, int end, long t) {
-    for (; i >= s; i--) {
-      E e = ea[i];
-      if (e == null) { continue; }
-      if (!e.isDataValidState()) {
-        synchronized (e) {
-          if (!e.isDataValidState()) {
-            r[i] = null;
-            _fetched.set(i, false);
-            long t2 = fetchBulkLoop(ea, k, r, _fetched, s, i - 1, end, t);
-            if (!e.isDataValidState()) {
-              e.setLastModification(t);
-              insertFetched(e, r[i], t, t2);
-            }
-            return t2;
-          } else {
-          }
-        }
-      }
-      r[i] = (T) e.getValue();
-      _fetched.set(i);
-    }
-    int _needsFetchCnt = 0;
-    for (i = s; i < end; i++) {
-      if (!_fetched.get(i)) {
-        _needsFetchCnt++;
-      }
-    }
-    if (_needsFetchCnt == 0) {
-      return 0;
-    }
-    if (experimentalBulkCacheSource == null && bulkCacheSource == null) {
-      sequentialFetch(ea, k, r, _fetched, s, end);
-      return 0;
-    } if (bulkCacheSource != null) {
-      final int[] _index = new int[_needsFetchCnt];
-      int idx = 0;
-      for (i = s; i < end; i++) {
-        if (!_fetched.get(i)) {
-          _index[idx++] = i;
-        }
-      }
-      List<CacheEntry<K, T>> _entries = new AbstractList<CacheEntry<K,T>>() {
-        @Override
-        public CacheEntry<K, T> get(int index) {
-          return ea[_index[index]];
-        }
-
-        @Override
-        public int size() {
-          return _index.length;
-        }
-      };
-      try {
-        List<T> _resultList = bulkCacheSource.getValues(_entries, t);
-        if (_resultList.size() != _index.length) {
-          throw new CacheUsageExcpetion("bulk source returned list with wrong length");
-        }
-        for (i = 0; i < _index.length; i++) {
-          r[_index[i]] = _resultList.get(i);
-        }
-      } catch (Throwable _ouch) {
-        T v = (T) new ExceptionWrapper(_ouch);
-        for (i = s; i < end; i++) {
-          if (!_fetched.get(i)) {
-            r[i] = v;
-          }
-        }
-      }
-    } else {
-      try {
-        experimentalBulkCacheSource.getBulk(k, r, _fetched, s, end);
-      } catch (Throwable _ouch) {
-        T v = (T) new ExceptionWrapper(_ouch);
-        for (i = s; i < end; i++) {
-          Entry e = ea[i];
-          if (!e.isDataValidState()) {
-            r[i] = v;
-          }
-        }
-      }
-    }
-    return System.currentTimeMillis();
-  }
 
   final void sequentialFetch(E[] ea, K[] _keys, T[] _result, BitSet _fetched, int s, int end) {
     for (int i = s; i < end; i++) {
@@ -2199,66 +2076,12 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
   final void sequentialGetFallBack(K[] _keys, T[] _result, BitSet _fetched, int s, int e) {
     for (int i = s; i < e; i++) {
       if (!_fetched.get(i)) {
-        _result[i] = get(_keys[i]);
-      }
-    }
-  }
-
-  final void freeBulkKeyRetrievalMarkers(Entry[] _entries) {
-    synchronized (lock) {
-      for (Entry<E, K, T> et : _entries) {
-        if (et == null) { continue; }
-        bulkKeysCurrentlyRetrieved.remove(et.key);
-      }
-    }
-  }
-
-  private boolean checkForDeadLockOrExceptions(Entry[] _entries, int s, int e) {
-    if (bulkKeysCurrentlyRetrieved == null) {
-      bulkKeysCurrentlyRetrieved = new HashSet<K>();
-    }
-    for (int i = s; i < e; i++) {
-      Entry _entry = _entries[i];
-      if (_entry != null) {
-        if ((_entry.getException() != null) ||
-            bulkKeysCurrentlyRetrieved.contains(_entry.key)) {
-          return true;
+        try {
+          _result[i] = get(_keys[i]);
+        } catch (Exception ignore) {
         }
       }
     }
-    for (int i = s; i < e; i++) {
-      Entry<E, K, T> _entry = _entries[i];
-      if (_entry != null) {
-        bulkKeysCurrentlyRetrieved.add(_entry.key);
-      }
-    }
-    return false;
-  }
-
-  /**
-   * lookup entries or create new ones if needed, already fill the result
-   * if the entry was fetched
-   */
-  private int checkAndCreateEntries(K[] _keys, T[] _result, BitSet _fetched, Entry[] _entries, int s, int e) {
-    int _fetchCount = e - s;
-    for (int i = s; i < e; i++) {
-      if (_fetched.get(i)) { _fetchCount--; continue; }
-      K key = _keys[i];
-      int hc = modifiedHash(key.hashCode());
-      Entry<E,K,T> _entry = lookupEntry(key, hc);
-      if (_entry == null) {
-        _entries[i] = newEntry(key, hc);
-      } else {
-        if (_entry.isDataValidState()) {
-          _result[i] = _entry.getValue();
-          _fetched.set(i);
-          _fetchCount--;
-        } else {
-          _entries[i] = _entry;
-        }
-      }
-    }
-    return _fetchCount;
   }
 
   public abstract long getHitCnt();
@@ -2313,8 +2136,6 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
         .checkEquals("mainHashCtrl.size == Hash.calcEntryCount(mainHash)", mainHashCtrl.size, Hash.calcEntryCount(mainHash))
         .checkEquals("refreshHashCtrl.size == Hash.calcEntryCount(refreshHash)", refreshHashCtrl.size, Hash.calcEntryCount(refreshHash))
         .check("!!evictionNeeded | (getSize() <= maxSize)", !!evictionNeeded | (getLocalSize() <= maxSize))
-        .checkLessOrEquals("bulkKeysCurrentlyRetrieved.size() <= getSize()",
-          bulkKeysCurrentlyRetrieved == null ? 0 : bulkKeysCurrentlyRetrieved.size(), getLocalSize())
         .check("storage => storage.getAlert() < 2", storage == null || storage.getAlert() < 2);
     }
   }
