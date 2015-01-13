@@ -48,7 +48,7 @@ public abstract class StorageAdapter {
   /** Starts the parallel clearing process, returns immediatly */
   public abstract Future<Void> clearAndReconnect();
 
-  public abstract void put(BaseCache.Entry e);
+  public abstract void put(BaseCache.Entry e, long _nextRefreshTime);
   public abstract StorageEntry get(Object key);
   public abstract boolean remove(Object key);
   public abstract void evict(BaseCache.Entry e);

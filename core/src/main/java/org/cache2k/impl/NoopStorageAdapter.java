@@ -26,8 +26,6 @@ import org.cache2k.ClosableIterator;
 import org.cache2k.impl.threading.Futures;
 import org.cache2k.storage.StorageEntry;
 
-import java.util.Collections;
-import java.util.Iterator;
 import java.util.concurrent.Future;
 
 /**
@@ -77,7 +75,7 @@ public class NoopStorageAdapter extends StorageAdapter {
   }
 
   @Override
-  public void put(BaseCache.Entry e) { }
+  public void put(BaseCache.Entry e, long _nextRefreshTime) { }
 
   @Override
   public StorageEntry get(Object key) {

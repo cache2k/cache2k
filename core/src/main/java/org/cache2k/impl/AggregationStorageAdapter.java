@@ -100,9 +100,9 @@ public class AggregationStorageAdapter extends StorageAdapter implements Storage
    * sequentially.
    */
   @Override
-  public void put(BaseCache.Entry e) {
+  public void put(BaseCache.Entry e, long _nextRefreshTime) {
     for (StorageAdapter a : storages) {
-      a.put(e);
+      a.put(e, _nextRefreshTime);
     }
   }
 

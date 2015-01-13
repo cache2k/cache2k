@@ -55,7 +55,7 @@ public interface PurgeableStorage {
      * if the storage relies on the entry locking of the cache and has no
      * locking for the entry I/O itself.
      */
-    void lockAndRun(Object key, Runnable _action);
+    void lockAndRun(Object key, PurgeAction _action);
 
   }
 
@@ -82,4 +82,13 @@ public interface PurgeableStorage {
 
   }
 
+  interface PurgeAction {
+
+    /**
+     * Check storage whether entry for the key is still expired. If yes,
+     * remove it. Otherwise the entry is returned.
+     */
+    StorageEntry checkAndPurge(Object key);
+
+  }
 }

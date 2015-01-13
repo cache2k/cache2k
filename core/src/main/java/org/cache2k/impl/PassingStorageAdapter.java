@@ -147,19 +147,22 @@ public class PassingStorageAdapter extends StorageAdapter {
   /**
    * Store entry on cache put. Entry must be locked, since we use the
    * entry directly for handing it over to the storage, it is not
-   * allowed to change.
+   * allowed to change. The expiry time in the entry does not have
+   * a valid value yet, so that is why it is transferred separately.
    */
-  public void put(BaseCache.Entry e) {
+  public void put(BaseCache.Entry e, long _nextRefreshTime) {
     if (passivation) {
       synchronized (deletedKeys) {
         deletedKeys.remove(e.getKey());
       }
       return;
     }
-    doPut(e);
+    StorageEntry se =
+        new StorageEntryForPut(e.getKey(), e.getValue(), e.getCreatedOrUpdated(), _nextRefreshTime);
+    doPut(se);
   }
 
-  private void doPut(BaseCache.Entry e) {
+  private void doPut(StorageEntry e) {
     try {
       storage.put(e);
       checkStartFlushTimer();
@@ -210,7 +213,7 @@ public class PassingStorageAdapter extends StorageAdapter {
 
   /**
    * If passivation is not enabled, then we need to do nothing here since, the
-   * entry was transferred to the storage on the {@link #put(org.cache2k.impl.BaseCache.Entry)}
+   * entry was transferred to the storage on the {@link StorageAdapter#put(org.cache2k.impl.BaseCache.Entry, long)}
    * operation. With passivation enabled, the entries need to be transferred when evicted from
    * the heap.
    *
@@ -364,18 +367,21 @@ public class PassingStorageAdapter extends StorageAdapter {
         _scanCount.incrementAndGet();
         if ((_storageEntry.getEntryExpiryTime() > 0 && _storageEntry.getEntryExpiryTime() < _entryExpireTime) ||
             (_storageEntry.getValueExpiryTime() > 0 && _storageEntry.getValueExpiryTime() < _valueExpiryTime)) {
-          Runnable _action = new Runnable() {
+          PurgeableStorage.PurgeAction _action = new PurgeableStorage.PurgeAction() {
             @Override
-            public void run() {
+            public StorageEntry checkAndPurge(Object key) {
               try {
-                StorageEntry e2 = storage.get(_storageEntry.getKey());
+                StorageEntry e2 = storage.get(key);
                 if (_storageEntry.getEntryExpiryTime() == e2.getEntryExpiryTime() &&
                     _storageEntry.getValueExpiryTime() == e2.getValueExpiryTime()) {
-                  storage.remove(_storageEntry.getKey());
+                  storage.remove(key);
                   _purgeCount.incrementAndGet();
+                  return null;
                 }
+                return e2;
               } catch (Exception ex) {
                 disable("storage.remove()", ex);
+                return null;
               }
             }
           };
@@ -417,7 +423,7 @@ public class PassingStorageAdapter extends StorageAdapter {
   class MyPurgeContext extends MyMultiThreadContext implements PurgeableStorage.PurgeContext {
 
     @Override
-    public void lockAndRun(Object key, Runnable _action) {
+    public void lockAndRun(Object key, PurgeableStorage.PurgeAction _action) {
       cache.lockAndRunForPurge(key, _action);
     }
 
@@ -991,6 +997,11 @@ public class PassingStorageAdapter extends StorageAdapter {
     return storage.getEntryCount() + cache.getLocalSize();
   }
 
+  @Override
+  public String toString() {
+    return "PassingStorageAdapter(implementation=" + getImplementation() + ")";
+  }
+
   public CacheStorage getImplementation() {
     return storage;
   }
@@ -1090,6 +1101,46 @@ public class PassingStorageAdapter extends StorageAdapter {
       return t;
     }
 
+  }
+
+  static class StorageEntryForPut implements StorageEntry {
+
+    Object key;
+    Object value;
+    long creationTime;
+    long expiryTime;
+
+    StorageEntryForPut(Object key, Object value, long creationTime, long expiryTime) {
+      this.key = key;
+      this.value = value;
+      this.creationTime = creationTime;
+      this.expiryTime = expiryTime;
+    }
+
+    @Override
+    public Object getKey() {
+      return key;
+    }
+
+    @Override
+    public Object getValueOrException() {
+      return value;
+    }
+
+    @Override
+    public long getCreatedOrUpdated() {
+      return creationTime;
+    }
+
+    @Override
+    public long getValueExpiryTime() {
+      return expiryTime;
+    }
+
+    @Override
+    public long getEntryExpiryTime() {
+      return 0;
+    }
   }
 
   public static class Tunable extends TunableConstants {

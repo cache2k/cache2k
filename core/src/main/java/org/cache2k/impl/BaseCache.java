@@ -45,6 +45,7 @@ import org.cache2k.CacheSourceWithMetaInfo;
 import org.cache2k.CacheSource;
 import org.cache2k.PropagatedCacheException;
 
+import org.cache2k.storage.PurgeableStorage;
 import org.cache2k.storage.StorageEntry;
 import org.cache2k.impl.util.Log;
 import org.cache2k.impl.util.TunableConstants;
@@ -1064,12 +1065,21 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
       E e = lookupOrNewEntrySynchronized(key);
       if (e.hasFreshData()) { return e; }
       synchronized (e) {
-        if (!e.hasFreshData()) {
-          if (e.isRemovedState()) {
-            continue;
-          }
-          fetch(e);
+        e.waitForFetch();
+        if (e.hasFreshData()) {
+          return e;
         }
+        if (e.isRemovedState()) {
+          continue;
+        }
+        e.startFetch();
+      }
+      boolean _finished = false;
+      try {
+        e.finishFetch(fetch(e));
+        _finished = true;
+      } finally {
+        e.ensureFetchAbort(_finished);
       }
       evictEventually();
       return e;
@@ -1096,9 +1106,14 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
           if (e.isRemovedState()) {
             continue;
           }
-          insertEntryFromStorage(se, e, _needsFetch);
+          if (e.isFetchInProgress()) {
+            e.waitForFetch();
+            return e;
+          }
+          e.startFetch();
         }
       }
+      e.finishFetch(insertEntryFromStorage(se, e, _needsFetch));
       evictEventually();
       return e;
     }
@@ -1110,49 +1125,83 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
    * Called from storage. The entry referenced by the key is expired and
    * will be purged.
    */
-  protected void lockAndRunForPurge(Object key, Runnable _action) {
+  protected void lockAndRunForPurge(Object key, PurgeableStorage.PurgeAction _action) {
     int _spinCount = TUNABLE.maximumEntryLockSpins;
+    E e;
     for (;;) {
       if (_spinCount-- <= 0) { throw new CacheLockSpinsExceededError(); }
-      E e = lookupOrNewEntrySynchronized((K) key);
+      e = lookupOrNewEntrySynchronized((K) key);
       if (e.hasFreshData()) { return; }
       synchronized (e) {
-        if (!e.isDataValidState()) {
-          if (e.isRemovedState()) {
-            continue;
-          }
-          _action.run();
-          if (e.isVirgin()) {
-            evictEntryFromHeap(e);
-          }
+        if (e.isDataValidState()) {
+          return;
         }
+        e.waitForFetch();
+        if (e.isRemovedState()) {
+          continue;
+        }
+        e.startFetch();
+        break;
       }
-      break;
+    }
+    boolean _finished = false;
+    try {
+      StorageEntry se = _action.checkAndPurge(key);
+      synchronized (e) {
+        evictEntryFromHeap(e);
+      }
+      _finished = true;
+    } finally {
+      e.ensureFetchAbort(_finished);
     }
   }
 
   protected final void evictEventually() {
+    int _spinCount = TUNABLE.maximumEvictSpins;
+    E _previousCandidate = null;
     while (evictionNeeded) {
+      if (_spinCount-- <= 0) { return; }
       E e;
       synchronized (lock) {
+        checkClosed();
         if (getLocalSize() <= maxSize) {
           evictionNeeded = false;
           return;
         }
         e = findEvictionCandidate();
       }
+      boolean _shouldStore = false;
       synchronized (e) {
         if (e.isRemovedState()) {
           continue;
         }
+        if (e.isPinned()) {
+          if (e != _previousCandidate) {
+            _previousCandidate = e;
+            continue;
+          } else {
+            return;
+          }
+        }
 
-        boolean _shouldStore =
+        _shouldStore =
           (storage != null) &&
           ((hasKeepAfterExpired() && (e.getValueExpiryTime() > 0)) || e.hasFreshData());
         if (_shouldStore) {
-          storage.evict(e);
+          e.startFetch();
+        } else {
+          evictEntryFromHeap(e);
         }
-        evictEntryFromHeap(e);
+      }
+      if (_shouldStore) {
+        try {
+          storage.evict(e);
+        } finally {
+          synchronized (e) {
+            e.finishFetch(Entry.FETCH_ABORT);
+            evictEntryFromHeap(e);
+          }
+        }
       }
     }
   }
@@ -1171,6 +1220,7 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
       }
       evictionNeeded = getLocalSize() > maxSize;
     }
+    e.notifyAll();
   }
 
   /**
@@ -1215,16 +1265,29 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
       if (e.hasFreshData()) { return e; }
       boolean _hasFreshData = false;
       if (storage != null) {
+        boolean _needsLoad;
         synchronized (e) {
-          _hasFreshData = e.hasFreshData();
-          if (!_hasFreshData) {
-            if (e.isRemovedState()) {
-              continue;
-            }
-            fetchWithStorage(e, false);
-            _hasFreshData = e.hasFreshData();
+          e.waitForFetch();
+          if (e.isRemovedState()) {
+            continue;
+          }
+          if (e.hasFreshData()) {
+            return e;
+          }
+          _needsLoad = conditionallyStartProcess(e);
+        }
+        if (_needsLoad) {
+          boolean _finished = false;
+          try {
+            long t = fetchWithStorage(e, false);
+            e.finishFetch(t);
+            _hasFreshData = e.hasFreshData(System.currentTimeMillis(), t);
+            _finished = true;
+          } finally {
+            e.ensureFetchAbort(_finished);
           }
         }
+
       }
       evictEventually();
       if (_hasFreshData) {
@@ -1251,31 +1314,60 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
 
   @Override
   public boolean putIfAbsent(K key, T value) {
-    int _spinCount = TUNABLE.maximumEntryLockSpins;
-    boolean _success = false;
-    for (;;) {
-      if (_spinCount-- <= 0) { throw new CacheLockSpinsExceededError(); }
-      E e = lookupOrNewEntrySynchronized(key);
-      synchronized (e) {
-        if (e.isRemovedState()) {
-          continue;
+    if (storage == null) {
+       int _spinCount = TUNABLE.maximumEntryLockSpins;
+      E e;
+      for (;;) {
+        if (_spinCount-- <= 0) {
+          throw new CacheLockSpinsExceededError();
         }
-        if (e.isVirgin() && storage != null) {
-          fetchWithStorage(e, false);
-        }
-        long t = System.currentTimeMillis();
-        if (!e.hasFreshData(t)) {
-          insertOnPut(e, value, t, t);
+        e = lookupOrNewEntrySynchronized(key);
+        synchronized (e) {
+          if (e.isRemovedState()) {
+            continue;
+          }
+          long t = System.currentTimeMillis();
+          if (e.hasFreshData(t)) {
+            return false;
+          }
           synchronized (lock) {
             peekHitNotFreshCnt++;
           }
-          _success = true;
+          e.nextRefreshTime = insertOnPut(e, value, t, t);
+          return true;
         }
       }
-      break;
     }
+    int _spinCount = TUNABLE.maximumEntryLockSpins;
+    E e; long t;
+    for (;;) {
+      if (_spinCount-- <= 0) { throw new CacheLockSpinsExceededError(); }
+      e = lookupOrNewEntrySynchronized(key);
+      synchronized (e) {
+        e.waitForFetch();
+        if (e.isRemovedState()) {
+          continue;
+        }
+        t = System.currentTimeMillis();
+        if (e.hasFreshData(t)) {
+          return false;
+        }
+        e.startFetch();
+        break;
+      }
+    }
+    if (e.isVirgin()) {
+      long _result = fetchWithStorage(e, false);
+      long now = System.currentTimeMillis();
+      if (e.hasFreshData(now, _result)) {
+        e.finishFetch(_result);
+        return false;
+      }
+      e.nextRefreshTime = Entry.LOADED_NON_VALID_AND_PUT;
+    }
+    e.finishFetch(insertOnPut(e, value, t, t));
     evictEventually();
-    return _success;
+    return true;
   }
 
   @Override
@@ -1286,16 +1378,25 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
       if (_spinCount-- <= 0) { throw new CacheLockSpinsExceededError(); }
       e = lookupOrNewEntrySynchronized(key);
       synchronized (e) {
-        long t = System.currentTimeMillis();
         if (e.isRemovedState()) {
           continue;
         }
-        if (e.isDataValidState()) {
-          e.setReputState();
+        if (e.isFetchInProgress()) {
+          e.waitForFetch();
+          continue;
+        } else {
+          e.startFetch();
+          break;
         }
-        insertOnPut(e, value, t, t);
       }
-      break;
+    }
+    boolean _finished = false;
+    try {
+      long t = System.currentTimeMillis();
+      e.finishFetch(insertOnPut(e, value, t, t));
+      _finished = true;
+    } finally {
+      e.ensureFetchAbort(_finished);
     }
     evictEventually();
   }
@@ -1333,21 +1434,43 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
     for (;;) {
       if (_spinCount-- <= 0) { throw new CacheLockSpinsExceededError(); }
       E e = lookupOrNewEntrySynchronized(key);
+      boolean _hasFreshData;
       synchronized (e) {
-        if (e.isRemovedState()) { continue; }
-        fetchWithStorage(e, false);
-        boolean _hasFreshData = e.hasFreshData();
-        boolean _storageRemove = storage.remove(key);
+        e.waitForFetch();
+        if (e.isRemovedState()) {
+          continue;
+        }
+        _hasFreshData = e.hasFreshData();
+        e.startFetch();
+      }
+      boolean _storageRemove = false;
+      boolean _finished = false;
+      try {
+        _storageRemove = storage.remove(key);
+        _finished = true;
+      } finally {
+        e.ensureFetchAbort(_finished);
+      }
+      synchronized (e) {
+        boolean _virgin = e.isVirgin();
+        e.finishFetch(Entry.LOADED_NON_VALID);
         boolean _heapRemove;
         synchronized (lock) {
+          if (_virgin) {
+            if (_storageRemove) {
+              loadHitCnt++;
+            } else {
+              loadNonFreshCnt++;
+            }
+          }
           if (removeEntry(e)) {
             removedCnt++;
             _heapRemove = true;
           } else {
             _heapRemove = false;
           }
+          return _hasFreshData && (_heapRemove || _storageRemove);
         }
-        return _hasFreshData && (_heapRemove || _storageRemove);
       }
     }
   }
@@ -1636,12 +1759,20 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
       exceptionExpiryCalculator, exceptionMaxLinger);
   }
 
-  protected void fetch(final E e) {
+  protected long fetch(final E e) {
     if (storage != null) {
-      fetchWithStorage(e, true);
+      return fetchWithStorage(e, true);
     } else {
-      fetchFromSource(e);
+      return fetchFromSource(e);
     }
+  }
+
+  protected boolean conditionallyStartProcess(E e) {
+    if (!e.isVirgin()) {
+      return false;
+    }
+    e.startFetch();
+    return true;
   }
 
   /**
@@ -1650,12 +1781,11 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
    * @param _needsFetch true if value needs to be fetched from the cache source.
    *                   This is false, when the we only need to peek for an value already mapped.
    */
-  protected void fetchWithStorage(E e, boolean _needsFetch) {
+  protected long fetchWithStorage(E e, boolean _needsFetch) {
     if (!e.isVirgin()) {
       if (_needsFetch) {
-        fetchFromSource(e);
+        return fetchFromSource(e);
       }
-      return;
     }
     StorageEntry se = storage.get(e.key);
     if (se == null) {
@@ -1663,20 +1793,18 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
         synchronized (lock) {
           loadMissCnt++;
         }
-        fetchFromSource(e);
-        return;
+        return fetchFromSource(e);
       }
-      e.setLoadedNonValid();
       synchronized (lock) {
         touchedTime = System.currentTimeMillis();
         loadNonFreshCnt++;
       }
-      return;
+      return Entry.LOADED_NON_VALID;
     }
-    insertEntryFromStorage(se, e, _needsFetch);
+    return insertEntryFromStorage(se, e, _needsFetch);
   }
 
-  protected void insertEntryFromStorage(StorageEntry se, E e, boolean _needsFetch) {
+  protected long insertEntryFromStorage(StorageEntry se, E e, boolean _needsFetch) {
     e.setLastModificationFromStorage(se.getCreatedOrUpdated());
     long now = System.currentTimeMillis();
     T v = (T) se.getValueOrException();
@@ -1692,21 +1820,19 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
       if (_needsFetch) {
         e.value = se.getValueOrException();
         e.setLoadedNonValidAndFetch();
-        fetchFromSource(e);
-        return;
+        return fetchFromSource(e);
       } else {
-        e.setLoadedNonValid();
         synchronized (lock) {
           touchedTime = now;
           loadNonFreshCnt++;
         }
-        return;
+        return Entry.LOADED_NON_VALID;
       }
     }
-    insert(e, (T) se.getValueOrException(), 0, now, INSERT_STAT_UPDATE, _nextRefreshTime);
+    return insert(e, (T) se.getValueOrException(), 0, now, INSERT_STAT_UPDATE, _nextRefreshTime);
   }
 
-  protected void fetchFromSource(E e) {
+  protected long fetchFromSource(E e) {
     T v;
     long t0 = System.currentTimeMillis();
     try {
@@ -1723,22 +1849,22 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
       v = (T) new ExceptionWrapper(_ouch);
     }
     long t = System.currentTimeMillis();
-    insertFetched(e, v, t0, t);
+    return insertFetched(e, v, t0, t);
   }
 
-  protected final void insertFetched(E e, T v, long t0, long t) {
-    insert(e, v, t0, t, INSERT_STAT_UPDATE);
+  protected final long insertFetched(E e, T v, long t0, long t) {
+    return insert(e, v, t0, t, INSERT_STAT_UPDATE);
   }
 
-  protected final void insertOnPut(E e, T v, long t0, long t) {
+  protected final long insertOnPut(E e, T v, long t0, long t) {
     e.setLastModification(t0);
-    insert(e, v, t0, t, INSERT_STAT_PUT);
+    return insert(e, v, t0, t, INSERT_STAT_PUT);
   }
 
   /**
    * Calculate the next refresh time if a timer / expiry is needed and call insert.
    */
-  protected final void insert(E e, T v, long t0, long t, byte _updateStatistics) {
+  protected final long insert(E e, T v, long t0, long t, byte _updateStatistics) {
     long _nextRefreshTime = maxLinger == 0 ? Entry.FETCH_NEXT_TIME_STATE : Entry.FETCHED_STATE;
     if (timer != null) {
       if (e.isVirgin() || e.hasException()) {
@@ -1747,14 +1873,31 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
         _nextRefreshTime = calcNextRefreshTime((K) e.getKey(), v, t0, e);
       }
     }
-    insert(e,v,t0,t, _updateStatistics, _nextRefreshTime);
+    return insert(e,v,t0,t, _updateStatistics, _nextRefreshTime);
   }
 
   final static byte INSERT_STAT_NO_UPDATE = 0;
   final static byte INSERT_STAT_UPDATE = 1;
   final static byte INSERT_STAT_PUT = 2;
 
-  protected final void insert(E e, T v, long t0, long t, byte _updateStatistics, long _nextRefreshTime) {
+  protected final long insert(E e, T v, long t0, long t, byte _updateStatistics, long _nextRefreshTime) {
+    boolean _suppressException =
+      v instanceof ExceptionWrapper && hasSuppressExceptions() && e.getValue() != INITIAL_VALUE && !e.hasException();
+    if (!_suppressException) {
+      e.value = v;
+    }
+    CacheStorageException _storageException = null;
+    if (storage != null && e.isDirty() && _nextRefreshTime != Entry.FETCH_NEXT_TIME_STATE) {
+
+      try {
+        storage.put(e, _nextRefreshTime);
+      } catch (CacheStorageException ex) {
+        _storageException = ex;
+      } catch (Throwable ex) {
+        _storageException = new CacheStorageException(ex);
+      }
+      e.resetDirty();
+    }
     synchronized (lock) {
       checkClosed();
       touchedTime = t;
@@ -1763,8 +1906,7 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
           loadHitCnt++;
         } else {
           if (v instanceof ExceptionWrapper) {
-            if (hasSuppressExceptions() && e.getValue() != INITIAL_VALUE && !e.hasException()) {
-              v = (T) e.getValue();
+            if (_suppressException) {
               suppressedExceptionCnt++;
             } else {
               Log log = getLog();
@@ -1792,47 +1934,53 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
         if (e.isVirgin()) {
           putNewEntryCnt++;
         }
-      }
-      if (e.task != null) {
-        e.task.cancel();
-      }
-      e.value = v;
-      if (hasSharpTimeout() && _nextRefreshTime > Entry.EXPIRY_TIME_MIN) {
-        _nextRefreshTime = -_nextRefreshTime;
-      }
-      if (timer != null &&
-        (_nextRefreshTime > Entry.EXPIRY_TIME_MIN || _nextRefreshTime < -1)) {
-        if (_nextRefreshTime < -1) {
-          long _timerTime =
-            -_nextRefreshTime - TUNABLE.sharpExpirySafetyGapMillis;
-          if (_timerTime >= t) {
-            MyTimerTask tt = new MyTimerTask();
-            tt.entry = e;
-            timer.schedule(tt, new Date(_timerTime));
-            e.task = tt;
-            _nextRefreshTime = -_nextRefreshTime;
-          }
-        } else {
-          MyTimerTask tt = new MyTimerTask();
-          tt.entry = e;
-          timer.schedule(tt, new Date(_nextRefreshTime));
-          e.task = tt;
-        }
-      } else {
-        if (_nextRefreshTime == 0) {
-          _nextRefreshTime = Entry.FETCH_NEXT_TIME_STATE;
-        } else if (_nextRefreshTime == -1) {
-          _nextRefreshTime = Entry.FETCHED_STATE;
-        } else {
+        if (e.nextRefreshTime == Entry.LOADED_NON_VALID_AND_PUT) {
+          peekHitNotFreshCnt++;
         }
       }
+      if (_storageException != null) {
+        throw _storageException;
+      }
+      _nextRefreshTime = stopStartTimer(_nextRefreshTime, e, t);
     } // synchronized (lock)
 
-    e.nextRefreshTime = _nextRefreshTime;
-    if (storage != null && e.isDirty()) {
-      storage.put(e);
-      e.resetDirty();
+    return _nextRefreshTime;
+  }
+
+  protected long stopStartTimer(long _nextRefreshTime, E e, long now) {
+    if (e.task != null) {
+      e.task.cancel();
     }
+    if (hasSharpTimeout() && _nextRefreshTime > Entry.EXPIRY_TIME_MIN) {
+      _nextRefreshTime = -_nextRefreshTime;
+    }
+    if (timer != null &&
+      (_nextRefreshTime > Entry.EXPIRY_TIME_MIN || _nextRefreshTime < -1)) {
+      if (_nextRefreshTime < -1) {
+        long _timerTime =
+          -_nextRefreshTime - TUNABLE.sharpExpirySafetyGapMillis;
+        if (_timerTime >= now) {
+          MyTimerTask tt = new MyTimerTask();
+          tt.entry = e;
+          timer.schedule(tt, new Date(_timerTime));
+          e.task = tt;
+          _nextRefreshTime = -_nextRefreshTime;
+        }
+      } else {
+        MyTimerTask tt = new MyTimerTask();
+        tt.entry = e;
+        timer.schedule(tt, new Date(_nextRefreshTime));
+        e.task = tt;
+      }
+    } else {
+      if (_nextRefreshTime == 0) {
+        _nextRefreshTime = Entry.FETCH_NEXT_TIME_STATE;
+      } else if (_nextRefreshTime == -1) {
+        _nextRefreshTime = Entry.FETCHED_STATE;
+      } else {
+      }
+    }
+    return _nextRefreshTime;
   }
 
   /**
@@ -1873,20 +2021,21 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
             @Override
             public void run() {
               synchronized (e) {
-                try {
-                  if (e.isRemovedFromReplacementList()) {
-                    return;
-                  }
-                  e.setGettingRefresh();
-                  fetch(e);
-                } catch (CacheClosedException ignore) {
-                } catch (Throwable ex) {
-                  synchronized (lock) {
-                    internalExceptionCnt++;
-                  }
-                  getLog().warn("Refresh exception", ex);
-                  expireEntry(e);
+                if (e.isRemovedFromReplacementList() || e.isRemovedState() || e.isFetchInProgress()) {
+                  return;
                 }
+                e.setGettingRefresh();
+              }
+              try {
+                fetch(e);
+              } catch (CacheClosedException ignore) {
+              } catch (Throwable ex) {
+                e.ensureFetchAbort(false);
+                synchronized (lock) {
+                  internalExceptionCnt++;
+                }
+                getLog().warn("Refresh exception", ex);
+                expireEntry(e);
               }
              }
           };
@@ -1935,7 +2084,7 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
     getEvictionExecutor().execute(r);
   }
 
-  protected void expireEntry(E e) {
+    protected void expireEntry(E e) {
     synchronized (e) {
       if (e.isRemovedState() || e.isExpiredState()) {
         return;
@@ -3112,6 +3261,12 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
      * an exception after about one second of spinning.
      */
     public int maximumEntryLockSpins = 333333;
+
+    /**
+     * Maximum number of tries to find an entry for eviction if maximum size
+     * is reached.
+     */
+    public int maximumEvictSpins = 5;
 
     /**
      * Size of the hash table before inserting the first entry. Must be power
