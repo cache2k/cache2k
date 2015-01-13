@@ -241,6 +241,10 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
    */
   protected boolean evictionNeeded = false;
 
+  protected Class keyType;
+
+  protected Class valueType;
+
   protected StorageAdapter storage;
 
   protected TimerService timerService = GlobalTimerService.getInstance();
@@ -305,6 +309,8 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
 
   /** called via reflection from CacheBuilder */
   public void setCacheConfig(CacheConfig c) {
+    valueType = c.getValueType();
+    keyType = c.getKeyType();
     if (name != null) {
       throw new IllegalStateException("already configured");
     }
@@ -400,6 +406,19 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
   @SuppressWarnings("unused")
   public void setExperimentalBulkCacheSource(ExperimentalBulkCacheSource<K, T> g) {
     experimentalBulkCacheSource = g;
+    if (source == null) {
+      source = new CacheSourceWithMetaInfo<K, T>() {
+        @Override
+        public T get(K key, long _currentTime, T _previousValue, long _timeLastFetched) throws Throwable {
+          K[] ka = (K[]) Array.newInstance(keyType, 1);
+          ka[0] = key;
+          T[] ra = (T[]) Array.newInstance(valueType, 1);
+          BitSet _fetched = new BitSet(1);
+          experimentalBulkCacheSource.getBulk(ka, ra, _fetched, 0, 1);
+          return ra[0];
+        }
+      };
+    }
   }
 
   public void setBulkCacheSource(BulkCacheSource<K, T> s) {

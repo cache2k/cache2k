@@ -102,14 +102,14 @@ public class CacheBuilderImpl<K, T> extends CacheBuilder<K, T> {
       c.setExceptionExpiryCalculator(exceptionExpiryCalculator);
     }
 
+    if (config != null) {
+      c.setCacheConfig(config);
+    }
     if (bulkCacheSource != null) {
       c.setBulkCacheSource(bulkCacheSource);
     }
     if (experimentalBulkCacheSource != null) {
       c.setExperimentalBulkCacheSource(experimentalBulkCacheSource);
-    }
-    if (config != null) {
-      c.setCacheConfig(config);
     }
   }
 
