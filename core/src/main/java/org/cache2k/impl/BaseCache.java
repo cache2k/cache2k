@@ -2682,9 +2682,17 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
   public static class Entry<E extends Entry, K, T>
     implements MutableCacheEntry<K,T>, StorageEntry {
 
-    static final int FETCHED_STATE = 10;
-    static final int REFRESH_STATE = 11;
-    static final int REPUT_STATE = 13;
+    static final int FETCHED_STATE = 16;
+    static final int REFRESH_STATE = FETCHED_STATE + 1;
+    static final int REPUT_STATE = FETCHED_STATE + 3;
+
+    static final int FETCH_IN_PROGRESS_VALID = FETCHED_STATE + 4;
+
+    static final int LOADED_NON_VALID_AND_PUT = 9;
+
+    static final int FETCH_ABORT = 8;
+
+    static final int FETCH_IN_PROGRESS_NON_VALID = 7;
 
     /** Storage was checked, no data available */
     static final int LOADED_NON_VALID_AND_FETCH = 6;
@@ -2698,8 +2706,12 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
     static final int FETCH_NEXT_TIME_STATE = 3;
 
     static private final int REMOVED_STATE = 2;
+
+    static private final int FETCH_IN_PROGRESS_VIRGIN = 1;
+
     static final int VIRGIN_STATE = 0;
-    static final int EXPIRY_TIME_MIN = 20;
+
+    static final int EXPIRY_TIME_MIN = 32;
 
     public BaseCache.MyTimerTask task;
 
@@ -2770,7 +2782,8 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
 
     public final boolean isVirgin() {
       return
-        nextRefreshTime == VIRGIN_STATE;
+        nextRefreshTime == VIRGIN_STATE ||
+        nextRefreshTime == FETCH_IN_PROGRESS_VIRGIN;
     }
 
     public final boolean isFetchNextTimeState() {
@@ -2790,6 +2803,74 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
      */
     public final boolean isDataValidState() {
       return nextRefreshTime >= FETCHED_STATE || nextRefreshTime < 0;
+    }
+
+    /**
+     * Starts long operation on entry. Pins the entry in the cache.
+     */
+    public void startFetch() {
+      if (isVirgin()) {
+        nextRefreshTime = FETCH_IN_PROGRESS_VIRGIN;
+      } else {
+        nextRefreshTime = FETCH_IN_PROGRESS_NON_VALID;
+      }
+    }
+
+    public void finishFetch(long _nextRefreshTime) {
+      synchronized (Entry.this) {
+        nextRefreshTime = _nextRefreshTime;
+        notifyAll();
+      }
+    }
+
+    /**
+     * If fetch is not stopped, abort and make entry invalid.
+     * This is a safety measure, since during entry processing an
+     * exceptions may happen. This can happen regularly e.g. if storage
+     * is set to read only and a cache put is made.
+     */
+    public void ensureFetchAbort(boolean _finished) {
+      if (_finished) {
+        return;
+      }
+      if (isFetchInProgress()) {
+        synchronized (Entry.this) {
+          if (isFetchInProgress()) {
+            nextRefreshTime = FETCH_ABORT;
+            notifyAll();
+          }
+        }
+      }
+    }
+
+    /**
+     * Entry is not allowed to be evicted
+     */
+    public boolean isPinned() {
+      return isFetchInProgress();
+    }
+
+    public boolean isFetchInProgress() {
+      return
+        nextRefreshTime == REFRESH_STATE ||
+        nextRefreshTime == LOADED_NON_VALID_AND_FETCH ||
+        nextRefreshTime == FETCH_IN_PROGRESS_VIRGIN ||
+        nextRefreshTime == LOADED_NON_VALID_AND_PUT ||
+        nextRefreshTime == FETCH_IN_PROGRESS_NON_VALID ||
+        nextRefreshTime == FETCH_IN_PROGRESS_VALID;
+    }
+
+    public void waitForFetch() {
+      if (!isFetchInProgress()) {
+        return;
+      }
+      try {
+        do {
+          wait();
+        } while (isFetchInProgress());
+      } catch (InterruptedException e) {
+        throw new CacheInternalError();
+      }
     }
 
     /**
@@ -2820,12 +2901,25 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
       return false;
     }
 
+    public final boolean hasFreshData(long now, long _nextRefreshTime) {
+      if (_nextRefreshTime >= FETCHED_STATE) {
+        return true;
+      }
+      if (_nextRefreshTime < 0) {
+        return now < -_nextRefreshTime;
+      }
+      return false;
+    }
+
     public void setFetchedState() {
       nextRefreshTime = FETCHED_STATE;
     }
 
     public void setLoadedNonValid() {
-      nextRefreshTime = LOADED_NON_VALID;
+      synchronized (this) {
+        nextRefreshTime = LOADED_NON_VALID;
+        notifyAll();
+      }
     }
 
     public boolean isLoadedNonValid() {
