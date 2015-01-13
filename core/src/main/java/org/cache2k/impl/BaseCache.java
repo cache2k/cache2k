@@ -1039,11 +1039,14 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
 
       @Override
       public String toString() {
+        long _expiry = e.getValueExpiryTime();
         return "CacheEntry(" +
           "key=" + getKey() + ", " +
           "value=" + getValue() + ", " +
           ((getException() != null) ? "exception=" + e.getException() + ", " : "") +
-          "lastModification='" + (formatMillis(getLastModification())) + "')";
+          "updated=" + formatMillis(getLastModification()) + ", " +
+          "expiry=" + (_expiry != 0 ? (formatMillis(_expiry)) : "-") + ", " +
+          "flags=" + (_expiry == 0 ? e.nextRefreshTime : "-") + ")";
       }
 
     };
