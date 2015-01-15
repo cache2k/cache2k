@@ -40,22 +40,22 @@ public class CacheSizeEstimator {
 
   int accuracy;
   Random random;
-  BaseCache.Entry lastEntry;
-  BaseCache.Entry[] hash1;
-  BaseCache.Entry[] hash2;
+  Entry lastEntry;
+  Entry[] hash1;
+  Entry[] hash2;
 
   final void switchHash() {
-    BaseCache.Entry[] tmp = hash1;
+    Entry[] tmp = hash1;
     hash1 = hash2;
     hash2 = tmp;
   }
 
-  final BaseCache.Entry nextEntry() {
+  final Entry nextEntry() {
     if (lastEntry.another != null) {
       return lastEntry = lastEntry.another;
     }
-    int idx = BaseCache.Hash.index(hash1, lastEntry.hashCode);
-    BaseCache.Entry e;
+    int idx = Hash.index(hash1, lastEntry.hashCode);
+    Entry e;
     do {
       idx++;
       if (idx >= hash1.length) {

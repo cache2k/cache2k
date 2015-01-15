@@ -25,7 +25,7 @@ package org.cache2k.impl.timer;
 import org.cache2k.impl.util.Log;
 
 /**
- * Timer queue based on the {@link org.cache2k.impl.BaseCache.Entry#nextRefreshTime} field.
+ * Timer queue based on the {@link org.cache2k.impl.Entry#nextRefreshTime} field.
  * Earlier implementations used {@link java.util.Timer} which has some
  * disadvantages: per cache entry two additional objects are created,
  * the task and the lock object. Per one timer a thread is needed. To

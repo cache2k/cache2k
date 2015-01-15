@@ -25,7 +25,7 @@ package org.cache2k.impl;
 /**
  * @author Jens Wilke; created: 2013-12-22
  */
-public abstract class LockFreeCache<E extends BaseCache.Entry, K, T>
+public abstract class LockFreeCache<E extends Entry, K, T>
   extends BaseCache<E, K, T> {
 
   /**
@@ -35,7 +35,7 @@ public abstract class LockFreeCache<E extends BaseCache.Entry, K, T>
   @Override
   protected final E lookupOrNewEntrySynchronized(K key) {
     int hc = modifiedHash(key.hashCode());
-    E e = BaseCache.Hash.lookup(mainHash, key, hc);
+    E e = Hash.lookup(mainHash, key, hc);
     if (e != null) {
       recordHit(e);
       return e;
@@ -52,7 +52,7 @@ public abstract class LockFreeCache<E extends BaseCache.Entry, K, T>
 
   @Override
   protected final E lookupEntryUnsynchronized(K key, int hc) {
-    E e = BaseCache.Hash.lookup(mainHash, key, hc);
+    E e = Hash.lookup(mainHash, key, hc);
     if (e != null) {
       recordHit(e);
       return e;

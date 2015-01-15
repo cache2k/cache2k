@@ -377,7 +377,7 @@ public class ClockProPlusCache<K, T> extends LockFreeCache<ClockProPlusCache.Ent
            ", directRemoveCnt=" + directRemoveCnt;
   }
 
-  static class Entry<K, T> extends BaseCache.Entry<Entry, K, T> {
+  static class Entry<K, T> extends org.cache2k.impl.Entry<Entry, K, T> {
 
     int hitCnt;
     boolean hot;

@@ -75,7 +75,7 @@ public class NoopStorageAdapter extends StorageAdapter {
   }
 
   @Override
-  public void put(BaseCache.Entry e, long _nextRefreshTime) { }
+  public void put(Entry e, long _nextRefreshTime) { }
 
   @Override
   public StorageEntry get(Object key) {
@@ -86,18 +86,18 @@ public class NoopStorageAdapter extends StorageAdapter {
   public boolean remove(Object key) { return false; }
 
   @Override
-  public void evict(BaseCache.Entry e) { }
+  public void evict(Entry e) { }
 
   @Override
-  public void expire(BaseCache.Entry e) { }
+  public void expire(Entry e) { }
 
   @Override
   public void disable(Throwable t) { }
 
   @SuppressWarnings("unchecked")
   @Override
-  public ClosableIterator<BaseCache.Entry> iterateAll() {
-    return new EmptyClosableIterator<BaseCache.Entry>();
+  public ClosableIterator<Entry> iterateAll() {
+    return new EmptyClosableIterator<Entry>();
   }
 
   @Override

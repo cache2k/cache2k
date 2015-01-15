@@ -76,7 +76,7 @@ public class FailureStorageAdapter extends StorageAdapter {
   }
 
   @Override
-  public void put(BaseCache.Entry e, long _nextRefreshTime) {
+  public void put(Entry e, long _nextRefreshTime) {
     throwException();
 
   }
@@ -94,19 +94,19 @@ public class FailureStorageAdapter extends StorageAdapter {
   }
 
   @Override
-  public void evict(BaseCache.Entry e) {
+  public void evict(Entry e) {
     throwException();
 
   }
 
   @Override
-  public void expire(BaseCache.Entry e) {
+  public void expire(Entry e) {
     throwException();
 
   }
 
   @Override
-  public ClosableIterator<BaseCache.Entry> iterateAll() {
+  public ClosableIterator<Entry> iterateAll() {
     throwException();
     return null;
   }

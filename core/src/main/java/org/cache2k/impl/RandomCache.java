@@ -27,7 +27,7 @@ package org.cache2k.impl;
  *
  * @author Jens Wilke; created: 2013-12-22
  */
-public class RandomCache<K, T> extends LockFreeCache<BaseCache.Entry, K, T> {
+public class RandomCache<K, T> extends LockFreeCache<Entry, K, T> {
 
   int evictionIndex = 0;
 

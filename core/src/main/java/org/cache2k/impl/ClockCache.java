@@ -130,7 +130,7 @@ public class ClockCache<K, T> extends LockFreeCache<ClockCache.Entry, K, T> {
             ", scan24hCnt=" + scan24hCnt;
   }
 
-  static class Entry<K, T> extends BaseCache.Entry<Entry, K, T> {
+  static class Entry<K, T> extends org.cache2k.impl.Entry<Entry, K, T> {
 
     int hitCnt;
 

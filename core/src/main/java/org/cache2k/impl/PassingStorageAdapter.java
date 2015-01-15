@@ -150,7 +150,7 @@ public class PassingStorageAdapter extends StorageAdapter {
    * allowed to change. The expiry time in the entry does not have
    * a valid value yet, so that is why it is transferred separately.
    */
-  public void put(BaseCache.Entry e, long _nextRefreshTime) {
+  public void put(Entry e, long _nextRefreshTime) {
     if (passivation) {
       synchronized (deletedKeys) {
         deletedKeys.remove(e.getKey());
@@ -213,7 +213,7 @@ public class PassingStorageAdapter extends StorageAdapter {
 
   /**
    * If passivation is not enabled, then we need to do nothing here since, the
-   * entry was transferred to the storage on the {@link StorageAdapter#put(org.cache2k.impl.BaseCache.Entry, long)}
+   * entry was transferred to the storage on the {@link StorageAdapter#put(Entry, long)}
    * operation. With passivation enabled, the entries need to be transferred when evicted from
    * the heap.
    *
@@ -221,7 +221,7 @@ public class PassingStorageAdapter extends StorageAdapter {
    * The cache client will be throttled until the I/O operation is finished. This is what we
    * want in general. To decouple it, we need to implement async storage I/O support.
    */
-  public void evict(BaseCache.Entry e) {
+  public void evict(Entry e) {
     if (passivation) {
       putEventually(e);
     }
@@ -234,7 +234,7 @@ public class PassingStorageAdapter extends StorageAdapter {
    * thread and decoupling yields bad race conditions.
    * Expired entries in the storage are remove by the purge run.
    */
-  public void expire(BaseCache.Entry e) {
+  public void expire(Entry e) {
   }
 
   /**
@@ -244,7 +244,7 @@ public class PassingStorageAdapter extends StorageAdapter {
    * be put to the off heap storage, but not into the persistent
    * storage again.
    */
-  private void putEventually(BaseCache.Entry e) {
+  private void putEventually(Entry e) {
     if (!e.isDirty()) {
       if (!(storage instanceof TransientStorageClass)) {
         return;
@@ -281,7 +281,7 @@ public class PassingStorageAdapter extends StorageAdapter {
   }
 
   @Override
-  public ClosableIterator<BaseCache.Entry> iterateAll() {
+  public ClosableIterator<Entry> iterateAll() {
     final CompleteIterator it = new CompleteIterator();
     if (tunable.iterationQueueCapacity > 0) {
       it.queue = new ArrayBlockingQueue<StorageEntry>(tunable.iterationQueueCapacity);
@@ -452,7 +452,7 @@ public class PassingStorageAdapter extends StorageAdapter {
       CacheStorage.EntryFilter f = new CacheStorage.EntryFilter() {
         @Override
         public boolean shouldInclude(Object _key) {
-          return !BaseCache.Hash.contains(it.keysIterated, _key, cache.modifiedHash(_key.hashCode()));
+          return !Hash.contains(it.keysIterated, _key, cache.modifiedHash(_key.hashCode()));
         }
       };
       try {
@@ -478,7 +478,7 @@ public class PassingStorageAdapter extends StorageAdapter {
 
   }
 
-  static final BaseCache.Entry LAST_ENTRY = new BaseCache.Entry();
+  static final Entry LAST_ENTRY = new Entry();
 
   class MyMultiThreadContext implements CacheStorage.MultiThreadedContext {
 
@@ -556,10 +556,10 @@ public class PassingStorageAdapter extends StorageAdapter {
 
   class CompleteIterator
     extends MyMultiThreadContext
-    implements ClosableIterator<BaseCache.Entry>, CacheStorage.VisitContext {
+    implements ClosableIterator<Entry>, CacheStorage.VisitContext {
 
-    BaseCache.Hash keepHashCtrlForClearDetection;
-    BaseCache.Entry[] keysIterated;
+    Hash keepHashCtrlForClearDetection;
+    Entry[] keysIterated;
     ClosableConcurrentHashEntryIterator localIteration;
     int maximumEntriesToIterate;
     StorageEntry entry;
@@ -583,7 +583,7 @@ public class PassingStorageAdapter extends StorageAdapter {
       if (localIteration != null) {
         boolean b = localIteration.hasNext();
         if (b) {
-          BaseCache.Entry e;
+          Entry e;
           entry = e = localIteration.next();
           return true;
         }
@@ -637,7 +637,7 @@ public class PassingStorageAdapter extends StorageAdapter {
     }
 
     @Override
-    public BaseCache.Entry next() {
+    public Entry next() {
       return cache.insertEntryFromStorage(entry, false);
     }
 
@@ -822,13 +822,13 @@ public class PassingStorageAdapter extends StorageAdapter {
    * Iterate through the heap entries and store them in the storage.
    */
   private void passivateHeapEntriesOnShutdown() {
-    Iterator<BaseCache.Entry> it;
+    Iterator<Entry> it;
     try {
       synchronized (cache.lock) {
         it = cache.iterateAllLocalEntries();
       }
       while (it.hasNext()) {
-        BaseCache.Entry e = it.next();
+        Entry e = it.next();
         synchronized (e) {
           putEventually(e);
         }

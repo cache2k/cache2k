@@ -48,16 +48,16 @@ public abstract class StorageAdapter {
   /** Starts the parallel clearing process, returns immediatly */
   public abstract Future<Void> clearAndReconnect();
 
-  public abstract void put(BaseCache.Entry e, long _nextRefreshTime);
+  public abstract void put(Entry e, long _nextRefreshTime);
   public abstract StorageEntry get(Object key);
   public abstract boolean remove(Object key);
-  public abstract void evict(BaseCache.Entry e);
+  public abstract void evict(Entry e);
 
   /**
    * TODO: Relly needed?
    */
-  public abstract void expire(BaseCache.Entry e);
-  public abstract ClosableIterator<BaseCache.Entry> iterateAll();
+  public abstract void expire(Entry e);
+  public abstract ClosableIterator<Entry> iterateAll();
 
   /**
    * Return the total number of entries within the heap and

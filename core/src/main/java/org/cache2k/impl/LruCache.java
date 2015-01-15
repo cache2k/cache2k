@@ -75,7 +75,7 @@ public class LruCache<K, T> extends BaseCache<LruCache.Entry, K, T> {
     }
   }
 
-  protected static class Entry<K,T> extends BaseCache.Entry<LruCache.Entry<K,T>, K, T>{
+  protected static class Entry<K,T> extends org.cache2k.impl.Entry<Entry<K,T>, K, T> {
 
   }
 

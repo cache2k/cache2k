@@ -267,7 +267,7 @@ public class ArcCache<K, T> extends BaseCache<ArcCache.Entry, K, T> {
   }
 
   /** An entry in the hash table */
-  protected static class Entry<K,T> extends BaseCache.Entry<Entry<K,T>, K, T> {
+  protected static class Entry<K,T> extends org.cache2k.impl.Entry<Entry<K,T>, K, T> {
 
     boolean withinT2;
 

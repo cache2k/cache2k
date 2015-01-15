@@ -53,37 +53,37 @@ import org.cache2k.ClosableIterator;
  *
  * @author Jens Wilke; created: 2013-12-21
  */
-public class ClosableConcurrentHashEntryIterator<E extends BaseCache.Entry>
+public class ClosableConcurrentHashEntryIterator<E extends Entry>
   implements ClosableIterator<E> {
 
   int iteratedCountLastRun;
-  BaseCache.Entry lastEntry = null;
-  BaseCache.Hash<E> hashCtl;
-  BaseCache.Hash<E> hashCtl2;
-  BaseCache.Entry[] hash;
-  BaseCache.Entry[] hash2;
-  BaseCache.Hash<E> hashCtlCopy;
-  BaseCache.Hash<E> hashCtl2Copy;
-  BaseCache.Entry[] hashCopy;
-  BaseCache.Entry[] hash2Copy;
-  BaseCache.Hash<BaseCache.Entry> iteratedCtl = new BaseCache.Hash<BaseCache.Entry>();
-  BaseCache.Entry[] iterated;
+  Entry lastEntry = null;
+  Hash<E> hashCtl;
+  Hash<E> hashCtl2;
+  Entry[] hash;
+  Entry[] hash2;
+  Hash<E> hashCtlCopy;
+  Hash<E> hashCtl2Copy;
+  Entry[] hashCopy;
+  Entry[] hash2Copy;
+  Hash<Entry> iteratedCtl = new Hash<Entry>();
+  Entry[] iterated;
   boolean keepIterated = false;
   boolean stopOnClear = true;
 
   public ClosableConcurrentHashEntryIterator(
-    BaseCache.Hash<E> _hashCtl, E[] _hash,
-    BaseCache.Hash<E> _hashCtl2, E[] _hash2) {
+    Hash<E> _hashCtl, E[] _hash,
+    Hash<E> _hashCtl2, E[] _hash2) {
     hashCopy = hash = _hash;
     hash2Copy = hash2 = _hash2;
     hashCtlCopy = hashCtl = _hashCtl;
     hashCtl2Copy = hashCtl2 = _hashCtl2;
     _hashCtl.incrementSuppressExpandCount();
-    iterated = iteratedCtl.init(BaseCache.Entry.class);
+    iterated = iteratedCtl.init(Entry.class);
   }
 
-  private BaseCache.Entry nextEntry() {
-    BaseCache.Entry e;
+  private Entry nextEntry() {
+    Entry e;
     if (hash == null) {
       return null;
     }
@@ -104,7 +104,7 @@ public class ClosableConcurrentHashEntryIterator<E extends BaseCache.Entry>
           return e;
         }
       }
-      idx = BaseCache.Hash.index(hash, lastEntry.hashCode) + 1;
+      idx = Hash.index(hash, lastEntry.hashCode) + 1;
     }
     for (;;) {
       if (idx >= hash.length) {
@@ -126,9 +126,9 @@ public class ClosableConcurrentHashEntryIterator<E extends BaseCache.Entry>
 
   protected E checkIteratedOrNext(E e) {
     do {
-      boolean _notYetIterated = !BaseCache.Hash.contains(iterated, e.key, e.hashCode);
+      boolean _notYetIterated = !Hash.contains(iterated, e.key, e.hashCode);
       if (_notYetIterated) {
-        BaseCache.Entry _newEntryIterated = new BaseCache.Entry();
+        Entry _newEntryIterated = new Entry();
         _newEntryIterated.key = e.key;
         _newEntryIterated.hashCode = e.hashCode;
         iterated = iteratedCtl.insert(iterated, _newEntryIterated);

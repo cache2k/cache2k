@@ -100,7 +100,7 @@ public class AggregationStorageAdapter extends StorageAdapter implements Storage
    * sequentially.
    */
   @Override
-  public void put(BaseCache.Entry e, long _nextRefreshTime) {
+  public void put(Entry e, long _nextRefreshTime) {
     for (StorageAdapter a : storages) {
       a.put(e, _nextRefreshTime);
     }
@@ -131,14 +131,14 @@ public class AggregationStorageAdapter extends StorageAdapter implements Storage
   }
 
   @Override
-  public void evict(BaseCache.Entry e) {
+  public void evict(Entry e) {
     for (StorageAdapter a : storages) {
       a.evict(e);
     }
   }
 
   @Override
-  public void expire(BaseCache.Entry e) {
+  public void expire(Entry e) {
     for (StorageAdapter a : storages) {
       a.expire(e);
     }
@@ -149,7 +149,7 @@ public class AggregationStorageAdapter extends StorageAdapter implements Storage
    * all entries.
    */
   @Override
-  public ClosableIterator<BaseCache.Entry> iterateAll() {
+  public ClosableIterator<Entry> iterateAll() {
     return storages[storages.length - 1].iterateAll();
   }
 
