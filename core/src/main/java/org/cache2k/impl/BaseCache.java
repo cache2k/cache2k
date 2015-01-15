@@ -1435,6 +1435,7 @@ public abstract class BaseCache<E extends BaseCache.Entry, K, T>
       E e = lookupEntrySynchronized(key);
       if (e != null) {
         synchronized (e) {
+          e.waitForFetch();
           if (!e.isRemovedState()) {
             synchronized (lock) {
               boolean f = e.hasFreshData();
