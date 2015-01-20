@@ -32,6 +32,7 @@ import org.cache2k.storage.StorageEntry;
  *
  * @author Jens Wilke
  */
+@SuppressWarnings("unchecked")
 public class Entry<E extends Entry, K, T>
   implements MutableCacheEntry<K,T>, StorageEntry {
 
@@ -89,7 +90,7 @@ public class Entry<E extends Entry, K, T>
    * Hash implementation: the calculated, modified hash code, retrieved from the key when the entry is
    * inserted in the cache
    *
-   * @see #modifiedHash(int)
+   * @see BaseCache#modifiedHash(int)
    */
   public int hashCode;
 
@@ -107,6 +108,9 @@ public class Entry<E extends Entry, K, T>
     fetchedTime = t << 1;
   }
 
+  /**
+   * Memory entry needs to be send to the storage.
+   */
   public boolean isDirty() {
     return (fetchedTime & 1) == 0;
   }
@@ -145,11 +149,10 @@ public class Entry<E extends Entry, K, T>
 
   /**
    * The entry value was fetched and is valid, which means it can be
-   * returned by the cache. If a valid an entry with {@link #isDataValidState()}
-   * true gets removed from the cache the data is still valid. This is
-   * because a concurrent get needs to return the data. There is also
-   * the chance that an entry is removed by eviction, or is never inserted
-   * to the cache, before the get returns it.
+   * returned by the cache. If a valid entry gets removed from the
+   * cache the data is still valid. This is because a concurrent get needs to
+   * return the data. There is also the chance that an entry is removed by eviction,
+   * or is never inserted to the cache, before the get returns it.
    *
    * <p/>Even if this is true, the data may be expired. Use hasFreshData() to
    * make sure to get not expired data.
@@ -235,8 +238,7 @@ public class Entry<E extends Entry, K, T>
     }
     if (needsTimeCheck()) {
       long now = System.currentTimeMillis();
-      boolean f = now < -nextRefreshTime;
-      return f;
+      return now < -nextRefreshTime;
     }
     return false;
   }
@@ -262,17 +264,6 @@ public class Entry<E extends Entry, K, T>
       return now < -_nextRefreshTime;
     }
     return false;
-  }
-
-  public void setFetchedState() {
-    nextRefreshTime = FETCHED_STATE;
-  }
-
-  public void setLoadedNonValid() {
-    synchronized (this) {
-      nextRefreshTime = LOADED_NON_VALID;
-      notifyAll();
-    }
   }
 
   public boolean isLoadedNonValid() {
@@ -308,10 +299,6 @@ public class Entry<E extends Entry, K, T>
     return nextRefreshTime == REMOVED_STATE;
   }
 
-  public void setFetchNextTimeState() {
-    nextRefreshTime = FETCH_NEXT_TIME_STATE;
-  }
-
   public void setGettingRefresh() {
     nextRefreshTime = REFRESH_STATE;
   }
@@ -322,10 +309,6 @@ public class Entry<E extends Entry, K, T>
 
   public boolean isBeeingReput() {
     return nextRefreshTime == REPUT_STATE;
-  }
-
-  public void setReputState() {
-    nextRefreshTime = REPUT_STATE;
   }
 
   public boolean needsTimeCheck() {
@@ -439,6 +422,16 @@ public class Entry<E extends Entry, K, T>
   @Override
   public final boolean equals(Object obj) {
     return this == obj;
+  }
+
+  /* check entry states */
+  static {
+    Entry e = new Entry();
+    e.nextRefreshTime = FETCHED_STATE;
+    e.setGettingRefresh();
+    e = new Entry();
+    e.setLoadedNonValidAndFetch();
+    e.setExpiredState();
   }
 
 }

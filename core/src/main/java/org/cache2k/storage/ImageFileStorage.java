@@ -956,6 +956,8 @@ public class ImageFileStorage
     return getTotalValueSpace() - getFreeSpace();
   }
 
+  public long getPutCnt() { return putCount; }
+
   /**
    * Prints out current state. The output is not necessarily consistent, because
    * no lock is used.

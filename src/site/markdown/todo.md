@@ -1,5 +1,7 @@
 ## Todo
 
+  * rename from fetch to entry operation?
+
 A poor mans issue tracker.
 
 ### 0.20
@@ -62,6 +64,10 @@ Planned API breaking changes in this release:
   * developer description for storage
   * Storage aggregation
   * async storage
+  
+#### minor storage improvements
+
+  * purge expired heap entries from storage directly
 
 ### robustness
 

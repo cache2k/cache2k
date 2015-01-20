@@ -2103,15 +2103,12 @@ public abstract class BaseCache<E extends Entry, K, T>
     getEvictionExecutor().execute(r);
   }
 
-    protected void expireEntry(E e) {
+  protected void expireEntry(E e) {
     synchronized (e) {
       if (e.isRemovedState() || e.isExpiredState()) {
         return;
       }
       e.setExpiredState();
-      if (storage != null && !hasKeepAfterExpired()) {
-        storage.expire(e);
-      }
       synchronized (lock) {
         checkClosed();
         if (hasKeepAfterExpired()) {
