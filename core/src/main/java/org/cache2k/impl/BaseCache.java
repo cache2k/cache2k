@@ -1188,7 +1188,7 @@ public abstract class BaseCache<E extends Entry, K, T>
         }
         e = findEvictionCandidate();
       }
-      boolean _shouldStore = false;
+      boolean _shouldStore;
       synchronized (e) {
         if (e.isRemovedState()) {
           continue;
@@ -1202,9 +1202,9 @@ public abstract class BaseCache<E extends Entry, K, T>
           }
         }
 
+        boolean _storeEvenImmediatelyExpired = hasKeepAfterExpired() && (e.isDataValidState() || e.isExpiredState() || e.nextRefreshTime == Entry.FETCH_NEXT_TIME_STATE);
         _shouldStore =
-          (storage != null) &&
-          ((hasKeepAfterExpired() && (e.getValueExpiryTime() > 0)) || e.hasFreshData());
+            (storage != null) && (_storeEvenImmediatelyExpired || e.hasFreshData());
         if (_shouldStore) {
           e.startFetch();
         } else {
@@ -1740,9 +1740,8 @@ public abstract class BaseCache<E extends Entry, K, T>
       }
       if (_maxLinger > 0) {
         return _maxLinger + now;
-      } else {
-        return _maxLinger;
       }
+      return -1;
     }
     if (_exceptionMaxLinger == 0) {
       return 0;
@@ -1884,7 +1883,7 @@ public abstract class BaseCache<E extends Entry, K, T>
    * Calculate the next refresh time if a timer / expiry is needed and call insert.
    */
   protected final long insert(E e, T v, long t0, long t, byte _updateStatistics) {
-    long _nextRefreshTime = maxLinger == 0 ? Entry.FETCH_NEXT_TIME_STATE : Entry.FETCHED_STATE;
+    long _nextRefreshTime = maxLinger == 0 ? 0 : Long.MAX_VALUE;
     if (timer != null) {
       if (e.isVirgin() || e.hasException()) {
         _nextRefreshTime = calcNextRefreshTime((K) e.getKey(), v, t0, null);
@@ -1899,15 +1898,21 @@ public abstract class BaseCache<E extends Entry, K, T>
   final static byte INSERT_STAT_UPDATE = 1;
   final static byte INSERT_STAT_PUT = 2;
 
+  /**
+   * @param _nextRefreshTime -1/MAXVAL: eternal, 0: expires immediately
+   */
   protected final long insert(E e, T v, long t0, long t, byte _updateStatistics, long _nextRefreshTime) {
+    if (_nextRefreshTime == -1) {
+      _nextRefreshTime = Long.MAX_VALUE;
+    }
     boolean _suppressException =
       v instanceof ExceptionWrapper && hasSuppressExceptions() && e.getValue() != INITIAL_VALUE && !e.hasException();
     if (!_suppressException) {
       e.value = v;
     }
     CacheStorageException _storageException = null;
-    if (storage != null && e.isDirty() && _nextRefreshTime != Entry.FETCH_NEXT_TIME_STATE) {
-
+    if (storage != null && e.isDirty() &&
+        (_nextRefreshTime != 0 || hasKeepAfterExpired())) {
       try {
         storage.put(e, _nextRefreshTime);
       } catch (CacheStorageException ex) {
@@ -1994,7 +1999,7 @@ public abstract class BaseCache<E extends Entry, K, T>
     } else {
       if (_nextRefreshTime == 0) {
         _nextRefreshTime = Entry.FETCH_NEXT_TIME_STATE;
-      } else if (_nextRefreshTime == -1) {
+      } else if (_nextRefreshTime == Long.MAX_VALUE) {
         _nextRefreshTime = Entry.FETCHED_STATE;
       } else {
       }

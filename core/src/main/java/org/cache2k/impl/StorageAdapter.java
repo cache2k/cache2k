@@ -48,6 +48,10 @@ public abstract class StorageAdapter {
   /** Starts the parallel clearing process, returns immediatly */
   public abstract Future<Void> clearAndReconnect();
 
+  /**
+   *
+   * @param _nextRefreshTime value expiry time in millis, 0: expire immediately, {@link Long#MAX_VALUE}: no expiry
+   */
   public abstract void put(Entry e, long _nextRefreshTime);
   public abstract StorageEntry get(Object key);
   public abstract boolean remove(Object key);
