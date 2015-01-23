@@ -536,6 +536,14 @@ public abstract class BaseCache<E extends Entry, K, T>
    * Executor for evictoins / expiry from within timer callback. Never blocks.
    */
   private Executor getEvictionExecutor() {
+    /*
+      Exception in thread "CACHE-ArcCacheTest.testBigScan-i4kqhtiu-kpo88d" java.lang.NullPointerException
+    	at org.cache2k.impl.BaseCache.getEvictionExecutor(BaseCache.java:571)
+    	at org.cache2k.impl.BaseCache.timerEvent(BaseCache.java:2563)
+    	at org.cache2k.impl.BaseCache$MyTimerTask.run(BaseCache.java:3312)
+    	at java.util.TimerThread.mainLoop(Timer.java:555)
+    	at java.util.TimerThread.run(Timer.java:505)
+    	*/
     return manager.getEvictionExecutor();
   }
 
@@ -1146,6 +1154,7 @@ public abstract class BaseCache<E extends Entry, K, T>
   protected void lockAndRunForPurge(Object key, PurgeableStorage.PurgeAction _action) {
     int _spinCount = TUNABLE.maximumEntryLockSpins;
     E e;
+    boolean _virgin;
     for (;;) {
       if (_spinCount-- <= 0) { throw new CacheLockSpinsExceededError(); }
       e = lookupOrNewEntrySynchronized((K) key);
@@ -1158,6 +1167,7 @@ public abstract class BaseCache<E extends Entry, K, T>
         if (e.isRemovedState()) {
           continue;
         }
+        _virgin = e.isVirgin();
         e.startFetch();
         break;
       }
@@ -1166,7 +1176,13 @@ public abstract class BaseCache<E extends Entry, K, T>
     try {
       StorageEntry se = _action.checkAndPurge(key);
       synchronized (e) {
-        evictEntryFromHeap(e);
+        if (_virgin) {
+          e.finishFetch(Entry.VIRGIN_STATE);
+          evictEntryFromHeap(e);
+        } else {
+          e.finishFetch(Entry.LOADED_NON_VALID);
+          evictEntryFromHeap(e);
+        }
       }
       _finished = true;
     } finally {
@@ -1901,18 +1917,18 @@ public abstract class BaseCache<E extends Entry, K, T>
   /**
    * @param _nextRefreshTime -1/MAXVAL: eternal, 0: expires immediately
    */
-  protected final long insert(E e, T v, long t0, long t, byte _updateStatistics, long _nextRefreshTime) {
+  protected final long insert(E e, T _value, long t0, long t, byte _updateStatistics, long _nextRefreshTime) {
     if (_nextRefreshTime == -1) {
       _nextRefreshTime = Long.MAX_VALUE;
     }
     boolean _suppressException =
-      v instanceof ExceptionWrapper && hasSuppressExceptions() && e.getValue() != INITIAL_VALUE && !e.hasException();
+      _value instanceof ExceptionWrapper && hasSuppressExceptions() && e.getValue() != INITIAL_VALUE && !e.hasException();
     if (!_suppressException) {
-      e.value = v;
+      e.value = _value;
     }
+
     CacheStorageException _storageException = null;
-    if (storage != null && e.isDirty() &&
-        (_nextRefreshTime != 0 || hasKeepAfterExpired())) {
+    if (storage != null && e.isDirty() && (_nextRefreshTime != 0 || hasKeepAfterExpired())) {
       try {
         storage.put(e, _nextRefreshTime);
       } catch (CacheStorageException ex) {
@@ -1921,6 +1937,8 @@ public abstract class BaseCache<E extends Entry, K, T>
         _storageException = new CacheStorageException(ex);
       }
     }
+
+    long _nextRefreshTimeWithState;
     synchronized (lock) {
       checkClosed();
       touchedTime = t;
@@ -1928,18 +1946,19 @@ public abstract class BaseCache<E extends Entry, K, T>
         if (t0 == 0) {
           loadHitCnt++;
         } else {
-          if (v instanceof ExceptionWrapper) {
-            if (_suppressException) {
-              suppressedExceptionCnt++;
-            } else {
+          if (_suppressException) {
+            suppressedExceptionCnt++;
+            fetchExceptionCnt++;
+          } else {
+            if (_value instanceof ExceptionWrapper) {
               Log log = getLog();
               if (log.isDebugEnabled()) {
                 log.debug(
                     "caught exception, expires at: " + formatMillis(_nextRefreshTime),
-                    ((ExceptionWrapper) v).getException());
+                    ((ExceptionWrapper) _value).getException());
               }
+              fetchExceptionCnt++;
             }
-            fetchExceptionCnt++;
           }
           fetchCnt++;
           fetchMillis += t - t0;
@@ -1964,10 +1983,10 @@ public abstract class BaseCache<E extends Entry, K, T>
       if (_storageException != null) {
         throw _storageException;
       }
-      _nextRefreshTime = stopStartTimer(_nextRefreshTime, e, t);
+      _nextRefreshTimeWithState = stopStartTimer(_nextRefreshTime, e, t);
     } // synchronized (lock)
 
-    return _nextRefreshTime;
+    return _nextRefreshTimeWithState;
   }
 
   protected long stopStartTimer(long _nextRefreshTime, E e, long now) {
