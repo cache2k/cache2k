@@ -1160,10 +1160,10 @@ public abstract class BaseCache<E extends Entry, K, T>
       e = lookupOrNewEntrySynchronized((K) key);
       if (e.hasFreshData()) { return; }
       synchronized (e) {
+        e.waitForFetch();
         if (e.isDataValidState()) {
           return;
         }
-        e.waitForFetch();
         if (e.isRemovedState()) {
           continue;
         }
