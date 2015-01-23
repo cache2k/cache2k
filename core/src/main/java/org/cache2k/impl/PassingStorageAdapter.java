@@ -250,7 +250,6 @@ public class PassingStorageAdapter extends StorageAdapter {
    * storage again.
    */
   private void putEventually(Entry e) {
-    System.err.println("putEventually: " + e);
     if (!e.isDirty()) {
       try {
         if (storage.contains(e.getKey())) {
