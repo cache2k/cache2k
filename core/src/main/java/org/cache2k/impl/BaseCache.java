@@ -1920,7 +1920,6 @@ public abstract class BaseCache<E extends Entry, K, T>
       } catch (Throwable ex) {
         _storageException = new CacheStorageException(ex);
       }
-      e.resetDirty();
     }
     synchronized (lock) {
       checkClosed();

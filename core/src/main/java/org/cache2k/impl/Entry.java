@@ -120,7 +120,7 @@ public class Entry<E extends Entry, K, T>
   }
 
   public void resetDirty() {
-    fetchedTime = fetchedTime << 1 >> 1;
+    fetchedTime = fetchedTime | 1;
   }
 
   /** Reset next as a marker for {@link #isRemovedFromReplacementList()} */

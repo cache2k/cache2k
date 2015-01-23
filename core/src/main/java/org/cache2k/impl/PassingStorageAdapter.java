@@ -81,6 +81,7 @@ public class PassingStorageAdapter extends StorageAdapter {
   private BaseCache cache;
   CacheStorage storage;
   boolean passivation = false;
+  boolean storageIsTransient = false;
   long errorCount = 0;
   Set<Object> deletedKeys = null;
   StorageContext context;
@@ -126,11 +127,14 @@ public class PassingStorageAdapter extends StorageAdapter {
       CacheStorageProvider<?> pr = (CacheStorageProvider)
         SingleProviderResolver.getInstance().resolve(config.getImplementation());
       storage = pr.create(context, config);
+      if (storage instanceof TransientStorageClass) {
+        storageIsTransient = true;
+      }
       flushIntervalMillis = config.getFlushIntervalMillis();
       if (!(storage instanceof FlushableStorage)) {
         flushIntervalMillis = -1;
       }
-      if (config.isPassivation() || storage instanceof TransientStorageClass) {
+      if (config.isPassivation() || storageIsTransient) {
         deletedKeys = new HashSet<Object>();
         passivation = true;
       }
@@ -238,6 +242,7 @@ public class PassingStorageAdapter extends StorageAdapter {
   }
 
   /**
+   * Called upon evict, when in passivation mode.
    * Store it in the storage if needed, that is if it is dirty
    * or if the entry is not yet in the storage. When an off heap
    * and persistent storage is aggregated, evicted entries will
@@ -245,10 +250,8 @@ public class PassingStorageAdapter extends StorageAdapter {
    * storage again.
    */
   private void putEventually(Entry e) {
+    System.err.println("putEventually: " + e);
     if (!e.isDirty()) {
-      if (!(storage instanceof TransientStorageClass)) {
-        return;
-      }
       try {
         if (storage.contains(e.getKey())) {
           return;
@@ -804,7 +807,7 @@ public class PassingStorageAdapter extends StorageAdapter {
         return null;
       }
     };
-    if (passivation && !(storage instanceof TransientStorageClass)) {
+    if (passivation && !storageIsTransient) {
       final Callable<Void> _before = _closeTaskChain;
       _closeTaskChain = new Callable<Void>() {
         @Override

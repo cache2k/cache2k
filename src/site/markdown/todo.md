@@ -195,3 +195,10 @@ The interesting question is, what is the "core
   * ycombinator
   * javaranch caching article, at: http://www.coderanch.com/how-to/java/CachingStrategies
   * WikiPedia?
+
+## research ideas
+
+  * Describe the optimized (aka clock pro plus) algorithm, which is clock pro combined generational clock.
+  * "Caching beyond belady". Eviction on the basis of entry count makes not perfect sense within the JVM. When to do the eviction if it is needed? Before or after the cache operation? 
+  * Multi level caching and optimized algorithms. Hot entries in the heap always will be evicted on secondary storage.
+    Continuously ping the heap entries?  
