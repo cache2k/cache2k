@@ -532,21 +532,6 @@ public abstract class BaseCache<E extends Entry, K, T>
     }
   }
 
-  /**
-   * Executor for evictoins / expiry from within timer callback. Never blocks.
-   */
-  private Executor getEvictionExecutor() {
-    /*
-      Exception in thread "CACHE-ArcCacheTest.testBigScan-i4kqhtiu-kpo88d" java.lang.NullPointerException
-    	at org.cache2k.impl.BaseCache.getEvictionExecutor(BaseCache.java:571)
-    	at org.cache2k.impl.BaseCache.timerEvent(BaseCache.java:2563)
-    	at org.cache2k.impl.BaseCache$MyTimerTask.run(BaseCache.java:3312)
-    	at java.util.TimerThread.mainLoop(Timer.java:555)
-    	at java.util.TimerThread.run(Timer.java:505)
-    	*/
-    return manager.getEvictionExecutor();
-  }
-
   boolean isNeedingTimer() {
     return
         maxLinger > 0 || entryExpiryCalculator != null ||
@@ -2044,19 +2029,13 @@ public abstract class BaseCache<E extends Entry, K, T>
         if (mainHashCtrl.remove(mainHash, e)) {
           refreshHash = refreshHashCtrl.insert(refreshHash, e);
           if (e.hashCode != modifiedHash(e.key.hashCode())) {
-            Runnable r = new Runnable() {
-              @Override
-              public void run() {
-                synchronized (lock) {
-                  synchronized (e) {
-                    if (!e.isRemovedState() && removeEntryFromHash(e)) {
-                      expiredRemoveCnt++;
-                    }
-                  }
+            synchronized (lock) {
+              synchronized (e) {
+                if (!e.isRemovedState() && removeEntryFromHash(e)) {
+                  expiredRemoveCnt++;
                 }
               }
-            };
-            getEvictionExecutor().execute(r);
+            }
             return;
           }
           Runnable r = new Runnable() {
@@ -2069,7 +2048,8 @@ public abstract class BaseCache<E extends Entry, K, T>
                 e.setGettingRefresh();
               }
               try {
-                fetch(e);
+                long t = fetch(e);
+                e.finishFetch(t);
               } catch (CacheClosedException ignore) {
               } catch (Throwable ex) {
                 e.ensureFetchAbort(false);
@@ -2091,44 +2071,36 @@ public abstract class BaseCache<E extends Entry, K, T>
       }
 
     } else {
-      if (_executionTime < e.nextRefreshTime && e.nextRefreshTime > Entry.EXPIRY_TIME_MIN) {
-        Runnable r = new Runnable() {
-          @Override
-          public void run() {
-            synchronized (e) {
-              if (!e.isRemovedState()) {
-                long t = System.currentTimeMillis();
-                if (t < e.nextRefreshTime && e.nextRefreshTime > Entry.EXPIRY_TIME_MIN) {
-                  e.nextRefreshTime = -e.nextRefreshTime;
-                  return;
-                } else if (t >= e.nextRefreshTime) {
-                  expireEntry(e);
-                }
-              }
+      if (_executionTime < e.nextRefreshTime) {
+        synchronized (e) {
+          if (!e.isRemovedState()) {
+            long t = System.currentTimeMillis();
+            if (t < e.nextRefreshTime) {
+              e.nextRefreshTime = -e.nextRefreshTime;
+              return;
+            } else {
+              expireEntry(e);
             }
           }
-        };
-        getEvictionExecutor().execute(r);
+        }
         return;
       }
     }
-    Runnable r = new Runnable() {
-      @Override
-      public void run() {
-        synchronized (e) {
-          long t = System.currentTimeMillis();
-          if (t >= e.nextRefreshTime) {
-            expireEntry(e);
-          }
-        }
+    synchronized (e) {
+      long t = System.currentTimeMillis();
+      if (t >= e.nextRefreshTime) {
+        expireEntry(e);
       }
-    };
-    getEvictionExecutor().execute(r);
+    }
   }
 
   protected void expireEntry(E e) {
     synchronized (e) {
       if (e.isRemovedState() || e.isExpiredState()) {
+        return;
+      }
+      if (e.isFetchInProgress()) {
+        e.nextRefreshTime = Entry.FETCH_IN_PROGRESS_NON_VALID;
         return;
       }
       e.setExpiredState();
