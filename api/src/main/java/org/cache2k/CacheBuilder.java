@@ -156,6 +156,9 @@ public abstract class CacheBuilder<K,T>
    * Set the time duration after an entry expires. To switch off time
    * based expiry use {@link #eternal(boolean)}. A value of 0 effectively
    * disables the cache.
+   *
+   * <p/>If an {@link org.cache2k.EntryExpiryCalculator} is set, this setting
+   * controls the maximum possible expiry duration.
    */
   public CacheBuilder<K, T> expiryDuration(long v, TimeUnit u) {
     config.setExpiryMillis(u.toMillis(v));
@@ -208,13 +211,17 @@ public abstract class CacheBuilder<K,T>
   }
 
   /**
-   * Set expiry calculator to use.
+   * Set expiry calculator to use. If {@link #expiryDuration(long, java.util.concurrent.TimeUnit)}
+   * is set to 0 then expiry calculation is not used, all entries expire immediately.
    */
   public CacheBuilder<K, T> entryExpiryCalculator(EntryExpiryCalculator c) {
     entryExpiryCalculator = c;
     return this;
   }
 
+  /**
+   * Set expiry calculator to use in case of an exception happened in the {@link CacheSource}.
+   */
   public CacheBuilder<K, T> exceptionExpiryCalculator(ExceptionExpiryCalculator c) {
     exceptionExpiryCalculator = c;
     return this;
