@@ -519,7 +519,9 @@ public class ImageFileStorage
   }
 
   public long getFreeSpace() {
-    return freeMap.getFreeSpace();
+    synchronized (freeMap) {
+      return freeMap.getFreeSpace();
+    }
   }
 
   public long getTotalValueSpace() {
@@ -952,9 +954,6 @@ public class ImageFileStorage
     }
   }
 
-  public long getUsedSpace() {
-    return getTotalValueSpace() - getFreeSpace();
-  }
 
   public long getPutCnt() { return putCount; }
 
@@ -973,21 +972,33 @@ public class ImageFileStorage
       return "DirectFileStorage(fileName=" + fileName + ", UNKOWN)";
     }
     long _spaceToFree;
+    long _totalValueSpace;
     synchronized (commitLock) {
       synchronized (valuesLock) {
         _spaceToFree = calculateSpaceToFree();
+        _totalValueSpace = getTotalValueSpace();
       }
+    }
+    long _freeSpace;
+    long _freeSlots;
+    long _largestSlot;
+    long _smallestSlot;
+    synchronized (_freeMapCopy) {
+      _freeSpace = _freeMapCopy.getFreeSpace();
+      _freeSlots = _freeMapCopy.getSlotCount();
+      _largestSlot = _freeMapCopy.getSizeOfLargestSlot();
+      _smallestSlot = _freeMapCopy.getSizeOfSmallestSlot();
     }
     return "DirectFileStorage(fileName=" + fileName + ", " +
         "entryCapacity=" + entryCapacity + ", " +
         "entryCnt=" + _valuesCopy.size() + ", " +
         "totalSpace=" + getTotalValueSpace() + ", " +
-        "usedSpace=" + getUsedSpace() + ", " +
-        "freeSpace=" + _freeMapCopy.getFreeSpace() + ", " +
+        "usedSpace=" + (_totalValueSpace - _freeSpace) + ", " +
+        "freeSpace=" + _freeSpace + ", " +
         "spaceToFree=" + _spaceToFree + ", " +
-        "freeSlots=" + _freeMapCopy.getSlotCount() + ", " +
-        "smallestSlot=" + _freeMapCopy.getSizeOfSmallestSlot() + ", " +
-        "largestSlot=" + _freeMapCopy.getSizeOfLargestSlot() + ", " +
+        "freeSlots=" + _freeSlots + ", " +
+        "smallestSlot=" + _smallestSlot + ", " +
+        "largestSlot=" + _largestSlot + ", " +
         "hitCnt=" + hitCount + ", " +
         "missCnt=" + missCount + ", " +
         "putCnt=" + putCount + ", " +
