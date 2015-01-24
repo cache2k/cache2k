@@ -2057,7 +2057,9 @@ public abstract class BaseCache<E extends Entry, K, T>
                   internalExceptionCnt++;
                 }
                 getLog().warn("Refresh exception", ex);
-                expireEntry(e);
+                try {
+                  expireEntry(e);
+                } catch (CacheClosedException ignore) { }
               }
              }
           };
@@ -2079,7 +2081,9 @@ public abstract class BaseCache<E extends Entry, K, T>
               e.nextRefreshTime = -e.nextRefreshTime;
               return;
             } else {
-              expireEntry(e);
+              try {
+                expireEntry(e);
+              } catch (CacheClosedException ignore) { }
             }
           }
         }
@@ -2089,7 +2093,9 @@ public abstract class BaseCache<E extends Entry, K, T>
     synchronized (e) {
       long t = System.currentTimeMillis();
       if (t >= e.nextRefreshTime) {
-        expireEntry(e);
+        try {
+          expireEntry(e);
+        } catch (CacheClosedException ignore) { }
       }
     }
   }
