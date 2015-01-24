@@ -193,6 +193,11 @@ public class CacheManagerImpl extends CacheManager {
     }
   }
 
+  @Override
+  public synchronized void destroy() {
+    close();
+  }
+
   /**
    * The shutdown takes place in two phases. First all caches are notified to
    * cancel their scheduled timer jobs, after that the shutdown is done. Cancelling
@@ -208,7 +213,7 @@ public class CacheManagerImpl extends CacheManager {
    * routed through as early and directly as possible.
    */
   @Override
-  public synchronized void destroy() {
+  public synchronized void close() {
     List<Throwable> _suppressedExceptions = new ArrayList<Throwable>();
     if (caches != null) {
       Futures.WaitForAllFuture<Void> _wait = new Futures.WaitForAllFuture<Void>();

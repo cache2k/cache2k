@@ -731,10 +731,13 @@ public abstract class BaseCache<E extends Entry, K, T>
     return shutdownInitiated;
   }
 
-  /**
-   * Free all resources.
-   */
+  @Override
   public void destroy() {
+    close();
+  }
+
+  @Override
+  public void close() {
     synchronized (lock) {
       if (shutdownInitiated) {
         return;
@@ -1036,35 +1039,50 @@ public abstract class BaseCache<E extends Entry, K, T>
     if (e == null) {
       return null;
     }
-    CacheEntry<K,T> ce = new CacheEntry<K, T>() {
-      @Override
-      public K getKey() { return e.getKey(); }
+    synchronized (e) {
+      final K _key = e.getKey();
+      final T _value = e.getValue();
+      final Throwable _exception = e.getException();
+      final long _lastModification = e.getLastModification();
+      CacheEntry<K, T> ce = new CacheEntry<K, T>() {
+        @Override
+        public K getKey() {
+          return _key;
+        }
 
-      @Override
-      public T getValue() { return e.getValue(); }
+        @Override
+        public T getValue() {
+          return _value;
+        }
 
-      @Override
-      public Throwable getException() { return e.getException(); }
+        @Override
+        public Throwable getException() {
+          return _exception;
+        }
 
-      @Override
-      public long getLastModification() { return e.getLastModification(); }
+        @Override
+        public long getLastModification() {
+          return _lastModification;
+        }
 
-      @Override
-      public String toString() {
-        long _expiry = e.getValueExpiryTime();
-        return "CacheEntry(" +
-          "key=" + getKey() + ", " +
-          "value=" + getValue() + ", " +
-          ((getException() != null) ? "exception=" + e.getException() + ", " : "") +
-          "updated=" + formatMillis(getLastModification()) + ", " +
-          "expiry=" + (_expiry != 0 ? (formatMillis(_expiry)) : "-") + ", " +
-          "flags=" + (_expiry == 0 ? e.nextRefreshTime : "-") + ")";
-      }
+        @Override
+        public String toString() {
+          long _expiry = e.getValueExpiryTime();
+          return "CacheEntry(" +
+              "key=" + getKey() + ", " +
+              "value=" + getValue() + ", " +
+              ((getException() != null) ? "exception=" + e.getException() + ", " : "") +
+              "updated=" + formatMillis(getLastModification()) + ", " +
+              "expiry=" + (_expiry != 0 ? (formatMillis(_expiry)) : "-") + ", " +
+              "flags=" + (_expiry == 0 ? e.nextRefreshTime : "-") + ")";
+        }
 
-    };
-    return ce;
+      };
+      return ce;
+    }
   }
 
+  @Override
   public CacheEntry<K, T> getEntry(K key) {
     return returnEntry(getEntryInternal(key));
   }

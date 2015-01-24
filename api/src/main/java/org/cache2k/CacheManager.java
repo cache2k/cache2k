@@ -26,6 +26,7 @@ import org.cache2k.spi.Cache2kExtensionProvider;
 
 import javax.naming.Context;
 import javax.naming.InitialContext;
+import java.io.Closeable;
 import java.lang.reflect.Constructor;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -35,7 +36,7 @@ import java.util.ServiceLoader;
 /**
  * @author Jens Wilke; created: 2013-06-27
  */
-public abstract class CacheManager implements Iterable<Cache> {
+public abstract class CacheManager implements Iterable<Cache>, Closeable {
 
   protected final static String DEFAULT_MANAGER_NAME = "default";
 
@@ -121,9 +122,16 @@ public abstract class CacheManager implements Iterable<Cache> {
   public abstract void clear();
 
   /**
-   * Destroy all caches associated to this cache manager.
+   * @deprecated Use {@link #close()}
    */
   public abstract void destroy();
+
+  /**
+   * Free all resources from managed caches. If there is unwritten data, it is flushed, if needed.
+   * Same as calling all {@link org.cache2k.Cache#close()} methods. Calling this method is more effective,
+   * since it tries to close all caches concurrently as fast as possible.
+   */
+  public abstract void close();
 
   public abstract boolean isDestroyed();
 

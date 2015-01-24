@@ -23,6 +23,17 @@ package org.cache2k;
  */
 
 /**
+ * Object representing a cache entry. With the cache entry it can be
+ * checked whether a mapping in the cache is present, even if the cache
+ * holds null or an exception.
+ *
+ * <p>After retrieved the entry instance does not change the values, even
+ * if the value for its key is updated in the cache.
+ *
+ * <p>Design remark: The cache is generally also aware of the time the
+ * object will be refreshed next or when it expired. This is not exposed
+ * to applications by intention.
+ *
  * @author Jens Wilke; created: 2014-03-18
  */
 public interface CacheEntry<K, T> {
@@ -38,7 +49,5 @@ public interface CacheEntry<K, T> {
    * or by a put. If the entry was never fetched yet 0 is returned.
    */
   long getLastModification();
-
-  String toString();
 
 }

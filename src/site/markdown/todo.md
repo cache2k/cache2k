@@ -1,17 +1,10 @@
 ## Todo
 
-  * rename from fetch to entry operation?
-
 A poor mans issue tracker.
 
-### 0.20
-
-  * documentation update?
-  
 ### 0.21
 
   * contains()
-  * Closable, close() and closeAsync()
 
 ### 0.22
 
@@ -24,28 +17,21 @@ Planned API breaking changes in this release:
 
 ### Next
 
+  * tests for concurrency issues
   * New benchmark
-  * Statistics: removeCnt with storage is "wrong", there are heap entries for loaded/checked storage
-  * test exceptions within expiry policy
-  * stress test with evictions
-  * description for exception handling: policy, exception counter, suppressed exceptions, exceptions and bulk requests
+  * memory benchmark?
+  * switch to new timer implementation?
   * Better formatting: msecs/fetch=833.2831546786805
   * have totalFetchMillis and totalFetches as JMX value
   * peekEntry/iterator, make sure the entry values are consistent/immutable. modification time and value may be updated independently
-  * Flushable, flush() and flushAsync()
-  * clear() and clearAsync() ?
-  * purge() and purgeAsync() ?
 
 ### Warmups
 
   * factor out triggered job
-  * contains()
   * extract LRU operations from BaseCache
 
 ### Storage and persistence
 
-  * fetchWithStorage, get rid of flag
-  * reset() dirty?, review isDirty() handling
   * purge thread for timer thread decoupling
   * storage: special marshallers for int, long, string
   * Optimize purge: partial purge, start with least recently used
@@ -88,24 +74,6 @@ java.lang.IllegalStateException: detected operations while clearing.
 	at org.cache2k.impl.threading.GlobalPooledExecutor$ExecutorThread.run(GlobalPooledExecutor.java:318)
 	at java.lang.Thread.run(Thread.java:744)
 
-destroy(): we need to consistently check if cache is in shutdown phase after obtaining the lock.
-there may be fetches or storage operations ongoing. E.g.:
-
-WARNING: Refresh exception
-java.lang.IllegalStateException: Timer already cancelled.
-	at java.util.Timer.sched(Timer.java:397)
-	at java.util.Timer.schedule(Timer.java:208)
-	at org.cache2k.impl.BaseCache.insert(BaseCache.java:2074)
-	at org.cache2k.impl.BaseCache.insert(BaseCache.java:2001)
-	at org.cache2k.impl.BaseCache.insertFetched(BaseCache.java:1977)
-	at org.cache2k.impl.BaseCache.fetchFromSource(BaseCache.java:1973)
-	at org.cache2k.impl.BaseCache.fetchWithStorage(BaseCache.java:1868)
-	at org.cache2k.impl.BaseCache.fetch(BaseCache.java:1849)
-	at org.cache2k.impl.BaseCache$8.run(BaseCache.java:2167)
-	at java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1145)
-	at java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:615)
-	at java.lang.Thread.run(Thread.java:744)
-
 ### configuration
 
   * XML configuration
@@ -120,9 +88,6 @@ java.lang.IllegalStateException: Timer already cancelled.
   * improve thread usage and memory footprint for expiry timer
   * Rethink on cache manager, SPI, maybe take a look on jsr107 for this
 
-  * Benchmark with more than one thread:
-    Example: http://sourceforge.net/p/nitrocache/blog/2012/05/performance-benchmark-nitrocache--ehcache--infinispan--jcs--cach4j
-    
 ### JSR107
 
 Things in JSR107 we don't have yet.
@@ -140,7 +105,6 @@ Things in JSR107 we don't have yet.
   * API: typing / K or ? extends K
   * API: typing for get(), see:    http://stackoverflow.com/questions/857420/what-are-the-reasons-why-map-getobject-key-is-not-fully-generic
   * API/implementation: transaction support for use as database cache, for the lock free cache implementations
-  * API: destroy -> close
   * expiry/refresh: explain behaviour and API description
   * final bulk source API
   * reorganize timer. currently one timer thread is used per cache.
@@ -150,7 +114,6 @@ Things in JSR107 we don't have yet.
   * noname caches/generated names and garbage collection?
   * special integer key variant
   * prefetch: correct implementation / don't increment usage / counter for evicted non-used entries?
-  * getEntry()
   * Memory size estimation, check this:
     * http://codespot.net/2012/01/04/measuring-java-object-sizes/?relatedposts_exclude=382
     * http://marxsoftware.blogspot.de/2011/12/estimating-java-object-sizes-with.html

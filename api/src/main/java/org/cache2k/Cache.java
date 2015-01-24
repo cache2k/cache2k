@@ -23,6 +23,7 @@ package org.cache2k;
  * #L%
  */
 
+import java.io.Closeable;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -35,7 +36,7 @@ import java.util.Set;
  * @author Jens Wilke
  */
 @SuppressWarnings("UnusedDeclaration")
-public interface Cache<K, T> extends KeyValueSource<K,T>, Iterable<CacheEntry<K, T>>  {
+public interface Cache<K, T> extends KeyValueSource<K,T>, Iterable<CacheEntry<K, T>>, Closeable {
 
   public abstract String getName();
 
@@ -48,6 +49,24 @@ public interface Cache<K, T> extends KeyValueSource<K,T>, Iterable<CacheEntry<K,
    * Returns object in the cache that is mapped to the key.
    */
   public abstract T get(K key);
+
+  /**
+   * Returns a mapped entry from the cache or null. If no entry is present or the entry
+   * is expired, null is also returned.
+   *
+   * <p>If an exception was thrown during fetching the entry via the cache source,
+   * method does not follow the same schema of rethrowing the exception like in get()
+   * and peek(), instead the exception can be retrieved via,
+   * {@link org.cache2k.CacheEntry#getException()}
+   *
+   * <p>The reason for the existence of this method is, that in the presence of
+   * null values it cannot be determined by peek() and get() if there is a mapping
+   * or a null value.
+   *
+   * <p>Multiple calls for the same key may return different instances of the entry
+   * object.
+   */
+  public CacheEntry<K, T> getEntry(K key);
 
   /**
    * Signals the intent to call a get on the same key in the near future.
@@ -85,17 +104,21 @@ public interface Cache<K, T> extends KeyValueSource<K,T>, Iterable<CacheEntry<K,
   public abstract T peek(K key);
 
   /**
-   * Returns a mapped entry from the cache or null. If an entry is expired, null
-   * is also returned. Multiple calls for the same key may return different instances.
+   * Returns a mapped entry from the cache or null. If no entry is present or the entry
+   * is expired, null is also returned. As with {@link #peek(Object)}, no request to the
+   * {@link CacheSource} is made, if no entry is available for the requested key.
    *
-   * <p/>If an exception was thrown during fetching the entry via the cache source,
+   * <p>If an exception was thrown during fetching the entry via the cache source,
    * method does not follow the same schema of rethrowing the exception like in get()
    * and peek(), instead the exception can be retrieved via,
    * {@link org.cache2k.CacheEntry#getException()}
    *
-   * <p/>The reason for the existence of this method is, that in the presence of
+   * <p>The reason for the existence of this method is, that in the presence of
    * null values it cannot be determined by peek() and get() if there is a mapping
    * or a null value.
+   *
+   * <p>Multiple calls for the same key may return different instances of the entry
+   * object.
    */
   public abstract CacheEntry<K, T> peekEntry(K key);
 
@@ -199,11 +222,27 @@ public interface Cache<K, T> extends KeyValueSource<K,T>, Iterable<CacheEntry<K,
   public abstract void flush();
 
   /**
-   * Free all resources and remove the cache from the CacheManager.
-   *
-   * <p>TODO-API: rename to close()
+   * @deprecated use {@link #close()}
    */
   public abstract void destroy();
+
+  /**
+   * Free all resources and remove the cache from the CacheManager.
+   * If persistence support is enabled, the cache may flush unwritten data. Depending on the
+   * configuration of the persistence, this method only returns after all unwritten data is
+   * flushed to disk.
+   *
+   * <p>The method is designed to free resources and finish operations as gracefully and fast
+   * as possible. Some cache operations take an unpredictable long time such as the call of
+   * the {@link CacheSource#get(Object)}, so it may happen that the cache still has threads
+   * in use when this method returns.
+   *
+   * <p>After close, subsequent cache operations will throw a {@link org.cache2k.CacheException}.
+   * Cache operations currently in progress, may or may not terminated with an exception.
+   *
+   * <p>If all caches need to be closed it is more effective to use {@link CacheManager#close()}
+   */
+  public abstract void close();
 
   /**
    * Returns information about the caches internal information. Calling {@link #toString}
