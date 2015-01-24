@@ -123,6 +123,12 @@ public interface Cache<K, T> extends KeyValueSource<K,T>, Iterable<CacheEntry<K,
   public abstract CacheEntry<K, T> peekEntry(K key);
 
   /**
+   * Returns true if the there is a mapping for the specified key. Does not invoke
+   * the {@link CacheSource} if no entry exists.
+   */
+  public abstract boolean contains(K key);
+
+  /**
    * Set object value for the key
    */
   public abstract void put(K key, T value);

@@ -1336,6 +1336,15 @@ public abstract class BaseCache<E extends Entry, K, T>
   }
 
   @Override
+  public boolean contains(K key) {
+    E e = peekEntryInternal(key);
+    if (e != null) {
+      return true;
+    }
+    return false;
+  }
+
+  @Override
   public T peek(K key) {
     E e = peekEntryInternal(key);
     if (e != null) {

@@ -4,7 +4,6 @@ A poor mans issue tracker.
 
 ### 0.21
 
-  * contains()
 
 ### 0.22
 
@@ -27,7 +26,6 @@ Planned API breaking changes in this release:
 
 ### Warmups
 
-  * factor out triggered job
   * extract LRU operations from BaseCache
 
 ### Storage and persistence
