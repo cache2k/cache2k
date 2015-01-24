@@ -1827,7 +1827,7 @@ public abstract class BaseCache<E extends Entry, K, T>
     e.setLastModificationFromStorage(se.getCreatedOrUpdated());
     long now = System.currentTimeMillis();
     T v = (T) se.getValueOrException();
-    long _nextRefreshTime = maxLinger == 0 ? Entry.FETCH_NEXT_TIME_STATE : Entry.FETCHED_STATE;
+    long _nextRefreshTime = maxLinger == 0 ? 0 : Long.MAX_VALUE;
     long _expiryTimeFromStorage = se.getValueExpiryTime();
     boolean _expired = _expiryTimeFromStorage != 0 && _expiryTimeFromStorage <= now;
     if (!_expired && timer != null) {
@@ -2000,12 +2000,7 @@ public abstract class BaseCache<E extends Entry, K, T>
         e.task = tt;
       }
     } else {
-      if (_nextRefreshTime == 0) {
-        _nextRefreshTime = Entry.FETCH_NEXT_TIME_STATE;
-      } else if (_nextRefreshTime == Long.MAX_VALUE) {
-        _nextRefreshTime = Entry.FETCHED_STATE;
-      } else {
-      }
+      _nextRefreshTime = _nextRefreshTime == Long.MAX_VALUE ? Entry.FETCHED_STATE : Entry.FETCH_NEXT_TIME_STATE;
     }
     return _nextRefreshTime;
   }
