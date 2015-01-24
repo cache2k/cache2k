@@ -294,12 +294,6 @@ public class PassingStorageAdapter extends StorageAdapter {
       it.heapIteration = cache.iterateAllHeapEntries();
       it.heapIteration.setKeepIterated(true);
       it.keepHashCtrlForClearDetection = cache.mainHashCtrl;
-      if (!passivation) {
-        it.maximumEntriesToIterate = storage.getEntryCount();
-      } else {
-        it.maximumEntriesToIterate = Integer.MAX_VALUE;
-      }
-
     }
     it.executorForStorageCall = executor;
     long now = System.currentTimeMillis();
@@ -563,7 +557,6 @@ public class PassingStorageAdapter extends StorageAdapter {
     Hash keepHashCtrlForClearDetection;
     Entry[] keysIterated;
     ClosableConcurrentHashEntryIterator heapIteration;
-    int maximumEntriesToIterate;
     StorageEntry entry;
     BlockingQueue<StorageEntry> queue;
     Callable<Void> runnable;
@@ -590,13 +583,9 @@ public class PassingStorageAdapter extends StorageAdapter {
             return true;
           }
         }
-        if (heapIteration.iteratedCtl.size >= maximumEntriesToIterate) {
-          queue = null;
-        } else {
-          keysIterated = heapIteration.iterated;
-          futureToCheckAbnormalTermination =
-            executorForStorageCall.submit(runnable);
-        }
+        keysIterated = heapIteration.iterated;
+        futureToCheckAbnormalTermination =
+          executorForStorageCall.submit(runnable);
         heapIteration = null;
       }
       if (queue != null) {
