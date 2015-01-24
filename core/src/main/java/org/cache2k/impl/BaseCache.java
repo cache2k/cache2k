@@ -567,7 +567,7 @@ public abstract class BaseCache<E extends Entry, K, T>
       checkClosed();
       _untouchedHeapCache = touchedTime == clearedTime && getLocalSize() == 0;
       if (!storage.checkStorageStillDisconnectedForClear()) {
-        t.allLocalEntries = iterateAllLocalEntries();
+        t.allLocalEntries = iterateAllHeapEntries();
         t.allLocalEntries.setStopOnClear(false);
       }
       t.storage = storage;
@@ -647,7 +647,7 @@ public abstract class BaseCache<E extends Entry, K, T>
   protected final void clearLocalCache() {
     synchronized (lock) {
       checkClosed();
-      Iterator<Entry> it = iterateAllLocalEntries();
+      Iterator<Entry> it = iterateAllHeapEntries();
       int _count = 0;
       while (it.hasNext()) {
         Entry e = it.next();
@@ -819,7 +819,7 @@ public abstract class BaseCache<E extends Entry, K, T>
   protected ClosableIterator<Entry> iterateLocalAndStorage() {
     if (storage == null) {
       synchronized (lock) {
-        return iterateAllLocalEntries();
+        return iterateAllHeapEntries();
       }
     } else {
       return storage.iterateAll();
@@ -1142,7 +1142,13 @@ public abstract class BaseCache<E extends Entry, K, T>
           e.startFetch();
         }
       }
-      e.finishFetch(insertEntryFromStorage(se, e, _needsFetch));
+      boolean _finished = false;
+      try {
+        e.finishFetch(insertEntryFromStorage(se, e, _needsFetch));
+        _finished = true;
+      } finally {
+        e.ensureFetchAbort(_finished);
+      }
       evictEventually();
       return e;
     }
@@ -2149,7 +2155,7 @@ public abstract class BaseCache<E extends Entry, K, T>
    * Returns all cache entries within the heap cache. Entries that
    * are expired or contain no valid data are not filtered out.
    */
-  final protected ClosableConcurrentHashEntryIterator<Entry> iterateAllLocalEntries() {
+  final protected ClosableConcurrentHashEntryIterator<Entry> iterateAllHeapEntries() {
     return
       new ClosableConcurrentHashEntryIterator(
         mainHashCtrl, mainHash, refreshHashCtrl, refreshHash);

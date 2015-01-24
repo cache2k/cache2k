@@ -291,8 +291,8 @@ public class PassingStorageAdapter extends StorageAdapter {
       it.queue = new SynchronousQueue<StorageEntry>();
     }
     synchronized (cache.lock) {
-      it.localIteration = cache.iterateAllLocalEntries();
-      it.localIteration.setKeepIterated(true);
+      it.heapIteration = cache.iterateAllHeapEntries();
+      it.heapIteration.setKeepIterated(true);
       it.keepHashCtrlForClearDetection = cache.mainHashCtrl;
       if (!passivation) {
         it.maximumEntriesToIterate = storage.getEntryCount();
@@ -562,7 +562,7 @@ public class PassingStorageAdapter extends StorageAdapter {
 
     Hash keepHashCtrlForClearDetection;
     Entry[] keysIterated;
-    ClosableConcurrentHashEntryIterator localIteration;
+    ClosableConcurrentHashEntryIterator heapIteration;
     int maximumEntriesToIterate;
     StorageEntry entry;
     BlockingQueue<StorageEntry> queue;
@@ -582,21 +582,22 @@ public class PassingStorageAdapter extends StorageAdapter {
 
     @Override
     public boolean hasNext() {
-      if (localIteration != null) {
-        boolean b = localIteration.hasNext();
-        if (b) {
+      if (heapIteration != null) {
+        while (heapIteration.hasNext()) {
           Entry e;
-          entry = e = localIteration.next();
-          return true;
+          entry = e = heapIteration.next();
+          if (e.isDataValidState()) {
+            return true;
+          }
         }
-        if (localIteration.iteratedCtl.size >= maximumEntriesToIterate) {
+        if (heapIteration.iteratedCtl.size >= maximumEntriesToIterate) {
           queue = null;
         } else {
-          keysIterated = localIteration.iterated;
+          keysIterated = heapIteration.iterated;
           futureToCheckAbnormalTermination =
             executorForStorageCall.submit(runnable);
         }
-        localIteration = null;
+        heapIteration = null;
       }
       if (queue != null) {
         if (abortException != null) {
@@ -650,9 +651,9 @@ public class PassingStorageAdapter extends StorageAdapter {
 
     @Override
     public void close() {
-      if (localIteration != null) {
-        localIteration.close();
-        localIteration = null;
+      if (heapIteration != null) {
+        heapIteration.close();
+        heapIteration = null;
       }
       if (executorForStorageCall != null) {
         executorForStorageCall.shutdownNow();
@@ -827,7 +828,7 @@ public class PassingStorageAdapter extends StorageAdapter {
     Iterator<Entry> it;
     try {
       synchronized (cache.lock) {
-        it = cache.iterateAllLocalEntries();
+        it = cache.iterateAllHeapEntries();
       }
       while (it.hasNext()) {
         Entry e = it.next();
