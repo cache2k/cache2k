@@ -16,7 +16,7 @@ Planned API breaking changes in this release:
 
 ### Next
 
-  * tests for concurrency issues
+  * tests for concurrency issues with purge and clear
   * New benchmark
   * memory benchmark?
   * switch to new timer implementation?
@@ -97,6 +97,7 @@ Things in JSR107 we don't have yet.
 
 #### Details
 
+  * drop removeCnt statistics and improve remove performance?
   * expiry/refresh: Implement sharp expiry and background refresh, refresh ahead of time with different now?
   * change cache size during operation: maximumSize / capacity JMX setting
   * explain/check null support
