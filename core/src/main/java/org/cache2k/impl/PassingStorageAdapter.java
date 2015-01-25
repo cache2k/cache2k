@@ -1152,7 +1152,11 @@ public class PassingStorageAdapter extends StorageAdapter {
      */
     public int iterationQueueCapacity = 3;
 
-    public boolean useManagerThreadPool = true;
+    /**
+     * User global thread pool are a separate one.
+     * FIXME: Don't use global pool, there are some lingering bugs...
+     */
+    public boolean useManagerThreadPool = false;
 
     /**
      * Thread termination writes a info log message, if we still wait for termination.

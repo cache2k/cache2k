@@ -59,6 +59,10 @@ import java.util.concurrent.TimeoutException;
  * @see org.cache2k.impl.threading.LimitedPooledExecutor
  * @see java.util.concurrent.ExecutorService
  * @author Jens Wilke; created: 2014-05-12
+ *
+ * FIXME: implementation is faulty, we need to come up with a better implementation or a different approach.
+ * Discovered a design error: If one task keeps busy or is stuck the pool is not spawning a new thread, since
+ * there is no real measure of active threads. I think we should adapt the thread pool executor.
  */
 public class GlobalPooledExecutor {
 
