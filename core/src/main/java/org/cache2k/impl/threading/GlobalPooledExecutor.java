@@ -135,22 +135,23 @@ public class GlobalPooledExecutor {
       throw new IllegalStateException("pool was shut down");
     }
     Task<V> t = new Task<V>(c, n);
-    int cnt = getThreadInUseCount();
-    if (cnt > 0) {
-      if (taskQueue.size() == 0) {
-        return queue(t, _timeoutMillis);
+    int cnt;
+    synchronized (this) {
+      cnt = getThreadInUseCount();
+      if (cnt > 0) {
+        if (taskQueue.size() == 0) {
+          return queue(t, _timeoutMillis);
+        }
+        if (!tunable.disableHardLimit && cnt >= tunable.hardLimitThreadCount) {
+          return queue(t, _timeoutMillis);
+        }
       }
-      if (!tunable.disableHardLimit && cnt >= tunable.hardLimitThreadCount) {
-        return queue(t, _timeoutMillis);
-      }
+      threadCount++;
+      cnt = getThreadInUseCount();
     }
     Thread thr = factory.newThread(new ExecutorThread());
-    synchronized (this) {
-      threadCount++;
-    }
     thr.start();
-    cnt = getThreadInUseCount();
-    if (cnt < peakThreadCount) {
+    if (cnt > peakThreadCount) {
       peakThreadCount = cnt;
     }
     return queue(t, _timeoutMillis);
