@@ -1484,10 +1484,13 @@ public abstract class BaseCache<E extends Entry, K, T>
       return false;
     }
     int _spinCount = TUNABLE.maximumEntryLockSpins;
+    E e;
+    boolean _hasFreshData;
     for (;;) {
-      if (_spinCount-- <= 0) { throw new CacheLockSpinsExceededError(); }
-      E e = lookupOrNewEntrySynchronized(key);
-      boolean _hasFreshData;
+      if (_spinCount-- <= 0) {
+        throw new CacheLockSpinsExceededError();
+      }
+      e = lookupOrNewEntrySynchronized(key);
       synchronized (e) {
         e.waitForFetch();
         if (e.isRemovedState()) {
@@ -1495,37 +1498,33 @@ public abstract class BaseCache<E extends Entry, K, T>
         }
         _hasFreshData = e.hasFreshData();
         e.startFetch();
-      }
-      boolean _storageRemove = false;
-      boolean _finished = false;
-      try {
-        _storageRemove = storage.remove(key);
-        _finished = true;
-      } finally {
-        e.ensureFetchAbort(_finished);
-      }
-      synchronized (e) {
-        boolean _virgin = e.isVirgin();
-        e.finishFetch(Entry.LOADED_NON_VALID);
-        boolean _heapRemove;
-        synchronized (lock) {
-          if (_virgin) {
-            if (_storageRemove) {
-              loadHitCnt++;
-            } else {
-              loadNonFreshCnt++;
-            }
-          }
-          if (removeEntry(e)) {
-            removedCnt++;
-            _heapRemove = true;
-          } else {
-            _heapRemove = false;
-          }
-          return _hasFreshData && (_heapRemove || _storageRemove);
-        }
+        break;
       }
     }
+    boolean _finished = false;
+    try {
+      if (!_hasFreshData && e.isVirgin()) {
+        long t = fetchWithStorage(e, false);
+        _hasFreshData = e.hasFreshData(System.currentTimeMillis(), t);
+      }
+      if (_hasFreshData) {
+        storage.remove(key);
+      }
+      synchronized (e) {
+        e.finishFetch(Entry.LOADED_NON_VALID);
+        if (_hasFreshData) {
+          synchronized (lock) {
+            if (removeEntry(e)) {
+              removedCnt++;
+            }
+          }
+        }
+      }
+      _finished = true;
+    } finally {
+      e.ensureFetchAbort(_finished);
+    }
+    return _hasFreshData;
   }
 
   @Override
@@ -1806,9 +1805,9 @@ public abstract class BaseCache<E extends Entry, K, T>
 
   protected long calcNextRefreshTime(K _key, T _newObject, long now, Entry _entry) {
     return calcNextRefreshTime(
-      _key, _newObject, now, _entry,
-      entryExpiryCalculator, maxLinger,
-      exceptionExpiryCalculator, exceptionMaxLinger);
+        _key, _newObject, now, _entry,
+        entryExpiryCalculator, maxLinger,
+        exceptionExpiryCalculator, exceptionMaxLinger);
   }
 
   protected long fetch(final E e) {
@@ -1838,6 +1837,7 @@ public abstract class BaseCache<E extends Entry, K, T>
       if (_needsFetch) {
         return fetchFromSource(e);
       }
+      return Entry.LOADED_NON_VALID;
     }
     StorageEntry se = storage.get(e.key);
     if (se == null) {
