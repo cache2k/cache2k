@@ -99,8 +99,9 @@ public class ClosableConcurrentHashEntryIterator<E extends Entry>
     if (lastEntry != null) {
       e = lastEntry.another;
       if (e != null) {
-        lastEntry = e = checkIteratedOrNext((E) e);
+        e = checkIteratedOrNext((E) e);
         if (e != null) {
+          lastEntry = e;
           return e;
         }
       }
