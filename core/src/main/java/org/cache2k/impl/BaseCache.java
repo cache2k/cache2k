@@ -248,6 +248,11 @@ public abstract class BaseCache<E extends Entry, K, T>
 
   protected TimerService timerService = GlobalTimerService.getInstance();
 
+  /**
+   * Stops creation of new entries when clear is ongoing.
+   */
+  protected boolean waitForClear = false;
+
   private int featureBits = 0;
 
   private static final int SHARP_TIMEOUT_FEATURE = 1;
@@ -565,6 +570,7 @@ public abstract class BaseCache<E extends Entry, K, T>
     boolean _untouchedHeapCache;
     synchronized (lock) {
       checkClosed();
+      waitForClear = true;
       _untouchedHeapCache = touchedTime == clearedTime && getLocalSize() == 0;
       if (!storage.checkStorageStillDisconnectedForClear()) {
         t.allLocalEntries = iterateAllHeapEntries();
@@ -584,7 +590,12 @@ public abstract class BaseCache<E extends Entry, K, T>
     } catch (Exception ex) {
       throw new CacheStorageException(ex);
     }
-    clearLocalCache();
+    synchronized (lock) {
+      if (isClosed()) { throw new CacheClosedException(); }
+      clearLocalCache();
+      waitForClear = false;
+      lock.notifyAll();
+    }
   }
 
   protected void updateShutdownWaitFuture(Future<?> f) {
@@ -634,6 +645,11 @@ public abstract class BaseCache<E extends Entry, K, T>
     if (isClosed()) {
       throw new CacheClosedException();
     }
+    while (waitForClear) {
+      try {
+        lock.wait();
+      } catch (InterruptedException ignore) { }
+    }
   }
 
   public final void clear() {
@@ -641,25 +657,25 @@ public abstract class BaseCache<E extends Entry, K, T>
       processClearWithStorage();
       return;
     }
-    clearLocalCache();
+    synchronized (lock) {
+      checkClosed();
+      clearLocalCache();
+    }
   }
 
   protected final void clearLocalCache() {
-    synchronized (lock) {
-      checkClosed();
-      Iterator<Entry> it = iterateAllHeapEntries();
-      int _count = 0;
-      while (it.hasNext()) {
-        Entry e = it.next();
-        e.removedFromList();
-        cancelExpiryTimer(e);
-        _count++;
-      }
-      removedCnt += getLocalSize();
-      initializeHeapCache();
-      clearedTime = System.currentTimeMillis();
-      touchedTime = clearedTime;
+    Iterator<Entry> it = iterateAllHeapEntries();
+    int _count = 0;
+    while (it.hasNext()) {
+      Entry e = it.next();
+      e.removedFromList();
+      cancelExpiryTimer(e);
+      _count++;
     }
+    removedCnt += getLocalSize();
+    initializeHeapCache();
+    clearedTime = System.currentTimeMillis();
+    touchedTime = clearedTime;
   }
 
   protected void initializeHeapCache() {
