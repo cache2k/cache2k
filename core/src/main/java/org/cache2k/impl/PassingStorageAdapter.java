@@ -871,7 +871,7 @@ public class PassingStorageAdapter extends StorageAdapter {
    * are buffered. Here we have multiple race conditions. A clear() exists
    * immediately but the storage is still working on the first clear.
    * All previous clear processes will be cancelled and the last one may
-   * will. However, this method is not necessarily executed in the order
+   * win. However, this method is not necessarily executed in the order
    * the clear or the disconnect took place. This is checked also.
    */
   public Future<Void> clearAndReconnect() {
