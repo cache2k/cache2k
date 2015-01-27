@@ -933,6 +933,32 @@ public abstract class BaseCache<E extends Entry, K, T>
     return _head;
   }
 
+  /**
+   * Insert X into A B C, yields: A X B C.
+   */
+  protected static final <E extends Entry> E insertAfterHeadCyclicList(final E _head, final E e) {
+    if (_head == null) {
+      return (E) e.shortCircuit();
+    }
+    e.prev = _head;
+    e.next = _head.next;
+    _head.next.prev = e;
+    _head.next = e;
+    return _head;
+  }
+
+  /** Insert element at the head of the list */
+  protected static final <E extends Entry> E insertIntoHeadCyclicList(final E _head, final E e) {
+    if (_head == null) {
+      return (E) e.shortCircuit();
+    }
+    e.next = _head;
+    e.prev = _head.prev;
+    _head.prev.next = e;
+    _head.prev = e;
+    return e;
+  }
+
   protected static <E extends Entry> E removeFromCyclicList(final E _head, E e) {
     if (e.next == e) {
       e.removedFromList();
