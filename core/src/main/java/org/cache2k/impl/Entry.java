@@ -78,7 +78,7 @@ public class Entry<E extends Entry, K, T>
    * The time is the time in millis times 2. A set bit 1 means the entry is fetched from
    * the storage and not modified since then.
    */
-  private long fetchedTime;
+  public long fetchedTime;
 
   /**
    * Contains the next time a refresh has to occur. Low values have a special meaning, see defined constants.
