@@ -22,27 +22,38 @@ package org.cache2k.impl;
  * #L%
  */
 
+import org.cache2k.impl.util.TunableConstants;
+
 /**
- * Clock pro implementation
+ * CLOCK Pro implementation with 3 clocks. Using separate clocks for hot and cold
+ * has saves us the extra marker (4 bytes in Java) for an entry to decide whether it is in hot
+ * or cold. OTOH we shuffle around the entries in different lists and loose the order they
+ * were inserted, which leads to less cache efficiency.
+ *
+ * <p/>This version uses a static allocation for hot and cold spaces. No online or dynamic
+ * optimization is done yet. However, the hitrate for all measured access traces is better
+ * then LRU and it is resistant to scans.
  *
  * @author Jens Wilke; created: 2013-07-12
  */
 @SuppressWarnings("unchecked")
-public class ClockProPlusCache<K, T> extends LockFreeCache<ClockProPlusCache.Entry, K, T> {
+public class ClockProPlusCache<K, T> extends BaseCache<ClockProPlusCache.Entry, K, T> {
 
   long hotHits;
   long coldHits;
   long ghostHits;
+  long directRemoveCnt;
 
-  int hotRunCnt;
-  int hot24hCnt;
-  int hotScanCnt;
+  long hotRunCnt;
+  long hot24hCnt;
+  long hotScanCnt;
+
+  long evictedColdHitCnt = 0;
 
   long hotSizeSum;
-  int coldRunCnt;
-  int cold24hCnt;
-  int coldScanCnt;
-  int directRemoveCnt;
+  long coldRunCnt;
+  long cold24hCnt;
+  long coldScanCnt;
 
   int coldSize;
   int hotSize;
@@ -51,13 +62,15 @@ public class ClockProPlusCache<K, T> extends LockFreeCache<ClockProPlusCache.Ent
   /** Maximum size of hot clock. 0 means normal clock behaviour */
   int hotMax;
   int ghostMax;
-  boolean hotMaxFix = false;
 
   Entry handCold;
   Entry handHot;
   Entry handGhost;
   Hash<Entry> ghostHashCtrl;
   Entry[] ghostHash;
+  long ghostInsertCnt = 0;
+
+  Tunable tunable = new Tunable();
 
   private int sumUpListHits(Entry e) {
     if (e == null) { return 0; }
@@ -72,15 +85,14 @@ public class ClockProPlusCache<K, T> extends LockFreeCache<ClockProPlusCache.Ent
 
   @Override
   public long getHitCnt() {
-    return hotHits + coldHits + countAllHits();
+    return hotHits + coldHits + sumUpListHits(handCold) + sumUpListHits(handHot);
   }
 
-  @Override
   protected void initializeHeapCache() {
     super.initializeHeapCache();
     ghostMax = maxSize;
-    hotMax = maxSize * 50 / 100;
-    hotMaxFix = false;
+    ghostMax = maxSize;
+    hotMax = maxSize * 97 / 100;
     coldSize = 0;
     hotSize = 0;
     staleSize = 0;
@@ -91,40 +103,39 @@ public class ClockProPlusCache<K, T> extends LockFreeCache<ClockProPlusCache.Ent
     ghostHash = ghostHashCtrl.init(Entry.class);
   }
 
+
   /**
-   * We are called e.g. from the timer event to remove the entry.
-   * Eviction does not call this entry, because the findCandidate evicts
-   * directly.
-   *
-   * <p>The entry may be in the cold or the hot clock. For removing it
-   * we need to know in what clock it resided, to decrement the size counter.
-   *
+   * We are called to remove the entry. The cause may be a timer event
+   * or for eviction.
+   * We can just remove the entry from the list, but we don't
+   * know which list it is in to correct the counters accordingly.
+   * So, instead of removing it directly, we just mark it and remove it
+   * by the normal eviction process.
    */
   @Override
   protected void removeEntryFromReplacementList(Entry e) {
-
-    if (handCold.prev == e) {
-      if (handHot == e) {
-        handCold = handHot = removeFromCyclicList(handCold, e);
-      } else {
-        handCold = removeFromCyclicList(handCold, e);
-      }
+    evictedColdHitCnt += e.coldHitCnt;
+    insertCopyIntoGhosts(e);
+    if (handCold == e) {
+      handCold = removeFromCyclicList(handCold, e);
       coldSize--;
+      handCold = refillFromHot(handCold);
       directRemoveCnt++;
     } else {
       staleSize++;
       e.setStale();
     }
-    insertCopyIntoGhosts(e);
   }
 
   private void insertCopyIntoGhosts(Entry e) {
     Entry<K,T> e2 = new Entry<K, T>();
+    e2.value = (T) INITIAL_GHOST_VALUE;
     e2.key = (K) e.key;
     e2.hashCode = e.hashCode;
+    e2.fetchedTime = ghostInsertCnt++;
     ghostHash = ghostHashCtrl.insert(ghostHash, e2);
     handGhost = insertIntoTailCyclicList(handGhost, e2);
-    if (ghostHashCtrl.size > maxSize - hotMax) {
+    if (ghostHashCtrl.size > ghostMax) {
       runHandGhost();
     }
   }
@@ -149,127 +160,116 @@ public class ClockProPlusCache<K, T> extends LockFreeCache<ClockProPlusCache.Ent
     return new Entry();
   }
 
-
-
-
-
   protected Entry<K,T> runHandHot() {
-    if (handHot == null) {
-      handHot = handCold;
-    }
     hotRunCnt++;
-
     Entry<K,T> _handStart = handHot;
     Entry<K,T> _hand = _handStart;
     Entry<K,T> _coldCandidate = _hand;
-    int _hits = Integer.MAX_VALUE;
+    int _lowestHits = Integer.MAX_VALUE;
     long _hotHits = hotHits;
-    int _scanCnt = 0;
+    int _scanCnt = -1;
+    int _decrease = 1;
+    _decrease = ((_hand.hitCnt + _hand.next.hitCnt) >> 6) + 1;
     do {
-      if (_hand.hot) {
-        _scanCnt++;
-        int _hitCnt = _hand.hitCnt;
-        if (_hitCnt < _hits) {
-          _hits = _hitCnt;
-          _coldCandidate = _hand;
-          if (_hits == 0) {
-            break;
-          }
+      _scanCnt++;
+      int _hitCnt = _hand.hitCnt;
+      if (_hitCnt < _lowestHits) {
+        _lowestHits = _hitCnt;
+        _coldCandidate = _hand;
+        if (_hitCnt == 0) {
+          break;
         }
-        int _decrease = ((_hits>>4) + 1);
-        _hand.hitCnt -= _decrease;
+      }
+      if (_hitCnt < _decrease) {
+        _hand.hitCnt = 0;
+        _hotHits += _hitCnt;
+      } else {
+        _hand.hitCnt = _hitCnt - _decrease;
         _hotHits += _decrease;
       }
       _hand = _hand.next;
-    } while (_hand != _handStart && _hits > 0);
-    _hotHits += _coldCandidate.hitCnt;
-    _coldCandidate.hitCnt = 0;
+    } while (_hand != _handStart);
     hotHits = _hotHits;
     hotScanCnt += _scanCnt;
-    if (_hand == _handStart) {
+    if (_scanCnt == hotMax ) {
       hot24hCnt++; // count a full clock cycle
     }
-    handHot = _hand;
-    _coldCandidate.hot = false;
+    handHot = removeFromCyclicList(_hand, _coldCandidate);
     hotSize--;
     return _coldCandidate;
   }
 
-  private void decreaseColdSpace() {
-    if (hotMaxFix) { return; }
-    hotMax = Math.min(maxSize - 1, hotMax + 1);
-  }
-
-  private void increaseColdSpace() {
-    if (hotMaxFix) { return; }
-    hotMax = Math.max(0, hotMax - 1);
-  }
+  static class InitialGhostValuePleaseComplain { }
+  final static InitialGhostValuePleaseComplain INITIAL_GHOST_VALUE =
+          new InitialGhostValuePleaseComplain();
 
   /**
-   * Run hand cold.
-   * Promote reference cold to hot or unreferenced test to cold
+   * Runs cold hand an in turn hot hand to find eviction candidate.
    */
+  @Override
   protected Entry findEvictionCandidate() {
     hotSizeSum += hotMax;
     coldRunCnt++;
     Entry<K,T> _hand = handCold;
-    int _scanCnt = 1;
-    int _coldSize = coldSize;
+    int _scanCnt = 0;
     do {
-      if (!_hand.hot && _hand.hitCnt == 0) {
-        decreaseColdSpace();
+      if (_hand == null && handHot != null) {
+        _hand = refillFromHot(_hand);
       }
-      while (true) {
-        while (_hand.hot) {
-          _hand = _hand.next;
-        }
-        if (_hand.hitCnt == 0) {
-          break;
-        }
-        increaseColdSpace();
-        _scanCnt++;
-        coldHits += _hand.hitCnt;
-        _hand.hitCnt = 0;
-        _hand.hot = true;
-        hotSize++;
-        _coldSize--;
-        runHandHot();
-        _coldSize++;
-        _hand = _hand.next;
+      if (_hand != null && _hand.hitCnt > 0) {
+        _hand = refillFromHot(_hand);
+        do {
+          _scanCnt++;
+          _hand.coldHitCnt++;
+          coldHits += _hand.hitCnt;
+          _hand.hitCnt = 0;
+          Entry<K, T> e = _hand;
+          _hand = (Entry<K, T>) removeFromCyclicList(e);
+          coldSize--;
+          hotSize++;
+          handHot = insertIntoTailCyclicList(handHot, e);
+        } while (_hand != null && _hand.hitCnt > 0);
       }
 
-      while (hotSize > hotMax) {
-        runHandHot();
-        _coldSize++;
+      if (_hand == null) {
+        _hand = refillFromHot(_hand);
       }
 
       if (!_hand.isStale()) {
-        break;
-      }
-      if (_hand == handHot) {
-        _hand = handHot = (Entry<K, T>) removeFromCyclicList(_hand);
-      } else {
-        _hand = (Entry<K, T>) removeFromCyclicList(_hand);
-      }
-      _coldSize--;
+         break;
+       }
+      _hand = (Entry<K,T>) removeFromCyclicList(_hand);
       staleSize--;
+      coldSize--;
       _scanCnt--;
-    } while(true);
-    if (_scanCnt > coldSize) {
+
+    } while (true);
+    if (_scanCnt > this.coldSize) {
       cold24hCnt++;
     }
-    while (hotSize > hotMax) {
-      runHandHot();
-      _coldSize++;
-    }
     coldScanCnt += _scanCnt;
-    coldSize = _coldSize;
-    handCold = _hand.next;
+    handCold = _hand;
+    return _hand;
+  }
+
+  private Entry<K, T> refillFromHot(Entry<K, T> _hand) {
+    while (hotSize > hotMax || _hand == null) {
+      Entry<K,T> e = runHandHot();
+      if (e != null) {
+        if (e.isStale()) {
+          staleSize--;
+        } else {
+          _hand = insertIntoTailCyclicList(_hand, e);
+          coldSize++;
+        }
+      }
+    }
     return _hand;
   }
 
   protected void runHandGhost() {
     boolean f = ghostHashCtrl.remove(ghostHash, handGhost);
+    Entry e = handGhost;
     handGhost = (Entry) removeFromCyclicList(handGhost);
   }
 
@@ -279,64 +279,10 @@ public class ClockProPlusCache<K, T> extends LockFreeCache<ClockProPlusCache.Ent
     if (e != null) {
       handGhost = removeFromCyclicList(handGhost, e);
       ghostHits++;
-      ghostHit(e);
+      hotSize++;
+      handHot = insertIntoTailCyclicList(handHot, e);
     }
     return e;
-  }
-
-  private void ghostHit(Entry e) {
-
-    increaseColdSpace();
-    handCold = insertIntoTailCyclicList(handCold, e);
-    e.hot = true;
-    hotSize++;
-    while (hotSize > hotMax) {
-      runHandHot();
-      coldSize++;
-    }
-  }
-
-  int countHotCold(boolean _status) {
-    if (handCold == null) {
-      return 0;
-    }
-    int cnt = 0;
-    Entry<K, T> e = handCold;
-    do {
-      if (e.hot == _status) {
-        cnt++;
-      }
-      e = e.next;
-    } while (e != handCold);
-    return cnt;
-  }
-
-  long countHotColdHits(boolean _status) {
-    if (handCold == null) {
-      return 0;
-    }
-    long cnt = 0;
-    Entry<K, T> e = handCold;
-    do {
-      if (e.hot == _status) {
-        cnt += e.hitCnt;
-      }
-      e = e.next;
-    } while (e != handCold);
-    return cnt;
-  }
-
-  long countAllHits() {
-    if (handCold == null) {
-      return 0;
-    }
-    long cnt = 0;
-    Entry<K, T> e = handCold;
-    do {
-      cnt += e.hitCnt;
-      e = e.next;
-    } while (e != handCold);
-    return cnt;
   }
 
   @Override
@@ -347,12 +293,12 @@ public class ClockProPlusCache<K, T> extends LockFreeCache<ClockProPlusCache.Ent
                       ghostHashCtrl.size, Hash.calcEntryCount(ghostHash))
               .check("hotMax <= maxElements", hotMax <= maxSize)
               .check("hotSize <= hotMax", hotSize <= hotMax)
-              .checkEquals("getSize() == (getListSize() + evictedButInHashCnt) ", getLocalSize(),  getListSize() + evictedButInHashCnt)
+              .checkEquals("getListSize() == getSize()", (getListSize()) , getLocalSize())
               .check("checkCyclicListIntegrity(handHot)", checkCyclicListIntegrity(handHot))
               .check("checkCyclicListIntegrity(handCold)", checkCyclicListIntegrity(handCold))
               .check("checkCyclicListIntegrity(handGhost)", checkCyclicListIntegrity(handGhost))
-              .checkEquals("listEntries == coldSize", countHotCold(false), coldSize)
-              .checkEquals("listEntries == hotSize", countHotCold(true), hotSize)
+              .checkEquals("getCyclicListEntryCount(handHot) == hotSize", getCyclicListEntryCount(handHot), hotSize)
+              .checkEquals("getCyclicListEntryCount(handCold) == coldSize", getCyclicListEntryCount(handCold), coldSize)
               .checkEquals("getCyclicListEntryCount(handGhost) == ghostSize", getCyclicListEntryCount(handGhost), ghostHashCtrl.size);
     }
   }
@@ -365,10 +311,10 @@ public class ClockProPlusCache<K, T> extends LockFreeCache<ClockProPlusCache.Ent
            ", hotSizeAvg=" + (coldRunCnt > 0 ? (hotSizeSum / coldRunCnt) : -1) +
            ", ghostSize=" + ghostHashCtrl.size +
            ", staleSize=" + staleSize +
-           ", coldHits=" + (coldHits + countHotColdHits(false)) +
-           ", hotHits=" + (hotHits + countHotColdHits(true)) +
+           ", coldHits=" + (coldHits + sumUpListHits(handCold)) +
+           ", hotHits=" + (hotHits + sumUpListHits(handHot)) +
            ", ghostHits=" + ghostHits +
-           ", coldRunCnt=" + coldRunCnt +
+           ", coldRunCnt=" + coldRunCnt +// identical to the evictions anyways
            ", coldScanCnt=" + coldScanCnt +
            ", cold24hCnt=" + cold24hCnt +
            ", hotRunCnt=" + hotRunCnt +
@@ -380,7 +326,21 @@ public class ClockProPlusCache<K, T> extends LockFreeCache<ClockProPlusCache.Ent
   static class Entry<K, T> extends org.cache2k.impl.Entry<Entry, K, T> {
 
     int hitCnt;
-    boolean hot;
+    int coldHitCnt;
+
+  }
+
+  public int getHotMax() {
+    return hotMax;
+  }
+
+  public void setHotMax(int hotMax) {
+    this.hotMax = hotMax;
+  }
+
+  public static class Tunable extends TunableConstants {
+
+    public boolean insert0HitsFromHotToColdHead = false;
 
   }
 
