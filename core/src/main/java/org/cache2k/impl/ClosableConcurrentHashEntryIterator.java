@@ -116,8 +116,9 @@ public class ClosableConcurrentHashEntryIterator<E extends Entry>
       }
       e = hash[idx];
       if (e != null) {
-        lastEntry = e = checkIteratedOrNext((E) e);
+        e = checkIteratedOrNext((E) e);
         if (e != null) {
+          lastEntry = e;
           return e;
         }
       }
