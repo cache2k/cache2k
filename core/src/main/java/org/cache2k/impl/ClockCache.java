@@ -89,14 +89,13 @@ public class ClockCache<K, T> extends LockFreeCache<ClockCache.Entry, K, T> {
     return new Entry();
   }
 
-
   /**
    * Run to evict an entry.
    */
   @Override
   protected Entry findEvictionCandidate() {
     runCnt++;
-    int _scanCnt = 1;
+    int _scanCnt = 0;
 
     while (hand.hitCnt > 0) {
       _scanCnt++;
@@ -108,9 +107,7 @@ public class ClockCache<K, T> extends LockFreeCache<ClockCache.Entry, K, T> {
       scan24hCnt++;
     }
     scanCnt += _scanCnt;
-    Entry _evictionCandidate = hand;
-    hand = (Entry) hand.next;
-    return _evictionCandidate;
+    return hand;
   }
 
   @Override
