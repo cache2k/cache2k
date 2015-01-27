@@ -24,8 +24,10 @@ package org.cache2k.storage;
 
 import org.cache2k.StorageConfiguration;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -102,7 +104,15 @@ public class ByReferenceHeapStorageImpl implements CacheStorage {
 
   @Override
   public void visit(VisitContext ctx, EntryFilter f, EntryVisitor v) throws Exception {
-    for (StorageEntry e : entries.values()) {
+    List<StorageEntry> l = new ArrayList<StorageEntry>();
+    synchronized (this) {
+      for (StorageEntry e : entries.values()) {
+        if (f.shouldInclude(e.getKey())) {
+          l.add(e);
+        }
+      }
+    }
+    for (StorageEntry e : l) {
       if (f.shouldInclude(e.getKey())) {
         v.visit(e);
       }
