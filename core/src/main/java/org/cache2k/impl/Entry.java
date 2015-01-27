@@ -67,6 +67,10 @@ public class Entry<E extends Entry, K, T>
 
   static final int EXPIRY_TIME_MIN = 32;
 
+  static private final StaleMarker STALE_MARKER_KEY = new StaleMarker();
+
+  final static InitialValueInEntryNeverReturned INITIAL_VALUE = new InitialValueInEntryNeverReturned();
+
   public BaseCache.MyTimerTask task;
 
   /**
@@ -84,7 +88,7 @@ public class Entry<E extends Entry, K, T>
 
   public K key;
 
-  public volatile T value = (T) BaseCache.INITIAL_VALUE;
+  public volatile T value = (T) INITIAL_VALUE;
 
   /**
    * Hash implementation: the calculated, modified hash code, retrieved from the key when the entry is
@@ -316,11 +320,11 @@ public class Entry<E extends Entry, K, T>
   }
 
   public boolean isStale() {
-    return BaseCache.STALE_MARKER_KEY == key;
+    return STALE_MARKER_KEY == key;
   }
 
   public void setStale() {
-    key = (K) BaseCache.STALE_MARKER_KEY;
+    key = (K) STALE_MARKER_KEY;
   }
 
   public boolean hasException() {
@@ -432,6 +436,13 @@ public class Entry<E extends Entry, K, T>
     e = new Entry();
     e.setLoadedNonValidAndFetch();
     e.setExpiredState();
+  }
+
+  static class InitialValueInEntryNeverReturned extends Object { }
+
+  static class StaleMarker {
+    @Override
+    public boolean equals(Object o) { return false; }
   }
 
 }

@@ -65,7 +65,6 @@ import java.util.Map;
 import java.util.Random;
 import java.util.Set;
 import java.util.Timer;
-import java.util.concurrent.Executor;
 import java.util.concurrent.Future;
 import java.util.concurrent.FutureTask;
 import java.util.concurrent.TimeUnit;
@@ -1956,7 +1955,7 @@ public abstract class BaseCache<E extends Entry, K, T>
       _nextRefreshTime = Long.MAX_VALUE;
     }
     boolean _suppressException =
-      _value instanceof ExceptionWrapper && hasSuppressExceptions() && e.getValue() != INITIAL_VALUE && !e.hasException();
+      _value instanceof ExceptionWrapper && hasSuppressExceptions() && e.getValue() != Entry.INITIAL_VALUE && !e.hasException();
     if (!_suppressException) {
       e.value = _value;
     }
@@ -2643,17 +2642,6 @@ public abstract class BaseCache<E extends Entry, K, T>
       timerEvent(entry, scheduledExecutionTime());
     }
   }
-
-  static class InitialValueInEntryNeverReturned extends Object { }
-
-  final static InitialValueInEntryNeverReturned INITIAL_VALUE = new InitialValueInEntryNeverReturned();
-
-  static class StaleMarker {
-    @Override
-    public boolean equals(Object o) { return false; }
-  }
-
-  final static StaleMarker STALE_MARKER_KEY = new StaleMarker();
 
   public static class Tunable extends TunableConstants {
 
