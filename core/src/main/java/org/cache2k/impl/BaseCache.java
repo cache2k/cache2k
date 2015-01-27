@@ -1019,7 +1019,7 @@ public abstract class BaseCache<E extends Entry, K, T>
   /**
    * New cache entry, put it in the replacement algorithm structure
    */
-  protected abstract void insertIntoReplcamentList(E e);
+  protected abstract void insertIntoReplacementList(E e);
 
   /**
    * Entry object factory. Return an entry of the proper entry subtype for
@@ -1730,7 +1730,7 @@ public abstract class BaseCache<E extends Entry, K, T>
       e = newEntry();
       e.key = key;
       e.hashCode = hc;
-      insertIntoReplcamentList(e);
+      insertIntoReplacementList(e);
     }
     mainHash = mainHashCtrl.insert(mainHash, e);
     newEntryCnt++;

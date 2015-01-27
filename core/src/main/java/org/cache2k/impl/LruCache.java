@@ -46,7 +46,7 @@ public class LruCache<K, T> extends BaseCache<LruCache.Entry, K, T> {
   }
 
   @Override
-  protected void insertIntoReplcamentList(Entry e) {
+  protected void insertIntoReplacementList(Entry e) {
     insertInList(head, e);
   }
 

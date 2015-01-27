@@ -81,7 +81,7 @@ public class ArcCache<K, T> extends BaseCache<ArcCache.Entry, K, T> {
   }
 
   @Override
-  protected void insertIntoReplcamentList(Entry e) {
+  protected void insertIntoReplacementList(Entry e) {
     insertInList(t1Head, e);
     t1Size++;
   }

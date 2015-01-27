@@ -77,7 +77,7 @@ public class ClockCache<K, T> extends LockFreeCache<ClockCache.Entry, K, T> {
   }
 
   @Override
-  protected void insertIntoReplcamentList(Entry e) {
+  protected void insertIntoReplacementList(Entry e) {
     e.hitCnt = 1;
     hits--;
     size++;

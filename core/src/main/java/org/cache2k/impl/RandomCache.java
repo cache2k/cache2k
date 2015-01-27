@@ -40,7 +40,7 @@ public class RandomCache<K, T> extends LockFreeCache<Entry, K, T> {
   }
 
   @Override
-  protected void insertIntoReplcamentList(Entry e) {
+  protected void insertIntoReplacementList(Entry e) {
     e.next = e;
   }
 

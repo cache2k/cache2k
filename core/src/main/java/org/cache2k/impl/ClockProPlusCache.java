@@ -139,7 +139,7 @@ public class ClockProPlusCache<K, T> extends LockFreeCache<ClockProPlusCache.Ent
   }
 
   @Override
-  protected void insertIntoReplcamentList(Entry e) {
+  protected void insertIntoReplacementList(Entry e) {
     coldSize++;
     handCold = insertIntoTailCyclicList(handCold, e);
   }
