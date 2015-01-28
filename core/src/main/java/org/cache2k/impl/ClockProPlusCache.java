@@ -37,7 +37,7 @@ import org.cache2k.impl.util.TunableConstants;
  * @author Jens Wilke; created: 2013-07-12
  */
 @SuppressWarnings("unchecked")
-public class ClockProPlusCache<K, T> extends BaseCache<ClockProPlusCache.Entry, K, T> {
+public class ClockProPlusCache<K, T> extends LockFreeCache<ClockProPlusCache.Entry, K, T> {
 
   long hotHits;
   long coldHits;
@@ -119,7 +119,6 @@ public class ClockProPlusCache<K, T> extends BaseCache<ClockProPlusCache.Entry, 
     if (handCold == e) {
       handCold = removeFromCyclicList(handCold, e);
       coldSize--;
-      handCold = refillFromHot(handCold);
       directRemoveCnt++;
     } else {
       staleSize++;
@@ -213,10 +212,10 @@ public class ClockProPlusCache<K, T> extends BaseCache<ClockProPlusCache.Entry, 
     Entry<K,T> _hand = handCold;
     int _scanCnt = 0;
     do {
-      if (_hand == null && handHot != null) {
+      if (_hand == null) {
         _hand = refillFromHot(_hand);
       }
-      if (_hand != null && _hand.hitCnt > 0) {
+      if (_hand.hitCnt > 0) {
         _hand = refillFromHot(_hand);
         do {
           _scanCnt++;
@@ -292,7 +291,6 @@ public class ClockProPlusCache<K, T> extends BaseCache<ClockProPlusCache.Entry, 
               .checkEquals("ghostHashCtrl.size == Hash.calcEntryCount(refreshHash)",
                       ghostHashCtrl.size, Hash.calcEntryCount(ghostHash))
               .check("hotMax <= maxElements", hotMax <= maxSize)
-              .check("hotSize <= hotMax", hotSize <= hotMax)
               .checkEquals("getListSize() == getSize()", (getListSize()) , getLocalSize())
               .check("checkCyclicListIntegrity(handHot)", checkCyclicListIntegrity(handHot))
               .check("checkCyclicListIntegrity(handCold)", checkCyclicListIntegrity(handCold))

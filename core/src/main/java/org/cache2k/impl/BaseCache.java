@@ -2674,7 +2674,7 @@ public abstract class BaseCache<E extends Entry, K, T>
     /**
      * Implementation class to use by default.
      */
-    public Class<? extends BaseCache> defaultImplementation = ClockCache.class;
+    public Class<? extends BaseCache> defaultImplementation = LruCache.class;
 
     /**
      * Log exceptions from the source just as they happen. The log goes to the debug output
