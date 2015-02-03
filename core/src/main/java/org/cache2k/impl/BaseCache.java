@@ -1129,9 +1129,7 @@ public abstract class BaseCache<E extends Entry, K, T>
   }
 
   protected E getEntryInternal(K key) {
-    int _spinCount = TUNABLE.maximumEntryLockSpins;
     for (;;) {
-      if (_spinCount-- <= 0) { throw new CacheLockSpinsExceededError(); }
       E e = lookupOrNewEntrySynchronized(key);
       if (e.hasFreshData()) { return e; }
       synchronized (e) {
