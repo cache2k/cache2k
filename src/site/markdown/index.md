@@ -6,6 +6,8 @@ the name cache2k.
 
 ## News
 
+  * **Version 0.21, 2015-02-04**: Rewrite internal entry locking. Bunch of new methods and interfaces. See [Version 0.21 release notes](0/21.html)
+  * 2015-02-01: FOSDEM talk, mostly covering advanced eviction techniques and latest benchmarks with Version 0.21, see [slides on slideshare](http://www.slideshare.net/cruftex/cache2k-java-caching-turbo-charged-fosdem-2015) 
   * **Version 0.20, 2014-11-11**: Revised configuration, iterator, improved 
     exception handling, android compatible core module, see [Version 0.20 release notes](0/20.html)
   * **Version 0.19.2, 2014-09-23**: Rerelease of 0.19, compatible to android. 
