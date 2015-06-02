@@ -113,6 +113,7 @@ public class ClockProPlusCache<K, T> extends LockFreeCache<ClockProPlusCache.Ent
   protected void removeEntryFromReplacementList(Entry e) {
     insertCopyIntoGhosts(e);
     if (handCold == e) {
+      coldHits += e.hitCnt;
       handCold = removeFromCyclicList(handCold, e);
       coldSize--;
       directRemoveCnt++;
