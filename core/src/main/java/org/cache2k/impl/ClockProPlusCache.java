@@ -48,8 +48,6 @@ public class ClockProPlusCache<K, T> extends LockFreeCache<ClockProPlusCache.Ent
   long hot24hCnt;
   long hotScanCnt;
 
-  long evictedColdHitCnt = 0;
-
   long hotSizeSum;
   long coldRunCnt;
   long cold24hCnt;
@@ -91,7 +89,6 @@ public class ClockProPlusCache<K, T> extends LockFreeCache<ClockProPlusCache.Ent
   protected void initializeHeapCache() {
     super.initializeHeapCache();
     ghostMax = maxSize;
-    ghostMax = maxSize;
     hotMax = maxSize * 97 / 100;
     coldSize = 0;
     hotSize = 0;
@@ -114,7 +111,6 @@ public class ClockProPlusCache<K, T> extends LockFreeCache<ClockProPlusCache.Ent
    */
   @Override
   protected void removeEntryFromReplacementList(Entry e) {
-    evictedColdHitCnt += e.coldHitCnt;
     insertCopyIntoGhosts(e);
     if (handCold == e) {
       handCold = removeFromCyclicList(handCold, e);
@@ -214,7 +210,6 @@ public class ClockProPlusCache<K, T> extends LockFreeCache<ClockProPlusCache.Ent
         _hand = refillFromHot(_hand);
         do {
           _scanCnt++;
-          _hand.coldHitCnt++;
           coldHits += _hand.hitCnt;
           _hand.hitCnt = 0;
           Entry<K, T> e = _hand;
@@ -319,21 +314,6 @@ public class ClockProPlusCache<K, T> extends LockFreeCache<ClockProPlusCache.Ent
   static class Entry<K, T> extends org.cache2k.impl.Entry<Entry, K, T> {
 
     int hitCnt;
-    int coldHitCnt;
-
-  }
-
-  public int getHotMax() {
-    return hotMax;
-  }
-
-  public void setHotMax(int hotMax) {
-    this.hotMax = hotMax;
-  }
-
-  public static class Tunable extends TunableConstants {
-
-    public boolean insert0HitsFromHotToColdHead = false;
 
   }
 
