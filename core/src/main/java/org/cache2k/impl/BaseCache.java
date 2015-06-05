@@ -1073,7 +1073,7 @@ public abstract class BaseCache<E extends Entry, K, T>
 
   @Override
   public T get(K key) {
-    return returnValue(getEntryInternal(key));
+    return (T) returnValue(getEntryInternal(key));
   }
 
   /**
@@ -1397,7 +1397,7 @@ public abstract class BaseCache<E extends Entry, K, T>
   public T peek(K key) {
     E e = peekEntryInternal(key);
     if (e != null) {
-      return returnValue(e);
+      return (T) returnValue(e);
     }
     return null;
   }
