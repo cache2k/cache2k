@@ -163,8 +163,7 @@ public class ClockProPlusCache<K, T> extends LockFreeCache<ClockProPlusCache.Ent
     int _lowestHits = Integer.MAX_VALUE;
     long _hotHits = hotHits;
     int _scanCnt = -1;
-    int _decrease = 1;
-    _decrease = ((_hand.hitCnt + _hand.next.hitCnt) >> 6) + 1;
+    int _decrease = _decrease = ((_hand.hitCnt + _hand.next.hitCnt) >> 6) + 1;
     do {
       _scanCnt++;
       int _hitCnt = _hand.hitCnt;
