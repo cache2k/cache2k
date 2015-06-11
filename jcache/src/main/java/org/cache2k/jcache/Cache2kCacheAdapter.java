@@ -44,6 +44,11 @@ public class Cache2kCacheAdapter<K, V> implements javax.cache.Cache<K, V> {
   Cache2kManagerAdapter manager;
   Cache<K, V> cache;
 
+  public Cache2kCacheAdapter(Cache2kManagerAdapter manager, Cache<K, V> cache) {
+    this.manager = manager;
+    this.cache = cache;
+  }
+
   @Override
   public V get(K k) {
     return cache.get(k);

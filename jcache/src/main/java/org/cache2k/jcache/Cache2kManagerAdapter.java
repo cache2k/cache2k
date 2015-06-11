@@ -34,7 +34,9 @@ import javax.cache.expiry.ExpiryPolicy;
 import javax.cache.expiry.ModifiedExpiryPolicy;
 import javax.cache.spi.CachingProvider;
 import java.net.URI;
+import java.util.HashSet;
 import java.util.Properties;
+import java.util.Set;
 
 /**
  * @author Jens Wilke; created: 2015-03-27
@@ -102,8 +104,7 @@ public class Cache2kManagerAdapter implements CacheManager {
       }
     }
     b.manager(manager);
-
-    return null;
+    return new Cache2kCacheAdapter<K, V>(this, b.build());
   }
 
   @Override
@@ -118,12 +119,18 @@ public class Cache2kManagerAdapter implements CacheManager {
 
   @Override
   public Iterable<String> getCacheNames() {
-    return null;
+    Set<String> _names = new HashSet<String>();
+    for (org.cache2k.Cache c : manager) {
+      if (!c.isClosed()) {
+        _names.add(c.getName());
+      }
+    }
+    return _names;
   }
 
   @Override
   public void destroyCache(String cacheName) {
-
+    manager.getCache(cacheName).close();
   }
 
   @Override
@@ -138,12 +145,12 @@ public class Cache2kManagerAdapter implements CacheManager {
 
   @Override
   public void close() {
-
+    manager.close();
   }
 
   @Override
   public boolean isClosed() {
-    return false;
+    return manager.isClosed();
   }
 
   @Override
