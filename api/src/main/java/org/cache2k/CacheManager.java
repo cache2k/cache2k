@@ -102,7 +102,13 @@ public abstract class CacheManager implements Iterable<Cache>, Closeable {
    */
   public abstract void close();
 
+  /**
+   *
+   * @deprecated use {@link #isClosed()}
+   */
   public abstract boolean isDestroyed();
+
+  public abstract boolean isClosed();
 
   public abstract Properties getProperties();
 

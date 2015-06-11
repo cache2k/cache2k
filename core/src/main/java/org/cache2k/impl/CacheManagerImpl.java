@@ -184,7 +184,7 @@ public class CacheManagerImpl extends CacheManager {
   }
 
   @Override
-  public Cache getCache(String name) {
+  public synchronized Cache getCache(String name) {
     return cacheNames.get(name);
   }
 
@@ -319,7 +319,13 @@ public class CacheManagerImpl extends CacheManager {
   }
 
   @Override
+  @Deprecated
   public boolean isDestroyed() {
+    return isClosed();
+  }
+
+  @Override
+  public boolean isClosed() {
     return caches == null;
   }
 

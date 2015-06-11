@@ -746,7 +746,8 @@ public abstract class BaseCache<E extends Entry, K, T>
     }
   }
 
-  protected boolean isClosed() {
+  @Override
+  public boolean isClosed() {
     return shutdownInitiated;
   }
 

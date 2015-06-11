@@ -251,6 +251,11 @@ public interface Cache<K, T> extends KeyValueSource<K,T>, Iterable<CacheEntry<K,
   public abstract void close();
 
   /**
+   * True if cache was closed or closing is in progress.
+   */
+  public abstract boolean isClosed();
+
+  /**
    * Returns information about the caches internal information. Calling {@link #toString}
    * on the cache object is an expensive operation, since internal statistics are
    * collected and other thread users need to be locked out, to have a consistent
