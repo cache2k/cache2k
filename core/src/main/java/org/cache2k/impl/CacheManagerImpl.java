@@ -30,7 +30,6 @@ import org.cache2k.impl.threading.GlobalPooledExecutor;
 import org.cache2k.impl.util.Log;
 
 import java.io.IOException;
-import java.io.InputStream;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -38,6 +37,7 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Properties;
 import java.util.ServiceLoader;
 import java.util.Set;
 import java.util.concurrent.ArrayBlockingQueue;
@@ -77,12 +77,15 @@ public class CacheManagerImpl extends CacheManager {
   private ExecutorService evictionExecutor;
   private String version;
   private String buildNumber;
+  private Properties properties;
+  private ClassLoader classLoader;
 
-  public CacheManagerImpl() {
-    this(getDefaultName());
-  }
-
-  public CacheManagerImpl(String _name) {
+  public CacheManagerImpl(ClassLoader cl, String _name, Properties p) {
+    if (cl == null) {
+      cl = getClass().getClassLoader();
+    }
+    classLoader = cl;
+    properties = p;
     name = _name;
     log = Log.getLog(CacheManager.class.getName() + '.' + name);
     String _buildNumber = null;
@@ -268,6 +271,7 @@ public class CacheManagerImpl extends CacheManager {
         _suppressedExceptions.add(t);
       }
     }
+    ((Cache2kManagerProviderImpl) provider).removeManager(this);
     eventuallyThrowException(_suppressedExceptions);
   }
 
@@ -320,7 +324,7 @@ public class CacheManagerImpl extends CacheManager {
   }
 
   private String getThreadNamePrefix() {
-    if (!DEFAULT_MANAGER_NAME.equals(name)) {
+    if (!Cache2kManagerProviderImpl.DEFAULT_MANAGER_NAME.equals(name)) {
       return "cache2k:" + name + ":";
     }
     return "cache2k-";
@@ -400,6 +404,16 @@ public class CacheManagerImpl extends CacheManager {
 
   public String getBuildNumber() {
     return buildNumber;
+  }
+
+  @Override
+  public Properties getProperties() {
+    return properties;
+  }
+
+  @Override
+  public ClassLoader getClassLoader() {
+    return classLoader;
   }
 
 }

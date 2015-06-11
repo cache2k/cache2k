@@ -23,12 +23,23 @@ package org.cache2k.impl;
  */
 
 import org.cache2k.spi.Cache2kCoreProvider;
+import org.cache2k.spi.Cache2kManagerProvider;
 import org.cache2k.storage.ImageFileStorage;
 
 /**
  * @author Jens Wilke; created: 2014-04-20
  */
 public class Cache2kCoreProviderImpl extends Cache2kCoreProvider {
+
+  Cache2kManagerProviderImpl provider;
+
+  @Override
+  public synchronized Cache2kManagerProvider getManagerProvider() {
+    if (provider == null) {
+      provider = new Cache2kManagerProviderImpl();
+    }
+    return provider;
+  }
 
   @Override
   public Class<CacheBuilderImpl> getBuilderImplementation() {

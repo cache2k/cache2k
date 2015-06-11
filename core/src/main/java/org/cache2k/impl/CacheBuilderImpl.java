@@ -168,7 +168,7 @@ public class CacheBuilderImpl<K, T> extends CacheBuilder<K, T> {
     Cache<K,T> _cache = constructImplementationAndFillParameters(_implClass);
     CacheManagerImpl cm = null;
     if (_cache instanceof BaseCache) {
-      cm = (CacheManagerImpl) CacheManager.getInstance();
+      cm = (CacheManagerImpl) (manager == null ? CacheManager.getInstance() : manager);
       ((BaseCache) _cache).setCacheManager(cm);
     }
     configureViaSetters(_cache);

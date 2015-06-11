@@ -49,6 +49,7 @@
     <module>jmx-api</module>
     <module>core</module>
     <module>ee</module>
+    <module>jcache</module>
   </modules>
 
   <dependencies>
@@ -151,6 +152,7 @@
             </goals>
           </execution>
         </executions>
+
         <configuration>
           <!-- no aggregation, we want to have docs on the API package alone -->
           <aggregate>false</aggregate>
@@ -167,6 +169,8 @@
           <bottom>
             <![CDATA[<a href="http://cache2k.org" target="_blank">cache2k</a> API documentation. Copyright &#169; {inceptionYear}&#x2013;{currentYear} <a href="http://headissue.com" target="_blank">headissue GmbH, Munich</a>.]]>
           </bottom>
+          <!-- TODO: cleanup javadoc and remove again -->
+          <additionalparam>-Xdoclint:none</additionalparam>
         </configuration>
       </plugin>
     </plugins>

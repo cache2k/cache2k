@@ -42,6 +42,8 @@ import java.util.ServiceLoader;
  */
 public abstract class Cache2kCoreProvider {
 
+  public abstract Cache2kManagerProvider getManagerProvider();
+
   public abstract Class<? extends CacheBuilder> getBuilderImplementation();
 
   public abstract Class<?> getDefaultPersistenceStoreImplementation();

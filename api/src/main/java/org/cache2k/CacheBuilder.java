@@ -67,6 +67,7 @@ public abstract class CacheBuilder<K,T>
     return cb;
   }
 
+  protected CacheManager manager;
   protected EntryExpiryCalculator entryExpiryCalculator;
   protected CacheSource cacheSource;
   protected CacheSourceWithMetaInfo cacheSourceWithMetaInfo;
@@ -106,6 +107,12 @@ public abstract class CacheBuilder<K,T>
    */
   public CacheBuilder<K, T> name(Object _containingObject, String _fieldName) {
     return name(_containingObject.getClass(), _fieldName);
+  }
+
+  /** */
+  public CacheBuilder<K, T> manager(CacheManager m) {
+    manager = m;
+    return this;
   }
 
   public CacheBuilder<K, T> name(String v) {
