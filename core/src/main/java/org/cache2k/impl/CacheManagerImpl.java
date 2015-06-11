@@ -217,6 +217,9 @@ public class CacheManagerImpl extends CacheManager {
    */
   @Override
   public synchronized void close() {
+    if (caches == null) {
+      return;
+    }
     List<Throwable> _suppressedExceptions = new ArrayList<Throwable>();
     if (caches != null) {
       Futures.WaitForAllFuture<Void> _wait = new Futures.WaitForAllFuture<Void>();
