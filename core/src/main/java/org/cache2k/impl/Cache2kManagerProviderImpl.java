@@ -45,6 +45,10 @@ public class Cache2kManagerProviderImpl implements Cache2kManagerProvider {
   Map<ClassLoader, Map<String, CacheManager>> loader2name2manager =
       new WeakHashMap<ClassLoader, Map<String, CacheManager>>();
 
+  public Object getLockObject() {
+    return loader2name2manager;
+  }
+
   @Override
   public void setDefaultName(String s) {
     if (defaultManager != null) {
@@ -64,20 +68,22 @@ public class Cache2kManagerProviderImpl implements Cache2kManagerProvider {
   }
 
   @Override
-  public synchronized CacheManager getManager(ClassLoader cl, String _name, Properties p) {
-    if (cl == null) {
-      cl = getDefaultClassLoader();
+  public CacheManager getManager(ClassLoader cl, String _name, Properties p) {
+    synchronized (getLockObject()) {
+      if (cl == null) {
+        cl = getDefaultClassLoader();
+      }
+      Map<String, CacheManager> map = loader2name2manager.get(cl);
+      if (map == null) {
+        loader2name2manager.put(cl, map = new HashMap<String, CacheManager>());
+      }
+      CacheManager cm = map.get(_name);
+      if (cm == null) {
+        cm = new CacheManagerImpl(cl, _name, p);
+        map.put(_name, cm);
+      }
+      return cm;
     }
-    Map<String, CacheManager> map = loader2name2manager.get(cl);
-    if (map == null) {
-      loader2name2manager.put(cl, map = new HashMap<String, CacheManager>());
-    }
-    CacheManager cm = map.get(_name);
-    if (cm == null) {
-      cm = new CacheManagerImpl(cl, _name, p);
-      map.put(_name, cm);
-    }
-    return cm;
   }
 
   @Override
@@ -92,7 +98,7 @@ public class Cache2kManagerProviderImpl implements Cache2kManagerProvider {
    * Called from the manager after a close. Removes the manager from the known managers.
    */
   void removeManager(CacheManager cm) {
-    synchronized (this) {
+    synchronized (getLockObject()) {
       for (Map<String, CacheManager> m : loader2name2manager.values()) {
         Iterator<CacheManager> it = m.values().iterator();
         while (it.hasNext()) {
@@ -109,7 +115,7 @@ public class Cache2kManagerProviderImpl implements Cache2kManagerProvider {
   public void close(ClassLoader l) {
     Set<CacheManager> _managers = new HashSet<CacheManager>();
     Map<String, CacheManager> map;
-    synchronized (this) {
+    synchronized (getLockObject()) {
       map = loader2name2manager.get(l);
       if (map == null) {
         return;
@@ -131,7 +137,7 @@ public class Cache2kManagerProviderImpl implements Cache2kManagerProvider {
   @Override
   public void close(ClassLoader l, String _name) {
     CacheManager cm;
-    synchronized (this) {
+    synchronized (getLockObject()) {
       Map<String, CacheManager> map = loader2name2manager.get(l);
       if (map == null) { return; }
       cm = map.get(_name);

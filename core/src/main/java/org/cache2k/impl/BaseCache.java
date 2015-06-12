@@ -501,6 +501,10 @@ public abstract class BaseCache<E extends Entry, K, T>
 
   public StorageAdapter getStorage() { return storage; }
 
+  public Class<?> getKeyType() { return keyType; }
+
+  public Class<?> getValueType() { return valueType; }
+
   /**
    * Registers the cache in a global set for the clearAllCaches function and
    * registers it with the resource monitor.

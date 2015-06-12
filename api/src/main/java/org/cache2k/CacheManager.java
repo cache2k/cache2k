@@ -83,6 +83,10 @@ public abstract class CacheManager implements Iterable<Cache>, Closeable {
 
   public abstract String getName();
 
+  /**
+   * Returns all caches that were not closed before. If the cache manager is closed by itself, always
+   * returns nothing.
+   */
   public abstract Iterator<Cache> iterator();
 
   public abstract Cache getCache(String name);

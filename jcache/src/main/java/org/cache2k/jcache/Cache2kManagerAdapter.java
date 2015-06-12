@@ -23,20 +23,27 @@ package org.cache2k.jcache;
  */
 
 import org.cache2k.CacheBuilder;
+import org.cache2k.impl.CacheManagerImpl;
 
 import javax.cache.Cache;
+import javax.cache.CacheException;
 import javax.cache.CacheManager;
 import javax.cache.configuration.CompleteConfiguration;
 import javax.cache.configuration.Configuration;
+import javax.cache.configuration.MutableConfiguration;
 import javax.cache.expiry.Duration;
 import javax.cache.expiry.EternalExpiryPolicy;
 import javax.cache.expiry.ExpiryPolicy;
 import javax.cache.expiry.ModifiedExpiryPolicy;
 import javax.cache.spi.CachingProvider;
 import java.net.URI;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
+import java.util.WeakHashMap;
 
 /**
  * @author Jens Wilke; created: 2015-03-27
@@ -45,6 +52,7 @@ public class Cache2kManagerAdapter implements CacheManager {
 
   org.cache2k.CacheManager manager;
   Cache2kCachingProvider provider;
+  Map<String, Cache2kCacheAdapter> name2adapter = new HashMap<String, Cache2kCacheAdapter>();
 
   public Cache2kManagerAdapter(Cache2kCachingProvider p, org.cache2k.CacheManager cm) {
     manager = cm;
@@ -74,10 +82,18 @@ public class Cache2kManagerAdapter implements CacheManager {
   @Override
   public <K, V, C extends Configuration<K, V>> Cache<K, V> createCache(String _cacheName, C cfg)
       throws IllegalArgumentException {
+    checkClosed();
+    checkNonNullCacheName(_cacheName);
     CacheBuilder b = CacheBuilder.newCache(cfg.getKeyType(), cfg.getValueType());
+    b.name(_cacheName);
     b.eternal(true);
+    MutableConfiguration<K, V> _cfgCopy = null;
     if (cfg instanceof CompleteConfiguration) {
       CompleteConfiguration<K, V> cc = (CompleteConfiguration<K, V>) cfg;
+      _cfgCopy = new MutableConfiguration<K, V>();
+      _cfgCopy.setTypes(cc.getKeyType(), cc.getValueType());
+      _cfgCopy.setStoreByValue(cc.isStoreByValue());
+
       if (cc.isReadThrough()) {
         throw new UnsupportedOperationException("no support for jsr107 read through operation");
       }
@@ -98,32 +114,72 @@ public class Cache2kManagerAdapter implements CacheManager {
       }
     }
     b.manager(manager);
-    return new Cache2kCacheAdapter<K, V>(this, b.build());
+    synchronized (((CacheManagerImpl)manager).getLockObject()) {
+      Cache _jsr107cache = name2adapter.get(_cacheName);
+      if (_jsr107cache != null && !_jsr107cache.isClosed()) {
+        throw new CacheException("cache already existing with name: " + _cacheName);
+      }
+      org.cache2k.Cache _existingCache = manager.getCache(_cacheName);
+      if (_existingCache != null && !_existingCache.isClosed()) {
+        throw new CacheException("A cache2k instance is already existing with name: " + _cacheName);
+      }
+      Cache2kCacheAdapter<K, V> c = new Cache2kCacheAdapter<K, V>(this, b.build(), cfg.isStoreByValue(), _cfgCopy);
+      name2adapter.put(c.getName(), c);
+      return c;
+    }
   }
 
   @Override
-  public <K, V> Cache<K, V> getCache(String cacheName, Class<K> keyType, Class<V> valueType) {
-    return null;
+  public <K, V> Cache<K, V> getCache(String _cacheName, final Class<K> _keyType, final Class<V> _valueType) {
+    checkClosed();
+    synchronized (((CacheManagerImpl)manager).getLockObject()) {
+      Cache2kCacheAdapter<K, V> c = name2adapter.get(_cacheName);
+      if (c != null && manager.getCache(_cacheName) == c.cache && !c.isClosed()) {
+        Configuration cfg = c.getConfiguration(Configuration.class);
+        if (!cfg.getKeyType().equals(_keyType)) {
+          if (_keyType.equals(Object.class)) {
+            throw new IllegalArgumentException("Available cache by requested name has runtime type parameters.");
+          }
+          throw new ClassCastException("key type mismatch, expected: " + cfg.getKeyType().getName());
+        }
+        if (!cfg.getValueType().equals(_valueType)) {
+          if (_valueType.equals(Object.class)) {
+            throw new IllegalArgumentException("Available cache by requested name has runtime type parameters.");
+          }
+          throw new ClassCastException("value type mismatch, expected: " + cfg.getValueType().getName());
+        }
+        return c;
+      }
+
+      return null;
+    }
   }
 
+  private void checkNonNullCacheName(String _cacheName) {
+    if (_cacheName == null) {
+      throw new NullPointerException("cache name is null");
+    }
+  }
+
+  @SuppressWarnings("unchecked")
   @Override
-  public <K, V> Cache<K, V> getCache(String cacheName) {
-    return null;
+  public <K, V> Cache<K, V> getCache(String _cacheName) {
+    return (Cache<K, V>) getCache(_cacheName, Object.class, Object.class);
   }
 
   @Override
   public Iterable<String> getCacheNames() {
     Set<String> _names = new HashSet<String>();
     for (org.cache2k.Cache c : manager) {
-      if (!c.isClosed()) {
-        _names.add(c.getName());
-      }
+      _names.add(c.getName());
     }
-    return _names;
+    return Collections.unmodifiableSet(_names);
   }
 
   @Override
   public void destroyCache(String _cacheName) {
+    checkClosed();
+    checkNonNullCacheName(_cacheName);
     org.cache2k.Cache c = manager.getCache(_cacheName);
     if (c != null) {
       c.close();
@@ -131,13 +187,21 @@ public class Cache2kManagerAdapter implements CacheManager {
   }
 
   @Override
-  public void enableManagement(String cacheName, boolean enabled) {
+  public void enableManagement(String _cacheName, boolean enabled) {
+    checkClosed();
+    checkNonNullCacheName(_cacheName);
+  }
 
+  private void checkClosed() {
+    if (isClosed()) {
+      throw new IllegalStateException("cache manager is closed");
+    }
   }
 
   @Override
-  public void enableStatistics(String cacheName, boolean enabled) {
-
+  public void enableStatistics(String _cacheName, boolean enabled) {
+    checkClosed();
+    checkNonNullCacheName(_cacheName);
   }
 
   @Override
@@ -151,8 +215,11 @@ public class Cache2kManagerAdapter implements CacheManager {
   }
 
   @Override
-  public <T> T unwrap(Class<T> clazz) {
-    return null;
+  public <T> T unwrap(Class<T> _class) {
+    if (org.cache2k.CacheManager.class.isAssignableFrom(_class)) {
+      return (T) manager;
+    }
+    throw new IllegalArgumentException("requested unwrap class not available");
   }
 
 }

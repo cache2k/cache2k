@@ -22,6 +22,7 @@ package org.cache2k.jcache;
  * #L%
  */
 
+import org.cache2k.impl.Cache2kManagerProviderImpl;
 import org.cache2k.spi.Cache2kCoreProvider;
 import org.cache2k.spi.Cache2kManagerProvider;
 import org.cache2k.spi.SingleProviderResolver;
@@ -31,7 +32,10 @@ import javax.cache.configuration.OptionalFeature;
 import javax.cache.spi.CachingProvider;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Properties;
+import java.util.WeakHashMap;
 
 /**
  * @author Jens Wilke; created: 2014-10-19
@@ -39,9 +43,15 @@ import java.util.Properties;
 public class Cache2kCachingProvider implements CachingProvider {
 
   Cache2kManagerProvider forwardProvider;
+  Map<ClassLoader, Map<URI, Cache2kManagerAdapter>> classLader2uri2cache =
+      new WeakHashMap<ClassLoader, Map<URI, Cache2kManagerAdapter>>();
 
   {
     forwardProvider = SingleProviderResolver.getInstance().resolve(Cache2kCoreProvider.class).getManagerProvider();
+  }
+
+  private Object getLockObject() {
+    return ((Cache2kManagerProviderImpl) forwardProvider).getLockObject();
   }
 
   public URI name2Uri(String _name) {
@@ -57,10 +67,23 @@ public class Cache2kCachingProvider implements CachingProvider {
   }
 
   @Override
-  public CacheManager getCacheManager(URI uri, ClassLoader classLoader, Properties properties) {
-    return new Cache2kManagerAdapter(
-        this,
-        forwardProvider.getManager(classLoader, uri2Name(uri), properties));
+  public CacheManager getCacheManager(URI uri, ClassLoader cl, Properties p) {
+    synchronized (getLockObject()) {
+      Map<URI, Cache2kManagerAdapter> map = classLader2uri2cache.get(cl);
+      if (map == null) {
+        map = new HashMap<URI, Cache2kManagerAdapter>();
+        classLader2uri2cache.put(cl, map);
+      }
+      Cache2kManagerAdapter cm = map.get(uri);
+      if (cm != null && !cm.isClosed()) {
+        return cm;
+      }
+      cm = new Cache2kManagerAdapter(
+          this,
+          forwardProvider.getManager(cl, uri2Name(uri), p));
+      map.put(uri, cm);
+      return cm;
+    }
   }
 
   @Override
@@ -79,10 +102,8 @@ public class Cache2kCachingProvider implements CachingProvider {
   }
 
   @Override
-  public CacheManager getCacheManager(URI uri, ClassLoader classLoader) {
-    return new Cache2kManagerAdapter(
-        this,
-        forwardProvider.getManager(classLoader, uri2Name(uri), getDefaultProperties()));
+  public CacheManager getCacheManager(URI uri, ClassLoader cl) {
+    return getCacheManager(uri, cl, getDefaultProperties());
   }
 
   @Override

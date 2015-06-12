@@ -27,7 +27,9 @@ import org.cache2k.impl.BaseCache;
 
 import javax.cache.CacheManager;
 import javax.cache.configuration.CacheEntryListenerConfiguration;
+import javax.cache.configuration.CompleteConfiguration;
 import javax.cache.configuration.Configuration;
+import javax.cache.configuration.MutableConfiguration;
 import javax.cache.integration.CompletionListener;
 import javax.cache.processor.EntryProcessor;
 import javax.cache.processor.EntryProcessorException;
@@ -43,10 +45,18 @@ public class Cache2kCacheAdapter<K, V> implements javax.cache.Cache<K, V> {
 
   Cache2kManagerAdapter manager;
   Cache<K, V> cache;
+  BaseCache<?, K, V> cacheImpl;
+  boolean storeByValue;
 
-  public Cache2kCacheAdapter(Cache2kManagerAdapter manager, Cache<K, V> cache) {
-    this.manager = manager;
-    this.cache = cache;
+  /** Null, if no complete configuration is effective */
+  CompleteConfiguration<K, V> completeConfiguration;
+
+  public Cache2kCacheAdapter(Cache2kManagerAdapter _manager, Cache<K, V> _cache, boolean _storeByvalue, CompleteConfiguration<K, V> _completeConfiguration) {
+    manager = _manager;
+    cache = _cache;
+    cacheImpl = (BaseCache<?, K, V>) _cache;
+    completeConfiguration = _completeConfiguration;
+    storeByValue = _storeByvalue;
   }
 
   @Override
@@ -91,7 +101,7 @@ public class Cache2kCacheAdapter<K, V> implements javax.cache.Cache<K, V> {
 
   @Override
   public boolean remove(K key) {
-    return ((BaseCache) cache).removeWithFlag(key);
+    return cacheImpl.removeWithFlag(key);
   }
 
   @Override
@@ -134,9 +144,35 @@ public class Cache2kCacheAdapter<K, V> implements javax.cache.Cache<K, V> {
     cache.clear();
   }
 
+  @SuppressWarnings("unchecked")
   @Override
-  public <C extends Configuration<K, V>> C getConfiguration(Class<C> clazz) {
-    throw new UnsupportedOperationException("jsr107 getConfiguration() not supported");
+  public <C extends Configuration<K, V>> C getConfiguration(Class<C> _class) {
+    if (_class.isAssignableFrom(CompleteConfiguration.class)) {
+      if (completeConfiguration != null) {
+        return (C) completeConfiguration;
+      }
+      MutableConfiguration<K, V> cfg = new MutableConfiguration<K, V>();
+      cfg.setTypes((Class<K>) cacheImpl.getKeyType(), (Class<V>) cacheImpl.getValueType());
+      cfg.setStoreByValue(storeByValue);
+      return (C) cfg;
+    } else {
+      return (C) new Configuration<K, V>() {
+        @Override
+        public Class<K> getKeyType() {
+          return (Class<K>) cacheImpl.getKeyType();
+        }
+
+        @Override
+        public Class<V> getValueType() {
+          return (Class<V>) cacheImpl.getValueType();
+        }
+
+        @Override
+        public boolean isStoreByValue() {
+          return storeByValue;
+        }
+      };
+    }
   }
 
   @Override
@@ -166,7 +202,7 @@ public class Cache2kCacheAdapter<K, V> implements javax.cache.Cache<K, V> {
 
   @Override
   public boolean isClosed() {
-    throw new UnsupportedOperationException("jsr107 isClosed() not supported");
+    return cache.isClosed();
   }
 
   @Override

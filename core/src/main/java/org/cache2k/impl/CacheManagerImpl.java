@@ -32,6 +32,7 @@ import org.cache2k.impl.util.Log;
 import java.io.IOException;
 import java.net.URL;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -67,6 +68,7 @@ public class CacheManagerImpl extends CacheManager {
     }
   }
 
+  private Object lock = new Object();
   private Log log;
   private String name;
   private Map<String, BaseCache> cacheNames = new HashMap<String, BaseCache>();
@@ -133,7 +135,8 @@ public class CacheManagerImpl extends CacheManager {
     for (char c : s.toCharArray()) {
       if (c == '.' ||
           c == '-' ||
-          c == '~') {
+          c == '~' ||
+          c == '@') {
         continue;
       }
       if (!Character.isJavaIdentifierPart(c)) {
@@ -146,30 +149,34 @@ public class CacheManagerImpl extends CacheManager {
   static class StackTrace extends Exception { }
 
   /* called by builder */
-  public synchronized void newCache(Cache c) {
-    BaseCache bc = (BaseCache) c;
-    String _requestedName = c.getName();
-    String _name = _requestedName;
-    while (cacheNames.containsKey(_name)) {
-      _name = _requestedName + "~" + Integer.toString(disambiguationCounter++, 36);
-    }
-    if (!_requestedName.equals(_name)) {
-      log.warn("duplicate name, disambiguating: " + _requestedName + " -> " + _name, new StackTrace());
-      bc.setName(_name);
-    }
-    checkName(_name);
+  public void newCache(Cache c) {
+    synchronized (lock) {
+      BaseCache bc = (BaseCache) c;
+      String _requestedName = c.getName();
+      String _name = _requestedName;
+      while (cacheNames.containsKey(_name)) {
+        _name = _requestedName + "~" + Integer.toString(disambiguationCounter++, 36);
+      }
+      if (!_requestedName.equals(_name)) {
+        log.warn("duplicate name, disambiguating: " + _requestedName + " -> " + _name, new StackTrace());
+        bc.setName(_name);
+      }
+      checkName(_name);
 
-    caches.add(c);
-    sendCreatedEvent(c);
-    bc.setCacheManager(this);
-    cacheNames.put(c.getName(), bc);
+      caches.add(c);
+      sendCreatedEvent(c);
+      bc.setCacheManager(this);
+      cacheNames.put(c.getName(), bc);
+    }
   }
 
   /* called by cache or CM */
-  public synchronized void cacheDestroyed(Cache c) {
-    cacheNames.remove(c.getName());
-    caches.remove(c);
-    sendDestroyedEvent(c);
+  public void cacheDestroyed(Cache c) {
+    synchronized (lock) {
+      cacheNames.remove(c.getName());
+      caches.remove(c);
+      sendDestroyedEvent(c);
+    }
   }
 
   @Override
@@ -178,26 +185,39 @@ public class CacheManagerImpl extends CacheManager {
   }
 
   @Override
-  public synchronized Iterator<Cache> iterator() {
-    checkClosed();
-    return new HashSet<Cache>(caches).iterator();
+  public Iterator<Cache> iterator() {
+    Set<Cache> _caches = new HashSet<Cache>();
+    synchronized (lock) {
+      if (!isClosed()) {
+        for (Cache c : caches) {
+          if (!c.isClosed()) {
+            _caches.add(c);
+          }
+        }
+      }
+    }
+    return _caches.iterator();
   }
 
   @Override
-  public synchronized Cache getCache(String name) {
-    return cacheNames.get(name);
-  }
-
-  @Override
-  public synchronized void clear() {
-    checkClosed();
-    for (Cache c : caches) {
-      c.clear();
+  public Cache getCache(String name) {
+    synchronized (lock) {
+      return cacheNames.get(name);
     }
   }
 
   @Override
-  public synchronized void destroy() {
+  public void clear() {
+    synchronized (lock) {
+      checkClosed();
+      for (Cache c : caches) {
+        c.clear();
+      }
+    }
+  }
+
+  @Override
+  public void destroy() {
     close();
   }
 
@@ -216,66 +236,68 @@ public class CacheManagerImpl extends CacheManager {
    * routed through as early and directly as possible.
    */
   @Override
-  public synchronized void close() {
-    if (caches == null) {
-      return;
-    }
-    List<Throwable> _suppressedExceptions = new ArrayList<Throwable>();
-    if (caches != null) {
-      Futures.WaitForAllFuture<Void> _wait = new Futures.WaitForAllFuture<Void>();
-      for (Cache c : caches) {
-        if (c instanceof BaseCache) {
-          try {
-            Future<Void> f = ((BaseCache) c).cancelTimerJobs();
-            _wait.add(f);
-          } catch (Throwable t) {
-            _suppressedExceptions.add(t);
-          }
-        }
+  public void close() {
+    synchronized (lock) {
+      if (caches == null) {
+        return;
       }
-      try {
-        _wait.get(3000, TimeUnit.MILLISECONDS);
-      } catch (Exception ex) {
-        _suppressedExceptions.add(ex);
-      }
-      if (!_wait.isDone()) {
+      List<Throwable> _suppressedExceptions = new ArrayList<Throwable>();
+      if (caches != null) {
+        Futures.WaitForAllFuture<Void> _wait = new Futures.WaitForAllFuture<Void>();
         for (Cache c : caches) {
           if (c instanceof BaseCache) {
-            BaseCache bc = (BaseCache) c;
             try {
-              Future<Void> f = bc.cancelTimerJobs();
-              if (!f.isDone()) {
-                bc.getLog().info("fetches ongoing, terminating anyway...");
-              }
+              Future<Void> f = ((BaseCache) c).cancelTimerJobs();
+              _wait.add(f);
             } catch (Throwable t) {
               _suppressedExceptions.add(t);
             }
           }
         }
-      }
-      Set<Cache> _caches = new HashSet<Cache>();
-      _caches.addAll(caches);
-      for (Cache c : _caches) {
         try {
-          c.destroy();
+          _wait.get(3000, TimeUnit.MILLISECONDS);
+        } catch (Exception ex) {
+          _suppressedExceptions.add(ex);
+        }
+        if (!_wait.isDone()) {
+          for (Cache c : caches) {
+            if (c instanceof BaseCache) {
+              BaseCache bc = (BaseCache) c;
+              try {
+                Future<Void> f = bc.cancelTimerJobs();
+                if (!f.isDone()) {
+                  bc.getLog().info("fetches ongoing, terminating anyway...");
+                }
+              } catch (Throwable t) {
+                _suppressedExceptions.add(t);
+              }
+            }
+          }
+        }
+        Set<Cache> _caches = new HashSet<Cache>();
+        _caches.addAll(caches);
+        for (Cache c : _caches) {
+          try {
+            c.destroy();
+          } catch (Throwable t) {
+            _suppressedExceptions.add(t);
+          }
+        }
+        try {
+          if (threadPool != null) {
+            threadPool.close();
+          }
+          for (CacheManagerLifeCycleListener lc : cacheManagerLifeCycleListeners) {
+            lc.managerDestroyed(this);
+          }
+          caches = null;
         } catch (Throwable t) {
           _suppressedExceptions.add(t);
         }
       }
-      try {
-        if (threadPool != null) {
-            threadPool.close();
-        }
-        for (CacheManagerLifeCycleListener lc : cacheManagerLifeCycleListeners) {
-          lc.managerDestroyed(this);
-        }
-        caches = null;
-      } catch (Throwable t) {
-        _suppressedExceptions.add(t);
-      }
+      ((Cache2kManagerProviderImpl) provider).removeManager(this);
+      eventuallyThrowException(_suppressedExceptions);
     }
-    ((Cache2kManagerProviderImpl) provider).removeManager(this);
-    eventuallyThrowException(_suppressedExceptions);
   }
 
   /**
@@ -343,11 +365,20 @@ public class CacheManagerImpl extends CacheManager {
    * Lazy creation of thread pool, usable for all caches managed by the cache
    * manager.
    */
-  public synchronized GlobalPooledExecutor getThreadPool() {
-    if (threadPool == null) {
-      threadPool = new GlobalPooledExecutor(getThreadNamePrefix() + "pool-");
+  public GlobalPooledExecutor getThreadPool() {
+    synchronized (lock) {
+      if (threadPool == null) {
+        threadPool = new GlobalPooledExecutor(getThreadNamePrefix() + "pool-");
+      }
+      return threadPool;
     }
-    return threadPool;
+  }
+
+  /**
+   * Used for JSR107 cache manager implementation
+   */
+  public Object getLockObject() {
+    return lock;
   }
 
   public ExecutorService createEvictionExecutor() {
