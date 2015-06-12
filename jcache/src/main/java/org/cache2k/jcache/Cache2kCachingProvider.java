@@ -22,7 +22,9 @@ package org.cache2k.jcache;
  * #L%
  */
 
+import org.cache2k.spi.Cache2kCoreProvider;
 import org.cache2k.spi.Cache2kManagerProvider;
+import org.cache2k.spi.SingleProviderResolver;
 
 import javax.cache.CacheManager;
 import javax.cache.configuration.OptionalFeature;
@@ -37,6 +39,10 @@ import java.util.Properties;
 public class Cache2kCachingProvider implements CachingProvider {
 
   Cache2kManagerProvider forwardProvider;
+
+  {
+    forwardProvider = SingleProviderResolver.getInstance().resolve(Cache2kCoreProvider.class).getManagerProvider();
+  }
 
   public URI name2Uri(String _name) {
     try {
