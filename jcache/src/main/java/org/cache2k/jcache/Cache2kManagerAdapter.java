@@ -78,12 +78,6 @@ public class Cache2kManagerAdapter implements CacheManager {
     b.eternal(true);
     if (cfg instanceof CompleteConfiguration) {
       CompleteConfiguration<K, V> cc = (CompleteConfiguration<K, V>) cfg;
-      if (cc.isManagementEnabled()) {
-        throw new UnsupportedOperationException("no support for jsr107 management");
-      }
-      if (cc.isStatisticsEnabled()) {
-        throw new UnsupportedOperationException("no support for jsr107 statistics");
-      }
       if (cc.isReadThrough()) {
         throw new UnsupportedOperationException("no support for jsr107 read through operation");
       }
@@ -129,8 +123,11 @@ public class Cache2kManagerAdapter implements CacheManager {
   }
 
   @Override
-  public void destroyCache(String cacheName) {
-    manager.getCache(cacheName).close();
+  public void destroyCache(String _cacheName) {
+    org.cache2k.Cache c = manager.getCache(_cacheName);
+    if (c != null) {
+      c.close();
+    }
   }
 
   @Override
