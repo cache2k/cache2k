@@ -68,6 +68,12 @@ public class Cache2kCachingProvider implements CachingProvider {
 
   @Override
   public CacheManager getCacheManager(URI uri, ClassLoader cl, Properties p) {
+    if (uri == null) {
+      uri = getDefaultURI();
+    }
+    if (cl == null) {
+      cl = getDefaultClassLoader();
+    }
     synchronized (getLockObject()) {
       Map<URI, Cache2kManagerAdapter> map = classLader2uri2cache.get(cl);
       if (map == null) {
