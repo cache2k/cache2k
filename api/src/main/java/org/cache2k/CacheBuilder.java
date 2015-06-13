@@ -47,6 +47,16 @@ public abstract class CacheBuilder<K,T>
   }
 
   @SuppressWarnings("unchecked")
+  public static CacheBuilder<?,?> newCache() {
+    CacheBuilder cb = null;
+    try {
+      cb = (CacheBuilder) PROTOTYPE.clone();
+    } catch (CloneNotSupportedException ignored) {  }
+    cb.ctor(null, null, null);
+    return cb;
+  }
+
+  @SuppressWarnings("unchecked")
   public static <K,T> CacheBuilder<K,T> newCache(Class<K> _keyType, Class<T> _valueType) {
     CacheBuilder<K,T> cb = null;
     try {
@@ -85,6 +95,16 @@ public abstract class CacheBuilder<K,T>
     config.setEntryType(_entryType);
   }
 
+  public <K2> CacheBuilder<K2, T>  keyType(Class<K2> t) {
+    config.setKeyType(t);
+    return (CacheBuilder<K2, T>) this;
+  }
+
+  public <T2> CacheBuilder<K, T2>  valueType(Class<T2> t) {
+    config.setValueType(t);
+    return (CacheBuilder<K, T2>) this;
+  }
+
   /**
    * Constructs a cache name out of the simple class name and fieldname.
    *
@@ -95,6 +115,9 @@ public abstract class CacheBuilder<K,T>
     return this;
   }
 
+  /**
+   * Constructs a cache name from the simple class name.
+   */
   public CacheBuilder<K, T> name(Class<?> _class) {
     config.setName(_class.getSimpleName());
     return this;
