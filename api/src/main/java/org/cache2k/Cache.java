@@ -181,6 +181,11 @@ public interface Cache<K, T> extends KeyValueSource<K,T>, Iterable<CacheEntry<K,
   public Map<K, T> getAll(Set<? extends K> keys);
 
   /**
+   * Bulk counterpart for {@link #peek(Object)}
+   */
+  public Map<K, T> peekAll(Set<? extends K> keys);
+
+  /**
    * Number of entries the cache holds in total. When iterating the entries
    * the cache will always return less or an identical number of entries.
    * The reason for this is, that duplicate entries may exist in different

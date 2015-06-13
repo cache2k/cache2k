@@ -58,6 +58,7 @@ import java.util.AbstractSet;
 import java.util.Arrays;
 import java.util.BitSet;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
@@ -2222,76 +2223,26 @@ public abstract class BaseCache<E extends Entry, K, T>
   /**
    * JSR107 bulk interface
    */
-  public Map<K, T> getAll(final Set<? extends K> _keys) {
-    K[] ka = (K[]) new Object[_keys.size()];
-    int i = 0;
-    for (K k : _keys) {
-      ka[i++] = k;
+  public Map<K, T> getAll(final Set<? extends K> _inputKeys) {
+    Map<K, T> map = new HashMap<K, T>();
+    for (K k : _inputKeys) {
+      T v = get(k);
+      if (v != null) {
+        map.put(k, v);
+      }
     }
-    T[] va = (T[]) new Object[ka.length];
-    getBulk(ka, va, new BitSet(), 0, ka.length);
-    return new AbstractMap<K, T>() {
-      @Override
-      public T get(Object key) {
-        if (containsKey(key)) {
-          return BaseCache.this.get((K) key);
-        }
-        return null;
+    return map;
+  }
+
+  public Map<K, T> peekAll(final Set<? extends K> _inputKeys) {
+    Map<K, T> map = new HashMap<K, T>();
+    for (K k : _inputKeys) {
+      CacheEntry<K, T> e = peekEntry(k);
+      if (e != null) {
+        map.put(k, e.getValue());
       }
-
-      @Override
-      public boolean containsKey(Object key) {
-        return _keys.contains(key);
-      }
-
-      @Override
-      public Set<Entry<K, T>> entrySet() {
-        return new AbstractSet<Entry<K, T>>() {
-          @Override
-          public Iterator<Entry<K, T>> iterator() {
-            return new Iterator<Entry<K, T>>() {
-              Iterator<? extends K> it = _keys.iterator();
-              @Override
-              public boolean hasNext() {
-                return it.hasNext();
-              }
-
-              @Override
-              public Entry<K, T> next() {
-                final K k = it.next();
-                final T t = BaseCache.this.get(k);
-                return new Entry<K, T>() {
-                  @Override
-                  public K getKey() {
-                    return k;
-                  }
-
-                  @Override
-                  public T getValue() {
-                    return t;
-                  }
-
-                  @Override
-                  public T setValue(T value) {
-                    throw new UnsupportedOperationException();
-                  }
-                };
-              }
-
-              @Override
-              public void remove() {
-                throw new UnsupportedOperationException();
-              }
-            };
-          }
-
-          @Override
-          public int size() {
-            return _keys.size();
-          }
-        };
-      }
-    };
+    }
+    return map;
   }
 
   /**
