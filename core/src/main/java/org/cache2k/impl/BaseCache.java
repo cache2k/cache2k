@@ -63,6 +63,7 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.NoSuchElementException;
 import java.util.Random;
 import java.util.Set;
 import java.util.Timer;
@@ -876,11 +877,13 @@ public abstract class BaseCache<E extends Entry, K, T>
     @Override
     public boolean hasNext() {
       while (iterator.hasNext()) {
-        entry = iterator.next();
-        if (entry.hasFreshData()) {
+        Entry e = iterator.next();
+        if (e.hasFreshData()) {
+          entry = e;
           return true;
         }
       }
+      entry = null;
       return false;
     }
 
@@ -893,10 +896,18 @@ public abstract class BaseCache<E extends Entry, K, T>
     }
 
     @Override
-    public CacheEntry<K, T> next() { return returnEntry(entry); }
+    public CacheEntry<K, T> next() {
+      if (entry == null) {
+        throw new NoSuchElementException("not available");
+      }
+      return returnEntry(entry);
+    }
 
     @Override
     public void remove() {
+      if (entry == null) {
+        throw new IllegalStateException("hasNext() / next() not called or end of iteration reached");
+      }
       BaseCache.this.remove((K) entry.getKey());
     }
   }
@@ -2354,17 +2365,81 @@ public abstract class BaseCache<E extends Entry, K, T>
   }
 
   /**
-   * JSR107 bulk interface
+   * JSR107 bulk interface. The behaviour is compatible to the JSR107 TCK. We also need
+   * to be compatible to the exception handling policy, which says that the exception
+   * is to be thrown when most specific. So exceptions are only thrown, when the value
+   * which has produced an exception is requested from the map.
    */
   public Map<K, T> getAll(final Set<? extends K> _inputKeys) {
-    Map<K, T> map = new HashMap<K, T>();
+    final Set<K> _keys = new HashSet<K>();
     for (K k : _inputKeys) {
-      T v = get(k);
-      if (v != null) {
-        map.put(k, v);
+      E e = getEntryInternal(k);
+      if (e != null) {
+        _keys.add(k);
       }
     }
-    return map;
+    final Set<Map.Entry<K, T>> set =
+      new AbstractSet<Map.Entry<K, T>>() {
+        @Override
+        public Iterator<Map.Entry<K, T>> iterator() {
+          return new Iterator<Map.Entry<K, T>>() {
+            Iterator<? extends K> keyIterator = _keys.iterator();
+            @Override
+            public boolean hasNext() {
+              return keyIterator.hasNext();
+            }
+
+            @Override
+            public Map.Entry<K, T> next() {
+              final K key = keyIterator.next();
+              return new Map.Entry<K, T>(){
+                @Override
+                public K getKey() {
+                  return key;
+                }
+
+                @Override
+                public T getValue() {
+                  return get(key);
+                }
+
+                @Override
+                public T setValue(T value) {
+                  throw new UnsupportedOperationException();
+                }
+              };
+            }
+
+            @Override
+            public void remove() {
+              throw new UnsupportedOperationException();
+            }
+          };
+        }
+        @Override
+        public int size() {
+          return _keys.size();
+        }
+      };
+    return new AbstractMap<K, T>() {
+      @Override
+      public T get(Object key) {
+        if (containsKey(key)) {
+          return BaseCache.this.get((K) key);
+        }
+        return null;
+      }
+
+      @Override
+      public boolean containsKey(Object key) {
+        return _keys.contains(key);
+      }
+
+      @Override
+      public Set<Entry<K, T>> entrySet() {
+        return set;
+      }
+    };
   }
 
   public Map<K, T> peekAll(final Set<? extends K> _inputKeys) {

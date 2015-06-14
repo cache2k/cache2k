@@ -24,6 +24,8 @@ package org.cache2k.impl;
 
 import org.cache2k.ClosableIterator;
 
+import java.util.NoSuchElementException;
+
 /**
  * Iterator over all hash table entries of two hashes.
  *
@@ -182,6 +184,12 @@ public class ClosableConcurrentHashEntryIterator<E extends Entry>
 
   @Override
   public E next() {
+    if (lastEntry == null) {
+      if (hash == null) {
+        throw new NoSuchElementException("not available");
+      }
+      throw new IllegalStateException("call hasNext() first");
+    }
     return (E) lastEntry;
   }
 
