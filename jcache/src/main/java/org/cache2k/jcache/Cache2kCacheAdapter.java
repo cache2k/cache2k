@@ -143,8 +143,9 @@ public class Cache2kCacheAdapter<K, V> implements javax.cache.Cache<K, V> {
   }
 
   @Override
-  public boolean remove(K key, V oldValue) {
-    throw new UnsupportedOperationException("jsr107 remove(key, old) not supported");
+  public boolean remove(K key, V _oldValue) {
+    checkClosed();
+    return cache.remove(key, _oldValue);
   }
 
   @Override

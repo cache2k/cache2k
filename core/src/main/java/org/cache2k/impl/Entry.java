@@ -342,6 +342,13 @@ public class Entry<E extends Entry, K, T>
     value = (T) new ExceptionWrapper(exception);
   }
 
+  public boolean equalsValue(T v) {
+    if (value == null) {
+      return v == value;
+    }
+    return value.equals(v);
+  }
+
   public T getValue() {
     if (value instanceof ExceptionWrapper) { return null; }
     return value;

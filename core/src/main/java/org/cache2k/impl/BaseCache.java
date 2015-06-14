@@ -1548,6 +1548,15 @@ public abstract class BaseCache<E extends Entry, K, T>
     evictEventually();
   }
 
+  @Override
+  public boolean remove(K key, T _value) {
+    return removeWithFlag(key, true, _value);
+  }
+
+  public boolean removeWithFlag(K key) {
+    return removeWithFlag(key, false, null);
+  }
+
   /**
    * Remove the object mapped to a key from the cache.
    *
@@ -1558,7 +1567,7 @@ public abstract class BaseCache<E extends Entry, K, T>
    * keep the cache and the storage consistent it must be ensured that this thread
    * is the only one working on the entry.
    */
-  public boolean removeWithFlag(K key) {
+  public boolean removeWithFlag(K key, boolean _checkValue, T _value) {
     if (storage == null) {
       E e = lookupEntrySynchronized(key);
       if (e != null) {
@@ -1567,6 +1576,10 @@ public abstract class BaseCache<E extends Entry, K, T>
           if (!e.isRemovedState()) {
             synchronized (lock) {
               boolean f = e.hasFreshData();
+              if (_checkValue &&
+                  (!f || !e.equalsValue(_value))) {
+                return false;
+              }
               if (removeEntry(e)) {
                 removedCnt++;
                 return f;
@@ -1598,9 +1611,13 @@ public abstract class BaseCache<E extends Entry, K, T>
     }
     boolean _finished = false;
     try {
+      long t;
       if (!_hasFreshData && e.isVirgin()) {
-        long t = fetchWithStorage(e, false);
+        t = fetchWithStorage(e, false);
         _hasFreshData = e.hasFreshData(System.currentTimeMillis(), t);
+      }
+      if (_checkValue && _hasFreshData && !e.equalsValue(_value)) {
+        _hasFreshData = false;
       }
       if (_hasFreshData) {
         storage.remove(key);

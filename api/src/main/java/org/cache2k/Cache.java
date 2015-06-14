@@ -135,12 +135,19 @@ public interface Cache<K, T> extends KeyValueSource<K,T>, Iterable<CacheEntry<K,
 
   public abstract boolean putIfAbsent(K key, T value);
 
-  public abstract T peekAndPut(K key, T _value);
+  public abstract T peekAndPut(K key, T value);
 
   /**
    * Remove the object mapped to key from the cache.
    */
   public abstract void remove(K key);
+
+  /**
+   * Remove the mapping if the stored value is the equal to the comparison value.
+   *
+   * @return true, if mapping was removed
+   */
+  public boolean remove(K key, T value);
 
   /**
    * Remove the mappings for the keys atomically. Missing keys
