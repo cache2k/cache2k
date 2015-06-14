@@ -135,6 +135,8 @@ public interface Cache<K, T> extends KeyValueSource<K,T>, Iterable<CacheEntry<K,
 
   public abstract boolean putIfAbsent(K key, T value);
 
+  public abstract T peekAndPut(K key, T _value);
+
   /**
    * Remove the object mapped to key from the cache.
    */

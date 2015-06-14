@@ -47,6 +47,7 @@ public class Cache2kCacheAdapter<K, V> implements javax.cache.Cache<K, V> {
   Cache<K, V> cache;
   BaseCache<?, K, V> cacheImpl;
   boolean storeByValue;
+  boolean readThrough = false;
 
   /** Null, if no complete configuration is effective */
   CompleteConfiguration<K, V> completeConfiguration;
@@ -61,16 +62,25 @@ public class Cache2kCacheAdapter<K, V> implements javax.cache.Cache<K, V> {
 
   @Override
   public V get(K k) {
-    return cache.get(k);
+    checkClosed();
+    if (readThrough) {
+      return cache.get(k);
+    }
+    return cache.peek(k);
   }
 
   @Override
-  public Map<K, V> getAll(Set<? extends K> keys) {
-    return cache.getAll(keys);
+  public Map<K, V> getAll(Set<? extends K> _keys) {
+    checkClosed();
+    if (readThrough) {
+      return cache.getAll(_keys);
+    }
+    return cache.peekAll(_keys);
   }
 
   @Override
   public boolean containsKey(K key) {
+    checkClosed();
     return cache.contains(key);
   }
 
@@ -81,6 +91,7 @@ public class Cache2kCacheAdapter<K, V> implements javax.cache.Cache<K, V> {
 
   @Override
   public void put(K k, V v) {
+    checkClosed();
     cache.put(k, v);
   }
 
@@ -223,6 +234,12 @@ public class Cache2kCacheAdapter<K, V> implements javax.cache.Cache<K, V> {
   @Override
   public Iterator<Entry<K, V>> iterator() {
     throw new UnsupportedOperationException("jsr107 iterator not supported");
+  }
+
+  private void checkClosed() {
+    if (cache.isClosed()) {
+      throw new IllegalStateException("cache is closed");
+    }
   }
 
 }

@@ -1328,6 +1328,52 @@ public abstract class BaseCache<E extends Entry, K, T>
     return removeEntryFromHash(e);
   }
 
+  public T peekAndPut(K key, T _value) {
+    final int hc = modifiedHash(key.hashCode());
+    boolean _hasFreshData = false;
+    E e;
+    for (;;) {
+      e = lookupEntryUnsynchronized(key, hc);
+      if (e == null) {
+        synchronized (lock) {
+          e = lookupEntry(key, hc);
+          if (e == null) {
+            e = newEntry(key, hc);
+          }
+        }
+      }
+      synchronized (e) {
+        if (e.isRemovedState()) {
+          continue;
+        }
+        if (e.isFetchInProgress()) {
+          e.waitForFetch();
+          continue;
+        }
+        _hasFreshData = e.hasFreshData();
+        e.startFetch();
+        break;
+      }
+    }
+    boolean _finished = false;
+    try {
+      T _previousValue = null;
+      if (storage != null && e.isVirgin()) {
+        long t = fetchWithStorage(e, false);
+        _hasFreshData = e.hasFreshData(System.currentTimeMillis(), t);
+      }
+      if (_hasFreshData) {
+        _previousValue = (T) e.getValue();
+      }
+      long t = System.currentTimeMillis();
+      e.finishFetch(insertOnPut(e, _value, t, t));
+      _finished = true;
+      return _previousValue;
+    } finally {
+      e.ensureFetchAbort(_finished);
+    }
+  }
+
   /**
    * Return the entry, if it is in the cache, without invoking the
    * cache source.
