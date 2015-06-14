@@ -135,6 +135,10 @@ public interface Cache<K, T> extends KeyValueSource<K,T>, Iterable<CacheEntry<K,
 
   public abstract boolean putIfAbsent(K key, T value);
 
+  public abstract boolean replace(K key, T _newValue);
+
+  public abstract boolean replace(K key, T _oldValue, T _newValue);
+
   public abstract T peekAndRemove(K key);
 
   public abstract T peekAndPut(K key, T value);

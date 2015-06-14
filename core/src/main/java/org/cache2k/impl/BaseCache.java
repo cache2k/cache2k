@@ -1385,6 +1385,78 @@ public abstract class BaseCache<E extends Entry, K, T>
     }
   }
 
+  @Override
+  public boolean replace(K key, T _newValue) {
+    return replace(key, false, null, _newValue);
+  }
+
+  @Override
+  public boolean replace(K key, T _oldValue, T _newValue) {
+    return replace(key, true, _oldValue, _newValue);
+  }
+
+  protected boolean replace(K key, boolean _compare, T _oldValue, T _newValue) {
+    final int hc = modifiedHash(key.hashCode());
+    if (storage == null) {
+      E e = lookupEntrySynchronized(key);
+      if (e != null) {
+        synchronized (e) {
+          e.waitForFetch();
+          if (!e.isRemovedState() && e.hasFreshData() && (!_compare || e.equalsValue(_oldValue))) {
+            e.startFetch();
+            long t = System.currentTimeMillis();
+            e.finishFetch(insertOnPut(e, _newValue, t, t));
+            return true;
+          }
+        }
+      }
+      return false;
+    }
+    boolean _hasFreshData = false;
+    E e;
+    for (;;) {
+      e = lookupEntryUnsynchronized(key, hc);
+      if (e == null) {
+        synchronized (lock) {
+          e = lookupEntry(key, hc);
+          if (e == null) {
+            e = newEntry(key, hc);
+          }
+        }
+      }
+      synchronized (e) {
+        e.waitForFetch();
+        if (e.isRemovedState()) {
+          continue;
+        }
+        if (_compare && e.hasFreshData() && !e.equalsValue(_oldValue)) {
+          return false;
+        }
+        e.startFetch();
+        break;
+      }
+    }
+    boolean _finished = false;
+    try {
+      if (e.isVirgin()) {
+        long t = fetchWithStorage(e, false);
+        _hasFreshData = e.hasFreshData(System.currentTimeMillis(), t);
+        if (!_hasFreshData || (_compare && !e.equalsValue(_oldValue))) {
+          e.finishFetch(t);
+          _finished = true;
+          return false;
+        }
+      }
+
+      long t = System.currentTimeMillis();
+      e.finishFetch(insertOnPut(e, _newValue, t, t));
+      _finished = true;
+      return true;
+    } finally {
+      e.ensureFetchAbort(_finished);
+    }
+  }
+
   /**
    * Return the entry, if it is in the cache, without invoking the
    * cache source.
@@ -1626,6 +1698,11 @@ public abstract class BaseCache<E extends Entry, K, T>
       if (!_hasFreshData && e.isVirgin()) {
         t = fetchWithStorage(e, false);
         _hasFreshData = e.hasFreshData(System.currentTimeMillis(), t);
+        if (_checkValue && _hasFreshData && !e.equalsValue(_value)) {
+          e.finishFetch(t);
+          _finished = true;
+          return false;
+        }
       }
       if (_checkValue && _hasFreshData && !e.equalsValue(_value)) {
         _hasFreshData = false;
