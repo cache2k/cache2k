@@ -92,22 +92,49 @@ public class Cache2kCacheAdapter<K, V> implements javax.cache.Cache<K, V> {
   @Override
   public void put(K k, V v) {
     checkClosed();
+    if (v == null) {
+      throw new NullPointerException("null value not allowed");
+    }
     cache.put(k, v);
   }
 
   @Override
-  public V getAndPut(K key, V value) {
-    throw new UnsupportedOperationException("jsr107 getAndPut() not supported");
+  public V getAndPut(K key, V _value) {
+    checkClosed();
+    checkNullValue(_value);
+    return cache.peekAndPut(key, _value);
+  }
+
+  private void checkNullValue(V _value) {
+    if (_value == null) {
+      throw new NullPointerException("null value not supported");
+    }
   }
 
   @Override
   public void putAll(Map<? extends K, ? extends V> map) {
-    throw new UnsupportedOperationException("jsr107 putAll() not supported");
+    checkClosed();
+    if (map == null) {
+      throw new NullPointerException("null map parameter");
+    }
+    for (Map.Entry<? extends K, ? extends V> e : map.entrySet()) {
+      V v = e.getValue();
+      checkNullValue(e.getValue());
+      if (e.getKey() == null) {
+        throw new NullPointerException("null key not allowed");
+      }
+    }
+    for (Map.Entry<? extends K, ? extends V> e : map.entrySet()) {
+      V v = e.getValue();
+      cache.put(e.getKey(), e.getValue());
+    }
   }
 
   @Override
-  public boolean putIfAbsent(K key, V value) {
-    return cache.putIfAbsent(key, value);
+  public boolean putIfAbsent(K key, V _value) {
+    checkClosed();
+    checkNullValue(_value);
+    return cache.putIfAbsent(key, _value);
   }
 
   @Override
