@@ -1644,6 +1644,76 @@ public abstract class BaseCache<E extends Entry, K, T>
     removeWithFlag(key);
   }
 
+  public T peekAndRemove(K key) {
+    if (storage == null) {
+      E e = lookupEntrySynchronized(key);
+      if (e != null) {
+        synchronized (e) {
+          e.waitForFetch();
+          if (!e.isRemovedState()) {
+            synchronized (lock) {
+              T _value = null;
+              boolean f = e.hasFreshData();
+              if (f) {
+                _value = (T) e.getValue();
+              }
+              if (removeEntry(e)) {
+                removedCnt++;
+              }
+              return _value;
+            }
+          }
+        }
+      }
+      return null;
+    }
+    int _spinCount = TUNABLE.maximumEntryLockSpins;
+    E e;
+    boolean _hasFreshData;
+    for (;;) {
+      if (_spinCount-- <= 0) {
+        throw new CacheLockSpinsExceededError();
+      }
+      e = lookupOrNewEntrySynchronized(key);
+      synchronized (e) {
+        e.waitForFetch();
+        if (e.isRemovedState()) {
+          continue;
+        }
+        _hasFreshData = e.hasFreshData();
+        e.startFetch();
+        break;
+      }
+    }
+    boolean _finished = false;
+    T _value = null;
+    try {
+      long t;
+      if (!_hasFreshData && e.isVirgin()) {
+        t = fetchWithStorage(e, false);
+        _hasFreshData = e.hasFreshData(System.currentTimeMillis(), t);
+      }
+      if (_hasFreshData) {
+        _value = (T) e.getValue();
+        storage.remove(key);
+      }
+      synchronized (e) {
+        e.finishFetch(Entry.LOADED_NON_VALID);
+        if (_hasFreshData) {
+          synchronized (lock) {
+            if (removeEntry(e)) {
+              removedCnt++;
+            }
+          }
+        }
+      }
+      _finished = true;
+    } finally {
+      e.ensureFetchAbort(_finished);
+    }
+    return _value;
+  }
+
   @Override
   public void prefetch(final K key) {
     if (refreshPool == null ||
