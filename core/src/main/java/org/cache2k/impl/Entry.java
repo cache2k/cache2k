@@ -81,8 +81,14 @@ public class Entry<E extends Entry, K, T>
   public long fetchedTime;
 
   /**
-   * Contains the next time a refresh has to occur. Low values have a special meaning, see defined constants.
-   * Negative values means the refresh time was expired, and we need to check the time.
+   * Contains the next time a refresh has to occur, or if no background refresh is configured, when the entry
+   * is expired. Low values have a special meaning, see defined constants.
+   * Negative values means that we need to check against the wall clock.
+   *
+   * Whenever processing is done on the entry, e.g. a refresh or update,  the field is used to reflect
+   * the processing state. This means that, during processing the expiry time is lost. This has no negative
+   * impact on the visibility of the entry. For example if the entry is refreshed, it is expired, but since
+   * background refresh is enabled, the expired entry is still returned by the cache.
    */
   public volatile long nextRefreshTime;
 
