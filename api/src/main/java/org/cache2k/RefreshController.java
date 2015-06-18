@@ -26,6 +26,7 @@ package org.cache2k;
  * Calculates the time when the object needs to be updated next.
  * 
  * @author Jens Wilke; created: 2010-06-24
+ * @deprecated use {@link org.cache2k.EntryExpiryCalculator}
  */
 public abstract interface RefreshController<T> {
 
