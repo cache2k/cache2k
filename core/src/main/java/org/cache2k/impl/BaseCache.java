@@ -1414,19 +1414,16 @@ public abstract class BaseCache<E extends Entry, K, T>
         long t = fetchWithStorage(e, false);
         _hasFreshData = e.hasFreshData(System.currentTimeMillis(), t);
       }
+      long t = System.currentTimeMillis();
+      e.finishFetch(insertOnPut(e, _value, t, t));
       if (_hasFreshData) {
         T _previousValue = (T) e.getValue();
-        long t = System.currentTimeMillis();
-        e.finishFetch(insertOnPut(e, _value, t, t));
         _finished = true;
         return _previousValue;
+      } else {
+        _finished = true;
+        return null;
       }
-      synchronized (lock) {
-        putNewEntryCnt++;
-      }
-      e.finishFetch(Entry.LOADED_NON_VALID);
-      _finished = false;
-      return null;
     } finally {
       e.ensureFetchAbort(_finished);
     }
