@@ -1387,6 +1387,7 @@ public abstract class BaseCache<E extends Entry, K, T>
   public T peekAndReplace(K key, T _value) {
     final int hc = modifiedHash(key.hashCode());
     boolean _hasFreshData = false;
+    boolean _newEntry = false;
     E e;
     for (;;) {
       e = lookupEntryUnsynchronized(key, hc);
@@ -1395,6 +1396,7 @@ public abstract class BaseCache<E extends Entry, K, T>
           e = lookupEntry(key, hc);
           if (e == null) {
             e = newEntry(key, hc);
+            _newEntry = true;
           }
         }
       }
@@ -1421,9 +1423,13 @@ public abstract class BaseCache<E extends Entry, K, T>
         _finished = true;
         return _previousValue;
       } else {
-        synchronized (lock) {
-          putNewEntryCnt++;
+        if (_newEntry) {
+          synchronized (lock) {
+            putNewEntryCnt++;
+          }
         }
+        e.finishFetch(Entry.LOADED_NON_VALID);
+        _finished = true;
         return null;
       }
     } finally {
