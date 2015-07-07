@@ -1415,13 +1415,15 @@ public abstract class BaseCache<E extends Entry, K, T>
         _hasFreshData = e.hasFreshData(System.currentTimeMillis(), t);
       }
       long t = System.currentTimeMillis();
-      e.finishFetch(insertOnPut(e, _value, t, t));
       if (_hasFreshData) {
         T _previousValue = (T) e.getValue();
+        e.finishFetch(insertOnPut(e, _value, t, t));
         _finished = true;
         return _previousValue;
       } else {
-        _finished = true;
+        synchronized (lock) {
+          putNewEntryCnt++;
+        }
         return null;
       }
     } finally {
