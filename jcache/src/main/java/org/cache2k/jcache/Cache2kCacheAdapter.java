@@ -23,6 +23,7 @@ package org.cache2k.jcache;
  */
 
 import org.cache2k.Cache;
+import org.cache2k.CacheEntry;
 import org.cache2k.impl.BaseCache;
 
 import javax.cache.CacheManager;
@@ -92,9 +93,7 @@ public class Cache2kCacheAdapter<K, V> implements javax.cache.Cache<K, V> {
   @Override
   public void put(K k, V v) {
     checkClosed();
-    if (v == null) {
-      throw new NullPointerException("null value not allowed");
-    }
+    checkNullValue(v);
     cache.put(k, v);
   }
 
@@ -105,9 +104,15 @@ public class Cache2kCacheAdapter<K, V> implements javax.cache.Cache<K, V> {
     return cache.peekAndPut(key, _value);
   }
 
-  private void checkNullValue(V _value) {
+  void checkNullValue(V _value) {
     if (_value == null) {
       throw new NullPointerException("null value not supported");
+    }
+  }
+
+  void checkNullKey(K key) {
+    if (key == null) {
+      throw new NullPointerException("null key not supported");
     }
   }
 
@@ -120,9 +125,7 @@ public class Cache2kCacheAdapter<K, V> implements javax.cache.Cache<K, V> {
     for (Map.Entry<? extends K, ? extends V> e : map.entrySet()) {
       V v = e.getValue();
       checkNullValue(e.getValue());
-      if (e.getKey() == null) {
-        throw new NullPointerException("null key not allowed");
-      }
+      checkNullKey(e.getKey());
     }
     for (Map.Entry<? extends K, ? extends V> e : map.entrySet()) {
       V v = e.getValue();
@@ -139,43 +142,60 @@ public class Cache2kCacheAdapter<K, V> implements javax.cache.Cache<K, V> {
 
   @Override
   public boolean remove(K key) {
+    checkClosed();
     return cacheImpl.removeWithFlag(key);
   }
 
   @Override
   public boolean remove(K key, V _oldValue) {
     checkClosed();
+    checkNullValue(_oldValue);
     return cache.remove(key, _oldValue);
   }
 
   @Override
   public V getAndRemove(K key) {
-    throw new UnsupportedOperationException("jsr107 getAndRemove(key) not supported");
+    checkClosed();
+    return cache.peekAndRemove(key);
   }
 
   @Override
-  public boolean replace(K key, V oldValue, V newValue) {
-    throw new UnsupportedOperationException("jsr107 replace(k, old, new) not supported");
+  public boolean replace(K key, V _oldValue, V _newValue) {
+    checkClosed();
+    checkNullValue(_oldValue);
+    checkNullValue(_newValue);
+    return cache.replace(key, _oldValue, _newValue);
   }
 
   @Override
-  public boolean replace(K key, V value) {
-    throw new UnsupportedOperationException("jsr107 replace(k, v) not supported");
+  public boolean replace(K key, V _value) {
+    checkClosed();
+    checkNullValue(_value);
+    return cache.replace(key, _value);
   }
 
   @Override
-  public V getAndReplace(K key, V value) {
-    throw new UnsupportedOperationException("jsr107 getAndReplace() not supported");
+  public V getAndReplace(K key, V _value) {
+    checkClosed();
+    checkNullValue(_value);
+    return cache.peekAndReplace(key, _value);
   }
 
   @Override
   public void removeAll(Set<? extends K> keys) {
-    throw new UnsupportedOperationException("jsr107 removeAll(keys) not supported");
+    checkClosed();
+    for (K k : keys) {
+      checkNullKey(k);
+      cache.remove(k);
+    }
   }
 
   @Override
   public void removeAll() {
-    throw new UnsupportedOperationException("jsr107 removeAll() not supported");
+    checkClosed();
+    for (CacheEntry<K, V> e : cache) {
+      cache.remove(e.getKey());
+    }
   }
 
   @Override
@@ -194,24 +214,23 @@ public class Cache2kCacheAdapter<K, V> implements javax.cache.Cache<K, V> {
       cfg.setTypes((Class<K>) cacheImpl.getKeyType(), (Class<V>) cacheImpl.getValueType());
       cfg.setStoreByValue(storeByValue);
       return (C) cfg;
-    } else {
-      return (C) new Configuration<K, V>() {
-        @Override
-        public Class<K> getKeyType() {
-          return (Class<K>) cacheImpl.getKeyType();
-        }
-
-        @Override
-        public Class<V> getValueType() {
-          return (Class<V>) cacheImpl.getValueType();
-        }
-
-        @Override
-        public boolean isStoreByValue() {
-          return storeByValue;
-        }
-      };
     }
+    return (C) new Configuration<K, V>() {
+      @Override
+      public Class<K> getKeyType() {
+        return (Class<K>) cacheImpl.getKeyType();
+      }
+
+      @Override
+      public Class<V> getValueType() {
+        return (Class<V>) cacheImpl.getValueType();
+      }
+
+      @Override
+      public boolean isStoreByValue() {
+        return storeByValue;
+      }
+    };
   }
 
   @Override
@@ -246,7 +265,10 @@ public class Cache2kCacheAdapter<K, V> implements javax.cache.Cache<K, V> {
 
   @Override
   public <T> T unwrap(Class<T> clazz) {
-    throw new UnsupportedOperationException("jsr107 unwrap() not supported");
+    if (Cache.class.equals(clazz)) {
+      return (T) cache;
+    }
+    throw new IllegalArgumentException("requested class unknown");
   }
 
   @Override
@@ -261,7 +283,44 @@ public class Cache2kCacheAdapter<K, V> implements javax.cache.Cache<K, V> {
 
   @Override
   public Iterator<Entry<K, V>> iterator() {
-    throw new UnsupportedOperationException("jsr107 iterator not supported");
+    checkClosed();
+    final Iterator<CacheEntry<K, V>> it = cache.iterator();
+    return new Iterator<Entry<K, V>>() {
+
+      @Override
+      public boolean hasNext() {
+        return it.hasNext();
+      }
+
+      @Override
+      public Entry<K, V> next() {
+        final CacheEntry<K, V> e = it.next();
+        return new Entry<K, V>() {
+          @Override
+          public K getKey() {
+            return e.getKey();
+          }
+
+          @Override
+          public V getValue() {
+            return e.getValue();
+          }
+
+          @Override
+          public <T> T unwrap(Class<T> _class) {
+            if (CacheEntry.class.equals(_class)) {
+              return (T) e;
+            }
+            return null;
+          }
+        };
+      }
+
+      @Override
+      public void remove() {
+        it.remove();
+      }
+    };
   }
 
   private void checkClosed() {

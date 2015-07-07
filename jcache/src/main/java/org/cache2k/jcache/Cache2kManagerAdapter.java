@@ -23,6 +23,9 @@ package org.cache2k.jcache;
  */
 
 import org.cache2k.CacheBuilder;
+import org.cache2k.CacheEntry;
+import org.cache2k.EntryExpiryCalculator;
+import org.cache2k.RefreshController;
 import org.cache2k.impl.CacheManagerImpl;
 
 import javax.cache.Cache;
@@ -52,7 +55,7 @@ public class Cache2kManagerAdapter implements CacheManager {
 
   org.cache2k.CacheManager manager;
   Cache2kCachingProvider provider;
-  Map<String, Cache2kCacheAdapter> name2adapter = new HashMap<String, Cache2kCacheAdapter>();
+  Map<String, Cache> name2adapter = new HashMap<String, Cache>();
 
   public Cache2kManagerAdapter(Cache2kCachingProvider p, org.cache2k.CacheManager cm) {
     manager = cm;
@@ -84,6 +87,18 @@ public class Cache2kManagerAdapter implements CacheManager {
       throws IllegalArgumentException {
     checkClosed();
     checkNonNullCacheName(_cacheName);
+    if (cfg instanceof CompleteConfiguration) {
+      CompleteConfiguration<K, V> cc = (CompleteConfiguration<K, V>) cfg;
+      if (hasSpecialExpiryPolicy(cc) || hasAlwaysSpecialExpiry()) {
+        return createCacheWithSpecialExpiry(_cacheName, cc);
+      }
+    }
+    if (hasAlwaysSpecialExpiry()) {
+      MutableConfiguration<K, V> cc = new MutableConfiguration<K, V>();
+      cc.setTypes(cfg.getKeyType(), cfg.getValueType());
+      cc.setStoreByValue(cfg.isStoreByValue());
+      return createCacheWithSpecialExpiry(_cacheName, cc);
+    }
     CacheBuilder b = CacheBuilder.newCache(cfg.getKeyType(), cfg.getValueType());
     b.name(_cacheName);
     b.eternal(true);
@@ -104,13 +119,15 @@ public class Cache2kManagerAdapter implements CacheManager {
         throw new UnsupportedOperationException("no support for jsr107 entry listener");
       }
       ExpiryPolicy _policy = cc.getExpiryPolicyFactory().create();
-      if (_policy.equals(EternalExpiryPolicy.factoryOf().create())) {
+      if (_policy instanceof EternalExpiryPolicy) {
         b.eternal(true);
       } else if (_policy instanceof ModifiedExpiryPolicy) {
         Duration d = ((ModifiedExpiryPolicy) _policy).getExpiryForUpdate();
         b.expiryDuration(d.getDurationAmount(), d.getTimeUnit());
       } else {
-        throw new UnsupportedOperationException("no support for exipry policy: " + _policy.getClass());
+
+        b.entryExpiryCalculator(new ExpiryCalculatorAdapter(_policy));
+        throw new RuntimeException("internal error, cannot happen");
       }
     }
     b.manager(manager);
@@ -129,12 +146,72 @@ public class Cache2kManagerAdapter implements CacheManager {
     }
   }
 
+  boolean hasAlwaysSpecialExpiry() {
+    return true;
+  }
+
+  <K, V> boolean hasSpecialExpiryPolicy(CompleteConfiguration<K, V> cc) {
+    ExpiryPolicy _policy = cc.getExpiryPolicyFactory().create();
+    if (_policy instanceof EternalExpiryPolicy) {
+      return false;
+    } else if (_policy instanceof ModifiedExpiryPolicy) {
+      return false;
+    }
+    return true;
+  }
+
+  <K, V, C extends Configuration<K, V>> Cache<K, V> createCacheWithSpecialExpiry(String _cacheName, CompleteConfiguration<K, V> cc)
+      throws IllegalArgumentException {
+    CacheBuilder b = CacheBuilder.newCache(cc.getKeyType(), CacheWithExpiryPolicyAdapter.ValueAndExtra.class);
+    b.name(_cacheName);
+    MutableConfiguration<K, V> _cfgCopy = new MutableConfiguration<K, V>();
+    _cfgCopy.setTypes(cc.getKeyType(), cc.getValueType());
+    _cfgCopy.setStoreByValue(cc.isStoreByValue());
+    if (cc.isReadThrough()) {
+      throw new UnsupportedOperationException("no support for jsr107 read through operation");
+    }
+    if (cc.isWriteThrough()) {
+      throw new UnsupportedOperationException("no support for jsr107 write through operation");
+    }
+    if (cc.getCacheEntryListenerConfigurations().iterator().hasNext()) {
+      throw new UnsupportedOperationException("no support for jsr107 entry listener");
+    }
+    ExpiryPolicy _policy = EternalExpiryPolicy.factoryOf().create();
+    if (cc.getExpiryPolicyFactory() != null) {
+      _policy = cc.getExpiryPolicyFactory().create();
+    }
+    b.entryExpiryCalculator(new CacheWithExpiryPolicyAdapter.ExpiryCalculatorAdapter(_policy));
+    b.manager(manager);
+    synchronized (((CacheManagerImpl)manager).getLockObject()) {
+      Cache _jsr107cache = name2adapter.get(_cacheName);
+      if (_jsr107cache != null && !_jsr107cache.isClosed()) {
+        throw new CacheException("cache already existing with name: " + _cacheName);
+      }
+      org.cache2k.Cache _existingCache = manager.getCache(_cacheName);
+      if (_existingCache != null && !_existingCache.isClosed()) {
+        throw new CacheException("A cache2k instance is already existing with name: " + _cacheName);
+      }
+      Cache2kCacheAdapter<K, CacheWithExpiryPolicyAdapter.ValueAndExtra<V>> ca =
+          new Cache2kCacheAdapter<K, CacheWithExpiryPolicyAdapter.ValueAndExtra<V>>(this, b.build(), cc.isStoreByValue(), null);
+      CacheWithExpiryPolicyAdapter<K, V> c = new CacheWithExpiryPolicyAdapter<K, V>();
+      c.cache = ca;
+      c.completeConfiguration = _cfgCopy;
+      c.valueType = _cfgCopy.getValueType();
+      c.keyType = _cfgCopy.getKeyType();
+      c.readThrough = _cfgCopy.isReadThrough();
+      c.expiryPolicy = _policy;
+      c.c2kCache = ca.cache;
+      name2adapter.put(c.getName(), c);
+      return c;
+    }
+  }
+
   @Override
   public <K, V> Cache<K, V> getCache(String _cacheName, final Class<K> _keyType, final Class<V> _valueType) {
     checkClosed();
     synchronized (((CacheManagerImpl)manager).getLockObject()) {
-      Cache2kCacheAdapter<K, V> c = name2adapter.get(_cacheName);
-      if (c != null && manager.getCache(_cacheName) == c.cache && !c.isClosed()) {
+      Cache<K, V> c = name2adapter.get(_cacheName);
+      if (c != null && manager.getCache(_cacheName) == c.unwrap(org.cache2k.Cache.class) && !c.isClosed()) {
         Configuration cfg = c.getConfiguration(Configuration.class);
         if (!cfg.getKeyType().equals(_keyType)) {
           if (_keyType.equals(Object.class)) {
@@ -220,6 +297,35 @@ public class Cache2kManagerAdapter implements CacheManager {
       return (T) manager;
     }
     throw new IllegalArgumentException("requested unwrap class not available");
+  }
+
+  static class ExpiryCalculatorAdapter<K, V> implements EntryExpiryCalculator<K, V> {
+
+    ExpiryPolicy policy;
+
+    public ExpiryCalculatorAdapter(ExpiryPolicy policy) {
+      this.policy = policy;
+    }
+
+    @Override
+    public long calculateExpiryTime(K _key, V _value, long _fetchTime, CacheEntry<K, V> _oldEntry) {
+      Duration d;
+      if (_oldEntry == null) {
+        d = policy.getExpiryForCreation();
+      } else {
+        d = policy.getExpiryForUpdate();
+      }
+      if (d == null) {
+        throw new NullPointerException("JSR107 spec says null means, no change in duration, not supported");
+      }
+      if (d.equals(Duration.ETERNAL)) {
+        return Long.MAX_VALUE;
+      }
+      if (d.equals(Duration.ZERO)) {
+        return 0;
+      }
+      return _fetchTime + d.getTimeUnit().toMillis(d.getDurationAmount());
+    }
   }
 
 }
