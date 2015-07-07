@@ -37,10 +37,15 @@ public interface EntryExpiryCalculator<K, T> {
    * there is no specific expiry time known or needed. In any case the effective
    * expiry duration will never be longer than the configured expiry
    *
-   * <p>The cache may call the method multiple times after an entry is inserted,
-   * when the expiry time needs a recalculation. The reason for this is to react on
-   * possible configuration changes properly. This may happen when an entry
-   * is read back from storage.
+   * <p>For some expiry calculations it is useful to know the previous entry, e.g. to detect
+   * whether the stored data was really updated. If a previous mapping is present in the cache,
+   * it is passed to this method. If the entry is expired it is passed nonetheless.
+   * </p>
+   *
+   * <p>The cache may call the method multiple times after an entry is inserted to
+   * reflect possible configuration changes. It is an anti pattern to look on the wall
+   * clock, or put other wise, don't assume that the current time is the time when the
+   * entry was fetched (or put).
    * </p>
    *
    * @param _key the cache key
@@ -48,7 +53,8 @@ public interface EntryExpiryCalculator<K, T> {
    * @param _fetchTime this is the current time in millis. If a cache source was used to
    *                   fetch the value, this is the time before the fetch was started.
    * @param _oldEntry entry representing the current mapping, if there is a value present.
-   *                  If the current entry holds an exception, this is null.
+   *                  If the current entry holds an exception, this is null. Expired entries will be
+   *                  also passed.
    *
    * @return time the time of expiry in millis since epoch. 0 if it should not be cached.
    *              By default expiry itself happens lenient, zero or some milliseconds after

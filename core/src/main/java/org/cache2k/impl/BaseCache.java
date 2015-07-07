@@ -2235,10 +2235,10 @@ public abstract class BaseCache<E extends Entry, K, T>
   protected final long insert(E e, T v, long t0, long t, byte _updateStatistics) {
     long _nextRefreshTime = maxLinger == 0 ? 0 : Long.MAX_VALUE;
     if (timer != null) {
-      if (e.isVirgin() || e.hasException()) {
-        _nextRefreshTime = calcNextRefreshTime((K) e.getKey(), v, t0, null);
-      } else {
+      if (e.isDataValidState() || e.isExpiredState()) {
         _nextRefreshTime = calcNextRefreshTime((K) e.getKey(), v, t0, e);
+      } else {
+        _nextRefreshTime = calcNextRefreshTime((K) e.getKey(), v, t0, null);
       }
     }
     return insert(e,v,t0,t, _updateStatistics, _nextRefreshTime);
