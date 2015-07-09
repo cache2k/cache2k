@@ -46,7 +46,7 @@ public interface CacheEntry<K, T> {
 
   /**
    * Time the entry was last updated either by a fetch via the CacheSource
-   * or by a put. If the entry was never fetched yet 0 is returned.
+   * or by a put. If the entry was never fetched 0 is returned.
    */
   long getLastModification();
 
