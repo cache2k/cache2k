@@ -656,14 +656,17 @@ public class PassingStorageAdapter extends StorageAdapter {
 
     @Override
     public void close() {
+      abortFlag = true;
       if (heapIteration != null) {
         heapIteration.close();
         heapIteration = null;
       }
       if (executorForStorageCall != null) {
-        executorForStorageCall.shutdownNow();
         executorForStorageCall = null;
         queue = null;
+      }
+      if (keysIterated != null) {
+        keysIterated = null;
       }
     }
 

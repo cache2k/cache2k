@@ -888,6 +888,7 @@ public abstract class BaseCache<E extends Entry, K, T>
         }
       }
       entry = null;
+      close();
       return false;
     }
 
