@@ -114,6 +114,9 @@ public abstract class CacheManager implements Iterable<Cache>, Closeable {
 
   public abstract boolean isClosed();
 
+  /**
+   * Properties for the cache manager, never null.
+   */
   public abstract Properties getProperties();
 
   public abstract ClassLoader getClassLoader();

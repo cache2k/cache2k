@@ -87,6 +87,9 @@ public class CacheManagerImpl extends CacheManager {
       cl = getClass().getClassLoader();
     }
     classLoader = cl;
+    if (p == null) {
+      p = new Properties();
+    }
     properties = p;
     name = _name;
     log = Log.getLog(CacheManager.class.getName() + '.' + name);
@@ -446,6 +449,10 @@ public class CacheManagerImpl extends CacheManager {
     return buildNumber;
   }
 
+  /**
+   * Returns the properties, lazily create properties. If requested the first time.
+   *
+   */
   @Override
   public Properties getProperties() {
     return properties;
