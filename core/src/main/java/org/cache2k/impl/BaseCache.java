@@ -882,7 +882,6 @@ public abstract class BaseCache<E extends Entry, K, T>
       }
       while (iterator.hasNext()) {
         Entry e = iterator.next();
-        System.err.println(e);
         if (!filter || e.hasFreshData()) {
           entry = e;
           return true;

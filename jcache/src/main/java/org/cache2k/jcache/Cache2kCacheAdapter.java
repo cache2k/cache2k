@@ -87,6 +87,7 @@ public class Cache2kCacheAdapter<K, V> implements javax.cache.Cache<K, V> {
 
   @Override
   public void loadAll(Set<? extends K> keys, boolean replaceExistingValues, CompletionListener completionListener) {
+    checkClosed();
     throw new UnsupportedOperationException("jsr107 loadAll() not supported");
   }
 
