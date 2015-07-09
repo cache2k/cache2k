@@ -66,7 +66,8 @@ public class ByReferenceHeapStorageImpl implements CacheStorage {
 
   @Override
   public synchronized StorageEntry get(Object key) throws Exception {
-    return entries.get(key);
+    HeapEntry e = entries.get(key);
+    return e;
   }
 
   @Override
@@ -154,6 +155,17 @@ public class ByReferenceHeapStorageImpl implements CacheStorage {
     @Override
     public long getEntryExpiryTime() {
       return entryExpiry;
+    }
+
+    @Override
+    public String toString() {
+      return "HeapEntry{" +
+          "key=" + key +
+          ", value=" + value +
+          ", updated=" + updated +
+          ", valueExpiry=" + valueExpiry +
+          ", entryExpiry=" + entryExpiry +
+          '}';
     }
   }
 

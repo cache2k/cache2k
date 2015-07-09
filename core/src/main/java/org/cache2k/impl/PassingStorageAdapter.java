@@ -47,6 +47,7 @@ import org.cache2k.impl.util.TunableFactory;
 import java.io.NotSerializableException;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.NoSuchElementException;
 import java.util.Properties;
 import java.util.Set;
 import java.util.concurrent.ArrayBlockingQueue;
@@ -557,7 +558,7 @@ public class PassingStorageAdapter extends StorageAdapter {
     Hash keepHashCtrlForClearDetection;
     Entry[] keysIterated;
     ClosableConcurrentHashEntryIterator heapIteration;
-    StorageEntry entry;
+    Entry entry;
     BlockingQueue<StorageEntry> queue;
     Callable<Void> runnable;
     Future<Void> futureToCheckAbnormalTermination;
@@ -575,11 +576,15 @@ public class PassingStorageAdapter extends StorageAdapter {
 
     @Override
     public boolean hasNext() {
+      if (entry != null) {
+        return true;
+      }
       if (heapIteration != null) {
         while (heapIteration.hasNext()) {
           Entry e;
-          entry = e = heapIteration.next();
-          if (e.isDataValidState()) {
+          e = heapIteration.next();
+          if (e.hasFreshData()) {
+            entry = e;
             return true;
           }
         }
@@ -588,11 +593,10 @@ public class PassingStorageAdapter extends StorageAdapter {
           executorForStorageCall.submit(runnable);
         heapIteration = null;
       }
+      if (abortException != null) {
+        queue = null;
+      }
       if (queue != null) {
-        if (abortException != null) {
-          queue = null;
-          throw new StorageIterationException(abortException);
-        }
         if (cache.shutdownInitiated) {
           throw new CacheClosedException();
         }
@@ -602,35 +606,47 @@ public class PassingStorageAdapter extends StorageAdapter {
         }
         try {
           for (;;) {
-            entry = queue.poll(1234, TimeUnit.MILLISECONDS);
-            if (entry == null) {
+            StorageEntry se = queue.poll(1234, TimeUnit.MILLISECONDS);
+            if (se == null) {
               if (!futureToCheckAbnormalTermination.isDone()) {
                 continue;
               }
               futureToCheckAbnormalTermination.get();
             }
-            break;
-          }
-          if (entry != LAST_ENTRY) {
-            return true;
+            if (se == LAST_ENTRY) {
+              queue = null;
+              break;
+            }
+            entry = cache.insertEntryFromStorage(se, false);
+            if (entry != null) {
+              return true;
+            }
           }
         } catch (InterruptedException _ignore) {
+          heapIteration = null;
+          queue = null;
         } catch (ExecutionException ex) {
           if (abortException == null) {
             abortException = ex;
           }
         }
-        queue = null;
-        if (abortException != null) {
-          throw new CacheStorageException(abortException);
-        }
+      }
+      if (abortException != null) {
+        throw new StorageIterationException(abortException);
       }
       return false;
     }
 
     @Override
     public Entry next() {
-      return cache.insertEntryFromStorage(entry, false);
+      if (entry == null) {
+        if (!hasNext()) {
+          throw new NoSuchElementException();
+        }
+      }
+      Entry e = entry;
+      entry = null;
+      return e;
     }
 
     @Override
@@ -1132,6 +1148,16 @@ public class PassingStorageAdapter extends StorageAdapter {
     @Override
     public long getEntryExpiryTime() {
       return 0;
+    }
+
+    @Override
+    public String toString() {
+      return "StorageEntryForPut{" +
+          "key=" + key +
+          ", value=" + value +
+          ", creationTime=" + creationTime +
+          ", expiryTime=" + expiryTime +
+          '}';
     }
   }
 

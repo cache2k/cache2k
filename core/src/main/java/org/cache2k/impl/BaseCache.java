@@ -837,24 +837,15 @@ public abstract class BaseCache<E extends Entry, K, T>
     }
   }
 
-  /**
-   * Complete iteration of all entries in the cache, including
-   * storage / persisted entries. The iteration may include expired
-   * entries or entries with no valid data.
-   */
-  protected ClosableIterator<Entry> iterateLocalAndStorage() {
-    if (storage == null) {
-      synchronized (lock) {
-        return iterateAllHeapEntries();
-      }
-    } else {
-      return storage.iterateAll();
-    }
-  }
-
   @Override
   public ClosableIterator<CacheEntry<K, T>> iterator() {
-    return new IteratorFilterEntry2Entry(iterateLocalAndStorage());
+    if (storage == null) {
+      synchronized (lock) {
+        return new IteratorFilterEntry2Entry(iterateAllHeapEntries(), true);
+      }
+    } else {
+      return new IteratorFilterEntry2Entry(storage.iterateAll(), false);
+    }
   }
 
   /**
@@ -865,8 +856,15 @@ public abstract class BaseCache<E extends Entry, K, T>
 
     ClosableIterator<Entry> iterator;
     Entry entry;
+    CacheEntry<K, T> lastEntry;
+    boolean filter = true;
 
     IteratorFilterEntry2Entry(ClosableIterator<Entry> it) { iterator = it; }
+
+    IteratorFilterEntry2Entry(ClosableIterator<Entry> it, boolean _filter) {
+      iterator = it;
+      filter = _filter;
+    }
 
     /**
      * Between hasNext() and next() an entry may be evicted or expired.
@@ -876,9 +874,16 @@ public abstract class BaseCache<E extends Entry, K, T>
      */
     @Override
     public boolean hasNext() {
+      if (entry != null) {
+        return true;
+      }
+      if (iterator == null) {
+        return false;
+      }
       while (iterator.hasNext()) {
         Entry e = iterator.next();
-        if (e.hasFreshData()) {
+        System.err.println(e);
+        if (!filter || e.hasFreshData()) {
           entry = e;
           return true;
         }
@@ -900,17 +905,17 @@ public abstract class BaseCache<E extends Entry, K, T>
       if (entry == null && !hasNext()) {
         throw new NoSuchElementException("not available");
       }
-      CacheEntry<K, T> ce = returnEntry(entry);
+      lastEntry = returnEntry(entry);
       entry = null;
-      return ce;
+      return lastEntry;
     }
 
     @Override
     public void remove() {
-      if (entry == null) {
+      if (lastEntry == null) {
         throw new IllegalStateException("hasNext() / next() not called or end of iteration reached");
       }
-      BaseCache.this.remove((K) entry.getKey());
+      BaseCache.this.remove((K) lastEntry.getKey());
     }
   }
 
@@ -1199,20 +1204,23 @@ public abstract class BaseCache<E extends Entry, K, T>
           }
           if (e.isFetchInProgress()) {
             e.waitForFetch();
-            return e;
+            return e.hasFreshData() ? e : null;
           }
           e.startFetch();
         }
       }
+      boolean _fresh;
       boolean _finished = false;
       try {
-        e.finishFetch(insertEntryFromStorage(se, e, _needsFetch));
+        long _nextRefresh = insertEntryFromStorage(se, e, _needsFetch);
+        _fresh = e.hasFreshData(System.currentTimeMillis(), _nextRefresh);
+        e.finishFetch(_nextRefresh);
         _finished = true;
       } finally {
         e.ensureFetchAbort(_finished);
       }
       evictEventually();
-      return e;
+      return _fresh ? e : null;
     }
   }
 

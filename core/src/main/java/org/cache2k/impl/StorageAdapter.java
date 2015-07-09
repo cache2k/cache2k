@@ -57,9 +57,6 @@ public abstract class StorageAdapter {
   public abstract boolean remove(Object key);
   public abstract void evict(Entry e);
 
-  /**
-   * TODO: Relly needed?
-   */
   public abstract void expire(Entry e);
   public abstract ClosableIterator<Entry> iterateAll();
 
