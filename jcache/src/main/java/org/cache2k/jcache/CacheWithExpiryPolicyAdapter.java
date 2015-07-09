@@ -55,7 +55,6 @@ public class CacheWithExpiryPolicyAdapter<K, V> implements Cache<K, V> {
   Class<K> keyType;
   Class<V> valueType;
   boolean storeByValue;
-  boolean readThrough = false;
   ExpiryPolicy expiryPolicy;
   CompleteConfiguration<K, V> completeConfiguration;
 

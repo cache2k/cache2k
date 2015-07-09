@@ -24,6 +24,7 @@ package org.cache2k.jcache;
 
 import org.cache2k.CacheBuilder;
 import org.cache2k.CacheEntry;
+import org.cache2k.CacheSource;
 import org.cache2k.EntryExpiryCalculator;
 import org.cache2k.RefreshController;
 import org.cache2k.impl.CacheManagerImpl;
@@ -38,6 +39,7 @@ import javax.cache.expiry.Duration;
 import javax.cache.expiry.EternalExpiryPolicy;
 import javax.cache.expiry.ExpiryPolicy;
 import javax.cache.expiry.ModifiedExpiryPolicy;
+import javax.cache.integration.CacheLoader;
 import javax.cache.spi.CachingProvider;
 import java.net.URI;
 import java.util.Collections;
@@ -167,8 +169,19 @@ public class Cache2kManagerAdapter implements CacheManager {
     MutableConfiguration<K, V> _cfgCopy = new MutableConfiguration<K, V>();
     _cfgCopy.setTypes(cc.getKeyType(), cc.getValueType());
     _cfgCopy.setStoreByValue(cc.isStoreByValue());
+    _cfgCopy.setReadThrough(_cfgCopy.isReadThrough());
     if (cc.isReadThrough()) {
-      throw new UnsupportedOperationException("no support for jsr107 read through operation");
+      final CacheLoader<K, V> cl = cc.getCacheLoaderFactory().create();
+      b.source(new CacheSource<K, CacheWithExpiryPolicyAdapter.ValueAndExtra>() {
+        @Override
+        public CacheWithExpiryPolicyAdapter.ValueAndExtra get(K k) {
+          V v = cl.load(k);
+          if (v == null) {
+            return null;
+          }
+          return new CacheWithExpiryPolicyAdapter.ValueAndExtra<V>(v);
+        }
+      });
     }
     if (cc.isWriteThrough()) {
       throw new UnsupportedOperationException("no support for jsr107 write through operation");
@@ -193,12 +206,12 @@ public class Cache2kManagerAdapter implements CacheManager {
       }
       Cache2kCacheAdapter<K, CacheWithExpiryPolicyAdapter.ValueAndExtra<V>> ca =
           new Cache2kCacheAdapter<K, CacheWithExpiryPolicyAdapter.ValueAndExtra<V>>(this, b.build(), cc.isStoreByValue(), null);
+      ca.readThrough = cc.isReadThrough();
       CacheWithExpiryPolicyAdapter<K, V> c = new CacheWithExpiryPolicyAdapter<K, V>();
       c.cache = ca;
       c.completeConfiguration = _cfgCopy;
-      c.valueType = _cfgCopy.getValueType();
-      c.keyType = _cfgCopy.getKeyType();
-      c.readThrough = _cfgCopy.isReadThrough();
+      c.valueType = cc.getValueType();
+      c.keyType = cc.getKeyType();
       c.expiryPolicy = _policy;
       c.c2kCache = ca.cache;
       name2adapter.put(c.getName(), c);
