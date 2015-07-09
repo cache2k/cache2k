@@ -60,6 +60,7 @@ public class ClosableConcurrentHashEntryIterator<E extends Entry>
 
   int iteratedCountLastRun;
   Entry lastEntry = null;
+  Entry nextEntry = null;
   Hash<E> hashCtl;
   Hash<E> hashCtl2;
   Entry[] hash;
@@ -179,18 +180,21 @@ public class ClosableConcurrentHashEntryIterator<E extends Entry>
 
   @Override
   public boolean hasNext() {
-    return nextEntry() != null;
+    return (nextEntry = nextEntry()) != null;
   }
 
   @Override
   public E next() {
-    if (lastEntry == null) {
-      if (hash == null) {
-        throw new NoSuchElementException("not available");
-      }
-      throw new IllegalStateException("call hasNext() first");
+    if (nextEntry != null) {
+      E e = (E) nextEntry;
+      nextEntry = null;
+      return e;
     }
-    return (E) lastEntry;
+    E e = (E) nextEntry();
+    if (e == null) {
+      throw new NoSuchElementException("not available");
+    }
+    return e;
   }
 
   @Override

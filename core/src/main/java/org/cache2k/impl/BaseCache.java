@@ -897,10 +897,12 @@ public abstract class BaseCache<E extends Entry, K, T>
 
     @Override
     public CacheEntry<K, T> next() {
-      if (entry == null) {
+      if (entry == null && !hasNext()) {
         throw new NoSuchElementException("not available");
       }
-      return returnEntry(entry);
+      CacheEntry<K, T> ce = returnEntry(entry);
+      entry = null;
+      return ce;
     }
 
     @Override
