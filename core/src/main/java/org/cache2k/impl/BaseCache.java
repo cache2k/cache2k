@@ -2325,10 +2325,15 @@ public abstract class BaseCache<E extends Entry, K, T>
   protected final long insertOrUpdateAndCalculateExpiry(E e, T v, long t0, long t, byte _updateStatistics, long _previousNextRefreshTime) {
     long _nextRefreshTime = maxLinger == 0 ? 0 : Long.MAX_VALUE;
     if (timer != null) {
-      if (Entry.isDataValidState(_previousNextRefreshTime) || Entry.isExpiredState(_previousNextRefreshTime)) {
-        _nextRefreshTime = calcNextRefreshTime((K) e.getKey(), v, t0, e);
-      } else {
-        _nextRefreshTime = calcNextRefreshTime((K) e.getKey(), v, t0, null);
+      try {
+        if (Entry.isDataValidState(_previousNextRefreshTime) || Entry.isExpiredState(_previousNextRefreshTime)) {
+          _nextRefreshTime = calcNextRefreshTime((K) e.getKey(), v, t0, e);
+        } else {
+          _nextRefreshTime = calcNextRefreshTime((K) e.getKey(), v, t0, null);
+        }
+      } catch (Exception ex) {
+        updateStatistics(e, v, t0, t, _updateStatistics, false);
+        throw new CacheException("exception in expiry calculation", ex);
       }
     }
     return insert(e, v, t0, t, _updateStatistics, _nextRefreshTime);
@@ -2375,37 +2380,7 @@ public abstract class BaseCache<E extends Entry, K, T>
     long _nextRefreshTimeWithState;
     synchronized (lock) {
       checkClosed();
-      touchedTime = t;
-      if (_updateStatistics == INSERT_STAT_UPDATE) {
-        if (_justLoadedFromStorage) {
-          loadHitCnt++;
-        } else {
-          if (_suppressException) {
-            suppressedExceptionCnt++;
-            fetchExceptionCnt++;
-          } else {
-            if (_value instanceof ExceptionWrapper) {
-              fetchExceptionCnt++;
-            }
-          }
-          fetchCnt++;
-          fetchMillis += t - t0;
-          if (e.isGettingRefresh()) {
-            refreshCnt++;
-          }
-          if (e.isLoadedNonValidAndFetch()) {
-            loadNonFreshAndFetchedCnt++;
-          } else if (!e.isVirgin()) {
-            fetchButHitCnt++;
-          }
-        }
-      } else if (_updateStatistics == INSERT_STAT_PUT) {
-        putCnt++;
-        eventuallyAdjustPutNewEntryCount(e);
-        if (e.nextRefreshTime == Entry.LOADED_NON_VALID_AND_PUT) {
-          peekHitNotFreshCnt++;
-        }
-      }
+      updateStatisticsNeedsLock(e, _value, t0, t, _updateStatistics, _suppressException);
       if (_storageException != null) {
         throw _storageException;
       }
@@ -2413,6 +2388,47 @@ public abstract class BaseCache<E extends Entry, K, T>
     } // synchronized (lock)
 
     return _nextRefreshTimeWithState;
+  }
+
+  private void updateStatistics(E e, T _value, long t0, long t, byte _updateStatistics, boolean _suppressException) {
+    synchronized (lock) {
+      updateStatisticsNeedsLock(e, _value, t0, t, _updateStatistics, _suppressException);
+    }
+  }
+
+  private void updateStatisticsNeedsLock(E e, T _value, long t0, long t, byte _updateStatistics, boolean _suppressException) {
+    boolean _justLoadedFromStorage = storage != null && t0 == 0;
+    touchedTime = t;
+    if (_updateStatistics == INSERT_STAT_UPDATE) {
+      if (_justLoadedFromStorage) {
+        loadHitCnt++;
+      } else {
+        if (_suppressException) {
+          suppressedExceptionCnt++;
+          fetchExceptionCnt++;
+        } else {
+          if (_value instanceof ExceptionWrapper) {
+            fetchExceptionCnt++;
+          }
+        }
+        fetchCnt++;
+        fetchMillis += t - t0;
+        if (e.isGettingRefresh()) {
+          refreshCnt++;
+        }
+        if (e.isLoadedNonValidAndFetch()) {
+          loadNonFreshAndFetchedCnt++;
+        } else if (!e.isVirgin()) {
+          fetchButHitCnt++;
+        }
+      }
+    } else if (_updateStatistics == INSERT_STAT_PUT) {
+      putCnt++;
+      eventuallyAdjustPutNewEntryCount(e);
+      if (e.nextRefreshTime == Entry.LOADED_NON_VALID_AND_PUT) {
+        peekHitNotFreshCnt++;
+      }
+    }
   }
 
   private void eventuallyAdjustPutNewEntryCount(E e) {
