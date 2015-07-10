@@ -224,7 +224,11 @@ public class CacheWithExpiryPolicyAdapter<K, V> implements Cache<K, V> {
   @Override
   public V getAndPut(K key, V value) {
     checkClosed();
-    return (V) returnValue(key, cache.getAndPut(key, new ValueAndExtra(value)));
+    ValueAndExtra<V> e = cache.getAndPut(key, new ValueAndExtra(value));
+    if (e != null) {
+      return e.value;
+    }
+    return null;
   }
 
   @Override
@@ -251,7 +255,12 @@ public class CacheWithExpiryPolicyAdapter<K, V> implements Cache<K, V> {
   @Override
   public boolean remove(K key, V oldValue) {
     checkClosed();
-    return cache.remove(key, new ValueAndExtra<V>(oldValue));
+    ValueAndExtra<V> e = c2kCache.peek(key);
+    boolean _result = c2kCache.remove(key, new ValueAndExtra<V>(oldValue));
+    if (!_result && e != null) {
+      touchEntry(key, e);
+    }
+    return _result;
   }
 
   @Override
