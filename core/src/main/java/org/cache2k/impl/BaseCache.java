@@ -30,6 +30,7 @@ import org.cache2k.CacheWriter;
 import org.cache2k.ClosableIterator;
 import org.cache2k.EntryExpiryCalculator;
 import org.cache2k.ExceptionExpiryCalculator;
+import org.cache2k.ExceptionPropagator;
 import org.cache2k.ExperimentalBulkCacheSource;
 import org.cache2k.Cache;
 import org.cache2k.CacheConfig;
@@ -108,6 +109,13 @@ public abstract class BaseCache<E extends Entry, K, T>
         return _value.getCacheExpiryTime();
       }
     };
+
+  final static ExceptionPropagator DEFAULT_EXCEPTION_PROPAGATOR = new ExceptionPropagator() {
+    @Override
+    public void propagateException(String _additionalMessage, Throwable _originalException) {
+      throw new PropagatedCacheException(_additionalMessage, _originalException);
+    }
+  };
 
   protected int hashSeed;
 
@@ -247,6 +255,8 @@ public abstract class BaseCache<E extends Entry, K, T>
   protected Class valueType;
 
   protected CacheWriter<K, T> writer;
+
+  protected ExceptionPropagator exceptionPropagator = DEFAULT_EXCEPTION_PROPAGATOR;
 
   protected StorageAdapter storage;
 
@@ -397,6 +407,10 @@ public abstract class BaseCache<E extends Entry, K, T>
         }
       }
     };
+  }
+
+  public void setExceptionPropagator(ExceptionPropagator ep) {
+    exceptionPropagator = ep;
   }
 
   @SuppressWarnings("unused")
@@ -2035,7 +2049,7 @@ public abstract class BaseCache<E extends Entry, K, T>
           w.additionalExceptionMessage = "(expiry=" + (t > 0 ? formatMillis(t) : "none") + ") " + w.getException();
         }
       }
-      throw new PropagatedCacheException(w.additionalExceptionMessage, w.getException());
+      exceptionPropagator.propagateException(w.additionalExceptionMessage, w.getException());
     }
     return v;
   }
@@ -2172,8 +2186,10 @@ public abstract class BaseCache<E extends Entry, K, T>
       return 0;
     }
     if (_exceptionEc != null) {
-      long t = _exceptionEc.calculateExpiryTime(_key, ((ExceptionWrapper) _newObject).getException(), now);
-      return limitExpiryToMaxLinger(now, _exceptionMaxLinger, t);
+      ExceptionWrapper _wrapper = (ExceptionWrapper) _newObject;
+      long t = _exceptionEc.calculateExpiryTime(_key, _wrapper.getException(), now);
+      t = limitExpiryToMaxLinger(now, _exceptionMaxLinger, t);
+      return t;
     }
     if (_exceptionMaxLinger > 0) {
       return _exceptionMaxLinger + now;

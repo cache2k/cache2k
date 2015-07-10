@@ -27,6 +27,7 @@ import org.cache2k.CacheEntry;
 import org.cache2k.CacheSource;
 import org.cache2k.CacheWriter;
 import org.cache2k.EntryExpiryCalculator;
+import org.cache2k.ExceptionPropagator;
 import org.cache2k.RefreshController;
 import org.cache2k.impl.CacheManagerImpl;
 
@@ -41,6 +42,7 @@ import javax.cache.expiry.EternalExpiryPolicy;
 import javax.cache.expiry.ExpiryPolicy;
 import javax.cache.expiry.ModifiedExpiryPolicy;
 import javax.cache.integration.CacheLoader;
+import javax.cache.integration.CacheLoaderException;
 import javax.cache.integration.CacheWriterException;
 import javax.cache.spi.CachingProvider;
 import java.net.URI;
@@ -168,6 +170,12 @@ public class Cache2kManagerAdapter implements CacheManager {
       throws IllegalArgumentException {
     CacheBuilder b = CacheBuilder.newCache(cc.getKeyType(), CacheWithExpiryPolicyAdapter.ValueAndExtra.class);
     b.name(_cacheName);
+    b.exceptionPropagator(new ExceptionPropagator() {
+      @Override
+      public void propagateException(String _additionalMessage, Throwable _originalException) {
+        throw new CacheLoaderException(_additionalMessage, _originalException);
+      }
+    });
     MutableConfiguration<K, V> _cfgCopy = new MutableConfiguration<K, V>();
     _cfgCopy.setTypes(cc.getKeyType(), cc.getValueType());
     _cfgCopy.setStoreByValue(cc.isStoreByValue());

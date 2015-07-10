@@ -86,6 +86,7 @@ public abstract class CacheBuilder<K,T>
   protected BulkCacheSource bulkCacheSource;
   protected ExceptionExpiryCalculator exceptionExpiryCalculator;
   protected CacheWriter cacheWriter;
+  protected ExceptionPropagator exceptionPropagator;
 
   /** Builder is constructed from prototype */
   protected void ctor(Class<K> _keyType, Class<T> _valueType, Class<?> _entryType) {
@@ -218,6 +219,11 @@ public abstract class CacheBuilder<K,T>
    */
   public CacheBuilder<K, T> expiryMillis(long v) {
     config.setExpiryMillis(v);
+    return this;
+  }
+
+  public CacheBuilder<K, T> exceptionPropagator(ExceptionPropagator ep) {
+    exceptionPropagator = ep;
     return this;
   }
 

@@ -101,6 +101,9 @@ public class CacheBuilderImpl<K, T> extends CacheBuilder<K, T> {
     if (exceptionExpiryCalculator != null) {
       c.setExceptionExpiryCalculator(exceptionExpiryCalculator);
     }
+    if (exceptionPropagator != null) {
+      c.setExceptionPropagator(exceptionPropagator);
+    }
 
     if (config != null) {
       c.setCacheConfig(config);
