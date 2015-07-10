@@ -285,7 +285,7 @@ public class CacheWithExpiryPolicyAdapter<K, V> implements Cache<K, V> {
   public boolean replace(K key, V oldValue, V newValue) {
     checkClosed();
     ValueAndExtra<V> e = c2kCache.peek(key);
-    boolean b = cache.replace(key, new ValueAndExtra<V>(oldValue), new ValueAndExtra<V>(newValue));
+    boolean b = c2kCache.replace(key, new ValueAndExtra<V>(oldValue), new ValueAndExtra<V>(newValue));
     if (!b && e != null) {
       touchEntry(key, e);
     }
@@ -295,7 +295,7 @@ public class CacheWithExpiryPolicyAdapter<K, V> implements Cache<K, V> {
   @Override
   public boolean replace(K key, V value) {
     checkClosed();
-    return cache.replace(key, new ValueAndExtra<V>(value));
+    return c2kCache.replace(key, new ValueAndExtra<V>(value));
   }
 
   @Override
@@ -549,7 +549,7 @@ public class CacheWithExpiryPolicyAdapter<K, V> implements Cache<K, V> {
         if (_oldEntry == null) {
           throw new NullPointerException("no previous expiry value: null expiry duration not valid");
         }
-        return _oldEntry.getValue().expiryTime;
+        return _value.expiryTime = _oldEntry.getValue().expiryTime;
 
       }
       if (d.equals(Duration.ETERNAL)) {
