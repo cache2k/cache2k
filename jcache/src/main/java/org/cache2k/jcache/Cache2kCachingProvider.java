@@ -56,14 +56,14 @@ public class Cache2kCachingProvider implements CachingProvider {
 
   public URI name2Uri(String _name) {
     try {
-      return new URI("file", _name, null);
+      return new URI(_name);
     } catch (URISyntaxException e) {
       throw new IllegalArgumentException(e);
     }
   }
 
   public String uri2Name(URI uri) {
-    return uri.getSchemeSpecificPart();
+    return uri.toString();
   }
 
   @Override
@@ -99,7 +99,9 @@ public class Cache2kCachingProvider implements CachingProvider {
 
   @Override
   public URI getDefaultURI() {
-    return name2Uri(forwardProvider.getDefaultName());
+    String _defaultName = forwardProvider.getDefaultName();
+    URI _defaultUri = name2Uri(_defaultName);
+    return _defaultUri;
   }
 
   @Override
