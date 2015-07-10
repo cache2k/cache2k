@@ -2250,6 +2250,7 @@ public abstract class BaseCache<E extends Entry, K, T>
 
   protected long insertEntryFromStorage(StorageEntry se, E e, boolean _needsFetch) {
     e.setLastModificationFromStorage(se.getCreatedOrUpdated());
+    T _valueOrException = (T) se.getValueOrException();
     long now = System.currentTimeMillis();
     T v = (T) se.getValueOrException();
     long _nextRefreshTime = maxLinger == 0 ? 0 : Long.MAX_VALUE;
@@ -2262,7 +2263,7 @@ public abstract class BaseCache<E extends Entry, K, T>
     boolean _fetchAlways = timer == null && maxLinger == 0;
     if (_expired || _fetchAlways) {
       if (_needsFetch) {
-        e.value = se.getValueOrException();
+        e.value = _valueOrException;
         e.setLoadedNonValidAndFetch();
         return fetchFromSource(e, 0);
       } else {
@@ -2273,7 +2274,7 @@ public abstract class BaseCache<E extends Entry, K, T>
         return Entry.LOADED_NON_VALID;
       }
     }
-    return insert(e, (T) se.getValueOrException(), 0, now, INSERT_STAT_UPDATE, _nextRefreshTime);
+    return insert(e, _valueOrException, 0, now, INSERT_STAT_UPDATE, _nextRefreshTime);
   }
 
   protected long fetchFromSource(E e, long _previousNextRefreshValue) {
@@ -2330,7 +2331,7 @@ public abstract class BaseCache<E extends Entry, K, T>
         _nextRefreshTime = calcNextRefreshTime((K) e.getKey(), v, t0, null);
       }
     }
-    return insert(e,v,t0,t, _updateStatistics, _nextRefreshTime);
+    return insert(e, v, t0, t, _updateStatistics, _nextRefreshTime);
   }
 
   final static byte INSERT_STAT_NO_UPDATE = 0;
@@ -2341,14 +2342,23 @@ public abstract class BaseCache<E extends Entry, K, T>
    * @param _nextRefreshTime -1/MAXVAL: eternal, 0: expires immediately
    */
   protected final long insert(E e, T _value, long t0, long t, byte _updateStatistics, long _nextRefreshTime) {
+    final boolean _justLoadedFromStorage = (storage != null) && t0 == 0;
     if (_nextRefreshTime == -1) {
       _nextRefreshTime = Long.MAX_VALUE;
     }
-    boolean _suppressException =
+    final boolean _suppressException =
       _value instanceof ExceptionWrapper && hasSuppressExceptions() && e.getValue() != Entry.INITIAL_VALUE && !e.hasException();
 
     if (!_suppressException) {
       e.value = _value;
+    }
+    if (_value instanceof ExceptionWrapper && !_suppressException && !_justLoadedFromStorage) {
+      Log log = getLog();
+      if (log.isDebugEnabled()) {
+        log.debug(
+            "source caught exception, expires at: " + formatMillis(_nextRefreshTime),
+            ((ExceptionWrapper) _value).getException());
+      }
     }
 
     CacheStorageException _storageException = null;
@@ -2367,7 +2377,7 @@ public abstract class BaseCache<E extends Entry, K, T>
       checkClosed();
       touchedTime = t;
       if (_updateStatistics == INSERT_STAT_UPDATE) {
-        if (t0 == 0) {
+        if (_justLoadedFromStorage) {
           loadHitCnt++;
         } else {
           if (_suppressException) {
@@ -2375,12 +2385,6 @@ public abstract class BaseCache<E extends Entry, K, T>
             fetchExceptionCnt++;
           } else {
             if (_value instanceof ExceptionWrapper) {
-              Log log = getLog();
-              if (log.isDebugEnabled()) {
-                log.debug(
-                    "caught exception, expires at: " + formatMillis(_nextRefreshTime),
-                    ((ExceptionWrapper) _value).getException());
-              }
               fetchExceptionCnt++;
             }
           }
