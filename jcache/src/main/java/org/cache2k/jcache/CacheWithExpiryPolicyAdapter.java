@@ -23,6 +23,7 @@ package org.cache2k.jcache;
  */
 
 import org.cache2k.CacheEntry;
+import org.cache2k.CacheWriter;
 import org.cache2k.EntryExpiryCalculator;
 
 import javax.cache.Cache;
@@ -386,27 +387,31 @@ public class CacheWithExpiryPolicyAdapter<K, V> implements Cache<K, V> {
       @Override
       public Entry<K, V> next() {
         final Entry<K, ValueAndExtra<V>> e = it.next();
-        return new Entry<K, V>() {
-          @Override
-          public K getKey() {
-            return e.getKey();
-          }
-
-          @Override
-          public V getValue() {
-            return returnValue(e.getKey(), e.getValue());
-          }
-
-          @Override
-          public <T> T unwrap(Class<T> clazz) {
-            throw new UnsupportedOperationException();
-          }
-        };
+        return returnEntry(e.getKey(), e.getValue());
       }
 
       @Override
       public void remove() {
         it.remove();
+      }
+    };
+  }
+
+  Entry<K, V> returnEntry(final K key, final ValueAndExtra<V> v) {
+    return new Entry<K, V>() {
+      @Override
+      public K getKey() {
+        return key;
+      }
+
+      @Override
+      public V getValue() {
+        return returnValue(key, v);
+      }
+
+      @Override
+      public <T> T unwrap(Class<T> clazz) {
+        throw new UnsupportedOperationException();
       }
     };
   }

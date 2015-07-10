@@ -26,6 +26,7 @@ import org.cache2k.BulkCacheSource;
 import org.cache2k.CacheEntry;
 import org.cache2k.CacheException;
 import org.cache2k.CacheMisconfigurationException;
+import org.cache2k.CacheWriter;
 import org.cache2k.ClosableIterator;
 import org.cache2k.EntryExpiryCalculator;
 import org.cache2k.ExceptionExpiryCalculator;
@@ -245,6 +246,8 @@ public abstract class BaseCache<E extends Entry, K, T>
 
   protected Class valueType;
 
+  protected CacheWriter<K, T> writer;
+
   protected StorageAdapter storage;
 
   protected TimerService timerService = GlobalTimerService.getInstance();
@@ -259,6 +262,7 @@ public abstract class BaseCache<E extends Entry, K, T>
   private static final int SHARP_TIMEOUT_FEATURE = 1;
   private static final int KEEP_AFTER_EXPIRED = 2;
   private static final int SUPPRESS_EXCEPTIONS = 4;
+  private static final int NULL_VALUE_SUPPORT = 8;
 
   protected final boolean hasSharpTimeout() {
     return (featureBits & SHARP_TIMEOUT_FEATURE) > 0;
@@ -266,6 +270,10 @@ public abstract class BaseCache<E extends Entry, K, T>
 
   protected final boolean hasKeepAfterExpired() {
     return (featureBits & KEEP_AFTER_EXPIRED) > 0;
+  }
+
+  protected final boolean hasNullValueSupport() {
+    return (featureBits & NULL_VALUE_SUPPORT) > 0;
   }
 
   protected final boolean hasSuppressExceptions() {
@@ -394,6 +402,10 @@ public abstract class BaseCache<E extends Entry, K, T>
   @SuppressWarnings("unused")
   public void setSource(CacheSourceWithMetaInfo<K, T> eg) {
     source = eg;
+  }
+
+  public void setWriter(CacheWriter<K, T> w) {
+    writer = w;
   }
 
   @SuppressWarnings("unused")
@@ -1113,42 +1125,42 @@ public abstract class BaseCache<E extends Entry, K, T>
       final T _value = e.getValue();
       final Throwable _exception = e.getException();
       final long _lastModification = e.getLastModification();
-      CacheEntry<K, T> ce = new CacheEntry<K, T>() {
-        @Override
-        public K getKey() {
-          return _key;
-        }
-
-        @Override
-        public T getValue() {
-          return _value;
-        }
-
-        @Override
-        public Throwable getException() {
-          return _exception;
-        }
-
-        @Override
-        public long getLastModification() {
-          return _lastModification;
-        }
-
-        @Override
-        public String toString() {
-          long _expiry = e.getValueExpiryTime();
-          return "CacheEntry(" +
-              "key=" + getKey() + ", " +
-              "value=" + getValue() + ", " +
-              ((getException() != null) ? "exception=" + e.getException() + ", " : "") +
-              "updated=" + formatMillis(getLastModification()) + ", " +
-              "expiry=" + (_expiry != 0 ? (formatMillis(_expiry)) : "-") + ", " +
-              "flags=" + (_expiry == 0 ? e.nextRefreshTime : "-") + ")";
-        }
-
-      };
-      return ce;
+      return returnCacheEntry(_key, _value, _exception, _lastModification);
     }
+  }
+
+  private CacheEntry<K, T> returnCacheEntry(final K _key, final T _value, final Throwable _exception, final long _lastModification) {
+    CacheEntry<K, T> ce = new CacheEntry<K, T>() {
+      @Override
+      public K getKey() {
+        return _key;
+      }
+
+      @Override
+      public T getValue() {
+        return _value;
+      }
+
+      @Override
+      public Throwable getException() {
+        return _exception;
+      }
+
+      @Override
+      public long getLastModification() {
+        return _lastModification;
+      }
+
+      @Override
+      public String toString() {
+        return "CacheEntry(" +
+            "key=" + getKey() +
+            ((getException() != null) ? ", exception=" + getException() + ", " : ", value=" + getValue()) +
+            ", updated=" + formatMillis(getLastModification());
+      }
+
+    };
+    return ce;
   }
 
   @Override
@@ -1713,6 +1725,9 @@ public abstract class BaseCache<E extends Entry, K, T>
    * is the only one working on the entry.
    */
   public boolean removeWithFlag(K key, boolean _checkValue, T _value) {
+    if (!_checkValue) {
+      eventuallyCallWriterDelete(key);
+    }
     if (storage == null) {
       E e = lookupEntrySynchronized(key);
       if (e != null) {
@@ -1721,9 +1736,11 @@ public abstract class BaseCache<E extends Entry, K, T>
           if (!e.isRemovedState()) {
             synchronized (lock) {
               boolean f = e.hasFreshData();
-              if (_checkValue &&
-                  (!f || !e.equalsValue(_value))) {
-                return false;
+              if (_checkValue) {
+                if (!f || !e.equalsValue(_value)) {
+                  return false;
+                }
+                eventuallyCallWriterDelete(key);
               }
               if (removeEntry(e)) {
                 removedCnt++;
@@ -1770,6 +1787,7 @@ public abstract class BaseCache<E extends Entry, K, T>
         _hasFreshData = false;
       }
       if (_hasFreshData) {
+        eventuallyCallWriterDelete(key);
         storage.remove(key);
       }
       synchronized (e) {
@@ -1789,12 +1807,25 @@ public abstract class BaseCache<E extends Entry, K, T>
     return _hasFreshData;
   }
 
+  private void eventuallyCallWriterDelete(K key) {
+    if (writer != null) {
+      try {
+        writer.delete(key);
+      } catch (RuntimeException ex) {
+        throw ex;
+      } catch (Exception ex) {
+        throw new CacheException(ex);
+      }
+    }
+  }
+
   @Override
   public void remove(K key) {
     removeWithFlag(key);
   }
 
   public T peekAndRemove(K key) {
+    eventuallyCallWriterDelete(key);
     if (storage == null) {
       E e = lookupEntrySynchronized(key);
       if (e != null) {
@@ -1816,7 +1847,7 @@ public abstract class BaseCache<E extends Entry, K, T>
         }
       }
       return null;
-    }
+    } // end if (storage == null) ....
     int _spinCount = TUNABLE.maximumEntryLockSpins;
     E e;
     boolean _hasFreshData;
@@ -2233,10 +2264,6 @@ public abstract class BaseCache<E extends Entry, K, T>
       v = (T) new ExceptionWrapper(_ouch);
     }
     long t = System.currentTimeMillis();
-    return insertFetched(e, v, t0, t);
-  }
-
-  protected final long insertFetched(E e, T v, long t0, long t) {
     return insert(e, v, t0, t, INSERT_STAT_UPDATE);
   }
 
@@ -2274,6 +2301,27 @@ public abstract class BaseCache<E extends Entry, K, T>
     boolean _suppressException =
       _value instanceof ExceptionWrapper && hasSuppressExceptions() && e.getValue() != Entry.INITIAL_VALUE && !e.hasException();
     if (!_suppressException) {
+      if (writer != null && _updateStatistics == INSERT_STAT_PUT) {
+        try {
+          CacheEntry<K, T> ce;
+          if (_value instanceof ExceptionWrapper) {
+            ce = returnCacheEntry((K) e.getKey(), null, ((ExceptionWrapper) _value).getException(), t0);
+          } else {
+            ce = returnCacheEntry((K) e.getKey(), _value, null, t0);
+          }
+          writer.write(ce);
+        } catch (RuntimeException ex) {
+          synchronized (lock) {
+            eventuallyAdjustPutNewEntryCount(e);
+          }
+          throw ex;
+        } catch (Exception ex) {
+          synchronized (lock) {
+            eventuallyAdjustPutNewEntryCount(e);
+          }
+          throw new CacheException("writer exception", ex);
+        }
+      }
       e.value = _value;
     }
 
@@ -2323,9 +2371,7 @@ public abstract class BaseCache<E extends Entry, K, T>
         }
       } else if (_updateStatistics == INSERT_STAT_PUT) {
         putCnt++;
-        if (e.isVirgin()) {
-          putNewEntryCnt++;
-        }
+        eventuallyAdjustPutNewEntryCount(e);
         if (e.nextRefreshTime == Entry.LOADED_NON_VALID_AND_PUT) {
           peekHitNotFreshCnt++;
         }
@@ -2337,6 +2383,12 @@ public abstract class BaseCache<E extends Entry, K, T>
     } // synchronized (lock)
 
     return _nextRefreshTimeWithState;
+  }
+
+  private void eventuallyAdjustPutNewEntryCount(E e) {
+    if (e.isVirgin()) {
+      putNewEntryCnt++;
+    }
   }
 
   protected long stopStartTimer(long _nextRefreshTime, E e, long now) {

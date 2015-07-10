@@ -111,6 +111,9 @@ public class CacheBuilderImpl<K, T> extends CacheBuilder<K, T> {
     if (experimentalBulkCacheSource != null) {
       c.setExperimentalBulkCacheSource(experimentalBulkCacheSource);
     }
+    if (cacheWriter != null) {
+      c.setWriter(cacheWriter);
+    }
   }
 
   void configureViaSetters(Object o) {

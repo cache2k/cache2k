@@ -85,6 +85,7 @@ public abstract class CacheBuilder<K,T>
   protected ExperimentalBulkCacheSource experimentalBulkCacheSource;
   protected BulkCacheSource bulkCacheSource;
   protected ExceptionExpiryCalculator exceptionExpiryCalculator;
+  protected CacheWriter cacheWriter;
 
   /** Builder is constructed from prototype */
   protected void ctor(Class<K> _keyType, Class<T> _valueType, Class<?> _entryType) {
@@ -240,6 +241,11 @@ public abstract class CacheBuilder<K,T>
     return this;
   }
 
+  public CacheBuilder<K, T> writer(CacheWriter<K, T> w) {
+    cacheWriter = w;
+    return this;
+  }
+
   /**
    * Set expiry calculator to use. If {@link #expiryDuration(long, java.util.concurrent.TimeUnit)}
    * is set to 0 then expiry calculation is not used, all entries expire immediately.
@@ -279,6 +285,7 @@ public abstract class CacheBuilder<K,T>
   /**
    * Builds a cache with the specified configuration parameters.
    * The builder reused to build caches with similar or identical
+   * configuration. The builder is not thread safe.
    * configuration. The builder is not thread safe.
    */
   public abstract Cache<K, T> build();

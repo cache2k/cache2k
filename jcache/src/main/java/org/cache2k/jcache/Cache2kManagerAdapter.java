@@ -25,6 +25,7 @@ package org.cache2k.jcache;
 import org.cache2k.CacheBuilder;
 import org.cache2k.CacheEntry;
 import org.cache2k.CacheSource;
+import org.cache2k.CacheWriter;
 import org.cache2k.EntryExpiryCalculator;
 import org.cache2k.RefreshController;
 import org.cache2k.impl.CacheManagerImpl;
@@ -40,6 +41,7 @@ import javax.cache.expiry.EternalExpiryPolicy;
 import javax.cache.expiry.ExpiryPolicy;
 import javax.cache.expiry.ModifiedExpiryPolicy;
 import javax.cache.integration.CacheLoader;
+import javax.cache.integration.CacheWriterException;
 import javax.cache.spi.CachingProvider;
 import java.net.URI;
 import java.util.Collections;
@@ -169,7 +171,8 @@ public class Cache2kManagerAdapter implements CacheManager {
     MutableConfiguration<K, V> _cfgCopy = new MutableConfiguration<K, V>();
     _cfgCopy.setTypes(cc.getKeyType(), cc.getValueType());
     _cfgCopy.setStoreByValue(cc.isStoreByValue());
-    _cfgCopy.setReadThrough(_cfgCopy.isReadThrough());
+    _cfgCopy.setReadThrough(cc.isReadThrough());
+    _cfgCopy.setWriteThrough(cc.isWriteThrough());
     if (cc.isReadThrough()) {
       final CacheLoader<K, V> cl = cc.getCacheLoaderFactory().create();
       b.source(new CacheSource<K, CacheWithExpiryPolicyAdapter.ValueAndExtra>() {
@@ -184,7 +187,8 @@ public class Cache2kManagerAdapter implements CacheManager {
       });
     }
     if (cc.isWriteThrough()) {
-      throw new UnsupportedOperationException("no support for jsr107 write through operation");
+      final javax.cache.integration.CacheWriter<? super K, ? super V> cw = cc.getCacheWriterFactory().create();
+      b.writer(new CacheWriterAdapterForTouchRecording(cw));
     }
     if (cc.getCacheEntryListenerConfigurations().iterator().hasNext()) {
       throw new UnsupportedOperationException("no support for jsr107 entry listener");
@@ -339,6 +343,50 @@ public class Cache2kManagerAdapter implements CacheManager {
       }
       return _fetchTime + d.getTimeUnit().toMillis(d.getDurationAmount());
     }
+  }
+
+  static class CacheWriterAdapterForTouchRecording<K, V> implements CacheWriter<K, CacheWithExpiryPolicyAdapter.ValueAndExtra<V>> {
+
+    javax.cache.integration.CacheWriter<K, V> cacheWriter;
+
+    public CacheWriterAdapterForTouchRecording(javax.cache.integration.CacheWriter<K, V> cacheWriter) {
+      this.cacheWriter = cacheWriter;
+    }
+
+    @Override
+    public void write(final CacheEntry<K, CacheWithExpiryPolicyAdapter.ValueAndExtra<V>> e) throws Exception {
+      Cache.Entry<K, V> ce = new Cache.Entry<K, V>() {
+        @Override
+        public K getKey() {
+          return e.getKey();
+        }
+
+        @Override
+        public V getValue() {
+          return e.getValue().value;
+        }
+
+        @Override
+        public <T> T unwrap(Class<T> clazz) {
+          throw new UnsupportedOperationException("unwrap entry not supported");
+        }
+      };
+      try {
+        cacheWriter.write(ce);
+      } catch (Exception ex) {
+        throw new CacheWriterException(ex);
+      }
+    }
+
+    @Override
+    public void delete(Object key) throws Exception {
+      try {
+        cacheWriter.delete(key);
+      } catch (Exception ex) {
+        throw new CacheWriterException(ex);
+      }
+    }
+
   }
 
 }
