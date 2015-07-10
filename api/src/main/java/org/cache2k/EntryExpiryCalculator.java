@@ -48,6 +48,10 @@ public interface EntryExpiryCalculator<K, T> {
    * entry was fetched (or put).
    * </p>
    *
+   * <p><b>Mutation of values: </b> Mutating values within the expiry calculator may have undesired
+   * effects and is not supported in general.
+   * </p>
+   *
    * @param _key the cache key
    * @param _value the value to be cached, may be null
    * @param _fetchTime this is the current time in millis. If a cache source was used to

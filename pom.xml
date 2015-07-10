@@ -205,6 +205,7 @@
 
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    <jcache.version>1.0.0</jcache.version>
   </properties>
 
 
@@ -406,6 +407,13 @@
       <id>android</id>
       <modules>
         <module>android-test</module>
+      </modules>
+    </profile>
+
+    <profile>
+      <id>jsr107-tck-tests</id>
+      <modules>
+        <module>jsr107-tck-tests</module>
       </modules>
     </profile>
 
