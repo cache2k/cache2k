@@ -250,7 +250,7 @@ public abstract class CacheBuilder<K,T>
    * Set expiry calculator to use. If {@link #expiryDuration(long, java.util.concurrent.TimeUnit)}
    * is set to 0 then expiry calculation is not used, all entries expire immediately.
    */
-  public CacheBuilder<K, T> entryExpiryCalculator(EntryExpiryCalculator c) {
+  public CacheBuilder<K, T> entryExpiryCalculator(EntryExpiryCalculator<K, T> c) {
     entryExpiryCalculator = c;
     return this;
   }
@@ -258,7 +258,7 @@ public abstract class CacheBuilder<K,T>
   /**
    * Set expiry calculator to use in case of an exception happened in the {@link CacheSource}.
    */
-  public CacheBuilder<K, T> exceptionExpiryCalculator(ExceptionExpiryCalculator c) {
+  public CacheBuilder<K, T> exceptionExpiryCalculator(ExceptionExpiryCalculator<K> c) {
     exceptionExpiryCalculator = c;
     return this;
   }

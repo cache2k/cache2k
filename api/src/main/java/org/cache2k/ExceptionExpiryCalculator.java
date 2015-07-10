@@ -29,6 +29,7 @@ package org.cache2k;
  * a different expiry value can determined.
  *
  * @author Jens Wilke; created: 2014-10-16
+ * @since 0.20
  */
 public interface ExceptionExpiryCalculator<K> {
 

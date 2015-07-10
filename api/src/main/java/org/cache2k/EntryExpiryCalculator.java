@@ -68,6 +68,7 @@ public interface EntryExpiryCalculator<K, T> {
    *              and {@link org.cache2k.CacheBuilder#backgroundRefresh(boolean)} influence the behaviour.
    *              If a negated value of the expiry time is returned, this means that sharp expiry is
    *              requested explicitly.
+   *  @since 0.20
    */
   long calculateExpiryTime(
       K _key,
