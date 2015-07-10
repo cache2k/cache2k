@@ -1169,6 +1169,7 @@ public abstract class BaseCache<E extends Entry, K, T>
   }
 
   protected E getEntryInternal(K key) {
+    long _previousNextRefreshTime;
     for (;;) {
       E e = lookupOrNewEntrySynchronized(key);
       if (e.hasFreshData()) { return e; }
@@ -1180,14 +1181,14 @@ public abstract class BaseCache<E extends Entry, K, T>
         if (e.isRemovedState()) {
           continue;
         }
-        e.startFetch();
+        _previousNextRefreshTime = e.startFetch();
       }
       boolean _finished = false;
       try {
-        e.finishFetch(fetch(e));
+        e.finishFetch(fetch(e, _previousNextRefreshTime));
         _finished = true;
       } finally {
-        e.ensureFetchAbort(_finished);
+        e.ensureFetchAbort(_finished, _previousNextRefreshTime);
       }
       evictEventually();
       return e;
@@ -1391,14 +1392,14 @@ public abstract class BaseCache<E extends Entry, K, T>
     try {
       T _previousValue = null;
       if (storage != null && e.isVirgin()) {
-        long t = fetchWithStorage(e, false);
+        long t = fetchWithStorage(e, false, _previousNextRefreshTime);
         _hasFreshData = e.hasFreshData(System.currentTimeMillis(), t);
       }
       if (_hasFreshData) {
         _previousValue = (T) e.getValue();
       }
       long t = System.currentTimeMillis();
-      e.finishFetch(insertOnPut(e, _value, t, t));
+      e.finishFetch(insertOnPut(e, _value, t, t, _previousNextRefreshTime));
       _finished = true;
       return _previousValue;
     } finally {
@@ -1437,13 +1438,13 @@ public abstract class BaseCache<E extends Entry, K, T>
     boolean _finished = false;
     try {
       if (storage != null && e.isVirgin()) {
-        long t = fetchWithStorage(e, false);
+        long t = fetchWithStorage(e, false, _previousNextRefreshTime);
         _hasFreshData = e.hasFreshData(System.currentTimeMillis(), t);
       }
       long t = System.currentTimeMillis();
       if (_hasFreshData) {
         T _previousValue = (T) e.getValue();
-        e.finishFetch(insertOnPut(e, _value, t, t));
+        e.finishFetch(insertOnPut(e, _value, t, t, _previousNextRefreshTime));
         _finished = true;
         return _previousValue;
       } else {
@@ -1489,7 +1490,7 @@ public abstract class BaseCache<E extends Entry, K, T>
       boolean _finished = false;
       try {
         long t = System.currentTimeMillis();
-        e.finishFetch(insertOnPut(e, _newValue, t, t));
+        e.finishFetch(insertOnPut(e, _newValue, t, t, _previousNextRefreshTime));
         _finished = true;
         return true;
       } finally {
@@ -1523,7 +1524,7 @@ public abstract class BaseCache<E extends Entry, K, T>
     boolean _finished = false;
     try {
       if (e.isVirgin()) {
-        long t = fetchWithStorage(e, false);
+        long t = fetchWithStorage(e, false, _previousNextRefreshTime);
         _hasFreshData = e.hasFreshData(System.currentTimeMillis(), t);
         if (!_hasFreshData || (_compare && !e.equalsValue(_oldValue))) {
           e.finishFetch(t);
@@ -1533,7 +1534,7 @@ public abstract class BaseCache<E extends Entry, K, T>
       }
 
       long t = System.currentTimeMillis();
-      e.finishFetch(insertOnPut(e, _newValue, t, t));
+      e.finishFetch(insertOnPut(e, _newValue, t, t, _previousNextRefreshTime));
       _finished = true;
       return true;
     } finally {
@@ -1551,6 +1552,7 @@ public abstract class BaseCache<E extends Entry, K, T>
    */
   protected E peekEntryInternal(K key) {
     final int hc = modifiedHash(key.hashCode());
+    long _previousNextRefreshTime;
     int _spinCount = TUNABLE.maximumEntryLockSpins;
     for (;;) {
       if (_spinCount-- <= 0) { throw new CacheLockSpinsExceededError(); }
@@ -1579,17 +1581,18 @@ public abstract class BaseCache<E extends Entry, K, T>
           if (e.hasFreshData()) {
             return e;
           }
+          _previousNextRefreshTime = e.nextRefreshTime;
           _needsLoad = conditionallyStartProcess(e);
         }
         if (_needsLoad) {
           boolean _finished = false;
           try {
-            long t = fetchWithStorage(e, false);
+            long t = fetchWithStorage(e, false, _previousNextRefreshTime);
             e.finishFetch(t);
             _hasFreshData = e.hasFreshData(System.currentTimeMillis(), t);
             _finished = true;
           } finally {
-            e.ensureFetchAbort(_finished);
+            e.ensureFetchAbort(_finished, _previousNextRefreshTime);
           }
         }
 
@@ -1653,7 +1656,7 @@ public abstract class BaseCache<E extends Entry, K, T>
         }
         boolean _finished = false;
         try {
-          e.finishFetch(insertOnPut(e, value, now, now));
+          e.finishFetch(insertOnPut(e, value, now, now, _previousNextRefreshTime));
           _finished = true;
           return true;
         } finally {
@@ -1680,7 +1683,7 @@ public abstract class BaseCache<E extends Entry, K, T>
       }
     }
     if (e.isVirgin()) {
-      long _result = _previousNextRefreshTime = fetchWithStorage(e, false);
+      long _result = _previousNextRefreshTime = fetchWithStorage(e, false, _previousNextRefreshTime);
       now = System.currentTimeMillis();
       if (e.hasFreshData(now, _result)) {
         e.finishFetch(_result);
@@ -1690,7 +1693,7 @@ public abstract class BaseCache<E extends Entry, K, T>
     }
     boolean _finished = false;
     try {
-      e.finishFetch(insertOnPut(e, value, t, t));
+      e.finishFetch(insertOnPut(e, value, t, t, _previousNextRefreshTime));
       _finished = true;
       evictEventually();
       return true;
@@ -1723,7 +1726,7 @@ public abstract class BaseCache<E extends Entry, K, T>
     boolean _finished = false;
     try {
       long t = System.currentTimeMillis();
-      e.finishFetch(insertOnPut(e, value, t, t));
+      e.finishFetch(insertOnPut(e, value, t, t, _previousNextRefreshTime));
       _finished = true;
     } finally {
       e.ensureFetchAbort(_finished, _previousNextRefreshTime);
@@ -1801,7 +1804,7 @@ public abstract class BaseCache<E extends Entry, K, T>
     try {
       long t;
       if (!_hasFreshData && e.isVirgin()) {
-        t = fetchWithStorage(e, false);
+        t = fetchWithStorage(e, false, 0);
         _hasFreshData = e.hasFreshData(System.currentTimeMillis(), t);
         if (_checkValue && _hasFreshData && !e.equalsValue(_value)) {
           e.finishFetch(t);
@@ -1897,7 +1900,7 @@ public abstract class BaseCache<E extends Entry, K, T>
     try {
       long t;
       if (!_hasFreshData && e.isVirgin()) {
-        t = fetchWithStorage(e, false);
+        t = fetchWithStorage(e, false, 0);
         _hasFreshData = e.hasFreshData(System.currentTimeMillis(), t);
       }
       if (_hasFreshData) {
@@ -2199,11 +2202,11 @@ public abstract class BaseCache<E extends Entry, K, T>
         exceptionExpiryCalculator, exceptionMaxLinger);
   }
 
-  protected long fetch(final E e) {
+  protected long fetch(final E e, long _previousNextRefreshTime) {
     if (storage != null) {
-      return fetchWithStorage(e, true);
+      return fetchWithStorage(e, true, _previousNextRefreshTime);
     } else {
-      return fetchFromSource(e);
+      return fetchFromSource(e, _previousNextRefreshTime);
     }
   }
 
@@ -2221,10 +2224,10 @@ public abstract class BaseCache<E extends Entry, K, T>
    * @param _needsFetch true if value needs to be fetched from the cache source.
    *                   This is false, when the we only need to peek for an value already mapped.
    */
-  protected long fetchWithStorage(E e, boolean _needsFetch) {
+  protected long fetchWithStorage(E e, boolean _needsFetch, long _previousNextRefreshTime) {
     if (!e.isVirgin()) {
       if (_needsFetch) {
-        return fetchFromSource(e);
+        return fetchFromSource(e, _previousNextRefreshTime);
       }
       return Entry.LOADED_NON_VALID;
     }
@@ -2234,7 +2237,7 @@ public abstract class BaseCache<E extends Entry, K, T>
         synchronized (lock) {
           loadMissCnt++;
         }
-        return fetchFromSource(e);
+        return fetchFromSource(e, _previousNextRefreshTime);
       }
       synchronized (lock) {
         touchedTime = System.currentTimeMillis();
@@ -2261,7 +2264,7 @@ public abstract class BaseCache<E extends Entry, K, T>
       if (_needsFetch) {
         e.value = se.getValueOrException();
         e.setLoadedNonValidAndFetch();
-        return fetchFromSource(e);
+        return fetchFromSource(e, 0);
       } else {
         synchronized (lock) {
           touchedTime = now;
@@ -2273,7 +2276,7 @@ public abstract class BaseCache<E extends Entry, K, T>
     return insert(e, (T) se.getValueOrException(), 0, now, INSERT_STAT_UPDATE, _nextRefreshTime);
   }
 
-  protected long fetchFromSource(E e) {
+  protected long fetchFromSource(E e, long _previousNextRefreshValue) {
     T v;
     long t0 = System.currentTimeMillis();
     try {
@@ -2290,10 +2293,10 @@ public abstract class BaseCache<E extends Entry, K, T>
       v = (T) new ExceptionWrapper(_ouch);
     }
     long t = System.currentTimeMillis();
-    return insert(e, v, t0, t, INSERT_STAT_UPDATE);
+    return insertOrUpdateAndCalculateExpiry(e, v, t0, t, INSERT_STAT_UPDATE, _previousNextRefreshValue);
   }
 
-  protected final long insertOnPut(E e, T v, long t0, long t) {
+  protected final long insertOnPut(E e, T v, long t0, long t, long _previousNextRefreshValue) {
     if (writer != null) {
       try {
         CacheEntry<K, T> ce;
@@ -2312,16 +2315,16 @@ public abstract class BaseCache<E extends Entry, K, T>
       }
     }
     e.setLastModification(t0);
-    return insert(e, v, t0, t, INSERT_STAT_PUT);
+    return insertOrUpdateAndCalculateExpiry(e, v, t0, t, INSERT_STAT_PUT, _previousNextRefreshValue);
   }
 
   /**
    * Calculate the next refresh time if a timer / expiry is needed and call insert.
    */
-  protected final long insert(E e, T v, long t0, long t, byte _updateStatistics) {
+  protected final long insertOrUpdateAndCalculateExpiry(E e, T v, long t0, long t, byte _updateStatistics, long _previousNextRefreshTime) {
     long _nextRefreshTime = maxLinger == 0 ? 0 : Long.MAX_VALUE;
     if (timer != null) {
-      if (e.isDataValidState() || e.isExpiredState()) {
+      if (Entry.isDataValidState(_previousNextRefreshTime) || Entry.isExpiredState(_previousNextRefreshTime)) {
         _nextRefreshTime = calcNextRefreshTime((K) e.getKey(), v, t0, e);
       } else {
         _nextRefreshTime = calcNextRefreshTime((K) e.getKey(), v, t0, null);
@@ -2476,14 +2479,16 @@ public abstract class BaseCache<E extends Entry, K, T>
           Runnable r = new Runnable() {
             @Override
             public void run() {
+              long _previousNextRefreshTime;
               synchronized (e) {
                 if (e.isRemovedFromReplacementList() || e.isRemovedState() || e.isFetchInProgress()) {
                   return;
                 }
+                _previousNextRefreshTime = e.nextRefreshTime;
                 e.setGettingRefresh();
               }
               try {
-                long t = fetch(e);
+                long t = fetch(e, _previousNextRefreshTime);
                 e.finishFetch(t);
               } catch (CacheClosedException ignore) {
               } catch (Throwable ex) {
@@ -2676,20 +2681,6 @@ public abstract class BaseCache<E extends Entry, K, T>
   }
 
 
-  final void sequentialFetch(E[] ea, K[] _keys, T[] _result, BitSet _fetched, int s, int end) {
-    for (int i = s; i < end; i++) {
-      E e = ea[i];
-      if (e == null) { continue; }
-      if (!e.isDataValidState()) {
-        synchronized (e) {
-          if (!e.isDataValidState()) {
-            fetch(e);
-          }
-          _result[i] = (T) e.getValue();
-        }
-      }
-    }
-  }
 
   final void sequentialGetFallBack(K[] _keys, T[] _result, BitSet _fetched, int s, int e) {
     for (int i = s; i < e; i++) {

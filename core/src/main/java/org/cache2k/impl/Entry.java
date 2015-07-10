@@ -168,7 +168,11 @@ public class Entry<E extends Entry, K, T>
    * make sure to get not expired data.
    */
   public final boolean isDataValidState() {
-    return nextRefreshTime >= FETCHED_STATE || nextRefreshTime < 0;
+    return isDataValidState(nextRefreshTime);
+  }
+
+  public static boolean isDataValidState(long _nextRefreshTime) {
+    return _nextRefreshTime >= FETCHED_STATE || _nextRefreshTime < 0;
   }
 
   /**
@@ -314,7 +318,11 @@ public class Entry<E extends Entry, K, T>
    * {@link BaseCache#hasKeepAfterExpired()} is true.
    */
   public boolean isExpiredState() {
-    return nextRefreshTime == EXPIRED_STATE;
+    return isExpiredState(nextRefreshTime);
+  }
+
+  public static boolean isExpiredState(long _nextRefreshTime) {
+    return _nextRefreshTime == EXPIRED_STATE;
   }
 
   public void setRemovedState() {

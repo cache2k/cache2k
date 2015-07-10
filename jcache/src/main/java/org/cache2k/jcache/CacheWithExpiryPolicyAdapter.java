@@ -264,7 +264,7 @@ public class CacheWithExpiryPolicyAdapter<K, V> implements Cache<K, V> {
     checkClosed();
     ValueAndExtra<V> e = c2kCache.peek(key);
     boolean b = cache.replace(key, new ValueAndExtra<V>(oldValue), new ValueAndExtra<V>(newValue));
-    if (!b) {
+    if (!b && e != null) {
       touchEntry(key, e);
     }
     return b;
