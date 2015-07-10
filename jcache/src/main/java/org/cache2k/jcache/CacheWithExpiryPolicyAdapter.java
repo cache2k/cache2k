@@ -79,7 +79,13 @@ public class CacheWithExpiryPolicyAdapter<K, V> implements Cache<K, V> {
 
   @Override
   public Map<K, V> getAll(Set<? extends K> keys) {
-    final Map<K, ValueAndExtra<V>> map = cache.getAll(keys);
+    final Map<K, ValueAndExtra<V>> m0 = cache.getAll(keys);
+    final Map<K, ValueAndExtra<V>> map = new HashMap<K, ValueAndExtra<V>>();
+    for (Map.Entry<K, ValueAndExtra<V>> e : m0.entrySet()) {
+      if (e.getValue() != null) {
+        map.put(e.getKey(), e.getValue());
+      }
+    }
     return new Map<K, V>() {
       @Override
       public int size() {
@@ -536,6 +542,9 @@ public class CacheWithExpiryPolicyAdapter<K, V> implements Cache<K, V> {
 
     @Override
     public long calculateExpiryTime(K _key, ValueAndExtra<V> _value, long _fetchTime, CacheEntry<K, ValueAndExtra<V>> _oldEntry) {
+      if (_value == null) {
+        return 0;
+      }
       Duration d;
       if (_value.expiryTime >= 1) {
         return _value.expiryTime == 1 ? 0 : _value.expiryTime;
