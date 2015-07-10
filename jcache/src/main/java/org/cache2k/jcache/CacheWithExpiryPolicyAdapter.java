@@ -23,7 +23,6 @@ package org.cache2k.jcache;
  */
 
 import org.cache2k.CacheEntry;
-import org.cache2k.CacheWriter;
 import org.cache2k.EntryExpiryCalculator;
 
 import javax.cache.Cache;
@@ -47,6 +46,20 @@ import java.util.Map;
 import java.util.Set;
 
 /**
+ * Adapter to add required semantics for JSR107 with expiry policy.
+ *
+ * <p>There are multiple requirements which makes cache operations with expiry policy very inefficient. These are:
+ * <ul>
+ *   <li>The TCK checks that the access policy is called and adjusted on each cache request</li>
+ *   <li>The TCK has some tests that use a zero duration on expiry, so an entry is expired after the first access</li>
+ *   <li>The TCK does not allow that the expiry policy methods are called in the configuration phase</li>
+ *   <li>In case the expiry policy methods return null, this means, that the expiry is not changed</li>
+ * </ul>
+ *
+ * </p>
+ * JSR107 has rules which make cache operations with an expiry policy quite ineffective.
+ *
+ *
  * @author Jens Wilke; created: 2015-04-01
  */
 public class CacheWithExpiryPolicyAdapter<K, V> implements Cache<K, V> {
@@ -407,6 +420,7 @@ public class CacheWithExpiryPolicyAdapter<K, V> implements Cache<K, V> {
   }
 
   Entry<K, V> returnEntry(final K key, final ValueAndExtra<V> v) {
+    final V _value = returnValue(key, v);
     return new Entry<K, V>() {
       @Override
       public K getKey() {
@@ -415,7 +429,7 @@ public class CacheWithExpiryPolicyAdapter<K, V> implements Cache<K, V> {
 
       @Override
       public V getValue() {
-        return returnValue(key, v);
+        return _value;
       }
 
       @Override
@@ -431,7 +445,16 @@ public class CacheWithExpiryPolicyAdapter<K, V> implements Cache<K, V> {
     }
   }
 
-  void updateExpiry(ValueAndExtra<V> e, Duration d) {
+  void updateExpiry(K key, ValueAndExtra<V> e, Duration d) {
+    ValueAndExtra<V> _newEntry = new ValueAndExtra<V>(e.value);
+    if (Duration.ZERO.equals(d)) {
+      _newEntry.expiryTime = 1;
+    } else if (Duration.ETERNAL.equals(d)) {
+      _newEntry.expiryTime = Long.MAX_VALUE;
+    } else {
+      _newEntry.expiryTime = System.currentTimeMillis() + d.getTimeUnit().toMillis(d.getDurationAmount());
+    }
+    c2kCache.replace(key, e, _newEntry);
   }
 
   V returnLastValue(ValueAndExtra<V> e) {
@@ -452,7 +475,7 @@ public class CacheWithExpiryPolicyAdapter<K, V> implements Cache<K, V> {
   private void touchEntry(K key, ValueAndExtra<V> e) {
     Duration d = expiryPolicy.getExpiryForAccess();
     if (d != null)          {
-      updateExpiry(e, d);
+      updateExpiry(key, e, d);
     }
   }
 
@@ -465,6 +488,10 @@ public class CacheWithExpiryPolicyAdapter<K, V> implements Cache<K, V> {
   static class ValueAndExtra<V> {
 
     V value;
+
+    /**
+     * If the expiry policy rule returns null, the expiry time is not changed. We need to remember the expiry time.
+     */
     long expiryTime;
 
     public ValueAndExtra(V _value) {
@@ -510,6 +537,9 @@ public class CacheWithExpiryPolicyAdapter<K, V> implements Cache<K, V> {
     @Override
     public long calculateExpiryTime(K _key, ValueAndExtra<V> _value, long _fetchTime, CacheEntry<K, ValueAndExtra<V>> _oldEntry) {
       Duration d;
+      if (_value.expiryTime >= 1) {
+        return _value.expiryTime == 1 ? 0 : _value.expiryTime;
+      }
       if (_oldEntry == null) {
         d = policy.getExpiryForCreation();
       } else {
