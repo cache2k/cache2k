@@ -1366,6 +1366,7 @@ public abstract class BaseCache<E extends Entry, K, T>
     final int hc = modifiedHash(key.hashCode());
     boolean _hasFreshData = false;
     E e;
+    long _previousNextRefreshTime;
     for (;;) {
       e = lookupEntryUnsynchronized(key, hc);
       if (e == null) {
@@ -1382,7 +1383,7 @@ public abstract class BaseCache<E extends Entry, K, T>
           continue;
         }
         _hasFreshData = e.hasFreshData();
-        e.startFetch();
+        _previousNextRefreshTime = e.startFetch();
         break;
       }
     }
@@ -1401,7 +1402,7 @@ public abstract class BaseCache<E extends Entry, K, T>
       _finished = true;
       return _previousValue;
     } finally {
-      e.ensureFetchAbort(_finished);
+      e.ensureFetchAbort(_finished, _previousNextRefreshTime);
     }
   }
 
@@ -1411,6 +1412,7 @@ public abstract class BaseCache<E extends Entry, K, T>
     boolean _hasFreshData = false;
     boolean _newEntry = false;
     E e;
+    long _previousNextRefreshTime;
     for (;;) {
       e = lookupEntryUnsynchronized(key, hc);
       if (e == null) {
@@ -1428,7 +1430,7 @@ public abstract class BaseCache<E extends Entry, K, T>
           continue;
         }
         _hasFreshData = e.hasFreshData();
-        e.startFetch();
+        _previousNextRefreshTime = e.startFetch();
         break;
       }
     }
@@ -1455,7 +1457,7 @@ public abstract class BaseCache<E extends Entry, K, T>
         return null;
       }
     } finally {
-      e.ensureFetchAbort(_finished);
+      e.ensureFetchAbort(_finished, _previousNextRefreshTime);
     }
   }
 
@@ -1471,20 +1473,28 @@ public abstract class BaseCache<E extends Entry, K, T>
 
   protected boolean replace(K key, boolean _compare, T _oldValue, T _newValue) {
     final int hc = modifiedHash(key.hashCode());
+    long _previousNextRefreshTime;
     if (storage == null) {
       E e = lookupEntrySynchronized(key);
-      if (e != null) {
-        synchronized (e) {
-          e.waitForFetch();
-          if (!e.isRemovedState() && e.hasFreshData() && (!_compare || e.equalsValue(_oldValue))) {
-            e.startFetch();
-            long t = System.currentTimeMillis();
-            e.finishFetch(insertOnPut(e, _newValue, t, t));
-            return true;
-          }
-        }
+      if (e == null) {
+        return false;
       }
-      return false;
+      synchronized (e) {
+        e.waitForFetch();
+        if (e.isRemovedState() || !e.hasFreshData() || !(!_compare || e.equalsValue(_oldValue))) {
+          return false;
+        }
+        _previousNextRefreshTime  = e.startFetch();
+      }
+      boolean _finished = false;
+      try {
+        long t = System.currentTimeMillis();
+        e.finishFetch(insertOnPut(e, _newValue, t, t));
+        _finished = true;
+        return true;
+      } finally {
+        e.ensureFetchAbort(_finished, _previousNextRefreshTime);
+      }
     }
     boolean _hasFreshData = false;
     E e;
@@ -1506,7 +1516,7 @@ public abstract class BaseCache<E extends Entry, K, T>
         if (_compare && e.hasFreshData() && !e.equalsValue(_oldValue)) {
           return false;
         }
-        e.startFetch();
+        _previousNextRefreshTime = e.startFetch();
         break;
       }
     }
@@ -1527,7 +1537,7 @@ public abstract class BaseCache<E extends Entry, K, T>
       _finished = true;
       return true;
     } finally {
-      e.ensureFetchAbort(_finished);
+      e.ensureFetchAbort(_finished, _previousNextRefreshTime);
     }
   }
 
@@ -1618,6 +1628,8 @@ public abstract class BaseCache<E extends Entry, K, T>
 
   @Override
   public boolean putIfAbsent(K key, T value) {
+    long _previousNextRefreshTime;
+    long now;
     if (storage == null) {
        int _spinCount = TUNABLE.maximumEntryLockSpins;
       E e;
@@ -1630,15 +1642,22 @@ public abstract class BaseCache<E extends Entry, K, T>
           if (e.isRemovedState()) {
             continue;
           }
-          long t = System.currentTimeMillis();
-          if (e.hasFreshData(t)) {
+          now = System.currentTimeMillis();
+          if (e.hasFreshData(now)) {
             return false;
           }
           synchronized (lock) {
             peekHitNotFreshCnt++;
           }
-          e.nextRefreshTime = insertOnPut(e, value, t, t);
+          _previousNextRefreshTime = e.startFetch();
+        }
+        boolean _finished = false;
+        try {
+          e.finishFetch(insertOnPut(e, value, now, now));
+          _finished = true;
           return true;
+        } finally {
+          e.ensureFetchAbort(_finished, _previousNextRefreshTime);
         }
       }
     }
@@ -1656,26 +1675,33 @@ public abstract class BaseCache<E extends Entry, K, T>
         if (e.hasFreshData(t)) {
           return false;
         }
-        e.startFetch();
+        _previousNextRefreshTime = e.startFetch();
         break;
       }
     }
     if (e.isVirgin()) {
-      long _result = fetchWithStorage(e, false);
-      long now = System.currentTimeMillis();
+      long _result = _previousNextRefreshTime = fetchWithStorage(e, false);
+      now = System.currentTimeMillis();
       if (e.hasFreshData(now, _result)) {
         e.finishFetch(_result);
         return false;
       }
       e.nextRefreshTime = Entry.LOADED_NON_VALID_AND_PUT;
     }
-    e.finishFetch(insertOnPut(e, value, t, t));
-    evictEventually();
-    return true;
+    boolean _finished = false;
+    try {
+      e.finishFetch(insertOnPut(e, value, t, t));
+      _finished = true;
+      evictEventually();
+      return true;
+    } finally {
+      e.ensureFetchAbort(_finished, _previousNextRefreshTime);
+    }
   }
 
   @Override
   public void put(K key, T value) {
+    long _previousNextRefreshTime;
     int _spinCount = TUNABLE.maximumEntryLockSpins;
     E e;
     for (;;) {
@@ -1689,7 +1715,7 @@ public abstract class BaseCache<E extends Entry, K, T>
           e.waitForFetch();
           continue;
         } else {
-          e.startFetch();
+          _previousNextRefreshTime = e.startFetch();
           break;
         }
       }
@@ -1700,7 +1726,7 @@ public abstract class BaseCache<E extends Entry, K, T>
       e.finishFetch(insertOnPut(e, value, t, t));
       _finished = true;
     } finally {
-      e.ensureFetchAbort(_finished);
+      e.ensureFetchAbort(_finished, _previousNextRefreshTime);
     }
     evictEventually();
   }
@@ -2268,6 +2294,23 @@ public abstract class BaseCache<E extends Entry, K, T>
   }
 
   protected final long insertOnPut(E e, T v, long t0, long t) {
+    if (writer != null) {
+      try {
+        CacheEntry<K, T> ce;
+        ce = returnCacheEntry((K) e.getKey(), v, null, t0);
+        writer.write(ce);
+      } catch (RuntimeException ex) {
+        synchronized (lock) {
+          eventuallyAdjustPutNewEntryCount(e);
+        }
+        throw ex;
+      } catch (Exception ex) {
+        synchronized (lock) {
+          eventuallyAdjustPutNewEntryCount(e);
+        }
+        throw new CacheException("writer exception", ex);
+      }
+    }
     e.setLastModification(t0);
     return insert(e, v, t0, t, INSERT_STAT_PUT);
   }
@@ -2300,28 +2343,8 @@ public abstract class BaseCache<E extends Entry, K, T>
     }
     boolean _suppressException =
       _value instanceof ExceptionWrapper && hasSuppressExceptions() && e.getValue() != Entry.INITIAL_VALUE && !e.hasException();
+
     if (!_suppressException) {
-      if (writer != null && _updateStatistics == INSERT_STAT_PUT) {
-        try {
-          CacheEntry<K, T> ce;
-          if (_value instanceof ExceptionWrapper) {
-            ce = returnCacheEntry((K) e.getKey(), null, ((ExceptionWrapper) _value).getException(), t0);
-          } else {
-            ce = returnCacheEntry((K) e.getKey(), _value, null, t0);
-          }
-          writer.write(ce);
-        } catch (RuntimeException ex) {
-          synchronized (lock) {
-            eventuallyAdjustPutNewEntryCount(e);
-          }
-          throw ex;
-        } catch (Exception ex) {
-          synchronized (lock) {
-            eventuallyAdjustPutNewEntryCount(e);
-          }
-          throw new CacheException("writer exception", ex);
-        }
-      }
       e.value = _value;
     }
 

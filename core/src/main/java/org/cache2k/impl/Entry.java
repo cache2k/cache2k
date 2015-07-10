@@ -174,12 +174,14 @@ public class Entry<E extends Entry, K, T>
   /**
    * Starts long operation on entry. Pins the entry in the cache.
    */
-  public void startFetch() {
+  public long startFetch() {
+    long tmp = nextRefreshTime;
     if (isVirgin()) {
       nextRefreshTime = FETCH_IN_PROGRESS_VIRGIN;
     } else {
       nextRefreshTime = FETCH_IN_PROGRESS_NON_VALID;
     }
+    return tmp;
   }
 
   public void finishFetch(long _nextRefreshTime) {
@@ -203,6 +205,20 @@ public class Entry<E extends Entry, K, T>
       synchronized (Entry.this) {
         if (isFetchInProgress()) {
           nextRefreshTime = FETCH_ABORT;
+          notifyAll();
+        }
+      }
+    }
+  }
+
+  public void ensureFetchAbort(boolean _finished, long _previousNextRefreshTime) {
+    if (_finished) {
+      return;
+    }
+    if (isFetchInProgress()) {
+      synchronized (Entry.this) {
+        if (isFetchInProgress()) {
+          nextRefreshTime = _previousNextRefreshTime;
           notifyAll();
         }
       }
