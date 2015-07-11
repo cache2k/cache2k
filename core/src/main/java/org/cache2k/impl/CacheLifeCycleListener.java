@@ -29,7 +29,7 @@ import org.cache2k.CacheManager;
  * @author Jens Wilke; created: 2013-07-01
  */
 public interface CacheLifeCycleListener {
-  
+
   void cacheCreated(CacheManager cm, Cache c);
 
   void cacheDestroyed(CacheManager cm, Cache c);

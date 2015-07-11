@@ -122,7 +122,7 @@ public interface CacheInfoMXBean {
   long getSuppressedExceptionCnt();
 
   /**
-   * The percentage of cache accesses the cache delivered data directly instead of fetching it.
+   * The percentage of cache accesses the cache delivered data.
    */
   double getHitRate();
 
