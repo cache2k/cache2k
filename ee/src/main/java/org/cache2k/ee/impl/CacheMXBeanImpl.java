@@ -35,7 +35,7 @@ public class CacheMXBeanImpl implements CacheMXBean {
 
   BaseCache cache;
 
-  CacheMXBeanImpl(BaseCache cache) {
+  public CacheMXBeanImpl(BaseCache cache) {
     this.cache = cache;
   }
 

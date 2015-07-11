@@ -29,6 +29,7 @@ import org.cache2k.CacheWriter;
 import org.cache2k.EntryExpiryCalculator;
 import org.cache2k.ExceptionPropagator;
 import org.cache2k.RefreshController;
+import org.cache2k.impl.CacheLifeCycleListener;
 import org.cache2k.impl.CacheManagerImpl;
 
 import javax.cache.Cache;
@@ -51,6 +52,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Properties;
+import java.util.ServiceLoader;
 import java.util.Set;
 import java.util.WeakHashMap;
 
@@ -58,6 +60,16 @@ import java.util.WeakHashMap;
  * @author Jens Wilke; created: 2015-03-27
  */
 public class Cache2kManagerAdapter implements CacheManager {
+
+  static JCacheJmxSupport jmxSupport;
+
+  static {
+    for (CacheLifeCycleListener l : ServiceLoader.load(CacheLifeCycleListener.class)) {
+      if (l instanceof JCacheJmxSupport) {
+        jmxSupport = (JCacheJmxSupport) l;
+      }
+    }
+  }
 
   org.cache2k.CacheManager manager;
   Cache2kCachingProvider provider;
@@ -207,7 +219,7 @@ public class Cache2kManagerAdapter implements CacheManager {
     }
     b.entryExpiryCalculator(new CacheWithExpiryPolicyAdapter.ExpiryCalculatorAdapter(_policy));
     b.manager(manager);
-    synchronized (((CacheManagerImpl)manager).getLockObject()) {
+    synchronized (((CacheManagerImpl) manager).getLockObject()) {
       Cache _jsr107cache = name2adapter.get(_cacheName);
       if (_jsr107cache != null && !_jsr107cache.isClosed()) {
         throw new CacheException("cache already existing with name: " + _cacheName);
@@ -227,6 +239,9 @@ public class Cache2kManagerAdapter implements CacheManager {
       c.expiryPolicy = _policy;
       c.c2kCache = ca.cache;
       name2adapter.put(c.getName(), c);
+      if (cc.isStatisticsEnabled()) {
+        enableStatistics(c.getName(), true);
+      }
       return c;
     }
   }
@@ -255,6 +270,14 @@ public class Cache2kManagerAdapter implements CacheManager {
 
       return null;
     }
+  }
+
+  private Cache2kCacheAdapter getAdapter(String _name) {
+    Cache ca = name2adapter.get(_name);
+    if (ca instanceof CacheWithExpiryPolicyAdapter) {
+      return (Cache2kCacheAdapter) ((CacheWithExpiryPolicyAdapter) ca).cache;
+    }
+    return (Cache2kCacheAdapter) ca;
   }
 
   private void checkNonNullCacheName(String _cacheName) {
@@ -304,6 +327,17 @@ public class Cache2kManagerAdapter implements CacheManager {
   public void enableStatistics(String _cacheName, boolean enabled) {
     checkClosed();
     checkNonNullCacheName(_cacheName);
+    if (enabled) {
+      Cache2kCacheAdapter ca = getAdapter(_cacheName);
+      if (ca != null) {
+        synchronized (ca) {
+          if (!ca.statisticsEnabled) {
+            jmxSupport.registerCache(ca.cache);
+            ca.statisticsEnabled = true;
+          }
+        }
+      }
+    }
   }
 
   @Override

@@ -49,6 +49,7 @@ public class Cache2kCacheAdapter<K, V> implements javax.cache.Cache<K, V> {
   BaseCache<?, K, V> cacheImpl;
   boolean storeByValue;
   boolean readThrough = false;
+  boolean statisticsEnabled = false;
 
   /** Null, if no complete configuration is effective */
   CompleteConfiguration<K, V> completeConfiguration;
