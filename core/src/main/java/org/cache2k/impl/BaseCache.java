@@ -2801,7 +2801,7 @@ public abstract class BaseCache<E extends Entry, K, T>
     synchronized (lock) {
       long t = System.currentTimeMillis();
       if (info != null &&
-          (info.creationTime + info.creationDeltaMs * 17 + 333 > t)) {
+          (info.creationTime + info.creationDeltaMs * TUNABLE.minimumStatisticsCreationTimeDeltaFactor + TUNABLE.minimumStatisticsCreationDeltaMillis > t)) {
         return info;
       }
       info = getLatestInfo(t);
@@ -3145,6 +3145,18 @@ public abstract class BaseCache<E extends Entry, K, T>
      * suppresses the timer usage completely.
      */
     public long sharpExpirySafetyGapMillis = 666;
+
+    /**
+     * Some statistic values need processing time to gather and compute it. This is a safety
+     * time delta, to ensure that the machine is not busy due to statistics generation. Default: 333.
+     */
+    public int minimumStatisticsCreationDeltaMillis = 333;
+
+    /**
+     *  Factor of the statistics creation time, that determines the time difference when new
+     *  statistics are generated.
+     */
+    public int minimumStatisticsCreationTimeDeltaFactor = 17;
 
 
   }
