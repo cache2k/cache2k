@@ -2955,7 +2955,7 @@ public abstract class BaseCache<E extends Entry, K, T>
     public long getKeyMutationCnt() { return keyMutationCount; }
     public double getDataHitRate() {
       long cnt = getReadUsageCnt();
-      return cnt == 0 ? 100 : (cnt - missCnt) * 100D / cnt;
+      return cnt == 0 ? 0.0 : ((cnt - missCnt) * 100D / cnt);
     }
     public String getDataHitString() { return percentString(getDataHitRate()); }
     public double getEntryHitRate() { return usageCnt == 0 ? 100 : (usageCnt - newEntryCnt + putCnt) * 100D / usageCnt; }
@@ -3019,7 +3019,7 @@ public abstract class BaseCache<E extends Entry, K, T>
       _metric0 = Math.min(100, _metric0);
       return _metric0;
     }
-    public double getMillisPerFetch() { return fetchCnt == 0 ? -1 : (fetchMillis * 1D / fetchCnt); }
+    public double getMillisPerFetch() { return fetchCnt == 0 ? 0 : (fetchMillis * 1D / fetchCnt); }
     public long getFetchMillis() { return fetchMillis; }
     public int getCollisionCnt() { return collisionInfo.collisionCnt; }
     public int getCollisionSlotCnt() { return collisionInfo.collisionSlotCnt; }
