@@ -25,6 +25,7 @@ package org.cache2k.impl;
 import org.cache2k.BulkCacheSource;
 import org.cache2k.CacheEntry;
 import org.cache2k.CacheException;
+import org.cache2k.CacheManager;
 import org.cache2k.CacheMisconfigurationException;
 import org.cache2k.CacheWriter;
 import org.cache2k.ClosableIterator;
@@ -2828,6 +2829,11 @@ public abstract class BaseCache<E extends Entry, K, T>
       return "-";
     }
     return formatMillis(t);
+  }
+
+  @Override
+  public CacheManager getCacheManager() {
+    return manager;
   }
 
   /**

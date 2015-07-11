@@ -276,6 +276,11 @@ public interface Cache<K, T> extends KeyValueSource<K,T>, Iterable<CacheEntry<K,
   public abstract void close();
 
   /**
+   * Return the cache manager for this cache instance.
+   */
+  public CacheManager getCacheManager();
+
+  /**
    * True if cache was closed or closing is in progress.
    */
   public abstract boolean isClosed();
