@@ -1412,6 +1412,11 @@ public abstract class BaseCache<E extends Entry, K, T>
       }
       if (_hasFreshData) {
         _previousValue = (T) e.getValue();
+        recordHit(e);
+      } else {
+        synchronized (lock) {
+          peekMissCnt++;
+        }
       }
       long t = System.currentTimeMillis();
       e.finishFetch(insertOnPut(e, _value, t, t, _previousNextRefreshTime));
