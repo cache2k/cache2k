@@ -156,6 +156,8 @@ public abstract class BaseCache<E extends Entry, K, T>
   protected long putCnt = 0;
   protected long putNewEntryCnt = 0;
   protected long removedCnt = 0;
+  /** Number of entries removed by clear. */
+  protected long clearedCnt = 0;
   protected long expiredKeptCnt = 0;
   protected long expiredRemoveCnt = 0;
   protected long evictedCnt = 0;
@@ -697,7 +699,7 @@ public abstract class BaseCache<E extends Entry, K, T>
 
   protected final void clearLocalCache() {
     iterateAllEntriesRemoveAndCancelTimer();
-    removedCnt += getLocalSize();
+    clearedCnt += getLocalSize();
     initializeHeapCache();
     clearedTime = System.currentTimeMillis();
     touchedTime = clearedTime;
@@ -1122,6 +1124,8 @@ public abstract class BaseCache<E extends Entry, K, T>
    */
   protected E lookupEntryUnsynchronized(K key, int hc) { return null; }
 
+  protected E lookupEntryUnsynchronizedNoHitRecord(K key, int hc) { return null; }
+
   @Override
   public T get(K key) {
     return (T) returnValue(getEntryInternal(key));
@@ -1412,7 +1416,9 @@ public abstract class BaseCache<E extends Entry, K, T>
       }
       if (_hasFreshData) {
         _previousValue = (T) e.getValue();
-        recordHit(e);
+        synchronized (lock) {
+          recordHit(e);
+        }
       } else {
         synchronized (lock) {
           peekMissCnt++;
@@ -1628,6 +1634,10 @@ public abstract class BaseCache<E extends Entry, K, T>
 
   @Override
   public boolean contains(K key) {
+    if (storage == null) {
+      E e = lookupEntrySynchronizedNoHitRecord(key);
+      return e != null && e.hasFreshData();
+    }
     E e = peekEntryInternal(key);
     if (e != null) {
       return true;
@@ -1886,6 +1896,9 @@ public abstract class BaseCache<E extends Entry, K, T>
               boolean f = e.hasFreshData();
               if (f) {
                 _value = (T) e.getValue();
+                recordHit(e);
+              } else {
+                peekMissCnt++;
               }
               if (removeEntry(e)) {
                 removedCnt++;
@@ -1894,6 +1907,9 @@ public abstract class BaseCache<E extends Entry, K, T>
             }
           }
         }
+      }
+      synchronized (lock) {
+        peekMissCnt++;
       }
       return null;
     } // end if (storage == null) ....
@@ -2071,7 +2087,18 @@ public abstract class BaseCache<E extends Entry, K, T>
     return e;
   }
 
-  protected E lookupEntry(K key, int hc) {
+  protected E lookupEntrySynchronizedNoHitRecord(K key) {
+    int hc = modifiedHash(key.hashCode());
+    E e = lookupEntryUnsynchronizedNoHitRecord(key, hc);
+    if (e == null) {
+      synchronized (lock) {
+        e = lookupEntryNoHitRecord(key, hc);
+      }
+    }
+    return e;
+  }
+
+  protected final E lookupEntry(K key, int hc) {
     E e = Hash.lookup(mainHash, key, hc);
     if (e != null) {
       recordHit(e);
@@ -2082,6 +2109,20 @@ public abstract class BaseCache<E extends Entry, K, T>
       refreshHitCnt++;
       mainHash = mainHashCtrl.insert(mainHash, e);
       recordHit(e);
+      return e;
+    }
+    return null;
+  }
+
+  protected final E lookupEntryNoHitRecord(K key, int hc) {
+    E e = Hash.lookup(mainHash, key, hc);
+    if (e != null) {
+      return e;
+    }
+    e = refreshHashCtrl.remove(refreshHash, key, hc);
+    if (e != null) {
+      refreshHitCnt++;
+      mainHash = mainHashCtrl.insert(mainHash, e);
       return e;
     }
     return null;
@@ -2782,8 +2823,8 @@ public abstract class BaseCache<E extends Entry, K, T>
             newEntryCnt - virginEvictCnt,
             getFetchesBecauseOfNewEntries() + getFetchesInFlight() + putNewEntryCnt + loadNonFreshCnt + loadHitCnt)
         .checkLessOrEquals("getFetchesInFlight() <= 100", getFetchesInFlight(), 100)
-        .checkEquals("newEntryCnt == getSize() + evictedCnt + expiredRemoveCnt + removeCnt", newEntryCnt, getLocalSize() + evictedCnt + expiredRemoveCnt + removedCnt)
-        .checkEquals("newEntryCnt == getSize() + evictedCnt + getExpiredCnt() - expiredKeptCnt + removeCnt", newEntryCnt, getLocalSize() + evictedCnt + getExpiredCnt() - expiredKeptCnt + removedCnt)
+        .checkEquals("newEntryCnt == getSize() + evictedCnt + expiredRemoveCnt + removeCnt + clearedCnt", newEntryCnt, getLocalSize() + evictedCnt + expiredRemoveCnt + removedCnt + clearedCnt)
+        .checkEquals("newEntryCnt == getSize() + evictedCnt + getExpiredCnt() - expiredKeptCnt + removeCnt + clearedCnt", newEntryCnt, getLocalSize() + evictedCnt + getExpiredCnt() - expiredKeptCnt + removedCnt + clearedCnt)
         .checkEquals("mainHashCtrl.size == Hash.calcEntryCount(mainHash)", mainHashCtrl.size, Hash.calcEntryCount(mainHash))
         .checkEquals("refreshHashCtrl.size == Hash.calcEntryCount(refreshHash)", refreshHashCtrl.size, Hash.calcEntryCount(refreshHash))
         .check("!!evictionNeeded | (getSize() <= maxSize)", !!evictionNeeded | (getLocalSize() <= maxSize))
@@ -2939,7 +2980,7 @@ public abstract class BaseCache<E extends Entry, K, T>
     public long getStorageHitCnt() { return loadHitCnt; }
     public long getStorageLoadCnt() { return storageLoadCnt; }
     public long getStorageMissCnt() { return storageMissCnt; }
-    public long getReadUsageCnt() { return usageCnt - putCnt; }
+    public long getReadUsageCnt() { return usageCnt - putCnt - removedCnt; }
     public long getUsageCnt() { return usageCnt; }
     public long getMissCnt() { return missCnt; }
     public long getNewEntryCnt() { return newEntryCnt; }
