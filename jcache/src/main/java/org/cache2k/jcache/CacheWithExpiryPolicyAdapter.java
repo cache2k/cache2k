@@ -24,6 +24,7 @@ package org.cache2k.jcache;
 
 import org.cache2k.CacheEntry;
 import org.cache2k.EntryExpiryCalculator;
+import org.cache2k.impl.BaseCache;
 
 import javax.cache.Cache;
 import javax.cache.CacheManager;
@@ -287,15 +288,41 @@ public class CacheWithExpiryPolicyAdapter<K, V> implements Cache<K, V> {
     return returnLastValue(cache.getAndRemove(key));
   }
 
+  final CacheEntry<K, ValueAndExtra<V>> DUMMY_ENTRY = new CacheEntry<K, ValueAndExtra<V>>() {
+    @Override
+    public K getKey() {
+      return null;
+    }
+
+    @Override
+    public ValueAndExtra<V> getValue() {
+      return null;
+    }
+
+    @Override
+    public Throwable getException() {
+      return null;
+    }
+
+    @Override
+    public long getLastModification() {
+      return 0;
+    }
+  };
+
   @Override
   public boolean replace(K key, V oldValue, V newValue) {
     checkClosed();
-    ValueAndExtra<V> e = c2kCache.peek(key);
-    boolean b = c2kCache.replace(key, new ValueAndExtra<V>(oldValue), new ValueAndExtra<V>(newValue));
-    if (!b && e != null) {
-      touchEntry(key, e);
+    CacheEntry<K, ValueAndExtra<V>> e =
+        ((BaseCache) c2kCache).replaceOrGet(
+            key,
+            new ValueAndExtra<V>(oldValue),
+            new ValueAndExtra<V>(newValue),
+            DUMMY_ENTRY);
+    if (e != null && e != DUMMY_ENTRY) {
+      touchEntry(key, e.getValue());
     }
-    return b;
+    return e == null;
   }
 
   @Override

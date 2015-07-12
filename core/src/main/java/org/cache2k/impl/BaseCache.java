@@ -1490,35 +1490,56 @@ public abstract class BaseCache<E extends Entry, K, T>
 
   @Override
   public boolean replace(K key, T _newValue) {
-    return replace(key, false, null, _newValue);
+    return replace(key, false, null, _newValue) == null;
   }
 
   @Override
   public boolean replace(K key, T _oldValue, T _newValue) {
-    return replace(key, true, _oldValue, _newValue);
+    return replace(key, true, _oldValue, _newValue) == null;
   }
 
-  protected boolean replace(K key, boolean _compare, T _oldValue, T _newValue) {
+  public CacheEntry<K, T> replaceOrGet(K key, T _oldValue, T _newValue, CacheEntry<K, T> _dummyEntry) {
+    E e = replace(key, true, _oldValue, _newValue);
+    if (e == DUMMY_ENTRY_NO_REPLACE) {
+      return _dummyEntry;
+    } else if (e != null) {
+      return returnEntry(e);
+    }
+    return null;
+  }
+
+  final Entry DUMMY_ENTRY_NO_REPLACE = new Entry();
+
+  protected E replace(K key, boolean _compare, T _oldValue, T _newValue) {
     final int hc = modifiedHash(key.hashCode());
     long _previousNextRefreshTime;
     if (storage == null) {
       E e = lookupEntrySynchronized(key);
       if (e == null) {
-        return false;
+        synchronized (lock) {
+          peekMissCnt++;
+        }
+        return (E) DUMMY_ENTRY_NO_REPLACE;
       }
       synchronized (e) {
         e.waitForFetch();
-        if (e.isRemovedState() || !e.hasFreshData() || !(!_compare || e.equalsValue(_oldValue))) {
-          return false;
+        if (e.isRemovedState() || !e.hasFreshData()) {
+          return (E) DUMMY_ENTRY_NO_REPLACE;
+        }
+        if (_compare && !e.equalsValue(_oldValue)) {
+          return e;
         }
         _previousNextRefreshTime  = e.startFetch();
       }
       boolean _finished = false;
+      synchronized (lock) {
+        recordHit(e);
+      }
       try {
         long t = System.currentTimeMillis();
         e.finishFetch(insertOnPut(e, _newValue, t, t, _previousNextRefreshTime));
         _finished = true;
-        return true;
+        return null;
       } finally {
         e.ensureFetchAbort(_finished, _previousNextRefreshTime);
       }
@@ -1540,8 +1561,11 @@ public abstract class BaseCache<E extends Entry, K, T>
         if (e.isRemovedState()) {
           continue;
         }
-        if (_compare && e.hasFreshData() && !e.equalsValue(_oldValue)) {
-          return false;
+        if (!e.hasFreshData()) {
+          return (E) DUMMY_ENTRY_NO_REPLACE;
+        }
+        if (_compare && !e.equalsValue(_oldValue)) {
+          return e;
         }
         _previousNextRefreshTime = e.startFetch();
         break;
@@ -1552,17 +1576,22 @@ public abstract class BaseCache<E extends Entry, K, T>
       if (e.isVirgin()) {
         long t = fetchWithStorage(e, false, _previousNextRefreshTime);
         _hasFreshData = e.hasFreshData(System.currentTimeMillis(), t);
-        if (!_hasFreshData || (_compare && !e.equalsValue(_oldValue))) {
+        if (!_hasFreshData) {
           e.finishFetch(t);
           _finished = true;
-          return false;
+          return (E) DUMMY_ENTRY_NO_REPLACE;
+        }
+        if (_compare && !e.equalsValue(_oldValue)) {
+          e.finishFetch(t);
+          _finished = true;
+          return e;
         }
       }
 
       long t = System.currentTimeMillis();
       e.finishFetch(insertOnPut(e, _newValue, t, t, _previousNextRefreshTime));
       _finished = true;
-      return true;
+      return null;
     } finally {
       e.ensureFetchAbort(_finished, _previousNextRefreshTime);
     }
