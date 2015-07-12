@@ -133,6 +133,11 @@ public interface Cache<K, T> extends KeyValueSource<K,T>, Iterable<CacheEntry<K,
    */
   public abstract void put(K key, T value);
 
+  /**
+   * Same as put, if there is no value mapped to the key in the cache.
+   *
+   * <p>If a mapping is present, the cache does not account this call as access.</p>
+   */
   public abstract boolean putIfAbsent(K key, T value);
 
   /**

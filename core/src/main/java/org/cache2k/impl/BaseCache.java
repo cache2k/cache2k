@@ -1670,7 +1670,7 @@ public abstract class BaseCache<E extends Entry, K, T>
         if (_spinCount-- <= 0) {
           throw new CacheLockSpinsExceededError();
         }
-        e = lookupOrNewEntrySynchronized(key);
+        e = lookupOrNewEntrySynchronizedNoHitRecord(key);
         synchronized (e) {
           if (e.isRemovedState()) {
             continue;
@@ -1680,7 +1680,10 @@ public abstract class BaseCache<E extends Entry, K, T>
             return false;
           }
           synchronized (lock) {
-            peekHitNotFreshCnt++;
+            if (!e.isVirgin()) {
+              recordHit(e);
+              peekHitNotFreshCnt++;
+            }
           }
           _previousNextRefreshTime = e.startFetch();
         }
@@ -2053,6 +2056,21 @@ public abstract class BaseCache<E extends Entry, K, T>
       synchronized (lock) {
         checkClosed();
         e = lookupEntry(key, hc);
+        if (e == null) {
+          e = newEntry(key, hc);
+        }
+      }
+    }
+    return e;
+  }
+
+  protected E lookupOrNewEntrySynchronizedNoHitRecord(K key) {
+    int hc = modifiedHash(key.hashCode());
+    E e = lookupEntryUnsynchronizedNoHitRecord(key, hc);
+    if (e == null) {
+      synchronized (lock) {
+        checkClosed();
+        e = lookupEntryNoHitRecord(key, hc);
         if (e == null) {
           e = newEntry(key, hc);
         }
