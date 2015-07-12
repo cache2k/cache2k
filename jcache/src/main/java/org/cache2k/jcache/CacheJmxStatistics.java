@@ -22,6 +22,7 @@ package org.cache2k.jcache;
  * #L%
  */
 
+import org.cache2k.impl.BaseCache;
 import org.cache2k.jmx.CacheInfoMXBean;
 
 import javax.cache.management.CacheStatisticsMXBean;
@@ -31,10 +32,15 @@ import javax.cache.management.CacheStatisticsMXBean;
  */
 public class CacheJmxStatistics implements CacheStatisticsMXBean {
 
-  CacheInfoMXBean stats;
+  BaseCache cache;
+  boolean exactStatistics = true;
 
-  public CacheJmxStatistics(CacheInfoMXBean stats) {
-    this.stats = stats;
+  BaseCache.Info getInfo() {
+    return exactStatistics ? cache.getLatestInfo() : cache.getInfo();
+  }
+
+  public CacheJmxStatistics(BaseCache _cache) {
+    cache = _cache;
   }
 
   @Override
@@ -44,47 +50,49 @@ public class CacheJmxStatistics implements CacheStatisticsMXBean {
 
   @Override
   public long getCacheHits() {
-    return stats.getUsageCnt() - stats.getMissCnt();
+    BaseCache.Info inf = getInfo();
+    return inf.getReadUsageCnt() - inf.getMissCnt();
   }
 
   @Override
   public float getCacheHitPercentage() {
-    return (float) stats.getHitRate();
+    return (float) getInfo().getDataHitRate();
   }
 
   @Override
   public long getCacheMisses() {
-    return stats.getMissCnt();
+    return getInfo().getMissCnt();
   }
 
   @Override
   public float getCacheMissPercentage() {
-    return 0;
+    BaseCache.Info inf = getInfo();
+    return inf.getReadUsageCnt() == 0 ? 0.0F : (100.0F * inf.getMissCnt() / inf.getReadUsageCnt());
   }
 
   @Override
   public long getCacheGets() {
-    return stats.getUsageCnt();
+    return getInfo().getReadUsageCnt();
   }
 
   @Override
   public long getCachePuts() {
-    return stats.getPutCnt();
+    return getInfo().getPutCnt();
   }
 
   @Override
   public long getCacheRemovals() {
-    return 0;
+    return getInfo().getRemovedCnt();
   }
 
   @Override
   public long getCacheEvictions() {
-    return stats.getEvictedCnt();
+    return getInfo().getEvictedCnt();
   }
 
   @Override
   public float getAverageGetTime() {
-    return (float) stats.getMillisPerFetch();
+    return (float) getInfo().getMillisPerFetch();
   }
 
   @Override

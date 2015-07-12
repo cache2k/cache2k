@@ -571,4 +571,8 @@ public class CacheWithExpiryPolicyAdapter<K, V> implements Cache<K, V> {
     }
   }
 
+  public String toString() {
+    return c2kCache.toString();
+  }
+
 }

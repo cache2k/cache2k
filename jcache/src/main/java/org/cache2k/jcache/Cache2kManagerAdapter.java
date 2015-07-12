@@ -28,7 +28,6 @@ import org.cache2k.CacheSource;
 import org.cache2k.CacheWriter;
 import org.cache2k.EntryExpiryCalculator;
 import org.cache2k.ExceptionPropagator;
-import org.cache2k.RefreshController;
 import org.cache2k.impl.CacheLifeCycleListener;
 import org.cache2k.impl.CacheManagerImpl;
 
@@ -330,7 +329,7 @@ public class Cache2kManagerAdapter implements CacheManager {
     if (enabled) {
       Cache2kCacheAdapter ca = getAdapter(_cacheName);
       if (ca != null) {
-        synchronized (ca) {
+        synchronized (ca.cache) {
           if (!ca.statisticsEnabled) {
             jmxSupport.registerCache(ca.cache);
             ca.statisticsEnabled = true;

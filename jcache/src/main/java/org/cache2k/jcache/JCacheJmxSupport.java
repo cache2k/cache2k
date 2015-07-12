@@ -51,7 +51,7 @@ public class JCacheJmxSupport implements CacheLifeCycleListener {
       String _name = createStatisticsObjectName(c);
       try {
          mbs.registerMBean(
-           new CacheJmxStatistics(new org.cache2k.ee.impl.CacheMXBeanImpl((BaseCache) c)),
+           new CacheJmxStatistics((BaseCache) c),
            new ObjectName(_name));
       } catch (Exception e) {
         throw new CacheUsageExcpetion("Error registering JMX bean, name='" + _name + "'", e);
