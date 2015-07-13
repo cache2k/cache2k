@@ -867,13 +867,29 @@ public abstract class BaseCache<E extends Entry, K, T>
   }
 
   @Override
+  public void removeAll() {
+    ClosableIterator<E> it;
+    if (storage == null) {
+      synchronized (lock) {
+        it = new IteratorFilterFresh((ClosableIterator<E>) iterateAllHeapEntries());
+      }
+    } else {
+      it = (ClosableIterator<E>) storage.iterateAll();
+    }
+    while (it.hasNext()) {
+      E e = it.next();
+      remove((K) e.getKey());
+    }
+  }
+
+  @Override
   public ClosableIterator<CacheEntry<K, T>> iterator() {
     if (storage == null) {
       synchronized (lock) {
-        return new IteratorFilterEntry2Entry(iterateAllHeapEntries(), true);
+        return new IteratorFilterEntry2Entry((ClosableIterator<E>) iterateAllHeapEntries(), true);
       }
     } else {
-      return new IteratorFilterEntry2Entry(storage.iterateAll(), false);
+      return new IteratorFilterEntry2Entry((ClosableIterator<E>) storage.iterateAll(), false);
     }
   }
 
@@ -883,14 +899,14 @@ public abstract class BaseCache<E extends Entry, K, T>
    */
   class IteratorFilterEntry2Entry implements ClosableIterator<CacheEntry<K, T>> {
 
-    ClosableIterator<Entry> iterator;
-    Entry entry;
+    ClosableIterator<E> iterator;
+    E entry;
     CacheEntry<K, T> lastEntry;
     boolean filter = true;
 
-    IteratorFilterEntry2Entry(ClosableIterator<Entry> it) { iterator = it; }
+    IteratorFilterEntry2Entry(ClosableIterator<E> it) { iterator = it; }
 
-    IteratorFilterEntry2Entry(ClosableIterator<Entry> it, boolean _filter) {
+    IteratorFilterEntry2Entry(ClosableIterator<E> it, boolean _filter) {
       iterator = it;
       filter = _filter;
     }
@@ -910,7 +926,7 @@ public abstract class BaseCache<E extends Entry, K, T>
         return false;
       }
       while (iterator.hasNext()) {
-        Entry e = iterator.next();
+        E e = iterator.next();
         if (!filter || e.hasFreshData()) {
           entry = e;
           return true;
@@ -934,6 +950,7 @@ public abstract class BaseCache<E extends Entry, K, T>
       if (entry == null && !hasNext()) {
         throw new NoSuchElementException("not available");
       }
+      recordHitLocked(entry);
       lastEntry = returnEntry(entry);
       entry = null;
       return lastEntry;
@@ -946,6 +963,70 @@ public abstract class BaseCache<E extends Entry, K, T>
       }
       BaseCache.this.remove((K) lastEntry.getKey());
     }
+  }
+
+  /**
+   * Filter out non valid entries and wrap each entry with a cache
+   * entry object.
+   */
+  class IteratorFilterFresh implements ClosableIterator<E> {
+
+    ClosableIterator<E> iterator;
+    E entry;
+    CacheEntry<K, T> lastEntry;
+    boolean filter = true;
+
+    IteratorFilterFresh(ClosableIterator<E> it) { iterator = it; }
+
+    /**
+     * Between hasNext() and next() an entry may be evicted or expired.
+     * In practise we have to deliver a next entry if we return hasNext() with
+     * true, furthermore, there should be no big gap between the calls to
+     * hasNext() and next().
+     */
+    @Override
+    public boolean hasNext() {
+      if (entry != null) {
+        return true;
+      }
+      if (iterator == null) {
+        return false;
+      }
+      while (iterator.hasNext()) {
+        E e = iterator.next();
+        if (e.hasFreshData()) {
+          entry = e;
+          return true;
+        }
+      }
+      entry = null;
+      close();
+      return false;
+    }
+
+    @Override
+    public void close() {
+      if (iterator != null) {
+        iterator.close();
+        iterator = null;
+      }
+    }
+
+    @Override
+    public E next() {
+      if (entry == null && !hasNext()) {
+        throw new NoSuchElementException("not available");
+      }
+      E tmp = entry;
+      entry = null;
+      return tmp;
+    }
+
+    @Override
+    public void remove() {
+      throw new UnsupportedOperationException();
+    }
+
   }
 
   protected static void removeFromList(final Entry e) {
@@ -1125,6 +1206,12 @@ public abstract class BaseCache<E extends Entry, K, T>
   protected E lookupEntryUnsynchronized(K key, int hc) { return null; }
 
   protected E lookupEntryUnsynchronizedNoHitRecord(K key, int hc) { return null; }
+
+  protected void recordHitLocked(E e) {
+    synchronized (lock) {
+      recordHit(e);
+    }
+  }
 
   @Override
   public T get(K key) {
@@ -1416,9 +1503,7 @@ public abstract class BaseCache<E extends Entry, K, T>
       }
       if (_hasFreshData) {
         _previousValue = (T) e.getValue();
-        synchronized (lock) {
-          recordHit(e);
-        }
+        recordHitLocked(e);
       } else {
         synchronized (lock) {
           peekMissCnt++;
@@ -1510,6 +1595,9 @@ public abstract class BaseCache<E extends Entry, K, T>
 
   final Entry DUMMY_ENTRY_NO_REPLACE = new Entry();
 
+  /**
+   * replace if value matches. if value not matches, return the existing entry or the dummy entry.
+   */
   protected E replace(K key, boolean _compare, T _oldValue, T _newValue) {
     final int hc = modifiedHash(key.hashCode());
     long _previousNextRefreshTime;
@@ -1532,9 +1620,7 @@ public abstract class BaseCache<E extends Entry, K, T>
         _previousNextRefreshTime  = e.startFetch();
       }
       boolean _finished = false;
-      synchronized (lock) {
-        recordHit(e);
-      }
+      recordHitLocked(e);
       try {
         long t = System.currentTimeMillis();
         e.finishFetch(insertOnPut(e, _newValue, t, t, _previousNextRefreshTime));

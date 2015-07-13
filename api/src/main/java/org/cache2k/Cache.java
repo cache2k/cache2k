@@ -245,6 +245,8 @@ public interface Cache<K, T> extends KeyValueSource<K,T>, Iterable<CacheEntry<K,
   @Override
   ClosableIterator<CacheEntry<K, T>> iterator();
 
+  public abstract void removeAll();
+
   /**
    * Remove persistent entries, that are not longer needed. Only has an effect
    * if a storage is defined.

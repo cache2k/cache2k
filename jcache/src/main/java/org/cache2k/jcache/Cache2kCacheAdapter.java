@@ -195,9 +195,7 @@ public class Cache2kCacheAdapter<K, V> implements javax.cache.Cache<K, V> {
   @Override
   public void removeAll() {
     checkClosed();
-    for (CacheEntry<K, V> e : cache) {
-      cache.remove(e.getKey());
-    }
+    cache.removeAll();
   }
 
   @Override

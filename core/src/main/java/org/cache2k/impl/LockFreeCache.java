@@ -29,6 +29,14 @@ public abstract class LockFreeCache<E extends Entry, K, T>
   extends BaseCache<E, K, T> {
 
   /**
+   * No locking needed.
+   */
+  @Override
+  protected final void recordHitLocked(E e) {
+    recordHit(e);
+  }
+
+  /**
    * First lookup in the hash unsynchronized, if missed, do synchronize and
    * try again.
    */
