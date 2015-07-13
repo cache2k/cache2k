@@ -181,6 +181,7 @@ public class Cache2kManagerAdapter implements CacheManager {
       throws IllegalArgumentException {
     CacheBuilder b = CacheBuilder.newCache(cc.getKeyType(), CacheWithExpiryPolicyAdapter.ValueAndExtra.class);
     b.name(_cacheName);
+    b.sharpExpiry(true);
     b.exceptionPropagator(new ExceptionPropagator() {
       @Override
       public void propagateException(String _additionalMessage, Throwable _originalException) {

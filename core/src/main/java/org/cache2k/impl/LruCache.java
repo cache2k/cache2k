@@ -40,8 +40,10 @@ public class LruCache<K, T> extends BaseCache<LruCache.Entry, K, T> {
 
   @Override
   protected void recordHit(Entry e) {
-    removeEntryFromReplacementList(e);
-    insertInList(head, e);
+    if (!e.isRemovedFromReplacementList()) {
+      removeEntryFromReplacementList(e);
+      insertInList(head, e);
+    }
     hitCnt++;
   }
 

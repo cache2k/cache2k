@@ -154,6 +154,7 @@ public abstract class BaseCache<E extends Entry, K, T>
 
   protected long keyMutationCount = 0;
   protected long putCnt = 0;
+  protected long putButExpiredCnt = 0;
   protected long putNewEntryCnt = 0;
   protected long removedCnt = 0;
   /** Number of entries removed by clear. */
@@ -927,7 +928,12 @@ public abstract class BaseCache<E extends Entry, K, T>
       }
       while (iterator.hasNext()) {
         E e = iterator.next();
-        if (!filter || e.hasFreshData()) {
+        if (filter) {
+          if (e.hasFreshData()) {
+            entry = e;
+            return true;
+          }
+        } else {
           entry = e;
           return true;
         }
@@ -1530,11 +1536,17 @@ public abstract class BaseCache<E extends Entry, K, T>
       if (e == null) {
         synchronized (lock) {
           e = lookupEntry(key, hc);
-          if (e == null) {
+          if (e == null && storage != null) {
             e = newEntry(key, hc);
             _newEntry = true;
           }
         }
+      }
+      if (e == null) {
+        synchronized (lock) {
+          peekMissCnt++;
+        }
+        return null;
       }
       synchronized (e) {
         e.waitForFetch();
@@ -1554,15 +1566,17 @@ public abstract class BaseCache<E extends Entry, K, T>
       }
       long t = System.currentTimeMillis();
       if (_hasFreshData) {
+        recordHitLocked(e);
         T _previousValue = (T) e.getValue();
         e.finishFetch(insertOnPut(e, _value, t, t, _previousNextRefreshTime));
         _finished = true;
         return _previousValue;
       } else {
-        if (_newEntry) {
-          synchronized (lock) {
+        synchronized (lock) {
+          if (_newEntry) {
             putNewEntryCnt++;
           }
+          peekMissCnt++;
         }
         e.finishFetch(Entry.LOADED_NON_VALID);
         _finished = true;
@@ -2581,6 +2595,9 @@ public abstract class BaseCache<E extends Entry, K, T>
         throw _storageException;
       }
       _nextRefreshTimeWithState = stopStartTimer(_nextRefreshTime, e, t);
+      if (_updateStatistics == INSERT_STAT_PUT && !e.hasFreshData(t, _nextRefreshTimeWithState)) {
+        putButExpiredCnt++;
+      }
     } // synchronized (lock)
 
     return _nextRefreshTimeWithState;
@@ -3083,6 +3100,7 @@ public abstract class BaseCache<E extends Entry, K, T>
     long storageLoadCnt = storageMissCnt + loadHitCnt;
     long newEntryCnt = BaseCache.this.newEntryCnt - virginEvictCnt;
     long hitCnt = getHitCnt();
+    long correctedPutCnt = putCnt - putButExpiredCnt;
     long usageCnt =
         hitCnt + newEntryCnt + peekMissCnt;
     CollisionInfo collisionInfo;
@@ -3130,7 +3148,7 @@ public abstract class BaseCache<E extends Entry, K, T>
     public long getEvictedCnt() { return evictedCnt - virginEvictCnt; }
     public long getRemovedCnt() { return BaseCache.this.removedCnt; }
     public long getPutNewEntryCnt() { return putNewEntryCnt; }
-    public long getPutCnt() { return putCnt; }
+    public long getPutCnt() { return correctedPutCnt; }
     public long getKeyMutationCnt() { return keyMutationCount; }
     public double getDataHitRate() {
       long cnt = getReadUsageCnt();
