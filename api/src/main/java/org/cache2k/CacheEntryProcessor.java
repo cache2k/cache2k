@@ -23,13 +23,10 @@ package org.cache2k;
  */
 
 /**
- * @author Jens Wilke; created: 2013-12-21
+ * @author Jens Wilke; created: 2015-05-02
  */
-public interface MutableCacheEntry<K, T> extends CacheEntry<K, T> {
+public interface CacheEntryProcessor<K, T, R> {
 
-  boolean exists();
-  void setValue(T v);
-  void setException(Throwable ex);
-  void remove();
+  R process(MutableCacheEntry<K, T> entry, Object... arguments) throws Exception;
 
 }

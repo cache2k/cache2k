@@ -23,13 +23,22 @@ package org.cache2k;
  */
 
 /**
- * @author Jens Wilke; created: 2013-12-21
+ * @author Jens Wilke; created: 2015-05-02
  */
-public interface MutableCacheEntry<K, T> extends CacheEntry<K, T> {
+public interface EntryProcessingResult<R> {
 
-  boolean exists();
-  void setValue(T v);
-  void setException(Throwable ex);
-  void remove();
+  /**
+   * Result of entry processing.
+   *
+   * @throws org.cache2k.CacheEntryProcessingException throws this wrapped exception if an
+   *         exception occurred during processing.
+   */
+  R getResult();
+
+  /**
+   * Original exception of entry processing or null if no exception occurred. If this is null,
+   * #getResult will throw no exception.
+   */
+  Throwable getException();
 
 }

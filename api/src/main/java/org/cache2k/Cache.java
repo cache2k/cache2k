@@ -183,6 +183,9 @@ public interface Cache<K, T> extends KeyValueSource<K,T>, Iterable<CacheEntry<K,
    */
   public void fetchAll(Set<? extends K> keys, boolean replaceExistingValues, FetchCompletedListener l);
 
+  public <R> Map<K, EntryProcessingResult<R>> invokeAll(
+      Set<? extends K> keys, CacheEntryProcessor<K ,T, R> p, Object... _objs);
+
   /**
    * Disclaimer: This method is here to be able to support known coding similar
    * to JSR107. Do not use it. Just use prefetch() and the normal Cache.get().

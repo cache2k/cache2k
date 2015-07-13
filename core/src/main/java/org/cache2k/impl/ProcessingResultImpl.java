@@ -1,8 +1,8 @@
-package org.cache2k;
+package org.cache2k.impl;
 
 /*
  * #%L
- * cache2k API only package
+ * cache2k core package
  * %%
  * Copyright (C) 2000 - 2015 headissue GmbH, Munich
  * %%
@@ -22,14 +22,35 @@ package org.cache2k;
  * #L%
  */
 
+import org.cache2k.CacheEntryProcessingException;
+import org.cache2k.EntryProcessingResult;
+
 /**
- * @author Jens Wilke; created: 2013-12-21
+ * @author Jens Wilke; created: 2015-05-02
  */
-public interface MutableCacheEntry<K, T> extends CacheEntry<K, T> {
+public class ProcessingResultImpl<R> implements EntryProcessingResult<R> {
 
-  boolean exists();
-  void setValue(T v);
-  void setException(Throwable ex);
-  void remove();
+  R result;
+  Throwable exception = null;
 
+  public ProcessingResultImpl(R result) {
+    this.result = result;
+  }
+
+  public ProcessingResultImpl(Throwable t) {
+    exception = t;
+  }
+
+  @Override
+  public R getResult() {
+    if (exception != null) {
+      throw new CacheEntryProcessingException(exception);
+    }
+    return result;
+  }
+
+  @Override
+  public Throwable getException() {
+    return exception;
+  }
 }

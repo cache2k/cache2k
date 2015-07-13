@@ -24,7 +24,10 @@ package org.cache2k.jcache;
 
 import org.cache2k.Cache;
 import org.cache2k.CacheEntry;
+import org.cache2k.CacheEntryProcessor;
+import org.cache2k.EntryProcessingResult;
 import org.cache2k.FetchCompletedListener;
+import org.cache2k.MutableCacheEntry;
 import org.cache2k.impl.BaseCache;
 
 import javax.cache.CacheManager;
@@ -37,6 +40,9 @@ import javax.cache.integration.CompletionListener;
 import javax.cache.processor.EntryProcessor;
 import javax.cache.processor.EntryProcessorException;
 import javax.cache.processor.EntryProcessorResult;
+import javax.cache.processor.MutableEntry;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
@@ -252,12 +258,71 @@ public class Cache2kCacheAdapter<K, V> implements javax.cache.Cache<K, V> {
 
   @Override
   public <T> T invoke(K key, EntryProcessor<K, V, T> entryProcessor, Object... arguments) throws EntryProcessorException {
-    throw new UnsupportedOperationException("jsr107 invoke() not supported");
+    Map<K, EntryProcessorResult<T>> m = invokeAll(Collections.singleton(key), entryProcessor, arguments);
+    return m.size() > 0 ? m.values().iterator().next().get() : null;
   }
 
   @Override
-  public <T> Map<K, EntryProcessorResult<T>> invokeAll(Set<? extends K> keys, EntryProcessor<K, V, T> entryProcessor, Object... arguments) {
-    throw new UnsupportedOperationException("jsr107 invokeAll() not supported");
+  public <T> Map<K, EntryProcessorResult<T>> invokeAll(Set<? extends K> keys, final EntryProcessor<K, V, T> entryProcessor, Object... arguments) {
+    if (entryProcessor == null) {
+      throw new NullPointerException("processor is null");
+    }
+    CacheEntryProcessor<K, V, T> p = new CacheEntryProcessor<K, V, T>() {
+      @Override
+      public T process(final MutableCacheEntry<K, V> e, Object... _objs) throws Exception {
+        MutableEntry<K, V> me = new MutableEntry<K, V>() {
+          @Override
+          public boolean exists() {
+            return e.exists();
+          }
+
+          @Override
+          public void remove() {
+            e.remove();
+          }
+
+          @Override
+          public void setValue(V value) {
+            e.setValue(value);
+          }
+
+          @Override
+          public K getKey() {
+            return e.getKey();
+          }
+
+          @Override
+          public V getValue() {
+            return e.getValue();
+          }
+
+          @Override
+          public <T> T unwrap(Class<T> clazz) {
+            return null;
+          }
+        };
+        return entryProcessor.process(me, _objs);
+      }
+    };
+    Map<K, EntryProcessingResult<T>> _result = cache.invokeAll(keys, p, arguments);
+    Map<K, EntryProcessorResult<T>> _mappedResult = new HashMap<K, EntryProcessorResult<T>>();
+    for (Map.Entry<K, EntryProcessingResult<T>> e : _result.entrySet()) {
+      final EntryProcessingResult<T> pr = e.getValue();
+      EntryProcessorResult<T> epr = new EntryProcessorResult<T>() {
+        @Override
+        public T get() throws EntryProcessorException {
+          if (pr.getException() != null) {
+            if (pr.getException() instanceof EntryProcessorException) {
+              throw (EntryProcessorException) pr.getException();
+            }
+            throw new EntryProcessorException(pr.getException());
+          }
+          return pr.getResult();
+        }
+      };
+      _mappedResult.put(e.getKey(), epr);
+    }
+    return _mappedResult;
   }
 
   @Override

@@ -24,12 +24,15 @@ package org.cache2k.impl;
 
 import org.cache2k.BulkCacheSource;
 import org.cache2k.CacheEntry;
+import org.cache2k.CacheEntryProcessingException;
+import org.cache2k.CacheEntryProcessor;
 import org.cache2k.CacheException;
 import org.cache2k.CacheManager;
 import org.cache2k.CacheMisconfigurationException;
 import org.cache2k.CacheWriter;
 import org.cache2k.ClosableIterator;
 import org.cache2k.EntryExpiryCalculator;
+import org.cache2k.EntryProcessingResult;
 import org.cache2k.ExceptionExpiryCalculator;
 import org.cache2k.ExceptionPropagator;
 import org.cache2k.ExperimentalBulkCacheSource;
@@ -178,6 +181,11 @@ public abstract class BaseCache<E extends Entry, K, T>
   protected long fetchMillis = 0;
   protected long refreshHitCnt = 0;
   protected long newEntryCnt = 0;
+
+  /**
+   * Entries created for processing via invoke, but no operation happened on it.
+   */
+  protected long invokeNewEntryCnt = 0;
 
   /**
    * Loaded from storage, but the entry was not fresh and cannot be returned.
@@ -2597,17 +2605,26 @@ public abstract class BaseCache<E extends Entry, K, T>
     long _nextRefreshTime = maxLinger == 0 ? 0 : Long.MAX_VALUE;
     if (timer != null) {
       try {
-        if (Entry.isDataValidState(_previousNextRefreshTime) || Entry.isExpiredState(_previousNextRefreshTime)) {
-          _nextRefreshTime = calcNextRefreshTime((K) e.getKey(), v, t0, e);
-        } else {
-          _nextRefreshTime = calcNextRefreshTime((K) e.getKey(), v, t0, null);
-        }
+        _nextRefreshTime = calculateNextRefreshTime(e, v, t0, _previousNextRefreshTime);
       } catch (Exception ex) {
         updateStatistics(e, v, t0, t, _updateStatistics, false);
         throw new CacheException("exception in expiry calculation", ex);
       }
     }
     return insert(e, v, t0, t, _updateStatistics, _nextRefreshTime);
+  }
+
+  /**
+   * @throws Exception any exception from the ExpiryCalculator
+   */
+  private long calculateNextRefreshTime(E _entry, T _newValue, long t0, long _previousNextRefreshTime) {
+    long _nextRefreshTime;
+    if (Entry.isDataValidState(_previousNextRefreshTime) || Entry.isExpiredState(_previousNextRefreshTime)) {
+      _nextRefreshTime = calcNextRefreshTime((K) _entry.getKey(), _newValue, t0, _entry);
+    } else {
+      _nextRefreshTime = calcNextRefreshTime((K) _entry.getKey(), _newValue, t0, null);
+    }
+    return _nextRefreshTime;
   }
 
   final static byte INSERT_STAT_NO_UPDATE = 0;
@@ -2999,8 +3016,10 @@ public abstract class BaseCache<E extends Entry, K, T>
   int startOperationForExistingEntriesNoWait(K[] _keys, int[] _hashCodes, E[] _entries, long[] _pNrt) {
     int cnt = 0;
     for (int i = _keys.length - 1; i >= 0; i--) {
+      E e = _entries[i];
+      if (e != null) { continue; }
       K key = _keys[i];
-      E e = lookupEntryUnsynchronized(key, _hashCodes[i]);
+      e = lookupEntryUnsynchronized(key, _hashCodes[i]);
       if (e == null) { continue; }
       synchronized (e) {
         if (!e.isRemovedState() && !e.isFetchInProgress()) {
@@ -3016,9 +3035,10 @@ public abstract class BaseCache<E extends Entry, K, T>
   int startOperationNewEntries(K[] _keys, int[] _hashCodes, E[] _entries, long[] _pNrt) {
     int cnt = 0;
     for (int i = _keys.length - 1; i >= 0; i--) {
+      E e = _entries[i];
+      if (e != null) { continue; }
       K key = _keys[i];
-      E e = lookupOrNewEntrySynchronized(key, _hashCodes[i]);
-      if (e == null) { continue; }
+      e = lookupOrNewEntrySynchronized(key, _hashCodes[i]);
       synchronized (e) {
         if (!e.isRemovedState() && !e.isFetchInProgress()) {
           _pNrt[i] = e.startFetch();
@@ -3033,9 +3053,10 @@ public abstract class BaseCache<E extends Entry, K, T>
   int startOperationNewEntriesAndWait(K[] _keys, int[] _hashCodes, E[] _entries, long[] _pNrt) {
     int cnt = 0;
     for (int i = _keys.length - 1; i >= 0; i--) {
+      E e = _entries[i];
+      if (e != null) { continue; }
       K key = _keys[i];
-      E e = lookupOrNewEntrySynchronized(key, _hashCodes[i]);
-      if (e == null) { continue; }
+      e = lookupOrNewEntrySynchronized(key, _hashCodes[i]);
       synchronized (e) {
         e.waitForFetch();
         if (!e.isRemovedState()) {
@@ -3064,6 +3085,154 @@ public abstract class BaseCache<E extends Entry, K, T>
       }
       cnt += startOperationNewEntriesAndWait(_keys, _hashCodes, _entries, _pNrt);
     } while (cnt != _keys.length);
+    if (storage != null) {
+      throw new UnsupportedOperationException("storage load must happen here");
+    }
+  }
+
+  void initializeEntries(BulkOperation op, long now, K[] _keys, E[] _entries, long[] _pNrt, EntryForProcessor<K, T>[] _pEntries) {
+    for (int i = _keys.length - 1; i >= 0; i--) {
+      E e = _entries[i];
+      EntryForProcessor<K, T> ep;
+      _pEntries[i] = ep = new EntryForProcessor<K, T>();
+      ep.index = i;
+      ep.lastModification = e.getLastModification();
+      ep.key = _keys[i];
+      ep.operation = op;
+      if (e.hasFreshData(now, _pNrt[i])) {
+        ep.value = (T) e.getValueOrException();
+      } else {
+        ep.needsFetch = true;
+        if (storage != null) {
+          ep.needsLoad = true;
+        }
+      }
+    }
+  }
+
+  @Override
+  public <R> Map<K, EntryProcessingResult<R>> invokeAll(Set<? extends K> _inputKeys, CacheEntryProcessor<K ,T, R> p, Object... _objs) {
+    checkClosed();
+    K[] _keys = _inputKeys.toArray((K[]) Array.newInstance(keyType, 0));
+    int[] _hashCodes = new int[_keys.length];
+    E[] _entries = (E[]) Array.newInstance(newEntry().getClass(), _keys.length);
+    long[] _pNrt = new long[_keys.length];
+    long t0 = System.currentTimeMillis();
+    startBulkOperation(_keys, _hashCodes, _entries, _pNrt);
+    EntryForProcessor<K, T>[] _pEntries = new EntryForProcessor[_keys.length];
+    BulkOperation op = new BulkOperation(_entries, _pNrt);
+    initializeEntries(op, t0, _keys, _entries, _pNrt, _pEntries);
+
+    Map<K, EntryProcessingResult<R>> _results = new HashMap<K, EntryProcessingResult<R>>();
+    boolean _gotException = false;
+    for (int i = _keys.length - 1; i >= 0; i--) {
+      EntryProcessingResult<R> _result;
+      try {
+         R r = p.process(_pEntries[i], _objs);
+         _result = r != null ? new ProcessingResultImpl<R>(r) : null;
+      } catch (Throwable t) {
+        _result = new ProcessingResultImpl<R>(t);
+        _gotException = true;
+      }
+      if (_result != null) {
+        _results.put(_keys[i], _result);
+      }
+    }
+
+    long[] _newExpiry = new long[_keys.length];
+    Exception _propagateException = null;
+    if (!_gotException && timer != null) {
+      try {
+        for (int i = _keys.length - 1; i >= 0; i--) {
+          if (_pEntries[i].updated && !_pEntries[i].removed) {
+            _newExpiry[i] = calculateNextRefreshTime(_entries[i], (T) _pEntries[i].value, t0, _pNrt[i]);
+          }
+        }
+      } catch (Exception ex) {
+        _gotException = true;
+        _propagateException = ex;
+      }
+    }
+
+    if (_gotException) {
+      for (int i = _keys.length - 1; i >= 0; i--) {
+        if (_pNrt[i] == Entry.VIRGIN_STATE) {
+          synchronized (lock) {
+            invokeNewEntryCnt++;
+          }
+        }
+        _entries[i].finishFetch(_pNrt[i]);
+      }
+    } else {
+      for (int i = _keys.length - 1; i >= 0; i--) {
+        E e = _entries[i];
+        if (!_pEntries[i].updated) {
+          if (_pNrt[i] == Entry.VIRGIN_STATE) {
+            synchronized (lock) {
+              invokeNewEntryCnt++;
+            }
+          }
+          e.finishFetch(_pNrt[i]);
+          continue;
+        }
+        if (_pEntries[i].removed) {
+          if (e.hasFreshData(System.currentTimeMillis(), _pNrt[i])) {
+            synchronized (e) {
+              e.finishFetch(Entry.LOADED_NON_VALID);
+              synchronized (lock) {
+                removeEntry(e);
+                removedCnt++;
+              }
+            }
+          } else {
+            synchronized (lock) {
+              invokeNewEntryCnt++;
+            }
+            e.finishFetch(_pNrt[i]);
+          }
+          continue;
+        }
+        long t = System.currentTimeMillis();
+        long _expiry;
+        if (timer == null) {
+          _expiry = maxLinger == 0 ? 0 : Long.MAX_VALUE;
+        } else {
+          _expiry = _newExpiry[i];
+        }
+        e.setLastModification(_pEntries[i].getLastModification());
+        e.finishFetch(insert(e, (T) _pEntries[i].value, t0, t, INSERT_STAT_PUT, _expiry));
+      }
+    }
+
+    if (_propagateException != null) {
+      throw new CacheEntryProcessingException(_propagateException);
+    }
+
+    return _results;
+  }
+
+  class BulkOperation {
+    E[] entries;
+    long[] pNrt;
+
+    public BulkOperation(E[] entries, long[] pNrt) {
+      this.entries = entries;
+      this.pNrt = pNrt;
+    }
+
+    void loadAndFetch(EntryForProcessor<K, T> ep) {
+      int idx = ep.index;
+      pNrt[idx] = fetch(entries[idx], pNrt[idx]);
+      ep.needsLoad = false;
+      ep.needsFetch = false;
+      if (entries[idx].hasFreshData(System.currentTimeMillis(), pNrt[idx])) {
+        ep.value = (T) entries[idx].getValue();
+        ep.lastModification = entries[idx].getLastModification();
+      } else {
+        ep.removed = true;
+      }
+    }
+
   }
 
   public abstract long getHitCnt();
@@ -3101,7 +3270,9 @@ public abstract class BaseCache<E extends Entry, K, T>
     return (int) (newEntryCnt - putNewEntryCnt - virginEvictCnt
         - loadNonFreshCnt
         - loadHitCnt
-        - _fetchesBecauseOfNoEntries);
+        - _fetchesBecauseOfNoEntries
+        - invokeNewEntryCnt
+    );
   }
 
   protected IntegrityState getIntegrityState() {

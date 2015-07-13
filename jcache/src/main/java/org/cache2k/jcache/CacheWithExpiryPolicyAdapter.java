@@ -38,6 +38,7 @@ import javax.cache.integration.CompletionListener;
 import javax.cache.processor.EntryProcessor;
 import javax.cache.processor.EntryProcessorException;
 import javax.cache.processor.EntryProcessorResult;
+import javax.cache.processor.MutableEntry;
 import java.util.AbstractCollection;
 import java.util.AbstractSet;
 import java.util.Collection;
@@ -382,14 +383,62 @@ public class CacheWithExpiryPolicyAdapter<K, V> implements Cache<K, V> {
     };
   }
 
+  <T> EntryProcessor<K, ValueAndExtra<V>, T> wrapEntryProcessor(final EntryProcessor<K, V, T> ep) {
+    if (ep == null) {
+      throw new NullPointerException("processor is null");
+    }
+    return new EntryProcessor<K, ValueAndExtra<V>, T>() {
+      @Override
+      public T process(final MutableEntry<K, ValueAndExtra<V>> e0, Object... _args) throws EntryProcessorException {
+        MutableEntry<K, V> me = new MutableEntry<K, V>() {
+          boolean fresh = false;
+          @Override
+          public boolean exists() {
+            return e0.exists();
+          }
+
+          @Override
+          public void remove() {
+            e0.remove();
+          }
+
+          @Override
+          public void setValue(V value) {
+            fresh = true;
+            e0.setValue(new ValueAndExtra<V>(value));
+          }
+
+          @Override
+          public K getKey() {
+            return e0.getKey();
+          }
+
+          @Override
+          public V getValue() {
+            if (fresh) {
+              return e0.getValue().value;
+            }
+            return returnValue(e0.getKey(), e0.getValue());
+          }
+
+          @Override
+          public <T> T unwrap(Class<T> clazz) {
+            return null;
+          }
+        };
+        return ep.process(me, _args);
+      }
+    };
+  }
+
   @Override
   public <T> T invoke(K key, EntryProcessor<K, V, T> entryProcessor, Object... arguments) throws EntryProcessorException {
-    throw new UnsupportedOperationException();
+    return cache.invoke(key, wrapEntryProcessor(entryProcessor), arguments);
   }
 
   @Override
   public <T> Map<K, EntryProcessorResult<T>> invokeAll(Set<? extends K> keys, EntryProcessor<K, V, T> entryProcessor, Object... arguments) {
-    throw new UnsupportedOperationException();
+    return cache.invokeAll(keys, wrapEntryProcessor(entryProcessor), arguments);
   }
 
   @Override
@@ -584,6 +633,9 @@ public class CacheWithExpiryPolicyAdapter<K, V> implements Cache<K, V> {
       if (d == null) {
         if (_oldEntry == null) {
           throw new NullPointerException("no previous expiry value: null expiry duration not valid");
+        }
+        if (_oldEntry.getException() != null) {
+          throw new RuntimeException("exception on this entry, missing duration...", _oldEntry.getException());
         }
         return _value.expiryTime = _oldEntry.getValue().expiryTime;
 
