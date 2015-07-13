@@ -22,6 +22,7 @@ package org.cache2k.impl;
  * #L%
  */
 
+import org.cache2k.CacheEntry;
 import org.cache2k.MutableCacheEntry;
 import org.cache2k.storage.StorageEntry;
 
@@ -34,7 +35,7 @@ import org.cache2k.storage.StorageEntry;
  */
 @SuppressWarnings("unchecked")
 public class Entry<E extends Entry, K, T>
-  implements MutableCacheEntry<K,T>, StorageEntry {
+  implements CacheEntry<K,T>, StorageEntry {
 
   static final int FETCHED_STATE = 16;
   static final int REFRESH_STATE = FETCHED_STATE + 1;
@@ -384,11 +385,6 @@ public class Entry<E extends Entry, K, T>
     return value;
   }
 
-
-  @Override
-  public void setValue(T v) {
-    value = v;
-  }
 
   @Override
   public K getKey() {
