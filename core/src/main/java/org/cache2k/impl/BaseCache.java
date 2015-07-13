@@ -35,6 +35,7 @@ import org.cache2k.ExceptionPropagator;
 import org.cache2k.ExperimentalBulkCacheSource;
 import org.cache2k.Cache;
 import org.cache2k.CacheConfig;
+import org.cache2k.FetchCompletedListener;
 import org.cache2k.RefreshController;
 import org.cache2k.StorageConfiguration;
 import org.cache2k.ValueWithExpiryTime;
@@ -1282,9 +1283,12 @@ public abstract class BaseCache<E extends Entry, K, T>
 
   protected E getEntryInternal(K key) {
     long _previousNextRefreshTime;
+    E e;
     for (;;) {
-      E e = lookupOrNewEntrySynchronized(key);
-      if (e.hasFreshData()) { return e; }
+      e = lookupOrNewEntrySynchronized(key);
+      if (e.hasFreshData()) {
+        return e;
+      }
       synchronized (e) {
         e.waitForFetch();
         if (e.hasFreshData()) {
@@ -1294,17 +1298,43 @@ public abstract class BaseCache<E extends Entry, K, T>
           continue;
         }
         _previousNextRefreshTime = e.startFetch();
+        break;
       }
-      boolean _finished = false;
-      try {
-        e.finishFetch(fetch(e, _previousNextRefreshTime));
-        _finished = true;
-      } finally {
-        e.ensureFetchAbort(_finished, _previousNextRefreshTime);
-      }
-      evictEventually();
-      return e;
     }
+    boolean _finished = false;
+    try {
+      e.finishFetch(fetch(e, _previousNextRefreshTime));
+      _finished = true;
+    } finally {
+      e.ensureFetchAbort(_finished, _previousNextRefreshTime);
+    }
+    evictEventually();
+    return e;
+  }
+
+  /** Always fetch the value from the source. That is a copy of getEntryInternal without fresh checks. */
+  protected void fetchAndReplace(K key) {
+    long _previousNextRefreshTime;
+    E e;
+    for (;;) {
+      e = lookupOrNewEntrySynchronized(key);
+      synchronized (e) {
+        e.waitForFetch();
+        if (e.isRemovedState()) {
+          continue;
+        }
+        _previousNextRefreshTime = e.startFetch();
+        break;
+      }
+    }
+    boolean _finished = false;
+    try {
+      e.finishFetch(fetch(e, _previousNextRefreshTime));
+      _finished = true;
+    } finally {
+      e.ensureFetchAbort(_finished, _previousNextRefreshTime);
+    }
+    evictEventually();
   }
 
   /**
@@ -2151,9 +2181,30 @@ public abstract class BaseCache<E extends Entry, K, T>
   }
 
   @Override
+  public void fetchAll(Set<? extends K> _keys, boolean replaceExistingValues, FetchCompletedListener l) {
+    if (replaceExistingValues) {
+      for (K k : _keys) {
+        fetchAndReplace(k);
+      }
+      if (l != null) {
+        l.fetchCompleted();
+      }
+    } else {
+      prefetch(_keys, l);
+    }
+  }
+
+  @Override
   public void prefetch(final Set<K> keys) {
+    prefetch(keys, null);
+  }
+
+  void prefetch(final Set<? extends K> keys, final FetchCompletedListener l) {
     if (refreshPool == null) {
       getAll(keys);
+      if (l != null) {
+        l.fetchCompleted();
+      }
       return;
     }
     boolean _complete = true;
@@ -2163,12 +2214,18 @@ public abstract class BaseCache<E extends Entry, K, T>
       }
     }
     if (_complete) {
+      if (l != null) {
+        l.fetchCompleted();
+      }
       return;
     }
     Runnable r = new Runnable() {
       @Override
       public void run() {
         getAll(keys);
+        if (l != null) {
+          l.fetchCompleted();
+        }
       }
     };
     refreshPool.submit(r);
@@ -2180,6 +2237,10 @@ public abstract class BaseCache<E extends Entry, K, T>
    */
   protected E lookupOrNewEntrySynchronized(K key) {
     int hc = modifiedHash(key.hashCode());
+    return lookupOrNewEntrySynchronized(key, hc);
+  }
+
+  protected E lookupOrNewEntrySynchronized(K key, int hc) {
     E e = lookupEntryUnsynchronized(key, hc);
     if (e == null) {
       synchronized (lock) {
@@ -2926,6 +2987,85 @@ public abstract class BaseCache<E extends Entry, K, T>
     }
   }
 
+  /**
+   * We need the hash code multiple times. Calculate all hash codes.
+   */
+  void calcHashCodes(K[] _keys, int[] _hashCodes) {
+    for (int i = _keys.length - 1; i >= 0; i--) {
+      _hashCodes[i] = modifiedHash(_keys[i].hashCode());
+    }
+  }
+
+  int startOperationForExistingEntriesNoWait(K[] _keys, int[] _hashCodes, E[] _entries, long[] _pNrt) {
+    int cnt = 0;
+    for (int i = _keys.length - 1; i >= 0; i--) {
+      K key = _keys[i];
+      E e = lookupEntryUnsynchronized(key, _hashCodes[i]);
+      if (e == null) { continue; }
+      synchronized (e) {
+        if (!e.isRemovedState() && !e.isFetchInProgress()) {
+          _pNrt[i] = e.startFetch();
+          _entries[i] = e;
+          cnt++;
+        }
+      }
+    }
+    return cnt;
+  }
+
+  int startOperationNewEntries(K[] _keys, int[] _hashCodes, E[] _entries, long[] _pNrt) {
+    int cnt = 0;
+    for (int i = _keys.length - 1; i >= 0; i--) {
+      K key = _keys[i];
+      E e = lookupOrNewEntrySynchronized(key, _hashCodes[i]);
+      if (e == null) { continue; }
+      synchronized (e) {
+        if (!e.isRemovedState() && !e.isFetchInProgress()) {
+          _pNrt[i] = e.startFetch();
+          _entries[i] = e;
+          cnt++;
+        }
+      }
+    }
+    return cnt;
+  }
+
+  int startOperationNewEntriesAndWait(K[] _keys, int[] _hashCodes, E[] _entries, long[] _pNrt) {
+    int cnt = 0;
+    for (int i = _keys.length - 1; i >= 0; i--) {
+      K key = _keys[i];
+      E e = lookupOrNewEntrySynchronized(key, _hashCodes[i]);
+      if (e == null) { continue; }
+      synchronized (e) {
+        e.waitForFetch();
+        if (!e.isRemovedState()) {
+          _pNrt[i] = e.startFetch();
+          _entries[i] = e;
+          cnt++;
+        }
+      }
+    }
+    return cnt;
+  }
+
+  void startBulkOperation(K[] _keys, int[] _hashCodes, E[] _entries, long[] _pNrt) {
+    calcHashCodes(_keys, _hashCodes);
+    int cnt = 0;
+    cnt = startOperationForExistingEntriesNoWait(_keys, _hashCodes, _entries, _pNrt);
+    if (cnt == _keys.length) { return; }
+    cnt += startOperationNewEntries(_keys, _hashCodes, _entries, _pNrt);
+    if (cnt == _keys.length) { return; }
+    cnt += startOperationNewEntries(_keys, _hashCodes, _entries, _pNrt);
+    if (cnt == _keys.length) { return; }
+    int _spinCount = TUNABLE.maximumEntryLockSpins;
+    do {
+      if (_spinCount-- <= 0) {
+        throw new CacheLockSpinsExceededError();
+      }
+      cnt += startOperationNewEntriesAndWait(_keys, _hashCodes, _entries, _pNrt);
+    } while (cnt != _keys.length);
+  }
+
   public abstract long getHitCnt();
 
   protected final int calculateHashEntryCount() {
@@ -2978,7 +3118,7 @@ public abstract class BaseCache<E extends Entry, K, T>
         .checkEquals("mainHashCtrl.size == Hash.calcEntryCount(mainHash)", mainHashCtrl.size, Hash.calcEntryCount(mainHash))
         .checkEquals("refreshHashCtrl.size == Hash.calcEntryCount(refreshHash)", refreshHashCtrl.size, Hash.calcEntryCount(refreshHash))
         .check("!!evictionNeeded | (getSize() <= maxSize)", !!evictionNeeded | (getLocalSize() <= maxSize))
-        .check("storage => storage.getAlert() < 2", storage == null || storage.getAlert() < 2);
+          .check("storage => storage.getAlert() < 2", storage == null || storage.getAlert() < 2);
     }
   }
 

@@ -175,6 +175,15 @@ public interface Cache<K, T> extends KeyValueSource<K,T>, Iterable<CacheEntry<K,
   public abstract void removeAllAtOnce(Set<K> key);
 
   /**
+   * Fetch a set of values from the cache source. This call is modelled after the JSR107
+   * method Cache.loadAll.
+   *
+   * @deprecated May or may not stay in the API, use the more lightweight #prefetch call as alternative
+   * @since 0.22
+   */
+  public void fetchAll(Set<? extends K> keys, boolean replaceExistingValues, FetchCompletedListener l);
+
+  /**
    * Disclaimer: This method is here to be able to support known coding similar
    * to JSR107. Do not use it. Just use prefetch() and the normal Cache.get().
    * Since Cache.get() is almost as fast as a HashMap there is no need to

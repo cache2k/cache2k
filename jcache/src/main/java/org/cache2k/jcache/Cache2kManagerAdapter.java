@@ -193,12 +193,13 @@ public class Cache2kManagerAdapter implements CacheManager {
     _cfgCopy.setStoreByValue(cc.isStoreByValue());
     _cfgCopy.setReadThrough(cc.isReadThrough());
     _cfgCopy.setWriteThrough(cc.isWriteThrough());
-    if (cc.isReadThrough()) {
-      final CacheLoader<K, V> cl = cc.getCacheLoaderFactory().create();
+    CacheLoader<K, CacheWithExpiryPolicyAdapter.ValueAndExtra<V>> cl = null;
+    if (cc.getCacheLoaderFactory() != null) {
+      final CacheLoader<K, V> clf = cc.getCacheLoaderFactory().create();
       b.source(new CacheSource<K, CacheWithExpiryPolicyAdapter.ValueAndExtra>() {
         @Override
         public CacheWithExpiryPolicyAdapter.ValueAndExtra get(K k) {
-          V v = cl.load(k);
+          V v = clf.load(k);
           if (v == null) {
             return null;
           }
@@ -230,6 +231,7 @@ public class Cache2kManagerAdapter implements CacheManager {
       }
       Cache2kCacheAdapter<K, CacheWithExpiryPolicyAdapter.ValueAndExtra<V>> ca =
           new Cache2kCacheAdapter<K, CacheWithExpiryPolicyAdapter.ValueAndExtra<V>>(this, b.build(), cc.isStoreByValue(), null);
+      ca.loader = cl;
       ca.readThrough = cc.isReadThrough();
       CacheWithExpiryPolicyAdapter<K, V> c = new CacheWithExpiryPolicyAdapter<K, V>();
       c.cache = ca;

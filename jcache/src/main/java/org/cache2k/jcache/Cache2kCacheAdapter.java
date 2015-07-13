@@ -24,6 +24,7 @@ package org.cache2k.jcache;
 
 import org.cache2k.Cache;
 import org.cache2k.CacheEntry;
+import org.cache2k.FetchCompletedListener;
 import org.cache2k.impl.BaseCache;
 
 import javax.cache.CacheManager;
@@ -31,6 +32,7 @@ import javax.cache.configuration.CacheEntryListenerConfiguration;
 import javax.cache.configuration.CompleteConfiguration;
 import javax.cache.configuration.Configuration;
 import javax.cache.configuration.MutableConfiguration;
+import javax.cache.integration.CacheLoader;
 import javax.cache.integration.CompletionListener;
 import javax.cache.processor.EntryProcessor;
 import javax.cache.processor.EntryProcessorException;
@@ -48,6 +50,7 @@ public class Cache2kCacheAdapter<K, V> implements javax.cache.Cache<K, V> {
   Cache<K, V> cache;
   BaseCache<?, K, V> cacheImpl;
   boolean storeByValue;
+  CacheLoader<K, V> loader = null;
   boolean readThrough = false;
   boolean statisticsEnabled = false;
 
@@ -87,9 +90,23 @@ public class Cache2kCacheAdapter<K, V> implements javax.cache.Cache<K, V> {
   }
 
   @Override
-  public void loadAll(Set<? extends K> keys, boolean replaceExistingValues, CompletionListener completionListener) {
+  public void loadAll(Set<? extends K> keys, boolean replaceExistingValues, final CompletionListener completionListener) {
     checkClosed();
-    throw new UnsupportedOperationException("jsr107 loadAll() not supported");
+    FetchCompletedListener l = null;
+    if (completionListener != null) {
+      l = new FetchCompletedListener() {
+        @Override
+        public void fetchCompleted() {
+          completionListener.onCompletion();
+        }
+
+        @Override
+        public void fetchException(Exception _exception) {
+          completionListener.onException(_exception);
+        }
+      };
+    }
+    cache.fetchAll(keys, replaceExistingValues, l);
   }
 
   @Override
