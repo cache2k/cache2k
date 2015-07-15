@@ -27,6 +27,7 @@ import org.cache2k.CacheException;
 import org.cache2k.CacheManager;
 import org.cache2k.impl.threading.Futures;
 import org.cache2k.impl.threading.GlobalPooledExecutor;
+import org.cache2k.impl.util.Cache2kVersion;
 import org.cache2k.impl.util.Log;
 
 import java.io.IOException;
@@ -93,20 +94,8 @@ public class CacheManagerImpl extends CacheManager {
     properties = p;
     name = _name;
     log = Log.getLog(CacheManager.class.getName() + '.' + name);
-    String _buildNumber = null;
-    String _version = null;
-    try {
-      Class _myClass = this.getClass();
-      String _classPath = _myClass.getResource(_myClass.getSimpleName() + ".class").toString();
-      if (_classPath != null && _classPath.startsWith("jar")) {
-        String _manifestUrl =
-            _classPath.substring(0, _classPath.lastIndexOf("!") + 1) + "/META-INF/MANIFEST.MF";
-        Manifest m = new Manifest(new URL(_manifestUrl).openStream());
-        version = _version = m.getMainAttributes().getValue("Implementation-Version");
-        buildNumber = _buildNumber = m.getMainAttributes().getValue("Implementation-Build");
-      }
-    } catch (IOException _ignore) {
-    }
+    String _buildNumber = Cache2kVersion.getBuildNumber();
+    String _version = Cache2kVersion.getVersion();
     StringBuilder sb = new StringBuilder();
     sb.append("org.cache2k manager starting. ");
     sb.append("name="); sb.append(name);
