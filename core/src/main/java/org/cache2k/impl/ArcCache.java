@@ -109,7 +109,7 @@ public class ArcCache<K, T> extends BaseCache<ArcCache.Entry, K, T> {
       insertT2(e);
       return e;
     }
-    allMissEvictGhots();
+    allMissEvictGhosts();
     return null;
   }
 
@@ -158,7 +158,7 @@ public class ArcCache<K, T> extends BaseCache<ArcCache.Entry, K, T> {
    * Called when no entry was hit within b1 or b2. This checks whether we need to
    * remove some entries from the b1 and b2 lists.
    */
-  private void allMissEvictGhots() {
+  private void allMissEvictGhosts() {
     if ((t1Size + b1HashCtrl.size) >= maxSize) {
       if (b1HashCtrl.size > 0) {
         Entry e = b1Head.prev;
@@ -196,7 +196,7 @@ public class ArcCache<K, T> extends BaseCache<ArcCache.Entry, K, T> {
       e = replace();
     }
     if (b1HashCtrl.size + b2HashCtrl.size > maxSize) {
-      allMissEvictGhots();
+      allMissEvictGhosts();
     }
     return e;
   }
