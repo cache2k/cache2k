@@ -3442,7 +3442,7 @@ public abstract class BaseCache<E extends Entry, K, T>
     public long getStorageHitCnt() { return loadHitCnt; }
     public long getStorageLoadCnt() { return storageLoadCnt; }
     public long getStorageMissCnt() { return storageMissCnt; }
-    public long getReadUsageCnt() { return usageCnt - putCnt - removedCnt; }
+    public long getReadUsageCnt() { return usageCnt - putCnt - removedCnt - invokeNewEntryCnt; }
     public long getUsageCnt() { return usageCnt; }
     public long getMissCnt() { return missCnt; }
     public long getNewEntryCnt() { return newEntryCnt; }
