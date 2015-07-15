@@ -3154,6 +3154,27 @@ public abstract class BaseCache<E extends Entry, K, T>
       }
     }
 
+    if (!_gotException && writer != null) {
+      try {
+        for (int i = _keys.length - 1; i >= 0; i--) {
+          if (!_pEntries[i].updated) {
+            continue;
+          }
+          if (_pEntries[i].removed) {
+            if (_entries[i].hasFreshData(System.currentTimeMillis(), _pNrt[i])) {
+              writer.delete(_keys[i]);
+            }
+          } else {
+            CacheEntry<K, T> ce = returnCacheEntry(_keys[i], _pEntries[i].getValue(), _pEntries[i].getException(), _pEntries[i].getLastModification());
+            writer.write(ce);
+          }
+        }
+      } catch (Exception ex) {
+        _gotException = true;
+        _propagateException = ex;
+      }
+    }
+
     if (_gotException) {
       for (int i = _keys.length - 1; i >= 0; i--) {
         if (_pNrt[i] == Entry.VIRGIN_STATE) {
