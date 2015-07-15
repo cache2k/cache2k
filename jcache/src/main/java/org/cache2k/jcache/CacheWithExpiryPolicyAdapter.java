@@ -415,7 +415,7 @@ public class CacheWithExpiryPolicyAdapter<K, V> implements Cache<K, V> {
 
           @Override
           public V getValue() {
-            if (fresh) {
+            if (fresh || !exists()) {
               return e0.getValue().value;
             }
             return returnValue(e0.getKey(), e0.getValue());
