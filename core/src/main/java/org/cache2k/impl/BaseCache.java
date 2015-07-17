@@ -1193,9 +1193,7 @@ public abstract class BaseCache<E extends Entry, K, T>
    * events which affect the entry. For this, we need to acquire the lock on the entry
    * first.
    */
-  protected E findEvictionCandidate() {
-    return null;
-  }
+  protected abstract E findEvictionCandidate();
 
 
   /**
