@@ -150,12 +150,8 @@ public class Cache2kCacheAdapter<K, V> implements javax.cache.Cache<K, V> {
     for (Map.Entry<? extends K, ? extends V> e : map.entrySet()) {
       V v = e.getValue();
       checkNullValue(e.getValue());
-      checkNullKey(e.getKey());
     }
-    for (Map.Entry<? extends K, ? extends V> e : map.entrySet()) {
-      V v = e.getValue();
-      cache.put(e.getKey(), e.getValue());
-    }
+    cache.putAll(map);
   }
 
   @Override
