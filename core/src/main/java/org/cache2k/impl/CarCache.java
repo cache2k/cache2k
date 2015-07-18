@@ -48,6 +48,8 @@ public class CarCache<K, T> extends LockFreeCache<CarCache.Entry, K, T> {
 
   boolean b2HitPreferenceForEviction;
 
+  long hits;
+
   protected void initializeHeapCache() {
     super.initializeHeapCache();
     t1Size = 0;
@@ -83,7 +85,7 @@ public class CarCache<K, T> extends LockFreeCache<CarCache.Entry, K, T> {
 
   @Override
   public long getHitCnt() {
-    return 0;
+    return hits + sumUpListHits(t1Head) + sumUpListHits(t2Head);
   }
 
   private int sumUpListHits(Entry e) {
@@ -146,6 +148,7 @@ public class CarCache<K, T> extends LockFreeCache<CarCache.Entry, K, T> {
           t1Head = e.next;
           break;
         }
+        hits += e.hitCnt;
         e.hitCnt = 0;
         t1Head = removeFromCyclicList(t1Head, e);
         t1Size--;
@@ -157,6 +160,7 @@ public class CarCache<K, T> extends LockFreeCache<CarCache.Entry, K, T> {
           t2Head = e.next;
           break;
         }
+        hits += e.hitCnt;
         e.hitCnt = 0;
         t2Head = e.next;
       }
