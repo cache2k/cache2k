@@ -90,6 +90,7 @@ public class EntryForProcessor<K, T> implements MutableCacheEntry<K, T> {
   @Override
   public boolean exists() {
     if (needsLoad) {
+      throw new UnsupportedOperationException("storage: load only case need implementation");
     }
     return !(needsFetch || removed);
   }
