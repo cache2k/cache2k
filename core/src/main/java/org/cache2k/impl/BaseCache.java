@@ -64,6 +64,7 @@ import java.util.AbstractMap;
 import java.util.AbstractSet;
 import java.util.Arrays;
 import java.util.BitSet;
+import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -3002,6 +3003,15 @@ public abstract class BaseCache<E extends Entry, K, T>
     }
   }
 
+  public void putAll(Map<? extends K, ? extends T> valueMap) {
+    if (valueMap.containsKey(null)) {
+      throw new NullPointerException("map contains null key");
+    }
+    for (Map.Entry<? extends K, ? extends T> e : valueMap.entrySet()) {
+      put(e.getKey(), e.getValue());
+    }
+  }
+
   /**
    * We need the hash code multiple times. Calculate all hash codes.
    */
@@ -3109,7 +3119,13 @@ public abstract class BaseCache<E extends Entry, K, T>
   }
 
   @Override
-  public <R> Map<K, EntryProcessingResult<R>> invokeAll(Set<? extends K> _inputKeys, CacheEntryProcessor<K ,T, R> p, Object... _objs) {
+  public <R> R invoke(K key, CacheEntryProcessor<K, T, R> entryProcessor, Object... _args) {
+    Map<K, EntryProcessingResult<R>> m = invokeAll(Collections.singleton(key), entryProcessor, _args);
+    return m.size() > 0 ? m.values().iterator().next().getResult() : null;
+  }
+
+  @Override
+  public <R> Map<K, EntryProcessingResult<R>> invokeAll(Set<? extends K> _inputKeys, CacheEntryProcessor<K ,T, R> p, Object... _args) {
     checkClosed();
     K[] _keys = _inputKeys.toArray((K[]) Array.newInstance(keyType, 0));
     int[] _hashCodes = new int[_keys.length];
@@ -3126,7 +3142,7 @@ public abstract class BaseCache<E extends Entry, K, T>
     for (int i = _keys.length - 1; i >= 0; i--) {
       EntryProcessingResult<R> _result;
       try {
-         R r = p.process(_pEntries[i], _objs);
+         R r = p.process(_pEntries[i], _args);
          _result = r != null ? new ProcessingResultImpl<R>(r) : null;
       } catch (Throwable t) {
         _result = new ProcessingResultImpl<R>(t);

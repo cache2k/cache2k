@@ -183,6 +183,8 @@ public interface Cache<K, T> extends KeyValueSource<K,T>, Iterable<CacheEntry<K,
    */
   public void fetchAll(Set<? extends K> keys, boolean replaceExistingValues, FetchCompletedListener l);
 
+  public <R> R invoke(K key, CacheEntryProcessor<K, T, R> entryProcessor, Object... _args);
+
   public <R> Map<K, EntryProcessingResult<R>> invokeAll(
       Set<? extends K> keys, CacheEntryProcessor<K ,T, R> p, Object... _objs);
 
@@ -221,6 +223,11 @@ public interface Cache<K, T> extends KeyValueSource<K,T>, Iterable<CacheEntry<K,
    * Bulk counterpart for {@link #peek(Object)}
    */
   public Map<K, T> peekAll(Set<? extends K> keys);
+
+  /**
+   * Put all elements of the map into the cache.
+   */
+  public void putAll(Map<? extends K, ? extends T> m);
 
   /**
    * Number of entries the cache holds in total. When iterating the entries
