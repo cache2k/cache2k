@@ -1,0 +1,190 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <parent>
+        <groupId>org.cache2k</groupId>
+        <artifactId>jcache-tests</artifactId>
+        <version>0.22-SNAPSHOT</version>
+        <relativePath>../pom.xml</relativePath>
+    </parent>
+
+    <artifactId>cache2k-jcache-tck-test-complete</artifactId>
+    <packaging>jar</packaging>
+    <name>Test with original TCK tests</name>
+    <url>https://github.com/jsr107/jsr107tck</url>
+    <description>
+      Wires together cache-tests with the RI implementation and runs
+        JUnit against them.
+    </description>
+
+    <dependencies>
+        <dependency>
+            <groupId>org.cache2k</groupId>
+            <artifactId>cache2k-jcache</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>javax.cache</groupId>
+            <artifactId>cache-tests</artifactId>
+            <version>${jcache-spec-version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>javax.cache</groupId>
+            <artifactId>cache-tests</artifactId>
+            <classifier>tests</classifier>
+            <scope>test</scope>
+            <version>1.0.0</version>
+        </dependency>
+
+        <dependency>
+            <groupId>org.hamcrest</groupId>
+            <artifactId>hamcrest-library</artifactId>
+            <version>1.2</version>
+            <scope>test</scope>
+        </dependency>
+
+        <!-- Logging to figure out what the heck is going on -->
+        <dependency>
+            <groupId>log4j</groupId>
+            <artifactId>log4j</artifactId>
+            <version>1.2.16</version>
+            <scope>test</scope>
+        </dependency>
+
+    </dependencies>
+
+  <build>
+        <testResources>
+            <testResource>
+                <directory>../src/test/resources</directory>
+                <filtering>true</filtering>
+            </testResource>
+        </testResources>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-dependency-plugin</artifactId>
+                <version>2.8</version>
+                <executions>
+                    <!--Required because JUnit will not detect tests simply included in a dep-->
+                    <execution>
+                        <id>copy-cache-tests</id>
+                        <goals>
+                            <goal>unpack-dependencies</goal>
+                        </goals>
+                        <configuration>
+                            <outputDirectory>${project.build.testOutputDirectory}
+                            </outputDirectory>
+                            <includeArtifactIds>cache-tests</includeArtifactIds>
+                            <includeScope>test</includeScope>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>copy-domain</id>
+                        <goals>
+                            <goal>copy</goal>
+                        </goals>
+                        <configuration>
+                            <artifactItems>
+                                <artifactItem>
+                                    <groupId>javax.cache</groupId>
+                                    <artifactId>app-domain</artifactId>
+                                    <version>${jcache-spec-version}</version>
+                                    <outputDirectory>${domain-lib-dir}
+                                    </outputDirectory>
+                                    <destFileName>${domain-jar}</destFileName>
+                                </artifactItem>
+                            </artifactItems>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-source-plugin</artifactId>
+                <version>2.0.3</version>
+            </plugin>
+
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <version>2.9</version>
+                <configuration>
+                    <systemPropertyVariables>
+                        <java.net.preferIPv4Stack>${java.net.preferIPv4Stack}</java.net.preferIPv4Stack>
+                        <domainJar>${domain-lib-dir}/${domain-jar}</domainJar>
+
+                      <javax.management.builder.initial>org.cache2k.jcache.tckGlue.TckMBeanServerBuilder
+                      </javax.management.builder.initial>
+                      <org.jsr107.tck.management.agentId>someUniqueString
+                      </org.jsr107.tck.management.agentId>
+                      <javax.cache.CacheManager>org.cache2k.CacheManger</javax.cache.CacheManager>
+                      <javax.cache.Cache>org.cache2k.Cache</javax.cache.Cache>
+                      <javax.cache.Cache.Entry>org.cache2k.CacheEntry</javax.cache.Cache.Entry>
+                      <javax.cache.annotation.CacheInvocationContext>$
+                          {CacheInvocationContextImpl}
+                      </javax.cache.annotation.CacheInvocationContext>
+                    </systemPropertyVariables>
+                    <excludes>
+                        <exclude>**/annotation/*Test.java</exclude>
+                    </excludes>
+                </configuration>
+            </plugin>
+
+        </plugins>
+    </build>
+
+    <profiles>
+
+        <!--To run all tests do not specify any profile-->
+
+        <!-- Profile for running basic tests.
+             Use mvn -P test-basic-cache clean install -->
+        <profile>
+            <id>test-basic-cache</id>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-surefire-plugin</artifactId>
+                        <configuration>
+                            <excludes>
+                                <include>**/interceptor/*Test.java</include>
+                            </excludes>
+                            <systemPropertyVariables>
+                                <domainJar>${domain-lib-dir}/${domain-jar}
+                                </domainJar>
+                            </systemPropertyVariables>
+                        </configuration>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+
+        <!-- Profile for running optional tests.
+             Use mvn -P test-optional-cache clean install -->
+        <profile>
+            <id>test-optional-cache</id>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-surefire-plugin</artifactId>
+                        <configuration>
+                            <includes>
+                                <include>**/interceptor/*Test.java</include>
+                            </includes>
+                        </configuration>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+    </profiles>
+
+</project>
+

@@ -1,0 +1,52 @@
+
+# Syntax: FULL_CLASS_NAME#METHOD_NAME
+
+# dummy test that fails always.
+org.jsr107.tck.CachingTest#dummyTest
+
+# failures
+org.jsr107.tck.management.CacheMBStatisticsBeanTest#testCacheStatisticsInvokeEntryProcessorRemove
+org.jsr107.tck.management.CacheMBStatisticsBeanTest#testCacheStatisticsInvokeEntryProcessorUpdate
+org.jsr107.tck.management.CacheMBStatisticsBeanTest#testCacheStatisticsInvokeEntryProcessorGet
+org.jsr107.tck.management.CacheMBStatisticsBeanTest#testCacheStatisticsInvokeEntryProcessorNoOp
+
+org.jsr107.tck.management.CacheManagerManagementTest#testCacheManagementOffThenOnThenOff
+org.jsr107.tck.management.CacheManagerManagementTest#testCacheStatisticsOffThenOnThenOff
+
+org.jsr107.tck.integration.CacheLoaderWithoutReadThroughTest#shouldLoadWhenAccessingWithEntryProcessor
+org.jsr107.tck.integration.CacheWriterTest#shouldWriteThroughUsingInvoke_remove_nonExistingEntry
+
+org.jsr107.tck.StoreByValueTest#get_Existing_MutateValue
+org.jsr107.tck.StoreByValueTest#getAndPut_Existing_NonSameKey_MutateValue
+org.jsr107.tck.StoreByValueTest#getAndPut_Existing_NonSameKey_MutateKey
+org.jsr107.tck.StoreByValueTest#getAndPut_Existing_MutateValue
+org.jsr107.tck.StoreByValueTest#getAndPut_NotThere
+org.jsr107.tck.StoreByValueTest#get_Existing_MutateKey
+
+# errors
+
+org.jsr107.tck.management.CacheManagerManagementTest#testMultipleCacheManagers
+org.jsr107.tck.management.CacheManagerManagementTest#testJMXGetsCacheAdditionsAndRemovals
+org.jsr107.tck.management.CacheManagerManagementTest#testDoubleRegistration
+
+org.jsr107.tck.management.CacheMXBeanTest#testCacheMXBean
+org.jsr107.tck.management.CacheMXBeanTest#testCustomConfiguration
+
+org.jsr107.tck.expiry.CacheExpiryTest#org.jsr107.tck.expiry.CacheExpiryTest#expire_whenCreated_ModifiedExpiryPolicy
+org.jsr107.tck.expiry.CacheExpiryTest#expire_whenCreated_ParameterizedExpiryPolicy
+org.jsr107.tck.expiry.CacheExpiryTest#expire_whenCreated_TouchedExpiryPolicy
+org.jsr107.tck.expiry.CacheExpiryTest#invokeGetValueShouldCallGetExpiry
+org.jsr107.tck.expiry.CacheExpiryTest#expire_whenCreated_AccessedExpiryPolicy
+org.jsr107.tck.expiry.CacheExpiryTest#expire_whenCreated_ModifiedExpiryPolicy
+org.jsr107.tck.expiry.CacheExpiryTest#expire_whenCreated_CreatedExpiryPolicy
+
+org.jsr107.tck.event.CacheListenerTest#testDeregistration
+org.jsr107.tck.event.CacheListenerTest#testDeregistration_nullParameter
+org.jsr107.tck.event.CacheListenerTest#testFilteredListener
+org.jsr107.tck.event.CacheListenerTest#testDynamicRegistration
+org.jsr107.tck.event.CacheListenerTest#testBrokenCacheEntryListener
+org.jsr107.tck.event.CacheListenerTest#testCacheEntryListener
+org.jsr107.tck.event.CacheListenerTest#testCacheClearListener
+
+org.jsr107.tck.CacheTest#testCacheEntryUnwrap
+
