@@ -31,7 +31,7 @@ import java.lang.reflect.Method;
  *
  * @author Jens Wilke
  */
-public class CloneCopyTransformer<T> extends CopyTransformer<T> {
+public class CloneCopyTransformer<T> extends CopyTransformer<T> {                                 ;
 
   Method cloneMethod;
 
@@ -42,6 +42,9 @@ public class CloneCopyTransformer<T> extends CopyTransformer<T> {
   @SuppressWarnings("unchecked")
   @Override
   protected T copy(T o) {
+    if (o == null) {
+      return null;
+    }
     try {
       return (T) cloneMethod.invoke(o);
     } catch (IllegalAccessException e) {

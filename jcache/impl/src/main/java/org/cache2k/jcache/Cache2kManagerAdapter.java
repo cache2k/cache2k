@@ -30,6 +30,11 @@ import org.cache2k.EntryExpiryCalculator;
 import org.cache2k.ExceptionPropagator;
 import org.cache2k.impl.CacheLifeCycleListener;
 import org.cache2k.impl.CacheManagerImpl;
+import org.cache2k.jcache.generic.storeByValueSimulation.CopyCacheProxy;
+import org.cache2k.jcache.generic.storeByValueSimulation.ObjectCopyFactory;
+import org.cache2k.jcache.generic.storeByValueSimulation.ObjectTransformer;
+import org.cache2k.jcache.generic.storeByValueSimulation.RuntimeCopyTransformer;
+import org.cache2k.jcache.generic.storeByValueSimulation.SimpleObjectCopyFactory;
 
 import javax.cache.Cache;
 import javax.cache.CacheException;
@@ -240,12 +245,32 @@ public class Cache2kManagerAdapter implements CacheManager {
       c.keyType = cc.getKeyType();
       c.expiryPolicy = _policy;
       c.c2kCache = ca.cache;
-      name2adapter.put(c.getName(), c);
+      _jsr107cache = c;
+      if (cc.isStoreByValue()) {
+        final ObjectTransformer<K, K> _keyTransformer = createCopyTransformer(cc.getKeyType());
+        final ObjectTransformer<V, V> _valueTransformer = createCopyTransformer(cc.getValueType());
+        _jsr107cache =
+            new CopyCacheProxy(
+                _jsr107cache,
+                _keyTransformer,
+                _valueTransformer);
+      }
+      name2adapter.put(c.getName(), _jsr107cache);
       if (cc.isStatisticsEnabled()) {
         enableStatistics(c.getName(), true);
       }
-      return c;
+      return _jsr107cache;
     }
+  }
+
+  private <K, V> ObjectTransformer<K, K> createCopyTransformer(final Class<K> _type) {
+    ObjectCopyFactory f = new SimpleObjectCopyFactory();
+    ObjectTransformer<K, K> _keyTransformer;
+    _keyTransformer = f.createCopyTransformer(_type);
+    if (_keyTransformer == null) {
+      _keyTransformer = ( ObjectTransformer<K, K>) new RuntimeCopyTransformer();
+    }
+    return _keyTransformer;
   }
 
   @Override
@@ -276,6 +301,9 @@ public class Cache2kManagerAdapter implements CacheManager {
 
   private Cache2kCacheAdapter getAdapter(String _name) {
     Cache ca = name2adapter.get(_name);
+    if (ca instanceof CopyCacheProxy) {
+      ca = ((CopyCacheProxy) ca).getWrappedCache();
+    }
     if (ca instanceof CacheWithExpiryPolicyAdapter) {
       return (Cache2kCacheAdapter) ((CacheWithExpiryPolicyAdapter) ca).cache;
     }

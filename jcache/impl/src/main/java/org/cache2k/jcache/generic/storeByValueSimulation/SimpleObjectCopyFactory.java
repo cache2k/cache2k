@@ -44,9 +44,10 @@ public class SimpleObjectCopyFactory implements ObjectCopyFactory {
     if (m != null) {
       return new CloneCopyTransformer<T>(m);
     }
-    if (clazz.isAssignableFrom(Serializable.class)) {
+    if (Serializable.class.isAssignableFrom(clazz)) {
       return ObjectTransformer.SERIALIZABLE_COPY_TRANSFORM;
     }
+
     return null;
   }
 

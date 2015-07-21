@@ -25,6 +25,7 @@ package org.cache2k.jcache.generic.storeByValueSimulation;
 import org.junit.AfterClass;
 import org.junit.Test;
 
+import java.io.Serializable;
 import java.util.Date;
 
 import static org.junit.Assert.*;
@@ -59,6 +60,25 @@ public class SimpleObjectCopyFactoryTest {
     Integer val = 45;
     Integer v2 = t.compact(val);
     v2 = t.expand(val);
+  }
+
+  @Test
+  public void testDate() {
+    ObjectTransformer<Date, Date> t = factory.createCopyTransformer(Date.class);
+  }
+
+  public static class Dummy { }
+
+  @Test
+  public void testNotSerializable() {
+    ObjectTransformer<Dummy, Dummy> t = factory.createCopyTransformer(Dummy.class);
+  }
+
+  public static class DummySerializable implements Serializable { }
+
+  @Test
+  public void testSerializable() {
+    ObjectTransformer<DummySerializable, DummySerializable> t = factory.createCopyTransformer(DummySerializable.class);
   }
 
 }

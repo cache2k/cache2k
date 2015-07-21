@@ -91,6 +91,9 @@ public class TransformingCacheProxy<K, V, K0, V0> implements javax.cache.Cache<K
   }
 
   static <E, I> Set<I> compactSet(Set<E> keys, final ObjectTransformer<E, I> tr) {
+    if (keys == null) {
+      return null;
+    }
     final int _size = keys.size();
     final Iterator<E> it = keys.iterator();
     return new AbstractSet<I>() {
@@ -122,6 +125,9 @@ public class TransformingCacheProxy<K, V, K0, V0> implements javax.cache.Cache<K
   }
 
   static <E, I> Set<I> compactBoundedSet(Set<? extends E> keys, final ObjectTransformer<E, I> tr) {
+    if (keys == null) {
+      return null;
+    }
     final int _size = keys.size();
     final Iterator<? extends E> it = keys.iterator();
     return new AbstractSet<I>() {
@@ -204,6 +210,9 @@ public class TransformingCacheProxy<K, V, K0, V0> implements javax.cache.Cache<K
   }
 
   Map<K0, V0> compactMap(final Map<? extends K, ? extends V> map) {
+    if (map == null) {
+      return null;
+    }
     Map<K0, V0> m2 = new HashMap<K0, V0>();
     for (Map.Entry<? extends K, ? extends V> e : map.entrySet()) {
       m2.put(keyTransformer.compact(e.getKey()), valueTransformer.compact(e.getValue()));
@@ -256,7 +265,7 @@ public class TransformingCacheProxy<K, V, K0, V0> implements javax.cache.Cache<K
 
   @Override
   public boolean remove(K key, V oldValue) {
-    return cache.remove(passingKeyTransformer.compact(key));
+    return cache.remove(passingKeyTransformer.compact(key), valueTransformer.compact(oldValue));
   }
 
   @Override
@@ -316,6 +325,9 @@ public class TransformingCacheProxy<K, V, K0, V0> implements javax.cache.Cache<K
   }
 
   private <T> EntryProcessor<K0, V0, T> wrapEntryProcessor(final EntryProcessor<K, V, T> entryProcessor) {
+    if (entryProcessor == null) {
+      throw new NullPointerException("null processor");
+    }
     return new EntryProcessor<K0, V0, T>() {
       @Override
       public T process(final MutableEntry<K0, V0> entry, Object... arguments) throws EntryProcessorException {
@@ -452,6 +464,10 @@ public class TransformingCacheProxy<K, V, K0, V0> implements javax.cache.Cache<K
         it.remove();
       }
     };
+  }
+
+  public Cache<K0, V0> getWrappedCache() {
+    return cache;
   }
 
 }

@@ -43,6 +43,9 @@ public class SerializableCopyTransformer<T> extends CopyTransformer<T> {
   }
 
   static Object copySerializableObject(Object o) {
+    if (o == null) {
+      return null;
+    }
     try {
       ByteArrayOutputStream bos = new ByteArrayOutputStream();
       ObjectOutputStream out = new ObjectOutputStream(bos);
