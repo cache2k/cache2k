@@ -3257,12 +3257,16 @@ public abstract class BaseCache<E extends Entry, K, T>
 
     void loadAndFetch(EntryForProcessor<K, T> ep) {
       int idx = ep.index;
-      pNrt[idx] = fetch(entries[idx], pNrt[idx]);
+      E e = entries[idx];
+      pNrt[idx] = fetch(e, pNrt[idx]);
+      if (e.isVirgin()) {
+        e.setLoadedNonValidAndFetch();
+      }
       ep.needsLoad = false;
       ep.needsFetch = false;
-      if (entries[idx].hasFreshData(System.currentTimeMillis(), pNrt[idx])) {
-        ep.value = (T) entries[idx].getValue();
-        ep.lastModification = entries[idx].getLastModification();
+      if (e.hasFreshData(System.currentTimeMillis(), pNrt[idx])) {
+        ep.value = (T) e.getValue();
+        ep.lastModification = e.getLastModification();
       } else {
         ep.removed = true;
       }
