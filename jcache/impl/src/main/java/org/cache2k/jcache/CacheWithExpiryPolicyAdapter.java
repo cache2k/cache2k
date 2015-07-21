@@ -491,7 +491,7 @@ public class CacheWithExpiryPolicyAdapter<K, V> implements Cache<K, V> {
       @Override
       public Entry<K, V> next() {
         final Entry<K, ValueAndExtra<V>> e = it.next();
-        return returnEntry(e.getKey(), e.getValue());
+        return returnEntry(e);
       }
 
       @Override
@@ -501,7 +501,9 @@ public class CacheWithExpiryPolicyAdapter<K, V> implements Cache<K, V> {
     };
   }
 
-  Entry<K, V> returnEntry(final K key, final ValueAndExtra<V> v) {
+  Entry<K, V> returnEntry(final Entry<K, ValueAndExtra<V>> e) {
+    final K key = e.getKey();
+    final ValueAndExtra<V> v = e.getValue();
     final V _value = returnValue(key, v);
     return new Entry<K, V>() {
       @Override
@@ -516,7 +518,31 @@ public class CacheWithExpiryPolicyAdapter<K, V> implements Cache<K, V> {
 
       @Override
       public <T> T unwrap(Class<T> clazz) {
-        throw new UnsupportedOperationException();
+        if (clazz.equals(CacheEntry.class)) {
+          final CacheEntry<K, ValueAndExtra<V>> ce = e.unwrap(CacheEntry.class);
+          return (T) new CacheEntry<K, V>() {
+            @Override
+            public Throwable getException() {
+              return ce.getException();
+            }
+
+            @Override
+            public K getKey() {
+              return key;
+            }
+
+            @Override
+            public long getLastModification() {
+              return ce.getLastModification();
+            }
+
+            @Override
+            public V getValue() {
+              return _value;
+            }
+          };
+        }
+        return null;
       }
     };
   }

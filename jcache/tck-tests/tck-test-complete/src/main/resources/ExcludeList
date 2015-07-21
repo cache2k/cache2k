@@ -40,6 +40,3 @@ org.jsr107.tck.event.CacheListenerTest#testDynamicRegistration
 org.jsr107.tck.event.CacheListenerTest#testBrokenCacheEntryListener
 org.jsr107.tck.event.CacheListenerTest#testCacheEntryListener
 org.jsr107.tck.event.CacheListenerTest#testCacheClearListener
-
-org.jsr107.tck.CacheTest#testCacheEntryUnwrap
-
