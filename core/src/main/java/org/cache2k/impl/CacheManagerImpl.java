@@ -128,7 +128,8 @@ public class CacheManagerImpl extends CacheManager {
       if (c == '.' ||
           c == '-' ||
           c == '~' ||
-          c == '@') {
+          c == '@' ||
+          c == ' ') {
         continue;
       }
       if (!Character.isJavaIdentifierPart(c)) {
