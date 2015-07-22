@@ -50,6 +50,7 @@
     <module>core</module>
     <module>ee</module>
     <module>jcache</module>
+    <module>junit-util</module>
   </modules>
 
   <dependencies>
