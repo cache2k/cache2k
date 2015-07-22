@@ -59,16 +59,16 @@ public class Cache2kCacheAdapter<K, V> implements javax.cache.Cache<K, V> {
   CacheLoader<K, V> loader = null;
   boolean readThrough = false;
   boolean statisticsEnabled = false;
+  boolean configurationEnabled = false;
 
   /** Null, if no complete configuration is effective */
   CompleteConfiguration<K, V> completeConfiguration;
 
-  public Cache2kCacheAdapter(Cache2kManagerAdapter _manager, Cache<K, V> _cache, boolean _storeByvalue, CompleteConfiguration<K, V> _completeConfiguration) {
+  public Cache2kCacheAdapter(Cache2kManagerAdapter _manager, Cache<K, V> _cache, CompleteConfiguration<K, V> _completeConfiguration) {
     manager = _manager;
     cache = _cache;
     cacheImpl = (BaseCache<?, K, V>) _cache;
     completeConfiguration = _completeConfiguration;
-    storeByValue = _storeByvalue;
   }
 
   @Override

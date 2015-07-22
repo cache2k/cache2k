@@ -162,7 +162,7 @@ public class Cache2kManagerAdapter implements CacheManager {
       if (_existingCache != null && !_existingCache.isClosed()) {
         throw new CacheException("A cache2k instance is already existing with name: " + _cacheName);
       }
-      Cache2kCacheAdapter<K, V> c = new Cache2kCacheAdapter<K, V>(this, b.build(), cfg.isStoreByValue(), _cfgCopy);
+      Cache2kCacheAdapter<K, V> c = new Cache2kCacheAdapter<K, V>(this, b.build(), _cfgCopy);
       name2adapter.put(c.getName(), c);
       return c;
     }
@@ -235,18 +235,18 @@ public class Cache2kManagerAdapter implements CacheManager {
         throw new CacheException("A cache2k instance is already existing with name: " + _cacheName);
       }
       Cache2kCacheAdapter<K, CacheWithExpiryPolicyAdapter.ValueAndExtra<V>> ca =
-          new Cache2kCacheAdapter<K, CacheWithExpiryPolicyAdapter.ValueAndExtra<V>>(this, b.build(), cc.isStoreByValue(), null);
+          new Cache2kCacheAdapter<K, CacheWithExpiryPolicyAdapter.ValueAndExtra<V>>(this, b.build(), null);
       ca.loader = cl;
       ca.readThrough = cc.isReadThrough();
       CacheWithExpiryPolicyAdapter<K, V> c = new CacheWithExpiryPolicyAdapter<K, V>();
       c.cache = ca;
-      c.completeConfiguration = _cfgCopy;
       c.valueType = cc.getValueType();
       c.keyType = cc.getKeyType();
       c.expiryPolicy = _policy;
       c.c2kCache = ca.cache;
       _jsr107cache = c;
       if (cc.isStoreByValue()) {
+        ca.storeByValue = true;
         final ObjectTransformer<K, K> _keyTransformer = createCopyTransformer(cc.getKeyType());
         final ObjectTransformer<V, V> _valueTransformer = createCopyTransformer(cc.getValueType());
         _jsr107cache =
@@ -258,6 +258,9 @@ public class Cache2kManagerAdapter implements CacheManager {
       name2adapter.put(c.getName(), _jsr107cache);
       if (cc.isStatisticsEnabled()) {
         enableStatistics(c.getName(), true);
+      }
+      if (cc.isManagementEnabled()) {
+        enableManagement(c.getName(), true);
       }
       return _jsr107cache;
     }
@@ -345,6 +348,22 @@ public class Cache2kManagerAdapter implements CacheManager {
   public void enableManagement(String _cacheName, boolean enabled) {
     checkClosed();
     checkNonNullCacheName(_cacheName);
+    Cache2kCacheAdapter ca = getAdapter(_cacheName);
+    if (ca == null) {
+      return;
+    }
+    Cache c = name2adapter.get(_cacheName);
+    if (enabled) {
+      if (!ca.configurationEnabled) {
+        jmxSupport.enableConfiguration(ca.cache, c);
+        ca.configurationEnabled = true;
+      }
+    } else {
+      if (ca.configurationEnabled) {
+        jmxSupport.disableConfiguration(ca.cache);
+        ca.configurationEnabled = false;
+      }
+    }
   }
 
   private void checkClosed() {
@@ -362,8 +381,18 @@ public class Cache2kManagerAdapter implements CacheManager {
       if (ca != null) {
         synchronized (ca.cache) {
           if (!ca.statisticsEnabled) {
-            jmxSupport.registerCache(ca.cache);
+            jmxSupport.enableStatistics(ca.cache);
             ca.statisticsEnabled = true;
+          }
+        }
+      }
+    } else {
+      Cache2kCacheAdapter ca = getAdapter(_cacheName);
+      if (ca != null) {
+        synchronized (ca.cache) {
+          if (ca.statisticsEnabled) {
+            jmxSupport.disableStatistics(ca.cache);
+            ca.statisticsEnabled = false;
           }
         }
       }

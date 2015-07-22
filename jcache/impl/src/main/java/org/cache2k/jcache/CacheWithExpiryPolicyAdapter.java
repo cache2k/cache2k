@@ -67,12 +67,10 @@ import java.util.Set;
 public class CacheWithExpiryPolicyAdapter<K, V> implements Cache<K, V> {
 
   org.cache2k.Cache<K, ValueAndExtra<V>> c2kCache;
-  Cache<K, ValueAndExtra<V>> cache;
+  Cache2kCacheAdapter<K, ValueAndExtra<V>> cache;
   Class<K> keyType;
   Class<V> valueType;
-  boolean storeByValue;
   ExpiryPolicy expiryPolicy;
-  CompleteConfiguration<K, V> completeConfiguration;
 
   @Override
   public V get(K key) {
@@ -357,12 +355,10 @@ public class CacheWithExpiryPolicyAdapter<K, V> implements Cache<K, V> {
   @Override
   public <C extends Configuration<K, V>> C getConfiguration(Class<C> clazz) {
     if (CompleteConfiguration.class.isAssignableFrom(clazz)) {
-      if (completeConfiguration != null) {
-        return (C) completeConfiguration;
-      }
       MutableConfiguration<K, V> cfg = new MutableConfiguration<K, V>();
       cfg.setTypes(keyType, valueType);
-      cfg.setStoreByValue(storeByValue);
+      cfg.setStatisticsEnabled(cache.statisticsEnabled);
+      cfg.setManagementEnabled(cache.configurationEnabled);
       return (C) cfg;
     }
     return (C) new Configuration<K, V>() {
@@ -378,7 +374,7 @@ public class CacheWithExpiryPolicyAdapter<K, V> implements Cache<K, V> {
 
       @Override
       public boolean isStoreByValue() {
-        return storeByValue;
+        return false;
       }
     };
   }

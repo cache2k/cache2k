@@ -24,7 +24,12 @@ package org.cache2k.jcache.generic.storeByValueSimulation;
 
 import javax.cache.Cache;
 import javax.cache.configuration.CacheEntryListenerConfiguration;
+import javax.cache.configuration.CompleteConfiguration;
 import javax.cache.configuration.Configuration;
+import javax.cache.configuration.Factory;
+import javax.cache.expiry.ExpiryPolicy;
+import javax.cache.integration.CacheLoader;
+import javax.cache.integration.CacheWriter;
 
 /**
  * Cache proxy that expects the transformers keep the type but copy the objects. Copying could be
@@ -40,11 +45,89 @@ public class CopyCacheProxy<K, T> extends TransformingCacheProxy<K, T, K, T> {
   }
 
   /**
-   * Delegates to the wrapped cache.
+   * Delegates to the wrapped cache. Wrap configuration and return true on store by value
    */
+  @SuppressWarnings("unchecked")
   @Override
   public <C extends Configuration<K, T>> C getConfiguration(Class<C> clazz) {
-    return cache.getConfiguration(clazz);
+    final C c = cache.getConfiguration(clazz);
+    if (c instanceof CompleteConfiguration) {
+      final CompleteConfiguration<K, T> cc = (CompleteConfiguration<K,T>) c;
+      return (C) new CompleteConfiguration<K, T>() {
+        @Override
+        public Iterable<CacheEntryListenerConfiguration<K, T>> getCacheEntryListenerConfigurations() {
+          return cc.getCacheEntryListenerConfigurations();
+        }
+
+        @Override
+        public boolean isReadThrough() {
+          return cc.isReadThrough();
+        }
+
+        @Override
+        public boolean isWriteThrough() {
+          return cc.isWriteThrough();
+        }
+
+        @Override
+        public boolean isStatisticsEnabled() {
+          return cc.isStatisticsEnabled();
+        }
+
+        @Override
+        public boolean isManagementEnabled() {
+          return cc.isManagementEnabled();
+        }
+
+        @Override
+        public Factory<CacheLoader<K, T>> getCacheLoaderFactory() {
+          return cc.getCacheLoaderFactory();
+        }
+
+        @Override
+        public Factory<CacheWriter<? super K, ? super T>> getCacheWriterFactory() {
+          return cc.getCacheWriterFactory();
+        }
+
+        @Override
+        public Factory<ExpiryPolicy> getExpiryPolicyFactory() {
+          return cc.getExpiryPolicyFactory();
+        }
+
+        @Override
+        public Class<K> getKeyType() {
+          return cc.getKeyType();
+        }
+
+        @Override
+        public Class<T> getValueType() {
+          return cc.getValueType();
+        }
+
+        @Override
+        public boolean isStoreByValue() {
+          return true;
+        }
+      };
+    } else if (c instanceof Configuration) {
+      return (C) new Configuration<K, T>() {
+        @Override
+        public Class<K> getKeyType() {
+          return c.getKeyType();
+        }
+
+        @Override
+        public Class<T> getValueType() {
+          return c.getValueType();
+        }
+
+        @Override
+        public boolean isStoreByValue() {
+          return true;
+        }
+      };
+    }
+    return c;
   }
 
   /**

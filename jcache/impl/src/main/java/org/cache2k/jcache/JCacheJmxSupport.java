@@ -27,6 +27,7 @@ import org.cache2k.CacheManager;
 import org.cache2k.impl.BaseCache;
 import org.cache2k.impl.CacheLifeCycleListener;
 import org.cache2k.impl.CacheUsageExcpetion;
+import org.cache2k.jmx.CacheMXBean;
 
 import javax.cache.CacheException;
 import javax.management.InstanceNotFoundException;
@@ -46,6 +47,19 @@ public class JCacheJmxSupport implements CacheLifeCycleListener {
    * Register JMX objects. Called by manager if statistics support is requested.
    */
   public void registerCache(Cache c) {
+  }
+
+  @Override
+  public void cacheCreated(CacheManager cm, Cache c) {
+  }
+
+  @Override
+  public void cacheDestroyed(CacheManager cm, Cache c) {
+    disableStatistics(c);
+    disableConfiguration(c);
+  }
+
+  public void enableStatistics(Cache c) {
     MBeanServer mbs = mBeanServer;
     if (c instanceof BaseCache) {
       String _name = createStatisticsObjectName(c);
@@ -59,12 +73,7 @@ public class JCacheJmxSupport implements CacheLifeCycleListener {
     }
   }
 
-  @Override
-  public void cacheCreated(CacheManager cm, Cache c) {
-  }
-
-  @Override
-  public void cacheDestroyed(CacheManager cm, Cache c) {
+  public void disableStatistics(Cache c) {
     MBeanServer mbs = mBeanServer;
     if (c instanceof BaseCache) {
       String _name = createStatisticsObjectName(c);
@@ -77,8 +86,35 @@ public class JCacheJmxSupport implements CacheLifeCycleListener {
     }
   }
 
+  public void enableConfiguration(Cache c, javax.cache.Cache ca) {
+    MBeanServer mbs = mBeanServer;
+    String _name = createConfigurationObjectName(c);
+    try {
+       mbs.registerMBean(new CacheJmxConfiguration(ca), new ObjectName(_name));
+    } catch (Exception e) {
+      throw new CacheUsageExcpetion("Error registering JMX bean, name='" + _name + "'", e);
+    }
+  }
+
+  public void disableConfiguration(Cache c) {
+    MBeanServer mbs = mBeanServer;
+    String _name = createConfigurationObjectName(c);
+    try {
+      mbs.unregisterMBean(new ObjectName(_name));
+    } catch (InstanceNotFoundException ignore) {
+    } catch (Exception e) {
+      throw new CacheUsageExcpetion("Error deregistering JMX bean, name='" + _name + "'", e);
+    }
+  }
+
   public String createStatisticsObjectName(Cache cache) {
     return "javax.cache:type=CacheStatistics," +
+          "CacheManager=" + sanitizeName(cache.getCacheManager().getName()) +
+          ",Cache=" + sanitizeName(cache.getName());
+  }
+
+  public String createConfigurationObjectName(Cache cache) {
+    return "javax.cache:type=CacheConfiguration," +
           "CacheManager=" + sanitizeName(cache.getCacheManager().getName()) +
           ",Cache=" + sanitizeName(cache.getName());
   }
