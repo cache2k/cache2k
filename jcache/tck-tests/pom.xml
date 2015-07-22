@@ -12,7 +12,6 @@
       <relativePath>../pom.xml</relativePath>
     </parent>
 
-
     <properties>
         <domain-lib-dir>${project.build.directory}/domainlib</domain-lib-dir>
         <domain-jar>domain.jar</domain-jar>

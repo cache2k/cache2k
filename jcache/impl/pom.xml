@@ -6,8 +6,9 @@
   
   <parent>
     <groupId>org.cache2k</groupId>
-    <artifactId>cache2k-parent</artifactId>
+    <artifactId>cache2k-jcache-parent</artifactId>
     <version>0.22-SNAPSHOT</version>
+    <relativePath>../pom.xml</relativePath>
   </parent>
 
   <artifactId>cache2k-jcache</artifactId>
