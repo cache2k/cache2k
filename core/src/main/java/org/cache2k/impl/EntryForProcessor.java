@@ -38,16 +38,14 @@ public class EntryForProcessor<K, T> implements MutableCacheEntry<K, T> {
   T value;
   boolean removed;
   boolean updated = false;
-  boolean needsFetch;
-  boolean needsLoad;
+  boolean needsLoadOrFetch;
 
   @Override
   public void setValue(T v) {
     lastModification = System.currentTimeMillis();
     value = v;
     removed = false;
-    needsLoad = false;
-    needsFetch = false;
+    needsLoadOrFetch = false;
     updated = true;
   }
 
@@ -56,8 +54,7 @@ public class EntryForProcessor<K, T> implements MutableCacheEntry<K, T> {
     lastModification = System.currentTimeMillis();
     value = (T) new ExceptionWrapper(ex);
     removed = false;
-    needsLoad = false;
-    needsFetch = false;
+    needsLoadOrFetch = false;
     updated = true;
   }
 
@@ -67,7 +64,7 @@ public class EntryForProcessor<K, T> implements MutableCacheEntry<K, T> {
     value = null;
     removed = true;
     updated = true;
-    needsFetch = needsLoad = false;
+    needsLoadOrFetch = false;
   }
 
   @Override
@@ -75,11 +72,14 @@ public class EntryForProcessor<K, T> implements MutableCacheEntry<K, T> {
     return key;
   }
 
+  /**
+   * Does not call the cache source, but loads from the storage if needed. Storage load is postponed until the
+   * value is requested, since the entry processor could also only be used for writes.
+   */
   @Override
   public T getValue() {
-    if (needsFetch) {
-      operation.loadAndFetch(this);
-      needsFetch = false;
+    if (needsLoadOrFetch) {
+      operation.loadOrFetch(this);
     }
     if (value instanceof ExceptionWrapper) {
       return null;
@@ -89,17 +89,16 @@ public class EntryForProcessor<K, T> implements MutableCacheEntry<K, T> {
 
   @Override
   public boolean exists() {
-    if (needsLoad) {
-      throw new UnsupportedOperationException("storage: load only case need implementation");
+    if (needsLoadOrFetch) {
+      operation.loadOrFetch(this);
     }
-    return !(needsFetch || removed);
+    return !removed;
   }
 
   @Override
   public Throwable getException() {
-    if (needsFetch) {
-      operation.loadAndFetch(this);
-      needsFetch = false;
+    if (needsLoadOrFetch) {
+      operation.loadOrFetch(this);
     }
     if (value instanceof ExceptionWrapper) {
       return ((ExceptionWrapper) value).getException();

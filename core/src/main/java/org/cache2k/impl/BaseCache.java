@@ -3110,9 +3110,9 @@ public abstract class BaseCache<E extends Entry, K, T>
       if (e.hasFreshData(now, _pNrt[i])) {
         ep.value = (T) e.getValueOrException();
       } else {
-        ep.needsFetch = true;
-        if (storage != null) {
-          ep.needsLoad = true;
+        ep.removed = true;
+        if (storage != null || source != null) {
+          ep.needsLoadOrFetch = true;
         }
       }
     }
@@ -3255,6 +3255,27 @@ public abstract class BaseCache<E extends Entry, K, T>
       this.pNrt = pNrt;
     }
 
+    void loadOrFetch(EntryForProcessor<K, T> ep) {
+      int idx = ep.index;
+      E e = entries[idx];
+      if (storage != null) {
+        pNrt[idx] = fetchWithStorage(e, ep.removed, pNrt[idx]);
+      } else {
+        pNrt[idx] = fetch(e, pNrt[idx]);
+      }
+      if (e.isVirgin()) {
+        e.setLoadedNonValidAndFetch();
+      }
+      ep.needsLoadOrFetch = false;
+      if (e.hasFreshData(System.currentTimeMillis(), pNrt[idx])) {
+        ep.value = (T) e.getValue();
+        ep.lastModification = e.getLastModification();
+      } else {
+        ep.removed = true;
+      }
+    }
+
+    /*
     void loadAndFetch(EntryForProcessor<K, T> ep) {
       int idx = ep.index;
       E e = entries[idx];
@@ -3271,6 +3292,7 @@ public abstract class BaseCache<E extends Entry, K, T>
         ep.removed = true;
       }
     }
+    */
 
   }
 
