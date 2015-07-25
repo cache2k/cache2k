@@ -36,6 +36,6 @@ public interface CacheWriter<K, T> {
    * @param key
    * @throws Exception if an exception occurs, the cache update will not occur
    */
-  public void delete(Object key) throws Exception;
+  public void delete(K key) throws Exception;
 
 }
