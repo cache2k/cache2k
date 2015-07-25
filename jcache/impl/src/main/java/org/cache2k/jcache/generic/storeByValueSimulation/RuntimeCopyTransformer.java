@@ -22,8 +22,6 @@ package org.cache2k.jcache.generic.storeByValueSimulation;
  * #L%
  */
 
-import javafx.scene.chart.XYChart;
-
 import java.io.Serializable;
 
 /**
