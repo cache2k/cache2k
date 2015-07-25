@@ -223,7 +223,11 @@ public class Entry<E extends Entry, K, T>
     if (isFetchInProgress()) {
       synchronized (Entry.this) {
         if (isFetchInProgress()) {
-          nextRefreshTime = _previousNextRefreshTime;
+          if (_previousNextRefreshTime == VIRGIN_STATE) {
+            nextRefreshTime = LOADED_NON_VALID;
+          } else {
+            nextRefreshTime = _previousNextRefreshTime;
+          }
           notifyAll();
         }
       }

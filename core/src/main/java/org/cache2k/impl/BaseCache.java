@@ -2582,14 +2582,10 @@ public abstract class BaseCache<E extends Entry, K, T>
         ce = returnCacheEntry((K) e.getKey(), v, null, t0);
         writer.write(ce);
       } catch (RuntimeException ex) {
-        synchronized (lock) {
-          eventuallyAdjustPutNewEntryCount(e);
-        }
+        cleanupAfterWriterException(e);
         throw ex;
       } catch (Exception ex) {
-        synchronized (lock) {
-          eventuallyAdjustPutNewEntryCount(e);
-        }
+        cleanupAfterWriterException(e);
         throw new CacheException("writer exception", ex);
       }
     }
@@ -2724,6 +2720,14 @@ public abstract class BaseCache<E extends Entry, K, T>
   private void eventuallyAdjustPutNewEntryCount(E e) {
     if (e.isVirgin()) {
       putNewEntryCnt++;
+    }
+  }
+
+  private void cleanupAfterWriterException(E e) {
+    if (e.isVirgin()) {
+      synchronized (lock) {
+        putNewEntryCnt++;
+      }
     }
   }
 
