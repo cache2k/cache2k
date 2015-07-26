@@ -189,13 +189,6 @@ public class Entry<E extends Entry, K, T>
     return tmp;
   }
 
-  public void finishFetch(long _nextRefreshTime) {
-    synchronized (Entry.this) {
-      nextRefreshTime = _nextRefreshTime;
-      notifyAll();
-    }
-  }
-
   /**
    * If fetch is not stopped, abort and make entry invalid.
    * This is a safety measure, since during entry processing an

@@ -1345,13 +1345,20 @@ public abstract class BaseCache<E extends Entry, K, T>
     }
     boolean _finished = false;
     try {
-      e.finishFetch(fetch(e, _previousNextRefreshTime));
+      finishFetch(e, fetch(e, _previousNextRefreshTime));
       _finished = true;
     } finally {
       e.ensureFetchAbort(_finished, _previousNextRefreshTime);
     }
     evictEventually();
     return e;
+  }
+
+  protected void finishFetch(E e, long _nextRefreshTime) {
+    synchronized (e) {
+      e.nextRefreshTime = _nextRefreshTime;
+      e.notifyAll();
+    }
   }
 
   /** Always fetch the value from the source. That is a copy of getEntryInternal without fresh checks. */
@@ -1371,7 +1378,7 @@ public abstract class BaseCache<E extends Entry, K, T>
     }
     boolean _finished = false;
     try {
-      e.finishFetch(fetch(e, _previousNextRefreshTime));
+      finishFetch(e, fetch(e, _previousNextRefreshTime));
       _finished = true;
     } finally {
       e.ensureFetchAbort(_finished, _previousNextRefreshTime);
@@ -1411,7 +1418,7 @@ public abstract class BaseCache<E extends Entry, K, T>
       try {
         long _nextRefresh = insertEntryFromStorage(se, e, _needsFetch);
         _fresh = e.hasFreshData(System.currentTimeMillis(), _nextRefresh);
-        e.finishFetch(_nextRefresh);
+        finishFetch(e, _nextRefresh);
         _finished = true;
       } finally {
         e.ensureFetchAbort(_finished);
@@ -1453,10 +1460,10 @@ public abstract class BaseCache<E extends Entry, K, T>
       StorageEntry se = _action.checkAndPurge(key);
       synchronized (e) {
         if (_virgin) {
-          e.finishFetch(Entry.VIRGIN_STATE);
+          finishFetch(e, Entry.VIRGIN_STATE);
           evictEntryFromHeap(e);
         } else {
-          e.finishFetch(Entry.LOADED_NON_VALID);
+          finishFetch(e, Entry.LOADED_NON_VALID);
           evictEntryFromHeap(e);
         }
       }
@@ -1508,7 +1515,7 @@ public abstract class BaseCache<E extends Entry, K, T>
           storage.evict(e);
         } finally {
           synchronized (e) {
-            e.finishFetch(Entry.FETCH_ABORT);
+            finishFetch(e, Entry.FETCH_ABORT);
             evictEntryFromHeap(e);
           }
         }
@@ -1588,7 +1595,7 @@ public abstract class BaseCache<E extends Entry, K, T>
         }
       }
       long t = System.currentTimeMillis();
-      e.finishFetch(insertOnPut(e, _value, t, t, _previousNextRefreshTime));
+      finishFetch(e, insertOnPut(e, _value, t, t, _previousNextRefreshTime));
       _finished = true;
       return _previousValue;
     } finally {
@@ -1640,7 +1647,7 @@ public abstract class BaseCache<E extends Entry, K, T>
       if (_hasFreshData) {
         recordHitLocked(e);
         T _previousValue = (T) e.getValue();
-        e.finishFetch(insertOnPut(e, _value, t, t, _previousNextRefreshTime));
+        finishFetch(e, insertOnPut(e, _value, t, t, _previousNextRefreshTime));
         _finished = true;
         return _previousValue;
       } else {
@@ -1650,7 +1657,7 @@ public abstract class BaseCache<E extends Entry, K, T>
           }
           peekMissCnt++;
         }
-        e.finishFetch(Entry.LOADED_NON_VALID);
+        finishFetch(e, Entry.LOADED_NON_VALID);
         _finished = true;
         return null;
       }
@@ -1709,7 +1716,7 @@ public abstract class BaseCache<E extends Entry, K, T>
       recordHitLocked(e);
       try {
         long t = System.currentTimeMillis();
-        e.finishFetch(insertOnPut(e, _newValue, t, t, _previousNextRefreshTime));
+        finishFetch(e, insertOnPut(e, _newValue, t, t, _previousNextRefreshTime));
         _finished = true;
         return null;
       } finally {
@@ -1749,19 +1756,19 @@ public abstract class BaseCache<E extends Entry, K, T>
         long t = fetchWithStorage(e, false, _previousNextRefreshTime);
         _hasFreshData = e.hasFreshData(System.currentTimeMillis(), t);
         if (!_hasFreshData) {
-          e.finishFetch(t);
+          finishFetch(e, t);
           _finished = true;
           return (E) DUMMY_ENTRY_NO_REPLACE;
         }
         if (_compare && !e.equalsValue(_oldValue)) {
-          e.finishFetch(t);
+          finishFetch(e, t);
           _finished = true;
           return e;
         }
       }
 
       long t = System.currentTimeMillis();
-      e.finishFetch(insertOnPut(e, _newValue, t, t, _previousNextRefreshTime));
+      finishFetch(e, insertOnPut(e, _newValue, t, t, _previousNextRefreshTime));
       _finished = true;
       return null;
     } finally {
@@ -1815,7 +1822,7 @@ public abstract class BaseCache<E extends Entry, K, T>
           boolean _finished = false;
           try {
             long t = fetchWithStorage(e, false, _previousNextRefreshTime);
-            e.finishFetch(t);
+            finishFetch(e, t);
             _hasFreshData = e.hasFreshData(System.currentTimeMillis(), t);
             _finished = true;
           } finally {
@@ -1890,7 +1897,7 @@ public abstract class BaseCache<E extends Entry, K, T>
         }
         boolean _finished = false;
         try {
-          e.finishFetch(insertOnPut(e, value, now, now, _previousNextRefreshTime));
+          finishFetch(e, insertOnPut(e, value, now, now, _previousNextRefreshTime));
           _finished = true;
           return true;
         } finally {
@@ -1920,14 +1927,14 @@ public abstract class BaseCache<E extends Entry, K, T>
       long _result = _previousNextRefreshTime = fetchWithStorage(e, false, _previousNextRefreshTime);
       now = System.currentTimeMillis();
       if (e.hasFreshData(now, _result)) {
-        e.finishFetch(_result);
+        finishFetch(e, _result);
         return false;
       }
       e.nextRefreshTime = Entry.LOADED_NON_VALID_AND_PUT;
     }
     boolean _finished = false;
     try {
-      e.finishFetch(insertOnPut(e, value, t, t, _previousNextRefreshTime));
+      finishFetch(e, insertOnPut(e, value, t, t, _previousNextRefreshTime));
       _finished = true;
       evictEventually();
       return true;
@@ -1960,7 +1967,7 @@ public abstract class BaseCache<E extends Entry, K, T>
     boolean _finished = false;
     try {
       long t = System.currentTimeMillis();
-      e.finishFetch(insertOnPut(e, value, t, t, _previousNextRefreshTime));
+      finishFetch(e, insertOnPut(e, value, t, t, _previousNextRefreshTime));
       _finished = true;
     } finally {
       e.ensureFetchAbort(_finished, _previousNextRefreshTime);
@@ -2041,7 +2048,7 @@ public abstract class BaseCache<E extends Entry, K, T>
         t = fetchWithStorage(e, false, 0);
         _hasFreshData = e.hasFreshData(System.currentTimeMillis(), t);
         if (_checkValue && _hasFreshData && !e.equalsValue(_value)) {
-          e.finishFetch(t);
+          finishFetch(e, t);
           _finished = true;
           return false;
         }
@@ -2054,7 +2061,7 @@ public abstract class BaseCache<E extends Entry, K, T>
         storage.remove(key);
       }
       synchronized (e) {
-        e.finishFetch(Entry.LOADED_NON_VALID);
+        finishFetch(e, Entry.LOADED_NON_VALID);
         if (_hasFreshData) {
           synchronized (lock) {
             if (removeEntry(e)) {
@@ -2148,7 +2155,7 @@ public abstract class BaseCache<E extends Entry, K, T>
         storage.remove(key);
       }
       synchronized (e) {
-        e.finishFetch(Entry.LOADED_NON_VALID);
+        finishFetch(e, Entry.LOADED_NON_VALID);
         if (_hasFreshData) {
           synchronized (lock) {
             if (removeEntry(e)) {
@@ -2838,7 +2845,7 @@ public abstract class BaseCache<E extends Entry, K, T>
               }
               try {
                 long t = fetch(e, _previousNextRefreshTime);
-                e.finishFetch(t);
+                finishFetch(e, t);
               } catch (CacheClosedException ignore) {
               } catch (Throwable ex) {
                 e.ensureFetchAbort(false);
@@ -3235,7 +3242,7 @@ public abstract class BaseCache<E extends Entry, K, T>
             invokeNewEntryCnt++;
           }
         }
-        _entries[i].finishFetch(_pNrt[i]);
+        finishFetch(_entries[i], _pNrt[i]);
       }
     } else {
       for (int i = _keys.length - 1; i >= 0; i--) {
@@ -3246,13 +3253,13 @@ public abstract class BaseCache<E extends Entry, K, T>
               invokeNewEntryCnt++;
             }
           }
-          e.finishFetch(_pNrt[i]);
+          finishFetch(e, _pNrt[i]);
           continue;
         }
         if (_pEntries[i].removed) {
           if (e.hasFreshData(System.currentTimeMillis(), _pNrt[i])) {
             synchronized (e) {
-              e.finishFetch(Entry.LOADED_NON_VALID);
+              finishFetch(e, Entry.LOADED_NON_VALID);
               synchronized (lock) {
                 removeEntry(e);
                 removedCnt++;
@@ -3262,7 +3269,7 @@ public abstract class BaseCache<E extends Entry, K, T>
             synchronized (lock) {
               invokeNewEntryCnt++;
             }
-            e.finishFetch(_pNrt[i]);
+            finishFetch(e, _pNrt[i]);
           }
           continue;
         }
@@ -3274,7 +3281,7 @@ public abstract class BaseCache<E extends Entry, K, T>
           _expiry = _newExpiry[i];
         }
         e.setLastModification(_pEntries[i].getLastModification());
-        e.finishFetch(insert(e, (T) _pEntries[i].value, t0, t, INSERT_STAT_PUT, _expiry));
+        finishFetch(e, insert(e, (T) _pEntries[i].value, t0, t, INSERT_STAT_PUT, _expiry));
       }
     }
 
