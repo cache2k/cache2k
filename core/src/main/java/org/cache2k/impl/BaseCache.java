@@ -58,6 +58,7 @@ import org.cache2k.impl.util.TunableConstants;
 import org.cache2k.impl.util.TunableFactory;
 
 import java.lang.reflect.Array;
+import java.lang.reflect.Field;
 import java.security.SecureRandom;
 import java.util.AbstractList;
 import java.util.AbstractMap;
@@ -75,6 +76,7 @@ import java.util.NoSuchElementException;
 import java.util.Random;
 import java.util.Set;
 import java.util.Timer;
+import java.util.TimerTask;
 import java.util.concurrent.Future;
 import java.util.concurrent.FutureTask;
 import java.util.concurrent.TimeUnit;
@@ -1246,6 +1248,35 @@ public abstract class BaseCache<E extends Entry, K, T>
       final Throwable _exception = e.getException();
       final long _lastModification = e.getLastModification();
       return returnCacheEntry(_key, _value, _exception, _lastModification);
+    }
+  }
+
+  public String getEntryState(K key) {
+    E e = getEntryInternal(key);
+    synchronized (e) {
+      String _timerState = "n/a";
+      if (e.task != null) {
+        _timerState = "<unavailable>";
+        try {
+          Field f = TimerTask.class.getDeclaredField("state");
+          f.setAccessible(true);
+          int _state = f.getInt(e.task);
+          _timerState = _state + "";
+        } catch (Exception x) {
+          _timerState = x.toString();
+        }
+      }
+      return
+          "Entry{" + System.identityHashCode(e) + "}, " +
+          "keyIdentityHashCode=" + System.identityHashCode(e.key) + ", " +
+          "valueIdentityHashCode=" + System.identityHashCode(e.value) + ", " +
+          "keyHashCode" + e.key.hashCode() + ", " +
+          "keyModifiedHashCode=" + e.hashCode + ", " +
+          "keyMutation=" + (modifiedHash(e.key.hashCode()) != e.hashCode) + ", " +
+          "modified=" + e.getLastModification() + ", " +
+          "nextRefreshTime(with state)=" + e.nextRefreshTime + ", " +
+          "hasTimer=" + (e.task != null ? "true" : "false") + ", " +
+          "timerState=" + _timerState;
     }
   }
 
