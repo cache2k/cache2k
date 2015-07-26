@@ -23,6 +23,7 @@ package org.cache2k.impl;
  */
 
 import org.cache2k.impl.util.TunableConstants;
+import org.cache2k.impl.util.TunableFactory;
 
 /**
  * CLOCK Pro implementation with 3 clocks. Using separate clocks for hot and cold
@@ -38,6 +39,8 @@ import org.cache2k.impl.util.TunableConstants;
  */
 @SuppressWarnings("unchecked")
 public class ClockProPlusCache<K, T> extends LockFreeCache<ClockProPlusCache.Entry, K, T> {
+
+  private static final Tunable TUNABLE_CLOCK_PRO = TunableFactory.get(Tunable.class);
 
   long hotHits;
   long coldHits;
@@ -89,7 +92,7 @@ public class ClockProPlusCache<K, T> extends LockFreeCache<ClockProPlusCache.Ent
   protected void initializeHeapCache() {
     super.initializeHeapCache();
     ghostMax = maxSize;
-    hotMax = maxSize * 97 / 100;
+    hotMax = maxSize * TUNABLE_CLOCK_PRO.hotMaxPercentage / 100;
     coldSize = 0;
     hotSize = 0;
     staleSize = 0;
@@ -197,7 +200,7 @@ public class ClockProPlusCache<K, T> extends LockFreeCache<ClockProPlusCache.Ent
     int _lowestHits = Integer.MAX_VALUE;
     long _hotHits = hotHits;
     int _scanCnt = -1;
-    int _decrease = _decrease = ((_hand.hitCnt + _hand.next.hitCnt) >> 6) + 1;
+    int _decrease = ((_hand.hitCnt + _hand.next.hitCnt) >> TUNABLE_CLOCK_PRO.hitCounterDecreaseShift) + 1;
     do {
       _scanCnt++;
       int _hitCnt = _hand.hitCnt;
@@ -348,6 +351,14 @@ public class ClockProPlusCache<K, T> extends LockFreeCache<ClockProPlusCache.Ent
   static class Entry<K, T> extends org.cache2k.impl.Entry<Entry, K, T> {
 
     int hitCnt;
+
+  }
+
+  public static class Tunable extends TunableConstants {
+
+    int hotMaxPercentage = 97;
+
+    int hitCounterDecreaseShift = 6;
 
   }
 
