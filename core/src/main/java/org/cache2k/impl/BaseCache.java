@@ -1253,6 +1253,10 @@ public abstract class BaseCache<E extends Entry, K, T>
 
   public String getEntryState(K key) {
     E e = getEntryInternal(key);
+    return generateEntryStateString(e);
+  }
+
+  private String generateEntryStateString(E e) {
     synchronized (e) {
       String _timerState = "n/a";
       if (e.task != null) {
