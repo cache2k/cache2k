@@ -82,6 +82,14 @@ public final class TunableFactory {
     return null;
   }
 
+  /**
+   * Provide tuning object with initialized information from the properties file.
+   *
+   * @param p Properties from the execution context
+   * @param c Tunable class
+   * @param <T> type of requested tunable class
+   * @return Created and initialized object
+   */
   public synchronized static <T extends TunableConstants> T get(Properties p, Class<T> c) {
     T cfg = getDefault(c);
     if (p != null
@@ -93,6 +101,14 @@ public final class TunableFactory {
     return cfg;
   }
 
+  /**
+   * Provide tuning object with initialized information from properties in the class path
+   * or system properties.
+   *
+   * @param c Tunable class
+   * @param <T> type of requested tunable class
+   * @return Created and initialized object
+   */
   public synchronized static <T extends TunableConstants> T get(Class<T> c) {
     return getDefault(c);
   }
