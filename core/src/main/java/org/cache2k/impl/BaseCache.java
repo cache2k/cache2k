@@ -1356,7 +1356,7 @@ public abstract class BaseCache<E extends Entry, K, T>
 
   protected void finishFetch(E e, long _nextRefreshTime) {
     synchronized (e) {
-      e.nextRefreshTime = _nextRefreshTime;
+      e.nextRefreshTime = stopStartTimer(_nextRefreshTime, e, System.currentTimeMillis());
       e.notifyAll();
     }
   }
@@ -2702,20 +2702,25 @@ public abstract class BaseCache<E extends Entry, K, T>
       }
     }
 
-    long _nextRefreshTimeWithState;
     synchronized (lock) {
       checkClosed();
       updateStatisticsNeedsLock(e, _value, t0, t, _updateStatistics, _suppressException);
       if (_storageException != null) {
         throw _storageException;
       }
-      _nextRefreshTimeWithState = stopStartTimer(_nextRefreshTime, e, t);
-      if (_updateStatistics == INSERT_STAT_PUT && !e.hasFreshData(t, _nextRefreshTimeWithState)) {
+      if (_nextRefreshTime == 0) {
+        _nextRefreshTime = Entry.FETCH_NEXT_TIME_STATE;
+      } else {
+        if (_nextRefreshTime == Long.MAX_VALUE) {
+          _nextRefreshTime = Entry.FETCHED_STATE;
+        }
+      }
+      if (_updateStatistics == INSERT_STAT_PUT && !e.hasFreshData(t, _nextRefreshTime)) {
         putButExpiredCnt++;
       }
     } // synchronized (lock)
 
-    return _nextRefreshTimeWithState;
+    return _nextRefreshTime;
   }
 
   private void updateStatistics(E e, T _value, long t0, long t, byte _updateStatistics, boolean _suppressException) {
@@ -2799,7 +2804,6 @@ public abstract class BaseCache<E extends Entry, K, T>
         e.task = tt;
       }
     } else {
-      _nextRefreshTime = _nextRefreshTime == Long.MAX_VALUE ? Entry.FETCHED_STATE : Entry.FETCH_NEXT_TIME_STATE;
     }
     return _nextRefreshTime;
   }
