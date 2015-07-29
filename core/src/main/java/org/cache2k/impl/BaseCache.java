@@ -3407,6 +3407,7 @@ public abstract class BaseCache<E extends Entry, K, T>
 
   public final Info getInfo() {
     synchronized (lock) {
+      checkClosed();
       long t = System.currentTimeMillis();
       if (info != null &&
           (info.creationTime + info.creationDeltaMs * TUNABLE.minimumStatisticsCreationTimeDeltaFactor + TUNABLE.minimumStatisticsCreationDeltaMillis > t)) {
@@ -3423,6 +3424,7 @@ public abstract class BaseCache<E extends Entry, K, T>
 
   private Info getLatestInfo(long t) {
     synchronized (lock) {
+      checkClosed();
       info = new Info();
       info.creationTime = t;
       info.creationDeltaMs = (int) (System.currentTimeMillis() - t);
