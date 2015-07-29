@@ -170,8 +170,6 @@
           <bottom>
             <![CDATA[<a href="http://cache2k.org" target="_blank">cache2k</a> API documentation. Copyright &#169; {inceptionYear}&#x2013;{currentYear} <a href="http://headissue.com" target="_blank">headissue GmbH, Munich</a>.]]>
           </bottom>
-          <!-- TODO: cleanup javadoc and remove again -->
-          <additionalparam>-Xdoclint:none</additionalparam>
         </configuration>
       </plugin>
     </plugins>
@@ -416,6 +414,28 @@
       <modules>
         <module>jsr107-tck-tests</module>
       </modules>
+    </profile>
+
+    <!-- automatically disable doclint, as proposed here:
+         http://stackoverflow.com/questions/15886209/maven-is-not-working-in-java-8-when-javadoc-tags-are-incomplete
+         -->
+    <profile>
+      <id>doclint-java8-disable</id>
+      <activation>
+        <jdk>[1.8,)</jdk>
+      </activation>
+
+      <build>
+        <plugins>
+          <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-javadoc-plugin</artifactId>
+            <configuration>
+              <additionalparam>-Xdoclint:none</additionalparam>
+            </configuration>
+          </plugin>
+        </plugins>
+      </build>
     </profile>
 
   </profiles>
