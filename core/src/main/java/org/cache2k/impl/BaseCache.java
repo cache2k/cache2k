@@ -3397,6 +3397,7 @@ public abstract class BaseCache<E extends Entry, K, T>
   /** Check internal data structures and throw and exception if something is wrong, used for unit testing */
   public final void checkIntegrity() {
     synchronized (lock) {
+      checkClosed();
       IntegrityState is = getIntegrityState();
       if (is.getStateFlags() > 0) {
         throw new CacheIntegrityError(is.getStateDescriptor(), is.getFailingChecks(), toString());
