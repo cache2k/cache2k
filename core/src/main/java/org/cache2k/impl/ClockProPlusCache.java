@@ -333,7 +333,6 @@ public class ClockProPlusCache<K, T> extends LockFreeCache<ClockProPlusCache.Ent
     return ", coldSize=" + coldSize +
            ", hotSize=" + hotSize +
            ", hotMaxSize=" + hotMax +
-           ", hotSizeAvg=" + (coldRunCnt > 0 ? (hotSizeSum / coldRunCnt) : -1) +
            ", ghostSize=" + ghostHashCtrl.size +
            ", staleSize=" + staleSize +
            ", coldHits=" + (coldHits + sumUpListHits(handCold)) +
