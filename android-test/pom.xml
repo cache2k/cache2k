@@ -9,7 +9,7 @@
 
   <properties>
     <android.platform.version>4.1.1.4</android.platform.version>
-    <android.plugin.version>3.8.2</android.plugin.version>
+    <android.plugin.version>4.0.0-rc.2</android.plugin.version>
   </properties>
 
   <artifactId>cache2k-android-test</artifactId>
@@ -61,6 +61,7 @@
           <sdk>
             <platform>16</platform>
           </sdk>
+          <testCoverageFile>/data/data/org.cache2k/files/coverage.ec</testCoverageFile>
         </configuration>
         <extensions>true</extensions>
       </plugin>
