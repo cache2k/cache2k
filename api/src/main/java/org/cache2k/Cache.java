@@ -319,4 +319,9 @@ public interface Cache<K, T> extends KeyValueSource<K,T>, Iterable<CacheEntry<K,
    */
   public String toString();
 
+  /**
+   * Request an alternative interface for the cache.
+   */
+  public <X> X requestInterface(Class<X> _type);
+
 }
