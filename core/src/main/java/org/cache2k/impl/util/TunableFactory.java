@@ -144,7 +144,8 @@ public final class TunableFactory {
           cfg.getClass().getName().replace('$', '.') + "." + f.getName();
         String o = p.getProperty(_propName);
         if (o != null) {
-          if (f.getType() == Boolean.TYPE) {
+          final Class<?> _fieldType = f.getType();
+          if (_fieldType == Boolean.TYPE) {
             o = o.toLowerCase();
             if (
               "off".equals(o) ||
@@ -157,24 +158,29 @@ public final class TunableFactory {
             if (log.isDebugEnabled()) {
               log.debug(_propName + "=" + f.get(cfg));
             }
-          } else if (f.getType() == Integer.TYPE) {
+          } else if (_fieldType == Integer.TYPE) {
             f.set(cfg, Integer.valueOf(o));
             if (log.isDebugEnabled()) {
               log.debug(_propName + "=" + f.get(cfg));
             }
-          } else if (f.getType() == String.class) {
+          } else if (_fieldType == Long.TYPE) {
+            f.set(cfg, Long.valueOf(o));
+            if (log.isDebugEnabled()) {
+              log.debug(_propName + "=" + f.get(cfg));
+            }
+          } else if (_fieldType == String.class) {
             f.set(cfg, o);
             if (log.isDebugEnabled()) {
               log.debug(_propName + "=" + f.get(cfg));
             }
-          } else if (f.getType() == Class.class) {
+          } else if (_fieldType == Class.class) {
             Class<?> c = Class.forName(o);
             f.set(cfg, c);
             if (log.isDebugEnabled()) {
               log.debug(_propName + "=" + c.getName());
             }
           } else {
-            throw new CacheInternalError("no policy to change this tunable type");
+            throw new CacheInternalError("Changing this tunable type is not supported. Tunable: " + _propName + ", " + _fieldType);
           }
         }
       }
