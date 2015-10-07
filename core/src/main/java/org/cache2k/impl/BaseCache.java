@@ -2877,7 +2877,8 @@ public abstract class BaseCache<E extends Entry, K, T>
 
     }
     synchronized (e) {
-      if (e.isFetchInProgress() || e.isRemovedState()) {
+      long nrt = e.nextRefreshTime;
+      if (nrt < Entry.EXPIRY_TIME_MIN) {
         return;
       }
       long t = System.currentTimeMillis();
