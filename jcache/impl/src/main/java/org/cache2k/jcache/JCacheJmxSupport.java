@@ -59,30 +59,26 @@ public class JCacheJmxSupport implements CacheLifeCycleListener {
     disableConfiguration(c);
   }
 
-  public void enableStatistics(Cache c) {
+  public void enableStatistics(Cache2kCacheAdapter c) {
     MBeanServer mbs = mBeanServer;
-    if (c instanceof BaseCache) {
-      String _name = createStatisticsObjectName(c);
-      try {
-         mbs.registerMBean(
-           new CacheJmxStatistics((BaseCache) c),
-           new ObjectName(_name));
-      } catch (Exception e) {
-        throw new CacheUsageExcpetion("Error registering JMX bean, name='" + _name + "'", e);
-      }
+    String _name = createStatisticsObjectName(c.cache);
+    try {
+       mbs.registerMBean(
+         new CacheJmxStatistics(c),
+         new ObjectName(_name));
+    } catch (Exception e) {
+      throw new CacheUsageExcpetion("Error registering JMX bean, name='" + _name + "'", e);
     }
   }
 
   public void disableStatistics(Cache c) {
     MBeanServer mbs = mBeanServer;
-    if (c instanceof BaseCache) {
-      String _name = createStatisticsObjectName(c);
-      try {
-        mbs.unregisterMBean(new ObjectName(_name));
-      } catch (InstanceNotFoundException ignore) {
-      } catch (Exception e) {
-        throw new CacheUsageExcpetion("Error deregistering JMX bean, name='" + _name + "'", e);
-      }
+    String _name = createStatisticsObjectName(c);
+    try {
+      mbs.unregisterMBean(new ObjectName(_name));
+    } catch (InstanceNotFoundException ignore) {
+    } catch (Exception e) {
+      throw new CacheUsageExcpetion("Error deregistering JMX bean, name='" + _name + "'", e);
     }
   }
 

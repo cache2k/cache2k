@@ -46,6 +46,7 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicLong;
 
 /**
  * @author Jens Wilke; created: 2015-03-28
@@ -60,6 +61,8 @@ public class Cache2kCacheAdapter<K, V> implements javax.cache.Cache<K, V> {
   boolean readThrough = false;
   boolean statisticsEnabled = false;
   boolean configurationEnabled = false;
+  AtomicLong missCorrectionCounter = new AtomicLong();
+  AtomicLong hitCorrectionCounter = new AtomicLong();
 
   /** Null, if no complete configuration is effective */
   CompleteConfiguration<K, V> completeConfiguration;
@@ -266,38 +269,16 @@ public class Cache2kCacheAdapter<K, V> implements javax.cache.Cache<K, V> {
     CacheEntryProcessor<K, V, T> p = new CacheEntryProcessor<K, V, T>() {
       @Override
       public T process(final MutableCacheEntry<K, V> e, Object... _objs) throws Exception {
-        MutableEntry<K, V> me = new MutableEntry<K, V>() {
-          @Override
-          public boolean exists() {
-            return e.exists();
-          }
-
-          @Override
-          public void remove() {
-            e.remove();
-          }
-
-          @Override
-          public void setValue(V value) {
-            e.setValue(value);
-          }
-
-          @Override
-          public K getKey() {
-            return e.getKey();
-          }
-
-          @Override
-          public V getValue() {
-            return e.getValue();
-          }
-
-          @Override
-          public <T> T unwrap(Class<T> clazz) {
-            return null;
-          }
-        };
-        return entryProcessor.process(me, _objs);
+        final boolean _alreadyExisting = e.exists();
+        MutableEntryAdapter<K, V> me = new MutableEntryAdapter<K, V>(e);
+        T _result = entryProcessor.process(me, _objs);
+        if (!me.getInvoked && !_alreadyExisting) {
+          missCorrectionCounter.incrementAndGet();
+        }
+        if (me.putRemoveInvoked && _alreadyExisting) {
+          hitCorrectionCounter.incrementAndGet();
+        }
+        return _result;
       }
     };
     Map<K, EntryProcessingResult<T>> _result = cache.invokeAll(keys, p, arguments);
@@ -407,4 +388,47 @@ public class Cache2kCacheAdapter<K, V> implements javax.cache.Cache<K, V> {
     }
   }
 
+  private class MutableEntryAdapter<K, V> implements MutableEntry<K, V> {
+
+    private boolean getInvoked = false;
+    private boolean putRemoveInvoked = false;
+    private final MutableCacheEntry<K, V> e;
+
+    public MutableEntryAdapter(MutableCacheEntry<K, V> e) {
+      this.e = e;
+    }
+
+    @Override
+    public boolean exists() {
+      return e.exists();
+    }
+
+    @Override
+    public void remove() {
+      putRemoveInvoked = true;
+      e.remove();
+    }
+
+    @Override
+    public void setValue(V value) {
+      putRemoveInvoked = true;
+      e.setValue(value);
+    }
+
+    @Override
+    public K getKey() {
+      getInvoked = true;
+      return e.getKey();
+    }
+
+    @Override
+    public V getValue() {
+      return e.getValue();
+    }
+
+    @Override
+    public <T> T unwrap(Class<T> clazz) {
+      return null;
+    }
+  }
 }

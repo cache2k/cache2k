@@ -470,4 +470,8 @@ public class TransformingCacheProxy<K, V, K0, V0> implements javax.cache.Cache<K
     return cache;
   }
 
+  public String toString() {
+    return getClass().getSimpleName() + "(" + cache + ")";
+  }
+
 }

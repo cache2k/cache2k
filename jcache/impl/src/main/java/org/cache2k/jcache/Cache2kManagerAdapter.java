@@ -381,7 +381,7 @@ public class Cache2kManagerAdapter implements CacheManager {
       if (ca != null) {
         synchronized (ca.cache) {
           if (!ca.statisticsEnabled) {
-            jmxSupport.enableStatistics(ca.cache);
+            jmxSupport.enableStatistics(ca);
             ca.statisticsEnabled = true;
           }
         }

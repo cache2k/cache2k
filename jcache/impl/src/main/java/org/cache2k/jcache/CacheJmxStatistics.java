@@ -32,15 +32,18 @@ import javax.cache.management.CacheStatisticsMXBean;
 public class CacheJmxStatistics implements CacheStatisticsMXBean {
 
   private static final boolean flushOnAccess = Tuning.GLOBAL.flushStatisticsOnAccess;
+  private static final int tweakStatisticsForEntityProcessor = Tuning.GLOBAL.tweakStatisticsForEntityProcessor ? 1 : 0;
 
   BaseCache cache;
+  Cache2kCacheAdapter adapter;
 
   BaseCache.Info getInfo() {
     return flushOnAccess ? cache.getLatestInfo() : cache.getInfo();
   }
 
-  public CacheJmxStatistics(BaseCache _cache) {
-    cache = _cache;
+  public CacheJmxStatistics(Cache2kCacheAdapter _cache) {
+    cache = _cache.cacheImpl;
+    adapter = _cache;
   }
 
   @Override
@@ -51,17 +54,35 @@ public class CacheJmxStatistics implements CacheStatisticsMXBean {
   @Override
   public long getCacheHits() {
     BaseCache.Info inf = getInfo();
-    return inf.getReadUsageCnt() - inf.getMissCnt();
+    return calcHits(inf);
+  }
+
+  private long calcHits(BaseCache.Info inf) {
+    return inf.getReadUsageCnt() - inf.getMissCnt() + adapter.hitCorrectionCounter.get() * tweakStatisticsForEntityProcessor;
   }
 
   @Override
   public float getCacheHitPercentage() {
+    if (tweakStatisticsForEntityProcessor == 1) {
+      BaseCache.Info inf = getInfo();
+      long _hits = calcHits(inf);
+      long _miss = calcMisses(inf);
+      if (_hits == 0) {
+        return 0.0F;
+      }
+      return (float) _hits * 100F / (_hits + _miss);
+    }
     return (float) getInfo().getDataHitRate();
   }
 
   @Override
   public long getCacheMisses() {
-    return getInfo().getMissCnt();
+    BaseCache.Info inf = getInfo();
+    return calcMisses(inf);
+  }
+
+  private long calcMisses(BaseCache.Info inf) {
+    return inf.getMissCnt() + adapter.missCorrectionCounter.get() * tweakStatisticsForEntityProcessor;
   }
 
   @Override

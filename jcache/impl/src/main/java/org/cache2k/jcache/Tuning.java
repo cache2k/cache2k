@@ -34,6 +34,15 @@ public class Tuning extends TunableConstants {
 
   public static final Tuning GLOBAL = TunableFactory.get(Tuning.class);
 
+  /**
+   * Every access to an JMX value will flush the cache statistics. This is only needed for the TCK,
+   * that it can check the correct counting.
+   */
   public boolean flushStatisticsOnAccess = true;
+
+  /**
+   * Apply a "correction" to the statistics for the entity processor invokes. Needed for the TCK.
+   */
+  public boolean tweakStatisticsForEntityProcessor = true;
 
 }
