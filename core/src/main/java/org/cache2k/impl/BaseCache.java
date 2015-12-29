@@ -663,6 +663,14 @@ public abstract class BaseCache<E extends Entry, K, T>
   }
 
   protected final void clearLocalCache() {
+    iterateAllEntriesRemoveAndCancelTimer();
+    removedCnt += getLocalSize();
+    initializeHeapCache();
+    clearedTime = System.currentTimeMillis();
+    touchedTime = clearedTime;
+  }
+
+  protected void iterateAllEntriesRemoveAndCancelTimer() {
     Iterator<Entry> it = iterateAllHeapEntries();
     int _count = 0;
     while (it.hasNext()) {
@@ -671,10 +679,6 @@ public abstract class BaseCache<E extends Entry, K, T>
       cancelExpiryTimer(e);
       _count++;
     }
-    removedCnt += getLocalSize();
-    initializeHeapCache();
-    clearedTime = System.currentTimeMillis();
-    touchedTime = clearedTime;
   }
 
   protected void initializeHeapCache() {
@@ -1763,7 +1767,7 @@ public abstract class BaseCache<E extends Entry, K, T>
     return f;
   }
 
-  private void cancelExpiryTimer(Entry e) {
+  protected void cancelExpiryTimer(Entry e) {
     if (e.task != null) {
       e.task.cancel();
       timerCancelCount++;

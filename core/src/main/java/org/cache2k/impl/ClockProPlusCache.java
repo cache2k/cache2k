@@ -123,6 +123,40 @@ public class ClockProPlusCache<K, T> extends LockFreeCache<ClockProPlusCache.Ent
     }
   }
 
+  @Override
+  protected void iterateAllEntriesRemoveAndCancelTimer() {
+    Entry e, _head;
+    int _count = 0;
+    e = _head = handCold;
+    long _hits = 0;
+    if (e != null) {
+      do {
+        _hits += e.hitCnt;
+        if (!e.isStale()) {
+          e.removedFromList();
+          cancelExpiryTimer(e);
+          _count++;
+        }
+        e = (Entry) e.prev;
+      } while (e != _head);
+      coldHits += _hits;
+    }
+    e = _head = handHot;
+    if (e != null) {
+      _hits = 0;
+      do {
+        _hits += e.hitCnt;
+        if (!e.isStale()) {
+          e.removedFromList();
+          cancelExpiryTimer(e);
+          _count++;
+        }
+        e = (Entry) e.prev;
+      } while (e != _head);
+      hotHits += _hits;
+    }
+  }
+
   private void insertCopyIntoGhosts(Entry e) {
     Entry<K,T> e2 = new Entry<K, T>();
     e2.key = (K) e.key;
@@ -228,6 +262,7 @@ public class ClockProPlusCache<K, T> extends LockFreeCache<ClockProPlusCache.Ent
       if (!_hand.isStale()) {
          break;
        }
+      coldHits += _hand.hitCnt;
       _hand = (Entry<K,T>) removeFromCyclicList(_hand);
       staleSize--;
       coldSize--;

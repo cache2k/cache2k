@@ -61,9 +61,27 @@ public class ClockCache<K, T> extends LockFreeCache<ClockCache.Entry, K, T> {
     hand = null;
   }
 
+  protected void iterateAllEntriesRemoveAndCancelTimer() {
+    Entry e, _head;
+    int _count = 0;
+    e = _head = hand;
+    long _hits = 0;
+    if (e != null) {
+      do {
+        _hits += e.hitCnt;
+        e.removedFromList();
+        cancelExpiryTimer(e);
+        _count++;
+        e = (Entry) e.prev;
+      } while (e != _head);
+      hits += _hits;
+    }
+  }
+
   @Override
   protected void removeEntryFromReplacementList(Entry e) {
     hand = removeFromCyclicList(hand, e);
+    hits += e.hitCnt;
     size--;
   }
 
