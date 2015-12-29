@@ -68,11 +68,9 @@ public class ClockProPlusCache<K, T> extends LockFreeCache<ClockProPlusCache.Ent
   Entry[] ghostHash;
   long ghostInsertCnt = 0;
 
-  Tunable tunable = new Tunable();
-
-  private int sumUpListHits(Entry e) {
+  private long sumUpListHits(Entry e) {
     if (e == null) { return 0; }
-    int cnt = 0;
+    long cnt = 0;
     Entry _head = e;
     do {
       cnt += e.hitCnt;
@@ -176,6 +174,36 @@ public class ClockProPlusCache<K, T> extends LockFreeCache<ClockProPlusCache.Ent
   @Override
   protected void recordHit(Entry e) {
     e.hitCnt++;
+    int _hitCnt = e.hitCnt + 1;
+    if (_hitCnt < 0) {
+      scrubCache(e);
+      recordHit(e);
+      return;
+    }
+    e.hitCnt = _hitCnt;
+  }
+
+  private long scrubCounters(Entry e) {
+    if (e == null) { return 0; }
+      int cnt = 0;
+      Entry _head = e;
+      do {
+        int _hitCnt = e.hitCnt;
+        int _hitCnt2 = e.hitCnt = e.hitCnt >> 1;
+        cnt += _hitCnt - _hitCnt2;
+        e = (Entry) e.next;
+      } while (e != _head);
+    return cnt;
+  }
+
+  protected void scrubCache(Entry e) {
+    synchronized (lock) {
+      if (e.hitCnt != Integer.MAX_VALUE) {
+        return;
+      }
+      coldHits += scrubCounters(handCold);
+      hotHits += scrubCounters(handHot);
+    }
   }
 
   @Override
