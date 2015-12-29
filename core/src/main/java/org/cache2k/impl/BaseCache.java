@@ -2088,9 +2088,6 @@ public abstract class BaseCache<E extends Entry, K, T>
    * When the time has come remove the entry from the cache.
    */
   protected void timerEvent(final E e, long _executionTime) {
-    if (e.isRemovedFromReplacementList()) {
-      return;
-    }
     if (refreshPool != null) {
       synchronized (lock) {
         if (isClosed()) { return; }
@@ -2143,33 +2140,20 @@ public abstract class BaseCache<E extends Entry, K, T>
           }
           refreshSubmitFailedCnt++;
         }
-
-      }
-
-    } else {
-      if (_executionTime < e.nextRefreshTime) {
-        synchronized (e) {
-          if (!e.isRemovedState()) {
-            long t = System.currentTimeMillis();
-            if (t < e.nextRefreshTime) {
-              e.nextRefreshTime = -e.nextRefreshTime;
-              return;
-            } else {
-              try {
-                expireEntry(e);
-              } catch (CacheClosedException ignore) { }
-            }
-          }
-        }
-        return;
       }
     }
     synchronized (e) {
+      long nrt = e.nextRefreshTime;
+      if (nrt < Entry.EXPIRY_TIME_MIN) {
+        return;
+      }
       long t = System.currentTimeMillis();
       if (t >= e.nextRefreshTime) {
         try {
           expireEntry(e);
         } catch (CacheClosedException ignore) { }
+      } else {
+        e.nextRefreshTime = -e.nextRefreshTime;
       }
     }
   }
