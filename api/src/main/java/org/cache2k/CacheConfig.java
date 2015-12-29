@@ -78,6 +78,11 @@ public class CacheConfig {
     return maxSize;
   }
 
+  /**
+   * The maximum number of entries hold by the cache. When the maximum size is reached, by
+   * inserting new entries, the cache eviction algorithm will remove one or more entries
+   * to keep the size within the limit.
+   */
   public void setMaxSize(int maxSize) {
     this.maxSize = maxSize;
   }
