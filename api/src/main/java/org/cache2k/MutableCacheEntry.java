@@ -27,6 +27,9 @@ package org.cache2k;
  */
 public interface MutableCacheEntry<K, T> extends CacheEntry<K, T> {
 
+  /**
+   * True if a mapping exists in the cache, never invokes the loader / cache source.
+   */
   boolean exists();
   void setValue(T v);
   void setException(Throwable ex);

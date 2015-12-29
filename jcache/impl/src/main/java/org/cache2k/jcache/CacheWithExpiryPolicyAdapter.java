@@ -411,7 +411,12 @@ public class CacheWithExpiryPolicyAdapter<K, V> implements Cache<K, V> {
 
           @Override
           public V getValue() {
-            if (fresh || !exists()) {
+            boolean _doNotCountCacheAccessIfEntryGetsLoaded = !exists();
+            boolean _doNotCountCacheAccessIfEntryIsFresh = fresh;
+            if (_doNotCountCacheAccessIfEntryIsFresh || _doNotCountCacheAccessIfEntryGetsLoaded) {
+              if (!cache.readThrough && !exists()) {
+                return null;
+              }
               return e0.getValue() != null ? e0.getValue().value : null;
             }
             return returnValue(e0.getKey(), e0.getValue());

@@ -89,9 +89,6 @@ public class EntryForProcessor<K, T> implements MutableCacheEntry<K, T> {
 
   @Override
   public boolean exists() {
-    if (needsLoadOrFetch) {
-      operation.loadOrFetch(this);
-    }
     return !removed;
   }
 

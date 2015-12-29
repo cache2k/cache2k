@@ -13,7 +13,6 @@ org.jsr107.tck.management.CacheMBStatisticsBeanTest#testCacheStatisticsInvokeEnt
 org.jsr107.tck.management.CacheManagerManagementTest#testCacheManagementOffThenOnThenOff
 org.jsr107.tck.management.CacheManagerManagementTest#testCacheStatisticsOffThenOnThenOff
 
-org.jsr107.tck.integration.CacheLoaderWithoutReadThroughTest#shouldLoadWhenAccessingWithEntryProcessor
 org.jsr107.tck.integration.CacheWriterTest#shouldWriteThroughUsingInvoke_remove_nonExistingEntry
 
 # errors
