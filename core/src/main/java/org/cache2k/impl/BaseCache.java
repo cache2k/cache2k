@@ -3152,7 +3152,7 @@ public abstract class BaseCache<E extends Entry, K, T>
       if (e.hasFreshData(now, _pNrt[i])) {
         ep.value = (T) e.getValueOrException();
       } else {
-        ep.removed = true;
+        ep.removed = ep.notExistingInCacheYet = true;
         if (storage != null || source != null) {
           ep.needsLoadOrFetch = true;
         }
@@ -3217,9 +3217,12 @@ public abstract class BaseCache<E extends Entry, K, T>
             continue;
           }
           if (_pEntries[i].removed) {
+            writer.delete(_keys[i]);
+            /* TCK: always calls the writer!!!
             if (_entries[i].hasFreshData(System.currentTimeMillis(), _pNrt[i])) {
               writer.delete(_keys[i]);
             }
+            */
           } else {
             CacheEntry<K, T> ce = returnCacheEntry(_keys[i], _pEntries[i].getValue(), _pEntries[i].getException(), _pEntries[i].getLastModification());
             writer.write(ce);

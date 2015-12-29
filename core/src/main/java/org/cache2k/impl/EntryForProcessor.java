@@ -36,7 +36,8 @@ public class EntryForProcessor<K, T> implements MutableCacheEntry<K, T> {
   long lastModification;
   K key;
   T value;
-  boolean removed;
+  boolean removed = false;
+  boolean notExistingInCacheYet = false;
   boolean updated = false;
   boolean needsLoadOrFetch;
 
@@ -60,11 +61,19 @@ public class EntryForProcessor<K, T> implements MutableCacheEntry<K, T> {
 
   @Override
   public void remove() {
-    lastModification = System.currentTimeMillis();
-    value = null;
-    removed = true;
-    updated = true;
-    needsLoadOrFetch = false;
+   if (notExistingInCacheYet && updated) {
+      lastModification = 0;
+      value = null;
+      removed = true;
+      updated = false;
+      needsLoadOrFetch = false;
+    } else {
+      lastModification = System.currentTimeMillis();
+      value = null;
+      removed = true;
+      updated = true;
+      needsLoadOrFetch = false;
+    }
   }
 
   @Override
