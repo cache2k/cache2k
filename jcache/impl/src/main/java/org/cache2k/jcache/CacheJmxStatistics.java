@@ -23,7 +23,6 @@ package org.cache2k.jcache;
  */
 
 import org.cache2k.impl.BaseCache;
-import org.cache2k.jmx.CacheInfoMXBean;
 
 import javax.cache.management.CacheStatisticsMXBean;
 
@@ -32,11 +31,12 @@ import javax.cache.management.CacheStatisticsMXBean;
  */
 public class CacheJmxStatistics implements CacheStatisticsMXBean {
 
+  private static final boolean flushOnAccess = Tuning.GLOBAL.flushStatisticsOnAccess;
+
   BaseCache cache;
-  boolean exactStatistics = true;
 
   BaseCache.Info getInfo() {
-    return exactStatistics ? cache.getLatestInfo() : cache.getInfo();
+    return flushOnAccess ? cache.getLatestInfo() : cache.getInfo();
   }
 
   public CacheJmxStatistics(BaseCache _cache) {
