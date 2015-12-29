@@ -82,6 +82,14 @@ public final class TunableFactory {
     return null;
   }
 
+  /**
+   * Provide tuning object with initialized information from the properties file.
+   *
+   * @param p Properties from the execution context
+   * @param c Tunable class
+   * @param <T> type of requested tunable class
+   * @return Created and initialized object
+   */
   public synchronized static <T extends TunableConstants> T get(Properties p, Class<T> c) {
     T cfg = getDefault(c);
     if (p != null
@@ -93,6 +101,14 @@ public final class TunableFactory {
     return cfg;
   }
 
+  /**
+   * Provide tuning object with initialized information from properties in the class path
+   * or system properties.
+   *
+   * @param c Tunable class
+   * @param <T> type of requested tunable class
+   * @return Created and initialized object
+   */
   public synchronized static <T extends TunableConstants> T get(Class<T> c) {
     return getDefault(c);
   }
@@ -128,7 +144,8 @@ public final class TunableFactory {
           cfg.getClass().getName().replace('$', '.') + "." + f.getName();
         String o = p.getProperty(_propName);
         if (o != null) {
-          if (f.getType() == Boolean.TYPE) {
+          final Class<?> _fieldType = f.getType();
+          if (_fieldType == Boolean.TYPE) {
             o = o.toLowerCase();
             if (
               "off".equals(o) ||
@@ -141,24 +158,29 @@ public final class TunableFactory {
             if (log.isDebugEnabled()) {
               log.debug(_propName + "=" + f.get(cfg));
             }
-          } else if (f.getType() == Integer.TYPE) {
+          } else if (_fieldType == Integer.TYPE) {
             f.set(cfg, Integer.valueOf(o));
             if (log.isDebugEnabled()) {
               log.debug(_propName + "=" + f.get(cfg));
             }
-          } else if (f.getType() == String.class) {
+          } else if (_fieldType == Long.TYPE) {
+            f.set(cfg, Long.valueOf(o));
+            if (log.isDebugEnabled()) {
+              log.debug(_propName + "=" + f.get(cfg));
+            }
+          } else if (_fieldType == String.class) {
             f.set(cfg, o);
             if (log.isDebugEnabled()) {
               log.debug(_propName + "=" + f.get(cfg));
             }
-          } else if (f.getType() == Class.class) {
+          } else if (_fieldType == Class.class) {
             Class<?> c = Class.forName(o);
             f.set(cfg, c);
             if (log.isDebugEnabled()) {
               log.debug(_propName + "=" + c.getName());
             }
           } else {
-            throw new CacheInternalError("no policy to change this tunable type");
+            throw new CacheInternalError("Changing this tunable type is not supported. Tunable: " + _propName + ", " + _fieldType);
           }
         }
       }
