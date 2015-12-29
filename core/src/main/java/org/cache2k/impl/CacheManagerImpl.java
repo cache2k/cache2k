@@ -69,6 +69,7 @@ public class CacheManagerImpl extends CacheManager {
     }
   }
 
+  private Map<String, StackTrace> name2CreationStackTrace = null;
   private Object lock = new Object();
   private Log log;
   private String name;
@@ -101,9 +102,13 @@ public class CacheManagerImpl extends CacheManager {
     sb.append("name="); sb.append(name);
     sb.append(", version="); sb.append(_version);
     sb.append(", build="); sb.append(_buildNumber);
+    boolean _traceCacheCreation = log.isDebugEnabled();
     log.info(sb.toString());
     for (CacheManagerLifeCycleListener lc : cacheManagerLifeCycleListeners) {
       lc.managerCreated(this);
+    }
+    if (_traceCacheCreation) {
+      name2CreationStackTrace = new HashMap<String, StackTrace>();
     }
   }
 
@@ -152,10 +157,16 @@ public class CacheManagerImpl extends CacheManager {
       }
       if (!_requestedName.equals(_name)) {
         log.warn("duplicate name, disambiguating: " + _requestedName + " -> " + _name, new StackTrace());
+        if (name2CreationStackTrace != null) {
+          log.warn("initial creation of " + _requestedName, name2CreationStackTrace.get(_requestedName));
+        }
         bc.setName(_name);
       }
       checkName(_name);
 
+      if (name2CreationStackTrace != null) {
+        name2CreationStackTrace.put(_name, new StackTrace());
+      }
       caches.add(c);
       sendCreatedEvent(c);
       bc.setCacheManager(this);
@@ -167,6 +178,9 @@ public class CacheManagerImpl extends CacheManager {
   public void cacheDestroyed(Cache c) {
     synchronized (lock) {
       cacheNames.remove(c.getName());
+      if (name2CreationStackTrace != null) {
+        name2CreationStackTrace.remove(c.getName());
+      }
       caches.remove(c);
       sendDestroyedEvent(c);
     }
