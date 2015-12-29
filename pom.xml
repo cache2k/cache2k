@@ -103,6 +103,34 @@
           <artifactId>maven-surefire-plugin</artifactId>
           <version>2.19</version>
         </plugin>
+
+
+	<!-- needed for the special site theme -->
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-site-plugin</artifactId>
+          <version>3.3</version>
+          <dependencies>
+            <dependency>
+              <groupId>org.apache.maven.doxia</groupId>
+              <artifactId>doxia-module-markdown</artifactId>
+              <version>1.4</version>
+            </dependency>
+
+            <dependency>
+              <groupId>lt.velykis.maven.skins</groupId>
+              <artifactId>reflow-velocity-tools</artifactId>
+              <version>1.1.1</version>
+            </dependency>
+            <!-- Reflow skin requires Velocity >= 1.7  -->
+            <dependency>
+              <groupId>org.apache.velocity</groupId>
+              <artifactId>velocity</artifactId>
+              <version>1.7</version>
+            </dependency>
+          </dependencies>
+        </plugin>
+
       </plugins>
     </pluginManagement>
 
@@ -189,18 +217,6 @@
   </build>
 
   <distributionManagement>
-    <!-- switched to maven central
-    <repository>
-      <id>headissue.public</id>
-      <name>headissue public repository</name>
-      <url>${h7e.public.deploy.url}</url>
-    </repository>
-    <snapshotRepository>
-      <id>headissue.snapshot</id>
-      <name>Internal Snapshot Repository</name>
-      <url>${h7e.snapshot.deploy.url}</url>
-    </snapshotRepository>
-    -->
     <site>
       <id>cache2k</id>
       <url>file:/tmp/cache2k-site</url>
@@ -211,32 +227,14 @@
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <jcache.version>1.0.0</jcache.version>
     <jacoco-maven-plugin-version>0.7.5.201505241946</jacoco-maven-plugin-version>
+    <h7e.recycle.coverage>jacoco-instrument</h7e.recycle.coverage>
   </properties>
-
 
   <profiles>
 
     <!-- profile for site build of cache2k.org -->
     <profile>
       <id>site</id>
-
-      <repositories>
-        <repository>
-          <id>headissue.public</id>
-          <name>headissue public maven repository</name>
-          <url>https://www.headissue.com/maven</url>
-          <layout>default</layout>
-        </repository>
-      </repositories>
-
-      <pluginRepositories>
-        <pluginRepository>
-          <id>headissue.public</id>
-          <name>headissue public maven repository</name>
-          <url>https://www.headissue.com/maven</url>
-          <layout>default</layout>
-        </pluginRepository>
-      </pluginRepositories>
 
       <reporting>
         <plugins>
@@ -247,20 +245,6 @@
             <reportSets>
               <reportSet>
                 <reports>
-                  <!-- maybe switch something on later ... jw -->
-                  <!-- Remove unwanted reports here -->
-                  <!--<report>index</report>-->
-                  <!--<report>summary</report>-->
-                  <!-- <report>dependencies</report> -->
-                  <!-- <report>dependency-convergence</report> -->
-                  <!--<report>project-team</report>-->
-                  <!--<report>mailing-list</report>-->
-                  <!--<report>cim</report>-->
-                  <!--<report>issue-tracking</report>-->
-                  <!-- <report>license</report> -->
-                  <!--<report>scm</report>-->
-                  <!-- <report>modules</report> -->
-                  <!-- <report>plugins</report> -->
                 </reports>
               </reportSet>
             </reportSets>
@@ -295,54 +279,8 @@
               </reportSet>
             </reportSets>
           </plugin>
-          <plugin>
-            <groupId>org.apache.maven.plugins</groupId>
-            <artifactId>maven-changes-plugin</artifactId>
-            <version>2.9</version>
-            <reportSets>
-              <reportSet>
-                <reports>
-                  <report>changes-report</report>
-                </reports>
-              </reportSet>
-            </reportSets>
-          </plugin>
         </plugins>
       </reporting>
-
-      <build>
-        <pluginManagement>
-          <plugins>
-            <plugin>
-              <groupId>org.apache.maven.plugins</groupId>
-              <artifactId>maven-site-plugin</artifactId>
-              <version>3.3</version>
-              <configuration>
-                <stagingSiteURL>file:${env.HOME}/public_html/cache2k</stagingSiteURL>
-              </configuration>
-              <dependencies>
-                <dependency>
-                  <groupId>org.apache.maven.doxia</groupId>
-                  <artifactId>doxia-module-markdown</artifactId>
-                  <version>1.4</version>
-                </dependency>
-
-                <dependency>
-                  <groupId>lt.velykis.maven.skins</groupId>
-                  <artifactId>reflow-velocity-tools</artifactId>
-                  <version>1.1.1</version>
-                </dependency>
-                <!-- Reflow skin requires Velocity >= 1.7  -->
-                <dependency>
-                  <groupId>org.apache.velocity</groupId>
-                  <artifactId>velocity</artifactId>
-                  <version>1.7</version>
-                </dependency>
-              </dependencies>
-            </plugin>
-          </plugins>
-        </pluginManagement>
-      </build>
     </profile>
 
     <!--
@@ -430,22 +368,11 @@
       </build>
     </profile>
 
-    <!-- profile to generate a report of the total test coverage. use it with
-         mvn -Pjacoco-report resources:resources jacoco:merge jacoco:report -->
+    <!-- profile to merge a report for the total test coverage. use it with
+         mvn -Pjacoco-merge jacoco:merge jacoco:report -->
     <profile>
-      <id>jacoco-report</id>
+      <id>jacoco-merge</id>
       <build>
-        <resources>
-            <resource>
-                <directory>${project.basedir}</directory>
-                <includes>
-                    <include>**/target/classes/**/*.class</include>
-                </includes>
-              <excludes>
-                <exclude>**/android-test/**</exclude>
-              </excludes>
-             </resource>
-        </resources>
         <plugins>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
@@ -474,6 +401,10 @@
       </build>
     </profile>
 
+    <!--
+         profile for doing static analysis, normal reports are switched off
+         run with: mvn -Pstatic-analysis site
+    -->
     <profile>
       <id>static-analysis</id>
       <reporting>
@@ -482,9 +413,57 @@
             <groupId>org.apache.maven.plugins</groupId>
             <artifactId>maven-pmd-plugin</artifactId>
             <version>3.5</version>
+            <configuration>
+              <skipEmptyReport>false</skipEmptyReport>
+            </configuration>
+          </plugin>
+          <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-project-info-reports-plugin</artifactId>
+            <version>2.8.1</version>
+            <reportSets>
+              <reportSet>
+                <reports>
+                  <!-- generate no normal report at all -->
+                </reports>
+              </reportSet>
+            </reportSets>
           </plugin>
         </plugins>
       </reporting>
+    </profile>
+
+    <!-- fast tests are run with coverage -->
+    <profile>
+      <id>fast-test</id>
+      <build>
+        <plugins>
+          <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-surefire-plugin</artifactId>
+            <!-- we only exclude, so the TCK tests are run, too -->
+            <configuration>
+              <excludedGroups>org.cache2k.junit.StorageTests,org.cache2k.junit.SlowTests</excludedGroups>
+            </configuration>
+          </plugin>
+        </plugins>
+      </build>
+    </profile>
+
+    <profile>
+      <id>slow-test</id>
+      <build>
+        <plugins>
+          <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-surefire-plugin</artifactId>
+            <configuration>
+              <groups>org.cache2k.junit.SlowTests</groups>
+              <excludedGroups>org.cache2k.junit.StorageTests</excludedGroups>
+            </configuration>
+          </plugin>
+        </plugins>
+      </build>
     </profile>
 
     <profile>
