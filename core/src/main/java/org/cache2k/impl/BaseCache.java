@@ -1144,13 +1144,20 @@ public abstract class BaseCache<E extends Entry, K, T>
       }
       boolean _finished = false;
       try {
-        e.finishFetch(fetch(e));
+        finishFetch(e, fetch(e));
         _finished = true;
       } finally {
         e.ensureFetchAbort(_finished);
       }
       evictEventually();
       return e;
+    }
+  }
+
+  protected void finishFetch(E e, long _nextRefreshTime) {
+    synchronized (e) {
+      e.nextRefreshTime = _nextRefreshTime;
+      e.notifyAll();
     }
   }
 
@@ -1183,7 +1190,7 @@ public abstract class BaseCache<E extends Entry, K, T>
       }
       boolean _finished = false;
       try {
-        e.finishFetch(insertEntryFromStorage(se, e, _needsFetch));
+        finishFetch(e, insertEntryFromStorage(se, e, _needsFetch));
         _finished = true;
       } finally {
         e.ensureFetchAbort(_finished);
@@ -1225,10 +1232,10 @@ public abstract class BaseCache<E extends Entry, K, T>
       StorageEntry se = _action.checkAndPurge(key);
       synchronized (e) {
         if (_virgin) {
-          e.finishFetch(Entry.VIRGIN_STATE);
+          finishFetch(e, Entry.VIRGIN_STATE);
           evictEntryFromHeap(e);
         } else {
-          e.finishFetch(Entry.LOADED_NON_VALID);
+          finishFetch(e, Entry.LOADED_NON_VALID);
           evictEntryFromHeap(e);
         }
       }
@@ -1280,7 +1287,7 @@ public abstract class BaseCache<E extends Entry, K, T>
           storage.evict(e);
         } finally {
           synchronized (e) {
-            e.finishFetch(Entry.FETCH_ABORT);
+            finishFetch(e, Entry.FETCH_ABORT);
             evictEntryFromHeap(e);
           }
         }
@@ -1362,7 +1369,7 @@ public abstract class BaseCache<E extends Entry, K, T>
           boolean _finished = false;
           try {
             long t = fetchWithStorage(e, false);
-            e.finishFetch(t);
+            finishFetch(e, t);
             _hasFreshData = e.hasFreshData(System.currentTimeMillis(), t);
             _finished = true;
           } finally {
@@ -1451,12 +1458,12 @@ public abstract class BaseCache<E extends Entry, K, T>
       long _result = fetchWithStorage(e, false);
       long now = System.currentTimeMillis();
       if (e.hasFreshData(now, _result)) {
-        e.finishFetch(_result);
+        finishFetch(e, _result);
         return false;
       }
       e.nextRefreshTime = Entry.LOADED_NON_VALID_AND_PUT;
     }
-    e.finishFetch(insertOnPut(e, value, t, t));
+    finishFetch(e, insertOnPut(e, value, t, t));
     evictEventually();
     return true;
   }
@@ -1484,7 +1491,7 @@ public abstract class BaseCache<E extends Entry, K, T>
     boolean _finished = false;
     try {
       long t = System.currentTimeMillis();
-      e.finishFetch(insertOnPut(e, value, t, t));
+      finishFetch(e, insertOnPut(e, value, t, t));
       _finished = true;
     } finally {
       e.ensureFetchAbort(_finished);
@@ -1550,7 +1557,7 @@ public abstract class BaseCache<E extends Entry, K, T>
         storage.remove(key);
       }
       synchronized (e) {
-        e.finishFetch(Entry.LOADED_NON_VALID);
+        finishFetch(e, Entry.LOADED_NON_VALID);
         if (_hasFreshData) {
           synchronized (lock) {
             if (removeEntry(e)) {
@@ -2116,7 +2123,7 @@ public abstract class BaseCache<E extends Entry, K, T>
               }
               try {
                 long t = fetch(e);
-                e.finishFetch(t);
+                finishFetch(e, t);
               } catch (CacheClosedException ignore) {
               } catch (Throwable ex) {
                 e.ensureFetchAbort(false);
@@ -2672,7 +2679,7 @@ public abstract class BaseCache<E extends Entry, K, T>
     /**
      * Implementation class to use by default.
      */
-    public Class<? extends BaseCache> defaultImplementation = LruCache.class;
+    public Class<? extends BaseCache> defaultImplementation = ClockProPlusCache.class;
 
     /**
      * Log exceptions from the source just as they happen. The log goes to the debug output
