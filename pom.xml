@@ -227,7 +227,7 @@
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <jcache.version>1.0.0</jcache.version>
     <jacoco-maven-plugin-version>0.7.5.201505241946</jacoco-maven-plugin-version>
-    <h7e.recycle.coverage>jacoco-instrument</h7e.recycle.coverage>
+    <h7e.recycle.test.coverage>jacoco-instrument,fast-tests</h7e.recycle.test.coverage>
   </properties>
 
   <profiles>
@@ -435,7 +435,7 @@
 
     <!-- fast tests are run with coverage -->
     <profile>
-      <id>fast-test</id>
+      <id>fast-tests</id>
       <build>
         <plugins>
           <plugin>
@@ -451,7 +451,7 @@
     </profile>
 
     <profile>
-      <id>slow-test</id>
+      <id>slow-tests</id>
       <build>
         <plugins>
           <plugin>
