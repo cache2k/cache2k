@@ -1069,7 +1069,7 @@ public abstract class BaseCache<E extends Entry, K, T>
 
   @Override
   public T get(K key) {
-    return returnValue(getEntryInternal(key));
+    return (T) returnValue(getEntryInternal(key));
   }
 
   /**
@@ -1156,7 +1156,7 @@ public abstract class BaseCache<E extends Entry, K, T>
 
   protected void finishFetch(E e, long _nextRefreshTime) {
     synchronized (e) {
-      e.nextRefreshTime = _nextRefreshTime;
+      e.nextRefreshTime = stopStartTimer(_nextRefreshTime, e, System.currentTimeMillis());
       e.notifyAll();
     }
   }
@@ -1400,7 +1400,7 @@ public abstract class BaseCache<E extends Entry, K, T>
   public T peek(K key) {
     E e = peekEntryInternal(key);
     if (e != null) {
-      return returnValue(e);
+      return (T) returnValue(e);
     }
     return null;
   }
@@ -2002,7 +2002,6 @@ public abstract class BaseCache<E extends Entry, K, T>
       }
     }
 
-    long _nextRefreshTimeWithState;
     synchronized (lock) {
       checkClosed();
       touchedTime = t;
@@ -2047,10 +2046,14 @@ public abstract class BaseCache<E extends Entry, K, T>
       if (_storageException != null) {
         throw _storageException;
       }
-      _nextRefreshTimeWithState = stopStartTimer(_nextRefreshTime, e, t);
     } // synchronized (lock)
 
-    return _nextRefreshTimeWithState;
+    if (_nextRefreshTime == 0) {
+      _nextRefreshTime = Entry.FETCH_NEXT_TIME_STATE;
+    } else if (_nextRefreshTime == Long.MAX_VALUE) {
+       _nextRefreshTime = Entry.FETCHED_STATE;
+    }
+    return _nextRefreshTime;
   }
 
   protected long stopStartTimer(long _nextRefreshTime, E e, long now) {
@@ -2079,7 +2082,6 @@ public abstract class BaseCache<E extends Entry, K, T>
         e.task = tt;
       }
     } else {
-      _nextRefreshTime = _nextRefreshTime == Long.MAX_VALUE ? Entry.FETCHED_STATE : Entry.FETCH_NEXT_TIME_STATE;
     }
     return _nextRefreshTime;
   }
