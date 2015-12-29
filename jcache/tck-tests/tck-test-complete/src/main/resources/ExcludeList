@@ -10,9 +10,6 @@ org.jsr107.tck.management.CacheMBStatisticsBeanTest#testCacheStatisticsInvokeEnt
 org.jsr107.tck.management.CacheMBStatisticsBeanTest#testCacheStatisticsInvokeEntryProcessorGet
 org.jsr107.tck.management.CacheMBStatisticsBeanTest#testCacheStatisticsInvokeEntryProcessorNoOp
 
-org.jsr107.tck.management.CacheManagerManagementTest#testCacheManagementOffThenOnThenOff
-org.jsr107.tck.management.CacheManagerManagementTest#testCacheStatisticsOffThenOnThenOff
-
 # errors
 
 org.jsr107.tck.management.CacheManagerManagementTest#testMultipleCacheManagers
