@@ -1785,7 +1785,7 @@ public abstract class BaseCache<E extends Entry, K, T>
    * If the entry is not present, this result is cached in the local
    * cache.
    */
-  protected E peekEntryInternal(K key) {
+  final protected E peekEntryInternal(K key) {
     final int hc = modifiedHash(key.hashCode());
     long _previousNextRefreshTime;
     int _spinCount = TUNABLE.maximumEntryLockSpins;
