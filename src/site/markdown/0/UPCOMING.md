@@ -1,4 +1,4 @@
-# cache2k version 0.22 release notes
+# cache2k version 0.24 release notes
 
 ## Possible breakages
 
@@ -15,7 +15,6 @@
 
 ## Fixes and Improvements
 
-  * Fixes in the handling for entry expiry and refresh: There are rare casen when entries are not refreshed/updated when expired
   * Cache.iterator(): Proper exception on wrong usage of iterator pattern
   * Cache.iterator(): Fix semantics for direct call to next() without call to hasNext()
   * Fix usage counter for clock and clock pro implementation together with clear() operation
