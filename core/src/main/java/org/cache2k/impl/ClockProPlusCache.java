@@ -38,7 +38,7 @@ import org.cache2k.impl.util.TunableFactory;
  * @author Jens Wilke; created: 2013-07-12
  */
 @SuppressWarnings("unchecked")
-public class ClockProPlusCache<K, T> extends LockFreeCache<ClockProPlusCache.Entry, K, T> {
+public class ClockProPlusCache<K, T> extends LockFreeCache<Entry, K, T> {
 
   private static final Tunable TUNABLE_CLOCK_PRO = TunableFactory.get(Tunable.class);
 
@@ -159,7 +159,7 @@ public class ClockProPlusCache<K, T> extends LockFreeCache<ClockProPlusCache.Ent
   }
 
   private void insertCopyIntoGhosts(Entry e) {
-    Entry<K,T> e2 = new Entry<K, T>();
+    Entry<Entry, K,T> e2 = new Entry<Entry, K, T>();
     e2.key = (K) e.key;
     e2.hashCode = e.hashCode;
     e2.fetchedTime = ghostInsertCnt++;
@@ -176,8 +176,8 @@ public class ClockProPlusCache<K, T> extends LockFreeCache<ClockProPlusCache.Ent
 
   @Override
   protected void recordHit(Entry e) {
-    int _hitCnt = e.hitCnt + 1;
-    if (_hitCnt < 0) {
+    long _hitCnt = e.hitCnt + 1;
+    if ((_hitCnt & 0x100000000L) != 0 ) {
       scrubCache(e);
       recordHit(e);
       return;
@@ -190,8 +190,8 @@ public class ClockProPlusCache<K, T> extends LockFreeCache<ClockProPlusCache.Ent
     int cnt = 0;
     Entry _head = e;
     do {
-      int _hitCnt = e.hitCnt;
-      int _hitCnt2 = e.hitCnt = e.hitCnt >> 1;
+      long _hitCnt = e.hitCnt;
+      long _hitCnt2 = e.hitCnt = e.hitCnt >> 1;
       cnt += _hitCnt - _hitCnt2;
       e = (Entry) e.next;
     } while (e != _head);
@@ -219,18 +219,18 @@ public class ClockProPlusCache<K, T> extends LockFreeCache<ClockProPlusCache.Ent
     return new Entry();
   }
 
-  protected Entry<K,T> runHandHot() {
+  protected Entry<Entry, K,T> runHandHot() {
     hotRunCnt++;
-    Entry<K,T> _handStart = handHot;
-    Entry<K,T> _hand = _handStart;
-    Entry<K,T> _coldCandidate = _hand;
-    int _lowestHits = Integer.MAX_VALUE;
+    Entry<Entry, K,T> _handStart = handHot;
+    Entry<Entry, K,T> _hand = _handStart;
+    Entry<Entry, K,T> _coldCandidate = _hand;
+    long _lowestHits = Long.MAX_VALUE;
     long _hotHits = hotHits;
     int _scanCnt = -1;
-    int _decrease = ((_hand.hitCnt + _hand.next.hitCnt) >> TUNABLE_CLOCK_PRO.hitCounterDecreaseShift) + 1;
+    long _decrease = ((_hand.hitCnt + _hand.next.hitCnt) >> TUNABLE_CLOCK_PRO.hitCounterDecreaseShift) + 1;
     do {
       _scanCnt++;
-      int _hitCnt = _hand.hitCnt;
+      long _hitCnt = _hand.hitCnt;
       if (_hitCnt < _lowestHits) {
         _lowestHits = _hitCnt;
         _coldCandidate = _hand;
@@ -264,7 +264,7 @@ public class ClockProPlusCache<K, T> extends LockFreeCache<ClockProPlusCache.Ent
   protected Entry findEvictionCandidate() {
     hotSizeSum += hotMax;
     coldRunCnt++;
-    Entry<K,T> _hand = handCold;
+    Entry<Entry, K,T> _hand = handCold;
     int _scanCnt = 0;
     do {
       if (_hand == null) {
@@ -276,8 +276,8 @@ public class ClockProPlusCache<K, T> extends LockFreeCache<ClockProPlusCache.Ent
           _scanCnt++;
           coldHits += _hand.hitCnt;
           _hand.hitCnt = 0;
-          Entry<K, T> e = _hand;
-          _hand = (Entry<K, T>) removeFromCyclicList(e);
+          Entry<Entry, K, T> e = _hand;
+          _hand = (Entry<Entry, K, T>) removeFromCyclicList(e);
           coldSize--;
           hotSize++;
           handHot = insertIntoTailCyclicList(handHot, e);
@@ -291,7 +291,7 @@ public class ClockProPlusCache<K, T> extends LockFreeCache<ClockProPlusCache.Ent
       if (!_hand.isStale()) {
          break;
        }
-      _hand = (Entry<K,T>) removeFromCyclicList(_hand);
+      _hand = (Entry<Entry, K,T>) removeFromCyclicList(_hand);
       staleSize--;
       coldSize--;
       _scanCnt--;
@@ -305,9 +305,9 @@ public class ClockProPlusCache<K, T> extends LockFreeCache<ClockProPlusCache.Ent
     return _hand;
   }
 
-  private Entry<K, T> refillFromHot(Entry<K, T> _hand) {
+  private Entry<Entry, K, T> refillFromHot(Entry<Entry, K, T> _hand) {
     while (hotSize > hotMax || _hand == null) {
-      Entry<K,T> e = runHandHot();
+      Entry<Entry, K,T> e = runHandHot();
       if (e != null) {
         if (e.isStale()) {
           staleSize--;
@@ -372,12 +372,6 @@ public class ClockProPlusCache<K, T> extends LockFreeCache<ClockProPlusCache.Ent
            ", hotScanCnt=" + hotScanCnt +
            ", hot24hCnt=" + hot24hCnt +
            ", directRemoveCnt=" + directRemoveCnt;
-  }
-
-  static class Entry<K, T> extends org.cache2k.impl.Entry<Entry, K, T> {
-
-    int hitCnt;
-
   }
 
   public static class Tunable extends TunableConstants {

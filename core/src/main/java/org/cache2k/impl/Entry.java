@@ -75,6 +75,11 @@ public class Entry<E extends Entry, K, T>
   public BaseCache.MyTimerTask task;
 
   /**
+   * Hit counter for clock pro. Not used by every eviction algorithm.
+   */
+  long hitCnt;
+
+  /**
    * Time the entry was last updated by put or by fetching it from the cache source.
    * The time is the time in millis times 2. A set bit 1 means the entry is fetched from
    * the storage and not modified since then.
