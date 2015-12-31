@@ -277,6 +277,13 @@ public abstract class CacheBuilder<K,T>
     return this;
   }
 
+  /**
+   * Sets the internal cache implementation to be used. This is used currently
+   * for internal purposes. It will be removed from the general API, since the implementation
+   * type is not defined within the api module.
+   *
+   * @deprecated since 0.23
+   */
   public CacheBuilder<K, T> implementation(Class<?> c) {
     config.setImplementation(c);
     return this;
