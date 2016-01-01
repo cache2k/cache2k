@@ -1,33 +1,55 @@
 # cache2k version 0.24 release notes
 
-## Possible breakages
+## Potential breakages
+
+Changes in semantics or API that may break existing applications are listed here. In general, only very minor
+changes are done with breaking existing semantics, which will most likely not affect existing applications.
+Everything that will most likely break applications will be introduced as new API and the old will get deprecated.
+Modifications in the statistics output will not listed as breakage.
 
   * Semantics of Cache.getAll() changed. Instead of returning always a map size equal to the requested count of keys,
     only keys with a non-null mapping are returned in the map.
   * Added generic types to the methods CacheBuilder.entryExpiryCalculator and CacheBuilder.exceptionExpiryCalculator
 
+## Bug fixes
+
+Serious bugs will listed here. If something is listed here it might affect an existing application and updating is
+recommended.
+
+  * Fix possible race condition in cache manager when adding and closing caches and requesting an iteration of the existing caches
+
 ## New and Noteworthy
+
+  * none
 
   TODO: check API, add since, add comment!
   * entry processor scheme like in JSR107: Cache.invokeAll,
   * Beginning of JSR107 support.
-  * classloader support
+
+## 
 
 ## Fixes and Improvements
-
+  
+  * The cache manager logs the used default cache implementation at startup
+  * Performance improvement for read access on available data (approx. 5%) on 64 bit JVMs
   * Cache.iterator(): Proper exception on wrong usage of iterator pattern
   * Cache.iterator(): Fix semantics for direct call to next() without call to hasNext()
-  * Fix usage counter for clock and clock pro implementation together with clear() operation
-  * Fix possible race condition in cache manager when adding and closing caches and requesting an iteration of the existing caches
   * Handle exceptions within the expiry calculator more gracefully (still needs work, entry state is inconsistent if an exceptions happens here)
   * ExceptionPropagator for customising the propagation of cached exception
-  * Cache.contains(), does no access recording if no storage is attached. Change because JSR107 specifies that a contains() does not count as get.
-    However, cache2k has no dedicated counters just for get. Treating the contains as an access to an entry has pros and cons.
+
+Statistics:
+
+  * Cache.contains(), does no access recording if no storage is attached. Change because JSR107 specifies that a contains() does 
+    not count the same ways as get(). However, cache2k has no dedicated counters for get(), but counts every access, which also is a
+    hit for the eviction algorithm. This means, the contains() call does not the prevent the entry from beeing evicted, which may
+    be undisired. Treating the contains as an access to an entry has pros and cons.
   * JMX statistics: initial getHitRate() value is 0.0
   * JMX statistics: initial getMillisPerFetch() value is 0.0
 
 
 ## API Changes and new methods
+
+  * deprecated: CacheManager.isDestroyed(), replaced by isClosed()
 
   * new: Cache.peekAndReplace()
   * new: Cache.peekAndRemove()
@@ -42,7 +64,5 @@
   * new: Cache.removeAll()
   * new: Cache.invoke() and Cache.invokeAll()
   * new: Cache.putAll()
-
-  * deprecated: CacheManager.isDestroyed(), replaced by isClosed()
 
   * Stronger typing: Added generic types to the methods CacheBuilder.entryExpiryCalculator and CacheBuilder.exceptionExpiryCalculator
