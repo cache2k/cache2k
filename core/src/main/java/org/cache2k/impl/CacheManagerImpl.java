@@ -103,6 +103,8 @@ public class CacheManagerImpl extends CacheManager {
     sb.append(", version="); sb.append(_version);
     sb.append(", build="); sb.append(_buildNumber);
     boolean _traceCacheCreation = log.isDebugEnabled();
+    sb.append(", defaultImplementation=");
+    sb.append(BaseCache.TUNABLE.defaultImplementation.getSimpleName());
     log.info(sb.toString());
     for (CacheManagerLifeCycleListener lc : cacheManagerLifeCycleListeners) {
       lc.managerCreated(this);
