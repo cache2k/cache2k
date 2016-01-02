@@ -1717,7 +1717,7 @@ public abstract class BaseCache<E extends Entry, K, T>
         e.nextRefreshTime = stopStartTimer(_nextRefreshTime, e, System.currentTimeMillis());
       }
       recordHitLocked(e);
-      return e;
+      return null;
     }
     boolean _hasFreshData = false;
     E e;
