@@ -1695,7 +1695,7 @@ public abstract class BaseCache<E extends Entry, K, T>
   protected E replace(K key, boolean _compare, T _oldValue, T _newValue) {
     final int hc = modifiedHash(key.hashCode());
     long _previousNextRefreshTime;
-    if (storage == null) {
+    if (storage == null && writer == null) {
       E e = lookupEntrySynchronized(key);
       if (e == null) {
         synchronized (lock) {
@@ -1704,25 +1704,20 @@ public abstract class BaseCache<E extends Entry, K, T>
         return (E) DUMMY_ENTRY_NO_REPLACE;
       }
       synchronized (e) {
-        e.waitForFetch();
         if (e.isRemovedState() || !e.hasFreshData()) {
           return (E) DUMMY_ENTRY_NO_REPLACE;
         }
         if (_compare && !e.equalsValue(_oldValue)) {
           return e;
         }
-        _previousNextRefreshTime  = e.startFetch();
-      }
-      boolean _finished = false;
-      recordHitLocked(e);
-      try {
+        _previousNextRefreshTime = e.nextRefreshTime;
+        e.nextRefreshTime = Entry.REPUT_STATE;
         long t = System.currentTimeMillis();
-        finishFetch(e, insertOnPut(e, _newValue, t, t, _previousNextRefreshTime));
-        _finished = true;
-        return null;
-      } finally {
-        e.ensureFetchAbort(_finished, _previousNextRefreshTime);
+        long _nextRefreshTime = insertOnPut(e, _newValue, t, t, _previousNextRefreshTime);
+        e.nextRefreshTime = stopStartTimer(_nextRefreshTime, e, System.currentTimeMillis());
       }
+      recordHitLocked(e);
+      return e;
     }
     boolean _hasFreshData = false;
     E e;
@@ -1946,9 +1941,35 @@ public abstract class BaseCache<E extends Entry, K, T>
 
   @Override
   public void put(K key, T value) {
-    long _previousNextRefreshTime;
     int _spinCount = TUNABLE.maximumEntryLockSpins;
     E e;
+    if (storage == null && writer == null) {
+      for (;;) {
+        if (_spinCount-- <= 0) {
+          throw new CacheLockSpinsExceededError();
+        }
+        e = lookupOrNewEntrySynchronized(key);
+        synchronized (e) {
+          if (e.isRemovedState()) {
+            continue;
+          }
+          if (e.isFetchInProgress()) {
+            e.waitForFetch();
+            continue;
+          }
+          long t = System.currentTimeMillis();
+          long _nextRefreshTime = e.nextRefreshTime;
+          if (e.hasFreshData(t)) {
+            e.nextRefreshTime = Entry.REPUT_STATE;
+          }
+          _nextRefreshTime = insertOnPut(e, value, t, t, e.nextRefreshTime);
+          e.nextRefreshTime = stopStartTimer(_nextRefreshTime, e, System.currentTimeMillis());
+        }
+        evictEventually();
+        return;
+      }
+    }
+    long _previousNextRefreshTime;
     for (;;) {
       if (_spinCount-- <= 0) { throw new CacheLockSpinsExceededError(); }
       e = lookupOrNewEntrySynchronized(key);

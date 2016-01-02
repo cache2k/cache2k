@@ -17,6 +17,7 @@ Serious bugs will listed here. If something is listed here it might affect an ex
 recommended.
 
   * Fix possible race condition in cache manager when adding and closing caches and requesting an iteration of the existing caches
+  * Retrieving entries via peek() yielded null, in case of a parallel update via put()
 
 ## New and Noteworthy
 
@@ -30,8 +31,9 @@ recommended.
 
 ## Fixes and Improvements
   
+  * Performance improvement: put() on existing entry by 15%
   * The cache manager logs the used default cache implementation at startup
-  * Performance improvement for read access on available data (approx. 5%) on 64 bit JVMs
+  * Performance improvement: read access and cache hit (approx. 5%) on 64 bit JVMs
   * Cache.iterator(): Proper exception on wrong usage of iterator pattern
   * Cache.iterator(): Fix semantics for direct call to next() without call to hasNext()
   * Handle exceptions within the expiry calculator more gracefully (still needs work, entry state is inconsistent if an exceptions happens here)
