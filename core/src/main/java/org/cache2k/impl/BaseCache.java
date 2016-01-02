@@ -832,7 +832,6 @@ public abstract class BaseCache<E extends Entry, K, T>
                 " (" + TUNABLE.waitForTimerJobsSeconds + " seconds)", ex);
         getLog().warn("Thread dump:\n" + ThreadDump.generateThredDump());
       }
-      getLog().warn("State: " + toString());
     } catch (Exception ex) {
       getLog().warn("exception waiting for timer jobs termination", ex);
     }
@@ -1692,7 +1691,7 @@ public abstract class BaseCache<E extends Entry, K, T>
   /**
    * replace if value matches. if value not matches, return the existing entry or the dummy entry.
    */
-  protected E replace(K key, boolean _compare, T _oldValue, T _newValue) {
+  protected E replace(final K key, final boolean _compare, final T _oldValue, final T _newValue) {
     final int hc = modifiedHash(key.hashCode());
     long _previousNextRefreshTime;
     if (storage == null && writer == null) {
@@ -1719,24 +1718,58 @@ public abstract class BaseCache<E extends Entry, K, T>
       recordHitLocked(e);
       return null;
     }
+    if (storage == null) {
+      boolean _hasFreshData = false;
+      E e;
+      for (;;) {
+        e = lookupOrNewEntrySynchronized(key, hc);
+        synchronized (e) {
+          e.waitForFetch();
+          if (e.isRemovedState()) {
+            continue;
+          }
+          if (e.isVirgin() || !e.hasFreshData()) {
+            if (e.isVirgin()) {
+              synchronized (this) {
+                loadNonFreshCnt++;
+                e.nextRefreshTime = Entry.LOADED_NON_VALID;
+              }
+            }
+            return (E) DUMMY_ENTRY_NO_REPLACE;
+          }
+          if (_compare && !e.equalsValue(_oldValue)) {
+            return e;
+          }
+          _previousNextRefreshTime = e.startFetch();
+          break;
+        }
+      }
+      boolean _finished = false;
+      try {
+        long t = System.currentTimeMillis();
+        finishFetch(e, insertOnPut(e, _newValue, t, t, _previousNextRefreshTime));
+        _finished = true;
+        return null;
+      } finally {
+        e.ensureFetchAbort(_finished, _previousNextRefreshTime);
+      }
+    }
     boolean _hasFreshData = false;
     E e;
     for (;;) {
-      e = lookupEntryUnsynchronized(key, hc);
-      if (e == null) {
-        synchronized (lock) {
-          e = lookupEntry(key, hc);
-          if (e == null) {
-            e = newEntry(key, hc);
-          }
-        }
-      }
+      e = lookupOrNewEntrySynchronized(key, hc);
       synchronized (e) {
         e.waitForFetch();
         if (e.isRemovedState()) {
           continue;
         }
-        if (!e.hasFreshData()) {
+        if (e.isVirgin() || !e.hasFreshData()) {
+          if (e.isVirgin()) {
+            synchronized (this) {
+              loadNonFreshCnt++;
+              e.nextRefreshTime = Entry.LOADED_NON_VALID;
+            }
+          }
           return (E) DUMMY_ENTRY_NO_REPLACE;
         }
         if (_compare && !e.equalsValue(_oldValue)) {
