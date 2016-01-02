@@ -39,8 +39,10 @@ public class CacheTest {
     Cache<String,String> c =
       CacheBuilder.newCache(String.class, String.class).build();
     String val = c.peek("something");
+    assertNull(val);
     c.put("something", "hello");
     val = c.get("something");
+    assertNotNull(val);
     c.close();
   }
 
@@ -57,7 +59,9 @@ public class CacheTest {
         .source(_lengthCountingSource)
         .build();
     int v = c.get("hallo");
+    assertEquals(5, v);
     v = c.get("long string");
+    assertEquals(11, v);
     c.close();
   }
 
@@ -66,8 +70,11 @@ public class CacheTest {
     Cache<String,String> c =
       CacheBuilder.newCache(String.class, String.class).build();
     String val = c.peek("something");
+    assertNull(val);
     c.put("something", "hello");
     CacheEntry<String, String> e = c.getEntry("something");
+    assertNotNull(e);
+    assertEquals("hello", e.getValue());
     c.close();
   }
 
@@ -76,7 +83,10 @@ public class CacheTest {
     Cache<String,String> c =
       CacheBuilder.newCache(String.class, String.class).build();
     String val = c.peek("something");
+    assertNull(val);
     c.put("something", "hello");
+    assertTrue(c.contains("something"));
+    assertFalse(c.contains("dsaf"));
     c.close();
   }
 

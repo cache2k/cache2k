@@ -39,6 +39,7 @@ public class CacheManagerTest {
   public void testSameProvider() {
     CachingProvider p1 = Caching.getCachingProvider();
     CachingProvider p2 = Caching.getCachingProvider();
+    assertTrue(p1 == p2);
   }
 
   @Test
@@ -46,6 +47,7 @@ public class CacheManagerTest {
     CachingProvider p = Caching.getCachingProvider();
     CacheManager cm1 = p.getCacheManager();
     CacheManager cm2 = p.getCacheManager();
+    assertTrue(cm1 == cm2);
   }
 
 }
