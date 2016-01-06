@@ -23,7 +23,8 @@ package org.cache2k;
  */
 
 /**
- * A custom policy which allows to calculate a specific expiry time per entry.
+ * A custom policy which allows to calculate a specific expiry time for an entry after an
+ * insert or update.
  *
  * @author Jens Wilke; created: 2014-10-14
  * @since 0.20
@@ -35,11 +36,16 @@ public interface EntryExpiryCalculator<K, T> {
    * If 0 is returned, this means entry expires immediately, or is always
    * fetched from the source. If {@link Long#MAX_VALUE} is returned it means
    * there is no specific expiry time known or needed. In any case the effective
-   * expiry duration will never be longer than the configured expiry
+   * expiry duration will never be longer than the configured expiry.
    *
    * <p>For some expiry calculations it is useful to know the previous entry, e.g. to detect
    * whether the stored data was really updated. If a previous mapping is present in the cache,
-   * it is passed to this method. If the entry is expired it is passed nonetheless.
+   * it is passed to this method. If the entry is expired it is passed nonetheless, however,
+   * it may be missing.
+   * </p>
+   *
+   * <p><b>Inserts or updates:</b> It is possible to return different expiry times for
+   * insert or updates. An update can be detected by the presence of the old entry.
    * </p>
    *
    * <p>The cache may call the method multiple times after an entry is inserted to
@@ -48,7 +54,7 @@ public interface EntryExpiryCalculator<K, T> {
    * entry was fetched (or put).
    * </p>
    *
-   * <p><b>Mutation of values: </b> Mutating values within the expiry calculator may have undesired
+   * <p><b>Mutation of values:</b> Mutating values within the expiry calculator may have undesired
    * effects and is not supported in general.
    * </p>
    *
