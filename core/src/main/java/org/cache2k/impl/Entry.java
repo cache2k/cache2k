@@ -43,6 +43,11 @@ public class Entry<E extends Entry, K, T>
 
   static final int FETCH_IN_PROGRESS_VALID = FETCHED_STATE + 4;
 
+  /**
+   * Entry was created for locking purposes of an atomic operation.
+   */
+  static final int ATOMIC_OP_NON_VALID = 10;
+
   static final int LOADED_NON_VALID_AND_PUT = 9;
 
   static final int FETCH_ABORT = 8;

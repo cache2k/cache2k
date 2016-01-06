@@ -22,34 +22,12 @@ package org.cache2k.impl;
  * #L%
  */
 
-import org.cache2k.BulkCacheSource;
-import org.cache2k.CacheEntry;
-import org.cache2k.CacheEntryProcessingException;
-import org.cache2k.CacheEntryProcessor;
-import org.cache2k.CacheException;
-import org.cache2k.CacheManager;
-import org.cache2k.CacheMisconfigurationException;
-import org.cache2k.CacheWriter;
-import org.cache2k.ClosableIterator;
-import org.cache2k.EntryExpiryCalculator;
-import org.cache2k.EntryProcessingResult;
-import org.cache2k.ExceptionExpiryCalculator;
-import org.cache2k.ExceptionPropagator;
-import org.cache2k.ExperimentalBulkCacheSource;
-import org.cache2k.Cache;
-import org.cache2k.CacheConfig;
-import org.cache2k.FetchCompletedListener;
-import org.cache2k.RefreshController;
-import org.cache2k.StorageConfiguration;
-import org.cache2k.ValueWithExpiryTime;
+import org.cache2k.*;
 import org.cache2k.impl.threading.Futures;
 import org.cache2k.impl.threading.LimitedPooledExecutor;
 import org.cache2k.impl.timer.GlobalTimerService;
 import org.cache2k.impl.timer.TimerService;
 import org.cache2k.impl.util.ThreadDump;
-import org.cache2k.CacheSourceWithMetaInfo;
-import org.cache2k.CacheSource;
-import org.cache2k.PropagatedCacheException;
 
 import org.cache2k.storage.PurgeableStorage;
 import org.cache2k.storage.StorageEntry;
@@ -187,9 +165,10 @@ public abstract class BaseCache<E extends Entry, K, T>
   protected long newEntryCnt = 0;
 
   /**
-   * Entries created for processing via invoke, but no operation happened on it.
+   * Entries created for processing via invoke or replace, but no operation happened on it.
+   * The entry processor may just have checked the entry state or an exception happened.
    */
-  protected long invokeNewEntryCnt = 0;
+  protected long atomicOpNewEntryCnt = 0;
 
   /**
    * Loaded from storage, but the entry was not fresh and cannot be returned.
@@ -1676,6 +1655,9 @@ public abstract class BaseCache<E extends Entry, K, T>
     return replace(key, true, _oldValue, _newValue) == null;
   }
 
+  /**
+   * Used by JCache impl, since access needs to trigger the TTI maybe use EP instead?
+   */
   public CacheEntry<K, T> replaceOrGet(K key, T _oldValue, T _newValue, CacheEntry<K, T> _dummyEntry) {
     E e = replace(key, true, _oldValue, _newValue);
     if (e == DUMMY_ENTRY_NO_REPLACE) {
@@ -1731,8 +1713,8 @@ public abstract class BaseCache<E extends Entry, K, T>
           if (e.isVirgin() || !e.hasFreshData()) {
             if (e.isVirgin()) {
               synchronized (this) {
-                loadNonFreshCnt++;
-                e.nextRefreshTime = Entry.LOADED_NON_VALID;
+                atomicOpNewEntryCnt++;
+                e.nextRefreshTime = Entry.ATOMIC_OP_NON_VALID;
               }
             }
             return (E) DUMMY_ENTRY_NO_REPLACE;
@@ -3292,8 +3274,9 @@ public abstract class BaseCache<E extends Entry, K, T>
       for (int i = _keys.length - 1; i >= 0; i--) {
         if (_pNrt[i] == Entry.VIRGIN_STATE) {
           synchronized (lock) {
-            invokeNewEntryCnt++;
+            atomicOpNewEntryCnt++;
           }
+          _pNrt[i] = Entry.ATOMIC_OP_NON_VALID;
         }
         finishFetch(_entries[i], _pNrt[i]);
       }
@@ -3303,8 +3286,9 @@ public abstract class BaseCache<E extends Entry, K, T>
         if (!_pEntries[i].updated) {
           if (_pNrt[i] == Entry.VIRGIN_STATE) {
             synchronized (lock) {
-              invokeNewEntryCnt++;
+              atomicOpNewEntryCnt++;
             }
+            _pNrt[i] = Entry.ATOMIC_OP_NON_VALID;
           }
           finishFetch(e, _pNrt[i]);
           continue;
@@ -3320,7 +3304,7 @@ public abstract class BaseCache<E extends Entry, K, T>
             }
           } else {
             synchronized (lock) {
-              invokeNewEntryCnt++;
+              atomicOpNewEntryCnt++;
             }
             finishFetch(e, _pNrt[i]);
           }
@@ -3431,7 +3415,7 @@ public abstract class BaseCache<E extends Entry, K, T>
         - loadNonFreshCnt
         - loadHitCnt
         - _fetchesBecauseOfNoEntries
-        - invokeNewEntryCnt
+        - atomicOpNewEntryCnt
     );
   }
 
@@ -3440,9 +3424,9 @@ public abstract class BaseCache<E extends Entry, K, T>
       return new IntegrityState()
         .checkEquals(
             "newEntryCnt - virginEvictCnt == " +
-                "getFetchesBecauseOfNewEntries() + getFetchesInFlight() + putNewEntryCnt + loadNonFreshCnt + loadHitCnt",
+                "getFetchesBecauseOfNewEntries() + getFetchesInFlight() + putNewEntryCnt + loadNonFreshCnt + loadHitCnt + atomicOpNewEntryCnt",
             newEntryCnt - virginEvictCnt,
-            getFetchesBecauseOfNewEntries() + getFetchesInFlight() + putNewEntryCnt + loadNonFreshCnt + loadHitCnt)
+            getFetchesBecauseOfNewEntries() + getFetchesInFlight() + putNewEntryCnt + loadNonFreshCnt + loadHitCnt + atomicOpNewEntryCnt)
         .checkLessOrEquals("getFetchesInFlight() <= 100", getFetchesInFlight(), 100)
         .checkEquals("newEntryCnt == getSize() + evictedCnt + expiredRemoveCnt + removeCnt + clearedCnt", newEntryCnt, getLocalSize() + evictedCnt + expiredRemoveCnt + removedCnt + clearedCnt)
         .checkEquals("newEntryCnt == getSize() + evictedCnt + getExpiredCnt() - expiredKeptCnt + removeCnt + clearedCnt", newEntryCnt, getLocalSize() + evictedCnt + getExpiredCnt() - expiredKeptCnt + removedCnt + clearedCnt)
@@ -3614,7 +3598,7 @@ public abstract class BaseCache<E extends Entry, K, T>
     public long getStorageHitCnt() { return loadHitCnt; }
     public long getStorageLoadCnt() { return storageLoadCnt; }
     public long getStorageMissCnt() { return storageMissCnt; }
-    public long getReadUsageCnt() { return usageCnt - putCnt - removedCnt - invokeNewEntryCnt; }
+    public long getReadUsageCnt() { return usageCnt - putCnt - removedCnt - atomicOpNewEntryCnt; }
     public long getUsageCnt() { return usageCnt; }
     public long getMissCnt() { return missCnt; }
     public long getNewEntryCnt() { return newEntryCnt; }

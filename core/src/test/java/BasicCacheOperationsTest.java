@@ -63,6 +63,7 @@ public class BasicCacheOperationsTest {
 
   @After
   public void cleanupCache() {
+    assertTrue("Tests are not allowed to create private caches", staticCache == cache);
     ((BaseCache) cache).checkIntegrity();
     cache.clear();
   }
@@ -158,6 +159,7 @@ public class BasicCacheOperationsTest {
   @Test
   public void replace_3arg_Different() {
     cache.put(KEY, VALUE);
+    assertEquals(VALUE, cache.peek(KEY));
     assertFalse(cache.replace(KEY, OTHER_VALUE, OTHER_VALUE));
     assertEquals(VALUE, cache.peek(KEY));
   }
