@@ -52,7 +52,7 @@ public abstract class CacheBuilder<K,T>
     try {
       cb = (CacheBuilder) PROTOTYPE.clone();
     } catch (CloneNotSupportedException ignored) {  }
-    cb.ctor(null, null, null);
+    cb.ctor();
     return cb;
   }
 
@@ -87,6 +87,11 @@ public abstract class CacheBuilder<K,T>
   protected ExceptionExpiryCalculator exceptionExpiryCalculator;
   protected CacheWriter cacheWriter;
   protected ExceptionPropagator exceptionPropagator;
+
+  protected void ctor() {
+    root = this;
+    config = new CacheConfig();
+  }
 
   /** Builder is constructed from prototype */
   protected void ctor(Class<K> _keyType, Class<T> _valueType, Class<?> _entryType) {

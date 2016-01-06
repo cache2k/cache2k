@@ -94,7 +94,7 @@ public class CacheRefreshThreadPool {
 
     @Override
     public synchronized Thread newThread(Runnable r) {
-      Thread t = new Thread(r, "cache-refresh-" + count.incrementAndGet());
+      Thread t = new Thread(r, "cache2k-refresh-" + count.incrementAndGet());
       t.setDaemon(true);
       return t;
     }
