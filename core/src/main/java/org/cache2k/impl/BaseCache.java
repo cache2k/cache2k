@@ -330,8 +330,8 @@ public abstract class BaseCache<E extends Entry, K, T>
 
   /** called via reflection from CacheBuilder */
   public void setCacheConfig(CacheConfig c) {
-    valueType = c.getValueType();
-    keyType = c.getKeyType();
+    valueType = c.getValueType().getType();
+    keyType = c.getKeyType().getType();
     if (name != null) {
       throw new IllegalStateException("already configured");
     }
@@ -377,7 +377,7 @@ public abstract class BaseCache<E extends Entry, K, T>
     } else if (_stores.size() > 1) {
       throw new UnsupportedOperationException("no aggregation support yet");
     }
-    if (ValueWithExpiryTime.class.isAssignableFrom(c.getValueType()) &&
+    if (ValueWithExpiryTime.class.isAssignableFrom(c.getValueType().getType()) &&
         entryExpiryCalculator == null)  {
       entryExpiryCalculator =
         (EntryExpiryCalculator<K, T>)

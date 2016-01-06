@@ -33,6 +33,9 @@ If something is listed here it might affect an existing application and updating
 Fixes of corner cases that are most likely not affecting any existing applications and improvements are listed here.
   
   * Performance improvement: put() on existing entry by 15%
+  * Typing: "unsupported" exception if an array is used for key or value types
+  * Typing: Actual type parameters of genreic types can be stored in the cache config
+  * Typing: Converted CacheConfig to a generic type, transporting the key/value types at compile time
   * The cache manager logs the used default cache implementation at startup
   * Performance improvement: read access and cache hit (approx. 5%) on 64 bit JVMs
   * Cache.iterator(): Proper exception on wrong usage of iterator pattern

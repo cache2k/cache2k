@@ -22,6 +22,7 @@ package org.cache2k;
  * #L%
  */
 
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -31,12 +32,11 @@ import java.util.List;
  *
  * @author Jens Wilke; created: 2013-06-25
  */
-public class CacheConfig {
+public class CacheConfig<K, V> implements Serializable {
 
   private String name;
-  private Class<?> keyType = Object.class;
-  private Class<?> valueType = Object.class;
-  private Class<?> entryType;
+  private CacheTypeDescriptor keyType;
+  private CacheTypeDescriptor valueType;
   private Class<?> implementation;
   private int maxSize = 2000;
   private int maxSizeHighBound = Integer.MAX_VALUE;
@@ -49,6 +49,66 @@ public class CacheConfig {
   private boolean sharpExpiry = false;
   private List<Object> moduleConfiguration;
   private boolean suppressExceptions = true;
+
+  /**
+   * Construct a config instance setting the type parameters and returning a
+   * proper generic type. See the respective setters for more information on
+   * the key/value types.
+   *
+   * @see #setKeyType(Class)
+   * @see #setValueType(Class)
+   */
+  public static <K,V> CacheConfig<K, V> of(Class<K> keyType, Class<V> valueType) {
+    CacheConfig c = new CacheConfig();
+    c.setKeyType(keyType);
+    c.setValueType(valueType);
+    return (CacheConfig<K, V>) c;
+  }
+
+  /**
+   * Construct a config instance setting the type parameters and returning a
+   * proper generic type. See the respective setters for more information on
+   * the key/value types.
+   *
+   * @see #setKeyType(Class)
+   * @see #setValueType(Class)
+   */
+  public static <K,V> CacheConfig<K, V> of(Class<K> keyType, CacheTypeDescriptor<V> valueType) {
+    CacheConfig c = new CacheConfig();
+    c.setKeyType(keyType);
+    c.setValueType(valueType);
+    return (CacheConfig<K, V>) c;
+  }
+
+  /**
+   * Construct a config instance setting the type parameters and returning a
+   * proper generic type. See the respective setters for more information on
+   * the key/value types.
+   *
+   * @see #setKeyType(Class)
+   * @see #setValueType(Class)
+   */
+  public static <K,V> CacheConfig<K, V> of(CacheTypeDescriptor<K> keyType, Class<V> valueType) {
+    CacheConfig c = new CacheConfig();
+    c.setKeyType(keyType);
+    c.setValueType(valueType);
+    return (CacheConfig<K, V>) c;
+  }
+
+  /**
+   * Construct a config instance setting the type parameters and returning a
+   * proper generic type. See the respective setters for more information on
+   * the key/value types.
+   *
+   * @see #setKeyType(Class)
+   * @see #setValueType(Class)
+   */
+  public static <K,V> CacheConfig<K, V> of(CacheTypeDescriptor<K> keyType, CacheTypeDescriptor<V> valueType) {
+    CacheConfig c = new CacheConfig();
+    c.setKeyType(keyType);
+    c.setValueType(valueType);
+    return (CacheConfig<K, V>) c;
+  }
 
   public String getName() {
     return name;
@@ -117,30 +177,81 @@ public class CacheConfig {
     this.backgroundRefresh = backgroundRefresh;
   }
 
-  public Class<?> getKeyType() {
+  public CacheTypeDescriptor getKeyType() {
     return keyType;
   }
 
-  public void setKeyType(Class<?> keyType) {
-    if (keyType == null) { throw new NullPointerException("null key type not allowed"); }
-    this.keyType = keyType;
+  void checkNull(Object v) {
+    if (v == null) {
+      throw new NullPointerException("null value not allowed");
+    }
   }
 
-  public Class<?> getValueType() {
+  /**
+   * The used type of the cache key. A suitable cache key must provide a useful equals() and hashCode() method.
+   * Arrays are not valid for cache keys.
+   *
+   * <p><b>About types:</b><br/>
+   *
+   * The type may be set only once and cannot be changed during the lifetime of a cache. If no type information
+   * is provided it defaults to the Object class.The provided type information might be used inside the cache
+   * for optimizations and as well as to select appropriate default transformation schemes for copying
+   * objects or marshalling. The correct types are not strictly enforced at all levels by the cache
+   * for performance reasons. The cache application guarantees that only the specified types will be used.
+   * The cache will check the type compatibility at critical points, e.g. when reconnecting to an external storage.
+   * Generic types: An application may provide more detailed type information to the cache, which
+   * contains also generic type parameters by providing a {@link CacheType} where the cache can extract
+   * the type information.
+   * </p>
+   *
+   * @see CacheType
+   * @see #setKeyType(CacheTypeDescriptor)
+   */
+  public void setKeyType(Class<?> v) {
+    checkNull(v);
+    setKeyType(CacheType.fromClass(v));
+  }
+
+  /**
+   * Set more detailed type information of the cache key, containing possible generic type arguments.
+   *
+   * @see #setKeyType(Class) for a general discussion on types
+   */
+  public void setKeyType(CacheTypeDescriptor v) {
+    checkNull(v);
+    if (keyType != null && !v.equals(keyType)) {
+      throw new IllegalArgumentException("Key type may only set once.");
+    }
+    if (v.isArray()) {
+      throw new IllegalArgumentException("Arrays are not supported for keys");
+    }
+    keyType = v.getBeanRepresentation();
+  }
+
+  public CacheTypeDescriptor<V> getValueType() {
     return valueType;
   }
 
-  public Class<?> getEntryType() {
-    return entryType;
+  /**
+   * The used type of the cache value. A suitable cache key must provide a useful equals() and hashCode() method.
+   * Arrays are not valid for cache keys.
+   *
+   * @see #setKeyType(Class) for a general discussion on types
+   */
+  public void setValueType(Class<?> v) {
+    checkNull(v);
+    setValueType(new CacheTypeDescriptor.OfClass(v));
   }
 
-  public void setEntryType(Class<?> entryType) {
-    this.entryType = entryType;
-  }
-
-  public void setValueType(Class<?> valueType) {
-    if (valueType == null) { throw new NullPointerException("null value type not allowed"); }
-    this.valueType = valueType;
+  public void setValueType(CacheTypeDescriptor v) {
+    checkNull(v);
+    if (valueType != null && !v.equals(valueType)) {
+      throw new IllegalArgumentException("Value type may only set once.");
+    }
+    if (v.isArray()) {
+      throw new IllegalArgumentException("Arrays are not supported for values");
+    }
+    valueType = v.getBeanRepresentation();
   }
 
   public boolean isEternal() {

@@ -104,8 +104,8 @@ public class PassingStorageAdapter extends StorageAdapter {
     cache = _cache;
     parent = _cache;
     context = new StorageContext(_cache);
-    context.keyType = _cacheConfig.getKeyType();
-    context.valueType = _cacheConfig.getValueType();
+    context.keyType = _cacheConfig.getKeyType().getType();
+    context.valueType = _cacheConfig.getValueType().getType();
     config = _storageConfig;
     if (tunable.useManagerThreadPool) {
       executor = new LimitedPooledExecutor(cache.manager.getThreadPool());

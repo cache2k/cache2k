@@ -46,34 +46,44 @@ public abstract class CacheBuilder<K,T>
     }
   }
 
-  @SuppressWarnings("unchecked")
   public static CacheBuilder<?,?> newCache() {
-    CacheBuilder cb = null;
-    try {
-      cb = (CacheBuilder) PROTOTYPE.clone();
-    } catch (CloneNotSupportedException ignored) {  }
-    cb.ctor();
-    return cb;
+    return fromConfig(new CacheConfig());
   }
 
-  @SuppressWarnings("unchecked")
   public static <K,T> CacheBuilder<K,T> newCache(Class<K> _keyType, Class<T> _valueType) {
+    return fromConfig(CacheConfig.of(_keyType, _valueType));
+  }
+
+  public static <K,T> CacheBuilder<K,T> newCache(CacheTypeDescriptor<K> _keyType, Class<T> _valueType) {
+    return fromConfig(CacheConfig.of(_keyType, _valueType));
+  }
+
+  public static <K,T> CacheBuilder<K,T> newCache(Class<K> _keyType, CacheTypeDescriptor<T> _valueType) {
+    return fromConfig(CacheConfig.of(_keyType, _valueType));
+  }
+
+  public static <K,T> CacheBuilder<K,T> newCache(CacheTypeDescriptor<K> _keyType, CacheTypeDescriptor<T> _valueType) {
+    return fromConfig(CacheConfig.of(_keyType, _valueType));
+  }
+
+  /**
+   * Method to be removed. Entry type information will be discarded.
+   *
+   * @deprecated use {@link #newCache(Class, CacheTypeDescriptor)}
+   */
+  @SuppressWarnings("unchecked")
+  public static <K, C extends Collection<T>, T> CacheBuilder<K, C> newCache(
+    Class<K> _keyType, Class<C> _collectionType, Class<T> _entryType) {
+    return fromConfig(CacheConfig.of(_keyType, _collectionType));
+  }
+
+  static <K,T> CacheBuilder<K, T> fromConfig(CacheConfig<K, T> c) {
     CacheBuilder<K,T> cb = null;
     try {
       cb = (CacheBuilder<K,T>) PROTOTYPE.clone();
     } catch (CloneNotSupportedException ignored) {  }
-    cb.ctor(_keyType, _valueType, null);
-    return cb;
-  }
-
-  @SuppressWarnings("unchecked")
-  public static <K, C extends Collection<T>, T> CacheBuilder<K, C> newCache(
-    Class<K> _keyType, Class<C> _collectionType, Class<T> _entryType) {
-    CacheBuilder<K,C> cb = null;
-    try {
-      cb = (CacheBuilder<K,C>) PROTOTYPE.clone();
-    } catch (CloneNotSupportedException ignored) { }
-    cb.ctor(_keyType, _collectionType, _entryType);
+    cb.root = cb;
+    cb.config = c;
     return cb;
   }
 
@@ -87,20 +97,6 @@ public abstract class CacheBuilder<K,T>
   protected ExceptionExpiryCalculator exceptionExpiryCalculator;
   protected CacheWriter cacheWriter;
   protected ExceptionPropagator exceptionPropagator;
-
-  protected void ctor() {
-    root = this;
-    config = new CacheConfig();
-  }
-
-  /** Builder is constructed from prototype */
-  protected void ctor(Class<K> _keyType, Class<T> _valueType, Class<?> _entryType) {
-    root = this;
-    config = new CacheConfig();
-    config.setValueType(_valueType);
-    config.setKeyType(_keyType);
-    config.setEntryType(_entryType);
-  }
 
   public <K2> CacheBuilder<K2, T>  keyType(Class<K2> t) {
     config.setKeyType(t);
