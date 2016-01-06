@@ -209,6 +209,8 @@ public abstract class BaseCache<E extends Entry, K, T>
    */
   protected long virginEvictCnt = 0;
 
+  protected long timerEvents = 0;
+
   protected int maximumBulkFetchSize = 100;
 
   /**
@@ -2819,6 +2821,10 @@ public abstract class BaseCache<E extends Entry, K, T>
     if (e.task != null) {
       e.task.cancel();
     }
+    if ((_nextRefreshTime > Entry.EXPIRY_TIME_MIN && _nextRefreshTime <= now) &&
+        (_nextRefreshTime < -1 && (now >= -_nextRefreshTime))) {
+      return Entry.EXPIRED_STATE;
+    }
     if (hasSharpTimeout() && _nextRefreshTime > Entry.EXPIRY_TIME_MIN && _nextRefreshTime != Long.MAX_VALUE) {
       _nextRefreshTime = -_nextRefreshTime;
     }
@@ -2855,62 +2861,67 @@ public abstract class BaseCache<E extends Entry, K, T>
     }
     */
     if (refreshPool != null) {
-      synchronized (lock) {
-        if (isClosed()) { return; }
-        if (e.task == null) {
-          return;
-        }
-        if (e.isRemovedFromReplacementList()) {
-          return;
-        }
-        if (mainHashCtrl.remove(mainHash, e)) {
-          refreshHash = refreshHashCtrl.insert(refreshHash, e);
-          if (e.hashCode != modifiedHash(e.key.hashCode())) {
-            synchronized (lock) {
-              synchronized (e) {
-                if (!e.isRemovedState() && removeEntryFromHash(e)) {
-                  expiredRemoveCnt++;
-                }
+      synchronized (e) {
+        synchronized (lock) {
+          timerEvents++;
+          if (isClosed()) {
+            return;
+          }
+          touchedTime = _executionTime;
+          if (e.isRemovedState()) {
+            return;
+          }
+          if (mainHashCtrl.remove(mainHash, e)) {
+            refreshHash = refreshHashCtrl.insert(refreshHash, e);
+            if (e.hashCode != modifiedHash(e.key.hashCode())) {
+              if (!e.isRemovedState() && removeEntryFromHash(e)) {
+                expiredRemoveCnt++;
               }
+              return;
             }
-            return;
-          }
-          Runnable r = new Runnable() {
-            @Override
-            public void run() {
-              long _previousNextRefreshTime;
-              synchronized (e) {
-                if (e.isRemovedFromReplacementList() || e.isRemovedState() || e.isFetchInProgress()) {
-                  return;
-                }
-                _previousNextRefreshTime = e.nextRefreshTime;
-                e.setGettingRefresh();
-              }
-              try {
-                long t = fetch(e, _previousNextRefreshTime);
-                finishFetch(e, t);
-              } catch (CacheClosedException ignore) {
-              } catch (Throwable ex) {
-                e.ensureFetchAbort(false);
-                synchronized (lock) {
-                  internalExceptionCnt++;
-                }
-                getLog().warn("Refresh exception", ex);
-                try {
-                  expireEntry(e);
-                } catch (CacheClosedException ignore) { }
-              }
-             }
-          };
-          boolean _submitOkay = refreshPool.submit(r);
-          if (_submitOkay) {
-            return;
-          }
-          refreshSubmitFailedCnt++;
-        }
+            Runnable r = new Runnable() {
+              @Override
+              public void run() {
+                long _previousNextRefreshTime;
+                synchronized (e) {
 
+                  if (e.isRemovedFromReplacementList() || e.isRemovedState() || e.isFetchInProgress()) {
+                    return;
+                  }
+                  _previousNextRefreshTime = e.nextRefreshTime;
+                  e.setGettingRefresh();
+                }
+                try {
+                  long t = fetch(e, _previousNextRefreshTime);
+                  finishFetch(e, t);
+                } catch (CacheClosedException ignore) {
+                } catch (Throwable ex) {
+                  e.ensureFetchAbort(false);
+                  synchronized (lock) {
+                    internalExceptionCnt++;
+                  }
+                  getLog().warn("Refresh exception", ex);
+                  try {
+                    expireEntry(e);
+                  } catch (CacheClosedException ignore) {
+                  }
+                }
+              }
+            };
+            boolean _submitOkay = refreshPool.submit(r);
+            if (_submitOkay) {
+              return;
+            }
+            refreshSubmitFailedCnt++;
+          } else { // if (mainHashCtrl.remove(mainHash, e)) ...
+          }
+        }
       }
 
+    } else {
+      synchronized (lock) {
+        timerEvents++;
+      }
     }
     synchronized (e) {
       long nrt = e.nextRefreshTime;
@@ -3528,6 +3539,7 @@ public abstract class BaseCache<E extends Entry, K, T>
         + "expiredCnt=" + fo.getExpiredCnt() + ", "
         + "evictedCnt=" + fo.getEvictedCnt() + ", "
         + "removedCnt=" + fo.getRemovedCnt() + ", "
+        + "timerEventCnt=" + fo.getTimerEventCnt() + ", "
         + "storageLoadCnt=" + fo.getStorageLoadCnt() + ", "
         + "storageMissCnt=" + fo.getStorageMissCnt() + ", "
         + "storageHitCnt=" + fo.getStorageHitCnt() + ", "
@@ -3617,6 +3629,7 @@ public abstract class BaseCache<E extends Entry, K, T>
     public long getPutNewEntryCnt() { return putNewEntryCnt; }
     public long getPutCnt() { return correctedPutCnt; }
     public long getKeyMutationCnt() { return keyMutationCount; }
+    public long getTimerEventCnt() { return timerEvents; }
     public double getDataHitRate() {
       long cnt = getReadUsageCnt();
       return cnt == 0 ? 0.0 : ((cnt - missCnt) * 100D / cnt);
