@@ -460,6 +460,8 @@
             <configuration>
               <groups>org.cache2k.junit.SlowTests</groups>
               <excludedGroups>org.cache2k.junit.StorageTests</excludedGroups>
+              <parallel>classes</parallel>
+              <threadCount>2</threadCount>
             </configuration>
           </plugin>
         </plugins>
