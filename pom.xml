@@ -443,7 +443,7 @@
             <artifactId>maven-surefire-plugin</artifactId>
             <!-- we only exclude, so the TCK tests are run, too -->
             <configuration>
-              <excludedGroups>org.cache2k.junit.StorageTests,org.cache2k.junit.SlowTests</excludedGroups>
+              <excludedGroups>org.cache2k.junit.StorageTests,org.cache2k.junit.SlowTests,org.cache2k.junit.TimingTests</excludedGroups>
             </configuration>
           </plugin>
         </plugins>
@@ -459,9 +459,9 @@
             <artifactId>maven-surefire-plugin</artifactId>
             <configuration>
               <groups>org.cache2k.junit.SlowTests</groups>
-              <excludedGroups>org.cache2k.junit.StorageTests</excludedGroups>
+              <excludedGroups>org.cache2k.junit.StorageTests,org.cache2k.junit.TimingTests</excludedGroups>
               <parallel>classes</parallel>
-              <threadCount>2</threadCount>
+              <threadCount>5</threadCount>
             </configuration>
           </plugin>
         </plugins>
