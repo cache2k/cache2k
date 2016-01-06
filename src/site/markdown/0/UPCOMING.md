@@ -13,15 +13,14 @@ Modifications in the statistics output will not listed as breakage.
 
 ## Bug fixes
 
-Serious bugs will listed here. If something is listed here it might affect an existing application and updating is
-recommended.
+If something is listed here it might affect an existing application and updating is recommended.
 
+  * Enabled background refresh and entry expiry calculator: In case the calculator returned the current time or a past time, the 
+    entry was not marked as expired.
   * Fix possible race condition in cache manager when adding and closing caches and requesting an iteration of the existing caches
-  * Retrieving entries via peek() yielded null, in case of a parallel update via put()
+  * Retrieving existing entries via peek() might return null if a concurrent put() happens
 
 ## New and Noteworthy
-
-  * none
 
   TODO: check API, add since, add comment!
   * entry processor scheme like in JSR107: Cache.invokeAll,
@@ -30,6 +29,8 @@ recommended.
 ## 
 
 ## Fixes and Improvements
+
+Fixes of corner cases that are most likely not affecting any existing applications and improvements are listed here.
   
   * Performance improvement: put() on existing entry by 15%
   * The cache manager logs the used default cache implementation at startup
