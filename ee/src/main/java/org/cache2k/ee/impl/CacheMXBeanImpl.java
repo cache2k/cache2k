@@ -22,8 +22,8 @@ package org.cache2k.ee.impl;
  * #L%
  */
 
-import org.cache2k.Cache;
 import org.cache2k.impl.BaseCache;
+import org.cache2k.impl.InternalCacheInfo;
 import org.cache2k.jmx.CacheMXBean;
 
 import java.util.Date;
@@ -39,7 +39,7 @@ public class CacheMXBeanImpl implements CacheMXBean {
     this.cache = cache;
   }
 
-  private BaseCache.Info getInfo() { return cache.getInfo(); }
+  private InternalCacheInfo getInfo() { return cache.getInfo(); }
 
   @Override
   public int getSize() {

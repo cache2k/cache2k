@@ -131,7 +131,7 @@ public abstract class BaseCache<E extends Entry, K, T>
 
   protected ExceptionExpiryCalculator<K> exceptionExpiryCalculator;
 
-  protected Info info;
+  protected CacheBaseInfo info;
 
   protected long clearedTime = 0;
   protected long startedTime;
@@ -3460,7 +3460,7 @@ public abstract class BaseCache<E extends Entry, K, T>
   }
 
 
-  public final Info getInfo() {
+  public final InternalCacheInfo getInfo() {
     synchronized (lock) {
       checkClosed();
       long t = System.currentTimeMillis();
@@ -3468,19 +3468,19 @@ public abstract class BaseCache<E extends Entry, K, T>
           (info.creationTime + info.creationDeltaMs * TUNABLE.minimumStatisticsCreationTimeDeltaFactor + TUNABLE.minimumStatisticsCreationDeltaMillis > t)) {
         return info;
       }
-      info = getLatestInfo(t);
+      info = generateInfo(t);
     }
     return info;
   }
 
-  public final Info getLatestInfo() {
-    return getLatestInfo(System.currentTimeMillis());
+  public final InternalCacheInfo getLatestInfo() {
+    return generateInfo(System.currentTimeMillis());
   }
 
-  private Info getLatestInfo(long t) {
+  private CacheBaseInfo generateInfo(long t) {
     synchronized (lock) {
       checkClosed();
-      info = new Info();
+      info = new CacheBaseInfo(this);
       info.creationTime = t;
       info.creationDeltaMs = (int) (System.currentTimeMillis() - t);
       return info;
@@ -3488,13 +3488,6 @@ public abstract class BaseCache<E extends Entry, K, T>
   }
 
   protected String getExtraStatistics() { return ""; }
-
-  static String timestampToString(long t) {
-    if (t == 0) {
-      return "-";
-    }
-    return formatMillis(t);
-  }
 
   @Override
   public CacheManager getCacheManager() {
@@ -3517,218 +3510,10 @@ public abstract class BaseCache<E extends Entry, K, T>
   @Override
   public String toString() {
     synchronized (lock) {
-      Info fo = getLatestInfo();
+      InternalCacheInfo fo = getLatestInfo();
       return "Cache{" + name + "}"
-        + "("
-        + "size=" + fo.getSize() + ", "
-        + "maxSize=" + fo.getMaxSize() + ", "
-        + "usageCnt=" + fo.getUsageCnt() + ", "
-        + "missCnt=" + fo.getMissCnt() + ", "
-        + "fetchCnt=" + fo.getFetchCnt() + ", "
-        + "fetchButHitCnt=" + fetchButHitCnt + ", "
-        + "heapHitCnt=" + fo.hitCnt + ", "
-        + "virginEvictCnt=" + virginEvictCnt + ", "
-        + "fetchesInFlightCnt=" + fo.getFetchesInFlightCnt() + ", "
-        + "newEntryCnt=" + fo.getNewEntryCnt() + ", "
-        + "bulkGetCnt=" + fo.getBulkGetCnt() + ", "
-        + "refreshCnt=" + fo.getRefreshCnt() + ", "
-        + "refreshSubmitFailedCnt=" + fo.getRefreshSubmitFailedCnt() + ", "
-        + "refreshHitCnt=" + fo.getRefreshHitCnt() + ", "
-        + "putCnt=" + fo.getPutCnt() + ", "
-        + "putNewEntryCnt=" + fo.getPutNewEntryCnt() + ", "
-        + "expiredCnt=" + fo.getExpiredCnt() + ", "
-        + "evictedCnt=" + fo.getEvictedCnt() + ", "
-        + "removedCnt=" + fo.getRemovedCnt() + ", "
-        + "timerEventCnt=" + fo.getTimerEventCnt() + ", "
-        + "storageLoadCnt=" + fo.getStorageLoadCnt() + ", "
-        + "storageMissCnt=" + fo.getStorageMissCnt() + ", "
-        + "storageHitCnt=" + fo.getStorageHitCnt() + ", "
-        + "hitRate=" + fo.getDataHitString() + ", "
-        + "collisionCnt=" + fo.getCollisionCnt() + ", "
-        + "collisionSlotCnt=" + fo.getCollisionSlotCnt() + ", "
-        + "longestCollisionSize=" + fo.getLongestCollisionSize() + ", "
-        + "hashQuality=" + fo.getHashQualityInteger() + ", "
-        + "msecs/fetch=" + (fo.getMillisPerFetch() >= 0 ? fo.getMillisPerFetch() : "-")  + ", "
-        + "created=" + timestampToString(fo.getStarted()) + ", "
-        + "cleared=" + timestampToString(fo.getCleared()) + ", "
-        + "touched=" + timestampToString(fo.getTouched()) + ", "
-        + "fetchExceptionCnt=" + fo.getFetchExceptionCnt() + ", "
-        + "suppressedExceptionCnt=" + fo.getSuppressedExceptionCnt() + ", "
-        + "internalExceptionCnt=" + fo.getInternalExceptionCnt() + ", "
-        + "keyMutationCnt=" + fo.getKeyMutationCnt() + ", "
-        + "infoCreated=" + timestampToString(fo.getInfoCreated()) + ", "
-        + "infoCreationDeltaMs=" + fo.getInfoCreationDeltaMs() + ", "
-        + "impl=\"" + getClass().getSimpleName() + "\""
-        + getExtraStatistics() + ", "
-        + "integrityState=" + fo.getIntegrityDescriptor() + ")";
+              + "(" + fo.toString() + ")";
     }
-  }
-
-  /**
-   * Stable interface to request information from the cache, the object
-   * safes values that need a longer calculation time, other values are
-   * requested directly.
-   */
-  public class Info {
-
-    int size = BaseCache.this.getLocalSize();
-    long creationTime;
-    int creationDeltaMs;
-    long missCnt = fetchCnt - refreshCnt + peekHitNotFreshCnt + peekMissCnt;
-    long storageMissCnt = loadMissCnt + loadNonFreshCnt + loadNonFreshAndFetchedCnt;
-    long storageLoadCnt = storageMissCnt + loadHitCnt;
-    long newEntryCnt = BaseCache.this.newEntryCnt - virginEvictCnt;
-    long hitCnt = getHitCnt();
-    long correctedPutCnt = putCnt - putButExpiredCnt;
-    long usageCnt =
-        hitCnt + newEntryCnt + peekMissCnt;
-    CollisionInfo collisionInfo;
-    String extraStatistics;
-    int fetchesInFlight = BaseCache.this.getFetchesInFlight();
-
-    {
-      collisionInfo = new CollisionInfo();
-      Hash.calcHashCollisionInfo(collisionInfo, mainHash);
-      Hash.calcHashCollisionInfo(collisionInfo, refreshHash);
-      extraStatistics = BaseCache.this.getExtraStatistics();
-      if (extraStatistics.startsWith(", ")) {
-        extraStatistics = extraStatistics.substring(2);
-      }
-    }
-
-    IntegrityState integrityState = getIntegrityState();
-
-    String percentString(double d) {
-      String s = Double.toString(d);
-      return (s.length() > 5 ? s.substring(0, 5) : s) + "%";
-    }
-
-    public String getName() { return name; }
-    public String getImplementation() { return BaseCache.this.getClass().getSimpleName(); }
-    public int getSize() { return size; }
-    public int getMaxSize() { return maxSize; }
-    public long getStorageHitCnt() { return loadHitCnt; }
-    public long getStorageLoadCnt() { return storageLoadCnt; }
-    public long getStorageMissCnt() { return storageMissCnt; }
-    public long getReadUsageCnt() { return usageCnt - putCnt - removedCnt - atomicOpNewEntryCnt; }
-    public long getUsageCnt() { return usageCnt; }
-    public long getMissCnt() { return missCnt; }
-    public long getNewEntryCnt() { return newEntryCnt; }
-    public long getFetchCnt() { return fetchCnt; }
-    public int getFetchesInFlightCnt() { return fetchesInFlight; }
-    public long getBulkGetCnt() { return bulkGetCnt; }
-    public long getRefreshCnt() { return refreshCnt; }
-    public long getInternalExceptionCnt() { return internalExceptionCnt; }
-    public long getRefreshSubmitFailedCnt() { return refreshSubmitFailedCnt; }
-    public long getSuppressedExceptionCnt() { return suppressedExceptionCnt; }
-    public long getFetchExceptionCnt() { return fetchExceptionCnt; }
-    public long getRefreshHitCnt() { return refreshHitCnt; }
-    public long getExpiredCnt() { return BaseCache.this.getExpiredCnt(); }
-    public long getEvictedCnt() { return evictedCnt - virginEvictCnt; }
-    public long getRemovedCnt() { return BaseCache.this.removedCnt; }
-    public long getPutNewEntryCnt() { return putNewEntryCnt; }
-    public long getPutCnt() { return correctedPutCnt; }
-    public long getKeyMutationCnt() { return keyMutationCount; }
-    public long getTimerEventCnt() { return timerEvents; }
-    public double getDataHitRate() {
-      long cnt = getReadUsageCnt();
-      return cnt == 0 ? 0.0 : ((cnt - missCnt) * 100D / cnt);
-    }
-    public String getDataHitString() { return percentString(getDataHitRate()); }
-    public double getEntryHitRate() { return usageCnt == 0 ? 100 : (usageCnt - newEntryCnt + putCnt) * 100D / usageCnt; }
-    public String getEntryHitString() { return percentString(getEntryHitRate()); }
-    /** How many items will be accessed with collision */
-    public int getCollisionPercentage() {
-      return
-        (size - collisionInfo.collisionCnt) * 100 / size;
-    }
-    /** 100 means each collision has its own slot */
-    public int getSlotsPercentage() {
-      return collisionInfo.collisionSlotCnt * 100 / collisionInfo.collisionCnt;
-    }
-    public int getHq0() {
-      return Math.max(0, 105 - collisionInfo.longestCollisionSize * 5) ;
-    }
-    public int getHq1() {
-      final int _metricPercentageBase = 60;
-      int m =
-        getCollisionPercentage() * ( 100 - _metricPercentageBase) / 100 + _metricPercentageBase;
-      m = Math.min(100, m);
-      m = Math.max(0, m);
-      return m;
-    }
-    public int getHq2() {
-      final int _metricPercentageBase = 80;
-      int m =
-        getSlotsPercentage() * ( 100 - _metricPercentageBase) / 100 + _metricPercentageBase;
-      m = Math.min(100, m);
-      m = Math.max(0, m);
-      return m;
-    }
-    public int getHashQualityInteger() {
-      if (size == 0 || collisionInfo.collisionSlotCnt == 0) {
-        return 100;
-      }
-      int _metric0 = getHq0();
-      int _metric1 = getHq1();
-      int _metric2 = getHq2();
-      if (_metric1 < _metric0) {
-        int v = _metric0;
-        _metric0 = _metric1;
-        _metric1 = v;
-      }
-      if (_metric2 < _metric0) {
-        int v = _metric0;
-        _metric0 = _metric2;
-        _metric2 = v;
-      }
-      if (_metric2 < _metric1) {
-        int v = _metric1;
-        _metric1 = _metric2;
-        _metric2 = v;
-      }
-      if (_metric0 <= 0) {
-        return 0;
-      }
-      _metric0 = _metric0 + ((_metric1 - 50) * 5 / _metric0);
-      _metric0 = _metric0 + ((_metric2 - 50) * 2 / _metric0);
-      _metric0 = Math.max(0, _metric0);
-      _metric0 = Math.min(100, _metric0);
-      return _metric0;
-    }
-    public double getMillisPerFetch() { return fetchCnt == 0 ? 0 : (fetchMillis * 1D / fetchCnt); }
-    public long getFetchMillis() { return fetchMillis; }
-    public int getCollisionCnt() { return collisionInfo.collisionCnt; }
-    public int getCollisionSlotCnt() { return collisionInfo.collisionSlotCnt; }
-    public int getLongestCollisionSize() { return collisionInfo.longestCollisionSize; }
-    public String getIntegrityDescriptor() { return integrityState.getStateDescriptor(); }
-    public long getStarted() { return startedTime; }
-    public long getCleared() { return clearedTime; }
-    public long getTouched() { return touchedTime; }
-    public long getInfoCreated() { return creationTime; }
-    public int getInfoCreationDeltaMs() { return creationDeltaMs; }
-    public int getHealth() {
-      if (storage != null && storage.getAlert() == 2) {
-        return 2;
-      }
-      if (integrityState.getStateFlags() > 0 ||
-          getHashQualityInteger() < 5) {
-        return 2;
-      }
-      if (storage != null && storage.getAlert() == 1) {
-        return 1;
-      }
-      if (getHashQualityInteger() < 30 ||
-        getKeyMutationCnt() > 0 ||
-        getInternalExceptionCnt() > 0) {
-        return 1;
-      }
-      return 0;
-    }
-    public String getExtraStatistics() {
-      return extraStatistics;
-    }
-
   }
 
   static class CollisionInfo {
@@ -3835,7 +3620,7 @@ public abstract class BaseCache<E extends Entry, K, T>
      *  Factor of the statistics creation time, that determines the time difference when new
      *  statistics are generated.
      */
-    public int minimumStatisticsCreationTimeDeltaFactor = 17;
+    public int minimumStatisticsCreationTimeDeltaFactor = 123;
 
 
   }

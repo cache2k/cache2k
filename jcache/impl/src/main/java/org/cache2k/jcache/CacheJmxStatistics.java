@@ -23,6 +23,7 @@ package org.cache2k.jcache;
  */
 
 import org.cache2k.impl.BaseCache;
+import org.cache2k.impl.InternalCacheInfo;
 
 import javax.cache.management.CacheStatisticsMXBean;
 
@@ -37,7 +38,7 @@ public class CacheJmxStatistics implements CacheStatisticsMXBean {
   BaseCache cache;
   Cache2kCacheAdapter adapter;
 
-  BaseCache.Info getInfo() {
+  InternalCacheInfo getInfo() {
     return flushOnAccess ? cache.getLatestInfo() : cache.getInfo();
   }
 
@@ -53,18 +54,18 @@ public class CacheJmxStatistics implements CacheStatisticsMXBean {
 
   @Override
   public long getCacheHits() {
-    BaseCache.Info inf = getInfo();
+    InternalCacheInfo inf = getInfo();
     return calcHits(inf);
   }
 
-  private long calcHits(BaseCache.Info inf) {
+  private long calcHits(InternalCacheInfo inf) {
     return inf.getReadUsageCnt() - inf.getMissCnt() + adapter.hitCorrectionCounter.get() * tweakStatisticsForEntityProcessor;
   }
 
   @Override
   public float getCacheHitPercentage() {
     if (tweakStatisticsForEntityProcessor == 1) {
-      BaseCache.Info inf = getInfo();
+      InternalCacheInfo inf = getInfo();
       long _hits = calcHits(inf);
       long _miss = calcMisses(inf);
       if (_hits == 0) {
@@ -77,17 +78,17 @@ public class CacheJmxStatistics implements CacheStatisticsMXBean {
 
   @Override
   public long getCacheMisses() {
-    BaseCache.Info inf = getInfo();
+    InternalCacheInfo inf = getInfo();
     return calcMisses(inf);
   }
 
-  private long calcMisses(BaseCache.Info inf) {
+  private long calcMisses(InternalCacheInfo inf) {
     return inf.getMissCnt() + adapter.missCorrectionCounter.get() * tweakStatisticsForEntityProcessor;
   }
 
   @Override
   public float getCacheMissPercentage() {
-    BaseCache.Info inf = getInfo();
+    InternalCacheInfo inf = getInfo();
     return inf.getReadUsageCnt() == 0 ? 0.0F : (100.0F * inf.getMissCnt() / inf.getReadUsageCnt());
   }
 
