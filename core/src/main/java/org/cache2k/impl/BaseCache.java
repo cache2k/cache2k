@@ -77,7 +77,7 @@ import static org.cache2k.impl.util.Util.*;
  */
 @SuppressWarnings({"unchecked", "SynchronizationOnLocalVariableOrMethodParameter"})
 public abstract class BaseCache<E extends Entry, K, T>
-  implements Cache<K, T>, CanCheckIntegrity, Iterable<CacheEntry<K, T>>, StorageAdapter.Parent {
+  implements InternalCache<K, T>, StorageAdapter.Parent  {
 
   static final Random SEED_RANDOM = new Random(new SecureRandom().nextLong());
   static int cacheCnt = 0;
@@ -517,6 +517,7 @@ public abstract class BaseCache<E extends Entry, K, T>
     maxLinger = s * 1000;
   }
 
+  @Override
   public String getName() {
     return name;
   }
@@ -525,10 +526,13 @@ public abstract class BaseCache<E extends Entry, K, T>
     manager = cm;
   }
 
+  @Override
   public StorageAdapter getStorage() { return storage; }
 
+  @Override
   public Class<?> getKeyType() { return keyType; }
 
+  @Override
   public Class<?> getValueType() { return valueType; }
 
   /**
@@ -730,6 +734,7 @@ public abstract class BaseCache<E extends Entry, K, T>
     }
   }
 
+  @Override
   public void clearTimingStatistics() {
     synchronized (lock) {
       fetchCnt = 0;
@@ -1657,9 +1662,7 @@ public abstract class BaseCache<E extends Entry, K, T>
     return replace(key, true, _oldValue, _newValue) == null;
   }
 
-  /**
-   * Used by JCache impl, since access needs to trigger the TTI maybe use EP instead?
-   */
+  @Override
   public CacheEntry<K, T> replaceOrGet(K key, T _oldValue, T _newValue, CacheEntry<K, T> _dummyEntry) {
     E e = replace(key, true, _oldValue, _newValue);
     if (e == DUMMY_ENTRY_NO_REPLACE) {
@@ -3460,6 +3463,7 @@ public abstract class BaseCache<E extends Entry, K, T>
   }
 
 
+  @Override
   public final InternalCacheInfo getInfo() {
     synchronized (lock) {
       checkClosed();
@@ -3473,6 +3477,7 @@ public abstract class BaseCache<E extends Entry, K, T>
     return info;
   }
 
+  @Override
   public final InternalCacheInfo getLatestInfo() {
     return generateInfo(System.currentTimeMillis());
   }
@@ -3549,7 +3554,7 @@ public abstract class BaseCache<E extends Entry, K, T>
     /**
      * Implementation class to use by default.
      */
-    public Class<? extends BaseCache> defaultImplementation =
+    public Class<? extends InternalCache> defaultImplementation =
             "64".equals(System.getProperty("sun.arch.data.model"))
                     ? ClockProPlus64Cache.class : ClockProPlusCache.class;
 

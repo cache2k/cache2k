@@ -22,7 +22,7 @@ package org.cache2k.jcache;
  * #L%
  */
 
-import org.cache2k.impl.BaseCache;
+import org.cache2k.impl.InternalCache;
 import org.cache2k.impl.InternalCacheInfo;
 
 import javax.cache.management.CacheStatisticsMXBean;
@@ -35,7 +35,7 @@ public class CacheJmxStatistics implements CacheStatisticsMXBean {
   private static final boolean flushOnAccess = Tuning.GLOBAL.flushStatisticsOnAccess;
   private static final int tweakStatisticsForEntityProcessor = Tuning.GLOBAL.tweakStatisticsForEntityProcessor ? 1 : 0;
 
-  BaseCache cache;
+  InternalCache cache;
   Cache2kCacheAdapter adapter;
 
   InternalCacheInfo getInfo() {

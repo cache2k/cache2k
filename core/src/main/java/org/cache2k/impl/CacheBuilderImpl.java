@@ -120,7 +120,7 @@ public class CacheBuilderImpl<K, T> extends CacheBuilder<K, T> {
   }
 
   void configureViaSetters(Object o) {
-    if (o instanceof BaseCache) {
+    if (o instanceof InternalCache) {
       confiugreViaSettersDirect((BaseCache) o);
       return;
     }
@@ -173,7 +173,7 @@ public class CacheBuilderImpl<K, T> extends CacheBuilder<K, T> {
     }
     Cache<K,T> _cache = constructImplementationAndFillParameters(_implClass);
     CacheManagerImpl cm = null;
-    if (_cache instanceof BaseCache) {
+    if (_cache instanceof InternalCache) {
       cm = (CacheManagerImpl) (manager == null ? CacheManager.getInstance() : manager);
       ((BaseCache) _cache).setCacheManager(cm);
     }
@@ -181,7 +181,7 @@ public class CacheBuilderImpl<K, T> extends CacheBuilder<K, T> {
     if (cm != null) {
       cm.newCache(_cache);
     }
-    if (_cache instanceof BaseCache) {
+    if (_cache instanceof InternalCache) {
       ((BaseCache) _cache).init();
     }
     return _cache;

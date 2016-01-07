@@ -21,7 +21,7 @@
  */
 import org.cache2k.Cache;
 import org.cache2k.CacheBuilder;
-import org.cache2k.impl.BaseCache;
+import org.cache2k.impl.InternalCache;
 import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Before;
@@ -55,7 +55,7 @@ public class BasicCacheOperationsWithEntryProcessorTest extends BasicCacheOperat
 
   @After
   public void cleanupCache() {
-    ((BaseCache) staticCache.getWrappedCache()).checkIntegrity();
+    ((InternalCache) staticCache.getWrappedCache()).checkIntegrity();
     cache.clear();
   }
 

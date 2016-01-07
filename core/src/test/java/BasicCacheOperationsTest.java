@@ -22,7 +22,7 @@
 import org.cache2k.Cache;
 import org.cache2k.CacheBuilder;
 import org.cache2k.CacheException;
-import org.cache2k.impl.BaseCache;
+import org.cache2k.impl.InternalCache;
 import org.junit.*;
 
 import static org.junit.Assert.*;
@@ -64,7 +64,7 @@ public class BasicCacheOperationsTest {
   @After
   public void cleanupCache() {
     assertTrue("Tests are not allowed to create private caches", staticCache == cache);
-    ((BaseCache) cache).checkIntegrity();
+    ((InternalCache) cache).checkIntegrity();
     cache.clear();
   }
 

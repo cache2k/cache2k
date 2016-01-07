@@ -23,8 +23,8 @@ package org.cache2k.ee.impl;
  */
 
 import org.cache2k.Cache;
-import org.cache2k.impl.BaseCache;
 import org.cache2k.impl.CacheManagerImpl;
+import org.cache2k.impl.InternalCache;
 import org.cache2k.impl.threading.GlobalPooledExecutor;
 import org.cache2k.jmx.CacheManagerMXBean;
 
@@ -43,8 +43,8 @@ public class ManagerMXBeanImpl implements CacheManagerMXBean {
   public int getAlert() {
     int v = 0;
     for (Cache c : manager) {
-      if (c instanceof BaseCache) {
-        v = Math.max(v, ((BaseCache) c).getInfo().getHealth());
+      if (c instanceof InternalCache) {
+        v = Math.max(v, ((InternalCache) c).getInfo().getHealth());
       }
     }
     GlobalPooledExecutor ex = manager.getThreadPoolEventually();

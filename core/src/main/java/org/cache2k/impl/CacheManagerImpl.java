@@ -30,10 +30,7 @@ import org.cache2k.impl.threading.GlobalPooledExecutor;
 import org.cache2k.impl.util.Cache2kVersion;
 import org.cache2k.impl.util.Log;
 
-import java.io.IOException;
-import java.net.URL;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -50,7 +47,6 @@ import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.jar.Manifest;
 
 /**
  * @author Jens Wilke; created: 2013-07-01
@@ -73,7 +69,7 @@ public class CacheManagerImpl extends CacheManager {
   private Object lock = new Object();
   private Log log;
   private String name;
-  private Map<String, BaseCache> cacheNames = new HashMap<String, BaseCache>();
+  private Map<String, InternalCache> cacheNames = new HashMap<String, InternalCache>();
   private Set<Cache> caches = new HashSet<Cache>();
   private int disambiguationCounter = 1;
   private GlobalPooledExecutor threadPool;
@@ -254,7 +250,7 @@ public class CacheManagerImpl extends CacheManager {
       if (caches != null) {
         Futures.WaitForAllFuture<Void> _wait = new Futures.WaitForAllFuture<Void>();
         for (Cache c : caches) {
-          if (c instanceof BaseCache) {
+          if (c instanceof InternalCache) {
             try {
               Future<Void> f = ((BaseCache) c).cancelTimerJobs();
               _wait.add(f);
@@ -270,7 +266,7 @@ public class CacheManagerImpl extends CacheManager {
         }
         if (!_wait.isDone()) {
           for (Cache c : caches) {
-            if (c instanceof BaseCache) {
+            if (c instanceof InternalCache) {
               BaseCache bc = (BaseCache) c;
               try {
                 Future<Void> f = bc.cancelTimerJobs();

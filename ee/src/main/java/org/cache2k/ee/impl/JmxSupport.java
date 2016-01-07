@@ -24,11 +24,11 @@ package org.cache2k.ee.impl;
 
 import org.cache2k.Cache;
 import org.cache2k.CacheManager;
-import org.cache2k.impl.BaseCache;
 import org.cache2k.impl.CacheLifeCycleListener;
 import org.cache2k.impl.CacheManagerImpl;
 import org.cache2k.impl.CacheManagerLifeCycleListener;
 import org.cache2k.impl.CacheUsageExcpetion;
+import org.cache2k.impl.InternalCache;
 
 import javax.management.InstanceNotFoundException;
 import javax.management.MBeanServer;
@@ -48,11 +48,11 @@ public class JmxSupport implements CacheLifeCycleListener, CacheManagerLifeCycle
   @Override
   public void cacheCreated(CacheManager cm, Cache c) {
     MBeanServer mbs = ManagementFactory.getPlatformMBeanServer();
-    if (c instanceof BaseCache) {
+    if (c instanceof InternalCache) {
       String _name = standardName(cm, c);
       try {
          mbs.registerMBean(
-           new CacheMXBeanImpl((BaseCache) c),
+           new CacheMXBeanImpl((InternalCache) c),
            new ObjectName(_name));
       } catch (Exception e) {
         throw new CacheUsageExcpetion("Error registering JMX bean, name='" + _name + "'", e);
@@ -63,7 +63,7 @@ public class JmxSupport implements CacheLifeCycleListener, CacheManagerLifeCycle
   @Override
   public void cacheDestroyed(CacheManager cm, Cache c) {
     MBeanServer mbs = ManagementFactory.getPlatformMBeanServer();
-    if (c instanceof BaseCache) {
+    if (c instanceof InternalCache) {
       String _name = standardName(cm, c);
       try {
         mbs.unregisterMBean(new ObjectName(_name));

@@ -24,7 +24,6 @@ package org.cache2k.impl;
 
 import org.cache2k.Cache;
 import org.cache2k.CacheEntry;
-import org.cache2k.CacheEntryProcessingException;
 import org.cache2k.CacheEntryProcessor;
 import org.cache2k.MutableCacheEntry;
 
@@ -49,7 +48,7 @@ public class ConcurrentMapWrapper<K,V> implements ConcurrentMap<K, V> {
 
   public ConcurrentMapWrapper(Cache<K, V> cache) {
     this.cache = cache;
-    BaseCache bc = (BaseCache) cache;
+    InternalCache bc = (InternalCache) cache;
     keyType = bc.getKeyType();
     valueType = bc.getValueType();
   }
