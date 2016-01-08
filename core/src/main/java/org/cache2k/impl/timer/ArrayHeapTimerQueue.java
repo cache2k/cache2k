@@ -57,7 +57,7 @@ public class ArrayHeapTimerQueue extends TimerService {
 
   final Object lock = new Object();
 
-  MyThread thread;
+  volatile MyThread thread;
 
   String threadName;
 
@@ -138,6 +138,23 @@ public class ArrayHeapTimerQueue extends TimerService {
   @Override
   public long getFireExceptionCount() {
     return fireExceptionCount;
+  }
+
+  @Override
+  public void close() {
+    if (thread != null) {
+      synchronized (lock) {
+        outQueue = new Queue();
+        lock.notify();
+      }
+      Thread th = thread;
+      if (th != null) {
+        try {
+          thread.join();
+        } catch (InterruptedException ignore) {
+        }
+      }
+    }
   }
 
   void addTimerEvent(BaseTimerTask e) {

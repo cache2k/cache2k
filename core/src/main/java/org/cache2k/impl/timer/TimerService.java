@@ -22,12 +22,14 @@ package org.cache2k.impl.timer;
  * #L%
  */
 
+import java.io.Closeable;
+
 /**
  * Generic interface of a timer service.
  *
  * @author Jens Wilke; created: 2014-03-23
  */
-public abstract class TimerService {
+public abstract class TimerService implements Closeable {
 
   /**
    * Add a timer that fires at the specified time.
@@ -35,6 +37,12 @@ public abstract class TimerService {
   public abstract <T> CancelHandle add(TimerListener _listener, long _fireTime);
 
   public abstract <T> CancelHandle add(TimerPayloadListener<T> _listener, T _payload, long _fireTime);
+
+  /**
+   * Cancels all queued events and frees resources. The method waits until any pending events
+   * got delivered. It is guaranteed that after the method returns no more events fire.
+   */
+  public abstract void close();
 
   /**
    * Return the tasks in the timer queue including the cancelled.
@@ -49,11 +57,16 @@ public abstract class TimerService {
   public interface CancelHandle {
 
     /**
-     * Cancel the timer execution. This is a fast and unsynchronized method.
+     * Cancel the timer execution. This method is fast, it does not remove the
+     * timer from the queue.
      */
-    public void cancel();
+    void cancel();
 
-    public boolean isCancelled();
+    /**
+     * True after cancel was called. This is not suitable for detecting whether a
+     * cancel was successful and the timer event will not fire.
+     */
+    boolean isCancelled();
 
   }
 

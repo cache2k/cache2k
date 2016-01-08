@@ -62,6 +62,13 @@ public class GlobalTimerService extends TimerService {
   }
 
   @Override
+  public void close() {
+    for (int i = 0; i < timerQueues.length; i++) {
+      timerQueues[i].close();
+    }
+  }
+
+  @Override
   public int getQueueSize() {
     int v = 0;
     for (int i = 0; i < timerQueues.length; i++) {
