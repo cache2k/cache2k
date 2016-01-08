@@ -46,6 +46,10 @@ public abstract class CacheBuilder<K,T>
     }
   }
 
+  /**
+   *
+   * @deprecated will removed with no replacement? Construct the cache with type information.
+   */
   public static CacheBuilder<?,?> newCache() {
     return fromConfig(new CacheConfig());
   }
@@ -108,10 +112,22 @@ public abstract class CacheBuilder<K,T>
     return (CacheBuilder<K, T2>) this;
   }
 
+  public <K2> CacheBuilder<K2, T>  keyType(CacheTypeDescriptor<K2> t) {
+    config.setKeyType(t);
+    return (CacheBuilder<K2, T>) this;
+  }
+
+  public <T2> CacheBuilder<K, T2>  valueType(CacheTypeDescriptor<T2> t) {
+    config.setValueType(t);
+    return (CacheBuilder<K, T2>) this;
+  }
+
   /**
    * Constructs a cache name out of the simple class name and fieldname.
    *
-   * a cache name should be unique within an application / cache manager!
+   * <p>See {@link #name(String)} for a general discussion about cache names.
+   *
+   * @see #name(String)
    */
   public CacheBuilder<K, T> name(Class<?> _class, String _fieldName) {
     config.setName(_class.getSimpleName() + "." + _fieldName);
@@ -119,7 +135,11 @@ public abstract class CacheBuilder<K,T>
   }
 
   /**
-   * Constructs a cache name from the simple class name.
+   * Sets a cache name from the simple class name.
+   *
+   * <p>See {@link #name(String)} for a general discussion about cache names.
+   *
+   * @see #name(String)
    */
   public CacheBuilder<K, T> name(Class<?> _class) {
     config.setName(_class.getSimpleName());
@@ -129,18 +149,48 @@ public abstract class CacheBuilder<K,T>
   /**
    * Constructs a cache name out of the simple class name and fieldname.
    *
-   * a cache name should be unique within an application / cache manager!
+   * @see #name(String)
+   * @deprecated users should change to, e.g. <code>name(this.getClass(), "cache")</code>
    */
   public CacheBuilder<K, T> name(Object _containingObject, String _fieldName) {
     return name(_containingObject.getClass(), _fieldName);
   }
 
-  /** */
+  /**
+   * The manager this cache should belong to.
+   */
   public CacheBuilder<K, T> manager(CacheManager m) {
     manager = m;
     return this;
   }
 
+  /**
+   * Sets the name of a cache. If a name is specified it must be ensured it is unique within
+   * the cache manager. Cache names are used at several places to have a unique ID of a cache.
+   * For example, to register JMX beans. Another usage is derive a filename for a persistence
+   * cache.
+   *
+   * <p>If a name is not specified the cache generates a name automatically. The name is
+   * inferred from the call stack trace and contains the simple class name, the method and
+   * the line number of the of the caller to <code>build()</code>. Instead of relying to the
+   * automatic name generation, a name should be chosen carefully.
+   *
+   * <p>In case of a name collision the cache is generating a unique name by adding a counter value.
+   * This behavior may change.
+   *
+   * <p>TODO: Remove autogeneration and name uniquifier?
+   *
+   * <p>Allowed characters for a cache name, are URL non-reserved characters,
+   * these are: [A-Z], [a-z], [0-9] and [~-_.-], see RFC3986. The reason for
+   * restricting the characters in names, is that the names may be used to derive
+   * other resource names from it, e.g. for file based storage.
+   *
+   * <p>For brevity within log messages and other displays the cache name may be
+   * shortened if the manager name is included as prefix.
+   *
+   * @see Cache#getName()
+   * @see org.cache2k.StorageConfiguration.Builder#storageName(String)
+   */
   public CacheBuilder<K, T> name(String v) {
     config.setName(v);
     return this;
@@ -151,13 +201,32 @@ public abstract class CacheBuilder<K,T>
     return this;
   }
 
-  public CacheBuilder<K, T> maxSize(int v) {
-    config.setMaxSize(v);
+  /**
+   * The maximum number of entries hold by the cache. When the maximum size is reached, by
+   * inserting new entries, the cache eviction algorithm will remove one or more entries
+   * to keep the size within the configured limit.
+   *
+   * <p>In case of an attached storage this setting means the total cache capacity. A different
+   * in heap capacity can be set by {@link #heapEntryCapacity}.
+   *
+   */
+  public CacheBuilder<K, T> entryCapacity(int v) {
+    config.setEntryCapacity(v);
     return this;
   }
 
+  /**
+   * @deprecated Use {@link #entryCapacity(int)}
+   */
+  public CacheBuilder<K, T> maxSize(int v) {
+    config.setEntryCapacity(v);
+    return this;
+  }
+
+  /**
+   * @deprecated not used.
+   */
   public CacheBuilder<K, T> maxSizeBound(int v) {
-    config.setMaxSizeHighBound(v);
     return this;
   }
 
@@ -180,6 +249,9 @@ public abstract class CacheBuilder<K,T>
     return this;
   }
 
+  /**
+   * Maximum count of entries stored in heap.
+   */
   public CacheBuilder<K, T> heapEntryCapacity(int v) {
     config.setHeapEntryCapacity(v);
     return this;

@@ -43,7 +43,7 @@ public class BasicCacheOperationsWithEntryProcessorTest extends BasicCacheOperat
             .newCache(Integer.class, Integer.class)
             .name(BasicCacheOperationsTest.class)
             .eternal(true)
-            .maxSize(1000)
+            .entryCapacity(1000)
             .build();
     staticCache = new EntryProcessorCacheWrapper<Integer, Integer>(c);
   }

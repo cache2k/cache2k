@@ -39,6 +39,7 @@ public class CacheConfig<K, V> implements Serializable {
   private CacheTypeDescriptor valueType;
   private Class<?> implementation;
   private int maxSize = 2000;
+  private int entryCapacity = 2000;
   private int maxSizeHighBound = Integer.MAX_VALUE;
   private int maxSizeLowBound = 0;
   private int heapEntryCapacity = -1;
@@ -110,47 +111,57 @@ public class CacheConfig<K, V> implements Serializable {
     return (CacheConfig<K, V>) c;
   }
 
+  /**
+   * @see CacheBuilder#name(String)
+   */
   public String getName() {
     return name;
   }
 
   /**
-   * Sets the name of a cache. If a name is not specified the caching framework
-   * provides a name for the cache.
    *
-   * <p>If a name is specified it must be ensured it is unique within the cache
-   * manager. A unique name may consist of a namespace and a counter, e.g.
-   * "com.company.application.AssetCache-1".
-   *
-   * <p>Allowed characters for a cache name, are URL non-reserved characters,
-   * these are: [A-Z], [a-z], [0-9] and [~-_.-], see RFC3986. The reason for
-   * restricting the characters in names, is that the names may be used to derive
-   * other resource names from it, e.g. for file based storage.
-   *
-   * <p>For brevity within log messages and other displays the cache name may be
-   * shortened if the manager name is included as prefix.
+   * @see CacheBuilder#name(String)
    */
   public void setName(String name) {
     this.name = name;
   }
 
-  public int getMaxSize() {
-    return maxSize;
+  /**
+   *
+   * @see CacheBuilder#entryCapacity(int)
+   */
+  public int getEntryCapacity() {
+    return entryCapacity;
+  }
+
+  public void setEntryCapacity(int v) {
+    this.entryCapacity = v;
   }
 
   /**
-   * The maximum number of entries hold by the cache. When the maximum size is reached, by
-   * inserting new entries, the cache eviction algorithm will remove one or more entries
-   * to keep the size within the limit.
+   * @deprecated Use {@link #getEntryCapacity()}
    */
-  public void setMaxSize(int maxSize) {
-    this.maxSize = maxSize;
+  public int getMaxSize() {
+    return entryCapacity;
   }
 
+  /**
+   * @deprecated Use {@link #setEntryCapacity(int)}
+   */
+  public void setMaxSize(int v) {
+    this.entryCapacity = v;
+  }
+
+  /**
+   * @deprecated not used.
+   */
   public int getMaxSizeHighBound() {
     return maxSizeHighBound;
   }
 
+  /**
+   * @deprecated not used.
+   */
   public void setMaxSizeHighBound(int maxSizeHighBound) {
     if (maxSize > maxSizeHighBound) {
       maxSize = maxSizeHighBound;
@@ -158,10 +169,16 @@ public class CacheConfig<K, V> implements Serializable {
     this.maxSizeHighBound = maxSizeHighBound;
   }
 
+  /**
+   * @deprecated not used.
+   */
   public int getMaxSizeLowBound() {
     return maxSizeLowBound;
   }
 
+  /**
+   * @deprecated not used.
+   */
   public void setMaxSizeLowBound(int maxSizeLowBound) {
     if (maxSize < maxSizeLowBound) {
       maxSize = maxSizeLowBound;
@@ -194,7 +211,7 @@ public class CacheConfig<K, V> implements Serializable {
    * <p><b>About types:</b><br/>
    *
    * The type may be set only once and cannot be changed during the lifetime of a cache. If no type information
-   * is provided it defaults to the Object class.The provided type information might be used inside the cache
+   * is provided it defaults to the Object class. The provided type information might be used inside the cache
    * for optimizations and as well as to select appropriate default transformation schemes for copying
    * objects or marshalling. The correct types are not strictly enforced at all levels by the cache
    * for performance reasons. The cache application guarantees that only the specified types will be used.

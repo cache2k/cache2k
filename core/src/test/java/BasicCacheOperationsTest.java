@@ -46,7 +46,7 @@ public class BasicCacheOperationsTest {
             .newCache(Integer.class, Integer.class)
             .name(BasicCacheOperationsTest.class)
             .eternal(true)
-            .maxSize(1000)
+            .entryCapacity(1000)
             .build();
   }
 

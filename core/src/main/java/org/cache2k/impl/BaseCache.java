@@ -336,7 +336,7 @@ public abstract class BaseCache<E extends Entry, K, T>
       throw new IllegalStateException("already configured");
     }
     setName(c.getName());
-    maxSize = c.getMaxSize();
+    maxSize = c.getEntryCapacity();
     if (c.getHeapEntryCapacity() >= 0) {
       maxSize = c.getHeapEntryCapacity();
     }
@@ -371,7 +371,7 @@ public abstract class BaseCache<E extends Entry, K, T>
     if (_stores.size() == 1) {
       StorageConfiguration cfg = _stores.get(0);
       if (cfg.getEntryCapacity() < 0) {
-        cfg.setEntryCapacity(c.getMaxSize());
+        cfg.setEntryCapacity(c.getEntryCapacity());
       }
       storage = new PassingStorageAdapter(this, c, _stores.get(0));
     } else if (_stores.size() > 1) {
