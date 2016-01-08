@@ -41,9 +41,9 @@ public class CacheBuilderTest {
   public void typesParameters() {
     Cache<Long, String> c =
       CacheBuilder.newCache()
-            .valueType(String.class)
-            .keyType(Long.class)
-            .build();
+        .valueType(String.class)
+        .keyType(Long.class)
+        .build();
     c.close();
   }
 
@@ -51,7 +51,7 @@ public class CacheBuilderTest {
   public void noTypes() {
     Cache c =
       CacheBuilder.newCache().build();
-    c.put("hallo", (Integer) 234);
+    c.put("hallo", 234);
     c.close();
   }
 
@@ -71,7 +71,7 @@ public class CacheBuilderTest {
   }
 
   @Test
-  public void collectionValueTypeToken() {
+  public void collectionValueCacheType() {
     Cache<Long, List<String>> c =
       CacheBuilder.newCache(Long.class, new CacheType<List<String>>() {}).build();
     c.put(123L, new ArrayList<String>());
@@ -79,12 +79,29 @@ public class CacheBuilderTest {
   }
 
   @Test
+  public void collectionValueClass() {
+    Cache<Long, List<String>> c =
+      (Cache<Long, List<String>>) (Object) CacheBuilder.newCache(Long.class, List.class).build();
+    c.put(123L, new ArrayList<String>());
+    c.close();
+  }
+
+  @Test
   public void typesParametersWith() {
     Cache<Long, List> c =
-            CacheBuilder.newCache()
-                    .valueType(List.class)
-                    .keyType(Long.class)
-                    .build();
+      CacheBuilder.newCache()
+        .valueType(List.class)
+        .keyType(Long.class)
+        .build();
+    c.close();
+  }
+
+  @Test
+  public void noTypesAndCast() {
+    Cache<Long, List<String>> c =
+      (Cache<Long, List<String>>)
+        CacheBuilder.newCache()
+          .build();
     c.close();
   }
 
