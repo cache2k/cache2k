@@ -22,9 +22,14 @@ package org.cache2k.core.test;
  * #L%
  */
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+
 /**
  */
 public interface TestingParameters {
+
+  Log RESULT_LOG = LogFactory.getLog("results");
 
   /**
    * Maximum time in millis we wait for an event to finish. Might need to be increased in loaded environments.
