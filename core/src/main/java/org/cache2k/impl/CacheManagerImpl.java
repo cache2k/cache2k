@@ -180,7 +180,7 @@ public class CacheManagerImpl extends CacheManager {
   @Override
   public synchronized Iterator<Cache> iterator() {
     checkClosed();
-    return caches.iterator();
+    return new HashSet<Cache>(caches).iterator();
   }
 
   @Override
