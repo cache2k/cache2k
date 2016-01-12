@@ -2090,6 +2090,10 @@ public abstract class BaseCache<E extends Entry, K, T>
     if (e.task != null) {
       e.task.cancel();
     }
+    if ((_nextRefreshTime > Entry.EXPIRY_TIME_MIN && _nextRefreshTime <= now) &&
+      (_nextRefreshTime < -1 && (now >= -_nextRefreshTime))) {
+      return Entry.EXPIRED_STATE;
+    }
     if (hasSharpTimeout() && _nextRefreshTime > Entry.EXPIRY_TIME_MIN) {
       _nextRefreshTime = -_nextRefreshTime;
     }
