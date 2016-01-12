@@ -1476,6 +1476,32 @@ public abstract class BaseCache<E extends Entry, K, T>
   public void put(K key, T value) {
     int _spinCount = TUNABLE.maximumEntryLockSpins;
     E e;
+    if (storage == null) {
+      for (;;) {
+        if (_spinCount-- <= 0) {
+          throw new CacheLockSpinsExceededError();
+        }
+        e = lookupOrNewEntrySynchronized(key);
+        synchronized (e) {
+          if (e.isRemovedState()) {
+            continue;
+          }
+          if (e.isFetchInProgress()) {
+            e.waitForFetch();
+            continue;
+          }
+          long t = System.currentTimeMillis();
+          long _nextRefreshTime = e.nextRefreshTime;
+          if (e.hasFreshData(t)) {
+            e.nextRefreshTime = Entry.REPUT_STATE;
+          }
+          _nextRefreshTime = insertOnPut(e, value, t, t);
+          e.nextRefreshTime = stopStartTimer(_nextRefreshTime, e, System.currentTimeMillis());
+        }
+        evictEventually();
+        return;
+      }
+    }
     for (;;) {
       if (_spinCount-- <= 0) { throw new CacheLockSpinsExceededError(); }
       e = lookupOrNewEntrySynchronized(key);
