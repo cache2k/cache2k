@@ -6,6 +6,7 @@ the name cache2k.
 
 ## News
 
+  * **Version 0.22.1, 2016-01-13**: Bugfix release, Update recommended. See [Version 0.22.1 release notes](0/22.1.html)
   * **Version 0.22, 2015-12-29**: Minor bug fix release. See [Version 0.22 release notes](0/22.html)
   * **Version 0.21.1, 2015-06-13**: Fix Android compatibility. Closes GH#19
   * **Version 0.21, 2015-02-04**: Rewrite internal entry locking. Bunch of new methods and interfaces. See [Version 0.21 release notes](0/21.html)
