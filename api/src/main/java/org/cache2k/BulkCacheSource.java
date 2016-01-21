@@ -27,7 +27,7 @@ import java.util.List;
 /**
  * @author Jens Wilke; created: 2014-03-18
  */
-public interface BulkCacheSource<K, T> {
+public interface BulkCacheSource<K, V> {
 
   /**
    * Retrieve the values for the given cache entries. The cache
@@ -43,8 +43,8 @@ public interface BulkCacheSource<K, T> {
    * @return
    * @throws Throwable
    */
-  public List<T> getValues(
-    List<CacheEntry<K, T>> entries,
+  public List<V> getValues(
+    List<CacheEntry<K, V>> entries,
     long currentTime) throws Throwable;
 
 }

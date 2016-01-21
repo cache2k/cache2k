@@ -38,7 +38,7 @@ import org.cache2k.impl.util.TunableFactory;
  * @author Jens Wilke; created: 2013-07-12
  */
 @SuppressWarnings("unchecked")
-public class ClockProPlusCache<K, T> extends LockFreeCache<Entry, K, T> {
+public class ClockProPlusCache<K, V> extends LockFreeCache<K, V> {
 
   private static final Tunable TUNABLE_CLOCK_PRO = TunableFactory.get(Tunable.class);
 
@@ -157,9 +157,9 @@ public class ClockProPlusCache<K, T> extends LockFreeCache<Entry, K, T> {
     }
   }
 
-  private void insertCopyIntoGhosts(Entry e) {
-    Entry<Entry, K,T> e2 = new Entry<Entry, K, T>();
-    e2.key = (K) e.key;
+  private void insertCopyIntoGhosts(Entry<K, V> e) {
+    Entry<K, V> e2 = new Entry<K, V>();
+    e2.key = e.key;
     e2.hashCode = e.hashCode;
     ghostHash = ghostHashCtrl.insert(ghostHash, e2);
     handGhost = insertIntoTailCyclicList(handGhost, e2);
@@ -191,7 +191,7 @@ public class ClockProPlusCache<K, T> extends LockFreeCache<Entry, K, T> {
       long _hitCnt = e.hitCnt;
       long _hitCnt2 = e.hitCnt = e.hitCnt >> 1;
       cnt += _hitCnt - _hitCnt2;
-      e = (Entry) e.next;
+      e = e.next;
     } while (e != _head);
     return cnt;
   }
@@ -217,11 +217,11 @@ public class ClockProPlusCache<K, T> extends LockFreeCache<Entry, K, T> {
     return new Entry();
   }
 
-  protected Entry<Entry, K,T> runHandHot() {
+  protected Entry<K, V> runHandHot() {
     hotRunCnt++;
-    Entry<Entry, K,T> _handStart = handHot;
-    Entry<Entry, K,T> _hand = _handStart;
-    Entry<Entry, K,T> _coldCandidate = _hand;
+    Entry<K, V> _handStart = handHot;
+    Entry<K, V> _hand = _handStart;
+    Entry<K, V> _coldCandidate = _hand;
     long _lowestHits = Long.MAX_VALUE;
     long _hotHits = hotHits;
     int _scanCnt = -1;
@@ -262,7 +262,7 @@ public class ClockProPlusCache<K, T> extends LockFreeCache<Entry, K, T> {
   protected Entry findEvictionCandidate() {
     hotSizeSum += hotMax;
     coldRunCnt++;
-    Entry<Entry, K,T> _hand = handCold;
+    Entry _hand = handCold;
     int _scanCnt = 0;
     do {
       if (_hand == null) {
@@ -274,8 +274,8 @@ public class ClockProPlusCache<K, T> extends LockFreeCache<Entry, K, T> {
           _scanCnt++;
           coldHits += _hand.hitCnt;
           _hand.hitCnt = 0;
-          Entry<Entry, K, T> e = _hand;
-          _hand = (Entry<Entry, K, T>) removeFromCyclicList(e);
+          Entry e = _hand;
+          _hand = removeFromCyclicList(e);
           coldSize--;
           hotSize++;
           handHot = insertIntoTailCyclicList(handHot, e);
@@ -289,7 +289,7 @@ public class ClockProPlusCache<K, T> extends LockFreeCache<Entry, K, T> {
       if (!_hand.isStale()) {
          break;
        }
-      _hand = (Entry<Entry, K,T>) removeFromCyclicList(_hand);
+      _hand = removeFromCyclicList(_hand);
       staleSize--;
       coldSize--;
       _scanCnt--;
@@ -303,9 +303,9 @@ public class ClockProPlusCache<K, T> extends LockFreeCache<Entry, K, T> {
     return _hand;
   }
 
-  private Entry<Entry, K, T> refillFromHot(Entry<Entry, K, T> _hand) {
+  private Entry refillFromHot(Entry _hand) {
     while (hotSize > hotMax || _hand == null) {
-      Entry<Entry, K,T> e = runHandHot();
+      Entry e = runHandHot();
       if (e != null) {
         if (e.isStale()) {
           staleSize--;

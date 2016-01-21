@@ -29,11 +29,11 @@ package org.cache2k;
  *
  * @author Jens Wilke; created: 2013-12-17
  */
-public interface KeyValueSource<K, T> extends CacheSource<K, T> {
+public interface KeyValueSource<K, V> extends CacheSource<K, V> {
 
   /**
    * Returns object mapped to key
    */
-  public abstract T get(K key);
+  public abstract V get(K key);
 
 }

@@ -25,8 +25,8 @@ package org.cache2k;
 /**
  * @author Jens Wilke; created: 2015-05-02
  */
-public interface CacheEntryProcessor<K, T, R> {
+public interface CacheEntryProcessor<K, V, R> {
 
-  R process(MutableCacheEntry<K, T> entry, Object... arguments) throws Exception;
+  R process(MutableCacheEntry<K, V> entry, Object... arguments) throws Exception;
 
 }

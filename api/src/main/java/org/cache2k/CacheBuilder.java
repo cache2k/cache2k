@@ -31,8 +31,8 @@ import java.util.concurrent.TimeUnit;
 /**
  * @author Jens Wilke; created: 2013-06-25
  */
-public abstract class CacheBuilder<K,T>
-  extends RootAnyBuilder<K, T> implements Cloneable {
+public abstract class CacheBuilder<K, V>
+  extends RootAnyBuilder<K, V> implements Cloneable {
 
   private static CacheBuilder PROTOTYPE;
 
@@ -102,9 +102,9 @@ public abstract class CacheBuilder<K,T>
   protected CacheWriter cacheWriter;
   protected ExceptionPropagator exceptionPropagator;
 
-  public <K2> CacheBuilder<K2, T>  keyType(Class<K2> t) {
+  public <K2> CacheBuilder<K2, V>  keyType(Class<K2> t) {
     config.setKeyType(t);
-    return (CacheBuilder<K2, T>) this;
+    return (CacheBuilder<K2, V>) this;
   }
 
   public <T2> CacheBuilder<K, T2>  valueType(Class<T2> t) {
@@ -112,9 +112,9 @@ public abstract class CacheBuilder<K,T>
     return (CacheBuilder<K, T2>) this;
   }
 
-  public <K2> CacheBuilder<K2, T>  keyType(CacheTypeDescriptor<K2> t) {
+  public <K2> CacheBuilder<K2, V>  keyType(CacheTypeDescriptor<K2> t) {
     config.setKeyType(t);
-    return (CacheBuilder<K2, T>) this;
+    return (CacheBuilder<K2, V>) this;
   }
 
   public <T2> CacheBuilder<K, T2>  valueType(CacheTypeDescriptor<T2> t) {
@@ -129,7 +129,7 @@ public abstract class CacheBuilder<K,T>
    *
    * @see #name(String)
    */
-  public CacheBuilder<K, T> name(Class<?> _class, String _fieldName) {
+  public CacheBuilder<K, V> name(Class<?> _class, String _fieldName) {
     config.setName(_class.getSimpleName() + "." + _fieldName);
     return this;
   }
@@ -141,7 +141,7 @@ public abstract class CacheBuilder<K,T>
    *
    * @see #name(String)
    */
-  public CacheBuilder<K, T> name(Class<?> _class) {
+  public CacheBuilder<K, V> name(Class<?> _class) {
     config.setName(_class.getSimpleName());
     return this;
   }
@@ -152,14 +152,14 @@ public abstract class CacheBuilder<K,T>
    * @see #name(String)
    * @deprecated users should change to, e.g. <code>name(this.getClass(), "cache")</code>
    */
-  public CacheBuilder<K, T> name(Object _containingObject, String _fieldName) {
+  public CacheBuilder<K, V> name(Object _containingObject, String _fieldName) {
     return name(_containingObject.getClass(), _fieldName);
   }
 
   /**
    * The manager this cache should belong to.
    */
-  public CacheBuilder<K, T> manager(CacheManager m) {
+  public CacheBuilder<K, V> manager(CacheManager m) {
     manager = m;
     return this;
   }
@@ -191,12 +191,12 @@ public abstract class CacheBuilder<K,T>
    * @see Cache#getName()
    * @see org.cache2k.StorageConfiguration.Builder#storageName(String)
    */
-  public CacheBuilder<K, T> name(String v) {
+  public CacheBuilder<K, V> name(String v) {
     config.setName(v);
     return this;
   }
 
-  public CacheBuilder<K, T> keepDataAfterExpired(boolean v) {
+  public CacheBuilder<K, V> keepDataAfterExpired(boolean v) {
     config.setKeepDataAfterExpired(v);
     return this;
   }
@@ -210,7 +210,7 @@ public abstract class CacheBuilder<K,T>
    * in heap capacity can be set by {@link #heapEntryCapacity}.
    *
    */
-  public CacheBuilder<K, T> entryCapacity(int v) {
+  public CacheBuilder<K, V> entryCapacity(int v) {
     config.setEntryCapacity(v);
     return this;
   }
@@ -218,7 +218,7 @@ public abstract class CacheBuilder<K,T>
   /**
    * @deprecated Use {@link #entryCapacity(int)}
    */
-  public CacheBuilder<K, T> maxSize(int v) {
+  public CacheBuilder<K, V> maxSize(int v) {
     config.setEntryCapacity(v);
     return this;
   }
@@ -226,7 +226,7 @@ public abstract class CacheBuilder<K,T>
   /**
    * @deprecated not used.
    */
-  public CacheBuilder<K, T> maxSizeBound(int v) {
+  public CacheBuilder<K, V> maxSizeBound(int v) {
     return this;
   }
 
@@ -234,7 +234,7 @@ public abstract class CacheBuilder<K,T>
    * Keep entries forever. Default is false. By default the cache uses an expiry time
    * of 10 minutes.
    */
-  public CacheBuilder<K, T> eternal(boolean v) {
+  public CacheBuilder<K, V> eternal(boolean v) {
     config.setEternal(v);
     return this;
   }
@@ -244,7 +244,7 @@ public abstract class CacheBuilder<K,T>
    * a previous value. When this is active, and an exception was suppressed
    * the expiry is determined by the exception expiry settings. Default: true
    */
-  public CacheBuilder<K, T> suppressExceptions(boolean v) {
+  public CacheBuilder<K, V> suppressExceptions(boolean v) {
     config.setSuppressExceptions(v);
     return this;
   }
@@ -252,7 +252,7 @@ public abstract class CacheBuilder<K,T>
   /**
    * Maximum count of entries stored in heap.
    */
-  public CacheBuilder<K, T> heapEntryCapacity(int v) {
+  public CacheBuilder<K, V> heapEntryCapacity(int v) {
     config.setHeapEntryCapacity(v);
     return this;
   }
@@ -274,7 +274,7 @@ public abstract class CacheBuilder<K,T>
    * is within the consistency guarantees of a cache, however, it may be important
    * to interpret concurrency testing results.
    */
-  public CacheBuilder<K, T> expiryDuration(long v, TimeUnit u) {
+  public CacheBuilder<K, V> expiryDuration(long v, TimeUnit u) {
     config.setExpiryMillis(u.toMillis(v));
     return this;
   }
@@ -283,7 +283,7 @@ public abstract class CacheBuilder<K,T>
    * Separate timeout in the case an exception was thrown in the cache source.
    * By default 10% of the normal expiry is used.
    */
-  public CacheBuilder<K, T> exceptionExpiryDuration(long v, TimeUnit u) {
+  public CacheBuilder<K, V> exceptionExpiryDuration(long v, TimeUnit u) {
     config.setExceptionExpiryMillis(u.toMillis(v));
     return this;
   }
@@ -291,7 +291,7 @@ public abstract class CacheBuilder<K,T>
   /**
    * @deprecated since 0.20, please use {@link #expiryDuration}
    */
-  public CacheBuilder<K, T> expirySecs(int v) {
+  public CacheBuilder<K, V> expirySecs(int v) {
     config.setExpiryMillis(v * 1000);
     return this;
   }
@@ -299,37 +299,37 @@ public abstract class CacheBuilder<K,T>
   /**
    * @deprecated since 0.20, please use {@link #expiryDuration}
    */
-  public CacheBuilder<K, T> expiryMillis(long v) {
+  public CacheBuilder<K, V> expiryMillis(long v) {
     config.setExpiryMillis(v);
     return this;
   }
 
-  public CacheBuilder<K, T> exceptionPropagator(ExceptionPropagator ep) {
+  public CacheBuilder<K, V> exceptionPropagator(ExceptionPropagator ep) {
     exceptionPropagator = ep;
     return this;
   }
 
-  public CacheBuilder<K, T> source(CacheSource<K, T> g) {
+  public CacheBuilder<K, V> source(CacheSource<K, V> g) {
     cacheSource = g;
     return this;
   }
 
-  public CacheBuilder<K, T> source(CacheSourceWithMetaInfo<K, T> g) {
+  public CacheBuilder<K, V> source(CacheSourceWithMetaInfo<K, V> g) {
     cacheSourceWithMetaInfo = g;
     return this;
   }
 
-  public CacheBuilder<K, T> source(ExperimentalBulkCacheSource<K, T> g) {
+  public CacheBuilder<K, V> source(ExperimentalBulkCacheSource<K, V> g) {
     experimentalBulkCacheSource = g;
     return this;
   }
 
-  public CacheBuilder<K, T> source(BulkCacheSource<K, T> g) {
+  public CacheBuilder<K, V> source(BulkCacheSource<K, V> g) {
     bulkCacheSource = g;
     return this;
   }
 
-  public CacheBuilder<K, T> writer(CacheWriter<K, T> w) {
+  public CacheBuilder<K, V> writer(CacheWriter<K, V> w) {
     cacheWriter = w;
     return this;
   }
@@ -338,7 +338,7 @@ public abstract class CacheBuilder<K,T>
    * Set expiry calculator to use. If {@link #expiryDuration(long, java.util.concurrent.TimeUnit)}
    * is set to 0 then expiry calculation is not used, all entries expire immediately.
    */
-  public CacheBuilder<K, T> entryExpiryCalculator(EntryExpiryCalculator<K, T> c) {
+  public CacheBuilder<K, V> entryExpiryCalculator(EntryExpiryCalculator<K, V> c) {
     entryExpiryCalculator = c;
     return this;
   }
@@ -346,7 +346,7 @@ public abstract class CacheBuilder<K,T>
   /**
    * Set expiry calculator to use in case of an exception happened in the {@link CacheSource}.
    */
-  public CacheBuilder<K, T> exceptionExpiryCalculator(ExceptionExpiryCalculator<K> c) {
+  public CacheBuilder<K, V> exceptionExpiryCalculator(ExceptionExpiryCalculator<K> c) {
     exceptionExpiryCalculator = c;
     return this;
   }
@@ -354,7 +354,7 @@ public abstract class CacheBuilder<K,T>
   /**
    * @deprecated since 0.20, please use {@link #entryExpiryCalculator}
    */
-  public CacheBuilder<K, T> refreshController(RefreshController c) {
+  public CacheBuilder<K, V> refreshController(RefreshController c) {
     refreshController = c;
     return this;
   }
@@ -366,7 +366,7 @@ public abstract class CacheBuilder<K,T>
    *
    * @deprecated since 0.23
    */
-  public CacheBuilder<K, T> implementation(Class<?> c) {
+  public CacheBuilder<K, V> implementation(Class<?> c) {
     config.setImplementation(c);
     return this;
   }
@@ -383,6 +383,6 @@ public abstract class CacheBuilder<K,T>
    * configuration. The builder is not thread safe.
    * configuration. The builder is not thread safe.
    */
-  public abstract Cache<K, T> build();
+  public abstract Cache<K, V> build();
 
 }

@@ -33,7 +33,7 @@ import org.cache2k.storage.StorageEntry;
  * @author Jens Wilke
  */
 @SuppressWarnings("unchecked")
-public class Entry<E extends Entry, K, T>
+public class Entry<K, T>
   implements CacheEntry<K,T>, StorageEntry {
 
   static final int FETCHED_STATE = 16;
@@ -117,12 +117,12 @@ public class Entry<E extends Entry, K, T>
   /**
    * Hash implementation: Link to another entry in the same hash table slot when the hash code collides.
    */
-  public Entry<E, K, T> another;
+  public Entry<K, T> another;
 
   /** Lru list: pointer to next element or list head */
-  public E next;
+  public Entry next;
   /** Lru list: pointer to previous element or list head */
-  public E prev;
+  public Entry prev;
 
   private static final int MODIFICATION_TIME_BITS = 44;
   private static final long MODIFICATION_TIME_BASE = 0;
@@ -284,8 +284,8 @@ public class Entry<E extends Entry, K, T>
     return isStale () || next == null;
   }
 
-  public E shortCircuit() {
-    return next = prev = (E) this;
+  public Entry shortCircuit() {
+    return next = prev = this;
   }
 
   public final boolean isVirgin() {

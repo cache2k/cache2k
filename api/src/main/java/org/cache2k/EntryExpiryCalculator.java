@@ -29,7 +29,7 @@ package org.cache2k;
  * @author Jens Wilke; created: 2014-10-14
  * @since 0.20
  */
-public interface EntryExpiryCalculator<K, T> {
+public interface EntryExpiryCalculator<K, V> {
 
   /**
    * Returns the time of expiry in milliseconds since epoch.
@@ -78,8 +78,8 @@ public interface EntryExpiryCalculator<K, T> {
    */
   long calculateExpiryTime(
       K _key,
-      T _value,
+      V _value,
       long _fetchTime,
-      CacheEntry<K, T> _oldEntry);
+      CacheEntry<K, V> _oldEntry);
 
 }

@@ -28,7 +28,7 @@ package org.cache2k.impl;
  *
  * @author Jens Wilke; created: 2013-12-01
  */
-public class ClockCache<K, T> extends LockFreeCache<ClockCache.Entry, K, T> {
+public class ClockCache<K, V> extends LockFreeCache<K, V> {
 
   long hits;
   int runCnt;
@@ -142,12 +142,6 @@ public class ClockCache<K, T> extends LockFreeCache<ClockCache.Entry, K, T> {
     return  ", clockRunCnt=" + runCnt +
             ", scanCnt=" + scanCnt +
             ", scan24hCnt=" + scan24hCnt;
-  }
-
-  static class Entry<K, T> extends org.cache2k.impl.Entry<Entry, K, T> {
-
-    int hitCnt;
-
   }
 
 }

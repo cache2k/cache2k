@@ -30,28 +30,28 @@ import java.util.List;
  * @author Jens Wilke; created: 2014-04-19
  */
 @SuppressWarnings("unchecked")
-public abstract class RootAnyBuilder<K, T>
-  extends BaseAnyBuilder<K, T, CacheConfig> {
+public abstract class RootAnyBuilder<K, V>
+  extends BaseAnyBuilder<K, V, CacheConfig> {
 
   private List<BaseAnyBuilder> modules = Collections.emptyList();
   protected CacheConfig config;
-  StorageConfiguration.Builder<K, T, ?> persistence;
+  StorageConfiguration.Builder<K, V, ?> persistence;
 
   /** Closed for extension */
   RootAnyBuilder() { }
 
-  public CacheBuilder<K,T> backgroundRefresh(boolean f) {
+  public CacheBuilder<K, V> backgroundRefresh(boolean f) {
     config.setBackgroundRefresh(f);
-    return (CacheBuilder<K,T>) this;
+    return (CacheBuilder<K, V>) this;
   }
 
-  public CacheBuilder<K,T> sharpExpiry(boolean f) {
+  public CacheBuilder<K, V> sharpExpiry(boolean f) {
     config.setSharpExpiry(f);
-    return (CacheBuilder<K,T>) this;
+    return (CacheBuilder<K, V>) this;
   }
 
   @Override
-  public StorageConfiguration.Builder<K, T, ?> persistence() {
+  public StorageConfiguration.Builder<K, V, ?> persistence() {
     if (persistence == null) {
       persistence = addModule(new StorageConfiguration.Builder());
     }

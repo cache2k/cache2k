@@ -28,9 +28,9 @@ package org.cache2k.impl;
  *
  * @author Jens Wilke
  */
-public class LruCache<K, T> extends BaseCache<LruCache.Entry, K, T> {
+public class LruCache<K, V> extends BaseCache<K, V> {
 
-  Entry<K,T> head;
+  Entry<K, V> head;
   long hitCnt;
 
   @Override
@@ -54,7 +54,7 @@ public class LruCache<K, T> extends BaseCache<LruCache.Entry, K, T> {
 
   @Override
   protected Entry newEntry() {
-    return new Entry<K, T>();
+    return new Entry<K, V>();
   }
 
 
@@ -66,7 +66,7 @@ public class LruCache<K, T> extends BaseCache<LruCache.Entry, K, T> {
   @Override
   protected void initializeHeapCache() {
     super.initializeHeapCache();
-    head = new Entry<K,T>().shortCircuit();
+    head = new Entry<K, V>().shortCircuit();
   }
 
   @Override
@@ -75,10 +75,6 @@ public class LruCache<K, T> extends BaseCache<LruCache.Entry, K, T> {
       return super.getIntegrityState()
         .checkEquals("size = list entry count", getLocalSize() , getListEntryCount(head));
     }
-  }
-
-  protected static class Entry<K,T> extends org.cache2k.impl.Entry<Entry<K,T>, K, T> {
-
   }
 
 }

@@ -36,7 +36,7 @@ import java.util.Set;
  * @author Jens Wilke
  */
 @SuppressWarnings("UnusedDeclaration")
-public interface Cache<K, T> extends KeyValueSource<K,T>, Iterable<CacheEntry<K, T>>, Closeable {
+public interface Cache<K, V> extends KeyValueSource<K, V>, Iterable<CacheEntry<K, V>>, Closeable {
 
   public abstract String getName();
 
@@ -48,7 +48,7 @@ public interface Cache<K, T> extends KeyValueSource<K,T>, Iterable<CacheEntry<K,
   /**
    * Returns object in the cache that is mapped to the key.
    */
-  public abstract T get(K key);
+  public abstract V get(K key);
 
   /**
    * Returns a mapped entry from the cache or null. If no entry is present or the entry
@@ -66,7 +66,7 @@ public interface Cache<K, T> extends KeyValueSource<K,T>, Iterable<CacheEntry<K,
    * <p>Multiple calls for the same key may return different instances of the entry
    * object.
    */
-  public CacheEntry<K, T> getEntry(K key);
+  public CacheEntry<K, V> getEntry(K key);
 
   /**
    * Signals the intent to call a get on the same key in the near future.
@@ -101,7 +101,7 @@ public interface Cache<K, T> extends KeyValueSource<K,T>, Iterable<CacheEntry<K,
    * @throws org.cache2k.PropagatedCacheException if an exception happened
    *         when the value was fetched by the cache source
    */
-  public abstract T peek(K key);
+  public abstract V peek(K key);
 
   /**
    * Returns a mapped entry from the cache or null. If no entry is present or the entry
@@ -120,7 +120,7 @@ public interface Cache<K, T> extends KeyValueSource<K,T>, Iterable<CacheEntry<K,
    * <p>Multiple calls for the same key may return different instances of the entry
    * object.
    */
-  public abstract CacheEntry<K, T> peekEntry(K key);
+  public abstract CacheEntry<K, V> peekEntry(K key);
 
   /**
    * Returns true if the there is a mapping for the specified key. Does not invoke
@@ -131,27 +131,27 @@ public interface Cache<K, T> extends KeyValueSource<K,T>, Iterable<CacheEntry<K,
   /**
    * Set object value for the key
    */
-  public abstract void put(K key, T value);
+  public abstract void put(K key, V value);
 
   /**
    * Same as put, if there is no value mapped to the key in the cache.
    *
    * <p>If a mapping is present, the cache does not account this call as access.</p>
    */
-  public abstract boolean putIfAbsent(K key, T value);
+  public abstract boolean putIfAbsent(K key, V value);
 
   /**
    * Replace an existing mapping and return the current one.
    */
-  public abstract T peekAndReplace(K key, T _value);
+  public abstract V peekAndReplace(K key, V _value);
 
-  public abstract boolean replace(K key, T _newValue);
+  public abstract boolean replace(K key, V _newValue);
 
-  public abstract boolean replace(K key, T _oldValue, T _newValue);
+  public abstract boolean replace(K key, V _oldValue, V _newValue);
 
-  public abstract T peekAndRemove(K key);
+  public abstract V peekAndRemove(K key);
 
-  public abstract T peekAndPut(K key, T value);
+  public abstract V peekAndPut(K key, V value);
 
   /**
    * Remove the object mapped to key from the cache.
@@ -163,7 +163,7 @@ public interface Cache<K, T> extends KeyValueSource<K,T>, Iterable<CacheEntry<K,
    *
    * @return true, if mapping was removed
    */
-  public boolean remove(K key, T value);
+  public boolean remove(K key, V value);
 
   /**
    * Remove the mappings for the keys atomically. Missing keys
@@ -183,10 +183,10 @@ public interface Cache<K, T> extends KeyValueSource<K,T>, Iterable<CacheEntry<K,
    */
   public void fetchAll(Set<? extends K> keys, boolean replaceExistingValues, FetchCompletedListener l);
 
-  public <R> R invoke(K key, CacheEntryProcessor<K, T, R> entryProcessor, Object... _args);
+  public <R> R invoke(K key, CacheEntryProcessor<K, V, R> entryProcessor, Object... _args);
 
   public <R> Map<K, EntryProcessingResult<R>> invokeAll(
-      Set<? extends K> keys, CacheEntryProcessor<K ,T, R> p, Object... _objs);
+    Set<? extends K> keys, CacheEntryProcessor<K , V, R> p, Object... _objs);
 
   /**
    * Disclaimer: This method is here to be able to support known coding similar
@@ -217,17 +217,17 @@ public interface Cache<K, T> extends KeyValueSource<K,T>, Iterable<CacheEntry<K,
    *
    * @exception PropagatedCacheException may be thrown if the fetch fails.
    */
-  public Map<K, T> getAll(Set<? extends K> keys);
+  public Map<K, V> getAll(Set<? extends K> keys);
 
   /**
    * Bulk counterpart for {@link #peek(Object)}
    */
-  public Map<K, T> peekAll(Set<? extends K> keys);
+  public Map<K, V> peekAll(Set<? extends K> keys);
 
   /**
    * Put all elements of the map into the cache.
    */
-  public void putAll(Map<? extends K, ? extends T> m);
+  public void putAll(Map<? extends K, ? extends V> m);
 
   /**
    * Number of entries the cache holds in total. When iterating the entries
@@ -262,7 +262,7 @@ public interface Cache<K, T> extends KeyValueSource<K,T>, Iterable<CacheEntry<K,
    * try with resources pattern.
    */
   @Override
-  ClosableIterator<CacheEntry<K, T>> iterator();
+  ClosableIterator<CacheEntry<K, V>> iterator();
 
   public abstract void removeAll();
 

@@ -36,11 +36,11 @@ package org.cache2k;
  *
  * @author Jens Wilke; created: 2014-03-18
  */
-public interface CacheEntry<K, T> {
+public interface CacheEntry<K, V> {
 
   K getKey();
 
-  T getValue();
+  V getValue();
 
   Throwable getException();
 

@@ -29,6 +29,7 @@ import org.cache2k.EntryProcessingResult;
 import org.cache2k.FetchCompletedListener;
 import org.cache2k.MutableCacheEntry;
 import org.cache2k.impl.BaseCache;
+import org.cache2k.impl.InternalCache;
 
 import javax.cache.CacheManager;
 import javax.cache.configuration.CacheEntryListenerConfiguration;
@@ -55,7 +56,7 @@ public class Cache2kCacheAdapter<K, V> implements javax.cache.Cache<K, V> {
 
   Cache2kManagerAdapter manager;
   Cache<K, V> cache;
-  BaseCache<?, K, V> cacheImpl;
+  InternalCache<K, V> cacheImpl;
   boolean storeByValue;
   CacheLoader<K, V> loader = null;
   boolean readThrough = false;
@@ -70,7 +71,7 @@ public class Cache2kCacheAdapter<K, V> implements javax.cache.Cache<K, V> {
   public Cache2kCacheAdapter(Cache2kManagerAdapter _manager, Cache<K, V> _cache, CompleteConfiguration<K, V> _completeConfiguration) {
     manager = _manager;
     cache = _cache;
-    cacheImpl = (BaseCache<?, K, V>) _cache;
+    cacheImpl = (InternalCache<K, V>) _cache;
     completeConfiguration = _completeConfiguration;
   }
 

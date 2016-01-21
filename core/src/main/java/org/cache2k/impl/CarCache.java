@@ -28,7 +28,7 @@ package org.cache2k.impl;
  *
  * @author Jens Wilke
  */
-public class CarCache<K, T> extends LockFreeCache<CarCache.Entry, K, T> {
+public class CarCache<K, V> extends LockFreeCache<K, V> {
 
   int size;
   int arcP = 0;
@@ -41,10 +41,10 @@ public class CarCache<K, T> extends LockFreeCache<CarCache.Entry, K, T> {
 
   int t1Size;
   int t2Size;
-  Entry<K,T> t2Head;
-  Entry<K,T> t1Head;
-  Entry<K,T> b1Head;
-  Entry<K,T> b2Head;
+  Entry<K, V> t2Head;
+  Entry<K, V> t1Head;
+  Entry<K, V> b1Head;
+  Entry<K, V> b2Head;
 
   boolean b2HitPreferenceForEviction;
 
@@ -56,10 +56,10 @@ public class CarCache<K, T> extends LockFreeCache<CarCache.Entry, K, T> {
     t2Size = 0;
     t1Head = null;
     t2Head = null;
-    b1Head = new Entry<K, T>();
-    b2Head = new Entry<K, T>();
-    b1Head = new Entry<K,T>().shortCircuit();
-    b2Head = new Entry<K,T>().shortCircuit();
+    b1Head = new Entry<K, V>();
+    b2Head = new Entry<K, V>();
+    b1Head = new Entry<K, V>().shortCircuit();
+    b2Head = new Entry<K, V>().shortCircuit();
     b1HashCtrl = new Hash<Entry>();
     b2HashCtrl = new Hash<Entry>();
     b1Hash = b1HashCtrl.init(Entry.class);
@@ -139,8 +139,8 @@ public class CarCache<K, T> extends LockFreeCache<CarCache.Entry, K, T> {
     return replace();
   }
 
-  private Entry<K, T> replace() {
-    Entry<K, T> e = null;
+  private Entry<K, V> replace() {
+    Entry<K, V> e = null;
     for (;;) {
       if (t1Size >= Math.max(1, arcP) || t2Size == 0) {
         e = t1Head;
@@ -185,7 +185,7 @@ public class CarCache<K, T> extends LockFreeCache<CarCache.Entry, K, T> {
     }
   }
 
-  private void insertT2(Entry<K, T> e) {
+  private void insertT2(Entry<K, V> e) {
     t2Size++;
     t2Head = insertIntoTailCyclicList(t2Head, e);
   }
@@ -194,21 +194,21 @@ public class CarCache<K, T> extends LockFreeCache<CarCache.Entry, K, T> {
     return t1Size + t2Size;
   }
 
-  private void insertCopyIntoB1(Entry<K, T> e) {
-    Entry<K,T> e2 = copyEntryForGhost(e);
+  private void insertCopyIntoB1(Entry<K, V> e) {
+    Entry<K, V> e2 = copyEntryForGhost(e);
     b1Hash = b1HashCtrl.insert(b1Hash, e2);
     insertInList(b1Head, e2);
   }
 
-  private void insertCopyIntoB2(Entry<K, T> e) {
-    Entry<K,T> e2 = copyEntryForGhost(e);
+  private void insertCopyIntoB2(Entry<K, V> e) {
+    Entry<K, V> e2 = copyEntryForGhost(e);
     b2Hash = b2HashCtrl.insert(b2Hash, e2);
     insertInList(b2Head, e2);
   }
 
-  private Entry<K, T> copyEntryForGhost(Entry<K, T> e) {
-    Entry<K, T> e2;
-    e2 = new Entry<K, T>();
+  private Entry<K, V> copyEntryForGhost(Entry<K, V> e) {
+    Entry<K, V> e2;
+    e2 = new Entry<K, V>();
     e2.key = (K) e.key;
     e2.hashCode = e.hashCode;
     return e2;
@@ -221,7 +221,7 @@ public class CarCache<K, T> extends LockFreeCache<CarCache.Entry, K, T> {
     if (!_t1Hit || !_t2Hit) {
       if (t1Size < t2Size) {
         _t1Hit = false; _t2Hit = true;
-        Entry<K, T> x = t1Head;
+        Entry<K, V> x = t1Head;
         if (x != null) {
           do {
             if (x == e) {
@@ -234,7 +234,7 @@ public class CarCache<K, T> extends LockFreeCache<CarCache.Entry, K, T> {
         }
       } else {
         _t1Hit = true; _t2Hit = false;
-        Entry<K, T> x = t2Head;
+        Entry<K, V> x = t2Head;
         if (x != null) {
           do {
             if (x == e) {
@@ -256,12 +256,6 @@ public class CarCache<K, T> extends LockFreeCache<CarCache.Entry, K, T> {
       t2Head = removeFromCyclicList(t2Head, e);
       t2Size--;
     }
-  }
-
-  static class Entry<K, T> extends org.cache2k.impl.Entry<Entry, K, T> {
-
-    int hitCnt;
-
   }
 
 }

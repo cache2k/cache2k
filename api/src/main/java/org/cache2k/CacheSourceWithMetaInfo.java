@@ -25,8 +25,8 @@ package org.cache2k;
 /**
  * @author Jens Wilke; created: 2013-07-04
  */
-public abstract class CacheSourceWithMetaInfo<K, T> {
+public abstract class CacheSourceWithMetaInfo<K, V> {
 
-  public abstract T get(K key, long _currentTime, T _previousValue, long _timeLastFetched) throws Throwable;
+  public abstract V get(K key, long _currentTime, V _previousValue, long _timeLastFetched) throws Throwable;
 
 }

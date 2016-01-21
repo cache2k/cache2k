@@ -30,7 +30,7 @@ import org.cache2k.CacheEntry;
  *
  * @author Jens Wilke
  */
-public interface InternalCache<K, T> extends Cache<K, T>, CanCheckIntegrity {
+public interface InternalCache<K, V> extends Cache<K, V>, CanCheckIntegrity {
 
   String getName();
 
@@ -45,9 +45,12 @@ public interface InternalCache<K, T> extends Cache<K, T>, CanCheckIntegrity {
   /**
    * Used by JCache impl, since access needs to trigger the TTI maybe use EP instead?
    */
-  CacheEntry<K, T> replaceOrGet(K key, T _oldValue, T _newValue, CacheEntry<K, T> _dummyEntry);
+  CacheEntry<K, V> replaceOrGet(K key, V _oldValue, V _newValue, CacheEntry<K, V> _dummyEntry);
+
+  boolean removeWithFlag(K key);
 
   InternalCacheInfo getInfo();
 
   InternalCacheInfo getLatestInfo();
+
 }

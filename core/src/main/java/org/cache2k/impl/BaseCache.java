@@ -76,8 +76,8 @@ import static org.cache2k.impl.util.Util.*;
  * @author Jens Wilke; created: 2013-07-09
  */
 @SuppressWarnings({"unchecked", "SynchronizationOnLocalVariableOrMethodParameter"})
-public abstract class BaseCache<E extends Entry, K, T>
-  implements InternalCache<K, T>, StorageAdapter.Parent  {
+public abstract class BaseCache<K, V>
+  implements InternalCache<K, V>, StorageAdapter.Parent  {
 
   static final Random SEED_RANDOM = new Random(new SecureRandom().nextLong());
   static int cacheCnt = 0;
@@ -119,7 +119,7 @@ public abstract class BaseCache<E extends Entry, K, T>
 
   protected String name;
   protected CacheManagerImpl manager;
-  protected CacheSourceWithMetaInfo<K, T> source;
+  protected CacheSourceWithMetaInfo<K, V> source;
   /** Statistics */
 
   /** Time in milliseconds we keep an element */
@@ -127,7 +127,7 @@ public abstract class BaseCache<E extends Entry, K, T>
 
   protected long exceptionMaxLinger = 1 * 60 * 1000;
 
-  protected EntryExpiryCalculator<K, T> entryExpiryCalculator;
+  protected EntryExpiryCalculator<K, V> entryExpiryCalculator;
 
   protected ExceptionExpiryCalculator<K> exceptionExpiryCalculator;
 
@@ -223,15 +223,15 @@ public abstract class BaseCache<E extends Entry, K, T>
 
   protected CacheRefreshThreadPool refreshPool;
 
-  protected Hash<E> mainHashCtrl;
-  protected E[] mainHash;
+  protected Hash<Entry<K, V>> mainHashCtrl;
+  protected Entry<K, V>[] mainHash;
 
-  protected Hash<E> refreshHashCtrl;
-  protected E[] refreshHash;
+  protected Hash<Entry<K, V>> refreshHashCtrl;
+  protected Entry<K, V>[] refreshHash;
 
-  protected ExperimentalBulkCacheSource<K, T> experimentalBulkCacheSource;
+  protected ExperimentalBulkCacheSource<K, V> experimentalBulkCacheSource;
 
-  protected BulkCacheSource<K, T> bulkCacheSource;
+  protected BulkCacheSource<K, V> bulkCacheSource;
 
   protected Timer timer;
 
@@ -252,7 +252,7 @@ public abstract class BaseCache<E extends Entry, K, T>
 
   protected Class valueType;
 
-  protected CacheWriter<K, T> writer;
+  protected CacheWriter<K, V> writer;
 
   protected ExceptionPropagator exceptionPropagator = DEFAULT_EXCEPTION_PROPAGATOR;
 
@@ -380,12 +380,12 @@ public abstract class BaseCache<E extends Entry, K, T>
     if (ValueWithExpiryTime.class.isAssignableFrom(c.getValueType().getType()) &&
         entryExpiryCalculator == null)  {
       entryExpiryCalculator =
-        (EntryExpiryCalculator<K, T>)
+        (EntryExpiryCalculator<K, V>)
         ENTRY_EXPIRY_CALCULATOR_FROM_VALUE;
     }
   }
 
-  public void setEntryExpiryCalculator(EntryExpiryCalculator<K, T> v) {
+  public void setEntryExpiryCalculator(EntryExpiryCalculator<K, V> v) {
     entryExpiryCalculator = v;
   }
 
@@ -394,10 +394,10 @@ public abstract class BaseCache<E extends Entry, K, T>
   }
 
   /** called via reflection from CacheBuilder */
-  public void setRefreshController(final RefreshController<T> lc) {
-    entryExpiryCalculator = new EntryExpiryCalculator<K, T>() {
+  public void setRefreshController(final RefreshController<V> lc) {
+    entryExpiryCalculator = new EntryExpiryCalculator<K, V>() {
       @Override
-      public long calculateExpiryTime(K _key, T _value, long _fetchTime, CacheEntry<K, T> _oldEntry) {
+      public long calculateExpiryTime(K _key, V _value, long _fetchTime, CacheEntry<K, V> _oldEntry) {
         if (_oldEntry != null) {
           return lc.calculateNextRefreshTime(_oldEntry.getValue(), _value, _oldEntry.getLastModification(), _fetchTime);
         } else {
@@ -412,20 +412,20 @@ public abstract class BaseCache<E extends Entry, K, T>
   }
 
   @SuppressWarnings("unused")
-  public void setSource(CacheSourceWithMetaInfo<K, T> eg) {
+  public void setSource(CacheSourceWithMetaInfo<K, V> eg) {
     source = eg;
   }
 
-  public void setWriter(CacheWriter<K, T> w) {
+  public void setWriter(CacheWriter<K, V> w) {
     writer = w;
   }
 
   @SuppressWarnings("unused")
-  public void setSource(final CacheSource<K, T> g) {
+  public void setSource(final CacheSource<K, V> g) {
     if (g != null) {
-      source = new CacheSourceWithMetaInfo<K, T>() {
+      source = new CacheSourceWithMetaInfo<K, V>() {
         @Override
-        public T get(K key, long _currentTime, T _previousValue, long _timeLastFetched) throws Throwable {
+        public V get(K key, long _currentTime, V _previousValue, long _timeLastFetched) throws Throwable {
           return g.get(key);
         }
       };
@@ -433,15 +433,15 @@ public abstract class BaseCache<E extends Entry, K, T>
   }
 
   @SuppressWarnings("unused")
-  public void setExperimentalBulkCacheSource(ExperimentalBulkCacheSource<K, T> g) {
+  public void setExperimentalBulkCacheSource(ExperimentalBulkCacheSource<K, V> g) {
     experimentalBulkCacheSource = g;
     if (source == null) {
-      source = new CacheSourceWithMetaInfo<K, T>() {
+      source = new CacheSourceWithMetaInfo<K, V>() {
         @Override
-        public T get(K key, long _currentTime, T _previousValue, long _timeLastFetched) throws Throwable {
+        public V get(K key, long _currentTime, V _previousValue, long _timeLastFetched) throws Throwable {
           K[] ka = (K[]) Array.newInstance(keyType, 1);
           ka[0] = key;
-          T[] ra = (T[]) Array.newInstance(valueType, 1);
+          V[] ra = (V[]) Array.newInstance(valueType, 1);
           BitSet _fetched = new BitSet(1);
           experimentalBulkCacheSource.getBulk(ka, ra, _fetched, 0, 1);
           return ra[0];
@@ -450,20 +450,20 @@ public abstract class BaseCache<E extends Entry, K, T>
     }
   }
 
-  public void setBulkCacheSource(BulkCacheSource<K, T> s) {
+  public void setBulkCacheSource(BulkCacheSource<K, V> s) {
     bulkCacheSource = s;
     if (source == null) {
-      source = new CacheSourceWithMetaInfo<K, T>() {
+      source = new CacheSourceWithMetaInfo<K, V>() {
         @Override
-        public T get(final K key, final long _currentTime, final T _previousValue, final long _timeLastFetched) throws Throwable {
-          final CacheEntry<K, T> entry = new CacheEntry<K, T>() {
+        public V get(final K key, final long _currentTime, final V _previousValue, final long _timeLastFetched) throws Throwable {
+          final CacheEntry<K, V> entry = new CacheEntry<K, V>() {
             @Override
             public K getKey() {
               return key;
             }
 
             @Override
-            public T getValue() {
+            public V getValue() {
               return _previousValue;
             }
 
@@ -477,9 +477,9 @@ public abstract class BaseCache<E extends Entry, K, T>
               return _timeLastFetched;
             }
           };
-          List<CacheEntry<K, T>> _entryList = new AbstractList<CacheEntry<K, T>>() {
+          List<CacheEntry<K, V>> _entryList = new AbstractList<CacheEntry<K, V>>() {
             @Override
-            public CacheEntry<K, T> get(int index) {
+            public CacheEntry<K, V> get(int index) {
               return entry;
             }
 
@@ -643,7 +643,7 @@ public abstract class BaseCache<E extends Entry, K, T>
 
   class StorageClearTask implements LimitedPooledExecutor.NeverRunInCallingTask<Void> {
 
-    ClosableConcurrentHashEntryIterator<Entry> allLocalEntries;
+    ClosableConcurrentHashEntryIterator<org.cache2k.impl.Entry> allLocalEntries;
     StorageAdapter storage;
 
     @Override
@@ -666,9 +666,9 @@ public abstract class BaseCache<E extends Entry, K, T>
     }
 
     private void waitForEntryOperations() {
-      Iterator<Entry> it = allLocalEntries;
+      Iterator<org.cache2k.impl.Entry> it = allLocalEntries;
       while (it.hasNext()) {
-        Entry e = it.next();
+        org.cache2k.impl.Entry e = it.next();
         synchronized (e) { }
       }
     }
@@ -705,10 +705,10 @@ public abstract class BaseCache<E extends Entry, K, T>
   }
 
   protected void iterateAllEntriesRemoveAndCancelTimer() {
-    Iterator<Entry> it = iterateAllHeapEntries();
+    Iterator<org.cache2k.impl.Entry> it = iterateAllHeapEntries();
     int _count = 0;
     while (it.hasNext()) {
-      Entry e = it.next();
+      org.cache2k.impl.Entry e = it.next();
       e.removedFromList();
       cancelExpiryTimer(e);
       _count++;
@@ -720,10 +720,10 @@ public abstract class BaseCache<E extends Entry, K, T>
       mainHashCtrl.cleared();
       refreshHashCtrl.cleared();
     }
-    mainHashCtrl = new Hash<E>();
-    refreshHashCtrl = new Hash<E>();
-    mainHash = mainHashCtrl.init((Class<E>) newEntry().getClass());
-    refreshHash = refreshHashCtrl.init((Class<E>) newEntry().getClass());
+    mainHashCtrl = new Hash<Entry<K, V>>();
+    refreshHashCtrl = new Hash<Entry<K, V>>();
+    mainHash = mainHashCtrl.init((Class<Entry<K, V>>) newEntry().getClass());
+    refreshHash = refreshHashCtrl.init((Class<Entry<K, V>>) newEntry().getClass());
     if (startedTime == 0) {
       startedTime = System.currentTimeMillis();
     }
@@ -867,28 +867,28 @@ public abstract class BaseCache<E extends Entry, K, T>
 
   @Override
   public void removeAll() {
-    ClosableIterator<E> it;
+    ClosableIterator<Entry> it;
     if (storage == null) {
       synchronized (lock) {
-        it = new IteratorFilterFresh((ClosableIterator<E>) iterateAllHeapEntries());
+        it = new IteratorFilterFresh((ClosableIterator<Entry>) iterateAllHeapEntries());
       }
     } else {
-      it = (ClosableIterator<E>) storage.iterateAll();
+      it = (ClosableIterator<Entry>) storage.iterateAll();
     }
     while (it.hasNext()) {
-      E e = it.next();
+      Entry e = it.next();
       remove((K) e.getKey());
     }
   }
 
   @Override
-  public ClosableIterator<CacheEntry<K, T>> iterator() {
+  public ClosableIterator<CacheEntry<K, V>> iterator() {
     if (storage == null) {
       synchronized (lock) {
-        return new IteratorFilterEntry2Entry((ClosableIterator<E>) iterateAllHeapEntries(), true);
+        return new IteratorFilterEntry2Entry((ClosableIterator<Entry>) iterateAllHeapEntries(), true);
       }
     } else {
-      return new IteratorFilterEntry2Entry((ClosableIterator<E>) storage.iterateAll(), false);
+      return new IteratorFilterEntry2Entry((ClosableIterator<Entry>) storage.iterateAll(), false);
     }
   }
 
@@ -896,16 +896,16 @@ public abstract class BaseCache<E extends Entry, K, T>
    * Filter out non valid entries and wrap each entry with a cache
    * entry object.
    */
-  class IteratorFilterEntry2Entry implements ClosableIterator<CacheEntry<K, T>> {
+  class IteratorFilterEntry2Entry implements ClosableIterator<CacheEntry<K, V>> {
 
-    ClosableIterator<E> iterator;
-    E entry;
-    CacheEntry<K, T> lastEntry;
+    ClosableIterator<Entry> iterator;
+    Entry entry;
+    CacheEntry<K, V> lastEntry;
     boolean filter = true;
 
-    IteratorFilterEntry2Entry(ClosableIterator<E> it) { iterator = it; }
+    IteratorFilterEntry2Entry(ClosableIterator<Entry> it) { iterator = it; }
 
-    IteratorFilterEntry2Entry(ClosableIterator<E> it, boolean _filter) {
+    IteratorFilterEntry2Entry(ClosableIterator<Entry> it, boolean _filter) {
       iterator = it;
       filter = _filter;
     }
@@ -925,7 +925,7 @@ public abstract class BaseCache<E extends Entry, K, T>
         return false;
       }
       while (iterator.hasNext()) {
-        E e = iterator.next();
+        Entry e = iterator.next();
         if (filter) {
           if (e.hasFreshData()) {
             entry = e;
@@ -950,7 +950,7 @@ public abstract class BaseCache<E extends Entry, K, T>
     }
 
     @Override
-    public CacheEntry<K, T> next() {
+    public CacheEntry<K, V> next() {
       if (entry == null && !hasNext()) {
         throw new NoSuchElementException("not available");
       }
@@ -973,14 +973,14 @@ public abstract class BaseCache<E extends Entry, K, T>
    * Filter out non valid entries and wrap each entry with a cache
    * entry object.
    */
-  class IteratorFilterFresh implements ClosableIterator<E> {
+  class IteratorFilterFresh implements ClosableIterator<Entry> {
 
-    ClosableIterator<E> iterator;
-    E entry;
-    CacheEntry<K, T> lastEntry;
+    ClosableIterator<Entry> iterator;
+    Entry entry;
+    CacheEntry<K, V> lastEntry;
     boolean filter = true;
 
-    IteratorFilterFresh(ClosableIterator<E> it) { iterator = it; }
+    IteratorFilterFresh(ClosableIterator<Entry> it) { iterator = it; }
 
     /**
      * Between hasNext() and next() an entry may be evicted or expired.
@@ -997,7 +997,7 @@ public abstract class BaseCache<E extends Entry, K, T>
         return false;
       }
       while (iterator.hasNext()) {
-        E e = iterator.next();
+        Entry e = iterator.next();
         if (e.hasFreshData()) {
           entry = e;
           return true;
@@ -1017,11 +1017,11 @@ public abstract class BaseCache<E extends Entry, K, T>
     }
 
     @Override
-    public E next() {
+    public Entry next() {
       if (entry == null && !hasNext()) {
         throw new NoSuchElementException("not available");
       }
-      E tmp = entry;
+      Entry tmp = entry;
       entry = null;
       return tmp;
     }
@@ -1047,7 +1047,7 @@ public abstract class BaseCache<E extends Entry, K, T>
   }
 
   protected static final int getListEntryCount(final Entry _head) {
-    Entry e = _head.next;
+    org.cache2k.impl.Entry e = _head.next;
     int cnt = 0;
     while (e != _head) {
       cnt++;
@@ -1059,12 +1059,12 @@ public abstract class BaseCache<E extends Entry, K, T>
     return cnt;
   }
 
-  protected static final <E extends Entry> void moveToFront(final E _head, final E e) {
+  protected static final <E extends org.cache2k.impl.Entry> void moveToFront(final E _head, final E e) {
     removeFromList(e);
     insertInList(_head, e);
   }
 
-  protected static final <E extends Entry> E insertIntoTailCyclicList(final E _head, final E e) {
+  protected static final <E extends org.cache2k.impl.Entry> E insertIntoTailCyclicList(final E _head, final E e) {
     if (_head == null) {
       return (E) e.shortCircuit();
     }
@@ -1078,7 +1078,7 @@ public abstract class BaseCache<E extends Entry, K, T>
   /**
    * Insert X into A B C, yields: A X B C.
    */
-  protected static final <E extends Entry> E insertAfterHeadCyclicList(final E _head, final E e) {
+  protected static final <E extends org.cache2k.impl.Entry> E insertAfterHeadCyclicList(final E _head, final E e) {
     if (_head == null) {
       return (E) e.shortCircuit();
     }
@@ -1090,7 +1090,7 @@ public abstract class BaseCache<E extends Entry, K, T>
   }
 
   /** Insert element at the head of the list */
-  protected static final <E extends Entry> E insertIntoHeadCyclicList(final E _head, final E e) {
+  protected static final <E extends org.cache2k.impl.Entry> E insertIntoHeadCyclicList(final E _head, final E e) {
     if (_head == null) {
       return (E) e.shortCircuit();
     }
@@ -1101,29 +1101,29 @@ public abstract class BaseCache<E extends Entry, K, T>
     return e;
   }
 
-  protected static <E extends Entry> E removeFromCyclicList(final E _head, E e) {
+  protected static <E extends org.cache2k.impl.Entry> E removeFromCyclicList(final E _head, E e) {
     if (e.next == e) {
       e.removedFromList();
       return null;
     }
-    Entry _eNext = e.next;
+    org.cache2k.impl.Entry _eNext = e.next;
     e.prev.next = _eNext;
     e.next.prev = e.prev;
     e.removedFromList();
     return e == _head ? (E) _eNext : _head;
   }
 
-  protected static Entry removeFromCyclicList(final Entry e) {
-    Entry _eNext = e.next;
+  protected static org.cache2k.impl.Entry removeFromCyclicList(final org.cache2k.impl.Entry e) {
+    org.cache2k.impl.Entry _eNext = e.next;
     e.prev.next = _eNext;
     e.next.prev = e.prev;
     e.removedFromList();
     return _eNext == e ? null : _eNext;
   }
 
-  protected static int getCyclicListEntryCount(Entry e) {
+  protected static int getCyclicListEntryCount(org.cache2k.impl.Entry e) {
     if (e == null) { return 0; }
-    final Entry _head = e;
+    final org.cache2k.impl.Entry _head = e;
     int cnt = 0;
     do {
       cnt++;
@@ -1135,9 +1135,9 @@ public abstract class BaseCache<E extends Entry, K, T>
     return cnt;
   }
 
-  protected static boolean checkCyclicListIntegrity(Entry e) {
+  protected static boolean checkCyclicListIntegrity(org.cache2k.impl.Entry e) {
     if (e == null) { return true; }
-    Entry _head = e;
+    org.cache2k.impl.Entry _head = e;
     do {
       if (e.next == null) {
         return false;
@@ -1156,23 +1156,23 @@ public abstract class BaseCache<E extends Entry, K, T>
   /**
    * Record an entry hit.
    */
-  protected abstract void recordHit(E e);
+  protected abstract void recordHit(Entry e);
 
   /**
    * New cache entry, put it in the replacement algorithm structure
    */
-  protected abstract void insertIntoReplacementList(E e);
+  protected abstract void insertIntoReplacementList(Entry e);
 
   /**
    * Entry object factory. Return an entry of the proper entry subtype for
    * the replacement/eviction algorithm.
    */
-  protected abstract E newEntry();
+  protected abstract Entry newEntry();
 
 
   /**
    * Find an entry that should be evicted. Called within structure lock.
-   * After doing some checks the cache will call {@link #removeEntryFromReplacementList(Entry)}
+   * After doing some checks the cache will call {@link #removeEntryFromReplacementList(org.cache2k.impl.Entry)}
    * if this entry will be really evicted. Pinned entries may be skipped. A
    * good eviction algorithm returns another candidate on sequential calls, even
    * if the candidate was not removed.
@@ -1182,13 +1182,13 @@ public abstract class BaseCache<E extends Entry, K, T>
    * events which affect the entry. For this, we need to acquire the lock on the entry
    * first.
    */
-  protected abstract E findEvictionCandidate();
+  protected abstract Entry findEvictionCandidate();
 
 
   /**
    *
    */
-  protected void removeEntryFromReplacementList(E e) {
+  protected void removeEntryFromReplacementList(Entry e) {
     removeFromList(e);
   }
 
@@ -1199,38 +1199,38 @@ public abstract class BaseCache<E extends Entry, K, T>
    * if the size limit of the cache is reached, because some replacement
    * algorithms (ARC) do this together.
    */
-  protected E checkForGhost(K key, int hc) { return null; }
+  protected Entry checkForGhost(K key, int hc) { return null; }
 
   /**
    * Implement unsynchronized lookup if it is supported by the eviction.
    * If a null is returned the lookup is redone synchronized.
    */
-  protected E lookupEntryUnsynchronized(K key, int hc) { return null; }
+  protected Entry lookupEntryUnsynchronized(K key, int hc) { return null; }
 
-  protected E lookupEntryUnsynchronizedNoHitRecord(K key, int hc) { return null; }
+  protected Entry lookupEntryUnsynchronizedNoHitRecord(K key, int hc) { return null; }
 
-  protected void recordHitLocked(E e) {
+  protected void recordHitLocked(Entry e) {
     synchronized (lock) {
       recordHit(e);
     }
   }
 
   @Override
-  public T get(K key) {
-    return (T) returnValue(getEntryInternal(key));
+  public V get(K key) {
+    return (V) returnValue(getEntryInternal(key));
   }
 
   /**
    * Wrap entry in a separate object instance. We can return the entry directly, however we lock on
    * the entry object.
    */
-  protected CacheEntry<K, T> returnEntry(final Entry<E, K, T> e) {
+  protected CacheEntry<K, V> returnEntry(final Entry<K, V> e) {
     if (e == null) {
       return null;
     }
     synchronized (e) {
       final K _key = e.getKey();
-      final T _value = e.getValue();
+      final V _value = e.getValue();
       final Throwable _exception = e.getException();
       final long _lastModification = e.getLastModification();
       return returnCacheEntry(_key, _value, _exception, _lastModification);
@@ -1238,11 +1238,11 @@ public abstract class BaseCache<E extends Entry, K, T>
   }
 
   public String getEntryState(K key) {
-    E e = getEntryInternal(key);
+    Entry e = getEntryInternal(key);
     return generateEntryStateString(e);
   }
 
-  private String generateEntryStateString(E e) {
+  private String generateEntryStateString(Entry<K, V> e) {
     synchronized (e) {
       String _timerState = "n/a";
       if (e.task != null) {
@@ -1270,15 +1270,15 @@ public abstract class BaseCache<E extends Entry, K, T>
     }
   }
 
-  private CacheEntry<K, T> returnCacheEntry(final K _key, final T _value, final Throwable _exception, final long _lastModification) {
-    CacheEntry<K, T> ce = new CacheEntry<K, T>() {
+  private CacheEntry<K, V> returnCacheEntry(final K _key, final V _value, final Throwable _exception, final long _lastModification) {
+    CacheEntry<K, V> ce = new CacheEntry<K, V>() {
       @Override
       public K getKey() {
         return _key;
       }
 
       @Override
-      public T getValue() {
+      public V getValue() {
         return _value;
       }
 
@@ -1305,13 +1305,13 @@ public abstract class BaseCache<E extends Entry, K, T>
   }
 
   @Override
-  public CacheEntry<K, T> getEntry(K key) {
+  public CacheEntry<K, V> getEntry(K key) {
     return returnEntry(getEntryInternal(key));
   }
 
-  protected E getEntryInternal(K key) {
+  protected Entry getEntryInternal(K key) {
     long _previousNextRefreshTime;
-    E e;
+    Entry e;
     for (;;) {
       e = lookupOrNewEntrySynchronized(key);
       if (e.hasFreshData()) {
@@ -1340,7 +1340,7 @@ public abstract class BaseCache<E extends Entry, K, T>
     return e;
   }
 
-  protected void finishFetch(E e, long _nextRefreshTime) {
+  protected void finishFetch(Entry e, long _nextRefreshTime) {
     synchronized (e) {
       e.nextRefreshTime = stopStartTimer(_nextRefreshTime, e, System.currentTimeMillis());
       e.processingDone();
@@ -1351,7 +1351,7 @@ public abstract class BaseCache<E extends Entry, K, T>
   /** Always fetch the value from the source. That is a copy of getEntryInternal without fresh checks. */
   protected void fetchAndReplace(K key) {
     long _previousNextRefreshTime;
-    E e;
+    Entry e;
     for (;;) {
       e = lookupOrNewEntrySynchronized(key);
       synchronized (e) {
@@ -1382,11 +1382,11 @@ public abstract class BaseCache<E extends Entry, K, T>
    * @param _needsFetch if true the entry is fetched from CacheSource when expired.
    * @return a cache entry is always returned, however, it may be outdated
    */
-  protected Entry insertEntryFromStorage(StorageEntry se, boolean _needsFetch) {
+  protected org.cache2k.impl.Entry insertEntryFromStorage(StorageEntry se, boolean _needsFetch) {
     int _spinCount = TUNABLE.maximumEntryLockSpins;
     for (;;) {
       if (_spinCount-- <= 0) { throw new CacheLockSpinsExceededError(); }
-      E e = lookupOrNewEntrySynchronized((K) se.getKey());
+      Entry e = lookupOrNewEntrySynchronized((K) se.getKey());
       if (e.hasFreshData()) { return e; }
       synchronized (e) {
         if (!e.isDataValidState()) {
@@ -1423,7 +1423,7 @@ public abstract class BaseCache<E extends Entry, K, T>
    */
   protected void lockAndRunForPurge(Object key, PurgeableStorage.PurgeAction _action) {
     int _spinCount = TUNABLE.maximumEntryLockSpins;
-    E e;
+    Entry e;
     boolean _virgin;
     for (;;) {
       if (_spinCount-- <= 0) { throw new CacheLockSpinsExceededError(); }
@@ -1447,10 +1447,10 @@ public abstract class BaseCache<E extends Entry, K, T>
       StorageEntry se = _action.checkAndPurge(key);
       synchronized (e) {
         if (_virgin) {
-          finishFetch(e, Entry.VIRGIN_STATE);
+          finishFetch(e, org.cache2k.impl.Entry.VIRGIN_STATE);
           evictEntryFromHeap(e);
         } else {
-          finishFetch(e, Entry.LOADED_NON_VALID);
+          finishFetch(e, org.cache2k.impl.Entry.LOADED_NON_VALID);
           evictEntryFromHeap(e);
         }
       }
@@ -1462,10 +1462,10 @@ public abstract class BaseCache<E extends Entry, K, T>
 
   protected final void evictEventually() {
     int _spinCount = TUNABLE.maximumEvictSpins;
-    E _previousCandidate = null;
+    Entry _previousCandidate = null;
     while (evictionNeeded) {
       if (_spinCount-- <= 0) { return; }
-      E e;
+      Entry e;
       synchronized (lock) {
         checkClosed();
         if (getLocalSize() <= maxSize) {
@@ -1488,7 +1488,7 @@ public abstract class BaseCache<E extends Entry, K, T>
           }
         }
 
-        boolean _storeEvenImmediatelyExpired = hasKeepAfterExpired() && (e.isDataValidState() || e.isExpiredState() || e.nextRefreshTime == Entry.FETCH_NEXT_TIME_STATE);
+        boolean _storeEvenImmediatelyExpired = hasKeepAfterExpired() && (e.isDataValidState() || e.isExpiredState() || e.nextRefreshTime == org.cache2k.impl.Entry.FETCH_NEXT_TIME_STATE);
         _shouldStore =
             (storage != null) && (_storeEvenImmediatelyExpired || e.hasFreshData());
         if (_shouldStore) {
@@ -1502,7 +1502,7 @@ public abstract class BaseCache<E extends Entry, K, T>
           storage.evict(e);
         } finally {
           synchronized (e) {
-            finishFetch(e, Entry.FETCH_ABORT);
+            finishFetch(e, org.cache2k.impl.Entry.FETCH_ABORT);
             evictEntryFromHeap(e);
           }
         }
@@ -1510,7 +1510,7 @@ public abstract class BaseCache<E extends Entry, K, T>
     }
   }
 
-  private void evictEntryFromHeap(E e) {
+  private void evictEntryFromHeap(Entry e) {
     synchronized (lock) {
       if (e.isRemovedFromReplacementList()) {
         if (removeEntryFromHash(e)) {
@@ -1533,7 +1533,7 @@ public abstract class BaseCache<E extends Entry, K, T>
    * in a parallel thread and may have already selected this
    * entry.
    */
-  protected boolean removeEntry(E e) {
+  protected boolean removeEntry(Entry e) {
     if (!e.isRemovedFromReplacementList()) {
       removeEntryFromReplacementList(e);
     }
@@ -1541,10 +1541,10 @@ public abstract class BaseCache<E extends Entry, K, T>
   }
 
   @Override
-  public T peekAndPut(K key, T _value) {
+  public V peekAndPut(K key, V _value) {
     final int hc = modifiedHash(key.hashCode());
     boolean _hasFreshData = false;
-    E e;
+    Entry e;
     long _previousNextRefreshTime;
     for (;;) {
       e = lookupEntryUnsynchronized(key, hc);
@@ -1568,13 +1568,13 @@ public abstract class BaseCache<E extends Entry, K, T>
     }
     boolean _finished = false;
     try {
-      T _previousValue = null;
+      V _previousValue = null;
       if (storage != null && e.isVirgin()) {
         long t = fetchWithStorage(e, false, _previousNextRefreshTime);
         _hasFreshData = e.hasFreshData(System.currentTimeMillis(), t);
       }
       if (_hasFreshData) {
-        _previousValue = (T) e.getValue();
+        _previousValue = (V) e.getValue();
         recordHitLocked(e);
       } else {
         synchronized (lock) {
@@ -1591,11 +1591,11 @@ public abstract class BaseCache<E extends Entry, K, T>
   }
 
   @Override
-  public T peekAndReplace(K key, T _value) {
+  public V peekAndReplace(K key, V _value) {
     final int hc = modifiedHash(key.hashCode());
     boolean _hasFreshData = false;
     boolean _newEntry = false;
-    E e;
+    Entry e;
     long _previousNextRefreshTime;
     for (;;) {
       e = lookupEntryUnsynchronized(key, hc);
@@ -1633,7 +1633,7 @@ public abstract class BaseCache<E extends Entry, K, T>
       long t = System.currentTimeMillis();
       if (_hasFreshData) {
         recordHitLocked(e);
-        T _previousValue = (T) e.getValue();
+        V _previousValue = (V) e.getValue();
         finishFetch(e, insertOnPut(e, _value, t, t, _previousNextRefreshTime));
         _finished = true;
         return _previousValue;
@@ -1644,7 +1644,7 @@ public abstract class BaseCache<E extends Entry, K, T>
           }
           peekMissCnt++;
         }
-        finishFetch(e, Entry.LOADED_NON_VALID);
+        finishFetch(e, org.cache2k.impl.Entry.LOADED_NON_VALID);
         _finished = true;
         return null;
       }
@@ -1654,18 +1654,18 @@ public abstract class BaseCache<E extends Entry, K, T>
   }
 
   @Override
-  public boolean replace(K key, T _newValue) {
+  public boolean replace(K key, V _newValue) {
     return replace(key, false, null, _newValue) == null;
   }
 
   @Override
-  public boolean replace(K key, T _oldValue, T _newValue) {
+  public boolean replace(K key, V _oldValue, V _newValue) {
     return replace(key, true, _oldValue, _newValue) == null;
   }
 
   @Override
-  public CacheEntry<K, T> replaceOrGet(K key, T _oldValue, T _newValue, CacheEntry<K, T> _dummyEntry) {
-    E e = replace(key, true, _oldValue, _newValue);
+  public CacheEntry<K, V> replaceOrGet(K key, V _oldValue, V _newValue, CacheEntry<K, V> _dummyEntry) {
+    Entry e = replace(key, true, _oldValue, _newValue);
     if (e == DUMMY_ENTRY_NO_REPLACE) {
       return _dummyEntry;
     } else if (e != null) {
@@ -1674,31 +1674,31 @@ public abstract class BaseCache<E extends Entry, K, T>
     return null;
   }
 
-  final Entry DUMMY_ENTRY_NO_REPLACE = new Entry();
+  final Entry DUMMY_ENTRY_NO_REPLACE = new org.cache2k.impl.Entry();
 
   /**
    * replace if value matches. if value not matches, return the existing entry or the dummy entry.
    */
-  protected E replace(final K key, final boolean _compare, final T _oldValue, final T _newValue) {
+  protected Entry<K, V> replace(final K key, final boolean _compare, final V _oldValue, final V _newValue) {
     final int hc = modifiedHash(key.hashCode());
     long _previousNextRefreshTime;
     if (storage == null && writer == null) {
-      E e = lookupEntrySynchronized(key);
+      Entry e = lookupEntrySynchronized(key);
       if (e == null) {
         synchronized (lock) {
           peekMissCnt++;
         }
-        return (E) DUMMY_ENTRY_NO_REPLACE;
+        return DUMMY_ENTRY_NO_REPLACE;
       }
       synchronized (e) {
         if (e.isRemovedState() || !e.hasFreshData()) {
-          return (E) DUMMY_ENTRY_NO_REPLACE;
+          return (Entry) DUMMY_ENTRY_NO_REPLACE;
         }
         if (_compare && !e.equalsValue(_oldValue)) {
           return e;
         }
         _previousNextRefreshTime = e.nextRefreshTime;
-        e.nextRefreshTime = Entry.REPUT_STATE;
+        e.nextRefreshTime = org.cache2k.impl.Entry.REPUT_STATE;
         long t = System.currentTimeMillis();
         long _nextRefreshTime = insertOnPut(e, _newValue, t, t, _previousNextRefreshTime);
         e.nextRefreshTime = stopStartTimer(_nextRefreshTime, e, System.currentTimeMillis());
@@ -1708,7 +1708,7 @@ public abstract class BaseCache<E extends Entry, K, T>
     }
     if (storage == null) {
       boolean _hasFreshData = false;
-      E e;
+      Entry e;
       for (;;) {
         e = lookupOrNewEntrySynchronized(key, hc);
         synchronized (e) {
@@ -1720,10 +1720,10 @@ public abstract class BaseCache<E extends Entry, K, T>
             if (e.isVirgin()) {
               synchronized (this) {
                 atomicOpNewEntryCnt++;
-                e.nextRefreshTime = Entry.ATOMIC_OP_NON_VALID;
+                e.nextRefreshTime = org.cache2k.impl.Entry.ATOMIC_OP_NON_VALID;
               }
             }
-            return (E) DUMMY_ENTRY_NO_REPLACE;
+            return (Entry) DUMMY_ENTRY_NO_REPLACE;
           }
           if (_compare && !e.equalsValue(_oldValue)) {
             return e;
@@ -1743,7 +1743,7 @@ public abstract class BaseCache<E extends Entry, K, T>
       }
     }
     boolean _hasFreshData = false;
-    E e;
+    Entry e;
     for (;;) {
       e = lookupOrNewEntrySynchronized(key, hc);
       synchronized (e) {
@@ -1755,10 +1755,10 @@ public abstract class BaseCache<E extends Entry, K, T>
           if (e.isVirgin()) {
             synchronized (this) {
               loadNonFreshCnt++;
-              e.nextRefreshTime = Entry.LOADED_NON_VALID;
+              e.nextRefreshTime = org.cache2k.impl.Entry.LOADED_NON_VALID;
             }
           }
-          return (E) DUMMY_ENTRY_NO_REPLACE;
+          return (Entry) DUMMY_ENTRY_NO_REPLACE;
         }
         if (_compare && !e.equalsValue(_oldValue)) {
           return e;
@@ -1775,7 +1775,7 @@ public abstract class BaseCache<E extends Entry, K, T>
         if (!_hasFreshData) {
           finishFetch(e, t);
           _finished = true;
-          return (E) DUMMY_ENTRY_NO_REPLACE;
+          return (Entry) DUMMY_ENTRY_NO_REPLACE;
         }
         if (_compare && !e.equalsValue(_oldValue)) {
           finishFetch(e, t);
@@ -1801,13 +1801,13 @@ public abstract class BaseCache<E extends Entry, K, T>
    * If the entry is not present, this result is cached in the local
    * cache.
    */
-  final protected E peekEntryInternal(K key) {
+  final protected Entry<K, V> peekEntryInternal(K key) {
     final int hc = modifiedHash(key.hashCode());
     long _previousNextRefreshTime;
     int _spinCount = TUNABLE.maximumEntryLockSpins;
     for (;;) {
       if (_spinCount-- <= 0) { throw new CacheLockSpinsExceededError(); }
-      E e = lookupEntryUnsynchronized(key, hc);
+      Entry e = lookupEntryUnsynchronized(key, hc);
       if (e == null) {
         synchronized (lock) {
           e = lookupEntry(key, hc);
@@ -1860,10 +1860,10 @@ public abstract class BaseCache<E extends Entry, K, T>
   @Override
   public boolean contains(K key) {
     if (storage == null) {
-      E e = lookupEntrySynchronizedNoHitRecord(key);
+      Entry e = lookupEntrySynchronizedNoHitRecord(key);
       return e != null && e.hasFreshData();
     }
-    E e = peekEntryInternal(key);
+    Entry e = peekEntryInternal(key);
     if (e != null) {
       return true;
     }
@@ -1871,26 +1871,26 @@ public abstract class BaseCache<E extends Entry, K, T>
   }
 
   @Override
-  public T peek(K key) {
-    E e = peekEntryInternal(key);
+  public V peek(K key) {
+    Entry<K, V> e = peekEntryInternal(key);
     if (e != null) {
-      return (T) returnValue(e);
+      return returnValue(e);
     }
     return null;
   }
 
   @Override
-  public CacheEntry<K, T> peekEntry(K key) {
+  public CacheEntry<K, V> peekEntry(K key) {
     return returnEntry(peekEntryInternal(key));
   }
 
   @Override
-  public boolean putIfAbsent(K key, T value) {
+  public boolean putIfAbsent(K key, V value) {
     long _previousNextRefreshTime;
     long now;
     if (storage == null) {
        int _spinCount = TUNABLE.maximumEntryLockSpins;
-      E e;
+      Entry e;
       for (;;) {
         if (_spinCount-- <= 0) {
           throw new CacheLockSpinsExceededError();
@@ -1923,7 +1923,7 @@ public abstract class BaseCache<E extends Entry, K, T>
       }
     }
     int _spinCount = TUNABLE.maximumEntryLockSpins;
-    E e; long t;
+    Entry e; long t;
     for (;;) {
       if (_spinCount-- <= 0) { throw new CacheLockSpinsExceededError(); }
       e = lookupOrNewEntrySynchronized(key);
@@ -1947,7 +1947,7 @@ public abstract class BaseCache<E extends Entry, K, T>
         finishFetch(e, _result);
         return false;
       }
-      e.nextRefreshTime = Entry.LOADED_NON_VALID_AND_PUT;
+      e.nextRefreshTime = org.cache2k.impl.Entry.LOADED_NON_VALID_AND_PUT;
     }
     boolean _finished = false;
     try {
@@ -1961,9 +1961,9 @@ public abstract class BaseCache<E extends Entry, K, T>
   }
 
   @Override
-  public void put(K key, T value) {
+  public void put(K key, V value) {
     int _spinCount = TUNABLE.maximumEntryLockSpins;
-    E e;
+    Entry e;
     if (storage == null && writer == null) {
       for (;;) {
         if (_spinCount-- <= 0) {
@@ -1981,7 +1981,7 @@ public abstract class BaseCache<E extends Entry, K, T>
           long t = System.currentTimeMillis();
           long _nextRefreshTime = e.nextRefreshTime;
           if (e.hasFreshData(t)) {
-            e.nextRefreshTime = Entry.REPUT_STATE;
+            e.nextRefreshTime = org.cache2k.impl.Entry.REPUT_STATE;
           }
           _nextRefreshTime = insertOnPut(e, value, t, t, e.nextRefreshTime);
           e.nextRefreshTime = stopStartTimer(_nextRefreshTime, e, System.currentTimeMillis());
@@ -2019,10 +2019,11 @@ public abstract class BaseCache<E extends Entry, K, T>
   }
 
   @Override
-  public boolean remove(K key, T _value) {
+  public boolean remove(K key, V _value) {
     return removeWithFlag(key, true, _value);
   }
 
+  @Override
   public boolean removeWithFlag(K key) {
     return removeWithFlag(key, false, null);
   }
@@ -2037,12 +2038,12 @@ public abstract class BaseCache<E extends Entry, K, T>
    * keep the cache and the storage consistent it must be ensured that this thread
    * is the only one working on the entry.
    */
-  public boolean removeWithFlag(K key, boolean _checkValue, T _value) {
+  public boolean removeWithFlag(K key, boolean _checkValue, V _value) {
     if (!_checkValue) {
       eventuallyCallWriterDelete(key);
     }
     if (storage == null) {
-      E e = lookupEntrySynchronized(key);
+      Entry e = lookupEntrySynchronized(key);
       if (e != null) {
         synchronized (e) {
           e.waitForFetch();
@@ -2067,7 +2068,7 @@ public abstract class BaseCache<E extends Entry, K, T>
       return false;
     }
     int _spinCount = TUNABLE.maximumEntryLockSpins;
-    E e;
+    Entry e;
     boolean _hasFreshData;
     for (;;) {
       if (_spinCount-- <= 0) {
@@ -2104,7 +2105,7 @@ public abstract class BaseCache<E extends Entry, K, T>
         storage.remove(key);
       }
       synchronized (e) {
-        finishFetch(e, Entry.LOADED_NON_VALID);
+        finishFetch(e, org.cache2k.impl.Entry.LOADED_NON_VALID);
         if (_hasFreshData) {
           synchronized (lock) {
             if (removeEntry(e)) {
@@ -2137,19 +2138,19 @@ public abstract class BaseCache<E extends Entry, K, T>
     removeWithFlag(key);
   }
 
-  public T peekAndRemove(K key) {
+  public V peekAndRemove(K key) {
     eventuallyCallWriterDelete(key);
     if (storage == null) {
-      E e = lookupEntrySynchronized(key);
+      Entry e = lookupEntrySynchronized(key);
       if (e != null) {
         synchronized (e) {
           e.waitForFetch();
           if (!e.isRemovedState()) {
             synchronized (lock) {
-              T _value = null;
+              V _value = null;
               boolean f = e.hasFreshData();
               if (f) {
-                _value = (T) e.getValue();
+                _value = (V) e.getValue();
                 recordHit(e);
               } else {
                 peekMissCnt++;
@@ -2168,7 +2169,7 @@ public abstract class BaseCache<E extends Entry, K, T>
       return null;
     } // end if (storage == null) ....
     int _spinCount = TUNABLE.maximumEntryLockSpins;
-    E e;
+    Entry e;
     boolean _hasFreshData;
     for (;;) {
       if (_spinCount-- <= 0) {
@@ -2186,7 +2187,7 @@ public abstract class BaseCache<E extends Entry, K, T>
       }
     }
     boolean _finished = false;
-    T _value = null;
+    V _value = null;
     try {
       long t;
       if (!_hasFreshData && e.isVirgin()) {
@@ -2194,11 +2195,11 @@ public abstract class BaseCache<E extends Entry, K, T>
         _hasFreshData = e.hasFreshData(System.currentTimeMillis(), t);
       }
       if (_hasFreshData) {
-        _value = (T) e.getValue();
+        _value = (V) e.getValue();
         storage.remove(key);
       }
       synchronized (e) {
-        finishFetch(e, Entry.LOADED_NON_VALID);
+        finishFetch(e, org.cache2k.impl.Entry.LOADED_NON_VALID);
         if (_hasFreshData) {
           synchronized (lock) {
             if (removeEntry(e)) {
@@ -2327,13 +2328,13 @@ public abstract class BaseCache<E extends Entry, K, T>
    * Lookup or create a new entry. The new entry is created, because we need
    * it for locking within the data fetch.
    */
-  protected E lookupOrNewEntrySynchronized(K key) {
+  protected Entry<K, V> lookupOrNewEntrySynchronized(K key) {
     int hc = modifiedHash(key.hashCode());
     return lookupOrNewEntrySynchronized(key, hc);
   }
 
-  protected E lookupOrNewEntrySynchronized(K key, int hc) {
-    E e = lookupEntryUnsynchronized(key, hc);
+  protected Entry<K, V> lookupOrNewEntrySynchronized(K key, int hc) {
+    Entry e = lookupEntryUnsynchronized(key, hc);
     if (e == null) {
       synchronized (lock) {
         checkClosed();
@@ -2346,9 +2347,9 @@ public abstract class BaseCache<E extends Entry, K, T>
     return e;
   }
 
-  protected E lookupOrNewEntrySynchronizedNoHitRecord(K key) {
+  protected Entry<K, V> lookupOrNewEntrySynchronizedNoHitRecord(K key) {
     int hc = modifiedHash(key.hashCode());
-    E e = lookupEntryUnsynchronizedNoHitRecord(key, hc);
+    Entry e = lookupEntryUnsynchronizedNoHitRecord(key, hc);
     if (e == null) {
       synchronized (lock) {
         checkClosed();
@@ -2361,8 +2362,8 @@ public abstract class BaseCache<E extends Entry, K, T>
     return e;
   }
 
-  protected T returnValue(Entry<E, K,T> e) {
-    T v = e.value;
+  protected V returnValue(Entry<K, V> e) {
+    V v = e.value;
     if (v instanceof ExceptionWrapper) {
       ExceptionWrapper w = (ExceptionWrapper) v;
       if (w.additionalExceptionMessage == null) {
@@ -2376,9 +2377,9 @@ public abstract class BaseCache<E extends Entry, K, T>
     return v;
   }
 
-  protected E lookupEntrySynchronized(K key) {
+  protected Entry<K, V> lookupEntrySynchronized(K key) {
     int hc = modifiedHash(key.hashCode());
-    E e = lookupEntryUnsynchronized(key, hc);
+    Entry e = lookupEntryUnsynchronized(key, hc);
     if (e == null) {
       synchronized (lock) {
         e = lookupEntry(key, hc);
@@ -2387,9 +2388,9 @@ public abstract class BaseCache<E extends Entry, K, T>
     return e;
   }
 
-  protected E lookupEntrySynchronizedNoHitRecord(K key) {
+  protected Entry lookupEntrySynchronizedNoHitRecord(K key) {
     int hc = modifiedHash(key.hashCode());
-    E e = lookupEntryUnsynchronizedNoHitRecord(key, hc);
+    Entry e = lookupEntryUnsynchronizedNoHitRecord(key, hc);
     if (e == null) {
       synchronized (lock) {
         e = lookupEntryNoHitRecord(key, hc);
@@ -2398,8 +2399,8 @@ public abstract class BaseCache<E extends Entry, K, T>
     return e;
   }
 
-  protected final E lookupEntry(K key, int hc) {
-    E e = Hash.lookup(mainHash, key, hc);
+  protected final Entry lookupEntry(K key, int hc) {
+    Entry e = Hash.lookup(mainHash, key, hc);
     if (e != null) {
       recordHit(e);
       return e;
@@ -2414,8 +2415,8 @@ public abstract class BaseCache<E extends Entry, K, T>
     return null;
   }
 
-  protected final E lookupEntryNoHitRecord(K key, int hc) {
-    E e = Hash.lookup(mainHash, key, hc);
+  protected final Entry lookupEntryNoHitRecord(K key, int hc) {
+    Entry e = Hash.lookup(mainHash, key, hc);
     if (e != null) {
       return e;
     }
@@ -2433,11 +2434,11 @@ public abstract class BaseCache<E extends Entry, K, T>
    * Insert new entry in all structures (hash and replacement list). May evict an
    * entry if the maximum capacity is reached.
    */
-  protected E newEntry(K key, int hc) {
+  protected Entry newEntry(K key, int hc) {
     if (getLocalSize() >= maxSize) {
       evictionNeeded = true;
     }
-    E e = checkForGhost(key, hc);
+    Entry e = checkForGhost(key, hc);
     if (e == null) {
       e = newEntry();
       e.key = key;
@@ -2459,7 +2460,7 @@ public abstract class BaseCache<E extends Entry, K, T>
    * The entry is already removed from the replacement list. stop/reset timer, if needed.
    * Called under big lock.
    */
-  private boolean removeEntryFromHash(E e) {
+  private boolean removeEntryFromHash(Entry<K, V> e) {
     boolean f = mainHashCtrl.remove(mainHash, e) || refreshHashCtrl.remove(refreshHash, e);
     checkForHashCodeChange(e);
     cancelExpiryTimer(e);
@@ -2470,7 +2471,7 @@ public abstract class BaseCache<E extends Entry, K, T>
     return f;
   }
 
-  protected final void cancelExpiryTimer(Entry e) {
+  protected final void cancelExpiryTimer(Entry<K, V> e) {
     if (e.task != null) {
       e.task.cancel();
       timerCancelCount++;
@@ -2488,7 +2489,7 @@ public abstract class BaseCache<E extends Entry, K, T>
    * the key has changed, the stored hash code in the cache will not match any more and
    * the item is evicted very fast.
    */
-  private void checkForHashCodeChange(Entry e) {
+  private void checkForHashCodeChange(Entry<K, V> e) {
     if (modifiedHash(e.key.hashCode()) != e.hashCode && !e.isStale()) {
       if (keyMutationCount ==  0) {
         getLog().warn("Key mismatch! Key hashcode changed! keyClass=" + e.key.getClass().getName());
@@ -2513,7 +2514,7 @@ public abstract class BaseCache<E extends Entry, K, T>
    * @param _newObject might be a fetched value or an exception wrapped into the {@link ExceptionWrapper}
    */
   static <K, T>  long calcNextRefreshTime(
-      K _key, T _newObject, long now, Entry _entry,
+      K _key, T _newObject, long now, org.cache2k.impl.Entry _entry,
       EntryExpiryCalculator<K, T> ec, long _maxLinger,
       ExceptionExpiryCalculator<K> _exceptionEc, long _exceptionMaxLinger) {
     if (!(_newObject instanceof ExceptionWrapper)) {
@@ -2558,14 +2559,14 @@ public abstract class BaseCache<E extends Entry, K, T>
     return t;
   }
 
-  protected long calcNextRefreshTime(K _key, T _newObject, long now, Entry _entry) {
+  protected long calcNextRefreshTime(K _key, V _newObject, long now, org.cache2k.impl.Entry _entry) {
     return calcNextRefreshTime(
         _key, _newObject, now, _entry,
         entryExpiryCalculator, maxLinger,
         exceptionExpiryCalculator, exceptionMaxLinger);
   }
 
-  protected long fetch(final E e, long _previousNextRefreshTime) {
+  protected long fetch(final Entry e, long _previousNextRefreshTime) {
     if (storage != null) {
       return fetchWithStorage(e, true, _previousNextRefreshTime);
     } else {
@@ -2573,7 +2574,7 @@ public abstract class BaseCache<E extends Entry, K, T>
     }
   }
 
-  protected boolean conditionallyStartProcess(E e) {
+  protected boolean conditionallyStartProcess(Entry e) {
     if (!e.isVirgin()) {
       return false;
     }
@@ -2587,12 +2588,12 @@ public abstract class BaseCache<E extends Entry, K, T>
    * @param _needsFetch true if value needs to be fetched from the cache source.
    *                   This is false, when the we only need to peek for an value already mapped.
    */
-  protected long fetchWithStorage(E e, boolean _needsFetch, long _previousNextRefreshTime) {
+  protected long fetchWithStorage(Entry<K, V> e, boolean _needsFetch, long _previousNextRefreshTime) {
     if (!e.isVirgin()) {
       if (_needsFetch) {
         return fetchFromSource(e, _previousNextRefreshTime);
       }
-      return Entry.LOADED_NON_VALID;
+      return org.cache2k.impl.Entry.LOADED_NON_VALID;
     }
     StorageEntry se = storage.get(e.key);
     if (se == null) {
@@ -2606,22 +2607,22 @@ public abstract class BaseCache<E extends Entry, K, T>
         touchedTime = System.currentTimeMillis();
         loadNonFreshCnt++;
       }
-      return Entry.LOADED_NON_VALID;
+      return org.cache2k.impl.Entry.LOADED_NON_VALID;
     }
     return insertEntryFromStorage(se, e, _needsFetch);
   }
 
-  protected long insertEntryFromStorage(StorageEntry se, E e, boolean _needsFetch) {
+  protected long insertEntryFromStorage(StorageEntry se, Entry<K, V> e, boolean _needsFetch) {
     e.setLastModificationFromStorage(se.getCreatedOrUpdated());
-    T _valueOrException = (T) se.getValueOrException();
+    V _valueOrException = (V) se.getValueOrException();
     long now = System.currentTimeMillis();
-    T v = (T) se.getValueOrException();
+    V v = (V) se.getValueOrException();
     long _nextRefreshTime = maxLinger == 0 ? 0 : Long.MAX_VALUE;
     long _expiryTimeFromStorage = se.getValueExpiryTime();
     boolean _expired = _expiryTimeFromStorage != 0 && _expiryTimeFromStorage <= now;
     if (!_expired && timer != null) {
       _nextRefreshTime = calcNextRefreshTime((K) se.getKey(), v, se.getCreatedOrUpdated(), null);
-      _expired = _nextRefreshTime > Entry.EXPIRY_TIME_MIN && _nextRefreshTime <= now;
+      _expired = _nextRefreshTime > org.cache2k.impl.Entry.EXPIRY_TIME_MIN && _nextRefreshTime <= now;
     }
     boolean _fetchAlways = timer == null && maxLinger == 0;
     if (_expired || _fetchAlways) {
@@ -2634,14 +2635,14 @@ public abstract class BaseCache<E extends Entry, K, T>
           touchedTime = now;
           loadNonFreshCnt++;
         }
-        return Entry.LOADED_NON_VALID;
+        return org.cache2k.impl.Entry.LOADED_NON_VALID;
       }
     }
     return insert(e, _valueOrException, 0, now, INSERT_STAT_UPDATE, _nextRefreshTime);
   }
 
-  protected long fetchFromSource(E e, long _previousNextRefreshValue) {
-    T v;
+  protected long fetchFromSource(Entry<K, V> e, long _previousNextRefreshValue) {
+    V v;
     long t0 = System.currentTimeMillis();
     try {
       if (source == null) {
@@ -2650,20 +2651,20 @@ public abstract class BaseCache<E extends Entry, K, T>
       if (e.isVirgin() || e.hasException()) {
         v = source.get((K) e.key, t0, null, e.getLastModification());
       } else {
-        v = source.get((K) e.key, t0, (T) e.getValue(), e.getLastModification());
+        v = source.get((K) e.key, t0, (V) e.getValue(), e.getLastModification());
       }
       e.setLastModification(t0);
     } catch (Throwable _ouch) {
-      v = (T) new ExceptionWrapper(_ouch);
+      v = (V) new ExceptionWrapper(_ouch);
     }
     long t = System.currentTimeMillis();
     return insertOrUpdateAndCalculateExpiry(e, v, t0, t, INSERT_STAT_UPDATE, _previousNextRefreshValue);
   }
 
-  protected final long insertOnPut(E e, T v, long t0, long t, long _previousNextRefreshValue) {
+  protected final long insertOnPut(Entry<K, V> e, V v, long t0, long t, long _previousNextRefreshValue) {
     if (writer != null) {
       try {
-        CacheEntry<K, T> ce;
+        CacheEntry<K, V> ce;
         ce = returnCacheEntry((K) e.getKey(), v, null, t0);
         writer.write(ce);
       } catch (RuntimeException ex) {
@@ -2681,7 +2682,7 @@ public abstract class BaseCache<E extends Entry, K, T>
   /**
    * Calculate the next refresh time if a timer / expiry is needed and call insert.
    */
-  protected final long insertOrUpdateAndCalculateExpiry(E e, T v, long t0, long t, byte _updateStatistics, long _previousNextRefreshTime) {
+  protected final long insertOrUpdateAndCalculateExpiry(Entry<K, V> e, V v, long t0, long t, byte _updateStatistics, long _previousNextRefreshTime) {
     long _nextRefreshTime = maxLinger == 0 ? 0 : Long.MAX_VALUE;
     if (timer != null) {
       try {
@@ -2697,9 +2698,9 @@ public abstract class BaseCache<E extends Entry, K, T>
   /**
    * @throws Exception any exception from the ExpiryCalculator
    */
-  private long calculateNextRefreshTime(E _entry, T _newValue, long t0, long _previousNextRefreshTime) {
+  private long calculateNextRefreshTime(Entry<K, V> _entry, V _newValue, long t0, long _previousNextRefreshTime) {
     long _nextRefreshTime;
-    if (Entry.isDataValidState(_previousNextRefreshTime) || Entry.isExpiredState(_previousNextRefreshTime)) {
+    if (org.cache2k.impl.Entry.isDataValidState(_previousNextRefreshTime) || org.cache2k.impl.Entry.isExpiredState(_previousNextRefreshTime)) {
       _nextRefreshTime = calcNextRefreshTime((K) _entry.getKey(), _newValue, t0, _entry);
     } else {
       _nextRefreshTime = calcNextRefreshTime((K) _entry.getKey(), _newValue, t0, null);
@@ -2714,13 +2715,13 @@ public abstract class BaseCache<E extends Entry, K, T>
   /**
    * @param _nextRefreshTime -1/MAXVAL: eternal, 0: expires immediately
    */
-  protected final long insert(E e, T _value, long t0, long t, byte _updateStatistics, long _nextRefreshTime) {
+  protected final long insert(Entry<K, V> e, V _value, long t0, long t, byte _updateStatistics, long _nextRefreshTime) {
     final boolean _justLoadedFromStorage = (storage != null) && t0 == 0;
     if (_nextRefreshTime == -1) {
       _nextRefreshTime = Long.MAX_VALUE;
     }
     final boolean _suppressException =
-      _value instanceof ExceptionWrapper && hasSuppressExceptions() && e.getValue() != Entry.INITIAL_VALUE && !e.hasException();
+      _value instanceof ExceptionWrapper && hasSuppressExceptions() && e.getValue() != org.cache2k.impl.Entry.INITIAL_VALUE && !e.hasException();
 
     if (!_suppressException) {
       e.value = _value;
@@ -2752,10 +2753,10 @@ public abstract class BaseCache<E extends Entry, K, T>
         throw _storageException;
       }
       if (_nextRefreshTime == 0) {
-        _nextRefreshTime = Entry.FETCH_NEXT_TIME_STATE;
+        _nextRefreshTime = org.cache2k.impl.Entry.FETCH_NEXT_TIME_STATE;
       } else {
         if (_nextRefreshTime == Long.MAX_VALUE) {
-          _nextRefreshTime = Entry.FETCHED_STATE;
+          _nextRefreshTime = org.cache2k.impl.Entry.FETCHED_STATE;
         }
       }
       if (_updateStatistics == INSERT_STAT_PUT && !e.hasFreshData(t, _nextRefreshTime)) {
@@ -2766,13 +2767,13 @@ public abstract class BaseCache<E extends Entry, K, T>
     return _nextRefreshTime;
   }
 
-  private void updateStatistics(E e, T _value, long t0, long t, byte _updateStatistics, boolean _suppressException) {
+  private void updateStatistics(Entry e, V _value, long t0, long t, byte _updateStatistics, boolean _suppressException) {
     synchronized (lock) {
       updateStatisticsNeedsLock(e, _value, t0, t, _updateStatistics, _suppressException);
     }
   }
 
-  private void updateStatisticsNeedsLock(E e, T _value, long t0, long t, byte _updateStatistics, boolean _suppressException) {
+  private void updateStatisticsNeedsLock(Entry e, V _value, long t0, long t, byte _updateStatistics, boolean _suppressException) {
     boolean _justLoadedFromStorage = storage != null && t0 == 0;
     touchedTime = t;
     if (_updateStatistics == INSERT_STAT_UPDATE) {
@@ -2801,19 +2802,19 @@ public abstract class BaseCache<E extends Entry, K, T>
     } else if (_updateStatistics == INSERT_STAT_PUT) {
       putCnt++;
       eventuallyAdjustPutNewEntryCount(e);
-      if (e.nextRefreshTime == Entry.LOADED_NON_VALID_AND_PUT) {
+      if (e.nextRefreshTime == org.cache2k.impl.Entry.LOADED_NON_VALID_AND_PUT) {
         peekHitNotFreshCnt++;
       }
     }
   }
 
-  private void eventuallyAdjustPutNewEntryCount(E e) {
+  private void eventuallyAdjustPutNewEntryCount(Entry e) {
     if (e.isVirgin()) {
       putNewEntryCnt++;
     }
   }
 
-  private void cleanupAfterWriterException(E e) {
+  private void cleanupAfterWriterException(Entry e) {
     if (e.isVirgin()) {
       synchronized (lock) {
         putNewEntryCnt++;
@@ -2821,19 +2822,19 @@ public abstract class BaseCache<E extends Entry, K, T>
     }
   }
 
-  protected long stopStartTimer(long _nextRefreshTime, E e, long now) {
+  protected long stopStartTimer(long _nextRefreshTime, Entry e, long now) {
     if (e.task != null) {
       e.task.cancel();
     }
-    if ((_nextRefreshTime > Entry.EXPIRY_TIME_MIN && _nextRefreshTime <= now) &&
+    if ((_nextRefreshTime > org.cache2k.impl.Entry.EXPIRY_TIME_MIN && _nextRefreshTime <= now) &&
         (_nextRefreshTime < -1 && (now >= -_nextRefreshTime))) {
-      return Entry.EXPIRED_STATE;
+      return org.cache2k.impl.Entry.EXPIRED_STATE;
     }
-    if (hasSharpTimeout() && _nextRefreshTime > Entry.EXPIRY_TIME_MIN && _nextRefreshTime != Long.MAX_VALUE) {
+    if (hasSharpTimeout() && _nextRefreshTime > org.cache2k.impl.Entry.EXPIRY_TIME_MIN && _nextRefreshTime != Long.MAX_VALUE) {
       _nextRefreshTime = -_nextRefreshTime;
     }
     if (timer != null &&
-      (_nextRefreshTime > Entry.EXPIRY_TIME_MIN || _nextRefreshTime < -1)) {
+      (_nextRefreshTime > org.cache2k.impl.Entry.EXPIRY_TIME_MIN || _nextRefreshTime < -1)) {
       if (_nextRefreshTime < -1) {
         long _timerTime =
           -_nextRefreshTime - TUNABLE.sharpExpirySafetyGapMillis;
@@ -2858,7 +2859,7 @@ public abstract class BaseCache<E extends Entry, K, T>
   /**
    * When the time has come remove the entry from the cache.
    */
-  protected void timerEvent(final E e, long _executionTime) {
+  protected void timerEvent(final Entry e, long _executionTime) {
     /* checked below, if we do not go through a synchronized clause, we may see old data
     if (e.isRemovedFromReplacementList()) {
       return;
@@ -2929,7 +2930,7 @@ public abstract class BaseCache<E extends Entry, K, T>
     }
     synchronized (e) {
       long nrt = e.nextRefreshTime;
-      if (nrt < Entry.EXPIRY_TIME_MIN) {
+      if (nrt < org.cache2k.impl.Entry.EXPIRY_TIME_MIN) {
         return;
       }
       long t = System.currentTimeMillis();
@@ -2943,13 +2944,13 @@ public abstract class BaseCache<E extends Entry, K, T>
     }
   }
 
-  protected void expireEntry(E e) {
+  protected void expireEntry(Entry e) {
     synchronized (e) {
       if (e.isRemovedState() || e.isExpiredState()) {
         return;
       }
       if (e.isFetchInProgress()) {
-        e.nextRefreshTime = Entry.FETCH_IN_PROGRESS_NON_VALID;
+        e.nextRefreshTime = org.cache2k.impl.Entry.FETCH_IN_PROGRESS_NON_VALID;
         return;
       }
       e.setExpiredState();
@@ -2970,7 +2971,7 @@ public abstract class BaseCache<E extends Entry, K, T>
    * Returns all cache entries within the heap cache. Entries that
    * are expired or contain no valid data are not filtered out.
    */
-  final protected ClosableConcurrentHashEntryIterator<Entry> iterateAllHeapEntries() {
+  final protected ClosableConcurrentHashEntryIterator<org.cache2k.impl.Entry> iterateAllHeapEntries() {
     return
       new ClosableConcurrentHashEntryIterator(
         mainHashCtrl, mainHash, refreshHashCtrl, refreshHash);
@@ -2982,7 +2983,7 @@ public abstract class BaseCache<E extends Entry, K, T>
 
 
   /** JSR107 convenience getAll from array */
-  public Map<K, T> getAll(K[] _keys) {
+  public Map<K, V> getAll(K[] _keys) {
     return getAll(new HashSet<K>(Arrays.asList(_keys)));
   }
 
@@ -2992,19 +2993,19 @@ public abstract class BaseCache<E extends Entry, K, T>
    * is to be thrown when most specific. So exceptions are only thrown, when the value
    * which has produced an exception is requested from the map.
    */
-  public Map<K, T> getAll(final Set<? extends K> _inputKeys) {
+  public Map<K, V> getAll(final Set<? extends K> _inputKeys) {
     final Set<K> _keys = new HashSet<K>();
     for (K k : _inputKeys) {
-      E e = getEntryInternal(k);
+      Entry e = getEntryInternal(k);
       if (e != null) {
         _keys.add(k);
       }
     }
-    final Set<Map.Entry<K, T>> set =
-      new AbstractSet<Map.Entry<K, T>>() {
+    final Set<Map.Entry<K, V>> set =
+      new AbstractSet<Map.Entry<K, V>>() {
         @Override
-        public Iterator<Map.Entry<K, T>> iterator() {
-          return new Iterator<Map.Entry<K, T>>() {
+        public Iterator<Map.Entry<K, V>> iterator() {
+          return new Iterator<Map.Entry<K, V>>() {
             Iterator<? extends K> keyIterator = _keys.iterator();
             @Override
             public boolean hasNext() {
@@ -3012,21 +3013,21 @@ public abstract class BaseCache<E extends Entry, K, T>
             }
 
             @Override
-            public Map.Entry<K, T> next() {
+            public Map.Entry<K, V> next() {
               final K key = keyIterator.next();
-              return new Map.Entry<K, T>(){
+              return new Map.Entry<K, V>(){
                 @Override
                 public K getKey() {
                   return key;
                 }
 
                 @Override
-                public T getValue() {
+                public V getValue() {
                   return get(key);
                 }
 
                 @Override
-                public T setValue(T value) {
+                public V setValue(V value) {
                   throw new UnsupportedOperationException();
                 }
               };
@@ -3043,9 +3044,9 @@ public abstract class BaseCache<E extends Entry, K, T>
           return _keys.size();
         }
       };
-    return new AbstractMap<K, T>() {
+    return new AbstractMap<K, V>() {
       @Override
-      public T get(Object key) {
+      public V get(Object key) {
         if (containsKey(key)) {
           return BaseCache.this.get((K) key);
         }
@@ -3058,16 +3059,16 @@ public abstract class BaseCache<E extends Entry, K, T>
       }
 
       @Override
-      public Set<Entry<K, T>> entrySet() {
+      public Set<Entry<K, V>> entrySet() {
         return set;
       }
     };
   }
 
-  public Map<K, T> peekAll(final Set<? extends K> _inputKeys) {
-    Map<K, T> map = new HashMap<K, T>();
+  public Map<K, V> peekAll(final Set<? extends K> _inputKeys) {
+    Map<K, V> map = new HashMap<K, V>();
     for (K k : _inputKeys) {
-      CacheEntry<K, T> e = peekEntry(k);
+      CacheEntry<K, V> e = peekEntry(k);
       if (e != null) {
         map.put(k, e.getValue());
       }
@@ -3079,13 +3080,13 @@ public abstract class BaseCache<E extends Entry, K, T>
    * Retrieve
    */
   @SuppressWarnings("unused")
-  public void getBulk(K[] _keys, T[] _result, BitSet _fetched, int s, int e) {
+  public void getBulk(K[] _keys, V[] _result, BitSet _fetched, int s, int e) {
     sequentialGetFallBack(_keys, _result, _fetched, s, e);
   }
 
 
 
-  final void sequentialGetFallBack(K[] _keys, T[] _result, BitSet _fetched, int s, int e) {
+  final void sequentialGetFallBack(K[] _keys, V[] _result, BitSet _fetched, int s, int e) {
     for (int i = s; i < e; i++) {
       if (!_fetched.get(i)) {
         try {
@@ -3096,11 +3097,11 @@ public abstract class BaseCache<E extends Entry, K, T>
     }
   }
 
-  public void putAll(Map<? extends K, ? extends T> valueMap) {
+  public void putAll(Map<? extends K, ? extends V> valueMap) {
     if (valueMap.containsKey(null)) {
       throw new NullPointerException("map contains null key");
     }
-    for (Map.Entry<? extends K, ? extends T> e : valueMap.entrySet()) {
+    for (Map.Entry<? extends K, ? extends V> e : valueMap.entrySet()) {
       put(e.getKey(), e.getValue());
     }
   }
@@ -3114,10 +3115,10 @@ public abstract class BaseCache<E extends Entry, K, T>
     }
   }
 
-  int startOperationForExistingEntriesNoWait(K[] _keys, int[] _hashCodes, E[] _entries, long[] _pNrt) {
+  int startOperationForExistingEntriesNoWait(K[] _keys, int[] _hashCodes, Entry[] _entries, long[] _pNrt) {
     int cnt = 0;
     for (int i = _keys.length - 1; i >= 0; i--) {
-      E e = _entries[i];
+      Entry e = _entries[i];
       if (e != null) { continue; }
       K key = _keys[i];
       e = lookupEntryUnsynchronized(key, _hashCodes[i]);
@@ -3133,10 +3134,10 @@ public abstract class BaseCache<E extends Entry, K, T>
     return cnt;
   }
 
-  int startOperationNewEntries(K[] _keys, int[] _hashCodes, E[] _entries, long[] _pNrt) {
+  int startOperationNewEntries(K[] _keys, int[] _hashCodes, Entry[] _entries, long[] _pNrt) {
     int cnt = 0;
     for (int i = _keys.length - 1; i >= 0; i--) {
-      E e = _entries[i];
+      Entry e = _entries[i];
       if (e != null) { continue; }
       K key = _keys[i];
       e = lookupOrNewEntrySynchronized(key, _hashCodes[i]);
@@ -3151,10 +3152,10 @@ public abstract class BaseCache<E extends Entry, K, T>
     return cnt;
   }
 
-  int startOperationNewEntriesAndWait(K[] _keys, int[] _hashCodes, E[] _entries, long[] _pNrt) {
+  int startOperationNewEntriesAndWait(K[] _keys, int[] _hashCodes, Entry[] _entries, long[] _pNrt) {
     int cnt = 0;
     for (int i = _keys.length - 1; i >= 0; i--) {
-      E e = _entries[i];
+      Entry e = _entries[i];
       if (e != null) { continue; }
       K key = _keys[i];
       e = lookupOrNewEntrySynchronized(key, _hashCodes[i]);
@@ -3170,7 +3171,7 @@ public abstract class BaseCache<E extends Entry, K, T>
     return cnt;
   }
 
-  void startBulkOperation(K[] _keys, int[] _hashCodes, E[] _entries, long[] _pNrt) {
+  void startBulkOperation(K[] _keys, int[] _hashCodes, Entry[] _entries, long[] _pNrt) {
     calcHashCodes(_keys, _hashCodes);
     int cnt = 0;
     cnt = startOperationForExistingEntriesNoWait(_keys, _hashCodes, _entries, _pNrt);
@@ -3191,17 +3192,17 @@ public abstract class BaseCache<E extends Entry, K, T>
     }
   }
 
-  void initializeEntries(BulkOperation op, long now, K[] _keys, E[] _entries, long[] _pNrt, EntryForProcessor<K, T>[] _pEntries) {
+  void initializeEntries(BulkOperation op, long now, K[] _keys, Entry[] _entries, long[] _pNrt, EntryForProcessor<K, V>[] _pEntries) {
     for (int i = _keys.length - 1; i >= 0; i--) {
-      E e = _entries[i];
-      EntryForProcessor<K, T> ep;
-      _pEntries[i] = ep = new EntryForProcessor<K, T>();
+      Entry e = _entries[i];
+      EntryForProcessor<K, V> ep;
+      _pEntries[i] = ep = new EntryForProcessor<K, V>();
       ep.index = i;
       ep.lastModification = e.getLastModification();
       ep.key = _keys[i];
       ep.operation = op;
       if (e.hasFreshData(now, _pNrt[i])) {
-        ep.value = (T) e.getValueOrException();
+        ep.value = (V) e.getValueOrException();
       } else {
         ep.removed = ep.notExistingInCacheYet = true;
         if (storage != null || source != null) {
@@ -3212,21 +3213,21 @@ public abstract class BaseCache<E extends Entry, K, T>
   }
 
   @Override
-  public <R> R invoke(K key, CacheEntryProcessor<K, T, R> entryProcessor, Object... _args) {
+  public <R> R invoke(K key, CacheEntryProcessor<K, V, R> entryProcessor, Object... _args) {
     Map<K, EntryProcessingResult<R>> m = invokeAll(Collections.singleton(key), entryProcessor, _args);
     return m.size() > 0 ? m.values().iterator().next().getResult() : null;
   }
 
   @Override
-  public <R> Map<K, EntryProcessingResult<R>> invokeAll(Set<? extends K> _inputKeys, CacheEntryProcessor<K ,T, R> p, Object... _args) {
+  public <R> Map<K, EntryProcessingResult<R>> invokeAll(Set<? extends K> _inputKeys, CacheEntryProcessor<K , V, R> p, Object... _args) {
     checkClosed();
     K[] _keys = _inputKeys.toArray((K[]) Array.newInstance(keyType, 0));
     int[] _hashCodes = new int[_keys.length];
-    E[] _entries = (E[]) Array.newInstance(newEntry().getClass(), _keys.length);
+    Entry[] _entries = (Entry[]) Array.newInstance(newEntry().getClass(), _keys.length);
     long[] _pNrt = new long[_keys.length];
     long t0 = System.currentTimeMillis();
     startBulkOperation(_keys, _hashCodes, _entries, _pNrt);
-    EntryForProcessor<K, T>[] _pEntries = new EntryForProcessor[_keys.length];
+    EntryForProcessor<K, V>[] _pEntries = new EntryForProcessor[_keys.length];
     BulkOperation op = new BulkOperation(_entries, _pNrt);
     initializeEntries(op, t0, _keys, _entries, _pNrt, _pEntries);
 
@@ -3252,7 +3253,7 @@ public abstract class BaseCache<E extends Entry, K, T>
       try {
         for (int i = _keys.length - 1; i >= 0; i--) {
           if (_pEntries[i].updated && !_pEntries[i].removed) {
-            _newExpiry[i] = calculateNextRefreshTime(_entries[i], (T) _pEntries[i].value, t0, _pNrt[i]);
+            _newExpiry[i] = calculateNextRefreshTime(_entries[i], (V) _pEntries[i].value, t0, _pNrt[i]);
           }
         }
       } catch (Exception ex) {
@@ -3275,7 +3276,7 @@ public abstract class BaseCache<E extends Entry, K, T>
             }
             */
           } else {
-            CacheEntry<K, T> ce = returnCacheEntry(_keys[i], _pEntries[i].getValue(), _pEntries[i].getException(), _pEntries[i].getLastModification());
+            CacheEntry<K, V> ce = returnCacheEntry(_keys[i], _pEntries[i].getValue(), _pEntries[i].getException(), _pEntries[i].getLastModification());
             writer.write(ce);
           }
         }
@@ -3287,23 +3288,23 @@ public abstract class BaseCache<E extends Entry, K, T>
 
     if (_gotException) {
       for (int i = _keys.length - 1; i >= 0; i--) {
-        if (_pNrt[i] == Entry.VIRGIN_STATE) {
+        if (_pNrt[i] == org.cache2k.impl.Entry.VIRGIN_STATE) {
           synchronized (lock) {
             atomicOpNewEntryCnt++;
           }
-          _pNrt[i] = Entry.ATOMIC_OP_NON_VALID;
+          _pNrt[i] = org.cache2k.impl.Entry.ATOMIC_OP_NON_VALID;
         }
         finishFetch(_entries[i], _pNrt[i]);
       }
     } else {
       for (int i = _keys.length - 1; i >= 0; i--) {
-        E e = _entries[i];
+        Entry e = _entries[i];
         if (!_pEntries[i].updated) {
-          if (_pNrt[i] == Entry.VIRGIN_STATE) {
+          if (_pNrt[i] == org.cache2k.impl.Entry.VIRGIN_STATE) {
             synchronized (lock) {
               atomicOpNewEntryCnt++;
             }
-            _pNrt[i] = Entry.ATOMIC_OP_NON_VALID;
+            _pNrt[i] = org.cache2k.impl.Entry.ATOMIC_OP_NON_VALID;
           }
           finishFetch(e, _pNrt[i]);
           continue;
@@ -3311,7 +3312,7 @@ public abstract class BaseCache<E extends Entry, K, T>
         if (_pEntries[i].removed) {
           if (e.hasFreshData(System.currentTimeMillis(), _pNrt[i])) {
             synchronized (e) {
-              finishFetch(e, Entry.LOADED_NON_VALID);
+              finishFetch(e, org.cache2k.impl.Entry.LOADED_NON_VALID);
               synchronized (lock) {
                 removeEntry(e);
                 removedCnt++;
@@ -3333,7 +3334,7 @@ public abstract class BaseCache<E extends Entry, K, T>
           _expiry = _newExpiry[i];
         }
         e.setLastModification(_pEntries[i].getLastModification());
-        finishFetch(e, insert(e, (T) _pEntries[i].value, t0, t, INSERT_STAT_PUT, _expiry));
+        finishFetch(e, insert(e, (V) _pEntries[i].value, t0, t, INSERT_STAT_PUT, _expiry));
       }
     }
 
@@ -3345,17 +3346,17 @@ public abstract class BaseCache<E extends Entry, K, T>
   }
 
   class BulkOperation {
-    E[] entries;
+    Entry[] entries;
     long[] pNrt;
 
-    public BulkOperation(E[] entries, long[] pNrt) {
+    public BulkOperation(Entry[] entries, long[] pNrt) {
       this.entries = entries;
       this.pNrt = pNrt;
     }
 
-    void loadOrFetch(EntryForProcessor<K, T> ep) {
+    void loadOrFetch(EntryForProcessor<K, V> ep) {
       int idx = ep.index;
-      E e = entries[idx];
+      Entry e = entries[idx];
       if (storage != null) {
         pNrt[idx] = fetchWithStorage(e, ep.removed, pNrt[idx]);
       } else {
@@ -3366,7 +3367,7 @@ public abstract class BaseCache<E extends Entry, K, T>
       }
       ep.needsLoadOrFetch = false;
       if (e.hasFreshData(System.currentTimeMillis(), pNrt[idx])) {
-        ep.value = (T) e.getValue();
+        ep.value = (V) e.getValue();
         ep.lastModification = e.getLastModification();
       } else {
         ep.removed = true;
@@ -3504,7 +3505,7 @@ public abstract class BaseCache<E extends Entry, K, T>
   public <X> X requestInterface(Class<X> _type) {
     if (_type.equals(ConcurrentMap.class) ||
         _type.equals(Map.class)) {
-      return (X) new ConcurrentMapWrapper<K, T>(this);
+      return (X) new ConcurrentMapWrapper<K, V>(this);
     }
     return null;
   }
@@ -3543,7 +3544,7 @@ public abstract class BaseCache<E extends Entry, K, T>
   }
 
   protected class MyTimerTask extends java.util.TimerTask {
-    E entry;
+    Entry entry;
 
     public void run() {
       timerEvent(entry, scheduledExecutionTime());

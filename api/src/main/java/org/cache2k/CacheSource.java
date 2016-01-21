@@ -29,8 +29,8 @@ package org.cache2k;
  * @author Jens Wilke
  * @see CacheSourceWithMetaInfo alternative cache source with more information
  */
-public interface CacheSource<K, T> {
+public interface CacheSource<K, V> {
 
-  public T get(K o) throws Throwable;
+  public V get(K o) throws Throwable;
 
 }

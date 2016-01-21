@@ -25,7 +25,7 @@ package org.cache2k.impl;
 /**
  * Specialization for 64 bit systems.
  */
-public final class ClockProPlus64Cache<K, T>  extends ClockProPlusCache<K, T> {
+public final class ClockProPlus64Cache<K, V>  extends ClockProPlusCache<K, V> {
 
   /**
    * Just increment the hit counter on 64 bit systems. Writing a 64 bit value is atomic on 64 bit systems

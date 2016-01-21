@@ -41,7 +41,7 @@ package org.cache2k.impl;
  * @author Jens Wilke
  */
 @SuppressWarnings("unchecked")
-public class ArcCache<K, T> extends BaseCache<ArcCache.Entry, K, T> {
+public class ArcCache<K, V> extends BaseCache<K, V> {
 
   int arcP = 0;
 
@@ -56,10 +56,10 @@ public class ArcCache<K, T> extends BaseCache<ArcCache.Entry, K, T> {
   long t1Hit;
 
   int t1Size = 0;
-  Entry<K,T> t2Head;
-  Entry<K,T> t1Head;
-  Entry<K,T> b1Head;
-  Entry<K,T> b2Head;
+  Entry<K, V> t2Head;
+  Entry<K, V> t1Head;
+  Entry<K, V> b1Head;
+  Entry<K, V> b2Head;
 
   boolean b2HitPreferenceForEviction;
 
@@ -69,7 +69,8 @@ public class ArcCache<K, T> extends BaseCache<ArcCache.Entry, K, T> {
   }
 
   @Override
-  protected void recordHit(Entry e) {
+  protected void recordHit(Entry e0) {
+    ArcEntry e = (ArcEntry) e0;
     moveToFront(t2Head, e);
     if (e.withinT2) {
       t2Hit++;
@@ -81,7 +82,8 @@ public class ArcCache<K, T> extends BaseCache<ArcCache.Entry, K, T> {
   }
 
   @Override
-  protected void insertIntoReplacementList(Entry e) {
+  protected void insertIntoReplacementList(Entry e0) {
+    ArcEntry e = (ArcEntry) e0;
     insertInList(t1Head, e);
     t1Size++;
   }
@@ -89,8 +91,8 @@ public class ArcCache<K, T> extends BaseCache<ArcCache.Entry, K, T> {
   /** Emtpy, done by replace / checkForGhost. */
 
   @Override
-  protected Entry<K, T> newEntry() {
-    return new Entry<K, T>();
+  protected Entry<K, V> newEntry() {
+    return new ArcEntry<K, V>();
   }
 
   @Override
@@ -114,7 +116,8 @@ public class ArcCache<K, T> extends BaseCache<ArcCache.Entry, K, T> {
   }
 
   @Override
-  protected void removeEntryFromReplacementList(Entry e) {
+  protected void removeEntryFromReplacementList(Entry e0) {
+    ArcEntry e = (ArcEntry) e0;
     if (!e.withinT2) {
       t1Size--;
     }
@@ -138,7 +141,8 @@ public class ArcCache<K, T> extends BaseCache<ArcCache.Entry, K, T> {
     b2HitPreferenceForEviction = true;
   }
 
-  private void insertT2(Entry<K, T> e) {
+  private void insertT2(Entry<K, V> e0) {
+    ArcEntry e = (ArcEntry) e0;
     e.withinT2 = true;
     insertInList(t2Head, e);
   }
@@ -148,7 +152,7 @@ public class ArcCache<K, T> extends BaseCache<ArcCache.Entry, K, T> {
   }
 
   Entry cloneGhost(Entry e) {
-    Entry e2 = new Entry();
+    Entry e2 = new ArcEntry();
     e2.hashCode = e.hashCode;
     e2.key = e.key;
     return e2;
@@ -209,16 +213,16 @@ public class ArcCache<K, T> extends BaseCache<ArcCache.Entry, K, T> {
     return replace((t1Size >= arcP && t1Size > 0) || getT2Size() == 0);
   }
 
-  private Entry<K,T> replace(boolean _fromT1) {
-    Entry<K,T> e;
+  private Entry<K, V> replace(boolean _fromT1) {
+    Entry<K, V> e;
     if (_fromT1) {
       e = t1Head.prev;
-      Entry<K,T> e2 = cloneGhost(e);
+      Entry<K, V> e2 = cloneGhost(e);
       insertInList(b1Head, e2);
       b1Hash = b1HashCtrl.insert(b1Hash, e2);
     } else {
       e = t2Head.prev;
-      Entry<K,T> e2 = cloneGhost(e);
+      Entry<K, V> e2 = cloneGhost(e);
       insertInList(b2Head, e2);
       b2Hash = b2HashCtrl.insert(b2Hash, e2);
     }
@@ -233,10 +237,10 @@ public class ArcCache<K, T> extends BaseCache<ArcCache.Entry, K, T> {
     b2HashCtrl = new Hash<Entry>();
     b1Hash = b1HashCtrl.init(Entry.class);
     b2Hash = b2HashCtrl.init(Entry.class);
-    t1Head = new Entry<K,T>().shortCircuit();
-    t2Head = new Entry<K,T>().shortCircuit();
-    b1Head = new Entry<K,T>().shortCircuit();
-    b2Head = new Entry<K,T>().shortCircuit();
+    t1Head = new Entry<K, V>().shortCircuit();
+    t2Head = new Entry<K, V>().shortCircuit();
+    b1Head = new Entry<K, V>().shortCircuit();
+    b2Head = new Entry<K, V>().shortCircuit();
   }
 
   final int getListEntryCount() {
@@ -267,7 +271,7 @@ public class ArcCache<K, T> extends BaseCache<ArcCache.Entry, K, T> {
   }
 
   /** An entry in the hash table */
-  protected static class Entry<K,T> extends org.cache2k.impl.Entry<Entry<K,T>, K, T> {
+  protected static class ArcEntry<K,T> extends Entry<K, T> {
 
     boolean withinT2;
 
