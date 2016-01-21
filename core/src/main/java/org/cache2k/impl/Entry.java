@@ -36,26 +36,6 @@ import org.cache2k.storage.StorageEntry;
 public class Entry<E extends Entry, K, T>
   implements CacheEntry<K,T>, StorageEntry {
 
-  enum ProcessingState {
-    NONE,
-    LOAD,
-    FETCH,
-    WRITE,
-    STORE,
-    CALL,
-    DONE
-  }
-
-  static final ProcessingState[] PROCESSING_STATES = new ProcessingState[]{
-    ProcessingState.NONE,
-    ProcessingState.LOAD,
-    ProcessingState.FETCH,
-    ProcessingState.WRITE,
-    ProcessingState.STORE,
-    ProcessingState.CALL,
-    ProcessingState.DONE
-  };
-
   static final int FETCHED_STATE = 16;
   static final int REFRESH_STATE = FETCHED_STATE + 1;
   static final int REPUT_STATE = FETCHED_STATE + 3;
@@ -144,14 +124,14 @@ public class Entry<E extends Entry, K, T>
   /** Lru list: pointer to previous element or list head */
   public E prev;
 
-  static final int MODIFICATION_TIME_BITS = 44;
-  static final long MODIFICATION_TIME_BASE = 0;
-  static final int MODIFICATION_TIME_SHIFT = 1;
+  private static final int MODIFICATION_TIME_BITS = 44;
+  private static final long MODIFICATION_TIME_BASE = 0;
+  private static final int MODIFICATION_TIME_SHIFT = 1;
   /** including dirty */
-  static final long MODIFICATION_TIME_MASK = (1L << MODIFICATION_TIME_BITS) - 1;
+  private static final long MODIFICATION_TIME_MASK = (1L << MODIFICATION_TIME_BITS) - 1;
 
-  static final int DIRTY = 0;
-  static final int CLEAN = 1;
+  private static final int DIRTY = 0;
+  private static final int CLEAN = 1;
 
   /**
    * Set modification time and marks entry. We use {@value MODIFICATION_TIME_BITS} bit to store
@@ -193,46 +173,37 @@ public class Entry<E extends Entry, K, T>
     return (fetchedTime & MODIFICATION_TIME_MASK) >> MODIFICATION_TIME_SHIFT;
   }
 
-  /** Reset next as a marker for {@link #isRemovedFromReplacementList()} */
-  public final void removedFromList() {
-    next = null;
+  enum ProcessingState {
+    DONE,
+    LOAD,
+    FETCH,
+    WRITE,
+    STORE,
+    NOTIFY,
+    PINNED,
+    LAST
   }
 
-  /** Check that this entry is removed from the list, may be used in assertions. */
-  public boolean isRemovedFromReplacementList() {
-    return isStale () || next == null;
+  static final ProcessingState[] PROCESSING_STATES = new ProcessingState[]{
+    ProcessingState.DONE,
+    ProcessingState.LOAD,
+    ProcessingState.FETCH,
+    ProcessingState.WRITE,
+    ProcessingState.STORE,
+    ProcessingState.NOTIFY,
+    ProcessingState.PINNED,
+    ProcessingState.LAST
+  };
+
+  private static final int PS_MASK = 0x0f;
+  private static final int PS_POS = MODIFICATION_TIME_BITS;
+
+  public ProcessingState getProcessingState() {
+    return ProcessingState.values()[(int) ((fetchedTime >> PS_POS) & PS_MASK)];
   }
 
-  public E shortCircuit() {
-    return next = prev = (E) this;
-  }
-
-  public final boolean isVirgin() {
-    return
-      nextRefreshTime == VIRGIN_STATE ||
-      nextRefreshTime == FETCH_IN_PROGRESS_VIRGIN;
-  }
-
-  public final boolean isFetchNextTimeState() {
-    return nextRefreshTime == FETCH_NEXT_TIME_STATE;
-  }
-
-  /**
-   * The entry value was fetched and is valid, which means it can be
-   * returned by the cache. If a valid entry gets removed from the
-   * cache the data is still valid. This is because a concurrent get needs to
-   * return the data. There is also the chance that an entry is removed by eviction,
-   * or is never inserted to the cache, before the get returns it.
-   *
-   * <p/>Even if this is true, the data may be expired. Use hasFreshData() to
-   * make sure to get not expired data.
-   */
-  public final boolean isDataValidState() {
-    return isDataValidState(nextRefreshTime);
-  }
-
-  public static boolean isDataValidState(long _nextRefreshTime) {
-    return _nextRefreshTime >= FETCHED_STATE || _nextRefreshTime < 0;
+  private void setProcessingState(ProcessingState ps) {
+    fetchedTime = fetchedTime & ~PS_MASK | (ps.ordinal() << PS_POS);
   }
 
   /**
@@ -296,11 +267,11 @@ public class Entry<E extends Entry, K, T>
   public boolean isFetchInProgress() {
     return
       nextRefreshTime == REFRESH_STATE ||
-      nextRefreshTime == LOADED_NON_VALID_AND_FETCH ||
-      nextRefreshTime == FETCH_IN_PROGRESS_VIRGIN ||
-      nextRefreshTime == LOADED_NON_VALID_AND_PUT ||
-      nextRefreshTime == FETCH_IN_PROGRESS_NON_VALID ||
-      nextRefreshTime == FETCH_IN_PROGRESS_VALID;
+        nextRefreshTime == LOADED_NON_VALID_AND_FETCH ||
+        nextRefreshTime == FETCH_IN_PROGRESS_VIRGIN ||
+        nextRefreshTime == LOADED_NON_VALID_AND_PUT ||
+        nextRefreshTime == FETCH_IN_PROGRESS_NON_VALID ||
+        nextRefreshTime == FETCH_IN_PROGRESS_VALID;
   }
 
   public void waitForFetch() {
@@ -313,6 +284,48 @@ public class Entry<E extends Entry, K, T>
       } catch (InterruptedException ignore) {
       }
     } while (isFetchInProgress());
+  }
+
+  /** Reset next as a marker for {@link #isRemovedFromReplacementList()} */
+  public final void removedFromList() {
+    next = null;
+  }
+
+  /** Check that this entry is removed from the list, may be used in assertions. */
+  public boolean isRemovedFromReplacementList() {
+    return isStale () || next == null;
+  }
+
+  public E shortCircuit() {
+    return next = prev = (E) this;
+  }
+
+  public final boolean isVirgin() {
+    return
+      nextRefreshTime == VIRGIN_STATE ||
+      nextRefreshTime == FETCH_IN_PROGRESS_VIRGIN;
+  }
+
+  public final boolean isFetchNextTimeState() {
+    return nextRefreshTime == FETCH_NEXT_TIME_STATE;
+  }
+
+  /**
+   * The entry value was fetched and is valid, which means it can be
+   * returned by the cache. If a valid entry gets removed from the
+   * cache the data is still valid. This is because a concurrent get needs to
+   * return the data. There is also the chance that an entry is removed by eviction,
+   * or is never inserted to the cache, before the get returns it.
+   *
+   * <p/>Even if this is true, the data may be expired. Use hasFreshData() to
+   * make sure to get not expired data.
+   */
+  public final boolean isDataValidState() {
+    return isDataValidState(nextRefreshTime);
+  }
+
+  public static boolean isDataValidState(long _nextRefreshTime) {
+    return _nextRefreshTime >= FETCHED_STATE || _nextRefreshTime < 0;
   }
 
   /**
