@@ -69,7 +69,6 @@ public class ClockProPlusCache<K, T> extends LockFreeCache<Entry, K, T> {
   Entry handGhost;
   Hash<Entry> ghostHashCtrl;
   Entry[] ghostHash;
-  long ghostInsertCnt = 0;
 
   private long sumUpListHits(Entry e) {
     if (e == null) { return 0; }
@@ -162,7 +161,6 @@ public class ClockProPlusCache<K, T> extends LockFreeCache<Entry, K, T> {
     Entry<Entry, K,T> e2 = new Entry<Entry, K, T>();
     e2.key = (K) e.key;
     e2.hashCode = e.hashCode;
-    e2.fetchedTime = ghostInsertCnt++;
     ghostHash = ghostHashCtrl.insert(ghostHash, e2);
     handGhost = insertIntoTailCyclicList(handGhost, e2);
     if (ghostHashCtrl.size > ghostMax) {
