@@ -18,7 +18,7 @@ If something is listed here it might affect an existing application and updating
   * Enabled background refresh and entry expiry calculator: In case the calculator returned the current time or a past time, the 
     entry was not marked as expired.
   * Fix possible race condition in cache manager when adding and closing caches and requesting an iteration of the existing caches
-  * Retrieving existing entries via peek() might return null if a concurrent put() happens
+  * Fix: retrieving existing entries via peek() might return null when a concurrent put() happens
 
 ## New and Noteworthy
 
