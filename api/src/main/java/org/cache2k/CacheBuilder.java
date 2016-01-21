@@ -258,12 +258,21 @@ public abstract class CacheBuilder<K,T>
   }
 
   /**
-   * Set the time duration after an entry expires. To switch off time
-   * based expiry use {@link #eternal(boolean)}. A value of 0 effectively
-   * disables the cache.
+   * Set the time duration after that an inserted or updated cache entry expires.
+   * To switch off time based expiry use {@link #eternal(boolean)}.
    *
-   * <p/>If an {@link org.cache2k.EntryExpiryCalculator} is set, this setting
+   * <p>If an {@link org.cache2k.EntryExpiryCalculator} is set, this setting
    * controls the maximum possible expiry duration.
+   *
+   * <p>A value of 0 means every entry should expire immediately. In case of
+   * a cache source present, a cache in this setting can be used to block out
+   * concurrent requests for the same key.
+   *
+   * <p>For an expiry duration of 0 or within low millis, in a special corner case,
+   * especially when a source call executes below an OS time slice, more values from
+   * the cache source could be produced, then actually returned by the cache. This
+   * is within the consistency guarantees of a cache, however, it may be important
+   * to interpret concurrency testing results.
    */
   public CacheBuilder<K, T> expiryDuration(long v, TimeUnit u) {
     config.setExpiryMillis(u.toMillis(v));
