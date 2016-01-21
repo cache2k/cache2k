@@ -23,7 +23,6 @@ package org.cache2k.impl;
  */
 
 import org.cache2k.CacheEntry;
-import org.cache2k.MutableCacheEntry;
 import org.cache2k.storage.StorageEntry;
 
 /**
@@ -36,6 +35,26 @@ import org.cache2k.storage.StorageEntry;
 @SuppressWarnings("unchecked")
 public class Entry<E extends Entry, K, T>
   implements CacheEntry<K,T>, StorageEntry {
+
+  enum ProcessingState {
+    NONE,
+    LOAD,
+    FETCH,
+    WRITE,
+    STORE,
+    CALL,
+    DONE
+  }
+
+  static final ProcessingState[] PROCESSING_STATES = new ProcessingState[]{
+    ProcessingState.NONE,
+    ProcessingState.LOAD,
+    ProcessingState.FETCH,
+    ProcessingState.WRITE,
+    ProcessingState.STORE,
+    ProcessingState.CALL,
+    ProcessingState.DONE
+  };
 
   static final int FETCHED_STATE = 16;
   static final int REFRESH_STATE = FETCHED_STATE + 1;
@@ -89,7 +108,7 @@ public class Entry<E extends Entry, K, T>
    * The time is the time in millis times 2. A set bit 1 means the entry is fetched from
    * the storage and not modified since then.
    */
-  public long fetchedTime;
+  private long fetchedTime;
 
   /**
    * Contains the next time a refresh has to occur, or if no background refresh is configured, when the entry
@@ -125,23 +144,53 @@ public class Entry<E extends Entry, K, T>
   /** Lru list: pointer to previous element or list head */
   public E prev;
 
+  static final int MODIFICATION_TIME_BITS = 44;
+  static final long MODIFICATION_TIME_BASE = 0;
+  static final int MODIFICATION_TIME_SHIFT = 1;
+  /** including dirty */
+  static final long MODIFICATION_TIME_MASK = (1L << MODIFICATION_TIME_BITS) - 1;
+
+  static final int DIRTY = 0;
+  static final int CLEAN = 1;
+
+  /**
+   * Set modification time and marks entry. We use {@value MODIFICATION_TIME_BITS} bit to store
+   * the time, including 1 bit for the dirty state. Since everything is stored in a long field,
+   * we have bits left that we can use for other purposes.
+   *
+   * @param _clean 1 means not modified
+   */
+  void setLastModification(long t, int _clean) {
+    fetchedTime =
+      fetchedTime & ~MODIFICATION_TIME_MASK |
+        ((((t - MODIFICATION_TIME_BASE) << MODIFICATION_TIME_SHIFT) + _clean) & MODIFICATION_TIME_MASK);
+  }
+
+  /**
+   * Set modification time and marks entry as dirty.
+   */
   public void setLastModification(long t) {
-    fetchedTime = t << 1;
+    setLastModification(t, DIRTY);
   }
 
   /**
    * Memory entry needs to be send to the storage.
    */
   public boolean isDirty() {
-    return (fetchedTime & 1) == 0;
+    return (fetchedTime & MODIFICATION_TIME_SHIFT) == DIRTY;
   }
 
   public void setLastModificationFromStorage(long t) {
-    fetchedTime = t << 1 | 1;
+    setLastModification(t, CLEAN);
   }
 
   public void resetDirty() {
     fetchedTime = fetchedTime | 1;
+  }
+
+  @Override
+  public long getLastModification() {
+    return (fetchedTime & MODIFICATION_TIME_MASK) >> MODIFICATION_TIME_SHIFT;
   }
 
   /** Reset next as a marker for {@link #isRemovedFromReplacementList()} */
@@ -395,11 +444,6 @@ public class Entry<E extends Entry, K, T>
   @Override
   public K getKey() {
     return key;
-  }
-
-  @Override
-  public long getLastModification() {
-    return fetchedTime >> 1;
   }
 
   /**
