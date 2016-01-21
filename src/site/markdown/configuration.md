@@ -1,5 +1,8 @@
 
 
+immutable parameters, keytype, valuetype, storeByReference, source ref?
+
+
 
 # Bypassing with blocking
 
