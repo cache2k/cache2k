@@ -88,7 +88,7 @@ public class Entry<E extends Entry, K, T>
    * The time is the time in millis times 2. A set bit 1 means the entry is fetched from
    * the storage and not modified since then.
    */
-  private long fetchedTime;
+  private volatile long fetchedTime;
 
   /**
    * Contains the next time a refresh has to occur, or if no background refresh is configured, when the entry
@@ -173,27 +173,20 @@ public class Entry<E extends Entry, K, T>
     return (fetchedTime & MODIFICATION_TIME_MASK) >> MODIFICATION_TIME_SHIFT;
   }
 
+  /**
+   * Different possible processing states. The code only uses fetch now, rest is preparation.
+   */
   enum ProcessingState {
     DONE,
     LOAD,
     FETCH,
+    REFRESH,
     WRITE,
     STORE,
     NOTIFY,
     PINNED,
     LAST
   }
-
-  static final ProcessingState[] PROCESSING_STATES = new ProcessingState[]{
-    ProcessingState.DONE,
-    ProcessingState.LOAD,
-    ProcessingState.FETCH,
-    ProcessingState.WRITE,
-    ProcessingState.STORE,
-    ProcessingState.NOTIFY,
-    ProcessingState.PINNED,
-    ProcessingState.LAST
-  };
 
   private static final int PS_MASK = 0x0f;
   private static final int PS_POS = MODIFICATION_TIME_BITS;
@@ -202,21 +195,20 @@ public class Entry<E extends Entry, K, T>
     return ProcessingState.values()[(int) ((fetchedTime >> PS_POS) & PS_MASK)];
   }
 
-  private void setProcessingState(ProcessingState ps) {
-    fetchedTime = fetchedTime & ~PS_MASK | (ps.ordinal() << PS_POS);
+  public void setProcessingState(ProcessingState ps) {
+    fetchedTime = fetchedTime & ~((long) PS_MASK << PS_POS) | ((long) ps.ordinal() << PS_POS);
   }
 
   /**
    * Starts long operation on entry. Pins the entry in the cache.
    */
   public long startFetch() {
-    long tmp = nextRefreshTime;
-    if (isVirgin()) {
-      nextRefreshTime = FETCH_IN_PROGRESS_VIRGIN;
-    } else {
-      nextRefreshTime = FETCH_IN_PROGRESS_NON_VALID;
-    }
-    return tmp;
+    setProcessingState(ProcessingState.FETCH);
+    return nextRefreshTime;
+  }
+
+  public void processingDone() {
+    setProcessingState(ProcessingState.DONE);
   }
 
   /**
@@ -229,12 +221,9 @@ public class Entry<E extends Entry, K, T>
     if (_finished) {
       return;
     }
-    if (isFetchInProgress()) {
-      synchronized (Entry.this) {
-        if (isFetchInProgress()) {
-          nextRefreshTime = FETCH_ABORT;
-          notifyAll();
-        }
+    synchronized (Entry.this) {
+      if (isFetchInProgress()) {
+        notifyAll();
       }
     }
   }
@@ -243,16 +232,13 @@ public class Entry<E extends Entry, K, T>
     if (_finished) {
       return;
     }
-    if (isFetchInProgress()) {
-      synchronized (Entry.this) {
-        if (isFetchInProgress()) {
-          if (_previousNextRefreshTime == VIRGIN_STATE) {
-            nextRefreshTime = LOADED_NON_VALID;
-          } else {
-            nextRefreshTime = _previousNextRefreshTime;
-          }
-          notifyAll();
-        }
+    synchronized (Entry.this) {
+      if (isVirgin()) {
+        nextRefreshTime = FETCH_ABORT;
+      }
+      if (isFetchInProgress()) {
+        setProcessingState(ProcessingState.DONE);
+        notifyAll();
       }
     }
   }
@@ -265,13 +251,7 @@ public class Entry<E extends Entry, K, T>
   }
 
   public boolean isFetchInProgress() {
-    return
-      nextRefreshTime == REFRESH_STATE ||
-        nextRefreshTime == LOADED_NON_VALID_AND_FETCH ||
-        nextRefreshTime == FETCH_IN_PROGRESS_VIRGIN ||
-        nextRefreshTime == LOADED_NON_VALID_AND_PUT ||
-        nextRefreshTime == FETCH_IN_PROGRESS_NON_VALID ||
-        nextRefreshTime == FETCH_IN_PROGRESS_VALID;
+    return getProcessingState() != ProcessingState.DONE;
   }
 
   public void waitForFetch() {
@@ -284,6 +264,14 @@ public class Entry<E extends Entry, K, T>
       } catch (InterruptedException ignore) {
       }
     } while (isFetchInProgress());
+  }
+
+  public void setGettingRefresh() {
+    setProcessingState(ProcessingState.REFRESH);
+  }
+
+  public boolean isGettingRefresh() {
+    return getProcessingState() == ProcessingState.REFRESH;
   }
 
   /** Reset next as a marker for {@link #isRemovedFromReplacementList()} */
@@ -400,14 +388,6 @@ public class Entry<E extends Entry, K, T>
 
   public boolean isRemovedState() {
     return nextRefreshTime == REMOVED_STATE;
-  }
-
-  public void setGettingRefresh() {
-    nextRefreshTime = REFRESH_STATE;
-  }
-
-  public boolean isGettingRefresh() {
-    return nextRefreshTime == REFRESH_STATE;
   }
 
   public boolean isBeeingReput() {
@@ -528,10 +508,12 @@ public class Entry<E extends Entry, K, T>
   static {
     Entry e = new Entry();
     e.nextRefreshTime = FETCHED_STATE;
-    e.setGettingRefresh();
-    e = new Entry();
-    e.setLoadedNonValidAndFetch();
-    e.setExpiredState();
+    synchronized (e) {
+      e.setGettingRefresh();
+      e = new Entry();
+      e.setLoadedNonValidAndFetch();
+      e.setExpiredState();
+    }
   }
 
   static class InitialValueInEntryNeverReturned extends Object { }

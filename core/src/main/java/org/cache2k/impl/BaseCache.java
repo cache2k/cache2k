@@ -1343,6 +1343,7 @@ public abstract class BaseCache<E extends Entry, K, T>
   protected void finishFetch(E e, long _nextRefreshTime) {
     synchronized (e) {
       e.nextRefreshTime = stopStartTimer(_nextRefreshTime, e, System.currentTimeMillis());
+      e.processingDone();
       e.notifyAll();
     }
   }
