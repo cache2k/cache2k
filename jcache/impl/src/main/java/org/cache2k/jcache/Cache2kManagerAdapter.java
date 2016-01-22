@@ -455,16 +455,16 @@ public class Cache2kManagerAdapter implements CacheManager {
     }
 
     @Override
-    public void write(final CacheEntry<K, CacheWithExpiryPolicyAdapter.ValueAndExtra<V>> e) throws Exception {
+    public void write(final K key, final CacheWithExpiryPolicyAdapter.ValueAndExtra<V> value) throws Exception {
       Cache.Entry<K, V> ce = new Cache.Entry<K, V>() {
         @Override
         public K getKey() {
-          return e.getKey();
+          return key;
         }
 
         @Override
         public V getValue() {
-          return e.getValue().value;
+          return value.value;
         }
 
         @Override
