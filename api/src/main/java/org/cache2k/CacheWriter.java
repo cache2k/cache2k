@@ -27,7 +27,7 @@ package org.cache2k;
  */
 public interface CacheWriter<K, V> {
 
-  public void write(CacheEntry<K, V> e) throws Exception;
+  public void write(K key, V value) throws Exception;
 
   /**
    * Called when a mapping is removed from the cache. An expiry does not trigger a call

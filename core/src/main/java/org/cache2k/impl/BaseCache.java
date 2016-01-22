@@ -2664,9 +2664,7 @@ public abstract class BaseCache<K, V>
   protected final long insertOnPut(Entry<K, V> e, V v, long t0, long t, long _previousNextRefreshValue) {
     if (writer != null) {
       try {
-        CacheEntry<K, V> ce;
-        ce = returnCacheEntry((K) e.getKey(), v, null, t0);
-        writer.write(ce);
+        writer.write(e.getKey(), v);
       } catch (RuntimeException ex) {
         cleanupAfterWriterException(e);
         throw ex;
@@ -3276,8 +3274,7 @@ public abstract class BaseCache<K, V>
             }
             */
           } else {
-            CacheEntry<K, V> ce = returnCacheEntry(_keys[i], _pEntries[i].getValue(), _pEntries[i].getException(), _pEntries[i].getLastModification());
-            writer.write(ce);
+            writer.write(_keys[i], _pEntries[i].getValue());
           }
         }
       } catch (Exception ex) {
