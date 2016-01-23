@@ -139,12 +139,12 @@ public class CacheBuilderImpl<K, T> extends CacheBuilder<K, T> {
     }
   }
 
-  protected Cache<K,T> constructImplementationAndFillParameters(Class<?> cls) {
-    if (!Cache.class.isAssignableFrom(cls)) {
+  protected InternalCache<K,T> constructImplementationAndFillParameters(Class<?> cls) {
+    if (!InternalCache.class.isAssignableFrom(cls)) {
       throw new IllegalArgumentException("Specified impl not a cache" + cls.getName());
     }
     try {
-      Cache<K, T> _cache;
+      InternalCache<K, T> _cache;
       Constructor<?> ctr = findConstructor(cls);
       if (ctr != null) {
         Class<?>[] pt = ctr.getParameterTypes();
@@ -152,9 +152,9 @@ public class CacheBuilderImpl<K, T> extends CacheBuilder<K, T> {
         for (int i = 0; i < _args.length; i++) {
           _args[i] = getConstructorParameter(pt[i]);
         }
-        _cache = (Cache<K, T>) ctr.newInstance(_args);
+        _cache = (InternalCache<K, T>) ctr.newInstance(_args);
       } else {
-        _cache = (Cache<K, T>) cls.newInstance();
+        _cache = (InternalCache<K, T>) cls.newInstance();
       }
       return _cache;
     } catch (Exception e) {
@@ -171,19 +171,17 @@ public class CacheBuilderImpl<K, T> extends CacheBuilder<K, T> {
     if (config.getImplementation() != null) {
       _implClass = config.getImplementation();
     }
-    Cache<K,T> _cache = constructImplementationAndFillParameters(_implClass);
-    CacheManagerImpl cm = null;
-    if (_cache instanceof InternalCache) {
-      cm = (CacheManagerImpl) (manager == null ? CacheManager.getInstance() : manager);
-      ((BaseCache) _cache).setCacheManager(cm);
-    }
-    configureViaSetters(_cache);
-    if (cm != null) {
-      cm.newCache(_cache);
-    }
-    if (_cache instanceof InternalCache) {
-      ((BaseCache) _cache).init();
-    }
+    InternalCache<K,T> _cache = constructImplementationAndFillParameters(_implClass);
+
+    BaseCache bc = (BaseCache) _cache;
+    CacheManagerImpl cm = (CacheManagerImpl) (manager == null ? CacheManager.getInstance() : manager);
+    bc.setCacheManager(cm);
+    configureViaSetters(bc);
+    String _name = cm.newCache(_cache, bc.getName());
+    bc.setName(_name);
+    bc.init();
+
+
     return _cache;
   }
 

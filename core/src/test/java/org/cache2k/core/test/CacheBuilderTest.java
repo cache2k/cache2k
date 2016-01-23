@@ -30,12 +30,21 @@ import org.junit.Test;
 import java.util.ArrayList;
 import java.util.List;
 
+import static org.junit.Assert.*;
+
 /**
  * Cache builder tests for some special variants.
  *
  * @see org.cache2k.CacheBuilder
  */
 public class CacheBuilderTest {
+
+  @Test
+  public void managerName() {
+    Cache c = CacheBuilder.newCache().build();
+    assertEquals("default", c.getCacheManager().getName());
+    c.close();
+  }
 
   @Test
   public void typesParameters() {

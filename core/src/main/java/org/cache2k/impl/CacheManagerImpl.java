@@ -145,10 +145,8 @@ public class CacheManagerImpl extends CacheManager {
   static class StackTrace extends Exception { }
 
   /* called by builder */
-  public void newCache(Cache c) {
+  public String newCache(InternalCache c, String _requestedName) {
     synchronized (lock) {
-      BaseCache bc = (BaseCache) c;
-      String _requestedName = c.getName();
       String _name = _requestedName;
       while (cacheNames.containsKey(_name)) {
         _name = _requestedName + "~" + Integer.toString(disambiguationCounter++, 36);
@@ -158,7 +156,6 @@ public class CacheManagerImpl extends CacheManager {
         if (name2CreationStackTrace != null) {
           log.warn("initial creation of " + _requestedName, name2CreationStackTrace.get(_requestedName));
         }
-        bc.setName(_name);
       }
       checkName(_name);
 
@@ -167,8 +164,8 @@ public class CacheManagerImpl extends CacheManager {
       }
       caches.add(c);
       sendCreatedEvent(c);
-      bc.setCacheManager(this);
-      cacheNames.put(c.getName(), bc);
+      cacheNames.put(_name, c);
+      return _name;
     }
   }
 

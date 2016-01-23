@@ -22,12 +22,14 @@ package org.cache2k.impl;
  * #L%
  */
 
+import org.cache2k.CacheException;
+
 /**
  * Indicates cache missusage including configuration error.
  *
  * @author Jens Wilke; created: 2013-12-17
  */
-public class CacheUsageExcpetion extends RuntimeException {
+public class CacheUsageExcpetion extends CacheException {
 
   public CacheUsageExcpetion() {
   }
