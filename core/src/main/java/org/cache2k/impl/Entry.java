@@ -502,11 +502,12 @@ public class Entry<K, T>
   @Override
   public String toString() {
     return "Entry{" +
-      "createdOrUpdate=" + getCreatedOrUpdated() +
+      "key=" + key +
+      ", lock=" + getProcessingState() +
+      ", createdOrUpdate=" + getCreatedOrUpdated() +
       ", nextRefreshTime=" + nextRefreshTime +
       ", valueExpiryTime=" + getValueExpiryTime() +
       ", entryExpiryTime=" + getEntryExpiryTime() +
-      ", key=" + key +
       ", mHC=" + hashCode +
       ", value=" + value +
       ", dirty=" + isDirty() +
