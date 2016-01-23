@@ -1,4 +1,4 @@
-package org.cache2k.impl;
+package org.cache2k.storage;
 
 /*
  * #%L
@@ -22,33 +22,26 @@ package org.cache2k.impl;
  * #L%
  */
 
+import java.util.concurrent.atomic.AtomicLongFieldUpdater;
+
 /**
- * We use instances of the exception wrapper for the value field in the entry.
- * This way we can store exceptions without needing additional memory, if no exceptions
- * happen.
- *
- * @author Jens Wilke; created: 2013-07-12
+ * @author Jens Wilke
  */
-public class ExceptionWrapper {
+@SuppressWarnings("unused")
+public class StandardStorageEventCounter implements StorageEventCounter {
 
-  Throwable exception;
-
-  /**
-   * Store an additional exception message with the expiry time.
-   * Gets lazily set as soon as an exception is thrown.
-   */
-  transient String additionalExceptionMessage = null;
-
-  public ExceptionWrapper(Throwable ex) {
-    exception = ex;
+  final static AtomicLongFieldUpdater<StandardStorageEventCounter> READ_MISS_UPDATER =
+    AtomicLongFieldUpdater.newUpdater(StandardStorageEventCounter.class, "readMiss");
+  private volatile long readMiss;
+  @Override
+  public void readMiss() {
+    READ_MISS_UPDATER.incrementAndGet(this);
   }
-
-  public Throwable getException() {
-    return exception;
-  }
-
-  public String toString() {
-    return "ExceptionWrapper{" + exception.toString() + "}";
+  @Override
+  public void readMiss(long cnt) { READ_MISS_UPDATER.addAndGet(this, cnt); }
+  @Override
+  public long getReadMiss() {
+    return READ_MISS_UPDATER.get(this);
   }
 
 }

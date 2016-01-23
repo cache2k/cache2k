@@ -59,9 +59,9 @@ class CacheBaseInfo implements InternalCacheInfo {
     }
     fetchesInFlight = baseCache.getFetchesInFlight();
     size = baseCache.getLocalSize();
-    missCnt = baseCache.fetchCnt - baseCache.refreshCnt + baseCache.peekHitNotFreshCnt + baseCache.peekMissCnt;
-    storageMissCnt = baseCache.loadMissCnt + baseCache.loadNonFreshCnt + baseCache.loadNonFreshAndFetchedCnt;
-    storageLoadCnt = storageMissCnt + baseCache.loadHitCnt;
+    missCnt = baseCache.loadCnt - baseCache.refreshCnt + baseCache.peekHitNotFreshCnt + baseCache.peekMissCnt;
+    storageMissCnt = baseCache.readMissCnt + baseCache.readNonFreshCnt + baseCache.readNonFreshAndFetchedCnt;
+    storageLoadCnt = storageMissCnt + baseCache.readHitCnt;
     newEntryCnt = baseCache.newEntryCnt - baseCache.virginEvictCnt;
     hitCnt = baseCache.getHitCnt();
     correctedPutCnt = baseCache.putCnt - baseCache.putButExpiredCnt;
@@ -81,7 +81,7 @@ class CacheBaseInfo implements InternalCacheInfo {
 
   @Override
   public long getFetchButHitCnt() {
-    return baseCache.fetchButHitCnt;
+    return baseCache.loadButHitCnt;
   }
 
   @Override
@@ -94,7 +94,7 @@ class CacheBaseInfo implements InternalCacheInfo {
   @Override
   public int getMaxSize() { return baseCache.maxSize; }
   @Override
-  public long getStorageHitCnt() { return baseCache.loadHitCnt; }
+  public long getStorageHitCnt() { return baseCache.readHitCnt; }
   @Override
   public long getStorageLoadCnt() { return storageLoadCnt; }
   @Override
@@ -108,7 +108,7 @@ class CacheBaseInfo implements InternalCacheInfo {
   @Override
   public long getNewEntryCnt() { return newEntryCnt; }
   @Override
-  public long getFetchCnt() { return baseCache.fetchCnt; }
+  public long getFetchCnt() { return baseCache.loadCnt; }
   @Override
   public int getFetchesInFlightCnt() { return fetchesInFlight; }
   @Override
@@ -122,7 +122,7 @@ class CacheBaseInfo implements InternalCacheInfo {
   @Override
   public long getSuppressedExceptionCnt() { return baseCache.suppressedExceptionCnt; }
   @Override
-  public long getFetchExceptionCnt() { return baseCache.fetchExceptionCnt; }
+  public long getFetchExceptionCnt() { return baseCache.loadExceptionCnt; }
   @Override
   public long getRefreshHitCnt() { return baseCache.refreshHitCnt; }
   @Override
@@ -216,7 +216,7 @@ class CacheBaseInfo implements InternalCacheInfo {
     return _metric0;
   }
   @Override
-  public double getMillisPerFetch() { return baseCache.fetchCnt == 0 ? 0 : (baseCache.fetchMillis * 1D / baseCache.fetchCnt); }
+  public double getMillisPerFetch() { return baseCache.loadCnt == 0 ? 0 : (baseCache.fetchMillis * 1D / baseCache.loadCnt); }
   @Override
   public long getFetchMillis() { return baseCache.fetchMillis; }
   @Override

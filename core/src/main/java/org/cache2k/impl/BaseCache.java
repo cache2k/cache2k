@@ -150,15 +150,16 @@ public abstract class BaseCache<K, V>
   protected long evictedCnt = 0;
   protected long refreshCnt = 0;
   protected long suppressedExceptionCnt = 0;
-  protected long fetchExceptionCnt = 0;
+  protected long loadExceptionCnt = 0;
   /* that is a miss, but a hit was already counted. */
   protected long peekHitNotFreshCnt = 0;
   /* no heap hash hit */
   protected long peekMissCnt = 0;
 
-  protected long fetchCnt = 0;
+  protected long loadCnt = 0;
 
-  protected long fetchButHitCnt = 0;
+  protected long loadButHitCnt = 0;
+
   protected long bulkGetCnt = 0;
   protected long fetchMillis = 0;
   protected long refreshHitCnt = 0;
@@ -171,19 +172,24 @@ public abstract class BaseCache<K, V>
   protected long atomicOpNewEntryCnt = 0;
 
   /**
-   * Loaded from storage, but the entry was not fresh and cannot be returned.
+   * Read from storage, but the entry was not fresh and cannot be returned.
    */
-  protected long loadNonFreshCnt = 0;
+  protected long readNonFreshCnt = 0;
 
   /**
-   * Entry was loaded from storage and fresh.
+   * Entry was read from storage and fresh.
    */
-  protected long loadHitCnt = 0;
+  protected long readHitCnt = 0;
 
   /**
-   * Separate counter for loaded entries that needed a fetch.
+   * Separate counter for read entries that needed a fetch.
    */
-  protected long loadNonFreshAndFetchedCnt;
+  protected long readNonFreshAndFetchedCnt;
+
+  /**
+   * Storage did not contain the requested entry.
+   */
+  protected long readMissCnt = 0;
 
   protected long refreshSubmitFailedCnt = 0;
 
@@ -198,11 +204,6 @@ public abstract class BaseCache<K, V>
    * might be removed from the replacement list, but still in the hash.
    */
   protected int evictedButInHashCnt = 0;
-
-  /**
-   * Storage did not contain the requested entry.
-   */
-  protected long loadMissCnt = 0;
 
   /**
    * A newly inserted entry was removed by the eviction without the fetch to complete.
@@ -737,7 +738,7 @@ public abstract class BaseCache<K, V>
   @Override
   public void clearTimingStatistics() {
     synchronized (lock) {
-      fetchCnt = 0;
+      loadCnt = 0;
       fetchMillis = 0;
     }
   }
@@ -1754,7 +1755,7 @@ public abstract class BaseCache<K, V>
         if (e.isVirgin() || !e.hasFreshData()) {
           if (e.isVirgin()) {
             synchronized (this) {
-              loadNonFreshCnt++;
+              readNonFreshCnt++;
               e.nextRefreshTime = Entry.READ_NON_VALID;
             }
           }
@@ -2377,6 +2378,17 @@ public abstract class BaseCache<K, V>
     return e;
   }
 
+  protected V returnValue(V v) {
+    if (v instanceof ExceptionWrapper) {
+      ExceptionWrapper w = (ExceptionWrapper) v;
+      if (w.additionalExceptionMessage == null) {
+        w.additionalExceptionMessage = w.getException() + w.toString();
+      }
+      exceptionPropagator.propagateException(w.additionalExceptionMessage, w.getException());
+    }
+    return v;
+  }
+
   protected V returnValue(Entry<K, V> e) {
     V v = e.value;
     if (v instanceof ExceptionWrapper) {
@@ -2614,13 +2626,13 @@ public abstract class BaseCache<K, V>
     if (se == null) {
       if (_needsFetch) {
         synchronized (lock) {
-          loadMissCnt++;
+          readMissCnt++;
         }
         return fetchFromSource(e, _previousNextRefreshTime);
       }
       synchronized (lock) {
         touchedTime = System.currentTimeMillis();
-        loadNonFreshCnt++;
+        readNonFreshCnt++;
       }
       return org.cache2k.impl.Entry.READ_NON_VALID;
     }
@@ -2648,7 +2660,7 @@ public abstract class BaseCache<K, V>
       } else {
         synchronized (lock) {
           touchedTime = now;
-          loadNonFreshCnt++;
+          readNonFreshCnt++;
         }
         return Entry.READ_NON_VALID;
       }
@@ -2734,7 +2746,7 @@ public abstract class BaseCache<K, V>
       _nextRefreshTime = Long.MAX_VALUE;
     }
     final boolean _suppressException =
-      _value instanceof ExceptionWrapper && hasSuppressExceptions() && e.getValue() != org.cache2k.impl.Entry.INITIAL_VALUE && !e.hasException();
+      needsSuppress(e, _value);
 
     if (!_suppressException) {
       e.value = _value;
@@ -2766,10 +2778,10 @@ public abstract class BaseCache<K, V>
         throw _storageException;
       }
       if (_nextRefreshTime == 0) {
-        _nextRefreshTime = org.cache2k.impl.Entry.FETCH_NEXT_TIME_STATE;
+        _nextRefreshTime = Entry.FETCH_NEXT_TIME_STATE;
       } else {
         if (_nextRefreshTime == Long.MAX_VALUE) {
-          _nextRefreshTime = org.cache2k.impl.Entry.FETCHED_STATE;
+          _nextRefreshTime = Entry.FETCHED_STATE;
         }
       }
       if (_updateStatistics == INSERT_STAT_PUT && !e.hasFreshData(t, _nextRefreshTime)) {
@@ -2778,6 +2790,10 @@ public abstract class BaseCache<K, V>
     } // synchronized (lock)
 
     return _nextRefreshTime;
+  }
+
+  boolean needsSuppress(final Entry<K, V> e, final V _value) {
+    return _value instanceof ExceptionWrapper && hasSuppressExceptions() && e.getValue() != Entry.INITIAL_VALUE && !e.hasException();
   }
 
   private void updateStatistics(Entry e, V _value, long t0, long t, byte _updateStatistics, boolean _suppressException) {
@@ -2791,31 +2807,31 @@ public abstract class BaseCache<K, V>
     touchedTime = t;
     if (_updateStatistics == INSERT_STAT_UPDATE) {
       if (_justLoadedFromStorage) {
-        loadHitCnt++;
+        readHitCnt++;
       } else {
         if (_suppressException) {
           suppressedExceptionCnt++;
-          fetchExceptionCnt++;
+          loadExceptionCnt++;
         } else {
           if (_value instanceof ExceptionWrapper) {
-            fetchExceptionCnt++;
+            loadExceptionCnt++;
           }
         }
-        fetchCnt++;
+        loadCnt++;
         fetchMillis += t - t0;
         if (e.isGettingRefresh()) {
           refreshCnt++;
         }
         if (e.isLoadedNonValidAndFetch()) {
-          loadNonFreshAndFetchedCnt++;
+          readNonFreshAndFetchedCnt++;
         } else if (!e.isVirgin()) {
-          fetchButHitCnt++;
+          loadButHitCnt++;
         }
       }
     } else if (_updateStatistics == INSERT_STAT_PUT) {
       putCnt++;
       eventuallyAdjustPutNewEntryCount(e);
-      if (e.nextRefreshTime == org.cache2k.impl.Entry.LOADED_NON_VALID_AND_PUT) {
+      if (e.nextRefreshTime == Entry.LOADED_NON_VALID_AND_PUT) {
         peekHitNotFreshCnt++;
       }
     }
@@ -3434,14 +3450,14 @@ public abstract class BaseCache<K, V>
    * For peek no fetch is counted if there is a storage miss, hence the extra counter.
    */
   public long getFetchesBecauseOfNewEntries() {
-    return fetchCnt - fetchButHitCnt;
+    return loadCnt - loadButHitCnt;
   }
 
   protected int getFetchesInFlight() {
     long _fetchesBecauseOfNoEntries = getFetchesBecauseOfNewEntries();
     return (int) (newEntryCnt - putNewEntryCnt - virginEvictCnt
-        - loadNonFreshCnt
-        - loadHitCnt
+        - readNonFreshCnt
+        - readHitCnt
         - _fetchesBecauseOfNoEntries
         - atomicOpNewEntryCnt
     );
@@ -3454,7 +3470,7 @@ public abstract class BaseCache<K, V>
             "newEntryCnt - virginEvictCnt == " +
                 "getFetchesBecauseOfNewEntries() + getFetchesInFlight() + putNewEntryCnt + loadNonFreshCnt + loadHitCnt + atomicOpNewEntryCnt",
             newEntryCnt - virginEvictCnt,
-            getFetchesBecauseOfNewEntries() + getFetchesInFlight() + putNewEntryCnt + loadNonFreshCnt + loadHitCnt + atomicOpNewEntryCnt)
+            getFetchesBecauseOfNewEntries() + getFetchesInFlight() + putNewEntryCnt + readNonFreshCnt + readHitCnt + atomicOpNewEntryCnt)
         .checkLessOrEquals("getFetchesInFlight() <= 100", getFetchesInFlight(), 100)
         .checkEquals("newEntryCnt == getSize() + evictedCnt + expiredRemoveCnt + removeCnt + clearedCnt", newEntryCnt, getLocalSize() + evictedCnt + expiredRemoveCnt + removedCnt + clearedCnt)
         .checkEquals("newEntryCnt == getSize() + evictedCnt + getExpiredCnt() - expiredKeptCnt + removeCnt + clearedCnt", newEntryCnt, getLocalSize() + evictedCnt + getExpiredCnt() - expiredKeptCnt + removedCnt + clearedCnt)

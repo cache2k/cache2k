@@ -43,6 +43,11 @@ public class Entry<K, T>
   static final int FETCH_IN_PROGRESS_VALID = FETCHED_STATE + 4;
 
   /**
+   * Cache.remove() operation received. Needs to be send to storage.
+   */
+  static final int REMOVE_PENDING = 11;
+
+  /**
    * Entry was created for locking purposes of an atomic operation.
    */
   static final int ATOMIC_OP_NON_VALID = 10;
@@ -474,7 +479,7 @@ public class Entry<K, T>
    * @see org.cache2k.storage.StorageEntry
    */
   @Override
-  public Object getValueOrException() {
+  public T getValueOrException() {
     return value;
   }
 
