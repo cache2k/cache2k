@@ -57,7 +57,7 @@ public class Entry<K, T>
   static final int LOADED_NON_VALID_AND_FETCH = 6;
 
   /** Storage was checked, no data available */
-  static final int LOADED_NON_VALID = 5;
+  static final int READ_NON_VALID = 5;
 
   static final int EXPIRED_STATE = 4;
 
@@ -178,17 +178,26 @@ public class Entry<K, T>
    */
   enum ProcessingState {
     DONE,
+    READ,
+    READ_COMPLETE,
+    MUTATE,
     LOAD,
+    LOAD_COMPLETE,
     FETCH,
     REFRESH,
+    EXPIRY,
+    EXPIRY_COMPLETE,
     WRITE,
+    WRITE_COMPLETE,
     STORE,
+    STORE_COMPLETE,
     NOTIFY,
     PINNED,
     LAST
   }
 
-  private static final int PS_MASK = 0x0f;
+  private static final int PS_BITS = 5;
+  private static final int PS_MASK = (1 << PS_BITS) - 1;
   private static final int PS_POS = MODIFICATION_TIME_BITS;
 
   public ProcessingState getProcessingState() {
@@ -205,6 +214,14 @@ public class Entry<K, T>
   public long startFetch() {
     setProcessingState(ProcessingState.FETCH);
     return nextRefreshTime;
+  }
+
+  public void startFetch(ProcessingState ps) {
+    setProcessingState(ps);
+  }
+
+  public void nextProcessingStep(ProcessingState ps) {
+    setProcessingState(ps);
   }
 
   public void processingDone() {
@@ -354,7 +371,7 @@ public class Entry<K, T>
   }
 
   public boolean isLoadedNonValid() {
-    return nextRefreshTime == LOADED_NON_VALID;
+    return nextRefreshTime == READ_NON_VALID;
   }
 
   public void setLoadedNonValidAndFetch() {

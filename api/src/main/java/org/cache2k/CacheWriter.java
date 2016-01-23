@@ -27,7 +27,7 @@ package org.cache2k;
  */
 public interface CacheWriter<K, V> {
 
-  public void write(K key, V value) throws Exception;
+  void write(K key, V value) throws Exception;
 
   /**
    * Called when a mapping is removed from the cache. An expiry does not trigger a call
@@ -36,6 +36,6 @@ public interface CacheWriter<K, V> {
    * @param key
    * @throws Exception if an exception occurs, the cache update will not occur
    */
-  public void delete(K key) throws Exception;
+  void delete(K key) throws Exception;
 
 }

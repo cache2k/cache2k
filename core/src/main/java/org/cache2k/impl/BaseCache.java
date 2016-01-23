@@ -1205,7 +1205,7 @@ public abstract class BaseCache<K, V>
    * Implement unsynchronized lookup if it is supported by the eviction.
    * If a null is returned the lookup is redone synchronized.
    */
-  protected Entry lookupEntryUnsynchronized(K key, int hc) { return null; }
+  protected Entry<K, V> lookupEntryUnsynchronized(K key, int hc) { return null; }
 
   protected Entry lookupEntryUnsynchronizedNoHitRecord(K key, int hc) { return null; }
 
@@ -1447,10 +1447,10 @@ public abstract class BaseCache<K, V>
       StorageEntry se = _action.checkAndPurge(key);
       synchronized (e) {
         if (_virgin) {
-          finishFetch(e, org.cache2k.impl.Entry.VIRGIN_STATE);
+          finishFetch(e, Entry.VIRGIN_STATE);
           evictEntryFromHeap(e);
         } else {
-          finishFetch(e, org.cache2k.impl.Entry.LOADED_NON_VALID);
+          finishFetch(e, Entry.READ_NON_VALID);
           evictEntryFromHeap(e);
         }
       }
@@ -1644,7 +1644,7 @@ public abstract class BaseCache<K, V>
           }
           peekMissCnt++;
         }
-        finishFetch(e, org.cache2k.impl.Entry.LOADED_NON_VALID);
+        finishFetch(e, Entry.READ_NON_VALID);
         _finished = true;
         return null;
       }
@@ -1755,7 +1755,7 @@ public abstract class BaseCache<K, V>
           if (e.isVirgin()) {
             synchronized (this) {
               loadNonFreshCnt++;
-              e.nextRefreshTime = org.cache2k.impl.Entry.LOADED_NON_VALID;
+              e.nextRefreshTime = Entry.READ_NON_VALID;
             }
           }
           return (Entry) DUMMY_ENTRY_NO_REPLACE;
@@ -2105,7 +2105,7 @@ public abstract class BaseCache<K, V>
         storage.remove(key);
       }
       synchronized (e) {
-        finishFetch(e, org.cache2k.impl.Entry.LOADED_NON_VALID);
+        finishFetch(e, Entry.READ_NON_VALID);
         if (_hasFreshData) {
           synchronized (lock) {
             if (removeEntry(e)) {
@@ -2199,7 +2199,7 @@ public abstract class BaseCache<K, V>
         storage.remove(key);
       }
       synchronized (e) {
-        finishFetch(e, org.cache2k.impl.Entry.LOADED_NON_VALID);
+        finishFetch(e, Entry.READ_NON_VALID);
         if (_hasFreshData) {
           synchronized (lock) {
             if (removeEntry(e)) {
@@ -2347,6 +2347,21 @@ public abstract class BaseCache<K, V>
     return e;
   }
 
+  protected Entry<K, V> lookupOrOptionalNewEntrySynchronized(K key, boolean _newEntry) {
+    int hc = modifiedHash(key.hashCode());
+    Entry e = lookupEntryUnsynchronized(key, hc);
+    if (e == null) {
+      synchronized (lock) {
+        checkClosed();
+        e = lookupEntry(key, hc);
+        if (e == null && _newEntry) {
+          e = newEntry(key, hc);
+        }
+      }
+    }
+    return e;
+  }
+
   protected Entry<K, V> lookupOrNewEntrySynchronizedNoHitRecord(K key) {
     int hc = modifiedHash(key.hashCode());
     Entry e = lookupEntryUnsynchronizedNoHitRecord(key, hc);
@@ -2399,7 +2414,7 @@ public abstract class BaseCache<K, V>
     return e;
   }
 
-  protected final Entry lookupEntry(K key, int hc) {
+  protected final Entry<K, V> lookupEntry(K key, int hc) {
     Entry e = Hash.lookup(mainHash, key, hc);
     if (e != null) {
       recordHit(e);
@@ -2434,7 +2449,7 @@ public abstract class BaseCache<K, V>
    * Insert new entry in all structures (hash and replacement list). May evict an
    * entry if the maximum capacity is reached.
    */
-  protected Entry newEntry(K key, int hc) {
+  protected Entry<K, V> newEntry(K key, int hc) {
     if (getLocalSize() >= maxSize) {
       evictionNeeded = true;
     }
@@ -2559,7 +2574,7 @@ public abstract class BaseCache<K, V>
     return t;
   }
 
-  protected long calcNextRefreshTime(K _key, V _newObject, long now, org.cache2k.impl.Entry _entry) {
+  protected long calcNextRefreshTime(K _key, V _newObject, long now, Entry _entry) {
     return calcNextRefreshTime(
         _key, _newObject, now, _entry,
         entryExpiryCalculator, maxLinger,
@@ -2593,7 +2608,7 @@ public abstract class BaseCache<K, V>
       if (_needsFetch) {
         return fetchFromSource(e, _previousNextRefreshTime);
       }
-      return org.cache2k.impl.Entry.LOADED_NON_VALID;
+      return Entry.READ_NON_VALID;
     }
     StorageEntry se = storage.get(e.key);
     if (se == null) {
@@ -2607,7 +2622,7 @@ public abstract class BaseCache<K, V>
         touchedTime = System.currentTimeMillis();
         loadNonFreshCnt++;
       }
-      return org.cache2k.impl.Entry.LOADED_NON_VALID;
+      return org.cache2k.impl.Entry.READ_NON_VALID;
     }
     return insertEntryFromStorage(se, e, _needsFetch);
   }
@@ -2635,7 +2650,7 @@ public abstract class BaseCache<K, V>
           touchedTime = now;
           loadNonFreshCnt++;
         }
-        return org.cache2k.impl.Entry.LOADED_NON_VALID;
+        return Entry.READ_NON_VALID;
       }
     }
     return insert(e, _valueOrException, 0, now, INSERT_STAT_UPDATE, _nextRefreshTime);
@@ -2696,12 +2711,12 @@ public abstract class BaseCache<K, V>
   /**
    * @throws Exception any exception from the ExpiryCalculator
    */
-  private long calculateNextRefreshTime(Entry<K, V> _entry, V _newValue, long t0, long _previousNextRefreshTime) {
+  long calculateNextRefreshTime(Entry<K, V> _entry, V _newValue, long t0, long _previousNextRefreshTime) {
     long _nextRefreshTime;
-    if (org.cache2k.impl.Entry.isDataValidState(_previousNextRefreshTime) || org.cache2k.impl.Entry.isExpiredState(_previousNextRefreshTime)) {
-      _nextRefreshTime = calcNextRefreshTime((K) _entry.getKey(), _newValue, t0, _entry);
+    if (Entry.isDataValidState(_previousNextRefreshTime) || Entry.isExpiredState(_previousNextRefreshTime)) {
+      _nextRefreshTime = calcNextRefreshTime(_entry.getKey(), _newValue, t0, _entry);
     } else {
-      _nextRefreshTime = calcNextRefreshTime((K) _entry.getKey(), _newValue, t0, null);
+      _nextRefreshTime = calcNextRefreshTime(_entry.getKey(), _newValue, t0, null);
     }
     return _nextRefreshTime;
   }
@@ -2824,15 +2839,15 @@ public abstract class BaseCache<K, V>
     if (e.task != null) {
       e.task.cancel();
     }
-    if ((_nextRefreshTime > org.cache2k.impl.Entry.EXPIRY_TIME_MIN && _nextRefreshTime <= now) &&
+    if ((_nextRefreshTime > Entry.EXPIRY_TIME_MIN && _nextRefreshTime <= now) &&
         (_nextRefreshTime < -1 && (now >= -_nextRefreshTime))) {
-      return org.cache2k.impl.Entry.EXPIRED_STATE;
+      return Entry.EXPIRED_STATE;
     }
-    if (hasSharpTimeout() && _nextRefreshTime > org.cache2k.impl.Entry.EXPIRY_TIME_MIN && _nextRefreshTime != Long.MAX_VALUE) {
+    if (hasSharpTimeout() && _nextRefreshTime > Entry.EXPIRY_TIME_MIN && _nextRefreshTime != Long.MAX_VALUE) {
       _nextRefreshTime = -_nextRefreshTime;
     }
     if (timer != null &&
-      (_nextRefreshTime > org.cache2k.impl.Entry.EXPIRY_TIME_MIN || _nextRefreshTime < -1)) {
+      (_nextRefreshTime > Entry.EXPIRY_TIME_MIN || _nextRefreshTime < -1)) {
       if (_nextRefreshTime < -1) {
         long _timerTime =
           -_nextRefreshTime - TUNABLE.sharpExpirySafetyGapMillis;
@@ -3309,7 +3324,7 @@ public abstract class BaseCache<K, V>
         if (_pEntries[i].removed) {
           if (e.hasFreshData(System.currentTimeMillis(), _pNrt[i])) {
             synchronized (e) {
-              finishFetch(e, org.cache2k.impl.Entry.LOADED_NON_VALID);
+              finishFetch(e, org.cache2k.impl.Entry.READ_NON_VALID);
               synchronized (lock) {
                 removeEntry(e);
                 removedCnt++;

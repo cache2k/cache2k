@@ -39,7 +39,7 @@ public interface StorageEntry {
   /**
    * Time when the value is expired and is not allowed to be returned any more.
    * The storage needs to store this value. The storage may purge entries with
-   * the time exceeded. Returns 0 if not used, no expiry is requested.
+   * the time exceeded. 0 if not used and no expiry is requested.
    */
   long getValueExpiryTime();
 
