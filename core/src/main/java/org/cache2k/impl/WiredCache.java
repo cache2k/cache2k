@@ -435,46 +435,63 @@ public class WiredCache<K, V> implements InternalCache<K, V>, StorageAdapter.Par
 
     @Override
     public void wantData() {
+      if (storage == null) {
+        retrieveDataFromHeap();
+        return;
+      }
+      lockEntryForStorageRead();
+    }
+
+    public void retrieveDataFromHeap() {
+      Entry<K, V> e = entry;
+      if (e == NON_FRESH_DUMMY) {
+        e = heapCache.lookupEntrySynchronized(key);
+        if (e == null) {
+          heapMiss();
+          return;
+        }
+      }
+      if (!e.hasFreshData()) {
+        heapHitButNotFresh(e);
+        return;
+      }
+      heapHitAndFresh(e);
+    }
+
+    public void lockEntryForStorageRead() {
       int _spinCount = BaseCache.TUNABLE.maximumEntryLockSpins;
       Entry<K,V> e = entry;
+      boolean _needStorageRead = false;
+      if (e == NON_FRESH_DUMMY) {
+        e = heapCache.lookupOrNewEntrySynchronized(key);
+      }
       for (;;) {
-        if (_spinCount-- <= 0) { throw new CacheLockSpinsExceededError(); }
-        if (e == NON_FRESH_DUMMY || e.isRemovedState()) {
-          e = heapCache.lookupOrOptionalNewEntrySynchronized(key, storage != null);
+        if (_spinCount-- <= 0) {
+          throw new CacheLockSpinsExceededError();
         }
-        if (e != null && e.hasFreshData()) {
+        if (e.hasFreshData()) {
           heapHitAndFresh(e);
           return;
         }
-        if (storage == null) {
-          if (e == null) {
-            heapMiss();
-          } else {
-            heapHitButNotFresh(e);
-          }
-          return;
-        }
-        entry = e;
-        boolean _needStorageRead = false;
-          synchronized (e) {
-            e.waitForFetch();
-            if (e.isRemovedState()) {
-              e = NON_FRESH_DUMMY;
-              continue;
-            }
+        synchronized (e) {
+          e.waitForFetch();
+          if (!e.isRemovedState()) {
             if (e.isVirgin()) {
               storageRead = _needStorageRead = true;
               e.startFetch(Entry.ProcessingState.READ);
               entryLocked = true;
             }
+            break;
+          }
         }
-        if (_needStorageRead) {
-          storageRead();
-          return;
-        }
-        existingDataFetched(e);
-        return; // exit for
+        e = heapCache.lookupOrNewEntrySynchronized(key);
       }
+      if (_needStorageRead) {
+        entry = e;
+        storageRead();
+        return;
+      }
+      heapHitButNotFresh(e);
     }
 
     public void storageRead() {
@@ -544,14 +561,6 @@ public class WiredCache<K, V> implements InternalCache<K, V>, StorageAdapter.Par
     }
 
     public void heapHitAndFresh(Entry<K, V> e) {
-      entry = e;
-      examine();
-    }
-
-    /**
-     *
-     */
-    public void existingDataFetched(Entry<K, V> e) {
       entry = e;
       examine();
     }
@@ -885,19 +894,6 @@ public class WiredCache<K, V> implements InternalCache<K, V>, StorageAdapter.Par
       ready();
     }
 
-    public void noMutationRequested() {
-      if (entryLocked) {
-        synchronized (entry) {
-          entry.processingDone();
-          entry.notifyAll();
-        }
-      }
-      synchronized (heapCache.lock) {
-        updateOnlyReadStatisticsInsideLock();
-      }
-      ready();
-    }
-
     /**
      *
      */
@@ -910,6 +906,28 @@ public class WiredCache<K, V> implements InternalCache<K, V>, StorageAdapter.Par
      * evict after each cache operation that may have created a new entry.
      */
     public void evictEventuallyAfterMutation() {
+      heapCache.evictEventually();
+      ready();
+    }
+
+    public void noMutationRequested() {
+      if (entryLocked) {
+        synchronized (entry) {
+          entry.processingDone();
+          entry.notifyAll();
+        }
+      }
+      synchronized (heapCache.lock) {
+        updateOnlyReadStatisticsInsideLock();
+      }
+      if (storageRead) {
+        evictEventuallyAfterExamine();
+        return;
+      }
+      ready();
+    }
+
+    public void evictEventuallyAfterExamine() {
       heapCache.evictEventually();
       ready();
     }
