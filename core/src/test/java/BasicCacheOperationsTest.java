@@ -23,7 +23,9 @@ import org.cache2k.Cache;
 import org.cache2k.CacheBuilder;
 import org.cache2k.CacheException;
 import org.cache2k.impl.InternalCache;
+import org.cache2k.junit.FastTests;
 import org.junit.*;
+import org.junit.experimental.categories.Category;
 
 import static org.junit.Assert.*;
 
@@ -31,6 +33,7 @@ import static org.junit.Assert.*;
  * Test basic cache operations on a shared cache in a simple configuration.
  * The cache may hold 1000 entries and has no expiry.
  */
+@Category(FastTests.class)
 public class BasicCacheOperationsTest {
 
   final static Integer KEY = 1;
