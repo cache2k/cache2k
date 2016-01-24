@@ -2382,7 +2382,12 @@ public abstract class BaseCache<K, V>
     if (v instanceof ExceptionWrapper) {
       ExceptionWrapper w = (ExceptionWrapper) v;
       if (w.additionalExceptionMessage == null) {
-        w.additionalExceptionMessage = w.getException() + w.toString();
+        long t = w.until;
+        if (t > 0) {
+          w.additionalExceptionMessage = "(expiry=" + (t > 0 ? formatMillis(t) : "none") + ") " + w.getException();
+        } else {
+          w.additionalExceptionMessage = w.getException() + "";
+        }
       }
       exceptionPropagator.propagateException(w.additionalExceptionMessage, w.getException());
     }

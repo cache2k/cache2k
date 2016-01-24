@@ -274,6 +274,8 @@ class CacheBaseInfo implements InternalCacheInfo {
             + "maxSize=" + getMaxSize() + ", "
             + "usageCnt=" + getUsageCnt() + ", "
             + "missCnt=" + getMissCnt() + ", "
+            + "peekMissCnt=" + (baseCache.peekMissCnt) + ", "
+            + "peekHitNotFresh=" + (baseCache.peekHitNotFreshCnt) + ", "
             + "fetchCnt=" + getFetchCnt() + ", "
             + "fetchButHitCnt=" + getFetchButHitCnt() + ", "
             + "heapHitCnt=" + hitCnt + ", "

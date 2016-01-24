@@ -50,6 +50,11 @@ public class WiredCache<K, V> implements InternalCache<K, V>, StorageAdapter.Par
   CacheSourceWithMetaInfo<K, V> source;
   CacheWriter<K, V> writer;
 
+  /** For testing */
+  public BaseCache getHeapCache() {
+    return heapCache;
+  }
+
   @Override
   public void resetStorage(final StorageAdapter _current, final StorageAdapter _new) {
     heapCache.resetStorage(_current, _new);
@@ -188,12 +193,20 @@ public class WiredCache<K, V> implements InternalCache<K, V>, StorageAdapter.Par
       @Override
       public void examine(EntryProgress<V, V> c, Entry<K, V> e) {
         if (e.hasFreshData()) {
-          c.result(e.getValueOrException());
+          c.finish(e.getValueOrException());
+        } else {
+          c.wantMutate();
+        }
+      }
+
+      @Override
+      public void update(final EntryProgress<V, V> c, final Entry<K, V> e) {
+        if (e.hasFreshData()) {
+          c.finish(e.getValueOrException());
         } else {
           c.load();
         }
       }
-
     }));
    }
 
@@ -389,8 +402,10 @@ public class WiredCache<K, V> implements InternalCache<K, V>, StorageAdapter.Par
 
     void wantData();
     void wantMutate();
-    void load();
     void result(R result);
+    void finish();
+    void finish(R result);
+    void load();
     void remove();
     void put(V value);
 
@@ -410,12 +425,11 @@ public class WiredCache<K, V> implements InternalCache<K, V>, StorageAdapter.Par
     long loadStartedTime;
     long loadCompletedTime;
     Throwable exceptionToPropagate;
-    /** we need to call the writer, storage, and event listeners for update */
-    boolean mutate = false;
     boolean remove;
     long expiry = 0;
     /** We locked the entry, don't lock it again. */
     boolean entryLocked = false;
+    boolean needsFinish = true;
 
     boolean storageRead = false;
     boolean storageMiss = false;
@@ -538,10 +552,21 @@ public class WiredCache<K, V> implements InternalCache<K, V>, StorageAdapter.Par
       boolean _expired = _expiryTimeFromStorage != 0 && _expiryTimeFromStorage <= now;
       if (!_expired) {
         _nextRefreshTime = heapCache.calcNextRefreshTime((K) se.getKey(), v, se.getCreatedOrUpdated(), null);
-        _expired = _nextRefreshTime > Entry.EXPIRY_TIME_MIN && _nextRefreshTime <= now;
-      }
-      if (!_expired) {
-        e.nextRefreshTime = - _nextRefreshTime;
+        expiry = _nextRefreshTime;
+        if (_nextRefreshTime == -1 || _nextRefreshTime == Long.MAX_VALUE) {
+          e.nextRefreshTime = Entry.FETCHED_STATE;
+        } else if (_nextRefreshTime == 0) {
+          e.nextRefreshTime = Entry.READ_NON_VALID;
+        } else {
+          if (_nextRefreshTime < 0) {
+            _nextRefreshTime = -_nextRefreshTime;
+          }
+          if (_nextRefreshTime <= now) {
+            e.nextRefreshTime = Entry.READ_NON_VALID;
+          } else {
+            e.nextRefreshTime = - _nextRefreshTime;
+          }
+        }
       } else {
         e.nextRefreshTime = Entry.READ_NON_VALID;
       }
@@ -567,18 +592,33 @@ public class WiredCache<K, V> implements InternalCache<K, V>, StorageAdapter.Par
 
     public void examine() {
       operation.examine(this, entry);
-      if (!mutate) {
-        noMutationRequested();
+      if (needsFinish) {
+        finish();
       }
     }
 
     @Override
     public void wantMutate() {
       lockFor(Entry.ProcessingState.MUTATE);
+      heapHitButNotFresh = false;
+      heapMiss = false;
       operation.update(this, entry);
-      if (!mutate) {
-        noMutationRequested();
+      if (needsFinish) {
+        finish();
       }
+    }
+
+    @Override
+    public void finish() {
+      needsFinish = false;
+      noMutationRequested();
+    }
+
+    @Override
+    public void finish(final R result) {
+      needsFinish = false;
+      this.result = result;
+      noMutationRequested();
     }
 
     @Override
@@ -587,8 +627,8 @@ public class WiredCache<K, V> implements InternalCache<K, V>, StorageAdapter.Par
         exceptionToPropagate = new CacheUsageExcpetion("source not set");
         return;
       }
-      mutate = true;
-      lockFor(Entry.ProcessingState.LOAD);
+      needsFinish = false;
+      entry.nextProcessingStep(Entry.ProcessingState.LOAD);
       if (!entry.isVirgin() && !storageRead) {
         synchronized (heapCache.lock) {
           heapCache.loadButHitCnt++;
@@ -611,30 +651,35 @@ public class WiredCache<K, V> implements InternalCache<K, V>, StorageAdapter.Par
     }
 
     void lockFor(Entry.ProcessingState ps) {
-      if (!entryLocked) {
-        Entry<K, V> e = entry;
-        int _spinCount = BaseCache.TUNABLE.maximumEntryLockSpins;
-        if (e == NON_FRESH_DUMMY) {
-          e = heapCache.lookupOrNewEntrySynchronized(key);
-        }
-        for (;;) {
-          if (_spinCount-- <= 0) {
-            throw new CacheLockSpinsExceededError();
-          }
-          synchronized (e) {
-            e.waitForFetch();
-            if (!e.isRemovedState()) {
-              e.startFetch(ps);
-              entryLocked = true;
-              entry = e;
-              return;
-            }
-          }
-          e = heapCache.lookupOrNewEntrySynchronized(key);
-        }
-      } else {
+      if (entryLocked) {
         entry.nextProcessingStep(ps);
+        return;
       }
+      Entry<K, V> e = entry;
+      if (e == NON_FRESH_DUMMY) {
+        e = heapCache.lookupOrNewEntrySynchronized(key);
+      }
+      int _spinCount = BaseCache.TUNABLE.maximumEntryLockSpins;
+      for (;;) {
+        if (_spinCount-- <= 0) {
+          throw new CacheLockSpinsExceededError();
+        }
+        synchronized (e) {
+          e.waitForFetch();
+          if (!e.isRemovedState()) {
+            e.startFetch(ps);
+            entryLocked = true;
+            entry = e;
+            return;
+          }
+        }
+        e = heapCache.lookupOrNewEntrySynchronized(key);
+      }
+    }
+
+    public void skipLoadAfterLocking() {
+      operation.loaded(this, entry, entry.getValueOrException());
+      mutationReleaseLock();
     }
 
     @Override
@@ -655,7 +700,6 @@ public class WiredCache<K, V> implements InternalCache<K, V>, StorageAdapter.Par
     public void loadCompleted() {
       entry.nextProcessingStep(Entry.ProcessingState.LOAD_COMPLETE);
       loadCompletedTime = System.currentTimeMillis();
-      mutate = true;
       mutationCalculateExpiry();
     }
 
@@ -666,7 +710,7 @@ public class WiredCache<K, V> implements InternalCache<K, V>, StorageAdapter.Par
 
     @Override
     public void put(V value) {
-      mutate = true;
+      needsFinish = false;
       newValueOrException = value;
       lastModificationTime = System.currentTimeMillis();
       mutationCalculateExpiry();
@@ -674,7 +718,7 @@ public class WiredCache<K, V> implements InternalCache<K, V>, StorageAdapter.Par
 
     @Override
     public void remove() {
-      mutate = true;
+      needsFinish = false;
       remove = true;
       lastModificationTime = System.currentTimeMillis();
       mutationMayCallWriter();
@@ -706,6 +750,15 @@ public class WiredCache<K, V> implements InternalCache<K, V>, StorageAdapter.Par
           lastModificationTime = entry.getLastModification();
           synchronized (heapCache.lock) {
             heapCache.suppressedExceptionCnt++;
+          }
+        } else {
+          if (newValueOrException instanceof ExceptionWrapper) {
+            ExceptionWrapper ew = (ExceptionWrapper) newValueOrException;
+            if (expiry < 0) {
+              ew.until = -expiry;
+            } else if (expiry > Entry.EXPIRY_TIME_MIN && expiry != Long.MAX_VALUE){
+              ew.until = expiry;
+            }
           }
         }
         operation.loaded(this, entry, newValueOrException);

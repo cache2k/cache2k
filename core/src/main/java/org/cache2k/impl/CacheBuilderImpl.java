@@ -181,6 +181,19 @@ public class CacheBuilderImpl<K, T> extends CacheBuilder<K, T> {
     bc.setName(_name);
     bc.init();
 
+    boolean _wrap = false;
+    _wrap = true;
+    if (_wrap) {
+      WiredCache<K, T> wc = new WiredCache<K, T>();
+      wc.heapCache = bc;
+      wc.source = bc.source;
+      wc.storage = bc.storage;
+      wc.writer = bc.writer;
+      if (bc.storage != null) {
+        ((PassingStorageAdapter) bc.storage).parent = wc;
+      }
+      _cache = wc;
+    }
 
     return _cache;
   }

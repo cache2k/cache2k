@@ -32,6 +32,10 @@ package org.cache2k.impl;
 public class ExceptionWrapper {
 
   Throwable exception;
+  int count;
+  long since;
+  long lastTry;
+  long until;
 
   /**
    * Store an additional exception message with the expiry time.
