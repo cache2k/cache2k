@@ -24,6 +24,9 @@ package org.cache2k.impl;
 
 import org.cache2k.Cache;
 import org.cache2k.CacheEntry;
+import org.cache2k.impl.util.Log;
+
+import java.util.concurrent.Future;
 
 /**
  * Interface to extended cache functions for the internal components.
@@ -31,6 +34,9 @@ import org.cache2k.CacheEntry;
  * @author Jens Wilke
  */
 public interface InternalCache<K, V> extends Cache<K, V>, CanCheckIntegrity {
+
+  /** used from the cache manager */
+  Log getLog();
 
   String getName();
 
@@ -41,6 +47,9 @@ public interface InternalCache<K, V> extends Cache<K, V>, CanCheckIntegrity {
   Class<?> getValueType();
 
   void clearTimingStatistics();
+
+  /** used from the cache manager for shutdown */
+  Future<Void> cancelTimerJobs();
 
   /**
    * Used by JCache impl, since access needs to trigger the TTI maybe use EP instead?

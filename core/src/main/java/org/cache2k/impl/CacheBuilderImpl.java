@@ -177,22 +177,27 @@ public class CacheBuilderImpl<K, T> extends CacheBuilder<K, T> {
     CacheManagerImpl cm = (CacheManagerImpl) (manager == null ? CacheManager.getInstance() : manager);
     bc.setCacheManager(cm);
     configureViaSetters(bc);
+
+    boolean _wrap = false;
+    _wrap = true;
+    WiredCache<K, T> wc = null;
+    if (_wrap) {
+      wc = new WiredCache<K, T>();
+      wc.heapCache = bc;
+      _cache = wc;
+    }
+
     String _name = cm.newCache(_cache, bc.getName());
     bc.setName(_name);
     bc.init();
 
-    boolean _wrap = false;
-    _wrap = true;
     if (_wrap) {
-      WiredCache<K, T> wc = new WiredCache<K, T>();
-      wc.heapCache = bc;
       wc.source = bc.source;
       wc.storage = bc.storage;
       wc.writer = bc.writer;
       if (bc.storage != null) {
         ((PassingStorageAdapter) bc.storage).parent = wc;
       }
-      _cache = wc;
     }
 
     return _cache;

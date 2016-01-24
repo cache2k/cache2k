@@ -319,7 +319,8 @@ public abstract class BaseCache<K, V>
   /**
    * Normally a cache itself logs nothing, so just construct when needed.
    */
-  protected Log getLog() {
+  @Override
+  public Log getLog() {
     return
       Log.getLog(Cache.class.getName() + '/' + getCompleteName());
   }
@@ -749,7 +750,8 @@ public abstract class BaseCache<K, V>
    * Preparation for shutdown. Cancel all pending timer jobs e.g. for
    * expiry/refresh or flushing the storage.
    */
-  Future<Void> cancelTimerJobs() {
+  @Override
+  public Future<Void> cancelTimerJobs() {
     synchronized (lock) {
       if (timer != null) {
         timer.cancel();

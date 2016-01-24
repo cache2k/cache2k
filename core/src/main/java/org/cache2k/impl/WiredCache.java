@@ -33,12 +33,14 @@ import org.cache2k.EntryProcessingResult;
 import org.cache2k.FetchCompletedListener;
 import org.cache2k.experimentalApi.AsyncCacheLoader;
 import org.cache2k.experimentalApi.AsyncCacheWriter;
+import org.cache2k.impl.util.Log;
 import org.cache2k.storage.StorageCallback;
 import org.cache2k.storage.StorageEntry;
 
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.Future;
 
 /**
  * @author Jens Wilke
@@ -49,6 +51,16 @@ public class WiredCache<K, V> implements InternalCache<K, V>, StorageAdapter.Par
   StorageAdapter storage;
   CacheSourceWithMetaInfo<K, V> source;
   CacheWriter<K, V> writer;
+
+  @Override
+  public Future<Void> cancelTimerJobs() {
+    return heapCache.cancelTimerJobs();
+  }
+
+  @Override
+  public Log getLog() {
+    return heapCache.getLog();
+  }
 
   /** For testing */
   public BaseCache getHeapCache() {
@@ -65,7 +77,9 @@ public class WiredCache<K, V> implements InternalCache<K, V>, StorageAdapter.Par
     return execute(key, new UpdateExisting<K, V, V>() {
       @Override
       public void update(EntryProgress<V, V> c, Entry<K, V> e) {
-        c.result(e.getValueOrException());
+        if (e.hasFreshData()) {
+          c.result(e.getValueOrException());
+        }
         c.put(value);
       }
     });
@@ -196,17 +210,13 @@ public class WiredCache<K, V> implements InternalCache<K, V>, StorageAdapter.Par
         if (e.hasFreshData()) {
           c.result(e.getValueOrException());
         } else {
-          c.wantMutate();
+          c.wantMutation();
         }
       }
 
       @Override
       public void update(final EntryProgress<V, V> c, final Entry<K, V> e) {
-        if (e.hasFreshData()) {
-          c.finish(e.getValueOrException());
-        } else {
-          c.load();
-        }
+        c.load();
       }
     }));
    }
@@ -360,7 +370,7 @@ public class WiredCache<K, V> implements InternalCache<K, V>, StorageAdapter.Par
 
     @Override
     public void examine(EntryProgress<V, R> c, Entry<K, V> e) {
-      c.wantMutate();
+      c.wantMutation();
     }
 
     @Override
@@ -402,7 +412,7 @@ public class WiredCache<K, V> implements InternalCache<K, V>, StorageAdapter.Par
   interface EntryProgress<V, R> {
 
     void wantData();
-    void wantMutate();
+    void wantMutation();
     void result(R result);
     void finish();
     void finish(R result);
@@ -598,10 +608,17 @@ public class WiredCache<K, V> implements InternalCache<K, V>, StorageAdapter.Par
     }
 
     @Override
-    public void wantMutate() {
-      lockFor(Entry.ProcessingState.MUTATE);
+    public void wantMutation() {
       heapHitButNotFresh = false;
       heapMiss = false;
+      if (!entryLocked) {
+        lockFor(Entry.ProcessingState.MUTATE);
+        operation.examine(this, entry);
+        if (needsFinish) {
+          finish();
+        }
+        return;
+      }
       operation.update(this, entry);
       if (needsFinish) {
         finish();
@@ -909,6 +926,7 @@ public class WiredCache<K, V> implements InternalCache<K, V>, StorageAdapter.Par
       }
       if (storageRead && storageMiss) {
         heapCache.readNonFreshCnt++;
+        heapCache.peekHitNotFreshCnt++;
       }
       if (storageRead && !storageMiss) {
         heapCache.readHitCnt++;

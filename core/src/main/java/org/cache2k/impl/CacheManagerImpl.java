@@ -249,7 +249,7 @@ public class CacheManagerImpl extends CacheManager {
         for (Cache c : caches) {
           if (c instanceof InternalCache) {
             try {
-              Future<Void> f = ((BaseCache) c).cancelTimerJobs();
+              Future<Void> f = ((InternalCache) c).cancelTimerJobs();
               _wait.add(f);
             } catch (Throwable t) {
               _suppressedExceptions.add(t);
@@ -264,7 +264,7 @@ public class CacheManagerImpl extends CacheManager {
         if (!_wait.isDone()) {
           for (Cache c : caches) {
             if (c instanceof InternalCache) {
-              BaseCache bc = (BaseCache) c;
+              InternalCache bc = (InternalCache) c;
               try {
                 Future<Void> f = bc.cancelTimerJobs();
                 if (!f.isDone()) {
