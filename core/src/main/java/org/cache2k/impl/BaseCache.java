@@ -158,6 +158,8 @@ public abstract class BaseCache<K, V>
 
   protected long loadCnt = 0;
 
+  protected long loadFailedCnt = 0;
+
   protected long loadButHitCnt = 0;
 
   protected long bulkGetCnt = 0;
@@ -3455,7 +3457,7 @@ public abstract class BaseCache<K, V>
    * For peek no fetch is counted if there is a storage miss, hence the extra counter.
    */
   public long getFetchesBecauseOfNewEntries() {
-    return loadCnt - loadButHitCnt;
+    return loadCnt - loadButHitCnt + loadFailedCnt;
   }
 
   protected int getFetchesInFlight() {

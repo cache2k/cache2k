@@ -183,8 +183,9 @@ public class WiredCache<K, V> implements InternalCache<K, V>, StorageAdapter.Par
 
   @Override
   public V get(K key) {
+    Entry<K, V> e;
     final int hc =  heapCache.modifiedHash(key.hashCode());
-    Entry<K, V> e = heapCache.lookupEntryUnsynchronized(key, hc);
+    e = heapCache.lookupEntryUnsynchronized(key, hc);
     if (e != null && e.hasFreshData()) {
       return heapCache.returnValue(e.getValueOrException());
     }
@@ -193,7 +194,7 @@ public class WiredCache<K, V> implements InternalCache<K, V>, StorageAdapter.Par
       @Override
       public void examine(EntryProgress<V, V> c, Entry<K, V> e) {
         if (e.hasFreshData()) {
-          c.finish(e.getValueOrException());
+          c.result(e.getValueOrException());
         } else {
           c.wantMutate();
         }
@@ -575,7 +576,6 @@ public class WiredCache<K, V> implements InternalCache<K, V>, StorageAdapter.Par
     }
 
     public void heapHitButNotFresh(Entry<K, V> e) {
-      heapHitButNotFresh = true;
       entry = e;
       examine();
     }
@@ -623,17 +623,22 @@ public class WiredCache<K, V> implements InternalCache<K, V>, StorageAdapter.Par
 
     @Override
     public void load() {
-      if (source == null) {
-        exceptionToPropagate = new CacheUsageExcpetion("source not set");
-        return;
-      }
-      needsFinish = false;
-      entry.nextProcessingStep(Entry.ProcessingState.LOAD);
       if (!entry.isVirgin() && !storageRead) {
         synchronized (heapCache.lock) {
           heapCache.loadButHitCnt++;
         }
       }
+      if (source == null) {
+        exceptionToPropagate = new CacheUsageExcpetion("source not set");
+        synchronized (heapCache.lock) {
+          if (entry.isVirgin()) {
+            heapCache.loadFailedCnt++;
+          }
+        }
+        return;
+      }
+      needsFinish = false;
+      entry.nextProcessingStep(Entry.ProcessingState.LOAD);
       Entry<K, V> e = entry;
       long t0 = lastModificationTime = loadStartedTime = System.currentTimeMillis();
       V v;
@@ -675,11 +680,6 @@ public class WiredCache<K, V> implements InternalCache<K, V>, StorageAdapter.Par
         }
         e = heapCache.lookupOrNewEntrySynchronized(key);
       }
-    }
-
-    public void skipLoadAfterLocking() {
-      operation.loaded(this, entry, entry.getValueOrException());
-      mutationReleaseLock();
     }
 
     @Override
@@ -966,6 +966,9 @@ public class WiredCache<K, V> implements InternalCache<K, V>, StorageAdapter.Par
     public void noMutationRequested() {
       if (entryLocked) {
         synchronized (entry) {
+          if (entry.isVirgin()) {
+            entry.nextRefreshTime = Entry.FETCH_ABORT;
+          }
           entry.processingDone();
           entry.notifyAll();
         }
