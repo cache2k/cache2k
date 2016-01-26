@@ -383,6 +383,8 @@ public class WiredCache<K, V> implements InternalCache<K, V>, StorageAdapter.Par
     boolean heapHitButNotFresh = false;
     boolean heapMiss = false;
 
+    boolean wantData = false;
+
     public EntryAction(Semantic<K, V, R> op, K k, Entry<K,V> e) {
       operation = op;
       key = k;
@@ -395,6 +397,7 @@ public class WiredCache<K, V> implements InternalCache<K, V>, StorageAdapter.Par
 
     @Override
     public void wantData() {
+      wantData = true;
       if (storage == null) {
         retrieveDataFromHeap();
         return;
@@ -521,6 +524,7 @@ public class WiredCache<K, V> implements InternalCache<K, V>, StorageAdapter.Par
     }
 
     public void heapHitButNotFresh(Entry<K, V> e) {
+      heapHitButNotFresh = true;
       entry = e;
       examine();
     }
@@ -544,8 +548,6 @@ public class WiredCache<K, V> implements InternalCache<K, V>, StorageAdapter.Par
 
     @Override
     public void wantMutation() {
-      heapHitButNotFresh = false;
-      heapMiss = false;
       if (!entryLocked) {
         lockFor(Entry.ProcessingState.MUTATE);
         operation.examine(this, entry);
@@ -657,7 +659,11 @@ public class WiredCache<K, V> implements InternalCache<K, V>, StorageAdapter.Par
       needsFinish = false;
       newValueOrException = value;
       lastModificationTime = System.currentTimeMillis();
-      metrics().put();
+      if (entry.isVirgin()) {
+        metrics().putNewEntry();
+      } else {
+        metrics().putHit();
+      }
       mutationCalculateExpiry();
     }
 
@@ -899,6 +905,9 @@ public class WiredCache<K, V> implements InternalCache<K, V>, StorageAdapter.Par
         }
       } else {
         updateOnlyReadStatisticsInsideLock();
+        if (wantData) {
+          metrics().casOperation();
+        }
       }
     }
 

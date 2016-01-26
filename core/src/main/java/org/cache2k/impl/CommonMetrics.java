@@ -27,12 +27,20 @@ package org.cache2k.impl;
  */
 public interface CommonMetrics {
 
-  long getPutCount();
+  long getPutNewEntryCount();
+  long getPutHitCount();
+  long getCasOperationCount();
 
   interface Updater extends CommonMetrics {
 
-    void put();
-    void put(long cnt);
+    void putNewEntry();
+    void putNewEntry(long cnt);
+
+    void putHit();
+    void putHit(long cnt);
+
+    void casOperation();
+    void casOperation(long cnt);
 
   }
 

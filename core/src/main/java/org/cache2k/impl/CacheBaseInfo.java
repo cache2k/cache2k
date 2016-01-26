@@ -61,14 +61,14 @@ class CacheBaseInfo implements InternalCacheInfo {
     }
     fetchesInFlight = baseCache.getFetchesInFlight();
     size = baseCache.getLocalSize();
-    missCnt = baseCache.loadCnt - baseCache.refreshCnt + baseCache.peekHitNotFreshCnt + baseCache.peekMissCnt;
+    missCnt = baseCache.loadCnt + baseCache.peekHitNotFreshCnt + baseCache.peekMissCnt;
     storageMissCnt = baseCache.readMissCnt + baseCache.readNonFreshCnt + baseCache.readNonFreshAndFetchedCnt;
     storageLoadCnt = storageMissCnt + baseCache.readHitCnt;
     newEntryCnt = baseCache.newEntryCnt - baseCache.virginEvictCnt;
     hitCnt = baseCache.getHitCnt();
-    correctedPutCnt = metrics.getPutCount() - baseCache.putButExpiredCnt;
+    correctedPutCnt = metrics.getPutNewEntryCount() + metrics.getPutHitCount() - baseCache.putButExpiredCnt;
     usageCnt =
-            hitCnt + newEntryCnt + baseCache.peekMissCnt;
+            hitCnt + newEntryCnt + baseCache.peekMissCnt - metrics.getCasOperationCount();
   }
 
   String percentString(double d) {
@@ -102,7 +102,9 @@ class CacheBaseInfo implements InternalCacheInfo {
   @Override
   public long getStorageMissCnt() { return storageMissCnt; }
   @Override
-  public long getReadUsageCnt() { return usageCnt - metrics.getPutCount() - baseCache.removedCnt - baseCache.atomicOpNewEntryCnt; }
+  public long getReadUsageCnt() {
+    return hitCnt + baseCache.peekMissCnt + baseCache.loadCnt - baseCache.loadButHitCnt - metrics.getPutHitCount();
+  }
   @Override
   public long getUsageCnt() { return usageCnt; }
   @Override
@@ -149,7 +151,7 @@ class CacheBaseInfo implements InternalCacheInfo {
   @Override
   public String getDataHitString() { return percentString(getDataHitRate()); }
   @Override
-  public double getEntryHitRate() { return usageCnt == 0 ? 100 : (usageCnt - newEntryCnt + metrics.getPutCount()) * 100D / usageCnt; }
+  public double getEntryHitRate() { return usageCnt == 0 ? 100 : (usageCnt - newEntryCnt + metrics.getPutNewEntryCount()) * 100D / usageCnt; }
   @Override
   public String getEntryHitString() { return percentString(getEntryHitRate()); }
   /** How many items will be accessed with collision */

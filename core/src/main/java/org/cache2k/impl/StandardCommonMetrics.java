@@ -29,20 +29,52 @@ import java.util.concurrent.atomic.AtomicLongFieldUpdater;
  */
 public class StandardCommonMetrics implements CommonMetrics.Updater {
 
-  static final AtomicLongFieldUpdater<StandardCommonMetrics> PUT_UPDATER =
-    AtomicLongFieldUpdater.newUpdater(StandardCommonMetrics.class, "put");
-  private volatile long put;
+  static final AtomicLongFieldUpdater<StandardCommonMetrics> PUT_NEW_ENTRY_UPDATER =
+    AtomicLongFieldUpdater.newUpdater(StandardCommonMetrics.class, "putNewEntry");
+  private volatile long putNewEntry;
   @Override
-  public void put() {
-    PUT_UPDATER.incrementAndGet(this);
+  public void putNewEntry() {
+    PUT_NEW_ENTRY_UPDATER.incrementAndGet(this);
   }
   @Override
-  public long getPutCount() {
-    return PUT_UPDATER.get(this);
+  public long getPutNewEntryCount() {
+    return PUT_NEW_ENTRY_UPDATER.get(this);
   }
   @Override
-  public void put(final long cnt) {
-    PUT_UPDATER.addAndGet(this, cnt);
+  public void putNewEntry(final long cnt) {
+    PUT_NEW_ENTRY_UPDATER.addAndGet(this, cnt);
+  }
+
+  static final AtomicLongFieldUpdater<StandardCommonMetrics> CAS_OPERATION_UPDATER =
+    AtomicLongFieldUpdater.newUpdater(StandardCommonMetrics.class, "casOperation");
+  private volatile long casOperation;
+  @Override
+  public void casOperation() {
+    CAS_OPERATION_UPDATER.incrementAndGet(this);
+  }
+  @Override
+  public long getCasOperationCount() {
+    return CAS_OPERATION_UPDATER.get(this);
+  }
+  @Override
+  public void casOperation(final long cnt) {
+    CAS_OPERATION_UPDATER.addAndGet(this, cnt);
+  }
+
+  static final AtomicLongFieldUpdater<StandardCommonMetrics> putHitUpdater =
+    AtomicLongFieldUpdater.newUpdater(StandardCommonMetrics.class, "putHit");
+  private volatile long putHit;
+  @Override
+  public void putHit() {
+    putHitUpdater.incrementAndGet(this);
+  }
+  @Override
+  public long getPutHitCount() {
+    return putHitUpdater.get(this);
+  }
+  @Override
+  public void putHit(final long cnt) {
+    putHitUpdater.addAndGet(this, cnt);
   }
 
 }

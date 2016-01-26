@@ -2827,19 +2827,21 @@ public abstract class BaseCache<K, V>
             loadExceptionCnt++;
           }
         }
-        loadCnt++;
         fetchMillis += t - t0;
         if (e.isGettingRefresh()) {
           refreshCnt++;
+        } else {
+          loadCnt++;
+          if (e.isLoadedNonValidAndFetch()) {
+            readNonFreshAndFetchedCnt++;
+          } else if (!e.isVirgin()) {
+            loadButHitCnt++;
+          }
         }
-        if (e.isLoadedNonValidAndFetch()) {
-          readNonFreshAndFetchedCnt++;
-        } else if (!e.isVirgin()) {
-          loadButHitCnt++;
-        }
+
       }
     } else if (_updateStatistics == INSERT_STAT_PUT) {
-      metrics.put();
+      metrics.putNewEntry();
       eventuallyAdjustPutNewEntryCount(e);
       if (e.nextRefreshTime == Entry.LOADED_NON_VALID_AND_PUT) {
         peekHitNotFreshCnt++;
