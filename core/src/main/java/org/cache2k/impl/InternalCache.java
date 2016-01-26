@@ -51,15 +51,15 @@ public interface InternalCache<K, V> extends Cache<K, V>, CanCheckIntegrity {
   /** used from the cache manager for shutdown */
   Future<Void> cancelTimerJobs();
 
+  InternalCacheInfo getInfo();
+
+  InternalCacheInfo getLatestInfo();
+
   /**
    * Used by JCache impl, since access needs to trigger the TTI maybe use EP instead?
    */
   CacheEntry<K, V> replaceOrGet(K key, V _oldValue, V _newValue, CacheEntry<K, V> _dummyEntry);
 
   boolean removeWithFlag(K key);
-
-  InternalCacheInfo getInfo();
-
-  InternalCacheInfo getLatestInfo();
 
 }
