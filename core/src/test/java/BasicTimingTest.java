@@ -25,7 +25,7 @@ import org.cache2k.junit.TimingTests;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.*;
 
 /**
  * Tests that need to run separately to test some assumption on timings of current machines.
@@ -47,6 +47,7 @@ public class BasicTimingTest {
     for (int i = 0; i < _CACHE_SIZE; i++) {
       c.put(i, i);
     }
+    assertNotNull(c.toString());
   }
 
 }
