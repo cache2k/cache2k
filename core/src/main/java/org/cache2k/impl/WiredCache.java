@@ -24,7 +24,6 @@ package org.cache2k.impl;
 
 import org.cache2k.CacheEntry;
 import org.cache2k.CacheEntryProcessor;
-import org.cache2k.CacheException;
 import org.cache2k.CacheManager;
 import org.cache2k.CacheSourceWithMetaInfo;
 import org.cache2k.CacheWriter;
@@ -349,11 +348,7 @@ public class WiredCache<K, V> implements InternalCache<K, V>, StorageAdapter.Par
     }
     Throwable t = _action.exceptionToPropagate;
     if (t != null) {
-      if (t instanceof RuntimeException) {
-        throw ((RuntimeException) t);
-      } else {
-        throw new CacheException(t);
-      }
+      throw new WrappedOperationException(t);
     }
     return _action.result;
   }
