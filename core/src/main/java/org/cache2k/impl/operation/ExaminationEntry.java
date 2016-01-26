@@ -1,4 +1,4 @@
-package org.cache2k.storage;
+package org.cache2k.impl.operation;
 
 /*
  * #%L
@@ -23,13 +23,23 @@ package org.cache2k.storage;
  */
 
 /**
+ * A entry on the heap cache, that may only be used for reading.
+ * Only the relevant properties are defined to implement the cache
+ * semantics on it.
+ *
  * @author Jens Wilke
  */
-public interface StorageCallback {
+public interface ExaminationEntry<K, V> {
 
-  void onReadSuccess(StorageEntry e);
-  void onReadFailure(Throwable t);
-  void onStoreSuccess();
-  void onStoreFailure(Throwable t);
+  /** Entry contains valid and not expired data */
+  boolean hasFreshData();
+
+  /** Associated key */
+  K getKey();
+
+  /** Associated value or the {@link org.cache2k.impl.ExceptionWrapper} */
+  V getValueOrException();
+
+  long getLastModification();
 
 }

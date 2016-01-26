@@ -25,11 +25,13 @@ package org.cache2k.storage;
 /**
  * @author Jens Wilke
  */
-public interface StorageCallback {
+public interface StorageMetrics {
 
-  void onReadSuccess(StorageEntry e);
-  void onReadFailure(Throwable t);
-  void onStoreSuccess();
-  void onStoreFailure(Throwable t);
+  long getReadMiss();
+
+  interface Updater extends StorageMetrics {
+    void readMiss();
+    void readMiss(long cnt);
+  }
 
 }

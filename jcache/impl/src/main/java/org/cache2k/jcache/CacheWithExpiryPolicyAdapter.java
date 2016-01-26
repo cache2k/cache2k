@@ -66,7 +66,7 @@ import java.util.Set;
  */
 public class CacheWithExpiryPolicyAdapter<K, V> implements Cache<K, V> {
 
-  org.cache2k.Cache<K, ValueAndExtra<V>> c2kCache;
+  org.cache2k.impl.InternalCache<K, ValueAndExtra<V>> c2kCache;
   Cache2kCacheAdapter<K, ValueAndExtra<V>> cache;
   Class<K> keyType;
   Class<V> valueType;
@@ -313,7 +313,7 @@ public class CacheWithExpiryPolicyAdapter<K, V> implements Cache<K, V> {
   public boolean replace(K key, V oldValue, V newValue) {
     checkClosed();
     CacheEntry<K, ValueAndExtra<V>> e =
-        ((BaseCache) c2kCache).replaceOrGet(
+        c2kCache.replaceOrGet(
             key,
             new ValueAndExtra<V>(oldValue),
             new ValueAndExtra<V>(newValue),

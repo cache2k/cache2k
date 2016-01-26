@@ -1,4 +1,4 @@
-package org.cache2k.storage;
+package org.cache2k.impl;
 
 /*
  * #%L
@@ -25,11 +25,15 @@ package org.cache2k.storage;
 /**
  * @author Jens Wilke
  */
-public interface StorageCallback {
+public interface CommonMetrics {
 
-  void onReadSuccess(StorageEntry e);
-  void onReadFailure(Throwable t);
-  void onStoreSuccess();
-  void onStoreFailure(Throwable t);
+  long getPutCount();
+
+  interface Updater extends CommonMetrics {
+
+    void put();
+    void put(long cnt);
+
+  }
 
 }

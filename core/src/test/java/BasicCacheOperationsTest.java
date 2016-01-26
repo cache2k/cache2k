@@ -21,6 +21,7 @@
  */
 import org.cache2k.Cache;
 import org.cache2k.CacheBuilder;
+import org.cache2k.CacheEntry;
 import org.cache2k.CacheException;
 import org.cache2k.impl.InternalCache;
 import org.cache2k.junit.FastTests;
@@ -77,9 +78,7 @@ public class BasicCacheOperationsTest {
   }
 
   /*
-   * initial
-   *
-   * Test on the initial state of the cache.
+   * initial: Tests on the initial state of the cache.
    */
 
   @Test
@@ -131,6 +130,136 @@ public class BasicCacheOperationsTest {
   @Test(expected = NullPointerException.class)
   public void put_NullKey() {
     cache.put(null, VALUE);
+  }
+
+  /*
+   * peekAndPut
+   */
+  @Test
+  public void peekAndPut() {
+    Integer v = cache.peekAndPut(KEY, VALUE);
+    assertNull(v);
+    v = cache.peekAndPut(KEY, VALUE);
+    assertNotNull(v);
+    assertEquals(VALUE, v);
+  }
+
+  @Test(expected = NullPointerException.class)
+  public void peekAndPut_NullKey() {
+    cache.peekAndPut(null, VALUE);
+  }
+
+  @Test
+  public void peekAndPut_Null() {
+    Integer v = cache.peekAndPut(KEY, null);
+    assertNull(v);
+    assertTrue(cache.contains(KEY));
+    v = cache.peekAndPut(KEY, VALUE);
+    assertNull(v);
+    assertTrue(cache.contains(KEY));
+    v = cache.peekAndPut(KEY, null);
+    assertNotNull(v);
+    assertEquals(VALUE, v);
+    v = cache.peekAndPut(KEY, null);
+    assertNull(v);
+  }
+
+  /*
+   * peekAndRemove
+   */
+
+  @Test
+  public void peekAndRemove() {
+    Integer v = cache.peekAndRemove(KEY);
+    assertNull(v);
+    assertFalse(cache.contains(KEY));
+    cache.put(KEY, VALUE);
+    assertTrue(cache.contains(KEY));
+    v = cache.peekAndRemove(KEY);
+    assertNotNull(v);
+    assertFalse(cache.contains(KEY));
+  }
+
+  @Test
+  public void peekAndRemove_Null() {
+    cache.put(KEY, null);
+    assertTrue(cache.contains(KEY));
+    Integer v = cache.peekAndRemove(KEY);
+    assertNull(v);
+    assertFalse(cache.contains(KEY));
+  }
+
+  @Test(expected = NullPointerException.class)
+  public void peekAndRemove_NullKey() {
+    cache.peekAndRemove(null);
+  }
+
+  /*
+   * peekAndReplace
+   */
+
+  @Test
+  public void peekAndReplace() {
+    Integer v = cache.peekAndReplace(KEY, VALUE);
+    assertNull(v);
+    assertFalse(cache.contains(KEY));
+    cache.put(KEY, VALUE);
+    v = cache.peekAndReplace(KEY, OTHER_VALUE);
+    assertNotNull(v);
+    assertTrue(cache.contains(KEY));
+    assertEquals(VALUE, v);
+    assertEquals(OTHER_VALUE, cache.peek(KEY));
+  }
+
+  @Test
+  public void peekAndReplace_Null() {
+    Integer v = cache.peekAndReplace(KEY, null);
+    assertNull(v);
+    assertFalse(cache.contains(KEY));
+    cache.put(KEY, VALUE);
+    v = cache.peekAndReplace(KEY, null);
+    assertNotNull(v);
+    assertTrue(cache.contains(KEY));
+    assertEquals(VALUE, v);
+    assertNull(cache.peek(KEY));
+  }
+
+  @Test(expected = NullPointerException.class)
+  public void peekAndReplace_NullKey() {
+    cache.peekAndReplace(null, VALUE);
+  }
+
+  /*
+   * peekEntry
+   */
+
+  @Test
+  public void peekEntry() {
+    long t0 = System.currentTimeMillis();
+    CacheEntry<Integer, Integer> e = cache.peekEntry(KEY);
+    assertNull(e);
+    cache.put(KEY, VALUE);
+    e = cache.peekEntry(KEY);
+    assertEquals(KEY, e.getKey());
+    assertEquals(VALUE, e.getValue());
+    assertTrue(e.getLastModification() >= t0);
+  }
+
+  @Test
+  public void peekEntry_Null() {
+    long t0 = System.currentTimeMillis();
+    CacheEntry<Integer, Integer> e = cache.peekEntry(KEY);
+    assertNull(e);
+    cache.put(KEY, null);
+    e = cache.peekEntry(KEY);
+    assertEquals(KEY, e.getKey());
+    assertNull(e.getValue());
+    assertTrue(e.getLastModification() >= t0);
+  }
+
+  @Test(expected = NullPointerException.class)
+  public void peekEntry_NullKey() {
+    cache.peekEntry(null);
   }
 
   /*

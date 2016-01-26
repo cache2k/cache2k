@@ -32,18 +32,18 @@ import java.util.concurrent.Executor;
  */
 public interface AsyncCacheLoader<K,V> {
 
-  void get(K key, V value, CacheEntry<K, V> entry, CompletedListener<V> callback, Executor ex);
+  void get(K key, V value, CacheEntry<K, V> entry, Callback<V> callback, Executor ex);
 
   /**
    * Callback for async cache load.
    *
    * @author Jens Wilke
    */
-  interface CompletedListener<V> extends EventListener {
+  interface Callback<V> extends EventListener {
 
-    void loadComplete(V value);
+    void onLoadSuccess(V value);
 
-    void loadException(Throwable t);
+    void onLoadFailure(Throwable t);
 
   }
 

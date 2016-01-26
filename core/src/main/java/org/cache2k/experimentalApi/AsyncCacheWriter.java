@@ -30,17 +30,17 @@ import java.util.concurrent.Executor;
  */
 public interface AsyncCacheWriter<K,V> {
 
-  void write(K key, V value, CompletedListener callback, Executor ex);
+  void write(K key, V value, Callback callback, Executor ex);
 
-  void remove(K key, CompletedListener callback, Executor ex);
+  void remove(K key, Callback callback, Executor ex);
 
   /**
    * @author Jens Wilke
    */
-  interface CompletedListener extends EventListener {
+  interface Callback extends EventListener {
 
-    void writeComplete();
-    void writeException(Throwable ex);
+    void onWriteSuccess();
+    void onWriteFailure(Throwable ex);
 
   }
 }

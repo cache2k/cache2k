@@ -33,10 +33,14 @@ import org.cache2k.EntryProcessingResult;
 import org.cache2k.FetchCompletedListener;
 import org.cache2k.experimentalApi.AsyncCacheLoader;
 import org.cache2k.experimentalApi.AsyncCacheWriter;
+import org.cache2k.impl.operation.Progress;
+import org.cache2k.impl.operation.Semantic;
+import org.cache2k.impl.operation.Specification;
 import org.cache2k.impl.util.Log;
 import org.cache2k.storage.StorageCallback;
 import org.cache2k.storage.StorageEntry;
 
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -46,6 +50,8 @@ import java.util.concurrent.Future;
  * @author Jens Wilke
  */
 public class WiredCache<K, V> implements InternalCache<K, V>, StorageAdapter.Parent {
+
+  final Specification<K, V> SPEC = new Specification<K,V>();
 
   BaseCache<K,V> heapCache;
   StorageAdapter storage;
@@ -73,99 +79,6 @@ public class WiredCache<K, V> implements InternalCache<K, V>, StorageAdapter.Par
   }
 
   @Override
-  public V peekAndPut(final K key, final V value) {
-    return execute(key, new UpdateExisting<K, V, V>() {
-      @Override
-      public void update(EntryProgress<V, V> c, Entry<K, V> e) {
-        if (e.hasFreshData()) {
-          c.result(e.getValueOrException());
-        }
-        c.put(value);
-      }
-    });
-  }
-
-  @Override
-  public V peekAndRemove(K key) {
-    return heapCache.peekAndRemove(key);
-  }
-
-  @Override
-  public V peekAndReplace(K key, V _value) {
-    return heapCache.peekAndReplace(key, _value);
-  }
-
-  @Override
-  public CacheEntry<K, V> peekEntry(K key) {
-    return heapCache.peekEntry(key);
-  }
-
-  @Override
-  public void prefetch(K key) {
-    heapCache.prefetch(key);
-  }
-
-  @Override
-  public void prefetch(List<K> keys, int _startIndex, int _afterEndIndex) {
-    heapCache.prefetch(keys, _startIndex, _afterEndIndex);
-  }
-
-  @Override
-  public void prefetch(Set<K> keys) {
-    heapCache.prefetch(keys);
-  }
-
-  @Override
-  public void put(K key, V value) {
-    heapCache.put(key, value);
-  }
-
-  @Override
-  public void putAll(Map<? extends K, ? extends V> m) {
-    heapCache.putAll(m);
-  }
-
-  @Override
-  public boolean putIfAbsent(K key, V value) {
-    return heapCache.putIfAbsent(key, value);
-  }
-
-  @Override
-  public void remove(K key) {
-    heapCache.remove(key);
-  }
-
-  @Override
-  public boolean remove(K key, V value) {
-    return heapCache.remove(key, value);
-  }
-
-  @Override
-  public boolean removeWithFlag(K key) {
-    return heapCache.removeWithFlag(key);
-  }
-
-  @Override
-  public void removeAll() {
-    heapCache.removeAll();
-  }
-
-  @Override
-  public void removeAllAtOnce(Set<K> key) {
-    heapCache.removeAllAtOnce(key);
-  }
-
-  @Override
-  public boolean replace(K key, V _newValue) {
-    return heapCache.replace(key, _newValue);
-  }
-
-  @Override
-  public boolean replace(K key, V _oldValue, V _newValue) {
-    return heapCache.replace(key, _oldValue, _newValue);
-  }
-
-  @Override
   public String getName() {
     return heapCache.getName();
   }
@@ -181,13 +94,99 @@ public class WiredCache<K, V> implements InternalCache<K, V>, StorageAdapter.Par
   }
 
   @Override
+  public V peekAndPut(K key, V value) {
+    return execute(key, SPEC.peekAndPut(key, value));
+  }
+
+  @Override
+  public V peekAndRemove(K key) {
+    return execute(key, SPEC.peekAndRemove(key));
+  }
+
+  @Override
+  public V peekAndReplace(K key, V value) {
+    return execute(key, SPEC.peekAndReplace(key, value));
+  }
+
+  @Override
+  public CacheEntry<K, V> peekEntry(K key) { return execute(key, SPEC.peekEntry(key)); }
+
+  @Override
+  public void prefetch(K key) {
+  }
+
+  @Override
+  public void prefetch(List<K> keys, int _startIndex, int _afterEndIndex) {
+  }
+
+  @Override
+  public void prefetch(Set<K> keys) {
+  }
+
+  @Override
+  public void put(K key, V value) {
+    execute(key, SPEC.put(key, value));
+  }
+
+  @Override
+  public void putAll(Map<? extends K, ? extends V> m) {
+    for (Map.Entry<? extends K, ? extends V> e : m.entrySet()) {
+      put(e.getKey(), e.getValue());
+    }
+  }
+
+  @Override
+  public boolean putIfAbsent(K key, V value) {
+    return execute(key, SPEC.putIfAbsent(key, value));
+  }
+
+  @Override
+  public void remove(K key) {
+    execute(key, SPEC.remove(key));
+  }
+
+  @Override
+  public boolean remove(K key, V value) {
+    return execute(key, SPEC.remove(key, value));
+  }
+
+  @Override
+  public boolean removeWithFlag(K key) {
+    return execute(key, SPEC.containsAndRemove(key));
+  }
+
+  @Override
+  public void removeAll() {
+    for (CacheEntry<K, V> e : this) {
+      remove(e.getKey());
+    }
+  }
+
+  @Override
+  public void removeAllAtOnce(Set<K> _keys) {
+    for (K k : _keys) {
+      remove(k);
+    }
+  }
+
+  @Override
+  public boolean replace(K key, V _newValue) {
+    return execute(key, SPEC.replace(key, _newValue));
+  }
+
+  @Override
+  public boolean replace(K key, V _oldValue, V _newValue) {
+    return execute(key, SPEC.replace(key, _oldValue, _newValue));
+  }
+
+  @Override
   public CacheEntry<K, V> replaceOrGet(K key, V _oldValue, V _newValue, CacheEntry<K, V> _dummyEntry) {
-    return heapCache.replaceOrGet(key, _oldValue, _newValue, _dummyEntry);
+    return execute(key, SPEC.replaceOrGet(key, _oldValue, _newValue, _dummyEntry));
   }
 
   @Override
   public boolean contains(K key) {
-    return heapCache.contains(key);
+    return execute(key, SPEC.contains(key));
   }
 
   @Override
@@ -195,34 +194,41 @@ public class WiredCache<K, V> implements InternalCache<K, V>, StorageAdapter.Par
     heapCache.fetchAll(keys, replaceExistingValues, l);
   }
 
+  V returnValue(V v) {
+    return heapCache.returnValue(v);
+  }
+
+  V returnValue(Entry<K,V> e) {
+    return returnValue(e.getValueOrException());
+  }
+
+  Entry<K, V> lookup(K key) {
+    final int hc =  heapCache.modifiedHash(key.hashCode());
+    return heapCache.lookupEntryUnsynchronized(key, hc);
+  }
+
   @Override
   public V get(K key) {
-    Entry<K, V> e;
-    final int hc =  heapCache.modifiedHash(key.hashCode());
-    e = heapCache.lookupEntryUnsynchronized(key, hc);
+    Entry<K, V> e = lookup(key);
     if (e != null && e.hasFreshData()) {
-      return heapCache.returnValue(e.getValueOrException());
+      return returnValue(e);
     }
-    return heapCache.returnValue(execute(key, e, new ExamineExisting<K, V, V>() {
-
-      @Override
-      public void examine(EntryProgress<V, V> c, Entry<K, V> e) {
-        if (e.hasFreshData()) {
-          c.result(e.getValueOrException());
-        } else {
-          c.wantMutation();
-        }
-      }
-
-      @Override
-      public void update(final EntryProgress<V, V> c, final Entry<K, V> e) {
-        c.load();
-      }
-    }));
+    return returnValue(execute(key, e, SPEC.get(key)));
    }
 
+  public Map<K, V> getAllXy(Set<? extends K> _keys) {
+    Map<K, V> map = new HashMap<K, V>();
+    for (K k : _keys) {
+      CacheEntry<K, V> e = getEntry(k);
+      if (e != null) {
+      }
+      remove(k);
+    }
+    return null;
+  }
+
   @Override
-  public Map<K, V> getAll(Set<? extends K> keys) {
+  public Map<K, V> getAll(final Set<? extends K> keys) {
     return heapCache.getAll(keys);
   }
 
@@ -263,19 +269,11 @@ public class WiredCache<K, V> implements InternalCache<K, V>, StorageAdapter.Par
 
   @Override
   public V peek(K key) {
-    final int hc =  heapCache.modifiedHash(key.hashCode());
-    Entry<K, V> e = heapCache.lookupEntryUnsynchronized(key, hc);
+    Entry<K, V> e = lookup(key);
     if (e != null && e.hasFreshData()) {
-      return heapCache.returnValue(e.getValueOrException());
+      return returnValue(e);
     }
-    return heapCache.returnValue(execute(key, new ExamineExisting<K, V, V>() {
-      @Override
-      public void examine(EntryProgress<V, V> c, Entry<K, V> e) {
-        if (e.hasFreshData()) {
-          c.result(e.getValueOrException());
-        }
-      }
-    }));
+    return returnValue(execute(key, SPEC.peek(key)));
   }
 
   @Override
@@ -343,57 +341,12 @@ public class WiredCache<K, V> implements InternalCache<K, V>, StorageAdapter.Par
     return heapCache.requestInterface(_type);
   }
 
-  interface ExecutableEntryOperation<K, V, R> {
-    void setup(EntryProgress<V, R> c);
-    void examine(EntryProgress<V, R> c, Entry<K,V> e);
-    void update(EntryProgress<V, R> c, Entry<K,V> e);
-    /** Called after the load completes. The entry does is not yet altered. */
-    void loaded(EntryProgress<V, R> c, Entry<K,V> e, V v);
-  }
-
-  static abstract class AbstractExecutableEntryOperation<K, V, R> implements ExecutableEntryOperation<K, V, R> {
-
-    /**
-     * By default a load returns always the value as result. May be overridden to change.
-     *
-     * @param e the entry containing the old data
-     * @param _newValueOrException  value returned from the loader
-     */
-    @Override
-    public void loaded(final EntryProgress<V, R> c, final Entry<K, V> e, V _newValueOrException) {
-      c.result((R) _newValueOrException);
-    }
-
-  }
-
-  static abstract class UpdateExisting<K, V, R> extends AbstractExecutableEntryOperation<K, V, R> {
-
-    @Override
-    public void examine(EntryProgress<V, R> c, Entry<K, V> e) {
-      c.wantMutation();
-    }
-
-    @Override
-    public void setup(EntryProgress<V, R> c) {
-      c.wantData();
-    }
-
-  }
-
-  static abstract class ExamineExisting<K, V, R> extends AbstractExecutableEntryOperation<K, V, R> {
-
-    @Override
-    public void setup(EntryProgress<V, R> c) {
-      c.wantData();
-    }
-
-    @Override
-    public void update(EntryProgress<V, R> c, Entry<K, V> e) { }
-
-  }
-  <R> R execute(K key, Entry<K, V> e, ExecutableEntryOperation<K, V, R> op) {
+  <R> R execute(K key, Entry<K, V> e, Semantic<K, V, R> op) {
     EntryAction<R> _action = new EntryAction<R>(op, key, e);
-    op.setup(_action);
+    op.start(_action);
+    if (_action.entryLocked) {
+      throw new CacheInternalError("entry not unlocked?");
+    }
     Throwable t = _action.exceptionToPropagate;
     if (t != null) {
       if (t instanceof RuntimeException) {
@@ -405,30 +358,17 @@ public class WiredCache<K, V> implements InternalCache<K, V>, StorageAdapter.Par
     return _action.result;
   }
 
-  <R> R execute(K key, ExecutableEntryOperation<K, V, R> op) {
+  <R> R execute(K key, Semantic<K, V, R> op) {
     return execute(key, null, op);
-  }
-
-  interface EntryProgress<V, R> {
-
-    void wantData();
-    void wantMutation();
-    void result(R result);
-    void finish();
-    void finish(R result);
-    void load();
-    void remove();
-    void put(V value);
-
   }
 
   static final Entry NON_FRESH_DUMMY = new Entry();
 
   @SuppressWarnings("SynchronizeOnNonFinalField")
-  class EntryAction<R> implements StorageCallback, AsyncCacheLoader.CompletedListener<V>, AsyncCacheWriter.CompletedListener, EntryProgress<V, R> {
+  class EntryAction<R> implements StorageCallback, AsyncCacheLoader.Callback<V>, AsyncCacheWriter.Callback, Progress<V, R> {
 
     K key;
-    ExecutableEntryOperation<K,V,R> operation;
+    Semantic<K,V,R> operation;
     Entry<K, V> entry;
     V newValueOrException;
     R result;
@@ -448,7 +388,7 @@ public class WiredCache<K, V> implements InternalCache<K, V>, StorageAdapter.Par
     boolean heapHitButNotFresh = false;
     boolean heapMiss = false;
 
-    public EntryAction(ExecutableEntryOperation<K, V, R> op, K k, Entry<K,V> e) {
+    public EntryAction(Semantic<K, V, R> op, K k, Entry<K,V> e) {
       operation = op;
       key = k;
       if (e != null) {
@@ -524,20 +464,20 @@ public class WiredCache<K, V> implements InternalCache<K, V>, StorageAdapter.Par
       try {
          se = storage.get(entry.key);
       } catch (Throwable ex) {
-        readException(ex);
+        onReadFailure(ex);
         return;
       }
-      readComplete(se);
+      onReadSuccess(se);
     }
 
     @Override
-    public void readException(Throwable t) {
+    public void onReadFailure(Throwable t) {
       examinationAbort(t);
     }
 
     @SuppressWarnings("unchecked")
     @Override
-    public void readComplete(StorageEntry se) {
+    public void onReadSuccess(StorageEntry se) {
       if (se == null) {
         storageReadMiss();
         return;
@@ -625,16 +565,8 @@ public class WiredCache<K, V> implements InternalCache<K, V>, StorageAdapter.Par
       }
     }
 
-    @Override
     public void finish() {
       needsFinish = false;
-      noMutationRequested();
-    }
-
-    @Override
-    public void finish(final R result) {
-      needsFinish = false;
-      this.result = result;
       noMutationRequested();
     }
 
@@ -666,10 +598,10 @@ public class WiredCache<K, V> implements InternalCache<K, V>, StorageAdapter.Par
           v = source.get(e.key, t0, e.getValue(), e.getLastModification());
         }
       } catch (Throwable _ouch) {
-        loadException(_ouch);
+        onLoadFailure(_ouch);
         return;
       }
-      loadComplete(v);
+      onLoadSuccess(v);
     }
 
     void lockFor(Entry.ProcessingState ps) {
@@ -700,13 +632,13 @@ public class WiredCache<K, V> implements InternalCache<K, V>, StorageAdapter.Par
     }
 
     @Override
-    public void loadComplete(V value) {
+    public void onLoadSuccess(V value) {
       newValueOrException = value;
       loadCompleted();
     }
 
     @Override
-    public void loadException(Throwable t) {
+    public void onLoadFailure(Throwable t) {
       synchronized (heapCache.lock) {
         heapCache.loadExceptionCnt++;
       }
@@ -730,6 +662,7 @@ public class WiredCache<K, V> implements InternalCache<K, V>, StorageAdapter.Par
       needsFinish = false;
       newValueOrException = value;
       lastModificationTime = System.currentTimeMillis();
+      metrics().put();
       mutationCalculateExpiry();
     }
 
@@ -810,9 +743,9 @@ public class WiredCache<K, V> implements InternalCache<K, V>, StorageAdapter.Par
           entry.nextProcessingStep(Entry.ProcessingState.WRITE);
           try {
             writer.write(key, newValueOrException);
-            writeComplete();
+            onWriteSuccess();
           } catch (Throwable t) {
-            writeException(t);
+            onWriteFailure(t);
           }
         } else {
           mutationMayStore();
@@ -821,21 +754,21 @@ public class WiredCache<K, V> implements InternalCache<K, V>, StorageAdapter.Par
         try {
           entry.nextProcessingStep(Entry.ProcessingState.WRITE);
           writer.delete(key);
-          writeComplete();
+          onWriteSuccess();
         } catch (Throwable t) {
-          writeException(t);
+          onWriteFailure(t);
         }
       }
     }
 
     @Override
-    public void writeComplete() {
+    public void onWriteSuccess() {
       entry.nextProcessingStep(Entry.ProcessingState.WRITE_COMPLETE);
       mutationUpdateHeap();
     }
 
     @Override
-    public void writeException(Throwable t) {
+    public void onWriteFailure(Throwable t) {
       mutationAbort(t);
     }
 
@@ -861,6 +794,33 @@ public class WiredCache<K, V> implements InternalCache<K, V>, StorageAdapter.Par
         skipStore();
         return;
       }
+      if (expiry == 0) {
+        if (heapCache.hasKeepAfterExpired()) {
+          mutationStoreRegular();
+          return;
+        }
+        mutationStoreNoKeepExpired();
+        return;
+      }
+      mutationStoreRegular();
+    }
+
+    /**
+     * The entry is expired immediately. Send a remove to the store, so no old data is kept.
+     * TODO-C: Optimize, send remove for expired entries only if present in the storage.
+     */
+    public void mutationStoreNoKeepExpired() {
+      entry.nextProcessingStep(Entry.ProcessingState.STORE);
+      try {
+        storage.remove(key);
+      } catch (Throwable t) {
+        onStoreFailure(t);
+        return;
+      }
+      onStoreSuccess();
+    }
+
+    public void mutationStoreRegular() {
       entry.nextProcessingStep(Entry.ProcessingState.STORE);
       try {
         if (remove) {
@@ -869,20 +829,20 @@ public class WiredCache<K, V> implements InternalCache<K, V>, StorageAdapter.Par
           storage.put(entry, expiry);
         }
       } catch (Throwable t) {
-        storeException(t);
+        onStoreFailure(t);
         return;
       }
-      storeComplete();
+      onStoreSuccess();
     }
 
     @Override
-    public void storeComplete() {
+    public void onStoreSuccess() {
       entry.nextProcessingStep(Entry.ProcessingState.STORE_COMPLETE);
       mutationReleaseLock();
     }
 
     @Override
-    public void storeException(Throwable t) {
+    public void onStoreFailure(Throwable t) {
       mutationAbort(t);
     }
 
@@ -893,11 +853,13 @@ public class WiredCache<K, V> implements InternalCache<K, V>, StorageAdapter.Par
     public void mutationReleaseLock() {
       synchronized (entry) {
         entry.processingDone();
+        entryLocked = false;
         entry.notifyAll();
         if (remove) {
           synchronized (heapCache.lock) {
-            heapCache.removedCnt++;
-            heapCache.removeEntry(entry);
+            if (heapCache.removeEntry(entry)) {
+              heapCache.removedCnt++;
+            }
           }
         } else {
           long _nextRefreshTime = expiry;
@@ -951,6 +913,7 @@ public class WiredCache<K, V> implements InternalCache<K, V>, StorageAdapter.Par
         synchronized (entry) {
           entry.processingDone();
           entry.notifyAll();
+          entryLocked = false;
         }
       }
       ready();
@@ -961,6 +924,7 @@ public class WiredCache<K, V> implements InternalCache<K, V>, StorageAdapter.Par
       synchronized (entry) {
         entry.processingDone();
         entry.notifyAll();
+        entryLocked = false;
       }
       ready();
     }
@@ -990,6 +954,7 @@ public class WiredCache<K, V> implements InternalCache<K, V>, StorageAdapter.Par
           entry.processingDone();
           entry.notifyAll();
         }
+        entryLocked = false;
       }
       synchronized (heapCache.lock) {
         updateOnlyReadStatisticsInsideLock();
@@ -1008,6 +973,10 @@ public class WiredCache<K, V> implements InternalCache<K, V>, StorageAdapter.Par
 
     public void ready() {
 
+    }
+
+    protected CommonMetrics.Updater metrics() {
+      return heapCache.metrics;
     }
 
   }

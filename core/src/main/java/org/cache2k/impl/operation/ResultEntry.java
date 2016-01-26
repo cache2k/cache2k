@@ -1,4 +1,4 @@
-package org.cache2k.storage;
+package org.cache2k.impl.operation;
 
 /*
  * #%L
@@ -22,14 +22,12 @@ package org.cache2k.storage;
  * #L%
  */
 
+import org.cache2k.CacheEntry;
+
 /**
+ * Needed for getAll and peekAll to have the valueOrException.
+ *
  * @author Jens Wilke
  */
-public interface StorageCallback {
-
-  void onReadSuccess(StorageEntry e);
-  void onReadFailure(Throwable t);
-  void onStoreSuccess();
-  void onStoreFailure(Throwable t);
-
+public interface ResultEntry<K, V> extends CacheEntry<K,V>, ExaminationEntry<K,V> {
 }

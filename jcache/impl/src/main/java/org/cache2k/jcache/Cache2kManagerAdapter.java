@@ -30,6 +30,7 @@ import org.cache2k.EntryExpiryCalculator;
 import org.cache2k.ExceptionPropagator;
 import org.cache2k.impl.CacheLifeCycleListener;
 import org.cache2k.impl.CacheManagerImpl;
+import org.cache2k.impl.InternalCache;
 import org.cache2k.jcache.generic.storeByValueSimulation.CopyCacheProxy;
 import org.cache2k.jcache.generic.storeByValueSimulation.ObjectCopyFactory;
 import org.cache2k.jcache.generic.storeByValueSimulation.ObjectTransformer;
@@ -243,7 +244,7 @@ public class Cache2kManagerAdapter implements CacheManager {
       c.valueType = cc.getValueType();
       c.keyType = cc.getKeyType();
       c.expiryPolicy = _policy;
-      c.c2kCache = ca.cache;
+      c.c2kCache = (InternalCache<K, CacheWithExpiryPolicyAdapter.ValueAndExtra<V>>) ca.cache;
       _jsr107cache = c;
       if (cc.isStoreByValue()) {
         ca.storeByValue = true;

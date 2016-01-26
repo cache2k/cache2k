@@ -139,7 +139,6 @@ public abstract class BaseCache<K, V>
   protected int timerCancelCount = 0;
 
   protected long keyMutationCount = 0;
-  protected long putCnt = 0;
   protected long putButExpiredCnt = 0;
   protected long putNewEntryCnt = 0;
   protected long removedCnt = 0;
@@ -215,6 +214,8 @@ public abstract class BaseCache<K, V>
   protected long timerEvents = 0;
 
   protected int maximumBulkFetchSize = 100;
+
+  CommonMetrics.Updater metrics = new StandardCommonMetrics();
 
   /**
    * Structure lock of the cache. Every operation that needs a consistent structure
@@ -2838,7 +2839,7 @@ public abstract class BaseCache<K, V>
         }
       }
     } else if (_updateStatistics == INSERT_STAT_PUT) {
-      putCnt++;
+      metrics.put();
       eventuallyAdjustPutNewEntryCount(e);
       if (e.nextRefreshTime == Entry.LOADED_NON_VALID_AND_PUT) {
         peekHitNotFreshCnt++;
@@ -3463,24 +3464,12 @@ public abstract class BaseCache<K, V>
   }
 
   protected int getFetchesInFlight() {
-    long _fetchesBecauseOfNoEntries = getFetchesBecauseOfNewEntries();
-    return (int) (newEntryCnt - putNewEntryCnt - virginEvictCnt
-        - readNonFreshCnt
-        - readHitCnt
-        - _fetchesBecauseOfNoEntries
-        - atomicOpNewEntryCnt
-    );
+    return 0;
   }
 
   protected IntegrityState getIntegrityState() {
     synchronized (lock) {
       return new IntegrityState()
-        .checkEquals(
-            "newEntryCnt - virginEvictCnt == " +
-                "getFetchesBecauseOfNewEntries() + getFetchesInFlight() + putNewEntryCnt + loadNonFreshCnt + loadHitCnt + atomicOpNewEntryCnt",
-            newEntryCnt - virginEvictCnt,
-            getFetchesBecauseOfNewEntries() + getFetchesInFlight() + putNewEntryCnt + readNonFreshCnt + readHitCnt + atomicOpNewEntryCnt)
-        .checkLessOrEquals("getFetchesInFlight() <= 100", getFetchesInFlight(), 100)
         .checkEquals("newEntryCnt == getSize() + evictedCnt + expiredRemoveCnt + removeCnt + clearedCnt", newEntryCnt, getLocalSize() + evictedCnt + expiredRemoveCnt + removedCnt + clearedCnt)
         .checkEquals("newEntryCnt == getSize() + evictedCnt + getExpiredCnt() - expiredKeptCnt + removeCnt + clearedCnt", newEntryCnt, getLocalSize() + evictedCnt + getExpiredCnt() - expiredKeptCnt + removedCnt + clearedCnt)
         .checkEquals("mainHashCtrl.size == Hash.calcEntryCount(mainHash)", mainHashCtrl.size, Hash.calcEntryCount(mainHash))

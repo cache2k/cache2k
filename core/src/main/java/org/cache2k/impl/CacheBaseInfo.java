@@ -31,6 +31,7 @@ import static org.cache2k.impl.util.Util.formatMillis;
  */
 class CacheBaseInfo implements InternalCacheInfo {
 
+  CommonMetrics metrics;
   private BaseCache baseCache;
   int size;
   long creationTime;
@@ -49,6 +50,7 @@ class CacheBaseInfo implements InternalCacheInfo {
 
   public CacheBaseInfo(BaseCache baseCache) {
     this.baseCache = baseCache;
+    metrics = baseCache.metrics;
     integrityState = baseCache.getIntegrityState();
     collisionInfo = new BaseCache.CollisionInfo();
     Hash.calcHashCollisionInfo(collisionInfo, baseCache.mainHash);
@@ -64,7 +66,7 @@ class CacheBaseInfo implements InternalCacheInfo {
     storageLoadCnt = storageMissCnt + baseCache.readHitCnt;
     newEntryCnt = baseCache.newEntryCnt - baseCache.virginEvictCnt;
     hitCnt = baseCache.getHitCnt();
-    correctedPutCnt = baseCache.putCnt - baseCache.putButExpiredCnt;
+    correctedPutCnt = metrics.getPutCount() - baseCache.putButExpiredCnt;
     usageCnt =
             hitCnt + newEntryCnt + baseCache.peekMissCnt;
   }
@@ -100,7 +102,7 @@ class CacheBaseInfo implements InternalCacheInfo {
   @Override
   public long getStorageMissCnt() { return storageMissCnt; }
   @Override
-  public long getReadUsageCnt() { return usageCnt - baseCache.putCnt - baseCache.removedCnt - baseCache.atomicOpNewEntryCnt; }
+  public long getReadUsageCnt() { return usageCnt - metrics.getPutCount() - baseCache.removedCnt - baseCache.atomicOpNewEntryCnt; }
   @Override
   public long getUsageCnt() { return usageCnt; }
   @Override
@@ -147,7 +149,7 @@ class CacheBaseInfo implements InternalCacheInfo {
   @Override
   public String getDataHitString() { return percentString(getDataHitRate()); }
   @Override
-  public double getEntryHitRate() { return usageCnt == 0 ? 100 : (usageCnt - newEntryCnt + baseCache.putCnt) * 100D / usageCnt; }
+  public double getEntryHitRate() { return usageCnt == 0 ? 100 : (usageCnt - newEntryCnt + metrics.getPutCount()) * 100D / usageCnt; }
   @Override
   public String getEntryHitString() { return percentString(getEntryHitRate()); }
   /** How many items will be accessed with collision */

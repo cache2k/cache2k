@@ -1,4 +1,4 @@
-package org.cache2k.storage;
+package org.cache2k.impl;
 
 /*
  * #%L
@@ -27,21 +27,22 @@ import java.util.concurrent.atomic.AtomicLongFieldUpdater;
 /**
  * @author Jens Wilke
  */
-@SuppressWarnings("unused")
-public class StandardStorageEventCounter implements StorageEventCounter {
+public class StandardCommonMetrics implements CommonMetrics.Updater {
 
-  final static AtomicLongFieldUpdater<StandardStorageEventCounter> READ_MISS_UPDATER =
-    AtomicLongFieldUpdater.newUpdater(StandardStorageEventCounter.class, "readMiss");
-  private volatile long readMiss;
+  static final AtomicLongFieldUpdater<StandardCommonMetrics> PUT_UPDATER =
+    AtomicLongFieldUpdater.newUpdater(StandardCommonMetrics.class, "put");
+  private volatile long put;
   @Override
-  public void readMiss() {
-    READ_MISS_UPDATER.incrementAndGet(this);
+  public void put() {
+    PUT_UPDATER.incrementAndGet(this);
   }
   @Override
-  public void readMiss(long cnt) { READ_MISS_UPDATER.addAndGet(this, cnt); }
+  public long getPutCount() {
+    return PUT_UPDATER.get(this);
+  }
   @Override
-  public long getReadMiss() {
-    return READ_MISS_UPDATER.get(this);
+  public void put(final long cnt) {
+    PUT_UPDATER.addAndGet(this, cnt);
   }
 
 }
