@@ -85,7 +85,7 @@ public class Specification<K, V> {
     @Override
     public void examine(Progress c, ExaminationEntry e) {
       if (c.isPresentOrMiss()) {
-        c.result(e.getValueOrException());
+        c.result(returnStableEntry(e));
       } else {
         c.wantMutation();
       }

@@ -23,9 +23,13 @@ package org.cache2k.impl.operation;
  */
 
 /**
- * A entry on the heap cache, that may only be used for reading.
+ * A entry on the heap cache, used for reading.
  * Only the relevant properties are defined to implement the cache
  * semantics on it.
+ *
+ * <p>This interface is used to make sure the operation semantics
+ * pass on the valueOrException property as result, which is needed
+ * to propagate the exception correctly.
  *
  * @author Jens Wilke
  */

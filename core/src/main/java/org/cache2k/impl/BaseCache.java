@@ -77,7 +77,7 @@ import static org.cache2k.impl.util.Util.*;
  */
 @SuppressWarnings({"unchecked", "SynchronizationOnLocalVariableOrMethodParameter"})
 public abstract class BaseCache<K, V>
-  implements InternalCache<K, V>, StorageAdapter.Parent  {
+  extends AbstractCache<K, V> implements StorageAdapter.Parent  {
 
   static final Random SEED_RANDOM = new Random(new SecureRandom().nextLong());
   static int cacheCnt = 0;
@@ -2236,7 +2236,7 @@ public abstract class BaseCache<K, V>
     refreshPool.submit(r);
   }
 
-  public void prefetch(final List<K> keys, final int _startIndex, final int _endIndexExclusive) {
+  public void prefetch(final List<? extends K> keys, final int _startIndex, final int _endIndexExclusive) {
     if (keys.size() == 0 || _startIndex == _endIndexExclusive) {
       return;
     }
@@ -2294,7 +2294,7 @@ public abstract class BaseCache<K, V>
   }
 
   @Override
-  public void prefetch(final Set<K> keys) {
+  public void prefetch(final Set<? extends K> keys) {
     prefetch(keys, null);
   }
 
@@ -3020,6 +3020,14 @@ public abstract class BaseCache<K, V>
 
   @Override
   public void removeAllAtOnce(Set<K> _keys) {
+    throw new UnsupportedOperationException();
+  }
+
+  @Override
+  public void removeAll(final Set<? extends K> keys) {
+    for (K k : keys) {
+      remove(k);
+    }
   }
 
 
@@ -3527,15 +3535,6 @@ public abstract class BaseCache<K, V>
   @Override
   public CacheManager getCacheManager() {
     return manager;
-  }
-
-  @Override
-  public <X> X requestInterface(Class<X> _type) {
-    if (_type.equals(ConcurrentMap.class) ||
-        _type.equals(Map.class)) {
-      return (X) new ConcurrentMapWrapper<K, V>(this);
-    }
-    return null;
   }
 
   /**

@@ -10,6 +10,8 @@ Modifications in the statistics output will not listed as breakage.
   * Semantics of Cache.getAll() changed. Instead of returning always a map size equal to the requested count of keys,
     only keys with a non-null mapping are returned in the map.
   * Added generic types to the methods CacheBuilder.entryExpiryCalculator and CacheBuilder.exceptionExpiryCalculator
+  * Bulk API signatures changed from Set<K> to Set<? extends K>
+    TODO: !!!!!!!!!
 
 ## Bug fixes
 

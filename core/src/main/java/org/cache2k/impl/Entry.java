@@ -24,6 +24,7 @@ package org.cache2k.impl;
 
 import org.cache2k.CacheEntry;
 import org.cache2k.impl.operation.ExaminationEntry;
+import org.cache2k.impl.operation.ResultEntry;
 import org.cache2k.storage.StorageEntry;
 
 /**

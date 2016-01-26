@@ -23,10 +23,20 @@ import org.cache2k.Cache;
 import org.cache2k.CacheBuilder;
 import org.cache2k.CacheEntry;
 import org.cache2k.CacheException;
+import org.cache2k.PropagatedCacheException;
+import org.cache2k.impl.ExceptionWrapper;
 import org.cache2k.impl.InternalCache;
 import org.cache2k.junit.FastTests;
 import org.junit.*;
 import org.junit.experimental.categories.Category;
+
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.Map;
+import java.util.Set;
 
 import static org.junit.Assert.*;
 
@@ -37,6 +47,8 @@ import static org.junit.Assert.*;
 @Category(FastTests.class)
 public class BasicCacheOperationsTest {
 
+  @SuppressWarnings("ThrowableInstanceNeverThrown")
+  final static Exception OUCH = new Exception("ouch");
   final static Integer KEY = 1;
   final static Integer OTHER_KEY = 2;
   final static Integer VALUE = 1;
@@ -133,6 +145,62 @@ public class BasicCacheOperationsTest {
   }
 
   /*
+   * putAll
+   */
+  @Test
+  public void putAll() {
+    cache.putAll(Collections.<Integer, Integer>emptyMap());
+    Map<Integer, Integer> map = new HashMap<Integer, Integer>();
+    map.put(KEY, VALUE);
+    map.put(OTHER_KEY, null);
+    cache.putAll(map);
+    assertTrue(cache.contains(KEY));
+    assertTrue(cache.contains(OTHER_KEY));
+    assertNull(cache.peek(OTHER_KEY));
+    assertEquals(VALUE, cache.peek(KEY));
+  }
+
+  /*
+   * contains
+   */
+  @Test
+  public void contains() {
+    assertFalse(cache.contains(KEY));
+    cache.put(KEY, VALUE);
+    assertTrue(cache.contains(KEY));
+  }
+
+  @Test
+  public void contains_Null() {
+    assertFalse(cache.contains(KEY));
+    cache.put(KEY, null);
+    assertTrue(cache.contains(KEY));
+  }
+
+  /*
+   * putIfAbsent()
+   */
+  @Test
+  public void putIfAbsent() {
+    cache.putIfAbsent(KEY, VALUE);
+    assertTrue(cache.contains(KEY));
+    assertEquals(KEY, cache.peek(KEY));
+    cache.putIfAbsent(KEY, OTHER_VALUE);
+    assertTrue(cache.contains(KEY));
+    assertEquals(VALUE, cache.peek(KEY));
+  }
+
+  /*
+   * putIfAbsent()
+   */
+  @Test
+  public void putIfAbsent_Null() {
+    cache.putIfAbsent(KEY, null);
+    assertTrue(cache.contains(KEY));
+    assertNull(cache.peek(KEY));
+  }
+
+  /*
    * peekAndPut
    */
   @Test
@@ -164,6 +232,12 @@ public class BasicCacheOperationsTest {
     assertNull(v);
   }
 
+  @Test(expected = PropagatedCacheException.class)
+  public void peekAndPut_Exception() {
+    ((Cache) cache).put(KEY, new ExceptionWrapper(OUCH));
+    cache.peekAndPut(KEY, VALUE);
+  }
+
   /*
    * peekAndRemove
    */
@@ -192,6 +266,12 @@ public class BasicCacheOperationsTest {
   @Test(expected = NullPointerException.class)
   public void peekAndRemove_NullKey() {
     cache.peekAndRemove(null);
+  }
+
+  @Test(expected = PropagatedCacheException.class)
+  public void peekAndRemove_Exception() {
+    ((Cache) cache).put(KEY, new ExceptionWrapper(OUCH));
+    cache.peekAndRemove(KEY);
   }
 
   /*
@@ -229,10 +309,15 @@ public class BasicCacheOperationsTest {
     cache.peekAndReplace(null, VALUE);
   }
 
+  @Test(expected = PropagatedCacheException.class)
+  public void peekAndReplace_Exception() {
+    ((Cache) cache).put(KEY, new ExceptionWrapper(OUCH));
+    cache.peekAndReplace(KEY, VALUE);
+  }
+
   /*
    * peekEntry
    */
-
   @Test
   public void peekEntry() {
     long t0 = System.currentTimeMillis();
@@ -260,6 +345,173 @@ public class BasicCacheOperationsTest {
   @Test(expected = NullPointerException.class)
   public void peekEntry_NullKey() {
     cache.peekEntry(null);
+  }
+
+  @Test
+  public void peekEntry_Exception() {
+    ((Cache) cache).put(KEY, new ExceptionWrapper(OUCH));
+    CacheEntry<Integer, Integer> e = cache.peekEntry(KEY);
+    assertEquals(KEY, e.getKey());
+    assertNull(e.getValue());
+    assertEquals(OUCH, e.getException());
+  }
+
+  /*
+   * getEntry
+   */
+  @Test
+  public void getEntry() {
+    long t0 = System.currentTimeMillis();
+    cache.put(KEY, VALUE);
+    CacheEntry<Integer, Integer> e = cache.getEntry(KEY);
+    assertEquals(KEY, e.getKey());
+    assertEquals(VALUE, e.getValue());
+    assertTrue(e.getLastModification() >= t0);
+  }
+
+  @Test
+  public void getEntry_Null() {
+    long t0 = System.currentTimeMillis();
+    cache.put(KEY, null);
+    CacheEntry<Integer, Integer> e = cache.getEntry(KEY);
+    assertEquals(KEY, e.getKey());
+    assertNull(e.getValue());
+    assertTrue(e.getLastModification() >= t0);
+  }
+
+  @Test(expected = NullPointerException.class)
+  public void getEntry_NullKey() {
+    cache.getEntry(null);
+  }
+
+  @Test
+  public void getEntry_Exception() {
+    ((Cache) cache).put(KEY, new ExceptionWrapper(OUCH));
+    CacheEntry<Integer, Integer> e = cache.getEntry(KEY);
+    assertEquals(KEY, e.getKey());
+    assertNull(e.getValue());
+    assertEquals(OUCH, e.getException());
+  }
+
+  Set<Integer> keySet(Integer... keys) {
+    return new HashSet<Integer>(Arrays.asList(keys));
+  }
+
+  /*
+   * peek all
+   */
+  @Test
+  public void peekAll() {
+    Map<Integer, Integer> m = cache.peekAll(keySet(KEY, OTHER_KEY));
+    assertEquals(0, m.size());
+    assertTrue(m.isEmpty());
+    cache.put(KEY, VALUE);
+    m = cache.peekAll(keySet(KEY, OTHER_KEY));
+    assertEquals(1, m.size());
+    assertEquals(VALUE, m.get(KEY));
+    assertTrue(m.containsKey(KEY));
+    assertTrue(m.containsValue(VALUE));
+  }
+
+  @Test(expected = NullPointerException.class)
+  public void peekAll_NullKey() {
+    cache.peekAll(keySet(null));
+  }
+
+  @Test
+  public void peekAll_Exception() {
+    ((Cache) cache).put(KEY, new ExceptionWrapper(OUCH));
+    Map<Integer, Integer> m = cache.peekAll(keySet(KEY, OTHER_KEY));
+    assertEquals(1, m.size());
+    assertEquals(1, m.values().size());
+    assertEquals(1, m.keySet().size());
+    assertEquals(1, m.entrySet().size());
+    try {
+      m.get(KEY);
+      fail("Exception expected");
+    } catch (PropagatedCacheException ex) {
+    }
+    Iterator<Integer> it = m.keySet().iterator();
+    assertTrue(it.hasNext());
+    assertEquals(KEY, it.next());
+    assertFalse("one entry", it.hasNext());
+    it = m.values().iterator();
+    assertTrue(it.hasNext());
+    try {
+      assertEquals(KEY, it.next());
+      fail("Exception expected");
+    } catch (PropagatedCacheException ex) {
+    }
+    Iterator<Map.Entry<Integer, Integer>> ei = m.entrySet().iterator();
+    assertTrue(ei.hasNext());
+    Map.Entry<Integer,Integer> e = ei.next();
+    assertEquals(KEY, e.getKey());
+    try {
+      e.getValue();
+      fail("Exception expected");
+    } catch (PropagatedCacheException ex) {
+    }
+  }
+
+  @Test
+  public void peekAll_MutationMethodsUnsupported() {
+    cache.put(KEY, VALUE);
+    Map<Integer, Integer> m = cache.peekAll(keySet(KEY, OTHER_KEY));
+    assertEquals(1, m.size());
+    try {
+      m.clear();
+      fail("Exception expected");
+    } catch (UnsupportedOperationException ex) {
+    }
+    try {
+      m.put(KEY, VALUE);
+      fail("Exception expected");
+    } catch (UnsupportedOperationException ex) {
+    }
+    try {
+      m.remove(KEY);
+      fail("Exception expected");
+    } catch (UnsupportedOperationException ex) {
+    }
+    try {
+      m.clear();
+      fail("Exception expected");
+    } catch (UnsupportedOperationException ex) {
+    }
+    try {
+      m.putAll(null);
+      fail("Exception expected");
+    } catch (UnsupportedOperationException ex) {
+    }
+    try {
+      m.values().add(4711);
+      fail("Exception expected");
+    } catch (UnsupportedOperationException ex) {
+    }
+    try {
+      m.entrySet().iterator().next().setValue(4711);
+      fail("Exception expected");
+    } catch (UnsupportedOperationException ex) {
+    }
+  }
+
+  /*
+   * getAll()
+   */
+  @Test
+  public void getAll() {
+    cache.put(KEY, VALUE);
+    cache.put(OTHER_KEY, VALUE);
+    Map<Integer, Integer> m = cache.getAll(keySet(KEY, OTHER_KEY));
+    assertEquals(2, m.size());
+    assertEquals(VALUE, m.get(KEY));
+    assertTrue(m.containsKey(KEY));
+    assertTrue(m.containsValue(VALUE));
+  }
+
+  @Test(expected = NullPointerException.class)
+  public void getAll_NullKey() {
+    cache.getAll(keySet(null));
   }
 
   /*

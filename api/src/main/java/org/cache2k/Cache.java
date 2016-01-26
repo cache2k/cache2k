@@ -99,9 +99,9 @@ public interface Cache<K, V> extends KeyValueSource<K, V>, Iterable<CacheEntry<K
    * keys are locked for data fetch within the fetch. A sequential get
    * on a key will stall until the value is loaded.
    */
-  void prefetch(Set<K> keys);
+  void prefetch(Set<? extends K> keys);
 
-  void prefetch(List<K> keys, int _startIndex, int _afterEndIndex);
+  void prefetch(List<? extends K> keys, int _startIndex, int _afterEndIndex);
 
   /**
    * Returns the value if it is mapped within the cache and it is not
@@ -279,6 +279,7 @@ public interface Cache<K, V> extends KeyValueSource<K, V>, Iterable<CacheEntry<K
    * @param key key whose mapping is to be removed from the cache
    * @return the previous value associated with <tt>key</tt>, or
    *         <tt>null</tt> if there was no mapping for <tt>key</tt>.
+   * @throws NullPointerException if a specified key is null
    * @throws ClassCastException if the key is of an inappropriate type for
    *         the cache. This check is optional depending on the cache
    *         configuration.
@@ -290,46 +291,39 @@ public interface Cache<K, V> extends KeyValueSource<K, V>, Iterable<CacheEntry<K
   /**
    * Removes the mapping for a key from the cache if it is present.
    *
-   * <p>Returns the value to which this map previously associated the key,
-   * or <tt>null</tt> if the map contained no mapping for the key.
-   *
-   * <p>If this map permits null values, then a return value of
-   * <tt>null</tt> does not <i>necessarily</i> indicate that the map
-   * contained no mapping for the key; it's also possible that the map
-   * explicitly mapped the key to <tt>null</tt>.
-   *
-   * <p>The map will not contain a mapping for the specified key once the
-   * call returns.
-   *
-   * @param key key whose mapping is to be removed from the map
-   * @return the previous value associated with <tt>key</tt>, or
-   *         <tt>null</tt> if there was no mapping for <tt>key</tt>.
-   * @throws UnsupportedOperationException if the <tt>remove</tt> operation
-   *         is not supported by this map
+   * @param key key whose mapping is to be removed from the cache
+   * @throws NullPointerException if a specified key is null
    * @throws ClassCastException if the key is of an inappropriate type for
    *         this map
-   * (<a href="{@docRoot}/java/util/Collection.html#optional-restrictions">optional</a>)
-   * @throws NullPointerException if the specified key is null and this
-   *         map does not permit null keys
-   * (<a href="{@docRoot}/java/util/Collection.html#optional-restrictions">optional</a>)
    */
   void remove(K key);
 
   /**
    * Remove the mapping if the stored value is the equal to the comparison value.
    *
+   * @param key key whose mapping is to be removed from the cache
+   * @param expectedValue value that must match with the existing value in the cache
+   * @throws NullPointerException if a specified key is null
+   * @throws ClassCastException if the key is of an inappropriate type for
+   *         this map
    * @return true, if mapping was removed
    */
-  boolean remove(K key, V value);
+  boolean remove(K key, V expectedValue);
 
   /**
-   * Remove the mappings for the keys atomically. Missing keys
-   * will be ignored.
+   * This was for atomic removal of a bunch of entries. Not supported any more.
    *
-   * <p/>Parallel fetches from the cache source, that are currently
-   * ongoing for some of the given keys, will be ignored.
+   * @deprecated
+   * @throws UnsupportedOperationException
    */
   void removeAllAtOnce(Set<K> key);
+
+  /**
+   * Removes a set of keys. This has the same semantics of calling
+   * remove to every key, except that the cache is trying to optimize the
+   * bulk operation.
+   */
+  void removeAll(Set<? extends K> keys);
 
   /**
    * Fetch a set of values from the cache source. This call is modelled after the JSR107
@@ -338,11 +332,11 @@ public interface Cache<K, V> extends KeyValueSource<K, V>, Iterable<CacheEntry<K
    * @deprecated May or may not stay in the API, use the more lightweight #prefetch call as alternative
    * @since 0.22
    */
-  public void fetchAll(Set<? extends K> keys, boolean replaceExistingValues, FetchCompletedListener l);
+  void fetchAll(Set<? extends K> keys, boolean replaceExistingValues, FetchCompletedListener l);
 
-  public <R> R invoke(K key, CacheEntryProcessor<K, V, R> entryProcessor, Object... _args);
+  <R> R invoke(K key, CacheEntryProcessor<K, V, R> entryProcessor, Object... _args);
 
-  public <R> Map<K, EntryProcessingResult<R>> invokeAll(
+  <R> Map<K, EntryProcessingResult<R>> invokeAll(
     Set<? extends K> keys, CacheEntryProcessor<K , V, R> p, Object... _objs);
 
   /**

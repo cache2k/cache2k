@@ -32,13 +32,16 @@ import org.cache2k.EntryProcessingResult;
 import org.cache2k.FetchCompletedListener;
 import org.cache2k.experimentalApi.AsyncCacheLoader;
 import org.cache2k.experimentalApi.AsyncCacheWriter;
+import org.cache2k.impl.operation.ExaminationEntry;
 import org.cache2k.impl.operation.Progress;
+import org.cache2k.impl.operation.ResultEntry;
 import org.cache2k.impl.operation.Semantic;
 import org.cache2k.impl.operation.Specification;
 import org.cache2k.impl.util.Log;
 import org.cache2k.storage.StorageCallback;
 import org.cache2k.storage.StorageEntry;
 
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -47,7 +50,7 @@ import java.util.concurrent.Future;
 /**
  * @author Jens Wilke
  */
-public class WiredCache<K, V> implements InternalCache<K, V>, StorageAdapter.Parent {
+public class WiredCache<K, V> extends AbstractCache<K, V> implements  StorageAdapter.Parent {
 
   final Specification<K, V> SPEC = new Specification<K,V>();
 
@@ -87,38 +90,50 @@ public class WiredCache<K, V> implements InternalCache<K, V>, StorageAdapter.Par
   }
 
   @Override
+  public Class<?> getKeyType() {
+    return heapCache.getKeyType();
+  }
+
+  @Override
   public Class<?> getValueType() {
     return heapCache.getValueType();
   }
 
   @Override
+  public CacheManager getCacheManager() {
+    return heapCache.getCacheManager();
+  }
+
+  @Override
   public V peekAndPut(K key, V value) {
-    return execute(key, SPEC.peekAndPut(key, value));
+    return returnValue(execute(key, SPEC.peekAndPut(key, value)));
   }
 
   @Override
   public V peekAndRemove(K key) {
-    return execute(key, SPEC.peekAndRemove(key));
+    return returnValue(execute(key, SPEC.peekAndRemove(key)));
   }
 
   @Override
   public V peekAndReplace(K key, V value) {
-    return execute(key, SPEC.peekAndReplace(key, value));
+    return returnValue(execute(key, SPEC.peekAndReplace(key, value)));
   }
 
   @Override
-  public CacheEntry<K, V> peekEntry(K key) { return execute(key, SPEC.peekEntry(key)); }
+  public CacheEntry<K, V> peekEntry(K key) {
+    return execute(key, SPEC.peekEntry(key));
+  }
 
   @Override
   public void prefetch(K key) {
   }
 
   @Override
-  public void prefetch(List<K> keys, int _startIndex, int _afterEndIndex) {
+  public void prefetch(List<? extends K> keys, int _startIndex, int _afterEndIndex) {
   }
 
   @Override
-  public void prefetch(Set<K> keys) {
+  public void prefetch(Set<? extends K> keys) {
   }
 
   @Override
@@ -156,20 +171,6 @@ public class WiredCache<K, V> implements InternalCache<K, V>, StorageAdapter.Par
   @Override
   public boolean removeWithFlag(K key) {
     return execute(key, SPEC.containsAndRemove(key));
-  }
-
-  @Override
-  public void removeAll() {
-    for (CacheEntry<K, V> e : this) {
-      remove(e.getKey());
-    }
-  }
-
-  @Override
-  public void removeAllAtOnce(Set<K> _keys) {
-    for (K k : _keys) {
-      remove(k);
-    }
   }
 
   @Override
@@ -223,19 +224,27 @@ public class WiredCache<K, V> implements InternalCache<K, V>, StorageAdapter.Par
     return returnValue(execute(key, e, SPEC.get(key)));
    }
 
- @Override
-  public Map<K, V> getAll(final Set<? extends K> keys) {
-    return heapCache.getAll(keys);
-  }
-
+  /**
+   * We need to deal with possible null values and exceptions. This is
+   * a simple placeholder implementation that covers it all by working
+   * on the entry.
+   */
   @Override
-  public CacheManager getCacheManager() {
-    return heapCache.getCacheManager();
+  public Map<K, V> getAll(final Set<? extends K> keys) {
+    prefetch(keys);
+    Map<K, ExaminationEntry<K, V>> map = new HashMap<K, ExaminationEntry<K, V>>();
+    for (K k : keys) {
+      ExaminationEntry<K, V> e = execute(k, SPEC.getEntry(k));
+      if (e != null) {
+        map.put(k, e);
+      }
+    }
+    return convertValueMap(map);
   }
 
   @Override
   public CacheEntry<K, V> getEntry(K key) {
-    return heapCache.getEntry(key);
+    return execute(key, SPEC.getEntry(key));
   }
 
   @Override
@@ -254,11 +263,6 @@ public class WiredCache<K, V> implements InternalCache<K, V>, StorageAdapter.Par
   }
 
   @Override
-  public boolean isClosed() {
-    return heapCache.isClosed();
-  }
-
-  @Override
   public ClosableIterator<CacheEntry<K, V>> iterator() {
     return heapCache.iterator();
   }
@@ -272,19 +276,35 @@ public class WiredCache<K, V> implements InternalCache<K, V>, StorageAdapter.Par
     return returnValue(execute(key, SPEC.peek(key)));
   }
 
+  /**
+   * We need to deal with possible null values and exceptions. This is
+   * a simple placeholder implementation that covers it all by working
+   * on the entry.
+   */
   @Override
-  public Map<K, V> peekAll(Set<? extends K> keys) {
-    return heapCache.peekAll(keys);
+  public Map<K, V> peekAll(final Set<? extends K> keys) {
+    Map<K, ExaminationEntry<K, V>> map = new HashMap<K, ExaminationEntry<K, V>>();
+    for (K k : keys) {
+      ExaminationEntry<K, V> e = execute(k, SPEC.peekEntry(k));
+      if (e != null) {
+        map.put(k, e);
+      }
+    }
+    return convertValueMap(map);
+  }
+
+  private Map<K, V> convertValueMap(final Map<K, ExaminationEntry<K, V>> _map) {
+    return new MapValueConverterProxy<K, V, ExaminationEntry<K, V>>(_map) {
+      @Override
+      protected V convert(final ExaminationEntry<K, V> v) {
+        return returnValue(v.getValueOrException());
+      }
+    };
   }
 
   @Override
   public InternalCacheInfo getLatestInfo() {
     return heapCache.getLatestInfo();
-  }
-
-  @Override
-  public Class<?> getKeyType() {
-    return heapCache.getKeyType();
   }
 
   @Override
@@ -323,6 +343,11 @@ public class WiredCache<K, V> implements InternalCache<K, V>, StorageAdapter.Par
   }
 
   @Override
+  public boolean isClosed() {
+    return heapCache.isClosed();
+  }
+
+  @Override
   public void close() {
     heapCache.close();
   }
@@ -330,11 +355,6 @@ public class WiredCache<K, V> implements InternalCache<K, V>, StorageAdapter.Par
   @Override
   public String toString() {
     return heapCache.toString();
-  }
-
-  @Override
-  public <X> X requestInterface(Class<X> _type) {
-    return heapCache.requestInterface(_type);
   }
 
   <R> R execute(K key, Entry<K, V> e, Semantic<K, V, R> op) {

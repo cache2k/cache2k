@@ -73,12 +73,12 @@ public class CacheWrapper<K,V> implements Cache<K, V> {
   }
 
   @Override
-  public void prefetch(Set<K> keys) {
+  public void prefetch(Set<? extends K> keys) {
     cache.prefetch(keys);
   }
 
   @Override
-  public void prefetch(List<K> keys, int _startIndex, int _afterEndIndex) {
+  public void prefetch(List<? extends K> keys, int _startIndex, int _afterEndIndex) {
     cache.prefetch(keys, _startIndex, _afterEndIndex);
   }
 
@@ -185,6 +185,11 @@ public class CacheWrapper<K,V> implements Cache<K, V> {
   @Override
   public ClosableIterator<CacheEntry<K, V>> iterator() {
     return cache.iterator();
+  }
+
+  @Override
+  public void removeAll(Set<? extends K> keys) {
+    cache.removeAll(keys);
   }
 
   @Override

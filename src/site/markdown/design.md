@@ -5,7 +5,7 @@ Documentation of design decisions and rationale.
 The API is provided in a separate module. This way a clean API is defined and
 breakages will be avoided.
 
-## Statistics are not optional, but build in
+## Statistics are but build in, nut optional
 
 The cache2k implementations have a fixed set of build-in statistics. There is
 no way to switch these on or off. The reasons:
@@ -54,10 +54,6 @@ a cache source is present.
 Right now there is a getAll() but no corresponding peekAll(), since the bulk
 operations only make sense in read-through operation.
 
-## Bulk API and JSR107 getAll()
-
-After implementing the getAll() JSR107 on top of C2K I came to the conclusion that
-it has to die again. Its still in the implementation but not exposed by the API.
 
 
 
