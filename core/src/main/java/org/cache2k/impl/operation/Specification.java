@@ -39,7 +39,7 @@ public class Specification<K, V> {
   static final Semantic PEEK = new Semantic.Read() {
     @Override
     public void examine(Progress c, ExaminationEntry e) {
-      if (e.hasFreshData()) {
+      if (c.isPresentOrMiss()) {
         c.result(e.getValueOrException());
       }
     }
@@ -53,7 +53,7 @@ public class Specification<K, V> {
 
     @Override
     public void examine(Progress c, ExaminationEntry e) {
-      if (e.hasFreshData()) {
+      if (c.isPresentOrMiss()) {
         c.result(e.getValueOrException());
       } else {
         c.wantMutation();
@@ -84,7 +84,7 @@ public class Specification<K, V> {
 
     @Override
     public void examine(Progress c, ExaminationEntry e) {
-      if (e.hasFreshData()) {
+      if (c.isPresentOrMiss()) {
         c.result(e.getValueOrException());
       } else {
         c.wantMutation();
@@ -94,14 +94,12 @@ public class Specification<K, V> {
     @Override
     public void update(final Progress c, final ExaminationEntry e) {
       c.load();
-      if (e.hasFreshData()) {
-        c.result(returnStableEntry(e));
-      }
     }
 
     @Override
     public void loaded(final Progress c, final ExaminationEntry e, final Object _newValueOrException) {
-
+      c.result(returnStableEntry(e));
+      throw new UnsupportedOperationException();
     }
   };
 
@@ -120,7 +118,7 @@ public class Specification<K, V> {
 
     @Override
     public void update(final Progress c, final ExaminationEntry e) {
-      if (e.hasFreshData()) {
+      if (c.isPresentOrMiss()) {
         c.result(returnStableEntry(e));
       }
     }
@@ -147,7 +145,7 @@ public class Specification<K, V> {
 
     @Override
     public void update(Progress c, ExaminationEntry e) {
-      if (e.hasFreshData()) {
+      if (c.isPresent()) {
         c.result(true);
         c.remove();
         return;
@@ -165,7 +163,7 @@ public class Specification<K, V> {
 
     @Override
     public void examine(Progress c, ExaminationEntry e) {
-      if (e.hasFreshData()) {
+      if (c.isPresent()) {
         c.result(true);
         return;
       }
@@ -181,7 +179,7 @@ public class Specification<K, V> {
 
     @Override
     public void update(Progress c, ExaminationEntry e) {
-      if (e.hasFreshData()) {
+      if (c.isPresentOrMiss()) {
         c.result(e.getValueOrException());
       }
       c.remove();
@@ -193,7 +191,7 @@ public class Specification<K, V> {
 
       @Override
       public void update(Progress<V, V> c, ExaminationEntry<K, V> e) {
-        if (e.hasFreshData()) {
+        if (c.isPresentOrMiss()) {
           c.result(e.getValueOrException());
           c.put(value);
         }
@@ -207,7 +205,7 @@ public class Specification<K, V> {
 
       @Override
       public void update(Progress<V, V> c, ExaminationEntry<K, V> e) {
-        if (e.hasFreshData()) {
+        if (c.isPresentOrMiss()) {
           c.result(e.getValueOrException());
         }
         c.put(value);
@@ -232,7 +230,7 @@ public class Specification<K, V> {
 
       @Override
       public void update(Progress<V, Boolean> c, ExaminationEntry<K, V> e) {
-        if (!e.hasFreshData()) {
+        if (!c.isPresent()) {
           c.result(true);
           c.put(value);
           return;
@@ -248,7 +246,7 @@ public class Specification<K, V> {
 
       @Override
       public void update(Progress<V, Boolean> c, ExaminationEntry<K, V> e) {
-        if (e.hasFreshData()) {
+        if (c.isPresent()) {
           c.result(true);
           c.put(value);
           return;
@@ -264,7 +262,7 @@ public class Specification<K, V> {
 
       @Override
       public void update(Progress<V, Boolean> c, ExaminationEntry<K, V> e) {
-        if (e.hasFreshData() && e.getValueOrException().equals(value)) {
+        if (c.isPresentOrMiss() && e.getValueOrException().equals(value)) {
           c.result(true);
           c.put(newValue);
           return;
@@ -281,7 +279,7 @@ public class Specification<K, V> {
 
       @Override
       public void update(Progress<V, CacheEntry<K, V>> c, ExaminationEntry<K, V> e) {
-        if (e.hasFreshData()) {
+        if (c.isPresentOrMiss()) {
           if (e.getValueOrException().equals(value)) {
             c.result(null);
             c.put(newValue);
@@ -301,7 +299,7 @@ public class Specification<K, V> {
 
       @Override
       public void update(Progress<V, Boolean> c, ExaminationEntry<K, V> e) {
-        if (e.hasFreshData() && e.getValueOrException().equals(value)) {
+        if (c.isPresentOrMiss() && e.getValueOrException().equals(value)) {
           c.result(true);
           c.remove();
           return;
@@ -322,14 +320,6 @@ public class Specification<K, V> {
       key = _key;
       lastModification = _lastModification;
       valueOrException = _valueOrException;
-    }
-
-    /**
-     * Not supported for a result.
-     */
-    @Override
-    public boolean hasFreshData() {
-      throw new UnsupportedOperationException();
     }
 
     @Override

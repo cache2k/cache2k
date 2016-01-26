@@ -39,7 +39,6 @@ import org.cache2k.impl.util.Log;
 import org.cache2k.storage.StorageCallback;
 import org.cache2k.storage.StorageEntry;
 
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -123,6 +122,16 @@ public class WiredCache<K, V> implements InternalCache<K, V>, StorageAdapter.Par
   }
 
   @Override
+  public boolean contains(K key) {
+    return execute(key, SPEC.contains(key));
+  }
+
+  @Override
+  public boolean putIfAbsent(K key, V value) {
+    return execute(key, SPEC.putIfAbsent(key, value));
+  }
+
+  @Override
   public void put(K key, V value) {
     execute(key, SPEC.put(key, value));
   }
@@ -132,11 +141,6 @@ public class WiredCache<K, V> implements InternalCache<K, V>, StorageAdapter.Par
     for (Map.Entry<? extends K, ? extends V> e : m.entrySet()) {
       put(e.getKey(), e.getValue());
     }
-  }
-
-  @Override
-  public boolean putIfAbsent(K key, V value) {
-    return execute(key, SPEC.putIfAbsent(key, value));
   }
 
   @Override
@@ -170,7 +174,11 @@ public class WiredCache<K, V> implements InternalCache<K, V>, StorageAdapter.Par
 
   @Override
   public boolean replace(K key, V _newValue) {
-    return execute(key, SPEC.replace(key, _newValue));
+    Entry<K, V> e = lookup(key);
+    if (e != null && e.hasFreshData()) {
+      return execute(key, SPEC.replace(key, _newValue));
+    }
+    return false;
   }
 
   @Override
@@ -181,11 +189,6 @@ public class WiredCache<K, V> implements InternalCache<K, V>, StorageAdapter.Par
   @Override
   public CacheEntry<K, V> replaceOrGet(K key, V _oldValue, V _newValue, CacheEntry<K, V> _dummyEntry) {
     return execute(key, SPEC.replaceOrGet(key, _oldValue, _newValue, _dummyEntry));
-  }
-
-  @Override
-  public boolean contains(K key) {
-    return execute(key, SPEC.contains(key));
   }
 
   @Override
@@ -206,6 +209,11 @@ public class WiredCache<K, V> implements InternalCache<K, V>, StorageAdapter.Par
     return heapCache.lookupEntryUnsynchronized(key, hc);
   }
 
+  Entry<K, V> lookupNoHit(K key) {
+    final int hc =  heapCache.modifiedHash(key.hashCode());
+    return heapCache.lookupEntryUnsynchronizedNoHitRecord(key, hc);
+  }
+
   @Override
   public V get(K key) {
     Entry<K, V> e = lookup(key);
@@ -215,18 +223,7 @@ public class WiredCache<K, V> implements InternalCache<K, V>, StorageAdapter.Par
     return returnValue(execute(key, e, SPEC.get(key)));
    }
 
-  public Map<K, V> getAllXy(Set<? extends K> _keys) {
-    Map<K, V> map = new HashMap<K, V>();
-    for (K k : _keys) {
-      CacheEntry<K, V> e = getEntry(k);
-      if (e != null) {
-      }
-      remove(k);
-    }
-    return null;
-  }
-
-  @Override
+ @Override
   public Map<K, V> getAll(final Set<? extends K> keys) {
     return heapCache.getAll(keys);
   }
@@ -380,10 +377,28 @@ public class WiredCache<K, V> implements InternalCache<K, V>, StorageAdapter.Par
     boolean storageRead = false;
     boolean storageMiss = false;
     boolean storageNonFresh = false;
-    boolean heapHitButNotFresh = false;
+
     boolean heapMiss = false;
 
     boolean wantData = false;
+    boolean countMiss = false;
+    boolean heapHit = false;
+    boolean doNotCountAccess = false;
+
+    @Override
+    public boolean isPresent() {
+      doNotCountAccess = true;
+      return entry.hasFreshData();
+    }
+
+    @Override
+    public boolean isPresentOrMiss() {
+      if  (entry.hasFreshData()) {
+        return true;
+      }
+      countMiss = true;
+      return false;
+    }
 
     public EntryAction(Semantic<K, V, R> op, K k, Entry<K,V> e) {
       operation = op;
@@ -414,11 +429,7 @@ public class WiredCache<K, V> implements InternalCache<K, V>, StorageAdapter.Par
           return;
         }
       }
-      if (!e.hasFreshData()) {
-        heapHitButNotFresh(e);
-        return;
-      }
-      heapHitAndFresh(e);
+      heapHit(e);
     }
 
     public void lockEntryForStorageRead() {
@@ -431,10 +442,6 @@ public class WiredCache<K, V> implements InternalCache<K, V>, StorageAdapter.Par
       for (;;) {
         if (_spinCount-- <= 0) {
           throw new CacheLockSpinsExceededError();
-        }
-        if (e.hasFreshData()) {
-          heapHitAndFresh(e);
-          return;
         }
         synchronized (e) {
           e.waitForFetch();
@@ -454,7 +461,7 @@ public class WiredCache<K, V> implements InternalCache<K, V>, StorageAdapter.Par
         storageRead();
         return;
       }
-      heapHitButNotFresh(e);
+      heapHit(e);
     }
 
     public void storageRead() {
@@ -523,18 +530,13 @@ public class WiredCache<K, V> implements InternalCache<K, V>, StorageAdapter.Par
       examine();
     }
 
-    public void heapHitButNotFresh(Entry<K, V> e) {
-      heapHitButNotFresh = true;
-      entry = e;
-      examine();
-    }
-
     public void heapMiss() {
       heapMiss = true;
       examine();
     }
 
-    public void heapHitAndFresh(Entry<K, V> e) {
+    public void heapHit(Entry<K, V> e) {
+      heapHit = true;
       entry = e;
       examine();
     }
@@ -550,6 +552,7 @@ public class WiredCache<K, V> implements InternalCache<K, V>, StorageAdapter.Par
     public void wantMutation() {
       if (!entryLocked) {
         lockFor(Entry.ProcessingState.MUTATE);
+        countMiss = false;
         operation.examine(this, entry);
         if (needsFinish) {
           finish();
@@ -659,11 +662,6 @@ public class WiredCache<K, V> implements InternalCache<K, V>, StorageAdapter.Par
       needsFinish = false;
       newValueOrException = value;
       lastModificationTime = System.currentTimeMillis();
-      if (entry.isVirgin()) {
-        metrics().putNewEntry();
-      } else {
-        metrics().putHit();
-      }
       mutationCalculateExpiry();
     }
 
@@ -719,6 +717,18 @@ public class WiredCache<K, V> implements InternalCache<K, V>, StorageAdapter.Par
         }
         mutationUpdateHeap();
         return;
+      } else {
+        if (entry.isVirgin()) {
+          metrics().putNewEntry();
+        } else {
+          if (!wantData) {
+            metrics().putNoReadHit();
+          } else {
+            if (expiry > 0) {
+              metrics().putHit();
+            }
+          }
+        }
       }
       mutationMayCallWriter();
     }
@@ -881,15 +891,19 @@ public class WiredCache<K, V> implements InternalCache<K, V>, StorageAdapter.Par
     }
 
     public void updateOnlyReadStatisticsInsideLock() {
-      if (heapHitButNotFresh) {
-        heapCache.peekHitNotFreshCnt++;
-      }
-      if (heapMiss) {
-        heapCache.peekMissCnt++;
-      }
-      if (storageRead && storageMiss) {
-        heapCache.readNonFreshCnt++;
-        heapCache.peekHitNotFreshCnt++;
+      if (countMiss) {
+        if (heapHit) {
+          heapCache.peekHitNotFreshCnt++;
+        }
+        if (heapMiss) {
+          heapCache.peekMissCnt++;
+        }
+        if (storageRead && storageMiss) {
+          heapCache.readNonFreshCnt++;
+          heapCache.peekHitNotFreshCnt++;
+        }
+      } else if (doNotCountAccess && heapHit) {
+        metrics().containsButHit();
       }
       if (storageRead && !storageMiss) {
         heapCache.readHitCnt++;

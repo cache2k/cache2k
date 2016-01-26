@@ -75,7 +75,7 @@ public interface Cache<K, V> extends KeyValueSource<K, V>, Iterable<CacheEntry<K
    * <p>Multiple calls for the same key may return different instances of the entry
    * object.
    */
-  public CacheEntry<K, V> getEntry(K key);
+  CacheEntry<K, V> getEntry(K key);
 
   /**
    * Signals the intent to call a get on the same key in the near future.
@@ -104,11 +104,22 @@ public interface Cache<K, V> extends KeyValueSource<K, V>, Iterable<CacheEntry<K
   void prefetch(List<K> keys, int _startIndex, int _afterEndIndex);
 
   /**
-   * Returns the value if it is mapped within the cache and not expired, or null.
-   * No request on the cache source is made.
+   * Returns the value if it is mapped within the cache and it is not
+   * expired, or null.
    *
-   * @throws org.cache2k.PropagatedCacheException if an exception happened
-   *         when the value was fetched by the cache source
+   * @param key key with which the specified value is associated
+   * @return the value associated with the specified key, or
+   *         {@code null} if there was no mapping for the key.
+   *         (A {@code null} return can also indicate that the cache
+   *         previously associated {@code null} with the key)
+   * @throws ClassCastException if the class of the specified key
+   *         prevents it from being stored in this cache
+   * @throws NullPointerException if the specified key is null or the
+   *         value is null and the cache does not permit null values
+   * @throws IllegalArgumentException if some property of the specified key
+   *         prevents it from being stored in this cache
+   * @throws PropagatedCacheException if the loading of the entry produced
+   *         an exception, which was not suppressed and is not yet expired
    */
   V peek(K key);
 
@@ -128,6 +139,8 @@ public interface Cache<K, V> extends KeyValueSource<K, V>, Iterable<CacheEntry<K
    *
    * <p>Multiple calls for the same key may return different instances of the entry
    * object.
+   * @throws PropagatedCacheException if the loading of the entry produced
+   *         an exception, which was not suppressed and is not yet expired
    */
   CacheEntry<K, V> peekEntry(K key);
 
@@ -138,7 +151,29 @@ public interface Cache<K, V> extends KeyValueSource<K, V>, Iterable<CacheEntry<K
   boolean contains(K key);
 
   /**
-   * Set object value for the key
+   * Updates an existing cache entry for the specified key, so it associates
+   * the given value, or, insert a new cache entry for this key and value.
+   *
+   * <p>If an {@link EntryExpiryCalculator} is specified in the
+   * cache configuration it is called and will determine the expiry time.
+   * If a {@link CacheWriter} is configured in, then it is called with the
+   * new value. If the {@link EntryExpiryCalculator} or {@link CacheWriter}
+   * yield an exception the operation will be aborted and the previous
+   * mapping will be preserved.
+   *
+   * @param key key with which the specified value is associated
+   * @param value value to be associated with the specified key
+   * @return {@code true} if a mapping is present and the value was replaced.
+   *         {@code false} if no entry is present and no action was performed.
+   * @throws ClassCastException if the class of the specified key or value
+   *         prevents it from being stored in this cache.
+   * @throws NullPointerException if the specified key is null or the
+   *         value is null and the cache does not permit null values
+   * @throws IllegalArgumentException if some property of the specified key
+   *         or value prevents it from being stored in this cache.
+   * @throws CacheException if the cache was unable to process the request
+   *         completely, for example, if an exceptions was thrown
+   *         by a {@link CacheWriter}
    */
   void put(K key, V value);
 
@@ -153,8 +188,8 @@ public interface Cache<K, V> extends KeyValueSource<K, V>, Iterable<CacheEntry<K
    * Replaces the entry for a key only if currently mapped to some value.
    * This is equivalent to
    *  <pre> {@code
-   * if (map.containsKey(key)) {
-   *   return map.put(key, value);
+   * if (cache.contains(key)) {
+   *   return cache.put(key, value);
    * } else
    *   return null;
    * }</pre>
@@ -167,14 +202,14 @@ public interface Cache<K, V> extends KeyValueSource<K, V>, Iterable<CacheEntry<K
    *         {@code null} if there was no mapping for the key.
    *         (A {@code null} return can also indicate that the cache
    *         previously associated {@code null} with the key)
-   * @throws UnsupportedOperationException if the {@code put} operation
-   *         is not supported by this map
    * @throws ClassCastException if the class of the specified key or value
-   *         prevents it from being stored in this map
+   *         prevents it from being stored in this cache
    * @throws NullPointerException if the specified key is null or the
    *         value is null and the cache does not permit null values
    * @throws IllegalArgumentException if some property of the specified key
-   *         or value prevents it from being stored in this map
+   *         or value prevents it from being stored in this cache
+   * @throws PropagatedCacheException if the loading of the entry produced
+   *         an exception, which was not suppressed and is not yet expired
    */
   V peekAndReplace(K key, V value);
 
@@ -182,8 +217,8 @@ public interface Cache<K, V> extends KeyValueSource<K, V>, Iterable<CacheEntry<K
    * Replaces the entry for a key only if currently mapped to some value.
    * This is equivalent to
    *  <pre> {@code
-   * if (map.containsKey(key)) {
-   *   map.put(key, value);
+   * if (cache.contains(key)) {
+   *   cache.put(key, value);
    *   return true
    * } else
    *   return false;
@@ -195,25 +230,88 @@ public interface Cache<K, V> extends KeyValueSource<K, V>, Iterable<CacheEntry<K
    * @param value value to be associated with the specified key
    * @return {@code true} if a mapping is present and the value was replaced.
    *         {@code false} if no entry is present and no action was performed.
-   * @throws UnsupportedOperationException if the {@code put} operation
-   *         is not supported by this map
    * @throws ClassCastException if the class of the specified key or value
-   *         prevents it from being stored in this map
+   *         prevents it from being stored in this cache.
    * @throws NullPointerException if the specified key is null or the
    *         value is null and the cache does not permit null values
    * @throws IllegalArgumentException if some property of the specified key
-   *         or value prevents it from being stored in this map
+   *         or value prevents it from being stored in this cache.
    */
   boolean replace(K key, V value);
 
-  boolean replace(K key, V _oldValue, V _newValue);
+  /**
+   * Replaces the entry for a key only if currently mapped to a given value.
+   * This is equivalent to
+   *  <pre> {@code
+   * if (cache.contains(key) && Objects.equals(cache.get(key), oldValue)) {
+   *   cache.put(key, newValue);
+   *   return true;
+   * } else
+   *   return false;
+   * }</pre>
+   *
+   * except that the action is performed atomically.
+   *
+   * @param key key with which the specified value is associated
+   * @param oldValue value expected to be associated with the specified key
+   * @param newValue value to be associated with the specified key
+   * @return {@code true} if the value was replaced
+   * @throws ClassCastException if the class of a specified key or value
+   *         prevents it from being stored in this map
+   * @throws NullPointerException if a specified key or value is null,
+   *         and this map does not permit null keys or values
+   * @throws IllegalArgumentException if some property of a specified key
+   *         or value prevents it from being stored in this map
+   */
+  boolean replace(K key, V oldValue, V newValue);
 
+  /**
+   * Removes the mapping for a key from the cache if it is present.
+   *
+   * <p>Returns the value to which the cache previously associated the key,
+   * or <tt>null</tt> if the cache contained no mapping for the key.
+   *
+   * <p>If the cache does permit null values, then a return value of
+   * <tt>null</tt> does not <i>necessarily</i> indicate that the cache
+   * contained no mapping for the key; it's also possible that the cache
+   * explicitly mapped the key to <tt>null</tt>.
+   *
+   * @param key key whose mapping is to be removed from the cache
+   * @return the previous value associated with <tt>key</tt>, or
+   *         <tt>null</tt> if there was no mapping for <tt>key</tt>.
+   * @throws ClassCastException if the key is of an inappropriate type for
+   *         the cache. This check is optional depending on the cache
+   *         configuration.
+   */
   V peekAndRemove(K key);
 
   V peekAndPut(K key, V value);
 
   /**
-   * Remove the object mapped to key from the cache.
+   * Removes the mapping for a key from the cache if it is present.
+   *
+   * <p>Returns the value to which this map previously associated the key,
+   * or <tt>null</tt> if the map contained no mapping for the key.
+   *
+   * <p>If this map permits null values, then a return value of
+   * <tt>null</tt> does not <i>necessarily</i> indicate that the map
+   * contained no mapping for the key; it's also possible that the map
+   * explicitly mapped the key to <tt>null</tt>.
+   *
+   * <p>The map will not contain a mapping for the specified key once the
+   * call returns.
+   *
+   * @param key key whose mapping is to be removed from the map
+   * @return the previous value associated with <tt>key</tt>, or
+   *         <tt>null</tt> if there was no mapping for <tt>key</tt>.
+   * @throws UnsupportedOperationException if the <tt>remove</tt> operation
+   *         is not supported by this map
+   * @throws ClassCastException if the key is of an inappropriate type for
+   *         this map
+   * (<a href="{@docRoot}/java/util/Collection.html#optional-restrictions">optional</a>)
+   * @throws NullPointerException if the specified key is null and this
+   *         map does not permit null keys
+   * (<a href="{@docRoot}/java/util/Collection.html#optional-restrictions">optional</a>)
    */
   void remove(K key);
 
@@ -268,7 +366,8 @@ public interface Cache<K, V> extends KeyValueSource<K, V>, Iterable<CacheEntry<K
    * fallback non-bulk operation if a fetch is ongoing and the keys overlap.
    *
    * <p/>In contrast to JSR107 the following guarantees are met
-   * if the operation returns without exception: map.size() == keys.size()
+   * if the operation returns without exception: map.size() == keys.size().
+   * TODO: only if null values are permitted.
    *
    * <p/>Exception handling: The method may terminate normal, even if a cache
    * fetch via cache source failed. In this case the exception will be thrown
@@ -279,7 +378,22 @@ public interface Cache<K, V> extends KeyValueSource<K, V>, Iterable<CacheEntry<K
   Map<K, V> getAll(Set<? extends K> keys);
 
   /**
-   * Bulk counterpart for {@link #peek(Object)}
+   * Bulk version for {@link #peek(Object)}
+   *
+   * <p>If the cache permits null values, the map will contain entries
+   * mapped to a null value.
+   *
+   * <p>If the loading of an entry produced an exception, which was not
+   * suppressed and is not yet expired. This exception will be thrown
+   * as {@link PropagatedCacheException} when the entry is accessed
+   * via the map interface.
+   *
+   * @throws ClassCastException if the class of the specified key
+   *         prevents it from being stored in this cache
+   * @throws NullPointerException if the specified key is null or the
+   *         value is null and the cache does not permit null values
+   * @throws IllegalArgumentException if some property of the specified key
+   *         prevents it from being stored in this cache
    */
   Map<K, V> peekAll(Set<? extends K> keys);
 

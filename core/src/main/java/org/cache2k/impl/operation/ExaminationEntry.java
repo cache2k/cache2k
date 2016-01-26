@@ -31,9 +31,6 @@ package org.cache2k.impl.operation;
  */
 public interface ExaminationEntry<K, V> {
 
-  /** Entry contains valid and not expired data */
-  boolean hasFreshData();
-
   /** Associated key */
   K getKey();
 

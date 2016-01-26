@@ -22,8 +22,6 @@ package org.cache2k.impl.operation;
  * #L%
  */
 
-import org.cache2k.impl.Entry;
-
 /**
  * Interface for cache operation semantics to control the progress of the processing.
  *
@@ -37,13 +35,25 @@ public interface Progress<V, R> {
    * Requests that the cache content for an entry will be provided.
    * If the cache is tiered, the data will be read into the heap cache.
    * Last command of semantic method. Calls back on
-   * {@link Semantic#examine(Progress, Entry)}
+   * {@link Semantic#examine(Progress, ExaminationEntry)}
    */
   void wantData();
 
   /**
+   * Entry has valid data in the cache and is not expired. This is used for all
+   * operations that do not want to access the value.
+   */
+  boolean isPresent();
+
+  /**
+   * Entry has valid data in the cache and is not expired. This is used for all
+   * operations that do not want to access the value.
+   */
+  boolean isPresentOrMiss();
+
+  /**
    * The entry gets locked for mutation. Last command of semantic method.
-   *  Calls back on {@link Semantic#update(Progress, Entry)}
+   *  Calls back on {@link Semantic#update(Progress, ExaminationEntry)}
    */
   void wantMutation();
 

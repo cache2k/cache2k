@@ -339,6 +339,10 @@ public class Entry<K, T>
     return _nextRefreshTime >= FETCHED_STATE || _nextRefreshTime < 0;
   }
 
+  public boolean hasData() {
+    return !isVirgin() && !isRemovedState();
+  }
+
   /**
    * Returns true if the entry has a valid value and is fresh / not expired.
    */

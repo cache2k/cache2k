@@ -30,6 +30,12 @@ public interface CommonMetrics {
   long getPutNewEntryCount();
   long getPutHitCount();
   long getCasOperationCount();
+  long getPutNoReadHitCount();
+
+  /**
+   * Correction counter for read usage
+   */
+  long getContainsButHitCount();
 
   interface Updater extends CommonMetrics {
 
@@ -39,8 +45,14 @@ public interface CommonMetrics {
     void putHit();
     void putHit(long cnt);
 
+    void putNoReadHit();
+    void putNoReadHit(long cnt);
+
     void casOperation();
     void casOperation(long cnt);
+
+    void containsButHit();
+    void containsButHit(long cnt);
 
   }
 

@@ -66,9 +66,9 @@ class CacheBaseInfo implements InternalCacheInfo {
     storageLoadCnt = storageMissCnt + baseCache.readHitCnt;
     newEntryCnt = baseCache.newEntryCnt - baseCache.virginEvictCnt;
     hitCnt = baseCache.getHitCnt();
-    correctedPutCnt = metrics.getPutNewEntryCount() + metrics.getPutHitCount() - baseCache.putButExpiredCnt;
+    correctedPutCnt = metrics.getPutNewEntryCount() + metrics.getPutHitCount() + metrics.getPutNoReadHitCount() - baseCache.putButExpiredCnt;
     usageCnt =
-            hitCnt + newEntryCnt + baseCache.peekMissCnt - metrics.getCasOperationCount();
+            hitCnt + newEntryCnt + baseCache.peekMissCnt + metrics.getPutHitCount();
   }
 
   String percentString(double d) {
@@ -103,7 +103,11 @@ class CacheBaseInfo implements InternalCacheInfo {
   public long getStorageMissCnt() { return storageMissCnt; }
   @Override
   public long getReadUsageCnt() {
-    return hitCnt + baseCache.peekMissCnt + baseCache.loadCnt - baseCache.loadButHitCnt - metrics.getPutHitCount();
+    long _putHit = metrics.getPutNoReadHitCount();
+    long _containsBitHit = metrics.getContainsButHitCount();
+    return
+      hitCnt + baseCache.peekMissCnt
+      + baseCache.loadCnt - baseCache.loadButHitCnt - _putHit - _containsBitHit;
   }
   @Override
   public long getUsageCnt() { return usageCnt; }
