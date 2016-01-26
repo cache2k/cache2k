@@ -28,6 +28,15 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+/*
+ * Descriptions derive partly from the java.util.concurrent.ConcurrentMap.
+ * Original copyright:
+ *
+ * Written by Doug Lea with assistance from members of JCP JSR-166
+ * Expert Group and released to the public domain, as explained at
+ * http://creativecommons.org/publicdomain/zero/1.0/
+ */
+
 /**
  * Interface to the cache2k cache implementation. To obtain a cache
  * instance use the {@link CacheBuilder}.
@@ -38,17 +47,17 @@ import java.util.Set;
 @SuppressWarnings("UnusedDeclaration")
 public interface Cache<K, V> extends KeyValueSource<K, V>, Iterable<CacheEntry<K, V>>, Closeable {
 
-  public abstract String getName();
+  String getName();
 
   /**
    * Clear the cache contents
    */
-  public abstract void clear();
+  void clear();
 
   /**
    * Returns object in the cache that is mapped to the key.
    */
-  public abstract V get(K key);
+  V get(K key);
 
   /**
    * Returns a mapped entry from the cache or null. If no entry is present or the entry
@@ -77,7 +86,7 @@ public interface Cache<K, V> extends KeyValueSource<K, V>, Iterable<CacheEntry<K
    * will take place with the same thread pool then the one used
    * for background refresh.
    */
-  public abstract void prefetch(K key);
+  void prefetch(K key);
 
   /**
    * Signals the intend to call get on the set of keys in the near future.
@@ -90,9 +99,9 @@ public interface Cache<K, V> extends KeyValueSource<K, V>, Iterable<CacheEntry<K
    * keys are locked for data fetch within the fetch. A sequential get
    * on a key will stall until the value is loaded.
    */
-  public abstract void prefetch(Set<K> keys);
+  void prefetch(Set<K> keys);
 
-  public abstract void prefetch(List<K> keys, int _startIndex, int _afterEndIndex);
+  void prefetch(List<K> keys, int _startIndex, int _afterEndIndex);
 
   /**
    * Returns the value if it is mapped within the cache and not expired, or null.
@@ -101,7 +110,7 @@ public interface Cache<K, V> extends KeyValueSource<K, V>, Iterable<CacheEntry<K
    * @throws org.cache2k.PropagatedCacheException if an exception happened
    *         when the value was fetched by the cache source
    */
-  public abstract V peek(K key);
+  V peek(K key);
 
   /**
    * Returns a mapped entry from the cache or null. If no entry is present or the entry
@@ -120,50 +129,100 @@ public interface Cache<K, V> extends KeyValueSource<K, V>, Iterable<CacheEntry<K
    * <p>Multiple calls for the same key may return different instances of the entry
    * object.
    */
-  public abstract CacheEntry<K, V> peekEntry(K key);
+  CacheEntry<K, V> peekEntry(K key);
 
   /**
    * Returns true if the there is a mapping for the specified key. Does not invoke
    * the {@link CacheSource} if no entry exists.
    */
-  public abstract boolean contains(K key);
+  boolean contains(K key);
 
   /**
    * Set object value for the key
    */
-  public abstract void put(K key, V value);
+  void put(K key, V value);
 
   /**
    * Same as put, if there is no value mapped to the key in the cache.
    *
    * <p>If a mapping is present, the cache does not account this call as access.</p>
    */
-  public abstract boolean putIfAbsent(K key, V value);
+  boolean putIfAbsent(K key, V value);
 
   /**
-   * Replace an existing mapping and return the current one.
+   * Replaces the entry for a key only if currently mapped to some value.
+   * This is equivalent to
+   *  <pre> {@code
+   * if (map.containsKey(key)) {
+   *   return map.put(key, value);
+   * } else
+   *   return null;
+   * }</pre>
+   *
+   * except that the action is performed atomically.
+   *
+   * @param key key with which the specified value is associated
+   * @param value value to be associated with the specified key
+   * @return the previous value associated with the specified key, or
+   *         {@code null} if there was no mapping for the key.
+   *         (A {@code null} return can also indicate that the cache
+   *         previously associated {@code null} with the key)
+   * @throws UnsupportedOperationException if the {@code put} operation
+   *         is not supported by this map
+   * @throws ClassCastException if the class of the specified key or value
+   *         prevents it from being stored in this map
+   * @throws NullPointerException if the specified key is null or the
+   *         value is null and the cache does not permit null values
+   * @throws IllegalArgumentException if some property of the specified key
+   *         or value prevents it from being stored in this map
    */
-  public abstract V peekAndReplace(K key, V _value);
+  V peekAndReplace(K key, V value);
 
-  public abstract boolean replace(K key, V _newValue);
+  /**
+   * Replaces the entry for a key only if currently mapped to some value.
+   * This is equivalent to
+   *  <pre> {@code
+   * if (map.containsKey(key)) {
+   *   map.put(key, value);
+   *   return true
+   * } else
+   *   return false;
+   * }</pre>
+   *
+   * except that the action is performed atomically.
+   *
+   * @param key key with which the specified value is associated
+   * @param value value to be associated with the specified key
+   * @return {@code true} if a mapping is present and the value was replaced.
+   *         {@code false} if no entry is present and no action was performed.
+   * @throws UnsupportedOperationException if the {@code put} operation
+   *         is not supported by this map
+   * @throws ClassCastException if the class of the specified key or value
+   *         prevents it from being stored in this map
+   * @throws NullPointerException if the specified key is null or the
+   *         value is null and the cache does not permit null values
+   * @throws IllegalArgumentException if some property of the specified key
+   *         or value prevents it from being stored in this map
+   */
+  boolean replace(K key, V value);
 
-  public abstract boolean replace(K key, V _oldValue, V _newValue);
+  boolean replace(K key, V _oldValue, V _newValue);
 
-  public abstract V peekAndRemove(K key);
+  V peekAndRemove(K key);
 
-  public abstract V peekAndPut(K key, V value);
+  V peekAndPut(K key, V value);
 
   /**
    * Remove the object mapped to key from the cache.
    */
-  public abstract void remove(K key);
+  void remove(K key);
 
   /**
    * Remove the mapping if the stored value is the equal to the comparison value.
    *
    * @return true, if mapping was removed
    */
-  public boolean remove(K key, V value);
+  boolean remove(K key, V value);
 
   /**
    * Remove the mappings for the keys atomically. Missing keys
@@ -172,7 +231,7 @@ public interface Cache<K, V> extends KeyValueSource<K, V>, Iterable<CacheEntry<K
    * <p/>Parallel fetches from the cache source, that are currently
    * ongoing for some of the given keys, will be ignored.
    */
-  public abstract void removeAllAtOnce(Set<K> key);
+  void removeAllAtOnce(Set<K> key);
 
   /**
    * Fetch a set of values from the cache source. This call is modelled after the JSR107
@@ -217,17 +276,17 @@ public interface Cache<K, V> extends KeyValueSource<K, V>, Iterable<CacheEntry<K
    *
    * @exception PropagatedCacheException may be thrown if the fetch fails.
    */
-  public Map<K, V> getAll(Set<? extends K> keys);
+  Map<K, V> getAll(Set<? extends K> keys);
 
   /**
    * Bulk counterpart for {@link #peek(Object)}
    */
-  public Map<K, V> peekAll(Set<? extends K> keys);
+  Map<K, V> peekAll(Set<? extends K> keys);
 
   /**
    * Put all elements of the map into the cache.
    */
-  public void putAll(Map<? extends K, ? extends V> m);
+   void putAll(Map<? extends K, ? extends V> m);
 
   /**
    * Number of entries the cache holds in total. When iterating the entries
@@ -241,7 +300,7 @@ public interface Cache<K, V> extends KeyValueSource<K, V>, Iterable<CacheEntry<K
    *
    * <p>TODO-API: Keep this for the final API?
    */
-  public abstract int getTotalEntryCount();
+  int getTotalEntryCount();
 
   /**
    * Iterate all entries in the cache.
@@ -264,24 +323,24 @@ public interface Cache<K, V> extends KeyValueSource<K, V>, Iterable<CacheEntry<K
   @Override
   ClosableIterator<CacheEntry<K, V>> iterator();
 
-  public abstract void removeAll();
+  void removeAll();
 
   /**
    * Remove persistent entries, that are not longer needed. Only has an effect
    * if a storage is defined.
    */
-  public abstract void purge();
+  void purge();
 
   /**
    * Ensure that any transient data is stored in the persistence storage.
    * Nothing will be done if no persistent storage is configured.
    */
-  public abstract void flush();
+  void flush();
 
   /**
    * @deprecated use {@link #close()}
    */
-  public abstract void destroy();
+  void destroy();
 
   /**
    * Free all resources and remove the cache from the CacheManager.
@@ -299,17 +358,17 @@ public interface Cache<K, V> extends KeyValueSource<K, V>, Iterable<CacheEntry<K
    *
    * <p>If all caches need to be closed it is more effective to use {@link CacheManager#close()}
    */
-  public abstract void close();
+  void close();
 
   /**
    * Return the cache manager for this cache instance.
    */
-  public CacheManager getCacheManager();
+  CacheManager getCacheManager();
 
   /**
    * True if cache was closed or closing is in progress.
    */
-  public abstract boolean isClosed();
+  boolean isClosed();
 
   /**
    * Returns information about the caches internal information. Calling {@link #toString}
@@ -317,11 +376,11 @@ public interface Cache<K, V> extends KeyValueSource<K, V>, Iterable<CacheEntry<K
    * collected and other thread users need to be locked out, to have a consistent
    * view.
    */
-  public String toString();
+  String toString();
 
   /**
    * Request an alternative interface for the cache.
    */
-  public <X> X requestInterface(Class<X> _type);
+  <X> X requestInterface(Class<X> _type);
 
 }

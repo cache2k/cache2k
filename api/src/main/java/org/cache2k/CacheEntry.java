@@ -45,7 +45,7 @@ public interface CacheEntry<K, V> {
   Throwable getException();
 
   /**
-   * Time the entry was last updated either by a fetch via the CacheSource
+   * Time in millis the entry was last updated either by a fetch via the CacheSource
    * or by a put. If the entry was never fetched 0 is returned.
    */
   long getLastModification();
