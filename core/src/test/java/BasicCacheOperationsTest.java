@@ -411,6 +411,15 @@ public class BasicCacheOperationsTest {
     assertEquals(VALUE, m.get(KEY));
     assertTrue(m.containsKey(KEY));
     assertTrue(m.containsValue(VALUE));
+    assertNull(m.get(OTHER_KEY));
+  }
+
+  @Test
+  public void peekAll_Null() {
+    cache.put(KEY, null);
+    Map<Integer, Integer> m = cache.peekAll(keySet(KEY, OTHER_KEY));
+    assertEquals(1, m.size());
+    assertNull(m.get(KEY));
   }
 
   @Test(expected = NullPointerException.class)

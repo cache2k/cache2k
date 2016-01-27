@@ -76,7 +76,11 @@ public abstract class MapValueConverterProxy<K, V, S>  implements Map<K, V> {
 
   @Override
   public V get(final Object key) {
-    return convert(map.get(key));
+    S v = map.get(key);
+    if (v == null) {
+      return null;
+    }
+    return convert(v);
   }
 
   @Override
