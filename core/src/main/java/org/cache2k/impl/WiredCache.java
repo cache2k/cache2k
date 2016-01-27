@@ -837,20 +837,22 @@ public class WiredCache<K, V> extends AbstractCache<K, V> implements  StorageAda
      */
     public void mutationStoreNoKeepExpired() {
       entry.nextProcessingStep(Entry.ProcessingState.STORE);
+      boolean _entryRemoved;
       try {
-        storage.remove(key);
+        _entryRemoved = storage.remove(key);
       } catch (Throwable t) {
         onStoreFailure(t);
         return;
       }
-      onStoreSuccess();
+      onStoreSuccess(_entryRemoved);
     }
 
     public void mutationStoreRegular() {
       entry.nextProcessingStep(Entry.ProcessingState.STORE);
+      boolean _entryRemoved = false;
       try {
         if (remove) {
-          storage.remove(key);
+          _entryRemoved = storage.remove(key);
         } else {
           storage.put(entry, expiry);
         }
@@ -858,11 +860,11 @@ public class WiredCache<K, V> extends AbstractCache<K, V> implements  StorageAda
         onStoreFailure(t);
         return;
       }
-      onStoreSuccess();
+      onStoreSuccess(_entryRemoved);
     }
 
     @Override
-    public void onStoreSuccess() {
+    public void onStoreSuccess(boolean _entryRemoved) {
       entry.nextProcessingStep(Entry.ProcessingState.STORE_COMPLETE);
       mutationReleaseLock();
     }
