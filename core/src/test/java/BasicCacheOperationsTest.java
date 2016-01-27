@@ -502,6 +502,16 @@ public class BasicCacheOperationsTest {
       fail("Exception expected");
     } catch (UnsupportedOperationException ex) {
     }
+    try {
+      m.entrySet().iterator().remove();
+      fail("Exception expected");
+    } catch (UnsupportedOperationException ex) {
+    }
+    try {
+      m.values().iterator().remove();
+      fail("Exception expected");
+    } catch (UnsupportedOperationException ex) {
+    }
   }
 
   /*

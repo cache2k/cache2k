@@ -120,6 +120,11 @@ public abstract class MapValueConverterProxy<K, V, S>  implements Map<K, V> {
           public V next() {
             return convert(it.next());
           }
+
+          @Override
+          public void remove() {
+            throw new UnsupportedOperationException();
+          }
         };
       }
 
@@ -162,6 +167,11 @@ public abstract class MapValueConverterProxy<K, V, S>  implements Map<K, V> {
                 throw new UnsupportedOperationException();
               }
             };
+          }
+
+          @Override
+          public void remove() {
+            throw new UnsupportedOperationException();
           }
         };
       }
