@@ -606,27 +606,23 @@ public class BasicCacheOperationsTest {
   }
 
   /*
-   * replace_3arg
+   * replaceKVV
    *
    * TODO: null value
    * TODO: null key
    */
 
   @Test
-  public void replace_3arg_Missing() {
+  public void replaceKvv() {
     assertFalse(cache.replace(KEY, VALUE, OTHER_VALUE));
     assertFalse(cache.contains(KEY));
-  }
-
-  @Test
-  public void replace_3arg() throws Exception {
     cache.put(KEY, VALUE);
     assertTrue(cache.replace(KEY, VALUE, OTHER_VALUE));
     assertEquals(OTHER_VALUE, cache.peek(KEY));
   }
 
   @Test
-  public void replace_3arg_Different() {
+  public void replaceKvv_Different() {
     cache.put(KEY, VALUE);
     assertEquals(VALUE, cache.peek(KEY));
     assertFalse(cache.replace(KEY, OTHER_VALUE, OTHER_VALUE));
@@ -634,12 +630,29 @@ public class BasicCacheOperationsTest {
   }
 
   @Test
-  public void replace_3arg_NoMap() {
+  public void replaceKvv_NoMap() {
     cache.put(KEY, VALUE);
     assertFalse(cache.replace(OTHER_KEY, OTHER_VALUE, OTHER_VALUE));
     assertEquals(VALUE, cache.peek(KEY));
     assertNull(cache.peek(OTHER_KEY));
     assertFalse(cache.contains(OTHER_KEY));
+  }
+
+  @Test
+  public void replaceKvv_Null() {
+    cache.replace(KEY, null, null);
+    cache.put(KEY, null);
+    cache.replace(KEY, null, VALUE);
+    assertEquals(VALUE, cache.peek(KEY));
+    cache.replace(KEY, OTHER_VALUE, null);
+    assertEquals(VALUE, cache.peek(KEY));
+    cache.replace(KEY, VALUE, null);
+    assertTrue(cache.contains(KEY));
+  }
+
+  @Test(expected = NullPointerException.class)
+  public void replaceKvv_NullKey() {
+    cache.replace(null, OTHER_VALUE, OTHER_VALUE);
   }
 
   /*

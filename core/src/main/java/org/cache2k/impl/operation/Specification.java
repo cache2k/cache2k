@@ -264,7 +264,9 @@ public class Specification<K, V> {
 
       @Override
       public void update(Progress<V, Boolean> c, ExaminationEntry<K, V> e) {
-        if (c.isPresentOrMiss() && e.getValueOrException().equals(value)) {
+        if (c.isPresentOrMiss() &&
+          ( (value == null && e.getValueOrException() == null) ||
+            value.equals(e.getValueOrException())) ) {
           c.result(true);
           c.put(newValue);
           return;
