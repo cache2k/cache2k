@@ -50,7 +50,7 @@ public interface Semantic<K, V, R> {
   /**
    * Load is complete.
    */
-  void loaded(Progress<V, R> c, ExaminationEntry<K, V> e, V v);
+  void loaded(Progress<V, R> c, ExaminationEntry<K, V> e);
 
   /**
    * Base class to provide a default for the load result.
@@ -62,11 +62,10 @@ public interface Semantic<K, V, R> {
      * This is only called when a load was requested.
      *
      * @param e the entry containing the old data
-     * @param _newValueOrException  value returned from the loader
      */
     @Override
-    public void loaded(final Progress<V, R> c, final ExaminationEntry<K, V> e, V _newValueOrException) {
-      c.result((R) _newValueOrException);
+    public void loaded(final Progress<V, R> c, final ExaminationEntry<K, V> e) {
+      c.result((R) e.getValueOrException());
     }
 
   }

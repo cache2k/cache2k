@@ -607,9 +607,6 @@ public class BasicCacheOperationsTest {
 
   /*
    * replaceKVV
-   *
-   * TODO: null value
-   * TODO: null key
    */
 
   @Test
@@ -656,26 +653,42 @@ public class BasicCacheOperationsTest {
   }
 
   /*
-   * replace_2arg
-   *
-   * TODO: null value
-   * TODO: null key
+   * replace
    */
 
   @Test
-  public void replace_2arg() {
+  public void replace() {
+    boolean f = cache.replace(KEY, VALUE);
+    assertFalse(f);
     cache.put(KEY, VALUE);
-    assertTrue(cache.replace(KEY, OTHER_VALUE));
+    f = cache.replace(KEY, OTHER_VALUE);
+    assertTrue(f);
     assertEquals(OTHER_VALUE, cache.peek(KEY));
   }
 
   @Test
-  public void replace_2arg_NoMap() {
+  public void replace_NoMap() {
     cache.put(KEY, VALUE);
     assertFalse(cache.replace(OTHER_KEY, OTHER_VALUE));
     assertEquals(VALUE, cache.peek(KEY));
     assertNull(cache.peek(OTHER_KEY));
     assertFalse(cache.contains(OTHER_KEY));
+  }
+
+  @Test
+  public void replace_Null() {
+    boolean f = cache.replace(KEY, null);
+    assertFalse(f);
+    cache.put(KEY, VALUE);
+    f = cache.replace(KEY, null);
+    assertTrue(f);
+    assertNull(cache.peek(KEY));
+    assertTrue(cache.contains(KEY));
+  }
+
+  @Test(expected = NullPointerException.class)
+  public void replace_NullKey() {
+    cache.replace(null, VALUE);
   }
 
 }

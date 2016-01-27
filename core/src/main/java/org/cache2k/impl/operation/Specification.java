@@ -99,9 +99,8 @@ public class Specification<K, V> {
     }
 
     @Override
-    public void loaded(final Progress c, final ExaminationEntry e, final Object _newValueOrException) {
+    public void loaded(final Progress c, final ExaminationEntry e) {
       c.result(returnStableEntry(e));
-      throw new UnsupportedOperationException();
     }
   };
 

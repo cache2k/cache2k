@@ -175,11 +175,7 @@ public class WiredCache<K, V> extends AbstractCache<K, V> implements  StorageAda
 
   @Override
   public boolean replace(K key, V _newValue) {
-    Entry<K, V> e = lookup(key);
-    if (e != null && e.hasFreshData()) {
-      return execute(key, SPEC.replace(key, _newValue));
-    }
-    return false;
+    return execute(key, SPEC.replace(key, _newValue));
   }
 
   @Override
@@ -730,7 +726,6 @@ public class WiredCache<K, V> extends AbstractCache<K, V> implements  StorageAda
             }
           }
         }
-        operation.loaded(this, entry, newValueOrException);
         if (_suppressException) {
           mutationSkipWriterSuppressedException();
           return;
@@ -882,6 +877,9 @@ public class WiredCache<K, V> extends AbstractCache<K, V> implements  StorageAda
     }
 
     public void mutationReleaseLock() {
+      if (loadCompletedTime > 0) {
+        operation.loaded(this, entry);
+      }
       synchronized (entry) {
         entry.processingDone();
         entryLocked = false;
