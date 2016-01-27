@@ -169,7 +169,7 @@ public class WiredCache<K, V> extends AbstractCache<K, V> implements  StorageAda
   }
 
   @Override
-  public boolean removeWithFlag(K key) {
+  public boolean containsAndRemove(K key) {
     return execute(key, SPEC.containsAndRemove(key));
   }
 

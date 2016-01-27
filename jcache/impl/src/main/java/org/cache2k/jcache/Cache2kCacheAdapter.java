@@ -28,7 +28,6 @@ import org.cache2k.CacheEntryProcessor;
 import org.cache2k.EntryProcessingResult;
 import org.cache2k.FetchCompletedListener;
 import org.cache2k.MutableCacheEntry;
-import org.cache2k.impl.BaseCache;
 import org.cache2k.impl.InternalCache;
 
 import javax.cache.CacheManager;
@@ -168,7 +167,7 @@ public class Cache2kCacheAdapter<K, V> implements javax.cache.Cache<K, V> {
   @Override
   public boolean remove(K key) {
     checkClosed();
-    return cacheImpl.removeWithFlag(key);
+    return cacheImpl.containsAndRemove(key);
   }
 
   @Override

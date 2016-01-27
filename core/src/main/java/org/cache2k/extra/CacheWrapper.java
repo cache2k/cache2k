@@ -138,6 +138,9 @@ public class CacheWrapper<K,V> implements Cache<K, V> {
   }
 
   @Override
+  public boolean containsAndRemove(K key) { return cache.containsAndRemove(key); }
+
+  @Override
   public boolean remove(K key, V value) {
     return cache.remove(key, value);
   }

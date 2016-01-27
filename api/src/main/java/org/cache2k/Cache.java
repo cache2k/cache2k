@@ -286,10 +286,28 @@ public interface Cache<K, V> extends KeyValueSource<K, V>, Iterable<CacheEntry<K
    */
   V peekAndRemove(K key);
 
-  V peekAndPut(K key, V value);
+  /**
+   * Removes the mapping for a key from the cache and returns true if it
+   * one was present.
+   *
+   * @param key key whose mapping is to be removed from the cache
+   * @return {@code true} if the cache contained a mapping for the specified key
+   * @throws NullPointerException if a specified key is null
+   * @throws ClassCastException if the key is of an inappropriate type for
+   *         the cache. This check is optional depending on the cache
+   *         configuration.
+   */
+  boolean containsAndRemove(K key);
 
   /**
    * Removes the mapping for a key from the cache if it is present.
+   *
+   * <p>These alternative versions of the remove operation exist:
+   * <ul>
+   *   <li>{@link #containsAndRemove(Object)}, returning a success flag</li>
+   *   <li>{@link #peekAndRemove(Object)}, returning the removed value</li>
+   *   <li>{@link #remove(Object, Object)}, conditional removal matching on the current value</li>
+   * </ul>
    *
    * @param key key whose mapping is to be removed from the cache
    * @throws NullPointerException if a specified key is null
@@ -324,6 +342,8 @@ public interface Cache<K, V> extends KeyValueSource<K, V>, Iterable<CacheEntry<K
    * bulk operation.
    */
   void removeAll(Set<? extends K> keys);
+
+  V peekAndPut(K key, V value);
 
   /**
    * Fetch a set of values from the cache source. This call is modelled after the JSR107

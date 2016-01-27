@@ -55,7 +55,6 @@ import java.util.Random;
 import java.util.Set;
 import java.util.Timer;
 import java.util.TimerTask;
-import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.Future;
 import java.util.concurrent.FutureTask;
 import java.util.concurrent.TimeUnit;
@@ -2030,7 +2029,7 @@ public abstract class BaseCache<K, V>
   }
 
   @Override
-  public boolean removeWithFlag(K key) {
+  public boolean containsAndRemove(K key) {
     return removeWithFlag(key, false, null);
   }
 
@@ -2141,7 +2140,7 @@ public abstract class BaseCache<K, V>
 
   @Override
   public void remove(K key) {
-    removeWithFlag(key);
+    containsAndRemove(key);
   }
 
   public V peekAndRemove(K key) {

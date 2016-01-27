@@ -515,10 +515,58 @@ public class BasicCacheOperationsTest {
   }
 
   /*
-   * remove
-   *
-   * TODO: test remove
+   * remove(k)
    */
+
+  @Test
+  public void remove() {
+    cache.remove(KEY);
+    assertFalse(cache.contains(KEY));
+    cache.put(KEY, VALUE);
+    assertTrue(cache.contains(KEY));
+    cache.remove(KEY);
+    assertFalse(cache.contains(KEY));
+  }
+
+  @Test
+  public void remove_Null() {
+    cache.put(KEY, null);
+    cache.remove(KEY);
+    assertFalse(cache.contains(KEY));
+  }
+
+  @Test(expected = NullPointerException.class)
+  public void remove_NullKey() {
+    cache.remove(null);
+  }
+
+  /*
+   * containsAndRemove(k)
+   */
+
+  @Test
+  public void containsAndRemove() {
+    boolean f = cache.containsAndRemove(KEY);
+    assertFalse(f);
+    assertFalse(cache.contains(KEY));
+    cache.put(KEY, VALUE);
+    assertTrue(cache.contains(KEY));
+    f = cache.containsAndRemove(KEY);
+    assertFalse(cache.contains(KEY));
+    assertTrue(f);
+  }
+
+  @Test
+  public void containsAndRemove_Null() {
+    cache.put(KEY, null);
+    cache.containsAndRemove(KEY);
+    assertFalse(cache.contains(KEY));
+  }
+
+  @Test(expected = NullPointerException.class)
+  public void containsAndRemove_NullKey() {
+    cache.containsAndRemove(null);
+  }
 
   /*
    * replace_3arg
