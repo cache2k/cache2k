@@ -569,6 +569,43 @@ public class BasicCacheOperationsTest {
   }
 
   /*
+   * remove(k, v)
+   */
+
+  @Test
+  public void removeKv() {
+    boolean f = cache.remove(KEY, VALUE);
+    assertFalse(f);
+    assertFalse(cache.contains(KEY));
+    cache.put(KEY, VALUE);
+    assertTrue(cache.contains(KEY));
+    f = cache.remove(KEY, OTHER_VALUE);
+    assertFalse(f);
+    f = cache.remove(KEY, VALUE);
+    assertFalse(cache.contains(KEY));
+    assertTrue(f);
+    f = cache.remove(KEY, VALUE);
+    assertFalse(f);
+  }
+
+  @Test
+  public void removeKv_Null() {
+    boolean f = cache.remove(KEY, null);
+    assertFalse(f);
+    cache.put(KEY, null);
+    f = cache.remove(KEY, OTHER_VALUE);
+    assertFalse(f);
+    f = cache.remove(KEY, null);
+    assertTrue(f);
+    assertFalse(cache.contains(KEY));
+  }
+
+  @Test(expected = NullPointerException.class)
+  public void removeKv_NullKey() {
+    cache.remove(null, OTHER_VALUE);
+  }
+
+  /*
    * replace_3arg
    *
    * TODO: null value

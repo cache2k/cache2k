@@ -25,6 +25,8 @@ package org.cache2k.impl.operation;
 import org.cache2k.CacheEntry;
 import org.cache2k.impl.ExceptionWrapper;
 
+import java.util.Objects;
+
 /**
  * Semantics of all cache operations on entries.
  *
@@ -299,7 +301,9 @@ public class Specification<K, V> {
 
       @Override
       public void update(Progress<V, Boolean> c, ExaminationEntry<K, V> e) {
-        if (c.isPresentOrMiss() && e.getValueOrException().equals(value)) {
+        if (c.isPresentOrMiss() &&
+          ( (value == null && e.getValueOrException() == null) ||
+             value.equals(e.getValueOrException())) ) {
           c.result(true);
           c.remove();
           return;
