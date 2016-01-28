@@ -4,8 +4,8 @@
 
 Changes in semantics or API that may break existing applications are listed here. In general, only very minor
 changes are done with breaking existing semantics, which will most likely not affect existing applications.
-Everything that will most likely break applications will be introduced as new API and the old will get deprecated.
-Modifications in the statistics output will not listed as breakage.
+Everything that will most likely break applications will be introduced as a new API and the old one will 
+get deprecated. Modifications in the statistics output will not listed as breakage.
 
   * Semantics of Cache.getAll() changed. Instead of returning always a map size equal to the requested count of keys,
     only keys with a non-null mapping are returned in the map.
@@ -46,6 +46,7 @@ Fixes of corner cases that are most likely not affecting any existing applicatio
   * Cache.iterator(): Fix semantics for direct call to next() without call to hasNext()
   * Handle exceptions within the expiry calculator more gracefully (still needs work, entry state is inconsistent if an exceptions happens here)
   * ExceptionPropagator for customising the propagation of cached exception
+  * backgroundRefresh and sharpExpiry moved to CacheBuilder and documented
 
 Statistics:
 
