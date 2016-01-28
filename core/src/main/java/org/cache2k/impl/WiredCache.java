@@ -34,7 +34,6 @@ import org.cache2k.experimentalApi.AsyncCacheLoader;
 import org.cache2k.experimentalApi.AsyncCacheWriter;
 import org.cache2k.impl.operation.ExaminationEntry;
 import org.cache2k.impl.operation.Progress;
-import org.cache2k.impl.operation.ResultEntry;
 import org.cache2k.impl.operation.Semantic;
 import org.cache2k.impl.operation.Specification;
 import org.cache2k.impl.util.Log;
@@ -761,30 +760,32 @@ public class WiredCache<K, V> extends AbstractCache<K, V> implements  StorageAda
      */
     public void mutationMayCallWriter() {
       if (writer == null) {
-        skipWriting();
+        skipWritingNoWriter();
         return;
       }
-      if (!remove) {
-        if (!(newValueOrException instanceof ExceptionWrapper)) {
-          entry.nextProcessingStep(Entry.ProcessingState.WRITE);
-          try {
-            writer.write(key, newValueOrException);
-            onWriteSuccess();
-          } catch (Throwable t) {
-            onWriteFailure(t);
-          }
-        } else {
-          mutationMayStore();
-        }
-      } else {
+      if (remove) {
         try {
           entry.nextProcessingStep(Entry.ProcessingState.WRITE);
           writer.delete(key);
-          onWriteSuccess();
         } catch (Throwable t) {
           onWriteFailure(t);
+          return;
         }
+        onWriteSuccess();
+        return;
       }
+      if (newValueOrException instanceof ExceptionWrapper) {
+        skipWritingForException();
+        return;
+      }
+      entry.nextProcessingStep(Entry.ProcessingState.WRITE);
+      try {
+        writer.write(key, newValueOrException);
+      } catch (Throwable t) {
+        onWriteFailure(t);
+        return;
+      }
+      onWriteSuccess();
     }
 
     @Override
@@ -798,7 +799,11 @@ public class WiredCache<K, V> extends AbstractCache<K, V> implements  StorageAda
       mutationAbort(t);
     }
 
-    public void skipWriting() {
+    public void skipWritingForException() {
+      mutationUpdateHeap();
+    }
+
+    public void skipWritingNoWriter() {
       mutationUpdateHeap();
     }
 
