@@ -186,10 +186,18 @@ public class CacheConfig<K, V> implements Serializable {
     this.maxSizeLowBound = maxSizeLowBound;
   }
 
+  /**
+   *
+   * @see CacheBuilder#backgroundRefresh(boolean)
+   */
   public boolean isBackgroundRefresh() {
     return backgroundRefresh;
   }
 
+  /**
+   *
+   * @see CacheBuilder#backgroundRefresh(boolean)
+   */
   public void setBackgroundRefresh(boolean backgroundRefresh) {
     this.backgroundRefresh = backgroundRefresh;
   }

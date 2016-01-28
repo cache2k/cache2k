@@ -371,6 +371,26 @@ public abstract class CacheBuilder<K, V>
     return this;
   }
 
+  /**
+   * When true, enable background refresh / refresh ahead. After an entry is expired, the cache
+   * loader is invoked to fetch a fresh value. The old value will be returned by the cache, although
+   * it is expired, and will be replaced by the new value, once the loader is finished. In the case
+   * there are not enough threads available to start the loading, the entry will expire immediately and
+   * the next {@code get()} request will trigger the load.
+   *
+   * <p>Once refreshed, the entry is in a trail period. If it is not accessed until the next
+   * expiry, no refresh will be done and the entry expires regularly.
+   */
+  public CacheBuilder<K, V> backgroundRefresh(boolean f) {
+    config.setBackgroundRefresh(f);
+    return this;
+  }
+
+  public CacheBuilder<K, V> sharpExpiry(boolean f) {
+    config.setSharpExpiry(f);
+    return this;
+  }
+
   @Deprecated
   public CacheConfig getConfig() {
     return null;

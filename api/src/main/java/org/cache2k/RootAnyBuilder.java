@@ -40,16 +40,6 @@ public abstract class RootAnyBuilder<K, V>
   /** Closed for extension */
   RootAnyBuilder() { }
 
-  public CacheBuilder<K, V> backgroundRefresh(boolean f) {
-    config.setBackgroundRefresh(f);
-    return (CacheBuilder<K, V>) this;
-  }
-
-  public CacheBuilder<K, V> sharpExpiry(boolean f) {
-    config.setSharpExpiry(f);
-    return (CacheBuilder<K, V>) this;
-  }
-
   @Override
   public StorageConfiguration.Builder<K, V, ?> persistence() {
     if (persistence == null) {
