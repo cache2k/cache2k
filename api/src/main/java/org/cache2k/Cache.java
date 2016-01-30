@@ -499,10 +499,9 @@ public interface Cache<K, V> extends KeyValueSource<K, V>, Iterable<CacheEntry<K
   boolean isClosed();
 
   /**
-   * Returns information about the caches internal information. Calling {@link #toString}
-   * on the cache object is an expensive operation, since internal statistics are
-   * collected and other thread users need to be locked out, to have a consistent
-   * view.
+   * Returns internal information. This is an expensive operation, since internal statistics are
+   * collected. During the call, concurrent operations on the cache may be blocked, to check
+   * consistency.
    */
   String toString();
 
