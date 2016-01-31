@@ -61,6 +61,7 @@ public class Cache2kCacheAdapter<K, V> implements javax.cache.Cache<K, V> {
   boolean readThrough = false;
   boolean statisticsEnabled = false;
   boolean configurationEnabled = false;
+  AtomicLong iterationHitCorrectionCounter = new AtomicLong();
   AtomicLong missCorrectionCounter = new AtomicLong();
   AtomicLong hitCorrectionCounter = new AtomicLong();
 
@@ -353,6 +354,7 @@ public class Cache2kCacheAdapter<K, V> implements javax.cache.Cache<K, V> {
 
       @Override
       public Entry<K, V> next() {
+        iterationHitCorrectionCounter.incrementAndGet();
         final CacheEntry<K, V> e = it.next();
         return new Entry<K, V>() {
           @Override

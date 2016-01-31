@@ -68,7 +68,7 @@ class CacheBaseInfo implements InternalCacheInfo {
     hitCnt = baseCache.getHitCnt();
     correctedPutCnt = metrics.getPutNewEntryCount() + metrics.getPutHitCount() + metrics.getPutNoReadHitCount() - baseCache.putButExpiredCnt;
     usageCnt =
-            hitCnt + newEntryCnt + baseCache.peekMissCnt + metrics.getPutHitCount();
+            hitCnt + newEntryCnt + baseCache.peekMissCnt + metrics.getPutHitCount() + metrics.getRemoveCount();
   }
 
   String percentString(double d) {

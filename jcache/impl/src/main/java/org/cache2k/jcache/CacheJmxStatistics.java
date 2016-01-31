@@ -59,7 +59,9 @@ public class CacheJmxStatistics implements CacheStatisticsMXBean {
   }
 
   private long calcHits(InternalCacheInfo inf) {
-    return inf.getReadUsageCnt() - inf.getMissCnt() + adapter.hitCorrectionCounter.get() * tweakStatisticsForEntityProcessor;
+    return inf.getReadUsageCnt() - inf.getMissCnt() +
+      adapter.iterationHitCorrectionCounter.get() +
+      adapter.hitCorrectionCounter.get() * tweakStatisticsForEntityProcessor;
   }
 
   @Override
@@ -94,7 +96,7 @@ public class CacheJmxStatistics implements CacheStatisticsMXBean {
 
   @Override
   public long getCacheGets() {
-    return getInfo().getReadUsageCnt();
+    return getInfo().getReadUsageCnt() + adapter.iterationHitCorrectionCounter.get();
   }
 
   @Override

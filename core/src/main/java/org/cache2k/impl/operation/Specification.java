@@ -226,12 +226,17 @@ public class Specification<K, V> {
     };
   }
 
+  /**
+   * Updates intentionally hit and miss counter to adjust with JSR107.
+   *
+   * @see org.cache2k.Cache#putIfAbsent(Object, Object)
+   */
   public Semantic<K, V, Boolean> putIfAbsent(final K key, final V value) {
     return new Semantic.UpdateExisting<K, V, Boolean>() {
 
       @Override
       public void update(Progress<V, Boolean> c, ExaminationEntry<K, V> e) {
-        if (!c.isPresent()) {
+        if (!c.isPresentOrMiss()) {
           c.result(true);
           c.put(value);
           return;
@@ -242,12 +247,17 @@ public class Specification<K, V> {
     };
   }
 
+  /**
+   * Updates intentionally hit and miss counter to adjust with JSR107.
+   *
+   * @see org.cache2k.Cache#replace(Object, Object)
+   */
   public Semantic<K, V, Boolean> replace(final K key, final V value) {
     return new Semantic.UpdateExisting<K, V, Boolean>() {
 
       @Override
       public void update(Progress<V, Boolean> c, ExaminationEntry<K, V> e) {
-        if (c.isPresent()) {
+        if (c.isPresentOrMiss()) {
           c.result(true);
           c.put(value);
           return;

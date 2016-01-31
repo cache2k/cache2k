@@ -259,7 +259,35 @@ public class WiredCache<K, V> extends AbstractCache<K, V> implements  StorageAda
 
   @Override
   public ClosableIterator<CacheEntry<K, V>> iterator() {
-    return heapCache.iterator();
+    final ClosableIterator<CacheEntry<K, V>> it = heapCache.iterator();
+    ClosableIterator<CacheEntry<K, V>> _adapted = new ClosableIterator<CacheEntry<K, V>>() {
+
+      CacheEntry<K, V> entry;
+
+      @Override
+      public void close() {
+        it.close();
+      }
+
+      @Override
+      public boolean hasNext() {
+        return it.hasNext();
+      }
+
+      @Override
+      public CacheEntry<K, V> next() {
+        return entry = it.next();
+      }
+
+      @Override
+      public void remove() {
+        if (entry == null) {
+          throw new IllegalStateException("call next first");
+        }
+        WiredCache.this.remove(entry.getKey());
+      }
+    };
+    return _adapted;
   }
 
   @Override
@@ -568,7 +596,7 @@ public class WiredCache<K, V> extends AbstractCache<K, V> implements  StorageAda
 
     @Override
     public void wantMutation() {
-      if (!entryLocked) {
+      if (!entryLocked && wantData) {
         lockFor(Entry.ProcessingState.MUTATE);
         countMiss = false;
         operation.examine(this, entry);
@@ -651,6 +679,35 @@ public class WiredCache<K, V> extends AbstractCache<K, V> implements  StorageAda
       }
     }
 
+    void lockForNoHit(Entry.ProcessingState ps) {
+      if (entryLocked) {
+        entry.nextProcessingStep(ps);
+        return;
+      }
+      Entry<K, V> e = entry;
+      if (e == NON_FRESH_DUMMY) {
+        e = heapCache.lookupOrNewEntrySynchronizedNoHitRecord(key);
+      }
+      int _spinCount = BaseCache.TUNABLE.maximumEntryLockSpins;
+      for (;;) {
+        if (_spinCount-- <= 0) {
+          throw new CacheLockSpinsExceededError();
+        }
+        synchronized (e) {
+          e.waitForFetch();
+          if (!e.isRemovedState()) {
+            e.startFetch(ps);
+            entryLocked = true;
+            heapDataValid = e.isDataValidState();
+            heapHit = !e.isVirgin();
+            entry = e;
+            return;
+          }
+        }
+        e = heapCache.lookupOrNewEntrySynchronizedNoHitRecord(key);
+      }
+    }
+
     @Override
     public void onLoadSuccess(V value) {
       newValueOrException = value;
@@ -679,6 +736,7 @@ public class WiredCache<K, V> extends AbstractCache<K, V> implements  StorageAda
 
     @Override
     public void put(V value) {
+      lockFor(Entry.ProcessingState.MUTATE);
       needsFinish = false;
       newValueOrException = value;
       lastModificationTime = System.currentTimeMillis();
@@ -687,6 +745,7 @@ public class WiredCache<K, V> extends AbstractCache<K, V> implements  StorageAda
 
     @Override
     public void remove() {
+      lockForNoHit(Entry.ProcessingState.MUTATE);
       needsFinish = false;
       remove = true;
       lastModificationTime = System.currentTimeMillis();
@@ -955,9 +1014,7 @@ public class WiredCache<K, V> extends AbstractCache<K, V> implements  StorageAda
         if (remove) {
           if (heapDataValid) {
             metrics().remove();
-            metrics().heapHitButNoRead();
           } else if (heapHit) {
-            metrics().heapHitButNoRead();
           }
         }
       }

@@ -24,7 +24,6 @@ package org.cache2k.jcache;
 
 import org.cache2k.CacheEntry;
 import org.cache2k.EntryExpiryCalculator;
-import org.cache2k.impl.BaseCache;
 
 import javax.cache.Cache;
 import javax.cache.CacheManager;
@@ -274,11 +273,7 @@ public class CacheWithExpiryPolicyAdapter<K, V> implements Cache<K, V> {
   @Override
   public boolean remove(K key, V oldValue) {
     checkClosed();
-    ValueAndExtra<V> e = c2kCache.peek(key);
     boolean _result = c2kCache.remove(key, new ValueAndExtra<V>(oldValue));
-    if (!_result && e != null) {
-      touchEntry(key, e);
-    }
     return _result;
   }
 

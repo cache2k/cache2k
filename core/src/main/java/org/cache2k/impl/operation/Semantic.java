@@ -83,7 +83,8 @@ public interface Semantic<K, V, R> {
 
     /** Instruct to lock the entry for the update. Again, since examine may be called when entry is there. */
     @Override
-    public final void examine(Progress<V, R> c, ExaminationEntry<K, V> e) { c.wantMutation(); }
+    public final void examine(Progress<V, R> c, ExaminationEntry<K, V> e) {
+    }
 
     /**
      * Called to update the entry.
