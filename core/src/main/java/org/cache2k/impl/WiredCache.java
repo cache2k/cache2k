@@ -855,7 +855,7 @@ public class WiredCache<K, V> extends AbstractCache<K, V> implements  StorageAda
     @Override
     public void onWriteSuccess() {
       entry.nextProcessingStep(Entry.ProcessingState.WRITE_COMPLETE);
-      mutationUpdateHeap();
+      checkKeepOrRemove();
     }
 
     @Override
@@ -864,10 +864,44 @@ public class WiredCache<K, V> extends AbstractCache<K, V> implements  StorageAda
     }
 
     public void skipWritingForException() {
-      mutationUpdateHeap();
+      checkKeepOrRemove();
     }
 
     public void skipWritingNoWriter() {
+      checkKeepOrRemove();
+    }
+
+    /**
+     * In case we have a expiry of 0, this means that the entry should
+     *  not be cached. If there is a valid entry, we remove it if we do not
+     *  keep the data.
+     */
+    public void checkKeepOrRemove() {
+      boolean _hasKeepAfterExpired = heapCache.hasKeepAfterExpired();
+      if (expiry != 0 || remove || _hasKeepAfterExpired) {
+        mutationUpdateHeap();
+        return;
+      }
+      if (entry.isDataValidState()) {
+        expiredImmediatelyDoRemove();
+        return;
+      }
+      expiredImmediatelySkipMutation();
+    }
+
+    public void expiredImmediatelySkipMutation() {
+      synchronized (heapCache.lock) {
+        heapCache.putButExpiredCnt++;
+      }
+      noMutationRequested();
+    }
+
+    public void skipDoubleRemoval() {
+      noMutationRequested();
+    }
+
+    public void expiredImmediatelyDoRemove() {
+      remove = true;
       mutationUpdateHeap();
     }
 
@@ -889,34 +923,10 @@ public class WiredCache<K, V> extends AbstractCache<K, V> implements  StorageAda
         skipStore();
         return;
       }
-      if (expiry == 0) {
-        if (heapCache.hasKeepAfterExpired()) {
-          mutationStoreRegular();
-          return;
-        }
-        mutationStoreNoKeepExpired();
-        return;
-      }
-      mutationStoreRegular();
+      mutationStore();
     }
 
-    /**
-     * The entry is expired immediately. Send a remove to the store, so no old data is kept.
-     * TODO-C: Optimize, send remove for expired entries only if present in the storage.
-     */
-    public void mutationStoreNoKeepExpired() {
-      entry.nextProcessingStep(Entry.ProcessingState.STORE);
-      boolean _entryRemoved;
-      try {
-        _entryRemoved = storage.remove(key);
-      } catch (Throwable t) {
-        onStoreFailure(t);
-        return;
-      }
-      onStoreSuccess(_entryRemoved);
-    }
-
-    public void mutationStoreRegular() {
+    public void mutationStore() {
       entry.nextProcessingStep(Entry.ProcessingState.STORE);
       boolean _entryRemoved = false;
       try {
@@ -965,8 +975,14 @@ public class WiredCache<K, V> extends AbstractCache<K, V> implements  StorageAda
           long _nextRefreshTime = expiry;
           if (_nextRefreshTime == 0) {
             entry.nextRefreshTime = org.cache2k.impl.Entry.FETCH_NEXT_TIME_STATE;
+            if (entry.task != null) {
+              entry.task.cancel();
+            }
           } else if (_nextRefreshTime == Long.MAX_VALUE) {
             entry.nextRefreshTime = org.cache2k.impl.Entry.FETCHED_STATE;
+            if (entry.task != null) {
+              entry.task.cancel();
+            }
           } else {
             entry.nextRefreshTime =
               heapCache.stopStartTimer(expiry, entry, System.currentTimeMillis());
@@ -1072,7 +1088,7 @@ public class WiredCache<K, V> extends AbstractCache<K, V> implements  StorageAda
       synchronized (heapCache.lock) {
         updateOnlyReadStatisticsInsideLock();
       }
-      if (storageRead) {
+      if (!heapHit) {
         evictEventuallyAfterExamine();
         return;
       }
