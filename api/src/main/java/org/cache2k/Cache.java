@@ -145,8 +145,17 @@ public interface Cache<K, V> extends KeyValueSource<K, V>, Iterable<CacheEntry<K
   CacheEntry<K, V> peekEntry(K key);
 
   /**
-   * Returns true if the there is a mapping for the specified key. Does not invoke
-   * the {@link CacheSource} if no entry exists.
+   * Returns true, if there is a mapping for the specified key.
+   *
+   * <p>This operation is neutral to the cache statistics and does not
+   * mark the entry as accesses to delay the potential eviction.
+   *
+   * @return {@code true}, if this cache contains a mapping for the specified
+   *         key
+   * @throws ClassCastException if the key is of an inappropriate type for
+   *         this cache
+   * @throws NullPointerException if the specified key is null
+   *
    */
   boolean contains(K key);
 
@@ -178,9 +187,35 @@ public interface Cache<K, V> extends KeyValueSource<K, V>, Iterable<CacheEntry<K
   void put(K key, V value);
 
   /**
-   * Same as put, if there is no value mapped to the key in the cache.
+   * If the specified key is not already associated
+   * with a value, associate it with the given value.
+   * This is equivalent to
+   *  <pre> {@code
+   * if (!cache.containsKey(key)) {
+   *   cache.put(key, value);
+   *   return true;
+   * } else {
+   *   return false;
+   * }}</pre>
    *
-   * <p>If a mapping is present, the cache does not account this call as access.</p>
+   * except that the action is performed atomically.
+   *
+   * <p>Statistics: If an entry exists this operation counts as a hit, if the entry
+   * is missing, a miss and put is counted. This definition is identical to the JSR107
+   * statistics semantics. This is not consistent with other operations like
+   * {@link #containsAndRemove(Object)} and {@link #contains(Object)} that don't update
+   * the hit and miss counter if solely the existence of an entry is tested and not the
+   * value itself is requested. This counting is subject to discussion and future change.
+   *
+   * @param key key with which the specified value is to be associated
+   * @param value value to be associated with the specified key
+   * @return {@code true}, if no entry was present and the value was associated with the key
+   * @throws ClassCastException if the class of the specified key or value
+   *         prevents it from being stored in this cache
+   * @throws NullPointerException if the specified key is null or the
+   *         value is null and the cache does not permit null values
+   * @throws IllegalArgumentException if some property of the specified key
+   *         or value prevents it from being stored in this cache
    */
   boolean putIfAbsent(K key, V value);
 
@@ -225,6 +260,13 @@ public interface Cache<K, V> extends KeyValueSource<K, V>, Iterable<CacheEntry<K
    * }</pre>
    *
    * except that the action is performed atomically.
+   *
+   * <p>Statistics: If an entry exists this operation counts as a hit, if the entry
+   * is missing, a miss and put is counted. This definition is identical to the JSR107
+   * statistics semantics. This is not consistent with other operations like
+   * {@link #containsAndRemove(Object)} and {@link #contains(Object)} that don't update
+   * the hit and miss counter if solely the existence of an entry is tested and not the
+   * value itself is requested. This counting is subject to discussion and future change.
    *
    * @param key key with which the specified value is associated
    * @param value value to be associated with the specified key
@@ -331,7 +373,7 @@ public interface Cache<K, V> extends KeyValueSource<K, V>, Iterable<CacheEntry<K
   /**
    * This was for atomic removal of a bunch of entries. Not supported any more.
    *
-   * @deprecated
+   * @deprecated no replacement planed
    * @throws UnsupportedOperationException
    */
   void removeAllAtOnce(Set<K> key);
@@ -426,7 +468,7 @@ public interface Cache<K, V> extends KeyValueSource<K, V>, Iterable<CacheEntry<K
    * <p>The method has more statistical value and the result depends on the
    * actual configuration of the cache.
    *
-   * <p>TODO-API: Keep this for the final API?
+   * <p>TODO-API: Keep this for the final API? Move to a simple statistics interface?
    */
   int getTotalEntryCount();
 
@@ -435,18 +477,21 @@ public interface Cache<K, V> extends KeyValueSource<K, V>, Iterable<CacheEntry<K
    *
    * <p>Contract: All entries present in the cache by the call of the method call will
    * be iterated if not removed during the iteration goes on. The iteration may or may not
-   * iterate entries inserted during the iteration is in progress. The iteration never
+   * iterate entries inserted while the iteration is in progress. The iteration never
    * iterates duplicate entries.
    *
    * <p>The iteration is usable concurrently. Concurrent operations will not be
    * influenced. Mutations of the cache, like remove or put, will not stop the iteration.
    *
    * <p>The iterator itself is not thread safe. Calls to one iterator instance from
-   * different threads need to be properly synchronized.
+   * different threads are illegal or need proper synchronization.
    *
-   * <p>The iterator holds resources. If an iteration is aborted, the resources should
-   * be freed by calling {@link org.cache2k.ClosableIterator#close}, e.g. with a
-   * try with resources pattern.
+   * <p>The iterator holds heap resources to keep track of entries already iterated.
+   * If an iteration is aborted, the resources should be freed by calling
+   * {@link org.cache2k.ClosableIterator#close}, for example in a try with resources clause.
+   *
+   * <p>Statistics: Iteration is neutral to the cache statistics. Counting hits for iterated
+   * entries would effectively render the hitrate metric meaningless if iterations are used.
    */
   @Override
   ClosableIterator<CacheEntry<K, V>> iterator();
