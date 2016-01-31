@@ -959,7 +959,6 @@ public abstract class BaseCache<K, V>
       if (entry == null && !hasNext()) {
         throw new NoSuchElementException("not available");
       }
-      recordHitLocked(entry);
       lastEntry = returnEntry(entry);
       entry = null;
       return lastEntry;
@@ -2048,7 +2047,7 @@ public abstract class BaseCache<K, V>
       eventuallyCallWriterDelete(key);
     }
     if (storage == null) {
-      Entry e = lookupEntrySynchronized(key);
+      Entry e = lookupEntrySynchronizedNoHitRecord(key);
       if (e != null) {
         synchronized (e) {
           e.waitForFetch();
