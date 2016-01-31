@@ -541,11 +541,15 @@ public class BasicCacheOperationsTest {
    */
 
   @Test
-  public void remove() {
+  public void remove_NotExisting() {
     statistics().reset();
     cache.remove(KEY);
     statistics().expectAllZero();
     assertFalse(cache.contains(KEY));
+  }
+
+  @Test
+  public void remove() {
     cache.put(KEY, VALUE);
     assertTrue(cache.contains(KEY));
     statistics().reset();
