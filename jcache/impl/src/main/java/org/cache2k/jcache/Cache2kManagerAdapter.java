@@ -125,6 +125,7 @@ public class Cache2kManagerAdapter implements CacheManager {
     CacheBuilder b = CacheBuilder.newCache(cfg.getKeyType(), cfg.getValueType());
     b.name(_cacheName);
     b.eternal(true);
+    b.keepDataAfterExpired(false);
     MutableConfiguration<K, V> _cfgCopy = null;
     if (cfg instanceof CompleteConfiguration) {
       CompleteConfiguration<K, V> cc = (CompleteConfiguration<K, V>) cfg;
@@ -188,6 +189,7 @@ public class Cache2kManagerAdapter implements CacheManager {
     CacheBuilder b = CacheBuilder.newCache(cc.getKeyType(), CacheWithExpiryPolicyAdapter.ValueAndExtra.class);
     b.name(_cacheName);
     b.sharpExpiry(true);
+    b.keepDataAfterExpired(false);
     b.exceptionPropagator(new ExceptionPropagator() {
       @Override
       public void propagateException(String _additionalMessage, Throwable _originalException) {
