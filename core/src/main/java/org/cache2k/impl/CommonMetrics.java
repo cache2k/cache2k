@@ -37,6 +37,13 @@ public interface CommonMetrics {
    */
   long getContainsButHitCount();
 
+  /**
+   * A valid entry was removed from the cache.
+   */
+  long getRemoveCount();
+
+  long getHeapHitButNoReadCount();
+
   interface Updater extends CommonMetrics {
 
     void putNewEntry();
@@ -53,6 +60,12 @@ public interface CommonMetrics {
 
     void containsButHit();
     void containsButHit(long cnt);
+
+    void remove();
+    void remove(long cnt);
+
+    void heapHitButNoRead();
+    void heapHitButNoRead(long cnt);
 
   }
 

@@ -387,6 +387,8 @@ public class WiredCache<K, V> extends AbstractCache<K, V> implements  StorageAda
     long expiry = 0;
     /** We locked the entry, don't lock it again. */
     boolean entryLocked = false;
+    /** True if entry had some data after locking. Expiry is not checked. */
+    boolean heapDataValid = false;
     boolean needsFinish = true;
 
     boolean storageRead = false;
@@ -465,6 +467,7 @@ public class WiredCache<K, V> extends AbstractCache<K, V> implements  StorageAda
               storageRead = _needStorageRead = true;
               e.startFetch(Entry.ProcessingState.READ);
               entryLocked = true;
+              heapDataValid = e.isDataValidState();
             }
             break;
           }
@@ -638,6 +641,8 @@ public class WiredCache<K, V> extends AbstractCache<K, V> implements  StorageAda
           if (!e.isRemovedState()) {
             e.startFetch(ps);
             entryLocked = true;
+            heapDataValid = e.isDataValidState();
+            heapHit = !e.isVirgin();
             entry = e;
             return;
           }
@@ -946,6 +951,14 @@ public class WiredCache<K, V> extends AbstractCache<K, V> implements  StorageAda
         updateOnlyReadStatisticsInsideLock();
         if (wantData) {
           metrics().casOperation();
+        }
+        if (remove) {
+          if (heapDataValid) {
+            metrics().remove();
+            metrics().heapHitButNoRead();
+          } else if (heapHit) {
+            metrics().heapHitButNoRead();
+          }
         }
       }
     }

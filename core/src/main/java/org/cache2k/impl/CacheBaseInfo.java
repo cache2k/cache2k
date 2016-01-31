@@ -105,9 +105,10 @@ class CacheBaseInfo implements InternalCacheInfo {
   public long getReadUsageCnt() {
     long _putHit = metrics.getPutNoReadHitCount();
     long _containsBitHit = metrics.getContainsButHitCount();
+    long _heapHitButNoRead = metrics.getHeapHitButNoReadCount();
     return
       hitCnt + baseCache.peekMissCnt
-      + baseCache.loadCnt - baseCache.loadButHitCnt - _putHit - _containsBitHit;
+      + baseCache.loadCnt - baseCache.loadButHitCnt - _putHit - _containsBitHit - _heapHitButNoRead;
   }
   @Override
   public long getUsageCnt() { return usageCnt; }
@@ -138,7 +139,7 @@ class CacheBaseInfo implements InternalCacheInfo {
   @Override
   public long getEvictedCnt() { return baseCache.evictedCnt - baseCache.virginEvictCnt; }
   @Override
-  public long getRemovedCnt() { return baseCache.removedCnt; }
+  public long getRemovedCnt() { return metrics.getRemoveCount(); }
   @Override
   public long getPutNewEntryCnt() { return baseCache.putNewEntryCnt; }
   @Override
