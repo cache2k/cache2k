@@ -33,7 +33,8 @@ import javax.cache.management.CacheStatisticsMXBean;
 public class CacheJmxStatistics implements CacheStatisticsMXBean {
 
   private static final boolean flushOnAccess = Tuning.GLOBAL.flushStatisticsOnAccess;
-  private static final int tweakStatisticsForEntityProcessor = Tuning.GLOBAL.tweakStatisticsForEntityProcessor ? 1 : 0;
+  private static final int tweakStatisticsForEntryProcessor =
+    Tuning.GLOBAL.tweakStatisticsForEntityProcessor && false ? 1 : 0;
 
   InternalCache cache;
   Cache2kCacheAdapter adapter;
@@ -61,12 +62,12 @@ public class CacheJmxStatistics implements CacheStatisticsMXBean {
   private long calcHits(InternalCacheInfo inf) {
     return inf.getReadUsageCnt() - inf.getMissCnt() +
       adapter.iterationHitCorrectionCounter.get() +
-      adapter.hitCorrectionCounter.get() * tweakStatisticsForEntityProcessor;
+      adapter.hitCorrectionCounter.get() * tweakStatisticsForEntryProcessor;
   }
 
   @Override
   public float getCacheHitPercentage() {
-    if (tweakStatisticsForEntityProcessor == 1) {
+    if (tweakStatisticsForEntryProcessor == 1) {
       InternalCacheInfo inf = getInfo();
       long _hits = calcHits(inf);
       long _miss = calcMisses(inf);
@@ -85,7 +86,7 @@ public class CacheJmxStatistics implements CacheStatisticsMXBean {
   }
 
   private long calcMisses(InternalCacheInfo inf) {
-    return inf.getMissCnt() + adapter.missCorrectionCounter.get() * tweakStatisticsForEntityProcessor;
+    return inf.getMissCnt() + adapter.missCorrectionCounter.get() * tweakStatisticsForEntryProcessor;
   }
 
   @Override
