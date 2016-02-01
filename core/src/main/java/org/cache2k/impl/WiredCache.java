@@ -249,12 +249,41 @@ public class WiredCache<K, V> extends AbstractCache<K, V> implements  StorageAda
 
   @Override
   public <R> R invoke(K key, CacheEntryProcessor<K, V, R> entryProcessor, Object... _args) {
-    return heapCache.invoke(key, entryProcessor, _args);
+    return execute(key, SPEC.invoke(key, entryProcessor, _args));
   }
 
   @Override
   public <R> Map<K, EntryProcessingResult<R>> invokeAll(Set<? extends K> keys, CacheEntryProcessor<K, V, R> p, Object... _objs) {
-    return heapCache.invokeAll(keys, p, _objs);
+    Map<K, EntryProcessingResult<R>> m = new HashMap<K, EntryProcessingResult<R>>();
+    for (K k : keys) {
+      try {
+        final R _result = invoke(k, p, _objs);
+        m.put(k, new EntryProcessingResult<R>() {
+          @Override
+          public R getResult() {
+            return _result;
+          }
+
+          @Override
+          public Throwable getException() {
+            return null;
+          }
+        });
+      } catch (final Throwable t) {
+        m.put(k, new EntryProcessingResult<R>() {
+          @Override
+          public R getResult() {
+            return null;
+          }
+
+          @Override
+          public Throwable getException() {
+            return t;
+          }
+        });
+      }
+    }
+    return m;
   }
 
   @Override
@@ -1031,6 +1060,13 @@ public class WiredCache<K, V> extends AbstractCache<K, V> implements  StorageAda
           }
         }
       }
+    }
+
+    /**
+     * Failure call on Progress from Semantic.
+     */
+    public void failure(Throwable t) {
+      mutationAbort(t);
     }
 
     public void examinationAbort(Throwable t) {

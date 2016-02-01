@@ -23,9 +23,9 @@ package org.cache2k.impl.operation;
  */
 
 import org.cache2k.CacheEntry;
+import org.cache2k.CacheEntryProcessor;
+import org.cache2k.MutableCacheEntry;
 import org.cache2k.impl.ExceptionWrapper;
-
-import java.util.Objects;
 
 /**
  * Semantics of all cache operations on entries.
@@ -368,6 +368,102 @@ public class Specification<K, V> {
       return valueOrException;
     }
 
+  }
+
+  static class MutableEntryOnProgress<K, V> implements MutableCacheEntry<K, V> {
+
+    ExaminationEntry<K, V> entry;
+    Progress<V, ?> progress;
+    boolean mutate = false;
+    boolean remove = false;
+    boolean exists = false;
+    V value = null;
+
+    public MutableEntryOnProgress(final Progress<V, ?> _progress, final ExaminationEntry<K, V> _entry) {
+      entry = _entry;
+      progress = _progress;
+      if (_progress.isPresentOrMiss()) {
+        value = entry.getValueOrException();
+        exists = true;
+      }
+    }
+
+    @Override
+    public boolean exists() {
+      return exists;
+    }
+
+    @Override
+    public void setValue(final V v) {
+      mutate = true;
+      value = v;
+    }
+
+    @Override
+    public void setException(final Throwable ex) {
+      value = (V) new ExceptionWrapper(ex);
+    }
+
+    @Override
+    public void remove() {
+      mutate = remove = true;
+      exists = false;
+      value = null;
+    }
+
+    @Override
+    public K getKey() {
+      return entry.getKey();
+    }
+
+    @Override
+    public V getValue() {
+      if (value instanceof ExceptionWrapper) {
+        return null;
+      }
+      return value;
+    }
+
+    @Override
+    public Throwable getException() {
+      if (value instanceof ExceptionWrapper) {
+        return ((ExceptionWrapper) value).getException();
+      }
+      return null;
+    }
+
+    @Override
+    public long getLastModification() {
+      return entry.getLastModification();
+    }
+
+    public void sendMutationCommandIfNeeded() {
+      if (mutate) {
+        if (remove) {
+          progress.remove();
+        } else {
+          progress.put(value);
+        }
+      }
+    }
+
+  }
+
+  public <R> Semantic<K, V, R> invoke(final K key, final CacheEntryProcessor<K, V, R> _processor, final Object... _arguments) {
+    return new Semantic.UpdateExisting<K, V, R>() {
+      @Override
+      public void update(final Progress<V, R> c, final ExaminationEntry<K, V> e) {
+        MutableEntryOnProgress<K, V> _mutableEntryOnProgress = new MutableEntryOnProgress<K, V>(c, e);
+        try {
+          R _result = _processor.process(_mutableEntryOnProgress, _arguments);
+          c.result(_result);
+        } catch (Throwable t) {
+          c.failure(t);
+          return;
+        }
+        _mutableEntryOnProgress.sendMutationCommandIfNeeded();
+      }
+    };
   }
 
 }

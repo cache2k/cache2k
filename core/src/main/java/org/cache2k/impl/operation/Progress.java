@@ -79,4 +79,9 @@ public interface Progress<V, R> {
    */
   void put(V value);
 
+  /**
+   * Bad things happened, propagate the exception to the client.
+   */
+  void failure(Throwable t);
+
 }
