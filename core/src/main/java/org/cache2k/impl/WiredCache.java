@@ -896,9 +896,6 @@ public class WiredCache<K, V> extends AbstractCache<K, V> implements  StorageAda
       noMutationRequested();
     }
 
-    public void skipDoubleRemoval() {
-      noMutationRequested();
-    }
 
     public void expiredImmediatelyDoRemove() {
       remove = true;
