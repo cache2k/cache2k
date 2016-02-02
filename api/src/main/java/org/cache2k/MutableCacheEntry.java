@@ -25,13 +25,35 @@ package org.cache2k;
 /**
  * @author Jens Wilke; created: 2013-12-21
  */
-public interface MutableCacheEntry<K, T> extends CacheEntry<K, T> {
+public interface MutableCacheEntry<K, V> extends CacheEntry<K, V> {
+
+  /**
+   * <p>Returns the value to which the cache associated the key,
+   * or {@code null} if the cache contained no mapping for the key.
+   *
+   * <p>If the cache does permit null values, then a return value of
+   * {@code null} does not necessarily indicate that the cache
+   * contained no mapping for the key. It is also possible that the cache
+   * explicitly associated the key to the value {@code null}. Use {@link #exists()}
+   * to check whether an entry is existing instead of a null check.
+   *
+   * <p>If read through operation is enabled and the entry not yet existing
+   * in the cache, the call to this method triggers a call to the cache loader.
+   *
+   * <p>In contrast to the main Cache interface there is no no peekValue method,
+   * since the same effect can be achieved by the combination of {@link #exists()}
+   * and {@link #getValue()}.
+   *
+   * @see CacheLoader
+   */
+  @Override
+  V getValue();
 
   /**
    * True if a mapping exists in the cache, never invokes the loader / cache source.
    */
   boolean exists();
-  void setValue(T v);
+  void setValue(V v);
   void setException(Throwable ex);
   void remove();
 
