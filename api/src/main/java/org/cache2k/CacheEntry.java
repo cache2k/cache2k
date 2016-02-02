@@ -23,14 +23,14 @@ package org.cache2k;
  */
 
 /**
- * Object representing a cache entry. With the cache entry it can be
+ * Object representing a cache entry. With the cache entry, it can be
  * checked whether a mapping in the cache is present, even if the cache
  * holds null or an exception.
  *
- * <p>After retrieved the entry instance does not change the values, even
+ * <p>After retrieved, the entry instance does not change its values, even
  * if the value for its key is updated in the cache.
  *
- * <p>Design remark: The cache is generally also aware of the time the
+ * <p>Design note: The cache is generally also aware of the time the
  * object will be refreshed next or when it expired. This is not exposed
  * to applications by intention.
  *

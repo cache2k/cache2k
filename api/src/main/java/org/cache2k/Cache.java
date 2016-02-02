@@ -107,6 +107,13 @@ public interface Cache<K, V> extends KeyValueSource<K, V>, Iterable<CacheEntry<K
    * Returns the value if it is mapped within the cache and it is not
    * expired, or null.
    *
+   * <p>In contrast to {@link #get(Object)} this method solely operates
+   * on the cache content and does not invoke the loader.
+   *
+   * <p>API rationale: Consequently all methods that do not invoke the loader
+   * but return a value or a cache entry are named peek within this interface
+   * to make the different semantics immediately obvious by the name.
+   *
    * @param key key with which the specified value is associated
    * @return the value associated with the specified key, or
    *         {@code null} if there was no mapping for the key.
@@ -139,6 +146,7 @@ public interface Cache<K, V> extends KeyValueSource<K, V>, Iterable<CacheEntry<K
    *
    * <p>Multiple calls for the same key may return different instances of the entry
    * object.
+   *
    * @throws PropagatedCacheException if the loading of the entry produced
    *         an exception, which was not suppressed and is not yet expired
    */
@@ -148,8 +156,9 @@ public interface Cache<K, V> extends KeyValueSource<K, V>, Iterable<CacheEntry<K
    * Returns true, if there is a mapping for the specified key.
    *
    * <p>This operation is neutral to the cache statistics and does not
-   * mark the entry as accesses to delay the potential eviction.
+   * mark the entry as accessed to delay a potential eviction.
    *
+   * @param key key which association should be checked
    * @return {@code true}, if this cache contains a mapping for the specified
    *         key
    * @throws ClassCastException if the key is of an inappropriate type for
@@ -200,6 +209,9 @@ public interface Cache<K, V> extends KeyValueSource<K, V>, Iterable<CacheEntry<K
    *
    * except that the action is performed atomically.
    *
+   * <p>See {@link #put(Object, Object)} for the effects on the cache writer and
+   * expiry calculation.
+   *
    * <p>Statistics: If an entry exists this operation counts as a hit, if the entry
    * is missing, a miss and put is counted. This definition is identical to the JSR107
    * statistics semantics. This is not consistent with other operations like
@@ -224,12 +236,16 @@ public interface Cache<K, V> extends KeyValueSource<K, V>, Iterable<CacheEntry<K
    * This is equivalent to
    *  <pre> {@code
    * if (cache.contains(key)) {
-   *   return cache.put(key, value);
+   *   cache.put(key, value);
+   *   return cache.peek(key);
    * } else
    *   return null;
    * }</pre>
    *
    * except that the action is performed atomically.
+   *
+   * <p>As with {@link #peek(Object)}, no request to the {@link CacheLoader} is made,
+   * if no entry is associated to the requested key.
    *
    * @param key key with which the specified value is associated
    * @param value value to be associated with the specified key
@@ -311,12 +327,24 @@ public interface Cache<K, V> extends KeyValueSource<K, V>, Iterable<CacheEntry<K
    * Removes the mapping for a key from the cache if it is present.
    *
    * <p>Returns the value to which the cache previously associated the key,
-   * or <tt>null</tt> if the cache contained no mapping for the key.
+   * or {@code null} if the cache contained no mapping for the key.
    *
    * <p>If the cache does permit null values, then a return value of
-   * <tt>null</tt> does not <i>necessarily</i> indicate that the cache
-   * contained no mapping for the key; it's also possible that the cache
-   * explicitly mapped the key to <tt>null</tt>.
+   * {@code null} does not necessarily indicate that the cache
+   * contained no mapping for the key. It is also possible that the cache
+   * explicitly associated the key to the value {@code null}.
+   *
+   * This is equivalent to
+   *  <pre> {@code
+   *  V tmp = cache.peek(key);
+   *  cache.remove(key);
+   *  return tmp;
+   * }</pre>
+   *
+   * except that the action is performed atomically.
+   *
+   * <p>As with {@link #peek(Object)}, no request to the {@link CacheLoader} is made,
+   * if no entry is associated to the requested key.
    *
    * @param key key whose mapping is to be removed from the cache
    * @return the previous value associated with <tt>key</tt>, or
@@ -385,6 +413,45 @@ public interface Cache<K, V> extends KeyValueSource<K, V>, Iterable<CacheEntry<K
    */
   void removeAll(Set<? extends K> keys);
 
+  /**
+   * Updates an existing cache entry for the specified key, so it associates
+   * the given value, or, insert a new cache entry for this key and value. The previous
+   * value will returned, or null if none was available.
+   *
+   * <p>Returns the value to which the cache previously associated the key,
+   * or {@code null} if the cache contained no mapping for the key.
+   *
+   * <p>If the cache does permit null values, then a return value of
+   * {@code null} does not necessarily indicate that the cache
+   * contained no mapping for the key. It is also possible that the cache
+   * explicitly associated the key to the value {@code null}.
+   *
+   * This is equivalent to
+   *  <pre> {@code
+   *  V tmp = cache.peek(key);
+   *  cache.put(key, value);
+   *  return tmp;
+   * }</pre>
+   *
+   * except that the action is performed atomically.
+   *
+   * <p>As with {@link #peek(Object)}, no request to the {@link CacheLoader} is made,
+   * if no entry is associated to the requested key.
+   *
+   * <p>See {@link #put(Object, Object)} for the effects on the cache writer and
+   * expiry calculation.
+   *
+   * @param key key with which the specified value is associated
+   * @param value value to be associated with the specified key
+   * @return {@code true} if a mapping is present and the value was replaced.
+   *         {@code false} if no entry is present and no action was performed.
+   * @throws ClassCastException if the class of the specified key or value
+   *         prevents it from being stored in this cache.
+   * @throws NullPointerException if the specified key is null or the
+   *         value is null and the cache does not permit null values
+   * @throws IllegalArgumentException if some property of the specified key
+   *         or value prevents it from being stored in this cache.
+   */
   V peekAndPut(K key, V value);
 
   /**
