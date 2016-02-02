@@ -271,10 +271,27 @@ public class CacheWithExpiryPolicyAdapter<K, V> implements Cache<K, V> {
   }
 
   @Override
-  public boolean remove(K key, V oldValue) {
+  public boolean remove(K key, final V oldValue) {
     checkClosed();
-    boolean _result = c2kCache.remove(key, new ValueAndExtra<V>(oldValue));
-    return _result;
+    checkNullValue(oldValue);
+    if (key == null) {
+      throw new NullPointerException();
+    }
+    EntryProcessor<K, V, Boolean> ep = new EntryProcessor<K, V, Boolean>() {
+      @Override
+      public Boolean process(final MutableEntry<K, V> entry, final Object... arguments) throws EntryProcessorException {
+        if (!entry.exists()) {
+          return false;
+        }
+        V _existingValue = entry.getValue();
+        if (oldValue.equals(_existingValue)) {
+          entry.remove();
+          return true;
+        }
+        return false;
+      }
+    };
+    return invoke(key, ep);
   }
 
   @Override
