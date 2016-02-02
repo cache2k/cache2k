@@ -1,4 +1,3 @@
-
 package org.cache2k;
 
 /*
@@ -24,14 +23,25 @@ package org.cache2k;
  */
 
 /**
- * An interface to get a value by a key.
- * 
  * @author Jens Wilke
- * @see CacheSourceWithMetaInfo alternative cache source with more information
- * @deprecated Replaced by {@link CacheLoader}
  */
-public interface CacheSource<K, V> {
+public interface CacheLoader<K, V> extends CacheSource<K,V>{
 
-  V get(K o) throws Throwable;
+  /**
+   *
+   *
+   * <p>API rationale: This method declares an exception to allow any unhandled
+   * exceptions of the loader implementation to just pass through. Since the cache
+   * needs to catch an deal with loader exceptions in any way, this saves otherwise
+   * necessary try/catch clauses in the loader.
+   *
+   * @param key
+   * @return value to be associated with the key. If the cache permits null values
+   *         a null is associated with the key.
+   *         TODO: If the cache does not permit null values, remove mapping as in JSR107?
+   * @throws Exception Unhandled exception from the loader. The exception will be
+   *         handled by the cache based on the configuration.
+   */
+  V get(K key) throws Exception;
 
 }

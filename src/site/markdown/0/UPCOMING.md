@@ -38,7 +38,7 @@ Fixes of corner cases that are most likely not affecting any existing applicatio
   * Added lots of documentation to the configuration classes
   * Performance improvement: put() on existing entry by 15%
   * Typing: "unsupported" exception if an array is used for key or value types
-  * Typing: Actual type parameters of genreic types can be stored in the cache config
+  * Typing: Actual type parameters of genereic types can be stored in the cache config
   * Typing: Converted CacheConfig to a generic type, transporting the key/value types at compile time
   * The cache manager logs the used default cache implementation at startup
   * Performance improvement: read access and cache hit (approx. 5%) on 64 bit JVMs
@@ -62,6 +62,7 @@ Statistics:
 
   * deprecated: CacheManager.isDestroyed(), replaced by isClosed()
   * deprecated: CacheBuilder.maxSize, replaced by entryCapacity()
+  * deprecated: CacheSource, replaced by CacheLoader (although I don't like the name, this avoids confusion)
 
   * new: Cache.peekAndReplace()
   * new: Cache.peekAndRemove()
