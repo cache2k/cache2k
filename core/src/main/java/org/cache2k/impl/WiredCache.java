@@ -27,9 +27,11 @@ import org.cache2k.CacheEntryProcessor;
 import org.cache2k.CacheManager;
 import org.cache2k.CacheSourceWithMetaInfo;
 import org.cache2k.CacheWriter;
+import org.cache2k.CacheWriterException;
 import org.cache2k.ClosableIterator;
 import org.cache2k.EntryProcessingResult;
 import org.cache2k.FetchCompletedListener;
+import org.cache2k.WrappedAttachmentException;
 import org.cache2k.experimentalApi.AsyncCacheLoader;
 import org.cache2k.experimentalApi.AsyncCacheWriter;
 import org.cache2k.impl.operation.ExaminationEntry;
@@ -418,7 +420,11 @@ public class WiredCache<K, V> extends AbstractCache<K, V> implements  StorageAda
     }
     Throwable t = _action.exceptionToPropagate;
     if (t != null) {
-      throw new WrappedOperationException(t);
+      if (t instanceof WrappedAttachmentException) {
+        t.fillInStackTrace();
+        throw (WrappedAttachmentException) t;
+      }
+      throw new WrappedAttachmentException(t);
     }
     return _action.result;
   }
@@ -440,7 +446,7 @@ public class WiredCache<K, V> extends AbstractCache<K, V> implements  StorageAda
     long lastModificationTime;
     long loadStartedTime;
     long loadCompletedTime;
-    Throwable exceptionToPropagate;
+    WrappedAttachmentException exceptionToPropagate;
     boolean remove;
     long expiry = 0;
     /** We locked the entry, don't lock it again. */
@@ -555,7 +561,7 @@ public class WiredCache<K, V> extends AbstractCache<K, V> implements  StorageAda
 
     @Override
     public void onReadFailure(Throwable t) {
-      examinationAbort(t);
+      examinationAbort(new StorageReadException(t));
     }
 
     @SuppressWarnings("unchecked")
@@ -661,7 +667,7 @@ public class WiredCache<K, V> extends AbstractCache<K, V> implements  StorageAda
         }
       }
       if (source == null) {
-        exceptionToPropagate = new CacheUsageExcpetion("source not set");
+        exceptionToPropagate = new WrappedAttachmentException(new CacheUsageExcpetion("source not set"));
         synchronized (heapCache.lock) {
           if (entry.isVirgin()) {
             heapCache.loadFailedCnt++;
@@ -849,7 +855,7 @@ public class WiredCache<K, V> extends AbstractCache<K, V> implements  StorageAda
     }
 
     public void expiryCalculationException(Throwable t) {
-      mutationAbort(t);
+      mutationAbort(new ExpiryCalculationException(t));
     }
 
     public void mutationSkipWriterSuppressedException() {
@@ -897,7 +903,7 @@ public class WiredCache<K, V> extends AbstractCache<K, V> implements  StorageAda
 
     @Override
     public void onWriteFailure(Throwable t) {
-      mutationAbort(t);
+      mutationAbort(new CacheWriterException(t));
     }
 
     public void skipWritingForException() {
@@ -984,7 +990,7 @@ public class WiredCache<K, V> extends AbstractCache<K, V> implements  StorageAda
 
     @Override
     public void onStoreFailure(Throwable t) {
-      mutationAbort(t);
+      mutationAbort(new StorageWriteException(t));
     }
 
     public void skipStore() {
@@ -1074,10 +1080,10 @@ public class WiredCache<K, V> extends AbstractCache<K, V> implements  StorageAda
      * Failure call on Progress from Semantic.
      */
     public void failure(Throwable t) {
-      mutationAbort(t);
+      mutationAbort(new ProcessingFailureException(t));
     }
 
-    public void examinationAbort(Throwable t) {
+    public void examinationAbort(WrappedAttachmentException t) {
       exceptionToPropagate = t;
       if (entryLocked) {
         synchronized (entry) {
@@ -1089,7 +1095,7 @@ public class WiredCache<K, V> extends AbstractCache<K, V> implements  StorageAda
       ready();
     }
 
-    public void mutationAbort(Throwable t) {
+    public void mutationAbort(WrappedAttachmentException t) {
       exceptionToPropagate = t;
       synchronized (entry) {
         entry.processingDone();
@@ -1149,6 +1155,27 @@ public class WiredCache<K, V> extends AbstractCache<K, V> implements  StorageAda
       return heapCache.metrics;
     }
 
+  }
+
+  static class StorageReadException extends WrappedAttachmentException {
+    public StorageReadException(final Throwable cause) {
+      super(cause);
+    }
+  }
+  static class StorageWriteException extends WrappedAttachmentException {
+    public StorageWriteException(final Throwable cause) {
+      super(cause);
+    }
+  }
+  static class ExpiryCalculationException extends WrappedAttachmentException {
+    public ExpiryCalculationException(final Throwable cause) {
+      super(cause);
+    }
+  }
+  static class ProcessingFailureException extends WrappedAttachmentException {
+    public ProcessingFailureException(final Throwable cause) {
+      super(cause);
+    }
   }
 
 }

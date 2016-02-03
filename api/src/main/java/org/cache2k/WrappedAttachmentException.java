@@ -1,8 +1,8 @@
-package org.cache2k.impl;
+package org.cache2k;
 
 /*
  * #%L
- * cache2k core package
+ * cache2k API only package
  * %%
  * Copyright (C) 2000 - 2016 headissue GmbH, Munich
  * %%
@@ -22,8 +22,6 @@ package org.cache2k.impl;
  * #L%
  */
 
-import org.cache2k.CacheException;
-
 /**
  * Wraps an exception that happened during processing of one entry, e.g. when the
  * {@link org.cache2k.EntryExpiryCalculator} was throwing it. For async operations
@@ -31,8 +29,10 @@ import org.cache2k.CacheException;
  *
  * @author Jens Wilke
  */
-public final class WrappedOperationException extends CacheException {
-  public WrappedOperationException(final Throwable cause) {
+public class WrappedAttachmentException extends CacheException {
+
+  public WrappedAttachmentException(final Throwable cause) {
     super(cause);
   }
+
 }
