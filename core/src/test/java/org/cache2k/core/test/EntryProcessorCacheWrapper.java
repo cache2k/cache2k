@@ -41,7 +41,7 @@ public class EntryProcessorCacheWrapper<K, V> extends CacheWrapper<K, V> {
   }
 
   /**
-   * Not replaces by entry processor invokation.
+   * Not replaces by entry processor invocation.
    */
   @Override
   public V get(K key) {
@@ -49,27 +49,40 @@ public class EntryProcessorCacheWrapper<K, V> extends CacheWrapper<K, V> {
   }
 
   /**
-   * Not replaces by entry processor invokation.
+   * Not replaces by entry processor invocation.
    */
   @Override
   public V peek(K key) {
     return super.peek(key);
   }
 
-  /**
-   * Not replaces by entry processor invokation.
-   */
   @Override
   public boolean contains(K key) {
-    return super.contains(key);
+    CacheEntryProcessor<K, V, Boolean> p = new CacheEntryProcessor<K, V, Boolean>() {
+      @Override
+      public Boolean process(MutableCacheEntry<K, V> entry, Object... arguments) throws Exception {
+        if (!entry.exists()) {
+          return false;
+        }
+        return true;
+      }
+    };
+    return invoke(key, p);
   }
 
   /**
-   * Not replaces by entry processor invokation.
+   * Not replaces by entry processor invocation.
    */
   @Override
-  public void put(K key, V value) {
-    super.put(key, value);
+  public void put(K key, final V value) {
+    CacheEntryProcessor<K, V, Void> p = new CacheEntryProcessor<K, V, Void>() {
+      @Override
+      public Void process(MutableCacheEntry<K, V> entry, Object... arguments) throws Exception {
+        entry.setValue(value);
+        return null;
+      }
+    };
+    invoke(key, p);
   }
 
   @Override

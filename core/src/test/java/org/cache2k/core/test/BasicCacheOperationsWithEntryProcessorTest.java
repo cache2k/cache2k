@@ -57,6 +57,7 @@ public class BasicCacheOperationsWithEntryProcessorTest extends BasicCacheOperat
   @Before
   public void initCache() {
     cache = staticCache;
+    statistics().reset();
   }
 
   @After

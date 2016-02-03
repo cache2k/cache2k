@@ -74,9 +74,17 @@ public class BasicCacheOperationsTest {
    */
   Cache<Integer, Integer> cache;
 
+  final Statistics statistics = new Statistics();
+
+  public Statistics statistics() {
+    statistics.sample(cache);
+    return statistics;
+  }
+
   @Before
   public void initCache() {
     cache = staticCache;
+    statistics().reset();
   }
 
   @After
@@ -160,6 +168,18 @@ public class BasicCacheOperationsTest {
     assertTrue(cache.contains(OTHER_KEY));
     assertNull(cache.peek(OTHER_KEY));
     assertEquals(VALUE, cache.peek(KEY));
+  }
+
+  /*
+   * peek
+   */
+  @Test
+  public void peek_Miss() {
+    assertNull(cache.peek(KEY));
+    statistics()
+      .readCount.expect(1)
+      .missCount.expect(1)
+      .expectAllZero();
   }
 
   /*
@@ -714,13 +734,6 @@ public class BasicCacheOperationsTest {
   @Test(expected = NullPointerException.class)
   public void replace_NullKey() {
     cache.replace(null, VALUE);
-  }
-
-  final Statistics statistics = new Statistics();
-
-  public Statistics statistics() {
-    statistics.sample(cache);
-    return statistics;
   }
 
 }

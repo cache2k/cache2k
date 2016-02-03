@@ -467,16 +467,19 @@ public class WiredCache<K, V> extends AbstractCache<K, V> implements  StorageAda
     boolean doNotCountAccess = false;
 
     boolean loadAndMutate = false;
+    boolean load = false;
+    /** Fresh load in first round. Triggers that we always say it is present. */
+    boolean successfulLoad = false;
 
     @Override
     public boolean isPresent() {
       doNotCountAccess = true;
-      return entry.hasFreshData();
+      return successfulLoad || entry.hasFreshData();
     }
 
     @Override
     public boolean isPresentOrMiss() {
-      if  (entry.hasFreshData()) {
+      if (successfulLoad || entry.hasFreshData()) {
         return true;
       }
       countMiss = true;
@@ -656,7 +659,8 @@ public class WiredCache<K, V> extends AbstractCache<K, V> implements  StorageAda
 
     @Override
     public void loadAndMutation() {
-      throw new UnsupportedOperationException();
+      loadAndMutate = true;
+      load();
     }
 
     @Override
@@ -676,6 +680,7 @@ public class WiredCache<K, V> extends AbstractCache<K, V> implements  StorageAda
         return;
       }
       needsFinish = false;
+      load = true;
       entry.nextProcessingStep(Entry.ProcessingState.LOAD);
       Entry<K, V> e = entry;
       long t0 = lastModificationTime = loadStartedTime = System.currentTimeMillis();
@@ -812,9 +817,13 @@ public class WiredCache<K, V> extends AbstractCache<K, V> implements  StorageAda
       expiryCalculated();
     }
 
+    public void expiryCalculationException(Throwable t) {
+      mutationAbort(new ExpiryCalculationException(t));
+    }
+
     public void expiryCalculated() {
       entry.nextProcessingStep(Entry.ProcessingState.EXPIRY_COMPLETE);
-      if (loadCompletedTime > 0) {
+      if (load) {
         boolean _suppressException = heapCache.needsSuppress(entry, newValueOrException);
         if (_suppressException) {
           newValueOrException = entry.getValue();
@@ -832,11 +841,11 @@ public class WiredCache<K, V> extends AbstractCache<K, V> implements  StorageAda
             }
           }
         }
-        if (_suppressException) {
-          mutationSkipWriterSuppressedException();
+        if (loadAndMutate) {
+          loadAndExpiryCalculatedMutateAgain();
           return;
         }
-        mutationUpdateHeap();
+        checkKeepOrRemove();
         return;
       } else {
         if (entry.isVirgin()) {
@@ -854,12 +863,33 @@ public class WiredCache<K, V> extends AbstractCache<K, V> implements  StorageAda
       mutationMayCallWriter();
     }
 
-    public void expiryCalculationException(Throwable t) {
-      mutationAbort(new ExpiryCalculationException(t));
+    public void loadAndExpiryCalculatedMutateAgain() {
+      load = loadAndMutate = false;
+      needsFinish = successfulLoad = true;
+      ExaminationEntry ee = new ExaminationEntry() {
+        @Override
+        public Object getKey() {
+          return entry.getKey();
+        }
+
+        @Override
+        public Object getValueOrException() {
+          return newValueOrException;
+        }
+
+        @Override
+        public long getLastModification() {
+          return lastModificationTime;
+        }
+      };
+      operation.update(this, ee);
+      if (needsFinish) {
+        updateDidNotTriggerDifferentMutationStoreLoadedValue();
+      }
     }
 
-    public void mutationSkipWriterSuppressedException() {
-      mutationUpdateHeap();
+    public void updateDidNotTriggerDifferentMutationStoreLoadedValue() {
+      checkKeepOrRemove();
     }
 
     /**
@@ -998,7 +1028,7 @@ public class WiredCache<K, V> extends AbstractCache<K, V> implements  StorageAda
     }
 
     public void mutationReleaseLock() {
-      if (loadCompletedTime > 0) {
+      if (load) {
         operation.loaded(this, entry);
       }
       synchronized (entry) {
@@ -1148,7 +1178,6 @@ public class WiredCache<K, V> extends AbstractCache<K, V> implements  StorageAda
     }
 
     public void ready() {
-
     }
 
     protected CommonMetrics.Updater metrics() {

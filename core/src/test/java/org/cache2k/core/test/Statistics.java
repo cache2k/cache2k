@@ -54,10 +54,31 @@ public class Statistics {
     }
   };
 
+  public final Counter putCount = new Counter("put") {
+    @Override
+    protected long getCounterValue(final InternalCacheInfo inf) {
+      return inf.getPutCnt();
+    }
+  };
+
+  public final Counter missCount = new Counter("miss") {
+    @Override
+    protected long getCounterValue(final InternalCacheInfo inf) {
+      return inf.getMissCnt();
+    }
+  };
+
   public final Counter removeCount = new Counter("remove") {
     @Override
     protected long getCounterValue(final InternalCacheInfo inf) {
       return inf.getRemovedCnt();
+    }
+  };
+
+  public final Counter loadCount = new Counter("load") {
+    @Override
+    protected long getCounterValue(final InternalCacheInfo inf) {
+      return inf.getFetchCnt();
     }
   };
 
@@ -69,8 +90,9 @@ public class Statistics {
   }
 
   /** Get the latest counter values from the cache. */
-  public void sample(Cache<?,?> c) {
-    info = c.requestInterface(InternalCache.class).getInfo();
+  public Statistics sample(Cache<?,?> c) {
+    info = c.requestInterface(InternalCache.class).getLatestInfo();
+    return this;
   }
 
   /** Checks that all counter deltas are zero */

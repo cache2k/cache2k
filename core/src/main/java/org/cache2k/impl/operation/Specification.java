@@ -453,10 +453,10 @@ public class Specification<K, V> {
     public void sendMutationCommandIfNeeded() {
       if (mutate) {
         if (remove) {
-         progress.remove();
-        } else {
-          progress.put(value);
+          progress.remove();
+          return;
         }
+        progress.put(value);
       }
     }
 
