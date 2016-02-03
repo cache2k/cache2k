@@ -30,6 +30,6 @@ package org.cache2k;
  */
 public interface ExceptionPropagator {
 
-  public void propagateException(String _additionalMessage, Throwable _originalException);
+  void propagateException(String _additionalMessage, Throwable _originalException);
 
 }
