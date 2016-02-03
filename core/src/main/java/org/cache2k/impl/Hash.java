@@ -50,6 +50,9 @@ public class Hash<E extends Entry> {
   private int suppressExpandCount;
 
   public static int index(Entry[] _hashTable, int _hashCode) {
+    if (_hashTable == null) {
+      throw new CacheClosedException();
+    }
     return _hashCode & (_hashTable.length - 1);
   }
 

@@ -33,15 +33,14 @@ import org.cache2k.junit.FastTests;
 import org.junit.*;
 import org.junit.experimental.categories.Category;
 
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Map;
-import java.util.Set;
 
 import static org.junit.Assert.*;
+
+import static org.cache2k.core.test.StaticUtil.*;
 
 /**
  * Test basic cache operations on a shared cache in a simple configuration.
@@ -396,20 +395,16 @@ public class BasicCacheOperationsTest {
     assertEquals(OUCH, e.getException());
   }
 
-  Set<Integer> keySet(Integer... keys) {
-    return new HashSet<Integer>(Arrays.asList(keys));
-  }
-
   /*
    * peek all
    */
   @Test
   public void peekAll() {
-    Map<Integer, Integer> m = cache.peekAll(keySet(KEY, OTHER_KEY));
+    Map<Integer, Integer> m = cache.peekAll(asSet(KEY, OTHER_KEY));
     assertEquals(0, m.size());
     assertTrue(m.isEmpty());
     cache.put(KEY, VALUE);
-    m = cache.peekAll(keySet(KEY, OTHER_KEY));
+    m = cache.peekAll(asSet(KEY, OTHER_KEY));
     assertEquals(1, m.size());
     assertEquals(VALUE, m.get(KEY));
     assertTrue(m.containsKey(KEY));
@@ -420,20 +415,20 @@ public class BasicCacheOperationsTest {
   @Test
   public void peekAll_Null() {
     cache.put(KEY, null);
-    Map<Integer, Integer> m = cache.peekAll(keySet(KEY, OTHER_KEY));
+    Map<Integer, Integer> m = cache.peekAll(asSet(KEY, OTHER_KEY));
     assertEquals(1, m.size());
     assertNull(m.get(KEY));
   }
 
   @Test(expected = NullPointerException.class)
   public void peekAll_NullKey() {
-    cache.peekAll(keySet(new Integer[]{null}));
+    cache.peekAll(asSet(new Integer[]{null}));
   }
 
   @Test
   public void peekAll_Exception() {
     ((Cache) cache).put(KEY, new ExceptionWrapper(OUCH));
-    Map<Integer, Integer> m = cache.peekAll(keySet(KEY, OTHER_KEY));
+    Map<Integer, Integer> m = cache.peekAll(asSet(KEY, OTHER_KEY));
     assertEquals(1, m.size());
     assertEquals(1, m.values().size());
     assertEquals(1, m.keySet().size());
@@ -468,7 +463,7 @@ public class BasicCacheOperationsTest {
   @Test
   public void peekAll_MutationMethodsUnsupported() {
     cache.put(KEY, VALUE);
-    Map<Integer, Integer> m = cache.peekAll(keySet(KEY, OTHER_KEY));
+    Map<Integer, Integer> m = cache.peekAll(asSet(KEY, OTHER_KEY));
     assertEquals(1, m.size());
     try {
       m.clear();
@@ -524,7 +519,7 @@ public class BasicCacheOperationsTest {
   public void getAll() {
     cache.put(KEY, VALUE);
     cache.put(OTHER_KEY, VALUE);
-    Map<Integer, Integer> m = cache.getAll(keySet(KEY, OTHER_KEY));
+    Map<Integer, Integer> m = cache.getAll(asSet(KEY, OTHER_KEY));
     assertEquals(2, m.size());
     assertEquals(VALUE, m.get(KEY));
     assertTrue(m.containsKey(KEY));
@@ -533,7 +528,7 @@ public class BasicCacheOperationsTest {
 
   @Test(expected = NullPointerException.class)
   public void getAll_NullKey() {
-    cache.getAll(keySet(null));
+    cache.getAll((asSet(new Integer[]{null})));
   }
 
   /*
