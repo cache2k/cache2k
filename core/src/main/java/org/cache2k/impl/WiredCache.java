@@ -418,13 +418,10 @@ public class WiredCache<K, V> extends AbstractCache<K, V> implements  StorageAda
     if (_action.entryLocked) {
       throw new CacheInternalError("entry not unlocked?");
     }
-    Throwable t = _action.exceptionToPropagate;
+    WrappedAttachmentException t = _action.exceptionToPropagate;
     if (t != null) {
-      if (t instanceof WrappedAttachmentException) {
-        t.fillInStackTrace();
-        throw (WrappedAttachmentException) t;
-      }
-      throw new WrappedAttachmentException(t);
+      t.fillInStackTrace();
+      throw t;
     }
     return _action.result;
   }
