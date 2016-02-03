@@ -44,6 +44,9 @@ public interface MutableCacheEntry<K, V> extends CacheEntry<K, V> {
    * since the same effect can be achieved by the combination of {@link #exists()}
    * and {@link #getValue()}.
    *
+   * @throws RestartException if the value is not yet available and the cache loader
+   *                          needs to be invoked. After the load the entry processor
+   *                          will be executed again.
    * @see CacheLoader
    */
   @Override
@@ -51,8 +54,14 @@ public interface MutableCacheEntry<K, V> extends CacheEntry<K, V> {
 
   /**
    * True if a mapping exists in the cache, never invokes the loader / cache source.
+   *
+   * @throws RestartException if the information about the entry is not yet available
+   *                          and the cache needs to retrieve information from the
+   *                          secondary storage. After completed, the entry processor
+   *                          will be executed again.
    */
   boolean exists();
+
   void setValue(V v);
   void setException(Throwable ex);
   void remove();
