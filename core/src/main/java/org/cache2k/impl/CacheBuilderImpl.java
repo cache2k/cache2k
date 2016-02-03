@@ -193,6 +193,7 @@ public class CacheBuilderImpl<K, T> extends CacheBuilder<K, T> {
 
     if (_wrap) {
       wc.source = bc.source;
+      wc.readThrough = bc.source != null;
       wc.storage = bc.storage;
       wc.writer = bc.writer;
       if (bc.storage != null) {

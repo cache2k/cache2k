@@ -57,6 +57,7 @@ public class WiredCache<K, V> extends AbstractCache<K, V> implements  StorageAda
   StorageAdapter storage;
   CacheSourceWithMetaInfo<K, V> source;
   CacheWriter<K, V> writer;
+  boolean readThrough;
 
   @Override
   public Future<Void> cancelTimerJobs() {
@@ -249,7 +250,7 @@ public class WiredCache<K, V> extends AbstractCache<K, V> implements  StorageAda
 
   @Override
   public <R> R invoke(K key, CacheEntryProcessor<K, V, R> entryProcessor, Object... _args) {
-    return execute(key, SPEC.invoke(key, entryProcessor, _args));
+    return execute(key, SPEC.invoke(key, readThrough, entryProcessor, _args));
   }
 
   @Override
@@ -459,6 +460,8 @@ public class WiredCache<K, V> extends AbstractCache<K, V> implements  StorageAda
     boolean heapHit = false;
     boolean doNotCountAccess = false;
 
+    boolean loadAndMutate = false;
+
     @Override
     public boolean isPresent() {
       doNotCountAccess = true;
@@ -643,6 +646,11 @@ public class WiredCache<K, V> extends AbstractCache<K, V> implements  StorageAda
     public void finish() {
       needsFinish = false;
       noMutationRequested();
+    }
+
+    @Override
+    public void loadAndMutation() {
+      throw new UnsupportedOperationException();
     }
 
     @Override

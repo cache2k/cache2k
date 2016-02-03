@@ -25,6 +25,7 @@ package org.cache2k.impl.operation;
 import org.cache2k.CacheEntry;
 import org.cache2k.CacheEntryProcessor;
 import org.cache2k.MutableCacheEntry;
+import org.cache2k.RestartException;
 import org.cache2k.impl.ExceptionWrapper;
 
 /**
@@ -378,8 +379,10 @@ public class Specification<K, V> {
     boolean remove = false;
     boolean exists = false;
     V value = null;
+    boolean readThrough = false;
 
-    public MutableEntryOnProgress(final Progress<V, ?> _progress, final ExaminationEntry<K, V> _entry) {
+    public MutableEntryOnProgress(final Progress<V, ?> _progress, final ExaminationEntry<K, V> _entry, boolean _readThrough) {
+      readThrough = _readThrough;
       entry = _entry;
       progress = _progress;
       if (_progress.isPresentOrMiss()) {
@@ -418,6 +421,9 @@ public class Specification<K, V> {
 
     @Override
     public V getValue() {
+      if (readThrough && !exists) {
+        throw new NeedsLoadRestartException();
+      }
       if (value instanceof ExceptionWrapper) {
         return null;
       }
@@ -449,21 +455,30 @@ public class Specification<K, V> {
 
   }
 
-  public <R> Semantic<K, V, R> invoke(final K key, final CacheEntryProcessor<K, V, R> _processor, final Object... _arguments) {
+  public <R> Semantic<K, V, R> invoke(final K key, final boolean _readThrough, final CacheEntryProcessor<K, V, R> _processor, final Object... _arguments) {
     return new Semantic.UpdateExisting<K, V, R>() {
       @Override
       public void update(final Progress<V, R> c, final ExaminationEntry<K, V> e) {
-        MutableEntryOnProgress<K, V> _mutableEntryOnProgress = new MutableEntryOnProgress<K, V>(c, e);
+        MutableEntryOnProgress<K, V> _mutableEntryOnProgress = new MutableEntryOnProgress<K, V>(c, e, _readThrough);
         try {
           R _result = _processor.process(_mutableEntryOnProgress, _arguments);
           c.result(_result);
+        } catch (NeedsLoadRestartException rs) {
+          c.loadAndMutation();
+          return;
         } catch (Throwable t) {
           c.failure(t);
           return;
         }
         _mutableEntryOnProgress.sendMutationCommandIfNeeded();
       }
+
+      /** No operation, result is set by the entry processor */
+      @Override
+      public void loaded(final Progress<V, R> c, final ExaminationEntry<K, V> e) { }
     };
   }
+
+  public static class NeedsLoadRestartException extends RestartException { }
 
 }

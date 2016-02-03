@@ -70,6 +70,11 @@ public interface Progress<V, R> {
   void load();
 
   /**
+   * Request a load, however call update again for the final outcome.
+   */
+  void loadAndMutation();
+
+  /**
    * The entry will be removed. Last command of semantic method.
    */
   void remove();
