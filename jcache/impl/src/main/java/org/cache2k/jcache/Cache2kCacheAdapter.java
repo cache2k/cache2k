@@ -25,9 +25,11 @@ package org.cache2k.jcache;
 import org.cache2k.Cache;
 import org.cache2k.CacheEntry;
 import org.cache2k.CacheEntryProcessor;
+import org.cache2k.CacheWriterException;
 import org.cache2k.EntryProcessingResult;
 import org.cache2k.FetchCompletedListener;
 import org.cache2k.MutableCacheEntry;
+import org.cache2k.WrappedAttachmentException;
 import org.cache2k.impl.InternalCache;
 
 import javax.cache.CacheManager;
@@ -123,14 +125,22 @@ public class Cache2kCacheAdapter<K, V> implements javax.cache.Cache<K, V> {
   public void put(K k, V v) {
     checkClosed();
     checkNullValue(v);
-    cache.put(k, v);
+    try {
+      cache.put(k, v);
+    } catch (CacheWriterException ex) {
+      throw new javax.cache.integration.CacheWriterException(ex);
+    }
   }
 
   @Override
   public V getAndPut(K key, V _value) {
     checkClosed();
     checkNullValue(_value);
-    return cache.peekAndPut(key, _value);
+    try {
+      return cache.peekAndPut(key, _value);
+    } catch (CacheWriterException ex) {
+      throw new javax.cache.integration.CacheWriterException(ex);
+    }
   }
 
   void checkNullValue(V _value) {
@@ -155,33 +165,53 @@ public class Cache2kCacheAdapter<K, V> implements javax.cache.Cache<K, V> {
       V v = e.getValue();
       checkNullValue(e.getValue());
     }
-    cache.putAll(map);
+    try {
+      cache.putAll(map);
+    } catch (CacheWriterException ex) {
+      throw new javax.cache.integration.CacheWriterException(ex);
+    }
   }
 
   @Override
   public boolean putIfAbsent(K key, V _value) {
     checkClosed();
     checkNullValue(_value);
-    return cache.putIfAbsent(key, _value);
+    try {
+      return cache.putIfAbsent(key, _value);
+    } catch (CacheWriterException ex) {
+      throw new javax.cache.integration.CacheWriterException(ex);
+    }
   }
 
   @Override
   public boolean remove(K key) {
     checkClosed();
-    return cacheImpl.containsAndRemove(key);
+    try {
+      return cacheImpl.containsAndRemove(key);
+    } catch (CacheWriterException ex) {
+      throw new javax.cache.integration.CacheWriterException(ex);
+    }
   }
 
   @Override
   public boolean remove(K key, V _oldValue) {
     checkClosed();
     checkNullValue(_oldValue);
-    return cache.remove(key, _oldValue);
+    try {
+      return cache.remove(key, _oldValue);
+    } catch (CacheWriterException ex) {
+      throw new javax.cache.integration.CacheWriterException(ex);
+    }
   }
 
   @Override
   public V getAndRemove(K key) {
     checkClosed();
-    return cache.peekAndRemove(key);
+    try {
+      return cache.peekAndRemove(key);
+    } catch (CacheWriterException ex) {
+      throw new javax.cache.integration.CacheWriterException(ex);
+    }
   }
 
   @Override
@@ -189,36 +219,53 @@ public class Cache2kCacheAdapter<K, V> implements javax.cache.Cache<K, V> {
     checkClosed();
     checkNullValue(_oldValue);
     checkNullValue(_newValue);
-    return cache.replace(key, _oldValue, _newValue);
+    try {
+      return cache.replace(key, _oldValue, _newValue);
+    } catch (CacheWriterException ex) {
+      throw new javax.cache.integration.CacheWriterException(ex);
+    }
   }
 
   @Override
   public boolean replace(K key, V _value) {
     checkClosed();
     checkNullValue(_value);
-    return cache.replace(key, _value);
+    try {
+      return cache.replace(key, _value);
+    } catch (CacheWriterException ex) {
+      throw new javax.cache.integration.CacheWriterException(ex);
+    }
   }
 
   @Override
   public V getAndReplace(K key, V _value) {
     checkClosed();
     checkNullValue(_value);
-    return cache.peekAndReplace(key, _value);
+    try {
+      return cache.peekAndReplace(key, _value);
+    } catch (CacheWriterException ex) {
+      throw new javax.cache.integration.CacheWriterException(ex);
+    }
   }
 
   @Override
   public void removeAll(Set<? extends K> keys) {
     checkClosed();
-    for (K k : keys) {
-      checkNullKey(k);
-      cache.remove(k);
+    try {
+      cache.removeAll(keys);
+    } catch (CacheWriterException ex) {
+      throw new javax.cache.integration.CacheWriterException(ex);
     }
   }
 
   @Override
   public void removeAll() {
     checkClosed();
-    cache.removeAll();
+    try {
+      cache.removeAll();
+    } catch (CacheWriterException ex) {
+      throw new javax.cache.integration.CacheWriterException(ex);
+    }
   }
 
   @Override
@@ -258,12 +305,15 @@ public class Cache2kCacheAdapter<K, V> implements javax.cache.Cache<K, V> {
 
   @Override
   public <T> T invoke(K key, EntryProcessor<K, V, T> entryProcessor, Object... arguments) throws EntryProcessorException {
+    checkClosed();
+    checkNullKey(key);
     Map<K, EntryProcessorResult<T>> m = invokeAll(Collections.singleton(key), entryProcessor, arguments);
     return m.size() > 0 ? m.values().iterator().next().get() : null;
   }
 
   @Override
   public <T> Map<K, EntryProcessorResult<T>> invokeAll(Set<? extends K> keys, final EntryProcessor<K, V, T> entryProcessor, Object... arguments) {
+    checkClosed();
     if (entryProcessor == null) {
       throw new NullPointerException("processor is null");
     }
@@ -289,11 +339,12 @@ public class Cache2kCacheAdapter<K, V> implements javax.cache.Cache<K, V> {
       EntryProcessorResult<T> epr = new EntryProcessorResult<T>() {
         @Override
         public T get() throws EntryProcessorException {
-          if (pr.getException() != null) {
-            if (pr.getException() instanceof EntryProcessorException) {
-              throw (EntryProcessorException) pr.getException();
+          Throwable t = pr.getException();
+          if (t != null) {
+            if (t instanceof WrappedAttachmentException && t.getCause() instanceof EntryProcessorException) {
+              throw (EntryProcessorException) t.getCause();
             }
-            throw new EntryProcessorException(pr.getException());
+            throw new EntryProcessorException(t);
           }
           return pr.getResult();
         }

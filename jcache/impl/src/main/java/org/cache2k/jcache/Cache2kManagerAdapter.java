@@ -28,6 +28,7 @@ import org.cache2k.CacheSource;
 import org.cache2k.CacheWriter;
 import org.cache2k.EntryExpiryCalculator;
 import org.cache2k.ExceptionPropagator;
+import org.cache2k.WrappedAttachmentException;
 import org.cache2k.impl.CacheLifeCycleListener;
 import org.cache2k.impl.CacheManagerImpl;
 import org.cache2k.impl.InternalCache;
@@ -475,20 +476,12 @@ public class Cache2kManagerAdapter implements CacheManager {
           throw new UnsupportedOperationException("unwrap entry not supported");
         }
       };
-      try {
-        cacheWriter.write(ce);
-      } catch (Exception ex) {
-        throw new CacheWriterException(ex);
-      }
+      cacheWriter.write(ce);
     }
 
     @Override
     public void delete(Object key) throws Exception {
-      try {
-        cacheWriter.delete(key);
-      } catch (Exception ex) {
-        throw new CacheWriterException(ex);
-      }
+      cacheWriter.delete(key);
     }
 
   }

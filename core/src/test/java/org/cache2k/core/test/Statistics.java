@@ -69,8 +69,8 @@ public class Statistics {
   }
 
   /** Get the latest counter values from the cache. */
-  public void sample(Cache c) {
-    info = ((InternalCache) c).getLatestInfo();
+  public void sample(Cache<?,?> c) {
+    info = c.requestInterface(InternalCache.class).getInfo();
   }
 
   /** Checks that all counter deltas are zero */

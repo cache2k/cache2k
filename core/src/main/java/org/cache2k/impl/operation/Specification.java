@@ -375,6 +375,7 @@ public class Specification<K, V> {
 
     ExaminationEntry<K, V> entry;
     Progress<V, ?> progress;
+    boolean originalExists = false;
     boolean mutate = false;
     boolean remove = false;
     boolean exists = false;
@@ -387,7 +388,7 @@ public class Specification<K, V> {
       progress = _progress;
       if (_progress.isPresentOrMiss()) {
         value = entry.getValueOrException();
-        exists = true;
+        originalExists = exists = true;
       }
     }
 
@@ -399,6 +400,8 @@ public class Specification<K, V> {
     @Override
     public void setValue(final V v) {
       mutate = true;
+      exists = true;
+      remove = false;
       value = v;
     }
 
@@ -409,7 +412,11 @@ public class Specification<K, V> {
 
     @Override
     public void remove() {
-      mutate = remove = true;
+      if (mutate && !originalExists) {
+        mutate = false;
+      } else {
+        mutate = remove = true;
+      }
       exists = false;
       value = null;
     }
@@ -421,7 +428,7 @@ public class Specification<K, V> {
 
     @Override
     public V getValue() {
-      if (readThrough && !exists) {
+      if (!exists && !mutate && readThrough) {
         throw new NeedsLoadRestartException();
       }
       if (value instanceof ExceptionWrapper) {
@@ -446,7 +453,7 @@ public class Specification<K, V> {
     public void sendMutationCommandIfNeeded() {
       if (mutate) {
         if (remove) {
-          progress.remove();
+         progress.remove();
         } else {
           progress.put(value);
         }

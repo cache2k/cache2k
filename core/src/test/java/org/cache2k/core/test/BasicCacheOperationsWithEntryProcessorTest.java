@@ -25,10 +25,12 @@ package org.cache2k.core.test;
 import org.cache2k.Cache;
 import org.cache2k.CacheBuilder;
 import org.cache2k.impl.InternalCache;
+import org.cache2k.junit.FastTests;
 import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.BeforeClass;
+import org.junit.experimental.categories.Category;
 
 /**
  * Reuse the basic operations test with the wrapper to the entry processor.
@@ -36,6 +38,7 @@ import org.junit.BeforeClass;
  * @see BasicCacheOperationsTest
  * @see EntryProcessorCacheWrapper
  */
+@Category(FastTests.class)
 public class BasicCacheOperationsWithEntryProcessorTest extends BasicCacheOperationsTest {
 
   static EntryProcessorCacheWrapper<Integer, Integer> staticCache;

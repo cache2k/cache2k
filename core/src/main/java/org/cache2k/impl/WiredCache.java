@@ -261,6 +261,9 @@ public class WiredCache<K, V> extends AbstractCache<K, V> implements  StorageAda
     for (K k : keys) {
       try {
         final R _result = invoke(k, p, _objs);
+        if (_result == null) {
+          continue;
+        }
         m.put(k, new EntryProcessingResult<R>() {
           @Override
           public R getResult() {

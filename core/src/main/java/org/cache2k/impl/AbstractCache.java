@@ -54,11 +54,15 @@ public abstract class AbstractCache<K, V> implements InternalCache<K, V> {
     }
   }
 
+  @SuppressWarnings("unchecked")
   @Override
   public <X> X requestInterface(Class<X> _type) {
     if (_type.equals(ConcurrentMap.class) ||
       _type.equals(Map.class)) {
       return (X) new ConcurrentMapWrapper<K, V>(this);
+    }
+    if (_type.equals(InternalCache.class)) {
+      return (X) this;
     }
     return null;
   }
