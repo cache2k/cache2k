@@ -60,23 +60,22 @@ public class CacheJmxStatistics implements CacheStatisticsMXBean {
   }
 
   private long calcHits(InternalCacheInfo inf) {
-    return inf.getReadUsageCnt() - inf.getMissCnt() +
+    long _readUsage = inf.getReadUsageCnt();
+    long _missCount = inf.getMissCnt();
+    return _readUsage - _missCount +
       adapter.iterationHitCorrectionCounter.get() +
       adapter.hitCorrectionCounter.get() * tweakStatisticsForEntryProcessor;
   }
 
   @Override
   public float getCacheHitPercentage() {
-    if (tweakStatisticsForEntryProcessor == 1) {
-      InternalCacheInfo inf = getInfo();
-      long _hits = calcHits(inf);
-      long _miss = calcMisses(inf);
-      if (_hits == 0) {
-        return 0.0F;
-      }
-      return (float) _hits * 100F / (_hits + _miss);
+    InternalCacheInfo inf = getInfo();
+    long _hits = calcHits(inf);
+    long _miss = calcMisses(inf);
+    if (_hits == 0) {
+      return 0.0F;
     }
-    return (float) getInfo().getDataHitRate();
+    return (float) _hits * 100F / (_hits + _miss);
   }
 
   @Override
