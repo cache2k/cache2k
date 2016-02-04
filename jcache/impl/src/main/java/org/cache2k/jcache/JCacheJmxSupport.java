@@ -24,16 +24,12 @@ package org.cache2k.jcache;
 
 import org.cache2k.Cache;
 import org.cache2k.CacheManager;
-import org.cache2k.impl.BaseCache;
 import org.cache2k.impl.CacheLifeCycleListener;
 import org.cache2k.impl.CacheUsageExcpetion;
-import org.cache2k.jmx.CacheMXBean;
 
-import javax.cache.CacheException;
 import javax.management.InstanceNotFoundException;
 import javax.management.MBeanServer;
 import javax.management.MBeanServerFactory;
-import javax.management.MalformedObjectNameException;
 import javax.management.ObjectName;
 
 /**
@@ -59,7 +55,7 @@ public class JCacheJmxSupport implements CacheLifeCycleListener {
     disableConfiguration(c);
   }
 
-  public void enableStatistics(Cache2kCacheAdapter c) {
+  public void enableStatistics(JCacheAdapter c) {
     MBeanServer mbs = mBeanServer;
     String _name = createStatisticsObjectName(c.cache);
     try {

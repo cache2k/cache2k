@@ -63,10 +63,10 @@ import java.util.Set;
  *
  * @author Jens Wilke; created: 2015-04-01
  */
-public class CacheWithExpiryPolicyAdapter<K, V> implements Cache<K, V> {
+public class TouchyJCacheAdapter<K, V> implements Cache<K, V> {
 
-  org.cache2k.impl.InternalCache<K, ValueAndExtra<V>> c2kCache;
-  Cache2kCacheAdapter<K, ValueAndExtra<V>> cache;
+  org.cache2k.impl.InternalCache<K, TimeVal<V>> c2kCache;
+  JCacheAdapter<K, TimeVal<V>> cache;
   Class<K> keyType;
   Class<V> valueType;
   ExpiryPolicy expiryPolicy;
@@ -78,9 +78,9 @@ public class CacheWithExpiryPolicyAdapter<K, V> implements Cache<K, V> {
 
   @Override
   public Map<K, V> getAll(Set<? extends K> keys) {
-    final Map<K, ValueAndExtra<V>> m0 = cache.getAll(keys);
-    final Map<K, ValueAndExtra<V>> map = new HashMap<K, ValueAndExtra<V>>();
-    for (Map.Entry<K, ValueAndExtra<V>> e : m0.entrySet()) {
+    final Map<K, TimeVal<V>> m0 = cache.getAll(keys);
+    final Map<K, TimeVal<V>> map = new HashMap<K, TimeVal<V>>();
+    for (Map.Entry<K, TimeVal<V>> e : m0.entrySet()) {
       if (e.getValue() != null) {
         map.put(e.getKey(), e.getValue());
       }
@@ -151,7 +151,7 @@ public class CacheWithExpiryPolicyAdapter<K, V> implements Cache<K, V> {
 
           @Override
           public Iterator<V> iterator() {
-            final Iterator<Entry<K, ValueAndExtra<V>>> it = map.entrySet().iterator();
+            final Iterator<Entry<K, TimeVal<V>>> it = map.entrySet().iterator();
             return new Iterator<V>() {
               @Override
               public boolean hasNext() {
@@ -160,7 +160,7 @@ public class CacheWithExpiryPolicyAdapter<K, V> implements Cache<K, V> {
 
               @Override
               public V next() {
-                Entry<K, ValueAndExtra<V>> e = it.next();
+                Entry<K, TimeVal<V>> e = it.next();
                 return returnValue(e.getKey(), e.getValue());
               }
 
@@ -176,7 +176,7 @@ public class CacheWithExpiryPolicyAdapter<K, V> implements Cache<K, V> {
 
       @Override
       public Set<Entry<K, V>> entrySet() {
-        final Iterator<Entry<K, ValueAndExtra<V>>> it = map.entrySet().iterator();
+        final Iterator<Entry<K, TimeVal<V>>> it = map.entrySet().iterator();
         return new AbstractSet<Entry<K, V>>() {
           @Override
           public Iterator<Entry<K, V>> iterator() {
@@ -188,7 +188,7 @@ public class CacheWithExpiryPolicyAdapter<K, V> implements Cache<K, V> {
 
               @Override
               public Entry<K, V> next() {
-                final Entry<K, ValueAndExtra<V>> e = it.next();
+                final Entry<K, TimeVal<V>> e = it.next();
                 return new Entry<K, V>() {
                   @Override
                   public K getKey() {
@@ -236,13 +236,13 @@ public class CacheWithExpiryPolicyAdapter<K, V> implements Cache<K, V> {
   @Override
   public void put(K key, V value) {
     checkClosed();
-    cache.put(key, new ValueAndExtra<V>(value));
+    cache.put(key, new TimeVal<V>(value));
   }
 
   @Override
   public V getAndPut(K key, V value) {
     checkClosed();
-    ValueAndExtra<V> e = cache.getAndPut(key, new ValueAndExtra(value));
+    TimeVal<V> e = cache.getAndPut(key, new TimeVal(value));
     if (e != null) {
       return e.value;
     }
@@ -255,9 +255,9 @@ public class CacheWithExpiryPolicyAdapter<K, V> implements Cache<K, V> {
     if (map.containsKey(null)) {
       throw new NullPointerException("null key not allowed");
     }
-    Map<K, ValueAndExtra<V>> m2 = new HashMap<K, ValueAndExtra<V>>();
+    Map<K, TimeVal<V>> m2 = new HashMap<K, TimeVal<V>>();
     for (Map.Entry<? extends K, ? extends V> e : map.entrySet()) {
-      m2.put(e.getKey(), new ValueAndExtra<V>(e.getValue()));
+      m2.put(e.getKey(), new TimeVal<V>(e.getValue()));
     }
     cache.putAll(m2);
   }
@@ -265,7 +265,7 @@ public class CacheWithExpiryPolicyAdapter<K, V> implements Cache<K, V> {
   @Override
   public boolean putIfAbsent(K key, V value) {
     checkClosed();
-    return cache.putIfAbsent(key, new ValueAndExtra<V>(value));
+    return cache.putIfAbsent(key, new TimeVal<V>(value));
   }
 
   @Override
@@ -280,20 +280,20 @@ public class CacheWithExpiryPolicyAdapter<K, V> implements Cache<K, V> {
     if (key == null) {
       throw new NullPointerException();
     }
-    EntryProcessor<K, ValueAndExtra<V>, Boolean> ep = new EntryProcessor<K, ValueAndExtra<V>, Boolean>() {
+    EntryProcessor<K, TimeVal<V>, Boolean> ep = new EntryProcessor<K, TimeVal<V>, Boolean>() {
       @Override
-      public Boolean process(final MutableEntry<K, ValueAndExtra<V>> entry, final Object... arguments) throws EntryProcessorException {
+      public Boolean process(final MutableEntry<K, TimeVal<V>> entry, final Object... arguments) throws EntryProcessorException {
         if (!entry.exists()) {
           return false;
         }
-        ValueAndExtra<V> _existingValue = entry.getValue();
+        TimeVal<V> _existingValue = entry.getValue();
         if (_existingValue.value.equals(oldValue)) {
           entry.remove();
           return true;
         }
         Duration d = expiryPolicy.getExpiryForAccess();
         if (d != null) {
-          ValueAndExtra<V> _newEntry = newValue(_existingValue, d);
+          TimeVal<V> _newEntry = newValue(_existingValue, d);
           entry.setValue(_newEntry);
         }
         return false;
@@ -307,14 +307,14 @@ public class CacheWithExpiryPolicyAdapter<K, V> implements Cache<K, V> {
     return returnLastValue(cache.getAndRemove(key));
   }
 
-  final CacheEntry<K, ValueAndExtra<V>> DUMMY_ENTRY = new CacheEntry<K, ValueAndExtra<V>>() {
+  final CacheEntry<K, TimeVal<V>> DUMMY_ENTRY = new CacheEntry<K, TimeVal<V>>() {
     @Override
     public K getKey() {
       return null;
     }
 
     @Override
-    public ValueAndExtra<V> getValue() {
+    public TimeVal<V> getValue() {
       return null;
     }
 
@@ -332,11 +332,11 @@ public class CacheWithExpiryPolicyAdapter<K, V> implements Cache<K, V> {
   @Override
   public boolean replace(K key, V oldValue, V newValue) {
     checkClosed();
-    CacheEntry<K, ValueAndExtra<V>> e =
+    CacheEntry<K, TimeVal<V>> e =
         c2kCache.replaceOrGet(
             key,
-            new ValueAndExtra<V>(oldValue),
-            new ValueAndExtra<V>(newValue),
+            new TimeVal<V>(oldValue),
+            new TimeVal<V>(newValue),
             DUMMY_ENTRY);
     if (e != null && e != DUMMY_ENTRY) {
       touchEntry(key, e.getValue());
@@ -347,13 +347,13 @@ public class CacheWithExpiryPolicyAdapter<K, V> implements Cache<K, V> {
   @Override
   public boolean replace(K key, V value) {
     checkClosed();
-    return c2kCache.replace(key, new ValueAndExtra<V>(value));
+    return c2kCache.replace(key, new TimeVal<V>(value));
   }
 
   @Override
   public V getAndReplace(K key, V value) {
     checkClosed();
-    return returnLastValue(cache.getAndReplace(key, new ValueAndExtra<V>(value)));
+    return returnLastValue(cache.getAndReplace(key, new TimeVal<V>(value)));
   }
 
   @Override
@@ -399,15 +399,16 @@ public class CacheWithExpiryPolicyAdapter<K, V> implements Cache<K, V> {
     };
   }
 
-  <T> EntryProcessor<K, ValueAndExtra<V>, T> wrapEntryProcessor(final EntryProcessor<K, V, T> ep) {
+  <T> EntryProcessor<K, TimeVal<V>, T> wrapEntryProcessor(final EntryProcessor<K, V, T> ep) {
     if (ep == null) {
       throw new NullPointerException("processor is null");
     }
-    return new EntryProcessor<K, ValueAndExtra<V>, T>() {
+    return new EntryProcessor<K, TimeVal<V>, T>() {
+      boolean freshOrJustLoaded = false;
       @Override
-      public T process(final MutableEntry<K, ValueAndExtra<V>> e0, Object... _args) throws EntryProcessorException {
+      public T process(final MutableEntry<K, TimeVal<V>> e0, Object... _args) throws EntryProcessorException {
         MutableEntry<K, V> me = new MutableEntry<K, V>() {
-          boolean fresh = false;
+
           @Override
           public boolean exists() {
             return e0.exists();
@@ -420,8 +421,8 @@ public class CacheWithExpiryPolicyAdapter<K, V> implements Cache<K, V> {
 
           @Override
           public void setValue(V value) {
-            fresh = true;
-            e0.setValue(new ValueAndExtra<V>(value));
+            freshOrJustLoaded = true;
+            e0.setValue(new TimeVal<V>(value));
           }
 
           @Override
@@ -432,12 +433,14 @@ public class CacheWithExpiryPolicyAdapter<K, V> implements Cache<K, V> {
           @Override
           public V getValue() {
             boolean _doNotCountCacheAccessIfEntryGetsLoaded = !exists();
-            boolean _doNotCountCacheAccessIfEntryIsFresh = fresh;
+            boolean _doNotCountCacheAccessIfEntryIsFresh = freshOrJustLoaded;
             if (_doNotCountCacheAccessIfEntryIsFresh || _doNotCountCacheAccessIfEntryGetsLoaded) {
               if (!cache.readThrough && !exists()) {
                 return null;
               }
-              return e0.getValue() != null ? e0.getValue().value : null;
+              freshOrJustLoaded = true;
+              TimeVal<V> v = e0.getValue();
+              return  v != null ? v.value : null;
             }
             return returnValue(e0.getKey(), e0.getValue());
           }
@@ -485,7 +488,7 @@ public class CacheWithExpiryPolicyAdapter<K, V> implements Cache<K, V> {
   @Override
   public <T> T unwrap(Class<T> clazz) {
     if (org.cache2k.Cache.class.equals(clazz)) {
-      return (T) ((Cache2kCacheAdapter) cache).cache;
+      return (T) ((JCacheAdapter) cache).cache;
     }
     throw new IllegalArgumentException("unwrap wrong type");
   }
@@ -502,7 +505,7 @@ public class CacheWithExpiryPolicyAdapter<K, V> implements Cache<K, V> {
 
   @Override
   public Iterator<Cache.Entry<K, V>> iterator() {
-    final Iterator<Cache.Entry<K, ValueAndExtra<V>>> it = cache.iterator();
+    final Iterator<Cache.Entry<K, TimeVal<V>>> it = cache.iterator();
     return new Iterator<Entry<K, V>>() {
       @Override
       public boolean hasNext() {
@@ -511,7 +514,7 @@ public class CacheWithExpiryPolicyAdapter<K, V> implements Cache<K, V> {
 
       @Override
       public Entry<K, V> next() {
-        final Entry<K, ValueAndExtra<V>> e = it.next();
+        final Entry<K, TimeVal<V>> e = it.next();
         return returnEntry(e);
       }
 
@@ -522,9 +525,9 @@ public class CacheWithExpiryPolicyAdapter<K, V> implements Cache<K, V> {
     };
   }
 
-  Entry<K, V> returnEntry(final Entry<K, ValueAndExtra<V>> e) {
+  Entry<K, V> returnEntry(final Entry<K, TimeVal<V>> e) {
     final K key = e.getKey();
-    final ValueAndExtra<V> v = e.getValue();
+    final TimeVal<V> v = e.getValue();
     final V _value = returnValue(key, v);
     return new Entry<K, V>() {
       @Override
@@ -540,7 +543,7 @@ public class CacheWithExpiryPolicyAdapter<K, V> implements Cache<K, V> {
       @Override
       public <T> T unwrap(Class<T> clazz) {
         if (clazz.equals(CacheEntry.class)) {
-          final CacheEntry<K, ValueAndExtra<V>> ce = e.unwrap(CacheEntry.class);
+          final CacheEntry<K, TimeVal<V>> ce = e.unwrap(CacheEntry.class);
           return (T) new CacheEntry<K, V>() {
             @Override
             public Throwable getException() {
@@ -574,8 +577,8 @@ public class CacheWithExpiryPolicyAdapter<K, V> implements Cache<K, V> {
     }
   }
 
-  private ValueAndExtra<V> newValue(final ValueAndExtra<V> e, final Duration d) {
-    ValueAndExtra<V> _newEntry = new ValueAndExtra<V>(e.value);
+  private TimeVal<V> newValue(final TimeVal<V> e, final Duration d) {
+    TimeVal<V> _newEntry = new TimeVal<V>(e.value);
     if (Duration.ZERO.equals(d)) {
       _newEntry.expiryTime = 1;
     } else if (Duration.ETERNAL.equals(d)) {
@@ -586,14 +589,14 @@ public class CacheWithExpiryPolicyAdapter<K, V> implements Cache<K, V> {
     return _newEntry;
   }
 
-  V returnLastValue(ValueAndExtra<V> e) {
+  V returnLastValue(TimeVal<V> e) {
     if (e != null) {
       return e.value;
     }
     return null;
   }
 
-  V returnValue(K key, ValueAndExtra<V> e) {
+  V returnValue(K key, TimeVal<V> e) {
     if (e != null) {
       touchEntry(key, e);
       return e.value;
@@ -601,10 +604,10 @@ public class CacheWithExpiryPolicyAdapter<K, V> implements Cache<K, V> {
     return null;
   }
 
-  private void touchEntry(K key, ValueAndExtra<V> e) {
+  private void touchEntry(K key, TimeVal<V> e) {
     Duration d = expiryPolicy.getExpiryForAccess();
     if (d != null) {
-      ValueAndExtra<V> _newEntry = newValue(e, d);
+      TimeVal<V> _newEntry = newValue(e, d);
       c2kCache.replace(key, e, _newEntry);
     }
   }
@@ -615,7 +618,7 @@ public class CacheWithExpiryPolicyAdapter<K, V> implements Cache<K, V> {
     }
   }
 
-  static class ValueAndExtra<V> {
+  static class TimeVal<V> {
 
     V value;
 
@@ -624,7 +627,7 @@ public class CacheWithExpiryPolicyAdapter<K, V> implements Cache<K, V> {
      */
     long expiryTime;
 
-    public ValueAndExtra(V _value) {
+    public TimeVal(V _value) {
       if (_value == null) {
         throw new NullPointerException("value is null");
       }
@@ -639,7 +642,7 @@ public class CacheWithExpiryPolicyAdapter<K, V> implements Cache<K, V> {
       if (o == null || getClass() != o.getClass()) {
         return false;
       }
-      ValueAndExtra entry = (ValueAndExtra) o;
+      TimeVal entry = (TimeVal) o;
       if (!value.equals(entry.value)) {
         return false;
       }
@@ -653,7 +656,7 @@ public class CacheWithExpiryPolicyAdapter<K, V> implements Cache<K, V> {
 
   }
 
-  static class ExpiryCalculatorAdapter<K, V> implements EntryExpiryCalculator<K, ValueAndExtra<V>> {
+  static class ExpiryCalculatorAdapter<K, V> implements EntryExpiryCalculator<K, TimeVal<V>> {
 
     ExpiryPolicy policy;
 
@@ -662,7 +665,7 @@ public class CacheWithExpiryPolicyAdapter<K, V> implements Cache<K, V> {
     }
 
     @Override
-    public long calculateExpiryTime(K _key, ValueAndExtra<V> _value, long _fetchTime, CacheEntry<K, ValueAndExtra<V>> _oldEntry) {
+    public long calculateExpiryTime(K _key, TimeVal<V> _value, long _fetchTime, CacheEntry<K, TimeVal<V>> _oldEntry) {
       if (_value == null) {
         return 0;
       }

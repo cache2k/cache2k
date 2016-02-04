@@ -28,7 +28,6 @@ import org.cache2k.CacheSource;
 import org.cache2k.CacheWriter;
 import org.cache2k.EntryExpiryCalculator;
 import org.cache2k.ExceptionPropagator;
-import org.cache2k.WrappedAttachmentException;
 import org.cache2k.impl.CacheLifeCycleListener;
 import org.cache2k.impl.CacheManagerImpl;
 import org.cache2k.impl.InternalCache;
@@ -50,7 +49,6 @@ import javax.cache.expiry.ExpiryPolicy;
 import javax.cache.expiry.ModifiedExpiryPolicy;
 import javax.cache.integration.CacheLoader;
 import javax.cache.integration.CacheLoaderException;
-import javax.cache.integration.CacheWriterException;
 import javax.cache.spi.CachingProvider;
 import java.net.URI;
 import java.util.Collections;
@@ -60,12 +58,11 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.ServiceLoader;
 import java.util.Set;
-import java.util.WeakHashMap;
 
 /**
  * @author Jens Wilke; created: 2015-03-27
  */
-public class Cache2kManagerAdapter implements CacheManager {
+public class JCacheManagerAdapter implements CacheManager {
 
   static JCacheJmxSupport jmxSupport;
 
@@ -81,7 +78,7 @@ public class Cache2kManagerAdapter implements CacheManager {
   Cache2kCachingProvider provider;
   Map<String, Cache> name2adapter = new HashMap<String, Cache>();
 
-  public Cache2kManagerAdapter(Cache2kCachingProvider p, org.cache2k.CacheManager cm) {
+  public JCacheManagerAdapter(Cache2kCachingProvider p, org.cache2k.CacheManager cm) {
     manager = cm;
     provider = p;
   }
@@ -165,7 +162,7 @@ public class Cache2kManagerAdapter implements CacheManager {
       if (_existingCache != null && !_existingCache.isClosed()) {
         throw new CacheException("A cache2k instance is already existing with name: " + _cacheName);
       }
-      Cache2kCacheAdapter<K, V> c = new Cache2kCacheAdapter<K, V>(this, b.build(), _cfgCopy);
+      JCacheAdapter<K, V> c = new JCacheAdapter<K, V>(this, b.build(), _cfgCopy);
       name2adapter.put(c.getName(), c);
       return c;
     }
@@ -187,7 +184,7 @@ public class Cache2kManagerAdapter implements CacheManager {
 
   <K, V, C extends Configuration<K, V>> Cache<K, V> createCacheWithSpecialExpiry(String _cacheName, CompleteConfiguration<K, V> cc)
       throws IllegalArgumentException {
-    CacheBuilder b = CacheBuilder.newCache(cc.getKeyType(), CacheWithExpiryPolicyAdapter.ValueAndExtra.class);
+    CacheBuilder b = CacheBuilder.newCache(cc.getKeyType(), TouchyJCacheAdapter.TimeVal.class);
     b.name(_cacheName);
     b.sharpExpiry(true);
     b.keepDataAfterExpired(false);
@@ -202,17 +199,17 @@ public class Cache2kManagerAdapter implements CacheManager {
     _cfgCopy.setStoreByValue(cc.isStoreByValue());
     _cfgCopy.setReadThrough(cc.isReadThrough());
     _cfgCopy.setWriteThrough(cc.isWriteThrough());
-    CacheLoader<K, CacheWithExpiryPolicyAdapter.ValueAndExtra<V>> cl = null;
+    CacheLoader<K, TouchyJCacheAdapter.TimeVal<V>> cl = null;
     if (cc.getCacheLoaderFactory() != null) {
       final CacheLoader<K, V> clf = cc.getCacheLoaderFactory().create();
-      b.source(new CacheSource<K, CacheWithExpiryPolicyAdapter.ValueAndExtra>() {
+      b.source(new CacheSource<K, TouchyJCacheAdapter.TimeVal>() {
         @Override
-        public CacheWithExpiryPolicyAdapter.ValueAndExtra get(K k) {
+        public TouchyJCacheAdapter.TimeVal get(K k) {
           V v = clf.load(k);
           if (v == null) {
             return null;
           }
-          return new CacheWithExpiryPolicyAdapter.ValueAndExtra<V>(v);
+          return new TouchyJCacheAdapter.TimeVal<V>(v);
         }
       });
     }
@@ -227,7 +224,7 @@ public class Cache2kManagerAdapter implements CacheManager {
     if (cc.getExpiryPolicyFactory() != null) {
       _policy = cc.getExpiryPolicyFactory().create();
     }
-    b.entryExpiryCalculator(new CacheWithExpiryPolicyAdapter.ExpiryCalculatorAdapter(_policy));
+    b.entryExpiryCalculator(new TouchyJCacheAdapter.ExpiryCalculatorAdapter(_policy));
     b.manager(manager);
     synchronized (((CacheManagerImpl) manager).getLockObject()) {
       Cache _jsr107cache = name2adapter.get(_cacheName);
@@ -238,16 +235,16 @@ public class Cache2kManagerAdapter implements CacheManager {
       if (_existingCache != null && !_existingCache.isClosed()) {
         throw new CacheException("A cache2k instance is already existing with name: " + _cacheName);
       }
-      Cache2kCacheAdapter<K, CacheWithExpiryPolicyAdapter.ValueAndExtra<V>> ca =
-          new Cache2kCacheAdapter<K, CacheWithExpiryPolicyAdapter.ValueAndExtra<V>>(this, b.build(), null);
+      JCacheAdapter<K, TouchyJCacheAdapter.TimeVal<V>> ca =
+          new JCacheAdapter<K, TouchyJCacheAdapter.TimeVal<V>>(this, b.build(), null);
       ca.loader = cl;
       ca.readThrough = cc.isReadThrough();
-      CacheWithExpiryPolicyAdapter<K, V> c = new CacheWithExpiryPolicyAdapter<K, V>();
+      TouchyJCacheAdapter<K, V> c = new TouchyJCacheAdapter<K, V>();
       c.cache = ca;
       c.valueType = cc.getValueType();
       c.keyType = cc.getKeyType();
       c.expiryPolicy = _policy;
-      c.c2kCache = (InternalCache<K, CacheWithExpiryPolicyAdapter.ValueAndExtra<V>>) ca.cache;
+      c.c2kCache = (InternalCache<K, TouchyJCacheAdapter.TimeVal<V>>) ca.cache;
       _jsr107cache = c;
       if (cc.isStoreByValue()) {
         ca.storeByValue = true;
@@ -306,15 +303,15 @@ public class Cache2kManagerAdapter implements CacheManager {
     }
   }
 
-  private Cache2kCacheAdapter getAdapter(String _name) {
+  private JCacheAdapter getAdapter(String _name) {
     Cache ca = name2adapter.get(_name);
     if (ca instanceof CopyCacheProxy) {
       ca = ((CopyCacheProxy) ca).getWrappedCache();
     }
-    if (ca instanceof CacheWithExpiryPolicyAdapter) {
-      return (Cache2kCacheAdapter) ((CacheWithExpiryPolicyAdapter) ca).cache;
+    if (ca instanceof TouchyJCacheAdapter) {
+      return (JCacheAdapter) ((TouchyJCacheAdapter) ca).cache;
     }
-    return (Cache2kCacheAdapter) ca;
+    return (JCacheAdapter) ca;
   }
 
   private void checkNonNullCacheName(String _cacheName) {
@@ -352,7 +349,7 @@ public class Cache2kManagerAdapter implements CacheManager {
   public void enableManagement(String _cacheName, boolean enabled) {
     checkClosed();
     checkNonNullCacheName(_cacheName);
-    Cache2kCacheAdapter ca = getAdapter(_cacheName);
+    JCacheAdapter ca = getAdapter(_cacheName);
     if (ca == null) {
       return;
     }
@@ -381,7 +378,7 @@ public class Cache2kManagerAdapter implements CacheManager {
     checkClosed();
     checkNonNullCacheName(_cacheName);
     if (enabled) {
-      Cache2kCacheAdapter ca = getAdapter(_cacheName);
+      JCacheAdapter ca = getAdapter(_cacheName);
       if (ca != null) {
         synchronized (ca.cache) {
           if (!ca.statisticsEnabled) {
@@ -391,7 +388,7 @@ public class Cache2kManagerAdapter implements CacheManager {
         }
       }
     } else {
-      Cache2kCacheAdapter ca = getAdapter(_cacheName);
+      JCacheAdapter ca = getAdapter(_cacheName);
       if (ca != null) {
         synchronized (ca.cache) {
           if (ca.statisticsEnabled) {
@@ -450,7 +447,7 @@ public class Cache2kManagerAdapter implements CacheManager {
     }
   }
 
-  static class CacheWriterAdapterForTouchRecording<K, V> implements CacheWriter<K, CacheWithExpiryPolicyAdapter.ValueAndExtra<V>> {
+  static class CacheWriterAdapterForTouchRecording<K, V> implements CacheWriter<K, TouchyJCacheAdapter.TimeVal<V>> {
 
     javax.cache.integration.CacheWriter<K, V> cacheWriter;
 
@@ -459,7 +456,7 @@ public class Cache2kManagerAdapter implements CacheManager {
     }
 
     @Override
-    public void write(final K key, final CacheWithExpiryPolicyAdapter.ValueAndExtra<V> value) throws Exception {
+    public void write(final K key, final TouchyJCacheAdapter.TimeVal<V> value) throws Exception {
       Cache.Entry<K, V> ce = new Cache.Entry<K, V>() {
         @Override
         public K getKey() {

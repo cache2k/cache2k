@@ -37,13 +37,13 @@ public class CacheJmxStatistics implements CacheStatisticsMXBean {
     Tuning.GLOBAL.tweakStatisticsForEntityProcessor && false ? 1 : 0;
 
   InternalCache cache;
-  Cache2kCacheAdapter adapter;
+  JCacheAdapter adapter;
 
   InternalCacheInfo getInfo() {
     return flushOnAccess ? cache.getLatestInfo() : cache.getInfo();
   }
 
-  public CacheJmxStatistics(Cache2kCacheAdapter _cache) {
+  public CacheJmxStatistics(JCacheAdapter _cache) {
     cache = _cache.cacheImpl;
     adapter = _cache;
   }

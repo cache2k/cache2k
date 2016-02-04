@@ -53,9 +53,9 @@ import java.util.concurrent.atomic.AtomicLong;
 /**
  * @author Jens Wilke; created: 2015-03-28
  */
-public class Cache2kCacheAdapter<K, V> implements javax.cache.Cache<K, V> {
+public class JCacheAdapter<K, V> implements javax.cache.Cache<K, V> {
 
-  Cache2kManagerAdapter manager;
+  JCacheManagerAdapter manager;
   Cache<K, V> cache;
   InternalCache<K, V> cacheImpl;
   boolean storeByValue;
@@ -70,7 +70,7 @@ public class Cache2kCacheAdapter<K, V> implements javax.cache.Cache<K, V> {
   /** Null, if no complete configuration is effective */
   CompleteConfiguration<K, V> completeConfiguration;
 
-  public Cache2kCacheAdapter(Cache2kManagerAdapter _manager, Cache<K, V> _cache, CompleteConfiguration<K, V> _completeConfiguration) {
+  public JCacheAdapter(JCacheManagerAdapter _manager, Cache<K, V> _cache, CompleteConfiguration<K, V> _completeConfiguration) {
     manager = _manager;
     cache = _cache;
     cacheImpl = (InternalCache<K, V>) _cache;
