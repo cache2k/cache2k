@@ -705,10 +705,19 @@ public class BasicCacheOperationsTest {
   public void replace() {
     boolean f = cache.replace(KEY, VALUE);
     assertFalse(f);
+    statistics()
+      .readCount.expect(1)
+      .missCount.expect(1)
+      .expectAllZero();
     cache.put(KEY, VALUE);
     f = cache.replace(KEY, OTHER_VALUE);
     assertTrue(f);
     assertEquals(OTHER_VALUE, cache.peek(KEY));
+    statistics()
+      .readCount.expect(2)
+      .missCount.expect(0)
+      .putCount.expect(2)
+      .expectAllZero();
   }
 
   @Test
