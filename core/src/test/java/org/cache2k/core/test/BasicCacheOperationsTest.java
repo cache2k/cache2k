@@ -619,35 +619,35 @@ public class BasicCacheOperationsTest {
 
   @Test
   public void removeKv() {
-    boolean f = cache.remove(KEY, VALUE);
+    boolean f = cache.removeIfEquals(KEY, VALUE);
     assertFalse(f);
     assertFalse(cache.contains(KEY));
     cache.put(KEY, VALUE);
     assertTrue(cache.contains(KEY));
-    f = cache.remove(KEY, OTHER_VALUE);
+    f = cache.removeIfEquals(KEY, OTHER_VALUE);
     assertFalse(f);
-    f = cache.remove(KEY, VALUE);
+    f = cache.removeIfEquals(KEY, VALUE);
     assertFalse(cache.contains(KEY));
     assertTrue(f);
-    f = cache.remove(KEY, VALUE);
+    f = cache.removeIfEquals(KEY, VALUE);
     assertFalse(f);
   }
 
   @Test
   public void removeKv_Null() {
-    boolean f = cache.remove(KEY, null);
+    boolean f = cache.removeIfEquals(KEY, null);
     assertFalse(f);
     cache.put(KEY, null);
-    f = cache.remove(KEY, OTHER_VALUE);
+    f = cache.removeIfEquals(KEY, OTHER_VALUE);
     assertFalse(f);
-    f = cache.remove(KEY, null);
+    f = cache.removeIfEquals(KEY, null);
     assertTrue(f);
     assertFalse(cache.contains(KEY));
   }
 
   @Test(expected = NullPointerException.class)
   public void removeKv_NullKey() {
-    cache.remove(null, OTHER_VALUE);
+    cache.removeIfEquals(null, OTHER_VALUE);
   }
 
   /*
@@ -656,10 +656,10 @@ public class BasicCacheOperationsTest {
 
   @Test
   public void replaceKvv() {
-    assertFalse(cache.replace(KEY, VALUE, OTHER_VALUE));
+    assertFalse(cache.replaceIfEquals(KEY, VALUE, OTHER_VALUE));
     assertFalse(cache.contains(KEY));
     cache.put(KEY, VALUE);
-    assertTrue(cache.replace(KEY, VALUE, OTHER_VALUE));
+    assertTrue(cache.replaceIfEquals(KEY, VALUE, OTHER_VALUE));
     assertEquals(OTHER_VALUE, cache.peek(KEY));
   }
 
@@ -667,14 +667,14 @@ public class BasicCacheOperationsTest {
   public void replaceKvv_Different() {
     cache.put(KEY, VALUE);
     assertEquals(VALUE, cache.peek(KEY));
-    assertFalse(cache.replace(KEY, OTHER_VALUE, OTHER_VALUE));
+    assertFalse(cache.replaceIfEquals(KEY, OTHER_VALUE, OTHER_VALUE));
     assertEquals(VALUE, cache.peek(KEY));
   }
 
   @Test
   public void replaceKvv_NoMap() {
     cache.put(KEY, VALUE);
-    assertFalse(cache.replace(OTHER_KEY, OTHER_VALUE, OTHER_VALUE));
+    assertFalse(cache.replaceIfEquals(OTHER_KEY, OTHER_VALUE, OTHER_VALUE));
     assertEquals(VALUE, cache.peek(KEY));
     assertNull(cache.peek(OTHER_KEY));
     assertFalse(cache.contains(OTHER_KEY));
@@ -682,19 +682,19 @@ public class BasicCacheOperationsTest {
 
   @Test
   public void replaceKvv_Null() {
-    cache.replace(KEY, null, null);
+    cache.replaceIfEquals(KEY, null, null);
     cache.put(KEY, null);
-    cache.replace(KEY, null, VALUE);
+    cache.replaceIfEquals(KEY, null, VALUE);
     assertEquals(VALUE, cache.peek(KEY));
-    cache.replace(KEY, OTHER_VALUE, null);
+    cache.replaceIfEquals(KEY, OTHER_VALUE, null);
     assertEquals(VALUE, cache.peek(KEY));
-    cache.replace(KEY, VALUE, null);
+    cache.replaceIfEquals(KEY, VALUE, null);
     assertTrue(cache.contains(KEY));
   }
 
   @Test(expected = NullPointerException.class)
   public void replaceKvv_NullKey() {
-    cache.replace(null, OTHER_VALUE, OTHER_VALUE);
+    cache.replaceIfEquals(null, OTHER_VALUE, OTHER_VALUE);
   }
 
   /*

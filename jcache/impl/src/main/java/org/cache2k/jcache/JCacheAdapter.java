@@ -198,7 +198,7 @@ public class JCacheAdapter<K, V> implements javax.cache.Cache<K, V> {
     checkClosed();
     checkNullValue(_oldValue);
     try {
-      return cache.remove(key, _oldValue);
+      return cache.removeIfEquals(key, _oldValue);
     } catch (CacheWriterException ex) {
       throw new javax.cache.integration.CacheWriterException(ex);
     }
@@ -220,7 +220,7 @@ public class JCacheAdapter<K, V> implements javax.cache.Cache<K, V> {
     checkNullValue(_oldValue);
     checkNullValue(_newValue);
     try {
-      return cache.replace(key, _oldValue, _newValue);
+      return cache.replaceIfEquals(key, _oldValue, _newValue);
     } catch (CacheWriterException ex) {
       throw new javax.cache.integration.CacheWriterException(ex);
     }

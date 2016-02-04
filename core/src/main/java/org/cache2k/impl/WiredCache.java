@@ -166,7 +166,7 @@ public class WiredCache<K, V> extends AbstractCache<K, V> implements  StorageAda
   }
 
   @Override
-  public boolean remove(K key, V value) {
+  public boolean removeIfEquals(K key, V value) {
     return execute(key, SPEC.remove(key, value));
   }
 
@@ -181,7 +181,7 @@ public class WiredCache<K, V> extends AbstractCache<K, V> implements  StorageAda
   }
 
   @Override
-  public boolean replace(K key, V _oldValue, V _newValue) {
+  public boolean replaceIfEquals(K key, V _oldValue, V _newValue) {
     return execute(key, SPEC.replace(key, _oldValue, _newValue));
   }
 

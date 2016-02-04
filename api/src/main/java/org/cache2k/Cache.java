@@ -321,7 +321,7 @@ public interface Cache<K, V> extends KeyValueSource<K, V>, Iterable<CacheEntry<K
    * @throws IllegalArgumentException if some property of a specified key
    *         or value prevents it from being stored in this map
    */
-  boolean replace(K key, V oldValue, V newValue);
+  boolean replaceIfEquals(K key, V oldValue, V newValue);
 
   /**
    * Removes the mapping for a key from the cache if it is present.
@@ -376,7 +376,7 @@ public interface Cache<K, V> extends KeyValueSource<K, V>, Iterable<CacheEntry<K
    * <ul>
    *   <li>{@link #containsAndRemove(Object)}, returning a success flag</li>
    *   <li>{@link #peekAndRemove(Object)}, returning the removed value</li>
-   *   <li>{@link #remove(Object, Object)}, conditional removal matching on the current value</li>
+   *   <li>{@link #removeIfEquals(Object, Object)}, conditional removal matching on the current value</li>
    * </ul>
    *
    * @param key key whose mapping is to be removed from the cache
@@ -396,7 +396,7 @@ public interface Cache<K, V> extends KeyValueSource<K, V>, Iterable<CacheEntry<K
    *         this map
    * @return true, if mapping was removed
    */
-  boolean remove(K key, V expectedValue);
+  boolean removeIfEquals(K key, V expectedValue);
 
   /**
    * This was for atomic removal of a bunch of entries. Not supported any more.

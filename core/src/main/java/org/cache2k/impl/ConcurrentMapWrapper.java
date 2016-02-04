@@ -71,14 +71,14 @@ public class ConcurrentMapWrapper<K,V> implements ConcurrentMap<K, V> {
   @Override
   public boolean remove(Object key, Object value) {
     if (keyType.isAssignableFrom(key.getClass()) && valueType.isAssignableFrom(value.getClass())) {
-      return cache.remove((K) key, (V) value);
+      return cache.removeIfEquals((K) key, (V) value);
     }
     return false;
   }
 
   @Override
   public boolean replace(K key, V oldValue, V newValue) {
-    return cache.replace(key, oldValue, newValue);
+    return cache.replaceIfEquals(key, oldValue, newValue);
   }
 
   @Override

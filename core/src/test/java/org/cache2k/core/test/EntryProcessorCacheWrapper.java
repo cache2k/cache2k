@@ -101,7 +101,7 @@ public class EntryProcessorCacheWrapper<K, V> extends CacheWrapper<K, V> {
   }
 
   @Override
-  public boolean replace(final K key, final V _oldValue, final V _newValue) {
+  public boolean replaceIfEquals(final K key, final V _oldValue, final V _newValue) {
     CacheEntryProcessor<K, V, Boolean> p = new CacheEntryProcessor<K, V, Boolean>() {
       @Override
       public Boolean process(MutableCacheEntry<K, V> entry, Object... arguments) throws Exception {

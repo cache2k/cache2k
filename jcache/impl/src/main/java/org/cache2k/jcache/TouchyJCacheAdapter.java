@@ -608,7 +608,7 @@ public class TouchyJCacheAdapter<K, V> implements Cache<K, V> {
     Duration d = expiryPolicy.getExpiryForAccess();
     if (d != null) {
       TimeVal<V> _newEntry = newValue(e, d);
-      c2kCache.replace(key, e, _newEntry);
+      c2kCache.replaceIfEquals(key, e, _newEntry);
     }
   }
 

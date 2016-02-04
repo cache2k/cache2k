@@ -118,8 +118,8 @@ public class CacheWrapper<K,V> implements Cache<K, V> {
   }
 
   @Override
-  public boolean replace(K key, V _oldValue, V _newValue) {
-    return cache.replace(key, _oldValue, _newValue);
+  public boolean replaceIfEquals(K key, V _oldValue, V _newValue) {
+    return cache.replaceIfEquals(key, _oldValue, _newValue);
   }
 
   @Override
@@ -141,8 +141,8 @@ public class CacheWrapper<K,V> implements Cache<K, V> {
   public boolean containsAndRemove(K key) { return cache.containsAndRemove(key); }
 
   @Override
-  public boolean remove(K key, V value) {
-    return cache.remove(key, value);
+  public boolean removeIfEquals(K key, V value) {
+    return cache.removeIfEquals(key, value);
   }
 
   @Override

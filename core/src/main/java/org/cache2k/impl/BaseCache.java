@@ -1663,7 +1663,7 @@ public abstract class BaseCache<K, V>
   }
 
   @Override
-  public boolean replace(K key, V _oldValue, V _newValue) {
+  public boolean replaceIfEquals(K key, V _oldValue, V _newValue) {
     return replace(key, true, _oldValue, _newValue) == null;
   }
 
@@ -2023,7 +2023,7 @@ public abstract class BaseCache<K, V>
   }
 
   @Override
-  public boolean remove(K key, V _value) {
+  public boolean removeIfEquals(K key, V _value) {
     return removeWithFlag(key, true, _value);
   }
 
