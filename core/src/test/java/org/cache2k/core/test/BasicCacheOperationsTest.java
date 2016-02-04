@@ -736,4 +736,24 @@ public class BasicCacheOperationsTest {
     cache.replace(null, VALUE);
   }
 
+  /*
+   * iterator()
+   */
+
+  @Test
+  public void iterator() {
+    assertFalse(cache.iterator().hasNext());
+    cache.put(KEY, VALUE);
+    cache.put(OTHER_KEY, OTHER_VALUE);
+    statistics().reset();
+    Map<Integer,Integer> map = new HashMap<Integer, Integer>();
+    for (CacheEntry<Integer, Integer> ce : cache) {
+      map.put(ce.getKey(), ce.getValue());
+    }
+    assertEquals(2, map.size());
+    assertTrue(map.containsKey(KEY));
+    assertTrue(map.containsKey(OTHER_KEY));
+    statistics().expectAllZero();
+  }
+
 }
