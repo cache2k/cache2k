@@ -618,7 +618,7 @@ public class BasicCacheOperationsTest {
    */
 
   @Test
-  public void removeKv() {
+  public void removeIfEquals() {
     boolean f = cache.removeIfEquals(KEY, VALUE);
     assertFalse(f);
     assertFalse(cache.contains(KEY));
@@ -634,7 +634,7 @@ public class BasicCacheOperationsTest {
   }
 
   @Test
-  public void removeKv_Null() {
+  public void removeIfEquals_Null() {
     boolean f = cache.removeIfEquals(KEY, null);
     assertFalse(f);
     cache.put(KEY, null);
@@ -646,16 +646,16 @@ public class BasicCacheOperationsTest {
   }
 
   @Test(expected = NullPointerException.class)
-  public void removeKv_NullKey() {
+  public void removeIfEquals_NullKey() {
     cache.removeIfEquals(null, OTHER_VALUE);
   }
 
   /*
-   * replaceKVV
+   * replaceIfEquals
    */
 
   @Test
-  public void replaceKvv() {
+  public void replaceIfEquals() {
     assertFalse(cache.replaceIfEquals(KEY, VALUE, OTHER_VALUE));
     assertFalse(cache.contains(KEY));
     cache.put(KEY, VALUE);
@@ -664,7 +664,7 @@ public class BasicCacheOperationsTest {
   }
 
   @Test
-  public void replaceKvv_Different() {
+  public void replaceIfEquals_Different() {
     cache.put(KEY, VALUE);
     assertEquals(VALUE, cache.peek(KEY));
     assertFalse(cache.replaceIfEquals(KEY, OTHER_VALUE, OTHER_VALUE));
@@ -672,7 +672,7 @@ public class BasicCacheOperationsTest {
   }
 
   @Test
-  public void replaceKvv_NoMap() {
+  public void replaceIfEquals_NoMap() {
     cache.put(KEY, VALUE);
     assertFalse(cache.replaceIfEquals(OTHER_KEY, OTHER_VALUE, OTHER_VALUE));
     assertEquals(VALUE, cache.peek(KEY));
@@ -681,7 +681,7 @@ public class BasicCacheOperationsTest {
   }
 
   @Test
-  public void replaceKvv_Null() {
+  public void replaceIfEquals_Null() {
     cache.replaceIfEquals(KEY, null, null);
     cache.put(KEY, null);
     cache.replaceIfEquals(KEY, null, VALUE);
@@ -693,7 +693,7 @@ public class BasicCacheOperationsTest {
   }
 
   @Test(expected = NullPointerException.class)
-  public void replaceKvv_NullKey() {
+  public void replaceIfEquals_NullKey() {
     cache.replaceIfEquals(null, OTHER_VALUE, OTHER_VALUE);
   }
 
