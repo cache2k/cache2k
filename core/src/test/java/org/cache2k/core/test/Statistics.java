@@ -46,6 +46,14 @@ public class Statistics {
 
   InternalCacheInfo info;
   List<Counter> counters = new ArrayList<Counter>();
+  boolean disable = false;
+
+  public Statistics() {
+  }
+
+  public Statistics(final boolean _disable) {
+    disable = _disable;
+  }
 
   public final Counter readCount = new Counter("read") {
     @Override
@@ -133,7 +141,9 @@ public class Statistics {
      * that all other counters are 0.
      */
     public Statistics expect(long v) {
-      assertEquals(name + " counter", v, get());
+      if (!disable) {
+        assertEquals(name + " counter", v, get());
+      }
       reset();
       return Statistics.this;
     }

@@ -43,6 +43,15 @@ public class BasicCacheOperationsWithEntryProcessorTest extends BasicCacheOperat
 
   static EntryProcessorCacheWrapper<Integer, Integer> staticCache;
 
+  /*
+   * Disable statistics, statistics are counted differently with use of the entry processor.
+   * With the entry processor usage, an invoke*() always counts as read, so a put() via entry processor
+   * has always other statistics results.
+   */
+  {
+    statistics = new Statistics(true);
+  }
+
   @BeforeClass
   public static void setUp() {
     Cache<Integer, Integer>  c = CacheBuilder
