@@ -74,7 +74,7 @@ public class BasicCacheOperationsTest {
    */
   Cache<Integer, Integer> cache;
 
-  final Statistics statistics = new Statistics();
+  Statistics statistics = new Statistics();
 
   public Statistics statistics() {
     statistics.sample(cache);
@@ -712,11 +712,16 @@ public class BasicCacheOperationsTest {
     cache.put(KEY, VALUE);
     f = cache.replace(KEY, OTHER_VALUE);
     assertTrue(f);
-    assertEquals(OTHER_VALUE, cache.peek(KEY));
     statistics()
-      .readCount.expect(2)
+      .readCount.expect(1)
       .missCount.expect(0)
       .putCount.expect(2)
+      .expectAllZero();
+    assertEquals(OTHER_VALUE, cache.peek(KEY));
+    statistics()
+      .readCount.expect(1)
+      .missCount.expect(0)
+      .putCount.expect(0)
       .expectAllZero();
   }
 
