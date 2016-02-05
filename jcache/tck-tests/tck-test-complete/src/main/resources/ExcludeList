@@ -5,7 +5,7 @@
 org.jsr107.tck.CachingTest#dummyTest
 
 # changed in TCK, https://github.com/jsr107/jsr107tck/issues/63
-org.jsr107.tck.management.CacheMBStatisticsBeanTest.testPutIfAbsent
+org.jsr107.tck.management.CacheMBStatisticsBeanTest#testPutIfAbsent
 
 # failures
 
