@@ -1053,7 +1053,7 @@ public class WiredCache<K, V> extends AbstractCache<K, V> implements  StorageAda
 
     public void callListeners() {
       if (remove) {
-        if (entry.isDataValidState()) {
+        if (storageDataValid || heapDataValid) {
           if (syncEntryRemovedListeners != null) {
             for (CacheEntryRemovedListener l : syncEntryRemovedListeners) {
               try {

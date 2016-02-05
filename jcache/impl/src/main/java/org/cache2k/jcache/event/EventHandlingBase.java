@@ -188,8 +188,11 @@ public abstract class EventHandlingBase<K,V,W> {
 
     @Override
     public void onEntryCreated(
-      final org.cache2k.Cache<K, W> c,
-      final CacheEntry<K, W> e) {
+        final org.cache2k.Cache<K, W> c,
+        final CacheEntry<K, W> e) {
+      if (e.getException() != null) {
+        return;
+      }
       javax.cache.Cache<K,V> _jCache = manager.resolveCacheWrapper(c);
       EntryEvent<K, V> cee =
         new EntryEvent<K, V>(_jCache, EventType.CREATED, e.getKey(), extractValue(e.getValue()));
@@ -206,6 +209,9 @@ public abstract class EventHandlingBase<K,V,W> {
 
     @Override
     public void onEntryUpdated(final Cache<K, W> c, final W _previousValue, final CacheEntry<K, W> e) {
+      if (e.getException() != null) {
+        return;
+      }
       javax.cache.Cache<K,V> _jCache = manager.resolveCacheWrapper(c);
       EntryEvent<K, V> cee =
         new EntryEventWithOldValue<K, V>(_jCache, EventType.UPDATED, e.getKey(), extractValue(e.getValue()), extractValue(_previousValue));
