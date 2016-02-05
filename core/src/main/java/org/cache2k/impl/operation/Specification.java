@@ -105,7 +105,7 @@ public class Specification<K, V> {
     }
   };
 
-  static CacheEntry returnStableEntry(ExaminationEntry e) {
+  public static CacheEntry returnStableEntry(ExaminationEntry e) {
     return
       new ReadOnlyCacheEntry(
         e.getKey(), e.getValueOrException(),
