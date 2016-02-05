@@ -334,6 +334,10 @@ public abstract class CacheBuilder<K, V>
     return this;
   }
 
+  public abstract CacheBuilder<K, V> addSynchronousListener(CacheEntryListener<K,V> listener);
+
+  public abstract CacheBuilder<K, V> addAsynchronousListener(CacheEntryListener<K,V> listener);
+
   /**
    * Set expiry calculator to use. If {@link #expiryDuration(long, java.util.concurrent.TimeUnit)}
    * is set to 0 then expiry calculation is not used, all entries expire immediately.

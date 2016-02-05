@@ -23,6 +23,11 @@ package org.cache2k.impl;
  */
 
 import org.cache2k.BulkCacheSource;
+import org.cache2k.CacheEntryCreatedListener;
+import org.cache2k.CacheEntryExpiredListener;
+import org.cache2k.CacheEntryListener;
+import org.cache2k.CacheEntryRemovedListener;
+import org.cache2k.CacheEntryUpdatedListener;
 import org.cache2k.ExperimentalBulkCacheSource;
 import org.cache2k.Cache;
 import org.cache2k.CacheBuilder;
@@ -34,12 +39,35 @@ import org.cache2k.RefreshController;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * @author Jens Wilke; created: 2013-12-06
  */
 @SuppressWarnings("unused") // instantiated by reflection from cache builder
 public class CacheBuilderImpl<K, T> extends CacheBuilder<K, T> {
+
+  List<CacheEntryListener<K,T>> asyncListeners;
+  List<CacheEntryListener<K,T>> syncListeners;
+
+  @Override
+  public CacheBuilder<K, T> addAsynchronousListener(final CacheEntryListener<K, T> listener) {
+    if (asyncListeners == null) {
+      asyncListeners = new ArrayList<CacheEntryListener<K, T>>();
+    }
+    asyncListeners.add(listener);
+    return this;
+  }
+
+  @Override
+  public CacheBuilder<K, T> addSynchronousListener(final CacheEntryListener<K, T> listener) {
+    if (syncListeners == null) {
+      syncListeners = new ArrayList<CacheEntryListener<K, T>>();
+    }
+    syncListeners.add(listener);
+    return this;
+  }
 
   String deriveNameFromStackTrace() {
     Exception ex = new Exception();
@@ -162,6 +190,7 @@ public class CacheBuilderImpl<K, T> extends CacheBuilder<K, T> {
     }
   }
 
+  @SuppressWarnings({"unchecked", "SuspiciousToArrayCall"})
   public Cache<K, T> build() {
     config = createConfiguration();
     if (config.getName() == null) {
@@ -199,8 +228,58 @@ public class CacheBuilderImpl<K, T> extends CacheBuilder<K, T> {
       if (bc.storage != null) {
         ((PassingStorageAdapter) bc.storage).parent = wc;
       }
-    }
+      if (asyncListeners != null) {
+        List<CacheEntryCreatedListener<K,T>> cll = new ArrayList<CacheEntryCreatedListener<K, T>>();
+        List<CacheEntryUpdatedListener<K,T>> ull = new ArrayList<CacheEntryUpdatedListener<K, T>>();
+        List<CacheEntryRemovedListener<K,T>> rll = new ArrayList<CacheEntryRemovedListener<K, T>>();
+        for (CacheEntryListener<K,T> el : asyncListeners) {
 
+          if (el instanceof CacheEntryCreatedListener) {
+            cll.add((CacheEntryCreatedListener) el);
+          }
+          if (el instanceof CacheEntryUpdatedListener) {
+            ull.add((CacheEntryUpdatedListener) el);
+          }
+          if (el instanceof CacheEntryRemovedListener) {
+            rll.add((CacheEntryRemovedListener) el);
+          }
+        }
+        if (cll.size() > 0) {
+          wc.asyncEntryCreatedListeners = cll.toArray(new CacheEntryCreatedListener[cll.size()]);
+        }
+        if (ull.size() > 0) {
+          wc.asyncEntryUpdatedListeners = ull.toArray(new CacheEntryUpdatedListener[ull.size()]);
+        }
+        if (rll.size() > 0) {
+          wc.asyncEntryRemovedListeners = rll.toArray(new CacheEntryRemovedListener[rll.size()]);
+        }
+      }
+      if (syncListeners != null) {
+        List<CacheEntryCreatedListener<K,T>> cll = new ArrayList<CacheEntryCreatedListener<K, T>>();
+        List<CacheEntryUpdatedListener<K,T>> ull = new ArrayList<CacheEntryUpdatedListener<K, T>>();
+        List<CacheEntryRemovedListener<K,T>> rll = new ArrayList<CacheEntryRemovedListener<K, T>>();
+        for (CacheEntryListener<K,T> el : syncListeners) {
+          if (el instanceof CacheEntryCreatedListener) {
+            cll.add((CacheEntryCreatedListener) el);
+          }
+          if (el instanceof CacheEntryUpdatedListener) {
+            ull.add((CacheEntryUpdatedListener) el);
+          }
+          if (el instanceof CacheEntryRemovedListener) {
+            rll.add((CacheEntryRemovedListener) el);
+          }
+        }
+        if (cll.size() > 0) {
+          wc.syncEntryCreatedListeners = cll.toArray(new CacheEntryCreatedListener[cll.size()]);
+        }
+        if (ull.size() > 0) {
+          wc.syncEntryUpdatedListeners = ull.toArray(new CacheEntryUpdatedListener[ull.size()]);
+        }
+        if (rll.size() > 0) {
+          wc.syncEntryRemovedListeners = rll.toArray(new CacheEntryRemovedListener[rll.size()]);
+        }
+      }
+    }
     return _cache;
   }
 

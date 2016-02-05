@@ -31,6 +31,9 @@ import org.cache2k.ExceptionPropagator;
 import org.cache2k.impl.CacheLifeCycleListener;
 import org.cache2k.impl.CacheManagerImpl;
 import org.cache2k.impl.InternalCache;
+import org.cache2k.jcache.event.EntryEvent;
+import org.cache2k.jcache.event.EntryEventWithOldValue;
+import org.cache2k.jcache.event.EventHandlingBase;
 import org.cache2k.jcache.generic.storeByValueSimulation.CopyCacheProxy;
 import org.cache2k.jcache.generic.storeByValueSimulation.ObjectCopyFactory;
 import org.cache2k.jcache.generic.storeByValueSimulation.ObjectTransformer;
@@ -40,9 +43,18 @@ import org.cache2k.jcache.generic.storeByValueSimulation.SimpleObjectCopyFactory
 import javax.cache.Cache;
 import javax.cache.CacheException;
 import javax.cache.CacheManager;
+import javax.cache.configuration.CacheEntryListenerConfiguration;
 import javax.cache.configuration.CompleteConfiguration;
 import javax.cache.configuration.Configuration;
+import javax.cache.configuration.Factory;
 import javax.cache.configuration.MutableConfiguration;
+import javax.cache.event.CacheEntryCreatedListener;
+import javax.cache.event.CacheEntryEvent;
+import javax.cache.event.CacheEntryEventFilter;
+import javax.cache.event.CacheEntryExpiredListener;
+import javax.cache.event.CacheEntryRemovedListener;
+import javax.cache.event.CacheEntryUpdatedListener;
+import javax.cache.event.EventType;
 import javax.cache.expiry.Duration;
 import javax.cache.expiry.EternalExpiryPolicy;
 import javax.cache.expiry.ExpiryPolicy;
@@ -58,6 +70,8 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.ServiceLoader;
 import java.util.Set;
+import java.util.WeakHashMap;
+import java.util.concurrent.Executors;
 
 /**
  * @author Jens Wilke; created: 2015-03-27
@@ -77,6 +91,11 @@ public class JCacheManagerAdapter implements CacheManager {
   org.cache2k.CacheManager manager;
   Cache2kCachingProvider provider;
   Map<String, Cache> name2adapter = new HashMap<String, Cache>();
+
+  /**
+   * Needed for event delivery to find the corresponding JCache for a cache2k cache.
+   */
+  volatile Map<org.cache2k.Cache, Cache> c2k2jCache = Collections.emptyMap();
 
   public JCacheManagerAdapter(Cache2kCachingProvider p, org.cache2k.CacheManager cm) {
     manager = cm;
@@ -105,7 +124,7 @@ public class JCacheManagerAdapter implements CacheManager {
 
   @Override
   public <K, V, C extends Configuration<K, V>> Cache<K, V> createCache(String _cacheName, C cfg)
-      throws IllegalArgumentException {
+    throws IllegalArgumentException {
     checkClosed();
     checkNonNullCacheName(_cacheName);
     if (cfg instanceof CompleteConfiguration) {
@@ -153,7 +172,7 @@ public class JCacheManagerAdapter implements CacheManager {
       }
     }
     b.manager(manager);
-    synchronized (((CacheManagerImpl)manager).getLockObject()) {
+    synchronized (((CacheManagerImpl) manager).getLockObject()) {
       Cache _jsr107cache = name2adapter.get(_cacheName);
       if (_jsr107cache != null && !_jsr107cache.isClosed()) {
         throw new CacheException("cache already existing with name: " + _cacheName);
@@ -182,8 +201,9 @@ public class JCacheManagerAdapter implements CacheManager {
     return true;
   }
 
+  @SuppressWarnings("unchecked")
   <K, V, C extends Configuration<K, V>> Cache<K, V> createCacheWithSpecialExpiry(String _cacheName, CompleteConfiguration<K, V> cc)
-      throws IllegalArgumentException {
+    throws IllegalArgumentException {
     CacheBuilder b = CacheBuilder.newCache(cc.getKeyType(), TouchyJCacheAdapter.TimeVal.class);
     b.name(_cacheName);
     b.sharpExpiry(true);
@@ -217,9 +237,6 @@ public class JCacheManagerAdapter implements CacheManager {
       final javax.cache.integration.CacheWriter<? super K, ? super V> cw = cc.getCacheWriterFactory().create();
       b.writer(new CacheWriterAdapterForTouchRecording(cw));
     }
-    if (cc.getCacheEntryListenerConfigurations().iterator().hasNext()) {
-      throw new UnsupportedOperationException("no support for jsr107 entry listener");
-    }
     ExpiryPolicy _policy = EternalExpiryPolicy.factoryOf().create();
     if (cc.getExpiryPolicyFactory() != null) {
       _policy = cc.getExpiryPolicyFactory().create();
@@ -235,8 +252,16 @@ public class JCacheManagerAdapter implements CacheManager {
       if (_existingCache != null && !_existingCache.isClosed()) {
         throw new CacheException("A cache2k instance is already existing with name: " + _cacheName);
       }
+
+      TouchyJCacheAdapter.EventHandling<K,V> _eventHandling = new TouchyJCacheAdapter.EventHandling<K, V>();
+      _eventHandling.registerCache2kListeners(b);
+      for (CacheEntryListenerConfiguration<K,V> cfg : cc.getCacheEntryListenerConfigurations()) {
+        _eventHandling.registerListener(cfg);
+      }
+      _eventHandling.init(this, Executors.newCachedThreadPool());
+
       JCacheAdapter<K, TouchyJCacheAdapter.TimeVal<V>> ca =
-          new JCacheAdapter<K, TouchyJCacheAdapter.TimeVal<V>>(this, b.build(), null);
+        new JCacheAdapter<K, TouchyJCacheAdapter.TimeVal<V>>(this, b.build(), null);
       ca.loader = cl;
       ca.readThrough = cc.isReadThrough();
       TouchyJCacheAdapter<K, V> c = new TouchyJCacheAdapter<K, V>();
@@ -246,16 +271,23 @@ public class JCacheManagerAdapter implements CacheManager {
       c.expiryPolicy = _policy;
       c.c2kCache = (InternalCache<K, TouchyJCacheAdapter.TimeVal<V>>) ca.cache;
       _jsr107cache = c;
+      c.eventHandling = _eventHandling;
+
       if (cc.isStoreByValue()) {
         ca.storeByValue = true;
         final ObjectTransformer<K, K> _keyTransformer = createCopyTransformer(cc.getKeyType());
         final ObjectTransformer<V, V> _valueTransformer = createCopyTransformer(cc.getValueType());
         _jsr107cache =
-            new CopyCacheProxy(
-                _jsr107cache,
-                _keyTransformer,
-                _valueTransformer);
+          new CopyCacheProxy(
+            _jsr107cache,
+            _keyTransformer,
+            _valueTransformer);
       }
+
+      Map<org.cache2k.Cache, Cache> _cloneC2k2jCache = new WeakHashMap<org.cache2k.Cache, Cache>();
+      _cloneC2k2jCache.putAll(c2k2jCache);
+      _cloneC2k2jCache.put(c.c2kCache, _jsr107cache);
+      c2k2jCache = _cloneC2k2jCache;
       name2adapter.put(c.getName(), _jsr107cache);
       if (cc.isStatisticsEnabled()) {
         enableStatistics(c.getName(), true);
@@ -267,20 +299,21 @@ public class JCacheManagerAdapter implements CacheManager {
     }
   }
 
+  @SuppressWarnings("unchecked")
   private <K, V> ObjectTransformer<K, K> createCopyTransformer(final Class<K> _type) {
     ObjectCopyFactory f = new SimpleObjectCopyFactory();
     ObjectTransformer<K, K> _keyTransformer;
     _keyTransformer = f.createCopyTransformer(_type);
     if (_keyTransformer == null) {
-      _keyTransformer = ( ObjectTransformer<K, K>) new RuntimeCopyTransformer();
+      _keyTransformer = (ObjectTransformer<K, K>) new RuntimeCopyTransformer();
     }
     return _keyTransformer;
   }
 
-  @Override
+  @Override @SuppressWarnings("unchecked")
   public <K, V> Cache<K, V> getCache(String _cacheName, final Class<K> _keyType, final Class<V> _valueType) {
     checkClosed();
-    synchronized (((CacheManagerImpl)manager).getLockObject()) {
+    synchronized (((CacheManagerImpl) manager).getLockObject()) {
       Cache<K, V> c = name2adapter.get(_cacheName);
       if (c != null && manager.getCache(_cacheName) == c.unwrap(org.cache2k.Cache.class) && !c.isClosed()) {
         Configuration cfg = c.getConfiguration(Configuration.class);
@@ -418,6 +451,13 @@ public class JCacheManagerAdapter implements CacheManager {
     throw new IllegalArgumentException("requested unwrap class not available");
   }
 
+  /**
+   * Return the JCache wrapper for a c2k cache.
+   */
+  public Cache resolveCacheWrapper(org.cache2k.Cache _c2kCache) {
+    return c2k2jCache.get(_c2kCache);
+  }
+
   static class ExpiryCalculatorAdapter<K, V> implements EntryExpiryCalculator<K, V> {
 
     ExpiryPolicy policy;
@@ -479,6 +519,255 @@ public class JCacheManagerAdapter implements CacheManager {
     @Override
     public void delete(Object key) throws Exception {
       cacheWriter.delete(key);
+    }
+
+  }
+
+  static class EntryWrapper<K, V> extends CacheEntryEvent<K, V> {
+
+    CacheEntry<K, V> entry;
+
+    public EntryWrapper(final Cache source, final EventType eventType, final CacheEntry<K, V> _entry) {
+      super(source, eventType);
+      entry = _entry;
+    }
+
+    @Override
+    public K getKey() {
+      return entry.getKey();
+    }
+
+    @Override
+    public V getValue() {
+      return entry.getValue();
+    }
+
+    @SuppressWarnings("unchecked")
+    @Override
+    public <T> T unwrap(final Class<T> _class) {
+      if (CacheEntry.class.equals(_class)) {
+        return (T) entry;
+      }
+      return null;
+    }
+
+    @Override
+    public V getOldValue() {
+      return null;
+    }
+
+    @Override
+    public boolean isOldValueAvailable() {
+      return false;
+    }
+  }
+
+  static class EntryWrapperWithOldValue<K, V> extends EntryEvent<K, V> {
+
+    V oldValue;
+
+    public EntryWrapperWithOldValue(final Cache source, final EventType eventType, final CacheEntry<K, V> _entry, final V _oldValue) {
+      super(source, eventType, _entry);
+      oldValue = _oldValue;
+    }
+
+    @Override
+    public V getOldValue() {
+      return oldValue;
+    }
+
+    @Override
+    public boolean isOldValueAvailable() {
+      return true;
+    }
+
+  }
+
+  @SuppressWarnings("unchecked")
+  class JCacheEntryCreatedListenerAdapter<K, V> implements org.cache2k.CacheEntryCreatedListener<K, V> {
+
+    CacheEntryEventFilter<K, V> filter;
+    CacheEntryCreatedListener<K, V> listener;
+
+    public JCacheEntryCreatedListenerAdapter(
+      CacheEntryEventFilter<K, V> _filter,
+      CacheEntryCreatedListener<K, V> _listener) {
+      filter = _filter;
+      listener = _listener;
+    }
+
+    @Override
+    public void onEntryCreated(final org.cache2k.Cache<K, V> c, final CacheEntry<K, V> e) {
+      Cache<K,V> _jCache = c2k2jCache.get(c);
+      EntryEvent<K, V> cee = new EntryEvent<K, V>(_jCache, EventType.CREATED, e);
+      if (filter != null && !filter.evaluate(cee)) {
+        return;
+      }
+      listener.onCreated(cee);
+    }
+
+  }
+
+  class JCacheEntryUpdatedListenerAdapter<K, V> implements org.cache2k.CacheEntryUpdatedListener<K, V> {
+
+    CacheEntryEventFilter<K, V> filter;
+    CacheEntryUpdatedListener<K, V> listener;
+
+    public JCacheEntryUpdatedListenerAdapter(final CacheEntryEventFilter<K, V> _filter, final CacheEntryUpdatedListener<K, V> _listener) {
+      filter = _filter;
+      listener = _listener;
+    }
+
+    @SuppressWarnings("unchecked")
+    @Override
+    public void onEntryUpdated(org.cache2k.Cache<K, V> c, final V _previousValue, final CacheEntry<K, V> e) {
+      Cache<K,V> _jCache = c2k2jCache.get(c);
+      EntryEvent<K, V> ee = new EntryEventWithOldValue<K, V>(_jCache, EventType.UPDATED, e, _previousValue);
+      if (filter != null && !filter.evaluate(ee)) {
+        return;
+      }
+      listener.onUpdated(ee);
+    }
+
+  }
+
+  class JCacheEntryExpiredListerAdapter<K, V> implements org.cache2k.CacheEntryExpiredListener<K, V> {
+
+    CacheEntryEventFilter<K, V> filter;
+    CacheEntryExpiredListener<K, V> listener;
+
+    public JCacheEntryExpiredListerAdapter(final CacheEntryEventFilter<K, V> _filter, final CacheEntryExpiredListener<K, V> _listener) {
+      filter = _filter;
+      listener = _listener;
+    }
+
+    @Override
+    public void onEntryExpired(final org.cache2k.Cache<K, V> c, final CacheEntry<K, V> e) {
+      Cache<K,V> _jCache = c2k2jCache.get(c);
+      EntryEvent<K, V> ee = new EntryEvent<K, V>(_jCache, EventType.EXPIRED, e);
+      if (filter != null && !filter.evaluate(ee)) {
+        return;
+      }
+      listener.onExpired(ee);
+    }
+
+  }
+
+  class JCacheEntryRemovedListerAdapter<K, V> implements org.cache2k.CacheEntryRemovedListener<K, V> {
+
+    CacheEntryEventFilter<K, V> filter;
+    CacheEntryRemovedListener<K, V> listener;
+
+    public JCacheEntryRemovedListerAdapter(final CacheEntryEventFilter<K, V> _filter, final CacheEntryRemovedListener<K, V> _listener) {
+      filter = _filter;
+      listener = _listener;
+    }
+
+    @Override
+    public void onEntryRemoved(final org.cache2k.Cache<K, V> c, final CacheEntry<K, V> e) {
+      Cache<K,V> _jCache = c2k2jCache.get(c);
+      EntryEvent<K, V> ee = new EntryEvent<K, V>(_jCache, EventType.REMOVED, e);
+      if (filter != null && !filter.evaluate(ee)) {
+        return;
+      }
+      listener.onRemoved(ee);
+    }
+
+  }
+
+  @SuppressWarnings("unchecked")
+  class JCacheEntryCreatedListenerAdapterTouchy<K, V> implements org.cache2k.CacheEntryCreatedListener<K, TouchyJCacheAdapter.TimeVal<V>> {
+
+    CacheEntryEventFilter<K, V> filter;
+    CacheEntryCreatedListener<K, V> listener;
+
+    public JCacheEntryCreatedListenerAdapterTouchy(
+      CacheEntryEventFilter<K, V> _filter,
+      CacheEntryCreatedListener<K, V> _listener) {
+      filter = _filter;
+      listener = _listener;
+    }
+
+    @Override
+    public void onEntryCreated(
+      final org.cache2k.Cache<K, TouchyJCacheAdapter.TimeVal<V>> c,
+      final CacheEntry<K, TouchyJCacheAdapter.TimeVal<V>> e) {
+      Cache<K,V> _jCache = c2k2jCache.get(c);
+      EntryEvent<K, V> cee = new EntryEvent<K, V>(_jCache, EventType.CREATED, e.getKey(), e.getValue().value);
+      if (filter != null && !filter.evaluate(cee)) {
+        return;
+      }
+      listener.onCreated(cee);
+    }
+
+  }
+
+  class JCacheEntryUpdatedListenerAdapterTouchy<K, V> implements org.cache2k.CacheEntryUpdatedListener<K, TouchyJCacheAdapter.TimeVal<V>> {
+
+    CacheEntryEventFilter<K, V> filter;
+    CacheEntryUpdatedListener<K, V> listener;
+
+    public JCacheEntryUpdatedListenerAdapterTouchy(final CacheEntryEventFilter<K, V> _filter, final CacheEntryUpdatedListener<K, V> _listener) {
+      filter = _filter;
+      listener = _listener;
+    }
+
+    @SuppressWarnings("unchecked")
+    @Override
+    public void onEntryUpdated(
+      org.cache2k.Cache<K, TouchyJCacheAdapter.TimeVal<V>> c, final TouchyJCacheAdapter.TimeVal<V> _previousValue, final CacheEntry<K, TouchyJCacheAdapter.TimeVal<V>> e) {
+      Cache<K,V> _jCache = c2k2jCache.get(c);
+      EntryEvent<K, V> ee = new EntryEventWithOldValue<K, V>(_jCache, EventType.UPDATED, e.getKey(), e.getValue().value, _previousValue.value);
+      if (filter != null && !filter.evaluate(ee)) {
+        return;
+      }
+      listener.onUpdated(ee);
+    }
+
+  }
+
+  class JCacheEntryExpiredListerAdapterTouchy<K, V> implements org.cache2k.CacheEntryExpiredListener<K, TouchyJCacheAdapter.TimeVal<V>> {
+
+    CacheEntryEventFilter<K, V> filter;
+    CacheEntryExpiredListener<K, V> listener;
+
+    public JCacheEntryExpiredListerAdapterTouchy(final CacheEntryEventFilter<K, V> _filter, final CacheEntryExpiredListener<K, V> _listener) {
+      filter = _filter;
+      listener = _listener;
+    }
+
+    @Override
+    public void onEntryExpired(final org.cache2k.Cache<K, TouchyJCacheAdapter.TimeVal<V>> c, final CacheEntry<K, TouchyJCacheAdapter.TimeVal<V>> e) {
+      Cache<K,V> _jCache = c2k2jCache.get(c);
+      EntryEvent<K, V> ee = new EntryEvent<K, V>(_jCache, EventType.EXPIRED, e.getKey(), e.getValue().value);
+      if (filter != null && !filter.evaluate(ee)) {
+        return;
+      }
+      listener.onExpired(ee);
+    }
+
+  }
+
+  class JCacheEntryRemovedListerAdapterTouchy<K, V> implements org.cache2k.CacheEntryRemovedListener<K, TouchyJCacheAdapter.TimeVal<V>> {
+
+    CacheEntryEventFilter<K, V> filter;
+    CacheEntryRemovedListener<K, V> listener;
+
+    public JCacheEntryRemovedListerAdapterTouchy(final CacheEntryEventFilter<K, V> _filter, final CacheEntryRemovedListener<K, V> _listener) {
+      filter = _filter;
+      listener = _listener;
+    }
+
+    @Override
+    public void onEntryRemoved(
+      final org.cache2k.Cache<K, TouchyJCacheAdapter.TimeVal<V>> c,
+      final CacheEntry<K, TouchyJCacheAdapter.TimeVal<V>> e) {
+      Cache<K,V> _jCache = c2k2jCache.get(c);
+      EntryEvent<K, V> ee = new EntryEvent<K, V>(_jCache, EventType.REMOVED, e.getKey(), e.getValue().value);
+      if (filter != null && !filter.evaluate(ee)) {
+        return;
+      }
+      listener.onRemoved(ee);
     }
 
   }

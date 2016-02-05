@@ -24,6 +24,7 @@ package org.cache2k.jcache;
 
 import org.cache2k.CacheEntry;
 import org.cache2k.EntryExpiryCalculator;
+import org.cache2k.jcache.event.EventHandlingBase;
 
 import javax.cache.Cache;
 import javax.cache.CacheManager;
@@ -45,6 +46,8 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
+
+import static org.cache2k.jcache.Util.*;
 
 /**
  * Adapter to add required semantics for JSR107 with expiry policy.
@@ -70,6 +73,7 @@ public class TouchyJCacheAdapter<K, V> implements Cache<K, V> {
   Class<K> keyType;
   Class<V> valueType;
   ExpiryPolicy expiryPolicy;
+  EventHandling<K,V> eventHandling;
 
   @Override
   public V get(K key) {
@@ -379,6 +383,10 @@ public class TouchyJCacheAdapter<K, V> implements Cache<K, V> {
       cfg.setTypes(keyType, valueType);
       cfg.setStatisticsEnabled(cache.statisticsEnabled);
       cfg.setManagementEnabled(cache.configurationEnabled);
+      Collection<CacheEntryListenerConfiguration<K,V>> _listenerConfigurations = eventHandling.getAllListenerConfigurations();
+      for (CacheEntryListenerConfiguration<K,V> _listenerConfig : _listenerConfigurations) {
+        cfg.addCacheEntryListenerConfiguration(_listenerConfig);
+      }
       return (C) cfg;
     }
     return (C) new Configuration<K, V>() {
@@ -494,13 +502,13 @@ public class TouchyJCacheAdapter<K, V> implements Cache<K, V> {
   }
 
   @Override
-  public void registerCacheEntryListener(CacheEntryListenerConfiguration<K, V> cacheEntryListenerConfiguration) {
-    throw new UnsupportedOperationException();
+  public void registerCacheEntryListener(CacheEntryListenerConfiguration<K, V> cfg) {
+    eventHandling.registerListener(cfg);
   }
 
   @Override
-  public void deregisterCacheEntryListener(CacheEntryListenerConfiguration<K, V> cacheEntryListenerConfiguration) {
-    throw new UnsupportedOperationException();
+  public void deregisterCacheEntryListener(CacheEntryListenerConfiguration<K, V> cfg) {
+    eventHandling.unregisterListener(requireNonNull(cfg, "listener configuration"));
   }
 
   @Override
@@ -700,6 +708,14 @@ public class TouchyJCacheAdapter<K, V> implements Cache<K, V> {
 
   public String toString() {
     return c2kCache.toString();
+  }
+
+  static class EventHandling<K,V> extends EventHandlingBase<K,V,TimeVal<V>> {
+
+    @Override
+    protected V extractValue(final TimeVal<V> _value) {
+      return _value.value;
+    }
   }
 
 }

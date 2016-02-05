@@ -23,7 +23,10 @@ package org.cache2k.impl;
  */
 
 import org.cache2k.CacheEntry;
+import org.cache2k.CacheEntryCreatedListener;
 import org.cache2k.CacheEntryProcessor;
+import org.cache2k.CacheEntryRemovedListener;
+import org.cache2k.CacheEntryUpdatedListener;
 import org.cache2k.CacheManager;
 import org.cache2k.CacheSourceWithMetaInfo;
 import org.cache2k.CacheWriter;
@@ -46,7 +49,11 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.Executor;
 import java.util.concurrent.Future;
+import java.util.concurrent.SynchronousQueue;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
 
 /**
  * @author Jens Wilke
@@ -60,6 +67,15 @@ public class WiredCache<K, V> extends AbstractCache<K, V> implements  StorageAda
   CacheSourceWithMetaInfo<K, V> source;
   CacheWriter<K, V> writer;
   boolean readThrough;
+  Executor listenerExecutor = new ThreadPoolExecutor(0, Runtime.getRuntime().availableProcessors() * 2,
+                                      60L, TimeUnit.SECONDS,
+                                      new SynchronousQueue<Runnable>());
+  CacheEntryRemovedListener<K,V>[] syncEntryRemovedListeners;
+  CacheEntryCreatedListener<K,V>[] syncEntryCreatedListeners;
+  CacheEntryUpdatedListener<K,V>[] syncEntryUpdatedListeners;
+  CacheEntryRemovedListener<K,V>[] asyncEntryRemovedListeners;
+  CacheEntryCreatedListener<K,V>[] asyncEntryCreatedListeners;
+  CacheEntryUpdatedListener<K,V>[] asyncEntryUpdatedListeners;
 
   @Override
   public Future<Void> cancelTimerJobs() {
@@ -442,6 +458,7 @@ public class WiredCache<K, V> extends AbstractCache<K, V> implements  StorageAda
     Semantic<K,V,R> operation;
     Entry<K, V> entry;
     V newValueOrException;
+    V oldValueOrException;
     R result;
     long lastModificationTime;
     long loadStartedTime;
@@ -453,11 +470,11 @@ public class WiredCache<K, V> extends AbstractCache<K, V> implements  StorageAda
     boolean entryLocked = false;
     /** True if entry had some data after locking. Expiry is not checked. */
     boolean heapDataValid = false;
+    boolean storageDataValid = false;
     boolean needsFinish = true;
 
     boolean storageRead = false;
     boolean storageMiss = false;
-    boolean storageNonFresh = false;
 
     boolean heapMiss = false;
 
@@ -468,7 +485,11 @@ public class WiredCache<K, V> extends AbstractCache<K, V> implements  StorageAda
 
     boolean loadAndMutate = false;
     boolean load = false;
-    /** Fresh load in first round. Triggers that we always say it is present. */
+
+    /**
+     * Fresh load in first round with {@link #loadAndMutate}.
+     * Triggers that we always say it is present.
+     */
     boolean successfulLoad = false;
 
     @Override
@@ -598,6 +619,7 @@ public class WiredCache<K, V> extends AbstractCache<K, V> implements  StorageAda
         expiry = _nextRefreshTime;
         if (_nextRefreshTime == -1 || _nextRefreshTime == Long.MAX_VALUE) {
           e.nextRefreshTime = Entry.FETCHED_STATE;
+          storageDataValid = true;
         } else if (_nextRefreshTime == 0) {
           e.nextRefreshTime = Entry.READ_NON_VALID;
         } else {
@@ -608,6 +630,7 @@ public class WiredCache<K, V> extends AbstractCache<K, V> implements  StorageAda
             e.nextRefreshTime = Entry.READ_NON_VALID;
           } else {
             e.nextRefreshTime = - _nextRefreshTime;
+            storageDataValid = true;
           }
         }
       } else {
@@ -980,6 +1003,7 @@ public class WiredCache<K, V> extends AbstractCache<K, V> implements  StorageAda
       if (remove) {
         entry.nextRefreshTime = Entry.REMOVE_PENDING;
       } else {
+        oldValueOrException = entry.value;
         entry.value = newValueOrException;
       }
       mutationMayStore();
@@ -1015,7 +1039,7 @@ public class WiredCache<K, V> extends AbstractCache<K, V> implements  StorageAda
     @Override
     public void onStoreSuccess(boolean _entryRemoved) {
       entry.nextProcessingStep(Entry.ProcessingState.STORE_COMPLETE);
-      mutationReleaseLock();
+      callListeners();
     }
 
     @Override
@@ -1024,6 +1048,90 @@ public class WiredCache<K, V> extends AbstractCache<K, V> implements  StorageAda
     }
 
     public void skipStore() {
+      callListeners();
+    }
+
+    public void callListeners() {
+      if (remove) {
+        if (entry.isDataValidState()) {
+          if (syncEntryRemovedListeners != null) {
+            for (CacheEntryRemovedListener l : syncEntryRemovedListeners) {
+              try {
+                l.onEntryRemoved(WiredCache.this, entry);
+              } catch (Throwable t) {
+                exceptionToPropagate = new ListenerException(t);
+              }
+            }
+          }
+          if (asyncEntryRemovedListeners != null) {
+            final CacheEntry e = Specification.returnStableEntry(entry);
+            for (final CacheEntryRemovedListener l : asyncEntryRemovedListeners) {
+              try {
+                listenerExecutor.execute(new Runnable() {
+                  @Override
+                  public void run() {
+                    l.onEntryRemoved(WiredCache.this, e);
+                  }
+                });
+              } catch (Throwable t) {
+                exceptionToPropagate = new ListenerException(t);
+              }
+            }
+          }
+        }
+      } else {
+        if (storageDataValid || heapDataValid) {
+          if (syncEntryUpdatedListeners != null) {
+            for (CacheEntryUpdatedListener l : syncEntryUpdatedListeners) {
+              try {
+                l.onEntryUpdated(WiredCache.this, oldValueOrException, entry);
+              } catch (Throwable t) {
+                exceptionToPropagate = new ListenerException(t);
+              }
+            }
+          }
+          if (asyncEntryUpdatedListeners != null) {
+            final CacheEntry e = Specification.returnStableEntry(entry);
+            for (final CacheEntryUpdatedListener l : asyncEntryUpdatedListeners) {
+              try {
+                listenerExecutor.execute(new Runnable() {
+                  @Override
+                  public void run() {
+                    l.onEntryUpdated(WiredCache.this, oldValueOrException, e);
+                  }
+                });
+              } catch (Throwable t) {
+                exceptionToPropagate = new ListenerException(t);
+              }
+            }
+          }
+        } else {
+          if (syncEntryCreatedListeners != null) {
+            for (CacheEntryCreatedListener l : syncEntryCreatedListeners) {
+              try {
+                l.onEntryCreated(WiredCache.this, entry);
+              } catch (Throwable t) {
+                exceptionToPropagate = new ListenerException(t);
+              }
+            }
+          }
+          if (asyncEntryCreatedListeners != null) {
+            final CacheEntry e = Specification.returnStableEntry(entry);
+            for (final CacheEntryCreatedListener l : syncEntryCreatedListeners) {
+              try {
+                listenerExecutor.execute(new Runnable() {
+                  @Override
+                  public void run() {
+                    l.onEntryCreated(WiredCache.this, e);
+                  }
+                });
+              } catch (Throwable t) {
+                exceptionToPropagate = new ListenerException(t);
+              }
+            }
+          }
+        }
+      }
       mutationReleaseLock();
     }
 
@@ -1206,5 +1314,9 @@ public class WiredCache<K, V> extends AbstractCache<K, V> implements  StorageAda
       super(cause);
     }
   }
-
+  public static class ListenerException extends WrappedAttachmentException {
+    public ListenerException(final Throwable cause) {
+      super(cause);
+    }
+  }
 }

@@ -23,6 +23,7 @@ package org.cache2k.impl;
  */
 
 import org.cache2k.Cache;
+import org.cache2k.CacheEntryListener;
 import org.cache2k.CacheException;
 import org.cache2k.CacheManager;
 import org.cache2k.impl.threading.Futures;
