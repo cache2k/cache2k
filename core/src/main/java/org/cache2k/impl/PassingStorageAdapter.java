@@ -163,7 +163,7 @@ public class PassingStorageAdapter extends StorageAdapter {
       return;
     }
     StorageEntryForPut se =
-        new StorageEntryForPut(e.getKey(), e.getValue(), e.getCreatedOrUpdated(), _nextRefreshTime);
+        new StorageEntryForPut(e.getKey(), e.getValueOrException(), e.getCreatedOrUpdated(), _nextRefreshTime);
     doPut(se);
   }
 
