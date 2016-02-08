@@ -626,7 +626,7 @@ public class TouchyJCacheAdapter<K, V> implements Cache<K, V> {
     }
   }
 
-  static class TimeVal<V> {
+  public static class TimeVal<V> {
 
     V value;
 

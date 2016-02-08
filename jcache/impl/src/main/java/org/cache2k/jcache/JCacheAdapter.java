@@ -50,6 +50,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
+import java.util.NoSuchElementException;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicLong;
 
@@ -427,30 +428,41 @@ public class JCacheAdapter<K, V> implements javax.cache.Cache<K, V> {
     final Iterator<CacheEntry<K, V>> it = cache.iterator();
     return new Iterator<Entry<K, V>>() {
 
+      CacheEntry<K, V> entry;
+
       @Override
       public boolean hasNext() {
-        return it.hasNext();
+        while(it.hasNext()) {
+          entry = it.next();
+          if (entry.getException() == null) {
+            return true;
+          }
+        }
+        entry = null;
+        return false;
       }
 
       @Override
       public Entry<K, V> next() {
+        if (entry == null && !hasNext()) {
+          throw new NoSuchElementException();
+        }
         iterationHitCorrectionCounter.incrementAndGet();
-        final CacheEntry<K, V> e = it.next();
         return new Entry<K, V>() {
           @Override
           public K getKey() {
-            return e.getKey();
+            return entry.getKey();
           }
 
           @Override
           public V getValue() {
-            return e.getValue();
+            return entry.getValue();
           }
 
           @Override
           public <T> T unwrap(Class<T> _class) {
             if (CacheEntry.class.equals(_class)) {
-              return (T) e;
+              return (T) entry;
             }
             return null;
           }
