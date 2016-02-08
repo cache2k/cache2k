@@ -23,6 +23,8 @@ package org.cache2k;
  */
 
 /**
+ * Marker for all entry listeners.
+ *
  * @author Jens Wilke
  */
 public interface CacheEntryListener<K,V> {

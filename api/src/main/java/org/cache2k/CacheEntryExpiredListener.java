@@ -23,6 +23,11 @@ package org.cache2k;
  */
 
 /**
+ * Listener called for an expired entry. An expiry event may not be sent if an
+ * entry is refreshed before the expiry is detected. In this cache an update event is sent.
+ *
+ * <p>Expiry events are not yet completely implemented.
+ *
  * @author Jens Wilke
  */
 public interface CacheEntryExpiredListener<K, V> extends CacheEntryListener<K,V> {

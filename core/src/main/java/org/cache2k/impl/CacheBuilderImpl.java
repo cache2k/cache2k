@@ -48,17 +48,7 @@ import java.util.List;
 @SuppressWarnings("unused") // instantiated by reflection from cache builder
 public class CacheBuilderImpl<K, T> extends CacheBuilder<K, T> {
 
-  List<CacheEntryListener<K,T>> asyncListeners;
   List<CacheEntryListener<K,T>> syncListeners;
-
-  @Override
-  public CacheBuilder<K, T> addAsynchronousListener(final CacheEntryListener<K, T> listener) {
-    if (asyncListeners == null) {
-      asyncListeners = new ArrayList<CacheEntryListener<K, T>>();
-    }
-    asyncListeners.add(listener);
-    return this;
-  }
 
   @Override
   public CacheBuilder<K, T> addSynchronousListener(final CacheEntryListener<K, T> listener) {
@@ -227,32 +217,6 @@ public class CacheBuilderImpl<K, T> extends CacheBuilder<K, T> {
       wc.writer = bc.writer;
       if (bc.storage != null) {
         ((PassingStorageAdapter) bc.storage).parent = wc;
-      }
-      if (asyncListeners != null) {
-        List<CacheEntryCreatedListener<K,T>> cll = new ArrayList<CacheEntryCreatedListener<K, T>>();
-        List<CacheEntryUpdatedListener<K,T>> ull = new ArrayList<CacheEntryUpdatedListener<K, T>>();
-        List<CacheEntryRemovedListener<K,T>> rll = new ArrayList<CacheEntryRemovedListener<K, T>>();
-        for (CacheEntryListener<K,T> el : asyncListeners) {
-
-          if (el instanceof CacheEntryCreatedListener) {
-            cll.add((CacheEntryCreatedListener) el);
-          }
-          if (el instanceof CacheEntryUpdatedListener) {
-            ull.add((CacheEntryUpdatedListener) el);
-          }
-          if (el instanceof CacheEntryRemovedListener) {
-            rll.add((CacheEntryRemovedListener) el);
-          }
-        }
-        if (cll.size() > 0) {
-          wc.asyncEntryCreatedListeners = cll.toArray(new CacheEntryCreatedListener[cll.size()]);
-        }
-        if (ull.size() > 0) {
-          wc.asyncEntryUpdatedListeners = ull.toArray(new CacheEntryUpdatedListener[ull.size()]);
-        }
-        if (rll.size() > 0) {
-          wc.asyncEntryRemovedListeners = rll.toArray(new CacheEntryRemovedListener[rll.size()]);
-        }
       }
       if (syncListeners != null) {
         List<CacheEntryCreatedListener<K,T>> cll = new ArrayList<CacheEntryCreatedListener<K, T>>();

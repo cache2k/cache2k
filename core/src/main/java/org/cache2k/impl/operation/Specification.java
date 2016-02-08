@@ -326,51 +326,6 @@ public class Specification<K, V> {
     };
   }
 
-  static class ReadOnlyCacheEntry<K, V> implements ResultEntry<K, V> {
-
-    K key;
-    V valueOrException;
-    long lastModification;
-
-    public ReadOnlyCacheEntry(final K _key, final V _valueOrException, final long _lastModification) {
-      key = _key;
-      lastModification = _lastModification;
-      valueOrException = _valueOrException;
-    }
-
-    @Override
-    public Throwable getException() {
-      if (valueOrException instanceof ExceptionWrapper) {
-        return ((ExceptionWrapper) valueOrException).getException();
-      }
-      return null;
-    }
-
-    @Override
-    public K getKey() {
-      return key;
-    }
-
-    @Override
-    public long getLastModification() {
-      return lastModification;
-    }
-
-    @Override
-    public V getValue() {
-      if (valueOrException instanceof ExceptionWrapper) {
-        return null;
-      }
-      return valueOrException;
-    }
-
-    @Override
-    public V getValueOrException() {
-      return valueOrException;
-    }
-
-  }
-
   static class MutableEntryOnProgress<K, V> implements MutableCacheEntry<K, V> {
 
     ExaminationEntry<K, V> entry;

@@ -26,6 +26,7 @@ import org.cache2k.Cache;
 import org.cache2k.CacheBuilder;
 import org.cache2k.CacheEntry;
 import org.cache2k.jcache.JCacheManagerAdapter;
+import org.cache2k.jcache.TouchyJCacheAdapter;
 
 import javax.cache.configuration.CacheEntryListenerConfiguration;
 import javax.cache.configuration.Factory;
@@ -36,21 +37,14 @@ import javax.cache.event.CacheEntryListener;
 import javax.cache.event.CacheEntryRemovedListener;
 import javax.cache.event.CacheEntryUpdatedListener;
 import javax.cache.event.EventType;
-import javax.xml.bind.Marshaller;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Map;
-import java.util.Queue;
 import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.Executor;
-import java.util.concurrent.LinkedBlockingQueue;
-import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * cache2k does not support changing the listener configuration at runtime. Registers one
@@ -68,6 +62,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 public abstract class EventHandlingBase<K,V,W> {
 
   JCacheManagerAdapter manager;
+  javax.cache.Cache jCache;
   List<Listener.Created<K,V>> createdListener = new CopyOnWriteArrayList<Listener.Created<K, V>>();
   List<Listener.Updated<K,V>> updatedListener = new CopyOnWriteArrayList<Listener.Updated<K, V>>();
   List<Listener.Removed<K,V>> removedListener = new CopyOnWriteArrayList<Listener.Removed<K, V>>();
@@ -193,34 +188,63 @@ public abstract class EventHandlingBase<K,V,W> {
       if (e.getException() != null) {
         return;
       }
-      javax.cache.Cache<K,V> _jCache = manager.resolveCacheWrapper(c);
-      EntryEvent<K, V> cee =
-        new EntryEvent<K, V>(_jCache, EventType.CREATED, e.getKey(), extractValue(e.getValue()));
-      asyncDispatcher.deliverAsyncEvent(cee);
-      for (Listener<K,V> t : createdListener) {
-        t.fire(cee);
-      }
+      javax.cache.Cache<K,V> _jCache = getCache(c);
+      fireCreated(_jCache, e);
     }
 
+  }
+
+  private void fireCreated(final javax.cache.Cache<K, V> _jCache, final CacheEntry<K, W> e) {
+    EntryEvent<K, V> cee =
+      new EntryEvent<K, V>(_jCache, EventType.CREATED, e.getKey(), extractValue(e.getValue()));
+    asyncDispatcher.deliverAsyncEvent(cee);
+    for (Listener<K,V> t : createdListener) {
+      t.fire(cee);
+    }
   }
 
   @SuppressWarnings("unchecked")
   class UpdatedListenerAdapter implements org.cache2k.CacheEntryUpdatedListener<K, W> {
 
     @Override
-    public void onEntryUpdated(final Cache<K, W> c, final W _previousValue, final CacheEntry<K, W> e) {
+    public void onEntryUpdated(final Cache<K, W> c, final CacheEntry<K, W> _previousEntry, final CacheEntry<K, W> e) {
+      javax.cache.Cache<K,V> _jCache = getCache(c);
       if (e.getException() != null) {
+        if (_previousEntry.getException() != null) {
+          return;
+        }
+        EntryEvent<K, V> cee =
+          new EntryEvent<K, V>(_jCache, EventType.REMOVED, e.getKey(), extractValue(_previousEntry.getValue()));
+        asyncDispatcher.deliverAsyncEvent(cee);
+        for (Listener<K,V> t : removedListener) {
+          t.fire(cee);
+        }
         return;
       }
-      javax.cache.Cache<K,V> _jCache = manager.resolveCacheWrapper(c);
+      if (_previousEntry.getException() != null) {
+        fireCreated(_jCache, e);
+        return;
+      }
+      W v0 = _previousEntry.getValue();
+      W v1 = e.getValue();
+      if (v0 == v1 && v0 instanceof TouchyJCacheAdapter.TimeVal) {
+        return;
+      }
       EntryEvent<K, V> cee =
-        new EntryEventWithOldValue<K, V>(_jCache, EventType.UPDATED, e.getKey(), extractValue(e.getValue()), extractValue(_previousValue));
+        new EntryEventWithOldValue<K, V>(_jCache, EventType.UPDATED, e.getKey(), extractValue(v1), extractValue(v0));
       asyncDispatcher.deliverAsyncEvent(cee);
-      for (Listener<K,V> t : createdListener) {
+      for (Listener<K,V> t : updatedListener) {
         t.fire(cee);
       }
     }
 
+  }
+
+  private javax.cache.Cache getCache(final Cache<K, W> c) {
+    if (jCache != null) {
+      return jCache;
+    }
+    return jCache = manager.resolveCacheWrapper(c);
   }
 
   @SuppressWarnings("unchecked")
@@ -230,11 +254,14 @@ public abstract class EventHandlingBase<K,V,W> {
     public void onEntryRemoved(
       final org.cache2k.Cache<K, W> c,
       final CacheEntry<K, W> e) {
-      javax.cache.Cache<K,V> _jCache = manager.resolveCacheWrapper(c);
+      if (e.getException() != null) {
+        return;
+      }
+      javax.cache.Cache<K,V> _jCache = getCache(c);
       EntryEvent<K, V> cee =
         new EntryEvent<K, V>(_jCache, EventType.REMOVED, e.getKey(), extractValue(e.getValue()));
       asyncDispatcher.deliverAsyncEvent(cee);
-      for (Listener<K,V> t : createdListener) {
+      for (Listener<K,V> t : removedListener) {
         t.fire(cee);
       }
     }
@@ -248,11 +275,14 @@ public abstract class EventHandlingBase<K,V,W> {
     public void onEntryExpired(
       final org.cache2k.Cache<K, W> c,
       final CacheEntry<K, W> e) {
-      javax.cache.Cache<K,V> _jCache = manager.resolveCacheWrapper(c);
+      if (e.getException() != null) {
+        return;
+      }
+      javax.cache.Cache<K,V> _jCache = getCache(c);
       EntryEvent<K, V> cee =
         new EntryEvent<K, V>(_jCache, EventType.EXPIRED, e.getKey(), extractValue(e.getValue()));
       asyncDispatcher.deliverAsyncEvent(cee);
-      for (Listener<K,V> t : createdListener) {
+      for (Listener<K,V> t : expiredListener) {
         t.fire(cee);
       }
     }

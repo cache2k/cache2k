@@ -23,10 +23,13 @@ package org.cache2k;
  */
 
 /**
+ * Fires in case a cache entry is mutated. This happens on {@link Cache#put} and its variants
+ * if a previous mapping exists, or if a value is reloaded or refreshed after expiry.
+ *
  * @author Jens Wilke
  */
 public interface CacheEntryUpdatedListener<K, V> extends CacheEntryListener<K,V> {
 
-  void onEntryUpdated(Cache<K,V> c, V _previousValue, CacheEntry<K, V> e);
+  void onEntryUpdated(Cache<K,V> cache, CacheEntry<K, V> previousEntry, CacheEntry<K, V> currentEntry);
 
 }
