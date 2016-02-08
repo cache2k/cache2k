@@ -7,27 +7,4 @@ org.jsr107.tck.CachingTest#dummyTest
 # changed in TCK, https://github.com/jsr107/jsr107tck/issues/63
 org.jsr107.tck.management.CacheMBStatisticsBeanTest#testPutIfAbsent
 
-# failures
 
-# errors
-
-org.jsr107.tck.management.CacheManagerManagementTest#testMultipleCacheManagers
-
-org.jsr107.tck.expiry.CacheExpiryTest#expire_whenCreated_ModifiedExpiryPolicy
-org.jsr107.tck.expiry.CacheExpiryTest#expire_whenCreated_ParameterizedExpiryPolicy
-org.jsr107.tck.expiry.CacheExpiryTest#expire_whenCreated_TouchedExpiryPolicy
-org.jsr107.tck.expiry.CacheExpiryTest#expire_whenCreated_CreatedExpiryPolicy
-org.jsr107.tck.expiry.CacheExpiryTest#invokeGetValueShouldCallGetExpiry
-org.jsr107.tck.expiry.CacheExpiryTest#expire_whenCreated_AccessedExpiryPolicy
-
-org.jsr107.tck.event.CacheListenerTest#testDeregistration
-org.jsr107.tck.event.CacheListenerTest#testDeregistration_nullParameter
-org.jsr107.tck.event.CacheListenerTest#testFilteredListener
-org.jsr107.tck.event.CacheListenerTest#testDynamicRegistration
-org.jsr107.tck.event.CacheListenerTest#testBrokenCacheEntryListener
-org.jsr107.tck.event.CacheListenerTest#testCacheEntryListener
-org.jsr107.tck.event.CacheListenerTest#testCacheClearListener
-
-# needs investigation
-# fails when run von maven
-org.jsr107.tck.management.CacheMXBeanTest#testCustomConfiguration
