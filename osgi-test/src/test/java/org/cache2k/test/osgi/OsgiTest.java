@@ -4,6 +4,7 @@ import org.cache2k.Cache;
 import org.cache2k.CacheBuilder;
 import org.junit.Ignore;
 import org.junit.Test;
+import static org.junit.Assert.*;
 import org.ops4j.pax.exam.Configuration;
 import org.ops4j.pax.exam.Option;
 import org.ops4j.pax.exam.junit.PaxExam;
@@ -19,7 +20,6 @@ import static org.ops4j.pax.exam.CoreOptions.mavenBundle;
  *
  * @author Jens Wilke
  */
-@Ignore
 @org.junit.runner.RunWith(PaxExam.class)
 @ExamReactorStrategy(PerMethod.class)
 public class OsgiTest {
@@ -33,9 +33,24 @@ public class OsgiTest {
   }
 
   @Test
-  public void test() {
+  public void testSimple() {
     Cache<String, String> c = CacheBuilder.newCache(String.class, String.class).build();
-    System.out.println("hello world");
+    c.put("abc", "123");
+    assertTrue(c.contains("abc"));
+    assertEquals("123", c.peek("abc"));
+    c.close();
+  }
+
+  @Test @Ignore("SPI for marshallers not working.")
+  public void testWithSerialization() {
+    Cache<String, String> c =
+      CacheBuilder.newCache(String.class, String.class)
+        .persistence()
+        .build();
+    c.put("abc", "123");
+    assertTrue(c.contains("abc"));
+    assertEquals("123", c.peek("abc"));
+    c.close();
   }
 
 }
