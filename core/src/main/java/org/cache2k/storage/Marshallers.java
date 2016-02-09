@@ -38,7 +38,7 @@ import java.util.Set;
 public class Marshallers implements MarshallerFactory {
 
   private static ServiceLoader<? extends MarshallerFactory> loader =
-    ServiceLoader.load(MarshallerFactory.class);
+    ServiceLoader.load(MarshallerFactory.class, Marshallers.class.getClassLoader());
 
   private static MarshallerFactory instance;
 
