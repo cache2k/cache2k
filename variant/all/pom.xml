@@ -46,7 +46,7 @@
       <scope>provided</scope>
     </dependency>
 
-    <!-- TODO: add JCache -->
+    <!-- TODO: add JCache? -->
 
   </dependencies>
 
@@ -59,7 +59,7 @@
         <extensions>true</extensions>
         <configuration>
           <instructions>
-            <Embed-Dependency>*;scope=provided</Embed-Dependency>
+            <Embed-Dependency>*;scope=provided;inline=true</Embed-Dependency>
             <Private-Package>*;-split-package:=merge-first</Private-Package>
             <Export-Package>
               org.cache2k,
