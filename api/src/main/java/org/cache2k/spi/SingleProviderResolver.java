@@ -26,6 +26,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.LineNumberReader;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -43,11 +44,14 @@ import java.util.Map;
  */
 public class SingleProviderResolver {
 
-  static Map<ClassLoader, SingleProviderResolver> loader2resolver =
+  private final static Map<ClassLoader, SingleProviderResolver> loader2resolver =
       new HashMap<ClassLoader, SingleProviderResolver>();
 
+  /**
+   * Get a resolver instance which resolves classes with the same class loader as this class is in.
+   */
   public static SingleProviderResolver getInstance() {
-    return getInstance(Thread.currentThread().getContextClassLoader());
+    return getInstance(SingleProviderResolver.class.getClassLoader());
   }
 
   public synchronized static SingleProviderResolver getInstance(ClassLoader cl) {
@@ -59,8 +63,8 @@ public class SingleProviderResolver {
     return r;
   }
 
-  private ClassLoader classLoader;
-  private HashMap<Class<?>, Object> type2instance = new HashMap<Class<?>, Object>();
+  private final ClassLoader classLoader;
+  private final Map<Class<?>, Object> type2instance = new HashMap<Class<?>, Object>();
 
   private SingleProviderResolver(ClassLoader cl) {
     classLoader = cl;
@@ -76,17 +80,19 @@ public class SingleProviderResolver {
    * @return cached instance of the provider, never null
    * @throws java.lang.LinkageError if no provider is found.
    */
+  @SuppressWarnings("unchecked")
   public <T> T resolve(Class<T> c) {
     if (c == null) {
       throw new NullPointerException("requested provider interface is null");
     }
-    @SuppressWarnings("unchecked")
-    T obj = (T) type2instance.get(c);
-    if (obj == null) {
-      obj = loadProvider(c);
-      type2instance.put(c, obj);
+    synchronized (type2instance) {
+      T obj = (T) type2instance.get(c);
+      if (obj == null) {
+        obj = loadProvider(c);
+        type2instance.put(c, obj);
+      }
+      return obj;
     }
-    return obj;
   }
 
   @SuppressWarnings("unchecked")
@@ -98,7 +104,7 @@ public class SingleProviderResolver {
       }
       return (T) classLoader.loadClass(_className).newInstance();
     } catch (Exception e) {
-      throw new LinkageError("Error instantiating " + c.getName() + ", got " +e.toString());
+      throw new LinkageError("Error instantiating " + c.getName() + ", got exception: " +e.toString());
     }
   }
 
