@@ -6,7 +6,7 @@
   <parent>
     <groupId>org.cache2k</groupId>
     <artifactId>cache2k-parent</artifactId>
-    <version>0.23</version>
+    <version>0.23.1-SNAPSHOT</version>
   </parent>
 
   <description>
