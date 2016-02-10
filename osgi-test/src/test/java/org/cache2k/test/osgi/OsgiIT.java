@@ -38,13 +38,15 @@ import static org.ops4j.pax.exam.CoreOptions.junitBundles;
 import static org.ops4j.pax.exam.CoreOptions.bundle;
 
 /**
- * Test the OSGi enabled bundle. Not yet working.
+ * Test the OSGi enabled bundle. Tests are run via the failsafe maven plugin and not with
+ * surefire, since these are integration tests. This is critical since we must run
+ * after the package phase for the the bundle package to exist.
  *
  * @author Jens Wilke
  */
 @org.junit.runner.RunWith(PaxExam.class)
 @ExamReactorStrategy(PerMethod.class)
-public class OsgiTest {
+public class OsgiIT {
 
   @Configuration
   public Option[] config() {
