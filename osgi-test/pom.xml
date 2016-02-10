@@ -96,20 +96,20 @@
     <plugins>
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-surefire-plugin</artifactId>
-        <configuration>
-          <skipTests>true</skipTests>
-        </configuration>
-      </plugin>
-      <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-failsafe-plugin</artifactId>
+        <executions>
+          <execution>
+            <goals>
+              <goal>integration-test</goal>
+              <goal>verify</goal>
+            </goals>
+          </execution>
+        </executions>
         <configuration>
           <systemPropertyVariables>
             <cache2k.version>${project.version}</cache2k.version>
             <slf4j.version>${slf4j.version}</slf4j.version>
           </systemPropertyVariables>
-          <skipTests>true</skipTests>
         </configuration>
       </plugin>
     </plugins>

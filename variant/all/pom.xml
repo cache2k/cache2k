@@ -11,10 +11,14 @@
   </parent>
 
   <description>
+    Bundle jar including all cache2k modules for usage as runtime dependency.
+    This jar also provides OSGi meta information.
+    No source and JavaDoc is included in the associated jars. To access source and
+    JavaDoc use the bundled jars separately.
   </description>
 
   <artifactId>cache2k-all</artifactId>
-  <name>${project.artifactId}</name>
+  <name>${project.artifactId} complete bundle</name>
 
   <dependencies>
 
@@ -46,12 +50,66 @@
       <scope>provided</scope>
     </dependency>
 
-    <!-- TODO: add JCache? -->
-
   </dependencies>
 
    <build>
     <plugins>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-javadoc-plugin</artifactId>
+        <configuration>
+          <skip>true</skip>
+        </configuration>
+      </plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-source-plugin</artifactId>
+        <configuration>
+          <skipSource>true</skipSource>
+        </configuration>
+      </plugin>
+      <!--
+          sonatype requires all artifacts also to have a source and javadoc jar.
+          produce a dummy jar which contains only readme.
+      -->
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-jar-plugin</artifactId>
+        <executions>
+          <execution>
+            <id>empty-javadoc-jar</id>
+            <phase>package</phase>
+            <goals>
+              <goal>jar</goal>
+            </goals>
+            <configuration>
+              <classifier>javadoc</classifier>
+              <classesDirectory>${basedir}/emtpy-javadoc-and-sources</classesDirectory>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+      <!--
+          sonatype requires all artifacts also to have a source and sources jar.
+          produce a dummy jar which contains only readme.
+      -->
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-jar-plugin</artifactId>
+        <executions>
+          <execution>
+            <id>empty-sources-jar</id>
+            <phase>package</phase>
+            <goals>
+              <goal>jar</goal>
+            </goals>
+            <configuration>
+              <classifier>sources</classifier>
+              <classesDirectory>${basedir}/emtpy-javadoc-and-sources</classesDirectory>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
       <plugin>
         <groupId>org.apache.felix</groupId>
         <artifactId>maven-bundle-plugin</artifactId>
@@ -72,17 +130,6 @@
             </Import-Package>
             <!-- TODO: link to doc? -->
             <Bundle-DocURL>http://cache2k.org</Bundle-DocURL>
-            <!-- This removes the control instructions above from the final manifest file. -->
-            <!--
-            <_removeheaders>
-              Ignore-Package,
-              Include-Resource,
-              Private-Package,
-              Embed-Dependency,
-              Bundle-ClassPath,
-              Embedded-Artifacts
-            </_removeheaders>
-            -->
             <!-- Add regular jar manifest information -->
             <Implementation-Build>${buildNumber}</Implementation-Build>
             <Implementation-Version>${project.version}</Implementation-Version>
