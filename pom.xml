@@ -477,8 +477,9 @@
               <excludedGroups>org.cache2k.junit.StorageTests,org.cache2k.junit.TimingTests</excludedGroups>
               <parallel>classes</parallel>
               <threadCount>5</threadCount>
-              <!-- make this test more verbose to investigate a VM crash -->
+              <!-- make this test more verbose to investigate a VM crash
               <argLine>-XX:+HeapDumpOnOutOfMemoryError -XX:+PrintGC -XX:+PrintCompilation</argLine>
+               -->
             </configuration>
           </plugin>
         </plugins>
