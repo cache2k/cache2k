@@ -6,6 +6,7 @@ the name cache2k.
 
 ## News
 
+  * **Version 0.23, 2016-02-10**: OSGi support, ClockProPlus eviction becomes default, See [Version 0.23 release notes](0/23.html)
   * **Version 0.22.1, 2016-01-13**: Bugfix release, Update recommended. See [Version 0.22.1 release notes](0/22.1.html)
   * **Version 0.22, 2015-12-29**: Minor bug fix release. See [Version 0.22 release notes](0/22.html)
   * **Version 0.21.1, 2015-06-13**: Fix Android compatibility. Closes GH#19
@@ -48,7 +49,7 @@ chacke2k is on maven central. If you use maven, add to your project pom:
 Please replace `${cache2k-version}` with the latest version. The cache2k-core 
 module is compatible with Java 6 environments including android.
 
-For Java enterprise applications, add this to your dependencies: 
+For Java enterprise applications, you can use a OSGi enabled bundle (cache2k-all) that contains everything in a single jar: 
 
 ```xml
 <dependencies>
@@ -56,17 +57,18 @@ For Java enterprise applications, add this to your dependencies:
     <groupId>org.cache2k</groupId>
     <artifactId>cache2k-api</artifactId>
     <version>${cache2k-version}</version>
+    <scope>compile</scope>
   </dependency>
   <dependency>
       <groupId>org.cache2k</groupId>
-      <artifactId>cache2k-ee</artifactId>
+      <artifactId>cache2k-all</artifactId>
       <version>${cache2k-version}</version>
       <scope>runtime</scope>
   </dependency>
 </dependencies>
 ```
 
-This will add JMX support.  
+Please mind that `cache2k-all` also contains the `cache2k-api` module, hence `cache2k-api` is only needed at compile time.
 
 ## Getting started
 
