@@ -682,10 +682,16 @@ public abstract class BaseCache<K, V>
     if (isClosed()) {
       throw new CacheClosedException();
     }
+    boolean _interrupt = false;
     while (waitForClear) {
       try {
         lock.wait();
-      } catch (InterruptedException ignore) { }
+      } catch (InterruptedException ignore) {
+        _interrupt = true;
+      }
+    }
+    if (_interrupt) {
+      Thread.currentThread().interrupt();
     }
   }
 

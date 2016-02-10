@@ -172,6 +172,7 @@ public class GlobalPooledExecutor {
 
   public void waitUntilAllDied() {
     int _delta;
+    boolean _interrupt = false;
     for (;;) {
       synchronized (this) {
         _delta = threadCount - diedThreadCount;
@@ -182,7 +183,11 @@ public class GlobalPooledExecutor {
       try {
         Thread.sleep(1);
       } catch (InterruptedException e) {
+        _interrupt = true;
       }
+    }
+    if (_interrupt) {
+      Thread.currentThread().interrupt();
     }
   }
 

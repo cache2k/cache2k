@@ -34,6 +34,7 @@ If something is listed here it might affect an existing application and updating
 
 Fixes of corner cases that are most likely not affecting any existing applications and improvements are listed here.
   
+  * Restore thread interrupt status, if an interruption exception is suppressed inside the cache
   * Deprecated configuration parameters not in use
   * Added lots of documentation to the configuration classes
   * Performance improvement: put() on existing entry by 15%

@@ -291,6 +291,7 @@ public class ImageFileStorage
     try {
       Thread.sleep(7);
     } catch (InterruptedException ignore) {
+      Thread.currentThread().interrupt();
     }
     long _counters2 = putCount + missCount + hitCount + removeCount + evictCount;
     if (_counters2 != _counters) {

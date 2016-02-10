@@ -282,12 +282,17 @@ public class Entry<K, T>
     if (!isFetchInProgress()) {
       return;
     }
+    boolean _interrupt = false;
     do {
       try {
         wait();
       } catch (InterruptedException ignore) {
+        _interrupt = true;
       }
     } while (isFetchInProgress());
+    if (_interrupt) {
+      Thread.currentThread().interrupt();
+    }
   }
 
   public void setGettingRefresh() {

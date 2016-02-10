@@ -460,13 +460,15 @@ public class PassingStorageAdapter extends StorageAdapter {
       } finally {
         try {
           it.awaitTermination();
-        } catch (InterruptedException ex) {
+        } catch (InterruptedException ignore) {
+          Thread.currentThread().interrupt();
         }
         for (;;) {
           try {
             _queue.put(LAST_ENTRY);
             break;
-          } catch (InterruptedException ex) {
+          } catch (InterruptedException ignore) {
+            Thread.currentThread().interrupt();
           }
         }
       }
@@ -623,6 +625,7 @@ public class PassingStorageAdapter extends StorageAdapter {
             }
           }
         } catch (InterruptedException _ignore) {
+          Thread.currentThread().interrupt();
           heapIteration = null;
           queue = null;
         } catch (ExecutionException ex) {
