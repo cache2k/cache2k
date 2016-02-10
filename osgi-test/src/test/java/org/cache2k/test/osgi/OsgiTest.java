@@ -1,5 +1,27 @@
 package org.cache2k.test.osgi;
 
+/*
+ * #%L
+ * osgi-test
+ * %%
+ * Copyright (C) 2000 - 2016 headissue GmbH, Munich
+ * %%
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation, either version 3 of the 
+ * License, or (at your option) any later version.
+ * 
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public 
+ * License along with this program.  If not, see
+ * <http://www.gnu.org/licenses/gpl-3.0.html>.
+ * #L%
+ */
+
 import org.cache2k.Cache;
 import org.cache2k.CacheBuilder;
 import org.junit.Ignore;
@@ -13,7 +35,7 @@ import org.ops4j.pax.exam.spi.reactors.PerMethod;
 
 import static org.ops4j.pax.exam.CoreOptions.options;
 import static org.ops4j.pax.exam.CoreOptions.junitBundles;
-import static org.ops4j.pax.exam.CoreOptions.mavenBundle;
+import static org.ops4j.pax.exam.CoreOptions.bundle;
 
 /**
  * Test the OSGi enabled bundle. Not yet working.
@@ -26,8 +48,14 @@ public class OsgiTest {
 
   @Configuration
   public Option[] config() {
+    String _userDir = System.getProperty("user.dir");
+    String _ownPath = "/osgi-test";
+    String _workspaceDir = _userDir;
+    if (_workspaceDir.endsWith(_ownPath)) {
+      _workspaceDir = _workspaceDir.substring(0,_workspaceDir.length() -  _ownPath.length());
+    }
     return options(
-      mavenBundle("org.cache2k", "cache2k-all", System.getProperty("cache2k.version", "0.24-SNAPSHOT")),
+      bundle("file:///" + _workspaceDir + "/variant/all/target/cache2k-all-" + System.getProperty("cache2k.version") + ".jar"),
       junitBundles()
     );
   }
