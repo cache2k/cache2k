@@ -48,7 +48,7 @@ public abstract class CacheManager implements Iterable<Cache>, Closeable {
   static {
     provider = SingleProviderResolver.getInstance().resolve(Cache2kCoreProvider.class).getManagerProvider();
     ServiceLoader<Cache2kExtensionProvider> _loader =
-        ServiceLoader.load(Cache2kExtensionProvider.class);
+        ServiceLoader.load(Cache2kExtensionProvider.class, CacheManager.class.getClassLoader());
     for (Cache2kExtensionProvider p : _loader) {
       p.register();
     }

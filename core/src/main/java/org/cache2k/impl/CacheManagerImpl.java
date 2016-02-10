@@ -58,10 +58,11 @@ public class CacheManagerImpl extends CacheManager {
   static List<CacheManagerLifeCycleListener> cacheManagerLifeCycleListeners = new ArrayList<CacheManagerLifeCycleListener>();
 
   static {
-    for (CacheLifeCycleListener l : ServiceLoader.load(CacheLifeCycleListener.class)) {
+    ClassLoader cl = CacheManagerImpl.class.getClassLoader();
+    for (CacheLifeCycleListener l : ServiceLoader.load(CacheLifeCycleListener.class, cl)) {
       cacheLifeCycleListeners.add(l);
     }
-    for (CacheManagerLifeCycleListener l : ServiceLoader.load(CacheManagerLifeCycleListener.class)) {
+    for (CacheManagerLifeCycleListener l : ServiceLoader.load(CacheManagerLifeCycleListener.class, cl)) {
       cacheManagerLifeCycleListeners.add(l);
     }
   }
@@ -76,10 +77,10 @@ public class CacheManagerImpl extends CacheManager {
   private GlobalPooledExecutor threadPool;
   private AtomicInteger evictionThreadCount = new AtomicInteger();
   private ExecutorService evictionExecutor;
-  private String version;
-  private String buildNumber;
   private Properties properties;
   private ClassLoader classLoader;
+  private String version;
+  private String buildNumber;
 
   public CacheManagerImpl(ClassLoader cl, String _name, Properties p) {
     if (cl == null) {
@@ -92,13 +93,13 @@ public class CacheManagerImpl extends CacheManager {
     properties = p;
     name = _name;
     log = Log.getLog(CacheManager.class.getName() + '.' + name);
-    String _buildNumber = Cache2kVersion.getBuildNumber();
-    String _version = Cache2kVersion.getVersion();
+    buildNumber = Cache2kVersion.getBuildNumber();
+    version = Cache2kVersion.getVersion();
     StringBuilder sb = new StringBuilder();
     sb.append("org.cache2k manager starting. ");
     sb.append("name="); sb.append(name);
-    sb.append(", version="); sb.append(_version);
-    sb.append(", build="); sb.append(_buildNumber);
+    sb.append(", version="); sb.append(version);
+    sb.append(", build="); sb.append(buildNumber);
     boolean _traceCacheCreation = log.isDebugEnabled();
     sb.append(", defaultImplementation=");
     sb.append(BaseCache.TUNABLE.defaultImplementation.getSimpleName());
@@ -421,13 +422,6 @@ public class CacheManagerImpl extends CacheManager {
 
   }
 
-  public ExecutorService getEvictionExecutor() {
-    if (evictionExecutor == null) {
-      evictionExecutor = createEvictionExecutor();
-    }
-    return evictionExecutor;
-  }
-
   /**
    * Only return thread pool if created before. For JMX bean access.
    */
@@ -439,14 +433,6 @@ public class CacheManagerImpl extends CacheManager {
     if (caches == null) {
       throw new IllegalStateException("CacheManager already closed");
     }
-  }
-
-  public String getVersion() {
-    return version;
-  }
-
-  public String getBuildNumber() {
-    return buildNumber;
   }
 
   /**
@@ -461,6 +447,14 @@ public class CacheManagerImpl extends CacheManager {
   @Override
   public ClassLoader getClassLoader() {
     return classLoader;
+  }
+
+  public String getVersion() {
+    return version;
+  }
+
+  public String getBuildNumber() {
+    return buildNumber;
   }
 
 }
