@@ -1,0 +1,146 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+
+  <packaging>bundle</packaging>
+
+  <parent>
+    <groupId>org.cache2k</groupId>
+    <artifactId>cache2k-parent</artifactId>
+    <version>0.23-SNAPSHOT</version>
+    <relativePath>../../pom.xml</relativePath>
+  </parent>
+
+  <description>
+    Bundle jar including all cache2k modules for usage as runtime dependency.
+    This jar also provides OSGi meta information.
+    No source and JavaDoc is included in the associated jars. To access source and
+    JavaDoc use the bundled jars separately.
+  </description>
+
+  <artifactId>cache2k-all</artifactId>
+  <name>${project.artifactId} bundle</name>
+
+  <dependencies>
+
+    <dependency>
+      <groupId>${project.groupId}</groupId>
+      <artifactId>cache2k-api</artifactId>
+      <version>${project.version}</version>
+      <scope>provided</scope>
+    </dependency>
+
+    <dependency>
+      <groupId>${project.groupId}</groupId>
+      <artifactId>cache2k-core</artifactId>
+      <version>${project.version}</version>
+      <scope>provided</scope>
+    </dependency>
+
+    <dependency>
+      <groupId>${project.groupId}</groupId>
+      <artifactId>cache2k-ee</artifactId>
+      <version>${project.version}</version>
+      <scope>provided</scope>
+    </dependency>
+
+    <dependency>
+      <groupId>${project.groupId}</groupId>
+      <artifactId>cache2k-jmx-api</artifactId>
+      <version>${project.version}</version>
+      <scope>provided</scope>
+    </dependency>
+
+  </dependencies>
+
+   <build>
+    <plugins>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-javadoc-plugin</artifactId>
+        <configuration>
+          <skip>true</skip>
+        </configuration>
+      </plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-source-plugin</artifactId>
+        <configuration>
+          <skipSource>true</skipSource>
+        </configuration>
+      </plugin>
+      <!--
+          sonatype requires all artifacts also to have a source and javadoc jar.
+          produce a dummy jar which contains only readme.
+      -->
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-jar-plugin</artifactId>
+        <executions>
+          <execution>
+            <id>empty-javadoc-jar</id>
+            <phase>package</phase>
+            <goals>
+              <goal>jar</goal>
+            </goals>
+            <configuration>
+              <classifier>javadoc</classifier>
+              <classesDirectory>${basedir}/emtpy-javadoc-and-sources</classesDirectory>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+      <!--
+          sonatype requires all artifacts also to have a source and sources jar.
+          produce a dummy jar which contains only readme.
+      -->
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-jar-plugin</artifactId>
+        <executions>
+          <execution>
+            <id>empty-sources-jar</id>
+            <phase>package</phase>
+            <goals>
+              <goal>jar</goal>
+            </goals>
+            <configuration>
+              <classifier>sources</classifier>
+              <classesDirectory>${basedir}/emtpy-javadoc-and-sources</classesDirectory>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+      <plugin>
+        <groupId>org.apache.felix</groupId>
+        <artifactId>maven-bundle-plugin</artifactId>
+        <extensions>true</extensions>
+        <configuration>
+          <instructions>
+            <Embed-Dependency>*;scope=provided;inline=true</Embed-Dependency>
+            <Private-Package>*;-split-package:=merge-first</Private-Package>
+            <Export-Package>
+              org.cache2k,
+              org.cache2k.spi,
+              org.cache2k.storage;-split-package:=merge-first
+            </Export-Package>
+            <Import-Package>
+              javax.management,
+              javax.naming,
+              org.apache.commons.logging;resolution:=optional
+            </Import-Package>
+            <!-- TODO: link to doc? -->
+            <Bundle-DocURL>http://cache2k.org</Bundle-DocURL>
+            <!-- Add regular jar manifest information -->
+            <Implementation-Build>${buildNumber}</Implementation-Build>
+            <Implementation-Version>${project.version}</Implementation-Version>
+            <Implementation-Title>${project.name}</Implementation-Title>
+            <Implementation-Vendor-Id>${project.groupId}</Implementation-Vendor-Id>
+            <Implementation-Vendor>${project.organization.name}</Implementation-Vendor>
+          </instructions>
+          <!-- nice manifest, everything with style :) -->
+          <niceManifest>true</niceManifest>
+        </configuration>
+      </plugin>
+    </plugins>
+  </build>
+</project>
