@@ -644,10 +644,16 @@ public abstract class BaseCache<E extends Entry, K, T>
     if (isClosed()) {
       throw new CacheClosedException();
     }
+    boolean _interrupted = false;
     while (waitForClear) {
       try {
         lock.wait();
-      } catch (InterruptedException ignore) { }
+      } catch (InterruptedException ignore) {
+        _interrupted = true;
+      }
+    }
+    if (_interrupted) {
+      Thread.currentThread().interrupt();
     }
   }
 

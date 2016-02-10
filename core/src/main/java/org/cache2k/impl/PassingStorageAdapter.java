@@ -460,12 +460,14 @@ public class PassingStorageAdapter extends StorageAdapter {
         try {
           it.awaitTermination();
         } catch (InterruptedException ex) {
+          Thread.currentThread().interrupt();
         }
         for (;;) {
           try {
             _queue.put(LAST_ENTRY);
             break;
           } catch (InterruptedException ex) {
+            Thread.currentThread().interrupt();
           }
         }
       }

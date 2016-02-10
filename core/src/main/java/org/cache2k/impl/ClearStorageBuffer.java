@@ -279,6 +279,7 @@ public class ClearStorageBuffer implements CacheStorage, FlushableStorage, Purge
       long _millis = _waitMicros / 1000000;
       Thread.sleep(_millis);
     } catch (InterruptedException e) {
+      Thread.currentThread().interrupt();
     }
   }
 

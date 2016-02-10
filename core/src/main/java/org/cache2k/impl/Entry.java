@@ -217,12 +217,16 @@ public class Entry<E extends Entry, K, T>
     if (!isFetchInProgress()) {
       return;
     }
-    try {
-      do {
+    boolean _interrupted = false;
+    do {
+      try {
         wait();
-      } while (isFetchInProgress());
-    } catch (InterruptedException e) {
-      throw new CacheInternalError();
+      } catch (InterruptedException e) {
+        _interrupted = true;
+      }
+    } while (isFetchInProgress());
+    if (_interrupted) {
+      Thread.currentThread().interrupt();
     }
   }
 
