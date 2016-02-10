@@ -5,7 +5,10 @@ Documentation of design decisions and rationale.
 The API is provided in a separate module. This way a clean API is defined and
 breakages will be avoided.
 
-## Statistics are but build in, nut optional
+Providing a well defined API minimizes also the risk of a lock-in. Other vendors
+can implement the same API or bridge APIs to other caches can be build.
+
+## Statistics are but build in, not optional
 
 The cache2k implementations have a fixed set of build-in statistics. There is
 no way to switch these on or off. The reasons:
