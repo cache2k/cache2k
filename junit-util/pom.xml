@@ -12,10 +12,21 @@
   <description>
     Defines different categories (SlowTests, FastTests, ...) we can specify for unit testing.
     Added as test dependency, otherwise we cannot specify the category in aggregator builds / on top level.
+    This serves also as a test scope BOM.
   </description>
 
   <artifactId>cache2k-junit-util</artifactId>
   <version>0.24-SNAPSHOT</version>
   <name>Util classes for all JUnit based tests</name>
+
+  <dependencies>
+
+    <dependency>
+      <groupId>junit</groupId>
+      <artifactId>junit</artifactId>
+      <version>4.11</version>
+    </dependency>
+
+  </dependencies>
 
 </project>

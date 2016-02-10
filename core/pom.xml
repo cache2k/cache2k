@@ -20,30 +20,28 @@
   </description>
 
   <dependencies>
+
       <dependency>
           <groupId>${project.groupId}</groupId>
           <artifactId>cache2k-api</artifactId>
           <version>${project.version}</version>
       </dependency>
-      <dependency>
-          <groupId>${project.groupId}</groupId>
-          <artifactId>cache2k-jmx-api</artifactId>
-          <version>${project.version}</version>
-      </dependency>
+
     <dependency>
       <groupId>commons-logging</groupId>
       <artifactId>commons-logging</artifactId>
       <version>1.1.3</version>
       <optional>true</optional>
     </dependency>
+
     <dependency>
         <groupId>org.cache2k</groupId>
         <artifactId>cache2k-junit-util</artifactId>
         <version>${project.version}</version>
         <scope>test</scope>
     </dependency>
-  </dependencies>
 
+  </dependencies>
 
   <build>
       <resources>

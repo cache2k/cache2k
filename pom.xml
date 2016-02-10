@@ -51,16 +51,9 @@
     <module>ee</module>
     <module>jcache</module>
     <module>junit-util</module>
+    <module>variant/all</module>
+    <module>osgi-test</module>
   </modules>
-
-  <dependencies>
-    <dependency>
-      <groupId>junit</groupId>
-      <artifactId>junit</artifactId>
-      <version>4.11</version>
-      <scope>test</scope>
-    </dependency>
-  </dependencies>
 
   <build>
     <pluginManagement>
@@ -104,6 +97,7 @@
           <version>2.19</version>
           <configuration>
             <trimStackTrace>false</trimStackTrace>
+            <excludedGroups>org.cache2k.junit.StorageTests,org.cache2k.junit.TimingTests</excludedGroups>
           </configuration>
         </plugin>
 
