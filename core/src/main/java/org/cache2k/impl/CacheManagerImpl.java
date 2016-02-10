@@ -60,10 +60,11 @@ public class CacheManagerImpl extends CacheManager {
   static List<CacheManagerLifeCycleListener> cacheManagerLifeCycleListeners = new ArrayList<CacheManagerLifeCycleListener>();
 
   static {
-    for (CacheLifeCycleListener l : ServiceLoader.load(CacheLifeCycleListener.class)) {
+    ClassLoader cl = CacheManagerImpl.class.getClassLoader();
+    for (CacheLifeCycleListener l : ServiceLoader.load(CacheLifeCycleListener.class, cl)) {
       cacheLifeCycleListeners.add(l);
     }
-    for (CacheManagerLifeCycleListener l : ServiceLoader.load(CacheManagerLifeCycleListener.class)) {
+    for (CacheManagerLifeCycleListener l : ServiceLoader.load(CacheManagerLifeCycleListener.class, cl)) {
       cacheManagerLifeCycleListeners.add(l);
     }
   }
@@ -87,13 +88,13 @@ public class CacheManagerImpl extends CacheManager {
   public CacheManagerImpl(String _name) {
     name = _name;
     log = Log.getLog(CacheManager.class.getName() + '.' + name);
-    String _buildNumber = Cache2kVersion.getBuildNumber();
-    String _version = Cache2kVersion.getVersion();
+    buildNumber = Cache2kVersion.getBuildNumber();
+    version = Cache2kVersion.getVersion();
     StringBuilder sb = new StringBuilder();
     sb.append("org.cache2k manager starting. ");
     sb.append("name="); sb.append(name);
-    sb.append(", version="); sb.append(_version);
-    sb.append(", build="); sb.append(_buildNumber);
+    sb.append(", version="); sb.append(version);
+    sb.append(", build="); sb.append(buildNumber);
     boolean _traceCacheCreation = log.isDebugEnabled();
     log.info(sb.toString());
     for (CacheManagerLifeCycleListener lc : cacheManagerLifeCycleListeners) {
