@@ -7,12 +7,12 @@
   <parent>
     <groupId>org.cache2k</groupId>
     <artifactId>cache2k-parent</artifactId>
-    <version>0.23-SNAPSHOT</version>
+    <version>0.23</version>
     <relativePath>../pom.xml</relativePath>
   </parent>
 
   <artifactId>cache2k-api</artifactId>
-  <version>0.23-SNAPSHOT</version>
+  <version>0.23</version>
   <name>cache2k API only package</name>
 
   <description>

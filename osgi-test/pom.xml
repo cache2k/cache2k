@@ -6,7 +6,7 @@
   <parent>
     <groupId>org.cache2k</groupId>
     <artifactId>cache2k-parent</artifactId>
-    <version>0.23-SNAPSHOT</version>
+    <version>0.23</version>
     <relativePath>../pom.xml</relativePath>
   </parent>
 
@@ -111,6 +111,15 @@
           </systemPropertyVariables>
         </configuration>
       </plugin>
+
+<plugin>
+  <groupId>org.apache.maven.plugins</groupId>
+  <artifactId>maven-deploy-plugin</artifactId>
+  <configuration>
+    <skip>true</skip>
+  </configuration>
+</plugin>
+
     </plugins>
   </build>
 
