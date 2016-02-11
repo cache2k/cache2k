@@ -362,12 +362,7 @@ public class WiredCache<K, V> extends AbstractCache<K, V>
   }
 
   private Map<K, V> convertValueMap(final Map<K, ExaminationEntry<K, V>> _map) {
-    return new MapValueConverterProxy<K, V, ExaminationEntry<K, V>>(_map) {
-      @Override
-      protected V convert(final ExaminationEntry<K, V> v) {
-        return returnValue(v.getValueOrException());
-      }
-    };
+    return heapCache.convertValueMap(_map);
   }
 
   @Override

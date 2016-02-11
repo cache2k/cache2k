@@ -23,6 +23,7 @@ package org.cache2k.impl;
  */
 
 import org.cache2k.*;
+import org.cache2k.impl.operation.ExaminationEntry;
 import org.cache2k.impl.threading.Futures;
 import org.cache2k.impl.timer.GlobalTimerService;
 import org.cache2k.impl.timer.TimerService;
@@ -1339,7 +1340,7 @@ public abstract class BaseCache<K, V>
         }
         _hasFreshData = e.hasFreshData();
         if (_hasFreshData) {
-          _previousValue = (V) e.getValue();
+          _previousValue = (V) e.getValueOrException();
         }
         putValue(e, _value);
         break;
@@ -1348,7 +1349,7 @@ public abstract class BaseCache<K, V>
     if (_hasFreshData) {
       recordHitLocked(e);
     }
-    return _previousValue;
+    return returnValue(_previousValue);
   }
 
   @Override
@@ -1363,9 +1364,9 @@ public abstract class BaseCache<K, V>
           continue;
         }
         if (e.hasFreshData()) {
-          V _previousValue = (V) e.getValue();
+          V _previousValue = (V) e.getValueOrException();
           putValue(e, _value);
-          return _previousValue;
+          return returnValue(_previousValue);
         }
       }
       break;
@@ -1426,7 +1427,6 @@ public abstract class BaseCache<K, V>
       }
       putValue(e, _newValue);
     }
-    recordHitLocked(e);
     return null;
   }
 
@@ -1555,6 +1555,7 @@ public abstract class BaseCache<K, V>
         }
         if (removeEntry(e)) {
           removedCnt++;
+          metrics.remove();
           return f;
         }
         return false;
@@ -1587,15 +1588,16 @@ public abstract class BaseCache<K, V>
         V _value = null;
         boolean f = e.hasFreshData();
         if (f) {
-          _value = (V) e.getValue();
+          _value = (V) e.getValueOrException();
           recordHit(e);
         } else {
           peekMissCnt++;
         }
         if (removeEntry(e)) {
           removedCnt++;
+          metrics.remove();
         }
-        return _value;
+        return returnValue(_value);
       }
     }
   }
@@ -2390,15 +2392,24 @@ public abstract class BaseCache<K, V>
     };
   }
 
+  public Map<K, V> convertValueMap(final Map<K, ExaminationEntry<K, V>> _map) {
+    return new MapValueConverterProxy<K, V, ExaminationEntry<K, V>>(_map) {
+      @Override
+      protected V convert(final ExaminationEntry<K, V> v) {
+        return returnValue(v.getValueOrException());
+      }
+    };
+  }
+
   public Map<K, V> peekAll(final Set<? extends K> _inputKeys) {
-    Map<K, V> map = new HashMap<K, V>();
+    Map<K, ExaminationEntry<K, V>> map = new HashMap<K, ExaminationEntry<K, V>>();
     for (K k : _inputKeys) {
-      CacheEntry<K, V> e = peekEntry(k);
+      ExaminationEntry<K, V> e = peekEntryInternal(k);
       if (e != null) {
-        map.put(k, e.getValue());
+        map.put(k, e);
       }
     }
-    return map;
+    return convertValueMap(map);
   }
 
   /**
