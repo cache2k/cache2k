@@ -79,6 +79,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 public class PassingStorageAdapter extends StorageAdapter {
 
   private Tunable tunable = TunableFactory.get(Tunable.class);
+  WiredCache wiredCache;
   private BaseCache cache;
   CacheStorage storage;
   boolean passivation = false;
@@ -99,21 +100,26 @@ public class PassingStorageAdapter extends StorageAdapter {
   Log log;
   StorageAdapter.Parent parent;
 
-  public PassingStorageAdapter(BaseCache _cache, CacheConfig _cacheConfig,
+  public PassingStorageAdapter(WiredCache wc, BaseCache _cache, StorageAdapter.Parent _parent, CacheConfig _cacheConfig,
                                StorageConfiguration _storageConfig) {
+    wiredCache = wc;
     cache = _cache;
-    parent = _cache;
+    parent = _parent;
     context = new StorageContext(_cache);
     context.keyType = _cacheConfig.getKeyType().getType();
     context.valueType = _cacheConfig.getValueType().getType();
     config = _storageConfig;
     if (tunable.useManagerThreadPool) {
-      executor = new LimitedPooledExecutor(cache.manager.getThreadPool());
+      executor = new LimitedPooledExecutor(getManager().getThreadPool());
     } else {
       executor = Executors.newCachedThreadPool();
     }
-    log = Log.getLog(Cache.class.getName() + ".storage/" + cache.getCompleteName());
+    log = Log.getLog(Cache.class.getName() + ".storage/" + getCompleteName());
     context.log = log;
+  }
+
+  private String getCompleteName() {
+    return cache.getCompleteName();
   }
 
   /**
@@ -291,7 +297,7 @@ public class PassingStorageAdapter extends StorageAdapter {
     } else {
       it.queue = new SynchronousQueue<StorageEntry>();
     }
-    synchronized (cache.lock) {
+    synchronized (lockObject()) {
       it.heapIteration = cache.iterateAllHeapEntries();
       it.heapIteration.setKeepIterated(true);
       it.keepHashCtrlForClearDetection = cache.mainHashCtrl;
@@ -300,6 +306,10 @@ public class PassingStorageAdapter extends StorageAdapter {
     long now = System.currentTimeMillis();
     it.runnable = new StorageVisitCallable(now, it);
     return it;
+  }
+
+  private Object lockObject() {
+    return cache.lock;
   }
 
   public void purge() {
@@ -489,7 +499,7 @@ public class PassingStorageAdapter extends StorageAdapter {
     public ExecutorService getExecutorService() {
       if (executorForVisitThread == null) {
         if (tunable.useManagerThreadPool) {
-          LimitedPooledExecutor ex = new LimitedPooledExecutor(cache.manager.getThreadPool());
+          LimitedPooledExecutor ex = new LimitedPooledExecutor(getManager().getThreadPool());
           ex.setExceptionListener(new LimitedPooledExecutor.ExceptionListener() {
             @Override
             public void exceptionWasThrown(Throwable ex) {
@@ -551,6 +561,10 @@ public class PassingStorageAdapter extends StorageAdapter {
       return abortFlag;
     }
 
+  }
+
+  private CacheManagerImpl getManager() {
+    return cache.manager;
   }
 
   class CompleteIterator
@@ -619,7 +633,7 @@ public class PassingStorageAdapter extends StorageAdapter {
               queue = null;
               break;
             }
-            entry = cache.insertEntryFromStorage(se, false);
+            entry = wiredCache.insertEntryFromStorage(se);
             if (entry != null) {
               return true;
             }
@@ -838,7 +852,7 @@ public class PassingStorageAdapter extends StorageAdapter {
   private void passivateHeapEntriesOnShutdown() {
     Iterator<Entry> it;
     try {
-      synchronized (cache.lock) {
+      synchronized (lockObject()) {
         it = cache.iterateAllHeapEntries();
       }
       while (it.hasNext()) {
@@ -931,7 +945,7 @@ public class PassingStorageAdapter extends StorageAdapter {
             disable("exception during clear", ex);
             throw new CacheStorageException(ex);
           }
-          synchronized (cache.lock) {
+          synchronized (lockObject()) {
             _buffer.startTransfer();
           }
           try {
@@ -966,7 +980,7 @@ public class PassingStorageAdapter extends StorageAdapter {
 
   public void disable(Throwable ex) {
     if (storage == null) { return; }
-    synchronized (cache.lock) {
+    synchronized (lockObject()) {
       synchronized (this) {
         if (storage == null) { return; }
         CacheStorage _storage = storage;

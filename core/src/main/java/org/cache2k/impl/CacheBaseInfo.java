@@ -31,6 +31,7 @@ import static org.cache2k.impl.util.Util.formatMillis;
  */
 class CacheBaseInfo implements InternalCacheInfo {
 
+  StorageAdapter storage;
   CommonMetrics metrics;
   private BaseCache baseCache;
   int size;
@@ -248,14 +249,14 @@ class CacheBaseInfo implements InternalCacheInfo {
   public int getInfoCreationDeltaMs() { return creationDeltaMs; }
   @Override
   public int getHealth() {
-    if (baseCache.storage != null && baseCache.storage.getAlert() == 2) {
+    if (storage != null && storage.getAlert() == 2) {
       return 2;
     }
     if (integrityState.getStateFlags() > 0 ||
         getHashQualityInteger() < 5) {
       return 2;
     }
-    if (baseCache.storage != null && baseCache.storage.getAlert() == 1) {
+    if (storage != null && storage.getAlert() == 1) {
       return 1;
     }
     if (getHashQualityInteger() < 30 ||

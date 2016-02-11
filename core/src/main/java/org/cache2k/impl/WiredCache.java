@@ -42,20 +42,25 @@ import org.cache2k.impl.operation.Progress;
 import org.cache2k.impl.operation.ReadOnlyCacheEntry;
 import org.cache2k.impl.operation.Semantic;
 import org.cache2k.impl.operation.Specification;
+import org.cache2k.impl.threading.Futures;
+import org.cache2k.impl.threading.LimitedPooledExecutor;
 import org.cache2k.impl.util.Log;
 import org.cache2k.storage.StorageCallback;
 import org.cache2k.storage.StorageEntry;
 
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.Future;
+import java.util.concurrent.FutureTask;
 
 /**
  * @author Jens Wilke
  */
-public class WiredCache<K, V> extends AbstractCache<K, V> implements  StorageAdapter.Parent {
+public class WiredCache<K, V> extends AbstractCache<K, V>
+  implements  StorageAdapter.Parent, HeapCacheListener<K,V> {
 
   final Specification<K, V> SPEC = new Specification<K,V>();
 
@@ -69,11 +74,6 @@ public class WiredCache<K, V> extends AbstractCache<K, V> implements  StorageAda
   CacheEntryUpdatedListener<K,V>[] syncEntryUpdatedListeners;
 
   @Override
-  public Future<Void> cancelTimerJobs() {
-    return heapCache.cancelTimerJobs();
-  }
-
-  @Override
   public Log getLog() {
     return heapCache.getLog();
   }
@@ -84,18 +84,8 @@ public class WiredCache<K, V> extends AbstractCache<K, V> implements  StorageAda
   }
 
   @Override
-  public void resetStorage(final StorageAdapter _current, final StorageAdapter _new) {
-    heapCache.resetStorage(_current, _new);
-  }
-
-  @Override
   public String getName() {
     return heapCache.getName();
-  }
-
-  @Override
-  public StorageAdapter getStorage() {
-    return heapCache.getStorage();
   }
 
   @Override
@@ -254,7 +244,12 @@ public class WiredCache<K, V> extends AbstractCache<K, V> implements  StorageAda
 
   @Override
   public int getTotalEntryCount() {
-    return heapCache.getTotalEntryCount();
+    synchronized (lockObject()) {
+      if (storage != null) {
+        return storage.getTotalEntryCount();
+      }
+      return heapCache.getLocalSize();
+    }
   }
 
   @Override
@@ -301,7 +296,15 @@ public class WiredCache<K, V> extends AbstractCache<K, V> implements  StorageAda
 
   @Override
   public ClosableIterator<CacheEntry<K, V>> iterator() {
-    final ClosableIterator<CacheEntry<K, V>> it = heapCache.iterator();
+    ClosableIterator<CacheEntry<K, V>> tor;
+    if (storage == null) {
+      synchronized (lockObject()) {
+         tor = new BaseCache.IteratorFilterEntry2Entry(heapCache, (ClosableIterator<Entry>) heapCache.iterateAllHeapEntries(), true);
+      }
+    } else {
+      tor = new BaseCache.IteratorFilterEntry2Entry(heapCache, (ClosableIterator<Entry>) storage.iterateAll(), false);
+    }
+    final ClosableIterator<CacheEntry<K, V>> it = tor;
     ClosableIterator<CacheEntry<K, V>> _adapted = new ClosableIterator<CacheEntry<K, V>>() {
 
       CacheEntry<K, V> entry;
@@ -388,23 +391,8 @@ public class WiredCache<K, V> extends AbstractCache<K, V> implements  StorageAda
   }
 
   @Override
-  public void purge() {
-    heapCache.purge();
-  }
-
-  @Override
-  public void flush() {
-    heapCache.flush();
-  }
-
-  @Override
-  public void clear() {
-    heapCache.clear();
-  }
-
-  @Override
   public void destroy() {
-    heapCache.destroy();
+    close();
   }
 
   @Override
@@ -413,17 +401,206 @@ public class WiredCache<K, V> extends AbstractCache<K, V> implements  StorageAda
   }
 
   @Override
-  public void close() {
-    heapCache.close();
-  }
-
-  @Override
   public String toString() {
     return heapCache.toString();
   }
 
+  public void init() {
+    if (storage == null && heapCache.maxSize == 0) {
+      throw new IllegalArgumentException("maxElements must be >0");
+    }
+    if (storage != null) {
+      storage.open();
+    }
+    heapCache.init();
+  }
+
+  @Override
+  public Future<Void> cancelTimerJobs() {
+    synchronized (lockObject()) {
+      Future<Void> _waitFuture = heapCache.cancelTimerJobs();
+      if (storage != null) {
+        Future<Void> f = storage.cancelTimerJobs();
+        if (f != null) {
+          _waitFuture = new Futures.WaitForAllFuture(_waitFuture, f);
+        }
+      }
+      return _waitFuture;
+    }
+  }
+
+  @Override
+  public void purge() {
+    if (storage != null) {
+      storage.purge();
+    }
+  }
+
+  @Override
+  public void flush() {
+    if (storage != null) {
+      storage.flush();
+    }
+  }
+
+  @Override
+  public void clear() {
+    if (storage != null) {
+      processClearWithStorage();
+      return;
+    }
+    heapCache.clear();
+  }
+
+  @Override
+  public void close() {
+    heapCache.closePart1();
+    Future<Void> _waitForStorage = null;
+    if (storage != null) {
+      _waitForStorage = storage.shutdown();
+    }
+    if (_waitForStorage != null) {
+      try {
+        _waitForStorage.get();
+      } catch (Exception ex) {
+        StorageAdapter.rethrow("shutdown", ex);
+      }
+    }
+    synchronized (lockObject()) {
+      storage = null;
+    }
+    heapCache.closePart2();
+  }
+
+  /**
+   * Stops creation of new entries when clear is ongoing.
+   */
+  protected boolean waitForClear = false;
+
+  private Object lockObject() {
+    return heapCache.lock;
+  }
+
+  @Override
+  public void resetStorage(StorageAdapter _from, StorageAdapter to) {
+    synchronized (lockObject()) {
+      storage = to;
+    }
+  }
+
+  @Override
+  public StorageAdapter getStorage() {
+    return storage;
+  }
+
+  /**
+   * Clear may be called during operation, e.g. to reset all the cache content. We must make sure
+   * that there is no ongoing operation when we send the clear to the storage. That is because the
+   * storage implementation has a guarantee that there is only one storage operation ongoing for
+   * one entry or key at any time. Clear, of course, affects all entries.
+   */
+  private void processClearWithStorage() {
+    StorageClearTask t = new StorageClearTask();
+    boolean _untouchedHeapCache;
+    synchronized (lockObject()) {
+      heapCache.checkClosed();
+      waitForClear = true;
+      _untouchedHeapCache = heapCache.touchedTime ==
+        heapCache.clearedTime && heapCache.getLocalSize() == 0;
+      if (!storage.checkStorageStillDisconnectedForClear()) {
+        t.allLocalEntries = heapCache.iterateAllHeapEntries();
+        t.allLocalEntries.setStopOnClear(false);
+      }
+      t.storage = storage;
+      t.storage.disconnectStorageForClear();
+    }
+    try {
+      if (_untouchedHeapCache) {
+        FutureTask<Void> f = new FutureTask<Void>(t);
+        heapCache.updateShutdownWaitFuture(f);
+        f.run();
+      } else {
+        heapCache.updateShutdownWaitFuture(heapCache.manager.getThreadPool().execute(t));
+      }
+    } catch (Exception ex) {
+      throw new CacheStorageException(ex);
+    }
+    synchronized (lockObject()) {
+      heapCache.checkClosed();
+      heapCache.clearLocalCache();
+      waitForClear = false;
+      lockObject().notifyAll();
+    }
+  }
+
+  class StorageClearTask implements LimitedPooledExecutor.NeverRunInCallingTask<Void> {
+
+    ClosableConcurrentHashEntryIterator<org.cache2k.impl.Entry> allLocalEntries;
+    StorageAdapter storage;
+
+    @Override
+    public Void call() {
+      try {
+        if (allLocalEntries != null) {
+          waitForEntryOperations();
+        }
+        storage.clearAndReconnect();
+        storage = null;
+        return null;
+      } catch (Throwable t) {
+        if (allLocalEntries != null) {
+          allLocalEntries.close();
+        }
+        getLog().warn("clear exception, when signalling storage", t);
+        storage.disable(t);
+        throw new CacheStorageException(t);
+      }
+    }
+
+    private void waitForEntryOperations() {
+      Iterator<Entry> it = allLocalEntries;
+      while (it.hasNext()) {
+        org.cache2k.impl.Entry e = it.next();
+        synchronized (e) { }
+      }
+    }
+  }
+
+  @Override
+  public void onEvictionFromHeap(final Entry<K, V> e) {
+    boolean _storeEvenImmediatelyExpired =
+      heapCache.hasKeepAfterExpired() && (e.isDataValidState() || e.isExpiredState() ||
+      e.nextRefreshTime == org.cache2k.impl.Entry.FETCH_NEXT_TIME_STATE);
+    boolean _shouldStore =
+      (storage != null) && (_storeEvenImmediatelyExpired || e.hasFreshData());
+    if (_shouldStore) {
+      storage.evict(e);
+    }
+  }
+
+  public Entry<K,V> insertEntryFromStorage(final StorageEntry se) {
+    Semantic<K,V, Entry<K,V>> op = new Semantic.Read<K, V, Entry<K, V>>() {
+      @Override
+      public void examine(final Progress<V, Entry<K, V>> c, final ExaminationEntry<K, V> e) {
+        c.result((Entry<K, V>) e);
+      }
+    };
+    EntryAction<Entry<K,V>> _action = new EntryAction<Entry<K,V>>(op, (K) se.getKey(), null) {
+      @Override
+      public void storageRead() {
+        onReadSuccess(se);
+      }
+    };
+    Entry<K,V> e = execute(op, _action);
+    return e;
+  }
+
   <R> R execute(K key, Entry<K, V> e, Semantic<K, V, R> op) {
     EntryAction<R> _action = new EntryAction<R>(op, key, e);
+    return execute(op, _action);
+  }
+
+  private <R> R execute(Semantic<K, V, R> op, final EntryAction<R> _action) {
     op.start(_action);
     if (_action.entryLocked) {
       throw new CacheInternalError("entry not unlocked?");

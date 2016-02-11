@@ -36,6 +36,7 @@ import org.cache2k.CacheManager;
 import org.cache2k.CacheSource;
 import org.cache2k.CacheSourceWithMetaInfo;
 import org.cache2k.RefreshController;
+import org.cache2k.StorageConfiguration;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
@@ -132,9 +133,6 @@ public class CacheBuilderImpl<K, T> extends CacheBuilder<K, T> {
     if (experimentalBulkCacheSource != null) {
       c.setExperimentalBulkCacheSource(experimentalBulkCacheSource);
     }
-    if (cacheWriter != null) {
-      c.setWriter(cacheWriter);
-    }
   }
 
   void configureViaSetters(Object o) {
@@ -208,15 +206,22 @@ public class CacheBuilderImpl<K, T> extends CacheBuilder<K, T> {
 
     String _name = cm.newCache(_cache, bc.getName());
     bc.setName(_name);
-    bc.init();
 
     if (_wrap) {
+      List<StorageConfiguration> _stores = config.getStorageModules();
+      if (_stores.size() == 1) {
+        StorageConfiguration cfg = _stores.get(0);
+        if (cfg.getEntryCapacity() < 0) {
+          cfg.setEntryCapacity(config.getEntryCapacity());
+        }
+        wc.storage = new PassingStorageAdapter(wc, bc, wc, config, _stores.get(0));
+      } else if (_stores.size() > 1) {
+        throw new UnsupportedOperationException("no aggregation support yet");
+      }
       wc.source = bc.source;
       wc.readThrough = bc.source != null;
-      wc.storage = bc.storage;
-      wc.writer = bc.writer;
-      if (bc.storage != null) {
-        ((PassingStorageAdapter) bc.storage).parent = wc;
+      if (cacheWriter != null) {
+        wc.writer = cacheWriter;
       }
       if (syncListeners != null) {
         List<CacheEntryCreatedListener<K,T>> cll = new ArrayList<CacheEntryCreatedListener<K, T>>();
@@ -243,6 +248,10 @@ public class CacheBuilderImpl<K, T> extends CacheBuilder<K, T> {
           wc.syncEntryRemovedListeners = rll.toArray(new CacheEntryRemovedListener[rll.size()]);
         }
       }
+      bc.listener = wc;
+      wc.init();
+    } else {
+      bc.init();
     }
     return _cache;
   }

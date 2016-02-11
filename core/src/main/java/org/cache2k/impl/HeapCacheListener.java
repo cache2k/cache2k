@@ -1,4 +1,4 @@
-package org.cache2k.impl.util;
+package org.cache2k.impl;
 
 /*
  * #%L
@@ -22,26 +22,22 @@ package org.cache2k.impl.util;
  * #L%
  */
 
-import java.sql.Timestamp;
-
 /**
- * A set of utility stuff we need often.
- *
- * @author Jens Wilke; created: 2014-12-18
+ * @author Jens Wilke
  */
-public class Util {
-  
-  public static String formatMillis(long _millis) {
-     return new Timestamp(_millis).toString();
+public interface HeapCacheListener<K,V> {
+
+  static final HeapCacheListener NO_OPERATION = new NoOperation();
+
+  void onEvictionFromHeap(Entry<K,V> e);
+
+  class NoOperation<K,V> implements HeapCacheListener<K,V> {
+
+    @Override
+    public void onEvictionFromHeap(final Entry<K, V> e) {
+
+    }
+
   }
 
-  /**
-   * Always throws exception. Used to mark a place in the code that needs work.
-   *
-   * @throws UnsupportedOperationException
-   */
-  public static void TODO() {
-    throw new UnsupportedOperationException("TODO");
-  }
-  
 }

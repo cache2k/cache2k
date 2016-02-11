@@ -200,6 +200,7 @@ public class Entry<K, T>
     STORE_COMPLETE,
     NOTIFY,
     PINNED,
+    EVICT,
     LAST
   }
 

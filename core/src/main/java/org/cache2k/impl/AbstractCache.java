@@ -67,4 +67,17 @@ public abstract class AbstractCache<K, V> implements InternalCache<K, V> {
     return null;
   }
 
+  @Override
+  public StorageAdapter getStorage() { return null; }
+
+  @Override
+  public void flush() {
+
+  }
+
+  @Override
+  public void purge() {
+
+  }
+
 }
