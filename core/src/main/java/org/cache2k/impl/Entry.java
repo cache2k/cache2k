@@ -24,7 +24,6 @@ package org.cache2k.impl;
 
 import org.cache2k.CacheEntry;
 import org.cache2k.impl.operation.ExaminationEntry;
-import org.cache2k.impl.operation.ResultEntry;
 import org.cache2k.storage.StorageEntry;
 
 /**
@@ -71,7 +70,7 @@ public class Entry<K, T>
   /** Logically the same as immediately expired */
   static final int FETCH_NEXT_TIME_STATE = 3;
 
-  static private final int REMOVED_STATE = 2;
+  static private final int GONE_STATE = 2;
 
   static private final int FETCH_IN_PROGRESS_VIRGIN = 1;
 
@@ -347,7 +346,7 @@ public class Entry<K, T>
   }
 
   public boolean hasData() {
-    return !isVirgin() && !isRemovedState();
+    return !isVirgin() && !isGone();
   }
 
   /**
@@ -416,12 +415,12 @@ public class Entry<K, T>
     return _nextRefreshTime == EXPIRED_STATE;
   }
 
-  public void setRemovedState() {
-    nextRefreshTime = REMOVED_STATE;
+  public void setGone() {
+    nextRefreshTime = GONE_STATE;
   }
 
-  public boolean isRemovedState() {
-    return nextRefreshTime == REMOVED_STATE;
+  public boolean isGone() {
+    return nextRefreshTime == GONE_STATE;
   }
 
   public boolean isBeeingReput() {

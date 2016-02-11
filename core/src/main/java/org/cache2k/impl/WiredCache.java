@@ -716,7 +716,7 @@ public class WiredCache<K, V> extends AbstractCache<K, V>
         }
         synchronized (e) {
           e.waitForFetch();
-          if (!e.isRemovedState()) {
+          if (!e.isGone()) {
             if (e.isVirgin()) {
               storageRead = _needStorageRead = true;
               e.startFetch(Entry.ProcessingState.READ);
@@ -901,7 +901,7 @@ public class WiredCache<K, V> extends AbstractCache<K, V>
         }
         synchronized (e) {
           e.waitForFetch();
-          if (!e.isRemovedState()) {
+          if (!e.isGone()) {
             e.startFetch(ps);
             entryLocked = true;
             heapDataValid = e.isDataValidState();
@@ -930,7 +930,7 @@ public class WiredCache<K, V> extends AbstractCache<K, V>
         }
         synchronized (e) {
           e.waitForFetch();
-          if (!e.isRemovedState()) {
+          if (!e.isGone()) {
             e.startFetch(ps);
             entryLocked = true;
             heapDataValid = e.isDataValidState();
