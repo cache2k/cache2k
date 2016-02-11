@@ -1214,48 +1214,6 @@ public abstract class BaseCache<K, V>
   }
 
   /**
-   * Insert the storage entry in the heap cache and return it. Used when storage entries
-   * are queried. We need to check whether the entry is present meanwhile, get the entry lock
-   * and maybe fetch it from the source. Doubles with {@link #getEntryInternal(Object)}
-   * except we do not need to retrieve the data from the storage again.
-   *
-   * @param _needsFetch if true the entry is fetched from CacheSource when expired.
-   * @return a cache entry is always returned, however, it may be outdated
-   */
-  protected org.cache2k.impl.Entry insertEntryFromStorage(StorageEntry se, boolean _needsFetch) {
-    int _spinCount = TUNABLE.maximumEntryLockSpins;
-    for (;;) {
-      if (_spinCount-- <= 0) { throw new CacheLockSpinsExceededError(); }
-      Entry e = lookupOrNewEntrySynchronized((K) se.getKey());
-      if (e.hasFreshData()) { return e; }
-      synchronized (e) {
-        if (!e.isDataValidState()) {
-          if (e.isRemovedState()) {
-            continue;
-          }
-          if (e.isFetchInProgress()) {
-            e.waitForFetch();
-            return e.hasFreshData() ? e : null;
-          }
-          e.startFetch();
-        }
-      }
-      boolean _fresh;
-      boolean _finished = false;
-      try {
-        long _nextRefresh = insertEntryFromStorage(se, e, _needsFetch);
-        _fresh = e.hasFreshData(System.currentTimeMillis(), _nextRefresh);
-        finishFetch(e, _nextRefresh);
-        _finished = true;
-      } finally {
-        e.ensureFetchAbort(_finished);
-      }
-      evictEventually();
-      return _fresh ? e : null;
-    }
-  }
-
-  /**
    * Insert a cache entry for the given key and run action under the entry
    * lock. If the cache entry has fresh data, we do not run the action.
    * Called from storage. The entry referenced by the key is expired and
@@ -2026,73 +1984,6 @@ public abstract class BaseCache<K, V>
 
   protected long fetch(final Entry e, long _previousNextRefreshTime) {
     return fetchFromSource(e, _previousNextRefreshTime);
-  }
-
-  protected boolean conditionallyStartProcess(Entry e) {
-    if (!e.isVirgin()) {
-      return false;
-    }
-    e.startFetch();
-    return true;
-  }
-
-  /**
-   *
-   * @param e
-   * @param _needsFetch true if value needs to be fetched from the cache source.
-   *                   This is false, when the we only need to peek for an value already mapped.
-  protected long fetchWithStorage(Entry<K, V> e, boolean _needsFetch, long _previousNextRefreshTime) {
-    if (!e.isVirgin()) {
-      if (_needsFetch) {
-        return fetchFromSource(e, _previousNextRefreshTime);
-      }
-      return Entry.READ_NON_VALID;
-    }
-    StorageEntry se = storage.get(e.key);
-    if (se == null) {
-      if (_needsFetch) {
-        synchronized (lock) {
-          readMissCnt++;
-        }
-        return fetchFromSource(e, _previousNextRefreshTime);
-      }
-      synchronized (lock) {
-        touchedTime = System.currentTimeMillis();
-        readNonFreshCnt++;
-      }
-      return org.cache2k.impl.Entry.READ_NON_VALID;
-    }
-    return insertEntryFromStorage(se, e, _needsFetch);
-  }
-   */
-
-  protected long insertEntryFromStorage(StorageEntry se, Entry<K, V> e, boolean _needsFetch) {
-    e.setLastModificationFromStorage(se.getCreatedOrUpdated());
-    V _valueOrException = (V) se.getValueOrException();
-    long now = System.currentTimeMillis();
-    V v = (V) se.getValueOrException();
-    long _nextRefreshTime = maxLinger == 0 ? 0 : Long.MAX_VALUE;
-    long _expiryTimeFromStorage = se.getValueExpiryTime();
-    boolean _expired = _expiryTimeFromStorage != 0 && _expiryTimeFromStorage <= now;
-    if (!_expired && timer != null) {
-      _nextRefreshTime = calcNextRefreshTime((K) se.getKey(), v, se.getCreatedOrUpdated(), null);
-      _expired = _nextRefreshTime > org.cache2k.impl.Entry.EXPIRY_TIME_MIN && _nextRefreshTime <= now;
-    }
-    boolean _fetchAlways = timer == null && maxLinger == 0;
-    if (_expired || _fetchAlways) {
-      if (_needsFetch) {
-        e.value = _valueOrException;
-        e.setLoadedNonValidAndFetch();
-        return fetchFromSource(e, 0);
-      } else {
-        synchronized (lock) {
-          touchedTime = now;
-          readNonFreshCnt++;
-        }
-        return Entry.READ_NON_VALID;
-      }
-    }
-    return insert(e, _valueOrException, 0, now, INSERT_STAT_UPDATE, _nextRefreshTime);
   }
 
   protected long fetchFromSource(Entry<K, V> e, long _previousNextRefreshValue) {
