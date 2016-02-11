@@ -419,6 +419,11 @@ public class Entry<K, T>
     nextRefreshTime = GONE_STATE;
   }
 
+  /**
+   * The entry is not present in the heap any more and was evicted, expired or removed.
+   * Usually we should never grab an entry from the hash table that has this state, but,
+   * after the synchronize goes through somebody else might have evicted it.
+   */
   public boolean isGone() {
     return nextRefreshTime == GONE_STATE;
   }
