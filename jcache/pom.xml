@@ -16,7 +16,7 @@
   <name>cache2k JCache JSR107 parent</name>
 
   <modules>
-    <module>impl</module>
+    <module>provider</module>
     <module>tck-tests</module>
   </modules>
 
@@ -30,5 +30,20 @@
     </dependency>
 
   </dependencies>
+
+  <profiles>
+
+    <!--
+      Local copy for IDE based tests. This is a clone of the TCK and
+      not checked in on GitHub.
+     -->
+    <profile>
+      <id>tck-test-clone</id>
+      <modules>
+        <module>tck-test-clone</module>
+      </modules>
+    </profile>
+
+  </profiles>
 
 </project>

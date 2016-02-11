@@ -113,7 +113,7 @@
                         <java.net.preferIPv4Stack>${java.net.preferIPv4Stack}</java.net.preferIPv4Stack>
                         <domainJar>${domain-lib-dir}/${domain-jar}</domainJar>
 
-                      <javax.management.builder.initial>org.cache2k.jcache.tckGlue.TckMBeanServerBuilder
+                      <javax.management.builder.initial>org.cache2k.jcache.provider.tckGlue.TckMBeanServerBuilder
                       </javax.management.builder.initial>
                       <org.jsr107.tck.management.agentId>someUniqueString
                       </org.jsr107.tck.management.agentId>
