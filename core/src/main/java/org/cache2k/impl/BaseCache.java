@@ -1337,6 +1337,9 @@ public abstract class BaseCache<K, V>
         _hasFreshData = e.hasFreshData();
         if (_hasFreshData) {
           _previousValue = (V) e.getValueOrException();
+          metrics.heapHitButNoRead();
+        } else {
+          peekMissCnt++;
         }
         putValue(e, _value);
         break;
@@ -1449,8 +1452,14 @@ public abstract class BaseCache<K, V>
 
   @Override
   public boolean contains(K key) {
-    Entry e = lookupEntrySynchronizedNoHitRecord(key);
-    return e != null && e.hasFreshData();
+    Entry e = lookupEntrySynchronized(key);
+    if (e != null) {
+      metrics.containsButHit();
+      if (e.hasFreshData()) {
+        return true;
+      }
+    }
+    return false;
   }
 
   @Override
@@ -1469,41 +1478,34 @@ public abstract class BaseCache<K, V>
 
   @Override
   public boolean putIfAbsent(K key, V value) {
-    int _spinCount = TUNABLE.maximumEntryLockSpins;
-    Entry e;
     for (;;) {
-      if (_spinCount-- <= 0) {
-        throw new CacheLockSpinsExceededError();
-      }
-      e = lookupOrNewEntrySynchronizedNoHitRecord(key);
+      Entry e = lookupOrNewEntrySynchronized(key);
       synchronized (e) {
+        e.waitForFetch();
         if (e.isGone()) {
           continue;
         }
         if (e.hasFreshData()) {
           return false;
         }
+        peekMissCnt++;
         putValue(e, value);
+        return true;
       }
-      synchronized (lock) {
-        if (!e.isVirgin()) {
-          recordHit(e);
-          peekHitNotFreshCnt++;
-        }
-      }
-      return true;
     }
   }
 
   @Override
   public void put(K key, V value) {
-    Entry e;
     for (;;) {
-      e = lookupOrNewEntrySynchronized(key);
+      Entry e = lookupOrNewEntrySynchronized(key);
       synchronized (e) {
         e.waitForFetch();
         if (e.isGone()) {
           continue;
+        }
+        if (!e.isVirgin()) {
+          metrics.heapHitButNoRead();
         }
         putValue(e, value);
       }
