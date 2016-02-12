@@ -559,6 +559,9 @@ public interface Cache<K, V> extends KeyValueSource<K, V>, Iterable<CacheEntry<K
    *
    * <p>Statistics: Iteration is neutral to the cache statistics. Counting hits for iterated
    * entries would effectively render the hitrate metric meaningless if iterations are used.
+   *
+   * <p>In case a storage (off heap or persistence) is attached the iterated entries are
+   * always inserted into the heap cache. This will affect statistics.
    */
   @Override
   ClosableIterator<CacheEntry<K, V>> iterator();
