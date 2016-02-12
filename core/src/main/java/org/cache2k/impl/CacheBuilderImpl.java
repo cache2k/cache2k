@@ -196,6 +196,13 @@ public class CacheBuilderImpl<K, T> extends CacheBuilder<K, T> {
     configureViaSetters(bc);
 
     boolean _wrap = false;
+
+    List<StorageConfiguration> _stores = config.getStorageModules();
+
+    if (syncListeners != null) { _wrap = true; }
+    if (cacheWriter != null) { _wrap = true; }
+    if (_stores.size() > 0) { _wrap = true; }
+
     _wrap = true;
     WiredCache<K, T> wc = null;
     if (_wrap) {
@@ -208,7 +215,6 @@ public class CacheBuilderImpl<K, T> extends CacheBuilder<K, T> {
     bc.setName(_name);
 
     if (_wrap) {
-      List<StorageConfiguration> _stores = config.getStorageModules();
       if (_stores.size() == 1) {
         StorageConfiguration cfg = _stores.get(0);
         if (cfg.getEntryCapacity() < 0) {
