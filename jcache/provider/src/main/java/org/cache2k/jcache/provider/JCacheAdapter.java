@@ -30,8 +30,8 @@ import org.cache2k.EntryProcessingResult;
 import org.cache2k.FetchCompletedListener;
 import org.cache2k.MutableCacheEntry;
 import org.cache2k.WrappedAttachmentException;
+import org.cache2k.impl.EntryAction;
 import org.cache2k.impl.InternalCache;
-import org.cache2k.impl.WiredCache;
 import org.cache2k.jcache.provider.event.EventHandlingBase;
 
 import javax.cache.CacheManager;
@@ -135,7 +135,7 @@ public class JCacheAdapter<K, V> implements javax.cache.Cache<K, V> {
       cache.put(k, v);
     } catch (CacheWriterException ex) {
       throw new javax.cache.integration.CacheWriterException(ex);
-    } catch (WiredCache.ListenerException ex) {
+    } catch (EntryAction.ListenerException ex) {
       throw new javax.cache.event.CacheEntryListenerException(ex);
     }
   }
@@ -148,7 +148,7 @@ public class JCacheAdapter<K, V> implements javax.cache.Cache<K, V> {
       return cache.peekAndPut(key, _value);
     } catch (CacheWriterException ex) {
       throw new javax.cache.integration.CacheWriterException(ex);
-    } catch (WiredCache.ListenerException ex) {
+    } catch (EntryAction.ListenerException ex) {
       throw new javax.cache.event.CacheEntryListenerException(ex);
     }
   }
@@ -177,7 +177,7 @@ public class JCacheAdapter<K, V> implements javax.cache.Cache<K, V> {
     }
     try {
       cache.putAll(map);
-    } catch (WiredCache.ListenerException ex) {
+    } catch (EntryAction.ListenerException ex) {
       throw new javax.cache.event.CacheEntryListenerException(ex);
     } catch (CacheWriterException ex) {
       throw new javax.cache.integration.CacheWriterException(ex);
@@ -190,7 +190,7 @@ public class JCacheAdapter<K, V> implements javax.cache.Cache<K, V> {
     checkNullValue(_value);
     try {
       return cache.putIfAbsent(key, _value);
-    } catch (WiredCache.ListenerException ex) {
+    } catch (EntryAction.ListenerException ex) {
       throw new javax.cache.event.CacheEntryListenerException(ex);
     } catch (CacheWriterException ex) {
       throw new javax.cache.integration.CacheWriterException(ex);
@@ -202,7 +202,7 @@ public class JCacheAdapter<K, V> implements javax.cache.Cache<K, V> {
     checkClosed();
     try {
       return cacheImpl.containsAndRemove(key);
-    } catch (WiredCache.ListenerException ex) {
+    } catch (EntryAction.ListenerException ex) {
       throw new javax.cache.event.CacheEntryListenerException(ex);
     } catch (CacheWriterException ex) {
       throw new javax.cache.integration.CacheWriterException(ex);
@@ -215,7 +215,7 @@ public class JCacheAdapter<K, V> implements javax.cache.Cache<K, V> {
     checkNullValue(_oldValue);
     try {
       return cache.removeIfEquals(key, _oldValue);
-    } catch (WiredCache.ListenerException ex) {
+    } catch (EntryAction.ListenerException ex) {
       throw new javax.cache.event.CacheEntryListenerException(ex);
     } catch (CacheWriterException ex) {
       throw new javax.cache.integration.CacheWriterException(ex);
@@ -227,7 +227,7 @@ public class JCacheAdapter<K, V> implements javax.cache.Cache<K, V> {
     checkClosed();
     try {
       return cache.peekAndRemove(key);
-    } catch (WiredCache.ListenerException ex) {
+    } catch (EntryAction.ListenerException ex) {
       throw new javax.cache.event.CacheEntryListenerException(ex);
     } catch (CacheWriterException ex) {
       throw new javax.cache.integration.CacheWriterException(ex);
@@ -241,7 +241,7 @@ public class JCacheAdapter<K, V> implements javax.cache.Cache<K, V> {
     checkNullValue(_newValue);
     try {
       return cache.replaceIfEquals(key, _oldValue, _newValue);
-    } catch (WiredCache.ListenerException ex) {
+    } catch (EntryAction.ListenerException ex) {
       throw new javax.cache.event.CacheEntryListenerException(ex);
     } catch (CacheWriterException ex) {
       throw new javax.cache.integration.CacheWriterException(ex);
@@ -254,7 +254,7 @@ public class JCacheAdapter<K, V> implements javax.cache.Cache<K, V> {
     checkNullValue(_value);
     try {
       return cache.replace(key, _value);
-    } catch (WiredCache.ListenerException ex) {
+    } catch (EntryAction.ListenerException ex) {
       throw new javax.cache.event.CacheEntryListenerException(ex);
     } catch (CacheWriterException ex) {
       throw new javax.cache.integration.CacheWriterException(ex);
@@ -267,7 +267,7 @@ public class JCacheAdapter<K, V> implements javax.cache.Cache<K, V> {
     checkNullValue(_value);
     try {
       return cache.peekAndReplace(key, _value);
-    } catch (WiredCache.ListenerException ex) {
+    } catch (EntryAction.ListenerException ex) {
       throw new javax.cache.event.CacheEntryListenerException(ex);
     } catch (CacheWriterException ex) {
       throw new javax.cache.integration.CacheWriterException(ex);
@@ -279,7 +279,7 @@ public class JCacheAdapter<K, V> implements javax.cache.Cache<K, V> {
     checkClosed();
     try {
       cache.removeAll(keys);
-    } catch (WiredCache.ListenerException ex) {
+    } catch (EntryAction.ListenerException ex) {
       throw new javax.cache.event.CacheEntryListenerException(ex);
     } catch (CacheWriterException ex) {
       throw new javax.cache.integration.CacheWriterException(ex);
@@ -291,7 +291,7 @@ public class JCacheAdapter<K, V> implements javax.cache.Cache<K, V> {
     checkClosed();
     try {
       cache.removeAll();
-    } catch (WiredCache.ListenerException ex) {
+    } catch (EntryAction.ListenerException ex) {
       throw new javax.cache.event.CacheEntryListenerException(ex);
     } catch (CacheWriterException ex) {
       throw new javax.cache.integration.CacheWriterException(ex);
