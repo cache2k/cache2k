@@ -28,8 +28,6 @@ import org.cache2k.ClosableIterator;
 import org.cache2k.StorageConfiguration;
 import org.cache2k.impl.threading.Futures;
 import org.cache2k.impl.threading.LimitedPooledExecutor;
-import org.cache2k.impl.timer.TimerListener;
-import org.cache2k.impl.timer.TimerService;
 import org.cache2k.spi.SingleProviderResolver;
 import org.cache2k.storage.CacheStorage;
 import org.cache2k.storage.CacheStorageContext;
@@ -45,11 +43,14 @@ import org.cache2k.impl.util.TunableConstants;
 import org.cache2k.impl.util.TunableFactory;
 
 import java.io.NotSerializableException;
+import java.util.Date;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.NoSuchElementException;
 import java.util.Properties;
 import java.util.Set;
+import java.util.Timer;
+import java.util.TimerTask;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.Callable;
@@ -92,16 +93,23 @@ public class PassingStorageAdapter extends StorageAdapter {
 
   long flushIntervalMillis = 0;
   Object flushLock = new Object();
-  TimerService.CancelHandle flushTimerHandle;
+  TimerTask flushTimerTask;
   Future<Void> lastExecutingFlush = new Futures.FinishedFuture<Void>();
 
   Object purgeRunningLock = new Object();
 
   Log log;
   StorageAdapter.Parent parent;
+  Timer timer;
+  boolean timerNeedsClose = false;
 
   public PassingStorageAdapter(WiredCache wc, BaseCache _cache, StorageAdapter.Parent _parent, CacheConfig _cacheConfig,
                                StorageConfiguration _storageConfig) {
+    timer = _cache.timer;
+    if (timer == null) {
+      timer = new Timer(_cache.getCompleteName() + "-flushtimer", true);
+      timerNeedsClose = true;
+    }
     wiredCache = wc;
     cache = _cache;
     parent = _parent;
@@ -673,6 +681,10 @@ public class PassingStorageAdapter extends StorageAdapter {
 
     @Override
     public void close() {
+      if (timerNeedsClose && timer != null) {
+        timer.cancel();
+        timer = null;
+      }
       abortFlag = true;
       if (heapIteration != null) {
         heapIteration.close();
@@ -705,7 +717,7 @@ public class PassingStorageAdapter extends StorageAdapter {
       return;
     }
     synchronized (flushLock) {
-      if (flushTimerHandle != null) {
+      if (flushTimerTask != null) {
         return;
       }
       scheduleFlushTimer();
@@ -713,20 +725,20 @@ public class PassingStorageAdapter extends StorageAdapter {
   }
 
   private void scheduleFlushTimer() {
-    TimerListener l = new TimerListener() {
+    flushTimerTask = new TimerTask() {
       @Override
-      public void fire(long _time) {
+      public void run() {
         onFlushTimerEvent();
       }
     };
     long _fireTime = System.currentTimeMillis() + config.getFlushIntervalMillis();
-    flushTimerHandle = cache.timerService.add(l, _fireTime);
+    timer.schedule(flushTimerTask, new Date(_fireTime));
   }
+
 
   protected void onFlushTimerEvent() {
     synchronized (flushLock) {
-      flushTimerHandle.cancel();
-      flushTimerHandle = null;
+      cancelFlushTimer();
       if (storage instanceof ClearStorageBuffer ||
         (!lastExecutingFlush.isDone())) {
         checkStartFlushTimer();
@@ -749,10 +761,7 @@ public class PassingStorageAdapter extends StorageAdapter {
    */
   public void flush() {
     synchronized (flushLock) {
-      if (flushTimerHandle != null) {
-        flushTimerHandle.cancel();
-        flushTimerHandle = null;
-      }
+      cancelFlushTimer();
     }
     Callable<Void> c = new Callable<Void>() {
       @Override
@@ -786,6 +795,13 @@ public class PassingStorageAdapter extends StorageAdapter {
     }
   }
 
+  private void cancelFlushTimer() {
+    if (flushTimerTask != null) {
+      flushTimerTask.cancel();
+      flushTimerTask = null;
+    }
+  }
+
   private void doStorageFlush() throws Exception {
     FlushableStorage.FlushContext ctx = new MyFlushContext();
     FlushableStorage _storage = (FlushableStorage) storage;
@@ -799,10 +815,7 @@ public class PassingStorageAdapter extends StorageAdapter {
       if (flushIntervalMillis >= 0) {
         flushIntervalMillis = -1;
       }
-      if (flushTimerHandle != null) {
-        flushTimerHandle.cancel();
-        flushTimerHandle = null;
-      }
+      cancelFlushTimer();
       if (!lastExecutingFlush.isDone()) {
         lastExecutingFlush.cancel(false);
         return lastExecutingFlush;

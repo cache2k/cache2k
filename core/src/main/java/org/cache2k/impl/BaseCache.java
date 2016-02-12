@@ -25,8 +25,6 @@ package org.cache2k.impl;
 import org.cache2k.*;
 import org.cache2k.impl.operation.ExaminationEntry;
 import org.cache2k.impl.threading.Futures;
-import org.cache2k.impl.timer.GlobalTimerService;
-import org.cache2k.impl.timer.TimerService;
 import org.cache2k.impl.util.ThreadDump;
 
 import org.cache2k.impl.util.Log;
@@ -257,8 +255,6 @@ public abstract class BaseCache<K, V>
   protected Class valueType;
 
   protected ExceptionPropagator exceptionPropagator = DEFAULT_EXCEPTION_PROPAGATOR;
-
-  protected TimerService timerService = GlobalTimerService.getInstance();
 
   private int featureBits = 0;
 
