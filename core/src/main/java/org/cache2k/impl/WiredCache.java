@@ -205,10 +205,6 @@ public class WiredCache<K, V> extends AbstractCache<K, V>
     return heapCache.lookupEntryUnsynchronized(key, hc);
   }
 
-  Entry<K, V> lookupNoHit(K key) {
-    final int hc =  heapCache.modifiedHash(key.hashCode());
-    return heapCache.lookupEntryUnsynchronizedNoHitRecord(key, hc);
-  }
 
   @Override
   public V get(K key) {
