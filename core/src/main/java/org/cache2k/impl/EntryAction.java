@@ -40,6 +40,8 @@ import org.cache2k.storage.StorageCallback;
 import org.cache2k.storage.StorageEntry;
 
 /**
+ * This is a method object to perform an operation on an entry.
+ *
  * @author Jens Wilke
  */
 @SuppressWarnings("SynchronizeOnNonFinalField")
