@@ -155,8 +155,8 @@ public interface Cache<K, V> extends KeyValueSource<K, V>, Iterable<CacheEntry<K
   /**
    * Returns true, if there is a mapping for the specified key.
    *
-   * <p>This operation is neutral to the cache statistics and does not
-   * mark the entry as accessed to delay a potential eviction.
+   * <p>Statistics: The operation does increase the usage counter, but does
+   * not count as read and therefore does not influence miss or hit values.
    *
    * @param key key which association should be checked
    * @return {@code true}, if this cache contains a mapping for the specified
