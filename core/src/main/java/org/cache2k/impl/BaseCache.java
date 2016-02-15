@@ -2506,41 +2506,6 @@ public abstract class BaseCache<K, V>
     return cnt;
   }
 
-  void startBulkOperation(K[] _keys, int[] _hashCodes, Entry[] _entries, long[] _pNrt) {
-    calcHashCodes(_keys, _hashCodes);
-    int cnt = 0;
-    cnt = startOperationForExistingEntriesNoWait(_keys, _hashCodes, _entries, _pNrt);
-    if (cnt == _keys.length) { return; }
-    cnt += startOperationNewEntries(_keys, _hashCodes, _entries, _pNrt);
-    if (cnt == _keys.length) { return; }
-    cnt += startOperationNewEntries(_keys, _hashCodes, _entries, _pNrt);
-    if (cnt == _keys.length) { return; }
-    int _spinCount = TUNABLE.maximumEntryLockSpins;
-    do {
-      if (_spinCount-- <= 0) {
-        throw new CacheLockSpinsExceededError();
-      }
-      cnt += startOperationNewEntriesAndWait(_keys, _hashCodes, _entries, _pNrt);
-    } while (cnt != _keys.length);
-  }
-
-  void initializeEntries(BulkOperation op, long now, K[] _keys, Entry[] _entries, long[] _pNrt, EntryForProcessor<K, V>[] _pEntries) {
-    for (int i = _keys.length - 1; i >= 0; i--) {
-      Entry e = _entries[i];
-      EntryForProcessor<K, V> ep;
-      _pEntries[i] = ep = new EntryForProcessor<K, V>();
-      ep.index = i;
-      ep.lastModification = e.getLastModification();
-      ep.key = _keys[i];
-      ep.operation = op;
-      if (e.hasFreshData(now, _pNrt[i])) {
-        ep.value = (V) e.getValueOrException();
-      } else {
-        ep.removed = ep.notExistingInCacheYet = true;
-      }
-    }
-  }
-
   Specification<K,V> spec() { return Specification.SINGLETON; }
 
   @Override
@@ -2556,52 +2521,6 @@ public abstract class BaseCache<K, V>
   @Override
   public <R> R invoke(K key, CacheEntryProcessor<K, V, R> entryProcessor, Object... _args) {
     return execute(key, spec().invoke(key, source != null, entryProcessor, _args));
-  }
-
-  class BulkOperation {
-    Entry[] entries;
-    long[] pNrt;
-
-    public BulkOperation(Entry[] entries, long[] pNrt) {
-      this.entries = entries;
-      this.pNrt = pNrt;
-    }
-
-    void loadOrFetch(EntryForProcessor<K, V> ep) {
-      int idx = ep.index;
-      Entry e = entries[idx];
-      pNrt[idx] = fetch(e, pNrt[idx]);
-      if (e.isVirgin()) {
-        e.setLoadedNonValidAndFetch();
-      }
-      ep.needsLoadOrFetch = false;
-      if (e.hasFreshData(System.currentTimeMillis(), pNrt[idx])) {
-        ep.value = (V) e.getValue();
-        ep.lastModification = e.getLastModification();
-      } else {
-        ep.removed = true;
-      }
-    }
-
-    /*
-    void loadAndFetch(EntryForProcessor<K, T> ep) {
-      int idx = ep.index;
-      E e = entries[idx];
-      pNrt[idx] = fetch(e, pNrt[idx]);
-      if (e.isVirgin()) {
-        e.setLoadedNonValidAndFetch();
-      }
-      ep.needsLoad = false;
-      ep.needsFetch = false;
-      if (e.hasFreshData(System.currentTimeMillis(), pNrt[idx])) {
-        ep.value = (T) e.getValue();
-        ep.lastModification = e.getLastModification();
-      } else {
-        ep.removed = true;
-      }
-    }
-    */
-
   }
 
   public abstract long getHitCnt();
