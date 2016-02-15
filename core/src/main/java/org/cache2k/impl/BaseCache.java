@@ -2411,27 +2411,6 @@ public abstract class BaseCache<K, V>
     return convertValueMap(map);
   }
 
-  /**
-   * Retrieve
-   */
-  @SuppressWarnings("unused")
-  public void getBulk(K[] _keys, V[] _result, BitSet _fetched, int s, int e) {
-    sequentialGetFallBack(_keys, _result, _fetched, s, e);
-  }
-
-
-
-  final void sequentialGetFallBack(K[] _keys, V[] _result, BitSet _fetched, int s, int e) {
-    for (int i = s; i < e; i++) {
-      if (!_fetched.get(i)) {
-        try {
-          _result[i] = get(_keys[i]);
-        } catch (Exception ignore) {
-        }
-      }
-    }
-  }
-
   public void putAll(Map<? extends K, ? extends V> valueMap) {
     if (valueMap.containsKey(null)) {
       throw new NullPointerException("map contains null key");
@@ -2439,71 +2418,6 @@ public abstract class BaseCache<K, V>
     for (Map.Entry<? extends K, ? extends V> e : valueMap.entrySet()) {
       put(e.getKey(), e.getValue());
     }
-  }
-
-  /**
-   * We need the hash code multiple times. Calculate all hash codes.
-   */
-  void calcHashCodes(K[] _keys, int[] _hashCodes) {
-    for (int i = _keys.length - 1; i >= 0; i--) {
-      _hashCodes[i] = modifiedHash(_keys[i].hashCode());
-    }
-  }
-
-  int startOperationForExistingEntriesNoWait(K[] _keys, int[] _hashCodes, Entry[] _entries, long[] _pNrt) {
-    int cnt = 0;
-    for (int i = _keys.length - 1; i >= 0; i--) {
-      Entry e = _entries[i];
-      if (e != null) { continue; }
-      K key = _keys[i];
-      e = lookupEntryUnsynchronized(key, _hashCodes[i]);
-      if (e == null) { continue; }
-      synchronized (e) {
-        if (!e.isGone() && !e.isFetchInProgress()) {
-          _pNrt[i] = e.startFetch();
-          _entries[i] = e;
-          cnt++;
-        }
-      }
-    }
-    return cnt;
-  }
-
-  int startOperationNewEntries(K[] _keys, int[] _hashCodes, Entry[] _entries, long[] _pNrt) {
-    int cnt = 0;
-    for (int i = _keys.length - 1; i >= 0; i--) {
-      Entry e = _entries[i];
-      if (e != null) { continue; }
-      K key = _keys[i];
-      e = lookupOrNewEntrySynchronized(key, _hashCodes[i]);
-      synchronized (e) {
-        if (!e.isGone() && !e.isFetchInProgress()) {
-          _pNrt[i] = e.startFetch();
-          _entries[i] = e;
-          cnt++;
-        }
-      }
-    }
-    return cnt;
-  }
-
-  int startOperationNewEntriesAndWait(K[] _keys, int[] _hashCodes, Entry[] _entries, long[] _pNrt) {
-    int cnt = 0;
-    for (int i = _keys.length - 1; i >= 0; i--) {
-      Entry e = _entries[i];
-      if (e != null) { continue; }
-      K key = _keys[i];
-      e = lookupOrNewEntrySynchronized(key, _hashCodes[i]);
-      synchronized (e) {
-        e.waitForFetch();
-        if (!e.isGone()) {
-          _pNrt[i] = e.startFetch();
-          _entries[i] = e;
-          cnt++;
-        }
-      }
-    }
-    return cnt;
   }
 
   Specification<K,V> spec() { return Specification.SINGLETON; }
