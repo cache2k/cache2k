@@ -2548,6 +2548,11 @@ public abstract class BaseCache<K, V>
     return new EntryAction<K, V, R>(this, this, op, key, e);
   }
 
+  /**
+   * Simply the {@link EntryAction} based code to provide the entry processor. If we code it directly this
+   * might be a little bit more efficient, but it gives quite a code bloat which has lots of
+   * corner cases for loader and exception handling.
+   */
   @Override
   public <R> R invoke(K key, CacheEntryProcessor<K, V, R> entryProcessor, Object... _args) {
     return execute(key, spec().invoke(key, source != null, entryProcessor, _args));
