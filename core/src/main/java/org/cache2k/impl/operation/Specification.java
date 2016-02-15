@@ -36,6 +36,8 @@ import org.cache2k.impl.ExceptionWrapper;
 @SuppressWarnings({"unchecked", "UnusedParameters"})
 public class Specification<K, V> {
 
+  public final static Specification SINGLETON = new Specification();
+
   public Semantic<K, V, V> peek(K key) {
     return PEEK;
   }

@@ -252,43 +252,6 @@ public class WiredCache<K, V> extends AbstractCache<K, V>
   }
 
   @Override
-  public <R> Map<K, EntryProcessingResult<R>> invokeAll(Set<? extends K> keys, CacheEntryProcessor<K, V, R> p, Object... _objs) {
-    Map<K, EntryProcessingResult<R>> m = new HashMap<K, EntryProcessingResult<R>>();
-    for (K k : keys) {
-      try {
-        final R _result = invoke(k, p, _objs);
-        if (_result == null) {
-          continue;
-        }
-        m.put(k, new EntryProcessingResult<R>() {
-          @Override
-          public R getResult() {
-            return _result;
-          }
-
-          @Override
-          public Throwable getException() {
-            return null;
-          }
-        });
-      } catch (final Throwable t) {
-        m.put(k, new EntryProcessingResult<R>() {
-          @Override
-          public R getResult() {
-            return null;
-          }
-
-          @Override
-          public Throwable getException() {
-            return t;
-          }
-        });
-      }
-    }
-    return m;
-  }
-
-  @Override
   public ClosableIterator<CacheEntry<K, V>> iterator() {
     ClosableIterator<CacheEntry<K, V>> tor;
     if (storage == null) {
@@ -567,6 +530,9 @@ public class WiredCache<K, V> extends AbstractCache<K, V>
     }
   }
 
+  /**
+   * Used by the storage iterator to insert the entry in the cache.
+   */
   public Entry<K,V> insertEntryFromStorage(final StorageEntry se) {
     Semantic<K,V, Entry<K,V>> op = new Semantic.Read<K, V, Entry<K, V>>() {
       @Override
@@ -584,26 +550,9 @@ public class WiredCache<K, V> extends AbstractCache<K, V>
     return e;
   }
 
-  <R> R execute(K key, Entry<K, V> e, Semantic<K, V, R> op) {
-    EntryAction<K, V, R> _action = new MyEntryAction<R>(op, key, e);
-    return execute(op, _action);
-  }
-
-  private <R> R execute(Semantic<K, V, R> op, final EntryAction<K, V, R> _action) {
-    op.start(_action);
-    if (_action.entryLocked) {
-      throw new CacheInternalError("entry not unlocked?");
-    }
-    WrappedAttachmentException t = _action.exceptionToPropagate;
-    if (t != null) {
-      t.fillInStackTrace();
-      throw t;
-    }
-    return _action.result;
-  }
-
-  <R> R execute(K key, Semantic<K, V, R> op) {
-    return execute(key, null, op);
+  @Override
+  protected <R> EntryAction<K, V, R> createEntryAction(final K key, final Entry<K, V> e, final Semantic<K, V, R> op) {
+    return new MyEntryAction<R>(op, key, e);
   }
 
   /**

@@ -23,7 +23,12 @@ package org.cache2k.impl;
  */
 
 import org.cache2k.CacheEntry;
+import org.cache2k.CacheEntryProcessor;
+import org.cache2k.EntryProcessingResult;
+import org.cache2k.WrappedAttachmentException;
+import org.cache2k.impl.operation.Semantic;
 
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentMap;
@@ -78,6 +83,67 @@ public abstract class AbstractCache<K, V> implements InternalCache<K, V> {
   @Override
   public void purge() {
 
+  }
+
+  @Override
+  public <R> Map<K, EntryProcessingResult<R>> invokeAll(Set<? extends K> keys, CacheEntryProcessor<K, V, R> p, Object... _objs) {
+    Map<K, EntryProcessingResult<R>> m = new HashMap<K, EntryProcessingResult<R>>();
+    for (K k : keys) {
+      try {
+        final R _result = invoke(k, p, _objs);
+        if (_result == null) {
+          continue;
+        }
+        m.put(k, new EntryProcessingResult<R>() {
+          @Override
+          public R getResult() {
+            return _result;
+          }
+
+          @Override
+          public Throwable getException() {
+            return null;
+          }
+        });
+      } catch (final Throwable t) {
+        m.put(k, new EntryProcessingResult<R>() {
+          @Override
+          public R getResult() {
+            return null;
+          }
+
+          @Override
+          public Throwable getException() {
+            return t;
+          }
+        });
+      }
+    }
+    return m;
+  }
+
+  protected <R> R execute(K key, Entry<K, V> e, Semantic<K, V, R> op) {
+    EntryAction<K, V, R> _action = createEntryAction(key, e, op);
+    return execute(op, _action);
+  }
+
+  protected abstract <R> EntryAction<K, V, R> createEntryAction(K key, Entry<K, V> e, Semantic<K, V, R> op);
+
+  protected <R> R execute(Semantic<K, V, R> op, final EntryAction<K, V, R> _action) {
+    op.start(_action);
+    if (_action.entryLocked) {
+      throw new CacheInternalError("entry not unlocked?");
+    }
+    WrappedAttachmentException t = _action.exceptionToPropagate;
+    if (t != null) {
+      t.fillInStackTrace();
+      throw t;
+    }
+    return _action.result;
+  }
+
+  protected <R> R execute(K key, Semantic<K, V, R> op) {
+    return execute(key, null, op);
   }
 
 }

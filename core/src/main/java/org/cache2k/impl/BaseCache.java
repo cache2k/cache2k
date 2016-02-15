@@ -24,6 +24,8 @@ package org.cache2k.impl;
 
 import org.cache2k.*;
 import org.cache2k.impl.operation.ExaminationEntry;
+import org.cache2k.impl.operation.Semantic;
+import org.cache2k.impl.operation.Specification;
 import org.cache2k.impl.threading.Futures;
 import org.cache2k.impl.util.ThreadDump;
 
@@ -41,7 +43,6 @@ import java.util.AbstractMap;
 import java.util.AbstractSet;
 import java.util.Arrays;
 import java.util.BitSet;
-import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -2540,113 +2541,16 @@ public abstract class BaseCache<K, V>
     }
   }
 
+  Specification<K,V> spec() { return Specification.SINGLETON; }
+
   @Override
-  public <R> R invoke(K key, CacheEntryProcessor<K, V, R> entryProcessor, Object... _args) {
-    Map<K, EntryProcessingResult<R>> m = invokeAll(Collections.singleton(key), entryProcessor, _args);
-    return m.size() > 0 ? m.values().iterator().next().getResult() : null;
+  protected <R> EntryAction<K, V, R> createEntryAction(final K key, final Entry<K, V> e, final Semantic<K, V, R> op) {
+    return new EntryAction<K, V, R>(this, this, op, key, e);
   }
 
   @Override
-  public <R> Map<K, EntryProcessingResult<R>> invokeAll(Set<? extends K> _inputKeys, CacheEntryProcessor<K , V, R> p, Object... _args) {
-    checkClosed();
-    K[] _keys = _inputKeys.toArray((K[]) Array.newInstance(keyType, 0));
-    int[] _hashCodes = new int[_keys.length];
-    Entry[] _entries = (Entry[]) Array.newInstance(newEntry().getClass(), _keys.length);
-    long[] _pNrt = new long[_keys.length];
-    long t0 = System.currentTimeMillis();
-    startBulkOperation(_keys, _hashCodes, _entries, _pNrt);
-    EntryForProcessor<K, V>[] _pEntries = new EntryForProcessor[_keys.length];
-    BulkOperation op = new BulkOperation(_entries, _pNrt);
-    initializeEntries(op, t0, _keys, _entries, _pNrt, _pEntries);
-
-    Map<K, EntryProcessingResult<R>> _results = new HashMap<K, EntryProcessingResult<R>>();
-    boolean _gotException = false;
-    for (int i = _keys.length - 1; i >= 0; i--) {
-      EntryProcessingResult<R> _result;
-      try {
-         R r = p.process(_pEntries[i], _args);
-         _result = r != null ? new ProcessingResultImpl<R>(r) : null;
-      } catch (Throwable t) {
-        _result = new ProcessingResultImpl<R>(t);
-        _gotException = true;
-      }
-      if (_result != null) {
-        _results.put(_keys[i], _result);
-      }
-    }
-
-    long[] _newExpiry = new long[_keys.length];
-    Exception _propagateException = null;
-    if (!_gotException && timer != null) {
-      try {
-        for (int i = _keys.length - 1; i >= 0; i--) {
-          if (_pEntries[i].updated && !_pEntries[i].removed) {
-            _newExpiry[i] = calculateNextRefreshTime(_entries[i], (V) _pEntries[i].value, t0, _pNrt[i]);
-          }
-        }
-      } catch (Exception ex) {
-        _gotException = true;
-        _propagateException = ex;
-      }
-    }
-
-    if (_gotException) {
-      for (int i = _keys.length - 1; i >= 0; i--) {
-        if (_pNrt[i] == org.cache2k.impl.Entry.VIRGIN_STATE) {
-          synchronized (lock) {
-            atomicOpNewEntryCnt++;
-          }
-          _pNrt[i] = org.cache2k.impl.Entry.ATOMIC_OP_NON_VALID;
-        }
-        finishFetch(_entries[i], _pNrt[i]);
-      }
-    } else {
-      for (int i = _keys.length - 1; i >= 0; i--) {
-        Entry e = _entries[i];
-        if (!_pEntries[i].updated) {
-          if (_pNrt[i] == org.cache2k.impl.Entry.VIRGIN_STATE) {
-            synchronized (lock) {
-              atomicOpNewEntryCnt++;
-            }
-            _pNrt[i] = org.cache2k.impl.Entry.ATOMIC_OP_NON_VALID;
-          }
-          finishFetch(e, _pNrt[i]);
-          continue;
-        }
-        if (_pEntries[i].removed) {
-          if (e.hasFreshData(System.currentTimeMillis(), _pNrt[i])) {
-            synchronized (e) {
-              finishFetch(e, org.cache2k.impl.Entry.READ_NON_VALID);
-              synchronized (lock) {
-                removeEntry(e);
-                removedCnt++;
-              }
-            }
-          } else {
-            synchronized (lock) {
-              atomicOpNewEntryCnt++;
-            }
-            finishFetch(e, _pNrt[i]);
-          }
-          continue;
-        }
-        long t = System.currentTimeMillis();
-        long _expiry;
-        if (timer == null) {
-          _expiry = maxLinger == 0 ? 0 : Long.MAX_VALUE;
-        } else {
-          _expiry = _newExpiry[i];
-        }
-        e.setLastModification(_pEntries[i].getLastModification());
-        finishFetch(e, insert(e, (V) _pEntries[i].value, t0, t, INSERT_STAT_PUT, _expiry));
-      }
-    }
-
-    if (_propagateException != null) {
-      throw new CacheEntryProcessingException(_propagateException);
-    }
-
-    return _results;
+  public <R> R invoke(K key, CacheEntryProcessor<K, V, R> entryProcessor, Object... _args) {
+    return execute(key, spec().invoke(key, source != null, entryProcessor, _args));
   }
 
   class BulkOperation {
