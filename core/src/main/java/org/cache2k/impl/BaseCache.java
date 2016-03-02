@@ -481,7 +481,7 @@ public abstract class BaseCache<K, V>
       maxLinger = -1;
       return;
     }
-    maxLinger = s * 1000;
+    maxLinger = s * 1000L;
   }
 
   @Override
@@ -506,7 +506,7 @@ public abstract class BaseCache<K, V>
   public void init() {
     synchronized (lock) {
       if (name == null) {
-        name = "" + cacheCnt++;
+        name = String.valueOf(cacheCnt++);
       }
 
       initializeHeapCache();
@@ -1089,7 +1089,7 @@ public abstract class BaseCache<K, V>
           Field f = TimerTask.class.getDeclaredField("state");
           f.setAccessible(true);
           int _state = f.getInt(e.task);
-          _timerState = _state + "";
+          _timerState = String.valueOf(_state);
         } catch (Exception x) {
           _timerState = x.toString();
         }
