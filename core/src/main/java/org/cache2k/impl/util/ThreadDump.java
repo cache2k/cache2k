@@ -33,6 +33,9 @@ import java.lang.management.ThreadMXBean;
  */
 public class ThreadDump {
 
+  private ThreadDump() {
+  }
+
   public static String generateThredDump() {
     final StringBuilder sb = new StringBuilder();
     final ThreadMXBean _threadMXBean = ManagementFactory.getThreadMXBean();

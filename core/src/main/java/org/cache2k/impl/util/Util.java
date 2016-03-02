@@ -30,7 +30,10 @@ import java.sql.Timestamp;
  * @author Jens Wilke; created: 2014-12-18
  */
 public class Util {
-  
+
+  private Util() {
+  }
+
   public static String formatMillis(long _millis) {
      return new Timestamp(_millis).toString();
   }

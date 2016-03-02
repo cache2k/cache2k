@@ -61,6 +61,9 @@ public class Cache2kVersion {
     }
   }
 
+  private Cache2kVersion() {
+  }
+
   public static String getBuildNumber() {
     return buildNumber;
   }
