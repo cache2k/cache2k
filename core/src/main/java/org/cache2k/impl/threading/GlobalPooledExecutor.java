@@ -143,7 +143,7 @@ public class GlobalPooledExecutor {
     synchronized (this) {
       cnt = getThreadInUseCount();
       if (cnt > 0) {
-        if (taskQueue.size() == 0) {
+        if (taskQueue.isEmpty()) {
           return queue(t, _timeoutMillis);
         }
         if (!tunable.disableHardLimit && cnt >= tunable.hardLimitThreadCount) {

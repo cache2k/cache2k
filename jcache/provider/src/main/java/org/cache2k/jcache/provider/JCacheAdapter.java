@@ -338,7 +338,7 @@ public class JCacheAdapter<K, V> implements javax.cache.Cache<K, V> {
     checkClosed();
     checkNullKey(key);
     Map<K, EntryProcessorResult<T>> m = invokeAll(Collections.singleton(key), entryProcessor, arguments);
-    return m.size() > 0 ? m.values().iterator().next().get() : null;
+    return !m.isEmpty() ? m.values().iterator().next().get() : null;
   }
 
   @Override

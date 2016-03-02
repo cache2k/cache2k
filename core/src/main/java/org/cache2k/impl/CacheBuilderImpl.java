@@ -201,7 +201,7 @@ public class CacheBuilderImpl<K, T> extends CacheBuilder<K, T> {
 
     if (syncListeners != null) { _wrap = true; }
     if (cacheWriter != null) { _wrap = true; }
-    if (_stores.size() > 0) { _wrap = true; }
+    if (!_stores.isEmpty()) { _wrap = true; }
 
     _wrap = true;
     WiredCache<K, T> wc = null;
@@ -244,13 +244,13 @@ public class CacheBuilderImpl<K, T> extends CacheBuilder<K, T> {
             rll.add((CacheEntryRemovedListener) el);
           }
         }
-        if (cll.size() > 0) {
+        if (!cll.isEmpty()) {
           wc.syncEntryCreatedListeners = cll.toArray(new CacheEntryCreatedListener[cll.size()]);
         }
-        if (ull.size() > 0) {
+        if (!ull.isEmpty()) {
           wc.syncEntryUpdatedListeners = ull.toArray(new CacheEntryUpdatedListener[ull.size()]);
         }
-        if (rll.size() > 0) {
+        if (!rll.isEmpty()) {
           wc.syncEntryRemovedListeners = rll.toArray(new CacheEntryRemovedListener[rll.size()]);
         }
       }

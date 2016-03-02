@@ -314,7 +314,7 @@ public class CacheManagerImpl extends CacheManager {
    * @throws org.cache2k.CacheException if list does not contain an error
    */
   private void eventuallyThrowException(List<Throwable> _suppressedExceptions) {
-    if (_suppressedExceptions.size() > 0) {
+    if (!_suppressedExceptions.isEmpty()) {
       Throwable _error = null;
       for (Throwable t : _suppressedExceptions) {
         if (t instanceof Error) { _error = t; }

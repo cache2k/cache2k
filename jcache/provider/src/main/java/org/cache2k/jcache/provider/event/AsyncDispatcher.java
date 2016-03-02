@@ -113,12 +113,12 @@ public class AsyncDispatcher<K,V> {
    * queue the event, if already something is happening for this key.
    */
   void deliverAsyncEvent(final EntryEvent<K,V> _event) {
-    if (asyncListenerByType.get(_event.getEventType()).size() == 0) {
+    if (asyncListenerByType.get(_event.getEventType()).isEmpty()) {
       return;
     }
     List<Listener<K,V>> _listeners =
       new ArrayList<Listener<K, V>>(asyncListenerByType.get(_event.getEventType()));
-    if (_listeners.size() == 0) {
+    if (_listeners.isEmpty()) {
       return;
     }
     K key = _event.getKey();
@@ -169,7 +169,7 @@ public class AsyncDispatcher<K,V> {
     EntryEvent<K,V> _event;
     synchronized (getLockObject(key)) {
       Queue<EntryEvent<K,V>> q = keyQueue.get(key);
-      if (q.size() == 0) {
+      if (q.isEmpty()) {
         keyQueue.remove(key);
         return;
       }
@@ -177,7 +177,7 @@ public class AsyncDispatcher<K,V> {
     }
     List<Listener<K,V>> _listeners =
       new ArrayList<Listener<K, V>>(asyncListenerByType.get(_event.getEventType()));
-    if (_listeners.size() == 0) {
+    if (_listeners.isEmpty()) {
       runMoreOnKeyQueueOrStop(key);
       return;
     }

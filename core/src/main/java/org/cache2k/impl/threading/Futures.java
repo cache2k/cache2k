@@ -70,7 +70,7 @@ public class Futures {
      */
     @Override
     public synchronized boolean cancel(boolean mayInterruptIfRunning) {
-      if (futureList.size() == 0) {
+      if (futureList.isEmpty()) {
         return false;
       }
       boolean _flag = true;

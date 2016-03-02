@@ -66,7 +66,7 @@ public abstract class RootAnyBuilder<K, V>
 
   @SuppressWarnings("unchecked")
   private <B extends BaseAnyBuilder> B addModule(B _moduleBuilder) {
-    if (modules.size() == 0) {
+    if (modules.isEmpty()) {
       modules = new ArrayList<BaseAnyBuilder>();
     }
     modules.add(_moduleBuilder);

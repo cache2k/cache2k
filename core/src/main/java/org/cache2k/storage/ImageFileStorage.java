@@ -269,7 +269,7 @@ public class ImageFileStorage
         return;
       }
       synchronized (valuesLock) {
-        boolean _empty = values.size() == 0;
+        boolean _empty = values.isEmpty();
         fastClose();
         if (_empty) {
           removeFiles();
@@ -671,7 +671,7 @@ public class ImageFileStorage
       }
       CommitWorker _worker;
       synchronized (valuesLock) {
-        if (newBufferEntries.size() == 0 && deletedBufferEntries.size() == 0) {
+        if (newBufferEntries.isEmpty() && deletedBufferEntries.isEmpty()) {
           return;
         }
         _worker = new CommitWorker();
@@ -814,7 +814,7 @@ public class ImageFileStorage
      * to be able to remove the earliest index file in the future.
      */
     private void checkForEntriesToRewrite() {
-      if (entriesInEarlierIndex.size() > 0) {
+      if (!entriesInEarlierIndex.isEmpty()) {
         sortOut(entriesInEarlierIndex, newEntries.keySet());
         sortOut(entriesInEarlierIndex, deletedEntries.keySet());
         int _writeCnt = newEntries.size() + deletedEntries.size();
