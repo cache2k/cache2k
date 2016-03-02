@@ -555,6 +555,20 @@ public class Entry<K, T>
     }
   }
 
+  @Override
+  public int hashCode() {
+    int result = (int) (this.hitCnt ^ this.hitCnt >>> 32);
+    result = 31 * result + (int) (this.fetchedTime ^ this.fetchedTime >>> 32);
+    result = 31 * result + (int) (this.nextRefreshTime ^ this.nextRefreshTime >>> 32);
+    result = 31 * result + (this.key != null ? this.key.hashCode() : 0);
+    result = 31 * result + (this.value != null ? this.value.hashCode() : 0);
+    result = 31 * result + this.hashCode;
+    result = 31 * result + (this.another != null ? this.another.hashCode() : 0);
+    result = 31 * result + (this.next != null ? this.next.hashCode() : 0);
+    result = 31 * result + (this.prev != null ? this.prev.hashCode() : 0);
+    return result;
+  }
+
   static class InitialValueInEntryNeverReturned extends Object { }
 
   static class StaleMarker {
