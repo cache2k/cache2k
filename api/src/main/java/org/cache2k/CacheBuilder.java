@@ -85,9 +85,9 @@ public abstract class CacheBuilder<K, V>
     CacheBuilder<K,T> cb = null;
     try {
       cb = (CacheBuilder<K,T>) PROTOTYPE.clone();
+      cb.root = cb;
+      cb.config = c;
     } catch (CloneNotSupportedException ignored) {  }
-    cb.root = cb;
-    cb.config = c;
     return cb;
   }
 
