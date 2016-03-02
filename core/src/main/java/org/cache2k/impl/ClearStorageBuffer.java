@@ -312,10 +312,8 @@ public class ClearStorageBuffer implements CacheStorage, FlushableStorage, Purge
       for (Op op : _workList) {
         sentOperationsCnt++;
         op.execute(_target);
-        if (shouldStop) {
-          if (exception != null) {
-            throw new CacheStorageException(exception);
-          }
+        if (shouldStop && exception != null) {
+          throw new CacheStorageException(exception);
         }
       }
     }

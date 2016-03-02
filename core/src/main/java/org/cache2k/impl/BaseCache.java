@@ -1547,10 +1547,8 @@ public abstract class BaseCache<K, V>
       }
       synchronized (lock) {
         boolean f = e.hasFreshData();
-        if (_checkValue) {
-          if (!f || !e.equalsValue(_value)) {
-            return false;
-          }
+        if (_checkValue && (!f || !e.equalsValue(_value))) {
+          return false;
         }
         if (removeEntry(e)) {
           removedCnt++;
