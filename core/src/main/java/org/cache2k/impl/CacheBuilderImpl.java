@@ -203,7 +203,6 @@ public class CacheBuilderImpl<K, T> extends CacheBuilder<K, T> {
     if (cacheWriter != null) { _wrap = true; }
     if (_stores.size() > 0) { _wrap = true; }
 
-    _wrap = true;
     WiredCache<K, T> wc = null;
     if (_wrap) {
       wc = new WiredCache<K, T>();
