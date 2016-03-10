@@ -1617,7 +1617,7 @@ public abstract class BaseCache<K, V>
   }
 
   public void prefetch(final List<? extends K> keys, final int _startIndex, final int _endIndexExclusive) {
-    if (keys.size() == 0 || _startIndex == _endIndexExclusive) {
+    if (keys.isEmpty() || _startIndex == _endIndexExclusive) {
       return;
     }
     if (keys.size() <= _endIndexExclusive) {

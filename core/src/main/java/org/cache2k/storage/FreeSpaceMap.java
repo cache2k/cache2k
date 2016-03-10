@@ -64,7 +64,7 @@ public class FreeSpaceMap {
   }
 
   public Slot getHighestSlot() {
-    if (pos2slot.size() > 0) {
+    if (!pos2slot.isEmpty()) {
       return pos2slot.last();
     }
     return null;
@@ -198,14 +198,14 @@ public class FreeSpaceMap {
   }
 
   public long getSizeOfLargestSlot() {
-    if (freeSet.size() == 0) {
+    if (freeSet.isEmpty()) {
       return 0;
     }
     return freeSet.last().size;
   }
 
   public long getSizeOfSmallestSlot() {
-    if (freeSet.size() == 0) {
+    if (freeSet.isEmpty()) {
       return 0;
     }
     return freeSet.first().size;

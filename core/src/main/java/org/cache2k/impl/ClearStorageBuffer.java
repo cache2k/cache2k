@@ -302,7 +302,7 @@ public class ClearStorageBuffer implements CacheStorage, FlushableStorage, Purge
         if (shouldStop) {
           return;
         }
-        if (operations.size() == 0) {
+        if (operations.isEmpty()) {
           forwardStorage = nextStorage;
           return;
         }
