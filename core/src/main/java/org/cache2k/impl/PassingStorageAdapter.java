@@ -524,30 +524,28 @@ public class PassingStorageAdapter extends StorageAdapter {
 
     @Override
     public void awaitTermination() throws InterruptedException {
-      if (executorForVisitThread != null) {
-        if (!executorForVisitThread.isTerminated()) {
-          if (shouldStop()) {
-            executorForVisitThread.shutdownNow();
-          } else {
-            executorForVisitThread.shutdown();
+      if (executorForVisitThread != null && !executorForVisitThread.isTerminated()) {
+        if (shouldStop()) {
+          executorForVisitThread.shutdownNow();
+        } else {
+          executorForVisitThread.shutdown();
+        }
+        boolean _terminated = false;
+        if (tunable.terminationInfoSeconds > 0) {
+          _terminated = executorForVisitThread.awaitTermination(
+              tunable.terminationInfoSeconds, TimeUnit.SECONDS);
+        }
+        if (!_terminated) {
+          if (log.isInfoEnabled() && tunable.terminationInfoSeconds > 0) {
+            log.info(
+                "still waiting for thread termination after " +
+                    tunable.terminationInfoSeconds + " seconds," +
+                    " keep waiting for " + tunable.terminationTimeoutSeconds + " seconds...");
           }
-          boolean _terminated = false;
-          if (tunable.terminationInfoSeconds > 0) {
-            _terminated = executorForVisitThread.awaitTermination(
-                tunable.terminationInfoSeconds, TimeUnit.SECONDS);
-          }
+          _terminated = executorForVisitThread.awaitTermination(
+              tunable.terminationTimeoutSeconds - tunable.terminationInfoSeconds, TimeUnit.SECONDS);
           if (!_terminated) {
-            if (log.isInfoEnabled() && tunable.terminationInfoSeconds > 0) {
-              log.info(
-                  "still waiting for thread termination after " +
-                      tunable.terminationInfoSeconds + " seconds," +
-                      " keep waiting for " + tunable.terminationTimeoutSeconds + " seconds...");
-            }
-            _terminated = executorForVisitThread.awaitTermination(
-                tunable.terminationTimeoutSeconds - tunable.terminationInfoSeconds, TimeUnit.SECONDS);
-            if (!_terminated) {
-              log.warn("threads not terminated after " + tunable.terminationTimeoutSeconds + " seconds");
-            }
+            log.warn("threads not terminated after " + tunable.terminationTimeoutSeconds + " seconds");
           }
         }
       }

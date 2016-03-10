@@ -720,28 +720,24 @@ public class EntryAction<K, V, R> implements StorageCallback, AsyncCacheLoader.C
       return;
     }
     if (remove) {
-      if (storageDataValid || heapDataValid) {
-        if (entryRemovedListeners() != null) {
-          for (CacheEntryRemovedListener l : entryRemovedListeners()) {
-            try {
-              l.onEntryRemoved(userCache, entry);
-            } catch (Throwable t) {
-              exceptionToPropagate = new ListenerException(t);
-            }
+      if ((storageDataValid || heapDataValid) && entryRemovedListeners() != null) {
+        for (CacheEntryRemovedListener l : entryRemovedListeners()) {
+          try {
+            l.onEntryRemoved(userCache, entry);
+          } catch (Throwable t) {
+            exceptionToPropagate = new ListenerException(t);
           }
         }
       }
     } else {
-      if (storageDataValid || heapDataValid) {
-        if (entryUpdatedListeners() != null) {
-          for (CacheEntryUpdatedListener l : entryUpdatedListeners()) {
-            try {
-              l.onEntryUpdated(userCache,
-                new ReadOnlyCacheEntry<K, V>(entry.getKey(), oldValueOrException, previousModificationTime),
-                entry);
-            } catch (Throwable t) {
-              exceptionToPropagate = new ListenerException(t);
-            }
+      if ((storageDataValid || heapDataValid) && entryUpdatedListeners() != null) {
+        for (CacheEntryUpdatedListener l : entryUpdatedListeners()) {
+          try {
+            l.onEntryUpdated(userCache,
+              new ReadOnlyCacheEntry<K, V>(entry.getKey(), oldValueOrException, previousModificationTime),
+              entry);
+          } catch (Throwable t) {
+            exceptionToPropagate = new ListenerException(t);
           }
         }
       } else {
