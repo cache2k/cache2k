@@ -535,14 +535,6 @@ public class Entry<K, T>
       '}';
   }
 
-  /**
-   * Cache entries always have the object identity as equals method.
-   */
-  @Override
-  public final boolean equals(Object obj) {
-    return this == obj;
-  }
-
   /* check entry states */
   static {
     Entry e = new Entry();
