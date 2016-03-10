@@ -27,6 +27,9 @@ package org.cache2k.jcache.provider;
  */
 public class Util {
 
+  private Util() {
+  }
+
   public static <T> T checkKey(T _value) {
     return requireNonNull(_value, "cache key");
   }

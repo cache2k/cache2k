@@ -56,6 +56,9 @@ public final class TunableFactory {
 
   private static Properties customProperties;
 
+  private TunableFactory() {
+  }
+
   /**
    * Reload the tunable configuration from the system properties
    * and the configuration file.

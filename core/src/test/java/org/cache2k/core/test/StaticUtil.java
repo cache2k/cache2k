@@ -31,6 +31,9 @@ import java.util.Set;
  */
 public class StaticUtil {
 
+  private StaticUtil() {
+  }
+
   public static <T> Set<T> asSet(T... keys) {
     return new HashSet<T>(Arrays.asList(keys));
   }
