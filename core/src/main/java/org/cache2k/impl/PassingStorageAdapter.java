@@ -664,10 +664,8 @@ public class PassingStorageAdapter extends StorageAdapter {
 
     @Override
     public Entry next() {
-      if (entry == null) {
-        if (!hasNext()) {
-          throw new NoSuchElementException();
-        }
+      if (entry == null && !hasNext()) {
+        throw new NoSuchElementException();
       }
       Entry e = entry;
       entry = null;
