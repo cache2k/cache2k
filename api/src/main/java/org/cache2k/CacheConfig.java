@@ -299,7 +299,7 @@ public class CacheConfig<K, V> implements Serializable {
     if (v == -1 || v == Integer.MAX_VALUE) {
       expiryMillis = -1;
     }
-    expiryMillis = v * 1000;
+    expiryMillis = v * 1000L;
   }
 
   public int getExpirySeconds() {
