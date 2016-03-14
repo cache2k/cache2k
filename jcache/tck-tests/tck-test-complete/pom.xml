@@ -40,30 +40,12 @@
             <version>${jcache-tck-version}</version>
         </dependency>
 
-        <!-- Jit Pack, does only
-
-        <dependency>
-            <groupId>com.github.cruftex.jsr107tck</groupId>
-            <artifactId>cache-tests</artifactId>
-            <version>...</version>
-        </dependency>
-
-        <dependency>
-            <groupId>com.github.cruftex.jsr107tck</groupId>
-            <artifactId>cache-tests</artifactId>
-            <classifier>tests</classifier>
-            <scope>test</scope>
-            <version>...</version>
-        </dependency>
-
         <dependency>
             <groupId>org.hamcrest</groupId>
             <artifactId>hamcrest-library</artifactId>
             <version>1.2</version>
             <scope>test</scope>
         </dependency>
-
-        -->
 
         <!-- Logging to figure out what the heck is going on -->
         <dependency>
