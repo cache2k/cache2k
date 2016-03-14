@@ -53,6 +53,7 @@
     <module>junit-util</module>
     <module>variant/all</module>
     <module>osgi-test</module>
+    <module>xml-config</module>
   </modules>
 
   <properties>
