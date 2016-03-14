@@ -15,7 +15,7 @@
     <properties>
         <domain-lib-dir>${project.build.directory}/domainlib</domain-lib-dir>
         <domain-jar>domain.jar</domain-jar>
-        <jcache-spec-version>1.0.1</jcache-spec-version>
+        <jcache-tck-version>1.0.1</jcache-tck-version>
     </properties>
 
     <groupId>org.cache2k</groupId>
