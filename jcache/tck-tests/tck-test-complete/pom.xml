@@ -29,7 +29,7 @@
         <dependency>
             <groupId>javax.cache</groupId>
             <artifactId>cache-tests</artifactId>
-            <version>${jcache-spec-version}</version>
+            <version>${jcache-tck-version}</version>
         </dependency>
 
         <dependency>
@@ -37,7 +37,23 @@
             <artifactId>cache-tests</artifactId>
             <classifier>tests</classifier>
             <scope>test</scope>
-            <version>1.0.1</version>
+            <version>${jcache-tck-version}</version>
+        </dependency>
+
+        <!-- Jit Pack, does only
+
+        <dependency>
+            <groupId>com.github.cruftex.jsr107tck</groupId>
+            <artifactId>cache-tests</artifactId>
+            <version>...</version>
+        </dependency>
+
+        <dependency>
+            <groupId>com.github.cruftex.jsr107tck</groupId>
+            <artifactId>cache-tests</artifactId>
+            <classifier>tests</classifier>
+            <scope>test</scope>
+            <version>...</version>
         </dependency>
 
         <dependency>
@@ -46,6 +62,8 @@
             <version>1.2</version>
             <scope>test</scope>
         </dependency>
+
+        -->
 
         <!-- Logging to figure out what the heck is going on -->
         <dependency>
@@ -56,6 +74,15 @@
         </dependency>
 
     </dependencies>
+
+    <!-- jit pack experiment
+    <repositories>
+		<repository>
+		    <id>jitpack.io</id>
+		    <url>https://jitpack.io</url>
+		</repository>
+	</repositories>
+  -->
 
   <build>
         <testResources>
@@ -93,7 +120,7 @@
                                 <artifactItem>
                                     <groupId>javax.cache</groupId>
                                     <artifactId>app-domain</artifactId>
-                                    <version>${jcache-spec-version}</version>
+                                    <version>${jcache-tck-version}</version>
                                     <outputDirectory>${domain-lib-dir}
                                     </outputDirectory>
                                     <destFileName>${domain-jar}</destFileName>
