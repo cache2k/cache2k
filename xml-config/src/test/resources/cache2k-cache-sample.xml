@@ -19,33 +19,9 @@
   <http://www.gnu.org/licenses/gpl-3.0.html>.
   #L%
   -->
-<cache2k>
-
-    <default>
-        <cache>
-            <suppressExceptions>true</suppressExceptions>
-        </cache>
-    </default>
-
-    <templates>
-
-        <cache>
-            <name>smallOnes</name>
-            <entryCapacity>100</entryCapacity>
-
-        </cache>
-
-    </templates>
-
-    <caches>
-        <cache>
-            <_fromTemplate>smallOnes</_fromTemplate>
-            <name>flo</name>
-            <entryCapacity>5</entryCapacity>
-        </cache>
-        <cache>
-            <name>hallo</name>
-        </cache>
-    </caches>
-
-</cache2k>
+<cache>
+    <name>sample</name>
+    <entryCapacity>5</entryCapacity>
+    <suppressExceptions>false</suppressExceptions>
+    <sharpExpiry>true</sharpExpiry>
+</cache>
