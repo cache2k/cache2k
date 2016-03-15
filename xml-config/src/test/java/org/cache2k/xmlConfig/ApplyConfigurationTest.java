@@ -70,11 +70,41 @@ public class ApplyConfigurationTest {
     assertEquals(false, cfg.isSuppressExceptions());
   }
 
+  @Test
+  public void testParseTestConfig() throws Exception {
+    InputStream is = this.getClass().getResourceAsStream("/test-config.xml");
+    ConfigPullParser pp = new XppConfigParser(is);
+    TestConfig cfg = new TestConfig();
+    ApplyConfiguration apl = new ApplyConfiguration(cfg, pp);
+    apl.parse();
+    assertEquals(4711, cfg.getIntValue());
+    assertEquals(5432, cfg.getLongValue());
+    assertEquals(true, cfg.isBooleanValue());
+  }
+
   @SuppressWarnings("unused")
   public static class TestConfig {
 
     String hello;
     int intValue;
+    long longValue;
+    boolean booleanValue;
+
+    public boolean isBooleanValue() {
+      return booleanValue;
+    }
+
+    public void setBooleanValue(final boolean _booleanValue) {
+      booleanValue = _booleanValue;
+    }
+
+    public long getLongValue() {
+      return longValue;
+    }
+
+    public void setLongValue(final long _longValue) {
+      longValue = _longValue;
+    }
 
     public String getHello() {
       return hello;
