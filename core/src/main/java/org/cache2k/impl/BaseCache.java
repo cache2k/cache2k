@@ -471,19 +471,6 @@ public abstract class BaseCache<K, V>
     name = n;
   }
 
-  /**
-   * Set the time in seconds after which the cache does an refresh of the
-   * element. -1 means the element will be hold forever.
-   * 0 means the element will not be cached at all.
-   */
-  public void setExpirySeconds(int s) {
-    if (s < 0 || s == Integer.MAX_VALUE) {
-      maxLinger = -1;
-      return;
-    }
-    maxLinger = s * 1000L;
-  }
-
   @Override
   public String getName() {
     return name;
@@ -738,11 +725,6 @@ public abstract class BaseCache<K, V>
     CacheEntry<K, V> lastEntry;
     boolean filter = true;
 
-    IteratorFilterEntry2Entry(BaseCache<K,V> c, ClosableIterator<Entry> it) {
-      cache = c;
-      iterator = it;
-    }
-
     IteratorFilterEntry2Entry(BaseCache<K,V> c, ClosableIterator<Entry> it, boolean _filter) {
       cache = c;
       iterator = it;
@@ -805,70 +787,6 @@ public abstract class BaseCache<K, V>
       }
       cache.remove((K) lastEntry.getKey());
     }
-  }
-
-  /**
-   * Filter out non valid entries and wrap each entry with a cache
-   * entry object.
-   */
-  class IteratorFilterFresh implements ClosableIterator<Entry> {
-
-    ClosableIterator<Entry> iterator;
-    Entry entry;
-    CacheEntry<K, V> lastEntry;
-    boolean filter = true;
-
-    IteratorFilterFresh(ClosableIterator<Entry> it) { iterator = it; }
-
-    /**
-     * Between hasNext() and next() an entry may be evicted or expired.
-     * In practise we have to deliver a next entry if we return hasNext() with
-     * true, furthermore, there should be no big gap between the calls to
-     * hasNext() and next().
-     */
-    @Override
-    public boolean hasNext() {
-      if (entry != null) {
-        return true;
-      }
-      if (iterator == null) {
-        return false;
-      }
-      while (iterator.hasNext()) {
-        Entry e = iterator.next();
-        if (e.hasFreshData()) {
-          entry = e;
-          return true;
-        }
-      }
-      entry = null;
-      close();
-      return false;
-    }
-
-    @Override
-    public void close() {
-      if (iterator != null) {
-        iterator.close();
-        iterator = null;
-      }
-    }
-
-    @Override
-    public Entry next() {
-      if (entry == null && !hasNext()) {
-        throw new NoSuchElementException("not available");
-      }
-      Entry tmp = entry;
-      entry = null;
-      return tmp;
-    }
-
-    @Override
-    public void remove() {
-      throw new UnsupportedOperationException();
-    }
-
   }
 
   protected static void removeFromList(final Entry e) {
