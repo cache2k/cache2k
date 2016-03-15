@@ -43,7 +43,7 @@ public class ApplyConfigurationTest {
     Map<String, Method> map = ApplyConfiguration.generateSetterLookupMap(TestConfig.class);
     assertTrue(map.containsKey("hello"));
     assertTrue(map.containsKey("intValue"));
-    assertEquals(2, map.size());
+    assertEquals(4, map.size());
   }
 
   @Test
