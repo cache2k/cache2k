@@ -2050,14 +2050,6 @@ public abstract class BaseCache<K, V>
     }
   }
 
-  private void cleanupAfterWriterException(Entry e) {
-    if (e.isVirgin()) {
-      synchronized (lock) {
-        putNewEntryCnt++;
-      }
-    }
-  }
-
   protected long stopStartTimer(long _nextRefreshTime, Entry e, long now) {
     if (e.task != null) {
       e.task.cancel();
@@ -2225,11 +2217,6 @@ public abstract class BaseCache<K, V>
     }
   }
 
-
-  /** JSR107 convenience getAll from array */
-  public Map<K, V> getAll(K[] _keys) {
-    return getAll(new HashSet<K>(Arrays.asList(_keys)));
-  }
 
   /**
    * JSR107 bulk interface. The behaviour is compatible to the JSR107 TCK. We also need
