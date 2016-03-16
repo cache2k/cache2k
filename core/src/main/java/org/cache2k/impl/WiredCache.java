@@ -22,6 +22,7 @@ package org.cache2k.impl;
  * #L%
  */
 
+import org.cache2k.AdvancedCacheLoader;
 import org.cache2k.CacheEntry;
 import org.cache2k.CacheEntryCreatedListener;
 import org.cache2k.CacheEntryProcessor;
@@ -62,7 +63,7 @@ public class WiredCache<K, V> extends AbstractCache<K, V>
 
   BaseCache<K,V> heapCache;
   StorageAdapter storage;
-  CacheSourceWithMetaInfo<K, V> source;
+  AdvancedCacheLoader<K,V> loader;
   CacheWriter<K, V> writer;
   boolean readThrough;
   CacheEntryRemovedListener<K,V>[] syncEntryRemovedListeners;

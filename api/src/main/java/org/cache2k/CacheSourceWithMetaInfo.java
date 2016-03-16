@@ -24,6 +24,7 @@ package org.cache2k;
 
 /**
  * @author Jens Wilke; created: 2013-07-04
+ * @deprecated Replaced by {@link AdvancedCacheLoader}
  */
 public abstract class CacheSourceWithMetaInfo<K, V> {
 

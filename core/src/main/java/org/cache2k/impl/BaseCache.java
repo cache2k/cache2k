@@ -41,8 +41,8 @@ import java.security.SecureRandom;
 import java.util.AbstractList;
 import java.util.AbstractMap;
 import java.util.AbstractSet;
-import java.util.Arrays;
 import java.util.BitSet;
+import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -118,7 +118,8 @@ public abstract class BaseCache<K, V>
 
   protected String name;
   protected CacheManagerImpl manager;
-  protected CacheSourceWithMetaInfo<K, V> source;
+  protected AdvancedCacheLoader<K,V> loader;
+
   /** Statistics */
 
   /** Time in milliseconds we keep an element */
@@ -231,10 +232,6 @@ public abstract class BaseCache<K, V>
 
   protected Hash<Entry<K, V>> refreshHashCtrl;
   protected Entry<K, V>[] refreshHash;
-
-  protected ExperimentalBulkCacheSource<K, V> experimentalBulkCacheSource;
-
-  protected BulkCacheSource<K, V> bulkCacheSource;
 
   protected Timer timer;
 
@@ -383,47 +380,72 @@ public abstract class BaseCache<K, V>
   }
 
   @SuppressWarnings("unused")
-  public void setSource(CacheSourceWithMetaInfo<K, V> eg) {
-    source = eg;
+  public void setSource(final CacheSourceWithMetaInfo<K, V> eg) {
+    if (eg == null) {
+      return;
+    }
+    loader = new AdvancedCacheLoader<K, V>() {
+      @Override
+      public V load(final K key, final long currentTime, final CacheEntry<K, V> previousEntry) throws Exception {
+        try {
+          if (previousEntry != null && previousEntry.getException() == null) {
+            return eg.get(key, currentTime, previousEntry.getValue(), previousEntry.getLastModification());
+          } else {
+            return eg.get(key, currentTime, null, 0);
+          }
+        } catch (Exception e) {
+          throw e;
+        } catch (Throwable t) {
+          throw new RuntimeException("rethrow throwable", t);
+        }
+      }
+    };
   }
 
   @SuppressWarnings("unused")
   public void setSource(final CacheSource<K, V> g) {
-    if (g != null) {
-      source = new CacheSourceWithMetaInfo<K, V>() {
-        @Override
-        public V get(K key, long _currentTime, V _previousValue, long _timeLastFetched) throws Throwable {
-          return g.get(key);
-        }
-      };
+    if (g == null) {
+      return;
     }
+    loader = new AdvancedCacheLoader<K, V>() {
+      @Override
+      public V load(final K key, final long currentTime, final CacheEntry<K, V> previousEntry) throws Exception {
+        try {
+          return g.get(key);
+        } catch (Exception e) {
+          throw e;
+        } catch (Throwable t) {
+          throw new RuntimeException("rethrow throwable", t);
+        }
+      }
+    };
   }
 
   @SuppressWarnings("unused")
-  public void setExperimentalBulkCacheSource(ExperimentalBulkCacheSource<K, V> g) {
-    experimentalBulkCacheSource = g;
-    if (source == null) {
-      source = new CacheSourceWithMetaInfo<K, V>() {
+  public void setExperimentalBulkCacheSource(final ExperimentalBulkCacheSource<K, V> g) {
+    if (loader == null) {
+      loader = new AdvancedCacheLoader<K, V>() {
         @Override
-        public V get(K key, long _currentTime, V _previousValue, long _timeLastFetched) throws Throwable {
+        public V load(final K key, final long currentTime, final CacheEntry<K, V> previousEntry) throws Exception {
           K[] ka = (K[]) Array.newInstance(keyType, 1);
           ka[0] = key;
           V[] ra = (V[]) Array.newInstance(valueType, 1);
           BitSet _fetched = new BitSet(1);
-          experimentalBulkCacheSource.getBulk(ka, ra, _fetched, 0, 1);
+          g.getBulk(ka, ra, _fetched, 0, 1);
           return ra[0];
         }
       };
     }
   }
 
-  public void setBulkCacheSource(BulkCacheSource<K, V> s) {
-    bulkCacheSource = s;
-    if (source == null) {
-      source = new CacheSourceWithMetaInfo<K, V>() {
+  public void setBulkCacheSource(final BulkCacheSource<K, V> s) {
+    if (loader == null) {
+      loader = new AdvancedCacheLoader<K, V>() {
         @Override
-        public V get(final K key, final long _currentTime, final V _previousValue, final long _timeLastFetched) throws Throwable {
-          final CacheEntry<K, V> entry = new CacheEntry<K, V>() {
+        public V load(final K key, final long currentTime, final CacheEntry<K, V> previousEntry) throws Exception {
+          CacheEntry<K, V> entry = previousEntry;
+          if (previousEntry == null)
+            entry = new CacheEntry<K, V>() {
             @Override
             public K getKey() {
               return key;
@@ -431,7 +453,7 @@ public abstract class BaseCache<K, V>
 
             @Override
             public V getValue() {
-              return _previousValue;
+              return null;
             }
 
             @Override
@@ -441,24 +463,32 @@ public abstract class BaseCache<K, V>
 
             @Override
             public long getLastModification() {
-              return _timeLastFetched;
+              return 0;
             }
           };
-          List<CacheEntry<K, V>> _entryList = new AbstractList<CacheEntry<K, V>>() {
-            @Override
-            public CacheEntry<K, V> get(int index) {
-              return entry;
-            }
-
-            @Override
-            public int size() {
-              return 1;
-            }
-          };
-          return bulkCacheSource.getValues(_entryList, _currentTime).get(0);
+          try {
+            return s.getValues(Collections.singletonList(entry), currentTime).get(0);
+          } catch (Exception e) {
+            throw e;
+          } catch (Throwable t) {
+            throw new RuntimeException("rethrow throwable", t);
+          }
         }
       };
     }
+  }
+
+  public void setLoader(final CacheLoader<K,V> l) {
+    loader = new AdvancedCacheLoader<K, V>() {
+      @Override
+      public V load(final K key, final long currentTime, final CacheEntry<K, V> previousEntry) throws Exception {
+        return l.load(key);
+      }
+    };
+  }
+
+  public void setAdvancedLoader(final AdvancedCacheLoader<K,V> al) {
+    loader = al;
   }
 
   /**
@@ -499,8 +529,8 @@ public abstract class BaseCache<K, V>
       initializeHeapCache();
       initTimer();
       if (refreshPool != null &&
-        source == null) {
-        throw new CacheMisconfigurationException("backgroundRefresh, but no source");
+        loader == null) {
+        throw new CacheMisconfigurationException("backgroundRefresh, but no loader defined");
       }
       if (refreshPool != null && timer == null) {
         if (maxLinger == 0) {
@@ -698,7 +728,7 @@ public abstract class BaseCache<K, V>
         refreshPool = null;
       }
       mainHash = refreshHash = null;
-      source = null;
+      loader = null;
       if (manager != null) {
         manager.cacheDestroyed(this);
         manager = null;
@@ -1909,13 +1939,13 @@ public abstract class BaseCache<K, V>
     V v;
     long t0 = System.currentTimeMillis();
     try {
-      if (source == null) {
-        throw new CacheUsageExcpetion("source not set");
+      if (loader == null) {
+        throw new CacheUsageExcpetion("loader not set");
       }
-      if (e.isVirgin() || e.hasException()) {
-        v = source.get((K) e.key, t0, null, e.getLastModification());
+      if (e.isVirgin()) {
+        v = loader.load((K) e.key, t0, null);
       } else {
-        v = source.get((K) e.key, t0, (V) e.getValue(), e.getLastModification());
+        v = loader.load((K) e.key, t0, e);
       }
       e.setLastModification(t0);
     } catch (Throwable _ouch) {
@@ -2339,7 +2369,7 @@ public abstract class BaseCache<K, V>
    */
   @Override
   public <R> R invoke(K key, CacheEntryProcessor<K, V, R> entryProcessor, Object... _args) {
-    return execute(key, spec().invoke(key, source != null, entryProcessor, _args));
+    return execute(key, spec().invoke(key, loader != null, entryProcessor, _args));
   }
 
   public abstract long getHitCnt();

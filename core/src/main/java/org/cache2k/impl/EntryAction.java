@@ -22,6 +22,7 @@ package org.cache2k.impl;
  * #L%
  */
 
+import org.cache2k.AdvancedCacheLoader;
 import org.cache2k.Cache;
 import org.cache2k.CacheEntryCreatedListener;
 import org.cache2k.CacheEntryRemovedListener;
@@ -109,8 +110,8 @@ public class EntryAction<K, V, R> implements StorageCallback, AsyncCacheLoader.C
   /**
    * Provide the cache loader, if present.
    */
-  protected CacheSourceWithMetaInfo<K, V> source() {
-    return heapCache.source;
+  protected AdvancedCacheLoader<K, V> loader() {
+    return heapCache.loader;
   }
 
   /**
@@ -353,8 +354,8 @@ public class EntryAction<K, V, R> implements StorageCallback, AsyncCacheLoader.C
         heapCache.loadButHitCnt++;
       }
     }
-    CacheSourceWithMetaInfo<K, V> _source = source();
-    if (_source == null) {
+    AdvancedCacheLoader<K, V> _loader = loader();
+    if (_loader == null) {
       exceptionToPropagate = new WrappedAttachmentException(new CacheUsageExcpetion("source not set"));
       synchronized (heapCache.lock) {
         if (entry.isVirgin()) {
@@ -370,10 +371,10 @@ public class EntryAction<K, V, R> implements StorageCallback, AsyncCacheLoader.C
     long t0 = lastModificationTime = loadStartedTime = System.currentTimeMillis();
     V v;
     try {
-      if (e.isVirgin() || e.hasException()) {
-        v = _source.get(e.key, t0, null, e.getLastModification());
+      if (e.isVirgin()) {
+        v = _loader.load(e.key, t0, null);
       } else {
-        v = _source.get(e.key, t0, e.getValue(), e.getLastModification());
+        v = _loader.load(e.key, t0, e);
       }
     } catch (Throwable _ouch) {
       onLoadFailure(_ouch);

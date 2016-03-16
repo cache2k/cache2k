@@ -63,8 +63,10 @@ Statistics:
 
   * deprecated: CacheManager.isDestroyed(), replaced by isClosed()
   * deprecated: CacheBuilder.maxSize, replaced by entryCapacity()
-  * deprecated: CacheSource, replaced by CacheLoader (although I don't like the name, this avoids confusion)
+  * deprecated: CacheSource, CacheSourceWithMetaInfo, BulkCacheSource replaced by CacheLoader
 
+  * new: CacheLoader, replaces CacheSource
+  * new: AdvancedCacheLoader, replaces CacheSourceWithMetaInfo
   * new: Cache.peekAndReplace()
   * new: Cache.peekAndRemove()
   * new: Cache.peekAndPut()

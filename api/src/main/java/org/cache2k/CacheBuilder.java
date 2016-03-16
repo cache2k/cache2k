@@ -309,23 +309,45 @@ public abstract class CacheBuilder<K, V>
     return this;
   }
 
+  /**
+   * @deprecated use the loader, will be removed
+   */
   public CacheBuilder<K, V> source(CacheSource<K, V> g) {
     cacheSource = g;
     return this;
   }
 
+  /**
+   * @deprecated use the loader, will be removed
+   */
   public CacheBuilder<K, V> source(CacheSourceWithMetaInfo<K, V> g) {
     cacheSourceWithMetaInfo = g;
     return this;
   }
 
+  /**
+   * @deprecated use the loader, will be removed
+   */
   public CacheBuilder<K, V> source(ExperimentalBulkCacheSource<K, V> g) {
     experimentalBulkCacheSource = g;
     return this;
   }
 
+  /**
+   * @deprecated use the loader, will be removed
+   */
   public CacheBuilder<K, V> source(BulkCacheSource<K, V> g) {
     bulkCacheSource = g;
+    return this;
+  }
+
+  public CacheBuilder<K, V> loader(CacheLoader<K, V> l) {
+    config.setLoader(l);
+    return this;
+  }
+
+  public CacheBuilder<K, V> loader(AdvancedCacheLoader<K, V> l) {
+    config.setAdvancedLoader(l);
     return this;
   }
 

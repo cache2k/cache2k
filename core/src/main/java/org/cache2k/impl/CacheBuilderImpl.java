@@ -111,6 +111,10 @@ public class CacheBuilderImpl<K, T> extends CacheBuilder<K, T> {
     if (cacheSourceWithMetaInfo != null) {
       c.setSource(cacheSourceWithMetaInfo);
     }
+    if (config.getLoader() != null) {
+      c.setLoader(config.getLoader());
+    }
+
     if (refreshController != null) {
       c.setRefreshController(refreshController);
     }
@@ -223,8 +227,8 @@ public class CacheBuilderImpl<K, T> extends CacheBuilder<K, T> {
       } else if (_stores.size() > 1) {
         throw new UnsupportedOperationException("no aggregation support yet");
       }
-      wc.source = bc.source;
-      wc.readThrough = bc.source != null;
+      wc.loader = bc.loader;
+      wc.readThrough = bc.loader != null;
       if (cacheWriter != null) {
         wc.writer = cacheWriter;
       }

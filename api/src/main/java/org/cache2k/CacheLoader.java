@@ -22,26 +22,55 @@ package org.cache2k;
  * #L%
  */
 
+import java.util.HashMap;
+import java.util.Map;
+
 /**
+ * Retrieves or generates a value to load into the cache.
+ *
+ * <p>The alternative loader interface {@link AdvancedCacheLoader} provides the loader
+ * with the current cache value.
+ *
  * @author Jens Wilke
+ * @see AdvancedCacheLoader
+ * @since 0.24
  */
-public interface CacheLoader<K, V> extends CacheSource<K,V>{
+public abstract class CacheLoader<K, V> {
 
   /**
-   *
+   * Retrieves or generates data based on the key.
    *
    * <p>API rationale: This method declares an exception to allow any unhandled
    * exceptions of the loader implementation to just pass through. Since the cache
    * needs to catch an deal with loader exceptions in any way, this saves otherwise
    * necessary try/catch clauses in the loader.
    *
-   * @param key
+   * @param key the non-null key to provide the value for.
    * @return value to be associated with the key. If the cache permits null values
    *         a null is associated with the key.
-   *         TODO: If the cache does not permit null values, remove mapping as in JSR107?
    * @throws Exception Unhandled exception from the loader. The exception will be
-   *         handled by the cache based on the configuration.
+   *         handled by the cache based on its configuration.
    */
-  V get(K key) throws Exception;
+  public abstract V load(K key) throws Exception;
+
+  /**
+   * Loads multiple values to the cache.
+   *
+   * <p>The method is provided to complete the API. At the moment cache2k is not
+   * using them. Bulk operation will be implemented later.
+   *
+   * @param keys set of keys for the values to be loaded
+   * @return The loaded values. A key may map to null if the cache permits null values.
+   * @throws Exception Unhandled exception from the loader. The exception will be
+   *           handled by the cache based on its configuration. If an exception happens
+   *           the cache will retry the load with the single value load method.
+   */
+  public Map<K, V> loadAll(Iterable<? extends K> keys) throws Exception {
+    Map<K,V> map = new HashMap<K, V>();
+    for (K key : keys) {
+      map.put(key, load(key));
+    }
+    return map;
+  }
 
 }

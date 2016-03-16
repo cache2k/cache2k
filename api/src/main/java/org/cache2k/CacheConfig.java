@@ -50,6 +50,8 @@ public class CacheConfig<K, V> implements Serializable {
   private boolean sharpExpiry = false;
   private List<Object> moduleConfiguration;
   private boolean suppressExceptions = true;
+  private CacheLoader<K,V> loader;
+  private AdvancedCacheLoader<K,V> advancedLoader;
 
   /**
    * Construct a config instance setting the type parameters and returning a
@@ -411,4 +413,19 @@ public class CacheConfig<K, V> implements Serializable {
     return l;
   }
 
+  public CacheLoader<K,V> getLoader() {
+    return loader;
+  }
+
+  public void setLoader(final CacheLoader<K,V> v) {
+    loader = v;
+  }
+
+  public AdvancedCacheLoader<K, V> getAdvancedLoader() {
+    return advancedLoader;
+  }
+
+  public void setAdvancedLoader(final AdvancedCacheLoader<K, V> v) {
+    advancedLoader = v;
+  }
 }
