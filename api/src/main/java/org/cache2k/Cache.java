@@ -50,11 +50,6 @@ public interface Cache<K, V> extends KeyValueSource<K, V>, Iterable<CacheEntry<K
   String getName();
 
   /**
-   * Clear the cache contents
-   */
-  void clear();
-
-  /**
    * Returns object in the cache that is mapped to the key.
    */
   V get(K key);
@@ -567,6 +562,11 @@ public interface Cache<K, V> extends KeyValueSource<K, V>, Iterable<CacheEntry<K
   ClosableIterator<CacheEntry<K, V>> iterator();
 
   void removeAll();
+
+  /**
+   * Clear the cache contents
+   */
+  void clear();
 
   /**
    * Remove persistent entries, that are not longer needed. Only has an effect
