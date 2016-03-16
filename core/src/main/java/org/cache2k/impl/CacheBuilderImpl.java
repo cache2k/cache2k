@@ -52,7 +52,7 @@ public class CacheBuilderImpl<K, T> extends CacheBuilder<K, T> {
   List<CacheEntryListener<K,T>> syncListeners;
 
   @Override
-  public CacheBuilder<K, T> addSynchronousListener(final CacheEntryListener<K, T> listener) {
+  public CacheBuilder<K, T> addListener(final CacheEntryListener<K, T> listener) {
     if (syncListeners == null) {
       syncListeners = new ArrayList<CacheEntryListener<K, T>>();
     }
@@ -113,6 +113,9 @@ public class CacheBuilderImpl<K, T> extends CacheBuilder<K, T> {
     }
     if (config.getLoader() != null) {
       c.setLoader(config.getLoader());
+    }
+    if (config.getAdvancedLoader() != null) {
+      c.setAdvancedLoader(config.getAdvancedLoader());
     }
 
     if (refreshController != null) {

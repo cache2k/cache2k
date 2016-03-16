@@ -170,10 +170,10 @@ public abstract class EventHandlingBase<K,V,W> {
   }
 
   public void registerCache2kListeners(CacheBuilder<K, W> _builder) {
-    _builder.addSynchronousListener(new CreatedListenerAdapter());
-    _builder.addSynchronousListener(new UpdatedListenerAdapter());
-    _builder.addSynchronousListener(new RemovedListenerAdapter());
-    _builder.addSynchronousListener(new ExpiredListenerAdapter());
+    _builder.addListener(new CreatedListenerAdapter());
+    _builder.addListener(new UpdatedListenerAdapter());
+    _builder.addListener(new RemovedListenerAdapter());
+    _builder.addListener(new ExpiredListenerAdapter());
   }
 
   protected abstract V extractValue(W _value);

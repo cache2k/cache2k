@@ -356,7 +356,7 @@ public abstract class CacheBuilder<K, V>
     return this;
   }
 
-  public abstract CacheBuilder<K, V> addSynchronousListener(CacheEntryListener<K,V> listener);
+  public abstract CacheBuilder<K, V> addListener(CacheEntryListener<K,V> listener);
 
   /**
    * Set expiry calculator to use. If {@link #expiryDuration(long, java.util.concurrent.TimeUnit)}

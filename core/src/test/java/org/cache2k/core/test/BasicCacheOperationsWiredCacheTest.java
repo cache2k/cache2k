@@ -57,7 +57,7 @@ public class BasicCacheOperationsWiredCacheTest extends BasicCacheOperationsTest
         .name(BasicCacheOperationsTest.class)
         .eternal(true)
         .entryCapacity(1000)
-        .addSynchronousListener(new CacheEntryRemovedListener<Integer, Integer>() {
+         .addListener(new CacheEntryRemovedListener<Integer, Integer>() {
           @Override
           public void onEntryRemoved(final Cache<Integer, Integer> c, final CacheEntry<Integer, Integer> entry) {
 
