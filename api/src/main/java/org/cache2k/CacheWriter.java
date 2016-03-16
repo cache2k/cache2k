@@ -23,19 +23,33 @@ package org.cache2k;
  */
 
 /**
+ * Writer for write-through configurations. Any mutation of the cache via the
+ * {@link Cache}  interface, e.g.  {@link Cache#put(Object, Object)} or
+ * {@link Cache#remove(Object)}  will cause a writer call.
+ *
  * @author Jens Wilke; created: 2015-04-24
  */
-public interface CacheWriter<K, V> {
-
-  void write(K key, V value) throws Exception;
+public abstract class CacheWriter<K, V> {
 
   /**
-   * Called when a mapping is removed from the cache. An expiry does not trigger a call
+   * Called when the value was updated or inserted into the cache.
+   *
+   * @param key key of the value to be written, never null.
+   * @param value the value to be written, may be null if null is permitted.
+   * @throws Exception if an exception occurs, the cache update will not occur and this
+   *         exception will be wrapped in a {@link CacheWriterException}
+   */
+  public abstract void write(K key, V value) throws Exception;
+
+  /**
+   * Called when a mapping is removed from the cache. The removal was done by
+   * {@link Cache#remove} or {@link Cache#removeAll()}. An expiry does not trigger a call
    * to this method.
    *
-   * @param key
-   * @throws Exception if an exception occurs, the cache update will not occur
+   * @param key key of the value removed from the cache, never null.
+   * @throws Exception if an exception occurs, the cache update will not occur and this
+   *         exception will be wrapped in a {@link CacheWriterException}
    */
-  void delete(K key) throws Exception;
+  public abstract void delete(K key) throws Exception;
 
 }

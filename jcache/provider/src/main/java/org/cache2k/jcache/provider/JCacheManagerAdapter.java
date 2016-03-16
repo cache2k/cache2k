@@ -476,7 +476,7 @@ public class JCacheManagerAdapter implements CacheManager {
     }
   }
 
-  static class CacheWriterAdapterForTouchRecording<K, V> implements CacheWriter<K, TouchyJCacheAdapter.TimeVal<V>> {
+  static class CacheWriterAdapterForTouchRecording<K, V> extends CacheWriter<K, TouchyJCacheAdapter.TimeVal<V>> {
 
     javax.cache.integration.CacheWriter<K, V> cacheWriter;
 
