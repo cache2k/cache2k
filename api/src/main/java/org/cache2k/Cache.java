@@ -458,10 +458,10 @@ public interface Cache<K, V> extends KeyValueSource<K, V>, Iterable<CacheEntry<K
    */
   void fetchAll(Set<? extends K> keys, boolean replaceExistingValues, FetchCompletedListener l);
 
-  <R> R invoke(K key, CacheEntryProcessor<K, V, R> entryProcessor, Object... _args);
+  <R> R invoke(K key, CacheEntryProcessor<K, V, R> entryProcessor, Object... args);
 
   <R> Map<K, EntryProcessingResult<R>> invokeAll(
-    Set<? extends K> keys, CacheEntryProcessor<K , V, R> p, Object... _objs);
+    Set<? extends K> keys, CacheEntryProcessor<K , V, R> entryProcessor, Object... objs);
 
   /**
    * Disclaimer: This method is here to be able to support known coding similar

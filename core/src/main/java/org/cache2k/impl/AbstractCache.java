@@ -86,11 +86,11 @@ public abstract class AbstractCache<K, V> implements InternalCache<K, V> {
   }
 
   @Override
-  public <R> Map<K, EntryProcessingResult<R>> invokeAll(Set<? extends K> keys, CacheEntryProcessor<K, V, R> p, Object... _objs) {
+  public <R> Map<K, EntryProcessingResult<R>> invokeAll(Set<? extends K> keys, CacheEntryProcessor<K, V, R> entryProcessor, Object... objs) {
     Map<K, EntryProcessingResult<R>> m = new HashMap<K, EntryProcessingResult<R>>();
     for (K k : keys) {
       try {
-        final R _result = invoke(k, p, _objs);
+        final R _result = invoke(k, entryProcessor, objs);
         if (_result == null) {
           continue;
         }

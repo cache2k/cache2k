@@ -2368,8 +2368,8 @@ public abstract class BaseCache<K, V>
    * corner cases for loader and exception handling.
    */
   @Override
-  public <R> R invoke(K key, CacheEntryProcessor<K, V, R> entryProcessor, Object... _args) {
-    return execute(key, spec().invoke(key, loader != null, entryProcessor, _args));
+  public <R> R invoke(K key, CacheEntryProcessor<K, V, R> entryProcessor, Object... args) {
+    return execute(key, spec().invoke(key, loader != null, entryProcessor, args));
   }
 
   public abstract long getHitCnt();
