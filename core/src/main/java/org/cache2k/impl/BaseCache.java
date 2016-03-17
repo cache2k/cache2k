@@ -1631,6 +1631,7 @@ public abstract class BaseCache<K, V>
 
   void prefetch(final Iterable<? extends K> keys, final FetchCompletedListener l) {
     if (refreshPool == null) {
+      getAll(keys);
       if (l != null) {
         l.fetchCompleted();
       }
@@ -1651,7 +1652,17 @@ public abstract class BaseCache<K, V>
     Runnable r = new Runnable() {
       @Override
       public void run() {
-        getAll(keys);
+        try {
+          getAll(keys);
+        } catch (Exception ex) {
+          if (l != null) {
+            l.fetchException(ex);
+          }
+        } catch (Throwable ex) {
+          if (l != null) {
+            l.fetchException(new WrappedCustomizationException(ex));
+          }
+        }
         if (l != null) {
           l.fetchCompleted();
         }

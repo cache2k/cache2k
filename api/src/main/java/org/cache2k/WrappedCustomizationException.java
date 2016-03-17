@@ -29,9 +29,9 @@ package org.cache2k;
  *
  * @author Jens Wilke
  */
-public class WrappedAttachmentException extends CacheException {
+public class WrappedCustomizationException extends CacheException {
 
-  public WrappedAttachmentException(final Throwable cause) {
+  public WrappedCustomizationException(final Throwable cause) {
     super(cause);
   }
 

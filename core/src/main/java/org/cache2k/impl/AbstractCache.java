@@ -25,7 +25,7 @@ package org.cache2k.impl;
 import org.cache2k.CacheEntry;
 import org.cache2k.CacheEntryProcessor;
 import org.cache2k.EntryProcessingResult;
-import org.cache2k.WrappedAttachmentException;
+import org.cache2k.WrappedCustomizationException;
 import org.cache2k.impl.operation.Semantic;
 
 import java.util.HashMap;
@@ -134,7 +134,7 @@ public abstract class AbstractCache<K, V> implements InternalCache<K, V> {
     if (_action.entryLocked) {
       throw new CacheInternalError("entry not unlocked?");
     }
-    WrappedAttachmentException t = _action.exceptionToPropagate;
+    WrappedCustomizationException t = _action.exceptionToPropagate;
     if (t != null) {
       t.fillInStackTrace();
       throw t;

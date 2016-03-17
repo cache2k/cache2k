@@ -25,7 +25,7 @@ package org.cache2k;
 /**
  * @author Jens Wilke
  */
-public class CacheWriterException extends WrappedAttachmentException {
+public class CacheWriterException extends WrappedCustomizationException {
 
   public CacheWriterException(final Throwable cause) {
     super(cause);
