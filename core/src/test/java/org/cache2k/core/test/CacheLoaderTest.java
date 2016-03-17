@@ -28,7 +28,9 @@ import org.cache2k.CacheBuilder;
 import org.cache2k.CacheEntry;
 import org.cache2k.CacheEntryCreatedListener;
 import org.cache2k.CacheLoader;
+import org.cache2k.junit.FastTests;
 import org.junit.Test;
+import org.junit.experimental.categories.Category;
 
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -40,6 +42,7 @@ import static org.junit.Assert.*;
  * @author Jens Wilke
  * @see org.cache2k.CacheLoader
  */
+@Category(FastTests.class)
 public class CacheLoaderTest {
 
   @Test

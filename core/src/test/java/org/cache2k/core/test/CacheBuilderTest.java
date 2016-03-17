@@ -25,7 +25,9 @@ package org.cache2k.core.test;
 import org.cache2k.Cache;
 import org.cache2k.CacheBuilder;
 import org.cache2k.CacheType;
+import org.cache2k.junit.FastTests;
 import org.junit.Test;
+import org.junit.experimental.categories.Category;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -37,6 +39,7 @@ import static org.junit.Assert.*;
  *
  * @see org.cache2k.CacheBuilder
  */
+@Category(FastTests.class)
 public class CacheBuilderTest {
 
   @Test

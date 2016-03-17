@@ -24,14 +24,17 @@ package org.cache2k.core.test;
 
 import org.cache2k.Cache;
 import org.cache2k.CacheBuilder;
+import org.cache2k.junit.FastTests;
 import org.junit.BeforeClass;
 import org.junit.Test;
+import org.junit.experimental.categories.Category;
 
 import static org.cache2k.core.test.StaticUtil.*;
 
 /**
  * @author Jens Wilke
  */
+@Category(FastTests.class)
 public class CacheClosedTest {
 
   static final Integer VALUE = 1;
