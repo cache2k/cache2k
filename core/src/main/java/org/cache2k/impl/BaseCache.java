@@ -1134,7 +1134,10 @@ public abstract class BaseCache<K, V>
     }
   }
 
-  /** Always fetch the value from the source. That is a copy of getEntryInternal without fresh checks. */
+  /**
+   * Always fetch the value from the source. That is a copy of getEntryInternal
+   * without freshness checks.
+   */
   protected void fetchAndReplace(K key) {
     long _previousNextRefreshTime;
     Entry e;
@@ -1622,13 +1625,12 @@ public abstract class BaseCache<K, V>
   }
 
   @Override
-  public void prefetch(final Set<? extends K> keys) {
+  public void prefetch(final Iterable<? extends K> keys) {
     prefetch(keys, null);
   }
 
-  void prefetch(final Set<? extends K> keys, final FetchCompletedListener l) {
+  void prefetch(final Iterable<? extends K> keys, final FetchCompletedListener l) {
     if (refreshPool == null) {
-      getAll(keys);
       if (l != null) {
         l.fetchCompleted();
       }
@@ -1655,7 +1657,10 @@ public abstract class BaseCache<K, V>
         }
       }
     };
-    refreshPool.submit(r);
+    boolean _submitOkay = refreshPool.submit(r);
+    if (!_submitOkay) {
+      l.fetchCompleted();
+    }
   }
 
   /**
@@ -2254,7 +2259,7 @@ public abstract class BaseCache<K, V>
    * is to be thrown when most specific. So exceptions are only thrown, when the value
    * which has produced an exception is requested from the map.
    */
-  public Map<K, V> getAll(final Set<? extends K> _inputKeys) {
+  public Map<K, V> getAll(final Iterable<? extends K> _inputKeys) {
     final Set<K> _keys = new HashSet<K>();
     for (K k : _inputKeys) {
       Entry e = getEntryInternal(k);

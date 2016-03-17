@@ -94,8 +94,11 @@ public interface Cache<K, V> extends KeyValueSource<K, V>, Iterable<CacheEntry<K
    * keys are locked for data fetch within the fetch. A sequential get
    * on a key will stall until the value is loaded.
    */
-  void prefetch(Set<? extends K> keys);
+  void prefetch(Iterable<? extends K> keys);
 
+  /**
+   * @deprecated use a sublist and {@link #prefetch(Iterable)}
+   */
   void prefetch(List<? extends K> keys, int _startIndex, int _afterEndIndex);
 
   /**
@@ -475,13 +478,14 @@ public interface Cache<K, V> extends KeyValueSource<K, V>, Iterable<CacheEntry<K
    * selection is arbitrary.
    *
    * <p/>The cache source does not need to support the bulk operation. It is
-   * neither guaranteed that the bulk get is called on the cache source if it
+   * not guaranteed that the bulk get is called on the cache source if it
    * exists.
    *
    * <p/>The operation may be split into chunks and not performed atomically.
    * The entries that are processed within a chunk will be locked, to avoid
    * duplicate fetches from the cache source. To avoid deadlocks there is a
-   * fallback non-bulk operation if a fetch is ongoing and the keys overlap.
+   * fallback non-bulk operation if a concurrent bulk get is ongoing and
+   * the keys overlap.
    *
    * <p/>In contrast to JSR107 the following guarantees are met
    * if the operation returns without exception: map.size() == keys.size().
@@ -493,7 +497,7 @@ public interface Cache<K, V> extends KeyValueSource<K, V>, Iterable<CacheEntry<K
    *
    * @exception PropagatedCacheException may be thrown if the fetch fails.
    */
-  Map<K, V> getAll(Set<? extends K> keys);
+  Map<K, V> getAll(Iterable<? extends K> keys);
 
   /**
    * Bulk version for {@link #peek(Object)}

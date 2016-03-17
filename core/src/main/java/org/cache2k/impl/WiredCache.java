@@ -129,7 +129,7 @@ public class WiredCache<K, V> extends AbstractCache<K, V>
   }
 
   @Override
-  public void prefetch(Set<? extends K> keys) {
+  public void prefetch(Iterable<? extends K> keys) {
   }
 
   @Override
@@ -218,7 +218,7 @@ public class WiredCache<K, V> extends AbstractCache<K, V>
    * on the entry.
    */
   @Override
-  public Map<K, V> getAll(final Set<? extends K> keys) {
+  public Map<K, V> getAll(final Iterable<? extends K> keys) {
     prefetch(keys);
     Map<K, ExaminationEntry<K, V>> map = new HashMap<K, ExaminationEntry<K, V>>();
     for (K k : keys) {

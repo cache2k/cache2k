@@ -73,7 +73,7 @@ public class CacheWrapper<K,V> implements Cache<K, V> {
   }
 
   @Override
-  public void prefetch(Set<? extends K> keys) {
+  public void prefetch(Iterable<? extends K> keys) {
     cache.prefetch(keys);
   }
 
@@ -166,7 +166,7 @@ public class CacheWrapper<K,V> implements Cache<K, V> {
   }
 
   @Override
-  public Map<K, V> getAll(Set<? extends K> keys) {
+  public Map<K, V> getAll(Iterable<? extends K> keys) {
     return cache.getAll(keys);
   }
 
