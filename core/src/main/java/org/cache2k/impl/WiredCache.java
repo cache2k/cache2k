@@ -29,7 +29,6 @@ import org.cache2k.CacheEntryProcessor;
 import org.cache2k.CacheEntryRemovedListener;
 import org.cache2k.CacheEntryUpdatedListener;
 import org.cache2k.CacheManager;
-import org.cache2k.CacheSourceWithMetaInfo;
 import org.cache2k.CacheWriter;
 import org.cache2k.ClosableIterator;
 import org.cache2k.FetchCompletedListener;
