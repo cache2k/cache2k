@@ -1162,51 +1162,6 @@ public abstract class BaseCache<K, V>
     evictEventually();
   }
 
-  /**
-   * Insert a cache entry for the given key and run action under the entry
-   * lock. If the cache entry has fresh data, we do not run the action.
-   * Called from storage. The entry referenced by the key is expired and
-   * will be purged.
-   */
-  protected void lockAndRunForPurge(Object key, PurgeableStorage.PurgeAction _action) {
-    int _spinCount = TUNABLE.maximumEntryLockSpins;
-    Entry e;
-    boolean _virgin;
-    for (;;) {
-      if (_spinCount-- <= 0) { throw new CacheLockSpinsExceededError(); }
-      e = lookupOrNewEntrySynchronized((K) key);
-      if (e.hasFreshData()) { return; }
-      synchronized (e) {
-        e.waitForFetch();
-        if (e.isDataValidState()) {
-          return;
-        }
-        if (e.isGone()) {
-          continue;
-        }
-        _virgin = e.isVirgin();
-        e.startFetch();
-        break;
-      }
-    }
-    boolean _finished = false;
-    try {
-      StorageEntry se = _action.checkAndPurge(key);
-      synchronized (e) {
-        if (_virgin) {
-          finishFetch(e, Entry.VIRGIN_STATE);
-          evictEntryFromHeap(e);
-        } else {
-          finishFetch(e, Entry.READ_NON_VALID);
-          evictEntryFromHeap(e);
-        }
-      }
-      _finished = true;
-    } finally {
-      e.ensureFetchAbort(_finished);
-    }
-  }
-
   protected final void evictEventually() {
     int _spinCount = TUNABLE.maximumEvictSpins;
     Entry _previousCandidate = null;

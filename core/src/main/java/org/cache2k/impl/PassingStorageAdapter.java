@@ -400,7 +400,7 @@ public class PassingStorageAdapter extends StorageAdapter {
               }
             }
           };
-          cache.lockAndRunForPurge(_storageEntry.getKey(), _action);
+          wiredCache.lockAndRunForPurge(_storageEntry.getKey(), _action);
         }
       }
     };
@@ -439,7 +439,7 @@ public class PassingStorageAdapter extends StorageAdapter {
 
     @Override
     public void lockAndRun(Object key, PurgeableStorage.PurgeAction _action) {
-      cache.lockAndRunForPurge(key, _action);
+      wiredCache.lockAndRunForPurge(key, _action);
     }
 
   }

@@ -39,6 +39,7 @@ import org.cache2k.impl.operation.Specification;
 import org.cache2k.impl.threading.Futures;
 import org.cache2k.impl.threading.LimitedPooledExecutor;
 import org.cache2k.impl.util.Log;
+import org.cache2k.storage.PurgeableStorage;
 import org.cache2k.storage.StorageEntry;
 
 import java.util.HashMap;
@@ -441,6 +442,16 @@ public class WiredCache<K, V> extends AbstractCache<K, V>
   @Override
   public StorageAdapter getStorage() {
     return storage;
+  }
+
+  /**
+   * Insert a cache entry for the given key and run action under the entry
+   * lock. If the cache entry has fresh data, we do not run the action.
+   * Called from storage. The entry referenced by the key is expired and
+   * will be purged.
+   */
+  public void lockAndRunForPurge(K key, PurgeableStorage.PurgeAction _action) {
+    throw new UnsupportedOperationException();
   }
 
   /**
