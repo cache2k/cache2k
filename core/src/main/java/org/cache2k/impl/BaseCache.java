@@ -2263,7 +2263,6 @@ public abstract class BaseCache<K, V>
     }
   }
 
-
   /**
    * JSR107 bulk interface. The behaviour is compatible to the JSR107 TCK. We also need
    * to be compatible to the exception handling policy, which says that the exception
@@ -2527,12 +2526,6 @@ public abstract class BaseCache<K, V>
     public Class<? extends InternalCache> defaultImplementation =
             "64".equals(System.getProperty("sun.arch.data.model"))
                     ? ClockProPlus64Cache.class : ClockProPlusCache.class;
-
-    /**
-     * Log exceptions from the source just as they happen. The log goes to the debug output
-     * of the cache log, debug level of the cache log must be enabled also.
-     */
-    public boolean logSourceExceptions = false;
 
     public int waitForTimerJobsSeconds = 5;
 
