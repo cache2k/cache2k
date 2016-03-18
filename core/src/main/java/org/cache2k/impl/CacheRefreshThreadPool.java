@@ -52,7 +52,7 @@ public class CacheRefreshThreadPool {
         new ThreadPoolExecutor(0, THREAD_COUNT,
           21, TimeUnit.SECONDS,
           new SynchronousQueue<Runnable>(),
-          new MyThreadFactory(),
+          new LoaderThreadFactory(),
           new ThreadPoolExecutor.AbortPolicy());
     }
     leasedPoolInstances++;
@@ -88,13 +88,13 @@ public class CacheRefreshThreadPool {
     executor = null;
   }
 
-  static class MyThreadFactory implements ThreadFactory {
+  static class LoaderThreadFactory implements ThreadFactory {
 
     AtomicInteger count = new AtomicInteger();
 
     @Override
     public synchronized Thread newThread(Runnable r) {
-      Thread t = new Thread(r, "cache2k-refresh-" + count.incrementAndGet());
+      Thread t = new Thread(r, "cache2k-loader-" + count.incrementAndGet());
       t.setDaemon(true);
       return t;
     }

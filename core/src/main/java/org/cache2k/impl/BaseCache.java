@@ -32,13 +32,10 @@ import org.cache2k.impl.util.ThreadDump;
 import org.cache2k.impl.util.Log;
 import org.cache2k.impl.util.TunableConstants;
 import org.cache2k.impl.util.TunableFactory;
-import org.cache2k.storage.PurgeableStorage;
-import org.cache2k.storage.StorageEntry;
 
 import java.lang.reflect.Array;
 import java.lang.reflect.Field;
 import java.security.SecureRandom;
-import java.util.AbstractList;
 import java.util.AbstractMap;
 import java.util.AbstractSet;
 import java.util.BitSet;
@@ -54,9 +51,15 @@ import java.util.Random;
 import java.util.Set;
 import java.util.Timer;
 import java.util.TimerTask;
+import java.util.concurrent.Executor;
 import java.util.concurrent.Future;
+import java.util.concurrent.RejectedExecutionException;
+import java.util.concurrent.SynchronousQueue;
+import java.util.concurrent.ThreadFactory;
+import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.cache2k.impl.util.Util.*;
 
@@ -225,7 +228,13 @@ public abstract class BaseCache<K, V>
    */
   protected final Object lock = new Object();
 
-  protected CacheRefreshThreadPool refreshPool;
+  protected volatile Executor loaderExecutor = new Executor() {
+    @Override
+    public synchronized void execute(final Runnable _command) {
+      loaderExecutor = provideDefaultLoaderExecutor(0);
+      loaderExecutor.execute(_command);
+    }
+  };
 
   protected Hash<Entry<K, V>> mainHashCtrl;
   protected Entry<K, V>[] mainHash;
@@ -260,6 +269,7 @@ public abstract class BaseCache<K, V>
   private static final int KEEP_AFTER_EXPIRED = 2;
   private static final int SUPPRESS_EXCEPTIONS = 4;
   private static final int NULL_VALUE_SUPPORT = 8;
+  private static final int BACKGROUND_REFRESH = 16;
 
   protected final boolean hasSharpTimeout() {
     return (featureBits & SHARP_TIMEOUT_FEATURE) > 0;
@@ -277,19 +287,14 @@ public abstract class BaseCache<K, V>
     return (featureBits & SUPPRESS_EXCEPTIONS) > 0;
   }
 
+  protected final boolean hasBackgroundRefresh() { return (featureBits & BACKGROUND_REFRESH) > 0; }
+
   protected final void setFeatureBit(int _bitmask, boolean _flag) {
     if (_flag) {
       featureBits |= _bitmask;
     } else {
       featureBits &= ~_bitmask;
     }
-  }
-
-  /**
-   * Enabling background refresh means also serving expired values.
-   */
-  protected final boolean hasBackgroundRefreshAndServesExpiredValues() {
-    return refreshPool != null;
   }
 
   /**
@@ -324,7 +329,8 @@ public abstract class BaseCache<K, V>
       maxSize = c.getHeapEntryCapacity();
     }
     if (c.isBackgroundRefresh()) {
-      refreshPool = CacheRefreshThreadPool.getInstance();
+      setFeatureBit(BACKGROUND_REFRESH, true);
+      provideDefaultLoaderExecutor(0);
     }
     long _expiryMillis  = c.getExpiryMillis();
     if (_expiryMillis == Long.MAX_VALUE || _expiryMillis < 0) {
@@ -351,6 +357,18 @@ public abstract class BaseCache<K, V>
         (EntryExpiryCalculator<K, V>)
         ENTRY_EXPIRY_CALCULATOR_FROM_VALUE;
     }
+  }
+
+  Executor provideDefaultLoaderExecutor(int _threadCount) {
+    if (_threadCount == 0) {
+      _threadCount = Runtime.getRuntime().availableProcessors() * 2;
+    }
+    return
+      new ThreadPoolExecutor(0, _threadCount,
+        21, TimeUnit.SECONDS,
+        new SynchronousQueue<Runnable>(),
+        new LoaderThreadFactory(),
+        new ThreadPoolExecutor.AbortPolicy());
   }
 
   public void setEntryExpiryCalculator(EntryExpiryCalculator<K, V> v) {
@@ -528,18 +546,9 @@ public abstract class BaseCache<K, V>
 
       initializeHeapCache();
       initTimer();
-      if (refreshPool != null &&
+      if (hasBackgroundRefresh() &&
         loader == null) {
         throw new CacheMisconfigurationException("backgroundRefresh, but no loader defined");
-      }
-      if (refreshPool != null && timer == null) {
-        if (maxLinger == 0) {
-          getLog().warn("Background refresh is enabled, but elements are fetched always. Disable background refresh!");
-        } else {
-          getLog().warn("Background refresh is enabled, but elements are eternal. Disable background refresh!");
-        }
-        refreshPool.destroy();
-        refreshPool = null;
       }
     }
   }
@@ -722,10 +731,6 @@ public abstract class BaseCache<K, V>
       if (timer != null) {
         timer.cancel();
         timer = null;
-      }
-      if (refreshPool != null) {
-        refreshPool.destroy();
-        refreshPool = null;
       }
       mainHash = refreshHash = null;
       loader = null;
@@ -1509,17 +1514,15 @@ public abstract class BaseCache<K, V>
 
   @Override
   public void prefetch(final K key) {
-    if (refreshPool == null ||
-        lookupEntrySynchronized(key) != null) {
-      return;
+    try {
+      loaderExecutor.execute(new Runnable() {
+        @Override
+        public void run() {
+          get(key);
+        }
+      });
+    } catch (RejectedExecutionException ignore) {
     }
-    Runnable r = new Runnable() {
-      @Override
-      public void run() {
-        get(key);
-      }
-    };
-    refreshPool.submit(r);
   }
 
   public void prefetch(final List<? extends K> keys, final int _startIndex, final int _endIndexExclusive) {
@@ -1585,13 +1588,6 @@ public abstract class BaseCache<K, V>
   }
 
   void prefetch(final Iterable<? extends K> keys, final FetchCompletedListener l) {
-    if (refreshPool == null) {
-      getAll(keys);
-      if (l != null) {
-        l.fetchCompleted();
-      }
-      return;
-    }
     boolean _complete = true;
     for (K k : keys) {
       if (lookupEntryUnsynchronized(k, modifiedHash(k.hashCode())) == null) {
@@ -1623,8 +1619,9 @@ public abstract class BaseCache<K, V>
         }
       }
     };
-    boolean _submitOkay = refreshPool.submit(r);
-    if (!_submitOkay) {
+    try {
+      loaderExecutor.execute(r);
+    } catch (RejectedExecutionException ex) {
       l.fetchCompleted();
     }
   }
@@ -2094,7 +2091,7 @@ public abstract class BaseCache<K, V>
       return;
     }
     */
-    if (refreshPool != null) {
+    if (hasBackgroundRefresh()) {
       synchronized (e) {
         synchronized (lock) {
           timerEvents++;
@@ -2142,9 +2139,10 @@ public abstract class BaseCache<K, V>
                 }
               }
             };
-            boolean _submitOkay = refreshPool.submit(r);
-            if (_submitOkay) {
+            try {
+              loaderExecutor.execute(r);
               return;
+            } catch (RejectedExecutionException ignore) {
             }
             refreshSubmitFailedCnt++;
           } else { // if (mainHashCtrl.remove(mainHash, e)) ...
@@ -2545,6 +2543,29 @@ public abstract class BaseCache<K, V>
      */
     public int minimumStatisticsCreationTimeDeltaFactor = 123;
 
+
+  }
+
+  class LoaderThreadFactory implements ThreadFactory {
+
+    AtomicInteger count = new AtomicInteger();
+    String threadName;
+
+    {
+      String _prefix = "cache2k-loader-";
+      if (manager != null &&
+          !Cache2kManagerProviderImpl.DEFAULT_MANAGER_NAME.equals(manager.getName())) {
+        _prefix = _prefix + manager.getName() + ":";
+      }
+      threadName = _prefix + name;
+    }
+
+    @Override
+    public synchronized Thread newThread(Runnable r) {
+      Thread t = new Thread(r, threadName + "#" + count.incrementAndGet());
+      t.setDaemon(true);
+      return t;
+    }
 
   }
 

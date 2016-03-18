@@ -90,15 +90,15 @@ public class TransformingCacheProxy<K, V, K0, V0> implements javax.cache.Cache<K
     return expandMap(m);
   }
 
-  static <E, I> Set<I> compactSet(Set<E> keys, final ObjectTransformer<E, I> tr) {
+  static <E, I> Set<I> compactSet(final Set<E> keys, final ObjectTransformer<E, I> tr) {
     if (keys == null) {
       return null;
     }
     final int _size = keys.size();
-    final Iterator<E> it = keys.iterator();
     return new AbstractSet<I>() {
       @Override
       public Iterator<I> iterator() {
+        final Iterator<E> it = keys.iterator();
         return new Iterator<I>() {
           @Override
           public boolean hasNext() {
@@ -124,15 +124,15 @@ public class TransformingCacheProxy<K, V, K0, V0> implements javax.cache.Cache<K
     };
   }
 
-  static <E, I> Set<I> compactBoundedSet(Set<? extends E> keys, final ObjectTransformer<E, I> tr) {
+  static <E, I> Set<I> compactBoundedSet(final Set<? extends E> keys, final ObjectTransformer<E, I> tr) {
     if (keys == null) {
       return null;
     }
     final int _size = keys.size();
-    final Iterator<? extends E> it = keys.iterator();
     return new AbstractSet<I>() {
       @Override
       public Iterator<I> iterator() {
+        final Iterator<? extends E> it = keys.iterator();
         return new Iterator<I>() {
           @Override
           public boolean hasNext() {
@@ -158,12 +158,12 @@ public class TransformingCacheProxy<K, V, K0, V0> implements javax.cache.Cache<K
     };
   }
 
-  static <E, I> Set<E> expandSet(Set<I> keys, final ObjectTransformer<E, I> tr) {
+  static <E, I> Set<E> expandSet(final Set<I> keys, final ObjectTransformer<E, I> tr) {
     final int _size = keys.size();
-    final Iterator<I> it = keys.iterator();
     return new AbstractSet<E>() {
       @Override
       public Iterator<E> iterator() {
+        final Iterator<I> it = keys.iterator();
         return new Iterator<E>() {
           @Override
           public boolean hasNext() {

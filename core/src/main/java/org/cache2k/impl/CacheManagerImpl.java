@@ -75,8 +75,7 @@ public class CacheManagerImpl extends CacheManager {
   private Set<Cache> caches = new HashSet<Cache>();
   private int disambiguationCounter = 1;
   private GlobalPooledExecutor threadPool;
-  private AtomicInteger evictionThreadCount = new AtomicInteger();
-  private ExecutorService evictionExecutor;
+
   private Properties properties;
   private ClassLoader classLoader;
   private String version;
@@ -360,7 +359,7 @@ public class CacheManagerImpl extends CacheManager {
 
   private String getThreadNamePrefix() {
     if (!Cache2kManagerProviderImpl.DEFAULT_MANAGER_NAME.equals(name)) {
-      return "cache2k:" + name + ":";
+      return "cache2k-" + name + ":";
     }
     return "cache2k-";
   }
@@ -383,23 +382,6 @@ public class CacheManagerImpl extends CacheManager {
    */
   public Object getLockObject() {
     return lock;
-  }
-
-  public ExecutorService createEvictionExecutor() {
-    ThreadFactory _threadFactory = new ThreadFactory() {
-      @Override
-      public Thread newThread(Runnable r) {
-        String _name =
-            getThreadNamePrefix() + "eviction-" + evictionThreadCount.incrementAndGet();
-        Thread t = new Thread(new ExceptionWrapper(r), _name);
-        t.setDaemon(true);
-        return t;
-      }
-    };
-    return
-      new ThreadPoolExecutor(
-        0, Integer.MAX_VALUE, 17, TimeUnit.SECONDS,
-        new ArrayBlockingQueue<Runnable>(Runtime.getRuntime().availableProcessors() * 2), _threadFactory);
   }
 
   class ExceptionWrapper implements Runnable {
