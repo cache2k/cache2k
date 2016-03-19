@@ -473,7 +473,7 @@ public interface Cache<K, V> extends KeyValueSource<K, V>, Iterable<CacheEntry<K
    * @param l Listener interface that is invoked upon completion. May be null if no
    *          completion notification is needed.
    */
-  void loadAllAndReplace(Iterable<? extends K> keys, LoadCompletedListener l);
+  void reloadAll(Iterable<? extends K> keys, LoadCompletedListener l);
 
   <R> R invoke(K key, CacheEntryProcessor<K, V, R> entryProcessor, Object... args);
 

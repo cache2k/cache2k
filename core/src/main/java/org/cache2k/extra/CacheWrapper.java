@@ -28,7 +28,6 @@ import org.cache2k.CacheEntryProcessor;
 import org.cache2k.CacheManager;
 import org.cache2k.ClosableIterator;
 import org.cache2k.EntryProcessingResult;
-import org.cache2k.FetchCompletedListener;
 import org.cache2k.LoadCompletedListener;
 
 import java.util.List;
@@ -94,8 +93,8 @@ public class CacheWrapper<K,V> implements Cache<K, V> {
   }
 
   @Override
-  public void loadAllAndReplace(final Iterable<? extends K> keys, final LoadCompletedListener l) {
-    cache.loadAllAndReplace(keys, l);
+  public void reloadAll(final Iterable<? extends K> keys, final LoadCompletedListener l) {
+    cache.reloadAll(keys, l);
   }
 
   @Override

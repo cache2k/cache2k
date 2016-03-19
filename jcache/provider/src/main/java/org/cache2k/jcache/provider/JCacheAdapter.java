@@ -27,7 +27,6 @@ import org.cache2k.CacheEntry;
 import org.cache2k.CacheEntryProcessor;
 import org.cache2k.CacheWriterException;
 import org.cache2k.EntryProcessingResult;
-import org.cache2k.FetchCompletedListener;
 import org.cache2k.LoadCompletedListener;
 import org.cache2k.MutableCacheEntry;
 import org.cache2k.WrappedCustomizationException;
@@ -126,7 +125,7 @@ public class JCacheAdapter<K, V> implements javax.cache.Cache<K, V> {
       };
     }
     if (replaceExistingValues) {
-      cache.loadAllAndReplace(keys, l);
+      cache.reloadAll(keys, l);
     } else {
       cache.loadAll(keys, l);
     }

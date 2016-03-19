@@ -237,7 +237,7 @@ public class WiredCache<K, V> extends AbstractCache<K, V>
   }
 
   @Override
-  public void loadAllAndReplace(final Iterable<? extends K> _keys, final LoadCompletedListener l) {
+  public void reloadAll(final Iterable<? extends K> _keys, final LoadCompletedListener l) {
     final LoadCompletedListener _listener= l != null ? l : BaseCache.DUMMY_LOAD_COMPLETED_LISTENER;
     Set<K> _keySet = heapCache.generateKeySet(_keys);
     final AtomicInteger _countDown = new AtomicInteger(_keySet.size());
