@@ -28,13 +28,16 @@ import org.cache2k.CacheBuilder;
 import org.cache2k.CacheEntry;
 import org.cache2k.CacheEntryCreatedListener;
 import org.cache2k.CacheLoader;
+import org.cache2k.LoadCompletedListener;
 import org.cache2k.junit.FastTests;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.junit.Assert.*;
+import static org.cache2k.core.test.StaticUtil.*;
 
 /**
  * Test the cache loader.
@@ -109,6 +112,69 @@ public class CacheLoaderTest {
     assertFalse(c.contains(2));
     assertTrue(c.contains(5));
     c.close();
+  }
+
+  @Test
+  public void testLoadAll() throws Exception {
+    final AtomicInteger _countLoad =  new AtomicInteger();
+    Cache<Integer,Integer> c = CacheBuilder.newCache(Integer.class, Integer.class)
+      .name(CacheLoaderTest.class)
+      .loader(new CacheLoader<Integer, Integer>() {
+        @Override
+        public Integer load(final Integer key) throws Exception {
+          return _countLoad.incrementAndGet();
+        }
+      })
+      .eternal(true)
+      .build();
+    c.get(5);
+
+    CompletionWaiter w = new CompletionWaiter();
+    c.loadAll(asSet(5, 6), w);
+    w.awaitCompletion();
+    assertEquals(2, _countLoad.get());
+    assertEquals((Integer) 2, c.get(6));
+    c.close();
+  }
+
+  @Test
+  public void testReloadAll() throws Exception {
+    final AtomicInteger _countLoad =  new AtomicInteger();
+    Cache<Integer,Integer> c = CacheBuilder.newCache(Integer.class, Integer.class)
+      .name(CacheLoaderTest.class)
+      .loader(new CacheLoader<Integer, Integer>() {
+        @Override
+        public Integer load(final Integer key) throws Exception {
+          return _countLoad.incrementAndGet();
+        }
+      })
+      .eternal(true)
+      .build();
+    c.get(5);
+    CompletionWaiter w = new CompletionWaiter();
+    c.reloadAll(asSet(5, 6), w);
+    w.awaitCompletion();
+    assertEquals(3, _countLoad.get());
+    c.close();
+  }
+
+  class CompletionWaiter implements LoadCompletedListener {
+
+    CountDownLatch latch = new CountDownLatch(1);
+
+    @Override
+    public void loadCompleted() {
+      latch.countDown();
+    }
+
+    @Override
+    public void loadException(final Exception _exception) {
+
+    }
+
+    public void awaitCompletion() throws InterruptedException {
+      latch.await();
+    }
   }
 
 }
