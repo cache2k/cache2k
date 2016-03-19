@@ -22,6 +22,8 @@ package org.cache2k.impl.threading;
  * #L%
  */
 
+import org.cache2k.CacheManager;
+
 import java.util.Properties;
 import java.util.concurrent.ThreadFactory;
 
@@ -34,7 +36,7 @@ public class DefaultThreadFactoryProvider
   implements ThreadFactoryProvider {
 
   @Override
-  public ThreadFactory newThreadFactory(Properties _managerProperties, String _namePrefix) {
+  public ThreadFactory newThreadFactory(CacheManager _manager, String _namePrefix) {
     return new GlobalThreadFactory(_namePrefix);
   }
 

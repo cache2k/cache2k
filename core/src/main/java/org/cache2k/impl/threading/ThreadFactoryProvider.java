@@ -22,7 +22,8 @@ package org.cache2k.impl.threading;
  * #L%
  */
 
-import java.util.Properties;
+import org.cache2k.CacheManager;
+
 import java.util.concurrent.ThreadFactory;
 
 /**
@@ -36,6 +37,6 @@ public interface ThreadFactoryProvider {
   /**
    * Construct a new thread factory for the pool.
    */
-  ThreadFactory newThreadFactory(Properties _managerProperties, String namePrefix);
+  ThreadFactory newThreadFactory(CacheManager m, String namePrefix);
 
 }

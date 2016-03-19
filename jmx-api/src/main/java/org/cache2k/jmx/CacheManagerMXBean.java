@@ -28,10 +28,6 @@ package org.cache2k.jmx;
 @SuppressWarnings("unused")
 public interface CacheManagerMXBean {
 
-  int getThreadsInPool();
-
-  int getPeakThreadsInPool();
-
   /**
    * Combined health of all caches.
    *

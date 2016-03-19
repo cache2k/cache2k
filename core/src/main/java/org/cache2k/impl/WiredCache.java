@@ -37,7 +37,6 @@ import org.cache2k.impl.operation.Progress;
 import org.cache2k.impl.operation.Semantic;
 import org.cache2k.impl.operation.Specification;
 import org.cache2k.impl.threading.Futures;
-import org.cache2k.impl.threading.LimitedPooledExecutor;
 import org.cache2k.impl.util.Log;
 import org.cache2k.storage.PurgeableStorage;
 import org.cache2k.storage.StorageEntry;
@@ -397,7 +396,7 @@ public class WiredCache<K, V> extends AbstractCache<K, V>
   @Override
   public void clear() {
     if (storage != null) {
-      processClearWithStorage();
+      storage.clear();
       return;
     }
     heapCache.clear();
@@ -423,11 +422,6 @@ public class WiredCache<K, V> extends AbstractCache<K, V>
     heapCache.closePart2();
   }
 
-  /**
-   * Stops creation of new entries when clear is ongoing.
-   */
-  protected boolean waitForClear = false;
-
   private Object lockObject() {
     return heapCache.lock;
   }
@@ -452,79 +446,6 @@ public class WiredCache<K, V> extends AbstractCache<K, V>
    */
   public void lockAndRunForPurge(K key, PurgeableStorage.PurgeAction _action) {
     throw new UnsupportedOperationException();
-  }
-
-  /**
-   * Clear may be called during operation, e.g. to reset all the cache content. We must make sure
-   * that there is no ongoing operation when we send the clear to the storage. That is because the
-   * storage implementation has a guarantee that there is only one storage operation ongoing for
-   * one entry or key at any time. Clear, of course, affects all entries.
-   */
-  private void processClearWithStorage() {
-    StorageClearTask t = new StorageClearTask();
-    boolean _untouchedHeapCache;
-    synchronized (lockObject()) {
-      heapCache.checkClosed();
-      waitForClear = true;
-      _untouchedHeapCache = heapCache.touchedTime ==
-        heapCache.clearedTime && heapCache.getLocalSize() == 0;
-      if (!storage.checkStorageStillDisconnectedForClear()) {
-        t.allLocalEntries = heapCache.iterateAllHeapEntries();
-        t.allLocalEntries.setStopOnClear(false);
-      }
-      t.storage = storage;
-      t.storage.disconnectStorageForClear();
-    }
-    try {
-      if (_untouchedHeapCache) {
-        FutureTask<Void> f = new FutureTask<Void>(t);
-        heapCache.updateShutdownWaitFuture(f);
-        f.run();
-      } else {
-        heapCache.updateShutdownWaitFuture(heapCache.manager.getThreadPool().execute(t));
-      }
-    } catch (Exception ex) {
-      throw new CacheStorageException(ex);
-    }
-    synchronized (lockObject()) {
-      heapCache.checkClosed();
-      heapCache.clearLocalCache();
-      waitForClear = false;
-      lockObject().notifyAll();
-    }
-  }
-
-  class StorageClearTask implements LimitedPooledExecutor.NeverRunInCallingTask<Void> {
-
-    ClosableConcurrentHashEntryIterator<org.cache2k.impl.Entry> allLocalEntries;
-    StorageAdapter storage;
-
-    @Override
-    public Void call() {
-      try {
-        if (allLocalEntries != null) {
-          waitForEntryOperations();
-        }
-        storage.clearAndReconnect();
-        storage = null;
-        return null;
-      } catch (Throwable t) {
-        if (allLocalEntries != null) {
-          allLocalEntries.close();
-        }
-        getLog().warn("clear exception, when signalling storage", t);
-        storage.disable(t);
-        throw new CacheStorageException(t);
-      }
-    }
-
-    private void waitForEntryOperations() {
-      Iterator<Entry> it = allLocalEntries;
-      while (it.hasNext()) {
-        org.cache2k.impl.Entry e = it.next();
-        synchronized (e) { }
-      }
-    }
   }
 
   @Override

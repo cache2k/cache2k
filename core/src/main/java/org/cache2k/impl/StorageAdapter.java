@@ -42,6 +42,9 @@ public abstract class StorageAdapter {
   public abstract Future<Void> shutdown();
   public abstract void flush();
   public abstract void purge();
+
+  public abstract void clear();
+
   public abstract boolean checkStorageStillDisconnectedForClear();
   public abstract void disconnectStorageForClear();
 

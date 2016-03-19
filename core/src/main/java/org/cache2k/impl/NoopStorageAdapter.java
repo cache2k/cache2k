@@ -60,6 +60,9 @@ public class NoopStorageAdapter extends StorageAdapter {
   public void purge() { }
 
   @Override
+  public void clear() { }
+
+  @Override
   public boolean checkStorageStillDisconnectedForClear() {
     return true;
   }

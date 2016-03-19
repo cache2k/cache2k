@@ -25,7 +25,6 @@ package org.cache2k.ee.impl;
 import org.cache2k.Cache;
 import org.cache2k.impl.CacheManagerImpl;
 import org.cache2k.impl.InternalCache;
-import org.cache2k.impl.threading.GlobalPooledExecutor;
 import org.cache2k.jmx.CacheManagerMXBean;
 
 /**
@@ -47,29 +46,7 @@ public class ManagerMXBeanImpl implements CacheManagerMXBean {
         v = Math.max(v, ((InternalCache) c).getInfo().getHealth());
       }
     }
-    GlobalPooledExecutor ex = manager.getThreadPoolEventually();
-    if (ex != null && ex.wasWarningLimitReached()) {
-      v = Math.max(v, 1);
-    }
     return v;
-  }
-
-  @Override
-  public int getThreadsInPool() {
-    GlobalPooledExecutor ex = manager.getThreadPoolEventually();
-    if (ex != null) {
-      return ex.getThreadInUseCount();
-    }
-    return 0;
-  }
-
-  @Override
-  public int getPeakThreadsInPool() {
-    GlobalPooledExecutor ex = manager.getThreadPoolEventually();
-    if (ex != null) {
-      return ex.getPeakThreadCount();
-    }
-    return 0;
   }
 
   @Override

@@ -27,7 +27,6 @@ import org.cache2k.CacheConfig;
 import org.cache2k.ClosableIterator;
 import org.cache2k.StorageConfiguration;
 import org.cache2k.impl.threading.Futures;
-import org.cache2k.impl.threading.LimitedPooledExecutor;
 import org.cache2k.spi.SingleProviderResolver;
 import org.cache2k.storage.CacheStorage;
 import org.cache2k.storage.CacheStorageContext;
@@ -81,7 +80,7 @@ public class PassingStorageAdapter extends StorageAdapter {
 
   private Tunable tunable = TunableFactory.get(Tunable.class);
   WiredCache wiredCache;
-  private BaseCache cache;
+  private BaseCache heapCache;
   CacheStorage storage;
   boolean passivation = false;
   boolean storageIsTransient = false;
@@ -103,31 +102,27 @@ public class PassingStorageAdapter extends StorageAdapter {
   Timer timer;
   boolean timerNeedsClose = false;
 
-  public PassingStorageAdapter(WiredCache wc, BaseCache _cache, StorageAdapter.Parent _parent, CacheConfig _cacheConfig,
+  public PassingStorageAdapter(WiredCache wc, BaseCache _heapCache, StorageAdapter.Parent _parent, CacheConfig _cacheConfig,
                                StorageConfiguration _storageConfig) {
-    timer = _cache.timer;
+    timer = _heapCache.timer;
     if (timer == null) {
-      timer = new Timer(_cache.getCompleteName() + "-flushtimer", true);
+      timer = new Timer(_heapCache.getCompleteName() + "-flushtimer", true);
       timerNeedsClose = true;
     }
     wiredCache = wc;
-    cache = _cache;
+    heapCache = _heapCache;
     parent = _parent;
-    context = new StorageContext(_cache);
+    context = new StorageContext(_heapCache);
     context.keyType = _cacheConfig.getKeyType().getType();
     context.valueType = _cacheConfig.getValueType().getType();
     config = _storageConfig;
-    if (tunable.useManagerThreadPool) {
-      executor = new LimitedPooledExecutor(getManager().getThreadPool());
-    } else {
-      executor = Executors.newCachedThreadPool();
-    }
+    executor = Executors.newCachedThreadPool();
     log = Log.getLog(Cache.class.getName() + ".storage/" + getCompleteName());
     context.log = log;
   }
 
   private String getCompleteName() {
-    return cache.getCompleteName();
+    return heapCache.getCompleteName();
   }
 
   /**
@@ -306,9 +301,9 @@ public class PassingStorageAdapter extends StorageAdapter {
       it.queue = new SynchronousQueue<StorageEntry>();
     }
     synchronized (lockObject()) {
-      it.heapIteration = cache.iterateAllHeapEntries();
+      it.heapIteration = heapCache.iterateAllHeapEntries();
       it.heapIteration.setKeepIterated(true);
-      it.keepHashCtrlForClearDetection = cache.mainHashCtrl;
+      it.keepHashCtrlForClearDetection = heapCache.mainHashCtrl;
     }
     it.executorForStorageCall = executor;
     long now = System.currentTimeMillis();
@@ -317,7 +312,7 @@ public class PassingStorageAdapter extends StorageAdapter {
   }
 
   private Object lockObject() {
-    return cache.lock;
+    return heapCache.lock;
   }
 
   public void purge() {
@@ -444,7 +439,7 @@ public class PassingStorageAdapter extends StorageAdapter {
 
   }
 
-  class StorageVisitCallable implements LimitedPooledExecutor.NeverRunInCallingTask<Void> {
+  class StorageVisitCallable implements Callable<Void> {
 
     long now;
     CompleteIterator it;
@@ -467,7 +462,7 @@ public class PassingStorageAdapter extends StorageAdapter {
       CacheStorage.EntryFilter f = new CacheStorage.EntryFilter() {
         @Override
         public boolean shouldInclude(Object _key) {
-          return !Hash.contains(it.keysIterated, _key, cache.modifiedHash(_key.hashCode()));
+          return !Hash.contains(it.keysIterated, _key, heapCache.modifiedHash(_key.hashCode()));
         }
       };
       try {
@@ -506,18 +501,7 @@ public class PassingStorageAdapter extends StorageAdapter {
     @Override
     public ExecutorService getExecutorService() {
       if (executorForVisitThread == null) {
-        if (tunable.useManagerThreadPool) {
-          LimitedPooledExecutor ex = new LimitedPooledExecutor(getManager().getThreadPool());
-          ex.setExceptionListener(new LimitedPooledExecutor.ExceptionListener() {
-            @Override
-            public void exceptionWasThrown(Throwable ex) {
-              abortOnException(ex);
-            }
-          });
-          executorForVisitThread = ex;
-        } else {
-          executorForVisitThread = createOperationExecutor();
-        }
+        executorForVisitThread = createOperationExecutor();
       }
       return executorForVisitThread;
     }
@@ -572,7 +556,7 @@ public class PassingStorageAdapter extends StorageAdapter {
   }
 
   private CacheManagerImpl getManager() {
-    return cache.manager;
+    return heapCache.manager;
   }
 
   class CompleteIterator
@@ -621,7 +605,7 @@ public class PassingStorageAdapter extends StorageAdapter {
         queue = null;
       }
       if (queue != null) {
-        if (cache.shutdownInitiated) {
+        if (heapCache.shutdownInitiated) {
           throw new CacheClosedException();
         }
         if (keepHashCtrlForClearDetection.isCleared()) {
@@ -742,7 +726,7 @@ public class PassingStorageAdapter extends StorageAdapter {
         checkStartFlushTimer();
         return;
       }
-      Callable<Void> c = new LimitedPooledExecutor.NeverRunInCallingTask<Void>() {
+      Callable<Void> c = new Callable<Void>() {
         @Override
         public Void call() throws Exception {
           doStorageFlush();
@@ -864,7 +848,7 @@ public class PassingStorageAdapter extends StorageAdapter {
     Iterator<Entry> it;
     try {
       synchronized (lockObject()) {
-        it = cache.iterateAllHeapEntries();
+        it = heapCache.iterateAllHeapEntries();
       }
       while (it.hasNext()) {
         Entry e = it.next();
@@ -893,6 +877,71 @@ public class PassingStorageAdapter extends StorageAdapter {
       }
     }
     return false;
+  }
+
+  /**
+   * Clear may be called during operation, e.g. to reset all the cache content. We must make sure
+   * that there is no ongoing operation when we send the clear to the storage. That is because the
+   * storage implementation has a guarantee that there is only one storage operation ongoing for
+   * one entry or key at any time. Clear, of course, affects all entries.
+   */
+  @Override
+  public void clear() {
+    StorageClearTask t = new StorageClearTask();
+    synchronized (lockObject()) {
+      heapCache.checkClosed();
+      if (!checkStorageStillDisconnectedForClear()) {
+        t.allLocalEntries = heapCache.iterateAllHeapEntries();
+        t.allLocalEntries.setStopOnClear(false);
+      }
+      t.storage = this;
+      disconnectStorageForClear();
+    }
+    try {
+      FutureTask<Void> f = new FutureTask<Void>(t);
+      heapCache.updateShutdownWaitFuture(f);
+      executor.execute(f);
+    } catch (Exception ex) {
+      throw new CacheStorageException(ex);
+    }
+    synchronized (lockObject()) {
+      heapCache.checkClosed();
+      heapCache.clearLocalCache();
+      lockObject().notifyAll();
+    }
+  }
+
+  class StorageClearTask implements Callable<Void> {
+
+    ClosableConcurrentHashEntryIterator<org.cache2k.impl.Entry> allLocalEntries;
+    StorageAdapter storage;
+
+    @Override
+    public Void call() {
+      try {
+        if (allLocalEntries != null) {
+          waitForEntryOperations();
+        }
+        storage.clearAndReconnect();
+        storage = null;
+        return null;
+      } catch (Throwable t) {
+        if (allLocalEntries != null) {
+          allLocalEntries.close();
+        }
+        log.warn("clear exception, when signalling storage", t);
+        storage.disable(t);
+        throw new CacheStorageException(t);
+      }
+    }
+
+    private void waitForEntryOperations() {
+      Iterator<Entry> it = allLocalEntries;
+      while (it.hasNext()) {
+        org.cache2k.impl.Entry e = it.next();
+        synchronized (e) { }
+      }
+    }
   }
 
   /**
@@ -934,7 +983,7 @@ public class PassingStorageAdapter extends StorageAdapter {
         _buffer.nextStorage = _buffer.getOriginalStorage();
       }
       final ClearStorageBuffer _waitingBufferStack = _previousBuffer;
-      Callable<Void> c = new LimitedPooledExecutor.NeverRunInCallingTask<Void>() {
+      Callable<Void> c = new Callable<Void>() {
         @Override
         public Void call() throws Exception {
           try {
@@ -1005,7 +1054,7 @@ public class PassingStorageAdapter extends StorageAdapter {
         }
 
         storage = null;
-        parent.resetStorage(this, new NoopStorageAdapter(cache));
+        parent.resetStorage(this, new NoopStorageAdapter(heapCache));
       }
     }
   }
@@ -1033,7 +1082,7 @@ public class PassingStorageAdapter extends StorageAdapter {
     if (!passivation) {
       return storage.getEntryCount();
     }
-    return storage.getEntryCount() + cache.getLocalSize();
+    return storage.getEntryCount() + heapCache.getLocalSize();
   }
 
   @Override
@@ -1208,12 +1257,6 @@ public class PassingStorageAdapter extends StorageAdapter {
      * is used.
      */
     public int iterationQueueCapacity = 3;
-
-    /**
-     * User global thread pool are a separate one.
-     * FIXME: Don't use global pool, there are some lingering bugs...
-     */
-    public boolean useManagerThreadPool = false;
 
     /**
      * Thread termination writes a info log message, if we still wait for termination.

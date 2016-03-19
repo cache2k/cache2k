@@ -26,7 +26,9 @@ import org.cache2k.*;
 import org.cache2k.impl.operation.ExaminationEntry;
 import org.cache2k.impl.operation.Semantic;
 import org.cache2k.impl.operation.Specification;
+import org.cache2k.impl.threading.DefaultThreadFactoryProvider;
 import org.cache2k.impl.threading.Futures;
+import org.cache2k.impl.threading.ThreadFactoryProvider;
 import org.cache2k.impl.util.ThreadDump;
 
 import org.cache2k.impl.util.Log;
@@ -55,11 +57,9 @@ import java.util.concurrent.Executor;
 import java.util.concurrent.Future;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.SynchronousQueue;
-import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
-import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.cache2k.impl.util.Util.*;
 
@@ -216,8 +216,6 @@ public abstract class BaseCache<K, V>
 
   protected long timerEvents = 0;
 
-  protected int maximumBulkFetchSize = 100;
-
   CommonMetrics.Updater metrics = new StandardCommonMetrics();
 
   /**
@@ -359,6 +357,15 @@ public abstract class BaseCache<K, V>
     }
   }
 
+  String getThreadNamePrefix() {
+    String _prefix = "cache2k-loader-";
+    if (manager != null &&
+      !Cache2kManagerProviderImpl.DEFAULT_MANAGER_NAME.equals(manager.getName())) {
+      _prefix = _prefix + manager.getName() + ":";
+    }
+    return _prefix + name;
+  }
+
   Executor provideDefaultLoaderExecutor(int _threadCount) {
     if (_threadCount == 0) {
       _threadCount = Runtime.getRuntime().availableProcessors() * 2;
@@ -367,7 +374,7 @@ public abstract class BaseCache<K, V>
       new ThreadPoolExecutor(0, _threadCount,
         21, TimeUnit.SECONDS,
         new SynchronousQueue<Runnable>(),
-        new LoaderThreadFactory(),
+        TUNABLE.threadFactoryProvider.newThreadFactory(getCacheManager(), getThreadNamePrefix()),
         new ThreadPoolExecutor.AbortPolicy());
   }
 
@@ -2543,29 +2550,8 @@ public abstract class BaseCache<K, V>
      */
     public int minimumStatisticsCreationTimeDeltaFactor = 123;
 
+    public ThreadFactoryProvider threadFactoryProvider = new DefaultThreadFactoryProvider();
 
-  }
-
-  class LoaderThreadFactory implements ThreadFactory {
-
-    AtomicInteger count = new AtomicInteger();
-    String threadName;
-
-    {
-      String _prefix = "cache2k-loader-";
-      if (manager != null &&
-          !Cache2kManagerProviderImpl.DEFAULT_MANAGER_NAME.equals(manager.getName())) {
-        _prefix = _prefix + manager.getName() + ":";
-      }
-      threadName = _prefix + name;
-    }
-
-    @Override
-    public synchronized Thread newThread(Runnable r) {
-      Thread t = new Thread(r, threadName + "#" + count.incrementAndGet());
-      t.setDaemon(true);
-      return t;
-    }
 
   }
 

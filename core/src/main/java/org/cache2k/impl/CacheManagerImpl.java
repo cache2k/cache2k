@@ -23,11 +23,9 @@ package org.cache2k.impl;
  */
 
 import org.cache2k.Cache;
-import org.cache2k.CacheEntryListener;
 import org.cache2k.CacheException;
 import org.cache2k.CacheManager;
 import org.cache2k.impl.threading.Futures;
-import org.cache2k.impl.threading.GlobalPooledExecutor;
 import org.cache2k.impl.util.Cache2kVersion;
 import org.cache2k.impl.util.Log;
 
@@ -40,14 +38,9 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.ServiceLoader;
 import java.util.Set;
-import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.ExecutionException;
-import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
-import java.util.concurrent.ThreadFactory;
-import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * @author Jens Wilke; created: 2013-07-01
@@ -74,8 +67,6 @@ public class CacheManagerImpl extends CacheManager {
   private Map<String, InternalCache> cacheNames = new HashMap<String, InternalCache>();
   private Set<Cache> caches = new HashSet<Cache>();
   private int disambiguationCounter = 1;
-  private GlobalPooledExecutor threadPool;
-
   private Properties properties;
   private ClassLoader classLoader;
   private String version;
@@ -287,9 +278,6 @@ public class CacheManagerImpl extends CacheManager {
           }
         }
         try {
-          if (threadPool != null) {
-            threadPool.close();
-          }
           for (CacheManagerLifeCycleListener lc : cacheManagerLifeCycleListeners) {
             lc.managerDestroyed(this);
           }
@@ -365,19 +353,6 @@ public class CacheManagerImpl extends CacheManager {
   }
 
   /**
-   * Lazy creation of thread pool, usable for all caches managed by the cache
-   * manager.
-   */
-  public GlobalPooledExecutor getThreadPool() {
-    synchronized (lock) {
-      if (threadPool == null) {
-        threadPool = new GlobalPooledExecutor(getThreadNamePrefix() + "pool-");
-      }
-      return threadPool;
-    }
-  }
-
-  /**
    * Used for JSR107 cache manager implementation
    */
   public Object getLockObject() {
@@ -402,13 +377,6 @@ public class CacheManagerImpl extends CacheManager {
       }
     }
 
-  }
-
-  /**
-   * Only return thread pool if created before. For JMX bean access.
-   */
-  public GlobalPooledExecutor getThreadPoolEventually() {
-    return threadPool;
   }
 
   private void checkClosed() {
