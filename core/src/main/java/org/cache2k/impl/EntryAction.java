@@ -363,9 +363,13 @@ public class EntryAction<K, V, R> implements StorageCallback, AsyncCacheLoader.C
       }
       return;
     }
+    if (!entryLocked) {
+      lockFor(Entry.ProcessingState.LOAD);
+    } else {
+      entry.nextProcessingStep(Entry.ProcessingState.LOAD);
+    }
     needsFinish = false;
     load = true;
-    entry.nextProcessingStep(Entry.ProcessingState.LOAD);
     Entry<K, V> e = entry;
     long t0 = lastModificationTime = loadStartedTime = System.currentTimeMillis();
     V v;

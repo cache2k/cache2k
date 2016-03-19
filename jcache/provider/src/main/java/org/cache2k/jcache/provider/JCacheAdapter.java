@@ -28,6 +28,7 @@ import org.cache2k.CacheEntryProcessor;
 import org.cache2k.CacheWriterException;
 import org.cache2k.EntryProcessingResult;
 import org.cache2k.FetchCompletedListener;
+import org.cache2k.LoadCompletedListener;
 import org.cache2k.MutableCacheEntry;
 import org.cache2k.WrappedCustomizationException;
 import org.cache2k.impl.EntryAction;
@@ -110,21 +111,25 @@ public class JCacheAdapter<K, V> implements javax.cache.Cache<K, V> {
   @Override
   public void loadAll(Set<? extends K> keys, boolean replaceExistingValues, final CompletionListener completionListener) {
     checkClosed();
-    FetchCompletedListener l = null;
+    LoadCompletedListener l = null;
     if (completionListener != null) {
-      l = new FetchCompletedListener() {
+      l = new LoadCompletedListener() {
         @Override
-        public void fetchCompleted() {
+        public void loadCompleted() {
           completionListener.onCompletion();
         }
 
         @Override
-        public void fetchException(Exception _exception) {
+        public void loadException(Exception _exception) {
           completionListener.onException(_exception);
         }
       };
     }
-    cache.fetchAll(keys, replaceExistingValues, l);
+    if (replaceExistingValues) {
+      cache.loadAllAndReplace(keys, l);
+    } else {
+      cache.loadAll(keys, l);
+    }
   }
 
   @Override

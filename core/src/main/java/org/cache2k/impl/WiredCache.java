@@ -31,7 +31,7 @@ import org.cache2k.CacheEntryUpdatedListener;
 import org.cache2k.CacheManager;
 import org.cache2k.CacheWriter;
 import org.cache2k.ClosableIterator;
-import org.cache2k.FetchCompletedListener;
+import org.cache2k.LoadCompletedListener;
 import org.cache2k.impl.operation.ExaminationEntry;
 import org.cache2k.impl.operation.Progress;
 import org.cache2k.impl.operation.Semantic;
@@ -42,12 +42,11 @@ import org.cache2k.storage.PurgeableStorage;
 import org.cache2k.storage.StorageEntry;
 
 import java.util.HashMap;
-import java.util.Iterator;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.Future;
-import java.util.concurrent.FutureTask;
+import java.util.concurrent.RejectedExecutionException;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * A cache implementation that builds on a heap cache and coordinates with additional
@@ -120,15 +119,42 @@ public class WiredCache<K, V> extends AbstractCache<K, V>
   }
 
   @Override
-  public void prefetch(K key) {
+  public void prefetch(final K key) {
+    if (!heapCache.isLoaderThreadAvailable()) {
+      return;
+    }
+    heapCache.loaderExecutor.execute(new Runnable() {
+      @Override
+      public void run() {
+        load(key);
+      }
+    });
   }
 
   @Override
-  public void prefetch(List<? extends K> keys, int _startIndex, int _afterEndIndex) {
+  public void prefetchAll(Iterable<? extends K> keys) {
+    Set<K> _keysToLoad = heapCache.checkAllPresent(keys);
+    for (K k : _keysToLoad) {
+      if (!heapCache.isLoaderThreadAvailable()) {
+        return;
+      }
+      final K key = k;
+      Runnable r = new Runnable() {
+        @Override
+        public void run() {
+          load(key);
+        }
+      };
+      heapCache.loaderExecutor.execute(r);
+    }
   }
 
-  @Override
-  public void prefetch(Iterable<? extends K> keys) {
+  private void load(final K _key) {
+    Entry<K, V> e = lookupQuick(_key);
+    if (e != null && e.hasFreshData()) {
+      return;
+    }
+    execute(_key, e, SPEC.get(_key));
   }
 
   @Override
@@ -184,8 +210,53 @@ public class WiredCache<K, V> extends AbstractCache<K, V>
   }
 
   @Override
-  public void fetchAll(Set<? extends K> keys, boolean replaceExistingValues, FetchCompletedListener l) {
-    heapCache.fetchAll(keys, replaceExistingValues, l);
+  public void loadAll(final Iterable<? extends K> _keys, final LoadCompletedListener l) {
+    final LoadCompletedListener _listener= l != null ? l : BaseCache.DUMMY_LOAD_COMPLETED_LISTENER;
+    Set<K> _keysToLoad = heapCache.checkAllPresent(_keys);
+    if (_keysToLoad.isEmpty()) {
+      _listener.loadCompleted();
+      return;
+    }
+    final AtomicInteger _countDown = new AtomicInteger(_keysToLoad.size());
+    for (K k : _keysToLoad) {
+      final K key = k;
+      Runnable r = new Runnable() {
+        @Override
+        public void run() {
+          try {
+            load(key);
+          } finally {
+            if (_countDown.decrementAndGet() == 0) {
+              _listener.loadCompleted();
+            }
+          }
+        }
+      };
+      heapCache.loaderExecutor.execute(r);
+    }
+  }
+
+  @Override
+  public void loadAllAndReplace(final Iterable<? extends K> _keys, final LoadCompletedListener l) {
+    final LoadCompletedListener _listener= l != null ? l : BaseCache.DUMMY_LOAD_COMPLETED_LISTENER;
+    Set<K> _keySet = heapCache.generateKeySet(_keys);
+    final AtomicInteger _countDown = new AtomicInteger(_keySet.size());
+    for (K k : _keySet) {
+      final K key = k;
+      Runnable r = new Runnable() {
+        @Override
+        public void run() {
+          try {
+            execute(key, SPEC.UNCONDITIONAL_LOAD);
+          } finally {
+            if (_countDown.decrementAndGet() == 0) {
+              _listener.loadCompleted();
+            }
+          }
+        }
+      };
+      heapCache.loaderExecutor.execute(r);
+    }
   }
 
   V returnValue(V v) {
@@ -196,15 +267,14 @@ public class WiredCache<K, V> extends AbstractCache<K, V>
     return returnValue(e.getValueOrException());
   }
 
-  Entry<K, V> lookup(K key) {
-    final int hc =  heapCache.modifiedHash(key.hashCode());
-    return heapCache.lookupEntryUnsynchronized(key, hc);
+  Entry<K, V> lookupQuick(K key) {
+    return heapCache.lookupEntryUnsynchronized(key);
   }
 
 
   @Override
   public V get(K key) {
-    Entry<K, V> e = lookup(key);
+    Entry<K, V> e = lookupQuick(key);
     if (e != null && e.hasFreshData()) {
       return returnValue(e);
     }
@@ -292,7 +362,7 @@ public class WiredCache<K, V> extends AbstractCache<K, V>
 
   @Override
   public V peek(K key) {
-    Entry<K, V> e = lookup(key);
+    Entry<K, V> e = lookupQuick(key);
     if (e != null && e.hasFreshData()) {
       return returnValue(e);
     }

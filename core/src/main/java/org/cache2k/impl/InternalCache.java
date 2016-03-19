@@ -24,6 +24,7 @@ package org.cache2k.impl;
 
 import org.cache2k.Cache;
 import org.cache2k.CacheEntry;
+import org.cache2k.LoadCompletedListener;
 import org.cache2k.impl.util.Log;
 
 import java.util.concurrent.Future;

@@ -1,8 +1,8 @@
-package org.cache2k.impl.threading;
+package org.cache2k;
 
 /*
  * #%L
- * cache2k core package
+ * cache2k API only package
  * %%
  * Copyright (C) 2000 - 2016 headissue GmbH, Munich
  * %%
@@ -22,32 +22,13 @@ package org.cache2k.impl.threading;
  * #L%
  */
 
-import java.util.concurrent.ThreadFactory;
-import java.util.concurrent.atomic.AtomicInteger;
-
 /**
- * Factory which names the threads uniquely.
- *
- * @author Jens Wilke; created: 2014-06-10
+ * @author Jens Wilke
  */
-public class GlobalThreadFactory implements ThreadFactory {
+public interface LoadCompletedListener {
 
-  AtomicInteger threadCount = new AtomicInteger();
-  String prefix = "cache2k-";
+  void loadCompleted();
 
-  public GlobalThreadFactory(String _threadNamePrefix) {
-    if (_threadNamePrefix != null) {
-      this.prefix = _threadNamePrefix;
-    }
-  }
-
-  @Override
-  public Thread newThread(Runnable r) {
-    int id = threadCount.getAndIncrement();
-    Thread thr = new Thread(r);
-    thr.setName(prefix + '#' + Integer.toString(id, 36));
-    thr.setDaemon(true);
-    return thr;
-  }
+  void loadException(Exception _exception);
 
 }

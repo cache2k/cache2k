@@ -81,6 +81,13 @@ public class Specification<K, V> {
     }
   };
 
+  public static final Semantic UNCONDITIONAL_LOAD = new Semantic.Update() {
+    @Override
+    public void update(final Progress c, final ExaminationEntry e) {
+      c.load();
+    }
+  };
+
   public Semantic<K, V, ResultEntry<K,V>> getEntry(K key) {
     return GET_ENTRY;
   }

@@ -46,20 +46,22 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
-import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Random;
 import java.util.Set;
 import java.util.Timer;
 import java.util.TimerTask;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Future;
+import java.util.concurrent.LinkedBlockingDeque;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.SynchronousQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.cache2k.impl.util.Util.*;
 
@@ -78,6 +80,18 @@ import static org.cache2k.impl.util.Util.*;
 @SuppressWarnings({"unchecked", "SynchronizationOnLocalVariableOrMethodParameter"})
 public abstract class BaseCache<K, V>
   extends AbstractCache<K, V> {
+
+  static final LoadCompletedListener DUMMY_LOAD_COMPLETED_LISTENER = new LoadCompletedListener() {
+    @Override
+    public void loadCompleted() {
+
+    }
+
+    @Override
+    public void loadException(final Exception _exception) {
+
+    }
+  };
 
   static final Random SEED_RANDOM = new Random(new SecureRandom().nextLong());
   static int cacheCnt = 0;
@@ -373,7 +387,7 @@ public abstract class BaseCache<K, V>
     return
       new ThreadPoolExecutor(0, _threadCount,
         21, TimeUnit.SECONDS,
-        new SynchronousQueue<Runnable>(),
+        new LinkedBlockingDeque<Runnable>(),
         TUNABLE.threadFactoryProvider.newThreadFactory(getCacheManager(), getThreadNamePrefix()),
         new ThreadPoolExecutor.AbortPolicy());
   }
@@ -1146,34 +1160,6 @@ public abstract class BaseCache<K, V>
     }
   }
 
-  /**
-   * Always fetch the value from the source. That is a copy of getEntryInternal
-   * without freshness checks.
-   */
-  protected void fetchAndReplace(K key) {
-    long _previousNextRefreshTime;
-    Entry e;
-    for (;;) {
-      e = lookupOrNewEntrySynchronized(key);
-      synchronized (e) {
-        e.waitForFetch();
-        if (e.isGone()) {
-          continue;
-        }
-        _previousNextRefreshTime = e.startFetch();
-        break;
-      }
-    }
-    boolean _finished = false;
-    try {
-      finishFetch(e, fetch(e, _previousNextRefreshTime));
-      _finished = true;
-    } finally {
-      e.ensureFetchAbort(_finished, _previousNextRefreshTime);
-    }
-    evictEventually();
-  }
-
   protected final void evictEventually() {
     int _spinCount = TUNABLE.maximumEvictSpins;
     Entry _previousCandidate = null;
@@ -1519,118 +1505,146 @@ public abstract class BaseCache<K, V>
     }
   }
 
+  boolean isLoaderThreadAvailable() {
+    if (loaderExecutor instanceof ThreadPoolExecutor) {
+      ThreadPoolExecutor ex = (ThreadPoolExecutor) loaderExecutor;
+      return ex.getQueue().size() == 0;
+    }
+    return false;
+  }
+
   @Override
   public void prefetch(final K key) {
-    try {
+    if (isLoaderThreadAvailable()) {
       loaderExecutor.execute(new Runnable() {
         @Override
         public void run() {
           get(key);
         }
       });
-    } catch (RejectedExecutionException ignore) {
     }
   }
 
-  public void prefetch(final List<? extends K> keys, final int _startIndex, final int _endIndexExclusive) {
-    if (keys.isEmpty() || _startIndex == _endIndexExclusive) {
-      return;
-    }
-    if (keys.size() <= _endIndexExclusive) {
-      throw new IndexOutOfBoundsException("end > size");
-    }
-    if (_startIndex > _endIndexExclusive) {
-      throw new IndexOutOfBoundsException("start > end");
-    }
-    if (_startIndex > 0) {
-      throw new IndexOutOfBoundsException("end < 0");
-    }
-    Set<K> ks = new AbstractSet<K>() {
-      @Override
-      public Iterator<K> iterator() {
-        return new Iterator<K>() {
-          int idx = _startIndex;
-          @Override
-          public boolean hasNext() {
-            return idx < _endIndexExclusive;
-          }
-
-          @Override
-          public K next() {
-            return keys.get(idx++);
-          }
-
-          @Override
-          public void remove() {
-            throw new UnsupportedOperationException();
-          }
-        };
-      }
-
-      @Override
-      public int size() {
-        return _endIndexExclusive - _startIndex;
-      }
-    };
-    prefetch(ks);
-  }
-
+  /**
+   *
+   */
   @Override
-  public void fetchAll(Set<? extends K> _keys, boolean replaceExistingValues, FetchCompletedListener l) {
-    if (replaceExistingValues) {
-      for (K k : _keys) {
-        fetchAndReplace(k);
+  public void prefetchAll(final Iterable<? extends K> _keys) {
+    Set<K> _keysToLoad = checkAllPresent(_keys);
+    for (K k : _keysToLoad) {
+      final K key = k;
+      if (!isLoaderThreadAvailable()) {
+        return;
       }
-      if (l != null) {
-        l.fetchCompleted();
-      }
-    } else {
-      prefetch(_keys, l);
-    }
-  }
-
-  @Override
-  public void prefetch(final Iterable<? extends K> keys) {
-    prefetch(keys, null);
-  }
-
-  void prefetch(final Iterable<? extends K> keys, final FetchCompletedListener l) {
-    boolean _complete = true;
-    for (K k : keys) {
-      if (lookupEntryUnsynchronized(k, modifiedHash(k.hashCode())) == null) {
-        _complete = false; break;
-      }
-    }
-    if (_complete) {
-      if (l != null) {
-        l.fetchCompleted();
-      }
-      return;
-    }
-    Runnable r = new Runnable() {
-      @Override
-      public void run() {
-        try {
-          getAll(keys);
-        } catch (Exception ex) {
-          if (l != null) {
-            l.fetchException(ex);
-          }
-        } catch (Throwable ex) {
-          if (l != null) {
-            l.fetchException(new WrappedCustomizationException(ex));
-          }
+      Runnable r = new Runnable() {
+        @Override
+        public void run() {
+          getEntryInternal(key);
         }
-        if (l != null) {
-          l.fetchCompleted();
-        }
-      }
-    };
-    try {
+      };
       loaderExecutor.execute(r);
-    } catch (RejectedExecutionException ex) {
-      l.fetchCompleted();
     }
+  }
+
+  @Override
+  public void loadAll(final Iterable<? extends K> _keys, final LoadCompletedListener l) {
+    final LoadCompletedListener _listener= l != null ? l : DUMMY_LOAD_COMPLETED_LISTENER;
+    Set<K> _keysToLoad = checkAllPresent(_keys);
+    if (_keysToLoad.isEmpty()) {
+      _listener.loadCompleted();
+      return;
+    }
+    final AtomicInteger _countDown = new AtomicInteger(_keysToLoad.size());
+    for (K k : _keysToLoad) {
+      final K key = k;
+      Runnable r = new Runnable() {
+        @Override
+        public void run() {
+          try {
+            getEntryInternal(key);
+          } finally {
+            if (_countDown.decrementAndGet() == 0) {
+              _listener.loadCompleted();
+            }
+          }
+        }
+      };
+      loaderExecutor.execute(r);
+    }
+  }
+
+  @Override
+  public void loadAllAndReplace(final Iterable<? extends K> _keys, final LoadCompletedListener l) {
+    final LoadCompletedListener _listener= l != null ? l : DUMMY_LOAD_COMPLETED_LISTENER;
+    Set<K> _keySet = generateKeySet(_keys);
+    final AtomicInteger _countDown = new AtomicInteger(_keySet.size());
+    for (K k : _keySet) {
+      final K key = k;
+      Runnable r = new Runnable() {
+        @Override
+        public void run() {
+          try {
+            loadAndReplace(key);
+          } finally {
+            if (_countDown.decrementAndGet() == 0) {
+              _listener.loadCompleted();
+            }
+          }
+        }
+      };
+      loaderExecutor.execute(r);
+    }
+  }
+
+  public Set<K> generateKeySet(final Iterable<? extends K> _keys) {
+    Set<K> _keySet = new HashSet<K>();
+    for (K k : _keys) {
+      _keySet.add(k);
+    }
+    return _keySet;
+  }
+
+  public Set<K> checkAllPresent(final Iterable<? extends K> keys) {
+    Set<K> _keysToLoad = new HashSet<K>();
+    for (K k : keys) {
+      Entry<K,V> e = lookupEntryUnsynchronized(k);
+      if (e == null || !e.hasFreshData()) {
+        _keysToLoad.add(k);
+      }
+    }
+    return _keysToLoad;
+  }
+
+  public Entry<K, V> lookupEntryUnsynchronized(final K k) {
+    return lookupEntryUnsynchronized(k, modifiedHash(k.hashCode()));
+  }
+
+  /**
+   * Always fetch the value from the source. That is a copy of getEntryInternal
+   * without freshness checks.
+   */
+  protected void loadAndReplace(K key) {
+    long _previousNextRefreshTime;
+    Entry e;
+    for (;;) {
+      e = lookupOrNewEntrySynchronized(key);
+      synchronized (e) {
+        e.waitForFetch();
+        if (e.isGone()) {
+          continue;
+        }
+        _previousNextRefreshTime = e.startFetch();
+        break;
+      }
+    }
+    boolean _finished = false;
+    try {
+      finishFetch(e, fetch(e, _previousNextRefreshTime));
+      _finished = true;
+    } finally {
+      e.ensureFetchAbort(_finished, _previousNextRefreshTime);
+    }
+    evictEventually();
   }
 
   /**

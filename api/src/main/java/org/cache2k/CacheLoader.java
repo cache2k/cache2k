@@ -24,6 +24,7 @@ package org.cache2k;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.Executor;
 
 /**
  * Retrieves or generates a value to load into the cache.
@@ -33,12 +34,15 @@ import java.util.Map;
  *
  * @author Jens Wilke
  * @see AdvancedCacheLoader
- * @since 0.24
  */
 public abstract class CacheLoader<K, V> {
 
   /**
    * Retrieves or generates data based on the key.
+   *
+   * <p>Concurrent load requests on the same key will be blocked.
+   *
+   * <p>This method may not mutate the cache contents directly.
    *
    * <p>API rationale: This method declares an exception to allow any unhandled
    * exceptions of the loader implementation to just pass through. Since the cache
@@ -56,16 +60,19 @@ public abstract class CacheLoader<K, V> {
   /**
    * Loads multiple values to the cache.
    *
+   * <p>This method may not mutate the cache contents directly.
+   *
    * <p>The method is provided to complete the API. At the moment cache2k is not
-   * using them. Bulk operation will be implemented later.
+   * using it. Bulk operation will be implemented later.
    *
    * @param keys set of keys for the values to be loaded
+   * @param executor an executor for concurrent loading
    * @return The loaded values. A key may map to null if the cache permits null values.
    * @throws Exception Unhandled exception from the loader. The exception will be
    *           handled by the cache based on its configuration. If an exception happens
    *           the cache will retry the load with the single value load method.
    */
-  public Map<K, V> loadAll(Iterable<? extends K> keys) throws Exception {
+  public Map<K, V> loadAll(Iterable<? extends K> keys, Executor executor) throws Exception {
     Map<K,V> map = new HashMap<K, V>();
     for (K key : keys) {
       map.put(key, load(key));

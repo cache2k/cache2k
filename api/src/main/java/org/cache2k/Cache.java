@@ -73,28 +73,31 @@ public interface Cache<K, V> extends KeyValueSource<K, V>, Iterable<CacheEntry<K
   CacheEntry<K, V> getEntry(K key);
 
   /**
-   * Signals the intent to call a get on the same key in the near future.
+   * Signals the intent to request a value for the given key in the near future.
+   * The method will return immediately and the cache will load the
+   * the value asynchronously if not yet present in the cache. The cache may
+   * ignore the request, if not enough internal resources are available to
+   * load the value in background.
    *
-   * <p/>Triggers a prefetch and returns immediately. If the entry is in
-   * the cache already and still fresh nothing will happen. If the entry
-   * is not in the cache or expired a fetch will be triggered. The fetch
-   * will take place with the same thread pool then the one used
-   * for background refresh.
+   * @param key the key that should be loaded
    */
   void prefetch(K key);
 
   /**
-   * Signals the intend to call get on the set of keys in the near future.
-   *
-   * <p/>Without threads: Issues a bulk fetch on the set of keys not in
-   * the cache.
-   *
-   * <p/>With threads: If a thread is available than start the
-   * fetch operation on the missing key mappings and return after the
-   * keys are locked for data fetch within the fetch. A sequential get
-   * on a key will stall until the value is loaded.
+   * @deprecated Renamed to {@link #prefetchAll}
    */
   void prefetch(Iterable<? extends K> keys);
+
+  /**
+   * Signals the intent to request a value for the given keys in the near future.
+   * The method will return immediately and the cache will load the
+   * the values asynchronously if not yet present in the cache. The cache may
+   * ignore the request, if not enough internal resources are available to
+   * load the value in background.
+   *
+   * @param keys the keys which should be loaded
+   */
+   void prefetchAll(Iterable<? extends K> keys);
 
   /**
    * @deprecated use a sublist and {@link #prefetch(Iterable)}
@@ -453,13 +456,24 @@ public interface Cache<K, V> extends KeyValueSource<K, V>, Iterable<CacheEntry<K
   V peekAndPut(K key, V value);
 
   /**
-   * Fetch a set of values from the cache source. This call is modelled after the JSR107
-   * method Cache.loadAll.
+   * Asynchronously loads the given set of keys into the cache. Only missing or expired
+   * values will be loaded.
    *
-   * @deprecated May or may not stay in the API, use the more lightweight #prefetch call as alternative
-   * @since 0.22
+   * @param keys The keys to be loaded
+   * @param l Listener interface that is invoked upon completion. May be null if no
+   *          completion notification is needed.
    */
-  void fetchAll(Set<? extends K> keys, boolean replaceExistingValues, FetchCompletedListener l);
+  void loadAll(Iterable<? extends K> keys, LoadCompletedListener l);
+
+  /**
+   * Asynchronously loads the given set of keys into the cache. Invokes load for all keys
+   * and replaces values already in the cache.
+   *
+   * @param keys The keys to be loaded
+   * @param l Listener interface that is invoked upon completion. May be null if no
+   *          completion notification is needed.
+   */
+  void loadAllAndReplace(Iterable<? extends K> keys, LoadCompletedListener l);
 
   <R> R invoke(K key, CacheEntryProcessor<K, V, R> entryProcessor, Object... args);
 

@@ -29,6 +29,7 @@ import org.cache2k.CacheManager;
 import org.cache2k.ClosableIterator;
 import org.cache2k.EntryProcessingResult;
 import org.cache2k.FetchCompletedListener;
+import org.cache2k.LoadCompletedListener;
 
 import java.util.List;
 import java.util.Map;
@@ -78,8 +79,23 @@ public class CacheWrapper<K,V> implements Cache<K, V> {
   }
 
   @Override
+  public void prefetchAll(Iterable<? extends K> keys) {
+    cache.prefetchAll(keys);
+  }
+
+  @Override
   public void prefetch(List<? extends K> keys, int _startIndex, int _afterEndIndex) {
     cache.prefetch(keys, _startIndex, _afterEndIndex);
+  }
+
+  @Override
+  public void loadAll(final Iterable<? extends K> keys, final LoadCompletedListener l) {
+    cache.loadAll(keys, l);
+  }
+
+  @Override
+  public void loadAllAndReplace(final Iterable<? extends K> keys, final LoadCompletedListener l) {
+    cache.loadAllAndReplace(keys, l);
   }
 
   @Override
@@ -148,11 +164,6 @@ public class CacheWrapper<K,V> implements Cache<K, V> {
   @Override
   public void removeAllAtOnce(Set<K> key) {
     cache.removeAllAtOnce(key);
-  }
-
-  @Override
-  public void fetchAll(Set<? extends K> keys, boolean replaceExistingValues, FetchCompletedListener l) {
-    cache.fetchAll(keys, replaceExistingValues, l);
   }
 
   @Override

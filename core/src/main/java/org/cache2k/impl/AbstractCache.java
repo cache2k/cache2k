@@ -29,6 +29,7 @@ import org.cache2k.WrappedCustomizationException;
 import org.cache2k.impl.operation.Semantic;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentMap;
@@ -144,6 +145,16 @@ public abstract class AbstractCache<K, V> implements InternalCache<K, V> {
 
   protected <R> R execute(K key, Semantic<K, V, R> op) {
     return execute(key, null, op);
+  }
+
+  @Override
+  public void prefetch(final List<? extends K> keys, final int _startIndex, final int _endIndexExclusive) {
+    prefetch(keys.subList(_startIndex, _endIndexExclusive));
+  }
+
+  @Override
+  public void prefetch(final Iterable<? extends K> keys) {
+    prefetchAll(keys);
   }
 
 }
