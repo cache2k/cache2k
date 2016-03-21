@@ -1501,7 +1501,13 @@ public abstract class BaseCache<K, V>
     }
   }
 
-  boolean isLoaderThreadAvailable() {
+  /**
+   * True if we have spare threads in the thread pool that we can use for
+   * prefetching. If we get an instruction the prefetch, only do so if there
+   * are enough resources available, since we don't want to block out potentially
+   * more important refresh tasks from executing.
+   */
+  boolean isLoaderThreadAvailableForPrefetching() {
     if (loaderExecutor instanceof ThreadPoolExecutor) {
       ThreadPoolExecutor ex = (ThreadPoolExecutor) loaderExecutor;
       return ex.getQueue().size() == 0;
@@ -1511,7 +1517,7 @@ public abstract class BaseCache<K, V>
 
   @Override
   public void prefetch(final K key) {
-    if (isLoaderThreadAvailable()) {
+    if (isLoaderThreadAvailableForPrefetching()) {
       loaderExecutor.execute(new RunWithCatch() {
         @Override
         public void action() {
@@ -1529,7 +1535,7 @@ public abstract class BaseCache<K, V>
     Set<K> _keysToLoad = checkAllPresent(_keys);
     for (K k : _keysToLoad) {
       final K key = k;
-      if (!isLoaderThreadAvailable()) {
+      if (!isLoaderThreadAvailableForPrefetching()) {
         return;
       }
       Runnable r = new RunWithCatch() {

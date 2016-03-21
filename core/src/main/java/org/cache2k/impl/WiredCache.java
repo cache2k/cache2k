@@ -119,9 +119,10 @@ public class WiredCache<K, V> extends AbstractCache<K, V>
 
   @Override
   public void prefetch(final K key) {
-    if (!heapCache.isLoaderThreadAvailable()) {
+    if (!heapCache.isLoaderThreadAvailableForPrefetching()) {
       return;
     }
+
     heapCache.loaderExecutor.execute(new RunWithCatch() {
       @Override
       public void action() {
@@ -134,7 +135,7 @@ public class WiredCache<K, V> extends AbstractCache<K, V>
   public void prefetchAll(Iterable<? extends K> keys) {
     Set<K> _keysToLoad = heapCache.checkAllPresent(keys);
     for (K k : _keysToLoad) {
-      if (!heapCache.isLoaderThreadAvailable()) {
+      if (!heapCache.isLoaderThreadAvailableForPrefetching()) {
         return;
       }
       final K key = k;
