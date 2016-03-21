@@ -22,6 +22,10 @@ package org.cache2k.core.test;
  * #L%
  */
 
+import org.cache2k.Cache;
+import org.cache2k.impl.InternalCache;
+import org.cache2k.impl.InternalCacheInfo;
+
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
@@ -33,6 +37,10 @@ public class StaticUtil {
 
   public static <T> Set<T> asSet(T... keys) {
     return new HashSet<T>(Arrays.asList(keys));
+  }
+
+  public static InternalCacheInfo latestInfo(Cache c) {
+    return ((InternalCache) c).getLatestInfo();
   }
 
 }

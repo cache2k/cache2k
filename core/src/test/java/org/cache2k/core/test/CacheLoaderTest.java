@@ -129,10 +129,74 @@ public class CacheLoaderTest {
     c.close();
   }
 
+  @Test
+  public void testPrefetch() {
+    Cache<Integer,Integer> c = builder()
+      .loader(new CacheLoader<Integer, Integer>() {
+        @Override
+        public Integer load(final Integer key) throws Exception {
+          return key * 2;
+        }
+      })
+      .build();
+    c.prefetch(123);
+    assertTrue(latestInfo(c).getAsyncLoadsStarted() > 0);
+    c.close();
+  }
+
+  @Test
+  public void testNoPrefetch() {
+    Cache<Integer,Integer> c = builder()
+      .loader(new CacheLoader<Integer, Integer>() {
+        @Override
+        public Integer load(final Integer key) throws Exception {
+          return key * 2;
+        }
+      })
+      .build();
+    c.put(123, 3);
+    c.prefetch(123);
+    assertTrue(latestInfo(c).getAsyncLoadsStarted() == 0);
+    c.close();
+  }
+
+  @Test
+  public void testPrefetchAll() {
+    Cache<Integer,Integer> c = builder()
+      .loader(new CacheLoader<Integer, Integer>() {
+        @Override
+        public Integer load(final Integer key) throws Exception {
+          return key * 2;
+        }
+      })
+      .build();
+    c.prefetchAll(asSet(1,2,3));
+    assertTrue(latestInfo(c).getAsyncLoadsStarted() > 0);
+    c.close();
+  }
+
+  @Test
+  public void testNoPrefetchAll() {
+    Cache<Integer,Integer> c = builder()
+      .loader(new CacheLoader<Integer, Integer>() {
+        @Override
+        public Integer load(final Integer key) throws Exception {
+          return key * 2;
+        }
+      })
+      .build();
+    c.put(1,1);
+    c.put(2,2);
+    c.put(3,3);
+    c.prefetchAll(asSet(1,2,3));
+    assertTrue(latestInfo(c).getAsyncLoadsStarted() == 0);
+    c.close();
+  }
+
   protected CacheBuilder<Integer, Integer> builder() {
     return
       CacheBuilder.newCache(Integer.class, Integer.class)
-        .name(CacheLoaderTest.class)
+        .name(this.getClass().getSimpleName())
         .eternal(true);
   }
 
