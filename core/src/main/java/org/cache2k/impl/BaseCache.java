@@ -736,7 +736,6 @@ public abstract class BaseCache<K, V>
     } catch (Exception ex) {
       throw new CacheException(ex);
     }
-
   }
 
   @Override
@@ -752,7 +751,6 @@ public abstract class BaseCache<K, V>
         timer = null;
       }
       mainHash = refreshHash = null;
-      loader = null;
       if (manager != null) {
         manager.cacheDestroyed(this);
         manager = null;
