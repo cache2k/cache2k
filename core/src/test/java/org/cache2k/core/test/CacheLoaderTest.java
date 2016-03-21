@@ -26,7 +26,6 @@ import org.cache2k.AdvancedCacheLoader;
 import org.cache2k.Cache;
 import org.cache2k.CacheBuilder;
 import org.cache2k.CacheEntry;
-import org.cache2k.CacheEntryCreatedListener;
 import org.cache2k.CacheLoader;
 import org.cache2k.LoadCompletedListener;
 import org.cache2k.junit.FastTests;
@@ -44,22 +43,23 @@ import static org.cache2k.core.test.StaticUtil.*;
  * Test the cache loader.
  *
  * @author Jens Wilke
- * @see org.cache2k.CacheLoader
+ * @see CacheLoader
+ * @see AdvancedCacheLoader
+ * @see LoadCompletedListener
+ *
  */
 @Category(FastTests.class)
 public class CacheLoaderTest {
 
   @Test
   public void testLoader() {
-    Cache<Integer,Integer> c = CacheBuilder.newCache(Integer.class, Integer.class)
-      .name(CacheLoaderTest.class)
+    Cache<Integer,Integer> c = builder()
       .loader(new CacheLoader<Integer, Integer>() {
         @Override
         public Integer load(final Integer key) throws Exception {
           return key * 2;
         }
       })
-      .eternal(true)
       .build();
     assertEquals((Integer) 10, c.get(5));
     assertEquals((Integer) 20, c.get(10));
@@ -70,45 +70,15 @@ public class CacheLoaderTest {
 
   @Test
   public void testAdvancedLoader() {
-    Cache<Integer,Integer> c = CacheBuilder.newCache(Integer.class, Integer.class)
-      .name(CacheLoaderTest.class)
+    Cache<Integer,Integer> c = builder()
       .loader(new AdvancedCacheLoader<Integer, Integer>() {
         @Override
         public Integer load(final Integer key, long now, CacheEntry<Integer,Integer> e) throws Exception {
           return key * 2;
         }
       })
-      .eternal(true)
       .build();
     assertEquals((Integer) 10, c.get(5));
-    assertEquals((Integer) 20, c.get(10));
-    assertFalse(c.contains(2));
-    assertTrue(c.contains(5));
-    c.close();
-  }
-
-  @Test
-  public void testLoaderWithListener() {
-    final AtomicInteger _countCreated =  new AtomicInteger();
-    Cache<Integer,Integer> c = CacheBuilder.newCache(Integer.class, Integer.class)
-      .name(CacheLoaderTest.class)
-      .loader(new CacheLoader<Integer, Integer>() {
-        @Override
-        public Integer load(final Integer key) throws Exception {
-          return key * 2;
-        }
-      })
-      .addListener(new CacheEntryCreatedListener<Integer, Integer>() {
-        @Override
-        public void onEntryCreated(final Cache<Integer, Integer> c, final CacheEntry<Integer, Integer> e) {
-          _countCreated.incrementAndGet();
-        }
-      })
-      .eternal(true)
-      .build();
-    assertEquals(0, _countCreated.get());
-    assertEquals((Integer) 10, c.get(5));
-    assertEquals(1, _countCreated.get());
     assertEquals((Integer) 20, c.get(10));
     assertFalse(c.contains(2));
     assertTrue(c.contains(5));
@@ -118,15 +88,13 @@ public class CacheLoaderTest {
   @Test
   public void testLoadAll() throws Exception {
     final AtomicInteger _countLoad =  new AtomicInteger();
-    Cache<Integer,Integer> c = CacheBuilder.newCache(Integer.class, Integer.class)
-      .name(CacheLoaderTest.class)
+    Cache<Integer,Integer> c = builder()
       .loader(new CacheLoader<Integer, Integer>() {
         @Override
         public Integer load(final Integer key) throws Exception {
           return _countLoad.incrementAndGet();
         }
       })
-      .eternal(true)
       .build();
     c.get(5);
 
@@ -143,15 +111,13 @@ public class CacheLoaderTest {
   @Test
   public void testReloadAll() throws Exception {
     final AtomicInteger _countLoad =  new AtomicInteger();
-    Cache<Integer,Integer> c = CacheBuilder.newCache(Integer.class, Integer.class)
-      .name(CacheLoaderTest.class)
+    Cache<Integer,Integer> c = builder()
       .loader(new CacheLoader<Integer, Integer>() {
         @Override
         public Integer load(final Integer key) throws Exception {
           return _countLoad.incrementAndGet();
         }
       })
-      .eternal(true)
       .build();
     c.get(5);
     CompletionWaiter w = new CompletionWaiter();
@@ -161,6 +127,13 @@ public class CacheLoaderTest {
     c.reloadAll(asSet(5, 6), null);
     c.reloadAll(Collections.EMPTY_SET, null);
     c.close();
+  }
+
+  protected CacheBuilder<Integer, Integer> builder() {
+    return
+      CacheBuilder.newCache(Integer.class, Integer.class)
+        .name(CacheLoaderTest.class)
+        .eternal(true);
   }
 
   class CompletionWaiter implements LoadCompletedListener {
