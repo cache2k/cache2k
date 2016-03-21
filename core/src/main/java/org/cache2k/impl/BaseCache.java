@@ -1516,9 +1516,9 @@ public abstract class BaseCache<K, V>
   @Override
   public void prefetch(final K key) {
     if (isLoaderThreadAvailable()) {
-      loaderExecutor.execute(new Runnable() {
+      loaderExecutor.execute(new RunWithCatch() {
         @Override
-        public void run() {
+        public void action() {
           get(key);
         }
       });
@@ -1536,9 +1536,9 @@ public abstract class BaseCache<K, V>
       if (!isLoaderThreadAvailable()) {
         return;
       }
-      Runnable r = new Runnable() {
+      Runnable r = new RunWithCatch() {
         @Override
-        public void run() {
+        public void action() {
           getEntryInternal(key);
         }
       };
@@ -1557,9 +1557,9 @@ public abstract class BaseCache<K, V>
     final AtomicInteger _countDown = new AtomicInteger(_keysToLoad.size());
     for (K k : _keysToLoad) {
       final K key = k;
-      Runnable r = new Runnable() {
+      Runnable r = new RunWithCatch() {
         @Override
-        public void run() {
+        public void action() {
           try {
             getEntryInternal(key);
           } finally {
@@ -1580,9 +1580,9 @@ public abstract class BaseCache<K, V>
     final AtomicInteger _countDown = new AtomicInteger(_keySet.size());
     for (K k : _keySet) {
       final K key = k;
-      Runnable r = new Runnable() {
+      Runnable r = new RunWithCatch() {
         @Override
-        public void run() {
+        public void action() {
           try {
             loadAndReplace(key);
           } finally {
@@ -1593,6 +1593,21 @@ public abstract class BaseCache<K, V>
         }
       };
       loaderExecutor.execute(r);
+    }
+  }
+
+  abstract class RunWithCatch implements Runnable {
+
+    protected abstract void action();
+
+    @Override
+    public final void run() {
+      try {
+        action();
+      } catch (CacheClosedException ignore) {
+      } catch (Throwable t) {
+        getLog().warn("Loader thread exception", t);
+      }
     }
   }
 
