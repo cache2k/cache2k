@@ -33,6 +33,7 @@ import org.cache2k.junit.FastTests;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
+import java.util.Collections;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -134,6 +135,8 @@ public class CacheLoaderTest {
     w.awaitCompletion();
     assertEquals(2, _countLoad.get());
     assertEquals((Integer) 2, c.get(6));
+    c.loadAll(asSet(5, 6), null);
+    c.loadAll(Collections.EMPTY_SET, null);
     c.close();
   }
 
@@ -155,6 +158,8 @@ public class CacheLoaderTest {
     c.reloadAll(asSet(5, 6), w);
     w.awaitCompletion();
     assertEquals(3, _countLoad.get());
+    c.reloadAll(asSet(5, 6), null);
+    c.reloadAll(Collections.EMPTY_SET, null);
     c.close();
   }
 
