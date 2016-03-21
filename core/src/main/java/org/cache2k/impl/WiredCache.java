@@ -45,7 +45,6 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.Future;
-import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
@@ -123,9 +122,9 @@ public class WiredCache<K, V> extends AbstractCache<K, V>
     if (!heapCache.isLoaderThreadAvailable()) {
       return;
     }
-    heapCache.loaderExecutor.execute(new Runnable() {
+    heapCache.loaderExecutor.execute(new RunWithCatch() {
       @Override
-      public void run() {
+      public void action() {
         load(key);
       }
     });
@@ -139,9 +138,9 @@ public class WiredCache<K, V> extends AbstractCache<K, V>
         return;
       }
       final K key = k;
-      Runnable r = new Runnable() {
+      Runnable r = new RunWithCatch() {
         @Override
-        public void run() {
+        public void action() {
           load(key);
         }
       };
@@ -220,9 +219,9 @@ public class WiredCache<K, V> extends AbstractCache<K, V>
     final AtomicInteger _countDown = new AtomicInteger(_keysToLoad.size());
     for (K k : _keysToLoad) {
       final K key = k;
-      Runnable r = new Runnable() {
+      Runnable r = new RunWithCatch() {
         @Override
-        public void run() {
+        public void action() {
           try {
             load(key);
           } finally {
@@ -243,9 +242,9 @@ public class WiredCache<K, V> extends AbstractCache<K, V>
     final AtomicInteger _countDown = new AtomicInteger(_keySet.size());
     for (K k : _keySet) {
       final K key = k;
-      Runnable r = new Runnable() {
+      Runnable r = new RunWithCatch() {
         @Override
-        public void run() {
+        public void action() {
           try {
             execute(key, SPEC.UNCONDITIONAL_LOAD);
           } finally {
@@ -256,6 +255,21 @@ public class WiredCache<K, V> extends AbstractCache<K, V>
         }
       };
       heapCache.loaderExecutor.execute(r);
+    }
+  }
+
+  abstract class RunWithCatch implements Runnable {
+
+    protected abstract void action();
+
+    @Override
+    public final void run() {
+      try {
+        action();
+      } catch (CacheClosedException ignore) {
+      } catch (Throwable t) {
+        getLog().warn("Loader thread exception", t);
+      }
     }
   }
 
