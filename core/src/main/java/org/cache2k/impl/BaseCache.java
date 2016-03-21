@@ -238,13 +238,21 @@ public abstract class BaseCache<K, V>
    */
   protected final Object lock = new Object();
 
-  protected volatile Executor loaderExecutor = new Executor() {
+  protected volatile Executor loaderExecutor = new DummyExecutor(this);
+
+  static class DummyExecutor implements Executor {
+    BaseCache cache;
+
+    public DummyExecutor(final BaseCache _cache) {
+      cache = _cache;
+    }
+
     @Override
     public synchronized void execute(final Runnable _command) {
-      loaderExecutor = provideDefaultLoaderExecutor(0);
-      loaderExecutor.execute(_command);
+      cache.loaderExecutor = cache.provideDefaultLoaderExecutor(0);
+      cache.loaderExecutor.execute(_command);
     }
-  };
+  }
 
   protected Hash<Entry<K, V>> mainHashCtrl;
   protected Entry<K, V>[] mainHash;
@@ -1508,15 +1516,23 @@ public abstract class BaseCache<K, V>
    * more important refresh tasks from executing.
    */
   boolean isLoaderThreadAvailableForPrefetching() {
-    if (loaderExecutor instanceof ThreadPoolExecutor) {
-      ThreadPoolExecutor ex = (ThreadPoolExecutor) loaderExecutor;
+    Executor _loaderExecutor = loaderExecutor;
+    if (_loaderExecutor instanceof ThreadPoolExecutor) {
+      ThreadPoolExecutor ex = (ThreadPoolExecutor) _loaderExecutor;
       return ex.getQueue().size() == 0;
+    }
+    if (_loaderExecutor instanceof DummyExecutor) {
+      return true;
     }
     return false;
   }
 
   @Override
   public void prefetch(final K key) {
+    Entry<K,V> e = lookupEntrySynchronizedNoHitRecord(key);
+    if (e != null && e.hasFreshData()) {
+      return;
+    }
     if (isLoaderThreadAvailableForPrefetching()) {
       loaderExecutor.execute(new RunWithCatch() {
         @Override
@@ -1624,7 +1640,7 @@ public abstract class BaseCache<K, V>
   public Set<K> checkAllPresent(final Iterable<? extends K> keys) {
     Set<K> _keysToLoad = new HashSet<K>();
     for (K k : keys) {
-      Entry<K,V> e = lookupEntryUnsynchronized(k);
+      Entry<K,V> e = lookupEntrySynchronizedNoHitRecord(k);
       if (e == null || !e.hasFreshData()) {
         _keysToLoad.add(k);
       }

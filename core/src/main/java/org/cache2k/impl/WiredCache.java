@@ -122,7 +122,10 @@ public class WiredCache<K, V> extends AbstractCache<K, V>
     if (!heapCache.isLoaderThreadAvailableForPrefetching()) {
       return;
     }
-
+    Entry<K,V> e = heapCache.lookupEntrySynchronizedNoHitRecord(key);
+    if (e != null && e.hasFreshData()) {
+      return;
+    }
     heapCache.loaderExecutor.execute(new RunWithCatch() {
       @Override
       public void action() {

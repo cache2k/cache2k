@@ -22,6 +22,8 @@ package org.cache2k.impl;
  * #L%
  */
 
+import java.util.concurrent.ThreadPoolExecutor;
+
 import static org.cache2k.impl.util.Util.formatMillis;
 
 /**
@@ -48,6 +50,8 @@ class CacheBaseInfo implements InternalCacheInfo {
   String extraStatistics;
   int fetchesInFlight;
   IntegrityState integrityState;
+  long asyncLoadsStarted = 0;
+  long asyncLoadsInFlight = 0;
 
   public CacheBaseInfo(BaseCache baseCache) {
     this.baseCache = baseCache;
@@ -70,6 +74,12 @@ class CacheBaseInfo implements InternalCacheInfo {
     correctedPutCnt = metrics.getPutNewEntryCount() + metrics.getPutHitCount() + metrics.getPutNoReadHitCount() - baseCache.putButExpiredCnt;
     usageCnt =
             hitCnt + newEntryCnt + baseCache.peekMissCnt + metrics.getPutHitCount() + metrics.getRemoveCount();
+    if (baseCache.loaderExecutor instanceof ThreadPoolExecutor) {
+      ThreadPoolExecutor ex = (ThreadPoolExecutor) baseCache.loaderExecutor;
+      int _queuedIn = ex.getQueue().size();
+      asyncLoadsInFlight = ex.getActiveCount();
+      asyncLoadsStarted = ex.getCompletedTaskCount() + asyncLoadsInFlight + _queuedIn;
+    }
   }
 
   String percentString(double d) {
@@ -265,6 +275,16 @@ class CacheBaseInfo implements InternalCacheInfo {
       return 1;
     }
     return 0;
+  }
+
+  @Override
+  public long getAsyncLoadsStarted() {
+    return asyncLoadsStarted;
+  }
+
+  @Override
+  public long getAsyncLoadsInFlight() {
+    return asyncLoadsInFlight;
   }
 
   @Override

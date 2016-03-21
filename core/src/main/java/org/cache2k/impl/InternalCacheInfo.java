@@ -129,4 +129,9 @@ public interface InternalCacheInfo {
   int getHealth();
 
   String getExtraStatistics();
+
+  long getAsyncLoadsStarted();
+
+  long getAsyncLoadsInFlight();
+
 }
