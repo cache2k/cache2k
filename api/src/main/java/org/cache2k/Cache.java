@@ -459,9 +459,20 @@ public interface Cache<K, V> extends KeyValueSource<K, V>, Iterable<CacheEntry<K
    * Asynchronously loads the given set of keys into the cache. Only missing or expired
    * values will be loaded.
    *
+   * <p>The cache uses multiple threads to load the values in parallel. If there
+   * are not sufficient threads available, the load tasks will be queued and executed
+   * in a first come first serve manner. The loader thread pool will be also
+   * used for refresh operation after an entry is expired, which means, heavy load
+   * operation may delay a refresh of an entry.
+   *
+   * <p>If no loader is defined, the method will throw an immediate exception.
+   *
+   * <p>After the load is completed, the completion listener will be called, if provided.
+   *
    * @param keys The keys to be loaded
    * @param l Listener interface that is invoked upon completion. May be null if no
    *          completion notification is needed.
+   * @throws UnsupportedOperationException if no loader is defined
    */
   void loadAll(Iterable<? extends K> keys, LoadCompletedListener l);
 
@@ -469,9 +480,20 @@ public interface Cache<K, V> extends KeyValueSource<K, V>, Iterable<CacheEntry<K
    * Asynchronously loads the given set of keys into the cache. Invokes load for all keys
    * and replaces values already in the cache.
    *
+   * <p>The cache uses multiple threads to load the values in parallel. If there
+   * are not sufficient threads available, the load tasks will be queued and executed
+   * in a first come first serve manner. The loader thread pool will be also
+   * used for refresh operation after an entry is expired, which means, heavy load
+   * operation may delay a refresh of an entry.
+   *
+   * <p>If no loader is defined, the method will throw an immediate exception.
+   *
+   * <p>After the load is completed, the completion listener will be called, if provided.
+   *
    * @param keys The keys to be loaded
    * @param l Listener interface that is invoked upon completion. May be null if no
    *          completion notification is needed.
+   * @throws UnsupportedOperationException if no loader is defined
    */
   void reloadAll(Iterable<? extends K> keys, LoadCompletedListener l);
 
