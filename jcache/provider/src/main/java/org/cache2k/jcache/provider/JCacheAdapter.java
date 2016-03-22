@@ -63,7 +63,6 @@ public class JCacheAdapter<K, V> implements javax.cache.Cache<K, V> {
   Cache<K, V> cache;
   InternalCache<K, V> cacheImpl;
   boolean storeByValue;
-  CacheLoader<K, V> loader = null;
   boolean readThrough = false;
   boolean statisticsEnabled = false;
   boolean configurationEnabled = false;

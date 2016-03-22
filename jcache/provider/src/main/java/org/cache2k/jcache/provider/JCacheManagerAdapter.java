@@ -208,7 +208,6 @@ public class JCacheManagerAdapter implements CacheManager {
     _cfgCopy.setStoreByValue(cc.isStoreByValue());
     _cfgCopy.setReadThrough(cc.isReadThrough());
     _cfgCopy.setWriteThrough(cc.isWriteThrough());
-    CacheLoader<K, TouchyJCacheAdapter.TimeVal<V>> cl = null;
     if (cc.getCacheLoaderFactory() != null) {
       final CacheLoader<K, V> clf = cc.getCacheLoaderFactory().create();
       b.source(new CacheSource<K, TouchyJCacheAdapter.TimeVal>() {
@@ -251,7 +250,6 @@ public class JCacheManagerAdapter implements CacheManager {
 
       JCacheAdapter<K, TouchyJCacheAdapter.TimeVal<V>> ca =
         new JCacheAdapter<K, TouchyJCacheAdapter.TimeVal<V>>(this, b.build(), null);
-      ca.loader = cl;
       ca.readThrough = cc.isReadThrough();
       TouchyJCacheAdapter<K, V> c = new TouchyJCacheAdapter<K, V>();
       c.cache = ca;
