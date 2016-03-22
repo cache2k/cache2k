@@ -770,4 +770,24 @@ public class BasicCacheOperationsTest {
     statistics().expectAllZero();
   }
 
+  @Test(expected=UnsupportedOperationException.class)
+  public void loadAll() throws Exception {
+    cache.loadAll(asSet(KEY, OTHER_KEY), null);
+  }
+
+  @Test(expected=UnsupportedOperationException.class)
+  public void reloadAll() throws Exception {
+    cache.reloadAll(asSet(KEY, OTHER_KEY), null);
+  }
+
+  @Test
+  public void prefetch() {
+    cache.prefetch(KEY);
+  }
+
+  @Test
+  public void prefetchAll()  {
+    cache.prefetchAll(asSet(KEY, OTHER_KEY));
+  }
+
 }
