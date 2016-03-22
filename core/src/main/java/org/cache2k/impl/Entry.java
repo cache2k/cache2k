@@ -38,20 +38,11 @@ public class Entry<K, T>
   implements CacheEntry<K,T>, StorageEntry, ExaminationEntry<K, T> {
 
   static final int FETCHED_STATE = 16;
-  static final int REFRESH_STATE = FETCHED_STATE + 1;
-  static final int REPUT_STATE = FETCHED_STATE + 3;
-
-  static final int FETCH_IN_PROGRESS_VALID = FETCHED_STATE + 4;
 
   /**
    * Cache.remove() operation received. Needs to be send to storage.
    */
   static final int REMOVE_PENDING = 11;
-
-  /**
-   * Entry was created for locking purposes of an atomic operation.
-   */
-  static final int ATOMIC_OP_NON_VALID = 10;
 
   static final int LOADED_NON_VALID_AND_PUT = 9;
 
@@ -357,21 +348,7 @@ public class Entry<K, T>
       return true;
     }
     if (needsTimeCheck()) {
-      long now = System.currentTimeMillis();
-      return now < -nextRefreshTime;
-    }
-    return false;
-  }
-
-  /**
-   * Same as {@link #hasFreshData}, optimization if current time is known.
-   */
-  public final boolean hasFreshData(long now) {
-    if (nextRefreshTime >= FETCHED_STATE) {
-      return true;
-    }
-    if (needsTimeCheck()) {
-      return now < -nextRefreshTime;
+      return System.currentTimeMillis() < -nextRefreshTime;
     }
     return false;
   }
@@ -428,10 +405,6 @@ public class Entry<K, T>
     return nextRefreshTime == GONE_STATE;
   }
 
-  public boolean isBeeingReput() {
-    return nextRefreshTime == REPUT_STATE;
-  }
-
   public boolean needsTimeCheck() {
     return nextRefreshTime < 0;
   }
@@ -455,9 +428,6 @@ public class Entry<K, T>
     return null;
   }
 
-  public void setException(Throwable exception) {
-    value = (T) new ExceptionWrapper(exception);
-  }
 
   public boolean equalsValue(T v) {
     if (value == null) {
