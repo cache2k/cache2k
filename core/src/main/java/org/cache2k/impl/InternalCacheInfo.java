@@ -134,4 +134,8 @@ public interface InternalCacheInfo {
 
   long getAsyncLoadsInFlight();
 
+  int getLoaderThreadsLimit();
+
+  int getLoaderThreadsMaxActive();
+
 }

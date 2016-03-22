@@ -52,6 +52,9 @@ class CacheBaseInfo implements InternalCacheInfo {
   IntegrityState integrityState;
   long asyncLoadsStarted = 0;
   long asyncLoadsInFlight = 0;
+  int loaderThreadsLimit = 0;
+  int loaderThreadsMaxActive = 0;
+  int loaderThreadsActive = 0;
 
   public CacheBaseInfo(BaseCache baseCache) {
     this.baseCache = baseCache;
@@ -76,9 +79,10 @@ class CacheBaseInfo implements InternalCacheInfo {
             hitCnt + newEntryCnt + baseCache.peekMissCnt + metrics.getPutHitCount() + metrics.getRemoveCount();
     if (baseCache.loaderExecutor instanceof ThreadPoolExecutor) {
       ThreadPoolExecutor ex = (ThreadPoolExecutor) baseCache.loaderExecutor;
-      int _queuedIn = ex.getQueue().size();
       asyncLoadsInFlight = ex.getActiveCount();
-      asyncLoadsStarted = ex.getCompletedTaskCount() + asyncLoadsInFlight + _queuedIn;
+      asyncLoadsStarted = ex.getTaskCount();
+      loaderThreadsLimit = ex.getCorePoolSize();
+      loaderThreadsMaxActive = ex.getLargestPoolSize();
     }
   }
 
@@ -288,6 +292,16 @@ class CacheBaseInfo implements InternalCacheInfo {
   }
 
   @Override
+  public int getLoaderThreadsLimit() {
+    return loaderThreadsLimit;
+  }
+
+  @Override
+  public int getLoaderThreadsMaxActive() {
+    return loaderThreadsMaxActive;
+  }
+
+  @Override
   public String getExtraStatistics() {
     return extraStatistics;
   }
@@ -331,6 +345,10 @@ class CacheBaseInfo implements InternalCacheInfo {
             + "longestCollisionSize=" + getLongestCollisionSize() + ", "
             + "hashQuality=" + getHashQualityInteger() + ", "
             + "msecs/fetch=" + (getMillisPerFetch() >= 0 ? getMillisPerFetch() : "-")  + ", "
+            + "asyncLoadsStarted=" + asyncLoadsStarted + ", "
+            + "asyncLoadsInFlight=" + asyncLoadsInFlight + ", "
+            + "loaderThreadsLimit=" + loaderThreadsLimit + ", "
+            + "loaderThreadsMaxActive=" + loaderThreadsMaxActive + ", "
             + "created=" + timestampToString(getStarted()) + ", "
             + "cleared=" + timestampToString(getCleared()) + ", "
             + "touched=" + timestampToString(getTouched()) + ", "

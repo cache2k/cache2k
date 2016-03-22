@@ -348,7 +348,9 @@ public abstract class BaseCache<K, V>
     }
     if (c.isBackgroundRefresh()) {
       setFeatureBit(BACKGROUND_REFRESH, true);
-      provideDefaultLoaderExecutor(0);
+    }
+    if (c.getLoaderThreadCount() > 0) {
+      loaderExecutor = provideDefaultLoaderExecutor(c.getLoaderThreadCount());
     }
     long _expiryMillis  = c.getExpiryMillis();
     if (_expiryMillis == Long.MAX_VALUE || _expiryMillis < 0) {
@@ -387,11 +389,11 @@ public abstract class BaseCache<K, V>
   }
 
   Executor provideDefaultLoaderExecutor(int _threadCount) {
-    if (_threadCount == 0) {
-      _threadCount = Runtime.getRuntime().availableProcessors() * 2;
+    if (_threadCount <= 0) {
+      _threadCount = Runtime.getRuntime().availableProcessors() * TUNABLE.loaderThreadCountCpuFactor;
     }
     return
-      new ThreadPoolExecutor(0, _threadCount,
+      new ThreadPoolExecutor(_threadCount, _threadCount,
         21, TimeUnit.SECONDS,
         new LinkedBlockingDeque<Runnable>(),
         TUNABLE.threadFactoryProvider.newThreadFactory(getCacheManager(), getThreadNamePrefix()),
@@ -2610,6 +2612,11 @@ public abstract class BaseCache<K, V>
     public int minimumStatisticsCreationTimeDeltaFactor = 123;
 
     public ThreadFactoryProvider threadFactoryProvider = new DefaultThreadFactoryProvider();
+
+    /**
+     * Number of maximum loader threads, depending on the CPUs.
+     */
+    public int loaderThreadCountCpuFactor = 2;
 
 
   }

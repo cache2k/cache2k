@@ -415,6 +415,14 @@ public abstract class CacheBuilder<K, V>
     return this;
   }
 
+  /**
+   * Maximum number of threads this cache should use for calls to the {@link CacheLoader}
+   */
+  public CacheBuilder<K, V> loaderThreadCount(int v) {
+    config.setLoaderThreadCount(v);
+    return this;
+  }
+
   @Deprecated
   public CacheConfig getConfig() {
     return null;

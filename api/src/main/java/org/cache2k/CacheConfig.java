@@ -52,6 +52,7 @@ public class CacheConfig<K, V> implements Serializable {
   private boolean suppressExceptions = true;
   private CacheLoader<K,V> loader;
   private AdvancedCacheLoader<K,V> advancedLoader;
+  private int loaderThreadCount;
 
   /**
    * Construct a config instance setting the type parameters and returning a
@@ -428,4 +429,16 @@ public class CacheConfig<K, V> implements Serializable {
   public void setAdvancedLoader(final AdvancedCacheLoader<K, V> v) {
     advancedLoader = v;
   }
+
+  public int getLoaderThreadCount() {
+    return loaderThreadCount;
+  }
+
+  /**
+   * @see CacheBuilder#loaderThreadCount(int)
+   */
+  public void setLoaderThreadCount(final int v) {
+    loaderThreadCount = v;
+  }
+
 }

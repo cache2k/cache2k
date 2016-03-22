@@ -193,6 +193,61 @@ public class CacheLoaderTest {
     c.close();
   }
 
+  /**
+   * We should always have two loader threads.
+   */
+  @Test
+  public void testTwoLoaderThreadsAndPoolInfo() throws Exception {
+    final CountDownLatch _inLoader = new CountDownLatch(1);
+    final CountDownLatch _releaseLoader = new CountDownLatch(1);
+    Cache<Integer,Integer> c = builder()
+      .loader(new CacheLoader<Integer, Integer>() {
+        @Override
+        public Integer load(final Integer key) throws Exception {
+          _inLoader.countDown();
+          _releaseLoader.await();
+          return key * 2;
+        }
+      })
+      .build();
+    c.loadAll(asSet(1), null);
+    c.loadAll(asSet(2), null);
+    _inLoader.await();
+    assertEquals(2, latestInfo(c).getAsyncLoadsStarted());
+    assertEquals(2, latestInfo(c).getAsyncLoadsInFlight());
+    assertEquals(2, latestInfo(c).getLoaderThreadsMaxActive());
+    _releaseLoader.countDown();
+    c.close();
+  }
+
+  /**
+   * We should always have two loader threads.
+   */
+  @Test
+  public void testOneLoaderThreadsAndPoolInfo() throws Exception {
+    final CountDownLatch _inLoader = new CountDownLatch(1);
+    final CountDownLatch _releaseLoader = new CountDownLatch(1);
+    Cache<Integer,Integer> c = builder()
+      .loaderThreadCount(1)
+      .loader(new CacheLoader<Integer, Integer>() {
+        @Override
+        public Integer load(final Integer key) throws Exception {
+          _inLoader.countDown();
+          _releaseLoader.await();
+          return key * 2;
+        }
+      })
+      .build();
+    c.loadAll(asSet(1), null);
+    c.loadAll(asSet(2), null);
+    _inLoader.await();
+    assertEquals(2, latestInfo(c).getAsyncLoadsStarted());
+    assertEquals(1, latestInfo(c).getAsyncLoadsInFlight());
+    assertEquals(1, latestInfo(c).getLoaderThreadsMaxActive());
+    _releaseLoader.countDown();
+    c.close();
+  }
+
   protected CacheBuilder<Integer, Integer> builder() {
     return
       CacheBuilder.newCache(Integer.class, Integer.class)
