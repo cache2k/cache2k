@@ -119,6 +119,9 @@ public class WiredCache<K, V> extends AbstractCache<K, V>
 
   @Override
   public void prefetch(final K key) {
+    if (loader == null) {
+      return;
+    }
     if (!heapCache.isLoaderThreadAvailableForPrefetching()) {
       return;
     }
@@ -136,6 +139,9 @@ public class WiredCache<K, V> extends AbstractCache<K, V>
 
   @Override
   public void prefetchAll(Iterable<? extends K> keys) {
+    if (loader == null) {
+      return;
+    }
     Set<K> _keysToLoad = heapCache.checkAllPresent(keys);
     for (K k : _keysToLoad) {
       if (!heapCache.isLoaderThreadAvailableForPrefetching()) {
@@ -214,6 +220,7 @@ public class WiredCache<K, V> extends AbstractCache<K, V>
 
   @Override
   public void loadAll(final Iterable<? extends K> _keys, final LoadCompletedListener l) {
+    checkLoaderPresent();
     final LoadCompletedListener _listener= l != null ? l : BaseCache.DUMMY_LOAD_COMPLETED_LISTENER;
     Set<K> _keysToLoad = heapCache.checkAllPresent(_keys);
     if (_keysToLoad.isEmpty()) {
@@ -241,6 +248,7 @@ public class WiredCache<K, V> extends AbstractCache<K, V>
 
   @Override
   public void reloadAll(final Iterable<? extends K> _keys, final LoadCompletedListener l) {
+    checkLoaderPresent();
     final LoadCompletedListener _listener= l != null ? l : BaseCache.DUMMY_LOAD_COMPLETED_LISTENER;
     Set<K> _keySet = heapCache.generateKeySet(_keys);
     final AtomicInteger _countDown = new AtomicInteger(_keySet.size());
@@ -259,6 +267,12 @@ public class WiredCache<K, V> extends AbstractCache<K, V>
         }
       };
       heapCache.loaderExecutor.execute(r);
+    }
+  }
+
+  private void checkLoaderPresent() {
+    if (loader == null) {
+      throw new UnsupportedOperationException("loader not set");
     }
   }
 

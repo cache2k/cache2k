@@ -1529,6 +1529,9 @@ public abstract class BaseCache<K, V>
 
   @Override
   public void prefetch(final K key) {
+    if (loader == null) {
+      return;
+    }
     Entry<K,V> e = lookupEntrySynchronizedNoHitRecord(key);
     if (e != null && e.hasFreshData()) {
       return;
@@ -1548,6 +1551,9 @@ public abstract class BaseCache<K, V>
    */
   @Override
   public void prefetchAll(final Iterable<? extends K> _keys) {
+    if (loader == null) {
+      return;
+    }
     Set<K> _keysToLoad = checkAllPresent(_keys);
     for (K k : _keysToLoad) {
       final K key = k;
@@ -1566,6 +1572,7 @@ public abstract class BaseCache<K, V>
 
   @Override
   public void loadAll(final Iterable<? extends K> _keys, final LoadCompletedListener l) {
+    checkLoaderPresent();
     final LoadCompletedListener _listener= l != null ? l : DUMMY_LOAD_COMPLETED_LISTENER;
     Set<K> _keysToLoad = checkAllPresent(_keys);
     if (_keysToLoad.isEmpty()) {
@@ -1593,6 +1600,7 @@ public abstract class BaseCache<K, V>
 
   @Override
   public void reloadAll(final Iterable<? extends K> _keys, final LoadCompletedListener l) {
+    checkLoaderPresent();
     final LoadCompletedListener _listener= l != null ? l : DUMMY_LOAD_COMPLETED_LISTENER;
     Set<K> _keySet = generateKeySet(_keys);
     final AtomicInteger _countDown = new AtomicInteger(_keySet.size());
@@ -1961,9 +1969,7 @@ public abstract class BaseCache<K, V>
     V v;
     long t0 = System.currentTimeMillis();
     try {
-      if (loader == null) {
-        throw new CacheUsageExcpetion("loader not set");
-      }
+      checkLoaderPresent();
       if (e.isVirgin()) {
         v = loader.load((K) e.key, t0, null);
       } else {
@@ -1975,6 +1981,12 @@ public abstract class BaseCache<K, V>
     }
     long t = System.currentTimeMillis();
     return insertOrUpdateAndCalculateExpiry(e, v, t0, t, INSERT_STAT_UPDATE, _previousNextRefreshValue);
+  }
+
+  private void checkLoaderPresent() {
+    if (loader == null) {
+      throw new UnsupportedOperationException("loader not set");
+    }
   }
 
   protected final long insertOnPut(Entry<K, V> e, V v, long t0, long t, long _previousNextRefreshValue) {
