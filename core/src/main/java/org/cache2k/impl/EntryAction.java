@@ -217,7 +217,7 @@ public class EntryAction<K, V, R> implements StorageCallback, AsyncCacheLoader.C
             storageRead = _needStorageRead = true;
             e.startFetch(Entry.ProcessingState.READ);
             entryLocked = true;
-            heapDataValid = e.isDataValidState();
+            heapDataValid = e.isDataValid();
           }
           break;
         }
@@ -278,7 +278,7 @@ public class EntryAction<K, V, R> implements StorageCallback, AsyncCacheLoader.C
       _nextRefreshTime = heapCache.calcNextRefreshTime((K) se.getKey(), v, se.getCreatedOrUpdated(), null);
       expiry = _nextRefreshTime;
       if (_nextRefreshTime == -1 || _nextRefreshTime == Long.MAX_VALUE) {
-        e.nextRefreshTime = Entry.FETCHED_STATE;
+        e.nextRefreshTime = Entry.DATA_VALID;
         storageDataValid = true;
       } else if (_nextRefreshTime == 0) {
         e.nextRefreshTime = Entry.READ_NON_VALID;
@@ -405,7 +405,7 @@ public class EntryAction<K, V, R> implements StorageCallback, AsyncCacheLoader.C
         if (!e.isGone()) {
           e.startFetch(ps);
           entryLocked = true;
-          heapDataValid = e.isDataValidState();
+          heapDataValid = e.isDataValid();
           heapHit = !e.isVirgin();
           entry = e;
           return;
@@ -434,7 +434,7 @@ public class EntryAction<K, V, R> implements StorageCallback, AsyncCacheLoader.C
         if (!e.isGone()) {
           e.startFetch(ps);
           entryLocked = true;
-          heapDataValid = e.isDataValidState();
+          heapDataValid = e.isDataValid();
           heapHit = !e.isVirgin();
           entry = e;
           return;
@@ -644,7 +644,7 @@ public class EntryAction<K, V, R> implements StorageCallback, AsyncCacheLoader.C
       mutationUpdateHeap();
       return;
     }
-    if (entry.isDataValidState()) {
+    if (entry.isDataValid()) {
       expiredImmediatelyDoRemove();
       return;
     }
@@ -780,12 +780,12 @@ public class EntryAction<K, V, R> implements StorageCallback, AsyncCacheLoader.C
       } else {
         long _nextRefreshTime = expiry;
         if (_nextRefreshTime == 0) {
-          entry.nextRefreshTime = Entry.FETCH_NEXT_TIME_STATE;
+          entry.nextRefreshTime = Entry.EXPIRED_IMMEDIATELY;
           if (entry.task != null) {
             entry.task.cancel();
           }
         } else if (_nextRefreshTime == Long.MAX_VALUE) {
-          entry.nextRefreshTime = Entry.FETCHED_STATE;
+          entry.nextRefreshTime = Entry.DATA_VALID;
           if (entry.task != null) {
             entry.task.cancel();
           }

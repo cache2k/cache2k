@@ -37,7 +37,7 @@ import org.cache2k.storage.StorageEntry;
 public class Entry<K, T>
   implements CacheEntry<K,T>, StorageEntry, ExaminationEntry<K, T> {
 
-  static final int FETCHED_STATE = 16;
+  static final int DATA_VALID = 16;
 
   /**
    * Cache.remove() operation received. Needs to be send to storage.
@@ -53,19 +53,20 @@ public class Entry<K, T>
   /** Storage was checked, no data available */
   static final int LOADED_NON_VALID_AND_FETCH = 6;
 
-  /** Storage was checked, no data available */
+  /** @see #isReadNonValid() */
   static final int READ_NON_VALID = 5;
 
-  static final int EXPIRED_STATE = 4;
+  /** @see #isExpired() */
+  static final int EXPIRED = 4;
 
-  /** Logically the same as immediately expired */
-  static final int FETCH_NEXT_TIME_STATE = 3;
+  /** @see #isExpiredImmediately()  */
+  static final int EXPIRED_IMMEDIATELY = 3;
 
-  static private final int GONE_STATE = 2;
+  /** @see #isGone() */
+  static private final int GONE = 2;
 
-  static private final int FETCH_IN_PROGRESS_VIRGIN = 1;
-
-  static final int VIRGIN_STATE = 0;
+  /** @see #isVirgin() */
+  static final int VIRGIN = 0;
 
   static final int EXPIRY_TIME_MIN = 32;
 
@@ -308,14 +309,18 @@ public class Entry<K, T>
     return next = prev = this;
   }
 
+  /**
+   * Initial state of an entry.
+   */
   public final boolean isVirgin() {
-    return
-      nextRefreshTime == VIRGIN_STATE ||
-      nextRefreshTime == FETCH_IN_PROGRESS_VIRGIN;
+    return nextRefreshTime == VIRGIN;
   }
 
-  public final boolean isFetchNextTimeState() {
-    return nextRefreshTime == FETCH_NEXT_TIME_STATE;
+  /**
+   * Entry was expired immediately after a load.
+   */
+  public final boolean isExpiredImmediately() {
+    return nextRefreshTime == EXPIRED_IMMEDIATELY;
   }
 
   /**
@@ -328,23 +333,19 @@ public class Entry<K, T>
    * <p/>Even if this is true, the data may be expired. Use hasFreshData() to
    * make sure to get not expired data.
    */
-  public final boolean isDataValidState() {
-    return isDataValidState(nextRefreshTime);
+  public final boolean isDataValid() {
+    return isDataValid(nextRefreshTime);
   }
 
-  public static boolean isDataValidState(long _nextRefreshTime) {
-    return _nextRefreshTime >= FETCHED_STATE || _nextRefreshTime < 0;
-  }
-
-  public boolean hasData() {
-    return !isVirgin() && !isGone();
+  public static boolean isDataValid(long _nextRefreshTime) {
+    return _nextRefreshTime >= DATA_VALID || _nextRefreshTime < 0;
   }
 
   /**
    * Returns true if the entry has a valid value and is fresh / not expired.
    */
   public final boolean hasFreshData() {
-    if (nextRefreshTime >= FETCHED_STATE) {
+    if (nextRefreshTime >= DATA_VALID) {
       return true;
     }
     if (needsTimeCheck()) {
@@ -354,7 +355,7 @@ public class Entry<K, T>
   }
 
   public final boolean hasFreshData(long now, long _nextRefreshTime) {
-    if (_nextRefreshTime >= FETCHED_STATE) {
+    if (_nextRefreshTime >= DATA_VALID) {
       return true;
     }
     if (_nextRefreshTime < 0) {
@@ -363,7 +364,8 @@ public class Entry<K, T>
     return false;
   }
 
-  public boolean isLoadedNonValid() {
+  /** Storage was checked, no data available */
+  public boolean isReadNonValid() {
     return nextRefreshTime == READ_NON_VALID;
   }
 
@@ -377,23 +379,23 @@ public class Entry<K, T>
 
   /** Entry is kept in the cache but has expired */
   public void setExpiredState() {
-    nextRefreshTime = EXPIRED_STATE;
+    nextRefreshTime = EXPIRED;
   }
 
   /**
    * The entry expired, but still in the cache. This may happen if
    * {@link BaseCache#hasKeepAfterExpired()} is true.
    */
-  public boolean isExpiredState() {
-    return isExpiredState(nextRefreshTime);
+  public boolean isExpired() {
+    return isExpired(nextRefreshTime);
   }
 
-  public static boolean isExpiredState(long _nextRefreshTime) {
-    return _nextRefreshTime == EXPIRED_STATE;
+  public static boolean isExpired(long _nextRefreshTime) {
+    return _nextRefreshTime == EXPIRED;
   }
 
   public void setGone() {
-    nextRefreshTime = GONE_STATE;
+    nextRefreshTime = GONE;
   }
 
   /**
@@ -402,7 +404,7 @@ public class Entry<K, T>
    * after the synchronize goes through somebody else might have evicted it.
    */
   public boolean isGone() {
-    return nextRefreshTime == GONE_STATE;
+    return nextRefreshTime == GONE;
   }
 
   public boolean needsTimeCheck() {
@@ -508,7 +510,7 @@ public class Entry<K, T>
   /* check entry states */
   static {
     Entry e = new Entry();
-    e.nextRefreshTime = FETCHED_STATE;
+    e.nextRefreshTime = DATA_VALID;
     synchronized (e) {
       e.setGettingRefresh();
       e = new Entry();

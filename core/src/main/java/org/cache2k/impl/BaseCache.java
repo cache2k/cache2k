@@ -2017,7 +2017,7 @@ public abstract class BaseCache<K, V>
    */
   long calculateNextRefreshTime(Entry<K, V> _entry, V _newValue, long t0, long _previousNextRefreshTime) {
     long _nextRefreshTime;
-    if (Entry.isDataValidState(_previousNextRefreshTime) || Entry.isExpiredState(_previousNextRefreshTime)) {
+    if (Entry.isDataValid(_previousNextRefreshTime) || Entry.isExpired(_previousNextRefreshTime)) {
       _nextRefreshTime = calcNextRefreshTime(_entry.getKey(), _newValue, t0, _entry);
     } else {
       _nextRefreshTime = calcNextRefreshTime(_entry.getKey(), _newValue, t0, null);
@@ -2055,10 +2055,10 @@ public abstract class BaseCache<K, V>
       checkClosed();
       updateStatisticsNeedsLock(e, _value, t0, t, _updateStatistics, _suppressException);
       if (_nextRefreshTime == 0) {
-        _nextRefreshTime = Entry.FETCH_NEXT_TIME_STATE;
+        _nextRefreshTime = Entry.EXPIRED_IMMEDIATELY;
       } else {
         if (_nextRefreshTime == Long.MAX_VALUE) {
-          _nextRefreshTime = Entry.FETCHED_STATE;
+          _nextRefreshTime = Entry.DATA_VALID;
         }
       }
       if (_updateStatistics == INSERT_STAT_PUT && !e.hasFreshData(t, _nextRefreshTime)) {
@@ -2122,7 +2122,7 @@ public abstract class BaseCache<K, V>
     }
     if ((_nextRefreshTime > Entry.EXPIRY_TIME_MIN && _nextRefreshTime <= now) &&
         (_nextRefreshTime < -1 && (now >= -_nextRefreshTime))) {
-      return Entry.EXPIRED_STATE;
+      return Entry.EXPIRED;
     }
     if (hasSharpTimeout() && _nextRefreshTime > Entry.EXPIRY_TIME_MIN && _nextRefreshTime != Long.MAX_VALUE) {
       _nextRefreshTime = -_nextRefreshTime;
@@ -2241,7 +2241,7 @@ public abstract class BaseCache<K, V>
 
   protected void expireEntry(Entry e) {
     synchronized (e) {
-      if (e.isGone() || e.isExpiredState()) {
+      if (e.isGone() || e.isExpired()) {
         return;
       }
       if (e.isFetchInProgress()) {

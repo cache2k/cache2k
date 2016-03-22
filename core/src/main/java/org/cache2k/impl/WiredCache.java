@@ -553,8 +553,8 @@ public class WiredCache<K, V> extends AbstractCache<K, V>
   @Override
   public void onEvictionFromHeap(final Entry<K, V> e) {
     boolean _storeEvenImmediatelyExpired =
-      heapCache.hasKeepAfterExpired() && (e.isDataValidState() || e.isExpiredState() ||
-      e.nextRefreshTime == org.cache2k.impl.Entry.FETCH_NEXT_TIME_STATE);
+      heapCache.hasKeepAfterExpired() && (e.isDataValid() || e.isExpired() ||
+      e.nextRefreshTime == org.cache2k.impl.Entry.EXPIRED_IMMEDIATELY);
     boolean _shouldStore =
       (storage != null) && (_storeEvenImmediatelyExpired || e.hasFreshData());
     if (_shouldStore) {
