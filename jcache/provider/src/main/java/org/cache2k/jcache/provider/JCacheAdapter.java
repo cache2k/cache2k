@@ -40,7 +40,6 @@ import javax.cache.configuration.CompleteConfiguration;
 import javax.cache.configuration.Configuration;
 import javax.cache.configuration.MutableConfiguration;
 
-import javax.cache.integration.CacheLoader;
 import javax.cache.integration.CompletionListener;
 import javax.cache.processor.EntryProcessor;
 import javax.cache.processor.EntryProcessorException;
@@ -63,6 +62,7 @@ public class JCacheAdapter<K, V> implements javax.cache.Cache<K, V> {
   Cache<K, V> cache;
   InternalCache<K, V> cacheImpl;
   boolean storeByValue;
+  boolean loaderConfigured = false;
   boolean readThrough = false;
   boolean statisticsEnabled = false;
   boolean configurationEnabled = false;
@@ -109,6 +109,12 @@ public class JCacheAdapter<K, V> implements javax.cache.Cache<K, V> {
   @Override
   public void loadAll(Set<? extends K> keys, boolean replaceExistingValues, final CompletionListener completionListener) {
     checkClosed();
+    if (!loaderConfigured) {
+      if (completionListener != null) {
+        completionListener.onCompletion();
+      }
+      return;
+    }
     LoadCompletedListener l = null;
     if (completionListener != null) {
       l = new LoadCompletedListener() {

@@ -250,6 +250,9 @@ public class JCacheManagerAdapter implements CacheManager {
 
       JCacheAdapter<K, TouchyJCacheAdapter.TimeVal<V>> ca =
         new JCacheAdapter<K, TouchyJCacheAdapter.TimeVal<V>>(this, b.build(), null);
+      if (cc.getCacheLoaderFactory() != null) {
+        ca.loaderConfigured = true;
+      }
       ca.readThrough = cc.isReadThrough();
       TouchyJCacheAdapter<K, V> c = new TouchyJCacheAdapter<K, V>();
       c.cache = ca;
