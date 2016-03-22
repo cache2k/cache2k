@@ -50,9 +50,6 @@ public class Entry<K, T>
 
   static final int FETCH_IN_PROGRESS_NON_VALID = 7;
 
-  /** Storage was checked, no data available */
-  static final int LOADED_NON_VALID_AND_FETCH = 6;
-
   /** @see #isReadNonValid() */
   static final int READ_NON_VALID = 5;
 
@@ -369,14 +366,6 @@ public class Entry<K, T>
     return nextRefreshTime == READ_NON_VALID;
   }
 
-  public void setLoadedNonValidAndFetch() {
-    nextRefreshTime = LOADED_NON_VALID_AND_FETCH;
-  }
-
-  public boolean isLoadedNonValidAndFetch() {
-    return nextRefreshTime == LOADED_NON_VALID_AND_FETCH;
-  }
-
   /** Entry is kept in the cache but has expired */
   public void setExpiredState() {
     nextRefreshTime = EXPIRED;
@@ -514,7 +503,6 @@ public class Entry<K, T>
     synchronized (e) {
       e.setGettingRefresh();
       e = new Entry();
-      e.setLoadedNonValidAndFetch();
       e.setExpiredState();
     }
   }

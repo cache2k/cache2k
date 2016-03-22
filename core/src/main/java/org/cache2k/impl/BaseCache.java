@@ -182,12 +182,6 @@ public abstract class BaseCache<K, V>
   protected long newEntryCnt = 0;
 
   /**
-   * Entries created for processing via invoke or replace, but no operation happened on it.
-   * The entry processor may just have checked the entry state or an exception happened.
-   */
-  protected long atomicOpNewEntryCnt = 0;
-
-  /**
    * Read from storage, but the entry was not fresh and cannot be returned.
    */
   protected long readNonFreshCnt = 0;
@@ -2095,9 +2089,7 @@ public abstract class BaseCache<K, V>
         refreshCnt++;
       } else {
         loadCnt++;
-        if (e.isLoadedNonValidAndFetch()) {
-          readNonFreshAndFetchedCnt++;
-        } else if (!e.isVirgin()) {
+        if (!e.isVirgin()) {
           loadButHitCnt++;
         }
       }
