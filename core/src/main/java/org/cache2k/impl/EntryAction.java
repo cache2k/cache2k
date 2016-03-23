@@ -780,7 +780,7 @@ public class EntryAction<K, V, R> implements StorageCallback, AsyncCacheLoader.C
       } else {
         long _nextRefreshTime = expiry;
         if (_nextRefreshTime == 0) {
-          entry.nextRefreshTime = Entry.EXPIRED_IMMEDIATELY;
+          entry.nextRefreshTime = Entry.EXPIRED;
           if (entry.task != null) {
             entry.task.cancel();
           }

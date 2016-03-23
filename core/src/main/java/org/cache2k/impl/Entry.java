@@ -64,9 +64,6 @@ public class Entry<K, T>
   /** @see #isExpired() */
   static final int EXPIRED = 4;
 
-  /** @see #isExpiredImmediately()  */
-  static final int EXPIRED_IMMEDIATELY = 3;
-
   /** @see #isGone() */
   static private final int GONE = 2;
 
@@ -310,13 +307,6 @@ public class Entry<K, T>
    */
   public final boolean isVirgin() {
     return nextRefreshTime == VIRGIN;
-  }
-
-  /**
-   * Entry was expired immediately after a load.
-   */
-  public final boolean isExpiredImmediately() {
-    return nextRefreshTime == EXPIRED_IMMEDIATELY;
   }
 
   /**

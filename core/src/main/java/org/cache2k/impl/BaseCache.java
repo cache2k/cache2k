@@ -1966,7 +1966,7 @@ public abstract class BaseCache<K, V>
    */
   long calculateNextRefreshTime(Entry<K, V> _entry, V _newValue, long t0) {
     long _nextRefreshTime;
-    if (_entry.isDataValid() || _entry.isExpired() || _entry.isExpiredImmediately()) {
+    if (_entry.isDataValid() || _entry.isExpired()) {
       _nextRefreshTime = calcNextRefreshTime(_entry.getKey(), _newValue, t0, _entry);
     } else {
       _nextRefreshTime = calcNextRefreshTime(_entry.getKey(), _newValue, t0, null);
@@ -2004,7 +2004,7 @@ public abstract class BaseCache<K, V>
       checkClosed();
       updateStatisticsNeedsLock(e, _value, t0, t, _updateStatistics, _suppressException);
       if (_nextRefreshTime == 0) {
-        _nextRefreshTime = Entry.EXPIRED_IMMEDIATELY;
+        _nextRefreshTime = Entry.EXPIRED;
       } else {
         if (_nextRefreshTime == Long.MAX_VALUE) {
           _nextRefreshTime = Entry.DATA_VALID;
