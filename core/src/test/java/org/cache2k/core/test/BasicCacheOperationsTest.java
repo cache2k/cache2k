@@ -790,4 +790,17 @@ public class BasicCacheOperationsTest {
     cache.prefetchAll(asSet(KEY, OTHER_KEY));
   }
 
+  @Test
+  public void entryState() {
+    if (!(cache instanceof InternalCache)) {
+      return;
+    }
+    InternalCache c = (InternalCache) cache;
+    String s = c.getEntryState(KEY);
+    assertNull(s);
+    cache.put(KEY, VALUE);
+    s = c.getEntryState(KEY);
+    assertNotNull(s);
+  }
+
 }

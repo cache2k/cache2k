@@ -1049,36 +1049,14 @@ public abstract class BaseCache<K, V>
     }
   }
 
+  @Override
   public String getEntryState(K key) {
-    Entry e = getEntryInternal(key);
-    return generateEntryStateString(e);
-  }
-
-  private String generateEntryStateString(Entry<K, V> e) {
+    Entry e = peekEntryInternal(key);
+    if (e == null) {
+      return null;
+    }
     synchronized (e) {
-      String _timerState = "n/a";
-      if (e.task != null) {
-        _timerState = "<unavailable>";
-        try {
-          Field f = TimerTask.class.getDeclaredField("state");
-          f.setAccessible(true);
-          int _state = f.getInt(e.task);
-          _timerState = String.valueOf(_state);
-        } catch (Exception x) {
-          _timerState = x.toString();
-        }
-      }
-      return
-          "Entry{" + System.identityHashCode(e) + "}, " +
-          "keyIdentityHashCode=" + System.identityHashCode(e.key) + ", " +
-          "valueIdentityHashCode=" + System.identityHashCode(e.value) + ", " +
-          "keyHashCode" + e.key.hashCode() + ", " +
-          "keyModifiedHashCode=" + e.hashCode + ", " +
-          "keyMutation=" + (modifiedHash(e.key.hashCode()) != e.hashCode) + ", " +
-          "modified=" + e.getLastModification() + ", " +
-          "nextRefreshTime(with state)=" + e.nextRefreshTime + ", " +
-          "hasTimer=" + (e.task != null ? "true" : "false") + ", " +
-          "timerState=" + _timerState;
+      return e.toString(this);
     }
   }
 
@@ -1146,7 +1124,7 @@ public abstract class BaseCache<K, V>
       finishFetch(e, fetch(e, _previousNextRefreshTime));
       _finished = true;
     } finally {
-      e.ensureFetchAbort(_finished, _previousNextRefreshTime);
+      e.ensureAbort(_finished, _previousNextRefreshTime);
     }
     evictEventually();
     return e;
@@ -1190,7 +1168,7 @@ public abstract class BaseCache<K, V>
       }
       listener.onEvictionFromHeap(e);
       synchronized (e) {
-        finishFetch(e, org.cache2k.impl.Entry.FETCH_ABORT);
+        finishFetch(e, org.cache2k.impl.Entry.ABORTED);
         evictEntryFromHeap(e);
       }
     }
@@ -1679,7 +1657,7 @@ public abstract class BaseCache<K, V>
       finishFetch(e, fetch(e, _previousNextRefreshTime));
       _finished = true;
     } finally {
-      e.ensureFetchAbort(_finished, _previousNextRefreshTime);
+      e.ensureAbort(_finished, _previousNextRefreshTime);
     }
     evictEventually();
   }
@@ -2096,9 +2074,6 @@ public abstract class BaseCache<K, V>
     } else if (_updateStatistics == INSERT_STAT_PUT) {
       metrics.putNewEntry();
       eventuallyAdjustPutNewEntryCount(e);
-      if (e.nextRefreshTime == Entry.LOADED_NON_VALID_AND_PUT) {
-        peekHitNotFreshCnt++;
-      }
     }
   }
 
@@ -2187,7 +2162,7 @@ public abstract class BaseCache<K, V>
                   finishFetch(e, t);
                 } catch (CacheClosedException ignore) {
                 } catch (Throwable ex) {
-                  e.ensureFetchAbort(false);
+                  e.ensureAbort(false);
                   synchronized (lock) {
                     internalExceptionCnt++;
                   }

@@ -891,7 +891,7 @@ public class EntryAction<K, V, R> implements StorageCallback, AsyncCacheLoader.C
     if (entryLocked) {
       synchronized (entry) {
         if (entry.isVirgin()) {
-          entry.nextRefreshTime = Entry.FETCH_ABORT;
+          entry.nextRefreshTime = Entry.ABORTED;
         }
         entry.processingDone();
         entry.notifyAll();

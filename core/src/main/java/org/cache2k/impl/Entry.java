@@ -26,6 +26,9 @@ import org.cache2k.CacheEntry;
 import org.cache2k.impl.operation.ExaminationEntry;
 import org.cache2k.storage.StorageEntry;
 
+import java.lang.reflect.Field;
+import java.util.TimerTask;
+
 /**
  * The cache entry. This is a combined hashtable entry with hashCode and
  * and collision list (other field) and it contains a double linked list
@@ -37,6 +40,14 @@ import org.cache2k.storage.StorageEntry;
 public class Entry<K, T>
   implements CacheEntry<K,T>, StorageEntry, ExaminationEntry<K, T> {
 
+  /**
+   * A value greater as means it is a time value.
+   */
+  static final int EXPIRY_TIME_MIN = 32;
+
+  /**
+   * bigger or equal means entry has / contains valid data
+   */
   static final int DATA_VALID = 16;
 
   /**
@@ -44,9 +55,8 @@ public class Entry<K, T>
    */
   static final int REMOVE_PENDING = 11;
 
-  static final int LOADED_NON_VALID_AND_PUT = 9;
-
-  static final int FETCH_ABORT = 8;
+  /** @see #isAborted() */
+  static final int ABORTED = 8;
 
   /** @see #isReadNonValid() */
   static final int READ_NON_VALID = 5;
@@ -62,8 +72,6 @@ public class Entry<K, T>
 
   /** @see #isVirgin() */
   static final int VIRGIN = 0;
-
-  static final int EXPIRY_TIME_MIN = 32;
 
   static private final StaleMarker STALE_MARKER_KEY = new StaleMarker();
 
@@ -228,7 +236,7 @@ public class Entry<K, T>
    * exceptions may happen. This can happen regularly e.g. if storage
    * is set to read only and a cache put is made.
    */
-  public void ensureFetchAbort(boolean _finished) {
+  public void ensureAbort(boolean _finished) {
     if (_finished) {
       return;
     }
@@ -239,13 +247,13 @@ public class Entry<K, T>
     }
   }
 
-  public void ensureFetchAbort(boolean _finished, long _previousNextRefreshTime) {
+  public void ensureAbort(boolean _finished, long _previousNextRefreshTime) {
     if (_finished) {
       return;
     }
     synchronized (Entry.this) {
       if (isVirgin()) {
-        nextRefreshTime = FETCH_ABORT;
+        nextRefreshTime = ABORTED;
       }
       if (isProcessing()) {
         setProcessingState(ProcessingState.DONE);
@@ -253,6 +261,11 @@ public class Entry<K, T>
       }
     }
   }
+
+  /**
+   * Last entry processing was aborted without yielding valid data
+   */
+  public boolean isAborted() { return nextRefreshTime == ABORTED; }
 
   /**
    * Entry is not allowed to be evicted
@@ -479,19 +492,52 @@ public class Entry<K, T>
     return 0;
   }
 
+  public String toString(BaseCache c) {
+    StringBuilder sb = new StringBuilder();
+    sb.append("Entry{");
+    sb.append("lock=").append(getProcessingState());
+    sb.append(", key=");
+    if (key == null) {
+      sb.append("null");
+    } else {
+      sb.append(key);
+      if (c != null && (c.modifiedHash(key.hashCode()) != hashCode)) {
+        sb.append(", keyMutation=true");
+      }
+    }
+    if (value != null) {
+      sb.append(", valueIdentityHashCode=").append(System.identityHashCode(value));
+    } else {
+      sb.append(", value=null");
+    }
+    sb.append(", modified=").append(getLastModification());
+    if (nextRefreshTime < 0) {
+      sb.append(", nextRefreshTime(sharp)=").append(-nextRefreshTime);
+    } else if (nextRefreshTime >= EXPIRY_TIME_MIN) {
+      sb.append(", nextRefreshTime(timer)=").append(nextRefreshTime);
+    } else {
+      sb.append(", state=").append(nextRefreshTime);
+    }
+    if (task != null) {
+      String _timerState = "<unavailable>";
+      try {
+        Field f = TimerTask.class.getDeclaredField("state");
+        f.setAccessible(true);
+        int _state = f.getInt(task);
+        _timerState = String.valueOf(_state);
+      } catch (Exception x) {
+        _timerState = x.toString();
+      }
+      sb.append(", timerState=").append(_timerState);
+    }
+    sb.append(", dirty=").append(isDirty());
+    sb.append("}");
+    return sb.toString();
+  }
+
   @Override
   public String toString() {
-    return "Entry{" +
-      "key=" + key +
-      ", lock=" + getProcessingState() +
-      ", createdOrUpdate=" + getCreatedOrUpdated() +
-      ", nextRefreshTime=" + nextRefreshTime +
-      ", valueExpiryTime=" + getValueExpiryTime() +
-      ", entryExpiryTime=" + getEntryExpiryTime() +
-      ", mHC=" + hashCode +
-      ", value=" + value +
-      ", dirty=" + isDirty() +
-      '}';
+    return toString(null);
   }
 
   /* check entry states */

@@ -61,4 +61,6 @@ public interface InternalCache<K, V> extends Cache<K, V>, CanCheckIntegrity {
    */
   CacheEntry<K, V> replaceOrGet(K key, V _oldValue, V _newValue, CacheEntry<K, V> _dummyEntry);
 
+  String getEntryState(K key);
+
 }

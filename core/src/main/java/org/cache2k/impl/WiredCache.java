@@ -587,6 +587,11 @@ public class WiredCache<K, V> extends AbstractCache<K, V>
     return new MyEntryAction<R>(op, key, e);
   }
 
+  @Override
+  public String getEntryState(final K key) {
+    return heapCache.getEntryState(key);
+  }
+
   /**
    * Wire the entry action to the resources of this cache.
    */
