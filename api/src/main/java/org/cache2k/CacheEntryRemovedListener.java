@@ -25,7 +25,7 @@ package org.cache2k;
 /**
  * @author Jens Wilke
  */
-public interface CacheEntryRemovedListener<K,V> extends CacheEntryListener<K,V> {
+public interface CacheEntryRemovedListener<K,V> extends CacheEntryOperationListener<K,V> {
 
   void onEntryRemoved(Cache<K,V> c, CacheEntry<K,V> entry);
 

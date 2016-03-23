@@ -27,5 +27,5 @@ package org.cache2k;
  *
  * @author Jens Wilke
  */
-public interface CacheEntryListener<K,V> {
+public interface CacheEntryOperationListener<K,V> {
 }

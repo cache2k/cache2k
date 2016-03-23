@@ -23,6 +23,9 @@ package org.cache2k.core.test;
  */
 
 import org.cache2k.Cache;
+import org.cache2k.CacheBuilder;
+import org.cache2k.CacheEntry;
+import org.cache2k.CacheEntryRemovedListener;
 import org.cache2k.impl.InternalCache;
 import org.cache2k.impl.InternalCacheInfo;
 
@@ -41,6 +44,19 @@ public class StaticUtil {
 
   public static InternalCacheInfo latestInfo(Cache c) {
     return ((InternalCache) c).getLatestInfo();
+  }
+
+  /**
+   * Enforce the usage of wired cache by registering a dummy listener.
+   */
+  @SuppressWarnings("unchecked")
+  public static <K,V> CacheBuilder<K,V> enforceWiredCache(CacheBuilder<K,V> b) {
+    return b.addListener(new CacheEntryRemovedListener() {
+      @Override
+      public void onEntryRemoved(final Cache c, final CacheEntry entry) {
+
+      }
+    });
   }
 
 }

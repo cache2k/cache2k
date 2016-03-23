@@ -25,7 +25,7 @@ package org.cache2k;
 /**
  * @author Jens Wilke
  */
-public interface CacheEntryCreatedListener<K, V> extends CacheEntryListener<K, V> {
+public interface CacheEntryCreatedListener<K, V> extends CacheEntryOperationListener<K, V> {
 
   void onEntryCreated(Cache<K,V> c, CacheEntry<K,V> e);
 

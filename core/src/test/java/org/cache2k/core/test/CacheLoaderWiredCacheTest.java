@@ -50,13 +50,7 @@ public class CacheLoaderWiredCacheTest extends CacheLoaderTest {
 
   @Override
   protected CacheBuilder<Integer, Integer> builder() {
-    return
-      super.builder().addListener(new CacheEntryExpiredListener<Integer, Integer>() {
-        @Override
-        public void onEntryExpired(final Cache<Integer, Integer> c, final CacheEntry<Integer, Integer> e) {
-
-        }
-      });
+    return StaticUtil.enforceWiredCache(super.builder());
   }
 
   @Test

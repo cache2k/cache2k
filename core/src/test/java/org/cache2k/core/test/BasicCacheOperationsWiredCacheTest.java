@@ -52,18 +52,12 @@ public class BasicCacheOperationsWiredCacheTest extends BasicCacheOperationsTest
    */
   @BeforeClass
   public static void setUp() {
-    Cache<Integer, Integer>  c =
-      CacheBuilder.newCache(Integer.class, Integer.class)
-        .name(BasicCacheOperationsTest.class)
-        .eternal(true)
-        .entryCapacity(1000)
-         .addListener(new CacheEntryRemovedListener<Integer, Integer>() {
-          @Override
-          public void onEntryRemoved(final Cache<Integer, Integer> c, final CacheEntry<Integer, Integer> entry) {
-
-          }
-        })
-        .build();
+    CacheBuilder<Integer, Integer> _builder = CacheBuilder.newCache(Integer.class, Integer.class)
+      .name(BasicCacheOperationsTest.class)
+      .eternal(true)
+      .entryCapacity(1000);
+    StaticUtil.enforceWiredCache(_builder);
+    Cache<Integer, Integer>  c = _builder.build();
     staticCache = c;
   }
 

@@ -28,7 +28,7 @@ package org.cache2k;
  *
  * @author Jens Wilke
  */
-public interface CacheEntryUpdatedListener<K, V> extends CacheEntryListener<K,V> {
+public interface CacheEntryUpdatedListener<K, V> extends CacheEntryOperationListener<K,V> {
 
   void onEntryUpdated(Cache<K,V> cache, CacheEntry<K, V> previousEntry, CacheEntry<K, V> currentEntry);
 

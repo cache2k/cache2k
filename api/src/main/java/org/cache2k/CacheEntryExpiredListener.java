@@ -30,7 +30,7 @@ package org.cache2k;
  *
  * @author Jens Wilke
  */
-public interface CacheEntryExpiredListener<K, V> extends CacheEntryListener<K,V> {
+public interface CacheEntryExpiredListener<K, V> extends CacheEntryOperationListener<K,V> {
 
   void onEntryExpired(Cache<K,V> c, CacheEntry<K,V> e);
 

@@ -24,8 +24,7 @@ package org.cache2k.impl;
 
 import org.cache2k.BulkCacheSource;
 import org.cache2k.CacheEntryCreatedListener;
-import org.cache2k.CacheEntryExpiredListener;
-import org.cache2k.CacheEntryListener;
+import org.cache2k.CacheEntryOperationListener;
 import org.cache2k.CacheEntryRemovedListener;
 import org.cache2k.CacheEntryUpdatedListener;
 import org.cache2k.ExperimentalBulkCacheSource;
@@ -49,12 +48,12 @@ import java.util.List;
 @SuppressWarnings("unused") // instantiated by reflection from cache builder
 public class CacheBuilderImpl<K, T> extends CacheBuilder<K, T> {
 
-  List<CacheEntryListener<K,T>> syncListeners;
+  List<CacheEntryOperationListener<K,T>> syncListeners;
 
   @Override
-  public CacheBuilder<K, T> addListener(final CacheEntryListener<K, T> listener) {
+  public CacheBuilder<K, T> addListener(final CacheEntryOperationListener<K, T> listener) {
     if (syncListeners == null) {
-      syncListeners = new ArrayList<CacheEntryListener<K, T>>();
+      syncListeners = new ArrayList<CacheEntryOperationListener<K, T>>();
     }
     syncListeners.add(listener);
     return this;
@@ -239,7 +238,7 @@ public class CacheBuilderImpl<K, T> extends CacheBuilder<K, T> {
         List<CacheEntryCreatedListener<K,T>> cll = new ArrayList<CacheEntryCreatedListener<K, T>>();
         List<CacheEntryUpdatedListener<K,T>> ull = new ArrayList<CacheEntryUpdatedListener<K, T>>();
         List<CacheEntryRemovedListener<K,T>> rll = new ArrayList<CacheEntryRemovedListener<K, T>>();
-        for (CacheEntryListener<K,T> el : syncListeners) {
+        for (CacheEntryOperationListener<K,T> el : syncListeners) {
           if (el instanceof CacheEntryCreatedListener) {
             cll.add((CacheEntryCreatedListener) el);
           }
