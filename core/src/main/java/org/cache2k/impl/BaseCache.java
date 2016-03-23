@@ -36,7 +36,6 @@ import org.cache2k.impl.util.TunableConstants;
 import org.cache2k.impl.util.TunableFactory;
 
 import java.lang.reflect.Array;
-import java.lang.reflect.Field;
 import java.security.SecureRandom;
 import java.util.AbstractMap;
 import java.util.AbstractSet;
@@ -51,7 +50,6 @@ import java.util.NoSuchElementException;
 import java.util.Random;
 import java.util.Set;
 import java.util.Timer;
-import java.util.TimerTask;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Future;
 import java.util.concurrent.LinkedBlockingDeque;
