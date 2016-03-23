@@ -27,7 +27,7 @@ package org.cache2k.impl;
  */
 public interface HeapCacheListener<K,V> {
 
-  static final HeapCacheListener NO_OPERATION = new NoOperation();
+  HeapCacheListener NO_OPERATION = new NoOperation();
 
   void onEvictionFromHeap(Entry<K,V> e);
 
