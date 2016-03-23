@@ -1098,7 +1098,6 @@ public abstract class BaseCache<K, V>
   }
 
   protected Entry getEntryInternal(K key) {
-    long _previousNextRefreshTime;
     Entry e;
     for (;;) {
       e = lookupOrNewEntrySynchronized(key);
@@ -1113,7 +1112,7 @@ public abstract class BaseCache<K, V>
         if (e.isGone()) {
           continue;
         }
-        _previousNextRefreshTime = e.startProcessing();
+        e.startProcessing();
         break;
       }
     }
@@ -1637,7 +1636,6 @@ public abstract class BaseCache<K, V>
    * without freshness checks.
    */
   protected void loadAndReplace(K key) {
-    long _previousNextRefreshTime;
     Entry e;
     for (;;) {
       e = lookupOrNewEntrySynchronized(key);
@@ -1646,7 +1644,7 @@ public abstract class BaseCache<K, V>
         if (e.isGone()) {
           continue;
         }
-        _previousNextRefreshTime = e.startProcessing();
+        e.startProcessing();
         break;
       }
     }

@@ -213,9 +213,8 @@ public class Entry<K, T>
   /**
    * Starts long operation on entry. Pins the entry in the cache.
    */
-  public long startProcessing() {
+  public void startProcessing() {
     setProcessingState(ProcessingState.FETCH);
-    return nextRefreshTime;
   }
 
   public void startProcessing(ProcessingState ps) {
