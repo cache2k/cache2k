@@ -48,8 +48,6 @@ public class Entry<K, T>
 
   static final int FETCH_ABORT = 8;
 
-  static final int FETCH_IN_PROGRESS_NON_VALID = 7;
-
   /** @see #isReadNonValid() */
   static final int READ_NON_VALID = 5;
 

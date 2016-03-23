@@ -2236,14 +2236,10 @@ public abstract class BaseCache<K, V>
       if (e.isGone() || e.isExpired()) {
         return;
       }
-      if (e.isProcessing()) {
-        e.nextRefreshTime = org.cache2k.impl.Entry.FETCH_IN_PROGRESS_NON_VALID;
-        return;
-      }
       e.setExpiredState();
       synchronized (lock) {
         checkClosed();
-        if (hasKeepAfterExpired()) {
+        if (hasKeepAfterExpired() || e.isProcessing()) {
           expiredKeptCnt++;
         } else {
           if (removeEntry(e)) {
