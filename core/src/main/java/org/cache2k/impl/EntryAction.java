@@ -211,11 +211,11 @@ public class EntryAction<K, V, R> implements StorageCallback, AsyncCacheLoader.C
         throw new CacheLockSpinsExceededError();
       }
       synchronized (e) {
-        e.waitForFetch();
+        e.waitForProcessing();
         if (!e.isGone()) {
           if (e.isVirgin()) {
             storageRead = _needStorageRead = true;
-            e.startFetch(Entry.ProcessingState.READ);
+            e.startProcessing(Entry.ProcessingState.READ);
             entryLocked = true;
             heapDataValid = e.isDataValid();
           }
@@ -401,9 +401,9 @@ public class EntryAction<K, V, R> implements StorageCallback, AsyncCacheLoader.C
         throw new CacheLockSpinsExceededError();
       }
       synchronized (e) {
-        e.waitForFetch();
+        e.waitForProcessing();
         if (!e.isGone()) {
-          e.startFetch(ps);
+          e.startProcessing(ps);
           entryLocked = true;
           heapDataValid = e.isDataValid();
           heapHit = !e.isVirgin();
@@ -430,9 +430,9 @@ public class EntryAction<K, V, R> implements StorageCallback, AsyncCacheLoader.C
         throw new CacheLockSpinsExceededError();
       }
       synchronized (e) {
-        e.waitForFetch();
+        e.waitForProcessing();
         if (!e.isGone()) {
-          e.startFetch(ps);
+          e.startProcessing(ps);
           entryLocked = true;
           heapDataValid = e.isDataValid();
           heapHit = !e.isVirgin();

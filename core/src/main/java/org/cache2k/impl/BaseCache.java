@@ -1130,14 +1130,14 @@ public abstract class BaseCache<K, V>
         return e;
       }
       synchronized (e) {
-        e.waitForFetch();
+        e.waitForProcessing();
         if (e.hasFreshData()) {
           return e;
         }
         if (e.isGone()) {
           continue;
         }
-        _previousNextRefreshTime = e.startFetch();
+        _previousNextRefreshTime = e.startProcessing();
         break;
       }
     }
@@ -1186,7 +1186,7 @@ public abstract class BaseCache<K, V>
             return;
           }
         }
-        e.startFetch(Entry.ProcessingState.EVICT);
+        e.startProcessing(Entry.ProcessingState.EVICT);
       }
       listener.onEvictionFromHeap(e);
       synchronized (e) {
@@ -1235,7 +1235,7 @@ public abstract class BaseCache<K, V>
     for (;;) {
       e = lookupOrNewEntrySynchronized(key, hc);
       synchronized (e) {
-        e.waitForFetch();
+        e.waitForProcessing();
         if (e.isGone()) {
           continue;
         }
@@ -1263,7 +1263,7 @@ public abstract class BaseCache<K, V>
       e = lookupEntrySynchronized(key);
       if (e == null) { break; }
       synchronized (e) {
-        e.waitForFetch();
+        e.waitForProcessing();
         if (e.isGone()) {
           continue;
         }
@@ -1322,7 +1322,7 @@ public abstract class BaseCache<K, V>
       return DUMMY_ENTRY_NO_REPLACE;
     }
     synchronized (e) {
-      e.waitForFetch();
+      e.waitForProcessing();
       if (e.isGone() || !e.hasFreshData()) {
         return (Entry) DUMMY_ENTRY_NO_REPLACE;
       }
@@ -1386,7 +1386,7 @@ public abstract class BaseCache<K, V>
     for (;;) {
       Entry e = lookupOrNewEntrySynchronized(key);
       synchronized (e) {
-        e.waitForFetch();
+        e.waitForProcessing();
         if (e.isGone()) {
           continue;
         }
@@ -1405,7 +1405,7 @@ public abstract class BaseCache<K, V>
     for (;;) {
       Entry e = lookupOrNewEntrySynchronized(key);
       synchronized (e) {
-        e.waitForFetch();
+        e.waitForProcessing();
         if (e.isGone()) {
           continue;
         }
@@ -1445,7 +1445,7 @@ public abstract class BaseCache<K, V>
       return false;
     }
     synchronized (e) {
-      e.waitForFetch();
+      e.waitForProcessing();
       if (e.isGone()) {
         return false;
       }
@@ -1480,7 +1480,7 @@ public abstract class BaseCache<K, V>
       return null;
     }
     synchronized (e) {
-      e.waitForFetch();
+      e.waitForProcessing();
       if (e.isGone()) {
         synchronized (lock) {
           peekMissCnt++;
@@ -1666,11 +1666,11 @@ public abstract class BaseCache<K, V>
     for (;;) {
       e = lookupOrNewEntrySynchronized(key);
       synchronized (e) {
-        e.waitForFetch();
+        e.waitForProcessing();
         if (e.isGone()) {
           continue;
         }
-        _previousNextRefreshTime = e.startFetch();
+        _previousNextRefreshTime = e.startProcessing();
         break;
       }
     }
@@ -2176,7 +2176,7 @@ public abstract class BaseCache<K, V>
                 long _previousNextRefreshTime;
                 synchronized (e) {
 
-                  if (e.isRemovedFromReplacementList() || e.isGone() || e.isFetchInProgress()) {
+                  if (e.isRemovedFromReplacementList() || e.isGone() || e.isProcessing()) {
                     return;
                   }
                   _previousNextRefreshTime = e.nextRefreshTime;
@@ -2236,7 +2236,7 @@ public abstract class BaseCache<K, V>
       if (e.isGone() || e.isExpired()) {
         return;
       }
-      if (e.isFetchInProgress()) {
+      if (e.isProcessing()) {
         e.nextRefreshTime = org.cache2k.impl.Entry.FETCH_IN_PROGRESS_NON_VALID;
         return;
       }

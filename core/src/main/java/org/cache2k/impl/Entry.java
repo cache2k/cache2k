@@ -207,12 +207,12 @@ public class Entry<K, T>
   /**
    * Starts long operation on entry. Pins the entry in the cache.
    */
-  public long startFetch() {
+  public long startProcessing() {
     setProcessingState(ProcessingState.FETCH);
     return nextRefreshTime;
   }
 
-  public void startFetch(ProcessingState ps) {
+  public void startProcessing(ProcessingState ps) {
     setProcessingState(ps);
   }
 
@@ -235,7 +235,7 @@ public class Entry<K, T>
       return;
     }
     synchronized (Entry.this) {
-      if (isFetchInProgress()) {
+      if (isProcessing()) {
         notifyAll();
       }
     }
@@ -249,7 +249,7 @@ public class Entry<K, T>
       if (isVirgin()) {
         nextRefreshTime = FETCH_ABORT;
       }
-      if (isFetchInProgress()) {
+      if (isProcessing()) {
         setProcessingState(ProcessingState.DONE);
         notifyAll();
       }
@@ -260,15 +260,15 @@ public class Entry<K, T>
    * Entry is not allowed to be evicted
    */
   public boolean isPinned() {
-    return isFetchInProgress();
+    return isProcessing();
   }
 
-  public boolean isFetchInProgress() {
+  public boolean isProcessing() {
     return getProcessingState() != ProcessingState.DONE;
   }
 
-  public void waitForFetch() {
-    if (!isFetchInProgress()) {
+  public void waitForProcessing() {
+    if (!isProcessing()) {
       return;
     }
     boolean _interrupt = false;
@@ -278,7 +278,7 @@ public class Entry<K, T>
       } catch (InterruptedException ignore) {
         _interrupt = true;
       }
-    } while (isFetchInProgress());
+    } while (isProcessing());
     if (_interrupt) {
       Thread.currentThread().interrupt();
     }
