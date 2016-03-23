@@ -494,7 +494,7 @@ public class EntryAction<K, V, R> implements StorageCallback, AsyncCacheLoader.C
       if (heapCache.timer != null) {
         expiry = heapCache.calculateNextRefreshTime(
           entry, newValueOrException,
-          lastModificationTime, entry.nextRefreshTime);
+          lastModificationTime);
       } else {
         expiry = heapCache.maxLinger == 0 ? 0 : Long.MAX_VALUE;
       }

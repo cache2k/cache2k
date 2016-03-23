@@ -1119,10 +1119,10 @@ public abstract class BaseCache<K, V>
     }
     boolean _finished = false;
     try {
-      finishFetch(e, fetch(e, _previousNextRefreshTime));
+      finishFetch(e, load(e));
       _finished = true;
     } finally {
-      e.ensureAbort(_finished, _previousNextRefreshTime);
+      e.ensureAbort(_finished);
     }
     evictEventually();
     return e;
@@ -1259,7 +1259,7 @@ public abstract class BaseCache<K, V>
 
   private void putValue(final Entry _e, final V _value) {
     long t = System.currentTimeMillis();
-    long _newNrt = insertOnPut(_e, _value, t, t, _e.nextRefreshTime);
+    long _newNrt = insertOnPut(_e, _value, t, t);
     _e.nextRefreshTime = stopStartTimer(_newNrt, _e, System.currentTimeMillis());
   }
 
@@ -1652,10 +1652,10 @@ public abstract class BaseCache<K, V>
     }
     boolean _finished = false;
     try {
-      finishFetch(e, fetch(e, _previousNextRefreshTime));
+      finishFetch(e, load(e));
       _finished = true;
     } finally {
-      e.ensureAbort(_finished, _previousNextRefreshTime);
+      e.ensureAbort(_finished);
     }
     evictEventually();
   }
@@ -1676,21 +1676,6 @@ public abstract class BaseCache<K, V>
         checkClosed();
         e = lookupEntry(key, hc);
         if (e == null) {
-          e = newEntry(key, hc);
-        }
-      }
-    }
-    return e;
-  }
-
-  protected Entry<K, V> lookupOrOptionalNewEntrySynchronized(K key, boolean _newEntry) {
-    int hc = modifiedHash(key.hashCode());
-    Entry e = lookupEntryUnsynchronized(key, hc);
-    if (e == null) {
-      synchronized (lock) {
-        checkClosed();
-        e = lookupEntry(key, hc);
-        if (e == null && _newEntry) {
           e = newEntry(key, hc);
         }
       }
@@ -1933,11 +1918,7 @@ public abstract class BaseCache<K, V>
         exceptionExpiryCalculator, exceptionMaxLinger);
   }
 
-  protected long fetch(final Entry e, long _previousNextRefreshTime) {
-    return fetchFromSource(e, _previousNextRefreshTime);
-  }
-
-  protected long fetchFromSource(Entry<K, V> e, long _previousNextRefreshValue) {
+  protected long load(Entry<K, V> e) {
     V v;
     long t0 = System.currentTimeMillis();
     try {
@@ -1952,7 +1933,7 @@ public abstract class BaseCache<K, V>
       v = (V) new ExceptionWrapper(_ouch);
     }
     long t = System.currentTimeMillis();
-    return insertOrUpdateAndCalculateExpiry(e, v, t0, t, INSERT_STAT_UPDATE, _previousNextRefreshValue);
+    return insertOrUpdateAndCalculateExpiry(e, v, t0, t, INSERT_STAT_UPDATE);
   }
 
   private void checkLoaderPresent() {
@@ -1961,19 +1942,19 @@ public abstract class BaseCache<K, V>
     }
   }
 
-  protected final long insertOnPut(Entry<K, V> e, V v, long t0, long t, long _previousNextRefreshValue) {
+  protected final long insertOnPut(Entry<K, V> e, V v, long t0, long t) {
     e.setLastModification(t0);
-    return insertOrUpdateAndCalculateExpiry(e, v, t0, t, INSERT_STAT_PUT, _previousNextRefreshValue);
+    return insertOrUpdateAndCalculateExpiry(e, v, t0, t, INSERT_STAT_PUT);
   }
 
   /**
    * Calculate the next refresh time if a timer / expiry is needed and call insert.
    */
-  protected final long insertOrUpdateAndCalculateExpiry(Entry<K, V> e, V v, long t0, long t, byte _updateStatistics, long _previousNextRefreshTime) {
+  protected final long insertOrUpdateAndCalculateExpiry(Entry<K, V> e, V v, long t0, long t, byte _updateStatistics) {
     long _nextRefreshTime = maxLinger == 0 ? 0 : Long.MAX_VALUE;
     if (timer != null) {
       try {
-        _nextRefreshTime = calculateNextRefreshTime(e, v, t0, _previousNextRefreshTime);
+        _nextRefreshTime = calculateNextRefreshTime(e, v, t0);
       } catch (Exception ex) {
         updateStatistics(e, v, t0, t, _updateStatistics, false);
         throw new CacheException("exception in expiry calculation", ex);
@@ -1985,9 +1966,9 @@ public abstract class BaseCache<K, V>
   /**
    * @throws Exception any exception from the ExpiryCalculator
    */
-  long calculateNextRefreshTime(Entry<K, V> _entry, V _newValue, long t0, long _previousNextRefreshTime) {
+  long calculateNextRefreshTime(Entry<K, V> _entry, V _newValue, long t0) {
     long _nextRefreshTime;
-    if (Entry.isDataValid(_previousNextRefreshTime) || Entry.isExpired(_previousNextRefreshTime)) {
+    if (_entry.isDataValid() || _entry.isExpired() || _entry.isExpiredImmediately()) {
       _nextRefreshTime = calcNextRefreshTime(_entry.getKey(), _newValue, t0, _entry);
     } else {
       _nextRefreshTime = calcNextRefreshTime(_entry.getKey(), _newValue, t0, null);
@@ -2146,17 +2127,15 @@ public abstract class BaseCache<K, V>
             Runnable r = new Runnable() {
               @Override
               public void run() {
-                long _previousNextRefreshTime;
                 synchronized (e) {
 
                   if (e.isRemovedFromReplacementList() || e.isGone() || e.isProcessing()) {
                     return;
                   }
-                  _previousNextRefreshTime = e.nextRefreshTime;
                   e.setGettingRefresh();
                 }
                 try {
-                  long t = fetch(e, _previousNextRefreshTime);
+                  long t = load(e);
                   finishFetch(e, t);
                 } catch (CacheClosedException ignore) {
                 } catch (Throwable ex) {

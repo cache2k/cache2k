@@ -240,18 +240,7 @@ public class Entry<K, T>
     if (_finished) {
       return;
     }
-    synchronized (Entry.this) {
-      if (isProcessing()) {
-        notifyAll();
-      }
-    }
-  }
-
-  public void ensureAbort(boolean _finished, long _previousNextRefreshTime) {
-    if (_finished) {
-      return;
-    }
-    synchronized (Entry.this) {
+    synchronized (this) {
       if (isVirgin()) {
         nextRefreshTime = ABORTED;
       }
@@ -342,11 +331,7 @@ public class Entry<K, T>
    * make sure to get not expired data.
    */
   public final boolean isDataValid() {
-    return isDataValid(nextRefreshTime);
-  }
-
-  public static boolean isDataValid(long _nextRefreshTime) {
-    return _nextRefreshTime >= DATA_VALID || _nextRefreshTime < 0;
+    return nextRefreshTime >= DATA_VALID || nextRefreshTime < 0;
   }
 
   /**
@@ -387,11 +372,7 @@ public class Entry<K, T>
    * {@link BaseCache#hasKeepAfterExpired()} is true.
    */
   public boolean isExpired() {
-    return isExpired(nextRefreshTime);
-  }
-
-  public static boolean isExpired(long _nextRefreshTime) {
-    return _nextRefreshTime == EXPIRED;
+    return nextRefreshTime == EXPIRED;
   }
 
   public void setGone() {
