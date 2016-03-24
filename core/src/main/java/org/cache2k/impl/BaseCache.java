@@ -2093,9 +2093,34 @@ public abstract class BaseCache<K, V>
   }
 
   /**
+   * Move entry to a separate hash for the entries that got a refresh.
+   * @return True, if successful
+   */
+  boolean moveToRefreshHash(Entry e, long _executionTime) {
+    synchronized (lock) {
+      if (isClosed()) {
+        return false;
+      }
+      touchedTime = _executionTime;
+      if (mainHashCtrl.remove(mainHash, e)) {
+        refreshHash = refreshHashCtrl.insert(refreshHash, e);
+        if (e.hashCode != modifiedHash(e.key.hashCode())) {
+          if (removeEntryFromHash(e)) {
+            expiredRemoveCnt++;
+          }
+          return false;
+        }
+        return true;
+      }
+    }
+    return false;
+  }
+
+  /**
    * When the time has come remove the entry from the cache.
    */
   protected void timerEvent(final Entry e, long _executionTime) {
+    metrics.timerEvent();
     /* checked below, if we do not go through a synchronized clause, we may see old data
     if (e.isRemovedFromReplacementList()) {
       return;
@@ -2103,65 +2128,46 @@ public abstract class BaseCache<K, V>
     */
     if (hasBackgroundRefresh()) {
       synchronized (e) {
-        synchronized (lock) {
-          metrics.timerEvent();
-          if (isClosed()) {
-            return;
-          }
-          touchedTime = _executionTime;
-          if (e.isGone()) {
-            return;
-          }
-          if (mainHashCtrl.remove(mainHash, e)) {
-            refreshHash = refreshHashCtrl.insert(refreshHash, e);
-            if (e.hashCode != modifiedHash(e.key.hashCode())) {
-              if (!e.isGone() && removeEntryFromHash(e)) {
-                expiredRemoveCnt++;
-              }
-              return;
-            }
-            Runnable r = new Runnable() {
-              @Override
-              public void run() {
-                synchronized (e) {
-
-                  if (e.isRemovedFromReplacementList() || e.isGone() || e.isProcessing()) {
-                    return;
-                  }
-                  e.setGettingRefresh();
+        if (e.isGone()) {
+          return;
+        }
+        if (moveToRefreshHash(e, _executionTime)) {
+          Runnable r = new Runnable() {
+            @Override
+            public void run() {
+              synchronized (e) {
+                e.waitForProcessing();
+                if (e.isGone()) {
+                  return;
                 }
+                e.setGettingRefresh();
+              }
+              try {
+                finishFetch(e, load(e));
+              } catch (CacheClosedException ignore) {
+              } catch (Throwable ex) {
+                e.ensureAbort(false);
+                synchronized (lock) {
+                  internalExceptionCnt++;
+                }
+                getLog().warn("Refresh exception", ex);
                 try {
-                  long t = load(e);
-                  finishFetch(e, t);
+                  expireEntry(e);
                 } catch (CacheClosedException ignore) {
-                } catch (Throwable ex) {
-                  e.ensureAbort(false);
-                  synchronized (lock) {
-                    internalExceptionCnt++;
-                  }
-                  getLog().warn("Refresh exception", ex);
-                  try {
-                    expireEntry(e);
-                  } catch (CacheClosedException ignore) {
-                  }
                 }
               }
-            };
-            try {
-              loaderExecutor.execute(r);
-              return;
-            } catch (RejectedExecutionException ignore) {
             }
-            refreshSubmitFailedCnt++;
-          } else { // if (mainHashCtrl.remove(mainHash, e)) ...
+          };
+          try {
+            loaderExecutor.execute(r);
+            return;
+          } catch (RejectedExecutionException ignore) {
           }
+          refreshSubmitFailedCnt++;
+        } else { // if (mainHashCtrl.remove(mainHash, e)) ...
         }
       }
 
-    } else {
-      synchronized (lock) {
-        metrics.timerEvent();
-      }
     }
     synchronized (e) {
       long nrt = e.nextRefreshTime;
