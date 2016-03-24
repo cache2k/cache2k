@@ -2096,12 +2096,11 @@ public abstract class BaseCache<K, V>
    * Move entry to a separate hash for the entries that got a refresh.
    * @return True, if successful
    */
-  boolean moveToRefreshHash(Entry e, long _executionTime) {
+  boolean moveToRefreshHash(Entry e) {
     synchronized (lock) {
       if (isClosed()) {
         return false;
       }
-      touchedTime = _executionTime;
       if (mainHashCtrl.remove(mainHash, e)) {
         refreshHash = refreshHashCtrl.insert(refreshHash, e);
         if (e.hashCode != modifiedHash(e.key.hashCode())) {
@@ -2119,7 +2118,7 @@ public abstract class BaseCache<K, V>
   /**
    * When the time has come remove the entry from the cache.
    */
-  protected void timerEvent(final Entry e, long _executionTime) {
+  protected void timerEvent(final Entry e) {
     metrics.timerEvent();
     /* checked below, if we do not go through a synchronized clause, we may see old data
     if (e.isRemovedFromReplacementList()) {
@@ -2131,7 +2130,7 @@ public abstract class BaseCache<K, V>
         if (e.isGone()) {
           return;
         }
-        if (moveToRefreshHash(e, _executionTime)) {
+        if (moveToRefreshHash(e)) {
           Runnable r = new Runnable() {
             @Override
             public void run() {
@@ -2477,7 +2476,7 @@ public abstract class BaseCache<K, V>
     Entry entry;
 
     public void run() {
-      timerEvent(entry, scheduledExecutionTime());
+      timerEvent(entry);
     }
   }
 
