@@ -162,7 +162,7 @@ class CacheBaseInfo implements InternalCacheInfo {
   @Override
   public long getKeyMutationCnt() { return baseCache.keyMutationCount; }
   @Override
-  public long getTimerEventCnt() { return baseCache.timerEvents; }
+   public long getTimerEventCnt() { return baseCache.metrics.getTimerEventCount(); }
   @Override
   public double getDataHitRate() {
     long cnt = getReadUsageCnt();

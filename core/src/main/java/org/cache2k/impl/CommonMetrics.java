@@ -44,6 +44,11 @@ public interface CommonMetrics {
 
   long getHeapHitButNoReadCount();
 
+  /**
+   * Count of timer events delivered to this cache.
+   */
+  long getTimerEventCount();
+
   interface Updater extends CommonMetrics {
 
     void putNewEntry();
@@ -66,6 +71,9 @@ public interface CommonMetrics {
 
     void heapHitButNoRead();
     void heapHitButNoRead(long cnt);
+
+    void timerEvent();
+    void timerEvent(long cnt);
 
   }
 

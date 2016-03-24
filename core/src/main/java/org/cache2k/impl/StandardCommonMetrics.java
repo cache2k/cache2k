@@ -140,4 +140,20 @@ public class StandardCommonMetrics implements CommonMetrics.Updater {
   public void containsButHit(final long cnt) {
     containsButHitUpdater.addAndGet(this, cnt);
   }
+
+  static final AtomicLongFieldUpdater<StandardCommonMetrics> timerEventUpdater =
+    AtomicLongFieldUpdater.newUpdater(StandardCommonMetrics.class, "timerEvent");
+  private volatile long timerEvents;
+  @Override
+  public void timerEvent() {
+    timerEventUpdater.incrementAndGet(this);
+  }
+  @Override
+  public long getTimerEventCount() {
+    return timerEventUpdater.get(this);
+  }
+  @Override
+  public void timerEvent(final long cnt) {
+    timerEventUpdater.addAndGet(this, cnt);
+  }
 }

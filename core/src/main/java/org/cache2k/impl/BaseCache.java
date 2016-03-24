@@ -218,8 +218,6 @@ public abstract class BaseCache<K, V>
    */
   protected long virginEvictCnt = 0;
 
-  protected long timerEvents = 0;
-
   CommonMetrics.Updater metrics = new StandardCommonMetrics();
 
   /**
@@ -2106,7 +2104,7 @@ public abstract class BaseCache<K, V>
     if (hasBackgroundRefresh()) {
       synchronized (e) {
         synchronized (lock) {
-          timerEvents++;
+          metrics.timerEvent();
           if (isClosed()) {
             return;
           }
@@ -2162,7 +2160,7 @@ public abstract class BaseCache<K, V>
 
     } else {
       synchronized (lock) {
-        timerEvents++;
+        metrics.timerEvent();
       }
     }
     synchronized (e) {
