@@ -143,7 +143,7 @@ public class StandardCommonMetrics implements CommonMetrics.Updater {
 
   static final AtomicLongFieldUpdater<StandardCommonMetrics> timerEventUpdater =
     AtomicLongFieldUpdater.newUpdater(StandardCommonMetrics.class, "timerEvent");
-  private volatile long timerEvents;
+  private volatile long timerEvent;
   @Override
   public void timerEvent() {
     timerEventUpdater.incrementAndGet(this);
