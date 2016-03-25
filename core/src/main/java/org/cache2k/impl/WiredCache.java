@@ -591,6 +591,16 @@ public class WiredCache<K, V> extends AbstractCache<K, V>
     return heapCache.getEntryState(key);
   }
 
+  @Override
+  public void timerEventExpireEntry(final Entry e) {
+    heapCache.timerEventExpireEntry(e);
+  }
+
+  @Override
+  public void timerEventRefresh(final Entry e) {
+    heapCache.timerEventRefresh(e);
+  }
+
   /**
    * Wire the entry action to the resources of this cache.
    */

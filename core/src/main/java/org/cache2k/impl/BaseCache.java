@@ -2138,7 +2138,8 @@ public abstract class BaseCache<K, V>
     return false;
   }
 
-  public void timerEventRefresh(final Entry<K,V> e) {
+  @Override
+  public void timerEventRefresh(final Entry<K, V> e) {
     metrics.timerEvent();
     synchronized (e) {
       if (e.isGone()) {
@@ -2183,7 +2184,8 @@ public abstract class BaseCache<K, V>
     }
   }
 
-  public void timerEventExpireEntry(Entry<K,V> e) {
+  @Override
+  public void timerEventExpireEntry(Entry<K, V> e) {
     metrics.timerEvent();
     synchronized (e) {
       timerEventExpireEntryLocked(e);
