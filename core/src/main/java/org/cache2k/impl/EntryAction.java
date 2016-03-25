@@ -275,9 +275,9 @@ public class EntryAction<K, V, R> implements StorageCallback, AsyncCacheLoader.C
     long _expiryTimeFromStorage = se.getValueExpiryTime();
     boolean _expired = _expiryTimeFromStorage != 0 && _expiryTimeFromStorage <= now;
     if (!_expired) {
-      _nextRefreshTime = heapCache.getDynamicRefreshHandler().calcNextRefreshTime((K) se.getKey(), v, se.getCreatedOrUpdated(), null);
+      _nextRefreshTime = heapCache.refreshHandler.calculateNextRefreshTime(e, v, now);
       expiry = _nextRefreshTime;
-      if (_nextRefreshTime == -1 || _nextRefreshTime == Long.MAX_VALUE) {
+      if (_nextRefreshTime == RefreshHandler.ETERNAL_MILLIS) {
         e.nextRefreshTime = Entry.DATA_VALID;
         storageDataValid = true;
       } else if (_nextRefreshTime == 0) {
