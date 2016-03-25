@@ -26,7 +26,7 @@ import org.cache2k.Cache;
 import org.cache2k.CacheBuilder;
 import org.cache2k.CacheEntry;
 import org.cache2k.CacheEntryCreatedListener;
-import org.cache2k.CacheLoader;
+import org.cache2k.integration.CacheLoader;
 import org.cache2k.junit.FastTests;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;

@@ -34,6 +34,10 @@ import org.cache2k.impl.util.ThreadDump;
 import org.cache2k.impl.util.Log;
 import org.cache2k.impl.util.TunableConstants;
 import org.cache2k.impl.util.TunableFactory;
+import org.cache2k.integration.AdvancedCacheLoader;
+import org.cache2k.integration.CacheLoader;
+import org.cache2k.integration.ExceptionPropagator;
+import org.cache2k.integration.LoadCompletedListener;
 
 import java.lang.reflect.Array;
 import java.security.SecureRandom;

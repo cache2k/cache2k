@@ -28,7 +28,7 @@ import org.cache2k.CacheEntryProcessor;
 import org.cache2k.CacheManager;
 import org.cache2k.ClosableIterator;
 import org.cache2k.EntryProcessingResult;
-import org.cache2k.LoadCompletedListener;
+import org.cache2k.integration.LoadCompletedListener;
 
 import java.util.List;
 import java.util.Map;

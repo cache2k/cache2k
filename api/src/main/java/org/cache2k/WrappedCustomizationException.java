@@ -31,8 +31,16 @@ package org.cache2k;
  */
 public class WrappedCustomizationException extends CacheException {
 
+  public WrappedCustomizationException(final String message) {
+    super(message);
+  }
+
   public WrappedCustomizationException(final Throwable cause) {
     super(cause);
+  }
+
+  public WrappedCustomizationException(String message, Throwable cause) {
+    super(message, cause);
   }
 
 }

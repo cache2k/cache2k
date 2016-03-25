@@ -22,13 +22,13 @@ package org.cache2k.impl;
  * #L%
  */
 
-import org.cache2k.AdvancedCacheLoader;
+import org.cache2k.integration.AdvancedCacheLoader;
 import org.cache2k.Cache;
 import org.cache2k.CacheEntryCreatedListener;
 import org.cache2k.CacheEntryRemovedListener;
 import org.cache2k.CacheEntryUpdatedListener;
-import org.cache2k.CacheWriter;
-import org.cache2k.CacheWriterException;
+import org.cache2k.integration.CacheWriter;
+import org.cache2k.integration.CacheWriterException;
 import org.cache2k.WrappedCustomizationException;
 import org.cache2k.experimentalApi.AsyncCacheLoader;
 import org.cache2k.experimentalApi.AsyncCacheWriter;

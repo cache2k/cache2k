@@ -22,6 +22,10 @@ package org.cache2k;
  * #L%
  */
 
+import org.cache2k.integration.AdvancedCacheLoader;
+import org.cache2k.integration.CacheLoader;
+import org.cache2k.integration.CacheWriter;
+import org.cache2k.integration.ExceptionPropagator;
 import org.cache2k.spi.Cache2kCoreProvider;
 import org.cache2k.spi.SingleProviderResolver;
 

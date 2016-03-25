@@ -22,6 +22,9 @@ package org.cache2k;
  * #L%
  */
 
+import org.cache2k.integration.AdvancedCacheLoader;
+import org.cache2k.integration.CacheLoader;
+
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Collections;

@@ -23,6 +23,8 @@ package org.cache2k;
  * #L%
  */
 
+import org.cache2k.integration.CacheLoader;
+
 /**
  * An interface to get a value by a key.
  * 

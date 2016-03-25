@@ -22,6 +22,8 @@ package org.cache2k;
  * #L%
  */
 
+import org.cache2k.integration.CacheLoader;
+
 /**
  * @author Jens Wilke; created: 2013-12-21
  */

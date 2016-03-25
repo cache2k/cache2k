@@ -23,6 +23,10 @@ package org.cache2k;
  * #L%
  */
 
+import org.cache2k.integration.CacheLoader;
+import org.cache2k.integration.CacheWriter;
+import org.cache2k.integration.LoadCompletedListener;
+
 import java.io.Closeable;
 import java.util.List;
 import java.util.Map;

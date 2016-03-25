@@ -27,6 +27,7 @@ package org.cache2k;
  * The cache is unable to operate.
  *
  * @author Jens Wilke; created: 2014-08-17
+ * @deprecated will be removed or moved to the implementation
  */
 public class CacheMisconfigurationException extends CacheException {
 
@@ -44,10 +45,6 @@ public class CacheMisconfigurationException extends CacheException {
 
   public CacheMisconfigurationException(Throwable cause) {
     super(cause);
-  }
-
-  public CacheMisconfigurationException(String message, Throwable cause, boolean enableSuppression, boolean writableStackTrace) {
-    super(message, cause, enableSuppression, writableStackTrace);
   }
 
 }

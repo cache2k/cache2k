@@ -22,16 +22,16 @@ package org.cache2k.impl;
  * #L%
  */
 
-import org.cache2k.AdvancedCacheLoader;
+import org.cache2k.integration.AdvancedCacheLoader;
 import org.cache2k.CacheEntry;
 import org.cache2k.CacheEntryCreatedListener;
 import org.cache2k.CacheEntryProcessor;
 import org.cache2k.CacheEntryRemovedListener;
 import org.cache2k.CacheEntryUpdatedListener;
 import org.cache2k.CacheManager;
-import org.cache2k.CacheWriter;
+import org.cache2k.integration.CacheWriter;
 import org.cache2k.ClosableIterator;
-import org.cache2k.LoadCompletedListener;
+import org.cache2k.integration.LoadCompletedListener;
 import org.cache2k.impl.operation.ExaminationEntry;
 import org.cache2k.impl.operation.Progress;
 import org.cache2k.impl.operation.Semantic;

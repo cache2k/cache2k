@@ -22,17 +22,19 @@ package org.cache2k;
  * #L%
  */
 
+import org.cache2k.integration.CacheLoaderException;
+
 /**
  * Wraps an application exception.
  *
- * If a cache receives an exception when fetching a value via the
- * cache source it may propagate the exception wrapped into this
- * one to the caller. Whether propagation occurs depends on the
- * configuration and on the presence of valid data.
+ * If a cache receives an exception when loading a value it may propagate
+ * the exception wrapped into this one to the caller. Whether propagation
+ * occurs depends on the configuration and on the presence of valid data.
  *
  * @author Jens Wilke
+ * @deprecated
  */
-public class PropagatedCacheException extends CacheException {
+public class PropagatedCacheException extends CacheLoaderException {
 
   public PropagatedCacheException(String _message, Throwable ex) {
     super(_message, ex);

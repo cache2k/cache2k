@@ -26,6 +26,7 @@ import java.util.List;
 
 /**
  * @author Jens Wilke; created: 2014-03-18
+ * @deprecated use {@link org.cache2k.integration.CacheLoader}
  */
 public interface BulkCacheSource<K, V> {
 

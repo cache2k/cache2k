@@ -22,6 +22,8 @@ package org.cache2k;
  * #L%
  */
 
+import org.cache2k.integration.AdvancedCacheLoader;
+
 /**
  * @author Jens Wilke; created: 2013-07-04
  * @deprecated Replaced by {@link AdvancedCacheLoader}

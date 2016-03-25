@@ -23,7 +23,7 @@ package org.cache2k;
  */
 
 /**
- * Simple interface to return a value selected by a key object. Cache users
+ * Reduced interface to return a value selected by a key object. Cache users
  * of a read-through cache may choose this simple interface for requesting data
  * only, rather to use the full blown cache interface.
  *

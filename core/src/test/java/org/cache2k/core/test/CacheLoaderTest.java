@@ -22,12 +22,12 @@ package org.cache2k.core.test;
  * #L%
  */
 
-import org.cache2k.AdvancedCacheLoader;
+import org.cache2k.integration.AdvancedCacheLoader;
 import org.cache2k.Cache;
 import org.cache2k.CacheBuilder;
 import org.cache2k.CacheEntry;
-import org.cache2k.CacheLoader;
-import org.cache2k.LoadCompletedListener;
+import org.cache2k.integration.CacheLoader;
+import org.cache2k.integration.LoadCompletedListener;
 import org.cache2k.junit.FastTests;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
