@@ -34,52 +34,49 @@ public interface EntryExpiryCalculator<K, V> {
   /**
    * Returns the time of expiry in milliseconds since epoch.
    * If 0 is returned, this means entry expires immediately, or is always
-   * fetched from the source. If {@link Long#MAX_VALUE} is returned it means
-   * there is no specific expiry time known or needed. In any case the effective
-   * expiry duration will never be longer than the configured expiry.
+   * fetched from the source.
+   *
+   * <p>By default expiry itself happens lenient, zero or some milliseconds after
+   * the returned value. If sharp expiry is requested, the value will not be
+   * returned any more by the cache when the point in time is reached.
+   * The cache parameters {@link org.cache2k.CacheBuilder#sharpExpiry(boolean)}
+   * and {@link org.cache2k.CacheBuilder#backgroundRefresh(boolean)} influence the behaviour.
    *
    * <p>For some expiry calculations it is useful to know the previous entry, e.g. to detect
    * whether the stored data was really updated. If a previous mapping is present in the cache,
    * it is passed to this method. If the entry is expired it is passed nonetheless, however,
    * it may be missing.
-   * </p>
    *
    * <p><b>Inserts or updates:</b> It is possible to return different expiry times for
    * insert or updates. An update can be detected by the presence of the old entry.
-   * </p>
    *
    * <p>The cache may call the method multiple times after an entry is inserted to
-   * reflect possible configuration changes. It is an anti pattern to look on the wall
-   * clock, or put other wise, don't assume that the current time is the time when the
-   * entry was fetched (or put).
-   * </p>
+   * reflect possible configuration changes.
    *
    * <p><b>Mutation of values:</b> Mutating values within the expiry calculator may have undesired
    * effects and is not supported in general.
-   * </p>
+   *
+   * <p><b>Cache access:</b> It is illegal to access the cache inside the method. Doing so, may
+   * result in a deadlock.
    *
    * @param _key the cache key
    * @param _value the value to be cached, may be null
-   * @param _fetchTime this is the current time in millis. If a cache source was used to
+   * @param _loadTime this is the current time in millis. If a cache source was used to
    *                   fetch the value, this is the time before the fetch was started.
    * @param _oldEntry entry representing the current mapping, if there is a value present.
    *                  If the current entry holds an exception, this is null. Expired entries will be
    *                  also passed.
-   *
    * @return time the time of expiry in millis since epoch. 0 if it should not be cached.
-   *              By default expiry itself happens lenient, zero or some milliseconds after
-   *              the returned value. If sharp expiry is requested, the value will not be
-   *              returned any more by the cache when the point in time is reached.
-   *              The cache parameters {@link org.cache2k.CacheBuilder#sharpExpiry(boolean)}
-   *              and {@link org.cache2k.CacheBuilder#backgroundRefresh(boolean)} influence the behaviour.
-   *              If a negated value of the expiry time is returned, this means that sharp expiry is
-   *              requested explicitly.
+   *              {@link Long#MAX_VALUE} means there is no specific expiry time known or needed.
+   *              In any case the effective expiry duration will never be longer than the
+   *              configured expiry value. If a negated value of the expiry time is returned,
+   *              this means that sharp expiry is requested explicitly.
    *  @since 0.20
    */
   long calculateExpiryTime(
       K _key,
       V _value,
-      long _fetchTime,
+      long _loadTime,
       CacheEntry<K, V> _oldEntry);
 
 }
