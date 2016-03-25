@@ -1450,7 +1450,7 @@ public abstract class BaseCache<K, V>
       return;
     }
     if (isLoaderThreadAvailableForPrefetching()) {
-      loaderExecutor.execute(new RunWithCatch() {
+      loaderExecutor.execute(new RunWithCatch(this) {
         @Override
         public void action() {
           get(key);
@@ -1473,7 +1473,7 @@ public abstract class BaseCache<K, V>
       if (!isLoaderThreadAvailableForPrefetching()) {
         return;
       }
-      Runnable r = new RunWithCatch() {
+      Runnable r = new RunWithCatch(this) {
         @Override
         public void action() {
           getEntryInternal(key);
@@ -1495,7 +1495,7 @@ public abstract class BaseCache<K, V>
     final AtomicInteger _countDown = new AtomicInteger(_keysToLoad.size());
     for (K k : _keysToLoad) {
       final K key = k;
-      Runnable r = new RunWithCatch() {
+      Runnable r = new RunWithCatch(this) {
         @Override
         public void action() {
           try {
@@ -1519,7 +1519,7 @@ public abstract class BaseCache<K, V>
     final AtomicInteger _countDown = new AtomicInteger(_keySet.size());
     for (K k : _keySet) {
       final K key = k;
-      Runnable r = new RunWithCatch() {
+      Runnable r = new RunWithCatch(this) {
         @Override
         public void action() {
           try {
@@ -1535,17 +1535,26 @@ public abstract class BaseCache<K, V>
     }
   }
 
-  abstract class RunWithCatch implements Runnable {
+  public static abstract class RunWithCatch implements Runnable {
+
+    InternalCache cache;
+
+    public RunWithCatch(final InternalCache _cache) {
+      cache = _cache;
+    }
 
     protected abstract void action();
 
     @Override
     public final void run() {
+      if (cache.isClosed()) {
+        return;
+      }
       try {
         action();
       } catch (CacheClosedException ignore) {
       } catch (Throwable t) {
-        getLog().warn("Loader thread exception", t);
+        cache.getLog().warn("Loader thread exception (" + Thread.currentThread().getName() + ")", t);
       }
     }
   }

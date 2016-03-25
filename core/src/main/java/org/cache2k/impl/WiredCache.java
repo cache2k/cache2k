@@ -129,7 +129,7 @@ public class WiredCache<K, V> extends AbstractCache<K, V>
     if (e != null && e.hasFreshData()) {
       return;
     }
-    heapCache.loaderExecutor.execute(new RunWithCatch() {
+    heapCache.loaderExecutor.execute(new BaseCache.RunWithCatch(this) {
       @Override
       public void action() {
         load(key);
@@ -148,7 +148,7 @@ public class WiredCache<K, V> extends AbstractCache<K, V>
         return;
       }
       final K key = k;
-      Runnable r = new RunWithCatch() {
+      Runnable r = new BaseCache.RunWithCatch(this) {
         @Override
         public void action() {
           load(key);
@@ -230,7 +230,7 @@ public class WiredCache<K, V> extends AbstractCache<K, V>
     final AtomicInteger _countDown = new AtomicInteger(_keysToLoad.size());
     for (K k : _keysToLoad) {
       final K key = k;
-      Runnable r = new RunWithCatch() {
+      Runnable r = new BaseCache.RunWithCatch(this) {
         @Override
         public void action() {
           try {
@@ -254,7 +254,7 @@ public class WiredCache<K, V> extends AbstractCache<K, V>
     final AtomicInteger _countDown = new AtomicInteger(_keySet.size());
     for (K k : _keySet) {
       final K key = k;
-      Runnable r = new RunWithCatch() {
+      Runnable r = new BaseCache.RunWithCatch(this) {
         @Override
         public void action() {
           try {
@@ -273,21 +273,6 @@ public class WiredCache<K, V> extends AbstractCache<K, V>
   private void checkLoaderPresent() {
     if (loader == null) {
       throw new UnsupportedOperationException("loader not set");
-    }
-  }
-
-  abstract class RunWithCatch implements Runnable {
-
-    protected abstract void action();
-
-    @Override
-    public final void run() {
-      try {
-        action();
-      } catch (CacheClosedException ignore) {
-      } catch (Throwable t) {
-        getLog().warn("Loader thread exception", t);
-      }
     }
   }
 
