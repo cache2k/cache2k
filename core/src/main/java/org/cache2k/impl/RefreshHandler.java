@@ -29,6 +29,7 @@ import org.cache2k.ValueWithExpiryTime;
 
 import java.util.Date;
 import java.util.Timer;
+import java.util.TimerTask;
 
 /**
  * Encapsulates logic for expiry and refresh calculation and timer handling.
@@ -144,8 +145,9 @@ public interface RefreshHandler<K,V>  {
 
     @Override
     public long stopStartTimer(long _nextRefreshTime, final Entry e, final long now) {
-      if (e.task != null) {
-        e.task.cancel();
+      TimerTask _task = e.task;
+      if (_task != null) {
+        _task.cancel();
       }
       if ((_nextRefreshTime > Entry.EXPIRY_TIME_MIN && _nextRefreshTime <= now) &&
         (_nextRefreshTime < -1 && (now >= -_nextRefreshTime))) {
@@ -181,7 +183,10 @@ public interface RefreshHandler<K,V>  {
     void scheduleTask(final long _nextRefreshTime, final Entry e) {
       Timer _timer = timer;
       if (_timer != null) {
-        timer.schedule(e.task, new Date(_nextRefreshTime));
+        try {
+          _timer.schedule(e.task, new Date(_nextRefreshTime));
+        } catch (IllegalStateException ignore) {
+        }
       }
     }
 
@@ -214,14 +219,15 @@ public interface RefreshHandler<K,V>  {
     }
 
     public void cancelExpiryTimer(Entry<K, V> e) {
-      if (e.task != null) {
-        e.task.cancel();
-        timerCancelCount++;
-        if (timerCancelCount >= 10000) {
-          timer.purge();
-          timerCancelCount = 0;
+      TimerTask _task = e.task;
+      if (_task != null) {
+        if (_task.cancel()) {
+          timerCancelCount++;
+          if (timerCancelCount >= 10000) {
+            timer.purge();
+            timerCancelCount = 0;
+          }
         }
-        e.task = null;
       }
     }
 
