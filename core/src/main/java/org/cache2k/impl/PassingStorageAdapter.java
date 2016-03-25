@@ -104,11 +104,8 @@ public class PassingStorageAdapter extends StorageAdapter {
 
   public PassingStorageAdapter(WiredCache wc, BaseCache _heapCache, StorageAdapter.Parent _parent, CacheConfig _cacheConfig,
                                StorageConfiguration _storageConfig) {
-    timer = _heapCache.timer;
-    if (timer == null) {
-      timer = new Timer(_heapCache.getCompleteName() + "-flushtimer", true);
-      timerNeedsClose = true;
-    }
+    timer = new Timer(_heapCache.getCompleteName() + "-flushtimer", true);
+    timerNeedsClose = true;
     wiredCache = wc;
     heapCache = _heapCache;
     parent = _parent;

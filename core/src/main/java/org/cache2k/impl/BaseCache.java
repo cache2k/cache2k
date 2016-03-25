@@ -133,16 +133,12 @@ public abstract class BaseCache<K, V>
   protected CacheManagerImpl manager;
   protected AdvancedCacheLoader<K,V> loader;
 
+  protected RefreshHandler<K,V> refreshHandler = new RefreshHandler.Dynamic<K, V>(this);
+  RefreshHandler.Dynamic<K,V> getDynamicRefreshHandler() {
+    return (RefreshHandler.Dynamic<K,V>) refreshHandler;
+  }
+
   /** Statistics */
-
-  /** Time in milliseconds we keep an element */
-  protected long maxLinger = 10 * 60 * 1000;
-
-  protected long exceptionMaxLinger = 1 * 60 * 1000;
-
-  protected EntryExpiryCalculator<K, V> entryExpiryCalculator;
-
-  protected ExceptionExpiryCalculator<K> exceptionExpiryCalculator;
 
   protected CacheBaseInfo info;
 
@@ -250,8 +246,6 @@ public abstract class BaseCache<K, V>
   protected Hash<Entry<K, V>> refreshHashCtrl;
   protected Entry<K, V>[] refreshHash;
 
-  protected Timer timer;
-
   /** Stuff that we need to wait for before shutdown may complete */
   protected Futures.WaitForAllFuture<?> shutdownWaitFuture;
 
@@ -324,7 +318,7 @@ public abstract class BaseCache<K, V>
       Log.getLog(Cache.class.getName() + '/' + getCompleteName());
   }
 
-  /** called via reflection from CacheBuilder */
+  /** called from CacheBuilder */
   public void setCacheConfig(CacheConfig c) {
     valueType = c.getValueType().getType();
     keyType = c.getKeyType().getType();
@@ -342,31 +336,10 @@ public abstract class BaseCache<K, V>
     if (c.getLoaderThreadCount() > 0) {
       loaderExecutor = provideDefaultLoaderExecutor(c.getLoaderThreadCount());
     }
-    long _expiryMillis  = c.getExpiryMillis();
-    if (_expiryMillis == Long.MAX_VALUE || _expiryMillis < 0) {
-      maxLinger = -1;
-    } else if (_expiryMillis >= 0) {
-      maxLinger = _expiryMillis;
-    }
-    long _exceptionExpiryMillis = c.getExceptionExpiryMillis();
-    if (_exceptionExpiryMillis == -1) {
-      if (maxLinger == -1) {
-        exceptionMaxLinger = -1;
-      } else {
-        exceptionMaxLinger = maxLinger / 10;
-      }
-    } else {
-      exceptionMaxLinger = _exceptionExpiryMillis;
-    }
     setFeatureBit(KEEP_AFTER_EXPIRED, c.isKeepDataAfterExpired());
     setFeatureBit(SHARP_TIMEOUT_FEATURE, c.isSharpExpiry());
     setFeatureBit(SUPPRESS_EXCEPTIONS, c.isSuppressExceptions());
-    if (ValueWithExpiryTime.class.isAssignableFrom(c.getValueType().getType()) &&
-        entryExpiryCalculator == null)  {
-      entryExpiryCalculator =
-        (EntryExpiryCalculator<K, V>)
-        ENTRY_EXPIRY_CALCULATOR_FROM_VALUE;
-    }
+    getDynamicRefreshHandler().configure(c);
   }
 
   String getThreadNamePrefix() {
@@ -391,16 +364,17 @@ public abstract class BaseCache<K, V>
   }
 
   public void setEntryExpiryCalculator(EntryExpiryCalculator<K, V> v) {
-    entryExpiryCalculator = v;
+    getDynamicRefreshHandler().entryExpiryCalculator = v;
+
   }
 
   public void setExceptionExpiryCalculator(ExceptionExpiryCalculator<K> v) {
-    exceptionExpiryCalculator = v;
+    getDynamicRefreshHandler().exceptionExpiryCalculator = v;
   }
 
   /** called via reflection from CacheBuilder */
   public void setRefreshController(final RefreshController<V> lc) {
-    entryExpiryCalculator = new EntryExpiryCalculator<K, V>() {
+    setEntryExpiryCalculator(new EntryExpiryCalculator<K, V>() {
       @Override
       public long calculateExpiryTime(K _key, V _value, long _fetchTime, CacheEntry<K, V> _oldEntry) {
         if (_oldEntry != null) {
@@ -409,7 +383,7 @@ public abstract class BaseCache<K, V>
           return lc.calculateNextRefreshTime(null, _value, 0L, _fetchTime);
         }
       }
-    };
+    });
   }
 
   public void setExceptionPropagator(ExceptionPropagator ep) {
@@ -564,32 +538,10 @@ public abstract class BaseCache<K, V>
       }
 
       initializeHeapCache();
-      initTimer();
+      refreshHandler.init();
       if (hasBackgroundRefresh() &&
         loader == null) {
         throw new CacheMisconfigurationException("backgroundRefresh, but no loader defined");
-      }
-    }
-  }
-
-  boolean isNeedingTimer() {
-    return
-        maxLinger > 0 || entryExpiryCalculator != null ||
-        exceptionMaxLinger > 0 || exceptionExpiryCalculator != null;
-  }
-
-  /**
-   * Either add a timer or remove the timer if needed or not needed.
-   */
-  private void initTimer() {
-    if (isNeedingTimer()) {
-      if (timer == null) {
-        timer = new Timer(name, true);
-      }
-    } else {
-      if (timer != null) {
-        timer.cancel();
-        timer = null;
       }
     }
   }
@@ -631,7 +583,7 @@ public abstract class BaseCache<K, V>
     while (it.hasNext()) {
       org.cache2k.impl.Entry e = it.next();
       e.removedFromList();
-      cancelExpiryTimer(e);
+      refreshHandler.cancelExpiryTimer(e);
       _count++;
     }
   }
@@ -648,11 +600,8 @@ public abstract class BaseCache<K, V>
     if (startedTime == 0) {
       startedTime = System.currentTimeMillis();
     }
-    if (timer != null) {
-      timer.cancel();
-      timer = null;
-      initTimer();
-    }
+    refreshHandler.shutdown();
+    refreshHandler.init();
   }
 
   @Override
@@ -670,9 +619,7 @@ public abstract class BaseCache<K, V>
   @Override
   public Future<Void> cancelTimerJobs() {
     synchronized (lock) {
-      if (timer != null) {
-        timer.cancel();
-      }
+      refreshHandler.shutdown();
       Future<Void> _waitFuture = new Futures.BusyWaitFuture<Void>() {
         @Override
         public boolean isDone() {
@@ -746,10 +693,7 @@ public abstract class BaseCache<K, V>
 
   public void closePart2() {
     synchronized (lock) {
-      if (timer != null) {
-        timer.cancel();
-        timer = null;
-      }
+      refreshHandler.shutdown();
       mainHash = refreshHash = null;
       if (manager != null) {
         manager.cacheDestroyed(this);
@@ -1811,24 +1755,12 @@ public abstract class BaseCache<K, V>
   private boolean removeEntryFromHash(Entry<K, V> e) {
     boolean f = mainHashCtrl.remove(mainHash, e) || refreshHashCtrl.remove(refreshHash, e);
     checkForHashCodeChange(e);
-    cancelExpiryTimer(e);
+    refreshHandler.cancelExpiryTimer(e);
     if (e.isVirgin()) {
       virginEvictCnt++;
     }
     e.setGone();
     return f;
-  }
-
-  protected final void cancelExpiryTimer(Entry<K, V> e) {
-    if (e.task != null) {
-      e.task.cancel();
-      timerCancelCount++;
-      if (timerCancelCount >= 10000) {
-        timer.purge();
-        timerCancelCount = 0;
-      }
-      e.task = null;
-    }
   }
 
   /**
@@ -1853,65 +1785,6 @@ public abstract class BaseCache<K, V>
       }
       keyMutationCount++;
     }
-  }
-
-  /**
-   * Time when the element should be fetched again from the underlying storage.
-   * If 0 then the object should not be cached at all. -1 means no expiry.
-   *
-   * @param _newObject might be a fetched value or an exception wrapped into the {@link ExceptionWrapper}
-   */
-  static <K, T>  long calcNextRefreshTime(
-      K _key, T _newObject, long now, org.cache2k.impl.Entry _entry,
-      EntryExpiryCalculator<K, T> ec, long _maxLinger,
-      ExceptionExpiryCalculator<K> _exceptionEc, long _exceptionMaxLinger) {
-    if (!(_newObject instanceof ExceptionWrapper)) {
-      if (_maxLinger == 0) {
-        return 0;
-      }
-      if (ec != null) {
-        long t = ec.calculateExpiryTime(_key, _newObject, now, _entry);
-        return limitExpiryToMaxLinger(now, _maxLinger, t);
-      }
-      if (_maxLinger > 0) {
-        return _maxLinger + now;
-      }
-      return -1;
-    }
-    if (_exceptionMaxLinger == 0) {
-      return 0;
-    }
-    if (_exceptionEc != null) {
-      ExceptionWrapper _wrapper = (ExceptionWrapper) _newObject;
-      long t = _exceptionEc.calculateExpiryTime(_key, _wrapper.getException(), now);
-      t = limitExpiryToMaxLinger(now, _exceptionMaxLinger, t);
-      return t;
-    }
-    if (_exceptionMaxLinger > 0) {
-      return _exceptionMaxLinger + now;
-    } else {
-      return _exceptionMaxLinger;
-    }
-  }
-
-  static long limitExpiryToMaxLinger(long now, long _maxLinger, long t) {
-    if (_maxLinger > 0) {
-      long _tMaximum = _maxLinger + now;
-      if (t > _tMaximum) {
-        return _tMaximum;
-      }
-      if (t < -1 && -t > _tMaximum) {
-        return -_tMaximum;
-      }
-    }
-    return t;
-  }
-
-  protected long calcNextRefreshTime(K _key, V _newObject, long now, Entry _entry) {
-    return calcNextRefreshTime(
-        _key, _newObject, now, _entry,
-        entryExpiryCalculator, maxLinger,
-        exceptionExpiryCalculator, exceptionMaxLinger);
   }
 
   protected long load(Entry<K, V> e) {
@@ -1947,29 +1820,16 @@ public abstract class BaseCache<K, V>
    * Calculate the next refresh time if a timer / expiry is needed and call insert.
    */
   protected final long insertOrUpdateAndCalculateExpiry(Entry<K, V> e, V v, long t0, long t, byte _updateStatistics) {
-    long _nextRefreshTime = maxLinger == 0 ? 0 : Long.MAX_VALUE;
-    if (timer != null) {
+    long _nextRefreshTime;
+    try {
+      _nextRefreshTime = refreshHandler.calculateNextRefreshTime(e, v, t0);
+    } catch (Exception ex) {
       try {
-        _nextRefreshTime = calculateNextRefreshTime(e, v, t0);
-      } catch (Exception ex) {
         updateStatistics(e, v, t0, t, _updateStatistics, false);
-        throw new CacheException("exception in expiry calculation", ex);
-      }
+      } catch (Throwable ignore) { }
+      throw new CacheException("exception in expiry calculation", ex);
     }
     return insert(e, v, t0, t, _updateStatistics, _nextRefreshTime);
-  }
-
-  /**
-   * @throws Exception any exception from the ExpiryCalculator
-   */
-  long calculateNextRefreshTime(Entry<K, V> _entry, V _newValue, long t0) {
-    long _nextRefreshTime;
-    if (_entry.isDataValid() || _entry.isExpired()) {
-      _nextRefreshTime = calcNextRefreshTime(_entry.getKey(), _newValue, t0, _entry);
-    } else {
-      _nextRefreshTime = calcNextRefreshTime(_entry.getKey(), _newValue, t0, null);
-    }
-    return _nextRefreshTime;
   }
 
   final static byte INSERT_STAT_NO_UPDATE = 0;
@@ -2059,60 +1919,11 @@ public abstract class BaseCache<K, V>
   }
 
   protected long stopStartTimer(long _nextRefreshTime, Entry e, long now) {
-    if (e.task != null) {
-      e.task.cancel();
-    }
-    if ((_nextRefreshTime > Entry.EXPIRY_TIME_MIN && _nextRefreshTime <= now) &&
-        (_nextRefreshTime < -1 && (now >= -_nextRefreshTime))) {
-      return Entry.EXPIRED;
-    }
-    if (hasSharpTimeout() && _nextRefreshTime > Entry.EXPIRY_TIME_MIN && _nextRefreshTime != Long.MAX_VALUE) {
-      _nextRefreshTime = -_nextRefreshTime;
-    }
-    if (timer != null &&
-      (_nextRefreshTime > Entry.EXPIRY_TIME_MIN || _nextRefreshTime < -1)) {
-      if (_nextRefreshTime < -1) {
-        long _timerTime =
-          -_nextRefreshTime - TUNABLE.sharpExpirySafetyGapMillis;
-        if (_timerTime >= now) {
-          ExpireTask tt = new ExpireTask();
-          tt.entry = e;
-          timer.schedule(tt, new Date(_timerTime));
-          e.task = tt;
-          _nextRefreshTime = -_nextRefreshTime;
-        }
-      } else {
-        if (hasBackgroundRefresh()) {
-          RefreshTask tt = new RefreshTask();
-          tt.entry = e;
-          timer.schedule(tt, new Date(_nextRefreshTime));
-          e.task = tt;
-        } else {
-          ExpireTask tt = new ExpireTask();
-          tt.entry = e;
-          timer.schedule(tt, new Date(_nextRefreshTime));
-          e.task = tt;
-        }
-      }
-    } else {
-    }
-    return _nextRefreshTime;
+    return refreshHandler.stopStartTimer(_nextRefreshTime, e, now);
   }
 
-  protected class RefreshTask extends java.util.TimerTask {
-    Entry entry;
-
-    public void run() {
-      timerEventRefresh(entry);
-    }
-  }
-
-  protected class ExpireTask extends java.util.TimerTask {
-    Entry entry;
-
-    public void run() {
-      timerEventExpireEntry(entry);
-    }
+  void cancelExpiryTimer(Entry e) {
+    refreshHandler.cancelExpiryTimer(e);
   }
 
   /**

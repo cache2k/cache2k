@@ -271,11 +271,11 @@ public class EntryAction<K, V, R> implements StorageCallback, AsyncCacheLoader.C
     long now = System.currentTimeMillis();
     V v = (V) se.getValueOrException();
     e.value = v;
-    long _nextRefreshTime = heapCache.maxLinger == 0 ? 0 : Long.MAX_VALUE;
+    long _nextRefreshTime;
     long _expiryTimeFromStorage = se.getValueExpiryTime();
     boolean _expired = _expiryTimeFromStorage != 0 && _expiryTimeFromStorage <= now;
     if (!_expired) {
-      _nextRefreshTime = heapCache.calcNextRefreshTime((K) se.getKey(), v, se.getCreatedOrUpdated(), null);
+      _nextRefreshTime = heapCache.getDynamicRefreshHandler().calcNextRefreshTime((K) se.getKey(), v, se.getCreatedOrUpdated(), null);
       expiry = _nextRefreshTime;
       if (_nextRefreshTime == -1 || _nextRefreshTime == Long.MAX_VALUE) {
         e.nextRefreshTime = Entry.DATA_VALID;
@@ -491,13 +491,9 @@ public class EntryAction<K, V, R> implements StorageCallback, AsyncCacheLoader.C
   public void mutationCalculateExpiry() {
     try {
       entry.nextProcessingStep(Entry.ProcessingState.EXPIRY);
-      if (heapCache.timer != null) {
-        expiry = heapCache.calculateNextRefreshTime(
-          entry, newValueOrException,
-          lastModificationTime);
-      } else {
-        expiry = heapCache.maxLinger == 0 ? 0 : Long.MAX_VALUE;
-      }
+      expiry = heapCache.refreshHandler.calculateNextRefreshTime(
+        entry, newValueOrException,
+        lastModificationTime);
     } catch (Exception ex) {
       expiryCalculationException(ex);
       return;
