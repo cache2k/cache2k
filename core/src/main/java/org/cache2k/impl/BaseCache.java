@@ -2075,28 +2075,51 @@ public abstract class BaseCache<K, V>
         long _timerTime =
           -_nextRefreshTime - TUNABLE.sharpExpirySafetyGapMillis;
         if (_timerTime >= now) {
-          MyTimerTask tt = new MyTimerTask();
+          ExpireTask tt = new ExpireTask();
           tt.entry = e;
           timer.schedule(tt, new Date(_timerTime));
           e.task = tt;
           _nextRefreshTime = -_nextRefreshTime;
         }
       } else {
-        MyTimerTask tt = new MyTimerTask();
-        tt.entry = e;
-        timer.schedule(tt, new Date(_nextRefreshTime));
-        e.task = tt;
+        if (hasBackgroundRefresh()) {
+          RefreshTask tt = new RefreshTask();
+          tt.entry = e;
+          timer.schedule(tt, new Date(_nextRefreshTime));
+          e.task = tt;
+        } else {
+          ExpireTask tt = new ExpireTask();
+          tt.entry = e;
+          timer.schedule(tt, new Date(_nextRefreshTime));
+          e.task = tt;
+        }
       }
     } else {
     }
     return _nextRefreshTime;
   }
 
+  protected class RefreshTask extends java.util.TimerTask {
+    Entry entry;
+
+    public void run() {
+      timerEventRefresh(entry);
+    }
+  }
+
+  protected class ExpireTask extends java.util.TimerTask {
+    Entry entry;
+
+    public void run() {
+      timerEventExpireEntry(entry);
+    }
+  }
+
   /**
    * Move entry to a separate hash for the entries that got a refresh.
    * @return True, if successful
    */
-  boolean moveToRefreshHash(Entry e) {
+  public boolean moveToRefreshHash(Entry e) {
     synchronized (lock) {
       if (isClosed()) {
         return false;
@@ -2115,71 +2138,72 @@ public abstract class BaseCache<K, V>
     return false;
   }
 
-  /**
-   * When the time has come remove the entry from the cache.
-   */
-  protected void timerEvent(final Entry e) {
+  public void timerEventRefresh(final Entry<K,V> e) {
     metrics.timerEvent();
-    /* checked below, if we do not go through a synchronized clause, we may see old data
-    if (e.isRemovedFromReplacementList()) {
-      return;
-    }
-    */
-    if (hasBackgroundRefresh()) {
-      synchronized (e) {
-        if (e.isGone()) {
-          return;
-        }
-        if (moveToRefreshHash(e)) {
-          Runnable r = new Runnable() {
-            @Override
-            public void run() {
-              synchronized (e) {
-                e.waitForProcessing();
-                if (e.isGone()) {
-                  return;
-                }
-                e.setGettingRefresh();
-              }
-              try {
-                finishFetch(e, load(e));
-              } catch (CacheClosedException ignore) {
-              } catch (Throwable ex) {
-                e.ensureAbort(false);
-                synchronized (lock) {
-                  internalExceptionCnt++;
-                }
-                getLog().warn("Refresh exception", ex);
-                try {
-                  expireEntry(e);
-                } catch (CacheClosedException ignore) {
-                }
-              }
-            }
-          };
-          try {
-            loaderExecutor.execute(r);
-            return;
-          } catch (RejectedExecutionException ignore) {
-          }
-          refreshSubmitFailedCnt++;
-        } else { // if (mainHashCtrl.remove(mainHash, e)) ...
-        }
-      }
-
-    }
     synchronized (e) {
-      long nrt = e.nextRefreshTime;
-      if (nrt < org.cache2k.impl.Entry.EXPIRY_TIME_MIN) {
+      if (e.isGone()) {
         return;
       }
-      long t = System.currentTimeMillis();
-      if (t >= e.nextRefreshTime) {
+      if (moveToRefreshHash(e)) {
+        Runnable r = new Runnable() {
+          @Override
+          public void run() {
+            synchronized (e) {
+              e.waitForProcessing();
+              if (e.isGone()) {
+                return;
+              }
+              e.setGettingRefresh();
+            }
+            try {
+              finishFetch(e, load(e));
+            } catch (CacheClosedException ignore) {
+            } catch (Throwable ex) {
+              e.ensureAbort(false);
+              synchronized (lock) {
+                internalExceptionCnt++;
+              }
+              getLog().warn("Refresh exception", ex);
+              try {
+                expireEntry(e);
+              } catch (CacheClosedException ignore) {
+              }
+            }
+          }
+        };
         try {
-          expireEntry(e);
-        } catch (CacheClosedException ignore) { }
-      } else {
-        e.nextRefreshTime = -e.nextRefreshTime;
+          loaderExecutor.execute(r);
+          return;
+        } catch (RejectedExecutionException ignore) {
+        }
+        refreshSubmitFailedCnt++;
+      } else { // if (mainHashCtrl.remove(mainHash, e)) ...
+      }
+      timerEventExpireEntryLocked(e);
+    }
+  }
+
+  public void timerEventExpireEntry(Entry<K,V> e) {
+    metrics.timerEvent();
+    synchronized (e) {
+      timerEventExpireEntryLocked(e);
+    }
+  }
+
+  private void timerEventExpireEntryLocked(final Entry<K, V> e) {
+    long nrt = e.nextRefreshTime;
+    if (nrt < Entry.EXPIRY_TIME_MIN) {
+      return;
+    }
+    long t = System.currentTimeMillis();
+    if (t >= e.nextRefreshTime) {
+      try {
+        expireEntry(e);
+      } catch (CacheClosedException ignore) { }
+    } else {
+      e.nextRefreshTime = -e.nextRefreshTime;
+      if (!hasKeepAfterExpired()) {
+
       }
     }
   }
@@ -2470,14 +2494,6 @@ public abstract class BaseCache<K, V>
     h ^= h >>> 15;
     return h;
 
-  }
-
-  protected class MyTimerTask extends java.util.TimerTask {
-    Entry entry;
-
-    public void run() {
-      timerEvent(entry);
-    }
   }
 
   public static class Tunable extends TunableConstants {

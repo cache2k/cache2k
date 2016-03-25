@@ -74,7 +74,7 @@ public class Entry<K, T>
 
   final static InitialValueInEntryNeverReturned INITIAL_VALUE = new InitialValueInEntryNeverReturned();
 
-  public BaseCache.MyTimerTask task;
+  public TimerTask task;
 
   /**
    * Hit counter for clock pro. Not used by every eviction algorithm.
