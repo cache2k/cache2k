@@ -457,7 +457,7 @@ public class JCacheManagerAdapter implements CacheManager {
     }
 
     @Override
-    public long calculateExpiryTime(K _key, V _value, long _fetchTime, CacheEntry<K, V> _oldEntry) {
+    public long calculateExpiryTime(K _key, V _value, long _loadTime, CacheEntry<K, V> _oldEntry) {
       Duration d;
       if (_oldEntry == null) {
         d = policy.getExpiryForCreation();
@@ -473,7 +473,7 @@ public class JCacheManagerAdapter implements CacheManager {
       if (d.equals(Duration.ZERO)) {
         return 0;
       }
-      return _fetchTime + d.getTimeUnit().toMillis(d.getDurationAmount());
+      return _loadTime + d.getTimeUnit().toMillis(d.getDurationAmount());
     }
   }
 

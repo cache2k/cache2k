@@ -671,7 +671,7 @@ public class TouchyJCacheAdapter<K, V> implements Cache<K, V> {
     }
 
     @Override
-    public long calculateExpiryTime(K _key, TimeVal<V> _value, long _fetchTime, CacheEntry<K, TimeVal<V>> _oldEntry) {
+    public long calculateExpiryTime(K _key, TimeVal<V> _value, long _loadTime, CacheEntry<K, TimeVal<V>> _oldEntry) {
       if (_value == null) {
         return 0;
       }
@@ -700,7 +700,7 @@ public class TouchyJCacheAdapter<K, V> implements Cache<K, V> {
       if (d.equals(Duration.ZERO)) {
         return _value.expiryTime = 0;
       }
-      return _value.expiryTime = _fetchTime + d.getTimeUnit().toMillis(d.getDurationAmount());
+      return _value.expiryTime = _loadTime + d.getTimeUnit().toMillis(d.getDurationAmount());
     }
   }
 

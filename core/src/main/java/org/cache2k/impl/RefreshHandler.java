@@ -23,6 +23,7 @@ package org.cache2k.impl;
  */
 
 import org.cache2k.CacheConfig;
+import org.cache2k.CacheEntry;
 import org.cache2k.EntryExpiryCalculator;
 import org.cache2k.ExceptionExpiryCalculator;
 import org.cache2k.ValueWithExpiryTime;
@@ -36,26 +37,45 @@ import java.util.TimerTask;
  *
  * @author Jens Wilke
  */
-public interface RefreshHandler<K,V>  {
+public abstract class RefreshHandler<K,V>  {
 
   /** Millis value meaning eternal, this is Long.MAX_VALUE */
-  long ETERNAL_MILLIS = Long.MAX_VALUE;
+  public final static long ETERNAL_MILLIS = Long.MAX_VALUE;
 
-  long SAFETY_GAP_MILLIS = BaseCache.TUNABLE.sharpExpirySafetyGapMillis;
-  RefreshHandler ETERNAL = new Eternal();
-  RefreshHandler IMMEDIATE = new Immediate();
+  final static long SAFETY_GAP_MILLIS = BaseCache.TUNABLE.sharpExpirySafetyGapMillis;
+  final static RefreshHandler ETERNAL = new Eternal();
+  final static RefreshHandler IMMEDIATE = new Immediate();
 
-  void init();
+  /**
+   * Instance of expiry calculator that extracts the expiry time from the value.
+   */
+  final static EntryExpiryCalculator<?, ValueWithExpiryTime> ENTRY_EXPIRY_CALCULATOR_FROM_VALUE = new
+    EntryExpiryCalculator<Object, ValueWithExpiryTime>() {
+      @Override
+      public long calculateExpiryTime(
+        Object _key, ValueWithExpiryTime _value, long _loadTime,
+        CacheEntry<Object, ValueWithExpiryTime> _oldEntry) {
+        return _value.getCacheExpiryTime();
+      }
+    };
 
-  void shutdown();
+  static <K, V> RefreshHandler<K,V> of(InternalCache<K,V> _cache, CacheConfig<K,V> _cfg) {
+    RefreshHandler.Dynamic<K,V> h = new RefreshHandler.Dynamic<K, V>(_cache);
+    h.configure(_cfg);
+    return h;
+  }
 
-  long calculateNextRefreshTime(Entry<K, V> e, V v, long t0);
+  public void init() { }
 
-  long stopStartTimer(long _nextRefreshTime, Entry<K,V> e, long now);
+  public void shutdown() { }
 
-  void cancelExpiryTimer(Entry<K, V> e);
+  public abstract long calculateNextRefreshTime(Entry<K, V> e, V v, long t0);
 
-  class Eternal implements RefreshHandler {
+  public abstract long stopStartTimer(long _nextRefreshTime, Entry<K,V> e, long now);
+
+  public abstract void cancelExpiryTimer(Entry<K, V> e);
+
+  static class Eternal<K,V> extends RefreshHandler<K,V> {
 
     @Override
     public void init() { }
@@ -64,12 +84,12 @@ public interface RefreshHandler<K,V>  {
     public void shutdown() { }
 
     @Override
-    public long calculateNextRefreshTime(final Entry e, final Object _o, final long t0) {
+    public long calculateNextRefreshTime(final Entry<K,V> e, final V v, final long t0) {
       return Long.MAX_VALUE;
     }
 
     @Override
-    public long stopStartTimer(final long _nextRefreshTime, final Entry e, final long now) {
+    public long stopStartTimer(final long _nextRefreshTime, final Entry<K,V> e, final long now) {
       return _nextRefreshTime;
     }
 
@@ -78,21 +98,15 @@ public interface RefreshHandler<K,V>  {
 
   }
 
-  class Immediate implements RefreshHandler {
+  static class Immediate<K,V> extends RefreshHandler<K,V> {
 
     @Override
-    public void init() { }
-
-    @Override
-    public void shutdown() { }
-
-    @Override
-    public long calculateNextRefreshTime(final Entry e, final Object _o, final long t0) {
+    public long calculateNextRefreshTime(final Entry<K,V> e, final V _o, final long t0) {
       return 0;
     }
 
     @Override
-    public long stopStartTimer(final long _nextRefreshTime, final Entry e, final long now) {
+    public long stopStartTimer(final long _nextRefreshTime, final Entry<K,V> e, final long now) {
       return _nextRefreshTime;
     }
 
@@ -101,7 +115,7 @@ public interface RefreshHandler<K,V>  {
 
   }
 
-  class Static<K,V> implements RefreshHandler<K,V> {
+  static class Static<K,V> extends RefreshHandler<K,V> {
 
     boolean sharpTimeout;
     boolean backgroundRefresh;
@@ -190,34 +204,6 @@ public interface RefreshHandler<K,V>  {
       }
     }
 
-    static class RefreshTask<K,V> extends java.util.TimerTask {
-      Entry<K,V> entry;
-      InternalCache cache;
-
-      public RefreshTask(final InternalCache _cache, final Entry<K, V> _entry) {
-        cache = _cache;
-        entry = _entry;
-      }
-
-      public void run() {
-        cache.timerEventRefresh(entry);
-      }
-    }
-
-    static class ExpireTask<K,V> extends java.util.TimerTask {
-      Entry<K,V> entry;
-      InternalCache cache;
-
-      public ExpireTask(final InternalCache _cache, final Entry<K, V> _entry) {
-        cache = _cache;
-        entry = _entry;
-      }
-
-      public void run() {
-        cache.timerEventExpireEntry(entry);
-      }
-    }
-
     public void cancelExpiryTimer(Entry<K, V> e) {
       TimerTask _task = e.task;
       if (_task != null) {
@@ -233,7 +219,35 @@ public interface RefreshHandler<K,V>  {
 
   }
 
-  class Dynamic<K,V> extends Static<K,V> {
+  static class RefreshTask<K,V> extends java.util.TimerTask {
+    Entry<K,V> entry;
+    InternalCache cache;
+
+    public RefreshTask(final InternalCache _cache, final Entry<K, V> _entry) {
+      cache = _cache;
+      entry = _entry;
+    }
+
+    public void run() {
+      cache.timerEventRefresh(entry);
+    }
+  }
+
+  static class ExpireTask<K,V> extends java.util.TimerTask {
+    Entry<K,V> entry;
+    InternalCache cache;
+
+    public ExpireTask(final InternalCache _cache, final Entry<K, V> _entry) {
+      cache = _cache;
+      entry = _entry;
+    }
+
+    public void run() {
+      cache.timerEventExpireEntry(entry);
+    }
+  }
+
+  static class Dynamic<K,V> extends Static<K,V> {
 
     EntryExpiryCalculator<K, V> entryExpiryCalculator;
     ExceptionExpiryCalculator<K> exceptionExpiryCalculator;
@@ -242,6 +256,7 @@ public interface RefreshHandler<K,V>  {
       super(_cache);
     }
 
+    @SuppressWarnings("unchecked")
     public void configure(CacheConfig<K,V> c) {
       long _expiryMillis  = c.getExpiryMillis();
       if (_expiryMillis == ETERNAL_MILLIS || _expiryMillis < 0) {
@@ -265,7 +280,7 @@ public interface RefreshHandler<K,V>  {
         entryExpiryCalculator == null)  {
         entryExpiryCalculator =
           (EntryExpiryCalculator<K, V>)
-            BaseCache.ENTRY_EXPIRY_CALCULATOR_FROM_VALUE;
+            ENTRY_EXPIRY_CALCULATOR_FROM_VALUE;
       }
     }
 
@@ -273,58 +288,6 @@ public interface RefreshHandler<K,V>  {
     boolean isNeedingTimer() {
       return super.isNeedingTimer() ||
          entryExpiryCalculator != null || exceptionExpiryCalculator != null;
-    }
-
-    /**
-     * Time when the element should be fetched again from the underlying storage.
-     * If 0 then the object should not be cached at all. -1 means no expiry.
-     *
-     * @param _newObject might be a fetched value or an exception wrapped into the {@link ExceptionWrapper}
-     */
-    static <K, T>  long calcNextRefreshTime(
-      K _key, T _newObject, long now, org.cache2k.impl.Entry _entry,
-      EntryExpiryCalculator<K, T> ec, long _maxLinger,
-      ExceptionExpiryCalculator<K> _exceptionEc, long _exceptionMaxLinger) {
-      if (!(_newObject instanceof ExceptionWrapper)) {
-        if (_maxLinger == 0) {
-          return 0;
-        }
-        if (ec != null) {
-          long t = ec.calculateExpiryTime(_key, _newObject, now, _entry);
-          return limitExpiryToMaxLinger(now, _maxLinger, t);
-        }
-        if (_maxLinger < ETERNAL_MILLIS) {
-          return _maxLinger + now;
-        }
-        return _maxLinger;
-      }
-      if (_exceptionMaxLinger == 0) {
-        return 0;
-      }
-      if (_exceptionEc != null) {
-        ExceptionWrapper _wrapper = (ExceptionWrapper) _newObject;
-        long t = _exceptionEc.calculateExpiryTime(_key, _wrapper.getException(), now);
-        t = limitExpiryToMaxLinger(now, _exceptionMaxLinger, t);
-        return t;
-      }
-      if (_exceptionMaxLinger < ETERNAL_MILLIS) {
-        return _exceptionMaxLinger + now;
-      } else {
-        return _exceptionMaxLinger;
-      }
-    }
-
-    static long limitExpiryToMaxLinger(long now, long _maxLinger, long t) {
-      if (_maxLinger > 0 && _maxLinger < ETERNAL_MILLIS) {
-        long _tMaximum = _maxLinger + now;
-        if (t > _tMaximum) {
-          return _tMaximum;
-        }
-        if (t < -1 && -t > _tMaximum) {
-          return -_tMaximum;
-        }
-      }
-      return t;
     }
 
     long calcNextRefreshTime(K _key, V _newObject, long now, Entry _entry) {
@@ -342,6 +305,58 @@ public interface RefreshHandler<K,V>  {
       }
     }
 
+  }
+
+  /**
+   * Time when the element should be fetched again from the underlying storage.
+   * If 0 then the object should not be cached at all. -1 means no expiry.
+   *
+   * @param _newObject might be a fetched value or an exception wrapped into the {@link ExceptionWrapper}
+   */
+  static <K, T>  long calcNextRefreshTime(
+    K _key, T _newObject, long now, org.cache2k.impl.Entry _entry,
+    EntryExpiryCalculator<K, T> ec, long _maxLinger,
+    ExceptionExpiryCalculator<K> _exceptionEc, long _exceptionMaxLinger) {
+    if (!(_newObject instanceof ExceptionWrapper)) {
+      if (_maxLinger == 0) {
+        return 0;
+      }
+      if (ec != null) {
+        long t = ec.calculateExpiryTime(_key, _newObject, now, _entry);
+        return limitExpiryToMaxLinger(now, _maxLinger, t);
+      }
+      if (_maxLinger < ETERNAL_MILLIS) {
+        return _maxLinger + now;
+      }
+      return _maxLinger;
+    }
+    if (_exceptionMaxLinger == 0) {
+      return 0;
+    }
+    if (_exceptionEc != null) {
+      ExceptionWrapper _wrapper = (ExceptionWrapper) _newObject;
+      long t = _exceptionEc.calculateExpiryTime(_key, _wrapper.getException(), now);
+      t = limitExpiryToMaxLinger(now, _exceptionMaxLinger, t);
+      return t;
+    }
+    if (_exceptionMaxLinger < ETERNAL_MILLIS) {
+      return _exceptionMaxLinger + now;
+    } else {
+      return _exceptionMaxLinger;
+    }
+  }
+
+  static long limitExpiryToMaxLinger(long now, long _maxLinger, long t) {
+    if (_maxLinger > 0 && _maxLinger < ETERNAL_MILLIS) {
+      long _tMaximum = _maxLinger + now;
+      if (t > _tMaximum) {
+        return _tMaximum;
+      }
+      if (t < -1 && -t > _tMaximum) {
+        return -_tMaximum;
+      }
+    }
+    return t;
   }
 
 }

@@ -44,7 +44,7 @@ public interface ValueWithExpiryTime {
   public final EntryExpiryCalculator<?, ?> AUTO_EXPIRY = new EntryExpiryCalculator<Object, Object>() {
     @Override
     public long calculateExpiryTime(
-        Object _key, Object _value, long _fetchTime,
+        Object _key, Object _value, long _loadTime,
         CacheEntry<Object, Object> _oldEntry) {
       if (_value instanceof ValueWithExpiryTime) {
         return ((ValueWithExpiryTime) _value).getCacheExpiryTime();

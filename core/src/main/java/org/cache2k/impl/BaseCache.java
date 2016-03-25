@@ -92,19 +92,6 @@ public abstract class BaseCache<K, V>
 
   protected static final Tunable TUNABLE = TunableFactory.get(Tunable.class);
 
-  /**
-   * Instance of expiry calculator that extracts the expiry time from the value.
-   */
-  final static EntryExpiryCalculator<?, ValueWithExpiryTime> ENTRY_EXPIRY_CALCULATOR_FROM_VALUE = new
-    EntryExpiryCalculator<Object, ValueWithExpiryTime>() {
-      @Override
-      public long calculateExpiryTime(
-          Object _key, ValueWithExpiryTime _value, long _fetchTime,
-          CacheEntry<Object, ValueWithExpiryTime> _oldEntry) {
-        return _value.getCacheExpiryTime();
-      }
-    };
-
   final static ExceptionPropagator DEFAULT_EXCEPTION_PROPAGATOR = new ExceptionPropagator() {
     @Override
     public void propagateException(String _additionalMessage, Throwable _originalException) {
@@ -374,11 +361,11 @@ public abstract class BaseCache<K, V>
   public void setRefreshController(final RefreshController<V> lc) {
     setEntryExpiryCalculator(new EntryExpiryCalculator<K, V>() {
       @Override
-      public long calculateExpiryTime(K _key, V _value, long _fetchTime, CacheEntry<K, V> _oldEntry) {
+      public long calculateExpiryTime(K _key, V _value, long _loadTime, CacheEntry<K, V> _oldEntry) {
         if (_oldEntry != null) {
-          return lc.calculateNextRefreshTime(_oldEntry.getValue(), _value, _oldEntry.getLastModification(), _fetchTime);
+          return lc.calculateNextRefreshTime(_oldEntry.getValue(), _value, _oldEntry.getLastModification(), _loadTime);
         } else {
-          return lc.calculateNextRefreshTime(null, _value, 0L, _fetchTime);
+          return lc.calculateNextRefreshTime(null, _value, 0L, _loadTime);
         }
       }
     });
