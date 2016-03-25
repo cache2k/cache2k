@@ -328,11 +328,11 @@ public interface RefreshHandler<K,V>  {
         exceptionExpiryCalculator, exceptionMaxLinger);
     }
 
-    public long calculateNextRefreshTime(Entry<K, V> _entry, V _newValue, long t0) {
+    public long calculateNextRefreshTime(Entry<K, V> _entry, V _newValue, long now) {
       if (_entry.isDataValid() || _entry.isExpired()) {
-        return calcNextRefreshTime(_entry.getKey(), _newValue, t0, _entry);
+        return calcNextRefreshTime(_entry.getKey(), _newValue, now, _entry);
       } else {
-        return calcNextRefreshTime(_entry.getKey(), _newValue, t0, null);
+        return calcNextRefreshTime(_entry.getKey(), _newValue, now, null);
       }
     }
 
