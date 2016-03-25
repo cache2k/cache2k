@@ -1674,6 +1674,7 @@ public abstract class BaseCache<K, V>
     Entry e = lookupEntryUnsynchronized(key, hc);
     if (e == null) {
       synchronized (lock) {
+        checkClosed();
         e = lookupEntry(key, hc);
       }
     }
@@ -1685,6 +1686,7 @@ public abstract class BaseCache<K, V>
     Entry e = lookupEntryUnsynchronizedNoHitRecord(key, hc);
     if (e == null) {
       synchronized (lock) {
+        checkClosed();
         e = lookupEntryNoHitRecord(key, hc);
       }
     }
@@ -1882,6 +1884,7 @@ public abstract class BaseCache<K, V>
 
   private void updateStatistics(Entry e, V _value, long t0, long t, byte _updateStatistics, boolean _suppressException) {
     synchronized (lock) {
+      checkClosed();
       updateStatisticsNeedsLock(e, _value, t0, t, _updateStatistics, _suppressException);
     }
   }
@@ -2198,6 +2201,7 @@ public abstract class BaseCache<K, V>
 
   public final int getTotalEntryCount() {
     synchronized (lock) {
+      checkClosed();
       return getLocalSize();
     }
   }
@@ -2219,6 +2223,7 @@ public abstract class BaseCache<K, V>
 
   protected IntegrityState getIntegrityState() {
     synchronized (lock) {
+      checkClosed();
       return new IntegrityState()
         .checkEquals("newEntryCnt == getSize() + evictedCnt + expiredRemoveCnt + removeCnt + clearedCnt", newEntryCnt, getLocalSize() + evictedCnt + expiredRemoveCnt + removedCnt + clearedCnt)
         .checkEquals("newEntryCnt == getSize() + evictedCnt + getExpiredCnt() - expiredKeptCnt + removeCnt + clearedCnt", newEntryCnt, getLocalSize() + evictedCnt + getExpiredCnt() - expiredKeptCnt + removedCnt + clearedCnt)
@@ -2283,6 +2288,9 @@ public abstract class BaseCache<K, V>
   @Override
   public String toString() {
     synchronized (lock) {
+      if (isClosed()) {
+        return "Cache{" + name + "}(closed)";
+      }
       InternalCacheInfo fo = getLatestInfo();
       return "Cache{" + name + "}"
               + "(" + fo.toString() + ")";
