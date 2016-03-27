@@ -83,5 +83,6 @@ Statistics:
   * new: Cache.removeAll()
   * new: Cache.invoke() and Cache.invokeAll()
   * new: Cache.putAll()
+  * CacheLoaderException used for wrapping loader exceptions, replaces PropagatedCacheException
 
   * Stronger typing: Added generic types to the methods CacheBuilder.entryExpiryCalculator and CacheBuilder.exceptionExpiryCalculator

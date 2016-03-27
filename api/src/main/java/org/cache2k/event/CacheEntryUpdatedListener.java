@@ -1,4 +1,4 @@
-package org.cache2k;
+package org.cache2k.event;
 
 /*
  * #%L
@@ -21,6 +21,10 @@ package org.cache2k;
  * <http://www.gnu.org/licenses/gpl-3.0.html>.
  * #L%
  */
+
+import org.cache2k.Cache;
+import org.cache2k.CacheEntry;
+import org.cache2k.event.CacheEntryOperationListener;
 
 /**
  * Fires in case a cache entry is mutated. This happens on {@link Cache#put} and its variants

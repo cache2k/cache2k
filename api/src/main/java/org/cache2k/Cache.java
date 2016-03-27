@@ -26,6 +26,7 @@ package org.cache2k;
 import org.cache2k.integration.CacheLoader;
 import org.cache2k.integration.CacheWriter;
 import org.cache2k.integration.LoadCompletedListener;
+import org.cache2k.integration.CacheLoaderException;
 
 import java.io.Closeable;
 import java.util.List;
@@ -130,7 +131,7 @@ public interface Cache<K, V> extends KeyValueSource<K, V>, Iterable<CacheEntry<K
    *         value is null and the cache does not permit null values
    * @throws IllegalArgumentException if some property of the specified key
    *         prevents it from being stored in this cache
-   * @throws PropagatedCacheException if the loading of the entry produced
+   * @throws CacheLoaderException if the loading of the entry produced
    *         an exception, which was not suppressed and is not yet expired
    */
   V peek(K key);
@@ -152,7 +153,7 @@ public interface Cache<K, V> extends KeyValueSource<K, V>, Iterable<CacheEntry<K
    * <p>Multiple calls for the same key may return different instances of the entry
    * object.
    *
-   * @throws PropagatedCacheException if the loading of the entry produced
+   * @throws CacheLoaderException if the loading of the entry produced
    *         an exception, which was not suppressed and is not yet expired
    */
   CacheEntry<K, V> peekEntry(K key);
@@ -264,7 +265,7 @@ public interface Cache<K, V> extends KeyValueSource<K, V>, Iterable<CacheEntry<K
    *         value is null and the cache does not permit null values
    * @throws IllegalArgumentException if some property of the specified key
    *         or value prevents it from being stored in this cache
-   * @throws PropagatedCacheException if the loading of the entry produced
+   * @throws CacheLoaderException if the loading of the entry produced
    *         an exception, which was not suppressed and is not yet expired
    */
   V peekAndReplace(K key, V value);
@@ -514,7 +515,7 @@ public interface Cache<K, V> extends KeyValueSource<K, V>, Iterable<CacheEntry<K
    *
    * <p/>Bulk get: gets all values associated with the keys. If an exception
    * happened during the fetch of any key, this exception will be thrown wrapped
-   * into a {@link PropagatedCacheException}. If more exceptions exist, the
+   * into a {@link CacheLoaderException}. If more exceptions exist, the
    * selection is arbitrary.
    *
    * <p/>The cache source does not need to support the bulk operation. It is
@@ -535,7 +536,7 @@ public interface Cache<K, V> extends KeyValueSource<K, V>, Iterable<CacheEntry<K
    * fetch via cache source failed. In this case the exception will be thrown
    * when the value is requested from the map.
    *
-   * @exception PropagatedCacheException may be thrown if the fetch fails.
+   * @exception CacheLoaderException may be thrown if the fetch fails.
    */
   Map<K, V> getAll(Iterable<? extends K> keys);
 
@@ -547,7 +548,7 @@ public interface Cache<K, V> extends KeyValueSource<K, V>, Iterable<CacheEntry<K
    *
    * <p>If the loading of an entry produced an exception, which was not
    * suppressed and is not yet expired. This exception will be thrown
-   * as {@link PropagatedCacheException} when the entry is accessed
+   * as {@link CacheLoaderException} when the entry is accessed
    * via the map interface.
    *
    * @throws ClassCastException if the class of the specified key

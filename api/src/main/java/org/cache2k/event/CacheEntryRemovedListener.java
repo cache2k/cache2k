@@ -1,4 +1,4 @@
-package org.cache2k;
+package org.cache2k.event;
 
 /*
  * #%L
@@ -22,11 +22,15 @@ package org.cache2k;
  * #L%
  */
 
+import org.cache2k.Cache;
+import org.cache2k.CacheEntry;
+import org.cache2k.event.CacheEntryOperationListener;
+
 /**
  * @author Jens Wilke
  */
-public interface CacheEntryCreatedListener<K, V> extends CacheEntryOperationListener<K, V> {
+public interface CacheEntryRemovedListener<K,V> extends CacheEntryOperationListener<K,V> {
 
-  void onEntryCreated(Cache<K,V> c, CacheEntry<K,V> e);
+  void onEntryRemoved(Cache<K,V> c, CacheEntry<K,V> entry);
 
 }

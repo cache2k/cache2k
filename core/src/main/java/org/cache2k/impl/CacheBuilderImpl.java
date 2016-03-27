@@ -23,10 +23,10 @@ package org.cache2k.impl;
  */
 
 import org.cache2k.BulkCacheSource;
-import org.cache2k.CacheEntryCreatedListener;
-import org.cache2k.CacheEntryOperationListener;
-import org.cache2k.CacheEntryRemovedListener;
-import org.cache2k.CacheEntryUpdatedListener;
+import org.cache2k.event.CacheEntryCreatedListener;
+import org.cache2k.event.CacheEntryOperationListener;
+import org.cache2k.event.CacheEntryRemovedListener;
+import org.cache2k.event.CacheEntryUpdatedListener;
 import org.cache2k.ExperimentalBulkCacheSource;
 import org.cache2k.Cache;
 import org.cache2k.CacheBuilder;

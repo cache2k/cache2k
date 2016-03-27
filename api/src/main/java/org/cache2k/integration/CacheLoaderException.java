@@ -22,23 +22,28 @@ package org.cache2k.integration;
  * #L%
  */
 
-import org.cache2k.WrappedCustomizationException;
+import org.cache2k.PropagatedCacheException;
 
 /**
  * Wraps loader exceptions. Exceptions occurring in the loader are usually cached, which
  * means, there can be multiple instances thrown for one loader exception. The cause
  * contains the original exceptions from the loader.
+ * Wraps an application exception.
+ *
+ * If a cache receives an exception when loading a value it may propagate
+ * the exception wrapped into this one to the caller. Whether propagation
+ * occurs depends on the configuration and on the presence of valid data.
  *
  * @author Jens Wilke
  */
-public class CacheLoaderException extends WrappedCustomizationException {
+public class CacheLoaderException extends PropagatedCacheException {
 
   public CacheLoaderException(String _message, Throwable ex) {
     super(_message, ex);
   }
 
-  public CacheLoaderException(final Throwable cause) {
-    super(cause);
+  public CacheLoaderException(Throwable ex) {
+    super(ex);
   }
 
 }

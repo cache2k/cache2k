@@ -1,4 +1,4 @@
-package org.cache2k;
+package org.cache2k.event;
 
 /*
  * #%L
@@ -23,10 +23,9 @@ package org.cache2k;
  */
 
 /**
+ * Marker for all entry listeners.
+ *
  * @author Jens Wilke
  */
-public interface CacheEntryRemovedListener<K,V> extends CacheEntryOperationListener<K,V> {
-
-  void onEntryRemoved(Cache<K,V> c, CacheEntry<K,V> entry);
-
+public interface CacheEntryOperationListener<K,V> {
 }

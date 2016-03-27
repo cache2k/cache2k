@@ -25,7 +25,7 @@ package org.cache2k.core.test;
 import org.cache2k.Cache;
 import org.cache2k.CacheBuilder;
 import org.cache2k.CacheEntry;
-import org.cache2k.CacheEntryCreatedListener;
+import org.cache2k.event.CacheEntryCreatedListener;
 import org.cache2k.integration.CacheLoader;
 import org.cache2k.junit.FastTests;
 import org.junit.Test;

@@ -1,4 +1,4 @@
-package org.cache2k;
+package org.cache2k.event;
 
 /*
  * #%L
@@ -22,10 +22,19 @@ package org.cache2k;
  * #L%
  */
 
+import org.cache2k.Cache;
+import org.cache2k.CacheEntry;
+
 /**
- * Marker for all entry listeners.
+ * Listener called for an expired entry. An expiry event may not be sent if an
+ * entry is refreshed before the expiry is detected. In this cache an update event is sent.
+ *
+ * <p>Expiry events are not yet completely implemented.
  *
  * @author Jens Wilke
  */
-public interface CacheEntryOperationListener<K,V> {
+public interface CacheEntryExpiredListener<K, V> extends CacheEntryOperationListener<K,V> {
+
+  void onEntryExpired(Cache<K,V> c, CacheEntry<K,V> e);
+
 }

@@ -24,9 +24,9 @@ package org.cache2k.impl;
 
 import org.cache2k.integration.AdvancedCacheLoader;
 import org.cache2k.Cache;
-import org.cache2k.CacheEntryCreatedListener;
-import org.cache2k.CacheEntryRemovedListener;
-import org.cache2k.CacheEntryUpdatedListener;
+import org.cache2k.event.CacheEntryCreatedListener;
+import org.cache2k.event.CacheEntryRemovedListener;
+import org.cache2k.event.CacheEntryUpdatedListener;
 import org.cache2k.integration.CacheWriter;
 import org.cache2k.integration.CacheWriterException;
 import org.cache2k.WrappedCustomizationException;

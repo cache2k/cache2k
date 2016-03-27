@@ -22,6 +22,7 @@ package org.cache2k;
  * #L%
  */
 
+import org.cache2k.event.CacheEntryOperationListener;
 import org.cache2k.integration.AdvancedCacheLoader;
 import org.cache2k.integration.CacheLoader;
 import org.cache2k.integration.CacheWriter;

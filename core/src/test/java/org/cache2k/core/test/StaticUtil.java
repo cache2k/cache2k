@@ -25,7 +25,7 @@ package org.cache2k.core.test;
 import org.cache2k.Cache;
 import org.cache2k.CacheBuilder;
 import org.cache2k.CacheEntry;
-import org.cache2k.CacheEntryRemovedListener;
+import org.cache2k.event.CacheEntryRemovedListener;
 import org.cache2k.impl.InternalCache;
 import org.cache2k.impl.InternalCacheInfo;
 

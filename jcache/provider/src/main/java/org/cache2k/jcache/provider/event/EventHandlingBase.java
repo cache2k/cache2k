@@ -179,7 +179,7 @@ public abstract class EventHandlingBase<K,V,W> {
   protected abstract V extractValue(W _value);
 
   @SuppressWarnings("unchecked")
-  class CreatedListenerAdapter implements org.cache2k.CacheEntryCreatedListener<K, W> {
+  class CreatedListenerAdapter implements org.cache2k.event.CacheEntryCreatedListener<K, W> {
 
     @Override
     public void onEntryCreated(
@@ -204,7 +204,7 @@ public abstract class EventHandlingBase<K,V,W> {
   }
 
   @SuppressWarnings("unchecked")
-  class UpdatedListenerAdapter implements org.cache2k.CacheEntryUpdatedListener<K, W> {
+  class UpdatedListenerAdapter implements org.cache2k.event.CacheEntryUpdatedListener<K, W> {
 
     @Override
     public void onEntryUpdated(final Cache<K, W> c, final CacheEntry<K, W> _previousEntry, final CacheEntry<K, W> e) {
@@ -248,7 +248,7 @@ public abstract class EventHandlingBase<K,V,W> {
   }
 
   @SuppressWarnings("unchecked")
-  class RemovedListenerAdapter implements org.cache2k.CacheEntryRemovedListener<K, W> {
+  class RemovedListenerAdapter implements org.cache2k.event.CacheEntryRemovedListener<K, W> {
 
     @Override
     public void onEntryRemoved(
@@ -269,7 +269,7 @@ public abstract class EventHandlingBase<K,V,W> {
   }
 
   @SuppressWarnings("unchecked")
-  class ExpiredListenerAdapter implements org.cache2k.CacheEntryExpiredListener<K, W> {
+  class ExpiredListenerAdapter implements org.cache2k.event.CacheEntryExpiredListener<K, W> {
 
     @Override
     public void onEntryExpired(

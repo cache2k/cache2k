@@ -38,6 +38,7 @@ import org.cache2k.integration.AdvancedCacheLoader;
 import org.cache2k.integration.CacheLoader;
 import org.cache2k.integration.ExceptionPropagator;
 import org.cache2k.integration.LoadCompletedListener;
+import org.cache2k.integration.CacheLoaderException;
 
 import java.lang.reflect.Array;
 import java.security.SecureRandom;
@@ -99,7 +100,7 @@ public abstract class BaseCache<K, V>
   final static ExceptionPropagator DEFAULT_EXCEPTION_PROPAGATOR = new ExceptionPropagator() {
     @Override
     public void propagateException(String _additionalMessage, Throwable _originalException) {
-      throw new PropagatedCacheException(_additionalMessage, _originalException);
+      throw new CacheLoaderException(_additionalMessage, _originalException);
     }
   };
 

@@ -32,9 +32,9 @@ import org.cache2k.integration.CacheLoaderException;
  * occurs depends on the configuration and on the presence of valid data.
  *
  * @author Jens Wilke
- * @deprecated
+ * @deprecated replaced by {@link CacheLoaderException}
  */
-public class PropagatedCacheException extends CacheLoaderException {
+public class PropagatedCacheException extends WrappedCustomizationException {
 
   public PropagatedCacheException(String _message, Throwable ex) {
     super(_message, ex);

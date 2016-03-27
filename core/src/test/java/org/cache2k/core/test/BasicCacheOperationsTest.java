@@ -26,7 +26,7 @@ import org.cache2k.Cache;
 import org.cache2k.CacheBuilder;
 import org.cache2k.CacheEntry;
 import org.cache2k.CacheException;
-import org.cache2k.PropagatedCacheException;
+import org.cache2k.integration.CacheLoaderException;
 import org.cache2k.impl.ExceptionWrapper;
 import org.cache2k.impl.InternalCache;
 import org.cache2k.junit.FastTests;
@@ -254,7 +254,7 @@ public class BasicCacheOperationsTest {
     assertNull(v);
   }
 
-  @Test(expected = PropagatedCacheException.class)
+  @Test(expected = CacheLoaderException.class)
   public void peekAndPut_Exception() {
     ((Cache) cache).put(KEY, new ExceptionWrapper(OUCH));
     cache.peekAndPut(KEY, VALUE);
@@ -290,7 +290,7 @@ public class BasicCacheOperationsTest {
     cache.peekAndRemove(null);
   }
 
-  @Test(expected = PropagatedCacheException.class)
+  @Test(expected = CacheLoaderException.class)
   public void peekAndRemove_Exception() {
     ((Cache) cache).put(KEY, new ExceptionWrapper(OUCH));
     cache.peekAndRemove(KEY);
@@ -331,7 +331,7 @@ public class BasicCacheOperationsTest {
     cache.peekAndReplace(null, VALUE);
   }
 
-  @Test(expected = PropagatedCacheException.class)
+  @Test(expected = CacheLoaderException.class)
   public void peekAndReplace_Exception() {
     ((Cache) cache).put(KEY, new ExceptionWrapper(OUCH));
     cache.peekAndReplace(KEY, VALUE);
@@ -456,7 +456,7 @@ public class BasicCacheOperationsTest {
     try {
       m.get(KEY);
       fail("Exception expected");
-    } catch (PropagatedCacheException ex) {
+    } catch (CacheLoaderException ex) {
     }
     Iterator<Integer> it = m.keySet().iterator();
     assertTrue(it.hasNext());
@@ -467,7 +467,7 @@ public class BasicCacheOperationsTest {
     try {
       assertEquals(KEY, it.next());
       fail("Exception expected");
-    } catch (PropagatedCacheException ex) {
+    } catch (CacheLoaderException ex) {
     }
     Iterator<Map.Entry<Integer, Integer>> ei = m.entrySet().iterator();
     assertTrue(ei.hasNext());
@@ -476,7 +476,7 @@ public class BasicCacheOperationsTest {
     try {
       e.getValue();
       fail("Exception expected");
-    } catch (PropagatedCacheException ex) {
+    } catch (CacheLoaderException ex) {
     }
   }
 
