@@ -22,11 +22,13 @@ package org.cache2k;
  * #L%
  */
 
+import org.cache2k.customization.ValueWithExpiryTime;
+
 /**
  * Interface for use with {@link org.cache2k.AutoEntryRefreshController}
  *
  * @author Jens Wilke; created: 2013-05-02
- * @deprecated Replaces bye {@link org.cache2k.ValueWithExpiryTime}
+ * @deprecated Replaces bye {@link ValueWithExpiryTime}
  */
 public interface ValueWithNextRefreshTime {
 

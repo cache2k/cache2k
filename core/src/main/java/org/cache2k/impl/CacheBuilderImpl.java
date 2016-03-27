@@ -120,8 +120,8 @@ public class CacheBuilderImpl<K, T> extends CacheBuilder<K, T> {
     if (refreshController != null) {
       c.setRefreshController(refreshController);
     }
-    if (entryExpiryCalculator != null) {
-      c.setEntryExpiryCalculator(entryExpiryCalculator);
+    if (expiryCalculator != null) {
+      c.setEntryExpiryCalculator(expiryCalculator);
     }
     if (exceptionExpiryCalculator != null) {
       c.setExceptionExpiryCalculator(exceptionExpiryCalculator);

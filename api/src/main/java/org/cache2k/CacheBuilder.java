@@ -22,6 +22,8 @@ package org.cache2k;
  * #L%
  */
 
+import org.cache2k.customization.ExceptionExpiryCalculator;
+import org.cache2k.customization.ExpiryCalculator;
 import org.cache2k.event.CacheEntryOperationListener;
 import org.cache2k.integration.AdvancedCacheLoader;
 import org.cache2k.integration.CacheLoader;
@@ -97,7 +99,7 @@ public abstract class CacheBuilder<K, V>
   }
 
   protected CacheManager manager;
-  protected EntryExpiryCalculator entryExpiryCalculator;
+  protected ExpiryCalculator expiryCalculator;
   protected CacheSource cacheSource;
   protected CacheSourceWithMetaInfo cacheSourceWithMetaInfo;
   protected RefreshController refreshController;
@@ -266,7 +268,7 @@ public abstract class CacheBuilder<K, V>
    * Set the time duration after that an inserted or updated cache entry expires.
    * To switch off time based expiry use {@link #eternal(boolean)}.
    *
-   * <p>If an {@link org.cache2k.EntryExpiryCalculator} is set, this setting
+   * <p>If an {@link ExpiryCalculator} is set, this setting
    * controls the maximum possible expiry duration.
    *
    * <p>A value of 0 means every entry should expire immediately. In case of
@@ -367,8 +369,8 @@ public abstract class CacheBuilder<K, V>
    * Set expiry calculator to use. If {@link #expiryDuration(long, java.util.concurrent.TimeUnit)}
    * is set to 0 then expiry calculation is not used, all entries expire immediately.
    */
-  public CacheBuilder<K, V> entryExpiryCalculator(EntryExpiryCalculator<K, V> c) {
-    entryExpiryCalculator = c;
+  public CacheBuilder<K, V> entryExpiryCalculator(ExpiryCalculator<K, V> c) {
+    expiryCalculator = c;
     return this;
   }
 
@@ -381,7 +383,7 @@ public abstract class CacheBuilder<K, V>
   }
 
   /**
-   * @deprecated since 0.20, please use {@link #entryExpiryCalculator}
+   * @deprecated since 0.20, please use {@link #expiryCalculator}
    */
   public CacheBuilder<K, V> refreshController(RefreshController c) {
     refreshController = c;

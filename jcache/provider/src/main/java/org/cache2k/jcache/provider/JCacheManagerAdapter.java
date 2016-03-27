@@ -26,7 +26,7 @@ import org.cache2k.CacheBuilder;
 import org.cache2k.CacheEntry;
 import org.cache2k.CacheSource;
 import org.cache2k.integration.CacheWriter;
-import org.cache2k.EntryExpiryCalculator;
+import org.cache2k.customization.ExpiryCalculator;
 import org.cache2k.integration.ExceptionPropagator;
 import org.cache2k.impl.CacheLifeCycleListener;
 import org.cache2k.impl.CacheManagerImpl;
@@ -448,7 +448,7 @@ public class JCacheManagerAdapter implements CacheManager {
     return c2k2jCache.get(_c2kCache);
   }
 
-  static class ExpiryCalculatorAdapter<K, V> implements EntryExpiryCalculator<K, V> {
+  static class ExpiryCalculatorAdapter<K, V> implements ExpiryCalculator<K, V> {
 
     ExpiryPolicy policy;
 

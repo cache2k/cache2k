@@ -24,9 +24,9 @@ package org.cache2k.impl;
 
 import org.cache2k.CacheConfig;
 import org.cache2k.CacheEntry;
-import org.cache2k.EntryExpiryCalculator;
-import org.cache2k.ExceptionExpiryCalculator;
-import org.cache2k.ValueWithExpiryTime;
+import org.cache2k.customization.ExpiryCalculator;
+import org.cache2k.customization.ExceptionExpiryCalculator;
+import org.cache2k.customization.ValueWithExpiryTime;
 
 import java.util.Date;
 import java.util.Timer;
@@ -49,8 +49,8 @@ public abstract class RefreshHandler<K,V>  {
   /**
    * Instance of expiry calculator that extracts the expiry time from the value.
    */
-  final static EntryExpiryCalculator<?, ValueWithExpiryTime> ENTRY_EXPIRY_CALCULATOR_FROM_VALUE = new
-    EntryExpiryCalculator<Object, ValueWithExpiryTime>() {
+  final static ExpiryCalculator<?, ValueWithExpiryTime> ENTRY_EXPIRY_CALCULATOR_FROM_VALUE = new
+    ExpiryCalculator<Object, ValueWithExpiryTime>() {
       @Override
       public long calculateExpiryTime(
         Object _key, ValueWithExpiryTime _value, long _loadTime,
@@ -249,7 +249,7 @@ public abstract class RefreshHandler<K,V>  {
 
   static class Dynamic<K,V> extends Static<K,V> {
 
-    EntryExpiryCalculator<K, V> entryExpiryCalculator;
+    ExpiryCalculator<K, V> expiryCalculator;
     ExceptionExpiryCalculator<K> exceptionExpiryCalculator;
 
     public Dynamic(final InternalCache _cache) {
@@ -277,9 +277,9 @@ public abstract class RefreshHandler<K,V>  {
       backgroundRefresh = c.isBackgroundRefresh();
       sharpTimeout = c.isSharpExpiry();
       if (ValueWithExpiryTime.class.isAssignableFrom(c.getValueType().getType()) &&
-        entryExpiryCalculator == null)  {
-        entryExpiryCalculator =
-          (EntryExpiryCalculator<K, V>)
+        expiryCalculator == null)  {
+        expiryCalculator =
+          (ExpiryCalculator<K, V>)
             ENTRY_EXPIRY_CALCULATOR_FROM_VALUE;
       }
     }
@@ -287,13 +287,13 @@ public abstract class RefreshHandler<K,V>  {
     @Override
     boolean isNeedingTimer() {
       return super.isNeedingTimer() ||
-         entryExpiryCalculator != null || exceptionExpiryCalculator != null;
+         expiryCalculator != null || exceptionExpiryCalculator != null;
     }
 
     long calcNextRefreshTime(K _key, V _newObject, long now, Entry _entry) {
       return calcNextRefreshTime(
         _key, _newObject, now, _entry,
-        entryExpiryCalculator, maxLinger,
+        expiryCalculator, maxLinger,
         exceptionExpiryCalculator, exceptionMaxLinger);
     }
 
@@ -315,7 +315,7 @@ public abstract class RefreshHandler<K,V>  {
    */
   static <K, T>  long calcNextRefreshTime(
     K _key, T _newObject, long now, org.cache2k.impl.Entry _entry,
-    EntryExpiryCalculator<K, T> ec, long _maxLinger,
+    ExpiryCalculator<K, T> ec, long _maxLinger,
     ExceptionExpiryCalculator<K> _exceptionEc, long _exceptionMaxLinger) {
     if (!(_newObject instanceof ExceptionWrapper)) {
       if (_maxLinger == 0) {

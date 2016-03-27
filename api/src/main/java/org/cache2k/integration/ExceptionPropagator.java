@@ -22,10 +22,8 @@ package org.cache2k.integration;
  * #L%
  */
 
-import org.cache2k.CacheSource;
-
 /**
- * Exceptions from the {@link CacheSource} are propagated via the {@link CacheLoaderException} by
+ * Exceptions from the {@link CacheLoader} are propagated via the {@link CacheLoaderException} by
  * default. It is possible to change this behaviour by registering a custom propagator.
  *
  * @author Jens Wilke; created: 2015-04-29

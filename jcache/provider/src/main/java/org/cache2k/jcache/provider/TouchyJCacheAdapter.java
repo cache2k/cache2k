@@ -23,7 +23,7 @@ package org.cache2k.jcache.provider;
  */
 
 import org.cache2k.CacheEntry;
-import org.cache2k.EntryExpiryCalculator;
+import org.cache2k.customization.ExpiryCalculator;
 import org.cache2k.jcache.provider.event.EventHandlingBase;
 
 import javax.cache.Cache;
@@ -662,7 +662,7 @@ public class TouchyJCacheAdapter<K, V> implements Cache<K, V> {
 
   }
 
-  static class ExpiryCalculatorAdapter<K, V> implements EntryExpiryCalculator<K, TimeVal<V>> {
+  static class ExpiryCalculatorAdapter<K, V> implements ExpiryCalculator<K, TimeVal<V>> {
 
     ExpiryPolicy policy;
 

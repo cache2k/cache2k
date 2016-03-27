@@ -23,6 +23,7 @@ package org.cache2k;
  * #L%
  */
 
+import org.cache2k.customization.ExpiryCalculator;
 import org.cache2k.integration.CacheLoader;
 import org.cache2k.integration.CacheWriter;
 import org.cache2k.integration.LoadCompletedListener;
@@ -180,10 +181,10 @@ public interface Cache<K, V> extends KeyValueSource<K, V>, Iterable<CacheEntry<K
    * Updates an existing cache entry for the specified key, so it associates
    * the given value, or, insert a new cache entry for this key and value.
    *
-   * <p>If an {@link EntryExpiryCalculator} is specified in the
+   * <p>If an {@link ExpiryCalculator} is specified in the
    * cache configuration it is called and will determine the expiry time.
    * If a {@link CacheWriter} is configured in, then it is called with the
-   * new value. If the {@link EntryExpiryCalculator} or {@link CacheWriter}
+   * new value. If the {@link ExpiryCalculator} or {@link CacheWriter}
    * yield an exception the operation will be aborted and the previous
    * mapping will be preserved.
    *

@@ -23,6 +23,8 @@ package org.cache2k.impl;
  */
 
 import org.cache2k.*;
+import org.cache2k.customization.ExceptionExpiryCalculator;
+import org.cache2k.customization.ExpiryCalculator;
 import org.cache2k.impl.operation.ExaminationEntry;
 import org.cache2k.impl.operation.Semantic;
 import org.cache2k.impl.operation.Specification;
@@ -354,8 +356,8 @@ public abstract class BaseCache<K, V>
         new ThreadPoolExecutor.AbortPolicy());
   }
 
-  public void setEntryExpiryCalculator(EntryExpiryCalculator<K, V> v) {
-    getDynamicRefreshHandler().entryExpiryCalculator = v;
+  public void setEntryExpiryCalculator(ExpiryCalculator<K, V> v) {
+    getDynamicRefreshHandler().expiryCalculator = v;
 
   }
 
@@ -365,7 +367,7 @@ public abstract class BaseCache<K, V>
 
   /** called via reflection from CacheBuilder */
   public void setRefreshController(final RefreshController<V> lc) {
-    setEntryExpiryCalculator(new EntryExpiryCalculator<K, V>() {
+    setEntryExpiryCalculator(new ExpiryCalculator<K, V>() {
       @Override
       public long calculateExpiryTime(K _key, V _value, long _loadTime, CacheEntry<K, V> _oldEntry) {
         if (_oldEntry != null) {

@@ -22,6 +22,8 @@ package org.cache2k;
  * #L%
  */
 
+import org.cache2k.customization.ExpiryCalculator;
+
 /**
  * Interface to add to a value object if it is possible to derive the
  * expiry time from the value. If no explicit expiry calculator is set
@@ -30,8 +32,9 @@ package org.cache2k;
  *
  * @author Jens Wilke; created: 2014-10-15
  * @since 0.20
+ * @deprecated replaced with {@link org.cache2k.customization.ValueWithExpiryTime}
  */
-public interface ValueWithExpiryTime {
+public interface ValueWithExpiryTime extends org.cache2k.customization.ValueWithExpiryTime {
 
   /**
    * Instance of an expiry calculator that uses the expiry value from the value
@@ -41,7 +44,7 @@ public interface ValueWithExpiryTime {
    *
    * @since 0.20
    */
-  public final EntryExpiryCalculator<?, ?> AUTO_EXPIRY = new EntryExpiryCalculator<Object, Object>() {
+  ExpiryCalculator<?, ?> AUTO_EXPIRY = new ExpiryCalculator<Object, Object>() {
     @Override
     public long calculateExpiryTime(
         Object _key, Object _value, long _loadTime,
@@ -62,6 +65,7 @@ public interface ValueWithExpiryTime {
    *
    * @since 0.20
    */
+  @Override
   long getCacheExpiryTime();
 
 }
