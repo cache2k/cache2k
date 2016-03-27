@@ -156,7 +156,7 @@ public class JCacheManagerAdapter implements CacheManager {
         b.expiryDuration(d.getDurationAmount(), d.getTimeUnit());
       } else {
 
-        b.entryExpiryCalculator(new ExpiryCalculatorAdapter(_policy));
+        b.expiryCalculator(new ExpiryCalculatorAdapter(_policy));
         throw new RuntimeException("internal error, cannot happen");
       }
     }
@@ -229,7 +229,7 @@ public class JCacheManagerAdapter implements CacheManager {
     if (cc.getExpiryPolicyFactory() != null) {
       _policy = cc.getExpiryPolicyFactory().create();
     }
-    b.entryExpiryCalculator(new TouchyJCacheAdapter.ExpiryCalculatorAdapter(_policy));
+    b.expiryCalculator(new TouchyJCacheAdapter.ExpiryCalculatorAdapter(_policy));
     b.manager(manager);
     synchronized (((CacheManagerImpl) manager).getLockObject()) {
       Cache _jsr107cache = name2adapter.get(_cacheName);

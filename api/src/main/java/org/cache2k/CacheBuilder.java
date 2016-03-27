@@ -366,10 +366,18 @@ public abstract class CacheBuilder<K, V>
   public abstract CacheBuilder<K, V> addListener(CacheEntryOperationListener<K,V> listener);
 
   /**
+   * @deprecated replaced by {@link #expiryCalculator}
+   */
+  public CacheBuilder<K, V> entryExpiryCalculator(EntryExpiryCalculator<K, V> c) {
+    expiryCalculator = c;
+    return this;
+  }
+
+  /**
    * Set expiry calculator to use. If {@link #expiryDuration(long, java.util.concurrent.TimeUnit)}
    * is set to 0 then expiry calculation is not used, all entries expire immediately.
    */
-  public CacheBuilder<K, V> entryExpiryCalculator(ExpiryCalculator<K, V> c) {
+  public CacheBuilder<K, V> expiryCalculator(ExpiryCalculator<K, V> c) {
     expiryCalculator = c;
     return this;
   }
