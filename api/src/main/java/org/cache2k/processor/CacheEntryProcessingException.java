@@ -1,4 +1,4 @@
-package org.cache2k;
+package org.cache2k.processor;
 
 /*
  * #%L
@@ -22,12 +22,17 @@ package org.cache2k;
  * #L%
  */
 
+import org.cache2k.CacheException;
+
 /**
- * Used with in the entry processor to abort the processing to let the cache
- * do some, possibly asynchronous processing, for example the load of a value, or,
- * the retrieval of data from secondary storage.
+ * Wrapped exception of an exception thrown during entry processing.
  *
- * @author Jens Wilke
+ * @author Jens Wilke; created: 2015-05-02
  */
-public class RestartException extends CacheException {
+public class CacheEntryProcessingException extends CacheException {
+
+  public CacheEntryProcessingException(Throwable cause) {
+    super(cause);
+  }
+
 }

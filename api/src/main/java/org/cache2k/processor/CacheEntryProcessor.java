@@ -1,4 +1,4 @@
-package org.cache2k;
+package org.cache2k.processor;
 
 /*
  * #%L
@@ -23,14 +23,10 @@ package org.cache2k;
  */
 
 /**
- * Wrapped exception of an exception thrown during entry processing.
- *
  * @author Jens Wilke; created: 2015-05-02
  */
-public class CacheEntryProcessingException extends CacheException {
+public interface CacheEntryProcessor<K, V, R> {
 
-  public CacheEntryProcessingException(Throwable cause) {
-    super(cause);
-  }
+  R process(MutableCacheEntry<K, V> entry, Object... arguments) throws Exception;
 
 }

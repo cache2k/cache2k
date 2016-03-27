@@ -24,11 +24,11 @@ package org.cache2k.jcache.provider;
 
 import org.cache2k.Cache;
 import org.cache2k.CacheEntry;
-import org.cache2k.CacheEntryProcessor;
+import org.cache2k.processor.CacheEntryProcessor;
 import org.cache2k.integration.CacheWriterException;
-import org.cache2k.EntryProcessingResult;
+import org.cache2k.processor.EntryProcessingResult;
 import org.cache2k.integration.LoadCompletedListener;
-import org.cache2k.MutableCacheEntry;
+import org.cache2k.processor.MutableCacheEntry;
 import org.cache2k.WrappedCustomizationException;
 import org.cache2k.impl.EntryAction;
 import org.cache2k.impl.InternalCache;

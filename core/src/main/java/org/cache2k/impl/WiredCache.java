@@ -25,7 +25,7 @@ package org.cache2k.impl;
 import org.cache2k.integration.AdvancedCacheLoader;
 import org.cache2k.CacheEntry;
 import org.cache2k.event.CacheEntryCreatedListener;
-import org.cache2k.CacheEntryProcessor;
+import org.cache2k.processor.CacheEntryProcessor;
 import org.cache2k.event.CacheEntryRemovedListener;
 import org.cache2k.event.CacheEntryUpdatedListener;
 import org.cache2k.CacheManager;

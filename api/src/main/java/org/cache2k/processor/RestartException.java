@@ -1,4 +1,4 @@
-package org.cache2k;
+package org.cache2k.processor;
 
 /*
  * #%L
@@ -22,11 +22,14 @@ package org.cache2k;
  * #L%
  */
 
+import org.cache2k.CacheException;
+
 /**
- * @author Jens Wilke; created: 2015-05-02
+ * Used with in the entry processor to abort the processing to let the cache
+ * do some, possibly asynchronous processing, for example the load of a value, or,
+ * the retrieval of data from secondary storage.
+ *
+ * @author Jens Wilke
  */
-public interface CacheEntryProcessor<K, V, R> {
-
-  R process(MutableCacheEntry<K, V> entry, Object... arguments) throws Exception;
-
+public class RestartException extends CacheException {
 }

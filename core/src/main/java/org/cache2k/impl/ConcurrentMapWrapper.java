@@ -24,8 +24,8 @@ package org.cache2k.impl;
 
 import org.cache2k.Cache;
 import org.cache2k.CacheEntry;
-import org.cache2k.CacheEntryProcessor;
-import org.cache2k.MutableCacheEntry;
+import org.cache2k.processor.CacheEntryProcessor;
+import org.cache2k.processor.MutableCacheEntry;
 
 import java.util.AbstractSet;
 import java.util.Collection;

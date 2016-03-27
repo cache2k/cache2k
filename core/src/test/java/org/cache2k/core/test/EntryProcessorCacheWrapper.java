@@ -23,8 +23,8 @@ package org.cache2k.core.test;
  */
 
 import org.cache2k.Cache;
-import org.cache2k.CacheEntryProcessor;
-import org.cache2k.MutableCacheEntry;
+import org.cache2k.processor.CacheEntryProcessor;
+import org.cache2k.processor.MutableCacheEntry;
 import org.cache2k.extra.CacheWrapper;
 
 /**

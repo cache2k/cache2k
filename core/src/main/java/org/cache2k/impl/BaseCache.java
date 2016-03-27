@@ -39,6 +39,7 @@ import org.cache2k.integration.CacheLoader;
 import org.cache2k.integration.ExceptionPropagator;
 import org.cache2k.integration.LoadCompletedListener;
 import org.cache2k.integration.CacheLoaderException;
+import org.cache2k.processor.CacheEntryProcessor;
 
 import java.lang.reflect.Array;
 import java.security.SecureRandom;

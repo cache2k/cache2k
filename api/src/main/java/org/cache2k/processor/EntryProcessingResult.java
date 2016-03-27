@@ -1,4 +1,4 @@
-package org.cache2k;
+package org.cache2k.processor;
 
 /*
  * #%L
@@ -30,7 +30,7 @@ public interface EntryProcessingResult<R> {
   /**
    * Result of entry processing.
    *
-   * @throws org.cache2k.CacheEntryProcessingException throws this wrapped exception if an
+   * @throws CacheEntryProcessingException throws this wrapped exception if an
    *         exception occurred during processing.
    */
   R getResult();

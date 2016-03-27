@@ -27,6 +27,8 @@ import org.cache2k.integration.CacheLoader;
 import org.cache2k.integration.CacheWriter;
 import org.cache2k.integration.LoadCompletedListener;
 import org.cache2k.integration.CacheLoaderException;
+import org.cache2k.processor.CacheEntryProcessor;
+import org.cache2k.processor.EntryProcessingResult;
 
 import java.io.Closeable;
 import java.util.List;

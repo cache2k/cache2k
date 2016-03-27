@@ -1,4 +1,4 @@
-package org.cache2k;
+package org.cache2k.processor;
 
 /*
  * #%L
@@ -22,6 +22,7 @@ package org.cache2k;
  * #L%
  */
 
+import org.cache2k.CacheEntry;
 import org.cache2k.integration.CacheLoader;
 
 /**

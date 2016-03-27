@@ -23,9 +23,9 @@ package org.cache2k.impl.operation;
  */
 
 import org.cache2k.CacheEntry;
-import org.cache2k.CacheEntryProcessor;
-import org.cache2k.MutableCacheEntry;
-import org.cache2k.RestartException;
+import org.cache2k.processor.CacheEntryProcessor;
+import org.cache2k.processor.MutableCacheEntry;
+import org.cache2k.processor.RestartException;
 import org.cache2k.impl.ExceptionWrapper;
 
 /**
