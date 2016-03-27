@@ -29,7 +29,7 @@ import org.cache2k.integration.CacheWriterException;
 import org.cache2k.processor.EntryProcessingResult;
 import org.cache2k.integration.LoadCompletedListener;
 import org.cache2k.processor.MutableCacheEntry;
-import org.cache2k.WrappedCustomizationException;
+import org.cache2k.CustomizationException;
 import org.cache2k.impl.EntryAction;
 import org.cache2k.impl.InternalCache;
 import org.cache2k.jcache.provider.event.EventHandlingBase;
@@ -380,7 +380,7 @@ public class JCacheAdapter<K, V> implements javax.cache.Cache<K, V> {
         public T get() throws EntryProcessorException {
           Throwable t = pr.getException();
           if (t != null) {
-            if (t instanceof WrappedCustomizationException && t.getCause() instanceof EntryProcessorException) {
+            if (t instanceof CustomizationException && t.getCause() instanceof EntryProcessorException) {
               throw (EntryProcessorException) t.getCause();
             }
             throw new EntryProcessorException(t);

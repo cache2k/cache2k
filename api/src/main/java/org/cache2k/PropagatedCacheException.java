@@ -34,7 +34,7 @@ import org.cache2k.integration.CacheLoaderException;
  * @author Jens Wilke
  * @deprecated replaced by {@link CacheLoaderException}
  */
-public class PropagatedCacheException extends WrappedCustomizationException {
+public class PropagatedCacheException extends CustomizationException {
 
   public PropagatedCacheException(String _message, Throwable ex) {
     super(_message, ex);

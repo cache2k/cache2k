@@ -22,14 +22,14 @@ package org.cache2k.integration;
  * #L%
  */
 
-import org.cache2k.WrappedCustomizationException;
+import org.cache2k.CustomizationException;
 
 /**
  * Wraps an exception caused by a writer.
  *
  * @author Jens Wilke
  */
-public class CacheWriterException extends WrappedCustomizationException {
+public class CacheWriterException extends CustomizationException {
 
   public CacheWriterException(final Throwable cause) {
     super(cause);

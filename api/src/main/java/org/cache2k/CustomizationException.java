@@ -29,17 +29,17 @@ package org.cache2k;
  *
  * @author Jens Wilke
  */
-public class WrappedCustomizationException extends CacheException {
+public class CustomizationException extends CacheException {
 
-  public WrappedCustomizationException(final String message) {
+  public CustomizationException(final String message) {
     super(message);
   }
 
-  public WrappedCustomizationException(final Throwable cause) {
+  public CustomizationException(final Throwable cause) {
     super(cause);
   }
 
-  public WrappedCustomizationException(String message, Throwable cause) {
+  public CustomizationException(String message, Throwable cause) {
     super(message, cause);
   }
 

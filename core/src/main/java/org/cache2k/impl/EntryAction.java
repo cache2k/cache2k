@@ -29,7 +29,7 @@ import org.cache2k.event.CacheEntryRemovedListener;
 import org.cache2k.event.CacheEntryUpdatedListener;
 import org.cache2k.integration.CacheWriter;
 import org.cache2k.integration.CacheWriterException;
-import org.cache2k.WrappedCustomizationException;
+import org.cache2k.CustomizationException;
 import org.cache2k.experimentalApi.AsyncCacheLoader;
 import org.cache2k.experimentalApi.AsyncCacheWriter;
 import org.cache2k.impl.operation.ExaminationEntry;
@@ -61,7 +61,7 @@ public class EntryAction<K, V, R> implements StorageCallback, AsyncCacheLoader.C
   long lastModificationTime;
   long loadStartedTime;
   long loadCompletedTime;
-  WrappedCustomizationException exceptionToPropagate;
+  CustomizationException exceptionToPropagate;
   boolean remove;
   long expiry = 0;
   /**
@@ -355,7 +355,7 @@ public class EntryAction<K, V, R> implements StorageCallback, AsyncCacheLoader.C
     }
     AdvancedCacheLoader<K, V> _loader = loader();
     if (_loader == null) {
-      exceptionToPropagate = new WrappedCustomizationException(new CacheUsageExcpetion("source not set"));
+      exceptionToPropagate = new CustomizationException(new CacheUsageExcpetion("source not set"));
       synchronized (heapCache.lock) {
         if (entry.isVirgin()) {
           heapCache.loadFailedCnt++;
@@ -845,7 +845,7 @@ public class EntryAction<K, V, R> implements StorageCallback, AsyncCacheLoader.C
     mutationAbort(new ProcessingFailureException(t));
   }
 
-  public void examinationAbort(WrappedCustomizationException t) {
+  public void examinationAbort(CustomizationException t) {
     exceptionToPropagate = t;
     if (entryLocked) {
       synchronized (entry) {
@@ -857,7 +857,7 @@ public class EntryAction<K, V, R> implements StorageCallback, AsyncCacheLoader.C
     ready();
   }
 
-  public void mutationAbort(WrappedCustomizationException t) {
+  public void mutationAbort(CustomizationException t) {
     exceptionToPropagate = t;
     synchronized (entry) {
       entry.processingDone();
@@ -912,31 +912,31 @@ public class EntryAction<K, V, R> implements StorageCallback, AsyncCacheLoader.C
   public void ready() {
   }
 
-  public static class StorageReadException extends WrappedCustomizationException {
+  public static class StorageReadException extends CustomizationException {
     public StorageReadException(final Throwable cause) {
       super(cause);
     }
   }
 
-  public static class StorageWriteException extends WrappedCustomizationException {
+  public static class StorageWriteException extends CustomizationException {
     public StorageWriteException(final Throwable cause) {
       super(cause);
     }
   }
 
-  public static class ExpiryCalculationException extends WrappedCustomizationException {
+  public static class ExpiryCalculationException extends CustomizationException {
     public ExpiryCalculationException(final Throwable cause) {
       super(cause);
     }
   }
 
-  public static class ProcessingFailureException extends WrappedCustomizationException {
+  public static class ProcessingFailureException extends CustomizationException {
     public ProcessingFailureException(final Throwable cause) {
       super(cause);
     }
   }
 
-  public static class ListenerException extends WrappedCustomizationException {
+  public static class ListenerException extends CustomizationException {
     public ListenerException(final Throwable cause) {
       super(cause);
     }
