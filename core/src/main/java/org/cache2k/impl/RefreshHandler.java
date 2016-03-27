@@ -59,13 +59,13 @@ public abstract class RefreshHandler<K,V>  {
       }
     };
 
-  static <K, V> RefreshHandler<K,V> of(InternalCache<K,V> _cache, CacheConfig<K,V> _cfg) {
-    RefreshHandler.Dynamic<K,V> h = new RefreshHandler.Dynamic<K, V>(_cache);
+  public static <K, V> RefreshHandler<K,V> of(CacheConfig<K,V> _cfg) {
+    RefreshHandler.Dynamic<K,V> h = new RefreshHandler.Dynamic<K, V>();
     h.configure(_cfg);
     return h;
   }
 
-  public void init() { }
+  public void init(InternalCache<K,V> c) { }
 
   public void shutdown() { }
 
@@ -76,9 +76,6 @@ public abstract class RefreshHandler<K,V>  {
   public abstract void cancelExpiryTimer(Entry<K, V> e);
 
   static class Eternal<K,V> extends RefreshHandler<K,V> {
-
-    @Override
-    public void init() { }
 
     @Override
     public void shutdown() { }
@@ -138,7 +135,8 @@ public abstract class RefreshHandler<K,V>  {
     }
 
     @Override
-    public synchronized void init() {
+    public synchronized void init(InternalCache<K,V> c) {
+      cache = c;
       if (isNeedingTimer()) {
         timer = new Timer(cache.getName(), true);
       }
@@ -252,10 +250,6 @@ public abstract class RefreshHandler<K,V>  {
     ExpiryCalculator<K, V> expiryCalculator;
     ExceptionExpiryCalculator<K> exceptionExpiryCalculator;
 
-    public Dynamic(final InternalCache _cache) {
-      super(_cache);
-    }
-
     @SuppressWarnings("unchecked")
     public void configure(CacheConfig<K,V> c) {
       long _expiryMillis  = c.getExpiryMillis();
@@ -276,6 +270,8 @@ public abstract class RefreshHandler<K,V>  {
       }
       backgroundRefresh = c.isBackgroundRefresh();
       sharpTimeout = c.isSharpExpiry();
+      expiryCalculator = c.getExpiryCalculator();
+      exceptionExpiryCalculator = c.getExceptionExpiryCalculator();
       if (ValueWithExpiryTime.class.isAssignableFrom(c.getValueType().getType()) &&
         expiryCalculator == null)  {
         expiryCalculator =

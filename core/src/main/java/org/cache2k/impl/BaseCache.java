@@ -126,10 +126,7 @@ public abstract class BaseCache<K, V>
   protected CacheManagerImpl manager;
   protected AdvancedCacheLoader<K,V> loader;
 
-  protected RefreshHandler<K,V> refreshHandler = new RefreshHandler.Dynamic<K, V>(this);
-  RefreshHandler.Dynamic<K,V> getDynamicRefreshHandler() {
-    return (RefreshHandler.Dynamic<K,V>) refreshHandler;
-  }
+  protected RefreshHandler<K,V> refreshHandler = RefreshHandler.ETERNAL;
 
   /** Statistics */
 
@@ -332,7 +329,6 @@ public abstract class BaseCache<K, V>
     setFeatureBit(KEEP_AFTER_EXPIRED, c.isKeepDataAfterExpired());
     setFeatureBit(SHARP_TIMEOUT_FEATURE, c.isSharpExpiry());
     setFeatureBit(SUPPRESS_EXCEPTIONS, c.isSuppressExceptions());
-    getDynamicRefreshHandler().configure(c);
   }
 
   String getThreadNamePrefix() {
@@ -356,27 +352,8 @@ public abstract class BaseCache<K, V>
         new ThreadPoolExecutor.AbortPolicy());
   }
 
-  public void setEntryExpiryCalculator(ExpiryCalculator<K, V> v) {
-    getDynamicRefreshHandler().expiryCalculator = v;
-
-  }
-
-  public void setExceptionExpiryCalculator(ExceptionExpiryCalculator<K> v) {
-    getDynamicRefreshHandler().exceptionExpiryCalculator = v;
-  }
-
-  /** called via reflection from CacheBuilder */
-  public void setRefreshController(final RefreshController<V> lc) {
-    setEntryExpiryCalculator(new ExpiryCalculator<K, V>() {
-      @Override
-      public long calculateExpiryTime(K _key, V _value, long _loadTime, CacheEntry<K, V> _oldEntry) {
-        if (_oldEntry != null) {
-          return lc.calculateNextRefreshTime(_oldEntry.getValue(), _value, _oldEntry.getLastModification(), _loadTime);
-        } else {
-          return lc.calculateNextRefreshTime(null, _value, 0L, _loadTime);
-        }
-      }
-    });
+  public void setRefreshHandler(final RefreshHandler<K,V> rh) {
+    refreshHandler = rh;
   }
 
   public void setExceptionPropagator(ExceptionPropagator ep) {
@@ -531,7 +508,7 @@ public abstract class BaseCache<K, V>
       }
 
       initializeHeapCache();
-      refreshHandler.init();
+      refreshHandler.init(this);
       if (hasBackgroundRefresh() &&
         loader == null) {
         throw new CacheMisconfigurationException("backgroundRefresh, but no loader defined");
@@ -594,7 +571,7 @@ public abstract class BaseCache<K, V>
       startedTime = System.currentTimeMillis();
     }
     refreshHandler.shutdown();
-    refreshHandler.init();
+    refreshHandler.init(this);
   }
 
   @Override

@@ -99,13 +99,10 @@ public abstract class CacheBuilder<K, V>
   }
 
   protected CacheManager manager;
-  protected ExpiryCalculator expiryCalculator;
   protected CacheSource cacheSource;
   protected CacheSourceWithMetaInfo cacheSourceWithMetaInfo;
-  protected RefreshController refreshController;
   protected ExperimentalBulkCacheSource experimentalBulkCacheSource;
   protected BulkCacheSource bulkCacheSource;
-  protected ExceptionExpiryCalculator exceptionExpiryCalculator;
   protected CacheWriter cacheWriter;
   protected ExceptionPropagator exceptionPropagator;
 
@@ -369,7 +366,7 @@ public abstract class CacheBuilder<K, V>
    * @deprecated replaced by {@link #expiryCalculator}
    */
   public CacheBuilder<K, V> entryExpiryCalculator(EntryExpiryCalculator<K, V> c) {
-    expiryCalculator = c;
+    expiryCalculator(c);
     return this;
   }
 
@@ -378,7 +375,7 @@ public abstract class CacheBuilder<K, V>
    * is set to 0 then expiry calculation is not used, all entries expire immediately.
    */
   public CacheBuilder<K, V> expiryCalculator(ExpiryCalculator<K, V> c) {
-    expiryCalculator = c;
+    config.setExpiryCalculator(c);
     return this;
   }
 
@@ -386,15 +383,24 @@ public abstract class CacheBuilder<K, V>
    * Set expiry calculator to use in case of an exception happened in the {@link CacheSource}.
    */
   public CacheBuilder<K, V> exceptionExpiryCalculator(ExceptionExpiryCalculator<K> c) {
-    exceptionExpiryCalculator = c;
+    config.setExceptionExpiryCalculator(c);
     return this;
   }
 
   /**
    * @deprecated since 0.20, please use {@link #expiryCalculator}
    */
-  public CacheBuilder<K, V> refreshController(RefreshController c) {
-    refreshController = c;
+  public CacheBuilder<K, V> refreshController(final RefreshController lc) {
+    expiryCalculator(new ExpiryCalculator<K, V>() {
+      @Override
+      public long calculateExpiryTime(K _key, V _value, long _loadTime, CacheEntry<K, V> _oldEntry) {
+        if (_oldEntry != null) {
+          return lc.calculateNextRefreshTime(_oldEntry.getValue(), _value, _oldEntry.getLastModification(), _loadTime);
+        } else {
+          return lc.calculateNextRefreshTime(null, _value, 0L, _loadTime);
+        }
+      }
+    });
     return this;
   }
 

@@ -79,7 +79,6 @@ public class CacheBuilderImpl<K, T> extends CacheBuilder<K, T> {
 
   Object getConstructorParameter(Class<?> c) {
     if (CacheConfig.class.isAssignableFrom(c)) { return config; }
-    if (RefreshController.class.isAssignableFrom(c)) { return refreshController; }
     if (CacheSource.class.isAssignableFrom(c)) { return cacheSource; }
     if (CacheSourceWithMetaInfo.class.isAssignableFrom(c)) { return cacheSourceWithMetaInfo; }
     if (ExperimentalBulkCacheSource.class.isAssignableFrom(c)) { return experimentalBulkCacheSource; }
@@ -116,20 +115,10 @@ public class CacheBuilderImpl<K, T> extends CacheBuilder<K, T> {
     if (config.getAdvancedLoader() != null) {
       c.setAdvancedLoader(config.getAdvancedLoader());
     }
-
-    if (refreshController != null) {
-      c.setRefreshController(refreshController);
-    }
-    if (expiryCalculator != null) {
-      c.setEntryExpiryCalculator(expiryCalculator);
-    }
-    if (exceptionExpiryCalculator != null) {
-      c.setExceptionExpiryCalculator(exceptionExpiryCalculator);
-    }
     if (exceptionPropagator != null) {
       c.setExceptionPropagator(exceptionPropagator);
     }
-
+    c.setRefreshHandler(RefreshHandler.of(config));
     if (config != null) {
       c.setCacheConfig(config);
     }
