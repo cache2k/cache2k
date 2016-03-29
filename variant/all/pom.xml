@@ -55,62 +55,6 @@
    <build>
     <plugins>
       <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-javadoc-plugin</artifactId>
-        <configuration>
-          <skip>true</skip>
-        </configuration>
-      </plugin>
-      <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-source-plugin</artifactId>
-        <configuration>
-          <skipSource>true</skipSource>
-        </configuration>
-      </plugin>
-      <!--
-          sonatype requires all artifacts also to have a source and javadoc jar.
-          produce a dummy jar which contains only readme.
-      -->
-      <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-jar-plugin</artifactId>
-        <executions>
-          <execution>
-            <id>empty-javadoc-jar</id>
-            <phase>package</phase>
-            <goals>
-              <goal>jar</goal>
-            </goals>
-            <configuration>
-              <classifier>javadoc</classifier>
-              <classesDirectory>${basedir}/empty-javadoc-and-sources</classesDirectory>
-            </configuration>
-          </execution>
-        </executions>
-      </plugin>
-      <!--
-          sonatype requires all artifacts also to have a source and sources jar.
-          produce a dummy jar which contains only readme.
-      -->
-      <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-jar-plugin</artifactId>
-        <executions>
-          <execution>
-            <id>empty-sources-jar</id>
-            <phase>package</phase>
-            <goals>
-              <goal>jar</goal>
-            </goals>
-            <configuration>
-              <classifier>sources</classifier>
-              <classesDirectory>${basedir}/empty-javadoc-and-sources</classesDirectory>
-            </configuration>
-          </execution>
-        </executions>
-      </plugin>
-      <plugin>
         <groupId>org.apache.felix</groupId>
         <artifactId>maven-bundle-plugin</artifactId>
         <extensions>true</extensions>
