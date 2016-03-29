@@ -34,6 +34,6 @@ package org.cache2k;
  */
 public interface ExceptionExpiryCalculator<K> extends org.cache2k.customization.ExceptionExpiryCalculator<K> {
 
-  long calculateExpiryTime(K _key, Throwable _throwable, long _fetchTime);
+  long calculateExpiryTime(K key, Throwable _throwable, long _fetchTime);
 
 }

@@ -39,9 +39,6 @@ import java.util.TimerTask;
  */
 public abstract class RefreshHandler<K,V>  {
 
-  /** Millis value meaning eternal, this is Long.MAX_VALUE */
-  public final static long ETERNAL_MILLIS = Long.MAX_VALUE;
-
   final static long SAFETY_GAP_MILLIS = BaseCache.TUNABLE.sharpExpirySafetyGapMillis;
   final static RefreshHandler ETERNAL = new Eternal();
   final static RefreshHandler IMMEDIATE = new Immediate();
@@ -253,15 +250,15 @@ public abstract class RefreshHandler<K,V>  {
     @SuppressWarnings("unchecked")
     public void configure(CacheConfig<K,V> c) {
       long _expiryMillis  = c.getExpiryMillis();
-      if (_expiryMillis == ETERNAL_MILLIS || _expiryMillis < 0) {
-        maxLinger = ETERNAL_MILLIS;
+      if (_expiryMillis == ExpiryCalculator.ETERNAL || _expiryMillis < 0) {
+        maxLinger = ExpiryCalculator.ETERNAL;
       } else if (_expiryMillis >= 0) {
         maxLinger = _expiryMillis;
       }
       long _exceptionExpiryMillis = c.getExceptionExpiryMillis();
       if (_exceptionExpiryMillis == -1) {
-        if (maxLinger == ETERNAL_MILLIS) {
-          exceptionMaxLinger = ETERNAL_MILLIS;
+        if (maxLinger == ExpiryCalculator.ETERNAL) {
+          exceptionMaxLinger = ExpiryCalculator.ETERNAL;
         } else {
           exceptionMaxLinger = maxLinger / 10;
         }
@@ -321,7 +318,7 @@ public abstract class RefreshHandler<K,V>  {
         long t = ec.calculateExpiryTime(_key, _newObject, now, _entry);
         return limitExpiryToMaxLinger(now, _maxLinger, t);
       }
-      if (_maxLinger < ETERNAL_MILLIS) {
+      if (_maxLinger < ExpiryCalculator.ETERNAL) {
         return _maxLinger + now;
       }
       return _maxLinger;
@@ -335,7 +332,7 @@ public abstract class RefreshHandler<K,V>  {
       t = limitExpiryToMaxLinger(now, _exceptionMaxLinger, t);
       return t;
     }
-    if (_exceptionMaxLinger < ETERNAL_MILLIS) {
+    if (_exceptionMaxLinger < ExpiryCalculator.ETERNAL) {
       return _exceptionMaxLinger + now;
     } else {
       return _exceptionMaxLinger;
@@ -343,7 +340,7 @@ public abstract class RefreshHandler<K,V>  {
   }
 
   static long limitExpiryToMaxLinger(long now, long _maxLinger, long t) {
-    if (_maxLinger > 0 && _maxLinger < ETERNAL_MILLIS) {
+    if (_maxLinger > 0 && _maxLinger < ExpiryCalculator.ETERNAL) {
       long _tMaximum = _maxLinger + now;
       if (t > _tMaximum) {
         return _tMaximum;

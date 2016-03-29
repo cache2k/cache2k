@@ -22,6 +22,7 @@ package org.cache2k.impl;
  * #L%
  */
 
+import org.cache2k.customization.ExpiryCalculator;
 import org.cache2k.integration.AdvancedCacheLoader;
 import org.cache2k.Cache;
 import org.cache2k.event.CacheEntryCreatedListener;
@@ -277,7 +278,7 @@ public class EntryAction<K, V, R> implements StorageCallback, AsyncCacheLoader.C
     if (!_expired) {
       _nextRefreshTime = heapCache.refreshHandler.calculateNextRefreshTime(e, v, now);
       expiry = _nextRefreshTime;
-      if (_nextRefreshTime == RefreshHandler.ETERNAL_MILLIS) {
+      if (_nextRefreshTime == ExpiryCalculator.ETERNAL) {
         e.nextRefreshTime = Entry.DATA_VALID;
         storageDataValid = true;
       } else if (_nextRefreshTime == 0) {

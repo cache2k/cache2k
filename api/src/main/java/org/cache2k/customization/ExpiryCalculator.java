@@ -25,8 +25,13 @@ package org.cache2k.customization;
 import org.cache2k.CacheEntry;
 
 /**
- * A custom policy which allows to calculate a specific expiry time for an entry after an
+ * A custom policy which allows to calculate a dynamic expiry time for an entry after an
  * insert or update.
+ *
+ * <p>For some expiry calculations it is useful to know the previous entry, e.g. to detect
+ * whether the stored data was really updated. If a previous value is present in the cache,
+ * it is passed to this method. Expired old entries will be passed in also, if still present
+ * in the cache.
  *
  * @author Jens Wilke; created: 2014-10-14
  * @since 0.20
@@ -34,20 +39,25 @@ import org.cache2k.CacheEntry;
 public interface ExpiryCalculator<K, V> {
 
   /**
+   * Return value used to signal that the value should not be cached. In a read through
+   * configuration the value will be loaded, when it is requested again.
+   */
+  long NO_CACHE = 0;
+
+  /**
+   * Return value signalling to keep the value forever in the cache, switching off expiry.
+   * If the cache has a static expiry time configured, then this is used instead.
+   */
+  long ETERNAL = Long.MAX_VALUE;
+
+  /**
    * Returns the time of expiry in milliseconds since epoch.
-   * If 0 is returned, this means entry expires immediately, or is always
-   * fetched from the source.
    *
    * <p>By default expiry itself happens lenient, zero or some milliseconds after
    * the returned value. If sharp expiry is requested, the value will not be
    * returned any more by the cache when the point in time is reached.
    * The cache parameters {@link org.cache2k.CacheBuilder#sharpExpiry(boolean)}
    * and {@link org.cache2k.CacheBuilder#backgroundRefresh(boolean)} influence the behaviour.
-   *
-   * <p>For some expiry calculations it is useful to know the previous entry, e.g. to detect
-   * whether the stored data was really updated. If a previous mapping is present in the cache,
-   * it is passed to this method. If the entry is expired it is passed nonetheless, however,
-   * it may be missing.
    *
    * <p><b>Inserts or updates:</b> It is possible to return different expiry times for
    * insert or updates. An update can be detected by the presence of the old entry.
@@ -61,24 +71,25 @@ public interface ExpiryCalculator<K, V> {
    * <p><b>Cache access:</b> It is illegal to access the cache inside the method. Doing so, may
    * result in a deadlock.
    *
-   * @param _key the cache key
-   * @param _value the value to be cached, may be null
-   * @param _loadTime this is the current time in millis. If a cache source was used to
-   *                   fetch the value, this is the time before the fetch was started.
-   * @param _oldEntry entry representing the current mapping, if there is a value present.
+   * @param key the cache key used for inserting or loading
+   * @param value the value to be cached, may be null
+   * @param loadTime The time the entry was inserted or loaded. If a loader was used,
+   *                 this is the time before the loader was called.
+   * @param oldEntry entry representing the current mapping, if there is a value present.
    *                  If the current entry holds an exception, this is null. Expired entries will be
    *                  also passed.
-   * @return time the time of expiry in millis since epoch. 0 if it should not be cached.
-   *              {@link Long#MAX_VALUE} means there is no specific expiry time known or needed.
+   * @return time the time of expiry in millis since epoch. {@link #NO_CACHE} if it should not be cached.
+   *              {@link #ETERNAL} means there is no specific expiry time known or needed.
    *              In any case the effective expiry duration will never be longer than the
    *              configured expiry value. If a negated value of the expiry time is returned,
    *              this means that sharp expiry is requested explicitly.
-   *  @since 0.20
+   *
+   * @see ExceptionExpiryCalculator#calculateExpiryTime(Object, Throwable, long)
    */
   long calculateExpiryTime(
-      K _key,
-      V _value,
-      long _loadTime,
-      CacheEntry<K, V> _oldEntry);
+      K key,
+      V value,
+      long loadTime,
+      CacheEntry<K, V> oldEntry);
 
 }

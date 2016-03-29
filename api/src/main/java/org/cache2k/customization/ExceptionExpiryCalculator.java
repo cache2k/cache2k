@@ -24,19 +24,28 @@ package org.cache2k.customization;
 
 /**
  * Special expiry calculator to calculate a separate expiry time if an
- * exceptions was thrown in the cache source. The general idea is that
+ * exception was thrown in the cache source. The general idea is that
  * depending on the nature of the exception (e.g. temporary or permanent)
- * a different expiry value can determined.
+ * a different expiry value can used.
  *
  * @author Jens Wilke; created: 2014-10-16
- * @since 0.20
  */
 public interface ExceptionExpiryCalculator<K> {
 
   /**
-   * Parameter semantics identical to
-   * {@link ExpiryCalculator#calculateExpiryTime}
+   * Returns the time of expiry for an exception in milliseconds since epoch.
+   *
+   * @param key the cache key used for inserting or loading
+   * @param loadTime The time the entry was inserted or loaded. If a loader was used,
+   *                 this is the time before the loader was called.
+   * @return time the time of expiry in millis since epoch. {@link ExpiryCalculator#NO_CACHE} if it
+   *              should not be cached. {@link ExpiryCalculator#ETERNAL} means there is no specific
+   *              expiry time known or needed. In any case the effective expiry duration will never be
+   *              longer than the configured expiry value. If a negated value of the expiry time is returned,
+   *              this means that sharp expiry is requested explicitly.
+   *
+   * @see ExpiryCalculator#calculateExpiryTime
    */
-  long calculateExpiryTime(K _key, Throwable _throwable, long _fetchTime);
+  long calculateExpiryTime(K key, Throwable throwable, long loadTime);
 
 }
