@@ -56,10 +56,28 @@ public abstract class RefreshHandler<K,V>  {
       }
     };
 
-  public static <K, V> RefreshHandler<K,V> of(CacheConfig<K,V> _cfg) {
-    RefreshHandler.Dynamic<K,V> h = new RefreshHandler.Dynamic<K, V>();
-    h.configure(_cfg);
-    return h;
+  public static <K, V> RefreshHandler<K,V> of(CacheConfig<K,V> cfg) {
+    if (cfg.getExceptionExpiryCalculator() != null || cfg.getExpiryCalculator() != null ||
+      ValueWithExpiryTime.class.isAssignableFrom(cfg.getValueType().getType())) {
+      RefreshHandler.Dynamic<K,V> h = new RefreshHandler.Dynamic<K, V>();
+      h.configure(cfg);
+      return h;
+    }
+    if ((cfg.getExpiryMillis() > 0 && cfg.getExpiryMillis() < Long.MAX_VALUE) ||
+        (cfg.getExceptionExpiryMillis() > 0 && cfg.getExceptionExpiryMillis() < Long.MAX_VALUE) ) {
+      RefreshHandler.Static<K,V> h = new RefreshHandler.Static<K, V>();
+      h.configureStatic(cfg);
+      return h;
+    }
+    if (cfg.getExpiryMillis() == 0 &&
+      (cfg.getExceptionExpiryMillis() == 0 || cfg.getExceptionExpiryMillis() == -1)) {
+      return IMMEDIATE;
+    }
+    if ((cfg.getExpiryMillis() == ExpiryCalculator.ETERNAL || cfg.getExceptionExpiryMillis() == -1) &&
+      (cfg.getExceptionExpiryMillis() == ExpiryCalculator.ETERNAL || cfg.getExceptionExpiryMillis() == -1)) {
+      return ETERNAL;
+    }
+    throw new IllegalArgumentException("expiry time ambiguous");
   }
 
   public void init(InternalCache<K,V> c) { }
@@ -119,11 +137,25 @@ public abstract class RefreshHandler<K,V>  {
     InternalCache cache;
     long timerCancelCount = 0;
 
-    public Static() {
-    }
-
-    public Static(final InternalCache _cache) {
-      cache = _cache;
+    void configureStatic(final CacheConfig<K, V> c) {
+      long _expiryMillis  = c.getExpiryMillis();
+      if (_expiryMillis == ExpiryCalculator.ETERNAL || _expiryMillis < 0) {
+        maxLinger = ExpiryCalculator.ETERNAL;
+      } else if (_expiryMillis >= 0) {
+        maxLinger = _expiryMillis;
+      }
+      long _exceptionExpiryMillis = c.getExceptionExpiryMillis();
+      if (_exceptionExpiryMillis == -1) {
+        if (maxLinger == ExpiryCalculator.ETERNAL) {
+          exceptionMaxLinger = ExpiryCalculator.ETERNAL;
+        } else {
+          exceptionMaxLinger = maxLinger / 10;
+        }
+      } else {
+        exceptionMaxLinger = _exceptionExpiryMillis;
+      }
+      backgroundRefresh = c.isBackgroundRefresh();
+      sharpTimeout = c.isSharpExpiry();
     }
 
     boolean isNeedingTimer() {
@@ -149,6 +181,15 @@ public abstract class RefreshHandler<K,V>  {
 
     @Override
     public long calculateNextRefreshTime(final Entry<K,V> e, final V _o, final long t0) {
+      if (_o instanceof ExceptionWrapper) {
+        if (exceptionMaxLinger == ExpiryCalculator.ETERNAL || exceptionMaxLinger == 0) {
+          return exceptionMaxLinger;
+        }
+        return exceptionMaxLinger + t0;
+      }
+      if (maxLinger == ExpiryCalculator.ETERNAL || maxLinger == 0) {
+        return maxLinger;
+      }
       return maxLinger + t0;
     }
 
@@ -248,25 +289,8 @@ public abstract class RefreshHandler<K,V>  {
     ExceptionExpiryCalculator<K> exceptionExpiryCalculator;
 
     @SuppressWarnings("unchecked")
-    public void configure(CacheConfig<K,V> c) {
-      long _expiryMillis  = c.getExpiryMillis();
-      if (_expiryMillis == ExpiryCalculator.ETERNAL || _expiryMillis < 0) {
-        maxLinger = ExpiryCalculator.ETERNAL;
-      } else if (_expiryMillis >= 0) {
-        maxLinger = _expiryMillis;
-      }
-      long _exceptionExpiryMillis = c.getExceptionExpiryMillis();
-      if (_exceptionExpiryMillis == -1) {
-        if (maxLinger == ExpiryCalculator.ETERNAL) {
-          exceptionMaxLinger = ExpiryCalculator.ETERNAL;
-        } else {
-          exceptionMaxLinger = maxLinger / 10;
-        }
-      } else {
-        exceptionMaxLinger = _exceptionExpiryMillis;
-      }
-      backgroundRefresh = c.isBackgroundRefresh();
-      sharpTimeout = c.isSharpExpiry();
+    void configure(CacheConfig<K,V> c) {
+      configureStatic(c);
       expiryCalculator = c.getExpiryCalculator();
       exceptionExpiryCalculator = c.getExceptionExpiryCalculator();
       if (ValueWithExpiryTime.class.isAssignableFrom(c.getValueType().getType()) &&
