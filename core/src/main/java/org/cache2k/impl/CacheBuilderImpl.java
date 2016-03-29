@@ -34,7 +34,6 @@ import org.cache2k.CacheConfig;
 import org.cache2k.CacheManager;
 import org.cache2k.CacheSource;
 import org.cache2k.CacheSourceWithMetaInfo;
-import org.cache2k.RefreshController;
 import org.cache2k.StorageConfiguration;
 
 import java.lang.reflect.Constructor;
@@ -219,7 +218,6 @@ public class CacheBuilderImpl<K, T> extends CacheBuilder<K, T> {
         throw new UnsupportedOperationException("no aggregation support yet");
       }
       wc.loader = bc.loader;
-      wc.readThrough = bc.loader != null;
       if (cacheWriter != null) {
         wc.writer = cacheWriter;
       }

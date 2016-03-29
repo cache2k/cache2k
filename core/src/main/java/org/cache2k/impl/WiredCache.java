@@ -56,13 +56,13 @@ import java.util.concurrent.atomic.AtomicInteger;
 public class WiredCache<K, V> extends AbstractCache<K, V>
   implements  StorageAdapter.Parent, HeapCacheListener<K,V> {
 
-  final Specification<K, V> SPEC = new Specification<K,V>();
+  @SuppressWarnings("unchecked")
+  final Specification<K, V> SPEC = Specification.SINGLETON;
 
   BaseCache<K,V> heapCache;
   StorageAdapter storage;
   AdvancedCacheLoader<K,V> loader;
   CacheWriter<K, V> writer;
-  boolean readThrough;
   CacheEntryRemovedListener<K,V>[] syncEntryRemovedListeners;
   CacheEntryCreatedListener<K,V>[] syncEntryCreatedListeners;
   CacheEntryUpdatedListener<K,V>[] syncEntryUpdatedListeners;
@@ -333,7 +333,7 @@ public class WiredCache<K, V> extends AbstractCache<K, V>
 
   @Override
   public <R> R invoke(K key, CacheEntryProcessor<K, V, R> entryProcessor, Object... args) {
-    return execute(key, SPEC.invoke(key, readThrough, entryProcessor, args));
+    return execute(key, SPEC.invoke(key, loader != null, entryProcessor, args));
   }
 
   @Override
