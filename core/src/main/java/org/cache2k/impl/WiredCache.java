@@ -45,6 +45,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.Future;
+import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
@@ -67,6 +68,10 @@ public class WiredCache<K, V> extends AbstractCache<K, V>
   CacheEntryCreatedListener<K,V>[] syncEntryCreatedListeners;
   CacheEntryUpdatedListener<K,V>[] syncEntryUpdatedListeners;
   RefreshHandler<K,V> refreshHandler;
+
+  private CommonMetrics.Updater metrics() {
+    return heapCache.metrics;
+  }
 
   @Override
   public Log getLog() {
@@ -159,12 +164,16 @@ public class WiredCache<K, V> extends AbstractCache<K, V>
     }
   }
 
-  private void load(final K _key) {
-    Entry<K, V> e = lookupQuick(_key);
+  private void load(final K key) {
+    Entry<K, V> e = lookupQuick(key);
     if (e != null && e.hasFreshData()) {
       return;
     }
-    execute(_key, e, SPEC.get(_key));
+    load(key, e);
+  }
+
+  private void load(final K key, final Entry<K, V> _e) {
+    execute(key, _e, SPEC.get(key));
   }
 
   @Override
@@ -450,6 +459,7 @@ public class WiredCache<K, V> extends AbstractCache<K, V>
     if (storage != null) {
       storage.open();
     }
+    refreshHandler.init(this);
     heapCache.init();
   }
 
@@ -487,7 +497,12 @@ public class WiredCache<K, V> extends AbstractCache<K, V>
       storage.clear();
       return;
     }
-    heapCache.clear();
+    synchronized (lockObject()) {
+      heapCache.checkClosed();
+      heapCache.clearLocalCache();
+      refreshHandler.shutdown();
+      refreshHandler.init(this);
+    }
   }
 
   @Override
@@ -507,6 +522,7 @@ public class WiredCache<K, V> extends AbstractCache<K, V>
     synchronized (lockObject()) {
       storage = null;
     }
+    refreshHandler.shutdown();
     heapCache.closePart2();
   }
 
@@ -578,13 +594,54 @@ public class WiredCache<K, V> extends AbstractCache<K, V>
   }
 
   @Override
-  public void timerEventExpireEntry(final Entry e) {
+  public void timerEventExpireEntry(final Entry<K,V> e) {
     heapCache.timerEventExpireEntry(e);
   }
 
   @Override
-  public void timerEventRefresh(final Entry e) {
-    heapCache.timerEventRefresh(e);
+  public void timerEventRefresh(final Entry<K,V> e) {
+    metrics().timerEvent();
+    synchronized (e) {
+      if (e.isGone()) {
+        return;
+      }
+      if (heapCache.moveToRefreshHash(e)) {
+        Runnable r = new Runnable() {
+          @Override
+          public void run() {
+            if (storage == null) {
+              synchronized (e) {
+                e.waitForProcessing();
+                if (e.isGone()) {
+                  return;
+                }
+              }
+            }
+            try {
+              execute(e.getKey(), e, SPEC.UNCONDITIONAL_LOAD);
+            } catch (CacheClosedException ignore) {
+            } catch (Throwable ex) {
+              synchronized (lockObject()) {
+                heapCache.internalExceptionCnt++;
+              }
+              getLog().warn("Refresh exception", ex);
+              try {
+                heapCache.expireEntry(e);
+              } catch (CacheClosedException ignore) {
+              }
+            }
+          }
+        };
+        try {
+          heapCache.loaderExecutor.execute(r);
+          return;
+        } catch (RejectedExecutionException ignore) {
+        }
+        heapCache.refreshSubmitFailedCnt++;
+      } else { // if (mainHashCtrl.remove(mainHash, e)) ...
+      }
+      heapCache.timerEventExpireEntryLocked(e);
+    }
   }
 
   /**

@@ -539,7 +539,7 @@ public abstract class BaseCache<K, V>
     }
   }
 
-  protected final void clearLocalCache() {
+  public final void clearLocalCache() {
     iterateAllEntriesRemoveAndCancelTimer();
     clearedCnt += getLocalSize();
     initializeHeapCache();
@@ -1985,7 +1985,7 @@ public abstract class BaseCache<K, V>
     }
   }
 
-  private void timerEventExpireEntryLocked(final Entry<K, V> e) {
+  public void timerEventExpireEntryLocked(final Entry<K, V> e) {
     long nrt = e.nextRefreshTime;
     if (nrt < Entry.EXPIRY_TIME_MIN) {
       return;

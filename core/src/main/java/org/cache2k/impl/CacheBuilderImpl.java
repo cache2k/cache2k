@@ -205,7 +205,6 @@ public class CacheBuilderImpl<K, T> extends CacheBuilder<K, T> {
 
     String _name = cm.newCache(_cache, bc.getName());
     bc.setName(_name);
-
     if (_wrap) {
       if (_stores.size() == 1) {
         StorageConfiguration cfg = _stores.get(0);
@@ -247,7 +246,6 @@ public class CacheBuilderImpl<K, T> extends CacheBuilder<K, T> {
       }
       bc.listener = wc;
       RefreshHandler<K,T> rh =RefreshHandler.of(config);
-      bc.setRefreshHandler(rh);
       wc.refreshHandler = rh;
       wc.init();
     } else {
