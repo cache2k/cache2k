@@ -117,7 +117,6 @@ public class CacheBuilderImpl<K, T> extends CacheBuilder<K, T> {
     if (exceptionPropagator != null) {
       c.setExceptionPropagator(exceptionPropagator);
     }
-    c.setRefreshHandler(RefreshHandler.of(config));
     if (config != null) {
       c.setCacheConfig(config);
     }
@@ -247,8 +246,12 @@ public class CacheBuilderImpl<K, T> extends CacheBuilder<K, T> {
         }
       }
       bc.listener = wc;
+      RefreshHandler<K,T> rh =RefreshHandler.of(config);
+      bc.setRefreshHandler(rh);
+      wc.refreshHandler = rh;
       wc.init();
     } else {
+      bc.setRefreshHandler(RefreshHandler.of(config));
       bc.init();
     }
     return _cache;

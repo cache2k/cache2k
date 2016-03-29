@@ -163,6 +163,9 @@ public class EntryAction<K, V, R> implements StorageCallback, AsyncCacheLoader.C
     return null;
   }
 
+  @SuppressWarnings("unchecked")
+  protected RefreshHandler<K,V> refreshHandler() { return RefreshHandler.ETERNAL; }
+
   @Override
   public boolean isPresent() {
     doNotCountAccess = true;
@@ -276,7 +279,7 @@ public class EntryAction<K, V, R> implements StorageCallback, AsyncCacheLoader.C
     long _expiryTimeFromStorage = se.getValueExpiryTime();
     boolean _expired = _expiryTimeFromStorage != 0 && _expiryTimeFromStorage <= now;
     if (!_expired) {
-      _nextRefreshTime = heapCache.refreshHandler.calculateNextRefreshTime(e, v, now);
+      _nextRefreshTime = refreshHandler().calculateNextRefreshTime(e, v, now);
       expiry = _nextRefreshTime;
       if (_nextRefreshTime == ExpiryCalculator.ETERNAL) {
         e.nextRefreshTime = Entry.DATA_VALID;
@@ -492,7 +495,7 @@ public class EntryAction<K, V, R> implements StorageCallback, AsyncCacheLoader.C
   public void mutationCalculateExpiry() {
     try {
       entry.nextProcessingStep(Entry.ProcessingState.EXPIRY);
-      expiry = heapCache.refreshHandler.calculateNextRefreshTime(
+      expiry = refreshHandler().calculateNextRefreshTime(
         entry, newValueOrException,
         lastModificationTime);
     } catch (Exception ex) {
@@ -788,7 +791,7 @@ public class EntryAction<K, V, R> implements StorageCallback, AsyncCacheLoader.C
           }
         } else {
           entry.nextRefreshTime =
-            heapCache.stopStartTimer(expiry, entry, System.currentTimeMillis());
+            refreshHandler().stopStartTimer(expiry, entry, System.currentTimeMillis());
         }
       }
     }

@@ -66,6 +66,7 @@ public class WiredCache<K, V> extends AbstractCache<K, V>
   CacheEntryRemovedListener<K,V>[] syncEntryRemovedListeners;
   CacheEntryCreatedListener<K,V>[] syncEntryCreatedListeners;
   CacheEntryUpdatedListener<K,V>[] syncEntryUpdatedListeners;
+  RefreshHandler<K,V> refreshHandler;
 
   @Override
   public Log getLog() {
@@ -625,6 +626,10 @@ public class WiredCache<K, V> extends AbstractCache<K, V>
       return writer;
     }
 
+    @Override
+    protected RefreshHandler<K, V> refreshHandler() {
+      return refreshHandler;
+    }
   }
 
 }
