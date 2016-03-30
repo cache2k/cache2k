@@ -358,6 +358,7 @@ class CacheBaseInfo implements InternalCacheInfo {
             + "keyMutationCnt=" + getKeyMutationCnt() + ", "
             + "infoCreated=" + timestampToString(getInfoCreated()) + ", "
             + "infoCreationDeltaMs=" + getInfoCreationDeltaMs() + ", "
+            + "impl=" + getImplementation() + ", "
             + getExtraStatistics() + ", "
             + "integrityState=" + getIntegrityDescriptor();
   }
