@@ -62,6 +62,8 @@ Statistics:
 
 ## API Changes and new methods
 
+  * grouped in subpackages, similar to JSR107: integration, configuration, event, processor, customization
+
   * deprecated: CacheManager.isDestroyed(), replaced by isClosed()
   * deprecated: CacheBuilder.maxSize, replaced by entryCapacity()
   * deprecated: CacheSource, CacheSourceWithMetaInfo, BulkCacheSource replaced by CacheLoader

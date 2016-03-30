@@ -959,7 +959,7 @@ public abstract class BaseCache<K, V>
 
   @Override
   public String getEntryState(K key) {
-    Entry e = peekEntryInternal(key);
+    Entry e = lookupEntrySynchronized(key);
     if (e == null) {
       return null;
     }

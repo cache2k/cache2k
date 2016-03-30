@@ -25,6 +25,7 @@ package org.cache2k.impl;
 import org.cache2k.CacheEntry;
 import org.cache2k.impl.operation.ExaminationEntry;
 import org.cache2k.storage.StorageEntry;
+import static org.cache2k.impl.util.Util.*;
 
 import java.lang.reflect.Field;
 import java.util.TimerTask;
@@ -480,11 +481,11 @@ public class Entry<K, T>
     } else {
       sb.append(", value=null");
     }
-    sb.append(", modified=").append(getLastModification());
+    sb.append(", modified=").append(formatMillis(getLastModification()));
     if (nextRefreshTime < 0) {
-      sb.append(", nextRefreshTime(sharp)=").append(-nextRefreshTime);
+      sb.append(", nextRefreshTime(sharp)=").append(formatMillis(-nextRefreshTime));
     } else if (nextRefreshTime >= EXPIRY_TIME_MIN) {
-      sb.append(", nextRefreshTime(timer)=").append(nextRefreshTime);
+      sb.append(", nextRefreshTime(timer)=").append(formatMillis(nextRefreshTime));
     } else {
       sb.append(", state=").append(nextRefreshTime);
     }
