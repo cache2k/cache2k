@@ -215,6 +215,7 @@ public abstract class RefreshHandler<K,V>  {
             e.task = new ExpireTask(cache, e);
             scheduleTask(_timerTime, e);
             _nextRefreshTime = -_nextRefreshTime;
+          } else {
           }
         } else {
           if (backgroundRefresh) {

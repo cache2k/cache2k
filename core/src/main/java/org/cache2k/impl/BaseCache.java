@@ -1991,12 +1991,12 @@ public abstract class BaseCache<K, V>
       return;
     }
     long t = System.currentTimeMillis();
-    if (t >= e.nextRefreshTime) {
+    if (t >= nrt) {
       try {
         expireEntry(e);
       } catch (CacheClosedException ignore) { }
     } else {
-      e.nextRefreshTime = -e.nextRefreshTime;
+      e.nextRefreshTime = -nrt;
       if (!hasKeepAfterExpired()) {
 
       }

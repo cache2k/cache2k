@@ -619,6 +619,9 @@ public class WiredCache<K, V> extends AbstractCache<K, V>
             }
             try {
               execute(e.getKey(), e, SPEC.UNCONDITIONAL_LOAD);
+              synchronized (lockObject()) {
+                heapCache.refreshCnt++;
+              }
             } catch (CacheClosedException ignore) {
             } catch (Throwable ex) {
               synchronized (lockObject()) {
