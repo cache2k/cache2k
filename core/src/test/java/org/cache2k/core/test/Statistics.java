@@ -86,7 +86,7 @@ public class Statistics {
   public final Counter loadCount = new Counter("load") {
     @Override
     protected long getCounterValue(final InternalCacheInfo inf) {
-      return inf.getFetchCnt();
+      return inf.getLoadCnt();
     }
   };
 

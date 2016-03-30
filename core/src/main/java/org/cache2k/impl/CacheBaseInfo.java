@@ -48,7 +48,7 @@ class CacheBaseInfo implements InternalCacheInfo {
   long usageCnt;
   BaseCache.CollisionInfo collisionInfo;
   String extraStatistics;
-  int fetchesInFlight;
+  int loadsInFlight;
   IntegrityState integrityState;
   long asyncLoadsStarted = 0;
   long asyncLoadsInFlight = 0;
@@ -67,7 +67,7 @@ class CacheBaseInfo implements InternalCacheInfo {
     if (extraStatistics.startsWith(", ")) {
       extraStatistics = extraStatistics.substring(2);
     }
-    fetchesInFlight = baseCache.getFetchesInFlight();
+    loadsInFlight = baseCache.getLoadsInFlight();
     size = baseCache.getLocalSize();
     missCnt = baseCache.loadCnt + baseCache.peekHitNotFreshCnt + baseCache.peekMissCnt;
     storageMissCnt = baseCache.readMissCnt + baseCache.readNonFreshCnt + baseCache.readNonFreshAndFetchedCnt;
@@ -97,7 +97,7 @@ class CacheBaseInfo implements InternalCacheInfo {
   public String getImplementation() { return baseCache.getClass().getSimpleName(); }
 
   @Override
-  public long getFetchButHitCnt() {
+  public long getLoadButHitCnt() {
     return baseCache.loadButHitCnt;
   }
 
@@ -132,9 +132,9 @@ class CacheBaseInfo implements InternalCacheInfo {
   @Override
   public long getNewEntryCnt() { return newEntryCnt; }
   @Override
-  public long getFetchCnt() { return baseCache.loadCnt; }
+  public long getLoadCnt() { return baseCache.loadCnt; }
   @Override
-  public int getFetchesInFlightCnt() { return fetchesInFlight; }
+  public int getLoadsInFlightCnt() { return loadsInFlight; }
   @Override
   public long getBulkGetCnt() { return baseCache.bulkGetCnt; }
   @Override
@@ -146,7 +146,7 @@ class CacheBaseInfo implements InternalCacheInfo {
   @Override
   public long getSuppressedExceptionCnt() { return baseCache.suppressedExceptionCnt; }
   @Override
-  public long getFetchExceptionCnt() { return baseCache.loadExceptionCnt; }
+  public long getLoadExceptionCnt() { return baseCache.loadExceptionCnt; }
   @Override
   public long getRefreshHitCnt() { return baseCache.refreshHitCnt; }
   @Override
@@ -240,9 +240,9 @@ class CacheBaseInfo implements InternalCacheInfo {
     return _metric0;
   }
   @Override
-  public double getMillisPerFetch() { return baseCache.loadCnt == 0 ? 0 : (baseCache.fetchMillis * 1D / baseCache.loadCnt); }
+  public double getMillisPerLoad() { return baseCache.loadCnt == 0 ? 0 : (baseCache.fetchMillis * 1D / baseCache.loadCnt); }
   @Override
-  public long getFetchMillis() { return baseCache.fetchMillis; }
+  public long getLoadMillis() { return baseCache.fetchMillis; }
   @Override
   public int getCollisionCnt() { return collisionInfo.collisionCnt; }
   @Override
@@ -320,11 +320,11 @@ class CacheBaseInfo implements InternalCacheInfo {
             + "missCnt=" + getMissCnt() + ", "
             + "peekMissCnt=" + (baseCache.peekMissCnt) + ", "
             + "peekHitNotFresh=" + (baseCache.peekHitNotFreshCnt) + ", "
-            + "fetchCnt=" + getFetchCnt() + ", "
-            + "fetchButHitCnt=" + getFetchButHitCnt() + ", "
+            + "loadCnt=" + getLoadCnt() + ", "
+            + "loadButHitCnt=" + getLoadButHitCnt() + ", "
             + "heapHitCnt=" + hitCnt + ", "
             + "virginEvictCnt=" + getVirginEvictCnt() + ", "
-            + "fetchesInFlightCnt=" + getFetchesInFlightCnt() + ", "
+            + "loadsInFlightCnt=" + getLoadsInFlightCnt() + ", "
             + "newEntryCnt=" + getNewEntryCnt() + ", "
             + "bulkGetCnt=" + getBulkGetCnt() + ", "
             + "refreshCnt=" + getRefreshCnt() + ", "
@@ -344,7 +344,7 @@ class CacheBaseInfo implements InternalCacheInfo {
             + "collisionSlotCnt=" + getCollisionSlotCnt() + ", "
             + "longestCollisionSize=" + getLongestCollisionSize() + ", "
             + "hashQuality=" + getHashQualityInteger() + ", "
-            + "msecs/fetch=" + (getMillisPerFetch() >= 0 ? getMillisPerFetch() : "-")  + ", "
+            + "msecs/load=" + (getMillisPerLoad() >= 0 ? getMillisPerLoad() : "-")  + ", "
             + "asyncLoadsStarted=" + asyncLoadsStarted + ", "
             + "asyncLoadsInFlight=" + asyncLoadsInFlight + ", "
             + "loaderThreadsLimit=" + loaderThreadsLimit + ", "
@@ -352,7 +352,7 @@ class CacheBaseInfo implements InternalCacheInfo {
             + "created=" + timestampToString(getStarted()) + ", "
             + "cleared=" + timestampToString(getCleared()) + ", "
             + "touched=" + timestampToString(getTouched()) + ", "
-            + "fetchExceptionCnt=" + getFetchExceptionCnt() + ", "
+            + "loadExceptionCnt=" + getLoadExceptionCnt() + ", "
             + "suppressedExceptionCnt=" + getSuppressedExceptionCnt() + ", "
             + "internalExceptionCnt=" + getInternalExceptionCnt() + ", "
             + "keyMutationCnt=" + getKeyMutationCnt() + ", "

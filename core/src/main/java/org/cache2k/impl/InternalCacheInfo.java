@@ -36,7 +36,7 @@ public interface InternalCacheInfo {
 
   long getVirginEvictCnt();
 
-  long getFetchButHitCnt();
+  long getLoadButHitCnt();
 
   long getStorageHitCnt();
 
@@ -52,9 +52,9 @@ public interface InternalCacheInfo {
 
   long getNewEntryCnt();
 
-  long getFetchCnt();
+  long getLoadCnt();
 
-  int getFetchesInFlightCnt();
+  int getLoadsInFlightCnt();
 
   long getBulkGetCnt();
 
@@ -66,7 +66,7 @@ public interface InternalCacheInfo {
 
   long getSuppressedExceptionCnt();
 
-  long getFetchExceptionCnt();
+  long getLoadExceptionCnt();
 
   long getRefreshHitCnt();
 
@@ -104,9 +104,9 @@ public interface InternalCacheInfo {
 
   int getHashQualityInteger();
 
-  double getMillisPerFetch();
+  double getMillisPerLoad();
 
-  long getFetchMillis();
+  long getLoadMillis();
 
   int getCollisionCnt();
 

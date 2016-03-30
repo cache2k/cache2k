@@ -68,7 +68,7 @@ public class CacheMXBeanImpl implements CacheMXBean {
 
   @Override
   public long getFetchCnt() {
-    return getInfo().getFetchCnt();
+    return getInfo().getLoadCnt();
   }
 
   @Override
@@ -103,7 +103,7 @@ public class CacheMXBeanImpl implements CacheMXBean {
 
   @Override
   public long getFetchExceptionCnt() {
-    return getInfo().getFetchExceptionCnt();
+    return getInfo().getLoadExceptionCnt();
   }
 
   @Override
@@ -143,7 +143,7 @@ public class CacheMXBeanImpl implements CacheMXBean {
 
   @Override
   public double getMillisPerFetch() {
-    return getInfo().getMillisPerFetch();
+    return getInfo().getMillisPerLoad();
   }
 
   @Override
@@ -153,7 +153,7 @@ public class CacheMXBeanImpl implements CacheMXBean {
 
   @Override
   public long getFetchMillis() {
-    return getInfo().getFetchMillis();
+    return getInfo().getLoadMillis();
   }
 
   @Override

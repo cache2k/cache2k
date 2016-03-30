@@ -23,8 +23,6 @@ package org.cache2k.impl;
  */
 
 import org.cache2k.*;
-import org.cache2k.customization.ExceptionExpiryCalculator;
-import org.cache2k.customization.ExpiryCalculator;
 import org.cache2k.impl.operation.ExaminationEntry;
 import org.cache2k.impl.operation.Semantic;
 import org.cache2k.impl.operation.Specification;
@@ -594,7 +592,7 @@ public abstract class BaseCache<K, V>
         @Override
         public boolean isDone() {
           synchronized (lock) {
-            return getFetchesInFlight() == 0;
+            return getLoadsInFlight() == 0;
           }
         }
       };
@@ -625,7 +623,7 @@ public abstract class BaseCache<K, V>
     } catch (TimeoutException ex) {
       int _fetchesInFlight;
       synchronized (lock) {
-        _fetchesInFlight = getFetchesInFlight();
+        _fetchesInFlight = getLoadsInFlight();
       }
       if (_fetchesInFlight > 0) {
         getLog().warn(
@@ -2196,7 +2194,7 @@ public abstract class BaseCache<K, V>
     return loadCnt - loadButHitCnt + loadFailedCnt;
   }
 
-  protected int getFetchesInFlight() {
+  protected int getLoadsInFlight() {
     return 0;
   }
 

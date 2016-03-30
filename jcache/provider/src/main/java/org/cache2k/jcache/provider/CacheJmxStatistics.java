@@ -116,7 +116,7 @@ public class CacheJmxStatistics implements CacheStatisticsMXBean {
 
   @Override
   public float getAverageGetTime() {
-    return (float) getInfo().getMillisPerFetch();
+    return (float) getInfo().getMillisPerLoad();
   }
 
   @Override
