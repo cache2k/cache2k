@@ -97,7 +97,7 @@ public abstract class RefreshHandler<K,V>  {
 
     @Override
     public long calculateNextRefreshTime(final Entry<K,V> e, final V v, final long t0) {
-      return Long.MAX_VALUE;
+      return ExpiryCalculator.ETERNAL;
     }
 
     @Override
@@ -119,7 +119,7 @@ public abstract class RefreshHandler<K,V>  {
 
     @Override
     public long stopStartTimer(final long _nextRefreshTime, final Entry<K,V> e) {
-      return _nextRefreshTime;
+      return Entry.EXPIRED;
     }
 
     @Override
@@ -195,16 +195,20 @@ public abstract class RefreshHandler<K,V>  {
 
     @Override
     public long stopStartTimer(long _nextRefreshTime, final Entry e) {
-      final long now = System.currentTimeMillis();
       TimerTask _task = e.task;
       if (_task != null) {
         _task.cancel();
       }
-      if ((_nextRefreshTime > Entry.EXPIRY_TIME_MIN && _nextRefreshTime <= now) &&
-        (_nextRefreshTime < -1 && (now >= -_nextRefreshTime))) {
+      if (_nextRefreshTime == 0) {
         return Entry.EXPIRED;
       }
-      if (sharpTimeout && _nextRefreshTime > Entry.EXPIRY_TIME_MIN && _nextRefreshTime != Long.MAX_VALUE) {
+      final long now = System.currentTimeMillis();
+      _nextRefreshTime = sanitizeTime(_nextRefreshTime, now);
+      if ((_nextRefreshTime > 0 && _nextRefreshTime < Entry.EXPIRY_TIME_MIN) ||
+           _nextRefreshTime == ExpiryCalculator.ETERNAL) {
+        return _nextRefreshTime;
+      }
+      if (sharpTimeout && _nextRefreshTime > Entry.EXPIRY_TIME_MIN) {
         _nextRefreshTime = -_nextRefreshTime;
       }
       if (timer != null &&
@@ -376,6 +380,14 @@ public abstract class RefreshHandler<K,V>  {
       }
     }
     return t;
+  }
+
+  static long sanitizeTime(final long _nextRefreshTime, final long _now) {
+    if ((_nextRefreshTime > Entry.EXPIRY_TIME_MIN && _nextRefreshTime <= _now) &&
+      (_nextRefreshTime < -1 && (_now >= -_nextRefreshTime))) {
+      return Entry.EXPIRED;
+    }
+    return _nextRefreshTime;
   }
 
 }

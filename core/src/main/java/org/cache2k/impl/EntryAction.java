@@ -288,7 +288,8 @@ public class EntryAction<K, V, R> implements StorageCallback, AsyncCacheLoader.C
         e.nextRefreshTime = Entry.READ_NON_VALID;
       } else {
         if (_nextRefreshTime < 0) {
-          _nextRefreshTime = -_nextRefreshTime;
+          e.nextRefreshTime = _nextRefreshTime;
+          storageDataValid = true;
         }
         if (_nextRefreshTime <= now) {
           e.nextRefreshTime = Entry.READ_NON_VALID;
@@ -778,21 +779,8 @@ public class EntryAction<K, V, R> implements StorageCallback, AsyncCacheLoader.C
           }
         }
       } else {
-        long _nextRefreshTime = expiry;
-        if (_nextRefreshTime == 0) {
-          entry.nextRefreshTime = Entry.EXPIRED;
-          if (entry.task != null) {
-            entry.task.cancel();
-          }
-        } else if (_nextRefreshTime == Long.MAX_VALUE) {
-          entry.nextRefreshTime = Entry.DATA_VALID;
-          if (entry.task != null) {
-            entry.task.cancel();
-          }
-        } else {
-          entry.nextRefreshTime =
-            refreshHandler().stopStartTimer(expiry, entry);
-        }
+        entry.nextRefreshTime =
+          refreshHandler().stopStartTimer(expiry, entry);
       }
     }
     synchronized (heapCache.lock) {

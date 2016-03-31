@@ -23,6 +23,7 @@ package org.cache2k.impl;
  */
 
 import org.cache2k.CacheEntry;
+import org.cache2k.customization.ExpiryCalculator;
 import org.cache2k.impl.operation.ExaminationEntry;
 import org.cache2k.storage.StorageEntry;
 import static org.cache2k.impl.util.Util.*;
@@ -484,6 +485,8 @@ public class Entry<K, T>
     sb.append(", modified=").append(formatMillis(getLastModification()));
     if (nextRefreshTime < 0) {
       sb.append(", nextRefreshTime(sharp)=").append(formatMillis(-nextRefreshTime));
+    } else if (nextRefreshTime == ExpiryCalculator.ETERNAL) {
+      sb.append(", nextRefreshTime=ETERNAL");
     } else if (nextRefreshTime >= EXPIRY_TIME_MIN) {
       sb.append(", nextRefreshTime(timer)=").append(formatMillis(nextRefreshTime));
     } else {

@@ -1039,7 +1039,7 @@ public abstract class BaseCache<K, V>
 
   protected void finishFetch(Entry e, long _nextRefreshTime) {
     synchronized (e) {
-      e.nextRefreshTime = stopStartTimer(_nextRefreshTime, e, System.currentTimeMillis());
+      e.nextRefreshTime = refreshHandler.stopStartTimer(_nextRefreshTime, e);
       e.processingDone();
       e.notifyAll();
     }
@@ -1169,7 +1169,7 @@ public abstract class BaseCache<K, V>
   private void putValue(final Entry _e, final V _value) {
     long t = System.currentTimeMillis();
     long _newNrt = insertOnPut(_e, _value, t, t);
-    _e.nextRefreshTime = stopStartTimer(_newNrt, _e, System.currentTimeMillis());
+    _e.nextRefreshTime = refreshHandler.stopStartTimer(_newNrt, _e);
   }
 
   @Override
@@ -1815,16 +1815,8 @@ public abstract class BaseCache<K, V>
   final static byte INSERT_STAT_UPDATE = 1;
   final static byte INSERT_STAT_PUT = 2;
 
-  /**
-   * @param _nextRefreshTime -1/MAXVAL: eternal, 0: expires immediately
-   */
   protected final long insert(Entry<K, V> e, V _value, long t0, long t, byte _updateStatistics, long _nextRefreshTime) {
-    if (_nextRefreshTime == -1) {
-      _nextRefreshTime = Long.MAX_VALUE;
-    }
-    final boolean _suppressException =
-      needsSuppress(e, _value);
-
+    final boolean _suppressException = needsSuppress(e, _value);
     if (!_suppressException) {
       e.value = _value;
     }
@@ -1840,13 +1832,6 @@ public abstract class BaseCache<K, V>
     synchronized (lock) {
       checkClosed();
       updateStatisticsNeedsLock(e, _value, t0, t, _updateStatistics, _suppressException);
-      if (_nextRefreshTime == 0) {
-        _nextRefreshTime = Entry.EXPIRED;
-      } else {
-        if (_nextRefreshTime == Long.MAX_VALUE) {
-          _nextRefreshTime = Entry.DATA_VALID;
-        }
-      }
       if (_updateStatistics == INSERT_STAT_PUT && !e.hasFreshData(t, _nextRefreshTime)) {
         putButExpiredCnt++;
       }
@@ -1896,10 +1881,6 @@ public abstract class BaseCache<K, V>
     if (e.isVirgin()) {
       putNewEntryCnt++;
     }
-  }
-
-  protected long stopStartTimer(long _nextRefreshTime, Entry e, long now) {
-    return refreshHandler.stopStartTimer(_nextRefreshTime, e);
   }
 
   void cancelExpiryTimer(Entry e) {
