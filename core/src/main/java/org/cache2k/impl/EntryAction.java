@@ -791,7 +791,7 @@ public class EntryAction<K, V, R> implements StorageCallback, AsyncCacheLoader.C
           }
         } else {
           entry.nextRefreshTime =
-            refreshHandler().stopStartTimer(expiry, entry, System.currentTimeMillis());
+            refreshHandler().stopStartTimer(expiry, entry);
         }
       }
     }

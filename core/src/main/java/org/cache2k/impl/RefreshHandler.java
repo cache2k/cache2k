@@ -86,7 +86,7 @@ public abstract class RefreshHandler<K,V>  {
 
   public abstract long calculateNextRefreshTime(Entry<K, V> e, V v, long t0);
 
-  public abstract long stopStartTimer(long _nextRefreshTime, Entry<K,V> e, long now);
+  public abstract long stopStartTimer(long _nextRefreshTime, Entry<K,V> e);
 
   public abstract void cancelExpiryTimer(Entry<K, V> e);
 
@@ -101,7 +101,7 @@ public abstract class RefreshHandler<K,V>  {
     }
 
     @Override
-    public long stopStartTimer(final long _nextRefreshTime, final Entry<K,V> e, final long now) {
+    public long stopStartTimer(final long _nextRefreshTime, final Entry<K,V> e) {
       return _nextRefreshTime;
     }
 
@@ -118,7 +118,7 @@ public abstract class RefreshHandler<K,V>  {
     }
 
     @Override
-    public long stopStartTimer(final long _nextRefreshTime, final Entry<K,V> e, final long now) {
+    public long stopStartTimer(final long _nextRefreshTime, final Entry<K,V> e) {
       return _nextRefreshTime;
     }
 
@@ -194,7 +194,8 @@ public abstract class RefreshHandler<K,V>  {
     }
 
     @Override
-    public long stopStartTimer(long _nextRefreshTime, final Entry e, final long now) {
+    public long stopStartTimer(long _nextRefreshTime, final Entry e) {
+      final long now = System.currentTimeMillis();
       TimerTask _task = e.task;
       if (_task != null) {
         _task.cancel();

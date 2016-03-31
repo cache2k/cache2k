@@ -1899,7 +1899,7 @@ public abstract class BaseCache<K, V>
   }
 
   protected long stopStartTimer(long _nextRefreshTime, Entry e, long now) {
-    return refreshHandler.stopStartTimer(_nextRefreshTime, e, now);
+    return refreshHandler.stopStartTimer(_nextRefreshTime, e);
   }
 
   void cancelExpiryTimer(Entry e) {
