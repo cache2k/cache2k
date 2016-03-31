@@ -54,7 +54,7 @@ public abstract class AbstractCache<K, V> implements InternalCache<K, V> {
   }
 
   @Override
-  public void removeAll(Set<? extends K> _keys) {
+  public void removeAll(Iterable<? extends K> _keys) {
     for (K k : _keys) {
       remove(k);
     }
@@ -87,7 +87,7 @@ public abstract class AbstractCache<K, V> implements InternalCache<K, V> {
   }
 
   @Override
-  public <R> Map<K, EntryProcessingResult<R>> invokeAll(Set<? extends K> keys, CacheEntryProcessor<K, V, R> entryProcessor, Object... objs) {
+  public <R> Map<K, EntryProcessingResult<R>> invokeAll(Iterable<? extends K> keys, CacheEntryProcessor<K, V, R> entryProcessor, Object... objs) {
     Map<K, EntryProcessingResult<R>> m = new HashMap<K, EntryProcessingResult<R>>();
     for (K k : keys) {
       try {

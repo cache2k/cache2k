@@ -402,7 +402,7 @@ public class WiredCache<K, V> extends AbstractCache<K, V>
    * on the entry.
    */
   @Override
-  public Map<K, V> peekAll(final Set<? extends K> keys) {
+  public Map<K, V> peekAll(final Iterable<? extends K> keys) {
     Map<K, ExaminationEntry<K, V>> map = new HashMap<K, ExaminationEntry<K, V>>();
     for (K k : keys) {
       ExaminationEntry<K, V> e = execute(k, SPEC.peekEntry(k));

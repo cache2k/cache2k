@@ -2035,13 +2035,6 @@ public abstract class BaseCache<K, V>
     throw new UnsupportedOperationException();
   }
 
-  @Override
-  public void removeAll(final Set<? extends K> keys) {
-    for (K k : keys) {
-      remove(k);
-    }
-  }
-
   /**
    * JSR107 bulk interface. The behaviour is compatible to the JSR107 TCK. We also need
    * to be compatible to the exception handling policy, which says that the exception
@@ -2129,7 +2122,7 @@ public abstract class BaseCache<K, V>
     };
   }
 
-  public Map<K, V> peekAll(final Set<? extends K> _inputKeys) {
+  public Map<K, V> peekAll(final Iterable<? extends K> _inputKeys) {
     Map<K, ExaminationEntry<K, V>> map = new HashMap<K, ExaminationEntry<K, V>>();
     for (K k : _inputKeys) {
       ExaminationEntry<K, V> e = peekEntryInternal(k);

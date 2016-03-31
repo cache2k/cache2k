@@ -171,7 +171,7 @@ public class CacheWrapper<K,V> implements Cache<K, V> {
   }
 
   @Override
-  public <R> Map<K, EntryProcessingResult<R>> invokeAll(Set<? extends K> keys, CacheEntryProcessor<K, V, R> entryProcessor, Object... objs) {
+  public <R> Map<K, EntryProcessingResult<R>> invokeAll(Iterable<? extends K> keys, CacheEntryProcessor<K, V, R> entryProcessor, Object... objs) {
     return cache.invokeAll(keys, entryProcessor, objs);
   }
 
@@ -181,7 +181,7 @@ public class CacheWrapper<K,V> implements Cache<K, V> {
   }
 
   @Override
-  public Map<K, V> peekAll(Set<? extends K> keys) {
+  public Map<K, V> peekAll(Iterable<? extends K> keys) {
     return cache.peekAll(keys);
   }
 
@@ -201,7 +201,7 @@ public class CacheWrapper<K,V> implements Cache<K, V> {
   }
 
   @Override
-  public void removeAll(Set<? extends K> keys) {
+  public void removeAll(Iterable<? extends K> keys) {
     cache.removeAll(keys);
   }
 

@@ -34,7 +34,6 @@ import org.cache2k.processor.EntryProcessingResult;
 import java.io.Closeable;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
 /*
  * Descriptions derive partly from the java.util.concurrent.ConcurrentMap.
@@ -413,14 +412,14 @@ public interface Cache<K, V> extends KeyValueSource<K, V>, Iterable<CacheEntry<K
    * @deprecated no replacement planed
    * @throws UnsupportedOperationException
    */
-  void removeAllAtOnce(Set<K> key);
+  void removeAllAtOnce(java.util.Set<K> key);
 
   /**
    * Removes a set of keys. This has the same semantics of calling
    * remove to every key, except that the cache is trying to optimize the
    * bulk operation.
    */
-  void removeAll(Set<? extends K> keys);
+  void removeAll(Iterable<? extends K> keys);
 
   /**
    * Updates an existing cache entry for the specified key, so it associates
@@ -508,7 +507,7 @@ public interface Cache<K, V> extends KeyValueSource<K, V>, Iterable<CacheEntry<K
   <R> R invoke(K key, CacheEntryProcessor<K, V, R> entryProcessor, Object... args);
 
   <R> Map<K, EntryProcessingResult<R>> invokeAll(
-    Set<? extends K> keys, CacheEntryProcessor<K , V, R> entryProcessor, Object... objs);
+    Iterable<? extends K> keys, CacheEntryProcessor<K , V, R> entryProcessor, Object... objs);
 
   /**
    * Disclaimer: This method is here to be able to support known coding similar
@@ -561,12 +560,12 @@ public interface Cache<K, V> extends KeyValueSource<K, V>, Iterable<CacheEntry<K
    * @throws IllegalArgumentException if some property of the specified key
    *         prevents it from being stored in this cache
    */
-  Map<K, V> peekAll(Set<? extends K> keys);
+  Map<K, V> peekAll(Iterable<? extends K> keys);
 
   /**
    * Put all elements of the map into the cache.
    */
-   void putAll(Map<? extends K, ? extends V> m);
+   void putAll(Map<? extends K, ? extends V> valueMap);
 
   /**
    * Number of entries the cache holds in total. When iterating the entries
