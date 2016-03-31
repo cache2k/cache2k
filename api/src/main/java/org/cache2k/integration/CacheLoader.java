@@ -73,11 +73,7 @@ public abstract class CacheLoader<K, V> {
    *           the cache will retry the load with the single value load method.
    */
   public Map<K, V> loadAll(Iterable<? extends K> keys, Executor executor) throws Exception {
-    Map<K,V> map = new HashMap<K, V>();
-    for (K key : keys) {
-      map.put(key, load(key));
-    }
-    return map;
+    throw new UnsupportedOperationException();
   }
 
 }
