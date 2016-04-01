@@ -49,6 +49,7 @@ Fixes of corner cases that are most likely not affecting any existing applicatio
   * ExceptionPropagator for customising the propagation of cached exception
   * backgroundRefresh and sharpExpiry moved to CacheBuilder and documented
   * Switching on eternal will not cache exceptions forever
+  * honor keepDataAfterExpired(false) correctly and remove expired entries from the cache
 
 Statistics:
 
