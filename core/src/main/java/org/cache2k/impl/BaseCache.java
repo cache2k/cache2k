@@ -1966,19 +1966,19 @@ public abstract class BaseCache<K, V>
 
   public void timerEventExpireEntryLocked(final Entry<K, V> e) {
     long nrt = e.nextRefreshTime;
-    if (nrt < Entry.EXPIRY_TIME_MIN) {
+    if (nrt >= 0 && nrt < Entry.EXPIRY_TIME_MIN) {
       return;
     }
     long t = System.currentTimeMillis();
-    if (t >= nrt) {
+    if (t >= Math.abs(nrt)) {
       try {
         expireEntry(e);
       } catch (CacheClosedException ignore) { }
     } else {
-      e.nextRefreshTime = -nrt;
       if (!hasKeepAfterExpired()) {
-
+        refreshHandler.scheduleFinalExpiryTimer(e);
       }
+      e.nextRefreshTime = -nrt;
     }
   }
 

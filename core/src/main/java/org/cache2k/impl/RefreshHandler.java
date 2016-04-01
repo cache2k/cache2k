@@ -124,6 +124,11 @@ public abstract class RefreshHandler<K,V>  {
    */
   public void cancelExpiryTimer(Entry<K, V> e) { }
 
+  /**
+   * Schedule second timer event for the expiry tie if sharp expiry is switched on.
+   */
+  public void scheduleFinalExpiryTimer(Entry<K, V> e) { }
+
   static class Eternal<K,V> extends RefreshHandler<K,V> {
 
     @Override
@@ -233,6 +238,8 @@ public abstract class RefreshHandler<K,V>  {
             scheduleTask(_timerTime, e);
             _nextRefreshTime = -_nextRefreshTime;
           } else {
+            e.task = new ExpireTask(cache, e);
+            scheduleTask(-_nextRefreshTime, e);
           }
         } else {
           if (backgroundRefresh) {
@@ -245,6 +252,12 @@ public abstract class RefreshHandler<K,V>  {
         }
       }
       return _nextRefreshTime;
+    }
+
+    @Override
+    public void scheduleFinalExpiryTimer(final Entry<K, V> e) {
+      e.task = new ExpireTask(cache, e);
+      scheduleTask(e.nextRefreshTime, e);
     }
 
     void scheduleTask(final long _nextRefreshTime, final Entry e) {
