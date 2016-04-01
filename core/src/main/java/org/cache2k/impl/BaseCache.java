@@ -1041,7 +1041,19 @@ public abstract class BaseCache<K, V>
     synchronized (e) {
       e.nextRefreshTime = refreshHandler.stopStartTimer(_nextRefreshTime, e);
       e.processingDone();
+      checkForImmediateExpiry(e);
       e.notifyAll();
+    }
+  }
+
+  private void checkForImmediateExpiry(final Entry e) {
+    if (!hasKeepAfterExpired() && e.nextRefreshTime == Entry.EXPIRED) {
+      synchronized (lock) {
+        checkClosed();
+        if (removeEntry(e)) {
+          expiredRemoveCnt++;
+        }
+      }
     }
   }
 
@@ -1166,10 +1178,11 @@ public abstract class BaseCache<K, V>
     return null;
   }
 
-  private void putValue(final Entry _e, final V _value) {
+  private void putValue(final Entry e, final V _value) {
     long t = System.currentTimeMillis();
-    long _newNrt = insertOnPut(_e, _value, t, t);
-    _e.nextRefreshTime = refreshHandler.stopStartTimer(_newNrt, _e);
+    long _newNrt = insertOnPut(e, _value, t, t);
+    e.nextRefreshTime = refreshHandler.stopStartTimer(_newNrt, e);
+    checkForImmediateExpiry(e);
   }
 
   @Override
@@ -1938,7 +1951,9 @@ public abstract class BaseCache<K, V>
               }
               getLog().warn("Refresh exception", ex);
               try {
-                expireEntry(e);
+                synchronized (e) {
+                  expireEntry(e);
+                }
               } catch (CacheClosedException ignore) {
               }
             }
@@ -1983,19 +1998,17 @@ public abstract class BaseCache<K, V>
   }
 
   protected void expireEntry(Entry e) {
-    synchronized (e) {
-      if (e.isGone() || e.isExpired()) {
-        return;
-      }
-      e.setExpiredState();
-      synchronized (lock) {
-        checkClosed();
-        if (hasKeepAfterExpired() || e.isProcessing()) {
-          expiredKeptCnt++;
-        } else {
-          if (removeEntry(e)) {
-            expiredRemoveCnt++;
-          }
+    if (e.isGone() || e.isExpired()) {
+      return;
+    }
+    e.setExpiredState();
+    synchronized (lock) {
+      checkClosed();
+      if (hasKeepAfterExpired() || e.isProcessing()) {
+        expiredKeptCnt++;
+      } else {
+        if (removeEntry(e)) {
+          expiredRemoveCnt++;
         }
       }
     }
