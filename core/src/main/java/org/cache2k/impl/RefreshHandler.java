@@ -43,12 +43,13 @@ public abstract class RefreshHandler<K,V>  {
   final static long SAFETY_GAP_MILLIS = BaseCache.TUNABLE.sharpExpirySafetyGapMillis;
   final static RefreshHandler ETERNAL = new Eternal();
   final static RefreshHandler IMMEDIATE = new Immediate();
+  final static RefreshHandler ETERNAL_IMMEDIATE = new EternalImmediate();
 
   /**
    * Instance of expiry calculator that extracts the expiry time from the value.
    */
-  final static ExpiryCalculator<?, ValueWithExpiryTime> ENTRY_EXPIRY_CALCULATOR_FROM_VALUE = new
-    ExpiryCalculator<Object, ValueWithExpiryTime>() {
+  final static ExpiryCalculator<?, ValueWithExpiryTime> ENTRY_EXPIRY_CALCULATOR_FROM_VALUE =
+    new ExpiryCalculator<Object, ValueWithExpiryTime>() {
       @Override
       public long calculateExpiryTime(
         Object _key, ValueWithExpiryTime _value, long _loadTime,
@@ -75,39 +76,69 @@ public abstract class RefreshHandler<K,V>  {
       return IMMEDIATE;
     }
     if ((cfg.getExpiryMillis() == ExpiryCalculator.ETERNAL || cfg.getExceptionExpiryMillis() == -1) &&
+      cfg.getExceptionExpiryMillis() == -1) {
+      return ETERNAL_IMMEDIATE;
+    }
+    if ((cfg.getExpiryMillis() == ExpiryCalculator.ETERNAL || cfg.getExpiryMillis() == -1) &&
       (cfg.getExceptionExpiryMillis() == ExpiryCalculator.ETERNAL || cfg.getExceptionExpiryMillis() == -1)) {
       return ETERNAL;
     }
     throw new IllegalArgumentException("expiry time ambiguous");
   }
 
+  /**
+   * Initialize timer, if needed.
+   */
   public void init(InternalCache<K,V> c) { }
 
+  /**
+   * Cancels all pending timer events.
+   */
   public void shutdown() { }
 
+  /**
+   * Calculates the expiry time for a value that was just loaded or inserted into the cache.
+   *
+   * @param e The entry, filled with the previous value if there is a value present alreay.
+   * @param v The new value or an exception wrapped in {@link ExceptionWrapper}
+   * @param _loadTime the time immediately before the load started
+   * @return Point in time when the entry should expire. Meaning identical to
+   *         {@link ExpiryCalculator#calculateExpiryTime(Object, Object, long, CacheEntry)}
+   */
   public abstract long calculateNextRefreshTime(Entry<K, V> e, V v, long _loadTime);
 
-  public abstract long stopStartTimer(long _nextRefreshTime, Entry<K,V> e);
+  /**
+   * Convert expiry value to the entry field value, essentially maps 0 to {@link Entry#EXPIRED}
+   * since 0 is a virgin entry. Restart the timer if needed.
+   *
+   * @param _nextRefreshTime calculated next refresh time
+   * @param e the entry
+   * @return sanitized nextRefreshTime for storage in the entry.
+   */
+  public long stopStartTimer(long _nextRefreshTime, Entry<K,V> e) {
+    return _nextRefreshTime == 0 ? Entry.EXPIRED : _nextRefreshTime;
+  }
 
-  public abstract void cancelExpiryTimer(Entry<K, V> e);
+  /**
+   * Cancel the timer on the entry, if a timer was set.
+   */
+  public void cancelExpiryTimer(Entry<K, V> e) { }
 
   static class Eternal<K,V> extends RefreshHandler<K,V> {
-
-    @Override
-    public void shutdown() { }
 
     @Override
     public long calculateNextRefreshTime(final Entry<K,V> e, final V v, final long _loadTime) {
       return ExpiryCalculator.ETERNAL;
     }
 
-    @Override
-    public long stopStartTimer(final long _nextRefreshTime, final Entry<K,V> e) {
-      return _nextRefreshTime;
-    }
+  }
+
+  static class EternalImmediate<K,V> extends RefreshHandler<K,V> {
 
     @Override
-    public void cancelExpiryTimer(final Entry e) { }
+    public long calculateNextRefreshTime(final Entry<K,V> e, final V v, final long _loadTime) {
+      return v instanceof ExceptionWrapper ? 0 : ExpiryCalculator.ETERNAL;
+    }
 
   }
 
@@ -117,14 +148,6 @@ public abstract class RefreshHandler<K,V>  {
     public long calculateNextRefreshTime(final Entry<K,V> e, final V v, final long _loadTime) {
       return 0;
     }
-
-    @Override
-    public long stopStartTimer(final long _nextRefreshTime, final Entry<K,V> e) {
-      return Entry.EXPIRED;
-    }
-
-    @Override
-    public void cancelExpiryTimer(final Entry e) { }
 
   }
 
@@ -318,12 +341,6 @@ public abstract class RefreshHandler<K,V>  {
 
   }
 
-  /**
-   * Time when the element should be fetched again from the underlying storage.
-   * If 0 then the object should not be cached at all. -1 means no expiry.
-   *
-   * @param _newObject might be a fetched value or an exception wrapped into the {@link ExceptionWrapper}
-   */
   static <K, T>  long calcNextRefreshTime(
     K _key, T _newObject, long now, org.cache2k.impl.Entry _entry,
     ExpiryCalculator<K, T> ec, long _maxLinger,

@@ -37,6 +37,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 
 import static org.junit.Assert.*;
 
@@ -64,6 +65,7 @@ public class BasicCacheOperationsTest {
             .newCache(Integer.class, Integer.class)
             .name(BasicCacheOperationsTest.class)
             .eternal(true)
+            .exceptionExpiryDuration(Long.MAX_VALUE, TimeUnit.MILLISECONDS)
             .entryCapacity(1000)
             .build();
   }

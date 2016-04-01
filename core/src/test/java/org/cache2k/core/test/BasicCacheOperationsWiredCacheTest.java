@@ -32,6 +32,8 @@ import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.experimental.categories.Category;
 
+import java.util.concurrent.TimeUnit;
+
 /**
  * Test the basic operations on the wired cache.
  *
@@ -53,6 +55,7 @@ public class BasicCacheOperationsWiredCacheTest extends BasicCacheOperationsTest
     CacheBuilder<Integer, Integer> _builder = CacheBuilder.newCache(Integer.class, Integer.class)
       .name(BasicCacheOperationsTest.class)
       .eternal(true)
+      .exceptionExpiryDuration(Long.MAX_VALUE, TimeUnit.MILLISECONDS)
       .entryCapacity(1000);
     StaticUtil.enforceWiredCache(_builder);
     Cache<Integer, Integer>  c = _builder.build();

@@ -10,7 +10,7 @@ get deprecated. Modifications in the statistics output will not listed as breaka
   * Semantics of Cache.getAll() changed. Instead of returning always a map size equal to the requested count of keys,
     only keys with a non-null mapping are returned in the map.
   * Added generic types to the methods CacheBuilder.entryExpiryCalculator and CacheBuilder.exceptionExpiryCalculator
-  * Bulk API signatures changed from Set<K> to Set<? extends K>
+  * Bulk API signatures changed from Set<K> to Iterable<? extends K>
     TODO: !!!!!!!!!
 
 ## Bug fixes
@@ -20,7 +20,6 @@ If something is listed here it might affect an existing application and updating
   * Enabled background refresh and entry expiry calculator: In case the calculator returned the current time or a past time, the 
     entry was not marked as expired.
   * Fix possible race condition in cache manager when adding and closing caches and requesting an iteration of the existing caches
-  * Fix: retrieving existing entries via peek() might return null when a concurrent put() happens
 
 ## New and Noteworthy
 
@@ -40,7 +39,7 @@ Fixes of corner cases that are most likely not affecting any existing applicatio
   * Added lots of documentation to the configuration classes
   * Performance improvement: put() on existing entry by 15%
   * Typing: "unsupported" exception if an array is used for key or value types
-  * Typing: Actual type parameters of genereic types can be stored in the cache config
+  * Typing: Actual type parameters of generic types can be stored in the cache config
   * Typing: Converted CacheConfig to a generic type, transporting the key/value types at compile time
   * The cache manager logs the used default cache implementation at startup
   * Performance improvement: read access and cache hit (approx. 5%) on 64 bit JVMs
@@ -49,13 +48,14 @@ Fixes of corner cases that are most likely not affecting any existing applicatio
   * Handle exceptions within the expiry calculator more gracefully (still needs work, entry state is inconsistent if an exceptions happens here)
   * ExceptionPropagator for customising the propagation of cached exception
   * backgroundRefresh and sharpExpiry moved to CacheBuilder and documented
+  * Switching on eternal will not cache exceptions forever
 
 Statistics:
 
   * Cache.contains(), does no access recording if no storage is attached. Change because JSR107 specifies that a contains() does 
     not count the same ways as get(). However, cache2k has no dedicated counters for get(), but counts every access, which also is a
-    hit for the eviction algorithm. This means, the contains() call does not the prevent the entry from beeing evicted, which may
-    be undisired. Treating the contains as an access to an entry has pros and cons.
+    hit for the eviction algorithm. This means, the contains() call does not the prevent the entry from being evicted, which may
+    be undesired. Treating the contains as an access to an entry has pros and cons.
   * JMX statistics: initial getHitRate() value is 0.0
   * JMX statistics: initial getMillisPerFetch() value is 0.0
 

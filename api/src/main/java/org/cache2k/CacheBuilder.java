@@ -236,7 +236,9 @@ public abstract class CacheBuilder<K, V>
 
   /**
    * Keep entries forever. Default is false. By default the cache uses an expiry time
-   * of 10 minutes.
+   * of 10 minutes. If there is no explicit expiry configured for exceptions
+   * with {@link #exceptionExpiryDuration(long, TimeUnit)}, exceptions will
+   * not be cached and expire immediately.
    */
   public CacheBuilder<K, V> eternal(boolean v) {
     config.setEternal(v);
