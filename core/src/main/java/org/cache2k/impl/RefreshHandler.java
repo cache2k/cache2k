@@ -37,6 +37,7 @@ import java.util.TimerTask;
  *
  * @author Jens Wilke
  */
+@SuppressWarnings("unchecked")
 public abstract class RefreshHandler<K,V>  {
 
   final static long SAFETY_GAP_MILLIS = BaseCache.TUNABLE.sharpExpirySafetyGapMillis;
@@ -84,7 +85,7 @@ public abstract class RefreshHandler<K,V>  {
 
   public void shutdown() { }
 
-  public abstract long calculateNextRefreshTime(Entry<K, V> e, V v, long t0);
+  public abstract long calculateNextRefreshTime(Entry<K, V> e, V v, long _loadTime);
 
   public abstract long stopStartTimer(long _nextRefreshTime, Entry<K,V> e);
 
@@ -96,7 +97,7 @@ public abstract class RefreshHandler<K,V>  {
     public void shutdown() { }
 
     @Override
-    public long calculateNextRefreshTime(final Entry<K,V> e, final V v, final long t0) {
+    public long calculateNextRefreshTime(final Entry<K,V> e, final V v, final long _loadTime) {
       return ExpiryCalculator.ETERNAL;
     }
 
@@ -113,7 +114,7 @@ public abstract class RefreshHandler<K,V>  {
   static class Immediate<K,V> extends RefreshHandler<K,V> {
 
     @Override
-    public long calculateNextRefreshTime(final Entry<K,V> e, final V _o, final long t0) {
+    public long calculateNextRefreshTime(final Entry<K,V> e, final V v, final long _loadTime) {
       return 0;
     }
 
@@ -133,7 +134,7 @@ public abstract class RefreshHandler<K,V>  {
     boolean backgroundRefresh;
     Timer timer;
     long maxLinger =  10 * 60 * 1000;
-    long exceptionMaxLinger = 1 * 60 * 1000;
+    long exceptionMaxLinger = 60 * 1000;
     InternalCache cache;
     long timerCancelCount = 0;
 
@@ -180,25 +181,13 @@ public abstract class RefreshHandler<K,V>  {
     }
 
     @Override
-    public long calculateNextRefreshTime(final Entry<K,V> e, final V _o, final long t0) {
-      if (_o instanceof ExceptionWrapper) {
-        if (exceptionMaxLinger == ExpiryCalculator.ETERNAL || exceptionMaxLinger == 0) {
-          return exceptionMaxLinger;
-        }
-        return exceptionMaxLinger + t0;
-      }
-      if (maxLinger == ExpiryCalculator.ETERNAL || maxLinger == 0) {
-        return maxLinger;
-      }
-      return maxLinger + t0;
+    public long calculateNextRefreshTime(final Entry<K,V> e, final V v, final long _loadTime) {
+      return calcNextRefreshTime(e.getKey(), v, _loadTime, e, null, maxLinger, null, exceptionMaxLinger);
     }
 
     @Override
     public long stopStartTimer(long _nextRefreshTime, final Entry e) {
-      TimerTask _task = e.task;
-      if (_task != null) {
-        _task.cancel();
-      }
+      cancelExpiryTimer(e);
       if (_nextRefreshTime == 0) {
         return Entry.EXPIRED;
       }
@@ -231,7 +220,6 @@ public abstract class RefreshHandler<K,V>  {
             scheduleTask(_nextRefreshTime, e);
           }
         }
-      } else {
       }
       return _nextRefreshTime;
     }
@@ -320,11 +308,11 @@ public abstract class RefreshHandler<K,V>  {
         exceptionExpiryCalculator, exceptionMaxLinger);
     }
 
-    public long calculateNextRefreshTime(Entry<K, V> _entry, V _newValue, long now) {
+    public long calculateNextRefreshTime(Entry<K, V> _entry, V _newValue, long _loadTime) {
       if (_entry.isDataValid() || _entry.isExpired()) {
-        return calcNextRefreshTime(_entry.getKey(), _newValue, now, _entry);
+        return calcNextRefreshTime(_entry.getKey(), _newValue, _loadTime, _entry);
       } else {
-        return calcNextRefreshTime(_entry.getKey(), _newValue, now, null);
+        return calcNextRefreshTime(_entry.getKey(), _newValue, _loadTime, null);
       }
     }
 
@@ -340,33 +328,33 @@ public abstract class RefreshHandler<K,V>  {
     K _key, T _newObject, long now, org.cache2k.impl.Entry _entry,
     ExpiryCalculator<K, T> ec, long _maxLinger,
     ExceptionExpiryCalculator<K> _exceptionEc, long _exceptionMaxLinger) {
-    if (!(_newObject instanceof ExceptionWrapper)) {
-      if (_maxLinger == 0) {
+    if (_newObject instanceof ExceptionWrapper) {
+      if (_exceptionMaxLinger == 0) {
         return 0;
       }
-      if (ec != null) {
-        long t = ec.calculateExpiryTime(_key, _newObject, now, _entry);
-        return limitExpiryToMaxLinger(now, _maxLinger, t);
+      if (_exceptionEc != null) {
+        ExceptionWrapper _wrapper = (ExceptionWrapper) _newObject;
+        long t = _exceptionEc.calculateExpiryTime(_key, _wrapper.getException(), now);
+        t = limitExpiryToMaxLinger(now, _exceptionMaxLinger, t);
+        return t;
       }
-      if (_maxLinger < ExpiryCalculator.ETERNAL) {
-        return _maxLinger + now;
+      if (_exceptionMaxLinger < ExpiryCalculator.ETERNAL) {
+        return _exceptionMaxLinger + now;
+      } else {
+        return _exceptionMaxLinger;
       }
-      return _maxLinger;
     }
-    if (_exceptionMaxLinger == 0) {
+    if (_maxLinger == 0) {
       return 0;
     }
-    if (_exceptionEc != null) {
-      ExceptionWrapper _wrapper = (ExceptionWrapper) _newObject;
-      long t = _exceptionEc.calculateExpiryTime(_key, _wrapper.getException(), now);
-      t = limitExpiryToMaxLinger(now, _exceptionMaxLinger, t);
-      return t;
+    if (ec != null) {
+      long t = ec.calculateExpiryTime(_key, _newObject, now, _entry);
+      return limitExpiryToMaxLinger(now, _maxLinger, t);
     }
-    if (_exceptionMaxLinger < ExpiryCalculator.ETERNAL) {
-      return _exceptionMaxLinger + now;
-    } else {
-      return _exceptionMaxLinger;
+    if (_maxLinger < ExpiryCalculator.ETERNAL) {
+      return _maxLinger + now;
     }
+    return _maxLinger;
   }
 
   static long limitExpiryToMaxLinger(long now, long _maxLinger, long t) {
