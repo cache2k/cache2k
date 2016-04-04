@@ -568,16 +568,17 @@ public interface Cache<K, V> extends KeyValueSource<K, V>, Iterable<CacheEntry<K
    void putAll(Map<? extends K, ? extends V> valueMap);
 
   /**
-   * Number of entries the cache holds in total. When iterating the entries
+   * Number of entries the cache stores in total. When iterating the entries
    * the cache will always return less or an identical number of entries.
-   * The reason for this is, that duplicate entries may exist in different
-   * storage layers (typically in heap and in persistent storage), or may be
-   * expired already.
+   *
+   * <p>Expired entries may stay in the cache {@link CacheBuilder#keepDataAfterExpired(boolean)}.
+   * These entries will be counted, but will not be returned by the iterator.
+   *
+   * <p>With the upcoming storage extension the heap cache may also store an entry
+   * for a not existing mapping in order to not recheck the storage all the time.
    *
    * <p>The method has more statistical value and the result depends on the
    * actual configuration of the cache.
-   *
-   * <p>TODO-API: Keep this for the final API? Move to a simple statistics interface?
    */
   int getTotalEntryCount();
 
