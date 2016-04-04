@@ -318,7 +318,7 @@ public abstract class BaseCache<K, V>
     if (c.getHeapEntryCapacity() >= 0) {
       maxSize = c.getHeapEntryCapacity();
     }
-    if (c.isBackgroundRefresh()) {
+    if (c.isRefreshAhead()) {
       setFeatureBit(BACKGROUND_REFRESH, true);
     }
     if (c.getLoaderThreadCount() > 0) {

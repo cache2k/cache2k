@@ -68,6 +68,7 @@ Statistics:
   * deprecated: CacheManager.isDestroyed(), replaced by isClosed()
   * deprecated: CacheBuilder.maxSize, replaced by entryCapacity()
   * deprecated: CacheSource, CacheSourceWithMetaInfo, BulkCacheSource replaced by CacheLoader
+  * deprecated: CacheBuilder.backgroundRefresh, replaced by refreshAhead
   
   * signature change: Replace Set by Iterable, prefetch, getAll 
 

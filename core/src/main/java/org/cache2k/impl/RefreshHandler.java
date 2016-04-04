@@ -183,7 +183,7 @@ public abstract class RefreshHandler<K,V>  {
       } else {
         exceptionMaxLinger = _exceptionExpiryMillis;
       }
-      backgroundRefresh = c.isBackgroundRefresh();
+      backgroundRefresh = c.isRefreshAhead();
       sharpTimeout = c.isSharpExpiry();
     }
 

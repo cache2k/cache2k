@@ -428,8 +428,16 @@ public abstract class CacheBuilder<K, V>
    * <p>Once refreshed, the entry is in a trail period. If it is not accessed until the next
    * expiry, no refresh will be done and the entry expires regularly.
    */
+  public CacheBuilder<K, V> refreshAhead(boolean f) {
+    config.setRefreshAhead(f);
+    return this;
+  }
+
+  /**
+   * @deprecated use {@link #refreshAhead(boolean)}
+   */
   public CacheBuilder<K, V> backgroundRefresh(boolean f) {
-    config.setBackgroundRefresh(f);
+    config.setRefreshAhead(f);
     return this;
   }
 

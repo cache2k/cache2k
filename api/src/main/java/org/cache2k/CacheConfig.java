@@ -49,7 +49,7 @@ public class CacheConfig<K, V> implements Serializable {
   private int maxSizeHighBound = Integer.MAX_VALUE;
   private int maxSizeLowBound = 0;
   private int heapEntryCapacity = -1;
-  private boolean backgroundRefresh = false;
+  private boolean refreshAhead = false;
   private long expiryMillis  = 10 * 60 * 1000;
   private long exceptionExpiryMillis = -1;
   private boolean keepDataAfterExpired = true;
@@ -199,18 +199,36 @@ public class CacheConfig<K, V> implements Serializable {
 
   /**
    *
-   * @see CacheBuilder#backgroundRefresh(boolean)
+   * @see CacheBuilder#refreshAhead(boolean)
    */
-  public boolean isBackgroundRefresh() {
-    return backgroundRefresh;
+  public boolean isRefreshAhead() {
+    return refreshAhead;
   }
 
   /**
    *
-   * @see CacheBuilder#backgroundRefresh(boolean)
+   * @see CacheBuilder#refreshAhead(boolean)
    */
-  public void setBackgroundRefresh(boolean backgroundRefresh) {
-    this.backgroundRefresh = backgroundRefresh;
+  public void setRefreshAhead(boolean v) {
+    this.refreshAhead = v;
+  }
+
+  /**
+   * @deprecated use {@link #isRefreshAhead()}
+   *
+   * @see CacheBuilder#refreshAhead(boolean)
+   */
+  public boolean isBackgroundRefresh() {
+    return refreshAhead;
+  }
+
+  /**
+   * @deprecated use {@link #setRefreshAhead(boolean)}
+   *
+   * @see CacheBuilder#refreshAhead(boolean)
+   */
+  public void setBackgroundRefresh(boolean v) {
+    refreshAhead = v;
   }
 
   public CacheTypeDescriptor getKeyType() {

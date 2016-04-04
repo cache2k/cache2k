@@ -57,7 +57,7 @@ public interface ExpiryCalculator<K, V> {
    * the returned value. If sharp expiry is requested, the value will not be
    * returned any more by the cache when the point in time is reached.
    * The cache parameters {@link org.cache2k.CacheBuilder#sharpExpiry(boolean)}
-   * and {@link org.cache2k.CacheBuilder#backgroundRefresh(boolean)} influence the behaviour.
+   * and {@link org.cache2k.CacheBuilder#refreshAhead(boolean)} influence the behaviour.
    *
    * <p><b>Inserts or updates:</b> It is possible to return different expiry times for
    * insert or updates. An update can be detected by the presence of the old entry.

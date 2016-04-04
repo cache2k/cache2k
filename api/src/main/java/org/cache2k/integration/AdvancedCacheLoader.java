@@ -24,7 +24,6 @@ package org.cache2k.integration;
 
 import org.cache2k.CacheBuilder;
 import org.cache2k.CacheEntry;
-import org.cache2k.integration.CacheLoader;
 
 /**
  * Retrieves or generates a value to load into the cache. The advanced loader interface
@@ -47,7 +46,7 @@ public abstract class AdvancedCacheLoader<K,V> {
    *                     There is no guarantee that an expired entry will be provided to the loader.
    *                     Depending und passed time and configuration expired entries may be purged.
    *                     Check the configuration parameters {@link CacheBuilder#keepDataAfterExpired(boolean)}
-   *                      and {@link CacheBuilder#backgroundRefresh(boolean)}.
+   *                      and {@link CacheBuilder#refreshAhead(boolean)}.
    * @return value to be associated with the key. If the cache permits null values
    *         a null is associated with the key.
    * @throws Exception Unhandled exception from the loader. The exception will be
