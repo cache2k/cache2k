@@ -452,6 +452,21 @@ public abstract class CacheBuilder<K, V>
     return this;
   }
 
+  /**
+   * Ensure that the cache value is stored via direct object reference and that
+   * no serialization takes place. Cache clients leveraging the fact that an in heap
+   * cache stores object references directly should set this value.
+   *
+   * <p>If this value is not set to true this means: The key and value objects need to have a
+   * defined serialization mechanism and cache may choose to use a tiered storage and transfer
+   * data to off heap or disk. For the 1.0 version this value has no effect. It should be
+   * used by application developers to future proof the applications with upcoming versions.
+   */
+  public CacheBuilder<K, V> storeByReference(boolean v) {
+    config.setStoreByReference(v);
+    return this;
+  }
+
   @Deprecated
   public CacheConfig getConfig() {
     return null;

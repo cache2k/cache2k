@@ -39,6 +39,7 @@ import java.util.List;
  */
 public class CacheConfig<K, V> implements Serializable {
 
+  private boolean storeByReference;
   private String name;
   private CacheTypeDescriptor keyType;
   private CacheTypeDescriptor valueType;
@@ -464,4 +465,14 @@ public class CacheConfig<K, V> implements Serializable {
     expiryCalculator = _expiryCalculator;
   }
 
+  public boolean isStoreByReference() {
+    return storeByReference;
+  }
+
+  /**
+   * @see CacheBuilder#storeByReference(boolean)
+   */
+  public void setStoreByReference(final boolean _storeByReference) {
+    storeByReference = _storeByReference;
+  }
 }
