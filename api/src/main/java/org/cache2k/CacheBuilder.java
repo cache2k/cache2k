@@ -433,6 +433,12 @@ public abstract class CacheBuilder<K, V>
     return this;
   }
 
+  /**
+   * By default the expiry time is not exact, which means, a value might be visible a few
+   * milliseconds after the time of expiry. The timing depends on the system load.
+   * Switching to true, means an entry is not visible exactly at and after the time of
+   * expiry.
+   */
   public CacheBuilder<K, V> sharpExpiry(boolean f) {
     config.setSharpExpiry(f);
     return this;
