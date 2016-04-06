@@ -38,8 +38,9 @@ import org.cache2k.impl.operation.Semantic;
 import org.cache2k.impl.operation.Specification;
 import org.cache2k.impl.threading.Futures;
 import org.cache2k.impl.util.Log;
-import org.cache2k.storage.PurgeableStorage;
-import org.cache2k.storage.StorageEntry;
+import org.cache2k.storageApi.PurgeableStorage;
+import org.cache2k.storageApi.StorageAdapter;
+import org.cache2k.storageApi.StorageEntry;
 
 import java.util.HashMap;
 import java.util.Map;

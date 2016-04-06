@@ -37,8 +37,9 @@ import org.cache2k.impl.operation.ExaminationEntry;
 import org.cache2k.impl.operation.Progress;
 import org.cache2k.impl.operation.ReadOnlyCacheEntry;
 import org.cache2k.impl.operation.Semantic;
-import org.cache2k.storage.StorageCallback;
-import org.cache2k.storage.StorageEntry;
+import org.cache2k.storageApi.StorageCallback;
+import org.cache2k.storageApi.StorageAdapter;
+import org.cache2k.storageApi.StorageEntry;
 
 /**
  * This is a method object to perform an operation on an entry.

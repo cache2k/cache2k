@@ -25,7 +25,8 @@ package org.cache2k.impl;
 import org.cache2k.CacheEntry;
 import org.cache2k.customization.ExpiryCalculator;
 import org.cache2k.impl.operation.ExaminationEntry;
-import org.cache2k.storage.StorageEntry;
+import org.cache2k.storageApi.StorageEntry;
+
 import static org.cache2k.impl.util.Util.*;
 
 import java.lang.reflect.Field;
@@ -45,7 +46,7 @@ public class Entry<K, T>
   /**
    * A value greater as means it is a time value.
    */
-  static final int EXPIRY_TIME_MIN = 32;
+  public static final int EXPIRY_TIME_MIN = 32;
 
   /**
    * bigger or equal means entry has / contains valid data
@@ -436,7 +437,7 @@ public class Entry<K, T>
   /**
    * Used for the storage interface.
    *
-   * @see org.cache2k.storage.StorageEntry
+   * @see StorageEntry
    */
   @Override
   public T getValueOrException() {
@@ -446,7 +447,7 @@ public class Entry<K, T>
   /**
    * Used for the storage interface.
    *
-   * @see org.cache2k.storage.StorageEntry
+   * @see StorageEntry
    */
   @Override
   public long getCreatedOrUpdated() {
@@ -456,8 +457,8 @@ public class Entry<K, T>
   /**
    * Used for the storage interface.
    *
-   * @see org.cache2k.storage.StorageEntry
-   * @deprectated Always returns 0, only to fulfill the {@link org.cache2k.storage.StorageEntry} interface
+   * @see StorageEntry
+   * @deprectated Always returns 0, only to fulfill the {@link StorageEntry} interface
    */
   @Override
   public long getEntryExpiryTime() {

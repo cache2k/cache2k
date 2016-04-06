@@ -1,4 +1,4 @@
-package org.cache2k.storage;
+package org.cache2k.storageApi;
 
 /*
  * #%L

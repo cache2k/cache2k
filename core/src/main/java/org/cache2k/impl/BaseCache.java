@@ -121,7 +121,7 @@ public abstract class BaseCache<K, V>
   protected int maxSize = 5000;
 
   protected String name;
-  protected CacheManagerImpl manager;
+  public CacheManagerImpl manager;
   protected AdvancedCacheLoader<K,V> loader;
 
   protected RefreshHandler<K,V> refreshHandler = RefreshHandler.ETERNAL;
@@ -210,7 +210,7 @@ public abstract class BaseCache<K, V>
    * lock, locking on it should be avoided and any operation under the lock should be
    * quick.
    */
-  protected final Object lock = new Object();
+  public final Object lock = new Object();
 
   protected volatile Executor loaderExecutor = new DummyExecutor(this);
 
@@ -228,7 +228,7 @@ public abstract class BaseCache<K, V>
     }
   }
 
-  protected Hash<Entry<K, V>> mainHashCtrl;
+  public Hash<Entry<K, V>> mainHashCtrl;
   protected Entry<K, V>[] mainHash;
 
   protected Hash<Entry<K, V>> refreshHashCtrl;
@@ -237,7 +237,7 @@ public abstract class BaseCache<K, V>
   /** Stuff that we need to wait for before shutdown may complete */
   protected Futures.WaitForAllFuture<?> shutdownWaitFuture;
 
-  protected boolean shutdownInitiated = false;
+  public boolean shutdownInitiated = false;
 
   /**
    * Flag during operation that indicates, that the cache is full and eviction needs
@@ -290,7 +290,7 @@ public abstract class BaseCache<K, V>
   /**
    * Returns name of the cache with manager name.
    */
-  protected String getCompleteName() {
+  public String getCompleteName() {
     if (manager != null) {
       return manager.getName() + ":" + name;
     }
@@ -514,7 +514,7 @@ public abstract class BaseCache<K, V>
     }
   }
 
-  protected void updateShutdownWaitFuture(Future<?> f) {
+  public void updateShutdownWaitFuture(Future<?> f) {
     synchronized (lock) {
       if (shutdownWaitFuture == null || shutdownWaitFuture.isDone()) {
         shutdownWaitFuture = new Futures.WaitForAllFuture(f);
@@ -524,7 +524,7 @@ public abstract class BaseCache<K, V>
     }
   }
 
-  protected void checkClosed() {
+  public void checkClosed() {
     if (isClosed()) {
       throw new CacheClosedException();
     }
@@ -2018,7 +2018,7 @@ public abstract class BaseCache<K, V>
    * Returns all cache entries within the heap cache. Entries that
    * are expired or contain no valid data are not filtered out.
    */
-  final protected ClosableConcurrentHashEntryIterator<org.cache2k.impl.Entry> iterateAllHeapEntries() {
+  public final ClosableConcurrentHashEntryIterator<org.cache2k.impl.Entry> iterateAllHeapEntries() {
     return
       new ClosableConcurrentHashEntryIterator(
         mainHashCtrl, mainHash, refreshHashCtrl, refreshHash);
@@ -2159,7 +2159,7 @@ public abstract class BaseCache<K, V>
     return Hash.calcEntryCount(mainHash) + Hash.calcEntryCount(refreshHash);
   }
 
-  protected final int getLocalSize() {
+  public final int getLocalSize() {
     return mainHashCtrl.size + refreshHashCtrl.size;
   }
 
@@ -2273,7 +2273,7 @@ public abstract class BaseCache<K, V>
    * This is actually a slightly reduced version of the java.util.HashMap
    * hash modification.
    */
-  protected final int modifiedHash(int h) {
+  public final int modifiedHash(int h) {
     h ^= hashSeed;
     h ^= h >>> 7;
     h ^= h >>> 15;

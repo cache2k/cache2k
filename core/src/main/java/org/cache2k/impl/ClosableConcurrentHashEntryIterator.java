@@ -70,7 +70,7 @@ public class ClosableConcurrentHashEntryIterator<E extends Entry>
   Entry[] hashCopy;
   Entry[] hash2Copy;
   Hash<Entry> iteratedCtl = new Hash<Entry>();
-  Entry[] iterated;
+  public Entry[] iterated;
   boolean keepIterated = false;
   boolean stopOnClear = true;
 

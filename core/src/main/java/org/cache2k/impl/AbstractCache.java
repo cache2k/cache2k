@@ -27,6 +27,7 @@ import org.cache2k.processor.CacheEntryProcessor;
 import org.cache2k.processor.EntryProcessingResult;
 import org.cache2k.CustomizationException;
 import org.cache2k.impl.operation.Semantic;
+import org.cache2k.storageApi.StorageAdapter;
 
 import java.util.HashMap;
 import java.util.List;

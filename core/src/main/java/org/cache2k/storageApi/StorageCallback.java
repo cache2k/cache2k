@@ -1,4 +1,4 @@
-package org.cache2k.storage;
+package org.cache2k.storageApi;
 
 /*
  * #%L
@@ -22,26 +22,16 @@ package org.cache2k.storage;
  * #L%
  */
 
-import java.util.concurrent.atomic.AtomicLongFieldUpdater;
+import org.cache2k.storageApi.StorageEntry;
 
 /**
  * @author Jens Wilke
  */
-@SuppressWarnings("unused")
-public class StandardStorageMetrics implements StorageMetrics.Updater {
+public interface StorageCallback {
 
-  final static AtomicLongFieldUpdater<StandardStorageMetrics> READ_MISS_UPDATER =
-    AtomicLongFieldUpdater.newUpdater(StandardStorageMetrics.class, "readMiss");
-  private volatile long readMiss;
-  @Override
-  public void readMiss() {
-    READ_MISS_UPDATER.incrementAndGet(this);
-  }
-  @Override
-  public void readMiss(long cnt) { READ_MISS_UPDATER.addAndGet(this, cnt); }
-  @Override
-  public long getReadMiss() {
-    return READ_MISS_UPDATER.get(this);
-  }
+  void onReadSuccess(StorageEntry e);
+  void onReadFailure(Throwable t);
+  void onStoreSuccess(boolean _entryRemoved);
+  void onStoreFailure(Throwable t);
 
 }

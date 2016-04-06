@@ -1,4 +1,4 @@
-package org.cache2k.impl;
+package org.cache2k.storageApi;
 
 /*
  * #%L
@@ -23,7 +23,9 @@ package org.cache2k.impl;
  */
 
 import org.cache2k.ClosableIterator;
-import org.cache2k.storage.StorageEntry;
+import org.cache2k.impl.CacheInternalError;
+import org.cache2k.impl.CacheStorageException;
+import org.cache2k.impl.Entry;
 
 import java.util.concurrent.Future;
 
@@ -77,7 +79,7 @@ public abstract class StorageAdapter {
   public abstract void disable(Throwable t);
 
   /** Implemented by a storage user, a cache or aggregator */
-  static interface Parent {
+  public interface Parent {
 
     /** Change the storage implementation to another one or null for a disconnect */
     void resetStorage(StorageAdapter _current, StorageAdapter _new);
@@ -91,7 +93,7 @@ public abstract class StorageAdapter {
     return new CacheStorageException(txt, ex);
   }
 
-  protected static void rethrow(String txt, Throwable ex) {
+  public static void rethrow(String txt, Throwable ex) {
     if (ex instanceof Error || ex.getCause() instanceof Error) {
       throw new CacheInternalError(txt, ex);
     }

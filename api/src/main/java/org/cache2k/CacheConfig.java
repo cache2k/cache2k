@@ -427,18 +427,6 @@ public class CacheConfig<K, V> implements Serializable {
     this.implementation = cacheImplementation;
   }
 
-  public List<StorageConfiguration> getStorageModules() {
-    if (moduleConfiguration == null) {
-      return Collections.emptyList();
-    }
-    ArrayList<StorageConfiguration> l = new ArrayList<StorageConfiguration>();
-    for (Object o : moduleConfiguration) {
-      if (o instanceof StorageConfiguration) {
-        l.add((StorageConfiguration) o);
-      }
-    }
-    return l;
-  }
 
   public CacheLoader<K,V> getLoader() {
     return loader;

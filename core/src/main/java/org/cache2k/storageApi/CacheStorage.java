@@ -1,4 +1,4 @@
-package org.cache2k.storage;
+package org.cache2k.storageApi;
 
 /*
  * #%L
@@ -21,6 +21,9 @@ package org.cache2k.storage;
  * <http://www.gnu.org/licenses/gpl-3.0.html>.
  * #L%
  */
+
+import org.cache2k.storageApi.StorageEntry;
+import org.cache2k.storageApi.PurgeableStorage;
 
 import java.io.IOException;
 import java.util.concurrent.ExecutorService;
@@ -80,7 +83,7 @@ public interface CacheStorage {
 
   /**
    * Iterate over all stored entries and call the entry visitor. It is generally safe to
-   * return expired entries. If {@link org.cache2k.storage.PurgeableStorage} is not
+   * return expired entries. If {@link PurgeableStorage} is not
    * implemented, returning expired entries is a must, to support the generic purge
    * algorithm.
    *

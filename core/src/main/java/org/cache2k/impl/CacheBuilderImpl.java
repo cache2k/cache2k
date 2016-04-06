@@ -34,7 +34,6 @@ import org.cache2k.CacheConfig;
 import org.cache2k.CacheManager;
 import org.cache2k.CacheSource;
 import org.cache2k.CacheSourceWithMetaInfo;
-import org.cache2k.StorageConfiguration;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
@@ -190,11 +189,8 @@ public class CacheBuilderImpl<K, T> extends CacheBuilder<K, T> {
 
     boolean _wrap = false;
 
-    List<StorageConfiguration> _stores = config.getStorageModules();
-
     if (syncListeners != null) { _wrap = true; }
     if (cacheWriter != null) { _wrap = true; }
-    if (!_stores.isEmpty()) { _wrap = true; }
 
     WiredCache<K, T> wc = null;
     if (_wrap) {
@@ -206,15 +202,6 @@ public class CacheBuilderImpl<K, T> extends CacheBuilder<K, T> {
     String _name = cm.newCache(_cache, bc.getName());
     bc.setName(_name);
     if (_wrap) {
-      if (_stores.size() == 1) {
-        StorageConfiguration cfg = _stores.get(0);
-        if (cfg.getEntryCapacity() < 0) {
-          cfg.setEntryCapacity(config.getEntryCapacity());
-        }
-        wc.storage = new PassingStorageAdapter(wc, bc, wc, config, _stores.get(0));
-      } else if (_stores.size() > 1) {
-        throw new UnsupportedOperationException("no aggregation support yet");
-      }
       wc.loader = bc.loader;
       if (cacheWriter != null) {
         wc.writer = cacheWriter;

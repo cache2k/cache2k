@@ -193,7 +193,7 @@ public abstract class CacheBuilder<K, V>
    * shortened if the manager name is included as prefix.
    *
    * @see Cache#getName()
-   * @see org.cache2k.StorageConfiguration.Builder#storageName(String)
+   * @see StorageConfiguration.Builder#storageName(String)
    */
   public CacheBuilder<K, V> name(String v) {
     config.setName(v);

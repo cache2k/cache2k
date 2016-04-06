@@ -24,12 +24,14 @@ package org.cache2k.impl;
 
 import org.cache2k.spi.Cache2kCoreProvider;
 import org.cache2k.spi.Cache2kManagerProvider;
-import org.cache2k.storage.ImageFileStorage;
 
 /**
  * @author Jens Wilke; created: 2014-04-20
  */
 public class Cache2kCoreProviderImpl extends Cache2kCoreProvider {
+
+  static Class<?> DEFAULT_STORAGE_IMPLEMENTATION;
+
 
   Cache2kManagerProviderImpl provider;
 
@@ -48,7 +50,7 @@ public class Cache2kCoreProviderImpl extends Cache2kCoreProvider {
 
   @Override
   public Class<?> getDefaultPersistenceStoreImplementation() {
-    return ImageFileStorage.class;
+    return DEFAULT_STORAGE_IMPLEMENTATION;
   }
 
 }

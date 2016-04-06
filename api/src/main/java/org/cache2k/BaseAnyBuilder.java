@@ -34,20 +34,12 @@ public abstract class BaseAnyBuilder<K, T, C>
 
   protected CacheBuilder<K, T> root;
 
-  BaseAnyBuilder() { }
+  protected BaseAnyBuilder() { }
 
   void setRoot(CacheBuilder<K, T> v) {
     root = v;
   }
 
-  /**
-   * Adds persistence to the cache or returns a previous added persistence storage
-   * configuration node. The persistence configuration is taken from a default
-   * configuration. Ideally speaking requesting persistence means that the
-   * cache contains data that is costly to reproduce and/or needs a big
-   * amount of storage which is not available within the java heap.
-   */
-  public StorageConfiguration.Builder<K, T, ?> persistence() { return root.persistence(); }
 
   public CacheBuilder<K, T> root() {
     return root;

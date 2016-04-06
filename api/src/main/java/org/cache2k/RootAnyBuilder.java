@@ -35,18 +35,10 @@ public abstract class RootAnyBuilder<K, V>
 
   private List<BaseAnyBuilder> modules = Collections.emptyList();
   protected CacheConfig config;
-  StorageConfiguration.Builder<K, V, ?> persistence;
 
   /** Closed for extension */
   RootAnyBuilder() { }
 
-  @Override
-  public StorageConfiguration.Builder<K, V, ?> persistence() {
-    if (persistence == null) {
-      persistence = addModule(new StorageConfiguration.Builder());
-    }
-    return persistence;
-  }
 
   @Override
   public CacheConfig createConfiguration() {
