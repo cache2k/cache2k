@@ -117,4 +117,14 @@ public class CacheBuilderTest {
     c.close();
   }
 
+  @Test
+  public void cacheNameForAnnotationDefault() {
+    Cache<Long, List<String>> c =
+      (Cache<Long, List<String>>)
+        CacheBuilder.newCache()
+          .name("package.name.ClassName.methodName(package.ParameterType,package.ParameterType")
+          .build();
+    c.close();
+  }
+
 }

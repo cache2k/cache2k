@@ -124,7 +124,11 @@ public class CacheManagerImpl extends CacheManager {
           c == '-' ||
           c == '~' ||
           c == '@' ||
-          c == ' ') {
+          c == ' ' ||
+          c == ',' ||
+          c == '(' ||
+          c == ')'
+        ) {
         continue;
       }
       if (!Character.isJavaIdentifierPart(c)) {
