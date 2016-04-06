@@ -537,13 +537,13 @@ public class EntryAction<K, V, R> implements StorageCallback, AsyncCacheLoader.C
       checkKeepOrRemove();
       return;
     } else {
-      if (entry.isVirgin()) {
-        metrics().putNewEntry();
-      } else {
-        if (!wantData) {
-          metrics().putNoReadHit();
+      if (expiry > 0) {
+        if (entry.isVirgin()) {
+          metrics().putNewEntry();
         } else {
-          if (expiry > 0) {
+          if (!wantData) {
+            metrics().putNoReadHit();
+          } else {
             metrics().putHit();
           }
         }
@@ -645,19 +645,9 @@ public class EntryAction<K, V, R> implements StorageCallback, AsyncCacheLoader.C
       mutationUpdateHeap();
       return;
     }
-    if (entry.isDataValid()) {
-      expiredImmediatelyDoRemove();
-      return;
-    }
-    expiredImmediatelySkipMutation();
+    expiredImmediatelyDoRemove();
   }
 
-  public void expiredImmediatelySkipMutation() {
-    synchronized (heapCache.lock) {
-      heapCache.putButExpiredCnt++;
-    }
-    noMutationRequested();
-  }
 
 
   public void expiredImmediatelyDoRemove() {
@@ -765,7 +755,7 @@ public class EntryAction<K, V, R> implements StorageCallback, AsyncCacheLoader.C
   }
 
   public void mutationReleaseLock() {
-    if (load) {
+    if (load && !remove) {
       operation.loaded(this, entry);
     }
     synchronized (entry) {
