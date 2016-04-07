@@ -209,10 +209,6 @@ public abstract class CacheBuilder<K, V>
    * The maximum number of entries hold by the cache. When the maximum size is reached, by
    * inserting new entries, the cache eviction algorithm will remove one or more entries
    * to keep the size within the configured limit.
-   *
-   * <p>In case of an attached storage this setting means the total cache capacity. A different
-   * in heap capacity can be set by {@link #heapEntryCapacity}.
-   *
    */
   public CacheBuilder<K, V> entryCapacity(int v) {
     config.setEntryCapacity(v);
@@ -256,7 +252,7 @@ public abstract class CacheBuilder<K, V>
   }
 
   /**
-   * Maximum count of entries stored in heap.
+   * @deprecated since 0.24, only needed for storage
    */
   public CacheBuilder<K, V> heapEntryCapacity(int v) {
     config.setHeapEntryCapacity(v);

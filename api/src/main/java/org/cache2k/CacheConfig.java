@@ -399,13 +399,15 @@ public class CacheConfig<K, V> implements Serializable {
     this.suppressExceptions = suppressExceptions;
   }
 
+  /**
+   * @deprecated since 0.24, only needed for storage
+   */
   public int getHeapEntryCapacity() {
     return heapEntryCapacity;
   }
 
   /**
-   * Maximum number of entries that the cache keeps in the heap.
-   * Only relevant if a storage modules is defined.
+   * @deprecated since 0.24, only needed for storage
    */
   public void setHeapEntryCapacity(int v) {
     this.heapEntryCapacity = v;
