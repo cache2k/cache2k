@@ -2,10 +2,15 @@
 
 ## New and Noteworthy
 
-  * Change to Apache license
-  TODO: check API, add since, add comment!
-  * entry processor scheme like in JSR107: Cache.invokeAll,
-  * Beginning of JSR107 support.
+  * Restructuring the API and improving the documentation. This is ongoing work. We will do some more releases in a 
+    short interval while working towards a 1.0 version, which then freezes the API.
+  * Change code base to Apache license  
+  * JSR107 support, TCK complete but not production ready
+  * Complete set of CAS-Operations
+  * Entry processor similar to JSR107
+  * Storage and persistence code and configuration is removed (it is not dead and will reappear in a post 1.0 release)
+  * CacheWriter
+  * Events
 
 ## Potential breakages
 
@@ -14,11 +19,10 @@ changes are done with breaking existing semantics, which will most likely not af
 Everything that will most likely break applications will be introduced as a new API and the old one will 
 get deprecated. Modifications in the statistics output will not listed as breakage.
 
-  * Semantics of Cache.getAll() changed. Instead of returning always a map size equal to the requested count of keys,
+  * Semantics of `Cache.getAll()` changed. Instead of returning always a map size equal to the requested count of keys,
     only keys with a non-null mapping are returned in the map.
-  * Added generic types to the methods CacheBuilder.entryExpiryCalculator and CacheBuilder.exceptionExpiryCalculator
-  * Bulk API signatures changed from Set<K> to Iterable<? extends K>
-    TODO: !!!!!!!!!
+  * Added generic types to the methods `CacheBuilder.entryExpiryCalculator` and `CacheBuilder.exceptionExpiryCalculator`
+  * Bulk API signatures changed from `Set<K>` to `Iterable<? extends K>`
 
 ## Bug fixes
 
@@ -59,17 +63,16 @@ Statistics:
   * JMX statistics: initial getHitRate() value is 0.0
   * JMX statistics: initial getMillisPerFetch() value is 0.0
 
-
 ## API Changes and new methods
 
-  * grouped in subpackages, similar to JSR107: integration, configuration, event, processor, customization
+  * regrouped in subpackages, similar to JSR107: integration, configuration, event, processor, customization
 
   * deprecated: CacheManager.isDestroyed(), replaced by isClosed()
   * deprecated: CacheBuilder.maxSize, replaced by entryCapacity()
   * deprecated: CacheSource, CacheSourceWithMetaInfo, BulkCacheSource replaced by CacheLoader
   * deprecated: CacheBuilder.backgroundRefresh, replaced by refreshAhead
   
-  * signature change: Replace Set by Iterable, prefetch, getAll 
+  * signature change: Replace `Set` by `Iterable`, in `prefetchAll()`, `getAll()`, `loadAll()`, `removeAll`  
 
   * new: CacheLoader, replaces CacheSource
   * new: AdvancedCacheLoader, replaces CacheSourceWithMetaInfo
@@ -86,6 +89,6 @@ Statistics:
   * new: Cache.removeAll()
   * new: Cache.invoke() and Cache.invokeAll()
   * new: Cache.putAll()
-  * CacheLoaderException used for wrapping loader exceptions, replaces PropagatedCacheException
+  * new: CacheLoaderException used for wrapping loader exceptions, replaces PropagatedCacheException
 
   * Stronger typing: Added generic types to the methods CacheBuilder.entryExpiryCalculator and CacheBuilder.exceptionExpiryCalculator
