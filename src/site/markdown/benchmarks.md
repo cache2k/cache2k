@@ -1,5 +1,10 @@
 # Benchmarks
 
+*Update: Meanwhile these benchmarks are two years old. The benchmarks are currently improved
+and extended. This page will be updated when some useful and complete state is reached.
+The latest development can be found at Jens' blog, starting here:
+[Java Caching Benchmarks 2016 - Part 1](http://cruftex.net/2016/03/16/Java-Caching-Benchmarks-2016-Part-1.html)*
+
 Here are some benchmarks. But let's start with the disclaimer: *There are lies,
 damn lies and benchmarks!* The benchmarks as well as the cache2k cache algorithms
 are still under heavy development. The code to reproduce the benchmarks
