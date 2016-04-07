@@ -1,5 +1,12 @@
 # cache2k version 0.24 release notes
 
+## New and Noteworthy
+
+  * Change to Apache license
+  TODO: check API, add since, add comment!
+  * entry processor scheme like in JSR107: Cache.invokeAll,
+  * Beginning of JSR107 support.
+
 ## Potential breakages
 
 Changes in semantics or API that may break existing applications are listed here. In general, only very minor
@@ -20,14 +27,6 @@ If something is listed here it might affect an existing application and updating
   * Enabled background refresh and entry expiry calculator: In case the calculator returned the current time or a past time, the 
     entry was not marked as expired.
   * Fix possible race condition in cache manager when adding and closing caches and requesting an iteration of the existing caches
-
-## New and Noteworthy
-
-  TODO: check API, add since, add comment!
-  * entry processor scheme like in JSR107: Cache.invokeAll,
-  * Beginning of JSR107 support.
-
-## 
 
 ## Fixes and Improvements
 

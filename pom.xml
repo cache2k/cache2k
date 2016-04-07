@@ -81,7 +81,7 @@
           <artifactId>license-maven-plugin</artifactId>
           <version>1.5</version>
           <configuration>
-            <licenseName>gpl_v3</licenseName>
+            <licenseName>apache_v2</licenseName>
           </configuration>
         </plugin>
 

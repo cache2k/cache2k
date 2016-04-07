@@ -141,7 +141,7 @@ Please use the issue tracker for bugs and wishes you step upon. We also monitor 
 
 ## License
 
-The code is released under GPLv3. We are aware, that this is not a fit for everyone. Details are discussed at [Issue 13](https://github.com/headissue/cache2k/issues/13). 
+The code is released under Apache license. 
 
 ## Alternatives
 
