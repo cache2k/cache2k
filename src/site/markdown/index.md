@@ -6,6 +6,7 @@ the name cache2k.
 
 ## News
 
+  * **Version 0.23.1, 2016-04-07**: Switch to Apache license, bug fix, See [Version 0.23.1 release notes](0/23.1.html)
   * **Version 0.23, 2016-02-10**: OSGi support, ClockProPlus eviction becomes default, See [Version 0.23 release notes](0/23.html)
   * **Version 0.22.1, 2016-01-13**: Bugfix release, Update recommended. See [Version 0.22.1 release notes](0/22.1.html)
   * **Version 0.22, 2015-12-29**: Minor bug fix release. See [Version 0.22 release notes](0/22.html)
