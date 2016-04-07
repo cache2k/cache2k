@@ -2,15 +2,6 @@
 
 ## New and Noteworthy
 
-  * Restructuring the API and improving the documentation. This is ongoing work. We will do some more releases in a 
-    short interval while working towards a 1.0 version, which then freezes the API.
-  * Change code base to Apache license  
-  * JSR107 support, TCK complete but not production ready
-  * Complete set of CAS-Operations
-  * Entry processor similar to JSR107
-  * Storage and persistence code and configuration is removed (it is not dead and will reappear in a post 1.0 release)
-  * CacheWriter
-  * Events
 
 ## Potential breakages
 
@@ -19,76 +10,16 @@ changes are done with breaking existing semantics, which will most likely not af
 Everything that will most likely break applications will be introduced as a new API and the old one will 
 get deprecated. Modifications in the statistics output will not listed as breakage.
 
-  * Semantics of `Cache.getAll()` changed. Instead of returning always a map size equal to the requested count of keys,
-    only keys with a non-null mapping are returned in the map.
-  * Added generic types to the methods `CacheBuilder.entryExpiryCalculator` and `CacheBuilder.exceptionExpiryCalculator`
-  * Bulk API signatures changed from `Set<K>` to `Iterable<? extends K>`
 
 ## Bug fixes
 
 If something is listed here it might affect an existing application and updating is recommended.
 
-  * Enabled background refresh and entry expiry calculator: In case the calculator returned the current time or a past time, the 
-    entry was not marked as expired.
-  * Fix possible race condition in cache manager when adding and closing caches and requesting an iteration of the existing caches
 
 ## Fixes and Improvements
 
 Fixes of corner cases that are most likely not affecting any existing applications and improvements are listed here.
   
-  * separate thread pool for asynchronous loader calls, via loadAll and prefetch, see CacheBuilder.loaderThreads 
-  * Restore thread interrupt status, if an interruption exception is suppressed inside the cache
-  * Deprecated configuration parameters not in use
-  * Added lots of documentation to the configuration classes
-  * Performance improvement: put() on existing entry by 15%
-  * Typing: "unsupported" exception if an array is used for key or value types
-  * Typing: Actual type parameters of generic types can be stored in the cache config
-  * Typing: Converted CacheConfig to a generic type, transporting the key/value types at compile time
-  * The cache manager logs the used default cache implementation at startup
-  * Performance improvement: read access and cache hit (approx. 5%) on 64 bit JVMs
-  * Cache.iterator(): Proper exception on wrong usage of iterator pattern
-  * Cache.iterator(): Fix semantics for direct call to next() without call to hasNext()
-  * Handle exceptions within the expiry calculator more gracefully (still needs work, entry state is inconsistent if an exceptions happens here)
-  * ExceptionPropagator for customising the propagation of cached exception
-  * backgroundRefresh and sharpExpiry moved to CacheBuilder and documented
-  * Switching on eternal will not cache exceptions forever
-  * honor keepDataAfterExpired(false) correctly and remove expired entries from the cache
-
-Statistics:
-
-  * Cache.contains(), does no access recording if no storage is attached. Change because JSR107 specifies that a contains() does 
-    not count the same ways as get(). However, cache2k has no dedicated counters for get(), but counts every access, which also is a
-    hit for the eviction algorithm. This means, the contains() call does not the prevent the entry from being evicted, which may
-    be undesired. Treating the contains as an access to an entry has pros and cons.
-  * JMX statistics: initial getHitRate() value is 0.0
-  * JMX statistics: initial getMillisPerFetch() value is 0.0
 
 ## API Changes and new methods
 
-  * regrouped in subpackages, similar to JSR107: integration, configuration, event, processor, customization
-
-  * deprecated: CacheManager.isDestroyed(), replaced by isClosed()
-  * deprecated: CacheBuilder.maxSize, replaced by entryCapacity()
-  * deprecated: CacheSource, CacheSourceWithMetaInfo, BulkCacheSource replaced by CacheLoader
-  * deprecated: CacheBuilder.backgroundRefresh, replaced by refreshAhead
-  
-  * signature change: Replace `Set` by `Iterable`, in `prefetchAll()`, `getAll()`, `loadAll()`, `removeAll`  
-
-  * new: CacheLoader, replaces CacheSource
-  * new: AdvancedCacheLoader, replaces CacheSourceWithMetaInfo
-  * new: Cache.peekAndReplace()
-  * new: Cache.peekAndRemove()
-  * new: Cache.peekAndPut()
-  * new: Cache.remove(key, oldValue)
-  * new: Cache.replace(key, oldValue, newValue)
-  * new: Cache.replace(key, newValue)
-  * new: Cache.peekAll()
-  * new: Cache.isClosed()
-  * new: CacheManager.isClosed()
-  * new: Cache.getCacheManager()
-  * new: Cache.removeAll()
-  * new: Cache.invoke() and Cache.invokeAll()
-  * new: Cache.putAll()
-  * new: CacheLoaderException used for wrapping loader exceptions, replaces PropagatedCacheException
-
-  * Stronger typing: Added generic types to the methods CacheBuilder.entryExpiryCalculator and CacheBuilder.exceptionExpiryCalculator
