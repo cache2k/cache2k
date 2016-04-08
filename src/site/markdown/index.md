@@ -4,6 +4,43 @@ cache2k focuses on providing a well engineered in-memory object cache implementa
 Java applications. The implementation leads back to a project started in 2000, hence
 the name cache2k.
 
+## Features at a glance
+
+The main aim is to get a small footprint core cache implementation which does
+
+ * One of the fastest cache for JVM local caching, see [the benchmarks page](benchmarks.html)
+ * Exception handling and resilience
+ * Null value support
+ * Expiry/update on time
+ * Variable expiry per entry
+ * Blocking read through, avoiding the thundering herds problem
+ * Refresh ahead
+ * Build-in efficient statistics (Cannot be disabled)
+ * JMX
+ * ...
+
+Since it is fresh open source, we will put up a detailed description of each feature as well
+polish the API and semantics one after another.
+
+## Status
+
+We use every cache2k release within production environments. However, some of the basic features
+are still evolving and there may be API breaking changes until we reach version 1.0.
+
+## Roadmap
+
+  * _1.0_, finalize JSR107 JCache support, stabilize API, documentation (April/May 2016)
+  * _1.2_, improve Bulk performance, reduce threads needed for timing (June 2016)
+  * _1.4_, async support (August 2016)
+  * _1.6_, persistence and off-heap features (November 2016)
+  
+Disclaimer:
+
+The information presented is not a commitment, promise, or legal obligation to deliver any material, code or functionality.
+Product capabilities, schedules and features are subject to change. To drive the project direction please vote for
+a feature by commenting "+1". If you need a commitment or need a special feature for your own product, please contact
+us.
+
 ## News
 
   * **Version 0.23.1, 2016-04-07**: Switch to Apache license, bug fix, See [Version 0.23.1 release notes](0/23.1.html)
@@ -17,15 +54,11 @@ the name cache2k.
     exception handling, android compatible core module, see [Version 0.20 release notes](0/20.html)
   * **Version 0.19.2, 2014-09-23**: Rerelease of 0.19, compatible to Android. 
     JMX support is dropped in this version. JMX support will be available in an extra jar in the future. 
-  * **Version 0.19.1, 2014-03-13**: Rerelease, now on Maven Central!
+  * **Version 0.19.1, 2014-03-13**: Re-release, now on Maven Central!
   * **Version 0.19, 2014-02-25**: JMX support enabled, bulk API enhancements,
     simple transaction support, see [Version 0.19 release notes](0/19.html)
   * **Version 0.18, 2013-12-18**: Initial open source release
 
-## Status
-
-We use every cache2k release within production environments. However, some of the basic features
-are still evolving and there may be API breaking changes until we reach version 1.0.
 
 ## Integrating cache2k in your project
 
@@ -118,23 +151,6 @@ Mind, that the methods get() and peek() have distinct behaviour in cache2k. get(
 do its best to get the date, peek() will only return data if the cache contains it. The
 presence of the cache source does not change this behaviour.
 
-## Features
-
-The main aim is to get a small footprint core cache implementation which does
-
- * Fast
- * Even faster with lock free cache access (experimental), see [the benchmarks page](benchmarks.html)
- * Exception support
- * Null value support
- * Expiry/update on time
- * Background refreshing
- * Nice statistics
- * JMX
- * ...
-
-Since it is fresh open source, we will put up a detailed description of each feature as well
-polish the API and semantics one after another. See our [todo list](todo.html)
-
 ## Feedback
 
 Please use the issue tracker for bugs and wishes you step upon. We also monitor the stackoverflow.com tag
@@ -153,6 +169,7 @@ which you should take a look on:
  * EHCache
  * JCS
  * JBoss Infinispan
+ * Caffeine
 
 ## Credits
 
