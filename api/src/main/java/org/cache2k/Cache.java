@@ -187,8 +187,6 @@ public interface Cache<K, V> extends KeyValueSource<K, V>, Iterable<CacheEntry<K
    *
    * @param key key with which the specified value is associated
    * @param value value to be associated with the specified key
-   * @return {@code true} if a mapping is present and the value was replaced.
-   *         {@code false} if no entry is present and no action was performed.
    * @throws ClassCastException if the class of the specified key or value
    *         prevents it from being stored in this cache.
    * @throws NullPointerException if the specified key is null or the

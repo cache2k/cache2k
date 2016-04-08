@@ -39,10 +39,9 @@ public interface BulkCacheSource<K, V> {
    *
    * @param entries list of entries / keys we want the data for
    * @param currentTime time in millis just before the call to this method
-   * @return
    * @throws Throwable
    */
-  public List<V> getValues(
+  List<V> getValues(
     List<CacheEntry<K, V>> entries,
     long currentTime) throws Throwable;
 
