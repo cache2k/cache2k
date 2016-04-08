@@ -9,6 +9,7 @@ the name cache2k.
 The main aim is to get a small footprint core cache implementation which does
 
  * One of the fastest cache for JVM local caching, see [the benchmarks page](benchmarks.html)
+ * Android compatible
  * Exception handling and resilience
  * Null value support
  * Expiry/update on time
