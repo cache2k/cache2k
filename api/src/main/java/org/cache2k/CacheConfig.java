@@ -320,7 +320,7 @@ public class CacheConfig<K, V> implements Serializable {
   }
 
   /**
-   * @depcrecated use {@link #setExpiryMillis}
+   * @deprecated use {@link #setExpiryMillis}
    */
   public void setExpirySeconds(int v) {
     if (v == -1 || v == Integer.MAX_VALUE) {
