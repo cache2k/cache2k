@@ -456,7 +456,7 @@ public class Entry<K, T>
    * Used for the storage interface.
    *
    * @see StorageEntry
-   * @deprectated Always returns 0, only to fulfill the {@link StorageEntry} interface
+   * @deprecated  Always returns 0, only to fulfill the {@link StorageEntry} interface
    */
   @Override
   public long getEntryExpiryTime() {
