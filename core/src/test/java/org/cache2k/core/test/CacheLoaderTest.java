@@ -20,6 +20,8 @@ package org.cache2k.core.test;
  * #L%
  */
 
+import org.cache2k.core.test.util.Condition;
+import org.cache2k.core.test.util.ConcurrencyHelper;
 import org.cache2k.integration.AdvancedCacheLoader;
 import org.cache2k.Cache;
 import org.cache2k.CacheBuilder;
@@ -128,30 +130,37 @@ public class CacheLoaderTest {
   }
 
   @Test
-  public void testPrefetch() {
-    Cache<Integer,Integer> c = builder()
-      .loader(new CacheLoader<Integer, Integer>() {
-        @Override
-        public Integer load(final Integer key) throws Exception {
-          return key * 2;
-        }
-      })
-      .build();
-    c.prefetch(123);
-    assertTrue(latestInfo(c).getAsyncLoadsStarted() > 0);
-    c.close();
+  public void testPrefetch() throws Exception {
+    for (int i = 0; i < 1000; i++){
+      Cache<Integer, Integer> c = builderWithLoader().build();
+      c.prefetch(123);
+      assertTrue("Iteration " + i, isLoadStarted(c));
+      c.close();
+    }
+  }
+
+  /**
+   * getAsyncLoadsStarted uses the task count from the executor which is not
+   * exact. We use is since we only want to know whether the loader will
+   * be invoked, testing for the enqueued task is sufficient and faster.
+   * Await the execution of the loader as fallback.
+   */
+  private boolean isLoadStarted(final Cache<Integer, Integer> _c) {
+    if (latestInfo(_c).getAsyncLoadsStarted() > 0) {
+      return true;
+    }
+    ConcurrencyHelper.await("Await loader execution", new Condition() {
+      @Override
+      public boolean check() throws Exception {
+        return loaderExecutionCount > 0;
+      }
+    });
+    return true;
   }
 
   @Test
   public void testNoPrefetch() {
-    Cache<Integer,Integer> c = builder()
-      .loader(new CacheLoader<Integer, Integer>() {
-        @Override
-        public Integer load(final Integer key) throws Exception {
-          return key * 2;
-        }
-      })
-      .build();
+    Cache<Integer,Integer> c = builderWithLoader().build();
     c.put(123, 3);
     c.prefetch(123);
     assertTrue(latestInfo(c).getAsyncLoadsStarted() == 0);
@@ -160,29 +169,15 @@ public class CacheLoaderTest {
 
   @Test
   public void testPrefetchAll() {
-    Cache<Integer,Integer> c = builder()
-      .loader(new CacheLoader<Integer, Integer>() {
-        @Override
-        public Integer load(final Integer key) throws Exception {
-          return key * 2;
-        }
-      })
-      .build();
+    Cache<Integer,Integer> c = builderWithLoader().build();
     c.prefetchAll(asSet(1,2,3));
-    assertTrue(latestInfo(c).getAsyncLoadsStarted() > 0);
+    assertTrue(isLoadStarted(c));
     c.close();
   }
 
   @Test
   public void testNoPrefetchAll() {
-    Cache<Integer,Integer> c = builder()
-      .loader(new CacheLoader<Integer, Integer>() {
-        @Override
-        public Integer load(final Integer key) throws Exception {
-          return key * 2;
-        }
-      })
-      .build();
+    Cache<Integer,Integer> c = builderWithLoader().build();
     c.put(1,1);
     c.put(2,2);
     c.put(3,3);
@@ -251,6 +246,22 @@ public class CacheLoaderTest {
       CacheBuilder.newCache(Integer.class, Integer.class)
         .name(this.getClass().getSimpleName())
         .eternal(true);
+  }
+
+  volatile int loaderExecutionCount = 0;
+
+  protected CacheBuilder<Integer, Integer> builderWithLoader() {
+    return
+      CacheBuilder.newCache(Integer.class, Integer.class)
+        .name(this.getClass().getSimpleName())
+        .eternal(true)
+        .loader(new CacheLoader<Integer, Integer>() {
+          @Override
+          public Integer load(final Integer key) throws Exception {
+            loaderExecutionCount++;
+            return key * 2;
+          }
+        });
   }
 
   class CompletionWaiter implements LoadCompletedListener {
