@@ -69,16 +69,4 @@ public class OsgiIT {
     c.close();
   }
 
-  @Test @Ignore("SPI for marshallers not working.")
-  public void testWithSerialization() {
-    Cache<String, String> c =
-      CacheBuilder.newCache(String.class, String.class)
-        .persistence()
-        .build();
-    c.put("abc", "123");
-    assertTrue(c.contains("abc"));
-    assertEquals("123", c.peek("abc"));
-    c.close();
-  }
-
 }
