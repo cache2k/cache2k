@@ -10,13 +10,14 @@ The main aim is to get a small footprint core cache implementation which does
 
  * One of the fastest cache for JVM local caching, see [the benchmarks page](benchmarks.html)
  * Android compatible
+ * Portable Java code, no use of `sun.misc.Unsafe`
  * Exception handling and resilience
  * Null value support
  * Expiry/update on time
  * Variable expiry per entry
  * Blocking read through, avoiding the thundering herds problem
  * Refresh ahead
- * Build-in efficient statistics (Cannot be disabled)
+ * Build-in, efficient statistics (Cannot be disabled)
  * JMX
  * ...
 
