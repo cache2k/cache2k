@@ -46,6 +46,7 @@ public abstract class LockFreeCache<K, V> extends BaseCache<K, V> {
       return e;
     }
     synchronized (lock) {
+      checkClosed();
       e = lookupEntry(key, hc);
       if (e == null) {
         e = newEntry(key, hc);
