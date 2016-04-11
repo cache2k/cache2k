@@ -1403,7 +1403,7 @@ public abstract class BaseCache<K, V>
 
   /**
    * True if we have spare threads in the thread pool that we can use for
-   * prefetching. If we get an instruction the prefetch, only do so if there
+   * prefetching. If we get an instruction to prefetch, only do so if there
    * are enough resources available, since we don't want to block out potentially
    * more important refresh tasks from executing.
    */
