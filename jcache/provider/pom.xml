@@ -39,10 +39,17 @@
       <artifactId>cache2k-api</artifactId>
       <version>${project.version}</version>
     </dependency>
+    <!--
+      The scope of the cache-api dependency is intentionally "provided"
+      because it is not Apache licensed. This way, users have to add the dependency
+      by themselves in their projects.
+      https://github.com/jsr107/jsr107spec/issues/333
+    -->
     <dependency>
       <groupId>javax.cache</groupId>
       <artifactId>cache-api</artifactId>
       <version>${jcache.version}</version>
+      <scope>provided</scope>
     </dependency>
   </dependencies>
 
