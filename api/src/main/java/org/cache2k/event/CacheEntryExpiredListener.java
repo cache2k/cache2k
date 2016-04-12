@@ -25,7 +25,7 @@ import org.cache2k.CacheEntry;
 
 /**
  * Listener called for an expired entry. An expiry event may not be sent if an
- * entry is refreshed before the expiry is detected. In this cache an update event is sent.
+ * entry is refreshed before the expiry is detected. In this case an update event is sent.
  *
  * <p>Expiry events are not yet completely implemented.
  *

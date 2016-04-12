@@ -22,6 +22,8 @@ package org.cache2k.customization;
 
 import org.cache2k.CacheEntry;
 
+import java.util.concurrent.TimeUnit;
+
 /**
  * A custom policy which allows to calculate a dynamic expiry time for an entry after an
  * insert or update.
@@ -76,13 +78,16 @@ public interface ExpiryCalculator<K, V> {
    * @param oldEntry entry representing the current mapping, if there is a value present.
    *                  If the current entry holds an exception, this is null. Expired entries will be
    *                  also passed.
-   * @return time the time of expiry in millis since epoch. {@link #NO_CACHE} if it should not be cached.
-   *              {@link #ETERNAL} means there is no specific expiry time known or needed.
-   *              In any case the effective expiry duration will never be longer than the
-   *              configured expiry value. If a negated value of the expiry time is returned,
-   *              this means that sharp expiry is requested explicitly.
+   * @return time the time of expiry in millis since epoch. {@link #NO_CACHE} if it should not cached.
+   *              {@link #ETERNAL} if there is no specific expiry time known or needed.
+   *              The effective expiry duration will never be longer than the
+   *              configured expiry value via {@link org.cache2k.CacheBuilder#expiryDuration(long, TimeUnit)}.
+   *              If a negative value is returned, the negated value will be the expiry time
+   *              used, but sharp expiry is requested always,
+   *              ignoring {@link org.cache2k.CacheBuilder#sharpExpiry(boolean)}.
    *
    * @see ExceptionExpiryCalculator#calculateExpiryTime(Object, Throwable, long)
+   * @see ValueWithExpiryTime#getCacheExpiryTime()
    */
   long calculateExpiryTime(
       K key,

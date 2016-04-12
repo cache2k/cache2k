@@ -21,7 +21,7 @@ package org.cache2k.event;
  */
 
 /**
- * Marker for all entry listeners.
+ * The root of all listeners that are called for an entry lifecycle and updates.
  *
  * @author Jens Wilke
  */

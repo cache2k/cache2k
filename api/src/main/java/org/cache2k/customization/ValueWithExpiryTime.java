@@ -20,6 +20,8 @@ package org.cache2k.customization;
  * #L%
  */
 
+import java.util.concurrent.TimeUnit;
+
 /**
  * Interface to add to a value object if it is possible to derive the
  * expiry time from the value. If no explicit expiry calculator is set
@@ -31,11 +33,15 @@ package org.cache2k.customization;
 public interface ValueWithExpiryTime {
 
   /**
-   * Return time of next refresh (expiry time). A return value of 0 means the
-   * entry expires immediately, or is always fetched from the source. A return value of
-   * {@link Long#MAX_VALUE} means there is no specific expiry time
-   * known or needed. In this case a reasonable default can be assumed for
-   * the expiry, the cache will use the configured expiry time.
+   * Point in time in milliseconds since when the value should expire.
+   *
+   * @return time the time of expiry in millis since epoch. {@link ExpiryCalculator#NO_CACHE} if it should not cached.
+   *              {@link ExpiryCalculator#ETERNAL} if there is no specific expiry time known or needed.
+   *              The effective expiry duration will never be longer than the
+   *              configured expiry value via {@link org.cache2k.CacheBuilder#expiryDuration(long, TimeUnit)} (long, TimeUnit)}.
+   *              If a negative value is returned, the negated value will be the expiry time
+   *              used, but sharp expiry is requested always,
+   *              ignoring {@link org.cache2k.CacheBuilder#sharpExpiry(boolean)}.
    */
   long getCacheExpiryTime();
 

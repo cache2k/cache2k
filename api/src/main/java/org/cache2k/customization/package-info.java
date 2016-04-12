@@ -1,4 +1,9 @@
-package org.cache2k.event;
+/**
+ * Set of interfaces for customization of the cache behavior.
+ *
+ * @author Jens Wilke
+ */
+package org.cache2k.customization;
 
 /*
  * #%L
@@ -19,18 +24,3 @@ package org.cache2k.event;
  * limitations under the License.
  * #L%
  */
-
-import org.cache2k.Cache;
-import org.cache2k.CacheEntry;
-
-/**
- * Fires in case a cache entry is mutated. This happens on {@link Cache#put} and its variants
- * if a previous entry exists, or if a value is reloaded or refreshed after expiry.
- *
- * @author Jens Wilke
- */
-public interface CacheEntryUpdatedListener<K, V> extends CacheEntryOperationListener<K,V> {
-
-  void onEntryUpdated(Cache<K,V> cache, CacheEntry<K, V> previousEntry, CacheEntry<K, V> currentEntry);
-
-}

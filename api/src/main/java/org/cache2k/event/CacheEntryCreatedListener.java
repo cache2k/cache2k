@@ -24,6 +24,9 @@ import org.cache2k.Cache;
 import org.cache2k.CacheEntry;
 
 /**
+ * A new entry is inserted into the cache, e.g. by {@link Cache#put(Object, Object)} or by
+ * read through and the {@link org.cache2k.integration.CacheLoader}.
+ *
  * @author Jens Wilke
  */
 public interface CacheEntryCreatedListener<K, V> extends CacheEntryOperationListener<K, V> {

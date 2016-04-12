@@ -22,9 +22,11 @@ package org.cache2k.event;
 
 import org.cache2k.Cache;
 import org.cache2k.CacheEntry;
-import org.cache2k.event.CacheEntryOperationListener;
 
 /**
+ * Called when an entry was actively removed from the cache. This is not called when an
+ * entry was evicted or expired.
+ *
  * @author Jens Wilke
  */
 public interface CacheEntryRemovedListener<K,V> extends CacheEntryOperationListener<K,V> {

@@ -20,6 +20,8 @@ package org.cache2k.customization;
  * #L%
  */
 
+import java.util.concurrent.TimeUnit;
+
 /**
  * Special expiry calculator to calculate a separate expiry time if an
  * exception was thrown in the cache source. The general idea is that
@@ -36,11 +38,13 @@ public interface ExceptionExpiryCalculator<K> {
    * @param key the cache key used for inserting or loading
    * @param loadTime The time the entry was inserted or loaded. If a loader was used,
    *                 this is the time before the loader was called.
-   * @return time the time of expiry in millis since epoch. {@link ExpiryCalculator#NO_CACHE} if it
-   *              should not be cached. {@link ExpiryCalculator#ETERNAL} means there is no specific
-   *              expiry time known or needed. In any case the effective expiry duration will never be
-   *              longer than the configured expiry value. If a negated value of the expiry time is returned,
-   *              this means that sharp expiry is requested explicitly.
+   * @return time the time of expiry in millis since epoch. {@link ExpiryCalculator#NO_CACHE} if it should not cached.
+   *              {@link ExpiryCalculator#ETERNAL} if there is no specific expiry time known or needed.
+   *              The effective expiry duration will never be longer than the
+   *              configured expiry value via {@link org.cache2k.CacheBuilder#expiryDuration(long, TimeUnit)}.
+   *              If a negative value is returned, the negated value will be the expiry time
+   *              used, but sharp expiry is requested always,
+   *              ignoring {@link org.cache2k.CacheBuilder#sharpExpiry(boolean)}.
    *
    * @see ExpiryCalculator#calculateExpiryTime
    */
