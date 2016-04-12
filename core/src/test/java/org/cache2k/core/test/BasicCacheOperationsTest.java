@@ -35,6 +35,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
+import java.util.NoSuchElementException;
 import java.util.concurrent.TimeUnit;
 
 import static org.junit.Assert.*;
@@ -768,6 +769,25 @@ public class BasicCacheOperationsTest {
     assertTrue(map.containsKey(KEY));
     assertTrue(map.containsKey(OTHER_KEY));
     statistics().expectAllZero();
+  }
+
+  @Test(expected = NoSuchElementException.class)
+  public void iterator_Next_Exception() {
+    Iterator it = cache.iterator();
+    assertFalse(it.hasNext());
+    it.next();
+  }
+
+  /** Iteration stops if cleared. */
+  @Test
+  public void iterator_clear() {
+    cache.put(KEY, VALUE);
+    cache.put(OTHER_KEY, OTHER_VALUE);
+    Iterator it = cache.iterator();
+    assertTrue(it.hasNext());
+    it.next();
+    cache.clear();
+    assertFalse(it.hasNext());
   }
 
   @Test(expected=UnsupportedOperationException.class)

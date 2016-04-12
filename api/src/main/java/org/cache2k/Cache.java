@@ -30,6 +30,7 @@ import org.cache2k.processor.CacheEntryProcessor;
 import org.cache2k.processor.EntryProcessingResult;
 
 import java.io.Closeable;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
@@ -592,18 +593,19 @@ public interface Cache<K, V> extends KeyValueSource<K, V>, Iterable<CacheEntry<K
    * <p>The iterator itself is not thread safe. Calls to one iterator instance from
    * different threads are illegal or need proper synchronization.
    *
-   * <p>The iterator holds heap resources to keep track of entries already iterated.
-   * If an iteration is aborted, the resources should be freed by calling
-   * {@link org.cache2k.ClosableIterator#close}, for example in a try with resources clause.
    *
    * <p>Statistics: Iteration is neutral to the cache statistics. Counting hits for iterated
    * entries would effectively render the hitrate metric meaningless if iterations are used.
    *
    * <p>In case a storage (off heap or persistence) is attached the iterated entries are
    * always inserted into the heap cache. This will affect statistics.
+   *
+   * <p>{@link CacheBuilder#refreshAhead(boolean)} is enabled there is a minimal chance
+   * that an entry in the cache will not be iterated if the iteration takes
+   * longer then the refresh/expiry time of one entry.
    */
   @Override
-  ClosableIterator<CacheEntry<K, V>> iterator();
+  Iterator<CacheEntry<K, V>> iterator();
 
   void removeAll();
 

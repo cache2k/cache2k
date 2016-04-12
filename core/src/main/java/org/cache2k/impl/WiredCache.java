@@ -41,6 +41,7 @@ import org.cache2k.storageApi.StorageAdapter;
 import org.cache2k.storageApi.StorageEntry;
 
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.Future;
@@ -346,24 +347,19 @@ public class WiredCache<K, V> extends AbstractCache<K, V>
   }
 
   @Override
-  public ClosableIterator<CacheEntry<K, V>> iterator() {
-    ClosableIterator<CacheEntry<K, V>> tor;
+  public Iterator<CacheEntry<K, V>> iterator() {
+    Iterator<CacheEntry<K, V>> tor;
     if (storage == null) {
       synchronized (lockObject()) {
-         tor = new BaseCache.IteratorFilterEntry2Entry(heapCache, (ClosableIterator<Entry>) heapCache.iterateAllHeapEntries(), true);
+         tor = new BaseCache.IteratorFilterEntry2Entry(heapCache, heapCache.iterateAllHeapEntries(), true);
       }
     } else {
-      tor = new BaseCache.IteratorFilterEntry2Entry(heapCache, (ClosableIterator<Entry>) storage.iterateAll(), false);
+      tor = new BaseCache.IteratorFilterEntry2Entry(heapCache, storage.iterateAll(), false);
     }
-    final ClosableIterator<CacheEntry<K, V>> it = tor;
-    ClosableIterator<CacheEntry<K, V>> _adapted = new ClosableIterator<CacheEntry<K, V>>() {
+    final Iterator<CacheEntry<K, V>> it = tor;
+    Iterator<CacheEntry<K, V>> _adapted = new Iterator<CacheEntry<K, V>>() {
 
       CacheEntry<K, V> entry;
-
-      @Override
-      public void close() {
-        it.close();
-      }
 
       @Override
       public boolean hasNext() {

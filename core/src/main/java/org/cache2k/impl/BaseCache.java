@@ -545,7 +545,7 @@ public abstract class BaseCache<K, V>
   }
 
   protected void iterateAllEntriesRemoveAndCancelTimer() {
-    Iterator<org.cache2k.impl.Entry> it = iterateAllHeapEntries();
+    Iterator<Entry<K,V>> it = iterateAllHeapEntries();
     int _count = 0;
     while (it.hasNext()) {
       org.cache2k.impl.Entry e = it.next();
@@ -670,9 +670,9 @@ public abstract class BaseCache<K, V>
   }
 
   @Override
-  public ClosableIterator<CacheEntry<K, V>> iterator() {
+  public Iterator<CacheEntry<K, V>> iterator() {
     synchronized (lock) {
-      return new IteratorFilterEntry2Entry(this, (ClosableIterator<Entry>) iterateAllHeapEntries(), true);
+      return new IteratorFilterEntry2Entry(this, iterateAllHeapEntries(), true);
     }
   }
 
@@ -680,15 +680,15 @@ public abstract class BaseCache<K, V>
    * Filter out non valid entries and wrap each entry with a cache
    * entry object.
    */
-  static class IteratorFilterEntry2Entry<K,V> implements ClosableIterator<CacheEntry<K, V>> {
+  static class IteratorFilterEntry2Entry<K,V> implements Iterator<CacheEntry<K, V>> {
 
     BaseCache<K,V> cache;
-    ClosableIterator<Entry> iterator;
+    Iterator<Entry<K,V>> iterator;
     Entry entry;
     CacheEntry<K, V> lastEntry;
     boolean filter = true;
 
-    IteratorFilterEntry2Entry(BaseCache<K,V> c, ClosableIterator<Entry> it, boolean _filter) {
+    IteratorFilterEntry2Entry(BaseCache<K,V> c, Iterator<Entry<K,V>> it, boolean _filter) {
       cache = c;
       iterator = it;
       filter = _filter;
@@ -721,16 +721,7 @@ public abstract class BaseCache<K, V>
         }
       }
       entry = null;
-      close();
       return false;
-    }
-
-    @Override
-    public void close() {
-      if (iterator != null) {
-        iterator.close();
-        iterator = null;
-      }
     }
 
     @Override
@@ -2020,10 +2011,8 @@ public abstract class BaseCache<K, V>
    * Returns all cache entries within the heap cache. Entries that
    * are expired or contain no valid data are not filtered out.
    */
-  public final ClosableConcurrentHashEntryIterator<org.cache2k.impl.Entry> iterateAllHeapEntries() {
-    return
-      new ClosableConcurrentHashEntryIterator(
-        mainHashCtrl, mainHash, refreshHashCtrl, refreshHash);
+  public final ConcurrentEntryIterator<K,V> iterateAllHeapEntries() {
+    return new ConcurrentEntryIterator<K,V>(this);
   }
 
   @Override

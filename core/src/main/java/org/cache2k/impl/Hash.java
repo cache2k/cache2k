@@ -45,7 +45,6 @@ public class Hash<E extends Entry> {
 
   public int size = 0;
   public int maxFill = 0;
-  private int suppressExpandCount;
 
   public static int index(Entry[] _hashTable, int _hashCode) {
     if (_hashTable == null) {
@@ -196,32 +195,12 @@ public class Hash<E extends Entry> {
     size++;
     insertWoExpand(_hashTable, _entry);
     synchronized (this) {
-      if (size >= maxFill && suppressExpandCount == 0) {
+      if (size >= maxFill) {
         maxFill = maxFill * 2;
         return expandHash(_hashTable);
       }
       return _hashTable;
     }
-  }
-
-  /**
-   * Usage/reference counter for iterations to suspend expand
-   * until the iteration finished. This is needed for correctness
-   * of the iteration, if an expand is done during the iteration
-   * process, the iterations returns duplicate entries or not
-   * all entries.
-   *
-   * <p>Failing to operate the increment/decrement in balance will
-   * mean that hash table expands are blocked forever, which is a
-   * serious error condition. Typical problems arise by thrown
-   * exceptions during an iteration.
-   */
-  public synchronized void incrementSuppressExpandCount() {
-    suppressExpandCount++;
-  }
-
-  public synchronized void decrementSuppressExpandCount() {
-    suppressExpandCount--;
   }
 
   /**

@@ -28,6 +28,7 @@ import org.cache2k.ClosableIterator;
 import org.cache2k.processor.EntryProcessingResult;
 import org.cache2k.integration.LoadCompletedListener;
 
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -194,7 +195,7 @@ public class CacheWrapper<K,V> implements Cache<K, V> {
   }
 
   @Override
-  public ClosableIterator<CacheEntry<K, V>> iterator() {
+  public Iterator<CacheEntry<K, V>> iterator() {
     return cache.iterator();
   }
 

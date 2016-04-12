@@ -11,6 +11,7 @@ Everything that will most likely break applications will be introduced as a new 
 get deprecated. Modifications in the statistics output will not listed as breakage.
 
   * Either expiryDuration or eternal must be set explicitly in this release. See: https://github.com/cache2k/cache2k/issues/21
+  * Return value of `Cache.iterator()` changed from `ClosableIterator` to `Iterator`
 
 ## Bug fixes
 
@@ -24,9 +25,13 @@ Fixes of corner cases that are most likely not affecting any existing applicatio
   * JavaDoc improvements (ongoing...)
   * `CacheManager.getCache()` does not return a closed or uninitialized cache
   * Fix a potential race condition: timer event / entry update
-  
+  * Make the iterator more robust. Problems with the previous solution: The iterator could block the cache 
+    if the iteration is not  finished completely or the iterator was not closed. In case of concurrent updates to 
+    the cache the iterator could continue iterating as long as entries are inserted.
 
 ## API Changes and new methods
+
+  * Return value of `Cache.iterator()` changed from `ClosableIterator` to `Iterator`
 
 
 
