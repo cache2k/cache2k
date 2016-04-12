@@ -21,7 +21,9 @@ import org.cache2k.Cache;
 import org.cache2k.CacheBuilder;
 import org.cache2k.CacheEntry;
 import org.cache2k.CacheSource;
+import org.cache2k.junit.FastTests;
 import org.junit.Test;
+import org.junit.experimental.categories.Category;
 
 import static org.junit.Assert.*;
 
@@ -30,12 +32,15 @@ import static org.junit.Assert.*;
  *
  * @author Jens Wilke; created: 2013-12-17
  */
+@Category(FastTests.class)
 public class CacheTest {
 
   @Test
   public void testPeekAndPut() {
     Cache<String,String> c =
-      CacheBuilder.newCache(String.class, String.class).build();
+      CacheBuilder.newCache(String.class, String.class)
+        .eternal(true)
+        .build();
     String val = c.peek("something");
     assertNull(val);
     c.put("something", "hello");
@@ -55,6 +60,7 @@ public class CacheTest {
     Cache<String,Integer> c =
       CacheBuilder.newCache(String.class, Integer.class)
         .source(_lengthCountingSource)
+        .eternal(true)
         .build();
     int v = c.get("hallo");
     assertEquals(5, v);
@@ -66,7 +72,9 @@ public class CacheTest {
   @Test
   public void testGetEntry() {
     Cache<String,String> c =
-      CacheBuilder.newCache(String.class, String.class).build();
+      CacheBuilder.newCache(String.class, String.class)
+        .eternal(true)
+        .build();
     String val = c.peek("something");
     assertNull(val);
     c.put("something", "hello");
@@ -79,7 +87,9 @@ public class CacheTest {
   @Test
   public void testContains() {
     Cache<String,String> c =
-      CacheBuilder.newCache(String.class, String.class).build();
+      CacheBuilder.newCache(String.class, String.class)
+        .eternal(true)
+        .build();
     String val = c.peek("something");
     assertNull(val);
     c.put("something", "hello");

@@ -57,6 +57,13 @@ public abstract class RefreshHandler<K,V>  {
     };
 
   public static <K, V> RefreshHandler<K,V> of(CacheConfig<K,V> cfg) {
+    if (cfg.getExpiryMillis() < 0) {
+      throw new IllegalArgumentException(
+        "Specify expiry or no expiry explicitly. " +
+        "Either set CacheBuilder.eternal(true) or CacheBuilder.expiryDuration(...). " +
+        "See: https://github.com/cache2k/cache2k/issues/21"
+      );
+    }
     if (cfg.getExceptionExpiryCalculator() != null || cfg.getExpiryCalculator() != null ||
       ValueWithExpiryTime.class.isAssignableFrom(cfg.getValueType().getType())) {
       RefreshHandler.Dynamic<K,V> h = new RefreshHandler.Dynamic<K, V>();

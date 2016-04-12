@@ -228,6 +228,7 @@ public class JCacheManagerAdapter implements CacheManager {
       _policy = cc.getExpiryPolicyFactory().create();
     }
     b.expiryCalculator(new TouchyJCacheAdapter.ExpiryCalculatorAdapter(_policy));
+    b.eternal(true);
     b.manager(manager);
     synchronized (((CacheManagerImpl) manager).getLockObject()) {
       Cache _jsr107cache = name2adapter.get(_cacheName);

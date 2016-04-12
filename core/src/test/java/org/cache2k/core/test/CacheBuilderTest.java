@@ -42,7 +42,7 @@ public class CacheBuilderTest {
 
   @Test
   public void managerName() {
-    Cache c = CacheBuilder.newCache().build();
+    Cache c = CacheBuilder.newCache().eternal(true).build();
     assertEquals("default", c.getCacheManager().getName());
     c.close();
   }
@@ -53,6 +53,7 @@ public class CacheBuilderTest {
       CacheBuilder.newCache()
         .valueType(String.class)
         .keyType(Long.class)
+        .eternal(true)
         .build();
     c.close();
   }
@@ -60,7 +61,7 @@ public class CacheBuilderTest {
   @Test
   public void noTypes() {
     Cache c =
-      CacheBuilder.newCache().build();
+      CacheBuilder.newCache().eternal(true).build();
     c.put("hallo", 234);
     c.close();
   }
@@ -68,14 +69,14 @@ public class CacheBuilderTest {
   @Test
   public void collectionValueType() {
     Cache<Long, List> c =
-      CacheBuilder.newCache(Long.class, List.class, String.class).build();
+      CacheBuilder.newCache(Long.class, List.class, String.class).eternal(true).build();
     c.close();
   }
 
   @Test
   public void collectionValueCast() {
     Cache<Long, List<String>> c =
-        (Cache<Long, List<String>>) ((Object) CacheBuilder.newCache(Long.class, List.class, String.class).build());
+        (Cache<Long, List<String>>) ((Object) CacheBuilder.newCache(Long.class, List.class, String.class).eternal(true).build());
     c.put(123L, new ArrayList<String>());
     c.close();
   }
@@ -83,7 +84,7 @@ public class CacheBuilderTest {
   @Test
   public void collectionValueCacheType() {
     Cache<Long, List<String>> c =
-      CacheBuilder.newCache(Long.class, new CacheType<List<String>>() {}).build();
+      CacheBuilder.newCache(Long.class, new CacheType<List<String>>() {}).eternal(true).build();
     c.put(123L, new ArrayList<String>());
     c.close();
   }
@@ -91,7 +92,7 @@ public class CacheBuilderTest {
   @Test
   public void collectionValueClass() {
     Cache<Long, List<String>> c =
-      (Cache<Long, List<String>>) (Object) CacheBuilder.newCache(Long.class, List.class).build();
+      (Cache<Long, List<String>>) (Object) CacheBuilder.newCache(Long.class, List.class).eternal(true).build();
     c.put(123L, new ArrayList<String>());
     c.close();
   }
@@ -102,6 +103,7 @@ public class CacheBuilderTest {
       CacheBuilder.newCache()
         .valueType(List.class)
         .keyType(Long.class)
+        .eternal(true)
         .build();
     c.close();
   }
@@ -111,6 +113,7 @@ public class CacheBuilderTest {
     Cache<Long, List<String>> c =
       (Cache<Long, List<String>>)
         CacheBuilder.newCache()
+          .eternal(true)
           .build();
     c.close();
   }
@@ -120,6 +123,7 @@ public class CacheBuilderTest {
     Cache<Long, List<String>> c =
       (Cache<Long, List<String>>)
         CacheBuilder.newCache()
+          .eternal(true)
           .name("package.name.ClassName.methodName(package.ParameterType,package.ParameterType")
           .build();
     c.close();

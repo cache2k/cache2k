@@ -37,6 +37,8 @@ import java.util.List;
  */
 public class CacheConfig<K, V> implements Serializable {
 
+  public final long EXPIRY_MILLIS_ETERNAL = Long.MAX_VALUE;
+
   private boolean storeByReference;
   private String name;
   private CacheTypeDescriptor keyType;
@@ -48,7 +50,7 @@ public class CacheConfig<K, V> implements Serializable {
   private int maxSizeLowBound = 0;
   private int heapEntryCapacity = -1;
   private boolean refreshAhead = false;
-  private long expiryMillis  = 10 * 60 * 1000;
+  private long expiryMillis  = -1;
   private long exceptionExpiryMillis = -1;
   private boolean keepDataAfterExpired = true;
   private boolean sharpExpiry = false;
@@ -307,7 +309,7 @@ public class CacheConfig<K, V> implements Serializable {
   }
 
   public boolean isEternal() {
-    return expiryMillis == -1 || expiryMillis == Long.MAX_VALUE;
+    return expiryMillis == -1 || expiryMillis == EXPIRY_MILLIS_ETERNAL;
   }
 
   /**
@@ -315,7 +317,7 @@ public class CacheConfig<K, V> implements Serializable {
    */
   public void setEternal(boolean v) {
     if (v) {
-      this.expiryMillis = -1;
+      this.expiryMillis = EXPIRY_MILLIS_ETERNAL;
     }
   }
 
