@@ -1,4 +1,4 @@
-# cache2k version 0.24 release notes
+# cache2k version 0.25-BETA "Indian Shores"
 
 ## New and Noteworthy
 
@@ -19,7 +19,11 @@ If something is listed here it might affect an existing application and updating
 ## Fixes and Improvements
 
 Fixes of corner cases that are most likely not affecting any existing applications and improvements are listed here.
+
+  * JavaDoc improvements (ongoing...)
   
 
 ## API Changes and new methods
+
+
 
