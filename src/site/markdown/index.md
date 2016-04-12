@@ -18,7 +18,8 @@ The main aim is to get a small footprint core cache implementation which does
  * Blocking read through, avoiding the thundering herds problem
  * Refresh ahead
  * Build-in, efficient statistics (Cannot be disabled)
- * JMX
+ * JMX support
+ * An API jar to separate a stable interface
  * ...
 
 Since it is fresh open source, we will put up a detailed description of each feature as well
