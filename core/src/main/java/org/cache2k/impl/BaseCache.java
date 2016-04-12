@@ -235,7 +235,7 @@ public abstract class BaseCache<K, V>
   /** Stuff that we need to wait for before shutdown may complete */
   protected Futures.WaitForAllFuture<?> shutdownWaitFuture;
 
-  public boolean shutdownInitiated = false;
+  public boolean shutdownInitiated = true;
 
   /**
    * Flag during operation that indicates, that the cache is full and eviction needs
@@ -509,6 +509,7 @@ public abstract class BaseCache<K, V>
         loader == null) {
         throw new CacheMisconfigurationException("backgroundRefresh, but no loader defined");
       }
+      shutdownInitiated = false;
     }
   }
 
@@ -1988,6 +1989,9 @@ public abstract class BaseCache<K, V>
         expireEntry(e);
       } catch (CacheClosedException ignore) { }
     } else {
+      if (nrt <= 0) {
+        return;
+      }
       if (!hasKeepAfterExpired()) {
         refreshHandler.scheduleFinalExpiryTimer(e);
       }
