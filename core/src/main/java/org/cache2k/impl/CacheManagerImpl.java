@@ -195,10 +195,12 @@ public class CacheManagerImpl extends CacheManager {
     return _caches.iterator();
   }
 
+  @SuppressWarnings("unchecked")
   @Override
-  public Cache getCache(String name) {
+  public <K,V> Cache<K,V> getCache(String name) {
     synchronized (lock) {
-      return cacheNames.get(name);
+      Cache c = cacheNames.get(name);
+      return c != null && c.isClosed() ? null : c;
     }
   }
 
