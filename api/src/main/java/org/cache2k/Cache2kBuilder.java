@@ -487,7 +487,6 @@ public abstract class Cache2kBuilder<K, V>
    * Builds a cache with the specified configuration parameters.
    * The builder reused to build caches with similar or identical
    * configuration. The builder is not thread safe.
-   * configuration. The builder is not thread safe.
    */
   public abstract Cache<K, V> build();
 

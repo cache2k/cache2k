@@ -31,7 +31,6 @@ import java.util.Collection;
 import java.util.concurrent.TimeUnit;
 
 /**
- * @author Jens Wilke
  * @deprecated Replace with {@link Cache2kBuilder}
  */
 public class CacheBuilder<K,V> {

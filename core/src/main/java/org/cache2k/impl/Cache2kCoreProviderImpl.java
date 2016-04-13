@@ -28,9 +28,6 @@ import org.cache2k.spi.Cache2kManagerProvider;
  */
 public class Cache2kCoreProviderImpl extends Cache2kCoreProvider {
 
-  static Class<?> DEFAULT_STORAGE_IMPLEMENTATION;
-
-
   Cache2kManagerProviderImpl provider;
 
   @Override
@@ -44,11 +41,6 @@ public class Cache2kCoreProviderImpl extends Cache2kCoreProvider {
   @Override
   public Class<Cache2kBuilderImpl> getBuilderImplementation() {
     return Cache2kBuilderImpl.class;
-  }
-
-  @Override
-  public Class<?> getDefaultPersistenceStoreImplementation() {
-    return DEFAULT_STORAGE_IMPLEMENTATION;
   }
 
 }

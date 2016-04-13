@@ -42,6 +42,4 @@ public abstract class Cache2kCoreProvider {
 
   public abstract Class<? extends Cache2kBuilder> getBuilderImplementation();
 
-  public abstract Class<?> getDefaultPersistenceStoreImplementation();
-
 }
