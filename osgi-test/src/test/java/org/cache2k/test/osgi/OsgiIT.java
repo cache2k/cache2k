@@ -62,7 +62,10 @@ public class OsgiIT {
 
   @Test
   public void testSimple() {
-    Cache<String, String> c = CacheBuilder.newCache(String.class, String.class).build();
+    Cache<String, String> c =
+      CacheBuilder.newCache(String.class, String.class)
+        .eternal(true)
+        .build();
     c.put("abc", "123");
     assertTrue(c.contains("abc"));
     assertEquals("123", c.peek("abc"));
