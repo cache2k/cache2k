@@ -220,21 +220,6 @@ public abstract class Cache2kBuilder<K, V>
   }
 
   /**
-   * @deprecated Use {@link #entryCapacity(int)}
-   */
-  public Cache2kBuilder<K, V> maxSize(int v) {
-    config.setEntryCapacity(v);
-    return this;
-  }
-
-  /**
-   * @deprecated not used.
-   */
-  public Cache2kBuilder<K, V> maxSizeBound(int v) {
-    return this;
-  }
-
-  /**
    * Keep entries forever. Default is false. By default the cache uses an expiry time
    * of 10 minutes. If there is no explicit expiry configured for exceptions
    * with {@link #exceptionExpiryDuration(long, TimeUnit)}, exceptions will
@@ -380,14 +365,6 @@ public abstract class Cache2kBuilder<K, V>
    * expiry, no refresh will be done and the entry expires regularly.
    */
   public Cache2kBuilder<K, V> refreshAhead(boolean f) {
-    config.setRefreshAhead(f);
-    return this;
-  }
-
-  /**
-   * @deprecated use {@link #refreshAhead(boolean)}
-   */
-  public Cache2kBuilder<K, V> backgroundRefresh(boolean f) {
     config.setRefreshAhead(f);
     return this;
   }

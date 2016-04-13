@@ -196,7 +196,6 @@ public class CacheBuilder<K,V> {
   }
 
   public CacheBuilder<K, V> maxSizeBound(final int v) {
-    builder.maxSizeBound(v);
     return this;
   }
 
@@ -241,7 +240,7 @@ public class CacheBuilder<K,V> {
   }
 
   public CacheBuilder<K, V> backgroundRefresh(final boolean f) {
-    builder.backgroundRefresh(f);
+    builder.refreshAhead(f);
     return this;
   }
 
@@ -306,7 +305,7 @@ public class CacheBuilder<K,V> {
   }
 
   public CacheBuilder<K, V> maxSize(final int v) {
-    builder.maxSize(v);
+    builder.entryCapacity(v);
     return this;
   }
 
