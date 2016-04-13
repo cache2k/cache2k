@@ -108,8 +108,6 @@ public abstract class Cache2kBuilder<K, V>
   protected CacheManager manager;
   protected CacheSource cacheSource;
   protected CacheSourceWithMetaInfo cacheSourceWithMetaInfo;
-  protected ExperimentalBulkCacheSource experimentalBulkCacheSource;
-  protected BulkCacheSource bulkCacheSource;
   protected CacheWriter cacheWriter;
   protected ExceptionPropagator exceptionPropagator;
 
@@ -314,38 +312,6 @@ public abstract class Cache2kBuilder<K, V>
 
   public Cache2kBuilder<K, V> exceptionPropagator(ExceptionPropagator ep) {
     exceptionPropagator = ep;
-    return this;
-  }
-
-  /**
-   * @deprecated use the loader, will be removed
-   */
-  public Cache2kBuilder<K, V> source(CacheSource<K, V> g) {
-    cacheSource = g;
-    return this;
-  }
-
-  /**
-   * @deprecated use the loader, will be removed
-   */
-  public Cache2kBuilder<K, V> source(CacheSourceWithMetaInfo<K, V> g) {
-    cacheSourceWithMetaInfo = g;
-    return this;
-  }
-
-  /**
-   * @deprecated use the loader, will be removed
-   */
-  public Cache2kBuilder<K, V> source(ExperimentalBulkCacheSource<K, V> g) {
-    experimentalBulkCacheSource = g;
-    return this;
-  }
-
-  /**
-   * @deprecated use the loader, will be removed
-   */
-  public Cache2kBuilder<K, V> source(BulkCacheSource<K, V> g) {
-    bulkCacheSource = g;
     return this;
   }
 

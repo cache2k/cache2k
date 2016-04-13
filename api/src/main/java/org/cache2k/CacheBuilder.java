@@ -28,6 +28,7 @@ import org.cache2k.integration.CacheWriter;
 import org.cache2k.integration.ExceptionPropagator;
 
 import java.util.Collection;
+import java.util.Collections;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -204,13 +205,23 @@ public class CacheBuilder<K,V> {
     return this;
   }
 
-  public CacheBuilder<K, V> source(final CacheSourceWithMetaInfo<K, V> g) {
-    builder.source(g);
-    return this;
-  }
-
-  public CacheBuilder<K, V> source(final ExperimentalBulkCacheSource<K, V> g) {
-    builder.source(g);
+  public CacheBuilder<K, V> source(final CacheSourceWithMetaInfo<K, V> eg) {
+    builder.loader(new AdvancedCacheLoader<K, V>() {
+      @Override
+      public V load(final K key, final long currentTime, final CacheEntry<K, V> previousEntry) throws Exception {
+        try {
+          if (previousEntry != null && previousEntry.getException() == null) {
+            return eg.get(key, currentTime, previousEntry.getValue(), previousEntry.getLastModification());
+          } else {
+            return eg.get(key, currentTime, null, 0);
+          }
+        } catch (Exception e) {
+          throw e;
+        } catch (Throwable t) {
+          throw new RuntimeException("rethrow throwable", t);
+        }
+      }
+    });
     return this;
   }
 
@@ -235,12 +246,57 @@ public class CacheBuilder<K,V> {
   }
 
   public CacheBuilder<K, V> source(final CacheSource<K, V> g) {
-    builder.source(g);
+    builder.loader(new AdvancedCacheLoader<K, V>() {
+      @Override
+      public V load(final K key, final long currentTime, final CacheEntry<K, V> previousEntry) throws Exception {
+        try {
+          return g.get(key);
+        } catch (Exception e) {
+          throw e;
+        } catch (Throwable t) {
+          throw new RuntimeException("rethrow throwable", t);
+        }
+      }
+    });
     return this;
   }
 
-  public CacheBuilder<K, V> source(final BulkCacheSource<K, V> g) {
-    builder.source(g);
+  public CacheBuilder<K, V> source(final BulkCacheSource<K, V> s) {
+    builder.loader(new AdvancedCacheLoader<K, V>() {
+      @Override
+      public V load(final K key, final long currentTime, final CacheEntry<K, V> previousEntry) throws Exception {
+        CacheEntry<K, V> entry = previousEntry;
+        if (previousEntry == null)
+          entry = new CacheEntry<K, V>() {
+            @Override
+            public K getKey() {
+              return key;
+            }
+
+            @Override
+            public V getValue() {
+              return null;
+            }
+
+            @Override
+            public Throwable getException() {
+              return null;
+            }
+
+            @Override
+            public long getLastModification() {
+              return 0;
+            }
+          };
+        try {
+          return s.getValues(Collections.singletonList(entry), currentTime).get(0);
+        } catch (Exception e) {
+          throw e;
+        } catch (Throwable t) {
+          throw new RuntimeException("rethrow throwable", t);
+        }
+      }
+    });
     return this;
   }
 

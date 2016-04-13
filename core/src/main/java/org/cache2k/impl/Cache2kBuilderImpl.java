@@ -20,12 +20,10 @@ package org.cache2k.impl;
  * #L%
  */
 
-import org.cache2k.BulkCacheSource;
 import org.cache2k.event.CacheEntryCreatedListener;
 import org.cache2k.event.CacheEntryOperationListener;
 import org.cache2k.event.CacheEntryRemovedListener;
 import org.cache2k.event.CacheEntryUpdatedListener;
-import org.cache2k.ExperimentalBulkCacheSource;
 import org.cache2k.Cache;
 import org.cache2k.Cache2kBuilder;
 import org.cache2k.CacheConfig;
@@ -58,7 +56,7 @@ public class Cache2kBuilderImpl<K, T> extends Cache2kBuilder<K, T> {
   String deriveNameFromStackTrace() {
     Exception ex = new Exception();
     for (StackTraceElement e : ex.getStackTrace()) {
-      if (!e.getClassName().startsWith(this.getClass().getPackage().getName())) {
+      if (!e.getClassName().startsWith("org.cache2k")) {
         int idx = e.getClassName().lastIndexOf('.');
         String _simpleClassName = e.getClassName().substring(idx + 1);
         String _methodName = e.getMethodName();
@@ -77,8 +75,6 @@ public class Cache2kBuilderImpl<K, T> extends Cache2kBuilder<K, T> {
     if (CacheConfig.class.isAssignableFrom(c)) { return config; }
     if (CacheSource.class.isAssignableFrom(c)) { return cacheSource; }
     if (CacheSourceWithMetaInfo.class.isAssignableFrom(c)) { return cacheSourceWithMetaInfo; }
-    if (ExperimentalBulkCacheSource.class.isAssignableFrom(c)) { return experimentalBulkCacheSource; }
-    if (BulkCacheSource.class.isAssignableFrom(c)) { return bulkCacheSource; }
     return null;
   }
 
@@ -99,12 +95,6 @@ public class Cache2kBuilderImpl<K, T> extends Cache2kBuilder<K, T> {
    */
   @SuppressWarnings("unchecked")
   void confiugreViaSettersDirect(BaseCache c) {
-    if (cacheSource != null) {
-      c.setSource(cacheSource);
-    }
-    if (cacheSourceWithMetaInfo != null) {
-      c.setSource(cacheSourceWithMetaInfo);
-    }
     if (config.getLoader() != null) {
       c.setLoader(config.getLoader());
     }
@@ -116,12 +106,6 @@ public class Cache2kBuilderImpl<K, T> extends Cache2kBuilder<K, T> {
     }
     if (config != null) {
       c.setCacheConfig(config);
-    }
-    if (bulkCacheSource != null) {
-      c.setBulkCacheSource(bulkCacheSource);
-    }
-    if (experimentalBulkCacheSource != null) {
-      c.setExperimentalBulkCacheSource(experimentalBulkCacheSource);
     }
   }
 

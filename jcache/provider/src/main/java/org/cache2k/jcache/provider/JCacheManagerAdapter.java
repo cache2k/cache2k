@@ -208,9 +208,9 @@ public class JCacheManagerAdapter implements CacheManager {
     _cfgCopy.setWriteThrough(cc.isWriteThrough());
     if (cc.getCacheLoaderFactory() != null) {
       final CacheLoader<K, V> clf = cc.getCacheLoaderFactory().create();
-      b.source(new CacheSource<K, TouchyJCacheAdapter.TimeVal>() {
+      b.loader(new org.cache2k.integration.CacheLoader<K,TouchyJCacheAdapter.TimeVal>() {
         @Override
-        public TouchyJCacheAdapter.TimeVal get(K k) {
+        public TouchyJCacheAdapter.TimeVal load(K k) {
           V v = clf.load(k);
           if (v == null) {
             return null;

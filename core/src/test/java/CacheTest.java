@@ -21,6 +21,7 @@ import org.cache2k.Cache;
 import org.cache2k.Cache2kBuilder;
 import org.cache2k.CacheEntry;
 import org.cache2k.CacheSource;
+import org.cache2k.integration.CacheLoader;
 import org.cache2k.junit.FastTests;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -51,15 +52,15 @@ public class CacheTest {
 
   @Test
   public void testGetWithSource() {
-    CacheSource<String,Integer> _lengthCountingSource = new CacheSource<String, Integer>() {
+    CacheLoader<String,Integer> _lengthCountingSource = new CacheLoader<String, Integer>() {
       @Override
-      public Integer get(String o) throws Throwable {
+      public Integer load(String o) {
         return o.length();
       }
     };
     Cache<String,Integer> c =
       Cache2kBuilder.newCache(String.class, Integer.class)
-        .source(_lengthCountingSource)
+        .loader(_lengthCountingSource)
         .eternal(true)
         .build();
     int v = c.get("hallo");
