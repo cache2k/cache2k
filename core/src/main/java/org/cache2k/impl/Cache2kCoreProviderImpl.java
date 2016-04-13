@@ -42,8 +42,8 @@ public class Cache2kCoreProviderImpl extends Cache2kCoreProvider {
   }
 
   @Override
-  public Class<CacheBuilderImpl> getBuilderImplementation() {
-    return CacheBuilderImpl.class;
+  public Class<Cache2kBuilderImpl> getBuilderImplementation() {
+    return Cache2kBuilderImpl.class;
   }
 
   @Override

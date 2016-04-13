@@ -20,9 +20,7 @@ package org.cache2k.spi;
  * #L%
  */
 
-import org.cache2k.CacheBuilder;
-
-import java.util.ServiceLoader;
+import org.cache2k.Cache2kBuilder;
 
 /**
  * For API internal use only. The cache2k implementation provides the
@@ -42,7 +40,7 @@ public abstract class Cache2kCoreProvider {
 
   public abstract Cache2kManagerProvider getManagerProvider();
 
-  public abstract Class<? extends CacheBuilder> getBuilderImplementation();
+  public abstract Class<? extends Cache2kBuilder> getBuilderImplementation();
 
   public abstract Class<?> getDefaultPersistenceStoreImplementation();
 

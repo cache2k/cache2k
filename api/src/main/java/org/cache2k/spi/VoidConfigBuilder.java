@@ -22,8 +22,7 @@ package org.cache2k.spi;
 
 import org.cache2k.AnyBuilder;
 import org.cache2k.Cache;
-import org.cache2k.CacheBuilder;
-import org.cache2k.RootAnyBuilder;
+import org.cache2k.Cache2kBuilder;
 
 /**
  * A builder that actually does build nothing. Used for submodules which have no
@@ -33,9 +32,9 @@ import org.cache2k.RootAnyBuilder;
  */
 public class VoidConfigBuilder<K, T> implements AnyBuilder<K, T, Void> {
 
-  private CacheBuilder<K, T> root;
+  private Cache2kBuilder<K, T> root;
 
-  public VoidConfigBuilder(CacheBuilder<K, T> root) {
+  public VoidConfigBuilder(Cache2kBuilder<K, T> root) {
     this.root = root;
   }
 
@@ -45,7 +44,7 @@ public class VoidConfigBuilder<K, T> implements AnyBuilder<K, T, Void> {
   }
 
   @Override
-  public CacheBuilder<K, T> root() {
+  public Cache2kBuilder<K, T> root() {
     return root;
   }
 

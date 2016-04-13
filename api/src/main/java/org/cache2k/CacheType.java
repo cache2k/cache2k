@@ -28,7 +28,7 @@ import java.lang.reflect.Type;
  * Helper class to capture generic types into a type descriptor. This is used to provide
  * the cache with detailed type information of the key and value objects.
  *
- * Example usage with {@link CacheBuilder}:<pre>   {@code
+ * Example usage with {@link Cache2kBuilder}:<pre>   {@code
  *
  *   CacheBuilder.newCache().valueType(new CacheType<List<String>(){}).build()
  * }</pre>

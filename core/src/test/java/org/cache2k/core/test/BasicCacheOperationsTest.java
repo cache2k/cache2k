@@ -21,7 +21,7 @@ package org.cache2k.core.test;
  */
 
 import org.cache2k.Cache;
-import org.cache2k.CacheBuilder;
+import org.cache2k.Cache2kBuilder;
 import org.cache2k.CacheEntry;
 import org.cache2k.CacheException;
 import org.cache2k.integration.CacheLoaderException;
@@ -60,7 +60,7 @@ public class BasicCacheOperationsTest {
 
   @BeforeClass
   public static void setUp() {
-    staticCache = CacheBuilder
+    staticCache = Cache2kBuilder
             .newCache(Integer.class, Integer.class)
             .name(BasicCacheOperationsTest.class)
             .eternal(true)

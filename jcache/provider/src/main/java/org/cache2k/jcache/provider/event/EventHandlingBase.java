@@ -21,7 +21,7 @@ package org.cache2k.jcache.provider.event;
  */
 
 import org.cache2k.Cache;
-import org.cache2k.CacheBuilder;
+import org.cache2k.Cache2kBuilder;
 import org.cache2k.CacheEntry;
 import org.cache2k.jcache.provider.JCacheManagerAdapter;
 import org.cache2k.jcache.provider.TouchyJCacheAdapter;
@@ -167,7 +167,7 @@ public abstract class EventHandlingBase<K,V,W> {
     }
   }
 
-  public void registerCache2kListeners(CacheBuilder<K, W> _builder) {
+  public void registerCache2kListeners(Cache2kBuilder<K, W> _builder) {
     _builder.addListener(new CreatedListenerAdapter());
     _builder.addListener(new UpdatedListenerAdapter());
     _builder.addListener(new RemovedListenerAdapter());

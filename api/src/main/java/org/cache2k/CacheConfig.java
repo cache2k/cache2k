@@ -123,7 +123,7 @@ public class CacheConfig<K, V> implements Serializable {
   }
 
   /**
-   * @see CacheBuilder#name(String)
+   * @see Cache2kBuilder#name(String)
    */
   public String getName() {
     return name;
@@ -131,7 +131,7 @@ public class CacheConfig<K, V> implements Serializable {
 
   /**
    *
-   * @see CacheBuilder#name(String)
+   * @see Cache2kBuilder#name(String)
    */
   public void setName(String name) {
     this.name = name;
@@ -139,7 +139,7 @@ public class CacheConfig<K, V> implements Serializable {
 
   /**
    *
-   * @see CacheBuilder#entryCapacity(int)
+   * @see Cache2kBuilder#entryCapacity(int)
    */
   public int getEntryCapacity() {
     return entryCapacity;
@@ -199,7 +199,7 @@ public class CacheConfig<K, V> implements Serializable {
 
   /**
    *
-   * @see CacheBuilder#refreshAhead(boolean)
+   * @see Cache2kBuilder#refreshAhead(boolean)
    */
   public boolean isRefreshAhead() {
     return refreshAhead;
@@ -207,7 +207,7 @@ public class CacheConfig<K, V> implements Serializable {
 
   /**
    *
-   * @see CacheBuilder#refreshAhead(boolean)
+   * @see Cache2kBuilder#refreshAhead(boolean)
    */
   public void setRefreshAhead(boolean v) {
     this.refreshAhead = v;
@@ -216,7 +216,7 @@ public class CacheConfig<K, V> implements Serializable {
   /**
    * @deprecated use {@link #isRefreshAhead()}
    *
-   * @see CacheBuilder#refreshAhead(boolean)
+   * @see Cache2kBuilder#refreshAhead(boolean)
    */
   public boolean isBackgroundRefresh() {
     return refreshAhead;
@@ -225,7 +225,7 @@ public class CacheConfig<K, V> implements Serializable {
   /**
    * @deprecated use {@link #setRefreshAhead(boolean)}
    *
-   * @see CacheBuilder#refreshAhead(boolean)
+   * @see Cache2kBuilder#refreshAhead(boolean)
    */
   public void setBackgroundRefresh(boolean v) {
     refreshAhead = v;
@@ -356,7 +356,7 @@ public class CacheConfig<K, V> implements Serializable {
   }
 
   /**
-   * @see org.cache2k.CacheBuilder#exceptionExpiryDuration
+   * @see Cache2kBuilder#exceptionExpiryDuration
    */
   public void setExceptionExpiryMillis(long v) {
     exceptionExpiryMillis = v;
@@ -382,7 +382,7 @@ public class CacheConfig<K, V> implements Serializable {
   }
 
   /**
-   * @see CacheBuilder#sharpExpiry(boolean)
+   * @see Cache2kBuilder#sharpExpiry(boolean)
    */
   public void setSharpExpiry(boolean sharpExpiry) {
     this.sharpExpiry = sharpExpiry;
@@ -393,7 +393,7 @@ public class CacheConfig<K, V> implements Serializable {
   }
 
   /**
-   * @see CacheBuilder#suppressExceptions(boolean)
+   * @see Cache2kBuilder#suppressExceptions(boolean)
    */
   public void setSuppressExceptions(boolean suppressExceptions) {
     this.suppressExceptions = suppressExceptions;
@@ -451,7 +451,7 @@ public class CacheConfig<K, V> implements Serializable {
   }
 
   /**
-   * @see CacheBuilder#loaderThreadCount(int)
+   * @see Cache2kBuilder#loaderThreadCount(int)
    */
   public void setLoaderThreadCount(final int v) {
     loaderThreadCount = v;
@@ -478,7 +478,7 @@ public class CacheConfig<K, V> implements Serializable {
   }
 
   /**
-   * @see CacheBuilder#storeByReference(boolean)
+   * @see Cache2kBuilder#storeByReference(boolean)
    */
   public void setStoreByReference(final boolean _storeByReference) {
     storeByReference = _storeByReference;

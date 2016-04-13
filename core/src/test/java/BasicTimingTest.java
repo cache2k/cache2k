@@ -18,7 +18,7 @@
  * #L%
  */
 import org.cache2k.Cache;
-import org.cache2k.CacheBuilder;
+import org.cache2k.Cache2kBuilder;
 import org.cache2k.junit.TimingTests;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -41,7 +41,7 @@ public class BasicTimingTest {
   public void testBigCacheTiming() {
     final int _CACHE_SIZE = 1000000;
     Cache<Integer,Integer> c =
-            CacheBuilder.newCache(Integer.class, Integer.class).entryCapacity(_CACHE_SIZE).build();
+            Cache2kBuilder.newCache(Integer.class, Integer.class).entryCapacity(_CACHE_SIZE).build();
     for (int i = 0; i < _CACHE_SIZE; i++) {
       c.put(i, i);
     }

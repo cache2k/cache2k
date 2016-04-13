@@ -21,7 +21,7 @@ package org.cache2k.core.test;
  */
 
 import org.cache2k.Cache;
-import org.cache2k.CacheBuilder;
+import org.cache2k.Cache2kBuilder;
 import org.cache2k.CacheEntry;
 import org.cache2k.impl.CacheClosedException;
 import org.cache2k.junit.FastTests;
@@ -44,7 +44,7 @@ public class IteratorTest {
 
   @Test
   public void testExpansion() {
-    Cache<Integer, Integer> c = CacheBuilder
+    Cache<Integer, Integer> c = Cache2kBuilder
       .newCache(Integer.class, Integer.class)
       .name(getClass().getName())
       .eternal(true)
@@ -76,7 +76,7 @@ public class IteratorTest {
 
   @Test(expected = CacheClosedException.class)
   public void testClose() {
-    Cache<Integer, Integer> c = CacheBuilder
+    Cache<Integer, Integer> c = Cache2kBuilder
       .newCache(Integer.class, Integer.class)
       .name(getClass().getName())
       .eternal(true)

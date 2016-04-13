@@ -21,7 +21,7 @@ package org.cache2k.test.osgi;
  */
 
 import org.cache2k.Cache;
-import org.cache2k.CacheBuilder;
+import org.cache2k.Cache2kBuilder;
 import org.junit.Ignore;
 import org.junit.Test;
 import static org.junit.Assert.*;
@@ -63,7 +63,7 @@ public class OsgiIT {
   @Test
   public void testSimple() {
     Cache<String, String> c =
-      CacheBuilder.newCache(String.class, String.class)
+      Cache2kBuilder.newCache(String.class, String.class)
         .eternal(true)
         .build();
     c.put("abc", "123");

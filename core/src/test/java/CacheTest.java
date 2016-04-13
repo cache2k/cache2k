@@ -18,7 +18,7 @@
  * #L%
  */
 import org.cache2k.Cache;
-import org.cache2k.CacheBuilder;
+import org.cache2k.Cache2kBuilder;
 import org.cache2k.CacheEntry;
 import org.cache2k.CacheSource;
 import org.cache2k.junit.FastTests;
@@ -38,7 +38,7 @@ public class CacheTest {
   @Test
   public void testPeekAndPut() {
     Cache<String,String> c =
-      CacheBuilder.newCache(String.class, String.class)
+      Cache2kBuilder.newCache(String.class, String.class)
         .eternal(true)
         .build();
     String val = c.peek("something");
@@ -58,7 +58,7 @@ public class CacheTest {
       }
     };
     Cache<String,Integer> c =
-      CacheBuilder.newCache(String.class, Integer.class)
+      Cache2kBuilder.newCache(String.class, Integer.class)
         .source(_lengthCountingSource)
         .eternal(true)
         .build();
@@ -72,7 +72,7 @@ public class CacheTest {
   @Test
   public void testGetEntry() {
     Cache<String,String> c =
-      CacheBuilder.newCache(String.class, String.class)
+      Cache2kBuilder.newCache(String.class, String.class)
         .eternal(true)
         .build();
     String val = c.peek("something");
@@ -87,7 +87,7 @@ public class CacheTest {
   @Test
   public void testContains() {
     Cache<String,String> c =
-      CacheBuilder.newCache(String.class, String.class)
+      Cache2kBuilder.newCache(String.class, String.class)
         .eternal(true)
         .build();
     String val = c.peek("something");

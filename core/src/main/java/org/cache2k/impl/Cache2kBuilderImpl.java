@@ -27,7 +27,7 @@ import org.cache2k.event.CacheEntryRemovedListener;
 import org.cache2k.event.CacheEntryUpdatedListener;
 import org.cache2k.ExperimentalBulkCacheSource;
 import org.cache2k.Cache;
-import org.cache2k.CacheBuilder;
+import org.cache2k.Cache2kBuilder;
 import org.cache2k.CacheConfig;
 import org.cache2k.CacheManager;
 import org.cache2k.CacheSource;
@@ -42,12 +42,12 @@ import java.util.List;
  * @author Jens Wilke; created: 2013-12-06
  */
 @SuppressWarnings("unused") // instantiated by reflection from cache builder
-public class CacheBuilderImpl<K, T> extends CacheBuilder<K, T> {
+public class Cache2kBuilderImpl<K, T> extends Cache2kBuilder<K, T> {
 
   List<CacheEntryOperationListener<K,T>> syncListeners;
 
   @Override
-  public CacheBuilder<K, T> addListener(final CacheEntryOperationListener<K, T> listener) {
+  public Cache2kBuilder<K, T> addListener(final CacheEntryOperationListener<K, T> listener) {
     if (syncListeners == null) {
       syncListeners = new ArrayList<CacheEntryOperationListener<K, T>>();
     }

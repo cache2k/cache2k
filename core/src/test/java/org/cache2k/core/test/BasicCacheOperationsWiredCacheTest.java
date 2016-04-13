@@ -21,7 +21,7 @@ package org.cache2k.core.test;
  */
 
 import org.cache2k.Cache;
-import org.cache2k.CacheBuilder;
+import org.cache2k.Cache2kBuilder;
 import org.cache2k.impl.InternalCache;
 import org.cache2k.junit.FastTests;
 import org.junit.After;
@@ -50,7 +50,7 @@ public class BasicCacheOperationsWiredCacheTest extends BasicCacheOperationsTest
    */
   @BeforeClass
   public static void setUp() {
-    CacheBuilder<Integer, Integer> _builder = CacheBuilder.newCache(Integer.class, Integer.class)
+    Cache2kBuilder<Integer, Integer> _builder = Cache2kBuilder.newCache(Integer.class, Integer.class)
       .name(BasicCacheOperationsTest.class)
       .eternal(true)
       .exceptionExpiryDuration(Long.MAX_VALUE, TimeUnit.MILLISECONDS)

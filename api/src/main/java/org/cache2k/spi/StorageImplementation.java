@@ -21,13 +21,13 @@ package org.cache2k.spi;
  */
 
 import org.cache2k.AnyBuilder;
-import org.cache2k.CacheBuilder;
+import org.cache2k.Cache2kBuilder;
 
 /**
  * @author Jens Wilke; created: 2014-06-18
  */
 public interface StorageImplementation<B extends AnyBuilder> {
 
-  <K, T> B createConfigurationBuilder(CacheBuilder<K, T> _rootBuilder);
+  <K, T> B createConfigurationBuilder(Cache2kBuilder<K, T> _rootBuilder);
 
 }

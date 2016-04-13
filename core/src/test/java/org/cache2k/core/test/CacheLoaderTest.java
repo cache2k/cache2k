@@ -24,7 +24,7 @@ import org.cache2k.core.test.util.Condition;
 import org.cache2k.core.test.util.ConcurrencyHelper;
 import org.cache2k.integration.AdvancedCacheLoader;
 import org.cache2k.Cache;
-import org.cache2k.CacheBuilder;
+import org.cache2k.Cache2kBuilder;
 import org.cache2k.CacheEntry;
 import org.cache2k.integration.CacheLoader;
 import org.cache2k.integration.LoadCompletedListener;
@@ -241,18 +241,18 @@ public class CacheLoaderTest {
     c.close();
   }
 
-  protected CacheBuilder<Integer, Integer> builder() {
+  protected Cache2kBuilder<Integer, Integer> builder() {
     return
-      CacheBuilder.newCache(Integer.class, Integer.class)
+      Cache2kBuilder.newCache(Integer.class, Integer.class)
         .name(this.getClass().getSimpleName())
         .eternal(true);
   }
 
   volatile int loaderExecutionCount = 0;
 
-  protected CacheBuilder<Integer, Integer> builderWithLoader() {
+  protected Cache2kBuilder<Integer, Integer> builderWithLoader() {
     return
-      CacheBuilder.newCache(Integer.class, Integer.class)
+      Cache2kBuilder.newCache(Integer.class, Integer.class)
         .name(this.getClass().getSimpleName())
         .eternal(true)
         .loader(new CacheLoader<Integer, Integer>() {

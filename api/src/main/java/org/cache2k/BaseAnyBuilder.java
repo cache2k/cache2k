@@ -30,16 +30,16 @@ package org.cache2k;
 public abstract class BaseAnyBuilder<K, T, C>
   implements AnyBuilder<K, T, C> {
 
-  protected CacheBuilder<K, T> root;
+  protected Cache2kBuilder<K, T> root;
 
   protected BaseAnyBuilder() { }
 
-  void setRoot(CacheBuilder<K, T> v) {
+  void setRoot(Cache2kBuilder<K, T> v) {
     root = v;
   }
 
 
-  public CacheBuilder<K, T> root() {
+  public Cache2kBuilder<K, T> root() {
     return root;
   }
 

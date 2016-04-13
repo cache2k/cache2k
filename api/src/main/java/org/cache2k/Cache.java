@@ -45,9 +45,9 @@ import java.util.Map;
 
 /**
  * Interface to the cache2k cache implementation. To obtain a cache
- * instance use the {@link CacheBuilder}.
+ * instance use the {@link Cache2kBuilder}.
  *
- * @see CacheBuilder to create a new cache
+ * @see Cache2kBuilder to create a new cache
  * @author Jens Wilke
  */
 @SuppressWarnings("UnusedDeclaration")
@@ -568,7 +568,7 @@ public interface Cache<K, V> extends KeyValueSource<K, V>, Iterable<CacheEntry<K
    * Number of entries the cache stores in total. When iterating the entries
    * the cache will always return less or an identical number of entries.
    *
-   * <p>Expired entries may stay in the cache {@link CacheBuilder#keepDataAfterExpired(boolean)}.
+   * <p>Expired entries may stay in the cache {@link Cache2kBuilder#keepDataAfterExpired(boolean)}.
    * These entries will be counted, but will not be returned by the iterator.
    *
    * <p>With the upcoming storage extension the heap cache may also store an entry
@@ -600,7 +600,7 @@ public interface Cache<K, V> extends KeyValueSource<K, V>, Iterable<CacheEntry<K
    * <p>In case a storage (off heap or persistence) is attached the iterated entries are
    * always inserted into the heap cache. This will affect statistics.
    *
-   * <p>{@link CacheBuilder#refreshAhead(boolean)} is enabled there is a minimal chance
+   * <p>{@link Cache2kBuilder#refreshAhead(boolean)} is enabled there is a minimal chance
    * that an entry in the cache will not be iterated if the iteration takes
    * longer then the refresh/expiry time of one entry.
    */

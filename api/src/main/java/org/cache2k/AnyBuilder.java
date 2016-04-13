@@ -38,7 +38,7 @@ public interface AnyBuilder<K, T, C> {
   /**
    * Goes back to the root builder, to add more configuration nodes.
    */
-  CacheBuilder<K, T> root();
+  Cache2kBuilder<K, T> root();
 
   /**
    * Builds the instance which is the target of nested builders. This

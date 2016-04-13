@@ -20,6 +20,7 @@ package org.cache2k.customization;
  * #L%
  */
 
+import org.cache2k.Cache2kBuilder;
 import org.cache2k.CacheEntry;
 
 import java.util.concurrent.TimeUnit;
@@ -56,8 +57,8 @@ public interface ExpiryCalculator<K, V> {
    * <p>By default expiry itself happens lenient, zero or some milliseconds after
    * the returned value. If sharp expiry is requested, the value will not be
    * returned any more by the cache when the point in time is reached.
-   * The cache parameters {@link org.cache2k.CacheBuilder#sharpExpiry(boolean)}
-   * and {@link org.cache2k.CacheBuilder#refreshAhead(boolean)} influence the behaviour.
+   * The cache parameters {@link Cache2kBuilder#sharpExpiry(boolean)}
+   * and {@link Cache2kBuilder#refreshAhead(boolean)} influence the behaviour.
    *
    * <p><b>Inserts or updates:</b> It is possible to return different expiry times for
    * insert or updates. An update can be detected by the presence of the old entry.
@@ -81,10 +82,10 @@ public interface ExpiryCalculator<K, V> {
    * @return time the time of expiry in millis since epoch. {@link #NO_CACHE} if it should not cached.
    *              {@link #ETERNAL} if there is no specific expiry time known or needed.
    *              The effective expiry duration will never be longer than the
-   *              configured expiry value via {@link org.cache2k.CacheBuilder#expiryDuration(long, TimeUnit)}.
+   *              configured expiry value via {@link Cache2kBuilder#expiryDuration(long, TimeUnit)}.
    *              If a negative value is returned, the negated value will be the expiry time
    *              used, but sharp expiry is requested always,
-   *              ignoring {@link org.cache2k.CacheBuilder#sharpExpiry(boolean)}.
+   *              ignoring {@link Cache2kBuilder#sharpExpiry(boolean)}.
    *
    * @see ExceptionExpiryCalculator#calculateExpiryTime(Object, Throwable, long)
    * @see ValueWithExpiryTime#getCacheExpiryTime()

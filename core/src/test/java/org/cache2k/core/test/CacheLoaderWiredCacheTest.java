@@ -21,7 +21,7 @@ package org.cache2k.core.test;
  */
 
 import org.cache2k.Cache;
-import org.cache2k.CacheBuilder;
+import org.cache2k.Cache2kBuilder;
 import org.cache2k.CacheEntry;
 import org.cache2k.event.CacheEntryCreatedListener;
 import org.cache2k.integration.CacheLoader;
@@ -46,7 +46,7 @@ import static org.junit.Assert.assertTrue;
 public class CacheLoaderWiredCacheTest extends CacheLoaderTest {
 
   @Override
-  protected CacheBuilder<Integer, Integer> builder() {
+  protected Cache2kBuilder<Integer, Integer> builder() {
     return StaticUtil.enforceWiredCache(super.builder());
   }
 
