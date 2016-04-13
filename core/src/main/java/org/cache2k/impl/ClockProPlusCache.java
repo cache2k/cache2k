@@ -36,7 +36,7 @@ import org.cache2k.impl.util.TunableFactory;
  * @author Jens Wilke; created: 2013-07-12
  */
 @SuppressWarnings("unchecked")
-public class ClockProPlusCache<K, V> extends LockFreeCache<K, V> {
+public class ClockProPlusCache<K, V> extends ConcurrentEvictionCache<K, V> {
 
   private static final Tunable TUNABLE_CLOCK_PRO = TunableFactory.get(Tunable.class);
 

@@ -21,9 +21,12 @@ package org.cache2k.impl;
  */
 
 /**
+ * Base class of all eviction algorithms that allow full concurrent read access without
+ * locking.
+ *
  * @author Jens Wilke; created: 2013-12-22
  */
-public abstract class LockFreeCache<K, V> extends BaseCache<K, V> {
+public abstract class ConcurrentEvictionCache<K, V> extends BaseCache<K, V> {
 
   /**
    * No locking needed.

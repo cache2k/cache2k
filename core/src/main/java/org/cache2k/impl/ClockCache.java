@@ -26,7 +26,7 @@ package org.cache2k.impl;
  *
  * @author Jens Wilke; created: 2013-12-01
  */
-public class ClockCache<K, V> extends LockFreeCache<K, V> {
+public class ClockCache<K, V> extends ConcurrentEvictionCache<K, V> {
 
   long hits;
   int runCnt;

@@ -26,7 +26,7 @@ package org.cache2k.impl;
  *
  * @author Jens Wilke
  */
-public class CarCache<K, V> extends LockFreeCache<K, V> {
+public class CarCache<K, V> extends ConcurrentEvictionCache<K, V> {
 
   int size;
   int arcP = 0;

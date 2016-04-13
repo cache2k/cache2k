@@ -25,7 +25,7 @@ package org.cache2k.impl;
  *
  * @author Jens Wilke; created: 2013-12-22
  */
-public class RandomCache<K, V> extends LockFreeCache<K, V> {
+public class RandomCache<K, V> extends ConcurrentEvictionCache<K, V> {
 
   int evictionIndex = 0;
 
