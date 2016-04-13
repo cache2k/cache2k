@@ -67,86 +67,104 @@ public class CacheBuilder<K,V> {
     return new CacheBuilder<K, C>(Cache2kBuilder.newCache(_keyType, _collectionType, _entryType));
   }
 
+  public static <K1, T> CacheBuilder<K1, T> fromConfig(final CacheConfig<K1, T> c) {
+    return new CacheBuilder<K1, T>(Cache2kBuilder.fromConfig(c));
+  }
+
   public CacheBuilder(final Cache2kBuilder<K, V> _builder) {
     builder = _builder;
   }
 
   Cache2kBuilder<K,V> builder;
 
-  public Cache2kBuilder<K, V> addListener(final CacheEntryOperationListener<K, V> listener) {
-    return builder.addListener(listener);
+  public CacheBuilder<K, V> addListener(final CacheEntryOperationListener<K, V> listener) {
+    builder.addListener(listener);
+    return this;
   }
 
-  public Cache2kBuilder<K, V> root() {
-    return builder.root();
+  public CacheBuilder<K, V> entryCapacity(final int v) {
+    builder.entryCapacity(v);
+    return this;
   }
 
-  public Cache2kBuilder<K, V> entryCapacity(final int v) {
-    return builder.entryCapacity(v);
+  public CacheBuilder<K, V> loaderThreadCount(final int v) {
+    builder.loaderThreadCount(v);
+    return this;
   }
 
-  public Cache2kBuilder<K, V> loaderThreadCount(final int v) {
-    return builder.loaderThreadCount(v);
+  public CacheBuilder<K, V> expiryDuration(final long v, final TimeUnit u) {
+    builder.expiryDuration(v, u);
+    return this;
   }
 
-  public Cache2kBuilder<K, V> expiryDuration(final long v, final TimeUnit u) {
-    return builder.expiryDuration(v, u);
+  public CacheBuilder<K, V> entryExpiryCalculator(final EntryExpiryCalculator<K, V> c) {
+    builder.entryExpiryCalculator(c);
+    return this;
   }
 
-  public Cache2kBuilder<K, V> entryExpiryCalculator(final EntryExpiryCalculator<K, V> c) {
-    return builder.entryExpiryCalculator(c);
+  public CacheBuilder<K, V> name(final Class<?> _class) {
+    builder.name(_class);
+    return this;
   }
 
-  public Cache2kBuilder<K, V> name(final Class<?> _class) {
-    return builder.name(_class);
+  public CacheBuilder<K, V> name(final Object _containingObject, final String _fieldName) {
+    builder.name(_containingObject, _fieldName);
+    return this;
   }
 
-  public Cache2kBuilder<K, V> name(final Object _containingObject, final String _fieldName) {
-    return builder.name(_containingObject, _fieldName);
+  public CacheBuilder<K, V> loader(final CacheLoader<K, V> l) {
+    builder.loader(l);
+    return this;
   }
 
-  public Cache2kBuilder<K, V> loader(final CacheLoader<K, V> l) {
-    return builder.loader(l);
+  public CacheBuilder<K, V> sharpExpiry(final boolean f) {
+    builder.sharpExpiry(f);
+    return this;
   }
 
-  public Cache2kBuilder<K, V> sharpExpiry(final boolean f) {
-    return builder.sharpExpiry(f);
+  public CacheBuilder<K, V> eternal(final boolean v) {
+    builder.eternal(v);
+    return this;
   }
 
-  public Cache2kBuilder<K, V> eternal(final boolean v) {
-    return builder.eternal(v);
+  public CacheBuilder<K, V> suppressExceptions(final boolean v) {
+    builder.suppressExceptions(v);
+    return this;
   }
 
-  public Cache2kBuilder<K, V> suppressExceptions(final boolean v) {
-    return builder.suppressExceptions(v);
+  public CacheBuilder<K, V> writer(final CacheWriter<K, V> w) {
+    builder.writer(w);
+    return this;
   }
 
-  public Cache2kBuilder<K, V> writer(final CacheWriter<K, V> w) {
-    return builder.writer(w);
+  public CacheBuilder<K, V> heapEntryCapacity(final int v) {
+    builder.heapEntryCapacity(v);
+    return this;
   }
 
-  public Cache2kBuilder<K, V> heapEntryCapacity(final int v) {
-    return builder.heapEntryCapacity(v);
+  public <T2> CacheBuilder<K, T2> valueType(final Class<T2> t) {
+    builder.valueType(t);
+    return (CacheBuilder<K, T2>) this;
   }
 
-  public <T2> Cache2kBuilder<K, T2> valueType(final Class<T2> t) {
-    return builder.valueType(t);
+  public <K2> CacheBuilder<K2, V> keyType(final Class<K2> t) {
+    builder.keyType(t);
+    return (CacheBuilder<K2, V>) this;
   }
 
-  public <K2> Cache2kBuilder<K2, V> keyType(final Class<K2> t) {
-    return builder.keyType(t);
+  public CacheBuilder<K, V> expiryCalculator(final ExpiryCalculator<K, V> c) {
+    builder.expiryCalculator(c);
+    return this;
   }
 
-  public Cache2kBuilder<K, V> expiryCalculator(final ExpiryCalculator<K, V> c) {
-    return builder.expiryCalculator(c);
+  public CacheBuilder<K, V> name(final Class<?> _class, final String _fieldName) {
+    builder.name(_class, _fieldName);
+    return this;
   }
 
-  public Cache2kBuilder<K, V> name(final Class<?> _class, final String _fieldName) {
-    return builder.name(_class, _fieldName);
-  }
-
-  public Cache2kBuilder<K, V> exceptionExpiryDuration(final long v, final TimeUnit u) {
-    return builder.exceptionExpiryDuration(v, u);
+  public CacheBuilder<K, V> exceptionExpiryDuration(final long v, final TimeUnit u) {
+    builder.exceptionExpiryDuration(v, u);
+    return this;
   }
 
   public Cache<K, V> build() {
@@ -157,16 +175,14 @@ public class CacheBuilder<K,V> {
     return builder.createConfiguration();
   }
 
-  public static <K1, T> Cache2kBuilder<K1, T> fromConfig(final CacheConfig<K1, T> c) {
-    return Cache2kBuilder.fromConfig(c);
+  public CacheBuilder<K, V> manager(final CacheManager m) {
+    builder.manager(m);
+    return this;
   }
 
-  public Cache2kBuilder<K, V> manager(final CacheManager m) {
-    return builder.manager(m);
-  }
-
-  public Cache2kBuilder<K, V> storeByReference(final boolean v) {
-    return builder.storeByReference(v);
+  public CacheBuilder<K, V> storeByReference(final boolean v) {
+    builder.storeByReference(v);
+    return this;
   }
 
   @Deprecated
@@ -174,84 +190,99 @@ public class CacheBuilder<K,V> {
     return builder.getConfig();
   }
 
-  public Cache2kBuilder<K, V> expirySecs(final int v) {
-    return builder.expirySecs(v);
+  public CacheBuilder<K, V> expirySecs(final int v) {
+    builder.expirySecs(v);
+    return this;
   }
 
-  public Cache2kBuilder<K, V> maxSizeBound(final int v) {
-    return builder.maxSizeBound(v);
+  public CacheBuilder<K, V> maxSizeBound(final int v) {
+    builder.maxSizeBound(v);
+    return this;
   }
 
-  public Cache2kBuilder<K, V> name(final String v) {
-    return builder.name(v);
+  public CacheBuilder<K, V> name(final String v) {
+    builder.name(v);
+    return this;
   }
 
-  public void setRoot(final Cache2kBuilder<K, V> v) {
-    builder.setRoot(v);
+  public CacheBuilder<K, V> source(final CacheSourceWithMetaInfo<K, V> g) {
+    builder.source(g);
+    return this;
   }
 
-  public Cache2kBuilder<K, V> source(final CacheSourceWithMetaInfo<K, V> g) {
-    return builder.source(g);
+  public CacheBuilder<K, V> source(final ExperimentalBulkCacheSource<K, V> g) {
+    builder.source(g);
+    return this;
   }
 
-  public Cache2kBuilder<K, V> source(final ExperimentalBulkCacheSource<K, V> g) {
-    return builder.source(g);
+  public CacheBuilder<K, V> implementation(final Class<?> c) {
+    builder.implementation(c);
+    return this;
   }
 
-  public Cache2kBuilder<K, V> implementation(final Class<?> c) {
-    return builder.implementation(c);
+  public <K2> CacheBuilder<K2, V> keyType(final CacheTypeDescriptor<K2> t) {
+    builder.keyType(t);
+    return (CacheBuilder<K2, V>) this;
   }
 
-  public <K2> Cache2kBuilder<K2, V> keyType(final CacheTypeDescriptor<K2> t) {
-    return builder.keyType(t);
+  public CacheBuilder<K, V> expiryMillis(final long v) {
+    builder.expiryMillis(v);
+    return this;
   }
 
-  public Cache2kBuilder<K, V> expiryMillis(final long v) {
-    return builder.expiryMillis(v);
+  public CacheBuilder<K, V> backgroundRefresh(final boolean f) {
+    builder.backgroundRefresh(f);
+    return this;
   }
 
-  public Cache2kBuilder<K, V> backgroundRefresh(final boolean f) {
-    return builder.backgroundRefresh(f);
+  public CacheBuilder<K, V> source(final CacheSource<K, V> g) {
+    builder.source(g);
+    return this;
   }
 
-  public Cache2kBuilder<K, V> source(final CacheSource<K, V> g) {
-    return builder.source(g);
+  public CacheBuilder<K, V> source(final BulkCacheSource<K, V> g) {
+    builder.source(g);
+    return this;
   }
 
-  public Cache2kBuilder<K, V> source(final BulkCacheSource<K, V> g) {
-    return builder.source(g);
+  public CacheBuilder<K, V> exceptionExpiryCalculator(final org.cache2k.customization.ExceptionExpiryCalculator<K> c) {
+    builder.exceptionExpiryCalculator(c);
+    return this;
   }
 
-  public Cache2kBuilder<K, V> exceptionExpiryCalculator(final org.cache2k.customization.ExceptionExpiryCalculator<K> c) {
-    return builder.exceptionExpiryCalculator(c);
+  public CacheBuilder<K, V> maxSize(final int v) {
+    builder.maxSize(v);
+    return this;
   }
 
-  public Cache2kBuilder<K, V> maxSize(final int v) {
-    return builder.maxSize(v);
+  public <T2> CacheBuilder<K, T2> valueType(final CacheTypeDescriptor<T2> t) {
+    builder.valueType(t);
+    return (CacheBuilder<K, T2>) this;
   }
 
-  public <T2> Cache2kBuilder<K, T2> valueType(final CacheTypeDescriptor<T2> t) {
-    return builder.valueType(t);
+  public CacheBuilder<K, V> keepDataAfterExpired(final boolean v) {
+    builder.keepDataAfterExpired(v);
+    return this;
   }
 
-  public Cache2kBuilder<K, V> keepDataAfterExpired(final boolean v) {
-    return builder.keepDataAfterExpired(v);
+  public CacheBuilder<K, V> refreshController(final RefreshController lc) {
+    builder.refreshController(lc);
+    return this;
   }
 
-  public Cache2kBuilder<K, V> refreshController(final RefreshController lc) {
-    return builder.refreshController(lc);
+  public CacheBuilder<K, V> refreshAhead(final boolean f) {
+    builder.refreshAhead(f);
+    return this;
   }
 
-  public Cache2kBuilder<K, V> refreshAhead(final boolean f) {
-    return builder.refreshAhead(f);
+  public CacheBuilder<K, V> exceptionPropagator(final ExceptionPropagator ep) {
+    builder.exceptionPropagator(ep);
+    return this;
   }
 
-  public Cache2kBuilder<K, V> exceptionPropagator(final ExceptionPropagator ep) {
-    return builder.exceptionPropagator(ep);
-  }
-
-  public Cache2kBuilder<K, V> loader(final AdvancedCacheLoader<K, V> l) {
-    return builder.loader(l);
+  public CacheBuilder<K, V> loader(final AdvancedCacheLoader<K, V> l) {
+    builder.loader(l);
+    return this;
   }
 
 }
