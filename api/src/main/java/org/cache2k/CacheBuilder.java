@@ -321,7 +321,16 @@ public class CacheBuilder<K,V> {
   }
 
   public CacheBuilder<K, V> refreshController(final RefreshController lc) {
-    builder.refreshController(lc);
+    expiryCalculator(new ExpiryCalculator<K, V>() {
+      @Override
+      public long calculateExpiryTime(K _key, V _value, long _loadTime, CacheEntry<K, V> _oldEntry) {
+        if (_oldEntry != null) {
+          return lc.calculateNextRefreshTime(_oldEntry.getValue(), _value, _oldEntry.getLastModification(), _loadTime);
+        } else {
+          return lc.calculateNextRefreshTime(null, _value, 0L, _loadTime);
+        }
+      }
+    });
     return this;
   }
 

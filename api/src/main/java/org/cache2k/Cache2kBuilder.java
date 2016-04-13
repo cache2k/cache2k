@@ -358,23 +358,6 @@ public abstract class Cache2kBuilder<K, V>
   }
 
   /**
-   * @deprecated since 0.20, please use {@link #expiryCalculator}
-   */
-  public Cache2kBuilder<K, V> refreshController(final RefreshController lc) {
-    expiryCalculator(new ExpiryCalculator<K, V>() {
-      @Override
-      public long calculateExpiryTime(K _key, V _value, long _loadTime, CacheEntry<K, V> _oldEntry) {
-        if (_oldEntry != null) {
-          return lc.calculateNextRefreshTime(_oldEntry.getValue(), _value, _oldEntry.getLastModification(), _loadTime);
-        } else {
-          return lc.calculateNextRefreshTime(null, _value, 0L, _loadTime);
-        }
-      }
-    });
-    return this;
-  }
-
-  /**
    * Sets the internal cache implementation to be used. This is used currently
    * for internal purposes. It will be removed from the general API, since the implementation
    * type is not defined within the api module.
