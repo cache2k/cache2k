@@ -20,6 +20,9 @@ package org.cache2k.impl.event;
  * #L%
  */
 
+import org.cache2k.impl.InternalCache;
+import org.cache2k.impl.util.Log;
+
 import java.util.LinkedList;
 import java.util.Map;
 import java.util.Queue;
@@ -55,8 +58,10 @@ public class AsyncDispatcher<K> {
 
   Map<K, Queue<AsyncEvent<K>>> keyQueue = new ConcurrentHashMap<K, Queue<AsyncEvent<K>>>();
   Executor executor;
+  InternalCache cache;
 
-  public AsyncDispatcher(final Executor _executor) {
+  public AsyncDispatcher(InternalCache _cache, final Executor _executor) {
+    cache = _cache;
     executor = _executor;
   }
 
@@ -90,7 +95,11 @@ public class AsyncDispatcher<K> {
    */
   public void runMoreOrStop(AsyncEvent<K> _event) {
     for (;;) {
-      _event.execute();
+      try {
+        _event.execute();
+      } catch (Throwable t) {
+        cache.getLog().warn("Async event exception", t);
+      }
       final K key = _event.getKey();
       synchronized (getLockObject(key)) {
         Queue<AsyncEvent<K>> q = keyQueue.get(key);

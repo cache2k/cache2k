@@ -30,6 +30,7 @@ import org.cache2k.event.CacheEntryCreatedListener;
 import org.cache2k.event.CacheEntryExpiredListener;
 import org.cache2k.event.CacheEntryRemovedListener;
 import org.cache2k.event.CacheEntryUpdatedListener;
+import org.cache2k.impl.util.Log;
 import org.cache2k.junit.FastTests;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -50,7 +51,7 @@ public class ListenerTest {
   protected Cache2kBuilder<Integer, Integer> builder() {
     return
       Cache2kBuilder.of(Integer.class, Integer.class)
-        .name(this.getClass().getSimpleName())
+        .name(this.getClass())
         .eternal(true);
   }
 
@@ -263,6 +264,51 @@ public class ListenerTest {
       @Override
       public boolean check() throws Exception {
         return _callCount.get() == 1;
+      }
+    });
+    c.close();
+  }
+
+  @Test(expected = Exception.class)
+  public void updateListenerException() {
+    Cache<Integer, Integer> c = builder()
+      .addListener(new CacheEntryUpdatedListener<Integer, Integer>() {
+        @Override
+        public void onEntryUpdated(final Cache<Integer, Integer> cache, final CacheEntry<Integer, Integer> currentEntry, final CacheEntry<Integer, Integer> entryWithNewData) {
+          throw new RuntimeException("ouch");
+        }
+      })
+      .build();
+    c.put(1, 2);
+    c.put(1, 2);
+    c.close();
+  }
+
+  @Test
+  public void asyncUpdateListenerException() {
+    String _logName = getClass().getName();
+    final Log.SuppressionCounter _suppressionCounter = new Log.SuppressionCounter();
+    Log.registerSuppression("org.cache2k.Cache/default:" + _logName, _suppressionCounter);
+    Cache<Integer, Integer> c =
+      Cache2kBuilder.of(Integer.class, Integer.class)
+        .name(_logName)
+        .eternal(true)
+        .addAsyncListener(new CacheEntryUpdatedListener<Integer, Integer>() {
+          @Override
+          public void onEntryUpdated(
+            final Cache<Integer, Integer> cache,
+            final CacheEntry<Integer, Integer> currentEntry,
+            final CacheEntry<Integer, Integer> entryWithNewData) {
+            throw new RuntimeException("ouch");
+          }
+        })
+        .build();
+    c.put(1, 2);
+    c.put(1, 2);
+    ConcurrencyHelper.await(new Condition() {
+      @Override
+      public boolean check() throws Exception {
+        return _suppressionCounter.getWarnCount() == 1;
       }
     });
     c.close();

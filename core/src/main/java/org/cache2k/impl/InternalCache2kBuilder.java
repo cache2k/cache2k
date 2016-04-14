@@ -240,7 +240,7 @@ public class InternalCache2kBuilder<K, T> {
         }
       }
       if (config.hasAsyncListeners()) {
-        AsyncDispatcher<K> _asyncDispatcher = new AsyncDispatcher<K>(ASYNC_EXECUTOR);
+        AsyncDispatcher<K> _asyncDispatcher = new AsyncDispatcher<K>(wc, ASYNC_EXECUTOR);
         List<CacheEntryCreatedListener<K,T>> cll = new ArrayList<CacheEntryCreatedListener<K, T>>();
         List<CacheEntryUpdatedListener<K,T>> ull = new ArrayList<CacheEntryUpdatedListener<K, T>>();
         List<CacheEntryRemovedListener<K,T>> rll = new ArrayList<CacheEntryRemovedListener<K, T>>();
