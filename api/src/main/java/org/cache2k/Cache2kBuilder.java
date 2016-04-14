@@ -106,10 +106,6 @@ public abstract class Cache2kBuilder<K, V>
   }
 
   protected CacheManager manager;
-  protected CacheSource cacheSource;
-  protected CacheSourceWithMetaInfo cacheSourceWithMetaInfo;
-  protected CacheWriter cacheWriter;
-  protected ExceptionPropagator exceptionPropagator;
 
   public <K2> Cache2kBuilder<K2, V> keyType(Class<K2> t) {
     config.setKeyType(t);
@@ -296,7 +292,7 @@ public abstract class Cache2kBuilder<K, V>
   }
 
   public Cache2kBuilder<K, V> exceptionPropagator(ExceptionPropagator ep) {
-    exceptionPropagator = ep;
+    config.setExceptionPropagator(ep);
     return this;
   }
 
@@ -311,7 +307,7 @@ public abstract class Cache2kBuilder<K, V>
   }
 
   public Cache2kBuilder<K, V> writer(CacheWriter<K, V> w) {
-    cacheWriter = w;
+    config.setWriter(w);
     return this;
   }
 

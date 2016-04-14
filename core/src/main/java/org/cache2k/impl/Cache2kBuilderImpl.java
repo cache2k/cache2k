@@ -28,8 +28,6 @@ import org.cache2k.Cache;
 import org.cache2k.Cache2kBuilder;
 import org.cache2k.CacheConfig;
 import org.cache2k.CacheManager;
-import org.cache2k.CacheSource;
-import org.cache2k.CacheSourceWithMetaInfo;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
@@ -73,8 +71,6 @@ public class Cache2kBuilderImpl<K, T> extends Cache2kBuilder<K, T> {
 
   Object getConstructorParameter(Class<?> c) {
     if (CacheConfig.class.isAssignableFrom(c)) { return config; }
-    if (CacheSource.class.isAssignableFrom(c)) { return cacheSource; }
-    if (CacheSourceWithMetaInfo.class.isAssignableFrom(c)) { return cacheSourceWithMetaInfo; }
     return null;
   }
 
@@ -101,8 +97,8 @@ public class Cache2kBuilderImpl<K, T> extends Cache2kBuilder<K, T> {
     if (config.getAdvancedLoader() != null) {
       c.setAdvancedLoader(config.getAdvancedLoader());
     }
-    if (exceptionPropagator != null) {
-      c.setExceptionPropagator(exceptionPropagator);
+    if (config.getExceptionPropagator() != null) {
+      c.setExceptionPropagator(config.getExceptionPropagator());
     }
     if (config != null) {
       c.setCacheConfig(config);
@@ -172,7 +168,7 @@ public class Cache2kBuilderImpl<K, T> extends Cache2kBuilder<K, T> {
     boolean _wrap = false;
 
     if (syncListeners != null) { _wrap = true; }
-    if (cacheWriter != null) { _wrap = true; }
+    if (config.getWriter() != null) { _wrap = true; }
 
     WiredCache<K, T> wc = null;
     if (_wrap) {
@@ -185,8 +181,8 @@ public class Cache2kBuilderImpl<K, T> extends Cache2kBuilder<K, T> {
     bc.setName(_name);
     if (_wrap) {
       wc.loader = bc.loader;
-      if (cacheWriter != null) {
-        wc.writer = cacheWriter;
+      if (config.getWriter() != null) {
+        wc.writer = config.getWriter();
       }
       if (syncListeners != null) {
         List<CacheEntryCreatedListener<K,T>> cll = new ArrayList<CacheEntryCreatedListener<K, T>>();

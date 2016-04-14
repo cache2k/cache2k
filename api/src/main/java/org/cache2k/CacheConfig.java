@@ -24,6 +24,8 @@ import org.cache2k.customization.*;
 import org.cache2k.customization.ExceptionExpiryCalculator;
 import org.cache2k.integration.AdvancedCacheLoader;
 import org.cache2k.integration.CacheLoader;
+import org.cache2k.integration.CacheWriter;
+import org.cache2k.integration.ExceptionPropagator;
 
 import java.io.Serializable;
 import java.util.ArrayList;
@@ -56,11 +58,13 @@ public class CacheConfig<K, V> implements Serializable {
   private boolean sharpExpiry = false;
   private List<Object> moduleConfiguration;
   private boolean suppressExceptions = true;
-  private CacheLoader<K,V> loader;
-  private AdvancedCacheLoader<K,V> advancedLoader;
   private int loaderThreadCount;
   private ExpiryCalculator<K,V> expiryCalculator;
   private ExceptionExpiryCalculator<K> exceptionExpiryCalculator;
+  private CacheLoader<K,V> loader;
+  private CacheWriter<K,V> writer;
+  private AdvancedCacheLoader<K,V> advancedLoader;
+  private ExceptionPropagator exceptionPropagator;
 
   /**
    * Construct a config instance setting the type parameters and returning a
@@ -473,6 +477,17 @@ public class CacheConfig<K, V> implements Serializable {
     expiryCalculator = _expiryCalculator;
   }
 
+  public CacheWriter<K, V> getWriter() {
+    return writer;
+  }
+
+  /**
+   * @see Cache2kBuilder#writer(CacheWriter)
+   */
+  public void setWriter(final CacheWriter<K, V> v) {
+    writer = v;
+  }
+
   public boolean isStoreByReference() {
     return storeByReference;
   }
@@ -482,5 +497,17 @@ public class CacheConfig<K, V> implements Serializable {
    */
   public void setStoreByReference(final boolean _storeByReference) {
     storeByReference = _storeByReference;
+  }
+
+  public ExceptionPropagator getExceptionPropagator() {
+    return exceptionPropagator;
+  }
+
+  /**
+   * @see Cache2kBuilder#exceptionPropagator(ExceptionPropagator)
+   * @param _exceptionPropagator
+   */
+  public void setExceptionPropagator(final ExceptionPropagator _exceptionPropagator) {
+    exceptionPropagator = _exceptionPropagator;
   }
 }

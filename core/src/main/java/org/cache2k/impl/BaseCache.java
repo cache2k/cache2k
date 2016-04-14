@@ -121,7 +121,6 @@ public abstract class BaseCache<K, V>
   protected String name;
   public CacheManagerImpl manager;
   protected AdvancedCacheLoader<K,V> loader;
-
   protected RefreshHandler<K,V> refreshHandler = RefreshHandler.ETERNAL;
 
   /** Statistics */
