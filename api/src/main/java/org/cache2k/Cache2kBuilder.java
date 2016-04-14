@@ -36,19 +36,13 @@ import java.util.concurrent.TimeUnit;
 /**
  * @author Jens Wilke; created: 2013-06-25
  */
-public abstract class Cache2kBuilder<K, V>
+public final class Cache2kBuilder<K, V>
   extends RootAnyBuilder<K, V> implements Cloneable {
 
-  private static Cache2kBuilder PROTOTYPE;
+  private static final Cache2kCoreProvider coreProvider;
 
   static {
-    try {
-      Cache2kCoreProvider _provider =
-        SingleProviderResolver.getInstance().resolve(Cache2kCoreProvider.class);
-      PROTOTYPE = _provider.getBuilderImplementation().newInstance();
-    } catch (Exception ex) {
-      throw new Error("cache2k-core module missing, no builder prototype", ex);
-    }
+    coreProvider = SingleProviderResolver.getInstance().resolve(Cache2kCoreProvider.class);
   }
 
   /**
@@ -96,11 +90,7 @@ public abstract class Cache2kBuilder<K, V>
   }
 
   static <K,T> Cache2kBuilder<K, T> fromConfig(CacheConfig<K, T> c) {
-    Cache2kBuilder<K,T> cb = null;
-    try {
-      cb = (Cache2kBuilder<K,T>) PROTOTYPE.clone();
-    } catch (CloneNotSupportedException ignored) {  }
-    cb.root = cb;
+    Cache2kBuilder<K,T> cb = new Cache2kBuilder<K, T>();
     cb.config = c;
     return cb;
   }
@@ -422,6 +412,8 @@ public abstract class Cache2kBuilder<K, V>
    * The builder reused to build caches with similar or identical
    * configuration. The builder is not thread safe.
    */
-  public abstract Cache<K, V> build();
+  public Cache<K, V> build() {
+    return coreProvider.createCache(manager, config);
+  }
 
 }

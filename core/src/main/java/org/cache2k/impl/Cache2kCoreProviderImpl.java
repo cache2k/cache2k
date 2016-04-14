@@ -20,6 +20,9 @@ package org.cache2k.impl;
  * #L%
  */
 
+import org.cache2k.Cache;
+import org.cache2k.CacheConfig;
+import org.cache2k.CacheManager;
 import org.cache2k.spi.Cache2kCoreProvider;
 import org.cache2k.spi.Cache2kManagerProvider;
 
@@ -39,8 +42,8 @@ public class Cache2kCoreProviderImpl extends Cache2kCoreProvider {
   }
 
   @Override
-  public Class<Cache2kBuilderImpl> getBuilderImplementation() {
-    return Cache2kBuilderImpl.class;
+  public <K, V> Cache<K, V> createCache(final CacheManager m, final CacheConfig<K, V> cfg) {
+    return new InternalCache2kBuilder<K,V>(cfg, m).build();
   }
 
 }

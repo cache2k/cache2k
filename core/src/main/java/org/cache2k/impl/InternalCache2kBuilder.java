@@ -25,7 +25,6 @@ import org.cache2k.event.CacheEntryOperationListener;
 import org.cache2k.event.CacheEntryRemovedListener;
 import org.cache2k.event.CacheEntryUpdatedListener;
 import org.cache2k.Cache;
-import org.cache2k.Cache2kBuilder;
 import org.cache2k.CacheConfig;
 import org.cache2k.CacheManager;
 
@@ -35,10 +34,19 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
+ * Method object to construct a cache2k cache.
+ *
  * @author Jens Wilke; created: 2013-12-06
  */
-@SuppressWarnings("unused") // instantiated by reflection from cache builder
-public class Cache2kBuilderImpl<K, T> extends Cache2kBuilder<K, T> {
+public class InternalCache2kBuilder<K, T> {
+
+  CacheManager manager;
+  CacheConfig<K,T> config;
+
+  public InternalCache2kBuilder(final CacheConfig<K, T> _config, final CacheManager _manager) {
+    config = _config;
+    manager = _manager;
+  }
 
   String deriveNameFromStackTrace() {
     Exception ex = new Exception();
@@ -139,7 +147,12 @@ public class Cache2kBuilderImpl<K, T> extends Cache2kBuilder<K, T> {
 
   @SuppressWarnings({"unchecked", "SuspiciousToArrayCall"})
   public Cache<K, T> build() {
-    config = createConfiguration();
+    if (config.getValueType() == null) {
+      config.setValueType(Object.class);
+    }
+    if (config.getKeyType() == null) {
+      config.setKeyType(Object.class);
+    }
     if (config.getName() == null) {
       config.setName(deriveNameFromStackTrace());
     }

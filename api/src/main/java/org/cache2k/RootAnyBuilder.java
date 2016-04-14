@@ -40,12 +40,6 @@ public abstract class RootAnyBuilder<K, V>
 
   @Override
   public CacheConfig createConfiguration() {
-    if (config.getValueType() == null) {
-      config.setValueType(Object.class);
-    }
-    if (config.getKeyType() == null) {
-      config.setKeyType(Object.class);
-    }
     List<Object> _moduleConfiguration = new ArrayList<Object>();
     for (BaseAnyBuilder bb : modules) {
       _moduleConfiguration.add(bb.createConfiguration());

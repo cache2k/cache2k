@@ -20,7 +20,9 @@ package org.cache2k.spi;
  * #L%
  */
 
-import org.cache2k.Cache2kBuilder;
+import org.cache2k.Cache;
+import org.cache2k.CacheConfig;
+import org.cache2k.CacheManager;
 
 /**
  * For API internal use only. The cache2k implementation provides the
@@ -40,6 +42,6 @@ public abstract class Cache2kCoreProvider {
 
   public abstract Cache2kManagerProvider getManagerProvider();
 
-  public abstract Class<? extends Cache2kBuilder> getBuilderImplementation();
+  public abstract <K,V> Cache<K,V> createCache(CacheManager m, CacheConfig<K,V> cfg);
 
 }
