@@ -40,17 +40,6 @@ import java.util.List;
 @SuppressWarnings("unused") // instantiated by reflection from cache builder
 public class Cache2kBuilderImpl<K, T> extends Cache2kBuilder<K, T> {
 
-  List<CacheEntryOperationListener<K,T>> syncListeners;
-
-  @Override
-  public Cache2kBuilder<K, T> addListener(final CacheEntryOperationListener<K, T> listener) {
-    if (syncListeners == null) {
-      syncListeners = new ArrayList<CacheEntryOperationListener<K, T>>();
-    }
-    syncListeners.add(listener);
-    return this;
-  }
-
   String deriveNameFromStackTrace() {
     Exception ex = new Exception();
     for (StackTraceElement e : ex.getStackTrace()) {
@@ -167,7 +156,7 @@ public class Cache2kBuilderImpl<K, T> extends Cache2kBuilder<K, T> {
 
     boolean _wrap = false;
 
-    if (syncListeners != null) { _wrap = true; }
+    if (config.hasListeners()) { _wrap = true; }
     if (config.getWriter() != null) { _wrap = true; }
 
     WiredCache<K, T> wc = null;
@@ -184,11 +173,11 @@ public class Cache2kBuilderImpl<K, T> extends Cache2kBuilder<K, T> {
       if (config.getWriter() != null) {
         wc.writer = config.getWriter();
       }
-      if (syncListeners != null) {
+      if (config.hasListeners()) {
         List<CacheEntryCreatedListener<K,T>> cll = new ArrayList<CacheEntryCreatedListener<K, T>>();
         List<CacheEntryUpdatedListener<K,T>> ull = new ArrayList<CacheEntryUpdatedListener<K, T>>();
         List<CacheEntryRemovedListener<K,T>> rll = new ArrayList<CacheEntryRemovedListener<K, T>>();
-        for (CacheEntryOperationListener<K,T> el : syncListeners) {
+        for (CacheEntryOperationListener<K,T> el : config.getListeners()) {
           if (el instanceof CacheEntryCreatedListener) {
             cll.add((CacheEntryCreatedListener) el);
           }

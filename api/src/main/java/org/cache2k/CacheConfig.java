@@ -22,6 +22,7 @@ package org.cache2k;
 
 import org.cache2k.customization.*;
 import org.cache2k.customization.ExceptionExpiryCalculator;
+import org.cache2k.event.CacheEntryOperationListener;
 import org.cache2k.integration.AdvancedCacheLoader;
 import org.cache2k.integration.CacheLoader;
 import org.cache2k.integration.CacheWriter;
@@ -29,8 +30,11 @@ import org.cache2k.integration.ExceptionPropagator;
 
 import java.io.Serializable;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 /**
  * Cache configuration. Adheres to bean standard.
@@ -65,6 +69,7 @@ public class CacheConfig<K, V> implements Serializable {
   private CacheWriter<K,V> writer;
   private AdvancedCacheLoader<K,V> advancedLoader;
   private ExceptionPropagator exceptionPropagator;
+  private Collection<CacheEntryOperationListener<K,V>> listeners;
 
   /**
    * Construct a config instance setting the type parameters and returning a
@@ -510,4 +515,25 @@ public class CacheConfig<K, V> implements Serializable {
   public void setExceptionPropagator(final ExceptionPropagator _exceptionPropagator) {
     exceptionPropagator = _exceptionPropagator;
   }
+
+  /**
+   * A set of listeners. A listener can be added by adding it to the collection.
+   * Duplicate (in terms of equal objects) identical listeners will be ignored.
+   *
+   * @return Mutable collection of listeners
+   */
+  public Collection<CacheEntryOperationListener<K,V>> getListeners() {
+    if (listeners == null) {
+      listeners = new HashSet<CacheEntryOperationListener<K,V>>();
+    }
+    return listeners;
+  }
+
+  /**
+   * @return True if listeners are added to this configuration.
+   */
+  public boolean hasListeners() {
+    return listeners != null && !listeners.isEmpty();
+  }
+
 }

@@ -311,7 +311,19 @@ public abstract class Cache2kBuilder<K, V>
     return this;
   }
 
-  public abstract Cache2kBuilder<K, V> addListener(CacheEntryOperationListener<K,V> listener);
+  /**
+   * Add a listener to the cache.
+   *
+   * @throws IllegalArgumentException if an identical listener is already added.
+   * @param listener The listener to add
+   */
+  public Cache2kBuilder<K, V> addListener(CacheEntryOperationListener<K,V> listener) {
+    boolean _inserted = config.getListeners().add(listener);
+    if (!_inserted) {
+      throw new IllegalArgumentException("Listener already added");
+    }
+    return this;
+  }
 
   /**
    * @deprecated replaced by {@link #expiryCalculator}

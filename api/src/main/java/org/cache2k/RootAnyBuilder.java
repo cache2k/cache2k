@@ -32,7 +32,7 @@ public abstract class RootAnyBuilder<K, V>
   extends BaseAnyBuilder<K, V, CacheConfig> {
 
   private List<BaseAnyBuilder> modules = Collections.emptyList();
-  protected CacheConfig config;
+  protected CacheConfig<K,V> config;
 
   /** Closed for extension */
   RootAnyBuilder() { }
