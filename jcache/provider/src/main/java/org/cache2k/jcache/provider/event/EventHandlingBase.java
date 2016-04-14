@@ -205,31 +205,31 @@ public abstract class EventHandlingBase<K,V,W> {
   class UpdatedListenerAdapter implements org.cache2k.event.CacheEntryUpdatedListener<K, W> {
 
     @Override
-    public void onEntryUpdated(final Cache<K, W> c, final CacheEntry<K, W> _previousEntry, final CacheEntry<K, W> e) {
+    public void onEntryUpdated(final Cache<K, W> c, final CacheEntry<K, W> _currentEntry, final CacheEntry<K, W> entryWithNewData) {
       javax.cache.Cache<K,V> _jCache = getCache(c);
-      if (e.getException() != null) {
-        if (_previousEntry.getException() != null) {
+      if (entryWithNewData.getException() != null) {
+        if (_currentEntry.getException() != null) {
           return;
         }
         EntryEvent<K, V> cee =
-          new EntryEvent<K, V>(_jCache, EventType.REMOVED, e.getKey(), extractValue(_previousEntry.getValue()));
+          new EntryEvent<K, V>(_jCache, EventType.REMOVED, entryWithNewData.getKey(), extractValue(_currentEntry.getValue()));
         asyncDispatcher.deliverAsyncEvent(cee);
         for (Listener<K,V> t : removedListener) {
           t.fire(cee);
         }
         return;
       }
-      if (_previousEntry.getException() != null) {
-        fireCreated(_jCache, e);
+      if (_currentEntry.getException() != null) {
+        fireCreated(_jCache, entryWithNewData);
         return;
       }
-      W v0 = _previousEntry.getValue();
-      W v1 = e.getValue();
+      W v0 = _currentEntry.getValue();
+      W v1 = entryWithNewData.getValue();
       if (v0 == v1 && v0 instanceof TouchyJCacheAdapter.TimeVal) {
         return;
       }
       EntryEvent<K, V> cee =
-        new EntryEventWithOldValue<K, V>(_jCache, EventType.UPDATED, e.getKey(), extractValue(v1), extractValue(v0));
+        new EntryEventWithOldValue<K, V>(_jCache, EventType.UPDATED, entryWithNewData.getKey(), extractValue(v1), extractValue(v0));
       asyncDispatcher.deliverAsyncEvent(cee);
       for (Listener<K,V> t : updatedListener) {
         t.fire(cee);
