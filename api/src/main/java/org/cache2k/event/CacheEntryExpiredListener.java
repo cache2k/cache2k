@@ -27,12 +27,18 @@ import org.cache2k.CacheEntry;
  * Listener called for an expired entry. An expiry event may not be sent if an
  * entry is refreshed before the expiry is detected. In this case an update event is sent.
  *
- * <p>Expiry events are not yet completely implemented.
- *
  * @author Jens Wilke
  */
 public interface CacheEntryExpiredListener<K, V> extends CacheEntryOperationListener<K,V> {
 
-  void onEntryExpired(Cache<K,V> c, CacheEntry<K,V> e);
+  /**
+   * Called after the expiry of an entry. The call is always done in the asynchronous thread
+   * pool and does not block cache internal resources.
+   *
+   * @param cache Reference to the cache that generated the event.
+   * @param entry Entry containing the last data. It is only valid to access the object during the
+   *                     call of this method. The object value may become invalid afterwards.
+   */
+  void onEntryExpired(Cache<K,V> cache, CacheEntry<K,V> entry);
 
 }
