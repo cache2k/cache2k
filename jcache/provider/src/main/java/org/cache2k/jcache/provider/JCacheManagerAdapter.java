@@ -128,7 +128,7 @@ public class JCacheManagerAdapter implements CacheManager {
     Cache2kBuilder b = Cache2kBuilder.of(cfg.getKeyType(), cfg.getValueType());
     b.name(_cacheName);
     b.eternal(true);
-    b.keepDataAfterExpired(false);
+    b.keepValueAfterExpired(false);
     MutableConfiguration<K, V> _cfgCopy = null;
     if (cfg instanceof CompleteConfiguration) {
       CompleteConfiguration<K, V> cc = (CompleteConfiguration<K, V>) cfg;
@@ -193,7 +193,7 @@ public class JCacheManagerAdapter implements CacheManager {
     Cache2kBuilder b = Cache2kBuilder.of(cc.getKeyType(), TouchyJCacheAdapter.TimeVal.class);
     b.name(_cacheName);
     b.sharpExpiry(true);
-    b.keepDataAfterExpired(false);
+    b.keepValueAfterExpired(false);
     b.exceptionPropagator(new ExceptionPropagator() {
       @Override
       public void propagateException(String _additionalMessage, Throwable _originalException) {

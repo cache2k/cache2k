@@ -26,6 +26,7 @@ get deprecated. Modifications in the statistics output will not listed as breaka
   * Either expiryDuration or eternal must be set explicitly in this release. See: https://github.com/cache2k/cache2k/issues/21
   * Return value of `Cache.iterator()` changed from `ClosableIterator` to `Iterator`
   * `ExperimentalBulkCacheSource` removed
+  * CacheConfig renamed and moved to new destination
 
 ## Bug fixes
 
@@ -47,7 +48,7 @@ Fixes of corner cases that are most likely not affecting any existing applicatio
 
   * Return value of `Cache.iterator()` changed from `ClosableIterator` to `Iterator`
   * Cache2kBuilder as replacement for CacheBuilder
-  
+  * Option keepDataAfterExpired renamed to keepValueAfterExpired
 
 
 

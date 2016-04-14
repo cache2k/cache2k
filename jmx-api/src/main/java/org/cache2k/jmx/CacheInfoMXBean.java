@@ -85,9 +85,9 @@ public interface CacheInfoMXBean {
    * Counter for the event that data in the cache has expired.
    *
    * <p>This can mean that the cache entry is removed or just marked as expired
-   * in case that the keep data option is enabled.
+   * in case that the keep value option is enabled.
    *
-   * @see org.cache2k.CacheConfig#setKeepDataAfterExpired(boolean)
+   * @see org.cache2k.CacheConfig#setKeepValueAfterExpired(boolean)
    */
   long getExpiredCnt();
 

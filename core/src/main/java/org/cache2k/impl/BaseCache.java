@@ -318,7 +318,7 @@ public abstract class BaseCache<K, V>
     if (c.getLoaderThreadCount() > 0) {
       loaderExecutor = provideDefaultLoaderExecutor(c.getLoaderThreadCount());
     }
-    setFeatureBit(KEEP_AFTER_EXPIRED, c.isKeepDataAfterExpired());
+    setFeatureBit(KEEP_AFTER_EXPIRED, c.isKeepValueAfterExpired());
     setFeatureBit(SHARP_TIMEOUT_FEATURE, c.isSharpExpiry());
     setFeatureBit(SUPPRESS_EXCEPTIONS, c.isSuppressExceptions());
   }

@@ -57,7 +57,7 @@ public class CacheConfig<K, V> implements Serializable {
   private boolean refreshAhead = false;
   private long expiryMillis  = -1;
   private long exceptionExpiryMillis = -1;
-  private boolean keepDataAfterExpired = true;
+  private boolean keepValueAfterExpired = true;
   private boolean sharpExpiry = false;
   private List<Object> moduleConfiguration;
   private boolean suppressExceptions = true;
@@ -370,19 +370,15 @@ public class CacheConfig<K, V> implements Serializable {
     exceptionExpiryMillis = v;
   }
 
-  public boolean isKeepDataAfterExpired() {
-    return keepDataAfterExpired;
+  public boolean isKeepValueAfterExpired() {
+    return keepValueAfterExpired;
   }
 
   /**
-   * Expired data is kept in the cache until the entry is evicted by the replacement
-   * algorithm. This consumes memory, but if the data is accessed again the previous
-   * data can be used by the cache source for optimizing, e.g. for a get if-modified-since.
-   *
-   * @see org.cache2k.CacheSourceWithMetaInfo
+   * @see Cache2kBuilder#keepValueAfterExpired(boolean)
    */
-  public void setKeepDataAfterExpired(boolean v) {
-    this.keepDataAfterExpired = v;
+  public void setKeepValueAfterExpired(boolean v) {
+    this.keepValueAfterExpired = v;
   }
 
   public boolean isSharpExpiry() {

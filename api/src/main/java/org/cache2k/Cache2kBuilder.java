@@ -236,8 +236,16 @@ public class Cache2kBuilder<K, V>
     return this;
   }
 
-  public final Cache2kBuilder<K, V> keepDataAfterExpired(boolean v) {
-    config.setKeepDataAfterExpired(v);
+  /**
+  * Expired data is kept in the cache until the entry is evicted by the replacement
+  * algorithm. This consumes memory, but if the data is accessed again the previous
+  * data can be used by the cache loader for optimizing (e.g. if-modified-since for a
+  * HTTP request).
+  *
+  * @see AdvancedCacheLoader
+  */
+  public final Cache2kBuilder<K, V> keepValueAfterExpired(boolean v) {
+    config.setKeepValueAfterExpired(v);
     return this;
   }
 
@@ -252,8 +260,10 @@ public class Cache2kBuilder<K, V>
   }
 
   /**
-   * Keep entries forever. Default is false. By default the cache uses an expiry time
-   * of 10 minutes. If there is no explicit expiry configured for exceptions
+   * Cached values do not expire by time. Entries will need to be removed from the
+   * cache explicitly or evicted if capacity constraints are reached.
+   *
+   * <p>Exceptions: If there is no explicit expiry configured for exceptions
    * with {@link #exceptionExpiryDuration(long, TimeUnit)}, exceptions will
    * not be cached and expire immediately.
    */
@@ -348,7 +358,7 @@ public class Cache2kBuilder<K, V>
   }
 
   /**
-   * Set expiry calculator to use in case of an exception happened in the {@link CacheSource}.
+   * Set expiry calculator to use in case of an exception happened in the {@link CacheLoader}.
    */
   public final Cache2kBuilder<K, V> exceptionExpiryCalculator(ExceptionExpiryCalculator<K> c) {
     config.setExceptionExpiryCalculator(c);
@@ -407,8 +417,8 @@ public class Cache2kBuilder<K, V>
    * cache stores object references directly should set this value.
    *
    * <p>If this value is not set to true this means: The key and value objects need to have a
-   * defined serialization mechanism and cache may choose to use a tiered storage and transfer
-   * data to off heap or disk. For the 1.0 version this value has no effect. It should be
+   * defined serialization mechanism and the cache may choose to transfer off the heap.
+   * For cache2k version 1.0 this value has no effect. It should be
    * used by application developers to future proof the applications with upcoming versions.
    */
   public final Cache2kBuilder<K, V> storeByReference(boolean v) {

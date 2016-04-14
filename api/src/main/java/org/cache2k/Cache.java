@@ -568,7 +568,7 @@ public interface Cache<K, V> extends KeyValueSource<K, V>, Iterable<CacheEntry<K
    * Number of entries the cache stores in total. When iterating the entries
    * the cache will always return less or an identical number of entries.
    *
-   * <p>Expired entries may stay in the cache {@link Cache2kBuilder#keepDataAfterExpired(boolean)}.
+   * <p>Expired entries may stay in the cache {@link Cache2kBuilder#keepValueAfterExpired(boolean)}.
    * These entries will be counted, but will not be returned by the iterator.
    *
    * <p>With the upcoming storage extension the heap cache may also store an entry

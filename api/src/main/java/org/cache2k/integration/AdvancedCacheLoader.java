@@ -42,9 +42,10 @@ public abstract class AdvancedCacheLoader<K,V> {
    * @param currentTime Time in millis, retrieved before the call.
    * @param previousEntry entry currently in the cache, regardless whether expired or not.
    *                     There is no guarantee that an expired entry will be provided to the loader.
-   *                     Depending und passed time and configuration expired entries may be purged.
-   *                     Check the configuration parameters {@link Cache2kBuilder#keepDataAfterExpired(boolean)}
-   *                      and {@link Cache2kBuilder#refreshAhead(boolean)}.
+   *                     Depending und passed time and configuration expired entries may be purged from
+   *                      the cache before the next load happens. Check the configuration parameters
+   *                      {@link Cache2kBuilder#keepValueAfterExpired(boolean)} and
+   *                      {@link Cache2kBuilder#refreshAhead(boolean)}.
    * @return value to be associated with the key. If the cache permits null values
    *         a null is associated with the key.
    * @throws Exception Unhandled exception from the loader. The exception will be
