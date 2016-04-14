@@ -24,6 +24,7 @@ import org.cache2k.Cache2kBuilder;
 import org.cache2k.CacheBuilder;
 import org.cache2k.CacheEntry;
 import org.cache2k.event.CacheEntryCreatedListener;
+import org.cache2k.event.CacheEntryExpiredListener;
 import org.cache2k.event.CacheEntryOperationListener;
 import org.cache2k.event.CacheEntryRemovedListener;
 import org.cache2k.event.CacheEntryUpdatedListener;
@@ -221,6 +222,7 @@ public class InternalCache2kBuilder<K, T> {
       List<CacheEntryCreatedListener<K,T>> _syncCreatedListeners = new ArrayList<CacheEntryCreatedListener<K, T>>();
       List<CacheEntryUpdatedListener<K,T>> _syncUpdatedListeners = new ArrayList<CacheEntryUpdatedListener<K, T>>();
       List<CacheEntryRemovedListener<K,T>> _syncRemovedListeners = new ArrayList<CacheEntryRemovedListener<K, T>>();
+      List<CacheEntryExpiredListener<K,T>> _syncExpiredListeners = new ArrayList<CacheEntryExpiredListener<K, T>>();
       if (config.hasListeners()) {
         for (CacheEntryOperationListener<K,T> el : config.getListeners()) {
           if (el instanceof CacheEntryCreatedListener) {
@@ -232,6 +234,9 @@ public class InternalCache2kBuilder<K, T> {
           if (el instanceof CacheEntryRemovedListener) {
             _syncRemovedListeners.add((CacheEntryRemovedListener) el);
           }
+          if (el instanceof CacheEntryExpiredListener) {
+            config.getAsyncListeners().add(el);
+          }
         }
       }
       if (config.hasAsyncListeners()) {
@@ -239,6 +244,7 @@ public class InternalCache2kBuilder<K, T> {
         List<CacheEntryCreatedListener<K,T>> cll = new ArrayList<CacheEntryCreatedListener<K, T>>();
         List<CacheEntryUpdatedListener<K,T>> ull = new ArrayList<CacheEntryUpdatedListener<K, T>>();
         List<CacheEntryRemovedListener<K,T>> rll = new ArrayList<CacheEntryRemovedListener<K, T>>();
+        List<CacheEntryExpiredListener<K,T>> ell = new ArrayList<CacheEntryExpiredListener<K, T>>();
         for (CacheEntryOperationListener<K,T> el : config.getAsyncListeners()) {
           if (el instanceof CacheEntryCreatedListener) {
             cll.add((CacheEntryCreatedListener) el);
@@ -248,6 +254,9 @@ public class InternalCache2kBuilder<K, T> {
           }
           if (el instanceof CacheEntryRemovedListener) {
             rll.add((CacheEntryRemovedListener) el);
+          }
+          if (el instanceof CacheEntryExpiredListener) {
+            ell.add((CacheEntryExpiredListener) el);
           }
         }
         for (CacheEntryCreatedListener l : cll) {
@@ -259,6 +268,9 @@ public class InternalCache2kBuilder<K, T> {
         for (CacheEntryRemovedListener l : rll) {
           _syncRemovedListeners.add(new AsyncRemovedListener<K, T>(_asyncDispatcher, l));
         }
+        for (CacheEntryExpiredListener l : ell) {
+          _syncExpiredListeners.add(new AsyncExpiredListener<K, T>(_asyncDispatcher, l));
+        }
       }
       if (!_syncCreatedListeners.isEmpty()) {
         wc.syncEntryCreatedListeners = _syncCreatedListeners.toArray(new CacheEntryCreatedListener[_syncCreatedListeners.size()]);
@@ -268,6 +280,9 @@ public class InternalCache2kBuilder<K, T> {
       }
       if (!_syncRemovedListeners.isEmpty()) {
         wc.syncEntryRemovedListeners = _syncRemovedListeners.toArray(new CacheEntryRemovedListener[_syncRemovedListeners.size()]);
+      }
+      if (!_syncExpiredListeners.isEmpty()) {
+        wc.syncEntryExpiredListeners = _syncExpiredListeners.toArray(new CacheEntryExpiredListener[_syncExpiredListeners.size()]);
       }
       bc.listener = wc;
       RefreshHandler<K,T> rh =RefreshHandler.of(config);
@@ -356,6 +371,32 @@ public class InternalCache2kBuilder<K, T> {
         @Override
         public void execute() {
           listener.onEntryRemoved(c, e);
+        }
+      });
+    }
+  }
+
+  static class AsyncExpiredListener<K,V> implements CacheEntryExpiredListener<K,V> {
+    AsyncDispatcher<K> dispatcher;
+    CacheEntryExpiredListener<K,V> listener;
+
+    public AsyncExpiredListener(final AsyncDispatcher<K> _dispatcher, final CacheEntryExpiredListener<K, V> _listener) {
+      dispatcher = _dispatcher;
+      listener = _listener;
+    }
+
+    @Override
+    public void onEntryExpired(final Cache<K, V> c, final CacheEntry<K, V> e0) {
+      final CacheEntry<K,V> e = ReadOnlyCacheEntry.of(e0);
+      dispatcher.queue(new AsyncEvent<K>() {
+        @Override
+        public K getKey() {
+          return e.getKey();
+        }
+
+        @Override
+        public void execute() {
+          listener.onEntryExpired(c, e);
         }
       });
     }

@@ -25,7 +25,9 @@ import org.cache2k.Cache2kBuilder;
 import org.cache2k.CacheEntry;
 import org.cache2k.core.test.util.ConcurrencyHelper;
 import org.cache2k.core.test.util.Condition;
+import org.cache2k.core.test.util.TimeBox;
 import org.cache2k.event.CacheEntryCreatedListener;
+import org.cache2k.event.CacheEntryExpiredListener;
 import org.cache2k.event.CacheEntryRemovedListener;
 import org.cache2k.event.CacheEntryUpdatedListener;
 import org.cache2k.junit.FastTests;
@@ -36,6 +38,7 @@ import static org.junit.Assert.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
@@ -71,7 +74,7 @@ public class ListenerTest {
   @Test
   public void updateListenerCalled() {
     final AtomicInteger _callCount = new AtomicInteger();
-    Cache<Integer,Integer> c = builder()
+    Cache<Integer, Integer> c = builder()
       .addListener(new CacheEntryUpdatedListener<Integer, Integer>() {
         @Override
         public void onEntryUpdated(final Cache<Integer, Integer> cache, final CacheEntry<Integer, Integer> currentEntry, final CacheEntry<Integer, Integer> entryWithNewData) {
@@ -90,7 +93,7 @@ public class ListenerTest {
   @Test
   public void removedListenerCalled() {
     final AtomicInteger _callCount = new AtomicInteger();
-    Cache<Integer,Integer> c = builder()
+    Cache<Integer, Integer> c = builder()
       .addListener(new CacheEntryRemovedListener<Integer, Integer>() {
         @Override
         public void onEntryRemoved(final Cache<Integer, Integer> c, final CacheEntry<Integer, Integer> e) {
@@ -113,7 +116,7 @@ public class ListenerTest {
   public void asyncCreatedListenerCalled() {
     final AtomicInteger _callCount = new AtomicInteger();
     final CountDownLatch _fire = new CountDownLatch(1);
-    Cache<Integer,Integer> c = builder()
+    Cache<Integer, Integer> c = builder()
       .addAsyncListener(new CacheEntryCreatedListener<Integer, Integer>() {
         @Override
         public void onEntryCreated(final Cache<Integer, Integer> c, final CacheEntry<Integer, Integer> e) {
@@ -141,7 +144,7 @@ public class ListenerTest {
   public void asyncUpdateListenerCalled() {
     final AtomicInteger _callCount = new AtomicInteger();
     final CountDownLatch _fire = new CountDownLatch(1);
-    Cache<Integer,Integer> c = builder()
+    Cache<Integer, Integer> c = builder()
       .addAsyncListener(new CacheEntryUpdatedListener<Integer, Integer>() {
         @Override
         public void onEntryUpdated(final Cache<Integer, Integer> cache, final CacheEntry<Integer, Integer> currentEntry, final CacheEntry<Integer, Integer> entryWithNewData) {
@@ -171,7 +174,7 @@ public class ListenerTest {
   public void asyncRemovedListenerCalled() {
     final AtomicInteger _callCount = new AtomicInteger();
     final CountDownLatch _fire = new CountDownLatch(1);
-    Cache<Integer,Integer> c = builder()
+    Cache<Integer, Integer> c = builder()
       .addAsyncListener(new CacheEntryRemovedListener<Integer, Integer>() {
         @Override
         public void onEntryRemoved(final Cache<Integer, Integer> c, final CacheEntry<Integer, Integer> e) {
@@ -203,7 +206,7 @@ public class ListenerTest {
   public void manyAsyncUpdateListenerCalled() {
     final AtomicInteger _callCount = new AtomicInteger();
     final ConcurrentMap<Integer, Integer> _seenValues = new ConcurrentHashMap<Integer, Integer>();
-    Cache<Integer,Integer> c = builder()
+    Cache<Integer, Integer> c = builder()
       .addAsyncListener(new CacheEntryUpdatedListener<Integer, Integer>() {
         @Override
         public void onEntryUpdated(final Cache<Integer, Integer> cache, final CacheEntry<Integer, Integer> currentEntry, final CacheEntry<Integer, Integer> entryWithNewData) {
@@ -225,6 +228,43 @@ public class ListenerTest {
       }
     });
     assertEquals("Event dispatching is using copied events", 123, _seenValues.size());
+    c.close();
+  }
+
+  @Test
+  public void asyncExpiredListenerCalled() {
+    final AtomicInteger _callCount = new AtomicInteger();
+    final long _EXPIRY_MILLIS = TestingParameters.MINIMAL_TICK_MILLIS;
+    final Cache<Integer, Integer> c = builder()
+      .addAsyncListener(new CacheEntryExpiredListener<Integer, Integer>() {
+        @Override
+        public void onEntryExpired(final Cache<Integer, Integer> c, final CacheEntry<Integer, Integer> e) {
+          _callCount.incrementAndGet();
+        }
+      })
+      .expiryDuration(_EXPIRY_MILLIS, TimeUnit.MILLISECONDS)
+      .build();
+    final int ANY_KEY = 1;
+    TimeBox.millis(_EXPIRY_MILLIS)
+      .work(new Runnable() {
+        @Override
+        public void run() {
+          c.put(ANY_KEY, 4711);
+        }
+      })
+      .check(new Runnable() {
+        @Override
+        public void run() {
+          assertEquals(0, _callCount.get());
+          assertTrue(c.contains(ANY_KEY));
+        }
+      });
+    ConcurrencyHelper.await(new Condition() {
+      @Override
+      public boolean check() throws Exception {
+        return _callCount.get() == 1;
+      }
+    });
     c.close();
   }
 

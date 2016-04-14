@@ -20,6 +20,7 @@ package org.cache2k.impl;
  * #L%
  */
 
+import org.cache2k.event.CacheEntryExpiredListener;
 import org.cache2k.integration.AdvancedCacheLoader;
 import org.cache2k.CacheEntry;
 import org.cache2k.event.CacheEntryCreatedListener;
@@ -66,6 +67,7 @@ public class WiredCache<K, V> extends AbstractCache<K, V>
   CacheEntryRemovedListener<K,V>[] syncEntryRemovedListeners;
   CacheEntryCreatedListener<K,V>[] syncEntryCreatedListeners;
   CacheEntryUpdatedListener<K,V>[] syncEntryUpdatedListeners;
+  CacheEntryExpiredListener<K,V>[] syncEntryExpiredListeners;
   RefreshHandler<K,V> refreshHandler;
 
   private CommonMetrics.Updater metrics() {
@@ -589,7 +591,37 @@ public class WiredCache<K, V> extends AbstractCache<K, V>
 
   @Override
   public void timerEventExpireEntry(final Entry<K,V> e) {
-    heapCache.timerEventExpireEntry(e);
+    metrics().timerEvent();
+    synchronized (e) {
+      timerEventExpireEntryLocked(e);
+    }
+  }
+
+  /**
+   * @see BaseCache#timerEventExpireEntryLocked(Entry)
+   */
+  void timerEventExpireEntryLocked(final Entry<K, V> e) {
+    long nrt = e.nextRefreshTime;
+    if (nrt >= 0 && nrt < Entry.EXPIRY_TIME_MIN) {
+      return;
+    }
+    long t = System.currentTimeMillis();
+    if (t >= Math.abs(nrt)) {
+      try {
+        heapCache.expireEntry(e);
+        for (CacheEntryExpiredListener<K,V> l : syncEntryExpiredListeners) {
+          l.onEntryExpired(this, e);
+        }
+      } catch (CacheClosedException ignore) { }
+    } else {
+      if (nrt <= 0) {
+        return;
+      }
+      if (!heapCache.hasKeepAfterExpired()) {
+        refreshHandler.scheduleFinalExpiryTimer(e);
+      }
+      e.nextRefreshTime = -nrt;
+    }
   }
 
   @Override
@@ -637,7 +669,7 @@ public class WiredCache<K, V> extends AbstractCache<K, V>
         heapCache.refreshSubmitFailedCnt++;
       } else { // if (mainHashCtrl.remove(mainHash, e)) ...
       }
-      heapCache.timerEventExpireEntryLocked(e);
+      timerEventExpireEntryLocked(e);
     }
   }
 

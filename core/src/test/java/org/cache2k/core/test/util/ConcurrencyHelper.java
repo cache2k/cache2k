@@ -62,7 +62,7 @@ public class ConcurrencyHelper {
   }
 
   /**
-   * Wait for an event the maximum test time.
+   * Wait for an event the maximum test time, as defined at {@link TestingParameters#MAX_FINISH_WAIT}
    */
   public static void await(final Condition c) {
     await(null, TestingParameters.MAX_FINISH_WAIT, c);
