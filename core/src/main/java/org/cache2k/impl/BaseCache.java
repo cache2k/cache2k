@@ -340,7 +340,7 @@ public abstract class BaseCache<K, V>
       new ThreadPoolExecutor(_threadCount, _threadCount,
         21, TimeUnit.SECONDS,
         new LinkedBlockingDeque<Runnable>(),
-        TUNABLE.threadFactoryProvider.newThreadFactory(getCacheManager(), getThreadNamePrefix()),
+        TUNABLE.threadFactoryProvider.newThreadFactory(getThreadNamePrefix()),
         new ThreadPoolExecutor.AbortPolicy());
   }
 

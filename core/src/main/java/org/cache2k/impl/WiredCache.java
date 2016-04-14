@@ -28,7 +28,6 @@ import org.cache2k.event.CacheEntryRemovedListener;
 import org.cache2k.event.CacheEntryUpdatedListener;
 import org.cache2k.CacheManager;
 import org.cache2k.integration.CacheWriter;
-import org.cache2k.ClosableIterator;
 import org.cache2k.integration.LoadCompletedListener;
 import org.cache2k.impl.operation.ExaminationEntry;
 import org.cache2k.impl.operation.Progress;

@@ -69,6 +69,7 @@ public class CacheConfig<K, V> implements Serializable {
   private AdvancedCacheLoader<K,V> advancedLoader;
   private ExceptionPropagator exceptionPropagator;
   private Collection<CacheEntryOperationListener<K,V>> listeners;
+  private Collection<CacheEntryOperationListener<K,V>> asyncListeners;
 
   /**
    * Construct a config instance setting the type parameters and returning a
@@ -518,7 +519,12 @@ public class CacheConfig<K, V> implements Serializable {
   }
 
   /**
-   * A set of listeners. A listener can be added by adding it to the collection.
+   * A set of listeners. Listeners added in this collection will be
+   * executed in a synchronous mode, meaning, further processing for
+   * an entry will stall until a registered listener is executed.
+   * The expiry will be always executed asynchronously.
+   *
+   * <p>A listener can be added by adding it to the collection.
    * Duplicate (in terms of equal objects) identical listeners will be ignored.
    *
    * @return Mutable collection of listeners
@@ -535,6 +541,26 @@ public class CacheConfig<K, V> implements Serializable {
    */
   public boolean hasListeners() {
     return listeners != null && !listeners.isEmpty();
+  }
+
+  /**
+   * A set of listeners. A listener can be added by adding it to the collection.
+   * Duplicate (in terms of equal objects) identical listeners will be ignored.
+   *
+   * @return Mutable collection of listeners
+   */
+  public Collection<CacheEntryOperationListener<K,V>> getAsyncListeners() {
+    if (asyncListeners == null) {
+      asyncListeners = new HashSet<CacheEntryOperationListener<K,V>>();
+    }
+    return asyncListeners;
+  }
+
+  /**
+   * @return True if listeners are added to this configuration.
+   */
+  public boolean hasAsyncListeners() {
+    return asyncListeners != null && !asyncListeners.isEmpty();
   }
 
 }

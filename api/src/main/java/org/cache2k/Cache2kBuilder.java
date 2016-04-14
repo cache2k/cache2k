@@ -328,13 +328,31 @@ public class Cache2kBuilder<K, V>
   }
 
   /**
-   * Add a listener to the cache.
+   * Add a listener. The listeners  will be executed in a synchronous mode, meaning,
+   * further processing for an entry will stall until a registered listener is executed.
+   * The expiry will be always executed asynchronously.
    *
    * @throws IllegalArgumentException if an identical listener is already added.
    * @param listener The listener to add
    */
   public final Cache2kBuilder<K, V> addListener(CacheEntryOperationListener<K,V> listener) {
     boolean _inserted = config.getListeners().add(listener);
+    if (!_inserted) {
+      throw new IllegalArgumentException("Listener already added");
+    }
+    return this;
+  }
+
+  /**
+   * A set of listeners. Listeners added in this collection will be
+   * executed in a synchronous mode, meaning, further processing for
+   * an entry will stall until a registered listener is executed.
+   *
+   * @throws IllegalArgumentException if an identical listener is already added.
+   * @param listener The listener to add
+   */
+  public final Cache2kBuilder<K,V> addAsyncListener(CacheEntryOperationListener<K,V> listener) {
+    boolean _inserted = config.getAsyncListeners().add(listener);
     if (!_inserted) {
       throw new IllegalArgumentException("Listener already added");
     }

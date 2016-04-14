@@ -16,6 +16,10 @@ The new pattern allows to capture the complete type information. For compatibili
 old builder class `CacheBuilder` is still available to allow applications to transition to the
 new builder.
 
+New features:
+
+  * Asynchronous entry operation events
+
 ## Potential breakages
 
 Changes in semantics or API that may break existing applications are listed here. In general, only very minor
@@ -27,6 +31,7 @@ get deprecated. Modifications in the statistics output will not listed as breaka
   * Return value of `Cache.iterator()` changed from `ClosableIterator` to `Iterator`
   * `ExperimentalBulkCacheSource` removed
   * CacheConfig renamed and moved to new destination
+  * Thread numbers from generated threads start with 1 and numbers will be reused if thread die
 
 ## Bug fixes
 
@@ -51,6 +56,10 @@ Fixes of corner cases that are most likely not affecting any existing applicatio
   * Cache2kBuilder as replacement for CacheBuilder
   * Cache2kBuilder.name(Class) sets the fully qualified class name as name
   * Option keepDataAfterExpired renamed to keepValueAfterExpired
+  * Cache2kBuilder.addAsyncListener
+  * CacheConfiguration.writer
+  * CacheConfiguration.getListeners
+  * CacheConfiguration.getAsyncListeners
   
 
 

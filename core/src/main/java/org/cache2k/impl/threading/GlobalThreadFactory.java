@@ -20,30 +20,58 @@ package org.cache2k.impl.threading;
  * #L%
  */
 
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ThreadFactory;
-import java.util.concurrent.atomic.AtomicInteger;
 
 /**
- * Factory which names the threads uniquely.
+ * Factory which names the threads uniquely. If threads stop the previous numbers
+ * will be reused.
  *
  * @author Jens Wilke; created: 2014-06-10
  */
 public class GlobalThreadFactory implements ThreadFactory {
 
-  AtomicInteger threadCount = new AtomicInteger();
-  String prefix = "cache2k-";
+  final static ConcurrentMap<String,String> NAMES_RUNNING =
+    new ConcurrentHashMap<String, String>();
+
+  String prefix;
 
   public GlobalThreadFactory(String _threadNamePrefix) {
-    if (_threadNamePrefix != null) {
-      this.prefix = _threadNamePrefix;
+    if (_threadNamePrefix == null) {
+      throw new NullPointerException("Missing thread name prefix");
     }
+    prefix = _threadNamePrefix;
+  }
+
+  protected String generateName(int id) {
+    return prefix + '-' + id;
   }
 
   @Override
-  public Thread newThread(Runnable r) {
-    int id = threadCount.getAndIncrement();
-    Thread thr = new Thread(r);
-    thr.setName(prefix + '#' + Integer.toString(id, 36));
+  public Thread newThread(final Runnable r) {
+    String _name;
+    int id = 1;
+    for (;;) {
+      _name = generateName(id);
+      if (NAMES_RUNNING.putIfAbsent(_name, _name) == null) {
+        break;
+      }
+      id++;
+    }
+    final String _finalName = _name;
+    final Runnable _myRunnable = new Runnable() {
+      @Override
+      public void run() {
+        try {
+          r.run();
+        } finally {
+          NAMES_RUNNING.remove(_finalName);
+        }
+      }
+    };
+    Thread thr = new Thread(_myRunnable);
+    thr.setName(_name);
     thr.setDaemon(true);
     return thr;
   }

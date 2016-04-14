@@ -1,4 +1,4 @@
-package org.cache2k.impl.threading;
+package org.cache2k.impl.event;
 
 /*
  * #%L
@@ -20,18 +20,13 @@ package org.cache2k.impl.threading;
  * #L%
  */
 
-import java.util.concurrent.ThreadFactory;
-
 /**
- * Provide the default implementation for the thread factory.
- *
- * @author Jens Wilke; created: 2014-06-10
+ * @author Jens Wilke
  */
-public class DefaultThreadFactoryProvider implements ThreadFactoryProvider {
+public abstract class AsyncEvent<K> {
 
-  @Override
-  public ThreadFactory newThreadFactory(String _namePrefix) {
-    return new GlobalThreadFactory(_namePrefix);
-  }
+  public abstract K getKey();
+
+  public abstract void execute();
 
 }
