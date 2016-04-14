@@ -20,6 +20,8 @@ package org.cache2k.impl;
  * #L%
  */
 
+import org.cache2k.Cache2kBuilder;
+import org.cache2k.CacheBuilder;
 import org.cache2k.event.CacheEntryCreatedListener;
 import org.cache2k.event.CacheEntryOperationListener;
 import org.cache2k.event.CacheEntryRemovedListener;
@@ -32,6 +34,7 @@ import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicLong;
 
 /**
  * Method object to construct a cache2k cache.
@@ -39,6 +42,9 @@ import java.util.List;
  * @author Jens Wilke; created: 2013-12-06
  */
 public class InternalCache2kBuilder<K, T> {
+
+  static final AtomicLong DERIVED_NAME_COUNTER =
+    new AtomicLong(System.currentTimeMillis() % 1234);
 
   CacheManager manager;
   CacheConfig<K,T> config;
@@ -48,20 +54,28 @@ public class InternalCache2kBuilder<K, T> {
     manager = _manager;
   }
 
+  boolean isBuilderClass(String _className) {
+    return CacheBuilder.class.getName().equals(_className) ||
+        Cache2kBuilder.class.getName().equals(_className);
+  }
+
   String deriveNameFromStackTrace() {
+    boolean _builderSeen = false;
     Exception ex = new Exception();
     for (StackTraceElement e : ex.getStackTrace()) {
-      if (!e.getClassName().startsWith("org.cache2k")) {
-        int idx = e.getClassName().lastIndexOf('.');
-        String _simpleClassName = e.getClassName().substring(idx + 1);
+      if (_builderSeen && !isBuilderClass(e.getClassName())) {
         String _methodName = e.getMethodName();
         if (_methodName.equals("<init>")) {
           _methodName = "INIT";
         }
-        if (_methodName != null && _methodName.length() > 0) {
-          return _simpleClassName + "." + _methodName + "" + "." + e.getLineNumber();
+        if (_methodName.equals("<clinit>")) {
+          _methodName = "CLINIT";
         }
+        return
+          "_" + e.getClassName() + "." + _methodName + "-" +
+          e.getLineNumber() + "-" + Long.toString(DERIVED_NAME_COUNTER.incrementAndGet(), 36);
       }
+      _builderSeen = isBuilderClass(e.getClassName());
     }
     return null;
   }
@@ -155,6 +169,9 @@ public class InternalCache2kBuilder<K, T> {
     }
     if (config.getName() == null) {
       config.setName(deriveNameFromStackTrace());
+      if (config.getName() == null) {
+        throw new IllegalArgumentException("name missing and automatic generation failed");
+      }
     }
     Class<?> _implClass = BaseCache.TUNABLE.defaultImplementation;
     if (config.getImplementation() != null) {

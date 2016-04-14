@@ -164,37 +164,27 @@ public class Cache2kBuilder<K, V>
   }
 
   /**
-   * Constructs a cache name out of the simple class name and fieldname.
+   * Constructs a cache name out of the class name and fieldname.
    *
    * <p>See {@link #name(String)} for a general discussion about cache names.
    *
    * @see #name(String)
    */
   public final Cache2kBuilder<K, V> name(Class<?> _class, String _fieldName) {
-    config.setName(_class.getSimpleName() + "." + _fieldName);
+    config.setName(_class.getName() + "." + _fieldName);
     return this;
   }
 
   /**
-   * Sets a cache name from the simple class name.
+   * Sets a cache name from the fully qualified class name.
    *
    * <p>See {@link #name(String)} for a general discussion about cache names.
    *
    * @see #name(String)
    */
   public final Cache2kBuilder<K, V> name(Class<?> _class) {
-    config.setName(_class.getSimpleName());
+    config.setName(_class.getName());
     return this;
-  }
-
-  /**
-   * Constructs a cache name out of the simple class name and fieldname.
-   *
-   * @see #name(String)
-   * @deprecated users should change to, e.g. <code>name(this.getClass(), "cache")</code>
-   */
-  public final Cache2kBuilder<K, V> name(Object _containingObject, String _fieldName) {
-    return name(_containingObject.getClass(), _fieldName);
   }
 
   /**
@@ -213,17 +203,20 @@ public class Cache2kBuilder<K, V>
    *
    * <p>If a name is not specified the cache generates a name automatically. The name is
    * inferred from the call stack trace and contains the simple class name, the method and
-   * the line number of the of the caller to <code>build()</code>. Instead of relying to the
-   * automatic name generation, a name should be chosen carefully.
+   * the line number of the of the caller to <code>build()</code>. The name also contains
+   * a random number. Automatically generated names don't allow reliable management, logging and
+   * additional configuration of caches. If no name is set, {@link #build()} will always create
+   * a new cache with a new unique name within the cache manager. Automatically generated
+   * cache names start with the character <code>'_'</code> as prefix to separate the names from the
+   * usual class name space.
    *
    * <p>In case of a name collision the cache is generating a unique name by adding a counter value.
    * This behavior may change.
    *
-   * <p>TODO: Remove autogeneration and name uniquifier?
-   *
    * <p>Allowed characters for a cache name, are URL non-reserved characters,
-   * these are: [A-Z], [a-z], [0-9] and [~-_.-], see RFC3986. The reason for
-   * restricting the characters in names, is that the names may be used to derive
+   * these are: <code>[A-Z]</code>, <code>[a-z]</code>, <code>[0-9]</code> and <code>[~-_.]</code>,
+   * see RFC3986 as well as the characters: <code>[,()]</code>.
+   * The reason for restricting the characters in names, is that the names may be used to derive
    * other resource names from it, e.g. for file based storage.
    *
    * <p>For brevity within log messages and other displays the cache name may be

@@ -32,6 +32,7 @@ get deprecated. Modifications in the statistics output will not listed as breaka
 
 If something is listed here it might affect an existing application and updating is recommended.
 
+  * Fix a potential race condition: timer event / entry update
 
 ## Fixes and Improvements
 
@@ -39,16 +40,17 @@ Fixes of corner cases that are most likely not affecting any existing applicatio
 
   * JavaDoc improvements (ongoing...)
   * `CacheManager.getCache()` does not return a closed or uninitialized cache
-  * Fix a potential race condition: timer event / entry update
   * Make the iterator more robust. Problems with the previous solution: The iterator could block the cache 
     if the iteration is not  finished completely or the iterator was not closed. In case of concurrent updates to 
     the cache the iterator could continue iterating as long as entries are inserted.
+  * Automatically generated cache names get a random number and start with '_', more see: `Cache2kBuilder.name`
 
 ## API Changes and new methods
 
   * Return value of `Cache.iterator()` changed from `ClosableIterator` to `Iterator`
   * Cache2kBuilder as replacement for CacheBuilder
+  * Cache2kBuilder.name(Class) sets the fully qualified class name as name
   * Option keepDataAfterExpired renamed to keepValueAfterExpired
-
+  
 
 

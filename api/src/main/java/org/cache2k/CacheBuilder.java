@@ -86,12 +86,12 @@ public class CacheBuilder<K,V> {
   }
 
   public CacheBuilder<K, V> name(final Class<?> _class) {
-    builder.name(_class);
+    name(_class.getSimpleName());
     return this;
   }
 
   public CacheBuilder<K, V> name(final Object _containingObject, final String _fieldName) {
-    builder.name(_containingObject, _fieldName);
+    name(_containingObject.getClass(), _fieldName);
     return this;
   }
 
@@ -141,7 +141,7 @@ public class CacheBuilder<K,V> {
   }
 
   public CacheBuilder<K, V> name(final Class<?> _class, final String _fieldName) {
-    builder.name(_class, _fieldName);
+    builder.name(_class.getSimpleName() + "." +  _fieldName);
     return this;
   }
 
