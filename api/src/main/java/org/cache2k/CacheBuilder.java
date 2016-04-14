@@ -32,7 +32,7 @@ import java.util.Collections;
 import java.util.concurrent.TimeUnit;
 
 /**
- * @deprecated Replace with {@link Cache2kBuilder}
+ * @deprecated Replaced with {@link Cache2kBuilder}
  */
 public class CacheBuilder<K,V> {
 
@@ -81,7 +81,7 @@ public class CacheBuilder<K,V> {
   }
 
   public CacheBuilder<K, V> entryExpiryCalculator(final EntryExpiryCalculator<K, V> c) {
-    builder.entryExpiryCalculator(c);
+    builder.expiryCalculator(c);
     return this;
   }
 
@@ -121,7 +121,7 @@ public class CacheBuilder<K,V> {
   }
 
   public CacheBuilder<K, V> heapEntryCapacity(final int v) {
-    builder.heapEntryCapacity(v);
+    builder.config.setHeapEntryCapacity(v);
     return this;
   }
 
@@ -174,7 +174,7 @@ public class CacheBuilder<K,V> {
   }
 
   public CacheBuilder<K, V> expirySecs(final int v) {
-    builder.expirySecs(v);
+    builder.expiryDuration(v, TimeUnit.SECONDS);
     return this;
   }
 
@@ -218,7 +218,7 @@ public class CacheBuilder<K,V> {
   }
 
   public CacheBuilder<K, V> expiryMillis(final long v) {
-    builder.expiryMillis(v);
+    builder.expiryDuration(v, TimeUnit.MILLISECONDS);
     return this;
   }
 

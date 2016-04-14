@@ -272,13 +272,6 @@ public class Cache2kBuilder<K, V>
     return this;
   }
 
-  /**
-   * @deprecated since 0.24, only needed for storage
-   */
-  public final Cache2kBuilder<K, V> heapEntryCapacity(int v) {
-    config.setHeapEntryCapacity(v);
-    return this;
-  }
 
   /**
    * Set the time duration after that an inserted or updated cache entry expires.
@@ -308,22 +301,6 @@ public class Cache2kBuilder<K, V>
    */
   public final Cache2kBuilder<K, V> exceptionExpiryDuration(long v, TimeUnit u) {
     config.setExceptionExpiryMillis(u.toMillis(v));
-    return this;
-  }
-
-  /**
-   * @deprecated since 0.20, please use {@link #expiryDuration}
-   */
-  public final Cache2kBuilder<K, V> expirySecs(int v) {
-    config.setExpiryMillis(v * 1000);
-    return this;
-  }
-
-  /**
-   * @deprecated since 0.20, please use {@link #expiryDuration}
-   */
-  public final Cache2kBuilder<K, V> expiryMillis(long v) {
-    config.setExpiryMillis(v);
     return this;
   }
 
@@ -358,14 +335,6 @@ public class Cache2kBuilder<K, V>
     if (!_inserted) {
       throw new IllegalArgumentException("Listener already added");
     }
-    return this;
-  }
-
-  /**
-   * @deprecated replaced by {@link #expiryCalculator}
-   */
-  public final Cache2kBuilder<K, V> entryExpiryCalculator(EntryExpiryCalculator<K, V> c) {
-    expiryCalculator(c);
     return this;
   }
 
