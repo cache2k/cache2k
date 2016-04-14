@@ -33,6 +33,8 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import static org.junit.Assert.*;
 
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -72,7 +74,7 @@ public class ListenerTest {
     Cache<Integer,Integer> c = builder()
       .addListener(new CacheEntryUpdatedListener<Integer, Integer>() {
         @Override
-        public void onEntryUpdated(final Cache<Integer, Integer> cache, final CacheEntry<Integer, Integer> previousEntry, final CacheEntry<Integer, Integer> currentEntry) {
+        public void onEntryUpdated(final Cache<Integer, Integer> cache, final CacheEntry<Integer, Integer> currentEntry, final CacheEntry<Integer, Integer> entryWithNewData) {
           Thread.yield();
           _callCount.incrementAndGet();
         }
@@ -142,7 +144,7 @@ public class ListenerTest {
     Cache<Integer,Integer> c = builder()
       .addAsyncListener(new CacheEntryUpdatedListener<Integer, Integer>() {
         @Override
-        public void onEntryUpdated(final Cache<Integer, Integer> cache, final CacheEntry<Integer, Integer> previousEntry, final CacheEntry<Integer, Integer> currentEntry) {
+        public void onEntryUpdated(final Cache<Integer, Integer> cache, final CacheEntry<Integer, Integer> currentEntry, final CacheEntry<Integer, Integer> entryWithNewData) {
           try {
             _fire.await();
           } catch (InterruptedException ignore) { }
@@ -200,11 +202,13 @@ public class ListenerTest {
   @Test(timeout = TestingParameters.MAX_FINISH_WAIT)
   public void manyAsyncUpdateListenerCalled() {
     final AtomicInteger _callCount = new AtomicInteger();
+    final ConcurrentMap<Integer, Integer> _seenValues = new ConcurrentHashMap<Integer, Integer>();
     Cache<Integer,Integer> c = builder()
       .addAsyncListener(new CacheEntryUpdatedListener<Integer, Integer>() {
         @Override
-        public void onEntryUpdated(final Cache<Integer, Integer> cache, final CacheEntry<Integer, Integer> previousEntry, final CacheEntry<Integer, Integer> currentEntry) {
+        public void onEntryUpdated(final Cache<Integer, Integer> cache, final CacheEntry<Integer, Integer> currentEntry, final CacheEntry<Integer, Integer> entryWithNewData) {
           _callCount.incrementAndGet();
+          _seenValues.put(entryWithNewData.getValue(), entryWithNewData.getValue());
         }
       })
       .build();
@@ -212,7 +216,7 @@ public class ListenerTest {
     assertEquals(0, _callCount.get());
     final int _UPDATE_COUNT = 123;
     for (int i = 0; i < _UPDATE_COUNT; i++) {
-      c.put(1, 2);
+      c.put(1, i);
     }
     ConcurrencyHelper.await(new Condition() {
       @Override
@@ -220,6 +224,7 @@ public class ListenerTest {
         return _callCount.get() == _UPDATE_COUNT;
       }
     });
+    assertEquals("Event dispatching is using copied events", 123, _seenValues.size());
     c.close();
   }
 

@@ -20,6 +20,8 @@ package org.cache2k.impl.operation;
  * #L%
  */
 
+import org.cache2k.CacheEntry;
+import org.cache2k.impl.Entry;
 import org.cache2k.impl.ExceptionWrapper;
 
 /**
@@ -33,7 +35,26 @@ public class ReadOnlyCacheEntry<K, V> implements ResultEntry<K, V> {
   V valueOrException;
   long lastModification;
 
+  public static <K,V> CacheEntry<K,V> of(CacheEntry<K,V> entry) {
+    if (entry instanceof ReadOnlyCacheEntry) {
+      return entry;
+    }
+    return new ReadOnlyCacheEntry<K, V>((Entry<K,V>) entry);
+  }
+
+  public ReadOnlyCacheEntry(Entry<K,V> entry) {
+    setValues(entry);
+  }
+
+  private void setValues(final Entry<K, V> entry) {
+    setValues(entry.getKey(), entry.getValueOrException(), entry.getLastModification());
+  }
+
   public ReadOnlyCacheEntry(final K _key, final V _valueOrException, final long _lastModification) {
+    setValues(_key, _valueOrException, _lastModification);
+  }
+
+  private void setValues(final K _key, final V _valueOrException, final long _lastModification) {
     key = _key;
     lastModification = _lastModification;
     valueOrException = _valueOrException;

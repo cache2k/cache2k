@@ -32,6 +32,7 @@ import org.cache2k.CacheConfig;
 import org.cache2k.CacheManager;
 import org.cache2k.impl.event.AsyncDispatcher;
 import org.cache2k.impl.event.AsyncEvent;
+import org.cache2k.impl.operation.ReadOnlyCacheEntry;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
@@ -289,7 +290,8 @@ public class InternalCache2kBuilder<K, T> {
     }
 
     @Override
-    public void onEntryCreated(final Cache<K, V> c, final CacheEntry<K, V> e) {
+    public void onEntryCreated(final Cache<K, V> c, CacheEntry<K, V> e0) {
+      final CacheEntry<K,V> e = ReadOnlyCacheEntry.of(e0);
       dispatcher.queue(new AsyncEvent<K>() {
         @Override
         public K getKey() {
@@ -302,6 +304,7 @@ public class InternalCache2kBuilder<K, T> {
         }
       });
     }
+
   }
 
   static class AsyncUpdatedListener<K,V> implements CacheEntryUpdatedListener<K,V> {
@@ -314,16 +317,18 @@ public class InternalCache2kBuilder<K, T> {
     }
 
     @Override
-    public void onEntryUpdated(final Cache<K, V> cache, final CacheEntry<K, V> previousEntry, final CacheEntry<K, V> currentEntry) {
+    public void onEntryUpdated(final Cache<K, V> cache, CacheEntry<K, V> currentEntry0, CacheEntry<K, V> entryWithNewData0) {
+      final CacheEntry<K,V> currentEntry = ReadOnlyCacheEntry.of(currentEntry0);
+      final CacheEntry<K,V> entryWithNewData = ReadOnlyCacheEntry.of(entryWithNewData0);
       dispatcher.queue(new AsyncEvent<K>() {
         @Override
         public K getKey() {
-          return previousEntry.getKey();
+          return currentEntry.getKey();
         }
 
         @Override
         public void execute() {
-          listener.onEntryUpdated(cache, previousEntry, currentEntry);
+          listener.onEntryUpdated(cache, currentEntry, entryWithNewData);
         }
       });
     }
@@ -340,7 +345,8 @@ public class InternalCache2kBuilder<K, T> {
     }
 
     @Override
-    public void onEntryRemoved(final Cache<K, V> c, final CacheEntry<K, V> e) {
+    public void onEntryRemoved(final Cache<K, V> c, final CacheEntry<K, V> e0) {
+      final CacheEntry<K,V> e = ReadOnlyCacheEntry.of(e0);
       dispatcher.queue(new AsyncEvent<K>() {
         @Override
         public K getKey() {
