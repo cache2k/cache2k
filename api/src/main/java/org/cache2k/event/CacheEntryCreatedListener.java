@@ -31,6 +31,13 @@ import org.cache2k.CacheEntry;
  */
 public interface CacheEntryCreatedListener<K, V> extends CacheEntryOperationListener<K, V> {
 
-  void onEntryCreated(Cache<K,V> c, CacheEntry<K,V> e);
+  /**
+   * Called after a creation of a cache entry and after all cache writer ran successfully.
+   *
+   * @param cache Reference to the cache that generated the event.
+   * @param entry Entry containing the current data. It is only valid to access the object during the
+   *                     call of this method. The object value may become invalid afterwards.
+   */
+  void onEntryCreated(Cache<K,V> cache, CacheEntry<K,V> entry);
 
 }
