@@ -243,7 +243,7 @@ public class CacheLoaderTest {
 
   protected Cache2kBuilder<Integer, Integer> builder() {
     return
-      Cache2kBuilder.newCache(Integer.class, Integer.class)
+      Cache2kBuilder.of(Integer.class, Integer.class)
         .name(this.getClass().getSimpleName())
         .eternal(true);
   }
@@ -252,7 +252,7 @@ public class CacheLoaderTest {
 
   protected Cache2kBuilder<Integer, Integer> builderWithLoader() {
     return
-      Cache2kBuilder.newCache(Integer.class, Integer.class)
+      Cache2kBuilder.of(Integer.class, Integer.class)
         .name(this.getClass().getSimpleName())
         .eternal(true)
         .loader(new CacheLoader<Integer, Integer>() {

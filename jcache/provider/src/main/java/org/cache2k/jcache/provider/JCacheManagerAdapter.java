@@ -22,7 +22,6 @@ package org.cache2k.jcache.provider;
 
 import org.cache2k.Cache2kBuilder;
 import org.cache2k.CacheEntry;
-import org.cache2k.CacheSource;
 import org.cache2k.integration.CacheWriter;
 import org.cache2k.customization.ExpiryCalculator;
 import org.cache2k.integration.ExceptionPropagator;
@@ -126,7 +125,7 @@ public class JCacheManagerAdapter implements CacheManager {
       cc.setStoreByValue(cfg.isStoreByValue());
       return createCacheWithSpecialExpiry(_cacheName, cc);
     }
-    Cache2kBuilder b = Cache2kBuilder.newCache(cfg.getKeyType(), cfg.getValueType());
+    Cache2kBuilder b = Cache2kBuilder.of(cfg.getKeyType(), cfg.getValueType());
     b.name(_cacheName);
     b.eternal(true);
     b.keepDataAfterExpired(false);
@@ -191,7 +190,7 @@ public class JCacheManagerAdapter implements CacheManager {
   @SuppressWarnings("unchecked")
   <K, V, C extends Configuration<K, V>> Cache<K, V> createCacheWithSpecialExpiry(String _cacheName, CompleteConfiguration<K, V> cc)
     throws IllegalArgumentException {
-    Cache2kBuilder b = Cache2kBuilder.newCache(cc.getKeyType(), TouchyJCacheAdapter.TimeVal.class);
+    Cache2kBuilder b = Cache2kBuilder.of(cc.getKeyType(), TouchyJCacheAdapter.TimeVal.class);
     b.name(_cacheName);
     b.sharpExpiry(true);
     b.keepDataAfterExpired(false);

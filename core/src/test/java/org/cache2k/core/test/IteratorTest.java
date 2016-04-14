@@ -45,7 +45,7 @@ public class IteratorTest {
   @Test
   public void testExpansion() {
     Cache<Integer, Integer> c = Cache2kBuilder
-      .newCache(Integer.class, Integer.class)
+      .of(Integer.class, Integer.class)
       .name(getClass().getName())
       .eternal(true)
       .entryCapacity(10000)
@@ -77,7 +77,7 @@ public class IteratorTest {
   @Test(expected = CacheClosedException.class)
   public void testClose() {
     Cache<Integer, Integer> c = Cache2kBuilder
-      .newCache(Integer.class, Integer.class)
+      .of(Integer.class, Integer.class)
       .name(getClass().getName())
       .eternal(true)
       .entryCapacity(10000)

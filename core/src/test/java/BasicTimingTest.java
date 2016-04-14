@@ -41,7 +41,7 @@ public class BasicTimingTest {
   public void testBigCacheTiming() {
     final int _CACHE_SIZE = 1000000;
     Cache<Integer,Integer> c =
-            Cache2kBuilder.newCache(Integer.class, Integer.class).entryCapacity(_CACHE_SIZE).build();
+            Cache2kBuilder.of(Integer.class, Integer.class).entryCapacity(_CACHE_SIZE).build();
     for (int i = 0; i < _CACHE_SIZE; i++) {
       c.put(i, i);
     }

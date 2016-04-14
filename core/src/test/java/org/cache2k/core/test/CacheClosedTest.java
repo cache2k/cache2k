@@ -42,7 +42,7 @@ public class CacheClosedTest {
   @BeforeClass
   public static void setUp() {
     cache = Cache2kBuilder
-      .newCache(Integer.class, Integer.class)
+      .of(Integer.class, Integer.class)
       .name(CacheClosedTest.class)
       .eternal(true)
       .entryCapacity(1000)

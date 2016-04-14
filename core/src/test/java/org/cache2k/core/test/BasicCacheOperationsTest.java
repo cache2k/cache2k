@@ -61,7 +61,7 @@ public class BasicCacheOperationsTest {
   @BeforeClass
   public static void setUp() {
     staticCache = Cache2kBuilder
-            .newCache(Integer.class, Integer.class)
+            .of(Integer.class, Integer.class)
             .name(BasicCacheOperationsTest.class)
             .eternal(true)
             .exceptionExpiryDuration(Long.MAX_VALUE, TimeUnit.MILLISECONDS)

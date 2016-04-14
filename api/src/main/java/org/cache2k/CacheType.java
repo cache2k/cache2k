@@ -44,34 +44,27 @@ public class CacheType<T> implements CacheTypeDescriptor<T> {
   private CacheTypeDescriptor descriptor;
 
   protected CacheType() {
-    descriptor = fromType(((ParameterizedType) this.getClass().getGenericSuperclass()).getActualTypeArguments()[0]);
+    descriptor = of(((ParameterizedType) this.getClass().getGenericSuperclass()).getActualTypeArguments()[0]);
   }
 
-  private static CacheTypeDescriptor fromType(Type t) {
+  public static CacheTypeDescriptor of(Type t) {
     if (t instanceof ParameterizedType) {
       ParameterizedType pt = (ParameterizedType) t;
       Class c = (Class) pt.getRawType();
       CacheTypeDescriptor[] ta = new CacheTypeDescriptor[pt.getActualTypeArguments().length];
       for (int i = 0; i < ta.length; i++) {
-        ta[i] = fromType(pt.getActualTypeArguments()[i]);
+        ta[i] = of(pt.getActualTypeArguments()[i]);
       }
       return new CacheTypeDescriptor.OfGeneric(c, ta);
     } else if (t instanceof GenericArrayType) {
       GenericArrayType gat = (GenericArrayType) t;
-      return new CacheTypeDescriptor.OfArray(fromType(gat.getGenericComponentType()));
+      return new CacheTypeDescriptor.OfArray(of(gat.getGenericComponentType()));
     }
     Class c = (Class) t;
     if (c.isArray()) {
-      return new CacheTypeDescriptor.OfArray(fromType(c.getComponentType()));
+      return new CacheTypeDescriptor.OfArray(of(c.getComponentType()));
     }
     return new CacheTypeDescriptor.OfClass(c);
-  }
-
-  /**
-   * Construct a type descriptor from a regular class or array.
-   */
-  public static final <T> CacheTypeDescriptor<T> fromClass(Class<T> c) {
-    return fromType(c);
   }
 
   @Override

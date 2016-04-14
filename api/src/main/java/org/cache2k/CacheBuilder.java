@@ -37,38 +37,21 @@ import java.util.concurrent.TimeUnit;
 public class CacheBuilder<K,V> {
 
   public static CacheBuilder<?,?> newCache() {
-    return new CacheBuilder(Cache2kBuilder.newCache());
+    return new CacheBuilder(Cache2kBuilder.forUnknownTypes());
   }
 
   public static <K,V> CacheBuilder<K,V> newCache(Class<K> _keyType, Class<V> _valueType) {
-    return new CacheBuilder<K, V>(Cache2kBuilder.newCache(_keyType, _valueType));
+    return fromConfig(CacheConfig.of(_keyType, _valueType));
   }
 
-  public static <K,V> CacheBuilder<K,V> newCache(CacheTypeDescriptor<K> _keyType, Class<V> _valueType) {
-    return new CacheBuilder<K, V>(Cache2kBuilder.newCache(_keyType, _valueType));
-  }
-
-  public static <K,V> CacheBuilder<K,V> newCache(Class<K> _keyType, CacheTypeDescriptor<V> _valueType) {
-    return new CacheBuilder<K, V>(Cache2kBuilder.newCache(_keyType, _valueType));
-  }
-
-  public static <K,V> CacheBuilder<K,V> newCache(CacheTypeDescriptor<K> _keyType, CacheTypeDescriptor<V> _valueType) {
-    return new CacheBuilder<K, V>(Cache2kBuilder.newCache(_keyType, _valueType));
-  }
-
-  /**
-   * Method to be removed. Entry type information will be discarded.
-   *
-   * @deprecated use {@link #newCache(Class, CacheTypeDescriptor)}
-   */
   @SuppressWarnings("unchecked")
   public static <K, C extends Collection<T>, T> CacheBuilder<K, C> newCache(
     Class<K> _keyType, Class<C> _collectionType, Class<T> _entryType) {
-    return new CacheBuilder<K, C>(Cache2kBuilder.newCache(_keyType, _collectionType, _entryType));
+    return newCache(_keyType, _collectionType);
   }
 
   public static <K1, T> CacheBuilder<K1, T> fromConfig(final CacheConfig<K1, T> c) {
-    return new CacheBuilder<K1, T>(Cache2kBuilder.fromConfig(c));
+    return new CacheBuilder<K1, T>(Cache2kBuilder.of(c));
   }
 
   public CacheBuilder(final Cache2kBuilder<K, V> _builder) {

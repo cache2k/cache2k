@@ -30,89 +30,135 @@ import org.cache2k.integration.ExceptionPropagator;
 import org.cache2k.spi.Cache2kCoreProvider;
 import org.cache2k.spi.SingleProviderResolver;
 
-import java.util.Collection;
+import java.lang.reflect.ParameterizedType;
+import java.lang.reflect.Type;
 import java.util.concurrent.TimeUnit;
 
 /**
- * @author Jens Wilke; created: 2013-06-25
+ * Builder to create a new cache2k cache. The usage is:
+ *
+ * <pre>{@code
+ *    Cache<Long, List<String>> c =
+ *      new Cache2kBuilder<Long, List<String>>() {}
+ *        .name("myCache")
+ *        .eternal(true)
+ *        .build();
+ * }</pre>
+ *
+ * <p>Caches belong to a cache manager. If no cache manager is set explicitly via {@link #manager} the
+ * default cache manager will be used, as defined by {@link CacheManager#getInstance()}.
+ *
+ * <p>To create a cache from a known configuration in a specified cache manager, use:
+ *
+ * <pre>{@code
+ *   CacheManager manager = ...
+ *   CacheConfiguration<Long, List<String>> config = ...
+ *
+ *   Cache<Long, List<String>> c =
+ *     Cache2kBuilder.of(config)
+ *       .manager(manager)
+ *       .build();
+ * }</pre>
+ *
+ * @author Jens Wilke
+ * @since 0.25
  */
-public final class Cache2kBuilder<K, V>
+public class Cache2kBuilder<K, V>
   extends RootAnyBuilder<K, V> implements Cloneable {
 
-  private static final Cache2kCoreProvider coreProvider;
+  private static final Cache2kCoreProvider CORE_PROVIDER;
 
   static {
-    coreProvider = SingleProviderResolver.getInstance().resolve(Cache2kCoreProvider.class);
+    CORE_PROVIDER = SingleProviderResolver.getInstance().resolve(Cache2kCoreProvider.class);
   }
 
   /**
-   * @deprecated will removed with no replacement?
+   * Create a new cache builder for a cache that has no type restrictions
+   * or to set the type information later via the builder methods {@link #keyType} or
+   * {@link #valueType}.
    */
-  public static Cache2kBuilder<?,?> newCache() {
-    return fromConfig(new CacheConfig());
+  public static Cache2kBuilder<?,?> forUnknownTypes() {
+    return of(new CacheConfig());
   }
 
   /**
-   * @deprecated will removed with no replacement?
+   * Create a new cache builder if key and value types are classes with no generic parameters.
    */
-  public static <K,T> Cache2kBuilder<K,T> newCache(Class<K> _keyType, Class<T> _valueType) {
-    return fromConfig(CacheConfig.of(_keyType, _valueType));
+  public static <K,T> Cache2kBuilder<K,T> of(Class<K> _keyType, Class<T> _valueType) {
+    return of(CacheConfig.of(_keyType, _valueType));
   }
 
   /**
-   * @deprecated will removed with no replacement?
+   * Create a builder from the configuration.
    */
-  public static <K,T> Cache2kBuilder<K,T> newCache(CacheTypeDescriptor<K> _keyType, Class<T> _valueType) {
-    return fromConfig(CacheConfig.of(_keyType, _valueType));
-  }
-
-  /**
-   * @deprecated will removed with no replacement?
-   */
-  public static <K,T> Cache2kBuilder<K,T> newCache(Class<K> _keyType, CacheTypeDescriptor<T> _valueType) {
-    return fromConfig(CacheConfig.of(_keyType, _valueType));
-  }
-
-  /**
-   * @deprecated will removed with no replacement?
-   */
-  public static <K,T> Cache2kBuilder<K,T> newCache(CacheTypeDescriptor<K> _keyType, CacheTypeDescriptor<T> _valueType) {
-    return fromConfig(CacheConfig.of(_keyType, _valueType));
-  }
-
-  /**
-   * @deprecated will removed with no replacement?
-   */
-  @SuppressWarnings("unchecked")
-  public static <K, C extends Collection<T>, T> Cache2kBuilder<K, C> newCache(
-    Class<K> _keyType, Class<C> _collectionType, Class<T> _entryType) {
-    return fromConfig(CacheConfig.of(_keyType, _collectionType));
-  }
-
-  static <K,T> Cache2kBuilder<K, T> fromConfig(CacheConfig<K, T> c) {
-    Cache2kBuilder<K,T> cb = new Cache2kBuilder<K, T>();
-    cb.config = c;
+  public static <K,T> Cache2kBuilder<K, T> of(CacheConfig<K, T> c) {
+    Cache2kBuilder<K,T> cb = new Cache2kBuilder<K, T>(c);
     return cb;
   }
 
-  protected CacheManager manager;
+  private CacheManager manager;
+  private Cache2kBuilder(CacheConfig<K,V> cfg) {
+    config = cfg;
+  }
 
-  public <K2> Cache2kBuilder<K2, V> keyType(Class<K2> t) {
+  /**
+   * Constructor to override for the usage pattern:
+   *
+   * <pre>{@code
+   *    Cache<Long, List<String>> c =
+   *      new Cache2kBuilder<Long, List<String>>() {}
+   *        .name("myCache")
+   *        .eternal(true)
+   *        .build();
+   * }</pre>
+   *
+   * The builder extracts the generic type parameters from the anonymous subclass.
+   */
+  @SuppressWarnings("unchecked")
+  protected Cache2kBuilder() {
+    Type[] _types =
+      ((ParameterizedType) this.getClass().getGenericSuperclass()).getActualTypeArguments();
+    config = CacheConfig.of(
+      (CacheTypeDescriptor<K>) CacheType.of(_types[0]).getBeanRepresentation(),
+      (CacheTypeDescriptor<V>) CacheType.of(_types[1]).getBeanRepresentation());
+  }
+
+  /**
+   * Sets the key type to use.
+   *
+   * @throws IllegalArgumentException if key type is already set
+   */
+  public final <K2> Cache2kBuilder<K2, V> keyType(Class<K2> t) {
     config.setKeyType(t);
     return (Cache2kBuilder<K2, V>) this;
   }
 
-  public <T2> Cache2kBuilder<K, T2> valueType(Class<T2> t) {
+  /**
+   * Sets the value type to use.
+   *
+   * @throws IllegalArgumentException if value type is already set
+   */
+  public final <T2> Cache2kBuilder<K, T2> valueType(Class<T2> t) {
     config.setValueType(t);
     return (Cache2kBuilder<K, T2>) this;
   }
 
-  public <K2> Cache2kBuilder<K2, V> keyType(CacheTypeDescriptor<K2> t) {
+  /**
+   * Sets the key type to use.
+   *
+   * @throws IllegalArgumentException if key type is already set
+   */
+  public final <K2> Cache2kBuilder<K2, V> keyType(CacheTypeDescriptor<K2> t) {
     config.setKeyType(t);
     return (Cache2kBuilder<K2, V>) this;
   }
 
-  public <T2> Cache2kBuilder<K, T2> valueType(CacheTypeDescriptor<T2> t) {
+  /**
+   * Sets the value type to use.
+   *
+   * @throws IllegalArgumentException if value type is already set
+   */
+  public final <T2> Cache2kBuilder<K, T2> valueType(CacheTypeDescriptor<T2> t) {
     config.setValueType(t);
     return (Cache2kBuilder<K, T2>) this;
   }
@@ -124,7 +170,7 @@ public final class Cache2kBuilder<K, V>
    *
    * @see #name(String)
    */
-  public Cache2kBuilder<K, V> name(Class<?> _class, String _fieldName) {
+  public final Cache2kBuilder<K, V> name(Class<?> _class, String _fieldName) {
     config.setName(_class.getSimpleName() + "." + _fieldName);
     return this;
   }
@@ -136,7 +182,7 @@ public final class Cache2kBuilder<K, V>
    *
    * @see #name(String)
    */
-  public Cache2kBuilder<K, V> name(Class<?> _class) {
+  public final Cache2kBuilder<K, V> name(Class<?> _class) {
     config.setName(_class.getSimpleName());
     return this;
   }
@@ -147,14 +193,14 @@ public final class Cache2kBuilder<K, V>
    * @see #name(String)
    * @deprecated users should change to, e.g. <code>name(this.getClass(), "cache")</code>
    */
-  public Cache2kBuilder<K, V> name(Object _containingObject, String _fieldName) {
+  public final Cache2kBuilder<K, V> name(Object _containingObject, String _fieldName) {
     return name(_containingObject.getClass(), _fieldName);
   }
 
   /**
-   * The manager this cache should belong to.
+   * The manager, the created cache will belong to.
    */
-  public Cache2kBuilder<K, V> manager(CacheManager m) {
+  public final Cache2kBuilder<K, V> manager(CacheManager m) {
     manager = m;
     return this;
   }
@@ -185,12 +231,12 @@ public final class Cache2kBuilder<K, V>
    *
    * @see Cache#getName()
    */
-  public Cache2kBuilder<K, V> name(String v) {
+  public final Cache2kBuilder<K, V> name(String v) {
     config.setName(v);
     return this;
   }
 
-  public Cache2kBuilder<K, V> keepDataAfterExpired(boolean v) {
+  public final Cache2kBuilder<K, V> keepDataAfterExpired(boolean v) {
     config.setKeepDataAfterExpired(v);
     return this;
   }
@@ -200,7 +246,7 @@ public final class Cache2kBuilder<K, V>
    * inserting new entries, the cache eviction algorithm will remove one or more entries
    * to keep the size within the configured limit.
    */
-  public Cache2kBuilder<K, V> entryCapacity(int v) {
+  public final Cache2kBuilder<K, V> entryCapacity(int v) {
     config.setEntryCapacity(v);
     return this;
   }
@@ -211,7 +257,7 @@ public final class Cache2kBuilder<K, V>
    * with {@link #exceptionExpiryDuration(long, TimeUnit)}, exceptions will
    * not be cached and expire immediately.
    */
-  public Cache2kBuilder<K, V> eternal(boolean v) {
+  public final Cache2kBuilder<K, V> eternal(boolean v) {
     config.setEternal(v);
     return this;
   }
@@ -221,7 +267,7 @@ public final class Cache2kBuilder<K, V>
    * a previous value. When this is active, and an exception was suppressed
    * the expiry is determined by the exception expiry settings. Default: true
    */
-  public Cache2kBuilder<K, V> suppressExceptions(boolean v) {
+  public final Cache2kBuilder<K, V> suppressExceptions(boolean v) {
     config.setSuppressExceptions(v);
     return this;
   }
@@ -229,7 +275,7 @@ public final class Cache2kBuilder<K, V>
   /**
    * @deprecated since 0.24, only needed for storage
    */
-  public Cache2kBuilder<K, V> heapEntryCapacity(int v) {
+  public final Cache2kBuilder<K, V> heapEntryCapacity(int v) {
     config.setHeapEntryCapacity(v);
     return this;
   }
@@ -251,7 +297,7 @@ public final class Cache2kBuilder<K, V>
    * is within the consistency guarantees of a cache, however, it may be important
    * to interpret concurrency testing results.
    */
-  public Cache2kBuilder<K, V> expiryDuration(long v, TimeUnit u) {
+  public final Cache2kBuilder<K, V> expiryDuration(long v, TimeUnit u) {
     config.setExpiryMillis(u.toMillis(v));
     return this;
   }
@@ -260,7 +306,7 @@ public final class Cache2kBuilder<K, V>
    * Separate timeout in the case an exception was thrown in the cache source.
    * By default 10% of the normal expiry is used.
    */
-  public Cache2kBuilder<K, V> exceptionExpiryDuration(long v, TimeUnit u) {
+  public final Cache2kBuilder<K, V> exceptionExpiryDuration(long v, TimeUnit u) {
     config.setExceptionExpiryMillis(u.toMillis(v));
     return this;
   }
@@ -268,7 +314,7 @@ public final class Cache2kBuilder<K, V>
   /**
    * @deprecated since 0.20, please use {@link #expiryDuration}
    */
-  public Cache2kBuilder<K, V> expirySecs(int v) {
+  public final Cache2kBuilder<K, V> expirySecs(int v) {
     config.setExpiryMillis(v * 1000);
     return this;
   }
@@ -276,27 +322,27 @@ public final class Cache2kBuilder<K, V>
   /**
    * @deprecated since 0.20, please use {@link #expiryDuration}
    */
-  public Cache2kBuilder<K, V> expiryMillis(long v) {
+  public final Cache2kBuilder<K, V> expiryMillis(long v) {
     config.setExpiryMillis(v);
     return this;
   }
 
-  public Cache2kBuilder<K, V> exceptionPropagator(ExceptionPropagator ep) {
+  public final Cache2kBuilder<K, V> exceptionPropagator(ExceptionPropagator ep) {
     config.setExceptionPropagator(ep);
     return this;
   }
 
-  public Cache2kBuilder<K, V> loader(CacheLoader<K, V> l) {
+  public final Cache2kBuilder<K, V> loader(CacheLoader<K, V> l) {
     config.setLoader(l);
     return this;
   }
 
-  public Cache2kBuilder<K, V> loader(AdvancedCacheLoader<K, V> l) {
+  public final Cache2kBuilder<K, V> loader(AdvancedCacheLoader<K, V> l) {
     config.setAdvancedLoader(l);
     return this;
   }
 
-  public Cache2kBuilder<K, V> writer(CacheWriter<K, V> w) {
+  public final Cache2kBuilder<K, V> writer(CacheWriter<K, V> w) {
     config.setWriter(w);
     return this;
   }
@@ -307,7 +353,7 @@ public final class Cache2kBuilder<K, V>
    * @throws IllegalArgumentException if an identical listener is already added.
    * @param listener The listener to add
    */
-  public Cache2kBuilder<K, V> addListener(CacheEntryOperationListener<K,V> listener) {
+  public final Cache2kBuilder<K, V> addListener(CacheEntryOperationListener<K,V> listener) {
     boolean _inserted = config.getListeners().add(listener);
     if (!_inserted) {
       throw new IllegalArgumentException("Listener already added");
@@ -318,7 +364,7 @@ public final class Cache2kBuilder<K, V>
   /**
    * @deprecated replaced by {@link #expiryCalculator}
    */
-  public Cache2kBuilder<K, V> entryExpiryCalculator(EntryExpiryCalculator<K, V> c) {
+  public final Cache2kBuilder<K, V> entryExpiryCalculator(EntryExpiryCalculator<K, V> c) {
     expiryCalculator(c);
     return this;
   }
@@ -327,7 +373,7 @@ public final class Cache2kBuilder<K, V>
    * Set expiry calculator to use. If {@link #expiryDuration(long, java.util.concurrent.TimeUnit)}
    * is set to 0 then expiry calculation is not used, all entries expire immediately.
    */
-  public Cache2kBuilder<K, V> expiryCalculator(ExpiryCalculator<K, V> c) {
+  public final Cache2kBuilder<K, V> expiryCalculator(ExpiryCalculator<K, V> c) {
     config.setExpiryCalculator(c);
     return this;
   }
@@ -335,7 +381,7 @@ public final class Cache2kBuilder<K, V>
   /**
    * Set expiry calculator to use in case of an exception happened in the {@link CacheSource}.
    */
-  public Cache2kBuilder<K, V> exceptionExpiryCalculator(ExceptionExpiryCalculator<K> c) {
+  public final Cache2kBuilder<K, V> exceptionExpiryCalculator(ExceptionExpiryCalculator<K> c) {
     config.setExceptionExpiryCalculator(c);
     return this;
   }
@@ -347,7 +393,7 @@ public final class Cache2kBuilder<K, V>
    *
    * @deprecated since 0.23
    */
-  public Cache2kBuilder<K, V> implementation(Class<?> c) {
+  public final Cache2kBuilder<K, V> implementation(Class<?> c) {
     config.setImplementation(c);
     return this;
   }
@@ -362,7 +408,7 @@ public final class Cache2kBuilder<K, V>
    * <p>Once refreshed, the entry is in a trail period. If it is not accessed until the next
    * expiry, no refresh will be done and the entry expires regularly.
    */
-  public Cache2kBuilder<K, V> refreshAhead(boolean f) {
+  public final Cache2kBuilder<K, V> refreshAhead(boolean f) {
     config.setRefreshAhead(f);
     return this;
   }
@@ -373,7 +419,7 @@ public final class Cache2kBuilder<K, V>
    * Switching to true, means an entry is not visible exactly at and after the time of
    * expiry.
    */
-  public Cache2kBuilder<K, V> sharpExpiry(boolean f) {
+  public final Cache2kBuilder<K, V> sharpExpiry(boolean f) {
     config.setSharpExpiry(f);
     return this;
   }
@@ -381,7 +427,7 @@ public final class Cache2kBuilder<K, V>
   /**
    * Maximum number of threads this cache should use for calls to the {@link CacheLoader}
    */
-  public Cache2kBuilder<K, V> loaderThreadCount(int v) {
+  public final Cache2kBuilder<K, V> loaderThreadCount(int v) {
     config.setLoaderThreadCount(v);
     return this;
   }
@@ -396,24 +442,23 @@ public final class Cache2kBuilder<K, V>
    * data to off heap or disk. For the 1.0 version this value has no effect. It should be
    * used by application developers to future proof the applications with upcoming versions.
    */
-  public Cache2kBuilder<K, V> storeByReference(boolean v) {
+  public final Cache2kBuilder<K, V> storeByReference(boolean v) {
     config.setStoreByReference(v);
     return this;
   }
 
   @Deprecated
-  public CacheConfig getConfig() {
+  public final CacheConfig getConfig() {
     return null;
   }
-
 
   /**
    * Builds a cache with the specified configuration parameters.
    * The builder reused to build caches with similar or identical
    * configuration. The builder is not thread safe.
    */
-  public Cache<K, V> build() {
-    return coreProvider.createCache(manager, config);
+  public final Cache<K, V> build() {
+    return CORE_PROVIDER.createCache(manager, config);
   }
 
 }

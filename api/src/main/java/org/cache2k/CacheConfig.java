@@ -272,7 +272,7 @@ public class CacheConfig<K, V> implements Serializable {
    */
   public void setKeyType(Class<?> v) {
     checkNull(v);
-    setKeyType(CacheType.fromClass(v));
+    setKeyType(new CacheTypeDescriptor.OfClass(v));
   }
 
   /**
@@ -430,10 +430,16 @@ public class CacheConfig<K, V> implements Serializable {
     this.moduleConfiguration = moduleConfiguration;
   }
 
+  /**
+   * @deprecated since 0.25
+   */
   public Class<?> getImplementation() {
     return implementation;
   }
 
+  /**
+   * @deprecated since 0.25
+   */
   public void setImplementation(Class<?> cacheImplementation) {
     this.implementation = cacheImplementation;
   }

@@ -2,6 +2,19 @@
 
 ## New and Noteworthy
 
+New builder class `Cache2kBuilder`. A cache is now build the following way:
+
+````
+     Cache<Long, List<String>> c =
+       new Cache2kBuilder<Long, List<String>>() {}
+         .name("myCache")
+         .eternal(true)
+         .build();
+````
+
+The new pattern allows to capture the complete type information. For compatibility reasons the
+old builder class `CacheBuilder` is still available to allow applications to transition to the
+new builder.
 
 ## Potential breakages
 
@@ -33,6 +46,8 @@ Fixes of corner cases that are most likely not affecting any existing applicatio
 ## API Changes and new methods
 
   * Return value of `Cache.iterator()` changed from `ClosableIterator` to `Iterator`
+  * Cache2kBuilder as replacement for CacheBuilder
+  
 
 
 

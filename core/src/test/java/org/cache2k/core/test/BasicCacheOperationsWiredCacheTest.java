@@ -50,7 +50,7 @@ public class BasicCacheOperationsWiredCacheTest extends BasicCacheOperationsTest
    */
   @BeforeClass
   public static void setUp() {
-    Cache2kBuilder<Integer, Integer> _builder = Cache2kBuilder.newCache(Integer.class, Integer.class)
+    Cache2kBuilder<Integer, Integer> _builder = Cache2kBuilder.of(Integer.class, Integer.class)
       .name(BasicCacheOperationsTest.class)
       .eternal(true)
       .exceptionExpiryDuration(Long.MAX_VALUE, TimeUnit.MILLISECONDS)

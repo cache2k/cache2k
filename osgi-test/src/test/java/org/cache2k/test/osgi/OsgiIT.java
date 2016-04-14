@@ -63,7 +63,7 @@ public class OsgiIT {
   @Test
   public void testSimple() {
     Cache<String, String> c =
-      Cache2kBuilder.newCache(String.class, String.class)
+      Cache2kBuilder.of(String.class, String.class)
         .eternal(true)
         .build();
     c.put("abc", "123");

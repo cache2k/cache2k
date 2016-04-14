@@ -39,12 +39,9 @@ import org.cache2k.integration.LoadCompletedListener;
 import org.cache2k.integration.CacheLoaderException;
 import org.cache2k.processor.CacheEntryProcessor;
 
-import java.lang.reflect.Array;
 import java.security.SecureRandom;
 import java.util.AbstractMap;
 import java.util.AbstractSet;
-import java.util.BitSet;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;

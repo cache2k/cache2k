@@ -42,7 +42,7 @@ public class CacheBuilderTest {
 
   @Test
   public void managerName() {
-    Cache c = Cache2kBuilder.newCache().eternal(true).build();
+    Cache c = Cache2kBuilder.forUnknownTypes().eternal(true).build();
     assertEquals("default", c.getCacheManager().getName());
     c.close();
   }
@@ -50,7 +50,7 @@ public class CacheBuilderTest {
   @Test
   public void typesParameters() {
     Cache<Long, String> c =
-      Cache2kBuilder.newCache()
+      Cache2kBuilder.forUnknownTypes()
         .valueType(String.class)
         .keyType(Long.class)
         .eternal(true)
@@ -61,30 +61,28 @@ public class CacheBuilderTest {
   @Test
   public void noTypes() {
     Cache c =
-      Cache2kBuilder.newCache().eternal(true).build();
+      Cache2kBuilder.forUnknownTypes().eternal(true).build();
     c.put("hallo", 234);
     c.close();
   }
 
   @Test
   public void collectionValueType() {
-    Cache<Long, List> c =
-      Cache2kBuilder.newCache(Long.class, List.class, String.class).eternal(true).build();
-    c.close();
-  }
-
-  @Test
-  public void collectionValueCast() {
     Cache<Long, List<String>> c =
-        (Cache<Long, List<String>>) ((Object) Cache2kBuilder.newCache(Long.class, List.class, String.class).eternal(true).build());
-    c.put(123L, new ArrayList<String>());
+      new Cache2kBuilder<Long, List<String>>() {}
+        .eternal(true)
+        .build();
     c.close();
   }
 
   @Test
   public void collectionValueCacheType() {
     Cache<Long, List<String>> c =
-      Cache2kBuilder.newCache(Long.class, new CacheType<List<String>>() {}).eternal(true).build();
+      Cache2kBuilder.forUnknownTypes()
+        .keyType(Long.class)
+        .valueType(new CacheType<List<String>>() {})
+        .eternal(true)
+        .build();
     c.put(123L, new ArrayList<String>());
     c.close();
   }
@@ -92,7 +90,7 @@ public class CacheBuilderTest {
   @Test
   public void collectionValueClass() {
     Cache<Long, List<String>> c =
-      (Cache<Long, List<String>>) (Object) Cache2kBuilder.newCache(Long.class, List.class).eternal(true).build();
+      (Cache<Long, List<String>>) (Object) Cache2kBuilder.of(Long.class, List.class).eternal(true).build();
     c.put(123L, new ArrayList<String>());
     c.close();
   }
@@ -100,7 +98,7 @@ public class CacheBuilderTest {
   @Test
   public void typesParametersWith() {
     Cache<Long, List> c =
-      Cache2kBuilder.newCache()
+      Cache2kBuilder.forUnknownTypes()
         .valueType(List.class)
         .keyType(Long.class)
         .eternal(true)
@@ -112,7 +110,7 @@ public class CacheBuilderTest {
   public void noTypesAndCast() {
     Cache<Long, List<String>> c =
       (Cache<Long, List<String>>)
-        Cache2kBuilder.newCache()
+        Cache2kBuilder.forUnknownTypes()
           .eternal(true)
           .build();
     c.close();
@@ -122,7 +120,7 @@ public class CacheBuilderTest {
   public void cacheNameForAnnotationDefault() {
     Cache<Long, List<String>> c =
       (Cache<Long, List<String>>)
-        Cache2kBuilder.newCache()
+        Cache2kBuilder.forUnknownTypes()
           .eternal(true)
           .name("package.name.ClassName.methodName(package.ParameterType,package.ParameterType")
           .build();

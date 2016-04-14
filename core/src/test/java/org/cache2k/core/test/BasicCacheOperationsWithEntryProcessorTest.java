@@ -53,7 +53,7 @@ public class BasicCacheOperationsWithEntryProcessorTest extends BasicCacheOperat
   @BeforeClass
   public static void setUp() {
     Cache<Integer, Integer>  c = Cache2kBuilder
-            .newCache(Integer.class, Integer.class)
+            .of(Integer.class, Integer.class)
             .name(BasicCacheOperationsTest.class)
             .eternal(true)
             .entryCapacity(1000)

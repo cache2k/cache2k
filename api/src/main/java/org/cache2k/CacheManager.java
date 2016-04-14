@@ -71,11 +71,11 @@ public abstract class CacheManager implements Iterable<Cache>, Closeable {
   /**
    * Get the default cache manager for the current class loader
    */
-  public synchronized static CacheManager getInstance() {
+  public static CacheManager getInstance() {
     return provider.getDefaultManager(null);
   }
 
-  public synchronized static CacheManager getInstance(String _name) {
+  public static CacheManager getInstance(String _name) {
     return provider.getManager(null, _name, null);
   }
 
