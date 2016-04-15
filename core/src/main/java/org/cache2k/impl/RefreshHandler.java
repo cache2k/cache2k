@@ -200,7 +200,7 @@ public abstract class RefreshHandler<K,V>  {
     @Override
     public synchronized void init(InternalCache<K,V> c) {
       cache = c;
-      if (isNeedingTimer()) {
+      if (timer == null && isNeedingTimer()) {
         timer = new Timer(cache.getName(), true);
       }
     }
@@ -261,6 +261,7 @@ public abstract class RefreshHandler<K,V>  {
 
     @Override
     public void scheduleFinalExpiryTimer(final Entry<K, V> e) {
+      cancelExpiryTimer(e);
       e.task = new ExpireTask(cache, e);
       scheduleTask(e.nextRefreshTime, e);
     }

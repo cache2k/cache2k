@@ -68,7 +68,6 @@ public class WiredCache<K, V> extends AbstractCache<K, V>
   CacheEntryCreatedListener<K,V>[] syncEntryCreatedListeners;
   CacheEntryUpdatedListener<K,V>[] syncEntryUpdatedListeners;
   CacheEntryExpiredListener<K,V>[] syncEntryExpiredListeners;
-  RefreshHandler<K,V> refreshHandler;
 
   private CommonMetrics.Updater metrics() {
     return heapCache.metrics;
@@ -455,8 +454,8 @@ public class WiredCache<K, V> extends AbstractCache<K, V>
     if (storage != null) {
       storage.open();
     }
-    refreshHandler.init(this);
     heapCache.init();
+    heapCache.refreshHandler.init(this);
   }
 
   @Override
@@ -496,8 +495,7 @@ public class WiredCache<K, V> extends AbstractCache<K, V>
     synchronized (lockObject()) {
       heapCache.checkClosed();
       heapCache.clearLocalCache();
-      refreshHandler.shutdown();
-      refreshHandler.init(this);
+      heapCache.refreshHandler.init(this);
     }
   }
 
@@ -518,7 +516,6 @@ public class WiredCache<K, V> extends AbstractCache<K, V>
     synchronized (lockObject()) {
       storage = null;
     }
-    refreshHandler.shutdown();
     heapCache.closePart2();
   }
 
@@ -701,7 +698,7 @@ public class WiredCache<K, V> extends AbstractCache<K, V>
 
     @Override
     protected RefreshHandler<K, V> refreshHandler() {
-      return refreshHandler;
+      return heapCache.refreshHandler;
     }
   }
 
