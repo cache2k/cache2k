@@ -601,28 +601,13 @@ public class WiredCache<K, V> extends AbstractCache<K, V>
    * @see BaseCache#timerEventExpireEntryLocked(Entry)
    */
   void timerEventExpireEntryLocked(final Entry<K, V> e) {
-    long nrt = e.nextRefreshTime;
-    if (nrt >= 0 && nrt < Entry.EXPIRY_TIME_MIN) {
-      return;
-    }
-    long t = System.currentTimeMillis();
-    if (t >= Math.abs(nrt)) {
-      try {
-        heapCache.expireEntry(e);
-        if (syncEntryExpiredListeners != null) {
-          for (CacheEntryExpiredListener<K, V> l : syncEntryExpiredListeners) {
-            l.onEntryExpired(this, e);
-          }
+    heapCache.timerEventExpireEntryLocked(e);
+    if (e.isExpired() || e.isGone()) {
+      if (syncEntryExpiredListeners != null) {
+        for (CacheEntryExpiredListener<K, V> l : syncEntryExpiredListeners) {
+          l.onEntryExpired(this, e);
         }
-      } catch (CacheClosedException ignore) { }
-    } else {
-      if (nrt <= 0) {
-        return;
       }
-      if (!heapCache.hasKeepAfterExpired()) {
-        refreshHandler.scheduleFinalExpiryTimer(e);
-      }
-      e.nextRefreshTime = -nrt;
     }
   }
 
