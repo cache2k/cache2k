@@ -191,7 +191,7 @@ public class CacheLoaderTest {
    */
   @Test
   public void testTwoLoaderThreadsAndPoolInfo() throws Exception {
-    final CountDownLatch _inLoader = new CountDownLatch(1);
+    final CountDownLatch _inLoader = new CountDownLatch(2);
     final CountDownLatch _releaseLoader = new CountDownLatch(1);
     Cache<Integer,Integer> c = builder()
       .loader(new CacheLoader<Integer, Integer>() {
