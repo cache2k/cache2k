@@ -116,7 +116,7 @@ public class Entry<K, T>
   /**
    * Hash implementation: Link to another entry in the same hash table slot when the hash code collides.
    */
-  public Entry<K, T> another;
+  public volatile Entry<K, T> another;
 
   /** Lru list: pointer to next element or list head */
   public Entry next;

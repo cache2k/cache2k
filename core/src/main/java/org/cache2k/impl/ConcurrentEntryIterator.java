@@ -133,13 +133,13 @@ public class ConcurrentEntryIterator<K,V> implements Iterator<Entry<K,V>> {
   }
 
   protected boolean switchAndCheckAbort() {
-    if (lastSequenceCnt == sequenceCnt) {
-      hash = null;
-      return true;
-    }
     synchronized (cache.lock) {
       if (hasExpansionOccurred()) {
         lastSequenceCnt += 2;
+      }
+      if (lastSequenceCnt == sequenceCnt) {
+        hash = null;
+        return true;
       }
       int _step = sequenceCnt % 6;
       if (_step == 0 || _step == 3 || _step == 4) {
