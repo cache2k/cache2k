@@ -31,6 +31,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import static org.junit.Assert.*;
+import static org.hamcrest.CoreMatchers.*;
 
 /**
  * Cache builder tests for some special variants.
@@ -135,6 +136,60 @@ public class CacheBuilderTest {
           .name("package.name.ClassName.methodName(package.ParameterType,package.ParameterType")
           .build();
     c.close();
+  }
+
+  @Test
+  public void cacheNameInConstructor0() {
+    Cache c = new BuildCacheInConstructor0().cache;
+    assertThat(c.getName(), startsWith("_org.cache2k.core.test.CacheBuilderTest$BuildCacheInConstructor0.INIT"));
+    c.close();
+  }
+
+  @Test
+  public void cacheNameInConstructor1() {
+    Cache c = new BuildCacheInConstructor1().cache;
+    assertThat(c.getName(), startsWith("_org.cache2k.core.test.CacheBuilderTest$BuildCacheInConstructor1.INIT"));
+    c.close();
+  }
+
+  @Test
+  public void cacheNameInConstructor2() {
+    Cache c = new BuildCacheInConstructor2().cache;
+    assertThat(c.getName(), startsWith("_org.cache2k.core.test.CacheBuilderTest$BuildCacheInConstructor2.INIT"));
+    c.close();
+  }
+
+  @Test
+  public void cacheNameInClassConstructor0() {
+    Cache c = BuildCacheInClassConstructor0.cache;
+    assertThat(c.getName(),
+      startsWith("_org.cache2k.core.test.CacheBuilderTest$BuildCacheInClassConstructor0.CLINIT"));
+    c.close();
+  }
+
+  static class BuildCacheInConstructor0 {
+    Cache<?,?> cache = Cache2kBuilder.forUnknownTypes().eternal(true).build();
+  }
+
+  static class BuildCacheInConstructor1 {
+
+    Cache<?,?> cache;
+
+    {
+      cache = Cache2kBuilder.forUnknownTypes().eternal(true).build();
+    }
+  }
+
+  static class BuildCacheInConstructor2 {
+    Cache<?,?> cache;
+    BuildCacheInConstructor2() {
+      cache = Cache2kBuilder.forUnknownTypes().eternal(true).build();
+    }
+  }
+
+  static class BuildCacheInClassConstructor0 {
+    static Cache<?,?> cache =
+      Cache2kBuilder.forUnknownTypes().eternal(true).build();
   }
 
 }

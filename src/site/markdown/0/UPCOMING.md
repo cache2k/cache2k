@@ -38,6 +38,7 @@ get deprecated. Modifications in the statistics output will not listed as breaka
 If something is listed here it might affect an existing application and updating is recommended.
 
   * Fix a potential race condition: timer event / entry update
+  * Deriving a cache name in a static class constructor failed, https://github.com/cache2k/cache2k/issues/47
 
 ## Fixes and Improvements
 
