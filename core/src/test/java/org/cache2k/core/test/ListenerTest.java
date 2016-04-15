@@ -269,6 +269,44 @@ public class ListenerTest {
     c.close();
   }
 
+  @Test
+  public void asyncExpiredListenerCalledSharpExpiry() {
+    final AtomicInteger _callCount = new AtomicInteger();
+    final long _EXPIRY_MILLIS = TestingParameters.MINIMAL_TICK_MILLIS;
+    final Cache<Integer, Integer> c = builder()
+      .addAsyncListener(new CacheEntryExpiredListener<Integer, Integer>() {
+        @Override
+        public void onEntryExpired(final Cache<Integer, Integer> c, final CacheEntry<Integer, Integer> e) {
+          _callCount.incrementAndGet();
+        }
+      })
+      .expiryDuration(_EXPIRY_MILLIS, TimeUnit.MILLISECONDS)
+      .sharpExpiry(true)
+      .build();
+    final int ANY_KEY = 1;
+    TimeBox.millis(_EXPIRY_MILLIS)
+      .work(new Runnable() {
+        @Override
+        public void run() {
+          c.put(ANY_KEY, 4711);
+        }
+      })
+      .check(new Runnable() {
+        @Override
+        public void run() {
+          assertEquals(0, _callCount.get());
+          assertTrue(c.contains(ANY_KEY));
+        }
+      });
+    ConcurrencyHelper.await(new Condition() {
+      @Override
+      public boolean check() throws Exception {
+        return _callCount.get() == 1;
+      }
+    });
+    c.close();
+  }
+
   @Test(expected = Exception.class)
   public void updateListenerException() {
     Cache<Integer, Integer> c = builder()
@@ -279,9 +317,12 @@ public class ListenerTest {
         }
       })
       .build();
-    c.put(1, 2);
-    c.put(1, 2);
-    c.close();
+    try {
+      c.put(1, 2);
+      c.put(1, 2);
+    } finally {
+      c.close();
+    }
   }
 
   @Test
