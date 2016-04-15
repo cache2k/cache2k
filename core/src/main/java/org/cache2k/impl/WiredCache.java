@@ -609,8 +609,10 @@ public class WiredCache<K, V> extends AbstractCache<K, V>
     if (t >= Math.abs(nrt)) {
       try {
         heapCache.expireEntry(e);
-        for (CacheEntryExpiredListener<K,V> l : syncEntryExpiredListeners) {
-          l.onEntryExpired(this, e);
+        if (syncEntryExpiredListeners != null) {
+          for (CacheEntryExpiredListener<K, V> l : syncEntryExpiredListeners) {
+            l.onEntryExpired(this, e);
+          }
         }
       } catch (CacheClosedException ignore) { }
     } else {
