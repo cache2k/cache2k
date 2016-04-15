@@ -30,19 +30,14 @@ polish the API and semantics one after another.
 We use every cache2k release within production environments. However, some of the basic features
 are still evolving and there may be API breaking changes until we reach version 1.0.
 
-## Roadmap
+## Road map
 
   * _1.0_, finalize JSR107 JCache support, stabilize API, documentation (April/May 2016)
   * _1.2_, improve Bulk performance, reduce threads needed for timing (June 2016)
   * _1.4_, async support (August 2016)
   * _1.6_, persistence and off-heap features (November 2016)
   
-Disclaimer:
-
-The information presented is not a commitment, promise, or legal obligation to deliver any material, code or functionality.
-Product capabilities, schedules and features are subject to change. To drive the project direction please vote for
-a feature by commenting "+1". If you need a commitment or need a special feature for your own product, please contact
-us.
+The road map represents a rough plan, the dates and features may change.
 
 ## News
 
