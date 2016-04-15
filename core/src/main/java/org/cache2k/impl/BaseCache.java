@@ -1880,9 +1880,7 @@ public abstract class BaseCache<K, V>
       if (nrt <= 0) {
         return;
       }
-      if (!hasKeepAfterExpired()) {
-        refreshHandler.scheduleFinalExpiryTimer(e);
-      }
+      refreshHandler.scheduleFinalExpiryTimer(e);
       e.nextRefreshTime = -nrt;
     }
   }
