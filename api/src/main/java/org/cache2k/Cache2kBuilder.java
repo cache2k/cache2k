@@ -293,7 +293,7 @@ public class Cache2kBuilder<K, V>
    * is within the consistency guarantees of a cache, however, it may be important
    * to interpret concurrency testing results.
    */
-  public final Cache2kBuilder<K, V> expiryDuration(long v, TimeUnit u) {
+  public final Cache2kBuilder<K, V> expireAfterWrite(long v, TimeUnit u) {
     config.setExpiryMillis(u.toMillis(v));
     return this;
   }
@@ -360,7 +360,7 @@ public class Cache2kBuilder<K, V>
   }
 
   /**
-   * Set expiry calculator to use. If {@link #expiryDuration(long, java.util.concurrent.TimeUnit)}
+   * Set expiry calculator to use. If {@link #expireAfterWrite(long, java.util.concurrent.TimeUnit)}
    * is set to 0 then expiry calculation is not used, all entries expire immediately.
    */
   public final Cache2kBuilder<K, V> expiryCalculator(ExpiryCalculator<K, V> c) {

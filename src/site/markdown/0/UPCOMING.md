@@ -57,6 +57,7 @@ Fixes of corner cases that are most likely not affecting any existing applicatio
   * Return value of `Cache.iterator()` changed from `ClosableIterator` to `Iterator`
   * Cache2kBuilder as replacement for CacheBuilder
   * Cache2kBuilder.name(Class) sets the fully qualified class name as name
+  * Cache2kBuilder.expiryAfterWrite() is the replacement of: CacheBuilder.expiryDuration()
   * Option keepDataAfterExpired renamed to keepValueAfterExpired
   * Cache2kBuilder.addAsyncListener
   * CacheConfiguration.writer

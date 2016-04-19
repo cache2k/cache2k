@@ -75,8 +75,11 @@ public class CacheBuilder<K,V> {
     return this;
   }
 
+  /**
+   * @deprecated Replaced by {@link Cache2kBuilder#expireAfterWrite}
+   */
   public CacheBuilder<K, V> expiryDuration(final long v, final TimeUnit u) {
-    builder.expiryDuration(v, u);
+    builder.expireAfterWrite(v, u);
     return this;
   }
 
@@ -174,7 +177,7 @@ public class CacheBuilder<K,V> {
   }
 
   public CacheBuilder<K, V> expirySecs(final int v) {
-    builder.expiryDuration(v, TimeUnit.SECONDS);
+    builder.expireAfterWrite(v, TimeUnit.SECONDS);
     return this;
   }
 
@@ -218,7 +221,7 @@ public class CacheBuilder<K,V> {
   }
 
   public CacheBuilder<K, V> expiryMillis(final long v) {
-    builder.expiryDuration(v, TimeUnit.MILLISECONDS);
+    builder.expireAfterWrite(v, TimeUnit.MILLISECONDS);
     return this;
   }
 

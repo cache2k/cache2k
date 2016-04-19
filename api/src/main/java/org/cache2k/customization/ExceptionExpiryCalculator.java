@@ -43,7 +43,7 @@ public interface ExceptionExpiryCalculator<K> {
    * @return time the time of expiry in millis since epoch. {@link ExpiryCalculator#NO_CACHE} if it should not cached.
    *              {@link ExpiryCalculator#ETERNAL} if there is no specific expiry time known or needed.
    *              The effective expiry duration will never be longer than the
-   *              configured expiry value via {@link Cache2kBuilder#expiryDuration(long, TimeUnit)}.
+   *              configured expiry value via {@link Cache2kBuilder#expireAfterWrite(long, TimeUnit)}.
    *              If a negative value is returned, the negated value will be the expiry time
    *              used, but sharp expiry is requested always,
    *              ignoring {@link Cache2kBuilder#sharpExpiry(boolean)}.

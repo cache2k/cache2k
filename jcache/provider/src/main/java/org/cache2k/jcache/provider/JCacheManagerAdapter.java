@@ -150,7 +150,7 @@ public class JCacheManagerAdapter implements CacheManager {
         b.eternal(true);
       } else if (_policy instanceof ModifiedExpiryPolicy) {
         Duration d = ((ModifiedExpiryPolicy) _policy).getExpiryForUpdate();
-        b.expiryDuration(d.getDurationAmount(), d.getTimeUnit());
+        b.expireAfterWrite(d.getDurationAmount(), d.getTimeUnit());
       } else {
 
         b.expiryCalculator(new ExpiryCalculatorAdapter(_policy));

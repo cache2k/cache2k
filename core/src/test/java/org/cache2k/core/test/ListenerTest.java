@@ -243,7 +243,7 @@ public class ListenerTest {
           _callCount.incrementAndGet();
         }
       })
-      .expiryDuration(_EXPIRY_MILLIS, TimeUnit.MILLISECONDS)
+      .expireAfterWrite(_EXPIRY_MILLIS, TimeUnit.MILLISECONDS)
       .build();
     final int ANY_KEY = 1;
     TimeBox.millis(_EXPIRY_MILLIS)
@@ -280,7 +280,7 @@ public class ListenerTest {
           _callCount.incrementAndGet();
         }
       })
-      .expiryDuration(_EXPIRY_MILLIS, TimeUnit.MILLISECONDS)
+      .expireAfterWrite(_EXPIRY_MILLIS, TimeUnit.MILLISECONDS)
       .sharpExpiry(true)
       .build();
     final int ANY_KEY = 1;
