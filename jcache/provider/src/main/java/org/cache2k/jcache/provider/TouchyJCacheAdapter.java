@@ -64,7 +64,7 @@ import java.util.Set;
  */
 public class TouchyJCacheAdapter<K, V> implements Cache<K, V> {
 
-  org.cache2k.impl.InternalCache<K, TimeVal<V>> c2kCache;
+  org.cache2k.core.InternalCache<K, TimeVal<V>> c2kCache;
   JCacheAdapter<K, TimeVal<V>> cache;
   Class<K> keyType;
   Class<V> valueType;

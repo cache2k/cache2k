@@ -21,8 +21,8 @@ package org.cache2k.test.core;
  */
 
 import org.cache2k.Cache;
-import org.cache2k.impl.InternalCache;
-import org.cache2k.impl.InternalCacheInfo;
+import org.cache2k.core.InternalCache;
+import org.cache2k.core.InternalCacheInfo;
 
 import java.util.ArrayList;
 import java.util.List;

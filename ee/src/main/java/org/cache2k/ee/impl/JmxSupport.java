@@ -22,11 +22,11 @@ package org.cache2k.ee.impl;
 
 import org.cache2k.Cache;
 import org.cache2k.CacheManager;
-import org.cache2k.impl.CacheLifeCycleListener;
-import org.cache2k.impl.CacheManagerImpl;
-import org.cache2k.impl.CacheManagerLifeCycleListener;
-import org.cache2k.impl.CacheUsageExcpetion;
-import org.cache2k.impl.InternalCache;
+import org.cache2k.core.CacheLifeCycleListener;
+import org.cache2k.core.CacheManagerImpl;
+import org.cache2k.core.CacheManagerLifeCycleListener;
+import org.cache2k.core.CacheUsageExcpetion;
+import org.cache2k.core.InternalCache;
 
 import javax.management.InstanceNotFoundException;
 import javax.management.MBeanServer;

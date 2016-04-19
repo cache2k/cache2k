@@ -40,7 +40,7 @@ import static org.junit.Assert.assertTrue;
  * to switch to the wiredcache implementation.
  *
  * @author Jens Wilke
- * @see org.cache2k.impl.WiredCache
+ * @see org.cache2k.core.WiredCache
  */
 @Category(FastTests.class)
 public class CacheLoaderWiredCacheTest extends CacheLoaderTest {

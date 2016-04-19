@@ -20,7 +20,7 @@ package org.cache2k.xmlConfig;
  * #L%
  */
 
-import org.cache2k.impl.util.Log;
+import org.cache2k.core.util.Log;
 
 import java.lang.reflect.Method;
 import java.util.HashMap;

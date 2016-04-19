@@ -20,8 +20,8 @@ package org.cache2k.ee.impl;
  * #L%
  */
 
-import org.cache2k.impl.InternalCache;
-import org.cache2k.impl.InternalCacheInfo;
+import org.cache2k.core.InternalCache;
+import org.cache2k.core.InternalCacheInfo;
 import org.cache2k.jmx.CacheMXBean;
 
 import java.util.Date;

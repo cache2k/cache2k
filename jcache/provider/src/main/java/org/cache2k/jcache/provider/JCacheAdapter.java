@@ -28,8 +28,8 @@ import org.cache2k.processor.EntryProcessingResult;
 import org.cache2k.integration.LoadCompletedListener;
 import org.cache2k.processor.MutableCacheEntry;
 import org.cache2k.CustomizationException;
-import org.cache2k.impl.EntryAction;
-import org.cache2k.impl.InternalCache;
+import org.cache2k.core.EntryAction;
+import org.cache2k.core.InternalCache;
 import org.cache2k.jcache.provider.event.EventHandlingBase;
 
 import javax.cache.CacheManager;

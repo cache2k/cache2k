@@ -24,8 +24,8 @@ import org.cache2k.Cache;
 import org.cache2k.Cache2kBuilder;
 import org.cache2k.CacheEntry;
 import org.cache2k.event.CacheEntryRemovedListener;
-import org.cache2k.impl.InternalCache;
-import org.cache2k.impl.InternalCacheInfo;
+import org.cache2k.core.InternalCache;
+import org.cache2k.core.InternalCacheInfo;
 
 import java.util.Arrays;
 import java.util.HashSet;

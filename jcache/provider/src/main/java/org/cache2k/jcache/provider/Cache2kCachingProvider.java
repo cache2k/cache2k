@@ -20,7 +20,7 @@ package org.cache2k.jcache.provider;
  * #L%
  */
 
-import org.cache2k.impl.Cache2kManagerProviderImpl;
+import org.cache2k.core.Cache2kManagerProviderImpl;
 import org.cache2k.spi.Cache2kCoreProvider;
 import org.cache2k.spi.Cache2kManagerProvider;
 import org.cache2k.spi.SingleProviderResolver;

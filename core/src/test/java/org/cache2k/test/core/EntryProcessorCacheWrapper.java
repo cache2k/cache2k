@@ -23,7 +23,7 @@ package org.cache2k.test.core;
 import org.cache2k.Cache;
 import org.cache2k.processor.CacheEntryProcessor;
 import org.cache2k.processor.MutableCacheEntry;
-import org.cache2k.extra.CacheWrapper;
+import org.cache2k.core.extra.CacheWrapper;
 
 /**
  * Override operations mutating or querying the cache by using the entry processor.

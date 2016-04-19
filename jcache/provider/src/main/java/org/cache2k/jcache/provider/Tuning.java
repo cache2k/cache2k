@@ -20,8 +20,8 @@ package org.cache2k.jcache.provider;
  * #L%
  */
 
-import org.cache2k.impl.util.TunableConstants;
-import org.cache2k.impl.util.TunableFactory;
+import org.cache2k.core.util.TunableConstants;
+import org.cache2k.core.util.TunableFactory;
 
 /**
  * Some global parameters for the cache2k JCache implementation.

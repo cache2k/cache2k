@@ -22,7 +22,7 @@ package org.cache2k.test.core;
 
 import org.cache2k.Cache;
 import org.cache2k.Cache2kBuilder;
-import org.cache2k.impl.InternalCache;
+import org.cache2k.core.InternalCache;
 import org.cache2k.junit.FastTests;
 import org.junit.After;
 import org.junit.AfterClass;
@@ -37,7 +37,7 @@ import java.util.concurrent.TimeUnit;
  *
  * @see BasicCacheOperationsTest
  * @see EntryProcessorCacheWrapper
- * @see org.cache2k.impl.WiredCache
+ * @see org.cache2k.core.WiredCache
  */
 @Category(FastTests.class)
 public class BasicCacheOperationsWiredCacheTest extends BasicCacheOperationsTest {

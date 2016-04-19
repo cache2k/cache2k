@@ -21,8 +21,8 @@ package org.cache2k.ee.impl;
  */
 
 import org.cache2k.Cache;
-import org.cache2k.impl.CacheManagerImpl;
-import org.cache2k.impl.InternalCache;
+import org.cache2k.core.CacheManagerImpl;
+import org.cache2k.core.InternalCache;
 import org.cache2k.jmx.CacheManagerMXBean;
 
 /**

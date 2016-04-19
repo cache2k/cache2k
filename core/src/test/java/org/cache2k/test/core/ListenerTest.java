@@ -30,7 +30,7 @@ import org.cache2k.event.CacheEntryCreatedListener;
 import org.cache2k.event.CacheEntryExpiredListener;
 import org.cache2k.event.CacheEntryRemovedListener;
 import org.cache2k.event.CacheEntryUpdatedListener;
-import org.cache2k.impl.util.Log;
+import org.cache2k.core.util.Log;
 import org.cache2k.junit.FastTests;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;

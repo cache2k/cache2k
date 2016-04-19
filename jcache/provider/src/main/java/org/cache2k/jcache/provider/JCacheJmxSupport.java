@@ -22,8 +22,8 @@ package org.cache2k.jcache.provider;
 
 import org.cache2k.Cache;
 import org.cache2k.CacheManager;
-import org.cache2k.impl.CacheLifeCycleListener;
-import org.cache2k.impl.CacheUsageExcpetion;
+import org.cache2k.core.CacheLifeCycleListener;
+import org.cache2k.core.CacheUsageExcpetion;
 
 import javax.management.InstanceNotFoundException;
 import javax.management.MBeanServer;
