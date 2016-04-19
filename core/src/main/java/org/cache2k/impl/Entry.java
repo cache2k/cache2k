@@ -292,6 +292,7 @@ public class Entry<K, T>
   /** Reset next as a marker for {@link #isRemovedFromReplacementList()} */
   public final void removedFromList() {
     next = null;
+    prev = null;
   }
 
   /** Check that this entry is removed from the list, may be used in assertions. */

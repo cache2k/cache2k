@@ -127,7 +127,6 @@ public abstract class BaseCache<K, V>
   protected long clearedTime = 0;
   protected long startedTime;
   protected long touchedTime;
-  protected int timerCancelCount = 0;
 
   protected long keyMutationCount = 0;
   protected long putButExpiredCnt = 0;

@@ -107,12 +107,13 @@ public class ClockProPlusCache<K, V> extends ConcurrentEvictionCache<K, V> {
     if (e != null) {
       do {
         _hits += e.hitCnt;
+        Entry _next = e.prev;
         if (!e.isStale()) {
           e.removedFromList();
           cancelExpiryTimer(e);
           _count++;
         }
-        e = (Entry) e.prev;
+        e = _next;
       } while (e != _head);
       coldHits += _hits;
     }
@@ -121,12 +122,13 @@ public class ClockProPlusCache<K, V> extends ConcurrentEvictionCache<K, V> {
       _hits = 0;
       do {
         _hits += e.hitCnt;
+        Entry _next = e.prev;
         if (!e.isStale()) {
           e.removedFromList();
           cancelExpiryTimer(e);
           _count++;
         }
-        e = (Entry) e.prev;
+        e = _next;
       } while (e != _head);
       hotHits += _hits;
     }

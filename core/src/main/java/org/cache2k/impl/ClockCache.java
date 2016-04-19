@@ -68,10 +68,11 @@ public class ClockCache<K, V> extends ConcurrentEvictionCache<K, V> {
     if (e != null) {
       do {
         _hits += e.hitCnt;
+        Entry _next = e.prev;
         e.removedFromList();
         cancelExpiryTimer(e);
         _count++;
-        e = (Entry) e.prev;
+        e = _next;
       } while (e != _head);
       hits += _hits;
     }
