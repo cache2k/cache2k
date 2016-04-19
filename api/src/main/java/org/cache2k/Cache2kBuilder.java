@@ -377,18 +377,6 @@ public class Cache2kBuilder<K, V>
   }
 
   /**
-   * Sets the internal cache implementation to be used. This is used currently
-   * for internal purposes. It will be removed from the general API, since the implementation
-   * type is not defined within the api module.
-   *
-   * @deprecated since 0.23
-   */
-  public final Cache2kBuilder<K, V> implementation(Class<?> c) {
-    config.setImplementation(c);
-    return this;
-  }
-
-  /**
    * When true, enable background refresh / refresh ahead. After an entry is expired, the cache
    * loader is invoked to fetch a fresh value. The old value will be returned by the cache, although
    * it is expired, and will be replaced by the new value, once the loader is finished. In the case
@@ -450,5 +438,6 @@ public class Cache2kBuilder<K, V>
   public final Cache<K, V> build() {
     return CORE_PROVIDER.createCache(manager, config);
   }
+
 
 }

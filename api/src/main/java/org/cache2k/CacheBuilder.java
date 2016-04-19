@@ -210,8 +210,10 @@ public class CacheBuilder<K,V> {
     return this;
   }
 
+  /**
+   * Removed without replacement.
+   */
   public CacheBuilder<K, V> implementation(final Class<?> c) {
-    builder.implementation(c);
     return this;
   }
 

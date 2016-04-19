@@ -189,9 +189,6 @@ public class InternalCache2kBuilder<K, T> {
       }
     }
     Class<?> _implClass = BaseCache.TUNABLE.defaultImplementation;
-    if (config.getImplementation() != null) {
-      _implClass = config.getImplementation();
-    }
     InternalCache<K,T> _cache = constructImplementationAndFillParameters(_implClass);
 
     BaseCache bc = (BaseCache) _cache;
