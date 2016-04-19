@@ -141,21 +141,21 @@ public class CacheBuilderTest {
   @Test
   public void cacheNameInConstructor0() {
     Cache c = new BuildCacheInConstructor0().cache;
-    assertThat(c.getName(), startsWith("_org.cache2k.core.test.CacheBuilderTest$BuildCacheInConstructor0.INIT"));
+    assertThat(c.getName(), startsWith("_org.cache2k.test.core.CacheBuilderTest$BuildCacheInConstructor0.INIT"));
     c.close();
   }
 
   @Test
   public void cacheNameInConstructor1() {
     Cache c = new BuildCacheInConstructor1().cache;
-    assertThat(c.getName(), startsWith("_org.cache2k.core.test.CacheBuilderTest$BuildCacheInConstructor1.INIT"));
+    assertThat(c.getName(), startsWith("_org.cache2k.test.core.CacheBuilderTest$BuildCacheInConstructor1.INIT"));
     c.close();
   }
 
   @Test
   public void cacheNameInConstructor2() {
     Cache c = new BuildCacheInConstructor2().cache;
-    assertThat(c.getName(), startsWith("_org.cache2k.core.test.CacheBuilderTest$BuildCacheInConstructor2.INIT"));
+    assertThat(c.getName(), startsWith("_org.cache2k.test.core.CacheBuilderTest$BuildCacheInConstructor2.INIT"));
     c.close();
   }
 
@@ -163,7 +163,7 @@ public class CacheBuilderTest {
   public void cacheNameInClassConstructor0() {
     Cache c = BuildCacheInClassConstructor0.cache;
     assertThat(c.getName(),
-      startsWith("_org.cache2k.core.test.CacheBuilderTest$BuildCacheInClassConstructor0.CLINIT"));
+      startsWith("_org.cache2k.test.core.CacheBuilderTest$BuildCacheInClassConstructor0.CLINIT"));
     c.close();
   }
 

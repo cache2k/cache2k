@@ -20,7 +20,6 @@ package org.cache2k.impl.util;
  * #L%
  */
 
-import java.io.IOException;
 import java.io.InputStream;
 import java.util.Properties;
 
