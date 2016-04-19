@@ -25,10 +25,13 @@ import org.cache2k.CacheEntry;
 import org.cache2k.customization.ExpiryCalculator;
 import org.cache2k.customization.ExceptionExpiryCalculator;
 import org.cache2k.customization.ValueWithExpiryTime;
+import org.cache2k.impl.util.TunableConstants;
+import org.cache2k.impl.util.TunableFactory;
 
 import java.util.Date;
 import java.util.Timer;
 import java.util.TimerTask;
+import java.util.concurrent.atomic.AtomicLong;
 
 /**
  * Encapsulates logic for expiry and refresh calculation and timer handling.
@@ -38,6 +41,7 @@ import java.util.TimerTask;
 @SuppressWarnings("unchecked")
 public abstract class RefreshHandler<K,V>  {
 
+  final static int PURGE_INTERVAL = TunableFactory.get(Tunable.class).purgeInterval;
   final static long SAFETY_GAP_MILLIS = BaseCache.TUNABLE.sharpExpirySafetyGapMillis;
   final static RefreshHandler ETERNAL = new Eternal();
   final static RefreshHandler IMMEDIATE = new Immediate();
@@ -166,8 +170,8 @@ public abstract class RefreshHandler<K,V>  {
     boolean sharpTimeout;
     boolean backgroundRefresh;
     Timer timer;
-    long maxLinger =  10 * 60 * 1000;
-    long exceptionMaxLinger = 60 * 1000;
+    long maxLinger;
+    long exceptionMaxLinger;
     InternalCache cache;
     long timerCancelCount = 0;
 
@@ -175,7 +179,7 @@ public abstract class RefreshHandler<K,V>  {
       long _expiryMillis  = c.getExpiryMillis();
       if (_expiryMillis == ExpiryCalculator.ETERNAL || _expiryMillis < 0) {
         maxLinger = ExpiryCalculator.ETERNAL;
-      } else if (_expiryMillis >= 0) {
+      } else {
         maxLinger = _expiryMillis;
       }
       long _exceptionExpiryMillis = c.getExceptionExpiryMillis();
@@ -281,7 +285,7 @@ public abstract class RefreshHandler<K,V>  {
       if (_task != null) {
         if (_task.cancel()) {
           timerCancelCount++;
-          if (timerCancelCount >= 10000) {
+          if (timerCancelCount >= PURGE_INTERVAL) {
             timer.purge();
             timerCancelCount = 0;
           }
@@ -412,6 +416,15 @@ public abstract class RefreshHandler<K,V>  {
       return Entry.EXPIRED;
     }
     return _nextRefreshTime;
+  }
+
+  public static class Tunable extends TunableConstants {
+
+    /**
+     * The number of cancelled timer tasks after that a purge is performed.
+     */
+    public int purgeInterval = 10000;
+
   }
 
 }
