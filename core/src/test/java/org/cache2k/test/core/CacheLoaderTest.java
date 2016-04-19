@@ -1,4 +1,4 @@
-package org.cache2k.core.test;
+package org.cache2k.test.core;
 
 /*
  * #%L
@@ -20,8 +20,8 @@ package org.cache2k.core.test;
  * #L%
  */
 
-import org.cache2k.core.test.util.Condition;
-import org.cache2k.core.test.util.ConcurrencyHelper;
+import org.cache2k.test.util.Condition;
+import org.cache2k.test.util.ConcurrencyHelper;
 import org.cache2k.integration.AdvancedCacheLoader;
 import org.cache2k.Cache;
 import org.cache2k.Cache2kBuilder;
@@ -37,7 +37,7 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.junit.Assert.*;
-import static org.cache2k.core.test.StaticUtil.*;
+import static org.cache2k.test.core.StaticUtil.*;
 
 /**
  * Test the cache loader.

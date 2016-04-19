@@ -1,4 +1,4 @@
-package org.cache2k.core.test;
+package org.cache2k.test.core;
 
 /*
  * #%L
@@ -26,8 +26,6 @@ import org.cache2k.junit.FastTests;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
-
-import static org.cache2k.core.test.StaticUtil.*;
 
 /**
  * @author Jens Wilke
@@ -67,7 +65,7 @@ public class CacheClosedTest {
 
   @Test(expected = IllegalStateException.class)
   public void peekAll() {
-    cache.peekAll(asSet(KEY));
+    cache.peekAll(StaticUtil.asSet(KEY));
   }
 
   @Test(expected = IllegalStateException.class)

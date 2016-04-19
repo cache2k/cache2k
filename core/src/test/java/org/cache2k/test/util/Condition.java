@@ -1,4 +1,4 @@
-package org.cache2k.core.test;
+package org.cache2k.test.util;
 
 /*
  * #%L
@@ -21,11 +21,12 @@ package org.cache2k.core.test;
  */
 
 /**
- * Storage examples removed for releasing 1.0 without storage. Storage will be added again in
- * a later release.
+ * A condition we may wait for.
  *
  * @author Jens Wilke
  */
-public class PersistenceExampleTest {
+public interface Condition {
+
+  boolean check() throws Exception;
 
 }

@@ -1,4 +1,4 @@
-package org.cache2k.core.test;
+package org.cache2k.test.core;
 
 /*
  * #%L
@@ -23,9 +23,9 @@ package org.cache2k.core.test;
 import org.cache2k.Cache;
 import org.cache2k.Cache2kBuilder;
 import org.cache2k.CacheEntry;
-import org.cache2k.core.test.util.ConcurrencyHelper;
-import org.cache2k.core.test.util.Condition;
-import org.cache2k.core.test.util.TimeBox;
+import org.cache2k.test.util.ConcurrencyHelper;
+import org.cache2k.test.util.Condition;
+import org.cache2k.test.util.TimeBox;
 import org.cache2k.event.CacheEntryCreatedListener;
 import org.cache2k.event.CacheEntryExpiredListener;
 import org.cache2k.event.CacheEntryRemovedListener;

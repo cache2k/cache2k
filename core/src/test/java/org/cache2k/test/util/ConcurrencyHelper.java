@@ -1,4 +1,4 @@
-package org.cache2k.core.test.util;
+package org.cache2k.test.util;
 
 /*
  * #%L
@@ -20,7 +20,7 @@ package org.cache2k.core.test.util;
  * #L%
  */
 
-import org.cache2k.core.test.TestingParameters;
+import org.cache2k.test.core.TestingParameters;
 
 /**
  * Helper methods that wait for some event for a reasonable amout of time.

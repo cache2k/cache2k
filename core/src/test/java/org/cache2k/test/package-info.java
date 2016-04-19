@@ -1,4 +1,9 @@
-package org.cache2k.core.test.util;
+/**
+ * Tests that use the normal cache-API for testing.
+ *
+ * @author Jens Wilke
+ */
+package org.cache2k.test;
 
 /*
  * #%L
@@ -19,14 +24,3 @@ package org.cache2k.core.test.util;
  * limitations under the License.
  * #L%
  */
-
-/**
- * A condition we may wait for.
- *
- * @author Jens Wilke
- */
-public interface Condition {
-
-  boolean check() throws Exception;
-
-}

@@ -1,4 +1,4 @@
-package org.cache2k.core.test.util;
+package org.cache2k.test.util;
 
 /*
  * #%L

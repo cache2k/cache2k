@@ -1,4 +1,4 @@
-package org.cache2k.core.test;
+package org.cache2k.test.core;
 
 /*
  * #%L
@@ -40,7 +40,7 @@ import java.util.concurrent.TimeUnit;
 
 import static org.junit.Assert.*;
 
-import static org.cache2k.core.test.StaticUtil.*;
+import static org.cache2k.test.core.StaticUtil.*;
 
 /**
  * Test basic cache operations on a shared cache in a simple configuration.
