@@ -40,6 +40,8 @@ If something is listed here it might affect an existing application and updating
   * Fix a potential race condition: timer event / entry update
   * Deriving a cache name in a static class constructor failed, https://github.com/cache2k/cache2k/issues/47
   * Fix a memory leak manifesting at high eviction rates and with expiry
+  * Fix for JMX naming: Duplicate names got disambiguated, but JMX used the original name (fix for current behavior, 
+    how cache names are handled will be finally changed and documented in the upcoming releases)
 
 ## Fixes and Improvements
 
@@ -51,6 +53,7 @@ Fixes of corner cases that are most likely not affecting any existing applicatio
     if the iteration is not  finished completely or the iterator was not closed. In case of concurrent updates to 
     the cache the iterator could continue iterating as long as entries are inserted.
   * Automatically generated cache names get a random number and start with '_', more see: `Cache2kBuilder.name`
+  * JDK Logging: prevent loggers own class name to be logged
 
 ## API Changes and new methods
 

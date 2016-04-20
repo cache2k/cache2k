@@ -167,6 +167,23 @@ public class CacheBuilderTest {
     c.close();
   }
 
+  @Test
+  public void cacheNameDisambiguation() {
+    Cache c0 = Cache2kBuilder
+      .forUnknownTypes()
+      .eternal(true)
+      .name(this.getClass(), "cacheNameDisambiguation")
+      .build();
+    Cache c1 = Cache2kBuilder
+      .forUnknownTypes()
+      .eternal(true)
+      .name(this.getClass(), "cacheNameDisambiguation")
+      .build();
+    assertEquals("org.cache2k.test.core.CacheBuilderTest.cacheNameDisambiguation~1", c1.getName());
+    c0.close();
+    c1.close();
+  }
+
   static class BuildCacheInConstructor0 {
     Cache<?,?> cache = Cache2kBuilder.forUnknownTypes().eternal(true).build();
   }

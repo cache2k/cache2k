@@ -182,34 +182,38 @@ public abstract class Log {
       return logger.isLoggable(Level.INFO);
     }
 
+    /**
+     * Send the log message to the JDK logger. Using the <code>logp</code>
+     * prevents the logger to derive the source class name from the call stack.
+     */
     @Override
     public void debug(String s) {
-      logger.log(Level.FINE, s);
+      logger.logp(Level.FINE, null, null, s);
     }
 
     @Override
     public void debug(String s, Throwable ex) {
-      logger.log(Level.FINE, s, ex);
+      logger.logp(Level.FINE, s, null, null, ex);
     }
 
     @Override
     public void info(String s) {
-      logger.log(Level.INFO, s);
+      logger.logp(Level.INFO, null, null, s);
     }
 
     @Override
     public void info(String s, Throwable ex) {
-      logger.log(Level.INFO, s, ex);
+      logger.logp(Level.INFO, null, null, s, ex);
     }
 
     @Override
     public void warn(String s) {
-      logger.log(Level.WARNING, s);
+      logger.logp(Level.WARNING, null, null, s);
     }
 
     @Override
     public void warn(String s, Throwable ex) {
-      logger.log(Level.WARNING, s, ex);
+      logger.logp(Level.WARNING, null, null, s, ex);
     }
   }
 

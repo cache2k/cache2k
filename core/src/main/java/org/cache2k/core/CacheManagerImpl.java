@@ -80,7 +80,7 @@ public class CacheManagerImpl extends CacheManager {
     }
     properties = p;
     name = _name;
-    log = Log.getLog(CacheManager.class.getName() + '.' + name);
+    log = Log.getLog(CacheManager.class.getName() + ':' + name);
     buildNumber = Cache2kVersion.getBuildNumber();
     version = Cache2kVersion.getVersion();
     StringBuilder sb = new StringBuilder();
@@ -100,7 +100,7 @@ public class CacheManagerImpl extends CacheManager {
     }
   }
 
-  private void sendCreatedEvent(Cache c) {
+  public void sendCreatedEvent(Cache c) {
     for (CacheLifeCycleListener e : cacheLifeCycleListeners) {
       e.cacheCreated(this, c);
     }
@@ -157,7 +157,6 @@ public class CacheManagerImpl extends CacheManager {
         name2CreationStackTrace.put(_name, new StackTrace());
       }
       caches.add(c);
-      sendCreatedEvent(c);
       cacheNames.put(_name, c);
       return _name;
     }

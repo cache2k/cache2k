@@ -288,6 +288,7 @@ public class InternalCache2kBuilder<K, T> {
       bc.setRefreshHandler(RefreshHandler.of(config));
       bc.init();
     }
+    cm.sendCreatedEvent(_cache);
     return _cache;
   }
 
