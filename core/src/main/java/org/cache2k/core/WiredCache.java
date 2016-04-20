@@ -60,7 +60,7 @@ public class WiredCache<K, V> extends AbstractCache<K, V>
   @SuppressWarnings("unchecked")
   final Specification<K, V> SPEC = Specification.SINGLETON;
 
-  BaseCache<K,V> heapCache;
+  HeapCache<K,V> heapCache;
   StorageAdapter storage;
   AdvancedCacheLoader<K,V> loader;
   CacheWriter<K, V> writer;
@@ -79,7 +79,7 @@ public class WiredCache<K, V> extends AbstractCache<K, V>
   }
 
   /** For testing */
-  public BaseCache getHeapCache() {
+  public HeapCache getHeapCache() {
     return heapCache;
   }
 
@@ -135,7 +135,7 @@ public class WiredCache<K, V> extends AbstractCache<K, V>
     if (e != null && e.hasFreshData()) {
       return;
     }
-    heapCache.loaderExecutor.execute(new BaseCache.RunWithCatch(this) {
+    heapCache.loaderExecutor.execute(new HeapCache.RunWithCatch(this) {
       @Override
       public void action() {
         load(key);
@@ -154,7 +154,7 @@ public class WiredCache<K, V> extends AbstractCache<K, V>
         return;
       }
       final K key = k;
-      Runnable r = new BaseCache.RunWithCatch(this) {
+      Runnable r = new HeapCache.RunWithCatch(this) {
         @Override
         public void action() {
           load(key);
@@ -231,7 +231,7 @@ public class WiredCache<K, V> extends AbstractCache<K, V>
   @Override
   public void loadAll(final Iterable<? extends K> _keys, final LoadCompletedListener l) {
     checkLoaderPresent();
-    final LoadCompletedListener _listener= l != null ? l : BaseCache.DUMMY_LOAD_COMPLETED_LISTENER;
+    final LoadCompletedListener _listener= l != null ? l : HeapCache.DUMMY_LOAD_COMPLETED_LISTENER;
     Set<K> _keysToLoad = heapCache.checkAllPresent(_keys);
     if (_keysToLoad.isEmpty()) {
       _listener.loadCompleted();
@@ -240,7 +240,7 @@ public class WiredCache<K, V> extends AbstractCache<K, V>
     final AtomicInteger _countDown = new AtomicInteger(_keysToLoad.size());
     for (K k : _keysToLoad) {
       final K key = k;
-      Runnable r = new BaseCache.RunWithCatch(this) {
+      Runnable r = new HeapCache.RunWithCatch(this) {
         @Override
         public void action() {
           try {
@@ -259,12 +259,12 @@ public class WiredCache<K, V> extends AbstractCache<K, V>
   @Override
   public void reloadAll(final Iterable<? extends K> _keys, final LoadCompletedListener l) {
     checkLoaderPresent();
-    final LoadCompletedListener _listener= l != null ? l : BaseCache.DUMMY_LOAD_COMPLETED_LISTENER;
+    final LoadCompletedListener _listener= l != null ? l : HeapCache.DUMMY_LOAD_COMPLETED_LISTENER;
     Set<K> _keySet = heapCache.generateKeySet(_keys);
     final AtomicInteger _countDown = new AtomicInteger(_keySet.size());
     for (K k : _keySet) {
       final K key = k;
-      Runnable r = new BaseCache.RunWithCatch(this) {
+      Runnable r = new HeapCache.RunWithCatch(this) {
         @Override
         public void action() {
           try {
@@ -351,10 +351,10 @@ public class WiredCache<K, V> extends AbstractCache<K, V>
     Iterator<CacheEntry<K, V>> tor;
     if (storage == null) {
       synchronized (lockObject()) {
-         tor = new BaseCache.IteratorFilterEntry2Entry(heapCache, heapCache.iterateAllHeapEntries(), true);
+         tor = new HeapCache.IteratorFilterEntry2Entry(heapCache, heapCache.iterateAllHeapEntries(), true);
       }
     } else {
-      tor = new BaseCache.IteratorFilterEntry2Entry(heapCache, storage.iterateAll(), false);
+      tor = new HeapCache.IteratorFilterEntry2Entry(heapCache, storage.iterateAll(), false);
     }
     final Iterator<CacheEntry<K, V>> it = tor;
     Iterator<CacheEntry<K, V>> _adapted = new Iterator<CacheEntry<K, V>>() {
@@ -595,7 +595,7 @@ public class WiredCache<K, V> extends AbstractCache<K, V>
   }
 
   /**
-   * @see BaseCache#timerEventExpireEntryLocked(Entry)
+   * @see HeapCache#timerEventExpireEntryLocked(Entry)
    */
   void timerEventExpireEntryLocked(final Entry<K, V> e) {
     heapCache.timerEventExpireEntryLocked(e);

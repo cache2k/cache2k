@@ -109,7 +109,7 @@ public class Entry<K, T>
    * Hash implementation: the calculated, modified hash code, retrieved from the key when the entry is
    * inserted in the cache
    *
-   * @see BaseCache#modifiedHash(int)
+   * @see HeapCache#modifiedHash(int)
    */
   public int hashCode;
 
@@ -360,7 +360,7 @@ public class Entry<K, T>
 
   /**
    * The entry expired, but still in the cache. This may happen if
-   * {@link BaseCache#hasKeepAfterExpired()} is true.
+   * {@link HeapCache#hasKeepAfterExpired()} is true.
    */
   public boolean isExpired() {
     return nextRefreshTime == EXPIRED;
@@ -464,7 +464,7 @@ public class Entry<K, T>
     return 0;
   }
 
-  public String toString(BaseCache c) {
+  public String toString(HeapCache c) {
     StringBuilder sb = new StringBuilder();
     sb.append("Entry{");
     sb.append("lock=").append(getProcessingState());

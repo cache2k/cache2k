@@ -50,7 +50,7 @@ public class EntryAction<K, V, R> implements StorageCallback, AsyncCacheLoader.C
   static final Entry NON_FRESH_DUMMY = new Entry();
 
   Cache<K, V> userCache;
-  BaseCache<K, V> heapCache;
+  HeapCache<K, V> heapCache;
   K key;
   Semantic<K, V, R> operation;
   Entry<K, V> entry;
@@ -94,7 +94,7 @@ public class EntryAction<K, V, R> implements StorageCallback, AsyncCacheLoader.C
    */
   boolean successfulLoad = false;
 
-  public EntryAction(BaseCache<K,V> _heapCache, Cache<K,V> _userCache, Semantic<K, V, R> op, K k, Entry<K, V> e) {
+  public EntryAction(HeapCache<K,V> _heapCache, Cache<K,V> _userCache, Semantic<K, V, R> op, K k, Entry<K, V> e) {
     heapCache = _heapCache;
     userCache = _userCache;
     operation = op;
@@ -203,7 +203,7 @@ public class EntryAction<K, V, R> implements StorageCallback, AsyncCacheLoader.C
   }
 
   public void lockEntryForStorageRead() {
-    int _spinCount = BaseCache.TUNABLE.maximumEntryLockSpins;
+    int _spinCount = HeapCache.TUNABLE.maximumEntryLockSpins;
     Entry<K, V> e = entry;
     boolean _needStorageRead = false;
     if (e == NON_FRESH_DUMMY) {
@@ -399,7 +399,7 @@ public class EntryAction<K, V, R> implements StorageCallback, AsyncCacheLoader.C
     if (e == NON_FRESH_DUMMY) {
       e = heapCache.lookupOrNewEntrySynchronized(key);
     }
-    int _spinCount = BaseCache.TUNABLE.maximumEntryLockSpins;
+    int _spinCount = HeapCache.TUNABLE.maximumEntryLockSpins;
     for (; ; ) {
       if (_spinCount-- <= 0) {
         throw new CacheLockSpinsExceededError();
@@ -428,7 +428,7 @@ public class EntryAction<K, V, R> implements StorageCallback, AsyncCacheLoader.C
     if (e == NON_FRESH_DUMMY) {
       e = heapCache.lookupOrNewEntrySynchronizedNoHitRecord(key);
     }
-    int _spinCount = BaseCache.TUNABLE.maximumEntryLockSpins;
+    int _spinCount = HeapCache.TUNABLE.maximumEntryLockSpins;
     for (; ; ) {
       if (_spinCount-- <= 0) {
         throw new CacheLockSpinsExceededError();

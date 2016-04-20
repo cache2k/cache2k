@@ -73,7 +73,7 @@ import static org.cache2k.core.util.Util.*;
  * @author Jens Wilke; created: 2013-07-09
  */
 @SuppressWarnings({"unchecked", "SynchronizationOnLocalVariableOrMethodParameter"})
-public abstract class BaseCache<K, V>
+public abstract class HeapCache<K, V>
   extends AbstractCache<K, V> {
 
   static final LoadCompletedListener DUMMY_LOAD_COMPLETED_LISTENER = new LoadCompletedListener() {
@@ -208,9 +208,9 @@ public abstract class BaseCache<K, V>
   protected volatile Executor loaderExecutor = new DummyExecutor(this);
 
   static class DummyExecutor implements Executor {
-    BaseCache cache;
+    HeapCache cache;
 
-    public DummyExecutor(final BaseCache _cache) {
+    public DummyExecutor(final HeapCache _cache) {
       cache = _cache;
     }
 
@@ -578,13 +578,13 @@ public abstract class BaseCache<K, V>
    */
   static class IteratorFilterEntry2Entry<K,V> implements Iterator<CacheEntry<K, V>> {
 
-    BaseCache<K,V> cache;
+    HeapCache<K,V> cache;
     Iterator<Entry<K,V>> iterator;
     Entry entry;
     CacheEntry<K, V> lastEntry;
     boolean filter = true;
 
-    IteratorFilterEntry2Entry(BaseCache<K,V> c, Iterator<Entry<K,V>> it, boolean _filter) {
+    IteratorFilterEntry2Entry(HeapCache<K,V> c, Iterator<Entry<K,V>> it, boolean _filter) {
       cache = c;
       iterator = it;
       filter = _filter;
@@ -1710,7 +1710,6 @@ public abstract class BaseCache<K, V>
     return insert(e, v, t0, t, _updateStatistics, _nextRefreshTime);
   }
 
-  final static byte INSERT_STAT_NO_UPDATE = 0;
   final static byte INSERT_STAT_UPDATE = 1;
   final static byte INSERT_STAT_PUT = 2;
 
@@ -1975,7 +1974,7 @@ public abstract class BaseCache<K, V>
       @Override
       public V get(Object key) {
         if (containsKey(key)) {
-          return BaseCache.this.get((K) key);
+          return HeapCache.this.get((K) key);
         }
         return null;
       }

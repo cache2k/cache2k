@@ -52,7 +52,7 @@ import java.util.NoSuchElementException;
  */
 public class ConcurrentEntryIterator<K,V> implements Iterator<Entry<K,V>> {
 
-  BaseCache<K, V> cache;
+  HeapCache<K, V> cache;
   Entry lastEntry = null;
   Entry nextEntry = null;
   int sequenceCnt = 0;
@@ -63,7 +63,7 @@ public class ConcurrentEntryIterator<K,V> implements Iterator<Entry<K,V>> {
   Hash<Entry<K, V>> iteratedCtl = new Hash<Entry<K,V>>();
   Entry<K, V>[] iterated;
 
-  public ConcurrentEntryIterator(BaseCache<K,V> _cache) {
+  public ConcurrentEntryIterator(HeapCache<K,V> _cache) {
     cache = _cache;
     iterated = iteratedCtl.init((Class<Entry<K, V>>) (Object) Entry.class);
     lastSequenceCnt = 2;

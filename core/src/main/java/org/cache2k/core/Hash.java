@@ -105,7 +105,7 @@ public class Hash<E extends Entry> {
     return a2;
   }
 
-  public static void calcHashCollisionInfo(BaseCache.CollisionInfo inf, Entry[] _hashTable) {
+  public static void calcHashCollisionInfo(HeapCache.CollisionInfo inf, Entry[] _hashTable) {
     for (Entry e : _hashTable) {
       if (e != null) {
         e = e.another;
@@ -232,8 +232,8 @@ public class Hash<E extends Entry> {
 
   public E[] init(Class<E> _entryType) {
     size = 0;
-    maxFill = BaseCache.TUNABLE.initialHashSize * BaseCache.TUNABLE.hashLoadPercent / 100;
-    return (E[]) Array.newInstance(_entryType, BaseCache.TUNABLE.initialHashSize);
+    maxFill = HeapCache.TUNABLE.initialHashSize * HeapCache.TUNABLE.hashLoadPercent / 100;
+    return (E[]) Array.newInstance(_entryType, HeapCache.TUNABLE.initialHashSize);
   }
 
 }

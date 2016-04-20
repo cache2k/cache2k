@@ -26,7 +26,7 @@ package org.cache2k.core;
  *
  * @author Jens Wilke
  */
-public class LruCache<K, V> extends BaseCache<K, V> {
+public class LruCache<K, V> extends HeapCache<K, V> {
 
   Entry<K, V> head;
   long hitCnt;

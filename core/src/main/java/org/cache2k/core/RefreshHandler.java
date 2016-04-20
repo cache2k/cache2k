@@ -41,7 +41,7 @@ import java.util.TimerTask;
 public abstract class RefreshHandler<K,V>  {
 
   final static int PURGE_INTERVAL = TunableFactory.get(Tunable.class).purgeInterval;
-  final static long SAFETY_GAP_MILLIS = BaseCache.TUNABLE.sharpExpirySafetyGapMillis;
+  final static long SAFETY_GAP_MILLIS = HeapCache.TUNABLE.sharpExpirySafetyGapMillis;
   final static RefreshHandler ETERNAL = new Eternal();
   final static RefreshHandler IMMEDIATE = new Immediate();
   final static RefreshHandler ETERNAL_IMMEDIATE = new EternalImmediate();

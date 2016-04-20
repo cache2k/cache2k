@@ -58,7 +58,7 @@ public class InternalCache2kBuilder<K, T> {
       Runtime.getRuntime().availableProcessors(), Runtime.getRuntime().availableProcessors(),
       21, TimeUnit.SECONDS,
       new LinkedBlockingDeque<Runnable>(),
-      BaseCache.TUNABLE.threadFactoryProvider.newThreadFactory("cache2k-async"),
+      HeapCache.TUNABLE.threadFactoryProvider.newThreadFactory("cache2k-async"),
       new ThreadPoolExecutor.AbortPolicy());
 
   CacheManager manager;
@@ -116,7 +116,7 @@ public class InternalCache2kBuilder<K, T> {
    * Explicitly call the wiring methods.
    */
   @SuppressWarnings("unchecked")
-  void confiugreViaSettersDirect(BaseCache c) {
+  void confiugreViaSettersDirect(HeapCache c) {
     if (config.getLoader() != null) {
       c.setLoader(config.getLoader());
     }
@@ -133,7 +133,7 @@ public class InternalCache2kBuilder<K, T> {
 
   void configureViaSetters(Object o) {
     if (o instanceof InternalCache) {
-      confiugreViaSettersDirect((BaseCache) o);
+      confiugreViaSettersDirect((HeapCache) o);
       return;
     }
     try {
@@ -188,10 +188,10 @@ public class InternalCache2kBuilder<K, T> {
         throw new IllegalArgumentException("name missing and automatic generation failed");
       }
     }
-    Class<?> _implClass = BaseCache.TUNABLE.defaultImplementation;
+    Class<?> _implClass = HeapCache.TUNABLE.defaultImplementation;
     InternalCache<K,T> _cache = constructImplementationAndFillParameters(_implClass);
 
-    BaseCache bc = (BaseCache) _cache;
+    HeapCache bc = (HeapCache) _cache;
     CacheManagerImpl cm = (CacheManagerImpl) (manager == null ? CacheManager.getInstance() : manager);
     bc.setCacheManager(cm);
     configureViaSetters(bc);
