@@ -13,15 +13,10 @@
 
   <artifactId>cache2k-api</artifactId>
   <version>0.25-SNAPSHOT</version>
-  <name>cache2k API only package</name>
+  <name>cache2k API</name>
 
   <description>
-    This package provides only the API needed for compiling. At runtime the module cache2k-core is
-    also needed.
-    cache2k is a well engineered high performance in-memory Java cache. It implements
-    latest eviction algorithms and coding techniques to achieve performance about 10 times better
-    then existing cache solutions. cache2k comes with a clean and concise API. The API is currently
-    still evolving until version 1.0 is reached.
+    A light weight and high performance Java cache library. API only jar.
   </description>
 
   <dependencies>

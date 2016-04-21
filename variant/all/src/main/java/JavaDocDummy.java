@@ -1,6 +1,6 @@
 /*
  * #%L
- * cache2k-all complete bundle
+ * cache2k all
  * %%
  * Copyright (C) 2000 - 2016 headissue GmbH, Munich
  * %%

@@ -2,7 +2,7 @@ package org.cache2k.jmx;
 
 /*
  * #%L
- * cache2k jmx api definitions
+ * cache2k JMX API
  * %%
  * Copyright (C) 2000 - 2016 headissue GmbH, Munich
  * %%

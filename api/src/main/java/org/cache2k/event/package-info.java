@@ -7,7 +7,7 @@ package org.cache2k.event;
 
 /*
  * #%L
- * cache2k API only package
+ * cache2k API
  * %%
  * Copyright (C) 2000 - 2016 headissue GmbH, Munich
  * %%

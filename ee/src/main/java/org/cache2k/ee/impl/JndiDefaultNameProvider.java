@@ -2,7 +2,7 @@ package org.cache2k.ee.impl;
 
 /*
  * #%L
- * cache2k for enterprise environments
+ * cache2k ee
  * %%
  * Copyright (C) 2000 - 2016 headissue GmbH, Munich
  * %%

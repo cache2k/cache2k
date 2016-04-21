@@ -2,7 +2,7 @@ package org.cache2k.core.experimentalApi;
 
 /*
  * #%L
- * cache2k core package
+ * cache2k core
  * %%
  * Copyright (C) 2000 - 2016 headissue GmbH, Munich
  * %%

@@ -2,7 +2,7 @@ package org.cache2k.test.core;
 
 /*
  * #%L
- * cache2k core package
+ * cache2k core
  * %%
  * Copyright (C) 2000 - 2016 headissue GmbH, Munich
  * %%

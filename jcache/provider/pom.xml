@@ -13,9 +13,10 @@
 
   <artifactId>cache2k-jcache</artifactId>
   <version>0.25-SNAPSHOT</version>
-  <name>cache2k JCache JSR107 implementation</name>
+  <name>cache2k JSR107 support</name>
 
   <description>
+    A light weight and high performance Java cache library. JCache/JSR107 support.
   </description>
 
   <dependencies>

@@ -10,15 +10,13 @@
     <relativePath>../../pom.xml</relativePath>
   </parent>
 
-  <description>
-    Bundle jar including all cache2k modules for usage as runtime dependency.
-    This jar also provides OSGi meta information.
-    No source and JavaDoc is included in the associated jars. To access source and
-    JavaDoc use the bundled jars separately.
-  </description>
-
   <artifactId>cache2k-all</artifactId>
-  <name>${project.artifactId} complete bundle</name>
+  <name>cache2k all</name>
+
+  <description>
+    A light weight and high performance Java cache library. Complete runtime bundle.
+    This jar also provides OSGi meta information.
+  </description>
 
   <dependencies>
 

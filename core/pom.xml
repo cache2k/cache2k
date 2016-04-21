@@ -9,14 +9,10 @@
 
   <artifactId>cache2k-core</artifactId>
   <version>0.25-SNAPSHOT</version>
-  <name>cache2k core package</name>
+  <name>cache2k core</name>
 
   <description>
-    This package provides the implementation of all basic cache2k features.
-    cache2k is a well engineered high performance in-memory Java cache. It implements
-    latest eviction algorithms and coding techniques to achieve performance about 10 times better
-    then existing cache solutions. cache2k comes with a clean and concise API. The API is currently
-    still evolving until version 1.0 is reached.
+      A light weight and high performance Java cache library. Android compatible core library.
   </description>
 
   <dependencies>
