@@ -2145,10 +2145,6 @@ public abstract class HeapCache<K, V>
     }
   }
 
-  static class CollisionInfo {
-    int collisionCnt; int collisionSlotCnt; int longestCollisionSize;
-  }
-
   /**
    * This function calculates a modified hash code. The intention is to
    * "rehash" the incoming integer hash codes to overcome weak hash code
