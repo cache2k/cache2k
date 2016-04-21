@@ -1672,9 +1672,9 @@ public abstract class HeapCache<K, V>
     try {
       checkLoaderPresent();
       if (e.isVirgin()) {
-        v = loader.load((K) e.key, t0, null);
+        v = loader.load(e.key, t0, null);
       } else {
-        v = loader.load((K) e.key, t0, e);
+        v = loader.load(e.key, t0, e);
       }
       e.setLastModification(t0);
     } catch (Throwable _ouch) {
@@ -1727,7 +1727,6 @@ public abstract class HeapCache<K, V>
             ((ExceptionWrapper) _value).getException());
       }
     }
-
     synchronized (lock) {
       checkClosed();
       updateStatisticsNeedsLock(e, _value, t0, t, _updateStatistics, _suppressException);
@@ -1735,7 +1734,6 @@ public abstract class HeapCache<K, V>
         putButExpiredCnt++;
       }
     } // synchronized (lock)
-
     return _nextRefreshTime;
   }
 

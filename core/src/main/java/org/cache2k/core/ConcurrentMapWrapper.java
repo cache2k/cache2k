@@ -44,9 +44,9 @@ public class ConcurrentMapWrapper<K,V> implements ConcurrentMap<K, V> {
   Class<?> keyType;
   Class<?> valueType;
 
-  public ConcurrentMapWrapper(Cache<K, V> cache) {
+  public ConcurrentMapWrapper(InternalCache<K, V> cache) {
     this.cache = cache;
-    InternalCache bc = (InternalCache) cache;
+    InternalCache bc = cache;
     keyType = bc.getKeyType();
     valueType = bc.getValueType();
   }
