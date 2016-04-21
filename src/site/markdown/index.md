@@ -41,9 +41,10 @@ The road map represents a rough plan, the dates and features may change.
 
 ## News
 
+  * **Version 0.25-BETA, 2016-04-21**: API restructuring, expiry and asynchronous notifications. See [Version 0.25 release notes](0/25.html)
   * **Version 0.24-BETA, 2016-04-11**: JSR107 support, Restructuring, Storage removed, Events, CacheWriter, etc. See [Version 0.24 release notes](0/24.html)
-  * **Version 0.23.1, 2016-04-07**: Switch to Apache license, bug fix, See [Version 0.23.1 release notes](0/23.1.html)
-  * **Version 0.23, 2016-02-10**: OSGi support, ClockProPlus eviction becomes default, See [Version 0.23 release notes](0/23.html)
+  * **Version 0.23.1, 2016-04-07**: Switch to Apache license, bug fix. See [Version 0.23.1 release notes](0/23.1.html)
+  * **Version 0.23, 2016-02-10**: OSGi support, ClockProPlus eviction becomes default. See [Version 0.23 release notes](0/23.html)
   * **Version 0.22.1, 2016-01-13**: Bugfix release, Update recommended. See [Version 0.22.1 release notes](0/22.1.html)
   * **Version 0.22, 2015-12-29**: Minor bug fix release. See [Version 0.22 release notes](0/22.html)
   * **Version 0.21.1, 2015-06-13**: Fix Android compatibility. Closes GH#19
