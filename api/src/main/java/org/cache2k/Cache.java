@@ -26,6 +26,7 @@ import org.cache2k.integration.CacheLoader;
 import org.cache2k.integration.CacheWriter;
 import org.cache2k.integration.LoadCompletedListener;
 import org.cache2k.integration.CacheLoaderException;
+import org.cache2k.integration.CacheWriterException;
 import org.cache2k.processor.CacheEntryProcessor;
 import org.cache2k.processor.EntryProcessingResult;
 
@@ -51,13 +52,16 @@ import java.util.Map;
  * @author Jens Wilke
  */
 @SuppressWarnings("UnusedDeclaration")
-public interface Cache<K, V> extends KeyValueSource<K, V>, Iterable<CacheEntry<K, V>>, Closeable {
+public interface Cache<K, V> extends
+  KeyValueSource<K, V>, KeyValueStore<K,V>,
+  Iterable<CacheEntry<K, V>>, Closeable {
 
   String getName();
 
   /**
    * Returns object in the cache that is mapped to the key.
    */
+  @Override
   V get(K key);
 
   /**
@@ -79,13 +83,20 @@ public interface Cache<K, V> extends KeyValueSource<K, V>, Iterable<CacheEntry<K
   CacheEntry<K, V> getEntry(K key);
 
   /**
-   * Signals the intent to request a value for the given key in the near future.
-   * The method will return immediately and the cache will load the
-   * the value asynchronously if not yet present in the cache. The cache may
-   * ignore the request, if not enough internal resources are available to
-   * load the value in background.
+   * Notify about the intend to retrieve the value for this key in the
+   * near future.
    *
-   * @param key the key that should be loaded
+   * <p>The method will return immediately and the cache will load the
+   * the value asynchronously if not yet present in the cache.
+   *
+   * <p>No action is performed, if no reasonable action can be taken
+   * for a cache configuration, for example no {@link CacheLoader} is defined.
+   * The cache may also do nothing, if not enough threads or other resources
+   * are available.
+   *
+   * <p>This method is not expected to throw an exception.
+   *
+   * @param key the key that should be loaded, not null
    */
   void prefetch(K key);
 
@@ -95,11 +106,23 @@ public interface Cache<K, V> extends KeyValueSource<K, V>, Iterable<CacheEntry<K
   void prefetch(Iterable<? extends K> keys);
 
   /**
-   * Signals the intent to request a value for the given keys in the near future.
-   * The method will return immediately and the cache will load the
-   * the values asynchronously if not yet present in the cache. The cache may
+   * Notify about the intend to retrieve the value for the keys in the
+   * near future.
+   *
+   * <p>The method will return immediately and the cache will load the
+   * the value asynchronously if not yet present in the cache.
+   *
+   * <p>No action is performed, if no reasonable action can be taken
+   * for a cache configuration, for example no {@link CacheLoader} is defined.
+   * The cache may also do nothing, if not enough threads or other resources
+   * are available.
+   *
+   * <p>The method will return immediately and the cache will load the
+   * the value asynchronously if not yet present in the cache. The cache may
    * ignore the request, if not enough internal resources are available to
    * load the value in background.
+   *
+   * <p>This method is not expected to throw an exception.
    *
    * @param keys the keys which should be loaded
    */
@@ -198,6 +221,7 @@ public interface Cache<K, V> extends KeyValueSource<K, V>, Iterable<CacheEntry<K
    *         completely, for example, if an exceptions was thrown
    *         by a {@link CacheWriter}
    */
+  @Override
   void put(K key, V value);
 
   /**
@@ -377,6 +401,8 @@ public interface Cache<K, V> extends KeyValueSource<K, V>, Iterable<CacheEntry<K
   /**
    * Removes the mapping for a key from the cache if it is present.
    *
+   * <p>If a writer is registered {@link CacheWriter#delete(Object)} will get called.
+   *
    * <p>These alternative versions of the remove operation exist:
    * <ul>
    *   <li>{@link #containsAndRemove(Object)}, returning a success flag</li>
@@ -384,11 +410,13 @@ public interface Cache<K, V> extends KeyValueSource<K, V>, Iterable<CacheEntry<K
    *   <li>{@link #removeIfEquals(Object, Object)}, conditional removal matching on the current value</li>
    * </ul>
    *
-   * @param key key whose mapping is to be removed from the cache
+   * @param key key which mapping is to be removed from the cache, not null
    * @throws NullPointerException if a specified key is null
    * @throws ClassCastException if the key is of an inappropriate type for
    *         this map
+   * @throws CacheWriterException if the writer call failed
    */
+  @Override
   void remove(K key);
 
   /**
@@ -415,7 +443,11 @@ public interface Cache<K, V> extends KeyValueSource<K, V>, Iterable<CacheEntry<K
    * Removes a set of keys. This has the same semantics of calling
    * remove to every key, except that the cache is trying to optimize the
    * bulk operation.
+   *
+   * @param keys a set of keys to remove
+   * @throws NullPointerException if a specified key is null
    */
+  @Override
   void removeAll(Iterable<? extends K> keys);
 
   /**
@@ -507,36 +539,27 @@ public interface Cache<K, V> extends KeyValueSource<K, V>, Iterable<CacheEntry<K
     Iterable<? extends K> keys, CacheEntryProcessor<K , V, R> entryProcessor, Object... objs);
 
   /**
-   * Disclaimer: This method is here to be able to support known coding similar
-   * to JSR107. Do not use it. Just use prefetch() and the normal Cache.get().
-   * Since Cache.get() is almost as fast as a HashMap there is no need to
-   * build up mini-caches. The caller code will also look much cleaner.
+   * <p/>Bulk get that gets all values associated with the keys.
    *
-   * <p/>Bulk get: gets all values associated with the keys. If an exception
-   * happened during the fetch of any key, this exception will be thrown wrapped
-   * into a {@link CacheLoaderException}. If more exceptions exist, the
-   * selection is arbitrary.
+   * <p/>The cache loader does not need to support the bulk operation and override
+   * {@link CacheLoader#loadAll}. The cache uses available threads from the loader
+   * thread pool to perform the load in parallel.
    *
-   * <p/>The cache source does not need to support the bulk operation. It is
-   * not guaranteed that the bulk get is called on the cache source if it
-   * exists.
+   * <p/>Exception handling: The method may terminate normal, even if the cache
+   * loader failed to provide values for some keys. The cache will generally
+   * do everything to delay the propagation of the exception until the key is requested,
+   * to be most specific. If the loader has permanent failures this method may
+   * throw an exception immediately.
    *
-   * <p/>The operation may be split into chunks and not performed atomically.
-   * The entries that are processed within a chunk will be locked, to avoid
-   * duplicate fetches from the cache source. To avoid deadlocks there is a
-   * fallback non-bulk operation if a concurrent bulk get is ongoing and
-   * the keys overlap.
+   * <p/>Performance: An better technique is the
+   * call of {@link Cache#prefetchAll(Iterable)} and then use the normal
+   * {@link Cache#get(Object)} to request the the values.
    *
-   * <p/>In contrast to JSR107 the following guarantees are met
-   * if the operation returns without exception: map.size() == keys.size().
-   * TODO: only if null values are permitted.
-   *
-   * <p/>Exception handling: The method may terminate normal, even if a cache
-   * fetch via cache source failed. In this case the exception will be thrown
-   * when the value is requested from the map.
-   *
-   * @exception CacheLoaderException may be thrown if the fetch fails.
+   * @throws NullPointerException if one of the specified keys is null
+   * @throws CacheLoaderException in case the loader has permanent failures.
+   *            Otherwise the exception is thrown when the key is requested.
    */
+  @Override
   Map<K, V> getAll(Iterable<? extends K> keys);
 
   /**
@@ -550,18 +573,22 @@ public interface Cache<K, V> extends KeyValueSource<K, V>, Iterable<CacheEntry<K
    * as {@link CacheLoaderException} when the entry is accessed
    * via the map interface.
    *
-   * @throws ClassCastException if the class of the specified key
-   *         prevents it from being stored in this cache
-   * @throws NullPointerException if the specified key is null or the
-   *         value is null and the cache does not permit null values
+   * @throws NullPointerException if one of the specified keys is null
    * @throws IllegalArgumentException if some property of the specified key
    *         prevents it from being stored in this cache
    */
   Map<K, V> peekAll(Iterable<? extends K> keys);
 
   /**
-   * Put all elements of the map into the cache.
+   * Insert all elements of the map into the cache.
+   *
+   * <p/>See {@link Cache#put(Object, Object)} for information about the
+   * interaction with the {@link CacheWriter} and {@link ExpiryCalculator}
+   *
+   * @param valueMap Map of keys with associated values to be inserted in the cache
+   * @throws NullPointerException if one of the specified keys is null
    */
+  @Override
    void putAll(Map<? extends K, ? extends V> valueMap);
 
   /**
@@ -607,10 +634,13 @@ public interface Cache<K, V> extends KeyValueSource<K, V>, Iterable<CacheEntry<K
   @Override
   Iterator<CacheEntry<K, V>> iterator();
 
+  /**
+   * Remove all cache contents calling registered listeners.
+   */
   void removeAll();
 
   /**
-   * Clear the cache contents
+   * Clear the cache in a fast way, causing minimal disruption. Not calling the listeners.
    */
   void clear();
 

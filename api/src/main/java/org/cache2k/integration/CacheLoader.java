@@ -61,7 +61,7 @@ public abstract class CacheLoader<K, V> {
    * <p>This method may not mutate the cache contents directly.
    *
    * <p>The method is provided to complete the API. At the moment cache2k is not
-   * using it. Bulk operation will be implemented later.
+   * using it. Please see the road map.
    *
    * @param keys set of keys for the values to be loaded
    * @param executor an executor for concurrent loading
