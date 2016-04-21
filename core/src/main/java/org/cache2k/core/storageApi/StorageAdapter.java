@@ -20,11 +20,11 @@ package org.cache2k.core.storageApi;
  * #L%
  */
 
-import org.cache2k.ClosableIterator;
 import org.cache2k.core.CacheInternalError;
 import org.cache2k.core.CacheStorageException;
 import org.cache2k.core.Entry;
 
+import java.util.Iterator;
 import java.util.concurrent.Future;
 
 /**
@@ -61,7 +61,7 @@ public abstract class StorageAdapter {
   public abstract void evict(Entry e);
 
   public abstract void expire(Entry e);
-  public abstract ClosableIterator<Entry> iterateAll();
+  public abstract Iterator<Entry> iterateAll();
 
   /**
    * Return the total number of entries within the heap and

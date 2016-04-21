@@ -32,6 +32,7 @@ get deprecated. Modifications in the statistics output will not listed as breaka
   * `ExperimentalBulkCacheSource` removed
   * CacheConfig and other configuration related things renamed and moved to subpackage configuration
   * Thread numbers from generated threads start with 1 and numbers will be reused if thread die
+  * Interface ClosableIterator removed
 
 ## Bug fixes
 
