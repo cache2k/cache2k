@@ -36,7 +36,9 @@ public class BasicCacheTest extends TestCase {
 
   public void testPeekAndPut() {
     Cache<String,String> c =
-      CacheBuilder.newCache(String.class, String.class).build();
+      CacheBuilder.newCache(String.class, String.class)
+        .eternal(true)
+        .build();
     String val = c.peek("something");
     c.put("something", "hello");
     val = c.get("something");
@@ -53,6 +55,7 @@ public class BasicCacheTest extends TestCase {
     Cache<String,Integer> c =
       CacheBuilder.newCache(String.class, Integer.class)
         .source(_lengthCountingSource)
+        .eternal(true)
         .build();
     int v = c.get("hallo");
     v = c.get("long string");
