@@ -68,6 +68,4 @@ Fixes of corner cases that are most likely not affecting any existing applicatio
   * CacheConfiguration.getListeners
   * CacheConfiguration.getAsyncListeners
   * KeyValueStore
-  
-
-
+  * AdvancedKeyValueSource

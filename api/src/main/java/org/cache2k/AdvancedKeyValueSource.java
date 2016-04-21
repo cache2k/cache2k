@@ -20,20 +20,34 @@ package org.cache2k;
  * #L%
  */
 
+import java.util.Map;
+
 /**
- * Reduced interface to return a value selected by a key object. Cache users
- * of a read-through cache may choose this simple interface for requesting data
- * only, rather to use the full blown cache interface.
+ * Key/value source with bulk get and prefetching.
  *
  * @author Jens Wilke
  */
-public interface KeyValueSource<K, V> {
+public interface AdvancedKeyValueSource<K,V> extends KeyValueSource<K,V> {
 
   /**
-   * Returns object via the key.
-   *
-   * @see Cache#get(Object)
+   * Retrieves all objects via the key.
    */
-  V get(K key);
+  Map<K, V> getAll(Iterable<? extends K> keys);
+
+  /**
+   * Notify about the intend to retrieve the value for this key in the
+   * near future.
+   **
+   * @see Cache#prefetch(Object)
+   */
+  void prefetch(K key);
+
+  /**
+   * Notify about the intend to retrieve the value for the keys in the
+   * near future.
+   *
+   * @see Cache#prefetchAll(Iterable)
+   */
+  void prefetchAll(Iterable<? extends K> keys);
 
 }

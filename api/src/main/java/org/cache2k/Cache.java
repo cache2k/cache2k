@@ -53,7 +53,7 @@ import java.util.Map;
  */
 @SuppressWarnings("UnusedDeclaration")
 public interface Cache<K, V> extends
-  KeyValueSource<K, V>, KeyValueStore<K,V>,
+  AdvancedKeyValueSource<K, V>, KeyValueStore<K,V>,
   Iterable<CacheEntry<K, V>>, Closeable {
 
   String getName();

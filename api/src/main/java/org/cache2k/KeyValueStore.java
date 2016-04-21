@@ -30,7 +30,7 @@ import java.util.Map;
  *
  * @author Jens Wilke
  */
-public interface KeyValueStore<K, V> extends KeyValueSource<K,V> {
+public interface KeyValueStore<K, V> extends AdvancedKeyValueSource<K,V> {
 
   /**
    * Insert a new value and call the writer, if registered.
