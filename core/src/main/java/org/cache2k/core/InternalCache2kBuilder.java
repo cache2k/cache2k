@@ -29,7 +29,7 @@ import org.cache2k.event.CacheEntryOperationListener;
 import org.cache2k.event.CacheEntryRemovedListener;
 import org.cache2k.event.CacheEntryUpdatedListener;
 import org.cache2k.Cache;
-import org.cache2k.CacheConfig;
+import org.cache2k.configuration.CacheConfiguration;
 import org.cache2k.CacheManager;
 import org.cache2k.core.event.AsyncDispatcher;
 import org.cache2k.core.event.AsyncEvent;
@@ -62,9 +62,9 @@ public class InternalCache2kBuilder<K, T> {
       new ThreadPoolExecutor.AbortPolicy());
 
   CacheManager manager;
-  CacheConfig<K,T> config;
+  CacheConfiguration<K,T> config;
 
-  public InternalCache2kBuilder(final CacheConfig<K, T> _config, final CacheManager _manager) {
+  public InternalCache2kBuilder(final CacheConfiguration<K, T> _config, final CacheManager _manager) {
     config = _config;
     manager = _manager;
   }
@@ -96,7 +96,7 @@ public class InternalCache2kBuilder<K, T> {
   }
 
   Object getConstructorParameter(Class<?> c) {
-    if (CacheConfig.class.isAssignableFrom(c)) { return config; }
+    if (CacheConfiguration.class.isAssignableFrom(c)) { return config; }
     return null;
   }
 
@@ -104,7 +104,7 @@ public class InternalCache2kBuilder<K, T> {
   Constructor<?> findConstructor(Class<?> c) {
     for (Constructor ctr : c.getConstructors()) {
       Class<?>[] pt = ctr.getParameterTypes();
-      if (pt != null && pt.length > 0 && CacheConfig.class.isAssignableFrom(pt[0])) {
+      if (pt != null && pt.length > 0 && CacheConfiguration.class.isAssignableFrom(pt[0])) {
         return ctr;
       }
     }

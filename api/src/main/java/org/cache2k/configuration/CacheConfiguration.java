@@ -1,4 +1,4 @@
-package org.cache2k;
+package org.cache2k.configuration;
 
 /*
  * #%L
@@ -20,6 +20,7 @@ package org.cache2k;
  * #L%
  */
 
+import org.cache2k.Cache2kBuilder;
 import org.cache2k.customization.*;
 import org.cache2k.customization.ExceptionExpiryCalculator;
 import org.cache2k.event.CacheEntryOperationListener;
@@ -40,7 +41,7 @@ import java.util.List;
  *
  * @author Jens Wilke; created: 2013-06-25
  */
-public class CacheConfig<K, V> implements Serializable {
+public class CacheConfiguration<K, V> implements Serializable {
 
   public final long EXPIRY_MILLIS_ETERNAL = Long.MAX_VALUE;
 
@@ -79,11 +80,11 @@ public class CacheConfig<K, V> implements Serializable {
    * @see #setKeyType(Class)
    * @see #setValueType(Class)
    */
-  public static <K,V> CacheConfig<K, V> of(Class<K> keyType, Class<V> valueType) {
-    CacheConfig c = new CacheConfig();
+  public static <K,V> CacheConfiguration<K, V> of(Class<K> keyType, Class<V> valueType) {
+    CacheConfiguration c = new CacheConfiguration();
     c.setKeyType(keyType);
     c.setValueType(valueType);
-    return (CacheConfig<K, V>) c;
+    return (CacheConfiguration<K, V>) c;
   }
 
   /**
@@ -94,11 +95,11 @@ public class CacheConfig<K, V> implements Serializable {
    * @see #setKeyType(Class)
    * @see #setValueType(Class)
    */
-  public static <K,V> CacheConfig<K, V> of(Class<K> keyType, CacheTypeDescriptor<V> valueType) {
-    CacheConfig c = new CacheConfig();
+  public static <K,V> CacheConfiguration<K, V> of(Class<K> keyType, CacheTypeDescriptor<V> valueType) {
+    CacheConfiguration c = new CacheConfiguration();
     c.setKeyType(keyType);
     c.setValueType(valueType);
-    return (CacheConfig<K, V>) c;
+    return (CacheConfiguration<K, V>) c;
   }
 
   /**
@@ -109,11 +110,11 @@ public class CacheConfig<K, V> implements Serializable {
    * @see #setKeyType(Class)
    * @see #setValueType(Class)
    */
-  public static <K,V> CacheConfig<K, V> of(CacheTypeDescriptor<K> keyType, Class<V> valueType) {
-    CacheConfig c = new CacheConfig();
+  public static <K,V> CacheConfiguration<K, V> of(CacheTypeDescriptor<K> keyType, Class<V> valueType) {
+    CacheConfiguration c = new CacheConfiguration();
     c.setKeyType(keyType);
     c.setValueType(valueType);
-    return (CacheConfig<K, V>) c;
+    return (CacheConfiguration<K, V>) c;
   }
 
   /**
@@ -124,11 +125,11 @@ public class CacheConfig<K, V> implements Serializable {
    * @see #setKeyType(Class)
    * @see #setValueType(Class)
    */
-  public static <K,V> CacheConfig<K, V> of(CacheTypeDescriptor<K> keyType, CacheTypeDescriptor<V> valueType) {
-    CacheConfig c = new CacheConfig();
+  public static <K,V> CacheConfiguration<K, V> of(CacheTypeDescriptor<K> keyType, CacheTypeDescriptor<V> valueType) {
+    CacheConfiguration c = new CacheConfiguration();
     c.setKeyType(keyType);
     c.setValueType(valueType);
-    return (CacheConfig<K, V>) c;
+    return (CacheConfiguration<K, V>) c;
   }
 
   /**

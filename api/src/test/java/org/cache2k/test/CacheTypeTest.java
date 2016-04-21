@@ -20,9 +20,9 @@ package org.cache2k.test;
  * #L%
  */
 
-import org.cache2k.CacheConfig;
-import org.cache2k.CacheType;
-import org.cache2k.CacheTypeDescriptor;
+import org.cache2k.configuration.CacheConfiguration;
+import org.cache2k.configuration.CacheType;
+import org.cache2k.configuration.CacheTypeDescriptor;
 import org.junit.Test;
 import static org.junit.Assert.*;
 
@@ -192,10 +192,10 @@ public class CacheTypeTest {
    */
   @Test
   public void testWithCacheConfig() throws Exception {
-    CacheConfig c = new CacheConfig();
+    CacheConfiguration c = new CacheConfiguration();
     c.setKeyType(String.class);
     c.setValueType(new CacheType<List<String>>(){});
-    CacheConfig c2 = copyObjectViaXmlEncoder(c);
+    CacheConfiguration c2 = copyObjectViaXmlEncoder(c);
     assertEquals(c.getKeyType(), c2.getKeyType());
     assertEquals(c.getValueType(), c2.getValueType());
   }

@@ -30,7 +30,7 @@ get deprecated. Modifications in the statistics output will not listed as breaka
   * Either expiryDuration or eternal must be set explicitly in this release. See: https://github.com/cache2k/cache2k/issues/21
   * Return value of `Cache.iterator()` changed from `ClosableIterator` to `Iterator`
   * `ExperimentalBulkCacheSource` removed
-  * CacheConfig renamed and moved to new destination
+  * CacheConfig and other configuration related things renamed and moved to subpackage configuration
   * Thread numbers from generated threads start with 1 and numbers will be reused if thread die
 
 ## Bug fixes

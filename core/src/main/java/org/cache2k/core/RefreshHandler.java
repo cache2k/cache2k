@@ -20,7 +20,7 @@ package org.cache2k.core;
  * #L%
  */
 
-import org.cache2k.CacheConfig;
+import org.cache2k.configuration.CacheConfiguration;
 import org.cache2k.CacheEntry;
 import org.cache2k.customization.ExpiryCalculator;
 import org.cache2k.customization.ExceptionExpiryCalculator;
@@ -59,7 +59,7 @@ public abstract class RefreshHandler<K,V>  {
       }
     };
 
-  public static <K, V> RefreshHandler<K,V> of(CacheConfig<K,V> cfg) {
+  public static <K, V> RefreshHandler<K,V> of(CacheConfiguration<K,V> cfg) {
     if (cfg.getExpiryMillis() < 0) {
       throw new IllegalArgumentException(
         "Specify expiry or no expiry explicitly. " +
@@ -174,7 +174,7 @@ public abstract class RefreshHandler<K,V>  {
     InternalCache cache;
     long timerCancelCount = 0;
 
-    void configureStatic(final CacheConfig<K, V> c) {
+    void configureStatic(final CacheConfiguration<K, V> c) {
       long _expiryMillis  = c.getExpiryMillis();
       if (_expiryMillis == ExpiryCalculator.ETERNAL || _expiryMillis < 0) {
         maxLinger = ExpiryCalculator.ETERNAL;
@@ -328,7 +328,7 @@ public abstract class RefreshHandler<K,V>  {
     ExceptionExpiryCalculator<K> exceptionExpiryCalculator;
 
     @SuppressWarnings("unchecked")
-    void configure(CacheConfig<K,V> c) {
+    void configure(CacheConfiguration<K,V> c) {
       configureStatic(c);
       expiryCalculator = c.getExpiryCalculator();
       exceptionExpiryCalculator = c.getExceptionExpiryCalculator();

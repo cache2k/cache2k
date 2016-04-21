@@ -20,6 +20,10 @@ package org.cache2k;
  * #L%
  */
 
+import org.cache2k.configuration.CacheConfiguration;
+import org.cache2k.configuration.CacheType;
+import org.cache2k.configuration.CacheTypeDescriptor;
+import org.cache2k.configuration.RootAnyBuilder;
 import org.cache2k.customization.ExceptionExpiryCalculator;
 import org.cache2k.customization.ExpiryCalculator;
 import org.cache2k.event.CacheEntryOperationListener;
@@ -78,26 +82,26 @@ public class Cache2kBuilder<K, V>
    * {@link #valueType}.
    */
   public static Cache2kBuilder<?,?> forUnknownTypes() {
-    return of(new CacheConfig());
+    return of(new CacheConfiguration());
   }
 
   /**
    * Create a new cache builder if key and value types are classes with no generic parameters.
    */
   public static <K,T> Cache2kBuilder<K,T> of(Class<K> _keyType, Class<T> _valueType) {
-    return of(CacheConfig.of(_keyType, _valueType));
+    return of(CacheConfiguration.of(_keyType, _valueType));
   }
 
   /**
    * Create a builder from the configuration.
    */
-  public static <K,T> Cache2kBuilder<K, T> of(CacheConfig<K, T> c) {
+  public static <K,T> Cache2kBuilder<K, T> of(CacheConfiguration<K, T> c) {
     Cache2kBuilder<K,T> cb = new Cache2kBuilder<K, T>(c);
     return cb;
   }
 
   private CacheManager manager;
-  private Cache2kBuilder(CacheConfig<K,V> cfg) {
+  private Cache2kBuilder(CacheConfiguration<K,V> cfg) {
     config = cfg;
   }
 
@@ -118,7 +122,7 @@ public class Cache2kBuilder<K, V>
   protected Cache2kBuilder() {
     Type[] _types =
       ((ParameterizedType) this.getClass().getGenericSuperclass()).getActualTypeArguments();
-    config = CacheConfig.of(
+    config = CacheConfiguration.of(
       (CacheTypeDescriptor<K>) CacheType.of(_types[0]).getBeanRepresentation(),
       (CacheTypeDescriptor<V>) CacheType.of(_types[1]).getBeanRepresentation());
   }
@@ -425,9 +429,8 @@ public class Cache2kBuilder<K, V>
     return this;
   }
 
-  @Deprecated
-  public final CacheConfig getConfig() {
-    return null;
+  public final CacheConfiguration toConfiguration() {
+    return config;
   }
 
   /**

@@ -21,7 +21,7 @@ package org.cache2k.spi;
  */
 
 import org.cache2k.Cache;
-import org.cache2k.CacheConfig;
+import org.cache2k.configuration.CacheConfiguration;
 import org.cache2k.CacheManager;
 
 /**
@@ -42,6 +42,6 @@ public abstract class Cache2kCoreProvider {
 
   public abstract Cache2kManagerProvider getManagerProvider();
 
-  public abstract <K,V> Cache<K,V> createCache(CacheManager m, CacheConfig<K,V> cfg);
+  public abstract <K,V> Cache<K,V> createCache(CacheManager m, CacheConfiguration<K,V> cfg);
 
 }

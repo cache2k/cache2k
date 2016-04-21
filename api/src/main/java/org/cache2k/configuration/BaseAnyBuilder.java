@@ -1,4 +1,4 @@
-package org.cache2k;
+package org.cache2k.configuration;
 
 /*
  * #%L
@@ -19,6 +19,9 @@ package org.cache2k;
  * limitations under the License.
  * #L%
  */
+
+import org.cache2k.Cache;
+import org.cache2k.Cache2kBuilder;
 
 /**
  * Base builder which defines top level methods

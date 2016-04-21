@@ -20,6 +20,8 @@ package org.cache2k;
  * #L%
  */
 
+import org.cache2k.configuration.CacheConfiguration;
+import org.cache2k.configuration.CacheTypeDescriptor;
 import org.cache2k.customization.*;
 import org.cache2k.event.CacheEntryOperationListener;
 import org.cache2k.integration.AdvancedCacheLoader;
@@ -41,7 +43,7 @@ public class CacheBuilder<K,V> {
   }
 
   public static <K,V> CacheBuilder<K,V> newCache(Class<K> _keyType, Class<V> _valueType) {
-    return fromConfig(CacheConfig.of(_keyType, _valueType));
+    return fromConfig(CacheConfiguration.of(_keyType, _valueType));
   }
 
   @SuppressWarnings("unchecked")
@@ -50,7 +52,7 @@ public class CacheBuilder<K,V> {
     return newCache(_keyType, _collectionType);
   }
 
-  public static <K1, T> CacheBuilder<K1, T> fromConfig(final CacheConfig<K1, T> c) {
+  public static <K1, T> CacheBuilder<K1, T> fromConfig(final CacheConfiguration<K1, T> c) {
     return new CacheBuilder<K1, T>(Cache2kBuilder.of(c));
   }
 
@@ -124,7 +126,7 @@ public class CacheBuilder<K,V> {
   }
 
   public CacheBuilder<K, V> heapEntryCapacity(final int v) {
-    builder.config.setHeapEntryCapacity(v);
+    builder.toConfiguration().setHeapEntryCapacity(v);
     return this;
   }
 
@@ -157,7 +159,7 @@ public class CacheBuilder<K,V> {
     return builder.build();
   }
 
-  public CacheConfig createConfiguration() {
+  public CacheConfiguration createConfiguration() {
     return builder.createConfiguration();
   }
 
@@ -172,8 +174,8 @@ public class CacheBuilder<K,V> {
   }
 
   @Deprecated
-  public CacheConfig getConfig() {
-    return builder.getConfig();
+  public CacheConfiguration getConfig() {
+    return builder.toConfiguration();
   }
 
   public CacheBuilder<K, V> expirySecs(final int v) {

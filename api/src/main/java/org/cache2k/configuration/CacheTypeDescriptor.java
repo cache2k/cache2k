@@ -1,4 +1,4 @@
-package org.cache2k;
+package org.cache2k.configuration;
 
 /*
  * #%L
@@ -21,7 +21,6 @@ package org.cache2k;
  */
 
 import java.io.Serializable;
-import java.lang.reflect.Type;
 import java.util.Arrays;
 
 /**

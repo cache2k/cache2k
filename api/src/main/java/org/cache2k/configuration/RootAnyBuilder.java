@@ -1,4 +1,4 @@
-package org.cache2k;
+package org.cache2k.configuration;
 
 /*
  * #%L
@@ -29,17 +29,16 @@ import java.util.List;
  */
 @SuppressWarnings("unchecked")
 public abstract class RootAnyBuilder<K, V>
-  extends BaseAnyBuilder<K, V, CacheConfig> {
+  extends BaseAnyBuilder<K, V, CacheConfiguration> {
 
   private List<BaseAnyBuilder> modules = Collections.emptyList();
-  protected CacheConfig<K,V> config;
+  protected CacheConfiguration<K,V> config;
 
-  /** Closed for extension */
-  RootAnyBuilder() { }
+  protected RootAnyBuilder() { }
 
 
   @Override
-  public CacheConfig createConfiguration() {
+  public CacheConfiguration createConfiguration() {
     List<Object> _moduleConfiguration = new ArrayList<Object>();
     for (BaseAnyBuilder bb : modules) {
       _moduleConfiguration.add(bb.createConfiguration());

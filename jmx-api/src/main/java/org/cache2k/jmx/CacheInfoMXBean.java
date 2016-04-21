@@ -20,6 +20,8 @@ package org.cache2k.jmx;
  * #L%
  */
 
+import org.cache2k.configuration.CacheConfiguration;
+
 import java.util.Date;
 
 /**
@@ -87,7 +89,7 @@ public interface CacheInfoMXBean {
    * <p>This can mean that the cache entry is removed or just marked as expired
    * in case that the keep value option is enabled.
    *
-   * @see org.cache2k.CacheConfig#setKeepValueAfterExpired(boolean)
+   * @see CacheConfiguration#setKeepValueAfterExpired(boolean)
    */
   long getExpiredCnt();
 

@@ -1,4 +1,4 @@
-package org.cache2k;
+package org.cache2k.configuration;
 
 /*
  * #%L
@@ -19,6 +19,10 @@ package org.cache2k;
  * limitations under the License.
  * #L%
  */
+
+import org.cache2k.Cache;
+import org.cache2k.Cache2kBuilder;
+import org.cache2k.configuration.CacheConfiguration;
 
 /**
  *
@@ -42,7 +46,7 @@ public interface AnyBuilder<K, T, C> {
 
   /**
    * Builds the instance which is the target of nested builders. This
-   * is either a {@link Cache} or a {@link CacheConfig}. The method is
+   * is either a {@link Cache} or a {@link CacheConfiguration}. The method is
    * always identical to root().build().
    */
   Cache<K, T> build();
