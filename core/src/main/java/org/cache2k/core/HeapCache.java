@@ -605,6 +605,7 @@ public abstract class HeapCache<K, V>
       if (iterator == null) {
         return false;
       }
+      cache.checkClosed();
       while (iterator.hasNext()) {
         Entry e = iterator.next();
         if (filter) {

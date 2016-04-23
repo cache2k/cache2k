@@ -78,13 +78,8 @@ public class ConcurrentEntryIterator<K,V> implements Iterator<Entry<K,V>> {
     if (hash == null) {
       return null;
     }
-    if (hashCtl.shouldAbort()) {
-      if (hashCtl.isCleared()) {
-        return null;
-      }
-      if (hashCtl.isClosed()) {
-        throw new CacheClosedException();
-      }
+    if (hashCtl.isCleared()) {
+      return null;
     }
     int idx = 0;
     if (lastEntry != null) {
@@ -117,14 +112,18 @@ public class ConcurrentEntryIterator<K,V> implements Iterator<Entry<K,V>> {
     }
   }
 
+  public void markIterated(Object key, int _hashCode) {
+    Entry _newEntryIterated = new Entry();
+    _newEntryIterated.key = key;
+    _newEntryIterated.hashCode = _hashCode;
+    iterated = iteratedCtl.insert(iterated, _newEntryIterated);
+  }
+
   protected Entry<K,V> checkIteratedOrNext(Entry<K,V> e) {
     do {
       boolean _notYetIterated = !Hash.contains(iterated, e.key, e.hashCode);
       if (_notYetIterated) {
-        Entry _newEntryIterated = new Entry();
-        _newEntryIterated.key = e.key;
-        _newEntryIterated.hashCode = e.hashCode;
-        iterated = iteratedCtl.insert(iterated, _newEntryIterated);
+        markIterated(e.key, e.hashCode);
         return e;
       }
       e = e.another;
@@ -202,7 +201,7 @@ public class ConcurrentEntryIterator<K,V> implements Iterator<Entry<K,V>> {
 
   /** Used by the storage code to filter out already iterated keys */
   public boolean hasBeenIterated(Object key, int _hashCode) {
-    return Hash.contains(iterated,key,  _hashCode);
+    return Hash.contains(iterated, key, _hashCode);
   }
 
 }
