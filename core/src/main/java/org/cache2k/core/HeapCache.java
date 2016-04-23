@@ -96,8 +96,13 @@ public abstract class HeapCache<K, V>
 
   final static ExceptionPropagator DEFAULT_EXCEPTION_PROPAGATOR = new ExceptionPropagator() {
     @Override
-    public void propagateException(String _additionalMessage, Throwable _originalException) {
-      throw new CacheLoaderException(_additionalMessage, _originalException);
+    public void propagateException(final Information exceptionInformation) {
+      long _expiry = exceptionInformation.getUntil();
+      if (_expiry > 0) {
+        throw new CacheLoaderException("(expiry=" + formatMillis(_expiry) + ") " + exceptionInformation.getException(), exceptionInformation.getException());
+      } else {
+        throw new CacheLoaderException("propagate previous loader exception", exceptionInformation.getException());
+      }
     }
   };
 
@@ -1519,15 +1524,7 @@ public abstract class HeapCache<K, V>
   protected V returnValue(V v) {
     if (v instanceof ExceptionWrapper) {
       ExceptionWrapper w = (ExceptionWrapper) v;
-      if (w.additionalExceptionMessage == null) {
-        long t = w.until;
-        if (t > 0) {
-          w.additionalExceptionMessage = "(expiry=" + (t > 0 ? formatMillis(t) : "none") + ") " + w.getException();
-        } else {
-          w.additionalExceptionMessage = w.getException() + "";
-        }
-      }
-      exceptionPropagator.propagateException(w.additionalExceptionMessage, w.getException());
+      exceptionPropagator.propagateException(w);
     }
     return v;
   }
@@ -1536,13 +1533,7 @@ public abstract class HeapCache<K, V>
     V v = e.value;
     if (v instanceof ExceptionWrapper) {
       ExceptionWrapper w = (ExceptionWrapper) v;
-      if (w.additionalExceptionMessage == null) {
-        synchronized (e) {
-          long t = e.getValueExpiryTime();
-          w.additionalExceptionMessage = "(expiry=" + (t > 0 ? formatMillis(t) : "none") + ") " + w.getException();
-        }
-      }
-      exceptionPropagator.propagateException(w.additionalExceptionMessage, w.getException());
+      exceptionPropagator.propagateException(w);
     }
     return v;
   }
@@ -1679,7 +1670,7 @@ public abstract class HeapCache<K, V>
       }
       e.setLastModification(t0);
     } catch (Throwable _ouch) {
-      v = (V) new ExceptionWrapper(_ouch);
+      v = (V) new ExceptionWrapper(e.key, _ouch, t0);
     }
     long t = System.currentTimeMillis();
     return insertOrUpdateAndCalculateExpiry(e, v, t0, t, INSERT_STAT_UPDATE);
@@ -1721,12 +1712,14 @@ public abstract class HeapCache<K, V>
       e.value = _value;
     }
     if (_value instanceof ExceptionWrapper && !_suppressException) {
+      long _expiry = Math.abs(_nextRefreshTime);
       Log log = getLog();
       if (log.isDebugEnabled()) {
         log.debug(
-            "source caught exception, expires at: " + formatMillis(_nextRefreshTime),
+            "loader caught exception, expires at: " + formatMillis(_expiry),
             ((ExceptionWrapper) _value).getException());
       }
+      ((ExceptionWrapper) _value).until = _expiry;
     }
     synchronized (lock) {
       checkClosed();

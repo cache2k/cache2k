@@ -20,6 +20,8 @@ package org.cache2k.core;
  * #L%
  */
 
+import org.cache2k.integration.ExceptionPropagator;
+
 /**
  * We use instances of the exception wrapper for the value field in the entry.
  * This way we can store exceptions without needing additional memory, if no exceptions
@@ -27,26 +29,41 @@ package org.cache2k.core;
  *
  * @author Jens Wilke; created: 2013-07-12
  */
-public class ExceptionWrapper {
+public class ExceptionWrapper<K> implements ExceptionPropagator.Information<K> {
 
   Throwable exception;
-  int count;
-  long since;
-  long lastTry;
+  long loadTime;
   long until;
-
-  /**
-   * Store an additional exception message with the expiry time.
-   * Gets lazily set as soon as an exception is thrown.
-   */
-  transient String additionalExceptionMessage = null;
+  K key;
 
   public ExceptionWrapper(Throwable ex) {
     exception = ex;
   }
 
+  public ExceptionWrapper(final K _key, final Throwable _exception, final long _loadTime) {
+    exception = _exception;
+    key = _key;
+    loadTime = _loadTime;
+  }
+
+  @Override
+  public K getKey() {
+    return key;
+  }
+
+  @Override
   public Throwable getException() {
     return exception;
+  }
+
+  @Override
+  public long getUntil() {
+    return until;
+  }
+
+  @Override
+  public long getLoadTime() {
+    return loadTime;
   }
 
   public String toString() {

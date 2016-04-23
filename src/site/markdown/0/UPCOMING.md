@@ -9,6 +9,7 @@ Changes in semantics or API that may break existing applications are listed here
 Modifications in the statistics output will not listed as breakage.
 
   * Classes/interfaces: AnyBuilder, BaseAnyBuilder and RootAnyBuilder removed
+  * `ExceptionPropagator` interface changed
 
 ## Bug fixes
 
@@ -19,6 +20,7 @@ If something is listed here it might affect an existing application and updating
 
 Fixes of corner cases that are most likely not affecting any existing applications and improvements are listed here.
 
+  * `ExceptionPropagator` gets structured context information about exception
 
 ## API Changes and new methods
 

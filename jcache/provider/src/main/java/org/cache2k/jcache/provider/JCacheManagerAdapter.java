@@ -196,8 +196,8 @@ public class JCacheManagerAdapter implements CacheManager {
     b.keepValueAfterExpired(false);
     b.exceptionPropagator(new ExceptionPropagator() {
       @Override
-      public void propagateException(String _additionalMessage, Throwable _originalException) {
-        throw new CacheLoaderException(_additionalMessage, _originalException);
+      public void propagateException(final Information exceptionInformation) {
+        throw new CacheLoaderException("propagate previous loader exception", exceptionInformation.getException());
       }
     });
     MutableConfiguration<K, V> _cfgCopy = new MutableConfiguration<K, V>();

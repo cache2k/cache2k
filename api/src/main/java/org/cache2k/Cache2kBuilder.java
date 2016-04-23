@@ -312,7 +312,7 @@ public class Cache2kBuilder<K, V> implements Cloneable {
     return this;
   }
 
-  public final Cache2kBuilder<K, V> exceptionPropagator(ExceptionPropagator ep) {
+  public final Cache2kBuilder<K, V> exceptionPropagator(ExceptionPropagator<K> ep) {
     config.setExceptionPropagator(ep);
     return this;
   }
