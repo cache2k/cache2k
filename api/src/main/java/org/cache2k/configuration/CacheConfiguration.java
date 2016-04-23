@@ -427,6 +427,13 @@ public class CacheConfiguration<K, V> implements Serializable {
     this.moduleConfiguration = moduleConfiguration;
   }
 
+  public Collection<Object> getModules() {
+    if (moduleConfiguration == null) {
+      moduleConfiguration = new ArrayList<Object>();
+    }
+    return moduleConfiguration;
+  }
+
 
   public CacheLoader<K,V> getLoader() {
     return loader;

@@ -36,3 +36,24 @@ TODO
 ## Why `peek` and not `getIfPresent`?
 
 TODO
+
+## Builder patterns
+
+An early version of cache2k used dedicated methods on the builder object to introduce
+ a new section:
+
+````
+   CacheBuilder.newBuilder()
+      .eternal(true)
+      .refreshAhead(false)
+      .persistence()
+        .entryCapacity(_storage)
+        .passivation(_passivation)
+      .build()  
+````
+
+This pattern is used, for example in Infinispan as well. Problems: The section builder objects
+need to define build() and also all sections. It is not extensible, all sections need to be defined 
+upfront. The syntax/indentation does not correlate with the section logic.
+
+

@@ -23,7 +23,7 @@ package org.cache2k;
 import org.cache2k.configuration.CacheConfiguration;
 import org.cache2k.configuration.CacheType;
 import org.cache2k.configuration.CacheTypeDescriptor;
-import org.cache2k.configuration.RootAnyBuilder;
+import org.cache2k.configuration.ConfigurationSectionBuilder;
 import org.cache2k.customization.ExceptionExpiryCalculator;
 import org.cache2k.customization.ExpiryCalculator;
 import org.cache2k.event.CacheEntryOperationListener;
@@ -67,8 +67,7 @@ import java.util.concurrent.TimeUnit;
  * @author Jens Wilke
  * @since 0.25
  */
-public class Cache2kBuilder<K, V>
-  extends RootAnyBuilder<K, V> implements Cloneable {
+public class Cache2kBuilder<K, V> implements Cloneable {
 
   private static final Cache2kCoreProvider CORE_PROVIDER;
 
@@ -99,6 +98,8 @@ public class Cache2kBuilder<K, V>
     Cache2kBuilder<K,T> cb = new Cache2kBuilder<K, T>(c);
     return cb;
   }
+
+  CacheConfiguration<K,V> config;
 
   private CacheManager manager;
   private Cache2kBuilder(CacheConfiguration<K,V> cfg) {
@@ -426,6 +427,16 @@ public class Cache2kBuilder<K, V>
    */
   public final Cache2kBuilder<K, V> storeByReference(boolean v) {
     config.setStoreByReference(v);
+    return this;
+  }
+
+  /**
+   * Add a new configuration sub section.
+   */
+  public final Cache2kBuilder<K, V> with(ConfigurationSectionBuilder... sectionBuilders) {
+    for (ConfigurationSectionBuilder b : sectionBuilders) {
+      config.getModules().add(b.buildConfigurationSection());
+    }
     return this;
   }
 

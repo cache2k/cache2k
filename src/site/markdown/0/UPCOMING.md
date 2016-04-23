@@ -8,6 +8,7 @@
 Changes in semantics or API that may break existing applications are listed here. 
 Modifications in the statistics output will not listed as breakage.
 
+  * Classes/interfaces: AnyBuilder, BaseAnyBuilder and RootAnyBuilder removed
 
 ## Bug fixes
 
@@ -21,3 +22,5 @@ Fixes of corner cases that are most likely not affecting any existing applicatio
 
 ## API Changes and new methods
 
+  * Classes/interfaces: AnyBuilder, BaseAnyBuilder and RootAnyBuilder removed; Originally intended for fluent 
+    configuration sections in builders, we will do another approach.

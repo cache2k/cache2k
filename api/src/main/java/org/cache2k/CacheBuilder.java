@@ -160,7 +160,7 @@ public class CacheBuilder<K,V> {
   }
 
   public CacheConfiguration createConfiguration() {
-    return builder.createConfiguration();
+    return builder.toConfiguration();
   }
 
   public CacheBuilder<K, V> manager(final CacheManager m) {

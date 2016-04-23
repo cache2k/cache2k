@@ -20,34 +20,11 @@ package org.cache2k.configuration;
  * #L%
  */
 
-import org.cache2k.Cache;
-import org.cache2k.Cache2kBuilder;
-
 /**
- * Base builder which defines top level methods
- * delegating to the root configuration builder.
- *
- * @author Jens Wilke; created: 2014-04-19
- * @param <C> configuration bean type
+ * @author Jens Wilke
  */
-public abstract class BaseAnyBuilder<K, T, C>
-  implements AnyBuilder<K, T, C> {
+public interface ConfigurationSectionBuilder<T> {
 
-  protected Cache2kBuilder<K, T> root;
-
-  protected BaseAnyBuilder() { }
-
-  void setRoot(Cache2kBuilder<K, T> v) {
-    root = v;
-  }
-
-
-  public Cache2kBuilder<K, T> root() {
-    return root;
-  }
-
-  public Cache<K, T> build() {
-    return root.build();
-  }
+  T buildConfigurationSection();
 
 }
