@@ -29,7 +29,7 @@ import org.cache2k.integration.ExceptionPropagator;
  *
  * @author Jens Wilke; created: 2013-07-12
  */
-public class ExceptionWrapper<K> implements ExceptionPropagator.Information<K> {
+public class ExceptionWrapper<K> implements ExceptionPropagator.CachedExceptionInformation<K> {
 
   Throwable exception;
   long loadTime;

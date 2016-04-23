@@ -96,7 +96,7 @@ public abstract class HeapCache<K, V>
 
   final static ExceptionPropagator DEFAULT_EXCEPTION_PROPAGATOR = new ExceptionPropagator() {
     @Override
-    public void propagateException(final Information exceptionInformation) {
+    public void propagateException(final CachedExceptionInformation exceptionInformation) {
       long _expiry = exceptionInformation.getUntil();
       if (_expiry > 0) {
         throw new CacheLoaderException("(expiry=" + formatMillis(_expiry) + ") " + exceptionInformation.getException(), exceptionInformation.getException());

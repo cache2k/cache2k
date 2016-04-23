@@ -196,7 +196,7 @@ public class JCacheManagerAdapter implements CacheManager {
     b.keepValueAfterExpired(false);
     b.exceptionPropagator(new ExceptionPropagator() {
       @Override
-      public void propagateException(final Information exceptionInformation) {
+      public void propagateException(final CachedExceptionInformation exceptionInformation) {
         throw new CacheLoaderException("propagate previous loader exception", exceptionInformation.getException());
       }
     });

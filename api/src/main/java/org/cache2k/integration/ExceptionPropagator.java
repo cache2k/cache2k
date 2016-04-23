@@ -35,14 +35,14 @@ public interface ExceptionPropagator<K> {
    *
    * @param exceptionInformation information when the original exception occurred.
    */
-  void propagateException(Information<K> exceptionInformation);
+  void propagateException(CachedExceptionInformation<K> exceptionInformation);
 
   /**
    * Relevant context information of a cached loader exception.
    *
    * @param <K> Key type
    */
-  interface Information<K> {
+  interface CachedExceptionInformation<K> {
 
     /**
      * Requested key from the loader

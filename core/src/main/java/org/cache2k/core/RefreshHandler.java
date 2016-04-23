@@ -172,7 +172,8 @@ public abstract class RefreshHandler<K,V>  {
     long maxLinger;
     long exceptionMaxLinger;
     InternalCache cache;
-    long timerCancelCount = 0;
+    /** Dirty counter, intentionally only 32 bit */
+    int timerCancelCount = 0;
 
     void configureStatic(final CacheConfiguration<K, V> c) {
       long _expiryMillis  = c.getExpiryMillis();
