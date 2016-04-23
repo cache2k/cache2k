@@ -5,10 +5,8 @@
 
 ## Potential breakages
 
-Changes in semantics or API that may break existing applications are listed here. In general, only very minor
-changes are done with breaking existing semantics, which will most likely not affect existing applications.
-Everything that will most likely break applications will be introduced as a new API and the old one will 
-get deprecated. Modifications in the statistics output will not listed as breakage.
+Changes in semantics or API that may break existing applications are listed here. 
+Modifications in the statistics output will not listed as breakage.
 
 
 ## Bug fixes
