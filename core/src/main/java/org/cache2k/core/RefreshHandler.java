@@ -100,6 +100,11 @@ public abstract class RefreshHandler<K,V>  {
   public void init(InternalCache<K,V> c) { }
 
   /**
+   * Cancel all timer events, and re-initialize timer
+   */
+  public void reset() { }
+
+  /**
    * Cancels all pending timer events.
    */
   public void shutdown() { }
@@ -203,7 +208,14 @@ public abstract class RefreshHandler<K,V>  {
 
     @Override
     public synchronized void init(InternalCache<K,V> c) {
-      cache = c;
+      if (cache == null) {
+        cache = c;
+      }
+    }
+
+    @Override
+    public synchronized  void reset() {
+      shutdown();
       if (timer == null && isNeedingTimer()) {
         timer = new Timer(cache.getName(), true);
       }

@@ -404,9 +404,8 @@ public abstract class HeapCache<K, V>
       if (name == null) {
         name = String.valueOf(cacheCnt++);
       }
-
-      initializeHeapCache();
       refreshHandler.init(this);
+      initializeHeapCache();
       if (hasBackgroundRefresh() &&
         loader == null) {
         throw new CacheMisconfigurationException("backgroundRefresh, but no loader defined");
@@ -469,8 +468,7 @@ public abstract class HeapCache<K, V>
     if (startedTime == 0) {
       startedTime = System.currentTimeMillis();
     }
-    refreshHandler.shutdown();
-    refreshHandler.init(this);
+    refreshHandler.reset();
   }
 
   @Override

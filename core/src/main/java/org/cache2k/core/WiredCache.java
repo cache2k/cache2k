@@ -454,8 +454,8 @@ public class WiredCache<K, V> extends AbstractCache<K, V>
     if (storage != null) {
       storage.open();
     }
-    heapCache.init();
     heapCache.refreshHandler.init(this);
+    heapCache.init();
   }
 
   @Override
@@ -492,11 +492,7 @@ public class WiredCache<K, V> extends AbstractCache<K, V>
       storage.clear();
       return;
     }
-    synchronized (lockObject()) {
-      heapCache.checkClosed();
-      heapCache.clearLocalCache();
-      heapCache.refreshHandler.init(this);
-    }
+    heapCache.clear();
   }
 
   @Override
