@@ -474,7 +474,8 @@ public class Entry<K, T>
   public String toString(HeapCache c) {
     StringBuilder sb = new StringBuilder();
     sb.append("Entry{");
-    sb.append("lock=").append(getProcessingState());
+    sb.append("objId=").append(System.identityHashCode(this));
+    sb.append(", lock=").append(getProcessingState());
     sb.append(", key=");
     if (key == null) {
       sb.append("null");
@@ -499,18 +500,23 @@ public class Entry<K, T>
     } else {
       sb.append(", state=").append(nextRefreshTime);
     }
-    if (getTask() != null) {
-      String _timerState = "<unavailable>";
-      try {
-        Field f = TimerTask.class.getDeclaredField("state");
-        f.setAccessible(true);
-        int _state = f.getInt(getTask());
-        _timerState = String.valueOf(_state);
-      } catch (Exception x) {
-        _timerState = x.toString();
+    if (Thread.holdsLock(this)) {
+      if (getTask() != null) {
+        String _timerState = "<unavailable>";
+        try {
+          Field f = TimerTask.class.getDeclaredField("state");
+          f.setAccessible(true);
+          int _state = f.getInt(getTask());
+          _timerState = String.valueOf(_state);
+        } catch (Exception x) {
+          _timerState = x.toString();
+        }
+        sb.append(", timerState=").append(_timerState);
       }
-      sb.append(", timerState=").append(_timerState);
+    } else {
+      sb.append(", timerState=skipped/notLocked");
     }
+
     sb.append(", dirty=").append(isDirty());
     sb.append("}");
     return sb.toString();

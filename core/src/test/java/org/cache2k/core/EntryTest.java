@@ -151,4 +151,13 @@ public class EntryTest {
     assertTrue(e.isStale());
   }
 
+  /**
+   * Just check that toString is producing no exception on empty entry.
+   */
+  @Test
+  public void virginToString() {
+    Entry e = new Entry();
+    e.toString();
+  }
+
 }
