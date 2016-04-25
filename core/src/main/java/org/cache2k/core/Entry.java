@@ -71,8 +71,6 @@ public class Entry<K, T>
   /** @see #isVirgin() */
   static final int VIRGIN = 0;
 
-  static private final StaleMarker STALE_MARKER_KEY = new StaleMarker();
-
   final static InitialValueInEntryNeverReturned INITIAL_VALUE = new InitialValueInEntryNeverReturned();
 
   public TimerTask task;
@@ -120,6 +118,7 @@ public class Entry<K, T>
 
   /** Lru list: pointer to next element or list head */
   public Entry next;
+
   /** Lru list: pointer to previous element or list head */
   public Entry prev;
 
@@ -383,12 +382,16 @@ public class Entry<K, T>
     return nextRefreshTime < 0;
   }
 
+  private static final int STALE_BITS = 1;
+  private static final int STALE_MASK = (1 << STALE_BITS) - 1;
+  private static final int STALE_POS = MODIFICATION_TIME_BITS + PS_BITS;
+
   public boolean isStale() {
-    return STALE_MARKER_KEY == key;
+    return ((fetchedTime >> STALE_POS) & STALE_MASK) > 0;
   }
 
   public void setStale() {
-    key = (K) STALE_MARKER_KEY;
+    fetchedTime |=  1L << STALE_POS;
   }
 
   public boolean hasException() {
@@ -526,10 +529,5 @@ public class Entry<K, T>
   }
 
   static class InitialValueInEntryNeverReturned extends Object { }
-
-  static class StaleMarker {
-    @Override
-    public boolean equals(Object o) { return false; }
-  }
 
 }

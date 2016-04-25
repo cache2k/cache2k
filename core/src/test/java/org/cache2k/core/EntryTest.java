@@ -143,4 +143,12 @@ public class EntryTest {
     assertEquals(Entry.ProcessingState.DONE, e.getProcessingState());
   }
 
+  @Test
+  public void testStale() {
+    Entry e = new Entry();
+    assertFalse(e.isStale());
+    e.setStale();
+    assertTrue(e.isStale());
+  }
+
 }
