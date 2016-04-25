@@ -140,6 +140,7 @@ public abstract class HeapCache<K, V>
   protected long removedCnt = 0;
   /** Number of entries removed by clear. */
   protected long clearedCnt = 0;
+  protected long clearCnt = 0;
   protected long expiredKeptCnt = 0;
   protected long expiredRemoveCnt = 0;
   protected long evictedCnt = 0;
@@ -438,20 +439,25 @@ public abstract class HeapCache<K, V>
   }
 
   public final void clearLocalCache() {
-    iterateAllEntriesRemoveAndCancelTimer();
+    iterateAllEntriesAndRemoveFromReplacementList();
     clearedCnt += getLocalSize();
+    clearCnt++;
     initializeHeapCache();
     clearedTime = System.currentTimeMillis();
     touchedTime = clearedTime;
   }
 
-  protected void iterateAllEntriesRemoveAndCancelTimer() {
+  /**
+   * Possible race with clear() and entryRemove. We need to
+   * mark every entry as removed, otherwise an already
+   * cleared entry might be removed again.
+   */
+  protected void iterateAllEntriesAndRemoveFromReplacementList() {
     Iterator<Entry<K,V>> it = iterateAllHeapEntries();
     int _count = 0;
     while (it.hasNext()) {
       org.cache2k.core.Entry e = it.next();
       e.removedFromList();
-      refreshHandler.cancelExpiryTimer(e);
       _count++;
     }
   }
@@ -1238,13 +1244,13 @@ public abstract class HeapCache<K, V>
       if (e.isGone()) {
         return false;
       }
-      synchronized (lock) {
-        boolean f = e.hasFreshData();
-        if (_checkValue) {
-          if (!f || !e.equalsValue(_value)) {
-            return false;
-          }
+      boolean f = e.hasFreshData();
+      if (_checkValue) {
+        if (!f || !e.equalsValue(_value)) {
+          return false;
         }
+      }
+      synchronized (lock) {
         if (removeEntry(e)) {
           removedCnt++;
           metrics.remove();
@@ -1770,10 +1776,6 @@ public abstract class HeapCache<K, V>
     if (e.isVirgin()) {
       putNewEntryCnt++;
     }
-  }
-
-  void cancelExpiryTimer(Entry e) {
-    refreshHandler.cancelExpiryTimer(e);
   }
 
   /**

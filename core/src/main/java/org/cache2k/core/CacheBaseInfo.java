@@ -313,6 +313,16 @@ class CacheBaseInfo implements InternalCacheInfo {
     return formatMillis(t);
   }
 
+  @Override
+  public long getClearCnt() {
+    return heapCache.clearCnt;
+  }
+
+  @Override
+  public long getClearedCnt() {
+    return heapCache.clearedCnt;
+  }
+
   public String toString() {
     return "size=" + getSize() + ", "
             + "maxSize=" + getMaxSize() + ", "
@@ -335,6 +345,7 @@ class CacheBaseInfo implements InternalCacheInfo {
             + "expiredCnt=" + getExpiredCnt() + ", "
             + "evictedCnt=" + getEvictedCnt() + ", "
             + "removedCnt=" + getRemovedCnt() + ", "
+            + "clearedCnt=" + getClearedCnt() + ", "
             + "timerEventCnt=" + getTimerEventCnt() + ", "
             + "storageLoadCnt=" + getStorageLoadCnt() + ", "
             + "storageMissCnt=" + getStorageMissCnt() + ", "
@@ -352,6 +363,7 @@ class CacheBaseInfo implements InternalCacheInfo {
             + "created=" + timestampToString(getStarted()) + ", "
             + "cleared=" + timestampToString(getCleared()) + ", "
             + "touched=" + timestampToString(getTouched()) + ", "
+            + "clearCnt=" + getClearCnt() + ", "
             + "loadExceptionCnt=" + getLoadExceptionCnt() + ", "
             + "suppressedExceptionCnt=" + getSuppressedExceptionCnt() + ", "
             + "internalExceptionCnt=" + getInternalExceptionCnt() + ", "

@@ -78,6 +78,10 @@ public interface InternalCacheInfo {
 
   long getPutCnt();
 
+  long getClearedCnt();
+
+  long getClearCnt();
+
   long getKeyMutationCnt();
 
   long getTimerEventCnt();

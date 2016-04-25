@@ -99,7 +99,7 @@ public class ClockProPlusCache<K, V> extends ConcurrentEvictionCache<K, V> {
   }
 
   @Override
-  protected void iterateAllEntriesRemoveAndCancelTimer() {
+  protected void iterateAllEntriesAndRemoveFromReplacementList() {
     Entry e, _head;
     int _count = 0;
     e = _head = handCold;
@@ -110,7 +110,6 @@ public class ClockProPlusCache<K, V> extends ConcurrentEvictionCache<K, V> {
         Entry _next = e.prev;
         if (!e.isStale()) {
           e.removedFromList();
-          cancelExpiryTimer(e);
           _count++;
         }
         e = _next;
@@ -125,7 +124,6 @@ public class ClockProPlusCache<K, V> extends ConcurrentEvictionCache<K, V> {
         Entry _next = e.prev;
         if (!e.isStale()) {
           e.removedFromList();
-          cancelExpiryTimer(e);
           _count++;
         }
         e = _next;

@@ -60,7 +60,7 @@ public class ClockCache<K, V> extends ConcurrentEvictionCache<K, V> {
   }
 
   @Override
-  protected void iterateAllEntriesRemoveAndCancelTimer() {
+  protected void iterateAllEntriesAndRemoveFromReplacementList() {
     Entry e, _head;
     int _count = 0;
     e = _head = hand;
@@ -70,7 +70,6 @@ public class ClockCache<K, V> extends ConcurrentEvictionCache<K, V> {
         _hits += e.hitCnt;
         Entry _next = e.prev;
         e.removedFromList();
-        cancelExpiryTimer(e);
         _count++;
         e = _next;
       } while (e != _head);
