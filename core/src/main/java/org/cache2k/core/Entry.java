@@ -73,7 +73,11 @@ public class Entry<K, T>
 
   final static InitialValueInEntryNeverReturned INITIAL_VALUE = new InitialValueInEntryNeverReturned();
 
-  private TimerTask task;
+  /**
+   * Usually this contains the reference to the timer task. In some cases, like when exceptions
+   * happen we will link to the PiggyBack object to add more information as needed.
+   */
+  private Object misc;
 
   /**
    * Hit counter for clock pro. Not used by every eviction algorithm.
@@ -169,14 +173,6 @@ public class Entry<K, T>
   @Override
   public long getLastModification() {
     return (fetchedTime & MODIFICATION_TIME_MASK) >> MODIFICATION_TIME_SHIFT;
-  }
-
-  public TimerTask getTask() {
-    return task;
-  }
-
-  public void setTask(TimerTask _task) {
-    task = _task;
   }
 
   /**
@@ -537,5 +533,74 @@ public class Entry<K, T>
   }
 
   static class InitialValueInEntryNeverReturned extends Object { }
+
+  public TimerTask getTask() {
+    if (misc instanceof TimerTask) {
+      return (TimerTask) misc;
+    }
+    TimerTaskPiggyBack pb = getPiggyBack(TimerTaskPiggyBack.class);
+    if (pb != null) {
+      return pb.task;
+    }
+    return null;
+  }
+
+  public boolean cancelTimerTask() {
+    Object o = misc;
+    if (o instanceof TimerTask) {
+      misc = null;
+      return ((TimerTask) o).cancel();
+    }
+    TimerTaskPiggyBack pb = getPiggyBack(TimerTaskPiggyBack.class);
+    if (pb != null) {
+      TimerTask tt = pb.task;
+      if (tt != null) {
+        pb.task = null;
+        return tt.cancel();
+      }
+    }
+    return false;
+  }
+
+  public <X> X getPiggyBack(Class<X> _class) {
+    Object obj = misc;
+    if (!(obj instanceof PiggyBack)) {
+      return null;
+    }
+    PiggyBack pb = (PiggyBack) obj;
+    do {
+      if (pb.getClass() == _class) {
+        return (X) pb;
+      }
+      pb = pb.next;
+    } while (pb != null);
+    return null;
+  }
+
+  public void setTask(TimerTask v) {
+    if (misc == null || misc instanceof TimerTask) {
+      misc = v;
+      return;
+    }
+    TimerTaskPiggyBack pb = getPiggyBack(TimerTaskPiggyBack.class);
+    if (pb != null) {
+      pb.task = v;
+      return;
+    }
+    misc = new TimerTaskPiggyBack(v, (PiggyBack) misc);
+  }
+
+  static class PiggyBack {
+    PiggyBack next;
+  }
+
+  static class TimerTaskPiggyBack extends PiggyBack {
+    TimerTask task;
+
+    public TimerTaskPiggyBack(final TimerTask _task, final PiggyBack _next) {
+      task = _task;
+      next = _next;
+    }
+  }
 
 }

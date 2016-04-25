@@ -293,14 +293,11 @@ public abstract class RefreshHandler<K,V>  {
     }
 
     public void cancelExpiryTimer(Entry<K, V> e) {
-      TimerTask _task = e.getTask();
-      if (_task != null) {
-        if (_task.cancel()) {
-          timerCancelCount++;
-          if (timerCancelCount >= PURGE_INTERVAL) {
-            timer.purge();
-            timerCancelCount = 0;
-          }
+      if (e.cancelTimerTask()) {
+        timerCancelCount++;
+        if (timerCancelCount >= PURGE_INTERVAL) {
+          timer.purge();
+          timerCancelCount = 0;
         }
       }
     }
