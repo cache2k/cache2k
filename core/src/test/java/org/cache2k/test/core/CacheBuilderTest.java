@@ -22,6 +22,7 @@ package org.cache2k.test.core;
 
 import org.cache2k.Cache;
 import org.cache2k.Cache2kBuilder;
+import org.cache2k.CacheManager;
 import org.cache2k.configuration.CacheType;
 import org.cache2k.core.util.Log;
 import org.cache2k.junit.FastTests;
@@ -170,13 +171,16 @@ public class CacheBuilderTest {
 
   @Test
   public void cacheNameDisambiguation() {
-    Cache c0 = Cache2kBuilder
-      .forUnknownTypes()
+    String _managerName = getClass().getName() + ".cacheNameDisambiguation";
+    Log.registerSuppression(CacheManager.class.getName() + ":" + _managerName, new Log.SuppressionCounter());
+    CacheManager mgr = CacheManager.getInstance(_managerName);
+    Cache c0 = Cache2kBuilder.forUnknownTypes()
+      .manager(mgr)
       .eternal(true)
       .name(this.getClass(), "cacheNameDisambiguation")
       .build();
-    Cache c1 = Cache2kBuilder
-      .forUnknownTypes()
+    Cache c1 = Cache2kBuilder.forUnknownTypes()
+      .manager(mgr)
       .eternal(true)
       .name(this.getClass(), "cacheNameDisambiguation")
       .build();
