@@ -255,19 +255,19 @@ public abstract class RefreshHandler<K,V>  {
           long _timerTime =
             -_nextRefreshTime - SAFETY_GAP_MILLIS;
           if (_timerTime >= now) {
-            e.task = new ExpireTask(cache, e);
+            e.setTask(new ExpireTask(cache, e));
             scheduleTask(_timerTime, e);
             _nextRefreshTime = -_nextRefreshTime;
           } else {
-            e.task = new ExpireTask(cache, e);
+            e.setTask(new ExpireTask(cache, e));
             scheduleTask(-_nextRefreshTime, e);
           }
         } else {
           if (backgroundRefresh) {
-            e.task = new RefreshTask<K,V>(cache, e);
+            e.setTask(new RefreshTask<K,V>(cache, e));
             scheduleTask(_nextRefreshTime, e);
           } else {
-            e.task = new ExpireTask(cache, e);
+            e.setTask(new ExpireTask(cache, e));
             scheduleTask(_nextRefreshTime, e);
           }
         }
@@ -278,7 +278,7 @@ public abstract class RefreshHandler<K,V>  {
     @Override
     public void scheduleFinalExpiryTimer(final Entry<K, V> e) {
       cancelExpiryTimer(e);
-      e.task = new ExpireTask(cache, e);
+      e.setTask(new ExpireTask(cache, e));
       scheduleTask(e.nextRefreshTime, e);
     }
 
@@ -286,14 +286,14 @@ public abstract class RefreshHandler<K,V>  {
       Timer _timer = timer;
       if (_timer != null) {
         try {
-          _timer.schedule(e.task, new Date(_nextRefreshTime));
+          _timer.schedule(e.getTask(), new Date(_nextRefreshTime));
         } catch (IllegalStateException ignore) {
         }
       }
     }
 
     public void cancelExpiryTimer(Entry<K, V> e) {
-      TimerTask _task = e.task;
+      TimerTask _task = e.getTask();
       if (_task != null) {
         if (_task.cancel()) {
           timerCancelCount++;

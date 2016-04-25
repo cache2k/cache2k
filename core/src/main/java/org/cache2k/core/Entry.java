@@ -73,7 +73,7 @@ public class Entry<K, T>
 
   final static InitialValueInEntryNeverReturned INITIAL_VALUE = new InitialValueInEntryNeverReturned();
 
-  public TimerTask task;
+  private TimerTask task;
 
   /**
    * Hit counter for clock pro. Not used by every eviction algorithm.
@@ -169,6 +169,14 @@ public class Entry<K, T>
   @Override
   public long getLastModification() {
     return (fetchedTime & MODIFICATION_TIME_MASK) >> MODIFICATION_TIME_SHIFT;
+  }
+
+  public TimerTask getTask() {
+    return task;
+  }
+
+  public void setTask(TimerTask _task) {
+    task = _task;
   }
 
   /**
@@ -495,12 +503,12 @@ public class Entry<K, T>
     } else {
       sb.append(", state=").append(nextRefreshTime);
     }
-    if (task != null) {
+    if (getTask() != null) {
       String _timerState = "<unavailable>";
       try {
         Field f = TimerTask.class.getDeclaredField("state");
         f.setAccessible(true);
-        int _state = f.getInt(task);
+        int _state = f.getInt(getTask());
         _timerState = String.valueOf(_state);
       } catch (Exception x) {
         _timerState = x.toString();
