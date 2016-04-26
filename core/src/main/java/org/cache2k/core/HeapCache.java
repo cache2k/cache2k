@@ -801,6 +801,15 @@ public abstract class HeapCache<K, V>
    */
   protected abstract Entry findEvictionCandidate();
 
+  /**
+   * Evict entry from the cache. Almost identical to {@link #removeEntryFromReplacementList(Entry)},
+   * but for eviction we might track additional history information. If the entry is
+   * expired or removed we don't track history.
+   */
+  protected void evictEntry(Entry e) {
+    removeEntryFromReplacementList(e);
+  }
+
 
   /**
    *
@@ -998,7 +1007,8 @@ public abstract class HeapCache<K, V>
           evictedCnt++;
         }
       } else {
-        if (removeEntry(e)) {
+        evictEntry(e);
+        if (removeEntryFromHash(e)) {
           evictedCnt++;
         }
       }

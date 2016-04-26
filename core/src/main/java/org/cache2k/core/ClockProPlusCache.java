@@ -134,16 +134,29 @@ public class ClockProPlusCache<K, V> extends ConcurrentEvictionCache<K, V> {
 
 
   /**
-   * We are called to remove the entry. The cause may be a timer event
-   * or for eviction.
-   * We can just remove the entry from the list, but we don't
-   * know which list it is in to correct the counters accordingly.
+   * Track the entry on the ghost list and call the usual remove procedure.
+   */
+  @Override
+  protected void evictEntry(final Entry e) {
+    insertCopyIntoGhosts(e);
+    removeEntryFromReplacementList(e);
+  }
+
+  /**
+   * Remove, expire or eviction of an entry happens. Remove the entry from the
+   * replacement list data structure. We can just remove the entry from the list,
+   * but we don't know which list it is in to correct the counters accordingly.
    * So, instead of removing it directly, we just mark it and remove it
    * by the normal eviction process.
+   *
+   * <p>Why don't generate ghosts here? If the entry is removed because of
+   * a programmatic remove or expiry we should not occupy any resources.
+   * Removing and expiry may also take place when no eviction is needed at all,
+   * which happens when the cache size did not hit the maximum yet. Producing ghosts
+   * would add additional overhead, when it is not needed.
    */
   @Override
   protected void removeEntryFromReplacementList(Entry e) {
-    insertCopyIntoGhosts(e);
     if (handCold == e) {
       coldHits += e.hitCnt;
       handCold = removeFromCyclicList(handCold, e);
