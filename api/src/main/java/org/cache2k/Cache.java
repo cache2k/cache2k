@@ -185,8 +185,8 @@ public interface Cache<K, V> extends
   /**
    * Returns true, if there is a mapping for the specified key.
    *
-   * <p>Statistics: The operation does increase the usage counter, but does
-   * not count as read and therefore does not influence miss or hit values.
+   * <p>Statistics: The operation does increase the usage counter if a mapping is present,
+   * but does not count as read and therefore does not influence miss or hit values.
    *
    * @param key key which association should be checked
    * @return {@code true}, if this cache contains a mapping for the specified
