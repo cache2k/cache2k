@@ -64,7 +64,7 @@ public class DefaultResiliencePolicy<K,V> implements ResiliencePolicy<K,V> {
   }
 
   @Override
-  public void open(final Context ctx) {
+  public void init(final Context ctx) {
     context = ctx;
     suppressDuration = context.getSuppressDurationMillis();
     if (suppressDuration == -1) {

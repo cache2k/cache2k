@@ -58,7 +58,7 @@ public class DefaultResiliencePolicyTest {
     ResiliencePolicy.Context ctx =
       new CtxBean(10000, -1, 500, -1);
     DefaultResiliencePolicy p = new DefaultResiliencePolicy();
-    p.open(ctx);
+    p.init(ctx);
     assertEquals(10000, p.getSuppressDuration());
   }
 
@@ -67,7 +67,7 @@ public class DefaultResiliencePolicyTest {
     ResiliencePolicy.Context ctx =
       new CtxBean(10000, -1, -1, -1);
     DefaultResiliencePolicy p = new DefaultResiliencePolicy();
-    p.open(ctx);
+    p.init(ctx);
     assertEquals(10000, p.getMaxRetryInterval());
   }
 
@@ -76,7 +76,7 @@ public class DefaultResiliencePolicyTest {
     ResiliencePolicy.Context ctx =
       new CtxBean(10000, -1, -1, 200);
     DefaultResiliencePolicy p = new DefaultResiliencePolicy();
-    p.open(ctx);
+    p.init(ctx);
     assertEquals(200, p.getSuppressDuration());
     assertEquals(200, p.getMaxRetryInterval());
   }
@@ -87,7 +87,7 @@ public class DefaultResiliencePolicyTest {
       new CtxBean(10000, 100, 500, 5000);
     DefaultResiliencePolicy p = new DefaultResiliencePolicy();
     p.setRandomization(0.5);
-    p.open(ctx);
+    p.init(ctx);
     InfoBean b = new InfoBean();
     b.setLoadTime(0);
     b.setSinceTime(0);
@@ -117,7 +117,7 @@ public class DefaultResiliencePolicyTest {
     p.setRandomization(0.0);
     assertEquals(0, p.getRandomization(), 0.1);
     p.setMultiplier(2);
-    p.open(ctx);
+    p.init(ctx);
     InfoBean b = new InfoBean();
     b.setLoadTime(0);
     b.setSinceTime(0);
@@ -135,7 +135,7 @@ public class DefaultResiliencePolicyTest {
     DefaultResiliencePolicy p = new DefaultResiliencePolicy();
     p.setRandomization(0.0);
     assertEquals(1.5, p.getMultiplier(), 0.1);
-    p.open(ctx);
+    p.init(ctx);
     InfoBean b = new InfoBean();
     b.setLoadTime(0);
     b.setSinceTime(0);
@@ -170,7 +170,7 @@ public class DefaultResiliencePolicyTest {
     DefaultResiliencePolicy p = new DefaultResiliencePolicy();
     p.setRandomization(0.0);
     assertEquals(1.5, p.getMultiplier(), 0.1);
-    p.open(ctx);
+    p.init(ctx);
     InfoBean b = new InfoBean();
     b.setLoadTime(0);
     b.setSinceTime(0);

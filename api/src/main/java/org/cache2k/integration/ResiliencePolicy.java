@@ -31,7 +31,7 @@ import org.cache2k.CacheEntry;
  */
 public interface ResiliencePolicy<K, V> {
 
-  void open(Context context);
+  void init(Context context);
 
   /**
    * Called after the loader threw an exception and a previous value is available.
