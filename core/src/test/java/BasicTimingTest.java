@@ -23,6 +23,8 @@ import org.cache2k.junit.TimingTests;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
+import java.util.concurrent.TimeUnit;
+
 import static org.junit.Assert.*;
 
 /**
@@ -45,6 +47,78 @@ public class BasicTimingTest {
         .entryCapacity(_CACHE_SIZE)
         .eternal(true)
         .build();
+    for (int i = 0; i < _CACHE_SIZE; i++) {
+      c.put(i, i);
+    }
+    assertNotNull(c.toString());
+  }
+
+  @Test
+  public void testBigCacheTimingWithUpdate() {
+    final int _CACHE_SIZE = 1000000;
+    Cache<Integer,Integer> c =
+      Cache2kBuilder.of(Integer.class, Integer.class)
+        .entryCapacity(_CACHE_SIZE)
+        .eternal(true)
+        .build();
+    for (int i = 0; i < _CACHE_SIZE; i++) {
+      c.put(i, i);
+    }
+    for (int i = 0; i < _CACHE_SIZE; i++) {
+      c.put(i, i);
+    }
+    assertNotNull(c.toString());
+  }
+
+  @Test
+  public void testBigCacheTimingPutRemovePut() {
+    final int _CACHE_SIZE = 1000000;
+    Cache<Integer,Integer> c =
+      Cache2kBuilder.of(Integer.class, Integer.class)
+        .entryCapacity(_CACHE_SIZE)
+        .eternal(true)
+        .build();
+    for (int i = 0; i < _CACHE_SIZE; i++) {
+      c.put(i, i);
+    }
+    for (int i = 0; i < _CACHE_SIZE; i++) {
+      c.remove(i);
+    }
+    for (int i = 0; i < _CACHE_SIZE; i++) {
+      c.put(i, i);
+    }
+    assertNotNull(c.toString());
+  }
+
+  @Test
+  public void testBigCacheTimingWithExpiry() {
+    final int _CACHE_SIZE = 1000000;
+    Cache<Integer,Integer> c =
+      Cache2kBuilder.of(Integer.class, Integer.class)
+        .entryCapacity(_CACHE_SIZE)
+        .expireAfterWrite(5, TimeUnit.MINUTES)
+        .build();
+    for (int i = 0; i < _CACHE_SIZE; i++) {
+      c.put(i, i);
+    }
+    assertNotNull(c.toString());
+  }
+
+  /**
+   * This is slower then {@link #testBigCacheTimingWithUpdate()} since the timer
+   * has to be rescheduled.
+   */
+  @Test
+  public void testBigCacheTimingWithExpiryWithUpdate() {
+    final int _CACHE_SIZE = 1000000;
+    Cache<Integer,Integer> c =
+      Cache2kBuilder.of(Integer.class, Integer.class)
+        .entryCapacity(_CACHE_SIZE)
+        .expireAfterWrite(5, TimeUnit.MINUTES)
+        .build();
+    for (int i = 0; i < _CACHE_SIZE; i++) {
+      c.put(i, i);
+    }
     for (int i = 0; i < _CACHE_SIZE; i++) {
       c.put(i, i);
     }
