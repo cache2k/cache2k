@@ -38,6 +38,7 @@ import org.cache2k.core.operation.Semantic;
 import org.cache2k.core.storageApi.StorageCallback;
 import org.cache2k.core.storageApi.StorageAdapter;
 import org.cache2k.core.storageApi.StorageEntry;
+import org.cache2k.integration.LoadExceptionInformation;
 
 /**
  * This is a method object to perform an operation on an entry.
@@ -454,12 +455,13 @@ public class EntryAction<K, V, R> implements StorageCallback, AsyncCacheLoader.C
     loadCompleted();
   }
 
+  @SuppressWarnings("unchecked")
   @Override
   public void onLoadFailure(Throwable t) {
     synchronized (heapCache.lock) {
       heapCache.loadExceptionCnt++;
     }
-    newValueOrException = (V) new ExceptionWrapper(key, t, loadStartedTime);
+    newValueOrException = (V) new ExceptionWrapper(key, t, loadStartedTime, entry);
     loadCompleted();
   }
 

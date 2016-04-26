@@ -28,6 +28,7 @@ import org.cache2k.integration.ExceptionPropagator;
 import org.cache2k.core.CacheLifeCycleListener;
 import org.cache2k.core.CacheManagerImpl;
 import org.cache2k.core.InternalCache;
+import org.cache2k.integration.LoadExceptionInformation;
 import org.cache2k.jcache.provider.generic.storeByValueSimulation.CopyCacheProxy;
 import org.cache2k.jcache.provider.generic.storeByValueSimulation.ObjectCopyFactory;
 import org.cache2k.jcache.provider.generic.storeByValueSimulation.ObjectTransformer;
@@ -196,7 +197,7 @@ public class JCacheManagerAdapter implements CacheManager {
     b.keepValueAfterExpired(false);
     b.exceptionPropagator(new ExceptionPropagator() {
       @Override
-      public void propagateException(final CachedExceptionInformation exceptionInformation) {
+      public void propagateException(Object key, final LoadExceptionInformation exceptionInformation) {
         throw new CacheLoaderException("propagate previous loader exception", exceptionInformation.getException());
       }
     });

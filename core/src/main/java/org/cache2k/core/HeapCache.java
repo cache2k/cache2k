@@ -38,6 +38,7 @@ import org.cache2k.integration.CacheLoader;
 import org.cache2k.integration.ExceptionPropagator;
 import org.cache2k.integration.LoadCompletedListener;
 import org.cache2k.integration.CacheLoaderException;
+import org.cache2k.integration.LoadExceptionInformation;
 import org.cache2k.processor.CacheEntryProcessor;
 
 import java.security.SecureRandom;
@@ -96,7 +97,7 @@ public abstract class HeapCache<K, V>
 
   final static ExceptionPropagator DEFAULT_EXCEPTION_PROPAGATOR = new ExceptionPropagator() {
     @Override
-    public void propagateException(final CachedExceptionInformation exceptionInformation) {
+    public void propagateException(Object key, final LoadExceptionInformation exceptionInformation) {
       long _expiry = exceptionInformation.getUntil();
       if (_expiry > 0) {
         throw new CacheLoaderException("(expiry=" + formatMillis(_expiry) + ") " + exceptionInformation.getException(), exceptionInformation.getException());
@@ -1261,10 +1262,11 @@ public abstract class HeapCache<K, V>
         }
       }
       synchronized (lock) {
-        if (removeEntry(e)) {
+        boolean f2 = removeEntry(e);
+        if (f && f2) {
           removedCnt++;
           metrics.remove();
-          return f;
+          return true;
         }
         return false;
       }
@@ -1538,7 +1540,7 @@ public abstract class HeapCache<K, V>
   protected V returnValue(V v) {
     if (v instanceof ExceptionWrapper) {
       ExceptionWrapper w = (ExceptionWrapper) v;
-      exceptionPropagator.propagateException(w);
+      exceptionPropagator.propagateException(w.getKey(), w);
     }
     return v;
   }
@@ -1547,7 +1549,7 @@ public abstract class HeapCache<K, V>
     V v = e.value;
     if (v instanceof ExceptionWrapper) {
       ExceptionWrapper w = (ExceptionWrapper) v;
-      exceptionPropagator.propagateException(w);
+      exceptionPropagator.propagateException(w.getKey(), w);
     }
     return v;
   }
@@ -1684,7 +1686,7 @@ public abstract class HeapCache<K, V>
       }
       e.setLastModification(t0);
     } catch (Throwable _ouch) {
-      v = (V) new ExceptionWrapper(e.key, _ouch, t0);
+      v = (V) new ExceptionWrapper(e.key, _ouch, t0, e);
     }
     long t = System.currentTimeMillis();
     return insertOrUpdateAndCalculateExpiry(e, v, t0, t, INSERT_STAT_UPDATE);
@@ -1722,7 +1724,9 @@ public abstract class HeapCache<K, V>
 
   protected final long insert(Entry<K, V> e, V _value, long t0, long t, byte _updateStatistics, long _nextRefreshTime) {
     final boolean _suppressException = needsSuppress(e, _value);
-    if (!_suppressException) {
+    if (_suppressException) {
+      e.setSuppressedLoadExceptionInformation((LoadExceptionInformation) _value);
+    } else {
       e.value = _value;
     }
     if (_value instanceof ExceptionWrapper && !_suppressException) {

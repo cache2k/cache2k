@@ -24,6 +24,7 @@ import org.cache2k.CacheEntry;
 import org.cache2k.customization.ExpiryCalculator;
 import org.cache2k.core.operation.ExaminationEntry;
 import org.cache2k.core.storageApi.StorageEntry;
+import org.cache2k.integration.LoadExceptionInformation;
 
 import static org.cache2k.core.util.Util.*;
 
@@ -398,6 +399,7 @@ public class Entry<K, T>
     fetchedTime |=  1L << STALE_POS;
   }
 
+
   public boolean hasException() {
     return value instanceof ExceptionWrapper;
   }
@@ -596,6 +598,25 @@ public class Entry<K, T>
     misc = new TimerTaskPiggyBack(v, (PiggyBack) misc);
   }
 
+  public void setSuppressedLoadExceptionInformation(LoadExceptionInformation w) {
+    Object _misc = misc;
+    if (_misc instanceof TimerTask) {
+      misc = new TimerTaskPiggyBack((TimerTask) _misc, new LoadExceptionPiggyBack(w, null));
+      return;
+    }
+    LoadExceptionPiggyBack inf = getPiggyBack(LoadExceptionPiggyBack.class);
+    if (inf != null) {
+      inf.info = w;
+      return;
+    }
+    misc = new LoadExceptionPiggyBack(w, (PiggyBack) _misc);
+  }
+
+  public LoadExceptionInformation getSuppressedLoadExceptionInformation() {
+    LoadExceptionPiggyBack inf = getPiggyBack(LoadExceptionPiggyBack.class);
+    return inf != null ? inf.info : null;
+  }
+
   static class PiggyBack {
     PiggyBack next;
   }
@@ -605,6 +626,15 @@ public class Entry<K, T>
 
     public TimerTaskPiggyBack(final TimerTask _task, final PiggyBack _next) {
       task = _task;
+      next = _next;
+    }
+  }
+
+  static class LoadExceptionPiggyBack extends PiggyBack {
+    LoadExceptionInformation info;
+
+    public LoadExceptionPiggyBack(final LoadExceptionInformation _info, final PiggyBack _next) {
+      info = _info;
       next = _next;
     }
   }

@@ -20,7 +20,7 @@ package org.cache2k.core;
  * #L%
  */
 
-import org.cache2k.integration.ExceptionPropagator;
+ import org.cache2k.integration.LoadExceptionInformation;
 
 /**
  * We use instances of the exception wrapper for the value field in the entry.
@@ -29,24 +29,53 @@ import org.cache2k.integration.ExceptionPropagator;
  *
  * @author Jens Wilke; created: 2013-07-12
  */
-public class ExceptionWrapper<K> implements ExceptionPropagator.CachedExceptionInformation<K> {
+public class ExceptionWrapper<K> implements LoadExceptionInformation {
 
   Throwable exception;
   long loadTime;
   long until;
+  int count;
+  long since;
   K key;
 
   public ExceptionWrapper(Throwable ex) {
     exception = ex;
   }
 
-  public ExceptionWrapper(final K _key, final Throwable _exception, final long _loadTime) {
+  /**
+   * Take over exception information from the entry, which either has
+   * no exception, an existing cached exception or a suppressed exception.
+   */
+  public ExceptionWrapper(final K _key, final Throwable _exception,
+                          final long _loadTime, final Entry e) {
+    LoadExceptionInformation _recentExceptionInfo;
+    Object _oldValue = e.getValueOrException();
+    if (_oldValue instanceof ExceptionWrapper) {
+      _recentExceptionInfo = (LoadExceptionInformation) _oldValue;
+    } else {
+      _recentExceptionInfo = e.getSuppressedLoadExceptionInformation();
+    }
+    init(_key, _exception, _loadTime, _recentExceptionInfo);
+  }
+
+  public ExceptionWrapper(final K _key, final Throwable _exception,
+                          final long _loadTime, final LoadExceptionInformation w) {
+    init(_key, _exception, _loadTime, w);
+  }
+
+  private void init(final K _key, final Throwable _exception,
+                    final long _loadTime, final LoadExceptionInformation w) {
     exception = _exception;
     key = _key;
     loadTime = _loadTime;
+    if (w != null) {
+      since = w.getSinceTime();
+      count = w.getRetryCount() + 1;
+    } else {
+      since = loadTime;
+    }
   }
 
-  @Override
   public K getKey() {
     return key;
   }
@@ -64,6 +93,16 @@ public class ExceptionWrapper<K> implements ExceptionPropagator.CachedExceptionI
   @Override
   public long getLoadTime() {
     return loadTime;
+  }
+
+  @Override
+  public int getRetryCount() {
+    return count;
+  }
+
+  @Override
+  public long getSinceTime() {
+    return since;
   }
 
   public String toString() {

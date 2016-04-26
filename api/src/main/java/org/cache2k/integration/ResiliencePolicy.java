@@ -31,6 +31,8 @@ import org.cache2k.CacheEntry;
  */
 public interface ResiliencePolicy<K, V> {
 
+  void open(Context context);
+
   /**
    * Called after the loader threw an exception and a previous value is available.
    * Determines from the given parameters whether the exception should be suppressed and
@@ -45,19 +47,32 @@ public interface ResiliencePolicy<K, V> {
    * @return Time in millis in the future when the content should expire again or 0 if the
    *         exception should not be suppressed.
    */
-  long suppressExceptionUntil(
-    K key,
-    Throwable exception,
-    long loadStartTime,
-    CacheEntry<K,V> cachedContent);
+  long suppressExceptionUntil(K key,
+                              LoadExceptionInformation exceptionInformation,
+                              CacheEntry<K, V> cachedContent);
 
   /**
    * Called after the loader threw an exception and no previous value is available or
-   * {@link #suppressExceptionUntil(Object, Throwable, long, CacheEntry)} returned null.
+   * {@link #suppressExceptionUntil} returned null.
    */
-  long cacheExceptionUntil(
-    K key,
-    Throwable exception,
-    long loadStartTime);
+  long cacheExceptionUntil(K key,
+                           LoadExceptionInformation exceptionInformation);
+
+  interface Context {
+
+    long getExpireAfterWriteMillis();
+
+    /**
+     *
+     *
+     * @return duration in milliseconds
+     */
+    long getSuppressDurationMillis();
+
+    long getRetryIntervalMillis();
+
+    long getMaxRetryIntervalMillis();
+
+  }
 
 }
