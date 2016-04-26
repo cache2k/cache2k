@@ -1645,7 +1645,7 @@ public abstract class HeapCache<K, V>
    * the item is evicted very fast.
    */
   private void checkForHashCodeChange(Entry<K, V> e) {
-    if (modifiedHash(e.key.hashCode()) != e.hashCode && !e.isStale()) {
+    if (modifiedHash(e.key.hashCode()) != e.hashCode) {
       if (keyMutationCount ==  0) {
         getLog().warn("Key mismatch! Key hashcode changed! keyClass=" + e.key.getClass().getName());
         String s;
