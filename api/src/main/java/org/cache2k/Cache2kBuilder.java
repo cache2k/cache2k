@@ -31,6 +31,7 @@ import org.cache2k.integration.AdvancedCacheLoader;
 import org.cache2k.integration.CacheLoader;
 import org.cache2k.integration.CacheWriter;
 import org.cache2k.integration.ExceptionPropagator;
+import org.cache2k.integration.ResiliencePolicy;
 import org.cache2k.spi.Cache2kCoreProvider;
 import org.cache2k.spi.SingleProviderResolver;
 
@@ -453,5 +454,10 @@ public class Cache2kBuilder<K, V> implements Cloneable {
     return CORE_PROVIDER.createCache(manager, config);
   }
 
+
+  public final Cache2kBuilder<K,V> resiliencePolicy(ResiliencePolicy<K,V> v) {
+    config.setResiliencePolicy(v);
+    return this;
+  }
 
 }

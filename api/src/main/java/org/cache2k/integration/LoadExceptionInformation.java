@@ -55,7 +55,7 @@ public interface LoadExceptionInformation {
   long getSinceTime();
 
   /**
-   * Start time of the load operation that generated the exception.
+   * Start time of the load operation that generated the recent exception.
    *
    * @return time in millis since epoch
    */

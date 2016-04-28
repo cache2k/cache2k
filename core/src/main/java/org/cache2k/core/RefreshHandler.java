@@ -27,6 +27,8 @@ import org.cache2k.customization.ExceptionExpiryCalculator;
 import org.cache2k.customization.ValueWithExpiryTime;
 import org.cache2k.core.util.TunableConstants;
 import org.cache2k.core.util.TunableFactory;
+import org.cache2k.integration.LoadExceptionInformation;
+import org.cache2k.integration.ResiliencePolicy;
 
 import java.util.Date;
 import java.util.Timer;
@@ -68,7 +70,7 @@ public abstract class RefreshHandler<K,V>  {
       );
     }
     if (cfg.getExceptionExpiryCalculator() != null || cfg.getExpiryCalculator() != null ||
-      ValueWithExpiryTime.class.isAssignableFrom(cfg.getValueType().getType())) {
+      ValueWithExpiryTime.class.isAssignableFrom(cfg.getValueType().getType()) || cfg.getResiliencePolicy() != null) {
       RefreshHandler.Dynamic<K,V> h = new RefreshHandler.Dynamic<K, V>();
       h.configure(cfg);
       return h;
@@ -120,6 +122,10 @@ public abstract class RefreshHandler<K,V>  {
    */
   public abstract long calculateNextRefreshTime(Entry<K, V> e, V v, long _loadTime);
 
+  public abstract long suppressExceptionUntil(Entry<K,V> e, LoadExceptionInformation inf);
+
+  public abstract long cacheExceptionUntil(Entry<K,V> e, LoadExceptionInformation inf);
+
   /**
    * Convert expiry value to the entry field value, essentially maps 0 to {@link Entry#EXPIRED}
    * since 0 is a virgin entry. Restart the timer if needed.
@@ -149,6 +155,15 @@ public abstract class RefreshHandler<K,V>  {
       return ExpiryCalculator.ETERNAL;
     }
 
+    @Override
+    public long cacheExceptionUntil(final Entry<K, V> e, final LoadExceptionInformation inf) {
+      return ExpiryCalculator.ETERNAL;
+    }
+
+    @Override
+    public long suppressExceptionUntil(final Entry<K, V> e, final LoadExceptionInformation inf) {
+      return ExpiryCalculator.ETERNAL;
+    }
   }
 
   static class EternalImmediate<K,V> extends RefreshHandler<K,V> {
@@ -156,6 +171,16 @@ public abstract class RefreshHandler<K,V>  {
     @Override
     public long calculateNextRefreshTime(final Entry<K,V> e, final V v, final long _loadTime) {
       return v instanceof ExceptionWrapper ? 0 : ExpiryCalculator.ETERNAL;
+    }
+
+    @Override
+    public long cacheExceptionUntil(final Entry<K, V> e, final LoadExceptionInformation inf) {
+      return 0;
+    }
+
+    @Override
+    public long suppressExceptionUntil(final Entry<K, V> e, final LoadExceptionInformation inf) {
+      return 0;
     }
 
   }
@@ -167,6 +192,15 @@ public abstract class RefreshHandler<K,V>  {
       return 0;
     }
 
+    @Override
+    public long cacheExceptionUntil(final Entry<K, V> e, final LoadExceptionInformation inf) {
+      return 0;
+    }
+
+    @Override
+    public long suppressExceptionUntil(final Entry<K, V> e, final LoadExceptionInformation inf) {
+      return 0;
+    }
   }
 
   static class Static<K,V> extends RefreshHandler<K,V> {
@@ -179,6 +213,7 @@ public abstract class RefreshHandler<K,V>  {
     InternalCache cache;
     /** Dirty counter, intentionally only 32 bit */
     int timerCancelCount = 0;
+    ResiliencePolicy<K,V> resiliencePolicy;
 
     void configureStatic(final CacheConfiguration<K, V> c) {
       long _expiryMillis  = c.getExpiryMillis();
@@ -187,16 +222,32 @@ public abstract class RefreshHandler<K,V>  {
       } else {
         maxLinger = _expiryMillis;
       }
-      long _exceptionExpiryMillis = c.getExceptionExpiryMillis();
-      if (_exceptionExpiryMillis == -1) {
-        if (maxLinger == ExpiryCalculator.ETERNAL) {
-          exceptionMaxLinger = ExpiryCalculator.ETERNAL;
-        } else {
-          exceptionMaxLinger = maxLinger / 10;
+      ResiliencePolicy.Context ctx = new ResiliencePolicy.Context() {
+        @Override
+        public long getExpireAfterWriteMillis() {
+          return c.getExpiryMillis();
         }
-      } else {
-        exceptionMaxLinger = _exceptionExpiryMillis;
+
+        @Override
+        public long getSuppressDurationMillis() {
+          return c.isSuppressExceptions() ? Long.MAX_VALUE : 0;
+        }
+
+        @Override
+        public long getRetryIntervalMillis() {
+          return c.getExceptionExpiryMillis();
+        }
+
+        @Override
+        public long getMaxRetryIntervalMillis() {
+          return c.getExceptionExpiryMillis();
+        }
+      };
+      resiliencePolicy = c.getResiliencePolicy();
+      if (resiliencePolicy == null) {
+        resiliencePolicy = new DefaultResiliencePolicy<K, V>();
       }
+      resiliencePolicy.init(ctx);
       backgroundRefresh = c.isRefreshAhead();
       sharpTimeout = c.isSharpExpiry();
     }
@@ -232,6 +283,16 @@ public abstract class RefreshHandler<K,V>  {
     @Override
     public long calculateNextRefreshTime(final Entry<K,V> e, final V v, final long _loadTime) {
       return calcNextRefreshTime(e.getKey(), v, _loadTime, e, null, maxLinger, null, exceptionMaxLinger);
+    }
+
+    @Override
+    public long suppressExceptionUntil(final Entry<K, V> e, final LoadExceptionInformation inf) {
+      return resiliencePolicy.suppressExceptionUntil(e.getKey(), inf, e);
+    }
+
+    @Override
+    public long cacheExceptionUntil(final Entry<K, V> e, final LoadExceptionInformation inf) {
+      return resiliencePolicy.cacheExceptionUntil(e.getKey(), inf);
     }
 
     @Override

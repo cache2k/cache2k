@@ -29,7 +29,7 @@ import java.util.Random;
 /**
  * @author Jens Wilke
  */
-public class DefaultResiliencePolicy<K,V> implements ResiliencePolicy<K,V> {
+public class DefaultResiliencePolicy<K,V> extends ResiliencePolicy<K,V> {
 
   Context context;
   Random random;
@@ -79,13 +79,18 @@ public class DefaultResiliencePolicy<K,V> implements ResiliencePolicy<K,V> {
       retryInterval = context.getExpireAfterWriteMillis() / 10;
     }
     random = HeapCache.SEED_RANDOM;
-    System.nanoTime();
   }
 
   @Override
   public long suppressExceptionUntil(final Object key,
                                      final LoadExceptionInformation exceptionInformation,
                                      final CacheEntry cachedContent) {
+    if (suppressDuration == 0) {
+      return 0;
+    }
+    if (suppressDuration == Long.MAX_VALUE) {
+      return Long.MAX_VALUE;
+    }
     long _maxSuppressUntil = exceptionInformation.getSinceTime() + suppressDuration;
     long _deltaMs = calculateRetryDelta(exceptionInformation);
     return Math.min(exceptionInformation.getLoadTime() + _deltaMs, _maxSuppressUntil);
@@ -101,6 +106,12 @@ public class DefaultResiliencePolicy<K,V> implements ResiliencePolicy<K,V> {
   @Override
   public long cacheExceptionUntil(final Object key,
                                   final LoadExceptionInformation exceptionInformation) {
+    if (retryInterval == 0) {
+      return 0;
+    }
+    if (retryInterval == Long.MAX_VALUE) {
+      return Long.MAX_VALUE;
+    }
     return exceptionInformation.getLoadTime() + calculateRetryDelta(exceptionInformation);
   }
 

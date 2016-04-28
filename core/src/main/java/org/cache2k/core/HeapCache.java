@@ -1686,10 +1686,47 @@ public abstract class HeapCache<K, V>
       }
       e.setLastModification(t0);
     } catch (Throwable _ouch) {
-      v = (V) new ExceptionWrapper(e.key, _ouch, t0, e);
+      long t = System.currentTimeMillis();
+      return loadGotException(e, new ExceptionWrapper(e.key, _ouch, t0, e), t0, t);
     }
     long t = System.currentTimeMillis();
     return insertOrUpdateAndCalculateExpiry(e, v, t0, t, INSERT_STAT_UPDATE);
+  }
+
+  protected long loadGotException(Entry<K, V> e, ExceptionWrapper<K> _value, long t0, long t) {
+    long _nextRefreshTime = 0;
+    boolean _suppressException = false;
+    try {
+      if ((e.isDataValid() || e.isExpired()) && e.getException() == null) {
+        _nextRefreshTime = refreshHandler.suppressExceptionUntil(e, _value);
+      }
+      if (_nextRefreshTime > t) {
+        _suppressException = true;
+      } else {
+        _nextRefreshTime = refreshHandler.cacheExceptionUntil(e, _value);
+      }
+    } catch (Exception ex) {
+      try {
+        updateStatistics(e, (V) _value, t0, t, INSERT_STAT_UPDATE, false);
+      } catch (Throwable ignore) { }
+      throw new ExpiryCalculationException(ex);
+    }
+    if (_suppressException) {
+      e.setSuppressedLoadExceptionInformation(_value);
+    } else {
+      e.value = (V) _value;
+    }
+    long _expiry = Math.abs(_nextRefreshTime);
+    _value.until = _expiry;
+    if (!_suppressException) {
+      Log log = getLog();
+      if (log.isDebugEnabled()) {
+        log.debug(
+          "loader caught exception, expires at: " + formatMillis(_expiry),
+          ((ExceptionWrapper) _value).getException());
+      }
+    }
+    return insertUpdateStats(e, (V) _value, t0, t, INSERT_STAT_UPDATE, _nextRefreshTime, _suppressException);
   }
 
   private void checkLoaderPresent() {
@@ -1723,22 +1760,11 @@ public abstract class HeapCache<K, V>
   final static byte INSERT_STAT_PUT = 2;
 
   protected final long insert(Entry<K, V> e, V _value, long t0, long t, byte _updateStatistics, long _nextRefreshTime) {
-    final boolean _suppressException = needsSuppress(e, _value);
-    if (_suppressException) {
-      e.setSuppressedLoadExceptionInformation((LoadExceptionInformation) _value);
-    } else {
-      e.value = _value;
-    }
-    if (_value instanceof ExceptionWrapper && !_suppressException) {
-      long _expiry = Math.abs(_nextRefreshTime);
-      Log log = getLog();
-      if (log.isDebugEnabled()) {
-        log.debug(
-            "loader caught exception, expires at: " + formatMillis(_expiry),
-            ((ExceptionWrapper) _value).getException());
-      }
-      ((ExceptionWrapper) _value).until = _expiry;
-    }
+    e.value = _value;
+    return insertUpdateStats(e, _value, t0, t, _updateStatistics, _nextRefreshTime, false);
+  }
+
+  private long insertUpdateStats(final Entry<K, V> e, final V _value, final long t0, final long t, final byte _updateStatistics, final long _nextRefreshTime, final boolean _suppressException) {
     synchronized (lock) {
       checkClosed();
       updateStatisticsNeedsLock(e, _value, t0, t, _updateStatistics, _suppressException);

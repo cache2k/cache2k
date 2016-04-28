@@ -29,9 +29,9 @@ import org.cache2k.CacheEntry;
  *
  * @author Jens Wilke
  */
-public interface ResiliencePolicy<K, V> {
+public abstract class ResiliencePolicy<K, V> {
 
-  void init(Context context);
+  public void init(Context context) { }
 
   /**
    * Called after the loader threw an exception and a previous value is available.
@@ -44,10 +44,12 @@ public interface ResiliencePolicy<K, V> {
    *
    * @param cachedContent The entry representing the currently cached content.
    *                      It is possible that this data is already expired.
-   * @return Time in millis in the future when the content should expire again or 0 if the
-   *         exception should not be suppressed.
+   * @return Time in millis in the future when the content should expire again. A 0 or
+   *         a time before the current time means the exception will not be suppressed. A
+   *         {@link org.cache2k.customization.ExpiryCalculator#ETERNAL} means the exception will be
+   *         suppressed and the recent content will be returned eternally.
    */
-  long suppressExceptionUntil(K key,
+  public abstract long suppressExceptionUntil(K key,
                               LoadExceptionInformation exceptionInformation,
                               CacheEntry<K, V> cachedContent);
 
@@ -55,10 +57,10 @@ public interface ResiliencePolicy<K, V> {
    * Called after the loader threw an exception and no previous value is available or
    * {@link #suppressExceptionUntil} returned null.
    */
-  long cacheExceptionUntil(K key,
+  public abstract long cacheExceptionUntil(K key,
                            LoadExceptionInformation exceptionInformation);
 
-  interface Context {
+  public interface Context {
 
     long getExpireAfterWriteMillis();
 

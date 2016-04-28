@@ -28,6 +28,7 @@ import org.cache2k.integration.AdvancedCacheLoader;
 import org.cache2k.integration.CacheLoader;
 import org.cache2k.integration.CacheWriter;
 import org.cache2k.integration.ExceptionPropagator;
+import org.cache2k.integration.ResiliencePolicy;
 
 import java.io.Serializable;
 import java.util.ArrayList;
@@ -65,6 +66,7 @@ public class CacheConfiguration<K, V> implements Serializable {
   private int loaderThreadCount;
   private ExpiryCalculator<K,V> expiryCalculator;
   private ExceptionExpiryCalculator<K> exceptionExpiryCalculator;
+  private ResiliencePolicy<K,V> resiliencePolicy;
   private CacheLoader<K,V> loader;
   private CacheWriter<K,V> writer;
   private AdvancedCacheLoader<K,V> advancedLoader;
@@ -557,4 +559,11 @@ public class CacheConfiguration<K, V> implements Serializable {
     return asyncListeners != null && !asyncListeners.isEmpty();
   }
 
+  public ResiliencePolicy<K, V> getResiliencePolicy() {
+    return resiliencePolicy;
+  }
+
+  public void setResiliencePolicy(final ResiliencePolicy<K, V> _resiliencePolicy) {
+    resiliencePolicy = _resiliencePolicy;
+  }
 }

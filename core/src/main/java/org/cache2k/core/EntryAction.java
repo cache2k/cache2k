@@ -38,7 +38,6 @@ import org.cache2k.core.operation.Semantic;
 import org.cache2k.core.storageApi.StorageCallback;
 import org.cache2k.core.storageApi.StorageAdapter;
 import org.cache2k.core.storageApi.StorageEntry;
-import org.cache2k.integration.LoadExceptionInformation;
 
 /**
  * This is a method object to perform an operation on an entry.
@@ -94,6 +93,8 @@ public class EntryAction<K, V, R> implements StorageCallback, AsyncCacheLoader.C
    * Triggers that we always say it is present.
    */
   boolean successfulLoad = false;
+
+  boolean suppressException = false;
 
   public EntryAction(HeapCache<K,V> _heapCache, Cache<K,V> _userCache, Semantic<K, V, R> op, K k, Entry<K, V> e) {
     heapCache = _heapCache;
@@ -495,11 +496,34 @@ public class EntryAction<K, V, R> implements StorageCallback, AsyncCacheLoader.C
   }
 
   public void mutationCalculateExpiry() {
+    entry.nextProcessingStep(Entry.ProcessingState.EXPIRY);
     try {
-      entry.nextProcessingStep(Entry.ProcessingState.EXPIRY);
-      expiry = refreshHandler().calculateNextRefreshTime(
-        entry, newValueOrException,
-        lastModificationTime);
+      if (newValueOrException instanceof ExceptionWrapper) {
+        ExceptionWrapper ew = (ExceptionWrapper) newValueOrException;
+        if ((entry.isDataValid() || entry.isExpired()) && entry.getException() == null) {
+          expiry = refreshHandler().suppressExceptionUntil(entry, ew);
+        }
+        if (expiry > loadCompletedTime) {
+          suppressException = true;
+          newValueOrException = entry.getValue();
+          lastModificationTime = entry.getLastModification();
+          synchronized (heapCache.lock) {
+            heapCache.suppressedExceptionCnt++;
+          }
+          entry.setSuppressedLoadExceptionInformation(ew);
+        } else {
+          expiry = refreshHandler().cacheExceptionUntil(entry, ew);
+        }
+        if (expiry < 0) {
+          ew.until = -expiry;
+        } else if (expiry > Entry.EXPIRY_TIME_MIN && expiry != Long.MAX_VALUE) {
+          ew.until = expiry;
+        }
+      } else {
+        expiry = refreshHandler().calculateNextRefreshTime(
+          entry, newValueOrException,
+          lastModificationTime);
+      }
     } catch (Exception ex) {
       expiryCalculationException(ex);
       return;
@@ -514,23 +538,6 @@ public class EntryAction<K, V, R> implements StorageCallback, AsyncCacheLoader.C
   public void expiryCalculated() {
     entry.nextProcessingStep(Entry.ProcessingState.EXPIRY_COMPLETE);
     if (load) {
-      boolean _suppressException = heapCache.needsSuppress(entry, newValueOrException);
-      if (_suppressException) {
-        newValueOrException = entry.getValue();
-        lastModificationTime = entry.getLastModification();
-        synchronized (heapCache.lock) {
-          heapCache.suppressedExceptionCnt++;
-        }
-      } else {
-        if (newValueOrException instanceof ExceptionWrapper) {
-          ExceptionWrapper ew = (ExceptionWrapper) newValueOrException;
-          if (expiry < 0) {
-            ew.until = -expiry;
-          } else if (expiry > Entry.EXPIRY_TIME_MIN && expiry != Long.MAX_VALUE) {
-            ew.until = expiry;
-          }
-        }
-      }
       if (loadAndMutate) {
         loadAndExpiryCalculatedMutateAgain();
         return;
@@ -903,12 +910,6 @@ public class EntryAction<K, V, R> implements StorageCallback, AsyncCacheLoader.C
 
   public static class StorageWriteException extends CustomizationException {
     public StorageWriteException(final Throwable cause) {
-      super(cause);
-    }
-  }
-
-  public static class ExpiryCalculationException extends CustomizationException {
-    public ExpiryCalculationException(final Throwable cause) {
       super(cause);
     }
   }
