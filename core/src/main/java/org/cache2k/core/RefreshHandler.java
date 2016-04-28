@@ -23,7 +23,6 @@ package org.cache2k.core;
 import org.cache2k.configuration.CacheConfiguration;
 import org.cache2k.CacheEntry;
 import org.cache2k.customization.ExpiryCalculator;
-import org.cache2k.customization.ExceptionExpiryCalculator;
 import org.cache2k.customization.ValueWithExpiryTime;
 import org.cache2k.core.util.TunableConstants;
 import org.cache2k.core.util.TunableFactory;
@@ -32,7 +31,6 @@ import org.cache2k.integration.ResiliencePolicy;
 
 import java.util.Date;
 import java.util.Timer;
-import java.util.TimerTask;
 
 /**
  * Encapsulates logic for expiry and refresh calculation and timer handling.
@@ -69,7 +67,11 @@ public abstract class RefreshHandler<K,V>  {
         "See: https://github.com/cache2k/cache2k/issues/21"
       );
     }
-    if (cfg.getExceptionExpiryCalculator() != null || cfg.getExpiryCalculator() != null ||
+    if (cfg.getExpiryMillis() == 0 &&
+      (cfg.getExceptionExpiryMillis() == 0 || cfg.getExceptionExpiryMillis() == -1)) {
+      return IMMEDIATE;
+    }
+    if (cfg.getExpiryCalculator() != null ||
       ValueWithExpiryTime.class.isAssignableFrom(cfg.getValueType().getType()) || cfg.getResiliencePolicy() != null) {
       RefreshHandler.Dynamic<K,V> h = new RefreshHandler.Dynamic<K, V>();
       h.configure(cfg);
@@ -80,10 +82,6 @@ public abstract class RefreshHandler<K,V>  {
       RefreshHandler.Static<K,V> h = new RefreshHandler.Static<K, V>();
       h.configureStatic(cfg);
       return h;
-    }
-    if (cfg.getExpiryMillis() == 0 &&
-      (cfg.getExceptionExpiryMillis() == 0 || cfg.getExceptionExpiryMillis() == -1)) {
-      return IMMEDIATE;
     }
     if ((cfg.getExpiryMillis() == ExpiryCalculator.ETERNAL || cfg.getExceptionExpiryMillis() == -1) &&
       cfg.getExceptionExpiryMillis() == -1) {
@@ -282,7 +280,7 @@ public abstract class RefreshHandler<K,V>  {
 
     @Override
     public long calculateNextRefreshTime(final Entry<K,V> e, final V v, final long _loadTime) {
-      return calcNextRefreshTime(e.getKey(), v, _loadTime, e, null, maxLinger, null, exceptionMaxLinger);
+      return calcNextRefreshTime(e.getKey(), v, _loadTime, e, null, maxLinger, exceptionMaxLinger);
     }
 
     @Override
@@ -396,13 +394,11 @@ public abstract class RefreshHandler<K,V>  {
   static class Dynamic<K,V> extends Static<K,V> {
 
     ExpiryCalculator<K, V> expiryCalculator;
-    ExceptionExpiryCalculator<K> exceptionExpiryCalculator;
 
     @SuppressWarnings("unchecked")
     void configure(CacheConfiguration<K,V> c) {
       configureStatic(c);
       expiryCalculator = c.getExpiryCalculator();
-      exceptionExpiryCalculator = c.getExceptionExpiryCalculator();
       if (ValueWithExpiryTime.class.isAssignableFrom(c.getValueType().getType()) &&
         expiryCalculator == null)  {
         expiryCalculator =
@@ -414,14 +410,14 @@ public abstract class RefreshHandler<K,V>  {
     @Override
     boolean isNeedingTimer() {
       return super.isNeedingTimer() ||
-         expiryCalculator != null || exceptionExpiryCalculator != null;
+         expiryCalculator != null;
     }
 
     long calcNextRefreshTime(K _key, V _newObject, long now, Entry _entry) {
       return calcNextRefreshTime(
         _key, _newObject, now, _entry,
         expiryCalculator, maxLinger,
-        exceptionExpiryCalculator, exceptionMaxLinger);
+        exceptionMaxLinger);
     }
 
     public long calculateNextRefreshTime(Entry<K, V> _entry, V _newValue, long _loadTime) {
@@ -437,16 +433,10 @@ public abstract class RefreshHandler<K,V>  {
   static <K, T>  long calcNextRefreshTime(
     K _key, T _newObject, long now, org.cache2k.core.Entry _entry,
     ExpiryCalculator<K, T> ec, long _maxLinger,
-    ExceptionExpiryCalculator<K> _exceptionEc, long _exceptionMaxLinger) {
+    long _exceptionMaxLinger) {
     if (_newObject instanceof ExceptionWrapper) {
       if (_exceptionMaxLinger == 0) {
         return 0;
-      }
-      if (_exceptionEc != null) {
-        ExceptionWrapper _wrapper = (ExceptionWrapper) _newObject;
-        long t = _exceptionEc.calculateExpiryTime(_key, _wrapper.getException(), now);
-        t = limitExpiryToMaxLinger(now, _exceptionMaxLinger, t);
-        return t;
       }
       if (_exceptionMaxLinger < ExpiryCalculator.ETERNAL) {
         return _exceptionMaxLinger + now;

@@ -61,16 +61,11 @@ public interface ExpiryCalculator<K, V> {
    * and {@link Cache2kBuilder#refreshAhead(boolean)} influence the behaviour.
    *
    * <p><b>Inserts or updates:</b> It is possible to return different expiry times for
-   * insert or updates. An update can be detected by the presence of the old entry.
+   * inserts or updates. An update can be detected by the presence of the old entry.
    *
-   * <p>The cache may call the method multiple times after an entry is inserted to
-   * reflect possible configuration changes.
-   *
-   * <p><b>Mutation of values:</b> Mutating values within the expiry calculator may have undesired
-   * effects and is not supported in general.
-   *
-   * <p><b>Cache access:</b> It is illegal to access the cache inside the method. Doing so, may
-   * result in a deadlock.
+   * <p><b>Calling cache operations:</b> It is illegal to call any
+   * cache methods from this method. This may have an undesired effect
+   * and can cause a deadlock.
    *
    * @param key the cache key used for inserting or loading
    * @param value the value to be cached, may be null
@@ -78,7 +73,7 @@ public interface ExpiryCalculator<K, V> {
    *                 this is the time before the loader was called.
    * @param oldEntry entry representing the current mapping, if there is a value present.
    *                  If the current entry holds an exception, this is null. Expired entries will be
-   *                  also passed.
+   *                 passed in as well.
    * @return time the time of expiry in millis since epoch. {@link #NO_CACHE} if it should not cached.
    *              {@link #ETERNAL} if there is no specific expiry time known or needed.
    *              The effective expiry duration will never be longer than the
@@ -87,7 +82,6 @@ public interface ExpiryCalculator<K, V> {
    *              used, but sharp expiry is requested always,
    *              ignoring {@link Cache2kBuilder#sharpExpiry(boolean)}.
    *
-   * @see ExceptionExpiryCalculator#calculateExpiryTime(Object, Throwable, long)
    * @see ValueWithExpiryTime#getCacheExpiryTime()
    */
   long calculateExpiryTime(

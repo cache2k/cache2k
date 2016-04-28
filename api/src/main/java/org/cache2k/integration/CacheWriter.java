@@ -37,6 +37,10 @@ public abstract class CacheWriter<K, V> {
   /**
    * Called when the value was updated or inserted into the cache.
    *
+   * <p><b>Calling cache operations:</b> It is illegal to call any
+   * cache methods from this method. This may have an undesired effect
+   * and can cause a deadlock.
+   *
    * @param key key of the value to be written, never null.
    * @param value the value to be written, may be null if null is permitted.
    * @throws Exception if an exception occurs, the cache update will not occur and this

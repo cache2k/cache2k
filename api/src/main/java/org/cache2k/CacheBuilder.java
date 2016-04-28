@@ -28,6 +28,8 @@ import org.cache2k.integration.AdvancedCacheLoader;
 import org.cache2k.integration.CacheLoader;
 import org.cache2k.integration.CacheWriter;
 import org.cache2k.integration.ExceptionPropagator;
+import org.cache2k.integration.LoadExceptionInformation;
+import org.cache2k.integration.ResiliencePolicy;
 
 import java.util.Collection;
 import java.util.Collections;
@@ -289,8 +291,18 @@ public class CacheBuilder<K,V> {
     return this;
   }
 
-  public CacheBuilder<K, V> exceptionExpiryCalculator(final org.cache2k.customization.ExceptionExpiryCalculator<K> c) {
-    builder.exceptionExpiryCalculator(c);
+  public CacheBuilder<K, V> exceptionExpiryCalculator(final org.cache2k.ExceptionExpiryCalculator<K> c) {
+    builder.resiliencePolicy(new ResiliencePolicy<K, V>() {
+      @Override
+      public long suppressExceptionUntil(final K key, final LoadExceptionInformation exceptionInformation, final CacheEntry<K, V> cachedContent) {
+        return c.calculateExpiryTime(key, exceptionInformation.getException(), exceptionInformation.getLoadTime());
+      }
+
+      @Override
+      public long cacheExceptionUntil(final K key, final LoadExceptionInformation exceptionInformation) {
+        return c.calculateExpiryTime(key, exceptionInformation.getException(), exceptionInformation.getLoadTime());
+      }
+    });
     return this;
   }
 

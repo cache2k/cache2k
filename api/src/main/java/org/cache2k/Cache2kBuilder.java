@@ -24,7 +24,6 @@ import org.cache2k.configuration.CacheConfiguration;
 import org.cache2k.configuration.CacheType;
 import org.cache2k.configuration.CacheTypeDescriptor;
 import org.cache2k.configuration.ConfigurationSectionBuilder;
-import org.cache2k.customization.ExceptionExpiryCalculator;
 import org.cache2k.customization.ExpiryCalculator;
 import org.cache2k.event.CacheEntryOperationListener;
 import org.cache2k.integration.AdvancedCacheLoader;
@@ -289,15 +288,7 @@ public class Cache2kBuilder<K, V> implements Cloneable {
    * <p>If an {@link ExpiryCalculator} is set, this setting
    * controls the maximum possible expiry duration.
    *
-   * <p>A value of 0 means every entry should expire immediately. In case of
-   * a cache source present, a cache in this setting can be used to block out
-   * concurrent requests for the same key.
-   *
-   * <p>For an expiry duration of 0 or within low millis, in a special corner case,
-   * especially when a source call executes below an OS time slice, more values from
-   * the cache source could be produced, then actually returned by the cache. This
-   * is within the consistency guarantees of a cache, however, it may be important
-   * to interpret concurrency testing results.
+   * <p>A value of 0 means every entry should expire immediately.
    */
   public final Cache2kBuilder<K, V> expireAfterWrite(long v, TimeUnit u) {
     config.setExpiryMillis(u.toMillis(v));
@@ -375,14 +366,6 @@ public class Cache2kBuilder<K, V> implements Cloneable {
   }
 
   /**
-   * Set expiry calculator to use in case of an exception happened in the {@link CacheLoader}.
-   */
-  public final Cache2kBuilder<K, V> exceptionExpiryCalculator(ExceptionExpiryCalculator<K> c) {
-    config.setExceptionExpiryCalculator(c);
-    return this;
-  }
-
-  /**
    * When true, enable background refresh / refresh ahead. After an entry is expired, the cache
    * loader is invoked to fetch a fresh value. The old value will be returned by the cache, although
    * it is expired, and will be replaced by the new value, once the loader is finished. In the case
@@ -432,6 +415,16 @@ public class Cache2kBuilder<K, V> implements Cloneable {
   }
 
   /**
+   * Sets a custom resilience policy to control the cache behavior in the presence
+   * of exceptions from the loader. If {@link #expireAfterWrite} is set to 0, this means
+   * caching is switched off, then the resilience policy will be ignored.
+   */
+  public final Cache2kBuilder<K,V> resiliencePolicy(ResiliencePolicy<K,V> v) {
+    config.setResiliencePolicy(v);
+    return this;
+  }
+
+  /**
    * Add a new configuration sub section.
    */
   public final Cache2kBuilder<K, V> with(ConfigurationSectionBuilder... sectionBuilders) {
@@ -454,10 +447,5 @@ public class Cache2kBuilder<K, V> implements Cloneable {
     return CORE_PROVIDER.createCache(manager, config);
   }
 
-
-  public final Cache2kBuilder<K,V> resiliencePolicy(ResiliencePolicy<K,V> v) {
-    config.setResiliencePolicy(v);
-    return this;
-  }
 
 }

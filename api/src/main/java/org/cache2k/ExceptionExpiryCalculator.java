@@ -30,7 +30,7 @@ package org.cache2k;
  * @since 0.20
  * @deprecated replaced with {@link org.cache2k.customization.ExceptionExpiryCalculator}
  */
-public interface ExceptionExpiryCalculator<K> extends org.cache2k.customization.ExceptionExpiryCalculator<K> {
+public interface ExceptionExpiryCalculator<K> {
 
   long calculateExpiryTime(K key, Throwable _throwable, long _fetchTime);
 

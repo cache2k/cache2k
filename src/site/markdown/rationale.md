@@ -56,4 +56,30 @@ This pattern is used, for example in Infinispan as well. Problems: The section b
 need to define build() and also all sections. It is not extensible, all sections need to be defined 
 upfront. The syntax/indentation does not correlate with the section logic.
 
+TODO
+
+## Time or duration for variable expiry?
+
+In applications there are use cases where items need to renew at a certain point in time.
+For example a product should be visible at 9am but not before. Also the HTTP protocol defines
+the 'expires' header, which is a point in time.
+
+Most other caches use a duration or time span to control the expiry of an object. The duration is
+an ambiguous concept, since the reference time is sometimes not defined. Does the time span start 
+after the loader has finished or before the loader was called?
+
+cache2k uses a point in time for variable expiry control, a long value representing the milliseconds 
+since the epoch. The used time reference is `System.currentTimeMillis()`. This has the advantage
+that the policy can return a distinct point in time if this is requested by the application or
+can calculate a reasonable point in time based on a duration configuration with a time reference
+of choice (now or load time). Furthermore, if the cache needs to honor the times by the millisecond, the
+parameter `sharpExpiry` can be switched on.
+
+So, cache2k is designed to provide exact timing aligned with the wall clock and what Java 
+`System.currentTimeMillis()` provides. 
+
+There is a disadvantage to this. The system time has not the guarantee of continuously ascending, 
+since it may be set to another value. So, it is important that system time is
+ properly synchronized and not making huge changes.
+ 
 
