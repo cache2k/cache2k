@@ -174,11 +174,11 @@ public class DefaultResiliencePolicyTest {
     InfoBean b = new InfoBean();
     b.setLoadTime(0);
     b.setSinceTime(0);
-    long t = p.cacheExceptionUntil("key", b);
+    long t = p.retryLoadAfter("key", b);
     assertEquals(100, t);
     b.incrementRetryCount();
     b.setLoadTime(107);
-    t = p.cacheExceptionUntil("key", b);
+    t = p.retryLoadAfter("key", b);
     assertEquals(150, t - b.getLoadTime());
     b.incrementRetryCount();
     b.incrementRetryCount();
@@ -186,7 +186,7 @@ public class DefaultResiliencePolicyTest {
     b.incrementRetryCount();
     b.incrementRetryCount();
     b.setLoadTime(0);
-    t = p.cacheExceptionUntil("key", b);
+    t = p.retryLoadAfter("key", b);
     assertEquals(500, t);
   }
 

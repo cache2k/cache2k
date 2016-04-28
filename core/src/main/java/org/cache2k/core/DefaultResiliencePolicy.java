@@ -104,8 +104,8 @@ public class DefaultResiliencePolicy<K,V> extends ResiliencePolicy<K,V> {
   }
 
   @Override
-  public long cacheExceptionUntil(final Object key,
-                                  final LoadExceptionInformation exceptionInformation) {
+  public long retryLoadAfter(final Object key,
+                             final LoadExceptionInformation exceptionInformation) {
     if (retryInterval == 0) {
       return 0;
     }

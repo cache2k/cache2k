@@ -57,7 +57,8 @@ public class CacheConfiguration<K, V> implements Serializable {
   private int heapEntryCapacity = -1;
   private boolean refreshAhead = false;
   private long expiryMillis  = -1;
-  private long exceptionExpiryMillis = -1;
+  private long retryIntervalMillis = -1;
+  private long maxRetryIntervalMillis = -1;
   private boolean keepValueAfterExpired = true;
   private boolean sharpExpiry = false;
   private List<Object> moduleConfiguration;
@@ -361,15 +362,23 @@ public class CacheConfiguration<K, V> implements Serializable {
     this.expiryMillis = expiryMillis;
   }
 
-  public long getExceptionExpiryMillis() {
-    return exceptionExpiryMillis;
+  public long getRetryIntervalMillis() {
+    return retryIntervalMillis;
   }
 
   /**
-   * @see Cache2kBuilder#exceptionExpiryDuration
+   * @see Cache2kBuilder#retryInterval
    */
-  public void setExceptionExpiryMillis(long v) {
-    exceptionExpiryMillis = v;
+  public void setRetryIntervalMillis(long v) {
+    retryIntervalMillis = v;
+  }
+
+  public long getMaxRetryIntervalMillis() {
+    return maxRetryIntervalMillis;
+  }
+
+  public void setMaxRetryIntervalMillis(final long _maxRetryIntervalMillis) {
+    maxRetryIntervalMillis = _maxRetryIntervalMillis;
   }
 
   public boolean isKeepValueAfterExpired() {

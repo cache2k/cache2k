@@ -64,7 +64,7 @@ public class BasicCacheOperationsTest {
             .of(Integer.class, Integer.class)
             .name(BasicCacheOperationsTest.class)
             .eternal(true)
-            .exceptionExpiryDuration(Long.MAX_VALUE, TimeUnit.MILLISECONDS)
+            .retryInterval(Long.MAX_VALUE, TimeUnit.MILLISECONDS)
             .entryCapacity(1000)
             .build();
   }

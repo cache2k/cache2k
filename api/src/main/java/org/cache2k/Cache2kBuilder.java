@@ -262,7 +262,7 @@ public class Cache2kBuilder<K, V> implements Cloneable {
    * cache explicitly or evicted if capacity constraints are reached.
    *
    * <p>Exceptions: If there is no explicit expiry configured for exceptions
-   * with {@link #exceptionExpiryDuration(long, TimeUnit)}, exceptions will
+   * with {@link #retryInterval(long, TimeUnit)}, exceptions will
    * not be cached and expire immediately.
    */
   public final Cache2kBuilder<K, V> eternal(boolean v) {
@@ -296,11 +296,22 @@ public class Cache2kBuilder<K, V> implements Cloneable {
   }
 
   /**
-   * Separate timeout in the case an exception was thrown in the cache source.
-   * By default 10% of the normal expiry is used.
+   * If a loader exception happens, this is the time interval after that a
+   * retry attempt is made. By default 5% of the normal expiry time configured by
+   * {@link #expireAfterWrite}.
    */
-  public final Cache2kBuilder<K, V> exceptionExpiryDuration(long v, TimeUnit u) {
-    config.setExceptionExpiryMillis(u.toMillis(v));
+  public final Cache2kBuilder<K, V> retryInterval(long v, TimeUnit u) {
+    config.setRetryIntervalMillis(u.toMillis(v));
+    return this;
+  }
+
+  /**
+   * For retries an exponential backoff algorithm is used. It starts with the
+   * set retry time and then increases the time to the maximum according to an
+   * exponential pattern.
+   */
+  public final Cache2kBuilder<K, V> maxRetryInterval(long v, TimeUnit u) {
+    config.setMaxRetryIntervalMillis(u.toMillis(v));
     return this;
   }
 

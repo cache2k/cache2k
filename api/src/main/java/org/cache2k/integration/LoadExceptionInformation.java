@@ -24,6 +24,16 @@ package org.cache2k.integration;
  * Relevant information of load attempt that generated an exception.
  * This is used by the exception propagator and the resilience policy.
  *
+ * <p>Compatibility: This interface is not intended for implementation
+ * or extension by a client and may get additional methods in a new minor release.
+ *
+ * <p>Rationale: The information does not contain the time of the original
+ * expiry of the cache value. This is intentional. There is no information
+ * field to record the time of expiry past the expiry itself. The expiry time
+ * information is reset as soon as the expiry time is reached. To produce no
+ * overhead, the information provided by this interface is captured only
+ * in case an exception happens.
+ *
  * @see ExceptionPropagator
  * @see ResiliencePolicy
  * @author Jens Wilke

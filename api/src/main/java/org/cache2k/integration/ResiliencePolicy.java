@@ -31,6 +31,11 @@ import org.cache2k.CacheEntry;
  */
 public abstract class ResiliencePolicy<K, V> {
 
+  /**
+   * Called before any other call.
+   *
+   * @param context Additional context information
+   */
   public void init(Context context) { }
 
   /**
@@ -41,6 +46,14 @@ public abstract class ResiliencePolicy<K, V> {
    * <p>The returned value is a point in time. If the currently cached
    * content is expired, returning a future time will effectively extend the entry
    * expiry.
+   *
+   * <p>Returning 0 or a past time means the exception should not be suppressed.
+   * The cache will call immediately {@link #retryLoadAfter} to determine how long the
+   * exception should stay in the cache and when the next retry attempt takes place.
+   *
+   * <p>If the exception is not suppressed, it will wrapped into a {@link CacheLoaderException} and propagated to the cache
+   * client. This is customizable by the {@link ExceptionPropagator}. The cache
+   * will
    *
    * @param cachedContent The entry representing the currently cached content.
    *                      It is possible that this data is already expired.
@@ -57,9 +70,16 @@ public abstract class ResiliencePolicy<K, V> {
    * Called after the loader threw an exception and no previous value is available or
    * {@link #suppressExceptionUntil} returned null.
    */
-  public abstract long cacheExceptionUntil(K key,
-                           LoadExceptionInformation exceptionInformation);
+  public abstract long retryLoadAfter(K key,
+                                      LoadExceptionInformation exceptionInformation);
 
+  /**
+   * Provides additional context information. At the moment, this interface provides the
+   * relevant configuration settings.
+   *
+   * <p>Compatibility: This interface is not intended for implementation
+   * or extension by a client and may get additional methods in a new minor release.
+   */
   public interface Context {
 
     long getExpireAfterWriteMillis();

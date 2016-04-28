@@ -153,7 +153,7 @@ public class CacheBuilder<K,V> {
   }
 
   public CacheBuilder<K, V> exceptionExpiryDuration(final long v, final TimeUnit u) {
-    builder.exceptionExpiryDuration(v, u);
+    builder.retryInterval(v, u);
     return this;
   }
 
@@ -299,7 +299,7 @@ public class CacheBuilder<K,V> {
       }
 
       @Override
-      public long cacheExceptionUntil(final K key, final LoadExceptionInformation exceptionInformation) {
+      public long retryLoadAfter(final K key, final LoadExceptionInformation exceptionInformation) {
         return c.calculateExpiryTime(key, exceptionInformation.getException(), exceptionInformation.getLoadTime());
       }
     });

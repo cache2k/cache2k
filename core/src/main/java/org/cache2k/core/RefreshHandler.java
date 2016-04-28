@@ -68,7 +68,7 @@ public abstract class RefreshHandler<K,V>  {
       );
     }
     if (cfg.getExpiryMillis() == 0 &&
-      (cfg.getExceptionExpiryMillis() == 0 || cfg.getExceptionExpiryMillis() == -1)) {
+      (cfg.getRetryIntervalMillis() == 0 || cfg.getRetryIntervalMillis() == -1)) {
       return IMMEDIATE;
     }
     if (cfg.getExpiryCalculator() != null ||
@@ -78,17 +78,17 @@ public abstract class RefreshHandler<K,V>  {
       return h;
     }
     if ((cfg.getExpiryMillis() > 0 && cfg.getExpiryMillis() < Long.MAX_VALUE) ||
-        (cfg.getExceptionExpiryMillis() > 0 && cfg.getExceptionExpiryMillis() < Long.MAX_VALUE) ) {
+        (cfg.getRetryIntervalMillis() > 0 && cfg.getRetryIntervalMillis() < Long.MAX_VALUE) ) {
       RefreshHandler.Static<K,V> h = new RefreshHandler.Static<K, V>();
       h.configureStatic(cfg);
       return h;
     }
-    if ((cfg.getExpiryMillis() == ExpiryCalculator.ETERNAL || cfg.getExceptionExpiryMillis() == -1) &&
-      cfg.getExceptionExpiryMillis() == -1) {
+    if ((cfg.getExpiryMillis() == ExpiryCalculator.ETERNAL || cfg.getRetryIntervalMillis() == -1) &&
+      cfg.getRetryIntervalMillis() == -1) {
       return ETERNAL_IMMEDIATE;
     }
     if ((cfg.getExpiryMillis() == ExpiryCalculator.ETERNAL || cfg.getExpiryMillis() == -1) &&
-      (cfg.getExceptionExpiryMillis() == ExpiryCalculator.ETERNAL || cfg.getExceptionExpiryMillis() == -1)) {
+      (cfg.getRetryIntervalMillis() == ExpiryCalculator.ETERNAL || cfg.getRetryIntervalMillis() == -1)) {
       return ETERNAL;
     }
     throw new IllegalArgumentException("expiry time ambiguous");
@@ -233,12 +233,12 @@ public abstract class RefreshHandler<K,V>  {
 
         @Override
         public long getRetryIntervalMillis() {
-          return c.getExceptionExpiryMillis();
+          return c.getRetryIntervalMillis();
         }
 
         @Override
         public long getMaxRetryIntervalMillis() {
-          return c.getExceptionExpiryMillis();
+          return c.getMaxRetryIntervalMillis();
         }
       };
       resiliencePolicy = c.getResiliencePolicy();
@@ -290,7 +290,7 @@ public abstract class RefreshHandler<K,V>  {
 
     @Override
     public long cacheExceptionUntil(final Entry<K, V> e, final LoadExceptionInformation inf) {
-      return resiliencePolicy.cacheExceptionUntil(e.getKey(), inf);
+      return resiliencePolicy.retryLoadAfter(e.getKey(), inf);
     }
 
     @Override
