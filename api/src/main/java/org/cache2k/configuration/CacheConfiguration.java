@@ -56,7 +56,7 @@ public class CacheConfiguration<K, V> implements Serializable {
   private int maxSizeLowBound = 0;
   private int heapEntryCapacity = -1;
   private boolean refreshAhead = false;
-  private long expiryMillis  = -1;
+  private long expireAfterWriteMillis = -1;
   private long retryIntervalMillis = -1;
   private long maxRetryIntervalMillis = -1;
   private boolean keepValueAfterExpired = true;
@@ -320,7 +320,7 @@ public class CacheConfiguration<K, V> implements Serializable {
   }
 
   public boolean isEternal() {
-    return expiryMillis == -1 || expiryMillis == EXPIRY_MILLIS_ETERNAL;
+    return expireAfterWriteMillis == -1 || expireAfterWriteMillis == EXPIRY_MILLIS_ETERNAL;
   }
 
   /**
@@ -328,29 +328,29 @@ public class CacheConfiguration<K, V> implements Serializable {
    */
   public void setEternal(boolean v) {
     if (v) {
-      this.expiryMillis = EXPIRY_MILLIS_ETERNAL;
+      this.expireAfterWriteMillis = EXPIRY_MILLIS_ETERNAL;
     }
   }
 
   /**
-   * @deprecated use {@link #setExpiryMillis}
+   * @deprecated use {@link #setExpireAfterWriteMillis}
    */
   public void setExpirySeconds(int v) {
     if (v == -1 || v == Integer.MAX_VALUE) {
-      expiryMillis = -1;
+      expireAfterWriteMillis = -1;
     }
-    expiryMillis = v * 1000L;
+    expireAfterWriteMillis = v * 1000L;
   }
 
   public int getExpirySeconds() {
     if (isEternal()) {
       return -1;
     }
-    return (int) (expiryMillis / 1000);
+    return (int) (expireAfterWriteMillis / 1000);
   }
 
-  public long getExpiryMillis() {
-    return expiryMillis;
+  public long getExpireAfterWriteMillis() {
+    return expireAfterWriteMillis;
   }
 
   /**
@@ -358,8 +358,8 @@ public class CacheConfiguration<K, V> implements Serializable {
    * determined this is the maximum expiry time. A value of -1 switches expiry off, that
    * means entries are kept for an eternal time, a value of 0 switches caching off.
    */
-  public void setExpiryMillis(long expiryMillis) {
-    this.expiryMillis = expiryMillis;
+  public void setExpireAfterWriteMillis(long v) {
+    this.expireAfterWriteMillis = v;
   }
 
   public long getRetryIntervalMillis() {

@@ -291,7 +291,7 @@ public class Cache2kBuilder<K, V> implements Cloneable {
    * <p>A value of 0 means every entry should expire immediately.
    */
   public final Cache2kBuilder<K, V> expireAfterWrite(long v, TimeUnit u) {
-    config.setExpiryMillis(u.toMillis(v));
+    config.setExpireAfterWriteMillis(u.toMillis(v));
     return this;
   }
 

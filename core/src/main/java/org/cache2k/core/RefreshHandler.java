@@ -60,14 +60,14 @@ public abstract class RefreshHandler<K,V>  {
     };
 
   public static <K, V> RefreshHandler<K,V> of(CacheConfiguration<K,V> cfg) {
-    if (cfg.getExpiryMillis() < 0) {
+    if (cfg.getExpireAfterWriteMillis() < 0) {
       throw new IllegalArgumentException(
         "Specify expiry or no expiry explicitly. " +
         "Either set CacheBuilder.eternal(true) or CacheBuilder.expiryDuration(...). " +
         "See: https://github.com/cache2k/cache2k/issues/21"
       );
     }
-    if (cfg.getExpiryMillis() == 0 &&
+    if (cfg.getExpireAfterWriteMillis() == 0 &&
       (cfg.getRetryIntervalMillis() == 0 || cfg.getRetryIntervalMillis() == -1)) {
       return IMMEDIATE;
     }
@@ -77,17 +77,17 @@ public abstract class RefreshHandler<K,V>  {
       h.configure(cfg);
       return h;
     }
-    if ((cfg.getExpiryMillis() > 0 && cfg.getExpiryMillis() < Long.MAX_VALUE) ||
+    if ((cfg.getExpireAfterWriteMillis() > 0 && cfg.getExpireAfterWriteMillis() < Long.MAX_VALUE) ||
         (cfg.getRetryIntervalMillis() > 0 && cfg.getRetryIntervalMillis() < Long.MAX_VALUE) ) {
       RefreshHandler.Static<K,V> h = new RefreshHandler.Static<K, V>();
       h.configureStatic(cfg);
       return h;
     }
-    if ((cfg.getExpiryMillis() == ExpiryCalculator.ETERNAL || cfg.getRetryIntervalMillis() == -1) &&
+    if ((cfg.getExpireAfterWriteMillis() == ExpiryCalculator.ETERNAL || cfg.getRetryIntervalMillis() == -1) &&
       cfg.getRetryIntervalMillis() == -1) {
       return ETERNAL_IMMEDIATE;
     }
-    if ((cfg.getExpiryMillis() == ExpiryCalculator.ETERNAL || cfg.getExpiryMillis() == -1) &&
+    if ((cfg.getExpireAfterWriteMillis() == ExpiryCalculator.ETERNAL || cfg.getExpireAfterWriteMillis() == -1) &&
       (cfg.getRetryIntervalMillis() == ExpiryCalculator.ETERNAL || cfg.getRetryIntervalMillis() == -1)) {
       return ETERNAL;
     }
@@ -214,7 +214,7 @@ public abstract class RefreshHandler<K,V>  {
     ResiliencePolicy<K,V> resiliencePolicy;
 
     void configureStatic(final CacheConfiguration<K, V> c) {
-      long _expiryMillis  = c.getExpiryMillis();
+      long _expiryMillis  = c.getExpireAfterWriteMillis();
       if (_expiryMillis == ExpiryCalculator.ETERNAL || _expiryMillis < 0) {
         maxLinger = ExpiryCalculator.ETERNAL;
       } else {
@@ -223,7 +223,7 @@ public abstract class RefreshHandler<K,V>  {
       ResiliencePolicy.Context ctx = new ResiliencePolicy.Context() {
         @Override
         public long getExpireAfterWriteMillis() {
-          return c.getExpiryMillis();
+          return c.getExpireAfterWriteMillis();
         }
 
         @Override
