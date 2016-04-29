@@ -120,8 +120,18 @@ public abstract class RefreshHandler<K,V>  {
    */
   public abstract long calculateNextRefreshTime(Entry<K, V> e, V v, long _loadTime);
 
+  /**
+   * Delegated to the resilience policy
+   *
+   * @see ResiliencePolicy#suppressExceptionUntil
+   */
   public abstract long suppressExceptionUntil(Entry<K,V> e, LoadExceptionInformation inf);
 
+  /**
+   * Delegated to the resilience policy
+   *
+   * @see ResiliencePolicy#retryLoadAfter
+   */
   public abstract long cacheExceptionUntil(Entry<K,V> e, LoadExceptionInformation inf);
 
   /**
@@ -207,7 +217,6 @@ public abstract class RefreshHandler<K,V>  {
     boolean backgroundRefresh;
     Timer timer;
     long maxLinger;
-    long exceptionMaxLinger;
     InternalCache cache;
     /** Dirty counter, intentionally only 32 bit */
     int timerCancelCount = 0;
@@ -251,8 +260,7 @@ public abstract class RefreshHandler<K,V>  {
     }
 
     boolean isNeedingTimer() {
-      return
-        maxLinger > 0 || exceptionMaxLinger > 0 ||
+      return maxLinger > 0 ||
           !(resiliencePolicy instanceof DefaultResiliencePolicy) ||
           !((DefaultResiliencePolicy) resiliencePolicy).isNoTimerNeeded();
     }
@@ -282,7 +290,7 @@ public abstract class RefreshHandler<K,V>  {
 
     @Override
     public long calculateNextRefreshTime(final Entry<K,V> e, final V v, final long _loadTime) {
-      return calcNextRefreshTime(e.getKey(), v, _loadTime, e, null, maxLinger, exceptionMaxLinger);
+      return calcNextRefreshTime(e.getKey(), v, _loadTime, e, null, maxLinger, 4711);
     }
 
     @Override
@@ -295,16 +303,40 @@ public abstract class RefreshHandler<K,V>  {
       return resiliencePolicy.retryLoadAfter(e.getKey(), inf);
     }
 
+    /**
+     * If we are about to start the timer, but discover that the entry is
+     * expired already, we need to start the refresh task.
+     * This will also start a refresh task, if the entry just was refreshed and it is
+     * expired immediately. The refresh task will handle this and expire the entry.
+     */
+    long eventuallyStartBackgroundRefresh(final Entry e) {
+      if (backgroundRefresh) {
+        e.setTask(new RefreshTask<K,V>(cache, e));
+        scheduleTask(0, e);
+        return Entry.DATA_VALID;
+      }
+      return Entry.EXPIRED;
+    }
+
+    /**
+     *
+     * @param _nextRefreshTime calculated next refresh time
+     * @param e the entry
+     * @return
+     */
     @Override
     public long stopStartTimer(long _nextRefreshTime, final Entry e) {
       cancelExpiryTimer(e);
       if (_nextRefreshTime == 0) {
-        return Entry.EXPIRED;
+        return eventuallyStartBackgroundRefresh(e);
       }
       final long now = System.currentTimeMillis();
       _nextRefreshTime = sanitizeTime(_nextRefreshTime, now);
       if ((_nextRefreshTime > 0 && _nextRefreshTime < Entry.EXPIRY_TIME_MIN) ||
-           _nextRefreshTime == ExpiryCalculator.ETERNAL) {
+        _nextRefreshTime == ExpiryCalculator.ETERNAL) {
+        if (_nextRefreshTime == Entry.EXPIRED) {
+          return eventuallyStartBackgroundRefresh(e);
+        }
         return _nextRefreshTime;
       }
       if (sharpTimeout && _nextRefreshTime > Entry.EXPIRY_TIME_MIN) {
@@ -420,7 +452,7 @@ public abstract class RefreshHandler<K,V>  {
       return calcNextRefreshTime(
         _key, _newObject, now, _entry,
         expiryCalculator, maxLinger,
-        exceptionMaxLinger);
+        4711);
     }
 
     public long calculateNextRefreshTime(Entry<K, V> _entry, V _newValue, long _loadTime) {
@@ -437,16 +469,6 @@ public abstract class RefreshHandler<K,V>  {
     K _key, T _newObject, long now, org.cache2k.core.Entry _entry,
     ExpiryCalculator<K, T> ec, long _maxLinger,
     long _exceptionMaxLinger) {
-    if (_newObject instanceof ExceptionWrapper) {
-      if (_exceptionMaxLinger == 0) {
-        return 0;
-      }
-      if (_exceptionMaxLinger < ExpiryCalculator.ETERNAL) {
-        return _exceptionMaxLinger + now;
-      } else {
-        return _exceptionMaxLinger;
-      }
-    }
     if (_maxLinger == 0) {
       return 0;
     }

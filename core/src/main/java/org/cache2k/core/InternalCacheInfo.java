@@ -50,6 +50,9 @@ public interface InternalCacheInfo {
 
   long getNewEntryCnt();
 
+  /**
+   * Loader calls including calls from refresh ahead.
+   */
   long getLoadCnt();
 
   int getLoadsInFlightCnt();

@@ -55,6 +55,7 @@ class CacheBaseInfo implements InternalCacheInfo {
   int loaderThreadsLimit = 0;
   int loaderThreadsMaxActive = 0;
   int loaderThreadsActive = 0;
+  long totalLoadCnt;
 
   public CacheBaseInfo(HeapCache _heapCache) {
     this.heapCache = _heapCache;
@@ -69,7 +70,7 @@ class CacheBaseInfo implements InternalCacheInfo {
     }
     loadsInFlight = _heapCache.getLoadsInFlight();
     size = _heapCache.getLocalSize();
-    missCnt = _heapCache.loadCnt + _heapCache.peekHitNotFreshCnt + _heapCache.peekMissCnt;
+    missCnt = _heapCache.loadWoRefreshCnt + _heapCache.peekHitNotFreshCnt + _heapCache.peekMissCnt;
     storageMissCnt = _heapCache.readMissCnt + _heapCache.readNonFreshCnt + _heapCache.readNonFreshAndFetchedCnt;
     storageLoadCnt = storageMissCnt + _heapCache.readHitCnt;
     newEntryCnt = _heapCache.newEntryCnt - _heapCache.virginEvictCnt;
@@ -84,6 +85,7 @@ class CacheBaseInfo implements InternalCacheInfo {
       loaderThreadsLimit = ex.getCorePoolSize();
       loaderThreadsMaxActive = ex.getLargestPoolSize();
     }
+    totalLoadCnt = heapCache.loadWoRefreshCnt + heapCache.refreshCnt;
   }
 
   String percentString(double d) {
@@ -123,7 +125,7 @@ class CacheBaseInfo implements InternalCacheInfo {
     long _heapHitButNoRead = metrics.getHeapHitButNoReadCount();
     return
       hitCnt + heapCache.peekMissCnt
-      + heapCache.loadCnt - heapCache.loadButHitCnt - _putHit - _containsBitHit - _heapHitButNoRead;
+      + heapCache.loadWoRefreshCnt - heapCache.loadButHitCnt - _putHit - _containsBitHit - _heapHitButNoRead;
   }
   @Override
   public long getUsageCnt() { return usageCnt; }
@@ -132,7 +134,7 @@ class CacheBaseInfo implements InternalCacheInfo {
   @Override
   public long getNewEntryCnt() { return newEntryCnt; }
   @Override
-  public long getLoadCnt() { return heapCache.loadCnt; }
+  public long getLoadCnt() { return totalLoadCnt; }
   @Override
   public int getLoadsInFlightCnt() { return loadsInFlight; }
   @Override
@@ -240,7 +242,7 @@ class CacheBaseInfo implements InternalCacheInfo {
     return _metric0;
   }
   @Override
-  public double getMillisPerLoad() { return heapCache.loadCnt == 0 ? 0 : (heapCache.fetchMillis * 1D / heapCache.loadCnt); }
+  public double getMillisPerLoad() { return getLoadCnt() == 0 ? 0 : (heapCache.fetchMillis * 1D / getLoadCnt()); }
   @Override
   public long getLoadMillis() { return heapCache.fetchMillis; }
   @Override

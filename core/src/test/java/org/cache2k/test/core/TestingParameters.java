@@ -25,18 +25,26 @@ import org.apache.commons.logging.LogFactory;
 
 /**
  */
-public interface TestingParameters {
+public class TestingParameters {
 
-  Log RESULT_LOG = LogFactory.getLog("results");
+  public static final Log RESULT_LOG = LogFactory.getLog("results");
 
   /**
    * Maximum time in millis we wait for an event to finish. Might need to be increased in loaded environments.
    */
-  int MAX_FINISH_WAIT = 60000;
+  public static final int MAX_FINISH_WAIT = 60000;
 
   /**
    * Minimum amount of time that we expect to pass in waiting for an event.
    */
-  int MINIMAL_TICK_MILLIS = 3;
+  public static final int MINIMAL_TICK_MILLIS = 3;
+
+  static int calculateMaxFinishWait() {
+    if (System.getProperty("idea.launcher.port") != null) {
+      return 3456;
+    } else {
+      return 60000;
+    }
+  }
 
 }

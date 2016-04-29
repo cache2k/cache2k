@@ -10,6 +10,7 @@ Modifications in the statistics output will not listed as breakage.
 
   * Classes/interfaces: AnyBuilder, BaseAnyBuilder and RootAnyBuilder removed
   * `ExceptionPropagator` interface changed
+  * LoadCompletionListener.loadException now expects a `Throwable`
 
 ## Bug fixes
 
@@ -23,6 +24,7 @@ Fixes of corner cases that are most likely not affecting any existing applicatio
   * Eviction: Don't generate ghost entries when no eviction is needed. Improves performance when cache is operated 
     below the maximum capacity.
   * Add missing expiry event, when entry is expired immediately after an update  
+  * Entry
  
 ## API Changes and new methods
 

@@ -264,9 +264,10 @@ public class CacheLoaderTest {
         });
   }
 
-  class CompletionWaiter implements LoadCompletedListener {
+  public static class CompletionWaiter implements LoadCompletedListener {
 
     CountDownLatch latch = new CountDownLatch(1);
+    volatile Throwable exception;
 
     @Override
     public void loadCompleted() {
@@ -274,13 +275,23 @@ public class CacheLoaderTest {
     }
 
     @Override
-    public void loadException(final Exception _exception) {
-
+    public void loadException(final Throwable _exception) {
+      exception = _exception;
+      latch.countDown();
     }
 
-    public void awaitCompletion() throws InterruptedException {
-      latch.await();
+    public void awaitCompletion() {
+      while (latch.getCount() > 0) {
+        try {
+          latch.await();
+        } catch (InterruptedException ignore) { }
+      }
     }
+
+    public Throwable getException() {
+      return exception;
+    }
+
   }
 
 }

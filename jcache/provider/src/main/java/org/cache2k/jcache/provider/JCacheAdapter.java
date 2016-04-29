@@ -38,6 +38,7 @@ import javax.cache.configuration.CompleteConfiguration;
 import javax.cache.configuration.Configuration;
 import javax.cache.configuration.MutableConfiguration;
 
+import javax.cache.integration.CacheLoaderException;
 import javax.cache.integration.CompletionListener;
 import javax.cache.processor.EntryProcessor;
 import javax.cache.processor.EntryProcessorException;
@@ -122,8 +123,12 @@ public class JCacheAdapter<K, V> implements javax.cache.Cache<K, V> {
         }
 
         @Override
-        public void loadException(Exception _exception) {
-          completionListener.onException(_exception);
+        public void loadException(Throwable _exception) {
+          if (_exception instanceof Exception) {
+            completionListener.onException((Exception) _exception);
+          } else {
+            completionListener.onException(new CacheLoaderException(_exception));
+          }
         }
       };
     }

@@ -586,15 +586,16 @@ public class WiredCache<K, V> extends AbstractCache<K, V>
   public void timerEventExpireEntry(final Entry<K,V> e) {
     metrics().timerEvent();
     synchronized (e) {
-      timerEventExpireEntryLocked(e);
+      expireOrScheduleFinalExpireEvent(e);
     }
   }
 
   /**
-   * @see HeapCache#timerEventExpireEntryLocked(Entry)
+   * @see HeapCache#expireOrScheduleFinalExpireEvent(Entry)
    */
-  void timerEventExpireEntryLocked(final Entry<K, V> e) {
-    heapCache.timerEventExpireEntryLocked(e);
+  @Override
+  public void expireOrScheduleFinalExpireEvent(final Entry<K, V> e) {
+    heapCache.expireOrScheduleFinalExpireEvent(e);
     if (e.isExpired() || e.isGone()) {
       if (syncEntryExpiredListeners != null) {
         for (CacheEntryExpiredListener<K, V> l : syncEntryExpiredListeners) {
@@ -649,7 +650,7 @@ public class WiredCache<K, V> extends AbstractCache<K, V>
         heapCache.refreshSubmitFailedCnt++;
       } else { // if (mainHashCtrl.remove(mainHash, e)) ...
       }
-      timerEventExpireEntryLocked(e);
+      expireOrScheduleFinalExpireEvent(e);
     }
   }
 

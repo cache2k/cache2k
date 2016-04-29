@@ -23,7 +23,6 @@ package org.cache2k.core;
 import org.cache2k.customization.ExpiryCalculator;
 import org.cache2k.event.CacheEntryExpiredListener;
 import org.cache2k.integration.AdvancedCacheLoader;
-import org.cache2k.Cache;
 import org.cache2k.event.CacheEntryCreatedListener;
 import org.cache2k.event.CacheEntryRemovedListener;
 import org.cache2k.event.CacheEntryUpdatedListener;
@@ -510,7 +509,7 @@ public class EntryAction<K, V, R> implements StorageCallback, AsyncCacheLoader.C
         if ((entry.isDataValid() || entry.isExpired()) && entry.getException() == null) {
           expiry = refreshHandler().suppressExceptionUntil(entry, ew);
         }
-        if (expiry > loadCompletedTime) {
+        if (expiry > loadStartedTime) {
           suppressException = true;
           newValueOrException = entry.getValue();
           lastModificationTime = entry.getLastModification();
@@ -803,7 +802,8 @@ public class EntryAction<K, V, R> implements StorageCallback, AsyncCacheLoader.C
         entry.nextRefreshTime =
           refreshHandler().stopStartTimer(expiry, entry);
         if ((heapDataValid || expiry > 0) && entry.isExpired()) {
-          userCache.timerEventExpireEntry(entry);
+          entry.nextRefreshTime = Entry.EXPIRY_TIME_MIN;
+          userCache.expireOrScheduleFinalExpireEvent(entry);
         }
       }
     }
@@ -835,7 +835,7 @@ public class EntryAction<K, V, R> implements StorageCallback, AsyncCacheLoader.C
 
   public void updateMutationStatisticsInsideLock() {
     if (loadCompletedTime > 0) {
-      heapCache.loadCnt++;
+      heapCache.loadWoRefreshCnt++;
       heapCache.fetchMillis += loadCompletedTime - loadStartedTime;
       if (storageRead && storageMiss) {
         heapCache.readMissCnt++;

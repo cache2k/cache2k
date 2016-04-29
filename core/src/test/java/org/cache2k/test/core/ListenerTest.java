@@ -36,6 +36,7 @@ import org.cache2k.junit.FastTests;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import static org.junit.Assert.*;
+import static org.cache2k.test.core.StaticUtil.*;
 
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -358,7 +359,7 @@ public class ListenerTest {
 
   /**
    * Expire time is 0 if entry is modified, yields: Expiry listener is called and entry
-   * is remove from cache.
+   * is removed from cache.
    */
   @Test
   public void asyncReallyExpiredAfterUpdate() {
@@ -428,7 +429,8 @@ public class ListenerTest {
         return _expireCallCount.get() == 1;
       }
     });
-    assertEquals(1, c.getTotalEntryCount());
+    assertEquals(0, c.getTotalEntryCount());
+    assertEquals(1, latestInfo(c).getExpiredCnt());
     c.close();
   }
 

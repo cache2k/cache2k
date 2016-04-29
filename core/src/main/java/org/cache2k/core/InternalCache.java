@@ -54,6 +54,8 @@ public interface InternalCache<K, V> extends Cache<K, V>, CanCheckIntegrity {
 
   void timerEventExpireEntry(Entry<K, V> e);
 
+  void expireOrScheduleFinalExpireEvent(final Entry<K, V> e);
+
   InternalCacheInfo getInfo();
 
   InternalCacheInfo getLatestInfo();

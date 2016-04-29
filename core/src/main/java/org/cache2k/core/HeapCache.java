@@ -85,7 +85,7 @@ public abstract class HeapCache<K, V>
     }
 
     @Override
-    public void loadException(final Exception _exception) {
+    public void loadException(final Throwable _exception) {
 
     }
   };
@@ -153,7 +153,7 @@ public abstract class HeapCache<K, V>
   /* no heap hash hit */
   protected long peekMissCnt = 0;
 
-  protected long loadCnt = 0;
+  protected long loadWoRefreshCnt = 0;
 
   protected long loadFailedCnt = 0;
 
@@ -481,7 +481,7 @@ public abstract class HeapCache<K, V>
   @Override
   public void clearTimingStatistics() {
     synchronized (lock) {
-      loadCnt = 0;
+      loadWoRefreshCnt = 0;
       fetchMillis = 0;
     }
   }
@@ -1700,7 +1700,7 @@ public abstract class HeapCache<K, V>
       if ((e.isDataValid() || e.isExpired()) && e.getException() == null) {
         _nextRefreshTime = refreshHandler.suppressExceptionUntil(e, _value);
       }
-      if (_nextRefreshTime > t) {
+      if (_nextRefreshTime > t0) {
         _suppressException = true;
       } else {
         _nextRefreshTime = refreshHandler.cacheExceptionUntil(e, _value);
@@ -1802,7 +1802,7 @@ public abstract class HeapCache<K, V>
       if (e.isGettingRefresh()) {
         refreshCnt++;
       } else {
-        loadCnt++;
+        loadWoRefreshCnt++;
         if (!e.isVirgin()) {
           loadButHitCnt++;
         }
@@ -1821,7 +1821,7 @@ public abstract class HeapCache<K, V>
 
   /**
    * Move entry to a separate hash for the entries that got a refresh.
-   * @return True, if successful
+   * True, if successful. False, if the entry had a refresh already.
    */
   public boolean moveToRefreshHash(Entry e) {
     synchronized (lock) {
@@ -1886,7 +1886,7 @@ public abstract class HeapCache<K, V>
         refreshSubmitFailedCnt++;
       } else { // if (mainHashCtrl.remove(mainHash, e)) ...
       }
-      timerEventExpireEntryLocked(e);
+      expireOrScheduleFinalExpireEvent(e);
     }
   }
 
@@ -1894,13 +1894,14 @@ public abstract class HeapCache<K, V>
   public void timerEventExpireEntry(Entry<K, V> e) {
     metrics.timerEvent();
     synchronized (e) {
-      timerEventExpireEntryLocked(e);
+      expireOrScheduleFinalExpireEvent(e);
     }
   }
 
-  public void timerEventExpireEntryLocked(final Entry<K, V> e) {
+  @Override
+  public void expireOrScheduleFinalExpireEvent(final Entry<K, V> e) {
     long nrt = e.nextRefreshTime;
-    if (nrt >= 0 && nrt < Entry.EXPIRY_TIME_MIN) {
+    if (nrt >= 0 && nrt < Entry.DATA_VALID) {
       return;
     }
     long t = System.currentTimeMillis();
@@ -2096,7 +2097,7 @@ public abstract class HeapCache<K, V>
    * For peek no fetch is counted if there is a storage miss, hence the extra counter.
    */
   public long getFetchesBecauseOfNewEntries() {
-    return loadCnt - loadButHitCnt + loadFailedCnt;
+    return loadWoRefreshCnt - loadButHitCnt + loadFailedCnt;
   }
 
   protected int getLoadsInFlight() {

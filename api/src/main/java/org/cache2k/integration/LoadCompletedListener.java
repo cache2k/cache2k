@@ -36,13 +36,13 @@ public interface LoadCompletedListener {
   /**
    * The operation could not completed, because of an error.
    *
-   * <p>In current implementations, there is no condition which raises a call to this method.
+   * <p>In the current implementation, there is no condition which raises a call to this method.
    * Errors while loading a value, will be delayed and propagated when the respective key
    * is accessed. This is subject to the resilience configuration.
    *
-   * <p>The method may be used in the future if some general failure condition during load.
+   * <p>The method may be used in the future for some general failure condition during load.
    * Applications should propagate the exception properly and not only log it.
    */
-  void loadException(Exception _exception);
+  void loadException(Throwable _exception);
 
 }
