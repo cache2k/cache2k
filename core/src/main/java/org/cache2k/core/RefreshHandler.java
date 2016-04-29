@@ -227,8 +227,8 @@ public abstract class RefreshHandler<K,V>  {
         }
 
         @Override
-        public long getSuppressDurationMillis() {
-          return c.isSuppressExceptions() ? Long.MAX_VALUE : 0;
+        public long getResilienceDurationMillis() {
+          return c.isSuppressExceptions() ? c.getResilienceDurationMillis() : 0;
         }
 
         @Override

@@ -59,7 +59,7 @@ public class DefaultResiliencePolicyTest {
       new CtxBean(10000, -1, 500, -1);
     DefaultResiliencePolicy p = new DefaultResiliencePolicy();
     p.init(ctx);
-    assertEquals(10000, p.getSuppressDuration());
+    assertEquals(10000, p.getResilienceDuration());
   }
 
   @Test
@@ -77,7 +77,7 @@ public class DefaultResiliencePolicyTest {
       new CtxBean(10000, -1, -1, 200);
     DefaultResiliencePolicy p = new DefaultResiliencePolicy();
     p.init(ctx);
-    assertEquals(200, p.getSuppressDuration());
+    assertEquals(200, p.getResilienceDuration());
     assertEquals(200, p.getMaxRetryInterval());
   }
 
@@ -213,7 +213,7 @@ public class DefaultResiliencePolicyTest {
     }
 
     @Override
-    public long getSuppressDurationMillis() {
+    public long getResilienceDurationMillis() {
       return suppressDurationMillis;
     }
 

@@ -22,6 +22,8 @@ package org.cache2k.integration;
 
 import org.cache2k.CacheEntry;
 
+import java.util.concurrent.TimeUnit;
+
 /**
  * Controls how to deal with loader exceptions in a read through configuration.
  * An exception can be cached and propagated or the cache can fallback to the
@@ -82,17 +84,33 @@ public abstract class ResiliencePolicy<K, V> {
    */
   public interface Context {
 
+    /**
+     * Expiry duration after entry mutation. -1 if not specified.
+     *
+     * @see org.cache2k.Cache2kBuilder#expireAfterWrite
+     */
     long getExpireAfterWriteMillis();
 
     /**
+     * Maximum time exceptions should be suppressed. -1 if not specified.
+     * 0 if no exception suppression is requested.
      *
-     *
-     * @return duration in milliseconds
+     * @see org.cache2k.Cache2kBuilder#resilienceDuration
      */
-    long getSuppressDurationMillis();
+    long getResilienceDurationMillis();
 
+    /**
+     * Retry after the first exceptions happened for a key. -1 if not specified.
+     *
+     * @see org.cache2k.Cache2kBuilder#retryInterval
+     */
     long getRetryIntervalMillis();
 
+    /**
+     * Retry after the first exceptions happened for a key. -1 if not specified.
+     *
+     * @see org.cache2k.Cache2kBuilder#maxRetryInterval
+     */
     long getMaxRetryIntervalMillis();
 
   }

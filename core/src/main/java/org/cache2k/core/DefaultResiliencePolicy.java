@@ -35,7 +35,7 @@ public class DefaultResiliencePolicy<K,V> extends ResiliencePolicy<K,V> {
   Random random;
   double multiplier = 1.5;
   double randomization = 0.5;
-  long suppressDuration;
+  long resilienceDuration;
   long maxRetryInterval;
   long retryInterval;
 
@@ -55,8 +55,8 @@ public class DefaultResiliencePolicy<K,V> extends ResiliencePolicy<K,V> {
     randomization = _randomization;
   }
 
-  public long getSuppressDuration() {
-    return suppressDuration;
+  public long getResilienceDuration() {
+    return resilienceDuration;
   }
 
   public long getMaxRetryInterval() {
@@ -66,17 +66,20 @@ public class DefaultResiliencePolicy<K,V> extends ResiliencePolicy<K,V> {
   @Override
   public void init(final Context ctx) {
     context = ctx;
-    suppressDuration = context.getSuppressDurationMillis();
-    if (suppressDuration == -1) {
-      suppressDuration = context.getExpireAfterWriteMillis();
+    resilienceDuration = context.getResilienceDurationMillis();
+    if (resilienceDuration == -1) {
+      resilienceDuration = Math.max(
+        context.getExpireAfterWriteMillis(),
+        context.getRetryIntervalMillis());
     }
     maxRetryInterval = context.getMaxRetryIntervalMillis();
     if (maxRetryInterval == -1) {
-      maxRetryInterval = suppressDuration;
+      maxRetryInterval = resilienceDuration;
     }
     retryInterval = context.getRetryIntervalMillis();
     if (retryInterval == -1) {
-      retryInterval = context.getExpireAfterWriteMillis() / 10;
+      retryInterval = context.getExpireAfterWriteMillis() * 100 / 5;
+      retryInterval = Math.max(retryInterval, resilienceDuration);
     }
     random = HeapCache.SEED_RANDOM;
   }
@@ -85,13 +88,13 @@ public class DefaultResiliencePolicy<K,V> extends ResiliencePolicy<K,V> {
   public long suppressExceptionUntil(final Object key,
                                      final LoadExceptionInformation exceptionInformation,
                                      final CacheEntry cachedContent) {
-    if (suppressDuration == 0) {
+    if (resilienceDuration == 0) {
       return 0;
     }
-    if (suppressDuration == Long.MAX_VALUE) {
+    if (resilienceDuration == Long.MAX_VALUE) {
       return Long.MAX_VALUE;
     }
-    long _maxSuppressUntil = exceptionInformation.getSinceTime() + suppressDuration;
+    long _maxSuppressUntil = exceptionInformation.getSinceTime() + resilienceDuration;
     long _deltaMs = calculateRetryDelta(exceptionInformation);
     return Math.min(exceptionInformation.getLoadTime() + _deltaMs, _maxSuppressUntil);
   }

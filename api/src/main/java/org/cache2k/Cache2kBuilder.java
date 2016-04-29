@@ -295,26 +295,6 @@ public class Cache2kBuilder<K, V> implements Cloneable {
     return this;
   }
 
-  /**
-   * If a loader exception happens, this is the time interval after that a
-   * retry attempt is made. By default 5% of the normal expiry time configured by
-   * {@link #expireAfterWrite}.
-   */
-  public final Cache2kBuilder<K, V> retryInterval(long v, TimeUnit u) {
-    config.setRetryIntervalMillis(u.toMillis(v));
-    return this;
-  }
-
-  /**
-   * For retries an exponential backoff algorithm is used. It starts with the
-   * set retry time and then increases the time to the maximum according to an
-   * exponential pattern.
-   */
-  public final Cache2kBuilder<K, V> maxRetryInterval(long v, TimeUnit u) {
-    config.setMaxRetryIntervalMillis(u.toMillis(v));
-    return this;
-  }
-
   public final Cache2kBuilder<K, V> exceptionPropagator(ExceptionPropagator<K> ep) {
     config.setExceptionPropagator(ep);
     return this;
@@ -426,9 +406,42 @@ public class Cache2kBuilder<K, V> implements Cloneable {
   }
 
   /**
+   * If a loader exception happens, this is the time interval after that a
+   * retry attempt is made. By default 5% of the normal expiry time configured by
+   * {@link #expireAfterWrite}.
+   */
+  public final Cache2kBuilder<K, V> retryInterval(long v, TimeUnit u) {
+    config.setRetryIntervalMillis(u.toMillis(v));
+    return this;
+  }
+
+  /**
+   * For retries an exponential backoff algorithm is used. It starts with the
+   * set retry time and then increases the time to the maximum according to an
+   * exponential pattern.
+   */
+  public final Cache2kBuilder<K, V> maxRetryInterval(long v, TimeUnit u) {
+    config.setMaxRetryIntervalMillis(u.toMillis(v));
+    return this;
+  }
+
+  /**
+   * Time span the cache will suppress loader exceptions if a value is available from
+   * a previous load. After the time span is passed the cache will start propagating
+   * loader exceptions. If {@link #suppressExceptions} is switched off, this setting
+   * has no effect. If this parameter is not specified, the value of {@link #expireAfterWrite}
+   * is used as default. The parameter will be ignored if {@link #suppressExceptions} if
+   * turned of.
+   */
+  public final Cache2kBuilder<K, V> resilienceDuration(long v, TimeUnit u) {
+    config.setMaxRetryIntervalMillis(u.toMillis(v));
+    return this;
+  }
+
+  /**
    * Sets a custom resilience policy to control the cache behavior in the presence
-   * of exceptions from the loader. If {@link #expireAfterWrite} is set to 0, this means
-   * caching is switched off, then the resilience policy will be ignored.
+   * of exceptions from the loader. A specified policy will be ignored if
+   * {@link #expireAfterWrite} is set to 0.
    */
   public final Cache2kBuilder<K,V> resiliencePolicy(ResiliencePolicy<K,V> v) {
     config.setResiliencePolicy(v);

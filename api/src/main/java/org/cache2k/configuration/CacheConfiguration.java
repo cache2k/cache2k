@@ -59,6 +59,7 @@ public class CacheConfiguration<K, V> implements Serializable {
   private long expireAfterWriteMillis = -1;
   private long retryIntervalMillis = -1;
   private long maxRetryIntervalMillis = -1;
+  private long resilienceDurationMillis = -1;
   private boolean keepValueAfterExpired = true;
   private boolean sharpExpiry = false;
   private List<Object> moduleConfiguration;
@@ -342,6 +343,9 @@ public class CacheConfiguration<K, V> implements Serializable {
     expireAfterWriteMillis = v * 1000L;
   }
 
+  /**
+   * @deprecated use {@link #getExpireAfterWriteMillis}
+   */
   public int getExpirySeconds() {
     if (isEternal()) {
       return -1;
@@ -362,6 +366,9 @@ public class CacheConfiguration<K, V> implements Serializable {
     this.expireAfterWriteMillis = v;
   }
 
+  /**
+   * @see Cache2kBuilder#retryInterval
+   */
   public long getRetryIntervalMillis() {
     return retryIntervalMillis;
   }
@@ -373,12 +380,32 @@ public class CacheConfiguration<K, V> implements Serializable {
     retryIntervalMillis = v;
   }
 
+  /**
+   * @see Cache2kBuilder#maxRetryInterval
+   */
   public long getMaxRetryIntervalMillis() {
     return maxRetryIntervalMillis;
   }
 
+  /**
+   * @see Cache2kBuilder#maxRetryInterval
+   */
   public void setMaxRetryIntervalMillis(final long _maxRetryIntervalMillis) {
     maxRetryIntervalMillis = _maxRetryIntervalMillis;
+  }
+
+  /**
+   * @see Cache2kBuilder#resilienceDuration
+   */
+  public long getResilienceDurationMillis() {
+    return resilienceDurationMillis;
+  }
+
+  /**
+   * @see Cache2kBuilder#resilienceDuration
+   */
+  public void setResilienceDurationMillis(final long _resilienceDurationMillis) {
+    resilienceDurationMillis = _resilienceDurationMillis;
   }
 
   public boolean isKeepValueAfterExpired() {
