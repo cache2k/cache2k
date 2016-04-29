@@ -84,6 +84,15 @@ public class DefaultResiliencePolicy<K,V> extends ResiliencePolicy<K,V> {
     random = HeapCache.SEED_RANDOM;
   }
 
+  /**
+   * No timer needed if the settings enable immediate expiry or never expire.
+   */
+  public boolean isNoTimerNeeded() {
+    return
+        (resilienceDuration == 0 || resilienceDuration == Long.MAX_VALUE) &&
+        (retryInterval == 0 || retryInterval == Long.MAX_VALUE);
+  }
+
   @Override
   public long suppressExceptionUntil(final Object key,
                                      final LoadExceptionInformation exceptionInformation,

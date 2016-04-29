@@ -22,8 +22,6 @@ package org.cache2k.integration;
 
 import org.cache2k.CacheEntry;
 
-import java.util.concurrent.TimeUnit;
-
 /**
  * Controls how to deal with loader exceptions in a read through configuration.
  * An exception can be cached and propagated or the cache can fallback to the
