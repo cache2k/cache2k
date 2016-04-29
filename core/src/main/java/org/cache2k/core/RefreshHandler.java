@@ -290,7 +290,7 @@ public abstract class RefreshHandler<K,V>  {
 
     @Override
     public long calculateNextRefreshTime(final Entry<K,V> e, final V v, final long _loadTime) {
-      return calcNextRefreshTime(e.getKey(), v, _loadTime, e, null, maxLinger, 4711);
+      return calcNextRefreshTime(e.getKey(), v, _loadTime, e, null, maxLinger);
     }
 
     @Override
@@ -451,8 +451,7 @@ public abstract class RefreshHandler<K,V>  {
     long calcNextRefreshTime(K _key, V _newObject, long now, Entry _entry) {
       return calcNextRefreshTime(
         _key, _newObject, now, _entry,
-        expiryCalculator, maxLinger,
-        4711);
+        expiryCalculator, maxLinger);
     }
 
     public long calculateNextRefreshTime(Entry<K, V> _entry, V _newValue, long _loadTime) {
@@ -467,8 +466,7 @@ public abstract class RefreshHandler<K,V>  {
 
   static <K, T>  long calcNextRefreshTime(
     K _key, T _newObject, long now, org.cache2k.core.Entry _entry,
-    ExpiryCalculator<K, T> ec, long _maxLinger,
-    long _exceptionMaxLinger) {
+    ExpiryCalculator<K, T> ec, long _maxLinger) {
     if (_maxLinger == 0) {
       return 0;
     }
