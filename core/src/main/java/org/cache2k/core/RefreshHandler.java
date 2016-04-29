@@ -474,7 +474,7 @@ public abstract class RefreshHandler<K,V>  {
   }
 
   static long sanitizeTime(final long _nextRefreshTime, final long now) {
-    if ((_nextRefreshTime > Entry.EXPIRY_TIME_MIN && _nextRefreshTime <= now) &&
+    if ((_nextRefreshTime > Entry.EXPIRY_TIME_MIN && _nextRefreshTime <= now) ||
       (_nextRefreshTime < -1 && (-_nextRefreshTime <= -now))) {
       return Entry.EXPIRED;
     }

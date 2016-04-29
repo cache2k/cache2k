@@ -683,6 +683,11 @@ public class WiredCache<K, V> extends AbstractCache<K, V>
     }
 
     @Override
+    protected CacheEntryExpiredListener<K, V>[] entryExpiredListeners() {
+      return syncEntryExpiredListeners;
+    }
+
+    @Override
     protected StorageAdapter storage() {
       return storage;
     }

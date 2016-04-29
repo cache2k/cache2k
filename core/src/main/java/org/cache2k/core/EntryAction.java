@@ -21,6 +21,7 @@ package org.cache2k.core;
  */
 
 import org.cache2k.customization.ExpiryCalculator;
+import org.cache2k.event.CacheEntryExpiredListener;
 import org.cache2k.integration.AdvancedCacheLoader;
 import org.cache2k.Cache;
 import org.cache2k.event.CacheEntryCreatedListener;
@@ -49,7 +50,7 @@ public class EntryAction<K, V, R> implements StorageCallback, AsyncCacheLoader.C
 
   static final Entry NON_FRESH_DUMMY = new Entry();
 
-  Cache<K, V> userCache;
+  InternalCache<K, V> userCache;
   HeapCache<K, V> heapCache;
   K key;
   Semantic<K, V, R> operation;
@@ -63,6 +64,8 @@ public class EntryAction<K, V, R> implements StorageCallback, AsyncCacheLoader.C
   long loadCompletedTime;
   CustomizationException exceptionToPropagate;
   boolean remove;
+  /** Special case of remove, expiry is in the past */
+  boolean expiredImmediately;
   long expiry = 0;
   /**
    * We locked the entry, don't lock it again.
@@ -96,7 +99,7 @@ public class EntryAction<K, V, R> implements StorageCallback, AsyncCacheLoader.C
 
   boolean suppressException = false;
 
-  public EntryAction(HeapCache<K,V> _heapCache, Cache<K,V> _userCache, Semantic<K, V, R> op, K k, Entry<K, V> e) {
+  public EntryAction(HeapCache<K,V> _heapCache, InternalCache<K,V> _userCache, Semantic<K, V, R> op, K k, Entry<K, V> e) {
     heapCache = _heapCache;
     userCache = _userCache;
     operation = op;
@@ -161,6 +164,10 @@ public class EntryAction<K, V, R> implements StorageCallback, AsyncCacheLoader.C
    * Provide the registered listeners for entry removal.
    */
   protected CacheEntryRemovedListener<K, V>[] entryRemovedListeners() {
+    return null;
+  }
+
+  protected CacheEntryExpiredListener<K, V>[] entryExpiredListeners() {
     return null;
   }
 
@@ -660,6 +667,7 @@ public class EntryAction<K, V, R> implements StorageCallback, AsyncCacheLoader.C
 
   public void expiredImmediatelyDoRemove() {
     remove = true;
+    expiredImmediately = true;
     mutationUpdateHeap();
   }
 
@@ -722,7 +730,19 @@ public class EntryAction<K, V, R> implements StorageCallback, AsyncCacheLoader.C
       mutationReleaseLock();
       return;
     }
-    if (remove) {
+    if (expiredImmediately) {
+      if (storageDataValid || heapDataValid) {
+        if (entryExpiredListeners() != null) {
+          for (CacheEntryExpiredListener l : entryExpiredListeners()) {
+            try {
+              l.onEntryExpired(userCache, entry);
+            } catch (Throwable t) {
+              exceptionToPropagate = new ListenerException(t);
+            }
+          }
+        }
+      }
+    } else if (remove) {
       if (storageDataValid || heapDataValid) {
         if (entryRemovedListeners() != null) {
           for (CacheEntryRemovedListener l : entryRemovedListeners()) {
@@ -779,6 +799,9 @@ public class EntryAction<K, V, R> implements StorageCallback, AsyncCacheLoader.C
       } else {
         entry.nextRefreshTime =
           refreshHandler().stopStartTimer(expiry, entry);
+        if ((heapDataValid || expiry > 0) && entry.isExpired()) {
+          userCache.timerEventExpireEntry(entry);
+        }
       }
     }
     synchronized (heapCache.lock) {

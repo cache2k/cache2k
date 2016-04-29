@@ -22,6 +22,7 @@ Fixes of corner cases that are most likely not affecting any existing applicatio
   * `ExceptionPropagator` gets structured context information about exception
   * Eviction: Don't generate ghost entries when no eviction is needed. Improves performance when cache is operated 
     below the maximum capacity.
+  * Add missing expiry event, when entry is expired immediately after an update  
  
 ## API Changes and new methods
 

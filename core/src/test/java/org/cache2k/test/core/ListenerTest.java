@@ -23,6 +23,7 @@ package org.cache2k.test.core;
 import org.cache2k.Cache;
 import org.cache2k.Cache2kBuilder;
 import org.cache2k.CacheEntry;
+import org.cache2k.customization.ExpiryCalculator;
 import org.cache2k.test.util.ConcurrencyHelper;
 import org.cache2k.test.util.Condition;
 import org.cache2k.test.util.TimeBox;
@@ -352,6 +353,82 @@ public class ListenerTest {
         return _suppressionCounter.getWarnCount() == 1;
       }
     });
+    c.close();
+  }
+
+  /**
+   * Expire time is 0 if entry is modified, yields: Expiry listener is called and entry
+   * is remove from cache.
+   */
+  @Test
+  public void asyncReallyExpiredAfterUpdate() {
+    final AtomicInteger _expireCallCount = new AtomicInteger();
+    final Cache<Integer, Integer> c = builder()
+      .addAsyncListener(new CacheEntryExpiredListener<Integer, Integer>() {
+        @Override
+        public void onEntryExpired(final Cache<Integer, Integer> c, final CacheEntry<Integer, Integer> e) {
+          _expireCallCount.incrementAndGet();
+        }
+      })
+      .eternal(true)
+      .keepValueAfterExpired(false)
+      .expiryCalculator(new ExpiryCalculator<Integer, Integer>() {
+        @Override
+        public long calculateExpiryTime(final Integer key, final Integer value, final long loadTime, final CacheEntry<Integer, Integer> oldEntry) {
+          if (oldEntry != null) {
+            return 0;
+          }
+          return ETERNAL;
+        }
+      })
+      .build();
+    c.put(1, 1);
+    c.put(1, 2);
+    ConcurrencyHelper.await(new Condition() {
+      @Override
+      public boolean check() throws Exception {
+        return _expireCallCount.get() == 1;
+      }
+    });
+    assertEquals(0, c.getTotalEntryCount());
+    c.close();
+  }
+
+  /**
+   * Expire time is load time if entry is modified, yields: Expiry listener is called. Entry
+   * stays in the cache, we need to implement the removal
+   */
+  @Test
+  public void asyncHalfExpiredAfterUpdate() {
+    final AtomicInteger _expireCallCount = new AtomicInteger();
+    final Cache<Integer, Integer> c = builder()
+      .addAsyncListener(new CacheEntryExpiredListener<Integer, Integer>() {
+        @Override
+        public void onEntryExpired(final Cache<Integer, Integer> c, final CacheEntry<Integer, Integer> e) {
+          _expireCallCount.incrementAndGet();
+        }
+      })
+      .eternal(true)
+      .keepValueAfterExpired(false)
+      .expiryCalculator(new ExpiryCalculator<Integer, Integer>() {
+        @Override
+        public long calculateExpiryTime(final Integer key, final Integer value, final long loadTime, final CacheEntry<Integer, Integer> oldEntry) {
+          if (oldEntry != null) {
+            return loadTime;
+          }
+          return ETERNAL;
+        }
+      })
+      .build();
+    c.put(1, 1);
+    c.put(1, 2);
+    ConcurrencyHelper.await(new Condition() {
+      @Override
+      public boolean check() throws Exception {
+        return _expireCallCount.get() == 1;
+      }
+    });
+    assertEquals(1, c.getTotalEntryCount());
     c.close();
   }
 
