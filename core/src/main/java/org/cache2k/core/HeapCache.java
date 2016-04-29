@@ -954,13 +954,8 @@ public abstract class HeapCache<K, V>
   }
 
   private void checkForImmediateExpiry(final Entry e) {
-    if (!hasKeepAfterExpired() && e.nextRefreshTime == Entry.EXPIRED) {
-      synchronized (lock) {
-        checkClosed();
-        if (removeEntry(e)) {
-          expiredRemoveCnt++;
-        }
-      }
+    if (e.isExpired()) {
+      doExpireEntry(e);
     }
   }
 
@@ -1923,6 +1918,10 @@ public abstract class HeapCache<K, V>
       return;
     }
     e.setExpiredState();
+    doExpireEntry(e);
+  }
+
+  private void doExpireEntry(final Entry e) {
     synchronized (lock) {
       checkClosed();
       if (hasKeepAfterExpired() || e.isProcessing()) {
