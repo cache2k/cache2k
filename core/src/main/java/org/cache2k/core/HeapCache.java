@@ -1761,6 +1761,7 @@ public abstract class HeapCache<K, V>
 
   protected final long insert(Entry<K, V> e, V _value, long t0, long t, byte _updateStatistics, long _nextRefreshTime) {
     e.value = _value;
+    e.resetSuppressedLoadExceptionInformation();
     return insertUpdateStats(e, _value, t0, t, _updateStatistics, _nextRefreshTime, false);
   }
 

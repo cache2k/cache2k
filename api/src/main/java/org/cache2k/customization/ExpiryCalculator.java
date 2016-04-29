@@ -37,19 +37,7 @@ import java.util.concurrent.TimeUnit;
  * @author Jens Wilke; created: 2014-10-14
  * @since 0.20
  */
-public interface ExpiryCalculator<K, V> {
-
-  /**
-   * Return value used to signal that the value should not be cached. In a read through
-   * configuration the value will be loaded, when it is requested again.
-   */
-  long NO_CACHE = 0;
-
-  /**
-   * Return value signalling to keep the value forever in the cache, switching off expiry.
-   * If the cache has a static expiry time configured, then this is used instead.
-   */
-  long ETERNAL = Long.MAX_VALUE;
+public interface ExpiryCalculator<K, V> extends ExpiryTimeConstants {
 
   /**
    * Returns the time of expiry in milliseconds since epoch.

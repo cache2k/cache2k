@@ -679,6 +679,9 @@ public class EntryAction<K, V, R> implements StorageCallback, AsyncCacheLoader.C
       oldValueOrException = entry.value;
       previousModificationTime = entry.getLastModification();
       entry.value = newValueOrException;
+      if (!(newValueOrException instanceof ExceptionWrapper)) {
+        entry.resetSuppressedLoadExceptionInformation();
+      }
     }
     mutationMayStore();
   }

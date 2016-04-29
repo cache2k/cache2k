@@ -612,6 +612,13 @@ public class Entry<K, T>
     misc = new LoadExceptionPiggyBack(w, (PiggyBack) _misc);
   }
 
+  public void resetSuppressedLoadExceptionInformation() {
+    LoadExceptionPiggyBack inf = getPiggyBack(LoadExceptionPiggyBack.class);
+    if (inf != null) {
+      inf.info = null;
+    }
+  }
+
   public LoadExceptionInformation getSuppressedLoadExceptionInformation() {
     LoadExceptionPiggyBack inf = getPiggyBack(LoadExceptionPiggyBack.class);
     return inf != null ? inf.info : null;
