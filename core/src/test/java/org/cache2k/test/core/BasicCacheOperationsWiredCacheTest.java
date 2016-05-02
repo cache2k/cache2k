@@ -53,7 +53,6 @@ public class BasicCacheOperationsWiredCacheTest extends BasicCacheOperationsTest
     Cache2kBuilder<Integer, Integer> _builder = Cache2kBuilder.of(Integer.class, Integer.class)
       .name(BasicCacheOperationsTest.class)
       .eternal(true)
-      .retryInterval(Long.MAX_VALUE, TimeUnit.MILLISECONDS)
       .entryCapacity(1000);
     StaticUtil.enforceWiredCache(_builder);
     Cache<Integer, Integer>  c = _builder.build();

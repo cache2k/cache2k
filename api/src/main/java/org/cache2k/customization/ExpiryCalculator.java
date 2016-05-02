@@ -63,12 +63,14 @@ public interface ExpiryCalculator<K, V> extends ExpiryTimeConstants {
    *                  If the current entry holds an exception, this is null. Expired entries will be
    *                 passed in as well.
    * @return time the time of expiry in millis since epoch. {@link #NO_CACHE} if it should not cached.
-   *              {@link #ETERNAL} if there is no specific expiry time known or needed.
-   *              The effective expiry duration will never be longer than the
-   *              configured expiry value via {@link Cache2kBuilder#expireAfterWrite(long, TimeUnit)}.
-   *              If a negative value is returned, the negated value will be the expiry time
-   *              used, but sharp expiry is requested always,
-   *              ignoring {@link Cache2kBuilder#sharpExpiry(boolean)}.
+   *         If {@link Cache2kBuilder#refreshAhead} is enabled the return value {@link #NO_CACHE} will remove
+   *         the entry from the cache and trigger a immediate refresh, while other return values will not remove
+   *         the entry. The return value {@link #ETERNAL} means that there is no specific expiry time known or needed.
+   *         The effective expiry duration will never be longer than the
+   *         configured expiry value via {@link Cache2kBuilder#expireAfterWrite(long, TimeUnit)}.
+   *         If a negative value is returned, the negated value will be the expiry time
+   *         used, but sharp expiry is requested always,
+   *         ignoring {@link Cache2kBuilder#sharpExpiry(boolean)}.
    *
    * @see ValueWithExpiryTime#getCacheExpiryTime()
    */

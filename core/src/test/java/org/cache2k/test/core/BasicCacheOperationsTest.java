@@ -64,7 +64,6 @@ public class BasicCacheOperationsTest {
             .of(Integer.class, Integer.class)
             .name(BasicCacheOperationsTest.class)
             .eternal(true)
-            .retryInterval(Long.MAX_VALUE, TimeUnit.MILLISECONDS)
             .entryCapacity(1000)
             .build();
   }
@@ -291,10 +290,14 @@ public class BasicCacheOperationsTest {
     cache.peekAndRemove(null);
   }
 
-  @Test(expected = CacheLoaderException.class)
+  @Test
   public void peekAndRemove_Exception() {
     ((Cache) cache).put(KEY, new ExceptionWrapper(OUCH));
-    cache.peekAndRemove(KEY);
+    try {
+      cache.peekAndRemove(KEY);
+      fail("exception expected");
+    } catch (CacheLoaderException ex) {
+    }
   }
 
   /*

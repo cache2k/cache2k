@@ -45,7 +45,7 @@ import org.cache2k.core.storageApi.StorageEntry;
  * @author Jens Wilke
  */
 @SuppressWarnings("SynchronizeOnNonFinalField")
-public class EntryAction<K, V, R> implements StorageCallback, AsyncCacheLoader.Callback<V>, AsyncCacheWriter.Callback, Progress<V, R> {
+public abstract class EntryAction<K, V, R> implements StorageCallback, AsyncCacheLoader.Callback<V>, AsyncCacheWriter.Callback, Progress<V, R> {
 
   static final Entry NON_FRESH_DUMMY = new Entry();
 
@@ -171,7 +171,7 @@ public class EntryAction<K, V, R> implements StorageCallback, AsyncCacheLoader.C
   }
 
   @SuppressWarnings("unchecked")
-  protected RefreshHandler<K,V> refreshHandler() { return RefreshHandler.ETERNAL; }
+  protected abstract RefreshHandler<K,V> refreshHandler(); //  { return RefreshHandler.ETERNAL; }
 
   @Override
   public boolean isPresent() {
@@ -504,7 +504,7 @@ public class EntryAction<K, V, R> implements StorageCallback, AsyncCacheLoader.C
   public void mutationCalculateExpiry() {
     entry.nextProcessingStep(Entry.ProcessingState.EXPIRY);
     try {
-      if (newValueOrException instanceof ExceptionWrapper) {
+      if (loadStartedTime > 0 && newValueOrException instanceof ExceptionWrapper) {
         ExceptionWrapper ew = (ExceptionWrapper) newValueOrException;
         if ((entry.isDataValid() || entry.isExpired()) && entry.getException() == null) {
           expiry = refreshHandler().suppressExceptionUntil(entry, ew);
@@ -738,7 +738,7 @@ public class EntryAction<K, V, R> implements StorageCallback, AsyncCacheLoader.C
 
   public void callListeners() {
     if (!mightHaveListeners()) {
-      mutationReleaseLock();
+      mutationReleaseLockAndStartTimer();
       return;
     }
     if (expiredImmediately) {
@@ -790,10 +790,10 @@ public class EntryAction<K, V, R> implements StorageCallback, AsyncCacheLoader.C
         }
       }
     }
-    mutationReleaseLock();
+    mutationReleaseLockAndStartTimer();
   }
 
-  public void mutationReleaseLock() {
+  public void mutationReleaseLockAndStartTimer() {
     if (load && !remove) {
       operation.loaded(this, entry);
     }

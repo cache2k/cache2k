@@ -64,6 +64,7 @@ public interface MutableCacheEntry<K, V> extends CacheEntry<K, V> {
   boolean exists();
 
   void setValue(V v);
+
   void setException(Throwable ex);
   void remove();
 

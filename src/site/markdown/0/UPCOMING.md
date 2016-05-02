@@ -24,7 +24,7 @@ Fixes of corner cases that are most likely not affecting any existing applicatio
   * Eviction: Don't generate ghost entries when no eviction is needed. Improves performance when cache is operated 
     below the maximum capacity.
   * Add missing expiry event, when entry is expired immediately after an update  
-  * Entry
+  * EntryProcessor did not honor expiry times or policy
  
 ## API Changes and new methods
 

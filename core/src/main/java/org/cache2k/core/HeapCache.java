@@ -935,11 +935,15 @@ public abstract class HeapCache<K, V>
 
   protected void finishFetch(Entry e, long _nextRefreshTime) {
     synchronized (e) {
-      e.nextRefreshTime = refreshHandler.stopStartTimer(_nextRefreshTime, e);
-      e.processingDone();
-      checkForImmediateExpiry(e);
       e.notifyAll();
+      e.processingDone();
+      restartTimer(e, _nextRefreshTime);
     }
+  }
+
+  private void restartTimer(final Entry e, final long _nextRefreshTime) {
+    e.nextRefreshTime = refreshHandler.stopStartTimer(_nextRefreshTime, e);
+    checkForImmediateExpiry(e);
   }
 
   private void checkForImmediateExpiry(final Entry e) {
@@ -1073,11 +1077,14 @@ public abstract class HeapCache<K, V>
     return null;
   }
 
+  /**
+   * Update the value directly within entry lock. Since we did not start
+   * entry processing we do not need to notify any waiting threads.
+   */
   private void putValue(final Entry e, final V _value) {
     long t = System.currentTimeMillis();
     long _newNrt = insertOnPut(e, _value, t, t);
-    e.nextRefreshTime = refreshHandler.stopStartTimer(_newNrt, e);
-    checkForImmediateExpiry(e);
+    restartTimer(e, _newNrt);
   }
 
   @Override
@@ -2036,7 +2043,12 @@ public abstract class HeapCache<K, V>
 
   @Override
   protected <R> EntryAction<K, V, R> createEntryAction(final K key, final Entry<K, V> e, final Semantic<K, V, R> op) {
-    return new EntryAction<K, V, R>(this, this, op, key, e);
+    return new EntryAction<K, V, R>(this, this, op, key, e) {
+      @Override
+      protected RefreshHandler<K, V> refreshHandler() {
+        return refreshHandler;
+      }
+    };
   }
 
   /**

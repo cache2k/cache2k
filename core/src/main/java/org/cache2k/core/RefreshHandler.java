@@ -178,7 +178,7 @@ public abstract class RefreshHandler<K,V>  {
 
     @Override
     public long calculateNextRefreshTime(final Entry<K,V> e, final V v, final long _loadTime) {
-      return v instanceof ExceptionWrapper ? 0 : ExpiryCalculator.ETERNAL;
+      return ExpiryCalculator.ETERNAL;
     }
 
     @Override
