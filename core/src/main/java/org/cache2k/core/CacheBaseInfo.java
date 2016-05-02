@@ -321,7 +321,8 @@ class CacheBaseInfo implements InternalCacheInfo {
   }
 
   public String toString() {
-    return "size=" + getSize() + ", "
+    return "Cache{" + heapCache.name + "}("
+            + "size=" + getSize() + ", "
             + "maxSize=" + getMaxSize() + ", "
             + "usageCnt=" + getUsageCnt() + ", "
             + "missCnt=" + getMissCnt() + ", "
@@ -368,7 +369,8 @@ class CacheBaseInfo implements InternalCacheInfo {
             + "infoCreationDeltaMs=" + getInfoCreationDeltaMs() + ", "
             + "impl=" + getImplementation() + ", "
             + getExtraStatistics() + ", "
-            + "integrityState=" + getIntegrityDescriptor();
+            + "integrityState=" + getIntegrityDescriptor()
+      + ")";
   }
 
 }

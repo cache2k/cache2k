@@ -2168,8 +2168,7 @@ public abstract class HeapCache<K, V>
         return "Cache{" + name + "}(closed)";
       }
       InternalCacheInfo fo = getLatestInfo();
-      return "Cache{" + name + "}"
-              + "(" + fo.toString() + ")";
+      return fo.toString();
     }
   }
 
