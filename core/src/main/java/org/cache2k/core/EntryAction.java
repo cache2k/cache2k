@@ -522,7 +522,7 @@ public abstract class EntryAction<K, V, R> implements StorageCallback, AsyncCach
         }
         if (expiry < 0) {
           ew.until = -expiry;
-        } else if (expiry > Entry.EXPIRY_TIME_MIN && expiry != Long.MAX_VALUE) {
+        } else if (expiry >= Entry.EXPIRY_TIME_MIN && expiry != Long.MAX_VALUE) {
           ew.until = expiry;
         }
       } else {

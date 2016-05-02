@@ -343,7 +343,7 @@ public abstract class RefreshHandler<K,V>  {
         _nextRefreshTime = -_nextRefreshTime;
       }
       if (timer != null &&
-        (_nextRefreshTime > Entry.EXPIRY_TIME_MIN || _nextRefreshTime < -1)) {
+        (_nextRefreshTime >= Entry.EXPIRY_TIME_MIN || _nextRefreshTime < 0)) {
         if (_nextRefreshTime < -1) {
           long _timerTime =
             -_nextRefreshTime - SAFETY_GAP_MILLIS;
@@ -364,7 +364,6 @@ public abstract class RefreshHandler<K,V>  {
             scheduleTask(_nextRefreshTime, e);
           }
         }
-      } else {
       }
       return _nextRefreshTime;
     }
