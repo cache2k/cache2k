@@ -192,17 +192,6 @@ public abstract class HeapCache<K, V>
    */
   protected long internalExceptionCnt = 0;
 
-  /**
-   * Needed to correct the counter invariants, because during eviction the entry
-   * might be removed from the replacement list, but still in the hash.
-   */
-  protected int evictedButInHashCnt = 0;
-
-  /**
-   * A newly inserted entry was removed by the eviction without the fetch to complete.
-   */
-  protected long virginEvictCnt = 0;
-
   CommonMetrics.Updater metrics = new StandardCommonMetrics();
 
   /**
@@ -999,7 +988,6 @@ public abstract class HeapCache<K, V>
     synchronized (lock) {
       if (e.isRemovedFromReplacementList()) {
         if (removeEntryFromHash(e)) {
-          evictedButInHashCnt--;
           evictedCnt++;
         }
       } else {
@@ -1010,7 +998,6 @@ public abstract class HeapCache<K, V>
       }
       evictionNeeded = getLocalSize() > maxSize;
     }
-    e.notifyAll();
   }
 
   /**
@@ -1020,7 +1007,12 @@ public abstract class HeapCache<K, V>
    * entry.
    */
   protected boolean removeEntry(Entry e) {
-    if (!e.isRemovedFromReplacementList()) {
+    if (e.isRemovedFromReplacementList()) {
+      if (removeEntryFromHash(e)) {
+        return true;
+      }
+      return false;
+    } else {
       removeEntryFromReplacementList(e);
     }
     return removeEntryFromHash(e);
@@ -1231,14 +1223,7 @@ public abstract class HeapCache<K, V>
   }
 
   /**
-   * Remove the object mapped to a key from the cache.
-   *
-   * <p>Operation with storage: If there is no entry within the cache there may
-   * be one in the storage, so we need to send the remove to the storage. However,
-   * if a remove() and a get() is going on in parallel it may happen that the entry
-   * gets removed from the storage and added again by the tail part of get(). To
-   * keep the cache and the storage consistent it must be ensured that this thread
-   * is the only one working on the entry.
+   * Remove the object from the cache.
    */
   public boolean removeWithFlag(K key, boolean _checkValue, V _value) {
     Entry e = lookupEntrySynchronizedNoHitRecord(key);
@@ -1257,13 +1242,11 @@ public abstract class HeapCache<K, V>
         }
       }
       synchronized (lock) {
-        boolean f2 = removeEntry(e);
-        if (f && f2) {
+        if (removeEntry(e)) {
           removedCnt++;
           metrics.remove();
-          return true;
         }
-        return false;
+        return f;
       }
     }
   }
@@ -1625,22 +1608,21 @@ public abstract class HeapCache<K, V>
   }
 
   /**
-   * Called when expiry of an entry happens. Remove it from the
-   * main cache, refresh cache and from the (lru) list. Also cancel the timer.
-   * Called under big lock.
-   */
-
-  /**
-   * The entry is already removed from the replacement list. stop/reset timer, if needed.
-   * Called under big lock.
+   * Remove the entry from the hash table. The entry is already removed from the replacement list.
+   * stop to timer, if needed. Called under big lock. The remove races with a clear. The clear
+   * is not updating each entry state to e.isGone() but just drops the whole hash table instead.
+   * This is why we return a flag whether the entry was really present or not at this time.
+   *
+   * <p>With completion of the method the entry content is no more visible. "Nulling" out the key
+   * or value of the entry incorrect, since there can be another thread which is just about to
+   * return the entries contents.
+   *
+   * @return True, if the entry was present in the hash table.
    */
   private boolean removeEntryFromHash(Entry<K, V> e) {
     boolean f = mainHashCtrl.remove(mainHash, e) || refreshHashCtrl.remove(refreshHash, e);
     checkForHashCodeChange(e);
     refreshHandler.cancelExpiryTimer(e);
-    if (e.isVirgin()) {
-      virginEvictCnt++;
-    }
     e.setGone();
     return f;
   }
@@ -1769,10 +1751,6 @@ public abstract class HeapCache<K, V>
       }
     } // synchronized (lock)
     return _nextRefreshTime;
-  }
-
-  boolean needsSuppress(final Entry<K, V> e, final V _value) {
-    return _value instanceof ExceptionWrapper && hasSuppressExceptions() && e.getValue() != Entry.INITIAL_VALUE && !e.hasException();
   }
 
   private void updateStatistics(Entry e, V _value, long t0, long t, byte _updateStatistics, boolean _suppressException) {

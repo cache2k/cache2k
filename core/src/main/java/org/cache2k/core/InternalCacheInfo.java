@@ -32,8 +32,6 @@ public interface InternalCacheInfo {
 
   int getMaxSize();
 
-  long getVirginEvictCnt();
-
   long getLoadButHitCnt();
 
   long getStorageHitCnt();
