@@ -25,6 +25,7 @@ Fixes of corner cases that are most likely not affecting any existing applicatio
     below the maximum capacity.
   * Add missing expiry event, when entry is expired immediately after an update  
   * EntryProcessor did not honor expiry times or policy
+  * Remove the output of the build information to standard error
  
 ## API Changes and new methods
 

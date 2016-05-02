@@ -40,7 +40,6 @@ public class Cache2kVersion {
       if (in != null) {
         Properties p = new Properties();
         p.load(in);
-        System.err.println(p);
         String s = p.getProperty("buildNumber");
         if (s != null && s.length() > 0) {
           buildNumber = s;
