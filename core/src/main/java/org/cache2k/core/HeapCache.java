@@ -1685,7 +1685,7 @@ public abstract class HeapCache<K, V>
       return loadGotException(e, new ExceptionWrapper(e.key, _ouch, t0, e), t0, t);
     }
     long t = System.currentTimeMillis();
-    return insertOrUpdateAndCalculateExpiry(e, v, t0, t, INSERT_STAT_UPDATE);
+    return insertOrUpdateAndCalculateExpiry(e, v, t0, t, INSERT_STAT_LOAD);
   }
 
   protected long loadGotException(Entry<K, V> e, ExceptionWrapper<K> _value, long t0, long t) {
@@ -1702,7 +1702,7 @@ public abstract class HeapCache<K, V>
       }
     } catch (Exception ex) {
       try {
-        updateStatistics(e, (V) _value, t0, t, INSERT_STAT_UPDATE, false);
+        updateStatistics(e, (V) _value, t0, t, INSERT_STAT_LOAD, false);
       } catch (Throwable ignore) { }
       throw new ExpiryCalculationException(ex);
     }
@@ -1721,7 +1721,7 @@ public abstract class HeapCache<K, V>
           ((ExceptionWrapper) _value).getException());
       }
     }
-    return insertUpdateStats(e, (V) _value, t0, t, INSERT_STAT_UPDATE, _nextRefreshTime, _suppressException);
+    return insertUpdateStats(e, (V) _value, t0, t, INSERT_STAT_LOAD, _nextRefreshTime, _suppressException);
   }
 
   private void checkLoaderPresent() {
@@ -1751,7 +1751,7 @@ public abstract class HeapCache<K, V>
     return insert(e, v, t0, t, _updateStatistics, _nextRefreshTime);
   }
 
-  final static byte INSERT_STAT_UPDATE = 1;
+  final static byte INSERT_STAT_LOAD = 1;
   final static byte INSERT_STAT_PUT = 2;
 
   protected final long insert(Entry<K, V> e, V _value, long t0, long t, byte _updateStatistics, long _nextRefreshTime) {
@@ -1784,7 +1784,7 @@ public abstract class HeapCache<K, V>
 
   private void updateStatisticsNeedsLock(Entry e, V _value, long t0, long t, byte _updateStatistics, boolean _suppressException) {
     touchedTime = t;
-    if (_updateStatistics == INSERT_STAT_UPDATE) {
+    if (_updateStatistics == INSERT_STAT_LOAD) {
       if (_suppressException) {
         suppressedExceptionCnt++;
         loadExceptionCnt++;
