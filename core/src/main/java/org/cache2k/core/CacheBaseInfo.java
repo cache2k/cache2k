@@ -57,7 +57,7 @@ class CacheBaseInfo implements InternalCacheInfo {
   int loaderThreadsActive = 0;
   long totalLoadCnt;
 
-  public CacheBaseInfo(HeapCache _heapCache) {
+  public CacheBaseInfo(HeapCache _heapCache, InternalCache _userCache) {
     this.heapCache = _heapCache;
     metrics = _heapCache.metrics;
     integrityState = _heapCache.getIntegrityState();
@@ -69,7 +69,7 @@ class CacheBaseInfo implements InternalCacheInfo {
       extraStatistics = extraStatistics.substring(2);
     }
     loadsInFlight = _heapCache.getLoadsInFlight();
-    size = _heapCache.getLocalSize();
+    size = _userCache.getTotalEntryCount();
     missCnt = _heapCache.loadWoRefreshCnt + _heapCache.peekHitNotFreshCnt + _heapCache.peekMissCnt;
     storageMissCnt = _heapCache.readMissCnt + _heapCache.readNonFreshCnt + _heapCache.readNonFreshAndFetchedCnt;
     storageLoadCnt = storageMissCnt + _heapCache.readHitCnt;
@@ -104,9 +104,9 @@ class CacheBaseInfo implements InternalCacheInfo {
   }
 
   @Override
-  public int getSize() { return size; }
+  public long getSize() { return size; }
   @Override
-  public int getMaxSize() { return heapCache.maxSize; }
+  public long getMaxSize() { return heapCache.maxSize; }
   @Override
   public long getStorageHitCnt() { return heapCache.readHitCnt; }
   @Override

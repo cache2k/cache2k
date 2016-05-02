@@ -31,3 +31,9 @@ Fixes of corner cases that are most likely not affecting any existing applicatio
 
   * Classes/interfaces: AnyBuilder, BaseAnyBuilder and RootAnyBuilder removed; Originally intended for fluent 
     configuration sections in builders, we will do another approach.
+  * `Cache.getTotalEntryCount()` is deprecated and will be remove in an upcoming release
+  * Return values and parameters related to the cache size converted to long
+  * Cleanup JMX info bean contents (unfinished)
+ 
+  
+  

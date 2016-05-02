@@ -50,10 +50,8 @@ public class CacheConfiguration<K, V> implements Serializable {
   private CacheTypeDescriptor keyType;
   private CacheTypeDescriptor valueType;
   private Class<?> implementation;
-  private int maxSize = 2000;
-  private int entryCapacity = 2000;
-  private int maxSizeHighBound = Integer.MAX_VALUE;
-  private int maxSizeLowBound = 0;
+
+  private long entryCapacity = 2000;
   private int heapEntryCapacity = -1;
   private boolean refreshAhead = false;
   private long expireAfterWriteMillis = -1;
@@ -151,62 +149,14 @@ public class CacheConfiguration<K, V> implements Serializable {
 
   /**
    *
-   * @see Cache2kBuilder#entryCapacity(int)
+   * @see Cache2kBuilder#entryCapacity
    */
-  public int getEntryCapacity() {
+  public long getEntryCapacity() {
     return entryCapacity;
   }
 
-  public void setEntryCapacity(int v) {
+  public void setEntryCapacity(long v) {
     this.entryCapacity = v;
-  }
-
-  /**
-   * @deprecated Use {@link #getEntryCapacity()}
-   */
-  public int getMaxSize() {
-    return entryCapacity;
-  }
-
-  /**
-   * @deprecated Use {@link #setEntryCapacity(int)}
-   */
-  public void setMaxSize(int v) {
-    this.entryCapacity = v;
-  }
-
-  /**
-   * @deprecated not used.
-   */
-  public int getMaxSizeHighBound() {
-    return maxSizeHighBound;
-  }
-
-  /**
-   * @deprecated not used.
-   */
-  public void setMaxSizeHighBound(int maxSizeHighBound) {
-    if (maxSize > maxSizeHighBound) {
-      maxSize = maxSizeHighBound;
-    }
-    this.maxSizeHighBound = maxSizeHighBound;
-  }
-
-  /**
-   * @deprecated not used.
-   */
-  public int getMaxSizeLowBound() {
-    return maxSizeLowBound;
-  }
-
-  /**
-   * @deprecated not used.
-   */
-  public void setMaxSizeLowBound(int maxSizeLowBound) {
-    if (maxSize < maxSizeLowBound) {
-      maxSize = maxSizeLowBound;
-    }
-    this.maxSizeLowBound = maxSizeLowBound;
   }
 
   /**

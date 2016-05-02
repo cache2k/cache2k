@@ -121,7 +121,7 @@ public abstract class HeapCache<K, V>
   HeapCacheListener<K,V> listener = HeapCacheListener.NO_OPERATION;
 
   /** Maximum amount of elements in cache */
-  protected int maxSize = 5000;
+  protected long maxSize = 5000;
 
   protected String name;
   public CacheManagerImpl manager;
@@ -2123,27 +2123,35 @@ public abstract class HeapCache<K, V>
 
   @Override
   public final InternalCacheInfo getInfo() {
-    synchronized (lock) {
-      checkClosed();
-      long t = System.currentTimeMillis();
-      if (info != null &&
-          (info.creationTime + info.creationDeltaMs * TUNABLE.minimumStatisticsCreationTimeDeltaFactor + TUNABLE.minimumStatisticsCreationDeltaMillis > t)) {
-        return info;
-      }
-      info = generateInfo(t);
-    }
-    return info;
+    return getInfo(this);
   }
 
   @Override
   public final InternalCacheInfo getLatestInfo() {
-    return generateInfo(System.currentTimeMillis());
+    return getLatestInfo(this);
   }
 
-  private CacheBaseInfo generateInfo(long t) {
+  public final InternalCacheInfo getInfo(InternalCache _userCache) {
     synchronized (lock) {
       checkClosed();
-      info = new CacheBaseInfo(this);
+      long t = System.currentTimeMillis();
+      if (info != null &&
+        (info.creationTime + info.creationDeltaMs * TUNABLE.minimumStatisticsCreationTimeDeltaFactor + TUNABLE.minimumStatisticsCreationDeltaMillis > t)) {
+        return info;
+      }
+      info = generateInfo(_userCache, t);
+    }
+    return info;
+  }
+
+  public final InternalCacheInfo getLatestInfo(InternalCache _userCache) {
+    return generateInfo(_userCache, System.currentTimeMillis());
+  }
+
+  private CacheBaseInfo generateInfo(InternalCache _userCache, long t) {
+    synchronized (lock) {
+      checkClosed();
+      info = new CacheBaseInfo(this, _userCache);
       info.creationTime = t;
       info.creationDeltaMs = (int) (System.currentTimeMillis() - t);
       return info;

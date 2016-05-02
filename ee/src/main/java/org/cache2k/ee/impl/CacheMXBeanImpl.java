@@ -40,12 +40,12 @@ public class CacheMXBeanImpl implements CacheMXBean {
   private InternalCacheInfo getInfo() { return cache.getInfo(); }
 
   @Override
-  public int getSize() {
+  public long getSize() {
     return getInfo().getSize();
   }
 
   @Override
-  public int getMaximumSize() {
+  public long getEntryCapacity() {
     return getInfo().getMaxSize();
   }
 
@@ -65,7 +65,7 @@ public class CacheMXBeanImpl implements CacheMXBean {
   }
 
   @Override
-  public long getFetchCnt() {
+  public long getLoadCnt() {
     return getInfo().getLoadCnt();
   }
 
@@ -125,28 +125,23 @@ public class CacheMXBeanImpl implements CacheMXBean {
   }
 
   @Override
-  public int getHashCollisionCnt() {
+  public long getHashCollisionCnt() {
     return getInfo().getCollisionCnt();
   }
 
   @Override
-  public int getHashCollisionsSlotCnt() {
+  public long getHashCollisionsSlotCnt() {
     return getInfo().getCollisionSlotCnt();
   }
 
   @Override
-  public int getHashLongestCollisionSize() {
+  public long getHashLongestCollisionSize() {
     return getInfo().getLongestCollisionSize();
   }
 
   @Override
   public double getMillisPerFetch() {
     return getInfo().getMillisPerLoad();
-  }
-
-  @Override
-  public int getMemoryUsage() {
-    return -1;
   }
 
   @Override
@@ -180,7 +175,7 @@ public class CacheMXBeanImpl implements CacheMXBean {
   }
 
   @Override
-  public int getInfoCreatedDetlaMillis() {
+  public int getInfoCreatedDeltaMillis() {
     return getInfo().getInfoCreationDeltaMs();
   }
 

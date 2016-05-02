@@ -414,12 +414,12 @@ public class WiredCache<K, V> extends AbstractCache<K, V>
 
   @Override
   public InternalCacheInfo getLatestInfo() {
-    return heapCache.getLatestInfo();
+    return heapCache.getLatestInfo(this);
   }
 
   @Override
   public InternalCacheInfo getInfo() {
-    return heapCache.getInfo();
+    return heapCache.getInfo(this);
   }
 
   @Override

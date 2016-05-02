@@ -56,8 +56,16 @@ public interface InternalCache<K, V> extends Cache<K, V>, CanCheckIntegrity {
 
   void expireOrScheduleFinalExpireEvent(final Entry<K, V> e);
 
+  /**
+   * Generate cache statistics. Some of the statistic values involve scanning portions
+   * of the cache content. To prevent system stress e.g. monitoring there is a
+   * the compute intensive parts will only be repeated if some time is passed.
+   */
   InternalCacheInfo getInfo();
 
+  /**
+   * Generate fresh statistics. This version is used by internal tests.
+   */
   InternalCacheInfo getLatestInfo();
 
   /**

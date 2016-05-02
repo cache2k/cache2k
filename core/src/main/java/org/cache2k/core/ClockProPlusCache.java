@@ -59,8 +59,8 @@ public class ClockProPlusCache<K, V> extends ConcurrentEvictionCache<K, V> {
   int staleSize;
 
   /** Maximum size of hot clock. 0 means normal clock behaviour */
-  int hotMax;
-  int ghostMax;
+  long hotMax;
+  long ghostMax;
 
   Entry handCold;
   Entry handHot;

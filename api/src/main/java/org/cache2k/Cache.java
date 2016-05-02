@@ -592,18 +592,9 @@ public interface Cache<K, V> extends
    void putAll(Map<? extends K, ? extends V> valueMap);
 
   /**
-   * Number of entries the cache stores in total. When iterating the entries
-   * the cache will always return less or an identical number of entries.
-   *
-   * <p>Expired entries may stay in the cache {@link Cache2kBuilder#keepValueAfterExpired(boolean)}.
-   * These entries will be counted, but will not be returned by the iterator.
-   *
-   * <p>With the upcoming storage extension the heap cache may also store an entry
-   * for a not existing mapping in order to not recheck the storage all the time.
-   *
-   * <p>The method has more statistical value and the result depends on the
-   * actual configuration of the cache.
+   * Will be removed. Returns always -1. Use the JMX bean.
    */
+  @Deprecated
   int getTotalEntryCount();
 
   /**

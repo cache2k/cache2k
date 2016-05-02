@@ -67,8 +67,6 @@ public abstract class StorageAdapter {
    * Return the total number of entries within the heap and
    * the storage. Should apply simple calculations to give and exact
    * number. No heavy operation e.g. checking for duplicates.
-   *
-   * @see org.cache2k.Cache#getTotalEntryCount()
    */
   public abstract int getTotalEntryCount();
 

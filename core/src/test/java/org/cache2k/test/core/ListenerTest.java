@@ -391,7 +391,7 @@ public class ListenerTest {
         return _expireCallCount.get() == 1;
       }
     });
-    assertEquals(0, c.getTotalEntryCount());
+    assertEquals(0, latestInfo(c).getSize());
     c.close();
   }
 
@@ -429,7 +429,7 @@ public class ListenerTest {
         return _expireCallCount.get() == 1;
       }
     });
-    assertEquals(0, c.getTotalEntryCount());
+    assertEquals(0, latestInfo(c).getSize());
     assertEquals(1, latestInfo(c).getExpiredCnt());
     c.close();
   }

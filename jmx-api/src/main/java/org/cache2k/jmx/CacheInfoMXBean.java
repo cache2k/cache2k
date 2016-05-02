@@ -20,6 +20,7 @@ package org.cache2k.jmx;
  * #L%
  */
 
+import org.cache2k.Cache2kBuilder;
 import org.cache2k.configuration.CacheConfiguration;
 
 import java.util.Date;
@@ -34,13 +35,17 @@ public interface CacheInfoMXBean {
 
   /**
    * The current number of entries within the cache, starting with 0.
+   * When iterating the entries the cache will always return less or an identical number of entries.
+   *
+   * <p>Expired entries may stay in the cache {@link Cache2kBuilder#keepValueAfterExpired(boolean)}.
+   * These entries will be counted, but will not be returned by the iterator.
    */
-  int getSize();
+  long getSize();
 
   /**
    * The configured maximum number of entries in the cache.
    */
-  int getMaximumSize();
+  long getEntryCapacity();
 
   /**
    * How often data was requested from the cache. In multi threading scenarios this
@@ -65,7 +70,7 @@ public interface CacheInfoMXBean {
   /**
    * How many times the data was fetched from the cache source.
    */
-  long getFetchCnt();
+  long getLoadCnt();
 
   /**
    * Counter for the event that the data of a cache entry was refreshed.
@@ -138,18 +143,18 @@ public interface CacheInfoMXBean {
    * Number of hashcode collisions within the cache. E.g. the hashCode: 2, 3, 3, 4, 4, 4 will
    * mean three collisions.
    */
-  int getHashCollisionCnt();
+  long getHashCollisionCnt();
 
   /**
    * Number of collision slots within the cache. E.g. the hashCode: 2, 3, 3, 4, 4, 4 will mean two
    * collision slots.
    */
-  int getHashCollisionsSlotCnt();
+  long getHashCollisionsSlotCnt();
 
   /**
    * The number of entries of the collision slot with the most collisions. Either 0, 2 or more.
    */
-  int getHashLongestCollisionSize();
+  long getHashLongestCollisionSize();
 
   /**
    * Milliseconds per fetch.
@@ -160,11 +165,6 @@ public interface CacheInfoMXBean {
    * Total number of time spent fetching entries from the cache source.
    */
   long getFetchMillis();
-
-  /**
-   * Amount of memory the cache
-   */
-  int getMemoryUsage();
 
   /**
    * Implementation class of the cache which controls the eviction strategy.
@@ -204,7 +204,7 @@ public interface CacheInfoMXBean {
   /**
    * Milliseconds needed to provide the data.
    */
-  int getInfoCreatedDetlaMillis();
+  int getInfoCreatedDeltaMillis();
 
   /**
    * Single health value from 0 meaning good, 1 meaning warning, and 2 meaning failure.

@@ -97,7 +97,7 @@ public class ConcurrentMapWrapper<K,V> implements ConcurrentMap<K, V> {
 
   @Override
   public int size() {
-    return cache.getTotalEntryCount();
+    return ((InternalCache) cache).getTotalEntryCount();
   }
 
   @Override

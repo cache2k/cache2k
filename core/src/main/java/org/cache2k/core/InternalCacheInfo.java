@@ -28,9 +28,9 @@ public interface InternalCacheInfo {
 
   String getImplementation();
 
-  int getSize();
+  long getSize();
 
-  int getMaxSize();
+  long getMaxSize();
 
   long getLoadButHitCnt();
 

@@ -252,7 +252,7 @@ public class Cache2kBuilder<K, V> implements Cloneable {
    * inserting new entries, the cache eviction algorithm will remove one or more entries
    * to keep the size within the configured limit.
    */
-  public final Cache2kBuilder<K, V> entryCapacity(int v) {
+  public final Cache2kBuilder<K, V> entryCapacity(long v) {
     config.setEntryCapacity(v);
     return this;
   }
