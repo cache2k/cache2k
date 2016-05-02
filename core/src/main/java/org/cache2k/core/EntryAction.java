@@ -659,12 +659,21 @@ public class EntryAction<K, V, R> implements StorageCallback, AsyncCacheLoader.C
       mutationUpdateHeap();
       return;
     }
-    expiredImmediatelyDoRemove();
+    if (_hasKeepAfterExpired) {
+      expiredImmediatelyKeepData();
+      return;
+    }
+    expiredImmediatelyAndRemove();
   }
 
 
 
-  public void expiredImmediatelyDoRemove() {
+  public void expiredImmediatelyKeepData() {
+    expiredImmediately = true;
+    mutationUpdateHeap();
+  }
+
+  public void expiredImmediatelyAndRemove() {
     remove = true;
     expiredImmediately = true;
     mutationUpdateHeap();
@@ -795,13 +804,16 @@ public class EntryAction<K, V, R> implements StorageCallback, AsyncCacheLoader.C
       if (remove) {
         synchronized (heapCache.lock) {
           if (heapCache.removeEntry(entry)) {
-            heapCache.removedCnt++;
+            if (expiredImmediately) {
+              heapCache.expiredRemoveCnt++;
+            } else {
+              heapCache.removedCnt++;
+            }
           }
         }
       } else {
-        entry.nextRefreshTime =
-          refreshHandler().stopStartTimer(expiry, entry);
-        if ((heapDataValid || expiry > 0) && entry.isExpired()) {
+        entry.nextRefreshTime = refreshHandler().stopStartTimer(expiry, entry);
+        if (entry.isExpired()) {
           entry.nextRefreshTime = Entry.EXPIRY_TIME_MIN;
           userCache.expireOrScheduleFinalExpireEvent(entry);
         }

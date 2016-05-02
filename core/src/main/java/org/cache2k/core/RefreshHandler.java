@@ -328,7 +328,7 @@ public abstract class RefreshHandler<K,V>  {
     public long stopStartTimer(long _nextRefreshTime, final Entry e) {
       cancelExpiryTimer(e);
       if (_nextRefreshTime == 0) {
-        return eventuallyStartBackgroundRefresh(e);
+        return Entry.EXPIRED;
       }
       final long now = System.currentTimeMillis();
       _nextRefreshTime = sanitizeTime(_nextRefreshTime, now);
