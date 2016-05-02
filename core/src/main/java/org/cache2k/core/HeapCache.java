@@ -52,6 +52,7 @@ import java.util.NoSuchElementException;
 import java.util.Random;
 import java.util.Set;
 import java.util.concurrent.Executor;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 import java.util.concurrent.LinkedBlockingDeque;
 import java.util.concurrent.RejectedExecutionException;
@@ -511,6 +512,9 @@ public abstract class HeapCache<K, V>
         return;
       }
       shutdownInitiated = true;
+    }
+    if (loaderExecutor instanceof ExecutorService) {
+      ((ExecutorService) loaderExecutor).shutdown();
     }
     Future<Void> _await = cancelTimerJobs();
     try {
