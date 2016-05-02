@@ -487,6 +487,10 @@
               <!-- make this test more verbose to investigate a VM crash
               <argLine>-XX:+HeapDumpOnOutOfMemoryError -XX:+PrintGC -XX:+PrintCompilation</argLine>
                -->
+              <!--
+              <argLine>-XX:+PrintGC</argLine>
+              -->
+              <argLine>-XX:+PrintGCDetails</argLine>
             </configuration>
           </plugin>
         </plugins>
