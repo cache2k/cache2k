@@ -108,6 +108,7 @@
           <configuration>
             <trimStackTrace>false</trimStackTrace>
             <excludedGroups>org.cache2k.junit.StorageTests,org.cache2k.junit.TimingTests</excludedGroups>
+            <runOrder>random</runOrder>
           </configuration>
         </plugin>
 
@@ -491,6 +492,13 @@
               <argLine>-XX:+PrintGC</argLine>
               -->
               <argLine>-XX:+PrintGCDetails</argLine>
+              <!--
+                   Use a lower safety gap, since some tests will use a time value for expiry higher then
+                   the safety gap.
+              -->
+              <systemPropertyVariables>
+                <org.cache2k.core.HeapCache.Tunable.sharpExpirySafetyGapMillis>1765</org.cache2k.core.HeapCache.Tunable.sharpExpirySafetyGapMillis>
+              </systemPropertyVariables>
             </configuration>
           </plugin>
         </plugins>

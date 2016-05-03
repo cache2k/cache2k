@@ -26,6 +26,7 @@ Fixes of corner cases that are most likely not affecting any existing applicatio
   * Add missing expiry event, when entry is expired immediately after an update  
   * EntryProcessor did not honor expiry times or policy
   * Remove the output of the build information to standard error
+  * Higher safety gap (27 seconds) for timer event, if sharp expiry is requested
  
 ## API Changes and new methods
 

@@ -2247,14 +2247,16 @@ public abstract class HeapCache<K, V>
     /**
      * When sharp expiry is enabled, the expiry timer goes
      * before the actual expiry to switch back to a time checking
-     * scheme when the get method is invoked. This prevents
-     * that an expired value gets served by the cache if the time
-     * is too late. A recent GC should not produce more then 200
-     * milliseconds stall. If longer GC stalls are expected, this
-     * value needs to be changed. A value of LONG.MaxValue
-     * suppresses the timer usage completely.
+     * scheme when the cache is accessed. This prevents
+     * that an expired value gets served by the cache when the time
+     * is too late. Experiments showed that a value of one second is
+     * usually sufficient.
+     *
+     * <p>OS scheduling is not reliable on virtual servers (e.g. KVM)
+     * to give the expiry task compute time on a busy server. To be safe in
+     * extreme cases, this parameter is set to a high value.
      */
-    public long sharpExpirySafetyGapMillis = 666;
+    public long sharpExpirySafetyGapMillis = 27 * 1000 + 127;
 
     /**
      * Some statistic values need processing time to gather and compute it. This is a safety
