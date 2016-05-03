@@ -368,11 +368,6 @@ public abstract class EntryAction<K, V, R> implements StorageCallback, AsyncCach
     AdvancedCacheLoader<K, V> _loader = loader();
     if (_loader == null) {
       exceptionToPropagate = new CustomizationException(new CacheUsageExcpetion("source not set"));
-      synchronized (heapCache.lock) {
-        if (entry.isVirgin()) {
-          heapCache.loadFailedCnt++;
-        }
-      }
       return;
     }
     if (!entryLocked) {

@@ -239,55 +239,25 @@ public class CacheManagerImpl extends CacheManager {
         return;
       }
       List<Throwable> _suppressedExceptions = new ArrayList<Throwable>();
-      if (caches != null) {
-        Futures.WaitForAllFuture<Void> _wait = new Futures.WaitForAllFuture<Void>();
-        for (Cache c : caches) {
-          if (c instanceof InternalCache) {
-            try {
-              Future<Void> f = ((InternalCache) c).cancelTimerJobs();
-              _wait.add(f);
-            } catch (Throwable t) {
-              _suppressedExceptions.add(t);
-            }
-          }
-        }
+      for (Cache c : caches) {
+        ((InternalCache) c).cancelTimerJobs();
+      }
+      Set<Cache> _caches = new HashSet<Cache>();
+      _caches.addAll(caches);
+      for (Cache c : _caches) {
         try {
-          _wait.get(3000, TimeUnit.MILLISECONDS);
-        } catch (Exception ex) {
-          _suppressedExceptions.add(ex);
-        }
-        if (!_wait.isDone()) {
-          for (Cache c : caches) {
-            if (c instanceof InternalCache) {
-              InternalCache bc = (InternalCache) c;
-              try {
-                Future<Void> f = bc.cancelTimerJobs();
-                if (!f.isDone()) {
-                  bc.getLog().info("fetches ongoing, terminating anyway...");
-                }
-              } catch (Throwable t) {
-                _suppressedExceptions.add(t);
-              }
-            }
-          }
-        }
-        Set<Cache> _caches = new HashSet<Cache>();
-        _caches.addAll(caches);
-        for (Cache c : _caches) {
-          try {
-            c.destroy();
-          } catch (Throwable t) {
-            _suppressedExceptions.add(t);
-          }
-        }
-        try {
-          for (CacheManagerLifeCycleListener lc : cacheManagerLifeCycleListeners) {
-            lc.managerDestroyed(this);
-          }
-          caches = null;
+          c.close();
         } catch (Throwable t) {
           _suppressedExceptions.add(t);
         }
+      }
+      try {
+        for (CacheManagerLifeCycleListener lc : cacheManagerLifeCycleListeners) {
+          lc.managerDestroyed(this);
+        }
+        caches = null;
+      } catch (Throwable t) {
+        _suppressedExceptions.add(t);
       }
       ((Cache2kManagerProviderImpl) provider).removeManager(this);
       eventuallyThrowException(_suppressedExceptions);

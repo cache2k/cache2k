@@ -459,16 +459,12 @@ public class WiredCache<K, V> extends AbstractCache<K, V>
   }
 
   @Override
-  public Future<Void> cancelTimerJobs() {
+  public void cancelTimerJobs() {
     synchronized (lockObject()) {
-      Future<Void> _waitFuture = heapCache.cancelTimerJobs();
+      heapCache.cancelTimerJobs();
       if (storage != null) {
-        Future<Void> f = storage.cancelTimerJobs();
-        if (f != null) {
-          _waitFuture = new Futures.WaitForAllFuture(_waitFuture, f);
-        }
+        storage.cancelTimerJobs();
       }
-      return _waitFuture;
     }
   }
 

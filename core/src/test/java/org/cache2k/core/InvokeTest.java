@@ -60,7 +60,6 @@ public class InvokeTest {
 
   @After
   public void tearDown() {
-    assertEquals(0, ((InternalCache) cache).getLatestInfo().getLoadsInFlightCnt());
     cache.close();
     cache = null;
   }

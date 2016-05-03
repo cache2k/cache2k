@@ -53,8 +53,6 @@ public interface InternalCacheInfo {
    */
   long getLoadCnt();
 
-  int getLoadsInFlightCnt();
-
   long getBulkGetCnt();
 
   long getRefreshCnt();

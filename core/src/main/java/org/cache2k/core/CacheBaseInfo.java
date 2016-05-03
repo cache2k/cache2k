@@ -48,7 +48,6 @@ class CacheBaseInfo implements InternalCacheInfo {
   long usageCnt;
   Hash.CollisionInfo collisionInfo;
   String extraStatistics;
-  int loadsInFlight;
   IntegrityState integrityState;
   long asyncLoadsStarted = 0;
   long asyncLoadsInFlight = 0;
@@ -68,7 +67,6 @@ class CacheBaseInfo implements InternalCacheInfo {
     if (extraStatistics.startsWith(", ")) {
       extraStatistics = extraStatistics.substring(2);
     }
-    loadsInFlight = _heapCache.getLoadsInFlight();
     size = _userCache.getTotalEntryCount();
     missCnt = _heapCache.loadWoRefreshCnt + _heapCache.peekHitNotFreshCnt + _heapCache.peekMissCnt;
     storageMissCnt = _heapCache.readMissCnt + _heapCache.readNonFreshCnt + _heapCache.readNonFreshAndFetchedCnt;
@@ -130,8 +128,6 @@ class CacheBaseInfo implements InternalCacheInfo {
   public long getNewEntryCnt() { return newEntryCnt; }
   @Override
   public long getLoadCnt() { return totalLoadCnt; }
-  @Override
-  public int getLoadsInFlightCnt() { return loadsInFlight; }
   @Override
   public long getBulkGetCnt() { return heapCache.bulkGetCnt; }
   @Override
@@ -331,7 +327,6 @@ class CacheBaseInfo implements InternalCacheInfo {
             + "loadCnt=" + getLoadCnt() + ", "
             + "loadButHitCnt=" + getLoadButHitCnt() + ", "
             + "heapHitCnt=" + hitCnt + ", "
-            + "loadsInFlightCnt=" + getLoadsInFlightCnt() + ", "
             + "newEntryCnt=" + getNewEntryCnt() + ", "
             + "bulkGetCnt=" + getBulkGetCnt() + ", "
             + "refreshCnt=" + getRefreshCnt() + ", "

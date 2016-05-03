@@ -155,11 +155,7 @@ public abstract class HeapCache<K, V>
   protected long peekMissCnt = 0;
 
   protected long loadWoRefreshCnt = 0;
-
-  protected long loadFailedCnt = 0;
-
   protected long loadButHitCnt = 0;
-
   protected long bulkGetCnt = 0;
   protected long fetchMillis = 0;
   protected long refreshHitCnt = 0;
@@ -481,19 +477,8 @@ public abstract class HeapCache<K, V>
    * expiry/refresh or flushing the storage.
    */
   @Override
-  public Future<Void> cancelTimerJobs() {
-    synchronized (lock) {
-      refreshHandler.shutdown();
-      Future<Void> _waitFuture = new Futures.BusyWaitFuture<Void>() {
-        @Override
-        public boolean isDone() {
-          synchronized (lock) {
-            return getLoadsInFlight() == 0;
-          }
-        }
-      };
-      return _waitFuture;
-    }
+  public void cancelTimerJobs() {
+    refreshHandler.shutdown();
   }
 
   @Override
@@ -516,28 +501,7 @@ public abstract class HeapCache<K, V>
     if (loaderExecutor instanceof ExecutorService) {
       ((ExecutorService) loaderExecutor).shutdown();
     }
-    Future<Void> _await = cancelTimerJobs();
-    try {
-      _await.get(TUNABLE.waitForTimerJobsSeconds, TimeUnit.SECONDS);
-    } catch (TimeoutException ex) {
-      int _fetchesInFlight;
-      synchronized (lock) {
-        _fetchesInFlight = getLoadsInFlight();
-      }
-      if (_fetchesInFlight > 0) {
-        getLog().warn(
-          "Fetches still in progress after " +
-            TUNABLE.waitForTimerJobsSeconds + " seconds. " +
-            "fetchesInFlight=" + _fetchesInFlight);
-      } else {
-        getLog().warn(
-          "timeout waiting for timer jobs termination" +
-            " (" + TUNABLE.waitForTimerJobsSeconds + " seconds)", ex);
-        getLog().warn("Thread dump:\n" + ThreadDump.generateThredDump());
-      }
-    } catch (Exception ex) {
-      getLog().warn("exception waiting for timer jobs termination", ex);
-    }
+    cancelTimerJobs();
     synchronized (lock) {
       mainHashCtrl.close();
       refreshHashCtrl.close();
@@ -2086,17 +2050,6 @@ public abstract class HeapCache<K, V>
     return expiredRemoveCnt + expiredKeptCnt;
   }
 
-  /**
-   * For peek no fetch is counted if there is a storage miss, hence the extra counter.
-   */
-  public long getFetchesBecauseOfNewEntries() {
-    return loadWoRefreshCnt - loadButHitCnt + loadFailedCnt;
-  }
-
-  protected int getLoadsInFlight() {
-    return 0;
-  }
-
   protected IntegrityState getIntegrityState() {
     synchronized (lock) {
       checkClosed();
@@ -2204,8 +2157,6 @@ public abstract class HeapCache<K, V>
     public Class<? extends InternalCache> defaultImplementation =
             "64".equals(System.getProperty("sun.arch.data.model"))
                     ? ClockProPlus64Cache.class : ClockProPlusCache.class;
-
-    public int waitForTimerJobsSeconds = 5;
 
     /**
      * Limits the number of spins until an entry lock is expected to

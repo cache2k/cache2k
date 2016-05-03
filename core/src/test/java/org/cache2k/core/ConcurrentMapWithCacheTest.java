@@ -44,7 +44,6 @@ public class ConcurrentMapWithCacheTest extends ConcurrentMapTest {
 
   @Override
   public void tearDown() {
-    assertEquals(0, ((InternalCache) cache).getLatestInfo().getLoadsInFlightCnt());
     cache.close();
     map = null;
     cache = null;

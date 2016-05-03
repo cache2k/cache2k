@@ -48,7 +48,7 @@ public interface InternalCache<K, V> extends Cache<K, V>, CanCheckIntegrity {
   void clearTimingStatistics();
 
   /** used from the cache manager for shutdown */
-  Future<Void> cancelTimerJobs();
+  void cancelTimerJobs();
 
   void timerEventRefresh(Entry<K, V> e);
 
