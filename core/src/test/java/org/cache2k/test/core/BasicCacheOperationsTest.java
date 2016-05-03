@@ -24,6 +24,7 @@ import org.cache2k.Cache;
 import org.cache2k.Cache2kBuilder;
 import org.cache2k.CacheEntry;
 import org.cache2k.CacheException;
+import org.cache2k.core.InternalCacheInfo;
 import org.cache2k.integration.CacheLoaderException;
 import org.cache2k.core.ExceptionWrapper;
 import org.cache2k.core.InternalCache;
@@ -36,7 +37,6 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.NoSuchElementException;
-import java.util.concurrent.TimeUnit;
 
 import static org.junit.Assert.*;
 
@@ -81,6 +81,20 @@ public class BasicCacheOperationsTest {
     return statistics;
   }
 
+  /**
+   * Use for assertions on absolute values.
+   */
+  public InternalCacheInfo info() {
+    return cache.requestInterface(InternalCache.class).getLatestInfo();
+  }
+
+  /**
+   * Number of entries in the cache.
+   */
+  public long size() {
+    return info().getSize();
+  }
+
   @Before
   public void initCache() {
     cache = staticCache;
@@ -112,12 +126,14 @@ public class BasicCacheOperationsTest {
   public void initial_Peek() {
     assertNull(cache.peek(KEY));
     assertNull(cache.peek(OTHER_KEY));
+    assertEquals(0, size());
   }
 
   @Test
   public void initial_Contains() {
     assertFalse(cache.contains(KEY));
     assertFalse(cache.contains(OTHER_KEY));
+    assertEquals(0, size());
   }
 
   /**
@@ -344,6 +360,14 @@ public class BasicCacheOperationsTest {
   /*
    * peekEntry
    */
+
+  @Test
+  public void peekEntry_Initial() {
+    CacheEntry<Integer, Integer> e = cache.peekEntry(KEY);
+    assertNull(e);
+    assertEquals(0, size());
+  }
+
   @Test
   public void peekEntry() {
     long t0 = System.currentTimeMillis();

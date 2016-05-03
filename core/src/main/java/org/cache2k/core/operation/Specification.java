@@ -123,10 +123,10 @@ public class Specification<K, V> {
     return PEEK_ENTRY;
   }
 
-  static final Semantic PEEK_ENTRY = new Semantic.UpdateExisting() {
+  static final Semantic PEEK_ENTRY = new Semantic.Read() {
 
     @Override
-    public void update(final Progress c, final ExaminationEntry e) {
+    public void examine(final Progress c, final ExaminationEntry e) {
       if (c.isPresentOrMiss()) {
         c.result(returnStableEntry(e));
       }
