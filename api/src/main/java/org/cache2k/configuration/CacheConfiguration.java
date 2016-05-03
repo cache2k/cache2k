@@ -363,7 +363,7 @@ public class CacheConfiguration<K, V> implements Serializable {
   }
 
   /**
-   * @see Cache2kBuilder#keepValueAfterExpired(boolean)
+   * @see Cache2kBuilder#keepDataAfterExpired(boolean)
    */
   public void setKeepValueAfterExpired(boolean v) {
     this.keepValueAfterExpired = v;

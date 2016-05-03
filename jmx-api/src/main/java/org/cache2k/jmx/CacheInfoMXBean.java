@@ -37,7 +37,7 @@ public interface CacheInfoMXBean {
    * The current number of entries within the cache, starting with 0.
    * When iterating the entries the cache will always return less or an identical number of entries.
    *
-   * <p>Expired entries may stay in the cache {@link Cache2kBuilder#keepValueAfterExpired(boolean)}.
+   * <p>Expired entries may stay in the cache {@link Cache2kBuilder#keepDataAfterExpired(boolean)}.
    * These entries will be counted, but will not be returned by the iterator.
    */
   long getSize();

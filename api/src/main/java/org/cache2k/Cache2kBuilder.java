@@ -242,7 +242,7 @@ public class Cache2kBuilder<K, V> implements Cloneable {
   *
   * @see AdvancedCacheLoader
   */
-  public final Cache2kBuilder<K, V> keepValueAfterExpired(boolean v) {
+  public final Cache2kBuilder<K, V> keepDataAfterExpired(boolean v) {
     config.setKeepValueAfterExpired(v);
     return this;
   }

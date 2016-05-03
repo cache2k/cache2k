@@ -372,7 +372,7 @@ public class ListenerTest {
         }
       })
       .eternal(true)
-      .keepValueAfterExpired(false)
+      .keepDataAfterExpired(false)
       .expiryCalculator(new ExpiryCalculator<Integer, Integer>() {
         @Override
         public long calculateExpiryTime(final Integer key, final Integer value, final long loadTime, final CacheEntry<Integer, Integer> oldEntry) {
@@ -410,7 +410,7 @@ public class ListenerTest {
         }
       })
       .eternal(true)
-      .keepValueAfterExpired(false)
+      .keepDataAfterExpired(false)
       .expiryCalculator(new ExpiryCalculator<Integer, Integer>() {
         @Override
         public long calculateExpiryTime(final Integer key, final Integer value, final long loadTime, final CacheEntry<Integer, Integer> oldEntry) {

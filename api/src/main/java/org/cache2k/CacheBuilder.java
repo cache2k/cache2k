@@ -317,7 +317,7 @@ public class CacheBuilder<K,V> {
   }
 
   public CacheBuilder<K, V> keepDataAfterExpired(final boolean v) {
-    builder.keepValueAfterExpired(v);
+    builder.keepDataAfterExpired(v);
     return this;
   }
 
