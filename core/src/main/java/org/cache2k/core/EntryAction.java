@@ -911,11 +911,14 @@ public abstract class EntryAction<K, V, R> implements StorageCallback, AsyncCach
   public void noMutationRequested() {
     if (entryLocked) {
       synchronized (entry) {
-        if (entry.isVirgin()) {
-          entry.nextRefreshTime = Entry.ABORTED;
-        }
         entry.processingDone();
         entry.notifyAll();
+        if (entry.isVirgin()) {
+          synchronized (heapCache.lock) {
+            heapCache.removeEntry(entry);
+            heapCache.virginRemovedCnt++;
+          }
+        }
       }
       entryLocked = false;
     }
