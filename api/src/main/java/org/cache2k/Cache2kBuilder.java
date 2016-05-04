@@ -271,9 +271,15 @@ public class Cache2kBuilder<K, V> implements Cloneable {
   }
 
   /**
-   * If an exceptions gets thrown by the cache source, suppress it if there is
+   * If an exceptions gets thrown by the cache loader, suppress it if there is
    * a previous value. When this is active, and an exception was suppressed
-   * the expiry is determined by the exception expiry settings. Default: true
+   * the expiry is determined by {@link #retryInterval(long, TimeUnit)}.
+   *
+   * <p>Setting this to false, will disable suppression or caching (aka resilience).
+   * Default value: true
+   *
+   * <p>Additional information can be found under <b>resilience</b> in
+   * the documentation.
    */
   public final Cache2kBuilder<K, V> suppressExceptions(boolean v) {
     config.setSuppressExceptions(v);
@@ -282,7 +288,7 @@ public class Cache2kBuilder<K, V> implements Cloneable {
 
 
   /**
-   * Set the time duration after that an inserted or updated cache entry expires.
+   * Time duration after insert or updated an cache entry expires.
    * To switch off time based expiry use {@link #eternal(boolean)}.
    *
    * <p>If an {@link ExpiryCalculator} is specified, the maximum expiry duration
@@ -412,9 +418,8 @@ public class Cache2kBuilder<K, V> implements Cloneable {
   }
 
   /**
-   * If a loader exception happens, this is the time interval after that a
-   * retry attempt is made. By default 5% of the normal expiry time configured by
-   * {@link #expireAfterWrite}.
+   * If a loader exception happens, this is the time interval after a
+   * retry attempt is made. If not specified, 10% of {@link #maxRetryInterval}.
    */
   public final Cache2kBuilder<K, V> retryInterval(long v, TimeUnit u) {
     config.setRetryIntervalMillis(u.toMillis(v));
@@ -422,9 +427,12 @@ public class Cache2kBuilder<K, V> implements Cloneable {
   }
 
   /**
-   * For retries an exponential backoff algorithm is used. It starts with the
-   * set retry time and then increases the time to the maximum according to an
-   * exponential pattern.
+   * If a loader exception happens, this is the maximum time interval after a
+   * retry attempt is made. For retries an exponential backoff algorithm is used.
+   * It starts with the retry time and then increases the time to the maximum
+   * according to an exponential pattern.
+   *
+   * <p>By default identical to {@link #resilienceDuration}
    */
   public final Cache2kBuilder<K, V> maxRetryInterval(long v, TimeUnit u) {
     config.setMaxRetryIntervalMillis(u.toMillis(v));
@@ -435,12 +443,13 @@ public class Cache2kBuilder<K, V> implements Cloneable {
    * Time span the cache will suppress loader exceptions if a value is available from
    * a previous load. After the time span is passed the cache will start propagating
    * loader exceptions. If {@link #suppressExceptions} is switched off, this setting
-   * has no effect. If this parameter is not specified, the value of {@link #expireAfterWrite}
-   * is used as default. The parameter will be ignored if {@link #suppressExceptions} if
-   * turned of.
+   * has no effect.
+   *
+   * <p>Defaults to  {@link #expireAfterWrite}. If {@link #suppressExceptions}
+   * is switched off, this setting has no effect.
    */
   public final Cache2kBuilder<K, V> resilienceDuration(long v, TimeUnit u) {
-    config.setMaxRetryIntervalMillis(u.toMillis(v));
+    config.setResilienceDurationMillis(u.toMillis(v));
     return this;
   }
 

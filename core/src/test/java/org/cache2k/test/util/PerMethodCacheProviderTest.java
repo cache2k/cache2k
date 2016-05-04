@@ -43,7 +43,7 @@ public class PerMethodCacheProviderTest {
 
   @Test
   public void testClose() {
-    target.config(new CacheRule.BuilderExtender<Integer, Integer>() {
+    target.config(new CacheRule.Specialization<Integer, Integer>() {
       @Override
       public void extend(final Cache2kBuilder<Integer, Integer> b) {
         b.entryCapacity(123);

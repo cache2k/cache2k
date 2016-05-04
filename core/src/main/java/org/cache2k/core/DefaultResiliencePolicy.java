@@ -31,13 +31,20 @@ import java.util.Random;
  */
 public class DefaultResiliencePolicy<K,V> extends ResiliencePolicy<K,V> {
 
-  Context context;
-  Random random;
-  double multiplier = 1.5;
-  double randomization = 0.5;
-  long resilienceDuration;
-  long maxRetryInterval;
-  long retryInterval;
+  /**
+   * We use a common random instance. Since this is only called for an exception
+   * we do not bother for contention.
+   */
+  static final Random SHARED_RANDOM = new Random();
+
+  static final int RETRY_PERCENT_OF_RESILIENCE_DURATION = 10;
+  static final int MIN_RETRY_INTERVAL = 1000;
+
+  private double multiplier = 1.5;
+  private double randomization = 0.5;
+  private long resilienceDuration;
+  private long maxRetryInterval;
+  private long retryInterval;
 
   public double getMultiplier() {
     return multiplier;
@@ -63,25 +70,38 @@ public class DefaultResiliencePolicy<K,V> extends ResiliencePolicy<K,V> {
     return maxRetryInterval;
   }
 
+  public long getRetryInterval() { return retryInterval; }
+
   @Override
   public void init(final Context ctx) {
-    context = ctx;
-    resilienceDuration = context.getResilienceDurationMillis();
+    resilienceDuration = ctx.getResilienceDurationMillis();
+    maxRetryInterval = ctx.getMaxRetryIntervalMillis();
+    retryInterval = ctx.getRetryIntervalMillis();
     if (resilienceDuration == -1) {
-      resilienceDuration = Math.max(
-        context.getExpireAfterWriteMillis(),
-        context.getRetryIntervalMillis());
+      if (ctx.getExpireAfterWriteMillis() == ETERNAL) {
+        resilienceDuration = 0;
+      } else {
+        resilienceDuration = ctx.getExpireAfterWriteMillis();
+      }
+    } else {
+      if (maxRetryInterval == -1) {
+        maxRetryInterval = resilienceDuration;
+      }
     }
-    maxRetryInterval = context.getMaxRetryIntervalMillis();
-    if (maxRetryInterval == -1) {
+    if (maxRetryInterval == -1 && retryInterval == -1) {
       maxRetryInterval = resilienceDuration;
     }
-    retryInterval = context.getRetryIntervalMillis();
     if (retryInterval == -1) {
-      retryInterval = context.getExpireAfterWriteMillis() * 100 / 5;
-      retryInterval = Math.max(retryInterval, resilienceDuration);
+      retryInterval = resilienceDuration * RETRY_PERCENT_OF_RESILIENCE_DURATION / 100;
+      retryInterval = Math.min(retryInterval, maxRetryInterval);
+      retryInterval = Math.max(MIN_RETRY_INTERVAL, retryInterval);
     }
-    random = HeapCache.SEED_RANDOM;
+    if (retryInterval > maxRetryInterval) {
+      maxRetryInterval = retryInterval;
+    }
+    if (maxRetryInterval > resilienceDuration && resilienceDuration != 0) {
+      resilienceDuration = maxRetryInterval;
+    }
   }
 
   /**
@@ -111,7 +131,7 @@ public class DefaultResiliencePolicy<K,V> extends ResiliencePolicy<K,V> {
   private long calculateRetryDelta(final LoadExceptionInformation exceptionInformation) {
     long _delta = (long)
       (retryInterval * Math.pow(multiplier, exceptionInformation.getRetryCount()));
-    _delta -= random.nextDouble() * randomization * _delta;
+    _delta -= SHARED_RANDOM.nextDouble() * randomization * _delta;
     return Math.min(_delta, maxRetryInterval);
   }
 

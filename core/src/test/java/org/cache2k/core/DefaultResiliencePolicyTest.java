@@ -20,14 +20,18 @@ package org.cache2k.core;
  * #L%
  */
 
-import org.cache2k.integration.LoadExceptionInformation;
+import org.cache2k.Cache;
+import org.cache2k.Cache2kBuilder;
 import org.cache2k.integration.ResiliencePolicy;
 import org.cache2k.junit.FastTests;
+import org.cache2k.test.util.IntCacheRule;
+import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
+import java.util.concurrent.TimeUnit;
+
 import static org.junit.Assert.*;
-import static org.hamcrest.Matchers.*;
 
 /**
  * @author Jens Wilke
@@ -35,256 +39,122 @@ import static org.hamcrest.Matchers.*;
 @Category(FastTests.class)
 public class DefaultResiliencePolicyTest {
 
-  @Test
-  public void testBackoffPower() {
-    assertEquals(10, 10 * Math.pow(1.5, 0), 0.1);
-    assertEquals(15, 10 * Math.pow(1.5, 1), 0.1);
-    assertEquals(22.5, 10 * Math.pow(1.5, 2), 0.1);
-    assertEquals(33.75, 10 * Math.pow(1.5, 3), 0.1);
+  /** Provide unique standard cache per method */
+  @Rule public IntCacheRule target = new IntCacheRule();
+
+  DefaultResiliencePolicy extractDefaultPolicy() {
+    RefreshHandler h = extractHandler();
+    if (!(h instanceof RefreshHandler.Static)) {
+      fail(RefreshHandler.Static.class + " expected");
+    }
+    ResiliencePolicy p = ((RefreshHandler.Static) h).resiliencePolicy;
+    if (!(p instanceof DefaultResiliencePolicy)) {
+      fail(DefaultResiliencePolicy.class + " expected");
+    }
+    return (DefaultResiliencePolicy) p;
+  }
+
+  RefreshHandler extractHandler() {
+    return target.getCache().requestInterface(HeapCache.class).refreshHandler;
   }
 
   @Test
-  public void testStandardProperties() {
-    DefaultResiliencePolicy p = new DefaultResiliencePolicy();
-    assertEquals(0.5, p.getRandomization(), 0.1);
-    assertEquals(1.5, p.getMultiplier(), 0.1);
+  public void eternal() {
+    Cache<Integer, Integer> c = new Cache2kBuilder<Integer, Integer>() {}
+      .eternal(true)
+      /* ... set loader ... */
+      .build();
+    target.setCache(c);
+    assertTrue(extractHandler() instanceof RefreshHandler.EternalImmediate);
+  }
+
+  @Test
+  public void expiry10m() {
+    Cache<Integer, Integer> c = new Cache2kBuilder<Integer, Integer>() {}
+      .expireAfterWrite(10, TimeUnit.MINUTES)
+      /* ... set loader ... */
+      .build();
+    target.setCache(c);
+    DefaultResiliencePolicy p = extractDefaultPolicy();
+    assertEquals(TimeUnit.MINUTES.toMillis(10), p.getResilienceDuration());
+    assertEquals(TimeUnit.MINUTES.toMillis(10), p.getMaxRetryInterval());
+    assertEquals(TimeUnit.MINUTES.toMillis(1), p.getRetryInterval());
   }
 
   /**
-   * Suppress duration defaults to expiry if not set.
+   * No suppression, because eternal. The only way that a reload can be triggered
+   * is with a reload operation. In this case we do not want suppression, unless
+   * specified explicitly.
    */
   @Test
-  public void testDefaultSuppressDuration() {
-    ResiliencePolicy.Context ctx =
-      new CtxBean(10000, -1, 500, -1);
-    DefaultResiliencePolicy p = new DefaultResiliencePolicy();
-    p.init(ctx);
-    assertEquals(10000, p.getResilienceDuration());
+  public void eternal_retry10s() {
+    Cache<Integer, Integer> c = new Cache2kBuilder<Integer, Integer>() {}
+      .eternal(true)
+      .retryInterval(10, TimeUnit.SECONDS)
+      /* ... set loader ... */
+      .build();
+    target.setCache(c);
+    DefaultResiliencePolicy p = extractDefaultPolicy();
+    assertEquals(0, p.getResilienceDuration());
+    assertEquals(TimeUnit.SECONDS.toMillis(10), p.getMaxRetryInterval());
+    assertEquals(TimeUnit.SECONDS.toMillis(10), p.getRetryInterval());
+  }
+
+  /**
+   * This is values=eternal, exceptions=immediate.
+   */
+  @Test
+  public void eternal_retry0s() {
+    Cache<Integer, Integer> c = new Cache2kBuilder<Integer, Integer>() {}
+      .eternal(true)
+      .retryInterval(0, TimeUnit.SECONDS)
+      /* ... set loader ... */
+      .build();
+    target.setCache(c);
+    assertTrue(extractHandler() instanceof RefreshHandler.EternalImmediate);
   }
 
   @Test
-  public void testDefaultMaxRetryInterval() {
-    ResiliencePolicy.Context ctx =
-      new CtxBean(10000, -1, -1, -1);
-    DefaultResiliencePolicy p = new DefaultResiliencePolicy();
-    p.init(ctx);
-    assertEquals(10000, p.getMaxRetryInterval());
+  public void expiry10m_duration30s() {
+    Cache<Integer, Integer> c = new Cache2kBuilder<Integer, Integer>() {}
+      .expireAfterWrite(10, TimeUnit.MINUTES)
+      .resilienceDuration(30, TimeUnit.SECONDS)
+      /* ... set loader ... */
+      .build();
+    target.setCache(c);
+    DefaultResiliencePolicy p = extractDefaultPolicy();
+    assertEquals(TimeUnit.SECONDS.toMillis(30), p.getResilienceDuration());
+    assertEquals(TimeUnit.SECONDS.toMillis(30), p.getMaxRetryInterval());
+    assertEquals(TimeUnit.SECONDS.toMillis(3), p.getRetryInterval());
   }
 
   @Test
-  public void testDefaultMaxRetryIntervalWithSuppressDuration() {
-    ResiliencePolicy.Context ctx =
-      new CtxBean(10000, -1, -1, 200);
-    DefaultResiliencePolicy p = new DefaultResiliencePolicy();
-    p.init(ctx);
-    assertEquals(200, p.getResilienceDuration());
-    assertEquals(200, p.getMaxRetryInterval());
+  public void eternal_duration30s() {
+    Cache<Integer, Integer> c = new Cache2kBuilder<Integer, Integer>() {}
+      .eternal(true)
+      .resilienceDuration(30, TimeUnit.SECONDS)
+      /* ... set loader ... */
+      .build();
+    target.setCache(c);
+    DefaultResiliencePolicy p = extractDefaultPolicy();
+    assertEquals(TimeUnit.SECONDS.toMillis(30), p.getResilienceDuration());
+    assertEquals(TimeUnit.SECONDS.toMillis(30), p.getMaxRetryInterval());
+    assertEquals(TimeUnit.SECONDS.toMillis(3), p.getRetryInterval());
   }
 
   @Test
-  public void testRandomization() {
-    ResiliencePolicy.Context ctx =
-      new CtxBean(10000, 100, 500, 5000);
-    DefaultResiliencePolicy p = new DefaultResiliencePolicy();
-    p.setRandomization(0.5);
-    p.init(ctx);
-    InfoBean b = new InfoBean();
-    b.setLoadTime(0);
-    b.setSinceTime(0);
-    long min = Long.MAX_VALUE;
-    long max = 0;
-    long t0 = p.suppressExceptionUntil("key", b, null);
-    boolean _oneDifferent = false;
-    for (int i = 0; i < 100; i++) {
-      long t = p.suppressExceptionUntil("key", b, null);
-      if (t != t0) {
-        _oneDifferent = true;
-      }
-      min = Math.min(t, min);
-      max = Math.max(t, max);
-    }
-    assertTrue(_oneDifferent);
-    assertThat((max - min), greaterThanOrEqualTo(50L / 2));
-    assertThat((max - min), lessThanOrEqualTo(50L));
-    assertThat(min, greaterThanOrEqualTo(50L));
-  }
-
-  @Test
-  public void testCustomMultiplier() {
-    ResiliencePolicy.Context ctx =
-      new CtxBean(10000, 100, 500, 5000);
-    DefaultResiliencePolicy p = new DefaultResiliencePolicy();
-    p.setRandomization(0.0);
-    assertEquals(0, p.getRandomization(), 0.1);
-    p.setMultiplier(2);
-    p.init(ctx);
-    InfoBean b = new InfoBean();
-    b.setLoadTime(0);
-    b.setSinceTime(0);
-    long t = p.suppressExceptionUntil("key", b, null);
-    assertEquals(100, t);
-    b.incrementRetryCount();
-    t = p.suppressExceptionUntil("key", b, null);
-    assertEquals(200, t);
-  }
-
-  @Test
-  public void testSuppress() {
-    ResiliencePolicy.Context ctx =
-      new CtxBean(10000, 100, 500, 5000);
-    DefaultResiliencePolicy p = new DefaultResiliencePolicy();
-    p.setRandomization(0.0);
-    assertEquals(1.5, p.getMultiplier(), 0.1);
-    p.init(ctx);
-    InfoBean b = new InfoBean();
-    b.setLoadTime(0);
-    b.setSinceTime(0);
-    long t = p.suppressExceptionUntil("key", b, null);
-    assertEquals(100, t);
-    b.incrementRetryCount();
-    b.setLoadTime(107);
-    t = p.suppressExceptionUntil("key", b, null);
-    assertEquals(150, t - b.getLoadTime());
-    b.incrementRetryCount();
-    b.setLoadTime(300);
-    t = p.suppressExceptionUntil("key", b, null);
-    assertEquals(225, t - b.getLoadTime());
-    b.incrementRetryCount();
-    b.setLoadTime(582);
-    t = p.suppressExceptionUntil("key", b, null);
-    assertEquals(337, t - b.getLoadTime());
-    b.incrementRetryCount();
-    b.setLoadTime(934);
-    t = p.suppressExceptionUntil("key", b, null);
-    assertEquals(500, t - b.getLoadTime());
-    b.incrementRetryCount();
-    b.setLoadTime(1534);
-    t = p.suppressExceptionUntil("key", b, null);
-    assertEquals(500, t - b.getLoadTime());
-  }
-
-  @Test
-  public void testCache() {
-    ResiliencePolicy.Context ctx =
-      new CtxBean(10000, 100, 500, 5000);
-    DefaultResiliencePolicy p = new DefaultResiliencePolicy();
-    p.setRandomization(0.0);
-    assertEquals(1.5, p.getMultiplier(), 0.1);
-    p.init(ctx);
-    InfoBean b = new InfoBean();
-    b.setLoadTime(0);
-    b.setSinceTime(0);
-    long t = p.retryLoadAfter("key", b);
-    assertEquals(100, t);
-    b.incrementRetryCount();
-    b.setLoadTime(107);
-    t = p.retryLoadAfter("key", b);
-    assertEquals(150, t - b.getLoadTime());
-    b.incrementRetryCount();
-    b.incrementRetryCount();
-    b.incrementRetryCount();
-    b.incrementRetryCount();
-    b.incrementRetryCount();
-    b.setLoadTime(0);
-    t = p.retryLoadAfter("key", b);
-    assertEquals(500, t);
-  }
-
-  static class CtxBean implements ResiliencePolicy.Context {
-
-    long expireAfterWriteMillis;
-    long suppressDurationMillis;
-    long retryIntervalMillis;
-    long maxRetryIntervalMillis;
-
-    public CtxBean(final long _expireAfterWriteMillis,
-                   final long _retryIntervalMillis,
-                   final long _maxRetryIntervalMillis,
-                   final long _suppressDurationMillis) {
-      expireAfterWriteMillis = _expireAfterWriteMillis;
-      retryIntervalMillis = _retryIntervalMillis;
-      maxRetryIntervalMillis = _maxRetryIntervalMillis;
-      suppressDurationMillis = _suppressDurationMillis;
-    }
-
-    @Override
-    public long getExpireAfterWriteMillis() {
-      return expireAfterWriteMillis;
-    }
-
-    @Override
-    public long getResilienceDurationMillis() {
-      return suppressDurationMillis;
-    }
-
-    @Override
-    public long getRetryIntervalMillis() {
-      return retryIntervalMillis;
-    }
-
-    @Override
-    public long getMaxRetryIntervalMillis() {
-      return maxRetryIntervalMillis;
-    }
-
-  }
-
-  static class InfoBean implements LoadExceptionInformation {
-
-    int retryCount;
-    Throwable exception;
-    long loadTime;
-    long sinceTime;
-    long until;
-
-    public void incrementRetryCount() {
-      retryCount++;
-    }
-
-    @Override
-    public Throwable getException() {
-      return exception;
-    }
-
-    @Override
-    public long getLoadTime() {
-      return loadTime;
-    }
-
-    @Override
-    public int getRetryCount() {
-      return retryCount;
-    }
-
-    @Override
-    public long getSinceTime() {
-      return sinceTime;
-    }
-
-    @Override
-    public long getUntil() {
-      return until;
-    }
-
-    public void setException(final Throwable _exception) {
-      exception = _exception;
-    }
-
-    public void setLoadTime(final long _loadTime) {
-      loadTime = _loadTime;
-    }
-
-    public void setRetryCount(final int _retryCount) {
-      retryCount = _retryCount;
-    }
-
-    public void setSinceTime(final long _sinceTime) {
-      sinceTime = _sinceTime;
-    }
-
-    public void setUntil(final long _until) {
-      until = _until;
-    }
+  public void eternal_duration30s_retry10s() {
+    Cache<Integer, Integer> c = new Cache2kBuilder<Integer, Integer>() {}
+      .eternal(true)
+      .resilienceDuration(30, TimeUnit.SECONDS)
+      .retryInterval(10, TimeUnit.SECONDS)
+      /* ... set loader ... */
+      .build();
+    target.setCache(c);
+    DefaultResiliencePolicy p = extractDefaultPolicy();
+    assertEquals(TimeUnit.SECONDS.toMillis(30), p.getResilienceDuration());
+    assertEquals(TimeUnit.SECONDS.toMillis(30), p.getMaxRetryInterval());
+    assertEquals(TimeUnit.SECONDS.toMillis(10), p.getRetryInterval());
   }
 
 }

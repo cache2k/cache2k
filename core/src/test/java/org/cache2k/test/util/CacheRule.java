@@ -72,26 +72,53 @@ public class CacheRule<K,V> implements TestRule {
       .eternal(true);
   }
 
-  public CacheRule<K,V> config(BuilderExtender<K,V> rb) {
-    if (cache != null) {
-      throw new IllegalStateException("cache already build");
-    }
+  public CacheRule<K,V> config(Specialization<K,V> rb) {
+    checkAlready();
     rb.extend(builder);
     return this;
   }
 
+  private void checkAlready() {
+    if (cache != null) {
+      throw new IllegalStateException("cache already build");
+    }
+  }
+
+  /**
+   * Create a cache or return an existing cache.
+   */
   public Cache<K,V> cache() {
     if (cache == null) {
       provideCache();
     }
     return cache;
   }
-  public Cache<K,V> cache(BuilderExtender<K,V> rb) {
+
+  /**
+   * Create a cache with additional special configuration.
+   */
+  public Cache<K,V> cache(Specialization<K,V> rb) {
     config(rb);
+    provideCache();
+    return cache;
+  }
+
+  /**
+   * Return cache, expects it to be build or set already.
+   */
+  public Cache<K,V> getCache() {
     if (cache == null) {
-      provideCache();
+      throw new NullPointerException("cache not yet built");
     }
     return cache;
+  }
+
+  /**
+   * Set a pre built cache to be managed by this rule.
+   */
+  public void setCache(Cache<K,V> c) {
+    checkAlready();
+    cache = c;
   }
 
   public InternalCacheInfo info() {
@@ -176,7 +203,7 @@ public class CacheRule<K,V> implements TestRule {
     return builder.build();
   }
 
-  public interface BuilderExtender<K,V> {
+  public interface Specialization<K,V> {
     void extend(Cache2kBuilder<K,V> b);
   }
 

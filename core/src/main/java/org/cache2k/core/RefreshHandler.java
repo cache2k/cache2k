@@ -59,6 +59,14 @@ public abstract class RefreshHandler<K,V>  {
       }
     };
 
+  static boolean realDuration(long t) {
+    return t > 0 && t < Long.MAX_VALUE;
+  }
+
+  static boolean zeroOrUnspecified(long t) {
+    return t == 0 || t == -1;
+  }
+
   public static <K, V> RefreshHandler<K,V> of(CacheConfiguration<K,V> cfg) {
     if (cfg.getExpireAfterWriteMillis() < 0) {
       throw new IllegalArgumentException(
@@ -67,28 +75,30 @@ public abstract class RefreshHandler<K,V>  {
         "See: https://github.com/cache2k/cache2k/issues/21"
       );
     }
-    if (cfg.getExpireAfterWriteMillis() == 0 &&
-      (cfg.getRetryIntervalMillis() == 0 || cfg.getRetryIntervalMillis() == -1)) {
+    if (cfg.getExpireAfterWriteMillis() == 0
+      && zeroOrUnspecified(cfg.getRetryIntervalMillis())) {
       return IMMEDIATE;
     }
-    if (cfg.getExpiryCalculator() != null ||
-      ValueWithExpiryTime.class.isAssignableFrom(cfg.getValueType().getType()) || cfg.getResiliencePolicy() != null) {
+    if (cfg.getExpiryCalculator() != null
+      || ValueWithExpiryTime.class.isAssignableFrom(cfg.getValueType().getType())
+      || cfg.getResiliencePolicy() != null) {
       RefreshHandler.Dynamic<K,V> h = new RefreshHandler.Dynamic<K, V>();
       h.configure(cfg);
       return h;
     }
-    if ((cfg.getExpireAfterWriteMillis() > 0 && cfg.getExpireAfterWriteMillis() < Long.MAX_VALUE) ||
-        (cfg.getRetryIntervalMillis() > 0 && cfg.getRetryIntervalMillis() < Long.MAX_VALUE) ) {
+    if (realDuration(cfg.getExpireAfterWriteMillis())
+      || realDuration(cfg.getRetryIntervalMillis())
+      || realDuration(cfg.getResilienceDurationMillis())) {
       RefreshHandler.Static<K,V> h = new RefreshHandler.Static<K, V>();
       h.configureStatic(cfg);
       return h;
     }
-    if ((cfg.getExpireAfterWriteMillis() == ExpiryCalculator.ETERNAL || cfg.getRetryIntervalMillis() == -1) &&
-      cfg.getRetryIntervalMillis() == -1) {
+    if (cfg.getExpireAfterWriteMillis() == ExpiryCalculator.ETERNAL
+      && zeroOrUnspecified(cfg.getRetryIntervalMillis())) {
       return ETERNAL_IMMEDIATE;
     }
-    if ((cfg.getExpireAfterWriteMillis() == ExpiryCalculator.ETERNAL || cfg.getExpireAfterWriteMillis() == -1) &&
-      (cfg.getRetryIntervalMillis() == ExpiryCalculator.ETERNAL || cfg.getRetryIntervalMillis() == -1)) {
+    if ((cfg.getExpireAfterWriteMillis() == ExpiryCalculator.ETERNAL || cfg.getExpireAfterWriteMillis() == -1)
+      && (cfg.getRetryIntervalMillis() == ExpiryCalculator.ETERNAL || cfg.getRetryIntervalMillis() == -1)) {
       return ETERNAL;
     }
     throw new IllegalArgumentException("expiry time ambiguous");

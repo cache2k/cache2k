@@ -66,7 +66,7 @@ public abstract class AbstractCache<K, V> implements InternalCache<K, V> {
       _type.equals(Map.class)) {
       return (X) new ConcurrentMapWrapper<K, V>(this);
     }
-    if (_type.equals(InternalCache.class)) {
+    if (_type.isAssignableFrom(this.getClass())) {
       return (X) this;
     }
     return null;

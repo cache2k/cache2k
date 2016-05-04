@@ -109,7 +109,7 @@ public class EntryProcessorTest {
 
   CacheWithWriter cacheWithWriter() {
     final CacheWithWriter c = new CacheWithWriter();
-    c.cache = target.cache(new CacheRule.BuilderExtender<Integer, Integer>() {
+    c.cache = target.cache(new CacheRule.Specialization<Integer, Integer>() {
       @Override
       public void extend(final Cache2kBuilder<Integer, Integer> b) {
         b.writer(c.writer);
@@ -148,7 +148,7 @@ public class EntryProcessorTest {
   @Test
   public void setException_propagation() {
     final String _TEXT = "set inside process";
-    Cache<Integer, Integer> c = target.cache(new CacheRule.BuilderExtender<Integer, Integer>() {
+    Cache<Integer, Integer> c = target.cache(new CacheRule.Specialization<Integer, Integer>() {
       @Override
       public void extend(final Cache2kBuilder<Integer, Integer> b) {
         b.retryInterval(Long.MAX_VALUE, TimeUnit.MILLISECONDS);
@@ -185,7 +185,7 @@ public class EntryProcessorTest {
         return ETERNAL;
       }
     };
-    Cache<Integer, Integer> c = target.cache(new CacheRule.BuilderExtender<Integer, Integer>() {
+    Cache<Integer, Integer> c = target.cache(new CacheRule.Specialization<Integer, Integer>() {
       @Override
       public void extend(final Cache2kBuilder<Integer, Integer> b) {
         b.resiliencePolicy(_policy);

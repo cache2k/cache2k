@@ -22,17 +22,21 @@ After an exception the cache will retry to load the value again after 5% of the 
 duration is passed. The load attempt is triggered when the client accesses the value
 again, or the cache is doing this by itself if `refreshAhead` is enabled.
 
-To keep the load down in the event of failure, the time duration between each retry
-increases according to an _exponential backoff_ pattern.
-For example, for 200 seconds expireAfterWrite will lead to a initial retry
+To keep the load in limits in the event of failure, the duration between each retry
+increases according to an _exponential backoff_ pattern by the factor of 1.5.
+Each duration is further randomized between one half and the full value.
+For example, an `expireAfterWrite` set to 200 seconds will lead to an initial retry
 time of 10 seconds. If exceptions persist the retry time will develop as follows:
 
-TODO: randomization
-
- - 10 seconds
- - 15 seconds
- - 22.5 seconds
- - 33.75 seconds
+.Retry intervals with exponential backoff starting at 10 seconds
+[width="70",options="header"]
+,===
+base duration,randomized duration range
+10 seconds,5 - 10 seconds
+15 seconds,7.5 - 115 seconds
+22.5 seconds,11.25 - 22.5 seconds
+33.75 seconds,16.875 - 33.75 seconds
+,===
 
 When reaching the configured expiry the cache will retry at this time interval and
 not increase further. The start retry interval and the maximum retry interval can
@@ -48,16 +52,40 @@ This behavior can be customized by the `ExceptionPropagator`.
 
 == Configuration options
 
-suppressExceptions::
-expireAfterWrite::
-resilienceDuration::
-retryInterval::
-mayRetryInterval::
-resiliencePolicy::
-exceptionPropagator::
+To customize the behavior the following
+
+suppressExceptions:: TODO!!!!
+expireAfterWrite:: Time duration after insert or updated an cache entry expires
+resilienceDuration:: Time span the cache will suppress loader exceptions if a value is available from
+                     a previous load. Defaults to `expiredAfterWrite`
+mayRetryInterval:: The maximum time interval after a retry attempt is made. Defaults to `resilienceDuration`
+retryInterval:: Initial time interval after a retry attempt is made. Defaults to 10% of `mayRetryInterval`, or a minimum of 2 seconds.
+resiliencePolicy:: Sets a custom resilience policy to control the cache behavior in the presence of exceptions
+exceptionPropagator:: Sets a custom behavior for exception propagation
+
+== Examples
+
+=== Don't work with expired data too long
+
+Expire entries after 10 minutes. If an exceptions happens we do not want
+ the cache to continue to service the previous (and expired) value for too long. In this scenario
+ it is better to propagate exceptions than serving a potentially outdated value. On the other side,
+ there may be temporary outages of the network for a maximum of 30 seconds we like to cover for.
+
+
 
 == Custom resilience policy
 
+By registering a custom implementation of the resilience policy it is possible to
+implement a special behavior that is used to determine the durations an exception should be
+suppressed or cached. Use the existing implementation as an example and starting point.
 
 
+== Debugging
+
+TODO
+effective configuration
+suppressed exceptions counter
+exceptions counter
+log exceptions?
 
