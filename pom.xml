@@ -54,6 +54,7 @@
     <module>variant/all</module>
     <module>osgi-test</module>
     <module>xml-config</module>
+    <module>doc</module>
   </modules>
 
   <properties>

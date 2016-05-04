@@ -1,0 +1,63 @@
+= Resilience
+
+In a read through configuration the cache can tolerate temporary loader failures.
+The write trough does not provide resilience capabilities at the moment, which means
+ a writer exception will always propagated to the cache client.
+
+== Default behavior
+
+The default behavior depends on the general expiry (`expiryAfterWrite`) setting of the cache.
+If no expiry is specified, all exceptions will be propagated to the client. The loader will be
+called immediately again, if the key is requested again.
+
+With specifying the expiry, the cache also enables the resilience features.
+If a load yields an exception and there is data in the cache: The exception is not propagated
+to the client, and the cache answers requests with the current cache content. Subsequent
+load attempts that yield an exception, will also be _suppressed_, if the time span to the
+first exception is below the expiry duration setting. If the loader produces
+subsequent exceptions that is longer then the configured expiry,
+the exception will be _propagated_. This time span can be modified (`resilienceDuration`).
+
+After an exception the cache will retry to load the value again after 5% of the expiry
+duration is passed. The load attempt is triggered when the client accesses the value
+again, or the cache is doing this by itself if `refreshAhead` is enabled.
+
+To keep the load down in the event of failure, the time duration between each retry
+increases according to an _exponential backoff_ pattern.
+For example, for 200 seconds expireAfterWrite will lead to a initial retry
+time of 10 seconds. If exceptions persist the retry time will develop as follows:
+
+TODO: randomization
+
+ - 10 seconds
+ - 15 seconds
+ - 22.5 seconds
+ - 33.75 seconds
+
+When reaching the configured expiry the cache will retry at this time interval and
+not increase further. The start retry interval and the maximum retry interval can
+be specified by `retryInterval` and `maxRetryInterval`.
+
+If an exception cannot be suppressed, it is propagated to the client immediately.
+The retry attempts follow the same pattern as above.
+
+When propagated, a loader exception is wrapped and rethrown as `CacheLoaderException`.
+A loader exception is potentially rethrown multiple times, if the retry time is not
+yet reached. In this situation a rethrown exception contains the text `until=<timestamp>`.
+This behavior can be customized by the `ExceptionPropagator`.
+
+== Configuration options
+
+suppressExceptions::
+expireAfterWrite::
+resilienceDuration::
+retryInterval::
+mayRetryInterval::
+resiliencePolicy::
+exceptionPropagator::
+
+== Custom resilience policy
+
+
+
+
