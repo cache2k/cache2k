@@ -54,7 +54,7 @@ This behavior can be customized by the `ExceptionPropagator`.
 
 To customize the behavior the following
 
-suppressExceptions:: TODO!!!!
+suppressExceptions:: Default is true. If set to false, do not suppress exceptions.
 expireAfterWrite:: Time duration after insert or updated an cache entry expires
 resilienceDuration:: Time span the cache will suppress loader exceptions if a value is available from
                      a previous load. Defaults to `expiredAfterWrite`
@@ -65,14 +65,69 @@ exceptionPropagator:: Sets a custom behavior for exception propagation
 
 == Examples
 
-=== Don't work with expired data too long
+=== No expiry
+
+Values do not expire, exceptions are not suppressed and an immediately
+retry is done.
+
+[source,java]
+----
+    Cache<Integer, Integer> c = new Cache2kBuilder<>() {}
+      .eternal(true)
+      /* ... set loader ... */
+      .build();
+----
+
+=== Expire after 10 minutes
+
+Values expire after 10 minutes. Exceptions are suppressed for 10 minutes
+as well, if possible. A retry attempt is made until 1 minute. If the cache
+continuously receives exceptions for a key, the retry intervals are exponentially
+increased up to 10 minutes.
+
+[source,java]
+----
+    Cache<Integer, Integer> c = new Cache2kBuilder<>() {}
+      .expireAfterWrite(10, TimeUnit.MINUTES)
+      /* ... set loader ... */
+      .build();
+----
+
+=== Reduced suppression time
 
 Expire entries after 10 minutes. If an exceptions happens we do not want
  the cache to continue to service the previous (and expired) value for too long. In this scenario
- it is better to propagate exceptions than serving a potentially outdated value. On the other side,
- there may be temporary outages of the network for a maximum of 30 seconds we like to cover for.
+ it is preferred to propagate an exception rather than serving a potentially outdated value.
+ On the other side, there may be temporary outages of the network for a maximum of 30 seconds
+ we like to cover for.
 
+[source,java]
+----
+    Cache<Integer, Integer> c = new Cache2kBuilder<Integer, Integer>() {}
+      .expireAfterWrite(10, TimeUnit.MINUTES)
+      .resilienceDuration(30, TimeUnit.SECONDS)
+      /* ... set loader ... */
+      .build();
+----
 
+=== Cached exceptions
+
+No suppression, because values never expire. The only way that a reload can be triggered
+is with a reload operation. In this case we do not want suppression, unless
+specified explicitly. The loader is not totally reliable, or a smart developer
+uses an exception to signal additional information. If exceptions occur, the cache
+should not be ineffective and keep exceptions and defer the next retry for 10 seconds.
+For requests between the retry interval, the cache will rethrow the previous exception.
+The retry interval does not increase, since a maximum timer interval is not specified.
+
+[source,java]
+----
+   Cache<Integer, Integer> c = new Cache2kBuilder<Integer, Integer>() {}
+      .eternal(true)
+      .retryInterval(10, TimeUnit.SECONDS)
+      /* ... set loader ... */
+      .build();
+----
 
 == Custom resilience policy
 

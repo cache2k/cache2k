@@ -86,6 +86,9 @@ public abstract class RefreshHandler<K,V>  {
       h.configure(cfg);
       return h;
     }
+    if (cfg.getResilienceDurationMillis() > 0 && !cfg.isSuppressExceptions()) {
+      throw new IllegalArgumentException("Ambiguous: exceptions suppression is switched off, but resilience duration is specified");
+    }
     if (realDuration(cfg.getExpireAfterWriteMillis())
       || realDuration(cfg.getRetryIntervalMillis())
       || realDuration(cfg.getResilienceDurationMillis())) {

@@ -58,6 +58,10 @@ public class DefaultResiliencePolicyTest {
     return target.getCache().requestInterface(HeapCache.class).refreshHandler;
   }
 
+  /**
+   * Values do not expire, exceptions are not suppressed and an immediately
+   * retry is done.
+   */
   @Test
   public void eternal() {
     Cache<Integer, Integer> c = new Cache2kBuilder<Integer, Integer>() {}
@@ -68,17 +72,43 @@ public class DefaultResiliencePolicyTest {
     assertTrue(extractHandler() instanceof RefreshHandler.EternalImmediate);
   }
 
+  /**
+   * Values do not expire. If a loader exception happens the exception
+   * is propagated and the first retry is done after approximately (plus randomization)
+   * 3 seconds. After second and the following exceptions the retry interval will
+   * be increased after a maximum of 30 seconds is reached.
+   *
+   * <p>For a cached value, a load can be triggered by {@code reload()}. If an
+   * exception happens in this case it is suppressed for 30 seconds. A first retry
+   * is done after 3 seconds.
+   */
   @Test
-  public void expiry10m() {
+  public void eternal_duration30s() {
     Cache<Integer, Integer> c = new Cache2kBuilder<Integer, Integer>() {}
-      .expireAfterWrite(10, TimeUnit.MINUTES)
+      .eternal(true)
+      .resilienceDuration(30, TimeUnit.SECONDS)
       /* ... set loader ... */
       .build();
     target.setCache(c);
     DefaultResiliencePolicy p = extractDefaultPolicy();
-    assertEquals(TimeUnit.MINUTES.toMillis(10), p.getResilienceDuration());
-    assertEquals(TimeUnit.MINUTES.toMillis(10), p.getMaxRetryInterval());
-    assertEquals(TimeUnit.MINUTES.toMillis(1), p.getRetryInterval());
+    assertEquals(TimeUnit.SECONDS.toMillis(30), p.getResilienceDuration());
+    assertEquals(TimeUnit.SECONDS.toMillis(30), p.getMaxRetryInterval());
+    assertEquals(TimeUnit.SECONDS.toMillis(3), p.getRetryInterval());
+  }
+
+  @Test
+  public void eternal_duration30s_retry10s() {
+    Cache<Integer, Integer> c = new Cache2kBuilder<Integer, Integer>() {}
+      .eternal(true)
+      .resilienceDuration(30, TimeUnit.SECONDS)
+      .retryInterval(10, TimeUnit.SECONDS)
+      /* ... set loader ... */
+      .build();
+    target.setCache(c);
+    DefaultResiliencePolicy p = extractDefaultPolicy();
+    assertEquals(TimeUnit.SECONDS.toMillis(30), p.getResilienceDuration());
+    assertEquals(TimeUnit.SECONDS.toMillis(30), p.getMaxRetryInterval());
+    assertEquals(TimeUnit.SECONDS.toMillis(10), p.getRetryInterval());
   }
 
   /**
@@ -115,6 +145,66 @@ public class DefaultResiliencePolicyTest {
   }
 
   @Test
+  public void expiry0() {
+    Cache<Integer, Integer> c = new Cache2kBuilder<Integer, Integer>() {}
+      .expireAfterWrite(0, TimeUnit.MINUTES)
+      /* ... set loader ... */
+      .build();
+    target.setCache(c);
+    assertTrue(extractHandler() instanceof RefreshHandler.Immediate);
+  }
+
+  @Test
+  public void expiry0_retry20s() {
+    Cache<Integer, Integer> c = new Cache2kBuilder<Integer, Integer>() {}
+      .expireAfterWrite(0, TimeUnit.MINUTES)
+      .retryInterval(20, TimeUnit.SECONDS)
+      .suppressExceptions(true) /* has no effect! */
+      /* ... set loader ... */
+      .build();
+    target.setCache(c);
+    DefaultResiliencePolicy p = extractDefaultPolicy();
+    assertEquals("no exception suppression", 0, p.getResilienceDuration());
+    assertEquals(TimeUnit.SECONDS.toMillis(20), p.getMaxRetryInterval());
+    assertEquals(TimeUnit.SECONDS.toMillis(20), p.getRetryInterval());
+  }
+
+  @Test
+  public void expiry0_retry20s_resilience20m() {
+    Cache<Integer, Integer> c = new Cache2kBuilder<Integer, Integer>() {}
+      .expireAfterWrite(0, TimeUnit.MINUTES)
+      .retryInterval(20, TimeUnit.SECONDS)
+      .resilienceDuration(5, TimeUnit.MINUTES)
+      .suppressExceptions(true) /* has no effect! */
+      /* ... set loader ... */
+      .build();
+    target.setCache(c);
+    DefaultResiliencePolicy p = extractDefaultPolicy();
+    assertEquals(TimeUnit.MINUTES.toMillis(5), p.getResilienceDuration());
+    assertEquals(TimeUnit.MINUTES.toMillis(5), p.getMaxRetryInterval());
+    assertEquals(TimeUnit.SECONDS.toMillis(20), p.getRetryInterval());
+  }
+
+  /**
+   * Values expire after 10 minutes. Exceptions are suppressed for 10 minutes
+   * as well, if possible. A retry attempt is made until 1 minute. If the cache
+   * continuously receives exceptions for a key, the retry intervals are
+   * exponentially increased up to 10 minutes.
+   */
+  @Test
+  public void expiry10m() {
+    Cache<Integer, Integer> c = new Cache2kBuilder<Integer, Integer>() {}
+      .expireAfterWrite(10, TimeUnit.MINUTES)
+      /* ... set loader ... */
+      .build();
+    target.setCache(c);
+    DefaultResiliencePolicy p = extractDefaultPolicy();
+    assertEquals(TimeUnit.MINUTES.toMillis(10), p.getResilienceDuration());
+    assertEquals(TimeUnit.MINUTES.toMillis(10), p.getMaxRetryInterval());
+    assertEquals(TimeUnit.MINUTES.toMillis(1), p.getRetryInterval());
+  }
+
+  @Test
   public void expiry10m_duration30s() {
     Cache<Integer, Integer> c = new Cache2kBuilder<Integer, Integer>() {}
       .expireAfterWrite(10, TimeUnit.MINUTES)
@@ -129,32 +219,27 @@ public class DefaultResiliencePolicyTest {
   }
 
   @Test
-  public void eternal_duration30s() {
+  public void expiry10m_retry10s() {
     Cache<Integer, Integer> c = new Cache2kBuilder<Integer, Integer>() {}
-      .eternal(true)
-      .resilienceDuration(30, TimeUnit.SECONDS)
-      /* ... set loader ... */
-      .build();
-    target.setCache(c);
-    DefaultResiliencePolicy p = extractDefaultPolicy();
-    assertEquals(TimeUnit.SECONDS.toMillis(30), p.getResilienceDuration());
-    assertEquals(TimeUnit.SECONDS.toMillis(30), p.getMaxRetryInterval());
-    assertEquals(TimeUnit.SECONDS.toMillis(3), p.getRetryInterval());
-  }
-
-  @Test
-  public void eternal_duration30s_retry10s() {
-    Cache<Integer, Integer> c = new Cache2kBuilder<Integer, Integer>() {}
-      .eternal(true)
-      .resilienceDuration(30, TimeUnit.SECONDS)
+      .expireAfterWrite(10, TimeUnit.MINUTES)
       .retryInterval(10, TimeUnit.SECONDS)
       /* ... set loader ... */
       .build();
     target.setCache(c);
     DefaultResiliencePolicy p = extractDefaultPolicy();
-    assertEquals(TimeUnit.SECONDS.toMillis(30), p.getResilienceDuration());
-    assertEquals(TimeUnit.SECONDS.toMillis(30), p.getMaxRetryInterval());
+    assertEquals(TimeUnit.MINUTES.toMillis(10), p.getResilienceDuration());
+    assertEquals(TimeUnit.SECONDS.toMillis(10), p.getMaxRetryInterval());
     assertEquals(TimeUnit.SECONDS.toMillis(10), p.getRetryInterval());
+  }
+
+  @Test(expected = IllegalArgumentException.class)
+  public void noSuppress_duration10m() {
+    Cache<Integer, Integer> c = new Cache2kBuilder<Integer, Integer>() {}
+      .eternal(true)
+      .resilienceDuration(10, TimeUnit.MINUTES)
+      .suppressExceptions(false)
+      /* ... set loader ... */
+      .build();
   }
 
 }
