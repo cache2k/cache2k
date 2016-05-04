@@ -29,8 +29,8 @@ import org.cache2k.core.extra.CacheWrapper;
  * Override operations mutating or querying the cache by using the entry processor.
  * This way we have a large test base for the entry processor, and we can verify that
  * every possible cache operation can be expressed via an entry processor invocation.
- * This class keeps the basic operations like peek, get, contains and put, since these
- * will be used by the tests to set initial cache state and assert the correct behavior.
+ *
+ * @author Jens Wilke
  */
 public class EntryProcessorCacheWrapper<K, V> extends CacheWrapper<K, V> {
 
@@ -39,7 +39,7 @@ public class EntryProcessorCacheWrapper<K, V> extends CacheWrapper<K, V> {
   }
 
   /**
-   * Not replaces by entry processor invocation.
+   * Not replaced by entry processor invocation.
    */
   @Override
   public V get(K key) {
@@ -47,11 +47,20 @@ public class EntryProcessorCacheWrapper<K, V> extends CacheWrapper<K, V> {
   }
 
   /**
-   * Not replaces by entry processor invocation.
+   * Not replaced by entry processor invocation.
    */
   @Override
   public V peek(K key) {
-    return super.peek(key);
+    CacheEntryProcessor<K, V, V> p = new CacheEntryProcessor<K, V, V>() {
+      @Override
+      public V process(MutableCacheEntry<K, V> entry, Object... arguments) throws Exception {
+        if (!entry.exists()) {
+          return null;
+        }
+        return entry.getValue();
+      }
+    };
+    return invoke(key, p);
   }
 
   @Override
