@@ -51,7 +51,7 @@ public interface Progress<V, R> {
 
   /**
    * The entry gets locked for mutation. Last command of semantic method.
-   *  Calls back on {@link Semantic#update(Progress, ExaminationEntry)}
+   * Calls back on {@link Semantic#update(Progress, ExaminationEntry)}
    */
   void wantMutation();
 

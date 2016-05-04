@@ -117,7 +117,7 @@ public interface Semantic<K, V, R> {
   }
 
   /**
-   * Read a cache entry and do a optional update. Based on the current state and value of the entry
+   * Read a cache entry and do an optional update. Based on the current state and value of the entry
    * this operation will do an update or not.
    */
   abstract class MightUpdateExisting<K, V, R> extends Base<K, V, R> {
