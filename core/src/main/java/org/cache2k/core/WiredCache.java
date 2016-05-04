@@ -34,7 +34,6 @@ import org.cache2k.core.operation.ExaminationEntry;
 import org.cache2k.core.operation.Progress;
 import org.cache2k.core.operation.Semantic;
 import org.cache2k.core.operation.Specification;
-import org.cache2k.core.threading.Futures;
 import org.cache2k.core.util.Log;
 import org.cache2k.core.storageApi.PurgeableStorage;
 import org.cache2k.core.storageApi.StorageAdapter;
@@ -68,6 +67,7 @@ public class WiredCache<K, V> extends AbstractCache<K, V>
   CacheEntryCreatedListener<K,V>[] syncEntryCreatedListeners;
   CacheEntryUpdatedListener<K,V>[] syncEntryUpdatedListeners;
   CacheEntryExpiredListener<K,V>[] syncEntryExpiredListeners;
+  StorageMetrics.Updater storageMetrics = new StandardStorageMetrics();
 
   private CommonMetrics.Updater metrics() {
     return heapCache.metrics;
@@ -698,6 +698,12 @@ public class WiredCache<K, V> extends AbstractCache<K, V>
     protected RefreshHandler<K, V> refreshHandler() {
       return heapCache.refreshHandler;
     }
+
+    @Override
+    protected StorageMetrics.Updater storageMetrics() {
+      return storageMetrics;
+    }
+
   }
 
 }

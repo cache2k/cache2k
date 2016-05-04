@@ -156,30 +156,9 @@ public abstract class HeapCache<K, V>
 
   protected long loadWoRefreshCnt = 0;
   protected long loadButHitCnt = 0;
-  protected long bulkGetCnt = 0;
   protected long fetchMillis = 0;
   protected long refreshHitCnt = 0;
   protected long newEntryCnt = 0;
-
-  /**
-   * Read from storage, but the entry was not fresh and cannot be returned.
-   */
-  protected long readNonFreshCnt = 0;
-
-  /**
-   * Entry was read from storage and fresh.
-   */
-  protected long readHitCnt = 0;
-
-  /**
-   * Separate counter for read entries that needed a fetch.
-   */
-  protected long readNonFreshAndFetchedCnt;
-
-  /**
-   * Storage did not contain the requested entry.
-   */
-  protected long readMissCnt = 0;
 
   protected long refreshSubmitFailedCnt = 0;
 

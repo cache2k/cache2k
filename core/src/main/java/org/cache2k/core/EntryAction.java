@@ -170,6 +170,8 @@ public abstract class EntryAction<K, V, R> implements StorageCallback, AsyncCach
     return null;
   }
 
+  protected StorageMetrics.Updater storageMetrics() { return null; }
+
   @SuppressWarnings("unchecked")
   protected abstract RefreshHandler<K,V> refreshHandler(); //  { return RefreshHandler.ETERNAL; }
 
@@ -829,14 +831,14 @@ public abstract class EntryAction<K, V, R> implements StorageCallback, AsyncCach
         heapCache.peekMissCnt++;
       }
       if (storageRead && storageMiss) {
-        heapCache.readNonFreshCnt++;
+        storageMetrics().readNonFresh();
         heapCache.peekHitNotFreshCnt++;
       }
     } else if (doNotCountAccess && heapHit) {
       metrics().containsButHit();
     }
     if (storageRead && !storageMiss) {
-      heapCache.readHitCnt++;
+      storageMetrics().readHit();
     }
   }
 
@@ -845,7 +847,7 @@ public abstract class EntryAction<K, V, R> implements StorageCallback, AsyncCach
       heapCache.loadWoRefreshCnt++;
       heapCache.fetchMillis += loadCompletedTime - loadStartedTime;
       if (storageRead && storageMiss) {
-        heapCache.readMissCnt++;
+        storageMetrics().readMiss();
       }
     } else {
       updateOnlyReadStatisticsInsideLock();

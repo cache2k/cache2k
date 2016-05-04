@@ -36,8 +36,6 @@ public interface InternalCacheInfo {
 
   long getStorageHitCnt();
 
-  long getStorageLoadCnt();
-
   long getStorageMissCnt();
 
   long getReadUsageCnt();
@@ -52,8 +50,6 @@ public interface InternalCacheInfo {
    * Loader calls including calls from refresh ahead.
    */
   long getLoadCnt();
-
-  long getBulkGetCnt();
 
   long getRefreshCnt();
 

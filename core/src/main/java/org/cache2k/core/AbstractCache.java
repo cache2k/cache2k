@@ -156,4 +156,9 @@ public abstract class AbstractCache<K, V> implements InternalCache<K, V> {
     prefetchAll(keys);
   }
 
+  @Override
+  public StorageMetrics getStorageMetrics() {
+    return StorageMetrics.DUMMY;
+  }
+
 }

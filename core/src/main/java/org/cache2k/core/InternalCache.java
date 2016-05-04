@@ -75,4 +75,11 @@ public interface InternalCache<K, V> extends Cache<K, V>, CanCheckIntegrity {
 
   String getEntryState(K key);
 
+  int getTotalEntryCount();
+
+  /**
+   * Return storage metrics if storage attached.
+   */
+  StorageMetrics getStorageMetrics();
+
 }
