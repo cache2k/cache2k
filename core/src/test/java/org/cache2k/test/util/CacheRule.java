@@ -1,0 +1,176 @@
+package org.cache2k.test.util;
+
+/*
+ * #%L
+ * cache2k core
+ * %%
+ * Copyright (C) 2000 - 2016 headissue GmbH, Munich
+ * %%
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ * 
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ * 
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ * #L%
+ */
+
+import org.cache2k.Cache;
+import org.cache2k.Cache2kBuilder;
+import org.cache2k.configuration.CacheType;
+import org.cache2k.configuration.CacheTypeDescriptor;
+import org.cache2k.core.InternalCache;
+import org.cache2k.core.InternalCacheInfo;
+import org.junit.rules.TestRule;
+import org.junit.runner.Description;
+import org.junit.runners.model.Statement;
+
+import java.lang.reflect.ParameterizedType;
+import java.lang.reflect.Type;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+
+/**
+ * @author Jens Wilke
+ */
+public class CacheRule<K,V> implements TestRule {
+
+  /**
+   * Record classes that have shared caches, just to throw a better exception.
+   */
+  private static Map<String, String> sharedCache = new ConcurrentHashMap<String, String>();
+
+  /** It is a class rule and we want to share the cache between the methods */
+  boolean shared;
+  Cache<K,V> cache;
+  Description description;
+  CacheTypeDescriptor<K> keyType;
+  CacheTypeDescriptor<V> valueType;
+  Cache2kBuilder<K,V> builder;
+
+  @SuppressWarnings("unchecked")
+  protected CacheRule() {
+    Type[] _types =
+      ((ParameterizedType) this.getClass().getGenericSuperclass()).getActualTypeArguments();
+    keyType =
+      (CacheTypeDescriptor<K>) CacheType.of(_types[0]).getBeanRepresentation();
+    valueType =
+      (CacheTypeDescriptor<V>) CacheType.of(_types[1]).getBeanRepresentation();
+    builder = getInitialBuilder();
+  }
+
+  private Cache2kBuilder<K, V> getInitialBuilder() {
+    return Cache2kBuilder.forUnknownTypes()
+      .keyType(keyType)
+      .valueType(valueType)
+      .entryCapacity(10000)
+      .eternal(true);
+  }
+
+  public CacheRule<K,V> config(BuilderExtender<K,V> rb) {
+    if (cache != null) {
+      throw new IllegalStateException("cache already build");
+    }
+    rb.extend(builder);
+    return this;
+  }
+
+  public Cache<K,V> cache() {
+    if (cache == null) {
+      provideCache();
+    }
+    return cache;
+  }
+
+  public InternalCacheInfo info() {
+    return cache.requestInterface(InternalCache.class).getLatestInfo();
+  }
+
+  @Override
+  public Statement apply(final Statement st, final Description d) {
+    if (d.isSuite()) {
+      shared = true;
+      description = d;
+      return new Statement() {
+        @Override
+        public void evaluate() throws Throwable {
+          try {
+            st.evaluate();
+          } finally {
+            cleanupClass();
+          }
+        }
+      };
+    }
+    if (d.isTest()) {
+      description = d;
+      return new Statement() {
+        @Override
+        public void evaluate() throws Throwable {
+          try {
+            st.evaluate();
+          } finally {
+            cleanupMethod();
+          }
+        }
+      };
+    }
+    throw new UnsupportedOperationException("hey?");
+  }
+
+  void cleanupMethod() {
+    if (shared) {
+      try {
+        cache.clear();
+      } catch (Throwable ignore) { }
+    } else {
+      try {
+        cache.clear();
+        cache.close();
+      } catch (Throwable ignore) { }
+    }
+  }
+
+  void cleanupClass() {
+    if (cache != null) {
+      try {
+        cache.clear();
+        cache.close();
+      } catch (Throwable ignore) { }
+    }
+  }
+
+  void provideCache() {
+    if (shared) {
+      if (cache == null) {
+        cache = buildCache();
+      }
+    } else {
+      cache = buildCache();
+    }
+  }
+
+  Cache<K, V> buildCache() {
+    String _name = description.getTestClass().getName();
+    if (shared) {
+      builder.name(description.getTestClass());
+      sharedCache.put(_name, _name);
+    } else {
+      if (sharedCache.containsKey(_name)) {
+        throw new IllegalArgumentException("Shared cache usage: Method rule must be identical instance.");
+      }
+      builder.name(description.getTestClass(), description.getMethodName());
+    }
+    return builder.build();
+  }
+
+  interface BuilderExtender<K,V> {
+    void extend(Cache2kBuilder<K,V> b);
+  }
+
+}
