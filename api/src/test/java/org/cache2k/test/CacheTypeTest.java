@@ -200,4 +200,17 @@ public class CacheTypeTest {
     assertEquals(c.getValueType(), c2.getValueType());
   }
 
+  /**
+   * Type cannot be captured. Expect proper exception:
+   * java.lang.IllegalArgumentException: The run time type is not available, got: T
+   */
+  @Test(expected = IllegalArgumentException.class)
+  public void testExceptionIfInsideGeneric() {
+    GenericWrapper<Integer> w = new GenericWrapper<Integer>();
+  }
+
+  static class GenericWrapper<T> {
+    CacheTypeDescriptor<T> type = new CacheType<T>() {};
+  }
+
 }

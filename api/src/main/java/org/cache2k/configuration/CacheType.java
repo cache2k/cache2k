@@ -62,6 +62,9 @@ public class CacheType<T> implements CacheTypeDescriptor<T> {
       GenericArrayType gat = (GenericArrayType) t;
       return new CacheTypeDescriptor.OfArray(of(gat.getGenericComponentType()));
     }
+    if (!(t instanceof Class)) {
+      throw new IllegalArgumentException("The run time type is not available, got: " + t);
+    }
     Class c = (Class) t;
     if (c.isArray()) {
       return new CacheTypeDescriptor.OfArray(of(c.getComponentType()));
