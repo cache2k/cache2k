@@ -344,6 +344,11 @@ public class Specification<K, V> {
     V value = null;
     boolean readThrough = false;
 
+    /**
+     * Sets exists and value together since it must be guaranteed that getValue() returns
+     * a value after exists yields true. It is critical that the isPresentOrMiss() check is
+     * only done once, since it depends on the current time.
+     */
     public MutableEntryOnProgress(final Progress<V, ?> _progress, final ExaminationEntry<K, V> _entry, boolean _readThrough) {
       readThrough = _readThrough;
       entry = _entry;
