@@ -29,7 +29,8 @@ Fixes of corner cases that are most likely not affecting any existing applicatio
   * EntryProcessor did not honor expiry times or policy
   * Remove the output of the build information to standard error
   * Higher safety gap (27 seconds) for timer event, if sharp expiry is requested
-  * peekEntry() did insert empty entry in some configuration
+  * `peekEntry()` and entry processor did leave a stale entry in some situations
+  * `MutableCacheEntry.setException()` behavior is defined
  
 ## API Changes and new methods
 

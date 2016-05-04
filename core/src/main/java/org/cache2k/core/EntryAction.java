@@ -501,7 +501,7 @@ public abstract class EntryAction<K, V, R> implements StorageCallback, AsyncCach
   public void mutationCalculateExpiry() {
     entry.nextProcessingStep(Entry.ProcessingState.EXPIRY);
     try {
-      if (loadStartedTime > 0 && newValueOrException instanceof ExceptionWrapper) {
+      if (newValueOrException instanceof ExceptionWrapper) {
         ExceptionWrapper ew = (ExceptionWrapper) newValueOrException;
         if ((entry.isDataValid() || entry.isExpired()) && entry.getException() == null) {
           expiry = refreshHandler().suppressExceptionUntil(entry, ew);

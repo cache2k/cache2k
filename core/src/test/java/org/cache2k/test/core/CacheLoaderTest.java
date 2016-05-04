@@ -131,7 +131,7 @@ public class CacheLoaderTest {
 
   @Test
   public void testPrefetch() throws Exception {
-    for (int i = 0; i < 1000; i++){
+    for (int i = 0; i < 10; i++){
       Cache<Integer, Integer> c = builderWithLoader().build();
       c.prefetch(123);
       assertTrue("Iteration " + i, isLoadStarted(c));

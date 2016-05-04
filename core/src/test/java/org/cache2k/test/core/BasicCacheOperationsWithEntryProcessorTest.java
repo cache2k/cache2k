@@ -30,6 +30,8 @@ import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.experimental.categories.Category;
 
+import java.util.concurrent.TimeUnit;
+
 /**
  * Reuse the basic operations test with the wrapper to the entry processor.
  *
@@ -55,6 +57,7 @@ public class BasicCacheOperationsWithEntryProcessorTest extends BasicCacheOperat
     Cache<Integer, Integer>  c = Cache2kBuilder
             .of(Integer.class, Integer.class)
             .name(BasicCacheOperationsTest.class)
+            .retryInterval(Long.MAX_VALUE, TimeUnit.MILLISECONDS)
             .eternal(true)
             .entryCapacity(1000)
             .build();

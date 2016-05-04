@@ -374,6 +374,9 @@ public class Specification<K, V> {
 
     @Override
     public void setException(final Throwable ex) {
+      mutate = true;
+      exists = true;
+      remove = false;
       value = (V) new ExceptionWrapper(ex);
     }
 

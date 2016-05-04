@@ -37,6 +37,7 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.NoSuchElementException;
+import java.util.concurrent.TimeUnit;
 
 import static org.junit.Assert.*;
 
@@ -63,6 +64,7 @@ public class BasicCacheOperationsTest {
     staticCache = Cache2kBuilder
             .of(Integer.class, Integer.class)
             .name(BasicCacheOperationsTest.class)
+            .retryInterval(Long.MAX_VALUE, TimeUnit.MILLISECONDS)
             .eternal(true)
             .entryCapacity(1000)
             .build();

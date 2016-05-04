@@ -86,6 +86,13 @@ public class CacheRule<K,V> implements TestRule {
     }
     return cache;
   }
+  public Cache<K,V> cache(BuilderExtender<K,V> rb) {
+    config(rb);
+    if (cache == null) {
+      provideCache();
+    }
+    return cache;
+  }
 
   public InternalCacheInfo info() {
     return cache.requestInterface(InternalCache.class).getLatestInfo();
@@ -169,7 +176,7 @@ public class CacheRule<K,V> implements TestRule {
     return builder.build();
   }
 
-  interface BuilderExtender<K,V> {
+  public interface BuilderExtender<K,V> {
     void extend(Cache2kBuilder<K,V> b);
   }
 
