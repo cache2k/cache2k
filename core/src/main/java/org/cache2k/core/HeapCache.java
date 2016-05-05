@@ -99,6 +99,9 @@ public abstract class HeapCache<K, V>
     public void propagateException(Object key, final LoadExceptionInformation exceptionInformation) {
       long _expiry = exceptionInformation.getUntil();
       if (_expiry > 0) {
+        if (_expiry == Long.MAX_VALUE) {
+          throw new CacheLoaderException("(expiry=ETERNAL) " + exceptionInformation.getException(), exceptionInformation.getException());
+        }
         throw new CacheLoaderException("(expiry=" + formatMillis(_expiry) + ") " + exceptionInformation.getException(), exceptionInformation.getException());
       } else {
         throw new CacheLoaderException("propagate previous loader exception", exceptionInformation.getException());
