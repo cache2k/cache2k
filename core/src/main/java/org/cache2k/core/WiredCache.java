@@ -454,7 +454,7 @@ public class WiredCache<K, V> extends AbstractCache<K, V>
     if (storage != null) {
       storage.open();
     }
-    heapCache.refreshHandler.init(this);
+    heapCache.timing.init(this);
     heapCache.init();
   }
 
@@ -695,8 +695,8 @@ public class WiredCache<K, V> extends AbstractCache<K, V>
     }
 
     @Override
-    protected RefreshHandler<K, V> refreshHandler() {
-      return heapCache.refreshHandler;
+    protected TimingHandler<K, V> timing() {
+      return heapCache.timing;
     }
 
     @Override

@@ -43,19 +43,19 @@ public class DefaultResiliencePolicyTest {
   @Rule public IntCacheRule target = new IntCacheRule();
 
   DefaultResiliencePolicy extractDefaultPolicy() {
-    RefreshHandler h = extractHandler();
-    if (!(h instanceof RefreshHandler.Static)) {
-      fail(RefreshHandler.Static.class + " expected");
+    TimingHandler h = extractHandler();
+    if (!(h instanceof TimingHandler.Static)) {
+      fail(TimingHandler.Static.class + " expected");
     }
-    ResiliencePolicy p = ((RefreshHandler.Static) h).resiliencePolicy;
+    ResiliencePolicy p = ((TimingHandler.Static) h).resiliencePolicy;
     if (!(p instanceof DefaultResiliencePolicy)) {
       fail(DefaultResiliencePolicy.class + " expected");
     }
     return (DefaultResiliencePolicy) p;
   }
 
-  RefreshHandler extractHandler() {
-    return target.getCache().requestInterface(HeapCache.class).refreshHandler;
+  TimingHandler extractHandler() {
+    return target.getCache().requestInterface(HeapCache.class).timing;
   }
 
   /**
@@ -69,7 +69,7 @@ public class DefaultResiliencePolicyTest {
       /* ... set loader ... */
       .build();
     target.setCache(c);
-    assertTrue(extractHandler() instanceof RefreshHandler.EternalImmediate);
+    assertTrue(extractHandler() instanceof TimingHandler.EternalImmediate);
   }
 
   /**
@@ -141,7 +141,7 @@ public class DefaultResiliencePolicyTest {
       /* ... set loader ... */
       .build();
     target.setCache(c);
-    assertTrue(extractHandler() instanceof RefreshHandler.EternalImmediate);
+    assertTrue(extractHandler() instanceof TimingHandler.EternalImmediate);
   }
 
   @Test
@@ -151,7 +151,7 @@ public class DefaultResiliencePolicyTest {
       /* ... set loader ... */
       .build();
     target.setCache(c);
-    assertTrue(extractHandler() instanceof RefreshHandler.Immediate);
+    assertTrue(extractHandler() instanceof TimingHandler.Immediate);
   }
 
   @Test

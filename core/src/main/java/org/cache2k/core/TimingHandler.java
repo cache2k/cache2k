@@ -33,18 +33,18 @@ import java.util.Date;
 import java.util.Timer;
 
 /**
- * Encapsulates logic for expiry and refresh calculation and timer handling.
+ * Encapsulates logic for expiry times calculation and timer handling.
  *
  * @author Jens Wilke
  */
 @SuppressWarnings("unchecked")
-public abstract class RefreshHandler<K,V>  {
+public abstract class TimingHandler<K,V>  {
 
   final static int PURGE_INTERVAL = TunableFactory.get(Tunable.class).purgeInterval;
   final static long SAFETY_GAP_MILLIS = HeapCache.TUNABLE.sharpExpirySafetyGapMillis;
-  final static RefreshHandler ETERNAL = new Eternal();
-  final static RefreshHandler IMMEDIATE = new Immediate();
-  final static RefreshHandler ETERNAL_IMMEDIATE = new EternalImmediate();
+  final static TimingHandler ETERNAL = new Eternal();
+  final static TimingHandler IMMEDIATE = new Immediate();
+  final static TimingHandler ETERNAL_IMMEDIATE = new EternalImmediate();
 
   /**
    * Instance of expiry calculator that extracts the expiry time from the value.
@@ -67,7 +67,7 @@ public abstract class RefreshHandler<K,V>  {
     return t == 0 || t == -1;
   }
 
-  public static <K, V> RefreshHandler<K,V> of(CacheConfiguration<K,V> cfg) {
+  public static <K, V> TimingHandler<K,V> of(CacheConfiguration<K,V> cfg) {
     if (cfg.getExpireAfterWriteMillis() < 0) {
       throw new IllegalArgumentException(
         "Specify expiry or no expiry explicitly. " +
@@ -82,7 +82,7 @@ public abstract class RefreshHandler<K,V>  {
     if (cfg.getExpiryCalculator() != null
       || ValueWithExpiryTime.class.isAssignableFrom(cfg.getValueType().getType())
       || cfg.getResiliencePolicy() != null) {
-      RefreshHandler.Dynamic<K,V> h = new RefreshHandler.Dynamic<K, V>();
+      TimingHandler.Dynamic<K,V> h = new TimingHandler.Dynamic<K, V>();
       h.configure(cfg);
       return h;
     }
@@ -92,7 +92,7 @@ public abstract class RefreshHandler<K,V>  {
     if (realDuration(cfg.getExpireAfterWriteMillis())
       || realDuration(cfg.getRetryIntervalMillis())
       || realDuration(cfg.getResilienceDurationMillis())) {
-      RefreshHandler.Static<K,V> h = new RefreshHandler.Static<K, V>();
+      TimingHandler.Static<K,V> h = new TimingHandler.Static<K, V>();
       h.configureStatic(cfg);
       return h;
     }
@@ -169,7 +169,7 @@ public abstract class RefreshHandler<K,V>  {
    */
   public void scheduleFinalExpiryTimer(Entry<K, V> e) { }
 
-  static class Eternal<K,V> extends RefreshHandler<K,V> {
+  static class Eternal<K,V> extends TimingHandler<K,V> {
 
     @Override
     public long calculateNextRefreshTime(final Entry<K,V> e, final V v, final long _loadTime) {
@@ -187,7 +187,7 @@ public abstract class RefreshHandler<K,V>  {
     }
   }
 
-  static class EternalImmediate<K,V> extends RefreshHandler<K,V> {
+  static class EternalImmediate<K,V> extends TimingHandler<K,V> {
 
     @Override
     public long calculateNextRefreshTime(final Entry<K,V> e, final V v, final long _loadTime) {
@@ -206,7 +206,7 @@ public abstract class RefreshHandler<K,V>  {
 
   }
 
-  static class Immediate<K,V> extends RefreshHandler<K,V> {
+  static class Immediate<K,V> extends TimingHandler<K,V> {
 
     @Override
     public long calculateNextRefreshTime(final Entry<K,V> e, final V v, final long _loadTime) {
@@ -224,7 +224,7 @@ public abstract class RefreshHandler<K,V>  {
     }
   }
 
-  static class Static<K,V> extends RefreshHandler<K,V> {
+  static class Static<K,V> extends TimingHandler<K,V> {
 
     boolean sharpTimeout;
     boolean backgroundRefresh;
@@ -326,10 +326,15 @@ public abstract class RefreshHandler<K,V>  {
     }
 
     /**
+     * Calculate the needed timer value, which depends on the setting of
+     * sharpExpiry and refreshAhead. It may happen that the timer is not
+     * started, because the time is already passed. In this case
+     * {@link Entry#EXPIRED} is returned. Callers need to check that and may
+     * be remove the entry consequently from the cache.
      *
      * @param _nextRefreshTime calculated next refresh time
      * @param e the entry
-     * @return
+     * @return adjusted value for nextRefreshTime.
      */
     @Override
     public long stopStartTimer(long _nextRefreshTime, final Entry e) {

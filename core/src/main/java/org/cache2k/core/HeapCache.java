@@ -28,7 +28,6 @@ import org.cache2k.core.operation.Specification;
 import org.cache2k.core.threading.DefaultThreadFactoryProvider;
 import org.cache2k.core.threading.Futures;
 import org.cache2k.core.threading.ThreadFactoryProvider;
-import org.cache2k.core.util.ThreadDump;
 
 import org.cache2k.core.util.Log;
 import org.cache2k.core.util.TunableConstants;
@@ -58,7 +57,6 @@ import java.util.concurrent.LinkedBlockingDeque;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.cache2k.core.util.Util.*;
@@ -126,7 +124,7 @@ public abstract class HeapCache<K, V>
   protected String name;
   public CacheManagerImpl manager;
   protected AdvancedCacheLoader<K,V> loader;
-  protected RefreshHandler<K,V> refreshHandler = RefreshHandler.ETERNAL;
+  protected TimingHandler<K,V> timing = TimingHandler.ETERNAL;
 
   /** Statistics */
 
@@ -317,8 +315,8 @@ public abstract class HeapCache<K, V>
         new ThreadPoolExecutor.AbortPolicy());
   }
 
-  public void setRefreshHandler(final RefreshHandler<K,V> rh) {
-    refreshHandler = rh;
+  public void setTiming(final TimingHandler<K,V> rh) {
+    timing = rh;
   }
 
   public void setExceptionPropagator(ExceptionPropagator ep) {
@@ -372,7 +370,7 @@ public abstract class HeapCache<K, V>
       if (name == null) {
         name = String.valueOf(cacheCnt++);
       }
-      refreshHandler.init(this);
+      timing.init(this);
       initializeHeapCache();
       if (hasBackgroundRefresh() &&
         loader == null) {
@@ -441,7 +439,7 @@ public abstract class HeapCache<K, V>
     if (startedTime == 0) {
       startedTime = System.currentTimeMillis();
     }
-    refreshHandler.reset();
+    timing.reset();
   }
 
   @Override
@@ -458,7 +456,7 @@ public abstract class HeapCache<K, V>
    */
   @Override
   public void cancelTimerJobs() {
-    refreshHandler.shutdown();
+    timing.shutdown();
   }
 
   @Override
@@ -504,7 +502,7 @@ public abstract class HeapCache<K, V>
 
   public void closePart2() {
     synchronized (lock) {
-      refreshHandler.shutdown();
+      timing.shutdown();
       mainHash = refreshHash = null;
       if (manager != null) {
         manager.cacheDestroyed(this);
@@ -890,7 +888,7 @@ public abstract class HeapCache<K, V>
   }
 
   private void restartTimer(final Entry e, final long _nextRefreshTime) {
-    e.nextRefreshTime = refreshHandler.stopStartTimer(_nextRefreshTime, e);
+    e.nextRefreshTime = timing.stopStartTimer(_nextRefreshTime, e);
     checkForImmediateExpiry(e);
   }
 
@@ -1577,7 +1575,7 @@ public abstract class HeapCache<K, V>
   private boolean removeEntryFromHash(Entry<K, V> e) {
     boolean f = mainHashCtrl.remove(mainHash, e) || refreshHashCtrl.remove(refreshHash, e);
     checkForHashCodeChange(e);
-    refreshHandler.cancelExpiryTimer(e);
+    timing.cancelExpiryTimer(e);
     e.setGone();
     return f;
   }
@@ -1630,12 +1628,12 @@ public abstract class HeapCache<K, V>
     boolean _suppressException = false;
     try {
       if ((e.isDataValid() || e.isExpired()) && e.getException() == null) {
-        _nextRefreshTime = refreshHandler.suppressExceptionUntil(e, _value);
+        _nextRefreshTime = timing.suppressExceptionUntil(e, _value);
       }
       if (_nextRefreshTime > t0) {
         _suppressException = true;
       } else {
-        _nextRefreshTime = refreshHandler.cacheExceptionUntil(e, _value);
+        _nextRefreshTime = timing.cacheExceptionUntil(e, _value);
       }
     } catch (Exception ex) {
       try {
@@ -1678,7 +1676,7 @@ public abstract class HeapCache<K, V>
   protected final long insertOrUpdateAndCalculateExpiry(Entry<K, V> e, V v, long t0, long t, byte _updateStatistics) {
     long _nextRefreshTime;
     try {
-      _nextRefreshTime = refreshHandler.calculateNextRefreshTime(e, v, t0);
+      _nextRefreshTime = timing.calculateNextRefreshTime(e, v, t0);
     } catch (Exception ex) {
       try {
         updateStatistics(e, v, t0, t, _updateStatistics, false);
@@ -1841,7 +1839,7 @@ public abstract class HeapCache<K, V>
       if (nrt <= 0) {
         return;
       }
-      refreshHandler.scheduleFinalExpiryTimer(e);
+      timing.scheduleFinalExpiryTimer(e);
       e.nextRefreshTime = -nrt;
     }
   }
@@ -1993,8 +1991,8 @@ public abstract class HeapCache<K, V>
   protected <R> EntryAction<K, V, R> createEntryAction(final K key, final Entry<K, V> e, final Semantic<K, V, R> op) {
     return new EntryAction<K, V, R>(this, this, op, key, e) {
       @Override
-      protected RefreshHandler<K, V> refreshHandler() {
-        return refreshHandler;
+      protected TimingHandler<K, V> timing() {
+        return timing;
       }
     };
   }

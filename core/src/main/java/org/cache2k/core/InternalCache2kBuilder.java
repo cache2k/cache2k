@@ -282,12 +282,12 @@ public class InternalCache2kBuilder<K, T> {
         wc.syncEntryExpiredListeners = _syncExpiredListeners.toArray(new CacheEntryExpiredListener[_syncExpiredListeners.size()]);
       }
       bc.listener = wc;
-      RefreshHandler rh = RefreshHandler.of(config);
-      bc.setRefreshHandler(rh);
+      TimingHandler rh = TimingHandler.of(config);
+      bc.setTiming(rh);
       wc.init();
     } else {
-      RefreshHandler rh = RefreshHandler.of(config);
-      bc.setRefreshHandler(rh);
+      TimingHandler rh = TimingHandler.of(config);
+      bc.setTiming(rh);
       bc.init();
     }
     cm.sendCreatedEvent(_cache);

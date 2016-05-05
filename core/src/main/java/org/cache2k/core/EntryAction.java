@@ -173,7 +173,7 @@ public abstract class EntryAction<K, V, R> implements StorageCallback, AsyncCach
   protected StorageMetrics.Updater storageMetrics() { return null; }
 
   @SuppressWarnings("unchecked")
-  protected abstract RefreshHandler<K,V> refreshHandler(); //  { return RefreshHandler.ETERNAL; }
+  protected abstract TimingHandler<K,V> timing(); //  { return RefreshHandler.ETERNAL; }
 
   @Override
   public boolean isPresent() {
@@ -288,7 +288,7 @@ public abstract class EntryAction<K, V, R> implements StorageCallback, AsyncCach
     long _expiryTimeFromStorage = se.getValueExpiryTime();
     boolean _expired = _expiryTimeFromStorage != 0 && _expiryTimeFromStorage <= now;
     if (!_expired) {
-      _nextRefreshTime = refreshHandler().calculateNextRefreshTime(e, v, now);
+      _nextRefreshTime = timing().calculateNextRefreshTime(e, v, now);
       expiry = _nextRefreshTime;
       if (_nextRefreshTime == ExpiryCalculator.ETERNAL) {
         e.nextRefreshTime = Entry.DATA_VALID;
@@ -504,7 +504,7 @@ public abstract class EntryAction<K, V, R> implements StorageCallback, AsyncCach
       if (newValueOrException instanceof ExceptionWrapper) {
         ExceptionWrapper ew = (ExceptionWrapper) newValueOrException;
         if ((entry.isDataValid() || entry.isExpired()) && entry.getException() == null) {
-          expiry = refreshHandler().suppressExceptionUntil(entry, ew);
+          expiry = timing().suppressExceptionUntil(entry, ew);
         }
         if (expiry > loadStartedTime) {
           suppressException = true;
@@ -515,7 +515,7 @@ public abstract class EntryAction<K, V, R> implements StorageCallback, AsyncCach
           }
           entry.setSuppressedLoadExceptionInformation(ew);
         } else {
-          expiry = refreshHandler().cacheExceptionUntil(entry, ew);
+          expiry = timing().cacheExceptionUntil(entry, ew);
         }
         if (expiry < 0) {
           ew.until = -expiry;
@@ -523,7 +523,7 @@ public abstract class EntryAction<K, V, R> implements StorageCallback, AsyncCach
           ew.until = expiry;
         }
       } else {
-        expiry = refreshHandler().calculateNextRefreshTime(
+        expiry = timing().calculateNextRefreshTime(
           entry, newValueOrException,
           lastModificationTime);
       }
@@ -809,7 +809,7 @@ public abstract class EntryAction<K, V, R> implements StorageCallback, AsyncCach
           }
         }
       } else {
-        entry.nextRefreshTime = refreshHandler().stopStartTimer(expiry, entry);
+        entry.nextRefreshTime = timing().stopStartTimer(expiry, entry);
         if (entry.isExpired()) {
           entry.nextRefreshTime = Entry.EXPIRY_TIME_MIN;
           userCache.expireOrScheduleFinalExpireEvent(entry);
