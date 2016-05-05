@@ -18,6 +18,8 @@ Modifications in the statistics output will not listed as breakage.
 
 If something is listed here it might affect an existing application and updating is recommended.
 
+  * EntryProcessor did not honor expiry times or policy
+
 ## Fixes and Improvements
 
 Fixes of corner cases that are most likely not affecting any existing applications and improvements are listed here.
@@ -26,11 +28,11 @@ Fixes of corner cases that are most likely not affecting any existing applicatio
   * Eviction: Don't generate ghost entries when no eviction is needed. Improves performance when cache is operated 
     below the maximum capacity.
   * Add missing expiry event, when entry is expired immediately after an update  
-  * EntryProcessor did not honor expiry times or policy
   * Remove the output of the build information to standard error
   * Higher safety gap (27 seconds) for timer event, if sharp expiry is requested
   * `peekEntry()` and entry processor did leave a stale entry in some situations
-  * `MutableCacheEntry.setException()` behavior is defined
+  * `MutableCacheEntry.setException()` was a stub, behavior is now defined
+  * Renaming of JMX properties
  
 ## API Changes and new methods
 

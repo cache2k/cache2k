@@ -52,7 +52,7 @@ This behavior can be customized by the `ExceptionPropagator`.
 
 == Configuration options
 
-To customize the behavior the following
+To customize the behavior the following options exist.
 
 suppressExceptions:: Default is true. If set to false, do not suppress exceptions.
 expireAfterWrite:: Time duration after insert or updated an cache entry expires
@@ -140,7 +140,7 @@ suppressed or cached. Use the existing implementation as an example and starting
 The cache has no support for logging exceptions. If this is needed, it can be achieved
 by an adaptor of the `CacheLoader`.
 
-
-exceptions counter
+The statistics expose counters for the total number of received load exceptions and the number
+of suppressed exception.
 
 
