@@ -135,12 +135,12 @@ By registering a custom implementation of the resilience policy it is possible t
 implement a special behavior that is used to determine the durations an exception should be
 suppressed or cached. Use the existing implementation as an example and starting point.
 
-
 == Debugging
 
-TODO
-effective configuration
-suppressed exceptions counter
+The cache has no support for logging exceptions. If this is needed, it can be achieved
+by an adaptor of the `CacheLoader`.
+
+
 exceptions counter
-log exceptions?
+
 

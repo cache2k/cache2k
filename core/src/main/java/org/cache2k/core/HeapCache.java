@@ -1646,16 +1646,8 @@ public abstract class HeapCache<K, V>
     } else {
       e.value = (V) _value;
     }
-    long _expiry = Math.abs(_nextRefreshTime);
-    _value.until = _expiry;
-    if (!_suppressException) {
-      Log log = getLog();
-      if (log.isDebugEnabled()) {
-        log.debug(
-          "loader caught exception, expires at: " + formatMillis(_expiry),
-          ((ExceptionWrapper) _value).getException());
-      }
-    }
+    _value.until = Math.abs(_nextRefreshTime);
+    _value.until = Math.abs(_nextRefreshTime);
     return insertUpdateStats(e, (V) _value, t0, t, INSERT_STAT_LOAD, _nextRefreshTime, _suppressException);
   }
 
