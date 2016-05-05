@@ -272,12 +272,6 @@ public abstract class RefreshHandler<K,V>  {
       sharpTimeout = c.isSharpExpiry();
     }
 
-    boolean isNeedingTimer() {
-      return maxLinger > 0 ||
-          !(resiliencePolicy instanceof DefaultResiliencePolicy) ||
-          !((DefaultResiliencePolicy) resiliencePolicy).isNoTimerNeeded();
-    }
-
     @Override
     public synchronized void init(InternalCache<K,V> c) {
       if (cache == null) {
@@ -288,7 +282,7 @@ public abstract class RefreshHandler<K,V>  {
     @Override
     public synchronized  void reset() {
       shutdown();
-      if (timer == null && isNeedingTimer()) {
+      if (timer == null) {
         timer = new Timer(cache.getName(), true);
       }
     }
@@ -355,8 +349,8 @@ public abstract class RefreshHandler<K,V>  {
       if (sharpTimeout && _nextRefreshTime > Entry.EXPIRY_TIME_MIN) {
         _nextRefreshTime = -_nextRefreshTime;
       }
-      if (timer != null &&
-        (_nextRefreshTime >= Entry.EXPIRY_TIME_MIN || _nextRefreshTime < 0)) {
+
+      if (_nextRefreshTime >= Entry.EXPIRY_TIME_MIN || _nextRefreshTime < 0) {
         if (_nextRefreshTime < -1) {
           long _timerTime =
             -_nextRefreshTime - SAFETY_GAP_MILLIS;
@@ -452,12 +446,6 @@ public abstract class RefreshHandler<K,V>  {
           (ExpiryCalculator<K, V>)
             ENTRY_EXPIRY_CALCULATOR_FROM_VALUE;
       }
-    }
-
-    @Override
-    boolean isNeedingTimer() {
-      return super.isNeedingTimer() ||
-         expiryCalculator != null;
     }
 
     long calcNextRefreshTime(K _key, V _newObject, long now, Entry _entry) {

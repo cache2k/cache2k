@@ -27,6 +27,9 @@ import org.cache2k.integration.ResiliencePolicy;
 import java.util.Random;
 
 /**
+ * Default resilience policy which implements a exponential back off and randomization
+ * of the retry intervals.
+ *
  * @author Jens Wilke
  */
 public class DefaultResiliencePolicy<K,V> extends ResiliencePolicy<K,V> {
@@ -45,6 +48,19 @@ public class DefaultResiliencePolicy<K,V> extends ResiliencePolicy<K,V> {
   private long resilienceDuration;
   private long maxRetryInterval;
   private long retryInterval;
+
+  /**
+   * Construct a resilience policy with multiplier 1.5 and randomization 0.5.
+   */
+  public DefaultResiliencePolicy() { }
+
+  /**
+   * Construct a resilience policy with custom multiplier and randomization.
+   */
+  public DefaultResiliencePolicy(double _multiplier, double _randomization) {
+    multiplier = _multiplier;
+    randomization = _randomization;
+  }
 
   public double getMultiplier() {
     return multiplier;
@@ -104,19 +120,10 @@ public class DefaultResiliencePolicy<K,V> extends ResiliencePolicy<K,V> {
     }
   }
 
-  /**
-   * No timer needed if the settings enable immediate expiry or never expire.
-   */
-  public boolean isNoTimerNeeded() {
-    return
-        (resilienceDuration == 0 || resilienceDuration == Long.MAX_VALUE) &&
-        (retryInterval == 0 || retryInterval == Long.MAX_VALUE);
-  }
-
   @Override
-  public long suppressExceptionUntil(final Object key,
+  public long suppressExceptionUntil(final K key,
                                      final LoadExceptionInformation exceptionInformation,
-                                     final CacheEntry cachedContent) {
+                                     final CacheEntry<K,V> cachedContent) {
     if (resilienceDuration == 0) {
       return 0;
     }
@@ -136,7 +143,7 @@ public class DefaultResiliencePolicy<K,V> extends ResiliencePolicy<K,V> {
   }
 
   @Override
-  public long retryLoadAfter(final Object key,
+  public long retryLoadAfter(final K key,
                              final LoadExceptionInformation exceptionInformation) {
     if (retryInterval == 0) {
       return 0;
