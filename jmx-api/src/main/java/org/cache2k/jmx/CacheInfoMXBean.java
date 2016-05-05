@@ -68,7 +68,7 @@ public interface CacheInfoMXBean {
   long getNewEntryCnt();
 
   /**
-   * How many times the data was fetched from the cache source.
+   * How many times a load succeeded.
    */
   long getLoadCnt();
 
@@ -116,12 +116,12 @@ public interface CacheInfoMXBean {
   long getKeyMutationCnt();
 
   /**
-   * Number of exceptions thrown by the {@link org.cache2k.CacheSource}.
+   * Number of exceptions thrown by the {@link org.cache2k.integration.CacheLoader}.
    */
-  long getFetchExceptionCnt();
+  long getLoadExceptionCnt();
 
   /**
-   * Number of exceptions thrown by the CacheSource that were ignored and
+   * Number of exceptions thrown by the {@code CacheLoader} that were ignored and
    * the previous data value got returned.
    */
   long getSuppressedExceptionCnt();
@@ -157,14 +157,14 @@ public interface CacheInfoMXBean {
   long getHashLongestCollisionSize();
 
   /**
-   * Milliseconds per fetch.
+   * Milliseconds per load.
    */
-  double getMillisPerFetch();
+  double getMillisPerLoad();
 
   /**
-   * Total number of time spent fetching entries from the cache source.
+   * Total number of time spent loading entries from the cache loader.
    */
-  long getFetchMillis();
+  long getTotalLoadMillis();
 
   /**
    * Implementation class of the cache which controls the eviction strategy.
