@@ -612,6 +612,9 @@ public class Entry<K, T>
     misc = new LoadExceptionPiggyBack(w, (PiggyBack) _misc);
   }
 
+  /**
+   * If the entry carries information about a suppressed exception, clear it.
+   */
   public void resetSuppressedLoadExceptionInformation() {
     LoadExceptionPiggyBack inf = getPiggyBack(LoadExceptionPiggyBack.class);
     if (inf != null) {
