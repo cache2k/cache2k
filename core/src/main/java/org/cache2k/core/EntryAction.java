@@ -526,6 +526,7 @@ public abstract class EntryAction<K, V, R> implements StorageCallback, AsyncCach
         expiry = timing().calculateNextRefreshTime(
           entry, newValueOrException,
           lastModificationTime);
+        entry.resetSuppressedLoadExceptionInformation();
       }
     } catch (Exception ex) {
       expiryCalculationException(ex);
@@ -684,9 +685,6 @@ public abstract class EntryAction<K, V, R> implements StorageCallback, AsyncCach
       oldValueOrException = entry.value;
       previousModificationTime = entry.getLastModification();
       entry.value = newValueOrException;
-      if (!(newValueOrException instanceof ExceptionWrapper)) {
-        entry.resetSuppressedLoadExceptionInformation();
-      }
     }
     mutationMayStore();
   }
