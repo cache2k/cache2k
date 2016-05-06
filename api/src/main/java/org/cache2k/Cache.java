@@ -539,21 +539,22 @@ public interface Cache<K, V> extends
     Iterable<? extends K> keys, CacheEntryProcessor<K , V, R> entryProcessor, Object... objs);
 
   /**
-   * <p/>Bulk get that gets all values associated with the keys.
+   * Retrieve values from the cache associated with the provided keys. If the
+   * value is not yet in the cache, the loader is invoked.
    *
-   * <p/>The cache loader does not need to support the bulk operation and override
-   * {@link CacheLoader#loadAll}. The cache uses available threads from the loader
-   * thread pool to perform the load in parallel.
+   * <p>Executing the request, the cache may do optimizations like
+   * utilizing multiple threads for invoking the loader or using the bulk
+   * methods on the loader. This is not yet fully exploited and will improve
+   * with further cache2k releases.
    *
-   * <p/>Exception handling: The method may terminate normal, even if the cache
+   * <p>Exception handling: The method may terminate normal, even if the cache
    * loader failed to provide values for some keys. The cache will generally
    * do everything to delay the propagation of the exception until the key is requested,
    * to be most specific. If the loader has permanent failures this method may
    * throw an exception immediately.
    *
-   * <p/>Performance: An better technique is the
-   * call of {@link Cache#prefetchAll(Iterable)} and then use the normal
-   * {@link Cache#get(Object)} to request the the values.
+   * <p>Performance: A better technique is using {@link Cache#prefetchAll(Iterable)}
+   * and then {@link Cache#get(Object)} to request the the values.
    *
    * @throws NullPointerException if one of the specified keys is null
    * @throws CacheLoaderException in case the loader has permanent failures.
