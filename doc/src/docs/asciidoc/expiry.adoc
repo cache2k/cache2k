@@ -1,0 +1,22 @@
+= Expiry and Refresh
+
+== Variable Expiry
+
+== Advanced Expiry Policy
+
+== Sharp Expiry
+
+== Cached Exceptions and Expiry
+
+
+== Refresh Ahead
+
+
+
+If _sharp expiry and refresh ahead_ is enabled in combination the contract of refresh ahead
+is relaxed. This will lead to:
+
+ - Entries will expire exactly at the specified time
+ - A refresh started at the expiry time
+ - `contains()` is `false`, if the entry is expired and not yet refreshed
+ - A `get()` on the expired entry will stall until refreshed
