@@ -43,7 +43,7 @@ public class ConcurrencyHelper {
             throw new TimeoutException("waiting for " + _timeoutMillis + " milliseconds");
           }
         }
-        Thread.sleep(1);
+        Thread.yield();
       }
     } catch (Exception ex) {
       throw new RethrownUnhandledException(ex);
