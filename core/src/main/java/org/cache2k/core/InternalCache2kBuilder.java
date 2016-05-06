@@ -188,6 +188,7 @@ public class InternalCache2kBuilder<K, T> {
         throw new IllegalArgumentException("name missing and automatic generation failed");
       }
     }
+    checkConfiguration();
     Class<?> _implClass = HeapCache.TUNABLE.defaultImplementation;
     InternalCache<K,T> _cache = constructImplementationAndFillParameters(_implClass);
 
@@ -292,6 +293,12 @@ public class InternalCache2kBuilder<K, T> {
     }
     cm.sendCreatedEvent(_cache);
     return _cache;
+  }
+
+  void checkConfiguration() {
+    if (config.isRefreshAhead() && !config.isKeepValueAfterExpired()) {
+      throw new IllegalArgumentException("refreshAhead && !keepDataAfterExpired");
+    }
   }
 
   static class AsyncCreatedListener<K,V> implements CacheEntryCreatedListener<K,V> {
