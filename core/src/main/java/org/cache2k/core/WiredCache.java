@@ -315,7 +315,6 @@ public class WiredCache<K, V> extends AbstractCache<K, V>
    */
   @Override
   public Map<K, V> getAll(final Iterable<? extends K> keys) {
-    prefetch(keys);
     Map<K, ExaminationEntry<K, V>> map = new HashMap<K, ExaminationEntry<K, V>>();
     for (K k : keys) {
       ExaminationEntry<K, V> e = execute(k, SPEC.getEntry(k));
