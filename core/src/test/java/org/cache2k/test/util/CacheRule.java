@@ -103,6 +103,13 @@ public class CacheRule<K,V> implements TestRule {
     return cache;
   }
 
+  public void run(Context<K,V> rb) {
+    config(rb);
+    provideCache();
+    rb.cache = cache;
+    rb.run();
+  }
+
   /**
    * Return cache, expects it to be build or set already.
    */
@@ -205,6 +212,15 @@ public class CacheRule<K,V> implements TestRule {
 
   public interface Specialization<K,V> {
     void extend(Cache2kBuilder<K,V> b);
+  }
+
+  public static abstract class Context<K,V> implements Specialization<K,V>, Runnable {
+
+    public Cache<K,V> cache;
+
+    /** Used to run the tests with the context object */
+    public void run() { }
+
   }
 
 }
