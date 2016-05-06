@@ -901,6 +901,10 @@ public abstract class HeapCache<K, V>
     }
   }
 
+  /**
+   * Loop: Request an eviction candidate, check whether processing is going on
+   * and evict it. Continue, if still above capacity limit.
+   */
   protected final void evictEventually() {
     int _spinCount = TUNABLE.maximumEvictSpins;
     Entry _previousCandidate = null;
@@ -919,7 +923,7 @@ public abstract class HeapCache<K, V>
         if (e.isGone()) {
           continue;
         }
-        if (e.isPinned()) {
+        if (e.isProcessing()) {
           if (e != _previousCandidate) {
             _previousCandidate = e;
             continue;
@@ -1779,7 +1783,7 @@ public abstract class HeapCache<K, V>
               if (e.isGone()) {
                 return;
               }
-              e.setGettingRefresh();
+              e.startProcessing(Entry.ProcessingState.REFRESH);
             }
             try {
               finishFetch(e, load(e));

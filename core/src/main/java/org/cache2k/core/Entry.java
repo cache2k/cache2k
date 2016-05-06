@@ -252,18 +252,6 @@ public class Entry<K, T>
     }
   }
 
-  /**
-   * Last entry processing was aborted without yielding valid data
-   */
-  public boolean isAborted() { return nextRefreshTime == ABORTED; }
-
-  /**
-   * Entry is not allowed to be evicted
-   */
-  public boolean isPinned() {
-    return isProcessing();
-  }
-
   public boolean isProcessing() {
     return getProcessingState() != ProcessingState.DONE;
   }
@@ -283,10 +271,6 @@ public class Entry<K, T>
     if (_interrupt) {
       Thread.currentThread().interrupt();
     }
-  }
-
-  public void setGettingRefresh() {
-    setProcessingState(ProcessingState.REFRESH);
   }
 
   public boolean isGettingRefresh() {
@@ -527,17 +511,6 @@ public class Entry<K, T>
   @Override
   public String toString() {
     return toString(null);
-  }
-
-  /* check entry states */
-  static {
-    Entry e = new Entry();
-    e.nextRefreshTime = DATA_VALID;
-    synchronized (e) {
-      e.setGettingRefresh();
-      e = new Entry();
-      e.setExpiredState();
-    }
   }
 
   static class InitialValueInEntryNeverReturned extends Object { }

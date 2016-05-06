@@ -135,9 +135,9 @@ public class EntryTest {
   public void testProcessingFetch() {
     Entry e = new Entry();
     e.nextRefreshTime = 4711;
-    e.setGettingRefresh();
-    assertTrue(e.isGettingRefresh());
     synchronized (e) {
+      e.startProcessing(Entry.ProcessingState.REFRESH);
+      assertTrue(e.isGettingRefresh());
       e.processingDone();
     }
     assertEquals(Entry.ProcessingState.DONE, e.getProcessingState());
