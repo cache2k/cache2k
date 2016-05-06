@@ -94,7 +94,7 @@ public interface CacheInfoMXBean {
    * <p>This can mean that the cache entry is removed or just marked as expired
    * in case that the keep value option is enabled.
    *
-   * @see CacheConfiguration#setKeepValueAfterExpired(boolean)
+   * @see CacheConfiguration#setKeepDataAfterExpired(boolean)
    */
   long getExpiredCnt();
 

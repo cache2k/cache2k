@@ -223,14 +223,14 @@ public abstract class HeapCache<K, V>
 
   private int featureBits = 0;
 
-  private static final int SHARP_TIMEOUT_FEATURE = 1;
+  private static final int SHARP_EXPIRY_FEATURE = 1;
   private static final int KEEP_AFTER_EXPIRED = 2;
   private static final int SUPPRESS_EXCEPTIONS = 4;
   private static final int NULL_VALUE_SUPPORT = 8;
   private static final int BACKGROUND_REFRESH = 16;
 
   protected final boolean hasSharpTimeout() {
-    return (featureBits & SHARP_TIMEOUT_FEATURE) > 0;
+    return (featureBits & SHARP_EXPIRY_FEATURE) > 0;
   }
 
   protected final boolean hasKeepAfterExpired() {
@@ -292,8 +292,8 @@ public abstract class HeapCache<K, V>
     if (c.getLoaderThreadCount() > 0) {
       loaderExecutor = provideDefaultLoaderExecutor(c.getLoaderThreadCount());
     }
-    setFeatureBit(KEEP_AFTER_EXPIRED, c.isKeepValueAfterExpired());
-    setFeatureBit(SHARP_TIMEOUT_FEATURE, c.isSharpExpiry());
+    setFeatureBit(KEEP_AFTER_EXPIRED, c.isKeepDataAfterExpired());
+    setFeatureBit(SHARP_EXPIRY_FEATURE, c.isSharpExpiry());
     setFeatureBit(SUPPRESS_EXCEPTIONS, c.isSuppressExceptions());
   }
 

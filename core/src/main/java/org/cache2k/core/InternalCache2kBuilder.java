@@ -296,7 +296,7 @@ public class InternalCache2kBuilder<K, T> {
   }
 
   void checkConfiguration() {
-    if (config.isRefreshAhead() && !config.isKeepValueAfterExpired()) {
+    if (config.isRefreshAhead() && !config.isKeepDataAfterExpired()) {
       throw new IllegalArgumentException("refreshAhead && !keepDataAfterExpired");
     }
   }

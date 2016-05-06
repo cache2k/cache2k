@@ -226,8 +226,8 @@ public abstract class TimingHandler<K,V>  {
 
   static class Static<K,V> extends TimingHandler<K,V> {
 
-    boolean sharpTimeout;
-    boolean backgroundRefresh;
+    boolean sharpExpiry;
+    boolean refreshAhead;
     Timer timer;
     long maxLinger;
     InternalCache cache;
@@ -268,8 +268,8 @@ public abstract class TimingHandler<K,V>  {
         resiliencePolicy = new DefaultResiliencePolicy<K, V>();
       }
       resiliencePolicy.init(ctx);
-      backgroundRefresh = c.isRefreshAhead();
-      sharpTimeout = c.isSharpExpiry();
+      refreshAhead = c.isRefreshAhead();
+      sharpExpiry = c.isSharpExpiry();
     }
 
     @Override
@@ -317,10 +317,10 @@ public abstract class TimingHandler<K,V>  {
      * expired immediately. The refresh task will handle this and expire the entry.
      */
     long eventuallyStartBackgroundRefresh(final Entry e) {
-      if (backgroundRefresh) {
+      if (refreshAhead) {
         e.setTask(new RefreshTask<K,V>(cache, e));
         scheduleTask(0, e);
-        return sharpTimeout ? Entry.EXPIRED : Entry.DATA_VALID;
+        return sharpExpiry ? Entry.EXPIRED : Entry.DATA_VALID;
       }
       return Entry.EXPIRED;
     }
@@ -351,7 +351,7 @@ public abstract class TimingHandler<K,V>  {
         }
         return _nextRefreshTime;
       }
-      if (sharpTimeout && _nextRefreshTime > Entry.EXPIRY_TIME_MIN) {
+      if (sharpExpiry && _nextRefreshTime > Entry.EXPIRY_TIME_MIN) {
         _nextRefreshTime = -_nextRefreshTime;
       }
 
@@ -367,7 +367,7 @@ public abstract class TimingHandler<K,V>  {
             scheduleFinalExpireWithOptionalRefresh(e, -_nextRefreshTime);
           }
         } else {
-          if (backgroundRefresh) {
+          if (refreshAhead) {
             e.setTask(new RefreshTask<K,V>(cache, e));
             scheduleTask(_nextRefreshTime, e);
           } else {
@@ -392,7 +392,7 @@ public abstract class TimingHandler<K,V>  {
     void scheduleFinalExpireWithOptionalRefresh(final Entry<K, V> e, long t) {
       e.setTask(new ExpireTask(cache, e));
       scheduleTask(t, e);
-      if (sharpTimeout && backgroundRefresh) {
+      if (sharpExpiry && refreshAhead) {
         e.setTask(new RefreshTask(cache, e));
         scheduleTask(t, e);
       }
