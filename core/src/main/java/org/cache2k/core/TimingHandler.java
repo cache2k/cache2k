@@ -320,7 +320,7 @@ public abstract class TimingHandler<K,V>  {
       if (backgroundRefresh) {
         e.setTask(new RefreshTask<K,V>(cache, e));
         scheduleTask(0, e);
-        return Entry.DATA_VALID;
+        return sharpTimeout ? Entry.EXPIRED : Entry.DATA_VALID;
       }
       return Entry.EXPIRED;
     }
@@ -364,8 +364,7 @@ public abstract class TimingHandler<K,V>  {
             scheduleTask(_timerTime, e);
             _nextRefreshTime = -_nextRefreshTime;
           } else {
-            e.setTask(new ExpireTask(cache, e));
-            scheduleTask(-_nextRefreshTime, e);
+            scheduleFinalExpireWithOptionalRefresh(e, -_nextRefreshTime);
           }
         } else {
           if (backgroundRefresh) {
@@ -383,8 +382,20 @@ public abstract class TimingHandler<K,V>  {
     @Override
     public void scheduleFinalExpiryTimer(final Entry<K, V> e) {
       cancelExpiryTimer(e);
+      scheduleFinalExpireWithOptionalRefresh(e, e.nextRefreshTime);
+    }
+
+    /**
+     * If sharp and refresh is requested, we schedule a refresh task at the some time.
+     * The refresh should start just when the value expired.
+     */
+    void scheduleFinalExpireWithOptionalRefresh(final Entry<K, V> e, long t) {
       e.setTask(new ExpireTask(cache, e));
-      scheduleTask(e.nextRefreshTime, e);
+      scheduleTask(t, e);
+      if (sharpTimeout && backgroundRefresh) {
+        e.setTask(new RefreshTask(cache, e));
+        scheduleTask(t, e);
+      }
     }
 
     void scheduleTask(final long _nextRefreshTime, final Entry e) {

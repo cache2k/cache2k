@@ -69,6 +69,21 @@ public class CacheLoaderTest {
   }
 
   @Test
+  public void testLoadNull() {
+    Cache<Integer,Integer> c = builder()
+      .loader(new CacheLoader<Integer, Integer>() {
+        @Override
+        public Integer load(final Integer key) throws Exception {
+          return null;
+        }
+      })
+      .build();
+    assertNull(c.get(5));
+    assertTrue(c.contains(5));
+    c.close();
+  }
+
+  @Test
   public void testAdvancedLoader() {
     Cache<Integer,Integer> c = builder()
       .loader(new AdvancedCacheLoader<Integer, Integer>() {
