@@ -213,8 +213,8 @@ public class ListenerTest {
       .addAsyncListener(new CacheEntryUpdatedListener<Integer, Integer>() {
         @Override
         public void onEntryUpdated(final Cache<Integer, Integer> cache, final CacheEntry<Integer, Integer> currentEntry, final CacheEntry<Integer, Integer> entryWithNewData) {
-          _callCount.incrementAndGet();
           _seenValues.put(entryWithNewData.getValue(), entryWithNewData.getValue());
+          _callCount.incrementAndGet();
         }
       })
       .build();
