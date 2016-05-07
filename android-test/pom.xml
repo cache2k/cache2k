@@ -4,7 +4,7 @@
   <parent>
     <groupId>org.cache2k</groupId>
     <artifactId>cache2k-parent</artifactId>
-    <version>0.26-SNAPSHOT</version>
+    <version>0.26-BETA</version>
   </parent>
 
   <properties>
@@ -13,7 +13,7 @@
   </properties>
 
   <artifactId>cache2k-android-test</artifactId>
-  <version>0.26-SNAPSHOT</version>
+  <version>0.26-BETA</version>
   <name>cache2k android tests</name>
   <packaging>apk</packaging>
 
