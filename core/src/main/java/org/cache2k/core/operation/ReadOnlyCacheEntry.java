@@ -35,9 +35,9 @@ public class ReadOnlyCacheEntry<K, V> implements ResultEntry<K, V> {
   V valueOrException;
   long lastModification;
 
-  public static <K,V> CacheEntry<K,V> of(CacheEntry<K,V> entry) {
+  public static <K,V> ReadOnlyCacheEntry<K,V> of(CacheEntry<K,V> entry) {
     if (entry instanceof ReadOnlyCacheEntry) {
-      return entry;
+      return (ReadOnlyCacheEntry) entry;
     }
     return new ReadOnlyCacheEntry<K, V>((Entry<K,V>) entry);
   }

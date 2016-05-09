@@ -23,6 +23,7 @@ package org.cache2k.core;
 import org.cache2k.*;
 import org.cache2k.configuration.CacheConfiguration;
 import org.cache2k.core.operation.ExaminationEntry;
+import org.cache2k.core.operation.ReadOnlyCacheEntry;
 import org.cache2k.core.operation.Semantic;
 import org.cache2k.core.operation.Specification;
 import org.cache2k.core.threading.DefaultThreadFactoryProvider;
@@ -1884,75 +1885,14 @@ public abstract class HeapCache<K, V>
    * which has produced an exception is requested from the map.
    */
   public Map<K, V> getAll(final Iterable<? extends K> _inputKeys) {
-    final Set<K> _keys = new HashSet<K>();
+    Map<K, ExaminationEntry<K, V>> map = new HashMap<K, ExaminationEntry<K, V>>();
     for (K k : _inputKeys) {
-      Entry e = getEntryInternal(k);
+      Entry<K,V> e = getEntryInternal(k);
       if (e != null) {
-        _keys.add(k);
+        map.put(e.getKey(), ReadOnlyCacheEntry.of(e));
       }
     }
-    final Set<Map.Entry<K, V>> set =
-      new AbstractSet<Map.Entry<K, V>>() {
-        @Override
-        public Iterator<Map.Entry<K, V>> iterator() {
-          return new Iterator<Map.Entry<K, V>>() {
-            Iterator<? extends K> keyIterator = _keys.iterator();
-            @Override
-            public boolean hasNext() {
-              return keyIterator.hasNext();
-            }
-
-            @Override
-            public Map.Entry<K, V> next() {
-              final K key = keyIterator.next();
-              return new Map.Entry<K, V>(){
-                @Override
-                public K getKey() {
-                  return key;
-                }
-
-                @Override
-                public V getValue() {
-                  return get(key);
-                }
-
-                @Override
-                public V setValue(V value) {
-                  throw new UnsupportedOperationException();
-                }
-              };
-            }
-
-            @Override
-            public void remove() {
-              throw new UnsupportedOperationException();
-            }
-          };
-        }
-        @Override
-        public int size() {
-          return _keys.size();
-        }
-      };
-    return new AbstractMap<K, V>() {
-      @Override
-      public V get(Object key) {
-        if (containsKey(key)) {
-          return HeapCache.this.get((K) key);
-        }
-        return null;
-      }
-
-      @Override
-      public boolean containsKey(Object key) {
-        return _keys.contains(key);
-      }
-
-      @Override
-      public Set<Entry<K, V>> entrySet() {
-        return set;
-      }
-    };
+    return convertValueMap(map);
   }
 
   public Map<K, V> convertValueMap(final Map<K, ExaminationEntry<K, V>> _map) {

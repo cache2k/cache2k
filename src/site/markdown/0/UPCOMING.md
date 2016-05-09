@@ -17,6 +17,7 @@ If something is listed here it might affect an existing application and updating
  
 ## Fixes and Improvements
 
+ - `getAll()` returns a stable map, not affected by expiry and parallel cache modifications.
  
 ## API Changes and new methods
 
