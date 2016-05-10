@@ -32,7 +32,7 @@ are still evolving and there may be API breaking changes until we reach version 
 
 ## Road map
 
-  * _1.0_, finalize JSR107 JCache support, stabilize API, documentation (April/May 2016)
+  * _1.0_, finalize JSR107 JCache support, stabilize API, documentation (May 2016)
   * _1.2_, improve Bulk performance, reduce threads needed for timing (June 2016)
   * _1.4_, async support (August 2016)
   * _1.6_, persistence and off-heap features (November 2016)
