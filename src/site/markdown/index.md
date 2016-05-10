@@ -41,7 +41,7 @@ The road map represents a rough plan, the dates and features may change.
 
 ## News
 
-  * **Version 0.26-BETA, 2016-05-06**: Resilience policy, more API restructuring, cleanup and minor bug fixes. See [Version 0.26 release notes](0/26.md)
+  * **Version 0.26-BETA, 2016-05-06**: Resilience policy, more API restructuring, cleanup and minor bug fixes. See [Version 0.26 release notes](0/26.html)
   * **Version 0.25-BETA, 2016-04-21**: API restructuring, expiry and asynchronous notifications. See [Version 0.25 release notes](0/25.html)
   * **Version 0.24-BETA, 2016-04-11**: JSR107 support, Restructuring, Storage removed, Events, CacheWriter, etc. See [Version 0.24 release notes](0/24.html)
   * **Version 0.23.1, 2016-04-07**: Switch to Apache license, bug fix. See [Version 0.23.1 release notes](0/23.1.html)
