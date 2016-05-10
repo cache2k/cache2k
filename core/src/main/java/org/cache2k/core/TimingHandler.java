@@ -456,7 +456,8 @@ public abstract class TimingHandler<K,V>  {
     void configure(CacheConfiguration<K,V> c) {
       configureStatic(c);
       expiryCalculator = c.getExpiryCalculator();
-      if (ValueWithExpiryTime.class.isAssignableFrom(c.getValueType().getType()) &&
+      if (c.getValueType() != null &&
+        ValueWithExpiryTime.class.isAssignableFrom(c.getValueType().getType()) &&
         expiryCalculator == null)  {
         expiryCalculator =
           (ExpiryCalculator<K, V>)
