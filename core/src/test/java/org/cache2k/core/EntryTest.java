@@ -160,4 +160,14 @@ public class EntryTest {
     e.toString();
   }
 
+  @Test
+  public void timeSpan32Bit() {
+    int _days = Integer.MAX_VALUE
+      / 1000
+      / 60
+      / 60
+      / 24;
+    assertEquals(24, _days);
+  }
+
 }
