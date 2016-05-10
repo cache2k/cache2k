@@ -20,6 +20,8 @@ package org.cache2k.core.util;
  * #L%
  */
 
+import java.util.HashMap;
+import java.util.Map;
 import java.util.ServiceLoader;
 import java.util.WeakHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -33,17 +35,16 @@ import java.util.logging.Logger;
  * logging to the framework of choice, the log output is channeled
  * through this class.
  *
- * <p/>To hook in another log framework provide another LogFactory
+ * <p>To hook in another log framework provide another LogFactory
  * implementation via the service loader.
  *
- * @author Jens Wilke; created: 2014-04-27
- * @see ServiceLoader
+ * @author Jens Wilke
  */
 public abstract class Log {
 
-  static WeakHashMap<String, Log> loggers = new WeakHashMap<String, Log>();
+  private static Map<String, Log> loggers = new HashMap<String, Log>();
 
-  static LogFactory logFactory;
+  private static LogFactory logFactory;
 
   public static Log getLog(Class<?> _class) {
     return getLog(_class.getName());
@@ -54,16 +55,28 @@ public abstract class Log {
     if (l != null) {
       return l;
     }
-    if (logFactory != null) {
-      l = logFactory.getLog(s);
-      loggers.put(s, l);
-      return l;
+    if (logFactory == null) {
+      initializeLogFactory();
     }
+    l = logFactory.getLog(s);
+    loggers.put(s, l);
+    return l;
+  }
+
+  private static void log(String s) {
+    getLog(Log.class.getName()).debug(s);
+  }
+
+  /**
+   * Finds a logger we can use. First we start with looking for a registered
+   * service provider. Then apache commons logging. As a fallback we use JDK logging.
+   */
+  private static void initializeLogFactory() {
     ServiceLoader<LogFactory> loader = ServiceLoader.load(LogFactory.class);
     for (LogFactory lf : loader) {
       logFactory = lf;
-      getLog(Log.class.getName()).debug("New instance, using: " + logFactory);
-      return getLog(s);
+      log("New instance, using: " + logFactory);
+      return;
     }
     try {
       final org.apache.commons.logging.LogFactory cl =
@@ -74,8 +87,8 @@ public abstract class Log {
           return new CommonsLogger(cl.getInstance(s));
         }
       };
-      getLog(Log.class.getName()).debug("New instance, using: " + logFactory);
-      return getLog(s);
+      log("New instance, using commons logging");
+      return;
     } catch (NoClassDefFoundError ignore) {
     }
     logFactory = new LogFactory() {
@@ -84,8 +97,7 @@ public abstract class Log {
         return new JdkLogger(Logger.getLogger(s));
       }
     };
-    getLog(Log.class.getName()).debug("New instance, using: " + logFactory);
-    return getLog(s);
+    log("New instance, using JDK logging");
   }
 
   /**

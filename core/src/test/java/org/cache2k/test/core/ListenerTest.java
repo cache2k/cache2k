@@ -363,7 +363,7 @@ public class ListenerTest {
 
   @Test
   public void asyncUpdateListenerException() {
-    String _logName = getClass().getName();
+    String _logName = getClass().getName() + ".asyncUpdateListenerException";
     final Log.SuppressionCounter _suppressionCounter = new Log.SuppressionCounter();
     Log.registerSuppression("org.cache2k.Cache/default:" + _logName, _suppressionCounter);
     Cache<Integer, Integer> c =
