@@ -154,4 +154,17 @@ public class StandardCommonMetrics implements CommonMetrics.Updater {
   public void timerEvent(final long cnt) {
     timerEventUpdater.addAndGet(this, cnt);
   }
+
+  static final AtomicLongFieldUpdater<StandardCommonMetrics> internalExceptionUpdater =
+    AtomicLongFieldUpdater.newUpdater(StandardCommonMetrics.class, "internalException");
+  private volatile long internalException;
+  @Override
+  public void internalException() {
+    internalExceptionUpdater.incrementAndGet(this);
+  }
+  @Override
+  public long getInternalExceptionCount() {
+    return internalExceptionUpdater.get(this);
+  }
+
 }

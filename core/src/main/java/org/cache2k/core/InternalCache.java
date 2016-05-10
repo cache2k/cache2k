@@ -82,4 +82,6 @@ public interface InternalCache<K, V> extends Cache<K, V>, CanCheckIntegrity {
    */
   StorageMetrics getStorageMetrics();
 
+  void logAndCountInternalException(String s, Throwable t);
+
 }

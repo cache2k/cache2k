@@ -42,8 +42,6 @@ import org.cache2k.integration.LoadExceptionInformation;
 import org.cache2k.processor.CacheEntryProcessor;
 
 import java.security.SecureRandom;
-import java.util.AbstractMap;
-import java.util.AbstractSet;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -164,12 +162,6 @@ public abstract class HeapCache<K, V>
   protected long newEntryCnt = 0;
 
   protected long refreshSubmitFailedCnt = 0;
-
-  /**
-   * An exception that should not have happened and was not thrown to the
-   * application. Only used for the refresh thread yet.
-   */
-  protected long internalExceptionCnt = 0;
 
   CommonMetrics.Updater metrics = new StandardCommonMetrics();
 
@@ -898,7 +890,7 @@ public abstract class HeapCache<K, V>
 
   private void checkForImmediateExpiry(final Entry e) {
     if (e.isExpired()) {
-      doExpireEntry(e);
+      expireAndRemoveEventually(e);
     }
   }
 
@@ -1791,10 +1783,7 @@ public abstract class HeapCache<K, V>
             } catch (CacheClosedException ignore) {
             } catch (Throwable ex) {
               e.ensureAbort(false);
-              synchronized (lock) {
-                internalExceptionCnt++;
-              }
-              getLog().warn("Refresh exception", ex);
+              logAndCountInternalException("Refresh exception", ex);
               try {
                 synchronized (e) {
                   expireEntry(e);
@@ -1814,6 +1803,12 @@ public abstract class HeapCache<K, V>
       }
       expireOrScheduleFinalExpireEvent(e);
     }
+  }
+
+  @Override
+  public void logAndCountInternalException(final String _text, final Throwable _exception) {
+    metrics.internalException();
+    getLog().warn(_text, _exception);
   }
 
   @Override
@@ -1849,10 +1844,14 @@ public abstract class HeapCache<K, V>
       return;
     }
     e.setExpiredState();
-    doExpireEntry(e);
+    expireAndRemoveEventually(e);
   }
 
-  private void doExpireEntry(final Entry e) {
+  /**
+   * Remove expired from heap and increment statistics. The entry is not removed when
+   * there is processing going on in parallel.
+   */
+  private void expireAndRemoveEventually(final Entry e) {
     synchronized (lock) {
       checkClosed();
       if (hasKeepAfterExpired() || e.isProcessing()) {

@@ -47,6 +47,11 @@ public interface CommonMetrics {
    */
   long getTimerEventCount();
 
+  /**
+   * The cache produced an exception by itself that should have been prevented.
+   */
+  long getInternalExceptionCount();
+
   interface Updater extends CommonMetrics {
 
     void putNewEntry();
@@ -72,6 +77,8 @@ public interface CommonMetrics {
 
     void timerEvent();
     void timerEvent(long cnt);
+
+    void internalException();
 
   }
 

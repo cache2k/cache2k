@@ -422,6 +422,11 @@ public class WiredCache<K, V> extends AbstractCache<K, V>
   }
 
   @Override
+  public void logAndCountInternalException(final String s, final Throwable t) {
+    heapCache.logAndCountInternalException(s, t);
+  }
+
+  @Override
   public void clearTimingStatistics() {
     heapCache.clearTimingStatistics();
   }
@@ -627,10 +632,7 @@ public class WiredCache<K, V> extends AbstractCache<K, V>
               }
             } catch (CacheClosedException ignore) {
             } catch (Throwable ex) {
-              synchronized (lockObject()) {
-                heapCache.internalExceptionCnt++;
-              }
-              getLog().warn("Refresh exception", ex);
+              logAndCountInternalException("Refresh exception", ex);
               try {
                 heapCache.expireEntry(e);
               } catch (CacheClosedException ignore) {

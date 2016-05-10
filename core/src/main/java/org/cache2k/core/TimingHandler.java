@@ -318,7 +318,7 @@ public abstract class TimingHandler<K,V>  {
      */
     long eventuallyStartBackgroundRefresh(final Entry e) {
       if (refreshAhead) {
-        e.setTask(new RefreshTask<K,V>(cache, e));
+        e.setTask(new RefreshTask<K,V>().to(cache, e));
         scheduleTask(0, e);
         return sharpExpiry ? Entry.EXPIRED : Entry.DATA_VALID;
       }
@@ -360,7 +360,7 @@ public abstract class TimingHandler<K,V>  {
           long _timerTime =
             -_nextRefreshTime - SAFETY_GAP_MILLIS;
           if (_timerTime >= now) {
-            e.setTask(new ExpireTask(cache, e));
+            e.setTask(new ExpireTask().to(cache, e));
             scheduleTask(_timerTime, e);
             _nextRefreshTime = -_nextRefreshTime;
           } else {
@@ -368,10 +368,10 @@ public abstract class TimingHandler<K,V>  {
           }
         } else {
           if (refreshAhead) {
-            e.setTask(new RefreshTask<K,V>(cache, e));
+            e.setTask(new RefreshTask<K,V>().to(cache, e));
             scheduleTask(_nextRefreshTime, e);
           } else {
-            e.setTask(new ExpireTask(cache, e));
+            e.setTask(new ExpireTask<K,V>().to(cache, e));
             scheduleTask(_nextRefreshTime, e);
           }
         }
@@ -390,10 +390,10 @@ public abstract class TimingHandler<K,V>  {
      * The refresh should start just when the value expired.
      */
     void scheduleFinalExpireWithOptionalRefresh(final Entry<K, V> e, long t) {
-      e.setTask(new ExpireTask(cache, e));
+      e.setTask(new ExpireTask().to(cache, e));
       scheduleTask(t, e);
       if (sharpExpiry && refreshAhead) {
-        e.setTask(new RefreshTask(cache, e));
+        e.setTask(new RefreshTask().to(cache, e));
         scheduleTask(t, e);
       }
     }
@@ -420,30 +420,36 @@ public abstract class TimingHandler<K,V>  {
 
   }
 
-  static class RefreshTask<K,V> extends java.util.TimerTask {
+  static abstract class CommonTask<K,V> extends java.util.TimerTask {
     Entry<K,V> entry;
-    InternalCache cache;
+    InternalCache<K,V> cache;
 
-    public RefreshTask(final InternalCache _cache, final Entry<K, V> _entry) {
-      cache = _cache;
-      entry = _entry;
+    CommonTask<K,V> to(final InternalCache<K,V> c, final Entry<K, V> e) {
+      cache = c;
+      entry = e;
+      return this;
     }
 
-    public void run() {
+    public abstract void fire() throws Exception;
+
+    public final void run() {
+      try {
+        fire();
+      } catch (Throwable ex) {
+        cache.logAndCountInternalException("Timer execution exception", ex);
+      }
+    }
+
+  }
+
+  static class RefreshTask<K,V> extends CommonTask<K,V> {
+    public void fire() {
       cache.timerEventRefresh(entry);
     }
   }
 
-  static class ExpireTask<K,V> extends java.util.TimerTask {
-    Entry<K,V> entry;
-    InternalCache cache;
-
-    public ExpireTask(final InternalCache _cache, final Entry<K, V> _entry) {
-      cache = _cache;
-      entry = _entry;
-    }
-
-    public void run() {
+  static class ExpireTask<K,V> extends CommonTask<K,V> {
+    public void fire() {
       cache.timerEventExpireEntry(entry);
     }
   }
