@@ -382,7 +382,7 @@ public abstract class TimingHandler<K,V>  {
     @Override
     public void scheduleFinalExpiryTimer(final Entry<K, V> e) {
       cancelExpiryTimer(e);
-      scheduleFinalExpireWithOptionalRefresh(e, e.nextRefreshTime);
+      scheduleFinalExpireWithOptionalRefresh(e, e.getNextRefreshTime());
     }
 
     /**

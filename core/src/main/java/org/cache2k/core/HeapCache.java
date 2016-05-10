@@ -884,7 +884,7 @@ public abstract class HeapCache<K, V>
   }
 
   private void restartTimer(final Entry e, final long _nextRefreshTime) {
-    e.nextRefreshTime = timing.stopStartTimer(_nextRefreshTime, e);
+    e.setNextRefreshTime(timing.stopStartTimer(_nextRefreshTime, e));
     checkForImmediateExpiry(e);
   }
 
@@ -1477,7 +1477,7 @@ public abstract class HeapCache<K, V>
   }
 
   protected V returnValue(Entry<K, V> e) {
-    V v = e.value;
+    V v = e.getValueOrException();
     if (v instanceof ExceptionWrapper) {
       ExceptionWrapper w = (ExceptionWrapper) v;
       exceptionPropagator.propagateException(w.getKey(), w);
@@ -1644,7 +1644,7 @@ public abstract class HeapCache<K, V>
     if (_suppressException) {
       e.setSuppressedLoadExceptionInformation(_value);
     } else {
-      e.value = (V) _value;
+      e.setValueOrException((V) _value);
     }
     _value.until = Math.abs(_nextRefreshTime);
     _value.until = Math.abs(_nextRefreshTime);
@@ -1682,7 +1682,7 @@ public abstract class HeapCache<K, V>
   final static byte INSERT_STAT_PUT = 2;
 
   protected final long insert(Entry<K, V> e, V _value, long t0, long t, byte _updateStatistics, long _nextRefreshTime) {
-    e.value = _value;
+    e.setValueOrException(_value);
     e.resetSuppressedLoadExceptionInformation();
     return insertUpdateStats(e, _value, t0, t, _updateStatistics, _nextRefreshTime, false);
   }
@@ -1821,7 +1821,7 @@ public abstract class HeapCache<K, V>
 
   @Override
   public void expireOrScheduleFinalExpireEvent(final Entry<K, V> e) {
-    long nrt = e.nextRefreshTime;
+    long nrt = e.getNextRefreshTime();
     if (nrt >= 0 && nrt < Entry.DATA_VALID) {
       return;
     }
@@ -1835,7 +1835,7 @@ public abstract class HeapCache<K, V>
         return;
       }
       timing.scheduleFinalExpiryTimer(e);
-      e.nextRefreshTime = -nrt;
+      e.setNextRefreshTime(-nrt);
     }
   }
 

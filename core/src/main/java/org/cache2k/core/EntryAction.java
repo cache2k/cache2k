@@ -273,7 +273,7 @@ public abstract class EntryAction<K, V, R> implements StorageCallback, AsyncCach
 
   public void storageReadMiss() {
     Entry<K, V> e = entry;
-    e.nextRefreshTime = Entry.READ_NON_VALID;
+    e.setNextRefreshTime(Entry.READ_NON_VALID);
     storageMiss = true;
     examine();
   }
@@ -283,7 +283,7 @@ public abstract class EntryAction<K, V, R> implements StorageCallback, AsyncCach
     e.setLastModificationFromStorage(se.getCreatedOrUpdated());
     long now = System.currentTimeMillis();
     V v = (V) se.getValueOrException();
-    e.value = v;
+    e.setValueOrException(v);
     long _nextRefreshTime;
     long _expiryTimeFromStorage = se.getValueExpiryTime();
     boolean _expired = _expiryTimeFromStorage != 0 && _expiryTimeFromStorage <= now;
@@ -291,24 +291,24 @@ public abstract class EntryAction<K, V, R> implements StorageCallback, AsyncCach
       _nextRefreshTime = timing().calculateNextRefreshTime(e, v, now);
       expiry = _nextRefreshTime;
       if (_nextRefreshTime == ExpiryCalculator.ETERNAL) {
-        e.nextRefreshTime = Entry.DATA_VALID;
+        e.setNextRefreshTime(Entry.DATA_VALID);
         storageDataValid = true;
       } else if (_nextRefreshTime == 0) {
-        e.nextRefreshTime = Entry.READ_NON_VALID;
+        e.setNextRefreshTime(Entry.READ_NON_VALID);
       } else {
         if (_nextRefreshTime < 0) {
-          e.nextRefreshTime = _nextRefreshTime;
+          e.setNextRefreshTime(_nextRefreshTime);
           storageDataValid = true;
         }
         if (_nextRefreshTime <= now) {
-          e.nextRefreshTime = Entry.READ_NON_VALID;
+          e.setNextRefreshTime(Entry.READ_NON_VALID);
         } else {
-          e.nextRefreshTime = -_nextRefreshTime;
+          e.setNextRefreshTime(-_nextRefreshTime);
           storageDataValid = true;
         }
       }
     } else {
-      e.nextRefreshTime = Entry.READ_NON_VALID;
+      e.setNextRefreshTime(Entry.READ_NON_VALID);
     }
     e.nextProcessingStep(Entry.ProcessingState.READ_COMPLETE);
     examine();
@@ -680,11 +680,11 @@ public abstract class EntryAction<K, V, R> implements StorageCallback, AsyncCach
   public void mutationUpdateHeap() {
     entry.setLastModification(lastModificationTime);
     if (remove) {
-      entry.nextRefreshTime = Entry.REMOVE_PENDING;
+      entry.setNextRefreshTime(Entry.REMOVE_PENDING);
     } else {
-      oldValueOrException = entry.value;
+      oldValueOrException = entry.getValueOrException();
       previousModificationTime = entry.getLastModification();
-      entry.value = newValueOrException;
+      entry.setValueOrException(newValueOrException);
     }
     mutationMayStore();
   }
@@ -807,9 +807,9 @@ public abstract class EntryAction<K, V, R> implements StorageCallback, AsyncCach
           }
         }
       } else {
-        entry.nextRefreshTime = timing().stopStartTimer(expiry, entry);
+        entry.setNextRefreshTime(timing().stopStartTimer(expiry, entry));
         if (entry.isExpired()) {
-          entry.nextRefreshTime = Entry.EXPIRY_TIME_MIN;
+          entry.setNextRefreshTime(Entry.EXPIRY_TIME_MIN);
           userCache.expireOrScheduleFinalExpireEvent(entry);
         }
       }

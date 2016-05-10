@@ -102,11 +102,11 @@ public class Entry<K, T>
    * impact on the visibility of the entry. For example if the entry is refreshed, it is expired, but since
    * background refresh is enabled, the expired entry is still returned by the cache.
    */
-  public volatile long nextRefreshTime;
+  private volatile long nextRefreshTime;
 
   public K key;
 
-  public volatile T value = (T) INITIAL_VALUE;
+  private volatile T valueOrException = (T) INITIAL_VALUE;
 
   /**
    * Hash implementation: the calculated, modified hash code, retrieved from the key when the entry is
@@ -174,6 +174,18 @@ public class Entry<K, T>
   @Override
   public long getLastModification() {
     return (fetchedTime & MODIFICATION_TIME_MASK) >> MODIFICATION_TIME_SHIFT;
+  }
+
+  public long getNextRefreshTime() {
+    return nextRefreshTime;
+  }
+
+  public void setNextRefreshTime(long _nextRefreshTime) {
+    nextRefreshTime = _nextRefreshTime;
+  }
+
+  public void setValueOrException(T _valueOrException) {
+    valueOrException = _valueOrException;
   }
 
   /**
@@ -385,27 +397,27 @@ public class Entry<K, T>
 
 
   public boolean hasException() {
-    return value instanceof ExceptionWrapper;
+    return valueOrException instanceof ExceptionWrapper;
   }
 
   public Throwable getException() {
-    if (value instanceof ExceptionWrapper) {
-      return ((ExceptionWrapper) value).getException();
+    if (valueOrException instanceof ExceptionWrapper) {
+      return ((ExceptionWrapper) valueOrException).getException();
     }
     return null;
   }
 
 
   public boolean equalsValue(T v) {
-    if (value == null) {
-      return v == value;
+    if (valueOrException == null) {
+      return v == valueOrException;
     }
-    return value.equals(v);
+    return valueOrException.equals(v);
   }
 
   public T getValue() {
-    if (value instanceof ExceptionWrapper) { return null; }
-    return value;
+    if (valueOrException instanceof ExceptionWrapper) { return null; }
+    return valueOrException;
   }
 
 
@@ -433,7 +445,7 @@ public class Entry<K, T>
    */
   @Override
   public T getValueOrException() {
-    return value;
+    return valueOrException;
   }
 
   /**
@@ -471,8 +483,8 @@ public class Entry<K, T>
         sb.append(", keyMutation=true");
       }
     }
-    if (value != null) {
-      sb.append(", valueIdentityHashCode=").append(System.identityHashCode(value));
+    if (valueOrException != null) {
+      sb.append(", valueIdentityHashCode=").append(System.identityHashCode(valueOrException));
     } else {
       sb.append(", value=null");
     }
