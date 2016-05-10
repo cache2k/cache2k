@@ -125,7 +125,7 @@ public class InvokeTest {
     Object _result = cache.invoke(_KEY, p);
     assertNull(_result);
     assertTrue("no exception during process", _reached.get());
-    assertFalse(cache.contains(_KEY));
+    assertFalse(cache.containsKey(_KEY));
   }
 
   @Test
@@ -223,7 +223,7 @@ public class InvokeTest {
         return null;
       }
     });
-    assertFalse(cache.contains(123));
+    assertFalse(cache.containsKey(123));
     String v = cache.peek(123);
     assertNull(v);
     statistics()

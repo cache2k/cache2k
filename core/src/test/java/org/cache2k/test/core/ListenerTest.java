@@ -288,7 +288,7 @@ public class ListenerTest {
         @Override
         public void run() {
           assertEquals(0, _callCount.get());
-          assertTrue(c.contains(ANY_KEY));
+          assertTrue(c.containsKey(ANY_KEY));
         }
       });
     ConcurrencyHelper.await(new Condition() {
@@ -329,7 +329,7 @@ public class ListenerTest {
         @Override
         public void run() {
           assertEquals(0, _callCount.get());
-          assertTrue(c.contains(ANY_KEY));
+          assertTrue(c.containsKey(ANY_KEY));
         }
       });
     ConcurrencyHelper.await(new Condition() {

@@ -133,8 +133,8 @@ public class BasicCacheOperationsTest {
 
   @Test
   public void initial_Contains() {
-    assertFalse(cache.contains(KEY));
-    assertFalse(cache.contains(OTHER_KEY));
+    assertFalse(cache.containsKey(KEY));
+    assertFalse(cache.containsKey(OTHER_KEY));
     assertEquals(0, size());
   }
 
@@ -154,7 +154,7 @@ public class BasicCacheOperationsTest {
   @Test
   public void put() {
     cache.put(KEY, VALUE);
-    assertTrue(cache.contains(KEY));
+    assertTrue(cache.containsKey(KEY));
     assertEquals(VALUE, cache.get(KEY));
     assertEquals(VALUE, cache.peek(KEY));
   }
@@ -162,7 +162,7 @@ public class BasicCacheOperationsTest {
   @Test
   public void put_Null() {
     cache.put(KEY, null);
-    assertTrue(cache.contains(KEY));
+    assertTrue(cache.containsKey(KEY));
     assertEquals(null, cache.peek(KEY));
     assertEquals(null, cache.get(KEY));
   }
@@ -182,8 +182,8 @@ public class BasicCacheOperationsTest {
     map.put(KEY, VALUE);
     map.put(OTHER_KEY, null);
     cache.putAll(map);
-    assertTrue(cache.contains(KEY));
-    assertTrue(cache.contains(OTHER_KEY));
+    assertTrue(cache.containsKey(KEY));
+    assertTrue(cache.containsKey(OTHER_KEY));
     assertNull(cache.peek(OTHER_KEY));
     assertEquals(VALUE, cache.peek(KEY));
   }
@@ -205,16 +205,16 @@ public class BasicCacheOperationsTest {
    */
   @Test
   public void contains() {
-    assertFalse(cache.contains(KEY));
+    assertFalse(cache.containsKey(KEY));
     cache.put(KEY, VALUE);
-    assertTrue(cache.contains(KEY));
+    assertTrue(cache.containsKey(KEY));
   }
 
   @Test
   public void contains_Null() {
-    assertFalse(cache.contains(KEY));
+    assertFalse(cache.containsKey(KEY));
     cache.put(KEY, null);
-    assertTrue(cache.contains(KEY));
+    assertTrue(cache.containsKey(KEY));
   }
 
   /*
@@ -223,10 +223,10 @@ public class BasicCacheOperationsTest {
   @Test
   public void putIfAbsent() {
     cache.putIfAbsent(KEY, VALUE);
-    assertTrue(cache.contains(KEY));
+    assertTrue(cache.containsKey(KEY));
     assertEquals(KEY, cache.peek(KEY));
     cache.putIfAbsent(KEY, OTHER_VALUE);
-    assertTrue(cache.contains(KEY));
+    assertTrue(cache.containsKey(KEY));
     assertEquals(VALUE, cache.peek(KEY));
   }
 
@@ -236,7 +236,7 @@ public class BasicCacheOperationsTest {
   @Test
   public void putIfAbsent_Null() {
     cache.putIfAbsent(KEY, null);
-    assertTrue(cache.contains(KEY));
+    assertTrue(cache.containsKey(KEY));
     assertNull(cache.peek(KEY));
   }
 
@@ -261,10 +261,10 @@ public class BasicCacheOperationsTest {
   public void peekAndPut_Null() {
     Integer v = cache.peekAndPut(KEY, null);
     assertNull(v);
-    assertTrue(cache.contains(KEY));
+    assertTrue(cache.containsKey(KEY));
     v = cache.peekAndPut(KEY, VALUE);
     assertNull(v);
-    assertTrue(cache.contains(KEY));
+    assertTrue(cache.containsKey(KEY));
     v = cache.peekAndPut(KEY, null);
     assertNotNull(v);
     assertEquals(VALUE, v);
@@ -286,21 +286,21 @@ public class BasicCacheOperationsTest {
   public void peekAndRemove() {
     Integer v = cache.peekAndRemove(KEY);
     assertNull(v);
-    assertFalse(cache.contains(KEY));
+    assertFalse(cache.containsKey(KEY));
     cache.put(KEY, VALUE);
-    assertTrue(cache.contains(KEY));
+    assertTrue(cache.containsKey(KEY));
     v = cache.peekAndRemove(KEY);
     assertNotNull(v);
-    assertFalse(cache.contains(KEY));
+    assertFalse(cache.containsKey(KEY));
   }
 
   @Test
   public void peekAndRemove_Null() {
     cache.put(KEY, null);
-    assertTrue(cache.contains(KEY));
+    assertTrue(cache.containsKey(KEY));
     Integer v = cache.peekAndRemove(KEY);
     assertNull(v);
-    assertFalse(cache.contains(KEY));
+    assertFalse(cache.containsKey(KEY));
   }
 
   @Test(expected = NullPointerException.class)
@@ -326,11 +326,11 @@ public class BasicCacheOperationsTest {
   public void peekAndReplace() {
     Integer v = cache.peekAndReplace(KEY, VALUE);
     assertNull(v);
-    assertFalse(cache.contains(KEY));
+    assertFalse(cache.containsKey(KEY));
     cache.put(KEY, VALUE);
     v = cache.peekAndReplace(KEY, OTHER_VALUE);
     assertNotNull(v);
-    assertTrue(cache.contains(KEY));
+    assertTrue(cache.containsKey(KEY));
     assertEquals(VALUE, v);
     assertEquals(OTHER_VALUE, cache.peek(KEY));
   }
@@ -339,11 +339,11 @@ public class BasicCacheOperationsTest {
   public void peekAndReplace_Null() {
     Integer v = cache.peekAndReplace(KEY, null);
     assertNull(v);
-    assertFalse(cache.contains(KEY));
+    assertFalse(cache.containsKey(KEY));
     cache.put(KEY, VALUE);
     v = cache.peekAndReplace(KEY, null);
     assertNotNull(v);
-    assertTrue(cache.contains(KEY));
+    assertTrue(cache.containsKey(KEY));
     assertEquals(VALUE, v);
     assertNull(cache.peek(KEY));
   }
@@ -590,24 +590,24 @@ public class BasicCacheOperationsTest {
     statistics().reset();
     cache.remove(KEY);
     statistics().expectAllZero();
-    assertFalse(cache.contains(KEY));
+    assertFalse(cache.containsKey(KEY));
   }
 
   @Test
   public void remove() {
     cache.put(KEY, VALUE);
-    assertTrue(cache.contains(KEY));
+    assertTrue(cache.containsKey(KEY));
     statistics().reset();
     cache.remove(KEY);
     statistics().removeCount.expect(1).expectAllZero();
-    assertFalse(cache.contains(KEY));
+    assertFalse(cache.containsKey(KEY));
   }
 
   @Test
   public void remove_Null() {
     cache.put(KEY, null);
     cache.remove(KEY);
-    assertFalse(cache.contains(KEY));
+    assertFalse(cache.containsKey(KEY));
   }
 
   @Test(expected = NullPointerException.class)
@@ -623,11 +623,11 @@ public class BasicCacheOperationsTest {
   public void containsAndRemove() {
     boolean f = cache.containsAndRemove(KEY);
     assertFalse(f);
-    assertFalse(cache.contains(KEY));
+    assertFalse(cache.containsKey(KEY));
     cache.put(KEY, VALUE);
-    assertTrue(cache.contains(KEY));
+    assertTrue(cache.containsKey(KEY));
     f = cache.containsAndRemove(KEY);
-    assertFalse(cache.contains(KEY));
+    assertFalse(cache.containsKey(KEY));
     assertTrue(f);
   }
 
@@ -635,7 +635,7 @@ public class BasicCacheOperationsTest {
   public void containsAndRemove_Null() {
     cache.put(KEY, null);
     cache.containsAndRemove(KEY);
-    assertFalse(cache.contains(KEY));
+    assertFalse(cache.containsKey(KEY));
   }
 
   @Test(expected = NullPointerException.class)
@@ -651,13 +651,13 @@ public class BasicCacheOperationsTest {
   public void removeIfEquals() {
     boolean f = cache.removeIfEquals(KEY, VALUE);
     assertFalse(f);
-    assertFalse(cache.contains(KEY));
+    assertFalse(cache.containsKey(KEY));
     cache.put(KEY, VALUE);
-    assertTrue(cache.contains(KEY));
+    assertTrue(cache.containsKey(KEY));
     f = cache.removeIfEquals(KEY, OTHER_VALUE);
     assertFalse(f);
     f = cache.removeIfEquals(KEY, VALUE);
-    assertFalse(cache.contains(KEY));
+    assertFalse(cache.containsKey(KEY));
     assertTrue(f);
     f = cache.removeIfEquals(KEY, VALUE);
     assertFalse(f);
@@ -672,7 +672,7 @@ public class BasicCacheOperationsTest {
     assertFalse(f);
     f = cache.removeIfEquals(KEY, null);
     assertTrue(f);
-    assertFalse(cache.contains(KEY));
+    assertFalse(cache.containsKey(KEY));
   }
 
   @Test(expected = NullPointerException.class)
@@ -687,7 +687,7 @@ public class BasicCacheOperationsTest {
   @Test
   public void replaceIfEquals() {
     assertFalse(cache.replaceIfEquals(KEY, VALUE, OTHER_VALUE));
-    assertFalse(cache.contains(KEY));
+    assertFalse(cache.containsKey(KEY));
     cache.put(KEY, VALUE);
     assertTrue(cache.replaceIfEquals(KEY, VALUE, OTHER_VALUE));
     assertEquals(OTHER_VALUE, cache.peek(KEY));
@@ -707,7 +707,7 @@ public class BasicCacheOperationsTest {
     assertFalse(cache.replaceIfEquals(OTHER_KEY, OTHER_VALUE, OTHER_VALUE));
     assertEquals(VALUE, cache.peek(KEY));
     assertNull(cache.peek(OTHER_KEY));
-    assertFalse(cache.contains(OTHER_KEY));
+    assertFalse(cache.containsKey(OTHER_KEY));
   }
 
   @Test
@@ -719,7 +719,7 @@ public class BasicCacheOperationsTest {
     cache.replaceIfEquals(KEY, OTHER_VALUE, null);
     assertEquals(VALUE, cache.peek(KEY));
     cache.replaceIfEquals(KEY, VALUE, null);
-    assertTrue(cache.contains(KEY));
+    assertTrue(cache.containsKey(KEY));
   }
 
   @Test(expected = NullPointerException.class)
@@ -761,7 +761,7 @@ public class BasicCacheOperationsTest {
     assertFalse(cache.replace(OTHER_KEY, OTHER_VALUE));
     assertEquals(VALUE, cache.peek(KEY));
     assertNull(cache.peek(OTHER_KEY));
-    assertFalse(cache.contains(OTHER_KEY));
+    assertFalse(cache.containsKey(OTHER_KEY));
   }
 
   @Test
@@ -772,7 +772,7 @@ public class BasicCacheOperationsTest {
     f = cache.replace(KEY, null);
     assertTrue(f);
     assertNull(cache.peek(KEY));
-    assertTrue(cache.contains(KEY));
+    assertTrue(cache.containsKey(KEY));
   }
 
   @Test(expected = NullPointerException.class)

@@ -161,4 +161,9 @@ public abstract class AbstractCache<K, V> implements InternalCache<K, V> {
     return StorageMetrics.DUMMY;
   }
 
+  @Override
+  public boolean contains(final K key) {
+    return containsKey(key);
+  }
+
 }

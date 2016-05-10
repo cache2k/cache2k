@@ -67,7 +67,7 @@ public class OsgiIT {
         .eternal(true)
         .build();
     c.put("abc", "123");
-    assertTrue(c.contains("abc"));
+    assertTrue(c.containsKey("abc"));
     assertEquals("123", c.peek("abc"));
     c.close();
   }

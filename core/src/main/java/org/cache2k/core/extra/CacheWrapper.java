@@ -111,6 +111,11 @@ public class CacheWrapper<K,V> implements Cache<K, V> {
   }
 
   @Override
+  public boolean containsKey(K key) {
+    return cache.containsKey(key);
+  }
+
+  @Override
   public void put(K key, V value) {
     cache.put(key, value);
   }

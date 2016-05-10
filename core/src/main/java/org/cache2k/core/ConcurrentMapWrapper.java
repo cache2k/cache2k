@@ -108,7 +108,7 @@ public class ConcurrentMapWrapper<K,V> implements ConcurrentMap<K, V> {
   @Override
   public boolean containsKey(Object key) {
     if (keyType.isAssignableFrom(key.getClass())) {
-      return cache.contains((K) key);
+      return cache.containsKey((K) key);
     }
     return false;
   }

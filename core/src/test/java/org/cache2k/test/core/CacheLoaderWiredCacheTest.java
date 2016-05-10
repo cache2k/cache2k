@@ -71,8 +71,8 @@ public class CacheLoaderWiredCacheTest extends CacheLoaderTest {
     assertEquals((Integer) 10, c.get(5));
     assertEquals(1, _countCreated.get());
     assertEquals((Integer) 20, c.get(10));
-    assertFalse(c.contains(2));
-    assertTrue(c.contains(5));
+    assertFalse(c.containsKey(2));
+    assertTrue(c.containsKey(5));
     c.close();
   }
 

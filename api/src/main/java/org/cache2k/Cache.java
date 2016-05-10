@@ -183,6 +183,11 @@ public interface Cache<K, V> extends
   CacheEntry<K, V> peekEntry(K key);
 
   /**
+   * @deprecated use {@link #containsKey(Object)}
+   */
+  boolean contains(K key);
+
+  /**
    * Returns true, if there is a mapping for the specified key.
    *
    * <p>Statistics: The operation does increase the usage counter if a mapping is present,
@@ -194,9 +199,8 @@ public interface Cache<K, V> extends
    * @throws ClassCastException if the key is of an inappropriate type for
    *         this cache
    * @throws NullPointerException if the specified key is null
-   *
    */
-  boolean contains(K key);
+  boolean containsKey(K key);
 
   /**
    * Updates an existing cache entry for the specified key, so it associates
@@ -244,7 +248,7 @@ public interface Cache<K, V> extends
    * <p>Statistics: If an entry exists this operation counts as a hit, if the entry
    * is missing, a miss and put is counted. This definition is identical to the JSR107
    * statistics semantics. This is not consistent with other operations like
-   * {@link #containsAndRemove(Object)} and {@link #contains(Object)} that don't update
+   * {@link #containsAndRemove(Object)} and {@link #containsKey(Object)} that don't update
    * the hit and miss counter if solely the existence of an entry is tested and not the
    * value itself is requested. This counting is subject to discussion and future change.
    *
@@ -264,7 +268,7 @@ public interface Cache<K, V> extends
    * Replaces the entry for a key only if currently mapped to some value.
    * This is equivalent to
    *  <pre> {@code
-   * if (cache.contains(key)) {
+   * if (cache.containsKey(key)) {
    *   cache.put(key, value);
    *   return cache.peek(key);
    * } else
@@ -297,7 +301,7 @@ public interface Cache<K, V> extends
    * Replaces the entry for a key only if currently mapped to some value.
    * This is equivalent to
    *  <pre> {@code
-   * if (cache.contains(key)) {
+   * if (cache.containsKey(key)) {
    *   cache.put(key, value);
    *   return true
    * } else
@@ -309,7 +313,7 @@ public interface Cache<K, V> extends
    * <p>Statistics: If an entry exists this operation counts as a hit, if the entry
    * is missing, a miss and put is counted. This definition is identical to the JSR107
    * statistics semantics. This is not consistent with other operations like
-   * {@link #containsAndRemove(Object)} and {@link #contains(Object)} that don't update
+   * {@link #containsAndRemove(Object)} and {@link #containsKey(Object)} that don't update
    * the hit and miss counter if solely the existence of an entry is tested and not the
    * value itself is requested. This counting is subject to discussion and future change.
    *
@@ -330,7 +334,7 @@ public interface Cache<K, V> extends
    * Replaces the entry for a key only if currently mapped to a given value.
    * This is equivalent to
    *  <pre> {@code
-   * if (cache.contains(key) && Objects.equals(cache.get(key), oldValue)) {
+   * if (cache.containsKey(key) && Objects.equals(cache.get(key), oldValue)) {
    *   cache.put(key, newValue);
    *   return true;
    * } else

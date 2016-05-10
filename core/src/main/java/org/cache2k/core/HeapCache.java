@@ -1110,7 +1110,7 @@ public abstract class HeapCache<K, V>
   }
 
   @Override
-  public boolean contains(K key) {
+  public boolean containsKey(K key) {
     Entry e = lookupEntrySynchronized(key);
     if (e != null) {
       metrics.containsButHit();

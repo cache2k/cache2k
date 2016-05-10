@@ -63,8 +63,8 @@ public class CacheLoaderTest {
       .build();
     assertEquals((Integer) 10, c.get(5));
     assertEquals((Integer) 20, c.get(10));
-    assertFalse(c.contains(2));
-    assertTrue(c.contains(5));
+    assertFalse(c.containsKey(2));
+    assertTrue(c.containsKey(5));
     c.close();
   }
 
@@ -79,7 +79,7 @@ public class CacheLoaderTest {
       })
       .build();
     assertNull(c.get(5));
-    assertTrue(c.contains(5));
+    assertTrue(c.containsKey(5));
     c.close();
   }
 
@@ -95,8 +95,8 @@ public class CacheLoaderTest {
       .build();
     assertEquals((Integer) 10, c.get(5));
     assertEquals((Integer) 20, c.get(10));
-    assertFalse(c.contains(2));
-    assertTrue(c.contains(5));
+    assertFalse(c.containsKey(2));
+    assertTrue(c.containsKey(5));
     c.close();
   }
 

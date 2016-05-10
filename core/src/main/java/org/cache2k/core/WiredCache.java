@@ -177,7 +177,7 @@ public class WiredCache<K, V> extends AbstractCache<K, V>
   }
 
   @Override
-  public boolean contains(K key) {
+  public boolean containsKey(K key) {
     return execute(key, SPEC.contains(key));
   }
 

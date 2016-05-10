@@ -21,4 +21,7 @@ If something is listed here it might affect an existing application and updating
  
 ## API Changes and new methods
 
+ - `contains()` replaced with `containsKey()`
+ 
+
   

@@ -93,8 +93,8 @@ public class CacheTest {
     String val = c.peek("something");
     assertNull(val);
     c.put("something", "hello");
-    assertTrue(c.contains("something"));
-    assertFalse(c.contains("dsaf"));
+    assertTrue(c.containsKey("something"));
+    assertFalse(c.containsKey("dsaf"));
     c.close();
   }
 

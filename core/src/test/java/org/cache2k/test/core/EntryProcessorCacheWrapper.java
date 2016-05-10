@@ -64,7 +64,7 @@ public class EntryProcessorCacheWrapper<K, V> extends CacheWrapper<K, V> {
   }
 
   @Override
-  public boolean contains(K key) {
+  public boolean containsKey(K key) {
     CacheEntryProcessor<K, V, Boolean> p = new CacheEntryProcessor<K, V, Boolean>() {
       @Override
       public Boolean process(MutableCacheEntry<K, V> entry, Object... arguments) throws Exception {

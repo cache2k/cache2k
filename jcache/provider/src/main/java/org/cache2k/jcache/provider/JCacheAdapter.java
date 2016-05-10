@@ -102,7 +102,7 @@ public class JCacheAdapter<K, V> implements javax.cache.Cache<K, V> {
   @Override
   public boolean containsKey(K key) {
     checkClosed();
-    return cache.contains(key);
+    return cache.containsKey(key);
   }
 
   @Override
