@@ -57,7 +57,6 @@ public class Entry<K, T>
    */
   static final int REMOVE_PENDING = 11;
 
-  /** @see #isAborted() */
   static final int ABORTED = 8;
 
   /** @see #isReadNonValid() */

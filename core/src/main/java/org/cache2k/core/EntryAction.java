@@ -273,44 +273,48 @@ public abstract class EntryAction<K, V, R> implements StorageCallback, AsyncCach
 
   public void storageReadMiss() {
     Entry<K, V> e = entry;
-    e.setNextRefreshTime(Entry.READ_NON_VALID);
-    storageMiss = true;
+    synchronized (e) {
+      e.setNextRefreshTime(Entry.READ_NON_VALID);
+      storageMiss = true;
+    }
     examine();
   }
 
   public void storageReadHit(StorageEntry se) {
     Entry<K, V> e = entry;
-    e.setLastModificationFromStorage(se.getCreatedOrUpdated());
-    long now = System.currentTimeMillis();
-    V v = (V) se.getValueOrException();
-    e.setValueOrException(v);
-    long _nextRefreshTime;
-    long _expiryTimeFromStorage = se.getValueExpiryTime();
-    boolean _expired = _expiryTimeFromStorage != 0 && _expiryTimeFromStorage <= now;
-    if (!_expired) {
-      _nextRefreshTime = timing().calculateNextRefreshTime(e, v, now);
-      expiry = _nextRefreshTime;
-      if (_nextRefreshTime == ExpiryCalculator.ETERNAL) {
-        e.setNextRefreshTime(Entry.DATA_VALID);
-        storageDataValid = true;
-      } else if (_nextRefreshTime == 0) {
-        e.setNextRefreshTime(Entry.READ_NON_VALID);
-      } else {
-        if (_nextRefreshTime < 0) {
-          e.setNextRefreshTime(_nextRefreshTime);
+    synchronized (e) {
+      e.setLastModificationFromStorage(se.getCreatedOrUpdated());
+      long now = System.currentTimeMillis();
+      V v = (V) se.getValueOrException();
+      e.setValueOrException(v);
+      long _nextRefreshTime;
+      long _expiryTimeFromStorage = se.getValueExpiryTime();
+      boolean _expired = _expiryTimeFromStorage != 0 && _expiryTimeFromStorage <= now;
+      if (!_expired) {
+        _nextRefreshTime = timing().calculateNextRefreshTime(e, v, now);
+        expiry = _nextRefreshTime;
+        if (_nextRefreshTime == ExpiryCalculator.ETERNAL) {
+          e.setNextRefreshTime(Entry.DATA_VALID);
           storageDataValid = true;
-        }
-        if (_nextRefreshTime <= now) {
+        } else if (_nextRefreshTime == 0) {
           e.setNextRefreshTime(Entry.READ_NON_VALID);
         } else {
-          e.setNextRefreshTime(-_nextRefreshTime);
-          storageDataValid = true;
+          if (_nextRefreshTime < 0) {
+            e.setNextRefreshTime(_nextRefreshTime);
+            storageDataValid = true;
+          }
+          if (_nextRefreshTime <= now) {
+            e.setNextRefreshTime(Entry.READ_NON_VALID);
+          } else {
+            e.setNextRefreshTime(-_nextRefreshTime);
+            storageDataValid = true;
+          }
         }
+      } else {
+        e.setNextRefreshTime(Entry.READ_NON_VALID);
       }
-    } else {
-      e.setNextRefreshTime(Entry.READ_NON_VALID);
+      e.nextProcessingStep(Entry.ProcessingState.READ_COMPLETE);
     }
-    e.nextProcessingStep(Entry.ProcessingState.READ_COMPLETE);
     examine();
   }
 
@@ -678,13 +682,15 @@ public abstract class EntryAction<K, V, R> implements StorageCallback, AsyncCach
   }
 
   public void mutationUpdateHeap() {
-    entry.setLastModification(lastModificationTime);
-    if (remove) {
-      entry.setNextRefreshTime(Entry.REMOVE_PENDING);
-    } else {
-      oldValueOrException = entry.getValueOrException();
-      previousModificationTime = entry.getLastModification();
-      entry.setValueOrException(newValueOrException);
+    synchronized (entry) {
+      entry.setLastModification(lastModificationTime);
+      if (remove) {
+        entry.setNextRefreshTime(Entry.REMOVE_PENDING);
+      } else {
+        oldValueOrException = entry.getValueOrException();
+        previousModificationTime = entry.getLastModification();
+        entry.setValueOrException(newValueOrException);
+      }
     }
     mutationMayStore();
   }
