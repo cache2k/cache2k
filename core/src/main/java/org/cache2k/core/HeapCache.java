@@ -866,7 +866,7 @@ public abstract class HeapCache<K, V>
     }
     boolean _finished = false;
     try {
-      finishFetch(e, load(e));
+      load(e);
       _finished = true;
     } finally {
       e.ensureAbort(_finished);
@@ -875,12 +875,10 @@ public abstract class HeapCache<K, V>
     return e;
   }
 
-  protected void finishFetch(Entry e, long _nextRefreshTime) {
-    synchronized (e) {
-      e.notifyAll();
-      e.processingDone();
-      restartTimer(e, _nextRefreshTime);
-    }
+  protected void finishLoadOrEviction(Entry e, long _nextRefreshTime) {
+    e.notifyAll();
+    e.processingDone();
+    restartTimer(e, _nextRefreshTime);
   }
 
   private void restartTimer(final Entry e, final long _nextRefreshTime) {
@@ -928,7 +926,7 @@ public abstract class HeapCache<K, V>
       }
       listener.onEvictionFromHeap(e);
       synchronized (e) {
-        finishFetch(e, org.cache2k.core.Entry.ABORTED);
+        finishLoadOrEviction(e, org.cache2k.core.Entry.ABORTED);
         evictEntryFromHeap(e);
       }
     }
@@ -1029,8 +1027,7 @@ public abstract class HeapCache<K, V>
    */
   private void putValue(final Entry e, final V _value) {
     long t = System.currentTimeMillis();
-    long _newNrt = insertOnPut(e, _value, t, t);
-    restartTimer(e, _newNrt);
+    insertOnPut(e, _value, t, t);
   }
 
   @Override
@@ -1422,7 +1419,7 @@ public abstract class HeapCache<K, V>
     }
     boolean _finished = false;
     try {
-      finishFetch(e, load(e));
+      load(e);
       _finished = true;
     } finally {
       e.ensureAbort(_finished);
@@ -1604,7 +1601,7 @@ public abstract class HeapCache<K, V>
     }
   }
 
-  protected long load(Entry<K, V> e) {
+  protected void load(Entry<K, V> e) {
     V v;
     long t0 = System.currentTimeMillis();
     try {
@@ -1617,13 +1614,14 @@ public abstract class HeapCache<K, V>
       e.setLastModification(t0);
     } catch (Throwable _ouch) {
       long t = System.currentTimeMillis();
-      return loadGotException(e, new ExceptionWrapper(e.key, _ouch, t0, e), t0, t);
+      loadGotException(e, new ExceptionWrapper(e.key, _ouch, t0, e), t0, t);
+      return;
     }
     long t = System.currentTimeMillis();
-    return insertOrUpdateAndCalculateExpiry(e, v, t0, t, INSERT_STAT_LOAD);
+    insertOrUpdateAndCalculateExpiry(e, v, t0, t, INSERT_STAT_LOAD);
   }
 
-  protected long loadGotException(Entry<K, V> e, ExceptionWrapper<K> _value, long t0, long t) {
+  protected void loadGotException(Entry<K, V> e, ExceptionWrapper<K> _value, long t0, long t) {
     long _nextRefreshTime = 0;
     boolean _suppressException = false;
     try {
@@ -1641,14 +1639,16 @@ public abstract class HeapCache<K, V>
       } catch (Throwable ignore) { }
       throw new ExpiryCalculationException(ex);
     }
-    if (_suppressException) {
-      e.setSuppressedLoadExceptionInformation(_value);
-    } else {
-      e.setValueOrException((V) _value);
+    synchronized (e) {
+      insertUpdateStats(e, (V) _value, t0, t, INSERT_STAT_LOAD, _nextRefreshTime, _suppressException);
+      if (_suppressException) {
+        e.setSuppressedLoadExceptionInformation(_value);
+      } else {
+        e.setValueOrException((V) _value);
+      }
+      _value.until = Math.abs(_nextRefreshTime);
+      finishLoadOrEviction(e, _nextRefreshTime);
     }
-    _value.until = Math.abs(_nextRefreshTime);
-    _value.until = Math.abs(_nextRefreshTime);
-    return insertUpdateStats(e, (V) _value, t0, t, INSERT_STAT_LOAD, _nextRefreshTime, _suppressException);
   }
 
   private void checkLoaderPresent() {
@@ -1657,15 +1657,15 @@ public abstract class HeapCache<K, V>
     }
   }
 
-  protected final long insertOnPut(Entry<K, V> e, V v, long t0, long t) {
+  protected final void insertOnPut(Entry<K, V> e, V v, long t0, long t) {
     e.setLastModification(t0);
-    return insertOrUpdateAndCalculateExpiry(e, v, t0, t, INSERT_STAT_PUT);
+    insertOrUpdateAndCalculateExpiry(e, v, t0, t, INSERT_STAT_PUT);
   }
 
   /**
    * Calculate the next refresh time if a timer / expiry is needed and call insert.
    */
-  protected final long insertOrUpdateAndCalculateExpiry(Entry<K, V> e, V v, long t0, long t, byte _updateStatistics) {
+  protected final void insertOrUpdateAndCalculateExpiry(Entry<K, V> e, V v, long t0, long t, byte _updateStatistics) {
     long _nextRefreshTime;
     try {
       _nextRefreshTime = timing.calculateNextRefreshTime(e, v, t0);
@@ -1675,19 +1675,29 @@ public abstract class HeapCache<K, V>
       } catch (Throwable ignore) { }
       throw new CacheException("exception in expiry calculation", ex);
     }
-    return insert(e, v, t0, t, _updateStatistics, _nextRefreshTime);
+    insert(e, v, t0, t, _updateStatistics, _nextRefreshTime);
   }
 
   final static byte INSERT_STAT_LOAD = 1;
   final static byte INSERT_STAT_PUT = 2;
 
-  protected final long insert(Entry<K, V> e, V _value, long t0, long t, byte _updateStatistics, long _nextRefreshTime) {
-    e.setValueOrException(_value);
-    e.resetSuppressedLoadExceptionInformation();
-    return insertUpdateStats(e, _value, t0, t, _updateStatistics, _nextRefreshTime, false);
+  protected final void insert(Entry<K, V> e, V _value, long t0, long t, byte _updateStatistics, long _nextRefreshTime) {
+    if (_updateStatistics == INSERT_STAT_LOAD) {
+      synchronized (e) {
+        insertUpdateStats(e, _value, t0, t, _updateStatistics, _nextRefreshTime, false);
+        e.setValueOrException(_value);
+        e.resetSuppressedLoadExceptionInformation();
+        finishLoadOrEviction(e, _nextRefreshTime);
+      }
+    } else {
+      e.setValueOrException(_value);
+      e.resetSuppressedLoadExceptionInformation();
+      insertUpdateStats(e, _value, t0, t, _updateStatistics, _nextRefreshTime, false);
+      restartTimer(e, _nextRefreshTime);
+    }
   }
 
-  private long insertUpdateStats(final Entry<K, V> e, final V _value, final long t0, final long t, final byte _updateStatistics, final long _nextRefreshTime, final boolean _suppressException) {
+  private void insertUpdateStats(final Entry<K, V> e, final V _value, final long t0, final long t, final byte _updateStatistics, final long _nextRefreshTime, final boolean _suppressException) {
     synchronized (lock) {
       checkClosed();
       updateStatisticsNeedsLock(e, _value, t0, t, _updateStatistics, _suppressException);
@@ -1695,7 +1705,6 @@ public abstract class HeapCache<K, V>
         putButExpiredCnt++;
       }
     } // synchronized (lock)
-    return _nextRefreshTime;
   }
 
   private void updateStatistics(Entry e, V _value, long t0, long t, byte _updateStatistics, boolean _suppressException) {
@@ -1779,7 +1788,7 @@ public abstract class HeapCache<K, V>
               e.startProcessing(Entry.ProcessingState.REFRESH);
             }
             try {
-              finishFetch(e, load(e));
+              load(e);
             } catch (CacheClosedException ignore) {
             } catch (Throwable ex) {
               e.ensureAbort(false);
