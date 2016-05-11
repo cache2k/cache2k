@@ -1611,7 +1611,6 @@ public abstract class HeapCache<K, V>
       } else {
         v = loader.load(e.key, t0, e);
       }
-      e.setLastModification(t0);
     } catch (Throwable _ouch) {
       long t = System.currentTimeMillis();
       loadGotException(e, new ExceptionWrapper(e.key, _ouch, t0, e), t0, t);
@@ -1658,7 +1657,6 @@ public abstract class HeapCache<K, V>
   }
 
   protected final void insertOnPut(Entry<K, V> e, V v, long t0, long t) {
-    e.setLastModification(t0);
     insertOrUpdateAndCalculateExpiry(e, v, t0, t, INSERT_STAT_PUT);
   }
 
@@ -1684,12 +1682,14 @@ public abstract class HeapCache<K, V>
   protected final void insert(Entry<K, V> e, V _value, long t0, long t, byte _updateStatistics, long _nextRefreshTime) {
     if (_updateStatistics == INSERT_STAT_LOAD) {
       synchronized (e) {
+        e.setLastModification(t0);
         insertUpdateStats(e, _value, t0, t, _updateStatistics, _nextRefreshTime, false);
         e.setValueOrException(_value);
         e.resetSuppressedLoadExceptionInformation();
         finishLoadOrEviction(e, _nextRefreshTime);
       }
     } else {
+      e.setLastModification(t0);
       e.setValueOrException(_value);
       e.resetSuppressedLoadExceptionInformation();
       insertUpdateStats(e, _value, t0, t, _updateStatistics, _nextRefreshTime, false);
