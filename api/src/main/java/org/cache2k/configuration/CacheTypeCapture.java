@@ -20,54 +20,109 @@ package org.cache2k.configuration;
  * #L%
  */
 
+import org.cache2k.Cache2kBuilder;
+
 import java.io.Serializable;
+import java.lang.reflect.GenericArrayType;
+import java.lang.reflect.ParameterizedType;
+import java.lang.reflect.Type;
 import java.util.Arrays;
 
 /**
- * A data structure to retain all known type information from the key and value types, including generic
- * parameters within the cache configuration. A caching application typically constructs a type descriptor
- * with the use of a {@link CacheType}.
+ * Helper class to capture generic types into a type descriptor. This is used to provide
+ * the cache with detailed type information of the key and value objects.
  *
- * <p>While the type descriptor contains implementation classes, interface consumers must not rely on the
- * implementation types.</p>
+ * Example usage with {@link Cache2kBuilder}:<pre>   {@code
  *
- * @see CacheType
+ *   CacheBuilder.newCache().valueType(new CacheType<List<String>(){}).build()
+ * }</pre>
+ *
+ * This constructs a cache with the known type <code>List&lt;String></code> for its value.
+ *
+ * @see <a href="https://github.com/google/guava/wiki/ReflectionExplained">Google Guava CacheType explaination</a>
+ *
+ * @author Jens Wilke
  */
-public interface CacheTypeDescriptor<T> {
+public class CacheTypeCapture<T> implements CacheType<T> {
 
-  /** The used prefix for the toString() output. */
-  String DESCRIPTOR_TO_STRING_PREFIX = "CacheTypeDescriptor#";
+  private CacheType descriptor;
 
-  /** Class type if not an array. */
-  Class<T> getType();
+  protected CacheTypeCapture() {
+    descriptor = of(((ParameterizedType) this.getClass().getGenericSuperclass()).getActualTypeArguments()[0]);
+  }
 
-  /**
-   * This ia a parameterized type and the concrete types are known.
-   * {@link #getTypeArguments()} returns the the arguments.
-   */
-  boolean hasTypeArguments();
+  public static CacheType of(Type t) {
+    if (t instanceof ParameterizedType) {
+      ParameterizedType pt = (ParameterizedType) t;
+      Class c = (Class) pt.getRawType();
+      CacheType[] ta = new CacheType[pt.getActualTypeArguments().length];
+      for (int i = 0; i < ta.length; i++) {
+        ta[i] = of(pt.getActualTypeArguments()[i]);
+      }
+      return new OfGeneric(c, ta);
+    } else if (t instanceof GenericArrayType) {
+      GenericArrayType gat = (GenericArrayType) t;
+      return new OfArray(of(gat.getGenericComponentType()));
+    }
+    if (!(t instanceof Class)) {
+      throw new IllegalArgumentException("The run time type is not available, got: " + t);
+    }
+    Class c = (Class) t;
+    if (c.isArray()) {
+      return new OfArray(of(c.getComponentType()));
+    }
+    return new OfClass(c);
+  }
 
-  /* This type is an array. */
-  boolean isArray();
+  @Override
+  public CacheType getBeanRepresentation() {
+    return descriptor;
+  }
 
-  /** The component type in case of an array */
-  CacheTypeDescriptor getComponentType();
+  @Override
+  public CacheType getComponentType() {
+    return descriptor.getComponentType();
+  }
 
-  /** Known type arguments, if the type is a parameterized type. */
-  CacheTypeDescriptor[] getTypeArguments();
+  @Override
+  public Class<T> getType() {
+    return descriptor.getType();
+  }
 
-  /** Java language compatible type name */
-  String getTypeName();
+  @Override
+  public CacheType[] getTypeArguments() {
+    return descriptor.getTypeArguments();
+  }
 
-  /**
-   * Return a serializable version of this type descriptor.
-   */
-  CacheTypeDescriptor getBeanRepresentation();
+  @Override
+  public String getTypeName() {
+    return descriptor.getTypeName();
+  }
 
-  abstract class BaseType implements CacheTypeDescriptor, Serializable {
+  @Override
+  public boolean hasTypeArguments() {
+    return descriptor.hasTypeArguments();
+  }
+
+  @Override
+  public boolean isArray() {
+    return descriptor.isArray();
+  }
+
+  @Override
+  public boolean equals(Object o) {
+    return descriptor.equals(o);
+  }
+
+  @Override
+  public int hashCode() {
+    return descriptor.hashCode();
+  }
+
+  private static abstract class BaseType implements CacheType, Serializable {
 
     @Override
-    public CacheTypeDescriptor getComponentType() {
+    public CacheType getComponentType() {
       return null;
     }
 
@@ -77,7 +132,7 @@ public interface CacheTypeDescriptor<T> {
     }
 
     @Override
-    public CacheTypeDescriptor[] getTypeArguments() {
+    public CacheType[] getTypeArguments() {
       return null;
     }
 
@@ -92,7 +147,7 @@ public interface CacheTypeDescriptor<T> {
     }
 
     @Override
-    public CacheTypeDescriptor getBeanRepresentation() {
+    public CacheType getBeanRepresentation() {
       return this;
     }
 
@@ -103,7 +158,7 @@ public interface CacheTypeDescriptor<T> {
 
   }
 
-  class OfClass extends BaseType {
+  private static class OfClass extends BaseType {
 
     Class<?> type;
 
@@ -161,16 +216,16 @@ public interface CacheTypeDescriptor<T> {
 
   }
 
-  class OfArray extends BaseType {
+  private static class OfArray extends BaseType {
 
-    CacheTypeDescriptor componentType;
+    CacheType componentType;
 
     /** Empty constructor for bean compliance. */
     @SuppressWarnings("unused")
     public OfArray() {
     }
 
-    public OfArray(CacheTypeDescriptor componentType) {
+    public OfArray(CacheType componentType) {
       this.componentType = componentType;
     }
 
@@ -180,16 +235,16 @@ public interface CacheTypeDescriptor<T> {
     }
 
     @Override
-    public CacheTypeDescriptor getComponentType() {
+    public CacheType getComponentType() {
       return componentType;
     }
 
     @SuppressWarnings("unused")
-    public void setComponentType(CacheTypeDescriptor componentType) {
+    public void setComponentType(CacheType componentType) {
       this.componentType = componentType;
     }
 
-    static int countDimensions(CacheTypeDescriptor td ) {
+    static int countDimensions(CacheType td ) {
       int cnt = 0;
       while (td.isArray()) {
         td = td.getComponentType();
@@ -198,7 +253,7 @@ public interface CacheTypeDescriptor<T> {
       return cnt;
     }
 
-    static Class<?> finalPrimitiveType(CacheTypeDescriptor td) {
+    static Class<?> finalPrimitiveType(CacheType td) {
       while (td.isArray()) {
         td = td.getComponentType();
       }
@@ -234,9 +289,9 @@ public interface CacheTypeDescriptor<T> {
     }
   }
 
-  class OfGeneric extends BaseType {
+  private static class OfGeneric extends BaseType {
 
-    CacheTypeDescriptor[] typeArguments;
+    CacheType[] typeArguments;
     Class<?> type;
 
     /** Empty constructor for bean compliance. */
@@ -244,7 +299,7 @@ public interface CacheTypeDescriptor<T> {
     public OfGeneric() {
     }
 
-    public OfGeneric(Class<?> type, CacheTypeDescriptor[] typeArguments) {
+    public OfGeneric(Class<?> type, CacheType[] typeArguments) {
       this.typeArguments = typeArguments;
       this.type = type;
     }
@@ -264,27 +319,13 @@ public interface CacheTypeDescriptor<T> {
     }
 
     @Override
-    public CacheTypeDescriptor[] getTypeArguments() {
+    public CacheType[] getTypeArguments() {
       return typeArguments;
     }
 
     @SuppressWarnings("unused")
-    public void setTypeArguments(CacheTypeDescriptor[] typeArguments) {
+    public void setTypeArguments(CacheType[] typeArguments) {
       this.typeArguments = typeArguments;
-    }
-
-    static String arrayToString(CacheTypeDescriptor[] a) {
-      if (a.length < 1) {
-        throw new IllegalArgumentException();
-      }
-      StringBuilder sb = new StringBuilder();
-      int l = a.length - 1;
-      for (int i = 0; ; i++) {
-        sb.append(a[i].getTypeName());
-        if (i == l)
-          return sb.toString();
-        sb.append(',');
-      }
     }
 
     @Override
@@ -310,6 +351,20 @@ public interface CacheTypeDescriptor<T> {
       return result;
     }
 
+  }
+
+  static String arrayToString(CacheType[] a) {
+    if (a.length < 1) {
+      throw new IllegalArgumentException();
+    }
+    StringBuilder sb = new StringBuilder();
+    int l = a.length - 1;
+    for (int i = 0; ; i++) {
+      sb.append(a[i].getTypeName());
+      if (i == l)
+        return sb.toString();
+      sb.append(',');
+    }
   }
 
 }

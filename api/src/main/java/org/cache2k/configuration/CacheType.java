@@ -20,101 +20,45 @@ package org.cache2k.configuration;
  * #L%
  */
 
-import org.cache2k.Cache2kBuilder;
-
-import java.lang.reflect.GenericArrayType;
-import java.lang.reflect.ParameterizedType;
-import java.lang.reflect.Type;
-
 /**
- * Helper class to capture generic types into a type descriptor. This is used to provide
- * the cache with detailed type information of the key and value objects.
+ * A data structure to retain all known type information from the key and value types, including generic
+ * parameters within the cache configuration. A caching application typically constructs a type descriptor
+ * with the use of a {@link CacheTypeCapture}.
  *
- * Example usage with {@link Cache2kBuilder}:<pre>   {@code
+ * <p>While the type descriptor contains implementation classes, interface consumers must not rely on the
+ * implementation types.
  *
- *   CacheBuilder.newCache().valueType(new CacheType<List<String>(){}).build()
- * }</pre>
- *
- * This constructs a cache with the known type <code>List&lt;String></code> for its value.
- *
- * @see <a href="https://github.com/google/guava/wiki/ReflectionExplained">Google Guava CacheType explaination</a>
- *
- * @author Jens Wilke
+ * @see CacheTypeCapture
  */
-public class CacheType<T> implements CacheTypeDescriptor<T> {
+public interface CacheType<T> {
 
-  private CacheTypeDescriptor descriptor;
+  /** The used prefix for the toString() output. */
+  String DESCRIPTOR_TO_STRING_PREFIX = "CacheTypeDescriptor#";
 
-  protected CacheType() {
-    descriptor = of(((ParameterizedType) this.getClass().getGenericSuperclass()).getActualTypeArguments()[0]);
-  }
+  /** Class type if not an array. */
+  Class<T> getType();
 
-  public static CacheTypeDescriptor of(Type t) {
-    if (t instanceof ParameterizedType) {
-      ParameterizedType pt = (ParameterizedType) t;
-      Class c = (Class) pt.getRawType();
-      CacheTypeDescriptor[] ta = new CacheTypeDescriptor[pt.getActualTypeArguments().length];
-      for (int i = 0; i < ta.length; i++) {
-        ta[i] = of(pt.getActualTypeArguments()[i]);
-      }
-      return new CacheTypeDescriptor.OfGeneric(c, ta);
-    } else if (t instanceof GenericArrayType) {
-      GenericArrayType gat = (GenericArrayType) t;
-      return new CacheTypeDescriptor.OfArray(of(gat.getGenericComponentType()));
-    }
-    if (!(t instanceof Class)) {
-      throw new IllegalArgumentException("The run time type is not available, got: " + t);
-    }
-    Class c = (Class) t;
-    if (c.isArray()) {
-      return new CacheTypeDescriptor.OfArray(of(c.getComponentType()));
-    }
-    return new CacheTypeDescriptor.OfClass(c);
-  }
+  /**
+   * This ia a parameterized type and the concrete types are known.
+   * {@link #getTypeArguments()} returns the the arguments.
+   */
+  boolean hasTypeArguments();
 
-  @Override
-  public CacheTypeDescriptor getBeanRepresentation() {
-    return descriptor;
-  }
+  /* This type is an array. */
+  boolean isArray();
 
-  @Override
-  public CacheTypeDescriptor getComponentType() {
-    return descriptor.getComponentType();
-  }
+  /** The component type in case of an array */
+  CacheType getComponentType();
 
-  @Override
-  public Class<T> getType() {
-    return descriptor.getType();
-  }
+  /** Known type arguments, if the type is a parameterized type. */
+  CacheType[] getTypeArguments();
 
-  @Override
-  public CacheTypeDescriptor[] getTypeArguments() {
-    return descriptor.getTypeArguments();
-  }
+  /** Java language compatible type name */
+  String getTypeName();
 
-  @Override
-  public String getTypeName() {
-    return descriptor.getTypeName();
-  }
-
-  @Override
-  public boolean hasTypeArguments() {
-    return descriptor.hasTypeArguments();
-  }
-
-  @Override
-  public boolean isArray() {
-    return descriptor.isArray();
-  }
-
-  @Override
-  public boolean equals(Object o) {
-    return descriptor.equals(o);
-  }
-
-  @Override
-  public int hashCode() {
-    return descriptor.hashCode();
-  }
+  /**
+   * Return a serializable version of this type descriptor.
+   */
+  CacheType getBeanRepresentation();
 
 }

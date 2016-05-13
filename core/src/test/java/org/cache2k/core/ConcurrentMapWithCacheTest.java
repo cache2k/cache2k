@@ -39,7 +39,7 @@ public class ConcurrentMapWithCacheTest extends ConcurrentMapTest {
   @Override
   public void setUp() {
     cache = Cache2kBuilder.of(Integer.class, String.class).name(this.getClass().getName()).eternal(true).build();
-    map = cache.requestInterface(ConcurrentMap.class);
+    map = cache.asMap();
   }
 
   @Override

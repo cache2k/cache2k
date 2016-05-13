@@ -47,8 +47,8 @@ public class CacheConfiguration<K, V> implements Serializable {
 
   private boolean storeByReference;
   private String name;
-  private CacheTypeDescriptor keyType;
-  private CacheTypeDescriptor valueType;
+  private CacheType keyType;
+  private CacheType valueType;
   private Class<?> implementation;
 
   private long entryCapacity = 2000;
@@ -95,7 +95,7 @@ public class CacheConfiguration<K, V> implements Serializable {
    * @see #setKeyType(Class)
    * @see #setValueType(Class)
    */
-  public static <K,V> CacheConfiguration<K, V> of(Class<K> keyType, CacheTypeDescriptor<V> valueType) {
+  public static <K,V> CacheConfiguration<K, V> of(Class<K> keyType, CacheType<V> valueType) {
     CacheConfiguration c = new CacheConfiguration();
     c.setKeyType(keyType);
     c.setValueType(valueType);
@@ -110,7 +110,7 @@ public class CacheConfiguration<K, V> implements Serializable {
    * @see #setKeyType(Class)
    * @see #setValueType(Class)
    */
-  public static <K,V> CacheConfiguration<K, V> of(CacheTypeDescriptor<K> keyType, Class<V> valueType) {
+  public static <K,V> CacheConfiguration<K, V> of(CacheType<K> keyType, Class<V> valueType) {
     CacheConfiguration c = new CacheConfiguration();
     c.setKeyType(keyType);
     c.setValueType(valueType);
@@ -125,7 +125,7 @@ public class CacheConfiguration<K, V> implements Serializable {
    * @see #setKeyType(Class)
    * @see #setValueType(Class)
    */
-  public static <K,V> CacheConfiguration<K, V> of(CacheTypeDescriptor<K> keyType, CacheTypeDescriptor<V> valueType) {
+  public static <K,V> CacheConfiguration<K, V> of(CacheType<K> keyType, CacheType<V> valueType) {
     CacheConfiguration c = new CacheConfiguration();
     c.setKeyType(keyType);
     c.setValueType(valueType);
@@ -193,7 +193,7 @@ public class CacheConfiguration<K, V> implements Serializable {
     refreshAhead = v;
   }
 
-  public CacheTypeDescriptor getKeyType() {
+  public CacheType getKeyType() {
     return keyType;
   }
 
@@ -216,16 +216,16 @@ public class CacheConfiguration<K, V> implements Serializable {
    * for performance reasons. The cache application guarantees that only the specified types will be used.
    * The cache will check the type compatibility at critical points, e.g. when reconnecting to an external storage.
    * Generic types: An application may provide more detailed type information to the cache, which
-   * contains also generic type parameters by providing a {@link CacheType} where the cache can extract
+   * contains also generic type parameters by providing a {@link CacheTypeCapture} where the cache can extract
    * the type information.
    * </p>
    *
-   * @see CacheType
-   * @see #setKeyType(CacheTypeDescriptor)
+   * @see CacheTypeCapture
+   * @see #setKeyType(CacheType)
    */
   public void setKeyType(Class<?> v) {
     checkNull(v);
-    setKeyType(new CacheTypeDescriptor.OfClass(v));
+    setKeyType(CacheTypeCapture.of(v));
   }
 
   /**
@@ -233,7 +233,7 @@ public class CacheConfiguration<K, V> implements Serializable {
    *
    * @see #setKeyType(Class) for a general discussion on types
    */
-  public void setKeyType(CacheTypeDescriptor v) {
+  public void setKeyType(CacheType v) {
     checkNull(v);
     if (keyType != null && !v.equals(keyType)) {
       throw new IllegalArgumentException("Key type may only set once.");
@@ -244,7 +244,7 @@ public class CacheConfiguration<K, V> implements Serializable {
     keyType = v.getBeanRepresentation();
   }
 
-  public CacheTypeDescriptor<V> getValueType() {
+  public CacheType<V> getValueType() {
     return valueType;
   }
 
@@ -256,10 +256,10 @@ public class CacheConfiguration<K, V> implements Serializable {
    */
   public void setValueType(Class<?> v) {
     checkNull(v);
-    setValueType(new CacheTypeDescriptor.OfClass(v));
+    setValueType(CacheTypeCapture.of(v));
   }
 
-  public void setValueType(CacheTypeDescriptor v) {
+  public void setValueType(CacheType v) {
     checkNull(v);
     if (valueType != null && !v.equals(valueType)) {
       throw new IllegalArgumentException("Value type may only set once.");

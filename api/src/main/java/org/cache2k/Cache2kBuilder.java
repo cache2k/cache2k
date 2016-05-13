@@ -21,8 +21,8 @@ package org.cache2k;
  */
 
 import org.cache2k.configuration.CacheConfiguration;
+import org.cache2k.configuration.CacheTypeCapture;
 import org.cache2k.configuration.CacheType;
-import org.cache2k.configuration.CacheTypeDescriptor;
 import org.cache2k.configuration.ConfigurationSectionBuilder;
 import org.cache2k.expiry.ExpiryPolicy;
 import org.cache2k.event.CacheEntryOperationListener;
@@ -124,8 +124,8 @@ public class Cache2kBuilder<K, V> implements Cloneable {
     Type[] _types =
       ((ParameterizedType) this.getClass().getGenericSuperclass()).getActualTypeArguments();
     config = CacheConfiguration.of(
-      (CacheTypeDescriptor<K>) CacheType.of(_types[0]).getBeanRepresentation(),
-      (CacheTypeDescriptor<V>) CacheType.of(_types[1]).getBeanRepresentation());
+      (CacheType<K>) CacheTypeCapture.of(_types[0]).getBeanRepresentation(),
+      (CacheType<V>) CacheTypeCapture.of(_types[1]).getBeanRepresentation());
   }
 
   /**
@@ -153,7 +153,7 @@ public class Cache2kBuilder<K, V> implements Cloneable {
    *
    * @throws IllegalArgumentException if key type is already set
    */
-  public final <K2> Cache2kBuilder<K2, V> keyType(CacheTypeDescriptor<K2> t) {
+  public final <K2> Cache2kBuilder<K2, V> keyType(CacheType<K2> t) {
     config.setKeyType(t);
     return (Cache2kBuilder<K2, V>) this;
   }
@@ -163,7 +163,7 @@ public class Cache2kBuilder<K, V> implements Cloneable {
    *
    * @throws IllegalArgumentException if value type is already set
    */
-  public final <T2> Cache2kBuilder<K, T2> valueType(CacheTypeDescriptor<T2> t) {
+  public final <T2> Cache2kBuilder<K, T2> valueType(CacheType<T2> t) {
     config.setValueType(t);
     return (Cache2kBuilder<K, T2>) this;
   }

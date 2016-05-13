@@ -35,6 +35,7 @@ import java.io.Closeable;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ConcurrentMap;
 
 /*
  * Descriptions derive partly from the java.util.concurrent.ConcurrentMap.
@@ -716,5 +717,11 @@ public interface Cache<K, V> extends
    * Request an alternative interface for the cache.
    */
   <X> X requestInterface(Class<X> _type);
+
+  /**
+   * Returns a map interface for operating with this cache. Operations on the map
+   * affect the cache directly, as well as modification on the cache will affect the map.
+   */
+  ConcurrentMap<K,V> asMap();
 
 }

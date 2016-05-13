@@ -22,8 +22,8 @@ package org.cache2k.test.util;
 
 import org.cache2k.Cache;
 import org.cache2k.Cache2kBuilder;
+import org.cache2k.configuration.CacheTypeCapture;
 import org.cache2k.configuration.CacheType;
-import org.cache2k.configuration.CacheTypeDescriptor;
 import org.cache2k.core.InternalCache;
 import org.cache2k.core.InternalCacheInfo;
 import org.junit.rules.TestRule;
@@ -49,8 +49,8 @@ public class CacheRule<K,V> implements TestRule {
   boolean shared;
   Cache<K,V> cache;
   Description description;
-  CacheTypeDescriptor<K> keyType;
-  CacheTypeDescriptor<V> valueType;
+  CacheType<K> keyType;
+  CacheType<V> valueType;
   Cache2kBuilder<K,V> builder;
 
   @SuppressWarnings("unchecked")
@@ -58,9 +58,9 @@ public class CacheRule<K,V> implements TestRule {
     Type[] _types =
       ((ParameterizedType) this.getClass().getGenericSuperclass()).getActualTypeArguments();
     keyType =
-      (CacheTypeDescriptor<K>) CacheType.of(_types[0]).getBeanRepresentation();
+      (CacheType<K>) CacheTypeCapture.of(_types[0]).getBeanRepresentation();
     valueType =
-      (CacheTypeDescriptor<V>) CacheType.of(_types[1]).getBeanRepresentation();
+      (CacheType<V>) CacheTypeCapture.of(_types[1]).getBeanRepresentation();
     builder = getInitialBuilder();
   }
 

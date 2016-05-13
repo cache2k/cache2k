@@ -21,7 +21,7 @@ package org.cache2k;
  */
 
 import org.cache2k.configuration.CacheConfiguration;
-import org.cache2k.configuration.CacheTypeDescriptor;
+import org.cache2k.configuration.CacheType;
 import org.cache2k.expiry.*;
 import org.cache2k.event.CacheEntryOperationListener;
 import org.cache2k.integration.AdvancedCacheLoader;
@@ -221,7 +221,7 @@ public class CacheBuilder<K,V> {
     return this;
   }
 
-  public <K2> CacheBuilder<K2, V> keyType(final CacheTypeDescriptor<K2> t) {
+  public <K2> CacheBuilder<K2, V> keyType(final CacheType<K2> t) {
     builder.keyType(t);
     return (CacheBuilder<K2, V>) this;
   }
@@ -311,7 +311,7 @@ public class CacheBuilder<K,V> {
     return this;
   }
 
-  public <T2> CacheBuilder<K, T2> valueType(final CacheTypeDescriptor<T2> t) {
+  public <T2> CacheBuilder<K, T2> valueType(final CacheType<T2> t) {
     builder.valueType(t);
     return (CacheBuilder<K, T2>) this;
   }

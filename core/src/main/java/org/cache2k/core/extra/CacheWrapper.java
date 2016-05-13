@@ -31,6 +31,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ConcurrentMap;
 
 /**
  * Wrap a cache and delegate all calls to it. This can be used to intercept methods calls, e.g. for
@@ -262,4 +263,8 @@ public class CacheWrapper<K,V> implements Cache<K, V> {
     return cache;
   }
 
+  @Override
+  public ConcurrentMap<K, V> asMap() {
+    return cache.asMap();
+  }
 }

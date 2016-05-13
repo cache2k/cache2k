@@ -21,8 +21,8 @@ package org.cache2k.test;
  */
 
 import org.cache2k.configuration.CacheConfiguration;
+import org.cache2k.configuration.CacheTypeCapture;
 import org.cache2k.configuration.CacheType;
-import org.cache2k.configuration.CacheTypeDescriptor;
 import org.junit.Test;
 import static org.junit.Assert.*;
 
@@ -39,8 +39,8 @@ import java.util.Set;
 /**
  * Test whether every type combination with generics can be build and retrieved from the type descriptor.
  *
+ * @see CacheTypeCapture
  * @see CacheType
- * @see CacheTypeDescriptor
  *
  * @author Jens Wilke
  */
@@ -51,7 +51,7 @@ public class CacheTypeTest {
    */
   @Test
   public void testIntArrayViaReflection() {
-    CacheType<int[]> vtt = new CacheType<int[]>() {};
+    CacheTypeCapture<int[]> vtt = new CacheTypeCapture<int[]>() {};
     ParameterizedType pt = (ParameterizedType) vtt.getClass().getGenericSuperclass();
     Class c = (Class) pt.getActualTypeArguments()[0];
     assertTrue(c.isArray());
@@ -63,7 +63,7 @@ public class CacheTypeTest {
    */
   @Test
   public void testStringListViaReflection() {
-    CacheType<List<String>> vtt = new CacheType<List<String>>() {};
+    CacheTypeCapture<List<String>> vtt = new CacheTypeCapture<List<String>>() {};
     ParameterizedType pt = (ParameterizedType) vtt.getClass().getGenericSuperclass();
     ParameterizedType t = (ParameterizedType) pt.getActualTypeArguments()[0];
     assertEquals(String.class, t.getActualTypeArguments()[0]);
@@ -74,7 +74,7 @@ public class CacheTypeTest {
    */
   @Test
   public void testListArrayViaReflection() {
-    CacheType<List<String>[]> vtt = new CacheType<List<String>[]>() {};
+    CacheTypeCapture<List<String>[]> vtt = new CacheTypeCapture<List<String>[]>() {};
     ParameterizedType pt = (ParameterizedType) vtt.getClass().getGenericSuperclass();
     GenericArrayType t = (GenericArrayType) pt.getActualTypeArguments()[0];
     ParameterizedType pt2 = (ParameterizedType) t.getGenericComponentType();
@@ -84,51 +84,51 @@ public class CacheTypeTest {
 
   @Test
   public void testSimpleType() {
-    CacheType<String> tt = new CacheType<String>() {};
-    CacheTypeDescriptor td = tt.getBeanRepresentation();
+    CacheTypeCapture<String> tt = new CacheTypeCapture<String>() {};
+    CacheType td = tt.getBeanRepresentation();
     assertEquals(String.class, tt.getBeanRepresentation().getType());
-    assertEquals(CacheTypeDescriptor.BaseType.DESCRIPTOR_TO_STRING_PREFIX + "String", td.toString());
+    assertEquals(CacheType.DESCRIPTOR_TO_STRING_PREFIX + "String", td.toString());
   }
 
   @Test
   public void testPrimitiveArrayType() {
-    CacheType<int[]> tt = new CacheType<int[]>() {};
-    CacheTypeDescriptor td = tt.getBeanRepresentation();
+    CacheTypeCapture<int[]> tt = new CacheTypeCapture<int[]>() {};
+    CacheType td = tt.getBeanRepresentation();
     assertNull(td.getType());
     assertTrue(td.isArray());
     assertEquals(int.class, td.getComponentType().getType());
-    assertEquals(CacheTypeDescriptor.DESCRIPTOR_TO_STRING_PREFIX + "int[]", td.toString());
+    assertEquals(CacheType.DESCRIPTOR_TO_STRING_PREFIX + "int[]", td.toString());
   }
 
   @Test
   public void testPrimitiveMultiArrayType() {
-    CacheType<int[][]> tt = new CacheType<int[][]>() {};
-    CacheTypeDescriptor td = tt.getBeanRepresentation();
+    CacheTypeCapture<int[][]> tt = new CacheTypeCapture<int[][]>() {};
+    CacheType td = tt.getBeanRepresentation();
     assertNull(td.getType());
     assertTrue(td.isArray());
     assertNull(td.getComponentType().getType());
     assertTrue(td.getComponentType().isArray());
     assertEquals(int.class, td.getComponentType().getComponentType().getType());
-    assertEquals(CacheTypeDescriptor.DESCRIPTOR_TO_STRING_PREFIX + "int[][]", td.toString());
+    assertEquals(CacheType.DESCRIPTOR_TO_STRING_PREFIX + "int[][]", td.toString());
   }
 
   @Test
   public void testGenericArrayType() {
-    CacheType<List<String>[]> tt = new CacheType<List<String>[]>() {};
-    CacheTypeDescriptor td = tt.getBeanRepresentation();
+    CacheTypeCapture<List<String>[]> tt = new CacheTypeCapture<List<String>[]>() {};
+    CacheType td = tt.getBeanRepresentation();
     assertNull(td.getType());
     assertTrue(td.isArray());
     assertEquals(List.class, td.getComponentType().getType());
     assertTrue(td.getComponentType().hasTypeArguments());
     assertEquals(1, td.getComponentType().getTypeArguments().length);
     assertEquals(String.class, td.getComponentType().getTypeArguments()[0].getType());
-    assertEquals(CacheTypeDescriptor.DESCRIPTOR_TO_STRING_PREFIX + "java.util.List<String>[]", td.toString());
+    assertEquals(CacheType.DESCRIPTOR_TO_STRING_PREFIX + "java.util.List<String>[]", td.toString());
   }
 
   @Test
   public void testGenericType() {
-    CacheType<Map<String,List<String>>> tt = new CacheType<Map<String,List<String>>>() {};
-    CacheTypeDescriptor td = tt.getBeanRepresentation();
+    CacheTypeCapture<Map<String,List<String>>> tt = new CacheTypeCapture<Map<String,List<String>>>() {};
+    CacheType td = tt.getBeanRepresentation();
     assertEquals(Map.class, td.getType());
     assertFalse(td.isArray());
     assertTrue(td.hasTypeArguments());
@@ -136,7 +136,7 @@ public class CacheTypeTest {
     assertEquals(String.class, td.getTypeArguments()[0].getType());
     assertEquals(List.class, td.getTypeArguments()[1].getType());
     assertTrue(td.getTypeArguments()[1].hasTypeArguments());
-    assertEquals(CacheTypeDescriptor.DESCRIPTOR_TO_STRING_PREFIX +
+    assertEquals(CacheType.DESCRIPTOR_TO_STRING_PREFIX +
             "java.util.Map<String,java.util.List<String>>", td.toString());
   }
 
@@ -165,25 +165,25 @@ public class CacheTypeTest {
 
   @Test
   public void testClassTypeBean() throws Exception {
-    CacheTypeDescriptor d = new CacheTypeDescriptor.OfClass(String.class);
+    CacheType d = CacheTypeCapture.of(String.class);
     toXmlAndBackAndCheck(d);
   }
 
   @Test
   public void testArrayTypeBean() throws Exception {
-    CacheTypeDescriptor d = new CacheType<int[]>(){}.getBeanRepresentation();
+    CacheType d = new CacheTypeCapture<int[]>(){}.getBeanRepresentation();
     toXmlAndBackAndCheck(d);
   }
 
   @Test
   public void testGenericTypeBean() throws Exception {
-    CacheTypeDescriptor d = new CacheType<List<String>>(){}.getBeanRepresentation();
+    CacheType d = new CacheTypeCapture<List<String>>(){}.getBeanRepresentation();
     toXmlAndBackAndCheck(d);
   }
 
   @Test
   public void testWeirdBean() throws Exception {
-    CacheTypeDescriptor d = new CacheType<Map<List<Set<int[]>>,String[]>>(){}.getBeanRepresentation();
+    CacheType d = new CacheTypeCapture<Map<List<Set<int[]>>,String[]>>(){}.getBeanRepresentation();
     toXmlAndBackAndCheck(d);
   }
 
@@ -194,7 +194,7 @@ public class CacheTypeTest {
   public void testWithCacheConfig() throws Exception {
     CacheConfiguration c = new CacheConfiguration();
     c.setKeyType(String.class);
-    c.setValueType(new CacheType<List<String>>(){});
+    c.setValueType(new CacheTypeCapture<List<String>>(){});
     CacheConfiguration c2 = copyObjectViaXmlEncoder(c);
     assertEquals(c.getKeyType(), c2.getKeyType());
     assertEquals(c.getValueType(), c2.getValueType());
@@ -210,7 +210,7 @@ public class CacheTypeTest {
   }
 
   static class GenericWrapper<T> {
-    CacheTypeDescriptor<T> type = new CacheType<T>() {};
+    CacheType<T> type = new CacheTypeCapture<T>() {};
   }
 
 }

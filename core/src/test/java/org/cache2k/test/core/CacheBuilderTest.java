@@ -23,7 +23,7 @@ package org.cache2k.test.core;
 import org.cache2k.Cache;
 import org.cache2k.Cache2kBuilder;
 import org.cache2k.CacheManager;
-import org.cache2k.configuration.CacheType;
+import org.cache2k.configuration.CacheTypeCapture;
 import org.cache2k.core.util.Log;
 import org.cache2k.junit.FastTests;
 import org.junit.Test;
@@ -93,7 +93,7 @@ public class CacheBuilderTest {
     Cache<Long, List<String>> c =
       Cache2kBuilder.forUnknownTypes()
         .keyType(Long.class)
-        .valueType(new CacheType<List<String>>() {})
+        .valueType(new CacheTypeCapture<List<String>>() {})
         .eternal(true)
         .build();
     c.put(123L, new ArrayList<String>());

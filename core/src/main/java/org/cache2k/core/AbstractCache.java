@@ -73,6 +73,11 @@ public abstract class AbstractCache<K, V> implements InternalCache<K, V> {
   }
 
   @Override
+  public ConcurrentMap<K, V> asMap() {
+    return new ConcurrentMapWrapper<K, V>(this);
+  }
+
+  @Override
   public StorageAdapter getStorage() { return null; }
 
   @Override
