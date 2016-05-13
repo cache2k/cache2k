@@ -22,7 +22,9 @@ package org.cache2k.core;
 
 import org.cache2k.configuration.CacheConfiguration;
 import org.cache2k.CacheEntry;
+import org.cache2k.core.util.Util;
 import org.cache2k.customization.ExpiryCalculator;
+import org.cache2k.customization.ExpiryTimeValues;
 import org.cache2k.customization.ValueWithExpiryTime;
 import org.cache2k.core.util.TunableConstants;
 import org.cache2k.core.util.TunableFactory;
@@ -156,6 +158,9 @@ public abstract class TimingHandler<K,V>  {
    * @return sanitized nextRefreshTime for storage in the entry.
    */
   public long stopStartTimer(long _nextRefreshTime, Entry<K,V> e) {
+    if ((_nextRefreshTime >= Entry.EXPIRY_TIME_MIN && _nextRefreshTime < Long.MAX_VALUE) || _nextRefreshTime < 0) {
+      throw new IllegalArgumentException("invalid expiry time, cache is not initialized with expiry: " + Util.formatMillis(_nextRefreshTime));
+    }
     return _nextRefreshTime == 0 ? Entry.EXPIRED : _nextRefreshTime;
   }
 
@@ -346,7 +351,7 @@ public abstract class TimingHandler<K,V>  {
       _nextRefreshTime = sanitizeTime(_nextRefreshTime, now);
       if ((_nextRefreshTime > 0 && _nextRefreshTime < Entry.EXPIRY_TIME_MIN) ||
         _nextRefreshTime == ExpiryCalculator.ETERNAL) {
-        if (_nextRefreshTime == Entry.EXPIRED) {
+        if (_nextRefreshTime == Entry.EXPIRED || _nextRefreshTime == ExpiryTimeValues.REFRESH_IMMEDIATELY) {
           return eventuallyStartBackgroundRefresh(e);
         }
         return _nextRefreshTime;

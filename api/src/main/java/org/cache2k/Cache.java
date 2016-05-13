@@ -22,6 +22,7 @@ package org.cache2k;
  */
 
 import org.cache2k.customization.ExpiryCalculator;
+import org.cache2k.customization.ExpiryTimeValues;
 import org.cache2k.integration.CacheLoader;
 import org.cache2k.integration.CacheWriter;
 import org.cache2k.integration.LoadCompletedListener;
@@ -494,6 +495,22 @@ public interface Cache<K, V> extends
    *         or value prevents it from being stored in this cache.
    */
   V peekAndPut(K key, V value);
+
+  /**
+   * Updates an existing not expired mapping to expire at the given point in time.
+   * If there is no mapping associated with the key or it is already expired, this
+   * operation has no effect.
+   *
+   * <p>
+   *
+   * <p>If the cache is not initialized with any customized expiry the method
+   * cannot be used.
+   *
+   * @param key key with which the specified value is associated
+   * @param millis Time in milliseconds since epoch when the entry should expire.
+   *               Also see {@link ExpiryTimeValues}
+   */
+  void expire(K key, long millis);
 
   /**
    * Asynchronously loads the given set of keys into the cache. Only missing or expired

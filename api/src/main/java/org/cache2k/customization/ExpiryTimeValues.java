@@ -21,18 +21,26 @@ package org.cache2k.customization;
  */
 
 /**
- * Time values that have a special meaning. Used for expressive return values in the
- * customizations {@link org.cache2k.integration.ResiliencePolicy} and {@link ExpiryCalculator}.
+ * Expiry time values that have a special meaning. Used for expressive return values in the
+ * customizations {@link org.cache2k.integration.ResiliencePolicy} and {@link ExpiryCalculator}
+ * as well as {@link org.cache2k.Cache#expire(Object, long)}.
  *
  * @author Jens Wilke
  */
-public interface ExpiryTimeConstants {
+public interface ExpiryTimeValues {
 
   /**
    * Return value used to signal that the value should not be cached. In a read through
    * configuration the value will be loaded, when it is requested again.
    */
   long NO_CACHE = 0;
+
+  /**
+   * If refresh ahead is enabled, the value will be cached and visible. An immediate
+   * refresh is triggered. If the refresh is not possible, because no loader threads
+   * are available the value will expire.
+   */
+  long REFRESH_IMMEDIATELY = 1;
 
   /**
    * Return value signalling to keep the value forever in the cache, switching off expiry.

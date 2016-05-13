@@ -179,6 +179,11 @@ public class CacheWrapper<K,V> implements Cache<K, V> {
   }
 
   @Override
+  public void expire(final K key, final long millis) {
+    cache.expire(key, millis);
+  }
+
+  @Override
   public Map<K, V> getAll(Iterable<? extends K> keys) {
     return cache.getAll(keys);
   }

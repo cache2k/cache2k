@@ -280,6 +280,11 @@ public class WiredCache<K, V> extends AbstractCache<K, V>
     }
   }
 
+  @Override
+  public void expire(final K key, final long _millis) {
+    execute(key, SPEC.expire(key, _millis));
+  }
+
   private void checkLoaderPresent() {
     if (loader == null) {
       throw new UnsupportedOperationException("loader not set");

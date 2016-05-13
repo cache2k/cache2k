@@ -456,6 +456,17 @@ public class Specification<K, V> {
     };
   }
 
+  public Semantic<K, V, Void> expire(K key, final long t) {
+    return new Semantic.UpdateExisting<K, V, Void>() {
+      @Override
+      public void update(Progress c, ExaminationEntry e) {
+        if (c.isPresent()) {
+          c.expire(t);
+        }
+      }
+    };
+  }
+
   public static class NeedsLoadRestartException extends RestartException { }
 
 }

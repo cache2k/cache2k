@@ -73,6 +73,11 @@ public interface Progress<V, R> {
   void loadAndMutation();
 
   /**
+   * Reset expiry to the specified value. Don't change the value.
+   */
+  void expire(long t);
+
+  /**
    * The entry will be removed. Last command of semantic method.
    */
   void remove();

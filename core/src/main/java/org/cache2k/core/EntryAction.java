@@ -45,7 +45,8 @@ import org.cache2k.core.storageApi.StorageEntry;
  * @author Jens Wilke
  */
 @SuppressWarnings("SynchronizeOnNonFinalField")
-public abstract class EntryAction<K, V, R> implements StorageCallback, AsyncCacheLoader.Callback<V>, AsyncCacheWriter.Callback, Progress<V, R> {
+public abstract class EntryAction<K, V, R> implements
+  StorageCallback, AsyncCacheLoader.Callback<V>, AsyncCacheWriter.Callback, Progress<V, R> {
 
   static final Entry NON_FRESH_DUMMY = new Entry();
 
@@ -502,6 +503,17 @@ public abstract class EntryAction<K, V, R> implements StorageCallback, AsyncCach
     mutationMayCallWriter();
   }
 
+  @Override
+  public void expire(long t) {
+    newValueOrException = entry.getValue();
+    lastModificationTime = entry.getLastModification();
+    expiry = t;
+    if (newValueOrException instanceof ExceptionWrapper) {
+      setUntil(ExceptionWrapper.class.cast(newValueOrException));
+    }
+    expiryCalculated();
+  }
+
   public void mutationCalculateExpiry() {
     entry.nextProcessingStep(Entry.ProcessingState.EXPIRY);
     try {
@@ -521,11 +533,7 @@ public abstract class EntryAction<K, V, R> implements StorageCallback, AsyncCach
         } else {
           expiry = timing().cacheExceptionUntil(entry, ew);
         }
-        if (expiry < 0) {
-          ew.until = -expiry;
-        } else if (expiry >= Entry.EXPIRY_TIME_MIN) {
-          ew.until = expiry;
-        }
+        setUntil(ew);
       } else {
         expiry = timing().calculateNextRefreshTime(
           entry, newValueOrException,
@@ -537,6 +545,14 @@ public abstract class EntryAction<K, V, R> implements StorageCallback, AsyncCach
       return;
     }
     expiryCalculated();
+  }
+
+  private void setUntil(final ExceptionWrapper _ew) {
+    if (expiry < 0) {
+      _ew.until = -expiry;
+    } else if (expiry >= Entry.EXPIRY_TIME_MIN) {
+      _ew.until = expiry;
+    }
   }
 
   public void expiryCalculationException(Throwable t) {
@@ -798,32 +814,35 @@ public abstract class EntryAction<K, V, R> implements StorageCallback, AsyncCach
     if (load && !remove) {
       operation.loaded(this, entry);
     }
-    synchronized (entry) {
-      entry.processingDone();
-      entryLocked = false;
-      entry.notifyAll();
-      if (remove) {
-        synchronized (heapCache.lock) {
-          if (heapCache.removeEntry(entry)) {
-            if (expiredImmediately) {
-              heapCache.expiredRemoveCnt++;
-            } else {
-              heapCache.removedCnt++;
+    try {
+      synchronized (entry) {
+        entry.processingDone();
+        entryLocked = false;
+        entry.notifyAll();
+        if (remove) {
+          synchronized (heapCache.lock) {
+            if (heapCache.removeEntry(entry)) {
+              if (expiredImmediately) {
+                heapCache.expiredRemoveCnt++;
+              } else {
+                heapCache.removedCnt++;
+              }
             }
           }
-        }
-      } else {
-        entry.setNextRefreshTime(timing().stopStartTimer(expiry, entry));
-        if (entry.isExpired()) {
-          entry.setNextRefreshTime(Entry.EXPIRY_TIME_MIN);
-          userCache.expireOrScheduleFinalExpireEvent(entry);
+        } else {
+          entry.setNextRefreshTime(timing().stopStartTimer(expiry, entry));
+          if (entry.isExpired()) {
+            entry.setNextRefreshTime(Entry.EXPIRY_TIME_MIN);
+            userCache.expireOrScheduleFinalExpireEvent(entry);
+          }
         }
       }
+    } finally {
+      synchronized (heapCache.lock) {
+        updateMutationStatisticsInsideLock();
+      }
+      mutationDone();
     }
-    synchronized (heapCache.lock) {
-      updateMutationStatisticsInsideLock();
-    }
-    mutationDone();
   }
 
   public void updateOnlyReadStatisticsInsideLock() {

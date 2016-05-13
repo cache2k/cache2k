@@ -21,7 +21,7 @@ package org.cache2k.integration;
  */
 
 import org.cache2k.CacheEntry;
-import org.cache2k.customization.ExpiryTimeConstants;
+import org.cache2k.customization.ExpiryTimeValues;
 
 /**
  * Controls how to deal with loader exceptions in a read through configuration.
@@ -30,7 +30,7 @@ import org.cache2k.customization.ExpiryTimeConstants;
  *
  * @author Jens Wilke
  */
-public abstract class ResiliencePolicy<K, V> implements ExpiryTimeConstants {
+public abstract class ResiliencePolicy<K, V> implements ExpiryTimeValues {
 
   /**
    * Called before any other call.

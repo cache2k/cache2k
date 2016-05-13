@@ -37,7 +37,7 @@ import java.util.concurrent.TimeUnit;
  * @author Jens Wilke; created: 2014-10-14
  * @since 0.20
  */
-public interface ExpiryCalculator<K, V> extends ExpiryTimeConstants {
+public interface ExpiryCalculator<K, V> extends ExpiryTimeValues {
 
   /**
    * Returns the time of expiry in milliseconds since epoch.
