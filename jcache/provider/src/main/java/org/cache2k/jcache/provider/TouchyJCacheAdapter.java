@@ -23,7 +23,7 @@ package org.cache2k.jcache.provider;
 import org.cache2k.CacheEntry;
 import org.cache2k.customization.ExpiryCalculator;
 import org.cache2k.customization.ExpiryTimeValues;
-import org.cache2k.jcache.provider.event.EventHandlingBase;
+import org.cache2k.jcache.provider.event.EventHandling;
 import org.cache2k.processor.CacheEntryProcessor;
 import org.cache2k.processor.MutableCacheEntry;
 
@@ -70,7 +70,7 @@ public class TouchyJCacheAdapter<K, V> implements Cache<K, V> {
   Class<K> keyType;
   Class<V> valueType;
   ExpiryPolicy expiryPolicy;
-  EventHandlingBase<K,V, V> eventHandling;
+  EventHandling<K, V> eventHandling;
 
   @Override
   public V get(K key) {

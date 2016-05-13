@@ -29,7 +29,7 @@ import org.cache2k.core.CacheLifeCycleListener;
 import org.cache2k.core.CacheManagerImpl;
 import org.cache2k.core.InternalCache;
 import org.cache2k.integration.LoadExceptionInformation;
-import org.cache2k.jcache.provider.event.EventHandlingBase;
+import org.cache2k.jcache.provider.event.EventHandling;
 import org.cache2k.jcache.provider.generic.storeByValueSimulation.CopyCacheProxy;
 import org.cache2k.jcache.provider.generic.storeByValueSimulation.ObjectCopyFactory;
 import org.cache2k.jcache.provider.generic.storeByValueSimulation.ObjectTransformer;
@@ -262,7 +262,7 @@ public class JCacheManagerAdapter implements CacheManager {
         throw new CacheException("A cache2k instance is already existing with name: " + _cacheName);
       }
 
-      EventHandlingBase<K,V, V> _eventHandling = new EventHandlingBase<K, V, V>();
+      EventHandling<K,V> _eventHandling = new EventHandling<K, V>();
       _eventHandling.registerCache2kListeners(b);
       for (CacheEntryListenerConfiguration<K,V> cfg : cc.getCacheEntryListenerConfigurations()) {
         _eventHandling.registerListener(cfg);

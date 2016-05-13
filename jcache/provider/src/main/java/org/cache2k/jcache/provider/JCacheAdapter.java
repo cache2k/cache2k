@@ -30,7 +30,7 @@ import org.cache2k.processor.MutableCacheEntry;
 import org.cache2k.CustomizationException;
 import org.cache2k.core.EntryAction;
 import org.cache2k.core.InternalCache;
-import org.cache2k.jcache.provider.event.EventHandlingBase;
+import org.cache2k.jcache.provider.event.EventHandling;
 
 import javax.cache.CacheManager;
 import javax.cache.configuration.CacheEntryListenerConfiguration;
@@ -72,7 +72,7 @@ public class JCacheAdapter<K, V> implements javax.cache.Cache<K, V> {
   /** Null, if no complete configuration is effective */
   CompleteConfiguration<K, V> completeConfiguration;
 
-  EventHandlingBase<K,V,V> eventHandling;
+  EventHandling<K,V> eventHandling;
 
   public JCacheAdapter(JCacheManagerAdapter _manager, Cache<K, V> _cache, CompleteConfiguration<K, V> _completeConfiguration) {
     manager = _manager;

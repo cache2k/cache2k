@@ -51,12 +51,11 @@ import java.util.concurrent.Executor;
  *
  * @see AsyncDispatcher
  * @param <K> key type
- * @param <V> value type of user cache
- * @param <W> value type of internal cache wrapper
+ * @param <V> value type
  *
  * @author Jens Wilke
  */
-public class EventHandlingBase<K,V,W> {
+public class EventHandling<K,V> {
 
   JCacheManagerAdapter manager;
   javax.cache.Cache jCache;
@@ -166,22 +165,22 @@ public class EventHandlingBase<K,V,W> {
     }
   }
 
-  public void registerCache2kListeners(Cache2kBuilder<K, W> _builder) {
+  public void registerCache2kListeners(Cache2kBuilder<K, V> _builder) {
     _builder.addListener(new CreatedListenerAdapter());
     _builder.addListener(new UpdatedListenerAdapter());
     _builder.addListener(new RemovedListenerAdapter());
     _builder.addListener(new ExpiredListenerAdapter());
   }
 
-  private V extractValue(W _value) { return (V) _value; }
+  private V extractValue(V _value) { return _value; }
 
   @SuppressWarnings("unchecked")
-  class CreatedListenerAdapter implements org.cache2k.event.CacheEntryCreatedListener<K, W> {
+  class CreatedListenerAdapter implements org.cache2k.event.CacheEntryCreatedListener<K, V> {
 
     @Override
     public void onEntryCreated(
-        final org.cache2k.Cache<K, W> c,
-        final CacheEntry<K, W> e) {
+        final org.cache2k.Cache<K, V> c,
+        final CacheEntry<K, V> e) {
       if (e.getException() != null) {
         return;
       }
@@ -191,7 +190,7 @@ public class EventHandlingBase<K,V,W> {
 
   }
 
-  private void fireCreated(final javax.cache.Cache<K, V> _jCache, final CacheEntry<K, W> e) {
+  private void fireCreated(final javax.cache.Cache<K, V> _jCache, final CacheEntry<K, V> e) {
     EntryEvent<K, V> cee =
       new EntryEvent<K, V>(_jCache, EventType.CREATED, e.getKey(), extractValue(e.getValue()));
     asyncDispatcher.deliverAsyncEvent(cee);
@@ -201,10 +200,10 @@ public class EventHandlingBase<K,V,W> {
   }
 
   @SuppressWarnings("unchecked")
-  class UpdatedListenerAdapter implements org.cache2k.event.CacheEntryUpdatedListener<K, W> {
+  class UpdatedListenerAdapter implements org.cache2k.event.CacheEntryUpdatedListener<K, V> {
 
     @Override
-    public void onEntryUpdated(final Cache<K, W> c, final CacheEntry<K, W> _currentEntry, final CacheEntry<K, W> entryWithNewData) {
+    public void onEntryUpdated(final Cache<K, V> c, final CacheEntry<K, V> _currentEntry, final CacheEntry<K, V> entryWithNewData) {
       javax.cache.Cache<K,V> _jCache = getCache(c);
       if (entryWithNewData.getException() != null) {
         if (_currentEntry.getException() != null) {
@@ -222,8 +221,8 @@ public class EventHandlingBase<K,V,W> {
         fireCreated(_jCache, entryWithNewData);
         return;
       }
-      W v0 = _currentEntry.getValue();
-      W v1 = entryWithNewData.getValue();
+      V v0 = _currentEntry.getValue();
+      V v1 = entryWithNewData.getValue();
       EntryEvent<K, V> cee =
         new EntryEventWithOldValue<K, V>(_jCache, EventType.UPDATED, entryWithNewData.getKey(), extractValue(v1), extractValue(v0));
       asyncDispatcher.deliverAsyncEvent(cee);
@@ -234,7 +233,7 @@ public class EventHandlingBase<K,V,W> {
 
   }
 
-  private javax.cache.Cache getCache(final Cache<K, W> c) {
+  private javax.cache.Cache getCache(final Cache<K, V> c) {
     if (jCache != null) {
       return jCache;
     }
@@ -242,12 +241,12 @@ public class EventHandlingBase<K,V,W> {
   }
 
   @SuppressWarnings("unchecked")
-  class RemovedListenerAdapter implements org.cache2k.event.CacheEntryRemovedListener<K, W> {
+  class RemovedListenerAdapter implements org.cache2k.event.CacheEntryRemovedListener<K, V> {
 
     @Override
     public void onEntryRemoved(
-      final org.cache2k.Cache<K, W> c,
-      final CacheEntry<K, W> e) {
+      final org.cache2k.Cache<K, V> c,
+      final CacheEntry<K, V> e) {
       if (e.getException() != null) {
         return;
       }
@@ -263,12 +262,12 @@ public class EventHandlingBase<K,V,W> {
   }
 
   @SuppressWarnings("unchecked")
-  class ExpiredListenerAdapter implements org.cache2k.event.CacheEntryExpiredListener<K, W> {
+  class ExpiredListenerAdapter implements org.cache2k.event.CacheEntryExpiredListener<K, V> {
 
     @Override
     public void onEntryExpired(
-      final org.cache2k.Cache<K, W> c,
-      final CacheEntry<K, W> e) {
+      final org.cache2k.Cache<K, V> c,
+      final CacheEntry<K, V> e) {
       if (e.getException() != null) {
         return;
       }
