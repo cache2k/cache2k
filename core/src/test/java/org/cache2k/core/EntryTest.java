@@ -162,11 +162,13 @@ public class EntryTest {
   }
 
   @Test
-  public void testStale() {
+  public void testHot() {
     Entry e = new Entry();
-    assertFalse(e.isStale());
-    e.setStale();
-    assertTrue(e.isStale());
+    assertFalse(e.isHot());
+    e.setHot(true);
+    assertTrue(e.isHot());
+    e.setHot(false);
+    assertFalse(e.isHot());
   }
 
   /**

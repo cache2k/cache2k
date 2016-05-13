@@ -43,20 +43,16 @@ public class ClockProPlusCache<K, V> extends ConcurrentEvictionCache<K, V> {
   long hotHits;
   long coldHits;
   long ghostHits;
-  long directRemoveCnt;
 
   long hotRunCnt;
   long hot24hCnt;
   long hotScanCnt;
-
-  long hotSizeSum;
   long coldRunCnt;
   long cold24hCnt;
   long coldScanCnt;
 
   int coldSize;
   int hotSize;
-  int staleSize;
 
   /** Maximum size of hot clock. 0 means normal clock behaviour */
   long hotMax;
@@ -74,7 +70,7 @@ public class ClockProPlusCache<K, V> extends ConcurrentEvictionCache<K, V> {
     Entry _head = e;
     do {
       cnt += e.hitCnt;
-      e = (Entry) e.next;
+      e = e.next;
     } while (e != _head);
     return cnt;
   }
@@ -90,7 +86,6 @@ public class ClockProPlusCache<K, V> extends ConcurrentEvictionCache<K, V> {
     hotMax = maxSize * TUNABLE_CLOCK_PRO.hotMaxPercentage / 100;
     coldSize = 0;
     hotSize = 0;
-    staleSize = 0;
     handCold = null;
     handHot = null;
     handGhost = null;
@@ -108,10 +103,8 @@ public class ClockProPlusCache<K, V> extends ConcurrentEvictionCache<K, V> {
       do {
         _hits += e.hitCnt;
         Entry _next = e.prev;
-        if (!e.isStale()) {
-          e.removedFromList();
-          _count++;
-        }
+        e.removedFromList();
+        _count++;
         e = _next;
       } while (e != _head);
       coldHits += _hits;
@@ -122,10 +115,8 @@ public class ClockProPlusCache<K, V> extends ConcurrentEvictionCache<K, V> {
       do {
         _hits += e.hitCnt;
         Entry _next = e.prev;
-        if (!e.isStale()) {
-          e.removedFromList();
-          _count++;
-        }
+        e.removedFromList();
+        _count++;
         e = _next;
       } while (e != _head);
       hotHits += _hits;
@@ -157,14 +148,14 @@ public class ClockProPlusCache<K, V> extends ConcurrentEvictionCache<K, V> {
    */
   @Override
   protected void removeEntryFromReplacementList(Entry e) {
-    if (handCold == e) {
+    if (e.isHot()) {
+      hotHits += e.hitCnt;
+      handHot = removeFromCyclicList(handHot, e);
+      hotSize--;
+    } else {
       coldHits += e.hitCnt;
       handCold = removeFromCyclicList(handCold, e);
       coldSize--;
-      directRemoveCnt++;
-    } else {
-      staleSize++;
-      e.setStale();
     }
   }
 
@@ -180,7 +171,7 @@ public class ClockProPlusCache<K, V> extends ConcurrentEvictionCache<K, V> {
   }
 
   private int getListSize() {
-    return hotSize + coldSize - staleSize;
+    return hotSize + coldSize;
   }
 
   @Override
@@ -263,6 +254,7 @@ public class ClockProPlusCache<K, V> extends ConcurrentEvictionCache<K, V> {
     }
     handHot = removeFromCyclicList(_hand, _coldCandidate);
     hotSize--;
+    _coldCandidate.setHot(false);
     return _coldCandidate;
   }
 
@@ -271,41 +263,30 @@ public class ClockProPlusCache<K, V> extends ConcurrentEvictionCache<K, V> {
    */
   @Override
   protected Entry findEvictionCandidate() {
-    hotSizeSum += hotMax;
     coldRunCnt++;
     Entry _hand = handCold;
     int _scanCnt = 0;
-    do {
-      if (_hand == null) {
-        _hand = refillFromHot(_hand);
-      }
-      if (_hand.hitCnt > 0) {
-        _hand = refillFromHot(_hand);
-        do {
-          _scanCnt++;
-          coldHits += _hand.hitCnt;
-          _hand.hitCnt = 0;
-          Entry e = _hand;
-          _hand = removeFromCyclicList(e);
-          coldSize--;
-          hotSize++;
-          handHot = insertIntoTailCyclicList(handHot, e);
-        } while (_hand != null && _hand.hitCnt > 0);
-      }
+    if (_hand == null) {
+      _hand = refillFromHot(_hand);
+    }
+    if (_hand.hitCnt > 0) {
+      _hand = refillFromHot(_hand);
+      do {
+        _scanCnt++;
+        coldHits += _hand.hitCnt;
+        _hand.hitCnt = 0;
+        Entry e = _hand;
+        _hand = removeFromCyclicList(e);
+        coldSize--;
+        e.setHot(true);
+        hotSize++;
+        handHot = insertIntoTailCyclicList(handHot, e);
+      } while (_hand != null && _hand.hitCnt > 0);
+    }
 
-      if (_hand == null) {
-        _hand = refillFromHot(_hand);
-      }
-
-      if (!_hand.isStale()) {
-         break;
-       }
-      _hand = removeFromCyclicList(_hand);
-      staleSize--;
-      coldSize--;
-      _scanCnt--;
-
-    } while (true);
+    if (_hand == null) {
+      _hand = refillFromHot(_hand);
+    }
     if (_scanCnt > this.coldSize) {
       cold24hCnt++;
     }
@@ -318,21 +299,17 @@ public class ClockProPlusCache<K, V> extends ConcurrentEvictionCache<K, V> {
     while (hotSize > hotMax || _hand == null) {
       Entry e = runHandHot();
       if (e != null) {
-        if (e.isStale()) {
-          staleSize--;
-        } else {
-          _hand = insertIntoTailCyclicList(_hand, e);
-          coldSize++;
-        }
+        _hand = insertIntoTailCyclicList(_hand, e);
+        coldSize++;
       }
     }
     return _hand;
   }
 
   protected void runHandGhost() {
-    boolean f = ghostHashCtrl.remove(ghostHash, handGhost);
     Entry e = handGhost;
-    handGhost = (Entry) removeFromCyclicList(handGhost);
+    boolean f = ghostHashCtrl.remove(ghostHash, e);
+    handGhost = removeFromCyclicList(e);
   }
 
   @Override
@@ -341,6 +318,7 @@ public class ClockProPlusCache<K, V> extends ConcurrentEvictionCache<K, V> {
     if (e != null) {
       handGhost = removeFromCyclicList(handGhost, e);
       ghostHits++;
+      e.setHot(true);
       hotSize++;
       handHot = insertIntoTailCyclicList(handHot, e);
     }
@@ -370,7 +348,6 @@ public class ClockProPlusCache<K, V> extends ConcurrentEvictionCache<K, V> {
            ", hotSize=" + hotSize +
            ", hotMaxSize=" + hotMax +
            ", ghostSize=" + ghostHashCtrl.size +
-           ", staleSize=" + staleSize +
            ", coldHits=" + (coldHits + sumUpListHits(handCold)) +
            ", hotHits=" + (hotHits + sumUpListHits(handHot)) +
            ", ghostHits=" + ghostHits +
@@ -379,8 +356,7 @@ public class ClockProPlusCache<K, V> extends ConcurrentEvictionCache<K, V> {
            ", cold24hCnt=" + cold24hCnt +
            ", hotRunCnt=" + hotRunCnt +
            ", hotScanCnt=" + hotScanCnt +
-           ", hot24hCnt=" + hot24hCnt +
-           ", directRemoveCnt=" + directRemoveCnt;
+           ", hot24hCnt=" + hot24hCnt;
   }
 
   public static class Tunable extends TunableConstants {

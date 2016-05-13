@@ -296,7 +296,7 @@ public class Entry<K, T>
 
   /** Check that this entry is removed from the list, may be used in assertions. */
   public boolean isRemovedFromReplacementList() {
-    return isStale () || next == null;
+    return next == null;
   }
 
   public Entry shortCircuit() {
@@ -382,21 +382,20 @@ public class Entry<K, T>
     return nextRefreshTime < 0;
   }
 
-  private static final int STALE_BITS = 1;
-  private static final int STALE_MASK = (1 << STALE_BITS) - 1;
-  private static final int STALE_POS = MODIFICATION_TIME_BITS + PS_BITS;
+  private static final int HOT_BITS = 1;
+  private static final int HOT_POS = MODIFICATION_TIME_BITS + PS_BITS;
+  private static final long HOT_DIRECT_MASK = 1L << HOT_POS;
 
-  public boolean isStale() {
-    return ((fetchedTime >> STALE_POS) & STALE_MASK) > 0;
+  public boolean isHot() {
+    return (fetchedTime & HOT_DIRECT_MASK) != 0;
   }
 
-  public void setStale() {
-    fetchedTime |=  1L << STALE_POS;
-  }
-
-
-  public boolean hasException() {
-    return valueOrException instanceof ExceptionWrapper;
+  public void setHot(boolean f) {
+    if (f) {
+      fetchedTime |=  HOT_DIRECT_MASK;
+    } else {
+      fetchedTime &= ~HOT_DIRECT_MASK;
+    }
   }
 
   public Throwable getException() {
@@ -405,7 +404,6 @@ public class Entry<K, T>
     }
     return null;
   }
-
 
   public boolean equalsValue(T v) {
     if (valueOrException == null) {
