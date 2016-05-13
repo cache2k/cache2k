@@ -21,7 +21,8 @@ package org.cache2k.integration;
  */
 
 import org.cache2k.CacheEntry;
-import org.cache2k.customization.ExpiryTimeValues;
+import org.cache2k.expiry.ExpiryPolicy;
+import org.cache2k.expiry.ExpiryTimeValues;
 
 /**
  * Controls how to deal with loader exceptions in a read through configuration.
@@ -60,7 +61,7 @@ public abstract class ResiliencePolicy<K, V> implements ExpiryTimeValues {
    *                      It is possible that this data is already expired.
    * @return Time in millis in the future when the content should expire again. A 0 or
    *         a time before the current time means the exception will not be suppressed. A
-   *         {@link org.cache2k.customization.ExpiryCalculator#ETERNAL} means the exception will be
+   *         {@link ExpiryPolicy#ETERNAL} means the exception will be
    *         suppressed and the recent content will be returned eternally.
    *         If the returned value is after the time reference of {@link LoadExceptionInformation#getLoadTime()}
    *         the exception will be suppressed for the ongoing operation.

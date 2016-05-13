@@ -23,9 +23,9 @@ package org.cache2k.core;
 import org.cache2k.configuration.CacheConfiguration;
 import org.cache2k.CacheEntry;
 import org.cache2k.core.util.Util;
-import org.cache2k.customization.ExpiryCalculator;
-import org.cache2k.customization.ExpiryTimeValues;
-import org.cache2k.customization.ValueWithExpiryTime;
+import org.cache2k.expiry.ExpiryPolicy;
+import org.cache2k.expiry.ExpiryTimeValues;
+import org.cache2k.expiry.ValueWithExpiryTime;
 import org.cache2k.core.util.TunableConstants;
 import org.cache2k.core.util.TunableFactory;
 import org.cache2k.integration.LoadExceptionInformation;
@@ -51,8 +51,8 @@ public abstract class TimingHandler<K,V>  {
   /**
    * Instance of expiry calculator that extracts the expiry time from the value.
    */
-  final static ExpiryCalculator<?, ValueWithExpiryTime> ENTRY_EXPIRY_CALCULATOR_FROM_VALUE =
-    new ExpiryCalculator<Object, ValueWithExpiryTime>() {
+  final static ExpiryPolicy<?, ValueWithExpiryTime> ENTRY_EXPIRY_CALCULATOR_FROM_VALUE =
+    new ExpiryPolicy<Object, ValueWithExpiryTime>() {
       @Override
       public long calculateExpiryTime(
         Object _key, ValueWithExpiryTime _value, long _loadTime,
@@ -81,7 +81,7 @@ public abstract class TimingHandler<K,V>  {
       && zeroOrUnspecified(cfg.getRetryIntervalMillis())) {
       return IMMEDIATE;
     }
-    if (cfg.getExpiryCalculator() != null
+    if (cfg.getExpiryPolicy() != null
       || ValueWithExpiryTime.class.isAssignableFrom(cfg.getValueType().getType())
       || cfg.getResiliencePolicy() != null) {
       TimingHandler.Dynamic<K,V> h = new TimingHandler.Dynamic<K, V>();
@@ -98,12 +98,12 @@ public abstract class TimingHandler<K,V>  {
       h.configureStatic(cfg);
       return h;
     }
-    if (cfg.getExpireAfterWriteMillis() == ExpiryCalculator.ETERNAL
+    if (cfg.getExpireAfterWriteMillis() == ExpiryPolicy.ETERNAL
       && zeroOrUnspecified(cfg.getRetryIntervalMillis())) {
       return ETERNAL_IMMEDIATE;
     }
-    if ((cfg.getExpireAfterWriteMillis() == ExpiryCalculator.ETERNAL || cfg.getExpireAfterWriteMillis() == -1)
-      && (cfg.getRetryIntervalMillis() == ExpiryCalculator.ETERNAL || cfg.getRetryIntervalMillis() == -1)) {
+    if ((cfg.getExpireAfterWriteMillis() == ExpiryPolicy.ETERNAL || cfg.getExpireAfterWriteMillis() == -1)
+      && (cfg.getRetryIntervalMillis() == ExpiryPolicy.ETERNAL || cfg.getRetryIntervalMillis() == -1)) {
       return ETERNAL;
     }
     throw new IllegalArgumentException("expiry time ambiguous");
@@ -131,7 +131,7 @@ public abstract class TimingHandler<K,V>  {
    * @param v The new value or an exception wrapped in {@link ExceptionWrapper}
    * @param _loadTime the time immediately before the load started
    * @return Point in time when the entry should expire. Meaning identical to
-   *         {@link ExpiryCalculator#calculateExpiryTime(Object, Object, long, CacheEntry)}
+   *         {@link ExpiryPolicy#calculateExpiryTime(Object, Object, long, CacheEntry)}
    */
   public abstract long calculateNextRefreshTime(Entry<K, V> e, V v, long _loadTime);
 
@@ -178,17 +178,17 @@ public abstract class TimingHandler<K,V>  {
 
     @Override
     public long calculateNextRefreshTime(final Entry<K,V> e, final V v, final long _loadTime) {
-      return ExpiryCalculator.ETERNAL;
+      return ExpiryPolicy.ETERNAL;
     }
 
     @Override
     public long cacheExceptionUntil(final Entry<K, V> e, final LoadExceptionInformation inf) {
-      return ExpiryCalculator.ETERNAL;
+      return ExpiryPolicy.ETERNAL;
     }
 
     @Override
     public long suppressExceptionUntil(final Entry<K, V> e, final LoadExceptionInformation inf) {
-      return ExpiryCalculator.ETERNAL;
+      return ExpiryPolicy.ETERNAL;
     }
   }
 
@@ -196,7 +196,7 @@ public abstract class TimingHandler<K,V>  {
 
     @Override
     public long calculateNextRefreshTime(final Entry<K,V> e, final V v, final long _loadTime) {
-      return ExpiryCalculator.ETERNAL;
+      return ExpiryPolicy.ETERNAL;
     }
 
     @Override
@@ -242,8 +242,8 @@ public abstract class TimingHandler<K,V>  {
 
     void configureStatic(final CacheConfiguration<K, V> c) {
       long _expiryMillis  = c.getExpireAfterWriteMillis();
-      if (_expiryMillis == ExpiryCalculator.ETERNAL || _expiryMillis < 0) {
-        maxLinger = ExpiryCalculator.ETERNAL;
+      if (_expiryMillis == ExpiryPolicy.ETERNAL || _expiryMillis < 0) {
+        maxLinger = ExpiryPolicy.ETERNAL;
       } else {
         maxLinger = _expiryMillis;
       }
@@ -357,7 +357,7 @@ public abstract class TimingHandler<K,V>  {
       final long now = System.currentTimeMillis();
       _nextRefreshTime = sanitizeTime(_nextRefreshTime, now);
       if ((_nextRefreshTime > 0 && _nextRefreshTime < Entry.EXPIRY_TIME_MIN) ||
-        _nextRefreshTime == ExpiryCalculator.ETERNAL) {
+        _nextRefreshTime == ExpiryPolicy.ETERNAL) {
         if (_nextRefreshTime == Entry.EXPIRED || _nextRefreshTime == ExpiryTimeValues.REFRESH_IMMEDIATELY) {
           return eventuallyStartBackgroundRefresh(e);
         }
@@ -468,17 +468,17 @@ public abstract class TimingHandler<K,V>  {
 
   static class Dynamic<K,V> extends Static<K,V> {
 
-    ExpiryCalculator<K, V> expiryCalculator;
+    ExpiryPolicy<K, V> expiryPolicy;
 
     @SuppressWarnings("unchecked")
     void configure(CacheConfiguration<K,V> c) {
       configureStatic(c);
-      expiryCalculator = c.getExpiryCalculator();
+      expiryPolicy = c.getExpiryPolicy();
       if (c.getValueType() != null &&
         ValueWithExpiryTime.class.isAssignableFrom(c.getValueType().getType()) &&
-        expiryCalculator == null)  {
-        expiryCalculator =
-          (ExpiryCalculator<K, V>)
+        expiryPolicy == null)  {
+        expiryPolicy =
+          (ExpiryPolicy<K, V>)
             ENTRY_EXPIRY_CALCULATOR_FROM_VALUE;
       }
     }
@@ -486,7 +486,7 @@ public abstract class TimingHandler<K,V>  {
     long calcNextRefreshTime(K _key, V _newObject, long now, Entry _entry) {
       return calcNextRefreshTime(
         _key, _newObject, now, _entry,
-        expiryCalculator, maxLinger);
+        expiryPolicy, maxLinger);
     }
 
     public long calculateNextRefreshTime(Entry<K, V> _entry, V _newValue, long _loadTime) {
@@ -501,7 +501,7 @@ public abstract class TimingHandler<K,V>  {
 
   static <K, T>  long calcNextRefreshTime(
     K _key, T _newObject, long now, org.cache2k.core.Entry _entry,
-    ExpiryCalculator<K, T> ec, long _maxLinger) {
+    ExpiryPolicy<K, T> ec, long _maxLinger) {
     if (_maxLinger == 0) {
       return 0;
     }
@@ -509,14 +509,14 @@ public abstract class TimingHandler<K,V>  {
       long t = ec.calculateExpiryTime(_key, _newObject, now, _entry);
       return limitExpiryToMaxLinger(now, _maxLinger, t);
     }
-    if (_maxLinger < ExpiryCalculator.ETERNAL) {
+    if (_maxLinger < ExpiryPolicy.ETERNAL) {
       return _maxLinger + now;
     }
     return _maxLinger;
   }
 
   static long limitExpiryToMaxLinger(long now, long _maxLinger, long t) {
-    if (_maxLinger > 0 && _maxLinger < ExpiryCalculator.ETERNAL) {
+    if (_maxLinger > 0 && _maxLinger < ExpiryPolicy.ETERNAL) {
       long _tMaximum = _maxLinger + now;
       if (t > _tMaximum) {
         return _tMaximum;

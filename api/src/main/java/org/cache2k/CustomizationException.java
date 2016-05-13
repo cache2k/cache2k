@@ -20,11 +20,11 @@ package org.cache2k;
  * #L%
  */
 
-import org.cache2k.customization.ExpiryCalculator;
+import org.cache2k.expiry.ExpiryPolicy;
 
 /**
  * Wraps an exception that happened during processing of one entry, e.g. when the
- * {@link ExpiryCalculator} was throwing it. For async operations
+ * {@link ExpiryPolicy} was throwing it. For async operations
  * these can happen on other threads, so we consequently wrap them.
  *
  * @author Jens Wilke

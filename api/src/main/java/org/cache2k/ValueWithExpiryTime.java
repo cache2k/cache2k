@@ -20,7 +20,7 @@ package org.cache2k;
  * #L%
  */
 
-import org.cache2k.customization.ExpiryCalculator;
+import org.cache2k.expiry.ExpiryPolicy;
 
 /**
  * Interface to add to a value object if it is possible to derive the
@@ -30,9 +30,9 @@ import org.cache2k.customization.ExpiryCalculator;
  *
  * @author Jens Wilke; created: 2014-10-15
  * @since 0.20
- * @deprecated replaced with {@link org.cache2k.customization.ValueWithExpiryTime}
+ * @deprecated replaced with {@link org.cache2k.expiry.ValueWithExpiryTime}
  */
-public interface ValueWithExpiryTime extends org.cache2k.customization.ValueWithExpiryTime {
+public interface ValueWithExpiryTime extends org.cache2k.expiry.ValueWithExpiryTime {
 
   /**
    * Instance of an expiry calculator that uses the expiry value from the value
@@ -42,7 +42,7 @@ public interface ValueWithExpiryTime extends org.cache2k.customization.ValueWith
    *
    * @since 0.20
    */
-  ExpiryCalculator<?, ?> AUTO_EXPIRY = new ExpiryCalculator<Object, Object>() {
+  ExpiryPolicy<?, ?> AUTO_EXPIRY = new ExpiryPolicy<Object, Object>() {
     @Override
     public long calculateExpiryTime(
         Object _key, Object _value, long _loadTime,

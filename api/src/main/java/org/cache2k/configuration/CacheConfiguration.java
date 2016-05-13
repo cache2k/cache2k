@@ -21,7 +21,7 @@ package org.cache2k.configuration;
  */
 
 import org.cache2k.Cache2kBuilder;
-import org.cache2k.customization.*;
+import org.cache2k.expiry.*;
 import org.cache2k.event.CacheEntryOperationListener;
 import org.cache2k.integration.AdvancedCacheLoader;
 import org.cache2k.integration.CacheLoader;
@@ -63,7 +63,7 @@ public class CacheConfiguration<K, V> implements Serializable {
   private List<Object> moduleConfiguration;
   private boolean suppressExceptions = true;
   private int loaderThreadCount;
-  private ExpiryCalculator<K,V> expiryCalculator;
+  private ExpiryPolicy<K,V> expiryPolicy;
   private ResiliencePolicy<K,V> resiliencePolicy;
   private CacheLoader<K,V> loader;
   private CacheWriter<K,V> writer;
@@ -448,12 +448,12 @@ public class CacheConfiguration<K, V> implements Serializable {
     loaderThreadCount = v;
   }
 
-  public ExpiryCalculator<K, V> getExpiryCalculator() {
-    return expiryCalculator;
+  public ExpiryPolicy<K, V> getExpiryPolicy() {
+    return expiryPolicy;
   }
 
-  public void setExpiryCalculator(final ExpiryCalculator<K, V> _expiryCalculator) {
-    expiryCalculator = _expiryCalculator;
+  public void setExpiryPolicy(final ExpiryPolicy<K, V> _expiryPolicy) {
+    expiryPolicy = _expiryPolicy;
   }
 
   public CacheWriter<K, V> getWriter() {

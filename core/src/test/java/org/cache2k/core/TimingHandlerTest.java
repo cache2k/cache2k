@@ -22,7 +22,7 @@ package org.cache2k.core;
 
 import org.cache2k.Cache2kBuilder;
 import org.cache2k.CacheEntry;
-import org.cache2k.customization.ExpiryCalculator;
+import org.cache2k.expiry.ExpiryPolicy;
 import org.cache2k.junit.FastTests;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -47,7 +47,7 @@ public class TimingHandlerTest {
   public void expireAfterWrite_policy_limit() {
     TimingHandler h = TimingHandler.of(
       Cache2kBuilder.forUnknownTypes()
-        .expiryCalculator(new ExpiryCalculator() {
+        .expiryPolicy(new ExpiryPolicy() {
           @Override
           public long calculateExpiryTime(Object key, Object value, long loadTime, CacheEntry oldEntry) {
             return ETERNAL;
@@ -71,7 +71,7 @@ public class TimingHandlerTest {
   public void expireAfterWrite_policy_limit_sharp() {
     TimingHandler h = TimingHandler.of(
       Cache2kBuilder.forUnknownTypes()
-        .expiryCalculator(new ExpiryCalculator() {
+        .expiryPolicy(new ExpiryPolicy() {
           @Override
           public long calculateExpiryTime(Object key, Object value, long loadTime, CacheEntry oldEntry) {
             return - (loadTime + TimeUnit.MINUTES.toMillis(99));

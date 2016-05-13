@@ -65,7 +65,7 @@
               org.cache2k.spi,
               org.cache2k.storage;-split-package:=merge-first,
               org.cache2k.integration,
-              org.cache2k.customization,
+              org.cache2k.expiry,
               org.cache2k.event,
               org.cache2k.processor
             </Export-Package>

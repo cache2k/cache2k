@@ -1,4 +1,4 @@
-package org.cache2k.customization;
+package org.cache2k.expiry;
 
 /*
  * #%L
@@ -22,7 +22,7 @@ package org.cache2k.customization;
 
 /**
  * Expiry time values that have a special meaning. Used for expressive return values in the
- * customizations {@link org.cache2k.integration.ResiliencePolicy} and {@link ExpiryCalculator}
+ * customizations {@link org.cache2k.integration.ResiliencePolicy} and {@link ExpiryPolicy}
  * as well as {@link org.cache2k.Cache#expire(Object, long)}.
  *
  * @author Jens Wilke

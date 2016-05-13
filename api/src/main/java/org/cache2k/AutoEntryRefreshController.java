@@ -20,7 +20,7 @@ package org.cache2k;
  * #L%
  */
 
-import org.cache2k.customization.ValueWithExpiryTime;
+import org.cache2k.expiry.ValueWithExpiryTime;
 
 /**
  * If object implements {@link ValueWithNextRefreshTime} then the next refresh time

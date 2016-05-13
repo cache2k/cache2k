@@ -1,9 +1,9 @@
 /**
- * Set of interfaces for customization of the cache behavior.
+ * Set of interfaces for customizing the expiry behavior.
  *
  * @author Jens Wilke
  */
-package org.cache2k.customization;
+package org.cache2k.expiry;
 
 /*
  * #%L

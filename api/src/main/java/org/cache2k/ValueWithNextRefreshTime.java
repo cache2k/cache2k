@@ -20,7 +20,7 @@ package org.cache2k;
  * #L%
  */
 
-import org.cache2k.customization.ValueWithExpiryTime;
+import org.cache2k.expiry.ValueWithExpiryTime;
 
 /**
  * Interface for use with {@link org.cache2k.AutoEntryRefreshController}

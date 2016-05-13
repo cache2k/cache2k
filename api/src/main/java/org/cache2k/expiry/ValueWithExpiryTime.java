@@ -1,4 +1,4 @@
-package org.cache2k.customization;
+package org.cache2k.expiry;
 
 /*
  * #%L
@@ -30,15 +30,15 @@ import java.util.concurrent.TimeUnit;
  * and this interface is detected on the value, the expiry requested
  * from the value by the cache.
  *
- * @author Jens Wilke; created: 2014-10-15
+ * @author Jens Wilke
  */
 public interface ValueWithExpiryTime {
 
   /**
    * Point in time in milliseconds since when the value should expire.
    *
-   * @return time the time of expiry in millis since epoch. {@link ExpiryCalculator#NO_CACHE} if it should not cached.
-   *              {@link ExpiryCalculator#ETERNAL} if there is no specific expiry time known or needed.
+   * @return time the time of expiry in millis since epoch. {@link ExpiryPolicy#NO_CACHE} if it should not cached.
+   *              {@link ExpiryPolicy#ETERNAL} if there is no specific expiry time known or needed.
    *              The effective expiry duration will never be longer than the
    *              configured expiry value via {@link Cache2kBuilder#expireAfterWrite(long, TimeUnit)} (long, TimeUnit)}.
    *              If a negative value is returned, the negated value will be the expiry time

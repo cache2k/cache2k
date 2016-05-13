@@ -21,8 +21,8 @@ package org.cache2k.jcache.provider;
  */
 
 import org.cache2k.CacheEntry;
-import org.cache2k.customization.ExpiryCalculator;
-import org.cache2k.customization.ExpiryTimeValues;
+import org.cache2k.expiry.ExpiryPolicy;
+import org.cache2k.expiry.ExpiryTimeValues;
 import org.cache2k.jcache.provider.event.EventHandling;
 import org.cache2k.processor.CacheEntryProcessor;
 import org.cache2k.processor.MutableCacheEntry;
@@ -34,7 +34,6 @@ import javax.cache.configuration.CompleteConfiguration;
 import javax.cache.configuration.Configuration;
 import javax.cache.configuration.MutableConfiguration;
 import javax.cache.expiry.Duration;
-import javax.cache.expiry.ExpiryPolicy;
 import javax.cache.integration.CompletionListener;
 import javax.cache.processor.EntryProcessor;
 import javax.cache.processor.EntryProcessorException;
@@ -69,7 +68,7 @@ public class TouchyJCacheAdapter<K, V> implements Cache<K, V> {
   JCacheAdapter<K, V> cache;
   Class<K> keyType;
   Class<V> valueType;
-  ExpiryPolicy expiryPolicy;
+  javax.cache.expiry.ExpiryPolicy expiryPolicy;
   EventHandling<K, V> eventHandling;
 
   @Override
@@ -564,11 +563,11 @@ public class TouchyJCacheAdapter<K, V> implements Cache<K, V> {
     return getClass().getSimpleName() + "@" + c2kCache.toString();
   }
 
-  public static class ExpiryCalculatorAdapter<K, V> implements ExpiryCalculator<K, V> {
+  public static class ExpiryPolicyAdapter<K, V> implements ExpiryPolicy<K, V> {
 
-    ExpiryPolicy policy;
+    javax.cache.expiry.ExpiryPolicy policy;
 
-    public ExpiryCalculatorAdapter(ExpiryPolicy policy) {
+    public ExpiryPolicyAdapter(javax.cache.expiry.ExpiryPolicy policy) {
       this.policy = policy;
     }
 

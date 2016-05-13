@@ -20,12 +20,12 @@ package org.cache2k;
  * #L%
  */
 
-import org.cache2k.customization.ExpiryCalculator;
+import org.cache2k.expiry.ExpiryPolicy;
 
 /**
- * @deprecated replaced with {@link ExpiryCalculator}
+ * @deprecated replaced with {@link ExpiryPolicy}
  */
-public interface EntryExpiryCalculator<K, V> extends ExpiryCalculator<K,V> {
+public interface EntryExpiryCalculator<K, V> extends ExpiryPolicy<K,V> {
 
   /**
    */

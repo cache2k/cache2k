@@ -21,8 +21,8 @@ package org.cache2k;
  * #L%
  */
 
-import org.cache2k.customization.ExpiryCalculator;
-import org.cache2k.customization.ExpiryTimeValues;
+import org.cache2k.expiry.ExpiryPolicy;
+import org.cache2k.expiry.ExpiryTimeValues;
 import org.cache2k.integration.CacheLoader;
 import org.cache2k.integration.CacheWriter;
 import org.cache2k.integration.LoadCompletedListener;
@@ -207,10 +207,10 @@ public interface Cache<K, V> extends
    * Updates an existing cache entry for the specified key, so it associates
    * the given value, or, insert a new cache entry for this key and value.
    *
-   * <p>If an {@link ExpiryCalculator} is specified in the
+   * <p>If an {@link ExpiryPolicy} is specified in the
    * cache configuration it is called and will determine the expiry time.
    * If a {@link CacheWriter} is configured in, then it is called with the
-   * new value. If the {@link ExpiryCalculator} or {@link CacheWriter}
+   * new value. If the {@link ExpiryPolicy} or {@link CacheWriter}
    * yield an exception the operation will be aborted and the previous
    * mapping will be preserved.
    *
@@ -608,7 +608,7 @@ public interface Cache<K, V> extends
    * Insert all elements of the map into the cache.
    *
    * <p/>See {@link Cache#put(Object, Object)} for information about the
-   * interaction with the {@link CacheWriter} and {@link ExpiryCalculator}
+   * interaction with the {@link CacheWriter} and {@link ExpiryPolicy}
    *
    * @param valueMap Map of keys with associated values to be inserted in the cache
    * @throws NullPointerException if one of the specified keys is null

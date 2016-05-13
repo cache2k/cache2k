@@ -23,7 +23,7 @@ package org.cache2k.test.core;
 import org.cache2k.Cache;
 import org.cache2k.Cache2kBuilder;
 import org.cache2k.CacheEntry;
-import org.cache2k.customization.ExpiryCalculator;
+import org.cache2k.expiry.ExpiryPolicy;
 import org.cache2k.test.util.CacheRule;
 import org.cache2k.test.util.ConcurrencyHelper;
 import org.cache2k.test.util.Condition;
@@ -410,7 +410,7 @@ public class ListenerTest {
          })
            .eternal(true)
            .keepDataAfterExpired(false)
-           .expiryCalculator(new ExpiryCalculator<Integer, Integer>() {
+           .expiryPolicy(new ExpiryPolicy<Integer, Integer>() {
              @Override
              public long calculateExpiryTime(final Integer key, final Integer value, final long loadTime, final CacheEntry<Integer, Integer> oldEntry) {
                if (oldEntry != null) {
@@ -450,7 +450,7 @@ public class ListenerTest {
           })
           .eternal(true)
           .keepDataAfterExpired(false)
-          .expiryCalculator(new ExpiryCalculator<Integer, Integer>() {
+          .expiryPolicy(new ExpiryPolicy<Integer, Integer>() {
             @Override
             public long calculateExpiryTime(final Integer key, final Integer value, final long loadTime, final CacheEntry<Integer, Integer> oldEntry) {
               if (oldEntry != null) {

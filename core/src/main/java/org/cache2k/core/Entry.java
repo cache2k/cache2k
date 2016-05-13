@@ -21,7 +21,7 @@ package org.cache2k.core;
  */
 
 import org.cache2k.CacheEntry;
-import org.cache2k.customization.ExpiryCalculator;
+import org.cache2k.expiry.ExpiryPolicy;
 import org.cache2k.core.operation.ExaminationEntry;
 import org.cache2k.core.storageApi.StorageEntry;
 import org.cache2k.integration.LoadExceptionInformation;
@@ -488,7 +488,7 @@ public class Entry<K, T>
     sb.append(", modified=").append(formatMillis(getLastModification()));
     if (nextRefreshTime < 0) {
       sb.append(", nextRefreshTime(sharp)=").append(formatMillis(-nextRefreshTime));
-    } else if (nextRefreshTime == ExpiryCalculator.ETERNAL) {
+    } else if (nextRefreshTime == ExpiryPolicy.ETERNAL) {
       sb.append(", nextRefreshTime=ETERNAL");
     } else if (nextRefreshTime >= EXPIRY_TIME_MIN) {
       sb.append(", nextRefreshTime(timer)=").append(formatMillis(nextRefreshTime));

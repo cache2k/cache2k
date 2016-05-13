@@ -23,7 +23,7 @@ package org.cache2k.jcache.provider;
 import org.cache2k.Cache2kBuilder;
 import org.cache2k.CacheEntry;
 import org.cache2k.integration.CacheWriter;
-import org.cache2k.customization.ExpiryCalculator;
+import org.cache2k.expiry.ExpiryPolicy;
 import org.cache2k.integration.ExceptionPropagator;
 import org.cache2k.core.CacheLifeCycleListener;
 import org.cache2k.core.CacheManagerImpl;
@@ -45,7 +45,6 @@ import javax.cache.configuration.Configuration;
 import javax.cache.configuration.MutableConfiguration;
 import javax.cache.expiry.Duration;
 import javax.cache.expiry.EternalExpiryPolicy;
-import javax.cache.expiry.ExpiryPolicy;
 import javax.cache.expiry.ModifiedExpiryPolicy;
 import javax.cache.integration.CacheLoader;
 import javax.cache.integration.CacheLoaderException;
@@ -147,7 +146,7 @@ public class JCacheManagerAdapter implements CacheManager {
       if (cc.getCacheEntryListenerConfigurations().iterator().hasNext()) {
         throw new UnsupportedOperationException("no support for jsr107 entry listener");
       }
-      ExpiryPolicy _policy = cc.getExpiryPolicyFactory().create();
+      javax.cache.expiry.ExpiryPolicy _policy = cc.getExpiryPolicyFactory().create();
       if (_policy instanceof EternalExpiryPolicy) {
         b.eternal(true);
       } else if (_policy instanceof ModifiedExpiryPolicy) {
@@ -155,7 +154,7 @@ public class JCacheManagerAdapter implements CacheManager {
         b.expireAfterWrite(d.getDurationAmount(), d.getTimeUnit());
       } else {
 
-        b.expiryCalculator(new ExpiryCalculatorAdapter(_policy));
+        b.expiryPolicy(new ExpiryPolicyAdapter(_policy));
         throw new RuntimeException("internal error, cannot happen");
       }
     }
@@ -180,7 +179,7 @@ public class JCacheManagerAdapter implements CacheManager {
   }
 
   <K, V> boolean hasSpecialExpiryPolicy(CompleteConfiguration<K, V> cc) {
-    ExpiryPolicy _policy = cc.getExpiryPolicyFactory().create();
+    javax.cache.expiry.ExpiryPolicy _policy = cc.getExpiryPolicyFactory().create();
     if (_policy instanceof EternalExpiryPolicy) {
       return false;
     } else if (_policy instanceof ModifiedExpiryPolicy) {
@@ -245,11 +244,11 @@ public class JCacheManagerAdapter implements CacheManager {
          }
        });
     }
-    ExpiryPolicy _policy = EternalExpiryPolicy.factoryOf().create();
+    javax.cache.expiry.ExpiryPolicy _policy = EternalExpiryPolicy.factoryOf().create();
     if (cc.getExpiryPolicyFactory() != null) {
       _policy = cc.getExpiryPolicyFactory().create();
     }
-    b.expiryCalculator(new TouchyJCacheAdapter.ExpiryCalculatorAdapter(_policy));
+    b.expiryPolicy(new TouchyJCacheAdapter.ExpiryPolicyAdapter(_policy));
     b.eternal(true);
     b.manager(manager);
     synchronized (((CacheManagerImpl) manager).getLockObject()) {
@@ -469,11 +468,11 @@ public class JCacheManagerAdapter implements CacheManager {
     return c2k2jCache.get(_c2kCache);
   }
 
-  static class ExpiryCalculatorAdapter<K, V> implements ExpiryCalculator<K, V> {
+  static class ExpiryPolicyAdapter<K, V> implements ExpiryPolicy<K, V> {
 
-    ExpiryPolicy policy;
+    javax.cache.expiry.ExpiryPolicy policy;
 
-    public ExpiryCalculatorAdapter(ExpiryPolicy policy) {
+    public ExpiryPolicyAdapter(javax.cache.expiry.ExpiryPolicy policy) {
       this.policy = policy;
     }
 

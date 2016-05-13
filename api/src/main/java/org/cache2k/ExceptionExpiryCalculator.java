@@ -28,7 +28,7 @@ package org.cache2k;
  *
  * @author Jens Wilke; created: 2014-10-16
  * @since 0.20
- * @deprecated replaced with {@link org.cache2k.customization.ExceptionExpiryCalculator}
+ * @deprecated replaced with {@link org.cache2k.expiry.ExceptionExpiryCalculator}
  */
 public interface ExceptionExpiryCalculator<K> {
 

@@ -24,7 +24,7 @@ import org.cache2k.configuration.CacheConfiguration;
 import org.cache2k.configuration.CacheType;
 import org.cache2k.configuration.CacheTypeDescriptor;
 import org.cache2k.configuration.ConfigurationSectionBuilder;
-import org.cache2k.customization.ExpiryCalculator;
+import org.cache2k.expiry.ExpiryPolicy;
 import org.cache2k.event.CacheEntryOperationListener;
 import org.cache2k.integration.AdvancedCacheLoader;
 import org.cache2k.integration.CacheLoader;
@@ -291,7 +291,7 @@ public class Cache2kBuilder<K, V> implements Cloneable {
    * Time duration after insert or updated an cache entry expires.
    * To switch off time based expiry use {@link #eternal(boolean)}.
    *
-   * <p>If an {@link ExpiryCalculator} is specified, the maximum expiry duration
+   * <p>If an {@link ExpiryPolicy} is specified, the maximum expiry duration
    * will not exceed the value that is specified here.
    *
    * <p>A value of 0 means every entry should expire immediately.
@@ -354,7 +354,7 @@ public class Cache2kBuilder<K, V> implements Cloneable {
   }
 
   /**
-   * Set expiry calculator to use.
+   * Set expiry policy to use.
    *
    * <p>If this is specified the maximum expiry time is still limited to the value in
    * {@link #expireAfterWrite}. If {@link #expireAfterWrite(long, java.util.concurrent.TimeUnit)}
@@ -363,8 +363,8 @@ public class Cache2kBuilder<K, V> implements Cloneable {
    * <p>If no maximum expiry is specified via {@link #expireAfterWrite} at leas the
    * {@link #resilienceDuration} needs to be specified, if resilience should be enabled.
    */
-  public final Cache2kBuilder<K, V> expiryCalculator(ExpiryCalculator<K, V> c) {
-    config.setExpiryCalculator(c);
+  public final Cache2kBuilder<K, V> expiryPolicy(ExpiryPolicy<K, V> c) {
+    config.setExpiryPolicy(c);
     return this;
   }
 

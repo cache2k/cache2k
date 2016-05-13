@@ -22,7 +22,7 @@ package org.cache2k;
 
 import org.cache2k.configuration.CacheConfiguration;
 import org.cache2k.configuration.CacheTypeDescriptor;
-import org.cache2k.customization.*;
+import org.cache2k.expiry.*;
 import org.cache2k.event.CacheEntryOperationListener;
 import org.cache2k.integration.AdvancedCacheLoader;
 import org.cache2k.integration.CacheLoader;
@@ -88,7 +88,7 @@ public class CacheBuilder<K,V> {
   }
 
   public CacheBuilder<K, V> entryExpiryCalculator(final EntryExpiryCalculator<K, V> c) {
-    builder.expiryCalculator(c);
+    builder.expiryPolicy(c);
     return this;
   }
 
@@ -142,8 +142,8 @@ public class CacheBuilder<K,V> {
     return (CacheBuilder<K2, V>) this;
   }
 
-  public CacheBuilder<K, V> expiryCalculator(final ExpiryCalculator<K, V> c) {
-    builder.expiryCalculator(c);
+  public CacheBuilder<K, V> expiryCalculator(final ExpiryPolicy<K, V> c) {
+    builder.expiryPolicy(c);
     return this;
   }
 
@@ -322,7 +322,7 @@ public class CacheBuilder<K,V> {
   }
 
   public CacheBuilder<K, V> refreshController(final RefreshController lc) {
-    expiryCalculator(new ExpiryCalculator<K, V>() {
+    expiryCalculator(new ExpiryPolicy<K, V>() {
       @Override
       public long calculateExpiryTime(K _key, V _value, long _loadTime, CacheEntry<K, V> _oldEntry) {
         if (_oldEntry != null) {

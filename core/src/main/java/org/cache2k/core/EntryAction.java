@@ -20,7 +20,7 @@ package org.cache2k.core;
  * #L%
  */
 
-import org.cache2k.customization.ExpiryCalculator;
+import org.cache2k.expiry.ExpiryPolicy;
 import org.cache2k.event.CacheEntryExpiredListener;
 import org.cache2k.integration.AdvancedCacheLoader;
 import org.cache2k.event.CacheEntryCreatedListener;
@@ -294,7 +294,7 @@ public abstract class EntryAction<K, V, R> implements
       if (!_expired) {
         _nextRefreshTime = timing().calculateNextRefreshTime(e, v, now);
         expiry = _nextRefreshTime;
-        if (_nextRefreshTime == ExpiryCalculator.ETERNAL) {
+        if (_nextRefreshTime == ExpiryPolicy.ETERNAL) {
           e.setNextRefreshTime(Entry.DATA_VALID);
           storageDataValid = true;
         } else if (_nextRefreshTime == 0) {

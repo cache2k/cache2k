@@ -20,13 +20,13 @@ package org.cache2k;
  * #L%
  */
 
-import org.cache2k.customization.ExpiryCalculator;
+import org.cache2k.expiry.ExpiryPolicy;
 
 /**
  * Calculates the time when the object needs to be updated next.
  * 
  * @author Jens Wilke; created: 2010-06-24
- * @deprecated use {@link ExpiryCalculator}
+ * @deprecated use {@link ExpiryPolicy}
  */
 public abstract interface RefreshController<T> {
 
