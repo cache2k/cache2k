@@ -111,4 +111,6 @@ public interface MutableCacheEntry<K, V> extends CacheEntry<K, V> {
    */
   void setException(Throwable ex);
 
+  void setExpiry(long t);
+
 }

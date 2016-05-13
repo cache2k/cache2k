@@ -381,6 +381,11 @@ public class Specification<K, V> {
     }
 
     @Override
+    public void setExpiry(final long t) {
+      throw new UnsupportedOperationException();
+    }
+
+    @Override
     public void remove() {
       if (mutate && !originalExists) {
         mutate = false;

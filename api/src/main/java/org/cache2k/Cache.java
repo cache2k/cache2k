@@ -501,7 +501,9 @@ public interface Cache<K, V> extends
    * If there is no mapping associated with the key or it is already expired, this
    * operation has no effect.
    *
-   * <p>
+   * <p>If the expiry time is in the past, the entry will expire immediately.
+   * In case refresh ahead is enabled, the entry will stay visible and a
+   * refresh is triggered.
    *
    * <p>If the cache is not initialized with any customized expiry the method
    * cannot be used.
@@ -509,6 +511,7 @@ public interface Cache<K, V> extends
    * @param key key with which the specified value is associated
    * @param millis Time in milliseconds since epoch when the entry should expire.
    *               Also see {@link ExpiryTimeValues}
+   * @throws IllegalArgumentException if no expiry was enabled during cache setup.
    */
   void expire(K key, long millis);
 
