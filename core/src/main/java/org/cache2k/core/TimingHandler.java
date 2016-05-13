@@ -344,8 +344,15 @@ public abstract class TimingHandler<K,V>  {
     @Override
     public long stopStartTimer(long _nextRefreshTime, final Entry e) {
       cancelExpiryTimer(e);
-      if (_nextRefreshTime == 0) {
+      if (_nextRefreshTime == ExpiryTimeValues.NO_CACHE) {
         return Entry.EXPIRED;
+      }
+      if (_nextRefreshTime == ExpiryTimeValues.NEUTRAL) {
+        long nrt = e.getNextRefreshTime();
+        if (nrt == 0) {
+          throw new IllegalArgumentException("neutral expiry not allowed for creation");
+        }
+        return e.getNextRefreshTime();
       }
       final long now = System.currentTimeMillis();
       _nextRefreshTime = sanitizeTime(_nextRefreshTime, now);

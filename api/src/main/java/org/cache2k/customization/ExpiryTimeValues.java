@@ -30,6 +30,11 @@ package org.cache2k.customization;
 public interface ExpiryTimeValues {
 
   /**
+   * Don't change the expiry of the entry. This can be used for an update.
+   */
+  long NEUTRAL = -1;
+
+  /**
    * Return value used to signal that the value should not be cached. In a read through
    * configuration the value will be loaded, when it is requested again.
    */
