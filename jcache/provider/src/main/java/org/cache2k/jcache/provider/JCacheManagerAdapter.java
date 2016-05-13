@@ -29,6 +29,7 @@ import org.cache2k.core.CacheLifeCycleListener;
 import org.cache2k.core.CacheManagerImpl;
 import org.cache2k.core.InternalCache;
 import org.cache2k.integration.LoadExceptionInformation;
+import org.cache2k.jcache.provider.event.EventHandlingBase;
 import org.cache2k.jcache.provider.generic.storeByValueSimulation.CopyCacheProxy;
 import org.cache2k.jcache.provider.generic.storeByValueSimulation.ObjectCopyFactory;
 import org.cache2k.jcache.provider.generic.storeByValueSimulation.ObjectTransformer;
@@ -117,14 +118,14 @@ public class JCacheManagerAdapter implements CacheManager {
     if (cfg instanceof CompleteConfiguration) {
       CompleteConfiguration<K, V> cc = (CompleteConfiguration<K, V>) cfg;
       if (hasSpecialExpiryPolicy(cc) || hasAlwaysSpecialExpiry()) {
-        return createCacheWithSpecialExpiry(_cacheName, cc);
+        return createCacheTouchyWrapper(_cacheName, cc);
       }
     }
     if (hasAlwaysSpecialExpiry()) {
       MutableConfiguration<K, V> cc = new MutableConfiguration<K, V>();
       cc.setTypes(cfg.getKeyType(), cfg.getValueType());
       cc.setStoreByValue(cfg.isStoreByValue());
-      return createCacheWithSpecialExpiry(_cacheName, cc);
+      return createCacheTouchyWrapper(_cacheName, cc);
     }
     Cache2kBuilder b = Cache2kBuilder.of(cfg.getKeyType(), cfg.getValueType());
     b.name(_cacheName);
@@ -188,10 +189,9 @@ public class JCacheManagerAdapter implements CacheManager {
     return true;
   }
 
-  @SuppressWarnings("unchecked")
-  <K, V, C extends Configuration<K, V>> Cache<K, V> createCacheWithSpecialExpiry(String _cacheName, CompleteConfiguration<K, V> cc)
+  <K, V, C extends Configuration<K, V>> Cache<K, V> createCacheTouchyWrapper(String _cacheName, CompleteConfiguration<K, V> cc)
     throws IllegalArgumentException {
-    Cache2kBuilder b = Cache2kBuilder.of(cc.getKeyType(), TouchyJCacheAdapter.TimeVal.class);
+    Cache2kBuilder b = Cache2kBuilder.of(cc.getKeyType(), cc.getValueType());
     b.name(_cacheName);
     b.sharpExpiry(true);
     b.keepDataAfterExpired(false);
@@ -208,20 +208,42 @@ public class JCacheManagerAdapter implements CacheManager {
     _cfgCopy.setWriteThrough(cc.isWriteThrough());
     if (cc.getCacheLoaderFactory() != null) {
       final CacheLoader<K, V> clf = cc.getCacheLoaderFactory().create();
-      b.loader(new org.cache2k.integration.CacheLoader<K,TouchyJCacheAdapter.TimeVal>() {
+      b.loader(new org.cache2k.integration.CacheLoader<K,V>() {
         @Override
-        public TouchyJCacheAdapter.TimeVal load(K k) {
-          V v = clf.load(k);
-          if (v == null) {
-            return null;
-          }
-          return new TouchyJCacheAdapter.TimeVal<V>(v);
+        public V load(K k) {
+          return clf.load(k);
         }
       });
     }
     if (cc.isWriteThrough()) {
       final javax.cache.integration.CacheWriter<? super K, ? super V> cw = cc.getCacheWriterFactory().create();
-      b.writer(new CacheWriterAdapterForTouchRecording(cw));
+      b.writer(new CacheWriter<K,V>() {
+         @Override
+         public void write(final K key, final V value) throws Exception {
+           Cache.Entry<K, V> ce = new Cache.Entry<K, V>() {
+             @Override
+             public K getKey() {
+               return key;
+             }
+
+             @Override
+             public V getValue() {
+               return value;
+             }
+
+             @Override
+             public <T> T unwrap(Class<T> clazz) {
+               throw new UnsupportedOperationException("unwrap entry not supported");
+             }
+           };
+           cw.write(ce);
+         }
+
+         @Override
+         public void delete(final Object key) throws Exception {
+           cw.delete(key);
+         }
+       });
     }
     ExpiryPolicy _policy = EternalExpiryPolicy.factoryOf().create();
     if (cc.getExpiryPolicyFactory() != null) {
@@ -240,15 +262,15 @@ public class JCacheManagerAdapter implements CacheManager {
         throw new CacheException("A cache2k instance is already existing with name: " + _cacheName);
       }
 
-      TouchyJCacheAdapter.EventHandling<K,V> _eventHandling = new TouchyJCacheAdapter.EventHandling<K, V>();
+      EventHandlingBase<K,V, V> _eventHandling = new EventHandlingBase<K, V, V>();
       _eventHandling.registerCache2kListeners(b);
       for (CacheEntryListenerConfiguration<K,V> cfg : cc.getCacheEntryListenerConfigurations()) {
         _eventHandling.registerListener(cfg);
       }
       _eventHandling.init(this, Executors.newCachedThreadPool());
 
-      JCacheAdapter<K, TouchyJCacheAdapter.TimeVal<V>> ca =
-        new JCacheAdapter<K, TouchyJCacheAdapter.TimeVal<V>>(this, b.build(), null);
+      JCacheAdapter<K, V> ca =
+        new JCacheAdapter<K, V>(this, b.build(), null);
       if (cc.getCacheLoaderFactory() != null) {
         ca.loaderConfigured = true;
       }
@@ -258,7 +280,7 @@ public class JCacheManagerAdapter implements CacheManager {
       c.valueType = cc.getValueType();
       c.keyType = cc.getKeyType();
       c.expiryPolicy = _policy;
-      c.c2kCache = (InternalCache<K, TouchyJCacheAdapter.TimeVal<V>>) ca.cache;
+      c.c2kCache = (InternalCache<K, V>) ca.cache;
       _jsr107cache = c;
       c.eventHandling = _eventHandling;
 
@@ -331,7 +353,7 @@ public class JCacheManagerAdapter implements CacheManager {
       ca = ((CopyCacheProxy) ca).getWrappedCache();
     }
     if (ca instanceof TouchyJCacheAdapter) {
-      return (JCacheAdapter) ((TouchyJCacheAdapter) ca).cache;
+      return ((TouchyJCacheAdapter) ca).cache;
     }
     return (JCacheAdapter) ca;
   }
@@ -474,42 +496,6 @@ public class JCacheManagerAdapter implements CacheManager {
       }
       return _loadTime + d.getTimeUnit().toMillis(d.getDurationAmount());
     }
-  }
-
-  static class CacheWriterAdapterForTouchRecording<K, V> extends CacheWriter<K, TouchyJCacheAdapter.TimeVal<V>> {
-
-    javax.cache.integration.CacheWriter<K, V> cacheWriter;
-
-    public CacheWriterAdapterForTouchRecording(javax.cache.integration.CacheWriter<K, V> cacheWriter) {
-      this.cacheWriter = cacheWriter;
-    }
-
-    @Override
-    public void write(final K key, final TouchyJCacheAdapter.TimeVal<V> value) throws Exception {
-      Cache.Entry<K, V> ce = new Cache.Entry<K, V>() {
-        @Override
-        public K getKey() {
-          return key;
-        }
-
-        @Override
-        public V getValue() {
-          return value.value;
-        }
-
-        @Override
-        public <T> T unwrap(Class<T> clazz) {
-          throw new UnsupportedOperationException("unwrap entry not supported");
-        }
-      };
-      cacheWriter.write(ce);
-    }
-
-    @Override
-    public void delete(Object key) throws Exception {
-      cacheWriter.delete(key);
-    }
-
   }
 
 }

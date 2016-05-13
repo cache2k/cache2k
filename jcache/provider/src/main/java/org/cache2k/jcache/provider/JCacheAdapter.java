@@ -72,7 +72,7 @@ public class JCacheAdapter<K, V> implements javax.cache.Cache<K, V> {
   /** Null, if no complete configuration is effective */
   CompleteConfiguration<K, V> completeConfiguration;
 
-  EventHandling<K,V> eventHandling;
+  EventHandlingBase<K,V,V> eventHandling;
 
   public JCacheAdapter(JCacheManagerAdapter _manager, Cache<K, V> _cache, CompleteConfiguration<K, V> _completeConfiguration) {
     manager = _manager;
@@ -182,6 +182,9 @@ public class JCacheAdapter<K, V> implements javax.cache.Cache<K, V> {
     checkClosed();
     if (map == null) {
       throw new NullPointerException("null map parameter");
+    }
+    if (map.containsKey(null)) {
+      throw new NullPointerException("null key not allowed");
     }
     for (Map.Entry<? extends K, ? extends V> e : map.entrySet()) {
       V v = e.getValue();
@@ -535,14 +538,6 @@ public class JCacheAdapter<K, V> implements javax.cache.Cache<K, V> {
     @Override
     public <T> T unwrap(Class<T> clazz) {
       return null;
-    }
-  }
-
-  static class EventHandling<K,V> extends EventHandlingBase<K,V,V> {
-
-    @Override
-    protected V extractValue(final V _value) {
-      return _value;
     }
   }
 

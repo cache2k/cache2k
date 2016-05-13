@@ -22,7 +22,10 @@ package org.cache2k.jcache.provider;
 
 import org.cache2k.CacheEntry;
 import org.cache2k.customization.ExpiryCalculator;
+import org.cache2k.customization.ExpiryTimeValues;
 import org.cache2k.jcache.provider.event.EventHandlingBase;
+import org.cache2k.processor.CacheEntryProcessor;
+import org.cache2k.processor.MutableCacheEntry;
 
 import javax.cache.Cache;
 import javax.cache.CacheManager;
@@ -40,13 +43,13 @@ import javax.cache.processor.MutableEntry;
 import java.util.AbstractCollection;
 import java.util.AbstractSet;
 import java.util.Collection;
-import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
 
 /**
- * Adapter to add required semantics for JSR107 with expiry policy.
+ * Adapter to add required semantics for JSR107 with a custom expiry policy. The JCacheAdapter is
+ * wrapped again and the expiry policy is called when needed.
  *
  * <p>There are multiple requirements which makes cache operations with expiry policy very inefficient. These are:
  * <ul>
@@ -56,20 +59,18 @@ import java.util.Set;
  *   <li>In case the expiry policy methods return null, this means, that the expiry is not changed</li>
  * </ul>
  *
- * </p>
- * JSR107 has rules which make cache operations with an expiry policy quite ineffective.
+ * <p>
  *
- *
- * @author Jens Wilke; created: 2015-04-01
+ * @author Jens Wilke
  */
 public class TouchyJCacheAdapter<K, V> implements Cache<K, V> {
 
-  org.cache2k.core.InternalCache<K, TimeVal<V>> c2kCache;
-  JCacheAdapter<K, TimeVal<V>> cache;
+  org.cache2k.core.InternalCache<K, V> c2kCache;
+  JCacheAdapter<K, V> cache;
   Class<K> keyType;
   Class<V> valueType;
   ExpiryPolicy expiryPolicy;
-  EventHandling<K,V> eventHandling;
+  EventHandlingBase<K,V, V> eventHandling;
 
   @Override
   public V get(K key) {
@@ -78,13 +79,7 @@ public class TouchyJCacheAdapter<K, V> implements Cache<K, V> {
 
   @Override
   public Map<K, V> getAll(Set<? extends K> keys) {
-    final Map<K, TimeVal<V>> m0 = cache.getAll(keys);
-    final Map<K, TimeVal<V>> map = new HashMap<K, TimeVal<V>>();
-    for (Map.Entry<K, TimeVal<V>> e : m0.entrySet()) {
-      if (e.getValue() != null) {
-        map.put(e.getKey(), e.getValue());
-      }
-    }
+    final Map<K, V> map = cache.getAll(keys);
     return new Map<K, V>() {
       @Override
       public int size() {
@@ -106,6 +101,7 @@ public class TouchyJCacheAdapter<K, V> implements Cache<K, V> {
         return map.containsValue(value);
       }
 
+      @SuppressWarnings("unchecked")
       @Override
       public V get(Object key) {
         return returnValue((K) key, map.get(key));
@@ -118,7 +114,7 @@ public class TouchyJCacheAdapter<K, V> implements Cache<K, V> {
 
       @Override
       public V remove(Object key) {
-        return returnLastValue(map.remove(key));
+        return map.remove(key);
       }
 
       @Override
@@ -151,7 +147,7 @@ public class TouchyJCacheAdapter<K, V> implements Cache<K, V> {
 
           @Override
           public Iterator<V> iterator() {
-            final Iterator<Entry<K, TimeVal<V>>> it = map.entrySet().iterator();
+            final Iterator<Entry<K, V>> it = map.entrySet().iterator();
             return new Iterator<V>() {
               @Override
               public boolean hasNext() {
@@ -160,7 +156,7 @@ public class TouchyJCacheAdapter<K, V> implements Cache<K, V> {
 
               @Override
               public V next() {
-                Entry<K, TimeVal<V>> e = it.next();
+                Entry<K, V> e = it.next();
                 return returnValue(e.getKey(), e.getValue());
               }
 
@@ -176,7 +172,7 @@ public class TouchyJCacheAdapter<K, V> implements Cache<K, V> {
 
       @Override
       public Set<Entry<K, V>> entrySet() {
-        final Iterator<Entry<K, TimeVal<V>>> it = map.entrySet().iterator();
+        final Iterator<Entry<K, V>> it = map.entrySet().iterator();
         return new AbstractSet<Entry<K, V>>() {
           @Override
           public Iterator<Entry<K, V>> iterator() {
@@ -188,7 +184,7 @@ public class TouchyJCacheAdapter<K, V> implements Cache<K, V> {
 
               @Override
               public Entry<K, V> next() {
-                final Entry<K, TimeVal<V>> e = it.next();
+                final Entry<K, V> e = it.next();
                 return new Entry<K, V>() {
                   @Override
                   public K getKey() {
@@ -235,37 +231,23 @@ public class TouchyJCacheAdapter<K, V> implements Cache<K, V> {
 
   @Override
   public void put(K key, V value) {
-    checkClosed();
-    cache.put(key, new TimeVal<V>(value));
+    cache.put(key, value);
   }
 
   @Override
   public V getAndPut(K key, V value) {
     checkClosed();
-    TimeVal<V> e = cache.getAndPut(key, new TimeVal(value));
-    if (e != null) {
-      return e.value;
-    }
-    return null;
+    return cache.getAndPut(key,value);
   }
 
   @Override
   public void putAll(Map<? extends K, ? extends V> map) {
-    checkClosed();
-    if (map.containsKey(null)) {
-      throw new NullPointerException("null key not allowed");
-    }
-    Map<K, TimeVal<V>> m2 = new HashMap<K, TimeVal<V>>();
-    for (Map.Entry<? extends K, ? extends V> e : map.entrySet()) {
-      m2.put(e.getKey(), new TimeVal<V>(e.getValue()));
-    }
-    cache.putAll(m2);
+    cache.putAll(map);
   }
 
   @Override
   public boolean putIfAbsent(K key, V value) {
-    checkClosed();
-    return cache.putIfAbsent(key, new TimeVal<V>(value));
+    return cache.putIfAbsent(key, value);
   }
 
   @Override
@@ -280,41 +262,40 @@ public class TouchyJCacheAdapter<K, V> implements Cache<K, V> {
     if (key == null) {
       throw new NullPointerException();
     }
-    EntryProcessor<K, TimeVal<V>, Boolean> ep = new EntryProcessor<K, TimeVal<V>, Boolean>() {
+    CacheEntryProcessor<K,V,Boolean> ep = new CacheEntryProcessor<K, V, Boolean>() {
       @Override
-      public Boolean process(final MutableEntry<K, TimeVal<V>> entry, final Object... arguments) throws EntryProcessorException {
+      public Boolean process(final MutableCacheEntry<K, V> entry, final Object... arguments) throws Exception {
         if (!entry.exists()) {
           return false;
         }
-        TimeVal<V> _existingValue = entry.getValue();
-        if (_existingValue.value.equals(oldValue)) {
+        V _existingValue = entry.getValue();
+        if (_existingValue.equals(oldValue)) {
           entry.remove();
           return true;
         }
         Duration d = expiryPolicy.getExpiryForAccess();
         if (d != null) {
-          TimeVal<V> _newEntry = newValue(_existingValue, d);
-          entry.setValue(_newEntry);
+          entry.setExpiry(calculateExpiry(d));
         }
         return false;
       }
     };
-    return cache.invoke(key, ep);
+    return c2kCache.invoke(key, ep);
   }
 
   @Override
   public V getAndRemove(K key) {
-    return returnLastValue(cache.getAndRemove(key));
+    return cache.getAndRemove(key);
   }
 
-  final CacheEntry<K, TimeVal<V>> DUMMY_ENTRY = new CacheEntry<K, TimeVal<V>>() {
+  final CacheEntry<K, V> DUMMY_ENTRY = new CacheEntry<K, V>() {
     @Override
     public K getKey() {
       return null;
     }
 
     @Override
-    public TimeVal<V> getValue() {
+    public V getValue() {
       return null;
     }
 
@@ -332,14 +313,16 @@ public class TouchyJCacheAdapter<K, V> implements Cache<K, V> {
   @Override
   public boolean replace(K key, V oldValue, V newValue) {
     checkClosed();
-    CacheEntry<K, TimeVal<V>> e =
-        c2kCache.replaceOrGet(
-            key,
-            new TimeVal<V>(oldValue),
-            new TimeVal<V>(newValue),
-            DUMMY_ENTRY);
+    checkNullValue(newValue);
+    checkNullValue(oldValue);
+    CacheEntry<K, V> e =
+      c2kCache.replaceOrGet(
+        key,
+        oldValue,
+        newValue,
+        DUMMY_ENTRY);
     if (e != null && e != DUMMY_ENTRY) {
-      touchEntry(key, e.getValue());
+      touchEntry(key);
     }
     return e == null;
   }
@@ -347,13 +330,13 @@ public class TouchyJCacheAdapter<K, V> implements Cache<K, V> {
   @Override
   public boolean replace(K key, V value) {
     checkClosed();
-    return c2kCache.replace(key, new TimeVal<V>(value));
+    checkNullValue(value);
+    return c2kCache.replace(key, value);
   }
 
   @Override
   public V getAndReplace(K key, V value) {
-    checkClosed();
-    return returnLastValue(cache.getAndReplace(key, new TimeVal<V>(value)));
+    return cache.getAndReplace(key, value);
   }
 
   @Override
@@ -403,62 +386,6 @@ public class TouchyJCacheAdapter<K, V> implements Cache<K, V> {
     };
   }
 
-  <T> EntryProcessor<K, TimeVal<V>, T> wrapEntryProcessor(final EntryProcessor<K, V, T> ep) {
-    if (ep == null) {
-      throw new NullPointerException("processor is null");
-    }
-    return new EntryProcessor<K, TimeVal<V>, T>() {
-      boolean freshOrJustLoaded = false;
-      @Override
-      public T process(final MutableEntry<K, TimeVal<V>> e0, Object... _args) throws EntryProcessorException {
-        MutableEntry<K, V> me = new MutableEntry<K, V>() {
-
-          @Override
-          public boolean exists() {
-            return e0.exists();
-          }
-
-          @Override
-          public void remove() {
-            e0.remove();
-          }
-
-          @Override
-          public void setValue(V value) {
-            freshOrJustLoaded = true;
-            e0.setValue(new TimeVal<V>(value));
-          }
-
-          @Override
-          public K getKey() {
-            return e0.getKey();
-          }
-
-          @Override
-          public V getValue() {
-            boolean _doNotCountCacheAccessIfEntryGetsLoaded = !exists();
-            boolean _doNotCountCacheAccessIfEntryIsFresh = freshOrJustLoaded;
-            if (_doNotCountCacheAccessIfEntryIsFresh || _doNotCountCacheAccessIfEntryGetsLoaded) {
-              if (!cache.readThrough && !exists()) {
-                return null;
-              }
-              freshOrJustLoaded = true;
-              TimeVal<V> v = e0.getValue();
-              return  v != null ? v.value : null;
-            }
-            return returnValue(e0.getKey(), e0.getValue());
-          }
-
-          @Override
-          public <T> T unwrap(Class<T> clazz) {
-            return null;
-          }
-        };
-        return ep.process(me, _args);
-      }
-    };
-  }
-
   @Override
   public <T> T invoke(K key, EntryProcessor<K, V, T> entryProcessor, Object... arguments) throws EntryProcessorException {
     return cache.invoke(key, wrapEntryProcessor(entryProcessor), arguments);
@@ -491,10 +418,7 @@ public class TouchyJCacheAdapter<K, V> implements Cache<K, V> {
 
   @Override
   public <T> T unwrap(Class<T> clazz) {
-    if (org.cache2k.Cache.class.equals(clazz)) {
-      return (T) ((JCacheAdapter) cache).cache;
-    }
-    throw new IllegalArgumentException("unwrap wrong type");
+    return c2kCache.requestInterface(clazz);
   }
 
   @Override
@@ -509,7 +433,7 @@ public class TouchyJCacheAdapter<K, V> implements Cache<K, V> {
 
   @Override
   public Iterator<Cache.Entry<K, V>> iterator() {
-    final Iterator<Cache.Entry<K, TimeVal<V>>> it = cache.iterator();
+    final Iterator<Cache.Entry<K, V>> it = cache.iterator();
     return new Iterator<Entry<K, V>>() {
       @Override
       public boolean hasNext() {
@@ -518,7 +442,7 @@ public class TouchyJCacheAdapter<K, V> implements Cache<K, V> {
 
       @Override
       public Entry<K, V> next() {
-        final Entry<K, TimeVal<V>> e = it.next();
+        final Entry<K, V> e = it.next();
         return returnEntry(e);
       }
 
@@ -529,138 +453,118 @@ public class TouchyJCacheAdapter<K, V> implements Cache<K, V> {
     };
   }
 
-  Entry<K, V> returnEntry(final Entry<K, TimeVal<V>> e) {
-    final K key = e.getKey();
-    final TimeVal<V> v = e.getValue();
-    final V _value = returnValue(key, v);
-    return new Entry<K, V>() {
+  private <T> EntryProcessor<K, V, T> wrapEntryProcessor(final EntryProcessor<K, V, T> ep) {
+    if (ep == null) {
+      throw new NullPointerException("processor is null");
+    }
+    return new EntryProcessor<K, V, T>() {
+      boolean freshOrJustLoaded = false;
       @Override
-      public K getKey() {
-        return key;
-      }
+      public T process(final MutableEntry<K, V> e0, Object... _args) throws EntryProcessorException {
+        MutableEntry<K, V> me = new MutableEntry<K, V>() {
 
-      @Override
-      public V getValue() {
-        return _value;
-      }
+          @Override
+          public boolean exists() {
+            return e0.exists();
+          }
 
-      @Override
-      public <T> T unwrap(Class<T> clazz) {
-        if (clazz.equals(CacheEntry.class)) {
-          final CacheEntry<K, TimeVal<V>> ce = e.unwrap(CacheEntry.class);
-          return (T) new CacheEntry<K, V>() {
-            @Override
-            public Throwable getException() {
-              return ce.getException();
+          @Override
+          public void remove() {
+            e0.remove();
+          }
+
+          @Override
+          public void setValue(V value) {
+            checkNullValue(value);
+            freshOrJustLoaded = true;
+            e0.setValue(value);
+          }
+
+          @Override
+          public K getKey() {
+            return e0.getKey();
+          }
+
+          @Override
+          public V getValue() {
+            boolean _doNotCountCacheAccessIfEntryGetsLoaded = !exists();
+            boolean _doNotCountCacheAccessIfEntryIsFresh = freshOrJustLoaded;
+            if (_doNotCountCacheAccessIfEntryIsFresh || _doNotCountCacheAccessIfEntryGetsLoaded) {
+              if (!cache.readThrough && !exists()) {
+                return null;
+              }
+              freshOrJustLoaded = true;
+              return e0.getValue();
             }
+            return returnValue(e0.getKey(), e0.getValue());
+          }
 
-            @Override
-            public K getKey() {
-              return key;
-            }
-
-            @Override
-            public long getLastModification() {
-              return ce.getLastModification();
-            }
-
-            @Override
-            public V getValue() {
-              return _value;
-            }
-          };
-        }
-        return null;
+          @Override
+          public <X> X unwrap(Class<X> clazz) {
+            return null;
+          }
+        };
+        return ep.process(me, _args);
       }
     };
   }
 
-  void checkClosed() {
+  /**
+   * Entry is accessed update expiry if needed.
+   */
+  private Entry<K, V> returnEntry(final Entry<K, V> e) {
+    touchEntry(e.getKey());
+    return e;
+  }
+
+  /**
+   * Entry was accessed update expiry if value is non null.
+   */
+  private V returnValue(K key, V _value) {
+    if (_value != null) {
+      Duration d = expiryPolicy.getExpiryForAccess();
+      if (d != null) {
+        c2kCache.expire(key, calculateExpiry(d));
+      }
+      return _value;
+    }
+    return null;
+  }
+
+  private static long calculateExpiry(final Duration d) {
+    if (Duration.ZERO.equals(d)) {
+      return ExpiryTimeValues.NO_CACHE;
+    } else if (Duration.ETERNAL.equals(d)) {
+      return ExpiryTimeValues.ETERNAL;
+    }
+    return System.currentTimeMillis() + d.getTimeUnit().toMillis(d.getDurationAmount());
+  }
+
+  private void touchEntry(K key) {
+    Duration d = expiryPolicy.getExpiryForAccess();
+    if (d != null) {
+      c2kCache.expire(key, calculateExpiry(d));
+    }
+  }
+
+  private void checkClosed() {
     if (cache.isClosed()) {
       throw new IllegalStateException("cache is closed");
     }
   }
 
-  private TimeVal<V> newValue(final TimeVal<V> e, final Duration d) {
-    TimeVal<V> _newEntry = new TimeVal<V>(e.value);
-    if (Duration.ZERO.equals(d)) {
-      _newEntry.expiryTime = 1;
-    } else if (Duration.ETERNAL.equals(d)) {
-      _newEntry.expiryTime = Long.MAX_VALUE;
-    } else {
-      _newEntry.expiryTime = System.currentTimeMillis() + d.getTimeUnit().toMillis(d.getDurationAmount());
-    }
-    return _newEntry;
-  }
-
-  V returnLastValue(TimeVal<V> e) {
-    if (e != null) {
-      return e.value;
-    }
-    return null;
-  }
-
-  V returnValue(K key, TimeVal<V> e) {
-    if (e != null) {
-      touchEntry(key, e);
-      return e.value;
-    }
-    return null;
-  }
-
-  private void touchEntry(K key, TimeVal<V> e) {
-    Duration d = expiryPolicy.getExpiryForAccess();
-    if (d != null) {
-      TimeVal<V> _newEntry = newValue(e, d);
-      c2kCache.replaceIfEquals(key, e, _newEntry);
-    }
-  }
-
-  void checkNullValue(V _value) {
+  private void checkNullValue(V _value) {
     if (_value == null) {
       throw new NullPointerException("value is null");
     }
   }
 
-  public static class TimeVal<V> {
-
-    V value;
-
-    /**
-     * If the expiry policy rule returns null, the expiry time is not changed. We need to remember the expiry time.
-     */
-    long expiryTime;
-
-    public TimeVal(V _value) {
-      if (_value == null) {
-        throw new NullPointerException("value is null");
-      }
-      value = _value;
-    }
-
-    @Override
-    public boolean equals(Object o) {
-      if (this == o) {
-        return true;
-      }
-      if (o == null || getClass() != o.getClass()) {
-        return false;
-      }
-      TimeVal entry = (TimeVal) o;
-      if (!value.equals(entry.value)) {
-        return false;
-      }
-      return true;
-    }
-
-    @Override
-    public int hashCode() {
-      return value.hashCode();
-    }
-
+  @Override
+  public String toString() {
+    return getClass().getSimpleName() + "@" + c2kCache.toString();
   }
 
-  static class ExpiryCalculatorAdapter<K, V> implements ExpiryCalculator<K, TimeVal<V>> {
+  public static class ExpiryCalculatorAdapter<K, V> implements ExpiryCalculator<K, V> {
 
     ExpiryPolicy policy;
 
@@ -669,48 +573,26 @@ public class TouchyJCacheAdapter<K, V> implements Cache<K, V> {
     }
 
     @Override
-    public long calculateExpiryTime(K _key, TimeVal<V> _value, long _loadTime, CacheEntry<K, TimeVal<V>> _oldEntry) {
+    public long calculateExpiryTime(K _key, V _value, long _loadTime, CacheEntry<K, V> _oldEntry) {
       if (_value == null) {
         return 0;
       }
       Duration d;
-      if (_value.expiryTime >= 1) {
-        return _value.expiryTime == 1 ? 0 : _value.expiryTime;
-      }
-      if (_oldEntry == null) {
+      if (_oldEntry == null || _oldEntry.getException() != null) {
         d = policy.getExpiryForCreation();
       } else {
         d = policy.getExpiryForUpdate();
       }
       if (d == null) {
-        if (_oldEntry == null) {
-          throw new NullPointerException("no previous expiry value: null expiry duration not valid");
-        }
-        if (_oldEntry.getException() != null) {
-          throw new RuntimeException("exception on this entry, missing duration...", _oldEntry.getException());
-        }
-        return _value.expiryTime = _oldEntry.getValue().expiryTime;
-
+        return ExpiryTimeValues.NEUTRAL;
       }
       if (d.equals(Duration.ETERNAL)) {
-        return _value.expiryTime = Long.MAX_VALUE;
+        return ExpiryTimeValues.ETERNAL;
       }
       if (d.equals(Duration.ZERO)) {
-        return _value.expiryTime = 0;
+        return ExpiryTimeValues.NO_CACHE;
       }
-      return _value.expiryTime = _loadTime + d.getTimeUnit().toMillis(d.getDurationAmount());
-    }
-  }
-
-  public String toString() {
-    return c2kCache.toString();
-  }
-
-  static class EventHandling<K,V> extends EventHandlingBase<K,V,TimeVal<V>> {
-
-    @Override
-    protected V extractValue(final TimeVal<V> _value) {
-      return _value.value;
+      return _loadTime + d.getTimeUnit().toMillis(d.getDurationAmount());
     }
   }
 

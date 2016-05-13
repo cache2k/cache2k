@@ -24,7 +24,6 @@ import org.cache2k.Cache;
 import org.cache2k.Cache2kBuilder;
 import org.cache2k.CacheEntry;
 import org.cache2k.jcache.provider.JCacheManagerAdapter;
-import org.cache2k.jcache.provider.TouchyJCacheAdapter;
 
 import javax.cache.configuration.CacheEntryListenerConfiguration;
 import javax.cache.configuration.Factory;
@@ -57,7 +56,7 @@ import java.util.concurrent.Executor;
  *
  * @author Jens Wilke
  */
-public abstract class EventHandlingBase<K,V,W> {
+public class EventHandlingBase<K,V,W> {
 
   JCacheManagerAdapter manager;
   javax.cache.Cache jCache;
@@ -174,7 +173,7 @@ public abstract class EventHandlingBase<K,V,W> {
     _builder.addListener(new ExpiredListenerAdapter());
   }
 
-  protected abstract V extractValue(W _value);
+  private V extractValue(W _value) { return (V) _value; }
 
   @SuppressWarnings("unchecked")
   class CreatedListenerAdapter implements org.cache2k.event.CacheEntryCreatedListener<K, W> {
@@ -225,9 +224,6 @@ public abstract class EventHandlingBase<K,V,W> {
       }
       W v0 = _currentEntry.getValue();
       W v1 = entryWithNewData.getValue();
-      if (v0 == v1 && v0 instanceof TouchyJCacheAdapter.TimeVal) {
-        return;
-      }
       EntryEvent<K, V> cee =
         new EntryEventWithOldValue<K, V>(_jCache, EventType.UPDATED, entryWithNewData.getKey(), extractValue(v1), extractValue(v0));
       asyncDispatcher.deliverAsyncEvent(cee);
