@@ -158,7 +158,10 @@ public class CacheTypeCapture<T> implements CacheType<T> {
 
   }
 
-  private static class OfClass extends BaseType {
+  /**
+   * CacheType representing a class.
+   */
+  public static class OfClass extends BaseType {
 
     Class<?> type;
 
@@ -216,7 +219,10 @@ public class CacheTypeCapture<T> implements CacheType<T> {
 
   }
 
-  private static class OfArray extends BaseType {
+  /**
+   * CacheType representing an array.
+   */
+  public static class OfArray extends BaseType {
 
     CacheType componentType;
 
@@ -289,7 +295,10 @@ public class CacheTypeCapture<T> implements CacheType<T> {
     }
   }
 
-  private static class OfGeneric extends BaseType {
+  /**
+   * CacheType representing a generic type.
+   */
+  public static class OfGeneric extends BaseType {
 
     CacheType[] typeArguments;
     Class<?> type;
