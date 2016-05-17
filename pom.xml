@@ -49,12 +49,13 @@
     <module>jmx-api</module>
     <module>core</module>
     <module>ee</module>
-    <module>jcache</module>
     <module>junit-util</module>
     <module>variant/all</module>
     <module>osgi-test</module>
     <module>xml-config</module>
     <module>doc</module>
+    <module>jcache/provider</module>
+    <module>jcache/tests</module>
   </modules>
 
   <properties>
@@ -517,6 +518,13 @@
       <id>osgi-test</id>
       <modules>
         <module>osgi-test</module>
+      </modules>
+    </profile>
+
+    <profile>
+      <id>jcache-tck-test-clone</id>
+      <modules>
+        <module>jcache/tck-test-clone</module>
       </modules>
     </profile>
 
