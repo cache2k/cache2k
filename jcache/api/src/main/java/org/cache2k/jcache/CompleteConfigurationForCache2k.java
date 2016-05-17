@@ -1,8 +1,8 @@
-package org.cache2k.core;
+package org.cache2k.jcache;
 
 /*
  * #%L
- * cache2k core
+ * cache2k API for JSR107 support
  * %%
  * Copyright (C) 2000 - 2016 headissue GmbH, Munich
  * %%
@@ -20,30 +20,22 @@ package org.cache2k.core;
  * #L%
  */
 
-import org.cache2k.Cache;
 import org.cache2k.configuration.Cache2kConfiguration;
-import org.cache2k.CacheManager;
-import org.cache2k.spi.Cache2kCoreProvider;
-import org.cache2k.spi.Cache2kManagerProvider;
+
+import javax.cache.configuration.CompleteConfiguration;
 
 /**
- * @author Jens Wilke; created: 2014-04-20
+ * Extends the JCache complete configuration with an additional cache2k configuration.
+ *
+ * @author Jens Wilke
  */
-public class Cache2kCoreProviderImpl extends Cache2kCoreProvider {
+public interface CompleteConfigurationForCache2k<K,V> extends CompleteConfiguration<K,V> {
 
-  Cache2kManagerProviderImpl provider;
-
-  @Override
-  public synchronized Cache2kManagerProvider getManagerProvider() {
-    if (provider == null) {
-      provider = new Cache2kManagerProviderImpl();
-    }
-    return provider;
-  }
-
-  @Override
-  public <K, V> Cache<K, V> createCache(final CacheManager m, final Cache2kConfiguration<K, V> cfg) {
-    return new InternalCache2kBuilder<K,V>(cfg, m).build();
-  }
+  /**
+   * Retrieve the extended cache2k configuration.
+   *
+   * @return cache2k configuration or null, if not needed
+   */
+  Cache2kConfiguration<K,V> getCache2kConfiguration();
 
 }

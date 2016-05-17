@@ -44,6 +44,7 @@ import javax.cache.processor.EntryProcessor;
 import javax.cache.processor.EntryProcessorException;
 import javax.cache.processor.EntryProcessorResult;
 import javax.cache.processor.MutableEntry;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -65,20 +66,17 @@ public class JCacheAdapter<K, V> implements javax.cache.Cache<K, V> {
   boolean readThrough = false;
   boolean statisticsEnabled = false;
   boolean configurationEnabled = false;
+  Class<K> keyType;
+  Class<V> valueType;
   AtomicLong iterationHitCorrectionCounter = new AtomicLong();
   AtomicLong missCorrectionCounter = new AtomicLong();
   AtomicLong hitCorrectionCounter = new AtomicLong();
-
-  /** Null, if no complete configuration is effective */
-  CompleteConfiguration<K, V> completeConfiguration;
-
   EventHandling<K,V> eventHandling;
 
-  public JCacheAdapter(JCacheManagerAdapter _manager, Cache<K, V> _cache, CompleteConfiguration<K, V> _completeConfiguration) {
+  public JCacheAdapter(JCacheManagerAdapter _manager, Cache<K, V> _cache) {
     manager = _manager;
     cache = _cache;
     cacheImpl = (InternalCache<K, V>) _cache;
-    completeConfiguration = _completeConfiguration;
   }
 
   @Override
@@ -321,24 +319,27 @@ public class JCacheAdapter<K, V> implements javax.cache.Cache<K, V> {
   @SuppressWarnings("unchecked")
   @Override
   public <C extends Configuration<K, V>> C getConfiguration(Class<C> _class) {
-    if (_class.isAssignableFrom(CompleteConfiguration.class)) {
-      if (completeConfiguration != null) {
-        return (C) completeConfiguration;
-      }
+    if (CompleteConfiguration.class.isAssignableFrom(_class)) {
       MutableConfiguration<K, V> cfg = new MutableConfiguration<K, V>();
-      cfg.setTypes((Class<K>) cacheImpl.getKeyType(), (Class<V>) cacheImpl.getValueType());
+      cfg.setTypes(keyType, valueType);
+      cfg.setStatisticsEnabled(statisticsEnabled);
+      cfg.setManagementEnabled(configurationEnabled);
       cfg.setStoreByValue(storeByValue);
+      Collection<CacheEntryListenerConfiguration<K,V>> _listenerConfigurations = eventHandling.getAllListenerConfigurations();
+      for (CacheEntryListenerConfiguration<K,V> _listenerConfig : _listenerConfigurations) {
+        cfg.addCacheEntryListenerConfiguration(_listenerConfig);
+      }
       return (C) cfg;
     }
     return (C) new Configuration<K, V>() {
       @Override
       public Class<K> getKeyType() {
-        return (Class<K>) cacheImpl.getKeyType();
+        return keyType;
       }
 
       @Override
       public Class<V> getValueType() {
-        return (Class<V>) cacheImpl.getValueType();
+        return valueType;
       }
 
       @Override
@@ -434,6 +435,9 @@ public class JCacheAdapter<K, V> implements javax.cache.Cache<K, V> {
 
   @Override
   public void deregisterCacheEntryListener(CacheEntryListenerConfiguration<K, V> cfg) {
+    if (cfg == null) {
+      throw new NullPointerException();
+    }
     eventHandling.unregisterListener(cfg);
   }
 

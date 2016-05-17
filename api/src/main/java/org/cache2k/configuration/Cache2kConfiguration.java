@@ -41,14 +41,14 @@ import java.util.List;
  *
  * @author Jens Wilke; created: 2013-06-25
  */
-public class CacheConfiguration<K, V> implements Serializable {
+public class Cache2kConfiguration<K, V> implements Serializable {
 
   public final long EXPIRY_MILLIS_ETERNAL = Long.MAX_VALUE;
 
   private boolean storeByReference;
   private String name;
-  private CacheType keyType;
-  private CacheType valueType;
+  private CacheType<K> keyType;
+  private CacheType<V> valueType;
   private Class<?> implementation;
 
   private long entryCapacity = 2000;
@@ -63,6 +63,7 @@ public class CacheConfiguration<K, V> implements Serializable {
   private List<Object> moduleConfiguration;
   private boolean suppressExceptions = true;
   private int loaderThreadCount;
+
   private ExpiryPolicy<K,V> expiryPolicy;
   private ResiliencePolicy<K,V> resiliencePolicy;
   private CacheLoader<K,V> loader;
@@ -80,11 +81,11 @@ public class CacheConfiguration<K, V> implements Serializable {
    * @see #setKeyType(Class)
    * @see #setValueType(Class)
    */
-  public static <K,V> CacheConfiguration<K, V> of(Class<K> keyType, Class<V> valueType) {
-    CacheConfiguration c = new CacheConfiguration();
+  public static <K,V> Cache2kConfiguration<K, V> of(Class<K> keyType, Class<V> valueType) {
+    Cache2kConfiguration c = new Cache2kConfiguration();
     c.setKeyType(keyType);
     c.setValueType(valueType);
-    return (CacheConfiguration<K, V>) c;
+    return (Cache2kConfiguration<K, V>) c;
   }
 
   /**
@@ -95,11 +96,11 @@ public class CacheConfiguration<K, V> implements Serializable {
    * @see #setKeyType(Class)
    * @see #setValueType(Class)
    */
-  public static <K,V> CacheConfiguration<K, V> of(Class<K> keyType, CacheType<V> valueType) {
-    CacheConfiguration c = new CacheConfiguration();
+  public static <K,V> Cache2kConfiguration<K, V> of(Class<K> keyType, CacheType<V> valueType) {
+    Cache2kConfiguration c = new Cache2kConfiguration();
     c.setKeyType(keyType);
     c.setValueType(valueType);
-    return (CacheConfiguration<K, V>) c;
+    return (Cache2kConfiguration<K, V>) c;
   }
 
   /**
@@ -110,11 +111,11 @@ public class CacheConfiguration<K, V> implements Serializable {
    * @see #setKeyType(Class)
    * @see #setValueType(Class)
    */
-  public static <K,V> CacheConfiguration<K, V> of(CacheType<K> keyType, Class<V> valueType) {
-    CacheConfiguration c = new CacheConfiguration();
+  public static <K,V> Cache2kConfiguration<K, V> of(CacheType<K> keyType, Class<V> valueType) {
+    Cache2kConfiguration c = new Cache2kConfiguration();
     c.setKeyType(keyType);
     c.setValueType(valueType);
-    return (CacheConfiguration<K, V>) c;
+    return (Cache2kConfiguration<K, V>) c;
   }
 
   /**
@@ -125,11 +126,11 @@ public class CacheConfiguration<K, V> implements Serializable {
    * @see #setKeyType(Class)
    * @see #setValueType(Class)
    */
-  public static <K,V> CacheConfiguration<K, V> of(CacheType<K> keyType, CacheType<V> valueType) {
-    CacheConfiguration c = new CacheConfiguration();
+  public static <K,V> Cache2kConfiguration<K, V> of(CacheType<K> keyType, CacheType<V> valueType) {
+    Cache2kConfiguration c = new Cache2kConfiguration();
     c.setKeyType(keyType);
     c.setValueType(valueType);
-    return (CacheConfiguration<K, V>) c;
+    return (Cache2kConfiguration<K, V>) c;
   }
 
   /**
@@ -193,7 +194,7 @@ public class CacheConfiguration<K, V> implements Serializable {
     refreshAhead = v;
   }
 
-  public CacheType getKeyType() {
+  public CacheType<K> getKeyType() {
     return keyType;
   }
 

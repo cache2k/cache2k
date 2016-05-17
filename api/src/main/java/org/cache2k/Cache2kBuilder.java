@@ -20,7 +20,7 @@ package org.cache2k;
  * #L%
  */
 
-import org.cache2k.configuration.CacheConfiguration;
+import org.cache2k.configuration.Cache2kConfiguration;
 import org.cache2k.configuration.CacheTypeCapture;
 import org.cache2k.configuration.CacheType;
 import org.cache2k.configuration.ConfigurationSectionBuilder;
@@ -81,28 +81,28 @@ public class Cache2kBuilder<K, V> implements Cloneable {
    * {@link #valueType}.
    */
   public static Cache2kBuilder<?,?> forUnknownTypes() {
-    return of(new CacheConfiguration());
+    return of(new Cache2kConfiguration());
   }
 
   /**
    * Create a new cache builder if key and value types are classes with no generic parameters.
    */
   public static <K,T> Cache2kBuilder<K,T> of(Class<K> _keyType, Class<T> _valueType) {
-    return of(CacheConfiguration.of(_keyType, _valueType));
+    return of(Cache2kConfiguration.of(_keyType, _valueType));
   }
 
   /**
    * Create a builder from the configuration.
    */
-  public static <K,T> Cache2kBuilder<K, T> of(CacheConfiguration<K, T> c) {
+  public static <K,T> Cache2kBuilder<K, T> of(Cache2kConfiguration<K, T> c) {
     Cache2kBuilder<K,T> cb = new Cache2kBuilder<K, T>(c);
     return cb;
   }
 
-  CacheConfiguration<K,V> config;
+  Cache2kConfiguration<K,V> config;
 
   private CacheManager manager;
-  private Cache2kBuilder(CacheConfiguration<K,V> cfg) {
+  private Cache2kBuilder(Cache2kConfiguration<K,V> cfg) {
     config = cfg;
   }
 
@@ -123,7 +123,7 @@ public class Cache2kBuilder<K, V> implements Cloneable {
   protected Cache2kBuilder() {
     Type[] _types =
       ((ParameterizedType) this.getClass().getGenericSuperclass()).getActualTypeArguments();
-    config = CacheConfiguration.of(
+    config = Cache2kConfiguration.of(
       (CacheType<K>) CacheTypeCapture.of(_types[0]).getBeanRepresentation(),
       (CacheType<V>) CacheTypeCapture.of(_types[1]).getBeanRepresentation());
   }
@@ -473,7 +473,7 @@ public class Cache2kBuilder<K, V> implements Cloneable {
     return this;
   }
 
-  public final CacheConfiguration toConfiguration() {
+  public final Cache2kConfiguration<K,V> toConfiguration() {
     return config;
   }
 

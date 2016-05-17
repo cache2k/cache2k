@@ -56,6 +56,7 @@
     <module>doc</module>
     <module>jcache/provider</module>
     <module>jcache/tests</module>
+    <module>jcache/api</module>
   </modules>
 
   <properties>

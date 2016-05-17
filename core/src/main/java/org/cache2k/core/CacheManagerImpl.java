@@ -140,6 +140,7 @@ public class CacheManagerImpl extends CacheManager {
 
   /* called by builder */
   public String newCache(InternalCache c, String _requestedName) {
+    checkClosed();
     synchronized (lock) {
       String _name = _requestedName;
       while (cacheNames.containsKey(_name)) {
@@ -238,6 +239,7 @@ public class CacheManagerImpl extends CacheManager {
       if (caches == null) {
         return;
       }
+      Thread.dumpStack();
       List<Throwable> _suppressedExceptions = new ArrayList<Throwable>();
       for (Cache c : caches) {
         ((InternalCache) c).cancelTimerJobs();

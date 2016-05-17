@@ -1,8 +1,8 @@
-package org.cache2k.core;
+package org.cache2k.jcache;
 
 /*
  * #%L
- * cache2k core
+ * cache2k API for JSR107 support
  * %%
  * Copyright (C) 2000 - 2016 headissue GmbH, Munich
  * %%
@@ -20,30 +20,27 @@ package org.cache2k.core;
  * #L%
  */
 
-import org.cache2k.Cache;
 import org.cache2k.configuration.Cache2kConfiguration;
-import org.cache2k.CacheManager;
-import org.cache2k.spi.Cache2kCoreProvider;
-import org.cache2k.spi.Cache2kManagerProvider;
+
+import javax.cache.configuration.CompleteConfiguration;
+import javax.cache.configuration.MutableConfiguration;
 
 /**
- * @author Jens Wilke; created: 2014-04-20
+ * Extends the JCache mutable configuration with an additional cache2k configuration.
+ *
+ * @author Jens Wilke
  */
-public class Cache2kCoreProviderImpl extends Cache2kCoreProvider {
+public final class MutableConfigurationForCache2k<K,V>
+  extends MutableConfiguration<K,V> implements CompleteConfiguration<K,V> {
 
-  Cache2kManagerProviderImpl provider;
+  private Cache2kConfiguration<K,V> cache2kConfiguration;
 
-  @Override
-  public synchronized Cache2kManagerProvider getManagerProvider() {
-    if (provider == null) {
-      provider = new Cache2kManagerProviderImpl();
-    }
-    return provider;
+  public Cache2kConfiguration<K, V> getCache2kConfiguration() {
+    return cache2kConfiguration;
   }
 
-  @Override
-  public <K, V> Cache<K, V> createCache(final CacheManager m, final Cache2kConfiguration<K, V> cfg) {
-    return new InternalCache2kBuilder<K,V>(cfg, m).build();
+  public void setCache2kConfiguration(final Cache2kConfiguration<K, V> _cache2kConfiguration) {
+    cache2kConfiguration = _cache2kConfiguration;
   }
 
 }

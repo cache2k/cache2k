@@ -21,7 +21,7 @@ package org.cache2k.core;
  */
 
 import org.cache2k.*;
-import org.cache2k.configuration.CacheConfiguration;
+import org.cache2k.configuration.Cache2kConfiguration;
 import org.cache2k.core.operation.ExaminationEntry;
 import org.cache2k.core.operation.ReadOnlyCacheEntry;
 import org.cache2k.core.operation.Semantic;
@@ -268,7 +268,7 @@ public abstract class HeapCache<K, V>
   }
 
   /** called from CacheBuilder */
-  public void setCacheConfig(CacheConfiguration c) {
+  public void setCacheConfig(Cache2kConfiguration c) {
     valueType = c.getValueType().getType();
     keyType = c.getKeyType().getType();
     if (name != null) {

@@ -21,19 +21,17 @@ package org.cache2k.jcache.provider;
  */
 
 import org.cache2k.CacheEntry;
-import org.cache2k.expiry.ExpiryPolicy;
+import org.cache2k.core.InternalCache;
 import org.cache2k.expiry.ExpiryTimeValues;
-import org.cache2k.jcache.provider.event.EventHandling;
 import org.cache2k.processor.CacheEntryProcessor;
 import org.cache2k.processor.MutableCacheEntry;
 
 import javax.cache.Cache;
 import javax.cache.CacheManager;
 import javax.cache.configuration.CacheEntryListenerConfiguration;
-import javax.cache.configuration.CompleteConfiguration;
 import javax.cache.configuration.Configuration;
-import javax.cache.configuration.MutableConfiguration;
 import javax.cache.expiry.Duration;
+import javax.cache.expiry.ExpiryPolicy;
 import javax.cache.integration.CompletionListener;
 import javax.cache.processor.EntryProcessor;
 import javax.cache.processor.EntryProcessorException;
@@ -64,12 +62,15 @@ import java.util.Set;
  */
 public class TouchyJCacheAdapter<K, V> implements Cache<K, V> {
 
-  org.cache2k.core.InternalCache<K, V> c2kCache;
+  InternalCache<K, V> c2kCache;
   JCacheAdapter<K, V> cache;
-  Class<K> keyType;
-  Class<V> valueType;
-  javax.cache.expiry.ExpiryPolicy expiryPolicy;
-  EventHandling<K, V> eventHandling;
+  ExpiryPolicy expiryPolicy;
+
+  public TouchyJCacheAdapter(JCacheAdapter<K,V> _cache, ExpiryPolicy _expiryPolicy) {
+    expiryPolicy = _expiryPolicy;
+    cache = _cache;
+    c2kCache = _cache.cacheImpl;
+  }
 
   @Override
   public V get(K key) {
@@ -356,33 +357,7 @@ public class TouchyJCacheAdapter<K, V> implements Cache<K, V> {
   @SuppressWarnings("unchecked")
   @Override
   public <C extends Configuration<K, V>> C getConfiguration(Class<C> clazz) {
-    if (CompleteConfiguration.class.isAssignableFrom(clazz)) {
-      MutableConfiguration<K, V> cfg = new MutableConfiguration<K, V>();
-      cfg.setTypes(keyType, valueType);
-      cfg.setStatisticsEnabled(cache.statisticsEnabled);
-      cfg.setManagementEnabled(cache.configurationEnabled);
-      Collection<CacheEntryListenerConfiguration<K,V>> _listenerConfigurations = eventHandling.getAllListenerConfigurations();
-      for (CacheEntryListenerConfiguration<K,V> _listenerConfig : _listenerConfigurations) {
-        cfg.addCacheEntryListenerConfiguration(_listenerConfig);
-      }
-      return (C) cfg;
-    }
-    return (C) new Configuration<K, V>() {
-      @Override
-      public Class<K> getKeyType() {
-        return keyType;
-      }
-
-      @Override
-      public Class<V> getValueType() {
-        return valueType;
-      }
-
-      @Override
-      public boolean isStoreByValue() {
-        return false;
-      }
-    };
+    return cache.getConfiguration(clazz);
   }
 
   @Override
@@ -422,12 +397,12 @@ public class TouchyJCacheAdapter<K, V> implements Cache<K, V> {
 
   @Override
   public void registerCacheEntryListener(CacheEntryListenerConfiguration<K, V> cfg) {
-    eventHandling.registerListener(cfg);
+    cache.registerCacheEntryListener(cfg);
   }
 
   @Override
   public void deregisterCacheEntryListener(CacheEntryListenerConfiguration<K, V> cfg) {
-    eventHandling.unregisterListener(Util.requireNonNull(cfg, "listener configuration"));
+    cache.deregisterCacheEntryListener(cfg);
   }
 
   @Override
@@ -563,7 +538,7 @@ public class TouchyJCacheAdapter<K, V> implements Cache<K, V> {
     return getClass().getSimpleName() + "@" + c2kCache.toString();
   }
 
-  public static class ExpiryPolicyAdapter<K, V> implements ExpiryPolicy<K, V> {
+  public static class ExpiryPolicyAdapter<K, V> implements org.cache2k.expiry.ExpiryPolicy<K, V> {
 
     javax.cache.expiry.ExpiryPolicy policy;
 

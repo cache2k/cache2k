@@ -20,7 +20,7 @@ package org.cache2k.xmlConfig;
  * #L%
  */
 
-import org.cache2k.configuration.CacheConfiguration;
+import org.cache2k.configuration.Cache2kConfiguration;
 import org.junit.Test;
 import static org.junit.Assert.*;
 
@@ -52,7 +52,7 @@ public class ApplyConfigurationTest {
 
   @Test
   public void testGenerateSetterMap_CacheConfig() {
-    Map<String, Method> map = ApplyConfiguration.generateSetterLookupMap(CacheConfiguration.class);
+    Map<String, Method> map = ApplyConfiguration.generateSetterLookupMap(Cache2kConfiguration.class);
     assertTrue(map.containsKey("entryCapacity"));
   }
 
@@ -60,7 +60,7 @@ public class ApplyConfigurationTest {
   public void testParseSampleXml() throws Exception {
     InputStream is = this.getClass().getResourceAsStream("/cache2k-cache-sample.xml");
     ConfigPullParser pp = new XppConfigParser(is);
-    CacheConfiguration cfg = new CacheConfiguration();
+    Cache2kConfiguration cfg = new Cache2kConfiguration();
     ApplyConfiguration apl = new ApplyConfiguration(cfg, pp);
     apl.parse();
     assertEquals(5, cfg.getEntryCapacity());

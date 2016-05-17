@@ -20,7 +20,7 @@ package org.cache2k.core;
  * #L%
  */
 
-import org.cache2k.configuration.CacheConfiguration;
+import org.cache2k.configuration.Cache2kConfiguration;
 import org.cache2k.CacheEntry;
 import org.cache2k.core.util.Util;
 import org.cache2k.expiry.ExpiryPolicy;
@@ -69,7 +69,7 @@ public abstract class TimingHandler<K,V>  {
     return t == 0 || t == -1;
   }
 
-  public static <K, V> TimingHandler<K,V> of(CacheConfiguration<K,V> cfg) {
+  public static <K, V> TimingHandler<K,V> of(Cache2kConfiguration<K,V> cfg) {
     if (cfg.getExpireAfterWriteMillis() < 0) {
       throw new IllegalArgumentException(
         "Specify expiry or no expiry explicitly. " +
@@ -240,7 +240,7 @@ public abstract class TimingHandler<K,V>  {
     int timerCancelCount = 0;
     ResiliencePolicy<K,V> resiliencePolicy;
 
-    void configureStatic(final CacheConfiguration<K, V> c) {
+    void configureStatic(final Cache2kConfiguration<K, V> c) {
       long _expiryMillis  = c.getExpireAfterWriteMillis();
       if (_expiryMillis == ExpiryPolicy.ETERNAL || _expiryMillis < 0) {
         maxLinger = ExpiryPolicy.ETERNAL;
@@ -471,7 +471,7 @@ public abstract class TimingHandler<K,V>  {
     ExpiryPolicy<K, V> expiryPolicy;
 
     @SuppressWarnings("unchecked")
-    void configure(CacheConfiguration<K,V> c) {
+    void configure(Cache2kConfiguration<K,V> c) {
       configureStatic(c);
       expiryPolicy = c.getExpiryPolicy();
       if (c.getValueType() != null &&

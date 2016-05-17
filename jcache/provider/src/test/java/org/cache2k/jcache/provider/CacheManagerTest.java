@@ -20,13 +20,19 @@ package org.cache2k.jcache.provider;
  * #L%
  */
 
-import org.cache2k.Cache;
+import org.cache2k.Cache2kBuilder;
+import org.cache2k.jcache.MutableConfigurationForCache2k;
+import org.junit.Ignore;
 import org.junit.Test;
 import static org.junit.Assert.*;
 
+import javax.cache.Cache;
 import javax.cache.CacheManager;
 import javax.cache.Caching;
+import javax.cache.configuration.Configuration;
+import javax.cache.configuration.MutableConfiguration;
 import javax.cache.spi.CachingProvider;
+import java.math.BigDecimal;
 
 /**
  * @author Jens Wilke; created: 2015-03-29
@@ -46,6 +52,35 @@ public class CacheManagerTest {
     CacheManager cm1 = p.getCacheManager();
     CacheManager cm2 = p.getCacheManager();
     assertTrue(cm1 == cm2);
+  }
+
+  @Test
+  public void create_empty_config() {
+    CachingProvider p = Caching.getCachingProvider();
+    CacheManager cm = p.getCacheManager();
+    MutableConfiguration<String, BigDecimal> mc = new MutableConfigurationForCache2k<String, BigDecimal>();
+    mc.setTypes(String.class, BigDecimal.class);
+    Cache<String, BigDecimal> c = cm.createCache("aCache", mc);
+    assertEquals("aCache", c.getName());
+    assertEquals(String.class, c.getConfiguration(Configuration.class).getKeyType());
+    assertEquals(BigDecimal.class, c.getConfiguration(Configuration.class).getValueType());
+    c.close();
+  }
+
+  @Test @Ignore("not yet")
+  public void create_config_cache2k_types() {
+    CachingProvider p = Caching.getCachingProvider();
+    CacheManager cm = p.getCacheManager();
+    MutableConfigurationForCache2k<String, BigDecimal> mc = new MutableConfigurationForCache2k<String, BigDecimal>();
+    mc.setCache2kConfiguration(
+      new Cache2kBuilder<String, BigDecimal>(){}
+        .toConfiguration()
+    );
+    Cache<String, BigDecimal> c = cm.createCache("aCache", mc);
+    assertEquals("aCache", c.getName());
+    assertEquals(String.class, c.getConfiguration(Configuration.class).getKeyType());
+    assertEquals(BigDecimal.class, c.getConfiguration(Configuration.class).getValueType());
+    c.close();
   }
 
 }
