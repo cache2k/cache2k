@@ -20,3 +20,7 @@ is relaxed. This will lead to:
  - A refresh started at the expiry time
  - `contains()` is `false`, if the entry is expired and not yet refreshed
  - A `get()` on the expired entry will stall until refreshed
+
+== Resetting the Expiry of a Cache Value
+
+Cache.expire
