@@ -239,7 +239,6 @@ public class CacheManagerImpl extends CacheManager {
       if (caches == null) {
         return;
       }
-      Thread.dumpStack();
       List<Throwable> _suppressedExceptions = new ArrayList<Throwable>();
       for (Cache c : caches) {
         ((InternalCache) c).cancelTimerJobs();
