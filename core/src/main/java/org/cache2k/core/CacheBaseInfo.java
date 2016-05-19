@@ -135,9 +135,9 @@ class CacheBaseInfo implements InternalCacheInfo {
   @Override
   public long getRefreshSubmitFailedCnt() { return heapCache.refreshSubmitFailedCnt; }
   @Override
-  public long getSuppressedExceptionCnt() { return heapCache.suppressedExceptionCnt; }
+  public long getSuppressedExceptionCnt() { return metrics.getSuppressedExceptionCount(); }
   @Override
-  public long getLoadExceptionCnt() { return heapCache.loadExceptionCnt; }
+  public long getLoadExceptionCnt() { return metrics.getLoadExceptionCount() + metrics.getSuppressedExceptionCount(); }
   @Override
   public long getRefreshHitCnt() { return heapCache.refreshHitCnt; }
   @Override

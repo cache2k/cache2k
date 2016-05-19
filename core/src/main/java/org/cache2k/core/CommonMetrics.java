@@ -72,6 +72,16 @@ public interface CommonMetrics {
    */
   long getLoadMillis();
 
+  /**
+   * Counter of exceptions thrown from the loader.
+   */
+  long getLoadExceptionCount();
+
+  /**
+   * Counter of suppressed exception from the loader
+   */
+  long getSuppressedExceptionCount();
+
   interface Updater extends CommonMetrics {
 
     void putNewEntry();
@@ -108,6 +118,12 @@ public interface CommonMetrics {
 
     void refresh(long _millis);
     void refresh(long cnt, long _millis);
+
+    void loadException();
+    void loadException(long cnt);
+
+    void suppressedException();
+    void suppressedException(long cnt);
 
   }
 

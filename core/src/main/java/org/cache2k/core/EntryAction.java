@@ -471,9 +471,6 @@ public abstract class EntryAction<K, V, R> implements
   @SuppressWarnings("unchecked")
   @Override
   public void onLoadFailure(Throwable t) {
-    synchronized (heapCache.lock) {
-      heapCache.loadExceptionCnt++;
-    }
     newValueOrException = (V) new ExceptionWrapper(key, t, loadStartedTime, entry);
     loadCompleted();
   }
@@ -538,11 +535,12 @@ public abstract class EntryAction<K, V, R> implements
           suppressException = true;
           newValueOrException = entry.getValue();
           lastModificationTime = entry.getLastModification();
-          synchronized (heapCache.lock) {
-            heapCache.suppressedExceptionCnt++;
-          }
+          metrics().suppressedException();
           entry.setSuppressedLoadExceptionInformation(ew);
         } else {
+          if (load) {
+            metrics().loadException();
+          }
           expiry = timing().cacheExceptionUntil(entry, ew);
         }
         setUntil(ew);

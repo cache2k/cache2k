@@ -229,4 +229,36 @@ public class StandardCommonMetrics implements CommonMetrics.Updater {
     loadMillisUpdater.addAndGet(this, _millis);
   }
 
+  static final AtomicLongFieldUpdater<StandardCommonMetrics> loadExceptionUpdater =
+    AtomicLongFieldUpdater.newUpdater(StandardCommonMetrics.class, "loadException");
+  private volatile long loadException;
+  @Override
+  public long getLoadExceptionCount() {
+    return loadExceptionUpdater.get(this);
+  }
+  @Override
+  public void loadException() {
+    loadExceptionUpdater.incrementAndGet(this);
+  }
+  @Override
+  public void loadException(final long cnt) {
+    loadExceptionUpdater.addAndGet(this, cnt);
+  }
+
+  static final AtomicLongFieldUpdater<StandardCommonMetrics> suppressedExceptionUpdater =
+    AtomicLongFieldUpdater.newUpdater(StandardCommonMetrics.class, "suppressedException");
+  private volatile long suppressedException;
+  @Override
+  public long getSuppressedExceptionCount() {
+    return suppressedExceptionUpdater.get(this);
+  }
+  @Override
+  public void suppressedException() {
+    suppressedExceptionUpdater.incrementAndGet(this);
+  }
+  @Override
+  public void suppressedException(final long cnt) {
+    suppressedExceptionUpdater.addAndGet(this, cnt);
+  }
+
 }

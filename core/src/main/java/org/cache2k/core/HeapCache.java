@@ -146,8 +146,6 @@ public abstract class HeapCache<K, V>
   protected long expiredKeptCnt = 0;
   protected long expiredRemoveCnt = 0;
   protected long evictedCnt = 0;
-  protected long suppressedExceptionCnt = 0;
-  protected long loadExceptionCnt = 0;
   /* that is a miss, but a hit was already counted. */
   protected long peekHitNotFreshCnt = 0;
   /* no heap hash hit */
@@ -1703,11 +1701,10 @@ public abstract class HeapCache<K, V>
   private void updateStatisticsNeedsLock(Entry e, V _value, long t0, long t, byte _updateStatistics, boolean _suppressException) {
     if (_updateStatistics == INSERT_STAT_LOAD) {
       if (_suppressException) {
-        suppressedExceptionCnt++;
-        loadExceptionCnt++;
+        metrics.suppressedException();
       } else {
         if (_value instanceof ExceptionWrapper) {
-          loadExceptionCnt++;
+          metrics.loadException();
         }
       }
       long _millis = t - t0;
