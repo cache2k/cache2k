@@ -4,25 +4,29 @@ In a read through configuration the cache can tolerate temporary loader failures
 The write trough does not provide resilience capabilities at the moment, which means
  a writer exception will always propagated to the cache client.
 
-== Default behavior
+== Behavior
 
 The default behavior depends on the general expiry (`expiryAfterWrite`) setting of the cache.
 If no expiry is specified, all exceptions will be propagated to the client. The loader will be
-called immediately again, if the key is requested again.
+called immediately again, if the key is requested again. When expiry is specified, the cache
+also enables the resilience features.
 
-With specifying the expiry, the cache also enables the resilience features.
 If a load yields an exception and there is data in the cache: The exception is not propagated
 to the client, and the cache answers requests with the current cache content. Subsequent
 load attempts that yield an exception, will also be _suppressed_, if the time span to the
-first exception is below the expiry duration setting. If the loader produces
-subsequent exceptions that is longer then the configured expiry,
-the exception will be _propagated_. This time span can be modified (`resilienceDuration`).
+first exception is below the resilience duration setting. If the loader produces
+subsequent exceptions that is longer then the resilience duration,
+the exception will be _propagated_. The resilience duration can be set with the parameter
+`resilienceDuration` and is identical to the `expiryAfterWrite` time span.
 
-After an exception the cache will retry to load the value again after 5% of the expiry
-duration is passed. The load attempt is triggered when the client accesses the value
-again, or the cache is doing this by itself if `refreshAhead` is enabled.
+== Retry
 
-To keep the load in limits in the event of failure, the duration between each retry
+After an exception happens the cache will do a retry to load the value again. The retry
+is started after the configured retry interval (`retryInterval`), or,  if not
+explicitly configured after 5% of the resilience duration. The load is started when the client accesses
+the value again, or the cache is doing this by itself if `refreshAhead` is enabled.
+
+To keep the system load in limits in the event of failure, the duration between each retry
 increases according to an _exponential backoff_ pattern by the factor of 1.5.
 Each duration is further randomized between one half and the full value.
 For example, an `expireAfterWrite` set to 200 seconds will lead to an initial retry
@@ -42,6 +46,8 @@ When reaching the configured expiry the cache will retry at this time interval a
 not increase further. The start retry interval and the maximum retry interval can
 be specified by `retryInterval` and `maxRetryInterval`.
 
+== Exception Propagation
+
 If an exception cannot be suppressed, it is propagated to the client immediately.
 The retry attempts follow the same pattern as above.
 
@@ -49,6 +55,34 @@ When propagated, a loader exception is wrapped and rethrown as `CacheLoaderExcep
 A loader exception is potentially rethrown multiple times, if the retry time is not
 yet reached. In this situation a rethrown exception contains the text `until=<timestamp>`.
 This behavior can be customized by the `ExceptionPropagator`.
+
+TODO: example exception
+TODO: example exception propagator
+
+== Invalidating Entries
+
+An application may need to invalidate a cache entry, so the cache will invoke the loader
+again the next time the entry is requested. How the value should be invalidated depend on
+the scenario of the application.
+
+=== `Cache.remove(key)`
+
+Invalidating an entry with `Cache.remove()` will cause the entry to be removed from the cache ultimately.
+The next time the entry is requested with `Cache.get(key)` the cache will invoke the loader (if defined).
+In case the loader yields an exception, this exception will be propagated to the application since there
+is no previous value for fallback.
+
+`Cache.remove(key)` is useful if the data is outdated and old data is not allowed to be delivered. Priority
+ is on data consistency.
+
+=== `Cache.expire(key, ExpiryTimeValues.REFRESH_IMMEDIATELY)`
+
+When invalidating an entry via `Cache.expire(key, ExpiryTimeValues.REFRESH_IMMEDIATELY)` the loader
+gets invoked when it is next accessed or instantly if refresh ahead is enabled. The value is still available
+in the cache as fallback if a loader exception occurs.
+
+This variant is the better choice if outdated values are allowed and the cache should continuously serve
+data. Priority is on availability.
 
 == Configuration options
 
