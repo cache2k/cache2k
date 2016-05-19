@@ -146,7 +146,6 @@ public abstract class HeapCache<K, V>
   protected long expiredKeptCnt = 0;
   protected long expiredRemoveCnt = 0;
   protected long evictedCnt = 0;
-  protected long refreshCnt = 0;
   protected long suppressedExceptionCnt = 0;
   protected long loadExceptionCnt = 0;
   /* that is a miss, but a hit was already counted. */
@@ -154,9 +153,6 @@ public abstract class HeapCache<K, V>
   /* no heap hash hit */
   protected long peekMissCnt = 0;
 
-  protected long loadWoRefreshCnt = 0;
-  protected long loadButHitCnt = 0;
-  protected long fetchMillis = 0;
   protected long refreshHitCnt = 0;
   protected long newEntryCnt = 0;
 
@@ -434,14 +430,6 @@ public abstract class HeapCache<K, V>
       startedTime = System.currentTimeMillis();
     }
     timing.reset();
-  }
-
-  @Override
-  public void clearTimingStatistics() {
-    synchronized (lock) {
-      loadWoRefreshCnt = 0;
-      fetchMillis = 0;
-    }
   }
 
   /**
@@ -1722,13 +1710,14 @@ public abstract class HeapCache<K, V>
           loadExceptionCnt++;
         }
       }
-      fetchMillis += t - t0;
+      long _millis = t - t0;
       if (e.isGettingRefresh()) {
-        refreshCnt++;
+        metrics.refresh(_millis);
       } else {
-        loadWoRefreshCnt++;
-        if (!e.isVirgin()) {
-          loadButHitCnt++;
+        if (e.isVirgin()) {
+          metrics.load(_millis);
+        } else {
+          metrics.reload(_millis);
         }
       }
     } else if (_updateStatistics == INSERT_STAT_PUT) {

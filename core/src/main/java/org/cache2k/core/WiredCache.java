@@ -432,11 +432,6 @@ public class WiredCache<K, V> extends AbstractCache<K, V>
   }
 
   @Override
-  public void clearTimingStatistics() {
-    heapCache.clearTimingStatistics();
-  }
-
-  @Override
   public void checkIntegrity() {
     heapCache.checkIntegrity();
   }
@@ -630,11 +625,7 @@ public class WiredCache<K, V> extends AbstractCache<K, V>
               }
             }
             try {
-              execute(e.getKey(), e, SPEC.UNCONDITIONAL_LOAD);
-              synchronized (lockObject()) {
-                heapCache.refreshCnt++;
-                heapCache.loadWoRefreshCnt--;
-              }
+              execute(e.getKey(), e, SPEC.REFRESH);
             } catch (CacheClosedException ignore) {
             } catch (Throwable ex) {
               logAndCountInternalException("Refresh exception", ex);

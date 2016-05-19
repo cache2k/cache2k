@@ -184,11 +184,6 @@ public class CacheMXBeanImpl implements CacheMXBean {
   }
 
   @Override
-  public void clearTimingStatistics() {
-    cache.clearTimingStatistics();
-  }
-
-  @Override
   public int getAlert() {
     return getInfo().getHealth();
   }

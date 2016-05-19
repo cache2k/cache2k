@@ -33,9 +33,4 @@ public interface CacheMXBean extends CacheInfoMXBean {
    */
   void clear();
 
-  /**
-   * Clear the timing statistics for value fetching.
-   */
-  void clearTimingStatistics();
-
 }

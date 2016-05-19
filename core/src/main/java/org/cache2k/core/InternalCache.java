@@ -45,8 +45,6 @@ public interface InternalCache<K, V> extends Cache<K, V>, CanCheckIntegrity {
 
   Class<?> getValueType();
 
-  void clearTimingStatistics();
-
   /** used from the cache manager for shutdown */
   void cancelTimerJobs();
 

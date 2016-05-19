@@ -68,6 +68,11 @@ public interface Progress<V, R> {
   void load();
 
   /**
+   * Same as load but counting statistics as refresh.
+   */
+  void refresh();
+
+  /**
    * Request a load, however call update again for the final outcome.
    */
   void loadAndMutation();

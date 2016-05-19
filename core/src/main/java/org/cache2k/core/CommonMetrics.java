@@ -52,6 +52,26 @@ public interface CommonMetrics {
    */
   long getInternalExceptionCount();
 
+  /**
+   * Entry was loaded, triggered by a get()
+   */
+  long getLoadCount();
+
+  /**
+   * Entry was loaded again, triggered by a get()
+   */
+  long getReloadCount();
+
+  /**
+   * Entry was loaded again, triggered by timer
+   */
+  long getRefreshCount();
+
+  /**
+   * Accumulated milliseconds spend in load operations.
+   */
+  long getLoadMillis();
+
   interface Updater extends CommonMetrics {
 
     void putNewEntry();
@@ -79,6 +99,15 @@ public interface CommonMetrics {
     void timerEvent(long cnt);
 
     void internalException();
+
+    void load(long _millis);
+    void load(long cnt, long _millis);
+
+    void reload(long _millis);
+    void reload(long cnt, long _millis);
+
+    void refresh(long _millis);
+    void refresh(long cnt, long _millis);
 
   }
 

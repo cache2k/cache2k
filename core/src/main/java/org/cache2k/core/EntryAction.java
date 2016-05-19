@@ -91,6 +91,9 @@ public abstract class EntryAction<K, V, R> implements
   boolean loadAndMutate = false;
   boolean load = false;
 
+  /** Stats for load should be counted as refresh */
+  boolean refresh = false;
+
   /**
    * Fresh load in first round with {@link #loadAndMutate}.
    * Triggers that we always say it is present.
@@ -366,12 +369,13 @@ public abstract class EntryAction<K, V, R> implements
   }
 
   @Override
+  public void refresh() {
+    refresh = true;
+    load();
+  }
+
+  @Override
   public void load() {
-    if (!entry.isVirgin() && !storageRead) {
-      synchronized (heapCache.lock) {
-        heapCache.loadButHitCnt++;
-      }
-    }
     AdvancedCacheLoader<K, V> _loader = loader();
     if (_loader == null) {
       exceptionToPropagate = new CustomizationException(new CacheUsageExcpetion("source not set"));
@@ -477,6 +481,14 @@ public abstract class EntryAction<K, V, R> implements
   public void loadCompleted() {
     entry.nextProcessingStep(Entry.ProcessingState.LOAD_COMPLETE);
     loadCompletedTime = System.currentTimeMillis();
+    long _delta = loadCompletedTime - loadStartedTime;
+    if (refresh) {
+      metrics().refresh(_delta);
+    } else if (entry.isVirgin() || !storageRead) {
+      metrics().load(_delta);
+    } else {
+      metrics().reload(_delta);
+    }
     mutationCalculateExpiry();
   }
 
@@ -867,8 +879,6 @@ public abstract class EntryAction<K, V, R> implements
 
   public void updateMutationStatisticsInsideLock() {
     if (loadCompletedTime > 0) {
-      heapCache.loadWoRefreshCnt++;
-      heapCache.fetchMillis += loadCompletedTime - loadStartedTime;
       if (storageRead && storageMiss) {
         storageMetrics().readMiss();
       }

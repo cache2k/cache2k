@@ -167,4 +167,66 @@ public class StandardCommonMetrics implements CommonMetrics.Updater {
     return internalExceptionUpdater.get(this);
   }
 
+  static final AtomicLongFieldUpdater<StandardCommonMetrics> loadMillisUpdater =
+    AtomicLongFieldUpdater.newUpdater(StandardCommonMetrics.class, "loadMillis");
+  private volatile long loadMillis;
+  @Override
+  public long getLoadMillis() {
+    return loadMillisUpdater.get(this);
+  }
+
+  static final AtomicLongFieldUpdater<StandardCommonMetrics> refreshUpdater =
+    AtomicLongFieldUpdater.newUpdater(StandardCommonMetrics.class, "refresh");
+  private volatile long refresh;
+  @Override
+  public long getRefreshCount() {
+    return refreshUpdater.get(this);
+  }
+  @Override
+  public void refresh(final long _millis) {
+    refreshUpdater.incrementAndGet(this);
+    loadMillisUpdater.addAndGet(this, _millis);
+  }
+  @Override
+  public void refresh(final long cnt, final long _millis) {
+    refreshUpdater.addAndGet(this, cnt);
+    loadMillisUpdater.addAndGet(this, _millis);
+  }
+
+  static final AtomicLongFieldUpdater<StandardCommonMetrics> loadUpdater =
+    AtomicLongFieldUpdater.newUpdater(StandardCommonMetrics.class, "load");
+  private volatile long load;
+  @Override
+  public long getLoadCount() {
+    return loadUpdater.get(this);
+  }
+  @Override
+  public void load(final long _millis) {
+    loadUpdater.incrementAndGet(this);
+    loadMillisUpdater.addAndGet(this, _millis);
+  }
+  @Override
+  public void load(final long cnt, final long _millis) {
+    loadUpdater.addAndGet(this, cnt);
+    loadMillisUpdater.addAndGet(this, _millis);
+  }
+
+  static final AtomicLongFieldUpdater<StandardCommonMetrics> reloadUpdater =
+    AtomicLongFieldUpdater.newUpdater(StandardCommonMetrics.class, "reload");
+  private volatile long reload;
+  @Override
+  public long getReloadCount() {
+    return reloadUpdater.get(this);
+  }
+  @Override
+  public void reload(final long _millis) {
+    reloadUpdater.incrementAndGet(this);
+    loadMillisUpdater.addAndGet(this, _millis);
+  }
+  @Override
+  public void reload(final long cnt, final long _millis) {
+    reloadUpdater.addAndGet(this, cnt);
+    loadMillisUpdater.addAndGet(this, _millis);
+  }
+
 }
