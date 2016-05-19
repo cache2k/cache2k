@@ -247,8 +247,6 @@ class CacheBaseInfo implements InternalCacheInfo {
   @Override
   public long getCleared() { return heapCache.clearedTime; }
   @Override
-  public long getTouched() { return heapCache.touchedTime; }
-  @Override
   public long getInfoCreated() { return creationTime; }
   @Override
   public int getInfoCreationDeltaMs() { return creationDeltaMs; }
@@ -348,7 +346,6 @@ class CacheBaseInfo implements InternalCacheInfo {
             + "loaderThreadsMaxActive=" + loaderThreadsMaxActive + ", "
             + "created=" + timestampToString(getStarted()) + ", "
             + "cleared=" + timestampToString(getCleared()) + ", "
-            + "touched=" + timestampToString(getTouched()) + ", "
             + "clearCnt=" + getClearCnt() + ", "
             + "loadExceptionCnt=" + getLoadExceptionCnt() + ", "
             + "suppressedExceptionCnt=" + getSuppressedExceptionCnt() + ", "

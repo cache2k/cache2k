@@ -21,6 +21,7 @@ package org.cache2k.jcache.provider;
  */
 
 import org.cache2k.Cache2kBuilder;
+import org.cache2k.CacheEntry;
 import org.cache2k.configuration.Cache2kConfiguration;
 import org.cache2k.configuration.CacheType;
 import org.cache2k.integration.CacheWriter;
@@ -39,8 +40,11 @@ import javax.cache.configuration.CacheEntryListenerConfiguration;
 import javax.cache.configuration.CompleteConfiguration;
 import javax.cache.configuration.Configuration;
 import javax.cache.configuration.MutableConfiguration;
+import javax.cache.expiry.CreatedExpiryPolicy;
+import javax.cache.expiry.Duration;
 import javax.cache.expiry.EternalExpiryPolicy;
 import javax.cache.expiry.ExpiryPolicy;
+import javax.cache.expiry.ModifiedExpiryPolicy;
 import javax.cache.integration.CacheLoader;
 import javax.cache.integration.CacheLoaderException;
 import java.util.concurrent.Executors;
@@ -60,6 +64,7 @@ public class JCacheBuilder<K,V> {
   private ExpiryPolicy expiryPolicy;
   private Cache<K,V> createdCache;
   private EventHandling<K,V> eventHandling;
+  private boolean needsTouchyWrapper;
 
   public JCacheBuilder(String _name, JCacheManagerAdapter _manager) {
     name = _name;
@@ -193,12 +198,81 @@ public class JCacheBuilder<K,V> {
     }
   }
 
+  /**
+   * Register a expiry policy to cache2k.
+   *
+   * <p>JSR107 requires that null values are deleted from the cache. We register an expiry policy
+   * to cache2k to provide this behavior.
+   */
   private void setupExpiryPolicy() {
-    expiryPolicy = EternalExpiryPolicy.factoryOf().create();
+    cache2kConfiguration.setEternal(true);
     if (config.getExpiryPolicyFactory() != null) {
       expiryPolicy = config.getExpiryPolicyFactory().create();
-      cache2kConfiguration.setEternal(true);
     }
+    if (expiryPolicy == null || expiryPolicy instanceof EternalExpiryPolicy) {
+      cache2kConfiguration.setExpiryPolicy(new org.cache2k.expiry.ExpiryPolicy<K, V>() {
+        @Override
+        public long calculateExpiryTime(final K key, final V value, final long loadTime, final CacheEntry<K, V> oldEntry) {
+          if (value == null) {
+            return NO_CACHE;
+          }
+          return ETERNAL;
+        }
+      });
+      return;
+    }
+    if (expiryPolicy instanceof ModifiedExpiryPolicy) {
+      Duration d = expiryPolicy.getExpiryForCreation();
+      final long _millisDuration = d.getTimeUnit().toMillis(d.getDurationAmount());
+      if (_millisDuration == 0) {
+        cache2kConfiguration.setExpiryPolicy(new org.cache2k.expiry.ExpiryPolicy<K, V>() {
+          @Override
+          public long calculateExpiryTime(final K key, final V value, final long loadTime, final CacheEntry<K, V> oldEntry) {
+            return NO_CACHE;
+          }
+        });
+        return;
+      }
+      cache2kConfiguration.setExpiryPolicy(new org.cache2k.expiry.ExpiryPolicy<K, V>() {
+        @Override
+        public long calculateExpiryTime(final K key, final V value, final long loadTime, final CacheEntry<K, V> oldEntry) {
+          if (value == null) {
+            return NO_CACHE;
+          }
+          return loadTime + _millisDuration;
+        }
+      });
+      return;
+    }
+    if (expiryPolicy instanceof CreatedExpiryPolicy) {
+      cache2kConfiguration.setEternal(true);
+      Duration d = expiryPolicy.getExpiryForCreation();
+      final long _millisDuration = d.getTimeUnit().toMillis(d.getDurationAmount());
+      if (_millisDuration == 0) {
+        cache2kConfiguration.setExpiryPolicy(new org.cache2k.expiry.ExpiryPolicy<K, V>() {
+          @Override
+          public long calculateExpiryTime(final K key, final V value, final long loadTime, final CacheEntry<K, V> oldEntry) {
+            return NO_CACHE;
+          }
+        });
+        return;
+      }
+      cache2kConfiguration.setExpiryPolicy(new org.cache2k.expiry.ExpiryPolicy<K, V>() {
+        @Override
+        public long calculateExpiryTime(final K key, final V value, final long loadTime, final CacheEntry<K, V> oldEntry) {
+          if (value == null) {
+            return NO_CACHE;
+          }
+          if (oldEntry == null) {
+            return loadTime + _millisDuration;
+          } else {
+            return NEUTRAL;
+          }
+        }
+      });
+      return;
+    }
+    needsTouchyWrapper = true;
     cache2kConfiguration.setExpiryPolicy(new TouchyJCacheAdapter.ExpiryPolicyAdapter<K,V>(expiryPolicy));
   }
 
@@ -230,12 +304,8 @@ public class JCacheBuilder<K,V> {
   }
 
   private void wrapForExpiryPolicy() {
-    if (expiryPolicy != null) {
+    if (needsTouchyWrapper) {
       createdCache = new TouchyJCacheAdapter<K, V>((JCacheAdapter<K, V>) createdCache, expiryPolicy);
-    } else {
-      createdCache = new TouchyJCacheAdapter<K, V>(
-        (JCacheAdapter<K, V>) createdCache,
-        EternalExpiryPolicy.factoryOf().create());
     }
   }
 

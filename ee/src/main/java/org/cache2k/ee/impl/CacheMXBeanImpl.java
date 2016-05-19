@@ -165,11 +165,6 @@ public class CacheMXBeanImpl implements CacheMXBean {
   }
 
   @Override
-  public Date getLastOperationTime() {
-    return new Date(getInfo().getTouched());
-  }
-
-  @Override
   public Date getInfoCreatedTime() {
     return new Date(getInfo().getInfoCreated());
   }

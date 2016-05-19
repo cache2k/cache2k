@@ -178,13 +178,6 @@ public interface CacheInfoMXBean {
   String getIntegrityDescriptor();
 
   /**
-   * Time of last meaningful cache operation. This is when the cache changed its
-   * structure or data was modified. Basically this means everything except a
-   * straight cache hit, that puts no effort on the cache.
-   */
-  Date getLastOperationTime();
-
-  /**
    * Time when cache object was created.
    */
   Date getCreatedTime();

@@ -134,7 +134,6 @@ public abstract class HeapCache<K, V>
 
   protected long clearedTime = 0;
   protected long startedTime;
-  protected long touchedTime;
 
   protected long keyMutationCount = 0;
   protected long putButExpiredCnt = 0;
@@ -405,7 +404,6 @@ public abstract class HeapCache<K, V>
     clearCnt++;
     initializeHeapCache();
     clearedTime = System.currentTimeMillis();
-    touchedTime = clearedTime;
   }
 
   /**
@@ -1715,7 +1713,6 @@ public abstract class HeapCache<K, V>
   }
 
   private void updateStatisticsNeedsLock(Entry e, V _value, long t0, long t, byte _updateStatistics, boolean _suppressException) {
-    touchedTime = t;
     if (_updateStatistics == INSERT_STAT_LOAD) {
       if (_suppressException) {
         suppressedExceptionCnt++;

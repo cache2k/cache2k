@@ -163,7 +163,7 @@ public class JCacheAdapter<K, V> implements javax.cache.Cache<K, V> {
     }
   }
 
-  void checkNullValue(V _value) {
+  private static void checkNullValue(Object _value) {
     if (_value == null) {
       throw new NullPointerException("null value not supported");
     }
@@ -524,6 +524,7 @@ public class JCacheAdapter<K, V> implements javax.cache.Cache<K, V> {
 
     @Override
     public void setValue(V value) {
+      checkNullValue(value);
       putRemoveInvoked = true;
       e.setValue(value);
     }
@@ -536,6 +537,9 @@ public class JCacheAdapter<K, V> implements javax.cache.Cache<K, V> {
 
     @Override
     public V getValue() {
+      if (!readThrough && !exists()) {
+        return null;
+      }
       return e.getValue();
     }
 

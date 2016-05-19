@@ -117,8 +117,6 @@ public interface InternalCacheInfo {
 
   long getCleared();
 
-  long getTouched();
-
   long getInfoCreated();
 
   int getInfoCreationDeltaMs();
