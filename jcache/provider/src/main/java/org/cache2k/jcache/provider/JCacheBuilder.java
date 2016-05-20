@@ -26,7 +26,7 @@ import org.cache2k.configuration.Cache2kConfiguration;
 import org.cache2k.configuration.CacheType;
 import org.cache2k.integration.CacheWriter;
 import org.cache2k.integration.ExceptionPropagator;
-import org.cache2k.integration.LoadExceptionInformation;
+import org.cache2k.integration.ExceptionInformation;
 import org.cache2k.jcache.CompleteConfigurationForCache2k;
 import org.cache2k.jcache.provider.event.EventHandling;
 import org.cache2k.jcache.provider.generic.storeByValueSimulation.CopyCacheProxy;
@@ -147,7 +147,7 @@ public class JCacheBuilder<K,V> {
     }
     cache2kConfiguration.setExceptionPropagator(new ExceptionPropagator() {
       @Override
-      public RuntimeException propagateException(Object key, final LoadExceptionInformation exceptionInformation) {
+      public RuntimeException propagateException(Object key, final ExceptionInformation exceptionInformation) {
         return new CacheLoaderException("propagate previous loader exception", exceptionInformation.getException());
       }
     });

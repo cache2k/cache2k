@@ -22,7 +22,7 @@ package org.cache2k.core;
 
 import org.cache2k.Cache;
 import org.cache2k.Cache2kBuilder;
-import org.cache2k.integration.LoadExceptionInformation;
+import org.cache2k.integration.ExceptionInformation;
 import org.cache2k.integration.ResiliencePolicy;
 import org.cache2k.junit.FastTests;
 import org.junit.Test;
@@ -302,7 +302,7 @@ public class DefaultResiliencePolicyUnitTest {
 
   }
 
-  static class InfoBean implements LoadExceptionInformation {
+  static class InfoBean implements ExceptionInformation {
 
     int retryCount;
     Throwable exception;

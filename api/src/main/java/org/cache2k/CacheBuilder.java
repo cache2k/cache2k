@@ -28,7 +28,7 @@ import org.cache2k.integration.AdvancedCacheLoader;
 import org.cache2k.integration.CacheLoader;
 import org.cache2k.integration.CacheWriter;
 import org.cache2k.integration.ExceptionPropagator;
-import org.cache2k.integration.LoadExceptionInformation;
+import org.cache2k.integration.ExceptionInformation;
 import org.cache2k.integration.ResiliencePolicy;
 
 import java.util.Collection;
@@ -294,12 +294,12 @@ public class CacheBuilder<K,V> {
   public CacheBuilder<K, V> exceptionExpiryCalculator(final org.cache2k.ExceptionExpiryCalculator<K> c) {
     builder.resiliencePolicy(new ResiliencePolicy<K, V>() {
       @Override
-      public long suppressExceptionUntil(final K key, final LoadExceptionInformation exceptionInformation, final CacheEntry<K, V> cachedContent) {
+      public long suppressExceptionUntil(final K key, final ExceptionInformation exceptionInformation, final CacheEntry<K, V> cachedContent) {
         return c.calculateExpiryTime(key, exceptionInformation.getException(), exceptionInformation.getLoadTime());
       }
 
       @Override
-      public long retryLoadAfter(final K key, final LoadExceptionInformation exceptionInformation) {
+      public long retryLoadAfter(final K key, final ExceptionInformation exceptionInformation) {
         return c.calculateExpiryTime(key, exceptionInformation.getException(), exceptionInformation.getLoadTime());
       }
     });

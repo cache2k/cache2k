@@ -20,7 +20,7 @@ package org.cache2k.core;
  * #L%
  */
 
- import org.cache2k.integration.LoadExceptionInformation;
+ import org.cache2k.integration.ExceptionInformation;
 
 /**
  * We use instances of the exception wrapper for the value field in the entry.
@@ -29,7 +29,7 @@ package org.cache2k.core;
  *
  * @author Jens Wilke; created: 2013-07-12
  */
-public class ExceptionWrapper<K> implements LoadExceptionInformation {
+public class ExceptionWrapper<K> implements ExceptionInformation {
 
   Throwable exception;
   long loadTime;
@@ -48,10 +48,10 @@ public class ExceptionWrapper<K> implements LoadExceptionInformation {
    */
   public ExceptionWrapper(final K _key, final Throwable _exception,
                           final long _loadTime, final Entry e) {
-    LoadExceptionInformation _recentExceptionInfo;
+    ExceptionInformation _recentExceptionInfo;
     Object _oldValue = e.getValueOrException();
     if (_oldValue instanceof ExceptionWrapper) {
-      _recentExceptionInfo = (LoadExceptionInformation) _oldValue;
+      _recentExceptionInfo = (ExceptionInformation) _oldValue;
     } else {
       _recentExceptionInfo = e.getSuppressedLoadExceptionInformation();
     }
@@ -59,12 +59,12 @@ public class ExceptionWrapper<K> implements LoadExceptionInformation {
   }
 
   public ExceptionWrapper(final K _key, final Throwable _exception,
-                          final long _loadTime, final LoadExceptionInformation w) {
+                          final long _loadTime, final ExceptionInformation w) {
     init(_key, _exception, _loadTime, w);
   }
 
   private void init(final K _key, final Throwable _exception,
-                    final long _loadTime, final LoadExceptionInformation w) {
+                    final long _loadTime, final ExceptionInformation w) {
     exception = _exception;
     key = _key;
     loadTime = _loadTime;

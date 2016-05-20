@@ -38,7 +38,7 @@ import org.cache2k.integration.CacheLoader;
 import org.cache2k.integration.ExceptionPropagator;
 import org.cache2k.integration.LoadCompletedListener;
 import org.cache2k.integration.CacheLoaderException;
-import org.cache2k.integration.LoadExceptionInformation;
+import org.cache2k.integration.ExceptionInformation;
 import org.cache2k.processor.CacheEntryProcessor;
 
 import java.security.SecureRandom;
@@ -95,7 +95,7 @@ public abstract class HeapCache<K, V>
 
   final static ExceptionPropagator DEFAULT_EXCEPTION_PROPAGATOR = new ExceptionPropagator() {
     @Override
-    public RuntimeException propagateException(Object key, final LoadExceptionInformation exceptionInformation) {
+    public RuntimeException propagateException(Object key, final ExceptionInformation exceptionInformation) {
       long _expiry = exceptionInformation.getUntil();
       if (_expiry > 0) {
         if (_expiry == Long.MAX_VALUE) {

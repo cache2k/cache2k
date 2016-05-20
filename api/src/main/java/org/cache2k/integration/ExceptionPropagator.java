@@ -41,6 +41,6 @@ public interface ExceptionPropagator<K> {
    *
    * @param exceptionInformation information when the original exception occurred.
    */
-  RuntimeException propagateException(K key, LoadExceptionInformation exceptionInformation);
+  RuntimeException propagateException(K key, ExceptionInformation exceptionInformation);
 
 }

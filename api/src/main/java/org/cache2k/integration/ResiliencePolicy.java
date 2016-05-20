@@ -63,11 +63,11 @@ public abstract class ResiliencePolicy<K, V> implements ExpiryTimeValues {
    *         a time before the current time means the exception will not be suppressed. A
    *         {@link ExpiryPolicy#ETERNAL} means the exception will be
    *         suppressed and the recent content will be returned eternally.
-   *         If the returned value is after the time reference of {@link LoadExceptionInformation#getLoadTime()}
+   *         If the returned value is after the time reference of {@link ExceptionInformation#getLoadTime()}
    *         the exception will be suppressed for the ongoing operation.
    */
   public abstract long suppressExceptionUntil(K key,
-                              LoadExceptionInformation exceptionInformation,
+                              ExceptionInformation exceptionInformation,
                               CacheEntry<K, V> cachedContent);
 
   /**
@@ -75,7 +75,7 @@ public abstract class ResiliencePolicy<K, V> implements ExpiryTimeValues {
    * {@link #suppressExceptionUntil} returned null.
    */
   public abstract long retryLoadAfter(K key,
-                                      LoadExceptionInformation exceptionInformation);
+                                      ExceptionInformation exceptionInformation);
 
   /**
    * Provides additional context information. At the moment, this interface provides the

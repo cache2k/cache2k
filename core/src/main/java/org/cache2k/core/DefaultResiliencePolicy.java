@@ -21,7 +21,7 @@ package org.cache2k.core;
  */
 
 import org.cache2k.CacheEntry;
-import org.cache2k.integration.LoadExceptionInformation;
+import org.cache2k.integration.ExceptionInformation;
 import org.cache2k.integration.ResiliencePolicy;
 
 import java.util.Random;
@@ -122,7 +122,7 @@ public class DefaultResiliencePolicy<K,V> extends ResiliencePolicy<K,V> {
 
   @Override
   public long suppressExceptionUntil(final K key,
-                                     final LoadExceptionInformation exceptionInformation,
+                                     final ExceptionInformation exceptionInformation,
                                      final CacheEntry<K,V> cachedContent) {
     if (resilienceDuration == 0) {
       return 0;
@@ -135,7 +135,7 @@ public class DefaultResiliencePolicy<K,V> extends ResiliencePolicy<K,V> {
     return Math.min(exceptionInformation.getLoadTime() + _deltaMs, _maxSuppressUntil);
   }
 
-  private long calculateRetryDelta(final LoadExceptionInformation exceptionInformation) {
+  private long calculateRetryDelta(final ExceptionInformation exceptionInformation) {
     long _delta = (long)
       (retryInterval * Math.pow(multiplier, exceptionInformation.getRetryCount()));
     _delta -= SHARED_RANDOM.nextDouble() * randomization * _delta;
@@ -144,7 +144,7 @@ public class DefaultResiliencePolicy<K,V> extends ResiliencePolicy<K,V> {
 
   @Override
   public long retryLoadAfter(final K key,
-                             final LoadExceptionInformation exceptionInformation) {
+                             final ExceptionInformation exceptionInformation) {
     if (retryInterval == 0) {
       return 0;
     }

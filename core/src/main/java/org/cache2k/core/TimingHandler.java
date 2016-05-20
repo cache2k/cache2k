@@ -28,7 +28,7 @@ import org.cache2k.expiry.ExpiryTimeValues;
 import org.cache2k.expiry.ValueWithExpiryTime;
 import org.cache2k.core.util.TunableConstants;
 import org.cache2k.core.util.TunableFactory;
-import org.cache2k.integration.LoadExceptionInformation;
+import org.cache2k.integration.ExceptionInformation;
 import org.cache2k.integration.ResiliencePolicy;
 
 import java.util.Date;
@@ -140,14 +140,14 @@ public abstract class TimingHandler<K,V>  {
    *
    * @see ResiliencePolicy#suppressExceptionUntil
    */
-  public abstract long suppressExceptionUntil(Entry<K,V> e, LoadExceptionInformation inf);
+  public abstract long suppressExceptionUntil(Entry<K,V> e, ExceptionInformation inf);
 
   /**
    * Delegated to the resilience policy
    *
    * @see ResiliencePolicy#retryLoadAfter
    */
-  public abstract long cacheExceptionUntil(Entry<K,V> e, LoadExceptionInformation inf);
+  public abstract long cacheExceptionUntil(Entry<K,V> e, ExceptionInformation inf);
 
   /**
    * Convert expiry value to the entry field value, essentially maps 0 to {@link Entry#EXPIRED}
@@ -182,12 +182,12 @@ public abstract class TimingHandler<K,V>  {
     }
 
     @Override
-    public long cacheExceptionUntil(final Entry<K, V> e, final LoadExceptionInformation inf) {
+    public long cacheExceptionUntil(final Entry<K, V> e, final ExceptionInformation inf) {
       return ExpiryPolicy.ETERNAL;
     }
 
     @Override
-    public long suppressExceptionUntil(final Entry<K, V> e, final LoadExceptionInformation inf) {
+    public long suppressExceptionUntil(final Entry<K, V> e, final ExceptionInformation inf) {
       return ExpiryPolicy.ETERNAL;
     }
   }
@@ -200,12 +200,12 @@ public abstract class TimingHandler<K,V>  {
     }
 
     @Override
-    public long cacheExceptionUntil(final Entry<K, V> e, final LoadExceptionInformation inf) {
+    public long cacheExceptionUntil(final Entry<K, V> e, final ExceptionInformation inf) {
       return 0;
     }
 
     @Override
-    public long suppressExceptionUntil(final Entry<K, V> e, final LoadExceptionInformation inf) {
+    public long suppressExceptionUntil(final Entry<K, V> e, final ExceptionInformation inf) {
       return 0;
     }
 
@@ -219,12 +219,12 @@ public abstract class TimingHandler<K,V>  {
     }
 
     @Override
-    public long cacheExceptionUntil(final Entry<K, V> e, final LoadExceptionInformation inf) {
+    public long cacheExceptionUntil(final Entry<K, V> e, final ExceptionInformation inf) {
       return 0;
     }
 
     @Override
-    public long suppressExceptionUntil(final Entry<K, V> e, final LoadExceptionInformation inf) {
+    public long suppressExceptionUntil(final Entry<K, V> e, final ExceptionInformation inf) {
       return 0;
     }
   }
@@ -306,12 +306,12 @@ public abstract class TimingHandler<K,V>  {
     }
 
     @Override
-    public long suppressExceptionUntil(final Entry<K, V> e, final LoadExceptionInformation inf) {
+    public long suppressExceptionUntil(final Entry<K, V> e, final ExceptionInformation inf) {
       return resiliencePolicy.suppressExceptionUntil(e.getKey(), inf, e);
     }
 
     @Override
-    public long cacheExceptionUntil(final Entry<K, V> e, final LoadExceptionInformation inf) {
+    public long cacheExceptionUntil(final Entry<K, V> e, final ExceptionInformation inf) {
       return resiliencePolicy.retryLoadAfter(e.getKey(), inf);
     }
 
