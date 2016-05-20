@@ -37,8 +37,6 @@ public interface ObjectTransformer<E, I> {
     }
   };
 
-  public final static ObjectTransformer SERIALIZABLE_COPY_TRANSFORM = new SerializableCopyTransformer();
-
   E expand(I _internal);
   I compact(E _external);
 

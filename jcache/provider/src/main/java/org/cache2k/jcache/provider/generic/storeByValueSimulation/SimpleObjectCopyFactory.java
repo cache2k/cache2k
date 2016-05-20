@@ -32,9 +32,14 @@ import java.lang.reflect.Modifier;
  */
 public class SimpleObjectCopyFactory implements ObjectCopyFactory {
 
-  @SuppressWarnings("unchecked")
   @Override
   public <T> ObjectTransformer<T, T> createCopyTransformer(Class<T> clazz) {
+    return createCopyTransformer(clazz, this.getClass().getClassLoader());
+  }
+
+  @SuppressWarnings("unchecked")
+  @Override
+  public <T> ObjectTransformer<T, T> createCopyTransformer(Class<T> clazz, ClassLoader classLoader) {
     if (isImmutable(clazz)) {
       return ObjectTransformer.IDENT_TRANSFORM;
     }
@@ -43,7 +48,7 @@ public class SimpleObjectCopyFactory implements ObjectCopyFactory {
       return new CloneCopyTransformer<T>(m);
     }
     if (Serializable.class.isAssignableFrom(clazz)) {
-      return ObjectTransformer.SERIALIZABLE_COPY_TRANSFORM;
+      return new SerializableCopyTransformer(classLoader);
     }
 
     return null;

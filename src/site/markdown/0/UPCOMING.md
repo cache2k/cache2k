@@ -20,6 +20,10 @@ If something is listed here it might affect an existing application and updating
  - `getAll()` returns a stable map, not affected by expiry and parallel cache modifications.
  - Fixed possible inconsistency of CacheEntry value and timestamp, when concurrent update happens
  - Tiny eviction implementation cleanup and simplification
+ - JCache: Custom classloader used for serialization of keys and values
+ - JCache: improved performance when not using custom expiry policy
+ - JCache: in situ configuration
+ - asMap()
  
 ## API Changes and new methods
 

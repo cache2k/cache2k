@@ -27,6 +27,12 @@ import java.io.Serializable;
  */
 public class RuntimeCopyTransformer extends CopyTransformer<Object>  {
 
+  SerializableCopyTransformer serializableCopyTransformer;
+
+  public RuntimeCopyTransformer(final ClassLoader _classLoader) {
+    serializableCopyTransformer = new SerializableCopyTransformer(_classLoader);
+  }
+
   @Override
   public Object copy(Object obj) {
     if (obj == null) {
@@ -36,7 +42,7 @@ public class RuntimeCopyTransformer extends CopyTransformer<Object>  {
       return obj;
     }
     if (obj instanceof Serializable) {
-      return SerializableCopyTransformer.copySerializableObject(obj);
+      return serializableCopyTransformer.copy(obj);
     }
     throw new IllegalArgumentException("Cannot determine copy / marshalling method for: " + obj.getClass().getName());
   }

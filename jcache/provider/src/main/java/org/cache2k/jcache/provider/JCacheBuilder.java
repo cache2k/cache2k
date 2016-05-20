@@ -324,9 +324,9 @@ public class JCacheBuilder<K,V> {
   @SuppressWarnings("unchecked")
   private <T> ObjectTransformer<T, T> createCopyTransformer(final CacheType<T> _type) {
     ObjectCopyFactory f = new SimpleObjectCopyFactory();
-    ObjectTransformer<T, T> _keyTransformer = f.createCopyTransformer(_type.getType());
+    ObjectTransformer<T, T> _keyTransformer = f.createCopyTransformer(_type.getType(), manager.getClassLoader());
     if (_keyTransformer == null) {
-      _keyTransformer = (ObjectTransformer<T, T>) new RuntimeCopyTransformer();
+      _keyTransformer = (ObjectTransformer<T, T>) new RuntimeCopyTransformer(manager.getClassLoader());
     }
     return _keyTransformer;
   }

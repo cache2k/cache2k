@@ -26,6 +26,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
+import java.io.ObjectStreamClass;
 
 /**
  * Uses serialization to copy the object instances.
@@ -34,13 +35,19 @@ import java.io.ObjectOutputStream;
  */
 public class SerializableCopyTransformer<T> extends CopyTransformer<T> {
 
+  private ClassLoader classLoader;
+
+  public SerializableCopyTransformer(final ClassLoader _classLoader) {
+    classLoader = _classLoader;
+  }
+
   @SuppressWarnings("unchecked")
   @Override
   protected T copy(T o) {
     return (T) copySerializableObject(o);
   }
 
-  static Object copySerializableObject(Object o) {
+  Object copySerializableObject(Object o) {
     if (o == null) {
       return null;
     }
@@ -50,7 +57,17 @@ public class SerializableCopyTransformer<T> extends CopyTransformer<T> {
       out.writeObject(o);
       out.close();
       ByteArrayInputStream bis = new ByteArrayInputStream(bos.toByteArray());
-      ObjectInputStream in = new ObjectInputStream(bis);
+      ObjectInputStream in = new ObjectInputStream(bis) {
+        @Override
+        protected Class<?> resolveClass(final ObjectStreamClass desc) throws IOException, ClassNotFoundException {
+          String name = desc.getName();
+          try {
+            return Class.forName(name, false, classLoader);
+          } catch (ClassNotFoundException ex) {
+            return super.resolveClass(desc);
+          }
+        }
+      };
       return in.readObject();
     } catch (IOException ex) {
       throw new CacheException("Failure to copy object",  ex);

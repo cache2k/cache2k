@@ -31,6 +31,8 @@ public interface ObjectCopyFactory {
    * Create a transformer class which actually does no type changes.
    * If the factory does know how to handle the type, it returns null.
    */
+  <T> ObjectTransformer<T, T> createCopyTransformer(Class<T> clazz, ClassLoader classLoader);
+
   <T> ObjectTransformer<T, T> createCopyTransformer(Class<T> clazz);
 
 }

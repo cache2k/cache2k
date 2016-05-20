@@ -20,6 +20,7 @@ package org.cache2k.jcache;
  * #L%
  */
 
+import org.cache2k.Cache2kBuilder;
 import org.cache2k.configuration.Cache2kConfiguration;
 
 import javax.cache.configuration.CompleteConfiguration;
@@ -32,6 +33,16 @@ import javax.cache.configuration.MutableConfiguration;
  */
 public final class MutableConfigurationForCache2k<K,V>
   extends MutableConfiguration<K,V> implements CompleteConfiguration<K,V> {
+
+  public static <K,V> MutableConfigurationForCache2k<K,V> of(Cache2kBuilder<K,V> builder) {
+    return of(builder.toConfiguration());
+  }
+
+  public static <K,V> MutableConfigurationForCache2k<K,V> of(Cache2kConfiguration<K,V> configuration) {
+    MutableConfigurationForCache2k<K,V> cfg = new MutableConfigurationForCache2k<K, V>();
+    cfg.cache2kConfiguration = configuration;
+    return cfg;
+  }
 
   private Cache2kConfiguration<K,V> cache2kConfiguration;
 
