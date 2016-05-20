@@ -60,7 +60,6 @@ public class Cache2kConfiguration<K, V> implements Serializable {
   private long resilienceDurationMillis = -1;
   private boolean keepDataAfterExpired = true;
   private boolean sharpExpiry = false;
-  private List<Object> moduleConfiguration;
   private boolean suppressExceptions = true;
   private int loaderThreadCount;
 
@@ -72,6 +71,8 @@ public class Cache2kConfiguration<K, V> implements Serializable {
   private ExceptionPropagator exceptionPropagator;
   private Collection<CacheEntryOperationListener<K,V>> listeners;
   private Collection<CacheEntryOperationListener<K,V>> asyncListeners;
+
+  private List<Object> sections;
 
   /**
    * Construct a config instance setting the type parameters and returning a
@@ -406,19 +407,14 @@ public class Cache2kConfiguration<K, V> implements Serializable {
     this.heapEntryCapacity = v;
   }
 
-  public List<Object> getModuleConfiguration() {
-    return moduleConfiguration;
-  }
-
-  public void setModuleConfiguration(List<Object> moduleConfiguration) {
-    this.moduleConfiguration = moduleConfiguration;
-  }
-
-  public Collection<Object> getModules() {
-    if (moduleConfiguration == null) {
-      moduleConfiguration = new ArrayList<Object>();
+  /**
+   * Mutable collection of additional configuration sections
+   */
+  public Collection<Object> getSections() {
+    if (sections == null) {
+      sections = new ArrayList<Object>();
     }
-    return moduleConfiguration;
+    return sections;
   }
 
 

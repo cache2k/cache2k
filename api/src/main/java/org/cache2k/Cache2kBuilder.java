@@ -468,7 +468,7 @@ public class Cache2kBuilder<K, V> implements Cloneable {
    */
   public final Cache2kBuilder<K, V> with(ConfigurationSectionBuilder... sectionBuilders) {
     for (ConfigurationSectionBuilder b : sectionBuilders) {
-      config.getModules().add(b.buildConfigurationSection());
+      config.getSections().add(b.buildConfigurationSection());
     }
     return this;
   }
