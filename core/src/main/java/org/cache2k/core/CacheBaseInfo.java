@@ -74,7 +74,7 @@ class CacheBaseInfo implements InternalCacheInfo {
     storageLoadCnt = storageMissCnt + storageMetrics.getReadHitCount();
     newEntryCnt = _heapCache.newEntryCnt;
     hitCnt = _heapCache.getHitCnt();
-    correctedPutCnt = metrics.getPutNewEntryCount() + metrics.getPutHitCount() + metrics.getPutNoReadHitCount() - _heapCache.putButExpiredCnt;
+    correctedPutCnt = metrics.getPutNewEntryCount() + metrics.getPutHitCount() + metrics.getPutNoReadHitCount();
     usageCnt =
             hitCnt + newEntryCnt + _heapCache.peekMissCnt + metrics.getPutHitCount() + metrics.getRemoveCount();
     if (_heapCache.loaderExecutor instanceof ThreadPoolExecutor) {
@@ -146,8 +146,6 @@ class CacheBaseInfo implements InternalCacheInfo {
   public long getEvictedCnt() { return heapCache.evictedCnt; }
   @Override
   public long getRemovedCnt() { return metrics.getRemoveCount(); }
-  @Override
-  public long getPutNewEntryCnt() { return heapCache.putNewEntryCnt; }
   @Override
   public long getPutCnt() { return correctedPutCnt; }
   @Override
@@ -328,7 +326,6 @@ class CacheBaseInfo implements InternalCacheInfo {
             + "refreshSubmitFailedCnt=" + getRefreshSubmitFailedCnt() + ", "
             + "refreshHitCnt=" + getRefreshHitCnt() + ", "
             + "putCnt=" + getPutCnt() + ", "
-            + "putNewEntryCnt=" + getPutNewEntryCnt() + ", "
             + "expiredCnt=" + getExpiredCnt() + ", "
             + "evictedCnt=" + getEvictedCnt() + ", "
             + "removedCnt=" + getRemovedCnt() + ", "

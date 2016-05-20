@@ -136,8 +136,6 @@ public abstract class HeapCache<K, V>
   protected long startedTime;
 
   protected long keyMutationCount = 0;
-  protected long putButExpiredCnt = 0;
-  protected long putNewEntryCnt = 0;
   protected long removedCnt = 0;
   protected long virginRemovedCnt = 0;
   /** Number of entries removed by clear. */
@@ -1618,7 +1616,7 @@ public abstract class HeapCache<K, V>
       }
     } catch (Exception ex) {
       try {
-        updateStatistics(e, (V) _value, t0, t, INSERT_STAT_LOAD, false);
+        insertUpdateStats(e, (V) _value, t0, t, INSERT_STAT_LOAD, 0, false);
       } catch (Throwable ignore) { }
       throw new ExpiryCalculationException(ex);
     }
@@ -1653,7 +1651,7 @@ public abstract class HeapCache<K, V>
       _nextRefreshTime = timing.calculateNextRefreshTime(e, v, t0);
     } catch (Exception ex) {
       try {
-        updateStatistics(e, v, t0, t, _updateStatistics, false);
+        insertUpdateStats(e, v, t0, t, _updateStatistics, Long.MAX_VALUE, false);
       } catch (Throwable ignore) { }
       throw new CacheException("exception in expiry calculation", ex);
     }
@@ -1682,23 +1680,6 @@ public abstract class HeapCache<K, V>
   }
 
   private void insertUpdateStats(final Entry<K, V> e, final V _value, final long t0, final long t, final byte _updateStatistics, final long _nextRefreshTime, final boolean _suppressException) {
-    synchronized (lock) {
-      checkClosed();
-      updateStatisticsNeedsLock(e, _value, t0, t, _updateStatistics, _suppressException);
-      if (_updateStatistics == INSERT_STAT_PUT && !e.hasFreshData(t, _nextRefreshTime)) {
-        putButExpiredCnt++;
-      }
-    } // synchronized (lock)
-  }
-
-  private void updateStatistics(Entry e, V _value, long t0, long t, byte _updateStatistics, boolean _suppressException) {
-    synchronized (lock) {
-      checkClosed();
-      updateStatisticsNeedsLock(e, _value, t0, t, _updateStatistics, _suppressException);
-    }
-  }
-
-  private void updateStatisticsNeedsLock(Entry e, V _value, long t0, long t, byte _updateStatistics, boolean _suppressException) {
     if (_updateStatistics == INSERT_STAT_LOAD) {
       if (_suppressException) {
         metrics.suppressedException();
@@ -1717,15 +1698,10 @@ public abstract class HeapCache<K, V>
           metrics.reload(_millis);
         }
       }
-    } else if (_updateStatistics == INSERT_STAT_PUT) {
-      metrics.putNewEntry();
-      eventuallyAdjustPutNewEntryCount(e);
-    }
-  }
-
-  private void eventuallyAdjustPutNewEntryCount(Entry e) {
-    if (e.isVirgin()) {
-      putNewEntryCnt++;
+    } else {
+      if (e.hasFreshData(t, _nextRefreshTime)) {
+        metrics.putNewEntry();
+      }
     }
   }
 

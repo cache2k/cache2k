@@ -27,6 +27,7 @@ public interface CommonMetrics {
 
   long getPutNewEntryCount();
   long getPutHitCount();
+
   long getCasOperationCount();
   long getPutNoReadHitCount();
 

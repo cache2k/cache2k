@@ -69,8 +69,6 @@ public interface InternalCacheInfo {
 
   long getRemovedCnt();
 
-  long getPutNewEntryCnt();
-
   long getPutCnt();
 
   long getClearedCnt();
