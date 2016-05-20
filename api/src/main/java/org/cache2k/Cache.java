@@ -664,12 +664,14 @@ public interface Cache<K, V> extends
   /**
    * Remove persistent entries, that are not longer needed. Only has an effect
    * if a storage is defined.
+   * @deprecated
    */
   void purge();
 
   /**
    * Ensure that any transient data is stored in the persistence storage.
    * Nothing will be done if no persistent storage is configured.
+   * @deprecated
    */
   void flush();
 
