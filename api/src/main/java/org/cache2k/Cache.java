@@ -514,7 +514,7 @@ public interface Cache<K, V> extends
    *               Also see {@link ExpiryTimeValues}
    * @throws IllegalArgumentException if no expiry was enabled during cache setup.
    */
-  void expire(K key, long millis);
+  void expireAt(K key, long millis);
 
   /**
    * Asynchronously loads the given set of keys into the cache. Only missing or expired

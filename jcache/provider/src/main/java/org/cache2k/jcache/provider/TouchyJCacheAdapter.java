@@ -498,7 +498,7 @@ public class TouchyJCacheAdapter<K, V> implements Cache<K, V> {
     if (_value != null) {
       Duration d = expiryPolicy.getExpiryForAccess();
       if (d != null) {
-        c2kCache.expire(key, calculateExpiry(d));
+        c2kCache.expireAt(key, calculateExpiry(d));
       }
       return _value;
     }
@@ -517,7 +517,7 @@ public class TouchyJCacheAdapter<K, V> implements Cache<K, V> {
   private void touchEntry(K key) {
     Duration d = expiryPolicy.getExpiryForAccess();
     if (d != null) {
-      c2kCache.expire(key, calculateExpiry(d));
+      c2kCache.expireAt(key, calculateExpiry(d));
     }
   }
 

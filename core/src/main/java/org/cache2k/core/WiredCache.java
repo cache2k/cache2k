@@ -281,7 +281,7 @@ public class WiredCache<K, V> extends AbstractCache<K, V>
   }
 
   @Override
-  public void expire(final K key, final long _millis) {
+  public void expireAt(final K key, final long _millis) {
     execute(key, SPEC.expire(key, _millis));
   }
 

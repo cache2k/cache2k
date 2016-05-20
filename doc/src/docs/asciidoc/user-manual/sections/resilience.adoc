@@ -75,7 +75,7 @@ is no previous value for fallback.
 `Cache.remove(key)` is useful if the data is outdated and old data is not allowed to be delivered. Priority
  is on data consistency.
 
-=== `Cache.expire(key, ExpiryTimeValues.REFRESH_IMMEDIATELY)`
+=== `Cache.expireAt(key, ExpiryTimeValues.REFRESH_IMMEDIATELY)`
 
 When invalidating an entry via `Cache.expire(key, ExpiryTimeValues.REFRESH_IMMEDIATELY)` the loader
 gets invoked when it is next accessed or instantly if refresh ahead is enabled. The value is still available

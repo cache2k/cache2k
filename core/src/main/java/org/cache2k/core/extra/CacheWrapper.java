@@ -180,8 +180,8 @@ public class CacheWrapper<K,V> implements Cache<K, V> {
   }
 
   @Override
-  public void expire(final K key, final long millis) {
-    cache.expire(key, millis);
+  public void expireAt(final K key, final long millis) {
+    cache.expireAt(key, millis);
   }
 
   @Override

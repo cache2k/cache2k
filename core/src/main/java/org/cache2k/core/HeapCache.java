@@ -1914,7 +1914,7 @@ public abstract class HeapCache<K, V>
   }
 
   @Override
-  public void expire(final K key, final long _millis) {
+  public void expireAt(final K key, final long _millis) {
     execute(key, spec().expire(key, _millis));
   }
 
