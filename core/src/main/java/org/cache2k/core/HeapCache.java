@@ -95,15 +95,15 @@ public abstract class HeapCache<K, V>
 
   final static ExceptionPropagator DEFAULT_EXCEPTION_PROPAGATOR = new ExceptionPropagator() {
     @Override
-    public void propagateException(Object key, final LoadExceptionInformation exceptionInformation) {
+    public RuntimeException propagateException(Object key, final LoadExceptionInformation exceptionInformation) {
       long _expiry = exceptionInformation.getUntil();
       if (_expiry > 0) {
         if (_expiry == Long.MAX_VALUE) {
-          throw new CacheLoaderException("(expiry=ETERNAL) " + exceptionInformation.getException(), exceptionInformation.getException());
+          return new CacheLoaderException("(expiry=ETERNAL) " + exceptionInformation.getException(), exceptionInformation.getException());
         }
-        throw new CacheLoaderException("(expiry=" + formatMillis(_expiry) + ") " + exceptionInformation.getException(), exceptionInformation.getException());
+        return new CacheLoaderException("(expiry=" + formatMillis(_expiry) + ") " + exceptionInformation.getException(), exceptionInformation.getException());
       } else {
-        throw new CacheLoaderException("propagate previous loader exception", exceptionInformation.getException());
+        return new CacheLoaderException("propagate previous loader exception", exceptionInformation.getException());
       }
     }
   };
@@ -1450,7 +1450,7 @@ public abstract class HeapCache<K, V>
   protected V returnValue(V v) {
     if (v instanceof ExceptionWrapper) {
       ExceptionWrapper w = (ExceptionWrapper) v;
-      exceptionPropagator.propagateException(w.getKey(), w);
+      throw exceptionPropagator.propagateException(w.getKey(), w);
     }
     return v;
   }
@@ -1459,7 +1459,7 @@ public abstract class HeapCache<K, V>
     V v = e.getValueOrException();
     if (v instanceof ExceptionWrapper) {
       ExceptionWrapper w = (ExceptionWrapper) v;
-      exceptionPropagator.propagateException(w.getKey(), w);
+      throw exceptionPropagator.propagateException(w.getKey(), w);
     }
     return v;
   }

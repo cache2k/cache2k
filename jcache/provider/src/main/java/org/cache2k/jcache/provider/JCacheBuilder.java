@@ -147,8 +147,8 @@ public class JCacheBuilder<K,V> {
     }
     cache2kConfiguration.setExceptionPropagator(new ExceptionPropagator() {
       @Override
-      public void propagateException(Object key, final LoadExceptionInformation exceptionInformation) {
-        throw new CacheLoaderException("propagate previous loader exception", exceptionInformation.getException());
+      public RuntimeException propagateException(Object key, final LoadExceptionInformation exceptionInformation) {
+        return new CacheLoaderException("propagate previous loader exception", exceptionInformation.getException());
       }
     });
   }

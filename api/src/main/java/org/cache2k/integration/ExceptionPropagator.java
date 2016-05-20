@@ -26,15 +26,21 @@ package org.cache2k.integration;
  * {@link CacheLoaderException}. This behavior can be modified by registering a custom
  * exception propagator.
  *
+ * <p>Exceptions should not be thrown directly but wrapped. Using this customization it
+ * is possible to change the exceptions type or the message according to the information
+ * available.
+ *
  * @author Jens Wilke
  */
 public interface ExceptionPropagator<K> {
 
   /**
-   * Expected to throw an exception. The original exception is passed in as information.
+   * Generate runtime exception to throw. The original exception is passed in as information.
+   * Every returned exception should be filled with a stack trace based on the current
+   * method call. This is done by the exception constructor automatically.
    *
    * @param exceptionInformation information when the original exception occurred.
    */
-  void propagateException(K key, LoadExceptionInformation exceptionInformation);
+  RuntimeException propagateException(K key, LoadExceptionInformation exceptionInformation);
 
 }
