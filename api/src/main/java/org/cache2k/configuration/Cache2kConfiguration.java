@@ -52,6 +52,7 @@ public class Cache2kConfiguration<K, V> implements Serializable {
   private Class<?> implementation;
 
   private long entryCapacity = 2000;
+  private boolean strictEviction = false;
   private int heapEntryCapacity = -1;
   private boolean refreshAhead = false;
   private long expireAfterWriteMillis = -1;
@@ -538,5 +539,13 @@ public class Cache2kConfiguration<K, V> implements Serializable {
 
   public void setResiliencePolicy(final ResiliencePolicy<K, V> _resiliencePolicy) {
     resiliencePolicy = _resiliencePolicy;
+  }
+
+  public boolean hasStrictEviction() {
+    return strictEviction;
+  }
+
+  public void setStrictEviction(final boolean _strictEviction) {
+    strictEviction = _strictEviction;
   }
 }

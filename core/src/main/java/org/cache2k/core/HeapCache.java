@@ -122,6 +122,7 @@ public abstract class HeapCache<K, V>
 
   /** Maximum amount of elements in cache */
   protected long maxSize = 5000;
+  protected int evictChunkSize = 1;
 
   protected String name;
   public CacheManagerImpl manager;
@@ -270,6 +271,11 @@ public abstract class HeapCache<K, V>
     if (c.getHeapEntryCapacity() >= 0) {
       maxSize = c.getHeapEntryCapacity();
     }
+    if (!c.hasStrictEviction() && maxSize > 100) {
+      evictChunkSize = Runtime.getRuntime().availableProcessors() * 2;
+      maxSize += evictChunkSize;
+    }
+
     if (c.isRefreshAhead()) {
       setFeatureBit(BACKGROUND_REFRESH, true);
     }
@@ -881,12 +887,13 @@ public abstract class HeapCache<K, V>
   protected final void evictEventually() {
     int _spinCount = TUNABLE.maximumEvictSpins;
     Entry _previousCandidate = null;
+    final long _sizeAfterEviction = maxSize + 1 - evictChunkSize;
     while (evictionNeeded) {
       if (_spinCount-- <= 0) { return; }
       Entry e;
       synchronized (lock) {
         checkClosed();
-        if (getLocalSize() <= maxSize) {
+        if (getLocalSize() <= _sizeAfterEviction) {
           evictionNeeded = false;
           return;
         }

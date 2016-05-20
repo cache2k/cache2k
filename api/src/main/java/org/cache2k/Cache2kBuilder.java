@@ -473,6 +473,17 @@ public class Cache2kBuilder<K, V> implements Cloneable {
     return this;
   }
 
+  /**
+   * To increase performance cache2k optimizes the eviction and does eviction in
+   * greater chunks. With strict eviction, the eviction is done for one entry
+   * as soon as the capacity constraint is met. This is primarily used for
+   * testing and evaluation purposes.
+   */
+  public final Cache2kBuilder<K,V> strictEviction(boolean flag) {
+    config.setStrictEviction(flag);
+    return this;
+  }
+
   public final Cache2kConfiguration<K,V> toConfiguration() {
     return config;
   }
