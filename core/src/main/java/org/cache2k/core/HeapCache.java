@@ -888,6 +888,7 @@ public abstract class HeapCache<K, V>
     int _spinCount = TUNABLE.maximumEvictSpins;
     Entry _previousCandidate = null;
     final long _sizeAfterEviction = maxSize + 1 - evictChunkSize;
+    Entry[] ea = new Entry[evictChunkSize];
     while (evictionNeeded) {
       if (_spinCount-- <= 0) { return; }
       Entry e;
@@ -897,26 +898,31 @@ public abstract class HeapCache<K, V>
           evictionNeeded = false;
           return;
         }
-        e = findEvictionCandidate();
-      }
-      synchronized (e) {
-        if (e.isGone()) {
-          continue;
+        for (int i = 0; i < ea.length; i++) {
+          ea[i] = findEvictionCandidate();
         }
-        if (e.isProcessing()) {
-          if (e != _previousCandidate) {
-            _previousCandidate = e;
+      }
+      for (int i = 0; i < ea.length; i++) {
+        e = ea[i];
+        synchronized (e) {
+          if (e.isGone()) {
             continue;
-          } else {
-            return;
           }
+          if (e.isProcessing()) {
+            if (e != _previousCandidate) {
+              _previousCandidate = e;
+              continue;
+            } else {
+              return;
+            }
+          }
+          e.startProcessing(Entry.ProcessingState.EVICT);
         }
-        e.startProcessing(Entry.ProcessingState.EVICT);
-      }
-      listener.onEvictionFromHeap(e);
-      synchronized (e) {
-        finishLoadOrEviction(e, org.cache2k.core.Entry.ABORTED);
-        evictEntryFromHeap(e);
+        listener.onEvictionFromHeap(e);
+        synchronized (e) {
+          finishLoadOrEviction(e, org.cache2k.core.Entry.ABORTED);
+          evictEntryFromHeap(e);
+        }
       }
     }
   }
