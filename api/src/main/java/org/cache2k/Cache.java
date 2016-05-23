@@ -551,6 +551,9 @@ public interface Cache<K, V> extends
    *
    * <p>After the load is completed, the completion listener will be called, if provided.
    *
+   * <p>Rationale: Actually the name is not perfect, it should be {@code reallyLoad}, because it loads the
+   * value also, when some value was inserted view {@code put}.
+   *
    * @param keys The keys to be loaded
    * @param l Listener interface that is invoked upon completion. May be null if no
    *          completion notification is needed.
