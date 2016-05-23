@@ -53,14 +53,15 @@ public interface CacheEntry<K, V> {
   V getValue();
 
   /**
-   * If not null a exception happened when the value was loaded and
-   * the exception cannot be suppressed.
+   * The exception happened when the value was loaded and
+   * the exception could not be suppressed. {@code null} if no exception
+   * happened and or it was suppressed. If {@code null} then {@link #getValue}
+   * returns a value.
    */
   Throwable getException();
 
   /**
-   * Time in millis the entry was last updated either by loading
-   * or by a put.
+   * Time in millis the entry was last updated either by load or put.
    */
   long getLastModification();
 

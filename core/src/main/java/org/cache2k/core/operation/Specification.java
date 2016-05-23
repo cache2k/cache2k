@@ -350,6 +350,8 @@ public class Specification<K, V> {
     boolean exists = false;
     V value = null;
     boolean readThrough = false;
+    boolean customExpiry = false;
+    long expiry;
 
     /**
      * Sets exists and value together since it must be guaranteed that getValue() returns
@@ -389,7 +391,8 @@ public class Specification<K, V> {
 
     @Override
     public void setExpiry(final long t) {
-      throw new UnsupportedOperationException();
+      customExpiry = true;
+      expiry = t;
     }
 
     @Override
@@ -438,10 +441,17 @@ public class Specification<K, V> {
           progress.remove();
           return;
         }
+        if (customExpiry) {
+          progress.putAndSetExpiry(value, expiry);
+          return;
+        }
         progress.put(value);
+        return;
+      }
+      if (customExpiry) {
+        progress.expire(expiry);
       }
     }
-
   }
 
   public <R> Semantic<K, V, R> invoke(final K key, final boolean _readThrough, final CacheEntryProcessor<K, V, R> _processor, final Object... _arguments) {

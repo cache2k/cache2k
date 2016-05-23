@@ -97,4 +97,9 @@ public interface Progress<V, R> {
    */
   void failure(Throwable t);
 
+  /**
+   * Set new value, skip expiry calculation and set expiry time directly.
+   */
+  void putAndSetExpiry(V value, long t);
+
 }

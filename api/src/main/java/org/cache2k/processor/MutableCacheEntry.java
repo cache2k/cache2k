@@ -92,7 +92,7 @@ public interface MutableCacheEntry<K, V> extends CacheEntry<K, V> {
   /**
    * Removes an entry from the cache.
    *
-   * <p>If a writer is registered, {@link org.cache2k.integration.CacheWriter#delete}
+   * <p>In case a writer is registered, {@link org.cache2k.integration.CacheWriter#delete}
    * is called. If a remove is performed on a not existing cache entry the writer
    * method will also be called.
    *
@@ -111,6 +111,13 @@ public interface MutableCacheEntry<K, V> extends CacheEntry<K, V> {
    */
   void setException(Throwable ex);
 
+  /**
+   * Set a new expiry time for the entry. If combined with {@link #setValue} the entry
+   * will be updated or inserted with this expiry time, otherwise just the expiry time
+   * will be updated.
+   *
+   * @param t Time in millis since epoch.
+   */
   void setExpiry(long t);
 
 }

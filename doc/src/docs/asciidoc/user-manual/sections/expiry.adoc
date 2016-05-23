@@ -23,7 +23,12 @@ is relaxed. This will lead to:
 
 == Resetting the Expiry of a Cache Value
 
-Cache.expire
+Cache.expireAt
+
+CacheEntryProcessor / setExpiry
+
+
+
 
 == Exceptions from the Expiry Policy
 

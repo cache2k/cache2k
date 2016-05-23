@@ -515,8 +515,23 @@ public abstract class EntryAction<K, V, R> implements
 
   @Override
   public void expire(long t) {
+    lockForNoHit(Entry.ProcessingState.MUTATE);
+    needsFinish = false;
     newValueOrException = entry.getValue();
     lastModificationTime = entry.getLastModification();
+    expiry = t;
+    if (newValueOrException instanceof ExceptionWrapper) {
+      setUntil(ExceptionWrapper.class.cast(newValueOrException));
+    }
+    expiryCalculated();
+  }
+
+  @Override
+  public void putAndSetExpiry(final V value, final long t) {
+    lockFor(Entry.ProcessingState.MUTATE);
+    needsFinish = false;
+    newValueOrException = value;
+    lastModificationTime = System.currentTimeMillis();
     expiry = t;
     if (newValueOrException instanceof ExceptionWrapper) {
       setUntil(ExceptionWrapper.class.cast(newValueOrException));
