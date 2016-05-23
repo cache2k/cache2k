@@ -382,20 +382,13 @@ public class Entry<K, T>
     return nextRefreshTime < 0;
   }
 
-  private static final int HOT_BITS = 1;
-  private static final int HOT_POS = MODIFICATION_TIME_BITS + PS_BITS;
-  private static final long HOT_DIRECT_MASK = 1L << HOT_POS;
 
-  public boolean isHot() {
-    return (fetchedTime & HOT_DIRECT_MASK) != 0;
-  }
+  boolean hot;
+
+  public boolean isHot() { return hot; }
 
   public void setHot(boolean f) {
-    if (f) {
-      fetchedTime |=  HOT_DIRECT_MASK;
-    } else {
-      fetchedTime &= ~HOT_DIRECT_MASK;
-    }
+    hot = f;
   }
 
   public Throwable getException() {
