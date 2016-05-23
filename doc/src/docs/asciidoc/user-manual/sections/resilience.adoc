@@ -53,7 +53,7 @@ The retry attempts follow the same pattern as above.
 
 When propagated, a loader exception is wrapped and rethrown as `CacheLoaderException`.
 A loader exception is potentially rethrown multiple times, if the retry time is not
-yet reached. In this situation a rethrown exception contains the text `until=<timestamp>`.
+yet reached. In this situation a rethrown exception contains the text `expiry=<timestamp>`.
 This behavior can be customized by the `ExceptionPropagator`.
 
 TODO: example exception
