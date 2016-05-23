@@ -139,7 +139,7 @@ public abstract class AbstractCache<K, V> implements InternalCache<K, V> {
     if (_action.entryLocked) {
       throw new CacheInternalError("entry not unlocked?");
     }
-    CustomizationException t = _action.exceptionToPropagate;
+    RuntimeException t = _action.exceptionToPropagate;
     if (t != null) {
       t.fillInStackTrace();
       throw t;

@@ -63,6 +63,7 @@ public class Cache2kConfiguration<K, V> implements Serializable {
   private boolean sharpExpiry = false;
   private boolean suppressExceptions = true;
   private int loaderThreadCount;
+  private boolean permitNullValues = false;
 
   private ExpiryPolicy<K,V> expiryPolicy;
   private ResiliencePolicy<K,V> resiliencePolicy;
@@ -545,7 +546,19 @@ public class Cache2kConfiguration<K, V> implements Serializable {
     return strictEviction;
   }
 
-  public void setStrictEviction(final boolean _strictEviction) {
-    strictEviction = _strictEviction;
+  public void setStrictEviction(final boolean v) {
+    strictEviction = v;
   }
+
+  public boolean isPermitNullValues() {
+    return permitNullValues;
+  }
+
+  /**
+   * @see Cache2kBuilder#permitNullValues(boolean)
+   */
+  public void setPermitNullValues(final boolean v) {
+    permitNullValues = v;
+  }
+
 }

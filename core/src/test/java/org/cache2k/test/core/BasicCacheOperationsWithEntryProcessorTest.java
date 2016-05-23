@@ -60,6 +60,7 @@ public class BasicCacheOperationsWithEntryProcessorTest extends BasicCacheOperat
             .retryInterval(Long.MAX_VALUE, TimeUnit.MILLISECONDS)
             .eternal(true)
             .entryCapacity(1000)
+            .permitNullValues(true)
             .build();
     staticCache = new EntryProcessorCacheWrapper<Integer, Integer>(c);
   }

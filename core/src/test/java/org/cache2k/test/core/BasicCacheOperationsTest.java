@@ -67,6 +67,7 @@ public class BasicCacheOperationsTest {
             .retryInterval(Long.MAX_VALUE, TimeUnit.MILLISECONDS)
             .eternal(true)
             .entryCapacity(1000)
+            .permitNullValues(true)
             .build();
   }
 

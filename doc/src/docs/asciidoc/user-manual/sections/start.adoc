@@ -1,24 +1,32 @@
 = Getting started
 
+== Maven
 
-== Versioning
 
-An extended semantic versioning scheme is used.
+== Cache Aside
 
-1.0:: Major version, adds and removes features, incompatible changes to the previous version
-1.1.0-BETA:: Odd minor version, development version, possibly instable API and untested new features
-1.2.0:: Even minor version, stable release, new features and compatible to the previous version.
-     Not be strictly binary compatible to the previous stable release. Interfaces not meant for
-     extension may get new methods.
-1.0.1:: Service release. Adds enhancements or fixes bugs. Strictly compatible to the stable release.
 
-Rationale: OSGi doesn't allow alphanumeric qualifiers. Every semantic information is
-in the numbers.
+== Read Through
 
-== How to read the documentation
 
-The documentation is intended as a guide through the functionality of cache2k and will help
-you to discover every important feature. At some points important overview or background
-information is given. It is not complete. More details can be found in the JavaDoc
-comments of the API, in examples, and in the test cases.
+== Caveats
+
+Some behavior of cache2k may be non obvious or surprising which holds probably for most
+non trivial complex peace of software. Cache2k has some features other cache products do
+not have. What should be reasonable defaults? Enabling a new feature by default will be
+of course lead to unexpected behavior for users knowing other cache products. This section
+gives an overview where this might occur.
+
+=== Suppressed Exception
+
+As soon as a global expiry time for an entry is set, the resilience feature is enabled and
+exceptions are suppressed or cached and then rethrown several times. The maximal duration
+an exception is suppressed identical to the configured expiry time.
+
+=== Keep Data
+
+TODO
+
+
+
 

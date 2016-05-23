@@ -77,6 +77,7 @@ public class CacheLoaderTest {
           return null;
         }
       })
+      .permitNullValues(true)
       .build();
     assertNull(c.get(5));
     assertTrue(c.containsKey(5));

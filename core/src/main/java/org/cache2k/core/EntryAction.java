@@ -22,6 +22,7 @@ package org.cache2k.core;
 
 import org.cache2k.expiry.ExpiryPolicy;
 import org.cache2k.event.CacheEntryExpiredListener;
+import org.cache2k.expiry.ExpiryTimeValues;
 import org.cache2k.integration.AdvancedCacheLoader;
 import org.cache2k.event.CacheEntryCreatedListener;
 import org.cache2k.event.CacheEntryRemovedListener;
@@ -62,7 +63,7 @@ public abstract class EntryAction<K, V, R> implements
   long lastModificationTime;
   long loadStartedTime;
   long loadCompletedTime;
-  CustomizationException exceptionToPropagate;
+  RuntimeException exceptionToPropagate;
   boolean remove;
   /** Special case of remove, expiry is in the past */
   boolean expiredImmediately;
@@ -527,33 +528,86 @@ public abstract class EntryAction<K, V, R> implements
     entry.nextProcessingStep(Entry.ProcessingState.EXPIRY);
     try {
       if (newValueOrException instanceof ExceptionWrapper) {
-        ExceptionWrapper ew = (ExceptionWrapper) newValueOrException;
-        if ((entry.isDataValid() || entry.isExpired()) && entry.getException() == null) {
-          expiry = timing().suppressExceptionUntil(entry, ew);
-        }
-        if (expiry > loadStartedTime) {
-          suppressException = true;
-          newValueOrException = entry.getValue();
-          lastModificationTime = entry.getLastModification();
-          metrics().suppressedException();
-          entry.setSuppressedLoadExceptionInformation(ew);
-        } else {
-          if (load) {
-            metrics().loadException();
+        try {
+          ExceptionWrapper ew = (ExceptionWrapper) newValueOrException;
+          if ((entry.isDataValid() || entry.isExpired()) && entry.getException() == null) {
+            expiry = timing().suppressExceptionUntil(entry, ew);
           }
-          expiry = timing().cacheExceptionUntil(entry, ew);
+          if (expiry > loadStartedTime) {
+            suppressException = true;
+            newValueOrException = entry.getValue();
+            lastModificationTime = entry.getLastModification();
+            metrics().suppressedException();
+            entry.setSuppressedLoadExceptionInformation(ew);
+          } else {
+            if (load) {
+              metrics().loadException();
+            }
+            expiry = timing().cacheExceptionUntil(entry, ew);
+          }
+          setUntil(ew);
+        } catch (Throwable ex) {
+          if (load) {
+            resiliencePolicyException(new ResiliencePolicyException(ex));
+            return;
+          }
+          expiryCalculationException(ex);
+          return;
         }
-        setUntil(ew);
       } else {
-        expiry = timing().calculateNextRefreshTime(
-          entry, newValueOrException,
-          lastModificationTime);
-        entry.resetSuppressedLoadExceptionInformation();
+        try {
+          expiry = timing().calculateNextRefreshTime(
+            entry, newValueOrException,
+            lastModificationTime);
+          if (newValueOrException == null && heapCache.hasRejectNullValues() && expiry != ExpiryTimeValues.NO_CACHE) {
+            RuntimeException _ouch = heapCache.returnNullValueDetectedException();
+            if (load) {
+              decideForLoaderExceptionAfterExpiryCalculation(new ResiliencePolicyException(_ouch));
+              return;
+            } else {
+              mutationAbort(_ouch);
+              return;
+            }
+          }
+          entry.resetSuppressedLoadExceptionInformation();
+        } catch (Throwable ex) {
+          if (load) {
+            decideForLoaderExceptionAfterExpiryCalculation(new ExpiryPolicyException(ex));
+            return;
+          }
+          expiryCalculationException(ex);
+          return;
+        }
       }
-    } catch (Exception ex) {
-      expiryCalculationException(ex);
-      return;
+    } catch (Throwable ex) {
+
     }
+    expiryCalculated();
+  }
+
+  /**
+   * An exception happened during or after expiry calculation. We handle this identical to
+   * the loader exception and let the resilience policy decide what to do with it.
+   * Rationale: An exception cause by the expiry policy may have its root cause
+   * in the loaded value and may be temporary.
+   */
+  @SuppressWarnings("unchecked")
+  private void decideForLoaderExceptionAfterExpiryCalculation(RuntimeException _ouch) {
+    newValueOrException = (V) new ExceptionWrapper<K>(key, _ouch, loadStartedTime, entry);
+    expiry = 0;
+    mutationCalculateExpiry();
+  }
+
+  /**
+   * We have two exception in this case: One from the loader or the expiry policy, one from
+   * the resilience policy. Propagate exception from the resilience policy and suppress
+   * the other, since this is a general configuration problem.
+   */
+  @SuppressWarnings("unchecked")
+  private void resiliencePolicyException(RuntimeException _ouch) {
+    newValueOrException = (V)
+      new ExceptionWrapper<K>(key, _ouch, loadStartedTime, entry);
+    expiry = 0;
     expiryCalculated();
   }
 
@@ -566,7 +620,7 @@ public abstract class EntryAction<K, V, R> implements
   }
 
   public void expiryCalculationException(Throwable t) {
-    mutationAbort(new ExpiryCalculationException(t));
+    mutationAbort(new ExpiryPolicyException(t));
   }
 
   public void expiryCalculated() {
@@ -913,7 +967,7 @@ public abstract class EntryAction<K, V, R> implements
     ready();
   }
 
-  public void mutationAbort(CustomizationException t) {
+  public void mutationAbort(RuntimeException t) {
     exceptionToPropagate = t;
     synchronized (entry) {
       entry.processingDone();

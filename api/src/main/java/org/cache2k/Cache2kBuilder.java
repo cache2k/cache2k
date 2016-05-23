@@ -484,6 +484,16 @@ public class Cache2kBuilder<K, V> implements Cloneable {
     return this;
   }
 
+  /**
+   * By default cache2k allows the use of null in a value. Setting
+   * this to true will make the cache throw an exception when
+   * a null value is inserted.
+   */
+  public final Cache2kBuilder<K,V> permitNullValues(boolean flag) {
+    config.setPermitNullValues(flag);
+    return this;
+  }
+
   public final Cache2kConfiguration<K,V> toConfiguration() {
     return config;
   }

@@ -65,6 +65,18 @@ public class StaticUtil {
     return w.getException();
   }
 
+  public static <K,V> void load(Cache<K,V> c, K ...keys) {
+    CacheLoaderTest.CompletionWaiter w = new CacheLoaderTest.CompletionWaiter();
+    c.loadAll(asSet(keys), w);
+    w.awaitCompletion();
+  }
+
+  public static <K,V> void reload(Cache<K,V> c, K ...keys) {
+    CacheLoaderTest.CompletionWaiter w = new CacheLoaderTest.CompletionWaiter();
+    c.reloadAll(asSet(keys), w);
+    w.awaitCompletion();
+  }
+
   public interface LoaderRunner {
     void run(LoadCompletedListener l);
   }

@@ -20,7 +20,6 @@ package org.cache2k.integration;
  * #L%
  */
 
-import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.Executor;
 
@@ -48,8 +47,8 @@ public abstract class CacheLoader<K, V> {
    * necessary try/catch clauses in the loader.
    *
    * @param key the non-null key to provide the value for.
-   * @return value to be associated with the key. If the cache permits null values
-   *         a null is associated with the key.
+   * @return value to be associated with the key. If the cache does not permit null values
+   *         an exception is thrown, but the expiry policy is called before it.
    * @throws Exception Unhandled exception from the loader. The exception will be
    *         handled by the cache based on its configuration.
    */

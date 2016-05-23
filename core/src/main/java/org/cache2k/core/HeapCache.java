@@ -208,26 +208,16 @@ public abstract class HeapCache<K, V>
 
   private int featureBits = 0;
 
-  private static final int SHARP_EXPIRY_FEATURE = 1;
   private static final int KEEP_AFTER_EXPIRED = 2;
-  private static final int SUPPRESS_EXCEPTIONS = 4;
-  private static final int NULL_VALUE_SUPPORT = 8;
+  private static final int REJECT_NULL_VALUES = 8;
   private static final int BACKGROUND_REFRESH = 16;
-
-  protected final boolean hasSharpTimeout() {
-    return (featureBits & SHARP_EXPIRY_FEATURE) > 0;
-  }
 
   protected final boolean hasKeepAfterExpired() {
     return (featureBits & KEEP_AFTER_EXPIRED) > 0;
   }
 
-  protected final boolean hasNullValueSupport() {
-    return (featureBits & NULL_VALUE_SUPPORT) > 0;
-  }
-
-  protected final boolean hasSuppressExceptions() {
-    return (featureBits & SUPPRESS_EXCEPTIONS) > 0;
+  protected final boolean hasRejectNullValues() {
+    return (featureBits & REJECT_NULL_VALUES) > 0;
   }
 
   protected final boolean hasBackgroundRefresh() { return (featureBits & BACKGROUND_REFRESH) > 0; }
@@ -283,8 +273,7 @@ public abstract class HeapCache<K, V>
       loaderExecutor = provideDefaultLoaderExecutor(c.getLoaderThreadCount());
     }
     setFeatureBit(KEEP_AFTER_EXPIRED, c.isKeepDataAfterExpired());
-    setFeatureBit(SHARP_EXPIRY_FEATURE, c.isSharpExpiry());
-    setFeatureBit(SUPPRESS_EXCEPTIONS, c.isSuppressExceptions());
+    setFeatureBit(REJECT_NULL_VALUES, !c.isPermitNullValues());
   }
 
   String getThreadNamePrefix() {
@@ -1022,7 +1011,7 @@ public abstract class HeapCache<K, V>
    */
   private void putValue(final Entry e, final V _value) {
     long t = System.currentTimeMillis();
-    insertOnPut(e, _value, t, t);
+    insertOrUpdateAndCalculateExpiry(e, _value, t, t, INSERT_STAT_PUT);
   }
 
   @Override
@@ -1608,14 +1597,15 @@ public abstract class HeapCache<K, V>
       }
     } catch (Throwable _ouch) {
       long t = System.currentTimeMillis();
-      loadGotException(e, new ExceptionWrapper(e.key, _ouch, t0, e), t0, t);
+      loadGotException(e, t0, t, _ouch);
       return;
     }
     long t = System.currentTimeMillis();
     insertOrUpdateAndCalculateExpiry(e, v, t0, t, INSERT_STAT_LOAD);
   }
 
-  protected void loadGotException(Entry<K, V> e, ExceptionWrapper<K> _value, long t0, long t) {
+  private void loadGotException(final Entry<K, V> e, final long t0, final long t, final Throwable _wrappedException) {
+    ExceptionWrapper<K> _value = new ExceptionWrapper(e.key, _wrappedException, t0, e);
     long _nextRefreshTime = 0;
     boolean _suppressException = false;
     try {
@@ -1628,10 +1618,8 @@ public abstract class HeapCache<K, V>
         _nextRefreshTime = timing.cacheExceptionUntil(e, _value);
       }
     } catch (Exception ex) {
-      try {
-        insertUpdateStats(e, (V) _value, t0, t, INSERT_STAT_LOAD, 0, false);
-      } catch (Throwable ignore) { }
-      throw new ExpiryCalculationException(ex);
+      resiliencePolicyException(e, t0, t, new ResiliencePolicyException(ex));
+      return;
     }
     synchronized (e) {
       insertUpdateStats(e, (V) _value, t0, t, INSERT_STAT_LOAD, _nextRefreshTime, _suppressException);
@@ -1645,14 +1633,19 @@ public abstract class HeapCache<K, V>
     }
   }
 
+  /**
+   * Exception from the resilience policy. We have two exceptions now. One from the loader or the expiry policy,
+   * one from the resilience policy. We propagate the more severe one from the resilience policy.
+   */
+  private void resiliencePolicyException(final Entry<K, V> e, final long t0, final long t, Throwable _exception) {
+    ExceptionWrapper<K> _value = new ExceptionWrapper(e.key, _exception, t0, e);
+    insert(e, (V) _value, t0, t, INSERT_STAT_LOAD, 0);
+  }
+
   private void checkLoaderPresent() {
     if (loader == null) {
       throw new UnsupportedOperationException("loader not set");
     }
-  }
-
-  protected final void insertOnPut(Entry<K, V> e, V v, long t0, long t) {
-    insertOrUpdateAndCalculateExpiry(e, v, t0, t, INSERT_STAT_PUT);
   }
 
   /**
@@ -1662,11 +1655,14 @@ public abstract class HeapCache<K, V>
     long _nextRefreshTime;
     try {
       _nextRefreshTime = timing.calculateNextRefreshTime(e, v, t0);
-    } catch (Exception ex) {
-      try {
-        insertUpdateStats(e, v, t0, t, _updateStatistics, Long.MAX_VALUE, false);
-      } catch (Throwable ignore) { }
-      throw new CacheException("exception in expiry calculation", ex);
+    } catch (Throwable ex) {
+      RuntimeException _wrappedException = new ExpiryPolicyException(ex);
+      if (_updateStatistics == INSERT_STAT_LOAD) {
+        loadGotException(e, t0, t, _wrappedException);
+        return;
+      }
+      insertUpdateStats(e, v, t0, t, _updateStatistics, Long.MAX_VALUE, false);
+      throw _wrappedException;
     }
     insert(e, v, t0, t, _updateStatistics, _nextRefreshTime);
   }
@@ -1674,8 +1670,16 @@ public abstract class HeapCache<K, V>
   final static byte INSERT_STAT_LOAD = 1;
   final static byte INSERT_STAT_PUT = 2;
 
+  public RuntimeException returnNullValueDetectedException() {
+    return new NullPointerException("null value not allowed, rejectNullValues(true)");
+  }
+
   protected final void insert(Entry<K, V> e, V _value, long t0, long t, byte _updateStatistics, long _nextRefreshTime) {
     if (_updateStatistics == INSERT_STAT_LOAD) {
+      if (_value == null && hasRejectNullValues() && _nextRefreshTime != 0) {
+        loadGotException(e, t0, t, returnNullValueDetectedException());
+        return;
+      }
       synchronized (e) {
         e.setLastModification(t0);
         insertUpdateStats(e, _value, t0, t, _updateStatistics, _nextRefreshTime, false);
@@ -1684,6 +1688,9 @@ public abstract class HeapCache<K, V>
         finishLoadOrEviction(e, _nextRefreshTime);
       }
     } else {
+      if (_value == null && hasRejectNullValues()) {
+        throw returnNullValueDetectedException();
+      }
       e.setLastModification(t0);
       e.setValueOrException(_value);
       e.resetSuppressedLoadExceptionInformation();

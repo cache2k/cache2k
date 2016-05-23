@@ -54,6 +54,7 @@ public class BasicCacheOperationsWiredCacheTest extends BasicCacheOperationsTest
       .name(BasicCacheOperationsTest.class)
       .eternal(true)
       .retryInterval(Long.MAX_VALUE, TimeUnit.MILLISECONDS)
+      .permitNullValues(true)
       .entryCapacity(1000);
     StaticUtil.enforceWiredCache(_builder);
     Cache<Integer, Integer>  c = _builder.build();

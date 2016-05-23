@@ -24,3 +24,6 @@ is relaxed. This will lead to:
 == Resetting the Expiry of a Cache Value
 
 Cache.expire
+
+== Exceptions from the Expiry Policy
+

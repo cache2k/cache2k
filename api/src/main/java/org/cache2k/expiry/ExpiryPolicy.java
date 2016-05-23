@@ -34,6 +34,8 @@ import java.util.concurrent.TimeUnit;
  * it is passed to this method. Expired old entries will be passed in also, if still present
  * in the cache.
  *
+ *
+ *
  * @author Jens Wilke; created: 2014-10-14
  * @since 0.20
  */
@@ -55,8 +57,15 @@ public interface ExpiryPolicy<K, V> extends ExpiryTimeValues {
    * cache methods from this method. This may have an undesired effect
    * and can cause a deadlock.
    *
+   * <p><b>null values:</b></p> If the loader returns a null value, the expiry
+   * policy will be called, regardless of the {@link Cache2kBuilder#permitNullValues} setting.
+   * If the expiry policy returns a {@link #NO_CACHE} the entry will be removed. If the expiry
+   * policy returns a different time value, a {@code NullPointerException} will be propagated
+   * if null values not permitted.
+   *
    * @param key the cache key used for inserting or loading
-   * @param value the value to be cached, may be null
+   * @param value the value to be cached. May be null if the loader returns null, regardless of the
+   *               {@link Cache2kBuilder#permitNullValues} setting.
    * @param loadTime The time the entry was inserted or loaded. If a loader was used,
    *                 this is the time before the loader was called.
    * @param oldEntry entry representing the current mapping, if there is a value present.

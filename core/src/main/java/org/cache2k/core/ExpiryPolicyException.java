@@ -25,9 +25,9 @@ import org.cache2k.CustomizationException;
 /**
  * @author Jens Wilke
  */
-public class ExpiryCalculationException extends CustomizationException {
+public class ExpiryPolicyException extends CustomizationException {
 
-  public ExpiryCalculationException(final Throwable cause) {
+  public ExpiryPolicyException(final Throwable cause) {
     super(cause);
   }
 }

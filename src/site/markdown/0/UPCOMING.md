@@ -10,6 +10,9 @@ The API is not stable yet.
 Changes in semantics or API that may break existing applications are listed here. 
 Modifications in the statistics output will not listed as breakage.
 
+ - null values are not allowed by default. The use of a null value can be enabled again via
+   `permitNullValues`
+
 ## Bug fixes
 
 If something is listed here it might affect an existing application and updating is recommended.
@@ -23,6 +26,8 @@ If something is listed here it might affect an existing application and updating
  - JCache: Custom classloader used for serialization of keys and values
  - JCache: improved performance when not using custom expiry policy
  - JCache: in situ configuration
+ - Exceptions in the expiry policy and resilience policy will be propagated as `CacheLoaderException` 
+   if happened during load 
  - asMap()
  
 ## API Changes and new methods
