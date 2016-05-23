@@ -869,15 +869,10 @@ public abstract class HeapCache<K, V>
     }
   }
 
-  /**
-   * Loop: Request an eviction candidate, check whether processing is going on
-   * and evict it. Continue, if still above capacity limit.
-   */
   protected final void evictEventually() {
     int _spinCount = TUNABLE.maximumEvictSpins;
     Entry _previousCandidate = null;
     final long _sizeAfterEviction = maxSize + 1 - evictChunkSize;
-    Entry[] ea = new Entry[evictChunkSize];
     while (evictionNeeded) {
       if (_spinCount-- <= 0) { return; }
       Entry e;
@@ -887,31 +882,26 @@ public abstract class HeapCache<K, V>
           evictionNeeded = false;
           return;
         }
-        for (int i = 0; i < ea.length; i++) {
-          ea[i] = findEvictionCandidate();
-        }
+        e = findEvictionCandidate();
       }
-      for (int i = 0; i < ea.length; i++) {
-        e = ea[i];
-        synchronized (e) {
-          if (e.isGone()) {
+      synchronized (e) {
+        if (e.isGone()) {
+          continue;
+        }
+        if (e.isProcessing()) {
+          if (e != _previousCandidate) {
+            _previousCandidate = e;
             continue;
+          } else {
+            return;
           }
-          if (e.isProcessing()) {
-            if (e != _previousCandidate) {
-              _previousCandidate = e;
-              continue;
-            } else {
-              return;
-            }
-          }
-          e.startProcessing(Entry.ProcessingState.EVICT);
         }
-        listener.onEvictionFromHeap(e);
-        synchronized (e) {
-          finishLoadOrEviction(e, org.cache2k.core.Entry.ABORTED);
-          evictEntryFromHeap(e);
-        }
+        e.startProcessing(Entry.ProcessingState.EVICT);
+      }
+      listener.onEvictionFromHeap(e);
+      synchronized (e) {
+        finishLoadOrEviction(e, org.cache2k.core.Entry.ABORTED);
+        evictEntryFromHeap(e);
       }
     }
   }
@@ -1681,6 +1671,13 @@ public abstract class HeapCache<K, V>
         return;
       }
       synchronized (e) {
+        /*=-
+        if (!e.isProcessing()) {
+          System.err.println(e);
+          System.err.println(isClosed());
+          System.err.println(e.getValueOrException());
+        }
+        -*/
         e.setLastModification(t0);
         insertUpdateStats(e, _value, t0, t, _updateStatistics, _nextRefreshTime, false);
         e.setValueOrException(_value);
