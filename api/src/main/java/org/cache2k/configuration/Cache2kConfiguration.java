@@ -542,7 +542,7 @@ public class Cache2kConfiguration<K, V> implements Serializable {
     resiliencePolicy = _resiliencePolicy;
   }
 
-  public boolean hasStrictEviction() {
+  public boolean isStrictEviction() {
     return strictEviction;
   }
 

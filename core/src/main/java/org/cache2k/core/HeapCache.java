@@ -261,7 +261,7 @@ public abstract class HeapCache<K, V>
     if (c.getHeapEntryCapacity() >= 0) {
       maxSize = c.getHeapEntryCapacity();
     }
-    if (!c.hasStrictEviction() && maxSize > 100) {
+    if (!c.isStrictEviction() && maxSize > 100) {
       evictChunkSize = Runtime.getRuntime().availableProcessors() * 2;
       maxSize += evictChunkSize;
     }
