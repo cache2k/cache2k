@@ -354,9 +354,7 @@ public class WiredCache<K, V> extends AbstractCache<K, V>
   public Iterator<CacheEntry<K, V>> iterator() {
     Iterator<CacheEntry<K, V>> tor;
     if (storage == null) {
-      synchronized (lockObject()) {
-         tor = new HeapCache.IteratorFilterEntry2Entry(heapCache, heapCache.iterateAllHeapEntries(), true);
-      }
+      tor = new HeapCache.IteratorFilterEntry2Entry(heapCache, heapCache.iterateAllHeapEntries(), true);
     } else {
       tor = new HeapCache.IteratorFilterEntry2Entry(heapCache, storage.iterateAll(), false);
     }

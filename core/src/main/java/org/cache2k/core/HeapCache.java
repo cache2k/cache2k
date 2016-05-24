@@ -419,7 +419,7 @@ public abstract class HeapCache<K, V>
       mainHashCtrl = new Hash<Entry<K, V>>();
       refreshHashCtrl = new Hash<Entry<K, V>>();
       mainHash = mainHashCtrl.initSegmented((Class<Entry<K, V>>) newEntry().getClass(), lock);
-      refreshHash = refreshHashCtrl.initSegmented((Class<Entry<K, V>>) newEntry().getClass(), lock);
+      refreshHash = refreshHashCtrl.initSegmented((Class<Entry<K, V>>) newEntry().getClass(), lock, mainHashCtrl);
     }
     if (startedTime == 0) {
       startedTime = System.currentTimeMillis();
@@ -914,20 +914,18 @@ public abstract class HeapCache<K, V>
 
   private void evictEntryFromHeap(Entry e) {
     synchronized (mainHashCtrl.segmentLock(e.hashCode)) {
-      synchronized (refreshHashCtrl.segmentLock(e.hashCode)) {
-        synchronized (lock) {
-          if (e.isRemovedFromReplacementList()) {
-            if (removeEntryFromHash(e)) {
-              evictedCnt++;
-            }
-          } else {
-            evictEntry(e);
-            if (removeEntryFromHash(e)) {
-              evictedCnt++;
-            }
+      synchronized (lock) {
+        if (e.isRemovedFromReplacementList()) {
+          if (removeEntryFromHash(e)) {
+            evictedCnt++;
           }
-          evictionNeeded = getLocalSize() > maxSize;
+        } else {
+          evictEntry(e);
+          if (removeEntryFromHash(e)) {
+            evictedCnt++;
+          }
         }
+        evictionNeeded = getLocalSize() > maxSize;
       }
     }
   }
@@ -944,29 +942,27 @@ public abstract class HeapCache<K, V>
    */
   protected boolean removeEntry(Entry e, int _cause) {
     synchronized (mainHashCtrl.segmentLock(e.hashCode)) {
-      synchronized (refreshHashCtrl.segmentLock(e.hashCode)) {
-        synchronized (lock) {
-          boolean _removed;
-          if (e.isRemovedFromReplacementList()) {
-            if (removeEntryFromHash(e)) {
-              _removed = true;
-            }
-            _removed = false;
-          } else {
-            removeEntryFromReplacementList(e);
-            _removed = removeEntryFromHash(e);
+      synchronized (lock) {
+        boolean _removed;
+        if (e.isRemovedFromReplacementList()) {
+          if (removeEntryFromHash(e)) {
+            _removed = true;
           }
-          if (_removed) {
-            if (_cause == REMOVE_CAUSE_COMMAND) {
-              removedCnt++;
-            } else if (_cause == REMOVE_CAUSE_EXPIRED) {
-              expiredRemoveCnt++;
-            } else if (_cause == REMOVE_CAUSE_VIRGIN) {
-              virginRemovedCnt++;
-            }
-          }
-          return _removed;
+          _removed = false;
+        } else {
+          removeEntryFromReplacementList(e);
+          _removed = removeEntryFromHash(e);
         }
+        if (_removed) {
+          if (_cause == REMOVE_CAUSE_COMMAND) {
+            removedCnt++;
+          } else if (_cause == REMOVE_CAUSE_EXPIRED) {
+            expiredRemoveCnt++;
+          } else if (_cause == REMOVE_CAUSE_VIRGIN) {
+            virginRemovedCnt++;
+          }
+        }
+        return _removed;
       }
     }
   }
@@ -1509,14 +1505,12 @@ public abstract class HeapCache<K, V>
       recordHit(e);
       return e;
     }
-    synchronized (refreshHashCtrl.segmentLock(hc)) {
-      e = refreshHashCtrl.remove(refreshHash, key, hc);
-      if (e != null) {
-        refreshHitCnt++;
-        mainHashCtrl.insert(mainHash, e);
-        recordHit(e);
-        return e;
-      }
+    e = refreshHashCtrl.remove(refreshHash, key, hc);
+    if (e != null) {
+      refreshHitCnt++;
+      mainHashCtrl.insert(mainHash, e);
+      recordHit(e);
+      return e;
     }
     return null;
   }
@@ -1526,13 +1520,11 @@ public abstract class HeapCache<K, V>
     if (e != null) {
       return e;
     }
-    synchronized (refreshHashCtrl.segmentLock(hc)) {
-      e = refreshHashCtrl.remove(refreshHash, key, hc);
-      if (e != null) {
-        refreshHitCnt++;
-        mainHashCtrl.insert(mainHash, e);
-        return e;
-      }
+    e = refreshHashCtrl.remove(refreshHash, key, hc);
+    if (e != null) {
+      refreshHitCnt++;
+      mainHashCtrl.insert(mainHash, e);
+      return e;
     }
     return null;
   }
@@ -1790,15 +1782,11 @@ public abstract class HeapCache<K, V>
         return false;
       }
       if (mainHashCtrl.remove(mainHash, e)) {
-        synchronized (refreshHashCtrl.segmentLock(e.hashCode)) {
-          refreshHashCtrl.insert(refreshHash, e);
-        }
+        refreshHashCtrl.insert(refreshHash, e);
         if (e.hashCode != modifiedHash(e.key.hashCode())) {
-          synchronized (refreshHashCtrl.segmentLock(e.hashCode)) {
-            synchronized (lock) {
-              if (removeEntryFromHash(e)) {
-                expiredRemoveCnt++;
-              }
+          synchronized (lock) {
+            if (removeEntryFromHash(e)) {
+              expiredRemoveCnt++;
             }
           }
           return false;
@@ -2090,15 +2078,10 @@ public abstract class HeapCache<K, V>
     return mainHashCtrl.runTotalLocked(new Hash.Job<T>() {
       @Override
       public T call() {
-        return refreshHashCtrl.runTotalLocked(new Hash.Job<T>() {
-          @Override
-          public T call() {
-            synchronized (lock) {
-              checkClosed();
-              return job.call();
-            }
-          }
-        });
+        synchronized (lock) {
+          checkClosed();
+          return job.call();
+        }
       }
     });
   }
