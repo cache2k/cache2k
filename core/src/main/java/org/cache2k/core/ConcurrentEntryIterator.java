@@ -57,7 +57,7 @@ public class ConcurrentEntryIterator<K,V> implements Iterator<Entry<K,V>> {
   Entry nextEntry = null;
   int sequenceCnt = 0;
   int lastSequenceCnt;
-  int initialHashSize;
+  int initialMaxFill;
   long clearCount;
   Hash<Entry<K, V>> hashCtl;
   Entry<K, V>[] hash;
@@ -167,30 +167,33 @@ public class ConcurrentEntryIterator<K,V> implements Iterator<Entry<K,V>> {
   }
 
   private boolean switchAndCheckAbort() {
-    synchronized (cache.lock) {
-      if (hasExpansionOccurred()) {
-        lastSequenceCnt += 2;
+    return cache.executeWithGlobalLock(new Hash.Job<Boolean>() {
+      @Override
+      public Boolean call() {
+        if (hasExpansionOccurred()) {
+          lastSequenceCnt += 2;
+        }
+        if (lastSequenceCnt == sequenceCnt) {
+          hash = null;
+          return true;
+        }
+        int _step = sequenceCnt % 6;
+        if (_step == 0 || _step == 3 || _step == 4) {
+          switchToMainHash();
+        }
+        if (_step == 1 || _step == 2 || _step == 5) {
+          switchToRefreshHash();
+        }
+        clearCount = hashCtl.getClearCount();
+        boolean _cacheClosed = hash == null;
+        if (_cacheClosed) {
+          return true;
+        }
+        initialMaxFill = hashCtl.getMaxFill();
+        sequenceCnt++;
+        return false;
       }
-      if (lastSequenceCnt == sequenceCnt) {
-        hash = null;
-        return true;
-      }
-      int _step = sequenceCnt % 6;
-      if (_step == 0 || _step == 3 || _step == 4) {
-        switchToMainHash();
-      }
-      if (_step == 1 || _step == 2 || _step == 5) {
-        switchToRefreshHash();
-      }
-      clearCount = hashCtl.getClearCount();
-      boolean _cacheClosed = hash == null;
-      if (_cacheClosed) {
-        return true;
-      }
-      initialHashSize = hashCtl.getSize();
-      sequenceCnt++;
-    }
-    return false;
+    });
   }
 
   /**
@@ -198,7 +201,7 @@ public class ConcurrentEntryIterator<K,V> implements Iterator<Entry<K,V>> {
    * scan over the hash tables.
    */
   private boolean hasExpansionOccurred() {
-    return hashCtl != null && initialHashSize != hashCtl.getSize();
+    return hashCtl != null && initialMaxFill != hashCtl.getMaxFill();
   }
 
   private void switchToMainHash() {

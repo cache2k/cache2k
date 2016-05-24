@@ -495,9 +495,7 @@ public abstract class HeapCache<K, V>
 
   @Override
   public Iterator<CacheEntry<K, V>> iterator() {
-    synchronized (lock) {
-      return new IteratorFilterEntry2Entry(this, iterateAllHeapEntries(), true);
-    }
+    return new IteratorFilterEntry2Entry(this, iterateAllHeapEntries(), true);
   }
 
   /**
@@ -1795,7 +1793,6 @@ public abstract class HeapCache<K, V>
         synchronized (refreshHashCtrl.segmentLock(e.hashCode)) {
           refreshHashCtrl.insert(refreshHash, e);
         }
-        checkExpandRefreshHash(e.hashCode);
         if (e.hashCode != modifiedHash(e.key.hashCode())) {
           synchronized (refreshHashCtrl.segmentLock(e.hashCode)) {
             synchronized (lock) {
@@ -1806,10 +1803,12 @@ public abstract class HeapCache<K, V>
           }
           return false;
         }
-        return true;
+      } else {
+       return false;
       }
     }
-    return false;
+    checkExpandRefreshHash(e.hashCode);
+    return true;
   }
 
   @Override

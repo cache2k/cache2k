@@ -60,6 +60,14 @@ public class Hash<E extends Entry> {
     return initArray(_entryType);
   }
 
+  public E[] initSegmented(Class<E> _entryType, Object _bigLock, Hash<E> _takeOverLocks) {
+    bigLock = _bigLock;
+    int _segmentCount = _takeOverLocks.segmentLocks.length;
+    segmentLocks = _takeOverLocks.segmentLocks;
+    segmentSize = new int[_segmentCount];
+    return initArray(_entryType);
+  }
+
   public E[] initUseBigLock(Class<E> _entryType, Object _bigLock) {
     bigLock = _bigLock;
     int _segmentCount = 1;
@@ -347,6 +355,10 @@ public class Hash<E extends Entry> {
       cnt += segmentSize[i];
     }
     return cnt;
+  }
+
+  public int getMaxFill() {
+    return maxFill;
   }
 
 }
