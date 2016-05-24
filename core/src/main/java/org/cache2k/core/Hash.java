@@ -43,8 +43,83 @@ import java.lang.reflect.Array;
  */
 public class Hash<E extends Entry> {
 
-  public int size = 0;
-  public int maxFill = 0;
+  private int maxFill = 0;
+  private Object[] segmentLocks;
+  private int[] segmentSize;
+
+  public E[] init(Class<E> _entryType) {
+    int _segmentCount = 8;
+    segmentLocks = new Object[_segmentCount];
+    for (int i = 0; i < _segmentCount; i++) {
+      segmentLocks[i] = new Object();
+    }
+    segmentSize = new int[_segmentCount];
+    maxFill =
+      HeapCache.TUNABLE.initialHashSize * HeapCache.TUNABLE.hashLoadPercent /
+        100 / _segmentCount;
+    if (maxFill == 0) {
+      throw new IllegalArgumentException("values for hash size or load factor too low.");
+    }
+    return initArray(_entryType);
+  }
+
+  public E[] init(Class<E> _entryType, Object _globalLock) {
+    int _segmentCount = 1;
+    segmentLocks = new Object[_segmentCount];
+    for (int i = 0; i < _segmentCount; i++) {
+      segmentLocks[i] = _globalLock;
+    }
+    segmentSize = new int[_segmentCount];
+    maxFill =
+      HeapCache.TUNABLE.initialHashSize * HeapCache.TUNABLE.hashLoadPercent /
+        100 / _segmentCount;
+    if (maxFill == 0) {
+      throw new IllegalArgumentException("values for hash size or load factor too low.");
+    }
+    return initArray(_entryType);
+  }
+
+  public E[] initSingleThreaded(Class<E> _entryType) {
+    int _segmentCount = 1;
+    segmentSize = new int[_segmentCount];
+    maxFill =
+      HeapCache.TUNABLE.initialHashSize * HeapCache.TUNABLE.hashLoadPercent /
+        100 / _segmentCount;
+    if (maxFill == 0) {
+      throw new IllegalArgumentException("values for hash size or load factor too low.");
+    }
+    return initArray(_entryType);
+  }
+
+  private E[] initArray(Class<E> _entryType) {
+    return (E[]) Array.newInstance(_entryType, HeapCache.TUNABLE.initialHashSize);
+  }
+
+  public Object segmentLock(int _hashCode) {
+    return segmentLocks[segmentIndex(_hashCode)];
+  }
+
+  public boolean globalLockTaken() {
+    for (Object o : segmentLocks) {
+      if (!Thread.holdsLock(o)) {
+        return false;
+      }
+    }
+    return true;
+  }
+
+  public boolean anyLockTaken() {
+    for (Object o : segmentLocks) {
+      if (Thread.holdsLock(o)) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  private int segmentIndex(final int _hashCode) {
+    return _hashCode & (segmentSize.length - 1);
+  }
 
   public static int index(Entry[] _hashTable, int _hashCode) {
     if (_hashTable == null) {
@@ -81,7 +156,7 @@ public class Hash<E extends Entry> {
   }
 
 
-  public static void insertWoExpand(Entry[] _hashTable, Entry e) {
+  private static void insertWoExpand(Entry[] _hashTable, Entry e) {
     int i = index(_hashTable, e.hashCode);
     e.another = _hashTable[i];
     _hashTable[i] = e;
@@ -142,18 +217,19 @@ public class Hash<E extends Entry> {
   }
 
   public boolean remove(Entry[] _hashTable, Entry _entry) {
-    int i = index(_hashTable, _entry.hashCode);
+    int hc = _entry.hashCode;
+    int i = index(_hashTable, hc);
     Entry e = _hashTable[i];
     if (e == _entry) {
       _hashTable[i] = e.another;
-      size--;
+      segmentSize[segmentIndex(hc)]--;
       return true;
     }
     while (e != null) {
       Entry _another = e.another;
       if (_another == _entry) {
         e.another = _another.another;
-        size--;
+        segmentSize[segmentIndex(hc)]--;
         return true;
       }
       e = _another;
@@ -174,14 +250,14 @@ public class Hash<E extends Entry> {
     }
     if (e.hashCode == hc && key.equals(e.key)) {
       _hashTable[i] = (E) e.another;
-      size--;
+      segmentSize[segmentIndex(hc)]--;
       return (E) e;
     }
     Entry _another = e.another;
     while (_another != null) {
       if (_another.hashCode == hc && key.equals(_another.key)) {
         e.another = _another.another;
-        size--;
+        segmentSize[segmentIndex(hc)]--;
         return (E) _another;
       }
       e = _another;
@@ -191,16 +267,41 @@ public class Hash<E extends Entry> {
   }
 
 
-  public E[] insert(E[] _hashTable, Entry _entry) {
-    size++;
+  public E[] insert(final E[] _hashTable, Entry _entry) {
+    int _size = segmentSize[segmentIndex(_entry.hashCode)]++;
     insertWoExpand(_hashTable, _entry);
-    synchronized (this) {
-      if (size >= maxFill) {
-        maxFill = maxFill * 2;
-        return expandHash(_hashTable);
-      }
-      return _hashTable;
+    if (_size >= maxFill) {
+      return runWithGlobalLock(new Job<E[]>() {
+        @Override
+        public E[] call() {
+          maxFill = maxFill * 2;
+          return expandHash(_hashTable);
+        }
+      });
     }
+    return _hashTable;
+  }
+
+  private <T> T runWithGlobalLock(Job<T> j, int idx) {
+    if (segmentLocks == null) {
+      return j.call();
+    }
+    synchronized (segmentLocks[idx]) {
+      idx++;
+      if (idx == segmentLocks.length) {
+        return j.call();
+      } else {
+        return runWithGlobalLock(j, idx);
+      }
+    }
+  }
+
+  public interface Job<T> {
+    T call();
+  }
+
+  public <T> T runWithGlobalLock(Job<T> j) {
+    return runWithGlobalLock(j, 0);
   }
 
   /**
@@ -208,36 +309,34 @@ public class Hash<E extends Entry> {
    * in used. Signal to iterations to abort.
    */
   public void cleared() {
-    if (size >= 0) {
-      size = -1;
-    }
+    maxFill = Integer.MAX_VALUE;
   }
 
   /**
    * Cache was closed. Inform operations/iterators on the hash.
    */
-  public void close() { size = -2; }
+  public void close() { maxFill = Integer.MAX_VALUE - 1; }
 
   /**
    * Operations should terminate
    */
-  public boolean isCleared() { return size == -1; }
+  public boolean isCleared() { return maxFill == Integer.MAX_VALUE; }
 
   /**
    * Operations should terminate and throw a {@link CacheClosedException}
    */
-  public boolean isClosed() { return size == -2; }
-
-  public boolean shouldAbort() { return size < 0; }
-
-  public E[] init(Class<E> _entryType) {
-    size = 0;
-    maxFill = HeapCache.TUNABLE.initialHashSize * HeapCache.TUNABLE.hashLoadPercent / 100;
-    return (E[]) Array.newInstance(_entryType, HeapCache.TUNABLE.initialHashSize);
-  }
+  public boolean isClosed() { return maxFill == Integer.MAX_VALUE - 1; }
 
   static class CollisionInfo {
     int collisionCnt; int collisionSlotCnt; int longestCollisionSize;
+  }
+
+  public int getSize() {
+    int cnt = 0;
+    for (int i = 0; i < segmentSize.length; i++) {
+      cnt += segmentSize[i];
+    }
+    return cnt;
   }
 
 }

@@ -65,6 +65,7 @@ public class LruCache<K, V> extends HeapCache<K, V> {
   protected void initializeHeapCache() {
     super.initializeHeapCache();
     head = new Entry<K, V>().shortCircuit();
+    throw new UnsupportedOperationException("LRU will be gone");
   }
 
   @Override

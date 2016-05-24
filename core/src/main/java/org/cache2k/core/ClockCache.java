@@ -127,11 +127,9 @@ public class ClockCache<K, V> extends ConcurrentEvictionCache<K, V> {
 
   @Override
   protected IntegrityState getIntegrityState() {
-    synchronized (lock) {
-      return super.getIntegrityState()
-              .check("checkCyclicListIntegrity(hand)", checkCyclicListIntegrity(hand))
-              .checkEquals("getCyclicListEntryCount(hand) == size", getCyclicListEntryCount(hand), size);
-    }
+    return super.getIntegrityState()
+            .check("checkCyclicListIntegrity(hand)", checkCyclicListIntegrity(hand))
+            .checkEquals("getCyclicListEntryCount(hand) == size", getCyclicListEntryCount(hand), size);
   }
 
   @Override

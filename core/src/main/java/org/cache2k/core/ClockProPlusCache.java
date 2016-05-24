@@ -90,7 +90,7 @@ public class ClockProPlusCache<K, V> extends ConcurrentEvictionCache<K, V> {
     handHot = null;
     handGhost = null;
     ghostHashCtrl = new Hash<Entry>();
-    ghostHash = ghostHashCtrl.init(Entry.class);
+    ghostHash = ghostHashCtrl.init(Entry.class, lock);
   }
 
   @Override
@@ -165,7 +165,7 @@ public class ClockProPlusCache<K, V> extends ConcurrentEvictionCache<K, V> {
     e2.hashCode = e.hashCode;
     ghostHash = ghostHashCtrl.insert(ghostHash, e2);
     handGhost = insertIntoTailCyclicList(handGhost, e2);
-    if (ghostHashCtrl.size > ghostMax) {
+    if (ghostHashCtrl.getSize() > ghostMax) {
       runHandGhost();
     }
   }
@@ -200,6 +200,7 @@ public class ClockProPlusCache<K, V> extends ConcurrentEvictionCache<K, V> {
 
   protected void scrubCache(Entry e) {
     synchronized (lock) {
+      checkClosed();
       if (e.hitCnt != Integer.MAX_VALUE) {
         return;
       }
@@ -327,19 +328,17 @@ public class ClockProPlusCache<K, V> extends ConcurrentEvictionCache<K, V> {
 
   @Override
   protected IntegrityState getIntegrityState() {
-    synchronized (lock) {
-      return super.getIntegrityState()
-              .checkEquals("ghostHashCtrl.size == Hash.calcEntryCount(refreshHash)",
-                      ghostHashCtrl.size, Hash.calcEntryCount(ghostHash))
-              .check("hotMax <= maxElements", hotMax <= maxSize)
-              .checkEquals("getListSize() == getSize()", (getListSize()) , getLocalSize())
-              .check("checkCyclicListIntegrity(handHot)", checkCyclicListIntegrity(handHot))
-              .check("checkCyclicListIntegrity(handCold)", checkCyclicListIntegrity(handCold))
-              .check("checkCyclicListIntegrity(handGhost)", checkCyclicListIntegrity(handGhost))
-              .checkEquals("getCyclicListEntryCount(handHot) == hotSize", getCyclicListEntryCount(handHot), hotSize)
-              .checkEquals("getCyclicListEntryCount(handCold) == coldSize", getCyclicListEntryCount(handCold), coldSize)
-              .checkEquals("getCyclicListEntryCount(handGhost) == ghostSize", getCyclicListEntryCount(handGhost), ghostHashCtrl.size);
-    }
+    return super.getIntegrityState()
+            .checkEquals("ghostHashCtrl.size == Hash.calcEntryCount(refreshHash)",
+                    ghostHashCtrl.getSize(), Hash.calcEntryCount(ghostHash))
+            .check("hotMax <= maxElements", hotMax <= maxSize)
+            .checkEquals("getListSize() == getSize()", (getListSize()) , getLocalSize())
+            .check("checkCyclicListIntegrity(handHot)", checkCyclicListIntegrity(handHot))
+            .check("checkCyclicListIntegrity(handCold)", checkCyclicListIntegrity(handCold))
+            .check("checkCyclicListIntegrity(handGhost)", checkCyclicListIntegrity(handGhost))
+            .checkEquals("getCyclicListEntryCount(handHot) == hotSize", getCyclicListEntryCount(handHot), hotSize)
+            .checkEquals("getCyclicListEntryCount(handCold) == coldSize", getCyclicListEntryCount(handCold), coldSize)
+            .checkEquals("getCyclicListEntryCount(handGhost) == ghostSize", getCyclicListEntryCount(handGhost), ghostHashCtrl.getSize());
   }
 
   @Override
@@ -347,7 +346,7 @@ public class ClockProPlusCache<K, V> extends ConcurrentEvictionCache<K, V> {
     return ", coldSize=" + coldSize +
            ", hotSize=" + hotSize +
            ", hotMaxSize=" + hotMax +
-           ", ghostSize=" + ghostHashCtrl.size +
+           ", ghostSize=" + ghostHashCtrl.getSize() +
            ", coldHits=" + (coldHits + sumUpListHits(handCold)) +
            ", hotHits=" + (hotHits + sumUpListHits(handHot)) +
            ", ghostHits=" + ghostHits +

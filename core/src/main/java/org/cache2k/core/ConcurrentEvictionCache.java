@@ -49,13 +49,15 @@ public abstract class ConcurrentEvictionCache<K, V> extends HeapCache<K, V> {
       return e;
     }
     synchronized (lock) {
-      checkClosed();
-      e = lookupEntry(key, hc);
-      if (e == null) {
-        e = newEntry(key, hc);
+      synchronized (mainHashCtrl.segmentLock(hc)) {
+        checkClosed();
+        e = lookupEntry(key, hc);
+        if (e == null) {
+          e = newEntry(key, hc);
+          return e;
+        }
         return e;
       }
-      return e;
     }
   }
 

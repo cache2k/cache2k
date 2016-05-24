@@ -65,7 +65,7 @@ public class ConcurrentEntryIterator<K,V> implements Iterator<Entry<K,V>> {
 
   public ConcurrentEntryIterator(HeapCache<K,V> _cache) {
     cache = _cache;
-    iterated = iteratedCtl.init((Class<Entry<K, V>>) (Object) Entry.class);
+    iterated = iteratedCtl.initSingleThreaded((Class<Entry<K, V>>) (Object) Entry.class);
     lastSequenceCnt = 2;
     if (cache.hasBackgroundRefresh()) {
       lastSequenceCnt = 4;
@@ -151,7 +151,7 @@ public class ConcurrentEntryIterator<K,V> implements Iterator<Entry<K,V>> {
       if (_cacheClosed) {
         return true;
       }
-      initialHashSize = hashCtl.size;
+      initialHashSize = hashCtl.getSize();
       sequenceCnt++;
     }
     return false;
@@ -162,7 +162,7 @@ public class ConcurrentEntryIterator<K,V> implements Iterator<Entry<K,V>> {
    * scan over the hash tables.
    */
   private boolean hasExpansionOccurred() {
-    return hashCtl != null && initialHashSize != hashCtl.size;
+    return hashCtl != null && initialHashSize != hashCtl.getSize();
   }
 
   private void switchToMainHash() {
