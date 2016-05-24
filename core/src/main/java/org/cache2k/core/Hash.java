@@ -44,62 +44,61 @@ import java.lang.reflect.Array;
 public class Hash<E extends Entry> {
 
   private int maxFill = 0;
+  private Object bigLock;
   private Object[] segmentLocks;
   private int[] segmentSize;
 
-  public E[] init(Class<E> _entryType) {
+  public E[] initSegmented(Class<E> _entryType, Object _bigLock) {
+    bigLock = _bigLock;
     int _segmentCount = 8;
     segmentLocks = new Object[_segmentCount];
     for (int i = 0; i < _segmentCount; i++) {
       segmentLocks[i] = new Object();
     }
     segmentSize = new int[_segmentCount];
-    maxFill =
-      HeapCache.TUNABLE.initialHashSize * HeapCache.TUNABLE.hashLoadPercent /
-        100 / _segmentCount;
-    if (maxFill == 0) {
-      throw new IllegalArgumentException("values for hash size or load factor too low.");
-    }
     return initArray(_entryType);
   }
 
-  public E[] init(Class<E> _entryType, Object _globalLock) {
+  public E[] initUseBigLock(Class<E> _entryType, Object _bigLock) {
+    bigLock = _bigLock;
     int _segmentCount = 1;
     segmentLocks = new Object[_segmentCount];
     for (int i = 0; i < _segmentCount; i++) {
-      segmentLocks[i] = _globalLock;
+      segmentLocks[i] = _bigLock;
     }
     segmentSize = new int[_segmentCount];
-    maxFill =
-      HeapCache.TUNABLE.initialHashSize * HeapCache.TUNABLE.hashLoadPercent /
-        100 / _segmentCount;
-    if (maxFill == 0) {
-      throw new IllegalArgumentException("values for hash size or load factor too low.");
-    }
     return initArray(_entryType);
   }
 
   public E[] initSingleThreaded(Class<E> _entryType) {
     int _segmentCount = 1;
     segmentSize = new int[_segmentCount];
-    maxFill =
-      HeapCache.TUNABLE.initialHashSize * HeapCache.TUNABLE.hashLoadPercent /
-        100 / _segmentCount;
-    if (maxFill == 0) {
-      throw new IllegalArgumentException("values for hash size or load factor too low.");
-    }
     return initArray(_entryType);
   }
 
   private E[] initArray(Class<E> _entryType) {
+    maxFill =
+      HeapCache.TUNABLE.initialHashSize * HeapCache.TUNABLE.hashLoadPercent /
+        100 / segmentSize.length;
+    if (maxFill == 0) {
+      throw new IllegalArgumentException("values for hash size or load factor too low.");
+    }
     return (E[]) Array.newInstance(_entryType, HeapCache.TUNABLE.initialHashSize);
   }
 
-  public Object segmentLock(int _hashCode) {
-    return segmentLocks[segmentIndex(_hashCode)];
+  public E[] clear(Class<E> _entryType) {
+    for (int i = 0; i < segmentSize.length; i++) {
+      segmentSize[i] = 0;
+    }
+    return initArray(_entryType);
   }
 
-  public boolean globalLockTaken() {
+  public Object segmentLock(int _hashCode) {
+    Object obj = segmentLocks[segmentIndex(_hashCode)];
+    return obj;
+  }
+
+  public boolean everyLockTaken() {
     for (Object o : segmentLocks) {
       if (!Thread.holdsLock(o)) {
         return false;
@@ -162,17 +161,22 @@ public class Hash<E extends Entry> {
     _hashTable[i] = e;
   }
 
-  private static void rehash(Entry[] a1, Entry[] a2) {
+  private void rehash(Entry[] a1, Entry[] a2) {
+    long _count = 0;
     for (Entry e : a1) {
       while (e != null) {
+        _count++;
         Entry _next = e.another;
         insertWoExpand(a2, e);
         e = _next;
       }
     }
+    if (getSize() != _count) {
+      throw new InternalError(getSize() + " != " + _count);
+    }
   }
 
-  private static <E extends Entry> E[] expandHash(E[] _hashTable) {
+  private <E extends Entry> E[] expandHash(E[] _hashTable) {
     E[] a2 = (E[]) Array.newInstance(
         _hashTable.getClass().getComponentType(),
         _hashTable.length * 2);
@@ -218,18 +222,19 @@ public class Hash<E extends Entry> {
 
   public boolean remove(Entry[] _hashTable, Entry _entry) {
     int hc = _entry.hashCode;
+    int idx = segmentIndex(hc);
     int i = index(_hashTable, hc);
     Entry e = _hashTable[i];
     if (e == _entry) {
       _hashTable[i] = e.another;
-      segmentSize[segmentIndex(hc)]--;
+      segmentSize[idx]--;
       return true;
     }
     while (e != null) {
       Entry _another = e.another;
       if (_another == _entry) {
         e.another = _another.another;
-        segmentSize[segmentIndex(hc)]--;
+        segmentSize[idx]--;
         return true;
       }
       e = _another;
@@ -243,6 +248,7 @@ public class Hash<E extends Entry> {
    * object may be inserted in another hash.
    */
   public E remove(E[] _hashTable, Object key, int hc) {
+    int idx = segmentIndex(hc);
     int i = index(_hashTable, hc);
     Entry e = _hashTable[i];
     if (e == null) {
@@ -250,14 +256,14 @@ public class Hash<E extends Entry> {
     }
     if (e.hashCode == hc && key.equals(e.key)) {
       _hashTable[i] = (E) e.another;
-      segmentSize[segmentIndex(hc)]--;
+      segmentSize[idx]--;
       return (E) e;
     }
     Entry _another = e.another;
     while (_another != null) {
       if (_another.hashCode == hc && key.equals(_another.key)) {
         e.another = _another.another;
-        segmentSize[segmentIndex(hc)]--;
+        segmentSize[idx]--;
         return (E) _another;
       }
       e = _another;
@@ -267,31 +273,37 @@ public class Hash<E extends Entry> {
   }
 
 
-  public E[] insert(final E[] _hashTable, Entry _entry) {
-    int _size = segmentSize[segmentIndex(_entry.hashCode)]++;
+  public void insert(final E[] _hashTable, Entry _entry) {
+    int idx = segmentIndex(_entry.hashCode);
+    segmentSize[idx]++;
     insertWoExpand(_hashTable, _entry);
-    if (_size >= maxFill) {
-      return runWithGlobalLock(new Job<E[]>() {
-        @Override
-        public E[] call() {
-          maxFill = maxFill * 2;
-          return expandHash(_hashTable);
-        }
-      });
+  }
+
+  public boolean needsExpansion(int hc) {
+    int idx = segmentIndex(hc);
+    return segmentSize[idx] >= maxFill;
+  }
+
+  public E[] expand(final E[] _hashTable, int hc) {
+    int idx = segmentIndex(hc);
+    if (segmentSize[idx] >= maxFill) {
+      maxFill = maxFill * 2;
+      return expandHash(_hashTable);
     }
     return _hashTable;
   }
 
-  private <T> T runWithGlobalLock(Job<T> j, int idx) {
+  private <T> T runTotalLocked(Job<T> j, int idx) {
     if (segmentLocks == null) {
       return j.call();
     }
-    synchronized (segmentLocks[idx]) {
+    Object obj = segmentLocks[idx];
+    synchronized (obj) {
       idx++;
       if (idx == segmentLocks.length) {
         return j.call();
       } else {
-        return runWithGlobalLock(j, idx);
+        return runTotalLocked(j, idx);
       }
     }
   }
@@ -300,8 +312,8 @@ public class Hash<E extends Entry> {
     T call();
   }
 
-  public <T> T runWithGlobalLock(Job<T> j) {
-    return runWithGlobalLock(j, 0);
+  public <T> T runTotalLocked(Job<T> j) {
+    return runTotalLocked(j, 0);
   }
 
   /**

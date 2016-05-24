@@ -379,10 +379,13 @@ public abstract class HeapCache<K, V>
   }
 
   public final void clear() {
-    synchronized (lock) {
-      checkClosed();
-      clearLocalCache();
-    }
+    executeWithGlobalLock(new Hash.Job<Void>() {
+      @Override
+      public Void call() {
+        clearLocalCache();
+        return null;
+      }
+    });
   }
 
   public final void clearLocalCache() {
@@ -410,13 +413,14 @@ public abstract class HeapCache<K, V>
 
   protected void initializeHeapCache() {
     if (mainHashCtrl != null) {
-      mainHashCtrl.cleared();
-      refreshHashCtrl.cleared();
+      mainHash = mainHashCtrl.clear((Class<Entry<K, V>>) newEntry().getClass());
+      refreshHash = refreshHashCtrl.clear((Class<Entry<K, V>>) newEntry().getClass());
+    } else {
+      mainHashCtrl = new Hash<Entry<K, V>>();
+      refreshHashCtrl = new Hash<Entry<K, V>>();
+      mainHash = mainHashCtrl.initSegmented((Class<Entry<K, V>>) newEntry().getClass(), lock);
+      refreshHash = refreshHashCtrl.initSegmented((Class<Entry<K, V>>) newEntry().getClass(), lock);
     }
-    mainHashCtrl = new Hash<Entry<K, V>>();
-    refreshHashCtrl = new Hash<Entry<K, V>>();
-    mainHash = mainHashCtrl.init((Class<Entry<K, V>>) newEntry().getClass());
-    refreshHash = refreshHashCtrl.init((Class<Entry<K, V>>) newEntry().getClass());
     if (startedTime == 0) {
       startedTime = System.currentTimeMillis();
     }
@@ -911,20 +915,28 @@ public abstract class HeapCache<K, V>
   }
 
   private void evictEntryFromHeap(Entry e) {
-    synchronized (lock) {
-      if (e.isRemovedFromReplacementList()) {
-        if (removeEntryFromHash(e)) {
-          evictedCnt++;
-        }
-      } else {
-        evictEntry(e);
-        if (removeEntryFromHash(e)) {
-          evictedCnt++;
+    synchronized (mainHashCtrl.segmentLock(e.hashCode)) {
+      synchronized (refreshHashCtrl.segmentLock(e.hashCode)) {
+        synchronized (lock) {
+          if (e.isRemovedFromReplacementList()) {
+            if (removeEntryFromHash(e)) {
+              evictedCnt++;
+            }
+          } else {
+            evictEntry(e);
+            if (removeEntryFromHash(e)) {
+              evictedCnt++;
+            }
+          }
+          evictionNeeded = getLocalSize() > maxSize;
         }
       }
-      evictionNeeded = getLocalSize() > maxSize;
     }
   }
+
+  final static int REMOVE_CAUSE_EXPIRED = 0;
+  final static int REMOVE_CAUSE_COMMAND = 1;
+  final static int REMOVE_CAUSE_VIRGIN = 2;
 
   /**
    * Remove the entry from the hash and the replacement list.
@@ -932,16 +944,33 @@ public abstract class HeapCache<K, V>
    * in a parallel thread and may have already selected this
    * entry.
    */
-  protected boolean removeEntry(Entry e) {
-    if (e.isRemovedFromReplacementList()) {
-      if (removeEntryFromHash(e)) {
-        return true;
+  protected boolean removeEntry(Entry e, int _cause) {
+    synchronized (mainHashCtrl.segmentLock(e.hashCode)) {
+      synchronized (refreshHashCtrl.segmentLock(e.hashCode)) {
+        synchronized (lock) {
+          boolean _removed;
+          if (e.isRemovedFromReplacementList()) {
+            if (removeEntryFromHash(e)) {
+              _removed = true;
+            }
+            _removed = false;
+          } else {
+            removeEntryFromReplacementList(e);
+            _removed = removeEntryFromHash(e);
+          }
+          if (_removed) {
+            if (_cause == REMOVE_CAUSE_COMMAND) {
+              removedCnt++;
+            } else if (_cause == REMOVE_CAUSE_EXPIRED) {
+              expiredRemoveCnt++;
+            } else if (_cause == REMOVE_CAUSE_VIRGIN) {
+              virginRemovedCnt++;
+            }
+          }
+          return _removed;
+        }
       }
-      return false;
-    } else {
-      removeEntryFromReplacementList(e);
     }
-    return removeEntryFromHash(e);
   }
 
   @Override
@@ -1169,15 +1198,12 @@ public abstract class HeapCache<K, V>
           return false;
         }
       }
-      synchronized (lock) {
-        if (removeEntry(e)) {
-          removedCnt++;
-          metrics.remove();
-        }
-        return f;
+      if (removeEntry(e, REMOVE_CAUSE_COMMAND)) {
+        metrics.remove();
       }
+      return f;
     }
-  }
+}
 
   @Override
   public void remove(K key) {
@@ -1196,21 +1222,18 @@ public abstract class HeapCache<K, V>
         peekMissCnt++;
         return null;
       }
-      synchronized (lock) {
-        V _value = null;
-        boolean f = e.hasFreshData();
-        if (f) {
-          _value = (V) e.getValueOrException();
-          recordHit(e);
-        } else {
-          peekMissCnt++;
-        }
-        if (removeEntry(e)) {
-          removedCnt++;
-          metrics.remove();
-        }
-        return returnValue(_value);
+      V _value = null;
+      boolean f = e.hasFreshData();
+      if (f) {
+        _value = (V) e.getValueOrException();
+        recordHit(e);
+      } else {
+        peekMissCnt++;
       }
+      if (removeEntry(e, REMOVE_CAUSE_COMMAND)) {
+        metrics.remove();
+      }
+      return returnValue(_value);
     }
   }
 
@@ -1413,15 +1436,14 @@ public abstract class HeapCache<K, V>
   protected Entry<K, V> lookupOrNewEntrySynchronized(K key, int hc) {
     Entry e = lookupEntryUnsynchronized(key, hc);
     if (e == null) {
-      synchronized (lock) {
-        synchronized (mainHashCtrl.segmentLock(hc)) {
-          checkClosed();
-          e = lookupEntry(key, hc);
-          if (e == null) {
-            e = newEntry(key, hc);
-          }
+      synchronized (mainHashCtrl.segmentLock(hc)) {
+        checkClosed();
+        e = lookupEntry(key, hc);
+        if (e == null) {
+          e = newEntry(key, hc);
         }
       }
+      checkExpandMainHash(hc);
     }
     return e;
   }
@@ -1430,15 +1452,14 @@ public abstract class HeapCache<K, V>
     int hc = modifiedHash(key.hashCode());
     Entry e = lookupEntryUnsynchronizedNoHitRecord(key, hc);
     if (e == null) {
-      synchronized (lock) {
-        synchronized (mainHashCtrl.segmentLock(hc)) {
-          checkClosed();
-          e = lookupEntryNoHitRecord(key, hc);
-          if (e == null) {
-            e = newEntry(key, hc);
-          }
+      synchronized (mainHashCtrl.segmentLock(hc)) {
+        checkClosed();
+        e = lookupEntryNoHitRecord(key, hc);
+        if (e == null) {
+          e = newEntry(key, hc);
         }
       }
+      checkExpandMainHash(hc);
     }
     return e;
   }
@@ -1464,11 +1485,9 @@ public abstract class HeapCache<K, V>
     int hc = modifiedHash(key.hashCode());
     Entry e = lookupEntryUnsynchronized(key, hc);
     if (e == null) {
-      synchronized (lock) {
-        synchronized (mainHashCtrl.segmentLock(hc)) {
-          checkClosed();
-          e = lookupEntry(key, hc);
-        }
+      synchronized (mainHashCtrl.segmentLock(hc)) {
+        checkClosed();
+        e = lookupEntry(key, hc);
       }
     }
     return e;
@@ -1478,11 +1497,9 @@ public abstract class HeapCache<K, V>
     int hc = modifiedHash(key.hashCode());
     Entry e = lookupEntryUnsynchronizedNoHitRecord(key, hc);
     if (e == null) {
-      synchronized (lock) {
-        synchronized (mainHashCtrl.segmentLock(hc)) {
-          checkClosed();
-          e = lookupEntryNoHitRecord(key, hc);
-        }
+      synchronized (mainHashCtrl.segmentLock(hc)) {
+        checkClosed();
+        e = lookupEntryNoHitRecord(key, hc);
       }
     }
     return e;
@@ -1498,7 +1515,7 @@ public abstract class HeapCache<K, V>
       e = refreshHashCtrl.remove(refreshHash, key, hc);
       if (e != null) {
         refreshHitCnt++;
-        mainHash = mainHashCtrl.insert(mainHash, e);
+        mainHashCtrl.insert(mainHash, e);
         recordHit(e);
         return e;
       }
@@ -1515,7 +1532,7 @@ public abstract class HeapCache<K, V>
       e = refreshHashCtrl.remove(refreshHash, key, hc);
       if (e != null) {
         refreshHitCnt++;
-        mainHash = mainHashCtrl.insert(mainHash, e);
+        mainHashCtrl.insert(mainHash, e);
         return e;
       }
     }
@@ -1528,19 +1545,46 @@ public abstract class HeapCache<K, V>
    * entry if the maximum capacity is reached.
    */
   protected Entry<K, V> newEntry(K key, int hc) {
-    if (getLocalSizeEstimate() >= maxSize) {
-      evictionNeeded = true;
+    Entry e;
+    synchronized (lock) {
+      if (getLocalSizeEstimate() >= maxSize) {
+        evictionNeeded = true;
+      }
+      e = checkForGhost(key, hc);
+      if (e == null) {
+        e = newEntry();
+        e.key = key;
+        e.hashCode = hc;
+        insertIntoReplacementList(e);
+      }
+      newEntryCnt++;
     }
-    Entry e = checkForGhost(key, hc);
-    if (e == null) {
-      e = newEntry();
-      e.key = key;
-      e.hashCode = hc;
-      insertIntoReplacementList(e);
-    }
-    mainHash = mainHashCtrl.insert(mainHash, e);
-    newEntryCnt++;
+    mainHashCtrl.insert(mainHash, e);
     return e;
+  }
+
+  void checkExpandMainHash(final int hc) {
+    if (mainHashCtrl.needsExpansion(hc)) {
+      mainHashCtrl.runTotalLocked(new Hash.Job<Void>() {
+        @Override
+        public Void call() {
+          mainHash = mainHashCtrl.expand(mainHash, hc);
+          return null;
+        }
+      });
+    }
+  }
+
+  void checkExpandRefreshHash(final int hc) {
+    if (refreshHashCtrl.needsExpansion(hc)) {
+      refreshHashCtrl.runTotalLocked(new Hash.Job<Void>() {
+        @Override
+        public Void call() {
+          refreshHash = refreshHashCtrl.expand(refreshHash, hc);
+          return null;
+        }
+      });
+    }
   }
 
   /**
@@ -1556,15 +1600,10 @@ public abstract class HeapCache<K, V>
    * @return True, if the entry was present in the hash table.
    */
   private boolean removeEntryFromHash(Entry<K, V> e) {
-    int hc = e.hashCode;
     boolean f;
-    synchronized (mainHashCtrl.segmentLock(hc)) {
-      f = mainHashCtrl.remove(mainHash, e);
-      if (!f) {
-        synchronized (refreshHashCtrl.segmentLock(hc)) {
-          f = refreshHashCtrl.remove(refreshHash, e);
-        }
-      }
+    f = mainHashCtrl.remove(mainHash, e);
+    if (!f) {
+      f = refreshHashCtrl.remove(refreshHash, e);
     }
     checkForHashCodeChange(e);
     timing.cancelExpiryTimer(e);
@@ -1748,23 +1787,26 @@ public abstract class HeapCache<K, V>
    * True, if successful. False, if the entry had a refresh already.
    */
   public boolean moveToRefreshHash(Entry e) {
-    synchronized (lock) {
-      synchronized (mainHashCtrl.segmentLock(e.hashCode)) {
-        if (isClosed()) {
-          return false;
+    synchronized (mainHashCtrl.segmentLock(e.hashCode)) {
+      if (isClosed()) {
+        return false;
+      }
+      if (mainHashCtrl.remove(mainHash, e)) {
+        synchronized (refreshHashCtrl.segmentLock(e.hashCode)) {
+          refreshHashCtrl.insert(refreshHash, e);
         }
-        if (mainHashCtrl.remove(mainHash, e)) {
+        checkExpandRefreshHash(e.hashCode);
+        if (e.hashCode != modifiedHash(e.key.hashCode())) {
           synchronized (refreshHashCtrl.segmentLock(e.hashCode)) {
-            refreshHash = refreshHashCtrl.insert(refreshHash, e);
-            if (e.hashCode != modifiedHash(e.key.hashCode())) {
+            synchronized (lock) {
               if (removeEntryFromHash(e)) {
                 expiredRemoveCnt++;
               }
-              return false;
             }
           }
-          return true;
+          return false;
         }
+        return true;
       }
     }
     return false;
@@ -1862,15 +1904,10 @@ public abstract class HeapCache<K, V>
    * there is processing going on in parallel.
    */
   private void expireAndRemoveEventually(final Entry e) {
-    synchronized (lock) {
-      checkClosed();
-      if (hasKeepAfterExpired() || e.isProcessing()) {
-        expiredKeptCnt++;
-      } else {
-        if (removeEntry(e)) {
-          expiredRemoveCnt++;
-        }
-      }
+    if (hasKeepAfterExpired() || e.isProcessing()) {
+      expiredKeptCnt++;
+    } else {
+      removeEntry(e, REMOVE_CAUSE_EXPIRED);
     }
   }
 
@@ -2003,7 +2040,7 @@ public abstract class HeapCache<K, V>
       public Void call() {
         IntegrityState is = getIntegrityState();
         if (is.getStateFlags() > 0) {
-          throw new CacheIntegrityError(is.getStateDescriptor(), is.getFailingChecks(), toString());
+          throw new CacheIntegrityError(is.getStateDescriptor(), is.getFailingChecks(), HeapCache.this.toString());
         }
         return null;
       }
@@ -2051,10 +2088,10 @@ public abstract class HeapCache<K, V>
   }
 
   public <T> T executeWithGlobalLock(final Hash.Job<T> job) {
-    return mainHashCtrl.runWithGlobalLock(new Hash.Job<T>() {
+    return mainHashCtrl.runTotalLocked(new Hash.Job<T>() {
       @Override
       public T call() {
-        return refreshHashCtrl.runWithGlobalLock(new Hash.Job<T>() {
+        return refreshHashCtrl.runTotalLocked(new Hash.Job<T>() {
           @Override
           public T call() {
             synchronized (lock) {

@@ -116,7 +116,8 @@ public class ConcurrentEntryIterator<K,V> implements Iterator<Entry<K,V>> {
     Entry _newEntryIterated = new Entry();
     _newEntryIterated.key = key;
     _newEntryIterated.hashCode = _hashCode;
-    iterated = iteratedCtl.insert(iterated, _newEntryIterated);
+    iteratedCtl.insert(iterated, _newEntryIterated);
+    iterated = iteratedCtl.expand(iterated, _hashCode);
   }
 
   protected Entry<K,V> checkIteratedOrNext(Entry<K,V> e) {

@@ -899,15 +899,7 @@ public abstract class EntryAction<K, V, R> implements
         entryLocked = false;
         entry.notifyAll();
         if (remove) {
-          synchronized (heapCache.lock) {
-            if (heapCache.removeEntry(entry)) {
-              if (expiredImmediately) {
-                heapCache.expiredRemoveCnt++;
-              } else {
-                heapCache.removedCnt++;
-              }
-            }
-          }
+          heapCache.removeEntry(entry, expiredImmediately ? HeapCache.REMOVE_CAUSE_EXPIRED : HeapCache.REMOVE_CAUSE_COMMAND);
         } else {
           entry.setNextRefreshTime(timing().stopStartTimer(expiry, entry));
           if (entry.isExpired()) {
@@ -1014,10 +1006,7 @@ public abstract class EntryAction<K, V, R> implements
         entry.processingDone();
         entry.notifyAll();
         if (entry.isVirgin()) {
-          synchronized (heapCache.lock) {
-            heapCache.removeEntry(entry);
-            heapCache.virginRemovedCnt++;
-          }
+          heapCache.removeEntry(entry, HeapCache.REMOVE_CAUSE_VIRGIN);
         }
       }
       entryLocked = false;

@@ -90,7 +90,7 @@ public class ClockProPlusCache<K, V> extends ConcurrentEvictionCache<K, V> {
     handHot = null;
     handGhost = null;
     ghostHashCtrl = new Hash<Entry>();
-    ghostHash = ghostHashCtrl.init(Entry.class, lock);
+    ghostHash = ghostHashCtrl.initUseBigLock(Entry.class, lock);
   }
 
   @Override
@@ -163,7 +163,8 @@ public class ClockProPlusCache<K, V> extends ConcurrentEvictionCache<K, V> {
     Entry<K, V> e2 = new Entry<K, V>();
     e2.key = e.key;
     e2.hashCode = e.hashCode;
-    ghostHash = ghostHashCtrl.insert(ghostHash, e2);
+    ghostHashCtrl.insert(ghostHash, e2);
+    ghostHash = ghostHashCtrl.expand(ghostHash, e.hashCode);
     handGhost = insertIntoTailCyclicList(handGhost, e2);
     if (ghostHashCtrl.getSize() > ghostMax) {
       runHandGhost();
