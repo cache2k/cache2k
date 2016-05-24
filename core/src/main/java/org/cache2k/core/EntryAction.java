@@ -909,24 +909,22 @@ public abstract class EntryAction<K, V, R> implements
         }
       }
     } finally {
-      synchronized (heapCache.lock) {
-        updateMutationStatisticsInsideLock();
-      }
+      updateMutationStatistics();
       mutationDone();
     }
   }
 
-  public void updateOnlyReadStatisticsInsideLock() {
+  public void updateOnlyReadStatistics() {
     if (countMiss) {
       if (heapHit) {
-        heapCache.peekHitNotFreshCnt++;
+        metrics().peekHitNotFresh();
       }
       if (heapMiss) {
-        heapCache.peekMissCnt++;
+        metrics().peekMiss();
       }
       if (storageRead && storageMiss) {
         storageMetrics().readNonFresh();
-        heapCache.peekHitNotFreshCnt++;
+        metrics().peekHitNotFresh();
       }
     } else if (doNotCountAccess && heapHit) {
       metrics().containsButHit();
@@ -936,16 +934,13 @@ public abstract class EntryAction<K, V, R> implements
     }
   }
 
-  public void updateMutationStatisticsInsideLock() {
+  public void updateMutationStatistics() {
     if (loadCompletedTime > 0) {
       if (storageRead && storageMiss) {
         storageMetrics().readMiss();
       }
     } else {
-      updateOnlyReadStatisticsInsideLock();
-      if (wantData) {
-        metrics().casOperation();
-      }
+      updateOnlyReadStatistics();
       if (remove) {
         if (heapDataValid) {
           metrics().remove();
@@ -1012,7 +1007,7 @@ public abstract class EntryAction<K, V, R> implements
       entryLocked = false;
     }
     synchronized (heapCache.lock) {
-      updateOnlyReadStatisticsInsideLock();
+      updateOnlyReadStatistics();
     }
     if (!heapHit) {
       evictEventuallyAfterExamine();

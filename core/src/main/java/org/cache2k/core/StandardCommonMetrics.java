@@ -43,22 +43,6 @@ public class StandardCommonMetrics implements CommonMetrics.Updater {
     PUT_NEW_ENTRY_UPDATER.addAndGet(this, cnt);
   }
 
-  static final AtomicLongFieldUpdater<StandardCommonMetrics> CAS_OPERATION_UPDATER =
-    AtomicLongFieldUpdater.newUpdater(StandardCommonMetrics.class, "casOperation");
-  private volatile long casOperation;
-  @Override
-  public void casOperation() {
-    CAS_OPERATION_UPDATER.incrementAndGet(this);
-  }
-  @Override
-  public long getCasOperationCount() {
-    return CAS_OPERATION_UPDATER.get(this);
-  }
-  @Override
-  public void casOperation(final long cnt) {
-    CAS_OPERATION_UPDATER.addAndGet(this, cnt);
-  }
-
   static final AtomicLongFieldUpdater<StandardCommonMetrics> putHitUpdater =
     AtomicLongFieldUpdater.newUpdater(StandardCommonMetrics.class, "putHit");
   private volatile long putHit;
@@ -259,6 +243,86 @@ public class StandardCommonMetrics implements CommonMetrics.Updater {
   @Override
   public void suppressedException(final long cnt) {
     suppressedExceptionUpdater.addAndGet(this, cnt);
+  }
+
+  static final AtomicLongFieldUpdater<StandardCommonMetrics> expiredKeptUpdater =
+    AtomicLongFieldUpdater.newUpdater(StandardCommonMetrics.class, "expiredKept");
+  private volatile long expiredKept;
+  @Override
+  public long getExpiredKeptCount() {
+    return expiredKeptUpdater.get(this);
+  }
+  @Override
+  public void expiredKept() {
+    expiredKeptUpdater.incrementAndGet(this);
+  }
+  @Override
+  public void expiredKept(final long cnt) {
+    expiredKeptUpdater.addAndGet(this, cnt);
+  }
+
+  static final AtomicLongFieldUpdater<StandardCommonMetrics> peekMissUpdater =
+    AtomicLongFieldUpdater.newUpdater(StandardCommonMetrics.class, "peekMiss");
+  private volatile long peekMiss;
+  @Override
+  public long getPeekMissCount() {
+    return peekMissUpdater.get(this);
+  }
+  @Override
+  public void peekMiss() {
+    peekMissUpdater.incrementAndGet(this);
+  }
+  @Override
+  public void peekMiss(final long cnt) {
+    peekMissUpdater.addAndGet(this, cnt);
+  }
+
+  static final AtomicLongFieldUpdater<StandardCommonMetrics> peekHitNotFreshUpdater =
+    AtomicLongFieldUpdater.newUpdater(StandardCommonMetrics.class, "peekHitNotFresh");
+  private volatile long peekHitNotFresh;
+  @Override
+  public long getPeekHitNotFreshCount() {
+    return peekHitNotFreshUpdater.get(this);
+  }
+  @Override
+  public void peekHitNotFresh() {
+    peekHitNotFreshUpdater.incrementAndGet(this);
+  }
+  @Override
+  public void peekHitNotFresh(final long cnt) {
+    peekHitNotFreshUpdater.addAndGet(this, cnt);
+  }
+
+  static final AtomicLongFieldUpdater<StandardCommonMetrics> refreshHitUpdater =
+    AtomicLongFieldUpdater.newUpdater(StandardCommonMetrics.class, "refreshHit");
+  private volatile long refreshHit;
+  @Override
+  public long getRefreshHitCount() {
+    return refreshHitUpdater.get(this);
+  }
+  @Override
+  public void refreshHit() {
+    refreshHitUpdater.incrementAndGet(this);
+  }
+  @Override
+  public void refreshHit(final long cnt) {
+    refreshHitUpdater.addAndGet(this, cnt);
+  }
+
+  static final AtomicLongFieldUpdater<StandardCommonMetrics> refreshSubmitFailedUpdater =
+    AtomicLongFieldUpdater.newUpdater(StandardCommonMetrics.class, "refreshSubmitFailed");
+  private volatile long refreshSubmitFailed;
+  @Override
+  public long getRefreshSubmitFailedCount() {
+    return refreshSubmitFailedUpdater.get(this);
+  }
+  @Override
+  public void refreshSubmitFailed() {
+    refreshSubmitFailedUpdater.incrementAndGet(this);
+  }
+  @Override
+  public void refreshSubmitFailed(final long cnt) {
+    refreshSubmitFailedUpdater.addAndGet(this, cnt);
   }
 
 }

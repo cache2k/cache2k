@@ -639,7 +639,7 @@ public class WiredCache<K, V> extends AbstractCache<K, V>
           return;
         } catch (RejectedExecutionException ignore) {
         }
-        heapCache.refreshSubmitFailedCnt++;
+        metrics().refreshSubmitFailed();
       } else { // if (mainHashCtrl.remove(mainHash, e)) ...
       }
       expireOrScheduleFinalExpireEvent(e);

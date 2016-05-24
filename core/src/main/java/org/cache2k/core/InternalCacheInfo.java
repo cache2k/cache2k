@@ -71,7 +71,7 @@ public interface InternalCacheInfo {
 
   long getPutCnt();
 
-  long getClearedCnt();
+  long getClearRemovedCnt();
 
   long getClearCnt();
 

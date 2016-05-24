@@ -28,7 +28,6 @@ public interface CommonMetrics {
   long getPutNewEntryCount();
   long getPutHitCount();
 
-  long getCasOperationCount();
   long getPutNoReadHitCount();
 
   /**
@@ -83,6 +82,33 @@ public interface CommonMetrics {
    */
   long getSuppressedExceptionCount();
 
+  /**
+   * Number of entries expired, but kept in the cache because of
+   * ongoing processing on the entry (pinned) or because keepData is enabled.
+   */
+  long getExpiredKeptCount();
+
+  /**
+   * Peek but nothing available in the heap.
+   */
+  long getPeekMissCount();
+
+  /**
+   * Peek, but entry available was not fresh.
+   */
+  long getPeekHitNotFreshCount();
+
+  /**
+   * Entry on probation for refresh got hit.
+   */
+  long getRefreshHitCount();
+
+  /**
+   * Refresh submit failed. Happens if the loader executor has not
+   * enough available resources and rejects the refresh task.
+   */
+  long getRefreshSubmitFailedCount();
+
   interface Updater extends CommonMetrics {
 
     void putNewEntry();
@@ -93,9 +119,6 @@ public interface CommonMetrics {
 
     void putNoReadHit();
     void putNoReadHit(long cnt);
-
-    void casOperation();
-    void casOperation(long cnt);
 
     void containsButHit();
     void containsButHit(long cnt);
@@ -125,6 +148,21 @@ public interface CommonMetrics {
 
     void suppressedException();
     void suppressedException(long cnt);
+
+    void expiredKept();
+    void expiredKept(long cnt);
+
+    void peekMiss();
+    void peekMiss(long cnt);
+
+    void peekHitNotFresh();
+    void peekHitNotFresh(long cnt);
+
+    void refreshHit();
+    void refreshHit(long cnt);
+
+    void refreshSubmitFailed();
+    void refreshSubmitFailed(long cnt);
 
   }
 

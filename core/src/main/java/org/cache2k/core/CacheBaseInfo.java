@@ -43,7 +43,6 @@ class CacheBaseInfo implements InternalCacheInfo {
   long missCnt;
   long storageMissCnt;
   long storageLoadCnt;
-  long newEntryCnt;
   long hitCnt;
   long correctedPutCnt;
   long usageCnt;
@@ -56,9 +55,32 @@ class CacheBaseInfo implements InternalCacheInfo {
   int loaderThreadsMaxActive = 0;
   long totalLoadCnt;
 
+  /*
+   * Consistent copies from heap cache. for 32 bit machines the access
+   * is not atomic. We copy the values while under big lock.
+   */
+  long clearedTime;
+  long newEntryCnt;
+  long keyMutationCnt;
+  long removedCnt;
+  long virginRemovedCnt;
+  long clearRemovedCnt;
+  long clearCnt;
+  long expiredRemoveCnt;
+  long evictedCnt;
+
   public CacheBaseInfo(HeapCache _heapCache, InternalCache _userCache) {
     this.heapCache = _heapCache;
     metrics = _heapCache.metrics;
+    newEntryCnt = _heapCache.newEntryCnt;
+    clearedTime = _heapCache.clearedTime;
+    keyMutationCnt = _heapCache.keyMutationCnt;
+    removedCnt = _heapCache.removedCnt;
+    virginRemovedCnt = _heapCache.virginRemovedCnt;
+    clearRemovedCnt = _heapCache.clearRemovedCnt;
+    clearCnt = _heapCache.clearCnt;
+    expiredRemoveCnt = _heapCache.expiredRemoveCnt;
+    evictedCnt = _heapCache.evictedCnt;
     integrityState = _heapCache.getIntegrityState();
     storageMetrics = _userCache.getStorageMetrics();
     collisionInfo = new Hash.CollisionInfo();
@@ -69,14 +91,13 @@ class CacheBaseInfo implements InternalCacheInfo {
       extraStatistics = extraStatistics.substring(2);
     }
     size = _userCache.getTotalEntryCount();
-    missCnt = metrics.getLoadCount() + metrics.getReloadCount() + _heapCache.peekHitNotFreshCnt + _heapCache.peekMissCnt;
+    missCnt = metrics.getLoadCount() + metrics.getReloadCount() + metrics.getPeekHitNotFreshCount() + metrics.getPeekMissCount();
     storageMissCnt = storageMetrics.getReadMissCount() + storageMetrics.getReadNonFreshCount();
     storageLoadCnt = storageMissCnt + storageMetrics.getReadHitCount();
-    newEntryCnt = _heapCache.newEntryCnt;
     hitCnt = _heapCache.getHitCnt();
     correctedPutCnt = metrics.getPutNewEntryCount() + metrics.getPutHitCount() + metrics.getPutNoReadHitCount();
     usageCnt =
-            hitCnt + newEntryCnt + _heapCache.peekMissCnt + metrics.getPutHitCount() + metrics.getRemoveCount();
+            hitCnt + newEntryCnt + metrics.getPeekMissCount() + metrics.getPutHitCount() + metrics.getRemoveCount();
     if (_heapCache.loaderExecutor instanceof ThreadPoolExecutor) {
       ThreadPoolExecutor ex = (ThreadPoolExecutor) _heapCache.loaderExecutor;
       asyncLoadsInFlight = ex.getActiveCount();
@@ -117,7 +138,7 @@ class CacheBaseInfo implements InternalCacheInfo {
     long _containsBitHit = metrics.getContainsButHitCount();
     long _heapHitButNoRead = metrics.getHeapHitButNoReadCount();
     return
-      hitCnt + heapCache.peekMissCnt
+      hitCnt + metrics.getPeekMissCount()
       + metrics.getLoadCount() - _putHit - _containsBitHit - _heapHitButNoRead;
   }
   @Override
@@ -133,25 +154,25 @@ class CacheBaseInfo implements InternalCacheInfo {
   @Override
   public long getInternalExceptionCnt() { return metrics.getInternalExceptionCount(); }
   @Override
-  public long getRefreshSubmitFailedCnt() { return heapCache.refreshSubmitFailedCnt; }
+  public long getRefreshSubmitFailedCnt() { return metrics.getRefreshSubmitFailedCount(); }
   @Override
   public long getSuppressedExceptionCnt() { return metrics.getSuppressedExceptionCount(); }
   @Override
   public long getLoadExceptionCnt() { return metrics.getLoadExceptionCount() + metrics.getSuppressedExceptionCount(); }
   @Override
-  public long getRefreshHitCnt() { return heapCache.refreshHitCnt; }
+  public long getRefreshHitCnt() { return metrics.getRefreshHitCount(); }
   @Override
-  public long getExpiredCnt() { return heapCache.getExpiredCnt(); }
+  public long getExpiredCnt() { return expiredRemoveCnt + metrics.getExpiredKeptCount(); }
   @Override
-  public long getEvictedCnt() { return heapCache.evictedCnt; }
+  public long getEvictedCnt() { return evictedCnt; }
   @Override
   public long getRemovedCnt() { return metrics.getRemoveCount(); }
   @Override
   public long getPutCnt() { return correctedPutCnt; }
   @Override
-  public long getKeyMutationCnt() { return heapCache.keyMutationCount; }
+  public long getKeyMutationCnt() { return keyMutationCnt; }
   @Override
-   public long getTimerEventCnt() { return heapCache.metrics.getTimerEventCount(); }
+   public long getTimerEventCnt() { return metrics.getTimerEventCount(); }
   @Override
   public double getDataHitRate() {
     long cnt = getReadUsageCnt();
@@ -305,9 +326,8 @@ class CacheBaseInfo implements InternalCacheInfo {
     return heapCache.clearCnt;
   }
 
-  @Override
-  public long getClearedCnt() {
-    return heapCache.clearedCnt;
+  public long getClearRemovedCnt() {
+    return heapCache.clearRemovedCnt;
   }
 
   public String toString() {
@@ -316,8 +336,8 @@ class CacheBaseInfo implements InternalCacheInfo {
             + "maxSize=" + getMaxSize() + ", "
             + "usageCnt=" + getUsageCnt() + ", "
             + "missCnt=" + getMissCnt() + ", "
-            + "peekMissCnt=" + (heapCache.peekMissCnt) + ", "
-            + "peekHitNotFresh=" + (heapCache.peekHitNotFreshCnt) + ", "
+            + "peekMissCnt=" + metrics.getPeekMissCount() + ", "
+            + "peekHitNotFresh=" + metrics.getPeekHitNotFreshCount() + ", "
             + "loadCnt=" + getLoadCnt() + ", "
             + "loadButHitCnt=" + getLoadButHitCnt() + ", "
             + "heapHitCnt=" + hitCnt + ", "
@@ -329,7 +349,7 @@ class CacheBaseInfo implements InternalCacheInfo {
             + "expiredCnt=" + getExpiredCnt() + ", "
             + "evictedCnt=" + getEvictedCnt() + ", "
             + "removedCnt=" + getRemovedCnt() + ", "
-            + "clearedCnt=" + getClearedCnt() + ", "
+            + "clearRemovedCnt=" + getClearRemovedCnt() + ", "
             + "timerEventCnt=" + getTimerEventCnt() + ", "
             + "hitRate=" + getDataHitString() + ", "
             + "collisionCnt=" + getCollisionCnt() + ", "

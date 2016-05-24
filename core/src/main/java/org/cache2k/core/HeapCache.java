@@ -108,7 +108,7 @@ public abstract class HeapCache<K, V>
     }
   };
 
-  protected int hashSeed;
+  protected final int hashSeed;
 
   {
     if (TUNABLE.disableHashRandomization) {
@@ -129,34 +129,6 @@ public abstract class HeapCache<K, V>
   protected AdvancedCacheLoader<K,V> loader;
   protected TimingHandler<K,V> timing = TimingHandler.ETERNAL;
 
-  /** Statistics */
-
-  protected CacheBaseInfo info;
-
-  protected long clearedTime = 0;
-  protected long startedTime;
-
-  protected long keyMutationCount = 0;
-  protected long removedCnt = 0;
-  protected long virginRemovedCnt = 0;
-  /** Number of entries removed by clear. */
-  protected long clearedCnt = 0;
-  protected long clearCnt = 0;
-  protected long expiredKeptCnt = 0;
-  protected long expiredRemoveCnt = 0;
-  protected long evictedCnt = 0;
-  /* that is a miss, but a hit was already counted. */
-  protected long peekHitNotFreshCnt = 0;
-  /* no heap hash hit */
-  protected long peekMissCnt = 0;
-
-  protected long refreshHitCnt = 0;
-  protected long newEntryCnt = 0;
-
-  protected long refreshSubmitFailedCnt = 0;
-
-  CommonMetrics.Updater metrics = new StandardCommonMetrics();
-
   /**
    * Structure lock of the cache. Every operation that needs a consistent structure
    * of the cache or modifies it needs to synchronize on this. Since this is a global
@@ -164,6 +136,31 @@ public abstract class HeapCache<K, V>
    * quick.
    */
   public final Object lock = new Object();
+
+  /** Statistics */
+
+  protected CacheBaseInfo info;
+  CommonMetrics.Updater metrics = new StandardCommonMetrics();
+
+  /*
+   * All the following counters and timestamps are updated under the single lock.
+   * The consistency of the counters can be checked by calculating invariants.
+   * For
+   *
+   */
+
+  protected long clearedTime = 0;
+  protected long startedTime;
+
+  protected long newEntryCnt = 0;
+  protected long keyMutationCnt = 0;
+  protected long removedCnt = 0;
+  protected long virginRemovedCnt = 0;
+  /** Number of entries removed by clear. */
+  protected long clearRemovedCnt = 0;
+  protected long clearCnt = 0;
+  protected long expiredRemoveCnt = 0;
+  protected long evictedCnt = 0;
 
   protected volatile Executor loaderExecutor = new DummyExecutor(this);
 
@@ -390,7 +387,7 @@ public abstract class HeapCache<K, V>
 
   public final void clearLocalCache() {
     iterateAllEntriesAndRemoveFromReplacementList();
-    clearedCnt += getLocalSize();
+    clearRemovedCnt += getLocalSize();
     clearCnt++;
     initializeHeapCache();
     clearedTime = System.currentTimeMillis();
@@ -985,7 +982,7 @@ public abstract class HeapCache<K, V>
           _previousValue = (V) e.getValueOrException();
           metrics.heapHitButNoRead();
         } else {
-          peekMissCnt++;
+          metrics.peekMiss();
         }
         putValue(e, _value);
         break;
@@ -1016,9 +1013,7 @@ public abstract class HeapCache<K, V>
       }
       break;
     }
-    synchronized (lock) {
-      peekMissCnt++;
-    }
+    metrics.peekMiss();
     return null;
   }
 
@@ -1060,9 +1055,7 @@ public abstract class HeapCache<K, V>
   protected Entry<K, V> replace(final K key, final boolean _compare, final V _oldValue, final V _newValue) {
     Entry e = lookupEntrySynchronized(key);
     if (e == null) {
-      synchronized (lock) {
-        peekMissCnt++;
-      }
+      metrics.peekMiss();
       return DUMMY_ENTRY_NO_REPLACE;
     }
     synchronized (e) {
@@ -1089,13 +1082,13 @@ public abstract class HeapCache<K, V>
   final protected Entry<K, V> peekEntryInternal(K key) {
     Entry e = lookupEntrySynchronized(key);
     if (e == null) {
-      peekMissCnt++;
+      metrics.peekMiss();
       return null;
     }
     if (e.hasFreshData()) {
       return e;
     }
-    peekHitNotFreshCnt++;
+    metrics.peekHitNotFresh();
     return null;
   }
 
@@ -1137,7 +1130,7 @@ public abstract class HeapCache<K, V>
         if (e.hasFreshData()) {
           return false;
         }
-        peekMissCnt++;
+        metrics.peekMiss();
         putValue(e, value);
         return true;
       }
@@ -1207,13 +1200,13 @@ public abstract class HeapCache<K, V>
   public V peekAndRemove(K key) {
     Entry e = lookupEntrySynchronized(key);
     if (e == null) {
-      peekMissCnt++;
+      metrics.peekMiss();
       return null;
     }
     synchronized (e) {
       e.waitForProcessing();
       if (e.isGone()) {
-        peekMissCnt++;
+        metrics.peekMiss();
         return null;
       }
       V _value = null;
@@ -1222,7 +1215,7 @@ public abstract class HeapCache<K, V>
         _value = (V) e.getValueOrException();
         recordHit(e);
       } else {
-        peekMissCnt++;
+        metrics.peekMiss();
       }
       if (removeEntry(e, REMOVE_CAUSE_COMMAND)) {
         metrics.remove();
@@ -1507,7 +1500,7 @@ public abstract class HeapCache<K, V>
     }
     e = refreshHashCtrl.remove(refreshHash, key, hc);
     if (e != null) {
-      refreshHitCnt++;
+      metrics.refreshHit();
       mainHashCtrl.insert(mainHash, e);
       recordHit(e);
       return e;
@@ -1522,7 +1515,7 @@ public abstract class HeapCache<K, V>
     }
     e = refreshHashCtrl.remove(refreshHash, key, hc);
     if (e != null) {
-      refreshHitCnt++;
+      metrics.refreshHit();
       mainHashCtrl.insert(mainHash, e);
       return e;
     }
@@ -1609,7 +1602,7 @@ public abstract class HeapCache<K, V>
    */
   private void checkForHashCodeChange(Entry<K, V> e) {
     if (modifiedHash(e.key.hashCode()) != e.hashCode) {
-      if (keyMutationCount ==  0) {
+      if (keyMutationCnt ==  0) {
         getLog().warn("Key mismatch! Key hashcode changed! keyClass=" + e.key.getClass().getName());
         String s;
         try {
@@ -1621,7 +1614,7 @@ public abstract class HeapCache<K, V>
           getLog().warn("Key mismatch! key.toString() threw exception", t);
         }
       }
-      keyMutationCount++;
+      keyMutationCnt++;
     }
   }
 
@@ -1837,7 +1830,7 @@ public abstract class HeapCache<K, V>
           return;
         } catch (RejectedExecutionException ignore) {
         }
-        refreshSubmitFailedCnt++;
+        metrics.refreshSubmitFailed();
       } else { // if (mainHashCtrl.remove(mainHash, e)) ...
       }
       expireOrScheduleFinalExpireEvent(e);
@@ -1892,7 +1885,7 @@ public abstract class HeapCache<K, V>
    */
   private void expireAndRemoveEventually(final Entry e) {
     if (hasKeepAfterExpired() || e.isProcessing()) {
-      expiredKeptCnt++;
+      metrics.expiredKept();
     } else {
       removeEntry(e, REMOVE_CAUSE_EXPIRED);
     }
@@ -2007,14 +2000,9 @@ public abstract class HeapCache<K, V>
     });
   }
 
-  public long getExpiredCnt() {
-    return expiredRemoveCnt + expiredKeptCnt;
-  }
-
   protected IntegrityState getIntegrityState() {
     return new IntegrityState()
-      .checkEquals("newEntryCnt == getSize() + evictedCnt + expiredRemoveCnt + removeCnt + clearedCnt + virginRemovedCnt", newEntryCnt, getLocalSize() + evictedCnt + expiredRemoveCnt + removedCnt + clearedCnt + virginRemovedCnt)
-      .checkEquals("newEntryCnt == getSize() + evictedCnt + getExpiredCnt() - expiredKeptCnt + removeCnt + clearedCnt + virginRemovedCnt", newEntryCnt, getLocalSize() + evictedCnt + getExpiredCnt() - expiredKeptCnt + removedCnt + clearedCnt + virginRemovedCnt)
+      .checkEquals("newEntryCnt == getSize() + evictedCnt + expiredRemoveCnt + removeCnt + clearedCnt + virginRemovedCnt", newEntryCnt, getLocalSize() + evictedCnt + expiredRemoveCnt + removedCnt + clearRemovedCnt + virginRemovedCnt)
       .checkEquals("mainHashCtrl.size == Hash.calcEntryCount(mainHash)", mainHashCtrl.getSize(), Hash.calcEntryCount(mainHash))
       .checkEquals("refreshHashCtrl.size == Hash.calcEntryCount(refreshHash)", refreshHashCtrl.getSize(), Hash.calcEntryCount(refreshHash))
       .check("!!evictionNeeded | (getSize() <= maxSize)", !!evictionNeeded | (getLocalSize() <= maxSize));
