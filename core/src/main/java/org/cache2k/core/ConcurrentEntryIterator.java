@@ -58,6 +58,7 @@ public class ConcurrentEntryIterator<K,V> implements Iterator<Entry<K,V>> {
   int sequenceCnt = 0;
   int lastSequenceCnt;
   int initialHashSize;
+  long clearCount;
   Hash<Entry<K, V>> hashCtl;
   Entry<K, V>[] hash;
   Hash<Entry<K, V>> iteratedCtl = new Hash<Entry<K,V>>();
@@ -73,12 +74,49 @@ public class ConcurrentEntryIterator<K,V> implements Iterator<Entry<K,V>> {
     switchAndCheckAbort();
   }
 
+  @Override
+  public boolean hasNext() {
+    return (nextEntry = nextEntry()) != null;
+  }
+
+  @Override
+  public Entry<K,V> next() {
+    if (nextEntry != null) {
+      Entry<K,V> e = nextEntry;
+      nextEntry = null;
+      return e;
+    }
+    Entry<K,V> e = nextEntry();
+    if (e == null) {
+      throw new NoSuchElementException("not available");
+    }
+    return e;
+  }
+
+  @Override
+  public void remove() {
+    throw new UnsupportedOperationException();
+  }
+
+  /** Used by the storage code to filter out already iterated keys */
+  public boolean hasBeenIterated(Object key, int _hashCode) {
+    return Hash.contains(iterated, key, _hashCode);
+  }
+
+  public void markIterated(Object key, int _hashCode) {
+    Entry _newEntryIterated = new Entry();
+    _newEntryIterated.key = key;
+    _newEntryIterated.hashCode = _hashCode;
+    iteratedCtl.insert(iterated, _newEntryIterated);
+    iterated = iteratedCtl.expand(iterated, _hashCode);
+  }
+
   private Entry nextEntry() {
     Entry e;
     if (hash == null) {
       return null;
     }
-    if (hashCtl.isCleared()) {
+    if (wasCleared()) {
       return null;
     }
     int idx = 0;
@@ -112,15 +150,11 @@ public class ConcurrentEntryIterator<K,V> implements Iterator<Entry<K,V>> {
     }
   }
 
-  public void markIterated(Object key, int _hashCode) {
-    Entry _newEntryIterated = new Entry();
-    _newEntryIterated.key = key;
-    _newEntryIterated.hashCode = _hashCode;
-    iteratedCtl.insert(iterated, _newEntryIterated);
-    iterated = iteratedCtl.expand(iterated, _hashCode);
+  private boolean wasCleared() {
+    return clearCount != hashCtl.getClearCount();
   }
 
-  protected Entry<K,V> checkIteratedOrNext(Entry<K,V> e) {
+  private Entry<K,V> checkIteratedOrNext(Entry<K,V> e) {
     do {
       boolean _notYetIterated = !Hash.contains(iterated, e.key, e.hashCode);
       if (_notYetIterated) {
@@ -132,7 +166,7 @@ public class ConcurrentEntryIterator<K,V> implements Iterator<Entry<K,V>> {
     return null;
   }
 
-  protected boolean switchAndCheckAbort() {
+  private boolean switchAndCheckAbort() {
     synchronized (cache.lock) {
       if (hasExpansionOccurred()) {
         lastSequenceCnt += 2;
@@ -148,6 +182,7 @@ public class ConcurrentEntryIterator<K,V> implements Iterator<Entry<K,V>> {
       if (_step == 1 || _step == 2 || _step == 5) {
         switchToRefreshHash();
       }
+      clearCount = hashCtl.getClearCount();
       boolean _cacheClosed = hash == null;
       if (_cacheClosed) {
         return true;
@@ -174,35 +209,6 @@ public class ConcurrentEntryIterator<K,V> implements Iterator<Entry<K,V>> {
   private void switchToRefreshHash() {
     hash = cache.refreshHash;
     hashCtl = cache.refreshHashCtrl;
-  }
-
-  @Override
-  public boolean hasNext() {
-    return (nextEntry = nextEntry()) != null;
-  }
-
-  @Override
-  public Entry<K,V> next() {
-    if (nextEntry != null) {
-      Entry<K,V> e = nextEntry;
-      nextEntry = null;
-      return e;
-    }
-    Entry<K,V> e = nextEntry();
-    if (e == null) {
-      throw new NoSuchElementException("not available");
-    }
-    return e;
-  }
-
-  @Override
-  public void remove() {
-    throw new UnsupportedOperationException();
-  }
-
-  /** Used by the storage code to filter out already iterated keys */
-  public boolean hasBeenIterated(Object key, int _hashCode) {
-    return Hash.contains(iterated, key, _hashCode);
   }
 
 }

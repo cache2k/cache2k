@@ -43,6 +43,7 @@ import java.lang.reflect.Array;
  */
 public class Hash<E extends Entry> {
 
+  private volatile long clearCount;
   private int maxFill = 0;
   private Object bigLock;
   private Object[] segmentLocks;
@@ -90,6 +91,7 @@ public class Hash<E extends Entry> {
     for (int i = 0; i < segmentSize.length; i++) {
       segmentSize[i] = 0;
     }
+    clearCount++;
     return initArray(_entryType);
   }
 
@@ -317,17 +319,13 @@ public class Hash<E extends Entry> {
   }
 
   /**
-   * The cache with this hash was cleared and the hash table is no longer
-   * in used. Signal to iterations to abort.
-   */
-  public void cleared() {
-    maxFill = Integer.MAX_VALUE;
-  }
-
-  /**
    * Cache was closed. Inform operations/iterators on the hash.
    */
   public void close() { maxFill = Integer.MAX_VALUE - 1; }
+
+  public long getClearCount() {
+    return clearCount;
+  }
 
   /**
    * Operations should terminate
