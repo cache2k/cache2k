@@ -140,7 +140,7 @@ public abstract class HeapCache<K, V>
   /** Statistics */
 
   protected CacheBaseInfo info;
-  CommonMetrics.Updater metrics = new StandardCommonMetrics();
+  CommonMetrics.Updater metrics;
 
   /*
    * All the following counters and timestamps are updated under the single lock.
@@ -247,7 +247,7 @@ public abstract class HeapCache<K, V>
   }
 
   /** called from CacheBuilder */
-  public void setCacheConfig(Cache2kConfiguration c) {
+  public void setCacheConfig(final Cache2kConfiguration c) {
     valueType = c.getValueType().getType();
     keyType = c.getKeyType().getType();
     if (name != null) {
@@ -262,15 +262,25 @@ public abstract class HeapCache<K, V>
       evictChunkSize = Runtime.getRuntime().availableProcessors() * 2;
       maxSize += evictChunkSize;
     }
+    setFeatureBit(KEEP_AFTER_EXPIRED, c.isKeepDataAfterExpired());
+    setFeatureBit(REJECT_NULL_VALUES, !c.isPermitNullValues());
+    setFeatureBit(BACKGROUND_REFRESH, c.isRefreshAhead());
 
-    if (c.isRefreshAhead()) {
-      setFeatureBit(BACKGROUND_REFRESH, true);
-    }
+    metrics = TUNABLE.commonMetricsFactory.create(new CommonMetricsFactory.Parameters() {
+      @Override
+      public boolean isDisabled() {
+        return c.isDisableStatistics();
+      }
+
+      @Override
+      public boolean isPrecise() {
+        return false;
+      }
+    });
+
     if (c.getLoaderThreadCount() > 0) {
       loaderExecutor = provideDefaultLoaderExecutor(c.getLoaderThreadCount());
     }
-    setFeatureBit(KEEP_AFTER_EXPIRED, c.isKeepDataAfterExpired());
-    setFeatureBit(REJECT_NULL_VALUES, !c.isPermitNullValues());
   }
 
   String getThreadNamePrefix() {
@@ -2190,6 +2200,8 @@ public abstract class HeapCache<K, V>
      * Number of maximum loader threads, depending on the CPUs.
      */
     public int loaderThreadCountCpuFactor = 2;
+
+    public StandardCommonMetricsFactory commonMetricsFactory = new StandardCommonMetricsFactory();
 
 
   }

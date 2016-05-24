@@ -325,4 +325,9 @@ public class StandardCommonMetrics implements CommonMetrics.Updater {
     refreshSubmitFailedUpdater.addAndGet(this, cnt);
   }
 
+  @Override
+  public boolean isDisabled() {
+    return false;
+  }
+
 }

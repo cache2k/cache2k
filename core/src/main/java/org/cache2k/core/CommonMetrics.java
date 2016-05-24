@@ -109,6 +109,8 @@ public interface CommonMetrics {
    */
   long getRefreshSubmitFailedCount();
 
+  boolean isDisabled();
+
   interface Updater extends CommonMetrics {
 
     void putNewEntry();
@@ -164,6 +166,284 @@ public interface CommonMetrics {
     void refreshSubmitFailed();
     void refreshSubmitFailed(long cnt);
 
+  }
+
+  class BlackHole implements Updater {
+
+    @Override
+    public void containsButHit() {
+
+    }
+
+    @Override
+    public void putNewEntry() {
+
+    }
+
+    @Override
+    public void putNewEntry(final long cnt) {
+
+    }
+
+    @Override
+    public void putHit() {
+
+    }
+
+    @Override
+    public void putHit(final long cnt) {
+
+    }
+
+    @Override
+    public void putNoReadHit() {
+
+    }
+
+    @Override
+    public void putNoReadHit(final long cnt) {
+
+    }
+
+    @Override
+    public void containsButHit(final long cnt) {
+
+    }
+
+    @Override
+    public void remove() {
+
+    }
+
+    @Override
+    public void remove(final long cnt) {
+
+    }
+
+    @Override
+    public void heapHitButNoRead() {
+
+    }
+
+    @Override
+    public void heapHitButNoRead(final long cnt) {
+
+    }
+
+    @Override
+    public void timerEvent() {
+
+    }
+
+    @Override
+    public void timerEvent(final long cnt) {
+
+    }
+
+    @Override
+    public void internalException() {
+
+    }
+
+    @Override
+    public void load(final long _millis) {
+
+    }
+
+    @Override
+    public void load(final long cnt, final long _millis) {
+
+    }
+
+    @Override
+    public void reload(final long _millis) {
+
+    }
+
+    @Override
+    public void reload(final long cnt, final long _millis) {
+
+    }
+
+    @Override
+    public void refresh(final long _millis) {
+
+    }
+
+    @Override
+    public void refresh(final long cnt, final long _millis) {
+
+    }
+
+    @Override
+    public void loadException() {
+
+    }
+
+    @Override
+    public void loadException(final long cnt) {
+
+    }
+
+    @Override
+    public void suppressedException() {
+
+    }
+
+    @Override
+    public void suppressedException(final long cnt) {
+
+    }
+
+    @Override
+    public void expiredKept() {
+
+    }
+
+    @Override
+    public void expiredKept(final long cnt) {
+
+    }
+
+    @Override
+    public void peekMiss() {
+
+    }
+
+    @Override
+    public void peekMiss(final long cnt) {
+
+    }
+
+    @Override
+    public void peekHitNotFresh() {
+
+    }
+
+    @Override
+    public void peekHitNotFresh(final long cnt) {
+
+    }
+
+    @Override
+    public void refreshHit() {
+
+    }
+
+    @Override
+    public void refreshHit(final long cnt) {
+
+    }
+
+    @Override
+    public void refreshSubmitFailed() {
+
+    }
+
+    @Override
+    public void refreshSubmitFailed(final long cnt) {
+
+    }
+
+    @Override
+    public long getPutNewEntryCount() {
+      return 0;
+    }
+
+    @Override
+    public long getPutHitCount() {
+      return 0;
+    }
+
+    @Override
+    public long getPutNoReadHitCount() {
+      return 0;
+    }
+
+    @Override
+    public long getContainsButHitCount() {
+      return 0;
+    }
+
+    @Override
+    public long getRemoveCount() {
+      return 0;
+    }
+
+    @Override
+    public long getHeapHitButNoReadCount() {
+      return 0;
+    }
+
+    @Override
+    public long getTimerEventCount() {
+      return 0;
+    }
+
+    @Override
+    public long getInternalExceptionCount() {
+      return 0;
+    }
+
+    @Override
+    public long getLoadCount() {
+      return 0;
+    }
+
+    @Override
+    public long getReloadCount() {
+      return 0;
+    }
+
+    @Override
+    public long getRefreshCount() {
+      return 0;
+    }
+
+    @Override
+    public long getLoadMillis() {
+      return 0;
+    }
+
+    @Override
+    public long getLoadExceptionCount() {
+      return 0;
+    }
+
+    @Override
+    public long getSuppressedExceptionCount() {
+      return 0;
+    }
+
+    @Override
+    public long getExpiredKeptCount() {
+      return 0;
+    }
+
+    @Override
+    public long getPeekMissCount() {
+      return 0;
+    }
+
+    @Override
+    public long getPeekHitNotFreshCount() {
+      return 0;
+    }
+
+    @Override
+    public long getRefreshHitCount() {
+      return 0;
+    }
+
+    @Override
+    public long getRefreshSubmitFailedCount() {
+      return 0;
+    }
+
+    @Override
+    public boolean isDisabled() {
+      return true;
+    }
   }
 
 }

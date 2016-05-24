@@ -64,6 +64,7 @@ public class Cache2kConfiguration<K, V> implements Serializable {
   private boolean suppressExceptions = true;
   private int loaderThreadCount;
   private boolean permitNullValues = false;
+  private boolean disableStatistics = false;
 
   private ExpiryPolicy<K,V> expiryPolicy;
   private ResiliencePolicy<K,V> resiliencePolicy;
@@ -561,4 +562,14 @@ public class Cache2kConfiguration<K, V> implements Serializable {
     permitNullValues = v;
   }
 
+  public boolean isDisableStatistics() {
+    return disableStatistics;
+  }
+
+  /**
+   * @see Cache2kBuilder#disableStatistics
+   */
+  public void setDisableStatistics(final boolean _disableStatistics) {
+    disableStatistics = _disableStatistics;
+  }
 }

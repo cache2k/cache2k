@@ -494,6 +494,14 @@ public class Cache2kBuilder<K, V> implements Cloneable {
     return this;
   }
 
+  /**
+   * By default statistic gathering is enabled. Set true to disable statistics.
+   */
+  public final Cache2kBuilder<K,V> disableStatistics(boolean flag) {
+    config.setDisableStatistics(flag);
+    return this;
+  }
+
   public final Cache2kConfiguration<K,V> toConfiguration() {
     return config;
   }
