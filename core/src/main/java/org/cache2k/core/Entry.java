@@ -189,38 +189,63 @@ public class Entry<K, T>
 
   /**
    * Different possible processing states. The code only uses fetch now, rest is preparation.
+   * We don't use enums, since enums produce object garbage.
    */
-  enum ProcessingState {
-    DONE,
-    READ,
-    READ_COMPLETE,
-    MUTATE,
-    LOAD,
-    LOAD_COMPLETE,
-    FETCH,
-    REFRESH,
-    EXPIRY,
-    EXPIRY_COMPLETE,
-    WRITE,
-    WRITE_COMPLETE,
-    STORE,
-    STORE_COMPLETE,
-    NOTIFY,
-    PINNED,
-    EVICT,
-    LAST
+  static class ProcessingState {
+    static final int DONE = 0;
+    static final int READ = 1;
+    static final int READ_COMPLETE = 2;
+    static final int MUTATE = 3;
+    static final int LOAD = 4;
+    static final int LOAD_COMPLETE = 5;
+    static final int FETCH = 6;
+    static final int REFRESH = 7;
+    static final int EXPIRY = 8;
+    static final int EXPIRY_COMPLETE = 9;
+    static final int WRITE = 10;
+    static final int WRITE_COMPLETE = 11;
+    static final int STORE = 12;
+    static final int STORE_COMPLETE = 13;
+    static final int NOTIFY = 14;
+    static final int PINNED = 15;
+    static final int EVICT = 16;
+    static final int LAST = 17;
+  }
+
+  String num2processingStateText(int ps) {
+    switch (ps) {
+      case ProcessingState.DONE: return "DONE";
+      case ProcessingState.READ: return "READ";
+      case ProcessingState.READ_COMPLETE: return "READ_COMPLETE";
+      case ProcessingState.MUTATE: return "MUTATE";
+      case ProcessingState.LOAD: return "LOAD";
+      case ProcessingState.LOAD_COMPLETE: return "LOAD_COMPLETE";
+      case ProcessingState.FETCH: return "FETCH";
+      case ProcessingState.REFRESH: return "REFRESH";
+      case ProcessingState.EXPIRY: return "EXPIRY";
+      case ProcessingState.EXPIRY_COMPLETE: return "EXPIRY_COMPLETE";
+      case ProcessingState.WRITE: return "WRITE";
+      case ProcessingState.WRITE_COMPLETE: return "WRITE_COMPLETE";
+      case ProcessingState.STORE: return "STORE";
+      case ProcessingState.STORE_COMPLETE: return "STORE_COMPLETE";
+      case ProcessingState.NOTIFY: return "NOTIFY";
+      case ProcessingState.PINNED: return "PINNED";
+      case ProcessingState.EVICT: return "EVICT";
+      case ProcessingState.LAST: return "LAST";
+    }
+    return "UNKNOWN";
   }
 
   private static final int PS_BITS = 5;
   private static final int PS_MASK = (1 << PS_BITS) - 1;
   private static final int PS_POS = MODIFICATION_TIME_BITS;
 
-  public ProcessingState getProcessingState() {
-    return ProcessingState.values()[(int) ((fetchedTime >> PS_POS) & PS_MASK)];
+  public int getProcessingState() {
+    return (int) ((fetchedTime >> PS_POS) & PS_MASK);
   }
 
-  public void setProcessingState(ProcessingState ps) {
-    fetchedTime = fetchedTime & ~((long) PS_MASK << PS_POS) | ((long) ps.ordinal() << PS_POS);
+  public void setProcessingState(int v) {
+    fetchedTime = fetchedTime & ~((long) PS_MASK << PS_POS) | (((long) v) << PS_POS);
   }
 
   /**
@@ -230,11 +255,11 @@ public class Entry<K, T>
     setProcessingState(ProcessingState.FETCH);
   }
 
-  public void startProcessing(ProcessingState ps) {
+  public void startProcessing(int ps) {
     setProcessingState(ps);
   }
 
-  public void nextProcessingStep(ProcessingState ps) {
+  public void nextProcessingStep(int ps) {
     setProcessingState(ps);
   }
 
@@ -463,7 +488,7 @@ public class Entry<K, T>
     StringBuilder sb = new StringBuilder();
     sb.append("Entry{");
     sb.append("objId=").append(System.identityHashCode(this));
-    sb.append(", lock=").append(getProcessingState());
+    sb.append(", lock=").append(num2processingStateText(getProcessingState()));
     sb.append(", key=");
     if (key == null) {
       sb.append("null");

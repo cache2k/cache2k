@@ -405,7 +405,7 @@ public abstract class EntryAction<K, V, R> implements
     onLoadSuccess(v);
   }
 
-  void lockFor(Entry.ProcessingState ps) {
+  void lockFor(int ps) {
     if (entryLocked) {
       entry.nextProcessingStep(ps);
       return;
@@ -434,7 +434,7 @@ public abstract class EntryAction<K, V, R> implements
     }
   }
 
-  void lockForNoHit(Entry.ProcessingState ps) {
+  void lockForNoHit(int ps) {
     if (entryLocked) {
       entry.nextProcessingStep(ps);
       return;
