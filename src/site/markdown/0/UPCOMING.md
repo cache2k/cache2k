@@ -29,6 +29,10 @@ If something is listed here it might affect an existing application and updating
  - Exceptions in the expiry policy and resilience policy will be propagated as `CacheLoaderException` 
    if happened during load 
  - asMap()
+ - history size of Clock-Pro eviction reduced to one half of the capacity
+ - getAll() returns empty map if no loader is defined and requested keys are not in cache
+ - get() return null if no loader is defined and entry is not in cache (was exception before).
+ 
  
 ## API Changes and new methods
 
