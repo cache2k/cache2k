@@ -1639,11 +1639,17 @@ public abstract class HeapCache<K, V>
         v = loader.load(e.key, t0, e);
       }
     } catch (Throwable _ouch) {
-      long t = System.currentTimeMillis();
+      long t = t0;
+      if (!metrics.isDisabled()) {
+        t = System.currentTimeMillis();
+      }
       loadGotException(e, t0, t, _ouch);
       return;
     }
-    long t = System.currentTimeMillis();
+    long t = t0;
+    if (!metrics.isDisabled()) {
+      t = System.currentTimeMillis();
+    }
     insertOrUpdateAndCalculateExpiry(e, v, t0, t, INSERT_STAT_LOAD);
   }
 
