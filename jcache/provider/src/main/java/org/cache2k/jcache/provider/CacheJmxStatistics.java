@@ -30,15 +30,11 @@ import javax.cache.management.CacheStatisticsMXBean;
  */
 public class CacheJmxStatistics implements CacheStatisticsMXBean {
 
-  private static final boolean flushOnAccess = Tuning.GLOBAL.flushStatisticsOnAccess;
-  private static final int tweakStatisticsForEntryProcessor =
-    Tuning.GLOBAL.tweakStatisticsForEntityProcessor && false ? 1 : 0;
-
   InternalCache cache;
   JCacheAdapter adapter;
 
   InternalCacheInfo getInfo() {
-    return flushOnAccess ? cache.getLatestInfo() : cache.getInfo();
+    return adapter.flushJmxStatistics ? cache.getLatestInfo() : cache.getInfo();
   }
 
   public CacheJmxStatistics(JCacheAdapter _cache) {
@@ -62,7 +58,7 @@ public class CacheJmxStatistics implements CacheStatisticsMXBean {
     long _missCount = inf.getMissCnt();
     return _readUsage - _missCount +
       adapter.iterationHitCorrectionCounter.get() +
-      adapter.hitCorrectionCounter.get() * tweakStatisticsForEntryProcessor;
+      adapter.hitCorrectionCounter.get();
   }
 
   @Override
@@ -83,7 +79,7 @@ public class CacheJmxStatistics implements CacheStatisticsMXBean {
   }
 
   private long calcMisses(InternalCacheInfo inf) {
-    return inf.getMissCnt() + adapter.missCorrectionCounter.get() * tweakStatisticsForEntryProcessor;
+    return inf.getMissCnt() + adapter.missCorrectionCounter.get();
   }
 
   @Override

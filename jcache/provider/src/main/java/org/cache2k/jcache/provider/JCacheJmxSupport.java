@@ -37,12 +37,6 @@ public class JCacheJmxSupport implements CacheLifeCycleListener {
 
   private static final MBeanServer mBeanServer = MBeanServerFactory.createMBeanServer();
 
-  /**
-   * Register JMX objects. Called by manager if statistics support is requested.
-   */
-  public void registerCache(Cache c) {
-  }
-
   @Override
   public void cacheCreated(CacheManager cm, Cache c) {
   }
@@ -110,7 +104,7 @@ public class JCacheJmxSupport implements CacheLifeCycleListener {
   }
 
   /**
-   * Filter illegal chars, same rule as in TCK.
+   * Filter illegal chars, same rule as in TCK or RI?
    */
   public static String sanitizeName(String string) {
     return string == null ? "" : string.replaceAll(":|=|\n|,", ".");

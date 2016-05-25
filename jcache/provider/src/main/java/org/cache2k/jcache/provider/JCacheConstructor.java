@@ -343,6 +343,9 @@ public class JCacheConstructor<K,V> {
     if (config.isStoreByValue()) {
       _adapter.storeByValue = true;
     }
+    if (extraConfiguration.isAlwaysFlushJmxStatistics()) {
+      _adapter.flushJmxStatistics = true;
+    }
     createdCache = _adapter;
   }
 

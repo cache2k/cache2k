@@ -137,6 +137,10 @@ Calling other methods on the cache from inside an entry processor execution (ree
 The entry processor should have no external side effects. To enable asynchronous operations, the execution
 may be interrupted by a `RestartException` and restarted.
 
+=== Cache.getConfiguration()
+
+It is not possible to retrieve the additional effective cache2k configuration with this method.
+
 === Performance
 
 Using the JCache API does not deliver the same performance as when the native cache2k API is used.
@@ -145,3 +149,4 @@ Some design choices in JCache lead to additional overhead, for example:
  - Event listeners are attachable and detachable at runtime
  - Expiry policy needs to be called for every access
  - Store-by-value semantics require keys and values to be copied
+
