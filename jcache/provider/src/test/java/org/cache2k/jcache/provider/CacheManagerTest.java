@@ -133,18 +133,4 @@ public class CacheManagerTest {
     cache.close();
   }
 
-  @Test(expected = IllegalArgumentException.class)
-  public void create_cache2k_config_storeByReference_copy_exception() {
-    CachingProvider p = Caching.getCachingProvider();
-    CacheManager cm = p.getCacheManager();
-    Cache<Long, Double> cache = cm.createCache("aCache", ExtendedMutableConfiguration.of(
-      new Cache2kBuilder<Long, Double>(){}
-        .with(new JCacheConfiguration.Builder()
-          .copyAlwaysIfRequested(true)
-        )
-      ).setStoreByValue(false)
-    );
-    cache.close();
-  }
-
 }

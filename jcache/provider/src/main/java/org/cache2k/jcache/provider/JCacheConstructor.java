@@ -105,7 +105,6 @@ public class JCacheConstructor<K,V> {
     setupTypes();
     setupName();
     setupDefaults();
-    checkConfiguration();
     setupExceptionPropagator();
     setupCacheThrough();
     setupExpiryPolicy();
@@ -159,14 +158,6 @@ public class JCacheConstructor<K,V> {
     if (!cache2kConfigurationWasProvided) {
       cache2kConfiguration.setSharpExpiry(true);
       cache2kConfiguration.setKeepDataAfterExpired(false);
-    }
-  }
-
-  private void checkConfiguration() {
-    if (!config.isStoreByValue() && extraConfiguration.isCopyAlwaysIfRequested()) {
-      throw new IllegalArgumentException(
-        "Store by reference requested via JCache configuration but copy requested " +
-          "via extra cache2k configuration.");
     }
   }
 
