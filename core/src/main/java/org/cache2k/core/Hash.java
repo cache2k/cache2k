@@ -139,11 +139,12 @@ public class Hash<E extends Entry> {
 
 
   public static <E extends Entry> E lookup(E[] _hashTable, Object key, int _hashCode) {
+    Object ek;
     int i = index(_hashTable, _hashCode);
     E e = _hashTable[i];
     while (e != null) {
       if (e.hashCode == _hashCode &&
-          key.equals(e.key)) {
+        (key == (ek = e.key) || key.equals(ek))) {
         return e;
       }
       e = (E) e.another;
@@ -152,11 +153,12 @@ public class Hash<E extends Entry> {
   }
 
   public static boolean contains(Entry[] _hashTable, Object key, int _hashCode) {
+    Object ek;
     int i = index(_hashTable, _hashCode);
     Entry e = _hashTable[i];
     while (e != null) {
       if (e.hashCode == _hashCode &&
-          (key == e.key || key.equals(e.key))) {
+          (key == (ek = e.key) || key.equals(ek))) {
         return true;
       }
       e = e.another;
