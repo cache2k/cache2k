@@ -21,6 +21,7 @@ package org.cache2k.core;
  */
 
 import org.cache2k.CacheEntry;
+import org.cache2k.processor.CacheEntryProcessingException;
 import org.cache2k.processor.CacheEntryProcessor;
 import org.cache2k.processor.EntryProcessingResult;
 import org.cache2k.core.operation.Semantic;
@@ -149,16 +150,17 @@ public abstract class AbstractCache<K, V> implements InternalCache<K, V> {
             return null;
           }
         });
-      } catch (final Throwable t) {
+      } catch (CacheEntryProcessingException t) {
+        final Throwable _cause = t.getCause();
         m.put(k, new EntryProcessingResult<R>() {
           @Override
           public R getResult() {
-            return null;
+            throw new CacheEntryProcessingException(_cause);
           }
 
           @Override
           public Throwable getException() {
-            return t;
+            return _cause;
           }
         });
       }

@@ -37,8 +37,6 @@ import org.cache2k.integration.AdvancedCacheLoader;
 import org.cache2k.integration.CacheLoader;
 import org.cache2k.integration.ExceptionPropagator;
 import org.cache2k.integration.LoadCompletedListener;
-import org.cache2k.integration.CacheLoaderException;
-import org.cache2k.integration.ExceptionInformation;
 import org.cache2k.processor.CacheEntryProcessor;
 
 import java.security.SecureRandom;
@@ -93,20 +91,7 @@ public abstract class HeapCache<K, V>
 
   protected static final Tunable TUNABLE = TunableFactory.get(Tunable.class);
 
-  final static ExceptionPropagator DEFAULT_EXCEPTION_PROPAGATOR = new ExceptionPropagator() {
-    @Override
-    public RuntimeException propagateException(Object key, final ExceptionInformation exceptionInformation) {
-      long _expiry = exceptionInformation.getUntil();
-      if (_expiry > 0) {
-        if (_expiry == Long.MAX_VALUE) {
-          return new CacheLoaderException("(expiry=ETERNAL) " + exceptionInformation.getException(), exceptionInformation.getException());
-        }
-        return new CacheLoaderException("(expiry=" + formatMillis(_expiry) + ") " + exceptionInformation.getException(), exceptionInformation.getException());
-      } else {
-        return new CacheLoaderException("propagate previous loader exception", exceptionInformation.getException());
-      }
-    }
-  };
+  final static ExceptionPropagator DEFAULT_EXCEPTION_PROPAGATOR = TUNABLE.exceptionPropagator;
 
   protected final int hashSeed;
 
@@ -776,16 +761,12 @@ public abstract class HeapCache<K, V>
    * Wrap entry in a separate object instance. We can return the entry directly, however we lock on
    * the entry object.
    */
-  protected CacheEntry<K, V> returnEntry(final Entry<K, V> e) {
+  protected CacheEntry<K, V> returnEntry(final ExaminationEntry<K, V> e) {
     if (e == null) {
       return null;
     }
     synchronized (e) {
-      final K _key = e.getKey();
-      final V _value = e.getValue();
-      final Throwable _exception = e.getException();
-      final long _lastModification = e.getLastModification();
-      return returnCacheEntry(_key, _value, _exception, _lastModification);
+      return returnCacheEntry(e.getKey(), e.getValueOrException(), e.getLastModification());
     }
   }
 
@@ -800,7 +781,7 @@ public abstract class HeapCache<K, V>
     }
   }
 
-  private CacheEntry<K, V> returnCacheEntry(final K _key, final V _value, final Throwable _exception, final long _lastModification) {
+  protected CacheEntry<K, V> returnCacheEntry(final K _key, final V _valueOrException, final long _lastModification) {
     CacheEntry<K, V> ce = new CacheEntry<K, V>() {
       @Override
       public K getKey() {
@@ -809,12 +790,18 @@ public abstract class HeapCache<K, V>
 
       @Override
       public V getValue() {
-        return _value;
+        if (_valueOrException instanceof ExceptionWrapper) {
+          throw exceptionPropagator.propagateException(_key, (ExceptionWrapper) _valueOrException);
+        }
+        return _valueOrException;
       }
 
       @Override
       public Throwable getException() {
-        return _exception;
+        if (_valueOrException instanceof ExceptionWrapper) {
+          return ((ExceptionWrapper) _valueOrException).getException();
+        }
+        return null;
       }
 
       @Override
@@ -1953,6 +1940,15 @@ public abstract class HeapCache<K, V>
     };
   }
 
+  public Map<K, V> convertCacheEntry2ValueMap(final Map<K, CacheEntry<K, V>> _map) {
+    return new MapValueConverterProxy<K, V, CacheEntry<K, V>>(_map) {
+      @Override
+      protected V convert(final CacheEntry<K, V> v) {
+        return v.getValue();
+      }
+    };
+  }
+
   public Map<K, V> peekAll(final Iterable<? extends K> _inputKeys) {
     Map<K, ExaminationEntry<K, V>> map = new HashMap<K, ExaminationEntry<K, V>>();
     for (K k : _inputKeys) {
@@ -2215,6 +2211,8 @@ public abstract class HeapCache<K, V>
     public int loaderThreadCountCpuFactor = 2;
 
     public StandardCommonMetricsFactory commonMetricsFactory = new StandardCommonMetricsFactory();
+
+    public ExceptionPropagator exceptionPropagator = new StandardExceptionPropagator();
 
 
   }

@@ -20,6 +20,8 @@ package org.cache2k.core.operation;
  * #L%
  */
 
+import org.cache2k.integration.ExceptionInformation;
+
 /**
  * Interface for cache operation semantics to control the progress of the processing.
  *
@@ -27,7 +29,7 @@ package org.cache2k.core.operation;
  *
  * @author Jens Wilke
  */
-public interface Progress<V, R> {
+public interface Progress<K, V, R> {
 
   /**
    * Requests that the cache content for an entry will be provided.
@@ -59,6 +61,16 @@ public interface Progress<V, R> {
    * Sets the operation result.
    */
   void result(R result);
+
+  /**
+   * Returns a cache entry as result. The entry will be copied before returning.
+   */
+  void entryResult(ExaminationEntry e);
+
+  /**
+   * Needed for the mutable entry getValue() to throw an exception.
+   */
+  RuntimeException propagateException(K key, ExceptionInformation inf);
 
   /**
    * Request that the entry value gets loaded from loader. Last command of semantic method.
@@ -93,9 +105,11 @@ public interface Progress<V, R> {
   void put(V value);
 
   /**
-   * Bad things happened, propagate the exception to the client.
+   * Bad things happened, propagate the exception to the client. The original exception
+   * must be wrapped. The calling stacktrace will be filled into the wrapped exception
+   * before thrown.
    */
-  void failure(Throwable t);
+  void failure(RuntimeException t);
 
   /**
    * Set new value, skip expiry calculation and set expiry time directly.

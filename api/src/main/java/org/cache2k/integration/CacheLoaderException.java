@@ -23,14 +23,21 @@ package org.cache2k.integration;
 import org.cache2k.PropagatedCacheException;
 
 /**
- * Wraps loader exceptions. Exceptions occurring in the loader are usually cached, which
- * means, there can be multiple instances thrown for one loader exception. The cause
- * contains the original exceptions from the loader.
- * Wraps an application exception.
+ * Exception to wrap a loader exception. When an exception is thrown by the loader
+ * and rethrown to the application it is wrapped in this exception.
  *
- * If a cache receives an exception when loading a value it may propagate
+ * <p>A single loader exception may be thrown multiple times to the application, if
+ * the exception is cached. This is controlled by the {@link ResiliencePolicy}.
+ * In case a cached exception is thrown, it contains the string {@code expiry=<timestamp>}
+ *
+ * <p>It is possible to register a custom behavior for exception propagation
+ * with the {@link ExceptionPropagator}.
+ *
+ * <p>If a cache receives an exception when loading a value it may propagate
  * the exception wrapped into this one to the caller. Whether propagation
  * occurs depends on the configuration and on the presence of valid data.
+ *
+ *
  *
  * @author Jens Wilke
  */

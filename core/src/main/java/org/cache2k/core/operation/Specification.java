@@ -21,6 +21,7 @@ package org.cache2k.core.operation;
  */
 
 import org.cache2k.CacheEntry;
+import org.cache2k.processor.CacheEntryProcessingException;
 import org.cache2k.processor.CacheEntryProcessor;
 import org.cache2k.processor.MutableCacheEntry;
 import org.cache2k.processor.RestartException;
@@ -102,7 +103,7 @@ public class Specification<K, V> {
     @Override
     public void examine(Progress c, ExaminationEntry e) {
       if (c.isPresentOrMiss()) {
-        c.result(returnStableEntry(e));
+        c.entryResult(e);
       } else {
         c.wantMutation();
       }
@@ -115,16 +116,9 @@ public class Specification<K, V> {
 
     @Override
     public void loaded(final Progress c, final ExaminationEntry e) {
-      c.result(returnStableEntry(e));
+      c.entryResult(e);
     }
   };
-
-  public static CacheEntry returnStableEntry(ExaminationEntry e) {
-    return
-      new ReadOnlyCacheEntry(
-        e.getKey(), e.getValueOrException(),
-        e.getLastModification());
-  }
 
   public Semantic<K, V, ResultEntry<K,V>> peekEntry(K key) {
     return PEEK_ENTRY;
@@ -135,7 +129,7 @@ public class Specification<K, V> {
     @Override
     public void examine(final Progress c, final ExaminationEntry e) {
       if (c.isPresentOrMiss()) {
-        c.result(returnStableEntry(e));
+        c.entryResult(e);
       }
     }
 
@@ -206,7 +200,7 @@ public class Specification<K, V> {
     return new Semantic.UpdateExisting<K, V, V>() {
 
       @Override
-      public void update(Progress<V, V> c, ExaminationEntry<K, V> e) {
+      public void update(Progress<K, V, V> c, ExaminationEntry<K, V> e) {
         if (c.isPresentOrMiss()) {
           c.result(e.getValueOrException());
           c.put(value);
@@ -220,7 +214,7 @@ public class Specification<K, V> {
     return new Semantic.UpdateExisting<K, V, V>() {
 
       @Override
-      public void update(Progress<V, V> c, ExaminationEntry<K, V> e) {
+      public void update(Progress<K, V, V> c, ExaminationEntry<K, V> e) {
         if (c.isPresentOrMiss()) {
           c.result(e.getValueOrException());
         }
@@ -234,7 +228,7 @@ public class Specification<K, V> {
     return new Semantic.Update<K, V, V>() {
 
       @Override
-      public void update(Progress<V, V> c, ExaminationEntry<K, V> e) {
+      public void update(Progress<K, V, V> c, ExaminationEntry<K, V> e) {
         c.put(value);
       }
 
@@ -250,7 +244,7 @@ public class Specification<K, V> {
     return new Semantic.UpdateExisting<K, V, Boolean>() {
 
       @Override
-      public void update(Progress<V, Boolean> c, ExaminationEntry<K, V> e) {
+      public void update(Progress<K, V, Boolean> c, ExaminationEntry<K, V> e) {
         if (!c.isPresentOrMiss()) {
           c.result(true);
           c.put(value);
@@ -271,7 +265,7 @@ public class Specification<K, V> {
     return new Semantic.UpdateExisting<K, V, Boolean>() {
 
       @Override
-      public void update(Progress<V, Boolean> c, ExaminationEntry<K, V> e) {
+      public void update(Progress<K, V, Boolean> c, ExaminationEntry<K, V> e) {
         if (c.isPresentOrMiss()) {
           c.result(true);
           c.put(value);
@@ -287,7 +281,7 @@ public class Specification<K, V> {
     return new Semantic.UpdateExisting<K, V, Boolean>() {
 
       @Override
-      public void update(Progress<V, Boolean> c, ExaminationEntry<K, V> e) {
+      public void update(Progress<K, V, Boolean> c, ExaminationEntry<K, V> e) {
         if (c.isPresentOrMiss() &&
           ( (value == null && e.getValueOrException() == null) ||
             value.equals(e.getValueOrException())) ) {
@@ -306,14 +300,14 @@ public class Specification<K, V> {
     return new Semantic.UpdateExisting<K, V, CacheEntry<K,V>>() {
 
       @Override
-      public void update(Progress<V, CacheEntry<K, V>> c, ExaminationEntry<K, V> e) {
+      public void update(Progress<K, V, CacheEntry<K, V>> c, ExaminationEntry<K, V> e) {
         if (c.isPresentOrMiss()) {
           if (e.getValueOrException().equals(value)) {
             c.result(null);
             c.put(newValue);
             return;
           }
-          c.result(returnStableEntry(e));
+          c.entryResult(e);
           return;
         }
         c.result(dummyEntry);
@@ -326,7 +320,7 @@ public class Specification<K, V> {
     return new Semantic.UpdateExisting<K, V, Boolean>() {
 
       @Override
-      public void update(Progress<V, Boolean> c, ExaminationEntry<K, V> e) {
+      public void update(Progress<K, V, Boolean> c, ExaminationEntry<K, V> e) {
         if (c.isPresentOrMiss() &&
           ( (value == null && e.getValueOrException() == null) ||
              value.equals(e.getValueOrException())) ) {
@@ -343,7 +337,7 @@ public class Specification<K, V> {
   static class MutableEntryOnProgress<K, V> implements MutableCacheEntry<K, V> {
 
     ExaminationEntry<K, V> entry;
-    Progress<V, ?> progress;
+    Progress<K, V, ?> progress;
     boolean originalExists = false;
     boolean mutate = false;
     boolean remove = false;
@@ -358,7 +352,7 @@ public class Specification<K, V> {
      * a value after exists yields true. It is critical that the isPresentOrMiss() check is
      * only done once, since it depends on the current time.
      */
-    public MutableEntryOnProgress(final Progress<V, ?> _progress, final ExaminationEntry<K, V> _entry, boolean _readThrough) {
+    public MutableEntryOnProgress(final Progress<K, V, ?> _progress, final ExaminationEntry<K, V> _entry, boolean _readThrough) {
       readThrough = _readThrough;
       entry = _entry;
       progress = _progress;
@@ -417,7 +411,7 @@ public class Specification<K, V> {
         throw new NeedsLoadRestartException();
       }
       if (value instanceof ExceptionWrapper) {
-        return null;
+        throw progress.propagateException(entry.getKey(), (ExceptionWrapper) value);
       }
       return value;
     }
@@ -457,7 +451,7 @@ public class Specification<K, V> {
   public <R> Semantic<K, V, R> invoke(final K key, final boolean _readThrough, final CacheEntryProcessor<K, V, R> _processor, final Object... _arguments) {
     return new Semantic.UpdateExisting<K, V, R>() {
       @Override
-      public void update(final Progress<V, R> c, final ExaminationEntry<K, V> e) {
+      public void update(final Progress<K, V, R> c, final ExaminationEntry<K, V> e) {
         MutableEntryOnProgress<K, V> _mutableEntryOnProgress = new MutableEntryOnProgress<K, V>(c, e, _readThrough);
         try {
           R _result = _processor.process(_mutableEntryOnProgress, _arguments);
@@ -466,7 +460,7 @@ public class Specification<K, V> {
           c.loadAndMutation();
           return;
         } catch (Throwable t) {
-          c.failure(t);
+          c.failure(new CacheEntryProcessingException(t));
           return;
         }
         _mutableEntryOnProgress.sendMutationCommandIfNeeded();
@@ -474,7 +468,7 @@ public class Specification<K, V> {
 
       /** No operation, result is set by the entry processor */
       @Override
-      public void loaded(final Progress<V, R> c, final ExaminationEntry<K, V> e) { }
+      public void loaded(final Progress<K, V, R> c, final ExaminationEntry<K, V> e) { }
     };
   }
 

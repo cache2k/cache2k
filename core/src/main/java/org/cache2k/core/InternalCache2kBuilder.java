@@ -311,8 +311,7 @@ public class InternalCache2kBuilder<K, T> {
     }
 
     @Override
-    public void onEntryCreated(final Cache<K, V> c, CacheEntry<K, V> e0) {
-      final CacheEntry<K,V> e = ReadOnlyCacheEntry.of(e0);
+    public void onEntryCreated(final Cache<K, V> c, final CacheEntry<K, V> e) {
       dispatcher.queue(new AsyncEvent<K>() {
         @Override
         public K getKey() {
@@ -338,9 +337,7 @@ public class InternalCache2kBuilder<K, T> {
     }
 
     @Override
-    public void onEntryUpdated(final Cache<K, V> cache, CacheEntry<K, V> currentEntry0, CacheEntry<K, V> entryWithNewData0) {
-      final CacheEntry<K,V> currentEntry = ReadOnlyCacheEntry.of(currentEntry0);
-      final CacheEntry<K,V> entryWithNewData = ReadOnlyCacheEntry.of(entryWithNewData0);
+    public void onEntryUpdated(final Cache<K, V> cache, final CacheEntry<K, V> currentEntry, final CacheEntry<K, V> entryWithNewData) {
       dispatcher.queue(new AsyncEvent<K>() {
         @Override
         public K getKey() {
@@ -366,8 +363,7 @@ public class InternalCache2kBuilder<K, T> {
     }
 
     @Override
-    public void onEntryRemoved(final Cache<K, V> c, final CacheEntry<K, V> e0) {
-      final CacheEntry<K,V> e = ReadOnlyCacheEntry.of(e0);
+    public void onEntryRemoved(final Cache<K, V> c, final CacheEntry<K, V> e) {
       dispatcher.queue(new AsyncEvent<K>() {
         @Override
         public K getKey() {
@@ -392,8 +388,7 @@ public class InternalCache2kBuilder<K, T> {
     }
 
     @Override
-    public void onEntryExpired(final Cache<K, V> c, final CacheEntry<K, V> e0) {
-      final CacheEntry<K,V> e = ReadOnlyCacheEntry.of(e0);
+    public void onEntryExpired(final Cache<K, V> c, final CacheEntry<K, V> e) {
       dispatcher.queue(new AsyncEvent<K>() {
         @Override
         public K getKey() {

@@ -379,8 +379,8 @@ public class JCacheAdapter<K, V> implements javax.cache.Cache<K, V> {
         public T get() throws EntryProcessorException {
           Throwable t = pr.getException();
           if (t != null) {
-            if (t instanceof CustomizationException && t.getCause() instanceof EntryProcessorException) {
-              throw (EntryProcessorException) t.getCause();
+            if (t instanceof EntryProcessorException) {
+              throw (EntryProcessorException) t;
             }
             throw new EntryProcessorException(t);
           }

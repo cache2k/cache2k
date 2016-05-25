@@ -20,6 +20,7 @@ package org.cache2k.core;
  * #L%
  */
 
+import org.cache2k.CacheEntry;
 import org.cache2k.expiry.ExpiryPolicy;
 import org.cache2k.event.CacheEntryExpiredListener;
 import org.cache2k.expiry.ExpiryTimeValues;
@@ -39,6 +40,7 @@ import org.cache2k.core.operation.Semantic;
 import org.cache2k.core.storageApi.StorageCallback;
 import org.cache2k.core.storageApi.StorageAdapter;
 import org.cache2k.core.storageApi.StorageEntry;
+import org.cache2k.integration.ExceptionInformation;
 
 /**
  * This is a method object to perform an operation on an entry.
@@ -47,7 +49,7 @@ import org.cache2k.core.storageApi.StorageEntry;
  */
 @SuppressWarnings("SynchronizeOnNonFinalField")
 public abstract class EntryAction<K, V, R> implements
-  StorageCallback, AsyncCacheLoader.Callback<V>, AsyncCacheWriter.Callback, Progress<V, R> {
+  StorageCallback, AsyncCacheLoader.Callback<V>, AsyncCacheWriter.Callback, Progress<K, V, R> {
 
   static final Entry NON_FRESH_DUMMY = new Entry();
 
@@ -496,6 +498,16 @@ public abstract class EntryAction<K, V, R> implements
   }
 
   @Override
+  public void entryResult(final ExaminationEntry e) {
+    result = (R) heapCache.returnEntry(e);
+  }
+
+  @Override
+  public RuntimeException propagateException(final K key, final ExceptionInformation inf) {
+    return heapCache.exceptionPropagator.propagateException(key, inf);
+  }
+
+  @Override
   public void put(V value) {
     lockFor(Entry.ProcessingState.MUTATE);
     needsFinish = false;
@@ -837,12 +849,13 @@ public abstract class EntryAction<K, V, R> implements
       mutationReleaseLockAndStartTimer();
       return;
     }
+    CacheEntry<K,V> _currentEntry = heapCache.returnEntry(entry);
     if (expiredImmediately) {
       if (storageDataValid || heapDataValid) {
         if (entryExpiredListeners() != null) {
           for (CacheEntryExpiredListener l : entryExpiredListeners()) {
             try {
-              l.onEntryExpired(userCache, entry);
+              l.onEntryExpired(userCache, _currentEntry);
             } catch (Throwable t) {
               exceptionToPropagate = new ListenerException(t);
             }
@@ -854,7 +867,7 @@ public abstract class EntryAction<K, V, R> implements
         if (entryRemovedListeners() != null) {
           for (CacheEntryRemovedListener l : entryRemovedListeners()) {
             try {
-              l.onEntryRemoved(userCache, entry);
+              l.onEntryRemoved(userCache, _currentEntry);
             } catch (Throwable t) {
               exceptionToPropagate = new ListenerException(t);
             }
@@ -864,11 +877,11 @@ public abstract class EntryAction<K, V, R> implements
     } else {
       if (storageDataValid || heapDataValid) {
         if (entryUpdatedListeners() != null) {
+          CacheEntry<K,V> _previousEntry =
+            heapCache.returnCacheEntry(entry.getKey(), oldValueOrException, previousModificationTime);
           for (CacheEntryUpdatedListener l : entryUpdatedListeners()) {
             try {
-              l.onEntryUpdated(userCache,
-                new ReadOnlyCacheEntry<K, V>(entry.getKey(), oldValueOrException, previousModificationTime),
-                entry);
+              l.onEntryUpdated(userCache, _previousEntry, _currentEntry);
             } catch (Throwable t) {
               exceptionToPropagate = new ListenerException(t);
             }
@@ -878,7 +891,7 @@ public abstract class EntryAction<K, V, R> implements
         if (entryCreatedListeners() != null) {
           for (CacheEntryCreatedListener l : entryCreatedListeners()) {
             try {
-              l.onEntryCreated(userCache, entry);
+              l.onEntryCreated(userCache, _currentEntry);
             } catch (Throwable t) {
               exceptionToPropagate = new ListenerException(t);
             }
@@ -953,8 +966,9 @@ public abstract class EntryAction<K, V, R> implements
   /**
    * Failure call on Progress from Semantic.
    */
-  public void failure(Throwable t) {
-    mutationAbort(new ProcessingFailureException(t));
+  @Override
+  public void failure(RuntimeException t) {
+    mutationAbort(t);
   }
 
   public void examinationAbort(CustomizationException t) {

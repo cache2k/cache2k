@@ -320,14 +320,14 @@ public class WiredCache<K, V> extends AbstractCache<K, V>
    */
   @Override
   public Map<K, V> getAll(final Iterable<? extends K> keys) {
-    Map<K, ExaminationEntry<K, V>> map = new HashMap<K, ExaminationEntry<K, V>>();
+    Map<K, CacheEntry<K, V>> map = new HashMap<K, CacheEntry<K, V>>();
     for (K k : keys) {
-      ExaminationEntry<K, V> e = execute(k, SPEC.getEntry(k));
+      CacheEntry<K, V> e = execute(k, SPEC.getEntry(k));
       if (e != null) {
         map.put(k, e);
       }
     }
-    return convertValueMap(map);
+    return heapCache.convertCacheEntry2ValueMap(map);
   }
 
   @Override
@@ -400,14 +400,14 @@ public class WiredCache<K, V> extends AbstractCache<K, V>
    */
   @Override
   public Map<K, V> peekAll(final Iterable<? extends K> keys) {
-    Map<K, ExaminationEntry<K, V>> map = new HashMap<K, ExaminationEntry<K, V>>();
+    Map<K, CacheEntry<K, V>> map = new HashMap<K, CacheEntry<K, V>>();
     for (K k : keys) {
-      ExaminationEntry<K, V> e = execute(k, SPEC.peekEntry(k));
+      CacheEntry<K, V> e = execute(k, SPEC.peekEntry(k));
       if (e != null) {
         map.put(k, e);
       }
     }
-    return convertValueMap(map);
+    return heapCache.convertCacheEntry2ValueMap(map);
   }
 
   private Map<K, V> convertValueMap(final Map<K, ExaminationEntry<K, V>> _map) {
@@ -556,7 +556,7 @@ public class WiredCache<K, V> extends AbstractCache<K, V>
   public Entry<K,V> insertEntryFromStorage(final StorageEntry se) {
     Semantic<K,V, Entry<K,V>> op = new Semantic.Read<K, V, Entry<K, V>>() {
       @Override
-      public void examine(final Progress<V, Entry<K, V>> c, final ExaminationEntry<K, V> e) {
+      public void examine(final Progress<K, V, Entry<K, V>> c, final ExaminationEntry<K, V> e) {
         c.result((Entry<K, V>) e);
       }
     };

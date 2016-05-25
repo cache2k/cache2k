@@ -20,6 +20,8 @@ package org.cache2k;
  * #L%
  */
 
+import org.cache2k.integration.CacheLoaderException;
+
 /**
  * Object representing a cache entry. With the cache entry, it can be
  * checked whether a mapping in the cache is present, even if the cache
@@ -47,8 +49,12 @@ public interface CacheEntry<K, V> {
   K getKey();
 
   /**
-   * Value of the entry. The value may be null if nulls are allowed, or,
-   * if an exception was thrown by the loader.
+   * Value of the entry. The value may be null if nulls are permitted. If the
+   * entry had a loader exception which is not suppressed, this exception will be
+   * propagated.
+   *
+   * @throws CacheLoaderException if the recent load was yielding an exception. Another
+   *         exception may be thrown if a custom exception propagator was registered.
    */
   V getValue();
 
@@ -56,7 +62,7 @@ public interface CacheEntry<K, V> {
    * The exception happened when the value was loaded and
    * the exception could not be suppressed. {@code null} if no exception
    * happened and or it was suppressed. If {@code null} then {@link #getValue}
-   * returns a value.
+   * returns a value and does not throw an exception.
    */
   Throwable getException();
 

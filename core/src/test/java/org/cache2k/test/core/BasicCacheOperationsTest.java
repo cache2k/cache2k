@@ -23,7 +23,6 @@ package org.cache2k.test.core;
 import org.cache2k.Cache;
 import org.cache2k.Cache2kBuilder;
 import org.cache2k.CacheEntry;
-import org.cache2k.CacheException;
 import org.cache2k.core.InternalCacheInfo;
 import org.cache2k.integration.CacheLoaderException;
 import org.cache2k.core.ExceptionWrapper;
@@ -406,7 +405,7 @@ public class BasicCacheOperationsTest {
     ((Cache) cache).put(KEY, new ExceptionWrapper(OUCH));
     CacheEntry<Integer, Integer> e = cache.peekEntry(KEY);
     assertEquals(KEY, e.getKey());
-    assertNull(e.getValue());
+    entryHasException(e);
     assertEquals(OUCH, e.getException());
   }
 
@@ -443,8 +442,17 @@ public class BasicCacheOperationsTest {
     ((Cache) cache).put(KEY, new ExceptionWrapper(OUCH));
     CacheEntry<Integer, Integer> e = cache.getEntry(KEY);
     assertEquals(KEY, e.getKey());
-    assertNull(e.getValue());
+    entryHasException(e);
     assertEquals(OUCH, e.getException());
+  }
+
+  private static void entryHasException(final CacheEntry<Integer, Integer> e) {
+    try {
+      e.getValue();
+      fail("exception expected");
+    } catch (CacheLoaderException ex) {
+    }
+    assertNotNull(e.getException());
   }
 
   /*

@@ -561,8 +561,27 @@ public interface Cache<K, V> extends
    */
   void reloadAll(Iterable<? extends K> keys, LoadCompletedListener l);
 
+  /**
+   *
+   * @param key
+   * @param entryProcessor processor instance to be invoked
+   * @param args arbitrary arguments passed to the entry processor
+   * @param <R> type of the result
+   * @throws org.cache2k.processor.CacheEntryProcessingException if the {@code invoke} had thrown an exception
+   * @return result provided by the entry processor
+   */
   <R> R invoke(K key, CacheEntryProcessor<K, V, R> entryProcessor, Object... args);
 
+  /**
+   *
+   * <p>The order of the invocation is unspecified.
+   *
+   * @param keys
+   * @param entryProcessor
+   * @param objs
+   * @param <R>
+   * @return
+   */
   <R> Map<K, EntryProcessingResult<R>> invokeAll(
     Iterable<? extends K> keys, CacheEntryProcessor<K , V, R> entryProcessor, Object... objs);
 

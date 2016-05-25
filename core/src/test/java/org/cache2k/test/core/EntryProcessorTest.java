@@ -23,13 +23,14 @@ package org.cache2k.test.core;
 import org.cache2k.Cache;
 import org.cache2k.Cache2kBuilder;
 import org.cache2k.CacheEntry;
-import org.cache2k.core.EntryAction;
 import org.cache2k.integration.CacheLoaderException;
 import org.cache2k.integration.CacheWriter;
 import org.cache2k.integration.ExceptionInformation;
 import org.cache2k.integration.ResiliencePolicy;
 import org.cache2k.junit.FastTests;
+import org.cache2k.processor.CacheEntryProcessingException;
 import org.cache2k.processor.CacheEntryProcessor;
+import org.cache2k.processor.EntryProcessingResult;
 import org.cache2k.processor.MutableCacheEntry;
 import org.cache2k.test.util.CacheRule;
 import org.cache2k.test.util.IntCacheRule;
@@ -37,10 +38,12 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
+import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 
 import static org.junit.Assert.*;
+import static org.cache2k.test.core.StaticUtil.*;
 
 /**
  * @author Jens Wilke
@@ -60,7 +63,7 @@ public class EntryProcessorTest {
   /**
    * Test that exceptions get propagated, otherwise we cannot use assert inside the processor.
    */
-  @Test(expected = EntryAction.ProcessingFailureException.class)
+  @Test(expected = CacheEntryProcessingException.class)
   public void exception() {
     Cache<Integer, Integer> c = target.cache();
     c.invoke(KEY, new CacheEntryProcessor<Integer, Integer, Object>() {
@@ -69,6 +72,28 @@ public class EntryProcessorTest {
         throw new IllegalStateException("test");
       }
     });
+  }
+
+  @Test
+  public void invokeAll_exception() {
+    Cache<Integer, Integer> c = target.cache();
+    Map<Integer, EntryProcessingResult<Object>> _resultMap = c.invokeAll(asSet(KEY), new CacheEntryProcessor<Integer, Integer, Object>() {
+      @Override
+      public Object process(final MutableCacheEntry<Integer, Integer> entry, final Object... arguments) throws Exception {
+        throw new IllegalStateException("test");
+      }
+    });
+    assertEquals(1, _resultMap.size());
+    EntryProcessingResult<Object>  _result = _resultMap.get(KEY);
+    assertNotNull(_result);
+    assertNotNull(_result.getException());
+    assertEquals(IllegalStateException.class, _result.getException().getClass());
+    try {
+      _result.getResult();
+      fail();
+    } catch (CacheEntryProcessingException ex ) {
+      assertEquals(IllegalStateException.class, ex.getCause().getClass());
+    }
   }
 
   @Test

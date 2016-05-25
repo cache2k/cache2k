@@ -21,15 +21,17 @@ package org.cache2k.processor;
  */
 
 /**
- * @author Jens Wilke; created: 2015-05-02
+ * Result tuple for {@code Cache.invokeAll()}.
+ *
+ * @see org.cache2k.Cache#invokeAll
+ * @author Jens Wilke
  */
 public interface EntryProcessingResult<R> {
 
   /**
    * Result of entry processing.
    *
-   * @throws CacheEntryProcessingException throws this wrapped exception if an
-   *         exception occurred during processing.
+   * @throws CacheEntryProcessingException if an exception occurred during processing.
    */
   R getResult();
 
