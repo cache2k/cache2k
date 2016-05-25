@@ -21,7 +21,9 @@ package org.cache2k.jcache.provider;
  */
 
 import org.cache2k.Cache2kBuilder;
-import org.cache2k.jcache.MutableConfigurationForCache2k;
+import org.cache2k.jcache.ExtendedMutableConfiguration;
+import org.cache2k.jcache.JCacheConfiguration;
+import org.cache2k.jcache.provider.generic.storeByValueSimulation.CopyCacheProxy;
 import org.junit.Ignore;
 import org.junit.Test;
 import static org.junit.Assert.*;
@@ -33,6 +35,7 @@ import javax.cache.configuration.Configuration;
 import javax.cache.configuration.MutableConfiguration;
 import javax.cache.spi.CachingProvider;
 import java.math.BigDecimal;
+import java.util.concurrent.TimeUnit;
 
 /**
  * @author Jens Wilke; created: 2015-03-29
@@ -58,7 +61,7 @@ public class CacheManagerTest {
   public void create_empty_config() {
     CachingProvider p = Caching.getCachingProvider();
     CacheManager cm = p.getCacheManager();
-    MutableConfiguration<String, BigDecimal> mc = new MutableConfigurationForCache2k<String, BigDecimal>();
+    MutableConfiguration<String, BigDecimal> mc = new ExtendedMutableConfiguration<String, BigDecimal>();
     mc.setTypes(String.class, BigDecimal.class);
     Cache<String, BigDecimal> c = cm.createCache("aCache", mc);
     assertEquals("aCache", c.getName());
@@ -71,7 +74,7 @@ public class CacheManagerTest {
   public void create_config_cache2k_types() {
     CachingProvider p = Caching.getCachingProvider();
     CacheManager cm = p.getCacheManager();
-    MutableConfigurationForCache2k<String, BigDecimal> mc = new MutableConfigurationForCache2k<String, BigDecimal>();
+    ExtendedMutableConfiguration<String, BigDecimal> mc = new ExtendedMutableConfiguration<String, BigDecimal>();
     mc.setCache2kConfiguration(
       new Cache2kBuilder<String, BigDecimal>(){}
         .toConfiguration()
@@ -81,6 +84,67 @@ public class CacheManagerTest {
     assertEquals(String.class, c.getConfiguration(Configuration.class).getKeyType());
     assertEquals(BigDecimal.class, c.getConfiguration(Configuration.class).getValueType());
     c.close();
+  }
+
+  @Test
+  public void create_cache2k_config_nowrap() {
+    CachingProvider p = Caching.getCachingProvider();
+    CacheManager cm = p.getCacheManager();
+    Cache<Long, Double> cache = cm.createCache("aCache", ExtendedMutableConfiguration.of(
+      new Cache2kBuilder<Long, Double>(){}
+        .entryCapacity(10000)
+        .expireAfterWrite(5, TimeUnit.MINUTES)
+    ));
+    assertFalse(cache instanceof CopyCacheProxy);
+    cache.close();
+  }
+
+  @Test
+  public void create_cache2k_config_wrap() {
+    CachingProvider p = Caching.getCachingProvider();
+    CacheManager cm = p.getCacheManager();
+    Cache<Long, Double> cache = cm.createCache("aCache", ExtendedMutableConfiguration.of(
+      new Cache2kBuilder<Long, Double>(){}
+        .entryCapacity(10000)
+        .expireAfterWrite(5, TimeUnit.MINUTES)
+        .with(new JCacheConfiguration.Builder()
+          .copyAlwaysIfRequested(true)
+        )
+    ));
+    assertTrue(cache instanceof CopyCacheProxy);
+    cache.close();
+  }
+
+  @Test(expected = IllegalArgumentException.class)
+  public void create_cache2k_config_key_type_mismatch() {
+    CachingProvider p = Caching.getCachingProvider();
+    CacheManager cm = p.getCacheManager();
+    MutableConfiguration cfg = ExtendedMutableConfiguration.of(new Cache2kBuilder<Long, Double>(){});
+    Cache<Integer, Double> cache = cm.createCache("aCache",  cfg.setTypes(Integer.class, Double.class));
+    cache.close();
+  }
+
+  @Test(expected = IllegalArgumentException.class)
+  public void create_cache2k_config_value_type_mismatch() {
+    CachingProvider p = Caching.getCachingProvider();
+    CacheManager cm = p.getCacheManager();
+    MutableConfiguration cfg = ExtendedMutableConfiguration.of(new Cache2kBuilder<Long, Double>(){});
+    Cache<Integer, Double> cache = cm.createCache("aCache",  cfg.setTypes(Long.class, Float.class));
+    cache.close();
+  }
+
+  @Test(expected = IllegalArgumentException.class)
+  public void create_cache2k_config_storeByReference_copy_exception() {
+    CachingProvider p = Caching.getCachingProvider();
+    CacheManager cm = p.getCacheManager();
+    Cache<Long, Double> cache = cm.createCache("aCache", ExtendedMutableConfiguration.of(
+      new Cache2kBuilder<Long, Double>(){}
+        .with(new JCacheConfiguration.Builder()
+          .copyAlwaysIfRequested(true)
+        )
+      ).setStoreByValue(false)
+    );
+    cache.close();
   }
 
 }

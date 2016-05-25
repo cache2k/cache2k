@@ -107,7 +107,7 @@ public class JCacheManagerAdapter implements CacheManager {
       if (_existingCache != null && !_existingCache.isClosed()) {
         throw new CacheException("A cache2k instance is already existing with name: " + _cacheName);
       }
-      JCacheBuilder<K,V> _builder = new JCacheBuilder<K, V>(_cacheName, this);
+      JCacheConstructor<K,V> _builder = new JCacheConstructor<K, V>(_cacheName, this);
       _builder.setConfiguration(cfg);
       Cache<K,V> _cache = _builder.build();
       org.cache2k.Cache _cache2k = _cache.unwrap(org.cache2k.Cache.class);

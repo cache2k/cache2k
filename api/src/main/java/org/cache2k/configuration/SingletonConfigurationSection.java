@@ -21,10 +21,9 @@ package org.cache2k.configuration;
  */
 
 /**
+ * A configuration section that may appear only once.
+ *
  * @author Jens Wilke
  */
-public interface ConfigurationSectionBuilder<T extends ConfigurationSection> {
-
-  T buildConfigurationSection();
-
+public interface SingletonConfigurationSection extends ConfigurationSection {
 }

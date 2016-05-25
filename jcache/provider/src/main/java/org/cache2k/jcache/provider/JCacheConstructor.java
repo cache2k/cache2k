@@ -27,7 +27,8 @@ import org.cache2k.configuration.CacheType;
 import org.cache2k.integration.CacheWriter;
 import org.cache2k.integration.ExceptionPropagator;
 import org.cache2k.integration.ExceptionInformation;
-import org.cache2k.jcache.CompleteConfigurationForCache2k;
+import org.cache2k.jcache.ExtendedConfiguration;
+import org.cache2k.jcache.JCacheConfiguration;
 import org.cache2k.jcache.provider.event.EventHandling;
 import org.cache2k.jcache.provider.generic.storeByValueSimulation.CopyCacheProxy;
 import org.cache2k.jcache.provider.generic.storeByValueSimulation.ObjectCopyFactory;
@@ -50,15 +51,18 @@ import javax.cache.integration.CacheLoaderException;
 import java.util.concurrent.Executors;
 
 /**
+ * Constructs a requested JCache.
+ *
  * @author Jens Wilke
  */
-public class JCacheBuilder<K,V> {
+public class JCacheConstructor<K,V> {
 
   private String name;
   private JCacheManagerAdapter manager;
-  private boolean cache2kConfigurationWasProvided;
+  private boolean cache2kConfigurationWasProvided = false;
   private CompleteConfiguration<K,V> config;
   private Cache2kConfiguration<K,V> cache2kConfiguration;
+  private JCacheConfiguration extraConfiguration = JCACHE_DEFAULTS;
   private CacheType<K> keyType;
   private CacheType<V> valueType;
   private ExpiryPolicy expiryPolicy;
@@ -66,7 +70,7 @@ public class JCacheBuilder<K,V> {
   private EventHandling<K,V> eventHandling;
   private boolean needsTouchyWrapper;
 
-  public JCacheBuilder(String _name, JCacheManagerAdapter _manager) {
+  public JCacheConstructor(String _name, JCacheManagerAdapter _manager) {
     name = _name;
     manager = _manager;
   }
@@ -74,9 +78,17 @@ public class JCacheBuilder<K,V> {
   public void setConfiguration(Configuration<K,V> cfg) {
     if (cfg instanceof CompleteConfiguration) {
       config = (CompleteConfiguration<K,V>) cfg;
-      if (cfg instanceof CompleteConfigurationForCache2k) {
-        cache2kConfiguration = ((CompleteConfigurationForCache2k<K,V>) cfg).getCache2kConfiguration();
-        cache2kConfigurationWasProvided = cache2kConfiguration != null;
+      if (cfg instanceof ExtendedConfiguration) {
+        cache2kConfiguration = ((ExtendedConfiguration<K,V>) cfg).getCache2kConfiguration();
+        if (cache2kConfiguration != null) {
+          cache2kConfigurationWasProvided = true;
+          extraConfiguration = CACHE2K_DEFAULTS;
+          JCacheConfiguration _extraConfigurationSpecified =
+            cache2kConfiguration.getSections().getSection(JCacheConfiguration.class);
+          if (_extraConfigurationSpecified != null) {
+            extraConfiguration = _extraConfigurationSpecified;
+          }
+        }
       }
     } else {
       MutableConfiguration<K, V> _cfgCopy = new MutableConfiguration<K, V>();
@@ -93,6 +105,7 @@ public class JCacheBuilder<K,V> {
     setupTypes();
     setupName();
     setupDefaults();
+    checkConfiguration();
     setupExceptionPropagator();
     setupCacheThrough();
     setupExpiryPolicy();
@@ -114,9 +127,22 @@ public class JCacheBuilder<K,V> {
     if (!cache2kConfigurationWasProvided) {
       cache2kConfiguration.setKeyType(config.getKeyType());
       cache2kConfiguration.setValueType(config.getValueType());
+    } else {
+      if (cache2kConfiguration.getKeyType() == null) {
+        cache2kConfiguration.setKeyType(config.getKeyType());
+      }
+      if (cache2kConfiguration.getValueType() == null) {
+        cache2kConfiguration.setValueType(config.getValueType());
+      }
     }
     keyType = cache2kConfiguration.getKeyType();
     valueType = cache2kConfiguration.getValueType();
+    if (!config.getKeyType().equals(Object.class) && !config.getKeyType().equals(keyType.getType())) {
+      throw new IllegalArgumentException("Key type mismatch between JCache and cache2k configuration");
+    }
+    if (!config.getValueType().equals(Object.class) && !config.getValueType().equals(valueType.getType())) {
+      throw new IllegalArgumentException("Value type mismatch between JCache and cache2k configuration");
+    }
   }
 
   private void setupName() {
@@ -133,6 +159,14 @@ public class JCacheBuilder<K,V> {
     if (!cache2kConfigurationWasProvided) {
       cache2kConfiguration.setSharpExpiry(true);
       cache2kConfiguration.setKeepDataAfterExpired(false);
+    }
+  }
+
+  private void checkConfiguration() {
+    if (!config.isStoreByValue() && extraConfiguration.isCopyAlwaysIfRequested()) {
+      throw new IllegalArgumentException(
+        "Store by reference requested via JCache configuration but copy requested " +
+          "via extra cache2k configuration.");
     }
   }
 
@@ -205,6 +239,24 @@ public class JCacheBuilder<K,V> {
    * to cache2k to provide this behavior.
    */
   private void setupExpiryPolicy() {
+    if (cache2kConfigurationWasProvided) {
+      final org.cache2k.expiry.ExpiryPolicy<K,V> ep = cache2kConfiguration.getExpiryPolicy();
+      if (ep != null) {
+        cache2kConfiguration.setExpiryPolicy(new org.cache2k.expiry.ExpiryPolicy<K, V>() {
+          @Override
+          public long calculateExpiryTime(final K key, final V value, final long loadTime, final CacheEntry<K, V> oldEntry) {
+            if (value == null) {
+              return NO_CACHE;
+            }
+            return ep.calculateExpiryTime(key, value, loadTime, oldEntry);
+          }
+        });
+        return;
+      }
+      if (cache2kConfiguration.getExpireAfterWriteMillis() >= 0) {
+        return;
+      }
+    }
     cache2kConfiguration.setEternal(true);
     if (config.getExpiryPolicyFactory() != null) {
       expiryPolicy = config.getExpiryPolicyFactory().create();
@@ -310,7 +362,7 @@ public class JCacheBuilder<K,V> {
   }
 
   private void wrapIfCopyIsNeeded() {
-    if (config.isStoreByValue()) {
+    if (extraConfiguration.isCopyAlwaysIfRequested() && config.isStoreByValue()) {
       final ObjectTransformer<K, K> _keyTransformer = createCopyTransformer(keyType);
       final ObjectTransformer<V, V> _valueTransformer = createCopyTransformer(valueType);
       createdCache =
@@ -330,5 +382,24 @@ public class JCacheBuilder<K,V> {
     }
     return _keyTransformer;
   }
+
+  /**
+   * Defaults to use if no cache2k configuration is provided.
+   */
+  private static final JCacheConfiguration JCACHE_DEFAULTS =
+    new JCacheConfiguration.Builder()
+      .alwaysFlushJmxStatistics(true)
+      .copyAlwaysIfRequested(true)
+      .buildConfigurationSection();
+
+  /**
+   * Defaults to use if cache2k configuration is provided but no
+   * extra JCacheConfiguration section is added.
+   */
+  private static final JCacheConfiguration CACHE2K_DEFAULTS =
+    new JCacheConfiguration.Builder()
+      .alwaysFlushJmxStatistics(false)
+      .copyAlwaysIfRequested(false)
+      .buildConfigurationSection();
 
 }

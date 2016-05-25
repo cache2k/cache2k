@@ -31,15 +31,15 @@ import javax.cache.configuration.MutableConfiguration;
  *
  * @author Jens Wilke
  */
-public final class MutableConfigurationForCache2k<K,V>
-  extends MutableConfiguration<K,V> implements CompleteConfiguration<K,V> {
+public final class ExtendedMutableConfiguration<K,V>
+  extends MutableConfiguration<K,V> implements ExtendedConfiguration<K,V> {
 
-  public static <K,V> MutableConfigurationForCache2k<K,V> of(Cache2kBuilder<K,V> builder) {
+  public static <K,V> ExtendedMutableConfiguration<K,V> of(Cache2kBuilder<K,V> builder) {
     return of(builder.toConfiguration());
   }
 
-  public static <K,V> MutableConfigurationForCache2k<K,V> of(Cache2kConfiguration<K,V> configuration) {
-    MutableConfigurationForCache2k<K,V> cfg = new MutableConfigurationForCache2k<K, V>();
+  public static <K,V> ExtendedMutableConfiguration<K,V> of(Cache2kConfiguration<K,V> configuration) {
+    ExtendedMutableConfiguration<K,V> cfg = new ExtendedMutableConfiguration<K, V>();
     cfg.cache2kConfiguration = configuration;
     return cfg;
   }

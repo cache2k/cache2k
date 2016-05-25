@@ -21,10 +21,9 @@ package org.cache2k.configuration;
  */
 
 /**
+ * Marker interface for additional configuration section beans.
+ *
  * @author Jens Wilke
  */
-public interface ConfigurationSectionBuilder<T extends ConfigurationSection> {
-
-  T buildConfigurationSection();
-
+public interface ConfigurationSection {
 }

@@ -75,7 +75,7 @@ public class Cache2kConfiguration<K, V> implements Serializable {
   private Collection<CacheEntryOperationListener<K,V>> listeners;
   private Collection<CacheEntryOperationListener<K,V>> asyncListeners;
 
-  private List<Object> sections;
+  private ConfigurationSectionContainer sections;
 
   /**
    * Construct a config instance setting the type parameters and returning a
@@ -413,9 +413,9 @@ public class Cache2kConfiguration<K, V> implements Serializable {
   /**
    * Mutable collection of additional configuration sections
    */
-  public Collection<Object> getSections() {
+  public ConfigurationSectionContainer getSections() {
     if (sections == null) {
-      sections = new ArrayList<Object>();
+      sections = new ConfigurationSectionContainer();
     }
     return sections;
   }

@@ -23,6 +23,7 @@ package org.cache2k;
 import org.cache2k.configuration.Cache2kConfiguration;
 import org.cache2k.configuration.CacheTypeCapture;
 import org.cache2k.configuration.CacheType;
+import org.cache2k.configuration.ConfigurationSection;
 import org.cache2k.configuration.ConfigurationSectionBuilder;
 import org.cache2k.expiry.ExpiryPolicy;
 import org.cache2k.event.CacheEntryOperationListener;
@@ -466,8 +467,8 @@ public class Cache2kBuilder<K, V> implements Cloneable {
   /**
    * Add a new configuration sub section.
    */
-  public final Cache2kBuilder<K, V> with(ConfigurationSectionBuilder... sectionBuilders) {
-    for (ConfigurationSectionBuilder b : sectionBuilders) {
+  public final Cache2kBuilder<K, V> with(ConfigurationSectionBuilder<? extends ConfigurationSection>... sectionBuilders) {
+    for (ConfigurationSectionBuilder<? extends ConfigurationSection> b : sectionBuilders) {
       config.getSections().add(b.buildConfigurationSection());
     }
     return this;
