@@ -32,6 +32,9 @@ If something is listed here it might affect an existing application and updating
  - history size of Clock-Pro eviction reduced to one half of the capacity
  - getAll() returns empty map if no loader is defined and requested keys are not in cache
  - get() return null if no loader is defined and entry is not in cache (was exception before).
+ - `CacheEntry.getValue()` and `MutableCacheEntry.getValue()` throws exception if loader exception happened
+ - `Cache.invoke`: Exceptions from entry processor propagated correctly as `EntryProcessingException`
+ - Global `ExceptionPropagator` customizable via tunable mechanism.
  
  
 ## API Changes and new methods
