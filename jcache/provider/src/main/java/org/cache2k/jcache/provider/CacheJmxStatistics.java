@@ -57,8 +57,7 @@ public class CacheJmxStatistics implements CacheStatisticsMXBean {
     long _readUsage = inf.getReadUsageCnt();
     long _missCount = inf.getMissCnt();
     return _readUsage - _missCount +
-      adapter.iterationHitCorrectionCounter.get() +
-      adapter.hitCorrectionCounter.get();
+      adapter.iterationHitCorrectionCounter.get();
   }
 
   @Override
@@ -79,7 +78,7 @@ public class CacheJmxStatistics implements CacheStatisticsMXBean {
   }
 
   private long calcMisses(InternalCacheInfo inf) {
-    return inf.getMissCnt() + adapter.missCorrectionCounter.get();
+    return inf.getMissCnt();
   }
 
   @Override

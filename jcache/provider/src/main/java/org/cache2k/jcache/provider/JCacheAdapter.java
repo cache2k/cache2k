@@ -70,8 +70,6 @@ public class JCacheAdapter<K, V> implements javax.cache.Cache<K, V> {
   Class<K> keyType;
   Class<V> valueType;
   AtomicLong iterationHitCorrectionCounter = new AtomicLong();
-  AtomicLong missCorrectionCounter = new AtomicLong();
-  AtomicLong hitCorrectionCounter = new AtomicLong();
   EventHandling<K,V> eventHandling;
 
   public JCacheAdapter(JCacheManagerAdapter _manager, Cache<K, V> _cache) {
@@ -367,15 +365,8 @@ public class JCacheAdapter<K, V> implements javax.cache.Cache<K, V> {
     CacheEntryProcessor<K, V, T> p = new CacheEntryProcessor<K, V, T>() {
       @Override
       public T process(final MutableCacheEntry<K, V> e, Object... _objs) throws Exception {
-        final boolean _alreadyExisting = e.exists();
         MutableEntryAdapter<K, V> me = new MutableEntryAdapter<K, V>(e);
         T _result = entryProcessor.process(me, _objs);
-        if (!me.getInvoked && !_alreadyExisting) {
-          missCorrectionCounter.incrementAndGet();
-        }
-        if (me.putRemoveInvoked && _alreadyExisting) {
-          hitCorrectionCounter.incrementAndGet();
-        }
         return _result;
       }
     };
