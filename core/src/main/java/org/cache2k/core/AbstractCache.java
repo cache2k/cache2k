@@ -23,11 +23,11 @@ package org.cache2k.core;
 import org.cache2k.CacheEntry;
 import org.cache2k.processor.CacheEntryProcessor;
 import org.cache2k.processor.EntryProcessingResult;
-import org.cache2k.CustomizationException;
 import org.cache2k.core.operation.Semantic;
 import org.cache2k.core.storageApi.StorageAdapter;
 
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -39,6 +39,45 @@ import java.util.concurrent.ConcurrentMap;
  * @author Jens Wilke
  */
 public abstract class AbstractCache<K, V> implements InternalCache<K, V> {
+
+  /**
+   * Key iteration on top of normal iterator.
+   */
+  @Override
+  public Iterable<K> keys() {
+    return new Iterable<K>() {
+      @Override
+      public Iterator<K> iterator() {
+        final Iterator<CacheEntry<K,V>> it = AbstractCache.this.iterator();
+        return new Iterator<K>() {
+          @Override
+          public boolean hasNext() {
+            return it.hasNext();
+          }
+
+          @Override
+          public K next() {
+            return it.next().getKey();
+          }
+
+          @Override
+          public void remove() {
+            throw new UnsupportedOperationException();
+          }
+        };
+      }
+    };
+  }
+
+  @Override
+  public Iterable<CacheEntry<K, V>> entries() {
+    return new Iterable<CacheEntry<K, V>>() {
+      @Override
+      public Iterator<CacheEntry<K, V>> iterator() {
+        return AbstractCache.this.iterator();
+      }
+    };
+  }
 
   @Override
   public void removeAllAtOnce(Set<K> _keys) {

@@ -210,6 +210,16 @@ public class CacheWrapper<K,V> implements Cache<K, V> {
   }
 
   @Override
+  public Iterable<K> keys() {
+    return cache.keys();
+  }
+
+  @Override
+  public Iterable<CacheEntry<K, V>> entries() {
+    return cache.entries();
+  }
+
+  @Override
   public void removeAll(Iterable<? extends K> keys) {
     cache.removeAll(keys);
   }

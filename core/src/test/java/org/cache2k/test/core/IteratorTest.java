@@ -45,16 +45,8 @@ public class IteratorTest {
 
   @Test
   public void testExpansion() {
-    Cache<Integer, Integer> c = Cache2kBuilder
-      .of(Integer.class, Integer.class)
-      .name(getClass().getName())
-      .eternal(true)
-      .entryCapacity(10000)
-      .build();
-    for (int i = 0; i < 20; i++) {
-      c.put(i,i);
-    }
-    Iterator<CacheEntry<Integer,Integer>> it = c.iterator();
+    Cache<Integer, Integer> c = setupCache();
+    Iterator<CacheEntry<Integer,Integer>> it = c.entries().iterator();
     Set<Integer> _keysSeen = new HashSet<Integer>();
     while (it.hasNext()) {
       CacheEntry<Integer,Integer> e = it.next();
@@ -75,19 +67,34 @@ public class IteratorTest {
     c.close();
   }
 
-  @Test(expected = CacheClosedException.class)
-  @Ignore("iterator needs to detect close()")
-  public void testClose() {
+  private Cache<Integer, Integer> setupCache() {
     Cache<Integer, Integer> c = Cache2kBuilder
       .of(Integer.class, Integer.class)
-      .name(getClass().getName())
       .eternal(true)
       .entryCapacity(10000)
       .build();
     for (int i = 0; i < 20; i++) {
       c.put(i,i);
     }
-    Iterator<CacheEntry<Integer,Integer>> it = c.iterator();
+    return c;
+  }
+
+  @Test
+  public void keyIteration() {
+    Cache<Integer, Integer> c = setupCache();
+    Set<Integer> _keysSeen = new HashSet<Integer>();
+    for (Integer i : c.keys()) {
+      _keysSeen.add(i);
+    }
+    assertEquals(20, _keysSeen.size());
+    c.close();
+  }
+
+  @Test(expected = CacheClosedException.class)
+  @Ignore("iterator needs to detect close()")
+  public void testClose() {
+    Cache<Integer, Integer> c = setupCache();
+    Iterator<CacheEntry<Integer,Integer>> it = c.entries().iterator();
     Set<Integer> _keysSeen = new HashSet<Integer>();
     while (it.hasNext()) {
       CacheEntry<Integer,Integer> e = it.next();

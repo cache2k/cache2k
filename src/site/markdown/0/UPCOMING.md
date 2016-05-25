@@ -36,3 +36,4 @@ If something is listed here it might affect an existing application and updating
  - `expire()` expires an entry manually or resets the expiry time
  - Rename:`CacheConfiguration` to `Cache2kConfiguration`
  - Removed `clearTimingStatistics` operation from JMX
+ - `Cache.iterator()` is deprecated, alternative is `Cache.entries()` or `Cache.keys()` 

@@ -568,7 +568,7 @@ public abstract class HeapCache<K, V>
       if (lastEntry == null) {
         throw new IllegalStateException("hasNext() / next() not called or end of iteration reached");
       }
-      cache.remove((K) lastEntry.getKey());
+      cache.remove(lastEntry.getKey());
     }
   }
 

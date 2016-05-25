@@ -82,7 +82,7 @@ public class ClockProPlusCache<K, V> extends ConcurrentEvictionCache<K, V> {
 
   protected void initializeHeapCache() {
     super.initializeHeapCache();
-    ghostMax = maxSize;
+    ghostMax = maxSize / 2 + 1;
     hotMax = maxSize * TUNABLE_CLOCK_PRO.hotMaxPercentage / 100;
     coldSize = 0;
     hotSize = 0;

@@ -441,18 +441,21 @@ public class JCacheAdapter<K, V> implements javax.cache.Cache<K, V> {
     eventHandling.unregisterListener(cfg);
   }
 
+  /**
+   * Iterate with the help of cache2k key iterator.
+   */
   @Override
-  public Iterator<Entry<K, V>> iterator() {
+  public Iterator<Entry<K,V>> iterator() {
     checkClosed();
-    final Iterator<CacheEntry<K, V>> it = cache.iterator();
+    final Iterator<K> _keyIterator = cache.keys().iterator();
     return new Iterator<Entry<K, V>>() {
 
       CacheEntry<K, V> entry;
 
       @Override
       public boolean hasNext() {
-        while(it.hasNext()) {
-          entry = it.next();
+        while(_keyIterator.hasNext()) {
+          entry = cache.getEntry(_keyIterator.next());
           if (entry.getException() == null) {
             return true;
           }
@@ -466,7 +469,6 @@ public class JCacheAdapter<K, V> implements javax.cache.Cache<K, V> {
         if (entry == null && !hasNext()) {
           throw new NoSuchElementException();
         }
-        iterationHitCorrectionCounter.incrementAndGet();
         return new Entry<K, V>() {
           @Override
           public K getKey() {
@@ -490,7 +492,10 @@ public class JCacheAdapter<K, V> implements javax.cache.Cache<K, V> {
 
       @Override
       public void remove() {
-        it.remove();
+        if (entry == null) {
+          throw new IllegalStateException("hasNext() / next() not called or end of iteration reached");
+        }
+        cache.remove(entry.getKey());
       }
     };
   }

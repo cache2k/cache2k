@@ -650,9 +650,59 @@ public interface Cache<K, V> extends
    * <p>{@link Cache2kBuilder#refreshAhead(boolean)} is enabled there is a minimal chance
    * that an entry in the cache will not be iterated if the iteration takes
    * longer then the refresh/expiry time of one entry.
+   *
+   * @deprecated use {@link #keys()}
    */
   @Override
   Iterator<CacheEntry<K, V>> iterator();
+
+  /**
+   * Iterate all keys in the cache.
+   *
+   * <p>Contract: All entry keys will be iterated when present in the cache in the moment
+   * of the call to {@link Iterable#iterator()}. An expiration or mutation of an entry
+   * happening during the iteration, may or may not be reflected. Separate calls to
+   * {@link Iterable#iterator()} to the identical {@code Itarable} instance start
+   * a separate iteration.
+   *
+   * <p>The iteration is usable concurrently. Concurrent operations will not be
+   * influenced. Mutations of the cache, like remove or put, will not stop the iteration.
+   *
+   * <p>The iterator itself is not thread safe. Calls to one iterator instance from
+   * different threads are illegal or need proper synchronization.
+   *
+   * <p>Statistics: Iteration is neutral to the cache statistics. Counting hits for iterated
+   * entries would effectively render the hitrate metric meaningless if iterations are used.
+   *
+   * <p>In case a storage (off heap or persistence) is attached the iterated entries are
+   * always inserted into the heap cache. This will affect statistics.
+   *
+   * <p>Rationale: Iterating keys can be realized in a faster way then iterating complete entries.
+   * Future releases may have an optimized key iteration.
+   */
+  Iterable<K> keys();
+
+  /**
+   * Iterate all entries in the cache.
+   *
+   * <p>Contract: All entries present in the cache by the call of the method call will
+   * be iterated if not removed during the iteration goes on. The iteration may or may not
+   * iterate entries inserted while the iteration is in progress. The iteration never
+   * iterates duplicate entries.
+   *
+   * <p>The iteration is usable concurrently. Concurrent operations will not be
+   * influenced. Mutations of the cache, like remove or put, will not stop the iteration.
+   *
+   * <p>The iterator itself is not thread safe. Calls to one iterator instance from
+   * different threads are illegal or need proper synchronization.
+   *
+   * <p>Statistics: Iteration is neutral to the cache statistics. Counting hits for iterated
+   * entries would effectively render the hitrate metric meaningless if iterations are used.
+   *
+   * <p>In case a storage (off heap or persistence) is attached the iterated entries are
+   * always inserted into the heap cache. This will affect statistics.
+   */
+  Iterable<CacheEntry<K,V>> entries();
 
   /**
    * Remove all cache contents calling registered listeners.
