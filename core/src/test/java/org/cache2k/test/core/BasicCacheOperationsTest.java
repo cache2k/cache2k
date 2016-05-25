@@ -143,9 +143,10 @@ public class BasicCacheOperationsTest {
    * Yields "org.cache2k.PropagatedCacheException: (expiry=none) org.cache2k.impl.CacheUsageExcpetion: source not set".
    * This is intentional, but maybe we change it in the future. At least check that we are consistent for now.
    */
-  @Test(expected = CacheException.class)
+  @Test
   public void initial_Get() {
-    cache.get(KEY);
+    Object obj = cache.get(KEY);
+    assertNull(obj);
   }
 
   /*
@@ -580,6 +581,12 @@ public class BasicCacheOperationsTest {
   @Test(expected = NullPointerException.class)
   public void getAll_NullKey() {
     cache.getAll((asSet(new Integer[]{null})));
+  }
+
+  @Test
+  public void getAll_not_present_no_loader() {
+    Map<Integer, Integer> m = cache.getAll(asSet(KEY, OTHER_KEY));
+    assertEquals(0, m.size());
   }
 
   /*

@@ -765,7 +765,11 @@ public abstract class HeapCache<K, V>
 
   @Override
   public V get(K key) {
-    return (V) returnValue(getEntryInternal(key));
+    Entry<K,V> e = getEntryInternal(key);
+    if (e == null) {
+      return null;
+    }
+    return (V) returnValue(e);
   }
 
   /**
@@ -836,6 +840,9 @@ public abstract class HeapCache<K, V>
   }
 
   protected Entry getEntryInternal(K key) {
+    if (loader == null) {
+      return peekEntryInternal(key);
+    }
     Entry e;
     for (;;) {
       e = lookupOrNewEntrySynchronized(key);

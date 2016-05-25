@@ -379,7 +379,7 @@ public abstract class EntryAction<K, V, R> implements
   public void load() {
     AdvancedCacheLoader<K, V> _loader = loader();
     if (_loader == null) {
-      exceptionToPropagate = new CustomizationException(new CacheUsageExcpetion("source not set"));
+      mutationAbort(null);
       return;
     }
     if (!entryLocked) {
