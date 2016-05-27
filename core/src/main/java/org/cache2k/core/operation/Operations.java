@@ -33,9 +33,9 @@ import org.cache2k.core.ExceptionWrapper;
  * @author Jens Wilke
  */
 @SuppressWarnings({"unchecked", "UnusedParameters"})
-public class Specification<K, V> {
+public class Operations<K, V> {
 
-  public final static Specification SINGLETON = new Specification();
+  public final static Operations SINGLETON = new Operations();
 
   public Semantic<K, V, V> peek(K key) {
     return PEEK;

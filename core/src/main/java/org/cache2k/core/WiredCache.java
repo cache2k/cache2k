@@ -33,7 +33,7 @@ import org.cache2k.integration.LoadCompletedListener;
 import org.cache2k.core.operation.ExaminationEntry;
 import org.cache2k.core.operation.Progress;
 import org.cache2k.core.operation.Semantic;
-import org.cache2k.core.operation.Specification;
+import org.cache2k.core.operation.Operations;
 import org.cache2k.core.util.Log;
 import org.cache2k.core.storageApi.PurgeableStorage;
 import org.cache2k.core.storageApi.StorageAdapter;
@@ -57,7 +57,7 @@ public class WiredCache<K, V> extends AbstractCache<K, V>
   implements  StorageAdapter.Parent, HeapCacheListener<K,V> {
 
   @SuppressWarnings("unchecked")
-  final Specification<K, V> SPEC = Specification.SINGLETON;
+  final Operations<K, V> SPEC = Operations.SINGLETON;
 
   HeapCache<K,V> heapCache;
   StorageAdapter storage;

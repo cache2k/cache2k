@@ -25,7 +25,7 @@ import org.cache2k.configuration.Cache2kConfiguration;
 import org.cache2k.core.operation.ExaminationEntry;
 import org.cache2k.core.operation.ReadOnlyCacheEntry;
 import org.cache2k.core.operation.Semantic;
-import org.cache2k.core.operation.Specification;
+import org.cache2k.core.operation.Operations;
 import org.cache2k.core.threading.DefaultThreadFactoryProvider;
 import org.cache2k.core.threading.Futures;
 import org.cache2k.core.threading.ThreadFactoryProvider;
@@ -1969,7 +1969,7 @@ public abstract class HeapCache<K, V>
     }
   }
 
-  Specification<K,V> spec() { return Specification.SINGLETON; }
+  Operations<K,V> spec() { return Operations.SINGLETON; }
 
   @Override
   protected <R> EntryAction<K, V, R> createEntryAction(final K key, final Entry<K, V> e, final Semantic<K, V, R> op) {
