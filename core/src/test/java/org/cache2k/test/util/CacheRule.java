@@ -26,6 +26,7 @@ import org.cache2k.configuration.CacheTypeCapture;
 import org.cache2k.configuration.CacheType;
 import org.cache2k.core.InternalCache;
 import org.cache2k.core.InternalCacheInfo;
+import org.cache2k.test.core.StaticUtil;
 import org.junit.rules.TestRule;
 import org.junit.runner.Description;
 import org.junit.runners.model.Statement;
@@ -75,6 +76,12 @@ public class CacheRule<K,V> implements TestRule {
   public CacheRule<K,V> config(Specialization<K,V> rb) {
     checkAlready();
     rb.extend(builder);
+    return this;
+  }
+
+  public CacheRule<K,V> enforecWiredCache() {
+    checkAlready();
+    StaticUtil.enforceWiredCache(builder);
     return this;
   }
 
