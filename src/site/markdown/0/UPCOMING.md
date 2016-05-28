@@ -35,6 +35,8 @@ If something is listed here it might affect an existing application and updating
  - `CacheEntry.getValue()` and `MutableCacheEntry.getValue()` throws exception if loader exception happened
  - `Cache.invoke`: Exceptions from entry processor propagated correctly as `EntryProcessingException`
  - Global `ExceptionPropagator` customizable via tunable mechanism.
+ - `CacheEntryProcessor` renamed to `EntryProcessor`
+ - `CacheEntryProcessingException` renamed to `EntryProcessingException`
  
  
 ## API Changes and new methods

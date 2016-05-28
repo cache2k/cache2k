@@ -28,8 +28,8 @@ import org.cache2k.integration.CacheWriter;
 import org.cache2k.integration.ExceptionInformation;
 import org.cache2k.integration.ResiliencePolicy;
 import org.cache2k.junit.FastTests;
-import org.cache2k.processor.CacheEntryProcessingException;
-import org.cache2k.processor.CacheEntryProcessor;
+import org.cache2k.processor.EntryProcessingException;
+import org.cache2k.processor.EntryProcessor;
 import org.cache2k.processor.EntryProcessingResult;
 import org.cache2k.processor.MutableCacheEntry;
 import org.cache2k.test.util.CacheRule;
@@ -63,10 +63,10 @@ public class EntryProcessorTest {
   /**
    * Test that exceptions get propagated, otherwise we cannot use assert inside the processor.
    */
-  @Test(expected = CacheEntryProcessingException.class)
+  @Test(expected = EntryProcessingException.class)
   public void exception() {
     Cache<Integer, Integer> c = target.cache();
-    c.invoke(KEY, new CacheEntryProcessor<Integer, Integer, Object>() {
+    c.invoke(KEY, new EntryProcessor<Integer, Integer, Object>() {
       @Override
       public Object process(final MutableCacheEntry<Integer, Integer> entry, final Object... arguments) throws Exception {
         throw new IllegalStateException("test");
@@ -77,7 +77,7 @@ public class EntryProcessorTest {
   @Test
   public void invokeAll_exception() {
     Cache<Integer, Integer> c = target.cache();
-    Map<Integer, EntryProcessingResult<Object>> _resultMap = c.invokeAll(asSet(KEY), new CacheEntryProcessor<Integer, Integer, Object>() {
+    Map<Integer, EntryProcessingResult<Object>> _resultMap = c.invokeAll(asSet(KEY), new EntryProcessor<Integer, Integer, Object>() {
       @Override
       public Object process(final MutableCacheEntry<Integer, Integer> entry, final Object... arguments) throws Exception {
         throw new IllegalStateException("test");
@@ -91,7 +91,7 @@ public class EntryProcessorTest {
     try {
       _result.getResult();
       fail();
-    } catch (CacheEntryProcessingException ex ) {
+    } catch (EntryProcessingException ex ) {
       assertEquals(IllegalStateException.class, ex.getCause().getClass());
     }
   }
@@ -99,7 +99,7 @@ public class EntryProcessorTest {
   @Test
   public void exists_Empty() {
     Cache<Integer, Integer> c = target.cache();
-    c.invoke(KEY, new CacheEntryProcessor<Integer, Integer, Object>() {
+    c.invoke(KEY, new EntryProcessor<Integer, Integer, Object>() {
       @Override
       public Object process(final MutableCacheEntry<Integer, Integer> entry, final Object... arguments) throws Exception {
         assertFalse(entry.exists());
@@ -146,7 +146,7 @@ public class EntryProcessorTest {
   @Test
   public void remove_Empty_WriterDelete() {
     CacheWithWriter ww = cacheWithWriter();
-    ww.cache.invoke(KEY, new CacheEntryProcessor<Integer, Integer, Object>() {
+    ww.cache.invoke(KEY, new EntryProcessor<Integer, Integer, Object>() {
       @Override
       public Object process(final MutableCacheEntry<Integer, Integer> entry, final Object... arguments) throws Exception {
         entry.remove();
@@ -159,7 +159,7 @@ public class EntryProcessorTest {
   @Test
   public void setValue_Empty_WriterWrite() {
     CacheWithWriter ww = cacheWithWriter();
-    ww.cache.invoke(KEY, new CacheEntryProcessor<Integer, Integer, Object>() {
+    ww.cache.invoke(KEY, new EntryProcessor<Integer, Integer, Object>() {
       @Override
       public Object process(final MutableCacheEntry<Integer, Integer> entry, final Object... arguments) throws Exception {
         entry.setValue(123);
@@ -179,7 +179,7 @@ public class EntryProcessorTest {
         b.retryInterval(Long.MAX_VALUE, TimeUnit.MILLISECONDS);
       }
     });
-    c.invoke(KEY, new CacheEntryProcessor<Integer, Integer, Object>() {
+    c.invoke(KEY, new EntryProcessor<Integer, Integer, Object>() {
       @Override
       public Object process(final MutableCacheEntry<Integer, Integer> entry, final Object... arguments) throws Exception {
         entry.setException(new IllegalStateException(_TEXT));
@@ -216,7 +216,7 @@ public class EntryProcessorTest {
         b.resiliencePolicy(_policy);
       }
     });
-    c.invoke(KEY, new CacheEntryProcessor<Integer, Integer, Object>() {
+    c.invoke(KEY, new EntryProcessor<Integer, Integer, Object>() {
       @Override
       public Object process(final MutableCacheEntry<Integer, Integer> entry, final Object... arguments) throws Exception {
         entry.setException(new IllegalStateException(_TEXT));

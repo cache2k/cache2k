@@ -21,8 +21,8 @@ package org.cache2k.core.operation;
  */
 
 import org.cache2k.CacheEntry;
-import org.cache2k.processor.CacheEntryProcessingException;
-import org.cache2k.processor.CacheEntryProcessor;
+import org.cache2k.processor.EntryProcessingException;
+import org.cache2k.processor.EntryProcessor;
 import org.cache2k.processor.MutableCacheEntry;
 import org.cache2k.processor.RestartException;
 import org.cache2k.core.ExceptionWrapper;
@@ -448,7 +448,7 @@ public class Operations<K, V> {
     }
   }
 
-  public <R> Semantic<K, V, R> invoke(final K key, final boolean _readThrough, final CacheEntryProcessor<K, V, R> _processor, final Object... _arguments) {
+  public <R> Semantic<K, V, R> invoke(final K key, final boolean _readThrough, final EntryProcessor<K, V, R> _processor, final Object... _arguments) {
     return new Semantic.UpdateExisting<K, V, R>() {
       @Override
       public void update(final Progress<K, V, R> c, final ExaminationEntry<K, V> e) {
@@ -460,7 +460,7 @@ public class Operations<K, V> {
           c.loadAndMutation();
           return;
         } catch (Throwable t) {
-          c.failure(new CacheEntryProcessingException(t));
+          c.failure(new EntryProcessingException(t));
           return;
         }
         _mutableEntryOnProgress.sendMutationCommandIfNeeded();

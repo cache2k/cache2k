@@ -21,8 +21,8 @@ package org.cache2k.core;
  */
 
 import org.cache2k.CacheEntry;
-import org.cache2k.processor.CacheEntryProcessingException;
-import org.cache2k.processor.CacheEntryProcessor;
+import org.cache2k.processor.EntryProcessingException;
+import org.cache2k.processor.EntryProcessor;
 import org.cache2k.processor.EntryProcessingResult;
 import org.cache2k.core.operation.Semantic;
 import org.cache2k.core.storageApi.StorageAdapter;
@@ -131,7 +131,7 @@ public abstract class AbstractCache<K, V> implements InternalCache<K, V> {
   }
 
   @Override
-  public <R> Map<K, EntryProcessingResult<R>> invokeAll(Iterable<? extends K> keys, CacheEntryProcessor<K, V, R> entryProcessor, Object... objs) {
+  public <R> Map<K, EntryProcessingResult<R>> invokeAll(Iterable<? extends K> keys, EntryProcessor<K, V, R> entryProcessor, Object... objs) {
     Map<K, EntryProcessingResult<R>> m = new HashMap<K, EntryProcessingResult<R>>();
     for (K k : keys) {
       try {
@@ -150,12 +150,12 @@ public abstract class AbstractCache<K, V> implements InternalCache<K, V> {
             return null;
           }
         });
-      } catch (CacheEntryProcessingException t) {
+      } catch (EntryProcessingException t) {
         final Throwable _cause = t.getCause();
         m.put(k, new EntryProcessingResult<R>() {
           @Override
           public R getResult() {
-            throw new CacheEntryProcessingException(_cause);
+            throw new EntryProcessingException(_cause);
           }
 
           @Override

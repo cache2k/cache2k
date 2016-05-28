@@ -20,25 +20,17 @@ package org.cache2k.processor;
  * #L%
  */
 
+import org.cache2k.CacheException;
+
 /**
- * Result tuple for {@code Cache.invokeAll()}.
+ * Wrapped exception of an exception thrown during entry processing.
  *
- * @see org.cache2k.Cache#invokeAll
- * @author Jens Wilke
+ * @author Jens Wilke; created: 2015-05-02
  */
-public interface EntryProcessingResult<R> {
+public class EntryProcessingException extends CacheException {
 
-  /**
-   * Result of entry processing.
-   *
-   * @throws EntryProcessingException if an exception occurred during processing.
-   */
-  R getResult();
-
-  /**
-   * Original exception of entry processing or null if no exception occurred. If this is null,
-   * #getResult will throw no exception.
-   */
-  Throwable getException();
+  public EntryProcessingException(Throwable cause) {
+    super(cause);
+  }
 
 }

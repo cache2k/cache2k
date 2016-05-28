@@ -22,12 +22,11 @@ package org.cache2k.jcache.provider;
 
 import org.cache2k.Cache;
 import org.cache2k.CacheEntry;
-import org.cache2k.processor.CacheEntryProcessor;
+import org.cache2k.processor.EntryProcessor;
 import org.cache2k.integration.CacheWriterException;
 import org.cache2k.processor.EntryProcessingResult;
 import org.cache2k.integration.LoadCompletedListener;
 import org.cache2k.processor.MutableCacheEntry;
-import org.cache2k.CustomizationException;
 import org.cache2k.core.EntryAction;
 import org.cache2k.core.InternalCache;
 import org.cache2k.jcache.provider.event.EventHandling;
@@ -40,7 +39,6 @@ import javax.cache.configuration.MutableConfiguration;
 
 import javax.cache.integration.CacheLoaderException;
 import javax.cache.integration.CompletionListener;
-import javax.cache.processor.EntryProcessor;
 import javax.cache.processor.EntryProcessorException;
 import javax.cache.processor.EntryProcessorResult;
 import javax.cache.processor.MutableEntry;
@@ -349,7 +347,7 @@ public class JCacheAdapter<K, V> implements javax.cache.Cache<K, V> {
   }
 
   @Override
-  public <T> T invoke(K key, EntryProcessor<K, V, T> entryProcessor, Object... arguments) throws EntryProcessorException {
+  public <T> T invoke(K key, javax.cache.processor.EntryProcessor<K,V,T> entryProcessor, Object... arguments) throws EntryProcessorException {
     checkClosed();
     checkNullKey(key);
     Map<K, EntryProcessorResult<T>> m = invokeAll(Collections.singleton(key), entryProcessor, arguments);
@@ -357,12 +355,12 @@ public class JCacheAdapter<K, V> implements javax.cache.Cache<K, V> {
   }
 
   @Override
-  public <T> Map<K, EntryProcessorResult<T>> invokeAll(Set<? extends K> keys, final EntryProcessor<K, V, T> entryProcessor, Object... arguments) {
+  public <T> Map<K, EntryProcessorResult<T>> invokeAll(Set<? extends K> keys, final javax.cache.processor.EntryProcessor<K,V,T> entryProcessor, Object... arguments) {
     checkClosed();
     if (entryProcessor == null) {
       throw new NullPointerException("processor is null");
     }
-    CacheEntryProcessor<K, V, T> p = new CacheEntryProcessor<K, V, T>() {
+    EntryProcessor<K, V, T> p = new EntryProcessor<K, V, T>() {
       @Override
       public T process(final MutableCacheEntry<K, V> e, Object... _objs) throws Exception {
         MutableEntryAdapter<K, V> me = new MutableEntryAdapter<K, V>(e);
@@ -500,36 +498,31 @@ public class JCacheAdapter<K, V> implements javax.cache.Cache<K, V> {
 
   private class MutableEntryAdapter<K, V> implements MutableEntry<K, V> {
 
-    private boolean getInvoked = false;
-    private boolean putRemoveInvoked = false;
-    private final MutableCacheEntry<K, V> e;
+    private final MutableCacheEntry<K, V> entry;
 
-    public MutableEntryAdapter(MutableCacheEntry<K, V> e) {
-      this.e = e;
+    MutableEntryAdapter(MutableCacheEntry<K, V> e) {
+      entry = e;
     }
 
     @Override
     public boolean exists() {
-      return e.exists();
+      return entry.exists();
     }
 
     @Override
     public void remove() {
-      putRemoveInvoked = true;
-      e.remove();
+      entry.remove();
     }
 
     @Override
     public void setValue(V value) {
       checkNullValue(value);
-      putRemoveInvoked = true;
-      e.setValue(value);
+      entry.setValue(value);
     }
 
     @Override
     public K getKey() {
-      getInvoked = true;
-      return e.getKey();
+      return entry.getKey();
     }
 
     @Override
@@ -537,7 +530,7 @@ public class JCacheAdapter<K, V> implements javax.cache.Cache<K, V> {
       if (!readThrough && !exists()) {
         return null;
       }
-      return e.getValue();
+      return entry.getValue();
     }
 
     @Override

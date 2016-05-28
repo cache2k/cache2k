@@ -1,4 +1,4 @@
-package org.cache2k.core;
+package org.cache2k.test.core;
 
 /*
  * #%L
@@ -21,10 +21,12 @@ package org.cache2k.core;
  */
 
 import org.cache2k.Cache;
+import org.cache2k.core.ExceptionWrapper;
+import org.cache2k.core.StandardExceptionPropagatorTest;
 import org.cache2k.integration.CacheLoaderException;
 import org.cache2k.junit.FastTests;
-import org.cache2k.processor.CacheEntryProcessingException;
-import org.cache2k.processor.CacheEntryProcessor;
+import org.cache2k.processor.EntryProcessingException;
+import org.cache2k.processor.EntryProcessor;
 import org.cache2k.processor.MutableCacheEntry;
 import org.cache2k.test.util.IntCacheRule;
 import org.junit.Rule;
@@ -37,6 +39,7 @@ import static org.junit.Assert.*;
  * Test various places where an exception must be thrown when an entry is accessed.
  *
  * @author Jens Wilke
+ * @see StandardExceptionPropagatorTest
  */
 @Category(FastTests.class)
 public class ExceptionPropagatorTest {
@@ -79,7 +82,7 @@ public class ExceptionPropagatorTest {
   @Test
   public void mutableEntry_entry_throws() {
     try {
-      prepCache().invoke(KEY, new CacheEntryProcessor<Integer, Integer, Void>() {
+      prepCache().invoke(KEY, new EntryProcessor<Integer, Integer, Void>() {
         @Override
         public Void process(final MutableCacheEntry<Integer, Integer> entry, final Object... arguments) throws Exception {
           entry.getValue();
@@ -87,7 +90,7 @@ public class ExceptionPropagatorTest {
         }
       });
       fail();
-    } catch (CacheEntryProcessingException ex) {
+    } catch (EntryProcessingException ex) {
       assertEquals(CacheLoaderException.class, ex.getCause().getClass());
     }
   }

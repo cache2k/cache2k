@@ -24,7 +24,7 @@ import org.cache2k.event.CacheEntryExpiredListener;
 import org.cache2k.integration.AdvancedCacheLoader;
 import org.cache2k.CacheEntry;
 import org.cache2k.event.CacheEntryCreatedListener;
-import org.cache2k.processor.CacheEntryProcessor;
+import org.cache2k.processor.EntryProcessor;
 import org.cache2k.event.CacheEntryRemovedListener;
 import org.cache2k.event.CacheEntryUpdatedListener;
 import org.cache2k.CacheManager;
@@ -346,7 +346,7 @@ public class WiredCache<K, V> extends AbstractCache<K, V>
   }
 
   @Override
-  public <R> R invoke(K key, CacheEntryProcessor<K, V, R> entryProcessor, Object... args) {
+  public <R> R invoke(K key, EntryProcessor<K, V, R> entryProcessor, Object... args) {
     return execute(key, SPEC.invoke(key, loader != null, entryProcessor, args));
   }
 

@@ -22,7 +22,7 @@ package org.cache2k.core;
 
 import org.cache2k.Cache;
 import org.cache2k.CacheEntry;
-import org.cache2k.processor.CacheEntryProcessor;
+import org.cache2k.processor.EntryProcessor;
 import org.cache2k.processor.MutableCacheEntry;
 
 import java.util.AbstractSet;
@@ -53,7 +53,7 @@ public class ConcurrentMapWrapper<K,V> implements ConcurrentMap<K, V> {
 
   @Override
   public V putIfAbsent(K key, final V value) {
-    CacheEntryProcessor<K, V, V> p = new CacheEntryProcessor<K, V, V>() {
+    EntryProcessor<K, V, V> p = new EntryProcessor<K, V, V>() {
       @Override
       public V process(MutableCacheEntry<K, V> entry, Object... arguments) throws Exception {
         if (!entry.exists()) {
@@ -81,7 +81,7 @@ public class ConcurrentMapWrapper<K,V> implements ConcurrentMap<K, V> {
 
   @Override
   public V replace(K key, final V value) {
-    CacheEntryProcessor<K, V, V> p = new CacheEntryProcessor<K, V, V>() {
+    EntryProcessor<K, V, V> p = new EntryProcessor<K, V, V>() {
       @Override
       public V process(MutableCacheEntry<K, V> entry, Object... arguments) throws Exception {
         if (entry.exists()) {
@@ -141,7 +141,7 @@ public class ConcurrentMapWrapper<K,V> implements ConcurrentMap<K, V> {
 
   @Override
   public V put(final K key, final V value) {
-    CacheEntryProcessor<K, V, V> p = new CacheEntryProcessor<K, V, V>() {
+    EntryProcessor<K, V, V> p = new EntryProcessor<K, V, V>() {
       @Override
       public V process(MutableCacheEntry<K, V> entry, Object... arguments) throws Exception {
         V result = entry.getValue();
@@ -157,7 +157,7 @@ public class ConcurrentMapWrapper<K,V> implements ConcurrentMap<K, V> {
     if (!keyType.isAssignableFrom(key.getClass())) {
       return null;
     }
-    CacheEntryProcessor<K, V, V> p = new CacheEntryProcessor<K, V, V>() {
+    EntryProcessor<K, V, V> p = new EntryProcessor<K, V, V>() {
       @Override
       public V process(MutableCacheEntry<K, V> entry, Object... arguments) throws Exception {
         V result = entry.getValue();

@@ -37,7 +37,7 @@ import org.cache2k.integration.AdvancedCacheLoader;
 import org.cache2k.integration.CacheLoader;
 import org.cache2k.integration.ExceptionPropagator;
 import org.cache2k.integration.LoadCompletedListener;
-import org.cache2k.processor.CacheEntryProcessor;
+import org.cache2k.processor.EntryProcessor;
 
 import java.security.SecureRandom;
 import java.util.HashMap;
@@ -1987,7 +1987,7 @@ public abstract class HeapCache<K, V>
    * corner cases for loader and exception handling.
    */
   @Override
-  public <R> R invoke(K key, CacheEntryProcessor<K, V, R> entryProcessor, Object... args) {
+  public <R> R invoke(K key, EntryProcessor<K, V, R> entryProcessor, Object... args) {
     return execute(key, spec().invoke(key, loader != null, entryProcessor, args));
   }
 

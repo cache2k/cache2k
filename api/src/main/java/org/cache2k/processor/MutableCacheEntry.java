@@ -24,7 +24,7 @@ import org.cache2k.CacheEntry;
 import org.cache2k.integration.CacheLoader;
 
 /**
- * A mutable entry is used inside the {@link CacheEntryProcessor} to perform
+ * A mutable entry is used inside the {@link EntryProcessor} to perform
  * updates and retrieve information if the entry is existing in the cache.
  *
  * <p>A mutation is only done if a method for mutation is called, e.g.
@@ -33,7 +33,7 @@ import org.cache2k.integration.CacheLoader;
  *
  * <p>One instance is only intended for usage by a single thread.
  *
- * @see CacheEntryProcessor
+ * @see EntryProcessor
  * @author Jens Wilke
  */
 public interface MutableCacheEntry<K, V> extends CacheEntry<K, V> {

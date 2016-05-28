@@ -28,7 +28,8 @@ import org.cache2k.integration.CacheWriter;
 import org.cache2k.integration.LoadCompletedListener;
 import org.cache2k.integration.CacheLoaderException;
 import org.cache2k.integration.CacheWriterException;
-import org.cache2k.processor.CacheEntryProcessor;
+import org.cache2k.processor.EntryProcessingException;
+import org.cache2k.processor.EntryProcessor;
 import org.cache2k.processor.EntryProcessingResult;
 
 import java.io.Closeable;
@@ -567,10 +568,10 @@ public interface Cache<K, V> extends
    * @param entryProcessor processor instance to be invoked
    * @param args arbitrary arguments passed to the entry processor
    * @param <R> type of the result
-   * @throws org.cache2k.processor.CacheEntryProcessingException if the {@code invoke} had thrown an exception
+   * @throws EntryProcessingException if the {@code invoke} had thrown an exception
    * @return result provided by the entry processor
    */
-  <R> R invoke(K key, CacheEntryProcessor<K, V, R> entryProcessor, Object... args);
+  <R> R invoke(K key, EntryProcessor<K, V, R> entryProcessor, Object... args);
 
   /**
    *
@@ -583,7 +584,7 @@ public interface Cache<K, V> extends
    * @return
    */
   <R> Map<K, EntryProcessingResult<R>> invokeAll(
-    Iterable<? extends K> keys, CacheEntryProcessor<K , V, R> entryProcessor, Object... objs);
+    Iterable<? extends K> keys, EntryProcessor<K , V, R> entryProcessor, Object... objs);
 
   /**
    * Retrieve values from the cache associated with the provided keys. If the

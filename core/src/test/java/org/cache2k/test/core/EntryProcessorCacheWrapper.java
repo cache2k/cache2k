@@ -21,7 +21,7 @@ package org.cache2k.test.core;
  */
 
 import org.cache2k.Cache;
-import org.cache2k.processor.CacheEntryProcessor;
+import org.cache2k.processor.EntryProcessor;
 import org.cache2k.processor.MutableCacheEntry;
 import org.cache2k.core.extra.CacheWrapper;
 
@@ -51,7 +51,7 @@ public class EntryProcessorCacheWrapper<K, V> extends CacheWrapper<K, V> {
    */
   @Override
   public V peek(K key) {
-    CacheEntryProcessor<K, V, V> p = new CacheEntryProcessor<K, V, V>() {
+    EntryProcessor<K, V, V> p = new EntryProcessor<K, V, V>() {
       @Override
       public V process(MutableCacheEntry<K, V> entry, Object... arguments) throws Exception {
         if (!entry.exists()) {
@@ -65,7 +65,7 @@ public class EntryProcessorCacheWrapper<K, V> extends CacheWrapper<K, V> {
 
   @Override
   public boolean containsKey(K key) {
-    CacheEntryProcessor<K, V, Boolean> p = new CacheEntryProcessor<K, V, Boolean>() {
+    EntryProcessor<K, V, Boolean> p = new EntryProcessor<K, V, Boolean>() {
       @Override
       public Boolean process(MutableCacheEntry<K, V> entry, Object... arguments) throws Exception {
         if (!entry.exists()) {
@@ -82,7 +82,7 @@ public class EntryProcessorCacheWrapper<K, V> extends CacheWrapper<K, V> {
    */
   @Override
   public void put(K key, final V value) {
-    CacheEntryProcessor<K, V, Void> p = new CacheEntryProcessor<K, V, Void>() {
+    EntryProcessor<K, V, Void> p = new EntryProcessor<K, V, Void>() {
       @Override
       public Void process(MutableCacheEntry<K, V> entry, Object... arguments) throws Exception {
         entry.setValue(value);
@@ -94,7 +94,7 @@ public class EntryProcessorCacheWrapper<K, V> extends CacheWrapper<K, V> {
 
   @Override
   public boolean replace(final K key, final V _newValue) {
-    CacheEntryProcessor<K, V, Boolean> p = new CacheEntryProcessor<K, V, Boolean>() {
+    EntryProcessor<K, V, Boolean> p = new EntryProcessor<K, V, Boolean>() {
       @Override
       public Boolean process(MutableCacheEntry<K, V> entry, Object... arguments) throws Exception {
         if (!entry.exists()) {
@@ -109,7 +109,7 @@ public class EntryProcessorCacheWrapper<K, V> extends CacheWrapper<K, V> {
 
   @Override
   public boolean replaceIfEquals(final K key, final V _oldValue, final V _newValue) {
-    CacheEntryProcessor<K, V, Boolean> p = new CacheEntryProcessor<K, V, Boolean>() {
+    EntryProcessor<K, V, Boolean> p = new EntryProcessor<K, V, Boolean>() {
       @Override
       public Boolean process(MutableCacheEntry<K, V> entry, Object... arguments) throws Exception {
         if (!entry.exists()) {

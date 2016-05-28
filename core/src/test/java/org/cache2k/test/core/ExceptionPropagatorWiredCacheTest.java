@@ -1,8 +1,8 @@
-package org.cache2k.processor;
+package org.cache2k.test.core;
 
 /*
  * #%L
- * cache2k API
+ * cache2k core
  * %%
  * Copyright (C) 2000 - 2016 headissue GmbH, Munich
  * %%
@@ -20,17 +20,27 @@ package org.cache2k.processor;
  * #L%
  */
 
-import org.cache2k.CacheException;
+import org.cache2k.Cache2kBuilder;
+import org.cache2k.junit.FastTests;
+import org.cache2k.test.util.CacheRule;
+import org.junit.experimental.categories.Category;
+
+import java.util.concurrent.TimeUnit;
 
 /**
- * Wrapped exception of an exception thrown during entry processing.
- *
- * @author Jens Wilke; created: 2015-05-02
+ * @author Jens Wilke
  */
-public class CacheEntryProcessingException extends CacheException {
+@Category(FastTests.class)
+public class ExceptionPropagatorWiredCacheTest extends ExceptionPropagatorTest {
 
-  public CacheEntryProcessingException(Throwable cause) {
-    super(cause);
+  {
+    target.config(new CacheRule.Specialization<Integer, Integer>() {
+      @Override
+      public void extend(final Cache2kBuilder<Integer, Integer> b) {
+        StaticUtil.enforceWiredCache(b);
+        b.retryInterval(Long.MAX_VALUE, TimeUnit.MILLISECONDS);
+      }
+    });
   }
 
 }

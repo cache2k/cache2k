@@ -23,7 +23,7 @@ package org.cache2k.jcache.provider;
 import org.cache2k.CacheEntry;
 import org.cache2k.core.InternalCache;
 import org.cache2k.expiry.ExpiryTimeValues;
-import org.cache2k.processor.CacheEntryProcessor;
+import org.cache2k.processor.EntryProcessor;
 import org.cache2k.processor.MutableCacheEntry;
 
 import javax.cache.Cache;
@@ -33,7 +33,6 @@ import javax.cache.configuration.Configuration;
 import javax.cache.expiry.Duration;
 import javax.cache.expiry.ExpiryPolicy;
 import javax.cache.integration.CompletionListener;
-import javax.cache.processor.EntryProcessor;
 import javax.cache.processor.EntryProcessorException;
 import javax.cache.processor.EntryProcessorResult;
 import javax.cache.processor.MutableEntry;
@@ -262,7 +261,7 @@ public class TouchyJCacheAdapter<K, V> implements Cache<K, V> {
     if (key == null) {
       throw new NullPointerException();
     }
-    CacheEntryProcessor<K,V,Boolean> ep = new CacheEntryProcessor<K, V, Boolean>() {
+    EntryProcessor<K,V,Boolean> ep = new EntryProcessor<K, V, Boolean>() {
       @Override
       public Boolean process(final MutableCacheEntry<K, V> entry, final Object... arguments) throws Exception {
         if (!entry.exists()) {
@@ -361,12 +360,12 @@ public class TouchyJCacheAdapter<K, V> implements Cache<K, V> {
   }
 
   @Override
-  public <T> T invoke(K key, EntryProcessor<K, V, T> entryProcessor, Object... arguments) throws EntryProcessorException {
+  public <T> T invoke(K key, javax.cache.processor.EntryProcessor<K,V, T> entryProcessor, Object... arguments) throws EntryProcessorException {
     return cache.invoke(key, wrapEntryProcessor(entryProcessor), arguments);
   }
 
   @Override
-  public <T> Map<K, EntryProcessorResult<T>> invokeAll(Set<? extends K> keys, EntryProcessor<K, V, T> entryProcessor, Object... arguments) {
+  public <T> Map<K, EntryProcessorResult<T>> invokeAll(Set<? extends K> keys, javax.cache.processor.EntryProcessor<K,V,T> entryProcessor, Object... arguments) {
     return cache.invokeAll(keys, wrapEntryProcessor(entryProcessor), arguments);
   }
 
@@ -427,11 +426,11 @@ public class TouchyJCacheAdapter<K, V> implements Cache<K, V> {
     };
   }
 
-  private <T> EntryProcessor<K, V, T> wrapEntryProcessor(final EntryProcessor<K, V, T> ep) {
+  private <T> javax.cache.processor.EntryProcessor<K,V,T> wrapEntryProcessor(final javax.cache.processor.EntryProcessor<K,V,T> ep) {
     if (ep == null) {
       throw new NullPointerException("processor is null");
     }
-    return new EntryProcessor<K, V, T>() {
+    return new javax.cache.processor.EntryProcessor<K,V, T>() {
       boolean freshOrJustLoaded = false;
       @Override
       public T process(final MutableEntry<K, V> e0, Object... _args) throws EntryProcessorException {
