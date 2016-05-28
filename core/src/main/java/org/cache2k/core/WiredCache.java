@@ -610,7 +610,6 @@ public class WiredCache<K, V> extends AbstractCache<K, V>
       if (e.isGone()) {
         return;
       }
-      if (heapCache.moveToRefreshHash(e)) {
         Runnable r = new Runnable() {
           @Override
           public void run() {
@@ -624,11 +623,16 @@ public class WiredCache<K, V> extends AbstractCache<K, V>
             }
             try {
               execute(e.getKey(), e, SPEC.REFRESH);
+              synchronized (e) {
+                heapCache.expireEntry(e);
+              }
             } catch (CacheClosedException ignore) {
             } catch (Throwable ex) {
               logAndCountInternalException("Refresh exception", ex);
               try {
-                heapCache.expireEntry(e);
+                synchronized (e) {
+                  heapCache.expireEntry(e);
+                }
               } catch (CacheClosedException ignore) {
               }
             }
@@ -640,8 +644,6 @@ public class WiredCache<K, V> extends AbstractCache<K, V>
         } catch (RejectedExecutionException ignore) {
         }
         metrics().refreshSubmitFailed();
-      } else { // if (mainHashCtrl.remove(mainHash, e)) ...
-      }
       expireOrScheduleFinalExpireEvent(e);
     }
   }

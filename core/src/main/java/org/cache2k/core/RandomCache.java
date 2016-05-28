@@ -50,23 +50,14 @@ public class RandomCache<K, V> extends ConcurrentEvictionCache<K, V> {
   /**
    * Start at arbitrary hash slot and evict the next best entry.
    */
+
   @Override
   protected Entry findEvictionCandidate() {
     Entry[] h0 = mainHash;
-    Entry[] h1 = refreshHash;
-    int idx = evictionIndex % (h0.length + h1.length);
-    if (idx >= h0.length) {
-      idx -= h0.length;
-      Entry[] t = h0;
-      h0 = h1;
-      h1 = t;
-    }
+    int idx = evictionIndex % (h0.length);
     while (h0[idx] == null) {
       idx++;
       if (idx >= h0.length) {
-        Entry[] t = h0;
-        h0 = h1;
-        h1 = t;
         idx = 0;
       }
     }

@@ -166,9 +166,6 @@ public abstract class HeapCache<K, V>
   public Hash<Entry<K, V>> mainHashCtrl;
   protected Entry<K, V>[] mainHash;
 
-  protected Hash<Entry<K, V>> refreshHashCtrl;
-  protected Entry<K, V>[] refreshHash;
-
   /** Stuff that we need to wait for before shutdown may complete */
   protected Futures.WaitForAllFuture<?> shutdownWaitFuture;
 
@@ -335,10 +332,6 @@ public abstract class HeapCache<K, V>
   @Override
   public Class<?> getValueType() { return valueType; }
 
-  /**
-   * Registers the cache in a global set for the clearAllCaches function and
-   * registers it with the resource monitor.
-   */
   public void init() {
     synchronized (lock) {
       if (name == null) {
@@ -406,12 +399,9 @@ public abstract class HeapCache<K, V>
   protected void initializeHeapCache() {
     if (mainHashCtrl != null) {
       mainHash = mainHashCtrl.clear((Class<Entry<K, V>>) newEntry().getClass());
-      refreshHash = refreshHashCtrl.clear((Class<Entry<K, V>>) newEntry().getClass());
     } else {
       mainHashCtrl = new Hash<Entry<K, V>>();
-      refreshHashCtrl = new Hash<Entry<K, V>>();
       mainHash = mainHashCtrl.initSegmented((Class<Entry<K, V>>) newEntry().getClass(), lock);
-      refreshHash = refreshHashCtrl.initSegmented((Class<Entry<K, V>>) newEntry().getClass(), lock, mainHashCtrl);
     }
     if (startedTime == 0) {
       startedTime = System.currentTimeMillis();
@@ -456,7 +446,6 @@ public abstract class HeapCache<K, V>
     cancelTimerJobs();
     synchronized (lock) {
       mainHashCtrl.close();
-      refreshHashCtrl.close();
     }
     try {
       Future<?> _future = shutdownWaitFuture;
@@ -477,7 +466,7 @@ public abstract class HeapCache<K, V>
   public void closePart2() {
     synchronized (lock) {
       timing.shutdown();
-      mainHash = refreshHash = null;
+      mainHash = null;
       if (manager != null) {
         manager.cacheDestroyed(this);
         manager = null;
@@ -1502,25 +1491,12 @@ public abstract class HeapCache<K, V>
       recordHit(e);
       return e;
     }
-    e = refreshHashCtrl.remove(refreshHash, key, hc);
-    if (e != null) {
-      metrics.refreshHit();
-      mainHashCtrl.insert(mainHash, e);
-      recordHit(e);
-      return e;
-    }
     return null;
   }
 
   protected final Entry lookupEntryNoHitRecord(K key, int hc) {
     Entry e = Hash.lookup(mainHash, key, hc);
     if (e != null) {
-      return e;
-    }
-    e = refreshHashCtrl.remove(refreshHash, key, hc);
-    if (e != null) {
-      metrics.refreshHit();
-      mainHashCtrl.insert(mainHash, e);
       return e;
     }
     return null;
@@ -1562,17 +1538,6 @@ public abstract class HeapCache<K, V>
     }
   }
 
-  void checkExpandRefreshHash(final int hc) {
-    if (refreshHashCtrl.needsExpansion(hc)) {
-      refreshHashCtrl.runTotalLocked(new Hash.Job<Void>() {
-        @Override
-        public Void call() {
-          refreshHash = refreshHashCtrl.expand(refreshHash, hc);
-          return null;
-        }
-      });
-    }
-  }
 
   /**
    * Remove the entry from the hash table. The entry is already removed from the replacement list.
@@ -1589,9 +1554,6 @@ public abstract class HeapCache<K, V>
   private boolean removeEntryFromHash(Entry<K, V> e) {
     boolean f;
     f = mainHashCtrl.remove(mainHash, e);
-    if (!f) {
-      f = refreshHashCtrl.remove(refreshHash, e);
-    }
     checkForHashCodeChange(e);
     timing.cancelExpiryTimer(e);
     e.setGone();
@@ -1779,28 +1741,6 @@ public abstract class HeapCache<K, V>
    * Move entry to a separate hash for the entries that got a refresh.
    * True, if successful. False, if the entry had a refresh already.
    */
-  public boolean moveToRefreshHash(Entry e) {
-    synchronized (mainHashCtrl.segmentLock(e.hashCode)) {
-      if (isClosed()) {
-        return false;
-      }
-      if (mainHashCtrl.remove(mainHash, e)) {
-        refreshHashCtrl.insert(refreshHash, e);
-        if (e.hashCode != modifiedHash(e.key.hashCode())) {
-          synchronized (lock) {
-            if (removeEntryFromHash(e)) {
-              expiredRemoveCnt++;
-            }
-          }
-          return false;
-        }
-      } else {
-       return false;
-      }
-    }
-    checkExpandRefreshHash(e.hashCode);
-    return true;
-  }
 
   @Override
   public void timerEventRefresh(final Entry<K, V> e) {
@@ -1809,7 +1749,6 @@ public abstract class HeapCache<K, V>
       if (e.isGone()) {
         return;
       }
-      if (moveToRefreshHash(e)) {
         Runnable r = new Runnable() {
           @Override
           public void run() {
@@ -1822,6 +1761,9 @@ public abstract class HeapCache<K, V>
             }
             try {
               load(e);
+              synchronized (e) {
+                expireEntry(e);
+              }
             } catch (CacheClosedException ignore) {
             } catch (Throwable ex) {
               e.ensureAbort(false);
@@ -1841,8 +1783,6 @@ public abstract class HeapCache<K, V>
         } catch (RejectedExecutionException ignore) {
         }
         metrics.refreshSubmitFailed();
-      } else { // if (mainHashCtrl.remove(mainHash, e)) ...
-      }
       expireOrScheduleFinalExpireEvent(e);
     }
   }
@@ -1998,16 +1938,12 @@ public abstract class HeapCache<K, V>
 
   public abstract long getHitCnt();
 
-  protected final int calculateHashEntryCount() {
-    return Hash.calcEntryCount(mainHash) + Hash.calcEntryCount(refreshHash);
-  }
-
   public final long getLocalSizeEstimate() {
-    return mainHashCtrl.getSize() + refreshHashCtrl.getSize();
+    return mainHashCtrl.getSize();
   }
 
   public final int getLocalSize() {
-    return mainHashCtrl.getSize() + refreshHashCtrl.getSize();
+    return mainHashCtrl.getSize();
   }
 
   public final int getTotalEntryCount() {
@@ -2023,7 +1959,6 @@ public abstract class HeapCache<K, V>
     return new IntegrityState()
       .checkEquals("newEntryCnt == getSize() + evictedCnt + expiredRemoveCnt + removeCnt + clearedCnt + virginRemovedCnt", newEntryCnt, getLocalSize() + evictedCnt + expiredRemoveCnt + removedCnt + clearRemovedCnt + virginRemovedCnt)
       .checkEquals("mainHashCtrl.size == Hash.calcEntryCount(mainHash)", mainHashCtrl.getSize(), Hash.calcEntryCount(mainHash))
-      .checkEquals("refreshHashCtrl.size == Hash.calcEntryCount(refreshHash)", refreshHashCtrl.getSize(), Hash.calcEntryCount(refreshHash))
       .check("!!evictionNeeded | (getSize() <= maxSize)", !!evictionNeeded | (getLocalSize() <= maxSize));
   }
 
@@ -2056,7 +1991,6 @@ public abstract class HeapCache<K, V>
 
   public final InternalCacheInfo getInfo(InternalCache _userCache) {
     synchronized (infoGenerationLock) {
-      checkClosed();
       long t = System.currentTimeMillis();
       if (info != null &&
         (info.creationTime + info.creationDeltaMs * TUNABLE.minimumStatisticsCreationTimeDeltaFactor + TUNABLE.minimumStatisticsCreationDeltaMillis > t)) {

@@ -182,7 +182,6 @@ public class ConcurrentEntryIterator<K,V> implements Iterator<Entry<K,V>> {
           switchToMainHash();
         }
         if (_step == 1 || _step == 2 || _step == 5) {
-          switchToRefreshHash();
         }
         clearCount = hashCtl.getClearCount();
         boolean _cacheClosed = hash == null;
@@ -209,9 +208,5 @@ public class ConcurrentEntryIterator<K,V> implements Iterator<Entry<K,V>> {
     hashCtl = cache.mainHashCtrl;
   }
 
-  private void switchToRefreshHash() {
-    hash = cache.refreshHash;
-    hashCtl = cache.refreshHashCtrl;
-  }
 
 }

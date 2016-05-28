@@ -85,7 +85,6 @@ class CacheBaseInfo implements InternalCacheInfo {
     storageMetrics = _userCache.getStorageMetrics();
     collisionInfo = new Hash.CollisionInfo();
     Hash.calcHashCollisionInfo(collisionInfo, _heapCache.mainHash);
-    Hash.calcHashCollisionInfo(collisionInfo, _heapCache.refreshHash);
     extraStatistics = _heapCache.getExtraStatistics();
     if (extraStatistics.startsWith(", ")) {
       extraStatistics = extraStatistics.substring(2);
