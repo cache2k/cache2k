@@ -2052,8 +2052,10 @@ public abstract class HeapCache<K, V>
     return getLatestInfo(this);
   }
 
+  Object infoGenerationLock = new Object();
+
   public final InternalCacheInfo getInfo(InternalCache _userCache) {
-    synchronized (lock) {
+    synchronized (infoGenerationLock) {
       checkClosed();
       long t = System.currentTimeMillis();
       if (info != null &&
@@ -2110,9 +2112,9 @@ public abstract class HeapCache<K, V>
       if (isClosed()) {
         return "Cache{" + name + "}(closed)";
       }
-      InternalCacheInfo fo = getLatestInfo();
-      return fo.toString();
     }
+    InternalCacheInfo fo = getLatestInfo();
+    return fo.toString();
   }
 
   /**
