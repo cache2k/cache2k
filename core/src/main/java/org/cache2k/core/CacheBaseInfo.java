@@ -37,7 +37,7 @@ class CacheBaseInfo implements InternalCacheInfo {
   CommonMetrics metrics;
   StorageMetrics storageMetrics = StorageMetrics.DUMMY;
   private HeapCache heapCache;
-  int size;
+  long size;
   long creationTime;
   int creationDeltaMs;
   long missCnt;
@@ -84,12 +84,12 @@ class CacheBaseInfo implements InternalCacheInfo {
     integrityState = _heapCache.getIntegrityState();
     storageMetrics = _userCache.getStorageMetrics();
     collisionInfo = new Hash.CollisionInfo();
-    Hash.calcHashCollisionInfo(collisionInfo, _heapCache.mainHash);
+    _heapCache.hash.calcHashCollisionInfo(collisionInfo);
     extraStatistics = _heapCache.getExtraStatistics();
     if (extraStatistics.startsWith(", ")) {
       extraStatistics = extraStatistics.substring(2);
     }
-    size = _userCache.getTotalEntryCount();
+    size = heapCache.getLocalSize();
     missCnt = metrics.getLoadCount() + metrics.getReloadCount() + metrics.getPeekHitNotFreshCount() + metrics.getPeekMissCount();
     storageMissCnt = storageMetrics.getReadMissCount() + storageMetrics.getReadNonFreshCount();
     storageLoadCnt = storageMissCnt + storageMetrics.getReadHitCount();
@@ -187,7 +187,7 @@ class CacheBaseInfo implements InternalCacheInfo {
   @Override
   public int getCollisionPercentage() {
     return
-      (size - collisionInfo.collisionCnt) * 100 / size;
+      (int) ((size - collisionInfo.collisionCnt) * 100 / size);
   }
   /** 100 means each collision has its own slot */
   @Override

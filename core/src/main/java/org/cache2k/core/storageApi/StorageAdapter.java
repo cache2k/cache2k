@@ -68,7 +68,7 @@ public abstract class StorageAdapter {
    * the storage. Should apply simple calculations to give and exact
    * number. No heavy operation e.g. checking for duplicates.
    */
-  public abstract int getTotalEntryCount();
+  public abstract long getTotalEntryCount();
 
   /** 0 means no alert, 1 orange, 2, red alert */
   public abstract int getAlert();

@@ -43,25 +43,17 @@ public abstract class ConcurrentEvictionCache<K, V> extends HeapCache<K, V> {
   @Override
   protected final Entry lookupOrNewEntrySynchronized(K key) {
     int hc = modifiedHash(key.hashCode());
-    Entry e = Hash.lookup(mainHash, key, hc);
+    Entry e = hash.lookupQuick(key, hc);
     if (e != null) {
       recordHit(e);
       return e;
     }
-    synchronized (mainHashCtrl.segmentLock(hc)) {
-      checkClosed();
-      e = lookupEntry(key, hc);
-      if (e == null) {
-        e = insertNewEntry(key, hc);
-      }
-    }
-    checkExpandMainHash(hc);
-    return e;
+    return insertNewEntry(key, hc);
   }
 
   @Override
   protected final Entry lookupEntryUnsynchronized(K key, int hc) {
-    Entry e = Hash.lookup(mainHash, key, hc);
+    Entry e = hash.lookupQuick(key, hc);
     if (e != null) {
       recordHit(e);
       return e;

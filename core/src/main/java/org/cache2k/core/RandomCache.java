@@ -20,6 +20,9 @@ package org.cache2k.core;
  * #L%
  */
 
+import java.util.Iterator;
+import java.util.concurrent.atomic.AtomicReferenceArray;
+
 /**
  * Random eviction without usage counters.
  *
@@ -48,19 +51,20 @@ public class RandomCache<K, V> extends ConcurrentEvictionCache<K, V> {
 
   @Override
   protected Entry findEvictionCandidate() {
-    Entry[] h0 = mainHash;
-    int idx = evictionIndex % (h0.length);
-    while (h0[idx] == null) {
+    AtomicReferenceArray<Entry<K,V>> h0 = hash.entries;
+    int idx = evictionIndex % (h0.length());
+    Entry e;
+    while ((e = h0.get(idx)) == null) {
       idx++;
-      if (idx >= h0.length) {
+      if (idx >= h0.length()) {
         idx = 0;
       }
     }
-    evictionIndex += h0[idx].hashCode;
+    evictionIndex += e.hashCode;
     if (evictionIndex < 0) {
       evictionIndex = -evictionIndex;
     }
-    return h0[idx];
+    return e;
   }
 
   @Override

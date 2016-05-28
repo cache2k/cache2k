@@ -24,6 +24,9 @@ import org.cache2k.core.threading.Job;
 
 import java.util.Iterator;
 import java.util.NoSuchElementException;
+import java.util.concurrent.atomic.AtomicReferenceArray;
+
+import static org.cache2k.core.util.Util.*;
 
 /**
  * Iterator over all cache entries of two hashes.
@@ -59,10 +62,10 @@ public class ConcurrentEntryIterator<K,V> implements Iterator<Entry<K,V>> {
   Entry nextEntry = null;
   int sequenceCnt = 0;
   int lastSequenceCnt;
-  int initialMaxFill;
+  long initialMaxFill;
   long clearCount;
-  Hash<Entry<K, V>> hashCtl;
-  Entry<K, V>[] hash;
+  Hash2<K,V> hash;
+  AtomicReferenceArray<Entry<K,V>> hashArray;
   Hash<Entry<K, V>> iteratedCtl = new Hash<Entry<K,V>>();
   Entry<K, V>[] iterated;
 
@@ -113,7 +116,7 @@ public class ConcurrentEntryIterator<K,V> implements Iterator<Entry<K,V>> {
 
   private Entry nextEntry() {
     Entry e;
-    if (hash == null) {
+    if (hashArray == null) {
       return null;
     }
     if (wasCleared()) {
@@ -129,16 +132,16 @@ public class ConcurrentEntryIterator<K,V> implements Iterator<Entry<K,V>> {
           return e;
         }
       }
-      idx = Hash.index(hash, lastEntry.hashCode) + 1;
+      idx = (lastEntry.hashCode & (hashArray.length() - 1) )+ 1;
     }
     for (;;) {
-      if (idx >= hash.length) {
+      if (idx >= hashArray.length()) {
         if (switchAndCheckAbort()) {
           return null;
         }
         idx = 0;
       }
-      e = hash[idx];
+      e = hashArray.get(idx);
       if (e != null) {
         e = checkIteratedOrNext(e);
         if (e != null) {
@@ -151,7 +154,7 @@ public class ConcurrentEntryIterator<K,V> implements Iterator<Entry<K,V>> {
   }
 
   private boolean wasCleared() {
-    return clearCount != hashCtl.getClearCount();
+    return clearCount != hash.getClearCount();
   }
 
   private Entry<K,V> checkIteratedOrNext(Entry<K,V> e) {
@@ -167,32 +170,39 @@ public class ConcurrentEntryIterator<K,V> implements Iterator<Entry<K,V>> {
   }
 
   private boolean switchAndCheckAbort() {
+    if (Thread.holdsLock(cache.lock)) {
+      return switchCheckAndAbortLocked();
+    }
     return cache.executeWithGlobalLock(new Job<Boolean>() {
       @Override
       public Boolean call() {
-        if (hasExpansionOccurred()) {
-          lastSequenceCnt += 2;
-        }
-        if (lastSequenceCnt == sequenceCnt) {
-          hash = null;
-          return true;
-        }
-        int _step = sequenceCnt % 6;
-        if (_step == 0 || _step == 3 || _step == 4) {
-          switchToMainHash();
-        }
-        if (_step == 1 || _step == 2 || _step == 5) {
-        }
-        clearCount = hashCtl.getClearCount();
-        boolean _cacheClosed = hash == null;
-        if (_cacheClosed) {
-          return true;
-        }
-        initialMaxFill = hashCtl.getMaxFill();
-        sequenceCnt++;
-        return false;
+        return switchCheckAndAbortLocked();
       }
     });
+  }
+
+  private Boolean switchCheckAndAbortLocked() {
+    if (hasExpansionOccurred()) {
+      lastSequenceCnt += 2;
+    }
+    if (lastSequenceCnt == sequenceCnt) {
+      hashArray = null;
+      return true;
+    }
+    int _step = sequenceCnt % 6;
+    if (_step == 0 || _step == 3 || _step == 4) {
+      switchToMainHash();
+    }
+    if (_step == 1 || _step == 2 || _step == 5) {
+    }
+    clearCount = hash.getClearCount();
+    boolean _cacheClosed = hashArray == null;
+    if (_cacheClosed) {
+      return true;
+    }
+    initialMaxFill = hash.getMaxFill();
+    sequenceCnt++;
+    return false;
   }
 
   /**
@@ -200,12 +210,12 @@ public class ConcurrentEntryIterator<K,V> implements Iterator<Entry<K,V>> {
    * scan over the hash tables.
    */
   private boolean hasExpansionOccurred() {
-    return hashCtl != null && initialMaxFill != hashCtl.getMaxFill();
+    return hash != null && initialMaxFill != hash.getMaxFill();
   }
 
   private void switchToMainHash() {
-    hash = cache.mainHash;
-    hashCtl = cache.mainHashCtrl;
+    hash = cache.hash;
+    hashArray = hash.entries;
   }
 
 

@@ -338,7 +338,6 @@ public class ClockProPlusCache<K, V> extends ConcurrentEvictionCache<K, V> {
             .checkEquals("ghostHashCtrl.size == Hash.calcEntryCount(refreshHash)",
                     ghostHashCtrl.getSize(), Hash.calcEntryCount(ghostHash))
             .check("hotMax <= maxElements", hotMax <= maxSize)
-            .checkEquals("getListSize() == getSize()", (getListSize()) , getLocalSize())
             .check("checkCyclicListIntegrity(handHot)", checkCyclicListIntegrity(handHot))
             .check("checkCyclicListIntegrity(handCold)", checkCyclicListIntegrity(handCold))
             .check("checkCyclicListIntegrity(handGhost)", checkCyclicListIntegrity(ghostHead))

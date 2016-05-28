@@ -339,9 +339,9 @@ public class WiredCache<K, V> extends AbstractCache<K, V>
   public int getTotalEntryCount() {
     synchronized (lockObject()) {
       if (storage != null) {
-        return storage.getTotalEntryCount();
+        return (int) storage.getTotalEntryCount();
       }
-      return heapCache.getLocalSize();
+      return (int) heapCache.getLocalSize();
     }
   }
 
