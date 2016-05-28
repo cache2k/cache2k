@@ -355,20 +355,20 @@ public class JCacheAdapter<K, V> implements javax.cache.Cache<K, V> {
   }
 
   @Override
-  public <T> Map<K, EntryProcessorResult<T>> invokeAll(Set<? extends K> keys, final javax.cache.processor.EntryProcessor<K,V,T> entryProcessor, Object... arguments) {
+  public <T> Map<K, EntryProcessorResult<T>> invokeAll(Set<? extends K> keys, final javax.cache.processor.EntryProcessor<K,V,T> entryProcessor, final Object... arguments) {
     checkClosed();
     if (entryProcessor == null) {
       throw new NullPointerException("processor is null");
     }
     EntryProcessor<K, V, T> p = new EntryProcessor<K, V, T>() {
       @Override
-      public T process(final MutableCacheEntry<K, V> e, Object... _objs) throws Exception {
+      public T process(final MutableCacheEntry<K, V> e) throws Exception {
         MutableEntryAdapter<K, V> me = new MutableEntryAdapter<K, V>(e);
-        T _result = entryProcessor.process(me, _objs);
+        T _result = entryProcessor.process(me, arguments);
         return _result;
       }
     };
-    Map<K, EntryProcessingResult<T>> _result = cache.invokeAll(keys, p, arguments);
+    Map<K, EntryProcessingResult<T>> _result = cache.invokeAll(keys, p);
     Map<K, EntryProcessorResult<T>> _mappedResult = new HashMap<K, EntryProcessorResult<T>>();
     for (Map.Entry<K, EntryProcessingResult<T>> e : _result.entrySet()) {
       final EntryProcessingResult<T> pr = e.getValue();

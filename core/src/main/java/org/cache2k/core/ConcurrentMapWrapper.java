@@ -55,7 +55,7 @@ public class ConcurrentMapWrapper<K,V> implements ConcurrentMap<K, V> {
   public V putIfAbsent(K key, final V value) {
     EntryProcessor<K, V, V> p = new EntryProcessor<K, V, V>() {
       @Override
-      public V process(MutableCacheEntry<K, V> entry, Object... arguments) throws Exception {
+      public V process(MutableCacheEntry<K, V> entry) throws Exception {
         if (!entry.exists()) {
           entry.setValue(value);
           return null;
@@ -83,7 +83,7 @@ public class ConcurrentMapWrapper<K,V> implements ConcurrentMap<K, V> {
   public V replace(K key, final V value) {
     EntryProcessor<K, V, V> p = new EntryProcessor<K, V, V>() {
       @Override
-      public V process(MutableCacheEntry<K, V> entry, Object... arguments) throws Exception {
+      public V process(MutableCacheEntry<K, V> entry) throws Exception {
         if (entry.exists()) {
           V result = entry.getValue();
           entry.setValue(value);
@@ -143,7 +143,7 @@ public class ConcurrentMapWrapper<K,V> implements ConcurrentMap<K, V> {
   public V put(final K key, final V value) {
     EntryProcessor<K, V, V> p = new EntryProcessor<K, V, V>() {
       @Override
-      public V process(MutableCacheEntry<K, V> entry, Object... arguments) throws Exception {
+      public V process(MutableCacheEntry<K, V> entry) throws Exception {
         V result = entry.getValue();
         entry.setValue(value);
         return result;
@@ -159,7 +159,7 @@ public class ConcurrentMapWrapper<K,V> implements ConcurrentMap<K, V> {
     }
     EntryProcessor<K, V, V> p = new EntryProcessor<K, V, V>() {
       @Override
-      public V process(MutableCacheEntry<K, V> entry, Object... arguments) throws Exception {
+      public V process(MutableCacheEntry<K, V> entry) throws Exception {
         V result = entry.getValue();
         entry.remove();
         return result;

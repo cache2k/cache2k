@@ -53,7 +53,7 @@ public class EntryProcessorCacheWrapper<K, V> extends CacheWrapper<K, V> {
   public V peek(K key) {
     EntryProcessor<K, V, V> p = new EntryProcessor<K, V, V>() {
       @Override
-      public V process(MutableCacheEntry<K, V> entry, Object... arguments) throws Exception {
+      public V process(MutableCacheEntry<K, V> entry) throws Exception {
         if (!entry.exists()) {
           return null;
         }
@@ -67,7 +67,7 @@ public class EntryProcessorCacheWrapper<K, V> extends CacheWrapper<K, V> {
   public boolean containsKey(K key) {
     EntryProcessor<K, V, Boolean> p = new EntryProcessor<K, V, Boolean>() {
       @Override
-      public Boolean process(MutableCacheEntry<K, V> entry, Object... arguments) throws Exception {
+      public Boolean process(MutableCacheEntry<K, V> entry) throws Exception {
         if (!entry.exists()) {
           return false;
         }
@@ -84,7 +84,7 @@ public class EntryProcessorCacheWrapper<K, V> extends CacheWrapper<K, V> {
   public void put(K key, final V value) {
     EntryProcessor<K, V, Void> p = new EntryProcessor<K, V, Void>() {
       @Override
-      public Void process(MutableCacheEntry<K, V> entry, Object... arguments) throws Exception {
+      public Void process(MutableCacheEntry<K, V> entry) throws Exception {
         entry.setValue(value);
         return null;
       }
@@ -96,7 +96,7 @@ public class EntryProcessorCacheWrapper<K, V> extends CacheWrapper<K, V> {
   public boolean replace(final K key, final V _newValue) {
     EntryProcessor<K, V, Boolean> p = new EntryProcessor<K, V, Boolean>() {
       @Override
-      public Boolean process(MutableCacheEntry<K, V> entry, Object... arguments) throws Exception {
+      public Boolean process(MutableCacheEntry<K, V> entry) throws Exception {
         if (!entry.exists()) {
           return false;
         }
@@ -111,7 +111,7 @@ public class EntryProcessorCacheWrapper<K, V> extends CacheWrapper<K, V> {
   public boolean replaceIfEquals(final K key, final V _oldValue, final V _newValue) {
     EntryProcessor<K, V, Boolean> p = new EntryProcessor<K, V, Boolean>() {
       @Override
-      public Boolean process(MutableCacheEntry<K, V> entry, Object... arguments) throws Exception {
+      public Boolean process(MutableCacheEntry<K, V> entry) throws Exception {
         if (!entry.exists()) {
           return false;
         }

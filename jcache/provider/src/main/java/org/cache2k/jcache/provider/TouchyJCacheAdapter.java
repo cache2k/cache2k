@@ -263,7 +263,7 @@ public class TouchyJCacheAdapter<K, V> implements Cache<K, V> {
     }
     EntryProcessor<K,V,Boolean> ep = new EntryProcessor<K, V, Boolean>() {
       @Override
-      public Boolean process(final MutableCacheEntry<K, V> entry, final Object... arguments) throws Exception {
+      public Boolean process(final MutableCacheEntry<K, V> entry) throws Exception {
         if (!entry.exists()) {
           return false;
         }

@@ -37,7 +37,7 @@ If something is listed here it might affect an existing application and updating
  - Global `ExceptionPropagator` customizable via tunable mechanism.
  - `CacheEntryProcessor` renamed to `EntryProcessor`
  - `CacheEntryProcessingException` renamed to `EntryProcessingException`
- 
+ - `Cache.invoke` and `Cache.invokeAll`: Remove var arg argument for arbitrary objects. Better aligned to Java 8 lambdas, reduces cruft.
  
 ## API Changes and new methods
 

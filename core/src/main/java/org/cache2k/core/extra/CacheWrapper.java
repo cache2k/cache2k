@@ -170,13 +170,13 @@ public class CacheWrapper<K,V> implements Cache<K, V> {
   }
 
   @Override
-  public <R> R invoke(K key, EntryProcessor<K, V, R> entryProcessor, Object... args) {
-    return cache.invoke(key, entryProcessor, args);
+  public <R> R invoke(K key, EntryProcessor<K, V, R> entryProcessor) {
+    return cache.invoke(key, entryProcessor);
   }
 
   @Override
-  public <R> Map<K, EntryProcessingResult<R>> invokeAll(Iterable<? extends K> keys, EntryProcessor<K, V, R> entryProcessor, Object... objs) {
-    return cache.invokeAll(keys, entryProcessor, objs);
+  public <R> Map<K, EntryProcessingResult<R>> invokeAll(Iterable<? extends K> keys, EntryProcessor<K, V, R> entryProcessor) {
+    return cache.invokeAll(keys, entryProcessor);
   }
 
   @Override

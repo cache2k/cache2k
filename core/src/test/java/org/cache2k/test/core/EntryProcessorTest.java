@@ -68,7 +68,7 @@ public class EntryProcessorTest {
     Cache<Integer, Integer> c = target.cache();
     c.invoke(KEY, new EntryProcessor<Integer, Integer, Object>() {
       @Override
-      public Object process(final MutableCacheEntry<Integer, Integer> entry, final Object... arguments) throws Exception {
+      public Object process(final MutableCacheEntry<Integer, Integer> entry) throws Exception {
         throw new IllegalStateException("test");
       }
     });
@@ -79,7 +79,7 @@ public class EntryProcessorTest {
     Cache<Integer, Integer> c = target.cache();
     Map<Integer, EntryProcessingResult<Object>> _resultMap = c.invokeAll(asSet(KEY), new EntryProcessor<Integer, Integer, Object>() {
       @Override
-      public Object process(final MutableCacheEntry<Integer, Integer> entry, final Object... arguments) throws Exception {
+      public Object process(final MutableCacheEntry<Integer, Integer> entry) throws Exception {
         throw new IllegalStateException("test");
       }
     });
@@ -101,7 +101,7 @@ public class EntryProcessorTest {
     Cache<Integer, Integer> c = target.cache();
     c.invoke(KEY, new EntryProcessor<Integer, Integer, Object>() {
       @Override
-      public Object process(final MutableCacheEntry<Integer, Integer> entry, final Object... arguments) throws Exception {
+      public Object process(final MutableCacheEntry<Integer, Integer> entry) throws Exception {
         assertFalse(entry.exists());
         return null;
       }
@@ -148,7 +148,7 @@ public class EntryProcessorTest {
     CacheWithWriter ww = cacheWithWriter();
     ww.cache.invoke(KEY, new EntryProcessor<Integer, Integer, Object>() {
       @Override
-      public Object process(final MutableCacheEntry<Integer, Integer> entry, final Object... arguments) throws Exception {
+      public Object process(final MutableCacheEntry<Integer, Integer> entry) throws Exception {
         entry.remove();
         return null;
       }
@@ -161,7 +161,7 @@ public class EntryProcessorTest {
     CacheWithWriter ww = cacheWithWriter();
     ww.cache.invoke(KEY, new EntryProcessor<Integer, Integer, Object>() {
       @Override
-      public Object process(final MutableCacheEntry<Integer, Integer> entry, final Object... arguments) throws Exception {
+      public Object process(final MutableCacheEntry<Integer, Integer> entry) throws Exception {
         entry.setValue(123);
         return null;
       }
@@ -181,7 +181,7 @@ public class EntryProcessorTest {
     });
     c.invoke(KEY, new EntryProcessor<Integer, Integer, Object>() {
       @Override
-      public Object process(final MutableCacheEntry<Integer, Integer> entry, final Object... arguments) throws Exception {
+      public Object process(final MutableCacheEntry<Integer, Integer> entry) throws Exception {
         entry.setException(new IllegalStateException(_TEXT));
         return null;
       }
@@ -218,7 +218,7 @@ public class EntryProcessorTest {
     });
     c.invoke(KEY, new EntryProcessor<Integer, Integer, Object>() {
       @Override
-      public Object process(final MutableCacheEntry<Integer, Integer> entry, final Object... arguments) throws Exception {
+      public Object process(final MutableCacheEntry<Integer, Integer> entry) throws Exception {
         entry.setException(new IllegalStateException(_TEXT));
         return null;
       }

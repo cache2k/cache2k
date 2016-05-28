@@ -69,7 +69,7 @@ public class InvokeTest {
     setUp();
     EntryProcessor p = new EntryProcessor() {
       @Override
-      public Object process(MutableCacheEntry entry, Object... arguments) throws Exception {
+      public Object process(MutableCacheEntry entry) throws Exception {
         return null;
       }
     };
@@ -82,7 +82,7 @@ public class InvokeTest {
     setUp();
     EntryProcessor p = new EntryProcessor() {
       @Override
-      public Object process(MutableCacheEntry entry, Object... arguments) throws Exception {
+      public Object process(MutableCacheEntry entry) throws Exception {
         return null;
       }
     };
@@ -97,7 +97,7 @@ public class InvokeTest {
     final int _KEY = 123;
     EntryProcessor p = new EntryProcessor() {
       @Override
-      public Object process(MutableCacheEntry _entry, Object... _args) throws Exception {
+      public Object process(MutableCacheEntry _entry) throws Exception {
         assertFalse(_entry.exists());
         assertEquals(0, _entry.getLastModification());
         assertEquals(_KEY, _entry.getKey());
@@ -115,7 +115,7 @@ public class InvokeTest {
     final AtomicBoolean _reached = new AtomicBoolean(false);
     EntryProcessor p = new EntryProcessor() {
       @Override
-      public Object process(MutableCacheEntry _entry, Object... _args) throws Exception {
+      public Object process(MutableCacheEntry _entry) throws Exception {
         assertNull(_entry.getValue());
         _reached.set(true);
         return null;
@@ -133,7 +133,7 @@ public class InvokeTest {
     setUp();
     EntryProcessor p = new EntryProcessor() {
       @Override
-      public Object process(MutableCacheEntry _entry, Object... _args) throws Exception {
+      public Object process(MutableCacheEntry _entry) throws Exception {
         return "abc";
       }
     };
@@ -146,7 +146,7 @@ public class InvokeTest {
     setUp();
     EntryProcessor p = new EntryProcessor() {
       @Override
-      public Object process(MutableCacheEntry _entry, Object... _args) throws Exception {
+      public Object process(MutableCacheEntry _entry) throws Exception {
         _entry.setValue("dummy");
         return "abc";
       }
@@ -161,7 +161,7 @@ public class InvokeTest {
     statistics().reset();
     EntryProcessor p = new EntryProcessor() {
       @Override
-      public Object process(MutableCacheEntry _entry, Object... _args) throws Exception {
+      public Object process(MutableCacheEntry _entry) throws Exception {
         Object o = _entry.getValue();
         _entry.setValue("dummy");
         return "abc";
@@ -181,7 +181,7 @@ public class InvokeTest {
     cacheWithLoader();
     cache.invoke(123, new EntryProcessor<Integer, String, Void>() {
       @Override
-      public Void process(final MutableCacheEntry<Integer, String> entry, final Object... arguments) throws Exception {
+      public Void process(final MutableCacheEntry<Integer, String> entry) throws Exception {
         String v = entry.getValue();
         assertEquals("123", v);
         return null;
@@ -196,7 +196,7 @@ public class InvokeTest {
     cacheWithLoader();
     cache.invoke(123, new EntryProcessor<Integer, String, Void>() {
       @Override
-      public Void process(final MutableCacheEntry<Integer, String> entry, final Object... arguments) throws Exception {
+      public Void process(final MutableCacheEntry<Integer, String> entry) throws Exception {
         String v = entry.getValue();
         assertEquals("123", v);
         entry.setValue("456");
@@ -216,7 +216,7 @@ public class InvokeTest {
     statistics().reset();
     cache.invoke(123, new EntryProcessor<Integer, String, Void>() {
       @Override
-      public Void process(final MutableCacheEntry<Integer, String> entry, final Object... arguments) throws Exception {
+      public Void process(final MutableCacheEntry<Integer, String> entry) throws Exception {
         String v = entry.getValue();
         assertEquals("123", v);
         entry.remove();

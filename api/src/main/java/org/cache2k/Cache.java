@@ -566,12 +566,11 @@ public interface Cache<K, V> extends
    *
    * @param key
    * @param entryProcessor processor instance to be invoked
-   * @param args arbitrary arguments passed to the entry processor
    * @param <R> type of the result
    * @throws EntryProcessingException if the {@code invoke} had thrown an exception
    * @return result provided by the entry processor
    */
-  <R> R invoke(K key, EntryProcessor<K, V, R> entryProcessor, Object... args);
+  <R> R invoke(K key, EntryProcessor<K, V, R> entryProcessor);
 
   /**
    *
@@ -579,12 +578,12 @@ public interface Cache<K, V> extends
    *
    * @param keys
    * @param entryProcessor
-   * @param objs
+
    * @param <R>
    * @return
    */
   <R> Map<K, EntryProcessingResult<R>> invokeAll(
-    Iterable<? extends K> keys, EntryProcessor<K , V, R> entryProcessor, Object... objs);
+    Iterable<? extends K> keys, EntryProcessor<K , V, R> entryProcessor);
 
   /**
    * Retrieve values from the cache associated with the provided keys. If the

@@ -346,8 +346,8 @@ public class WiredCache<K, V> extends AbstractCache<K, V>
   }
 
   @Override
-  public <R> R invoke(K key, EntryProcessor<K, V, R> entryProcessor, Object... args) {
-    return execute(key, SPEC.invoke(key, loader != null, entryProcessor, args));
+  public <R> R invoke(K key, EntryProcessor<K, V, R> entryProcessor) {
+    return execute(key, SPEC.invoke(key, loader != null, entryProcessor));
   }
 
   @Override

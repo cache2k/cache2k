@@ -1987,8 +1987,8 @@ public abstract class HeapCache<K, V>
    * corner cases for loader and exception handling.
    */
   @Override
-  public <R> R invoke(K key, EntryProcessor<K, V, R> entryProcessor, Object... args) {
-    return execute(key, spec().invoke(key, loader != null, entryProcessor, args));
+  public <R> R invoke(K key, EntryProcessor<K, V, R> entryProcessor) {
+    return execute(key, spec().invoke(key, loader != null, entryProcessor));
   }
 
   @Override

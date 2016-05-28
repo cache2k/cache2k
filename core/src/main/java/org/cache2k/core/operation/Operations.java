@@ -448,13 +448,13 @@ public class Operations<K, V> {
     }
   }
 
-  public <R> Semantic<K, V, R> invoke(final K key, final boolean _readThrough, final EntryProcessor<K, V, R> _processor, final Object... _arguments) {
+  public <R> Semantic<K, V, R> invoke(final K key, final boolean _readThrough, final EntryProcessor<K, V, R> _processor) {
     return new Semantic.UpdateExisting<K, V, R>() {
       @Override
       public void update(final Progress<K, V, R> c, final ExaminationEntry<K, V> e) {
         MutableEntryOnProgress<K, V> _mutableEntryOnProgress = new MutableEntryOnProgress<K, V>(c, e, _readThrough);
         try {
-          R _result = _processor.process(_mutableEntryOnProgress, _arguments);
+          R _result = _processor.process(_mutableEntryOnProgress);
           c.result(_result);
         } catch (NeedsLoadRestartException rs) {
           c.loadAndMutation();

@@ -20,8 +20,6 @@ package org.cache2k.processor;
  * #L%
  */
 
-import org.cache2k.Cache;
-
 /**
  * An invokable function to perform an atomic operation on a cache entry. For actions
  * on the {@link MutableCacheEntry} only the final effect will be applied to the cache.
@@ -31,13 +29,12 @@ import org.cache2k.Cache;
 public interface EntryProcessor<K, V, R> {
 
   /**
-   * Applies mutations to an entry.
+   * Examines or mutates an entry.
    *
-   * @param entry      the entry to mutate
-   * @param arguments  passed arguments to {@link Cache#invoke}
-   * @return Use defined result
+   * @param entry the entry to examine or mutate
+   * @return User defined result
    * @throws Exception an arbitrary exception that will be wrapped into a {@link EntryProcessingException}
    */
-  R process(MutableCacheEntry<K, V> entry, Object... arguments) throws Exception;
+  R process(MutableCacheEntry<K, V> entry) throws Exception;
 
 }
