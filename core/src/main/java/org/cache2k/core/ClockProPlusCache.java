@@ -160,19 +160,20 @@ public class ClockProPlusCache<K, V> extends ConcurrentEvictionCache<K, V> {
   }
 
   private void insertCopyIntoGhosts(Entry<K, V> e) {
-    Entry<K, V> e2 = Hash.lookup(ghostHash, e.getKey(), e.hashCode);
+    Entry<K, V> e2 = Hash.lookupHashCode(ghostHash, e.hashCode);
     if (e2 != null) {
       moveToFront(ghostHead, e2);
       return;
     }
     e2 = new Entry<K, V>();
-    e2.key = e.key;
     e2.hashCode = e.hashCode;
     ghostHashCtrl.insert(ghostHash, e2);
     ghostHash = ghostHashCtrl.expand(ghostHash, e.hashCode);
     insertInList(ghostHead, e2);
     if (ghostHashCtrl.getSize() > ghostMax) {
-      runHandGhost();
+      Entry re = ghostHead.prev;
+      boolean f = ghostHashCtrl.remove(ghostHash, re);
+      removeFromList(re);
     }
   }
 
@@ -313,21 +314,16 @@ public class ClockProPlusCache<K, V> extends ConcurrentEvictionCache<K, V> {
     return _hand;
   }
 
-  protected void runHandGhost() {
-    Entry e = ghostHead.prev;
-    boolean f = ghostHashCtrl.remove(ghostHash, e);
-    removeFromList(e);
-  }
-
   @Override
   protected Entry checkForGhost(K key, int hc) {
-    Entry e = ghostHashCtrl.remove(ghostHash, key, hc);
+    Entry e = ghostHashCtrl.removeWithIdenticalHashCode(ghostHash, hc);
     if (e != null) {
       removeFromList(e);
       ghostHits++;
       e.setHot(true);
       hotSize++;
       handHot = insertIntoTailCyclicList(handHot, e);
+      e.key = key;
     }
     return e;
   }

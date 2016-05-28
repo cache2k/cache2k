@@ -152,6 +152,18 @@ public class Hash<E extends Entry> {
     return null;
   }
 
+  public static <E extends Entry> E lookupHashCode(E[] _hashTable, int _hashCode) {
+    int i = index(_hashTable, _hashCode);
+    E e = _hashTable[i];
+    while (e != null) {
+      if (e.hashCode == _hashCode) {
+        return e;
+      }
+      e = (E) e.another;
+    }
+    return null;
+  }
+
   public static boolean contains(Entry[] _hashTable, Object key, int _hashCode) {
     Object ek;
     int i = index(_hashTable, _hashCode);
@@ -274,6 +286,36 @@ public class Hash<E extends Entry> {
     Entry _another = e.another;
     while (_another != null) {
       if (_another.hashCode == hc && key.equals(_another.key)) {
+        e.another = _another.another;
+        segmentSize[idx]--;
+        return (E) _another;
+      }
+      e = _another;
+      _another = _another.another;
+    }
+    return null;
+  }
+
+  /**
+   * Remove entry with this hash code from the hash. We never shrink the hash table, so
+   * the array keeps identical. After this remove operation the entry
+   * object may be inserted in another hash.
+   */
+  public E removeWithIdenticalHashCode(E[] _hashTable, int hc) {
+    int idx = segmentIndex(hc);
+    int i = index(_hashTable, hc);
+    Entry e = _hashTable[i];
+    if (e == null) {
+      return null;
+    }
+    if (e.hashCode == hc) {
+      _hashTable[i] = (E) e.another;
+      segmentSize[idx]--;
+      return (E) e;
+    }
+    Entry _another = e.another;
+    while (_another != null) {
+      if (_another.hashCode == hc) {
         e.another = _another.another;
         segmentSize[idx]--;
         return (E) _another;
