@@ -42,11 +42,6 @@ public class RandomCache<K, V> extends ConcurrentEvictionCache<K, V> {
     e.next = e;
   }
 
-  @Override
-  protected Entry newEntry() {
-    return new Entry();
-  }
-
   /**
    * Start at arbitrary hash slot and evict the next best entry.
    */

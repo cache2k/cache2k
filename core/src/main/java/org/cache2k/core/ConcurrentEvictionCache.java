@@ -52,7 +52,7 @@ public abstract class ConcurrentEvictionCache<K, V> extends HeapCache<K, V> {
       checkClosed();
       e = lookupEntry(key, hc);
       if (e == null) {
-        e = newEntry(key, hc);
+        e = insertNewEntry(key, hc);
       }
     }
     checkExpandMainHash(hc);

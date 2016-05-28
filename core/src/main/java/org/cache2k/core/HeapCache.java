@@ -28,6 +28,7 @@ import org.cache2k.core.operation.Semantic;
 import org.cache2k.core.operation.Operations;
 import org.cache2k.core.threading.DefaultThreadFactoryProvider;
 import org.cache2k.core.threading.Futures;
+import org.cache2k.core.threading.Job;
 import org.cache2k.core.threading.ThreadFactoryProvider;
 
 import org.cache2k.core.util.Log;
@@ -364,7 +365,7 @@ public abstract class HeapCache<K, V>
   }
 
   public final void clear() {
-    executeWithGlobalLock(new Hash.Job<Void>() {
+    executeWithGlobalLock(new Job<Void>() {
       @Override
       public Void call() {
         clearLocalCache();
@@ -398,10 +399,10 @@ public abstract class HeapCache<K, V>
 
   protected void initializeHeapCache() {
     if (mainHashCtrl != null) {
-      mainHash = mainHashCtrl.clear((Class<Entry<K, V>>) newEntry().getClass());
+      mainHash = mainHashCtrl.clear((Class<Entry<K,V>>) (Object) Entry.class);
     } else {
       mainHashCtrl = new Hash<Entry<K, V>>();
-      mainHash = mainHashCtrl.initSegmented((Class<Entry<K, V>>) newEntry().getClass(), lock);
+      mainHash = mainHashCtrl.initSegmented((Class<Entry<K,V>>) (Object) Entry.class, lock);
     }
     if (startedTime == 0) {
       startedTime = System.currentTimeMillis();
@@ -430,7 +431,7 @@ public abstract class HeapCache<K, V>
 
   public void closePart1() {
     try {
-      executeWithGlobalLock(new Hash.Job<Void>() {
+      executeWithGlobalLock(new Job<Void>() {
         @Override
         public Void call() {
           shutdownInitiated = true;
@@ -675,12 +676,6 @@ public abstract class HeapCache<K, V>
    * New cache entry, put it in the replacement algorithm structure
    */
   protected abstract void insertIntoReplacementList(Entry e);
-
-  /**
-   * Entry object factory. Return an entry of the proper entry subtype for
-   * the replacement/eviction algorithm.
-   */
-  protected abstract Entry newEntry();
 
 
   /**
@@ -1040,7 +1035,7 @@ public abstract class HeapCache<K, V>
     return null;
   }
 
-  final Entry DUMMY_ENTRY_NO_REPLACE = new org.cache2k.core.Entry();
+  final Entry DUMMY_ENTRY_NO_REPLACE = new org.cache2k.core.Entry(null, 4711);
 
   /**
    * replace if value matches. if value not matches, return the existing entry or the dummy entry.
@@ -1420,7 +1415,7 @@ public abstract class HeapCache<K, V>
         checkClosed();
         e = lookupEntry(key, hc);
         if (e == null) {
-          e = newEntry(key, hc);
+          e = insertNewEntry(key, hc);
         }
       }
       checkExpandMainHash(hc);
@@ -1436,7 +1431,7 @@ public abstract class HeapCache<K, V>
         checkClosed();
         e = lookupEntryNoHitRecord(key, hc);
         if (e == null) {
-          e = newEntry(key, hc);
+          e = insertNewEntry(key, hc);
         }
       }
       checkExpandMainHash(hc);
@@ -1507,19 +1502,14 @@ public abstract class HeapCache<K, V>
    * Insert new entry in all structures (hash and replacement list). May evict an
    * entry if the maximum capacity is reached.
    */
-  protected Entry<K, V> newEntry(K key, int hc) {
+  protected Entry<K, V> insertNewEntry(K key, int hc) {
     Entry e;
     synchronized (lock) {
       if (getLocalSizeEstimate() >= maxSize) {
         evictionNeeded = true;
       }
-      e = checkForGhost(key, hc);
-      if (e == null) {
-        e = newEntry();
-        e.key = key;
-        e.hashCode = hc;
-        insertIntoReplacementList(e);
-      }
+      e = new Entry<K,V>(key, hc);
+      insertIntoReplacementList(e);
       newEntryCnt++;
     }
     mainHashCtrl.insert(mainHash, e);
@@ -1528,7 +1518,7 @@ public abstract class HeapCache<K, V>
 
   void checkExpandMainHash(final int hc) {
     if (mainHashCtrl.needsExpansion(hc)) {
-      mainHashCtrl.runTotalLocked(new Hash.Job<Void>() {
+      mainHashCtrl.runTotalLocked(new Job<Void>() {
         @Override
         public Void call() {
           mainHash = mainHashCtrl.expand(mainHash, hc);
@@ -1947,7 +1937,7 @@ public abstract class HeapCache<K, V>
   }
 
   public final int getTotalEntryCount() {
-    return executeWithGlobalLock(new Hash.Job<Integer>() {
+    return executeWithGlobalLock(new Job<Integer>() {
       @Override
       public Integer call() {
         return getLocalSize();
@@ -1964,7 +1954,7 @@ public abstract class HeapCache<K, V>
 
   /** Check internal data structures and throw and exception if something is wrong, used for unit testing */
   public final void checkIntegrity() {
-    executeWithGlobalLock(new Hash.Job<Void>() {
+    executeWithGlobalLock(new Job<Void>() {
       @Override
       public Void call() {
         IntegrityState is = getIntegrityState();
@@ -2006,7 +1996,7 @@ public abstract class HeapCache<K, V>
   }
 
   private CacheBaseInfo generateInfo(final InternalCache _userCache, final long t) {
-    return executeWithGlobalLock(new Hash.Job<CacheBaseInfo>() {
+    return executeWithGlobalLock(new Job<CacheBaseInfo>() {
       @Override
       public CacheBaseInfo call() {
         info = new CacheBaseInfo(HeapCache.this, _userCache);
@@ -2017,8 +2007,8 @@ public abstract class HeapCache<K, V>
     });
   }
 
-  public <T> T executeWithGlobalLock(final Hash.Job<T> job) {
-    return mainHashCtrl.runTotalLocked(new Hash.Job<T>() {
+  public <T> T executeWithGlobalLock(final Job<T> job) {
+    return mainHashCtrl.runTotalLocked(new Job<T>() {
       @Override
       public T call() {
         synchronized (lock) {

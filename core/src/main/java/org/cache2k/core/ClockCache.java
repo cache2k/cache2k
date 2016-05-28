@@ -99,11 +99,6 @@ public class ClockCache<K, V> extends ConcurrentEvictionCache<K, V> {
     hand = insertIntoTailCyclicList(hand, e);
   }
 
-  @Override
-  protected Entry newEntry() {
-    return new Entry();
-  }
-
   /**
    * Run to evict an entry.
    */

@@ -20,6 +20,8 @@ package org.cache2k.core;
  * #L%
  */
 
+import org.cache2k.core.threading.Job;
+
 import java.util.Iterator;
 import java.util.NoSuchElementException;
 
@@ -104,9 +106,7 @@ public class ConcurrentEntryIterator<K,V> implements Iterator<Entry<K,V>> {
   }
 
   public void markIterated(Object key, int _hashCode) {
-    Entry _newEntryIterated = new Entry();
-    _newEntryIterated.key = key;
-    _newEntryIterated.hashCode = _hashCode;
+    Entry _newEntryIterated = new Entry(key, _hashCode);
     iteratedCtl.insert(iterated, _newEntryIterated);
     iterated = iteratedCtl.expand(iterated, _hashCode);
   }
@@ -167,7 +167,7 @@ public class ConcurrentEntryIterator<K,V> implements Iterator<Entry<K,V>> {
   }
 
   private boolean switchAndCheckAbort() {
-    return cache.executeWithGlobalLock(new Hash.Job<Boolean>() {
+    return cache.executeWithGlobalLock(new Job<Boolean>() {
       @Override
       public Boolean call() {
         if (hasExpansionOccurred()) {

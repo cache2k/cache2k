@@ -88,7 +88,7 @@ public class ClockProPlusCache<K, V> extends ConcurrentEvictionCache<K, V> {
     hotSize = 0;
     handCold = null;
     handHot = null;
-    ghostHead = new Entry().shortCircuit();
+    ghostHead = new Entry(null, 0).shortCircuit();
     ghostHashCtrl = new Hash<Entry>();
     ghostHash = ghostHashCtrl.initUseBigLock(Entry.class, lock);
   }
@@ -165,7 +165,7 @@ public class ClockProPlusCache<K, V> extends ConcurrentEvictionCache<K, V> {
       moveToFront(ghostHead, e2);
       return;
     }
-    e2 = new Entry<K, V>();
+    e2 = new Entry<K, V>(null, e.hashCode);
     e2.hashCode = e.hashCode;
     ghostHashCtrl.insert(ghostHash, e2);
     ghostHash = ghostHashCtrl.expand(ghostHash, e.hashCode);
@@ -218,13 +218,17 @@ public class ClockProPlusCache<K, V> extends ConcurrentEvictionCache<K, V> {
 
   @Override
   protected void insertIntoReplacementList(Entry e) {
+    Entry e2 = ghostHashCtrl.removeWithIdenticalHashCode(ghostHash, e.hashCode);
+    if (e2 != null) {
+      removeFromList(e2);
+      ghostHits++;
+      e.setHot(true);
+      hotSize++;
+      handHot = insertIntoTailCyclicList(handHot, e);
+      return;
+    }
     coldSize++;
     handCold = insertIntoTailCyclicList(handCold, e);
-  }
-
-  @Override
-  protected Entry newEntry() {
-    return new Entry();
   }
 
   protected Entry<K, V> runHandHot() {

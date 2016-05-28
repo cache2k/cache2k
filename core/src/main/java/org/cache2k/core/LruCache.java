@@ -50,11 +50,6 @@ public class LruCache<K, V> extends HeapCache<K, V> {
     insertInList(head, e);
   }
 
-  @Override
-  protected Entry newEntry() {
-    return new Entry<K, V>();
-  }
-
 
   @Override
   protected Entry findEvictionCandidate() {
@@ -64,7 +59,7 @@ public class LruCache<K, V> extends HeapCache<K, V> {
   @Override
   protected void initializeHeapCache() {
     super.initializeHeapCache();
-    head = new Entry<K, V>().shortCircuit();
+    head = new Entry<K, V>(null, 0).shortCircuit();
     throw new UnsupportedOperationException("LRU will be gone");
   }
 

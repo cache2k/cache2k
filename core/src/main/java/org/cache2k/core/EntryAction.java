@@ -35,7 +35,6 @@ import org.cache2k.core.experimentalApi.AsyncCacheLoader;
 import org.cache2k.core.experimentalApi.AsyncCacheWriter;
 import org.cache2k.core.operation.ExaminationEntry;
 import org.cache2k.core.operation.Progress;
-import org.cache2k.core.operation.ReadOnlyCacheEntry;
 import org.cache2k.core.operation.Semantic;
 import org.cache2k.core.storageApi.StorageCallback;
 import org.cache2k.core.storageApi.StorageAdapter;

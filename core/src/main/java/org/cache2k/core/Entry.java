@@ -126,6 +126,16 @@ public class Entry<K, T>
   /** Lru list: pointer to previous element or list head */
   public Entry prev;
 
+  public Entry(final K _key, final int _hashCode) {
+    key = _key;
+    hashCode = _hashCode;
+  }
+
+  public Entry() {
+    key = null;
+    hashCode = 0;
+  }
+
   private static final int MODIFICATION_TIME_BITS = 44;
   private static final long MODIFICATION_TIME_BASE = 0;
   private static final int MODIFICATION_TIME_SHIFT = 1;

@@ -20,6 +20,8 @@ package org.cache2k.core;
  * #L%
  */
 
+import org.cache2k.core.threading.Job;
+
 import java.lang.reflect.Array;
 
 /**
@@ -360,10 +362,6 @@ public class Hash<E extends Entry> {
         return runTotalLocked(j, idx);
       }
     }
-  }
-
-  public interface Job<T> {
-    T call();
   }
 
   public <T> T runTotalLocked(Job<T> j) {
