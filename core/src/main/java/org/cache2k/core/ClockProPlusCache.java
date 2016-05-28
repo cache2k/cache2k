@@ -60,7 +60,7 @@ public class ClockProPlusCache<K, V> extends ConcurrentEvictionCache<K, V> {
 
   Entry handCold;
   Entry handHot;
-  Entry handGhost;
+  Entry ghostHead;
   Hash<Entry> ghostHashCtrl;
   Entry[] ghostHash;
 
@@ -88,7 +88,7 @@ public class ClockProPlusCache<K, V> extends ConcurrentEvictionCache<K, V> {
     hotSize = 0;
     handCold = null;
     handHot = null;
-    handGhost = null;
+    ghostHead = new Entry().shortCircuit();
     ghostHashCtrl = new Hash<Entry>();
     ghostHash = ghostHashCtrl.initUseBigLock(Entry.class, lock);
   }
@@ -160,12 +160,17 @@ public class ClockProPlusCache<K, V> extends ConcurrentEvictionCache<K, V> {
   }
 
   private void insertCopyIntoGhosts(Entry<K, V> e) {
-    Entry<K, V> e2 = new Entry<K, V>();
+    Entry<K, V> e2 = Hash.lookup(ghostHash, e.getKey(), e.hashCode);
+    if (e2 != null) {
+      moveToFront(ghostHead, e2);
+      return;
+    }
+    e2 = new Entry<K, V>();
     e2.key = e.key;
     e2.hashCode = e.hashCode;
     ghostHashCtrl.insert(ghostHash, e2);
     ghostHash = ghostHashCtrl.expand(ghostHash, e.hashCode);
-    handGhost = insertIntoTailCyclicList(handGhost, e2);
+    insertInList(ghostHead, e2);
     if (ghostHashCtrl.getSize() > ghostMax) {
       runHandGhost();
     }
@@ -309,16 +314,16 @@ public class ClockProPlusCache<K, V> extends ConcurrentEvictionCache<K, V> {
   }
 
   protected void runHandGhost() {
-    Entry e = handGhost;
+    Entry e = ghostHead.prev;
     boolean f = ghostHashCtrl.remove(ghostHash, e);
-    handGhost = removeFromCyclicList(e);
+    removeFromList(e);
   }
 
   @Override
   protected Entry checkForGhost(K key, int hc) {
     Entry e = ghostHashCtrl.remove(ghostHash, key, hc);
     if (e != null) {
-      handGhost = removeFromCyclicList(handGhost, e);
+      removeFromList(e);
       ghostHits++;
       e.setHot(true);
       hotSize++;
@@ -336,10 +341,10 @@ public class ClockProPlusCache<K, V> extends ConcurrentEvictionCache<K, V> {
             .checkEquals("getListSize() == getSize()", (getListSize()) , getLocalSize())
             .check("checkCyclicListIntegrity(handHot)", checkCyclicListIntegrity(handHot))
             .check("checkCyclicListIntegrity(handCold)", checkCyclicListIntegrity(handCold))
-            .check("checkCyclicListIntegrity(handGhost)", checkCyclicListIntegrity(handGhost))
+            .check("checkCyclicListIntegrity(handGhost)", checkCyclicListIntegrity(ghostHead))
             .checkEquals("getCyclicListEntryCount(handHot) == hotSize", getCyclicListEntryCount(handHot), hotSize)
             .checkEquals("getCyclicListEntryCount(handCold) == coldSize", getCyclicListEntryCount(handCold), coldSize)
-            .checkEquals("getCyclicListEntryCount(handGhost) == ghostSize", getCyclicListEntryCount(handGhost), ghostHashCtrl.getSize());
+            .checkEquals("getListEntryCount(handGhost) == ghostSize", getListEntryCount(ghostHead), ghostHashCtrl.getSize());
   }
 
   @Override
