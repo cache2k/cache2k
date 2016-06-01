@@ -23,9 +23,15 @@ package org.cache2k.core.threading;
 import java.util.concurrent.locks.AbstractQueuedSynchronizer;
 
 /**
+ * Fallback locking mechanism when {@code StampedLock} is not available. This
+ *
+ * <p>Optimistic locking is only possible on a Java 8 VM that support the
+ * {@code loadFence} instructions. Otherwise loads might get reordered after
+ * the {@code validate}, causing wrong results.
+ *
  * @author Jens Wilke
  */
-public class OptimisticLockCompat implements OptimisticLock {
+public class NonOptimisticLock implements OptimisticLock {
 
   private static final int DUMMY = 4711;
 
@@ -43,14 +49,20 @@ public class OptimisticLockCompat implements OptimisticLock {
     return DUMMY;
   }
 
+  /**
+   * This is a read access on the lock state for data visibility.
+   */
   @Override
   public long tryOptimisticRead() {
     return sync.getStamp();
   }
 
+  /**
+   * Always false, optimistic locking not supported.
+   */
   @Override
   public boolean validate(final long stamp) {
-    return sync.getStamp() == stamp;
+    return false;
   }
 
   @Override
@@ -75,12 +87,14 @@ public class OptimisticLockCompat implements OptimisticLock {
 
   private static final class Sync extends AbstractQueuedSynchronizer {
 
+    private final int UNLOCKED = 0;
+    private final int LOCKED = 1;
+
     @Override
     protected boolean tryAcquire(int acquires) {
       int _state = getState();
-      if ((_state & 1) == 0) {
-        int _nextLockedState = _state + 1;
-        if (compareAndSetState(_state, _nextLockedState)) {
+      if (_state == UNLOCKED) {
+        if (compareAndSetState(_state, LOCKED)) {
           setExclusiveOwnerThread(Thread.currentThread());
           return true;
         }
@@ -94,17 +108,13 @@ public class OptimisticLockCompat implements OptimisticLock {
         throw new IllegalMonitorStateException();
       }
       setExclusiveOwnerThread(null);
-      setState(getState() + 1);
+      setState(UNLOCKED);
       return true;
     }
 
     @Override
     public boolean isHeldExclusively() {
-      return isLocked() && (getExclusiveOwnerThread() == Thread.currentThread());
-    }
-
-    private boolean isLocked() {
-      return (getState() & 1) == 1;
+      return getState() == LOCKED && (getExclusiveOwnerThread() == Thread.currentThread());
     }
 
     private int getStamp() {

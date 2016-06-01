@@ -65,7 +65,7 @@ public class ConcurrentEntryIterator<K,V> implements Iterator<Entry<K,V>> {
   long initialMaxFill;
   long clearCount;
   Hash2<K,V> hash;
-  AtomicReferenceArray<Entry<K,V>> hashArray;
+  Entry<K,V>[] hashArray;
   Hash<Entry<K, V>> iteratedCtl = new Hash<Entry<K,V>>();
   Entry<K, V>[] iterated;
 
@@ -132,16 +132,16 @@ public class ConcurrentEntryIterator<K,V> implements Iterator<Entry<K,V>> {
           return e;
         }
       }
-      idx = (lastEntry.hashCode & (hashArray.length() - 1) )+ 1;
+      idx = (lastEntry.hashCode & (hashArray.length - 1) )+ 1;
     }
     for (;;) {
-      if (idx >= hashArray.length()) {
+      if (idx >= hashArray.length) {
         if (switchAndCheckAbort()) {
           return null;
         }
         idx = 0;
       }
-      e = hashArray.get(idx);
+      e = hashArray[idx];
       if (e != null) {
         e = checkIteratedOrNext(e);
         if (e != null) {
@@ -215,7 +215,7 @@ public class ConcurrentEntryIterator<K,V> implements Iterator<Entry<K,V>> {
 
   private void switchToMainHash() {
     hash = cache.hash;
-    hashArray = hash.entries;
+    hashArray = hash.getEntries();
   }
 
 

@@ -164,7 +164,7 @@ public abstract class HeapCache<K, V>
     }
   }
 
-  protected Hash2<K,V> hash;
+  protected final Hash2<K,V> hash = new Hash2<K,V>(lock);
 
   /** Stuff that we need to wait for before shutdown may complete */
   protected Futures.WaitForAllFuture<?> shutdownWaitFuture;
@@ -378,6 +378,7 @@ public abstract class HeapCache<K, V>
     clearRemovedCnt += getLocalSize();
     clearCnt++;
     initializeHeapCache();
+    hash.clearWhenLocked();
     clearedTime = System.currentTimeMillis();
   }
 
@@ -397,12 +398,6 @@ public abstract class HeapCache<K, V>
   }
 
   protected void initializeHeapCache() {
-    if (hash != null) {
-      hash.clearWhenLocked();
-    } else {
-      hash = new Hash2<K,V>();
-      hash.initSegmented(lock);
-    }
     if (startedTime == 0) {
       startedTime = System.currentTimeMillis();
     }
@@ -1390,7 +1385,7 @@ public abstract class HeapCache<K, V>
   }
 
   protected Entry<K, V> lookupOrNewEntrySynchronized(K key, int hc) {
-    Entry e = lookupEntryUnsynchronized(key, hc);
+    Entry e = lookupEntry(key, hc);
     if (e == null) {
       return insertNewEntry(key, hc);
     }

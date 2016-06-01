@@ -51,12 +51,12 @@ public class RandomCache<K, V> extends ConcurrentEvictionCache<K, V> {
 
   @Override
   protected Entry findEvictionCandidate() {
-    AtomicReferenceArray<Entry<K,V>> h0 = hash.entries;
-    int idx = evictionIndex % (h0.length());
+    Entry<K,V>[] h0 = hash.getEntries();
+    int idx = evictionIndex % (h0.length);
     Entry e;
-    while ((e = h0.get(idx)) == null) {
+    while ((e = h0[idx]) == null) {
       idx++;
-      if (idx >= h0.length()) {
+      if (idx >= h0.length) {
         idx = 0;
       }
     }

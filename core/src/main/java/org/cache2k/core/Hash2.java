@@ -24,24 +24,21 @@ import org.cache2k.core.threading.Job;
 import org.cache2k.core.threading.Locks;
 import org.cache2k.core.threading.OptimisticLock;
 
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
-import java.util.concurrent.atomic.AtomicReferenceArray;
 
 /**
  * @author Jens Wilke
  */
 public class Hash2<K,V> {
 
-  private volatile int clearCount = 0;
+  private int clearCount = 0;
   private long maxFill;
   private Object bigLock;
-  volatile AtomicReferenceArray<Entry<K,V>> entries;
-  AtomicInteger size = new AtomicInteger();
-  OptimisticLock[] locks;
-  AtomicLong[] segmentSize;
+  private Entry<K,V>[] entries;
+  private final OptimisticLock[] locks;
+  private final AtomicLong[] segmentSize;
 
-  public AtomicReferenceArray<Entry<K,V>> initSegmented(Object _bigLock) {
+  public Hash2(Object _bigLock) {
     bigLock = _bigLock;
     int _segmentCount = 8;
     locks = new OptimisticLock[_segmentCount];
@@ -53,7 +50,6 @@ public class Hash2<K,V> {
       segmentSize[i] = new AtomicLong();
     }
     initArray();
-    return entries;
   }
 
   private void initArray() {
@@ -63,15 +59,15 @@ public class Hash2<K,V> {
     if (maxFill == 0) {
       throw new IllegalArgumentException("values for hash size or load factor too low.");
     }
-    entries = new AtomicReferenceArray(HeapCache.TUNABLE.initialHashSize);
+    entries = new Entry[HeapCache.TUNABLE.initialHashSize];
   }
 
-  public static <K,V> Entry<K,V> lookupQuick(K key, int _hash, AtomicReferenceArray<Entry<K,V>> tab) {
+  public static <K,V> Entry<K,V> lookupQuick(K key, int _hash, Entry[] tab) {
     if (tab == null) {
       throw new CacheClosedException();
     }
-    Entry<K,V> e; K ek; int n = tab.length(); int _mask = n - 1; int idx = _hash & (_mask);
-    e = tab.get(idx);
+    Entry<K,V> e; K ek; int n = tab.length; int _mask = n - 1; int idx = _hash & (_mask);
+    e = tab[idx];
     while (e != null) {
       if (e.hashCode == _hash && ((ek = e.key) == key || (ek.equals(key)))) {
         return e;
@@ -82,27 +78,27 @@ public class Hash2<K,V> {
   }
 
   public Entry<K,V> lookupQuick(K key, int _hash) {
-    return lookupQuick(key, _hash, entries);
+    return null;
   }
 
   /**
    * Lookup the entry in the hash table and return it. First tries an optimistic read.
    */
   public Entry<K,V> lookup(K key, int _hash) {
-    AtomicReferenceArray<Entry<K,V>> tab = entries;
-    if (tab == null) {
-      throw new CacheClosedException();
-    }
     OptimisticLock[] _locks = locks;
     int si = _hash & (_locks.length - 1);
     OptimisticLock l = _locks[si];
     long _stamp = l.tryOptimisticRead();
+    Entry<K,V>[] tab = entries;
+    if (tab == null) {
+      throw new CacheClosedException();
+    }
     Entry e;
     Object ek;
-    int n = tab.length();
+    int n = tab.length;
     int _mask = n - 1;
     int idx = _hash & (_mask);
-    e = tab.get(idx);
+    e = tab[idx];
     while (e != null) {
       if (e.hashCode == _hash && ((ek = e.key) == key || (ek.equals(key)))) {
         return e;
@@ -115,10 +111,13 @@ public class Hash2<K,V> {
     _stamp = l.readLock();
     try {
       tab = entries;
-      n = tab.length();
+      if (tab == null) {
+        throw new CacheClosedException();
+      }
+      n = tab.length;
       _mask = n - 1;
       idx = _hash & (_mask);
-      e = tab.get(idx);
+      e = tab[idx];
       while (e != null) {
         if (e.hashCode == _hash && ((ek = e.key) == key || (ek.equals(key)))) {
           return e;
@@ -142,20 +141,20 @@ public class Hash2<K,V> {
     OptimisticLock l = _locks[si];
     long _stamp = l.writeLock();
     try {
-      Entry e; Object ek; AtomicReferenceArray<Entry<K,V>> tab = entries;
+      Entry e; Object ek; Entry<K,V>[] tab = entries;
       if (tab == null) {
         throw new CacheClosedException();
       }
-      int n = tab.length(), _mask = n - 1, idx = _hash & (_mask);
-      e = tab.get(idx);
+      int n = tab.length, _mask = n - 1, idx = _hash & (_mask);
+      e = tab[idx];
       while (e != null) {
         if (e.hashCode == _hash && ((ek = e.key) == key || (ek.equals(key)))) {
           return e;
         }
         e = e.another;
       }
-      e2.another = tab.get(idx);
-      tab.set(idx, e2);
+      e2.another = tab[idx];
+      tab[idx] = e2;
       _size = segmentSize[si].incrementAndGet();
 
     } finally {
@@ -174,14 +173,14 @@ public class Hash2<K,V> {
     OptimisticLock l = _locks[si];
     long _stamp = l.writeLock();
     try {
-      Entry e; AtomicReferenceArray<Entry<K,V>> tab = entries;
+      Entry e; Entry<K,V>[] tab = entries;
       if (tab == null) {
         throw new CacheClosedException();
       }
-      int n = tab.length(), _mask = n - 1, idx = _hash & (_mask);
-      e = tab.get(idx);
+      int n = tab.length, _mask = n - 1, idx = _hash & (_mask);
+      e = tab[idx];
       if (e == e2) {
-        tab.set(idx, e.another);
+        tab[idx] = e.another;
         segmentSize[si].decrementAndGet();
         return true;
       }
@@ -206,14 +205,14 @@ public class Hash2<K,V> {
     OptimisticLock l = _locks[si];
     long _stamp = l.writeLock();
     try {
-      Entry e; Object ek; AtomicReferenceArray<Entry<K,V>> tab = entries;
+      Entry e; Object ek; Entry<K,V>[] tab = entries;
       if (tab == null) {
         throw new CacheClosedException();
       }
-      int n = tab.length(), _mask = n - 1, idx = _hash & (_mask);
-      e = tab.get(idx);
+      int n = tab.length, _mask = n - 1, idx = _hash & (_mask);
+      e = tab[idx];
       if (e != null && e.hashCode == _hash && ((ek = e.key) == key || (ek.equals(key)))) {
-        tab.set(idx, e.another);
+        tab[idx] = e.another;
         segmentSize[si].decrementAndGet();
         return e;
       }
@@ -263,15 +262,15 @@ public class Hash2<K,V> {
 
   private void rehash() {
     maxFill = maxFill * 2;
-    AtomicReferenceArray<Entry<K,V>> src = entries;
-    int i, sl = src.length(), n = sl * 2, _mask = n - 1, idx;
-    AtomicReferenceArray<Entry<K,V>> tab = new AtomicReferenceArray<Entry<K, V>>(n);
+    Entry<K,V>[] src = entries;
+    int i, sl = src.length, n = sl * 2, _mask = n - 1, idx;
+    Entry<K,V>[] tab = new Entry[n];
     long _count = 0; Entry _next, e;
     for (i = 0; i < sl; i++) {
-      e = src.get(i);
+      e = src[i];
       while (e != null) {
         _count++; _next = e.another; idx = e.hashCode & _mask;
-        e.another = tab.get(idx); tab.set(idx, e);
+        e.another = tab[idx]; tab[idx] = e;
         e = _next;
       }
     }
@@ -328,10 +327,10 @@ public class Hash2<K,V> {
   }
 
   public void calcHashCollisionInfo(Hash.CollisionInfo inf) {
-    AtomicReferenceArray<Entry<K,V>> tab = entries;
-    int n = tab.length();
+    Entry<K,V>[] tab = entries;
+    int n = tab.length;
     for (int i = 0; i < n; i++) {
-      Entry e = tab.get(i);
+      Entry e = tab[i];
       if (e != null) {
         e = e.another;
         if (e != null) {
@@ -349,6 +348,10 @@ public class Hash2<K,V> {
       }
     }
 
+  }
+
+  public Entry<K,V>[] getEntries() {
+    return entries;
   }
 
 }

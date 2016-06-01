@@ -40,11 +40,11 @@ public class Locks {
 
   private static void initializeOptimisticLock() {
     try {
-      optimisticLockImplementation = OptimisticLockJ8.class;
+      optimisticLockImplementation = OptimisticLockStamped.class;
       return;
     } catch (Exception ignore) {
     }
-    optimisticLockImplementation = OptimisticLockCompat.class;
+    optimisticLockImplementation = NonOptimisticLock.class;
   }
 
 }

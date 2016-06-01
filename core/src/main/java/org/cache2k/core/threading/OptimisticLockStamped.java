@@ -26,7 +26,7 @@ import java.util.concurrent.locks.StampedLock;
  * @author Jens Wilke
  */
 @SuppressWarnings("Since15")
-public class OptimisticLockJ8 implements OptimisticLock {
+public class OptimisticLockStamped implements OptimisticLock {
 
   private StampedLock lock = new StampedLock();
 
