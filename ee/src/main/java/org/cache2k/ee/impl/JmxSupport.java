@@ -25,7 +25,6 @@ import org.cache2k.CacheManager;
 import org.cache2k.core.CacheLifeCycleListener;
 import org.cache2k.core.CacheManagerImpl;
 import org.cache2k.core.CacheManagerLifeCycleListener;
-import org.cache2k.core.CacheUsageExcpetion;
 import org.cache2k.core.InternalCache;
 
 import javax.management.InstanceNotFoundException;
@@ -53,7 +52,7 @@ public class JmxSupport implements CacheLifeCycleListener, CacheManagerLifeCycle
            new CacheMXBeanImpl((InternalCache) c),
            new ObjectName(_name));
       } catch (Exception e) {
-        throw new CacheUsageExcpetion("Error registering JMX bean, name='" + _name + "'", e);
+        throw new IllegalStateException("Error registering JMX bean, name='" + _name + "'", e);
       }
     }
   }
@@ -67,7 +66,7 @@ public class JmxSupport implements CacheLifeCycleListener, CacheManagerLifeCycle
         mbs.unregisterMBean(new ObjectName(_name));
       } catch (InstanceNotFoundException ignore) {
       } catch (Exception e) {
-        throw new CacheUsageExcpetion("Error deregistering JMX bean, name='" + _name + "'", e);
+        throw new IllegalStateException("Error deregistering JMX bean, name='" + _name + "'", e);
       }
     }
   }
@@ -79,7 +78,7 @@ public class JmxSupport implements CacheLifeCycleListener, CacheManagerLifeCycle
     try {
       mbs.registerMBean(new ManagerMXBeanImpl((CacheManagerImpl) m),new ObjectName(_name));
     } catch (Exception e) {
-      throw new CacheUsageExcpetion("Error registering JMX bean, name='" + _name + "'", e);
+      throw new IllegalStateException("Error register JMX bean, name='" + _name + "'", e);
     }
   }
 
@@ -91,7 +90,7 @@ public class JmxSupport implements CacheLifeCycleListener, CacheManagerLifeCycle
       mbs.unregisterMBean(new ObjectName(_name));
     } catch (InstanceNotFoundException ignore) {
     } catch (Exception e) {
-      throw new CacheUsageExcpetion("Error deregistering JMX bean, name='" + _name + "'", e);
+      throw new IllegalStateException("Error unregister JMX bean, name='" + _name + "'", e);
     }
   }
 

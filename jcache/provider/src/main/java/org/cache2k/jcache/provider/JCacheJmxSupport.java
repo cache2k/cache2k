@@ -23,7 +23,6 @@ package org.cache2k.jcache.provider;
 import org.cache2k.Cache;
 import org.cache2k.CacheManager;
 import org.cache2k.core.CacheLifeCycleListener;
-import org.cache2k.core.CacheUsageExcpetion;
 
 import javax.management.InstanceNotFoundException;
 import javax.management.MBeanServer;
@@ -55,7 +54,7 @@ public class JCacheJmxSupport implements CacheLifeCycleListener {
          new CacheJmxStatistics(c),
          new ObjectName(_name));
     } catch (Exception e) {
-      throw new CacheUsageExcpetion("Error registering JMX bean, name='" + _name + "'", e);
+      throw new IllegalStateException("Error registering JMX bean, name='" + _name + "'", e);
     }
   }
 
@@ -66,7 +65,7 @@ public class JCacheJmxSupport implements CacheLifeCycleListener {
       mbs.unregisterMBean(new ObjectName(_name));
     } catch (InstanceNotFoundException ignore) {
     } catch (Exception e) {
-      throw new CacheUsageExcpetion("Error deregistering JMX bean, name='" + _name + "'", e);
+      throw new IllegalStateException("Error unregister JMX bean, name='" + _name + "'", e);
     }
   }
 
@@ -76,7 +75,7 @@ public class JCacheJmxSupport implements CacheLifeCycleListener {
     try {
        mbs.registerMBean(new CacheJmxConfiguration(ca), new ObjectName(_name));
     } catch (Exception e) {
-      throw new CacheUsageExcpetion("Error registering JMX bean, name='" + _name + "'", e);
+      throw new IllegalStateException("Error register JMX bean, name='" + _name + "'", e);
     }
   }
 
@@ -87,7 +86,7 @@ public class JCacheJmxSupport implements CacheLifeCycleListener {
       mbs.unregisterMBean(new ObjectName(_name));
     } catch (InstanceNotFoundException ignore) {
     } catch (Exception e) {
-      throw new CacheUsageExcpetion("Error deregistering JMX bean, name='" + _name + "'", e);
+      throw new IllegalStateException("Error unregister JMX bean, name='" + _name + "'", e);
     }
   }
 
