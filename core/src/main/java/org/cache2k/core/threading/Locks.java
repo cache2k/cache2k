@@ -41,6 +41,7 @@ public class Locks {
   private static void initializeOptimisticLock() {
     try {
       optimisticLockImplementation = OptimisticLockJ8.class;
+      return;
     } catch (Exception ignore) {
     }
     optimisticLockImplementation = OptimisticLockCompat.class;
