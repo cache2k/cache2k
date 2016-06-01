@@ -20,24 +20,26 @@ package org.cache2k.core;
  * #L%
  */
 
+import org.cache2k.configuration.Cache2kConfiguration;
+
 /**
- * Straight forward CLOCK implementation. This is probably the simplest
- * eviction algorithm around. Interestingly it produces good results.
- *
- * @author Jens Wilke; created: 2013-12-01
+ * @author Jens Wilke
  */
-public class ClockCache<K, V> extends ConcurrentEvictionCache<K, V> {
+public class ClockEviction extends AbstractEviction {
 
-  long hits;
-  int runCnt;
-  int scan24hCnt;
-  int scanCnt;
-  int size;
+  private long hits;
+  private long runCnt;
+  private long scan24hCnt;
+  private long scanCnt;
+  private long size = 0;
+  private Entry hand = null;
 
-  Entry hand;
+  public ClockEviction(final HeapCache _heapCache, final HeapCacheListener _listener, final Cache2kConfiguration cfg) {
+    super(_heapCache, _listener, cfg);
+  }
 
   @Override
-  public long getHitCnt() {
+  public long getHitCount() {
     return hits + sumUpListHits(hand);
   }
 
@@ -53,14 +55,7 @@ public class ClockCache<K, V> extends ConcurrentEvictionCache<K, V> {
   }
 
   @Override
-  protected void initializeHeapCache() {
-    super.initializeHeapCache();
-    size = 0;
-    hand = null;
-  }
-
-  @Override
-  protected void iterateAllEntriesAndRemoveFromReplacementList() {
+  public long removeAll() {
     Entry e, _head;
     int _count = 0;
     e = _head = hand;
@@ -75,22 +70,18 @@ public class ClockCache<K, V> extends ConcurrentEvictionCache<K, V> {
       } while (e != _head);
       hits += _hits;
     }
+    return _count;
   }
 
   @Override
-  protected void removeEntryFromReplacementList(Entry e) {
+  protected void removeEntryFromReplacementList(final Entry e) {
     hand = Entry.removeFromCyclicList(hand, e);
     hits += e.hitCnt;
     size--;
   }
 
-  private int getListSize() {
+  public long getSize() {
     return size;
-  }
-
-  @Override
-  protected void recordHit(Entry e) {
-    e.hitCnt++;
   }
 
   @Override
@@ -103,7 +94,7 @@ public class ClockCache<K, V> extends ConcurrentEvictionCache<K, V> {
    * Run to evict an entry.
    */
   @Override
-  protected Entry findEvictionCandidate() {
+  protected Entry findEvictionCandidate(Entry _previous) {
     runCnt++;
     int _scanCnt = 0;
 
@@ -121,17 +112,17 @@ public class ClockCache<K, V> extends ConcurrentEvictionCache<K, V> {
   }
 
   @Override
-  protected IntegrityState getIntegrityState() {
-    return super.getIntegrityState()
-            .check("checkCyclicListIntegrity(hand)", Entry.checkCyclicListIntegrity(hand))
-            .checkEquals("getCyclicListEntryCount(hand) == size", Entry.getCyclicListEntryCount(hand), size);
+  public void checkIntegrity(IntegrityState _integrityState) {
+    _integrityState
+      .check("checkCyclicListIntegrity(hand)", Entry.checkCyclicListIntegrity(hand))
+      .checkEquals("getCyclicListEntryCount(hand) == size", Entry.getCyclicListEntryCount(hand), size);
   }
 
   @Override
-  protected String getExtraStatistics() {
+  public String getExtraStatistics() {
     return  ", clockRunCnt=" + runCnt +
-            ", scanCnt=" + scanCnt +
-            ", scan24hCnt=" + scan24hCnt;
+      ", scanCnt=" + scanCnt +
+      ", scan24hCnt=" + scan24hCnt;
   }
 
 }

@@ -21,19 +21,36 @@ package org.cache2k.core;
  */
 
 /**
- * Specialization for 64 bit systems.
+ * @author Jens Wilke
  */
-public final class ClockProPlus64Cache<K, V>  extends ClockProPlusCache<K, V> {
+public interface Eviction {
+
+  void close();
+
+  void insert(Entry e);
+  void remove(Entry e);
+  long removeAll();
 
   /**
-   * Just increment the hit counter on 64 bit systems. Writing a 64 bit value is atomic on 64 bit systems
-   * but not on 32 bit systems. Of course the counter update itself is not an atomic operation, which will
-   * cause some missed hits. The 64 bit counter is big enough that it never wraps around in my projected
-   * lifetime...
+   * Stop concurrent threads that may access the eviction data structures.
+   * Needs to be called before checkIntegrity or accessing the counter
+   * values.
    */
-  @Override
-  protected void recordHit(Entry e) {
-    e.hitCnt++;
-  }
+  void stop();
+  /**
+   * Start concurrent eviction threads.
+   */
+  void start();
+
+  void checkIntegrity(IntegrityState _integrityState);
+  String getExtraStatistics();
+
+  long getHitCount();
+  long getNewEntryCount();
+  long getRemovedCount();
+  long getExpiredRemovedCount();
+  long getVirginRemovedCount();
+  long getEvictedCount();
+  long getSize();
 
 }

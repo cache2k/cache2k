@@ -20,6 +20,7 @@ package org.cache2k.core;
  * #L%
  */
 
+import org.cache2k.configuration.Cache2kConfiguration;
 import org.cache2k.core.util.TunableConstants;
 import org.cache2k.core.util.TunableFactory;
 
@@ -35,8 +36,7 @@ import org.cache2k.core.util.TunableFactory;
  *
  * @author Jens Wilke; created: 2013-07-12
  */
-@SuppressWarnings("unchecked")
-public class ClockProPlusCache<K, V> extends ConcurrentEvictionCache<K, V> {
+public class ClockProPlusEviction extends AbstractEviction {
 
   private static final Tunable TUNABLE_CLOCK_PRO = TunableFactory.get(Tunable.class);
 
@@ -64,6 +64,19 @@ public class ClockProPlusCache<K, V> extends ConcurrentEvictionCache<K, V> {
   Hash<Entry> ghostHashCtrl;
   Entry[] ghostHash;
 
+  public ClockProPlusEviction(final HeapCache _heapCache, final HeapCacheListener _listener, final Cache2kConfiguration cfg) {
+    super(_heapCache, _listener, cfg);
+    ghostMax = maxSize / 2 + 1;
+    hotMax = maxSize * TUNABLE_CLOCK_PRO.hotMaxPercentage / 100;
+    coldSize = 0;
+    hotSize = 0;
+    handCold = null;
+    handHot = null;
+    ghostHead = new Entry(null, 0).shortCircuit();
+    ghostHashCtrl = new Hash<Entry>();
+    ghostHash = ghostHashCtrl.initUseBigLock(Entry.class, lock);
+  }
+
   private long sumUpListHits(Entry e) {
     if (e == null) { return 0; }
     long cnt = 0;
@@ -76,25 +89,12 @@ public class ClockProPlusCache<K, V> extends ConcurrentEvictionCache<K, V> {
   }
 
   @Override
-  public long getHitCnt() {
+  public long getHitCount() {
     return hotHits + coldHits + sumUpListHits(handCold) + sumUpListHits(handHot);
   }
 
-  protected void initializeHeapCache() {
-    super.initializeHeapCache();
-    ghostMax = maxSize / 2 + 1;
-    hotMax = maxSize * TUNABLE_CLOCK_PRO.hotMaxPercentage / 100;
-    coldSize = 0;
-    hotSize = 0;
-    handCold = null;
-    handHot = null;
-    ghostHead = new Entry(null, 0).shortCircuit();
-    ghostHashCtrl = new Hash<Entry>();
-    ghostHash = ghostHashCtrl.initUseBigLock(Entry.class, lock);
-  }
-
   @Override
-  protected void iterateAllEntriesAndRemoveFromReplacementList() {
+  public long removeAll() {
     Entry e, _head;
     int _count = 0;
     e = _head = handCold;
@@ -109,6 +109,8 @@ public class ClockProPlusCache<K, V> extends ConcurrentEvictionCache<K, V> {
       } while (e != _head);
       coldHits += _hits;
     }
+    handCold = null;
+    coldSize = 0;
     e = _head = handHot;
     if (e != null) {
       _hits = 0;
@@ -121,14 +123,16 @@ public class ClockProPlusCache<K, V> extends ConcurrentEvictionCache<K, V> {
       } while (e != _head);
       hotHits += _hits;
     }
+    handHot = null;
+    hotSize = 0;
+    return _count;
   }
-
 
   /**
    * Track the entry on the ghost list and call the usual remove procedure.
    */
   @Override
-  protected void evictEntry(final Entry e) {
+  public void evictEntry(final Entry e) {
     insertCopyIntoGhosts(e);
     removeEntryFromReplacementList(e);
   }
@@ -159,13 +163,13 @@ public class ClockProPlusCache<K, V> extends ConcurrentEvictionCache<K, V> {
     }
   }
 
-  private void insertCopyIntoGhosts(Entry<K, V> e) {
-    Entry<K, V> e2 = Hash.lookupHashCode(ghostHash, e.hashCode);
+  private void insertCopyIntoGhosts(Entry e) {
+    Entry e2 = Hash.lookupHashCode(ghostHash, e.hashCode);
     if (e2 != null) {
       Entry.moveToFront(ghostHead, e2);
       return;
     }
-    e2 = new Entry<K, V>(null, e.hashCode);
+    e2 = new Entry(null, e.hashCode);
     e2.hashCode = e.hashCode;
     ghostHashCtrl.insert(ghostHash, e2);
     ghostHash = ghostHashCtrl.expand(ghostHash, e.hashCode);
@@ -177,50 +181,15 @@ public class ClockProPlusCache<K, V> extends ConcurrentEvictionCache<K, V> {
     }
   }
 
-  private int getListSize() {
+  public long getSize() {
     return hotSize + coldSize;
   }
 
   @Override
-  protected void recordHit(Entry e) {
-    long _hitCnt = e.hitCnt + 1;
-    if ((_hitCnt & 0x100000000L) != 0 ) {
-      scrubCache(e);
-      recordHit(e);
-      return;
-    }
-    e.hitCnt = _hitCnt;
-  }
-
-  private long scrubCounters(Entry e) {
-    if (e == null) { return 0; }
-    int cnt = 0;
-    Entry _head = e;
-    do {
-      long _hitCnt = e.hitCnt;
-      long _hitCnt2 = e.hitCnt = e.hitCnt >> 1;
-      cnt += _hitCnt - _hitCnt2;
-      e = e.next;
-    } while (e != _head);
-    return cnt;
-  }
-
-  protected void scrubCache(Entry e) {
-    synchronized (lock) {
-      checkClosed();
-      if (e.hitCnt != Integer.MAX_VALUE) {
-        return;
-      }
-      coldHits += scrubCounters(handCold);
-      hotHits += scrubCounters(handHot);
-    }
-  }
-
-  @Override
   protected void insertIntoReplacementList(Entry e) {
-    Entry e2 = ghostHashCtrl.removeWithIdenticalHashCode(ghostHash, e.hashCode);
-    if (e2 != null) {
-      Entry.removeFromList(e2);
+    Entry _ghost = ghostHashCtrl.removeWithIdenticalHashCode(ghostHash, e.hashCode);
+    if (_ghost != null) {
+      Entry.removeFromList(_ghost);
       ghostHits++;
       e.setHot(true);
       hotSize++;
@@ -231,11 +200,11 @@ public class ClockProPlusCache<K, V> extends ConcurrentEvictionCache<K, V> {
     handCold = Entry.insertIntoTailCyclicList(handCold, e);
   }
 
-  protected Entry<K, V> runHandHot() {
+  protected Entry runHandHot() {
     hotRunCnt++;
-    Entry<K, V> _handStart = handHot;
-    Entry<K, V> _hand = _handStart;
-    Entry<K, V> _coldCandidate = _hand;
+    Entry _handStart = handHot;
+    Entry _hand = _handStart;
+    Entry _coldCandidate = _hand;
     long _lowestHits = Long.MAX_VALUE;
     long _hotHits = hotHits;
     int _scanCnt = -1;
@@ -274,7 +243,7 @@ public class ClockProPlusCache<K, V> extends ConcurrentEvictionCache<K, V> {
    * Runs cold hand an in turn hot hand to find eviction candidate.
    */
   @Override
-  protected Entry findEvictionCandidate() {
+  protected Entry findEvictionCandidate(Entry _previous) {
     coldRunCnt++;
     Entry _hand = handCold;
     int _scanCnt = 0;
@@ -311,7 +280,7 @@ public class ClockProPlusCache<K, V> extends ConcurrentEvictionCache<K, V> {
     while (hotSize > hotMax || _hand == null) {
       Entry e = runHandHot();
       if (e != null) {
-        _hand = Entry.insertIntoTailCyclicList(_hand, e);
+        _hand =  Entry.insertIntoTailCyclicList(_hand, e);
         coldSize++;
       }
     }
@@ -319,34 +288,33 @@ public class ClockProPlusCache<K, V> extends ConcurrentEvictionCache<K, V> {
   }
 
   @Override
-  protected IntegrityState getIntegrityState() {
-    return super.getIntegrityState()
-            .checkEquals("ghostHashCtrl.size == Hash.calcEntryCount(refreshHash)",
-                    ghostHashCtrl.getSize(), Hash.calcEntryCount(ghostHash))
-            .check("hotMax <= maxElements", hotMax <= maxSize)
-            .check("checkCyclicListIntegrity(handHot)", Entry.checkCyclicListIntegrity(handHot))
-            .check("checkCyclicListIntegrity(handCold)", Entry.checkCyclicListIntegrity(handCold))
-            .check("checkCyclicListIntegrity(handGhost)", Entry.checkCyclicListIntegrity(ghostHead))
-            .checkEquals("getCyclicListEntryCount(handHot) == hotSize", Entry.getCyclicListEntryCount(handHot), hotSize)
-            .checkEquals("getCyclicListEntryCount(handCold) == coldSize", Entry.getCyclicListEntryCount(handCold), coldSize)
-            .checkEquals("getListEntryCount(handGhost) == ghostSize", Entry.getListEntryCount(ghostHead), ghostHashCtrl.getSize());
+  public void checkIntegrity(final IntegrityState _integrityState) {
+    _integrityState.checkEquals("ghostHashCtrl.size == Hash.calcEntryCount(refreshHash)",
+      ghostHashCtrl.getSize(), Hash.calcEntryCount(ghostHash))
+      .check("hotMax <= maxElements", hotMax <= maxSize)
+      .check("checkCyclicListIntegrity(handHot)", Entry.checkCyclicListIntegrity(handHot))
+      .check("checkCyclicListIntegrity(handCold)", Entry.checkCyclicListIntegrity(handCold))
+      .check("checkCyclicListIntegrity(handGhost)", Entry.checkCyclicListIntegrity(ghostHead))
+      .checkEquals("getCyclicListEntryCount(handHot) == hotSize", Entry.getCyclicListEntryCount(handHot), hotSize)
+      .checkEquals("getCyclicListEntryCount(handCold) == coldSize", Entry.getCyclicListEntryCount(handCold), coldSize)
+      .checkEquals("getListEntryCount(handGhost) == ghostSize", Entry.getListEntryCount(ghostHead), ghostHashCtrl.getSize());
   }
 
   @Override
-  protected String getExtraStatistics() {
+  public String getExtraStatistics() {
     return ", coldSize=" + coldSize +
-           ", hotSize=" + hotSize +
-           ", hotMaxSize=" + hotMax +
-           ", ghostSize=" + ghostHashCtrl.getSize() +
-           ", coldHits=" + (coldHits + sumUpListHits(handCold)) +
-           ", hotHits=" + (hotHits + sumUpListHits(handHot)) +
-           ", ghostHits=" + ghostHits +
-           ", coldRunCnt=" + coldRunCnt +// identical to the evictions anyways
-           ", coldScanCnt=" + coldScanCnt +
-           ", cold24hCnt=" + cold24hCnt +
-           ", hotRunCnt=" + hotRunCnt +
-           ", hotScanCnt=" + hotScanCnt +
-           ", hot24hCnt=" + hot24hCnt;
+      ", hotSize=" + hotSize +
+      ", hotMaxSize=" + hotMax +
+      ", ghostSize=" + ghostHashCtrl.getSize() +
+      ", coldHits=" + (coldHits + sumUpListHits(handCold)) +
+      ", hotHits=" + (hotHits + sumUpListHits(handHot)) +
+      ", ghostHits=" + ghostHits +
+      ", coldRunCnt=" + coldRunCnt +// identical to the evictions anyways
+      ", coldScanCnt=" + coldScanCnt +
+      ", cold24hCnt=" + cold24hCnt +
+      ", hotRunCnt=" + hotRunCnt +
+      ", hotScanCnt=" + hotScanCnt +
+      ", hot24hCnt=" + hot24hCnt;
   }
 
   public static class Tunable extends TunableConstants {
@@ -355,6 +323,39 @@ public class ClockProPlusCache<K, V> extends ConcurrentEvictionCache<K, V> {
 
     int hitCounterDecreaseShift = 6;
 
+  }
+
+  protected void recordHit(Entry e) {
+    long _hitCnt = e.hitCnt + 1;
+    if ((_hitCnt & 0x100000000L) != 0 ) {
+      scrubCache(e);
+      recordHit(e);
+      return;
+    }
+    e.hitCnt = _hitCnt;
+  }
+
+  private long scrubCounters(Entry e) {
+    if (e == null) { return 0; }
+    int cnt = 0;
+    Entry _head = e;
+    do {
+      long _hitCnt = e.hitCnt;
+      long _hitCnt2 = e.hitCnt = e.hitCnt >> 1;
+      cnt += _hitCnt - _hitCnt2;
+      e = e.next;
+    } while (e != _head);
+    return cnt;
+  }
+
+  protected void scrubCache(Entry e) {
+    synchronized (lock) {
+      if (e.hitCnt != Integer.MAX_VALUE) {
+        return;
+      }
+      coldHits += scrubCounters(handCold);
+      hotHits += scrubCounters(handHot);
+    }
   }
 
 }

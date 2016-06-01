@@ -282,13 +282,14 @@ public class InternalCache2kBuilder<K, T> {
       if (!_syncExpiredListeners.isEmpty()) {
         wc.syncEntryExpiredListeners = _syncExpiredListeners.toArray(new CacheEntryExpiredListener[_syncExpiredListeners.size()]);
       }
-      bc.listener = wc;
+      bc.eviction = new ClockProPlusEviction(bc, wc, config);
       TimingHandler rh = TimingHandler.of(config);
       bc.setTiming(rh);
       wc.init();
     } else {
       TimingHandler rh = TimingHandler.of(config);
       bc.setTiming(rh);
+      bc.eviction = new ClockProPlusEviction(bc, new HeapCacheListener.NoOperation(), config);
       bc.init();
     }
     cm.sendCreatedEvent(_cache);

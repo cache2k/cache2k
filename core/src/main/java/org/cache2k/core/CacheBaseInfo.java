@@ -72,15 +72,15 @@ class CacheBaseInfo implements InternalCacheInfo {
   public CacheBaseInfo(HeapCache _heapCache, InternalCache _userCache) {
     this.heapCache = _heapCache;
     metrics = _heapCache.metrics;
-    newEntryCnt = _heapCache.newEntryCnt;
+    newEntryCnt = _heapCache.eviction.getNewEntryCount();
     clearedTime = _heapCache.clearedTime;
     keyMutationCnt = _heapCache.keyMutationCnt;
-    removedCnt = _heapCache.removedCnt;
-    virginRemovedCnt = _heapCache.virginRemovedCnt;
+    removedCnt = _heapCache.eviction.getRemovedCount();
+    virginRemovedCnt = _heapCache.eviction.getVirginRemovedCount();
     clearRemovedCnt = _heapCache.clearRemovedCnt;
     clearCnt = _heapCache.clearCnt;
-    expiredRemoveCnt = _heapCache.expiredRemoveCnt;
-    evictedCnt = _heapCache.evictedCnt;
+    expiredRemoveCnt = _heapCache.eviction.getExpiredRemovedCount();
+    evictedCnt = _heapCache.eviction.getEvictedCount();
     integrityState = _heapCache.getIntegrityState();
     storageMetrics = _userCache.getStorageMetrics();
     collisionInfo = new Hash.CollisionInfo();
@@ -93,7 +93,7 @@ class CacheBaseInfo implements InternalCacheInfo {
     missCnt = metrics.getLoadCount() + metrics.getReloadCount() + metrics.getPeekHitNotFreshCount() + metrics.getPeekMissCount();
     storageMissCnt = storageMetrics.getReadMissCount() + storageMetrics.getReadNonFreshCount();
     storageLoadCnt = storageMissCnt + storageMetrics.getReadHitCount();
-    hitCnt = _heapCache.getHitCnt();
+    hitCnt = _heapCache.eviction.getHitCount();
     correctedPutCnt = metrics.getPutNewEntryCount() + metrics.getPutHitCount() + metrics.getPutNoReadHitCount();
     usageCnt =
             hitCnt + newEntryCnt + metrics.getPeekMissCount() + metrics.getPutHitCount() + metrics.getRemoveCount();

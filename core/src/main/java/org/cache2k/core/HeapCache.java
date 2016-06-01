@@ -72,7 +72,7 @@ import static org.cache2k.core.util.Util.*;
  * @author Jens Wilke; created: 2013-07-09
  */
 @SuppressWarnings({"unchecked", "SynchronizationOnLocalVariableOrMethodParameter"})
-public abstract class HeapCache<K, V>
+public class HeapCache<K, V>
   extends AbstractCache<K, V> {
 
   static final LoadCompletedListener DUMMY_LOAD_COMPLETED_LISTENER = new LoadCompletedListener() {
@@ -103,8 +103,6 @@ public abstract class HeapCache<K, V>
       hashSeed = SEED_RANDOM.nextInt();
     }
   }
-
-  HeapCacheListener<K,V> listener = HeapCacheListener.NO_OPERATION;
 
   /** Maximum amount of elements in cache */
   protected long maxSize = 5000;
@@ -144,20 +142,12 @@ public abstract class HeapCache<K, V>
   protected long clearedTime = 0;
   protected long startedTime;
 
-  protected long newEntryCnt = 0;
-
-  protected long removedCnt = 0;
-
-  protected long virginRemovedCnt = 0;
+  Eviction eviction;
 
   /** Number of entries removed by clear. */
   protected long clearRemovedCnt = 0;
 
   protected long clearCnt = 0;
-
-  protected long expiredRemoveCnt = 0;
-
-  protected long evictedCnt = 0;
 
   protected volatile Executor loaderExecutor = new DummyExecutor(this);
 
@@ -181,14 +171,6 @@ public abstract class HeapCache<K, V>
   protected Futures.WaitForAllFuture<?> shutdownWaitFuture;
 
   private volatile boolean shutdownInitiated = true;
-
-  /**
-   * Flag during operation that indicates, that the cache is full and eviction needs
-   * to be done. Eviction is only allowed to happen after an entry is fetched, so
-   * at the end of an cache operation that increased the entry count we check whether
-   * something needs to be evicted.
-   */
-  protected boolean evictionNeeded = false;
 
   protected Class keyType;
 
@@ -385,27 +367,12 @@ public abstract class HeapCache<K, V>
   }
 
   public final void clearLocalCache() {
-    iterateAllEntriesAndRemoveFromReplacementList();
-    clearRemovedCnt += getLocalSize();
+    long _removed = eviction.removeAll();
+    clearRemovedCnt += _removed;
     clearCnt++;
     initializeHeapCache();
     hash.clearWhenLocked();
     clearedTime = System.currentTimeMillis();
-  }
-
-  /**
-   * Possible race with clear() and entryRemove. We need to
-   * mark every entry as removed, otherwise an already
-   * cleared entry might be removed again.
-   */
-  protected void iterateAllEntriesAndRemoveFromReplacementList() {
-    Iterator<Entry<K,V>> it = iterateAllHeapEntries();
-    int _count = 0;
-    while (it.hasNext()) {
-      org.cache2k.core.Entry e = it.next();
-      e.removedFromList();
-      _count++;
-    }
   }
 
   protected void initializeHeapCache() {
@@ -550,45 +517,13 @@ public abstract class HeapCache<K, V>
   }
 
   /**
-   * Record an entry hit.
+   * Just increment the hit counter on 64 bit systems. Writing a 64 bit value is atomic on 64 bit systems
+   * but not on 32 bit systems. Of course the counter update itself is not an atomic operation, which will
+   * cause some missed hits. The 64 bit counter is big enough that it never wraps around in my projected
+   * lifetime...
    */
-  protected abstract void recordHit(Entry e);
-
-  /**
-   * New cache entry, put it in the replacement algorithm structure
-   */
-  protected abstract void insertIntoReplacementList(Entry e);
-
-
-  /**
-   * Find an entry that should be evicted. Called within structure lock.
-   * After doing some checks the cache will call {@link #removeEntryFromReplacementList(org.cache2k.core.Entry)}
-   * if this entry will be really evicted. Pinned entries may be skipped. A
-   * good eviction algorithm returns another candidate on sequential calls, even
-   * if the candidate was not removed.
-   *
-   * <p/>Rationale: Within the structure lock we can check for an eviction candidate
-   * and may remove it from the list. However, we cannot process additional operations or
-   * events which affect the entry. For this, we need to acquire the lock on the entry
-   * first.
-   */
-  protected abstract Entry findEvictionCandidate();
-
-  /**
-   * Evict entry from the cache. Almost identical to {@link #removeEntryFromReplacementList(Entry)},
-   * but for eviction we might track additional history information. If the entry is
-   * expired or removed we don't track history.
-   */
-  protected void evictEntry(Entry e) {
-    removeEntryFromReplacementList(e);
-  }
-
-
-  /**
-   *
-   */
-  protected void removeEntryFromReplacementList(Entry e) {
-    Entry.removeFromList(e);
+  protected void recordHit(Entry e) {
+    e.hitCnt++;
   }
 
   @Override
@@ -720,51 +655,6 @@ public abstract class HeapCache<K, V>
   }
 
   protected final void evictEventually() {
-    int _spinCount = TUNABLE.maximumEvictSpins;
-    Entry _previousCandidate = null;
-    final long _sizeAfterEviction = maxSize + 1 - evictChunkSize;
-    while (evictionNeeded) {
-      if (_spinCount-- <= 0) { return; }
-      Entry e;
-      synchronized (lock) {
-        checkClosed();
-        if (getLocalSize() <= _sizeAfterEviction) {
-          evictionNeeded = false;
-          return;
-        }
-        e = findEvictionCandidate();
-      }
-      synchronized (e) {
-        if (e.isGone()) {
-          continue;
-        }
-        if (e.isProcessing()) {
-          if (e != _previousCandidate) {
-            _previousCandidate = e;
-            continue;
-          } else {
-            return;
-          }
-        }
-        e.startProcessing(Entry.ProcessingState.EVICT);
-      }
-      listener.onEvictionFromHeap(e);
-      synchronized (e) {
-        finishLoadOrEviction(e, org.cache2k.core.Entry.ABORTED);
-        evictEntryFromHeap(e);
-      }
-    }
-  }
-
-  private void evictEntryFromHeap(Entry e) {
-    if (removeEntryFromHash(e)) {
-      synchronized (lock) {
-        if (!e.isRemovedFromReplacementList()) {
-          evictEntry(e);
-          evictedCnt++;
-        }
-      }
-    }
   }
 
   /**
@@ -776,19 +666,7 @@ public abstract class HeapCache<K, V>
   protected boolean removeEntry(Entry e) {
     boolean _removed = removeEntryFromHash(e);
     if (_removed) {
-      synchronized (lock) {
-        if (!e.isRemovedFromReplacementList()) {
-          removeEntryFromReplacementList(e);
-          long nrt = e.getNextRefreshTime();
-          if (nrt == (Entry.GONE + Entry.EXPIRED)) {
-            expiredRemoveCnt++;
-          } else if (nrt == (Entry.GONE + Entry.VIRGIN)) {
-            virginRemovedCnt++;
-          } else {
-            removedCnt++;
-          }
-        }
-      }
+      eviction.remove(e);
     }
     return _removed;
   }
@@ -1310,13 +1188,7 @@ public abstract class HeapCache<K, V>
     Entry<K,V> e = new Entry<K,V>(key, hc);
     Entry<K,V> e2 = hash.insert(e);
     if (e == e2) {
-      synchronized (lock) {
-        if (getLocalSizeEstimate() >= maxSize) {
-          evictionNeeded = true;
-        }
-        insertIntoReplacementList(e);
-        newEntryCnt++;
-      }
+      eviction.insert(e);
     }
     return e2;
   }
@@ -1718,12 +1590,6 @@ public abstract class HeapCache<K, V>
     execute(key, spec().expire(key, _millis));
   }
 
-  public abstract long getHitCnt();
-
-  public final long getLocalSizeEstimate() {
-    return hash.getSize();
-  }
-
   public final long getLocalSize() {
     return hash.getSize();
   }
@@ -1739,9 +1605,10 @@ public abstract class HeapCache<K, V>
 
   protected IntegrityState getIntegrityState() {
 
-    return new IntegrityState()
-      .checkEquals("newEntryCnt == getSize() + evictedCnt + expiredRemoveCnt + removeCnt + clearedCnt + virginRemovedCnt", newEntryCnt, getLocalSize() + evictedCnt + expiredRemoveCnt + removedCnt + clearRemovedCnt + virginRemovedCnt)
-      .check("!!evictionNeeded | (getSize() <= maxSize)", !!evictionNeeded | (getLocalSize() <= maxSize));
+    IntegrityState is = new IntegrityState()
+      .checkEquals("newEntryCnt == getSize() + evictedCnt + expiredRemoveCnt + removeCnt + clearedCnt + virginRemovedCnt", eviction.getNewEntryCount(), getLocalSize() + eviction.getEvictedCount() + eviction.getExpiredRemovedCount() + eviction.getRemovedCount() + clearRemovedCnt + eviction.getVirginRemovedCount());
+    eviction.checkIntegrity(is);
+    return is;
   }
 
   /** Check internal data structures and throw and exception if something is wrong, used for unit testing */
@@ -1855,12 +1722,9 @@ public abstract class HeapCache<K, V>
 
   public static class Tunable extends TunableConstants {
 
-    /**
-     * Implementation class to use by default.
-     */
     public Class<? extends InternalCache> defaultImplementation =
-            "64".equals(System.getProperty("sun.arch.data.model"))
-                    ? ClockProPlus64Cache.class : ClockProPlusCache.class;
+      HeapCache.class;
+
 
     /**
      * Limits the number of spins until an entry lock is expected to

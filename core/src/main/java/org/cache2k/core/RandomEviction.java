@@ -20,38 +20,35 @@ package org.cache2k.core;
  * #L%
  */
 
-import java.util.Iterator;
-import java.util.concurrent.atomic.AtomicReferenceArray;
+import org.cache2k.configuration.Cache2kConfiguration;
 
 /**
- * Random eviction without usage counters.
- *
- * @author Jens Wilke; created: 2013-12-22
+ * @author Jens Wilke
  */
-public class RandomCache<K, V> extends ConcurrentEvictionCache<K, V> {
+public class RandomEviction extends AbstractEviction {
 
-  int evictionIndex = 0;
+  private int evictionIndex = 0;
+  private long size = 0;
+  private Entry head = new Entry().shortCircuit();
 
-  @Override
-  protected void recordHit(Entry entry) { }
+  public RandomEviction(final HeapCache _heapCache, final HeapCacheListener _listener, final Cache2kConfiguration cfg) {
+    super(_heapCache, _listener, cfg);
+  }
 
   @Override
   protected void removeEntryFromReplacementList(Entry e) {
-    e.removedFromList();
+    Entry.removeFromList(e);
   }
 
   @Override
   protected void insertIntoReplacementList(Entry e) {
-    e.next = e;
+    size++;
+    Entry.insertInList(head, e);
   }
 
-  /**
-   * Start at arbitrary hash slot and evict the next best entry.
-   */
-
   @Override
-  protected Entry findEvictionCandidate() {
-    Entry<K,V>[] h0 = hash.getEntries();
+  protected Entry findEvictionCandidate(Entry _previous) {
+    Entry[] h0 = heapCache.hash.getEntries();
     int idx = evictionIndex % (h0.length);
     Entry e;
     while ((e = h0[idx]) == null) {
@@ -68,8 +65,36 @@ public class RandomCache<K, V> extends ConcurrentEvictionCache<K, V> {
   }
 
   @Override
-  public long getHitCnt() {
+  public void checkIntegrity(final IntegrityState _integrityState) {
+
+  }
+
+  @Override
+  public long removeAll() {
+    long _count = 0;
+    Entry _head = head;
+    Entry e = head.prev;
+    while (e != _head) {
+      Entry _next = e.prev;
+      e.removedFromList();
+      _count++;
+      e = _next;
+    }
+    return _count;
+  }
+
+  @Override
+  public String getExtraStatistics() {
+    return "";
+  }
+
+  @Override
+  public long getHitCount() {
     return 0;
   }
 
+  @Override
+  public long getSize() {
+    return size;
+  }
 }
