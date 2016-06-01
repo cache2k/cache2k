@@ -666,4 +666,128 @@ public class Entry<K, T>
     }
   }
 
+  /*
+   * **************************************** LRU list operation *******************************************
+   */
+
+  public static void removeFromList(final Entry e) {
+    e.prev.next = e.next;
+    e.next.prev = e.prev;
+    e.removedFromList();
+  }
+
+  public static void insertInList(final Entry _head, final Entry e) {
+    e.prev = _head;
+    e.next = _head.next;
+    e.next.prev = e;
+    _head.next = e;
+  }
+
+  public static final int getListEntryCount(final Entry _head) {
+    Entry e = _head.next;
+    int cnt = 0;
+    while (e != _head) {
+      cnt++;
+      if (e == null) {
+        return -cnt;
+      }
+      e = e.next;
+    }
+    return cnt;
+  }
+
+  public static final <E extends Entry> void moveToFront(final E _head, final E e) {
+    removeFromList(e);
+    insertInList(_head, e);
+  }
+
+  public static final <E extends Entry> E insertIntoTailCyclicList(final E _head, final E e) {
+    if (_head == null) {
+      return (E) e.shortCircuit();
+    }
+    e.next = _head;
+    e.prev = _head.prev;
+    _head.prev = e;
+    e.prev.next = e;
+    return _head;
+  }
+
+  /**
+   * Insert X into A B C, yields: A X B C.
+   */
+  public static final <E extends Entry> E insertAfterHeadCyclicList(final E _head, final E e) {
+    if (_head == null) {
+      return (E) e.shortCircuit();
+    }
+    e.prev = _head;
+    e.next = _head.next;
+    _head.next.prev = e;
+    _head.next = e;
+    return _head;
+  }
+
+  /** Insert element at the head of the list */
+  public static final <E extends Entry> E insertIntoHeadCyclicList(final E _head, final E e) {
+    if (_head == null) {
+      return (E) e.shortCircuit();
+    }
+    e.next = _head;
+    e.prev = _head.prev;
+    _head.prev.next = e;
+    _head.prev = e;
+    return e;
+  }
+
+  public static <E extends Entry> E removeFromCyclicList(final E _head, E e) {
+    if (e.next == e) {
+      e.removedFromList();
+      return null;
+    }
+    Entry _eNext = e.next;
+    e.prev.next = _eNext;
+    e.next.prev = e.prev;
+    e.removedFromList();
+    return e == _head ? (E) _eNext : _head;
+  }
+
+  public static Entry removeFromCyclicList(final Entry e) {
+    Entry _eNext = e.next;
+    e.prev.next = _eNext;
+    e.next.prev = e.prev;
+    e.removedFromList();
+    return _eNext == e ? null : _eNext;
+  }
+
+  public static int getCyclicListEntryCount(Entry e) {
+    if (e == null) { return 0; }
+    final Entry _head = e;
+    int cnt = 0;
+    do {
+      cnt++;
+      e = e.next;
+      if (e == null) {
+        return -cnt;
+      }
+    } while (e != _head);
+    return cnt;
+  }
+
+  public static boolean checkCyclicListIntegrity(Entry e) {
+    if (e == null) { return true; }
+    Entry _head = e;
+    do {
+      if (e.next == null) {
+        return false;
+      }
+      if (e.next.prev == null) {
+        return false;
+      }
+      if (e.next.prev != e) {
+        return false;
+      }
+      e = e.next;
+    } while (e != _head);
+    return true;
+  }
+
 }

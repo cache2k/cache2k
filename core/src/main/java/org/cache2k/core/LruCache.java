@@ -40,14 +40,14 @@ public class LruCache<K, V> extends HeapCache<K, V> {
   protected void recordHit(Entry e) {
     if (!e.isRemovedFromReplacementList()) {
       removeEntryFromReplacementList(e);
-      insertInList(head, e);
+      Entry.insertInList(head, e);
     }
     hitCnt++;
   }
 
   @Override
   protected void insertIntoReplacementList(Entry e) {
-    insertInList(head, e);
+    Entry.insertInList(head, e);
   }
 
 
@@ -67,7 +67,7 @@ public class LruCache<K, V> extends HeapCache<K, V> {
   protected IntegrityState getIntegrityState() {
     synchronized (lock) {
       return super.getIntegrityState()
-        .checkEquals("size = list entry count", getLocalSize() , getListEntryCount(head));
+        .checkEquals("size = list entry count", getLocalSize() , Entry.getListEntryCount(head));
     }
   }
 

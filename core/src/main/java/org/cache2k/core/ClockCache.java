@@ -79,7 +79,7 @@ public class ClockCache<K, V> extends ConcurrentEvictionCache<K, V> {
 
   @Override
   protected void removeEntryFromReplacementList(Entry e) {
-    hand = removeFromCyclicList(hand, e);
+    hand = Entry.removeFromCyclicList(hand, e);
     hits += e.hitCnt;
     size--;
   }
@@ -96,7 +96,7 @@ public class ClockCache<K, V> extends ConcurrentEvictionCache<K, V> {
   @Override
   protected void insertIntoReplacementList(Entry e) {
     size++;
-    hand = insertIntoTailCyclicList(hand, e);
+    hand = Entry.insertIntoTailCyclicList(hand, e);
   }
 
   /**
@@ -123,8 +123,8 @@ public class ClockCache<K, V> extends ConcurrentEvictionCache<K, V> {
   @Override
   protected IntegrityState getIntegrityState() {
     return super.getIntegrityState()
-            .check("checkCyclicListIntegrity(hand)", checkCyclicListIntegrity(hand))
-            .checkEquals("getCyclicListEntryCount(hand) == size", getCyclicListEntryCount(hand), size);
+            .check("checkCyclicListIntegrity(hand)", Entry.checkCyclicListIntegrity(hand))
+            .checkEquals("getCyclicListEntryCount(hand) == size", Entry.getCyclicListEntryCount(hand), size);
   }
 
   @Override
