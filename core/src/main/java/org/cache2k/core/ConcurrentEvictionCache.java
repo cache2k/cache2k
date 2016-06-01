@@ -29,14 +29,6 @@ package org.cache2k.core;
 public abstract class ConcurrentEvictionCache<K, V> extends HeapCache<K, V> {
 
   /**
-   * No locking needed.
-   */
-  @Override
-  protected final void recordHitLocked(Entry e) {
-    recordHit(e);
-  }
-
-  /**
    * First lookup in the hash unsynchronized, if missed, do synchronize and
    * try again.
    */

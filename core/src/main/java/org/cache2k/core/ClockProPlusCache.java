@@ -319,20 +319,6 @@ public class ClockProPlusCache<K, V> extends ConcurrentEvictionCache<K, V> {
   }
 
   @Override
-  protected Entry checkForGhost(K key, int hc) {
-    Entry e = ghostHashCtrl.removeWithIdenticalHashCode(ghostHash, hc);
-    if (e != null) {
-      removeFromList(e);
-      ghostHits++;
-      e.setHot(true);
-      hotSize++;
-      handHot = insertIntoTailCyclicList(handHot, e);
-      e.key = key;
-    }
-    return e;
-  }
-
-  @Override
   protected IntegrityState getIntegrityState() {
     return super.getIntegrityState()
             .checkEquals("ghostHashCtrl.size == Hash.calcEntryCount(refreshHash)",

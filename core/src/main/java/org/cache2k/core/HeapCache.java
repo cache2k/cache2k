@@ -128,6 +128,12 @@ public abstract class HeapCache<K, V>
   protected CacheBaseInfo info;
   CommonMetrics.Updater metrics;
 
+  /**
+   * Counts the number of key mutations. The count is not guarded and racy, but does not need
+   * to be exact. We don't put it to the metrics, because we do not want to have this discabled.
+   */
+  protected volatile long keyMutationCnt = 0;
+
   /*
    * All the following counters and timestamps are updated under the single lock.
    * The consistency of the counters can be checked by calculating invariants.
@@ -139,13 +145,18 @@ public abstract class HeapCache<K, V>
   protected long startedTime;
 
   protected long newEntryCnt = 0;
-  protected long keyMutationCnt = 0;
+
   protected long removedCnt = 0;
+
   protected long virginRemovedCnt = 0;
+
   /** Number of entries removed by clear. */
   protected long clearRemovedCnt = 0;
+
   protected long clearCnt = 0;
+
   protected long expiredRemoveCnt = 0;
+
   protected long evictedCnt = 0;
 
   protected volatile Executor loaderExecutor = new DummyExecutor(this);
@@ -701,27 +712,12 @@ public abstract class HeapCache<K, V>
   }
 
   /**
-   * Check whether we have an entry in the ghost table
-   * remove it from ghost and insert it into the replacement list.
-   * null if nothing there. This may also do an optional eviction
-   * if the size limit of the cache is reached, because some replacement
-   * algorithms (ARC) do this together.
-   */
-  protected Entry checkForGhost(K key, int hc) { return null; }
-
-  /**
    * Implement unsynchronized lookup if it is supported by the eviction.
    * If a null is returned the lookup is redone synchronized.
    */
   protected Entry<K, V> lookupEntryUnsynchronized(K key, int hc) { return null; }
 
   protected Entry lookupEntryUnsynchronizedNoHitRecord(K key, int hc) { return null; }
-
-  protected void recordHitLocked(Entry e) {
-    synchronized (lock) {
-      recordHit(e);
-    }
-  }
 
   @Override
   public V get(K key) {
@@ -953,7 +949,7 @@ public abstract class HeapCache<K, V>
       }
     }
     if (_hasFreshData) {
-      recordHitLocked(e);
+      recordHit(e);
     }
     return returnValue(_previousValue);
   }
