@@ -711,14 +711,6 @@ public abstract class HeapCache<K, V>
     removeFromList(e);
   }
 
-  /**
-   * Implement unsynchronized lookup if it is supported by the eviction.
-   * If a null is returned the lookup is redone synchronized.
-   */
-  protected Entry<K, V> lookupEntryUnsynchronized(K key, int hc) { return null; }
-
-  protected Entry lookupEntryUnsynchronizedNoHitRecord(K key, int hc) { return null; }
-
   @Override
   public V get(K key) {
     Entry<K,V> e = getEntryInternal(key);
@@ -743,7 +735,7 @@ public abstract class HeapCache<K, V>
 
   @Override
   public String getEntryState(K key) {
-    Entry e = lookupEntrySynchronized(key);
+    Entry e = lookupEntry(key);
     if (e == null) {
       return null;
     }
@@ -803,7 +795,7 @@ public abstract class HeapCache<K, V>
     }
     Entry e;
     for (;;) {
-      e = lookupOrNewEntrySynchronized(key);
+      e = lookupOrNewEntry(key);
       if (e.hasFreshData()) {
         return e;
       }
@@ -895,29 +887,26 @@ public abstract class HeapCache<K, V>
     }
   }
 
-  final static int REMOVE_CAUSE_EXPIRED = 0;
-  final static int REMOVE_CAUSE_COMMAND = 1;
-  final static int REMOVE_CAUSE_VIRGIN = 2;
-
   /**
    * Remove the entry from the hash and the replacement list.
    * There is a race condition to catch: The eviction may run
    * in a parallel thread and may have already selected this
    * entry.
    */
-  protected boolean removeEntry(Entry e, int _cause) {
+  protected boolean removeEntry(Entry e) {
     boolean _removed = removeEntryFromHash(e);
     if (_removed) {
       synchronized (lock) {
         if (!e.isRemovedFromReplacementList()) {
           removeEntryFromReplacementList(e);
-        }
-        if (_cause == REMOVE_CAUSE_COMMAND) {
-          removedCnt++;
-        } else if (_cause == REMOVE_CAUSE_EXPIRED) {
-          expiredRemoveCnt++;
-        } else if (_cause == REMOVE_CAUSE_VIRGIN) {
-          virginRemovedCnt++;
+          long nrt = e.getNextRefreshTime();
+          if (nrt == (Entry.GONE + Entry.EXPIRED)) {
+            expiredRemoveCnt++;
+          } else if (nrt == (Entry.GONE + Entry.VIRGIN)) {
+            virginRemovedCnt++;
+          } else {
+            removedCnt++;
+          }
         }
       }
     }
@@ -931,7 +920,7 @@ public abstract class HeapCache<K, V>
     V _previousValue = null;
     Entry e;
     for (;;) {
-      e = lookupOrNewEntrySynchronized(key, hc);
+      e = lookupOrNewEntry(key, hc);
       synchronized (e) {
         e.waitForProcessing();
         if (e.isGone()) {
@@ -958,7 +947,7 @@ public abstract class HeapCache<K, V>
   public V peekAndReplace(K key, V _value) {
     Entry e;
     for (;;) {
-      e = lookupEntrySynchronized(key);
+      e = lookupEntry(key);
       if (e == null) { break; }
       synchronized (e) {
         e.waitForProcessing();
@@ -1013,7 +1002,7 @@ public abstract class HeapCache<K, V>
    * replace if value matches. if value not matches, return the existing entry or the dummy entry.
    */
   protected Entry<K, V> replace(final K key, final boolean _compare, final V _oldValue, final V _newValue) {
-    Entry e = lookupEntrySynchronized(key);
+    Entry e = lookupEntry(key);
     if (e == null) {
       metrics.peekMiss();
       return DUMMY_ENTRY_NO_REPLACE;
@@ -1040,7 +1029,7 @@ public abstract class HeapCache<K, V>
    * cache.
    */
   final protected Entry<K, V> peekEntryInternal(K key) {
-    Entry e = lookupEntrySynchronized(key);
+    Entry e = lookupEntry(key);
     if (e == null) {
       metrics.peekMiss();
       return null;
@@ -1054,7 +1043,7 @@ public abstract class HeapCache<K, V>
 
   @Override
   public boolean containsKey(K key) {
-    Entry e = lookupEntrySynchronized(key);
+    Entry e = lookupEntry(key);
     if (e != null) {
       metrics.containsButHit();
       if (e.hasFreshData()) {
@@ -1081,7 +1070,7 @@ public abstract class HeapCache<K, V>
   @Override
   public boolean putIfAbsent(K key, V value) {
     for (;;) {
-      Entry e = lookupOrNewEntrySynchronized(key);
+      Entry e = lookupOrNewEntry(key);
       synchronized (e) {
         e.waitForProcessing();
         if (e.isGone()) {
@@ -1100,7 +1089,7 @@ public abstract class HeapCache<K, V>
   @Override
   public void put(K key, V value) {
     for (;;) {
-      Entry e = lookupOrNewEntrySynchronized(key);
+      Entry e = lookupOrNewEntry(key);
       synchronized (e) {
         e.waitForProcessing();
         if (e.isGone()) {
@@ -1130,7 +1119,7 @@ public abstract class HeapCache<K, V>
    * Remove the object from the cache.
    */
   public boolean removeWithFlag(K key, boolean _checkValue, V _value) {
-    Entry e = lookupEntrySynchronizedNoHitRecord(key);
+    Entry e = lookupEntryNoHitRecord(key);
     if (e == null) {
       return false;
     }
@@ -1145,7 +1134,7 @@ public abstract class HeapCache<K, V>
           return false;
         }
       }
-      if (removeEntry(e, REMOVE_CAUSE_COMMAND)) {
+      if (removeEntry(e)) {
         metrics.remove();
       }
       return f;
@@ -1158,7 +1147,7 @@ public abstract class HeapCache<K, V>
   }
 
   public V peekAndRemove(K key) {
-    Entry e = lookupEntrySynchronized(key);
+    Entry e = lookupEntry(key);
     if (e == null) {
       metrics.peekMiss();
       return null;
@@ -1177,7 +1166,7 @@ public abstract class HeapCache<K, V>
       } else {
         metrics.peekMiss();
       }
-      if (removeEntry(e, REMOVE_CAUSE_COMMAND)) {
+      if (removeEntry(e)) {
         metrics.remove();
       }
       return returnValue(_value);
@@ -1207,7 +1196,7 @@ public abstract class HeapCache<K, V>
     if (loader == null) {
       return;
     }
-    Entry<K,V> e = lookupEntrySynchronizedNoHitRecord(key);
+    Entry<K,V> e = lookupEntryNoHitRecord(key);
     if (e != null && e.hasFreshData()) {
       return;
     }
@@ -1332,16 +1321,12 @@ public abstract class HeapCache<K, V>
   public Set<K> checkAllPresent(final Iterable<? extends K> keys) {
     Set<K> _keysToLoad = new HashSet<K>();
     for (K k : keys) {
-      Entry<K,V> e = lookupEntrySynchronizedNoHitRecord(k);
+      Entry<K,V> e = lookupEntryNoHitRecord(k);
       if (e == null || !e.hasFreshData()) {
         _keysToLoad.add(k);
       }
     }
     return _keysToLoad;
-  }
-
-  public Entry<K, V> lookupEntryUnsynchronized(final K k) {
-    return lookupEntryUnsynchronized(k, modifiedHash(k.hashCode()));
   }
 
   /**
@@ -1351,7 +1336,7 @@ public abstract class HeapCache<K, V>
   protected void loadAndReplace(K key) {
     Entry e;
     for (;;) {
-      e = lookupOrNewEntrySynchronized(key);
+      e = lookupOrNewEntry(key);
       synchronized (e) {
         e.waitForProcessing();
         if (e.isGone()) {
@@ -1375,12 +1360,12 @@ public abstract class HeapCache<K, V>
    * Lookup or create a new entry. The new entry is created, because we need
    * it for locking within the data fetch.
    */
-  protected Entry<K, V> lookupOrNewEntrySynchronized(K key) {
+  protected Entry<K, V> lookupOrNewEntry(K key) {
     int hc = modifiedHash(key.hashCode());
-    return lookupOrNewEntrySynchronized(key, hc);
+    return lookupOrNewEntry(key, hc);
   }
 
-  protected Entry<K, V> lookupOrNewEntrySynchronized(K key, int hc) {
+  protected Entry<K, V> lookupOrNewEntry(K key, int hc) {
     Entry e = lookupEntry(key, hc);
     if (e == null) {
       return insertNewEntry(key, hc);
@@ -1388,9 +1373,9 @@ public abstract class HeapCache<K, V>
     return e;
   }
 
-  protected Entry<K, V> lookupOrNewEntrySynchronizedNoHitRecord(K key) {
+  protected Entry<K, V> lookupOrNewEntryNoHitRecord(K key) {
     int hc = modifiedHash(key.hashCode());
-    Entry e = lookupEntryUnsynchronizedNoHitRecord(key, hc);
+    Entry e = lookupEntryNoHitRecord(key, hc);
     if (e == null) {
       e = insertNewEntry(key, hc);
     }
@@ -1414,22 +1399,14 @@ public abstract class HeapCache<K, V>
     return v;
   }
 
-  protected Entry<K, V> lookupEntrySynchronized(K key) {
+  protected Entry<K, V> lookupEntry(K key) {
     int hc = modifiedHash(key.hashCode());
-    Entry e = lookupEntryUnsynchronized(key, hc);
-    if (e == null) {
-      e = lookupEntry(key, hc);
-    }
-    return e;
+    return lookupEntry(key, hc);
   }
 
-  protected Entry lookupEntrySynchronizedNoHitRecord(K key) {
+  protected Entry lookupEntryNoHitRecord(K key) {
     int hc = modifiedHash(key.hashCode());
-    Entry e = lookupEntryUnsynchronizedNoHitRecord(key, hc);
-    if (e == null) {
-      e = lookupEntryNoHitRecord(key, hc);
-    }
-    return e;
+    return lookupEntryNoHitRecord(key, hc);
   }
 
   protected final Entry<K, V> lookupEntry(K key, int hc) {
@@ -1442,11 +1419,7 @@ public abstract class HeapCache<K, V>
   }
 
   protected final Entry lookupEntryNoHitRecord(K key, int hc) {
-    Entry e = hash.lookup(key, hc);
-    if (e != null) {
-      return e;
-    }
-    return null;
+    return hash.lookup(key, hc);
   }
 
   /**
@@ -1766,7 +1739,7 @@ public abstract class HeapCache<K, V>
     if (hasKeepAfterExpired() || e.isProcessing()) {
       metrics.expiredKept();
     } else {
-      removeEntry(e, REMOVE_CAUSE_EXPIRED);
+      removeEntry(e);
     }
   }
 

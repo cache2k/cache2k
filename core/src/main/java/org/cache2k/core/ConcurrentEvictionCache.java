@@ -28,29 +28,4 @@ package org.cache2k.core;
  */
 public abstract class ConcurrentEvictionCache<K, V> extends HeapCache<K, V> {
 
-  /**
-   * First lookup in the hash unsynchronized, if missed, do synchronize and
-   * try again.
-   */
-  @Override
-  protected final Entry lookupOrNewEntrySynchronized(K key) {
-    int hc = modifiedHash(key.hashCode());
-    Entry e = hash.lookup(key, hc);
-    if (e != null) {
-      recordHit(e);
-      return e;
-    }
-    return insertNewEntry(key, hc);
-  }
-
-  @Override
-  protected final Entry lookupEntryUnsynchronized(K key, int hc) {
-    Entry e = hash.lookupQuick(key, hc);
-    if (e != null) {
-      recordHit(e);
-      return e;
-    }
-    return null;
-  }
-
 }

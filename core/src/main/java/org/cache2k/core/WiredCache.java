@@ -131,7 +131,7 @@ public class WiredCache<K, V> extends AbstractCache<K, V>
     if (!heapCache.isLoaderThreadAvailableForPrefetching()) {
       return;
     }
-    Entry<K,V> e = heapCache.lookupEntrySynchronizedNoHitRecord(key);
+    Entry<K,V> e = heapCache.lookupEntryNoHitRecord(key);
     if (e != null && e.hasFreshData()) {
       return;
     }
@@ -300,7 +300,7 @@ public class WiredCache<K, V> extends AbstractCache<K, V>
   }
 
   Entry<K, V> lookupQuick(K key) {
-    return heapCache.lookupEntryUnsynchronized(key);
+    return heapCache.lookupEntry(key);
   }
 
 

@@ -209,7 +209,7 @@ public abstract class EntryAction<K, V, R> implements
   public void retrieveDataFromHeap() {
     Entry<K, V> e = entry;
     if (e == NON_FRESH_DUMMY) {
-      e = heapCache.lookupEntrySynchronized(key);
+      e = heapCache.lookupEntry(key);
       if (e == null) {
         heapMiss();
         return;
@@ -223,7 +223,7 @@ public abstract class EntryAction<K, V, R> implements
     Entry<K, V> e = entry;
     boolean _needStorageRead = false;
     if (e == NON_FRESH_DUMMY) {
-      e = heapCache.lookupOrNewEntrySynchronized(key);
+      e = heapCache.lookupOrNewEntry(key);
     }
     for (; ; ) {
       if (_spinCount-- <= 0) {
@@ -241,7 +241,7 @@ public abstract class EntryAction<K, V, R> implements
           break;
         }
       }
-      e = heapCache.lookupOrNewEntrySynchronized(key);
+      e = heapCache.lookupOrNewEntry(key);
     }
     if (_needStorageRead) {
       entry = e;
@@ -413,7 +413,7 @@ public abstract class EntryAction<K, V, R> implements
     }
     Entry<K, V> e = entry;
     if (e == NON_FRESH_DUMMY) {
-      e = heapCache.lookupOrNewEntrySynchronized(key);
+      e = heapCache.lookupOrNewEntry(key);
     }
     int _spinCount = HeapCache.TUNABLE.maximumEntryLockSpins;
     for (; ; ) {
@@ -431,7 +431,7 @@ public abstract class EntryAction<K, V, R> implements
           return;
         }
       }
-      e = heapCache.lookupOrNewEntrySynchronized(key);
+      e = heapCache.lookupOrNewEntry(key);
     }
   }
 
@@ -442,7 +442,7 @@ public abstract class EntryAction<K, V, R> implements
     }
     Entry<K, V> e = entry;
     if (e == NON_FRESH_DUMMY) {
-      e = heapCache.lookupOrNewEntrySynchronizedNoHitRecord(key);
+      e = heapCache.lookupOrNewEntryNoHitRecord(key);
     }
     int _spinCount = HeapCache.TUNABLE.maximumEntryLockSpins;
     for (; ; ) {
@@ -460,7 +460,7 @@ public abstract class EntryAction<K, V, R> implements
           return;
         }
       }
-      e = heapCache.lookupOrNewEntrySynchronizedNoHitRecord(key);
+      e = heapCache.lookupOrNewEntryNoHitRecord(key);
     }
   }
 
@@ -791,7 +791,11 @@ public abstract class EntryAction<K, V, R> implements
     synchronized (entry) {
       entry.setLastModification(lastModificationTime);
       if (remove) {
-        entry.setNextRefreshTime(Entry.REMOVE_PENDING);
+        if (expiredImmediately) {
+          entry.setNextRefreshTime(Entry.EXPIRED);
+        } else {
+          entry.setNextRefreshTime(Entry.REMOVE_PENDING);
+        }
       } else {
         oldValueOrException = entry.getValueOrException();
         previousModificationTime = entry.getLastModification();
@@ -911,7 +915,7 @@ public abstract class EntryAction<K, V, R> implements
         entryLocked = false;
         entry.notifyAll();
         if (remove) {
-          heapCache.removeEntry(entry, expiredImmediately ? HeapCache.REMOVE_CAUSE_EXPIRED : HeapCache.REMOVE_CAUSE_COMMAND);
+          heapCache.removeEntry(entry);
         } else {
           entry.setNextRefreshTime(timing().stopStartTimer(expiry, entry));
           if (entry.isExpired()) {
@@ -1014,7 +1018,7 @@ public abstract class EntryAction<K, V, R> implements
         entry.processingDone();
         entry.notifyAll();
         if (entry.isVirgin()) {
-          heapCache.removeEntry(entry, HeapCache.REMOVE_CAUSE_VIRGIN);
+          heapCache.removeEntry(entry);
         }
       }
       entryLocked = false;

@@ -27,7 +27,11 @@ import org.cache2k.core.threading.OptimisticLock;
 import java.util.concurrent.atomic.AtomicLong;
 
 /**
+ * Simple concurrent hash table implementation using optimistic locking
+ * for the segments locks.
+ *
  * @author Jens Wilke
+ * @see OptimisticLock
  */
 public class Hash2<K,V> {
 
@@ -60,25 +64,6 @@ public class Hash2<K,V> {
       throw new IllegalArgumentException("values for hash size or load factor too low.");
     }
     entries = new Entry[HeapCache.TUNABLE.initialHashSize];
-  }
-
-  public static <K,V> Entry<K,V> lookupQuick(K key, int _hash, Entry[] tab) {
-    if (tab == null) {
-      throw new CacheClosedException();
-    }
-    Entry<K,V> e; K ek; int n = tab.length; int _mask = n - 1; int idx = _hash & (_mask);
-    e = tab[idx];
-    while (e != null) {
-      if (e.hashCode == _hash && ((ek = e.key) == key || (ek.equals(key)))) {
-        return e;
-      }
-      e = e.another;
-    }
-    return null;
-  }
-
-  public Entry<K,V> lookupQuick(K key, int _hash) {
-    return null;
   }
 
   /**
@@ -166,6 +151,11 @@ public class Hash2<K,V> {
     return e2;
   }
 
+  /**
+   * Remove existing entry from the hash.
+   *
+   * @return true, if entry was found and removed.
+   */
   public boolean remove(Entry<K,V> e2) {
     int _hash = e2.hashCode;
     OptimisticLock[] _locks = locks;
@@ -199,6 +189,11 @@ public class Hash2<K,V> {
     return false;
   }
 
+  /**
+   * Remove entry by the key.
+   *
+   * @return  The removed entry or null if not found.
+   */
   public Entry<K,V> remove(Object key, int _hash) {
     OptimisticLock[] _locks = locks;
     int si = _hash & (_locks.length - 1);
@@ -232,6 +227,9 @@ public class Hash2<K,V> {
     return null;
   }
 
+  /**
+   * Acquire all segment locks and rehash.
+   */
   private void expand() {
     long[] _stamps = lockAll();
     try {
@@ -241,6 +239,9 @@ public class Hash2<K,V> {
     }
   }
 
+  /**
+   * Acquire all segment locks and return an array with the stamps.
+   */
   private long[] lockAll() {
     OptimisticLock[] _locks = locks;
     int sn = _locks.length;
@@ -252,6 +253,11 @@ public class Hash2<K,V> {
     return _stamps;
   }
 
+  /**
+   * Release the all segment locks.
+   *
+   * @param _stamps array with the lock stamps.
+   */
   private void unlockAll(long[] _stamps) {
     OptimisticLock[] _locks = locks;
     int sn = _locks.length;
@@ -260,6 +266,9 @@ public class Hash2<K,V> {
     }
   }
 
+  /**
+   * Double the hash table size and rehash the entries. Assumes total lock.
+   */
   private void rehash() {
     maxFill = maxFill * 2;
     Entry<K,V>[] src = entries;
@@ -285,6 +294,9 @@ public class Hash2<K,V> {
     return sum;
   }
 
+  /**
+   * Lock all segments and run job.
+   */
   public <T> T runTotalLocked(Job<T> j) {
     long[] _stamps = lockAll();
     try {

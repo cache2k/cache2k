@@ -23,12 +23,14 @@ package org.cache2k.core.threading;
 import java.util.concurrent.locks.StampedLock;
 
 /**
+ * Optimistic lock backed by a Java 8 {@code StampedLock}
+ *
  * @author Jens Wilke
  */
 @SuppressWarnings("Since15")
 public class OptimisticLockStamped implements OptimisticLock {
 
-  private StampedLock lock = new StampedLock();
+  private final StampedLock lock = new StampedLock();
 
   @Override
   public long readLock() {

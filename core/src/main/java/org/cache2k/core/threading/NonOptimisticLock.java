@@ -51,10 +51,11 @@ public class NonOptimisticLock implements OptimisticLock {
 
   /**
    * This is a read access on the lock state for data visibility.
+   * Normal stamped lock return 0 for exclusive lock.
    */
   @Override
   public long tryOptimisticRead() {
-    return sync.getStamp();
+    return sync.getStamp() == Sync.LOCKED ? 0 : 1;
   }
 
   /**
@@ -87,8 +88,8 @@ public class NonOptimisticLock implements OptimisticLock {
 
   private static final class Sync extends AbstractQueuedSynchronizer {
 
-    private final int UNLOCKED = 0;
-    private final int LOCKED = 1;
+    private static final int UNLOCKED = 0;
+    private static final int LOCKED = 1;
 
     @Override
     protected boolean tryAcquire(int acquires) {

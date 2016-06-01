@@ -52,24 +52,25 @@ public class Entry<K, T>
    */
   static final int DATA_VALID = 16;
 
+  /** @see #isVirgin() */
+  static final int VIRGIN = 0;
+
+  /** @see #isReadNonValid() */
+  static final int READ_NON_VALID = 1;
+
   /**
    * Cache.remove() operation received. Needs to be send to storage.
    */
-  static final int REMOVE_PENDING = 11;
+  static final int REMOVE_PENDING = 2;
 
-  static final int ABORTED = 8;
-
-  /** @see #isReadNonValid() */
-  static final int READ_NON_VALID = 5;
+  static final int ABORTED = 3;
 
   /** @see #isExpired() */
   static final int EXPIRED = 4;
 
   /** @see #isGone() */
-  static private final int GONE = 2;
-
-  /** @see #isVirgin() */
-  static final int VIRGIN = 0;
+  static final int GONE = 8;
+  static final int GONE_OTHER = 15;
 
   final static InitialValueInEntryNeverReturned INITIAL_VALUE = new InitialValueInEntryNeverReturned();
 
@@ -401,7 +402,12 @@ public class Entry<K, T>
   }
 
   public void setGone() {
-    nextRefreshTime = GONE;
+    long nrt = nextRefreshTime;
+    if (nrt >= 0 && nrt < GONE) {
+      nextRefreshTime = GONE + nrt;
+      return;
+    }
+    nextRefreshTime = GONE_OTHER;
   }
 
   /**
@@ -410,7 +416,8 @@ public class Entry<K, T>
    * after the synchronize goes through somebody else might have evicted it.
    */
   public boolean isGone() {
-    return nextRefreshTime == GONE;
+    long nrt = nextRefreshTime;
+    return nrt >= GONE && nrt <= GONE_OTHER;
   }
 
   public boolean needsTimeCheck() {

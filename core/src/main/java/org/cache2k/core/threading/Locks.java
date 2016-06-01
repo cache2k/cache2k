@@ -21,12 +21,17 @@ package org.cache2k.core.threading;
  */
 
 /**
+ * Internal factory for lock implementations.
+ *
  * @author Jens Wilke
  */
 public class Locks {
 
   private static Class<? extends OptimisticLock> optimisticLockImplementation;
 
+  /**
+   * Returns a new lock implementation depending on the platform support.
+   */
   public static OptimisticLock newOptimistic() {
     if (optimisticLockImplementation == null) {
       initializeOptimisticLock();

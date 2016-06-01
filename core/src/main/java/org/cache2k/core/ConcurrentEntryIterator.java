@@ -24,58 +24,41 @@ import org.cache2k.core.threading.Job;
 
 import java.util.Iterator;
 import java.util.NoSuchElementException;
-import java.util.concurrent.atomic.AtomicReferenceArray;
-
-import static org.cache2k.core.util.Util.*;
 
 /**
- * Iterator over all cache entries of two hashes.
+ * Iterator over all cache entries.
  *
- * <p><b>Two hashes:</b>
- * The cache consists of two hashes. The main and the refresh
- * hash. To iterate over all entries we need to iterate over both hashes.
- * Since the iteration runs concurrently entries migrate from one hash
- * to the other. To make sure no entries are lost, two iterations are
- * processed one starting with the main and one with the refresh hash.
- * </p>
- *
- * <p><b>Hash expansion:</b></p>
+ * <p>Hash expansion:
  * During the iteration a hash expansion may happen, which means every
  * entry is rehashed. In this case it is most likely that entries are missed.
  * If an expansion occurred, there is another iteration over the new
- * hash table contents.
+ * hash table contents. To ensure that every entry is only iterated once,
+ * the iterator has an internal bookkeeping, what was previously iterated.
  *
- * <p><b>Clear: </b>
+ * <p>Clear:
  * A clear operation stops current iterations.
- * </p>
  *
- * <p><b>Close: </b>
+ * <p>Close:
  * A close operation will stop the iteration and yield a {@link CacheClosedException}
- * </p>
  *
- * @author Jens Wilke; created: 2013-12-21
+ * @author Jens Wilke
  */
 public class ConcurrentEntryIterator<K,V> implements Iterator<Entry<K,V>> {
 
-  HeapCache<K, V> cache;
-  Entry lastEntry = null;
-  Entry nextEntry = null;
-  int sequenceCnt = 0;
-  int lastSequenceCnt;
-  long initialMaxFill;
-  long clearCount;
-  Hash2<K,V> hash;
-  Entry<K,V>[] hashArray;
-  Hash<Entry<K, V>> iteratedCtl = new Hash<Entry<K,V>>();
-  Entry<K, V>[] iterated;
+  private HeapCache<K, V> cache;
+  private Entry lastEntry = null;
+  private Entry nextEntry = null;
+  private long initialMaxFill;
+  private long clearCount;
+  private Hash2<K,V> hash;
+  private Entry<K,V>[] hashArray;
+  private Hash<Entry<K, V>> iteratedCtl = new Hash<Entry<K,V>>();
+  private Entry<K, V>[] iterated;
 
   public ConcurrentEntryIterator(HeapCache<K,V> _cache) {
     cache = _cache;
     iterated = iteratedCtl.initSingleThreaded((Class<Entry<K, V>>) (Object) Entry.class);
-    lastSequenceCnt = 2;
-    if (cache.hasBackgroundRefresh()) {
-      lastSequenceCnt = 4;
-    }
+    hash = cache.hash;
     switchAndCheckAbort();
   }
 
@@ -181,42 +164,29 @@ public class ConcurrentEntryIterator<K,V> implements Iterator<Entry<K,V>> {
     });
   }
 
+  /**
+   * Check for expansion and abort criteria.
+   */
   private Boolean switchCheckAndAbortLocked() {
-    if (hasExpansionOccurred()) {
-      lastSequenceCnt += 2;
-    }
-    if (lastSequenceCnt == sequenceCnt) {
-      hashArray = null;
+    if (!hasExpansionOccurred()) {
       return true;
     }
-    int _step = sequenceCnt % 6;
-    if (_step == 0 || _step == 3 || _step == 4) {
-      switchToMainHash();
-    }
-    if (_step == 1 || _step == 2 || _step == 5) {
-    }
+    hashArray = hash.getEntries();
     clearCount = hash.getClearCount();
     boolean _cacheClosed = hashArray == null;
     if (_cacheClosed) {
       return true;
     }
     initialMaxFill = hash.getMaxFill();
-    sequenceCnt++;
     return false;
   }
 
   /**
    * True if hash table expanded while iterating. Triggers another
-   * scan over the hash tables.
+   * scan over the hash tables. True also before first run.
    */
   private boolean hasExpansionOccurred() {
-    return hash != null && initialMaxFill != hash.getMaxFill();
+    return initialMaxFill != hash.getMaxFill();
   }
-
-  private void switchToMainHash() {
-    hash = cache.hash;
-    hashArray = hash.getEntries();
-  }
-
 
 }
