@@ -27,6 +27,7 @@ import org.jctools.queues.MpscChunkedArrayQueue;
 import java.util.Queue;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.LinkedTransferQueue;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * @author Jens Wilke
@@ -34,10 +35,22 @@ import java.util.concurrent.LinkedTransferQueue;
 public class QueuedEviction implements Eviction, EvictionThread.Job {
 
   private final static int MAX_POLLS = 23;
+  private final static AtomicInteger runnerIndex = new AtomicInteger();
+  private final static EvictionThread[] threadRunners =
+    new EvictionThread[Runtime.getRuntime().availableProcessors()];
+
+  static {
+    for (int i = 0; i < threadRunners.length; i++) {
+      threadRunners[i] = new EvictionThread();
+    }
+  }
 
   private Queue<Entry> queue = new MpscChunkedArrayQueue<Entry>(4, 128, false);
-  private final static EvictionThread threadRunner = new EvictionThread();
+
   private AbstractEviction forward;
+
+  private EvictionThread threadRunner =
+    threadRunners[runnerIndex.getAndIncrement() % threadRunners.length];
 
   public QueuedEviction(final AbstractEviction _forward) {
     forward = _forward;
@@ -64,6 +77,11 @@ public class QueuedEviction implements Eviction, EvictionThread.Job {
   }
 
   @Override
+  public void evictEventually(int hc) {
+    forward.evictEventually(hc);
+  }
+
+  @Override
   public void evictEventually() {
     forward.evictEventually();
   }
@@ -79,6 +97,7 @@ public class QueuedEviction implements Eviction, EvictionThread.Job {
 
   @Override
   public void close() {
+    runnerIndex.decrementAndGet();
     stop();
   }
 

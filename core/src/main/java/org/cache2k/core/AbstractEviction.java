@@ -41,14 +41,15 @@ public abstract class AbstractEviction implements Eviction {
   Entry[] evictChunkReuse;
   int chunkSize;
 
-  public AbstractEviction(final HeapCache _heapCache, final HeapCacheListener _listener, final Cache2kConfiguration cfg) {
+  public AbstractEviction(final HeapCache _heapCache, final HeapCacheListener _listener, final Cache2kConfiguration cfg, final int evictionSegmentCount) {
     heapCache = _heapCache;
     listener = _listener;
     chunkSize = Runtime.getRuntime().availableProcessors() * 3;
-    if (cfg.getEntryCapacity() <= 100) {
-      maxSize = cfg.getEntryCapacity();
+    if (cfg.getEntryCapacity() <= 1000) {
+      maxSize = cfg.getEntryCapacity() / evictionSegmentCount;
+      chunkSize = 1;
     } else {
-      maxSize = cfg.getEntryCapacity() + chunkSize;
+      maxSize = (cfg.getEntryCapacity() + chunkSize) / evictionSegmentCount;
     }
     noListenerCall = _listener instanceof HeapCacheListener.NoOperation;
   }
@@ -115,10 +116,15 @@ public abstract class AbstractEviction implements Eviction {
     Entry[] _chunk;
     synchronized (lock) {
       if (getSize() <= maxSize) { return; }
-      _chunk = new Entry[1];
+      _chunk = reuseChunkArray();
       fillEvictionChunk(_chunk);
     }
     evictChunk(_chunk);
+  }
+
+  @Override
+  public void evictEventually(final int hc) {
+    evictEventually();
   }
 
   private void fillEvictionChunk(final Entry[] _chunk) {

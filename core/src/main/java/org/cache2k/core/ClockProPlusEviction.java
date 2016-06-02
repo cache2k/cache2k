@@ -66,8 +66,8 @@ public class ClockProPlusEviction extends AbstractEviction {
   int ghostSize = 0;
   static final int GHOST_LOAD_PERCENT = 80;
 
-  public ClockProPlusEviction(final HeapCache _heapCache, final HeapCacheListener _listener, final Cache2kConfiguration cfg) {
-    super(_heapCache, _listener, cfg);
+  public ClockProPlusEviction(final HeapCache _heapCache, final HeapCacheListener _listener, final Cache2kConfiguration cfg, int _segmentsCount) {
+    super(_heapCache, _listener, cfg, _segmentsCount);
     ghostMax = maxSize / 2 + 1;
     hotMax = maxSize * TUNABLE_CLOCK_PRO.hotMaxPercentage / 100;
     coldSize = 0;

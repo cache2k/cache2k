@@ -36,6 +36,7 @@ public class IntegrityState {
   long state = 0;
   long bitNr = 0;
   int stringsHashCode = 0;
+  String groupPrefix = "";
 
   IntegrityState check(boolean f) {
     check(null, f);
@@ -54,13 +55,18 @@ public class IntegrityState {
     stringsHashCode = stringsHashCode * 31 + _check.hashCode();
     if (!f) {
       if (_note != null) {
-        failingTests.add('"' + _check + "\" => " + _note);
+        failingTests.add(groupPrefix + '"' + _check + "\" => " + _note);
       } else {
-        failingTests.add('"' + _check+ '"');
+        failingTests.add(groupPrefix + '"' + _check+ '"');
       }
       state |= 1 << bitNr;
     }
     bitNr++;
+    return this;
+  }
+
+  public IntegrityState group(String _group) {
+    groupPrefix = _group + ": ";
     return this;
   }
 

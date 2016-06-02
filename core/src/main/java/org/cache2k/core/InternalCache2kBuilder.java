@@ -282,20 +282,39 @@ public class InternalCache2kBuilder<K, T> {
       if (!_syncExpiredListeners.isEmpty()) {
         wc.syncEntryExpiredListeners = _syncExpiredListeners.toArray(new CacheEntryExpiredListener[_syncExpiredListeners.size()]);
       }
-      AbstractEviction ev = new ClockProPlusEviction(bc, wc, config);
-      bc.eviction = ev;
+      bc.eviction = constructEviction(bc, wc, config);
       TimingHandler rh = TimingHandler.of(config);
       bc.setTiming(rh);
       wc.init();
     } else {
       TimingHandler rh = TimingHandler.of(config);
       bc.setTiming(rh);
-      AbstractEviction ev = new ClockProPlusEviction(bc, new HeapCacheListener.NoOperation(), config);
-      bc.eviction = ev;
+      bc.eviction = constructEviction(bc, new HeapCacheListener.NoOperation(), config);
       bc.init();
     }
     cm.sendCreatedEvent(_cache);
     return _cache;
+  }
+
+  Eviction constructEviction(HeapCache hc, HeapCacheListener l, Cache2kConfiguration config) {
+    boolean _queue = false;
+    int _segmentCount = 2;
+    if (config.getEntryCapacity() < 1000) {
+      _segmentCount = 1;
+    }
+    _segmentCount = 1;
+    Eviction[] _segments = new Eviction[_segmentCount];
+    for (int i = 0; i < _segments.length; i++) {
+      Eviction ev = new ClockProPlusEviction(hc, l, config, _segmentCount);
+      if (_queue) {
+        ev = new QueuedEviction((AbstractEviction) ev);
+      }
+      _segments[i] = ev;
+    }
+    if (_segmentCount == 1) {
+      return _segments[0];
+    }
+    return new SegmentedEviction(_segments);
   }
 
   void checkConfiguration() {

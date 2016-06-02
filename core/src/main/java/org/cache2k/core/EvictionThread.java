@@ -29,7 +29,8 @@ public class EvictionThread {
 
   private final static ThreadFactory THREAD_FACTORY =
     HeapCache.TUNABLE.threadFactoryProvider.newThreadFactory("cache2k-evict");
-  private final static int YIELD_SPINS = 77;
+  private final static int YIELD_SPINS = 33;
+  private final static int YIELD_TIMEOUT = 5432;
 
   private final Object lock = new Object();
   private Thread thread;
@@ -85,6 +86,7 @@ public class EvictionThread {
 
   private void runJobs() {
     boolean _hadWork = false;
+    long t0 = System.currentTimeMillis();
     int _spinCounter = YIELD_SPINS;
     for (;;) {
       synchronized (lock) {
@@ -97,7 +99,20 @@ public class EvictionThread {
         continue;
       }
       if (_spinCounter-- >= 0) {
-        Thread.yield();
+        try {
+          Thread.sleep(27);
+        } catch (InterruptedException ex) {
+         Thread.currentThread().interrupt();
+        }
+        continue;
+      }
+      if (t0 == 0) {
+        t0 = System.currentTimeMillis() + YIELD_TIMEOUT;
+        _spinCounter = YIELD_SPINS;
+        continue;
+      }
+      if (System.currentTimeMillis() < t0) {
+        _spinCounter = YIELD_SPINS;
         continue;
       }
       break;

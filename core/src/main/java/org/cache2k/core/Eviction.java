@@ -29,6 +29,7 @@ public interface Eviction {
 
   void close();
 
+  void evictEventually(int hc);
   void evictEventually();
   void execute(Entry e);
 

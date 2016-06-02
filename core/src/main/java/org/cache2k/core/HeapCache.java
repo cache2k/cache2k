@@ -1200,7 +1200,7 @@ public class HeapCache<K, V>
       l.unlockWrite(_stamp);
     }
     if (_needsEviction) {
-      eviction.evictEventually();
+      eviction.evictEventually(hc);
     }
     hash.checkExpand(hc);
     return e2;
