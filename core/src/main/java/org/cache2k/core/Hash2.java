@@ -35,6 +35,15 @@ import java.util.concurrent.atomic.AtomicLong;
  */
 public class Hash2<K,V> {
 
+  private static final int LOCK_SEGMENTS;
+  private static final int LOCK_MASK;
+
+  static {
+    int _ncpu = Runtime.getRuntime().availableProcessors();
+    LOCK_SEGMENTS = 2 << (31 - Integer.numberOfLeadingZeros(_ncpu));
+    LOCK_MASK = LOCK_SEGMENTS - 1;
+  }
+
   private int clearCount = 0;
   private long maxFill;
   private Object bigLock;
@@ -44,13 +53,12 @@ public class Hash2<K,V> {
 
   public Hash2(Object _bigLock) {
     bigLock = _bigLock;
-    int _segmentCount = 8;
-    locks = new OptimisticLock[_segmentCount];
-    for (int i = 0; i < _segmentCount; i++) {
+    locks = new OptimisticLock[LOCK_SEGMENTS];
+    for (int i = 0; i < LOCK_SEGMENTS; i++) {
       locks[i] = Locks.newOptimistic();
     }
-    segmentSize = new AtomicLong[_segmentCount];
-    for (int i = 0; i < _segmentCount; i++) {
+    segmentSize = new AtomicLong[LOCK_SEGMENTS];
+    for (int i = 0; i < LOCK_SEGMENTS; i++) {
       segmentSize[i] = new AtomicLong();
     }
     initArray();
@@ -71,7 +79,7 @@ public class Hash2<K,V> {
    */
   public Entry<K,V> lookup(K key, int _hash) {
     OptimisticLock[] _locks = locks;
-    int si = _hash & (_locks.length - 1);
+    int si = _hash & LOCK_MASK;
     OptimisticLock l = _locks[si];
     long _stamp = l.tryOptimisticRead();
     Entry<K,V>[] tab = entries;
@@ -122,7 +130,7 @@ public class Hash2<K,V> {
     long _size;
     int _hash = e2.hashCode; K key = e2.key;
     OptimisticLock[] _locks = locks;
-    int si = _hash & (_locks.length - 1);
+    int si = _hash & LOCK_MASK;
     OptimisticLock l = _locks[si];
     long _stamp = l.writeLock();
     try {
@@ -159,7 +167,7 @@ public class Hash2<K,V> {
   public boolean remove(Entry<K,V> e2) {
     int _hash = e2.hashCode;
     OptimisticLock[] _locks = locks;
-    int si = _hash & (_locks.length - 1);
+    int si = _hash & LOCK_MASK;
     OptimisticLock l = _locks[si];
     long _stamp = l.writeLock();
     try {
@@ -196,7 +204,7 @@ public class Hash2<K,V> {
    */
   public Entry<K,V> remove(Object key, int _hash) {
     OptimisticLock[] _locks = locks;
-    int si = _hash & (_locks.length - 1);
+    int si = _hash & LOCK_MASK;
     OptimisticLock l = _locks[si];
     long _stamp = l.writeLock();
     try {
