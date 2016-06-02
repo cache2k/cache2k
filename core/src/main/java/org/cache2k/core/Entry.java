@@ -104,7 +104,7 @@ public class Entry<K, T>
    */
   private volatile long nextRefreshTime;
 
-  public K key;
+  public final K key;
 
   private volatile T valueOrException = (T) INITIAL_VALUE;
 
@@ -114,7 +114,7 @@ public class Entry<K, T>
    *
    * @see HeapCache#modifiedHash(int)
    */
-  public int hashCode;
+  public final int hashCode;
 
   /**
    * Hash implementation: Link to another entry in the same hash table slot when the hash code collides.
@@ -337,6 +337,11 @@ public class Entry<K, T>
     return next == LIST_REMOVED_MARKER;
   }
 
+  /**
+   * Entry was not inserted into the replacement list AND not removed from replacement list.
+   * In practise it may happen that an entry gets removed before even entering the replacement list,
+   * because of clear.
+   */
   public boolean isNotYetInsertedInReplacementList() {
     return next == null;
   }
@@ -418,8 +423,6 @@ public class Entry<K, T>
 
   /**
    * The entry is not present in the heap any more and was evicted, expired or removed.
-   * Usually we should never grab an entry from the hash table that has this state, but,
-   * after the synchronize goes through somebody else might have evicted it.
    */
   public boolean isGone() {
     long nrt = nextRefreshTime;

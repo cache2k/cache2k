@@ -21,106 +21,174 @@ package org.cache2k.core;
  */
 
 import org.cache2k.configuration.Cache2kConfiguration;
+import org.cache2k.core.threading.Job;
 
 /**
  * @author Jens Wilke
  */
 public abstract class AbstractEviction implements Eviction {
 
-  Object lock = new Object();
-  long maxSize;
-  long newEntryCounter;
-  long removedCnt;
-  long expiredRemovedCnt;
-  long virginRemovedCnt;
-  long evictedCount;
+  final Object lock = new Object();
+  final protected long maxSize;
+  private long newEntryCounter;
+  private long removedCnt;
+  private long expiredRemovedCnt;
+  private long virginRemovedCnt;
+  private long evictedCount;
   private final HeapCacheListener listener;
+  private final boolean noListenerCall;
   protected final HeapCache heapCache;
+  Entry[] evictChunkReuse;
+  int chunkSize;
 
   public AbstractEviction(final HeapCache _heapCache, final HeapCacheListener _listener, final Cache2kConfiguration cfg) {
     heapCache = _heapCache;
     listener = _listener;
-    maxSize = cfg.getEntryCapacity();
+    chunkSize = Runtime.getRuntime().availableProcessors() * 3;
+    if (cfg.getEntryCapacity() <= 100) {
+      maxSize = cfg.getEntryCapacity();
+    } else {
+      maxSize = cfg.getEntryCapacity() + chunkSize;
+    }
+    noListenerCall = _listener instanceof HeapCacheListener.NoOperation;
   }
 
   @Override
-  public void insert(final Entry e) {
-    boolean _evictionNeeded = false;
+  public void execute(final Entry e) {
+    Entry[] _evictionChunk = null;
     synchronized (lock) {
-      if (getSize() >= maxSize) {
-        _evictionNeeded = true;
-      }
-      insertIntoReplacementList(e);
-      newEntryCounter++;
-    }
-    if (_evictionNeeded) {
-      evictEventually();
-    }
-  }
-
-  @Override
-  public void insertWithoutEviction(final Entry e) {
-    synchronized (lock) {
-      insertIntoReplacementList(e);
-      newEntryCounter++;
-    }
-  }
-
-  @Override
-  public void remove(final Entry e) {
-    synchronized (lock) {
-      if (!e.isRemovedFromReplacementList()) {
-        removeEntryFromReplacementList(e);
-        long nrt = e.getNextRefreshTime();
-        if (nrt == (Entry.GONE + Entry.EXPIRED)) {
-          expiredRemovedCnt++;
-        } else if (nrt == (Entry.GONE + Entry.VIRGIN)) {
-          virginRemovedCnt++;
-        } else {
-          removedCnt++;
+      if (e.isNotYetInsertedInReplacementList()) {
+        insertIntoReplacementList(e);
+        newEntryCounter++;
+        if (getSize() > maxSize) {
+          _evictionChunk = new Entry[1];
+          fillEvictionChunk(_evictionChunk);
         }
+      } else {
+        removeEventually(e);
       }
+    }
+    if (_evictionChunk != null) {
+      evictChunk(_evictionChunk);
+    }
+  }
+
+  Entry[] reuseChunkArray() {
+    Entry[] ea = evictChunkReuse;
+    if (ea != null) {
+      evictChunkReuse = null;
+    } else {
+      ea = new Entry[chunkSize];
+    }
+    return ea;
+  }
+
+  private void removeEventually(final Entry e) {
+    if (!e.isRemovedFromReplacementList()) {
+      removeEntryFromReplacementList(e);
+      long nrt = e.getNextRefreshTime();
+      if (nrt == (Entry.GONE + Entry.EXPIRED)) {
+        expiredRemovedCnt++;
+      } else if (nrt == (Entry.GONE + Entry.VIRGIN)) {
+        virginRemovedCnt++;
+      } else {
+        removedCnt++;
+      }
+    }
+  }
+
+  @Override
+  public boolean executeWithoutEviction(final Entry e) {
+    synchronized (lock) {
+      if (e.isNotYetInsertedInReplacementList()) {
+        insertIntoReplacementList(e);
+        newEntryCounter++;
+      } else {
+        removeEventually(e);
+      }
+      return getSize() > maxSize;
     }
   }
 
   @Override
   public void evictEventually() {
-    boolean _evictionNeeded = true;
-    Entry _previousCandidate = null;
-    int _spinCount = 5;
-    while (_evictionNeeded) {
-      Entry e;
-      if (_spinCount-- <= 0) { return; }
-      synchronized (lock) {
-        if (getSize() <= maxSize) {
-          return;
-        }
-        e = findEvictionCandidate(_previousCandidate);
-      }
-      synchronized (e) {
-        if (e.isGone()) {
-          continue;
-        }
-        if (e.isProcessing()) {
-          if (e != _previousCandidate) {
-            _previousCandidate = e;
-            continue;
-          } else {
-            return;
+    Entry[] _chunk;
+    synchronized (lock) {
+      if (getSize() <= maxSize) { return; }
+      _chunk = new Entry[1];
+      fillEvictionChunk(_chunk);
+    }
+    evictChunk(_chunk);
+  }
+
+  private void fillEvictionChunk(final Entry[] _chunk) {
+    for (int i = 0; i < _chunk.length; i++) {
+      _chunk[i] = findEvictionCandidate(null);
+    }
+  }
+
+  private void evictChunk(Entry[] _chunk) {
+    int _evictSpins = 5;
+    int _evictedCount = 0;
+    int _goneCount = 0;
+    int _processingCount = 0;
+    int _alreadyEvicted = 0;
+    for (;;) {
+      for (int i = 0; i < _chunk.length; i++) {
+        Entry e = _chunk[i];
+        if (noListenerCall) {
+          synchronized (e) {
+            if (e.isGone()) {
+              _goneCount++;
+              _chunk[i] = null;
+              continue;
+            }
+            if ( e.isProcessing()) {
+              _processingCount++;
+              _chunk[i] = null;
+              continue;
+            }
+            boolean f = heapCache.removeEntryForEviction(e);
+          }
+        } else {
+          synchronized (e) {
+            if (e.isGone() || e.isProcessing()) {
+              _chunk[i] = null;
+              continue;
+            }
+            e.startProcessing(Entry.ProcessingState.EVICT);
+          }
+          listener.onEvictionFromHeap(e);
+          synchronized (e) {
+            e.notifyAll();
+            e.processingDone();
+            boolean f = heapCache.removeEntryForEviction(e);
           }
         }
-        e.startProcessing(Entry.ProcessingState.EVICT);
-      }
-      listener.onEvictionFromHeap(e);
-      synchronized (e) {
-        e.notifyAll();
-        e.processingDone();
-        boolean f = heapCache.removeEntryFromHash(e);
       }
       synchronized (lock) {
-        if (!e.isRemovedFromReplacementList()) {
-          evictEntry(e);
-          evictedCount++;
+        for (int i = 0; i < _chunk.length; i++) {
+          Entry e = _chunk[i];
+          if (e != null) {
+            if (!e.isRemovedFromReplacementList()) {
+              evictEntry(e);
+              evictedCount++;
+              _evictedCount++;
+            } else {
+              _alreadyEvicted++;
+            }
+          }
+        }
+        if (getSize() > maxSize) {
+          if (--_evictSpins > 0) {
+            fillEvictionChunk(_chunk);
+          } else {
+            evictChunkReuse = _chunk;
+            return;
+          }
+        } else {
+          evictChunkReuse = _chunk;
+          return;
         }
       }
     }
@@ -152,6 +220,11 @@ public abstract class AbstractEviction implements Eviction {
   }
 
   @Override
+  public long getMaxSize() {
+    return maxSize;
+  }
+
+  @Override
   public void start() { }
 
   @Override
@@ -164,6 +237,13 @@ public abstract class AbstractEviction implements Eviction {
 
   @Override
   public void close() { }
+
+  @Override
+  public <T> T runLocked(final Job<T> j) {
+    synchronized (lock) {
+      return j.call();
+    }
+  }
 
   protected void evictEntry(Entry e) { removeEntryFromReplacementList(e); }
 

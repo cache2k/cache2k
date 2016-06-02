@@ -160,6 +160,42 @@ public class Hash2<K,V> {
   }
 
   /**
+   * Insert an entry. Checks if an entry already exists.
+   */
+  public Entry<K,V> insertWithinLock(Entry<K,V> e2, int _hash) {
+    K key = e2.key;
+    int si = _hash & LOCK_MASK;
+    Entry e; Object ek; Entry<K,V>[] tab = entries;
+    if (tab == null) {
+      throw new CacheClosedException();
+    }
+    int n = tab.length, _mask = n - 1, idx = _hash & (_mask);
+    e = tab[idx];
+    while (e != null) {
+      if (e.hashCode == _hash && ((ek = e.key) == key || (ek.equals(key)))) {
+        return e;
+      }
+      e = e.another;
+    }
+    e2.another = tab[idx];
+    tab[idx] = e2;
+    segmentSize[si].incrementAndGet();
+    return e2;
+  }
+
+  public void checkExpand(int _hash) {
+    int si = _hash & LOCK_MASK;
+    long _size = segmentSize[si].get();
+    if (_size > maxFill) {
+      expand();
+    }
+  }
+
+  public OptimisticLock getSegmentLock(int _hash) {
+    return locks[_hash & LOCK_MASK];
+  }
+
+  /**
    * Remove existing entry from the hash.
    *
    * @return true, if entry was found and removed.
@@ -193,6 +229,31 @@ public class Hash2<K,V> {
       }
     } finally {
       l.unlockWrite(_stamp);
+    }
+    return false;
+  }
+
+  public boolean removeWithinLock(Entry<K,V> e2, int _hash) {
+    int si = _hash & LOCK_MASK;
+    Entry e; Entry<K,V>[] tab = entries;
+    if (tab == null) {
+      throw new CacheClosedException();
+    }
+    int n = tab.length, _mask = n - 1, idx = _hash & (_mask);
+    e = tab[idx];
+    if (e == e2) {
+      tab[idx] = e.another;
+      segmentSize[si].decrementAndGet();
+      return true;
+    }
+    while (e != null) {
+      Entry _another = e.another;
+      if (_another == e2) {
+        e.another = _another.another;
+        segmentSize[si].decrementAndGet();
+        return true;
+      }
+      e = _another;
     }
     return false;
   }

@@ -20,6 +20,8 @@ package org.cache2k.core;
  * #L%
  */
 
+import org.cache2k.core.threading.Job;
+
 /**
  * @author Jens Wilke
  */
@@ -27,10 +29,16 @@ public interface Eviction {
 
   void close();
 
-  void insertWithoutEviction(Entry e);
   void evictEventually();
-  void insert(Entry e);
-  void remove(Entry e);
+  void execute(Entry e);
+
+  /**
+   * Submit to eviction for inserting or removing from the replacement list.
+   * However, eviction should be triggered (which in turn triggers a hash table
+   * update) since the hash segment lock is hold at the moment.
+   */
+  boolean executeWithoutEviction(Entry e);
+
   long removeAll();
 
   /**
@@ -47,6 +55,8 @@ public interface Eviction {
    */
   void start();
 
+  <T> T runLocked(Job<T> j);
+
   void checkIntegrity(IntegrityState _integrityState);
   String getExtraStatistics();
 
@@ -57,5 +67,6 @@ public interface Eviction {
   long getVirginRemovedCount();
   long getEvictedCount();
   long getSize();
+  long getMaxSize();
 
 }

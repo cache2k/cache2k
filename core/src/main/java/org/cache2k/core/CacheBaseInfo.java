@@ -68,6 +68,7 @@ class CacheBaseInfo implements InternalCacheInfo {
   long clearCnt;
   long expiredRemoveCnt;
   long evictedCnt;
+  long maxSize;
 
   public CacheBaseInfo(HeapCache _heapCache, InternalCache _userCache) {
     this.heapCache = _heapCache;
@@ -81,11 +82,12 @@ class CacheBaseInfo implements InternalCacheInfo {
     clearCnt = _heapCache.clearCnt;
     expiredRemoveCnt = _heapCache.eviction.getExpiredRemovedCount();
     evictedCnt = _heapCache.eviction.getEvictedCount();
+    maxSize = _heapCache.eviction.getMaxSize();
     integrityState = _heapCache.getIntegrityState();
     storageMetrics = _userCache.getStorageMetrics();
     collisionInfo = new Hash.CollisionInfo();
     _heapCache.hash.calcHashCollisionInfo(collisionInfo);
-    extraStatistics = _heapCache.getExtraStatistics();
+    extraStatistics = heapCache.eviction.getExtraStatistics();
     if (extraStatistics.startsWith(", ")) {
       extraStatistics = extraStatistics.substring(2);
     }
@@ -125,7 +127,7 @@ class CacheBaseInfo implements InternalCacheInfo {
   @Override
   public long getSize() { return size; }
   @Override
-  public long getMaxSize() { return heapCache.maxSize; }
+  public long getMaxSize() { return maxSize; }
   @Override
   public long getStorageHitCnt() { return storageMetrics.getReadHitCount(); }
 

@@ -29,6 +29,7 @@ import org.cache2k.core.operation.Operations;
 import org.cache2k.core.threading.DefaultThreadFactoryProvider;
 import org.cache2k.core.threading.Futures;
 import org.cache2k.core.threading.Job;
+import org.cache2k.core.threading.OptimisticLock;
 import org.cache2k.core.threading.ThreadFactoryProvider;
 
 import org.cache2k.core.util.Log;
@@ -103,10 +104,6 @@ public class HeapCache<K, V>
       hashSeed = SEED_RANDOM.nextInt();
     }
   }
-
-  /** Maximum amount of elements in cache */
-  protected long maxSize = 5000;
-  protected int evictChunkSize = 1;
 
   protected String name;
   public CacheManagerImpl manager;
@@ -229,14 +226,6 @@ public class HeapCache<K, V>
       throw new IllegalStateException("already configured");
     }
     setName(c.getName());
-    maxSize = c.getEntryCapacity();
-    if (c.getHeapEntryCapacity() >= 0) {
-      maxSize = c.getHeapEntryCapacity();
-    }
-    if (!c.isStrictEviction() && maxSize > 100) {
-      evictChunkSize = Runtime.getRuntime().availableProcessors() * 2;
-      maxSize += evictChunkSize;
-    }
     setFeatureBit(KEEP_AFTER_EXPIRED, c.isKeepDataAfterExpired());
     setFeatureBit(REJECT_NULL_VALUES, !c.isPermitNullValues());
     setFeatureBit(BACKGROUND_REFRESH, c.isRefreshAhead());
@@ -665,10 +654,21 @@ public class HeapCache<K, V>
    * entry.
    */
   protected boolean removeEntry(Entry e) {
-    boolean _removed = removeEntryFromHash(e);
-    if (_removed) {
-      eviction.remove(e);
+    int hc = e.hashCode;
+    boolean _removed;
+    OptimisticLock l = hash.getSegmentLock(hc);
+    long _stamp = l.writeLock();
+    try {
+      _removed = hash.removeWithinLock(e, hc);
+      e.setGone();
+      if (_removed) {
+        eviction.executeWithoutEviction(e);
+      }
+    } finally {
+      l.unlockWrite(_stamp);
     }
+    checkForHashCodeChange(e);
+    timing.cancelExpiryTimer(e);
     return _removed;
   }
 
@@ -1182,18 +1182,29 @@ public class HeapCache<K, V>
   }
 
   /**
-   * Insert new entry in all structures (hash and replacement list). May evict an
-   * entry if the maximum capacity is reached.
+   * Insert new entry in all structures (hash and eviction). The insert at the eviction
+   * needs to be done under the same lock, to allow a check of the consistency.
    */
   protected Entry<K, V> insertNewEntry(K key, int hc) {
     Entry<K,V> e = new Entry<K,V>(key, hc);
-    Entry<K,V> e2 = hash.insert(e);
-    if (e == e2) {
-      eviction.insert(e);
+    Entry<K, V> e2;
+    final OptimisticLock l = hash.getSegmentLock(hc);
+    final long _stamp = l.writeLock();
+    boolean _needsEviction = false;
+    try {
+      e2 = hash.insertWithinLock(e, hc);
+      if (e == e2) {
+        _needsEviction = eviction.executeWithoutEviction(e);
+      }
+    } finally {
+      l.unlockWrite(_stamp);
     }
+    if (_needsEviction) {
+      eviction.evictEventually();
+    }
+    hash.checkExpand(hc);
     return e2;
   }
-
 
   /**
    * Remove the entry from the hash table. The entry is already removed from the replacement list.
@@ -1207,7 +1218,7 @@ public class HeapCache<K, V>
    *
    * @return True, if the entry was present in the hash table.
    */
-  public boolean removeEntryFromHash(Entry<K, V> e) {
+  public boolean removeEntryForEviction(Entry<K, V> e) {
     boolean f = hash.remove(e);
     checkForHashCodeChange(e);
     timing.cancelExpiryTimer(e);
@@ -1605,9 +1616,11 @@ public class HeapCache<K, V>
   }
 
   protected IntegrityState getIntegrityState() {
-
     IntegrityState is = new IntegrityState()
-      .checkEquals("newEntryCnt == getSize() + evictedCnt + expiredRemoveCnt + removeCnt + clearedCnt + virginRemovedCnt", eviction.getNewEntryCount(), getLocalSize() + eviction.getEvictedCount() + eviction.getExpiredRemovedCount() + eviction.getRemovedCount() + clearRemovedCnt + eviction.getVirginRemovedCount());
+      .checkEquals("hash.getSize() == eviction.getSize()", hash.getSize(), eviction.getSize())
+      .checkEquals("newEntryCnt == getSize() + evictedCnt + expiredRemoveCnt + removeCnt + clearedCnt + virginRemovedCnt",
+        eviction.getNewEntryCount(), getLocalSize() + eviction.getEvictedCount() + eviction.getExpiredRemovedCount() + eviction.getRemovedCount() + clearRemovedCnt + eviction.getVirginRemovedCount())
+      .checkEquals("hash.getSize() == Hash.calcEntryCount(hash.getEntries())", hash.getSize(), Hash.calcEntryCount(hash.getEntries()));
     eviction.checkIntegrity(is);
     return is;
   }
@@ -1686,7 +1699,12 @@ public class HeapCache<K, V>
             if (f) {
               return (T) RESTART_AFTER_EVICTION;
             }
-            return job.call();
+            return eviction.runLocked(new Job<T>() {
+              @Override
+              public T call() {
+                return job.call();
+              }
+            });
           }
         });
         if (_result == RESTART_AFTER_EVICTION) {
@@ -1696,7 +1714,12 @@ public class HeapCache<K, V>
             public T call() {
               checkClosed();
               eviction.drain();
-              return job.call();
+              return eviction.runLocked(new Job<T>() {
+                @Override
+                public T call() {
+                  return job.call();
+                }
+              });
             }
           });
         }
@@ -1706,8 +1729,6 @@ public class HeapCache<K, V>
       }
     }
   }
-
-  protected String getExtraStatistics() { return ""; }
 
   @Override
   public CacheManager getCacheManager() {

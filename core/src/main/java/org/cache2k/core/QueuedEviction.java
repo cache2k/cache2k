@@ -20,7 +20,13 @@ package org.cache2k.core;
  * #L%
  */
 
-import java.util.concurrent.ConcurrentLinkedQueue;
+import org.cache2k.core.threading.Job;
+import org.jctools.queues.MpscArrayQueue;
+import org.jctools.queues.MpscChunkedArrayQueue;
+
+import java.util.Queue;
+import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.LinkedTransferQueue;
 
 /**
  * @author Jens Wilke
@@ -29,7 +35,7 @@ public class QueuedEviction implements Eviction, EvictionThread.Job {
 
   private final static int MAX_POLLS = 23;
 
-  private ConcurrentLinkedQueue<Entry> queue = new ConcurrentLinkedQueue<Entry>();
+  private Queue<Entry> queue = new MpscChunkedArrayQueue<Entry>(4, 128, false);
   private final static EvictionThread threadRunner = new EvictionThread();
   private AbstractEviction forward;
 
@@ -39,21 +45,22 @@ public class QueuedEviction implements Eviction, EvictionThread.Job {
   }
 
   @Override
-  public void insert(final Entry e) {
-    queue.add(e);
-    threadRunner.ensureRunning();
+  public void execute(final Entry e) {
+    throw new UnsupportedOperationException();
   }
 
+  /**
+   * We are not allowed to evict and remove from the hash in the calling thread.
+   * If we queue successfully, it's okay.
+   */
   @Override
-  public void remove(final Entry e) {
-    queue.add(e);
-    threadRunner.ensureRunning();
-  }
-
-  @Override
-  public void insertWithoutEviction(final Entry e) {
-    queue.add(e);
-    threadRunner.ensureRunning();
+  public boolean executeWithoutEviction(final Entry e) {
+    if (queue.offer(e)) {
+      threadRunner.ensureRunning();
+      return false;
+    } else {
+      return forward.executeWithoutEviction(e);
+    }
   }
 
   @Override
@@ -78,16 +85,10 @@ public class QueuedEviction implements Eviction, EvictionThread.Job {
   @Override
   public boolean runEvictionJob() {
     Entry e = queue.poll();
-    if (e == null) {
-      return false;
-    }
+    if (e == null) { return false; }
     int _pollCount = MAX_POLLS;
     do {
-      if (e.isNotYetInsertedInReplacementList()) {
-        forward.insert(e);
-      } else {
-        forward.remove(e);
-      }
+      forward.execute(e);
       if (--_pollCount == 0) {
         break;
       }
@@ -99,17 +100,12 @@ public class QueuedEviction implements Eviction, EvictionThread.Job {
   @Override
   public boolean drain() {
     Entry e = queue.poll();
-    boolean f = false;
-    while (e != null) {
-      f = true;
-      if (e.isNotYetInsertedInReplacementList()) {
-        forward.insertWithoutEviction(e);
-      } else {
-        forward.remove(e);
-      }
+    if (e == null) { return false; }
+    do {
+      forward.executeWithoutEviction(e);
       e = queue.poll();
-    }
-    return f;
+    } while (e != null);
+    return true;
   }
 
   @Override
@@ -130,6 +126,11 @@ public class QueuedEviction implements Eviction, EvictionThread.Job {
   @Override
   public void start() {
     threadRunner.addJob(this);
+  }
+
+  @Override
+  public <T> T runLocked(final Job<T> j) {
+    return forward.runLocked(j);
   }
 
   @Override
@@ -166,5 +167,8 @@ public class QueuedEviction implements Eviction, EvictionThread.Job {
   public long getHitCount() {
     return forward.getHitCount();
   }
+
+  @Override
+  public long getMaxSize() { return forward.getMaxSize(); }
 
 }

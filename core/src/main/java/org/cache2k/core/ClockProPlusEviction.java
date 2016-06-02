@@ -170,7 +170,6 @@ public class ClockProPlusEviction extends AbstractEviction {
       return;
     }
     e2 = new Entry(null, e.hashCode);
-    e2.hashCode = e.hashCode;
     ghostHashCtrl.insert(ghostHash, e2);
     ghostHash = ghostHashCtrl.expand(ghostHash, e.hashCode);
     Entry.insertInList(ghostHead, e2);
@@ -272,7 +271,7 @@ public class ClockProPlusEviction extends AbstractEviction {
       cold24hCnt++;
     }
     coldScanCnt += _scanCnt;
-    handCold = _hand;
+    handCold = _hand.next;
     return _hand;
   }
 

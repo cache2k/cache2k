@@ -283,7 +283,7 @@ public class InternalCache2kBuilder<K, T> {
         wc.syncEntryExpiredListeners = _syncExpiredListeners.toArray(new CacheEntryExpiredListener[_syncExpiredListeners.size()]);
       }
       AbstractEviction ev = new ClockProPlusEviction(bc, wc, config);
-      bc.eviction = new QueuedEviction(ev);
+      bc.eviction = ev;
       TimingHandler rh = TimingHandler.of(config);
       bc.setTiming(rh);
       wc.init();
@@ -291,7 +291,7 @@ public class InternalCache2kBuilder<K, T> {
       TimingHandler rh = TimingHandler.of(config);
       bc.setTiming(rh);
       AbstractEviction ev = new ClockProPlusEviction(bc, new HeapCacheListener.NoOperation(), config);
-      bc.eviction = new QueuedEviction(ev);
+      bc.eviction = ev;
       bc.init();
     }
     cm.sendCreatedEvent(_cache);

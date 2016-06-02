@@ -450,7 +450,7 @@ public class WiredCache<K, V> extends AbstractCache<K, V>
   }
 
   public void init() {
-    if (storage == null && heapCache.maxSize == 0) {
+    if (storage == null  && heapCache.eviction.getMaxSize() == 0) {
       throw new IllegalArgumentException("maxElements must be >0");
     }
     if (storage != null) {
