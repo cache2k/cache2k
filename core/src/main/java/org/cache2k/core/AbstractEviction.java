@@ -61,7 +61,7 @@ public abstract class AbstractEviction implements Eviction {
         insertIntoReplacementList(e);
         newEntryCounter++;
         if (getSize() > maxSize) {
-          _evictionChunk = new Entry[1];
+          _evictionChunk = reuseChunkArray();
           fillEvictionChunk(_evictionChunk);
         }
       } else {
@@ -78,7 +78,7 @@ public abstract class AbstractEviction implements Eviction {
     if (ea != null) {
       evictChunkReuse = null;
     } else {
-      ea = new Entry[chunkSize];
+      return new Entry[chunkSize];
     }
     return ea;
   }
