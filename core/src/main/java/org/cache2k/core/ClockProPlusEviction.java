@@ -60,9 +60,11 @@ public class ClockProPlusEviction extends AbstractEviction {
 
   Entry handCold;
   Entry handHot;
-  Entry ghostHead;
-  Hash<Entry> ghostHashCtrl;
-  Entry[] ghostHash;
+
+  Ghost[] ghosts;
+  Ghost ghostHead = new Ghost().shortCurcuit();
+  int ghostSize = 0;
+  static final int GHOST_LOAD_PERCENT = 80;
 
   public ClockProPlusEviction(final HeapCache _heapCache, final HeapCacheListener _listener, final Cache2kConfiguration cfg) {
     super(_heapCache, _listener, cfg);
@@ -72,9 +74,7 @@ public class ClockProPlusEviction extends AbstractEviction {
     hotSize = 0;
     handCold = null;
     handHot = null;
-    ghostHead = new Entry(null, 0).shortCircuit();
-    ghostHashCtrl = new Hash<Entry>();
-    ghostHash = ghostHashCtrl.initUseBigLock(Entry.class, lock);
+    ghosts = new Ghost[4];
   }
 
   private long sumUpListHits(Entry e) {
@@ -164,20 +164,25 @@ public class ClockProPlusEviction extends AbstractEviction {
   }
 
   private void insertCopyIntoGhosts(Entry e) {
-    Entry e2 = Hash.lookupHashCode(ghostHash, e.hashCode);
-    if (e2 != null) {
-      Entry.moveToFront(ghostHead, e2);
+    int hc = e.hashCode;
+    Ghost g = lookupGhost(hc);
+    if (g != null) {
+      /*
+       * either this is a hash code collision, or a previous ghost hit that was not removed.
+       */
+      Ghost.moveToFront(ghostHead, g);
       return;
     }
-    e2 = new Entry(null, e.hashCode);
-    ghostHashCtrl.insert(ghostHash, e2);
-    ghostHash = ghostHashCtrl.expand(ghostHash, e.hashCode);
-    Entry.insertInList(ghostHead, e2);
-    if (ghostHashCtrl.getSize() > ghostMax) {
-      Entry re = ghostHead.prev;
-      boolean f = ghostHashCtrl.remove(ghostHash, re);
-      Entry.removeFromList(re);
+    if (ghostSize >= ghostMax) {
+      g = ghostHead.prev;
+      Ghost.removeFromList(g);
+      boolean f = removeGhost(g, g.hash);
+    } else {
+      g = new Ghost();
     }
+    g.hash = hc;
+    insertGhost(g, hc);
+    Ghost.insertInList(ghostHead, g);
   }
 
   public long getSize() {
@@ -186,9 +191,15 @@ public class ClockProPlusEviction extends AbstractEviction {
 
   @Override
   protected void insertIntoReplacementList(Entry e) {
-    Entry _ghost = ghostHashCtrl.removeWithIdenticalHashCode(ghostHash, e.hashCode);
-    if (_ghost != null) {
-      Entry.removeFromList(_ghost);
+    Ghost g = lookupGhost(e.hashCode);
+    if (g != null) {
+      /*
+       * don't remove ghosts here, save object allocations.
+       */
+      if (false) {
+        removeGhost(g, g.hash);
+        Ghost.removeFromList(g);
+      }
       ghostHits++;
       e.setHot(true);
       hotSize++;
@@ -288,15 +299,14 @@ public class ClockProPlusEviction extends AbstractEviction {
 
   @Override
   public void checkIntegrity(final IntegrityState _integrityState) {
-    _integrityState.checkEquals("ghostHashCtrl.size == Hash.calcEntryCount(refreshHash)",
-      ghostHashCtrl.getSize(), Hash.calcEntryCount(ghostHash))
+    _integrityState
+      .checkEquals("ghostSize == countGhostsInHash()", ghostSize, countGhostsInHash())
       .check("hotMax <= maxElements", hotMax <= maxSize)
       .check("checkCyclicListIntegrity(handHot)", Entry.checkCyclicListIntegrity(handHot))
       .check("checkCyclicListIntegrity(handCold)", Entry.checkCyclicListIntegrity(handCold))
-      .check("checkCyclicListIntegrity(handGhost)", Entry.checkCyclicListIntegrity(ghostHead))
       .checkEquals("getCyclicListEntryCount(handHot) == hotSize", Entry.getCyclicListEntryCount(handHot), hotSize)
       .checkEquals("getCyclicListEntryCount(handCold) == coldSize", Entry.getCyclicListEntryCount(handCold), coldSize)
-      .checkEquals("getListEntryCount(handGhost) == ghostSize", Entry.getListEntryCount(ghostHead), ghostHashCtrl.getSize());
+      .checkEquals("Ghost.listSize(ghostHead) == ghostSize", Ghost.listSize(ghostHead), ghostSize);
   }
 
   @Override
@@ -304,7 +314,7 @@ public class ClockProPlusEviction extends AbstractEviction {
     return ", coldSize=" + coldSize +
       ", hotSize=" + hotSize +
       ", hotMaxSize=" + hotMax +
-      ", ghostSize=" + ghostHashCtrl.getSize() +
+      ", ghostSize=" + ghostSize +
       ", coldHits=" + (coldHits + sumUpListHits(handCold)) +
       ", hotHits=" + (hotHits + sumUpListHits(handHot)) +
       ", ghostHits=" + ghostHits +
@@ -355,6 +365,151 @@ public class ClockProPlusEviction extends AbstractEviction {
       coldHits += scrubCounters(handCold);
       hotHits += scrubCounters(handHot);
     }
+  }
+
+  private Ghost lookupGhost(int _hash) {
+    Ghost[] tab = ghosts;
+    int n = tab.length;
+    int _mask = n - 1;
+    int idx = _hash & (_mask);
+    Ghost e = tab[idx];
+    while (e != null) {
+      if (e.hash == _hash) {
+        return e;
+      }
+      e = e.another;
+    }
+    return null;
+  }
+
+  private void insertGhost(Ghost e2, int _hash) {
+    Ghost[] tab = ghosts;
+    int n = tab.length;
+    int _mask = n - 1;
+    int idx = _hash & (_mask);
+    Ghost e = tab[idx];
+    e2.another = e;
+    tab[idx] = e2;
+    ghostSize++;
+    int _maxFill = n * GHOST_LOAD_PERCENT / 100;
+    if (ghostSize > _maxFill) {
+      expand();
+    }
+  }
+
+  private void expand() {
+    Ghost[] tab = ghosts;
+    int n = tab.length;
+    int _mask;
+    int idx;Ghost[] _newTab = new Ghost[n * 2];
+    _mask = _newTab.length - 1;
+    for (Ghost g : tab) {
+      while (g != null) {
+        idx = g.hash & _mask;
+        Ghost _next = g.another;
+        g.another = _newTab[idx];
+        _newTab[idx] = g;
+        g = _next;
+      }
+    }
+    ghosts = _newTab;
+  }
+
+  private Ghost removeGhost(int _hash) {
+    Ghost[] tab = ghosts;
+    int n = tab.length;
+    int _mask = n - 1;
+    int idx = _hash & (_mask);
+    Ghost e = tab[idx];
+    if (e.hash == _hash) {
+      tab[idx] = e.another;
+      ghostSize--;
+      return e;
+    } else {
+      while (e != null) {
+        Ghost _another = e.another;
+        if (_another.hash == _hash) {
+          e.another = _another.another;
+          ghostSize--;
+          return _another;
+        }
+        e = _another;
+      }
+    }
+    return null;
+  }
+
+  private boolean removeGhost(Ghost g, int _hash) {
+    Ghost[] tab = ghosts;
+    int n = tab.length;
+    int _mask = n - 1;
+    int idx = _hash & (_mask);
+    Ghost e = tab[idx];
+    if (e == g) {
+      tab[idx] = e.another;
+      ghostSize--;
+      return true;
+    } else {
+      while (e != null) {
+        Ghost _another = e.another;
+        if (_another == g) {
+          e.another = _another.another;
+          ghostSize--;
+          return true;
+        }
+        e = _another;
+      }
+    }
+    return false;
+  }
+
+  private int countGhostsInHash() {
+    int _entryCount = 0;
+    for (Ghost e : ghosts) {
+      while (e != null) {
+        _entryCount++;
+        e = e.another;
+      }
+    }
+    return _entryCount;
+  }
+
+  private static class Ghost {
+
+    int hash;
+    Ghost another;
+    Ghost next;
+    Ghost prev;
+
+    Ghost shortCurcuit() {
+      return next = prev = this;
+    }
+
+    static void removeFromList(final Ghost e) {
+      e.prev.next = e.next;
+      e.next.prev = e.prev;
+      e.next = e.prev = null;
+    }
+
+    static void insertInList(final Ghost _head, final Ghost e) {
+      e.prev = _head;
+      e.next = _head.next;
+      e.next.prev = e;
+      _head.next = e;
+    }
+
+    static void moveToFront(final Ghost _head, final Ghost e) {
+      removeFromList(e);
+      insertInList(_head, e);
+    }
+
+    static int listSize(final Ghost _head) {
+      int _count = 0;
+      Ghost e = _head;
+      while ((e = e.next) != _head) { _count++; }
+      return _count;
+    }
+
   }
 
 }
