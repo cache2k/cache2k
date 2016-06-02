@@ -29,13 +29,13 @@ public class QueuedEviction implements Eviction, EvictionThread.Job {
 
   private final static int MAX_POLLS = 23;
 
-  ConcurrentLinkedQueue<Entry> queue;
-  AbstractEviction forward;
-  EvictionThread threadRunner;
+  private ConcurrentLinkedQueue<Entry> queue = new ConcurrentLinkedQueue<Entry>();
+  private final static EvictionThread threadRunner = new EvictionThread();
+  private AbstractEviction forward;
 
-  @Override
-  public long getHitCount() {
-    return 0;
+  public QueuedEviction(final AbstractEviction _forward) {
+    forward = _forward;
+    threadRunner.addJob(this);
   }
 
   @Override
@@ -50,26 +50,29 @@ public class QueuedEviction implements Eviction, EvictionThread.Job {
     threadRunner.ensureRunning();
   }
 
+  @Override
+  public void insertWithoutEviction(final Entry e) {
+    queue.add(e);
+    threadRunner.ensureRunning();
+  }
+
+  @Override
+  public void evictEventually() {
+    forward.evictEventually();
+  }
+
   /**
    * Drain the queue and execute remove all in the current thread.
    */
   @Override
   public long removeAll() {
-    threadRunner.removeJob(this);
-    runEvictionJob();
     long _removedCount = forward.removeAll();
-    threadRunner.addJob(this);
     return _removedCount;
   }
 
   @Override
-  public long getNewEntryCount() {
-    return 0;
-  }
-
-  @Override
   public void close() {
-
+    stop();
   }
 
   @Override
@@ -80,7 +83,7 @@ public class QueuedEviction implements Eviction, EvictionThread.Job {
     }
     int _pollCount = MAX_POLLS;
     do {
-      if (e.isRemovedFromReplacementList()) {
+      if (e.isNotYetInsertedInReplacementList()) {
         forward.insert(e);
       } else {
         forward.remove(e);
@@ -91,6 +94,22 @@ public class QueuedEviction implements Eviction, EvictionThread.Job {
       e = queue.poll();
     } while (e != null);
     return true;
+  }
+
+  @Override
+  public boolean drain() {
+    Entry e = queue.poll();
+    boolean f = false;
+    while (e != null) {
+      f = true;
+      if (e.isNotYetInsertedInReplacementList()) {
+        forward.insertWithoutEviction(e);
+      } else {
+        forward.remove(e);
+      }
+      e = queue.poll();
+    }
+    return f;
   }
 
   @Override
@@ -105,12 +124,17 @@ public class QueuedEviction implements Eviction, EvictionThread.Job {
 
   @Override
   public void stop() {
-
+    threadRunner.removeJob(this);
   }
 
   @Override
   public void start() {
+    threadRunner.addJob(this);
+  }
 
+  @Override
+  public long getNewEntryCount() {
+    return forward.getNewEntryCount();
   }
 
   @Override
@@ -137,4 +161,10 @@ public class QueuedEviction implements Eviction, EvictionThread.Job {
   public long getEvictedCount() {
     return forward.getEvictedCount();
   }
+
+  @Override
+  public long getHitCount() {
+    return forward.getHitCount();
+  }
+
 }

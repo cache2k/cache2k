@@ -54,7 +54,15 @@ public abstract class AbstractEviction implements Eviction {
       newEntryCounter++;
     }
     if (_evictionNeeded) {
-      evict();
+      evictEventually();
+    }
+  }
+
+  @Override
+  public void insertWithoutEviction(final Entry e) {
+    synchronized (lock) {
+      insertIntoReplacementList(e);
+      newEntryCounter++;
     }
   }
 
@@ -75,7 +83,8 @@ public abstract class AbstractEviction implements Eviction {
     }
   }
 
-  private void evict() {
+  @Override
+  public void evictEventually() {
     boolean _evictionNeeded = true;
     Entry _previousCandidate = null;
     int _spinCount = 5;
@@ -147,6 +156,11 @@ public abstract class AbstractEviction implements Eviction {
 
   @Override
   public void stop() { }
+
+  @Override
+  public boolean drain() {
+    return false;
+  }
 
   @Override
   public void close() { }

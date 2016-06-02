@@ -27,6 +27,8 @@ public interface Eviction {
 
   void close();
 
+  void insertWithoutEviction(Entry e);
+  void evictEventually();
   void insert(Entry e);
   void remove(Entry e);
   long removeAll();
@@ -37,6 +39,9 @@ public interface Eviction {
    * values.
    */
   void stop();
+
+  boolean drain();
+
   /**
    * Start concurrent eviction threads.
    */

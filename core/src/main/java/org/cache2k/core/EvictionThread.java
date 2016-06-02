@@ -29,7 +29,7 @@ public class EvictionThread {
 
   private final static ThreadFactory THREAD_FACTORY =
     HeapCache.TUNABLE.threadFactoryProvider.newThreadFactory("cache2k-evict");
-  private final static int YIELD_SPINS = 7;
+  private final static int YIELD_SPINS = 77;
 
   private final Object lock = new Object();
   private Thread thread;

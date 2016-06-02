@@ -324,14 +324,20 @@ public class Entry<K, T>
     return getProcessingState() == ProcessingState.REFRESH;
   }
 
+  private static final Entry LIST_REMOVED_MARKER = new Entry();
+
   /** Reset next as a marker for {@link #isRemovedFromReplacementList()} */
   public final void removedFromList() {
-    next = null;
+    next = LIST_REMOVED_MARKER;
     prev = null;
   }
 
   /** Check that this entry is removed from the list, may be used in assertions. */
   public boolean isRemovedFromReplacementList() {
+    return next == LIST_REMOVED_MARKER;
+  }
+
+  public boolean isNotYetInsertedInReplacementList() {
     return next == null;
   }
 

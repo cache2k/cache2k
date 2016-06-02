@@ -436,6 +436,7 @@ public class HeapCache<K, V>
 
   public void closePart2() {
     synchronized (lock) {
+      eviction.close();
       timing.shutdown();
       if (manager != null) {
         manager.cacheDestroyed(this);
@@ -1670,16 +1671,40 @@ public class HeapCache<K, V>
     return info;
   }
 
+  static final Object RESTART_AFTER_EVICTION = new Object();
+
   public <T> T executeWithGlobalLock(final Job<T> job) {
-    return hash.runTotalLocked(new Job<T>() {
-      @Override
-      public T call() {
-        synchronized (lock) {
-          checkClosed();
-          return job.call();
+    synchronized (lock) {
+      checkClosed();
+      eviction.stop();
+      try {
+        T _result = hash.runTotalLocked(new Job<T>() {
+          @Override
+          public T call() {
+            checkClosed();
+            boolean f = eviction.drain();
+            if (f) {
+              return (T) RESTART_AFTER_EVICTION;
+            }
+            return job.call();
+          }
+        });
+        if (_result == RESTART_AFTER_EVICTION) {
+          eviction.evictEventually();
+          _result = hash.runTotalLocked(new Job<T>() {
+            @Override
+            public T call() {
+              checkClosed();
+              eviction.drain();
+              return job.call();
+            }
+          });
         }
+        return _result;
+      } finally {
+        eviction.start();
       }
-    });
+    }
   }
 
   protected String getExtraStatistics() { return ""; }
