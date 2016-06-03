@@ -64,13 +64,16 @@ public class Hash2<K,V> {
   }
 
   private void initArray() {
-    maxFill =
-      HeapCache.TUNABLE.initialHashSize * HeapCache.TUNABLE.hashLoadPercent /
-        100 / segmentSize.length;
-    if (maxFill == 0) {
-      throw new IllegalArgumentException("values for hash size or load factor too low.");
+    int len = HeapCache.TUNABLE.initialHashSize;
+    if (segmentSize.length > len) {
+      len = segmentSize.length;
     }
-    entries = new Entry[HeapCache.TUNABLE.initialHashSize];
+    entries = new Entry[len];
+    calcMaxFill();
+  }
+
+  private void calcMaxFill() {
+    maxFill = entries.length * HeapCache.TUNABLE.hashLoadPercent / 100 / segmentSize.length;
   }
 
   /**
@@ -346,7 +349,6 @@ public class Hash2<K,V> {
    * Double the hash table size and rehash the entries. Assumes total lock.
    */
   private void rehash() {
-    maxFill = maxFill * 2;
     Entry<K,V>[] src = entries;
     int i, sl = src.length, n = sl * 2, _mask = n - 1, idx;
     Entry<K,V>[] tab = new Entry[n];
@@ -360,6 +362,7 @@ public class Hash2<K,V> {
       }
     }
     entries = tab;
+    calcMaxFill();
   }
 
   public long getSize() {
