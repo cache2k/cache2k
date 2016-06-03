@@ -298,11 +298,10 @@ public class InternalCache2kBuilder<K, T> {
 
   Eviction constructEviction(HeapCache hc, HeapCacheListener l, Cache2kConfiguration config) {
     boolean _queue = false;
-    int _segmentCount = 2;
+    int _segmentCount = 4;
     if (config.getEntryCapacity() < 1000) {
       _segmentCount = 1;
     }
-    _segmentCount = 1;
     Eviction[] _segments = new Eviction[_segmentCount];
     for (int i = 0; i < _segments.length; i++) {
       Eviction ev = new ClockProPlusEviction(hc, l, config, _segmentCount);
