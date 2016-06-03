@@ -165,6 +165,12 @@ public abstract class TimingHandler<K,V>  {
   }
 
   /**
+   * Start timer for expiring an entry on the separate refresh hash.
+   */
+  public void startRefreshProbationTimer(Entry<K,V> e) {
+  }
+
+  /**
    * Cancel the timer on the entry, if a timer was set.
    */
   public void cancelExpiryTimer(Entry<K, V> e) { }
@@ -392,6 +398,12 @@ public abstract class TimingHandler<K,V>  {
     }
 
     @Override
+    public void startRefreshProbationTimer(Entry<K,V> e) {
+      e.setTask(new RefreshExpireTask<K,V>().to(cache, e));
+      scheduleTask(Math.abs(e.getNextRefreshTime()), e);
+    }
+
+    @Override
     public void scheduleFinalExpiryTimer(final Entry<K, V> e) {
       cancelExpiryTimer(e);
       scheduleFinalExpireWithOptionalRefresh(e, e.getNextRefreshTime());
@@ -463,6 +475,12 @@ public abstract class TimingHandler<K,V>  {
   static class ExpireTask<K,V> extends CommonTask<K,V> {
     public void fire() {
       cache.timerEventExpireEntry(entry);
+    }
+  }
+
+  static class RefreshExpireTask<K,V> extends CommonTask<K,V> {
+    public void fire() {
+      cache.timerEventProbationTerminated(entry);
     }
   }
 

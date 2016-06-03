@@ -128,28 +128,28 @@ public class Hash2<K,V> {
   /**
    * Insert an entry. Checks if an entry already exists.
    */
-  public Entry<K,V> insert(Entry<K,V> e2) {
+  public Entry<K,V> insert(Entry<K,V> e) {
     long _size;
-    int _hash = e2.hashCode; K key = e2.key;
+    int _hash = e.hashCode; K key = e.key;
     OptimisticLock[] _locks = locks;
     int si = _hash & LOCK_MASK;
     OptimisticLock l = _locks[si];
     long _stamp = l.writeLock();
     try {
-      Entry e; Object ek; Entry<K,V>[] tab = entries;
+      Entry f; Object ek; Entry<K,V>[] tab = entries;
       if (tab == null) {
         throw new CacheClosedException();
       }
       int n = tab.length, _mask = n - 1, idx = _hash & (_mask);
-      e = tab[idx];
-      while (e != null) {
-        if (e.hashCode == _hash && ((ek = e.key) == key || (ek.equals(key)))) {
-          return e;
+      f = tab[idx];
+      while (f != null) {
+        if (f.hashCode == _hash && ((ek = f.key) == key || (ek.equals(key)))) {
+          return f;
         }
-        e = e.another;
+        f = f.another;
       }
-      e2.another = tab[idx];
-      tab[idx] = e2;
+      e.another = tab[idx];
+      tab[idx] = e;
       _size = segmentSize[si].incrementAndGet();
 
     } finally {
@@ -158,31 +158,78 @@ public class Hash2<K,V> {
     if (_size > maxFill) {
       expand();
     }
-    return e2;
+    return e;
+  }
+
+  /**
+   * Insert entry and overwrite existing entry.
+   */
+  public void insertOverwrite(Entry<K,V> e) {
+    long _size;
+    int _hash = e.hashCode; K key = e.key;
+    OptimisticLock[] _locks = locks;
+    int si = _hash & LOCK_MASK;
+    OptimisticLock l = _locks[si];
+    long _stamp = l.writeLock();
+    try {
+      Entry f; Object ek; Entry<K,V>[] tab = entries;
+      if (tab == null) {
+        throw new CacheClosedException();
+      }
+      int n = tab.length, _mask = n - 1, idx = _hash & (_mask);
+      f = tab[idx];
+      if (f != null) {
+        if (f.hashCode == _hash && ((ek = f.key) == key || (ek.equals(key)))) {
+          tab[idx] = e;
+          e.another = f.another;
+          return;
+        }
+        Entry _previous = f;
+        f = f.another;
+        while (f != null) {
+          if (f.hashCode == _hash && ((ek = f.key) == key || (ek.equals(key)))) {
+            e.another = f.another;
+            _previous.another = e;
+            return;
+          }
+          _previous = f;
+          f = f.another;
+        }
+      }
+      e.another = tab[idx];
+      tab[idx] = e;
+      _size = segmentSize[si].incrementAndGet();
+
+    } finally {
+      l.unlockWrite(_stamp);
+    }
+    if (_size > maxFill) {
+      expand();
+    }
   }
 
   /**
    * Insert an entry. Checks if an entry already exists.
    */
-  public Entry<K,V> insertWithinLock(Entry<K,V> e2, int _hash) {
-    K key = e2.key;
+  public Entry<K,V> insertWithinLock(Entry<K,V> e, int _hash) {
+    K key = e.key;
     int si = _hash & LOCK_MASK;
-    Entry e; Object ek; Entry<K,V>[] tab = entries;
+    Entry f; Object ek; Entry<K,V>[] tab = entries;
     if (tab == null) {
       throw new CacheClosedException();
     }
     int n = tab.length, _mask = n - 1, idx = _hash & (_mask);
-    e = tab[idx];
-    while (e != null) {
-      if (e.hashCode == _hash && ((ek = e.key) == key || (ek.equals(key)))) {
-        return e;
+    f = tab[idx];
+    while (f != null) {
+      if (f.hashCode == _hash && ((ek = f.key) == key || (ek.equals(key)))) {
+        return f;
       }
-      e = e.another;
+      f = f.another;
     }
-    e2.another = tab[idx];
-    tab[idx] = e2;
+    e.another = tab[idx];
+    tab[idx] = e;
     segmentSize[si].incrementAndGet();
-    return e2;
+    return e;
   }
 
   /**
@@ -210,32 +257,32 @@ public class Hash2<K,V> {
    *
    * @return true, if entry was found and removed.
    */
-  public boolean remove(Entry<K,V> e2) {
-    int _hash = e2.hashCode;
+  public boolean remove(Entry<K,V> e) {
+    int _hash = e.hashCode;
     OptimisticLock[] _locks = locks;
     int si = _hash & LOCK_MASK;
     OptimisticLock l = _locks[si];
     long _stamp = l.writeLock();
     try {
-      Entry e; Entry<K,V>[] tab = entries;
+      Entry f; Entry<K,V>[] tab = entries;
       if (tab == null) {
         throw new CacheClosedException();
       }
       int n = tab.length, _mask = n - 1, idx = _hash & (_mask);
-      e = tab[idx];
-      if (e == e2) {
-        tab[idx] = e.another;
+      f = tab[idx];
+      if (f == e) {
+        tab[idx] = f.another;
         segmentSize[si].decrementAndGet();
         return true;
       }
-      while (e != null) {
-        Entry _another = e.another;
-        if (_another == e2) {
-          e.another = _another.another;
+      while (f != null) {
+        Entry _another = f.another;
+        if (_another == e) {
+          f.another = _another.another;
           segmentSize[si].decrementAndGet();
           return true;
         }
-        e = _another;
+        f = _another;
       }
     } finally {
       l.unlockWrite(_stamp);
@@ -243,27 +290,27 @@ public class Hash2<K,V> {
     return false;
   }
 
-  public boolean removeWithinLock(Entry<K,V> e2, int _hash) {
+  public boolean removeWithinLock(Entry<K,V> e, int _hash) {
     int si = _hash & LOCK_MASK;
-    Entry e; Entry<K,V>[] tab = entries;
+    Entry f; Entry<K,V>[] tab = entries;
     if (tab == null) {
       throw new CacheClosedException();
     }
     int n = tab.length, _mask = n - 1, idx = _hash & (_mask);
-    e = tab[idx];
-    if (e == e2) {
-      tab[idx] = e.another;
+    f = tab[idx];
+    if (f == e) {
+      tab[idx] = f.another;
       segmentSize[si].decrementAndGet();
       return true;
     }
-    while (e != null) {
-      Entry _another = e.another;
-      if (_another == e2) {
-        e.another = _another.another;
+    while (f != null) {
+      Entry _another = f.another;
+      if (_another == e) {
+        f.another = _another.another;
         segmentSize[si].decrementAndGet();
         return true;
       }
-      e = _another;
+      f = _another;
     }
     return false;
   }
@@ -285,7 +332,10 @@ public class Hash2<K,V> {
       }
       int n = tab.length, _mask = n - 1, idx = _hash & (_mask);
       e = tab[idx];
-      if (e != null && e.hashCode == _hash && ((ek = e.key) == key || (ek.equals(key)))) {
+      if (e == null) {
+        return null;
+      }
+      if (e.hashCode == _hash && ((ek = e.key) == key || (ek.equals(key)))) {
         tab[idx] = e.another;
         segmentSize[si].decrementAndGet();
         return e;

@@ -410,10 +410,6 @@ public class WiredCache<K, V> extends AbstractCache<K, V>
     return heapCache.convertCacheEntry2ValueMap(map);
   }
 
-  private Map<K, V> convertValueMap(final Map<K, ExaminationEntry<K, V>> _map) {
-    return heapCache.convertValueMap(_map);
-  }
-
   @Override
   public InternalCacheInfo getLatestInfo() {
     return heapCache.getLatestInfo(this);
@@ -595,10 +591,14 @@ public class WiredCache<K, V> extends AbstractCache<K, V>
   public void expireOrScheduleFinalExpireEvent(final Entry<K, V> e) {
     heapCache.expireOrScheduleFinalExpireEvent(e);
     if (e.isExpired() || e.isGone()) {
-      if (syncEntryExpiredListeners != null) {
-        for (CacheEntryExpiredListener<K, V> l : syncEntryExpiredListeners) {
-          l.onEntryExpired(this, e);
-        }
+      callExpiryListeners(e);
+    }
+  }
+
+  private void callExpiryListeners(final Entry<K, V> e) {
+    if (syncEntryExpiredListeners != null) {
+      for (CacheEntryExpiredListener<K, V> l : syncEntryExpiredListeners) {
+        l.onEntryExpired(this, e);
       }
     }
   }
@@ -623,9 +623,7 @@ public class WiredCache<K, V> extends AbstractCache<K, V>
             }
             try {
               execute(e.getKey(), e, SPEC.REFRESH);
-              synchronized (e) {
-                heapCache.expireEntry(e);
-              }
+              heapCache.toRefreshHashAndStartTimer(e);
             } catch (CacheClosedException ignore) {
             } catch (Throwable ex) {
               logAndCountInternalException("Refresh exception", ex);
@@ -645,6 +643,15 @@ public class WiredCache<K, V> extends AbstractCache<K, V>
         }
         metrics().refreshSubmitFailed();
       expireOrScheduleFinalExpireEvent(e);
+    }
+  }
+
+  @Override
+  public void timerEventProbationTerminated(final Entry<K, V> e) {
+    metrics().timerEvent();
+    boolean f = heapCache.refreshHash.remove(e);
+    if (f) {
+      callExpiryListeners(e);
     }
   }
 

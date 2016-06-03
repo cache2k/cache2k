@@ -388,10 +388,22 @@ public abstract class EntryAction<K, V, R> implements
     } else {
       entry.nextProcessingStep(Entry.ProcessingState.LOAD);
     }
-    needsFinish = false;
-    load = true;
     Entry<K, V> e = entry;
     long t0 = lastModificationTime = loadStartedTime = System.currentTimeMillis();
+    Entry<K,V> e2 = heapCache.refreshHash.remove(e.getKey(), e.hashCode);
+    if (e2 != null && e2.getNextRefreshTime() > t0) {
+      synchronized (e2) {
+        newValueOrException = e2.getValue();
+        lastModificationTime = e2.getLastModification();
+        entry.setSuppressedLoadExceptionInformation(e2.getSuppressedLoadExceptionInformation());
+        expiry = e2.getNextRefreshTime();
+        e2.getTask().cancel();
+      }
+      mutationUpdateHeap();
+      return;
+    }
+    needsFinish = false;
+    load = true;
     V v;
     try {
       if (e.isVirgin()) {
@@ -917,10 +929,12 @@ public abstract class EntryAction<K, V, R> implements
         if (remove) {
           heapCache.removeEntry(entry);
         } else {
-          entry.setNextRefreshTime(timing().stopStartTimer(expiry, entry));
-          if (entry.isExpired()) {
-            entry.setNextRefreshTime(Entry.EXPIRY_TIME_MIN);
-            userCache.expireOrScheduleFinalExpireEvent(entry);
+          if (!refresh) {
+            entry.setNextRefreshTime(timing().stopStartTimer(expiry, entry));
+            if (entry.isExpired()) {
+              entry.setNextRefreshTime(Entry.EXPIRY_TIME_MIN);
+              userCache.expireOrScheduleFinalExpireEvent(entry);
+            }
           }
         }
       }
@@ -1000,15 +1014,6 @@ public abstract class EntryAction<K, V, R> implements
    *
    */
   public void mutationDone() {
-    evictEventuallyAfterMutation();
-  }
-
-  /**
-   * Standard behavior specifies, we always check whether something is to
-   * evict after each cache operation that may have created a new entry.
-   */
-  public void evictEventuallyAfterMutation() {
-    heapCache.evictEventually();
     ready();
   }
 
@@ -1026,15 +1031,6 @@ public abstract class EntryAction<K, V, R> implements
     synchronized (heapCache.lock) {
       updateOnlyReadStatistics();
     }
-    if (!heapHit) {
-      evictEventuallyAfterExamine();
-      return;
-    }
-    ready();
-  }
-
-  public void evictEventuallyAfterExamine() {
-    heapCache.evictEventually();
     ready();
   }
 

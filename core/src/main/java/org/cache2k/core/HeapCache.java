@@ -164,6 +164,8 @@ public class HeapCache<K, V>
 
   protected final Hash2<K,V> hash = new Hash2<K,V>();
 
+  protected final Hash2<K,V> refreshHash = new Hash2<K,V>();
+
   /** Stuff that we need to wait for before shutdown may complete */
   protected Futures.WaitForAllFuture<?> shutdownWaitFuture;
 
@@ -632,14 +634,17 @@ public class HeapCache<K, V>
     } finally {
       e.ensureAbort(_finished);
     }
-    evictEventually();
     return e;
   }
 
   protected void finishLoadOrEviction(Entry e, long _nextRefreshTime) {
     e.notifyAll();
+    if (e.getProcessingState() != Entry.ProcessingState.REFRESH) {
+      e.processingDone();
+      restartTimer(e, _nextRefreshTime);
+      return;
+    }
     e.processingDone();
-    restartTimer(e, _nextRefreshTime);
   }
 
   private void restartTimer(final Entry e, final long _nextRefreshTime) {
@@ -651,9 +656,6 @@ public class HeapCache<K, V>
     if (e.isExpired()) {
       expireAndRemoveEventually(e);
     }
-  }
-
-  protected final void evictEventually() {
   }
 
   /**
@@ -868,7 +870,6 @@ public class HeapCache<K, V>
         }
         putValue(e, value);
       }
-      evictEventually();
       return;
     }
   }
@@ -1121,7 +1122,6 @@ public class HeapCache<K, V>
     } finally {
       e.ensureAbort(_finished);
     }
-    evictEventually();
   }
 
   /**
@@ -1262,6 +1262,21 @@ public class HeapCache<K, V>
   protected void load(Entry<K, V> e) {
     V v;
     long t0 = System.currentTimeMillis();
+    Entry<K,V> e2 = refreshHash.remove(e.getKey(), e.hashCode);
+    if (e2 != null && e2.getNextRefreshTime() > t0) {
+      synchronized (e) {
+        long nrt;
+        synchronized (e2) {
+          e.setLastModification(e2.getLastModification());
+          e.setValueOrException(e2.getValueOrException());
+          e.setSuppressedLoadExceptionInformation(e2.getSuppressedLoadExceptionInformation());
+          e2.getTask().cancel();
+          nrt = e2.getNextRefreshTime();
+        }
+        finishLoadOrEviction(e, nrt);
+        return;
+      }
+    }
     try {
       checkLoaderPresent();
       if (e.isVirgin()) {
@@ -1424,42 +1439,74 @@ public class HeapCache<K, V>
       if (e.isGone()) {
         return;
       }
-        Runnable r = new Runnable() {
-          @Override
-          public void run() {
-            synchronized (e) {
-              e.waitForProcessing();
-              if (e.isGone()) {
-                return;
-              }
-              e.startProcessing(Entry.ProcessingState.REFRESH);
-            }
-            try {
-              load(e);
-              synchronized (e) {
-                expireEntry(e);
-              }
-            } catch (CacheClosedException ignore) {
-            } catch (Throwable ex) {
-              e.ensureAbort(false);
-              logAndCountInternalException("Refresh exception", ex);
-              try {
-                synchronized (e) {
-                  expireEntry(e);
-                }
-              } catch (CacheClosedException ignore) {
-              }
-            }
-          }
-        };
-        try {
-          loaderExecutor.execute(r);
-          return;
-        } catch (RejectedExecutionException ignore) {
+      Runnable r = new Runnable() {
+        @Override
+        public void run() {
+          refreshEntry(e);
         }
-        metrics.refreshSubmitFailed();
+      };
+      try {
+        loaderExecutor.execute(r);
+        return;
+      } catch (RejectedExecutionException ignore) {
+      }
+      metrics.refreshSubmitFailed();
       expireOrScheduleFinalExpireEvent(e);
     }
+  }
+
+  /**
+   * Executed in loader thread. Load the entry again. After the load we copy the entry to the
+   * refresh hash and expire it in the main hash. The entry needs to stay in the main hash
+   * during the load, to block out concurrent reads.
+   */
+  private void refreshEntry(final Entry<K, V> e) {
+    synchronized (e) {
+      e.waitForProcessing();
+      if (e.isGone()) {
+        return;
+      }
+      e.startProcessing(Entry.ProcessingState.REFRESH);
+    }
+    try {
+      load(e);
+      toRefreshHashAndStartTimer(e);
+    } catch (CacheClosedException ignore) {
+    } catch (Throwable ex) {
+      e.ensureAbort(false);
+      logAndCountInternalException("Refresh exception", ex);
+      try {
+        synchronized (e) {
+          expireEntry(e);
+        }
+      } catch (CacheClosedException ignore) {
+      }
+    }
+  }
+
+  public void toRefreshHashAndStartTimer(final Entry<K, V> e) {
+    synchronized (e) {
+      e.waitForProcessing();
+      if (e.isGone() || e.isExpired()) {
+        return;
+      }
+      Entry<K,V> e2 = new Entry<K, V>(e.getKey(), e.hashCode);
+      synchronized (e2) {
+        e2.setValueOrException(e.getValueOrException());
+        e2.setSuppressedLoadExceptionInformation(e.getSuppressedLoadExceptionInformation());
+        e2.setNextRefreshTime(e.getNextRefreshTime());
+        e2.setLastModification(e.getLastModification());
+        refreshHash.insertOverwrite(e2);
+        timing.startRefreshProbationTimer(e2);
+      }
+      expireEntry(e);
+    }
+  }
+
+  @Override
+  public void timerEventProbationTerminated(final Entry<K, V> e) {
+    metrics.timerEvent();
+    refreshHash.remove(e);
   }
 
   @Override
