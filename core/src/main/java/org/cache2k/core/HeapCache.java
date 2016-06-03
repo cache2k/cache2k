@@ -162,7 +162,7 @@ public class HeapCache<K, V>
     }
   }
 
-  protected final Hash2<K,V> hash = new Hash2<K,V>(lock);
+  protected final Hash2<K,V> hash = new Hash2<K,V>();
 
   /** Stuff that we need to wait for before shutdown may complete */
   protected Futures.WaitForAllFuture<?> shutdownWaitFuture;

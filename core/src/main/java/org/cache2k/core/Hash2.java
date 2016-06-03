@@ -33,6 +33,7 @@ import java.util.concurrent.atomic.AtomicLong;
  * @author Jens Wilke
  * @see OptimisticLock
  */
+@SuppressWarnings({"ConstantConditions", "WeakerAccess"})
 public class Hash2<K,V> {
 
   private static final int LOCK_SEGMENTS;
@@ -46,13 +47,11 @@ public class Hash2<K,V> {
 
   private int clearCount = 0;
   private long maxFill;
-  private Object bigLock;
   private Entry<K,V>[] entries;
   private final OptimisticLock[] locks;
   private final AtomicLong[] segmentSize;
 
-  public Hash2(Object _bigLock) {
-    bigLock = _bigLock;
+  {
     locks = new OptimisticLock[LOCK_SEGMENTS];
     for (int i = 0; i < LOCK_SEGMENTS; i++) {
       locks[i] = Locks.newOptimistic();
@@ -183,6 +182,13 @@ public class Hash2<K,V> {
     return e2;
   }
 
+  /**
+   * Checks whether expansion is needed and expand. No lock may be hold when calling this
+   * method, since the table must be locked completely using the proper lock order.
+   *
+   * <p>Need for expansion is only checked by comparing whether the associated segment is
+   * full. Should be called after insert after giving up the lock.
+   */
   public void checkExpand(int _hash) {
     int si = _hash & LOCK_MASK;
     long _size = segmentSize[si].get();
@@ -388,8 +394,8 @@ public class Hash2<K,V> {
   }
 
   public void clearWhenLocked() {
-    for (int i = 0; i < segmentSize.length; i++) {
-      segmentSize[i].set(0);
+    for (AtomicLong aSegmentSize : segmentSize) {
+      aSegmentSize.set(0);
     }
     clearCount++;
     initArray();
@@ -409,9 +415,8 @@ public class Hash2<K,V> {
 
   public void calcHashCollisionInfo(Hash.CollisionInfo inf) {
     Entry<K,V>[] tab = entries;
-    int n = tab.length;
-    for (int i = 0; i < n; i++) {
-      Entry e = tab[i];
+    for (Entry<K, V> aTab : tab) {
+      Entry e = aTab;
       if (e != null) {
         e = e.another;
         if (e != null) {
@@ -431,6 +436,9 @@ public class Hash2<K,V> {
 
   }
 
+  /**
+   * Entry table for used by the iterator.
+   */
   public Entry<K,V>[] getEntries() {
     return entries;
   }
