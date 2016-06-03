@@ -25,44 +25,42 @@ import org.cache2k.core.util.TunableConstants;
 import org.cache2k.core.util.TunableFactory;
 
 /**
- * CLOCK Pro implementation with 3 clocks. Using separate clocks for hot and cold
- * has saves us the extra marker (4 bytes in Java) for an entry to decide whether it is in hot
- * or cold. OTOH we shuffle around the entries in different lists and loose the order they
- * were inserted, which leads to less cache efficiency.
+ * CLOCK Pro implementation with 3 clocks.
  *
- * <p/>This version uses a static allocation for hot and cold spaces. No online or dynamic
+ * <p/>This version uses a static allocation for hot and cold space sizes. No online or dynamic
  * optimization is done yet. However, the hitrate for all measured access traces is better
  * then LRU and it is resistant to scans.
  *
  * @author Jens Wilke; created: 2013-07-12
  */
+@SuppressWarnings("WeakerAccess")
 public class ClockProPlusEviction extends AbstractEviction {
 
   private static final Tunable TUNABLE_CLOCK_PRO = TunableFactory.get(Tunable.class);
 
-  long hotHits;
-  long coldHits;
-  long ghostHits;
+  private long hotHits;
+  private long coldHits;
+  private long ghostHits;
 
-  long hotRunCnt;
-  long hotScanCnt;
-  long coldRunCnt;
-  long coldScanCnt;
+  private long hotRunCnt;
+  private long hotScanCnt;
+  private long coldRunCnt;
+  private long coldScanCnt;
 
-  int coldSize;
-  int hotSize;
+  private int coldSize;
+  private int hotSize;
 
   /** Maximum size of hot clock. 0 means normal clock behaviour */
-  long hotMax;
-  long ghostMax;
+  private long hotMax;
+  private long ghostMax;
 
-  Entry handCold;
-  Entry handHot;
+  private Entry handCold;
+  private Entry handHot;
 
-  Ghost[] ghosts;
-  Ghost ghostHead = new Ghost().shortCurcuit();
-  int ghostSize = 0;
-  static final int GHOST_LOAD_PERCENT = 80;
+  private Ghost[] ghosts;
+  private Ghost ghostHead = new Ghost().shortCircuit();
+  private int ghostSize = 0;
+  private static final int GHOST_LOAD_PERCENT = 63;
 
   public ClockProPlusEviction(final HeapCache _heapCache, final HeapCacheListener _listener, final Cache2kConfiguration cfg, int _segmentsCount) {
     super(_heapCache, _listener, cfg, _segmentsCount);
@@ -137,10 +135,7 @@ public class ClockProPlusEviction extends AbstractEviction {
 
   /**
    * Remove, expire or eviction of an entry happens. Remove the entry from the
-   * replacement list data structure. We can just remove the entry from the list,
-   * but we don't know which list it is in to correct the counters accordingly.
-   * So, instead of removing it directly, we just mark it and remove it
-   * by the normal eviction process.
+   * replacement list data structure.
    *
    * <p>Why don't generate ghosts here? If the entry is removed because of
    * a programmatic remove or expiry we should not occupy any resources.
@@ -205,17 +200,16 @@ public class ClockProPlusEviction extends AbstractEviction {
     handCold = Entry.insertIntoTailCyclicList(handCold, e);
   }
 
-  protected Entry runHandHot() {
+  private Entry runHandHot() {
     hotRunCnt++;
-    Entry _handStart = handHot;
-    Entry _hand = _handStart;
+    Entry _hand = handHot;
     Entry _coldCandidate = _hand;
     long _lowestHits = Long.MAX_VALUE;
     long _hotHits = hotHits;
-    int _scanCnt = -1;
+    int _initialMaxScan = hotSize >> 2 + 1;
+    int _maxScan = _initialMaxScan;
     long _decrease = ((_hand.hitCnt + _hand.next.hitCnt) >> TUNABLE_CLOCK_PRO.hitCounterDecreaseShift) + 1;
-    do {
-      _scanCnt++;
+    while (_maxScan-- > 0) {
       long _hitCnt = _hand.hitCnt;
       if (_hitCnt < _lowestHits) {
         _lowestHits = _hitCnt;
@@ -232,9 +226,9 @@ public class ClockProPlusEviction extends AbstractEviction {
         _hotHits += _decrease;
       }
       _hand = _hand.next;
-    } while (_hand != _handStart);
+    }
     hotHits = _hotHits;
-    hotScanCnt += _scanCnt;
+    hotScanCnt += _initialMaxScan - _maxScan;
     handHot = Entry.removeFromCyclicList(_hand, _coldCandidate);
     hotSize--;
     _coldCandidate.setHot(false);
@@ -248,7 +242,7 @@ public class ClockProPlusEviction extends AbstractEviction {
   protected Entry findEvictionCandidate(Entry _previous) {
     coldRunCnt++;
     Entry _hand = handCold;
-    int _scanCnt = 0;
+    int _scanCnt = 1;
     if (_hand == null) {
       _hand = refillFromHot(_hand);
     }
@@ -341,8 +335,7 @@ public class ClockProPlusEviction extends AbstractEviction {
     int n = tab.length;
     int _mask = n - 1;
     int idx = _hash & (_mask);
-    Ghost e = tab[idx];
-    e2.another = e;
+    e2.another = tab[idx];
     tab[idx] = e2;
     ghostSize++;
     int _maxFill = n * GHOST_LOAD_PERCENT / 100;
@@ -369,29 +362,6 @@ public class ClockProPlusEviction extends AbstractEviction {
     ghosts = _newTab;
   }
 
-  private Ghost removeGhost(int _hash) {
-    Ghost[] tab = ghosts;
-    int n = tab.length;
-    int _mask = n - 1;
-    int idx = _hash & (_mask);
-    Ghost e = tab[idx];
-    if (e.hash == _hash) {
-      tab[idx] = e.another;
-      ghostSize--;
-      return e;
-    } else {
-      while (e != null) {
-        Ghost _another = e.another;
-        if (_another.hash == _hash) {
-          e.another = _another.another;
-          ghostSize--;
-          return _another;
-        }
-        e = _another;
-      }
-    }
-    return null;
-  }
 
   private boolean removeGhost(Ghost g, int _hash) {
     Ghost[] tab = ghosts;
@@ -428,6 +398,9 @@ public class ClockProPlusEviction extends AbstractEviction {
     return _entryCount;
   }
 
+  /**
+   *
+   */
   private static class Ghost {
 
     int hash;
@@ -435,7 +408,7 @@ public class ClockProPlusEviction extends AbstractEviction {
     Ghost next;
     Ghost prev;
 
-    Ghost shortCurcuit() {
+    Ghost shortCircuit() {
       return next = prev = this;
     }
 
