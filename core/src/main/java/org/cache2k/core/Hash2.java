@@ -183,8 +183,9 @@ public class Hash2<K,V> {
   }
 
   /**
-   * Checks whether expansion is needed and expand. No lock may be hold when calling this
-   * method, since the table must be locked completely using the proper lock order.
+   * Checks whether expansion is needed and expand when {@link #insertWithinLock(Entry, int)} is used.
+   * No lock may be hold when calling this method, since the table must be locked completely using
+   * the proper lock order.
    *
    * <p>Need for expansion is only checked by comparing whether the associated segment is
    * full. Should be called after insert after giving up the lock.
