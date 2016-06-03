@@ -334,39 +334,6 @@ public class ClockProPlusEviction extends AbstractEviction {
 
   }
 
-  protected void recordHit(Entry e) {
-    long _hitCnt = e.hitCnt + 1;
-    if ((_hitCnt & 0x100000000L) != 0 ) {
-      scrubCache(e);
-      recordHit(e);
-      return;
-    }
-    e.hitCnt = _hitCnt;
-  }
-
-  private long scrubCounters(Entry e) {
-    if (e == null) { return 0; }
-    int cnt = 0;
-    Entry _head = e;
-    do {
-      long _hitCnt = e.hitCnt;
-      long _hitCnt2 = e.hitCnt = e.hitCnt >> 1;
-      cnt += _hitCnt - _hitCnt2;
-      e = e.next;
-    } while (e != _head);
-    return cnt;
-  }
-
-  protected void scrubCache(Entry e) {
-    synchronized (lock) {
-      if (e.hitCnt != Integer.MAX_VALUE) {
-        return;
-      }
-      coldHits += scrubCounters(handCold);
-      hotHits += scrubCounters(handHot);
-    }
-  }
-
   private Ghost lookupGhost(int _hash) {
     Ghost[] tab = ghosts;
     int n = tab.length;

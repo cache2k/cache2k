@@ -507,10 +507,19 @@ public class HeapCache<K, V>
   }
 
   /**
-   * Just increment the hit counter on 64 bit systems. Writing a 64 bit value is atomic on 64 bit systems
-   * but not on 32 bit systems. Of course the counter update itself is not an atomic operation, which will
-   * cause some missed hits. The 64 bit counter is big enough that it never wraps around in my projected
-   * lifetime...
+   * Increment the hit counter, because entry was accessed.
+   *
+   * <p>The hit counter is a dirty counter. In case of multiple CPU cores incrementing the
+   * same entry counter, increments will be lost. For the functionality of the eviction algorithm this
+   * is not a real loss, since still the most accessed entries will have more counts then the
+   * others. On 32 bit systems word tearing may occur. This will also have no real observable negative
+   * impact on the eviction, so we do not compensate for it.
+   *
+   * <p>The hit count is also used for access statistics. The dirty counting will effect
+   * the exact correctness of the access statistics.
+   *
+   * <p>Using a 64 bit counter per entry is basically a big waste of memory. When reducing
+   * to a 32 bit value is has approximately a negative performance impact of 30%.
    */
   protected void recordHit(Entry e) {
     e.hitCnt++;
