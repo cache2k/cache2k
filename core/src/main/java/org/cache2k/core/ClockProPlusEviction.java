@@ -45,10 +45,8 @@ public class ClockProPlusEviction extends AbstractEviction {
   long ghostHits;
 
   long hotRunCnt;
-  long hot24hCnt;
   long hotScanCnt;
   long coldRunCnt;
-  long cold24hCnt;
   long coldScanCnt;
 
   int coldSize;
@@ -195,11 +193,8 @@ public class ClockProPlusEviction extends AbstractEviction {
     if (g != null) {
       /*
        * don't remove ghosts here, save object allocations.
+       * removeGhost(g, g.hash);  Ghost.removeFromList(g);
        */
-      if (false) {
-        removeGhost(g, g.hash);
-        Ghost.removeFromList(g);
-      }
       ghostHits++;
       e.setHot(true);
       hotSize++;
@@ -240,9 +235,6 @@ public class ClockProPlusEviction extends AbstractEviction {
     } while (_hand != _handStart);
     hotHits = _hotHits;
     hotScanCnt += _scanCnt;
-    if (_scanCnt == hotMax ) {
-      hot24hCnt++; // count a full clock cycle
-    }
     handHot = Entry.removeFromCyclicList(_hand, _coldCandidate);
     hotSize--;
     _coldCandidate.setHot(false);
@@ -277,9 +269,6 @@ public class ClockProPlusEviction extends AbstractEviction {
 
     if (_hand == null) {
       _hand = refillFromHot(_hand);
-    }
-    if (_scanCnt > this.coldSize) {
-      cold24hCnt++;
     }
     coldScanCnt += _scanCnt;
     handCold = _hand.next;
@@ -320,10 +309,8 @@ public class ClockProPlusEviction extends AbstractEviction {
       ", ghostHits=" + ghostHits +
       ", coldRunCnt=" + coldRunCnt +// identical to the evictions anyways
       ", coldScanCnt=" + coldScanCnt +
-      ", cold24hCnt=" + cold24hCnt +
       ", hotRunCnt=" + hotRunCnt +
-      ", hotScanCnt=" + hotScanCnt +
-      ", hot24hCnt=" + hot24hCnt;
+      ", hotScanCnt=" + hotScanCnt;
   }
 
   public static class Tunable extends TunableConstants {
