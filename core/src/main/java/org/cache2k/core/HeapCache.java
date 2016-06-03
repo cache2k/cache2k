@@ -1777,9 +1777,7 @@ public class HeapCache<K, V>
 
   public static class Tunable extends TunableConstants {
 
-    public Class<? extends InternalCache> defaultImplementation =
-      HeapCache.class;
-
+    public Class<? extends InternalCache> defaultImplementation = HeapCache.class;
 
     /**
      * Limits the number of spins until an entry lock is expected to
