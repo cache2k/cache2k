@@ -399,13 +399,18 @@ public class ClockProPlusEviction extends AbstractEviction {
   }
 
   /**
-   *
+   * Ghost representing a entry we have seen and evicted from the cache. We only store
+   * the hash to save memory, since holding the key references may cause a size overhead.
    */
   private static class Ghost {
 
+    /** Modified hashcode of the key */
     int hash;
+    /** Hash table chain */
     Ghost another;
+    /** LRU double linked list */
     Ghost next;
+    /** LRU double linked list */
     Ghost prev;
 
     Ghost shortCircuit() {
