@@ -326,9 +326,6 @@ public class InternalCache2kBuilder<K, T> {
   }
 
   void checkConfiguration() {
-    if (config.isRefreshAhead() && !config.isKeepDataAfterExpired()) {
-      throw new IllegalArgumentException("refreshAhead && !keepDataAfterExpired");
-    }
   }
 
   static class AsyncCreatedListener<K,V> implements CacheEntryCreatedListener<K,V> {

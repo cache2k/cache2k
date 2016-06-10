@@ -32,6 +32,58 @@ import java.lang.reflect.Field;
 import java.util.TimerTask;
 
 /**
+ * Separate with relevant fields for read access only for optimizing the object layout.
+ *
+ * @author Jens Wilke
+ */
+class CompactEntry<K,T> {
+
+  private static class InitialValueInEntryNeverReturned extends Object { }
+
+  protected final static InitialValueInEntryNeverReturned INITIAL_VALUE = new InitialValueInEntryNeverReturned();
+
+  /**
+   * Contains the next time a refresh has to occur, or if no background refresh is configured, when the entry
+   * is expired. Low values have a special meaning, see defined constants.
+   * Negative values means that we need to check against the wall clock.
+   */
+  protected volatile long nextRefreshTime;
+
+  public final K key;
+
+  /**
+   * Holds the associated entry value or an exception via the {@link ExceptionWrapper}
+   */
+  protected volatile T valueOrException = (T) INITIAL_VALUE;
+
+  /**
+   * Hash implementation: the calculated, modified hash code, retrieved from the key when the entry is
+   * inserted in the cache
+   *
+   * @see HeapCache#modifiedHash(int)
+   */
+  public final int hashCode;
+
+  /**
+   * Hash implementation: Link to another entry in the same hash table slot when the hash code collides.
+   */
+  public Entry<K, T> another;
+
+  /**
+   * Hit counter.
+   *
+   * @see HeapCache#recordHit(Entry)
+   */
+  long hitCnt;
+
+  public CompactEntry(final K _key, final int _hashCode) {
+    key = _key;
+    hashCode = _hashCode;
+  }
+
+}
+
+/**
  * The cache entry. This is a combined hashtable entry with hashCode and
  * and collision list (other field) and it contains a double linked list
  * (next and previous) for the eviction algorithm.
@@ -39,7 +91,7 @@ import java.util.TimerTask;
  * @author Jens Wilke
  */
 @SuppressWarnings("unchecked")
-public class Entry<K, T>
+public class Entry<K, T> extends CompactEntry<K,T>
   implements CacheEntry<K,T>, StorageEntry, ExaminationEntry<K, T> {
 
   /**
@@ -68,11 +120,11 @@ public class Entry<K, T>
   /** @see #isExpired() */
   static final int EXPIRED = 4;
 
+  static final int EXPIRED_REFRESHED = 5;
+
   /** @see #isGone() */
   static final int GONE = 8;
   static final int GONE_OTHER = 15;
-
-  final static InitialValueInEntryNeverReturned INITIAL_VALUE = new InitialValueInEntryNeverReturned();
 
   /**
    * Usually this contains the reference to the timer task. In some cases, like when exceptions
@@ -81,45 +133,11 @@ public class Entry<K, T>
   private Object misc;
 
   /**
-   * Hit counter for clock pro. Not used by every eviction algorithm.
-   */
-  long hitCnt;
-
-  /**
    * Time the entry was last updated by put or by fetching it from the cache source.
    * The time is the time in millis times 2. A set bit 1 means the entry is fetched from
    * the storage and not modified since then.
    */
   private volatile long fetchedTime;
-
-  /**
-   * Contains the next time a refresh has to occur, or if no background refresh is configured, when the entry
-   * is expired. Low values have a special meaning, see defined constants.
-   * Negative values means that we need to check against the wall clock.
-   *
-   * Whenever processing is done on the entry, e.g. a refresh or update,  the field is used to reflect
-   * the processing state. This means that, during processing the expiry time is lost. This has no negative
-   * impact on the visibility of the entry. For example if the entry is refreshed, it is expired, but since
-   * background refresh is enabled, the expired entry is still returned by the cache.
-   */
-  private volatile long nextRefreshTime;
-
-  public final K key;
-
-  private volatile T valueOrException = (T) INITIAL_VALUE;
-
-  /**
-   * Hash implementation: the calculated, modified hash code, retrieved from the key when the entry is
-   * inserted in the cache
-   *
-   * @see HeapCache#modifiedHash(int)
-   */
-  public final int hashCode;
-
-  /**
-   * Hash implementation: Link to another entry in the same hash table slot when the hash code collides.
-   */
-  public Entry<K, T> another;
 
   /** Lru list: pointer to next element or list head */
   public Entry next;
@@ -127,15 +145,14 @@ public class Entry<K, T>
   /** Lru list: pointer to previous element or list head */
   public Entry prev;
 
+  /** Marker for Clock-PRO clock */
+  private boolean hot;
+
   public Entry(final K _key, final int _hashCode) {
-    key = _key;
-    hashCode = _hashCode;
+    super(_key, _hashCode);
   }
 
-  public Entry() {
-    key = null;
-    hashCode = 0;
-  }
+  public Entry() { this(null, 0); }
 
   private static final int MODIFICATION_TIME_BITS = 44;
   private static final long MODIFICATION_TIME_BASE = 0;
@@ -184,18 +201,6 @@ public class Entry<K, T>
   @Override
   public long getLastModification() {
     return (fetchedTime & MODIFICATION_TIME_MASK) >> MODIFICATION_TIME_SHIFT;
-  }
-
-  public long getNextRefreshTime() {
-    return nextRefreshTime;
-  }
-
-  public void setNextRefreshTime(long _nextRefreshTime) {
-    nextRefreshTime = _nextRefreshTime;
-  }
-
-  public void setValueOrException(T _valueOrException) {
-    valueOrException = _valueOrException;
   }
 
   /**
@@ -276,6 +281,18 @@ public class Entry<K, T>
 
   public void processingDone() {
     setProcessingState(ProcessingState.DONE);
+  }
+
+  public long getNextRefreshTime() {
+    return nextRefreshTime;
+  }
+
+  public void setNextRefreshTime(long _nextRefreshTime) {
+    nextRefreshTime = _nextRefreshTime;
+  }
+
+  public void setValueOrException(T _valueOrException) {
+    valueOrException = _valueOrException;
   }
 
   /**
@@ -434,8 +451,6 @@ public class Entry<K, T>
   }
 
 
-  boolean hot;
-
   public boolean isHot() { return hot; }
 
   public void setHot(boolean f) {
@@ -524,20 +539,22 @@ public class Entry<K, T>
         sb.append(", keyMutation=true");
       }
     }
-    if (valueOrException != null) {
-      sb.append(", valueIdentityHashCode=").append(System.identityHashCode(valueOrException));
+    Object _valueOrException = valueOrException;
+    if (_valueOrException != null) {
+      sb.append(", valueIdentityHashCode=").append(System.identityHashCode(_valueOrException));
     } else {
       sb.append(", value=null");
     }
     sb.append(", modified=").append(formatMillis(getLastModification()));
-    if (nextRefreshTime < 0) {
-      sb.append(", nextRefreshTime(sharp)=").append(formatMillis(-nextRefreshTime));
-    } else if (nextRefreshTime == ExpiryPolicy.ETERNAL) {
+    long nrt = nextRefreshTime;
+    if (nrt < 0) {
+      sb.append(", nextRefreshTime(sharp)=").append(formatMillis(-nrt));
+    } else if (nrt == ExpiryPolicy.ETERNAL) {
       sb.append(", nextRefreshTime=ETERNAL");
-    } else if (nextRefreshTime >= EXPIRY_TIME_MIN) {
-      sb.append(", nextRefreshTime(timer)=").append(formatMillis(nextRefreshTime));
+    } else if (nrt >= EXPIRY_TIME_MIN) {
+      sb.append(", nextRefreshTime(timer)=").append(formatMillis(nrt));
     } else {
-      sb.append(", state=").append(nextRefreshTime);
+      sb.append(", state=").append(nrt);
     }
     if (Thread.holdsLock(this)) {
       if (getTask() != null) {
@@ -565,8 +582,6 @@ public class Entry<K, T>
   public String toString() {
     return toString(null);
   }
-
-  static class InitialValueInEntryNeverReturned extends Object { }
 
   public TimerTask getTask() {
     if (misc instanceof TimerTask) {
@@ -624,18 +639,25 @@ public class Entry<K, T>
     misc = new TimerTaskPiggyBack(v, (PiggyBack) misc);
   }
 
-  public void setSuppressedLoadExceptionInformation(ExceptionInformation w) {
+  /**
+   * We want to add a new piggy back. Check for timer task and convert it to
+   * piggy back.
+   */
+  private PiggyBack existingPiggyBackForInserting() {
     Object _misc = misc;
     if (_misc instanceof TimerTask) {
-      misc = new TimerTaskPiggyBack((TimerTask) _misc, new LoadExceptionPiggyBack(w, null));
-      return;
+      return new TimerTaskPiggyBack((TimerTask) _misc, null);
     }
+    return (PiggyBack) _misc;
+  }
+
+  public void setSuppressedLoadExceptionInformation(ExceptionInformation w) {
     LoadExceptionPiggyBack inf = getPiggyBack(LoadExceptionPiggyBack.class);
     if (inf != null) {
       inf.info = w;
       return;
     }
-    misc = new LoadExceptionPiggyBack(w, (PiggyBack) _misc);
+    misc = new LoadExceptionPiggyBack(w, existingPiggyBackForInserting());
   }
 
   /**
@@ -653,16 +675,34 @@ public class Entry<K, T>
     return inf != null ? inf.info : null;
   }
 
+  public void setRefreshProbationNextRefreshTime(long nrt) {
+    RefreshProbationPiggyBack inf = getPiggyBack(RefreshProbationPiggyBack.class);
+    if (inf != null) {
+      inf.nextRefreshTime = nrt;
+      return;
+    }
+    misc = new RefreshProbationPiggyBack(nrt, existingPiggyBackForInserting());
+  }
+
+  public long getRefreshProbationNextRefreshTime() {
+    RefreshProbationPiggyBack inf = getPiggyBack(RefreshProbationPiggyBack.class);
+    return inf != null ? inf.nextRefreshTime : 0;
+  }
+
   static class PiggyBack {
-    PiggyBack next;
+    final PiggyBack next;
+
+    public PiggyBack(final PiggyBack _next) {
+      next = _next;
+    }
   }
 
   static class TimerTaskPiggyBack extends PiggyBack {
     TimerTask task;
 
     public TimerTaskPiggyBack(final TimerTask _task, final PiggyBack _next) {
+      super(_next);
       task = _task;
-      next = _next;
     }
   }
 
@@ -670,8 +710,17 @@ public class Entry<K, T>
     ExceptionInformation info;
 
     public LoadExceptionPiggyBack(final ExceptionInformation _info, final PiggyBack _next) {
+      super(_next);
       info = _info;
-      next = _next;
+    }
+  }
+
+  static class RefreshProbationPiggyBack extends PiggyBack {
+    long nextRefreshTime;
+
+    public RefreshProbationPiggyBack(long _nextRefreshTime, final PiggyBack _next) {
+      super(_next);
+      nextRefreshTime = _nextRefreshTime;
     }
   }
 

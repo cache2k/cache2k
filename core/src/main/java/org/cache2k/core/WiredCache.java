@@ -623,7 +623,6 @@ public class WiredCache<K, V> extends AbstractCache<K, V>
             }
             try {
               execute(e.getKey(), e, SPEC.REFRESH);
-              heapCache.toRefreshHashAndStartTimer(e);
             } catch (CacheClosedException ignore) {
             } catch (Throwable ex) {
               logAndCountInternalException("Refresh exception", ex);
@@ -649,9 +648,8 @@ public class WiredCache<K, V> extends AbstractCache<K, V>
   @Override
   public void timerEventProbationTerminated(final Entry<K, V> e) {
     metrics().timerEvent();
-    boolean f = heapCache.refreshHash.remove(e);
-    if (f) {
-      callExpiryListeners(e);
+    synchronized (e) {
+      expireOrScheduleFinalExpireEvent(e);
     }
   }
 

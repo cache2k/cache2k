@@ -167,7 +167,8 @@ public abstract class TimingHandler<K,V>  {
   /**
    * Start timer for expiring an entry on the separate refresh hash.
    */
-  public void startRefreshProbationTimer(Entry<K,V> e) {
+  public boolean startRefreshProbationTimer(Entry<K,V> e, long _nextRefreshTimern) {
+    return true;
   }
 
   /**
@@ -398,9 +399,21 @@ public abstract class TimingHandler<K,V>  {
     }
 
     @Override
-    public void startRefreshProbationTimer(Entry<K,V> e) {
+    public boolean startRefreshProbationTimer(Entry<K,V> e, long _nextRefreshTime) {
+      e.cancelTimerTask();
+      if (_nextRefreshTime == ExpiryTimeValues.ETERNAL) {
+        e.setNextRefreshTime(_nextRefreshTime);
+        return false;
+      }
+      if (_nextRefreshTime > 0 && _nextRefreshTime < Entry.EXPIRY_TIME_MIN) {
+        e.setNextRefreshTime(Entry.EXPIRED);
+        return true;
+      }
+      e.setRefreshProbationNextRefreshTime(_nextRefreshTime);
+      e.setNextRefreshTime(Entry.EXPIRED_REFRESHED);
       e.setTask(new RefreshExpireTask<K,V>().to(cache, e));
-      scheduleTask(Math.abs(e.getNextRefreshTime()), e);
+      scheduleTask(Math.abs(_nextRefreshTime), e);
+      return false;
     }
 
     @Override

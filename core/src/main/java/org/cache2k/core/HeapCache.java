@@ -164,8 +164,6 @@ public class HeapCache<K, V>
 
   protected final Hash2<K,V> hash = new Hash2<K,V>();
 
-  protected final Hash2<K,V> refreshHash = new Hash2<K,V>();
-
   /** Stuff that we need to wait for before shutdown may complete */
   protected Futures.WaitForAllFuture<?> shutdownWaitFuture;
 
@@ -645,6 +643,7 @@ public class HeapCache<K, V>
       return;
     }
     e.processingDone();
+    toRefreshHashAndStartTimer(e, _nextRefreshTime);
   }
 
   private void restartTimer(final Entry e, final long _nextRefreshTime) {
@@ -1262,18 +1261,8 @@ public class HeapCache<K, V>
   protected void load(Entry<K, V> e) {
     V v;
     long t0 = System.currentTimeMillis();
-    Entry<K,V> e2 = refreshHash.remove(e.getKey(), e.hashCode);
-    if (e2 != null && e2.getNextRefreshTime() > t0) {
-      synchronized (e) {
-        long nrt;
-        synchronized (e2) {
-          e.setLastModification(e2.getLastModification());
-          e.setValueOrException(e2.getValueOrException());
-          e.setSuppressedLoadExceptionInformation(e2.getSuppressedLoadExceptionInformation());
-          e2.getTask().cancel();
-          nrt = e2.getNextRefreshTime();
-        }
-        finishLoadOrEviction(e, nrt);
+    if (e.getNextRefreshTime() == Entry.EXPIRED_REFRESHED) {
+      if (entryInRefreshProbationAccessed(e, t0)) {
         return;
       }
     }
@@ -1297,6 +1286,22 @@ public class HeapCache<K, V>
       t = System.currentTimeMillis();
     }
     insertOrUpdateAndCalculateExpiry(e, v, t0, t, INSERT_STAT_LOAD);
+  }
+
+  /**
+   * Entry was refreshed before, reset timer and make entry visible again.
+   */
+  private boolean entryInRefreshProbationAccessed(final Entry<K, V> e, final long now) {
+    long  nrt = e.getRefreshProbationNextRefreshTime();
+    if (nrt > now) {
+      synchronized (e) {
+        metrics.refreshHit();
+        e.cancelTimerTask();
+        finishLoadOrEviction(e, nrt);
+        return true;
+      }
+    }
+    return false;
   }
 
   private void loadGotException(final Entry<K, V> e, final long t0, final long t, final Throwable _wrappedException) {
@@ -1470,7 +1475,6 @@ public class HeapCache<K, V>
     }
     try {
       load(e);
-      toRefreshHashAndStartTimer(e);
     } catch (CacheClosedException ignore) {
     } catch (Throwable ex) {
       e.ensureAbort(false);
@@ -1484,29 +1488,19 @@ public class HeapCache<K, V>
     }
   }
 
-  public void toRefreshHashAndStartTimer(final Entry<K, V> e) {
-    synchronized (e) {
-      e.waitForProcessing();
-      if (e.isGone() || e.isExpired()) {
-        return;
-      }
-      Entry<K,V> e2 = new Entry<K, V>(e.getKey(), e.hashCode);
-      synchronized (e2) {
-        e2.setValueOrException(e.getValueOrException());
-        e2.setSuppressedLoadExceptionInformation(e.getSuppressedLoadExceptionInformation());
-        e2.setNextRefreshTime(e.getNextRefreshTime());
-        e2.setLastModification(e.getLastModification());
-        refreshHash.insertOverwrite(e2);
-        timing.startRefreshProbationTimer(e2);
-      }
-      expireEntry(e);
+  public void toRefreshHashAndStartTimer(final Entry<K, V> e, long _nextRefreshTime) {
+    boolean _expired = timing.startRefreshProbationTimer(e, _nextRefreshTime);
+    if (_expired) {
+      expireAndRemoveEventually(e);
     }
   }
 
   @Override
   public void timerEventProbationTerminated(final Entry<K, V> e) {
     metrics.timerEvent();
-    refreshHash.remove(e);
+    synchronized (e) {
+      expireEntry(e);
+    }
   }
 
   @Override
@@ -1526,7 +1520,7 @@ public class HeapCache<K, V>
   @Override
   public void expireOrScheduleFinalExpireEvent(final Entry<K, V> e) {
     long nrt = e.getNextRefreshTime();
-    if (nrt >= 0 && nrt < Entry.DATA_VALID) {
+    if (e.isGone() || e.isExpired()) {
       return;
     }
     long t = System.currentTimeMillis();

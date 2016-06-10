@@ -390,17 +390,12 @@ public abstract class EntryAction<K, V, R> implements
     }
     Entry<K, V> e = entry;
     long t0 = lastModificationTime = loadStartedTime = System.currentTimeMillis();
-    Entry<K,V> e2 = heapCache.refreshHash.remove(e.getKey(), e.hashCode);
-    if (e2 != null && e2.getNextRefreshTime() > t0) {
-      synchronized (e2) {
-        newValueOrException = e2.getValue();
-        lastModificationTime = e2.getLastModification();
-        entry.setSuppressedLoadExceptionInformation(e2.getSuppressedLoadExceptionInformation());
-        expiry = e2.getNextRefreshTime();
-        e2.getTask().cancel();
+    if (e.getNextRefreshTime() == Entry.EXPIRED_REFRESHED) {
+      long nrt = e.getRefreshProbationNextRefreshTime();
+      if (nrt > t0) {
+        reviveRefreshedEntry(nrt);
+        return;
       }
-      mutationUpdateHeap();
-      return;
     }
     needsFinish = false;
     load = true;
@@ -416,6 +411,16 @@ public abstract class EntryAction<K, V, R> implements
       return;
     }
     onLoadSuccess(v);
+  }
+
+  public void reviveRefreshedEntry(long nrt) {
+    metrics().refreshHit();
+    Entry<K, V> e = entry;
+    e.cancelTimerTask();
+    newValueOrException = e.getValue();
+    lastModificationTime = e.getLastModification();
+    expiry = nrt;
+    mutationUpdateHeap();
   }
 
   void lockFor(int ps) {
@@ -546,7 +551,7 @@ public abstract class EntryAction<K, V, R> implements
     if (newValueOrException instanceof ExceptionWrapper) {
       setUntil(ExceptionWrapper.class.cast(newValueOrException));
     }
-    expiryCalculated();
+    checkKeepOrRemove();
   }
 
   @Override
@@ -921,26 +926,44 @@ public abstract class EntryAction<K, V, R> implements
     if (load && !remove) {
       operation.loaded(this, entry);
     }
-    try {
-      synchronized (entry) {
-        entry.processingDone();
+    synchronized (entry) {
+      entry.processingDone();
+      if (refresh) {
+        heapCache.toRefreshHashAndStartTimer(entry, expiry);
         entryLocked = false;
-        entry.notifyAll();
-        if (remove) {
-          heapCache.removeEntry(entry);
-        } else {
-          if (!refresh) {
-            entry.setNextRefreshTime(timing().stopStartTimer(expiry, entry));
-            if (entry.isExpired()) {
-              entry.setNextRefreshTime(Entry.EXPIRY_TIME_MIN);
-              userCache.expireOrScheduleFinalExpireEvent(entry);
-            }
-          }
+        updateMutationStatistics();
+        mutationDone();
+        return;
+      }
+      entryLocked = false;
+      entry.notifyAll();
+      if (remove) {
+        heapCache.removeEntry(entry);
+      } else {
+        entry.setNextRefreshTime(timing().stopStartTimer(expiry, entry));
+        if (entry.isExpired()) {
+          entry.setNextRefreshTime(Entry.EXPIRY_TIME_MIN);
+          userCache.expireOrScheduleFinalExpireEvent(entry);
         }
       }
-    } finally {
-      updateMutationStatistics();
-      mutationDone();
+    }
+    updateMutationStatistics();
+    mutationDone();
+  }
+
+  public void updateMutationStatistics() {
+    if (loadCompletedTime > 0) {
+      if (storageRead && storageMiss) {
+        storageMetrics().readMiss();
+      }
+    } else {
+      updateOnlyReadStatistics();
+      if (remove) {
+        if (heapDataValid) {
+          metrics().remove();
+        } else if (heapHit) {
+        }
+      }
     }
   }
 
@@ -961,22 +984,6 @@ public abstract class EntryAction<K, V, R> implements
     }
     if (storageRead && !storageMiss) {
       storageMetrics().readHit();
-    }
-  }
-
-  public void updateMutationStatistics() {
-    if (loadCompletedTime > 0) {
-      if (storageRead && storageMiss) {
-        storageMetrics().readMiss();
-      }
-    } else {
-      updateOnlyReadStatistics();
-      if (remove) {
-        if (heapDataValid) {
-          metrics().remove();
-        } else if (heapHit) {
-        }
-      }
     }
   }
 
