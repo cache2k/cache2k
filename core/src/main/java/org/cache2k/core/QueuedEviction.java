@@ -21,12 +21,9 @@ package org.cache2k.core;
  */
 
 import org.cache2k.core.threading.Job;
-import org.jctools.queues.MpscArrayQueue;
-import org.jctools.queues.MpscChunkedArrayQueue;
 
 import java.util.Queue;
 import java.util.concurrent.ArrayBlockingQueue;
-import java.util.concurrent.LinkedTransferQueue;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
@@ -45,7 +42,7 @@ public class QueuedEviction implements Eviction, EvictionThread.Job {
     }
   }
 
-  private Queue<Entry> queue = new MpscChunkedArrayQueue<Entry>(4, 128, false);
+  private Queue<Entry> queue = new ArrayBlockingQueue<Entry>(127);
 
   private AbstractEviction forward;
 

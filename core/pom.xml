@@ -58,11 +58,13 @@
         <scope>test</scope>
     </dependency>
 
-              <dependency>
-            <groupId>org.jctools</groupId>
-            <artifactId>jctools-core</artifactId>
-            <version>1.2</version>
-        </dependency>
+    <!-- queue implementation for testing eviction via separate thread
+    <dependency>
+        <groupId>org.jctools</groupId>
+        <artifactId>jctools-core</artifactId>
+        <version>1.2</version>
+    </dependency>
+    -->
 
   </dependencies>
 
