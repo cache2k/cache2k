@@ -45,7 +45,7 @@ public abstract class AbstractEviction implements Eviction {
   public AbstractEviction(final HeapCache _heapCache, final HeapCacheListener _listener, final Cache2kConfiguration cfg, final int evictionSegmentCount) {
     heapCache = _heapCache;
     listener = _listener;
-    chunkSize = Runtime.getRuntime().availableProcessors() * 3;
+    chunkSize = 4;
     if (cfg.getEntryCapacity() <= 1000) {
       maxSize = cfg.getEntryCapacity() / evictionSegmentCount;
       chunkSize = 1;
