@@ -416,7 +416,6 @@ public abstract class EntryAction<K, V, R> implements
   public void reviveRefreshedEntry(long nrt) {
     metrics().refreshHit();
     Entry<K, V> e = entry;
-    e.cancelTimerTask();
     newValueOrException = e.getValue();
     lastModificationTime = e.getLastModification();
     expiry = nrt;

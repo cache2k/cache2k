@@ -1296,7 +1296,6 @@ public class HeapCache<K, V>
     if (nrt > now) {
       synchronized (e) {
         metrics.refreshHit();
-        e.cancelTimerTask();
         finishLoadOrEviction(e, nrt);
         return true;
       }
