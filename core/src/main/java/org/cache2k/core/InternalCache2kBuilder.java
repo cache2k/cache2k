@@ -296,9 +296,18 @@ public class InternalCache2kBuilder<K, T> {
     return _cache;
   }
 
+  /**
+   * Construct segmented or queued eviction. For the moment hard coded.
+   * If capacity is at least 1000 we use 2 segments if 2 or more CPUs are available.
+   * Segmenting the eviction only improves for lots of concurrent inserts or evictions,
+   * there is no effect on read performance.
+   */
   Eviction constructEviction(HeapCache hc, HeapCacheListener l, Cache2kConfiguration config) {
     boolean _queue = false;
-    int _segmentCount = 4;
+    int _segmentCount = 1;
+    if (Runtime.getRuntime().availableProcessors() > 1) {
+      _segmentCount = 2;
+    }
     if (config.getEntryCapacity() < 1000) {
       _segmentCount = 1;
     }
