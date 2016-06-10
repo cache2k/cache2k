@@ -60,6 +60,8 @@ public class CacheBuilder<K,V> {
 
   public CacheBuilder(final Cache2kBuilder<K, V> _builder) {
     builder = _builder;
+    /** backwards compatible */
+    builder.permitNullValues(true);
   }
 
   Cache2kBuilder<K,V> builder;
