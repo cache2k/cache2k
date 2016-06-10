@@ -67,6 +67,8 @@ public interface InternalCacheInfo {
 
   long getEvictedCnt();
 
+  long getEvictionRunningCnt();
+
   long getRemovedCnt();
 
   long getPutCnt();
