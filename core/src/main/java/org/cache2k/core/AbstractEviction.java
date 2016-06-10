@@ -38,8 +38,9 @@ public abstract class AbstractEviction implements Eviction {
   private final HeapCacheListener listener;
   private final boolean noListenerCall;
   protected final HeapCache heapCache;
-  Entry[] evictChunkReuse;
-  int chunkSize;
+  private Entry[] evictChunkReuse;
+  private int chunkSize;
+  private long evictionRunningCount = 0;
 
   public AbstractEviction(final HeapCache _heapCache, final HeapCacheListener _listener, final Cache2kConfiguration cfg, final int evictionSegmentCount) {
     heapCache = _heapCache;
@@ -61,17 +62,12 @@ public abstract class AbstractEviction implements Eviction {
       if (e.isNotYetInsertedInReplacementList()) {
         insertIntoReplacementList(e);
         newEntryCounter++;
-        if (getSize() > maxSize) {
-          _evictionChunk = reuseChunkArray();
-          fillEvictionChunk(_evictionChunk);
-        }
+        _evictionChunk = fillEvictionChunk();
       } else {
         removeEventually(e);
       }
     }
-    if (_evictionChunk != null) {
-      evictChunk(_evictionChunk);
-    }
+    evictChunk(_evictionChunk);
   }
 
   Entry[] reuseChunkArray() {
@@ -107,17 +103,19 @@ public abstract class AbstractEviction implements Eviction {
       } else {
         removeEventually(e);
       }
-      return getSize() > maxSize;
+      return evictionNeeded();
     }
+  }
+
+  boolean evictionNeeded() {
+    return getSize() > (maxSize - evictionRunningCount);
   }
 
   @Override
   public void evictEventually() {
     Entry[] _chunk;
     synchronized (lock) {
-      if (getSize() <= maxSize) { return; }
-      _chunk = reuseChunkArray();
-      fillEvictionChunk(_chunk);
+      _chunk = fillEvictionChunk();
     }
     evictChunk(_chunk);
   }
@@ -127,10 +125,16 @@ public abstract class AbstractEviction implements Eviction {
     evictEventually();
   }
 
-  private void fillEvictionChunk(final Entry[] _chunk) {
+  private Entry[] fillEvictionChunk() {
+    if (!evictionNeeded()) {
+      return null;
+    }
+    final Entry[] _chunk = reuseChunkArray();
+    evictionRunningCount += _chunk.length;
     for (int i = 0; i < _chunk.length; i++) {
       _chunk[i] = findEvictionCandidate(null);
     }
+    return _chunk;
   }
 
   private void evictChunk(Entry[] _chunk) {
@@ -140,6 +144,7 @@ public abstract class AbstractEviction implements Eviction {
     int _processingCount = 0;
     int _alreadyEvicted = 0;
     for (;;) {
+      if (_chunk == null) { return; }
       for (int i = 0; i < _chunk.length; i++) {
         Entry e = _chunk[i];
         if (noListenerCall) {
@@ -183,11 +188,14 @@ public abstract class AbstractEviction implements Eviction {
             } else {
               _alreadyEvicted++;
             }
+            /* we reuse the chunk array, null the array position to avoid memory leak */
+            _chunk[i] = null;
           }
         }
-        if (getSize() > maxSize) {
+        evictionRunningCount -= _chunk.length;
+        if (evictionNeeded()) {
           if (--_evictSpins > 0) {
-            fillEvictionChunk(_chunk);
+            _chunk = fillEvictionChunk();
           } else {
             evictChunkReuse = _chunk;
             return;
@@ -256,5 +264,20 @@ public abstract class AbstractEviction implements Eviction {
   protected abstract Entry findEvictionCandidate(Entry e);
   protected abstract void removeEntryFromReplacementList(Entry e);
   protected abstract void insertIntoReplacementList(Entry e);
+
+  /**
+   * Check invariants if eviction is not running.
+   */
+  @Override
+  public void checkIntegrity(final IntegrityState is) {
+    if (evictionRunningCount > 0) {
+      is.check("eviction running: hash.getSize() == eviction.getSize()", true)
+        .check("eviction running: newEntryCnt == hash.getSize() + evictedCnt ....", true);
+    } else {
+      is.checkEquals("hash.getSize() == eviction.getSize()", heapCache.getLocalSize(), getSize())
+        .checkEquals("newEntryCnt == hash.getSize() + evictedCnt + expiredRemoveCnt + removeCnt + clearedCnt + virginRemovedCnt",
+          getNewEntryCount(), heapCache.getLocalSize() + getEvictedCount() + getExpiredRemovedCount() + getRemovedCount() + heapCache.clearRemovedCnt + getVirginRemovedCount());
+    }
+  }
 
 }
