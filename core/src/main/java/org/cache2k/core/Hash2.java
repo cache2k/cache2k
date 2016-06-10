@@ -468,9 +468,7 @@ public class Hash2<K,V> {
   }
 
   public void calcHashCollisionInfo(Hash.CollisionInfo inf) {
-    Entry<K,V>[] tab = entries;
-    for (Entry<K, V> aTab : tab) {
-      Entry e = aTab;
+    for (Entry<K, V> e : entries) {
       if (e != null) {
         e = e.another;
         if (e != null) {
