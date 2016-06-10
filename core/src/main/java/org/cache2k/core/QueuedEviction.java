@@ -187,4 +187,8 @@ public class QueuedEviction implements Eviction, EvictionThread.Job {
   @Override
   public long getMaxSize() { return forward.getMaxSize(); }
 
+  @Override
+  public int getEvictionRunningCount() {
+    return forward.getEvictionRunningCount();
+  }
 }

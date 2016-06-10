@@ -40,7 +40,7 @@ public abstract class AbstractEviction implements Eviction {
   protected final HeapCache heapCache;
   private Entry[] evictChunkReuse;
   private int chunkSize;
-  private long evictionRunningCount = 0;
+  private int evictionRunningCount = 0;
 
   public AbstractEviction(final HeapCache _heapCache, final HeapCacheListener _listener, final Cache2kConfiguration cfg, final int evictionSegmentCount) {
     heapCache = _heapCache;
@@ -239,6 +239,11 @@ public abstract class AbstractEviction implements Eviction {
   }
 
   @Override
+  public int getEvictionRunningCount() {
+    return evictionRunningCount;
+  }
+
+  @Override
   public void start() { }
 
   @Override
@@ -264,20 +269,5 @@ public abstract class AbstractEviction implements Eviction {
   protected abstract Entry findEvictionCandidate(Entry e);
   protected abstract void removeEntryFromReplacementList(Entry e);
   protected abstract void insertIntoReplacementList(Entry e);
-
-  /**
-   * Check invariants if eviction is not running.
-   */
-  @Override
-  public void checkIntegrity(final IntegrityState is) {
-    if (evictionRunningCount > 0) {
-      is.check("eviction running: hash.getSize() == eviction.getSize()", true)
-        .check("eviction running: newEntryCnt == hash.getSize() + evictedCnt ....", true);
-    } else {
-      is.checkEquals("hash.getSize() == eviction.getSize()", heapCache.getLocalSize(), getSize())
-        .checkEquals("newEntryCnt == hash.getSize() + evictedCnt + expiredRemoveCnt + removeCnt + clearedCnt + virginRemovedCnt",
-          getNewEntryCount(), heapCache.getLocalSize() + getEvictedCount() + getExpiredRemovedCount() + getRemovedCount() + heapCache.clearRemovedCnt + getVirginRemovedCount());
-    }
-  }
 
 }

@@ -214,4 +214,13 @@ public class SegmentedEviction implements Eviction {
     return sum;
   }
 
+  @Override
+  public int getEvictionRunningCount() {
+    int sum = 0;
+    for (Eviction ev : segments) {
+      sum += ev.getEvictionRunningCount();
+    }
+    return sum;
+  }
+
 }

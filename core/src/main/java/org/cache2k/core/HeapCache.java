@@ -1674,6 +1674,15 @@ public class HeapCache<K, V>
   protected IntegrityState getIntegrityState() {
     IntegrityState is = new IntegrityState()
       .checkEquals("hash.getSize() == Hash.calcEntryCount(hash.getEntries())", hash.getSize(), Hash.calcEntryCount(hash.getEntries()));
+    if (eviction.getEvictionRunningCount() > 0) {
+      is.check("eviction running: hash.getSize() == eviction.getSize()", true)
+        .check("eviction running: newEntryCnt == hash.getSize() + evictedCnt ....", true);
+    } else {
+      is.checkEquals("hash.getSize() == eviction.getSize()", getLocalSize(), eviction.getSize())
+        .checkEquals("newEntryCnt == hash.getSize() + evictedCnt + expiredRemoveCnt + removeCnt + clearedCnt + virginRemovedCnt",
+          eviction.getNewEntryCount(), getLocalSize() + eviction.getEvictedCount() +
+            eviction.getExpiredRemovedCount() + eviction.getRemovedCount() + clearRemovedCnt + eviction.getVirginRemovedCount());
+    }
     eviction.checkIntegrity(is);
     return is;
   }

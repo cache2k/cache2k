@@ -66,8 +66,17 @@ public interface Eviction {
   long getRemovedCount();
   long getExpiredRemovedCount();
   long getVirginRemovedCount();
+
+  /** Number of entries evicted */
   long getEvictedCount();
+
+  /** Number of eviction currently going on */
+  int getEvictionRunningCount();
+
+  /** Number of entries in the viction data structure */
   long getSize();
+
+  /** Size limit after eviction kicks in */
   long getMaxSize();
 
 }

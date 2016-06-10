@@ -281,10 +281,8 @@ public class ClockProPlusEviction extends AbstractEviction {
   }
 
   @Override
-  public void checkIntegrity(final IntegrityState _integrityState) {
-    super.checkIntegrity(_integrityState);
-    _integrityState
-      .checkEquals("ghostSize == countGhostsInHash()", ghostSize, countGhostsInHash())
+  public void checkIntegrity(final IntegrityState is) {
+    is.checkEquals("ghostSize == countGhostsInHash()", ghostSize, countGhostsInHash())
       .check("hotMax <= maxElements", hotMax <= maxSize)
       .check("checkCyclicListIntegrity(handHot)", Entry.checkCyclicListIntegrity(handHot))
       .check("checkCyclicListIntegrity(handCold)", Entry.checkCyclicListIntegrity(handCold))
