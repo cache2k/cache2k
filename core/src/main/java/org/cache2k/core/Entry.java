@@ -54,7 +54,7 @@ class CompactEntry<K,T> {
   /**
    * Holds the associated entry value or an exception via the {@link ExceptionWrapper}
    */
-  protected volatile T valueOrException = (T) INITIAL_VALUE;
+  private volatile T valueOrException = (T) INITIAL_VALUE;
 
   /**
    * Hash implementation: the calculated, modified hash code, retrieved from the key when the entry is
@@ -70,15 +70,47 @@ class CompactEntry<K,T> {
   public Entry<K, T> another;
 
   /**
-   * Hit counter.
+   * Hit counter. Modified directly by heap cache and eviction algorithm.
    *
    * @see HeapCache#recordHit(Entry)
    */
-  long hitCnt;
+  public long hitCnt;
 
   public CompactEntry(final K _key, final int _hashCode) {
     key = _key;
     hashCode = _hashCode;
+  }
+
+  public void setValueOrException(T _valueOrException) {
+    valueOrException = _valueOrException;
+  }
+
+  public Throwable getException() {
+    if (valueOrException instanceof ExceptionWrapper) {
+      return ((ExceptionWrapper) valueOrException).getException();
+    }
+    return null;
+  }
+
+  public boolean equalsValue(T v) {
+    if (valueOrException == null) {
+      return v == valueOrException;
+    }
+    return valueOrException.equals(v);
+  }
+
+  public T getValue() {
+    if (valueOrException instanceof ExceptionWrapper) { return null; }
+    return valueOrException;
+  }
+
+  /**
+   * Used for the storage interface.
+   *
+   * @see StorageEntry
+   */
+  public T getValueOrException() {
+    return valueOrException;
   }
 
 }
@@ -291,10 +323,6 @@ public class Entry<K, T> extends CompactEntry<K,T>
     nextRefreshTime = _nextRefreshTime;
   }
 
-  public void setValueOrException(T _valueOrException) {
-    valueOrException = _valueOrException;
-  }
-
   /**
    * If fetch is not stopped, abort and make entry invalid.
    * This is a safety measure, since during entry processing an
@@ -457,25 +485,6 @@ public class Entry<K, T> extends CompactEntry<K,T>
     hot = f;
   }
 
-  public Throwable getException() {
-    if (valueOrException instanceof ExceptionWrapper) {
-      return ((ExceptionWrapper) valueOrException).getException();
-    }
-    return null;
-  }
-
-  public boolean equalsValue(T v) {
-    if (valueOrException == null) {
-      return v == valueOrException;
-    }
-    return valueOrException.equals(v);
-  }
-
-  public T getValue() {
-    if (valueOrException instanceof ExceptionWrapper) { return null; }
-    return valueOrException;
-  }
-
 
   @Override
   public K getKey() {
@@ -493,17 +502,6 @@ public class Entry<K, T> extends CompactEntry<K,T>
     }
     return 0;
   }
-
-  /**
-   * Used for the storage interface.
-   *
-   * @see StorageEntry
-   */
-  @Override
-  public T getValueOrException() {
-    return valueOrException;
-  }
-
   /**
    * Used for the storage interface.
    *
@@ -539,7 +537,7 @@ public class Entry<K, T> extends CompactEntry<K,T>
         sb.append(", keyMutation=true");
       }
     }
-    Object _valueOrException = valueOrException;
+    Object _valueOrException = getValueOrException();
     if (_valueOrException != null) {
       sb.append(", valueIdentityHashCode=").append(System.identityHashCode(_valueOrException));
     } else {
