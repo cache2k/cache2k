@@ -1294,13 +1294,17 @@ public class HeapCache<K, V>
   private boolean entryInRefreshProbationAccessed(final Entry<K, V> e, final long now) {
     long  nrt = e.getRefreshProbationNextRefreshTime();
     if (nrt > now) {
-      synchronized (e) {
-        metrics.refreshHit();
-        finishLoadOrEviction(e, nrt);
-        return true;
-      }
+      reviveRefreshedEntry(e, nrt);
+      return true;
     }
     return false;
+  }
+
+  private void reviveRefreshedEntry(final Entry<K, V> e, final long _nrt) {
+    synchronized (e) {
+      metrics.refreshHit();
+      finishLoadOrEviction(e, _nrt);
+    }
   }
 
   private void loadGotException(final Entry<K, V> e, final long t0, final long t, final Throwable _wrappedException) {

@@ -388,6 +388,8 @@ public abstract class EntryAction<K, V, R> implements
     } else {
       entry.nextProcessingStep(Entry.ProcessingState.LOAD);
     }
+    needsFinish = false;
+    load = true;
     Entry<K, V> e = entry;
     long t0 = lastModificationTime = loadStartedTime = System.currentTimeMillis();
     if (e.getNextRefreshTime() == Entry.EXPIRED_REFRESHED) {
@@ -397,8 +399,6 @@ public abstract class EntryAction<K, V, R> implements
         return;
       }
     }
-    needsFinish = false;
-    load = true;
     V v;
     try {
       if (e.isVirgin()) {
@@ -419,7 +419,7 @@ public abstract class EntryAction<K, V, R> implements
     newValueOrException = e.getValue();
     lastModificationTime = e.getLastModification();
     expiry = nrt;
-    mutationUpdateHeap();
+    expiryCalculated();
   }
 
   void lockFor(int ps) {
