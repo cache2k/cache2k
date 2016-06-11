@@ -1370,7 +1370,7 @@ public class HeapCache<K, V>
   final static byte INSERT_STAT_PUT = 2;
 
   public RuntimeException returnNullValueDetectedException() {
-    return new NullPointerException("null value not allowed, rejectNullValues(true)");
+    return new NullPointerException("null value not allowed");
   }
 
   protected final void insert(Entry<K, V> e, V _value, long t0, long t, byte _updateStatistics, long _nextRefreshTime) {
