@@ -3,21 +3,22 @@
 
 == Versioning
 
-An extended semantic versioning scheme is used.
+A semantic versioning with Tick-Tock scheme is used. Development versions are marked
+by an odd minor version number. Examples:
 
 1.0:: Major version, adds and removes features, incompatible changes to the previous version
-1.1.0-BETA:: Odd minor version, development version, possibly instable API and untested new features
+1.1.0-BETA:: Odd minor version, development version, possibly unstable API and untested new features
 1.2.0:: Even minor version, stable release, new features and compatible to the previous version.
      Not be strictly binary compatible to the previous stable release. Interfaces not meant for
      extension may get new methods.
 1.0.1:: Service release. Adds enhancements or fixes bugs. Strictly compatible to the stable release.
 
-Rationale: OSGi doesn't allow alphanumeric qualifiers. Every semantic information is
+Rationale: OSGi doesn't allow alphanumeric qualifiers, so every semantic information is
 in the numbers.
 
 == How to read the documentation
 
-The documentation is intended as a guide through the functionality of cache2k and will help
-you to discover every important feature. At some points important overview or background
-information is given. It is not complete. More details can be found in the JavaDoc
-comments of the API, in examples, and in the test cases.
+The documentation is intended as a overview guide through the functionality of cache2k and will help
+you to discover every important feature. At some points rationale or background
+information is given. It is not complete. You will find additional information in the API JavaDoc,
+in examples, and in the test cases.

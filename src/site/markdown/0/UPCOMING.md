@@ -10,8 +10,10 @@ The API is not stable yet.
 Changes in semantics or API that may break existing applications are listed here. 
 Modifications in the statistics output will not listed as breakage.
 
- - null values are not allowed by default. The use of a null value can be enabled again via
-   `permitNullValues`
+ - null values are not allowed (any more!) by default. The use of a null value can be enabled again via
+   `permitNullValues`. The old deprecated builder (CacheBuilder) configures the cache to
+   permit null values by default to be backwards compatible to application still using the version
+   0.20-ish interfaces.
 
 ## Bug fixes
 
@@ -25,7 +27,7 @@ If something is listed here it might affect an existing application and updating
  - Tiny eviction implementation cleanup and simplification
  - JCache: Custom classloader used for serialization of keys and values
  - JCache: improved performance when not using custom expiry policy
- - JCache: in situ configuration
+ - JCache: extended configuration of cache2k features via JCache is possible
  - Exceptions in the expiry policy and resilience policy will be propagated as `CacheLoaderException` 
    if happened during load 
  - asMap()
@@ -37,7 +39,8 @@ If something is listed here it might affect an existing application and updating
  - Global `ExceptionPropagator` customizable via tunable mechanism.
  - `CacheEntryProcessor` renamed to `EntryProcessor`
  - `CacheEntryProcessingException` renamed to `EntryProcessingException`
- - `Cache.invoke` and `Cache.invokeAll`: Remove var arg argument for arbitrary objects. Better aligned to Java 8 lambdas, reduces cruft.
+ - `Cache.invoke` and `Cache.invokeAll`: Remove var arg argument for arbitrary objects. 
+   Better aligned to Java 8 lambdas.
  
 ## API Changes and new methods
 

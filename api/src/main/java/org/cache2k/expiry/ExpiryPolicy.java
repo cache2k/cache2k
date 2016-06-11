@@ -30,11 +30,9 @@ import java.util.concurrent.TimeUnit;
  * insert or update.
  *
  * <p>For some expiry calculations it is useful to know the previous entry, e.g. to detect
- * whether the stored data was really updated. If a previous value is present in the cache,
+ * whether the stored data was updated. If a previous value is present in the cache,
  * it is passed to this method. Expired old entries will be passed in also, if still present
  * in the cache.
- *
- *
  *
  * @author Jens Wilke; created: 2014-10-14
  * @since 0.20
@@ -54,14 +52,20 @@ public interface ExpiryPolicy<K, V> extends ExpiryTimeValues {
    * inserts or updates. An update can be detected by the presence of the old entry.
    *
    * <p><b>Calling cache operations:</b> It is illegal to call any
-   * cache methods from this method. This may have an undesired effect
-   * and can cause a deadlock.
+   * cache methods from this method. The outcome is undefined and it can
+   * cause a deadlock.
    *
-   * <p><b>null values:</b></p> If the loader returns a null value, the expiry
+   * <p><b>null values:</b> If the loader returns a null value, the expiry
    * policy will be called, regardless of the {@link Cache2kBuilder#permitNullValues} setting.
    * If the expiry policy returns a {@link #NO_CACHE} the entry will be removed. If the expiry
    * policy returns a different time value, a {@code NullPointerException} will be propagated
    * if null values not permitted.
+   *
+   * <p><b>API rationale:</b> The recently loaded or inserted data is not passed in via a cache
+   * entry object. Using a cache entry is desirable for API design reasons to have a thinner interface.
+   * But the "real" entry can only be filled after the expiry policy is done, passing in an entry object
+   * would mean to build a temporary object. Second, the properties that are needed by the implementation
+   * are available directly. OTOH, 4-arity breaks Java 8 lambdas.
    *
    * @param key the cache key used for inserting or loading
    * @param value the value to be cached. May be null if the loader returns null, regardless of the
@@ -69,8 +73,8 @@ public interface ExpiryPolicy<K, V> extends ExpiryTimeValues {
    * @param loadTime The time the entry was inserted or loaded. If a loader was used,
    *                 this is the time before the loader was called.
    * @param oldEntry entry representing the current mapping, if there is a value present.
-   *                  If the current entry holds an exception, this is null. Expired entries will be
-   *                 passed in as well.
+   *                  If the old entry holds an exception, this is null. Expired entries will be
+   *                 passed in as well if still in the cache.
    * @return time the time of expiry in millis since epoch. {@link #NO_CACHE} if it should not cached.
    *         If {@link Cache2kBuilder#refreshAhead} is enabled the return value {@link #NO_CACHE} will remove
    *         the entry from the cache and trigger a immediate refresh, while other return values will not remove
