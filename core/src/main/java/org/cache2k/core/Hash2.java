@@ -400,6 +400,9 @@ public class Hash2<K,V> {
    */
   private void rehash() {
     Entry<K,V>[] src = entries;
+    if (src == null) {
+      throw new CacheClosedException();
+    }
     int i, sl = src.length, n = sl * 2, _mask = n - 1, idx;
     Entry<K,V>[] tab = new Entry[n];
     long _count = 0; Entry _next, e;
