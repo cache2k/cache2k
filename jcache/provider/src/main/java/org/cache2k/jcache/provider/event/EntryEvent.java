@@ -20,8 +20,6 @@ package org.cache2k.jcache.provider.event;
  * #L%
  */
 
-import org.cache2k.CacheEntry;
-
 import javax.cache.Cache;
 import javax.cache.event.CacheEntryEvent;
 import javax.cache.event.EventType;
@@ -35,14 +33,8 @@ import java.util.NoSuchElementException;
  */
 public class EntryEvent<K, V> extends CacheEntryEvent<K, V> implements Iterable<CacheEntryEvent<? extends K, ? extends V>> {
 
-  K key;
-  V value;
-
-  public EntryEvent(final Cache source, final EventType eventType, final CacheEntry<K, V> _c2kEntry) {
-    super(source, eventType);
-    key = _c2kEntry.getKey();
-    value = _c2kEntry.getValue();
-  }
+  private K key;
+  private V value;
 
   public EntryEvent(final Cache source, final EventType eventType, final K _key, final V _value) {
     super(source, eventType);

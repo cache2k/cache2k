@@ -20,8 +20,6 @@ package org.cache2k.jcache.provider.event;
  * #L%
  */
 
-import org.cache2k.CacheEntry;
-
 import javax.cache.Cache;
 import javax.cache.event.EventType;
 
@@ -32,12 +30,7 @@ import javax.cache.event.EventType;
  */
 public class EntryEventWithOldValue<K, V> extends EntryEvent<K, V> {
 
-  V oldValue;
-
-  public EntryEventWithOldValue(final Cache source, final EventType eventType, final CacheEntry<K, V> _c2kEntry, final V _oldValue) {
-    super(source, eventType, _c2kEntry);
-    oldValue = _oldValue;
-  }
+  private V oldValue;
 
   public EntryEventWithOldValue(final Cache source, final EventType eventType, final K _key, final V _value, final V _oldValue) {
     super(source, eventType, _key, _value);
