@@ -636,7 +636,6 @@ public class HeapCache<K, V>
   }
 
   protected void finishLoadOrEviction(Entry e, long _nextRefreshTime) {
-    e.notifyAll();
     if (e.getProcessingState() != Entry.ProcessingState.REFRESH) {
       e.processingDone();
       restartTimer(e, _nextRefreshTime);

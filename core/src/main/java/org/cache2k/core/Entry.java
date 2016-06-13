@@ -292,7 +292,7 @@ public class Entry<K, T> extends CompactEntry<K,T>
     return (int) ((fetchedTime >> PS_POS) & PS_MASK);
   }
 
-  public void setProcessingState(int v) {
+  private void setProcessingState(int v) {
     fetchedTime = fetchedTime & ~((long) PS_MASK << PS_POS) | (((long) v) << PS_POS);
   }
 
@@ -307,11 +307,19 @@ public class Entry<K, T> extends CompactEntry<K,T>
     setProcessingState(ps);
   }
 
+  /**
+   * Switch to another processing state that is other then done.
+   */
   public void nextProcessingStep(int ps) {
     setProcessingState(ps);
   }
 
+  /**
+   * Set processing state to done and notify all that wait for
+   * processing this entry.
+   */
   public void processingDone() {
+    notifyAll();
     setProcessingState(ProcessingState.DONE);
   }
 
@@ -338,8 +346,7 @@ public class Entry<K, T> extends CompactEntry<K,T>
         nextRefreshTime = ABORTED;
       }
       if (isProcessing()) {
-        setProcessingState(ProcessingState.DONE);
-        notifyAll();
+        processingDone();
       }
     }
   }

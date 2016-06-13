@@ -26,10 +26,12 @@ import org.cache2k.core.threading.Job;
 /**
  * @author Jens Wilke
  */
+@SuppressWarnings({"WeakerAccess", "SynchronizationOnLocalVariableOrMethodParameter"})
 public abstract class AbstractEviction implements Eviction {
 
-  final Object lock = new Object();
-  final protected long maxSize;
+  protected final long maxSize;
+  protected final HeapCache heapCache;
+  private final Object lock = new Object();
   private long newEntryCounter;
   private long removedCnt;
   private long expiredRemovedCnt;
@@ -37,7 +39,6 @@ public abstract class AbstractEviction implements Eviction {
   private long evictedCount;
   private final HeapCacheListener listener;
   private final boolean noListenerCall;
-  protected final HeapCache heapCache;
   private Entry[] evictChunkReuse;
   private int chunkSize;
   private int evictionRunningCount = 0;
@@ -171,7 +172,6 @@ public abstract class AbstractEviction implements Eviction {
           }
           listener.onEvictionFromHeap(e);
           synchronized (e) {
-            e.notifyAll();
             e.processingDone();
             boolean f = heapCache.removeEntryForEviction(e);
           }

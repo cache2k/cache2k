@@ -935,7 +935,7 @@ public abstract class EntryAction<K, V, R> implements
         return;
       }
       entryLocked = false;
-      entry.notifyAll();
+
       if (remove) {
         heapCache.removeEntry(entry);
       } else {
@@ -999,7 +999,6 @@ public abstract class EntryAction<K, V, R> implements
     if (entryLocked) {
       synchronized (entry) {
         entry.processingDone();
-        entry.notifyAll();
         entryLocked = false;
       }
     }
@@ -1010,7 +1009,6 @@ public abstract class EntryAction<K, V, R> implements
     exceptionToPropagate = t;
     synchronized (entry) {
       entry.processingDone();
-      entry.notifyAll();
       entryLocked = false;
     }
     ready();
@@ -1027,7 +1025,6 @@ public abstract class EntryAction<K, V, R> implements
     if (entryLocked) {
       synchronized (entry) {
         entry.processingDone();
-        entry.notifyAll();
         if (entry.isVirgin()) {
           heapCache.removeEntry(entry);
         }
