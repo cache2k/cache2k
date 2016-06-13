@@ -370,14 +370,23 @@ public class Cache2kBuilder<K, V> implements Cloneable {
   }
 
   /**
-   * When true, enable background refresh / refresh ahead. After an entry is expired, the cache
-   * loader is invoked to fetch a fresh value. The old value will be returned by the cache, although
+   * When true, enable background refresh / refresh ahead. After the expiry time of a value is reached,
+   * the loader is invoked to fetch a fresh value. The old value will be returned by the cache, although
    * it is expired, and will be replaced by the new value, once the loader is finished. In the case
-   * there are not enough threads available to start the loading, the entry will expire immediately and
+   * there are not enough loader threads available, the value will expire immediately and
    * the next {@code get()} request will trigger the load.
    *
    * <p>Once refreshed, the entry is in a trail period. If it is not accessed until the next
-   * expiry, no refresh will be done and the entry expires regularly.
+   * expiry, no refresh will be done and the entry expires regularly. This means that the
+   * time an entry stays within the trail period is determined by the configured expiry time
+   * or the the {@code ExpiryPolicy}. In case an entry is not accessed any more it needs to
+   * reach the expiry time twice before removed from the cache.
+   *
+   * <p>The number of threads used to do the refresh are configured via
+   * {@link #loaderThreadCount(int)}
+   *
+   * @see CacheLoader
+   * @see #loaderThreadCount(int)
    */
   public final Cache2kBuilder<K, V> refreshAhead(boolean f) {
     config.setRefreshAhead(f);
