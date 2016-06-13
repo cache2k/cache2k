@@ -59,41 +59,5 @@ public abstract class CacheWriter<K, V> {
    */
   public abstract void delete(K key) throws Exception;
 
-  /**
-   * Write all values in the map.
-   *
-   * <p>Optional method, by default throws an {@link UnsupportedOperationException}.
-   *
-   * <p>The method is currently (1.0) not used by cache2k and are provided to future
-   * proof the interface.
-   *
-   * <p>The method is provided to complete the API. At the moment cache2k is not
-   * using it. Please see the road map.
-   *
-   * @param values The map of key and values to be written, never null.
-   * @throws Exception if an exception occurs, the cache update will not occur and this
-   *         exception will be wrapped in a {@link CacheWriterException}
-   */
-  public void writeAll(Map<? extends K, ? extends V> values, Executor executor) throws Exception {
-    throw new UnsupportedOperationException();
-  }
-
-  /**
-   * Called when a set of mappings is removed from the cache. The removal was done by
-   * {@link Cache#remove} or {@link Cache#removeAll()}. An expiry does not trigger a call
-   * to this method.
-   *
-   * <p>Optional method, by default throws an {@link UnsupportedOperationException}.
-   *
-   * <p>The method is provided to complete the API. At the moment cache2k is not
-   * using it. Please see the road map.
-   *
-   * @param keys set of keys for the values to be deleted.
-   * @throws Exception if an exception occurs, the cache update will not occur and this
-   *         exception will be wrapped in a {@link CacheWriterException}
-   */
-  public void deleteAll(Iterable<? extends K> keys, Executor executor) throws Exception {
-    throw new UnsupportedOperationException();
-  }
 
 }
