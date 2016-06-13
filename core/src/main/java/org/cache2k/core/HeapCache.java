@@ -1434,11 +1434,6 @@ public class HeapCache<K, V>
     }
   }
 
-  /**
-   * Move entry to a separate hash for the entries that got a refresh.
-   * True, if successful. False, if the entry had a refresh already.
-   */
-
   @Override
   public void timerEventRefresh(final Entry<K, V> e) {
     metrics.timerEvent();
