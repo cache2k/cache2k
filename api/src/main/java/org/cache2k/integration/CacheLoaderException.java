@@ -26,18 +26,23 @@ import org.cache2k.PropagatedCacheException;
  * Exception to wrap a loader exception. When an exception is thrown by the loader
  * and rethrown to the application it is wrapped in this exception.
  *
- * <p>A single loader exception may be thrown multiple times to the application, if
- * the exception is cached. This is controlled by the {@link ResiliencePolicy}.
- * In case a cached exception is thrown, it contains the string {@code expiry=<timestamp>}
- *
- * <p>It is possible to register a custom behavior for exception propagation
+ * <p>It is possible to register a custom behavior how exceptions are rethrown (propagated)
  * with the {@link ExceptionPropagator}.
  *
- * <p>If a cache receives an exception when loading a value it may propagate
- * the exception wrapped into this one to the caller. Whether propagation
- * occurs depends on the configuration and on the presence of valid data.
+ * <p>A single loader exception may be thrown multiple times to the application, if
+ * the exception is cached. On the other hand, it is possible to suppress a loader
+ * exception if the cache still contains data. This is controlled by the
+ * {@link ResiliencePolicy} or various configuration parameters (see the references).
+ * In case a cached exception is thrown, it contains the string {@code expiry=<timestamp>}
  *
- *
+ * <p>As a general rule, throwing this exception is delayed as long as possible, when
+ * an associated value for a specific key is requested that has caused the exception.
+ * For example {@link org.cache2k.Cache#getEntry} will not throw this exception but
+ * {@link org.cache2k.CacheEntry#getValue} will. For bulk methods for example
+ * {@link org.cache2k.Cache#getAll} the exception will be thrown when the respective
+ * value is accessed from the returned map. In case of a general error, for example the loader
+ * produces an exception for every key, exceptions may be thrown as soon as possible
+ * (fail fast principle).
  *
  * @author Jens Wilke
  */

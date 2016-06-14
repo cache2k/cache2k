@@ -29,6 +29,8 @@ import org.cache2k.CacheEntry;
  * can be used for a more intelligent loading strategy, e.g. for HTTP based loading with
  * the <code>If-Modified-Since</code> header.
  *
+ * <p>For general documentation on the loader, please see {@link CacheLoader}.
+ *
  * @author Jens Wilke
  * @see CacheLoader
  * @since 0.24
@@ -48,8 +50,8 @@ public abstract class AdvancedCacheLoader<K,V> {
    *                      {@link Cache2kBuilder#refreshAhead(boolean)}.
    * @return value to be associated with the key. If the cache permits null values
    *         a null is associated with the key.
-   * @throws Exception Unhandled exception from the loader. The exception will be
-   *         handled by the cache based on its configuration.
+   * @throws Exception Unhandled exception from the loader. Exceptions are suppressed or
+   *                   wrapped and rethrown via a {@link CacheLoaderException}
    */
   public abstract V load(K key, long currentTime, CacheEntry<K,V> previousEntry) throws Exception;
 

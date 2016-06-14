@@ -25,7 +25,7 @@ import org.cache2k.integration.CacheLoaderException;
 /**
  * Object representing a cache entry. With the cache entry, it can be
  * checked whether a mapping in the cache is present, even if the cache
- * holds null or an exception. Entries can be retrieved by
+ * contains {@code null} or an exception. Entries can be retrieved by
  * {@link Cache#peekEntry(Object)} or {@link Cache#getEntry(Object)} or
  * via {@link Cache#iterator()}.
  *
@@ -36,7 +36,7 @@ import org.cache2k.integration.CacheLoaderException;
  * object will be refreshed next or when it will expire. This is not exposed
  * to applications by intention.
  *
- * @author Jens Wilke; created: 2014-03-18
+ * @author Jens Wilke
  * @see Cache#peekEntry(Object)
  * @see Cache#getEntry(Object)
  * @see Cache#iterator()
@@ -53,21 +53,20 @@ public interface CacheEntry<K, V> {
    * entry had a loader exception which is not suppressed, this exception will be
    * propagated.
    *
-   * @throws CacheLoaderException if the recent load was yielding an exception. Another
-   *         exception may be thrown if a custom exception propagator was registered.
+   * @throws CacheLoaderException if the loading produced an exception .
    */
   V getValue();
 
   /**
    * The exception happened when the value was loaded and
    * the exception could not be suppressed. {@code null} if no exception
-   * happened and or it was suppressed. If {@code null} then {@link #getValue}
+   * happened or it was suppressed. If {@code null} then {@link #getValue}
    * returns a value and does not throw an exception.
    */
   Throwable getException();
 
   /**
-   * Time in millis the entry was last updated either by load or put.
+   * Time in millis the entry was last modified either by load or put.
    */
   long getLastModification();
 

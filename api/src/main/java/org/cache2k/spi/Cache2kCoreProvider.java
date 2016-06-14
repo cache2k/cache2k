@@ -36,7 +36,7 @@ import org.cache2k.CacheManager;
  * <p>This is for internal use by the API to locate the implementation.
  * Do not use or rely on this.
  *
- * @author Jens Wilke; created: 2014-04-20
+ * @author Jens Wilke
  */
 public abstract class Cache2kCoreProvider {
 

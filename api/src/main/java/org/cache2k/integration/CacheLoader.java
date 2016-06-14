@@ -20,26 +20,50 @@ package org.cache2k.integration;
  * #L%
  */
 
+import org.cache2k.processor.MutableCacheEntry;
+import org.cache2k.Cache;
+import org.cache2k.Cache2kBuilder;
+
 import java.util.Map;
 import java.util.concurrent.Executor;
 
 /**
- * Retrieves or generates a value to load into the cache.
+ * Retrieves or generates a value to load into the cache. Using a loader to automatically
+ * populate the cache is called read through caching. If the cache is primarily used the
+ * cache data that is expensive to generate or retrieve, using a {@code CacheLoader} has
+ * several advantages. The usable features with a loader are explained in the following.
+ *
+ * <p>Transparent operation: If configured, the loader is invoked implicitly, in case there is no value in
+ * the cache or it is expired, by the cache methods {@code get()}, {@code getAll()}
+ * or {@code getEntry()} as well as {@link MutableCacheEntry#getValue()}.
+ *
+ * <p>The cache loader can be invoked explicitly via {@link Cache#reloadAll(Iterable, LoadCompletedListener)}.
+ *
+ * <p>Prefetching: The method {@link Cache#prefetch(Object)} can be used to instruct the cache to load
+ * multiple values in the background.
+ *
+ * <p>Blocking: If the loader is invoked by {@link Cache#get} or the other methods that allow transparent access
+ * (see above) concurrent requests on the same key will block until the loading is completed.
+ * For expired values blocking can be avoided by enabling {@link Cache2kBuilder#refreshAhead}.
+ * There is no hard guarantee that the loader is invoked only for one key at a time, for example
+ * after {@link Cache#clear()} is called load operations for one key may overlap.
+ *
+ * <p>Refresh ahead:
  *
  * <p>The alternative loader interface {@link AdvancedCacheLoader} provides the loader
  * with the current cache value.
  *
  * @author Jens Wilke
  * @see AdvancedCacheLoader
+ * @since 0.24
  */
 public abstract class CacheLoader<K, V> {
 
   /**
    * Retrieves or generates data based on the key.
    *
-   * <p>Concurrent load requests on the same key will be blocked.
-   *
-   * <p>This method may not mutate the cache contents directly.
+   * <p>From inside this method it is illegal to call methods on the same cache. This
+   * may cause a deadlock.
    *
    * <p>API rationale: This method declares an exception to allow any unhandled
    * exceptions of the loader implementation to just pass through. Since the cache
@@ -47,27 +71,29 @@ public abstract class CacheLoader<K, V> {
    * necessary try/catch clauses in the loader.
    *
    * @param key the non-null key to provide the value for.
-   * @return value to be associated with the key. If the cache does not permit null values
-   *         an exception is thrown, but the expiry policy is called before it.
-   * @throws Exception Unhandled exception from the loader. The exception will be
-   *         handled by the cache based on its configuration.
+   * @return value to be associated with the key. If the cache does not permit {@code null}
+   *         values a {@link NullPointerException} is thrown, but the expiry policy is called before it.
+   * @throws Exception Unhandled exception from the loader. Exceptions are suppressed or
+   *                   wrapped and rethrown via a {@link CacheLoaderException}
    */
   public abstract V load(K key) throws Exception;
 
   /**
    * Loads multiple values to the cache.
    *
-   * <p>This method may not mutate the cache contents directly.
+   * <p>From inside this method it is illegal to call methods on the same cache. This
+   * may cause a deadlock.
    *
    * <p>The method is provided to complete the API. At the moment cache2k is not
    * using it. Please see the road map.
    *
    * @param keys set of keys for the values to be loaded
    * @param executor an executor for concurrent loading
-   * @return The loaded values. A key may map to null if the cache permits null values.
-   * @throws Exception Unhandled exception from the loader. The exception will be
-   *           handled by the cache based on its configuration. If an exception happens
-   *           the cache will retry the load with the single value load method.
+   * @return The loaded values. A key may map to {@code null} if the cache permits {@code null} values.
+   * @throws Exception Unhandled exception from the loader. Exceptions are suppressed or
+   *                   wrapped and rethrown via a {@link CacheLoaderException}.
+   *                   If an exception happens the cache may retry the load with the
+   *                   single value load method.
    */
   public Map<K, V> loadAll(Iterable<? extends K> keys, Executor executor) throws Exception {
     throw new UnsupportedOperationException();

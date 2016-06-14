@@ -26,6 +26,7 @@ import java.util.Map;
  * Key/value source with bulk get and prefetching.
  *
  * @author Jens Wilke
+ * @since 1.0
  */
 public interface AdvancedKeyValueSource<K,V> extends KeyValueSource<K,V> {
 

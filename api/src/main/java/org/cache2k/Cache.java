@@ -48,10 +48,54 @@ import java.util.concurrent.ConcurrentMap;
  */
 
 /**
- * Interface to the cache2k cache implementation. To obtain a cache
- * instance use the {@link Cache2kBuilder}.
+ * A cache is similar to a map or a key value store, allowing to retrieve and
+ * update values which are associated to keys. In contrast to a {@code HashMap} the
+ * cache allows concurrent access and modification to its content and
+ * automatically controls the amount of entries in the cache to stay within
+ * configured resource limits.
  *
- * @see Cache2kBuilder to create a new cache
+ * <p>A cache can be obtained via a {@link Cache2kBuilder}, for example:
+ *
+ * <pre>{@code
+ *    Cache<Long, List<String>> cache =
+ *      new Cache2kBuilder<Long, List<String>>() {}
+ *        .name("myCache")
+ *        .eternal(true)
+ *        .build();
+ * }</pre>
+ *
+ * <p><b>Basic operation:</b> To mutate and retrieve the cache content the operations
+ * {@link #put} and {@link #peek} can be used, for example:
+ *
+ * <pre>{@code
+ *    cache.put(1, "one");
+ *    cache.put(2, "two");
+ *    // might fail:
+ *    assertTrue(cache.containsKey(1));
+ *    assertEquals("two", cache.peek(2));
+ * }</pre>
+ *
+ * It is important to note that the two assertion in the above example may fail.
+ * A cache has not the same guarantees as a data storage, because it needs to remove
+ * content automatically as soon as resource limits are reached. This is called <em>eviction</em>.
+ *
+ * <p><b>Populating:</b> A cache may automatically populate its contents via a {@link CacheLoader}.
+ * For typical read mostly caching this has several advantages,
+ * for details see {@link CacheLoader}. When using a cache loader the
+ * additional methods for mutating the cache directly may not be needed. Some
+ * methods, that do not interact with the loader such as {@link #containsKey}
+ * may be false friends. To make the code more obvious and protect against
+ * the accidental use of methods that do not invoke the loader transparently
+ * a subset interface, for example the {@link KeyValueSource} can be used.
+ *
+ * <p><b>CAS-Operations:</b> The cache has a set of operations that examine an entry
+ * and do a mutation in an atomic way, for example {@link #putIfAbsent}, {@link #containsAndRemove} and
+ * {@link #replaceIfEquals}. To allow arbitrary semantics that operate atomically on an {@link EntryProcessor}
+ * can be implemented and executed via {@link Cache#invoke}.
+ *
+ * @param <K> type of the key
+ * @param <V> type of the stores values
+ * @see Cache2kBuilder
  * @author Jens Wilke
  */
 @SuppressWarnings("UnusedDeclaration")
@@ -59,29 +103,65 @@ public interface Cache<K, V> extends
   AdvancedKeyValueSource<K, V>, KeyValueStore<K,V>,
   Iterable<CacheEntry<K, V>>, Closeable {
 
+  /**
+   * A configured or generated name of this cache instance.
+   *
+   * @see Cache2kBuilder#name(String)
+   * @return name of this cache or null for anonymous caches.
+   */
   String getName();
 
   /**
-   * Returns object in the cache that is mapped to the key.
+   * Returns a value associated by the given key, that contains a non expired value.
+   * If no value is present or it is expired the cache loader
+   * is invoked, if configured, or {@code null} is returned.
+   *
+   * <p>If the loader is invoked, subsequent requests of the same key will block
+   * until the loading is completed, details see {@link CacheLoader}
+   *
+   * <p>As an alternative {@link #peek} can be used if the loader should
+   * not be invoked.
+   *
+   * @param key key with which the specified value is associated
+   * @return the value associated with the specified key, or
+   *         {@code null} if there was no mapping for the key.
+   *         (If nulls are permitted a {@code null} can also indicate that the cache
+   *         previously associated {@code null} with the key)
+   * @throws ClassCastException if the class of the specified key
+   *         prevents it from being stored in this cache
+   * @throws NullPointerException if the specified key is null
+   * @throws IllegalArgumentException if some property of the specified key
+   *         prevents it from being stored in this cache
+   * @throws CacheLoaderException if the loading produced an exception .
    */
   @Override
   V get(K key);
 
   /**
-   * Returns a mapped entry from the cache or null. If no entry is present or the entry
-   * is expired, null is also returned.
+   * Returns an entry associated by the given key, that contains a non expired value.
+   * If no entry is present or the value is expired, either the loader is invoked
+   * or {@code null} is returned.
    *
-   * <p>If an exception was thrown during fetching the entry via the cache source,
-   * method does not follow the same schema of rethrowing the exception like in get()
-   * and peek(), instead the exception can be retrieved via,
-   * {@link org.cache2k.CacheEntry#getException()}
+   * <p>If the loader is invoked, subsequent requests of the same key will block
+   * until the loading is completed, details see {@link CacheLoader}
    *
-   * <p>The reason for the existence of this method is, that in the presence of
-   * null values it cannot be determined by peek() and get() if there is a mapping
-   * or a null value.
+   * <p>In case the cache loader yields an exception, the entry object will
+   * be returned. The exception can be retrieved via {@link CacheEntry#getException()}.
    *
-   * <p>Multiple calls for the same key may return different instances of the entry
-   * object.
+   * <p>If {@code null} values are present the method can be used to
+   * check for an existent mapping and retrieve the value in one API call.
+   *
+   * <p>The alternative method {@link #peekEntry} can be used if the loader
+   * should not be invoked.
+   *
+   * @param key key to retrieve the associated with the cache entry
+   * @throws ClassCastException if the class of the specified key
+   *         prevents it from being stored in this cache
+   * @throws NullPointerException if the specified key is null
+   * @throws IllegalArgumentException if some property of the specified key
+   *         prevents it from being stored in this cache
+   * @returns An entry representing the cache mapping. Multiple calls for the same key may
+   *          return different instances of the entry object.
    */
   CacheEntry<K, V> getEntry(K key);
 
@@ -144,44 +224,41 @@ public interface Cache<K, V> extends
    * on the cache content and does not invoke the loader.
    *
    * <p>API rationale: Consequently all methods that do not invoke the loader
-   * but return a value or a cache entry are named peek within this interface
+   * but return a value or a cache entry are prefixed with {@code peek} within this interface
    * to make the different semantics immediately obvious by the name.
    *
    * @param key key with which the specified value is associated
    * @return the value associated with the specified key, or
    *         {@code null} if there was no mapping for the key.
-   *         (A {@code null} return can also indicate that the cache
+   *         (If nulls are permitted a {@code null} can also indicate that the cache
    *         previously associated {@code null} with the key)
    * @throws ClassCastException if the class of the specified key
    *         prevents it from being stored in this cache
-   * @throws NullPointerException if the specified key is null or the
-   *         value is null and the cache does not permit null values
+   * @throws NullPointerException if the specified key is null
    * @throws IllegalArgumentException if some property of the specified key
    *         prevents it from being stored in this cache
-   * @throws CacheLoaderException if the loading of the entry produced
-   *         an exception, which was not suppressed and is not yet expired
+   * @throws CacheLoaderException if the loading produced an exception .
    */
   V peek(K key);
 
   /**
-   * Returns a mapped entry from the cache or null. If no entry is present or the entry
-   * is expired, null is also returned. As with {@link #peek(Object)}, no request to the
-   * {@link CacheSource} is made, if no entry is available for the requested key.
+   * Returns an entry associated by the given key, that contains a non expired value.
+   * The loader will not be invoked by this method.
    *
-   * <p>If an exception was thrown during fetching the entry via the cache source,
-   * method does not follow the same schema of rethrowing the exception like in get()
-   * and peek(), instead the exception can be retrieved via,
-   * {@link org.cache2k.CacheEntry#getException()}
+   * <p>In case the cache loader yields an exception, the entry object will
+   * be returned. The exception can be retrieved via {@link CacheEntry#getException()}.
    *
-   * <p>The reason for the existence of this method is, that in the presence of
-   * null values it cannot be determined by peek() and get() if there is a mapping
-   * or a null value.
-   *
-   * <p>Multiple calls for the same key may return different instances of the entry
-   * object.
-   *
-   * @throws CacheLoaderException if the loading of the entry produced
-   *         an exception, which was not suppressed and is not yet expired
+   * <p>If {@code null} values are present the method can be used to
+   * check for an existent mapping and retrieve the value in one API call.
+   **
+   * @param key key to retrieve the associated with the cache entry
+   * @throws ClassCastException if the class of the specified key
+   *         prevents it from being stored in this cache
+   * @throws NullPointerException if the specified key is null
+   * @throws IllegalArgumentException if some property of the specified key
+   *         prevents it from being stored in this cache
+   * @returns An entry representing the cache mapping. Multiple calls for the same key may
+   *          return different instances of the entry object.
    */
   CacheEntry<K, V> peekEntry(K key);
 
@@ -690,14 +767,12 @@ public interface Cache<K, V> extends
    * <p>The iterator itself is not thread safe. Calls to one iterator instance from
    * different threads are illegal or need proper synchronization.
    *
-   * <p>Statistics: Iteration is neutral to the cache statistics. Counting hits for iterated
-   * entries would effectively render the hitrate metric meaningless if iterations are used.
+   * <p>Statistics: Iteration is neutral to the cache statistics.
    *
    * <p>In case a storage (off heap or persistence) is attached the iterated entries are
    * always inserted into the heap cache. This will affect statistics.
    *
-   * <p>Rationale: Iterating keys can be realized in a faster way then iterating complete entries.
-   * Future releases may have an optimized key iteration.
+   * <p>Rationale: Iterating keys is faster as iterating complete entries.
    */
   Iterable<K> keys();
 

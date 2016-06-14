@@ -40,7 +40,7 @@ import java.lang.reflect.Type;
 import java.util.concurrent.TimeUnit;
 
 /**
- * Builder to create a new cache2k cache. The usage is:
+ * Builder to create a {@link Cache} instance. The usage is:
  *
  * <pre>{@code
  *    Cache<Long, List<String>> c =
@@ -66,7 +66,7 @@ import java.util.concurrent.TimeUnit;
  * }</pre>
  *
  * @author Jens Wilke
- * @since 0.25
+ * @since 1.0
  */
 public class Cache2kBuilder<K, V> implements Cloneable {
 
