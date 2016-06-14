@@ -22,42 +22,36 @@ package org.cache2k.core;
 
 import org.cache2k.core.threading.Job;
 
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.NoSuchElementException;
 
 /**
  * Iterator over all cache entries.
  *
- * <p>Hash expansion:
- * During the iteration a hash expansion may happen, which means every
+ * <p>Hash expansion: During the iteration a hash expansion may happen, which means every
  * entry is rehashed. In this case it is most likely that entries are missed.
- * If an expansion occurred, there is another iteration over the new
- * hash table contents. To ensure that every entry is only iterated once,
- * the iterator has an internal bookkeeping, what was previously iterated.
+ * If an expansion occurred, the iteration will restart from the beginning. To ensure that every
+ * entry is only iterated once, the iterator has an internal bookkeeping, what was previously iterated.
  *
- * <p>Clear:
- * A clear operation stops current iterations.
+ * <p>Clear: A clear operation stops current iterations.
  *
- * <p>Close:
- * A close operation will stop the iteration and yield a {@link CacheClosedException}
+ * <p>Close: A close operation will stop the iteration and yield a {@link CacheClosedException}
  *
  * @author Jens Wilke
  */
 public class ConcurrentEntryIterator<K,V> implements Iterator<Entry<K,V>> {
 
   private HeapCache<K, V> cache;
-  private Entry lastEntry = null;
-  private Entry nextEntry = null;
-  private long initialMaxFill;
+  private Entry<K, V> lastEntry = null;
+  private Entry<K, V> nextEntry = null;
   private long clearCount;
   private Hash2<K,V> hash;
   private Entry<K,V>[] hashArray;
-  private Hash<Entry<K, V>> iteratedCtl = new Hash<Entry<K,V>>();
-  private Entry<K, V>[] iterated;
+  private HashMap<K,K> seen = new HashMap<K, K>();
 
   public ConcurrentEntryIterator(HeapCache<K,V> _cache) {
     cache = _cache;
-    iterated = iteratedCtl.initSingleThreaded((Class<Entry<K, V>>) (Object) Entry.class);
     hash = cache.hash;
     switchAndCheckAbort();
   }
@@ -87,14 +81,18 @@ public class ConcurrentEntryIterator<K,V> implements Iterator<Entry<K,V>> {
   }
 
   /** Used by the storage code to filter out already iterated keys */
-  public boolean hasBeenIterated(Object key, int _hashCode) {
-    return Hash.contains(iterated, key, _hashCode);
+  public boolean hasBeenIterated(K key, @SuppressWarnings("UnusedParameters") int _hashCode) {
+    return seen.containsKey(key);
   }
 
-  public void markIterated(Object key, int _hashCode) {
-    Entry _newEntryIterated = new Entry(key, _hashCode);
-    iteratedCtl.insert(iterated, _newEntryIterated);
-    iterated = iteratedCtl.expand(iterated, _hashCode);
+  /**
+   *
+   * @param key
+   * @param _hashCode corresponding modified hash, unused but we keep it if we want to switch to
+   *                  a more efficient hash table
+   */
+  public void markIterated(K key, @SuppressWarnings("UnusedParameters") int _hashCode) {
+    seen.put(key, key);
   }
 
   private Entry nextEntry() {
@@ -142,7 +140,7 @@ public class ConcurrentEntryIterator<K,V> implements Iterator<Entry<K,V>> {
 
   private Entry<K,V> checkIteratedOrNext(Entry<K,V> e) {
     do {
-      boolean _notYetIterated = !Hash.contains(iterated, e.key, e.hashCode);
+      boolean _notYetIterated = !seen.containsKey(e.key);
       if (_notYetIterated) {
         markIterated(e.key, e.hashCode);
         return e;
@@ -177,7 +175,6 @@ public class ConcurrentEntryIterator<K,V> implements Iterator<Entry<K,V>> {
     if (_cacheClosed) {
       return true;
     }
-    initialMaxFill = hash.getMaxFill();
     return false;
   }
 
@@ -186,7 +183,7 @@ public class ConcurrentEntryIterator<K,V> implements Iterator<Entry<K,V>> {
    * scan over the hash tables. True also before first run.
    */
   private boolean hasExpansionOccurred() {
-    return initialMaxFill != hash.getMaxFill();
+    return hashArray != hash.getEntries();
   }
 
 }

@@ -46,7 +46,7 @@ class CacheBaseInfo implements InternalCacheInfo {
   long hitCnt;
   long correctedPutCnt;
   long usageCnt;
-  Hash.CollisionInfo collisionInfo;
+  CollisionInfo collisionInfo;
   String extraStatistics;
   IntegrityState integrityState;
   long asyncLoadsStarted = 0;
@@ -87,7 +87,7 @@ class CacheBaseInfo implements InternalCacheInfo {
     evictionRunningCnt = _heapCache.eviction.getEvictionRunningCount();
     integrityState = _heapCache.getIntegrityState();
     storageMetrics = _userCache.getStorageMetrics();
-    collisionInfo = new Hash.CollisionInfo();
+    collisionInfo = new CollisionInfo();
     _heapCache.hash.calcHashCollisionInfo(collisionInfo);
     extraStatistics = heapCache.eviction.getExtraStatistics();
     if (extraStatistics.startsWith(", ")) {

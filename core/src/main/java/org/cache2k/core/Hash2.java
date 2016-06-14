@@ -470,7 +470,7 @@ public class Hash2<K,V> {
     entries = null;
   }
 
-  public void calcHashCollisionInfo(Hash.CollisionInfo inf) {
+  public void calcHashCollisionInfo(CollisionInfo inf) {
     for (Entry<K, V> e : entries) {
       if (e != null) {
         e = e.another;
@@ -489,6 +489,21 @@ public class Hash2<K,V> {
       }
     }
 
+  }
+
+  /**
+   * Count the entries in the hash table, by scanning through the hash table.
+   * This is used for integrity checks.
+   */
+  public long calcEntryCount() {
+    long _count = 0;
+    for (Entry e : entries) {
+      while (e != null) {
+        _count++;
+        e = e.another;
+      }
+    }
+    return _count;
   }
 
   /**

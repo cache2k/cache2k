@@ -1664,7 +1664,7 @@ public class HeapCache<K, V>
 
   protected IntegrityState getIntegrityState() {
     IntegrityState is = new IntegrityState()
-      .checkEquals("hash.getSize() == Hash.calcEntryCount(hash.getEntries())", hash.getSize(), Hash.calcEntryCount(hash.getEntries()));
+      .checkEquals("hash.getSize() == hash.calcEntryCount()", hash.getSize(), hash.calcEntryCount());
     if (eviction.getEvictionRunningCount() > 0) {
       is.check("eviction running: hash.getSize() == eviction.getSize()", true)
         .check("eviction running: newEntryCnt == hash.getSize() + evictedCnt ....", true);
