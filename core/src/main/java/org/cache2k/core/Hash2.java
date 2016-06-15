@@ -369,7 +369,7 @@ public class Hash2<K,V> {
   }
 
   /**
-   * Acquire all segment locks and return an array with the stamps.
+   * Acquire all segment locks and return an array with the lock stamps.
    */
   private long[] lockAll() {
     OptimisticLock[] _locks = locks;
@@ -427,7 +427,7 @@ public class Hash2<K,V> {
   }
 
   /**
-   * Lock all segments and run job.
+   * Lock all segments and run the job.
    */
   public <T> T runTotalLocked(Job<T> j) {
     long[] _stamps = lockAll();
@@ -462,10 +462,13 @@ public class Hash2<K,V> {
     return clearCount;
   }
 
-  public long getMaxFill() {
-    return maxFill;
-  }
-
+  /**
+   * Close the cache by discarding the entry table. Assumes total lock.
+   *
+   * <p>Closing will be visible to other threads, because of the guarantees of the locking.
+   * Using the entry table for closing has the advantage that the close check collapses with
+   * the implicit null check and has no additional overhead.
+   */
   public void close() {
     entries = null;
   }
