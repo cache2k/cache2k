@@ -637,22 +637,21 @@ public class HeapCache<K, V>
 
   protected void finishLoadOrEviction(Entry e, long _nextRefreshTime) {
     if (e.getProcessingState() != Entry.ProcessingState.REFRESH) {
-      e.processingDone();
       restartTimer(e, _nextRefreshTime);
-      return;
+    } else {
+      startRefreshProbationTimer(e, _nextRefreshTime);
     }
     e.processingDone();
-    toRefreshHashAndStartTimer(e, _nextRefreshTime);
   }
 
   private void restartTimer(final Entry e, final long _nextRefreshTime) {
     e.setNextRefreshTime(timing.stopStartTimer(_nextRefreshTime, e));
-    checkForImmediateExpiry(e);
+    checkIfImmediatelyExpired(e);
   }
 
-  private void checkForImmediateExpiry(final Entry e) {
+  private void checkIfImmediatelyExpired(final Entry e) {
     if (e.isExpired()) {
-      expireAndRemoveEventually(e);
+      expireAndRemoveEventuallyAfterProcessing(e);
     }
   }
 
@@ -1072,7 +1071,7 @@ public class HeapCache<K, V>
         action();
       } catch (CacheClosedException ignore) {
       } catch (Throwable t) {
-        cache.getLog().warn("Loader thread exception (" + Thread.currentThread().getName() + ")", t);
+        cache.logAndCountInternalException("Loader thread exception (" + Thread.currentThread().getName() + ")", t);
       }
     }
   }
@@ -1383,13 +1382,6 @@ public class HeapCache<K, V>
         return;
       }
       synchronized (e) {
-        /*=-
-        if (!e.isProcessing()) {
-          System.err.println(e);
-          System.err.println(isClosed());
-          System.err.println(e.getValueOrException());
-        }
-        -*/
         e.setLastModification(t0);
         insertUpdateStats(e, _value, t0, t, _updateStatistics, _nextRefreshTime, false);
         e.setValueOrException(_value);
@@ -1470,11 +1462,12 @@ public class HeapCache<K, V>
       }
       e.startProcessing(Entry.ProcessingState.REFRESH);
     }
+    boolean _finished = false;
     try {
       load(e);
+      _finished = true;
     } catch (CacheClosedException ignore) {
     } catch (Throwable ex) {
-      e.ensureAbort(false);
       logAndCountInternalException("Refresh exception", ex);
       try {
         synchronized (e) {
@@ -1482,10 +1475,12 @@ public class HeapCache<K, V>
         }
       } catch (CacheClosedException ignore) {
       }
+    } finally {
+      e.ensureAbort(_finished);
     }
   }
 
-  public void toRefreshHashAndStartTimer(final Entry<K, V> e, long _nextRefreshTime) {
+  public void startRefreshProbationTimer(final Entry<K, V> e, long _nextRefreshTime) {
     boolean _expired = timing.startRefreshProbationTimer(e, _nextRefreshTime);
     if (_expired) {
       expireAndRemoveEventually(e);
@@ -1545,9 +1540,26 @@ public class HeapCache<K, V>
   /**
    * Remove expired from heap and increment statistics. The entry is not removed when
    * there is processing going on in parallel.
+   *
+   * @see #expireAndRemoveEventuallyAfterProcessing(Entry)
    */
   private void expireAndRemoveEventually(final Entry e) {
     if (hasKeepAfterExpired() || e.isProcessing()) {
+      metrics.expiredKept();
+    } else {
+
+      removeEntry(e);
+    }
+  }
+
+  /**
+   * Remove expired from heap and increment statistics. This is at the end of processing,
+   * if entry is immediately expired.
+   *
+   * @see #expireAndRemoveEventually
+   */
+  private void expireAndRemoveEventuallyAfterProcessing(final Entry e) {
+    if (hasKeepAfterExpired()) {
       metrics.expiredKept();
     } else {
       removeEntry(e);

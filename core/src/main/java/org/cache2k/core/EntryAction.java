@@ -928,7 +928,7 @@ public abstract class EntryAction<K, V, R> implements
     synchronized (entry) {
       entry.processingDone();
       if (refresh) {
-        heapCache.toRefreshHashAndStartTimer(entry, expiry);
+        heapCache.startRefreshProbationTimer(entry, expiry);
         entryLocked = false;
         updateMutationStatistics();
         mutationDone();

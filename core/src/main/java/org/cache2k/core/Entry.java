@@ -332,10 +332,11 @@ public class Entry<K, T> extends CompactEntry<K,T>
   }
 
   /**
-   * If fetch is not stopped, abort and make entry invalid.
-   * This is a safety measure, since during entry processing an
-   * exceptions may happen. This can happen regularly e.g. if storage
-   * is set to read only and a cache put is made.
+   * Make sure entry processing is properly finished, otherwise threads waiting for
+   * an entry get stuck.
+   *
+   * <p>Usually no exceptions happens, but the CacheClosedException is happening out of order
+   * and stops processing to properly finish.
    */
   public void ensureAbort(boolean _finished) {
     if (_finished) {
@@ -533,7 +534,7 @@ public class Entry<K, T> extends CompactEntry<K,T>
   public String toString(HeapCache c) {
     StringBuilder sb = new StringBuilder();
     sb.append("Entry{");
-    sb.append("objId=").append(System.identityHashCode(this));
+    sb.append("id=").append(System.identityHashCode(this));
     sb.append(", lock=").append(num2processingStateText(getProcessingState()));
     sb.append(", key=");
     if (key == null) {
@@ -546,7 +547,7 @@ public class Entry<K, T> extends CompactEntry<K,T>
     }
     Object _valueOrException = getValueOrException();
     if (_valueOrException != null) {
-      sb.append(", valueIdentityHashCode=").append(System.identityHashCode(_valueOrException));
+      sb.append(", valueId=").append(System.identityHashCode(_valueOrException));
     } else {
       sb.append(", value=null");
     }
