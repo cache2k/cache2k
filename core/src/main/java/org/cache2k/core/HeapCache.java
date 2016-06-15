@@ -1714,10 +1714,8 @@ public class HeapCache<K, V>
     return getLatestInfo(this);
   }
 
-  Object infoGenerationLock = new Object();
-
   public final InternalCacheInfo getInfo(InternalCache _userCache) {
-    synchronized (infoGenerationLock) {
+    synchronized (lock) {
       long t = System.currentTimeMillis();
       if (info != null &&
         (info.creationTime + info.creationDeltaMs * TUNABLE.minimumStatisticsCreationTimeDeltaFactor + TUNABLE.minimumStatisticsCreationDeltaMillis > t)) {
