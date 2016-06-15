@@ -23,11 +23,13 @@ package org.cache2k.core;
 import org.cache2k.core.threading.Job;
 
 /**
+ * Forwards eviction operations to segments based on the hash code.
+ *
  * @author Jens Wilke
  */
-public class SegmentedEviction implements Eviction {
+public class SegmentedEviction implements Eviction, EvictionMetrics {
 
-  Eviction[] segments;
+  private Eviction[] segments;
 
   public SegmentedEviction(final Eviction[] _segments) {
     segments = _segments;
@@ -123,18 +125,6 @@ public class SegmentedEviction implements Eviction {
   }
 
   @Override
-  public String getExtraStatistics() {
-    StringBuilder sb  = new StringBuilder();
-    for (int i = 0; i < segments.length; i++) {
-      if (i > 0) { sb.append(", "); }
-      sb.append("eviction").append(i).append('(');
-      sb.append(segments[i].getExtraStatistics());
-      sb.append(')');
-    }
-    return sb.toString();
-  }
-
-  @Override
   public void checkIntegrity(final IntegrityState _integrityState) {
     for (int i = 0; i < segments.length; i++) {
       _integrityState.group("eviction" + i);
@@ -143,10 +133,27 @@ public class SegmentedEviction implements Eviction {
   }
 
   @Override
+  public EvictionMetrics getMetrics() {
+    return this;
+  }
+
+  @Override
+  public String getExtraStatistics() {
+    StringBuilder sb  = new StringBuilder();
+    for (int i = 0; i < segments.length; i++) {
+      if (i > 0) { sb.append(", "); }
+      sb.append("eviction").append(i).append('(');
+      sb.append(segments[i].getMetrics().getExtraStatistics());
+      sb.append(')');
+    }
+    return sb.toString();
+  }
+
+  @Override
   public long getHitCount() {
     long sum = 0;
     for (Eviction ev : segments) {
-      sum += ev.getHitCount();
+      sum += ev.getMetrics().getHitCount();
     }
     return sum;
   }
@@ -155,7 +162,7 @@ public class SegmentedEviction implements Eviction {
   public long getNewEntryCount() {
     long sum = 0;
     for (Eviction ev : segments) {
-      sum += ev.getNewEntryCount();
+      sum += ev.getMetrics().getNewEntryCount();
     }
     return sum;
   }
@@ -164,7 +171,7 @@ public class SegmentedEviction implements Eviction {
   public long getRemovedCount() {
     long sum = 0;
     for (Eviction ev : segments) {
-      sum += ev.getRemovedCount();
+      sum += ev.getMetrics().getRemovedCount();
     }
     return sum;
   }
@@ -173,7 +180,7 @@ public class SegmentedEviction implements Eviction {
   public long getExpiredRemovedCount() {
     long sum = 0;
     for (Eviction ev : segments) {
-      sum += ev.getExpiredRemovedCount();
+      sum += ev.getMetrics().getExpiredRemovedCount();
     }
     return sum;
   }
@@ -182,7 +189,7 @@ public class SegmentedEviction implements Eviction {
   public long getVirginRemovedCount() {
     long sum = 0;
     for (Eviction ev : segments) {
-      sum += ev.getVirginRemovedCount();
+      sum += ev.getMetrics().getVirginRemovedCount();
     }
     return sum;
   }
@@ -191,7 +198,7 @@ public class SegmentedEviction implements Eviction {
   public long getEvictedCount() {
     long sum = 0;
     for (Eviction ev : segments) {
-      sum += ev.getEvictedCount();
+      sum += ev.getMetrics().getEvictedCount();
     }
     return sum;
   }
@@ -200,7 +207,7 @@ public class SegmentedEviction implements Eviction {
   public long getSize() {
     long sum = 0;
     for (Eviction ev : segments) {
-      sum += ev.getSize();
+      sum += ev.getMetrics().getSize();
     }
     return sum;
   }
@@ -209,7 +216,7 @@ public class SegmentedEviction implements Eviction {
   public long getMaxSize() {
     long sum = 0;
     for (Eviction ev : segments) {
-      sum += ev.getMaxSize();
+      sum += ev.getMetrics().getMaxSize();
     }
     return sum;
   }
@@ -218,7 +225,7 @@ public class SegmentedEviction implements Eviction {
   public int getEvictionRunningCount() {
     int sum = 0;
     for (Eviction ev : segments) {
-      sum += ev.getEvictionRunningCount();
+      sum += ev.getMetrics().getEvictionRunningCount();
     }
     return sum;
   }

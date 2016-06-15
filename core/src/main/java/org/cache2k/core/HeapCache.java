@@ -1675,16 +1675,17 @@ public class HeapCache<K, V>
   }
 
   protected IntegrityState getIntegrityState() {
+    EvictionMetrics em = eviction.getMetrics();
     IntegrityState is = new IntegrityState()
       .checkEquals("hash.getSize() == hash.calcEntryCount()", hash.getSize(), hash.calcEntryCount());
-    if (eviction.getEvictionRunningCount() > 0) {
+    if (em.getEvictionRunningCount() > 0) {
       is.check("eviction running: hash.getSize() == eviction.getSize()", true)
         .check("eviction running: newEntryCnt == hash.getSize() + evictedCnt ....", true);
     } else {
-      is.checkEquals("hash.getSize() == eviction.getSize()", getLocalSize(), eviction.getSize())
+      is.checkEquals("hash.getSize() == eviction.getSize()", getLocalSize(), em.getSize())
         .checkEquals("newEntryCnt == hash.getSize() + evictedCnt + expiredRemoveCnt + removeCnt + clearedCnt + virginRemovedCnt",
-          eviction.getNewEntryCount(), getLocalSize() + eviction.getEvictedCount() +
-            eviction.getExpiredRemovedCount() + eviction.getRemovedCount() + clearRemovedCnt + eviction.getVirginRemovedCount());
+          em.getNewEntryCount(), getLocalSize() + em.getEvictedCount() +
+            em.getExpiredRemovedCount() + em.getRemovedCount() + clearRemovedCnt + em.getVirginRemovedCount());
     }
     eviction.checkIntegrity(is);
     return is;
@@ -1746,7 +1747,8 @@ public class HeapCache<K, V>
     return info;
   }
 
-  static final Object RESTART_AFTER_EVICTION = new Object();
+  /** Internal marker object */
+  private static final Object RESTART_AFTER_EVICTION = new Object();
 
   /**
    * Execute job while making sure that no other operations are going on.

@@ -27,6 +27,9 @@ import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
+ * Experimental implementation that connects the actual eviction via a queue to
+ * have more thread affinity.
+ *
  * @author Jens Wilke
  */
 public class QueuedEviction implements Eviction, EvictionThread.Job {
@@ -125,11 +128,6 @@ public class QueuedEviction implements Eviction, EvictionThread.Job {
   }
 
   @Override
-  public long getSize() {
-    return forward.getSize();
-  }
-
-  @Override
   public void checkIntegrity(final IntegrityState _integrityState) {
     forward.checkIntegrity(_integrityState);
   }
@@ -150,45 +148,7 @@ public class QueuedEviction implements Eviction, EvictionThread.Job {
   }
 
   @Override
-  public long getNewEntryCount() {
-    return forward.getNewEntryCount();
-  }
-
-  @Override
-  public String getExtraStatistics() {
-    return forward.getExtraStatistics();
-  }
-
-  @Override
-  public long getRemovedCount() {
-    return forward.getRemovedCount();
-  }
-
-  @Override
-  public long getExpiredRemovedCount() {
-    return forward.getExpiredRemovedCount();
-  }
-
-  @Override
-  public long getVirginRemovedCount() {
-    return forward.getVirginRemovedCount();
-  }
-
-  @Override
-  public long getEvictedCount() {
-    return forward.getEvictedCount();
-  }
-
-  @Override
-  public long getHitCount() {
-    return forward.getHitCount();
-  }
-
-  @Override
-  public long getMaxSize() { return forward.getMaxSize(); }
-
-  @Override
-  public int getEvictionRunningCount() {
-    return forward.getEvictionRunningCount();
+  public EvictionMetrics getMetrics() {
+    return forward.getMetrics();
   }
 }

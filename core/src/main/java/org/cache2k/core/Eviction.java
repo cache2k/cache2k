@@ -23,14 +23,16 @@ package org.cache2k.core;
 import org.cache2k.core.threading.Job;
 
 /**
+ * Interface to the eviction data structure (replacement list).
+ *
  * @author Jens Wilke
  */
 public interface Eviction {
 
-  void close();
-
-  void evictEventually(int hc);
-  void evictEventually();
+  /**
+   * Submit to eviction for inserting or removing from the replacement list.
+   * Will call the eviction if limits are reached.
+   */
   void execute(Entry e);
 
   /**
@@ -40,7 +42,36 @@ public interface Eviction {
    */
   boolean executeWithoutEviction(Entry e);
 
+  /**
+   * Evict if needed, focused on the segment addressed by the hash code.
+   * Called when eviction is probably needed.
+   */
+  void evictEventually(int _hashCode);
+
+  /**
+   * Evict if needed, checks all segments.
+   */
+  void evictEventually();
+
+  /**
+   * Remove all entries from the eviction data structure.
+   *
+   * @return entry count
+   */
   long removeAll();
+
+  /**
+   * Drain eviction queue and do updates in the eviction data structures.
+   * Does no eviction when size limit is reached.
+   *
+   * @boolean true, if eviction is needed
+   */
+  boolean drain();
+
+  /**
+   * Start concurrent eviction threads.
+   */
+  void start();
 
   /**
    * Stop concurrent threads that may access the eviction data structures.
@@ -49,34 +80,18 @@ public interface Eviction {
    */
   void stop();
 
-  boolean drain();
+  /**
+   * Free resources, for example thread pool or queue.
+   */
+  void close();
 
   /**
-   * Start concurrent eviction threads.
+   * Runs job making sure concurrent evictions operations pause.
    */
-  void start();
-
   <T> T runLocked(Job<T> j);
 
   void checkIntegrity(IntegrityState _integrityState);
-  String getExtraStatistics();
 
-  long getHitCount();
-  long getNewEntryCount();
-  long getRemovedCount();
-  long getExpiredRemovedCount();
-  long getVirginRemovedCount();
-
-  /** Number of entries evicted */
-  long getEvictedCount();
-
-  /** Number of eviction currently going on */
-  int getEvictionRunningCount();
-
-  /** Number of entries in the viction data structure */
-  long getSize();
-
-  /** Size limit after eviction kicks in */
-  long getMaxSize();
+  EvictionMetrics getMetrics();
 
 }

@@ -24,10 +24,12 @@ import org.cache2k.configuration.Cache2kConfiguration;
 import org.cache2k.core.threading.Job;
 
 /**
+ * Basic eviction functionality.
+ *
  * @author Jens Wilke
  */
 @SuppressWarnings({"WeakerAccess", "SynchronizationOnLocalVariableOrMethodParameter"})
-public abstract class AbstractEviction implements Eviction {
+public abstract class AbstractEviction implements Eviction, EvictionMetrics {
 
   protected final long maxSize;
   protected final HeapCache heapCache;
@@ -241,6 +243,11 @@ public abstract class AbstractEviction implements Eviction {
   @Override
   public int getEvictionRunningCount() {
     return evictionRunningCount;
+  }
+
+  @Override
+  public EvictionMetrics getMetrics() {
+    return this;
   }
 
   @Override

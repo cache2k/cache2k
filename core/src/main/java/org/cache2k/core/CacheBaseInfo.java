@@ -74,22 +74,23 @@ class CacheBaseInfo implements InternalCacheInfo {
   public CacheBaseInfo(HeapCache _heapCache, InternalCache _userCache) {
     this.heapCache = _heapCache;
     metrics = _heapCache.metrics;
-    newEntryCnt = _heapCache.eviction.getNewEntryCount();
+    EvictionMetrics em = _heapCache.eviction.getMetrics();
+    newEntryCnt = em.getNewEntryCount();
     clearedTime = _heapCache.clearedTime;
     keyMutationCnt = _heapCache.keyMutationCnt;
-    removedCnt = _heapCache.eviction.getRemovedCount();
-    virginRemovedCnt = _heapCache.eviction.getVirginRemovedCount();
+    removedCnt = em.getRemovedCount();
+    virginRemovedCnt = em.getVirginRemovedCount();
     clearRemovedCnt = _heapCache.clearRemovedCnt;
     clearCnt = _heapCache.clearCnt;
-    expiredRemoveCnt = _heapCache.eviction.getExpiredRemovedCount();
-    evictedCnt = _heapCache.eviction.getEvictedCount();
-    maxSize = _heapCache.eviction.getMaxSize();
-    evictionRunningCnt = _heapCache.eviction.getEvictionRunningCount();
+    expiredRemoveCnt = em.getExpiredRemovedCount();
+    evictedCnt = em.getEvictedCount();
+    maxSize = em.getMaxSize();
+    evictionRunningCnt = em.getEvictionRunningCount();
     integrityState = _heapCache.getIntegrityState();
     storageMetrics = _userCache.getStorageMetrics();
     collisionInfo = new CollisionInfo();
     _heapCache.hash.calcHashCollisionInfo(collisionInfo);
-    extraStatistics = heapCache.eviction.getExtraStatistics();
+    extraStatistics = em.getExtraStatistics();
     if (extraStatistics.startsWith(", ")) {
       extraStatistics = extraStatistics.substring(2);
     }
@@ -97,7 +98,7 @@ class CacheBaseInfo implements InternalCacheInfo {
     missCnt = metrics.getLoadCount() + metrics.getReloadCount() + metrics.getPeekHitNotFreshCount() + metrics.getPeekMissCount();
     storageMissCnt = storageMetrics.getReadMissCount() + storageMetrics.getReadNonFreshCount();
     storageLoadCnt = storageMissCnt + storageMetrics.getReadHitCount();
-    hitCnt = _heapCache.eviction.getHitCount();
+    hitCnt = em.getHitCount();
     correctedPutCnt = metrics.getPutNewEntryCount() + metrics.getPutHitCount() + metrics.getPutNoReadHitCount();
     usageCnt =
             hitCnt + newEntryCnt + metrics.getPeekMissCount() + metrics.getPutHitCount() + metrics.getRemoveCount();
