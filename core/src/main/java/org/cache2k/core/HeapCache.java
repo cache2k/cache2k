@@ -1750,6 +1750,15 @@ public class HeapCache<K, V>
 
   static final Object RESTART_AFTER_EVICTION = new Object();
 
+  /**
+   * Execute job while making sure that no other operations are going on.
+   * In case the eviction is connected via a queue we need to stop the queue processing.
+   * On the other hand we needs to make sure that the queue is drained because this
+   * method is used to access the recent statistics or check integrity. Draining the queue
+   * is a two phase job: The draining may not do eviction since we hold the locks, after
+   * lifting the lock with do eviction and lock again. This ensures that all
+   * queued entries are processed up to the point when the method was called.
+   */
   public <T> T executeWithGlobalLock(final Job<T> job) {
     synchronized (lock) {
       checkClosed();
