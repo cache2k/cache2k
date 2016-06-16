@@ -32,15 +32,18 @@ public interface Eviction {
   /**
    * Submit to eviction for inserting or removing from the replacement list.
    * Will call the eviction if limits are reached.
+   *
+   * <p>Whether the entry is inserted or removed is detected via the entry
+   * state {@link Entry#isNotYetInsertedInReplacementList()}.
    */
-  void execute(Entry e);
+  void submit(Entry e);
 
   /**
    * Submit to eviction for inserting or removing from the replacement list.
    * However, eviction should be triggered (which in turn triggers a hash table
    * update) since the hash segment lock is hold at the moment.
    */
-  boolean executeWithoutEviction(Entry e);
+  boolean submitWithoutEviction(Entry e);
 
   /**
    * Evict if needed, focused on the segment addressed by the hash code.

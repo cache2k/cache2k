@@ -670,7 +670,7 @@ public class HeapCache<K, V>
       _removed = hash.removeWithinLock(e, hc);
       e.setGone();
       if (_removed) {
-        eviction.executeWithoutEviction(e);
+        eviction.submitWithoutEviction(e);
       }
     } finally {
       l.unlockWrite(_stamp);
@@ -1200,7 +1200,7 @@ public class HeapCache<K, V>
     try {
       e2 = hash.insertWithinLock(e, hc);
       if (e == e2) {
-        _needsEviction = eviction.executeWithoutEviction(e);
+        _needsEviction = eviction.submitWithoutEviction(e);
       }
     } finally {
       l.unlockWrite(_stamp);

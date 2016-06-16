@@ -58,7 +58,7 @@ public class QueuedEviction implements Eviction, EvictionThread.Job {
   }
 
   @Override
-  public void execute(final Entry e) {
+  public void submit(final Entry e) {
     throw new UnsupportedOperationException();
   }
 
@@ -67,12 +67,12 @@ public class QueuedEviction implements Eviction, EvictionThread.Job {
    * If we queue successfully, it's okay.
    */
   @Override
-  public boolean executeWithoutEviction(final Entry e) {
+  public boolean submitWithoutEviction(final Entry e) {
     if (queue.offer(e)) {
       threadRunner.ensureRunning();
       return false;
     } else {
-      return forward.executeWithoutEviction(e);
+      return forward.submitWithoutEviction(e);
     }
   }
 
@@ -107,7 +107,7 @@ public class QueuedEviction implements Eviction, EvictionThread.Job {
     if (e == null) { return false; }
     int _pollCount = MAX_POLLS;
     do {
-      forward.execute(e);
+      forward.submit(e);
       if (--_pollCount == 0) {
         break;
       }
@@ -121,7 +121,7 @@ public class QueuedEviction implements Eviction, EvictionThread.Job {
     Entry e = queue.poll();
     if (e == null) { return false; }
     do {
-      forward.executeWithoutEviction(e);
+      forward.submitWithoutEviction(e);
       e = queue.poll();
     } while (e != null);
     return true;

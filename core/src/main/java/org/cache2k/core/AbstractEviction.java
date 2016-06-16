@@ -59,7 +59,7 @@ public abstract class AbstractEviction implements Eviction, EvictionMetrics {
   }
 
   @Override
-  public void execute(final Entry e) {
+  public void submit(final Entry e) {
     Entry[] _evictionChunk = null;
     synchronized (lock) {
       if (e.isNotYetInsertedInReplacementList()) {
@@ -73,6 +73,7 @@ public abstract class AbstractEviction implements Eviction, EvictionMetrics {
     evictChunk(_evictionChunk);
   }
 
+  /** Safe GC overhead by reusing the chunk array. */
   Entry[] reuseChunkArray() {
     Entry[] ea = evictChunkReuse;
     if (ea != null) {
@@ -98,7 +99,7 @@ public abstract class AbstractEviction implements Eviction, EvictionMetrics {
   }
 
   @Override
-  public boolean executeWithoutEviction(final Entry e) {
+  public boolean submitWithoutEviction(final Entry e) {
     synchronized (lock) {
       if (e.isNotYetInsertedInReplacementList()) {
         insertIntoReplacementList(e);
