@@ -31,10 +31,14 @@ import org.cache2k.core.threading.Job;
 @SuppressWarnings({"WeakerAccess", "SynchronizationOnLocalVariableOrMethodParameter"})
 public abstract class AbstractEviction implements Eviction, EvictionMetrics {
 
+  private static final int MAX_EVICTION_SPINS = 3;
+  private static final int DECREASE_AFTER_NO_CONTENTION = 11;
+  private static final int INITIAL_CHUNK_SIZE = 4;
+  private static final long MINIMUM_CAPACITY_FOR_CHUNKING = 1000;
+
   protected final long maxSize;
   protected final HeapCache heapCache;
   private final Object lock = new Object();
-  private final int MAX_EVICTION_SPINS = 3;
   private long newEntryCounter;
   private long removedCnt;
   private long expiredRemovedCnt;
@@ -46,15 +50,20 @@ public abstract class AbstractEviction implements Eviction, EvictionMetrics {
   private int chunkSize;
   private int evictionRunningCount = 0;
 
+  private final int maximumChunkSize;
+  private int noEvictionContentionCount = 0;
+
   public AbstractEviction(final HeapCache _heapCache, final HeapCacheListener _listener, final Cache2kConfiguration cfg, final int evictionSegmentCount) {
     heapCache = _heapCache;
     listener = _listener;
-    chunkSize = 4;
-    if (cfg.getEntryCapacity() <= 1000) {
-      maxSize = cfg.getEntryCapacity() / evictionSegmentCount;
+    maxSize = cfg.getEntryCapacity() / evictionSegmentCount;
+    if (cfg.getEntryCapacity() < MINIMUM_CAPACITY_FOR_CHUNKING) {
       chunkSize = 1;
+      maximumChunkSize = 1;
     } else {
-      maxSize = (cfg.getEntryCapacity() + chunkSize) / evictionSegmentCount;
+      chunkSize = INITIAL_CHUNK_SIZE;
+      int _maximumChunkSize = Runtime.getRuntime().availableProcessors() * 4;
+      maximumChunkSize = (int) Math.min((long) _maximumChunkSize, maxSize * 10 / 100);
     }
     noListenerCall = _listener instanceof HeapCacheListener.NoOperation;
   }
@@ -80,7 +89,7 @@ public abstract class AbstractEviction implements Eviction, EvictionMetrics {
     if (ea != null) {
       evictChunkReuse = null;
     } else {
-      return new Entry[chunkSize];
+      ea = new Entry[chunkSize];
     }
     return ea;
   }
@@ -112,8 +121,12 @@ public abstract class AbstractEviction implements Eviction, EvictionMetrics {
     }
   }
 
+  /**
+   * Do we need to trigger an eviction? For chunks sizes more than 1 the eviction
+   * kicks later.
+   */
   boolean evictionNeeded() {
-    return getSize() > (maxSize - evictionRunningCount);
+    return getSize() > (maxSize + evictionRunningCount + chunkSize / 2);
   }
 
   @Override
@@ -135,15 +148,18 @@ public abstract class AbstractEviction implements Eviction, EvictionMetrics {
       return null;
     }
     final Entry[] _chunk = reuseChunkArray();
-    refillChunk(_chunk);
-    return _chunk;
+    return refillChunk(_chunk);
   }
 
-  private void refillChunk(final Entry[] _chunk) {
+  private Entry[] refillChunk(Entry[] _chunk) {
+    if (_chunk == null) {
+      _chunk = new Entry[chunkSize];
+    }
     evictionRunningCount += _chunk.length;
     for (int i = 0; i < _chunk.length; i++) {
       _chunk[i] = findEvictionCandidate(null);
     }
+    return _chunk;
   }
 
   private void evictChunk(Entry[] _chunk) {
@@ -153,15 +169,55 @@ public abstract class AbstractEviction implements Eviction, EvictionMetrics {
       removeFromHash(_chunk);
       synchronized (lock) {
         removeAllFromReplacementListOnEvict(_chunk);
-        evictionRunningCount -= _chunk.length;
-        if (evictionNeeded() && --_evictSpins > 0) {
-          refillChunk(_chunk);
+        long _evictionRunningCount = (evictionRunningCount -= _chunk.length);
+        boolean _evictionNeeded = evictionNeeded();
+        _chunk = adaptChunkSize(_evictionNeeded, _evictionRunningCount, _chunk);
+        if (_evictionNeeded && --_evictSpins > 0) {
+          _chunk = refillChunk(_chunk);
         } else {
           evictChunkReuse = _chunk;
           return;
         }
       }
     }
+  }
+
+  /**
+   * Increase chunk size either if other evictions run in parallel or when one eviction was not enough.
+   * This will never increase the chunk size, when we just run on a single core.
+   */
+  Entry[] adaptChunkSize(boolean _evictionNeeded, long _evictionRunningCount, Entry[] _chunk) {
+    if (_evictionNeeded || _evictionRunningCount > 0) {
+      if (eventuallyExtendChunkSize()) {
+        _chunk = null;
+      }
+    } else {
+      if (eventuallyReduceChunkSize()) {
+        _chunk = null;
+      }
+    }
+    return _chunk;
+  }
+
+  private boolean eventuallyExtendChunkSize() {
+    noEvictionContentionCount = 0;
+    if (chunkSize < maximumChunkSize) {
+      chunkSize = Math.min(maximumChunkSize, chunkSize * 2);
+      return true;
+    }
+    return false;
+  }
+
+  private boolean eventuallyReduceChunkSize() {
+    int _count = noEvictionContentionCount++;
+    if (_count >= DECREASE_AFTER_NO_CONTENTION) {
+      if (chunkSize > INITIAL_CHUNK_SIZE) {
+        chunkSize = Math.max(INITIAL_CHUNK_SIZE, chunkSize / 2);
+        noEvictionContentionCount = 0;
+        return true;
+      }
+    }
+    return false;
   }
 
   private void removeFromHash(final Entry[] _chunk) {
@@ -281,5 +337,10 @@ public abstract class AbstractEviction implements Eviction, EvictionMetrics {
   protected abstract Entry findEvictionCandidate(Entry e);
   protected abstract void removeFromReplacementList(Entry e);
   protected abstract void insertIntoReplacementList(Entry e);
+
+  @Override
+  public String getExtraStatistics() {
+    return "chunkSize=" + chunkSize;
+  }
 
 }
