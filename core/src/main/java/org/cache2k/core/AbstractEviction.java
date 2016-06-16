@@ -34,6 +34,7 @@ public abstract class AbstractEviction implements Eviction, EvictionMetrics {
   protected final long maxSize;
   protected final HeapCache heapCache;
   private final Object lock = new Object();
+  private final int MAX_EVICTION_SPINS = 3;
   private long newEntryCounter;
   private long removedCnt;
   private long expiredRemovedCnt;
@@ -86,7 +87,7 @@ public abstract class AbstractEviction implements Eviction, EvictionMetrics {
 
   private void removeEventually(final Entry e) {
     if (!e.isRemovedFromReplacementList()) {
-      removeEntryFromReplacementList(e);
+      removeFromReplacementList(e);
       long nrt = e.getNextRefreshTime();
       if (nrt == (Entry.GONE + Entry.EXPIRED)) {
         expiredRemovedCnt++;
@@ -134,79 +135,82 @@ public abstract class AbstractEviction implements Eviction, EvictionMetrics {
       return null;
     }
     final Entry[] _chunk = reuseChunkArray();
+    refillChunk(_chunk);
+    return _chunk;
+  }
+
+  private void refillChunk(final Entry[] _chunk) {
     evictionRunningCount += _chunk.length;
     for (int i = 0; i < _chunk.length; i++) {
       _chunk[i] = findEvictionCandidate(null);
     }
-    return _chunk;
   }
 
   private void evictChunk(Entry[] _chunk) {
-    int _evictSpins = 5;
-    int _evictedCount = 0;
-    int _goneCount = 0;
-    int _processingCount = 0;
-    int _alreadyEvicted = 0;
+    int _evictSpins = MAX_EVICTION_SPINS;
     for (;;) {
       if (_chunk == null) { return; }
-      for (int i = 0; i < _chunk.length; i++) {
-        Entry e = _chunk[i];
-        if (noListenerCall) {
-          synchronized (e) {
-            if (e.isGone()) {
-              _goneCount++;
-              _chunk[i] = null;
-              continue;
-            }
-            if ( e.isProcessing()) {
-              _processingCount++;
-              _chunk[i] = null;
-              continue;
-            }
-            boolean f = heapCache.removeEntryForEviction(e);
-          }
-        } else {
-          synchronized (e) {
-            if (e.isGone() || e.isProcessing()) {
-              _chunk[i] = null;
-              continue;
-            }
-            e.startProcessing(Entry.ProcessingState.EVICT);
-          }
-          listener.onEvictionFromHeap(e);
-          synchronized (e) {
-            e.processingDone();
-            boolean f = heapCache.removeEntryForEviction(e);
-          }
-        }
-      }
+      removeFromHash(_chunk);
       synchronized (lock) {
-        for (int i = 0; i < _chunk.length; i++) {
-          Entry e = _chunk[i];
-          if (e != null) {
-            if (!e.isRemovedFromReplacementList()) {
-              evictEntry(e);
-              evictedCount++;
-              _evictedCount++;
-            } else {
-              _alreadyEvicted++;
-            }
-            /* we reuse the chunk array, null the array position to avoid memory leak */
-            _chunk[i] = null;
-          }
-        }
+        removeAllFromReplacementListOnEvict(_chunk);
         evictionRunningCount -= _chunk.length;
-        if (evictionNeeded()) {
-          if (--_evictSpins > 0) {
-            _chunk = fillEvictionChunk();
-          } else {
-            evictChunkReuse = _chunk;
-            return;
-          }
+        if (evictionNeeded() && --_evictSpins > 0) {
+          refillChunk(_chunk);
         } else {
           evictChunkReuse = _chunk;
           return;
         }
+      }
+    }
+  }
+
+  private void removeFromHash(final Entry[] _chunk) {
+    if (noListenerCall) {
+      removeFromHashWithoutListener(_chunk);
+    } else {
+      removeFromHashWithListener(_chunk);
+    }
+  }
+
+  private void removeFromHashWithoutListener(final Entry[] _chunk) {
+    for (int i = 0; i < _chunk.length; i++) {
+      Entry e = _chunk[i];
+      synchronized (e) {
+        if (e.isGone() || e.isProcessing()) {
+          _chunk[i] = null; continue;
+        }
+        boolean f = heapCache.removeEntryForEviction(e);
+      }
+    }
+  }
+
+  private void removeFromHashWithListener(final Entry[] _chunk) {
+    for (int i = 0; i < _chunk.length; i++) {
+      Entry e = _chunk[i];
+      synchronized (e) {
+        if (e.isGone() || e.isProcessing()) {
+          _chunk[i] = null; continue;
+        }
+        e.startProcessing(Entry.ProcessingState.EVICT);
+      }
+      listener.onEvictionFromHeap(e);
+      synchronized (e) {
+        e.processingDone();
+        boolean f = heapCache.removeEntryForEviction(e);
+      }
+    }
+  }
+
+  private void removeAllFromReplacementListOnEvict(final Entry[] _chunk) {
+    for (int i = 0; i < _chunk.length; i++) {
+      Entry e = _chunk[i];
+      if (e != null) {
+        if (!e.isRemovedFromReplacementList()) {
+          removeFromReplacementListOnEvict(e);
+          evictedCount++;
+        }
+        /* we reuse the chunk array, null the array position to avoid memory leak */
+        _chunk[i] = null;
       }
     }
   }
@@ -272,10 +276,10 @@ public abstract class AbstractEviction implements Eviction, EvictionMetrics {
     }
   }
 
-  protected void evictEntry(Entry e) { removeEntryFromReplacementList(e); }
+  protected void removeFromReplacementListOnEvict(Entry e) { removeFromReplacementList(e); }
 
   protected abstract Entry findEvictionCandidate(Entry e);
-  protected abstract void removeEntryFromReplacementList(Entry e);
+  protected abstract void removeFromReplacementList(Entry e);
   protected abstract void insertIntoReplacementList(Entry e);
 
 }

@@ -36,7 +36,7 @@ public class RandomEviction extends AbstractEviction {
   }
 
   @Override
-  protected void removeEntryFromReplacementList(Entry e) {
+  protected void removeFromReplacementList(Entry e) {
     Entry.removeFromList(e);
   }
 

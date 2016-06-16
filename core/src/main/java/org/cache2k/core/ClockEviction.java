@@ -74,7 +74,7 @@ public class ClockEviction extends AbstractEviction {
   }
 
   @Override
-  protected void removeEntryFromReplacementList(final Entry e) {
+  protected void removeFromReplacementList(final Entry e) {
     hand = Entry.removeFromCyclicList(hand, e);
     hits += e.hitCnt;
     size--;

@@ -128,9 +128,9 @@ public class ClockProPlusEviction extends AbstractEviction {
    * Track the entry on the ghost list and call the usual remove procedure.
    */
   @Override
-  public void evictEntry(final Entry e) {
+  public void removeFromReplacementListOnEvict(final Entry e) {
     insertCopyIntoGhosts(e);
-    removeEntryFromReplacementList(e);
+    removeFromReplacementList(e);
   }
 
   /**
@@ -144,7 +144,7 @@ public class ClockProPlusEviction extends AbstractEviction {
    * would add additional overhead, when it is not needed.
    */
   @Override
-  protected void removeEntryFromReplacementList(Entry e) {
+  protected void removeFromReplacementList(Entry e) {
     if (e.isHot()) {
       hotHits += e.hitCnt;
       handHot = Entry.removeFromCyclicList(handHot, e);
