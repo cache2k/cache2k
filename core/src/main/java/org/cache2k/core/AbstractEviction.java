@@ -31,7 +31,7 @@ import org.cache2k.core.threading.Job;
 @SuppressWarnings({"WeakerAccess", "SynchronizationOnLocalVariableOrMethodParameter"})
 public abstract class AbstractEviction implements Eviction, EvictionMetrics {
 
-  private static final int MAX_EVICTION_SPINS = 3;
+  private static final int MAX_EVICTION_SPINS = 1;
   private static final int DECREASE_AFTER_NO_CONTENTION = 11;
   private static final int INITIAL_CHUNK_SIZE = 4;
   private static final long MINIMUM_CAPACITY_FOR_CHUNKING = 1000;
