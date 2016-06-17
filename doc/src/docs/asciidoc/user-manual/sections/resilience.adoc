@@ -96,13 +96,14 @@ mayRetryInterval:: The maximum time interval after a retry attempt is made. Defa
 retryInterval:: Initial time interval after a retry attempt is made. Defaults to 10% of `mayRetryInterval`, or a minimum of 2 seconds.
 resiliencePolicy:: Sets a custom resilience policy to control the cache behavior in the presence of exceptions
 exceptionPropagator:: Sets a custom behavior for exception propagation
+refreshAhead:: Either the option `refreshAhead` or `keepDataAfterExpired` must be able to do exception suppression if an expiry is specified
+keepDataAfterExpired:: Either the option `refreshAhead` or `keepDataAfterExpired` must be able to do exception suppression if an expiry is specified
 
 == Examples
 
 === No expiry
 
-Values do not expire, exceptions are not suppressed and an immediately
-retry is done.
+Values do not expire, exceptions are not suppressed and an immediately retry is done.
 
 [source,java]
 ----
@@ -123,6 +124,7 @@ increased up to 10 minutes.
 ----
     Cache<Integer, Integer> c = new Cache2kBuilder<>() {}
       .expireAfterWrite(10, TimeUnit.MINUTES)
+      .keepDataAfterExpired(true)
       /* ... set loader ... */
       .build();
 ----
@@ -140,6 +142,7 @@ Expire entries after 10 minutes. If an exceptions happens we do not want
     Cache<Integer, Integer> c = new Cache2kBuilder<Integer, Integer>() {}
       .expireAfterWrite(10, TimeUnit.MINUTES)
       .resilienceDuration(30, TimeUnit.SECONDS)
+      .keepDataAfterExpired(true)
       /* ... set loader ... */
       .build();
 ----

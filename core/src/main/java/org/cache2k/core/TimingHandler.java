@@ -472,6 +472,7 @@ public abstract class TimingHandler<K,V>  {
     public final void run() {
       try {
         fire();
+      } catch (CacheClosedException ignore) {
       } catch (Throwable ex) {
         cache.logAndCountInternalException("Timer execution exception", ex);
       }

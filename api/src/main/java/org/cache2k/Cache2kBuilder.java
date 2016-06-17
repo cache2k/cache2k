@@ -236,13 +236,12 @@ public class Cache2kBuilder<K, V> implements Cloneable {
   }
 
   /**
-  * Expired data is kept in the cache until the entry is evicted by the replacement
-  * algorithm. This consumes memory, but if the data is accessed again the previous
-  * data can be used by the cache loader for optimizing (e.g. if-modified-since for a
-  * HTTP request).
-  *
-  * @see AdvancedCacheLoader
-  */
+   * Expired data is kept in the cache until the entry is evicted. This consumes memory,
+   * but if the data is accessed again the previous data can be used by the cache loader
+   * for optimizing (e.g. if-modified-since for a HTTP request). Default value: false
+   *
+   * @see AdvancedCacheLoader
+   */
   public final Cache2kBuilder<K, V> keepDataAfterExpired(boolean v) {
     config.setKeepDataAfterExpired(v);
     return this;
@@ -251,7 +250,7 @@ public class Cache2kBuilder<K, V> implements Cloneable {
   /**
    * The maximum number of entries hold by the cache. When the maximum size is reached, by
    * inserting new entries, the cache eviction algorithm will remove one or more entries
-   * to keep the size within the configured limit.
+   * to keep the size within the configured limit. The default value is: 2000.
    */
   public final Cache2kBuilder<K, V> entryCapacity(long v) {
     config.setEntryCapacity(v);

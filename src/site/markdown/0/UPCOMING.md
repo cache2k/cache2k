@@ -12,7 +12,7 @@ Modifications in the statistics output will not listed as breakage.
 
  - null values are not allowed (any more!) by default. The use of a null value can be enabled again via
    `permitNullValues`. The old deprecated builder (CacheBuilder) configures the cache to
-   permit null values by default to be backwards compatible to application still using the version
+   permit null values by default to be backwards compatible to applications still using the version
    0.20-ish interfaces.
 
 ## Bug fixes
@@ -41,6 +41,7 @@ If something is listed here it might affect an existing application and updating
  - `CacheEntryProcessingException` renamed to `EntryProcessingException`
  - `Cache.invoke` and `Cache.invokeAll`: Remove var arg argument for arbitrary objects. 
    Better aligned to Java 8 lambdas.
+ - `Cache2kBuilder.keepDataAfterExpired`: has become false by default
  
 ## API Changes and new methods
 

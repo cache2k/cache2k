@@ -59,7 +59,7 @@ public class Cache2kConfiguration<K, V> implements Serializable {
   private long retryIntervalMillis = -1;
   private long maxRetryIntervalMillis = -1;
   private long resilienceDurationMillis = -1;
-  private boolean keepDataAfterExpired = true;
+  private boolean keepDataAfterExpired = false;
   private boolean sharpExpiry = false;
   private boolean suppressExceptions = true;
   private int loaderThreadCount;
