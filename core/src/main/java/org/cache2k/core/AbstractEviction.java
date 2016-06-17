@@ -32,7 +32,7 @@ import org.cache2k.core.threading.Job;
 public abstract class AbstractEviction implements Eviction, EvictionMetrics {
 
   private static final int MAX_EVICTION_SPINS = 1;
-  private static final int DECREASE_AFTER_NO_CONTENTION = 11;
+  private static final int DECREASE_AFTER_NO_CONTENTION = 6;
   private static final int INITIAL_CHUNK_SIZE = 4;
   private static final long MINIMUM_CAPACITY_FOR_CHUNKING = 1000;
 
@@ -62,7 +62,7 @@ public abstract class AbstractEviction implements Eviction, EvictionMetrics {
       maximumChunkSize = 1;
     } else {
       chunkSize = INITIAL_CHUNK_SIZE;
-      int _maximumChunkSize = Runtime.getRuntime().availableProcessors() * 4;
+      int _maximumChunkSize = Runtime.getRuntime().availableProcessors() * 8;
       maximumChunkSize = (int) Math.min((long) _maximumChunkSize, maxSize * 10 / 100);
     }
     noListenerCall = _listener instanceof HeapCacheListener.NoOperation;
@@ -202,7 +202,7 @@ public abstract class AbstractEviction implements Eviction, EvictionMetrics {
   private boolean eventuallyExtendChunkSize() {
     noEvictionContentionCount = 0;
     if (chunkSize < maximumChunkSize) {
-      chunkSize = Math.min(maximumChunkSize, chunkSize * 2);
+      chunkSize = Math.min(maximumChunkSize, chunkSize + chunkSize >> 1);
       return true;
     }
     return false;
@@ -212,7 +212,7 @@ public abstract class AbstractEviction implements Eviction, EvictionMetrics {
     int _count = noEvictionContentionCount++;
     if (_count >= DECREASE_AFTER_NO_CONTENTION) {
       if (chunkSize > INITIAL_CHUNK_SIZE) {
-        chunkSize = Math.max(INITIAL_CHUNK_SIZE, chunkSize / 2);
+        chunkSize = Math.max(INITIAL_CHUNK_SIZE, chunkSize * 7 / 8);
         noEvictionContentionCount = 0;
         return true;
       }

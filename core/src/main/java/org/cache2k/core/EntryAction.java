@@ -809,6 +809,7 @@ public abstract class EntryAction<K, V, R> implements
       if (remove) {
         if (expiredImmediately) {
           entry.setNextRefreshTime(Entry.EXPIRED);
+          entry.setValueOrException(newValueOrException);
         } else {
           entry.setNextRefreshTime(Entry.REMOVE_PENDING);
         }
@@ -922,7 +923,7 @@ public abstract class EntryAction<K, V, R> implements
   }
 
   public void mutationReleaseLockAndStartTimer() {
-    if (load && !remove) {
+    if (load) {
       operation.loaded(this, entry);
     }
     synchronized (entry) {
