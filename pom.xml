@@ -470,6 +470,7 @@
             <!-- we only exclude, so the TCK tests are run, too -->
             <configuration>
               <excludedGroups>org.cache2k.junit.StorageTests,org.cache2k.junit.SlowTests,org.cache2k.junit.TimingTests</excludedGroups>
+              <argLine>-Xmx256m -XX:+HeapDumpOnOutOfMemoryError -XX:+PrintGCDetails</argLine>
             </configuration>
           </plugin>
         </plugins>
@@ -488,13 +489,13 @@
               <excludedGroups>org.cache2k.junit.StorageTests,org.cache2k.junit.TimingTests</excludedGroups>
               <parallel>classes</parallel>
               <threadCount>5</threadCount>
+              <argLine>-Xmx128m -XX:+HeapDumpOnOutOfMemoryError -XX:+PrintGCDetails</argLine>
               <!-- make this test more verbose to investigate a VM crash
               <argLine>-XX:+HeapDumpOnOutOfMemoryError -XX:+PrintGC -XX:+PrintCompilation</argLine>
                -->
               <!--
               <argLine>-XX:+PrintGC</argLine>
               -->
-              <argLine>-XX:+PrintGCDetails</argLine>
               <!--
                    Use a lower safety gap, since some tests will use a time value for expiry higher then
                    the safety gap.
