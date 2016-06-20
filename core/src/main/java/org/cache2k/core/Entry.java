@@ -152,7 +152,10 @@ public class Entry<K, T> extends CompactEntry<K,T>
   /** @see #isExpired() */
   static final int EXPIRED = 4;
 
-  static final int EXPIRED_REFRESHED = 5;
+  /** Expired, but protect entry from remval, since refresh is started. */
+  static final int EXPIRED_REFRESH_PENDING = 5;
+
+  static final int EXPIRED_REFRESHED = 6;
 
   /** @see #isGone() */
   static final int GONE = 8;
@@ -458,8 +461,8 @@ public class Entry<K, T> extends CompactEntry<K,T>
   }
 
   /**
-   * The entry expired, but still in the cache. This may happen if
-   * {@link HeapCache#hasKeepAfterExpired()} is true.
+   * The entry expired, still in the cache and subject to removal from the cache
+   * if {@link HeapCache#hasKeepAfterExpired()} is false.
    */
   public boolean isExpired() {
     return nextRefreshTime == EXPIRED;

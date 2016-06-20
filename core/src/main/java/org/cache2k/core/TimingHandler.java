@@ -153,15 +153,14 @@ public abstract class TimingHandler<K,V>  {
    * Convert expiry value to the entry field value, essentially maps 0 to {@link Entry#EXPIRED}
    * since 0 is a virgin entry. Restart the timer if needed.
    *
-   * @param _nextRefreshTime calculated next refresh time
-   * @param e the entry
+   * @param _expiryTime calculated expiry time
    * @return sanitized nextRefreshTime for storage in the entry.
    */
-  public long stopStartTimer(long _nextRefreshTime, Entry<K,V> e) {
-    if ((_nextRefreshTime >= Entry.EXPIRY_TIME_MIN && _nextRefreshTime < Long.MAX_VALUE) || _nextRefreshTime < 0) {
-      throw new IllegalArgumentException("invalid expiry time, cache is not initialized with expiry: " + Util.formatMillis(_nextRefreshTime));
+  public long stopStartTimer(long _expiryTime, Entry<K,V> e) {
+    if ((_expiryTime > 0 && _expiryTime < Long.MAX_VALUE) || _expiryTime < 0) {
+      throw new IllegalArgumentException("invalid expiry time, cache is not initialized with expiry: " + Util.formatMillis(_expiryTime));
     }
-    return _nextRefreshTime == 0 ? Entry.EXPIRED : _nextRefreshTime;
+    return _expiryTime == 0 ? Entry.EXPIRED : _expiryTime;
   }
 
   /**
@@ -328,11 +327,11 @@ public abstract class TimingHandler<K,V>  {
      * This will also start a refresh task, if the entry just was refreshed and it is
      * expired immediately. The refresh task will handle this and expire the entry.
      */
-    long eventuallyStartBackgroundRefresh(final Entry e) {
+    long expiredEventuallyStartBackgroundRefresh(final Entry e, boolean _sharpExpiry) {
       if (refreshAhead) {
         e.setTask(new RefreshTask<K,V>().to(cache, e));
         scheduleTask(0, e);
-        return sharpExpiry ? Entry.EXPIRED : Entry.DATA_VALID;
+        return sharpExpiry || _sharpExpiry ? Entry.EXPIRED_REFRESH_PENDING : Entry.DATA_VALID;
       }
       return Entry.EXPIRED;
     }
@@ -344,38 +343,39 @@ public abstract class TimingHandler<K,V>  {
      * {@link Entry#EXPIRED} is returned. Callers need to check that and may
      * be remove the entry consequently from the cache.
      *
-     * @param _nextRefreshTime calculated next refresh time
+     * @param _expiryTime expiry time with special values as defined in {@link ExpiryTimeValues}
      * @param e the entry
      * @return adjusted value for nextRefreshTime.
      */
     @Override
-    public long stopStartTimer(long _nextRefreshTime, final Entry e) {
+    public long stopStartTimer(long _expiryTime, final Entry e) {
       cancelExpiryTimer(e);
-      if (_nextRefreshTime == ExpiryTimeValues.NO_CACHE) {
+      if (_expiryTime == ExpiryTimeValues.NO_CACHE) {
         return Entry.EXPIRED;
       }
-      if (_nextRefreshTime == ExpiryTimeValues.NEUTRAL) {
+      if (_expiryTime == ExpiryTimeValues.NEUTRAL) {
         long nrt = e.getNextRefreshTime();
         if (nrt == 0) {
           throw new IllegalArgumentException("neutral expiry not allowed for creation");
         }
         return e.getNextRefreshTime();
       }
-      final long now = System.currentTimeMillis();
-      _nextRefreshTime = sanitizeTime(_nextRefreshTime, now);
-      if ((_nextRefreshTime > 0 && _nextRefreshTime < Entry.EXPIRY_TIME_MIN) ||
-        _nextRefreshTime == ExpiryPolicy.ETERNAL) {
-        if (_nextRefreshTime == Entry.EXPIRED || _nextRefreshTime == ExpiryTimeValues.REFRESH_IMMEDIATELY) {
-          return eventuallyStartBackgroundRefresh(e);
-        }
-        return _nextRefreshTime;
+      if (_expiryTime == ExpiryTimeValues.ETERNAL) {
+        return _expiryTime;
       }
+      if (_expiryTime == ExpiryTimeValues.REFRESH_IMMEDIATELY) {
+        return expiredEventuallyStartBackgroundRefresh(e, false);
+      }
+      final long now = System.currentTimeMillis();
+      if (Math.abs(_expiryTime) <= now) {
+        return expiredEventuallyStartBackgroundRefresh(e, _expiryTime < 0);
+      }
+      long _nextRefreshTime = _expiryTime;
       if (sharpExpiry && _nextRefreshTime > Entry.EXPIRY_TIME_MIN) {
         _nextRefreshTime = -_nextRefreshTime;
       }
-
       if (_nextRefreshTime >= Entry.EXPIRY_TIME_MIN || _nextRefreshTime < 0) {
-        if (_nextRefreshTime < -1) {
+        if (_nextRefreshTime < 0) {
           long _timerTime =
             -_nextRefreshTime - SAFETY_GAP_MILLIS;
           if (_timerTime >= now) {
@@ -558,14 +558,6 @@ public abstract class TimingHandler<K,V>  {
       }
     }
     return t;
-  }
-
-  static long sanitizeTime(final long _nextRefreshTime, final long now) {
-    if ((_nextRefreshTime > Entry.EXPIRY_TIME_MIN && _nextRefreshTime <= now) ||
-      (_nextRefreshTime < -1 && (-_nextRefreshTime <= -now))) {
-      return Entry.EXPIRED;
-    }
-    return _nextRefreshTime;
   }
 
   public static class Tunable extends TunableConstants {
