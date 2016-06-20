@@ -182,16 +182,22 @@ public abstract class AbstractEviction implements Eviction, EvictionMetrics {
     }
   }
 
+  long extendEventCount;
+  long reduceEventCount;
+  long reallyReduceEventCount;
+
   /**
    * Increase chunk size either if other evictions run in parallel or when one eviction was not enough.
    * This will never increase the chunk size, when we just run on a single core.
    */
   Entry[] adaptChunkSize(boolean _evictionNeeded, long _evictionRunningCount, Entry[] _chunk) {
     if (_evictionNeeded || _evictionRunningCount > 0) {
+      extendEventCount++;
       if (eventuallyExtendChunkSize()) {
         _chunk = null;
       }
     } else {
+      reduceEventCount++;
       if (eventuallyReduceChunkSize()) {
         _chunk = null;
       }
@@ -202,7 +208,7 @@ public abstract class AbstractEviction implements Eviction, EvictionMetrics {
   private boolean eventuallyExtendChunkSize() {
     noEvictionContentionCount = 0;
     if (chunkSize < maximumChunkSize) {
-      chunkSize = Math.min(maximumChunkSize, chunkSize + chunkSize >> 1);
+      chunkSize = Math.min(maximumChunkSize, chunkSize + (chunkSize >> 1) + 1);
       return true;
     }
     return false;
@@ -211,6 +217,7 @@ public abstract class AbstractEviction implements Eviction, EvictionMetrics {
   private boolean eventuallyReduceChunkSize() {
     int _count = noEvictionContentionCount++;
     if (_count >= DECREASE_AFTER_NO_CONTENTION) {
+      reallyReduceEventCount++;
       if (chunkSize > INITIAL_CHUNK_SIZE) {
         chunkSize = Math.max(INITIAL_CHUNK_SIZE, chunkSize * 7 / 8);
         noEvictionContentionCount = 0;
@@ -340,7 +347,10 @@ public abstract class AbstractEviction implements Eviction, EvictionMetrics {
 
   @Override
   public String getExtraStatistics() {
-    return "chunkSize=" + chunkSize;
+    return "chunkSize=" + chunkSize + ", " +
+      "extendEventCount=" + extendEventCount + ", " +
+      "reduceEventCount=" + reduceEventCount + ", " +
+      "reallyReduceEventCount=" + reallyReduceEventCount;
   }
 
 }
