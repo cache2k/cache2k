@@ -31,9 +31,8 @@ import org.cache2k.core.threading.Job;
 @SuppressWarnings({"WeakerAccess", "SynchronizationOnLocalVariableOrMethodParameter"})
 public abstract class AbstractEviction implements Eviction, EvictionMetrics {
 
-  private static final int MAX_EVICTION_SPINS = 1;
-  private static final int DECREASE_AFTER_NO_CONTENTION = 6;
-  private static final int INITIAL_CHUNK_SIZE = 4;
+  private static final int MINIMAL_CHUNK_SIZE = 4;
+  private static final int MAXIMAL_CHUNK_SIZE = 64;
   private static final long MINIMUM_CAPACITY_FOR_CHUNKING = 1000;
 
   protected final long maxSize;
@@ -50,7 +49,6 @@ public abstract class AbstractEviction implements Eviction, EvictionMetrics {
   private int chunkSize;
   private int evictionRunningCount = 0;
 
-  private final int maximumChunkSize;
   private int noEvictionContentionCount = 0;
 
   public AbstractEviction(final HeapCache _heapCache, final HeapCacheListener _listener, final Cache2kConfiguration cfg, final int evictionSegmentCount) {
@@ -59,11 +57,9 @@ public abstract class AbstractEviction implements Eviction, EvictionMetrics {
     maxSize = cfg.getEntryCapacity() / evictionSegmentCount;
     if (cfg.getEntryCapacity() < MINIMUM_CAPACITY_FOR_CHUNKING) {
       chunkSize = 1;
-      maximumChunkSize = 1;
     } else {
-      chunkSize = INITIAL_CHUNK_SIZE;
-      int _maximumChunkSize = Runtime.getRuntime().availableProcessors() * 8;
-      maximumChunkSize = (int) Math.min((long) _maximumChunkSize, maxSize * 10 / 100);
+      chunkSize = MINIMAL_CHUNK_SIZE + Runtime.getRuntime().availableProcessors() - 1;
+      chunkSize = Math.min(MAXIMAL_CHUNK_SIZE, chunkSize);
     }
     noListenerCall = _listener instanceof HeapCacheListener.NoOperation;
   }
@@ -163,68 +159,13 @@ public abstract class AbstractEviction implements Eviction, EvictionMetrics {
   }
 
   private void evictChunk(Entry[] _chunk) {
-    int _evictSpins = MAX_EVICTION_SPINS;
-    for (;;) {
-      if (_chunk == null) { return; }
-      removeFromHash(_chunk);
-      synchronized (lock) {
-        removeAllFromReplacementListOnEvict(_chunk);
-        long _evictionRunningCount = (evictionRunningCount -= _chunk.length);
-        boolean _evictionNeeded = evictionNeeded();
-        _chunk = adaptChunkSize(_evictionNeeded, _evictionRunningCount, _chunk);
-        if (_evictionNeeded && --_evictSpins > 0) {
-          _chunk = refillChunk(_chunk);
-        } else {
-          evictChunkReuse = _chunk;
-          return;
-        }
-      }
+    if (_chunk == null) { return; }
+    removeFromHash(_chunk);
+    synchronized (lock) {
+      removeAllFromReplacementListOnEvict(_chunk);
+      evictionRunningCount -= _chunk.length;
+      evictChunkReuse = _chunk;
     }
-  }
-
-  long extendEventCount;
-  long reduceEventCount;
-  long reallyReduceEventCount;
-
-  /**
-   * Increase chunk size either if other evictions run in parallel or when one eviction was not enough.
-   * This will never increase the chunk size, when we just run on a single core.
-   */
-  Entry[] adaptChunkSize(boolean _evictionNeeded, long _evictionRunningCount, Entry[] _chunk) {
-    if (_evictionNeeded || _evictionRunningCount > 0) {
-      extendEventCount++;
-      if (eventuallyExtendChunkSize()) {
-        _chunk = null;
-      }
-    } else {
-      reduceEventCount++;
-      if (eventuallyReduceChunkSize()) {
-        _chunk = null;
-      }
-    }
-    return _chunk;
-  }
-
-  private boolean eventuallyExtendChunkSize() {
-    noEvictionContentionCount = 0;
-    if (chunkSize < maximumChunkSize) {
-      chunkSize = Math.min(maximumChunkSize, chunkSize + (chunkSize >> 1) + 1);
-      return true;
-    }
-    return false;
-  }
-
-  private boolean eventuallyReduceChunkSize() {
-    int _count = noEvictionContentionCount++;
-    if (_count >= DECREASE_AFTER_NO_CONTENTION) {
-      reallyReduceEventCount++;
-      if (chunkSize > INITIAL_CHUNK_SIZE) {
-        chunkSize = Math.max(INITIAL_CHUNK_SIZE, chunkSize * 7 / 8);
-        noEvictionContentionCount = 0;
-        return true;
-      }
-    }
-    return false;
   }
 
   private void removeFromHash(final Entry[] _chunk) {
@@ -347,10 +288,7 @@ public abstract class AbstractEviction implements Eviction, EvictionMetrics {
 
   @Override
   public String getExtraStatistics() {
-    return "chunkSize=" + chunkSize + ", " +
-      "extendEventCount=" + extendEventCount + ", " +
-      "reduceEventCount=" + reduceEventCount + ", " +
-      "reallyReduceEventCount=" + reallyReduceEventCount;
+    return "chunkSize=" + chunkSize;
   }
 
 }
