@@ -41,8 +41,15 @@ public interface ExpiryTimeValues {
   long NO_CACHE = 0;
 
   /**
+   * Identical value to {@link #NO_CACHE}, meaningful when used together with
+   * {@link org.cache2k.Cache#expireAt}. The value expires immediately. An immediate
+   * load is triggered if refreshAhead is enabled.
+   */
+  long NOW = 0;
+
+  /**
    * If refresh ahead is enabled, the value will be cached and visible. An immediate
-   * refresh is triggered. If the refresh is not possible, because no loader threads
+   * load is triggered if refreshAhead is enabled. If the refresh is not possible, because no loader threads
    * are available the value will expire.
    */
   long REFRESH_IMMEDIATELY = 1;
