@@ -35,8 +35,8 @@ public interface ExpiryTimeValues {
   long NEUTRAL = -1;
 
   /**
-   * Return value used to signal that the value should not be cached. In a read through
-   * configuration the value will be loaded, when it is requested again.
+   * Value should not be cached. In a read through configuration the value will be
+   * reloaded, when it is requested again.
    */
   long NO_CACHE = 0;
 
