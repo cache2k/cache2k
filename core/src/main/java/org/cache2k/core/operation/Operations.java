@@ -21,6 +21,7 @@ package org.cache2k.core.operation;
  */
 
 import org.cache2k.CacheEntry;
+import org.cache2k.expiry.ExpiryTimeValues;
 import org.cache2k.processor.EntryProcessingException;
 import org.cache2k.processor.EntryProcessor;
 import org.cache2k.processor.MutableCacheEntry;
@@ -476,6 +477,13 @@ public class Operations<K, V> {
     return new Semantic.UpdateExisting<K, V, Void>() {
       @Override
       public void update(Progress c, ExaminationEntry e) {
+        if (t == ExpiryTimeValues.NO_CACHE ||
+            t == ExpiryTimeValues.REFRESH_IMMEDIATELY) {
+          if (c.isPresentOrInRefreshProbation()) {
+            c.expire(t);
+          }
+          return;
+        }
         if (c.isPresent()) {
           c.expire(t);
         }

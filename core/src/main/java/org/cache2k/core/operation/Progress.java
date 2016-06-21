@@ -46,6 +46,11 @@ public interface Progress<K, V, R> {
   boolean isPresent();
 
   /**
+   * Same as {@link #isPresent()} but also true if the entry is in refrsh probation.
+   */
+  boolean isPresentOrInRefreshProbation();
+
+  /**
    * Entry has valid data in the cache and is not expired. This is used for all
    * operations that do not want to access the value.
    */

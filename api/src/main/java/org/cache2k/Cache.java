@@ -37,6 +37,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.TimeUnit;
 
 /*
  * Descriptions derive partly from the java.util.concurrent.ConcurrentMap.
@@ -578,14 +579,19 @@ public interface Cache<K, V> extends
   /**
    * Updates an existing not expired mapping to expire at the given point in time.
    * If there is no mapping associated with the key or it is already expired, this
-   * operation has no effect.
+   * operation has no effect. The special values {@link ExpiryTimeValues#NO_CACHE} and
+   * {@link ExpiryTimeValues#REFRESH_IMMEDIATELY} also effect an entry that was just
+   * refreshed.
    *
-   * <p>If the expiry time is in the past, the entry will expire immediately.
-   * In case refresh ahead is enabled, the entry will stay visible and a
-   * refresh is triggered.
+   * <p>If the expiry time is in the past, the entry will expire immediately and
+   * refresh ahead is triggered, if enabled.
    *
-   * <p>If the cache is not initialized with any customized expiry the method
-   * cannot be used.
+   * <p>Also the special time value {@link ExpiryTimeValues#NO_CACHE} means removal,
+   * the writer is not called, since the method is for cache control only.
+   *
+   * <p>If the cache must be configured with a {@link ExpiryPolicy} or
+   * {@link Cache2kBuilder#expireAfterWrite(long, TimeUnit)} otherwise expiry
+   * timing is not available and this method will throw an exception.
    *
    * @param key key with which the specified value is associated
    * @param millis Time in milliseconds since epoch when the entry should expire.

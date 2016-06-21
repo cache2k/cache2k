@@ -188,6 +188,15 @@ public abstract class EntryAction<K, V, R> implements
   }
 
   @Override
+  public boolean isPresentOrInRefreshProbation() {
+    doNotCountAccess = true;
+    return
+      successfulLoad ||
+      entry.getNextRefreshTime() == Entry.EXPIRED_REFRESHED ||
+      entry.hasFreshData();
+  }
+
+  @Override
   public boolean isPresentOrMiss() {
     if (successfulLoad || entry.hasFreshData()) {
       return true;
