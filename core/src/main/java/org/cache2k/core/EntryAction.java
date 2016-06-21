@@ -933,7 +933,10 @@ public abstract class EntryAction<K, V, R> implements
 
   public void mutationReleaseLockAndStartTimer() {
     if (load) {
-      operation.loaded(this, entry);
+      if (!remove ||
+        !(entry.getValueOrException() == null && heapCache.hasRejectNullValues())) {
+        operation.loaded(this, entry);
+      }
     }
     synchronized (entry) {
       entry.processingDone();

@@ -632,6 +632,9 @@ public class HeapCache<K, V>
     } finally {
       e.ensureAbort(_finished);
     }
+    if (e.getValueOrException() == null && hasRejectNullValues()) {
+      return null;
+    }
     return e;
   }
 
