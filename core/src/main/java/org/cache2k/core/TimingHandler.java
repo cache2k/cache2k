@@ -370,32 +370,29 @@ public abstract class TimingHandler<K,V>  {
       if (Math.abs(_expiryTime) <= now) {
         return expiredEventuallyStartBackgroundRefresh(e, _expiryTime < 0);
       }
-      long _nextRefreshTime = _expiryTime;
-      if (sharpExpiry && _nextRefreshTime > Entry.EXPIRY_TIME_MIN) {
-        _nextRefreshTime = -_nextRefreshTime;
+      if (sharpExpiry && _expiryTime > 0) {
+        _expiryTime = -_expiryTime;
       }
-      if (_nextRefreshTime >= Entry.EXPIRY_TIME_MIN || _nextRefreshTime < 0) {
-        if (_nextRefreshTime < 0) {
-          long _timerTime =
-            -_nextRefreshTime - SAFETY_GAP_MILLIS;
-          if (_timerTime >= now) {
-            e.setTask(new ExpireTask().to(cache, e));
-            scheduleTask(_timerTime, e);
-            _nextRefreshTime = -_nextRefreshTime;
-          } else {
-            scheduleFinalExpireWithOptionalRefresh(e, -_nextRefreshTime);
-          }
+      if (_expiryTime < 0) {
+        long _timerTime =
+          -_expiryTime - SAFETY_GAP_MILLIS;
+        if (_timerTime >= now) {
+          e.setTask(new ExpireTask().to(cache, e));
+          scheduleTask(_timerTime, e);
+          _expiryTime = -_expiryTime;
         } else {
-          if (refreshAhead) {
-            e.setTask(new RefreshTask<K,V>().to(cache, e));
-            scheduleTask(_nextRefreshTime, e);
-          } else {
-            e.setTask(new ExpireTask<K,V>().to(cache, e));
-            scheduleTask(_nextRefreshTime, e);
-          }
+          scheduleFinalExpireWithOptionalRefresh(e, -_expiryTime);
+        }
+      } else {
+        if (refreshAhead) {
+          e.setTask(new RefreshTask<K,V>().to(cache, e));
+          scheduleTask(_expiryTime, e);
+        } else {
+          e.setTask(new ExpireTask<K,V>().to(cache, e));
+          scheduleTask(_expiryTime, e);
         }
       }
-      return _nextRefreshTime;
+      return _expiryTime;
     }
 
     @Override
