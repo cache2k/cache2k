@@ -1527,7 +1527,7 @@ public class HeapCache<K, V>
       if (nrt <= 0) {
         return;
       }
-      timing.scheduleFinalExpiryTimer(e);
+      timing.scheduleFinalTimerForSharpExpiry(e);
       e.setNextRefreshTime(-nrt);
     }
   }

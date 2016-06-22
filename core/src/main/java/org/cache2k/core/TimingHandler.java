@@ -178,7 +178,7 @@ public abstract class TimingHandler<K,V>  {
   /**
    * Schedule second timer event for the expiry tie if sharp expiry is switched on.
    */
-  public void scheduleFinalExpiryTimer(Entry<K, V> e) { }
+  public void scheduleFinalTimerForSharpExpiry(Entry<K, V> e) { }
 
   static class Eternal<K,V> extends TimingHandler<K,V> {
 
@@ -374,8 +374,7 @@ public abstract class TimingHandler<K,V>  {
         _expiryTime = -_expiryTime;
       }
       if (_expiryTime < 0) {
-        long _timerTime =
-          -_expiryTime - SAFETY_GAP_MILLIS;
+        long _timerTime = -_expiryTime - SAFETY_GAP_MILLIS;
         if (_timerTime >= now) {
           e.setTask(new ExpireTask().to(cache, e));
           scheduleTask(_timerTime, e);
@@ -384,13 +383,7 @@ public abstract class TimingHandler<K,V>  {
           scheduleFinalExpireWithOptionalRefresh(e, -_expiryTime);
         }
       } else {
-        if (refreshAhead) {
-          e.setTask(new RefreshTask<K,V>().to(cache, e));
-          scheduleTask(_expiryTime, e);
-        } else {
-          e.setTask(new ExpireTask<K,V>().to(cache, e));
-          scheduleTask(_expiryTime, e);
-        }
+        scheduleFinalExpireWithOptionalRefresh(e, _expiryTime);
       }
       return _expiryTime;
     }
@@ -414,22 +407,21 @@ public abstract class TimingHandler<K,V>  {
     }
 
     @Override
-    public void scheduleFinalExpiryTimer(final Entry<K, V> e) {
+    public void scheduleFinalTimerForSharpExpiry(final Entry<K, V> e) {
       cancelExpiryTimer(e);
       scheduleFinalExpireWithOptionalRefresh(e, e.getNextRefreshTime());
     }
 
     /**
-     * If sharp and refresh is requested, we schedule a refresh task at the some time.
-     * The refresh should start just when the value expired.
+     * Sharp expiry is requested: Either schedule refresh or expiry.
      */
     void scheduleFinalExpireWithOptionalRefresh(final Entry<K, V> e, long t) {
-      e.setTask(new ExpireTask().to(cache, e));
-      scheduleTask(t, e);
-      if (sharpExpiry && refreshAhead) {
+      if (refreshAhead) {
         e.setTask(new RefreshTask().to(cache, e));
-        scheduleTask(t, e);
+      } else {
+        e.setTask(new ExpireTask().to(cache, e));
       }
+      scheduleTask(t, e);
     }
 
     void scheduleTask(final long _nextRefreshTime, final Entry e) {
