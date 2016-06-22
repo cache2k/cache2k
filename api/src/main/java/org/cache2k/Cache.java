@@ -579,15 +579,15 @@ public interface Cache<K, V> extends
   /**
    * Updates an existing not expired mapping to expire at the given point in time.
    * If there is no mapping associated with the key or it is already expired, this
-   * operation has no effect. The special values {@link ExpiryTimeValues#NO_CACHE} and
-   * {@link ExpiryTimeValues#REFRESH_IMMEDIATELY} also effect an entry that was just
+   * operation has no effect. The special values {@link org.cache2k.expiry.Expiry#NOW} and
+   * {@link org.cache2k.expiry.Expiry#REFRESH} also effect an entry that was just
    * refreshed.
    *
    * <p>If the expiry time is in the past, the entry will expire immediately and
    * refresh ahead is triggered, if enabled.
    *
-   * <p>Also the special time value {@link ExpiryTimeValues#NO_CACHE} means removal,
-   * the writer is not called, since the method is for cache control only.
+   * <p>Also the special time value {@link org.cache2k.expiry.Expiry#NOW} might turn
+   * into a removal, the writer is not called, since the method is for cache control only.
    *
    * <p>If the cache must be configured with a {@link ExpiryPolicy} or
    * {@link Cache2kBuilder#expireAfterWrite(long, TimeUnit)} otherwise expiry

@@ -478,7 +478,7 @@ public class Operations<K, V> {
       @Override
       public void update(Progress c, ExaminationEntry e) {
         if (t == ExpiryTimeValues.NO_CACHE ||
-            t == ExpiryTimeValues.REFRESH_IMMEDIATELY) {
+            t == ExpiryTimeValues.REFRESH) {
           if (c.isPresentOrInRefreshProbation()) {
             c.expire(t);
           }

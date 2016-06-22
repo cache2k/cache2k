@@ -49,10 +49,10 @@ public interface ExpiryTimeValues {
 
   /**
    * If refresh ahead is enabled, the value will be cached and visible. An immediate
-   * load is triggered if refreshAhead is enabled. If the refresh is not possible, because no loader threads
-   * are available the value will expire.
+   * load is triggered if refreshAhead is enabled. If the refresh is not possible, for example because of
+   * no loader threads are available the value will expire.
    */
-  long REFRESH_IMMEDIATELY = 1;
+  long REFRESH = 1;
 
   /**
    * Return value signalling to keep the value forever in the cache, switching off expiry.

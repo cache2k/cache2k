@@ -363,7 +363,7 @@ public abstract class TimingHandler<K,V>  {
       if (_expiryTime == ExpiryTimeValues.ETERNAL) {
         return _expiryTime;
       }
-      if (_expiryTime == ExpiryTimeValues.REFRESH_IMMEDIATELY) {
+      if (_expiryTime == ExpiryTimeValues.REFRESH) {
         return expiredEventuallyStartBackgroundRefresh(e, false);
       }
       final long now = System.currentTimeMillis();
