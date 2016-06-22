@@ -56,33 +56,15 @@ A loader exception is potentially rethrown multiple times, if the retry time is 
 yet reached. In this situation a rethrown exception contains the text `expiry=<timestamp>`.
 This behavior can be customized by the `ExceptionPropagator`.
 
-TODO: example exception
-TODO: example exception propagator
-
-== Invalidating Entries
+== Invalidating
 
 An application may need to invalidate a cache entry, so the cache will invoke the loader
-again the next time the entry is requested. How the value should be invalidated depend on
-the scenario of the application.
+again the next time the entry is requested. How the value should be invalidated depends on
+the usage scenario and whether availability or consistency has to be priority.
 
-=== `Cache.remove(key)`
-
-Invalidating an entry with `Cache.remove()` will cause the entry to be removed from the cache ultimately.
-The next time the entry is requested with `Cache.get(key)` the cache will invoke the loader (if defined).
-In case the loader yields an exception, this exception will be propagated to the application since there
-is no previous value for fallback.
-
-`Cache.remove(key)` is useful if the data is outdated and old data is not allowed to be delivered. Priority
- is on data consistency.
-
-=== `Cache.expireAt(key, ExpiryTimeValues.REFRESH_IMMEDIATELY)`
-
-When invalidating an entry via `Cache.expire(key, ExpiryTimeValues.REFRESH_IMMEDIATELY)` the loader
-gets invoked when it is next accessed or instantly if refresh ahead is enabled. The value is still available
-in the cache as fallback if a loader exception occurs.
-
-This variant is the better choice if outdated values are allowed and the cache should continuously serve
-data. Priority is on availability.
+To be able to use the resilience features and increase availability in the event of failure
+the method `expireAt` should be preferred for invalidation. See the detailed discussion in the
+loading chapter.
 
 == Configuration options
 
