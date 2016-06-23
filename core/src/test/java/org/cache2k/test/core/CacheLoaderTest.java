@@ -89,7 +89,7 @@ public class CacheLoaderTest {
     Cache<Integer,Integer> c = builder()
       .loader(new AdvancedCacheLoader<Integer, Integer>() {
         @Override
-        public Integer load(final Integer key, long now, CacheEntry<Integer,Integer> e) throws Exception {
+        public Integer load(final Integer key, long currentTime, CacheEntry<Integer,Integer> e) throws Exception {
           return key * 2;
         }
       })
