@@ -577,61 +577,58 @@ public abstract class EntryAction<K, V, R> implements
 
   public void mutationCalculateExpiry() {
     entry.nextProcessingStep(Entry.ProcessingState.EXPIRY);
-    try {
-      if (newValueOrException instanceof ExceptionWrapper) {
-        try {
-          ExceptionWrapper ew = (ExceptionWrapper) newValueOrException;
-          if ((entry.isDataValid() || entry.isExpired()) && entry.getException() == null) {
-            expiry = timing().suppressExceptionUntil(entry, ew);
-          }
-          if (expiry > loadStartedTime) {
-            suppressException = true;
-            newValueOrException = entry.getValue();
-            lastModificationTime = entry.getLastModification();
-            metrics().suppressedException();
-            entry.setSuppressedLoadExceptionInformation(ew);
-          } else {
-            if (load) {
-              metrics().loadException();
-            }
-            expiry = timing().cacheExceptionUntil(entry, ew);
-          }
-          setUntil(ew);
-        } catch (Throwable ex) {
+    if (newValueOrException instanceof ExceptionWrapper) {
+      try {
+        expiry = 0;
+        ExceptionWrapper ew = (ExceptionWrapper) newValueOrException;
+        if ((entry.isDataValid() || entry.isExpired()) && entry.getException() == null) {
+          expiry = timing().suppressExceptionUntil(entry, ew);
+        }
+        if (expiry > loadStartedTime) {
+          suppressException = true;
+          newValueOrException = entry.getValue();
+          lastModificationTime = entry.getLastModification();
+          metrics().suppressedException();
+          entry.setSuppressedLoadExceptionInformation(ew);
+        } else {
           if (load) {
-            resiliencePolicyException(new ResiliencePolicyException(ex));
-            return;
+            metrics().loadException();
           }
-          expiryCalculationException(ex);
+          expiry = timing().cacheExceptionUntil(entry, ew);
+        }
+        setUntil(ew);
+      } catch (Throwable ex) {
+        if (load) {
+          resiliencePolicyException(new ResiliencePolicyException(ex));
           return;
         }
-      } else {
-        try {
-          expiry = timing().calculateNextRefreshTime(
-            entry, newValueOrException,
-            lastModificationTime);
-          if (newValueOrException == null && heapCache.hasRejectNullValues() && expiry != ExpiryTimeValues.NO_CACHE) {
-            RuntimeException _ouch = heapCache.returnNullValueDetectedException();
-            if (load) {
-              decideForLoaderExceptionAfterExpiryCalculation(new ResiliencePolicyException(_ouch));
-              return;
-            } else {
-              mutationAbort(_ouch);
-              return;
-            }
-          }
-          entry.resetSuppressedLoadExceptionInformation();
-        } catch (Throwable ex) {
-          if (load) {
-            decideForLoaderExceptionAfterExpiryCalculation(new ExpiryPolicyException(ex));
-            return;
-          }
-          expiryCalculationException(ex);
-          return;
-        }
+        expiryCalculationException(ex);
+        return;
       }
-    } catch (Throwable ex) {
-
+    } else {
+      try {
+        expiry = timing().calculateNextRefreshTime(
+          entry, newValueOrException,
+          lastModificationTime);
+        if (newValueOrException == null && heapCache.hasRejectNullValues() && expiry != ExpiryTimeValues.NO_CACHE) {
+          RuntimeException _ouch = heapCache.returnNullValueDetectedException();
+          if (load) {
+            decideForLoaderExceptionAfterExpiryCalculation(new ResiliencePolicyException(_ouch));
+            return;
+          } else {
+            mutationAbort(_ouch);
+            return;
+          }
+        }
+        entry.resetSuppressedLoadExceptionInformation();
+      } catch (Throwable ex) {
+        if (load) {
+          decideForLoaderExceptionAfterExpiryCalculation(new ExpiryPolicyException(ex));
+          return;
+        }
+        expiryCalculationException(ex);
+        return;
+      }
     }
     expiryCalculated();
   }
@@ -1023,6 +1020,7 @@ public abstract class EntryAction<K, V, R> implements
     synchronized (entry) {
       entry.processingDone();
       entryLocked = false;
+      needsFinish = false;
     }
     ready();
   }

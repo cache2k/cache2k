@@ -23,6 +23,7 @@ package org.cache2k.test.core;
 import org.cache2k.Cache;
 import org.cache2k.Cache2kBuilder;
 import org.cache2k.CacheEntry;
+import org.cache2k.expiry.Expiry;
 import org.cache2k.integration.CacheLoaderException;
 import org.cache2k.integration.CacheWriter;
 import org.cache2k.integration.ExceptionInformation;
@@ -39,6 +40,7 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
 import java.util.Map;
+import java.util.NoSuchElementException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 
@@ -107,6 +109,128 @@ public class EntryProcessorTest {
       }
     });
     assertEquals(0, target.info().getSize());
+  }
+
+  public static class CacheWithLoader {
+
+    Cache<Integer, Integer> cache;
+    CacheTest.IdentCountingLoader loader = new CacheTest.IdentCountingLoader();
+
+  }
+
+  CacheWithLoader cacheWithLoader() {
+    final CacheWithLoader c = new CacheWithLoader();
+    c.cache = target.cache(new CacheRule.Specialization<Integer, Integer>() {
+      @Override
+      public void extend(final Cache2kBuilder<Integer, Integer> b) {
+        b.loader(c.loader);
+      }
+    });
+    return c;
+  }
+
+  @Test
+  public void getValue_triggerLoad() {
+    CacheWithLoader wl = cacheWithLoader();
+    wl.cache.invoke(KEY, new EntryProcessor<Integer, Integer, Void>() {
+      @Override
+      public Void process(final MutableCacheEntry<Integer, Integer> entry) throws Exception {
+        Integer v = entry.getValue();
+        assertEquals(KEY, v);
+        assertTrue(entry.exists());
+        return null;
+      }
+    });
+    assertEquals(1, wl.loader.getCount());
+    assertTrue(wl.cache.containsKey(KEY));
+    assertEquals(KEY, wl.cache.peek(KEY));
+  }
+
+  @Test
+  public void getException_triggerLoad() {
+    CacheWithLoader wl = cacheWithLoader();
+    wl.cache.invoke(KEY, new EntryProcessor<Integer, Integer, Void>() {
+      @Override
+      public Void process(final MutableCacheEntry<Integer, Integer> entry) throws Exception {
+        Throwable t = entry.getException();
+        assertNull(t);
+        assertTrue(entry.exists());
+        Integer v = entry.getValue();
+        assertEquals(KEY, v);
+        return null;
+      }
+    });
+    assertEquals(1, wl.loader.getCount());
+  }
+
+  @Test
+  public void getValue_triggerLoad_remove() {
+    CacheWithLoader wl = cacheWithLoader();
+    wl.cache.invoke(KEY, new EntryProcessor<Integer, Integer, Void>() {
+      @Override
+      public Void process(final MutableCacheEntry<Integer, Integer> entry) throws Exception {
+        Integer v = entry.getValue();
+        assertEquals(KEY, v);
+        assertTrue(entry.exists());
+        entry.remove();
+        assertFalse(entry.exists());
+        return null;
+      }
+    });
+    assertEquals(1, wl.loader.getCount());
+    assertFalse(wl.cache.containsKey(KEY));
+  }
+
+  @Test
+  public void getValue_triggerLoad_setValue() {
+    CacheWithLoader wl = cacheWithLoader();
+    wl.cache.invoke(KEY, new EntryProcessor<Integer, Integer, Void>() {
+      @Override
+      public Void process(final MutableCacheEntry<Integer, Integer> entry) throws Exception {
+        Integer v = entry.getValue();
+        assertEquals(KEY, v);
+        assertTrue(entry.exists());
+        entry.setValue(4711);
+        return null;
+      }
+    });
+    assertEquals(1, wl.loader.getCount());
+    assertTrue(wl.cache.containsKey(KEY));
+    assertEquals(4711, (int) wl.cache.peek(KEY));
+  }
+
+  @Test
+  public void getValue_triggerLoad_setException() {
+    CacheWithLoader wl = cacheWithLoader();
+    wl.cache.invoke(KEY, new EntryProcessor<Integer, Integer, Void>() {
+      @Override
+      public Void process(final MutableCacheEntry<Integer, Integer> entry) throws Exception {
+        Integer v = entry.getValue();
+        assertEquals(KEY, v);
+        assertTrue(entry.exists());
+        entry.setException(new NoSuchElementException());
+        return null;
+      }
+    });
+    assertEquals(1, wl.loader.getCount());
+    assertFalse("exception expires immediately", wl.cache.containsKey(KEY));
+  }
+
+  @Test
+  public void getValue_triggerLoad_setExpiry() {
+    CacheWithLoader wl = cacheWithLoader();
+    wl.cache.invoke(KEY, new EntryProcessor<Integer, Integer, Void>() {
+      @Override
+      public Void process(final MutableCacheEntry<Integer, Integer> entry) throws Exception {
+        Integer v = entry.getValue();
+        assertEquals(KEY, v);
+        assertTrue(entry.exists());
+        entry.setExpiry(Expiry.NO_CACHE);
+        return null;
+      }
+    });
+    assertEquals(1, wl.loader.getCount());
+    assertFalse("expires immediately", wl.cache.containsKey(KEY));
   }
 
   static class CountingWriter  extends CacheWriter<Integer, Integer> {

@@ -419,6 +419,9 @@ public class Operations<K, V> {
 
     @Override
     public Throwable getException() {
+      if (!exists && !mutate && readThrough) {
+        throw new NeedsLoadRestartException();
+      }
       if (value instanceof ExceptionWrapper) {
         return ((ExceptionWrapper) value).getException();
       }
