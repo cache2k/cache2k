@@ -1,0 +1,62 @@
+== Expiry and Refresh
+
+A cached value may expire after some specified time. When expired, the value is not
+returned by the cache any more. The cache may be instructed to do an automatic
+reload of an expired value, this is called refresh ahead.
+
+Expiry does not mean that a cache entry is removed from the cache. The actual
+removal from the cache may lag behind.
+
+=== Specifying an Expiry Duration
+
+Expiry after an entry is created or modified can be specified via the `expireAfterWrite` parameter.
+This is also known as _time to live_. It is possible to specify different expiry values for
+created or modification with a custom `ExpiryPolicy`.
+
+[NOTE]
+_Expiry after access_ or _time to idle_ is not supported, since it prohibitive to high performance
+as it is achieved by cache2k. Typically there is no functional requirement for TTI, but it is used
+very often to minimize memory consumption in times of low activity. How a similar feature can be
+constructed that at the same time is not counter productive for performance needs further research.
+For discussion, see: https://github.com/cache2k/cache2k/issues/39[GH 39]
+
+=== Variable Expiry
+
+Each entry may have a different expiry time. This can be achieved by specifying an `ExpiryPolicy`.
+The configuration parameter `expireAfterWrite` is used as a maximum value.
+
+=== Sharp Expiry
+
+Although the expiry policy returns a point in time and not a duration the time of the expiry will
+lag a few milliseconds behind. This is the most effective mode of operation. In case there is a business
+requirement that data becomes invalid or needs refreshed at a defined point in time the parameter
+`sharpExpiry` can be enabled. This will cause that the expiry happens exactly at the point in time determined
+by the expiry policy. For more details see the JavaDoc or `Cache2kBuilder.sharpExpiry` and `ExpiryPolicy`.
+
+If _sharp expiry and refresh ahead_ is enabled in combination the contract of refresh ahead
+is relaxed. This will lead to:
+
+ - Entries will expire exactly at the specified time
+ - A refresh starts at expiry time
+ - `contains()` is `false`, if the entry is expired and not yet refreshed
+ - A `get()` on the expired entry will stall until refreshed
+
+=== Loader Exceptions and Expiry
+
+When an expiry duration is specified via `expireAfterWrite`, resilience features are automatically
+active. See the resilience chapter for details.
+
+=== Resetting the Expiry of a Cache Value
+
+The expiry value can be reset with the method `Cache.expireAt(key, time)`. Two special values exist:
+
+.Cache.expireAt constants
+[width="70",options="header"]
+,===
+constant,meaning
+Expiry.NOW, The value expires immediately. An immediate load is triggered if refreshAhead is enabled.
+Expiry.REFRESH, An immediate load is triggered if refreshAhead is enabled. If loading is not possible the value expires.
+,===
+
+It is possible to atomically examine a cached entry and update its expiry with the `EntryProcessor` and
+`MutableCacheEntry.setExpiry()`.
