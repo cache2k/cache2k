@@ -1,5 +1,34 @@
-= About cache2k
+= About
 
+cache2k is a compact in process cache implementation that has the following main design goals:
+
+Performance:: To achieve high performance cache2k is designed fundamentally different from ground up
+  is leveraging an eviction algorithm that allows concurrent read access without locking overhead.
+Ease of use:: Well documented API, provide additional features that do not need to much complex configuration
+Compact and modular:: Small core size, optional extensions
+
+== Features
+
+List of current features:
+
+ - The fastest cache (compared to other caches available to us), see http:/benchmarks[the benchmarks]
+ - Java 6 and Android compatible
+ - Leverages Java 8 to increase performance, when available
+ - Portable Java code, no use of `sun.misc.Unsafe`
+ - Resilience: Smart exception handling
+ - Null value support
+ - Expiry: duration or point in time
+ - Variable expiry per entry
+ - CacheLoader with blocking read through
+ - AdvancedLoader for smart requests (e.g. if-modified-since)
+ - CacheWriter
+ - Events
+ - Refresh ahead
+ - Efficient statistics
+ - JMX support
+ - Separate, well defined API
+ - Single JAR file for deployment
+ - JCache support
 
 == Versioning
 

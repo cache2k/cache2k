@@ -2,7 +2,9 @@
 
 :leveloffset: 1
 
+include::sections/about.adoc[]
 include::sections/start.adoc[]
+include::sections/loading.adoc[]
 include::sections/expiry.adoc[]
 include::sections/null.adoc[]
 include::sections/resilience.adoc[]
