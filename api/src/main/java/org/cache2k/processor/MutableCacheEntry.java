@@ -114,7 +114,8 @@ public interface MutableCacheEntry<K, V> extends CacheEntry<K, V> {
   /**
    * Set a new expiry time for the entry. If combined with {@link #setValue} the entry
    * will be updated or inserted with this expiry time, otherwise just the expiry time
-   * will be updated.
+   * will be updated. Special time values are defined and described at
+   * {@link org.cache2k.expiry.ExpiryTimeValues}
    *
    * @param t Time in millis since epoch.
    */
