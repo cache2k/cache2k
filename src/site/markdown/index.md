@@ -6,24 +6,24 @@ the name cache2k.
 
 ## Features at a glance
 
-The main aim is to get a small footprint core cache implementation which does
+The main goal is a small footprint cache implementation.
 
  * One of the fastest cache for JVM local caching, see [the benchmarks page](benchmarks.html)
- * Android compatible
+ * Java 6 and Android compatible
+ * Leverages Java 8 to increase performance, when available
  * Portable Java code, no use of `sun.misc.Unsafe`
- * Exception handling and resilience
+ * Resilience: Smart exception handling
  * Null value support
- * Expiry/update on time
+ * Expiry: duration or point in time
  * Variable expiry per entry
- * Blocking read through, avoiding the thundering herds problem
+ * CacheLoader with blocking read through
+ * CacheWriter
+ * Events
  * Refresh ahead
- * Build-in, efficient statistics (Cannot be disabled)
+ * Build-in, efficient statistics
  * JMX support
- * An API jar to separate a stable interface
- * ...
-
-Since it is fresh open source, we will put up a detailed description of each feature as well
-polish the API and semantics one after another.
+ * Separate API with concise interface
+ * JCache support
 
 ## Status
 
@@ -32,10 +32,10 @@ are still evolving and there may be API breaking changes until we reach version 
 
 ## Road map
 
-  * _1.0_, finalize JSR107 JCache support, stabilize API, documentation (May 2016)
-  * _1.2_, improve Bulk performance, reduce threads needed for timing (June 2016)
-  * _1.4_, async support (August 2016)
-  * _1.6_, persistence and off-heap features (November 2016)
+  * _1.0_, finalize JSR107 JCache support, stabilize API, documentation (July 2016)
+  * _1.2_, improve Bulk performance, reduce threads needed for timing
+  * _1.4_, async support
+  * _1.6_, persistence and off-heap features
   
 The road map represents a rough plan, the dates and features may change.
 
