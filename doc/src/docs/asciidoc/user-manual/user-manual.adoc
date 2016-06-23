@@ -1,13 +1,17 @@
-= Cache2k User Manual
+= Cache2k User Guide
+Jens Wilke
+:revnumber: {cache2kversion}
+:doctype: book
+:toc: left
+:numbered:
 
-:leveloffset: 1
+include::sections/_about.adoc[]
+include::sections/_start.adoc[]
+////
+include::sections/_loading.adoc[]
+include::sections/_expiry.adoc[]
+include::sections/_null.adoc[]
+include::sections/_resilience.adoc[]
+include::sections/_jcache.adoc[]
+////
 
-include::sections/about.adoc[]
-include::sections/start.adoc[]
-include::sections/loading.adoc[]
-include::sections/expiry.adoc[]
-include::sections/null.adoc[]
-include::sections/resilience.adoc[]
-include::sections/jcache.adoc[]
-
-:leveloffset: 0

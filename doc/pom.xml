@@ -77,12 +77,13 @@
                 <executions>
                     <execution>
                         <id>generate-html-doc</id>
-                        <phase>generate-resources</phase>
+                        <phase>site</phase>
                         <goals>
                             <goal>process-asciidoc</goal>
                         </goals>
                         <configuration>
                             <backend>html5</backend>
+                            <sourceHighlighter>coderay</sourceHighlighter>
                             <attributes>
                                 <imagesdir>./images</imagesdir>
                                 <toc>left</toc>
@@ -90,12 +91,13 @@
                                 <sectanchors>true</sectanchors>
                                 <idprefix/>
                                 <idseparator>-</idseparator>
+                                <cache2kversion>${project.version}</cache2kversion>
                             </attributes>
                         </configuration>
                     </execution>
                     <execution>
                         <id>generate-pdf-doc</id>
-                        <phase>generate-resources</phase>
+                        <phase>site</phase>
                         <goals>
                             <goal>process-asciidoc</goal>
                         </goals>
@@ -110,6 +112,7 @@
                                 <toc/>
                                 <idprefix/>
                                 <idseparator>-</idseparator>
+                                <cache2kversion>${project.version}</cache2kversion>
                             </attributes>
                         </configuration>
                     </execution>
