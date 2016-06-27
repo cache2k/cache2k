@@ -60,7 +60,7 @@
                     </dependency>
                 </dependencies>
                 <configuration>
-                    <sourceDirectory>src/docs/asciidoc/user-manual</sourceDirectory>
+                    <sourceDirectory>src/docs/asciidoc/user-guide</sourceDirectory>
                     <requires>
                         <require>asciidoctor-diagram</require>
                     </requires>
