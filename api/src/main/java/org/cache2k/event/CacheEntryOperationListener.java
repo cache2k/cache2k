@@ -20,10 +20,12 @@ package org.cache2k.event;
  * #L%
  */
 
+import java.util.EventListener;
+
 /**
  * The root of all listeners that are called for an entry lifecycle and updates.
  *
  * @author Jens Wilke
  */
-public interface CacheEntryOperationListener<K,V> {
+public interface CacheEntryOperationListener<K,V> extends EventListener {
 }
