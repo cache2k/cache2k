@@ -42,13 +42,19 @@ import org.junit.experimental.categories.Category;
 import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 
 import static org.junit.Assert.*;
 import static org.cache2k.test.core.StaticUtil.*;
 
 /**
+ * Tests for the entry processor.
+ *
  * @author Jens Wilke
+ * @see EntryProcessor
+ * @see Cache#invoke(Object, EntryProcessor)
+ * @see Cache#invokeAll(Iterable, EntryProcessor)
  */
 @Category(FastTests.class)
 public class EntryProcessorTest {
@@ -62,11 +68,37 @@ public class EntryProcessorTest {
   @Before public void setup() { cache = target.cache(); }
   */
 
+  @Test
+  public void intial_noop() {
+    Cache<Integer, Integer> c = target.cache();
+    EntryProcessor p = new EntryProcessor() {
+      @Override
+      public Object process(MutableCacheEntry entry) throws Exception {
+        return null;
+      }
+    };
+    Object _result = c.invoke(123, p);
+    assertNull(_result);
+  }
+
+  @Test(expected = NullPointerException.class)
+  public void initial_NullKey() {
+    Cache<Integer, Integer> c = target.cache();
+    EntryProcessor p = new EntryProcessor() {
+      @Override
+      public Object process(MutableCacheEntry entry) throws Exception {
+        return null;
+      }
+    };
+    Object _result = c.invoke(null, p);
+    fail("never reached");
+  }
+
   /**
    * Test that exceptions get propagated, otherwise we cannot use assert inside the processor.
    */
   @Test(expected = EntryProcessingException.class)
-  public void exception() {
+  public void exceptionPropagation() {
     Cache<Integer, Integer> c = target.cache();
     c.invoke(KEY, new EntryProcessor<Integer, Integer, Object>() {
       @Override
@@ -74,6 +106,106 @@ public class EntryProcessorTest {
         throw new IllegalStateException("test");
       }
     });
+  }
+
+  @Test
+  public void initial_Not_Existing() {
+    Cache<Integer, Integer> c = target.cache();
+    final AtomicBoolean _reached = new AtomicBoolean(false);
+    final int _KEY = 123;
+    EntryProcessor p = new EntryProcessor() {
+      @Override
+      public Object process(MutableCacheEntry _entry) throws Exception {
+        assertFalse(_entry.exists());
+        assertEquals(0, _entry.getLastModification());
+        assertEquals(_KEY, _entry.getKey());
+        _reached.set(true);
+        return null;
+      }
+    };
+    Object _result = c.invoke(_KEY, p);
+    assertNull(_result);
+  }
+
+  @Test
+  public void initial_GetYieldsNull() {
+    Cache<Integer, Integer> c = target.cache();
+    final AtomicBoolean _reached = new AtomicBoolean(false);
+    EntryProcessor p = new EntryProcessor() {
+      @Override
+      public Object process(MutableCacheEntry _entry) throws Exception {
+        assertNull(_entry.getValue());
+        _reached.set(true);
+        return null;
+      }
+    };
+    final int _KEY = 123;
+    Object _result = c.invoke(_KEY, p);
+    assertNull(_result);
+    assertTrue("no exception during process", _reached.get());
+    assertFalse(c.containsKey(_KEY));
+  }
+
+  @Test
+  public void initial_Return() {
+    Cache<Integer, Integer> c = target.cache();
+    EntryProcessor p = new EntryProcessor() {
+      @Override
+      public Object process(MutableCacheEntry _entry) throws Exception {
+        return "abc";
+      }
+    };
+    Object _result = c.invoke(123, p);
+    assertEquals("abc", _result);
+  }
+
+  @Test
+  public void initial_exists_Empty() {
+    Cache<Integer, Integer> c = target.cache();
+    c.invoke(KEY, new EntryProcessor<Integer, Integer, Object>() {
+      @Override
+      public Object process(final MutableCacheEntry<Integer, Integer> entry) throws Exception {
+        assertFalse(entry.exists());
+        return null;
+      }
+    });
+    assertEquals(0, target.info().getSize());
+  }
+
+  @Test
+  public void test_Initial_Set() {
+    Cache<Integer, Integer> c = target.cache();
+    EntryProcessor p = new EntryProcessor() {
+      @Override
+      public Object process(MutableCacheEntry _entry) throws Exception {
+        _entry.setValue("dummy");
+        return "abc";
+      }
+    };
+    Object _result = c.invoke(123, p);
+    assertEquals("abc", _result);
+  }
+
+  @Test
+  public void test_Initial_GetSet() {
+    target.statistics();
+    Cache<Integer, Integer> c = target.cache();
+    EntryProcessor p = new EntryProcessor() {
+      @Override
+      public Object process(MutableCacheEntry _entry) throws Exception {
+        Object o = _entry.getValue();
+        assertNull(o);
+        _entry.setValue("dummy");
+        return "abc";
+      }
+    };
+    Object _result = c.invoke(123, p);
+    assertEquals("abc", _result);
+    target.statistics()
+      .missCount.expect(1)
+      .readCount.expect(1)
+      .putCount.expect(1)
+      .expectAllZero();
   }
 
   @Test
@@ -96,19 +228,6 @@ public class EntryProcessorTest {
     } catch (EntryProcessingException ex ) {
       assertEquals(IllegalStateException.class, ex.getCause().getClass());
     }
-  }
-
-  @Test
-  public void exists_Empty() {
-    Cache<Integer, Integer> c = target.cache();
-    c.invoke(KEY, new EntryProcessor<Integer, Integer, Object>() {
-      @Override
-      public Object process(final MutableCacheEntry<Integer, Integer> entry) throws Exception {
-        assertFalse(entry.exists());
-        return null;
-      }
-    });
-    assertEquals(0, target.info().getSize());
   }
 
   public static class CacheWithLoader {
@@ -179,6 +298,33 @@ public class EntryProcessorTest {
     });
     assertEquals(1, wl.loader.getCount());
     assertFalse(wl.cache.containsKey(KEY));
+  }
+
+  /**
+   * No real remove happens / not counted, since the entry was not there before.
+   */
+  @Test
+  public void getValue_triggerLoad_remove_statistics() {
+    CacheWithLoader wl = cacheWithLoader();
+    target.statistics();
+    wl.cache.invoke(123, new EntryProcessor<Integer, Integer, Void>() {
+      @Override
+      public Void process(final MutableCacheEntry<Integer, Integer> entry) throws Exception {
+        Integer v = entry.getValue();
+        assertEquals(123, (int) v);
+        entry.remove();
+        return null;
+      }
+    });
+    assertFalse(wl.cache.containsKey(123));
+    Integer v = wl.cache.peek(123);
+    assertNull(v);
+    target.statistics()
+      .readCount.expect(2)
+      .missCount.expect(2)
+      .loadCount.expect(1)
+      .removeCount.expect(0)
+      .expectAllZero();
   }
 
   @Test

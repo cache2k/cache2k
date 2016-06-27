@@ -27,6 +27,7 @@ import org.cache2k.configuration.CacheType;
 import org.cache2k.core.InternalCache;
 import org.cache2k.core.InternalCacheInfo;
 import org.cache2k.test.core.StaticUtil;
+import org.cache2k.test.core.Statistics;
 import org.junit.rules.TestRule;
 import org.junit.runner.Description;
 import org.junit.runners.model.Statement;
@@ -47,12 +48,13 @@ public class CacheRule<K,V> implements TestRule {
   private static Map<String, String> sharedCache = new ConcurrentHashMap<String, String>();
 
   /** It is a class rule and we want to share the cache between the methods */
-  boolean shared;
-  Cache<K,V> cache;
-  Description description;
-  CacheType<K> keyType;
-  CacheType<V> valueType;
-  Cache2kBuilder<K,V> builder;
+  private boolean shared;
+  private Cache<K,V> cache;
+  private Description description;
+  private CacheType<K> keyType;
+  private CacheType<V> valueType;
+  private Cache2kBuilder<K,V> builder;
+  private Statistics statistics;
 
   @SuppressWarnings("unchecked")
   protected CacheRule() {
@@ -99,6 +101,14 @@ public class CacheRule<K,V> implements TestRule {
       provideCache();
     }
     return cache;
+  }
+
+  public Statistics statistics() {
+    if (statistics == null) {
+      statistics = new Statistics();
+    }
+    statistics.sample(cache());
+    return statistics;
   }
 
   /**
@@ -178,17 +188,22 @@ public class CacheRule<K,V> implements TestRule {
       } catch (Throwable ignore) { }
     } else {
       try {
-        cache.clear();
-        cache.close();
+        destroyCache();
       } catch (Throwable ignore) { }
     }
+  }
+
+  private void destroyCache() {
+    cache.clear();
+    cache.close();
+    cache = null;
+    statistics = null;
   }
 
   void cleanupClass() {
     if (cache != null) {
       try {
-        cache.clear();
-        cache.close();
+        destroyCache();
       } catch (Throwable ignore) { }
     }
   }
@@ -197,6 +212,9 @@ public class CacheRule<K,V> implements TestRule {
     if (shared) {
       if (cache == null) {
         cache = buildCache();
+      }
+      if (statistics != null) {
+        statistics.reset();
       }
     } else {
       cache = buildCache();
