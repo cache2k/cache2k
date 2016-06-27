@@ -60,3 +60,17 @@ Expiry.REFRESH, An immediate load is triggered if refreshAhead is enabled. If lo
 
 It is possible to atomically examine a cached entry and update its expiry with the `EntryProcessor` and
 `MutableCacheEntry.setExpiry()`.
+
+== Wall Clock and Clock Skew
+
+For timing reference the Java `System.currentTimeMillis()` is used. As with any application that relies on
+time, it is good practice that the system clock is synchronized with a time reference. When the system time
+needs to be corrected, it should adapt slowly to the correct time and keep continuously ascending.
+
+In case a clock skew happens regularly a premature or late cache expiry may cause troubles. It is possible
+to do some countermeasures. If the time decreases, entries may expire more early. This can be detected and with the
+`AdvancedCacheLoader` the previously loaded value can be reused. If the time increases, expiry can be triggered
+programmatically with `expireAt`.
+
+See also the Rationale section. It is planed for version 1.2 to have a configurable time source, which enables
+better adaption to different operating environments. Ideas and requests are welcome.
