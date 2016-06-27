@@ -2,9 +2,7 @@
 
 cache2k supports the JCache API standard and passes 100% of the TCK.
 
-=== Using cache2k with JCache
-
-==== Maven Dependencies
+=== Maven Dependencies
 
 Additionally to the normal cache2k dependencies the following dependencies need to be added:
 
@@ -28,10 +26,9 @@ Additionally to the normal cache2k dependencies the following dependencies need 
     </dependency>
 ----
 
-JCache 1.0 is not released with and OSI compatible Open Source license. When using JCache, please
-review the JCache licensing terms.
+JCache 1.0 is not released with an Open Source license. When using JCache, please review the JCache licensing terms.
 
-==== Getting Started with the JCache API
+=== Getting Started with the JCache API
 
 Since cache2k is JCache compatible, any available JCache introduction can be used for the
 first steps. The following online sources are recommended:
@@ -39,14 +36,14 @@ first steps. The following online sources are recommended:
  - https://dzone.com/refcardz/java-caching
  - https://www.youtube.com/watch?v=EugtmOaZn9w
 
-==== Configuration
+=== Configuration
 
-JCache does not define a cache configuration that is sufficient for operation, for example, configuring the
-cache capacity is not possible. To specify a meaningful cache configuration, the specific cache2k configuration
+JCache does not define a complete cache configuration, for example, configuring the
+cache capacity is not possible. To specify a meaningful cache configuration, the cache2k configuration mechanism
 needs to be utilized.
 
-To create a JCache with an additional cache2k configuration inside the application the interface
-`ExtendedConfiguration` or  `MutableExtendedConfiguration` are provided in the `cache2k-jcache-api` module.
+To create a JCache with an additional cache2k configuration the interface `ExtendedConfiguration` and the class `MutableExtendedConfiguration`
+is provided.
 
 Example usage:
 
@@ -61,16 +58,30 @@ Example usage:
     ));
 ----
 
-When an extended cache2k configuration is provided some of the JCache configuration options loose
-their meaning or get merged:
+[WARNING]
+====
+When a cache2k configuration is provided, the default behavior is not 100% JCache compatible any more, because
+the defaults of cache2k apply. The JCache behavior can be enabled again, if needed.
+====
 
-`Configuration.isStoreByValue`:: Will be ignored, if true. Store by value semantics can enabled again
-   in the JCache configuration section of cache2k.
-Expiry settings:: Settings in cache2k configuration take precedence.
-Loader and Writer:: Settings in JCache configuration take precedence.
+Expiry:: With pure JCache configuration the expiry is set to sharp expiry by default for maximum compatiblity. When the
+   cache2k configuration is used, sharp expiry is off and need to be enabled explicitly.
+`Configuration.isStoreByValue`:: When the cache2k configuration is active the parameter will be ignored, if true.
+   Store by value semantics can enabled again in the JCache configuration section of cache2k
+   `JCacheConfiguration.Builder.copyAlwaysIfRequested`. See example below how to specify the additional parameters.
+
+The JCache configuration and the cache2k configuration may have settings that control the same
+feature, for example expiry. In this case the two configurations need to be merged and conflicting settings
+have to be resolved. The policy is as follows:
+
+Expiry settings:: Settings in cache2k configuration take precedence. A configured expiry policy in the standard
+  JCache `CacheConfiguration` will be ignored if either `expiryAfterWrite` or `expiryPolicy` is specified in
+  the cache2k configuration.
+Loader and Writer:: Settings in JCache configuration take precedence. If a loader or a write is specified in the
+  JCache `CacheConfiguration` the setting in the cache2k configuration is ignored.
 Event listeners:: Registered listeners of both configurations will be used.
 
-==== Control Additional JCache Semantics
+=== Control Additional JCache Semantics
 
 The JCache implementation has additional options that control its semantics. These options are available in
 the `JCacheConfiguration` configuration section, which is provided by the `cache2k-jcache-api` module.
@@ -91,7 +102,7 @@ Example usage:
     ));
 ----
 
-The example enables store by value semantics again and requests that keys and values are copies when passed
+The example enables store by value semantics again and requests that keys and values are copied when passed
 to the cache or retrieved from the cache.
 
 === Implementation Details
@@ -141,7 +152,7 @@ may be interrupted by a `RestartException` and restarted.
 
 It is not possible to retrieve the additional effective cache2k configuration with this method.
 
-==== Performance
+=== Performance
 
 Using the JCache API does not deliver the same performance as when the native cache2k API is used.
 Some design choices in JCache lead to additional overhead, for example:
