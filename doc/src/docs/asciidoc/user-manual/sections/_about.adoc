@@ -4,8 +4,9 @@ cache2k is a compact in process cache implementation that has the following main
 
 Performance:: To achieve high performance cache2k is designed fundamentally different from ground up
   is leveraging an eviction algorithm that allows concurrent read access without locking overhead.
-Ease of use:: Well documented API, provide additional features that do not need to much complex configuration
-Compact and modular:: Small core size, optional extensions
+Ease of use:: Well documented API, provide features beyond standard cache libraries for typical problems,
+  the typical configuration should be as small as possible
+Compact and modular:: Keep a small core size, additional features
 
 === Features
 
@@ -27,7 +28,7 @@ List of current features:
  - Efficient statistics
  - JMX support
  - Separate, well defined API
- - Single JAR file for deployment
+ - Complete, single JAR file for deployment (with OSGi support)
  - JCache support
 
 === Versioning

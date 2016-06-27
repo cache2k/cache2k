@@ -19,7 +19,6 @@ Modifications in the statistics output will not listed as breakage.
 
 If something is listed here it might affect an existing application and updating is recommended.
 
- 
 ## Fixes and Improvements
 
  - `getAll()` returns a stable map, not affected by expiry and parallel cache modifications.
@@ -42,6 +41,8 @@ If something is listed here it might affect an existing application and updating
  - `Cache.invoke` and `Cache.invokeAll`: Remove var arg argument for arbitrary objects. 
    Better aligned to Java 8 lambdas.
  - `Cache2kBuilder.keepDataAfterExpired`: has become false by default
+ - `EntryProcessor`: Triggers load when `MutableEntry.getException` is called
+ - `EntryProcessor`: `MutableEntry.setException` or `MutableEntry.setExpiry` work correctly after loading the value
  
 ## API Changes and new methods
 
