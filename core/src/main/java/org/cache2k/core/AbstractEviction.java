@@ -51,11 +51,11 @@ public abstract class AbstractEviction implements Eviction, EvictionMetrics {
 
   private int noEvictionContentionCount = 0;
 
-  public AbstractEviction(final HeapCache _heapCache, final HeapCacheListener _listener, final Cache2kConfiguration cfg, final int evictionSegmentCount) {
+  public AbstractEviction(final HeapCache _heapCache, final HeapCacheListener _listener, final long _maxSize) {
     heapCache = _heapCache;
     listener = _listener;
-    maxSize = cfg.getEntryCapacity() / evictionSegmentCount;
-    if (cfg.getEntryCapacity() < MINIMUM_CAPACITY_FOR_CHUNKING) {
+    maxSize = _maxSize;
+    if (_maxSize < MINIMUM_CAPACITY_FOR_CHUNKING) {
       chunkSize = 1;
     } else {
       chunkSize = MINIMAL_CHUNK_SIZE + Runtime.getRuntime().availableProcessors() - 1;

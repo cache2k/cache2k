@@ -65,6 +65,7 @@ public class Cache2kConfiguration<K, V> implements Serializable {
   private int loaderThreadCount;
   private boolean permitNullValues = false;
   private boolean disableStatistics = false;
+  private int evictionSegmentCount = -1;
 
   private ExpiryPolicy<K,V> expiryPolicy;
   private ResiliencePolicy<K,V> resiliencePolicy;
@@ -571,5 +572,13 @@ public class Cache2kConfiguration<K, V> implements Serializable {
    */
   public void setDisableStatistics(final boolean _disableStatistics) {
     disableStatistics = _disableStatistics;
+  }
+
+  public int getEvictionSegmentCount() {
+    return evictionSegmentCount;
+  }
+
+  public void setEvictionSegmentCount(final int _evictionSegmentCount) {
+    evictionSegmentCount = _evictionSegmentCount;
   }
 }

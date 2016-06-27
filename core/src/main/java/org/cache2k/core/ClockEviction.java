@@ -34,8 +34,8 @@ public class ClockEviction extends AbstractEviction {
   private long size = 0;
   private Entry hand = null;
 
-  public ClockEviction(final HeapCache _heapCache, final HeapCacheListener _listener, final Cache2kConfiguration cfg, final int _segmentCount) {
-    super(_heapCache, _listener, cfg, _segmentCount);
+  public ClockEviction(final HeapCache _heapCache, final HeapCacheListener _listener, final long _maxSize) {
+    super(_heapCache, _listener, _maxSize);
   }
 
   @Override

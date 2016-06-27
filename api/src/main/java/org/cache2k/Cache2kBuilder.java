@@ -511,6 +511,20 @@ public class Cache2kBuilder<K, V> implements Cloneable {
     return this;
   }
 
+  /**
+   * Number of eviction segments. The default is one or two if the available processor
+   * count is more than one. In case the workload has lots of concurrent inserts or eviction
+   * the segment count may be increased if the cache eviction becomes the bottle neck.
+   * A value higher then the processor count is ineffective. Setting a higher value has
+   * a negative impact on the eviction efficiency. There will be hardly any application with
+   * a little positive effect when this parameter is set. Usual applications that do mostly
+   * concurrent reads, do not need an increase.
+   */
+  public final Cache2kBuilder<K,V> evictionSegmentCount(int v) {
+    config.setEvictionSegmentCount(v);
+    return this;
+  }
+
   public final Cache2kConfiguration<K,V> toConfiguration() {
     return config;
   }
