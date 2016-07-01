@@ -511,7 +511,7 @@ public abstract class TimingHandler<K,V>  {
     }
 
     public long calculateNextRefreshTime(Entry<K, V> _entry, V _newValue, long _loadTime) {
-      if (_entry.isDataValid() || _entry.isExpired()) {
+      if (_entry.isDataValid() || _entry.isExpired() || _entry.nextRefreshTime == Entry.EXPIRED_REFRESH_PENDING) {
         return calcNextRefreshTime(_entry.getKey(), _newValue, _loadTime, _entry);
       } else {
         return calcNextRefreshTime(_entry.getKey(), _newValue, _loadTime, null);
