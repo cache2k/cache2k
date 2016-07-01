@@ -973,7 +973,32 @@ public class HeapCache<K, V>
       loaderExecutor.execute(new RunWithCatch(this) {
         @Override
         public void action() {
-          get(key);
+          getEntryInternal(key);
+        }
+      });
+    }
+  }
+
+  @Override
+  public void prefetch(final CacheOperationCompletionListener _listener, final K key) {
+    if (loader == null) {
+      _listener.onCompleted();
+      return;
+    }
+    Entry<K,V> e = lookupEntryNoHitRecord(key);
+    if (e != null && e.hasFreshData()) {
+      _listener.onCompleted();
+      return;
+    }
+    if (isLoaderThreadAvailableForPrefetching()) {
+      loaderExecutor.execute(new RunWithCatch(this) {
+        @Override
+        public void action() {
+          try {
+            getEntryInternal(key);
+          } finally {
+            _listener.onCompleted();
+          }
         }
       });
     }
@@ -1004,18 +1029,39 @@ public class HeapCache<K, V>
   }
 
   @Override
-  public void prefetch(final CacheOperationCompletionListener listener, final K key) {
-
-  }
-
-  @Override
-  public void prefetchAll(final CacheOperationCompletionListener listener, final Iterable<? extends K> keys) {
-
-  }
-
-  @Override
-  public void prefetchAll(final CacheOperationCompletionListener listener, final K... keys) {
-
+  public void prefetchAll(final CacheOperationCompletionListener _listener, final Iterable<? extends K> _keys) {
+    if (loader == null) {
+      _listener.onCompleted();
+      return;
+    }
+    Set<K> _keysToLoad = checkAllPresent(_keys);
+    final AtomicInteger _count = new AtomicInteger(2);
+    try {
+      for (K k : _keysToLoad) {
+        final K key = k;
+        if (!isLoaderThreadAvailableForPrefetching()) {
+          return;
+        }
+        Runnable r = new RunWithCatch(this) {
+          @Override
+          public void action() {
+            try {
+              getEntryInternal(key);
+            } finally {
+              if (_count.decrementAndGet() == 0) {
+                _listener.onCompleted();
+              }
+            }
+          }
+        };
+        loaderExecutor.execute(r);
+        _count.incrementAndGet();
+      }
+    } finally {
+      if (_count.addAndGet(-2) == 0) {
+        _listener.onCompleted();
+      }
+    }
   }
 
   @Override

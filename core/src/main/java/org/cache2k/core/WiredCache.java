@@ -165,18 +165,62 @@ public class WiredCache<K, V> extends AbstractCache<K, V>
   }
 
   @Override
-  public void prefetch(final CacheOperationCompletionListener listener, final K key) {
-
+  public void prefetch(final CacheOperationCompletionListener _listener, final K key) {
+    if (loader == null || !heapCache.isLoaderThreadAvailableForPrefetching()) {
+      _listener.onCompleted();
+      return;
+    }
+    Entry<K,V> e = heapCache.lookupEntryNoHitRecord(key);
+    if (e != null && e.hasFreshData()) {
+      _listener.onCompleted();
+      return;
+    }
+    heapCache.loaderExecutor.execute(new HeapCache.RunWithCatch(this) {
+      @Override
+      public void action() {
+        try {
+          load(key);
+        } finally {
+          _listener.onCompleted();
+        }
+      }
+    });
   }
 
   @Override
-  public void prefetchAll(final CacheOperationCompletionListener listener, final Iterable<? extends K> keys) {
-
-  }
-
-  @Override
-  public void prefetchAll(final CacheOperationCompletionListener listener, final K... keys) {
-
+  public void prefetchAll(final CacheOperationCompletionListener _listener, final Iterable<? extends K> _keys) {
+    if (loader == null) {
+      _listener.onCompleted();
+      return;
+    }
+    final AtomicInteger _count = new AtomicInteger(2);
+    try {
+      Set<K> _keysToLoad = heapCache.checkAllPresent(_keys);
+      for (K k : _keysToLoad) {
+        if (!heapCache.isLoaderThreadAvailableForPrefetching()) {
+          return;
+        }
+        final K key = k;
+        Runnable r = new HeapCache.RunWithCatch(this) {
+          @Override
+          public void action() {
+            try {
+              load(key);
+            } finally {
+              if (_count.decrementAndGet() == 0) {
+                _listener.onCompleted();
+              }
+            }
+          }
+        };
+        heapCache.loaderExecutor.execute(r);
+        _count.incrementAndGet();
+      }
+    } finally {
+      if (_count.addAndGet(-2) == 0) {
+        _listener.onCompleted();
+      }
+    }
   }
 
   private void load(final K key) {

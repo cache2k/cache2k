@@ -21,12 +21,14 @@ package org.cache2k.core;
  */
 
 import org.cache2k.CacheEntry;
+import org.cache2k.CacheOperationCompletionListener;
 import org.cache2k.processor.EntryProcessingException;
 import org.cache2k.processor.EntryProcessor;
 import org.cache2k.processor.EntryProcessingResult;
 import org.cache2k.core.operation.Semantic;
 import org.cache2k.core.storageApi.StorageAdapter;
 
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -210,6 +212,11 @@ public abstract class AbstractCache<K, V> implements InternalCache<K, V> {
   @Override
   public boolean contains(final K key) {
     return containsKey(key);
+  }
+
+  @Override
+  public void prefetchAll(final CacheOperationCompletionListener _listener, final K... _keys) {
+    prefetchAll(_listener, Arrays.asList(_keys));
   }
 
 }
