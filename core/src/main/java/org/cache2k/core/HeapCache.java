@@ -38,7 +38,7 @@ import org.cache2k.core.util.TunableFactory;
 import org.cache2k.integration.AdvancedCacheLoader;
 import org.cache2k.integration.CacheLoader;
 import org.cache2k.integration.ExceptionPropagator;
-import org.cache2k.integration.LoadCompletedListener;
+import org.cache2k.CacheOperationCompletionListener;
 import org.cache2k.processor.EntryProcessor;
 
 import java.security.SecureRandom;
@@ -76,14 +76,14 @@ import static org.cache2k.core.util.Util.*;
 public class HeapCache<K, V>
   extends AbstractCache<K, V> {
 
-  static final LoadCompletedListener DUMMY_LOAD_COMPLETED_LISTENER = new LoadCompletedListener() {
+  static final CacheOperationCompletionListener DUMMY_LOAD_COMPLETED_LISTENER = new CacheOperationCompletionListener() {
     @Override
-    public void loadCompleted() {
+    public void onCompleted() {
 
     }
 
     @Override
-    public void loadException(final Throwable _exception) {
+    public void onException(final Throwable _exception) {
 
     }
   };
@@ -1004,12 +1004,27 @@ public class HeapCache<K, V>
   }
 
   @Override
-  public void loadAll(final Iterable<? extends K> _keys, final LoadCompletedListener l) {
+  public void prefetch(final CacheOperationCompletionListener listener, final K key) {
+
+  }
+
+  @Override
+  public void prefetchAll(final CacheOperationCompletionListener listener, final Iterable<? extends K> keys) {
+
+  }
+
+  @Override
+  public void prefetchAll(final CacheOperationCompletionListener listener, final K... keys) {
+
+  }
+
+  @Override
+  public void loadAll(final Iterable<? extends K> _keys, final CacheOperationCompletionListener l) {
     checkLoaderPresent();
-    final LoadCompletedListener _listener= l != null ? l : DUMMY_LOAD_COMPLETED_LISTENER;
+    final CacheOperationCompletionListener _listener= l != null ? l : DUMMY_LOAD_COMPLETED_LISTENER;
     Set<K> _keysToLoad = checkAllPresent(_keys);
     if (_keysToLoad.isEmpty()) {
-      _listener.loadCompleted();
+      _listener.onCompleted();
       return;
     }
     final AtomicInteger _countDown = new AtomicInteger(_keysToLoad.size());
@@ -1022,7 +1037,7 @@ public class HeapCache<K, V>
             getEntryInternal(key);
           } finally {
             if (_countDown.decrementAndGet() == 0) {
-              _listener.loadCompleted();
+              _listener.onCompleted();
             }
           }
         }
@@ -1032,9 +1047,9 @@ public class HeapCache<K, V>
   }
 
   @Override
-  public void reloadAll(final Iterable<? extends K> _keys, final LoadCompletedListener l) {
+  public void reloadAll(final Iterable<? extends K> _keys, final CacheOperationCompletionListener l) {
     checkLoaderPresent();
-    final LoadCompletedListener _listener= l != null ? l : DUMMY_LOAD_COMPLETED_LISTENER;
+    final CacheOperationCompletionListener _listener= l != null ? l : DUMMY_LOAD_COMPLETED_LISTENER;
     Set<K> _keySet = generateKeySet(_keys);
     final AtomicInteger _countDown = new AtomicInteger(_keySet.size());
     for (K k : _keySet) {
@@ -1046,7 +1061,7 @@ public class HeapCache<K, V>
             loadAndReplace(key);
           } finally {
             if (_countDown.decrementAndGet() == 0) {
-              _listener.loadCompleted();
+              _listener.onCompleted();
             }
           }
         }

@@ -20,6 +20,7 @@ package org.cache2k.integration;
  * #L%
  */
 
+import org.cache2k.CacheOperationCompletionListener;
 import org.cache2k.processor.MutableCacheEntry;
 import org.cache2k.Cache;
 import org.cache2k.Cache2kBuilder;
@@ -37,7 +38,7 @@ import java.util.concurrent.Executor;
  * the cache or it is expired, by the cache methods {@code get()}, {@code getAll()}
  * or {@code getEntry()} as well as {@link MutableCacheEntry#getValue()}.
  *
- * <p>The cache loader can be invoked explicitly via {@link Cache#reloadAll(Iterable, LoadCompletedListener)}.
+ * <p>The cache loader can be invoked explicitly via {@link Cache#reloadAll(Iterable, CacheOperationCompletionListener)}.
  *
  * <p>Prefetching: The method {@link Cache#prefetch(Object)} can be used to instruct the cache to load
  * multiple values in the background.

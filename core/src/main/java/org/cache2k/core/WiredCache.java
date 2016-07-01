@@ -29,7 +29,7 @@ import org.cache2k.event.CacheEntryRemovedListener;
 import org.cache2k.event.CacheEntryUpdatedListener;
 import org.cache2k.CacheManager;
 import org.cache2k.integration.CacheWriter;
-import org.cache2k.integration.LoadCompletedListener;
+import org.cache2k.CacheOperationCompletionListener;
 import org.cache2k.core.operation.ExaminationEntry;
 import org.cache2k.core.operation.Progress;
 import org.cache2k.core.operation.Semantic;
@@ -164,6 +164,21 @@ public class WiredCache<K, V> extends AbstractCache<K, V>
     }
   }
 
+  @Override
+  public void prefetch(final CacheOperationCompletionListener listener, final K key) {
+
+  }
+
+  @Override
+  public void prefetchAll(final CacheOperationCompletionListener listener, final Iterable<? extends K> keys) {
+
+  }
+
+  @Override
+  public void prefetchAll(final CacheOperationCompletionListener listener, final K... keys) {
+
+  }
+
   private void load(final K key) {
     Entry<K, V> e = lookupQuick(key);
     if (e != null && e.hasFreshData()) {
@@ -229,12 +244,12 @@ public class WiredCache<K, V> extends AbstractCache<K, V>
   }
 
   @Override
-  public void loadAll(final Iterable<? extends K> _keys, final LoadCompletedListener l) {
+  public void loadAll(final Iterable<? extends K> _keys, final CacheOperationCompletionListener l) {
     checkLoaderPresent();
-    final LoadCompletedListener _listener= l != null ? l : HeapCache.DUMMY_LOAD_COMPLETED_LISTENER;
+    final CacheOperationCompletionListener _listener= l != null ? l : HeapCache.DUMMY_LOAD_COMPLETED_LISTENER;
     Set<K> _keysToLoad = heapCache.checkAllPresent(_keys);
     if (_keysToLoad.isEmpty()) {
-      _listener.loadCompleted();
+      _listener.onCompleted();
       return;
     }
     final AtomicInteger _countDown = new AtomicInteger(_keysToLoad.size());
@@ -247,7 +262,7 @@ public class WiredCache<K, V> extends AbstractCache<K, V>
             load(key);
           } finally {
             if (_countDown.decrementAndGet() == 0) {
-              _listener.loadCompleted();
+              _listener.onCompleted();
             }
           }
         }
@@ -257,9 +272,9 @@ public class WiredCache<K, V> extends AbstractCache<K, V>
   }
 
   @Override
-  public void reloadAll(final Iterable<? extends K> _keys, final LoadCompletedListener l) {
+  public void reloadAll(final Iterable<? extends K> _keys, final CacheOperationCompletionListener l) {
     checkLoaderPresent();
-    final LoadCompletedListener _listener= l != null ? l : HeapCache.DUMMY_LOAD_COMPLETED_LISTENER;
+    final CacheOperationCompletionListener _listener= l != null ? l : HeapCache.DUMMY_LOAD_COMPLETED_LISTENER;
     Set<K> _keySet = heapCache.generateKeySet(_keys);
     final AtomicInteger _countDown = new AtomicInteger(_keySet.size());
     for (K k : _keySet) {
@@ -271,7 +286,7 @@ public class WiredCache<K, V> extends AbstractCache<K, V>
             execute(key, SPEC.UNCONDITIONAL_LOAD);
           } finally {
             if (_countDown.decrementAndGet() == 0) {
-              _listener.loadCompleted();
+              _listener.onCompleted();
             }
           }
         }

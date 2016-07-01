@@ -14,6 +14,7 @@ Modifications in the statistics output will not listed as breakage.
    `permitNullValues`. The old deprecated builder (CacheBuilder) configures the cache to
    permit null values by default to be backwards compatible to applications still using the version
    0.20-ish interfaces.
+ - LoadCompletedListener renamed to CacheOperationCompletionListener
 
 ## Bug fixes
 

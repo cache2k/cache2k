@@ -31,17 +31,30 @@ import java.util.Map;
 public interface AdvancedKeyValueSource<K,V> extends KeyValueSource<K,V> {
 
   /**
-   * Retrieves all objects via the key.
+   * Retrieves all objects via the key. For a more detailed descriptions see
+   * the cache interface.
+   *
+   * @see Cache#getAll(Iterable)
    */
   Map<K, V> getAll(Iterable<? extends K> keys);
 
   /**
    * Notify about the intend to retrieve the value for this key in the
-   * near future.
-   **
+   * near future. For a more detailed descriptions see
+   * the cache interface.
+   *
    * @see Cache#prefetch(Object)
    */
   void prefetch(K key);
+
+  /**
+   * Notify about the intend to retrieve the value for this key in the
+   * near future. For a more detailed descriptions see
+   * the cache interface.
+   *
+   * @see Cache#prefetch(CacheOperationCompletionListener, Object)
+   */
+  void prefetch(CacheOperationCompletionListener listener, K key);
 
   /**
    * Notify about the intend to retrieve the value for the keys in the
@@ -50,5 +63,21 @@ public interface AdvancedKeyValueSource<K,V> extends KeyValueSource<K,V> {
    * @see Cache#prefetchAll(Iterable)
    */
   void prefetchAll(Iterable<? extends K> keys);
+
+  /**
+   * Notify about the intend to retrieve the value for the keys in the
+   * near future.
+   *
+   * @see Cache#prefetchAll(CacheOperationCompletionListener, Iterable)
+   */
+  void prefetchAll(CacheOperationCompletionListener listener, Iterable<? extends K> keys);
+
+  /**
+   * Notify about the intend to retrieve the value for the keys in the
+   * near future.
+   *
+   * @see Cache#prefetchAll(CacheOperationCompletionListener, Object[])
+   */
+  void prefetchAll(CacheOperationCompletionListener listener, K... keys);
 
 }

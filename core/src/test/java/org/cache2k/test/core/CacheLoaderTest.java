@@ -27,7 +27,7 @@ import org.cache2k.Cache;
 import org.cache2k.Cache2kBuilder;
 import org.cache2k.CacheEntry;
 import org.cache2k.integration.CacheLoader;
-import org.cache2k.integration.LoadCompletedListener;
+import org.cache2k.CacheOperationCompletionListener;
 import org.cache2k.junit.FastTests;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -45,7 +45,7 @@ import static org.cache2k.test.core.StaticUtil.*;
  * @author Jens Wilke
  * @see CacheLoader
  * @see AdvancedCacheLoader
- * @see LoadCompletedListener
+ * @see CacheOperationCompletionListener
  *
  */
 @Category(FastTests.class)
@@ -280,18 +280,18 @@ public class CacheLoaderTest {
         });
   }
 
-  public static class CompletionWaiter implements LoadCompletedListener {
+  public static class CompletionWaiter implements CacheOperationCompletionListener {
 
     CountDownLatch latch = new CountDownLatch(1);
     volatile Throwable exception;
 
     @Override
-    public void loadCompleted() {
+    public void onCompleted() {
       latch.countDown();
     }
 
     @Override
-    public void loadException(final Throwable _exception) {
+    public void onException(final Throwable _exception) {
       exception = _exception;
       latch.countDown();
     }

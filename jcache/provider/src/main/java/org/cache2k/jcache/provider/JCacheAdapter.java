@@ -25,7 +25,7 @@ import org.cache2k.CacheEntry;
 import org.cache2k.processor.EntryProcessor;
 import org.cache2k.integration.CacheWriterException;
 import org.cache2k.processor.EntryProcessingResult;
-import org.cache2k.integration.LoadCompletedListener;
+import org.cache2k.CacheOperationCompletionListener;
 import org.cache2k.processor.MutableCacheEntry;
 import org.cache2k.core.EntryAction;
 import org.cache2k.core.InternalCache;
@@ -109,16 +109,16 @@ public class JCacheAdapter<K, V> implements javax.cache.Cache<K, V> {
       }
       return;
     }
-    LoadCompletedListener l = null;
+    CacheOperationCompletionListener l = null;
     if (completionListener != null) {
-      l = new LoadCompletedListener() {
+      l = new CacheOperationCompletionListener() {
         @Override
-        public void loadCompleted() {
+        public void onCompleted() {
           completionListener.onCompletion();
         }
 
         @Override
-        public void loadException(Throwable _exception) {
+        public void onException(Throwable _exception) {
           if (_exception instanceof Exception) {
             completionListener.onException((Exception) _exception);
           } else {

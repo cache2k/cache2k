@@ -1,4 +1,4 @@
-package org.cache2k.integration;
+package org.cache2k;
 
 /*
  * #%L
@@ -20,7 +20,7 @@ package org.cache2k.integration;
  * #L%
  */
 
-import org.cache2k.Cache;
+import java.util.EventListener;
 
 /**
  * A listener implemented by the applications to get notifications after a
@@ -28,10 +28,12 @@ import org.cache2k.Cache;
  *
  * @author Jens Wilke
  */
-public interface LoadCompletedListener {
+public interface CacheOperationCompletionListener extends EventListener {
 
-  /** Signals the completion of a {@link Cache#loadAll} or (@link Cache#reload} operation. */
-  void loadCompleted();
+  /**
+   * Signals the completion of a {@link Cache#loadAll} or (@link Cache#reload} operation.
+   */
+  void onCompleted();
 
   /**
    * The operation could not completed, because of an error.
@@ -43,6 +45,6 @@ public interface LoadCompletedListener {
    * <p>The method may be used in the future for some general failure condition during load.
    * Applications should propagate the exception properly and not only log it.
    */
-  void loadException(Throwable _exception);
+  void onException(Throwable exception);
 
 }

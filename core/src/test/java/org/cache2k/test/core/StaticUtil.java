@@ -26,7 +26,7 @@ import org.cache2k.CacheEntry;
 import org.cache2k.event.CacheEntryRemovedListener;
 import org.cache2k.core.InternalCache;
 import org.cache2k.core.InternalCacheInfo;
-import org.cache2k.integration.LoadCompletedListener;
+import org.cache2k.CacheOperationCompletionListener;
 
 import java.util.Arrays;
 import java.util.HashSet;
@@ -78,7 +78,7 @@ public class StaticUtil {
   }
 
   public interface LoaderRunner {
-    void run(LoadCompletedListener l);
+    void run(CacheOperationCompletionListener l);
   }
 
 }

@@ -25,7 +25,6 @@ import org.cache2k.expiry.ExpiryPolicy;
 import org.cache2k.expiry.ExpiryTimeValues;
 import org.cache2k.integration.CacheLoader;
 import org.cache2k.integration.CacheWriter;
-import org.cache2k.integration.LoadCompletedListener;
 import org.cache2k.integration.CacheLoaderException;
 import org.cache2k.integration.CacheWriterException;
 import org.cache2k.processor.EntryProcessingException;
@@ -178,11 +177,32 @@ public interface Cache<K, V> extends
    * The cache may also do nothing, if not enough threads or other resources
    * are available.
    *
-   * <p>This method is not expected to throw an exception.
+   * <p>This method doesn't throw an exception if the loading fails.
+   * Exceptions will be propagated when the value is accessed.
    *
    * @param key the key that should be loaded, not null
    */
   void prefetch(K key);
+
+  /**
+   * Notify about the intend to retrieve the value for this key in the
+   * near future.
+   *
+   * <p>The method will return immediately and the cache will load the
+   * the value asynchronously if not yet present in the cache.
+   *
+   * <p>No action is performed, if no reasonable action can be taken
+   * for a cache configuration, for example no {@link CacheLoader} is defined.
+   * The cache may also do nothing, if not enough threads or other resources
+   * are available.
+   *
+   * <p>This method doesn't throw an exception if the loading fails.
+   * Exceptions will be propagated when the value is accessed.
+   *
+   * @param key the key that should be loaded, not null
+   * @param listener A listener that gets notified when the prefetch operation is finished
+   */
+  void prefetch(CacheOperationCompletionListener listener, K key);
 
   /**
    * @deprecated Renamed to {@link #prefetchAll}
@@ -206,11 +226,62 @@ public interface Cache<K, V> extends
    * ignore the request, if not enough internal resources are available to
    * load the value in background.
    *
-   * <p>This method is not expected to throw an exception.
+   * <p>This method doesn't throw an exception if the loading fails.
+   * Exceptions will be propagated when the value is accessed.
    *
    * @param keys the keys which should be loaded
    */
-   void prefetchAll(Iterable<? extends K> keys);
+  void prefetchAll(Iterable<? extends K> keys);
+
+  /**
+   * Notify about the intend to retrieve the value for the keys in the
+   * near future.
+   *
+   * <p>The method will return immediately and the cache will load the
+   * the value asynchronously if not yet present in the cache.
+   *
+   * <p>No action is performed, if no reasonable action can be taken
+   * for a cache configuration, for example no {@link CacheLoader} is defined.
+   * The cache may also do nothing, if not enough threads or other resources
+   * are available.
+   *
+   * <p>The method will return immediately and the cache will load the
+   * the value asynchronously if not yet present in the cache. The cache may
+   * ignore the request, if not enough internal resources are available to
+   * load the value in background.
+   *
+   * <p>This method doesn't throw an exception if the loading fails.
+   * Exceptions will be propagated when the value is accessed.
+   *
+   * @param keys the keys which should be loaded
+   * @param listener A listener that gets notified when the prefetch operation is finished
+   */
+  void prefetchAll(CacheOperationCompletionListener listener, Iterable<? extends K> keys);
+
+  /**
+   * Notify about the intend to retrieve the value for the keys in the
+   * near future.
+   *
+   * <p>The method will return immediately and the cache will load the
+   * the value asynchronously if not yet present in the cache.
+   *
+   * <p>No action is performed, if no reasonable action can be taken
+   * for a cache configuration, for example no {@link CacheLoader} is defined.
+   * The cache may also do nothing, if not enough threads or other resources
+   * are available.
+   *
+   * <p>The method will return immediately and the cache will load the
+   * the value asynchronously if not yet present in the cache. The cache may
+   * ignore the request, if not enough internal resources are available to
+   * load the value in background.
+   *
+   * <p>This method doesn't throw an exception if the loading fails.
+   * Exceptions will be propagated when the value is accessed.
+   *
+   * @param keys the keys which should be loaded
+   * @param listener A listener that gets notified when the prefetch operation is finished
+   */
+  void prefetchAll(CacheOperationCompletionListener listener, K... keys);
 
   /**
    * @deprecated use a sublist and {@link #prefetch(Iterable)}
@@ -619,7 +690,7 @@ public interface Cache<K, V> extends
    *          completion notification is needed.
    * @throws UnsupportedOperationException if no loader is defined
    */
-  void loadAll(Iterable<? extends K> keys, LoadCompletedListener l);
+  void loadAll(Iterable<? extends K> keys, CacheOperationCompletionListener l);
 
   /**
    * Asynchronously loads the given set of keys into the cache. Invokes load for all keys
@@ -643,7 +714,7 @@ public interface Cache<K, V> extends
    *          completion notification is needed.
    * @throws UnsupportedOperationException if no loader is defined
    */
-  void reloadAll(Iterable<? extends K> keys, LoadCompletedListener l);
+  void reloadAll(Iterable<? extends K> keys, CacheOperationCompletionListener l);
 
   /**
    *
