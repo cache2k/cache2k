@@ -188,12 +188,12 @@ public class CacheRule<K,V> implements TestRule {
       } catch (Throwable ignore) { }
     } else {
       try {
-        destroyCache();
+        closeCache();
       } catch (Throwable ignore) { }
     }
   }
 
-  private void destroyCache() {
+  public void closeCache() {
     cache.clear();
     cache.close();
     cache = null;
@@ -203,7 +203,7 @@ public class CacheRule<K,V> implements TestRule {
   void cleanupClass() {
     if (cache != null) {
       try {
-        destroyCache();
+        closeCache();
       } catch (Throwable ignore) { }
     }
   }

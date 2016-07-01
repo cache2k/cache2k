@@ -26,6 +26,7 @@ import org.cache2k.CacheEntry;
 import org.cache2k.event.CacheEntryCreatedListener;
 import org.cache2k.integration.CacheLoader;
 import org.cache2k.junit.FastTests;
+import org.cache2k.test.util.CacheRule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
@@ -45,28 +46,30 @@ import static org.junit.Assert.assertTrue;
 @Category(FastTests.class)
 public class CacheLoaderWiredCacheTest extends CacheLoaderTest {
 
-  @Override
-  protected Cache2kBuilder<Integer, Integer> builder() {
-    return StaticUtil.enforceWiredCache(super.builder());
+  {
+    target.enforecWiredCache();
   }
 
   @Test
   public void testLoaderWithListener() {
     final AtomicInteger _countCreated =  new AtomicInteger();
-    Cache<Integer,Integer> c = builder()
-      .loader(new CacheLoader<Integer, Integer>() {
-        @Override
-        public Integer load(final Integer key) throws Exception {
-          return key * 2;
-        }
-      })
-      .addListener(new CacheEntryCreatedListener<Integer, Integer>() {
-        @Override
-        public void onEntryCreated(final Cache<Integer, Integer> c, final CacheEntry<Integer, Integer> e) {
-          _countCreated.incrementAndGet();
-        }
-      })
-      .build();
+    Cache<Integer, Integer> c = target.cache(new CacheRule.Specialization<Integer, Integer>() {
+      @Override
+      public void extend(final Cache2kBuilder<Integer, Integer> b) {
+        b .loader(new CacheLoader<Integer, Integer>() {
+            @Override
+            public Integer load(final Integer key) throws Exception {
+              return key * 2;
+            }
+          })
+          .addListener(new CacheEntryCreatedListener<Integer, Integer>() {
+            @Override
+            public void onEntryCreated(final Cache<Integer, Integer> c, final CacheEntry<Integer, Integer> e) {
+              _countCreated.incrementAndGet();
+            }
+          });
+      }
+    });
     assertEquals(0, _countCreated.get());
     assertEquals((Integer) 10, c.get(5));
     assertEquals(1, _countCreated.get());
