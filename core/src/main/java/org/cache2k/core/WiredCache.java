@@ -288,7 +288,7 @@ public class WiredCache<K, V> extends AbstractCache<K, V>
   }
 
   @Override
-  public void loadAll(final Iterable<? extends K> _keys, final CacheOperationCompletionListener l) {
+  public void loadAll(final CacheOperationCompletionListener l, final Iterable<? extends K> _keys) {
     checkLoaderPresent();
     final CacheOperationCompletionListener _listener= l != null ? l : HeapCache.DUMMY_LOAD_COMPLETED_LISTENER;
     Set<K> _keysToLoad = heapCache.checkAllPresent(_keys);
@@ -316,7 +316,7 @@ public class WiredCache<K, V> extends AbstractCache<K, V>
   }
 
   @Override
-  public void reloadAll(final Iterable<? extends K> _keys, final CacheOperationCompletionListener l) {
+  public void reloadAll(final CacheOperationCompletionListener l, final Iterable<? extends K> _keys) {
     checkLoaderPresent();
     final CacheOperationCompletionListener _listener= l != null ? l : HeapCache.DUMMY_LOAD_COMPLETED_LISTENER;
     Set<K> _keySet = heapCache.generateKeySet(_keys);

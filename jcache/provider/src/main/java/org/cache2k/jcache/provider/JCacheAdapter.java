@@ -128,9 +128,9 @@ public class JCacheAdapter<K, V> implements javax.cache.Cache<K, V> {
       };
     }
     if (replaceExistingValues) {
-      cache.reloadAll(keys, l);
+      cache.reloadAll(l, keys);
     } else {
-      cache.loadAll(keys, l);
+      cache.loadAll(l, keys);
     }
   }
 

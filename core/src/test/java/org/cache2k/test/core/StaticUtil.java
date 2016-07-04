@@ -67,13 +67,13 @@ public class StaticUtil {
 
   public static <K,V> void load(Cache<K,V> c, K ...keys) {
     CacheLoaderTest.CompletionWaiter w = new CacheLoaderTest.CompletionWaiter();
-    c.loadAll(asSet(keys), w);
+    c.loadAll(w, asSet(keys));
     w.awaitCompletion();
   }
 
   public static <K,V> void reload(Cache<K,V> c, K ...keys) {
     CacheLoaderTest.CompletionWaiter w = new CacheLoaderTest.CompletionWaiter();
-    c.reloadAll(asSet(keys), w);
+    c.reloadAll(w, asSet(keys));
     w.awaitCompletion();
   }
 

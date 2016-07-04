@@ -38,7 +38,7 @@ import java.util.concurrent.Executor;
  * the cache or it is expired, by the cache methods {@code get()}, {@code getAll()}
  * or {@code getEntry()} as well as {@link MutableCacheEntry#getValue()}.
  *
- * <p>The cache loader can be invoked explicitly via {@link Cache#reloadAll(Iterable, CacheOperationCompletionListener)}.
+ * <p>The cache loader can be invoked explicitly via {@link Cache#reloadAll(CacheOperationCompletionListener, Iterable)}.
  *
  * <p>Prefetching: The method {@link Cache#prefetch(Object)} can be used to instruct the cache to load
  * multiple values in the background.

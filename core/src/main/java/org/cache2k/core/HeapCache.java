@@ -1065,7 +1065,7 @@ public class HeapCache<K, V>
   }
 
   @Override
-  public void loadAll(final Iterable<? extends K> _keys, final CacheOperationCompletionListener l) {
+  public void loadAll(final CacheOperationCompletionListener l, final Iterable<? extends K> _keys) {
     checkLoaderPresent();
     final CacheOperationCompletionListener _listener= l != null ? l : DUMMY_LOAD_COMPLETED_LISTENER;
     Set<K> _keysToLoad = checkAllPresent(_keys);
@@ -1093,7 +1093,7 @@ public class HeapCache<K, V>
   }
 
   @Override
-  public void reloadAll(final Iterable<? extends K> _keys, final CacheOperationCompletionListener l) {
+  public void reloadAll(final CacheOperationCompletionListener l, final Iterable<? extends K> _keys) {
     checkLoaderPresent();
     final CacheOperationCompletionListener _listener= l != null ? l : DUMMY_LOAD_COMPLETED_LISTENER;
     Set<K> _keySet = generateKeySet(_keys);

@@ -36,6 +36,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.Executor;
 import java.util.concurrent.TimeUnit;
 
 /*
@@ -685,12 +686,12 @@ public interface Cache<K, V> extends
    *
    * <p>After the load is completed, the completion listener will be called, if provided.
    *
-   * @param keys The keys to be loaded
    * @param l Listener interface that is invoked upon completion. May be null if no
    *          completion notification is needed.
+   * @param keys The keys to be loaded
    * @throws UnsupportedOperationException if no loader is defined
    */
-  void loadAll(Iterable<? extends K> keys, CacheOperationCompletionListener l);
+  void loadAll(CacheOperationCompletionListener l, Iterable<? extends K> keys);
 
   /**
    * Asynchronously loads the given set of keys into the cache. Invokes load for all keys
@@ -709,12 +710,12 @@ public interface Cache<K, V> extends
    * <p>Rationale: Actually the name is not perfect, it should be {@code reallyLoad}, because it loads the
    * value also, when some value was inserted view {@code put}.
    *
-   * @param keys The keys to be loaded
    * @param l Listener interface that is invoked upon completion. May be null if no
    *          completion notification is needed.
+   * @param keys The keys to be loaded
    * @throws UnsupportedOperationException if no loader is defined
    */
-  void reloadAll(Iterable<? extends K> keys, CacheOperationCompletionListener l);
+  void reloadAll(CacheOperationCompletionListener l, Iterable<? extends K> keys);
 
   /**
    *
@@ -754,6 +755,10 @@ public interface Cache<K, V> extends
    * to be most specific. If the loader has permanent failures this method may
    * throw an exception immediately.
    *
+   * <p>The operation is not performed atomically. This operation may call different
+   * loader methods either {@link CacheLoader#loadAll(Iterable, Executor)} or
+   *  {@link CacheLoader#load(Object)}.
+   *
    * <p>Performance: A better technique is using {@link Cache#prefetchAll(Iterable)}
    * and then {@link Cache#get(Object)} to request the the values.
    *
@@ -774,6 +779,9 @@ public interface Cache<K, V> extends
    * suppressed and is not yet expired. This exception will be thrown
    * as {@link CacheLoaderException} when the entry is accessed
    * via the map interface.
+   *
+   * <p>The operation is not performed atomically. Mutations of the cache during
+   * this operation may or may not affect the result.
    *
    * @throws NullPointerException if one of the specified keys is null
    * @throws IllegalArgumentException if some property of the specified key

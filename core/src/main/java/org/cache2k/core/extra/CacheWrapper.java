@@ -102,13 +102,13 @@ public class CacheWrapper<K,V> implements Cache<K, V> {
   }
 
   @Override
-  public void loadAll(final Iterable<? extends K> keys, final CacheOperationCompletionListener l) {
-    cache.loadAll(keys, l);
+  public void loadAll(final CacheOperationCompletionListener l, final Iterable<? extends K> keys) {
+    cache.loadAll(l, keys);
   }
 
   @Override
-  public void reloadAll(final Iterable<? extends K> keys, final CacheOperationCompletionListener l) {
-    cache.reloadAll(keys, l);
+  public void reloadAll(final CacheOperationCompletionListener l, final Iterable<? extends K> keys) {
+    cache.reloadAll(l, keys);
   }
 
   @Override

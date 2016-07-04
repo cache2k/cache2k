@@ -837,12 +837,12 @@ public class BasicCacheOperationsTest {
 
   @Test(expected=UnsupportedOperationException.class)
   public void loadAll() throws Exception {
-    cache.loadAll(asSet(KEY, OTHER_KEY), null);
+    cache.loadAll(null, asSet(KEY, OTHER_KEY));
   }
 
   @Test(expected=UnsupportedOperationException.class)
   public void reloadAll() throws Exception {
-    cache.reloadAll(asSet(KEY, OTHER_KEY), null);
+    cache.reloadAll(null, asSet(KEY, OTHER_KEY));
   }
 
   @Test

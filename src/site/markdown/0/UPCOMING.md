@@ -15,6 +15,7 @@ Modifications in the statistics output will not listed as breakage.
    permit null values by default to be backwards compatible to applications still using the version
    0.20-ish interfaces.
  - LoadCompletedListener renamed to CacheOperationCompletionListener
+ - `Cache.load` and `Cache.reload`: Signature change, swap the two parameters
 
 ## Bug fixes
 

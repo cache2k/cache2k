@@ -129,12 +129,12 @@ public class CacheLoaderTest {
     });
     c.get(5);
     CompletionWaiter w = new CompletionWaiter();
-    c.loadAll(asSet(5, 6), w);
+    c.loadAll(w, asSet(5, 6));
     w.awaitCompletion();
     assertEquals(2, _countLoad.get());
     assertEquals((Integer) 2, c.get(6));
-    c.loadAll(asSet(5, 6), null);
-    c.loadAll(Collections.EMPTY_SET, null);
+    c.loadAll(null, asSet(5, 6));
+    c.loadAll(null, Collections.EMPTY_SET);
   }
 
   @Test
@@ -153,11 +153,11 @@ public class CacheLoaderTest {
     });
     c.get(5);
     CompletionWaiter w = new CompletionWaiter();
-    c.reloadAll(asSet(5, 6), w);
+    c.reloadAll(w, asSet(5, 6));
     w.awaitCompletion();
     assertEquals(3, _countLoad.get());
-    c.reloadAll(asSet(5, 6), null);
-    c.reloadAll(Collections.EMPTY_SET, null);
+    c.reloadAll(null, asSet(5, 6));
+    c.reloadAll(null, Collections.EMPTY_SET);
   }
 
   @Test
@@ -330,8 +330,8 @@ public class CacheLoaderTest {
         });
       }
     });
-    c.loadAll(asSet(1), null);
-    c.loadAll(asSet(2), null);
+    c.loadAll(null, asSet(1));
+    c.loadAll(null, asSet(2));
     _inLoader.await();
     assertEquals(2, latestInfo(c).getAsyncLoadsStarted());
     assertEquals(2, latestInfo(c).getAsyncLoadsInFlight());
@@ -360,8 +360,8 @@ public class CacheLoaderTest {
         });
       }
     });
-    c.loadAll(asSet(1), null);
-    c.loadAll(asSet(2), null);
+    c.loadAll(null, asSet(1));
+    c.loadAll(null, asSet(2));
     _inLoader.await();
     assertEquals(2, latestInfo(c).getAsyncLoadsStarted());
     assertEquals(1, latestInfo(c).getAsyncLoadsInFlight());
