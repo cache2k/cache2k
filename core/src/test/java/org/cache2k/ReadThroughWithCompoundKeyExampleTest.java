@@ -20,12 +20,15 @@ package org.cache2k;
  * #L%
  */
 
+import net.jcip.annotations.NotThreadSafe;
 import org.cache2k.integration.CacheLoader;
+import org.junit.After;
 import org.junit.Test;
 
 /**
  * @author Jens Wilke
  */
+@NotThreadSafe
 public class ReadThroughWithCompoundKeyExampleTest {
 
   Cache<Route, String> routeToAirline = new Cache2kBuilder<Route, String>() {}
@@ -38,6 +41,11 @@ public class ReadThroughWithCompoundKeyExampleTest {
       }
     })
     .build();
+
+  @After
+  public void tearDown() {
+    routeToAirline.close();
+  }
 
   private String findFavoriteAirline(String origin, String destination) {
     return "People Air";
