@@ -39,7 +39,7 @@ For starting with cache2k, let's construct a cache that maps one of our frequent
 
 [source,java]
 ----
-    Cache<String, String> cache = new Cache2kBuilder<>() {}
+    Cache<String, String> cache = new Cache2kBuilder<String, String>() {}
       .name("routeToAirline")
       .eternal(true)
       .entryCapacity(100)
