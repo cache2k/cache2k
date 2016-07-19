@@ -81,7 +81,7 @@ public class Cache2kBuilder<K, V> implements Cloneable {
    * or to set the type information later via the builder methods {@link #keyType} or
    * {@link #valueType}.
    */
-  public static Cache2kBuilder<?,?> forUnknownTypes() {
+  public static Cache2kBuilder forUnknownTypes() {
     return of(new Cache2kConfiguration());
   }
 
