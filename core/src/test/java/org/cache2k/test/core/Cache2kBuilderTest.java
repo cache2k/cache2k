@@ -43,6 +43,8 @@ import static org.hamcrest.CoreMatchers.*;
 @Category(FastTests.class)
 public class Cache2kBuilderTest {
 
+  private static final String CLASSNAME = Cache2kBuilderTest.class.getName();
+
   @Test
   public void managerName() {
     Cache c = Cache2kBuilder.forUnknownTypes().eternal(true).build();
@@ -79,6 +81,34 @@ public class Cache2kBuilderTest {
     c.close();
   }
 
+  /**
+   * If types are unknown you can cast to every generic type.
+   */
+  @Test
+  public void noTypesCastObjectObject() {
+    Cache<Object, Object> c = (Cache<Object,Object>)
+      Cache2kBuilder.forUnknownTypes().eternal(true).build();
+    c.put("hallo", 234);
+    c.close();
+  }
+
+  /**
+   * If types are unknown you can cast to every generic type.
+   */
+  @Test
+  public void noTypesCastStringInt() {
+    Cache<String, Integer> c = (Cache<String,Integer>)
+      Cache2kBuilder.forUnknownTypes().eternal(true).build();
+    c.put("hallo", 234);
+    c.close();
+  }
+
+  @Test
+  public void noTypesAnyCache() {
+    Cache<?, ?> c = Cache2kBuilder.forUnknownTypes().eternal(true).build();
+    c.close();
+  }
+
   @Test
   public void collectionValueType() {
     Cache<Long, List<String>> c =
@@ -88,6 +118,22 @@ public class Cache2kBuilderTest {
     c.close();
   }
 
+  /**
+   * When using classes for the type information, there is no generic type information.
+   * There is an ugly cast to (Object) needed to strip the result and be able to cast
+   * to the correct one.
+   */
+  @Test
+  public void collectionValueClass() {
+    Cache<Long, List<String>> c =
+      (Cache<Long, List<String>>) (Object) Cache2kBuilder.of(Long.class, List.class).eternal(true).build();
+    c.put(123L, new ArrayList<String>());
+    c.close();
+  }
+
+  /**
+   * Use the cache type to specify a type with generic parameter. No additional cast is needed.
+   */
   @Test
   public void collectionValueCacheType() {
     Cache<Long, List<String>> c =
@@ -101,15 +147,7 @@ public class Cache2kBuilderTest {
   }
 
   @Test
-  public void collectionValueClass() {
-    Cache<Long, List<String>> c =
-      (Cache<Long, List<String>>) (Object) Cache2kBuilder.of(Long.class, List.class).eternal(true).build();
-    c.put(123L, new ArrayList<String>());
-    c.close();
-  }
-
-  @Test
-  public void typesParametersWith() {
+  public void typesParametersWithList() {
     Cache<Long, List> c =
       Cache2kBuilder.forUnknownTypes()
         .valueType(List.class)
@@ -143,21 +181,21 @@ public class Cache2kBuilderTest {
   @Test
   public void cacheNameInConstructor0() {
     Cache c = new BuildCacheInConstructor0().cache;
-    assertThat(c.getName(), startsWith("_org.cache2k.test.core.CacheBuilderTest$BuildCacheInConstructor0.INIT"));
+    assertThat(c.getName(), startsWith("_" + CLASSNAME + "$BuildCacheInConstructor0.INIT"));
     c.close();
   }
 
   @Test
   public void cacheNameInConstructor1() {
     Cache c = new BuildCacheInConstructor1().cache;
-    assertThat(c.getName(), startsWith("_org.cache2k.test.core.CacheBuilderTest$BuildCacheInConstructor1.INIT"));
+    assertThat(c.getName(), startsWith("_" + CLASSNAME + "$BuildCacheInConstructor1.INIT"));
     c.close();
   }
 
   @Test
   public void cacheNameInConstructor2() {
     Cache c = new BuildCacheInConstructor2().cache;
-    assertThat(c.getName(), startsWith("_org.cache2k.test.core.CacheBuilderTest$BuildCacheInConstructor2.INIT"));
+    assertThat(c.getName(), startsWith("_" + CLASSNAME + "$BuildCacheInConstructor2.INIT"));
     c.close();
   }
 
@@ -165,7 +203,7 @@ public class Cache2kBuilderTest {
   public void cacheNameInClassConstructor0() {
     Cache c = BuildCacheInClassConstructor0.cache;
     assertThat(c.getName(),
-      startsWith("_org.cache2k.test.core.CacheBuilderTest$BuildCacheInClassConstructor0.CLINIT"));
+      startsWith("_" + CLASSNAME + "$BuildCacheInClassConstructor0.CLINIT"));
     c.close();
   }
 
@@ -184,7 +222,7 @@ public class Cache2kBuilderTest {
       .eternal(true)
       .name(this.getClass(), "cacheNameDisambiguation")
       .build();
-    assertEquals("org.cache2k.test.core.CacheBuilderTest.cacheNameDisambiguation~1", c1.getName());
+    assertEquals(CLASSNAME + ".cacheNameDisambiguation~1", c1.getName());
     c0.close();
     c1.close();
   }
