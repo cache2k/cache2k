@@ -41,7 +41,7 @@ import static org.hamcrest.CoreMatchers.*;
  * @see Cache2kBuilder
  */
 @Category(FastTests.class)
-public class CacheBuilderTest {
+public class Cache2kBuilderTest {
 
   @Test
   public void managerName() {
