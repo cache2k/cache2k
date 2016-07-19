@@ -51,7 +51,8 @@ public class CacheMXBeanImpl implements CacheMXBean {
 
   @Override
   public long getUsageCnt() {
-    return getInfo().getUsageCnt();
+    long _usageCount = getInfo().getUsageCnt();
+    return Math.min(0, _usageCount);
   }
 
   @Override

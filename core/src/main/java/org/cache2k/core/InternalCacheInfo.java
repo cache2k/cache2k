@@ -38,8 +38,14 @@ public interface InternalCacheInfo {
 
   long getStorageMissCnt();
 
+  /**
+   * Number of cache operations, only access.
+   */
   long getReadUsageCnt();
 
+  /**
+   * Number of cache operations.
+   */
   long getUsageCnt();
 
   long getMissCnt();
@@ -112,6 +118,8 @@ public interface InternalCacheInfo {
   int getLongestCollisionSize();
 
   String getIntegrityDescriptor();
+
+  long getGoneSpinCnt();
 
   long getStarted();
 

@@ -619,6 +619,7 @@ public class HeapCache<K, V>
           return e;
         }
         if (e.isGone()) {
+          metrics.goneSpin();
           continue;
         }
         e.startProcessing();
@@ -694,6 +695,7 @@ public class HeapCache<K, V>
       synchronized (e) {
         e.waitForProcessing();
         if (e.isGone()) {
+          metrics.goneSpin();
           continue;
         }
         _hasFreshData = e.hasFreshData();
@@ -722,6 +724,7 @@ public class HeapCache<K, V>
       synchronized (e) {
         e.waitForProcessing();
         if (e.isGone()) {
+          metrics.goneSpin();
           continue;
         }
         if (e.hasFreshData()) {
@@ -844,6 +847,7 @@ public class HeapCache<K, V>
       synchronized (e) {
         e.waitForProcessing();
         if (e.isGone()) {
+          metrics.goneSpin();
           continue;
         }
         if (e.hasFreshData()) {
@@ -863,6 +867,7 @@ public class HeapCache<K, V>
       synchronized (e) {
         e.waitForProcessing();
         if (e.isGone()) {
+          metrics.goneSpin();
           continue;
         }
         if (!e.isVirgin()) {
@@ -1170,6 +1175,7 @@ public class HeapCache<K, V>
       synchronized (e) {
         e.waitForProcessing();
         if (e.isGone()) {
+          metrics.goneSpin();
           continue;
         }
         e.startProcessing();

@@ -330,4 +330,20 @@ public class StandardCommonMetrics implements CommonMetrics.Updater {
     return false;
   }
 
+  static final AtomicLongFieldUpdater<StandardCommonMetrics> goneSpinUpdater =
+    AtomicLongFieldUpdater.newUpdater(StandardCommonMetrics.class, "goneSpin");
+  private volatile long goneSpin;
+  @Override
+  public long getGoneSpinCount() {
+    return goneSpinUpdater.get(this);
+  }
+  @Override
+  public void goneSpin() {
+    goneSpinUpdater.incrementAndGet(this);
+  }
+  @Override
+  public void goneSpin(final long cnt) {
+    goneSpinUpdater.addAndGet(this, cnt);
+  }
+
 }

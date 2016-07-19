@@ -45,6 +45,7 @@ If something is listed here it might affect an existing application and updating
  - `Cache2kBuilder.keepDataAfterExpired`: has become false by default
  - `EntryProcessor`: Triggers load when `MutableEntry.getException` is called
  - `EntryProcessor`: `MutableEntry.setException` or `MutableEntry.setExpiry` work correctly after loading the value
+ - Statistics: Correct usage counter in case of a race at entry mutation 
  
 ## API Changes and new methods
 

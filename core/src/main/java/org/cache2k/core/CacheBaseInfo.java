@@ -101,7 +101,9 @@ class CacheBaseInfo implements InternalCacheInfo {
     hitCnt = em.getHitCount();
     correctedPutCnt = metrics.getPutNewEntryCount() + metrics.getPutHitCount() + metrics.getPutNoReadHitCount();
     usageCnt =
-            hitCnt + newEntryCnt + metrics.getPeekMissCount() + metrics.getPutHitCount() + metrics.getRemoveCount();
+      hitCnt + newEntryCnt
+      + metrics.getPeekMissCount() + metrics.getPutHitCount() + metrics.getRemoveCount()
+      - metrics.getGoneSpinCount();
     if (_heapCache.loaderExecutor instanceof ThreadPoolExecutor) {
       ThreadPoolExecutor ex = (ThreadPoolExecutor) _heapCache.loaderExecutor;
       asyncLoadsInFlight = ex.getActiveCount();
@@ -141,9 +143,10 @@ class CacheBaseInfo implements InternalCacheInfo {
     long _putHit = metrics.getPutNoReadHitCount();
     long _containsBitHit = metrics.getContainsButHitCount();
     long _heapHitButNoRead = metrics.getHeapHitButNoReadCount();
+    long _goneSpin = metrics.getGoneSpinCount();
     return
       hitCnt + metrics.getPeekMissCount()
-      + metrics.getLoadCount() - _putHit - _containsBitHit - _heapHitButNoRead;
+      + metrics.getLoadCount() - _putHit - _containsBitHit - _heapHitButNoRead - _goneSpin;
   }
   @Override
   public long getUsageCnt() { return usageCnt; }
@@ -175,6 +178,12 @@ class CacheBaseInfo implements InternalCacheInfo {
   public long getRemovedCnt() { return metrics.getRemoveCount(); }
   @Override
   public long getPutCnt() { return correctedPutCnt; }
+
+  @Override
+  public long getGoneSpinCnt() {
+    return metrics.getGoneSpinCount();
+  }
+
   @Override
   public long getKeyMutationCnt() { return keyMutationCnt; }
   @Override
@@ -358,6 +367,7 @@ class CacheBaseInfo implements InternalCacheInfo {
             + "removedCnt=" + getRemovedCnt() + ", "
             + "clearRemovedCnt=" + getClearRemovedCnt() + ", "
             + "timerEventCnt=" + getTimerEventCnt() + ", "
+            + "goneSpinCnt=" + getGoneSpinCnt() + ", "
             + "hitRate=" + getDataHitString() + ", "
             + "collisionCnt=" + getCollisionCnt() + ", "
             + "collisionSlotCnt=" + getCollisionSlotCnt() + ", "

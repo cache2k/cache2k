@@ -109,6 +109,12 @@ public interface CommonMetrics {
    */
   long getRefreshSubmitFailedCount();
 
+  /**
+   * Entry was removed while waiting to get the mutation lock.
+   * Use this counter only if usage is counted (hit or new).
+   */
+  long getGoneSpinCount();
+
   boolean isDisabled();
 
   interface Updater extends CommonMetrics {
@@ -165,6 +171,9 @@ public interface CommonMetrics {
 
     void refreshSubmitFailed();
     void refreshSubmitFailed(long cnt);
+
+    void goneSpin();
+    void goneSpin(long cnt);
 
   }
 
@@ -346,6 +355,16 @@ public interface CommonMetrics {
     }
 
     @Override
+    public void goneSpin() {
+
+    }
+
+    @Override
+    public void goneSpin(final long cnt) {
+
+    }
+
+    @Override
     public long getPutNewEntryCount() {
       return 0;
     }
@@ -437,6 +456,11 @@ public interface CommonMetrics {
 
     @Override
     public long getRefreshSubmitFailedCount() {
+      return 0;
+    }
+
+    @Override
+    public long getGoneSpinCount() {
       return 0;
     }
 
