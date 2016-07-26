@@ -33,7 +33,6 @@ import static org.cache2k.core.util.Util.formatMillis;
  */
 class CacheBaseInfo implements InternalCacheInfo {
 
-  private StorageAdapter storage;
   private CommonMetrics metrics;
   private StorageMetrics storageMetrics = StorageMetrics.DUMMY;
   private HeapCache heapCache;
@@ -42,7 +41,6 @@ class CacheBaseInfo implements InternalCacheInfo {
   private int infoCreationDeltaMs;
   private long missCnt;
   private long storageMissCnt;
-  private long storageLoadCnt;
   private long hitCnt;
   private long correctedPutCnt;
   private long usageCnt;
@@ -63,7 +61,6 @@ class CacheBaseInfo implements InternalCacheInfo {
   private long newEntryCnt;
   private long keyMutationCnt;
   private long removedCnt;
-  private long virginRemovedCnt;
   private long clearRemovedCnt;
   private long clearCnt;
   private long expiredRemoveCnt;
@@ -80,7 +77,6 @@ class CacheBaseInfo implements InternalCacheInfo {
     clearedTime = _heapCache.clearedTime;
     keyMutationCnt = _heapCache.keyMutationCnt;
     removedCnt = em.getRemovedCount();
-    virginRemovedCnt = em.getVirginRemovedCount();
     clearRemovedCnt = _heapCache.clearRemovedCnt;
     clearCnt = _heapCache.clearCnt;
     expiredRemoveCnt = em.getExpiredRemovedCount();
@@ -98,7 +94,6 @@ class CacheBaseInfo implements InternalCacheInfo {
     size = heapCache.getLocalSize();
     missCnt = metrics.getLoadCount() + metrics.getReloadCount() + metrics.getPeekHitNotFreshCount() + metrics.getPeekMissCount();
     storageMissCnt = storageMetrics.getReadMissCount() + storageMetrics.getReadNonFreshCount();
-    storageLoadCnt = storageMissCnt + storageMetrics.getReadHitCount();
     hitCnt = em.getHitCount();
     correctedPutCnt = metrics.getPutNewEntryCount() + metrics.getPutHitCount() + metrics.getPutNoReadHitCount();
     usageCnt =
@@ -284,23 +279,13 @@ class CacheBaseInfo implements InternalCacheInfo {
   @Override
   public long getStartedTime() { return heapCache.startedTime; }
   @Override
-  public long getClearedTime() { return heapCache.clearedTime; }
+  public long getClearedTime() { return clearedTime; }
   @Override
   public long getInfoCreatedTime() { return infoCreatedTime; }
   @Override
   public int getInfoCreationDeltaMs() { return infoCreationDeltaMs; }
   @Override
   public int getHealth() {
-    if (storage != null && storage.getAlert() == 2) {
-      return 2;
-    }
-    if (integrityState.getStateFlags() > 0 ||
-        getHashQualityInteger() < 5) {
-      return 2;
-    }
-    if (storage != null && storage.getAlert() == 1) {
-      return 1;
-    }
     if (getHashQualityInteger() < 30 ||
       getKeyMutationCnt() > 0 ||
       getInternalExceptionCnt() > 0) {
@@ -343,11 +328,11 @@ class CacheBaseInfo implements InternalCacheInfo {
 
   @Override
   public long getClearCnt() {
-    return heapCache.clearCnt;
+    return clearCnt;
   }
 
   public long getClearRemovedCnt() {
-    return heapCache.clearRemovedCnt;
+    return clearRemovedCnt;
   }
 
   public String toString() {
