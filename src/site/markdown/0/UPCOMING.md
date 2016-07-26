@@ -9,7 +9,7 @@ The API is not completely stable yet, but almost.
 - Eviction allows segmentation, to improve multi core performance of insert and remove operations 
   on the cache (`Cache2kBuilder.evictionSegmentCount`)
 - Various other performance improvements
-- Lots of work on the documentation, it is not yet published. See 
+- Lots of work on the documentation. Not yet published. See 
   [the GitHub source](https://github.com/cache2k/cache2k/tree/master/doc/src/docs/asciidoc/user-guide/sections)
 
 ## Potential breakages
@@ -33,8 +33,8 @@ If something is listed here it might affect an existing application and updating
 ## Fixes and Improvements
 
  - `getAll()` returns a stable map, not affected by expiry and parallel cache modifications.
- - Fixed possible inconsistency of CacheEntry value and timestamp, when concurrent update happens
- - Tiny eviction implementation cleanup and simplification
+ - Fixed possible inconsistency between `CacheEntry.getValue()` and `CacheEntry.getLastModification()`, when concurrent update happens
+ - Eviction implementation cleanup and simplification
  - JCache: Custom classloader used for serialization of keys and values
  - JCache: improved performance when not using custom expiry policy
  - JCache: extended configuration of cache2k features via JCache is possible
@@ -42,8 +42,8 @@ If something is listed here it might affect an existing application and updating
    if happened during load 
  - asMap() provided `ConcurrentMap` interface view of the cache
  - Reduce memory footprint: history size of Clock-Pro eviction reduced to one half of the capacity
- - getAll() returns empty map if no loader is defined and requested keys are not in cache
- - get() return null if no loader is defined and entry is not in cache (was exception before).
+ - `getAll()` returns empty map if no loader is defined and requested keys are not in cache
+ - `get()` return `null` if no loader is defined and entry is not in cache (was exception before).
  - `CacheEntry.getValue()` and `MutableCacheEntry.getValue()` throws exception if loader exception happened
  - `Cache.invoke`: Exceptions from entry processor propagated correctly as `EntryProcessingException`
  - Global `ExceptionPropagator` customizable via tunable mechanism.
