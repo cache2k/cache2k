@@ -71,6 +71,7 @@ import java.util.concurrent.TimeUnit;
 public class Cache2kBuilder<K, V> implements Cloneable {
 
   private static final Cache2kCoreProvider CORE_PROVIDER;
+  private static final String MSG_NO_TYPES = "Use Cache2kBuilder.forUnknownTypes(), to construct a builder with no key and value types";
 
   static {
     CORE_PROVIDER = SingleProviderResolver.getInstance().resolve(Cache2kCoreProvider.class);
@@ -122,11 +123,18 @@ public class Cache2kBuilder<K, V> implements Cloneable {
    */
   @SuppressWarnings("unchecked")
   protected Cache2kBuilder() {
-    Type[] _types =
-      ((ParameterizedType) this.getClass().getGenericSuperclass()).getActualTypeArguments();
-    config = Cache2kConfiguration.of(
-      (CacheType<K>) CacheTypeCapture.of(_types[0]).getBeanRepresentation(),
-      (CacheType<V>) CacheTypeCapture.of(_types[1]).getBeanRepresentation());
+    Type t = this.getClass().getGenericSuperclass();
+    if (!(t instanceof ParameterizedType)) {
+      throw new IllegalArgumentException(MSG_NO_TYPES);
+    }
+    Type[] _types = ((ParameterizedType) t).getActualTypeArguments();
+    CacheType<K> _keyType = (CacheType<K>) CacheTypeCapture.of(_types[0]).getBeanRepresentation();
+    CacheType<V> _valueType = (CacheType<V>) CacheTypeCapture.of(_types[1]).getBeanRepresentation();
+    if (Object.class.equals(_keyType.getType()) &&
+      Object.class.equals(_valueType.getType())) {
+      throw new IllegalArgumentException(MSG_NO_TYPES);
+    }
+    config = Cache2kConfiguration.of(_keyType, _valueType);
   }
 
   /**

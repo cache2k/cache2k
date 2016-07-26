@@ -46,6 +46,8 @@ If something is listed here it might affect an existing application and updating
  - `EntryProcessor`: Triggers load when `MutableEntry.getException` is called
  - `EntryProcessor`: `MutableEntry.setException` or `MutableEntry.setExpiry` work correctly after loading the value
  - Statistics: Correct usage counter in case of a race at entry mutation 
+ - `new Cache2kBuilder(){}`, yields proper exception instead of just `ClassCastException`
+ - `new Cache2kBuilder<Object, Object>(){}`, yields `IllegalArgumentException`, use `Cache2kBuilder.forUnkownTypes()`
  
 ## API Changes and new methods
 

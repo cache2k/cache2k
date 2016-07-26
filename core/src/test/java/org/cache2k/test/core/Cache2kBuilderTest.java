@@ -109,6 +109,18 @@ public class Cache2kBuilderTest {
     c.close();
   }
 
+  @Test(expected = IllegalArgumentException.class)
+  public void anonymousWithoutTypes() {
+    Cache c = new Cache2kBuilder(){}.eternal(true).build();
+    c.clear();
+  }
+
+  @Test(expected = IllegalArgumentException.class)
+  public void anonymousWithObjectObject() {
+    Cache c = new Cache2kBuilder<Object,Object>(){}.eternal(true).build();
+    c.clear();
+  }
+
   @Test
   public void collectionValueType() {
     Cache<Long, List<String>> c =
