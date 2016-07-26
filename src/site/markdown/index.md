@@ -111,17 +111,14 @@ Here are two quick examples how to construct a cache and destroy it again.
 
 ### cache-aside / direct cache manipulation
 
-For direct cache manipulation you can use the methods peek() and put():
-
 ```java
-Cache<String,String> c =
-  CacheBuilder.newCache(String.class, String.class).build();
-String val = c.peek("something");
+Cache<String,String> cache = new Cache2kBuilder<String, String>() {}.build();
+String val = cache.peek("something");
 assertNull(val);
-c.put("something", "hello");
-val = c.get("something");
+cache.put("something", "hello");
+val = cache.get("something");
 assertNotNull(val);
-c.destroy();
+cache.dclose();
 ```
 
 ### read-through caching
@@ -130,27 +127,28 @@ Instead of direct manipulation it is possible to register a cache source. If no
 data is available within the cache, the cache will delegate to the cache source:
 
 ```java
-CacheSource<String,Integer> _lengthCountingSource =
-  new CacheSource<String, Integer>() {
+CacheLoader<String, Integer> lengthCountingLoader =
+  new CacheLoader<String, Integer>() {
     @Override
-    public Integer get(String o) throws Throwable {
+    public Integer get(String o) {
       return o.length();
     }
   };
-Cache<String,Integer> c =
-  CacheBuilder.newCache(String.class, Integer.class)
-    .source(_lengthCountingSource)
+Cache<String, Integer> cache =
+  new Cache2kBuilder<String, Integer>() {}
+    .loader(lengthCountingLoader)
     .build();
-int v = c.get("hallo");
+int v = cache.get("hallo");
 assertEquals(5, v);
-v = c.get("long string");
+assertNull(cache.peek("long string"));
+v = cache.get("long string");
 assertEquals(11, v);
-c.destroy();
+assertEquals(11, cache.peek("long string"));
+cache.close();
 ```
 
-Mind, that the methods get() and peek() have distinct behaviour in cache2k. get() will always
-do its best to get the date, peek() will only return data if the cache contains it. The
-presence of the cache source does not change this behaviour.
+Mind, that the methods get() and peek() have distinct behaviour in cache2k. get() will invoke the loader, 
+peek() will only return data if the cache contains it.
 
 ## Feedback
 
