@@ -540,6 +540,9 @@ public class Cache2kConfiguration<K, V> implements Serializable {
     return resiliencePolicy;
   }
 
+  /**
+   * @see Cache2kBuilder#resiliencePolicy
+   */
   public void setResiliencePolicy(final ResiliencePolicy<K, V> _resiliencePolicy) {
     resiliencePolicy = _resiliencePolicy;
   }
@@ -548,6 +551,9 @@ public class Cache2kConfiguration<K, V> implements Serializable {
     return strictEviction;
   }
 
+  /**
+   * @see Cache2kBuilder#strictEviction(boolean)
+   */
   public void setStrictEviction(final boolean v) {
     strictEviction = v;
   }
@@ -578,6 +584,10 @@ public class Cache2kConfiguration<K, V> implements Serializable {
     return evictionSegmentCount;
   }
 
+  /**
+   *
+   * @see Cache2kBuilder#evictionSegmentCount(int)
+   */
   public void setEvictionSegmentCount(final int _evictionSegmentCount) {
     evictionSegmentCount = _evictionSegmentCount;
   }
