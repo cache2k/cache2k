@@ -1789,7 +1789,7 @@ public class HeapCache<K, V>
     synchronized (lock) {
       long t = System.currentTimeMillis();
       if (info != null &&
-        (info.creationTime + info.creationDeltaMs * TUNABLE.minimumStatisticsCreationTimeDeltaFactor + TUNABLE.minimumStatisticsCreationDeltaMillis > t)) {
+        (info.getInfoCreatedTime() + info.getInfoCreationDeltaMs() * TUNABLE.minimumStatisticsCreationTimeDeltaFactor + TUNABLE.minimumStatisticsCreationDeltaMillis > t)) {
         return info;
       }
       info = generateInfo(_userCache, t);
@@ -1811,9 +1811,8 @@ public class HeapCache<K, V>
   }
 
   private CacheBaseInfo generateInfoUnderLock(final InternalCache _userCache, final long t) {
-    info = new CacheBaseInfo(HeapCache.this, _userCache);
-    info.creationTime = t;
-    info.creationDeltaMs = (int) (System.currentTimeMillis() - t);
+    info = new CacheBaseInfo(HeapCache.this, _userCache, t);
+    info.setInfoCreationDeltaMs((int) (System.currentTimeMillis() - t));
     return info;
   }
 

@@ -21,6 +21,8 @@ package org.cache2k.core;
  */
 
 /**
+ * Statistic metrics common to every cache type.
+ *
  * @author Jens Wilke
  */
 public interface CommonMetrics {

@@ -33,45 +33,46 @@ import static org.cache2k.core.util.Util.formatMillis;
  */
 class CacheBaseInfo implements InternalCacheInfo {
 
-  StorageAdapter storage;
-  CommonMetrics metrics;
-  StorageMetrics storageMetrics = StorageMetrics.DUMMY;
+  private StorageAdapter storage;
+  private CommonMetrics metrics;
+  private StorageMetrics storageMetrics = StorageMetrics.DUMMY;
   private HeapCache heapCache;
-  long size;
-  long creationTime;
-  int creationDeltaMs;
-  long missCnt;
-  long storageMissCnt;
-  long storageLoadCnt;
-  long hitCnt;
-  long correctedPutCnt;
-  long usageCnt;
-  CollisionInfo collisionInfo;
-  String extraStatistics;
-  IntegrityState integrityState;
-  long asyncLoadsStarted = 0;
-  long asyncLoadsInFlight = 0;
-  int loaderThreadsLimit = 0;
-  int loaderThreadsMaxActive = 0;
-  long totalLoadCnt;
+  private long size;
+  private long infoCreatedTime;
+  private int infoCreationDeltaMs;
+  private long missCnt;
+  private long storageMissCnt;
+  private long storageLoadCnt;
+  private long hitCnt;
+  private long correctedPutCnt;
+  private long usageCnt;
+  private CollisionInfo collisionInfo;
+  private String extraStatistics;
+  private IntegrityState integrityState;
+  private long asyncLoadsStarted = 0;
+  private long asyncLoadsInFlight = 0;
+  private int loaderThreadsLimit = 0;
+  private int loaderThreadsMaxActive = 0;
+  private long totalLoadCnt;
 
   /*
    * Consistent copies from heap cache. for 32 bit machines the access
    * is not atomic. We copy the values while under big lock.
    */
-  long clearedTime;
-  long newEntryCnt;
-  long keyMutationCnt;
-  long removedCnt;
-  long virginRemovedCnt;
-  long clearRemovedCnt;
-  long clearCnt;
-  long expiredRemoveCnt;
-  long evictedCnt;
-  long maxSize;
-  long evictionRunningCnt;
+  private long clearedTime;
+  private long newEntryCnt;
+  private long keyMutationCnt;
+  private long removedCnt;
+  private long virginRemovedCnt;
+  private long clearRemovedCnt;
+  private long clearCnt;
+  private long expiredRemoveCnt;
+  private long evictedCnt;
+  private long maxSize;
+  private long evictionRunningCnt;
 
-  public CacheBaseInfo(HeapCache _heapCache, InternalCache _userCache) {
+  public CacheBaseInfo(HeapCache _heapCache, InternalCache _userCache, long now) {
+    infoCreatedTime = now;
     this.heapCache = _heapCache;
     metrics = _heapCache.metrics;
     EvictionMetrics em = _heapCache.eviction.getMetrics();
@@ -117,6 +118,10 @@ class CacheBaseInfo implements InternalCacheInfo {
   String percentString(double d) {
     String s = Double.toString(d);
     return (s.length() > 5 ? s.substring(0, 5) : s) + "%";
+  }
+
+  public void setInfoCreationDeltaMs(int _millis) {
+    infoCreationDeltaMs = _millis;
   }
 
   @Override
@@ -277,13 +282,13 @@ class CacheBaseInfo implements InternalCacheInfo {
   @Override
   public String getIntegrityDescriptor() { return integrityState.getStateDescriptor(); }
   @Override
-  public long getStarted() { return heapCache.startedTime; }
+  public long getStartedTime() { return heapCache.startedTime; }
   @Override
-  public long getCleared() { return heapCache.clearedTime; }
+  public long getClearedTime() { return heapCache.clearedTime; }
   @Override
-  public long getInfoCreated() { return creationTime; }
+  public long getInfoCreatedTime() { return infoCreatedTime; }
   @Override
-  public int getInfoCreationDeltaMs() { return creationDeltaMs; }
+  public int getInfoCreationDeltaMs() { return infoCreationDeltaMs; }
   @Override
   public int getHealth() {
     if (storage != null && storage.getAlert() == 2) {
@@ -378,14 +383,14 @@ class CacheBaseInfo implements InternalCacheInfo {
             + "asyncLoadsInFlight=" + asyncLoadsInFlight + ", "
             + "loaderThreadsLimit=" + loaderThreadsLimit + ", "
             + "loaderThreadsMaxActive=" + loaderThreadsMaxActive + ", "
-            + "created=" + timestampToString(getStarted()) + ", "
-            + "cleared=" + timestampToString(getCleared()) + ", "
+            + "created=" + timestampToString(getStartedTime()) + ", "
+            + "cleared=" + timestampToString(getClearedTime()) + ", "
             + "clearCnt=" + getClearCnt() + ", "
             + "loadExceptionCnt=" + getLoadExceptionCnt() + ", "
             + "suppressedExceptionCnt=" + getSuppressedExceptionCnt() + ", "
             + "internalExceptionCnt=" + getInternalExceptionCnt() + ", "
             + "keyMutationCnt=" + getKeyMutationCnt() + ", "
-            + "infoCreated=" + timestampToString(getInfoCreated()) + ", "
+            + "infoCreated=" + timestampToString(getInfoCreatedTime()) + ", "
             + "infoCreationDeltaMs=" + getInfoCreationDeltaMs() + ", "
             + "impl=" + getImplementation() + ", "
             + getExtraStatistics() + ", "

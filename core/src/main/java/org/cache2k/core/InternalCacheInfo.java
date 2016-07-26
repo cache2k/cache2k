@@ -121,11 +121,11 @@ public interface InternalCacheInfo {
 
   long getGoneSpinCnt();
 
-  long getStarted();
+  long getStartedTime();
 
-  long getCleared();
+  long getClearedTime();
 
-  long getInfoCreated();
+  long getInfoCreatedTime();
 
   int getInfoCreationDeltaMs();
 

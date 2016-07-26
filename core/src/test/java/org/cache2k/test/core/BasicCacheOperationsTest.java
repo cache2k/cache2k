@@ -155,9 +155,28 @@ public class BasicCacheOperationsTest {
   @Test
   public void put() {
     cache.put(KEY, VALUE);
+    statistics()
+      .readCount.expect(0)
+      .missCount.expect(0)
+      .putCount.expect(1)
+      .expectAllZero();
     assertTrue(cache.containsKey(KEY));
     assertEquals(VALUE, cache.get(KEY));
     assertEquals(VALUE, cache.peek(KEY));
+  }
+
+  @Test
+  public void putTwice() {
+    cache.put(KEY, VALUE);
+    cache.put(KEY, OTHER_VALUE);
+    statistics()
+      .readCount.expect(0)
+      .missCount.expect(0)
+      .putCount.expect(2)
+      .expectAllZero();
+    assertTrue(cache.containsKey(KEY));
+    assertEquals(OTHER_VALUE, cache.get(KEY));
+    assertEquals(OTHER_VALUE, cache.peek(KEY));
   }
 
   @Test
