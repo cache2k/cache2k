@@ -20,6 +20,8 @@ package org.cache2k.core.threading;
  * #L%
  */
 
+import java.util.concurrent.locks.StampedLock;
+
 /**
  * Internal factory for lock implementations.
  *
@@ -43,11 +45,17 @@ public class Locks {
     }
   }
 
+  /**
+   * Loading of StampedLock will throw an error, if not available.
+   * Fallback to NonOptimisticLock in this case (in android).
+   */
   private static void initializeOptimisticLock() {
     try {
-      optimisticLockImplementation = OptimisticLockStamped.class;
+      if (StampedLock.class != null) {
+        optimisticLockImplementation = OptimisticLockStamped.class;
+      }
       return;
-    } catch (Exception ignore) {
+    } catch (NoClassDefFoundError ignore) {
     }
     optimisticLockImplementation = NonOptimisticLock.class;
   }
