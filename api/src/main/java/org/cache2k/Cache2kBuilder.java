@@ -65,6 +65,8 @@ import java.util.concurrent.TimeUnit;
  *       .build();
  * }</pre>
  *
+ * <p>To create a cache without type parameters or {@code Cache<Object,Object>}, use {@link Cache2kBuilder#forUnknownTypes()}.
+ *
  * @author Jens Wilke
  * @since 1.0
  */
