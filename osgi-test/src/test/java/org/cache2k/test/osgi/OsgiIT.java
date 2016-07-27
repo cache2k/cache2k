@@ -22,6 +22,10 @@ package org.cache2k.test.osgi;
 
 import org.cache2k.Cache;
 import org.cache2k.Cache2kBuilder;
+import org.cache2k.CacheEntry;
+import org.cache2k.CacheManager;
+import org.cache2k.configuration.Cache2kConfiguration;
+import org.cache2k.event.CacheEntryCreatedListener;
 import org.junit.Ignore;
 import org.junit.Test;
 import static org.junit.Assert.*;
@@ -30,6 +34,8 @@ import org.ops4j.pax.exam.Option;
 import org.ops4j.pax.exam.junit.PaxExam;
 import org.ops4j.pax.exam.spi.reactors.ExamReactorStrategy;
 import org.ops4j.pax.exam.spi.reactors.PerMethod;
+
+import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.ops4j.pax.exam.CoreOptions.options;
 import static org.ops4j.pax.exam.CoreOptions.junitBundles;
@@ -62,13 +68,66 @@ public class OsgiIT {
 
   @Test
   public void testSimple() {
+    CacheManager m = CacheManager.getInstance("testSimple");
     Cache<String, String> c =
       Cache2kBuilder.of(String.class, String.class)
+        .manager(m)
         .eternal(true)
         .build();
     c.put("abc", "123");
     assertTrue(c.containsKey("abc"));
     assertEquals("123", c.peek("abc"));
+    c.close();
+  }
+
+  @Test
+  public void testWithAnonBuilder() {
+    CacheManager m = CacheManager.getInstance("testWithAnonBuilder");
+    Cache<String, String> c =
+      new Cache2kBuilder<String, String>() {}
+        .manager(m)
+        .eternal(true)
+        .build();
+    c.put("abc", "123");
+    assertTrue(c.containsKey("abc"));
+    assertEquals("123", c.peek("abc"));
+    c.close();
+  }
+
+  /**
+   * Simple test to see whether configuration package is exported.
+   */
+  @Test
+  public void testConfigurationPackage() {
+    Cache2kConfiguration<String, String> c =
+      Cache2kBuilder.of(String.class, String.class)
+        .eternal(true)
+        .toConfiguration();
+    assertTrue(c.isEternal());
+  }
+
+  /**
+   * Simple test to see whether event package is exported.
+   */
+  @Test
+  public void testEventPackage() {
+    CacheManager m = CacheManager.getInstance("testEventPackage");
+    final AtomicInteger _count = new AtomicInteger();
+    Cache<String, String> c =
+      new Cache2kBuilder<String, String>() {}
+        .manager(m)
+        .eternal(true)
+        .addListener(new CacheEntryCreatedListener<String, String>() {
+          @Override
+          public void onEntryCreated(final Cache<String, String> cache, final CacheEntry<String, String> entry) {
+            _count.incrementAndGet();
+          }
+        })
+        .build();
+    c.put("abc", "123");
+    assertTrue(c.containsKey("abc"));
+    assertEquals("123", c.peek("abc"));
+    assertEquals(1, _count.get());
     c.close();
   }
 
