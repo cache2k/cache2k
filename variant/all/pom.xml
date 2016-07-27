@@ -67,7 +67,8 @@
               org.cache2k.integration,
               org.cache2k.expiry,
               org.cache2k.event,
-              org.cache2k.processor
+              org.cache2k.processor,
+              org.cache2k.configuration
             </Export-Package>
             <Import-Package>
               javax.management,
