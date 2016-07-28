@@ -20,7 +20,7 @@ package org.cache2k.core;
  * #L%
  */
 
-import org.cache2k.core.threading.Job;
+import org.cache2k.core.concurrency.Job;
 
 /**
  * Interface to the eviction data structure (replacement list).

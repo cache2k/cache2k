@@ -23,7 +23,7 @@ package org.cache2k.core;
 import org.cache2k.Cache;
 import org.cache2k.CacheException;
 import org.cache2k.CacheManager;
-import org.cache2k.core.threading.Futures;
+import org.cache2k.core.concurrency.Futures;
 import org.cache2k.core.util.Cache2kVersion;
 import org.cache2k.core.util.Log;
 
@@ -37,8 +37,6 @@ import java.util.Properties;
 import java.util.ServiceLoader;
 import java.util.Set;
 import java.util.concurrent.ExecutionException;
-import java.util.concurrent.Future;
-import java.util.concurrent.TimeUnit;
 
 /**
  * @author Jens Wilke; created: 2013-07-01

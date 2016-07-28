@@ -1,4 +1,4 @@
-package org.cache2k.core.threading;
+package org.cache2k.core.concurrency;
 
 /*
  * #%L

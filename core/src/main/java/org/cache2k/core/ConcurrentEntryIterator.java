@@ -20,7 +20,7 @@ package org.cache2k.core;
  * #L%
  */
 
-import org.cache2k.core.threading.Job;
+import org.cache2k.core.concurrency.Job;
 
 import java.util.HashMap;
 import java.util.Iterator;

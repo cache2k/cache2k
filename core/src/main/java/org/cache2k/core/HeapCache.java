@@ -26,11 +26,11 @@ import org.cache2k.core.operation.ExaminationEntry;
 import org.cache2k.core.operation.ReadOnlyCacheEntry;
 import org.cache2k.core.operation.Semantic;
 import org.cache2k.core.operation.Operations;
-import org.cache2k.core.threading.DefaultThreadFactoryProvider;
-import org.cache2k.core.threading.Futures;
-import org.cache2k.core.threading.Job;
-import org.cache2k.core.threading.OptimisticLock;
-import org.cache2k.core.threading.ThreadFactoryProvider;
+import org.cache2k.core.concurrency.DefaultThreadFactoryProvider;
+import org.cache2k.core.concurrency.Futures;
+import org.cache2k.core.concurrency.Job;
+import org.cache2k.core.concurrency.OptimisticLock;
+import org.cache2k.core.concurrency.ThreadFactoryProvider;
 
 import org.cache2k.core.util.Log;
 import org.cache2k.core.util.TunableConstants;

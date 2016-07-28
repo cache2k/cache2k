@@ -20,8 +20,7 @@ package org.cache2k.core;
  * #L%
  */
 
-import org.cache2k.configuration.Cache2kConfiguration;
-import org.cache2k.core.threading.Job;
+import org.cache2k.core.concurrency.Job;
 
 /**
  * Basic eviction functionality.

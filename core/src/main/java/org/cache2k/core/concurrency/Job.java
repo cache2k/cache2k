@@ -1,4 +1,4 @@
-package org.cache2k.core.threading;
+package org.cache2k.core.concurrency;
 
 /*
  * #%L
@@ -20,19 +20,11 @@ package org.cache2k.core.threading;
  * #L%
  */
 
-import java.util.concurrent.ThreadFactory;
-
 /**
- * Provider interface for a thread factory. This makes it possible to change
- * the thread factory via the {@link org.cache2k.core.util.TunableConstants}.
+ * A callable function.
  *
- * @author Jens Wilke; created: 2014-06-10
+ * @author Jens Wilke
  */
-public interface ThreadFactoryProvider {
-
-  /**
-   * Construct a new thread factory for the pool.
-   */
-  ThreadFactory newThreadFactory(String namePrefix);
-
+public interface Job<T> {
+  T call();
 }

@@ -20,9 +20,9 @@ package org.cache2k.core;
  * #L%
  */
 
-import org.cache2k.core.threading.Job;
-import org.cache2k.core.threading.Locks;
-import org.cache2k.core.threading.OptimisticLock;
+import org.cache2k.core.concurrency.Job;
+import org.cache2k.core.concurrency.Locks;
+import org.cache2k.core.concurrency.OptimisticLock;
 
 import java.util.concurrent.atomic.AtomicLong;
 
