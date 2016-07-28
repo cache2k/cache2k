@@ -268,8 +268,9 @@ public class Cache2kBuilder<K, V> implements Cloneable {
   }
 
   /**
-   * Cached values do not expire by time. Entries will need to be removed from the
-   * cache explicitly or evicted if capacity constraints are reached.
+   * When set to true, cached values do not expire by time. Entries will need to be removed
+   * from the cache explicitly or will be evicted if capacity constraints are reached.
+   * When no expiry is specified, eternal is the default.
    *
    * <p>Exceptions: If there is no explicit expiry configured for exceptions
    * with {@link #retryInterval(long, TimeUnit)}, exceptions will

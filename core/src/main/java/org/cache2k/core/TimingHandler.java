@@ -70,19 +70,12 @@ public abstract class TimingHandler<K,V>  {
   }
 
   public static <K, V> TimingHandler<K,V> of(Cache2kConfiguration<K,V> cfg) {
-    if (cfg.getExpireAfterWriteMillis() < 0) {
-      throw new IllegalArgumentException(
-        "Specify expiry or no expiry explicitly. " +
-        "Either set CacheBuilder.eternal(true) or CacheBuilder.expiryDuration(...). " +
-        "See: https://github.com/cache2k/cache2k/issues/21"
-      );
-    }
     if (cfg.getExpireAfterWriteMillis() == 0
       && zeroOrUnspecified(cfg.getRetryIntervalMillis())) {
       return IMMEDIATE;
     }
     if (cfg.getExpiryPolicy() != null
-      || ValueWithExpiryTime.class.isAssignableFrom(cfg.getValueType().getType())
+      || (cfg.getValueType() != null && ValueWithExpiryTime.class.isAssignableFrom(cfg.getValueType().getType()))
       || cfg.getResiliencePolicy() != null) {
       TimingHandler.Dynamic<K,V> h = new TimingHandler.Dynamic<K, V>();
       h.configure(cfg);
@@ -98,13 +91,13 @@ public abstract class TimingHandler<K,V>  {
       h.configureStatic(cfg);
       return h;
     }
-    if (cfg.getExpireAfterWriteMillis() == ExpiryPolicy.ETERNAL
-      && zeroOrUnspecified(cfg.getRetryIntervalMillis())) {
-      return ETERNAL_IMMEDIATE;
-    }
-    if ((cfg.getExpireAfterWriteMillis() == ExpiryPolicy.ETERNAL || cfg.getExpireAfterWriteMillis() == -1)
-      && (cfg.getRetryIntervalMillis() == ExpiryPolicy.ETERNAL || cfg.getRetryIntervalMillis() == -1)) {
-      return ETERNAL;
+    if ((cfg.getExpireAfterWriteMillis() == ExpiryPolicy.ETERNAL || cfg.getExpireAfterWriteMillis() == -1)) {
+      if (zeroOrUnspecified(cfg.getRetryIntervalMillis())) {
+        return ETERNAL_IMMEDIATE;
+      }
+      if (cfg.getRetryIntervalMillis() == ExpiryPolicy.ETERNAL) {
+        return ETERNAL;
+      }
     }
     throw new IllegalArgumentException("expiry time ambiguous");
   }

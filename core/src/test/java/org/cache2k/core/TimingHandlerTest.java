@@ -40,6 +40,25 @@ public class TimingHandlerTest {
 
   final long POINT_IN_TIME = 10000000;
 
+  @Test
+  public void eternalSpecified() {
+    TimingHandler h = TimingHandler.of(
+      Cache2kBuilder.forUnknownTypes()
+        .eternal(true)
+        .toConfiguration()
+    );
+    assertEquals(TimingHandler.ETERNAL_IMMEDIATE.getClass(), h.getClass());
+  }
+
+  @Test
+  public void eternalNotSpecified() {
+    TimingHandler h = TimingHandler.of(
+      Cache2kBuilder.forUnknownTypes()
+        .toConfiguration()
+    );
+    assertEquals(TimingHandler.ETERNAL_IMMEDIATE.getClass(), h.getClass());
+  }
+
   /**
    * The configuration setting serves as a time limit.
    */
