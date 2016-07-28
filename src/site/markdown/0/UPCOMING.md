@@ -18,6 +18,7 @@ Modifications in the statistics output will not listed as breakage.
 If something is listed here it might affect an existing application and updating is recommended.
 
 - OSGi: Add missing export of package `org.cache2k.configuration`
+- make eternal default, there is no need to specify either `eternal` or `expiryAfterWrite` any more explicitly, closes: https://github.com/cache2k/cache2k/issues/21
 
 
 ## Fixes and Improvements
