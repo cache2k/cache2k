@@ -36,11 +36,11 @@ import java.util.WeakHashMap;
  */
 public class Cache2kManagerProviderImpl implements Cache2kManagerProvider {
 
-  public final static String DEFAULT_MANAGER_NAME = "default";
+  final static String DEFAULT_MANAGER_NAME = "default";
 
-  CacheManager defaultManager;
-  String defaultName = DEFAULT_MANAGER_NAME;
-  Map<ClassLoader, Map<String, CacheManager>> loader2name2manager =
+  private CacheManager defaultManager;
+  private String defaultName = DEFAULT_MANAGER_NAME;
+  private Map<ClassLoader, Map<String, CacheManager>> loader2name2manager =
       new WeakHashMap<ClassLoader, Map<String, CacheManager>>();
 
   public Object getLockObject() {
