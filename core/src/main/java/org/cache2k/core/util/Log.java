@@ -23,7 +23,6 @@ package org.cache2k.core.util;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.ServiceLoader;
-import java.util.WeakHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -75,8 +74,20 @@ public abstract class Log {
     ServiceLoader<LogFactory> loader = ServiceLoader.load(LogFactory.class);
     for (LogFactory lf : loader) {
       logFactory = lf;
-      log("New instance, using: " + logFactory);
+      log("New instance, using: " + logFactory.getClass().getName());
       return;
+    }
+    try {
+      final org.slf4j.ILoggerFactory lf = org.slf4j.LoggerFactory.getILoggerFactory();
+      logFactory = new LogFactory() {
+        @Override
+        public Log getLog(String s) {
+          return new Slf4jLogger(lf.getLogger(s));
+        }
+      };
+      log("New instance, using SLF4J logging");
+      return;
+    } catch (NoClassDefFoundError ignore) {
     }
     try {
       final org.apache.commons.logging.LogFactory cl =
@@ -173,6 +184,55 @@ public abstract class Log {
     @Override
     public void warn(String s, Throwable ex) {
       cLog.warn(s, ex);
+    }
+  }
+
+  private static class Slf4jLogger extends Log {
+
+    org.slf4j.Logger logger;
+
+    private Slf4jLogger(org.slf4j.Logger _logger) {
+      this.logger = _logger;
+    }
+
+    @Override
+    public boolean isDebugEnabled() {
+      return logger.isDebugEnabled();
+    }
+
+    @Override
+    public boolean isInfoEnabled() {
+      return logger.isInfoEnabled();
+    }
+
+    @Override
+    public void debug(String s) {
+      logger.debug(s);
+    }
+
+    @Override
+    public void debug(String s, Throwable ex) {
+      logger.debug(s, ex);
+    }
+
+    @Override
+    public void info(String s, Throwable ex) {
+      logger.info(s);
+    }
+
+    @Override
+    public void info(String s) {
+      logger.info(s);
+    }
+
+    @Override
+    public void warn(String s) {
+      logger.warn(s);
+    }
+
+    @Override
+    public void warn(String s, Throwable ex) {
+      logger.warn(s, ex);
     }
   }
 
