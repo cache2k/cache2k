@@ -5,6 +5,7 @@
 A lot of API movement, since we work towards 1.0. See `Potential breakages` and `API changes`.
 The API is not completely stable yet, but almost.
 
+- SLF4J support
 
 ## Potential breakages
 
@@ -15,6 +16,8 @@ Modifications in the statistics output will not listed as breakage.
 ## Bug fixes
 
 If something is listed here it might affect an existing application and updating is recommended.
+
+- OSGi: Add missing export of package `org.cache2k.configuration`
 
 
 ## Fixes and Improvements

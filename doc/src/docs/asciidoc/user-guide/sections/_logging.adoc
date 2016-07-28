@@ -1,0 +1,22 @@
+== Logging
+
+The log output of cache2k is very sparse, however, some critical information could be send to the
+log, so proper logging is essential.
+
+=== Supported Log Infrastructure
+
+cache2k supports different logging facades and the JDK standard logging. The supported mechanisms
+include:
+
+ - SLF4J
+ - Apache Commons Logging
+ - JDK standard logging
+
+The availability is evaluated in the above order and the first match is picked and used exclusively for
+log output. E.g. if the slf4j-api is present, the log output will be directed to SLF4J. This scheme should have
+the desired results, without the need of additional configuration of the used logging facade.
+
+=== Wiring a Custom Log Target
+
+In case none of the above logging infrastructure can be used the service provider interface
+`org.cache2k.core.util.LogFactory` can be implemented and provided via the `ServiceLoader` mechanism.

@@ -19,3 +19,6 @@ include::sections/_resilience.adoc[]
 
 include::sections/_jcache.adoc[]
 
+include::sections/_logging.adoc[]
+
+
