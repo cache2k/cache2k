@@ -26,6 +26,8 @@ import org.junit.Test;
 
 import static org.junit.Assert.*;
 
+import java.util.Iterator;
+import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
@@ -182,6 +184,75 @@ public class ConcurrentMapTest {
   @Test
   public void testPut_Present() {
     assertNull(map.put(123, "abc"));
+  }
+
+  @Test
+  public void entrySet_size() {
+    assertEquals(0, map.entrySet().size());
+    map.put(123, "abc");
+    assertEquals(1, map.entrySet().size());
+  }
+
+  @Test
+  public void keySet_size() {
+    assertEquals(0, map.keySet().size());
+    map.put(123, "abc");
+    assertEquals(1, map.keySet().size());
+  }
+
+  @Test
+  public void valueSet_size() {
+    assertEquals(0, map.values().size());
+    map.put(123, "abc");
+    assertEquals(1, map.values().size());
+  }
+
+  @Test
+  public void entrySet_read() {
+    assertFalse(map.entrySet().iterator().hasNext());
+    map.put(123, "abc");
+    Map.Entry<Integer, String> e = map.entrySet().iterator().next();
+    assertEquals((Integer) 123, e.getKey());
+    assertEquals("abc", e.getValue());
+  }
+
+  @Test
+  public void valueSet_read() {
+    assertFalse(map.values().iterator().hasNext());
+    map.put(123, "abc");
+    String s = map.values().iterator().next();
+    assertEquals("abc", s);
+  }
+
+  @Test
+  public void keySet_read() {
+    assertFalse(map.keySet().iterator().hasNext());
+    map.put(123, "abc");
+    int k = map.keySet().iterator().next();
+    assertEquals(123, k);
+  }
+
+  @Test
+  public void entrySet_remove() {
+    map.put(123, "abc");
+    Iterator<?> it = map.entrySet().iterator();
+    it.next();
+    it.remove();
+    assertFalse(map.containsKey(123));
+  }
+
+  @Test
+  public void keySet_remove() {
+    map.put(123, "abc");
+    map.keySet().remove(123);
+    assertFalse(map.containsKey(123));
+  }
+
+  @Test
+  public void valueSet_remove() {
+    map.put(123, "abc");
+    map.values().remove("abc");
+    assertFalse(map.containsKey(123));
   }
 
 }

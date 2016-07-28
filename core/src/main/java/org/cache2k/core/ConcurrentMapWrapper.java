@@ -210,7 +210,7 @@ public class ConcurrentMapWrapper<K,V> implements ConcurrentMap<K, V> {
 
       @Override
       public int size() {
-        return size();
+        return ConcurrentMapWrapper.this.size();
       }
     };
   }
@@ -242,7 +242,7 @@ public class ConcurrentMapWrapper<K,V> implements ConcurrentMap<K, V> {
 
       @Override
       public int size() {
-        return size();
+        return ConcurrentMapWrapper.this.size();
       }
     };
   }
@@ -291,7 +291,7 @@ public class ConcurrentMapWrapper<K,V> implements ConcurrentMap<K, V> {
 
       @Override
       public int size() {
-        return size();
+        return ConcurrentMapWrapper.this.size();
       }
     };
   }
