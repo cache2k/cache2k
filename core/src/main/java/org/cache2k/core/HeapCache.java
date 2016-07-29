@@ -703,16 +703,12 @@ public class HeapCache<K, V>
         _hasFreshData = e.hasFreshData();
         if (_hasFreshData) {
           _previousValue = (V) e.getValueOrException();
-          metrics.heapHitButNoRead();
         } else {
           metrics.peekMiss();
         }
         putValue(e, _value);
         break;
       }
-    }
-    if (_hasFreshData) {
-      recordHit(e);
     }
     return returnValue(_previousValue);
   }
