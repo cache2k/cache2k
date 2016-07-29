@@ -267,14 +267,25 @@ public class BasicCacheOperationsTest {
   public void peekAndPut() {
     Integer v = cache.peekAndPut(KEY, VALUE);
     assertNull(v);
+    statistics()
+      .readCount.expect(1)
+      .missCount.expect(1)
+      .putCount.expect(1)
+      .expectAllZero();
     v = cache.peekAndPut(KEY, VALUE);
     assertNotNull(v);
     assertEquals(VALUE, v);
+    statistics()
+      .readCount.expect(1)
+      .missCount.expect(0)
+      .putCount.expect(1)
+      .expectAllZero();
   }
 
   @Test(expected = NullPointerException.class)
   public void peekAndPut_NullKey() {
     cache.peekAndPut(null, VALUE);
+    statistics().expectAllZero();
   }
 
   @Test
@@ -282,9 +293,19 @@ public class BasicCacheOperationsTest {
     Integer v = cache.peekAndPut(KEY, null);
     assertNull(v);
     assertTrue(cache.containsKey(KEY));
+    statistics()
+      .readCount.expect(1)
+      .missCount.expect(1)
+      .putCount.expect(1)
+      .expectAllZero();
     v = cache.peekAndPut(KEY, VALUE);
     assertNull(v);
     assertTrue(cache.containsKey(KEY));
+    statistics()
+      .readCount.expect(1)
+      .missCount.expect(0)
+      .putCount.expect(1)
+      .expectAllZero();
     v = cache.peekAndPut(KEY, null);
     assertNotNull(v);
     assertEquals(VALUE, v);

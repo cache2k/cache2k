@@ -147,8 +147,6 @@ class CacheBaseInfo implements InternalCacheInfo {
       + metrics.getLoadCount() - _putHit - _containsBitHit - _heapHitButNoRead - _goneSpin;
   }
   @Override
-  public long getUsageCnt() { return usageCnt; }
-  @Override
   public long getMissCnt() { return missCnt; }
   @Override
   public long getNewEntryCnt() { return newEntryCnt; }
@@ -337,8 +335,9 @@ class CacheBaseInfo implements InternalCacheInfo {
     return "Cache{" + heapCache.name + "}("
             + "size=" + getSize() + ", "
             + "maxSize=" + getMaxSize() + ", "
-            + "usageCnt=" + getUsageCnt() + ", "
+            + "readCnt=" + getReadUsageCnt() + ", "
             + "missCnt=" + getMissCnt() + ", "
+            + "putCnt=" + getPutCnt() + ", "
             + "peekMissCnt=" + metrics.getPeekMissCount() + ", "
             + "peekHitNotFresh=" + metrics.getPeekHitNotFreshCount() + ", "
             + "loadCnt=" + getLoadCnt() + ", "
@@ -348,7 +347,6 @@ class CacheBaseInfo implements InternalCacheInfo {
             + "refreshCnt=" + getRefreshCnt() + ", "
             + "refreshSubmitFailedCnt=" + getRefreshSubmitFailedCnt() + ", "
             + "refreshHitCnt=" + getRefreshHitCnt() + ", "
-            + "putCnt=" + getPutCnt() + ", "
             + "expiredCnt=" + getExpiredCnt() + ", "
             + "evictedCnt=" + getEvictedCnt() + ", "
             + "evictionRunningCnt=" + getEvictionRunningCnt() + ", "

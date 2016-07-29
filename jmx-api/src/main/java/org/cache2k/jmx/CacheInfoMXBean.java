@@ -53,7 +53,7 @@ public interface CacheInfoMXBean {
    * may choose to only present a best effort value. It is guaranteed that the
    * usage count is always greater than the miss count.
    */
-  long getUsageCnt();
+  long getGetCnt();
 
   /**
    * Counter of the event that: a client requested a data which was not
@@ -104,7 +104,7 @@ public interface CacheInfoMXBean {
   long getEvictedCnt();
 
   /**
-   * Number of calls to put().
+   * The total number of insert or update to a cache entry.
    */
   long getPutCnt();
 

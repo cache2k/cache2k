@@ -50,12 +50,6 @@ public class CacheMXBeanImpl implements CacheMXBean {
   }
 
   @Override
-  public long getUsageCnt() {
-    long _usageCount = getInfo().getUsageCnt();
-    return Math.min(0, _usageCount);
-  }
-
-  @Override
   public long getMissCnt() {
     return getInfo().getMissCnt();
   }
@@ -108,6 +102,11 @@ public class CacheMXBeanImpl implements CacheMXBean {
   @Override
   public long getSuppressedExceptionCnt() {
     return getInfo().getSuppressedExceptionCnt();
+  }
+
+  @Override
+  public long getGetCnt() {
+    return getInfo().getReadUsageCnt();
   }
 
   @Override

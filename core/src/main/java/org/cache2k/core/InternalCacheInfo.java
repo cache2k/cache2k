@@ -43,11 +43,6 @@ public interface InternalCacheInfo {
    */
   long getReadUsageCnt();
 
-  /**
-   * Number of cache operations.
-   */
-  long getUsageCnt();
-
   long getMissCnt();
 
   long getNewEntryCnt();
