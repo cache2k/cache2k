@@ -20,8 +20,6 @@ package org.cache2k.core;
  * #L%
  */
 
-import org.cache2k.core.storageApi.StorageAdapter;
-
 import java.util.concurrent.ThreadPoolExecutor;
 
 import static org.cache2k.core.util.Util.formatMillis;
