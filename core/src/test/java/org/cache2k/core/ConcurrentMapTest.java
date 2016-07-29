@@ -26,6 +26,7 @@ import org.junit.Test;
 
 import static org.junit.Assert.*;
 
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -71,6 +72,12 @@ public class ConcurrentMapTest {
   }
 
   @Test
+  public void testContainsKey_incompatible() {
+    map.put(123, "abc");
+    assertFalse(map.containsKey("123"));
+  }
+
+  @Test
   public void testContainsValue_Initial() {
     assertFalse(map.containsValue("abc"));
   }
@@ -79,6 +86,11 @@ public class ConcurrentMapTest {
   public void testContainsValue_Present() {
     map.put(123, "abc");
     assertTrue(map.containsValue("abc"));
+  }
+
+  @Test(expected = NullPointerException.class)
+  public void testContainsValue_null() {
+    map.containsValue(null);
   }
 
   @Test
@@ -110,6 +122,11 @@ public class ConcurrentMapTest {
   }
 
   @Test
+  public void testRemove_Incompatible() {
+    map.remove("abc");
+  }
+
+  @Test
   public void testRemove2Arg_Initial() {
     boolean v = map.remove(123, "abc");
     assertFalse(v);
@@ -127,6 +144,20 @@ public class ConcurrentMapTest {
     map.put(123, "abc");
     boolean v = map.remove(123, "abc");
     assertTrue(v);
+  }
+
+  @Test
+  public void testRemove2Arg_incompatible_types() {
+    map.put(123, "abc");
+    boolean v = map.remove(123, 123);
+    assertFalse(v);
+  }
+
+  @Test
+  public void testClear() {
+    map.put(123, "abc");
+    map.clear();
+    assertEquals(0, map.size());
   }
 
   @Test
@@ -177,6 +208,12 @@ public class ConcurrentMapTest {
   }
 
   @Test
+  public void testGet_incompatible() {
+    map.put(123, "abc");
+    assertNull(map.get("abc"));
+  }
+
+  @Test
   public void testPut_Initial() {
     assertNull(map.put(123, "abc"));
   }
@@ -184,6 +221,15 @@ public class ConcurrentMapTest {
   @Test
   public void testPut_Present() {
     assertNull(map.put(123, "abc"));
+  }
+
+  @Test
+  public void testPutAll_Present() {
+    Map<Integer, String> m = new HashMap<Integer, String>();
+    m.put(123, "abc");
+    m.put(4711, "cologne");
+    map.putAll(m);
+    assertEquals(2, map.size());
   }
 
   @Test
@@ -198,6 +244,14 @@ public class ConcurrentMapTest {
     assertEquals(0, map.keySet().size());
     map.put(123, "abc");
     assertEquals(1, map.keySet().size());
+  }
+
+  @Test
+  public void keySet_contains() {
+    assertFalse(map.keySet().contains("abc"));
+    map.put(123, "abc");
+    assertFalse(map.keySet().contains("abc"));
+    assertTrue(map.keySet().contains(123));
   }
 
   @Test
@@ -253,6 +307,17 @@ public class ConcurrentMapTest {
     map.put(123, "abc");
     map.values().remove("abc");
     assertFalse(map.containsKey(123));
+  }
+
+  @Test
+  public void test_equals() {
+    assertTrue(map.equals(map));
+    assertFalse(map.equals("123"));
+  }
+
+  @Test
+  public void test_hashCode() {
+    assertTrue(map.hashCode() == map.hashCode());
   }
 
 }

@@ -934,13 +934,28 @@ public interface Cache<K, V> extends
   String toString();
 
   /**
-   * Request an alternative interface for the cache.
+   * Request an alternative interface for this cache instance.
    */
   <X> X requestInterface(Class<X> _type);
 
   /**
    * Returns a map interface for operating with this cache. Operations on the map
-   * affect the cache directly, as well as modification on the cache will affect the map.
+   * affect the cache directly, as well as modifications on the cache will affect the map.
+   *
+   * <p>The returned map supports {@code null} values if enabled via
+   * {@link Cache2kBuilder#permitNullValues(boolean)}.
+   *
+   * <p>The {@code equals} and {@code hashCode} methods of the {@code Map} are forwarded to the cache, so a
+   * map is considered identical when from the same cache instance. This is not compatible to the general
+   * {@code Map} contract.
+   *
+   * <p>Multiple calls to this method return a new object instance which is a wrapper of the cache
+   * instance. Calling this method is a cheap operation.
+   *
+   * <p>The current {@code ConcurrentMap} implementation minimalistic and not optimized for all
+   * usage aspects. Calling the cache methods directly could be more effective.
+   *
+   * @return {@code ConcurrentMap} wrapper for this cache instance
    */
   ConcurrentMap<K,V> asMap();
 

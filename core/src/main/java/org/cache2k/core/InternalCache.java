@@ -84,4 +84,6 @@ public interface InternalCache<K, V> extends Cache<K, V>, CanCheckIntegrity {
 
   void logAndCountInternalException(String s, Throwable t);
 
+  boolean isNullValuePermitted();
+
 }

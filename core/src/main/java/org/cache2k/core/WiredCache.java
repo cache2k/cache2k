@@ -84,6 +84,11 @@ public class WiredCache<K, V> extends AbstractCache<K, V>
   }
 
   @Override
+  public boolean isNullValuePermitted() {
+    return heapCache.isNullValuePermitted();
+  }
+
+  @Override
   public String getName() {
     return heapCache.getName();
   }

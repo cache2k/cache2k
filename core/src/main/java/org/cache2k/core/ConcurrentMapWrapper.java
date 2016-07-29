@@ -40,15 +40,16 @@ import java.util.concurrent.ConcurrentMap;
  */
 public class ConcurrentMapWrapper<K,V> implements ConcurrentMap<K, V> {
 
-  Cache<K, V> cache;
-  Class<?> keyType;
-  Class<?> valueType;
+  private boolean permitNull;
+  private Cache<K, V> cache;
+  private Class<?> keyType;
+  private Class<?> valueType;
 
   public ConcurrentMapWrapper(InternalCache<K, V> cache) {
     this.cache = cache;
-    InternalCache bc = cache;
-    keyType = bc.getKeyType();
-    valueType = bc.getValueType();
+    permitNull = cache.isNullValuePermitted();
+    keyType = cache.getKeyType();
+    valueType = cache.getValueType();
   }
 
   @Override
@@ -116,6 +117,9 @@ public class ConcurrentMapWrapper<K,V> implements ConcurrentMap<K, V> {
   @Override
   public boolean containsValue(Object value) {
     if (value == null) {
+      if (!permitNull) {
+        throw new NullPointerException();
+      }
       for (CacheEntry<K, V> e : cache) {
         if (e.getValue() == null) {
           return true;
@@ -299,7 +303,10 @@ public class ConcurrentMapWrapper<K,V> implements ConcurrentMap<K, V> {
   /** This is the object identity of the cache */
   @Override
   public boolean equals(Object o) {
-    return cache.equals(o);
+    if (o instanceof ConcurrentMapWrapper) {
+      return cache.equals(((ConcurrentMapWrapper) o).cache);
+    }
+    return false;
   }
 
   @Override

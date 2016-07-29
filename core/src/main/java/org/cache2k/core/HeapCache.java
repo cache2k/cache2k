@@ -189,6 +189,8 @@ public class HeapCache<K, V>
     return (featureBits & REJECT_NULL_VALUES) > 0;
   }
 
+  public final boolean isNullValuePermitted() { return !hasRejectNullValues(); }
+
   protected final boolean hasBackgroundRefresh() { return (featureBits & BACKGROUND_REFRESH) > 0; }
 
   protected final void setFeatureBit(int _bitmask, boolean _flag) {
