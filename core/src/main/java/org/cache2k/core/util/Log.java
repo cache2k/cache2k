@@ -20,6 +20,8 @@ package org.cache2k.core.util;
  * #L%
  */
 
+import org.slf4j.helpers.NOPLoggerFactory;
+
 import java.util.HashMap;
 import java.util.Map;
 import java.util.ServiceLoader;
@@ -79,14 +81,16 @@ public abstract class Log {
     }
     try {
       final org.slf4j.ILoggerFactory lf = org.slf4j.LoggerFactory.getILoggerFactory();
-      logFactory = new LogFactory() {
-        @Override
-        public Log getLog(String s) {
-          return new Slf4jLogger(lf.getLogger(s));
-        }
-      };
-      log("New instance, using SLF4J logging");
-      return;
+      if (!(lf instanceof NOPLoggerFactory)) {
+        logFactory = new LogFactory() {
+          @Override
+          public Log getLog(String s) {
+            return new Slf4jLogger(lf.getLogger(s));
+          }
+        };
+        log("New instance, using SLF4J logging");
+        return;
+      }
     } catch (NoClassDefFoundError ignore) {
     }
     try {
