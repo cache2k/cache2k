@@ -41,7 +41,6 @@ class CacheBaseInfo implements InternalCacheInfo {
   private long storageMissCnt;
   private long hitCnt;
   private long correctedPutCnt;
-  private long usageCnt;
   private CollisionInfo collisionInfo;
   private String extraStatistics;
   private IntegrityState integrityState;
@@ -72,14 +71,14 @@ class CacheBaseInfo implements InternalCacheInfo {
     metrics = _heapCache.metrics;
     EvictionMetrics em = _heapCache.eviction.getMetrics();
     newEntryCnt = em.getNewEntryCount();
+    expiredRemoveCnt = em.getExpiredRemovedCount();
+    evictedCnt = em.getEvictedCount();
+    maxSize = em.getMaxSize();
     clearedTime = _heapCache.clearedTime;
     keyMutationCnt = _heapCache.keyMutationCnt;
     removedCnt = em.getRemovedCount();
     clearRemovedCnt = _heapCache.clearRemovedCnt;
     clearCnt = _heapCache.clearCnt;
-    expiredRemoveCnt = em.getExpiredRemovedCount();
-    evictedCnt = em.getEvictedCount();
-    maxSize = em.getMaxSize();
     evictionRunningCnt = em.getEvictionRunningCount();
     integrityState = _heapCache.getIntegrityState();
     storageMetrics = _userCache.getStorageMetrics();
@@ -94,10 +93,6 @@ class CacheBaseInfo implements InternalCacheInfo {
     storageMissCnt = storageMetrics.getReadMissCount() + storageMetrics.getReadNonFreshCount();
     hitCnt = em.getHitCount();
     correctedPutCnt = metrics.getPutNewEntryCount() + metrics.getPutHitCount() + metrics.getPutNoReadHitCount();
-    usageCnt =
-      hitCnt + newEntryCnt
-      + metrics.getPeekMissCount() + metrics.getPutHitCount() + metrics.getRemoveCount()
-      - metrics.getGoneSpinCount();
     if (_heapCache.loaderExecutor instanceof ThreadPoolExecutor) {
       ThreadPoolExecutor ex = (ThreadPoolExecutor) _heapCache.loaderExecutor;
       asyncLoadsInFlight = ex.getActiveCount();
@@ -170,7 +165,7 @@ class CacheBaseInfo implements InternalCacheInfo {
   @Override
   public long getEvictionRunningCnt() { return evictionRunningCnt; }
   @Override
-  public long getRemovedCnt() { return metrics.getRemoveCount(); }
+  public long getRemovedCnt() { return removedCnt; }
   @Override
   public long getPutCnt() { return correctedPutCnt; }
 
@@ -190,10 +185,7 @@ class CacheBaseInfo implements InternalCacheInfo {
   }
   @Override
   public String getDataHitString() { return percentString(getDataHitRate()); }
-  @Override
-  public double getEntryHitRate() { return usageCnt == 0 ? 100 : (usageCnt - newEntryCnt + metrics.getPutNewEntryCount()) * 100D / usageCnt; }
-  @Override
-  public String getEntryHitString() { return percentString(getEntryHitRate()); }
+
   /** How many items will be accessed with collision */
   @Override
   public int getCollisionPercentage() {

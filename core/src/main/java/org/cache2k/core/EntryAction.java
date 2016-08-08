@@ -817,7 +817,9 @@ public abstract class EntryAction<K, V, R> implements
           entry.setNextRefreshTime(Entry.EXPIRED);
           entry.setValueOrException(newValueOrException);
         } else {
-          entry.setNextRefreshTime(Entry.REMOVE_PENDING);
+          if (!entry.isVirgin()) {
+            entry.setNextRefreshTime(Entry.REMOVE_PENDING);
+          }
         }
       } else {
         oldValueOrException = entry.getValueOrException();
@@ -967,12 +969,6 @@ public abstract class EntryAction<K, V, R> implements
       }
     } else {
       updateOnlyReadStatistics();
-      if (remove) {
-        if (heapDataValid) {
-          metrics().remove();
-        } else if (heapHit) {
-        }
-      }
     }
   }
 

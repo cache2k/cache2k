@@ -86,10 +86,6 @@ public interface InternalCacheInfo {
 
   String getDataHitString();
 
-  double getEntryHitRate();
-
-  String getEntryHitString();
-
   int getCollisionPercentage();
 
   int getSlotsPercentage();

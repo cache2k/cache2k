@@ -37,11 +37,6 @@ public interface CommonMetrics {
    */
   long getContainsButHitCount();
 
-  /**
-   * A valid entry was removed from the cache.
-   */
-  long getRemoveCount();
-
   long getHeapHitButNoReadCount();
 
   /**
@@ -133,9 +128,6 @@ public interface CommonMetrics {
     void containsButHit();
     void containsButHit(long cnt);
 
-    void remove();
-    void remove(long cnt);
-
     void heapHitButNoRead();
     void heapHitButNoRead(long cnt);
 
@@ -218,16 +210,6 @@ public interface CommonMetrics {
 
     @Override
     public void containsButHit(final long cnt) {
-
-    }
-
-    @Override
-    public void remove() {
-
-    }
-
-    @Override
-    public void remove(final long cnt) {
 
     }
 
@@ -383,11 +365,6 @@ public interface CommonMetrics {
 
     @Override
     public long getContainsButHitCount() {
-      return 0;
-    }
-
-    @Override
-    public long getRemoveCount() {
       return 0;
     }
 

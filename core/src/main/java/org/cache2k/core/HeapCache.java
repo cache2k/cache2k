@@ -906,9 +906,7 @@ public class HeapCache<K, V>
           return false;
         }
       }
-      if (removeEntry(e)) {
-        metrics.remove();
-      }
+      removeEntry(e);
       return f;
     }
 }
@@ -938,9 +936,7 @@ public class HeapCache<K, V>
       } else {
         metrics.peekMiss();
       }
-      if (removeEntry(e)) {
-        metrics.remove();
-      }
+      removeEntry(e);
       return returnValue(_value);
     }
   }
