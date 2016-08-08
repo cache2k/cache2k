@@ -23,6 +23,8 @@ If something is listed here it might affect an existing application and updating
 - Fix size methods (was stack overflow): `Cache.asMap().values().size()`, `Cache.asMap().entrySet().size()`, `Cache.asMap().keySet().size()`, 
   closes: https://github.com/cache2k/cache2k/issues/51
 - `Cache.asMap()`: Fix `equals()` implementation, correct optional `null` support
+- Dropped separate usage counter. Use read usage (get) or write usage (put) counters.
+- Simplified metric gathering, removed superfluous counters
 
 ## Fixes and Improvements
 
