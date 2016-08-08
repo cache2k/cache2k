@@ -704,7 +704,11 @@ public class HeapCache<K, V>
         if (_hasFreshData) {
           _previousValue = (V) e.getValueOrException();
         } else {
-          metrics.peekMiss();
+          if (e.isVirgin()) {
+            metrics.peekMiss();
+          } else {
+            metrics.peekHitNotFresh();
+          }
         }
         putValue(e, _value);
         break;
@@ -932,9 +936,8 @@ public class HeapCache<K, V>
       boolean f = e.hasFreshData();
       if (f) {
         _value = (V) e.getValueOrException();
-        recordHit(e);
       } else {
-        metrics.peekMiss();
+        metrics.peekHitNotFresh();
       }
       removeEntry(e);
       return returnValue(_value);
@@ -1283,8 +1286,8 @@ public class HeapCache<K, V>
    * This is why we return a flag whether the entry was really present or not at this time.
    *
    * <p>With completion of the method the entry content is no more visible. "Nulling" out the key
-   * or value of the entry incorrect, since there can be another thread which is just about to
-   * return the entries contents.
+   * or value of the entry is incorrect, since there can be another thread which is just about to
+   * return the entry contents.
    *
    * @return True, if the entry was present in the hash table.
    */
