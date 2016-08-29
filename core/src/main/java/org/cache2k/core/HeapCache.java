@@ -408,7 +408,6 @@ public class HeapCache<K, V>
       ((ExecutorService) loaderExecutor).shutdown();
     }
     cancelTimerJobs();
-    hash.close();
     try {
       Future<?> _future = shutdownWaitFuture;
       if (_future != null) {
@@ -417,6 +416,7 @@ public class HeapCache<K, V>
     } catch (Exception ex) {
       throw new CacheException(ex);
     }
+
   }
 
   @Override
@@ -426,14 +426,19 @@ public class HeapCache<K, V>
   }
 
   public void closePart2() {
-    synchronized (lock) {
-      eviction.close();
-      timing.shutdown();
-      if (manager != null) {
-        manager.cacheDestroyed(this);
-        manager = null;
+    executeWithGlobalLock(new Job<Void>() {
+      @Override
+      public Void call() {
+        eviction.close();
+        timing.shutdown();
+        hash.close();
+        if (manager != null) {
+          manager.cacheDestroyed(HeapCache.this);
+          manager = null;
+        }
+        return null;
       }
-    }
+    }, false);
   }
 
   @Override
@@ -1826,14 +1831,29 @@ public class HeapCache<K, V>
    * queued entries are processed up to the point when the method was called.
    */
   public <T> T executeWithGlobalLock(final Job<T> job) {
+    return executeWithGlobalLock(job, true);
+  }
+
+  /**
+   * Execute job while making sure that no other operations are going on.
+   * In case the eviction is connected via a queue we need to stop the queue processing.
+   * On the other hand we needs to make sure that the queue is drained because this
+   * method is used to access the recent statistics or check integrity. Draining the queue
+   * is a two phase job: The draining may not do eviction since we hold the locks, after
+   * lifting the lock with do eviction and lock again. This ensures that all
+   * queued entries are processed up to the point when the method was called.
+   *
+   * @param _checkClosed variant, this method is needed once without check during the close itself
+   */
+  private <T> T executeWithGlobalLock(final Job<T> job, final boolean _checkClosed) {
     synchronized (lock) {
-      checkClosed();
+      if (_checkClosed) { checkClosed(); }
       eviction.stop();
       try {
         T _result = hash.runTotalLocked(new Job<T>() {
           @Override
           public T call() {
-            checkClosed();
+            if (_checkClosed) { checkClosed(); }
             boolean f = eviction.drain();
             if (f) {
               return (T) RESTART_AFTER_EVICTION;
@@ -1851,7 +1871,7 @@ public class HeapCache<K, V>
           _result = hash.runTotalLocked(new Job<T>() {
             @Override
             public T call() {
-              checkClosed();
+              if (_checkClosed) { checkClosed(); }
               eviction.drain();
               return eviction.runLocked(new Job<T>() {
                 @Override
