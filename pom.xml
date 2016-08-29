@@ -470,7 +470,9 @@
             <!-- we only exclude, so the TCK tests are run, too -->
             <configuration>
               <excludedGroups>org.cache2k.junit.StorageTests,org.cache2k.junit.SlowTests,org.cache2k.junit.TimingTests</excludedGroups>
+              <!-- jacoco instrumentation is not working GC debugging....
               <argLine>-Xmx256m -XX:+HeapDumpOnOutOfMemoryError -XX:+PrintGCDetails</argLine>
+              -->
             </configuration>
           </plugin>
         </plugins>
