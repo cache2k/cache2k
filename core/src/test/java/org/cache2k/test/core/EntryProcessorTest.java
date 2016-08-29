@@ -205,7 +205,7 @@ public class EntryProcessorTest {
     assertEquals("abc", _result);
     target.statistics()
       .missCount.expect(1)
-      .readCount.expect(1)
+      .getCount.expect(1)
       .putCount.expect(1)
       .expectAllZero();
   }
@@ -336,7 +336,7 @@ public class EntryProcessorTest {
     Integer v = wl.cache.peek(123);
     assertNull(v);
     target.statistics()
-      .readCount.expect(2)
+      .getCount.expect(2)
       .missCount.expect(2)
       .loadCount.expect(1)
       .removeCount.expect(0)

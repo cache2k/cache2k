@@ -54,8 +54,8 @@ public class CacheJmxStatistics implements CacheStatisticsMXBean {
   }
 
   private long calcHits(InternalCacheInfo inf) {
-    long _readUsage = inf.getReadUsageCnt();
-    long _missCount = inf.getMissCnt();
+    long _readUsage = inf.getGetCount();
+    long _missCount = inf.getMissCount();
     return _readUsage - _missCount +
       adapter.iterationHitCorrectionCounter.get();
   }
@@ -78,33 +78,33 @@ public class CacheJmxStatistics implements CacheStatisticsMXBean {
   }
 
   private long calcMisses(InternalCacheInfo inf) {
-    return inf.getMissCnt();
+    return inf.getMissCount();
   }
 
   @Override
   public float getCacheMissPercentage() {
     InternalCacheInfo inf = getInfo();
-    return inf.getReadUsageCnt() == 0 ? 0.0F : (100.0F * inf.getMissCnt() / inf.getReadUsageCnt());
+    return inf.getGetCount() == 0 ? 0.0F : (100.0F * inf.getMissCount() / inf.getGetCount());
   }
 
   @Override
   public long getCacheGets() {
-    return getInfo().getReadUsageCnt() + adapter.iterationHitCorrectionCounter.get();
+    return getInfo().getGetCount() + adapter.iterationHitCorrectionCounter.get();
   }
 
   @Override
   public long getCachePuts() {
-    return getInfo().getPutCnt();
+    return getInfo().getPutCount();
   }
 
   @Override
   public long getCacheRemovals() {
-    return getInfo().getRemovedCnt();
+    return getInfo().getRemovedCount();
   }
 
   @Override
   public long getCacheEvictions() {
-    return getInfo().getEvictedCnt();
+    return getInfo().getEvictedCount();
   }
 
   @Override

@@ -42,9 +42,9 @@ import static org.junit.Assert.assertEquals;
  */
 public class Statistics {
 
-  InternalCacheInfo info;
-  List<Counter> counters = new ArrayList<Counter>();
-  boolean disable = false;
+  private InternalCacheInfo info;
+  private List<Counter> counters = new ArrayList<Counter>();
+  private boolean disable = false;
 
   public Statistics() {
   }
@@ -53,38 +53,38 @@ public class Statistics {
     disable = _disable;
   }
 
-  public final Counter readCount = new Counter("read") {
+  public final Counter getCount = new Counter("get") {
     @Override
     protected long getCounterValue(final InternalCacheInfo inf) {
-      return inf.getReadUsageCnt();
+      return inf.getGetCount();
     }
   };
 
   public final Counter putCount = new Counter("put") {
     @Override
     protected long getCounterValue(final InternalCacheInfo inf) {
-      return inf.getPutCnt();
+      return inf.getPutCount();
     }
   };
 
   public final Counter missCount = new Counter("miss") {
     @Override
     protected long getCounterValue(final InternalCacheInfo inf) {
-      return inf.getMissCnt();
+      return inf.getMissCount();
     }
   };
 
   public final Counter removeCount = new Counter("remove") {
     @Override
     protected long getCounterValue(final InternalCacheInfo inf) {
-      return inf.getRemovedCnt();
+      return inf.getRemovedCount();
     }
   };
 
   public final Counter loadCount = new Counter("load") {
     @Override
     protected long getCounterValue(final InternalCacheInfo inf) {
-      return inf.getLoadCnt();
+      return inf.getLoadCount();
     }
   };
 

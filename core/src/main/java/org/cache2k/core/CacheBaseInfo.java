@@ -118,21 +118,21 @@ class CacheBaseInfo implements InternalCacheInfo {
   public String getImplementation() { return heapCache.getClass().getSimpleName(); }
 
   @Override
-  public long getLoadButHitCnt() {
+  public long getReloadCount() {
     return metrics.getReloadCount();
   }
 
   @Override
   public long getSize() { return size; }
   @Override
-  public long getMaxSize() { return maxSize; }
+  public long getHeapCapacity() { return maxSize; }
   @Override
   public long getStorageHitCnt() { return storageMetrics.getReadHitCount(); }
 
   @Override
   public long getStorageMissCnt() { return storageMissCnt; }
   @Override
-  public long getReadUsageCnt() {
+  public long getGetCount() {
     long _putHit = metrics.getPutNoReadHitCount();
     long _containsBitHit = metrics.getContainsButHitCount();
     long _heapHitButNoRead = metrics.getHeapHitButNoReadCount();
@@ -141,46 +141,46 @@ class CacheBaseInfo implements InternalCacheInfo {
       + metrics.getLoadCount() - _putHit - _containsBitHit - _heapHitButNoRead;
   }
   @Override
-  public long getMissCnt() { return missCnt; }
+  public long getMissCount() { return missCnt; }
   @Override
-  public long getNewEntryCnt() { return newEntryCnt; }
+  public long getNewEntryCount() { return newEntryCnt; }
   @Override
-  public long getLoadCnt() { return totalLoadCnt; }
+  public long getLoadCount() { return totalLoadCnt; }
   @Override
-  public long getRefreshCnt() { return metrics.getRefreshCount(); }
+  public long getRefreshCount() { return metrics.getRefreshCount(); }
   @Override
-  public long getInternalExceptionCnt() { return metrics.getInternalExceptionCount(); }
+  public long getInternalExceptionCount() { return metrics.getInternalExceptionCount(); }
   @Override
-  public long getRefreshSubmitFailedCnt() { return metrics.getRefreshSubmitFailedCount(); }
+  public long getRefreshSubmitFailedCount() { return metrics.getRefreshSubmitFailedCount(); }
   @Override
-  public long getSuppressedExceptionCnt() { return metrics.getSuppressedExceptionCount(); }
+  public long getSuppressedExceptionCount() { return metrics.getSuppressedExceptionCount(); }
   @Override
-  public long getLoadExceptionCnt() { return metrics.getLoadExceptionCount() + metrics.getSuppressedExceptionCount(); }
+  public long getLoadExceptionCount() { return metrics.getLoadExceptionCount() + metrics.getSuppressedExceptionCount(); }
   @Override
-  public long getRefreshHitCnt() { return metrics.getRefreshHitCount(); }
+  public long getRefreshHitCount() { return metrics.getRefreshHitCount(); }
   @Override
-  public long getExpiredCnt() { return expiredRemoveCnt + metrics.getExpiredKeptCount(); }
+  public long getExpiredCount() { return expiredRemoveCnt + metrics.getExpiredKeptCount(); }
   @Override
-  public long getEvictedCnt() { return evictedCnt; }
+  public long getEvictedCount() { return evictedCnt; }
   @Override
-  public long getEvictionRunningCnt() { return evictionRunningCnt; }
+  public long getEvictionRunningCount() { return evictionRunningCnt; }
   @Override
-  public long getRemovedCnt() { return removedCnt; }
+  public long getRemovedCount() { return removedCnt; }
   @Override
-  public long getPutCnt() { return correctedPutCnt; }
+  public long getPutCount() { return correctedPutCnt; }
 
   @Override
-  public long getGoneSpinCnt() {
+  public long getGoneSpinCount() {
     return metrics.getGoneSpinCount();
   }
 
   @Override
-  public long getKeyMutationCnt() { return keyMutationCnt; }
+  public long getKeyMutationCount() { return keyMutationCnt; }
   @Override
-   public long getTimerEventCnt() { return metrics.getTimerEventCount(); }
+   public long getTimerEventCount() { return metrics.getTimerEventCount(); }
   @Override
   public double getDataHitRate() {
-    long cnt = getReadUsageCnt();
+    long cnt = getGetCount();
     return cnt == 0 ? 0.0 : ((cnt - missCnt) * 100D / cnt);
   }
   @Override
@@ -252,15 +252,15 @@ class CacheBaseInfo implements InternalCacheInfo {
     return _metric0;
   }
   @Override
-  public double getMillisPerLoad() { return getLoadCnt() == 0 ? 0 : (metrics.getLoadMillis() * 1D / getLoadCnt()); }
+  public double getMillisPerLoad() { return getLoadCount() == 0 ? 0 : (metrics.getLoadMillis() * 1D / getLoadCount()); }
   @Override
   public long getLoadMillis() { return metrics.getLoadMillis(); }
   @Override
-  public int getCollisionCnt() { return collisionInfo.collisionCnt; }
+  public int getCollisionCount() { return collisionInfo.collisionCnt; }
   @Override
-  public int getCollisionSlotCnt() { return collisionInfo.collisionSlotCnt; }
+  public int getCollisionSlotCount() { return collisionInfo.collisionSlotCnt; }
   @Override
-  public int getLongestCollisionSize() { return collisionInfo.longestCollisionSize; }
+  public int getLongestSlot() { return collisionInfo.longestCollisionSize; }
   @Override
   public String getIntegrityDescriptor() { return integrityState.getStateDescriptor(); }
   @Override
@@ -274,8 +274,8 @@ class CacheBaseInfo implements InternalCacheInfo {
   @Override
   public int getHealth() {
     if (getHashQualityInteger() < 30 ||
-      getKeyMutationCnt() > 0 ||
-      getInternalExceptionCnt() > 0) {
+      getKeyMutationCount() > 0 ||
+      getInternalExceptionCount() > 0) {
       return 1;
     }
     return 0;
@@ -306,7 +306,7 @@ class CacheBaseInfo implements InternalCacheInfo {
     return extraStatistics;
   }
 
-  static String timestampToString(long t) {
+  private static String timestampToString(long t) {
     if (t == 0) {
       return "-";
     }
@@ -314,42 +314,40 @@ class CacheBaseInfo implements InternalCacheInfo {
   }
 
   @Override
-  public long getClearCnt() {
+  public long getClearCount() {
     return clearCnt;
   }
 
-  public long getClearRemovedCnt() {
+  public long getClearRemovedCount() {
     return clearRemovedCnt;
   }
 
   public String toString() {
     return "Cache{" + heapCache.name + "}("
             + "size=" + getSize() + ", "
-            + "maxSize=" + getMaxSize() + ", "
-            + "readCnt=" + getReadUsageCnt() + ", "
-            + "missCnt=" + getMissCnt() + ", "
-            + "putCnt=" + getPutCnt() + ", "
-            + "peekMissCnt=" + metrics.getPeekMissCount() + ", "
+            + "capacity=" + getHeapCapacity() + ", "
+            + "get=" + getGetCount() + ", "
+            + "miss=" + getMissCount() + ", "
+            + "put=" + getPutCount() + ", "
+            + "peekMiss=" + metrics.getPeekMissCount() + ", "
             + "peekHitNotFresh=" + metrics.getPeekHitNotFreshCount() + ", "
-            + "loadCnt=" + getLoadCnt() + ", "
-            + "loadButHitCnt=" + getLoadButHitCnt() + ", "
-            + "heapHitCnt=" + hitCnt + ", "
-            + "newEntryCnt=" + getNewEntryCnt() + ", "
-            + "refreshCnt=" + getRefreshCnt() + ", "
-            + "refreshSubmitFailedCnt=" + getRefreshSubmitFailedCnt() + ", "
-            + "refreshHitCnt=" + getRefreshHitCnt() + ", "
-            + "expiredCnt=" + getExpiredCnt() + ", "
-            + "evictedCnt=" + getEvictedCnt() + ", "
-            + "evictionRunningCnt=" + getEvictionRunningCnt() + ", "
-            + "removedCnt=" + getRemovedCnt() + ", "
-            + "clearRemovedCnt=" + getClearRemovedCnt() + ", "
-            + "timerEventCnt=" + getTimerEventCnt() + ", "
-            + "goneSpinCnt=" + getGoneSpinCnt() + ", "
+            + "load=" + getLoadCount() + ", "
+            + "reload=" + getReloadCount() + ", "
+            + "heapHit=" + hitCnt + ", "
+            + "refreshCnt=" + getRefreshCount() + ", "
+            + "refreshSubmitFailed=" + getRefreshSubmitFailedCount() + ", "
+            + "refreshHit=" + getRefreshHitCount() + ", "
+            + "loadException=" + getLoadExceptionCount() + ", "
+            + "suppressedException=" + getSuppressedExceptionCount() + ", "
+            + "new=" + getNewEntryCount() + ", "
+            + "expire=" + getExpiredCount() + ", "
+            + "remove=" + getRemovedCount() + ", "
+            + "clear=" + getClearCount() + ", "
+            + "removeByClear=" + getClearRemovedCount() + ", "
+            + "evict=" + getEvictedCount() + ", "
+            + "timer=" + getTimerEventCount() + ", "
+            + "goneSpin=" + getGoneSpinCount() + ", "
             + "hitRate=" + getDataHitString() + ", "
-            + "collisionCnt=" + getCollisionCnt() + ", "
-            + "collisionSlotCnt=" + getCollisionSlotCnt() + ", "
-            + "longestCollisionSize=" + getLongestCollisionSize() + ", "
-            + "hashQuality=" + getHashQualityInteger() + ", "
             + "msecs/load=" + (getMillisPerLoad() >= 0 ? getMillisPerLoad() : "-")  + ", "
             + "asyncLoadsStarted=" + asyncLoadsStarted + ", "
             + "asyncLoadsInFlight=" + asyncLoadsInFlight + ", "
@@ -357,15 +355,17 @@ class CacheBaseInfo implements InternalCacheInfo {
             + "loaderThreadsMaxActive=" + loaderThreadsMaxActive + ", "
             + "created=" + timestampToString(getStartedTime()) + ", "
             + "cleared=" + timestampToString(getClearedTime()) + ", "
-            + "clearCnt=" + getClearCnt() + ", "
-            + "loadExceptionCnt=" + getLoadExceptionCnt() + ", "
-            + "suppressedExceptionCnt=" + getSuppressedExceptionCnt() + ", "
-            + "internalExceptionCnt=" + getInternalExceptionCnt() + ", "
-            + "keyMutationCnt=" + getKeyMutationCnt() + ", "
             + "infoCreated=" + timestampToString(getInfoCreatedTime()) + ", "
             + "infoCreationDeltaMs=" + getInfoCreationDeltaMs() + ", "
+            + "collisions=" + getCollisionCount() + ", "
+            + "collisionSlots=" + getCollisionSlotCount() + ", "
+            + "longestSlot=" + getLongestSlot() + ", "
+            + "hashQuality=" + getHashQualityInteger() + ", "
             + "impl=" + getImplementation() + ", "
             + getExtraStatistics() + ", "
+            + "evictionRunningCnt=" + getEvictionRunningCount() + ", "
+            + "keyMutation=" + getKeyMutationCount() + ", "
+            + "internalException=" + getInternalExceptionCount() + ", "
             + "integrityState=" + getIntegrityDescriptor()
       + ")";
   }

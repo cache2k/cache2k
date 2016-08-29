@@ -470,7 +470,7 @@ public class ListenerTest {
       }
     });
     assertEquals(0, latestInfo(c).getSize());
-    assertEquals(1, latestInfo(c).getExpiredCnt());
+    assertEquals(1, latestInfo(c).getExpiredCount());
   }
 
 }

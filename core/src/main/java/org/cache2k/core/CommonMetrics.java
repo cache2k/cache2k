@@ -55,7 +55,7 @@ public interface CommonMetrics {
   long getLoadCount();
 
   /**
-   * Entry was loaded again, triggered by a get()
+   * Entry was loaded again, e.g. when expired, triggered by a get() or reload()
    */
   long getReloadCount();
 
@@ -86,12 +86,14 @@ public interface CommonMetrics {
   long getExpiredKeptCount();
 
   /**
-   * Peek but nothing available in the heap.
+   * Peek operation (or get() if no loader is present), has no hit.
    */
   long getPeekMissCount();
 
   /**
-   * Peek, but entry available was not fresh.
+   * Peek, but entry available was not fresh (expired). This is effectively a miss, but we count
+   * separately for debugging purposes. Always 0 if not
+   * {@link org.cache2k.Cache2kBuilder#keepDataAfterExpired(boolean)}
    */
   long getPeekHitNotFreshCount();
 
@@ -108,10 +110,12 @@ public interface CommonMetrics {
 
   /**
    * Entry was removed while waiting to get the mutation lock.
-   * Use this counter only if usage is counted (hit or new).
    */
   long getGoneSpinCount();
 
+  /**
+   * True if statistics is disabled.
+   */
   boolean isDisabled();
 
   interface Updater extends CommonMetrics {

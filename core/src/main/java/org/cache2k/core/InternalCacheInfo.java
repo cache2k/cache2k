@@ -24,15 +24,21 @@ package org.cache2k.core;
  * Created by jeans on 1/6/16.
  */
 public interface InternalCacheInfo {
+
   String getName();
 
   String getImplementation();
 
+  /**
+   * Current number of entries in the cache. This may include entries with expired
+   * values.
+   */
   long getSize();
 
-  long getMaxSize();
-
-  long getLoadButHitCnt();
+  /**
+   * Configured limit of the total cache entry capacity.
+   */
+  long getHeapCapacity();
 
   long getStorageHitCnt();
 
@@ -41,46 +47,51 @@ public interface InternalCacheInfo {
   /**
    * Number of cache operations, only access.
    */
-  long getReadUsageCnt();
+  long getGetCount();
 
-  long getMissCnt();
+  long getMissCount();
 
-  long getNewEntryCnt();
+  long getNewEntryCount();
 
   /**
-   * Loader calls including calls from refresh ahead.
+   * Loader calls including reloads and refresh.
    */
-  long getLoadCnt();
+  long getLoadCount();
 
-  long getRefreshCnt();
+  /**
+   *
+   */
+  long getReloadCount();
 
-  long getInternalExceptionCnt();
+  long getRefreshCount();
 
-  long getRefreshSubmitFailedCnt();
+  long getInternalExceptionCount();
 
-  long getSuppressedExceptionCnt();
+  long getRefreshSubmitFailedCount();
 
-  long getLoadExceptionCnt();
+  long getSuppressedExceptionCount();
 
-  long getRefreshHitCnt();
+  long getLoadExceptionCount();
 
-  long getExpiredCnt();
+  long getRefreshHitCount();
 
-  long getEvictedCnt();
+  long getExpiredCount();
 
-  long getEvictionRunningCnt();
+  long getEvictedCount();
 
-  long getRemovedCnt();
+  long getEvictionRunningCount();
 
-  long getPutCnt();
+  long getRemovedCount();
 
-  long getClearRemovedCnt();
+  long getPutCount();
 
-  long getClearCnt();
+  long getClearRemovedCount();
 
-  long getKeyMutationCnt();
+  long getClearCount();
 
-  long getTimerEventCnt();
+  long getKeyMutationCount();
+
+  long getTimerEventCount();
 
   double getDataHitRate();
 
@@ -102,15 +113,15 @@ public interface InternalCacheInfo {
 
   long getLoadMillis();
 
-  int getCollisionCnt();
+  int getCollisionCount();
 
-  int getCollisionSlotCnt();
+  int getCollisionSlotCount();
 
-  int getLongestCollisionSize();
+  int getLongestSlot();
 
   String getIntegrityDescriptor();
 
-  long getGoneSpinCnt();
+  long getGoneSpinCount();
 
   long getStartedTime();
 

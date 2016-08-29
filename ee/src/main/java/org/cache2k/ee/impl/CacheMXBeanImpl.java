@@ -46,72 +46,72 @@ public class CacheMXBeanImpl implements CacheMXBean {
 
   @Override
   public long getEntryCapacity() {
-    return getInfo().getMaxSize();
+    return getInfo().getHeapCapacity();
   }
 
   @Override
   public long getMissCnt() {
-    return getInfo().getMissCnt();
+    return getInfo().getMissCount();
   }
 
   @Override
   public long getNewEntryCnt() {
-    return getInfo().getNewEntryCnt();
+    return getInfo().getNewEntryCount();
   }
 
   @Override
   public long getLoadCnt() {
-    return getInfo().getLoadCnt();
+    return getInfo().getLoadCount();
   }
 
   @Override
   public long getRefreshCnt() {
-    return getInfo().getRefreshCnt();
+    return getInfo().getRefreshCount();
   }
 
   @Override
   public long getRefreshSubmitFailedCnt() {
-    return getInfo().getRefreshSubmitFailedCnt();
+    return getInfo().getRefreshSubmitFailedCount();
   }
 
   @Override
   public long getRefreshHitCnt() {
-    return getInfo().getRefreshHitCnt();
+    return getInfo().getRefreshHitCount();
   }
 
   @Override
   public long getExpiredCnt() {
-    return getInfo().getExpiredCnt();
+    return getInfo().getExpiredCount();
   }
 
   @Override
   public long getEvictedCnt() {
-    return getInfo().getEvictedCnt();
+    return getInfo().getEvictedCount();
   }
 
   @Override
   public long getKeyMutationCnt() {
-    return getInfo().getKeyMutationCnt();
+    return getInfo().getKeyMutationCount();
   }
 
   @Override
   public long getLoadExceptionCnt() {
-    return getInfo().getLoadExceptionCnt();
+    return getInfo().getLoadExceptionCount();
   }
 
   @Override
   public long getSuppressedExceptionCnt() {
-    return getInfo().getSuppressedExceptionCnt();
+    return getInfo().getSuppressedExceptionCount();
   }
 
   @Override
   public long getGetCnt() {
-    return getInfo().getReadUsageCnt();
+    return getInfo().getGetCount();
   }
 
   @Override
   public long getPutCnt() {
-    return getInfo().getPutCnt();
+    return getInfo().getPutCount();
   }
 
   @Override
@@ -126,17 +126,17 @@ public class CacheMXBeanImpl implements CacheMXBean {
 
   @Override
   public long getHashCollisionCnt() {
-    return getInfo().getCollisionCnt();
+    return getInfo().getCollisionCount();
   }
 
   @Override
   public long getHashCollisionsSlotCnt() {
-    return getInfo().getCollisionSlotCnt();
+    return getInfo().getCollisionSlotCount();
   }
 
   @Override
   public long getHashLongestCollisionSize() {
-    return getInfo().getLongestCollisionSize();
+    return getInfo().getLongestSlot();
   }
 
   @Override

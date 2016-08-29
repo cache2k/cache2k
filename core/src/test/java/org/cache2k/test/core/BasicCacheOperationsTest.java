@@ -24,6 +24,7 @@ import org.cache2k.Cache;
 import org.cache2k.Cache2kBuilder;
 import org.cache2k.CacheEntry;
 import org.cache2k.core.InternalCacheInfo;
+import org.cache2k.expiry.ExpiryTimeValues;
 import org.cache2k.integration.CacheLoaderException;
 import org.cache2k.core.ExceptionWrapper;
 import org.cache2k.core.InternalCache;
@@ -67,6 +68,7 @@ public class BasicCacheOperationsTest {
             .eternal(true)
             .entryCapacity(1000)
             .permitNullValues(true)
+            .keepDataAfterExpired(true)
             .build();
   }
 
@@ -156,7 +158,7 @@ public class BasicCacheOperationsTest {
   public void put() {
     cache.put(KEY, VALUE);
     statistics()
-      .readCount.expect(0)
+      .getCount.expect(0)
       .missCount.expect(0)
       .putCount.expect(1)
       .expectAllZero();
@@ -170,7 +172,7 @@ public class BasicCacheOperationsTest {
     cache.put(KEY, VALUE);
     cache.put(KEY, OTHER_VALUE);
     statistics()
-      .readCount.expect(0)
+      .getCount.expect(0)
       .missCount.expect(0)
       .putCount.expect(2)
       .expectAllZero();
@@ -211,11 +213,39 @@ public class BasicCacheOperationsTest {
   /*
    * peek
    */
+
   @Test
   public void peek_Miss() {
     assertNull(cache.peek(KEY));
     statistics()
-      .readCount.expect(1)
+      .getCount.expect(1)
+      .missCount.expect(1)
+      .expectAllZero();
+  }
+
+  @Test
+  public void peek_Hit() {
+    cache.put(KEY, VALUE);
+    statistics()
+      .putCount.expect(1)
+      .expectAllZero();
+    assertNotNull(cache.peek(KEY));
+    statistics()
+      .getCount.expect(1)
+      .missCount.expect(0)
+      .expectAllZero();
+  }
+
+  @Test
+  public void peek_NotFresh() {
+    cache.put(KEY, VALUE);
+    statistics()
+      .putCount.expect(1)
+      .expectAllZero();
+    cache.expireAt(KEY, ExpiryTimeValues.NOW);
+    assertNull(cache.peek(KEY));
+    statistics()
+      .getCount.expect(1)
       .missCount.expect(1)
       .expectAllZero();
   }
@@ -223,6 +253,7 @@ public class BasicCacheOperationsTest {
   /*
    * contains
    */
+
   @Test
   public void contains() {
     assertFalse(cache.containsKey(KEY));
@@ -240,19 +271,30 @@ public class BasicCacheOperationsTest {
   /*
    * putIfAbsent()
    */
+
   @Test
   public void putIfAbsent() {
     cache.putIfAbsent(KEY, VALUE);
+    statistics()
+      .getCount.expect(1)
+      .missCount.expect(1)
+      .putCount.expect(1)
+      .expectAllZero();
     assertTrue(cache.containsKey(KEY));
     assertEquals(KEY, cache.peek(KEY));
+    statistics()
+      .getCount.expect(1)
+      .expectAllZero();
     cache.putIfAbsent(KEY, OTHER_VALUE);
+    statistics()
+      .getCount.expect(1)
+      .missCount.expect(0)
+      .putCount.expect(0)
+      .expectAllZero();
     assertTrue(cache.containsKey(KEY));
     assertEquals(VALUE, cache.peek(KEY));
   }
 
-  /*
-   * putIfAbsent()
-   */
   @Test
   public void putIfAbsent_Null() {
     cache.putIfAbsent(KEY, null);
@@ -263,12 +305,13 @@ public class BasicCacheOperationsTest {
   /*
    * peekAndPut
    */
+
   @Test
   public void peekAndPut() {
     Integer v = cache.peekAndPut(KEY, VALUE);
     assertNull(v);
     statistics()
-      .readCount.expect(1)
+      .getCount.expect(1)
       .missCount.expect(1)
       .putCount.expect(1)
       .expectAllZero();
@@ -276,7 +319,7 @@ public class BasicCacheOperationsTest {
     assertNotNull(v);
     assertEquals(VALUE, v);
     statistics()
-      .readCount.expect(1)
+      .getCount.expect(1)
       .missCount.expect(0)
       .putCount.expect(1)
       .expectAllZero();
@@ -294,7 +337,7 @@ public class BasicCacheOperationsTest {
     assertNull(v);
     assertTrue(cache.containsKey(KEY));
     statistics()
-      .readCount.expect(1)
+      .getCount.expect(1)
       .missCount.expect(1)
       .putCount.expect(1)
       .expectAllZero();
@@ -302,7 +345,7 @@ public class BasicCacheOperationsTest {
     assertNull(v);
     assertTrue(cache.containsKey(KEY));
     statistics()
-      .readCount.expect(1)
+      .getCount.expect(1)
       .missCount.expect(0)
       .putCount.expect(1)
       .expectAllZero();
@@ -319,6 +362,20 @@ public class BasicCacheOperationsTest {
     cache.peekAndPut(KEY, VALUE);
   }
 
+  @Test
+  public void peekAndPut_NotFresh() {
+    cache.put(KEY, VALUE);
+    cache.expireAt(KEY, ExpiryTimeValues.NOW);
+    statistics().reset();
+    Integer v = cache.peekAndPut(KEY, VALUE);
+    assertNull(v);
+    statistics()
+      .getCount.expect(1)
+      .missCount.expect(1)
+      .putCount.expect(1)
+      .expectAllZero();
+  }
+
   /*
    * peekAndRemove
    */
@@ -326,11 +383,28 @@ public class BasicCacheOperationsTest {
   @Test
   public void peekAndRemove() {
     Integer v = cache.peekAndRemove(KEY);
+    statistics()
+      .getCount.expect(1)
+      .missCount.expect(1)
+      .putCount.expect(0)
+      .expectAllZero();
     assertNull(v);
     assertFalse(cache.containsKey(KEY));
     cache.put(KEY, VALUE);
     assertTrue(cache.containsKey(KEY));
+    statistics()
+      .getCount.expect(0)
+      .missCount.expect(0)
+      .removeCount.expect(0)
+      .putCount.expect(1)
+      .expectAllZero();
     v = cache.peekAndRemove(KEY);
+    statistics()
+      .getCount.expect(1)
+      .missCount.expect(0)
+      .removeCount.expect(1)
+      .putCount.expect(0)
+      .expectAllZero();
     assertNotNull(v);
     assertFalse(cache.containsKey(KEY));
   }
@@ -357,6 +431,20 @@ public class BasicCacheOperationsTest {
       fail("exception expected");
     } catch (CacheLoaderException ex) {
     }
+  }
+
+  @Test
+  public void peekAndRemove_NotFresh() {
+    cache.put(KEY, VALUE);
+    cache.expireAt(KEY, ExpiryTimeValues.NOW);
+    statistics().reset();
+    Integer v = cache.peekAndRemove(KEY);
+    assertNull(v);
+    statistics()
+      .getCount.expect(1)
+      .missCount.expect(1)
+      .removeCount.expect(0)
+      .expectAllZero();
   }
 
   /*
@@ -792,20 +880,20 @@ public class BasicCacheOperationsTest {
     boolean f = cache.replace(KEY, VALUE);
     assertFalse(f);
     statistics()
-      .readCount.expect(1)
+      .getCount.expect(1)
       .missCount.expect(1)
       .expectAllZero();
     cache.put(KEY, VALUE);
     f = cache.replace(KEY, OTHER_VALUE);
     assertTrue(f);
     statistics()
-      .readCount.expect(1)
+      .getCount.expect(1)
       .missCount.expect(0)
       .putCount.expect(2)
       .expectAllZero();
     assertEquals(OTHER_VALUE, cache.peek(KEY));
     statistics()
-      .readCount.expect(1)
+      .getCount.expect(1)
       .missCount.expect(0)
       .putCount.expect(0)
       .expectAllZero();
