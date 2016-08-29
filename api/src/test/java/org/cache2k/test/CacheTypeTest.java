@@ -23,7 +23,10 @@ package org.cache2k.test;
 import org.cache2k.configuration.Cache2kConfiguration;
 import org.cache2k.configuration.CacheTypeCapture;
 import org.cache2k.configuration.CacheType;
+import org.cache2k.junit.FastTests;
 import org.junit.Test;
+import org.junit.experimental.categories.Category;
+
 import static org.junit.Assert.*;
 
 import java.beans.XMLDecoder;
@@ -32,6 +35,7 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.lang.reflect.GenericArrayType;
 import java.lang.reflect.ParameterizedType;
+import java.lang.reflect.Type;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -44,6 +48,7 @@ import java.util.Set;
  *
  * @author Jens Wilke
  */
+@Category(FastTests.class)
 public class CacheTypeTest {
 
   /**
@@ -53,9 +58,15 @@ public class CacheTypeTest {
   public void testIntArrayViaReflection() {
     CacheTypeCapture<int[]> vtt = new CacheTypeCapture<int[]>() {};
     ParameterizedType pt = (ParameterizedType) vtt.getClass().getGenericSuperclass();
-    Class c = (Class) pt.getActualTypeArguments()[0];
-    assertTrue(c.isArray());
-    assertEquals(int.class, c.getComponentType());
+    Type t = pt.getActualTypeArguments()[0];
+    if (t instanceof Class) {
+      Class c = (Class) t;
+      assertTrue(c.isArray());
+      assertEquals(int.class, c.getComponentType());
+    } else {
+      GenericArrayType at = (GenericArrayType) t;
+      assertEquals(int.class, at.getGenericComponentType());
+    }
   }
 
   /**
