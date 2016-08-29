@@ -18,8 +18,6 @@ Modifications in the statistics output will not listed as breakage.
 If something is listed here it might affect an existing application and updating is recommended.
 
 - OSGi: Add missing export of package `org.cache2k.configuration`
-- make eternal default, there is no need to specify either `eternal` or `expiryAfterWrite` any 
-  more explicitly, closes: https://github.com/cache2k/cache2k/issues/21
 - Fix size methods (was stack overflow): `Cache.asMap().values().size()`, `Cache.asMap().entrySet().size()`, `Cache.asMap().keySet().size()`, 
   closes: https://github.com/cache2k/cache2k/issues/51
 - `Cache.asMap()`: Fix `equals()` implementation, correct optional `null` support
@@ -28,6 +26,9 @@ If something is listed here it might affect an existing application and updating
 
 ## Fixes and Improvements
 
+- improve robustness for close() / improve consistent behavior and avoid misleading exceptions when a closing/close cache is accessed
  
 ## API Changes and new methods
 
+- Complete semantic change: make eternal default, there is no need to specify either `eternal` or `expiryAfterWrite` any 
+  more explicitly, closes: https://github.com/cache2k/cache2k/issues/21
