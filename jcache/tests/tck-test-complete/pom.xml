@@ -15,8 +15,7 @@
     <name>Test with original TCK tests</name>
     <url>https://github.com/jsr107/jsr107tck</url>
     <description>
-      Wires together cache-tests with the RI implementation and runs
-        JUnit against them.
+      Wires together cache-tests with the RI implementation and runs JUnit against them.
     </description>
 
     <dependencies>
@@ -125,6 +124,7 @@
                 <artifactId>maven-surefire-plugin</artifactId>
                 <!-- version inherited -->
                 <configuration>
+                    <parallel>false</parallel>
                     <systemPropertyVariables>
                         <java.net.preferIPv4Stack>${java.net.preferIPv4Stack}</java.net.preferIPv4Stack>
                         <domainJar>${domain-lib-dir}/${domain-jar}</domainJar>
