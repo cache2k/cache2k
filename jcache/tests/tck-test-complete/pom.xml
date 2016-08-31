@@ -124,7 +124,9 @@
                 <artifactId>maven-surefire-plugin</artifactId>
                 <!-- version inherited -->
                 <configuration>
-                    <parallel>false</parallel>
+                    <!-- turn of parallel tests, if enabled -->
+                    <threadCount>1</threadCount>
+                    <perCoreThreadCount>false</perCoreThreadCount>
                     <systemPropertyVariables>
                         <java.net.preferIPv4Stack>${java.net.preferIPv4Stack}</java.net.preferIPv4Stack>
                         <domainJar>${domain-lib-dir}/${domain-jar}</domainJar>

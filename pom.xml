@@ -116,7 +116,7 @@
             <excludedGroups>org.cache2k.junit.StorageTests,org.cache2k.junit.TimingTests</excludedGroups>
             <runOrder>random</runOrder>
             <parallel>classes</parallel>
-            <threadCount>2</threadCount>
+            <threadCount>1</threadCount>
             <perCoreThreadCount>true</perCoreThreadCount>
             <systemPropertyVariables>
               <org.cache2k.core.HeapCache.Tunable.sharpExpirySafetyGapMillis>7654</org.cache2k.core.HeapCache.Tunable.sharpExpirySafetyGapMillis>

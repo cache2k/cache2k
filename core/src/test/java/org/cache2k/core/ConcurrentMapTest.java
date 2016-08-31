@@ -37,7 +37,7 @@ import java.util.concurrent.ConcurrentMap;
  */
 public class ConcurrentMapTest {
 
-  static ConcurrentMap<Integer, String> map;
+  ConcurrentMap<Integer, String> map;
 
   @Before
   public void setUp() {
@@ -46,7 +46,6 @@ public class ConcurrentMapTest {
 
   @After
   public void tearDown() {
-    map.clear();
     map = null;
   }
 
