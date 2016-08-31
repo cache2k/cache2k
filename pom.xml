@@ -112,6 +112,9 @@
             <trimStackTrace>false</trimStackTrace>
             <excludedGroups>org.cache2k.junit.StorageTests,org.cache2k.junit.TimingTests</excludedGroups>
             <runOrder>random</runOrder>
+            <systemPropertyVariables>
+              <org.cache2k.core.HeapCache.Tunable.sharpExpirySafetyGapMillis>7654</org.cache2k.core.HeapCache.Tunable.sharpExpirySafetyGapMillis>
+            </systemPropertyVariables>
           </configuration>
         </plugin>
 
