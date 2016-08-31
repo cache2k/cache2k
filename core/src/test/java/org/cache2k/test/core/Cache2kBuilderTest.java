@@ -26,6 +26,7 @@ import org.cache2k.CacheManager;
 import org.cache2k.configuration.CacheTypeCapture;
 import org.cache2k.core.util.Log;
 import org.cache2k.junit.FastTests;
+import static org.cache2k.test.core.StaticUtil.*;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
@@ -237,6 +238,34 @@ public class Cache2kBuilderTest {
     assertEquals(CLASSNAME + ".cacheNameDisambiguation~1", c1.getName());
     c0.close();
     c1.close();
+  }
+
+  @Test
+  public void cacheCapacity10() {
+    Cache c0 = Cache2kBuilder.forUnknownTypes()
+      .entryCapacity(10)
+      .build();
+    assertEquals(10, latestInfo(c0).getHeapCapacity());
+    c0.close();
+  }
+
+  @Test
+  public void cacheCapacityDefault2000() {
+    Cache c0 = Cache2kBuilder.forUnknownTypes().build();
+    assertEquals(2000, latestInfo(c0).getHeapCapacity());
+    c0.close();
+  }
+
+  /**
+   * Check that long is getting through completely.
+   */
+  @Test
+  public void cacheCapacityUnlimitedLongMaxValue() {
+    Cache c0 = Cache2kBuilder.forUnknownTypes()
+      .entryCapacity(Long.MAX_VALUE)
+      .build();
+    assertEquals(Long.MAX_VALUE, latestInfo(c0).getHeapCapacity());
+    c0.close();
   }
 
   static class BuildCacheInConstructor0 {

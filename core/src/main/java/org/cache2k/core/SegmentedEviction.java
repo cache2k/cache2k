@@ -216,7 +216,11 @@ public class SegmentedEviction implements Eviction, EvictionMetrics {
   public long getMaxSize() {
     long sum = 0;
     for (Eviction ev : segments) {
-      sum += ev.getMetrics().getMaxSize();
+      long l = ev.getMetrics().getMaxSize();
+      if (l == Long.MAX_VALUE) {
+        return Long.MAX_VALUE;
+      }
+      sum += l;
     }
     return sum;
   }

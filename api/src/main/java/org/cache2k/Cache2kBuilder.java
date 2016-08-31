@@ -260,7 +260,12 @@ public class Cache2kBuilder<K, V> implements Cloneable {
   /**
    * The maximum number of entries hold by the cache. When the maximum size is reached, by
    * inserting new entries, the cache eviction algorithm will remove one or more entries
-   * to keep the size within the configured limit. The default value is: 2000.
+   * to keep the size within the configured limit.
+   *
+   * <p>The value {@code Long.MAX_VALUE} means the capacity is not limited.
+   *
+   * <p>The default value is: 2000. The default value is conservative, so the application
+   * will usually run stable without tuning or setting a reasonable size.
    */
   public final Cache2kBuilder<K, V> entryCapacity(long v) {
     config.setEntryCapacity(v);

@@ -325,7 +325,7 @@ class CacheBaseInfo implements InternalCacheInfo {
   public String toString() {
     return "Cache{" + heapCache.name + "}("
             + "size=" + getSize() + ", "
-            + "capacity=" + getHeapCapacity() + ", "
+            + "capacity=" + (getHeapCapacity() != Long.MAX_VALUE ? getHeapCapacity() : "unlimited") + ", "
             + "get=" + getGetCount() + ", "
             + "miss=" + getMissCount() + ", "
             + "put=" + getPutCount() + ", "

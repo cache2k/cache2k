@@ -318,7 +318,9 @@ public class InternalCache2kBuilder<K, T> {
     _segmentCount = Math.min(_segmentCount, _maxSegments);
     Eviction[] _segments = new Eviction[_segmentCount];
     long _maxSize = config.getEntryCapacity() / _segmentCount;
-    if (config.getEntryCapacity() % _segmentCount > 0) {
+    if (config.getEntryCapacity() == Long.MAX_VALUE) {
+      _maxSize = Long.MAX_VALUE;
+    } else if (config.getEntryCapacity() % _segmentCount > 0) {
       _maxSize++;
     }
     for (int i = 0; i < _segments.length; i++) {
