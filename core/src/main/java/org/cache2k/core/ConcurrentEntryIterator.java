@@ -100,7 +100,12 @@ public class ConcurrentEntryIterator<K,V> implements Iterator<Entry<K,V>> {
     if (hashArray == null) {
       return null;
     }
-    if (wasCleared()) {
+    if (needsAbort()) {
+      if (hash != null && hash.isClosed()) {
+        clearOutReferences();
+        throw new CacheClosedException();
+      }
+      clearOutReferences();
       return null;
     }
     int idx = 0;
@@ -134,8 +139,8 @@ public class ConcurrentEntryIterator<K,V> implements Iterator<Entry<K,V>> {
     }
   }
 
-  private boolean wasCleared() {
-    return clearCount != hash.getClearCount();
+  private boolean needsAbort() {
+    return clearCount != hash.getClearOrCloseCount();
   }
 
   private Entry<K,V> checkIteratedOrNext(Entry<K,V> e) {
@@ -150,6 +155,11 @@ public class ConcurrentEntryIterator<K,V> implements Iterator<Entry<K,V>> {
     return null;
   }
 
+  /**
+   * Check for expansion and abort criteria.
+   *
+   * @return true, if iteration should abort
+   */
   private boolean switchAndCheckAbort() {
     if (Thread.holdsLock(cache.lock)) {
       return switchCheckAndAbortLocked();
@@ -164,18 +174,34 @@ public class ConcurrentEntryIterator<K,V> implements Iterator<Entry<K,V>> {
 
   /**
    * Check for expansion and abort criteria.
+   *
+   * @return true, if iteration should abort
    */
   private Boolean switchCheckAndAbortLocked() {
     if (!hasExpansionOccurred()) {
+      clearOutReferences();
       return true;
     }
     hashArray = hash.getEntries();
-    clearCount = hash.getClearCount();
+    clearCount = hash.getClearOrCloseCount();
     boolean _cacheClosed = hashArray == null;
     if (_cacheClosed) {
-      return true;
+      clearOutReferences();
+      throw new CacheClosedException();
     }
     return false;
+  }
+
+  /**
+   * At the end or at an iteration abort, clear the references. This is a memory leak protection:
+   * if this is not happening a kept reference to an iterator may prevent the whole cache from
+   * being garbage collected.
+   */
+  private void clearOutReferences() {
+    cache = null;
+    hash = null;
+    hashArray = null;
+    seen = null;
   }
 
   /**

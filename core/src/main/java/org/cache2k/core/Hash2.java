@@ -45,7 +45,11 @@ public class Hash2<K,V> {
     LOCK_MASK = LOCK_SEGMENTS - 1;
   }
 
-  private int clearCount = 0;
+  /**
+   * Counts clear and close operation on the hash. Needed for the iterator to detect the need for an abort.
+   */
+  private volatile int clearOrCloseCount = 0;
+  private volatile boolean closed = false;
   private long maxFill;
   private Entry<K,V>[] entries;
   private final OptimisticLock[] locks;
@@ -454,12 +458,12 @@ public class Hash2<K,V> {
     for (AtomicLong aSegmentSize : segmentSize) {
       aSegmentSize.set(0);
     }
-    clearCount++;
+    clearOrCloseCount++;
     initArray();
   }
 
-  public int getClearCount() {
-    return clearCount;
+  public int getClearOrCloseCount() {
+    return clearOrCloseCount;
   }
 
   /**
@@ -470,7 +474,9 @@ public class Hash2<K,V> {
    * the implicit null check and has no additional overhead.
    */
   public void close() {
+    clearOrCloseCount++;
     entries = null;
+    closed = true;
   }
 
   public void calcHashCollisionInfo(CollisionInfo inf) {
@@ -514,6 +520,10 @@ public class Hash2<K,V> {
    */
   public Entry<K,V>[] getEntries() {
     return entries;
+  }
+
+  public boolean isClosed() {
+    return closed;
   }
 
 }

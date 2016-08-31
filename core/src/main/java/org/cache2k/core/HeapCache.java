@@ -507,7 +507,7 @@ public class HeapCache<K, V>
     @Override
     public void remove() {
       if (lastEntry == null) {
-        throw new IllegalStateException("hasNext() / next() not called or end of iteration reached");
+        throw new IllegalStateException("Unable to remove, hasNext() / next() not called or end of iteration reached");
       }
       cache.remove(lastEntry.getKey());
     }

@@ -25,12 +25,13 @@ import org.cache2k.Cache2kBuilder;
 import org.cache2k.CacheEntry;
 import org.cache2k.core.CacheClosedException;
 import org.cache2k.junit.FastTests;
-import org.junit.Ignore;
+import org.junit.After;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.NoSuchElementException;
 import java.util.Set;
 
 import static org.junit.Assert.*;
@@ -43,9 +44,18 @@ import static org.junit.Assert.*;
 @Category(FastTests.class)
 public class IteratorTest {
 
+  Cache<Integer, Integer> cache;
+
+  @After
+  public void tearDown() {
+    if (cache != null) {
+      cache.close();
+    }
+  }
+
   @Test
   public void testExpansion() {
-    Cache<Integer, Integer> c = setupCache();
+    Cache<Integer, Integer> c = createCacheWith20Entries();
     Iterator<CacheEntry<Integer,Integer>> it = c.entries().iterator();
     Set<Integer> _keysSeen = new HashSet<Integer>();
     while (it.hasNext()) {
@@ -64,15 +74,37 @@ public class IteratorTest {
       _keysSeen.add(e.getKey());
     }
     assertTrue(_keysSeen.contains(19));
-    c.close();
   }
 
-  private Cache<Integer, Integer> setupCache() {
-    Cache<Integer, Integer> c = Cache2kBuilder
+  @Test
+  public void testIterateEmpty_hasNext() {
+    Cache<Integer, Integer> c = createEmptyCache();
+    Iterator<CacheEntry<Integer,Integer>> it = c.entries().iterator();
+    assertFalse(it.hasNext());
+    assertFalse(it.hasNext());
+    assertFalse(it.hasNext());
+    assertFalse(it.hasNext());
+    assertFalse(it.hasNext());
+    assertFalse(it.hasNext());
+  }
+
+  @Test(expected = NoSuchElementException.class)
+  public void testIterateEmpty_next() {
+    Cache<Integer, Integer> c = createEmptyCache();
+    Iterator<CacheEntry<Integer,Integer>> it = c.entries().iterator();
+    it.next();
+  }
+
+  private Cache<Integer, Integer> createEmptyCache() {
+    return cache = Cache2kBuilder
       .of(Integer.class, Integer.class)
       .eternal(true)
       .entryCapacity(10000)
       .build();
+  }
+
+  private Cache<Integer, Integer> createCacheWith20Entries() {
+    Cache<Integer, Integer> c = createEmptyCache();
     for (int i = 0; i < 20; i++) {
       c.put(i,i);
     }
@@ -81,7 +113,7 @@ public class IteratorTest {
 
   @Test
   public void keyIteration() {
-    Cache<Integer, Integer> c = setupCache();
+    Cache<Integer, Integer> c = createCacheWith20Entries();
     Set<Integer> _keysSeen = new HashSet<Integer>();
     for (Integer i : c.keys()) {
       _keysSeen.add(i);
@@ -91,9 +123,8 @@ public class IteratorTest {
   }
 
   @Test(expected = CacheClosedException.class)
-  @Ignore("iterator needs to detect close()")
   public void testClose() {
-    Cache<Integer, Integer> c = setupCache();
+    Cache<Integer, Integer> c = createCacheWith20Entries();
     Iterator<CacheEntry<Integer,Integer>> it = c.entries().iterator();
     Set<Integer> _keysSeen = new HashSet<Integer>();
     while (it.hasNext()) {
@@ -104,7 +135,9 @@ public class IteratorTest {
       }
     }
     c.close();
-    it.hasNext();
+    assertTrue(it.hasNext());
+    CacheEntry<Integer, Integer> e = it.next();
+    assertNotNull(e);
   }
 
 }

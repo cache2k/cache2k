@@ -26,8 +26,10 @@ If something is listed here it might affect an existing application and updating
 
 ## Fixes and Improvements
 
-- improve robustness for close() / improve consistent behavior and avoid misleading exceptions when a closing/close cache is accessed
+- improve robustness for `close()` / improve consistent behavior and avoid misleading exceptions when a closing/close cache is accessed
 - `Cache2kBuilder.entryCapacity(Long.MAX_VALUE)` means capacity is unlimited. Fixed internal integer overflows when this is used.
+- improve entry iterator: Immediately throws a `CacheClosedExcetpion` when the cache gets closed during an iteration. Clear out
+  internal references of the iterator at the end of iteration to prevent memory leaks.
  
 ## API Changes and new methods
 
