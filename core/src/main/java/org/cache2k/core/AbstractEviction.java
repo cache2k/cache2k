@@ -35,6 +35,7 @@ public abstract class AbstractEviction implements Eviction, EvictionMetrics {
   private static final long MINIMUM_CAPACITY_FOR_CHUNKING = 1000;
 
   protected final long maxSize;
+  protected final long correctedMaxSize;
   protected final HeapCache heapCache;
   private final Object lock = new Object();
   private long newEntryCounter;
@@ -61,6 +62,14 @@ public abstract class AbstractEviction implements Eviction, EvictionMetrics {
       chunkSize = Math.min(MAXIMAL_CHUNK_SIZE, chunkSize);
     }
     noListenerCall = _listener instanceof HeapCacheListener.NoOperation;
+    /**
+     * Avoid integer overflow when calculating with the max size.
+     */
+    if (maxSize == Long.MAX_VALUE) {
+      correctedMaxSize = Long.MAX_VALUE >> 1;
+    } else {
+      correctedMaxSize = maxSize;
+    }
   }
 
   @Override
@@ -121,7 +130,7 @@ public abstract class AbstractEviction implements Eviction, EvictionMetrics {
    * kicks later.
    */
   boolean evictionNeeded() {
-    return getSize() > (maxSize + evictionRunningCount + chunkSize / 2);
+    return getSize() > (correctedMaxSize + evictionRunningCount + chunkSize / 2);
   }
 
   @Override
