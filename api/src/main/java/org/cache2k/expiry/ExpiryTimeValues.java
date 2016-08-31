@@ -26,6 +26,9 @@ package org.cache2k.expiry;
  * as well as {@link org.cache2k.Cache#expireAt(Object, long)}.
  *
  * @author Jens Wilke
+ * @see ExpiryPolicy
+ * @see org.cache2k.integration.ResiliencePolicy
+ * @see org.cache2k.Cache#expireAt
  */
 public interface ExpiryTimeValues {
 
