@@ -44,7 +44,7 @@ public interface CacheType<T> {
    */
   boolean hasTypeArguments();
 
-  /* This type is an array. */
+  /** This type is an array. */
   boolean isArray();
 
   /** The component type in case of an array */
