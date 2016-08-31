@@ -499,8 +499,9 @@
               <groups>org.cache2k.junit.SlowTests</groups>
               <excludedGroups>org.cache2k.junit.StorageTests,org.cache2k.junit.TimingTests</excludedGroups>
               <parallel>classes</parallel>
-              <threadCount>5</threadCount>
-              <argLine>-Xmx128m -XX:+HeapDumpOnOutOfMemoryError -XX:+PrintGCDetails</argLine>
+              <perCoreThreadCount>true</perCoreThreadCount>
+              <threadCount>1</threadCount>
+              <argLine>-Xmx128m -XX:+HeapDumpOnOutOfMemoryError -XX:+PrintGCDetails -XX:OnOutOfMemoryError="kill -3 %p"</argLine>
               <!-- make this test more verbose to investigate a VM crash
               <argLine>-XX:+HeapDumpOnOutOfMemoryError -XX:+PrintGC -XX:+PrintCompilation</argLine>
                -->
