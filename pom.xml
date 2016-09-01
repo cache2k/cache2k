@@ -75,6 +75,7 @@
           <artifactId>maven-compiler-plugin</artifactId>
           <version>3.5.1</version>
           <configuration>
+            <useIncrementalCompilation>false</useIncrementalCompilation>
             <source>1.6</source>
             <target>1.6</target>
           </configuration>
