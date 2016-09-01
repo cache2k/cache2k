@@ -285,11 +285,11 @@ public class StandardCommonMetrics implements CommonMetrics.Updater {
     return refreshHitUpdater.get(this);
   }
   @Override
-  public void refreshHit() {
+  public void refreshedHit() {
     refreshHitUpdater.incrementAndGet(this);
   }
   @Override
-  public void refreshHit(final long cnt) {
+  public void refreshedHit(final long cnt) {
     refreshHitUpdater.addAndGet(this, cnt);
   }
 
@@ -297,15 +297,15 @@ public class StandardCommonMetrics implements CommonMetrics.Updater {
     AtomicLongFieldUpdater.newUpdater(StandardCommonMetrics.class, "refreshSubmitFailed");
   private volatile long refreshSubmitFailed;
   @Override
-  public long getRefreshSubmitFailedCount() {
+  public long getRefreshFailedCount() {
     return refreshSubmitFailedUpdater.get(this);
   }
   @Override
-  public void refreshSubmitFailed() {
+  public void refreshFailed() {
     refreshSubmitFailedUpdater.incrementAndGet(this);
   }
   @Override
-  public void refreshSubmitFailed(final long cnt) {
+  public void refreshFailed(final long cnt) {
     refreshSubmitFailedUpdater.addAndGet(this, cnt);
   }
 

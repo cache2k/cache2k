@@ -423,7 +423,7 @@ public abstract class EntryAction<K, V, R> implements
   }
 
   public void reviveRefreshedEntry(long nrt) {
-    metrics().refreshHit();
+    metrics().refreshedHit();
     Entry<K, V> e = entry;
     newValueOrException = e.getValue();
     lastModificationTime = e.getLastModification();

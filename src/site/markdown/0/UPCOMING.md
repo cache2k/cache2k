@@ -31,6 +31,7 @@ If something is listed here it might affect an existing application and updating
 - improve entry iterator: Immediately throws a `CacheClosedExcetpion` when the cache gets closed during an iteration. Clear out
   internal references of the iterator at the end of iteration to prevent memory leaks.
 - Rename JMX property: `getRefreshHitCnt` -> `getRefreshedHitCnt`  
+- Rename JMX property: `getRefreshSubmitFailedCnt` -> `getRefreshFailedCnt`  
  
 ## API Changes and new methods
 

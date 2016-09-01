@@ -704,7 +704,7 @@ public class WiredCache<K, V> extends AbstractCache<K, V>
           return;
         } catch (RejectedExecutionException ignore) {
         }
-        metrics().refreshSubmitFailed();
+        metrics().refreshFailed();
       expireOrScheduleFinalExpireEvent(e);
     }
   }

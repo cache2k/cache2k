@@ -78,10 +78,10 @@ public interface CacheInfoMXBean {
   long getRefreshCnt();
 
   /**
-   * Counter how many times a refresh submit failed, meaning that there were
+   * Counter how many times a refresh failed, because there were
    * not enough thread resources available.
    */
-  long getRefreshSubmitFailedCnt();
+  long getRefreshFailedCnt();
 
   /**
    * How many times we had a hit on a refreshed entry.

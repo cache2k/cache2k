@@ -138,9 +138,9 @@ public interface CommonMetrics {
    * Refresh submit failed. Happens if the loader executor has not
    * enough available resources and rejects the refresh task.
    *
-   * @see CommonMetrics#getRefreshSubmitFailedCount()
+   * @see CommonMetrics#getRefreshFailedCount()
    */
-  long getRefreshSubmitFailedCount();
+  long getRefreshFailedCount();
 
   /**
    * Entry was removed while waiting to get the mutation lock.
@@ -200,11 +200,11 @@ public interface CommonMetrics {
     void peekHitNotFresh();
     void peekHitNotFresh(long cnt);
 
-    void refreshHit();
-    void refreshHit(long cnt);
+    void refreshedHit();
+    void refreshedHit(long cnt);
 
-    void refreshSubmitFailed();
-    void refreshSubmitFailed(long cnt);
+    void refreshFailed();
+    void refreshFailed(long cnt);
 
     void goneSpin();
     void goneSpin(long cnt);
@@ -359,22 +359,22 @@ public interface CommonMetrics {
     }
 
     @Override
-    public void refreshHit() {
+    public void refreshedHit() {
 
     }
 
     @Override
-    public void refreshHit(final long cnt) {
+    public void refreshedHit(final long cnt) {
 
     }
 
     @Override
-    public void refreshSubmitFailed() {
+    public void refreshFailed() {
 
     }
 
     @Override
-    public void refreshSubmitFailed(final long cnt) {
+    public void refreshFailed(final long cnt) {
 
     }
 
@@ -474,7 +474,7 @@ public interface CommonMetrics {
     }
 
     @Override
-    public long getRefreshSubmitFailedCount() {
+    public long getRefreshFailedCount() {
       return 0;
     }
 

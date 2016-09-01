@@ -1372,7 +1372,7 @@ public class HeapCache<K, V>
 
   private void reviveRefreshedEntry(final Entry<K, V> e, final long _nrt) {
     synchronized (e) {
-      metrics.refreshHit();
+      metrics.refreshedHit();
       finishLoadOrEviction(e, _nrt);
     }
   }
@@ -1516,7 +1516,7 @@ public class HeapCache<K, V>
         return;
       } catch (RejectedExecutionException ignore) {
       }
-      metrics.refreshSubmitFailed();
+      metrics.refreshFailed();
       expireOrScheduleFinalExpireEvent(e);
     }
   }

@@ -70,8 +70,8 @@ public class CacheMXBeanImpl implements CacheMXBean {
   }
 
   @Override
-  public long getRefreshSubmitFailedCnt() {
-    return getInfo().getRefreshSubmitFailedCount();
+  public long getRefreshFailedCnt() {
+    return getInfo().getRefreshFailedCount();
   }
 
   @Override
