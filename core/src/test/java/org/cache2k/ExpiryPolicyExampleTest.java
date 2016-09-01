@@ -21,6 +21,7 @@ package org.cache2k;
  */
 
 import org.cache2k.integration.CacheLoader;
+import org.junit.After;
 import org.junit.Test;
 
 /**
@@ -29,7 +30,7 @@ import org.junit.Test;
 public class ExpiryPolicyExampleTest {
 
   Cache<String, String> routeToAirline = new Cache2kBuilder<String, String>() {}
-    .name("routeToAirline")
+    .name(this + "-routeToAirline")
     .eternal(true)
     .loader(new CacheLoader<String, String>() {
       @Override
@@ -39,6 +40,11 @@ public class ExpiryPolicyExampleTest {
       }
     })
     .build();
+
+  @After
+  public void tearDown() {
+    routeToAirline.close();
+  }
 
   private String findFavoriteAirline(String origin, String destination) {
     return "People Air";

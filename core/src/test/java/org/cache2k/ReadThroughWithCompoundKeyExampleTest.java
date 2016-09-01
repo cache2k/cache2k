@@ -32,7 +32,7 @@ import org.junit.Test;
 public class ReadThroughWithCompoundKeyExampleTest {
 
   Cache<Route, String> routeToAirline = new Cache2kBuilder<Route, String>() {}
-    .name("routeToAirline")
+    .name(this + "-routeToAirline")
     .eternal(true)
     .loader(new CacheLoader<Route, String>() {
       @Override
