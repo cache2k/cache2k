@@ -22,7 +22,7 @@ If something is listed here it might affect an existing application and updating
 - `Cache.asMap()`: Fix `equals()` implementation, correct optional `null` support
 - Dropped separate usage counter. Use read usage (get) or write usage (put) counters.
 - Simplified metric gathering, removed superfluous counters
-- Fix unnecessary hash table growth on concurrent inserts
+- Fix unnecessary hash table growth when concurrent inserts in different segments each trigger an expand
 
 ## Fixes and Improvements
 
