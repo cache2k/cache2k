@@ -67,7 +67,7 @@ public interface Eviction {
    * Drain eviction queue and do updates in the eviction data structures.
    * Does no eviction when size limit is reached.
    *
-   * @boolean true, if eviction is needed
+   * @return true, if eviction is needed
    */
   boolean drain();
 
