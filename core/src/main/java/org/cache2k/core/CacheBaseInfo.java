@@ -159,7 +159,7 @@ class CacheBaseInfo implements InternalCacheInfo {
   @Override
   public long getLoadExceptionCount() { return metrics.getLoadExceptionCount() + metrics.getSuppressedExceptionCount(); }
   @Override
-  public long getRefreshHitCount() { return metrics.getRefreshHitCount(); }
+  public long getRefreshedHitCount() { return metrics.getRefreshedHitCount(); }
   @Override
   public long getExpiredCount() { return expiredRemoveCnt + metrics.getExpiredKeptCount(); }
   @Override
@@ -338,7 +338,7 @@ class CacheBaseInfo implements InternalCacheInfo {
             + "heapHit=" + getHeapHitCount() + ", "
             + "refreshCnt=" + getRefreshCount() + ", "
             + "refreshSubmitFailed=" + getRefreshSubmitFailedCount() + ", "
-            + "refreshHit=" + getRefreshHitCount() + ", "
+            + "refreshedHit=" + getRefreshedHitCount() + ", "
             + "loadException=" + getLoadExceptionCount() + ", "
             + "suppressedException=" + getSuppressedExceptionCount() + ", "
             + "new=" + getNewEntryCount() + ", "

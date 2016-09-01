@@ -75,8 +75,8 @@ public class CacheMXBeanImpl implements CacheMXBean {
   }
 
   @Override
-  public long getRefreshHitCnt() {
-    return getInfo().getRefreshHitCount();
+  public long getRefreshedHitCnt() {
+    return getInfo().getRefreshedHitCount();
   }
 
   @Override

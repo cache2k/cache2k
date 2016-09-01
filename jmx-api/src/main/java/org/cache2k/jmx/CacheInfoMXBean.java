@@ -86,7 +86,7 @@ public interface CacheInfoMXBean {
   /**
    * How many times we had a hit on a refreshed entry.
    */
-  long getRefreshHitCnt();
+  long getRefreshedHitCnt();
 
   /**
    * Counter for the event that data in the cache has expired.

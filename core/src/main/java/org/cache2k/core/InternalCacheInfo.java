@@ -139,9 +139,9 @@ public interface InternalCacheInfo {
    * A previously refreshed entry was accessed. The access is only counted once after a refresh operation,
    * so the ration of refresh and refreshed hit is the efficiency of the refresh operation.
    *
-   * @see CommonMetrics#getRefreshHitCount()
+   * @see CommonMetrics#getRefreshedHitCount()
    */
-  long getRefreshHitCount();
+  long getRefreshedHitCount();
 
   /**
    * Counts entries that expired. This counter includes removed entries from the cache and

@@ -281,7 +281,7 @@ public class StandardCommonMetrics implements CommonMetrics.Updater {
     AtomicLongFieldUpdater.newUpdater(StandardCommonMetrics.class, "refreshHit");
   private volatile long refreshHit;
   @Override
-  public long getRefreshHitCount() {
+  public long getRefreshedHitCount() {
     return refreshHitUpdater.get(this);
   }
   @Override

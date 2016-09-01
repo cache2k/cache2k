@@ -130,9 +130,9 @@ public interface CommonMetrics {
   /**
    * Entry on probation for refresh got hit.
    *
-   * @see InternalCacheInfo#getRefreshHitCount()
+   * @see InternalCacheInfo#getRefreshedHitCount()
    */
-  long getRefreshHitCount();
+  long getRefreshedHitCount();
 
   /**
    * Refresh submit failed. Happens if the loader executor has not
@@ -469,7 +469,7 @@ public interface CommonMetrics {
     }
 
     @Override
-    public long getRefreshHitCount() {
+    public long getRefreshedHitCount() {
       return 0;
     }
 
