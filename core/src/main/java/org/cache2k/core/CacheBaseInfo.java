@@ -193,6 +193,9 @@ class CacheBaseInfo implements InternalCacheInfo {
   /** How many items will be accessed with collision */
   @Override
   public int getNoCollisionPercentage() {
+    if (size == 0) {
+      return 100;
+    }
     return
       (int) ((size - collisionInfo.collisionCnt) * 100 / size);
   }
@@ -323,7 +326,7 @@ class CacheBaseInfo implements InternalCacheInfo {
     return clearCnt;
   }
 
-  public long getClearRemovedCount() {
+  public long getRemoveByClearCount() {
     return clearRemovedCnt;
   }
 
@@ -348,7 +351,7 @@ class CacheBaseInfo implements InternalCacheInfo {
             + "expire=" + getExpiredCount() + ", "
             + "remove=" + getRemovedCount() + ", "
             + "clear=" + getClearCount() + ", "
-            + "removeByClear=" + getClearRemovedCount() + ", "
+            + "removeByClear=" + getRemoveByClearCount() + ", "
             + "evict=" + getEvictedCount() + ", "
             + "timer=" + getTimerEventCount() + ", "
             + "goneSpin=" + getGoneSpinCount() + ", "
@@ -380,7 +383,7 @@ class CacheBaseInfo implements InternalCacheInfo {
     if (val < 0) {
       return "-";
     }
-    DecimalFormat f = new DecimalFormat(".###");
+    DecimalFormat f = new DecimalFormat("#.###");
     return f.format(val);
   }
 

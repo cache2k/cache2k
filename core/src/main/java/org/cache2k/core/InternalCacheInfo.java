@@ -170,7 +170,7 @@ public interface InternalCacheInfo {
    * Removed entries, because of programmatic removal. Removal of entries by clear is
    * counted separately. Provided by the eviction implementation.
    *
-   * @see #getClearRemovedCount()
+   * @see #getRemoveByClearCount()
    * @see EvictionMetrics#getRemovedCount()
    */
   long getRemovedCount();
@@ -188,7 +188,7 @@ public interface InternalCacheInfo {
    *
    * @see Cache#clear()
    */
-  long getClearRemovedCount();
+  long getRemoveByClearCount();
 
   /**
    * Number of calls to {@code clear} this cache has received.
