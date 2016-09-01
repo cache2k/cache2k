@@ -296,7 +296,9 @@ public abstract class AbstractEviction implements Eviction, EvictionMetrics {
 
   @Override
   public String getExtraStatistics() {
-    return "chunkSize=" + chunkSize;
+    return
+      "impl=" + this.getClass().getSimpleName() +
+      ", chunkSize=" + chunkSize;
   }
 
 }

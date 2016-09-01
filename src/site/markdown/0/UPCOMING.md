@@ -32,6 +32,7 @@ If something is listed here it might affect an existing application and updating
   internal references of the iterator at the end of iteration to prevent memory leaks.
 - Rename JMX property: `getRefreshHitCnt` -> `getRefreshedHitCnt`  
 - Rename JMX property: `getRefreshSubmitFailedCnt` -> `getRefreshFailedCnt`  
+- Limit loader latency value to three fractions in toString() result, thus avoid: msecs/load=833.2831546786805
  
 ## API Changes and new methods
 

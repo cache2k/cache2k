@@ -167,7 +167,7 @@ public interface CacheInfoMXBean {
   long getTotalLoadMillis();
 
   /**
-   * Implementation class of the cache which controls the eviction strategy.
+   * Implementation class of the cache.
    */
   String getImplementation();
 

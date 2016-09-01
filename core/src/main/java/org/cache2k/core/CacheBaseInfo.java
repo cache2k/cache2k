@@ -20,6 +20,7 @@ package org.cache2k.core;
  * #L%
  */
 
+import java.text.DecimalFormat;
 import java.util.concurrent.ThreadPoolExecutor;
 
 import static org.cache2k.core.util.Util.formatMillis;
@@ -34,6 +35,7 @@ class CacheBaseInfo implements InternalCacheInfo {
   private CommonMetrics metrics;
   private StorageMetrics storageMetrics = StorageMetrics.DUMMY;
   private HeapCache heapCache;
+  private InternalCache cache;
   private long size;
   private long infoCreatedTime;
   private int infoCreationDeltaMs;
@@ -67,7 +69,8 @@ class CacheBaseInfo implements InternalCacheInfo {
 
   public CacheBaseInfo(HeapCache _heapCache, InternalCache _userCache, long now) {
     infoCreatedTime = now;
-    this.heapCache = _heapCache;
+    cache = _userCache;
+    heapCache = _heapCache;
     metrics = _heapCache.metrics;
     EvictionMetrics em = _heapCache.eviction.getMetrics();
     newEntryCnt = em.getNewEntryCount();
@@ -115,7 +118,7 @@ class CacheBaseInfo implements InternalCacheInfo {
   @Override
   public String getName() { return heapCache.name; }
   @Override
-  public String getImplementation() { return heapCache.getClass().getSimpleName(); }
+  public String getImplementation() { return cache.getClass().getSimpleName(); }
 
   @Override
   public long getReloadCount() {
@@ -350,7 +353,7 @@ class CacheBaseInfo implements InternalCacheInfo {
             + "timer=" + getTimerEventCount() + ", "
             + "goneSpin=" + getGoneSpinCount() + ", "
             + "hitRate=" + getHitRateString() + ", "
-            + "msecs/load=" + (getMillisPerLoad() >= 0 ? getMillisPerLoad() : "-")  + ", "
+            + "msecs/load=" + formatMillisPerLoad(getMillisPerLoad())  + ", "
             + "asyncLoadsStarted=" + asyncLoadsStarted + ", "
             + "asyncLoadsInFlight=" + asyncLoadsInFlight + ", "
             + "loaderThreadsLimit=" + loaderThreadsLimit + ", "
@@ -370,6 +373,14 @@ class CacheBaseInfo implements InternalCacheInfo {
             + "internalException=" + getInternalExceptionCount() + ", "
             + "integrityState=" + getIntegrityDescriptor()
       + ")";
+  }
+
+  static String formatMillisPerLoad(double val) {
+    if (val < 0) {
+      return "-";
+    }
+    DecimalFormat f = new DecimalFormat(".###");
+    return f.format(val);
   }
 
 }
