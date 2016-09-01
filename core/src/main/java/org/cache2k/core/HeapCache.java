@@ -125,7 +125,7 @@ public class HeapCache<K, V>
 
   /**
    * Counts the number of key mutations. The count is not guarded and racy, but does not need
-   * to be exact. We don't put it to the metrics, because we do not want to have this discabled.
+   * to be exact. We don't put it to the metrics, because we do not want to have this disabled.
    */
   protected volatile long keyMutationCnt = 0;
 

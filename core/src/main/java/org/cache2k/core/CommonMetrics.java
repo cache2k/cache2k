@@ -28,60 +28,90 @@ package org.cache2k.core;
 public interface CommonMetrics {
 
   long getPutNewEntryCount();
+
   long getPutHitCount();
 
   long getPutNoReadHitCount();
 
   /**
-   * Correction counter for read usage
+   * Operation was accessing a heap entry and counted a hit it is existing, but
+   * it should not be counted as read/get operation (e.g. {@code contains}). This
+   * is a correction counter applied to the get counter.
+   *
+   * @see CacheBaseInfo#getGetCount()
    */
   long getContainsButHitCount();
 
+  /**
+   * Operation was accessing a heap entry and counted a hit it is existing, but
+   * it should not be counted as read/get operation (e.g. {@code contains}). This
+   * is a correction counter applied to the get counter.
+   *
+   * @see CacheBaseInfo#getGetCount()
+   */
   long getHeapHitButNoReadCount();
 
   /**
    * Count of timer events delivered to this cache.
+   *
+   * @see InternalCacheInfo#getTimerEventCount()
    */
   long getTimerEventCount();
 
   /**
    * The cache produced an exception by itself that should have been prevented.
+   *
+   * @see InternalCacheInfo#getInternalExceptionCount()
    */
   long getInternalExceptionCount();
 
   /**
    * Entry was loaded, triggered by a get()
+   *
+   * @see InternalCacheInfo#getLoadCount()
    */
   long getLoadCount();
 
   /**
    * Entry was loaded again, e.g. when expired, triggered by a get() or reload()
+   *
+   * @see InternalCacheInfo#getReloadCount()
    */
   long getReloadCount();
 
   /**
    * Entry was loaded again, triggered by timer
+   *
+   * @see InternalCacheInfo#getRefreshCount()
    */
   long getRefreshCount();
 
   /**
    * Accumulated milliseconds spend in load operations.
+   *
+   * @see InternalCacheInfo#getLoadMillis()
    */
   long getLoadMillis();
 
   /**
    * Counter of exceptions thrown from the loader.
+   *
+   * @see InternalCacheInfo#getLoadExceptionCount()
    */
   long getLoadExceptionCount();
 
   /**
-   * Counter of suppressed exception from the loader
+   * Counter of suppressed exceptions from the loader
+   *
+   * @see InternalCacheInfo#getSuppressedExceptionCount()
    */
   long getSuppressedExceptionCount();
 
   /**
    * Number of entries expired, but kept in the cache because of
    * ongoing processing on the entry (pinned) or because keepData is enabled.
+   *
+   * @see InternalCacheInfo#getExpiredCount()
    */
   long getExpiredKeptCount();
 
@@ -99,22 +129,28 @@ public interface CommonMetrics {
 
   /**
    * Entry on probation for refresh got hit.
+   *
+   * @see InternalCacheInfo#getRefreshHitCount()
    */
   long getRefreshHitCount();
 
   /**
    * Refresh submit failed. Happens if the loader executor has not
    * enough available resources and rejects the refresh task.
+   *
+   * @see CommonMetrics#getRefreshSubmitFailedCount()
    */
   long getRefreshSubmitFailedCount();
 
   /**
    * Entry was removed while waiting to get the mutation lock.
+   *
+   * @see InternalCacheInfo#getGoneSpinCount()
    */
   long getGoneSpinCount();
 
   /**
-   * True if statistics is disabled.
+   * True if statistics are disabled.
    */
   boolean isDisabled();
 

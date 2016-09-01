@@ -145,6 +145,8 @@ class CacheBaseInfo implements InternalCacheInfo {
   @Override
   public long getNewEntryCount() { return newEntryCnt; }
   @Override
+  public long getHeapHitCount() { return hitCnt; }
+  @Override
   public long getLoadCount() { return totalLoadCnt; }
   @Override
   public long getRefreshCount() { return metrics.getRefreshCount(); }
@@ -177,14 +179,14 @@ class CacheBaseInfo implements InternalCacheInfo {
   @Override
   public long getKeyMutationCount() { return keyMutationCnt; }
   @Override
-   public long getTimerEventCount() { return metrics.getTimerEventCount(); }
+  public long getTimerEventCount() { return metrics.getTimerEventCount(); }
   @Override
-  public double getDataHitRate() {
+  public double getHitRate() {
     long cnt = getGetCount();
     return cnt == 0 ? 0.0 : ((cnt - missCnt) * 100D / cnt);
   }
   @Override
-  public String getDataHitString() { return percentString(getDataHitRate()); }
+  public String getHitRateString() { return percentString(getHitRate()); }
 
   /** How many items will be accessed with collision */
   @Override
@@ -333,7 +335,7 @@ class CacheBaseInfo implements InternalCacheInfo {
             + "peekHitNotFresh=" + metrics.getPeekHitNotFreshCount() + ", "
             + "load=" + getLoadCount() + ", "
             + "reload=" + getReloadCount() + ", "
-            + "heapHit=" + hitCnt + ", "
+            + "heapHit=" + getHeapHitCount() + ", "
             + "refreshCnt=" + getRefreshCount() + ", "
             + "refreshSubmitFailed=" + getRefreshSubmitFailedCount() + ", "
             + "refreshHit=" + getRefreshHitCount() + ", "
@@ -347,7 +349,7 @@ class CacheBaseInfo implements InternalCacheInfo {
             + "evict=" + getEvictedCount() + ", "
             + "timer=" + getTimerEventCount() + ", "
             + "goneSpin=" + getGoneSpinCount() + ", "
-            + "hitRate=" + getDataHitString() + ", "
+            + "hitRate=" + getHitRateString() + ", "
             + "msecs/load=" + (getMillisPerLoad() >= 0 ? getMillisPerLoad() : "-")  + ", "
             + "asyncLoadsStarted=" + asyncLoadsStarted + ", "
             + "asyncLoadsInFlight=" + asyncLoadsInFlight + ", "

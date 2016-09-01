@@ -29,34 +29,46 @@ import org.cache2k.Cache;
  */
 public interface EvictionMetrics {
 
-  /** Number of new created entries */
+  /**
+   * @see InternalCacheInfo#getNewEntryCount()
+   */
   long getNewEntryCount();
-
-  /** Fragment that the eviction wants to add to the {@link Cache#toString()} output. */
-  String getExtraStatistics();
 
   /** Number of recorded hits. */
   long getHitCount();
 
-  /** Removed entries, because of programmatic removal */
+  /**
+   * @see InternalCacheInfo#getRemovedCount()
+   */
   long getRemovedCount();
 
-  /** Removed entries, because expired */
+  /**
+   * Removed entries, because expired
+   *
+   * @see InternalCacheInfo#getExpiredCount()
+   */
   long getExpiredRemovedCount();
 
   /** Removal of an entry that was never used */
   long getVirginRemovedCount();
 
-  /** Number of entries evicted */
+  /**
+   * Number of entries evicted
+   *
+   * @see InternalCacheInfo#getEvictedCount()
+   */
   long getEvictedCount();
 
   /** Number of eviction currently going on */
   int getEvictionRunningCount();
 
-  /** Number of entries in the viction data structure */
+  /** Number of entries in the eviction data structure */
   long getSize();
 
   /** Size limit after eviction kicks in */
   long getMaxSize();
+
+  /** Fragment that the eviction wants to add to the {@link Cache#toString()} output. */
+  String getExtraStatistics();
 
 }

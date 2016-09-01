@@ -116,7 +116,7 @@ public class CacheMXBeanImpl implements CacheMXBean {
 
   @Override
   public double getHitRate() {
-    return getInfo().getDataHitRate();
+    return getInfo().getHitRate();
   }
 
   @Override
