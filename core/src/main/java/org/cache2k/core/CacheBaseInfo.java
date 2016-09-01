@@ -137,11 +137,10 @@ class CacheBaseInfo implements InternalCacheInfo {
   @Override
   public long getGetCount() {
     long _putHit = metrics.getPutNoReadHitCount();
-    long _containsBitHit = metrics.getContainsButHitCount();
     long _heapHitButNoRead = metrics.getHeapHitButNoReadCount();
     return
       hitCnt + metrics.getPeekMissCount()
-      + metrics.getLoadCount() - _putHit - _containsBitHit - _heapHitButNoRead;
+      + metrics.getLoadCount() - _putHit - _heapHitButNoRead;
   }
   @Override
   public long getMissCount() { return missCnt; }

@@ -825,7 +825,7 @@ public class HeapCache<K, V>
   public boolean containsKey(K key) {
     Entry e = lookupEntry(key);
     if (e != null) {
-      metrics.containsButHit();
+      metrics.heapHitButNoRead();
       if (e.hasFreshData()) {
         return true;
       }

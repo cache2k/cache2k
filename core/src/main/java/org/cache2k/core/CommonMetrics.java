@@ -40,15 +40,6 @@ public interface CommonMetrics {
    *
    * @see CacheBaseInfo#getGetCount()
    */
-  long getContainsButHitCount();
-
-  /**
-   * Operation was accessing a heap entry and counted a hit it is existing, but
-   * it should not be counted as read/get operation (e.g. {@code contains}). This
-   * is a correction counter applied to the get counter.
-   *
-   * @see CacheBaseInfo#getGetCount()
-   */
   long getHeapHitButNoReadCount();
 
   /**
@@ -165,9 +156,6 @@ public interface CommonMetrics {
     void putNoReadHit();
     void putNoReadHit(long cnt);
 
-    void containsButHit();
-    void containsButHit(long cnt);
-
     void heapHitButNoRead();
     void heapHitButNoRead(long cnt);
 
@@ -214,11 +202,6 @@ public interface CommonMetrics {
   class BlackHole implements Updater {
 
     @Override
-    public void containsButHit() {
-
-    }
-
-    @Override
     public void putNewEntry() {
 
     }
@@ -245,11 +228,6 @@ public interface CommonMetrics {
 
     @Override
     public void putNoReadHit(final long cnt) {
-
-    }
-
-    @Override
-    public void containsButHit(final long cnt) {
 
     }
 
@@ -400,11 +378,6 @@ public interface CommonMetrics {
 
     @Override
     public long getPutNoReadHitCount() {
-      return 0;
-    }
-
-    @Override
-    public long getContainsButHitCount() {
       return 0;
     }
 

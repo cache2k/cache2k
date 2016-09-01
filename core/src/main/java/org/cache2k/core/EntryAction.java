@@ -985,7 +985,7 @@ public abstract class EntryAction<K, V, R> implements
         metrics().peekHitNotFresh();
       }
     } else if (doNotCountAccess && heapHit) {
-      metrics().containsButHit();
+      metrics().heapHitButNoRead();
     }
     if (storageRead && !storageMiss) {
       storageMetrics().readHit();

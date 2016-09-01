@@ -91,22 +91,6 @@ public class StandardCommonMetrics implements CommonMetrics.Updater {
     heapHitButNoReadUpdater.addAndGet(this, cnt);
   }
 
-  static final AtomicLongFieldUpdater<StandardCommonMetrics> containsButHitUpdater =
-    AtomicLongFieldUpdater.newUpdater(StandardCommonMetrics.class, "containsButHit");
-  private volatile long containsButHit;
-  @Override
-  public void containsButHit() {
-    containsButHitUpdater.incrementAndGet(this);
-  }
-  @Override
-  public long getContainsButHitCount() {
-    return containsButHitUpdater.get(this);
-  }
-  @Override
-  public void containsButHit(final long cnt) {
-    containsButHitUpdater.addAndGet(this, cnt);
-  }
-
   static final AtomicLongFieldUpdater<StandardCommonMetrics> timerEventUpdater =
     AtomicLongFieldUpdater.newUpdater(StandardCommonMetrics.class, "timerEvent");
   private volatile long timerEvent;
