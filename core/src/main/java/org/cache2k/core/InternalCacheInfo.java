@@ -164,7 +164,7 @@ public interface InternalCacheInfo {
    *
    * @see EvictionMetrics#getEvictionRunningCount()
    */
-  long getEvictionRunningCount();
+  int getEvictionRunningCount();
 
   /**
    * Removed entries, because of programmatic removal. Removal of entries by clear is

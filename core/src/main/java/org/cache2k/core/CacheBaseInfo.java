@@ -63,7 +63,7 @@ class CacheBaseInfo implements InternalCacheInfo {
   private long expiredRemoveCnt;
   private long evictedCnt;
   private long maxSize;
-  private long evictionRunningCnt;
+  private int evictionRunningCnt;
 
   public CacheBaseInfo(HeapCache _heapCache, InternalCache _userCache, long now) {
     infoCreatedTime = now;
@@ -165,7 +165,7 @@ class CacheBaseInfo implements InternalCacheInfo {
   @Override
   public long getEvictedCount() { return evictedCnt; }
   @Override
-  public long getEvictionRunningCount() { return evictionRunningCnt; }
+  public int getEvictionRunningCount() { return evictionRunningCnt; }
   @Override
   public long getRemovedCount() { return removedCnt; }
   @Override
@@ -336,7 +336,7 @@ class CacheBaseInfo implements InternalCacheInfo {
             + "load=" + getLoadCount() + ", "
             + "reload=" + getReloadCount() + ", "
             + "heapHit=" + getHeapHitCount() + ", "
-            + "refreshCnt=" + getRefreshCount() + ", "
+            + "refresh=" + getRefreshCount() + ", "
             + "refreshSubmitFailed=" + getRefreshFailedCount() + ", "
             + "refreshedHit=" + getRefreshedHitCount() + ", "
             + "loadException=" + getLoadExceptionCount() + ", "
@@ -365,7 +365,7 @@ class CacheBaseInfo implements InternalCacheInfo {
             + "hashQuality=" + getHashQualityInteger() + ", "
             + "impl=" + getImplementation() + ", "
             + getExtraStatistics() + ", "
-            + "evictionRunningCnt=" + getEvictionRunningCount() + ", "
+            + "evictionRunning=" + getEvictionRunningCount() + ", "
             + "keyMutation=" + getKeyMutationCount() + ", "
             + "internalException=" + getInternalExceptionCount() + ", "
             + "integrityState=" + getIntegrityDescriptor()
