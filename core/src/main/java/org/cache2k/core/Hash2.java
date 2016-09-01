@@ -50,7 +50,12 @@ public class Hash2<K,V> {
    */
   private volatile int clearOrCloseCount = 0;
   private volatile boolean closed = false;
-  private long maxFill;
+
+  /**
+   * Maximum size of one segment, after we expand.
+   */
+  private long segmentMaxFill;
+
   private Entry<K,V>[] entries;
   private final OptimisticLock[] locks;
   private final AtomicLong[] segmentSize;
@@ -68,16 +73,13 @@ public class Hash2<K,V> {
   }
 
   private void initArray() {
-    int len = HeapCache.TUNABLE.initialHashSize;
-    if (segmentSize.length > len) {
-      len = segmentSize.length;
-    }
+    int len = Math.max(HeapCache.TUNABLE.initialHashSize, LOCK_SEGMENTS * 4);
     entries = new Entry[len];
     calcMaxFill();
   }
 
   private void calcMaxFill() {
-    maxFill = entries.length * HeapCache.TUNABLE.hashLoadPercent / 100 / segmentSize.length;
+    segmentMaxFill = entries.length * HeapCache.TUNABLE.hashLoadPercent / 100 / LOCK_SEGMENTS;
   }
 
   /**
@@ -159,8 +161,8 @@ public class Hash2<K,V> {
     } finally {
       l.unlockWrite(_stamp);
     }
-    if (_size > maxFill) {
-      expand();
+    if (_size > segmentMaxFill) {
+      eventuallyExpand(si);
     }
     return e;
   }
@@ -207,8 +209,8 @@ public class Hash2<K,V> {
     } finally {
       l.unlockWrite(_stamp);
     }
-    if (_size > maxFill) {
-      expand();
+    if (_size > segmentMaxFill) {
+      eventuallyExpand(si);
     }
   }
 
@@ -247,8 +249,8 @@ public class Hash2<K,V> {
   public void checkExpand(int _hash) {
     int si = _hash & LOCK_MASK;
     long _size = segmentSize[si].get();
-    if (_size > maxFill) {
-      expand();
+    if (_size > segmentMaxFill) {
+      eventuallyExpand(si);
     }
   }
 
@@ -361,11 +363,15 @@ public class Hash2<K,V> {
   }
 
   /**
-   * Acquire all segment locks and rehash.
+   * Acquire all segment locks and rehash, if really needed.
    */
-  private void expand() {
+  private void eventuallyExpand(int _segmentIndex) {
     long[] _stamps = lockAll();
     try {
+      long _size = segmentSize[_segmentIndex].get();
+      if (_size <= segmentMaxFill) {
+        return;
+      }
       rehash();
     } finally {
       unlockAll(_stamps);
