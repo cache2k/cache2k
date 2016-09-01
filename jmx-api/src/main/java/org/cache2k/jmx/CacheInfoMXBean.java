@@ -132,9 +132,9 @@ public interface CacheInfoMXBean {
   double getHitRate();
 
   /**
-   * Value between 100 and 0 to help evaluate the quality of the hashing function. 100 means perfect.
-   * This metric takes into account the collision to size ratio, the longest collision size
-   * and the collision to slot ratio. The value reads 0 if the longest collision size gets more
+   * Value between 0 and 100 to help evaluate the quality of the hashing function. 100 means perfect, there
+   * are no collisions. This metric takes into account the collision to size ratio, the longest collision size
+   * and the collisions to slot ratio. The value reads 0 if the longest collision size gets more
    * then 20.
    */
   int getHashQuality();

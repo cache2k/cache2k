@@ -192,10 +192,11 @@ class CacheBaseInfo implements InternalCacheInfo {
 
   /** How many items will be accessed with collision */
   @Override
-  public int getCollisionPercentage() {
+  public int getNoCollisionPercentage() {
     return
       (int) ((size - collisionInfo.collisionCnt) * 100 / size);
   }
+
   /** 100 means each collision has its own slot */
   @Override
   public int getSlotsPercentage() {
@@ -209,7 +210,7 @@ class CacheBaseInfo implements InternalCacheInfo {
   public int getHq1() {
     final int _metricPercentageBase = 60;
     int m =
-      getCollisionPercentage() * ( 100 - _metricPercentageBase) / 100 + _metricPercentageBase;
+      getNoCollisionPercentage() * ( 100 - _metricPercentageBase) / 100 + _metricPercentageBase;
     m = Math.min(100, m);
     m = Math.max(0, m);
     return m;
@@ -224,7 +225,7 @@ class CacheBaseInfo implements InternalCacheInfo {
     return m;
   }
   @Override
-  public int getHashQualityInteger() {
+  public int getHashQuality() {
     if (size == 0 || collisionInfo.collisionSlotCnt == 0) {
       return 100;
     }
@@ -260,11 +261,11 @@ class CacheBaseInfo implements InternalCacheInfo {
   @Override
   public long getLoadMillis() { return metrics.getLoadMillis(); }
   @Override
-  public int getCollisionCount() { return collisionInfo.collisionCnt; }
+  public int getHashCollisionCount() { return collisionInfo.collisionCnt; }
   @Override
-  public int getCollisionSlotCount() { return collisionInfo.collisionSlotCnt; }
+  public int getHashCollisionSlotCount() { return collisionInfo.collisionSlotCnt; }
   @Override
-  public int getLongestSlot() { return collisionInfo.longestCollisionSize; }
+  public int getHashLongestSlotSize() { return collisionInfo.longestCollisionSize; }
   @Override
   public String getIntegrityDescriptor() { return integrityState.getStateDescriptor(); }
   @Override
@@ -277,7 +278,7 @@ class CacheBaseInfo implements InternalCacheInfo {
   public int getInfoCreationDeltaMs() { return infoCreationDeltaMs; }
   @Override
   public int getHealth() {
-    if (getHashQualityInteger() < 30 ||
+    if (getHashQuality() < 30 ||
       getKeyMutationCount() > 0 ||
       getInternalExceptionCount() > 0) {
       return 1;
@@ -361,10 +362,11 @@ class CacheBaseInfo implements InternalCacheInfo {
             + "cleared=" + timestampToString(getClearedTime()) + ", "
             + "infoCreated=" + timestampToString(getInfoCreatedTime()) + ", "
             + "infoCreationDeltaMs=" + getInfoCreationDeltaMs() + ", "
-            + "collisions=" + getCollisionCount() + ", "
-            + "collisionSlots=" + getCollisionSlotCount() + ", "
-            + "longestSlot=" + getLongestSlot() + ", "
-            + "hashQuality=" + getHashQualityInteger() + ", "
+            + "collisions=" + getHashCollisionCount() + ", "
+            + "collisionSlots=" + getHashCollisionSlotCount() + ", "
+            + "longestSlot=" + getHashLongestSlotSize() + ", "
+            + "hashQuality=" + getHashQuality() + ", "
+            + "nonCollidingPercent=" + getNoCollisionPercentage() + ", "
             + "impl=" + getImplementation() + ", "
             + getExtraStatistics() + ", "
             + "evictionRunning=" + getEvictionRunningCount() + ", "
