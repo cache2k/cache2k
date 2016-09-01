@@ -27,10 +27,27 @@ package org.cache2k.core;
  */
 public interface CommonMetrics {
 
+  /**
+   * Counted for a put that triggers the insert of a new cache entry.
+   *
+   * @see InternalCacheInfo#getPutCount()
+   */
   long getPutNewEntryCount();
 
+  /**
+   * Counted for a put that updates an existing cache entry.
+   *
+   * @see InternalCacheInfo#getPutCount()
+   */
   long getPutHitCount();
 
+  /**
+   * Counted for a put that updates an existing cache entry. It incremented the
+   * entry hit counter, but shouldn't be counted as read.
+   *
+   * @see InternalCacheInfo#getPutCount()
+   * @see CacheBaseInfo#getGetCount()
+   */
   long getPutNoReadHitCount();
 
   /**
