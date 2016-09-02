@@ -59,6 +59,31 @@ public class EvictionTest {
   }
 
   @Test
+  public void testEvictCold() {
+    final int _SIZE = 30;
+    Cache<Integer, Integer> c =
+      Cache2kBuilder.of(Integer.class, Integer.class)
+        .eternal(true)
+        .entryCapacity(_SIZE)
+        .build();
+    for (int i = 0; i < _SIZE / 2; i++) {
+      c.put(i, i);
+    }
+    for (int i = 0; i < _SIZE / 2; i++) {
+      c.put(i, i);
+    }
+    for (int i = 0; i < _SIZE * 2; i++) {
+      c.put(i, i);
+    }
+    int _count = 0;
+    for (int k : c.keys()) {
+      _count++;
+    }
+    assertEquals(_SIZE, _count);
+    c.close();
+  }
+
+  @Test
   public void testEvictHot() {
     final int _SIZE = 30;
     Cache<Integer, Integer> c =
@@ -70,6 +95,15 @@ public class EvictionTest {
       c.put(i, i);
     }
     for (int i = 0; i < _SIZE / 2; i++) {
+      c.put(i, i);
+    }
+    for (int i = 0; i < _SIZE * 2; i++) {
+      c.put(i, i);
+    }
+    for (int i = _SIZE / 2; i < _SIZE; i++) {
+      c.put(i, i);
+    }
+    for (int i = _SIZE / 2; i < _SIZE; i++) {
       c.put(i, i);
     }
     for (int i = 0; i < _SIZE * 2; i++) {
