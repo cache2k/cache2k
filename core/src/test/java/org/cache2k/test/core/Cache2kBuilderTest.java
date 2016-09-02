@@ -268,6 +268,33 @@ public class Cache2kBuilderTest {
     c0.close();
   }
 
+  @Test
+  public void cacheRemovedAfterClose() {
+    final String _NAME = this.getClass().getSimpleName() + "-cacheRemovedAfterClose";
+    CacheManager cm = CacheManager.getInstance(_NAME);
+    Cache c = Cache2kBuilder.forUnknownTypes()
+      .manager(cm)
+      .name(_NAME)
+      .build();
+    assertEquals(c, cm.iterator().next());
+    c.close();
+    assertFalse(cm.iterator().hasNext());
+  }
+
+  @Test
+  public void cacheRemovedAfterClose_WiredCache() {
+    final String _NAME = this.getClass().getSimpleName() + "-cacheRemovedAfterCloseWiredCache";
+    CacheManager cm = CacheManager.getInstance(_NAME);
+    Cache2kBuilder _builder = Cache2kBuilder.forUnknownTypes()
+      .manager(cm)
+      .name(_NAME);
+    StaticUtil.enforceWiredCache(_builder);
+    Cache c = _builder.build();
+    assertEquals(c, cm.iterator().next());
+    c.close();
+    assertFalse(cm.iterator().hasNext());
+  }
+
   static class BuildCacheInConstructor0 {
     Cache<?,?> cache = Cache2kBuilder.forUnknownTypes().eternal(true).build();
   }
