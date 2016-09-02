@@ -125,21 +125,6 @@ public class CacheMXBeanImpl implements CacheMXBean {
   }
 
   @Override
-  public long getHashCollisionCnt() {
-    return getInfo().getHashCollisionCount();
-  }
-
-  @Override
-  public long getHashCollisionsSlotCnt() {
-    return getInfo().getHashCollisionSlotCount();
-  }
-
-  @Override
-  public long getHashLongestCollisionSize() {
-    return getInfo().getHashLongestSlotSize();
-  }
-
-  @Override
   public double getMillisPerLoad() {
     return getInfo().getMillisPerLoad();
   }

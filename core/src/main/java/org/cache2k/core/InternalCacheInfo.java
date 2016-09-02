@@ -222,15 +222,7 @@ public interface InternalCacheInfo {
   /**
    * Percentage of cache entries in collision lists, not reached by the first comparison.
    */
-  int getNoCollisionPercentage();
-
-  int getSlotsPercentage();
-
-  int getHq0();
-
-  int getHq1();
-
-  int getHq2();
+  int getNoCollisionPercent();
 
   /**
    * Value between 0 and 100 to help evaluate the quality of the hashing function. 100 means perfect, there

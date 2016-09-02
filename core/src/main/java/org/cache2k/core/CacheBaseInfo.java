@@ -192,72 +192,16 @@ class CacheBaseInfo implements InternalCacheInfo {
 
   /** How many items will be accessed with collision */
   @Override
-  public int getNoCollisionPercentage() {
+  public int getNoCollisionPercent() {
     if (size == 0) {
       return 100;
     }
     return
       (int) ((size - collisionInfo.collisionCnt) * 100 / size);
   }
-
-  /** 100 means each collision has its own slot */
-  @Override
-  public int getSlotsPercentage() {
-    return collisionInfo.collisionSlotCnt * 100 / collisionInfo.collisionCnt;
-  }
-  @Override
-  public int getHq0() {
-    return Math.max(0, 105 - collisionInfo.longestCollisionSize * 5) ;
-  }
-  @Override
-  public int getHq1() {
-    final int _metricPercentageBase = 60;
-    int m =
-      getNoCollisionPercentage() * ( 100 - _metricPercentageBase) / 100 + _metricPercentageBase;
-    m = Math.min(100, m);
-    m = Math.max(0, m);
-    return m;
-  }
-  @Override
-  public int getHq2() {
-    final int _metricPercentageBase = 80;
-    int m =
-      getSlotsPercentage() * ( 100 - _metricPercentageBase) / 100 + _metricPercentageBase;
-    m = Math.min(100, m);
-    m = Math.max(0, m);
-    return m;
-  }
   @Override
   public int getHashQuality() {
-    if (size == 0 || collisionInfo.collisionSlotCnt == 0) {
-      return 100;
-    }
-    int _metric0 = getHq0();
-    int _metric1 = getHq1();
-    int _metric2 = getHq2();
-    if (_metric1 < _metric0) {
-      int v = _metric0;
-      _metric0 = _metric1;
-      _metric1 = v;
-    }
-    if (_metric2 < _metric0) {
-      int v = _metric0;
-      _metric0 = _metric2;
-      _metric2 = v;
-    }
-    if (_metric2 < _metric1) {
-      int v = _metric1;
-      _metric1 = _metric2;
-      _metric2 = v;
-    }
-    if (_metric0 <= 0) {
-      return 0;
-    }
-    _metric0 = _metric0 + ((_metric1 - 50) * 5 / _metric0);
-    _metric0 = _metric0 + ((_metric2 - 50) * 2 / _metric0);
-    _metric0 = Math.max(0, _metric0);
-    _metric0 = Math.min(100, _metric0);
-    return _metric0;
+    return hashQuality(getNoCollisionPercent(), getHashLongestSlotSize());
   }
   @Override
   public double getMillisPerLoad() { return getLoadCount() == 0 ? 0 : (metrics.getLoadMillis() * 1D / getLoadCount()); }
@@ -367,7 +311,7 @@ class CacheBaseInfo implements InternalCacheInfo {
             + "collisionSlots=" + getHashCollisionSlotCount() + ", "
             + "longestSlot=" + getHashLongestSlotSize() + ", "
             + "hashQuality=" + getHashQuality() + ", "
-            + "nonCollidingPercent=" + getNoCollisionPercentage() + ", "
+            + "noCollisionPercent=" + getNoCollisionPercent() + ", "
             + "impl=" + getImplementation() + ", "
             + getExtraStatistics() + ", "
             + "evictionRunning=" + getEvictionRunningCount() + ", "
@@ -383,6 +327,18 @@ class CacheBaseInfo implements InternalCacheInfo {
     }
     DecimalFormat f = new DecimalFormat("#.###");
     return f.format(val);
+  }
+
+  static int hashQuality(int _noCollisionPercent, int _longestSlot) {
+    if (_longestSlot == 0) {
+      return 100;
+    }
+    final double _EXPONENT_CONSTANT = -0.011;
+    final int _SLOT_SIZE_MINIMUM = 5;
+    int _correctionForOversizeSlot = (int)
+      ((1 - Math.exp(_EXPONENT_CONSTANT * Math.max(0, _longestSlot - _SLOT_SIZE_MINIMUM))) * 100);
+    int _quality = _noCollisionPercent - _correctionForOversizeSlot;
+    return Math.max(0, Math.min(100, _quality));
   }
 
 }

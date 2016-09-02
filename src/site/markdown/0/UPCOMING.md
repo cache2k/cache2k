@@ -1,4 +1,4 @@
-# cache2k version 1.0-RC1 "Bahia de Santa Cruz"
+# cache2k version 0.28-BETA "Bahia de Santa Cruz"
 
 ## New and Noteworthy
 

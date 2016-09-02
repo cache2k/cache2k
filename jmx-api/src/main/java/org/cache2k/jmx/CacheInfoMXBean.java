@@ -132,29 +132,13 @@ public interface CacheInfoMXBean {
   double getHitRate();
 
   /**
-   * Value between 0 and 100 to help evaluate the quality of the hashing function. 100 means perfect, there
-   * are no collisions. This metric takes into account the collision to size ratio, the longest collision size
-   * and the collisions to slot ratio. The value reads 0 if the longest collision size gets more
-   * then 20.
+   * A value between 0 and 100 to help evaluate the quality of the hashing function. 100 means perfect, there
+   * are no collisions. A value of 80 means that 80% of the entries are reachable without collision.
+   * The size of the longest collision list is also combined into this value, for example if the longest collision
+   * size is 20, then this value is 85 and below. This way this metrics can be used to detect bad hash function
+   * and hash collision attacks.
    */
   int getHashQuality();
-
-  /**
-   * Number of hashcode collisions within the cache. E.g. the hashCode: 2, 3, 3, 4, 4, 4 will
-   * mean three collisions.
-   */
-  long getHashCollisionCnt();
-
-  /**
-   * Number of collision slots within the cache. E.g. the hashCode: 2, 3, 3, 4, 4, 4 will mean two
-   * collision slots.
-   */
-  long getHashCollisionsSlotCnt();
-
-  /**
-   * The number of entries of the collision slot with the most collisions. Either 0, 2 or more.
-   */
-  long getHashLongestCollisionSize();
 
   /**
    * Milliseconds per load.
