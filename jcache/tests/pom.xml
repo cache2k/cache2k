@@ -8,7 +8,7 @@
     <parent>
       <groupId>org.cache2k</groupId>
       <artifactId>cache2k-parent</artifactId>
-      <version>0.28-SNAPSHOT</version>
+      <version>0.28-BETA</version>
       <relativePath>../../pom.xml</relativePath>
     </parent>
 
