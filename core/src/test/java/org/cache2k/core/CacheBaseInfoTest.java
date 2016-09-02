@@ -20,6 +20,8 @@ package org.cache2k.core;
  * #L%
  */
 
+import org.cache2k.Cache;
+import org.cache2k.Cache2kBuilder;
 import org.cache2k.junit.FastTests;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -90,6 +92,16 @@ public class CacheBaseInfoTest {
   @Test
   public void testHashQuality50_50() {
     assertEquals(11, CacheBaseInfo.hashQuality(50, 50));
+  }
+
+  @Test
+  public void testToString() {
+    Cache<Integer, Integer> c =
+      Cache2kBuilder.of(Integer.class, Integer.class)
+        .eternal(true)
+        .build();
+    c.toString();
+    c.close();
   }
 
 }
