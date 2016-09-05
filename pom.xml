@@ -289,7 +289,7 @@
             <groupId>org.apache.maven.plugins</groupId>
             <artifactId>maven-javadoc-plugin</artifactId>
             <configuration>
-              <additionalparam>-Xdoclint:none</additionalparam>
+              <additionalparam>-Xdoclint:all -Xdoclint:-missing</additionalparam>
               <!-- no aggregation, we want to have docs on the API package alone -->
               <aggregate>false</aggregate>
               <!--
