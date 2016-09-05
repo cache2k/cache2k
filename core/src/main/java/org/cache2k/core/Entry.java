@@ -420,7 +420,7 @@ public class Entry<K, T> extends CompactEntry<K,T>
    * return the data. There is also the chance that an entry is removed by eviction,
    * or is never inserted to the cache, before the get returns it.
    *
-   * <p/>Even if this is true, the data may be expired. Use hasFreshData() to
+   * <p>Even if this is true, the data may be expired. Use hasFreshData() to
    * make sure to get not expired data.
    */
   public final boolean isDataValid() {

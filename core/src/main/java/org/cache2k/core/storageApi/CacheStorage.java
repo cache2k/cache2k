@@ -44,7 +44,7 @@ public interface CacheStorage {
    * the data, no reference may be hold within the storage to it. The callee takes
    * care that the entry data is consistent during the put method call.
    *
-   * <p/>If a put operation fails an implementation should try to remove an
+   * <p>If a put operation fails an implementation should try to remove an
    * existing entry bound to the key and then throw the exception.
    *
    * @throws IOException may be thrown if hope is lost
@@ -65,7 +65,7 @@ public interface CacheStorage {
    * Remove all entries from the cache and free resources. This operation is called
    * when there is no other operation concurrently executed on this storage instance.
    *
-   * <p/>When a Cache.clear() is initiated there is no obligation to send a
+   * <p>When a Cache.clear() is initiated there is no obligation to send a
    * CacheStorage.clear() to the persisted storage. Alternatively, all objects can
    * be removed via remove().
    */
@@ -82,7 +82,7 @@ public interface CacheStorage {
    * implemented, returning expired entries is a must, to support the generic purge
    * algorithm.
    *
-   * <p/>If the {@link ExecutorService} is used, the method may return immediately without
+   * <p>If the {@link ExecutorService} is used, the method may return immediately without
    * the waiting for all threads to finish. This is done by the caller, when needed.
    */
   public void visit(VisitContext ctx, EntryFilter f, EntryVisitor v) throws Exception;

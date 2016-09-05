@@ -31,7 +31,7 @@ public class Expiry implements ExpiryTimeValues {
    * Convert the time value to a time representing an a sharp expiry.
    * This essentially negates the time value and is provided for a more speaking coding style.
    *
-   * @param millis
+   * @param millis a positive value representing the milliseconds since epoch
    * @throws IllegalArgumentException if the time value is negative
    * @return a negated time representing sharp expiry
    */

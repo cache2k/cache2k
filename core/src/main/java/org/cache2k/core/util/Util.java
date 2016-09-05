@@ -36,7 +36,7 @@ public class Util {
   /**
    * Always throws exception. Used to mark a place in the code that needs work.
    *
-   * @throws UnsupportedOperationException
+   * @throws UnsupportedOperationException always throws an exception
    */
   public static void TODO() {
     throw new UnsupportedOperationException("TODO");

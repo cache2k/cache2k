@@ -32,7 +32,7 @@ public interface PurgeableStorage {
    * expired, e.g. if a CacheSource is present and a scheme like
    * if-modified-since is supported by it.
    *
-   * <p/>The storage implementation may choose to implement only one or no
+   * <p>The storage implementation may choose to implement only one or no
    * expiry variant by time.
    *
    * @param ctx Provides a multi-threaded context. Thread resources for purge

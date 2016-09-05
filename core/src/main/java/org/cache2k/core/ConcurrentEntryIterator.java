@@ -86,8 +86,10 @@ public class ConcurrentEntryIterator<K,V> implements Iterator<Entry<K,V>> {
   }
 
   /**
+   * Mark the key as returned by the iteration to suppress doubled iterations when we
+   * need to scan throw twice ore more, e.g. in case of a hash table expansion.
    *
-   * @param key
+   * @param key key object
    * @param _hashCode corresponding modified hash, unused but we keep it if we want to switch to
    *                  a more efficient hash table
    */

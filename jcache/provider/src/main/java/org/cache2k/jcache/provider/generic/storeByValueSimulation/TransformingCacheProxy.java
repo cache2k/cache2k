@@ -308,7 +308,7 @@ public class TransformingCacheProxy<K, V, K0, V0> implements javax.cache.Cache<K
   /**
    * Not supported (yet?)
    *
-   * @throws UnsupportedOperationException
+   * @throws UnsupportedOperationException always throws exception
    */
   @Override
   public <C extends Configuration<K, V>> C getConfiguration(Class<C> clazz) {
@@ -409,7 +409,7 @@ public class TransformingCacheProxy<K, V, K0, V0> implements javax.cache.Cache<K
   /**
    * Not supported (yet?)
    *
-   * @throws UnsupportedOperationException
+   * @throws UnsupportedOperationException always throws exception
    */
   @Override
   public void registerCacheEntryListener(CacheEntryListenerConfiguration<K, V> cacheEntryListenerConfiguration) {
@@ -419,7 +419,7 @@ public class TransformingCacheProxy<K, V, K0, V0> implements javax.cache.Cache<K
   /**
    * Not supported (yet?)
    *
-   * @throws UnsupportedOperationException
+   * @throws UnsupportedOperationException always throws exception
    */
   @Override
   public void deregisterCacheEntryListener(CacheEntryListenerConfiguration<K, V> cacheEntryListenerConfiguration) {
