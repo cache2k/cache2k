@@ -591,8 +591,8 @@ public interface Cache<K, V> extends
   /**
    * This was for atomic removal of a bunch of entries. Not supported any more.
    *
-   * @deprecated no replacement planed
-   * @throws UnsupportedOperationException
+   * @deprecated no replacement planed, will be removed
+   * @throws UnsupportedOperationException always throws exceptions
    */
   void removeAllAtOnce(java.util.Set<K> key);
 
@@ -719,7 +719,7 @@ public interface Cache<K, V> extends
 
   /**
    *
-   * @param key
+   * @param key the key of the cache entry that should be processed
    * @param entryProcessor processor instance to be invoked
    * @param <R> type of the result
    * @throws EntryProcessingException if the {@code invoke} had thrown an exception
@@ -731,11 +731,10 @@ public interface Cache<K, V> extends
    *
    * <p>The order of the invocation is unspecified.
    *
-   * @param keys
-   * @param entryProcessor
-
-   * @param <R>
-   * @return
+   * @param keys the keys of the cache entryies that should be processed
+   * @param entryProcessor processor instance to be invoked
+   * @param <R> type of the result
+   * @return map containing the invocation results for every cache key
    */
   <R> Map<K, EntryProcessingResult<R>> invokeAll(
     Iterable<? extends K> keys, EntryProcessor<K , V, R> entryProcessor);
