@@ -55,11 +55,11 @@ public interface ExpiryPolicy<K, V> extends ExpiryTimeValues {
    * cache methods from this method. The outcome is undefined and it can
    * cause a deadlock.
    *
-   * <p><b>null values:</b> If the loader returns a null value, the expiry
+   * <p><b>null values:</b> If the loader returns a {@code null} value, the expiry
    * policy will be called, regardless of the {@link Cache2kBuilder#permitNullValues} setting.
    * If the expiry policy returns a {@link #NO_CACHE} the entry will be removed. If the expiry
    * policy returns a different time value, a {@code NullPointerException} will be propagated
-   * if null values not permitted.
+   * if {@code null} values are not permitted.
    *
    * <p><b>API rationale:</b> The recently loaded or inserted data is not passed in via a cache
    * entry object. Using a cache entry is desirable for API design reasons to have a thinner interface.
