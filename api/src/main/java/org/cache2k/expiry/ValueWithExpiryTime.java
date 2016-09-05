@@ -30,6 +30,9 @@ import java.util.concurrent.TimeUnit;
  * and this interface is detected on the value, the expiry requested
  * from the value by the cache.
  *
+ * <p>Important caveat: This interface must be present on the configured cache value type to enable
+ * the functionality.
+ *
  * @author Jens Wilke
  */
 public interface ValueWithExpiryTime {

@@ -27,7 +27,7 @@ import org.cache2k.expiry.ValueWithExpiryTime;
  * is fetched from the object. If not, the default linger time is used by the cache.
  *
  * @author Jens Wilke; created: 2013-05-02
- * @deprecated Use {@link ValueWithExpiryTime#AUTO_EXPIRY}
+ * @deprecated See, {@link ValueWithExpiryTime}
  */
 public final class AutoEntryRefreshController<T> implements RefreshController<T> {
 
