@@ -41,6 +41,7 @@ import java.util.List;
  *
  * @author Jens Wilke; created: 2013-06-25
  */
+@SuppressWarnings("unused")
 public class Cache2kConfiguration<K, V> implements Serializable {
 
   public final long EXPIRY_MILLIS_ETERNAL = Long.MAX_VALUE;
@@ -203,7 +204,7 @@ public class Cache2kConfiguration<K, V> implements Serializable {
     return keyType;
   }
 
-  void checkNull(Object v) {
+  private void checkNull(Object v) {
     if (v == null) {
       throw new NullPointerException("null value not allowed");
     }
@@ -485,7 +486,6 @@ public class Cache2kConfiguration<K, V> implements Serializable {
 
   /**
    * @see Cache2kBuilder#exceptionPropagator(ExceptionPropagator)
-   * @param _exceptionPropagator
    */
   public void setExceptionPropagator(final ExceptionPropagator _exceptionPropagator) {
     exceptionPropagator = _exceptionPropagator;
