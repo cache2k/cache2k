@@ -50,8 +50,6 @@ public class Cache2kConfiguration<K, V> implements Serializable {
   private String name;
   private CacheType<K> keyType;
   private CacheType<V> valueType;
-  private Class<?> implementation;
-
   private long entryCapacity = 2000;
   private boolean strictEviction = false;
   private int heapEntryCapacity = -1;
