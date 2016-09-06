@@ -984,7 +984,7 @@ public class BasicCacheOperationsTest {
   }
 
   @Test
-  public void entryState() {
+  public void getEntryState() {
     if (!(cache instanceof InternalCache)) {
       return;
     }
@@ -994,6 +994,17 @@ public class BasicCacheOperationsTest {
     cache.put(KEY, VALUE);
     s = c.getEntryState(KEY);
     assertNotNull(s);
+  }
+
+  @Test
+  public void getEntryState_Exception() {
+    if (!(cache instanceof InternalCache)) {
+      return;
+    }
+    ((Cache) cache).put(KEY, new ExceptionWrapper(OUCH));
+    InternalCache c = (InternalCache) cache;
+    String s = c.getEntryState(KEY);
+    assertTrue(s.contains("exception="));
   }
 
 }

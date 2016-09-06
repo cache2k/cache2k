@@ -549,7 +549,9 @@ public class Entry<K, T> extends CompactEntry<K,T>
       }
     }
     Object _valueOrException = getValueOrException();
-    if (_valueOrException != null) {
+    if (_valueOrException instanceof ExceptionWrapper) {
+      sb.append(", exception=").append((((ExceptionWrapper) _valueOrException).getException().getClass().getSimpleName()));
+    } else if (_valueOrException != null) {
       sb.append(", valueId=").append(System.identityHashCode(_valueOrException));
     } else {
       sb.append(", value=null");
