@@ -1,4 +1,4 @@
-package org.cache2k.core;
+package org.cache2k.core.spi;
 
 /*
  * #%L
@@ -24,12 +24,15 @@ import org.cache2k.Cache;
 import org.cache2k.CacheManager;
 
 /**
+ * Interface to implement additional service providers that get notified
+ * on a lifecycle change of the cache. Used for JMX support.
+ *
  * @author Jens Wilke; created: 2013-07-01
  */
 public interface CacheLifeCycleListener {
 
-  void cacheCreated(CacheManager cm, Cache c);
+  void cacheCreated(Cache c);
 
-  void cacheDestroyed(CacheManager cm, Cache c);
+  void cacheDestroyed(Cache c);
 
 }

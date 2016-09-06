@@ -22,7 +22,7 @@ package org.cache2k.ee.impl;
 
 import org.cache2k.Cache;
 import org.cache2k.CacheManager;
-import org.cache2k.core.CacheLifeCycleListener;
+import org.cache2k.core.spi.CacheLifeCycleListener;
 import org.cache2k.core.CacheManagerImpl;
 import org.cache2k.core.CacheManagerLifeCycleListener;
 import org.cache2k.core.InternalCache;
@@ -43,10 +43,10 @@ public class JmxSupport implements CacheLifeCycleListener, CacheManagerLifeCycle
   Map<ClassLoader, Integer> classLoader2Integer = new WeakHashMap<ClassLoader, Integer>();
 
   @Override
-  public void cacheCreated(CacheManager cm, Cache c) {
+  public void cacheCreated(Cache c) {
     MBeanServer mbs = ManagementFactory.getPlatformMBeanServer();
     if (c instanceof InternalCache) {
-      String _name = standardName(cm, c);
+      String _name = standardName(c.getCacheManager(), c);
       try {
          mbs.registerMBean(
            new CacheMXBeanImpl((InternalCache) c),
@@ -58,10 +58,10 @@ public class JmxSupport implements CacheLifeCycleListener, CacheManagerLifeCycle
   }
 
   @Override
-  public void cacheDestroyed(CacheManager cm, Cache c) {
+  public void cacheDestroyed(Cache c) {
     MBeanServer mbs = ManagementFactory.getPlatformMBeanServer();
     if (c instanceof InternalCache) {
-      String _name = standardName(cm, c);
+      String _name = standardName(c.getCacheManager(), c);
       try {
         mbs.unregisterMBean(new ObjectName(_name));
       } catch (InstanceNotFoundException ignore) {

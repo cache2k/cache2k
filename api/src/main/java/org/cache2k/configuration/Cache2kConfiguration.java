@@ -52,7 +52,6 @@ public class Cache2kConfiguration<K, V> implements Serializable {
   private CacheType<V> valueType;
   private long entryCapacity = 2000;
   private boolean strictEviction = false;
-  private int heapEntryCapacity = -1;
   private boolean refreshAhead = false;
   private long expireAfterWriteMillis = -1;
   private long retryIntervalMillis = -1;
@@ -395,20 +394,6 @@ public class Cache2kConfiguration<K, V> implements Serializable {
   }
 
   /**
-   * @deprecated since 0.24, only needed for storage
-   */
-  public int getHeapEntryCapacity() {
-    return heapEntryCapacity;
-  }
-
-  /**
-   * @deprecated since 0.24, only needed for storage
-   */
-  public void setHeapEntryCapacity(int v) {
-    this.heapEntryCapacity = v;
-  }
-
-  /**
    * Mutable collection of additional configuration sections
    */
   public ConfigurationSectionContainer getSections() {
@@ -417,7 +402,6 @@ public class Cache2kConfiguration<K, V> implements Serializable {
     }
     return sections;
   }
-
 
   public CacheLoader<K,V> getLoader() {
     return loader;
@@ -587,4 +571,6 @@ public class Cache2kConfiguration<K, V> implements Serializable {
   public void setEvictionSegmentCount(final int _evictionSegmentCount) {
     evictionSegmentCount = _evictionSegmentCount;
   }
+
+
 }

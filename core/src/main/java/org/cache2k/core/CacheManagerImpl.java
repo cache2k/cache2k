@@ -23,10 +23,11 @@ package org.cache2k.core;
 import org.cache2k.Cache;
 import org.cache2k.CacheException;
 import org.cache2k.CacheManager;
-import org.cache2k.core.concurrency.Futures;
+import org.cache2k.core.spi.CacheLifeCycleListener;
 import org.cache2k.core.util.Cache2kVersion;
 import org.cache2k.core.util.Log;
 
+import java.lang.reflect.Array;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -43,17 +44,40 @@ import java.util.concurrent.ExecutionException;
  */
 public class CacheManagerImpl extends CacheManager {
   
-  static List<CacheLifeCycleListener> cacheLifeCycleListeners = new ArrayList<CacheLifeCycleListener>();
-  static List<CacheManagerLifeCycleListener> cacheManagerLifeCycleListeners = new ArrayList<CacheManagerLifeCycleListener>();
+  private static final Iterable<CacheLifeCycleListener> cacheLifeCycleListeners =
+    constructAllServiceImplementations(CacheLifeCycleListener.class);
+  private static final Iterable<CacheManagerLifeCycleListener> cacheManagerLifeCycleListeners =
+    constructAllServiceImplementations(CacheManagerLifeCycleListener.class);
 
-  static {
+  /**
+   * The service loader works lazy, however, we want to have all implementations constructed.
+   * Retrieve all implementations from the service loader and return an read-only iterable
+   * backed by an array.
+   */
+  private static <S> Iterable<S> constructAllServiceImplementations(Class<S> _service) {
     ClassLoader cl = CacheManagerImpl.class.getClassLoader();
-    for (CacheLifeCycleListener l : ServiceLoader.load(CacheLifeCycleListener.class, cl)) {
-      cacheLifeCycleListeners.add(l);
+    ArrayList<S> li = new ArrayList<S>();
+    for (S l : ServiceLoader.load(_service, cl)) {
+      li.add(l);
     }
-    for (CacheManagerLifeCycleListener l : ServiceLoader.load(CacheManagerLifeCycleListener.class, cl)) {
-      cacheManagerLifeCycleListeners.add(l);
-    }
+    final S[] a = (S[]) Array.newInstance(_service, li.size());
+    li.toArray(a);
+    return new Iterable<S>() {
+      public Iterator<S> iterator() {
+       return new Iterator<S>() {
+          private int pos = 0;
+          public boolean hasNext() {
+            return pos < a.length;
+          }
+          public S next() {
+            return a[pos++];
+          }
+          public void remove() {
+            throw new UnsupportedOperationException();
+          }
+        };
+      }
+    };
   }
 
   private Map<String, StackTrace> name2CreationStackTrace = null;
@@ -98,15 +122,19 @@ public class CacheManagerImpl extends CacheManager {
     }
   }
 
+  public static Iterable<CacheLifeCycleListener> getCacheLifeCycleListeners() {
+    return cacheLifeCycleListeners;
+  }
+
   public void sendCreatedEvent(Cache c) {
     for (CacheLifeCycleListener e : cacheLifeCycleListeners) {
-      e.cacheCreated(this, c);
+      e.cacheCreated(c);
     }
   }
 
   private void sendDestroyedEvent(Cache c) {
     for (CacheLifeCycleListener e : cacheLifeCycleListeners) {
-      e.cacheDestroyed(this, c);
+      e.cacheDestroyed(c);
     }
   }
 

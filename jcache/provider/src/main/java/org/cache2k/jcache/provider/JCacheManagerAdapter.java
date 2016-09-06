@@ -20,7 +20,7 @@ package org.cache2k.jcache.provider;
  * #L%
  */
 
-import org.cache2k.core.CacheLifeCycleListener;
+import org.cache2k.core.spi.CacheLifeCycleListener;
 import org.cache2k.core.CacheManagerImpl;
 import org.cache2k.jcache.provider.generic.storeByValueSimulation.CopyCacheProxy;
 
@@ -35,7 +35,6 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Properties;
-import java.util.ServiceLoader;
 import java.util.Set;
 import java.util.WeakHashMap;
 
@@ -44,14 +43,18 @@ import java.util.WeakHashMap;
  */
 public class JCacheManagerAdapter implements CacheManager {
 
-  static JCacheJmxSupport jmxSupport;
+  private final static JCacheJmxSupport jmxSupport = findJCacheJmxSupportInstance();
 
-  static {
-    for (CacheLifeCycleListener l : ServiceLoader.load(CacheLifeCycleListener.class)) {
+  /**
+   * The JMX support is already created via the serviceloader
+   */
+  private static JCacheJmxSupport findJCacheJmxSupportInstance() {
+    for (CacheLifeCycleListener l : CacheManagerImpl.getCacheLifeCycleListeners()) {
       if (l instanceof JCacheJmxSupport) {
-        jmxSupport = (JCacheJmxSupport) l;
+        return (JCacheJmxSupport) l;
       }
     }
+    return null;
   }
 
   private org.cache2k.CacheManager manager;

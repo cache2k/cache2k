@@ -22,7 +22,7 @@ package org.cache2k.jcache.provider;
 
 import org.cache2k.Cache;
 import org.cache2k.CacheManager;
-import org.cache2k.core.CacheLifeCycleListener;
+import org.cache2k.core.spi.CacheLifeCycleListener;
 
 import javax.management.InstanceNotFoundException;
 import javax.management.MBeanServer;
@@ -32,16 +32,17 @@ import javax.management.ObjectName;
 /**
  * @author Jens Wilke; created: 2015-04-29
  */
+@SuppressWarnings("WeakerAccess")
 public class JCacheJmxSupport implements CacheLifeCycleListener {
 
-  private static final MBeanServer mBeanServer = MBeanServerFactory.createMBeanServer();
+  private final MBeanServer mBeanServer = MBeanServerFactory.createMBeanServer();
 
   @Override
-  public void cacheCreated(CacheManager cm, Cache c) {
+  public void cacheCreated(Cache c) {
   }
 
   @Override
-  public void cacheDestroyed(CacheManager cm, Cache c) {
+  public void cacheDestroyed(Cache c) {
     disableStatistics(c);
     disableConfiguration(c);
   }

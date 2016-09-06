@@ -129,11 +129,6 @@ public class CacheBuilder<K,V> {
     return this;
   }
 
-  public CacheBuilder<K, V> heapEntryCapacity(final int v) {
-    builder.toConfiguration().setHeapEntryCapacity(v);
-    return this;
-  }
-
   public <T2> CacheBuilder<K, T2> valueType(final Class<T2> t) {
     builder.valueType(t);
     return (CacheBuilder<K, T2>) this;
