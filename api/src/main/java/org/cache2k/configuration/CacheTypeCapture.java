@@ -37,7 +37,7 @@ import java.util.Arrays;
  *   CacheBuilder.newCache().valueType(new CacheType<List<String>(){}).build()
  * }</pre>
  *
- * This constructs a cache with the known type <code>List&lt;String></code> for its value.
+ * This constructs a cache with the known type {@code List<String>} for its value.
  *
  * @see <a href="https://github.com/google/guava/wiki/ReflectionExplained">Google Guava CacheType explaination</a>
  *

@@ -20,14 +20,13 @@ package org.cache2k.core;
  * #L%
  */
 
-import org.cache2k.configuration.Cache2kConfiguration;
 import org.cache2k.core.util.TunableConstants;
 import org.cache2k.core.util.TunableFactory;
 
 /**
  * CLOCK Pro implementation with 3 clocks.
  *
- * <p/>This version uses a static allocation for hot and cold space sizes. No online or dynamic
+ * <p>This version uses a static allocation for hot and cold space sizes. No online or dynamic
  * optimization is done yet. However, the hitrate for all measured access traces is better
  * then LRU and it is resistant to scans.
  *

@@ -161,7 +161,7 @@ public interface Cache<K, V> extends
    * @throws NullPointerException if the specified key is null
    * @throws IllegalArgumentException if some property of the specified key
    *         prevents it from being stored in this cache
-   * @returns An entry representing the cache mapping. Multiple calls for the same key may
+   * @return An entry representing the cache mapping. Multiple calls for the same key may
    *          return different instances of the entry object.
    */
   CacheEntry<K, V> getEntry(K key);
@@ -330,7 +330,7 @@ public interface Cache<K, V> extends
    * @throws NullPointerException if the specified key is null
    * @throws IllegalArgumentException if some property of the specified key
    *         prevents it from being stored in this cache
-   * @returns An entry representing the cache mapping. Multiple calls for the same key may
+   * @return An entry representing the cache mapping. Multiple calls for the same key may
    *          return different instances of the entry object.
    */
   CacheEntry<K, V> peekEntry(K key);
@@ -791,7 +791,7 @@ public interface Cache<K, V> extends
   /**
    * Insert all elements of the map into the cache.
    *
-   * <p/>See {@link Cache#put(Object, Object)} for information about the
+   * <p>See {@link Cache#put(Object, Object)} for information about the
    * interaction with the {@link CacheWriter} and {@link ExpiryPolicy}
    *
    * @param valueMap Map of keys with associated values to be inserted in the cache

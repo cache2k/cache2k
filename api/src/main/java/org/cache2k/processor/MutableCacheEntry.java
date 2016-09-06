@@ -96,7 +96,7 @@ public interface MutableCacheEntry<K, V> extends CacheEntry<K, V> {
    * is called. If a remove is performed on a not existing cache entry the writer
    * method will also be called.
    *
-   * @see <a href="https://github.com/jsr107/jsr107tck/issues/84>JSR107 TCK issue 84</a>
+   * @see <a href="https://github.com/jsr107/jsr107tck/issues/84">JSR107 TCK issue 84</a>
    */
   void remove();
 

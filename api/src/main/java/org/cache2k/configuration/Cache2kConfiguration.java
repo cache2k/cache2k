@@ -214,8 +214,7 @@ public class Cache2kConfiguration<K, V> implements Serializable {
    * The used type of the cache key. A suitable cache key must provide a useful equals() and hashCode() method.
    * Arrays are not valid for cache keys.
    *
-   * <p><b>About types:</b><br/>
-   *
+   * <p><b>About types:</b>
    * The type may be set only once and cannot be changed during the lifetime of a cache. If no type information
    * is provided it defaults to the Object class. The provided type information might be used inside the cache
    * for optimizations and as well as to select appropriate default transformation schemes for copying
@@ -225,7 +224,6 @@ public class Cache2kConfiguration<K, V> implements Serializable {
    * Generic types: An application may provide more detailed type information to the cache, which
    * contains also generic type parameters by providing a {@link CacheTypeCapture} where the cache can extract
    * the type information.
-   * </p>
    *
    * @see CacheTypeCapture
    * @see #setKeyType(CacheType)

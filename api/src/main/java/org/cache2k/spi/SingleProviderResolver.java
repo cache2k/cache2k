@@ -32,7 +32,7 @@ import java.util.Map;
  * Resolves a service provider by its interface. This is used for the cache2k
  * internal providers.
  *
- * <p/>This class is in principle similar to the {@link java.util.ServiceLoader}.
+ * <p>This class is in principle similar to the {@link java.util.ServiceLoader}.
  * The design is a little bit simpler, because there is always one provider for each
  * interface. We cannot use the original ServiceLoader, since it is not working on
  * android.

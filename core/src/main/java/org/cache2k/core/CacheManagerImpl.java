@@ -223,7 +223,7 @@ public class CacheManagerImpl extends CacheManager {
    * the timer jobs first is needed, because there may be cache stacking and
    * a timer job of one cache may call an already closed cache.
    *
-   * <p/>Rationale exception handling: Exceptions on shutdown just could silently
+   * <p>Rationale exception handling: Exceptions on shutdown just could silently
    * ignored, because a shutdown is done any way. Exceptions could be happened
    * long before in a parallel task, shutdown is the last point where this could
    * be propagated to the application. Silently ignoring is bad anyway, because

@@ -39,7 +39,7 @@ public class Futures {
    * or the constructor. Waiting for all futures to finish is done
    * via {@link #get()}.
    *
-   * <p/>The get method call will throw Exceptions from the added futures.
+   * <p>The get method call will throw Exceptions from the added futures.
    */
   public static class WaitForAllFuture<V> implements Future<V> {
 
@@ -92,7 +92,7 @@ public class Futures {
     /**
      * True, if every future is done or no future is contained.
      *
-     * <p/>The list of futures is not touched, since an exception
+     * <p>The list of futures is not touched, since an exception
      * may be thrown via get.
      */
     @Override
@@ -109,11 +109,11 @@ public class Futures {
      * this method waits for finishing another one. If this happens, we wait
      * for that task also.
      *
-     * <p/>All get methods of the futures are executed to probe for possible
+     * <p>All get methods of the futures are executed to probe for possible
      * exceptions. Futures completed without exceptions, will be removed
      * for the list.
      *
-     * <p/>Implementation is a bit tricky. We need to call a potential stalling
+     * <p>Implementation is a bit tricky. We need to call a potential stalling
      * get outside the synchronized block, since new futures may come in in parallel.
      */
     @Override

@@ -41,7 +41,7 @@ public class ConfigurationReader {
    * Search setter method and set the parameter to the given value.
    *
    * @param _parameterName name of the parameter to set
-   * @param _content
+   * @param _content value to be set
    */
   public void apply(String _parameterName, String _content)
       throws ClassNotFoundException, InvocationTargetException, IllegalAccessException {
