@@ -47,6 +47,9 @@ public interface ExpiryPolicy<K, V> extends ExpiryTimeValues {
    * returned any more by the cache when the point in time is reached.
    * The cache parameters {@link Cache2kBuilder#sharpExpiry(boolean)}
    * and {@link Cache2kBuilder#refreshAhead(boolean)} influence the behaviour.
+   * It is also possible to request a sharp timeout for some entries. This is done
+   * by returning a negative time value, see the further comments for the return
+   * value below.
    *
    * <p><b>Inserts or updates:</b> It is possible to return different expiry times for
    * inserts or updates. An update can be detected by the presence of the old entry.
@@ -54,6 +57,10 @@ public interface ExpiryPolicy<K, V> extends ExpiryTimeValues {
    * <p><b>Calling cache operations:</b> It is illegal to call any
    * cache methods from this method. The outcome is undefined and it can
    * cause a deadlock.
+   *
+   * <p><b>Calling time:</b></p>The method is called from the cache, whenever a
+   * cache entry is updated. However, it is legal that the cache calls the
+   * method at arbitrary times during the entry lifecycle.
    *
    * <p><b>null values:</b> If the loader returns a {@code null} value, the expiry
    * policy will be called, regardless of the {@link Cache2kBuilder#permitNullValues} setting.
@@ -64,8 +71,8 @@ public interface ExpiryPolicy<K, V> extends ExpiryTimeValues {
    * <p><b>API rationale:</b> The recently loaded or inserted data is not passed in via a cache
    * entry object. Using a cache entry is desirable for API design reasons to have a thinner interface.
    * But the "real" entry can only be filled after the expiry policy is done, passing in an entry object
-   * would mean to build a temporary object. Second, the properties that are needed by the implementation
-   * are available directly. OTOH, 4-arity breaks Java 8 lambdas.
+   * would mean to build a temporary object, increasing GC load. Second, the properties that are
+   * needed by the implementation are available directly. The downside, OTOH, 4-arity breaks Java 8 lambdas.
    *
    * @param key the cache key used for inserting or loading
    * @param value the value to be cached. May be null if the loader returns null, regardless of the
@@ -81,7 +88,8 @@ public interface ExpiryPolicy<K, V> extends ExpiryTimeValues {
    *         that there is no specific expiry time known or needed. The effective expiry duration will never
    *         be longer than the configured expiry value via {@link Cache2kBuilder#expireAfterWrite(long, TimeUnit)}.
    *         If a negative value is returned, the negated value will be the expiry time
-   *         used, but sharp expiry is requested. See {@link Cache2kBuilder#sharpExpiry(boolean)}.
+   *         used, but sharp expiry is requested. Use {@link Expiry#toSharpTime(long)} to have a more
+   *         expressive code. See also {@link Cache2kBuilder#sharpExpiry(boolean)}.
    *
    * @see ValueWithExpiryTime#getCacheExpiryTime()
    */
