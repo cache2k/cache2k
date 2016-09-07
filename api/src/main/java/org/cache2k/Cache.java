@@ -718,23 +718,37 @@ public interface Cache<K, V> extends
   void reloadAll(CacheOperationCompletionListener l, Iterable<? extends K> keys);
 
   /**
+   * Invoke a user defined function on a cache entry.
+   *
+   * For examples and further details consult the documentation of {@link EntryProcessor}
+   * and {@link org.cache2k.processor.MutableCacheEntry}.
    *
    * @param key the key of the cache entry that should be processed
    * @param entryProcessor processor instance to be invoked
    * @param <R> type of the result
    * @throws EntryProcessingException if the {@code invoke} had thrown an exception
    * @return result provided by the entry processor
+   * @see EntryProcessor
+   * @see org.cache2k.processor.MutableCacheEntry
    */
   <R> R invoke(K key, EntryProcessor<K, V, R> entryProcessor);
 
   /**
+   * Invoke a user defined function on multiple cache entries specified by the
+   * {@code keys} parameter.
    *
-   * <p>The order of the invocation is unspecified.
+   * <p>The order of the invocation is unspecified. To speed up processing the cache
+   * may invoke the entry processor in parallel.
    *
-   * @param keys the keys of the cache entryies that should be processed
+   * For examples and further details consult the documentation of {@link EntryProcessor}
+   * and {@link org.cache2k.processor.MutableCacheEntry}.
+   *
+   * @param keys the keys of the cache entries that should be processed
    * @param entryProcessor processor instance to be invoked
    * @param <R> type of the result
    * @return map containing the invocation results for every cache key
+   * @see EntryProcessor
+   * @see org.cache2k.processor.MutableCacheEntry
    */
   <R> Map<K, EntryProcessingResult<R>> invokeAll(
     Iterable<? extends K> keys, EntryProcessor<K , V, R> entryProcessor);

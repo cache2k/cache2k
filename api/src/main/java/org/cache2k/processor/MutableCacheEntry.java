@@ -31,7 +31,8 @@ import org.cache2k.integration.CacheLoader;
  * {@code setValue} or {@code remove}. If multiple mutate methods
  * are called only the last method will be accounted for.
  *
- * <p>One instance is only intended for usage by a single thread.
+ * <p>One instance is only intended for usage by a single thread. And
+ * shouldn't passed or hold longer than the entry processor call.
  *
  * @see EntryProcessor
  * @author Jens Wilke
@@ -114,8 +115,9 @@ public interface MutableCacheEntry<K, V> extends CacheEntry<K, V> {
   /**
    * Set a new expiry time for the entry. If combined with {@link #setValue} the entry
    * will be updated or inserted with this expiry time, otherwise just the expiry time
-   * will be updated. Special time values are defined and described at
-   * {@link org.cache2k.expiry.ExpiryTimeValues}
+   * will be updated.
+   *
+   * <p>Special time values are defined and described at {@link org.cache2k.expiry.ExpiryTimeValues}
    *
    * @param t Time in millis since epoch.
    */
