@@ -41,7 +41,7 @@ The road map represents a rough plan, the dates and features may change.
 
 ## News
 
-  * **Version 0.28-BETA, 2016-09-02**: Minor bug fixes, SLF4J Support, statistics clean See [Version 0.28 release notes](0/28.html)
+  * **Version 0.28-BETA, 2016-09-02**: Minor bug fixes, SLF4J Support, statistics cleanup See [Version 0.28 release notes](0/28.html)
   * **Version 0.27-BETA, 2016-07-26**: Performance improvements, leveraging Java 8, more API restructuring, cleanup and minor bug fixes. See [Version 0.27 release notes](0/27.html)
   * **Version 0.26-BETA, 2016-05-06**: Resilience policy, more API restructuring, cleanup and minor bug fixes. See [Version 0.26 release notes](0/26.html)
   * **Version 0.25-BETA, 2016-04-21**: API restructuring, expiry and asynchronous notifications. See [Version 0.25 release notes](0/25.html)
