@@ -883,7 +883,9 @@ public interface Cache<K, V> extends
   Iterable<CacheEntry<K,V>> entries();
 
   /**
-   * Remove all cache contents calling registered listeners.
+   * Removes all cache contents. This has the same semantics of calling
+   * remove to every key, except that the cache is trying to optimize the
+   * bulk operation. Same as {@code clear} but listeners will be called.
    */
   void removeAll();
 

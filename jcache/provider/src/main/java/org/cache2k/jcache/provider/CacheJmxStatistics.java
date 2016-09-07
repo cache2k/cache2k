@@ -99,7 +99,7 @@ public class CacheJmxStatistics implements CacheStatisticsMXBean {
 
   @Override
   public long getCacheRemovals() {
-    return getInfo().getRemovedCount();
+    return getInfo().getRemoveCount();
   }
 
   @Override

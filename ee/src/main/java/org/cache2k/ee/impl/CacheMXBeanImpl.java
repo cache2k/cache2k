@@ -50,68 +50,83 @@ public class CacheMXBeanImpl implements CacheMXBean {
   }
 
   @Override
-  public long getMissCnt() {
+  public long getMissCount() {
     return getInfo().getMissCount();
   }
 
   @Override
-  public long getNewEntryCnt() {
+  public long getInsertCount() {
     return getInfo().getNewEntryCount();
   }
 
   @Override
-  public long getLoadCnt() {
+  public long getLoadCount() {
     return getInfo().getLoadCount();
   }
 
   @Override
-  public long getRefreshCnt() {
+  public long getRefreshCount() {
     return getInfo().getRefreshCount();
   }
 
   @Override
-  public long getRefreshFailedCnt() {
+  public long getRefreshFailedCount() {
     return getInfo().getRefreshFailedCount();
   }
 
   @Override
-  public long getRefreshedHitCnt() {
+  public long getRefreshedHitCount() {
     return getInfo().getRefreshedHitCount();
   }
 
   @Override
-  public long getExpiredCnt() {
+  public long getExpiredCount() {
     return getInfo().getExpiredCount();
   }
 
   @Override
-  public long getEvictedCnt() {
+  public long getEvictedCount() {
     return getInfo().getEvictedCount();
   }
 
   @Override
-  public long getKeyMutationCnt() {
+  public long getKeyMutationCount() {
     return getInfo().getKeyMutationCount();
   }
 
   @Override
-  public long getLoadExceptionCnt() {
+  public long getLoadExceptionCount() {
     return getInfo().getLoadExceptionCount();
   }
 
   @Override
-  public long getSuppressedExceptionCnt() {
+  public long getSuppressedLoadExceptionCount() {
     return getInfo().getSuppressedExceptionCount();
   }
 
   @Override
-  public long getGetCnt() {
+  public long getGetCount() {
     return getInfo().getGetCount();
   }
 
   @Override
-  public long getPutCnt() {
+  public long getPutCount() {
     return getInfo().getPutCount();
+  }
+
+  @Override
+  public long getClearCount() {
+    return getInfo().getClearCount();
+  }
+
+  @Override
+  public long getRemoveCount() {
+    return getInfo().getRemoveCount();
+  }
+
+  @Override
+  public long getClearedEntriesCount() {
+    return getInfo().getClearedEntriesCount();
   }
 
   @Override
@@ -174,7 +189,7 @@ public class CacheMXBeanImpl implements CacheMXBean {
   }
 
   @Override
-  public String getExtraStatistics() {
+  public String getEvictionStatistics() {
     return getInfo().getExtraStatistics();
   }
 

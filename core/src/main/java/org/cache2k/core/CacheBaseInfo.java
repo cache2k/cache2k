@@ -169,7 +169,7 @@ class CacheBaseInfo implements InternalCacheInfo {
   @Override
   public int getEvictionRunningCount() { return evictionRunningCnt; }
   @Override
-  public long getRemovedCount() { return removedCnt; }
+  public long getRemoveCount() { return removedCnt; }
   @Override
   public long getPutCount() { return correctedPutCnt; }
 
@@ -270,7 +270,7 @@ class CacheBaseInfo implements InternalCacheInfo {
     return clearCnt;
   }
 
-  public long getRemoveByClearCount() {
+  public long getClearedEntriesCount() {
     return clearRemovedCnt;
   }
 
@@ -291,9 +291,9 @@ class CacheBaseInfo implements InternalCacheInfo {
             + "suppressedException=" + getSuppressedExceptionCount() + ", "
             + "new=" + getNewEntryCount() + ", "
             + "expire=" + getExpiredCount() + ", "
-            + "remove=" + getRemovedCount() + ", "
+            + "remove=" + getRemoveCount() + ", "
             + "clear=" + getClearCount() + ", "
-            + "removeByClear=" + getRemoveByClearCount() + ", "
+            + "removeByClear=" + getClearedEntriesCount() + ", "
             + "evict=" + getEvictedCount() + ", "
             + "timer=" + getTimerEventCount() + ", "
             + "goneSpin=" + getGoneSpinCount() + ", "

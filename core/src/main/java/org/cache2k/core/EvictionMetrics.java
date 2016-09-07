@@ -38,7 +38,7 @@ public interface EvictionMetrics {
   long getHitCount();
 
   /**
-   * @see InternalCacheInfo#getRemovedCount()
+   * @see InternalCacheInfo#getRemoveCount()
    */
   long getRemovedCount();
 

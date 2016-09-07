@@ -77,7 +77,7 @@ public class Statistics {
   public final Counter removeCount = new Counter("remove") {
     @Override
     protected long getCounterValue(final InternalCacheInfo inf) {
-      return inf.getRemovedCount();
+      return inf.getRemoveCount();
     }
   };
 
