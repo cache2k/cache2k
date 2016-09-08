@@ -20,6 +20,7 @@ package org.cache2k.core;
  * #L%
  */
 
+import org.cache2k.configuration.CacheType;
 import org.cache2k.event.CacheEntryExpiredListener;
 import org.cache2k.integration.AdvancedCacheLoader;
 import org.cache2k.CacheEntry;
@@ -94,12 +95,12 @@ public class WiredCache<K, V> extends AbstractCache<K, V>
   }
 
   @Override
-  public Class<?> getKeyType() {
+  public CacheType getKeyType() {
     return heapCache.getKeyType();
   }
 
   @Override
-  public Class<?> getValueType() {
+  public CacheType getValueType() {
     return heapCache.getValueType();
   }
 

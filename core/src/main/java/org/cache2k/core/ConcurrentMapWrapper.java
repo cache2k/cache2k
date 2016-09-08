@@ -48,8 +48,8 @@ public class ConcurrentMapWrapper<K,V> implements ConcurrentMap<K, V> {
   public ConcurrentMapWrapper(InternalCache<K, V> cache) {
     this.cache = cache;
     permitNull = cache.isNullValuePermitted();
-    keyType = cache.getKeyType();
-    valueType = cache.getValueType();
+    keyType = cache.getKeyType().getType();
+    valueType = cache.getValueType().getType();
   }
 
   @Override

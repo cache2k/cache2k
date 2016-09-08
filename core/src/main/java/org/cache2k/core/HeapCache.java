@@ -22,6 +22,7 @@ package org.cache2k.core;
 
 import org.cache2k.*;
 import org.cache2k.configuration.Cache2kConfiguration;
+import org.cache2k.configuration.CacheType;
 import org.cache2k.core.operation.ExaminationEntry;
 import org.cache2k.core.operation.ReadOnlyCacheEntry;
 import org.cache2k.core.operation.Semantic;
@@ -169,9 +170,9 @@ public class HeapCache<K, V>
 
   private volatile boolean shutdownInitiated = true;
 
-  protected Class keyType;
+  protected CacheType keyType;
 
-  protected Class valueType;
+  protected CacheType valueType;
 
   protected ExceptionPropagator exceptionPropagator = DEFAULT_EXCEPTION_PROPAGATOR;
 
@@ -222,8 +223,8 @@ public class HeapCache<K, V>
 
   /** called from CacheBuilder */
   public void setCacheConfig(final Cache2kConfiguration c) {
-    valueType = c.getValueType().getType();
-    keyType = c.getKeyType().getType();
+    valueType = c.getValueType();
+    keyType = c.getKeyType();
     if (name != null) {
       throw new IllegalStateException("already configured");
     }
@@ -311,10 +312,10 @@ public class HeapCache<K, V>
   }
 
   @Override
-  public Class<?> getKeyType() { return keyType; }
+  public CacheType getKeyType() { return keyType; }
 
   @Override
-  public Class<?> getValueType() { return valueType; }
+  public CacheType getValueType() { return valueType; }
 
   public void init() {
     synchronized (lock) {

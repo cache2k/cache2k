@@ -22,6 +22,7 @@ package org.cache2k.core;
 
 import org.cache2k.Cache;
 import org.cache2k.CacheEntry;
+import org.cache2k.configuration.CacheType;
 import org.cache2k.core.util.Log;
 import org.cache2k.core.storageApi.StorageAdapter;
 
@@ -41,9 +42,9 @@ public interface InternalCache<K, V> extends Cache<K, V>, CanCheckIntegrity {
 
   StorageAdapter getStorage();
 
-  Class<?> getKeyType();
+  CacheType getKeyType();
 
-  Class<?> getValueType();
+  CacheType getValueType();
 
   /** used from the cache manager for shutdown */
   void cancelTimerJobs();
