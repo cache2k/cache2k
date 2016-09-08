@@ -1,0 +1,65 @@
+== Types
+
+In this chapter you will learn:
+
+- How to construct a cache with concrete types
+- Why you should use types
+- How generic types are captured
+
+=== Constructing a Cache with Generic Types
+
+When using generic types, the cache is constructed the same way as already shown in the
+__Getting started__ chapter.
+
+[source,java]
+----
+    Cache<Long, List<String>> cache =
+      new Cache2kBuilder<Long, List<String>>() {}
+        .eternal(true)
+        .build();
+----
+
+The `{}` is a trick which constructs an anonymous class, which contains the complete type information.
+ If just an object would be created the type information would not be available at runtime and could
+ not be use for configuring the cache.
+
+It is also possible to construct caches with arbitrary types dynamically, for example in generic code like
+a factory method. If generic type information should be passed, the interface `CacheType` can be implemented.
+A plain Java class is also supported.
+
+=== Key Type
+
+The key type need to implement `equals` and `hashCode`. Arrays are not valid for keys.
+
+=== Value Type
+
+Using arrays as values is discouraged. Cache operations testing for equality, like `Cache.replaceIfEquals`
+ will not work as desired on arrays.
+
+If the value type is implementing `ValueWithExpiryTime`, an expiry policy is added automatically. The
+the class documentation for further information.
+
+=== Untyped Caches
+
+It is possible to construct a untyped cache via `Cache2kBuilder.forUnknownTypes`, however, the
+used of untyped caches is discouraged. If different types need to be stored in a cache, construct
+a separate cache for each type with the proper type information.
+
+[IMPORTANT]
+.Don't use untyped caches
+====
+The need for an untyped cache could be an indicator for a misdirected organization of developer resources
+or an architectural problem. The typical pattern is, that someone needs to do a 'caching layer',
+since the application needs caching, which should handle arbitrary types. Caching isn't a single layer
+in a software architecture, it is a cross-cutting concern. At every interface
+boundary there is potential for caching. Inside every component there is potential for caching.
+====
+
+=== Future Enhancements
+
+Future versions of cache2k will leverage the type information for:
+
+- optimizations depending on the type
+- optional strict type checking
+- optional copying
+- derive a optimal marshaller for off heap overflow and persistence

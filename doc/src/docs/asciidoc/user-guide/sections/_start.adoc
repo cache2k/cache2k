@@ -200,7 +200,7 @@ is to define a dedicated class for the cache key that is a tuple of origin and d
 Cache keys needs to define a proper `hashCode` and `equals` method.
 
 [IMPORTANT]
-.Don't Mutate Keys
+.Don't mutate keys
 ====
 For a key instance it is illegal to change its value after it is used for a cache operation.
 The cache uses the key instance in its own data structure. When defining your own keys, it is a therefore a
