@@ -28,6 +28,16 @@ package org.cache2k.configuration;
  * <p>While the type descriptor contains implementation classes, interface consumers must not rely on the
  * implementation types.
  *
+ * <p><b>About types:</b>
+ * If no type information is provided it defaults to the Object class. The provided type information
+ * is used inside the cache for optimizations and as well as to select appropriate default transformation
+ * schemes for copying objects or marshalling. The correct types are not strictly enforced at all levels by the cache
+ * for performance reasons. The cache application guarantees that only the specified types will be used.
+ * The cache will check the type compatibility at critical points, e.g. when reconnecting to an external storage.
+ * Generic types: An application may provide more detailed type information to the cache, which
+ * contains also generic type parameters by providing a {@link CacheTypeCapture} where the cache can extract
+ * the type information.
+ *
  * @see CacheTypeCapture
  */
 public interface CacheType<T> {

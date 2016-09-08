@@ -140,9 +140,11 @@ public class Cache2kBuilder<K, V> implements Cloneable {
   }
 
   /**
-   * Sets the key type to use.
+   * The used type of the cache key. A suitable cache key must provide a useful
+   * {@code equals} and {@code hashCode} method. Arrays are not valid for cache keys.
    *
    * @throws IllegalArgumentException if key type is already set
+   * @see CacheType for a general discussion on types
    */
   public final <K2> Cache2kBuilder<K2, V> keyType(Class<K2> t) {
     config.setKeyType(t);
@@ -152,7 +154,12 @@ public class Cache2kBuilder<K, V> implements Cloneable {
   /**
    * Sets the value type to use.
    *
+   * <p>Using arrays as values is discouraged. Cache operations testing
+   * for equality, like {@link Cache#replaceIfEquals(Object, Object, Object)}
+   * will not work as desired on arrays.
+   *
    * @throws IllegalArgumentException if value type is already set
+   * @see CacheType for a general discussion on types
    */
   public final <T2> Cache2kBuilder<K, T2> valueType(Class<T2> t) {
     config.setValueType(t);
@@ -163,6 +170,7 @@ public class Cache2kBuilder<K, V> implements Cloneable {
    * Sets the key type to use.
    *
    * @throws IllegalArgumentException if key type is already set
+   * @see CacheType for a general discussion on types
    */
   public final <K2> Cache2kBuilder<K2, V> keyType(CacheType<K2> t) {
     config.setKeyType(t);
@@ -173,6 +181,7 @@ public class Cache2kBuilder<K, V> implements Cloneable {
    * Sets the value type to use.
    *
    * @throws IllegalArgumentException if value type is already set
+   * @see CacheType for a general discussion on types
    */
   public final <T2> Cache2kBuilder<K, T2> valueType(CacheType<T2> t) {
     config.setValueType(t);
