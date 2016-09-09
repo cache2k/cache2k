@@ -34,6 +34,16 @@ import java.util.Date;
 public interface CacheInfoMXBean {
 
   /**
+   * Type of the cache key.
+   */
+  String getKeyType();
+
+  /**
+   * Type of the cache value.
+   */
+  String getValueType();
+
+  /**
    * The current number of entries within the cache, starting with 0.
    * When iterating the entries the cache will always return less or an identical number of entries.
    *

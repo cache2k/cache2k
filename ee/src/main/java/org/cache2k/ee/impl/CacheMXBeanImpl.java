@@ -33,6 +33,16 @@ public class CacheMXBeanImpl implements CacheMXBean {
 
   InternalCache cache;
 
+  @Override
+  public String getKeyType() {
+    return cache.getKeyType().getTypeName();
+  }
+
+  @Override
+  public String getValueType() {
+    return cache.getValueType().getTypeName();
+  }
+
   public CacheMXBeanImpl(InternalCache cache) {
     this.cache = cache;
   }
