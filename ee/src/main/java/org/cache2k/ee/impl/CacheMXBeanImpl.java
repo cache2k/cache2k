@@ -171,12 +171,16 @@ public class CacheMXBeanImpl implements CacheMXBean {
 
   @Override
   public Date getClearedTime() {
-    return new Date(getInfo().getClearedTime());
+    return optionalDate(getInfo().getClearedTime());
   }
 
   @Override
   public Date getInfoCreatedTime() {
     return new Date(getInfo().getInfoCreatedTime());
+  }
+
+  Date optionalDate(long _millis) {
+    return _millis == 0 ? null : new Date(_millis);
   }
 
   @Override
