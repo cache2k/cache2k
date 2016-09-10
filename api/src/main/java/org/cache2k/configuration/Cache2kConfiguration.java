@@ -44,8 +44,6 @@ import java.util.List;
 @SuppressWarnings("unused")
 public class Cache2kConfiguration<K, V> implements Serializable {
 
-  public final long EXPIRY_MILLIS_ETERNAL = Long.MAX_VALUE;
-
   private boolean storeByReference;
   private String name;
   private CacheType<K> keyType;
@@ -160,7 +158,6 @@ public class Cache2kConfiguration<K, V> implements Serializable {
   }
 
   /**
-   *
    * @see Cache2kBuilder#refreshAhead(boolean)
    */
   public boolean isRefreshAhead() {
@@ -168,7 +165,6 @@ public class Cache2kConfiguration<K, V> implements Serializable {
   }
 
   /**
-   *
    * @see Cache2kBuilder#refreshAhead(boolean)
    */
   public void setRefreshAhead(boolean v) {
@@ -256,15 +252,15 @@ public class Cache2kConfiguration<K, V> implements Serializable {
   }
 
   public boolean isEternal() {
-    return expireAfterWriteMillis == -1 || expireAfterWriteMillis == EXPIRY_MILLIS_ETERNAL;
+    return expireAfterWriteMillis == -1 || expireAfterWriteMillis == ExpiryTimeValues.ETERNAL;
   }
 
   /**
-   * Set cache entry don't expiry by time.
+   * @see Cache2kBuilder#eternal(boolean)
    */
   public void setEternal(boolean v) {
     if (v) {
-      this.expireAfterWriteMillis = EXPIRY_MILLIS_ETERNAL;
+      this.expireAfterWriteMillis = ExpiryTimeValues.ETERNAL;
     }
   }
 
