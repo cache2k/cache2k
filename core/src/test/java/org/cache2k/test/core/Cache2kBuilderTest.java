@@ -180,6 +180,16 @@ public class Cache2kBuilderTest {
     c.close();
   }
 
+  @Test(expected = IllegalArgumentException.class)
+  public void arrayKeyYieldsException() {
+    new Cache2kBuilder<Integer[], String>() {};
+  }
+
+  @Test(expected = IllegalArgumentException.class)
+  public void arrayValueYieldsException() {
+    new Cache2kBuilder<String, Integer[]>() {};
+  }
+
   @Test
   public void cacheNameForAnnotationDefault() {
     Cache<Long, List<String>> c =

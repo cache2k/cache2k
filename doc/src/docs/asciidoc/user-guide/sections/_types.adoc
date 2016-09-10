@@ -33,8 +33,11 @@ The key type need to implement `equals` and `hashCode`. Arrays are not valid for
 
 === Value Type
 
-Using arrays as values is discouraged. Cache operations testing for equality, like `Cache.replaceIfEquals`
- will not work as desired on arrays.
+Using arrays as values is not supported, because the cache operations testing for equality,
+like `Cache.replaceIfEquals` will not work as desired on arrays. See the rationale for discussion.
+To prevent against problems, cache2k refuses to build a cache with a array value type specified
+at the configuration. However, this protection can be circumvented by not providing the
+proper type in the cache configuration.
 
 If the value type is implementing `ValueWithExpiryTime`, an expiry policy is added automatically. The
 the class documentation for further information.

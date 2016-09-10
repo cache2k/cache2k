@@ -102,4 +102,18 @@ The alternative and more common concept would define `onEntryCreated(CreatedEven
 On the other hand creating a new object for each event is additional overhead and adds one more indirection 
 complicating clients. The choice was made against good API design practices, to keep it more simple.
 
+## No Arrays as Values
+
+Using arrays as values is not supported, because the cache operations testing for equality, 
+like `Cache.replaceIfEquals` will not work as desired on arrays. 
+
+Supporting arrays is feasible, some cache implementations allow arrays and solve the problem of equality by
+ making the equality a customization option. The only argument for arrays is to save the extra object instance.
+Supporting arrays, would make the cache code base more complex with little benefit.
+
+To support caching of arrays of primitive types, some standard wrapper object should be provided.
+
+Maybe we should drop the check of array value type in the configuration, since it will never
+completely protect against the usage of arrays. In case the cache is by-reference only and
+ no operations are used that check for equality, arrays would work as values.
  

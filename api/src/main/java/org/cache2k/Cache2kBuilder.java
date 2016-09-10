@@ -89,7 +89,10 @@ public class Cache2kBuilder<K, V> implements Cloneable {
   }
 
   /**
-   * Create a new cache builder if key and value types are classes with no generic parameters.
+   * Create a new cache builder for key and value types are classes with no generic parameters.
+   *
+   * @see #keyType(Class)
+   * @see #valueType(Class)
    */
   public static <K,T> Cache2kBuilder<K,T> of(Class<K> _keyType, Class<T> _valueType) {
     return of(Cache2kConfiguration.of(_keyType, _valueType));
@@ -143,7 +146,7 @@ public class Cache2kBuilder<K, V> implements Cloneable {
    * The used type of the cache key. A suitable cache key must provide a useful
    * {@code equals} and {@code hashCode} method. Arrays are not valid for cache keys.
    *
-   * @throws IllegalArgumentException if key type is already set
+   * @throws IllegalArgumentException in case the type is illegal
    * @see CacheType for a general discussion on types
    */
   public final <K2> Cache2kBuilder<K2, V> keyType(Class<K2> t) {
@@ -152,13 +155,9 @@ public class Cache2kBuilder<K, V> implements Cloneable {
   }
 
   /**
-   * Sets the value type to use.
+   * Sets the value type to use. Arrays are not supported.
    *
-   * <p>Using arrays as values is discouraged. Cache operations testing
-   * for equality, like {@link Cache#replaceIfEquals(Object, Object, Object)}
-   * will not work as desired on arrays.
-   *
-   * @throws IllegalArgumentException if value type is already set
+   * @throws IllegalArgumentException in case the type is illegal
    * @see CacheType for a general discussion on types
    */
   public final <T2> Cache2kBuilder<K, T2> valueType(Class<T2> t) {
@@ -167,9 +166,10 @@ public class Cache2kBuilder<K, V> implements Cloneable {
   }
 
   /**
-   * Sets the key type to use.
+   * The used type of the cache key. A suitable cache key must provide a useful
+   * {@code equals} and {@code hashCode} method. Arrays are not valid for cache keys.
    *
-   * @throws IllegalArgumentException if key type is already set
+   * @throws IllegalArgumentException in case the type is illegal
    * @see CacheType for a general discussion on types
    */
   public final <K2> Cache2kBuilder<K2, V> keyType(CacheType<K2> t) {
@@ -178,9 +178,9 @@ public class Cache2kBuilder<K, V> implements Cloneable {
   }
 
   /**
-   * Sets the value type to use.
+   * Sets the value type to use. Arrays are not supported.
    *
-   * @throws IllegalArgumentException if value type is already set
+   * @throws IllegalArgumentException in case the type is illegal
    * @see CacheType for a general discussion on types
    */
   public final <T2> Cache2kBuilder<K, T2> valueType(CacheType<T2> t) {
