@@ -214,9 +214,6 @@ public class Cache2kConfiguration<K, V> implements Serializable {
    */
   public void setKeyType(CacheType v) {
     checkNull(v);
-    if (keyType != null && !v.equals(keyType)) {
-      throw new IllegalArgumentException("Key type may only set once.");
-    }
     if (v.isArray()) {
       throw new IllegalArgumentException("Arrays are not supported for keys");
     }
@@ -242,9 +239,6 @@ public class Cache2kConfiguration<K, V> implements Serializable {
    */
   public void setValueType(CacheType v) {
     checkNull(v);
-    if (valueType != null && !v.equals(valueType)) {
-      throw new IllegalArgumentException("Value type may only set once.");
-    }
     if (v.isArray()) {
       throw new IllegalArgumentException("Arrays are not supported for values");
     }
