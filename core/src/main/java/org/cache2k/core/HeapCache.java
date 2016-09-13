@@ -165,9 +165,6 @@ public class HeapCache<K, V>
 
   protected final Hash2<K,V> hash = new Hash2<K,V>();
 
-  /** Stuff that we need to wait for before shutdown may complete */
-  protected Futures.WaitForAllFuture<?> shutdownWaitFuture;
-
   private volatile boolean shutdownInitiated = true;
 
   protected CacheType keyType;
@@ -332,16 +329,6 @@ public class HeapCache<K, V>
     }
   }
 
-  public void updateShutdownWaitFuture(Future<?> f) {
-    synchronized (lock) {
-      if (shutdownWaitFuture == null || shutdownWaitFuture.isDone()) {
-        shutdownWaitFuture = new Futures.WaitForAllFuture(f);
-      } else {
-        shutdownWaitFuture.add((Future) f);
-      }
-    }
-  }
-
   public void checkClosed() {
     if (shutdownInitiated) {
       throw new CacheClosedException();
@@ -409,15 +396,6 @@ public class HeapCache<K, V>
       ((ExecutorService) loaderExecutor).shutdown();
     }
     cancelTimerJobs();
-    try {
-      Future<?> _future = shutdownWaitFuture;
-      if (_future != null) {
-        _future.get();
-      }
-    } catch (Exception ex) {
-      throw new CacheException(ex);
-    }
-
   }
 
   @Override
@@ -1939,12 +1917,6 @@ public class HeapCache<K, V>
     public int maximumEntryLockSpins = 333333;
 
     /**
-     * Maximum number of tries to find an entry for eviction if maximum size
-     * is reached.
-     */
-    public int maximumEvictSpins = 5;
-
-    /**
      * Size of the hash table before inserting the first entry. Must be power
      * of two. Default: 64.
      */
@@ -1981,7 +1953,7 @@ public class HeapCache<K, V>
      */
     public long sharpExpirySafetyGapMillis = 27 * 1000 + 127;
 
-    /**
+     /**
      * Some statistic values need processing time to gather and compute it. This is a safety
      * time delta, to ensure that the machine is not busy due to statistics generation. Default: 333.
      */
