@@ -28,9 +28,12 @@ import java.sql.Timestamp;
  * @author Jens Wilke; created: 2014-12-18
  */
 public class Util {
-  
+
+  /**
+   * Format milliseconds since epoch to a compact timestamp.
+   */
   public static String formatMillis(long _millis) {
-     return new Timestamp(_millis).toString();
+    return new Timestamp(_millis).toString();
   }
 
   /**
