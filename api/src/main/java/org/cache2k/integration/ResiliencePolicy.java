@@ -53,9 +53,8 @@ public abstract class ResiliencePolicy<K, V> implements ExpiryTimeValues {
    * The cache will call immediately {@link #retryLoadAfter} to determine how long the
    * exception should stay in the cache and when the next retry attempt takes place.
    *
-   * <p>If the exception is not suppressed, it will wrapped into a {@link CacheLoaderException} and propagated to the cache
-   * client. This is customizable by the {@link ExceptionPropagator}. The cache
-   * will
+   * <p>If the exception is not suppressed, it will wrapped into a {@link CacheLoaderException}
+   * and propagated to the cache client. This is customizable by the {@link ExceptionPropagator}.
    *
    * @param cachedContent The entry representing the currently cached content.
    *                      It is possible that this data is already expired.
@@ -72,7 +71,7 @@ public abstract class ResiliencePolicy<K, V> implements ExpiryTimeValues {
 
   /**
    * Called after the loader threw an exception and no previous value is available or
-   * {@link #suppressExceptionUntil} returned null.
+   * {@link #suppressExceptionUntil} returned zero.
    */
   public abstract long retryLoadAfter(K key,
                                       ExceptionInformation exceptionInformation);
@@ -82,7 +81,7 @@ public abstract class ResiliencePolicy<K, V> implements ExpiryTimeValues {
    * relevant configuration settings.
    *
    * <p>Compatibility: This interface is not intended for implementation
-   * or extension by a client and may get additional methods in a new minor release.
+   * or extension by a cache client and may get additional methods in a new minor release.
    */
   public interface Context {
 
