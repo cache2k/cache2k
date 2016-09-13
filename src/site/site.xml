@@ -51,7 +51,7 @@
       <brand>
         <name>
           <![CDATA[
-            <img src="/img/cache2k-logo.svg" alt="cache2k" title="cache2k Java caching logo"/>
+            <img src="./img/cache2k-logo.svg" alt="cache2k" title="cache2k Java caching logo"/>
           ]]>
         </name>
         <href>http://cache2k.org</href>
