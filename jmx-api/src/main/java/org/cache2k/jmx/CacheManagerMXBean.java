@@ -27,11 +27,10 @@ package org.cache2k.jmx;
 public interface CacheManagerMXBean {
 
   /**
-   * Combined health of all caches.
-   *
-   * @see org.cache2k.jmx.CacheInfoMXBean#getAlert()
+   * "OK" if no issues are to report, otherwise it starts with "WARNING:" or
+   * "FAILURE:" and a more descriptive text.
    */
-  int getAlert();
+  String getHealthStatus();
 
   /**
    * Clear all associated caches.

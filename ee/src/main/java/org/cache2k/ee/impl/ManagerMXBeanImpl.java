@@ -23,7 +23,12 @@ package org.cache2k.ee.impl;
 import org.cache2k.Cache;
 import org.cache2k.core.CacheManagerImpl;
 import org.cache2k.core.InternalCache;
+import org.cache2k.core.InternalCacheInfo;
 import org.cache2k.jmx.CacheManagerMXBean;
+
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.List;
 
 /**
 * @author Jens Wilke; created: 2014-10-09
@@ -37,14 +42,40 @@ public class ManagerMXBeanImpl implements CacheManagerMXBean {
   }
 
   @Override
-  public int getAlert() {
+  public String getHealthStatus() {
+    List<InternalCacheInfo.Health> li = new ArrayList<InternalCacheInfo.Health>();
     int v = 0;
     for (Cache c : manager) {
-      if (c instanceof InternalCache) {
-        v = Math.max(v, ((InternalCache) c).getInfo().getHealth());
+      InternalCache ic = (InternalCache) c;
+      li.addAll(ic.getInfo().getHealth());
+    }
+    return constructHealthString(li);
+  }
+
+  private String constructHealthString(final List<InternalCacheInfo.Health> _li) {
+    List<InternalCacheInfo.Health> _sortedList = new ArrayList<InternalCacheInfo.Health>();
+    for (InternalCacheInfo.Health hi : _li) {
+      if (InternalCacheInfo.Health.FAILURE.equals(hi.getLevel())) {
+        _sortedList.add(0, hi);
+      } else {
+        _sortedList.add(hi);
       }
     }
-    return v;
+    if (_sortedList.isEmpty()) {
+      return "OK";
+    }
+    boolean _comma = false;
+    StringBuilder sb = new StringBuilder();
+    for (InternalCacheInfo.Health hi : _sortedList) {
+      if (_comma) {
+        sb.append(", ");
+      }
+      sb.append(hi.getLevel()).append(": ");
+      sb.append(hi.getMessage())
+        .append(" (").append(hi.getCache().getCacheManager().getName()).append(':').append(hi.getCache().getName()).append(')');
+      _comma = true;
+    }
+    return sb.toString();
   }
 
   @Override

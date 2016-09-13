@@ -25,6 +25,7 @@ import org.cache2k.core.InternalCacheInfo;
 import org.cache2k.jmx.CacheMXBean;
 
 import java.util.Date;
+import java.util.Iterator;
 
 /**
  * @author Jens Wilke; created: 2014-10-09
@@ -199,7 +200,15 @@ public class CacheMXBeanImpl implements CacheMXBean {
 
   @Override
   public int getAlert() {
-    return getInfo().getHealth();
+    Iterator<InternalCacheInfo.Health> it = getInfo().getHealth().iterator();
+    if (!it.hasNext()) {
+      return 0;
+    }
+    InternalCacheInfo.Health hi = it.next();
+    if (InternalCacheInfo.Health.FAILURE.equals(hi.getLevel())) {
+      return 2;
+    }
+    return 1;
   }
 
   @Override

@@ -68,9 +68,24 @@ public class JmxSupportTest {
     m.close();
   }
 
+  @Test
+  public void emptyCacheManager_healthOkay() throws Exception {
+    String _name = getClass().getName() + ".emptyCacheManager_healthOkay";
+    CacheManager m = CacheManager.getInstance(_name);
+    MBeanInfo i = getCacheManagerInfo(_name);
+    assertEquals(ManagerMXBeanImpl.class.getName(), i.getClassName());
+    String _health = (String) server.getAttribute(getCacheManagerObjectName(_name), "HealthStatus");
+    assertEquals("OK", _health);
+    m.close();
+  }
+
   private MBeanInfo getCacheManagerInfo(String _name) throws Exception {
-    ObjectName on = new ObjectName("org.cache2k:type=CacheManager,name=" + _name);
+    ObjectName on = getCacheManagerObjectName(_name);
     return server.getMBeanInfo(on);
+  }
+
+  private ObjectName getCacheManagerObjectName(final String _name) throws MalformedObjectNameException {
+    return new ObjectName("org.cache2k:type=CacheManager,name=" + _name);
   }
 
   @Test(expected = InstanceNotFoundException.class)
@@ -91,7 +106,6 @@ public class JmxSupportTest {
       .eternal(true)
       .build();
     MBeanInfo i = getCacheInfo(_name);
-    System.out.println(i);
     assertEquals(CacheMXBeanImpl.class.getName(), i.getClassName());
     c.close();
   }

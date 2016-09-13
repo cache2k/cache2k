@@ -1977,6 +1977,16 @@ public class HeapCache<K, V>
 
     public ExceptionPropagator exceptionPropagator = new StandardExceptionPropagator();
 
+    /**
+     * Alert level error, when hash quality is below this threshold. Default 5.
+     */
+    public int hashQualityWarningThreshold = 20;
+
+    /**
+     * Alert level error, when hash quality is below this threshold. Default 5.
+     */
+    public int hashQualityErrorThreshold = 5;
+
 
   }
 

@@ -20,7 +20,13 @@ package org.cache2k.core;
  * #L%
  */
 
+import org.cache2k.Cache;
+
 import java.text.DecimalFormat;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Iterator;
+import java.util.List;
 import java.util.concurrent.ThreadPoolExecutor;
 
 import static org.cache2k.core.util.Util.formatMillis;
@@ -224,15 +230,27 @@ class CacheBaseInfo implements InternalCacheInfo {
   @Override
   public int getInfoCreationDeltaMs() { return infoCreationDeltaMs; }
   @Override
-  public int getHealth() {
-    if (getHashQuality() < 30 ||
-      getKeyMutationCount() > 0 ||
-      getInternalExceptionCount() > 0) {
-      return 1;
+  public Collection<Health> getHealth() {
+    List<Health> l = new ArrayList<Health>();
+    if (integrityState.getStateFlags() > 0) {
+      l.add(new HealthBean(cache, "integrity", Health.FAILURE, "Integrity check error: " + integrityState.getStateFlags()));
     }
-    return 0;
+    final int _ERROR_THRESHOLD = HeapCache.TUNABLE.hashQualityErrorThreshold;
+    if (getHashQuality() < _ERROR_THRESHOLD) {
+      l.add(new HealthBean(cache, "hashing", Health.FAILURE, "hash quality is " + getHashQuality() + "(error threshold: " + _ERROR_THRESHOLD));
+    }
+    final int _WARNING_THRESHOLD = HeapCache.TUNABLE.hashQualityWarningThreshold;
+    if (getHashQuality() < _ERROR_THRESHOLD) {
+      l.add(new HealthBean(cache, "hashing", Health.WARNING, "hash quality is " + getHashQuality() + "(error threshold: " + _WARNING_THRESHOLD));
+    }
+    if (getKeyMutationCount() > 0) {
+      l.add(new HealthBean(cache, "keyMutation", Health.WARNING, "key mutation detected"));
+    }
+    if (getInternalExceptionCount() > 0) {
+      l.add(new HealthBean(cache, "internalException", Health.WARNING, "internal exception"));
+    }
+    return l;
   }
-
   @Override
   public long getAsyncLoadsStarted() {
     return asyncLoadsStarted;
@@ -339,6 +357,41 @@ class CacheBaseInfo implements InternalCacheInfo {
       ((1 - Math.exp(_EXPONENT_CONSTANT * Math.max(0, _longestSlot - _SLOT_SIZE_MINIMUM))) * 100);
     int _quality = _noCollisionPercent - _correctionForOversizeSlot;
     return Math.max(0, Math.min(100, _quality));
+  }
+
+  static class HealthBean implements Health {
+
+    String id;
+    String message;
+    String level;
+    InternalCache cache;
+
+    public HealthBean(final InternalCache _cache, final String _id, final String _level, final String _message) {
+      cache = _cache;
+      id = _id;
+      level = _level;
+      message = _message;
+    }
+
+    @Override
+    public InternalCache getCache() {
+      return cache;
+    }
+
+    @Override
+    public String getId() {
+      return id;
+    }
+
+    @Override
+    public String getLevel() {
+      return level;
+    }
+
+    @Override
+    public String getMessage() {
+      return message;
+    }
   }
 
 }

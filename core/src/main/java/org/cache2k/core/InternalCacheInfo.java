@@ -22,6 +22,9 @@ package org.cache2k.core;
 
 import org.cache2k.Cache;
 
+import java.util.Collection;
+import java.util.Iterator;
+
 /**
  * Collection of all metrics of a cache. The data can be retrieved via
  * {@link InternalCache#getInfo()} or {@link InternalCache#getLatestInfo()}.
@@ -295,7 +298,7 @@ public interface InternalCacheInfo {
    */
   int getInfoCreationDeltaMs();
 
-  int getHealth();
+  Collection<Health> getHealth();
 
   String getExtraStatistics();
 
@@ -306,5 +309,17 @@ public interface InternalCacheInfo {
   int getLoaderThreadsLimit();
 
   int getLoaderThreadsMaxActive();
+
+  interface Health {
+
+    final String WARNING = "WARNING";
+    final String FAILURE = "FAILURE";
+
+    String getId();
+    String getMessage();
+    String getLevel();
+    InternalCache getCache();
+
+  }
 
 }
