@@ -27,6 +27,8 @@ import org.cache2k.core.InternalCache;
 import org.cache2k.jmx.CacheManagerMXBean;
 
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
 
 /**
@@ -34,7 +36,7 @@ import java.util.List;
 */
 public class ManagerMXBeanImpl implements CacheManagerMXBean {
 
-  CacheManagerImpl manager;
+  private final CacheManagerImpl manager;
 
   public ManagerMXBeanImpl(CacheManagerImpl manager) {
     this.manager = manager;
@@ -43,23 +45,27 @@ public class ManagerMXBeanImpl implements CacheManagerMXBean {
   @Override
   public String getHealthStatus() {
     List<HealthInfoElement> li = new ArrayList<HealthInfoElement>();
-    int v = 0;
     for (Cache c : manager) {
       InternalCache ic = (InternalCache) c;
       li.addAll(ic.getInfo().getHealth());
     }
+    sortHealthInfoList(li);
     return constructHealthString(li);
   }
 
-  static String constructHealthString(final List<HealthInfoElement> _li) {
-    List<HealthInfoElement> _sortedList = new ArrayList<HealthInfoElement>();
-    for (HealthInfoElement hi : _li) {
-      if (HealthInfoElement.FAILURE.equals(hi.getLevel())) {
-        _sortedList.add(0, hi);
-      } else {
-        _sortedList.add(hi);
+  void sortHealthInfoList(final List<HealthInfoElement> li) {
+    Collections.sort(li, new Comparator<HealthInfoElement>() {
+      @Override
+      public int compare(final HealthInfoElement o1, final HealthInfoElement o2) {
+        if (!o1.getLevel().equals(o2.getLevel())) {
+          return (HealthInfoElement.FAILURE.equals(o1.getLevel())) ? -1 : 1;
+        }
+        return o1.getCache().getName().compareTo(o2.getCache().getName());
       }
-    }
+    });
+  }
+
+  static String constructHealthString(final List<HealthInfoElement> _sortedList) {
     if (_sortedList.isEmpty()) {
       return "ok";
     }
@@ -67,11 +73,10 @@ public class ManagerMXBeanImpl implements CacheManagerMXBean {
     StringBuilder sb = new StringBuilder();
     for (HealthInfoElement hi : _sortedList) {
       if (_comma) {
-        sb.append(", ");
+        sb.append("; ");
       }
-      sb.append(hi.getLevel()).append(": ");
-      sb.append(hi.getMessage())
-        .append(" (").append(hi.getCache().getCacheManager().getName()).append(':').append(hi.getCache().getName()).append(')');
+      sb.append(hi.getLevel()).append(": ")
+        .append("[").append(hi.getCache().getName() + "] ").append(hi.getMessage());
       _comma = true;
     }
     return sb.toString();

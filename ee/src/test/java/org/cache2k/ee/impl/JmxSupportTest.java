@@ -44,7 +44,6 @@ import java.lang.management.ManagementFactory;
 import java.util.Collection;
 import java.util.Date;
 import java.util.List;
-import java.util.Optional;
 
 /**
  * Simple test to check that the support and the management object appear
@@ -77,6 +76,66 @@ public class JmxSupportTest {
     String _health = (String) server.getAttribute(getCacheManagerObjectName(_name), "HealthStatus");
     assertEquals("ok", _health);
     m.close();
+  }
+
+  /**
+   * Construct three caches with multiple issues and check the health string of the manager JMX.
+   */
+  @Test
+  public void multipleWarnings() throws Exception {
+    final String _MANAGER_NAME = getClass().getName() + ".multipleWarnings";
+    final String _CACHE_NAME_BAD_HASING = "cacheWithBadHashing";
+    final String _CACHE_NAME_KEY_MUTATION = "cacheWithKeyMutation";
+    final String _CACHE_NAME_MULTIPLE_ISSUES = "cacheWithMultipleIssues";
+    final String _SUPPRESS1 =  "org.cache2k.Cache/" + _MANAGER_NAME + ":" + _CACHE_NAME_KEY_MUTATION;
+    final String _SUPPRESS2 =  "org.cache2k.Cache/" + _MANAGER_NAME + ":" + _CACHE_NAME_MULTIPLE_ISSUES;
+    Log.registerSuppression(_SUPPRESS1, new Log.SuppressionCounter());
+    Log.registerSuppression(_SUPPRESS2, new Log.SuppressionCounter());
+    CacheManager m = CacheManager.getInstance(_MANAGER_NAME);
+    Cache _cacheWithbadHashing = Cache2kBuilder.of(Object.class, Object.class)
+      .name(_CACHE_NAME_BAD_HASING)
+      .eternal(true)
+      .manager(m)
+      .build();
+    Cache _cacheWithKeyMutation = Cache2kBuilder.of(Object.class, Object.class)
+      .name(_CACHE_NAME_KEY_MUTATION)
+      .eternal(true)
+      .entryCapacity(50)
+      .manager(m)
+      .build();
+    Cache _cacheWithMultipleIssues = Cache2kBuilder.of(Object.class, Object.class)
+      .name(_CACHE_NAME_MULTIPLE_ISSUES)
+      .entryCapacity(50)
+      .eternal(true)
+      .manager(m)
+      .build();
+    for (int i = 0; i < 9; i++) {
+      _cacheWithbadHashing.put(new KeyForMutation(), 1);
+    }
+    for (int i = 0; i < 100; i++) {
+      _cacheWithMultipleIssues.put(new KeyForMutation(), 1);
+    }
+    for (int i = 0; i < 100; i++) {
+      KeyForMutation v = new KeyForMutation();
+      _cacheWithKeyMutation.put(v, 1);
+      _cacheWithMultipleIssues.put(v, 1);
+      v.value = 1;
+    }
+    String _health = (String) server.getAttribute(getCacheManagerObjectName(_MANAGER_NAME), "HealthStatus");
+    assertEquals(
+      "FAILURE: [cacheWithKeyMutation] hash quality is 0 (threshold: 5); " +
+      "FAILURE: [cacheWithMultipleIssues] hash quality is 0 (threshold: 5); " +
+      "WARNING: [cacheWithBadHashing] hash quality is 7 (threshold: 20); " +
+      "WARNING: [cacheWithKeyMutation] key mutation detected; " +
+      "WARNING: [cacheWithMultipleIssues] key mutation detected", _health);
+    Log.unregisterSuppression(_SUPPRESS1);
+    Log.unregisterSuppression(_SUPPRESS2);
+    m.close();
+  }
+
+  static class KeyForMutation {
+    int value = 0;
+    public int hashCode() { return value; }
   }
 
   private MBeanInfo getCacheManagerInfo(String _name) throws Exception {

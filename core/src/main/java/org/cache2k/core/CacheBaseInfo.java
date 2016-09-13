@@ -232,13 +232,12 @@ class CacheBaseInfo implements InternalCacheInfo {
     if (integrityState.getStateFlags() > 0) {
       l.add(new HealthBean(cache, "integrity", HealthInfoElement.FAILURE, "Integrity check error: " + integrityState.getStateFlags()));
     }
+    final int _WARNING_THRESHOLD = HeapCache.TUNABLE.hashQualityWarningThreshold;
     final int _ERROR_THRESHOLD = HeapCache.TUNABLE.hashQualityErrorThreshold;
     if (getHashQuality() < _ERROR_THRESHOLD) {
-      l.add(new HealthBean(cache, "hashing", HealthInfoElement.FAILURE, "hash quality is " + getHashQuality() + "(error threshold: " + _ERROR_THRESHOLD));
-    }
-    final int _WARNING_THRESHOLD = HeapCache.TUNABLE.hashQualityWarningThreshold;
-    if (getHashQuality() < _ERROR_THRESHOLD) {
-      l.add(new HealthBean(cache, "hashing", HealthInfoElement.WARNING, "hash quality is " + getHashQuality() + "(error threshold: " + _WARNING_THRESHOLD));
+      l.add(new HealthBean(cache, "hashing", HealthInfoElement.FAILURE, "hash quality is " + getHashQuality() + " (threshold: " + _ERROR_THRESHOLD  + ")"));
+    } else if (getHashQuality() < _WARNING_THRESHOLD) {
+      l.add(new HealthBean(cache, "hashing", HealthInfoElement.WARNING, "hash quality is " + getHashQuality() + " (threshold: " + _WARNING_THRESHOLD + ")"));
     }
     if (getKeyMutationCount() > 0) {
       l.add(new HealthBean(cache, "keyMutation", HealthInfoElement.WARNING, "key mutation detected"));
