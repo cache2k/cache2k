@@ -25,6 +25,7 @@ import org.cache2k.Cache2kBuilder;
 import org.cache2k.CacheManager;
 import static org.junit.Assert.*;
 
+import org.cache2k.core.CacheManagerImpl;
 import org.cache2k.core.util.Log;
 import org.cache2k.junit.FastTests;
 import org.junit.Test;
@@ -133,7 +134,7 @@ public class JmxSupportTest {
     m.close();
   }
 
-  static class KeyForMutation {
+  private static class KeyForMutation {
     int value = 0;
     public int hashCode() { return value; }
   }
@@ -155,6 +156,24 @@ public class JmxSupportTest {
     assertEquals(ManagerMXBeanImpl.class.getName(), i.getClassName());
     m.close();
     getCacheManagerInfo(_name);
+  }
+
+  @Test
+  public void managerClear_noCache() throws Exception {
+    String _name = getClass().getName() + ".managerClear_noCache";
+    CacheManager m = CacheManager.getInstance(_name);
+    server.invoke(getCacheManagerObjectName(_name), "clear", new Object[0], new String[0]);
+    m.close();
+  }
+
+  @Test
+  public void managerAttributes() throws Exception {
+    String _name = getClass().getName() + ".managerAttributes";
+    CacheManager m = CacheManager.getInstance(_name);
+    objectName = getCacheManagerObjectName(_name);
+    checkAttribute("Version", ((CacheManagerImpl) m).getVersion());
+    checkAttribute("BuildNumber", ((CacheManagerImpl) m).getBuildNumber());
+    m.close();
   }
 
   @Test
