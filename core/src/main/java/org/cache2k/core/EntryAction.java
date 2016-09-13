@@ -208,11 +208,11 @@ public abstract class EntryAction<K, V, R> implements
   @Override
   public void wantData() {
     wantData = true;
-    if (storage() == null) {
-      retrieveDataFromHeap();
+    if (storage() != null) {
+      lockEntryForStorageRead();
       return;
     }
-    lockEntryForStorageRead();
+    retrieveDataFromHeap();
   }
 
   public void retrieveDataFromHeap() {
@@ -834,11 +834,11 @@ public abstract class EntryAction<K, V, R> implements
    * Entry mutation, call storage if needed
    */
   public void mutationMayStore() {
-    if (storage() == null) {
-      skipStore();
+    if (storage() != null) {
+      mutationStore();
       return;
     }
-    mutationStore();
+    skipStore();
   }
 
   public void mutationStore() {
