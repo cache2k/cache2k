@@ -22,12 +22,11 @@ package org.cache2k.ee.impl;
 
 import org.cache2k.Cache;
 import org.cache2k.core.CacheManagerImpl;
+import org.cache2k.core.HealthInfoElement;
 import org.cache2k.core.InternalCache;
-import org.cache2k.core.InternalCacheInfo;
 import org.cache2k.jmx.CacheManagerMXBean;
 
 import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.List;
 
 /**
@@ -43,7 +42,7 @@ public class ManagerMXBeanImpl implements CacheManagerMXBean {
 
   @Override
   public String getHealthStatus() {
-    List<InternalCacheInfo.Health> li = new ArrayList<InternalCacheInfo.Health>();
+    List<HealthInfoElement> li = new ArrayList<HealthInfoElement>();
     int v = 0;
     for (Cache c : manager) {
       InternalCache ic = (InternalCache) c;
@@ -52,21 +51,21 @@ public class ManagerMXBeanImpl implements CacheManagerMXBean {
     return constructHealthString(li);
   }
 
-  private String constructHealthString(final List<InternalCacheInfo.Health> _li) {
-    List<InternalCacheInfo.Health> _sortedList = new ArrayList<InternalCacheInfo.Health>();
-    for (InternalCacheInfo.Health hi : _li) {
-      if (InternalCacheInfo.Health.FAILURE.equals(hi.getLevel())) {
+  static String constructHealthString(final List<HealthInfoElement> _li) {
+    List<HealthInfoElement> _sortedList = new ArrayList<HealthInfoElement>();
+    for (HealthInfoElement hi : _li) {
+      if (HealthInfoElement.FAILURE.equals(hi.getLevel())) {
         _sortedList.add(0, hi);
       } else {
         _sortedList.add(hi);
       }
     }
     if (_sortedList.isEmpty()) {
-      return "OK";
+      return "ok";
     }
     boolean _comma = false;
     StringBuilder sb = new StringBuilder();
-    for (InternalCacheInfo.Health hi : _sortedList) {
+    for (HealthInfoElement hi : _sortedList) {
       if (_comma) {
         sb.append(", ");
       }

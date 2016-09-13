@@ -20,6 +20,7 @@ package org.cache2k.ee.impl;
  * #L%
  */
 
+import org.cache2k.core.HealthInfoElement;
 import org.cache2k.core.InternalCache;
 import org.cache2k.core.InternalCacheInfo;
 import org.cache2k.jmx.CacheMXBean;
@@ -200,12 +201,12 @@ public class CacheMXBeanImpl implements CacheMXBean {
 
   @Override
   public int getAlert() {
-    Iterator<InternalCacheInfo.Health> it = getInfo().getHealth().iterator();
+    Iterator<HealthInfoElement> it = getInfo().getHealth().iterator();
     if (!it.hasNext()) {
       return 0;
     }
-    InternalCacheInfo.Health hi = it.next();
-    if (InternalCacheInfo.Health.FAILURE.equals(hi.getLevel())) {
+    HealthInfoElement hi = it.next();
+    if (HealthInfoElement.FAILURE.equals(hi.getLevel())) {
       return 2;
     }
     return 1;

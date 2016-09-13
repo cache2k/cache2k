@@ -75,7 +75,7 @@ public class JmxSupportTest {
     MBeanInfo i = getCacheManagerInfo(_name);
     assertEquals(ManagerMXBeanImpl.class.getName(), i.getClassName());
     String _health = (String) server.getAttribute(getCacheManagerObjectName(_name), "HealthStatus");
-    assertEquals("OK", _health);
+    assertEquals("ok", _health);
     m.close();
   }
 

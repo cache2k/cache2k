@@ -1,8 +1,8 @@
-package org.cache2k.jmx;
+package org.cache2k.core;
 
 /*
  * #%L
- * cache2k JMX API
+ * cache2k core
  * %%
  * Copyright (C) 2000 - 2016 headissue GmbH, Munich
  * %%
@@ -21,24 +21,34 @@ package org.cache2k.jmx;
  */
 
 /**
- * @author Jens Wilke; created: 2013-12-20
+ * Describes a single problem of a cache, for example a bad hash quality.
+ * A collection of these element comprise the complete health information.
+ *
+ * @author Jens Wilke
  */
-@SuppressWarnings("unused")
-public interface CacheManagerMXBean {
+public interface HealthInfoElement {
+
+  String WARNING = "WARNING";
+  String FAILURE = "FAILURE";
 
   /**
-   * "ok" if no issues are to report, otherwise it starts with "WARNING:" or
-   * "FAILURE:" and a more descriptive text.
+   * Compact unique id of the message.
    */
-  String getHealthStatus();
+  String getId();
 
   /**
-   * Clear all associated caches.
+   * Text message describing the problem.
    */
-  void clear();
+  String getMessage();
 
-  String getVersion();
+  /**
+   * Either {@link #WARNING} or {@link #FAILURE}
+   */
+  String getLevel();
 
-  String getBuildNumber();
+  /**
+   * Cache reporting the trouble.
+   */
+  InternalCache getCache();
 
 }

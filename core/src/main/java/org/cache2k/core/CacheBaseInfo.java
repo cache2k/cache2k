@@ -20,12 +20,9 @@ package org.cache2k.core;
  * #L%
  */
 
-import org.cache2k.Cache;
-
 import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.ThreadPoolExecutor;
 
@@ -230,24 +227,24 @@ class CacheBaseInfo implements InternalCacheInfo {
   @Override
   public int getInfoCreationDeltaMs() { return infoCreationDeltaMs; }
   @Override
-  public Collection<Health> getHealth() {
-    List<Health> l = new ArrayList<Health>();
+  public Collection<HealthInfoElement> getHealth() {
+    List<HealthInfoElement> l = new ArrayList<HealthInfoElement>();
     if (integrityState.getStateFlags() > 0) {
-      l.add(new HealthBean(cache, "integrity", Health.FAILURE, "Integrity check error: " + integrityState.getStateFlags()));
+      l.add(new HealthBean(cache, "integrity", HealthInfoElement.FAILURE, "Integrity check error: " + integrityState.getStateFlags()));
     }
     final int _ERROR_THRESHOLD = HeapCache.TUNABLE.hashQualityErrorThreshold;
     if (getHashQuality() < _ERROR_THRESHOLD) {
-      l.add(new HealthBean(cache, "hashing", Health.FAILURE, "hash quality is " + getHashQuality() + "(error threshold: " + _ERROR_THRESHOLD));
+      l.add(new HealthBean(cache, "hashing", HealthInfoElement.FAILURE, "hash quality is " + getHashQuality() + "(error threshold: " + _ERROR_THRESHOLD));
     }
     final int _WARNING_THRESHOLD = HeapCache.TUNABLE.hashQualityWarningThreshold;
     if (getHashQuality() < _ERROR_THRESHOLD) {
-      l.add(new HealthBean(cache, "hashing", Health.WARNING, "hash quality is " + getHashQuality() + "(error threshold: " + _WARNING_THRESHOLD));
+      l.add(new HealthBean(cache, "hashing", HealthInfoElement.WARNING, "hash quality is " + getHashQuality() + "(error threshold: " + _WARNING_THRESHOLD));
     }
     if (getKeyMutationCount() > 0) {
-      l.add(new HealthBean(cache, "keyMutation", Health.WARNING, "key mutation detected"));
+      l.add(new HealthBean(cache, "keyMutation", HealthInfoElement.WARNING, "key mutation detected"));
     }
     if (getInternalExceptionCount() > 0) {
-      l.add(new HealthBean(cache, "internalException", Health.WARNING, "internal exception"));
+      l.add(new HealthBean(cache, "internalException", HealthInfoElement.WARNING, "internal exception"));
     }
     return l;
   }
@@ -359,7 +356,7 @@ class CacheBaseInfo implements InternalCacheInfo {
     return Math.max(0, Math.min(100, _quality));
   }
 
-  static class HealthBean implements Health {
+  static class HealthBean implements HealthInfoElement {
 
     String id;
     String message;
