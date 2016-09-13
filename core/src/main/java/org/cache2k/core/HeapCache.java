@@ -577,7 +577,7 @@ public class HeapCache<K, V>
         return "CacheEntry(" +
             "key=" + getKey() +
             ((getException() != null) ? ", exception=" + getException() + ", " : ", value=" + getValue()) +
-            ", updated=" + formatMillis(getLastModification());
+            ", modified=" + formatMillis(getLastModification());
       }
 
     };
@@ -1378,6 +1378,7 @@ public class HeapCache<K, V>
       if (_suppressException) {
         e.setSuppressedLoadExceptionInformation(_value);
       } else {
+        e.setLastModification(t0);
         e.setValueOrException((V) _value);
       }
       _value.until = Math.abs(_nextRefreshTime);
