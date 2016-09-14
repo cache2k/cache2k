@@ -48,7 +48,7 @@ import org.cache2k.integration.ExceptionInformation;
  */
 @SuppressWarnings("SynchronizeOnNonFinalField")
 public abstract class EntryAction<K, V, R> implements
-  StorageCallback, AsyncCacheLoader.Callback<V>, AsyncCacheWriter.Callback, Progress<K, V, R> {
+  AsyncCacheLoader.Callback<V>, AsyncCacheWriter.Callback, Progress<K, V, R> {
 
   static final Entry NON_FRESH_DUMMY = new Entry();
 
@@ -131,13 +131,6 @@ public abstract class EntryAction<K, V, R> implements
   }
 
   /**
-   * Provide the storage, default null.
-   */
-  protected StorageAdapter storage() {
-    return null;
-  }
-
-  /**
    * Provide the writer, default null.
    */
   protected CacheWriter<K, V> writer() {
@@ -176,8 +169,6 @@ public abstract class EntryAction<K, V, R> implements
     return null;
   }
 
-  protected StorageMetrics.Updater storageMetrics() { return null; }
-
   @SuppressWarnings("unchecked")
   protected abstract TimingHandler<K,V> timing(); //  { return RefreshHandler.ETERNAL; }
 
@@ -208,10 +199,6 @@ public abstract class EntryAction<K, V, R> implements
   @Override
   public void wantData() {
     wantData = true;
-    if (storage() != null) {
-      lockEntryForStorageRead();
-      return;
-    }
     retrieveDataFromHeap();
   }
 
@@ -225,74 +212,6 @@ public abstract class EntryAction<K, V, R> implements
       }
     }
     heapHit(e);
-  }
-
-  public void lockEntryForStorageRead() {
-    int _spinCount = HeapCache.TUNABLE.maximumEntryLockSpins;
-    Entry<K, V> e = entry;
-    boolean _needStorageRead = false;
-    if (e == NON_FRESH_DUMMY) {
-      e = heapCache.lookupOrNewEntry(key);
-    }
-    for (; ; ) {
-      if (_spinCount-- <= 0) {
-        throw new CacheLockSpinsExceededError();
-      }
-      synchronized (e) {
-        e.waitForProcessing();
-        if (!e.isGone()) {
-          if (e.isVirgin()) {
-            storageRead = _needStorageRead = true;
-            e.startProcessing(Entry.ProcessingState.READ);
-            entryLocked = true;
-            heapDataValid = e.isDataValid();
-          }
-          break;
-        }
-      }
-      e = heapCache.lookupOrNewEntry(key);
-    }
-    if (_needStorageRead) {
-      entry = e;
-      storageRead();
-      return;
-    }
-    heapHit(e);
-  }
-
-  public void storageRead() {
-    StorageEntry se;
-    try {
-      se = storage().get(entry.key);
-    } catch (Throwable ex) {
-      onReadFailure(ex);
-      return;
-    }
-    onReadSuccess(se);
-  }
-
-  @Override
-  public void onReadFailure(Throwable t) {
-    examinationAbort(new StorageReadException(t));
-  }
-
-  @SuppressWarnings("unchecked")
-  @Override
-  public void onReadSuccess(StorageEntry se) {
-    if (se == null) {
-      storageReadMiss();
-      return;
-    }
-    storageReadHit(se);
-  }
-
-  public void storageReadMiss() {
-    Entry<K, V> e = entry;
-    synchronized (e) {
-      e.setNextRefreshTime(Entry.READ_NON_VALID);
-      storageMiss = true;
-    }
-    examine();
   }
 
   public void storageReadHit(StorageEntry se) {
@@ -834,38 +753,7 @@ public abstract class EntryAction<K, V, R> implements
    * Entry mutation, call storage if needed
    */
   public void mutationMayStore() {
-    if (storage() != null) {
-      mutationStore();
-      return;
-    }
     skipStore();
-  }
-
-  public void mutationStore() {
-    entry.nextProcessingStep(Entry.ProcessingState.STORE);
-    boolean _entryRemoved = false;
-    try {
-      if (remove) {
-        _entryRemoved = storage().remove(key);
-      } else {
-        storage().put(entry, expiry);
-      }
-    } catch (Throwable t) {
-      onStoreFailure(t);
-      return;
-    }
-    onStoreSuccess(_entryRemoved);
-  }
-
-  @Override
-  public void onStoreSuccess(boolean _entryRemoved) {
-    entry.nextProcessingStep(Entry.ProcessingState.STORE_COMPLETE);
-    callListeners();
-  }
-
-  @Override
-  public void onStoreFailure(Throwable t) {
-    mutationAbort(new StorageWriteException(t));
   }
 
   public void skipStore() {
@@ -964,9 +852,6 @@ public abstract class EntryAction<K, V, R> implements
 
   public void updateMutationStatistics() {
     if (loadCompletedTime > 0) {
-      if (storageRead && storageMiss) {
-        storageMetrics().readMiss();
-      }
     } else {
       updateOnlyReadStatistics();
     }
@@ -980,15 +865,8 @@ public abstract class EntryAction<K, V, R> implements
       if (heapMiss) {
         metrics().peekMiss();
       }
-      if (storageRead && storageMiss) {
-        storageMetrics().readNonFresh();
-        metrics().peekHitNotFresh();
-      }
     } else if (doNotCountAccess && heapHit) {
       metrics().heapHitButNoRead();
-    }
-    if (storageRead && !storageMiss) {
-      storageMetrics().readHit();
     }
   }
 

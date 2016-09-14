@@ -611,25 +611,6 @@ public class WiredCache<K, V> extends AbstractCache<K, V>
     }
   }
 
-  /**
-   * Used by the storage iterator to insert the entry in the cache.
-   */
-  public Entry<K,V> insertEntryFromStorage(final StorageEntry se) {
-    Semantic<K,V, Entry<K,V>> op = new Semantic.Read<K, V, Entry<K, V>>() {
-      @Override
-      public void examine(final Progress<K, V, Entry<K, V>> c, final ExaminationEntry<K, V> e) {
-        c.result((Entry<K, V>) e);
-      }
-    };
-    EntryAction<K, V, Entry<K,V>> _action = new MyEntryAction<Entry<K,V>>(op, (K) se.getKey(), null) {
-      @Override
-      public void storageRead() {
-        onReadSuccess(se);
-      }
-    };
-    Entry<K,V> e = execute(op, _action);
-    return e;
-  }
 
   @Override
   protected <R> EntryAction<K, V, R> createEntryAction(final K key, final Entry<K, V> e, final Semantic<K, V, R> op) {
@@ -753,11 +734,6 @@ public class WiredCache<K, V> extends AbstractCache<K, V>
     }
 
     @Override
-    protected StorageAdapter storage() {
-      return storage;
-    }
-
-    @Override
     protected CacheWriter<K, V> writer() {
       return writer;
     }
@@ -765,11 +741,6 @@ public class WiredCache<K, V> extends AbstractCache<K, V>
     @Override
     protected TimingHandler<K, V> timing() {
       return heapCache.timing;
-    }
-
-    @Override
-    protected StorageMetrics.Updater storageMetrics() {
-      return storageMetrics;
     }
 
   }
