@@ -71,7 +71,7 @@ import static org.cache2k.core.util.Util.*;
  *
  * @author Jens Wilke; created: 2013-07-09
  */
-@SuppressWarnings({"unchecked", "SynchronizationOnLocalVariableOrMethodParameter"})
+@SuppressWarnings({"unchecked", "SynchronizationOnLocalVariableOrMethodParameter", "WeakerAccess"})
 public class HeapCache<K, V>
   extends AbstractCache<K, V> {
 
@@ -128,22 +128,23 @@ public class HeapCache<K, V>
    */
   protected volatile long keyMutationCnt = 0;
 
-  /*
-   * All the following counters and timestamps are updated under the single lock.
-   * The consistency of the counters can be checked by calculating invariants.
-   * For
-   *
-   */
-
   protected long clearedTime = 0;
   protected long startedTime;
 
   Eviction eviction;
 
-  /** Number of entries removed by clear. */
+  /** Number of entries removed by clear. Guarded by: lock */
   protected long clearRemovedCnt = 0;
 
+  /** Number of clear operations. Guarded by: lock */
   protected long clearCnt = 0;
+
+  /**
+   * Number of internal exceptions. Guarded by: lock.
+   *
+   *  @see InternalCacheInfo#getInternalExceptionCount()
+   */
+  protected long internalExceptionCnt = 0;
 
   protected volatile Executor loaderExecutor = new DummyExecutor(this);
 
@@ -1547,7 +1548,9 @@ public class HeapCache<K, V>
 
   @Override
   public void logAndCountInternalException(final String _text, final Throwable _exception) {
-    metrics.internalException();
+    synchronized (lock) {
+      internalExceptionCnt++;
+    }
     getLog().warn(_text, _exception);
   }
 

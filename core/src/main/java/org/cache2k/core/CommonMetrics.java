@@ -67,13 +67,6 @@ public interface CommonMetrics {
   long getTimerEventCount();
 
   /**
-   * The cache produced an exception by itself that should have been prevented.
-   *
-   * @see InternalCacheInfo#getInternalExceptionCount()
-   */
-  long getInternalExceptionCount();
-
-  /**
    * Entry was loaded, triggered by a get()
    *
    * @see InternalCacheInfo#getLoadCount()
@@ -179,8 +172,6 @@ public interface CommonMetrics {
     void timerEvent();
     void timerEvent(long cnt);
 
-    void internalException();
-
     void load(long _millis);
     void load(long cnt, long _millis);
 
@@ -265,11 +256,6 @@ public interface CommonMetrics {
 
     @Override
     public void timerEvent(final long cnt) {
-
-    }
-
-    @Override
-    public void internalException() {
 
     }
 
@@ -405,11 +391,6 @@ public interface CommonMetrics {
 
     @Override
     public long getTimerEventCount() {
-      return 0;
-    }
-
-    @Override
-    public long getInternalExceptionCount() {
       return 0;
     }
 

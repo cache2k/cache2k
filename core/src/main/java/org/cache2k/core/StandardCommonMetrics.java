@@ -107,18 +107,6 @@ public class StandardCommonMetrics implements CommonMetrics.Updater {
     timerEventUpdater.addAndGet(this, cnt);
   }
 
-  static final AtomicLongFieldUpdater<StandardCommonMetrics> internalExceptionUpdater =
-    AtomicLongFieldUpdater.newUpdater(StandardCommonMetrics.class, "internalException");
-  private volatile long internalException;
-  @Override
-  public void internalException() {
-    internalExceptionUpdater.incrementAndGet(this);
-  }
-  @Override
-  public long getInternalExceptionCount() {
-    return internalExceptionUpdater.get(this);
-  }
-
   static final AtomicLongFieldUpdater<StandardCommonMetrics> loadMillisUpdater =
     AtomicLongFieldUpdater.newUpdater(StandardCommonMetrics.class, "loadMillis");
   private volatile long loadMillis;

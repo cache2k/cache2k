@@ -69,6 +69,7 @@ class CacheBaseInfo implements InternalCacheInfo {
   private long evictedCnt;
   private long maxSize;
   private int evictionRunningCnt;
+  private long internalExceptionCnt;
 
   public CacheBaseInfo(HeapCache _heapCache, InternalCache _userCache, long now) {
     infoCreatedTime = now;
@@ -85,6 +86,7 @@ class CacheBaseInfo implements InternalCacheInfo {
     removedCnt = em.getRemovedCount();
     clearRemovedCnt = _heapCache.clearRemovedCnt;
     clearCnt = _heapCache.clearCnt;
+    internalExceptionCnt = _heapCache.internalExceptionCnt;
     evictionRunningCnt = em.getEvictionRunningCount();
     integrityState = _heapCache.getIntegrityState();
     storageMetrics = _userCache.getStorageMetrics();
@@ -156,7 +158,7 @@ class CacheBaseInfo implements InternalCacheInfo {
   @Override
   public long getRefreshCount() { return metrics.getRefreshCount(); }
   @Override
-  public long getInternalExceptionCount() { return metrics.getInternalExceptionCount(); }
+  public long getInternalExceptionCount() { return internalExceptionCnt; }
   @Override
   public long getRefreshFailedCount() { return metrics.getRefreshFailedCount(); }
   @Override
