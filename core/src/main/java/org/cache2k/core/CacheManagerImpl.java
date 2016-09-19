@@ -42,6 +42,7 @@ import java.util.concurrent.ExecutionException;
 /**
  * @author Jens Wilke; created: 2013-07-01
  */
+@SuppressWarnings("WeakerAccess")
 public class CacheManagerImpl extends CacheManager {
   
   private static final Iterable<CacheLifeCycleListener> cacheLifeCycleListeners =
@@ -81,7 +82,7 @@ public class CacheManagerImpl extends CacheManager {
   }
 
   private Map<String, StackTrace> name2CreationStackTrace = null;
-  private Object lock = new Object();
+  private final Object lock = new Object();
   private Log log;
   private String name;
   private Map<String, InternalCache> cacheNames = new HashMap<String, InternalCache>();
@@ -343,13 +344,6 @@ public class CacheManagerImpl extends CacheManager {
   @Override
   public boolean isClosed() {
     return caches == null;
-  }
-
-  private String getThreadNamePrefix() {
-    if (!Cache2kManagerProviderImpl.DEFAULT_MANAGER_NAME.equals(name)) {
-      return "cache2k-" + name + ":";
-    }
-    return "cache2k-";
   }
 
   /**
