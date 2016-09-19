@@ -22,4 +22,9 @@
     <entryCapacity>5</entryCapacity>
     <suppressExceptions>false</suppressExceptions>
     <sharpExpiry>true</sharpExpiry>
+    <sections>
+        <dummySection>
+            <type>.....</type>
+        </dummySection>
+    </sections>
 </cache>

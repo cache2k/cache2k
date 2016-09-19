@@ -23,30 +23,14 @@ package org.cache2k.xmlConfig;
 /**
  * @author Jens Wilke
  */
-public interface ConfigurationParser {
+public class ConfigurationException extends RuntimeException {
 
-  String getSource();
-
-  int getLineNumber();
-
-  Item next() throws Exception;
-
-  interface Item {
-    String getSource();
-    int getLineNumber();
+  public ConfigurationException(final String message, final ConfigurationParser.Item _item) {
+    super(message + " at " + _item.getSource() + ":" + _item.getLineNumber());
   }
 
-  interface Property extends Item {
-    String getName();
-    String getValue();
+  public ConfigurationException(final String message, final String _source, final int _lineNumber) {
+    super(message + " at " + _source + ":" + _lineNumber);
   }
-
-  interface Nest extends Item {
-    String getSectionName();
-  }
-
-  interface Unnest extends Item { }
-
-  interface End extends Item { }
 
 }

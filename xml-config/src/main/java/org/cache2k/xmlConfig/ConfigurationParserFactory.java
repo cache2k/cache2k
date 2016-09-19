@@ -20,33 +20,13 @@ package org.cache2k.xmlConfig;
  * #L%
  */
 
+import java.io.InputStream;
+
 /**
  * @author Jens Wilke
  */
-public interface ConfigurationParser {
+public interface ConfigurationParserFactory {
 
-  String getSource();
-
-  int getLineNumber();
-
-  Item next() throws Exception;
-
-  interface Item {
-    String getSource();
-    int getLineNumber();
-  }
-
-  interface Property extends Item {
-    String getName();
-    String getValue();
-  }
-
-  interface Nest extends Item {
-    String getSectionName();
-  }
-
-  interface Unnest extends Item { }
-
-  interface End extends Item { }
+  ConfigurationParser create(String _source, InputStream in, String _encoding);
 
 }

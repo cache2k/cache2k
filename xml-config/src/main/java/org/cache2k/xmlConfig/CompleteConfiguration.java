@@ -21,7 +21,14 @@ package org.cache2k.xmlConfig;
  */
 
 /**
+ * Holds information from a complete configuration file.
+ *
  * @author Jens Wilke
  */
 public class CompleteConfiguration {
+
+  ParsedItemsContainer defaults;
+  ParsedItemsContainer templates;
+  ParsedItemsContainer caches;
+
 }

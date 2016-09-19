@@ -19,27 +19,30 @@
   -->
 <cache2k>
 
-    <default>
+    <defaults>
         <cache>
             <suppressExceptions>true</suppressExceptions>
         </cache>
-    </default>
+    </defaults>
 
-    <templates>
-
+    <cache-templates>
         <cache>
             <name>smallOnes</name>
             <entryCapacity>100</entryCapacity>
-
         </cache>
-
-    </templates>
+    </cache-templates>
 
     <caches>
         <cache>
-            <_fromTemplate>smallOnes</_fromTemplate>
-            <name>flo</name>
+            <name>products</name>
+            <template>smallOnes</template>
             <entryCapacity>5</entryCapacity>
+            <sections>
+                <eviction>
+                    <type>EvictionConfiguration</type>
+                    <aValue>123</aValue>
+                </eviction>
+            </sections>
         </cache>
         <cache>
             <name>hallo</name>
