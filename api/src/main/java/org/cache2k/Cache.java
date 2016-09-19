@@ -921,7 +921,7 @@ public interface Cache<K, V> extends
    *
    * <p>The method is designed to free resources and finish operations as gracefully and fast
    * as possible. Some cache operations take an unpredictable long time such as the call of
-   * the {@link CacheSource#get(Object)}, so it may happen that the cache still has threads
+   * the {@link CacheLoader}, so it may happen that the cache still has threads
    * in use when this method returns.
    *
    * <p>After close, subsequent cache operations will throw a {@link org.cache2k.CacheException}.
