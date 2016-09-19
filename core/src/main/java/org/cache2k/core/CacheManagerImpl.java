@@ -293,46 +293,39 @@ public class CacheManagerImpl extends CacheManager {
   }
 
   /**
-   * Throw exception if the list contains exceptions. The the thrown exception
-   * all exceptions get added as suppressed exceptions. The main cause of the
-   * exception will be the first detected error or the first detected
-   * exception.
+   * During the shutdown of the cache manager multiple exceptions can happen from
+   * various caches. The list of exceptions gets examined to throw one exception.
+   *
+   * <p>If an error is present, the first found gets thrown as CacheInternalError.
+   * If no error is present the first normal exception gets thrown as CacheException.
+   *
+   * <p>The suppressed exceptions will be added to the single exception that gets
+   * thrown.
    *
    * @throws org.cache2k.core.CacheInternalError if list contains an error
    * @throws org.cache2k.CacheException if list does not contain an error
    */
-  private void eventuallyThrowException(List<Throwable> _suppressedExceptions) {
-    if (!_suppressedExceptions.isEmpty()) {
-      Throwable _error = null;
-      for (Throwable t : _suppressedExceptions) {
-        if (t instanceof Error) { _error = t; }
-        if (t instanceof ExecutionException &&
-          ((ExecutionException) t).getCause() instanceof Error) {
-          _error = t;
-        }
-      }
-      Throwable _throwNow;
-      String _text = "shutdown";
-      if (_suppressedExceptions.size() > 1) {
-        _text = " (" + _suppressedExceptions.size() + " exceptions)";
-      }
-      if (_error != null) {
-        _throwNow = new CacheInternalError(_text, _error);
-      } else {
-        _throwNow = new CacheException(_text, _suppressedExceptions.get(0));
-        _suppressedExceptions.remove(0);
-      }
-      for (Throwable t : _suppressedExceptions) {
-        if (t != _error) {
-          _throwNow.addSuppressed(t);
-        }
-      }
-      if (_error != null) {
-        throw (Error) _throwNow;
-      } else {
-        throw (RuntimeException) _throwNow;
+  static void eventuallyThrowException(List<Throwable> _suppressedExceptions) {
+    if (_suppressedExceptions.isEmpty()) {
+      return;
+    }
+    Throwable _error = null;
+    for (Throwable t : _suppressedExceptions) {
+      if (t instanceof Error) { _error = t; break; }
+      if (t instanceof ExecutionException &&
+        t.getCause() instanceof Error) {
+        _error = t.getCause();
+        break;
       }
     }
+    String _text = "Exception(s) during shutdown";
+    if (_suppressedExceptions.size() > 1) {
+      _text = " (" + (_suppressedExceptions.size() - 1)+ " more suppressed exceptions)";
+    }
+    if (_error != null) {
+      throw new CacheInternalError(_text, _error);
+    }
+    throw new CacheException(_text, _suppressedExceptions.get(0));
   }
 
   @Override
