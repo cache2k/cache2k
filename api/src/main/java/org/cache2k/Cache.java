@@ -118,7 +118,7 @@ public interface Cache<K, V> extends
    * is invoked, if configured, or {@code null} is returned.
    *
    * <p>If the loader is invoked, subsequent requests of the same key will block
-   * until the loading is completed, details see {@link CacheLoader}
+   * until the loading is completed. Details see {@link CacheLoader}.
    *
    * <p>As an alternative {@link #peek} can be used if the loader should
    * not be invoked.

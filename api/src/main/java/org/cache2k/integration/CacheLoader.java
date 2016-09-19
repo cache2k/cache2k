@@ -34,22 +34,23 @@ import java.util.concurrent.Executor;
  * cache data that is expensive to generate or retrieve, using a {@code CacheLoader} has
  * several advantages. The usable features with a loader are explained in the following.
  *
- * <p>Transparent operation: If configured, the loader is invoked implicitly, in case there is no value in
+ * <p><b>Transparent operation</b>: If configured, the loader is invoked implicitly, in case there is no value in
  * the cache or it is expired, by the cache methods {@code get()}, {@code getAll()}
  * or {@code getEntry()} as well as {@link MutableCacheEntry#getValue()}.
  *
  * <p>The cache loader can be invoked explicitly via {@link Cache#reloadAll(CacheOperationCompletionListener, Iterable)}.
  *
- * <p>Prefetching: The method {@link Cache#prefetch(Object)} can be used to instruct the cache to load
- * multiple values in the background.
- *
- * <p>Blocking: If the loader is invoked by {@link Cache#get} or the other methods that allow transparent access
+ * <p><b>Blocking</b>: If the loader is invoked by {@link Cache#get} or other methods that allow transparent access
  * (see above) concurrent requests on the same key will block until the loading is completed.
  * For expired values blocking can be avoided by enabling {@link Cache2kBuilder#refreshAhead}.
- * There is no hard guarantee that the loader is invoked only for one key at a time, for example
+ * There is no guarantee that the loader is invoked only for one key at a time. For example,
  * after {@link Cache#clear()} is called load operations for one key may overlap.
  *
- * <p>Refresh ahead:
+ * <p><b>Prefetching</b>: The method {@link Cache#prefetch(Object)} can be used to instruct the cache to load
+ * multiple values in the background.
+ *
+ * <p><b>Refresh ahead</b>: By enabling {@link Cache2kBuilder#refreshAhead} the cache will
+ * call the loader when an entry is expired, eagerly trying to keep the cache contents fresh.
  *
  * <p>The alternative loader interface {@link AdvancedCacheLoader} provides the loader
  * with the current cache value.

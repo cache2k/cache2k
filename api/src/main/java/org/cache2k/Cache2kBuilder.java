@@ -322,7 +322,9 @@ public class Cache2kBuilder<K, V> implements Cloneable {
    * <p>If an {@link ExpiryPolicy} is specified, the maximum expiry duration
    * will not exceed the value that is specified here.
    *
-   * <p>A value of 0 means every entry should expire immediately.
+   * <p>A value of {@code 0} means every entry should expire immediately. Low values or
+   * {@code 0} together with read through operation mode with a {@link CacheLoader} should be
+   * avoided in production environments.
    */
   public final Cache2kBuilder<K, V> expireAfterWrite(long v, TimeUnit u) {
     config.setExpireAfterWriteMillis(u.toMillis(v));
@@ -482,7 +484,7 @@ public class Cache2kBuilder<K, V> implements Cloneable {
    * loader exceptions. If {@link #suppressExceptions} is switched off, this setting
    * has no effect.
    *
-   * <p>Defaults to  {@link #expireAfterWrite}. If {@link #suppressExceptions}
+   * <p>Defaults to {@link #expireAfterWrite}. If {@link #suppressExceptions}
    * is switched off, this setting has no effect.
    */
   public final Cache2kBuilder<K, V> resilienceDuration(long v, TimeUnit u) {
