@@ -111,7 +111,7 @@ public interface InternalCacheInfo {
   /**
    * The cache produced an exception by itself that should have been prevented.
    *
-   * @see CommonMetrics#getInternalExceptionCount()
+   * @see HeapCache#internalExceptionCnt
    */
   long getInternalExceptionCount();
 
