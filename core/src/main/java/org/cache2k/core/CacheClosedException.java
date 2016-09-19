@@ -22,7 +22,9 @@ package org.cache2k.core;
 
 /**
  * Consistently this exception is thrown, when an operation detects that the
- * cache is closed. It is a subtype of {@link java.lang.IllegalStateException}
+ * cache is closed.
+ *
+ * <p>Rationale: It is a subtype of {@link java.lang.IllegalStateException}
  * and not a {@link org.cache2k.CacheException} since the JSR107 defines
  * it.
  *

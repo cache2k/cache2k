@@ -924,8 +924,9 @@ public interface Cache<K, V> extends
    * the {@link CacheLoader}, so it may happen that the cache still has threads
    * in use when this method returns.
    *
-   * <p>After close, subsequent cache operations will throw a {@link org.cache2k.CacheException}.
-   * Cache operations currently in progress, may or may not terminated with an exception.
+   * <p>After close, subsequent cache operations will throw a {@link IllegalStateException}.
+   * Cache operations currently in progress, may or may not terminated with an exception. A subsequent
+   * call to close will not throw an exception.
    *
    * <p>If all caches need to be closed it is more effective to use {@link CacheManager#close()}
    */
