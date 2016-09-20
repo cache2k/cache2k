@@ -25,7 +25,7 @@ package org.cache2k.xmlConfig;
  */
 public class ConfigurationException extends RuntimeException {
 
-  public ConfigurationException(final String message, final ConfigurationParser.Item _item) {
+  public ConfigurationException(final String message, final ConfigurationTokenizer.Item _item) {
     super(message + " at " + _item.getSource() + ":" + _item.getLineNumber());
   }
 

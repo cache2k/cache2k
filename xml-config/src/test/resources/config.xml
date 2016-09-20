@@ -19,34 +19,66 @@
   -->
 <cache2k>
 
-    <defaults>
-        <cache>
-            <suppressExceptions>true</suppressExceptions>
-        </cache>
-    </defaults>
+  <version>1.0</version>
 
-    <cache-templates>
-        <cache>
-            <name>smallOnes</name>
-            <entryCapacity>100</entryCapacity>
-        </cache>
-    </cache-templates>
+  <properties>
+    <user>
+      <bigCacheCapacity>12000</bigCacheCapacity>
+      <homeDirectory>${ENV.HOME}</homeDirectory>
+    </user>
+  </properties>
 
-    <caches>
-        <cache>
-            <name>products</name>
-            <template>smallOnes</template>
-            <entryCapacity>5</entryCapacity>
-            <sections>
-                <eviction>
-                    <type>EvictionConfiguration</type>
-                    <aValue>123</aValue>
-                </eviction>
-            </sections>
-        </cache>
-        <cache>
-            <name>hallo</name>
-        </cache>
-    </caches>
+  <defaults>
+
+    <cache>
+      <suppressExceptions>true</suppressExceptions>
+    </cache>
+
+  </defaults>
+
+  <templates>
+
+    <cache>
+      <name>small-cache</name>
+      <entryCapacity>100</entryCapacity>
+
+    </cache>
+
+  </templates>
+
+  <caches>
+
+    <cache>
+      <name>hallo</name>
+      <entryCapacity>${TOP.caches.products.entryCapacity}</entryCapacity>
+    </cache>
+
+    <cache>
+      <name>products</name>
+      <include>small-cache</include>
+      <entryCapacity>5</entryCapacity>
+      <sections>
+        <eviction>
+          <type>EvictionConfiguration</type>
+          <aValue>123</aValue>
+          <duplicateName>${cache.name}</duplicateName>
+          <directory>${TOP.properties.user.homeDirectory}</directory>
+          <bValue>${.aValue}</bValue>
+          <cValue>${eviction.aValue}</cValue>
+          <sections>
+            <jcache>
+              <prop>123</prop>
+            </jcache>
+          </sections>
+        </eviction>
+        <jcache>
+          <type>org.cache2k.jcache.JCacheConfiguration</type>
+
+        </jcache>
+      </sections>
+    </cache>
+
+
+  </caches>
 
 </cache2k>

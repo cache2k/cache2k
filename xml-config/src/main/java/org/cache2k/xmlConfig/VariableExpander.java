@@ -20,13 +20,22 @@ package org.cache2k.xmlConfig;
  * #L%
  */
 
-import java.io.InputStream;
-
 /**
+ * Runs through all properties in the configuration, check for variable references and expand them.
+ *
  * @author Jens Wilke
  */
-public interface ConfigurationParserFactory {
+public interface VariableExpander {
 
-  ConfigurationParser create(String _source, InputStream in, String _encoding);
+  void expand(Configuration cfg);
+
+  interface ExpanderContext {
+    Configuration getTopLevelConfiguration();
+    Configuration getCurrentConfiguration();
+  }
+
+  interface ValueAccessor {
+    String get(ExpanderContext ctx, String _variable);
+  }
 
 }

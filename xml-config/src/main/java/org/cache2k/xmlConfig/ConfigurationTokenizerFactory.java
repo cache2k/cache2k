@@ -20,15 +20,13 @@ package org.cache2k.xmlConfig;
  * #L%
  */
 
+import java.io.InputStream;
+
 /**
- * Holds information from a complete configuration file.
- *
  * @author Jens Wilke
  */
-public class CompleteConfiguration {
+public interface ConfigurationTokenizerFactory {
 
-  Configuration defaults;
-  Configuration templates;
-  Configuration caches;
+  ConfigurationTokenizer create(String _source, InputStream in, String _encoding);
 
 }

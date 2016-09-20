@@ -43,8 +43,8 @@ public class NewXppConfigParser extends AbstractConfigurationParser {
   public NewXppConfigParser(final String _source, final InputStream is) throws Exception {
     super(_source);
     XmlPullParserFactory factory = XmlPullParserFactory.newInstance();
-    XmlPullParser xpp = input = factory.newPullParser();
-    xpp.setInput(is, null);
+    input = factory.newPullParser();
+    input.setInput(is, null);
   }
 
   @Override

@@ -34,16 +34,33 @@ public class ParseCompleteTest {
   @Test
   public void parseIt() throws Exception {
     InputStream is = this.getClass().getResourceAsStream("/config.xml");
-    ConfigurationParser pp = new NewXppConfigParser("/config.xml", is);
-    ParsedItemsContainer _topLevel = ConfigurationFileParser.parse(pp);
-    ParsedItemsContainer _defaults = _topLevel.getSection("defaults");
+    ConfigurationTokenizer pp = new NewXppConfigParser("/config.xml", is);
+    Configuration _topLevel = ConfigurationParser.parse(pp);
+    assertEquals("1.0", _topLevel.getPropertyMap().get("version").getValue());
+    Configuration _defaults = _topLevel.getSection("defaults");
     assertNotNull(_defaults);
     assertEquals("true", _defaults.getSection("cache").getPropertyMap().get("suppressExceptions").getValue());
-    ParsedItemsContainer _caches = _topLevel.getSection("caches");
+    Configuration _caches = _topLevel.getSection("caches");
     assertNotNull(_caches);
     assertEquals("5", _caches.getSection("products").getPropertyMap().get("entryCapacity").getValue());
     assertNotNull("cache has eviction section", _caches.getSection("products").getSection("eviction"));
     assertEquals("123", _caches.getSection("products").getSection("eviction").getPropertyMap().get("aValue").getValue());
+    assertEquals("123", _topLevel.getPathProperty("caches.products.eviction.aValue"));
+  }
+
+  @Test
+  public void parseAndExpand() throws Exception {
+    InputStream is = this.getClass().getResourceAsStream("/config.xml");
+    ConfigurationTokenizer pp = new NewXppConfigParser("/config.xml", is);
+    Configuration cfg = ConfigurationParser.parse(pp);
+    VariableExpander _expander = new StandardVariableExpander();
+    _expander.expand(cfg);
+    String _homeDirectory = System.getenv("HOME");
+    assertEquals(_homeDirectory, cfg.getPathProperty("properties.user.homeDirectory"));
+    assertEquals("5", cfg.getPathProperty("caches.hallo.entryCapacity"));
+    assertEquals("products", cfg.getPathProperty("caches.products.eviction.duplicateName"));
+    assertEquals("123", cfg.getPathProperty("caches.products.eviction.bValue"));
+    assertEquals("123", cfg.getPathProperty("caches.products.eviction.cValue"));
   }
 
 }

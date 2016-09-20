@@ -21,14 +21,34 @@ package org.cache2k.xmlConfig;
  */
 
 /**
- * Holds information from a complete configuration file.
- *
  * @author Jens Wilke
  */
-public class CompleteConfiguration {
+public interface ConfigurationTokenizer {
 
-  Configuration defaults;
-  Configuration templates;
-  Configuration caches;
+  String getSource();
+
+  int getLineNumber();
+
+  Item next() throws Exception;
+
+  interface Item {
+    String getSource();
+    int getLineNumber();
+  }
+
+  interface Property extends Item {
+    String getName();
+    String getValue();
+    /** Value is multable for variable expansion */
+    void setValue(String v);
+  }
+
+  interface Nest extends Item {
+    String getSectionName();
+  }
+
+  interface Unnest extends Item { }
+
+  interface End extends Item { }
 
 }

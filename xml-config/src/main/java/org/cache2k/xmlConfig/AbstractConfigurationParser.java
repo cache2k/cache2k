@@ -23,7 +23,7 @@ package org.cache2k.xmlConfig;
 /**
  * @author Jens Wilke
  */
-public abstract class AbstractConfigurationParser implements ConfigurationParser {
+public abstract class AbstractConfigurationParser implements ConfigurationTokenizer {
 
   private final String source;
 
@@ -100,7 +100,7 @@ public abstract class AbstractConfigurationParser implements ConfigurationParser
 
   private static class MyProperty extends MyItem implements Property {
     private final String name;
-    private final String value;
+    private String value;
 
     public MyProperty(final String _source, final int _lineNumber, final String _name, final String _value) {
       super(_source, _lineNumber);
@@ -116,6 +116,11 @@ public abstract class AbstractConfigurationParser implements ConfigurationParser
     @Override
     public String getValue() {
       return value;
+    }
+
+    @Override
+    public void setValue(final String _value) {
+      value = _value;
     }
 
     @Override
