@@ -23,6 +23,11 @@ package org.cache2k.xmlConfig;
 import org.junit.Test;
 
 import java.io.InputStream;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
 
 import static org.junit.Assert.*;
 
@@ -34,25 +39,26 @@ public class ParseCompleteTest {
   @Test
   public void parseIt() throws Exception {
     InputStream is = this.getClass().getResourceAsStream("/config.xml");
-    ConfigurationTokenizer pp = new NewXppConfigParser("/config.xml", is);
-    Configuration _topLevel = ConfigurationParser.parse(pp);
+    ConfigurationTokenizer pp = new NewXppConfigParser("/config.xml", is, null);
+    ParsedConfiguration _topLevel = ConfigurationParser.parse(pp);
     assertEquals("1.0", _topLevel.getPropertyMap().get("version").getValue());
-    Configuration _defaults = _topLevel.getSection("defaults");
+    ParsedConfiguration _defaults = _topLevel.getSection("defaults");
     assertNotNull(_defaults);
     assertEquals("true", _defaults.getSection("cache").getPropertyMap().get("suppressExceptions").getValue());
-    Configuration _caches = _topLevel.getSection("caches");
+    ParsedConfiguration _caches = _topLevel.getSection("caches");
     assertNotNull(_caches);
     assertEquals("5", _caches.getSection("products").getPropertyMap().get("entryCapacity").getValue());
     assertNotNull("cache has eviction section", _caches.getSection("products").getSection("eviction"));
     assertEquals("123", _caches.getSection("products").getSection("eviction").getPropertyMap().get("aValue").getValue());
     assertEquals("123", _topLevel.getStringPropertyByPath("caches.products.eviction.aValue"));
+    assertNull(_topLevel.getStringPropertyByPath("NOEXISTENT.PROPERTY"));
   }
 
   @Test
   public void parseAndExpand() throws Exception {
     InputStream is = this.getClass().getResourceAsStream("/config.xml");
-    ConfigurationTokenizer pp = new NewXppConfigParser("/config.xml", is);
-    Configuration cfg = ConfigurationParser.parse(pp);
+    ConfigurationTokenizer pp = new NewXppConfigParser("/config.xml", is, null);
+    ParsedConfiguration cfg = ConfigurationParser.parse(pp);
     VariableExpander _expander = new StandardVariableExpander();
     _expander.expand(cfg);
     String _homeDirectory = System.getenv("HOME");
@@ -73,10 +79,56 @@ public class ParseCompleteTest {
   public void cyclicReferenceProtection() throws Exception {
     String _fileName = "/cyclic-variable.xml";
     InputStream is = this.getClass().getResourceAsStream(_fileName);
-    ConfigurationTokenizer pp = new NewXppConfigParser(_fileName, is);
-    Configuration cfg = ConfigurationParser.parse(pp);
+    ConfigurationTokenizer pp = new NewXppConfigParser(_fileName, is, null);
+    ParsedConfiguration cfg = ConfigurationParser.parse(pp);
     VariableExpander _expander = new StandardVariableExpander();
     _expander.expand(cfg);
+  }
+
+  @Test
+  public void parseViaStax() throws Exception {
+    InputStream is = this.getClass().getResourceAsStream("/config.xml");
+    ConfigurationTokenizer pp = new NewXppConfigParser("/config.xml", is, null);
+    ParsedConfiguration cfg = ConfigurationParser.parse(pp);
+    is = this.getClass().getResourceAsStream("/config.xml");
+    pp = new NewStaxConfigParser("/config.xml", is, null);
+    ParsedConfiguration cfg2 = ConfigurationParser.parse(pp);
+    compare(cfg, cfg2);
+  }
+
+  /** Recursively compare the parsed configuration objects */
+  void compare(ParsedConfiguration c1, ParsedConfiguration c2) {
+    assertEquals("name", c1.getName(), c2.getName());
+    assertEquals("context", c1.getPropertyContext(), c2.getPropertyContext());
+    assertEquals("property keys", extractSortedKeys(c1.getPropertyMap()), extractSortedKeys(c2.getPropertyMap()));
+    for (ConfigurationTokenizer.Property p : c1.getPropertyMap().values()) {
+      ConfigurationTokenizer.Property p2 = c2.getPropertyMap().get(p.getName());
+      assertEquals(p.getSource(), p2.getSource());
+      assertEquals(p.getLineNumber(), p2.getLineNumber());
+      assertEquals(p.getName(), p2.getName());
+      assertEquals(p.getValue(), p2.getValue());
+    }
+    assertEquals("section names", extractNames(c1.getSections()), extractNames(c2.getSections()));
+    assertEquals("section count", c1.getSections().size(), c2.getSections().size());
+    for (int i = 0; i < c1.getSections().size(); i++) {
+      compare(c1.getSections().get(i), c2.getSections().get(i));
+    }
+  }
+
+  List<String> extractSortedKeys(Map<String, ?> m) {
+    List<String> l = new ArrayList<String>();
+    l.addAll(m.keySet());
+    Collections.sort(l);
+    return l;
+  }
+
+  List<String> extractNames(Collection<ParsedConfiguration> lc) {
+    List<String> l = new ArrayList<String>();
+    for (ParsedConfiguration c : lc)
+    if (c.getName() != null) {
+      l.add(c.getName());
+    }
+    return l;
   }
 
 }

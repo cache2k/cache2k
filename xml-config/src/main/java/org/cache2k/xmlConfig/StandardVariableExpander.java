@@ -64,19 +64,19 @@ public class StandardVariableExpander implements VariableExpander {
   }
 
   @Override
-  public void expand(final Configuration cfg) {
+  public void expand(final ParsedConfiguration cfg) {
     new Process(cfg, new HashMap<String, ValueAccessor>(scope2resolver)).expand();
   }
 
   private static class Process implements ExpanderContext {
 
     private final Map<String, ValueAccessor> scope2resolver;
-    private final Configuration top;
-    private Configuration current;
+    private final ParsedConfiguration top;
+    private ParsedConfiguration current;
     private int forwardReference = 0;
     private ConfigurationTokenizer.Property lastTroubemaker;
 
-    Process(final Configuration _top, final Map<String, ValueAccessor> _scope2resolver) {
+    Process(final ParsedConfiguration _top, final Map<String, ValueAccessor> _scope2resolver) {
       top = _top;
       scope2resolver = _scope2resolver;
     }
@@ -98,7 +98,7 @@ public class StandardVariableExpander implements VariableExpander {
       } while(forwardReference > 0);
     }
 
-    private void recurse(Configuration cfg) {
+    private void recurse(ParsedConfiguration cfg) {
       current = cfg;
       for (ConfigurationTokenizer.Property p : cfg.getPropertyMap().values()) {
         if (p.isExpanded()) {
@@ -116,12 +116,12 @@ public class StandardVariableExpander implements VariableExpander {
           lastTroubemaker = p;
         }
       }
-      for (Configuration c2 : cfg.getSections()) {
+      for (ParsedConfiguration c2 : cfg.getSections()) {
         String _context = c2.getPropertyContext();
         ValueAccessor _savedAccessor = null;
         if (_context != null) {
           _savedAccessor = scope2resolver.get(_context);
-          final Configuration _localScope = c2;
+          final ParsedConfiguration _localScope = c2;
           scope2resolver.put(_context, new ValueAccessor() {
             @Override
             public String get(final ExpanderContext ctx, final String _variable) {
@@ -137,12 +137,12 @@ public class StandardVariableExpander implements VariableExpander {
     }
 
     @Override
-    public Configuration getCurrentConfiguration() {
+    public ParsedConfiguration getCurrentConfiguration() {
       return current;
     }
 
     @Override
-    public Configuration getTopLevelConfiguration() {
+    public ParsedConfiguration getTopLevelConfiguration() {
       return top;
     }
 

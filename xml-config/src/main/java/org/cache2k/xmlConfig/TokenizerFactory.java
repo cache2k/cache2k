@@ -20,31 +20,22 @@ package org.cache2k.xmlConfig;
  * #L%
  */
 
+import java.io.InputStream;
+
 /**
- * Runs through all properties in the configuration, check for variable references and expand them.
+ * Construct a tokenizer to use.
  *
  * @author Jens Wilke
+ * @see ConfigurationTokenizer
  */
-public interface VariableExpander {
+public interface TokenizerFactory {
 
-  void expand(ParsedConfiguration cfg);
-
-  interface ExpanderContext {
-    ParsedConfiguration getTopLevelConfiguration();
-    ParsedConfiguration getCurrentConfiguration();
-  }
-
-  interface ValueAccessor {
-    /**
-     *
-     * @param ctx current expander context
-     * @param _variable name of the variable to retrieve
-     * @return the value or null, if nothing known
-     * @throws NeedsExpansion if a property is referenced that needs expansion
-     */
-    String get(ExpanderContext ctx, String _variable);
-  }
-
-  class NeedsExpansion extends RuntimeException {}
+  /**
+   * @param _source Name of the source, this is used only for exceptions
+   * @param in Input stream to read from
+   * @param _encoding character encoding to use
+   * @return the created tokenizer
+   */
+  ConfigurationTokenizer createTokenizer(final String _source, InputStream in, String _encoding);
 
 }

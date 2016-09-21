@@ -29,6 +29,9 @@ public interface ConfigurationTokenizer {
 
   int getLineNumber();
 
+  /**
+   * The next item in the configuration or {@code null} if the end is reached.
+   */
   Item next() throws Exception;
 
   interface Item {

@@ -27,8 +27,8 @@ package org.cache2k.xmlConfig;
  */
 public class CompleteConfiguration {
 
-  Configuration defaults;
-  Configuration templates;
-  Configuration caches;
+  ParsedConfiguration defaults;
+  ParsedConfiguration templates;
+  ParsedConfiguration caches;
 
 }

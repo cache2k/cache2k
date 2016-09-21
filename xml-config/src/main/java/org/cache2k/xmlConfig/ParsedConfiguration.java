@@ -20,6 +20,7 @@ package org.cache2k.xmlConfig;
  * #L%
  */
 
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -27,14 +28,16 @@ import java.util.List;
 import java.util.Map;
 
 /**
+ *
+ *
  * @author Jens Wilke
  */
-public class Configuration {
+public class ParsedConfiguration {
 
   private String name;
   private String propertyContext;
   private Map<String, ConfigurationTokenizer.Property> properties = new HashMap<String, ConfigurationTokenizer.Property>();
-  private List<Configuration> sections = new ArrayList<Configuration>();
+  private List<ParsedConfiguration> sections = new ArrayList<ParsedConfiguration>();
 
   public String getName() {
     return name;
@@ -56,7 +59,7 @@ public class Configuration {
     return properties;
   }
 
-  public Collection<Configuration> getSections() {
+  public List<ParsedConfiguration> getSections() {
     return sections;
   }
 
@@ -67,12 +70,12 @@ public class Configuration {
     properties.put(p.getName(), p);
   }
 
-  public void addSection(Configuration c) {
+  public void addSection(ParsedConfiguration c) {
     sections.add(c);
   }
 
-  public Configuration getSection(String _name) {
-    for (Configuration c : sections) {
+  public ParsedConfiguration getSection(String _name) {
+    for (ParsedConfiguration c : sections) {
       if (_name.equals(c.getName())) {
         return c;
       }
@@ -89,7 +92,7 @@ public class Configuration {
   public ConfigurationTokenizer.Property getPropertyByPath(final String s) {
     int idx = 0;
     String[] _components = s.split("\\.");
-    Configuration cfg = this;
+    ParsedConfiguration cfg = this;
     while (idx < _components.length - 1) {
       cfg = cfg.getSection(_components[idx++]);
       if (cfg == null) {
