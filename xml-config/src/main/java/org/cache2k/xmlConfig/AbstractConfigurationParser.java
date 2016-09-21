@@ -101,6 +101,7 @@ public abstract class AbstractConfigurationParser implements ConfigurationTokeni
   private static class MyProperty extends MyItem implements Property {
     private final String name;
     private String value;
+    private boolean expanded;
 
     public MyProperty(final String _source, final int _lineNumber, final String _name, final String _value) {
       super(_source, _lineNumber);
@@ -121,6 +122,16 @@ public abstract class AbstractConfigurationParser implements ConfigurationTokeni
     @Override
     public void setValue(final String _value) {
       value = _value;
+    }
+
+    @Override
+    public boolean isExpanded() {
+      return expanded;
+    }
+
+    @Override
+    public void setExpanded(final boolean _expanded) {
+      expanded = _expanded;
     }
 
     @Override

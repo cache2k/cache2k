@@ -24,8 +24,11 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
+ * Lightweight and straight forward variable expansion.
+ *
  * @author Jens Wilke
  */
+@SuppressWarnings("WeakerAccess")
 public class StandardVariableExpander implements VariableExpander {
 
   private Map<String, ValueAccessor> scope2resolver = new HashMap<String, ValueAccessor>();
@@ -46,13 +49,15 @@ public class StandardVariableExpander implements VariableExpander {
     scope2resolver.put("TOP", new ValueAccessor() {
       @Override
       public String get(ExpanderContext ctx, final String _variable) {
-        return ctx.getTopLevelConfiguration().getPathProperty(_variable);
+        ConfigurationTokenizer.Property p = ctx.getTopLevelConfiguration().getPropertyByPath(_variable);
+        return checkAndReturnValue(p);
       }
     });
     scope2resolver.put("", new ValueAccessor() {
       @Override
       public String get(ExpanderContext ctx, final String _variable) {
-        return ctx.getCurrentConfiguration().getPathProperty(_variable);
+        ConfigurationTokenizer.Property p = ctx.getCurrentConfiguration().getPropertyByPath(_variable);
+        return checkAndReturnValue(p);
       }
     });
 
@@ -60,7 +65,7 @@ public class StandardVariableExpander implements VariableExpander {
 
   @Override
   public void expand(final Configuration cfg) {
-    new Process(cfg, new HashMap<String, ValueAccessor>(scope2resolver)).recurse(cfg);
+    new Process(cfg, new HashMap<String, ValueAccessor>(scope2resolver)).expand();
   }
 
   private static class Process implements ExpanderContext {
@@ -68,31 +73,59 @@ public class StandardVariableExpander implements VariableExpander {
     private final Map<String, ValueAccessor> scope2resolver;
     private final Configuration top;
     private Configuration current;
+    private int forwardReference = 0;
+    private ConfigurationTokenizer.Property lastTroubemaker;
 
-    public Process(final Configuration _top, final Map<String, ValueAccessor> _scope2resolver) {
+    Process(final Configuration _top, final Map<String, ValueAccessor> _scope2resolver) {
       top = _top;
       scope2resolver = _scope2resolver;
     }
 
+    /**
+     * Recurse into configuration objects and expand variables. It may happen that a property
+     * refers to another property which is not yet expanded. In this case we repeat the expansion.
+     * If the number of properties that are affected is not lowering per iteration there must
+     * be a cyclic reference.
+     */
+    private void expand() {
+      do {
+        int lastCounter = forwardReference;
+        forwardReference = 0;
+        recurse(top);
+        if (lastCounter > 0 && lastCounter == forwardReference) {
+          throw new ConfigurationException("Cyclic reference", lastTroubemaker.getSource(), lastTroubemaker.getLineNumber());
+        }
+      } while(forwardReference > 0);
+    }
+
     private void recurse(Configuration cfg) {
+      current = cfg;
       for (ConfigurationTokenizer.Property p : cfg.getPropertyMap().values()) {
+        if (p.isExpanded()) {
+          continue;
+        }
         String v0 = p.getValue();
-        String v = expand(v0);
-        if (v0 != v) {
-          p.setValue(v);
+        try {
+          String v = expand(v0);
+          if (v0 != v) {
+            p.setValue(v);
+          }
+          p.setExpanded(true);
+        } catch(NeedsExpansion ex) {
+          forwardReference++;
+          lastTroubemaker = p;
         }
       }
       for (Configuration c2 : cfg.getSections()) {
         String _context = c2.getPropertyContext();
         ValueAccessor _savedAccessor = null;
-        current = c2;
         if (_context != null) {
           _savedAccessor = scope2resolver.get(_context);
           final Configuration _localScope = c2;
           scope2resolver.put(_context, new ValueAccessor() {
             @Override
             public String get(final ExpanderContext ctx, final String _variable) {
-              return _localScope.getPathProperty(_variable);
+              return _localScope.getStringPropertyByPath(_variable);
             }
           });
         }
@@ -113,6 +146,12 @@ public class StandardVariableExpander implements VariableExpander {
       return top;
     }
 
+    /**
+     * Scan for sequences that look like a variable reference in the form of {@code ${scope.variablename}}
+     * lookup and replace the variable with the expanded value.
+     *
+     * @return the identical string if nothing was expanded, a replacement string if something was expanded
+     */
     private String expand(String s) {
       int idx = 0;
       int _endIdx;
@@ -144,6 +183,14 @@ public class StandardVariableExpander implements VariableExpander {
       }
     }
 
+  }
+
+  private String checkAndReturnValue(final ConfigurationTokenizer.Property p) {
+    if (p == null) { return null; }
+    if (!p.isExpanded()) {
+      throw new NeedsExpansion();
+    }
+    return p.getValue();
   }
 
 }

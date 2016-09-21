@@ -35,7 +35,16 @@ public interface VariableExpander {
   }
 
   interface ValueAccessor {
+    /**
+     *
+     * @param ctx current expander context
+     * @param _variable name of the variable to retrieve
+     * @return the value or null, if nothing known
+     * @throws NeedsExpansion if a property is referenced that needs expansion
+     */
     String get(ExpanderContext ctx, String _variable);
   }
+
+  class NeedsExpansion extends RuntimeException {}
 
 }

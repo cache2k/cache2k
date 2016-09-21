@@ -45,7 +45,7 @@ public class ParseCompleteTest {
     assertEquals("5", _caches.getSection("products").getPropertyMap().get("entryCapacity").getValue());
     assertNotNull("cache has eviction section", _caches.getSection("products").getSection("eviction"));
     assertEquals("123", _caches.getSection("products").getSection("eviction").getPropertyMap().get("aValue").getValue());
-    assertEquals("123", _topLevel.getPathProperty("caches.products.eviction.aValue"));
+    assertEquals("123", _topLevel.getStringPropertyByPath("caches.products.eviction.aValue"));
   }
 
   @Test
@@ -56,11 +56,27 @@ public class ParseCompleteTest {
     VariableExpander _expander = new StandardVariableExpander();
     _expander.expand(cfg);
     String _homeDirectory = System.getenv("HOME");
-    assertEquals(_homeDirectory, cfg.getPathProperty("properties.user.homeDirectory"));
-    assertEquals("5", cfg.getPathProperty("caches.hallo.entryCapacity"));
-    assertEquals("products", cfg.getPathProperty("caches.products.eviction.duplicateName"));
-    assertEquals("123", cfg.getPathProperty("caches.products.eviction.bValue"));
-    assertEquals("123", cfg.getPathProperty("caches.products.eviction.cValue"));
+    assertEquals(_homeDirectory, cfg.getStringPropertyByPath("properties.user.homeDirectory"));
+    assertEquals("123", cfg.getStringPropertyByPath("properties.user.forward"));
+    assertEquals("5", cfg.getStringPropertyByPath("caches.hallo.entryCapacity"));
+    assertEquals("products", cfg.getStringPropertyByPath("caches.products.eviction.duplicateName"));
+    assertEquals("123", cfg.getStringPropertyByPath("caches.products.eviction.bValue"));
+    assertEquals("123", cfg.getStringPropertyByPath("caches.products.eviction.cValue"));
+    assertEquals("[123]", cfg.getStringPropertyByPath("caches.products.eviction.dValue"));
+    assertEquals("123-products", cfg.getStringPropertyByPath("caches.products.eviction.eValue"));
+    assertEquals(_homeDirectory, cfg.getStringPropertyByPath("caches.products.eviction.directory"));
+    assertEquals("${CHACKA.farusimatasa}", cfg.getStringPropertyByPath("properties.user.illegalScope"));
+    assertEquals("${ENV.HOME", cfg.getStringPropertyByPath("properties.user.noClose"));
+  }
+
+  @Test(expected = ConfigurationException.class)
+  public void cyclicReferenceProtection() throws Exception {
+    String _fileName = "/cyclic-variable.xml";
+    InputStream is = this.getClass().getResourceAsStream(_fileName);
+    ConfigurationTokenizer pp = new NewXppConfigParser(_fileName, is);
+    Configuration cfg = ConfigurationParser.parse(pp);
+    VariableExpander _expander = new StandardVariableExpander();
+    _expander.expand(cfg);
   }
 
 }

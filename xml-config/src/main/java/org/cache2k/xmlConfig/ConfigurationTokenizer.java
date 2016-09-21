@@ -39,8 +39,11 @@ public interface ConfigurationTokenizer {
   interface Property extends Item {
     String getName();
     String getValue();
-    /** Value is multable for variable expansion */
+    /** Value is mutable for variable expansion */
     void setValue(String v);
+    /** Indicates that variable expansion has occured. */
+    boolean isExpanded();
+    void setExpanded(boolean v);
   }
 
   interface Nest extends Item {

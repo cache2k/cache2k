@@ -80,7 +80,13 @@ public class Configuration {
     return null;
   }
 
-  public String getPathProperty(String s) {
+  public String getStringPropertyByPath(String s) {
+    ConfigurationTokenizer.Property p = getPropertyByPath(s);
+    if (p == null) { return null; }
+    return p.getValue();
+  }
+
+  public ConfigurationTokenizer.Property getPropertyByPath(final String s) {
     int idx = 0;
     String[] _components = s.split("\\.");
     Configuration cfg = this;
@@ -94,7 +100,7 @@ public class Configuration {
     if (p == null) {
       return null;
     }
-    return p.getValue();
+    return p;
   }
 
 }

@@ -25,6 +25,13 @@
     <user>
       <bigCacheCapacity>12000</bigCacheCapacity>
       <homeDirectory>${ENV.HOME}</homeDirectory>
+      <forward>${TOP.caches.products.eviction.cValue}</forward>
+      <illegalScope>${CHACKA.farusimatasa}</illegalScope>
+      <noClose>${ENV.HOME</noClose>
+      <noScope>${snoopy}</noScope>
+      <noVariable>${.</noVariable>
+      <illegalVariable>${.asdf}</illegalVariable>
+      <vendor>${PROP.java.vendor}</vendor>
     </user>
   </properties>
 
@@ -65,6 +72,8 @@
           <directory>${TOP.properties.user.homeDirectory}</directory>
           <bValue>${.aValue}</bValue>
           <cValue>${eviction.aValue}</cValue>
+          <dValue>[${.aValue}]</dValue>
+          <eValue>${.aValue}-${cache.name}</eValue>
           <sections>
             <jcache>
               <prop>123</prop>
@@ -73,7 +82,6 @@
         </eviction>
         <jcache>
           <type>org.cache2k.jcache.JCacheConfiguration</type>
-
         </jcache>
       </sections>
     </cache>
