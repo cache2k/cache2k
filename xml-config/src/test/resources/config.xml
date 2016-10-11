@@ -17,7 +17,7 @@
   limitations under the License.
   #L%
   -->
-<cache2k>
+<cache2k-configuration>
 
   <version>1.0</version>
 
@@ -102,4 +102,4 @@
 
   </caches>
 
-</cache2k>
+</cache2k-configuration>
