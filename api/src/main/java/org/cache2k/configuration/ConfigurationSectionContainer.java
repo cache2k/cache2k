@@ -51,9 +51,9 @@ public class ConfigurationSectionContainer implements Iterable<ConfigurationSect
   /**
    * Retrieve a single section from the container.
    */
-  public <T> T getSection(Class<T> sectionType) {
+  public <T extends ConfigurationSection> T getSection(Class<T> sectionType) {
     for (ConfigurationSection s : sections) {
-      if (sectionType.isAssignableFrom(s.getClass())) {
+      if (sectionType.equals(s.getClass())) {
         return (T) s;
       }
     }
