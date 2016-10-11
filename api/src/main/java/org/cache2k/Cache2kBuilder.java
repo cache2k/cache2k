@@ -327,7 +327,7 @@ public class Cache2kBuilder<K, V> implements Cloneable {
    * avoided in production environments.
    */
   public final Cache2kBuilder<K, V> expireAfterWrite(long v, TimeUnit u) {
-    config.setExpireAfterWriteMillis(u.toMillis(v));
+    config.setExpireAfterWrite(u.toMillis(v));
     return this;
   }
 
@@ -461,7 +461,7 @@ public class Cache2kBuilder<K, V> implements Cloneable {
    * retry attempt is made. If not specified, 10% of {@link #maxRetryInterval}.
    */
   public final Cache2kBuilder<K, V> retryInterval(long v, TimeUnit u) {
-    config.setRetryIntervalMillis(u.toMillis(v));
+    config.setRetryInterval(u.toMillis(v));
     return this;
   }
 
@@ -474,7 +474,7 @@ public class Cache2kBuilder<K, V> implements Cloneable {
    * <p>By default identical to {@link #resilienceDuration}
    */
   public final Cache2kBuilder<K, V> maxRetryInterval(long v, TimeUnit u) {
-    config.setMaxRetryIntervalMillis(u.toMillis(v));
+    config.setMaxRetryInterval(u.toMillis(v));
     return this;
   }
 
@@ -488,7 +488,7 @@ public class Cache2kBuilder<K, V> implements Cloneable {
    * is switched off, this setting has no effect.
    */
   public final Cache2kBuilder<K, V> resilienceDuration(long v, TimeUnit u) {
-    config.setResilienceDurationMillis(u.toMillis(v));
+    config.setResilienceDuration(u.toMillis(v));
     return this;
   }
 

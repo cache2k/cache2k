@@ -42,7 +42,7 @@ import java.util.List;
  * @author Jens Wilke; created: 2013-06-25
  */
 @SuppressWarnings("unused")
-public class Cache2kConfiguration<K, V> implements Serializable {
+public class Cache2kConfiguration<K, V> implements Serializable, ConfigurationWithSections {
 
   private boolean storeByReference;
   private String name;
@@ -51,10 +51,10 @@ public class Cache2kConfiguration<K, V> implements Serializable {
   private long entryCapacity = 2000;
   private boolean strictEviction = false;
   private boolean refreshAhead = false;
-  private long expireAfterWriteMillis = -1;
-  private long retryIntervalMillis = -1;
-  private long maxRetryIntervalMillis = -1;
-  private long resilienceDurationMillis = -1;
+  private long expireAfterWrite = -1;
+  private long retryInterval = -1;
+  private long maxRetryInterval = -1;
+  private long resilienceDuration = -1;
   private boolean keepDataAfterExpired = false;
   private boolean sharpExpiry = false;
   private boolean suppressExceptions = true;
@@ -246,7 +246,7 @@ public class Cache2kConfiguration<K, V> implements Serializable {
   }
 
   public boolean isEternal() {
-    return expireAfterWriteMillis == -1 || expireAfterWriteMillis == ExpiryTimeValues.ETERNAL;
+    return expireAfterWrite == -1 || expireAfterWrite == ExpiryTimeValues.ETERNAL;
   }
 
   /**
@@ -254,83 +254,81 @@ public class Cache2kConfiguration<K, V> implements Serializable {
    */
   public void setEternal(boolean v) {
     if (v) {
-      this.expireAfterWriteMillis = ExpiryTimeValues.ETERNAL;
+      this.expireAfterWrite = ExpiryTimeValues.ETERNAL;
     }
   }
 
   /**
-   * @deprecated use {@link #setExpireAfterWriteMillis}
+   * @deprecated use {@link #setExpireAfterWrite}
    */
   public void setExpirySeconds(int v) {
     if (v == -1 || v == Integer.MAX_VALUE) {
-      expireAfterWriteMillis = -1;
+      expireAfterWrite = -1;
     }
-    expireAfterWriteMillis = v * 1000L;
+    expireAfterWrite = v * 1000L;
   }
 
   /**
-   * @deprecated use {@link #getExpireAfterWriteMillis}
+   * @deprecated use {@link #getExpireAfterWrite}
    */
   public int getExpirySeconds() {
     if (isEternal()) {
       return -1;
     }
-    return (int) (expireAfterWriteMillis / 1000);
+    return (int) (expireAfterWrite / 1000);
   }
 
-  public long getExpireAfterWriteMillis() {
-    return expireAfterWriteMillis;
+  public long getExpireAfterWrite() {
+    return expireAfterWrite;
   }
 
   /**
-   * The expiry value of all entries. If an entry specific expiry calculation is
-   * determined this is the maximum expiry time. A value of -1 switches expiry off, that
-   * means entries are kept for an eternal time, a value of 0 switches caching off.
+   * @see Cache2kBuilder#expireAfterWrite
    */
-  public void setExpireAfterWriteMillis(long v) {
-    this.expireAfterWriteMillis = v;
+  public void setExpireAfterWrite(long _millis) {
+    this.expireAfterWrite = _millis;
   }
 
   /**
    * @see Cache2kBuilder#retryInterval
    */
-  public long getRetryIntervalMillis() {
-    return retryIntervalMillis;
+  public long getRetryInterval() {
+    return retryInterval;
   }
 
   /**
    * @see Cache2kBuilder#retryInterval
    */
-  public void setRetryIntervalMillis(long v) {
-    retryIntervalMillis = v;
+  public void setRetryInterval(long _millis) {
+    retryInterval = _millis;
   }
 
   /**
    * @see Cache2kBuilder#maxRetryInterval
    */
-  public long getMaxRetryIntervalMillis() {
-    return maxRetryIntervalMillis;
+  public long getMaxRetryInterval() {
+    return maxRetryInterval;
   }
 
   /**
    * @see Cache2kBuilder#maxRetryInterval
    */
-  public void setMaxRetryIntervalMillis(final long _maxRetryIntervalMillis) {
-    maxRetryIntervalMillis = _maxRetryIntervalMillis;
+  public void setMaxRetryInterval(long _millis) {
+    maxRetryInterval = _millis;
   }
 
   /**
    * @see Cache2kBuilder#resilienceDuration
    */
-  public long getResilienceDurationMillis() {
-    return resilienceDurationMillis;
+  public long getResilienceDuration() {
+    return resilienceDuration;
   }
 
   /**
    * @see Cache2kBuilder#resilienceDuration
    */
-  public void setResilienceDurationMillis(final long _resilienceDurationMillis) {
-    resilienceDurationMillis = _resilienceDurationMillis;
+  public void setResilienceDuration(long _millis) {
+    resilienceDuration = _millis;
   }
 
   public boolean isKeepDataAfterExpired() {
