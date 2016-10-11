@@ -240,6 +240,7 @@ public abstract class TimingHandler<K,V>  {
     /** Dirty counter, intentionally only 32 bit */
     int timerCancelCount = 0;
     ResiliencePolicy<K,V> resiliencePolicy;
+    CustomizationFactory<ResiliencePolicy<K,V>> resiliencePolicyFactory;
 
     void configureStatic(final Cache2kConfiguration<K, V> c) {
       long _expiryMillis  = c.getExpireAfterWrite();
@@ -269,9 +270,15 @@ public abstract class TimingHandler<K,V>  {
           return c.getMaxRetryInterval();
         }
       };
-      resiliencePolicy = c.getResiliencePolicy();
-      if (resiliencePolicy == null) {
+      resiliencePolicyFactory = c.getResiliencePolicy();
+      if (resiliencePolicyFactory == null) {
         resiliencePolicy = new DefaultResiliencePolicy<K, V>();
+      } else {
+        if (resiliencePolicyFactory instanceof ReferenceFactory) {
+          try {
+            resiliencePolicy = resiliencePolicyFactory.create(null);
+          } catch (Exception ignore) { }
+        }
       }
       resiliencePolicy.init(ctx);
       refreshAhead = c.isRefreshAhead();
@@ -283,6 +290,10 @@ public abstract class TimingHandler<K,V>  {
       if (cache == null) {
         cache = c;
       }
+      if (resiliencePolicy == null) {
+        resiliencePolicy = c.createCustomization(resiliencePolicyFactory);
+      }
+      resiliencePolicyFactory = null;
     }
 
     @Override

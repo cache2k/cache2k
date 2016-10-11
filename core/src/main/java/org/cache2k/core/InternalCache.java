@@ -86,7 +86,11 @@ public interface InternalCache<K, V> extends Cache<K, V>, CanCheckIntegrity {
 
   boolean isNullValuePermitted();
 
-  /** Calls factory and wraps exceptions. */
+  /**
+   * Calls factory and wraps exceptions.
+   *
+   * @param f factory or null. If null, then null is returned.
+   */
   <T> T createCustomization(CustomizationFactory<T> f);
 
 }

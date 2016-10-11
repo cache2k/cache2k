@@ -531,7 +531,7 @@ public class Cache2kBuilder<K, V> implements Cloneable {
    * {@link #expireAfterWrite} is set to 0.
    */
   public final Cache2kBuilder<K,V> resiliencePolicy(ResiliencePolicy<K,V> v) {
-    config().setResiliencePolicy(v);
+    config().setResiliencePolicy(new ReferenceFactory<ResiliencePolicy<K, V>>(v));
     return this;
   }
 

@@ -76,7 +76,7 @@ public class Cache2kConfiguration<K, V> implements Serializable, ConfigurationWi
   private int evictionSegmentCount = -1;
 
   private CustomizationFactory<ExpiryPolicy<K,V>> expiryPolicy;
-  private ResiliencePolicy<K,V> resiliencePolicy;
+  private CustomizationFactory<ResiliencePolicy<K,V>> resiliencePolicy;
   private CacheLoader<K,V> loader;
   private CacheWriter<K,V> writer;
   private AdvancedCacheLoader<K,V> advancedLoader;
@@ -499,14 +499,14 @@ public class Cache2kConfiguration<K, V> implements Serializable, ConfigurationWi
     return asyncListeners != null && !asyncListeners.isEmpty();
   }
 
-  public ResiliencePolicy<K, V> getResiliencePolicy() {
+  public CustomizationFactory<ResiliencePolicy<K, V>> getResiliencePolicy() {
     return resiliencePolicy;
   }
 
   /**
    * @see Cache2kBuilder#resiliencePolicy
    */
-  public void setResiliencePolicy(final ResiliencePolicy<K, V> _resiliencePolicy) {
+  public void setResiliencePolicy(final CustomizationFactory<ResiliencePolicy<K, V>> _resiliencePolicy) {
     resiliencePolicy = _resiliencePolicy;
   }
 
