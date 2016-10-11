@@ -25,6 +25,7 @@ import org.cache2k.configuration.CacheTypeCapture;
 import org.cache2k.configuration.CacheType;
 import org.cache2k.configuration.ConfigurationSection;
 import org.cache2k.configuration.ConfigurationSectionBuilder;
+import org.cache2k.configuration.ReferenceFactory;
 import org.cache2k.expiry.ExpiryPolicy;
 import org.cache2k.event.CacheEntryOperationListener;
 import org.cache2k.integration.AdvancedCacheLoader;
@@ -426,7 +427,7 @@ public class Cache2kBuilder<K, V> implements Cloneable {
    * {@link #resilienceDuration} needs to be specified, if resilience should be enabled.
    */
   public final Cache2kBuilder<K, V> expiryPolicy(ExpiryPolicy<K, V> c) {
-    config().setExpiryPolicy(c);
+    config().setExpiryPolicy(new ReferenceFactory<ExpiryPolicy<K, V>>(c));
     return this;
   }
 

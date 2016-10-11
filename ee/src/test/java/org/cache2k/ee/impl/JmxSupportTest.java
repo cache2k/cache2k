@@ -94,21 +94,21 @@ public class JmxSupportTest {
     Log.registerSuppression(_SUPPRESS2, new Log.SuppressionCounter());
     CacheManager m = CacheManager.getInstance(_MANAGER_NAME);
     Cache _cacheWithbadHashing = Cache2kBuilder.of(Object.class, Object.class)
+      .manager(m)
       .name(_CACHE_NAME_BAD_HASING)
       .eternal(true)
-      .manager(m)
       .build();
     Cache _cacheWithKeyMutation = Cache2kBuilder.of(Object.class, Object.class)
+      .manager(m)
       .name(_CACHE_NAME_KEY_MUTATION)
       .eternal(true)
       .entryCapacity(50)
-      .manager(m)
       .build();
     Cache _cacheWithMultipleIssues = Cache2kBuilder.of(Object.class, Object.class)
+      .manager(m)
       .name(_CACHE_NAME_MULTIPLE_ISSUES)
       .entryCapacity(50)
       .eternal(true)
-      .manager(m)
       .build();
     for (int i = 0; i < 9; i++) {
       _cacheWithbadHashing.put(new KeyForMutation(), 1);

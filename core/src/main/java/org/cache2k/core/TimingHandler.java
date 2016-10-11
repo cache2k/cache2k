@@ -22,6 +22,8 @@ package org.cache2k.core;
 
 import org.cache2k.configuration.Cache2kConfiguration;
 import org.cache2k.CacheEntry;
+import org.cache2k.configuration.CustomizationFactory;
+import org.cache2k.configuration.ReferenceFactory;
 import org.cache2k.core.util.Util;
 import org.cache2k.expiry.ExpiryPolicy;
 import org.cache2k.expiry.ExpiryTimeValues;
@@ -482,19 +484,36 @@ public abstract class TimingHandler<K,V>  {
 
   static class Dynamic<K,V> extends Static<K,V> {
 
-    ExpiryPolicy<K, V> expiryPolicy;
+    private ExpiryPolicy<K, V> expiryPolicy;
+
+    /** Store policy factory until init is called and we have the cache reference */
+    private CustomizationFactory<ExpiryPolicy<K, V>> policyFactory;
 
     @SuppressWarnings("unchecked")
     void configure(Cache2kConfiguration<K,V> c) {
       configureStatic(c);
-      expiryPolicy = c.getExpiryPolicy();
+      policyFactory = c.getExpiryPolicy();
+      if (policyFactory instanceof ReferenceFactory) {
+        try {
+          expiryPolicy = policyFactory.create(null);
+        } catch (Exception ignore) { }
+      }
       if (c.getValueType() != null &&
         ValueWithExpiryTime.class.isAssignableFrom(c.getValueType().getType()) &&
-        expiryPolicy == null)  {
+        c.getExpiryPolicy() == null)  {
         expiryPolicy =
           (ExpiryPolicy<K, V>)
             ENTRY_EXPIRY_CALCULATOR_FROM_VALUE;
       }
+    }
+
+    @Override
+    public synchronized void init(final InternalCache<K, V> c) {
+      super.init(c);
+      if (expiryPolicy == null) {
+        expiryPolicy = c.createCustomization(policyFactory);
+      }
+      policyFactory = null;
     }
 
     long calcNextRefreshTime(K _key, V _newObject, long now, Entry _entry) {

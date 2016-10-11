@@ -23,10 +23,9 @@ package org.cache2k.core;
 import org.cache2k.Cache;
 import org.cache2k.CacheEntry;
 import org.cache2k.configuration.CacheType;
+import org.cache2k.configuration.CustomizationFactory;
 import org.cache2k.core.util.Log;
 import org.cache2k.core.storageApi.StorageAdapter;
-
-import java.util.concurrent.Future;
 
 /**
  * Interface to extended cache functions for the internal components.
@@ -86,5 +85,8 @@ public interface InternalCache<K, V> extends Cache<K, V>, CanCheckIntegrity {
   void logAndCountInternalException(String s, Throwable t);
 
   boolean isNullValuePermitted();
+
+  /** Calls factory and wraps exceptions. */
+  <T> T createCustomization(CustomizationFactory<T> f);
 
 }

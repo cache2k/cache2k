@@ -37,9 +37,21 @@ import java.util.HashSet;
 import java.util.List;
 
 /**
- * Cache configuration. Adheres to bean standard.
+ * Configuration for a cache2k cache.
  *
- * @author Jens Wilke; created: 2013-06-25
+ * <p>To create a cache, the {@link Cache2kBuilder} is used. All configuration properties
+ * are present on the builder and are documented in this place. Consequently all properties
+ * refer to the corresponding builder method.
+ *
+ * <p>The configuration bean is designed to be serializable. This is used for example to copy
+ * default configurations. The builder allows object references to customizations to be set.
+ * If this happens the configuration is not serializable. Such configuration is only used for
+ * immediate creation of one cache.
+ *
+ * <p>The configuration may contain additional beans, called configuration sections, that are
+ * used to configure extensions or submodules.</p>
+ *
+ * @author Jens Wilke
  */
 @SuppressWarnings("unused")
 public class Cache2kConfiguration<K, V> implements Serializable, ConfigurationWithSections {
@@ -63,7 +75,7 @@ public class Cache2kConfiguration<K, V> implements Serializable, ConfigurationWi
   private boolean disableStatistics = false;
   private int evictionSegmentCount = -1;
 
-  private ExpiryPolicy<K,V> expiryPolicy;
+  private CustomizationFactory<ExpiryPolicy<K,V>> expiryPolicy;
   private ResiliencePolicy<K,V> resiliencePolicy;
   private CacheLoader<K,V> loader;
   private CacheWriter<K,V> writer;
@@ -401,11 +413,11 @@ public class Cache2kConfiguration<K, V> implements Serializable, ConfigurationWi
     loaderThreadCount = v;
   }
 
-  public ExpiryPolicy<K, V> getExpiryPolicy() {
+  public CustomizationFactory<ExpiryPolicy<K, V>> getExpiryPolicy() {
     return expiryPolicy;
   }
 
-  public void setExpiryPolicy(final ExpiryPolicy<K, V> _expiryPolicy) {
+  public void setExpiryPolicy(final CustomizationFactory<ExpiryPolicy<K, V>> _expiryPolicy) {
     expiryPolicy = _expiryPolicy;
   }
 
