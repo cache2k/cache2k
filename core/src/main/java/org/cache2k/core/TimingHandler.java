@@ -70,8 +70,8 @@ public abstract class TimingHandler<K,V>  {
   }
 
   public static <K, V> TimingHandler<K,V> of(Cache2kConfiguration<K,V> cfg) {
-    if (cfg.getExpireAfterWriteMillis() == 0
-      && zeroOrUnspecified(cfg.getRetryIntervalMillis())) {
+    if (cfg.getExpireAfterWrite() == 0
+      && zeroOrUnspecified(cfg.getRetryInterval())) {
       return IMMEDIATE;
     }
     if (cfg.getExpiryPolicy() != null
@@ -81,21 +81,21 @@ public abstract class TimingHandler<K,V>  {
       h.configure(cfg);
       return h;
     }
-    if (cfg.getResilienceDurationMillis() > 0 && !cfg.isSuppressExceptions()) {
+    if (cfg.getResilienceDuration() > 0 && !cfg.isSuppressExceptions()) {
       throw new IllegalArgumentException("Ambiguous: exceptions suppression is switched off, but resilience duration is specified");
     }
-    if (realDuration(cfg.getExpireAfterWriteMillis())
-      || realDuration(cfg.getRetryIntervalMillis())
-      || realDuration(cfg.getResilienceDurationMillis())) {
+    if (realDuration(cfg.getExpireAfterWrite())
+      || realDuration(cfg.getRetryInterval())
+      || realDuration(cfg.getResilienceDuration())) {
       TimingHandler.Static<K,V> h = new TimingHandler.Static<K, V>();
       h.configureStatic(cfg);
       return h;
     }
-    if ((cfg.getExpireAfterWriteMillis() == ExpiryPolicy.ETERNAL || cfg.getExpireAfterWriteMillis() == -1)) {
-      if (zeroOrUnspecified(cfg.getRetryIntervalMillis())) {
+    if ((cfg.getExpireAfterWrite() == ExpiryPolicy.ETERNAL || cfg.getExpireAfterWrite() == -1)) {
+      if (zeroOrUnspecified(cfg.getRetryInterval())) {
         return ETERNAL_IMMEDIATE;
       }
-      if (cfg.getRetryIntervalMillis() == ExpiryPolicy.ETERNAL) {
+      if (cfg.getRetryInterval() == ExpiryPolicy.ETERNAL) {
         return ETERNAL;
       }
     }
@@ -240,7 +240,7 @@ public abstract class TimingHandler<K,V>  {
     ResiliencePolicy<K,V> resiliencePolicy;
 
     void configureStatic(final Cache2kConfiguration<K, V> c) {
-      long _expiryMillis  = c.getExpireAfterWriteMillis();
+      long _expiryMillis  = c.getExpireAfterWrite();
       if (_expiryMillis == ExpiryPolicy.ETERNAL || _expiryMillis < 0) {
         maxLinger = ExpiryPolicy.ETERNAL;
       } else {
@@ -249,22 +249,22 @@ public abstract class TimingHandler<K,V>  {
       ResiliencePolicy.Context ctx = new ResiliencePolicy.Context() {
         @Override
         public long getExpireAfterWriteMillis() {
-          return c.getExpireAfterWriteMillis();
+          return c.getExpireAfterWrite();
         }
 
         @Override
         public long getResilienceDurationMillis() {
-          return c.isSuppressExceptions() ? c.getResilienceDurationMillis() : 0;
+          return c.isSuppressExceptions() ? c.getResilienceDuration() : 0;
         }
 
         @Override
         public long getRetryIntervalMillis() {
-          return c.getRetryIntervalMillis();
+          return c.getRetryInterval();
         }
 
         @Override
         public long getMaxRetryIntervalMillis() {
-          return c.getMaxRetryIntervalMillis();
+          return c.getMaxRetryInterval();
         }
       };
       resiliencePolicy = c.getResiliencePolicy();
