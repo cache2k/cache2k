@@ -244,7 +244,7 @@ public class JCacheConstructor<K,V> {
         });
         return;
       }
-      if (cache2kConfiguration.getExpireAfterWriteMillis() >= 0) {
+      if (cache2kConfiguration.getExpireAfterWrite() >= 0) {
         return;
       }
     }
