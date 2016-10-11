@@ -20,31 +20,26 @@ package org.cache2k;
  * #L%
  */
 
+import org.cache2k.configuration.Cache2kConfiguration;
 import org.cache2k.spi.Cache2kCoreProvider;
 import org.cache2k.spi.Cache2kExtensionProvider;
 import org.cache2k.spi.Cache2kManagerProvider;
 import org.cache2k.spi.SingleProviderResolver;
 
-import javax.naming.Context;
-import javax.naming.InitialContext;
 import java.io.Closeable;
-import java.lang.reflect.Constructor;
-import java.util.HashMap;
 import java.util.Iterator;
-import java.util.Map;
 import java.util.Properties;
 import java.util.ServiceLoader;
-import java.util.WeakHashMap;
 
 /**
  * @author Jens Wilke; created: 2013-06-27
  */
 public abstract class CacheManager implements Iterable<Cache>, Closeable {
 
-  protected final static Cache2kManagerProvider provider;
+  protected final static Cache2kManagerProvider PROVIDER;
 
   static {
-    provider = SingleProviderResolver.getInstance().resolve(Cache2kCoreProvider.class).getManagerProvider();
+    PROVIDER = SingleProviderResolver.getInstance().resolve(Cache2kCoreProvider.class).getManagerProvider();
     ServiceLoader<Cache2kExtensionProvider> _loader =
         ServiceLoader.load(Cache2kExtensionProvider.class, CacheManager.class.getClassLoader());
     for (Cache2kExtensionProvider p : _loader) {
@@ -58,26 +53,34 @@ public abstract class CacheManager implements Iterable<Cache>, Closeable {
    * "org.cache2k.CacheManager.defaultName".
    */
   public static String getDefaultName() {
-    return provider.getDefaultName();
+    return PROVIDER.getDefaultName();
   }
 
   /**
    * Reset the manager name once on application startup.
    */
   public static void setDefaultName(String s) {
-    provider.setDefaultName(s);
+    PROVIDER.setDefaultName(s);
   }
 
   /**
    * Get the default cache manager for the current class loader
    */
   public static CacheManager getInstance() {
-    return provider.getDefaultManager(null);
+    return PROVIDER.getDefaultManager();
   }
 
   public static CacheManager getInstance(String _name) {
-    return provider.getManager(null, _name, null);
+    return PROVIDER.getManager(null, _name);
   }
+
+  /**
+   * Return the effective default configuration for this manager. A different default
+   * configuration may be provided by the configuration system.
+   *
+   * @return mutable configuration instance containing the effective configuration defaults
+   */
+  public abstract Cache2kConfiguration getDefaultConfiguration();
 
   public abstract String getName();
 
@@ -113,7 +116,8 @@ public abstract class CacheManager implements Iterable<Cache>, Closeable {
   public abstract boolean isClosed();
 
   /**
-   * Properties for the cache manager, never null.
+   * Properties for the cache manager, never null. By default the properties are empty.
+   * Cache clients may store arbitrary information.
    */
   public abstract Properties getProperties();
 

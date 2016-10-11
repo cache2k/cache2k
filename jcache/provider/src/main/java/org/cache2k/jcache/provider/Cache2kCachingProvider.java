@@ -84,7 +84,15 @@ public class Cache2kCachingProvider implements CachingProvider {
       }
       cm = new JCacheManagerAdapter(
           this,
-          forwardProvider.getManager(cl, uri2Name(uri), p));
+          forwardProvider.getManager(cl, uri2Name(uri)));
+       if (p != null && !p.isEmpty()) {
+        Properties _managerProperties = cm.getProperties();
+        for (Map.Entry e : p.entrySet()) {
+          if (!_managerProperties.containsKey(e.getKey())) {
+            _managerProperties.put(e.getKey(), e.getValue());
+          }
+        }
+      }
       map.put(uri, cm);
       return cm;
     }

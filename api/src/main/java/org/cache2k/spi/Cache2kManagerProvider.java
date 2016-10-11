@@ -35,9 +35,9 @@ public interface Cache2kManagerProvider {
 
   String getDefaultName();
 
-  CacheManager getManager(ClassLoader cl, String _name, Properties p);
+  CacheManager getManager(ClassLoader cl, String _name);
 
-  CacheManager getDefaultManager(Properties p);
+  CacheManager getDefaultManager();
 
   ClassLoader getDefaultClassLoader();
 

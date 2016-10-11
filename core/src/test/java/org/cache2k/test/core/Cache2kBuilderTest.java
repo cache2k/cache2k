@@ -182,12 +182,12 @@ public class Cache2kBuilderTest {
 
   @Test(expected = IllegalArgumentException.class)
   public void arrayKeyYieldsException() {
-    new Cache2kBuilder<Integer[], String>() {};
+    new Cache2kBuilder<Integer[], String>() {}.build();
   }
 
   @Test(expected = IllegalArgumentException.class)
   public void arrayValueYieldsException() {
-    new Cache2kBuilder<String, Integer[]>() {};
+    new Cache2kBuilder<String, Integer[]>() {}.build();
   }
 
   @Test
@@ -248,6 +248,14 @@ public class Cache2kBuilderTest {
     assertEquals(CLASSNAME + ".cacheNameDisambiguation~1", c1.getName());
     c0.close();
     c1.close();
+  }
+
+  @Test(expected = IllegalStateException.class)
+  public void managerAfterOtherStuff() {
+    Cache2kBuilder.forUnknownTypes()
+      .eternal(true)
+      .manager(CacheManager.getInstance())
+      .build();
   }
 
   @Test

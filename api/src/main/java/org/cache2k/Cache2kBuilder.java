@@ -85,7 +85,7 @@ public class Cache2kBuilder<K, V> implements Cloneable {
    * {@link #valueType}.
    */
   public static Cache2kBuilder forUnknownTypes() {
-    return of(new Cache2kConfiguration());
+    return new Cache2kBuilder(null, null);
   }
 
   /**
@@ -95,7 +95,7 @@ public class Cache2kBuilder<K, V> implements Cloneable {
    * @see #valueType(Class)
    */
   public static <K,T> Cache2kBuilder<K,T> of(Class<K> _keyType, Class<T> _valueType) {
-    return of(Cache2kConfiguration.of(_keyType, _valueType));
+    return new Cache2kBuilder<K, T>(CacheTypeCapture.of(_keyType), CacheTypeCapture.of(_valueType));
   }
 
   /**
@@ -106,11 +106,13 @@ public class Cache2kBuilder<K, V> implements Cloneable {
     return cb;
   }
 
-  Cache2kConfiguration<K,V> config;
+  private CacheType<K> keyType;
+  private CacheType<V> valueType;
+  private Cache2kConfiguration<K,V> config = null;
+  private CacheManager manager = null;
 
-  private CacheManager manager;
   private Cache2kBuilder(Cache2kConfiguration<K,V> cfg) {
-    config = cfg;
+    withConfig(cfg);
   }
 
   /**
@@ -133,13 +135,51 @@ public class Cache2kBuilder<K, V> implements Cloneable {
       throw new IllegalArgumentException(MSG_NO_TYPES);
     }
     Type[] _types = ((ParameterizedType) t).getActualTypeArguments();
-    CacheType<K> _keyType = (CacheType<K>) CacheTypeCapture.of(_types[0]).getBeanRepresentation();
-    CacheType<V> _valueType = (CacheType<V>) CacheTypeCapture.of(_types[1]).getBeanRepresentation();
-    if (Object.class.equals(_keyType.getType()) &&
-      Object.class.equals(_valueType.getType())) {
+    keyType = (CacheType<K>) CacheTypeCapture.of(_types[0]).getBeanRepresentation();
+    valueType = (CacheType<V>) CacheTypeCapture.of(_types[1]).getBeanRepresentation();
+    if (Object.class.equals(keyType.getType()) &&
+      Object.class.equals(valueType.getType())) {
       throw new IllegalArgumentException(MSG_NO_TYPES);
     }
-    config = Cache2kConfiguration.of(_keyType, _valueType);
+  }
+
+  private Cache2kBuilder(CacheType<K> _keyType, CacheType<V> _valueType) {
+    keyType = _keyType;
+    valueType = _valueType;
+  }
+
+  private void withConfig(Cache2kConfiguration<K,V> cfg) {
+    config = cfg;
+  }
+
+  private Cache2kConfiguration<K, V> config() {
+    if (config == null) {
+      if (manager == null) {
+        manager = CORE_PROVIDER.getManagerProvider().getDefaultManager();
+      }
+      config = manager.getDefaultConfiguration();
+      if (keyType != null) {
+        config.setKeyType(keyType);
+      }
+      if (valueType != null) {
+        config.setValueType(valueType);
+      }
+    }
+    return config;
+  }
+
+  /**
+   * The manager, the created cache will belong to. If this is set, it must be the
+   * first method called.
+   *
+   * @throws IllegalStateException if the manager is not provided immediately after the builder is created.
+   */
+  public final Cache2kBuilder<K, V> manager(CacheManager m) {
+    if (manager != null) {
+      throw new IllegalStateException("manager() must be first operation on builder.");
+    }
+    manager = m;
+    return this;
   }
 
   /**
@@ -150,7 +190,7 @@ public class Cache2kBuilder<K, V> implements Cloneable {
    * @see CacheType for a general discussion on types
    */
   public final <K2> Cache2kBuilder<K2, V> keyType(Class<K2> t) {
-    config.setKeyType(t);
+    config().setKeyType(t);
     return (Cache2kBuilder<K2, V>) this;
   }
 
@@ -161,7 +201,7 @@ public class Cache2kBuilder<K, V> implements Cloneable {
    * @see CacheType for a general discussion on types
    */
   public final <T2> Cache2kBuilder<K, T2> valueType(Class<T2> t) {
-    config.setValueType(t);
+    config().setValueType(t);
     return (Cache2kBuilder<K, T2>) this;
   }
 
@@ -173,7 +213,7 @@ public class Cache2kBuilder<K, V> implements Cloneable {
    * @see CacheType for a general discussion on types
    */
   public final <K2> Cache2kBuilder<K2, V> keyType(CacheType<K2> t) {
-    config.setKeyType(t);
+    config().setKeyType(t);
     return (Cache2kBuilder<K2, V>) this;
   }
 
@@ -184,7 +224,7 @@ public class Cache2kBuilder<K, V> implements Cloneable {
    * @see CacheType for a general discussion on types
    */
   public final <T2> Cache2kBuilder<K, T2> valueType(CacheType<T2> t) {
-    config.setValueType(t);
+    config().setValueType(t);
     return (Cache2kBuilder<K, T2>) this;
   }
 
@@ -196,7 +236,7 @@ public class Cache2kBuilder<K, V> implements Cloneable {
    * @see #name(String)
    */
   public final Cache2kBuilder<K, V> name(Class<?> _class, String _fieldName) {
-    config.setName(_class.getName() + "." + _fieldName);
+    config().setName(_class.getName() + "." + _fieldName);
     return this;
   }
 
@@ -208,15 +248,7 @@ public class Cache2kBuilder<K, V> implements Cloneable {
    * @see #name(String)
    */
   public final Cache2kBuilder<K, V> name(Class<?> _class) {
-    config.setName(_class.getName());
-    return this;
-  }
-
-  /**
-   * The manager, the created cache will belong to.
-   */
-  public final Cache2kBuilder<K, V> manager(CacheManager m) {
-    manager = m;
+    config().setName(_class.getName());
     return this;
   }
 
@@ -250,7 +282,7 @@ public class Cache2kBuilder<K, V> implements Cloneable {
    * @see Cache#getName()
    */
   public final Cache2kBuilder<K, V> name(String v) {
-    config.setName(v);
+    config().setName(v);
     return this;
   }
 
@@ -262,7 +294,7 @@ public class Cache2kBuilder<K, V> implements Cloneable {
    * @see AdvancedCacheLoader
    */
   public final Cache2kBuilder<K, V> keepDataAfterExpired(boolean v) {
-    config.setKeepDataAfterExpired(v);
+    config().setKeepDataAfterExpired(v);
     return this;
   }
 
@@ -277,7 +309,7 @@ public class Cache2kBuilder<K, V> implements Cloneable {
    * will usually run stable without tuning or setting a reasonable size.
    */
   public final Cache2kBuilder<K, V> entryCapacity(long v) {
-    config.setEntryCapacity(v);
+    config().setEntryCapacity(v);
     return this;
   }
 
@@ -294,7 +326,7 @@ public class Cache2kBuilder<K, V> implements Cloneable {
    * not be cached and expire immediately.
    */
   public final Cache2kBuilder<K, V> eternal(boolean v) {
-    config.setEternal(v);
+    config().setEternal(v);
     return this;
   }
 
@@ -310,7 +342,7 @@ public class Cache2kBuilder<K, V> implements Cloneable {
    * the documentation.
    */
   public final Cache2kBuilder<K, V> suppressExceptions(boolean v) {
-    config.setSuppressExceptions(v);
+    config().setSuppressExceptions(v);
     return this;
   }
 
@@ -327,27 +359,27 @@ public class Cache2kBuilder<K, V> implements Cloneable {
    * avoided in production environments.
    */
   public final Cache2kBuilder<K, V> expireAfterWrite(long v, TimeUnit u) {
-    config.setExpireAfterWrite(u.toMillis(v));
+    config().setExpireAfterWrite(u.toMillis(v));
     return this;
   }
 
   public final Cache2kBuilder<K, V> exceptionPropagator(ExceptionPropagator<K> ep) {
-    config.setExceptionPropagator(ep);
+    config().setExceptionPropagator(ep);
     return this;
   }
 
   public final Cache2kBuilder<K, V> loader(CacheLoader<K, V> l) {
-    config.setLoader(l);
+    config().setLoader(l);
     return this;
   }
 
   public final Cache2kBuilder<K, V> loader(AdvancedCacheLoader<K, V> l) {
-    config.setAdvancedLoader(l);
+    config().setAdvancedLoader(l);
     return this;
   }
 
   public final Cache2kBuilder<K, V> writer(CacheWriter<K, V> w) {
-    config.setWriter(w);
+    config().setWriter(w);
     return this;
   }
 
@@ -360,7 +392,7 @@ public class Cache2kBuilder<K, V> implements Cloneable {
    * @param listener The listener to add
    */
   public final Cache2kBuilder<K, V> addListener(CacheEntryOperationListener<K,V> listener) {
-    boolean _inserted = config.getListeners().add(listener);
+    boolean _inserted = config().getListeners().add(listener);
     if (!_inserted) {
       throw new IllegalArgumentException("Listener already added");
     }
@@ -376,7 +408,7 @@ public class Cache2kBuilder<K, V> implements Cloneable {
    * @param listener The listener to add
    */
   public final Cache2kBuilder<K,V> addAsyncListener(CacheEntryOperationListener<K,V> listener) {
-    boolean _inserted = config.getAsyncListeners().add(listener);
+    boolean _inserted = config().getAsyncListeners().add(listener);
     if (!_inserted) {
       throw new IllegalArgumentException("Listener already added");
     }
@@ -394,7 +426,7 @@ public class Cache2kBuilder<K, V> implements Cloneable {
    * {@link #resilienceDuration} needs to be specified, if resilience should be enabled.
    */
   public final Cache2kBuilder<K, V> expiryPolicy(ExpiryPolicy<K, V> c) {
-    config.setExpiryPolicy(c);
+    config().setExpiryPolicy(c);
     return this;
   }
 
@@ -418,7 +450,7 @@ public class Cache2kBuilder<K, V> implements Cloneable {
    * @see #loaderThreadCount(int)
    */
   public final Cache2kBuilder<K, V> refreshAhead(boolean f) {
-    config.setRefreshAhead(f);
+    config().setRefreshAhead(f);
     return this;
   }
 
@@ -429,7 +461,7 @@ public class Cache2kBuilder<K, V> implements Cloneable {
    * expiry.
    */
   public final Cache2kBuilder<K, V> sharpExpiry(boolean f) {
-    config.setSharpExpiry(f);
+    config().setSharpExpiry(f);
     return this;
   }
 
@@ -437,7 +469,7 @@ public class Cache2kBuilder<K, V> implements Cloneable {
    * Maximum number of threads this cache should use for calls to the {@link CacheLoader}
    */
   public final Cache2kBuilder<K, V> loaderThreadCount(int v) {
-    config.setLoaderThreadCount(v);
+    config().setLoaderThreadCount(v);
     return this;
   }
 
@@ -452,7 +484,7 @@ public class Cache2kBuilder<K, V> implements Cloneable {
    * used by application developers to future proof the applications with upcoming versions.
    */
   public final Cache2kBuilder<K, V> storeByReference(boolean v) {
-    config.setStoreByReference(v);
+    config().setStoreByReference(v);
     return this;
   }
 
@@ -461,7 +493,7 @@ public class Cache2kBuilder<K, V> implements Cloneable {
    * retry attempt is made. If not specified, 10% of {@link #maxRetryInterval}.
    */
   public final Cache2kBuilder<K, V> retryInterval(long v, TimeUnit u) {
-    config.setRetryInterval(u.toMillis(v));
+    config().setRetryInterval(u.toMillis(v));
     return this;
   }
 
@@ -474,7 +506,7 @@ public class Cache2kBuilder<K, V> implements Cloneable {
    * <p>By default identical to {@link #resilienceDuration}
    */
   public final Cache2kBuilder<K, V> maxRetryInterval(long v, TimeUnit u) {
-    config.setMaxRetryInterval(u.toMillis(v));
+    config().setMaxRetryInterval(u.toMillis(v));
     return this;
   }
 
@@ -488,7 +520,7 @@ public class Cache2kBuilder<K, V> implements Cloneable {
    * is switched off, this setting has no effect.
    */
   public final Cache2kBuilder<K, V> resilienceDuration(long v, TimeUnit u) {
-    config.setResilienceDuration(u.toMillis(v));
+    config().setResilienceDuration(u.toMillis(v));
     return this;
   }
 
@@ -498,7 +530,7 @@ public class Cache2kBuilder<K, V> implements Cloneable {
    * {@link #expireAfterWrite} is set to 0.
    */
   public final Cache2kBuilder<K,V> resiliencePolicy(ResiliencePolicy<K,V> v) {
-    config.setResiliencePolicy(v);
+    config().setResiliencePolicy(v);
     return this;
   }
 
@@ -507,7 +539,7 @@ public class Cache2kBuilder<K, V> implements Cloneable {
    */
   public final Cache2kBuilder<K, V> with(ConfigurationSectionBuilder<? extends ConfigurationSection>... sectionBuilders) {
     for (ConfigurationSectionBuilder<? extends ConfigurationSection> b : sectionBuilders) {
-      config.getSections().add(b.buildConfigurationSection());
+      config().getSections().add(b.buildConfigurationSection());
     }
     return this;
   }
@@ -519,7 +551,7 @@ public class Cache2kBuilder<K, V> implements Cloneable {
    * testing and evaluation purposes.
    */
   public final Cache2kBuilder<K,V> strictEviction(boolean flag) {
-    config.setStrictEviction(flag);
+    config().setStrictEviction(flag);
     return this;
   }
 
@@ -529,7 +561,7 @@ public class Cache2kBuilder<K, V> implements Cloneable {
    * a null value is inserted.
    */
   public final Cache2kBuilder<K,V> permitNullValues(boolean flag) {
-    config.setPermitNullValues(flag);
+    config().setPermitNullValues(flag);
     return this;
   }
 
@@ -537,7 +569,7 @@ public class Cache2kBuilder<K, V> implements Cloneable {
    * By default statistic gathering is enabled. Set true to disable statistics.
    */
   public final Cache2kBuilder<K,V> disableStatistics(boolean flag) {
-    config.setDisableStatistics(flag);
+    config().setDisableStatistics(flag);
     return this;
   }
 
@@ -551,12 +583,12 @@ public class Cache2kBuilder<K, V> implements Cloneable {
    * concurrent reads, do not need an increase.
    */
   public final Cache2kBuilder<K,V> evictionSegmentCount(int v) {
-    config.setEvictionSegmentCount(v);
+    config().setEvictionSegmentCount(v);
     return this;
   }
 
   public final Cache2kConfiguration<K,V> toConfiguration() {
-    return config;
+    return config();
   }
 
   /**
@@ -565,7 +597,7 @@ public class Cache2kBuilder<K, V> implements Cloneable {
    * configuration. The builder is not thread safe.
    */
   public final Cache<K, V> build() {
-    return CORE_PROVIDER.createCache(manager, config);
+    return CORE_PROVIDER.createCache(manager, config());
   }
 
 }

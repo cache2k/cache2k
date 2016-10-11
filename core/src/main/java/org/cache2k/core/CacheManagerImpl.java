@@ -23,9 +23,12 @@ package org.cache2k.core;
 import org.cache2k.Cache;
 import org.cache2k.CacheException;
 import org.cache2k.CacheManager;
+import org.cache2k.configuration.Cache2kConfiguration;
+import org.cache2k.core.spi.CacheConfigurationProvider;
 import org.cache2k.core.spi.CacheLifeCycleListener;
 import org.cache2k.core.util.Cache2kVersion;
 import org.cache2k.core.util.Log;
+import org.cache2k.spi.SingleProviderResolver;
 
 import java.lang.reflect.Array;
 import java.util.ArrayList;
@@ -44,11 +47,26 @@ import java.util.concurrent.ExecutionException;
  */
 @SuppressWarnings("WeakerAccess")
 public class CacheManagerImpl extends CacheManager {
-  
+
+  static final CacheConfigurationProvider CACHE_CONFIGURATION_PROVIDER =
+    createConfigurationProvider();
   private static final Iterable<CacheLifeCycleListener> cacheLifeCycleListeners =
     constructAllServiceImplementations(CacheLifeCycleListener.class);
   private static final Iterable<CacheManagerLifeCycleListener> cacheManagerLifeCycleListeners =
     constructAllServiceImplementations(CacheManagerLifeCycleListener.class);
+
+  /**
+   * Ignore linkage error, if there is no config module present.
+   */
+  private static CacheConfigurationProvider createConfigurationProvider() {
+    try {
+      return
+        SingleProviderResolver.getInstance(CacheManagerImpl.class.getClassLoader())
+          .resolve(CacheConfigurationProvider.class);
+    } catch (LinkageError ex) {
+      return null;
+    }
+  }
 
   /**
    * The service loader works lazy, however, we want to have all implementations constructed.
@@ -88,20 +106,16 @@ public class CacheManagerImpl extends CacheManager {
   private Map<String, InternalCache> cacheNames = new HashMap<String, InternalCache>();
   private Set<Cache> caches = new HashSet<Cache>();
   private int disambiguationCounter = 1;
-  private Properties properties;
+  private final Properties properties = new Properties();
   private ClassLoader classLoader;
   private String version;
   private String buildNumber;
 
-  public CacheManagerImpl(ClassLoader cl, String _name, Properties p) {
+  public CacheManagerImpl(ClassLoader cl, String _name) {
     if (cl == null) {
       cl = getClass().getClassLoader();
     }
     classLoader = cl;
-    if (p == null) {
-      p = new Properties();
-    }
-    properties = p;
     name = _name;
     log = Log.getLog(CacheManager.class.getName() + ':' + name);
     buildNumber = Cache2kVersion.getBuildNumber();
@@ -203,6 +217,14 @@ public class CacheManagerImpl extends CacheManager {
   }
 
   @Override
+  public Cache2kConfiguration getDefaultConfiguration() {
+    if (CACHE_CONFIGURATION_PROVIDER != null) {
+      return CACHE_CONFIGURATION_PROVIDER.getDefaultConfiguration(this);
+    }
+    return new Cache2kConfiguration();
+  }
+
+  @Override
   public String getName() {
     return name;
   }
@@ -287,7 +309,7 @@ public class CacheManagerImpl extends CacheManager {
       } catch (Throwable t) {
         _suppressedExceptions.add(t);
       }
-      ((Cache2kManagerProviderImpl) provider).removeManager(this);
+      ((Cache2kManagerProviderImpl) PROVIDER).removeManager(this);
       eventuallyThrowException(_suppressedExceptions);
     }
   }
@@ -372,10 +394,6 @@ public class CacheManagerImpl extends CacheManager {
     }
   }
 
-  /**
-   * Returns the properties, lazily create properties. If requested the first time.
-   *
-   */
   @Override
   public Properties getProperties() {
     return properties;

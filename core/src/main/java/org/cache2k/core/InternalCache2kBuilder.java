@@ -33,7 +33,6 @@ import org.cache2k.configuration.Cache2kConfiguration;
 import org.cache2k.CacheManager;
 import org.cache2k.core.event.AsyncDispatcher;
 import org.cache2k.core.event.AsyncEvent;
-import org.cache2k.core.operation.ReadOnlyCacheEntry;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
@@ -92,7 +91,7 @@ public class InternalCache2kBuilder<K, T> {
       }
       _builderSeen = isBuilderClass(e.getClassName());
     }
-    return null;
+    throw new IllegalArgumentException("name missing and automatic generation failed");
   }
 
   Object getConstructorParameter(Class<?> c) {
@@ -176,6 +175,10 @@ public class InternalCache2kBuilder<K, T> {
 
   @SuppressWarnings({"unchecked", "SuspiciousToArrayCall"})
   public Cache<K, T> build() {
+    if (CacheManagerImpl.CACHE_CONFIGURATION_PROVIDER != null &&
+        config.getName() != null) {
+      CacheManagerImpl.CACHE_CONFIGURATION_PROVIDER.augmentConfiguration(manager, config);
+    }
     if (config.getValueType() == null) {
       config.setValueType(Object.class);
     }
@@ -184,9 +187,6 @@ public class InternalCache2kBuilder<K, T> {
     }
     if (config.getName() == null) {
       config.setName(deriveNameFromStackTrace());
-      if (config.getName() == null) {
-        throw new IllegalArgumentException("name missing and automatic generation failed");
-      }
     }
     checkConfiguration();
     Class<?> _implClass = HeapCache.TUNABLE.defaultImplementation;

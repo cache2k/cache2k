@@ -66,7 +66,7 @@ public class Cache2kManagerProviderImpl implements Cache2kManagerProvider {
   }
 
   @Override
-  public CacheManager getManager(ClassLoader cl, String _name, Properties p) {
+  public CacheManager getManager(ClassLoader cl, String _name) {
     synchronized (getLockObject()) {
       if (cl == null) {
         cl = getDefaultClassLoader();
@@ -77,7 +77,7 @@ public class Cache2kManagerProviderImpl implements Cache2kManagerProvider {
       }
       CacheManager cm = map.get(_name);
       if (cm == null) {
-        cm = new CacheManagerImpl(cl, _name, p);
+        cm = new CacheManagerImpl(cl, _name);
         map.put(_name, cm);
       }
       return cm;
@@ -85,11 +85,11 @@ public class Cache2kManagerProviderImpl implements Cache2kManagerProvider {
   }
 
   @Override
-  public CacheManager getDefaultManager(Properties p) {
+  public CacheManager getDefaultManager() {
     if (defaultManager != null) {
       return defaultManager;
     }
-    return defaultManager = getManager(getDefaultClassLoader(), getDefaultName(), p);
+    return defaultManager = getManager(getDefaultClassLoader(), getDefaultName());
   }
 
   /**

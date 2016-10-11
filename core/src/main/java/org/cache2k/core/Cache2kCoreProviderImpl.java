@@ -31,13 +31,10 @@ import org.cache2k.spi.Cache2kManagerProvider;
  */
 public class Cache2kCoreProviderImpl extends Cache2kCoreProvider {
 
-  Cache2kManagerProviderImpl provider;
+  private final Cache2kManagerProviderImpl provider = new Cache2kManagerProviderImpl();
 
   @Override
-  public synchronized Cache2kManagerProvider getManagerProvider() {
-    if (provider == null) {
-      provider = new Cache2kManagerProviderImpl();
-    }
+  public Cache2kManagerProvider getManagerProvider() {
     return provider;
   }
 
