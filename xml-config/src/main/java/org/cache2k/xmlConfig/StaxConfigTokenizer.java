@@ -21,6 +21,7 @@ package org.cache2k.xmlConfig;
  */
 
 import javax.xml.stream.XMLInputFactory;
+import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamReader;
 import java.io.InputStream;
 import java.util.LinkedList;
@@ -28,36 +29,27 @@ import java.util.LinkedList;
 /**
  * @author Jens Wilke
  */
-public class StaxConfigParser implements ConfigPullParser {
+public class StaxConfigTokenizer extends AbstractConfigurationTokenizer {
 
-  LinkedList<String> hierarchy = new LinkedList<String>();
-  XMLStreamReader input;
-  String startName;
-  String value;
-  String propertyName;
+  private XMLStreamReader input;
+  private LinkedList<String> hierarchy = new LinkedList<String>();
+  private String startName;
+  private String value;
 
-  public StaxConfigParser(final InputStream is) throws Exception {
+  public StaxConfigTokenizer(final String _source, final InputStream in, final String _encoding)
+    throws XMLStreamException {
+    super(_source);
     XMLInputFactory f = XMLInputFactory.newInstance();
-    input = f.createXMLStreamReader(is);
+    input = f.createXMLStreamReader(in, _encoding);
   }
 
   @Override
-  public String getPropertyName() {
-    return propertyName;
+  public int getLineNumber() {
+    return input.getLocation().getLineNumber();
   }
 
   @Override
-  public String getPropertyValue() {
-    return value;
-  }
-
-  @Override
-  public String getSectionName() {
-    return hierarchy.element();
-  }
-
-  @Override
-  public int next() throws Exception {
+  public Item next() throws Exception {
     while (input.hasNext()) {
       int _type = input.next();
       switch (_type) {
@@ -65,7 +57,7 @@ public class StaxConfigParser implements ConfigPullParser {
           if (startName != null) {
             hierarchy.push(startName);
             startName = input.getLocalName();
-            return NEST;
+            return returnNest(hierarchy.element());
           }
           startName = input.getLocalName(); break;
         case XMLStreamReader.CHARACTERS :
@@ -73,18 +65,26 @@ public class StaxConfigParser implements ConfigPullParser {
         case XMLStreamReader.END_ELEMENT :
           String _name = input.getLocalName();
           if (startName != null && startName.equals(_name)) {
-            propertyName = _name;
             startName = null;
-            return PROPERTY;
+            return returnProperty(_name, value);
           }
           if (_name.equals(hierarchy.element())) {
             hierarchy.pop();
-            return UNNEST;
+            return returnUnnest();
           }
           break;
       }
     }
-    return END;
+    return null;
+  }
+
+  public static class Factory implements ConfigurationTokenizerFactory {
+
+    @Override
+    public ConfigurationTokenizer create(final String _source, final InputStream in, final String _encoding)
+      throws XMLStreamException {
+      return new StaxConfigTokenizer(_source, in, _encoding);
+    }
   }
 
 }

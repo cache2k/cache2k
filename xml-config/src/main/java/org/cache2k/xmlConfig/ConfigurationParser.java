@@ -38,7 +38,7 @@ public class ConfigurationParser {
   }
 
   static ParsedConfiguration parse(ConfigurationTokenizer _parser) throws Exception {
-    ParsedConfiguration c = new ParsedConfiguration();
+    ParsedConfiguration c = new ParsedConfiguration(_parser.getSource(), _parser.getLineNumber());
     parseTopLevelSections(_parser, c);
     ConfigurationTokenizer.Item _item = _parser.next();
     return c;
@@ -74,7 +74,7 @@ public class ConfigurationParser {
         throw new ConfigurationException("section start expected", _item);
       }
       ConfigurationTokenizer.Nest _sectionStart = (ConfigurationTokenizer.Nest) _item;
-      ParsedConfiguration _nestedContainer = new ParsedConfiguration();
+      ParsedConfiguration _nestedContainer = new ParsedConfiguration(_parser.getSource(), _parser.getLineNumber());
       _nestedContainer.setName(_sectionStart.getSectionName());
       _nestedContainer.setPropertyContext(_sectionStart.getSectionName());
       parseSection(_parser, _nestedContainer);
@@ -99,7 +99,7 @@ public class ConfigurationParser {
         _container.addProperty((ConfigurationTokenizer.Property) _item);
       }  else if (_item instanceof ConfigurationTokenizer.Nest) {
         ConfigurationTokenizer.Nest _sectionStart = (ConfigurationTokenizer.Nest) _item;
-        ParsedConfiguration _nestedContainer = new ParsedConfiguration();
+        ParsedConfiguration _nestedContainer = new ParsedConfiguration(_parser.getSource(), _parser.getLineNumber());
         _nestedContainer.setName(_sectionStart.getSectionName());
         parseSections(_parser, _nestedContainer);
         _container.addSection(_nestedContainer);

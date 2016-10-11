@@ -20,9 +20,7 @@ package org.cache2k.xmlConfig;
  * #L%
  */
 
-import java.io.Serializable;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -34,10 +32,26 @@ import java.util.Map;
  */
 public class ParsedConfiguration {
 
+  private String source;
+  private int lineNumber;
   private String name;
+  private String type;
   private String propertyContext;
   private Map<String, ConfigurationTokenizer.Property> properties = new HashMap<String, ConfigurationTokenizer.Property>();
   private List<ParsedConfiguration> sections = new ArrayList<ParsedConfiguration>();
+
+  public ParsedConfiguration(final String _source, final int _lineNumber) {
+    lineNumber = _lineNumber;
+    source = _source;
+  }
+
+  public String getSource() {
+    return source;
+  }
+
+  public int getLineNumber() {
+    return lineNumber;
+  }
 
   public String getName() {
     return name;
@@ -45,6 +59,14 @@ public class ParsedConfiguration {
 
   public void setName(final String _name) {
     name = _name;
+  }
+
+  public String getType() {
+    return type;
+  }
+
+  public void setType(final String _type) {
+    type = _type;
   }
 
   public String getPropertyContext() {
@@ -66,6 +88,9 @@ public class ParsedConfiguration {
   public void addProperty(ConfigurationTokenizer.Property p) {
     if ("name".equals(p.getName())) {
       name = p.getValue();
+    }
+    if ("type".equals(p.getName())) {
+      type = p.getValue();
     }
     properties.put(p.getName(), p);
   }

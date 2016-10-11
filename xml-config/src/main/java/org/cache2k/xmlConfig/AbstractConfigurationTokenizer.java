@@ -23,11 +23,11 @@ package org.cache2k.xmlConfig;
 /**
  * @author Jens Wilke
  */
-public abstract class AbstractConfigurationParser implements ConfigurationTokenizer {
+public abstract class AbstractConfigurationTokenizer implements ConfigurationTokenizer {
 
   private final String source;
 
-  public AbstractConfigurationParser(final String _source) {
+  public AbstractConfigurationTokenizer(final String _source) {
     source = _source;
   }
 

@@ -20,28 +20,36 @@ package org.cache2k.xmlConfig;
  * #L%
  */
 
+import org.cache2k.junit.FastTests;
 import org.junit.Test;
+import org.junit.experimental.categories.Category;
 
-import java.io.InputStream;
-import java.util.Arrays;
+import static org.junit.Assert.*;
 
 /**
  * @author Jens Wilke
  */
-public class ParserTest {
+@Category(FastTests.class)
+public class StandardPropertyParserTest {
 
-  public void test() throws Exception {
-    InputStream is = this.getClass().getResourceAsStream("/config.xml");
-    ConfigPullParser pp = new XppConfigParser(is);
-    for (;;) {
-      int r = pp.next();
-      switch (r) {
-        case ConfigPullParser.END: return;
-        case ConfigPullParser.PROPERTY: System.out.println(pp.getPropertyName() + " = " + Arrays.toString(pp.getPropertyValue().toCharArray())); break;
-        case ConfigPullParser.NEST: System.out.println("nest: " + pp.getSectionName()); break;
-        case ConfigPullParser.UNNEST: System.out.println("unnest"); break;
-      }
-    }
+  @Test
+  public void parseLong_123MB() {
+    assertEquals(123 * 1000 * 1000, StandardPropertyParser.parseLongWithUnitSuffix("123MB"));
+  }
+
+  @Test
+  public void parseLong_123() {
+    assertEquals(123, StandardPropertyParser.parseLongWithUnitSuffix("123"));
+  }
+
+  @Test(expected = NumberFormatException.class)
+  public void parseLong_123xy() {
+    StandardPropertyParser.parseLongWithUnitSuffix("123xy");
+  }
+
+  @Test(expected = NumberFormatException.class)
+  public void parseLong_xy() {
+    StandardPropertyParser.parseLongWithUnitSuffix("xy");
   }
 
 }

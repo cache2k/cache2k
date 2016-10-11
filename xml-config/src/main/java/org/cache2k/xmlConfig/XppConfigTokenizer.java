@@ -20,49 +20,55 @@ package org.cache2k.xmlConfig;
  * #L%
  */
 
-import javax.xml.stream.XMLInputFactory;
-import javax.xml.stream.XMLStreamException;
-import javax.xml.stream.XMLStreamReader;
+import org.xmlpull.v1.XmlPullParser;
+import org.xmlpull.v1.XmlPullParserException;
+import org.xmlpull.v1.XmlPullParserFactory;
+
+import java.io.IOException;
 import java.io.InputStream;
 import java.util.LinkedList;
 
 /**
  * @author Jens Wilke
  */
-public class NewStaxConfigParser extends AbstractConfigurationParser {
+public class XppConfigTokenizer extends AbstractConfigurationTokenizer {
 
-  private XMLStreamReader input;
+  private final XmlPullParser input;
   private LinkedList<String> hierarchy = new LinkedList<String>();
   private String startName;
   private String value;
+  private boolean startFlag = true;
 
-  public NewStaxConfigParser(final String _source, final InputStream in, final String _encoding) throws XMLStreamException {
+  XppConfigTokenizer(final String _source, final InputStream is, final String _encoding)
+    throws XmlPullParserException {
     super(_source);
-    XMLInputFactory f = XMLInputFactory.newInstance();
-    input = f.createXMLStreamReader(in, _encoding);
+    XmlPullParserFactory factory = XmlPullParserFactory.newInstance();
+    input = factory.newPullParser();
+    input.setInput(is, _encoding);
   }
 
   @Override
   public int getLineNumber() {
-    return input.getLocation().getLineNumber();
+    return input.getLineNumber();
   }
 
   @Override
   public Item next() throws Exception {
-    while (input.hasNext()) {
-      int _type = input.next();
-      switch (_type) {
-        case XMLStreamReader.START_ELEMENT :
+    int _eventType;
+    while ((_eventType = nextEvent()) != XmlPullParser.END_DOCUMENT) {
+      switch (_eventType) {
+        case XmlPullParser.START_TAG :
           if (startName != null) {
             hierarchy.push(startName);
-            startName = input.getLocalName();
+            startName = input.getName();
             return returnNest(hierarchy.element());
           }
-          startName = input.getLocalName(); break;
-        case XMLStreamReader.CHARACTERS :
-          value = input.getText(); break;
-        case XMLStreamReader.END_ELEMENT :
-          String _name = input.getLocalName();
+          startName = input.getName(); break;
+        case XmlPullParser.TEXT :
+          value = input.getText();
+          break;
+        case XmlPullParser.END_TAG :
+          String _name = input.getName();
           if (startName != null && startName.equals(_name)) {
             startName = null;
             return returnProperty(_name, value);
@@ -75,6 +81,23 @@ public class NewStaxConfigParser extends AbstractConfigurationParser {
       }
     }
     return null;
+  }
+
+  private int nextEvent() throws XmlPullParserException, IOException {
+    if (startFlag) {
+      startFlag = false;
+      return input.getEventType();
+    }
+    return input.next();
+  }
+
+  public static class Factory implements ConfigurationTokenizerFactory {
+
+    @Override
+    public ConfigurationTokenizer create(final String _source, final InputStream in, final String _encoding)
+      throws XmlPullParserException {
+      return new XppConfigTokenizer(_source, in, _encoding);
+    }
   }
 
 }

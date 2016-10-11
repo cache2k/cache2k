@@ -20,6 +20,7 @@ package org.cache2k.xmlConfig;
  * #L%
  */
 
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.HashMap;
 import java.util.Map;
@@ -39,11 +40,17 @@ public class Mutator {
     settersLookupMap = generateSetterLookupMap(_class);
   }
 
-  public void mutate(Object _target, String _propertyName, Object _value) throws Exception {
+  public Class<?> getType(String _propertyName) {
     Method m = settersLookupMap.get(_propertyName);
-    if (m == null) {
-      throw new IllegalArgumentException("Unknown property: " + _propertyName);
+    if ( m== null) {
+      return null;
     }
+    return m.getParameterTypes()[0];
+  }
+
+  public void mutate(Object _target, String _propertyName, Object _value)
+    throws IllegalAccessException, IllegalArgumentException, InvocationTargetException {
+    Method m = settersLookupMap.get(_propertyName);
     m.invoke(_target, _value);
   }
 

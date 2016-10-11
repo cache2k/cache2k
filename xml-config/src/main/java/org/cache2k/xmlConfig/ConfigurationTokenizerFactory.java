@@ -27,6 +27,6 @@ import java.io.InputStream;
  */
 public interface ConfigurationTokenizerFactory {
 
-  ConfigurationTokenizer create(String _source, InputStream in, String _encoding);
+  ConfigurationTokenizer create(String _source, InputStream in, String _encoding) throws Exception;
 
 }

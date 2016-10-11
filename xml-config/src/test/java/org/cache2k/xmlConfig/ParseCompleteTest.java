@@ -39,7 +39,7 @@ public class ParseCompleteTest {
   @Test
   public void parseIt() throws Exception {
     InputStream is = this.getClass().getResourceAsStream("/config.xml");
-    ConfigurationTokenizer pp = new NewXppConfigParser("/config.xml", is, null);
+    ConfigurationTokenizer pp = new XppConfigTokenizer("/config.xml", is, null);
     ParsedConfiguration _topLevel = ConfigurationParser.parse(pp);
     assertEquals("1.0", _topLevel.getPropertyMap().get("version").getValue());
     ParsedConfiguration _defaults = _topLevel.getSection("defaults");
@@ -57,7 +57,7 @@ public class ParseCompleteTest {
   @Test
   public void parseAndExpand() throws Exception {
     InputStream is = this.getClass().getResourceAsStream("/config.xml");
-    ConfigurationTokenizer pp = new NewXppConfigParser("/config.xml", is, null);
+    ConfigurationTokenizer pp = new XppConfigTokenizer("/config.xml", is, null);
     ParsedConfiguration cfg = ConfigurationParser.parse(pp);
     VariableExpander _expander = new StandardVariableExpander();
     _expander.expand(cfg);
@@ -79,7 +79,7 @@ public class ParseCompleteTest {
   public void cyclicReferenceProtection() throws Exception {
     String _fileName = "/cyclic-variable.xml";
     InputStream is = this.getClass().getResourceAsStream(_fileName);
-    ConfigurationTokenizer pp = new NewXppConfigParser(_fileName, is, null);
+    ConfigurationTokenizer pp = new XppConfigTokenizer(_fileName, is, null);
     ParsedConfiguration cfg = ConfigurationParser.parse(pp);
     VariableExpander _expander = new StandardVariableExpander();
     _expander.expand(cfg);
@@ -88,10 +88,10 @@ public class ParseCompleteTest {
   @Test
   public void parseViaStax() throws Exception {
     InputStream is = this.getClass().getResourceAsStream("/config.xml");
-    ConfigurationTokenizer pp = new NewXppConfigParser("/config.xml", is, null);
+    ConfigurationTokenizer pp = new XppConfigTokenizer("/config.xml", is, null);
     ParsedConfiguration cfg = ConfigurationParser.parse(pp);
     is = this.getClass().getResourceAsStream("/config.xml");
-    pp = new NewStaxConfigParser("/config.xml", is, null);
+    pp = new StaxConfigTokenizer("/config.xml", is, null);
     ParsedConfiguration cfg2 = ConfigurationParser.parse(pp);
     compare(cfg, cfg2);
   }

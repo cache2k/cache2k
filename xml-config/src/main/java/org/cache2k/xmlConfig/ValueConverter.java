@@ -21,14 +21,12 @@ package org.cache2k.xmlConfig;
  */
 
 /**
- * Holds information from a complete configuration file.
+ * Parse and convert a string to a object.
  *
  * @author Jens Wilke
  */
-public class CompleteConfiguration {
+public interface ValueConverter<T> {
 
-  ParsedConfiguration defaults;
-  ParsedConfiguration templates;
-  ParsedConfiguration caches;
+  T parse(String v) throws Exception;
 
 }

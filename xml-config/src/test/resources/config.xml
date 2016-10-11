@@ -50,6 +50,14 @@
       <entryCapacity>100</entryCapacity>
 
     </cache>
+    <cache>
+      <name>expires</name>
+      <expireAfterWrite>6m</expireAfterWrite>
+    </cache>
+    <cache>
+      <name>moreResilient</name>
+      <resilienceDuration>10m</resilienceDuration>
+    </cache>
 
   </templates>
 
@@ -86,6 +94,11 @@
       </sections>
     </cache>
 
+    <cache>
+      <name>flights</name>
+      <include>expires,moreResilient</include>
+      <entryCapacity>123</entryCapacity>
+    </cache>
 
   </caches>
 

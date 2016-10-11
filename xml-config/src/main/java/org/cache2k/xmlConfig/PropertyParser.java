@@ -20,67 +20,13 @@ package org.cache2k.xmlConfig;
  * #L%
  */
 
-import java.util.HashMap;
-import java.util.Map;
-
 /**
+ * Knows how to parse and convert string values to the target object type.
+ *
  * @author Jens Wilke
  */
-public class PropertyParser {
+public interface PropertyParser {
 
-  private Map<Class<?>, FieldParser> type2parser = new HashMap<Class<?>, FieldParser>();
-
-  public Object parse(Class<?> _targetType, String _value) throws Exception {
-    FieldParser p = type2parser.get(_targetType);
-    return p.parse(_value);
-  }
-
-  private void addParser(Class<?> _type, FieldParser<?> p) {
-    type2parser.put(_type, p);
-  }
-
-  private void addParser(Class<?> _primitiveType, Class<?> _type, FieldParser<?> p) {
-    type2parser.put(_primitiveType, p);
-    type2parser.put(_type, p);
-  }
-
-  {
-    addParser(Integer.TYPE, Integer.class, new FieldParser<Integer>() {
-      @Override
-      public Integer parse(final String v) {
-        return Integer.valueOf(v);
-      }
-    });
-    addParser(Boolean.TYPE, Boolean.class, new FieldParser<Boolean>() {
-      @Override
-      public Boolean parse(String v) {
-        v = v.toLowerCase();
-        return !(
-          "off".equals(v) ||
-            "false".equals(v) ||
-            "disable".equals(v) ||
-            "n".equals(v) ||
-            "no".equals(v));
-      }
-    });
-    addParser(Long.TYPE, Long.class, new FieldParser<Long>() {
-      @Override
-      public Long parse(final String v) {
-        return Long.valueOf(v);
-      }
-    });
-    addParser(String.class, new FieldParser<String>() {
-      @Override
-      public String parse(final String v) {
-        return v;
-      }
-    });
-    addParser(Class.class, new FieldParser<Class>() {
-      @Override
-      public Class<?> parse(final String v) throws Exception {
-        return Class.forName(v);
-      }
-    });
-  }
+  Object parse(Class<?> _targetType, String _value) throws Exception;
 
 }
