@@ -28,17 +28,38 @@ import org.cache2k.CacheManager;
  *
  * @author Jens Wilke
  */
-public class ReferenceFactory<T> implements CustomizationFactory<T> {
+public final class ReferenceFactory<T> implements CustomizationFactory<T> {
 
   private T object;
 
-  public ReferenceFactory(final T _object) {
-    object = _object;
+  /**
+   * Construct a customization factory that returns always the same object instance.
+   *
+   * @param obj reference to a customization. Not null.
+   */
+  public ReferenceFactory(final T obj) {
+    if (obj == null) {
+      throw new NullPointerException("object reference");
+    }
+    object = obj;
   }
 
   @Override
   public T create(final CacheManager ignored) {
     return object;
+  }
+
+  @Override
+  public boolean equals(final Object other) {
+    if (this == other) return true;
+    if (!(other instanceof ReferenceFactory)) return false;
+    ReferenceFactory<?> _that = (ReferenceFactory<?>) other;
+    return object.equals(_that.object);
+  }
+
+  @Override
+  public int hashCode() {
+    return object.hashCode();
   }
 
 }

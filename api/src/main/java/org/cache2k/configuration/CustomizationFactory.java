@@ -24,6 +24,7 @@ import org.cache2k.CacheManager;
 
 /**
  * Factory for cache customizations like {@code ExpiryPolicy} or {@code CacheLoader}.
+ * An implementation must implement proper a {@code hashCode} and {@code equals} method.
  *
  * @author Jens Wilke
  */
