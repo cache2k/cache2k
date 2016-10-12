@@ -23,6 +23,8 @@ package org.cache2k.core;
 import org.cache2k.Cache2kBuilder;
 import org.cache2k.CacheBuilder;
 import org.cache2k.CacheEntry;
+import org.cache2k.configuration.CustomizationFactory;
+import org.cache2k.configuration.ReferenceFactory;
 import org.cache2k.event.CacheEntryCreatedListener;
 import org.cache2k.event.CacheEntryExpiredListener;
 import org.cache2k.event.CacheEntryOperationListener;
@@ -226,7 +228,8 @@ public class InternalCache2kBuilder<K, T> {
       List<CacheEntryRemovedListener<K,T>> _syncRemovedListeners = new ArrayList<CacheEntryRemovedListener<K, T>>();
       List<CacheEntryExpiredListener<K,T>> _syncExpiredListeners = new ArrayList<CacheEntryExpiredListener<K, T>>();
       if (config.hasListeners()) {
-        for (CacheEntryOperationListener<K,T> el : config.getListeners()) {
+        for (CustomizationFactory<CacheEntryOperationListener<K,T>> f : config.getListeners()) {
+          CacheEntryOperationListener<K,T> el = ( CacheEntryOperationListener<K,T>) bc.createCustomization(f);
           if (el instanceof CacheEntryCreatedListener) {
             _syncCreatedListeners.add((CacheEntryCreatedListener) el);
           }
@@ -237,7 +240,7 @@ public class InternalCache2kBuilder<K, T> {
             _syncRemovedListeners.add((CacheEntryRemovedListener) el);
           }
           if (el instanceof CacheEntryExpiredListener) {
-            config.getAsyncListeners().add(el);
+            config.getAsyncListeners().add(new ReferenceFactory<CacheEntryOperationListener<K, T>>(el));
           }
         }
       }
@@ -247,7 +250,8 @@ public class InternalCache2kBuilder<K, T> {
         List<CacheEntryUpdatedListener<K,T>> ull = new ArrayList<CacheEntryUpdatedListener<K, T>>();
         List<CacheEntryRemovedListener<K,T>> rll = new ArrayList<CacheEntryRemovedListener<K, T>>();
         List<CacheEntryExpiredListener<K,T>> ell = new ArrayList<CacheEntryExpiredListener<K, T>>();
-        for (CacheEntryOperationListener<K,T> el : config.getAsyncListeners()) {
+        for (CustomizationFactory<CacheEntryOperationListener<K,T>> f : config.getAsyncListeners()) {
+          CacheEntryOperationListener<K,T> el = ( CacheEntryOperationListener<K,T>) bc.createCustomization(f);
           if (el instanceof CacheEntryCreatedListener) {
             cll.add((CacheEntryCreatedListener) el);
           }

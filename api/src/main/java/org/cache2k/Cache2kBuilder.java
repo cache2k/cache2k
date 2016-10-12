@@ -399,7 +399,7 @@ public class Cache2kBuilder<K, V> implements Cloneable {
    * @param listener The listener to add
    */
   public final Cache2kBuilder<K, V> addListener(CacheEntryOperationListener<K,V> listener) {
-    boolean _inserted = config().getListeners().add(listener);
+    boolean _inserted = config().getListeners().add(wrapCustomizationInstance(listener));
     if (!_inserted) {
       throw new IllegalArgumentException("Listener already added");
     }
@@ -415,7 +415,7 @@ public class Cache2kBuilder<K, V> implements Cloneable {
    * @param listener The listener to add
    */
   public final Cache2kBuilder<K,V> addAsyncListener(CacheEntryOperationListener<K,V> listener) {
-    boolean _inserted = config().getAsyncListeners().add(listener);
+    boolean _inserted = config().getAsyncListeners().add(wrapCustomizationInstance(listener));
     if (!_inserted) {
       throw new IllegalArgumentException("Listener already added");
     }

@@ -81,8 +81,9 @@ public class Cache2kConfiguration<K, V> implements Serializable, ConfigurationWi
   private CustomizationFactory<CacheWriter<K,V>> writer;
   private CustomizationFactory<AdvancedCacheLoader<K,V>> advancedLoader;
   private CustomizationFactory<ExceptionPropagator<K>> exceptionPropagator;
-  private Collection<CacheEntryOperationListener<K,V>> listeners;
-  private Collection<CacheEntryOperationListener<K,V>> asyncListeners;
+
+  private Collection<CustomizationFactory<CacheEntryOperationListener<K,V>>> listeners;
+  private Collection<CustomizationFactory<CacheEntryOperationListener<K,V>>> asyncListeners;
 
   private ConfigurationSectionContainer sections;
 
@@ -461,13 +462,13 @@ public class Cache2kConfiguration<K, V> implements Serializable, ConfigurationWi
    * The expiry will be always executed asynchronously.
    *
    * <p>A listener can be added by adding it to the collection.
-   * Duplicate (in terms of equal objects) identical listeners will be ignored.
+   * Duplicate (in terms of equal objects) listeners will be ignored.
    *
    * @return Mutable collection of listeners
    */
-  public Collection<CacheEntryOperationListener<K,V>> getListeners() {
+  public Collection<CustomizationFactory<CacheEntryOperationListener<K,V>>> getListeners() {
     if (listeners == null) {
-      listeners = new HashSet<CacheEntryOperationListener<K,V>>();
+      listeners = new HashSet<CustomizationFactory<CacheEntryOperationListener<K,V>>>();
     }
     return listeners;
   }
@@ -481,13 +482,13 @@ public class Cache2kConfiguration<K, V> implements Serializable, ConfigurationWi
 
   /**
    * A set of listeners. A listener can be added by adding it to the collection.
-   * Duplicate (in terms of equal objects) identical listeners will be ignored.
+   * Duplicate (in terms of equal objects) listeners will be ignored.
    *
    * @return Mutable collection of listeners
    */
-  public Collection<CacheEntryOperationListener<K,V>> getAsyncListeners() {
+  public Collection<CustomizationFactory<CacheEntryOperationListener<K,V>>> getAsyncListeners() {
     if (asyncListeners == null) {
-      asyncListeners = new HashSet<CacheEntryOperationListener<K,V>>();
+      asyncListeners = new HashSet<CustomizationFactory<CacheEntryOperationListener<K,V>>>();
     }
     return asyncListeners;
   }
