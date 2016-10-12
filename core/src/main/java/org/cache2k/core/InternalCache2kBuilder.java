@@ -33,6 +33,7 @@ import org.cache2k.configuration.Cache2kConfiguration;
 import org.cache2k.CacheManager;
 import org.cache2k.core.event.AsyncDispatcher;
 import org.cache2k.core.event.AsyncEvent;
+import org.cache2k.integration.AdvancedCacheLoader;
 import org.cache2k.integration.CacheLoader;
 import org.cache2k.integration.CacheWriter;
 
@@ -122,7 +123,7 @@ public class InternalCache2kBuilder<K, T> {
       c.setLoader((CacheLoader<K,T>) c.createCustomization(config.getLoader()));
     }
     if (config.getAdvancedLoader() != null) {
-      c.setAdvancedLoader(config.getAdvancedLoader());
+      c.setAdvancedLoader((AdvancedCacheLoader<K,T>) c.createCustomization(config.getAdvancedLoader()));
     }
     if (config.getExceptionPropagator() != null) {
       c.setExceptionPropagator(config.getExceptionPropagator());

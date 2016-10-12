@@ -381,7 +381,7 @@ public class Cache2kBuilder<K, V> implements Cloneable {
   }
 
   public final Cache2kBuilder<K, V> loader(AdvancedCacheLoader<K, V> l) {
-    config().setAdvancedLoader(l);
+    config().setAdvancedLoader(wrapCustomizationInstance(l));
     return this;
   }
 

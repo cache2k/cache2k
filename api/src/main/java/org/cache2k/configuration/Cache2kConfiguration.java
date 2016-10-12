@@ -79,7 +79,7 @@ public class Cache2kConfiguration<K, V> implements Serializable, ConfigurationWi
   private CustomizationFactory<ResiliencePolicy<K,V>> resiliencePolicy;
   private CustomizationFactory<CacheLoader<K,V>> loader;
   private CustomizationFactory<CacheWriter<K,V>> writer;
-  private AdvancedCacheLoader<K,V> advancedLoader;
+  private CustomizationFactory<AdvancedCacheLoader<K,V>> advancedLoader;
   private ExceptionPropagator exceptionPropagator;
   private Collection<CacheEntryOperationListener<K,V>> listeners;
   private Collection<CacheEntryOperationListener<K,V>> asyncListeners;
@@ -394,11 +394,11 @@ public class Cache2kConfiguration<K, V> implements Serializable, ConfigurationWi
     loader = v;
   }
 
-  public AdvancedCacheLoader<K, V> getAdvancedLoader() {
+  public CustomizationFactory<AdvancedCacheLoader<K, V>> getAdvancedLoader() {
     return advancedLoader;
   }
 
-  public void setAdvancedLoader(final AdvancedCacheLoader<K, V> v) {
+  public void setAdvancedLoader(final CustomizationFactory<AdvancedCacheLoader<K, V>> v) {
     advancedLoader = v;
   }
 
