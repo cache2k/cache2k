@@ -36,12 +36,6 @@ public class ApplyConfiguration {
   private Log log = Log.getLog(ApplyConfiguration.class);
   private PropertyParser propertyParser = new StandardPropertyParser();
 
-  /**
-   *
-   * @param cfg
-   * @param _bean
-   * @throws Exception
-   */
   public void apply(ParsedConfiguration cfg, ParsedConfiguration _templates, Object _bean) throws Exception {
     ConfigurationTokenizer.Property _include = cfg.getPropertyMap().get("include");
     if (_include != null) {
