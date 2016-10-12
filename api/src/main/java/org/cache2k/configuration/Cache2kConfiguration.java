@@ -77,8 +77,8 @@ public class Cache2kConfiguration<K, V> implements Serializable, ConfigurationWi
 
   private CustomizationFactory<ExpiryPolicy<K,V>> expiryPolicy;
   private CustomizationFactory<ResiliencePolicy<K,V>> resiliencePolicy;
-  private CacheLoader<K,V> loader;
-  private CacheWriter<K,V> writer;
+  private CustomizationFactory<CacheLoader<K,V>> loader;
+  private CustomizationFactory<CacheWriter<K,V>> writer;
   private AdvancedCacheLoader<K,V> advancedLoader;
   private ExceptionPropagator exceptionPropagator;
   private Collection<CacheEntryOperationListener<K,V>> listeners;
@@ -386,11 +386,11 @@ public class Cache2kConfiguration<K, V> implements Serializable, ConfigurationWi
     return sections;
   }
 
-  public CacheLoader<K,V> getLoader() {
+  public CustomizationFactory<CacheLoader<K,V>> getLoader() {
     return loader;
   }
 
-  public void setLoader(final CacheLoader<K,V> v) {
+  public void setLoader(final CustomizationFactory<CacheLoader<K,V>> v) {
     loader = v;
   }
 
@@ -421,14 +421,14 @@ public class Cache2kConfiguration<K, V> implements Serializable, ConfigurationWi
     expiryPolicy = _expiryPolicy;
   }
 
-  public CacheWriter<K, V> getWriter() {
+  public CustomizationFactory<CacheWriter<K, V>> getWriter() {
     return writer;
   }
 
   /**
    * @see Cache2kBuilder#writer(CacheWriter)
    */
-  public void setWriter(final CacheWriter<K, V> v) {
+  public void setWriter(final CustomizationFactory<CacheWriter<K, V>> v) {
     writer = v;
   }
 

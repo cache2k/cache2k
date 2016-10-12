@@ -369,8 +369,14 @@ public class Cache2kBuilder<K, V> implements Cloneable {
     return this;
   }
 
+  /** Wraps to factory but passes on nulls. */
+  private static <T> ReferenceFactory<T> wrapCustomizationInstance(T obj) {
+    if (obj == null) { return null; }
+    return new ReferenceFactory<T>(obj);
+  }
+
   public final Cache2kBuilder<K, V> loader(CacheLoader<K, V> l) {
-    config().setLoader(l);
+    config().setLoader(wrapCustomizationInstance(l));
     return this;
   }
 
@@ -380,7 +386,7 @@ public class Cache2kBuilder<K, V> implements Cloneable {
   }
 
   public final Cache2kBuilder<K, V> writer(CacheWriter<K, V> w) {
-    config().setWriter(w);
+    config().setWriter(wrapCustomizationInstance(w));
     return this;
   }
 
@@ -427,7 +433,7 @@ public class Cache2kBuilder<K, V> implements Cloneable {
    * {@link #resilienceDuration} needs to be specified, if resilience should be enabled.
    */
   public final Cache2kBuilder<K, V> expiryPolicy(ExpiryPolicy<K, V> c) {
-    config().setExpiryPolicy(new ReferenceFactory<ExpiryPolicy<K, V>>(c));
+    config().setExpiryPolicy(wrapCustomizationInstance(c));
     return this;
   }
 
@@ -531,7 +537,7 @@ public class Cache2kBuilder<K, V> implements Cloneable {
    * {@link #expireAfterWrite} is set to 0.
    */
   public final Cache2kBuilder<K,V> resiliencePolicy(ResiliencePolicy<K,V> v) {
-    config().setResiliencePolicy(new ReferenceFactory<ResiliencePolicy<K, V>>(v));
+    config().setResiliencePolicy(wrapCustomizationInstance(v));
     return this;
   }
 

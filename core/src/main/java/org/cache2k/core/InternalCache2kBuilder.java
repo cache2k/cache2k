@@ -33,6 +33,8 @@ import org.cache2k.configuration.Cache2kConfiguration;
 import org.cache2k.CacheManager;
 import org.cache2k.core.event.AsyncDispatcher;
 import org.cache2k.core.event.AsyncEvent;
+import org.cache2k.integration.CacheLoader;
+import org.cache2k.integration.CacheWriter;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
@@ -117,7 +119,7 @@ public class InternalCache2kBuilder<K, T> {
   @SuppressWarnings("unchecked")
   void confiugreViaSettersDirect(HeapCache c) {
     if (config.getLoader() != null) {
-      c.setLoader(config.getLoader());
+      c.setLoader((CacheLoader<K,T>) c.createCustomization(config.getLoader()));
     }
     if (config.getAdvancedLoader() != null) {
       c.setAdvancedLoader(config.getAdvancedLoader());
@@ -215,7 +217,7 @@ public class InternalCache2kBuilder<K, T> {
     if (_wrap) {
       wc.loader = bc.loader;
       if (config.getWriter() != null) {
-        wc.writer = config.getWriter();
+        wc.writer = (CacheWriter<K,T>) bc.createCustomization(config.getWriter());
       }
       List<CacheEntryCreatedListener<K,T>> _syncCreatedListeners = new ArrayList<CacheEntryCreatedListener<K, T>>();
       List<CacheEntryUpdatedListener<K,T>> _syncUpdatedListeners = new ArrayList<CacheEntryUpdatedListener<K, T>>();
