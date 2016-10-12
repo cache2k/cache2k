@@ -23,6 +23,7 @@ package org.cache2k.core;
 import org.cache2k.Cache2kBuilder;
 import org.cache2k.CacheBuilder;
 import org.cache2k.CacheEntry;
+import org.cache2k.CacheMisconfigurationException;
 import org.cache2k.configuration.CustomizationFactory;
 import org.cache2k.configuration.ReferenceFactory;
 import org.cache2k.event.CacheEntryCreatedListener;
@@ -40,8 +41,6 @@ import org.cache2k.integration.CacheLoader;
 import org.cache2k.integration.CacheWriter;
 import org.cache2k.integration.ExceptionPropagator;
 
-import java.lang.reflect.Constructor;
-import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.LinkedBlockingDeque;
@@ -54,11 +53,11 @@ import java.util.concurrent.atomic.AtomicLong;
  *
  * @author Jens Wilke; created: 2013-12-06
  */
-public class InternalCache2kBuilder<K, T> {
+public class InternalCache2kBuilder<K, V> {
 
-  static final AtomicLong DERIVED_NAME_COUNTER =
+  private static final AtomicLong DERIVED_NAME_COUNTER =
     new AtomicLong(System.currentTimeMillis() % 1234);
-  static final ThreadPoolExecutor ASYNC_EXECUTOR =
+  private static final ThreadPoolExecutor ASYNC_EXECUTOR =
     new ThreadPoolExecutor(
       Runtime.getRuntime().availableProcessors(), Runtime.getRuntime().availableProcessors(),
       21, TimeUnit.SECONDS,
@@ -66,20 +65,20 @@ public class InternalCache2kBuilder<K, T> {
       HeapCache.TUNABLE.threadFactoryProvider.newThreadFactory("cache2k-async"),
       new ThreadPoolExecutor.AbortPolicy());
 
-  CacheManager manager;
-  Cache2kConfiguration<K,T> config;
+  private CacheManager manager;
+  private Cache2kConfiguration<K, V> config;
 
-  public InternalCache2kBuilder(final Cache2kConfiguration<K, T> _config, final CacheManager _manager) {
+  public InternalCache2kBuilder(final Cache2kConfiguration<K, V> _config, final CacheManager _manager) {
     config = _config;
     manager = _manager;
   }
 
-  boolean isBuilderClass(String _className) {
+  private static boolean isBuilderClass(String _className) {
     return CacheBuilder.class.getName().equals(_className) ||
         Cache2kBuilder.class.getName().equals(_className);
   }
 
-  String deriveNameFromStackTrace() {
+  private static String deriveNameFromStackTrace() {
     boolean _builderSeen = false;
     Exception ex = new Exception();
     for (StackTraceElement e : ex.getStackTrace()) {
@@ -100,33 +99,17 @@ public class InternalCache2kBuilder<K, T> {
     throw new IllegalArgumentException("name missing and automatic generation failed");
   }
 
-  Object getConstructorParameter(Class<?> c) {
-    if (Cache2kConfiguration.class.isAssignableFrom(c)) { return config; }
-    return null;
-  }
-
-  /** return the first constructor with CacheConfig as first parameter */
-  Constructor<?> findConstructor(Class<?> c) {
-    for (Constructor ctr : c.getConstructors()) {
-      Class<?>[] pt = ctr.getParameterTypes();
-      if (pt != null && pt.length > 0 && Cache2kConfiguration.class.isAssignableFrom(pt[0])) {
-        return ctr;
-      }
-    }
-    return null;
-  }
-
   /**
    * The generic wiring code is not working on android.
    * Explicitly call the wiring methods.
    */
   @SuppressWarnings("unchecked")
-  void confiugreViaSettersDirect(HeapCache c) {
+  private void confiugreViaSettersDirect(HeapCache c) {
     if (config.getLoader() != null) {
-      c.setLoader((CacheLoader<K,T>) c.createCustomization(config.getLoader()));
+      c.setLoader((CacheLoader<K, V>) c.createCustomization(config.getLoader()));
     }
     if (config.getAdvancedLoader() != null) {
-      c.setAdvancedLoader((AdvancedCacheLoader<K,T>) c.createCustomization(config.getAdvancedLoader()));
+      c.setAdvancedLoader((AdvancedCacheLoader<K, V>) c.createCustomization(config.getAdvancedLoader()));
     }
     if (config.getExceptionPropagator() != null) {
       c.setExceptionPropagator((ExceptionPropagator<K>) c.createCustomization(config.getExceptionPropagator()));
@@ -136,51 +119,19 @@ public class InternalCache2kBuilder<K, T> {
     }
   }
 
-  void configureViaSetters(Object o) {
-    if (o instanceof InternalCache) {
-      confiugreViaSettersDirect((HeapCache) o);
-      return;
-    }
-    try {
-      for (Method m : o.getClass().getMethods()) {
-        Class<?>[] ps = m.getParameterTypes();
-        if (ps != null && ps.length == 1 && m.getName().startsWith(("set"))) {
-          Object p = getConstructorParameter(ps[0]);
-          if (p != null) {
-            m.invoke(o, p);
-          }
-        }
-      }
-    } catch (Exception ex) {
-      throw new IllegalArgumentException("Unable to configure cache", ex);
-    }
-  }
-
-  protected InternalCache<K,T> constructImplementationAndFillParameters(Class<?> cls) {
-    if (!InternalCache.class.isAssignableFrom(cls)) {
+  private HeapCache<K, V> constructImplementationAndFillParameters(Class<?> cls) {
+    if (!HeapCache.class.isAssignableFrom(cls)) {
       throw new IllegalArgumentException("Specified impl not a cache" + cls.getName());
     }
     try {
-      InternalCache<K, T> _cache;
-      Constructor<?> ctr = findConstructor(cls);
-      if (ctr != null) {
-        Class<?>[] pt = ctr.getParameterTypes();
-        Object[] _args = new Object[pt.length];
-        for (int i = 0; i < _args.length; i++) {
-          _args[i] = getConstructorParameter(pt[i]);
-        }
-        _cache = (InternalCache<K, T>) ctr.newInstance(_args);
-      } else {
-        _cache = (InternalCache<K, T>) cls.newInstance();
-      }
-      return _cache;
+      return (HeapCache<K, V>) cls.newInstance();
     } catch (Exception e) {
-      throw new IllegalArgumentException("Not able to instantiate cache implementation", e);
+      throw new CacheMisconfigurationException("Not able to instantiate cache implementation", e);
     }
   }
 
   @SuppressWarnings({"unchecked", "SuspiciousToArrayCall"})
-  public Cache<K, T> build() {
+  public Cache<K, V> build() {
     if (CacheManagerImpl.CACHE_CONFIGURATION_PROVIDER != null &&
         config.getName() != null) {
       CacheManagerImpl.CACHE_CONFIGURATION_PROVIDER.augmentConfiguration(manager, config);
@@ -196,12 +147,12 @@ public class InternalCache2kBuilder<K, T> {
     }
     checkConfiguration();
     Class<?> _implClass = HeapCache.TUNABLE.defaultImplementation;
-    InternalCache<K,T> _cache = constructImplementationAndFillParameters(_implClass);
+    InternalCache<K, V> _cache = constructImplementationAndFillParameters(_implClass);
 
     HeapCache bc = (HeapCache) _cache;
     CacheManagerImpl cm = (CacheManagerImpl) (manager == null ? CacheManager.getInstance() : manager);
     bc.setCacheManager(cm);
-    configureViaSetters(bc);
+    confiugreViaSettersDirect(bc);
 
     boolean _wrap = false;
 
@@ -209,9 +160,9 @@ public class InternalCache2kBuilder<K, T> {
     if (config.hasAsyncListeners()) { _wrap = true; }
     if (config.getWriter() != null) { _wrap = true; }
 
-    WiredCache<K, T> wc = null;
+    WiredCache<K, V> wc = null;
     if (_wrap) {
-      wc = new WiredCache<K, T>();
+      wc = new WiredCache<K, V>();
       wc.heapCache = bc;
       _cache = wc;
     }
@@ -221,15 +172,15 @@ public class InternalCache2kBuilder<K, T> {
     if (_wrap) {
       wc.loader = bc.loader;
       if (config.getWriter() != null) {
-        wc.writer = (CacheWriter<K,T>) bc.createCustomization(config.getWriter());
+        wc.writer = (CacheWriter<K, V>) bc.createCustomization(config.getWriter());
       }
-      List<CacheEntryCreatedListener<K,T>> _syncCreatedListeners = new ArrayList<CacheEntryCreatedListener<K, T>>();
-      List<CacheEntryUpdatedListener<K,T>> _syncUpdatedListeners = new ArrayList<CacheEntryUpdatedListener<K, T>>();
-      List<CacheEntryRemovedListener<K,T>> _syncRemovedListeners = new ArrayList<CacheEntryRemovedListener<K, T>>();
-      List<CacheEntryExpiredListener<K,T>> _syncExpiredListeners = new ArrayList<CacheEntryExpiredListener<K, T>>();
+      List<CacheEntryCreatedListener<K, V>> _syncCreatedListeners = new ArrayList<CacheEntryCreatedListener<K, V>>();
+      List<CacheEntryUpdatedListener<K, V>> _syncUpdatedListeners = new ArrayList<CacheEntryUpdatedListener<K, V>>();
+      List<CacheEntryRemovedListener<K, V>> _syncRemovedListeners = new ArrayList<CacheEntryRemovedListener<K, V>>();
+      List<CacheEntryExpiredListener<K, V>> _syncExpiredListeners = new ArrayList<CacheEntryExpiredListener<K, V>>();
       if (config.hasListeners()) {
-        for (CustomizationFactory<CacheEntryOperationListener<K,T>> f : config.getListeners()) {
-          CacheEntryOperationListener<K,T> el = ( CacheEntryOperationListener<K,T>) bc.createCustomization(f);
+        for (CustomizationFactory<CacheEntryOperationListener<K, V>> f : config.getListeners()) {
+          CacheEntryOperationListener<K, V> el = ( CacheEntryOperationListener<K, V>) bc.createCustomization(f);
           if (el instanceof CacheEntryCreatedListener) {
             _syncCreatedListeners.add((CacheEntryCreatedListener) el);
           }
@@ -240,18 +191,18 @@ public class InternalCache2kBuilder<K, T> {
             _syncRemovedListeners.add((CacheEntryRemovedListener) el);
           }
           if (el instanceof CacheEntryExpiredListener) {
-            config.getAsyncListeners().add(new ReferenceFactory<CacheEntryOperationListener<K, T>>(el));
+            config.getAsyncListeners().add(new ReferenceFactory<CacheEntryOperationListener<K, V>>(el));
           }
         }
       }
       if (config.hasAsyncListeners()) {
         AsyncDispatcher<K> _asyncDispatcher = new AsyncDispatcher<K>(wc, ASYNC_EXECUTOR);
-        List<CacheEntryCreatedListener<K,T>> cll = new ArrayList<CacheEntryCreatedListener<K, T>>();
-        List<CacheEntryUpdatedListener<K,T>> ull = new ArrayList<CacheEntryUpdatedListener<K, T>>();
-        List<CacheEntryRemovedListener<K,T>> rll = new ArrayList<CacheEntryRemovedListener<K, T>>();
-        List<CacheEntryExpiredListener<K,T>> ell = new ArrayList<CacheEntryExpiredListener<K, T>>();
-        for (CustomizationFactory<CacheEntryOperationListener<K,T>> f : config.getAsyncListeners()) {
-          CacheEntryOperationListener<K,T> el = ( CacheEntryOperationListener<K,T>) bc.createCustomization(f);
+        List<CacheEntryCreatedListener<K, V>> cll = new ArrayList<CacheEntryCreatedListener<K, V>>();
+        List<CacheEntryUpdatedListener<K, V>> ull = new ArrayList<CacheEntryUpdatedListener<K, V>>();
+        List<CacheEntryRemovedListener<K, V>> rll = new ArrayList<CacheEntryRemovedListener<K, V>>();
+        List<CacheEntryExpiredListener<K, V>> ell = new ArrayList<CacheEntryExpiredListener<K, V>>();
+        for (CustomizationFactory<CacheEntryOperationListener<K, V>> f : config.getAsyncListeners()) {
+          CacheEntryOperationListener<K, V> el = ( CacheEntryOperationListener<K, V>) bc.createCustomization(f);
           if (el instanceof CacheEntryCreatedListener) {
             cll.add((CacheEntryCreatedListener) el);
           }
@@ -266,16 +217,16 @@ public class InternalCache2kBuilder<K, T> {
           }
         }
         for (CacheEntryCreatedListener l : cll) {
-          _syncCreatedListeners.add(new AsyncCreatedListener<K, T>(_asyncDispatcher, l));
+          _syncCreatedListeners.add(new AsyncCreatedListener<K, V>(_asyncDispatcher, l));
         }
         for (CacheEntryUpdatedListener l : ull) {
-          _syncUpdatedListeners.add(new AsyncUpdatedListener<K, T>(_asyncDispatcher, l));
+          _syncUpdatedListeners.add(new AsyncUpdatedListener<K, V>(_asyncDispatcher, l));
         }
         for (CacheEntryRemovedListener l : rll) {
-          _syncRemovedListeners.add(new AsyncRemovedListener<K, T>(_asyncDispatcher, l));
+          _syncRemovedListeners.add(new AsyncRemovedListener<K, V>(_asyncDispatcher, l));
         }
         for (CacheEntryExpiredListener l : ell) {
-          _syncExpiredListeners.add(new AsyncExpiredListener<K, T>(_asyncDispatcher, l));
+          _syncExpiredListeners.add(new AsyncExpiredListener<K, V>(_asyncDispatcher, l));
         }
       }
       if (!_syncCreatedListeners.isEmpty()) {
@@ -310,8 +261,7 @@ public class InternalCache2kBuilder<K, T> {
    * Segmenting the eviction only improves for lots of concurrent inserts or evictions,
    * there is no effect on read performance.
    */
-  Eviction constructEviction(HeapCache hc, HeapCacheListener l, Cache2kConfiguration config) {
-    boolean _queue = false;
+  private Eviction constructEviction(HeapCache hc, HeapCacheListener l, Cache2kConfiguration config) {
     int _segmentCount = 1;
     if (Runtime.getRuntime().availableProcessors() > 1) {
       _segmentCount = 2;
@@ -333,9 +283,6 @@ public class InternalCache2kBuilder<K, T> {
     }
     for (int i = 0; i < _segments.length; i++) {
       Eviction ev = new ClockProPlusEviction(hc, l, _maxSize);
-      if (_queue) {
-        ev = new QueuedEviction((AbstractEviction) ev);
-      }
       _segments[i] = ev;
     }
     if (_segmentCount == 1) {
@@ -344,7 +291,7 @@ public class InternalCache2kBuilder<K, T> {
     return new SegmentedEviction(_segments);
   }
 
-  void checkConfiguration() {
+  private void checkConfiguration() {
   }
 
   static class AsyncCreatedListener<K,V> implements CacheEntryCreatedListener<K,V> {
@@ -373,7 +320,7 @@ public class InternalCache2kBuilder<K, T> {
 
   }
 
-  static class AsyncUpdatedListener<K,V> implements CacheEntryUpdatedListener<K,V> {
+  private static class AsyncUpdatedListener<K,V> implements CacheEntryUpdatedListener<K,V> {
     AsyncDispatcher<K> dispatcher;
     CacheEntryUpdatedListener<K,V> listener;
 
@@ -399,7 +346,7 @@ public class InternalCache2kBuilder<K, T> {
 
   }
 
-  static class AsyncRemovedListener<K,V> implements CacheEntryRemovedListener<K,V> {
+  private static class AsyncRemovedListener<K,V> implements CacheEntryRemovedListener<K,V> {
     AsyncDispatcher<K> dispatcher;
     CacheEntryRemovedListener<K,V> listener;
 
@@ -424,7 +371,7 @@ public class InternalCache2kBuilder<K, T> {
     }
   }
 
-  static class AsyncExpiredListener<K,V> implements CacheEntryExpiredListener<K,V> {
+  private static class AsyncExpiredListener<K,V> implements CacheEntryExpiredListener<K,V> {
     AsyncDispatcher<K> dispatcher;
     CacheEntryExpiredListener<K,V> listener;
 

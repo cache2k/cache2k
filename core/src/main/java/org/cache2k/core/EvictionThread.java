@@ -120,7 +120,7 @@ public class EvictionThread {
     stopped = true;
   }
 
-  interface Job {
+  public interface Job {
     boolean runEvictionJob();
   }
 
