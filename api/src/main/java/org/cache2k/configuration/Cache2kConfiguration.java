@@ -49,7 +49,7 @@ import java.util.List;
  * immediate creation of one cache.
  *
  * <p>The configuration may contain additional beans, called configuration sections, that are
- * used to configure extensions or submodules.</p>
+ * used to configure extensions or sub modules.</p>
  *
  * @author Jens Wilke
  */
@@ -80,7 +80,7 @@ public class Cache2kConfiguration<K, V> implements Serializable, ConfigurationWi
   private CustomizationFactory<CacheLoader<K,V>> loader;
   private CustomizationFactory<CacheWriter<K,V>> writer;
   private CustomizationFactory<AdvancedCacheLoader<K,V>> advancedLoader;
-  private ExceptionPropagator exceptionPropagator;
+  private CustomizationFactory<ExceptionPropagator<K>> exceptionPropagator;
   private Collection<CacheEntryOperationListener<K,V>> listeners;
   private Collection<CacheEntryOperationListener<K,V>> asyncListeners;
 
@@ -443,14 +443,14 @@ public class Cache2kConfiguration<K, V> implements Serializable, ConfigurationWi
     storeByReference = _storeByReference;
   }
 
-  public ExceptionPropagator getExceptionPropagator() {
+  public CustomizationFactory<ExceptionPropagator<K>> getExceptionPropagator() {
     return exceptionPropagator;
   }
 
   /**
    * @see Cache2kBuilder#exceptionPropagator(ExceptionPropagator)
    */
-  public void setExceptionPropagator(final ExceptionPropagator _exceptionPropagator) {
+  public void setExceptionPropagator(final CustomizationFactory<ExceptionPropagator<K>> _exceptionPropagator) {
     exceptionPropagator = _exceptionPropagator;
   }
 
