@@ -24,6 +24,7 @@ import org.cache2k.Cache2kBuilder;
 import org.cache2k.CacheEntry;
 import org.cache2k.configuration.Cache2kConfiguration;
 import org.cache2k.configuration.CacheType;
+import org.cache2k.configuration.ReferenceFactory;
 import org.cache2k.integration.CacheWriter;
 import org.cache2k.integration.ExceptionPropagator;
 import org.cache2k.integration.ExceptionInformation;
@@ -37,6 +38,7 @@ import org.cache2k.jcache.provider.generic.storeByValueSimulation.RuntimeCopyTra
 import org.cache2k.jcache.provider.generic.storeByValueSimulation.SimpleObjectCopyFactory;
 
 import javax.cache.Cache;
+import javax.cache.CacheException;
 import javax.cache.configuration.CacheEntryListenerConfiguration;
 import javax.cache.configuration.CompleteConfiguration;
 import javax.cache.configuration.Configuration;
@@ -170,12 +172,12 @@ public class JCacheConstructor<K,V> {
     if (cache2kConfiguration.getExceptionPropagator() != null) {
       return;
     }
-    cache2kConfiguration.setExceptionPropagator(new ExceptionPropagator() {
+    cache2kConfiguration.setExceptionPropagator(new ReferenceFactory<ExceptionPropagator<K>>(new ExceptionPropagator() {
       @Override
       public RuntimeException propagateException(Object key, final ExceptionInformation exceptionInformation) {
         return new CacheLoaderException("propagate previous loader exception", exceptionInformation.getException());
       }
-    });
+    }));
   }
 
   /**
@@ -184,16 +186,18 @@ public class JCacheConstructor<K,V> {
   private void setupCacheThrough() {
     if (config.getCacheLoaderFactory() != null) {
       final CacheLoader<K, V> clf = config.getCacheLoaderFactory().create();
-      cache2kConfiguration.setLoader(new org.cache2k.integration.CacheLoader<K,V>() {
-        @Override
-        public V load(K k) {
-          return clf.load(k);
-        }
-      });
+      cache2kConfiguration.setLoader(
+        new ReferenceFactory<org.cache2k.integration.CacheLoader<K, V>>(
+          new org.cache2k.integration.CacheLoader<K,V>() {
+            @Override
+            public V load(K k) {
+              return clf.load(k);
+            }
+          }));
     }
     if (config.isWriteThrough()) {
       final javax.cache.integration.CacheWriter<? super K, ? super V> cw = config.getCacheWriterFactory().create();
-      cache2kConfiguration.setWriter(new CacheWriter<K,V>() {
+      cache2kConfiguration.setWriter(new ReferenceFactory<CacheWriter<K, V>>(new CacheWriter<K,V>() {
         @Override
         public void write(final K key, final V value) throws Exception {
           Cache.Entry<K, V> ce = new Cache.Entry<K, V>() {
@@ -219,7 +223,7 @@ public class JCacheConstructor<K,V> {
         public void delete(final Object key) throws Exception {
           cw.delete(key);
         }
-      });
+      }));
     }
   }
 
@@ -231,9 +235,17 @@ public class JCacheConstructor<K,V> {
    */
   private void setupExpiryPolicy() {
     if (cache2kConfigurationWasProvided) {
-      final org.cache2k.expiry.ExpiryPolicy<K,V> ep = cache2kConfiguration.getExpiryPolicy();
-      if (ep != null) {
-        cache2kConfiguration.setExpiryPolicy(new org.cache2k.expiry.ExpiryPolicy<K, V>() {
+
+      if (cache2kConfiguration.getExpiryPolicy() != null) {
+        org.cache2k.expiry.ExpiryPolicy<K, V> ep0;
+        try {
+          ep0 = cache2kConfiguration.getExpiryPolicy().create(manager.getCache2kManager());
+        } catch (Exception ex) {
+          throw new CacheException("couldn't initialize expiry policy", ex);
+        }
+        final org.cache2k.expiry.ExpiryPolicy<K, V> ep = ep0;
+        cache2kConfiguration.setExpiryPolicy(new ReferenceFactory<org.cache2k.expiry.ExpiryPolicy<K, V>>(
+          new org.cache2k.expiry.ExpiryPolicy<K, V>() {
           @Override
           public long calculateExpiryTime(final K key, final V value, final long loadTime, final CacheEntry<K, V> oldEntry) {
             if (value == null) {
@@ -241,7 +253,7 @@ public class JCacheConstructor<K,V> {
             }
             return ep.calculateExpiryTime(key, value, loadTime, oldEntry);
           }
-        });
+        }));
         return;
       }
       if (cache2kConfiguration.getExpireAfterWrite() >= 0) {
@@ -253,7 +265,7 @@ public class JCacheConstructor<K,V> {
       expiryPolicy = config.getExpiryPolicyFactory().create();
     }
     if (expiryPolicy == null || expiryPolicy instanceof EternalExpiryPolicy) {
-      cache2kConfiguration.setExpiryPolicy(new org.cache2k.expiry.ExpiryPolicy<K, V>() {
+      cache2kConfiguration.setExpiryPolicy(new ReferenceFactory<org.cache2k.expiry.ExpiryPolicy<K, V>>(new org.cache2k.expiry.ExpiryPolicy<K, V>() {
         @Override
         public long calculateExpiryTime(final K key, final V value, final long loadTime, final CacheEntry<K, V> oldEntry) {
           if (value == null) {
@@ -261,22 +273,22 @@ public class JCacheConstructor<K,V> {
           }
           return ETERNAL;
         }
-      });
+      }));
       return;
     }
     if (expiryPolicy instanceof ModifiedExpiryPolicy) {
       Duration d = expiryPolicy.getExpiryForCreation();
       final long _millisDuration = d.getTimeUnit().toMillis(d.getDurationAmount());
       if (_millisDuration == 0) {
-        cache2kConfiguration.setExpiryPolicy(new org.cache2k.expiry.ExpiryPolicy<K, V>() {
+        cache2kConfiguration.setExpiryPolicy(new ReferenceFactory<org.cache2k.expiry.ExpiryPolicy<K, V>>(new org.cache2k.expiry.ExpiryPolicy<K, V>() {
           @Override
           public long calculateExpiryTime(final K key, final V value, final long loadTime, final CacheEntry<K, V> oldEntry) {
             return NO_CACHE;
           }
-        });
+        }));
         return;
       }
-      cache2kConfiguration.setExpiryPolicy(new org.cache2k.expiry.ExpiryPolicy<K, V>() {
+      cache2kConfiguration.setExpiryPolicy(new ReferenceFactory<org.cache2k.expiry.ExpiryPolicy<K, V>>(new org.cache2k.expiry.ExpiryPolicy<K, V>() {
         @Override
         public long calculateExpiryTime(final K key, final V value, final long loadTime, final CacheEntry<K, V> oldEntry) {
           if (value == null) {
@@ -284,7 +296,7 @@ public class JCacheConstructor<K,V> {
           }
           return loadTime + _millisDuration;
         }
-      });
+      }));
       return;
     }
     if (expiryPolicy instanceof CreatedExpiryPolicy) {
@@ -292,15 +304,15 @@ public class JCacheConstructor<K,V> {
       Duration d = expiryPolicy.getExpiryForCreation();
       final long _millisDuration = d.getTimeUnit().toMillis(d.getDurationAmount());
       if (_millisDuration == 0) {
-        cache2kConfiguration.setExpiryPolicy(new org.cache2k.expiry.ExpiryPolicy<K, V>() {
+        cache2kConfiguration.setExpiryPolicy(new ReferenceFactory<org.cache2k.expiry.ExpiryPolicy<K, V>>(new org.cache2k.expiry.ExpiryPolicy<K, V>() {
           @Override
           public long calculateExpiryTime(final K key, final V value, final long loadTime, final CacheEntry<K, V> oldEntry) {
             return NO_CACHE;
           }
-        });
+        }));
         return;
       }
-      cache2kConfiguration.setExpiryPolicy(new org.cache2k.expiry.ExpiryPolicy<K, V>() {
+      cache2kConfiguration.setExpiryPolicy(new ReferenceFactory<org.cache2k.expiry.ExpiryPolicy<K, V>>(new org.cache2k.expiry.ExpiryPolicy<K, V>() {
         @Override
         public long calculateExpiryTime(final K key, final V value, final long loadTime, final CacheEntry<K, V> oldEntry) {
           if (value == null) {
@@ -312,11 +324,11 @@ public class JCacheConstructor<K,V> {
             return NEUTRAL;
           }
         }
-      });
+      }));
       return;
     }
     needsTouchyWrapper = true;
-    cache2kConfiguration.setExpiryPolicy(new TouchyJCacheAdapter.ExpiryPolicyAdapter<K,V>(expiryPolicy));
+    cache2kConfiguration.setExpiryPolicy(new ReferenceFactory<org.cache2k.expiry.ExpiryPolicy<K, V>>(new TouchyJCacheAdapter.ExpiryPolicyAdapter<K,V>(expiryPolicy)));
   }
 
   private void setupEventHandling() {
