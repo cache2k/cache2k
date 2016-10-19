@@ -24,8 +24,6 @@ import org.cache2k.configuration.ConfigurationSection;
 import org.cache2k.configuration.ConfigurationWithSections;
 import org.cache2k.core.util.Log;
 
-import java.lang.reflect.InvocationTargetException;
-
 /**
  * Apply a parsed configuration to a configuration bean.
  *
@@ -47,7 +45,7 @@ public class ApplyConfiguration {
         apply(c2, _templates, _bean);
       }
     }
-    applyProperyValues(cfg, _bean);
+    applyPropertyValues(cfg, _bean);
     if (!(_bean instanceof ConfigurationWithSections)) {
       return;
     }
@@ -73,8 +71,8 @@ public class ApplyConfiguration {
     }
   }
 
-  private void applyProperyValues(final ParsedConfiguration cfg, final Object _bean) throws Exception {
-    Mutator m = new Mutator(_bean.getClass());
+  private void applyPropertyValues(final ParsedConfiguration cfg, final Object _bean) throws Exception {
+    BeanPropertyMutator m = new BeanPropertyMutator(_bean.getClass());
     for (ConfigurationTokenizer.Property p : cfg.getPropertyMap().values()) {
       Class<?> _propertyType = m.getType(p.getName());
       if (_propertyType == null) {

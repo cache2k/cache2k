@@ -33,7 +33,7 @@ import java.io.InputStream;
  *
  * @author Jens Wilke
  */
-public class XmlConfigurationProvider implements CacheConfigurationProvider {
+public class CacheConfigurationProviderImpl implements CacheConfigurationProvider {
 
   private final boolean usePullParser;
 

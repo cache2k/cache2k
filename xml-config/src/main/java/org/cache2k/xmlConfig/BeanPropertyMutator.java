@@ -30,19 +30,19 @@ import java.util.Map;
  *
  * @author Jens Wilke
  */
-public class Mutator {
+public class BeanPropertyMutator {
 
   private final static String SETTER_PREFIX = "set";
 
-  final Map<String, Method> settersLookupMap;
+  private final Map<String, Method> settersLookupMap;
 
-  public Mutator(Class<?> _class) {
+  public BeanPropertyMutator(Class<?> _class) {
     settersLookupMap = generateSetterLookupMap(_class);
   }
 
   public Class<?> getType(String _propertyName) {
     Method m = settersLookupMap.get(_propertyName);
-    if ( m== null) {
+    if (m == null) {
       return null;
     }
     return m.getParameterTypes()[0];
@@ -57,7 +57,9 @@ public class Mutator {
   static Map<String, Method> generateSetterLookupMap(Class<?> c) {
     Map<String, Method> map = new HashMap<String, Method>();
     for (Method m : c.getMethods()) {
-      if (m.getName().startsWith(SETTER_PREFIX) && m.getReturnType() == Void.TYPE && (m.getParameterTypes().length == 1)) {
+      if (m.getName().startsWith(SETTER_PREFIX) &&
+        m.getReturnType() == Void.TYPE &&
+        (m.getParameterTypes().length == 1)) {
         map.put(generatePropertyNameFromSetter(m.getName()), m);
       }
     }

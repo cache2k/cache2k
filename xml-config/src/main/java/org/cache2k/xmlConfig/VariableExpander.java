@@ -21,7 +21,7 @@ package org.cache2k.xmlConfig;
  */
 
 /**
- * Runs through all properties in the configuration, check for variable references and expand them.
+ * Runs through all properties in the configuration, checks for variable references and expand them.
  *
  * @author Jens Wilke
  */
