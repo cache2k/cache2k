@@ -25,7 +25,6 @@ import org.cache2k.CacheBuilder;
 import org.cache2k.CacheEntry;
 import org.cache2k.CacheMisconfigurationException;
 import org.cache2k.configuration.CustomizationFactory;
-import org.cache2k.configuration.ReferenceFactory;
 import org.cache2k.event.CacheEntryCreatedListener;
 import org.cache2k.event.CacheEntryExpiredListener;
 import org.cache2k.event.CacheEntryOperationListener;
@@ -104,7 +103,7 @@ public class InternalCache2kBuilder<K, V> {
    * Explicitly call the wiring methods.
    */
   @SuppressWarnings("unchecked")
-  private void confiugreViaSettersDirect(HeapCache c) {
+  private void configureViaSettersDirect(HeapCache c) {
     if (config.getLoader() != null) {
       c.setLoader((CacheLoader<K, V>) c.createCustomization(config.getLoader()));
     }
@@ -132,8 +131,7 @@ public class InternalCache2kBuilder<K, V> {
 
   @SuppressWarnings({"unchecked", "SuspiciousToArrayCall"})
   public Cache<K, V> build() {
-    if (CacheManagerImpl.CACHE_CONFIGURATION_PROVIDER != null &&
-        config.getName() != null) {
+    if (CacheManagerImpl.CACHE_CONFIGURATION_PROVIDER != null) {
       CacheManagerImpl.CACHE_CONFIGURATION_PROVIDER.augmentConfiguration(manager, config);
     }
     if (config.getValueType() == null) {
@@ -152,7 +150,7 @@ public class InternalCache2kBuilder<K, V> {
     HeapCache bc = (HeapCache) _cache;
     CacheManagerImpl cm = (CacheManagerImpl) (manager == null ? CacheManager.getInstance() : manager);
     bc.setCacheManager(cm);
-    confiugreViaSettersDirect(bc);
+    configureViaSettersDirect(bc);
 
     boolean _wrap = false;
 
@@ -178,6 +176,7 @@ public class InternalCache2kBuilder<K, V> {
       List<CacheEntryUpdatedListener<K, V>> _syncUpdatedListeners = new ArrayList<CacheEntryUpdatedListener<K, V>>();
       List<CacheEntryRemovedListener<K, V>> _syncRemovedListeners = new ArrayList<CacheEntryRemovedListener<K, V>>();
       List<CacheEntryExpiredListener<K, V>> _syncExpiredListeners = new ArrayList<CacheEntryExpiredListener<K, V>>();
+      List<CacheEntryExpiredListener<K, V>> _expiredListeners = new ArrayList<CacheEntryExpiredListener<K, V>>();
       if (config.hasListeners()) {
         for (CustomizationFactory<CacheEntryOperationListener<K, V>> f : config.getListeners()) {
           CacheEntryOperationListener<K, V> el = ( CacheEntryOperationListener<K, V>) bc.createCustomization(f);
@@ -191,11 +190,11 @@ public class InternalCache2kBuilder<K, V> {
             _syncRemovedListeners.add((CacheEntryRemovedListener) el);
           }
           if (el instanceof CacheEntryExpiredListener) {
-            config.getAsyncListeners().add(new ReferenceFactory<CacheEntryOperationListener<K, V>>(el));
+            _expiredListeners.add((CacheEntryExpiredListener) el);
           }
         }
       }
-      if (config.hasAsyncListeners()) {
+      if (config.hasAsyncListeners() || !_expiredListeners.isEmpty()) {
         AsyncDispatcher<K> _asyncDispatcher = new AsyncDispatcher<K>(wc, ASYNC_EXECUTOR);
         List<CacheEntryCreatedListener<K, V>> cll = new ArrayList<CacheEntryCreatedListener<K, V>>();
         List<CacheEntryUpdatedListener<K, V>> ull = new ArrayList<CacheEntryUpdatedListener<K, V>>();
@@ -226,6 +225,9 @@ public class InternalCache2kBuilder<K, V> {
           _syncRemovedListeners.add(new AsyncRemovedListener<K, V>(_asyncDispatcher, l));
         }
         for (CacheEntryExpiredListener l : ell) {
+          _syncExpiredListeners.add(new AsyncExpiredListener<K, V>(_asyncDispatcher, l));
+        }
+        for (CacheEntryExpiredListener l : _expiredListeners) {
           _syncExpiredListeners.add(new AsyncExpiredListener<K, V>(_asyncDispatcher, l));
         }
       }
