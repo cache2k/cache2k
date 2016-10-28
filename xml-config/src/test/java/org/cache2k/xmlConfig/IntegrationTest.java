@@ -22,6 +22,7 @@ package org.cache2k.xmlConfig;
 
 import org.cache2k.Cache;
 import org.cache2k.Cache2kBuilder;
+import org.cache2k.CacheMisconfigurationException;
 import org.cache2k.configuration.Cache2kConfiguration;
 import org.junit.Test;
 import static org.junit.Assert.*;
@@ -34,12 +35,12 @@ import static org.junit.Assert.*;
 public class IntegrationTest {
 
   @Test
-  public void testDefaultIsApplied() {
+  public void defaultIsApplied() {
     assertEquals(1234, new Cache2kBuilder<String, String>(){}.toConfiguration().getEntryCapacity());
   }
 
   @Test
-  public void testDefaultAndIndividualIsApplied() {
+  public void defaultAndIndividualIsApplied() {
     Cache2kBuilder<String, String> b =
       new Cache2kBuilder<String, String>(){}.name("flowers");
     Cache2kConfiguration<String, String> cfg = b.toConfiguration();
@@ -52,8 +53,13 @@ public class IntegrationTest {
   }
 
   @Test(expected = ConfigurationException.class)
-  public void testFailIfConfigurationIsMissing() {
+  public void failIfConfigurationIsMissing() {
     new Cache2kBuilder<String, String>(){}.name("missingDummy").build();
+  }
+
+  @Test(expected = CacheMisconfigurationException.class)
+  public void failIfNameIsMissing() {
+    new Cache2kBuilder<String, String>(){}.build();
   }
 
 }

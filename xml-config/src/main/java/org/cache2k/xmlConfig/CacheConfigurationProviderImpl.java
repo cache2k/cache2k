@@ -62,7 +62,7 @@ public class CacheConfigurationProviderImpl implements CacheConfigurationProvide
   @Override
   public Cache2kConfiguration getDefaultConfiguration(final CacheManager mgr) {
     try {
-      return copyViaSerialization(getManagerContext(mgr).getDefaultManagerConfiguration());
+      return copyViaSerialization(mgr, getManagerContext(mgr).getDefaultManagerConfiguration());
     } catch (Exception ex) {
       throw new CacheMisconfigurationException(
         "Providing default configuration for manager '" + mgr.getName() + "'", ex);
@@ -71,11 +71,15 @@ public class CacheConfigurationProviderImpl implements CacheConfigurationProvide
 
   @Override
   public <K, V> void augmentConfiguration(final CacheManager mgr, final Cache2kConfiguration<K, V> _bean) {
+    ParsedConfiguration pc = null;
+    ConfigurationContext ctx =  getManagerContext(mgr);
     final String _cacheName = _bean.getName();
     if (_cacheName == null) {
-      return;
+      if (ctx.isIgnoreAnonymousCache()) {
+        return;
+      }
+      throw new CacheMisconfigurationException("Cache name missing");
     }
-    ParsedConfiguration pc = null;
     try {
       pc = readManagerConfiguration(mgr);
       if (pc == null) {
@@ -85,8 +89,7 @@ public class CacheConfigurationProviderImpl implements CacheConfigurationProvide
       throw new CacheMisconfigurationException(
         "Cache '" + Util.compactFullName(mgr, _cacheName) + "'", ex);
     }
-     try {
-      ConfigurationContext ctx = getManagerContext(mgr);
+    try {
       ParsedConfiguration _cacheCfg = extractCacheSection(pc).getSection(_cacheName);
       if (_cacheCfg == null) {
         if (ctx.isIgnoreMissingConfiguration()) {
@@ -140,35 +143,50 @@ public class CacheConfigurationProviderImpl implements CacheConfigurationProvide
    * Hold the cache default configuration of a manager in a hash table. This is reused for all caches of
    * one manager.
    */
-  private ConfigurationContext getManagerContext(final CacheManager mgr) throws Exception {
+  private ConfigurationContext getManagerContext(final CacheManager mgr) {
     ConfigurationContext ctx = manager2defaultConfig.get(mgr);
     if (ctx != null) {
       return ctx;
     }
     synchronized (this) {
-      ParsedConfiguration pc = readManagerConfiguration(mgr);
-      ctx = new ConfigurationContext();
-      Cache2kConfiguration _bean = new Cache2kConfiguration();
-      applicant.apply(pc.getSection("defaults").getSection("cache"), extractTemplates(pc), _bean);
-      applicant.apply(pc, null, ctx);
-      if (!ctx.isSkipCheckOnStartup()) {
-        checkCacheConfigurationOnStartup(mgr, ctx, pc);
+      ParsedConfiguration pc;
+      try {
+        pc = readManagerConfiguration(mgr);
+      } catch (Exception ex) {
+        throw new CacheMisconfigurationException(
+          "Configuration for manager '" + mgr.getName() + "'", ex);
       }
-      ctx.setDefaultManagerConfiguration(_bean);
-      Map<CacheManager, ConfigurationContext> m2 =
-        new HashMap<CacheManager, ConfigurationContext>(manager2defaultConfig);
-      m2.put(mgr, ctx);
-      return ctx;
+      try {
+        ctx = new ConfigurationContext();
+        Cache2kConfiguration _bean = new Cache2kConfiguration();
+        applicant.apply(pc.getSection("defaults").getSection("cache"), extractTemplates(pc), _bean);
+        applicant.apply(pc, null, ctx);
+        if (!ctx.isSkipCheckOnStartup()) {
+          checkCacheConfigurationOnStartup(mgr, ctx, pc);
+        }
+        ctx.setDefaultManagerConfiguration(_bean);
+        Map<CacheManager, ConfigurationContext> m2 =
+          new HashMap<CacheManager, ConfigurationContext>(manager2defaultConfig);
+        m2.put(mgr, ctx);
+        return ctx;
+      } catch (Exception ex) {
+        throw new ConfigurationException( "Configuration for manager '" + mgr.getName() + "'", pc.getSource());
+      }
     }
   }
 
-  private static <T extends Serializable> T copyViaSerialization(T obj) throws Exception {
-     ByteArrayOutputStream bos = new ByteArrayOutputStream();
-     ObjectOutputStream oos = new ObjectOutputStream(bos);
-     oos.writeObject(obj);
-     oos.flush();
-     ByteArrayInputStream bin = new ByteArrayInputStream(bos.toByteArray());
-     return (T) new ObjectInputStream(bin).readObject();
+  private static <T extends Serializable> T copyViaSerialization(CacheManager mgr, T obj) {
+    try {
+      ByteArrayOutputStream bos = new ByteArrayOutputStream();
+      ObjectOutputStream oos = new ObjectOutputStream(bos);
+      oos.writeObject(obj);
+      oos.flush();
+      ByteArrayInputStream bin = new ByteArrayInputStream(bos.toByteArray());
+      return (T) new ObjectInputStream(bin).readObject();
+    } catch (Exception ex) {
+      throw new CacheMisconfigurationException(
+        "Copying default configuration for manager '" + mgr.getName() + "'");
+    }
   }
 
   private ParsedConfiguration extractTemplates(final ParsedConfiguration _pc) {
@@ -181,6 +199,7 @@ public class CacheConfigurationProviderImpl implements CacheConfigurationProvide
     private String managerName = null;
     private boolean ignoreMissingConfiguration = false;
     private boolean skipCheckOnStartup = false;
+    private boolean ignoreAnonymousCache = false;
     private Cache2kConfiguration<?,?> defaultManagerConfiguration;
 
     public Cache2kConfiguration<?, ?> getDefaultManagerConfiguration() {
@@ -223,6 +242,13 @@ public class CacheConfigurationProviderImpl implements CacheConfigurationProvide
       skipCheckOnStartup = _skipCheckOnStartup;
     }
 
+    public boolean isIgnoreAnonymousCache() {
+      return ignoreAnonymousCache;
+    }
+
+    public void setIgnoreAnonymousCache(final boolean _ignoreAnonymousCache) {
+      ignoreAnonymousCache = _ignoreAnonymousCache;
+    }
   }
 
 }

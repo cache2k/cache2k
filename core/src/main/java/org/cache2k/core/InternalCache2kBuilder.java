@@ -64,12 +64,12 @@ public class InternalCache2kBuilder<K, V> {
       HeapCache.TUNABLE.threadFactoryProvider.newThreadFactory("cache2k-async"),
       new ThreadPoolExecutor.AbortPolicy());
 
-  private CacheManager manager;
+  private CacheManagerImpl manager;
   private Cache2kConfiguration<K, V> config;
 
   public InternalCache2kBuilder(final Cache2kConfiguration<K, V> _config, final CacheManager _manager) {
     config = _config;
-    manager = _manager;
+    manager = (CacheManagerImpl) (_manager == null ? CacheManager.getInstance() : _manager);
   }
 
   private static boolean isBuilderClass(String _className) {
@@ -148,8 +148,7 @@ public class InternalCache2kBuilder<K, V> {
     InternalCache<K, V> _cache = constructImplementationAndFillParameters(_implClass);
 
     HeapCache bc = (HeapCache) _cache;
-    CacheManagerImpl cm = (CacheManagerImpl) (manager == null ? CacheManager.getInstance() : manager);
-    bc.setCacheManager(cm);
+    bc.setCacheManager(manager);
     configureViaSettersDirect(bc);
 
     boolean _wrap = false;
@@ -165,7 +164,7 @@ public class InternalCache2kBuilder<K, V> {
       _cache = wc;
     }
 
-    String _name = cm.newCache(_cache, bc.getName());
+    String _name = manager.newCache(_cache, bc.getName());
     bc.setName(_name);
     if (_wrap) {
       wc.loader = bc.loader;
@@ -253,7 +252,7 @@ public class InternalCache2kBuilder<K, V> {
       bc.eviction = constructEviction(bc, new HeapCacheListener.NoOperation(), config);
       bc.init();
     }
-    cm.sendCreatedEvent(_cache);
+    manager.sendCreatedEvent(_cache);
     return _cache;
   }
 
