@@ -43,8 +43,9 @@ public interface CacheConfigurationProvider {
   Cache2kConfiguration getDefaultConfiguration(CacheManager mgr);
 
   /**
-   * Called when {@link Cache2kBuilder#build()} is called. If no name was specified in the
-   * application, the name in the configuration is null.
+   * Called when {@link Cache2kBuilder#build()} was called before the configuration is used
+   * to create the cache. If no name was specified in the application, the name in the
+   * configuration is null.
    *
    * @param mgr Manager the new cache will live in
    * @param cfg the cache configuration

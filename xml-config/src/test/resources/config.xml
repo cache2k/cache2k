@@ -20,6 +20,9 @@
 <cache2k-configuration>
 
   <version>1.0</version>
+  <managerName>myApp</managerName>
+  <ignoreUnknownProperties>false</ignoreUnknownProperties>
+  <ignoreMissingConfiguration>false</ignoreMissingConfiguration>
 
   <properties>
     <user>

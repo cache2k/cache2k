@@ -247,12 +247,7 @@ public class HeapCache<K, V>
   }
 
   String getThreadNamePrefix() {
-    String _prefix = "cache2k-loader-";
-    if (manager != null &&
-      !Cache2kManagerProviderImpl.DEFAULT_MANAGER_NAME.equals(manager.getName())) {
-      _prefix = _prefix + manager.getName() + ":";
-    }
-    return _prefix + name;
+    return "cache2k-loader-" + compactFullName(manager, name);
   }
 
   Executor provideDefaultLoaderExecutor(int _threadCount) {

@@ -27,7 +27,6 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Map;
-import java.util.Properties;
 import java.util.Set;
 import java.util.WeakHashMap;
 
@@ -36,10 +35,10 @@ import java.util.WeakHashMap;
  */
 public class Cache2kManagerProviderImpl implements Cache2kManagerProvider {
 
-  final static String DEFAULT_MANAGER_NAME = "default";
+  public final static String STANDARD_DEFAULT_MANAGER_NAME = "default";
 
   private CacheManager defaultManager;
-  private String defaultName = DEFAULT_MANAGER_NAME;
+  private String defaultName = STANDARD_DEFAULT_MANAGER_NAME;
   private Map<ClassLoader, Map<String, CacheManager>> loader2name2manager =
       new WeakHashMap<ClassLoader, Map<String, CacheManager>>();
 

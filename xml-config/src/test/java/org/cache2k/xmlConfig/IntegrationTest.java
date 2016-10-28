@@ -20,7 +20,9 @@ package org.cache2k.xmlConfig;
  * #L%
  */
 
+import org.cache2k.Cache;
 import org.cache2k.Cache2kBuilder;
+import org.cache2k.configuration.Cache2kConfiguration;
 import org.junit.Test;
 import static org.junit.Assert.*;
 
@@ -34,6 +36,19 @@ public class IntegrationTest {
   @Test
   public void testDefaultIsApplied() {
     assertEquals(1234, new Cache2kBuilder<String, String>(){}.toConfiguration().getEntryCapacity());
+  }
+
+  @Test
+  public void testDefaultAndIndividualIsApplied() {
+    Cache2kBuilder<String, String> b =
+      new Cache2kBuilder<String, String>(){}.name("flowers");
+    Cache2kConfiguration<String, String> cfg = b.toConfiguration();
+    assertEquals(1234, cfg.getEntryCapacity());
+    assertEquals(-1, cfg.getExpireAfterWrite());
+    Cache<String, String> c = b.build();
+    assertEquals(1234, cfg.getEntryCapacity());
+    assertEquals(47000, cfg.getExpireAfterWrite());
+    c.close();
   }
 
 }

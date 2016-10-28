@@ -24,9 +24,13 @@ import org.cache2k.CacheManager;
 import org.cache2k.CacheMisconfigurationException;
 import org.cache2k.configuration.Cache2kConfiguration;
 import org.cache2k.core.spi.CacheConfigurationProvider;
+import org.cache2k.core.util.Log;
+import org.cache2k.core.util.Util;
 import org.xmlpull.v1.XmlPullParser;
 
 import java.io.InputStream;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * Hooks into cache2k and provides the additional configuration data.
@@ -36,6 +40,9 @@ import java.io.InputStream;
 public class CacheConfigurationProviderImpl implements CacheConfigurationProvider {
 
   private final boolean usePullParser;
+  private final Log log = Log.getLog(this.getClass());
+  private final Map<CacheManager, Cache2kConfiguration<?,?>> manager2Config =
+    new HashMap<CacheManager, Cache2kConfiguration<?, ?>>();
 
   {
     boolean _usePullParser = false;
@@ -64,6 +71,10 @@ public class CacheConfigurationProviderImpl implements CacheConfigurationProvide
     return cfg;
   }
 
+  private Cache2kConfiguration<?,?> getManagerConfiguration(final CacheManager mgr) throws Exception {
+    return null;
+  }
+
   @Override
   public Cache2kConfiguration getDefaultConfiguration(final CacheManager mgr) {
     try {
@@ -76,13 +87,26 @@ public class CacheConfigurationProviderImpl implements CacheConfigurationProvide
       return _bean;
     } catch (Exception ex) {
       throw new CacheMisconfigurationException(
-        "Exception while processing default XML configuration for manager '" + mgr.getName() + "'", ex);
+        "default configuration for manager '" + mgr.getName() + "'", ex);
     }
   }
 
   @Override
-  public <K, V> void augmentConfiguration(final CacheManager mgr, final Cache2kConfiguration<K, V> cfg) {
-
+  public <K, V> void augmentConfiguration(final CacheManager mgr, final Cache2kConfiguration<K, V> _bean) {
+    final String _cacheName = _bean.getName();
+    if (_cacheName == null) {
+      return;
+    }
+    try {
+      ParsedConfiguration cfg = readManagerConfiguration(mgr);
+      if (cfg != null) {
+        ApplyConfiguration _apply = new ApplyConfiguration();
+        _apply.apply(cfg.getSection("caches").getSection(_cacheName), null, _bean);
+      }
+    } catch (Exception ex) {
+      throw new CacheMisconfigurationException(
+        "cache '" + Util.compactFullName(mgr, _cacheName) + "'", ex);
+    }
   }
 
 }

@@ -20,6 +20,9 @@ package org.cache2k.core.util;
  * #L%
  */
 
+import org.cache2k.CacheManager;
+import org.cache2k.core.Cache2kManagerProviderImpl;
+
 import java.sql.Timestamp;
 
 /**
@@ -28,6 +31,8 @@ import java.sql.Timestamp;
  * @author Jens Wilke; created: 2014-12-18
  */
 public class Util {
+
+  public static final String NAME_SEPARATOR = ":";
 
   /**
    * Format milliseconds since epoch to a compact timestamp.
@@ -44,5 +49,12 @@ public class Util {
   public static void TODO() {
     throw new UnsupportedOperationException("TODO");
   }
-  
+
+  public static String compactFullName(CacheManager mgr, String _cacheName) {
+    if (!Cache2kManagerProviderImpl.STANDARD_DEFAULT_MANAGER_NAME.equals(mgr.getName())) {
+      return mgr.getName() + NAME_SEPARATOR + _cacheName;
+    }
+    return _cacheName;
+  }
+
 }

@@ -17,7 +17,7 @@
   limitations under the License.
   #L%
   -->
-<cache2k-configuration>
+<cache2k>
 
   <version>1.0</version>
 
@@ -29,4 +29,11 @@
 
   </defaults>
 
-</cache2k-configuration>
+  <caches>
+    <cache>
+      <name>flowers</name>
+      <expireAfterWrite>47s</expireAfterWrite>
+    </cache>
+  </caches>
+
+</cache2k>

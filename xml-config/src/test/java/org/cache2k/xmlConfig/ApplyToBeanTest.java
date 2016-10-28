@@ -33,7 +33,7 @@ import static org.junit.Assert.*;
  * @author Jens Wilke
  */
 @Category(FastTests.class)
-public class ApplyConfiguratonTest {
+public class ApplyToBeanTest {
 
   @Test
   public void readAndApply() throws Exception {
