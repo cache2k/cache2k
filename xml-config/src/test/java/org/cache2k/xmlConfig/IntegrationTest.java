@@ -22,8 +22,10 @@ package org.cache2k.xmlConfig;
 
 import org.cache2k.Cache;
 import org.cache2k.Cache2kBuilder;
+import org.cache2k.CacheManager;
 import org.cache2k.CacheMisconfigurationException;
 import org.cache2k.configuration.Cache2kConfiguration;
+import org.cache2k.jcache.JCacheConfiguration;
 import org.junit.Test;
 import static org.junit.Assert.*;
 
@@ -52,6 +54,17 @@ public class IntegrationTest {
     c.close();
   }
 
+  @Test
+  public void sectionIsThere() {
+    Cache2kBuilder<String, String> b =
+      new Cache2kBuilder<String, String>(){}.name("withSection");
+    Cache2kConfiguration<String, String> cfg = b.toConfiguration();
+    Cache<String, String> c = b.build();
+    assertEquals("default is false", false, new JCacheConfiguration().isAlwaysFlushJmxStatistics());
+    assertEquals("config applied", true, cfg.getSections().getSection(JCacheConfiguration.class).isAlwaysFlushJmxStatistics());
+    c.close();
+  }
+
   @Test(expected = ConfigurationException.class)
   public void failIfConfigurationIsMissing() {
     new Cache2kBuilder<String, String>(){}.name("missingDummy").build();
@@ -60,6 +73,38 @@ public class IntegrationTest {
   @Test(expected = CacheMisconfigurationException.class)
   public void failIfNameIsMissing() {
     new Cache2kBuilder<String, String>(){}.build();
+  }
+
+  @Test
+  public void unknownPropertyYieldsExceptionOnStartup() {
+    try {
+      new Cache2kBuilder<String, String>() { }
+        .manager(CacheManager.getInstance("unknownProperty"))
+        .entryCapacity(1234);
+      fail("expect exception");
+    } catch (Exception ex) {
+      assertTrue(ex.toString().contains("Unknown property"));
+    }
+  }
+
+  @Test
+  public void unknownPropertyYieldsExceptionOnBuild() {
+    try {
+      new Cache2kBuilder<String, String>() { }
+        .manager(CacheManager.getInstance("specialCases"))
+        .name("unknownProperty")
+        .build();
+      fail("expect exception");
+    } catch (Exception ex) {
+      assertTrue(ex.toString().contains("Unknown property"));
+    }
+  }
+
+  @Test
+  public void noManagerConfiguration() {
+    new Cache2kBuilder<String, String>() { }
+      .manager(CacheManager.getInstance("noManager"))
+      .entryCapacity(1234);
   }
 
 }

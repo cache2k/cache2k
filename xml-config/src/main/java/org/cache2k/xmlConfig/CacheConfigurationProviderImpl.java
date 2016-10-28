@@ -61,24 +61,25 @@ public class CacheConfigurationProviderImpl implements CacheConfigurationProvide
 
   @Override
   public Cache2kConfiguration getDefaultConfiguration(final CacheManager mgr) {
+    Cache2kConfiguration cfg = getManagerContext(mgr).getDefaultManagerConfiguration();
     try {
-      return copyViaSerialization(mgr, getManagerContext(mgr).getDefaultManagerConfiguration());
+      return copyViaSerialization(mgr, cfg);
     } catch (Exception ex) {
       throw new CacheMisconfigurationException(
-        "Providing default configuration for manager '" + mgr.getName() + "'", ex);
+        "Copying default cache configuration for manager '" + mgr.getName() + "'", ex);
     }
   }
 
   @Override
   public <K, V> void augmentConfiguration(final CacheManager mgr, final Cache2kConfiguration<K, V> _bean) {
-    ParsedConfiguration pc = null;
+    ParsedConfiguration pc;
     ConfigurationContext ctx =  getManagerContext(mgr);
     final String _cacheName = _bean.getName();
     if (_cacheName == null) {
       if (ctx.isIgnoreAnonymousCache()) {
         return;
       }
-      throw new CacheMisconfigurationException("Cache name missing");
+      throw new CacheMisconfigurationException("Cache name missing, cannot apply XML configuration");
     }
     try {
       pc = readManagerConfiguration(mgr);
@@ -99,10 +100,10 @@ public class CacheConfigurationProviderImpl implements CacheConfigurationProvide
       }
       applicant.apply(_cacheCfg, extractTemplates(pc), _bean);
     } catch (CacheException ex) {
-       throw ex;
-     } catch (Exception ex) {
-       throw new ConfigurationException("Cache '" + _cacheName + "'", pc.getSource());
-     }
+      throw ex;
+    } catch (Exception ex) {
+      throw new ConfigurationException("Cache '" + _cacheName + "'", pc.getSource());
+    }
   }
 
   private ParsedConfiguration readManagerConfiguration(final CacheManager mgr) throws Exception {
@@ -153,25 +154,40 @@ public class CacheConfigurationProviderImpl implements CacheConfigurationProvide
       try {
         pc = readManagerConfiguration(mgr);
       } catch (Exception ex) {
-        throw new CacheMisconfigurationException(
-          "Configuration for manager '" + mgr.getName() + "'", ex);
+        throw new CacheMisconfigurationException("Configuration for manager '" + mgr.getName() + "'", ex);
       }
       try {
         ctx = new ConfigurationContext();
-        Cache2kConfiguration _bean = new Cache2kConfiguration();
-        applicant.apply(pc.getSection("defaults").getSection("cache"), extractTemplates(pc), _bean);
-        applicant.apply(pc, null, ctx);
-        if (!ctx.isSkipCheckOnStartup()) {
-          checkCacheConfigurationOnStartup(mgr, ctx, pc);
+        Cache2kConfiguration _defaultConfiguration = new Cache2kConfiguration();
+        ctx.setManagerName(mgr.getName());
+        if (pc != null) {
+          applyDefaultConfigurationIfPresent(pc, _defaultConfiguration);
+          applicant.apply(pc, null, ctx);
+          if (!ctx.isSkipCheckOnStartup()) {
+            checkCacheConfigurationOnStartup(mgr, ctx, pc);
+          }
         }
-        ctx.setDefaultManagerConfiguration(_bean);
+        ctx.setDefaultManagerConfiguration(_defaultConfiguration);
         Map<CacheManager, ConfigurationContext> m2 =
           new HashMap<CacheManager, ConfigurationContext>(manager2defaultConfig);
         m2.put(mgr, ctx);
         return ctx;
+      } catch (CacheException ex) {
+        throw ex;
       } catch (Exception ex) {
-        throw new ConfigurationException( "Configuration for manager '" + mgr.getName() + "'", pc.getSource());
+        throw new ConfigurationException( "Configuration for manager '" + mgr.getName() + "'", pc.getSource(), ex);
       }
+    }
+  }
+
+  private void applyDefaultConfigurationIfPresent(final ParsedConfiguration _pc,
+                                                  final Cache2kConfiguration _defaultConfiguration) throws Exception {
+    ParsedConfiguration _defaults = _pc.getSection("defaults");
+    if (_defaults != null) {
+      _defaults = _defaults.getSection("cache");
+    }
+    if (_defaults != null) {
+      applicant.apply(_defaults, extractTemplates(_pc), _defaultConfiguration);
     }
   }
 

@@ -75,7 +75,9 @@ public class ApplyConfiguration {
     for (ConfigurationTokenizer.Property p : cfg.getPropertyMap().values()) {
       Class<?> _propertyType = m.getType(p.getName());
       if (_propertyType == null) {
-        if ("include".equals(p.getName()) || "name".equals(p.getName())) {
+        if ("include".equals(p.getName()) ||
+            "name".equals(p.getName()) ||
+            "type".equals(p.getName())) {
           continue;
         }
         throw new ConfigurationException("Unknown property '" + p.getName() + "'", p.getSource(), p.getLineNumber());

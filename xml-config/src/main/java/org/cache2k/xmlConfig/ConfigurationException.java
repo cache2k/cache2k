@@ -35,6 +35,10 @@ public class ConfigurationException extends CacheMisconfigurationException {
     super(message + " at " + _source);
   }
 
+  public ConfigurationException(final String message, final String _source, Exception _cause) {
+    super(message + " at " + _source, _cause);
+  }
+
   public ConfigurationException(final String message, final String _source, final int _lineNumber) {
     super(message + " at " + _source + ":" + _lineNumber);
   }

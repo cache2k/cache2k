@@ -20,28 +20,13 @@
 <cache2k>
 
   <version>1.0</version>
-
-  <defaults>
-
-    <cache>
-      <entryCapacity>1234</entryCapacity>
-    </cache>
-
-  </defaults>
+  <!-- set to default, exception expected without cache creation -->
+  <skipCheckOnStartup>false</skipCheckOnStartup>
 
   <caches>
     <cache>
-      <name>flowers</name>
-      <expireAfterWrite>47s</expireAfterWrite>
-    </cache>
-    <cache>
-      <name>withSection</name>
-      <sections>
-        <jcache>
-          <type>org.cache2k.jcache.JCacheConfiguration</type>
-          <alwaysFlushJmxStatistics>true</alwaysFlushJmxStatistics>
-        </jcache>
-      </sections>
+      <name>unknownProperty</name>
+      <bigBrownFox>47</bigBrownFox>
     </cache>
   </caches>
 
