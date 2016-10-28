@@ -20,35 +20,12 @@
 <cache2k>
 
   <version>1.0</version>
-  <skipCheckOnStartup>true</skipCheckOnStartup>
-  <ignoreAnonymousCache>true</ignoreAnonymousCache>
   <ignoreMissingCacheConfiguration>true</ignoreMissingCacheConfiguration>
 
-  <caches>
+  <defaults>
     <cache>
-      <name>unknownProperty</name>
-      <bigBrownFox>47</bigBrownFox>
+      <entryCapacity>1234</entryCapacity>
     </cache>
-    <cache>
-      <name>sectionTypeNotFound</name>
-      <sections>
-        <bla>
-          <type>tld.some.class</type>
-        </bla>
-      </sections>
-    </cache>
-    <cache>
-      <name>templateNotFound</name>
-      <include>notThere</include>
-    </cache>
-    <cache>
-      <name>sectionTypeMissing</name>
-      <sections>
-        <bla>
-          <dummy></dummy>
-        </bla>
-      </sections>
-    </cache>
-  </caches>
+  </defaults>
 
 </cache2k>

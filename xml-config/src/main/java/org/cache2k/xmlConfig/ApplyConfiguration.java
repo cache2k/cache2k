@@ -33,13 +33,14 @@ public class ApplyConfiguration {
 
   private PropertyParser propertyParser = new StandardPropertyParser();
 
-  public void apply(ParsedConfiguration cfg, ParsedConfiguration _templates, Object _bean) throws Exception {
+  public void apply(ParsedConfiguration cfg, ParsedConfiguration _templates, Object _bean) {
     ConfigurationTokenizer.Property _include = cfg.getPropertyMap().get("include");
     if (_include != null) {
       for (String _template : _include.getValue().split(",")) {
-        ParsedConfiguration c2 = _templates.getSection(_template);
+        ParsedConfiguration c2 = null;
+        if (_templates != null) { c2 = _templates.getSection(_template); }
         if (c2 == null) {
-          throw new ConfigurationException("Template not found: \"" + _template + "\"", _include.getSource(), _include.getLineNumber());
+          throw new ConfigurationException("Template not found \'" + _template + "\'", _include.getSource(), _include.getLineNumber());
         }
         apply(c2, _templates, _bean);
       }
@@ -63,14 +64,18 @@ public class ApplyConfiguration {
       ConfigurationSection _sectionBean =
         _configurationWithSections.getSections().getSection((Class<ConfigurationSection>) _type);
       if (_sectionBean == null) {
-        _sectionBean = (ConfigurationSection)  _type.newInstance();
+        try {
+          _sectionBean = (ConfigurationSection)  _type.newInstance();
+        } catch (Exception ex) {
+          throw new ConfigurationException("Cannot instantiate section class: " + ex, sc.getSource(), sc.getLineNumber());
+        }
         _configurationWithSections.getSections().add(_sectionBean);
       }
       apply(sc, _templates, _sectionBean);
     }
   }
 
-  private void applyPropertyValues(final ParsedConfiguration cfg, final Object _bean) throws Exception {
+  private void applyPropertyValues(final ParsedConfiguration cfg, final Object _bean) {
     BeanPropertyMutator m = new BeanPropertyMutator(_bean.getClass());
     for (ConfigurationTokenizer.Property p : cfg.getPropertyMap().values()) {
       Class<?> _propertyType = m.getType(p.getName());
@@ -82,7 +87,11 @@ public class ApplyConfiguration {
         }
         throw new ConfigurationException("Unknown property '" + p.getName() + "'", p.getSource(), p.getLineNumber());
       }
-      m.mutate(_bean, p.getName(), propertyParser.parse(_propertyType, p.getValue()));
+      try {
+        m.mutate(_bean, p.getName(), propertyParser.parse(_propertyType, p.getValue()));
+      } catch (Exception ex) {
+        throw new ConfigurationException("Cannot parse property: " + ex, p.getSource(), p.getLineNumber());
+      }
     }
   }
 

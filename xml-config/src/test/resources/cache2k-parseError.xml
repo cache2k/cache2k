@@ -20,35 +20,14 @@
 <cache2k>
 
   <version>1.0</version>
-  <skipCheckOnStartup>true</skipCheckOnStartup>
-  <ignoreAnonymousCache>true</ignoreAnonymousCache>
-  <ignoreMissingCacheConfiguration>true</ignoreMissingCacheConfiguration>
 
-  <caches>
+  <defaults>
     <cache>
-      <name>unknownProperty</name>
-      <bigBrownFox>47</bigBrownFox>
-    </cache>
-    <cache>
-      <name>sectionTypeNotFound</name>
       <sections>
-        <bla>
-          <type>tld.some.class</type>
-        </bla>
+        <!-- will yields section start missing, since recognized as property -->
+        <bla></bla>
       </sections>
     </cache>
-    <cache>
-      <name>templateNotFound</name>
-      <include>notThere</include>
-    </cache>
-    <cache>
-      <name>sectionTypeMissing</name>
-      <sections>
-        <bla>
-          <dummy></dummy>
-        </bla>
-      </sections>
-    </cache>
-  </caches>
+  </defaults>
 
 </cache2k>

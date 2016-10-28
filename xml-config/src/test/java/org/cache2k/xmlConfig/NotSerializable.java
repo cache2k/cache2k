@@ -20,23 +20,10 @@ package org.cache2k.xmlConfig;
  * #L%
  */
 
-import org.cache2k.CacheMisconfigurationException;
+import org.cache2k.configuration.ConfigurationSection;
 
 /**
  * @author Jens Wilke
  */
-public class ConfigurationException extends CacheMisconfigurationException {
-
-  public ConfigurationException(final String message, final ConfigurationTokenizer.Item _item) {
-    super(message + " at " + _item.getSource() + ":" + _item.getLineNumber());
-  }
-
-  public ConfigurationException(final String message, final String _source) {
-    super(message + " at " + _source);
-  }
-
-  public ConfigurationException(final String message, final String _source, final int _lineNumber) {
-    super(message + " at " + _source + ":" + _lineNumber);
-  }
-
+public class NotSerializable implements ConfigurationSection {
 }

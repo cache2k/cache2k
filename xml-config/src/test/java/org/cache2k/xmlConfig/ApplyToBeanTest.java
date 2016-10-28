@@ -44,6 +44,7 @@ public class ApplyToBeanTest {
     _expander.expand(cfg);
     ApplyConfiguration _apply = new ApplyConfiguration();
     Cache2kConfiguration _bean = new Cache2kConfiguration();
+    assertNotNull(cfg.getSection("templates").getSection("expires"));
     _apply.apply(cfg.getSection("caches").getSection("flights"), cfg.getSection("templates"), _bean);
     assertEquals(123, _bean.getEntryCapacity());
     assertEquals(600000, _bean.getResilienceDuration());

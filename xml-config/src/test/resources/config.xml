@@ -51,7 +51,6 @@
     <cache>
       <name>small-cache</name>
       <entryCapacity>100</entryCapacity>
-
     </cache>
     <cache>
       <name>expires</name>

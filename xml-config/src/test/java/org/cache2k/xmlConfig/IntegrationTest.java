@@ -28,6 +28,7 @@ import org.cache2k.configuration.Cache2kConfiguration;
 import org.cache2k.jcache.JCacheConfiguration;
 import org.junit.Test;
 import static org.junit.Assert.*;
+import static org.hamcrest.CoreMatchers.*;
 
 /**
  * Test that XML configuration elements get picked up when building cache2k
@@ -65,6 +66,12 @@ public class IntegrationTest {
     c.close();
   }
 
+  @Test
+  public void testBoth() {
+    new Cache2kBuilder<String, String>(){}.name("withSection");
+    new Cache2kBuilder<String, String>(){}.name("flowers");
+  }
+
   @Test(expected = ConfigurationException.class)
   public void failIfConfigurationIsMissing() {
     new Cache2kBuilder<String, String>(){}.name("missingDummy").build();
@@ -96,7 +103,102 @@ public class IntegrationTest {
         .build();
       fail("expect exception");
     } catch (Exception ex) {
-      assertTrue(ex.toString().contains("Unknown property"));
+      assertThat(ex.toString(), containsString("Unknown property"));
+    }
+  }
+
+  @Test
+  public void sectionTypeNotFound() {
+    try {
+      new Cache2kBuilder<String, String>() { }
+        .manager(CacheManager.getInstance("specialCases"))
+        .name("sectionTypeNotFound")
+        .build();
+      fail("expect exception");
+    } catch (Exception ex) {
+      assertThat(ex.toString(), containsString("class not found 'tld.some.class'"));
+    }
+  }
+
+  @Test
+  public void sectionTypeMissing() {
+    try {
+      new Cache2kBuilder<String, String>() { }
+        .manager(CacheManager.getInstance("specialCases"))
+        .name("sectionTypeMissing")
+        .build();
+      fail("expect exception");
+    } catch (Exception ex) {
+      assertThat(ex.toString(), containsString("section type missing"));
+    }
+  }
+
+  @Test
+  public void templateNotFound() {
+    try {
+      new Cache2kBuilder<String, String>() { }
+        .manager(CacheManager.getInstance("specialCases"))
+        .name("templateNotFound")
+        .build();
+      fail("expect exception");
+    } catch (Exception ex) {
+      assertThat(ex.toString(), containsString("Template not found 'notThere'"));
+    }
+  }
+
+  @Test
+  public void ignoreAnonymousCache() {
+    Cache c =
+    new Cache2kBuilder<String, String>() { }
+      .manager(CacheManager.getInstance("specialCases"))
+      .build();
+    c.close();
+  }
+
+  @Test
+  public void ignoreMissingCacheConfiguration() {
+    Cache c =
+      new Cache2kBuilder<String, String>() { }
+        .manager(CacheManager.getInstance("specialCases"))
+        .name("missingConfiguration")
+        .build();
+    c.close();
+  }
+
+  @Test
+  public void notSerializableSection() {
+    try {
+      new Cache2kBuilder<String, String>() { }
+        .manager(CacheManager.getInstance("notSerializable"))
+        .name("notSerializable")
+        .build();
+      fail("expect exception");
+    } catch (Exception ex) {
+      assertThat(ex.toString(), containsString("Copying default cache configuration"));
+    }
+  }
+
+  @Test
+  public void parseError() {
+    try {
+      new Cache2kBuilder<String, String>() { }
+        .manager(CacheManager.getInstance("parseError"))
+        .entryCapacity(1234);
+      fail("expect exception");
+    } catch (Exception ex) {
+      assertThat(ex.toString(), containsString("section start expected"));
+    }
+  }
+
+  @Test
+  public void parseErrorWrongXml() {
+    try {
+      new Cache2kBuilder<String, String>() { }
+        .manager(CacheManager.getInstance("parseErrorWrongXml"))
+        .entryCapacity(1234);
+      fail("expect exception");
+    } catch (Exception ex) {
+      assertThat(ex.toString(), containsString("CacheMisconfigurationException"));
     }
   }
 
@@ -105,6 +207,24 @@ public class IntegrationTest {
     new Cache2kBuilder<String, String>() { }
       .manager(CacheManager.getInstance("noManager"))
       .entryCapacity(1234);
+  }
+
+  @Test
+  public void noManagerConfigurationAndBuild() {
+    Cache c = new Cache2kBuilder<String, String>() { }
+      .manager(CacheManager.getInstance("noManager"))
+      .entryCapacity(1234)
+      .build();
+    c.close();
+  }
+
+  @Test
+  public void onlyDefault() {
+    Cache c = new Cache2kBuilder<String, String>() { }
+      .manager(CacheManager.getInstance("onlyDefault"))
+      .name("anyCache")
+      .build();
+    c.close();
   }
 
 }

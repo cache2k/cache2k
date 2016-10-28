@@ -26,7 +26,6 @@ import org.cache2k.CacheMisconfigurationException;
 import org.cache2k.configuration.Cache2kConfiguration;
 import org.cache2k.core.spi.CacheConfigurationProvider;
 import org.cache2k.core.util.Log;
-import org.cache2k.core.util.Util;
 import org.xmlpull.v1.XmlPullParser;
 
 import java.io.ByteArrayInputStream;
@@ -72,38 +71,28 @@ public class CacheConfigurationProviderImpl implements CacheConfigurationProvide
 
   @Override
   public <K, V> void augmentConfiguration(final CacheManager mgr, final Cache2kConfiguration<K, V> _bean) {
-    ParsedConfiguration pc;
     ConfigurationContext ctx =  getManagerContext(mgr);
     final String _cacheName = _bean.getName();
     if (_cacheName == null) {
       if (ctx.isIgnoreAnonymousCache()) {
         return;
       }
-      throw new CacheMisconfigurationException("Cache name missing, cannot apply XML configuration");
-    }
-    try {
-      pc = readManagerConfiguration(mgr);
-      if (pc == null) {
+      if (!ctx.isConfigurationPresent()) {
         return;
       }
-    } catch (Exception ex) {
-      throw new CacheMisconfigurationException(
-        "Cache '" + Util.compactFullName(mgr, _cacheName) + "'", ex);
+      throw new CacheMisconfigurationException("Cache name missing, cannot apply XML configuration");
     }
-    try {
-      ParsedConfiguration _cacheCfg = extractCacheSection(pc).getSection(_cacheName);
-      if (_cacheCfg == null) {
-        if (ctx.isIgnoreMissingConfiguration()) {
-          return;
-        }
-        throw new ConfigurationException("Configuration for cache '" + _cacheName + "' is missing", pc.getSource());
+    ParsedConfiguration pc;
+    pc = readManagerConfigurationWithExceptionHandling(mgr);
+    ParsedConfiguration _cacheCfg = extractCacheSection(pc);
+    if (_cacheCfg != null) { _cacheCfg = _cacheCfg.getSection(_cacheName); }
+    if (_cacheCfg == null) {
+      if (ctx.isIgnoreMissingCacheConfiguration()) {
+        return;
       }
-      applicant.apply(_cacheCfg, extractTemplates(pc), _bean);
-    } catch (CacheException ex) {
-      throw ex;
-    } catch (Exception ex) {
-      throw new ConfigurationException("Cache '" + _cacheName + "'", pc.getSource());
+      throw new ConfigurationException("Configuration for cache '" + _cacheName + "' is missing", pc.getSource());
     }
+    applicant.apply(_cacheCfg, extractTemplates(pc), _bean);
   }
 
   private ParsedConfiguration readManagerConfiguration(final CacheManager mgr) throws Exception {
@@ -127,14 +116,17 @@ public class CacheConfigurationProviderImpl implements CacheConfigurationProvide
   private ParsedConfiguration extractCacheSection(ParsedConfiguration pc) {
     ParsedConfiguration _cachesSection = pc.getSection("caches");
     if (_cachesSection == null) {
-      throw new ConfigurationException("Section 'caches' missing", pc.getSource(), -1);
+      return null;
     }
    return _cachesSection;
   }
 
-  private void checkCacheConfigurationOnStartup(final CacheManager mgr, final ConfigurationContext ctx, final ParsedConfiguration pc) throws Exception {
+  private void checkCacheConfigurationOnStartup(final CacheManager mgr, final ConfigurationContext ctx, final ParsedConfiguration pc) {
+    ParsedConfiguration _cachesSection = pc.getSection("caches");
+    if (_cachesSection == null) {
+      return;
+    }
     ParsedConfiguration _templates = extractTemplates(pc);
-    ParsedConfiguration _cachesSection = extractCacheSection(pc);
     for (ParsedConfiguration _cacheConfig : _cachesSection.getSections()) {
       applicant.apply(_cacheConfig, _templates, new Cache2kConfiguration());
     }
@@ -151,18 +143,14 @@ public class CacheConfigurationProviderImpl implements CacheConfigurationProvide
     }
     synchronized (this) {
       ParsedConfiguration pc;
-      try {
-        pc = readManagerConfiguration(mgr);
-      } catch (Exception ex) {
-        throw new CacheMisconfigurationException("Configuration for manager '" + mgr.getName() + "'", ex);
-      }
-      try {
+      pc = readManagerConfigurationWithExceptionHandling(mgr);
         ctx = new ConfigurationContext();
         Cache2kConfiguration _defaultConfiguration = new Cache2kConfiguration();
         ctx.setManagerName(mgr.getName());
         if (pc != null) {
           applyDefaultConfigurationIfPresent(pc, _defaultConfiguration);
           applicant.apply(pc, null, ctx);
+          ctx.setConfigurationPresent(true);
           if (!ctx.isSkipCheckOnStartup()) {
             checkCacheConfigurationOnStartup(mgr, ctx, pc);
           }
@@ -171,17 +159,25 @@ public class CacheConfigurationProviderImpl implements CacheConfigurationProvide
         Map<CacheManager, ConfigurationContext> m2 =
           new HashMap<CacheManager, ConfigurationContext>(manager2defaultConfig);
         m2.put(mgr, ctx);
+        manager2defaultConfig = m2;
         return ctx;
-      } catch (CacheException ex) {
-        throw ex;
-      } catch (Exception ex) {
-        throw new ConfigurationException( "Configuration for manager '" + mgr.getName() + "'", pc.getSource(), ex);
-      }
     }
   }
 
+  private ParsedConfiguration readManagerConfigurationWithExceptionHandling(final CacheManager mgr) {
+    ParsedConfiguration pc;
+    try {
+      pc = readManagerConfiguration(mgr);
+    } catch (CacheException ex) {
+      throw ex;
+    } catch (Exception ex) {
+      throw new CacheMisconfigurationException("Configuration for manager '" + mgr.getName() + "'", ex);
+    }
+    return pc;
+  }
+
   private void applyDefaultConfigurationIfPresent(final ParsedConfiguration _pc,
-                                                  final Cache2kConfiguration _defaultConfiguration) throws Exception {
+                                                  final Cache2kConfiguration _defaultConfiguration) {
     ParsedConfiguration _defaults = _pc.getSection("defaults");
     if (_defaults != null) {
       _defaults = _defaults.getSection("cache");
@@ -201,7 +197,7 @@ public class CacheConfigurationProviderImpl implements CacheConfigurationProvide
       return (T) new ObjectInputStream(bin).readObject();
     } catch (Exception ex) {
       throw new CacheMisconfigurationException(
-        "Copying default configuration for manager '" + mgr.getName() + "'");
+        "Copying default configuration for manager '" + mgr.getName() + "'", ex);
     }
   }
 
@@ -213,9 +209,10 @@ public class CacheConfigurationProviderImpl implements CacheConfigurationProvide
 
     private String version = "1.0";
     private String managerName = null;
-    private boolean ignoreMissingConfiguration = false;
+    private boolean ignoreMissingCacheConfiguration = false;
     private boolean skipCheckOnStartup = false;
     private boolean ignoreAnonymousCache = false;
+    private boolean configurationPresent = false;
     private Cache2kConfiguration<?,?> defaultManagerConfiguration;
 
     public Cache2kConfiguration<?, ?> getDefaultManagerConfiguration() {
@@ -226,12 +223,12 @@ public class CacheConfigurationProviderImpl implements CacheConfigurationProvide
       defaultManagerConfiguration = _defaultManagerConfiguration;
     }
 
-    public boolean isIgnoreMissingConfiguration() {
-      return ignoreMissingConfiguration;
+    public boolean isIgnoreMissingCacheConfiguration() {
+      return ignoreMissingCacheConfiguration;
     }
 
-    public void setIgnoreMissingConfiguration(final boolean _ignoreMissingConfiguration) {
-      ignoreMissingConfiguration = _ignoreMissingConfiguration;
+    public void setIgnoreMissingCacheConfiguration(final boolean _ignoreMissingCacheConfiguration) {
+      ignoreMissingCacheConfiguration = _ignoreMissingCacheConfiguration;
     }
 
     public String getManagerName() {
@@ -264,6 +261,14 @@ public class CacheConfigurationProviderImpl implements CacheConfigurationProvide
 
     public void setIgnoreAnonymousCache(final boolean _ignoreAnonymousCache) {
       ignoreAnonymousCache = _ignoreAnonymousCache;
+    }
+
+    public boolean isConfigurationPresent() {
+      return configurationPresent;
+    }
+
+    public void setConfigurationPresent(final boolean _configurationPresent) {
+      configurationPresent = _configurationPresent;
     }
   }
 
