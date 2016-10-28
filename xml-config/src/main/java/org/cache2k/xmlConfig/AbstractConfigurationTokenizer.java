@@ -33,8 +33,8 @@ public abstract class AbstractConfigurationTokenizer implements ConfigurationTok
 
   public String getSource() { return source; }
 
-  protected final Nest returnNest(final String _secionName) {
-    return new MyNest(getSource(), getLineNumber(), _secionName);
+  protected final Nest returnNest(final String _sectionName) {
+    return new MyNest(getSource(), getLineNumber(), _sectionName);
   }
 
   protected final Unnest returnUnnest() {

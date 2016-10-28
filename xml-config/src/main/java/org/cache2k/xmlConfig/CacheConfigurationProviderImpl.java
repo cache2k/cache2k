@@ -20,6 +20,7 @@ package org.cache2k.xmlConfig;
  * #L%
  */
 
+import org.cache2k.CacheException;
 import org.cache2k.CacheManager;
 import org.cache2k.CacheMisconfigurationException;
 import org.cache2k.configuration.Cache2kConfiguration;
@@ -28,7 +29,12 @@ import org.cache2k.core.util.Log;
 import org.cache2k.core.util.Util;
 import org.xmlpull.v1.XmlPullParser;
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+import java.io.Serializable;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -39,10 +45,10 @@ import java.util.Map;
  */
 public class CacheConfigurationProviderImpl implements CacheConfigurationProvider {
 
+  private ApplyConfiguration applicant = new ApplyConfiguration();
   private final boolean usePullParser;
   private final Log log = Log.getLog(this.getClass());
-  private final Map<CacheManager, Cache2kConfiguration<?,?>> manager2Config =
-    new HashMap<CacheManager, Cache2kConfiguration<?, ?>>();
+  private volatile Map<CacheManager, ConfigurationContext> manager2defaultConfig = new HashMap<CacheManager, ConfigurationContext>();
 
   {
     boolean _usePullParser = false;
@@ -51,6 +57,49 @@ public class CacheConfigurationProviderImpl implements CacheConfigurationProvide
       _usePullParser = true;
     } catch (Exception ex) { }
     usePullParser = _usePullParser;
+  }
+
+  @Override
+  public Cache2kConfiguration getDefaultConfiguration(final CacheManager mgr) {
+    try {
+      return copyViaSerialization(getManagerContext(mgr).getDefaultManagerConfiguration());
+    } catch (Exception ex) {
+      throw new CacheMisconfigurationException(
+        "Providing default configuration for manager '" + mgr.getName() + "'", ex);
+    }
+  }
+
+  @Override
+  public <K, V> void augmentConfiguration(final CacheManager mgr, final Cache2kConfiguration<K, V> _bean) {
+    final String _cacheName = _bean.getName();
+    if (_cacheName == null) {
+      return;
+    }
+    ParsedConfiguration pc = null;
+    try {
+      pc = readManagerConfiguration(mgr);
+      if (pc == null) {
+        return;
+      }
+    } catch (Exception ex) {
+      throw new CacheMisconfigurationException(
+        "Cache '" + Util.compactFullName(mgr, _cacheName) + "'", ex);
+    }
+     try {
+      ConfigurationContext ctx = getManagerContext(mgr);
+      ParsedConfiguration _cacheCfg = extractCacheSection(pc).getSection(_cacheName);
+      if (_cacheCfg == null) {
+        if (ctx.isIgnoreMissingConfiguration()) {
+          return;
+        }
+        throw new ConfigurationException("Configuration for cache '" + _cacheName + "' is missing", pc.getSource());
+      }
+      applicant.apply(_cacheCfg, extractTemplates(pc), _bean);
+    } catch (CacheException ex) {
+       throw ex;
+     } catch (Exception ex) {
+       throw new ConfigurationException("Cache '" + _cacheName + "'", pc.getSource());
+     }
   }
 
   private ParsedConfiguration readManagerConfiguration(final CacheManager mgr) throws Exception {
@@ -71,42 +120,109 @@ public class CacheConfigurationProviderImpl implements CacheConfigurationProvide
     return cfg;
   }
 
-  private Cache2kConfiguration<?,?> getManagerConfiguration(final CacheManager mgr) throws Exception {
-    return null;
+  private ParsedConfiguration extractCacheSection(ParsedConfiguration pc) {
+    ParsedConfiguration _cachesSection = pc.getSection("caches");
+    if (_cachesSection == null) {
+      throw new ConfigurationException("Section 'caches' missing", pc.getSource(), -1);
+    }
+   return _cachesSection;
   }
 
-  @Override
-  public Cache2kConfiguration getDefaultConfiguration(final CacheManager mgr) {
-    try {
-      ParsedConfiguration cfg = readManagerConfiguration(mgr);
+  private void checkCacheConfigurationOnStartup(final CacheManager mgr, final ConfigurationContext ctx, final ParsedConfiguration pc) throws Exception {
+    ParsedConfiguration _templates = extractTemplates(pc);
+    ParsedConfiguration _cachesSection = extractCacheSection(pc);
+    for (ParsedConfiguration _cacheConfig : _cachesSection.getSections()) {
+      applicant.apply(_cacheConfig, _templates, new Cache2kConfiguration());
+    }
+  }
+
+  /**
+   * Hold the cache default configuration of a manager in a hash table. This is reused for all caches of
+   * one manager.
+   */
+  private ConfigurationContext getManagerContext(final CacheManager mgr) throws Exception {
+    ConfigurationContext ctx = manager2defaultConfig.get(mgr);
+    if (ctx != null) {
+      return ctx;
+    }
+    synchronized (this) {
+      ParsedConfiguration pc = readManagerConfiguration(mgr);
+      ctx = new ConfigurationContext();
       Cache2kConfiguration _bean = new Cache2kConfiguration();
-      if (cfg != null) {
-        ApplyConfiguration _apply = new ApplyConfiguration();
-        _apply.apply(cfg.getSection("defaults").getSection("cache"), null, _bean);
+      applicant.apply(pc.getSection("defaults").getSection("cache"), extractTemplates(pc), _bean);
+      applicant.apply(pc, null, ctx);
+      if (!ctx.isSkipCheckOnStartup()) {
+        checkCacheConfigurationOnStartup(mgr, ctx, pc);
       }
-      return _bean;
-    } catch (Exception ex) {
-      throw new CacheMisconfigurationException(
-        "default configuration for manager '" + mgr.getName() + "'", ex);
+      ctx.setDefaultManagerConfiguration(_bean);
+      Map<CacheManager, ConfigurationContext> m2 =
+        new HashMap<CacheManager, ConfigurationContext>(manager2defaultConfig);
+      m2.put(mgr, ctx);
+      return ctx;
     }
   }
 
-  @Override
-  public <K, V> void augmentConfiguration(final CacheManager mgr, final Cache2kConfiguration<K, V> _bean) {
-    final String _cacheName = _bean.getName();
-    if (_cacheName == null) {
-      return;
+  private static <T extends Serializable> T copyViaSerialization(T obj) throws Exception {
+     ByteArrayOutputStream bos = new ByteArrayOutputStream();
+     ObjectOutputStream oos = new ObjectOutputStream(bos);
+     oos.writeObject(obj);
+     oos.flush();
+     ByteArrayInputStream bin = new ByteArrayInputStream(bos.toByteArray());
+     return (T) new ObjectInputStream(bin).readObject();
+  }
+
+  private ParsedConfiguration extractTemplates(final ParsedConfiguration _pc) {
+    return _pc.getSection("templates");
+  }
+
+  static class ConfigurationContext {
+
+    private String version = "1.0";
+    private String managerName = null;
+    private boolean ignoreMissingConfiguration = false;
+    private boolean skipCheckOnStartup = false;
+    private Cache2kConfiguration<?,?> defaultManagerConfiguration;
+
+    public Cache2kConfiguration<?, ?> getDefaultManagerConfiguration() {
+      return defaultManagerConfiguration;
     }
-    try {
-      ParsedConfiguration cfg = readManagerConfiguration(mgr);
-      if (cfg != null) {
-        ApplyConfiguration _apply = new ApplyConfiguration();
-        _apply.apply(cfg.getSection("caches").getSection(_cacheName), null, _bean);
-      }
-    } catch (Exception ex) {
-      throw new CacheMisconfigurationException(
-        "cache '" + Util.compactFullName(mgr, _cacheName) + "'", ex);
+
+    public void setDefaultManagerConfiguration(final Cache2kConfiguration<?, ?> _defaultManagerConfiguration) {
+      defaultManagerConfiguration = _defaultManagerConfiguration;
     }
+
+    public boolean isIgnoreMissingConfiguration() {
+      return ignoreMissingConfiguration;
+    }
+
+    public void setIgnoreMissingConfiguration(final boolean _ignoreMissingConfiguration) {
+      ignoreMissingConfiguration = _ignoreMissingConfiguration;
+    }
+
+    public String getManagerName() {
+      return managerName;
+    }
+
+    public void setManagerName(final String _managerName) {
+      managerName = _managerName;
+    }
+
+    public String getVersion() {
+      return version;
+    }
+
+    public void setVersion(final String _version) {
+      version = _version;
+    }
+
+    public boolean isSkipCheckOnStartup() {
+      return skipCheckOnStartup;
+    }
+
+    public void setSkipCheckOnStartup(final boolean _skipCheckOnStartup) {
+      skipCheckOnStartup = _skipCheckOnStartup;
+    }
+
   }
 
 }

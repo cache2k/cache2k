@@ -51,4 +51,9 @@ public class IntegrationTest {
     c.close();
   }
 
+  @Test(expected = ConfigurationException.class)
+  public void testFailIfConfigurationIsMissing() {
+    new Cache2kBuilder<String, String>(){}.name("missingDummy").build();
+  }
+
 }

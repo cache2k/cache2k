@@ -25,13 +25,12 @@ import org.cache2k.configuration.ConfigurationWithSections;
 import org.cache2k.core.util.Log;
 
 /**
- * Apply a parsed configuration to a configuration bean.
+ * Stateless singleton to apply a parsed configuration to a configuration bean.
  *
  * @author Jens Wilke
  */
 public class ApplyConfiguration {
 
-  private Log log = Log.getLog(ApplyConfiguration.class);
   private PropertyParser propertyParser = new StandardPropertyParser();
 
   public void apply(ParsedConfiguration cfg, ParsedConfiguration _templates, Object _bean) throws Exception {
@@ -76,8 +75,10 @@ public class ApplyConfiguration {
     for (ConfigurationTokenizer.Property p : cfg.getPropertyMap().values()) {
       Class<?> _propertyType = m.getType(p.getName());
       if (_propertyType == null) {
-        log.warn("Unknown property '" + p.getName() + "': " + p.getSource() + ':' + p.getLineNumber());
-        continue;
+        if ("include".equals(p.getName()) || "name".equals(p.getName())) {
+          continue;
+        }
+        throw new ConfigurationException("Unknown property '" + p.getName() + "'", p.getSource(), p.getLineNumber());
       }
       m.mutate(_bean, p.getName(), propertyParser.parse(_propertyType, p.getValue()));
     }

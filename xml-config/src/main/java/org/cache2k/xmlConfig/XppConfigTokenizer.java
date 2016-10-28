@@ -34,7 +34,7 @@ import java.util.LinkedList;
 public class XppConfigTokenizer extends AbstractConfigurationTokenizer {
 
   private final XmlPullParser input;
-  private LinkedList<String> hierarchy = new LinkedList<String>();
+  private final LinkedList<String> hierarchy = new LinkedList<String>();
   private String startName;
   private String value;
   private boolean startFlag = true;
