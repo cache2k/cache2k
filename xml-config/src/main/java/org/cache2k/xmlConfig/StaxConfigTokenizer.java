@@ -78,10 +78,10 @@ public class StaxConfigTokenizer extends AbstractConfigurationTokenizer {
     return null;
   }
 
-  public static class Factory implements ConfigurationTokenizerFactory {
+  public static class Factory implements TokenizerFactory {
 
     @Override
-    public ConfigurationTokenizer create(final String _source, final InputStream in, final String _encoding)
+    public ConfigurationTokenizer createTokenizer(final String _source, final InputStream in, final String _encoding)
       throws XMLStreamException {
       return new StaxConfigTokenizer(_source, in, _encoding);
     }

@@ -36,6 +36,6 @@ public interface TokenizerFactory {
    * @param _encoding character encoding to use
    * @return the created tokenizer
    */
-  ConfigurationTokenizer createTokenizer(final String _source, InputStream in, String _encoding);
+  ConfigurationTokenizer createTokenizer(final String _source, InputStream in, String _encoding) throws Exception;
 
 }

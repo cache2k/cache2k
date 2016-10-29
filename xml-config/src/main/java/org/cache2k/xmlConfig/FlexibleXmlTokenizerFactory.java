@@ -20,13 +20,32 @@ package org.cache2k.xmlConfig;
  * #L%
  */
 
+import org.xmlpull.v1.XmlPullParser;
+
 import java.io.InputStream;
 
 /**
  * @author Jens Wilke
  */
-public interface ConfigurationTokenizerFactory {
+public class FlexibleXmlTokenizerFactory implements TokenizerFactory {
 
-  ConfigurationTokenizer create(String _source, InputStream in, String _encoding) throws Exception;
+  private final TokenizerFactory realTokenizer;
+
+  {
+    TokenizerFactory tf;
+    try {
+      XmlPullParser.class.toString();
+      tf = new XppConfigTokenizer.Factory();
+    } catch (Exception ex) {
+      tf = new StaxConfigTokenizer.Factory();
+    }
+    realTokenizer = tf;
+  }
+
+  @Override
+  public ConfigurationTokenizer createTokenizer(final String _source, final InputStream in, final String _encoding)
+    throws Exception {
+    return realTokenizer.createTokenizer(_source, in, _encoding);
+  }
 
 }

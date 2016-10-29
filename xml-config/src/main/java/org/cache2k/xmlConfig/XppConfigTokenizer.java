@@ -91,10 +91,10 @@ public class XppConfigTokenizer extends AbstractConfigurationTokenizer {
     return input.next();
   }
 
-  public static class Factory implements ConfigurationTokenizerFactory {
+  public static class Factory implements TokenizerFactory {
 
     @Override
-    public ConfigurationTokenizer create(final String _source, final InputStream in, final String _encoding)
+    public ConfigurationTokenizer createTokenizer(final String _source, final InputStream in, final String _encoding)
       throws XmlPullParserException {
       return new XppConfigTokenizer(_source, in, _encoding);
     }

@@ -28,7 +28,6 @@ import org.cache2k.configuration.ConfigurationSection;
 import org.cache2k.configuration.ConfigurationWithSections;
 import org.cache2k.core.spi.CacheConfigurationProvider;
 import org.cache2k.core.util.Log;
-import org.xmlpull.v1.XmlPullParser;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -47,18 +46,10 @@ import java.util.Map;
 public class CacheConfigurationProviderImpl implements CacheConfigurationProvider {
 
   private PropertyParser propertyParser = new StandardPropertyParser();
-  private final boolean usePullParser;
+  private TokenizerFactory tokenizerFactory = new FlexibleXmlTokenizerFactory();
+  private volatile Map<Class<?>, BeanPropertyMutator> type2mutator = new HashMap<Class<?>, BeanPropertyMutator>();
   private final Log log = Log.getLog(this.getClass());
   private volatile Map<CacheManager, ConfigurationContext> manager2defaultConfig = new HashMap<CacheManager, ConfigurationContext>();
-
-  {
-    boolean _usePullParser = false;
-    try {
-      XmlPullParser.class.toString();
-      _usePullParser = true;
-    } catch (Exception ex) { }
-    usePullParser = _usePullParser;
-  }
 
   @Override
   public Cache2kConfiguration getDefaultConfiguration(final CacheManager mgr) {
@@ -103,12 +94,7 @@ public class CacheConfigurationProviderImpl implements CacheConfigurationProvide
     if (is == null) {
       return null;
     }
-    ConfigurationTokenizer tkn;
-    if (usePullParser) {
-      tkn = new XppConfigTokenizer(_fileName, is, null);
-    } else {
-      tkn = new StaxConfigTokenizer(_fileName, is, null);
-    }
+    ConfigurationTokenizer tkn = tokenizerFactory.createTokenizer(_fileName, is, null);
     ParsedConfiguration cfg = ConfigurationParser.parse(tkn);
     VariableExpander _expander = new StandardVariableExpander();
     _expander.expand(cfg);
@@ -247,7 +233,7 @@ public class CacheConfigurationProviderImpl implements CacheConfigurationProvide
   }
 
   private void applyPropertyValues(final ParsedConfiguration cfg, final Object _bean) {
-    BeanPropertyMutator m = new BeanPropertyMutator(_bean.getClass());
+    BeanPropertyMutator m = provideMutator(_bean.getClass());
     for (ConfigurationTokenizer.Property p : cfg.getPropertyMap().values()) {
       Class<?> _propertyType = m.getType(p.getName());
       if (_propertyType == null) {
@@ -264,6 +250,19 @@ public class CacheConfigurationProviderImpl implements CacheConfigurationProvide
         throw new ConfigurationException("Cannot parse property: " + ex, p.getSource(), p.getLineNumber());
       }
     }
+  }
+
+  private BeanPropertyMutator provideMutator(Class<?> _type) {
+    BeanPropertyMutator m = type2mutator.get(_type);
+    if (m == null) {
+      synchronized (this) {
+        m = new BeanPropertyMutator(_type);
+        Map<Class<?>, BeanPropertyMutator> m2 = new HashMap<Class<?>, BeanPropertyMutator>(type2mutator);
+        m2.put(_type, m);
+        type2mutator = m2;
+      }
+    }
+    return m;
   }
 
   private ParsedConfiguration extractTemplates(final ParsedConfiguration _pc) {

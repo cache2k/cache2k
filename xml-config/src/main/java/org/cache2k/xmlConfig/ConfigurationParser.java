@@ -20,22 +20,10 @@ package org.cache2k.xmlConfig;
  * #L%
  */
 
-import java.io.InputStream;
-
 /**
  * @author Jens Wilke
  */
 public class ConfigurationParser {
-
-  private final ConfigurationTokenizerFactory factory;
-
-  public ConfigurationParser(ConfigurationTokenizerFactory f) {
-    factory = f;
-  }
-
-  public ParsedConfiguration parse(String _source, InputStream in, String _encoding) throws Exception {
-    return parse(factory.create(_source, in, _encoding));
-  }
 
   static ParsedConfiguration parse(ConfigurationTokenizer _parser) throws Exception {
     ParsedConfiguration c = new ParsedConfiguration(_parser.getSource(), _parser.getLineNumber());
