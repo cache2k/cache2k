@@ -37,8 +37,16 @@
     <cache>
       <name>withSection</name>
       <sections>
-        <jcache>
+        <jcacheNonStandard>
           <type>org.cache2k.jcache.JCacheConfiguration</type>
+          <alwaysFlushJmxStatistics>true</alwaysFlushJmxStatistics>
+        </jcacheNonStandard>
+      </sections>
+    </cache>
+    <cache>
+      <name>withJCacheSection</name>
+      <sections>
+        <jcache>
           <alwaysFlushJmxStatistics>true</alwaysFlushJmxStatistics>
         </jcache>
       </sections>

@@ -50,6 +50,11 @@ public class CacheConfigurationProviderImpl implements CacheConfigurationProvide
   private volatile Map<Class<?>, BeanPropertyMutator> type2mutator = new HashMap<Class<?>, BeanPropertyMutator>();
   private final Log log = Log.getLog(this.getClass());
   private volatile Map<CacheManager, ConfigurationContext> manager2defaultConfig = new HashMap<CacheManager, ConfigurationContext>();
+  private final Map<String, String> standardSectionTypes = new HashMap<String, String>();
+
+  {
+    standardSectionTypes.put("jcache", "org.cache2k.jcache.JCacheConfiguration");
+  }
 
   @Override
   public Cache2kConfiguration getDefaultConfiguration(final CacheManager mgr) {
@@ -208,15 +213,19 @@ public class CacheConfigurationProviderImpl implements CacheConfigurationProvide
     }
     ConfigurationWithSections _configurationWithSections = (ConfigurationWithSections) _bean;
     for(ParsedConfiguration sc : cfg.getSections()) {
-      if (sc.getType() == null) {
+      String _sectionType = standardSectionTypes.get(sc.getName());
+      if (_sectionType == null) {
+        _sectionType = sc.getType();
+      }
+      if (_sectionType == null) {
         throw new ConfigurationException("section type missing", sc.getSource(), sc.getLineNumber());
       }
       Class<?> _type;
       try {
-        _type = Class.forName(sc.getType());
+        _type = Class.forName(_sectionType);
       } catch (ClassNotFoundException ex) {
         throw new ConfigurationException(
-          "section configuration class not found '" + sc.getType() + "'", sc.getSource(), sc.getLineNumber());
+          "section configuration class not found '" + _sectionType + "'", sc.getSource(), sc.getLineNumber());
       }
       ConfigurationSection _sectionBean =
         _configurationWithSections.getSections().getSection((Class<ConfigurationSection>) _type);
@@ -267,73 +276,6 @@ public class CacheConfigurationProviderImpl implements CacheConfigurationProvide
 
   private ParsedConfiguration extractTemplates(final ParsedConfiguration _pc) {
     return _pc.getSection("templates");
-  }
-
-  static class ConfigurationContext {
-
-    private String version = "1.0";
-    private String managerName = null;
-    private boolean ignoreMissingCacheConfiguration = false;
-    private boolean skipCheckOnStartup = false;
-    private boolean ignoreAnonymousCache = false;
-    private boolean configurationPresent = false;
-    private Cache2kConfiguration<?,?> defaultManagerConfiguration;
-
-    public Cache2kConfiguration<?, ?> getDefaultManagerConfiguration() {
-      return defaultManagerConfiguration;
-    }
-
-    public void setDefaultManagerConfiguration(final Cache2kConfiguration<?, ?> _defaultManagerConfiguration) {
-      defaultManagerConfiguration = _defaultManagerConfiguration;
-    }
-
-    public boolean isIgnoreMissingCacheConfiguration() {
-      return ignoreMissingCacheConfiguration;
-    }
-
-    public void setIgnoreMissingCacheConfiguration(final boolean _ignoreMissingCacheConfiguration) {
-      ignoreMissingCacheConfiguration = _ignoreMissingCacheConfiguration;
-    }
-
-    public String getManagerName() {
-      return managerName;
-    }
-
-    public void setManagerName(final String _managerName) {
-      managerName = _managerName;
-    }
-
-    public String getVersion() {
-      return version;
-    }
-
-    public void setVersion(final String _version) {
-      version = _version;
-    }
-
-    public boolean isSkipCheckOnStartup() {
-      return skipCheckOnStartup;
-    }
-
-    public void setSkipCheckOnStartup(final boolean _skipCheckOnStartup) {
-      skipCheckOnStartup = _skipCheckOnStartup;
-    }
-
-    public boolean isIgnoreAnonymousCache() {
-      return ignoreAnonymousCache;
-    }
-
-    public void setIgnoreAnonymousCache(final boolean _ignoreAnonymousCache) {
-      ignoreAnonymousCache = _ignoreAnonymousCache;
-    }
-
-    public boolean isConfigurationPresent() {
-      return configurationPresent;
-    }
-
-    public void setConfigurationPresent(final boolean _configurationPresent) {
-      configurationPresent = _configurationPresent;
-    }
   }
 
 }
