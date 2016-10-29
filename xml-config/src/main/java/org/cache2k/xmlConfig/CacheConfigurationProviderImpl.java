@@ -24,6 +24,8 @@ import org.cache2k.CacheException;
 import org.cache2k.CacheManager;
 import org.cache2k.CacheMisconfigurationException;
 import org.cache2k.configuration.Cache2kConfiguration;
+import org.cache2k.configuration.ConfigurationSection;
+import org.cache2k.configuration.ConfigurationWithSections;
 import org.cache2k.core.spi.CacheConfigurationProvider;
 import org.cache2k.core.util.Log;
 import org.xmlpull.v1.XmlPullParser;
@@ -44,7 +46,7 @@ import java.util.Map;
  */
 public class CacheConfigurationProviderImpl implements CacheConfigurationProvider {
 
-  private ApplyConfiguration applicant = new ApplyConfiguration();
+  private PropertyParser propertyParser = new StandardPropertyParser();
   private final boolean usePullParser;
   private final Log log = Log.getLog(this.getClass());
   private volatile Map<CacheManager, ConfigurationContext> manager2defaultConfig = new HashMap<CacheManager, ConfigurationContext>();
@@ -92,7 +94,7 @@ public class CacheConfigurationProviderImpl implements CacheConfigurationProvide
       }
       throw new ConfigurationException("Configuration for cache '" + _cacheName + "' is missing", pc.getSource());
     }
-    applicant.apply(_cacheCfg, extractTemplates(pc), _bean);
+    apply(_cacheCfg, extractTemplates(pc), _bean);
   }
 
   private ParsedConfiguration readManagerConfiguration(final CacheManager mgr) throws Exception {
@@ -128,7 +130,7 @@ public class CacheConfigurationProviderImpl implements CacheConfigurationProvide
     }
     ParsedConfiguration _templates = extractTemplates(pc);
     for (ParsedConfiguration _cacheConfig : _cachesSection.getSections()) {
-      applicant.apply(_cacheConfig, _templates, new Cache2kConfiguration());
+      apply(_cacheConfig, _templates, new Cache2kConfiguration());
     }
   }
 
@@ -149,7 +151,7 @@ public class CacheConfigurationProviderImpl implements CacheConfigurationProvide
         ctx.setManagerName(mgr.getName());
         if (pc != null) {
           applyDefaultConfigurationIfPresent(pc, _defaultConfiguration);
-          applicant.apply(pc, null, ctx);
+          apply(pc, null, ctx);
           ctx.setConfigurationPresent(true);
           if (!ctx.isSkipCheckOnStartup()) {
             checkCacheConfigurationOnStartup(mgr, ctx, pc);
@@ -183,7 +185,7 @@ public class CacheConfigurationProviderImpl implements CacheConfigurationProvide
       _defaults = _defaults.getSection("cache");
     }
     if (_defaults != null) {
-      applicant.apply(_defaults, extractTemplates(_pc), _defaultConfiguration);
+      apply(_defaults, extractTemplates(_pc), _defaultConfiguration);
     }
   }
 
@@ -198,6 +200,69 @@ public class CacheConfigurationProviderImpl implements CacheConfigurationProvide
     } catch (Exception ex) {
       throw new CacheMisconfigurationException(
         "Copying default configuration for manager '" + mgr.getName() + "'", ex);
+    }
+  }
+
+  /** Set properties in configuration bean based on the parsed configuration. Called by unit test. */
+  void apply(ParsedConfiguration cfg, ParsedConfiguration _templates, Object _bean) {
+    ConfigurationTokenizer.Property _include = cfg.getPropertyMap().get("include");
+    if (_include != null) {
+      for (String _template : _include.getValue().split(",")) {
+        ParsedConfiguration c2 = null;
+        if (_templates != null) { c2 = _templates.getSection(_template); }
+        if (c2 == null) {
+          throw new ConfigurationException("Template not found \'" + _template + "\'", _include.getSource(), _include.getLineNumber());
+        }
+        apply(c2, _templates, _bean);
+      }
+    }
+    applyPropertyValues(cfg, _bean);
+    if (!(_bean instanceof ConfigurationWithSections)) {
+      return;
+    }
+    ConfigurationWithSections _configurationWithSections = (ConfigurationWithSections) _bean;
+    for(ParsedConfiguration sc : cfg.getSections()) {
+      if (sc.getType() == null) {
+        throw new ConfigurationException("section type missing", sc.getSource(), sc.getLineNumber());
+      }
+      Class<?> _type;
+      try {
+        _type = Class.forName(sc.getType());
+      } catch (ClassNotFoundException ex) {
+        throw new ConfigurationException(
+          "section configuration class not found '" + sc.getType() + "'", sc.getSource(), sc.getLineNumber());
+      }
+      ConfigurationSection _sectionBean =
+        _configurationWithSections.getSections().getSection((Class<ConfigurationSection>) _type);
+      if (_sectionBean == null) {
+        try {
+          _sectionBean = (ConfigurationSection)  _type.newInstance();
+        } catch (Exception ex) {
+          throw new ConfigurationException("Cannot instantiate section class: " + ex, sc.getSource(), sc.getLineNumber());
+        }
+        _configurationWithSections.getSections().add(_sectionBean);
+      }
+      apply(sc, _templates, _sectionBean);
+    }
+  }
+
+  private void applyPropertyValues(final ParsedConfiguration cfg, final Object _bean) {
+    BeanPropertyMutator m = new BeanPropertyMutator(_bean.getClass());
+    for (ConfigurationTokenizer.Property p : cfg.getPropertyMap().values()) {
+      Class<?> _propertyType = m.getType(p.getName());
+      if (_propertyType == null) {
+        if ("include".equals(p.getName()) ||
+          "name".equals(p.getName()) ||
+          "type".equals(p.getName())) {
+          continue;
+        }
+        throw new ConfigurationException("Unknown property '" + p.getName() + "'", p.getSource(), p.getLineNumber());
+      }
+      try {
+        m.mutate(_bean, p.getName(), propertyParser.parse(_propertyType, p.getValue()));
+      } catch (Exception ex) {
+        throw new ConfigurationException("Cannot parse property: " + ex, p.getSource(), p.getLineNumber());
+      }
     }
   }
 

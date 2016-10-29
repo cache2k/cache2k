@@ -42,7 +42,7 @@ public class ApplyToBeanTest {
     ParsedConfiguration cfg = ConfigurationParser.parse(pp);
     VariableExpander _expander = new StandardVariableExpander();
     _expander.expand(cfg);
-    ApplyConfiguration _apply = new ApplyConfiguration();
+    CacheConfigurationProviderImpl _apply = new CacheConfigurationProviderImpl();
     Cache2kConfiguration _bean = new Cache2kConfiguration();
     assertNotNull(cfg.getSection("templates").getSection("expires"));
     _apply.apply(cfg.getSection("caches").getSection("flights"), cfg.getSection("templates"), _bean);
