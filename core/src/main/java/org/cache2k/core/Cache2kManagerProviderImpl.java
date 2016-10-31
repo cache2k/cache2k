@@ -39,8 +39,7 @@ import java.util.WeakHashMap;
 public class Cache2kManagerProviderImpl implements Cache2kManagerProvider {
 
   public final static String STANDARD_DEFAULT_MANAGER_NAME = "default";
-  static final CacheConfigurationProvider CACHE_CONFIGURATION_PROVIDER =
-    createConfigurationProvider();
+  static final CacheConfigurationProvider CACHE_CONFIGURATION_PROVIDER = createConfigurationProvider();
 
   private Object lock = new Object();
   private volatile Map<ClassLoader, String> defaultCacheName = Collections.EMPTY_MAP;
