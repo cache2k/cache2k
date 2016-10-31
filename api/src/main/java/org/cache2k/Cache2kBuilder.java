@@ -77,7 +77,7 @@ public class Cache2kBuilder<K, V> implements Cloneable {
   private static final String MSG_NO_TYPES = "Use Cache2kBuilder.forUnknownTypes(), to construct a builder with no key and value types";
 
   static {
-    CORE_PROVIDER = SingleProviderResolver.getInstance().resolve(Cache2kCoreProvider.class);
+    CORE_PROVIDER = SingleProviderResolver.resolveMandatory(Cache2kCoreProvider.class);
   }
 
   /**

@@ -36,12 +36,12 @@ import java.util.ServiceLoader;
  */
 public abstract class CacheManager implements Iterable<Cache>, Closeable {
 
-  protected final static Cache2kManagerProvider PROVIDER;
+  protected static Cache2kManagerProvider PROVIDER;
 
   static {
-    PROVIDER = SingleProviderResolver.getInstance().resolve(Cache2kCoreProvider.class).getManagerProvider();
+    PROVIDER = SingleProviderResolver.resolveMandatory(Cache2kCoreProvider.class).getManagerProvider();
     ServiceLoader<Cache2kExtensionProvider> _loader =
-        ServiceLoader.load(Cache2kExtensionProvider.class, CacheManager.class.getClassLoader());
+      ServiceLoader.load(Cache2kExtensionProvider.class, CacheManager.class.getClassLoader());
     for (Cache2kExtensionProvider p : _loader) {
       p.register();
     }

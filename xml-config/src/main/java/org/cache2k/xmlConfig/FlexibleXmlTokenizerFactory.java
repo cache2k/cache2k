@@ -25,21 +25,22 @@ import org.xmlpull.v1.XmlPullParser;
 import java.io.InputStream;
 
 /**
+ * Use XmlPullParser for XML parsing if present (on Android) or fall back to Stax for
+ * standard Java environments.
+ *
  * @author Jens Wilke
  */
 public class FlexibleXmlTokenizerFactory implements TokenizerFactory {
 
-  private final TokenizerFactory realTokenizer;
+  private final TokenizerFactory realTokenizer = detectUsableTokenizer();
 
-  {
-    TokenizerFactory tf;
+  TokenizerFactory detectUsableTokenizer() {
     try {
       XmlPullParser.class.toString();
-      tf = new XppConfigTokenizer.Factory();
-    } catch (Exception ex) {
-      tf = new StaxConfigTokenizer.Factory();
+      return new XppConfigTokenizer.Factory();
+    } catch (LinkageError ex) {
+      return new StaxConfigTokenizer.Factory();
     }
-    realTokenizer = tf;
   }
 
   @Override

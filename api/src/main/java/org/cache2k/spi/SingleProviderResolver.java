@@ -42,74 +42,60 @@ import java.util.Map;
  */
 public class SingleProviderResolver {
 
-  private final static Map<ClassLoader, SingleProviderResolver> loader2resolver =
-      new HashMap<ClassLoader, SingleProviderResolver>();
+  private static Map<Class, Object> providers = new HashMap<Class, Object>();
 
   /**
-   * Get a resolver instance which resolves classes with the same class loader as this class is in.
-   */
-  public static SingleProviderResolver getInstance() {
-    return getInstance(SingleProviderResolver.class.getClassLoader());
-  }
-
-  public synchronized static SingleProviderResolver getInstance(ClassLoader cl) {
-    SingleProviderResolver r = loader2resolver.get(cl);
-    if (r == null) {
-      r = new SingleProviderResolver(cl);
-      loader2resolver.put(cl, r);
-    }
-    return r;
-  }
-
-  private final ClassLoader classLoader;
-  private final Map<Class<?>, Object> type2instance = new HashMap<Class<?>, Object>();
-
-  private SingleProviderResolver(ClassLoader cl) {
-    classLoader = cl;
-  }
-
-  /**
-   * Return a provider for this interface. If a provider previously was
-   * resolved, a cached instance is returned.
+   * Return a provider for this interface.
    *
    * @param c the provider interface that is implemented
    * @param <T> type of provider interface
    *
-   * @return cached instance of the provider, never null
-   * @throws java.lang.LinkageError if no provider is found.
+   * @return instance of the provider, never null
+   * @throws java.lang.LinkageError if there is a problem instantiating the provider
+   *                                or no provider was specified
    */
-  @SuppressWarnings("unchecked")
-  public <T> T resolve(Class<T> c) {
-    if (c == null) {
-      throw new NullPointerException("requested provider interface is null");
+  public static <T> T resolveMandatory(Class<T> c) {
+    T obj = resolve(c);
+    if (obj == null) {
+      Error err = new LinkageError("No implementation found for: " + c.getName());
+      err.printStackTrace();
+      throw err;
     }
-    synchronized (type2instance) {
-      T obj = (T) type2instance.get(c);
-      if (obj == null) {
-        obj = loadProvider(c);
-        type2instance.put(c, obj);
-      }
-      return obj;
-    }
+    return obj;
   }
 
-  @SuppressWarnings("unchecked")
-  <T> T loadProvider(Class<T> c) {
+  /**
+   * Return a provider for this interface.
+   *
+   * @param c the provider interface that is implemented
+   * @param <T> type of provider interface
+   *
+   * @return instance of the provider or null if not found
+   * @throws java.lang.LinkageError if there is a problem instantiating the provider
+   */
+  public synchronized static <T> T resolve(Class<T> c) {
+    if (providers.containsKey(c)) {
+      return (T) providers.get(c);
+    }
     try {
       String _className = readFile("org/cache2k/services/" + c.getName());
       if (_className == null) {
-        throw new LinkageError("Provider missing for: " + c.getName());
+        return null;
       }
-      return (T) classLoader.loadClass(_className).newInstance();
-    } catch (Exception e) {
-      throw new LinkageError("Error instantiating " + c.getName() + ", got exception: " +e.toString());
+      T obj = (T) SingleProviderResolver.class.getClassLoader().loadClass(_className).newInstance();
+      providers.put(c, obj);
+      return obj;
+    } catch (Exception ex) {
+      Error err = new LinkageError("Error instantiating " + c.getName(), ex);
+      err.printStackTrace();
+      throw err;
     }
   }
 
-  String readFile(String _name) throws IOException {
-    InputStream in = classLoader.getResourceAsStream(_name);
+  private static String readFile(String _name) throws IOException {
+    InputStream in = SingleProviderResolver.class.getClassLoader().getResourceAsStream(_name);
     if (in == null) {
-      throw new IOException("Class resource file not found: " + _name);
+      return null;
     }
     LineNumberReader r = new LineNumberReader(new InputStreamReader(in));
     String l = r.readLine();
@@ -119,7 +105,7 @@ public class SingleProviderResolver {
       }
       l = r.readLine();
     }
-    return null;
+    throw new IOException("No class file name in resource: " + _name);
   }
 
 }

@@ -40,13 +40,11 @@ import java.util.WeakHashMap;
  */
 public class Cache2kCachingProvider implements CachingProvider {
 
-  Cache2kManagerProvider forwardProvider;
-  Map<ClassLoader, Map<URI, JCacheManagerAdapter>> classLader2uri2cache =
-      new WeakHashMap<ClassLoader, Map<URI, JCacheManagerAdapter>>();
+  private final Cache2kManagerProvider forwardProvider =
+    SingleProviderResolver.resolveMandatory(Cache2kCoreProvider.class).getManagerProvider();
 
-  {
-    forwardProvider = SingleProviderResolver.getInstance().resolve(Cache2kCoreProvider.class).getManagerProvider();
-  }
+  private final Map<ClassLoader, Map<URI, JCacheManagerAdapter>> classLoader2uri2cache =
+      new WeakHashMap<ClassLoader, Map<URI, JCacheManagerAdapter>>();
 
   private Object getLockObject() {
     return ((Cache2kManagerProviderImpl) forwardProvider).getLockObject();
@@ -73,10 +71,10 @@ public class Cache2kCachingProvider implements CachingProvider {
       cl = getDefaultClassLoader();
     }
     synchronized (getLockObject()) {
-      Map<URI, JCacheManagerAdapter> map = classLader2uri2cache.get(cl);
+      Map<URI, JCacheManagerAdapter> map = classLoader2uri2cache.get(cl);
       if (map == null) {
         map = new HashMap<URI, JCacheManagerAdapter>();
-        classLader2uri2cache.put(cl, map);
+        classLoader2uri2cache.put(cl, map);
       }
       JCacheManagerAdapter cm = map.get(uri);
       if (cm != null && !cm.isClosed()) {

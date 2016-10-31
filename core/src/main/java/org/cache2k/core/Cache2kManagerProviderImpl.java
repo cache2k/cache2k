@@ -39,24 +39,12 @@ import java.util.WeakHashMap;
 public class Cache2kManagerProviderImpl implements Cache2kManagerProvider {
 
   public final static String STANDARD_DEFAULT_MANAGER_NAME = "default";
-  static final CacheConfigurationProvider CACHE_CONFIGURATION_PROVIDER = createConfigurationProvider();
+  static final CacheConfigurationProvider CACHE_CONFIGURATION_PROVIDER =
+    SingleProviderResolver.resolve(CacheConfigurationProvider.class);
 
   private Object lock = new Object();
   private volatile Map<ClassLoader, String> defaultCacheName = Collections.EMPTY_MAP;
   private volatile Map<ClassLoader, Map<String, CacheManager>> loader2name2manager = Collections.EMPTY_MAP;
-
-  /**
-   * Ignore linkage error, if there is no config module present.
-   */
-  private static CacheConfigurationProvider createConfigurationProvider() {
-    try {
-      return
-        SingleProviderResolver.getInstance(CacheManagerImpl.class.getClassLoader())
-          .resolve(CacheConfigurationProvider.class);
-    } catch (LinkageError ex) {
-      return null;
-    }
-  }
 
   public Object getLockObject() {
     return lock;
