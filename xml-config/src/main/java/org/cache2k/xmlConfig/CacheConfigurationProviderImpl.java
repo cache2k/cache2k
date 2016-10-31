@@ -88,7 +88,9 @@ public class CacheConfigurationProviderImpl implements CacheConfigurationProvide
       if (!ctx.isConfigurationPresent()) {
         return;
       }
-      throw new CacheMisconfigurationException("Cache name missing, cannot apply XML configuration");
+      throw new CacheMisconfigurationException(
+        "Cache name missing, cannot apply XML configuration. " +
+        "Consider parameter: ignoreAnonymousCache");
     }
     ParsedConfiguration pc;
     pc = readManagerConfigurationWithExceptionHandling(mgr.getClassLoader(), getFileName(mgr));
@@ -98,7 +100,9 @@ public class CacheConfigurationProviderImpl implements CacheConfigurationProvide
       if (ctx.isIgnoreMissingCacheConfiguration()) {
         return;
       }
-      throw new ConfigurationException("Configuration for cache '" + _cacheName + "' is missing", pc.getSource());
+      throw new ConfigurationException(
+        "Configuration for cache '" + _cacheName + "' is missing. " +
+        "Consider parameter: ignoreMissingCacheConfiguration", pc.getSource());
     }
     apply(_cacheCfg, extractTemplates(pc), _bean);
   }
