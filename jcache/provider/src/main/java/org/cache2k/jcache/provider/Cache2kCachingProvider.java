@@ -105,7 +105,7 @@ public class Cache2kCachingProvider implements CachingProvider {
 
   @Override
   public URI getDefaultURI() {
-    String _defaultName = forwardProvider.getDefaultName();
+    String _defaultName = forwardProvider.getDefaultManagerName();
     URI _defaultUri = name2Uri(_defaultName);
     return _defaultUri;
   }

@@ -53,14 +53,14 @@ public abstract class CacheManager implements Iterable<Cache>, Closeable {
    * "org.cache2k.CacheManager.defaultName".
    */
   public static String getDefaultName() {
-    return PROVIDER.getDefaultName();
+    return PROVIDER.getDefaultManagerName();
   }
 
   /**
    * Reset the manager name once on application startup.
    */
   public static void setDefaultName(String s) {
-    PROVIDER.setDefaultName(s);
+    PROVIDER.setDefaultManagerName(s);
   }
 
   /**
@@ -73,6 +73,11 @@ public abstract class CacheManager implements Iterable<Cache>, Closeable {
   public static CacheManager getInstance(String _name) {
     return PROVIDER.getManager(null, _name);
   }
+
+  /**
+   * True if this is the default manager of the application, returned by {@link #getInstance()}
+   */
+  public abstract boolean isDefaultManager();
 
   /**
    * Return the effective default configuration for this manager. A different default

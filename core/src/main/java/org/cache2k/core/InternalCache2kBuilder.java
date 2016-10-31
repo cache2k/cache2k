@@ -131,8 +131,8 @@ public class InternalCache2kBuilder<K, V> {
 
   @SuppressWarnings({"unchecked", "SuspiciousToArrayCall"})
   public Cache<K, V> build() {
-    if (CacheManagerImpl.CACHE_CONFIGURATION_PROVIDER != null) {
-      CacheManagerImpl.CACHE_CONFIGURATION_PROVIDER.augmentConfiguration(manager, config);
+    if (Cache2kManagerProviderImpl.CACHE_CONFIGURATION_PROVIDER != null) {
+      Cache2kManagerProviderImpl.CACHE_CONFIGURATION_PROVIDER.augmentConfiguration(manager, config);
     }
     if (config.getValueType() == null) {
       config.setValueType(Object.class);

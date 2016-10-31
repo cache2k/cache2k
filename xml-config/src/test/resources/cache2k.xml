@@ -20,6 +20,7 @@
 <cache2k>
 
   <version>1.0</version>
+  <managerName>myApp</managerName>
 
   <defaults>
 

@@ -31,9 +31,9 @@ import java.util.Properties;
  */
 public interface Cache2kManagerProvider {
 
-  void setDefaultName(String s);
+  void setDefaultManagerName(String s);
 
-  String getDefaultName();
+  String getDefaultManagerName();
 
   CacheManager getManager(ClassLoader cl, String _name);
 

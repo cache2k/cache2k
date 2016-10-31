@@ -48,25 +48,10 @@ import java.util.concurrent.ExecutionException;
 @SuppressWarnings("WeakerAccess")
 public class CacheManagerImpl extends CacheManager {
 
-  static final CacheConfigurationProvider CACHE_CONFIGURATION_PROVIDER =
-    createConfigurationProvider();
   private static final Iterable<CacheLifeCycleListener> cacheLifeCycleListeners =
     constructAllServiceImplementations(CacheLifeCycleListener.class);
   private static final Iterable<CacheManagerLifeCycleListener> cacheManagerLifeCycleListeners =
     constructAllServiceImplementations(CacheManagerLifeCycleListener.class);
-
-  /**
-   * Ignore linkage error, if there is no config module present.
-   */
-  private static CacheConfigurationProvider createConfigurationProvider() {
-    try {
-      return
-        SingleProviderResolver.getInstance(CacheManagerImpl.class.getClassLoader())
-          .resolve(CacheConfigurationProvider.class);
-    } catch (LinkageError ex) {
-      return null;
-    }
-  }
 
   /**
    * The service loader works lazy, however, we want to have all implementations constructed.
@@ -110,11 +95,13 @@ public class CacheManagerImpl extends CacheManager {
   private ClassLoader classLoader;
   private String version;
   private String buildNumber;
+  private boolean defaultManager;
 
-  public CacheManagerImpl(ClassLoader cl, String _name) {
+  public CacheManagerImpl(ClassLoader cl, String _name, boolean _default) {
     if (cl == null) {
       cl = getClass().getClassLoader();
     }
+    defaultManager = _default;
     classLoader = cl;
     name = _name;
     log = Log.getLog(CacheManager.class.getName() + ':' + name);
@@ -217,9 +204,14 @@ public class CacheManagerImpl extends CacheManager {
   }
 
   @Override
+  public boolean isDefaultManager() {
+    return defaultManager;
+  }
+
+  @Override
   public Cache2kConfiguration getDefaultConfiguration() {
-    if (CACHE_CONFIGURATION_PROVIDER != null) {
-      return CACHE_CONFIGURATION_PROVIDER.getDefaultConfiguration(this);
+    if (Cache2kManagerProviderImpl.CACHE_CONFIGURATION_PROVIDER != null) {
+      return Cache2kManagerProviderImpl.CACHE_CONFIGURATION_PROVIDER.getDefaultConfiguration(this);
     }
     return new Cache2kConfiguration();
   }

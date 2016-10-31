@@ -32,6 +32,8 @@ import org.cache2k.configuration.Cache2kConfiguration;
  */
 public interface CacheConfigurationProvider {
 
+  String getDefaultManagerName();
+
   /**
    * A new configuration instance for mutation with default values. The default values
    * may differ per manager. The method gets called whenever a new cache is constructed

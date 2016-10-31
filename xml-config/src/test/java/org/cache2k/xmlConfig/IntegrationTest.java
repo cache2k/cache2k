@@ -37,6 +37,17 @@ import static org.hamcrest.CoreMatchers.*;
  */
 public class IntegrationTest {
 
+  /**
+   * The name of the default manager is set by the configuration.
+   */
+  @Test
+  public void defaultManagerName() {
+    Cache c = Cache2kBuilder.forUnknownTypes().name("flowers").build();
+    assertTrue("default manager", c.getCacheManager().isDefaultManager());
+    assertEquals("myApp", c.getCacheManager().getName());
+    c.close();
+  }
+
   @Test
   public void defaultIsApplied() {
     assertEquals(1234, new Cache2kBuilder<String, String>(){}.toConfiguration().getEntryCapacity());
