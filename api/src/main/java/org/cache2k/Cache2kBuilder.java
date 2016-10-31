@@ -156,7 +156,7 @@ public class Cache2kBuilder<K, V> implements Cloneable {
   private Cache2kConfiguration<K, V> config() {
     if (config == null) {
       if (manager == null) {
-        manager = CORE_PROVIDER.getManagerProvider().getDefaultManager();
+        manager = CacheManager.getInstance();
       }
       config = manager.getDefaultConfiguration();
       if (keyType != null) {

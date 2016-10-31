@@ -59,7 +59,7 @@ public class CacheConfigurationProviderImpl implements CacheConfigurationProvide
   }
 
   @Override
-  public String getDefaultManagerName() {
+  public String getDefaultManagerName(ClassLoader cl) {
     synchronized (this) {
       defaultManagerContext = createContext(null, DEFAULT_CONFIGURATION_FILE);
     }

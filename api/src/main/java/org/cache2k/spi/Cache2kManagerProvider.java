@@ -31,19 +31,17 @@ import java.util.Properties;
  */
 public interface Cache2kManagerProvider {
 
-  void setDefaultManagerName(String s);
+  void setDefaultManagerName(ClassLoader cl, String s);
 
-  String getDefaultManagerName();
+  String getDefaultManagerName(ClassLoader cl);
 
   CacheManager getManager(ClassLoader cl, String _name);
 
-  CacheManager getDefaultManager();
-
   ClassLoader getDefaultClassLoader();
 
-  void close(ClassLoader l);
-
   void close();
+
+  void close(ClassLoader l);
 
   void close(ClassLoader l, String _name);
 

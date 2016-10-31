@@ -32,7 +32,7 @@ import org.cache2k.configuration.Cache2kConfiguration;
  */
 public interface CacheConfigurationProvider {
 
-  String getDefaultManagerName();
+  String getDefaultManagerName(ClassLoader classLoader);
 
   /**
    * A new configuration instance for mutation with default values. The default values

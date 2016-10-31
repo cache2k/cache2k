@@ -25,6 +25,7 @@ import org.cache2k.core.spi.CacheConfigurationProvider;
 import org.cache2k.spi.Cache2kManagerProvider;
 import org.cache2k.spi.SingleProviderResolver;
 
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -41,11 +42,9 @@ public class Cache2kManagerProviderImpl implements Cache2kManagerProvider {
   static final CacheConfigurationProvider CACHE_CONFIGURATION_PROVIDER =
     createConfigurationProvider();
 
-  private CacheManager defaultManager;
-  private String defaultManagerName = null;
-  private String differentDefaultManagerName;
-  private Map<ClassLoader, Map<String, CacheManager>> loader2name2manager =
-      new WeakHashMap<ClassLoader, Map<String, CacheManager>>();
+  private Object lock = new Object();
+  private volatile Map<ClassLoader, String> defaultCacheName = Collections.EMPTY_MAP;
+  private volatile Map<ClassLoader, Map<String, CacheManager>> loader2name2manager = Collections.EMPTY_MAP;
 
   /**
    * Ignore linkage error, if there is no config module present.
@@ -61,33 +60,41 @@ public class Cache2kManagerProviderImpl implements Cache2kManagerProvider {
   }
 
   public Object getLockObject() {
-    return loader2name2manager;
+    return lock;
   }
 
-  public void setDefaultManagerName(String s) {
-    if (defaultManagerName != null) {
-      throw new IllegalStateException("a CacheManager was already created");
-    }
-    differentDefaultManagerName = s;
-  }
-
-  public String getDefaultManagerName() {
+  @Override
+  public void setDefaultManagerName(ClassLoader cl, String s) {
     synchronized (getLockObject()) {
-      if (defaultManagerName == null) {
-        return defaultManagerName = getEffectiveManagerName();
+      if (defaultCacheName.containsKey(cl)) {
+        throw new IllegalStateException("a CacheManager was already created");
       }
-      return defaultManagerName;
+      defaultCacheName.put(cl, s);
     }
   }
 
-  private String getEffectiveManagerName() {
-    if (differentDefaultManagerName != null) {
-      return differentDefaultManagerName;
+  @Override
+  public String getDefaultManagerName(ClassLoader cl) {
+    String n = defaultCacheName.get(cl);
+    if (n != null) {
+      return n;
     }
-    if (CACHE_CONFIGURATION_PROVIDER != null && CACHE_CONFIGURATION_PROVIDER.getDefaultManagerName() != null) {
-      return CACHE_CONFIGURATION_PROVIDER.getDefaultManagerName();
+    synchronized (getLockObject()) {
+      n = defaultCacheName.get(cl);
+      if (n != null) {
+        return n;
+      }
+      if (CACHE_CONFIGURATION_PROVIDER != null) {
+        n = CACHE_CONFIGURATION_PROVIDER.getDefaultManagerName(cl);
+      }
+      if (n == null) {
+        n = STANDARD_DEFAULT_MANAGER_NAME;
+      }
+      Map<ClassLoader, String> _copy = new HashMap<ClassLoader, String>(defaultCacheName);
+      _copy.put(cl, n);
+      defaultCacheName = _copy;
     }
-    return STANDARD_DEFAULT_MANAGER_NAME;
+    return n;
   }
 
   @Override
@@ -97,35 +104,42 @@ public class Cache2kManagerProviderImpl implements Cache2kManagerProvider {
 
   @Override
   public CacheManager getManager(ClassLoader cl, String _name) {
-    return getManager(cl, _name,
-      (cl == null || getDefaultClassLoader().equals(cl)) &&
-      getDefaultManagerName().equals(_name));
+    if (cl == null) {
+      throw new NullPointerException("classloader is null");
+    }
+    return getManager(cl, _name, getDefaultManagerName(cl).equals(_name));
   }
 
   public CacheManager getManager(ClassLoader cl, String _name, boolean _default) {
+    CacheManager mgr;
+    Map<String, CacheManager> _loader2managers = loader2name2manager.get(cl);
+    if (_loader2managers != null) {
+      mgr = _loader2managers.get(_name);
+      if (mgr != null) {
+        return mgr;
+      }
+    }
     synchronized (getLockObject()) {
-      if (cl == null) {
-        cl = getDefaultClassLoader();
+      _loader2managers = loader2name2manager.get(cl);
+      if (_loader2managers != null) {
+        mgr = _loader2managers.get(_name);
+        if (mgr != null) {
+          return mgr;
+        }
       }
-      Map<String, CacheManager> map = loader2name2manager.get(cl);
-      if (map == null) {
-        loader2name2manager.put(cl, map = new HashMap<String, CacheManager>());
+      if (_loader2managers != null) {
+        _loader2managers = new HashMap<String, CacheManager>(_loader2managers);
+      } else {
+        _loader2managers = new HashMap<String, CacheManager>();
       }
-      CacheManager cm = map.get(_name);
-      if (cm == null) {
-        cm = new CacheManagerImpl(cl, _name, _default);
-        map.put(_name, cm);
-      }
-      return cm;
+      mgr = new CacheManagerImpl(cl, _name, _default);
+      _loader2managers.put(_name, mgr);
+      Map<ClassLoader, Map<String, CacheManager>> _copy =
+        new WeakHashMap<ClassLoader, Map<String, CacheManager>>(loader2name2manager);
+      _copy.put(cl, _loader2managers);
+      loader2name2manager = _copy;
     }
-  }
-
-  @Override
-  public CacheManager getDefaultManager() {
-    if (defaultManager != null) {
-      return defaultManager;
-    }
-    return defaultManager = getManager(getDefaultClassLoader(), getDefaultManagerName(), true);
+    return mgr;
   }
 
   /**

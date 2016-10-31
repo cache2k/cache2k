@@ -53,25 +53,26 @@ public abstract class CacheManager implements Iterable<Cache>, Closeable {
    * "org.cache2k.CacheManager.defaultName".
    */
   public static String getDefaultName() {
-    return PROVIDER.getDefaultManagerName();
+    return PROVIDER.getDefaultManagerName(PROVIDER.getDefaultClassLoader());
   }
 
   /**
    * Reset the manager name once on application startup.
    */
   public static void setDefaultName(String s) {
-    PROVIDER.setDefaultManagerName(s);
+    PROVIDER.setDefaultManagerName(PROVIDER.getDefaultClassLoader(), s);
   }
 
   /**
    * Get the default cache manager for the current class loader
    */
   public static CacheManager getInstance() {
-    return PROVIDER.getDefaultManager();
+    ClassLoader _defaultClassLoader = PROVIDER.getDefaultClassLoader();
+    return PROVIDER.getManager(_defaultClassLoader, PROVIDER.getDefaultManagerName(_defaultClassLoader));
   }
 
   public static CacheManager getInstance(String _name) {
-    return PROVIDER.getManager(null, _name);
+    return PROVIDER.getManager(PROVIDER.getDefaultClassLoader(), _name);
   }
 
   /**
