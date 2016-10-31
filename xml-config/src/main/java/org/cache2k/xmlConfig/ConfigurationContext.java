@@ -36,6 +36,7 @@ class ConfigurationContext {
   private boolean skipCheckOnStartup = false;
   private boolean ignoreAnonymousCache = false;
   private boolean configurationPresent = false;
+  private ClassLoader classLoader;
   private Cache2kConfiguration<?, ?> defaultManagerConfiguration;
 
   public Cache2kConfiguration<?, ?> getDefaultManagerConfiguration() {
@@ -94,4 +95,11 @@ class ConfigurationContext {
     configurationPresent = _configurationPresent;
   }
 
+  public ClassLoader getClassLoader() {
+    return classLoader;
+  }
+
+  public void setClassLoader(final ClassLoader _classLoader) {
+    classLoader = _classLoader;
+  }
 }

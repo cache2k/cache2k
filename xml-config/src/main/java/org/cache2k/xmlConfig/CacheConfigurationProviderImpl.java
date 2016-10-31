@@ -45,7 +45,7 @@ import java.util.Map;
  */
 public class CacheConfigurationProviderImpl implements CacheConfigurationProvider {
 
-  private static final String DEFAULT_CONFIGURATION_FILE = "/cache2k.xml";
+  private static final String DEFAULT_CONFIGURATION_FILE = "cache2k.xml";
   private PropertyParser propertyParser = new StandardPropertyParser();
   private TokenizerFactory tokenizerFactory = new FlexibleXmlTokenizerFactory();
   private volatile Map<Class<?>, BeanPropertyMutator> type2mutator = new HashMap<Class<?>, BeanPropertyMutator>();
@@ -61,7 +61,7 @@ public class CacheConfigurationProviderImpl implements CacheConfigurationProvide
   @Override
   public String getDefaultManagerName(ClassLoader cl) {
     synchronized (this) {
-      defaultManagerContext = createContext(null, DEFAULT_CONFIGURATION_FILE);
+      defaultManagerContext = createContext(cl, null, DEFAULT_CONFIGURATION_FILE);
     }
     return defaultManagerContext.getManagerName();
   }
@@ -91,7 +91,7 @@ public class CacheConfigurationProviderImpl implements CacheConfigurationProvide
       throw new CacheMisconfigurationException("Cache name missing, cannot apply XML configuration");
     }
     ParsedConfiguration pc;
-    pc = readManagerConfigurationWithExceptionHandling(getFileName(mgr));
+    pc = readManagerConfigurationWithExceptionHandling(mgr.getClassLoader(), getFileName(mgr));
     ParsedConfiguration _cacheCfg = extractCacheSection(pc);
     if (_cacheCfg != null) { _cacheCfg = _cacheCfg.getSection(_cacheName); }
     if (_cacheCfg == null) {
@@ -107,11 +107,11 @@ public class CacheConfigurationProviderImpl implements CacheConfigurationProvide
     if (mgr.isDefaultManager()) {
       return DEFAULT_CONFIGURATION_FILE;
     }
-    return "/cache2k-" + mgr.getName() + ".xml";
+    return "cache2k-" + mgr.getName() + ".xml";
   }
 
-  private ParsedConfiguration readManagerConfiguration(final String _fileName) throws Exception {
-    InputStream is = this.getClass().getResourceAsStream(_fileName);
+  private ParsedConfiguration readManagerConfiguration(ClassLoader cl, final String _fileName) throws Exception {
+    InputStream is = cl.getResourceAsStream(_fileName);
     if (is == null) {
       return null;
     }
@@ -154,7 +154,7 @@ public class CacheConfigurationProviderImpl implements CacheConfigurationProvide
       if (mgr.isDefaultManager() && defaultManagerContext != null) {
         ctx = defaultManagerContext;
       } else {
-        ctx = createContext(mgr.getName(), getFileName(mgr));
+        ctx = createContext(mgr.getClassLoader(), mgr.getName(), getFileName(mgr));
       }
       Map<CacheManager, ConfigurationContext> m2 =
         new HashMap<CacheManager, ConfigurationContext>(manager2defaultConfig);
@@ -164,9 +164,10 @@ public class CacheConfigurationProviderImpl implements CacheConfigurationProvide
     }
   }
 
-  private ConfigurationContext createContext(String _managerName, String _fileName_fileName) {
-    ParsedConfiguration pc = readManagerConfigurationWithExceptionHandling(_fileName_fileName);
+  private ConfigurationContext createContext(ClassLoader cl, String _managerName, String _fileName_fileName) {
+    ParsedConfiguration pc = readManagerConfigurationWithExceptionHandling(cl, _fileName_fileName);
     ConfigurationContext ctx = new ConfigurationContext();
+    ctx.setClassLoader(cl);
     Cache2kConfiguration _defaultConfiguration = new Cache2kConfiguration();
     ctx.setManagerName(_managerName);
     if (pc != null) {
@@ -181,10 +182,10 @@ public class CacheConfigurationProviderImpl implements CacheConfigurationProvide
     return ctx;
   }
 
-  private ParsedConfiguration readManagerConfigurationWithExceptionHandling(final String _fileName) {
+  private ParsedConfiguration readManagerConfigurationWithExceptionHandling(final ClassLoader cl, final String _fileName) {
     ParsedConfiguration pc;
     try {
-      pc = readManagerConfiguration(_fileName);
+      pc = readManagerConfiguration(cl, _fileName);
     } catch (CacheException ex) {
       throw ex;
     } catch (Exception ex) {
