@@ -77,7 +77,7 @@ public class Cache2kManagerProviderImpl implements Cache2kManagerProvider {
       if (n == null) {
         n = STANDARD_DEFAULT_MANAGER_NAME;
       }
-      Map<ClassLoader, String> _copy = new HashMap<ClassLoader, String>(defaultCacheName);
+      Map<ClassLoader, String> _copy = new WeakHashMap<ClassLoader, String>(defaultCacheName);
       _copy.put(cl, n);
       defaultCacheName = _copy;
     }
