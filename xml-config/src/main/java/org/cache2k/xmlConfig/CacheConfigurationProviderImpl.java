@@ -80,29 +80,29 @@ public class CacheConfigurationProviderImpl implements CacheConfigurationProvide
   @Override
   public <K, V> void augmentConfiguration(final CacheManager mgr, final Cache2kConfiguration<K, V> _bean) {
     ConfigurationContext ctx =  getManagerContext(mgr);
+    if (!ctx.isConfigurationPresent()) {
+      return;
+    }
     final String _cacheName = _bean.getName();
     if (_cacheName == null) {
       if (ctx.isIgnoreAnonymousCache()) {
-        return;
-      }
-      if (!ctx.isConfigurationPresent()) {
         return;
       }
       throw new CacheMisconfigurationException(
         "Cache name missing, cannot apply XML configuration. " +
         "Consider parameter: ignoreAnonymousCache");
     }
-    ParsedConfiguration pc;
-    pc = readManagerConfigurationWithExceptionHandling(mgr.getClassLoader(), getFileName(mgr));
+    ParsedConfiguration pc = readManagerConfigurationWithExceptionHandling(mgr.getClassLoader(), getFileName(mgr));
     ParsedConfiguration _cacheCfg = extractCacheSection(pc);
     if (_cacheCfg != null) { _cacheCfg = _cacheCfg.getSection(_cacheName); }
     if (_cacheCfg == null) {
       if (ctx.isIgnoreMissingCacheConfiguration()) {
         return;
       }
-      throw new ConfigurationException(
+      String _exeptionText =
         "Configuration for cache '" + _cacheName + "' is missing. " +
-        "Consider parameter: ignoreMissingCacheConfiguration", pc.getSource());
+          "Consider parameter: ignoreMissingCacheConfiguration";
+      throw new ConfigurationException(_exeptionText, pc.getSource());
     }
     apply(_cacheCfg, extractTemplates(pc), _bean);
   }

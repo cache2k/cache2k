@@ -237,9 +237,17 @@ public class Cache2kBuilder<K, V> implements Cloneable {
    *
    * <p>See {@link #name(String)} for a general discussion about cache names.
    *
+   * @param _uniqueName unique name differentiating multiple components of the same type.
+   *                    May be {@code null}.
    * @see #name(String)
    */
   public final Cache2kBuilder<K, V> name(String _uniqueName, Class<?> _class, String _fieldName) {
+    if (_fieldName == null) {
+      throw new NullPointerException();
+    }
+    if (_uniqueName == null) {
+      return name(_class, _fieldName);
+    }
     config().setName(_uniqueName + '~' + _class.getName() + "." + _fieldName);
     return this;
   }
@@ -253,6 +261,9 @@ public class Cache2kBuilder<K, V> implements Cloneable {
    * @see #name(String)
    */
   public final Cache2kBuilder<K, V> name(Class<?> _class, String _fieldName) {
+    if (_fieldName == null) {
+      throw new NullPointerException();
+    }
     config().setName(_class.getName() + "." + _fieldName);
     return this;
   }

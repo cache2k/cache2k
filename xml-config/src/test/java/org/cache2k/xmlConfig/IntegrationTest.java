@@ -249,4 +249,22 @@ public class IntegrationTest {
     c.close();
   }
 
+  @Test (expected = ConfigurationException.class)
+  public void empty() {
+    Cache c = new Cache2kBuilder<String, String>() { }
+      .manager(CacheManager.getInstance("empty"))
+      .name("anyCache")
+      .build();
+    c.close();
+  }
+
+  @Test
+  public void notPresent() {
+    Cache c = new Cache2kBuilder<String, String>() { }
+      .manager(CacheManager.getInstance("notPresent"))
+      .name("anyCache")
+      .build();
+    c.close();
+  }
+
 }

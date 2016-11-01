@@ -62,6 +62,7 @@ public interface AdvancedKeyValueSource<K,V> extends KeyValueSource<K,V> {
    *
    * @see Cache#prefetchAll(Iterable)
    */
+
   void prefetchAll(Iterable<? extends K> keys);
 
   /**
