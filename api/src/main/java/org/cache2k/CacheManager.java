@@ -48,19 +48,26 @@ public abstract class CacheManager implements Iterable<Cache>, Closeable {
   }
 
   /**
-   * Name of the default cache manager, which is "default" by default. It is also possible
-   * to set the default manager name via JNDI context "java:comp/env" and name
-   * "org.cache2k.CacheManager.defaultName".
+   * Name of the default cache manager, which is "default" by default.
    */
   public static String getDefaultName() {
     return PROVIDER.getDefaultManagerName(PROVIDER.getDefaultClassLoader());
   }
 
   /**
-   * Reset the manager name once on application startup.
+   * Change the default manager name. The method can only be called once early in application startup,
+   * before the default manager instance is requested.
+   *
+   * <p>With the server-side addon it is also possible to set the default manager name via JNDI context
+   * "java:comp/env" and name "org.cache2k.CacheManager.defaultName".
+   *
+   * <p>The allowed characters in a manager name are identical to the characters in a cache name, this is
+   * documented at {@link Cache2kBuilder#name(String)}
+   *
+   * @see Cache2kBuilder#name(String)
    */
-  public static void setDefaultName(String s) {
-    PROVIDER.setDefaultManagerName(PROVIDER.getDefaultClassLoader(), s);
+  public static void setDefaultName(String managerName) {
+    PROVIDER.setDefaultManagerName(PROVIDER.getDefaultClassLoader(), managerName);
   }
 
   /**
@@ -71,8 +78,15 @@ public abstract class CacheManager implements Iterable<Cache>, Closeable {
     return PROVIDER.getManager(_defaultClassLoader, PROVIDER.getDefaultManagerName(_defaultClassLoader));
   }
 
-  public static CacheManager getInstance(String _name) {
-    return PROVIDER.getManager(PROVIDER.getDefaultClassLoader(), _name);
+  /**
+   * Retrieve a cache manager with the specified name. If not existing, a manager with that name
+   * is created.
+   *
+   *  <p>The allowed characters in a manager name are identical to the characters in a cache name, this is
+   * documented at {@link Cache2kBuilder#name(String)}
+   */
+  public static CacheManager getInstance(String managerName) {
+    return PROVIDER.getManager(PROVIDER.getDefaultClassLoader(), managerName);
   }
 
   /**

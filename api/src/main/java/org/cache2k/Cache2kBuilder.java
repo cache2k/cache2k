@@ -173,13 +173,15 @@ public class Cache2kBuilder<K, V> implements Cloneable {
    * The manager, the created cache will belong to. If this is set, it must be the
    * first method called.
    *
+   * @param manager The manager the created cache should belong to,
+   *                or {@code null} if the default cache manager should be used
    * @throws IllegalStateException if the manager is not provided immediately after the builder is created.
    */
-  public final Cache2kBuilder<K, V> manager(CacheManager m) {
-    if (manager != null) {
+  public final Cache2kBuilder<K, V> manager(CacheManager manager) {
+    if (this.manager != null) {
       throw new IllegalStateException("manager() must be first operation on builder.");
     }
-    manager = m;
+    this.manager = manager;
     return this;
   }
 
@@ -230,7 +232,21 @@ public class Cache2kBuilder<K, V> implements Cloneable {
   }
 
   /**
-   * Constructs a cache name out of the class name and fieldname.
+   * Constructs a cache name out of the class name, a field name and a unique name identifying the
+   * component in the application. Result example: {@code webImagePool~com.example.ImagePool.id2Image}
+   *
+   * <p>See {@link #name(String)} for a general discussion about cache names.
+   *
+   * @see #name(String)
+   */
+  public final Cache2kBuilder<K, V> name(String _uniqueName, Class<?> _class, String _fieldName) {
+    config().setName(_uniqueName + '~' + _class.getName() + "." + _fieldName);
+    return this;
+  }
+
+  /**
+   * Constructs a cache name out of the class name and field name. Result example:
+   * {@code com.example.ImagePool.id2Image}
    *
    * <p>See {@link #name(String)} for a general discussion about cache names.
    *
@@ -256,8 +272,7 @@ public class Cache2kBuilder<K, V> implements Cloneable {
   /**
    * Sets the name of a cache. If a name is specified it must be ensured it is unique within
    * the cache manager. Cache names are used at several places to have a unique ID of a cache.
-   * For example, to register JMX beans. Another usage is derive a filename for a persistence
-   * cache.
+   * For example, for referencing additional configuration or to register JMX beans.
    *
    * <p>If a name is not specified the cache generates a name automatically. The name is
    * inferred from the call stack trace and contains the simple class name, the method and
@@ -273,9 +288,12 @@ public class Cache2kBuilder<K, V> implements Cloneable {
    *
    * <p>Allowed characters for a cache name, are URL non-reserved characters,
    * these are: <code>[A-Z]</code>, <code>[a-z]</code>, <code>[0-9]</code> and <code>[~-_.]</code>,
-   * see RFC3986 as well as the characters: <code>[,()]</code>.
-   * The reason for restricting the characters in names, is that the names may be used to derive
-   * other resource names from it, e.g. for file based storage.
+   * see RFC3986 as well as the characters: <code>[,()]</code>. The reason for restricting the characters
+   * in names, is that the names may be used to derive other resource names from it, e.g. for
+   * file based storage. The allowed character set is not enforced, other then allowed characters might
+   * work or break depending of used addons and configuration.
+   *
+   * <p>The method is overloaded with variants to provide a naming convention of names.
    *
    * <p>For brevity within log messages and other displays the cache name may be
    * shortened if the manager name is included as prefix.
