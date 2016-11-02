@@ -85,7 +85,7 @@ public class JmxSupportTest {
   @Test
   public void multipleWarnings() throws Exception {
     final String _MANAGER_NAME = getClass().getName() + ".multipleWarnings";
-    final String _CACHE_NAME_BAD_HASING = "cacheWithBadHashing";
+    final String _CACHE_NAME_BAD_HASHING = "cacheWithBadHashing";
     final String _CACHE_NAME_KEY_MUTATION = "cacheWithKeyMutation";
     final String _CACHE_NAME_MULTIPLE_ISSUES = "cacheWithMultipleIssues";
     final String _SUPPRESS1 =  "org.cache2k.Cache/" + _MANAGER_NAME + ":" + _CACHE_NAME_KEY_MUTATION;
@@ -93,9 +93,9 @@ public class JmxSupportTest {
     Log.registerSuppression(_SUPPRESS1, new Log.SuppressionCounter());
     Log.registerSuppression(_SUPPRESS2, new Log.SuppressionCounter());
     CacheManager m = CacheManager.getInstance(_MANAGER_NAME);
-    Cache _cacheWithbadHashing = Cache2kBuilder.of(Object.class, Object.class)
+    Cache _cacheWithBadHashing = Cache2kBuilder.of(Object.class, Object.class)
       .manager(m)
-      .name(_CACHE_NAME_BAD_HASING)
+      .name(_CACHE_NAME_BAD_HASHING)
       .eternal(true)
       .build();
     Cache _cacheWithKeyMutation = Cache2kBuilder.of(Object.class, Object.class)
@@ -111,7 +111,7 @@ public class JmxSupportTest {
       .eternal(true)
       .build();
     for (int i = 0; i < 9; i++) {
-      _cacheWithbadHashing.put(new KeyForMutation(), 1);
+      _cacheWithBadHashing.put(new KeyForMutation(), 1);
     }
     for (int i = 0; i < 100; i++) {
       _cacheWithMultipleIssues.put(new KeyForMutation(), 1);
