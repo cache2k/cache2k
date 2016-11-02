@@ -139,13 +139,21 @@ public class JmxSupportTest {
     public int hashCode() { return value; }
   }
 
-  private MBeanInfo getCacheManagerInfo(String _name) throws Exception {
+  static MBeanInfo getCacheManagerInfo(String _name) throws Exception {
     ObjectName on = getCacheManagerObjectName(_name);
     return server.getMBeanInfo(on);
   }
 
-  private ObjectName getCacheManagerObjectName(final String _name) throws MalformedObjectNameException {
-    return new ObjectName("org.cache2k:type=CacheManager,name=" + _name);
+  private static ObjectName getCacheManagerObjectName(final String _name) throws MalformedObjectNameException {
+    if (needsQuoting(_name)) {
+      return new ObjectName("org.cache2k:type=CacheManager,name=\"" + _name + "\"");
+    } else {
+      return new ObjectName("org.cache2k:type=CacheManager,name=" + _name);
+    }
+  }
+
+  private static boolean needsQuoting(String _name) {
+    return _name.contains(",");
   }
 
   @Test(expected = InstanceNotFoundException.class)
@@ -239,14 +247,18 @@ public class JmxSupportTest {
     return server.getAttribute(objectName, _name);
   }
 
-  private MBeanInfo getCacheInfo(String _name) throws Exception {
+  static MBeanInfo getCacheInfo(String _name) throws Exception {
     MBeanServer mbs = ManagementFactory.getPlatformMBeanServer();
     ObjectName on = constructCacheObjectName(_name);
     return mbs.getMBeanInfo(on);
   }
 
-  private ObjectName constructCacheObjectName(final String _name) throws MalformedObjectNameException {
-    return new ObjectName("org.cache2k:type=Cache,manager=default,name=" + _name);
+  static ObjectName constructCacheObjectName(final String _name) throws MalformedObjectNameException {
+    if (needsQuoting(_name)) {
+      return new ObjectName("org.cache2k:type=Cache,manager=default,name=\"" + _name + "\"");
+    } else {
+      return new ObjectName("org.cache2k:type=Cache,manager=default,name=" + _name);
+    }
   }
 
   @Test(expected = InstanceNotFoundException.class)

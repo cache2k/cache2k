@@ -94,21 +94,6 @@ public class JmxSupport implements CacheLifeCycleListener, CacheManagerLifeCycle
     }
   }
 
-  private static String cacheManagerName(CacheManager cm) {
-    return
-      "org.cache2k" + ":" +
-      "type=CacheManager" +
-      ",name=" + cm.getName();
-  }
-
-  private static String cacheManagerNameWithClassLoaderNumber(CacheManager cm, int _classLoaderNumber) {
-    return
-      "org.cache2k" + ":" +
-      "type=CacheManager" +
-      ",name=" + cm.getName() +
-      ",uniqueClassLoaderNumber=" + _classLoaderNumber;
-  }
-
   /**
    * JSR107 allows cache managers with identical names within different class loaders.
    * If multiple class loaders are involved, we need to add a qualifier to separate the names.
@@ -131,22 +116,50 @@ public class JmxSupport implements CacheLifeCycleListener, CacheManagerLifeCycle
     return cacheManagerNameWithClassLoaderNumber(cm, no);
   }
 
+  private static String cacheManagerName(CacheManager cm) {
+    return
+      "org.cache2k" + ":" +
+        "type=CacheManager" +
+        ",name=" + sanitizeNameAsJmxValue(cm.getName());
+  }
+
+  private static String cacheManagerNameWithClassLoaderNumber(CacheManager cm, int _classLoaderNumber) {
+    return
+      "org.cache2k" + ":" +
+        "type=CacheManager" +
+        ",name=" + sanitizeNameAsJmxValue(cm.getName()) +
+        ",uniqueClassLoaderNumber=" + _classLoaderNumber;
+  }
+
   private synchronized String standardName(CacheManager cm, Cache c) {
     int _classLoaderNumber = getUniqueClassLoaderNumber(cm.getClassLoader());
     if (_classLoaderNumber == 1) {
       return
-          "org.cache2k" + ":" +
-              "type=Cache" +
-              ",manager=" + cm.getName() +
-              ",name=" + c.getName();
+        "org.cache2k" + ":" +
+          "type=Cache" +
+          ",manager=" + sanitizeNameAsJmxValue(cm.getName()) +
+          ",name=" + sanitizeNameAsJmxValue(c.getName());
     }
     return
-        "org.cache2k" + ":" +
+      "org.cache2k" + ":" +
         "type=Cache" +
-        ",manager=" + cm.getName() +
+        ",manager=" + sanitizeNameAsJmxValue(cm.getName()) +
         ",uniqueClassLoaderNumber=" + _classLoaderNumber +
-        ",name=" + c.getName();
+        ",name=" + sanitizeNameAsJmxValue(c.getName());
 
+  }
+
+  /**
+   * Names can be used as JMX values directly, but if containing a comma we need
+   * to do quoting.
+   *
+   * @see CacheManagerImpl#checkName(String)
+   */
+  private static String sanitizeNameAsJmxValue(String s) {
+    if (s.indexOf(',') >= 0) {
+      return '"' + s + '"';
+    }
+    return s;
   }
 
 }

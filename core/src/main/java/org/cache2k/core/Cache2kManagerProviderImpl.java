@@ -91,6 +91,7 @@ public class Cache2kManagerProviderImpl implements Cache2kManagerProvider {
 
   @Override
   public CacheManager getManager(ClassLoader cl, String _name) {
+    CacheManagerImpl.checkName(_name);
     if (cl == null) {
       throw new NullPointerException("classloader is null");
     }

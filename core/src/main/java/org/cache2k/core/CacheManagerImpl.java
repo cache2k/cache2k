@@ -141,16 +141,15 @@ public class CacheManagerImpl extends CacheManager {
   }
 
   /**
-   * Don't accept a cache name with too weird characters. Rather then escaping the
-   * name, so we can use it for JMX, it is better to just reject it.
+   * Don't accept a cache or manager names with too weird characters.
+   *
+   * @see org.cache2k.Cache2kBuilder#name(String)
    */
-  private void checkName(String s) {
+  public static void checkName(String s) {
     for (char c : s.toCharArray()) {
       if (c == '.' ||
           c == '-' ||
           c == '~' ||
-          c == '@' ||
-          c == ' ' ||
           c == ',' ||
           c == '(' ||
           c == ')'

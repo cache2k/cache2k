@@ -1,7 +1,7 @@
 == Logging
 
 The log output of cache2k is very sparse, however, some critical information could be send to the
-log, so proper logging is essential.
+log, so proper logging configuration is essential.
 
 === Supported Log Infrastructure
 
