@@ -556,7 +556,11 @@ public class WiredCache<K, V> extends AbstractCache<K, V>
 
   @Override
   public void close() {
-    heapCache.closePart1();
+    try {
+      heapCache.closePart1();
+    } catch (CacheClosedException ex) {
+      return;
+    }
     Future<Void> _waitForStorage = null;
     if (storage != null) {
       _waitForStorage = storage.shutdown();
