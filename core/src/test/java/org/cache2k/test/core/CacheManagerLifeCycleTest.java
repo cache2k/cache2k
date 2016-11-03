@@ -119,4 +119,20 @@ public class CacheManagerLifeCycleTest {
     assertFalse("no data", c.keys().iterator().hasNext());
   }
 
+  @Test
+  public void createCache() {
+    Cache c = CacheManager.getInstance().createCache(Cache2kBuilder.forUnknownTypes().name("dummy").toConfiguration());
+    assertEquals("dummy", c.getName());
+    c.close();
+  }
+
+  @Test
+  public void getActiveCaches() {
+    CacheManager.closeAll();
+    assertFalse(CacheManager.getInstance().getActiveCaches().iterator().hasNext());
+    Cache c = Cache2kBuilder.forUnknownTypes().build();
+    assertTrue(CacheManager.getInstance().getActiveCaches().iterator().hasNext());
+    c.close();
+  }
+
 }

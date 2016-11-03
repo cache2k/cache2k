@@ -32,7 +32,14 @@ import java.util.Properties;
 import java.util.ServiceLoader;
 
 /**
- * @author Jens Wilke; created: 2013-06-27
+ * A cache manager holds a set of caches. Caches within a cache manager share the
+ * same class loader and may have a different default configuration. If a cache manager
+ * is not specified a default manager is used.
+ *
+ * <p>Cache managers are identified by a unique name. If no name is specified the name
+ * {@code "default"} is used. The default name in use may be changed, see {@link #setDefaultName(String)}.
+ *
+ * @author Jens Wilke
  */
 public abstract class CacheManager implements Iterable<Cache>, Closeable {
 
@@ -58,8 +65,8 @@ public abstract class CacheManager implements Iterable<Cache>, Closeable {
    * Change the default manager name. The method can only be called once early in application startup,
    * before the default manager instance is requested.
    *
-   * <p>With the server-side addon it is also possible to set the default manager name via JNDI context
-   * "java:comp/env" and name "org.cache2k.CacheManager.defaultName".
+   * <p>It is also possible to set a different default manager name via JNDI context
+   * "java:comp/env" and name "org.cache2k.CacheManager.defaultName" or via the XML configuration.
    *
    * <p>The allowed characters in a manager name are identical to the characters in a cache name, this is
    * documented at {@link Cache2kBuilder#name(String)}
@@ -153,13 +160,25 @@ public abstract class CacheManager implements Iterable<Cache>, Closeable {
   /**
    * Returns all caches that were not closed before. If the cache manager is closed by itself, always
    * returns nothing.
+   *
+   * @deprecated use {@link #getActiveCaches()}
    */
   public abstract Iterator<Cache> iterator();
+
+  /**
+   * Returns all caches created in this cache manager instance.
+   */
+  public abstract Iterable<Cache> getActiveCaches();
 
   /**
    * Return a known cache that must be created before via the {@link Cache2kBuilder}.
    */
   public abstract <K,V> Cache<K,V> getCache(String name);
+
+  /**
+   * Create a new cache from the configuration.
+   */
+  public abstract <K,V> Cache<K,V> createCache(Cache2kConfiguration<K, V> cfg);
 
   /** Clear all caches associated to this cache manager */
   public abstract void clear();
