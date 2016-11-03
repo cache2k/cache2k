@@ -42,7 +42,7 @@ import java.util.Set;
 import java.util.concurrent.ExecutionException;
 
 /**
- * @author Jens Wilke; created: 2013-07-01
+ * @author Jens Wilke
  */
 @SuppressWarnings("WeakerAccess")
 public class CacheManagerImpl extends CacheManager {
@@ -158,7 +158,7 @@ public class CacheManagerImpl extends CacheManager {
       }
       if (!Character.isJavaIdentifierPart(c)) {
         throw new IllegalArgumentException(
-          "Cache name contains illegal chars: '" + c + "', name=\"" + s + "\"");
+          "Cache name contains illegal character: '" + c + "', name=\"" + s + "\"");
       }
     }
   }
@@ -222,6 +222,10 @@ public class CacheManagerImpl extends CacheManager {
 
   @Override
   public Iterator<Cache> iterator() {
+    return cachesCopy().iterator();
+  }
+
+  private Iterable<Cache> cachesCopy() {
     Set<Cache> _caches = new HashSet<Cache>();
     synchronized (lock) {
       if (!isClosed()) {
@@ -232,7 +236,7 @@ public class CacheManagerImpl extends CacheManager {
         }
       }
     }
-    return _caches.iterator();
+    return _caches;
   }
 
   @SuppressWarnings("unchecked")
@@ -246,11 +250,10 @@ public class CacheManagerImpl extends CacheManager {
 
   @Override
   public void clear() {
-    synchronized (lock) {
-      checkClosed();
-      for (Cache c : caches) {
+    for (Cache c : cachesCopy()) {
+      try {
         c.clear();
-      }
+      } catch (CacheClosedException ignore) { }
     }
   }
 
@@ -357,26 +360,6 @@ public class CacheManagerImpl extends CacheManager {
    */
   public Object getLockObject() {
     return lock;
-  }
-
-  class ExceptionWrapper implements Runnable {
-
-    Runnable runnable;
-
-    ExceptionWrapper(Runnable runnable) {
-      this.runnable = runnable;
-    }
-
-    @Override
-    public void run() {
-      try {
-        runnable.run();
-      } catch (CacheClosedException ignore) {
-       } catch (Throwable t) {
-        log.warn("Exception in thread \"" + Thread.currentThread().getName() + "\"", t);
-      }
-    }
-
   }
 
   private void checkClosed() {

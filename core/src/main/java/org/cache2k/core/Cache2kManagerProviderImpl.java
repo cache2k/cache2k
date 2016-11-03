@@ -141,6 +141,9 @@ public class Cache2kManagerProviderImpl implements Cache2kManagerProvider {
           CacheManager cm2 = it.next();
           if (cm == cm2) {
             it.remove();
+            if (cm.isDefaultManager()) {
+              defaultCacheName.remove(cm.getClassLoader());
+            }
           }
         }
       }
@@ -149,16 +152,7 @@ public class Cache2kManagerProviderImpl implements Cache2kManagerProvider {
 
   @Override
   public void close(ClassLoader l) {
-    Set<CacheManager> _managers = new HashSet<CacheManager>();
-    Map<String, CacheManager> map;
-    synchronized (getLockObject()) {
-      map = loader2name2manager.get(l);
-      if (map == null) {
-        return;
-      }
-      _managers.addAll(map.values());
-    }
-    for (CacheManager cm : _managers) {
+    for (CacheManager cm : loader2name2manager.get(l).values()) {
       cm.close();
     }
   }
@@ -171,14 +165,15 @@ public class Cache2kManagerProviderImpl implements Cache2kManagerProvider {
   }
 
   @Override
-  public void close(ClassLoader l, String _name) {
-    CacheManager cm;
-    synchronized (getLockObject()) {
-      Map<String, CacheManager> map = loader2name2manager.get(l);
-      if (map == null) { return; }
-      cm = map.get(_name);
-      if (cm == null) { return; }
+  public void close(ClassLoader cl, String _name) {
+    if (cl == null) {
+      cl = getDefaultClassLoader();
     }
+    CacheManager cm;
+    Map<String, CacheManager> map = loader2name2manager.get(cl);
+    if (map == null) { return; }
+    cm = map.get(_name);
+    if (cm == null) { return; }
     cm.close();
   }
 

@@ -115,6 +115,27 @@ public abstract class CacheManager implements Iterable<Cache>, Closeable {
   }
 
   /**
+   * Close all cache managers.
+   */
+  public static void closeAll() {
+    PROVIDER.close();
+  }
+
+  /**
+   * Close all cache manager associated with this class loader.
+   */
+  public static void closeAll(ClassLoader cl) {
+    PROVIDER.close(cl);
+  }
+
+  /**
+   * Close the named cache manager.
+   */
+  public static void close(ClassLoader cl, String name) {
+    PROVIDER.close(cl, name);
+  }
+
+  /**
    * True if this is the default manager of the application, returned by {@link #getInstance()}
    */
   public abstract boolean isDefaultManager();
@@ -123,7 +144,7 @@ public abstract class CacheManager implements Iterable<Cache>, Closeable {
    * Return the effective default configuration for this manager. A different default
    * configuration may be provided by the configuration system.
    *
-   * @return mutable configuration instance containing the effective configuration defaults
+   * @return mutable configuration instance containing the effective configuration defaults, never {@code null}
    */
   public abstract Cache2kConfiguration getDefaultConfiguration();
 
@@ -135,6 +156,9 @@ public abstract class CacheManager implements Iterable<Cache>, Closeable {
    */
   public abstract Iterator<Cache> iterator();
 
+  /**
+   * Return a known cache that must be created before via the {@link Cache2kBuilder}.
+   */
   public abstract <K,V> Cache<K,V> getCache(String name);
 
   /** Clear all caches associated to this cache manager */
@@ -146,9 +170,9 @@ public abstract class CacheManager implements Iterable<Cache>, Closeable {
   public abstract void destroy();
 
   /**
-   * Free all resources from managed caches. If there is unwritten data, it is flushed, if needed.
-   * Same as calling all {@link org.cache2k.Cache#close()} methods. Calling this method is more effective,
-   * since it tries to close all caches concurrently as fast as possible.
+   * Free all resources from managed caches. Same as calling all {@link org.cache2k.Cache#close()} methods.
+   * A closed manager cannot be use the create new caches. A new instance of the same name may be requested
+   * via {@link #getInstance(String)}.
    */
   public abstract void close();
 
@@ -158,6 +182,11 @@ public abstract class CacheManager implements Iterable<Cache>, Closeable {
    */
   public abstract boolean isDestroyed();
 
+  /**
+   * Returns true if this cache manager was closed.
+   *
+   * @see #close()
+   */
   public abstract boolean isClosed();
 
   /**
@@ -166,6 +195,9 @@ public abstract class CacheManager implements Iterable<Cache>, Closeable {
    */
   public abstract Properties getProperties();
 
+  /**
+   * Class loader this manager is using to load additional classes, resources or configuration.
+   */
   public abstract ClassLoader getClassLoader();
 
 }

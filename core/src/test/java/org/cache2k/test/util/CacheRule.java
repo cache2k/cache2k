@@ -34,6 +34,8 @@ import org.junit.runners.model.Statement;
 
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -53,8 +55,8 @@ public class CacheRule<K,V> implements TestRule {
   private Description description;
   private CacheType<K> keyType;
   private CacheType<V> valueType;
-  private Cache2kBuilder<K,V> builder;
   private Statistics statistics;
+  private List<Specialization> configurationSpecialization = new ArrayList<Specialization>();
 
   @SuppressWarnings("unchecked")
   protected CacheRule() {
@@ -64,7 +66,6 @@ public class CacheRule<K,V> implements TestRule {
       (CacheType<K>) CacheTypeCapture.of(_types[0]).getBeanRepresentation();
     valueType =
       (CacheType<V>) CacheTypeCapture.of(_types[1]).getBeanRepresentation();
-    builder = getInitialBuilder();
   }
 
   private Cache2kBuilder<K, V> getInitialBuilder() {
@@ -77,13 +78,18 @@ public class CacheRule<K,V> implements TestRule {
 
   public CacheRule<K,V> config(Specialization<K,V> rb) {
     checkAlready();
-    rb.extend(builder);
+    configurationSpecialization.add(rb);
     return this;
   }
 
   public CacheRule<K,V> enforecWiredCache() {
     checkAlready();
-    StaticUtil.enforceWiredCache(builder);
+    configurationSpecialization.add(new Specialization() {
+      @Override
+      public void extend(final Cache2kBuilder b) {
+        StaticUtil.enforceWiredCache(b);
+      }
+    });
     return this;
   }
 
@@ -223,16 +229,20 @@ public class CacheRule<K,V> implements TestRule {
 
   Cache<K, V> buildCache() {
     String _name = description.getTestClass().getName();
+    Cache2kBuilder b = getInitialBuilder();
+    for (Specialization sp : configurationSpecialization) {
+      sp.extend(b);
+    }
     if (shared) {
-      builder.name(description.getTestClass());
+      b.name(description.getTestClass());
       sharedCache.put(_name, _name);
     } else {
       if (sharedCache.containsKey(_name)) {
         throw new IllegalArgumentException("Shared cache usage: Method rule must be identical instance.");
       }
-      builder.name(description.getTestClass(), description.getMethodName());
+      b.name(description.getTestClass(), description.getMethodName());
     }
-    return builder.build();
+    return b.build();
   }
 
   public interface Specialization<K,V> {
