@@ -299,8 +299,8 @@ public class Cache2kBuilder<K, V> implements Cloneable {
    *
    * <p>Allowed characters for a cache name, are URL non-reserved characters,
    * these are: <code>[A-Z]</code>, <code>[a-z]</code>, <code>[0-9]</code> and <code>[~-_.]</code>,
-   * see RFC3986 as well as the characters: <code>[,()]</code>. However, the comma character should
-   * be avoided, since it leads to escaping of the JMX values.
+   * see RFC3986 as well as the characters: <code>[()]</code>. The characters <code>[@, ]</code> are supported
+   * as well, but should be avoided.
    *
    * <p>The reason for restricting the characters in names, is that the names may be used to derive
    * other resource names from it, e.g. for file based storage. The cache might not enforce the allowed

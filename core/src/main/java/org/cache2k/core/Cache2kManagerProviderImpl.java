@@ -120,7 +120,7 @@ public class Cache2kManagerProviderImpl implements Cache2kManagerProvider {
       } else {
         _loader2managers = new HashMap<String, CacheManager>();
       }
-      mgr = new CacheManagerImpl(cl, _name, _default);
+      mgr = new CacheManagerImpl(this, cl, _name, _default);
       _loader2managers.put(_name, mgr);
       Map<ClassLoader, Map<String, CacheManager>> _copy =
         new WeakHashMap<ClassLoader, Map<String, CacheManager>>(loader2name2manager);

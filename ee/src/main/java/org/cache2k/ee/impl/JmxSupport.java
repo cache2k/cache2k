@@ -21,26 +21,26 @@ package org.cache2k.ee.impl;
  */
 
 import org.cache2k.Cache;
+import org.cache2k.CacheException;
 import org.cache2k.CacheManager;
 import org.cache2k.core.spi.CacheLifeCycleListener;
 import org.cache2k.core.CacheManagerImpl;
-import org.cache2k.core.CacheManagerLifeCycleListener;
 import org.cache2k.core.InternalCache;
+import org.cache2k.core.spi.CacheManagerLifeCycleListener;
 
+import javax.management.InstanceAlreadyExistsException;
 import javax.management.InstanceNotFoundException;
 import javax.management.MBeanServer;
 import javax.management.ObjectName;
 import java.lang.management.ManagementFactory;
-import java.util.Map;
-import java.util.WeakHashMap;
 
 /**
  * Adds optional support for JMX.
+ *
+ * <p>Registering a name may fail because cache manager names may be identical in different
+ * class loaders.
  */
 public class JmxSupport implements CacheLifeCycleListener, CacheManagerLifeCycleListener {
-
-  int seenClassLoaderCount = 1;
-  Map<ClassLoader, Integer> classLoader2Integer = new WeakHashMap<ClassLoader, Integer>();
 
   @Override
   public void cacheCreated(Cache c) {
@@ -48,11 +48,12 @@ public class JmxSupport implements CacheLifeCycleListener, CacheManagerLifeCycle
     if (c instanceof InternalCache) {
       String _name = standardName(c.getCacheManager(), c);
       try {
-         mbs.registerMBean(
-           new CacheMXBeanImpl((InternalCache) c),
-           new ObjectName(_name));
+        mbs.registerMBean(
+          new CacheMXBeanImpl((InternalCache) c),
+          new ObjectName(_name));
+      } catch (InstanceAlreadyExistsException ignore) {
       } catch (Exception e) {
-        throw new IllegalStateException("Error registering JMX bean, name='" + _name + "'", e);
+        throw new CacheException("register JMX bean, ObjectName: " + _name, e);
       }
     }
   }
@@ -66,7 +67,7 @@ public class JmxSupport implements CacheLifeCycleListener, CacheManagerLifeCycle
         mbs.unregisterMBean(new ObjectName(_name));
       } catch (InstanceNotFoundException ignore) {
       } catch (Exception e) {
-        throw new IllegalStateException("Error deregistering JMX bean, name='" + _name + "'", e);
+        throw new CacheException("unregister JMX bean, ObjectName: " + _name, e);
       }
     }
   }
@@ -74,79 +75,43 @@ public class JmxSupport implements CacheLifeCycleListener, CacheManagerLifeCycle
   @Override
   public void managerCreated(CacheManager m) {
     MBeanServer mbs = ManagementFactory.getPlatformMBeanServer();
-    String _name = cacheManagerNameWithClassLoader(m);
+    ManagerMXBeanImpl _mBean = new ManagerMXBeanImpl((CacheManagerImpl) m);
+    String _name = managerName(m);
     try {
-      mbs.registerMBean(new ManagerMXBeanImpl((CacheManagerImpl) m),new ObjectName(_name));
+      mbs.registerMBean(_mBean, new ObjectName(_name));
+    } catch (InstanceAlreadyExistsException e) {
     } catch (Exception e) {
-      throw new IllegalStateException("Error register JMX bean, name='" + _name + "'", e);
+      throw new CacheException("register JMX bean, ObjectName: " + _name, e);
     }
   }
 
   @Override
   public void managerDestroyed(CacheManager m) {
     MBeanServer mbs = ManagementFactory.getPlatformMBeanServer();
-    String _name = cacheManagerNameWithClassLoader(m);
+    String _name = managerName(m);
     try {
-      mbs.unregisterMBean(new ObjectName(_name));
-    } catch (InstanceNotFoundException ignore) {
+      try {
+        mbs.unregisterMBean(new ObjectName(_name));
+      } catch (InstanceNotFoundException ignore) {
+      }
     } catch (Exception e) {
-      throw new IllegalStateException("Error unregister JMX bean, name='" + _name + "'", e);
+      throw new CacheException("Error unregister JMX bean, ObjectName: " + _name, e);
     }
   }
 
-  /**
-   * JSR107 allows cache managers with identical names within different class loaders.
-   * If multiple class loaders are involved, we need to add a qualifier to separate the names.
-   */
-  private synchronized int getUniqueClassLoaderNumber(ClassLoader _classLoader) {
-    Integer no = classLoader2Integer.get(_classLoader);
-    if (no == null) {
-      no = seenClassLoaderCount++;
-      classLoader2Integer.put(_classLoader, no);
-    }
-    return no;
-  }
-
-  private synchronized String cacheManagerNameWithClassLoader(CacheManager cm) {
-    ClassLoader _classLoader = cm.getClassLoader();
-    int no = getUniqueClassLoaderNumber(_classLoader);
-    if (no == 1) {
-      return cacheManagerName(cm);
-    }
-    return cacheManagerNameWithClassLoaderNumber(cm, no);
-  }
-
-  private static String cacheManagerName(CacheManager cm) {
+  private static String managerName(CacheManager cm) {
     return
       "org.cache2k" + ":" +
         "type=CacheManager" +
         ",name=" + sanitizeNameAsJmxValue(cm.getName());
   }
 
-  private static String cacheManagerNameWithClassLoaderNumber(CacheManager cm, int _classLoaderNumber) {
-    return
-      "org.cache2k" + ":" +
-        "type=CacheManager" +
-        ",name=" + sanitizeNameAsJmxValue(cm.getName()) +
-        ",uniqueClassLoaderNumber=" + _classLoaderNumber;
-  }
-
-  private synchronized String standardName(CacheManager cm, Cache c) {
-    int _classLoaderNumber = getUniqueClassLoaderNumber(cm.getClassLoader());
-    if (_classLoaderNumber == 1) {
-      return
-        "org.cache2k" + ":" +
-          "type=Cache" +
-          ",manager=" + sanitizeNameAsJmxValue(cm.getName()) +
-          ",name=" + sanitizeNameAsJmxValue(c.getName());
-    }
+  private String standardName(CacheManager cm, Cache c) {
     return
       "org.cache2k" + ":" +
         "type=Cache" +
         ",manager=" + sanitizeNameAsJmxValue(cm.getName()) +
-        ",uniqueClassLoaderNumber=" + _classLoaderNumber +
         ",name=" + sanitizeNameAsJmxValue(c.getName());
-
   }
 
   /**

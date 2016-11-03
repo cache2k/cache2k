@@ -24,11 +24,10 @@ import org.cache2k.Cache;
 import org.cache2k.CacheException;
 import org.cache2k.CacheManager;
 import org.cache2k.configuration.Cache2kConfiguration;
-import org.cache2k.core.spi.CacheConfigurationProvider;
 import org.cache2k.core.spi.CacheLifeCycleListener;
+import org.cache2k.core.spi.CacheManagerLifeCycleListener;
 import org.cache2k.core.util.Cache2kVersion;
 import org.cache2k.core.util.Log;
-import org.cache2k.spi.SingleProviderResolver;
 
 import java.lang.reflect.Array;
 import java.util.ArrayList;
@@ -96,11 +95,10 @@ public class CacheManagerImpl extends CacheManager {
   private String version;
   private String buildNumber;
   private boolean defaultManager;
+  private Cache2kManagerProviderImpl provider;
 
-  public CacheManagerImpl(ClassLoader cl, String _name, boolean _default) {
-    if (cl == null) {
-      cl = getClass().getClassLoader();
-    }
+  public CacheManagerImpl(Cache2kManagerProviderImpl _provider, ClassLoader cl, String _name, boolean _default) {
+    provider = _provider;
     defaultManager = _default;
     classLoader = cl;
     name = _name;
@@ -151,6 +149,8 @@ public class CacheManagerImpl extends CacheManager {
           c == '-' ||
           c == '~' ||
           c == ',' ||
+          c == '@' ||
+          c == ' ' ||
           c == '(' ||
           c == ')'
         ) {
@@ -401,6 +401,10 @@ public class CacheManagerImpl extends CacheManager {
 
   public String getBuildNumber() {
     return buildNumber;
+  }
+
+  public Cache2kManagerProviderImpl getProvider() {
+    return provider;
   }
 
 }

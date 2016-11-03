@@ -8,6 +8,9 @@ A good practise to avoid problems, is to set the cache manager name to a unique 
 The name of the default manager can be changed via JNDI, `CacheManager.setDefaultName()` or
 the XML configuration.
 
+If manager names within the platform are not unique an ambiguous situation exists that may lead to an
+exception or unusable JMX beans. Currently, naming conflicts are silently ignored.
+
 === Name quoting
 
 Cache and manager names may contain the comma character. If a comma is contained, then it will be quoted
