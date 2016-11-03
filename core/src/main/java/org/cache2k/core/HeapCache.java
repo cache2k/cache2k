@@ -374,18 +374,18 @@ public class HeapCache<K, V>
     close();
   }
 
-  public void closePart1() {
-    try {
-      executeWithGlobalLock(new Job<Void>() {
-        @Override
-        public Void call() {
-          shutdownInitiated = true;
-          return null;
-        }
-      });
-    } catch (CacheClosedException ex) {
-      return;
-    }
+  /**
+   *
+   * @throws CacheClosedException if cache is closed or closing is initiated by another thread.
+   */
+  public void closePart1() throws CacheClosedException {
+    executeWithGlobalLock(new Job<Void>() {
+      @Override
+      public Void call() {
+        shutdownInitiated = true;
+        return null;
+      }
+    });
     if (loaderExecutor instanceof ExecutorService) {
       ((ExecutorService) loaderExecutor).shutdown();
     }
@@ -394,7 +394,11 @@ public class HeapCache<K, V>
 
   @Override
   public void close() {
-    closePart1();
+    try {
+      closePart1();
+    } catch (CacheClosedException ex) {
+      return;
+    }
     closePart2();
   }
 
@@ -405,10 +409,7 @@ public class HeapCache<K, V>
         eviction.close();
         timing.shutdown();
         hash.close();
-        if (manager != null) {
-          manager.cacheDestroyed(HeapCache.this);
-          manager = null;
-        }
+        manager.cacheDestroyed(HeapCache.this);
         return null;
       }
     }, false);
