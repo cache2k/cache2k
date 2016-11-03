@@ -52,7 +52,7 @@
     <module>junit-util</module>
     <module>variant/all</module>
     <module>osgi-test</module>
-    <module>xml-config</module>
+    <module>xml-configuration</module>
     <module>doc</module>
     <module>jcache/provider</module>
     <module>jcache/tests</module>
