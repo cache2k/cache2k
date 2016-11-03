@@ -29,6 +29,8 @@ import org.cache2k.event.CacheEntryCreatedListener;
 import org.junit.Ignore;
 import org.junit.Test;
 import static org.junit.Assert.*;
+import static org.ops4j.pax.exam.CoreOptions.*;
+
 import org.ops4j.pax.exam.Configuration;
 import org.ops4j.pax.exam.Option;
 import org.ops4j.pax.exam.junit.PaxExam;
@@ -36,10 +38,6 @@ import org.ops4j.pax.exam.spi.reactors.ExamReactorStrategy;
 import org.ops4j.pax.exam.spi.reactors.PerMethod;
 
 import java.util.concurrent.atomic.AtomicInteger;
-
-import static org.ops4j.pax.exam.CoreOptions.options;
-import static org.ops4j.pax.exam.CoreOptions.junitBundles;
-import static org.ops4j.pax.exam.CoreOptions.bundle;
 
 /**
  * Test the OSGi enabled bundle. Tests are run via the failsafe maven plugin and not with
@@ -62,6 +60,8 @@ public class OsgiIT {
     }
     return options(
       bundle("file:///" + _workspaceDir + "/variant/all/target/cache2k-all-" + System.getProperty("cache2k.version") + ".jar"),
+
+
       junitBundles()
     );
   }
@@ -129,6 +129,16 @@ public class OsgiIT {
     assertEquals("123", c.peek("abc"));
     assertEquals(1, _count.get());
     c.close();
+  }
+
+  @Test
+  public void testDefaultCacheManager() {
+    assertEquals("default", CacheManager.getInstance().getName());
+  }
+
+  @Test
+  public void testConfigFileUsedDifferentManager() {
+    assertEquals("specialDefaultName", CacheManager.getInstance(OsgiIT.class.getClassLoader()).getName());
   }
 
 }

@@ -31,7 +31,7 @@ import org.cache2k.configuration.Cache2kConfiguration;
 class ConfigurationContext {
 
   private String version = null;
-  private String managerName = null;
+  private String defaultManagerName = null;
   private boolean ignoreMissingCacheConfiguration = false;
   private boolean skipCheckOnStartup = false;
   private boolean ignoreAnonymousCache = false;
@@ -55,12 +55,12 @@ class ConfigurationContext {
     ignoreMissingCacheConfiguration = _ignoreMissingCacheConfiguration;
   }
 
-  public String getManagerName() {
-    return managerName;
+  public String getDefaultManagerName() {
+    return defaultManagerName;
   }
 
-  public void setManagerName(final String _managerName) {
-    managerName = _managerName;
+  public void setDefaultManagerName(final String _defaultManagerName) {
+    defaultManagerName = _defaultManagerName;
   }
 
   public String getVersion() {

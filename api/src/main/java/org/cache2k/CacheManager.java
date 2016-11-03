@@ -71,7 +71,8 @@ public abstract class CacheManager implements Iterable<Cache>, Closeable {
   }
 
   /**
-   * Get the default cache manager for the current class loader
+   * Get the default cache manager for the default class loader. The default class loader
+   * is the class loader used to load the cache2k implementation classes.
    */
   public static CacheManager getInstance() {
     ClassLoader _defaultClassLoader = PROVIDER.getDefaultClassLoader();
@@ -79,14 +80,38 @@ public abstract class CacheManager implements Iterable<Cache>, Closeable {
   }
 
   /**
+   * Get the default cache manager for the specified class loader.
+   */
+  public static CacheManager getInstance(ClassLoader cl) {
+    return PROVIDER.getManager(cl, PROVIDER.getDefaultManagerName(cl));
+  }
+
+  /**
    * Retrieve a cache manager with the specified name. If not existing, a manager with that name
-   * is created.
+   * is created. The default class loader is used. The default class loader
+   * is the class loader used to load the cache2k implementation classes.
    *
-   *  <p>The allowed characters in a manager name are identical to the characters in a cache name, this is
+   * <p>The allowed characters in a manager name are identical to the characters in a cache name, this is
    * documented at {@link Cache2kBuilder#name(String)}
+   *
+   * @see Cache2kBuilder#name(String)
    */
   public static CacheManager getInstance(String managerName) {
     return PROVIDER.getManager(PROVIDER.getDefaultClassLoader(), managerName);
+  }
+
+  /**
+   * Retrieve a cache manager with the specified name using the specified classloader.
+   * If not existing, a manager with that name is created. Different cache managers are
+   * created for different class loaders. Manager names should be unique within one VM instance.
+   *
+   * <p>The allowed characters in a manager name are identical to the characters in a cache name, this is
+   * documented at {@link Cache2kBuilder#name(String)}
+   *
+   * @see Cache2kBuilder#name(String)
+   */
+  public static CacheManager getInstance(ClassLoader cl, String managerName) {
+    return PROVIDER.getManager(cl, managerName);
   }
 
   /**

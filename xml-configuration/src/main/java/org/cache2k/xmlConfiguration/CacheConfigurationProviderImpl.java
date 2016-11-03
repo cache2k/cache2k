@@ -63,7 +63,7 @@ public class CacheConfigurationProviderImpl implements CacheConfigurationProvide
     synchronized (this) {
       defaultManagerContext = createContext(cl, null, DEFAULT_CONFIGURATION_FILE);
     }
-    return defaultManagerContext.getManagerName();
+    return defaultManagerContext.getDefaultManagerName();
   }
 
   @Override
@@ -173,7 +173,7 @@ public class CacheConfigurationProviderImpl implements CacheConfigurationProvide
     ConfigurationContext ctx = new ConfigurationContext();
     ctx.setClassLoader(cl);
     Cache2kConfiguration _defaultConfiguration = new Cache2kConfiguration();
-    ctx.setManagerName(_managerName);
+    ctx.setDefaultManagerName(_managerName);
     if (pc != null) {
       applyDefaultConfigurationIfPresent(pc, _defaultConfiguration);
       apply(pc, null, ctx);
