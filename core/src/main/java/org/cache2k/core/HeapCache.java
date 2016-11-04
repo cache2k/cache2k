@@ -394,9 +394,6 @@ public class HeapCache<K, V>
 
   @Override
   public void close() {
-    if ("org.cache2k.test.core.BasicCacheOperationsTest".equals(getName())) {
-      System.out.println("closing");
-    }
     try {
       closePart1();
     } catch (CacheClosedException ex) {
