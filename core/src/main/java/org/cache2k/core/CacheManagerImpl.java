@@ -27,7 +27,6 @@ import org.cache2k.CacheManager;
 import org.cache2k.configuration.Cache2kConfiguration;
 import org.cache2k.core.spi.CacheLifeCycleListener;
 import org.cache2k.core.spi.CacheManagerLifeCycleListener;
-import org.cache2k.core.util.Cache2kVersion;
 import org.cache2k.core.util.Log;
 
 import java.lang.reflect.Array;
@@ -93,8 +92,6 @@ public class CacheManagerImpl extends CacheManager {
   private int disambiguationCounter = 1;
   private final Properties properties = new Properties();
   private ClassLoader classLoader;
-  private String version;
-  private String buildNumber;
   private boolean defaultManager;
   private Cache2kCoreProviderImpl provider;
   private boolean closing;
@@ -106,22 +103,23 @@ public class CacheManagerImpl extends CacheManager {
     classLoader = cl;
     name = _name;
     log = Log.getLog(CacheManager.class.getName() + ':' + name);
-    buildNumber = Cache2kVersion.getBuildNumber();
-    version = Cache2kVersion.getVersion();
-    StringBuilder sb = new StringBuilder();
-    sb.append("org.cache2k manager starting. ");
-    sb.append("name="); sb.append(name);
-    sb.append(", version="); sb.append(version);
-    sb.append(", build="); sb.append(buildNumber);
     boolean _traceCacheCreation = log.isDebugEnabled();
-    sb.append(", defaultImplementation=");
-    sb.append(HeapCache.TUNABLE.defaultImplementation.getSimpleName());
-    log.info(sb.toString());
+    boolean _assertionsEnabled = false;
+    _traceCacheCreation |= _assertionsEnabled;
     for (CacheManagerLifeCycleListener lc : cacheManagerLifeCycleListeners) {
       lc.managerCreated(this);
     }
     if (_traceCacheCreation) {
       name2CreationStackTrace = new HashMap<String, StackTrace>();
+    }
+    logPhase("open");
+  }
+
+  private void logPhase(String _phase) {
+    if (log.isDebugEnabled()) {
+      log.debug(_phase + " name=" + name +
+        ", id=" + Integer.toString(System.identityHashCode(this), 36) +
+        ", classloaderId=" + Integer.toString(System.identityHashCode(classLoader), 36));
     }
   }
 
@@ -303,6 +301,7 @@ public class CacheManagerImpl extends CacheManager {
       closing = true;
       closeStackTrace = new StackTrace();
     }
+    logPhase("close");
     List<Throwable> _suppressedExceptions = new ArrayList<Throwable>();
     for (Cache c : _caches) {
       ((InternalCache) c).cancelTimerJobs();
@@ -404,11 +403,11 @@ public class CacheManagerImpl extends CacheManager {
   }
 
   public String getVersion() {
-    return version;
+    return provider.getVersion();
   }
 
   public String getBuildNumber() {
-    return buildNumber;
+    return provider.getBuildNumber();
   }
 
   public Cache2kCoreProviderImpl getProvider() {

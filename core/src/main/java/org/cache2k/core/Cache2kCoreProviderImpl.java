@@ -24,6 +24,9 @@ import org.cache2k.Cache;
 import org.cache2k.CacheManager;
 import org.cache2k.configuration.Cache2kConfiguration;
 import org.cache2k.core.spi.CacheConfigurationProvider;
+import org.cache2k.core.spi.CacheManagerLifeCycleListener;
+import org.cache2k.core.util.Cache2kVersion;
+import org.cache2k.core.util.Log;
 import org.cache2k.spi.Cache2kCoreProvider;
 import org.cache2k.spi.SingleProviderResolver;
 
@@ -44,6 +47,22 @@ public class Cache2kCoreProviderImpl implements Cache2kCoreProvider {
   private Object lock = new Object();
   private volatile Map<ClassLoader, String> loader2defaultName = Collections.EMPTY_MAP;
   private volatile Map<ClassLoader, Map<String, CacheManager>> loader2name2manager = Collections.EMPTY_MAP;
+  private String version;
+  private String buildNumber;
+  private Log log;
+
+  {
+    log = Log.getLog(this.getClass());
+    buildNumber = Cache2kVersion.getBuildNumber();
+    version = Cache2kVersion.getVersion();
+    StringBuilder sb = new StringBuilder();
+    sb.append("cache2k starting. ");
+    sb.append("version="); sb.append(version);
+    sb.append(", build="); sb.append(buildNumber);
+    sb.append(", defaultImplementation=");
+    sb.append(HeapCache.TUNABLE.defaultImplementation.getSimpleName());
+    log.info(sb.toString());
+  }
 
   public Object getLockObject() {
     return lock;
@@ -177,6 +196,14 @@ public class Cache2kCoreProviderImpl implements Cache2kCoreProvider {
   @Override
   public <K, V> Cache<K, V> createCache(final CacheManager m, final Cache2kConfiguration<K, V> cfg) {
     return new InternalCache2kBuilder<K,V>(cfg, m).build();
+  }
+
+  public String getVersion() {
+    return version;
+  }
+
+  public String getBuildNumber() {
+    return buildNumber;
   }
 
 }
