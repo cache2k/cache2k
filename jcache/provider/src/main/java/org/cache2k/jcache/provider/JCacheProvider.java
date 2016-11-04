@@ -38,7 +38,7 @@ import java.util.WeakHashMap;
 /**
  * @author Jens Wilke; created: 2014-10-19
  */
-public class Cache2kCachingProvider implements CachingProvider {
+public class JCacheProvider implements CachingProvider {
 
   private final Cache2kManagerProvider forwardProvider =
     SingleProviderResolver.resolveMandatory(Cache2kCoreProvider.class).getManagerProvider();

@@ -58,7 +58,7 @@ public class JCacheManagerAdapter implements CacheManager {
   }
 
   private org.cache2k.CacheManager manager;
-  private Cache2kCachingProvider provider;
+  private JCacheProvider provider;
 
   /**
    * All caches. Currently closed caches stay in the map.
@@ -72,7 +72,7 @@ public class JCacheManagerAdapter implements CacheManager {
    */
   private volatile Map<org.cache2k.Cache, Cache> c2k2jCache = Collections.emptyMap();
 
-  public JCacheManagerAdapter(Cache2kCachingProvider p, org.cache2k.CacheManager cm) {
+  public JCacheManagerAdapter(JCacheProvider p, org.cache2k.CacheManager cm) {
     manager = cm;
     provider = p;
   }
