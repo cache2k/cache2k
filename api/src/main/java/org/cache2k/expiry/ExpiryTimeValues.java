@@ -56,7 +56,7 @@ public interface ExpiryTimeValues {
    *
    * <p>After the load operation is completed, the entry is in a special area and not accessible
    * by direct cache operations, meaning {@code containsKey} returns false. After an operation which
-   * triggers a load (e.g. {@code get} or {@code loadAll}, the entry is included in the cache.
+   * would regularly trigger a load (e.g. {@code get} or {@code loadAll}), the entry is present in the cache.
    */
   long REFRESH = 1;
 

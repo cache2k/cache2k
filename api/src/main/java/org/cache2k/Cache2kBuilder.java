@@ -343,7 +343,7 @@ public class Cache2kBuilder<K, V> implements Cloneable {
    * from the cache explicitly or will be evicted if capacity constraints are reached.
    * When no expiry is specified, eternal is the default.
    *
-   * <p>Setting eternal to false has no effect, instead configure a specific
+   * <p>Setting eternal to false has no effect, instead it is needed to configure a specific
    * expiry via {@link #expireAfterWrite(long, TimeUnit)}.
    *
    * <p>Exceptions: If there is no explicit expiry configured for exceptions
