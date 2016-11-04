@@ -575,7 +575,7 @@ public class WiredCache<K, V> extends AbstractCache<K, V>
     synchronized (lockObject()) {
       storage = null;
     }
-    heapCache.closePart2();
+    heapCache.closePart2(this);
   }
 
   private Object lockObject() {

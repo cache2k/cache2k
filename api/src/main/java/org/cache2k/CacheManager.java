@@ -42,10 +42,10 @@ import java.util.ServiceLoader;
  */
 public abstract class CacheManager implements Iterable<Cache>, Closeable {
 
-  static protected Cache2kCoreProvider PROVIDER =
-    SingleProviderResolver.resolveMandatory(Cache2kCoreProvider.class);
+  static protected final Cache2kCoreProvider PROVIDER;
 
   static {
+    PROVIDER = SingleProviderResolver.resolveMandatory(Cache2kCoreProvider.class);
     ServiceLoader<Cache2kExtensionProvider> _loader =
       ServiceLoader.load(Cache2kExtensionProvider.class, CacheManager.class.getClassLoader());
     for (Cache2kExtensionProvider p : _loader) {
@@ -191,6 +191,8 @@ public abstract class CacheManager implements Iterable<Cache>, Closeable {
    * Free all resources from managed caches. Same as calling all {@link org.cache2k.Cache#close()} methods.
    * A closed manager cannot be use the create new caches. A new instance of the same name may be requested
    * via {@link #getInstance(String)}.
+   *
+   * <p>Multiple calls to close have no effect.
    */
   public abstract void close();
 

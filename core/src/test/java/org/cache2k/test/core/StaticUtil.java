@@ -23,6 +23,7 @@ package org.cache2k.test.core;
 import org.cache2k.Cache;
 import org.cache2k.Cache2kBuilder;
 import org.cache2k.CacheEntry;
+import org.cache2k.CacheManager;
 import org.cache2k.event.CacheEntryRemovedListener;
 import org.cache2k.core.InternalCache;
 import org.cache2k.core.InternalCacheInfo;
@@ -31,6 +32,8 @@ import org.cache2k.CacheOperationCompletionListener;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
+
+import static org.junit.Assert.assertFalse;
 
 /**
  * @author Jens Wilke
@@ -56,6 +59,19 @@ public class StaticUtil {
 
       }
     });
+  }
+
+  public static void allCachesClosed() {
+    assertFalse("all caches closed",
+      CacheManager.getInstance().getActiveCaches().iterator().hasNext());
+  }
+
+  public static int count(Iterable<?> _things) {
+    int _counter = 0;
+    for (Object o : _things) {
+      _counter++;
+    }
+    return _counter;
   }
 
   public static Throwable loadAndWait(LoaderRunner x) {

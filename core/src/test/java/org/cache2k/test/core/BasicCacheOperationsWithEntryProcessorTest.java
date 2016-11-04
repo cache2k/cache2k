@@ -56,7 +56,7 @@ public class BasicCacheOperationsWithEntryProcessorTest extends BasicCacheOperat
   public static void setUp() {
     Cache<Integer, Integer>  c = Cache2kBuilder
             .of(Integer.class, Integer.class)
-            .name(BasicCacheOperationsTest.class)
+            .name(BasicCacheOperationsWithEntryProcessorTest.class)
             .retryInterval(Long.MAX_VALUE, TimeUnit.MILLISECONDS)
             .eternal(true)
             .entryCapacity(1000)

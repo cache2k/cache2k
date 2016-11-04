@@ -97,6 +97,8 @@ public class CacheManagerImpl extends CacheManager {
   private String buildNumber;
   private boolean defaultManager;
   private Cache2kCoreProviderImpl provider;
+  private boolean closing;
+  private Exception closeStackTrace;
 
   public CacheManagerImpl(Cache2kCoreProviderImpl _provider, ClassLoader cl, String _name, boolean _default) {
     provider = _provider;
@@ -166,10 +168,13 @@ public class CacheManagerImpl extends CacheManager {
 
   static class StackTrace extends Exception { }
 
-  /* called by builder */
+  /**
+   *
+   * @throws IllegalStateException if cache manager was closed or is closeing
+   */
   public String newCache(InternalCache c, String _requestedName) {
-    checkClosed();
     synchronized (lock) {
+      checkClosed();
       String _name = _requestedName;
       while (cacheNames.containsKey(_name)) {
         _name = _requestedName + "~" + Integer.toString(disambiguationCounter++, 36);
@@ -191,7 +196,7 @@ public class CacheManagerImpl extends CacheManager {
     }
   }
 
-  /* called by cache or CM */
+  /** Called from the cache during close() */
   public void cacheDestroyed(Cache c) {
     synchronized (lock) {
       cacheNames.remove(c.getName());
@@ -289,34 +294,42 @@ public class CacheManagerImpl extends CacheManager {
    */
   @Override
   public void close() {
+    Iterable<Cache> _caches;
     synchronized (lock) {
-      if (caches == null) {
+      if (closing) {
         return;
       }
-      List<Throwable> _suppressedExceptions = new ArrayList<Throwable>();
-      for (Cache c : caches) {
-        ((InternalCache) c).cancelTimerJobs();
-      }
-      Set<Cache> _caches = new HashSet<Cache>();
-      _caches.addAll(caches);
-      for (Cache c : _caches) {
-        try {
-          c.close();
-        } catch (Throwable t) {
-          _suppressedExceptions.add(t);
-        }
-      }
+      _caches = cachesCopy();
+      closing = true;
+      closeStackTrace = new StackTrace();
+    }
+    List<Throwable> _suppressedExceptions = new ArrayList<Throwable>();
+    for (Cache c : _caches) {
+      ((InternalCache) c).cancelTimerJobs();
+    }
+    for (Cache c : _caches) {
       try {
-        for (CacheManagerLifeCycleListener lc : cacheManagerLifeCycleListeners) {
-          lc.managerDestroyed(this);
-        }
-        caches = null;
+        c.close();
       } catch (Throwable t) {
         _suppressedExceptions.add(t);
       }
-      ((Cache2kCoreProviderImpl) PROVIDER).removeManager(this);
-      eventuallyThrowException(_suppressedExceptions);
     }
+    try {
+      for (CacheManagerLifeCycleListener lc : cacheManagerLifeCycleListeners) {
+        lc.managerDestroyed(this);
+      }
+    } catch (Throwable t) {
+      _suppressedExceptions.add(t);
+    }
+    ((Cache2kCoreProviderImpl) PROVIDER).removeManager(this);
+    synchronized (lock) {
+      for (Cache c : caches) {
+        log.warn("unable to close cache: " + c.getName());
+      }
+    }
+    eventuallyThrowException(_suppressedExceptions);
+    caches = null;
+    cacheNames = null;
   }
 
   /**
@@ -374,7 +387,8 @@ public class CacheManagerImpl extends CacheManager {
   }
 
   private void checkClosed() {
-    if (caches == null) {
+    if (closing) {
+      log.warn("CacheManager already closed => closing stack trace", closeStackTrace);
       throw new IllegalStateException("CacheManager already closed");
     }
   }

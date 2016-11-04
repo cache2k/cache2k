@@ -133,10 +133,11 @@ public class Cache2kCoreProviderImpl implements Cache2kCoreProvider {
    */
   void removeManager(CacheManager cm) {
     synchronized (getLockObject()) {
-      Map<String, CacheManager> _loader2managers = loader2name2manager.get(cm.getClassLoader());
-      _loader2managers.remove(cm.getName());
+      Map<String, CacheManager> _name2managers = loader2name2manager.get(cm.getClassLoader());
+      _name2managers = new HashMap<String, CacheManager>(_name2managers);
+      Object _removed = _name2managers.remove(cm.getName());
       Map<ClassLoader, Map<String, CacheManager>> _copy = new WeakHashMap<ClassLoader, Map<String, CacheManager>>(loader2name2manager);
-      _copy.put(cm.getClassLoader(), _loader2managers);
+      _copy.put(cm.getClassLoader(), _name2managers);
       loader2name2manager = _copy;
       if (cm.isDefaultManager()) {
         Map<ClassLoader, String> _defaultNameCopy = new WeakHashMap<ClassLoader, String>(loader2defaultName);

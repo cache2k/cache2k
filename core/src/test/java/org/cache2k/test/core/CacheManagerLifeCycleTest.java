@@ -20,7 +20,6 @@ package org.cache2k.test.core;
  * #L%
  */
 
-import net.jcip.annotations.NotThreadSafe;
 import org.cache2k.Cache;
 import org.cache2k.Cache2kBuilder;
 import org.cache2k.CacheManager;
@@ -38,16 +37,8 @@ import static org.junit.Assert.*;
  *
  * @author Jens Wilke
  */
-@NotThreadSafe @Category(FastTests.class)
+@Category(FastTests.class)
 public class CacheManagerLifeCycleTest {
-
-  @Test
-  public void setDefaultMangerName() {
-    CacheManager.getInstance().close();
-    CacheManager.setDefaultName("hello");
-    assertEquals("hello", CacheManager.getInstance().getName());
-    assertEquals("hello", CacheManager.getDefaultName());
-  }
 
   @Test(expected = IllegalStateException.class)
   public void setDefaultManagerName_Exception() {
@@ -57,10 +48,12 @@ public class CacheManagerLifeCycleTest {
 
   @Test
   public void openClose() {
-    CacheManager cm = CacheManager.getInstance();
+    String _uniqueName = this.getClass().getName() + ".openClose";
+    CacheManager cm = CacheManager.getInstance(_uniqueName);
     cm.close();
-    CacheManager cm2 = CacheManager.getInstance();
+    CacheManager cm2 = CacheManager.getInstance(_uniqueName);
     assertNotSame(cm, cm2);
+    cm2.close();
   }
 
   @Test
@@ -79,60 +72,72 @@ public class CacheManagerLifeCycleTest {
   }
 
   @Test
-  public void closeAll() {
-    CacheManager cm = CacheManager.getInstance();
-    ClassLoader cl1 = new URLClassLoader(new URL[0], this.getClass().getClassLoader());
-    ClassLoader cl2 = new URLClassLoader(new URL[0], this.getClass().getClassLoader());
-    CacheManager cm1 = CacheManager.getInstance(cl1);
-    CacheManager cm2 = CacheManager.getInstance(cl2);
-    CacheManager.closeAll();
-    assertTrue(cm1.isClosed());
-    assertTrue(cm2.isClosed());
-    assertTrue(cm.isClosed());
-  }
-
-  @Test
   public void closeSpecific() {
-    CacheManager.closeAll();
     ClassLoader cl1 = new URLClassLoader(new URL[0], this.getClass().getClassLoader());
     CacheManager cm1 = CacheManager.getInstance(cl1);
-    CacheManager.close(null, "something");
     CacheManager.close(cl1, "something");
     assertFalse(cm1.isClosed());
     CacheManager.close(cl1, "default");
+    assertTrue(cm1.isClosed());
   }
 
   @Test
   public void closesCache() {
-    CacheManager.closeAll();
-    Cache c = Cache2kBuilder.forUnknownTypes().name("dummy").build();
-    c.getCacheManager().close();
+    String _uniqueName = this.getClass().getName() + ".closesCache";
+    CacheManager cm = CacheManager.getInstance(_uniqueName);
+    Cache c = Cache2kBuilder.forUnknownTypes()
+      .manager(cm)
+      .name("dummy")
+      .build();
+    assertSame(cm, c.getCacheManager());
+    cm.close();
     assertTrue(c.isClosed());
   }
 
   @Test
   public void clearAllCaches() {
-    Cache c = Cache2kBuilder.forUnknownTypes().name("dummy").build();
+    String _uniqueName = this.getClass().getName() + ".clearAllCaches";
+    CacheManager cm = CacheManager.getInstance(_uniqueName);
+    Cache c = Cache2kBuilder.forUnknownTypes()
+      .manager(cm)
+      .name("dummy")
+      .build();
     c.put("hello", "paul");
     assertTrue("has some data", c.keys().iterator().hasNext());
     c.getCacheManager().clear();
     assertFalse("no data", c.keys().iterator().hasNext());
+    cm.close();
   }
 
   @Test
   public void createCache() {
-    Cache c = CacheManager.getInstance().createCache(Cache2kBuilder.forUnknownTypes().name("dummy").toConfiguration());
+    String _uniqueName = this.getClass().getName() + ".createCache";
+    CacheManager cm = CacheManager.getInstance(_uniqueName);
+    Cache c = cm.createCache(Cache2kBuilder.forUnknownTypes().name("dummy").toConfiguration());
     assertEquals("dummy", c.getName());
-    c.close();
+    assertSame(cm, c.getCacheManager());
+    cm.close();
   }
 
   @Test
   public void getActiveCaches() {
-    CacheManager.closeAll();
-    assertFalse(CacheManager.getInstance().getActiveCaches().iterator().hasNext());
-    Cache c = Cache2kBuilder.forUnknownTypes().build();
-    assertTrue(CacheManager.getInstance().getActiveCaches().iterator().hasNext());
-    c.close();
+    String _uniqueName = this.getClass().getName() + ".getActiveCaches";
+    CacheManager cm = CacheManager.getInstance(_uniqueName);
+    assertFalse(cm.getActiveCaches().iterator().hasNext());
+    Cache c = Cache2kBuilder.forUnknownTypes().manager(cm).build();
+    assertTrue(cm.getActiveCaches().iterator().hasNext());
+    cm.close();
+  }
+
+  @Test
+  public void onlyOneCacheForWired() {
+    String _uniqueName = this.getClass().getName() + ".onlyOneCacheForWired";
+    CacheManager cm = CacheManager.getInstance(_uniqueName);
+    Cache2kBuilder b = Cache2kBuilder.forUnknownTypes().manager(cm);
+    StaticUtil.enforceWiredCache(b);
+    Cache c = b.build();
+    assertEquals("one cache active", 1, StaticUtil.count(cm.getActiveCaches()));
+    cm.close();
   }
 
 }

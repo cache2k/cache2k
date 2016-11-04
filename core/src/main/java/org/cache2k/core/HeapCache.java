@@ -164,7 +164,7 @@ public class HeapCache<K, V>
 
   protected final Hash2<K,V> hash = new Hash2<K,V>();
 
-  private volatile boolean shutdownInitiated = true;
+  private volatile boolean closing = true;
 
   protected CacheType keyType;
 
@@ -319,12 +319,12 @@ public class HeapCache<K, V>
         loader == null) {
         throw new CacheMisconfigurationException("backgroundRefresh, but no loader defined");
       }
-      shutdownInitiated = false;
+      closing = false;
     }
   }
 
   public void checkClosed() {
-    if (shutdownInitiated) {
+    if (closing) {
       throw new CacheClosedException();
     }
   }
@@ -366,7 +366,7 @@ public class HeapCache<K, V>
 
   @Override
   public boolean isClosed() {
-    return shutdownInitiated;
+    return closing;
   }
 
   @Override
@@ -382,7 +382,7 @@ public class HeapCache<K, V>
     executeWithGlobalLock(new Job<Void>() {
       @Override
       public Void call() {
-        shutdownInitiated = true;
+        closing = true;
         return null;
       }
     });
@@ -394,22 +394,25 @@ public class HeapCache<K, V>
 
   @Override
   public void close() {
+    if ("org.cache2k.test.core.BasicCacheOperationsTest".equals(getName())) {
+      System.out.println("closing");
+    }
     try {
       closePart1();
     } catch (CacheClosedException ex) {
       return;
     }
-    closePart2();
+    closePart2(this);
   }
 
-  public void closePart2() {
+  public void closePart2(final InternalCache _userCache) {
     executeWithGlobalLock(new Job<Void>() {
       @Override
       public Void call() {
         eviction.close();
         timing.shutdown();
         hash.close();
-        manager.cacheDestroyed(HeapCache.this);
+        manager.cacheDestroyed(_userCache);
         return null;
       }
     }, false);
