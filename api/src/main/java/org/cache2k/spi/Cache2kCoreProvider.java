@@ -21,27 +21,33 @@ package org.cache2k.spi;
  */
 
 import org.cache2k.Cache;
-import org.cache2k.configuration.Cache2kConfiguration;
 import org.cache2k.CacheManager;
+import org.cache2k.configuration.Cache2kConfiguration;
 
 /**
- * For API internal use only. The cache2k implementation provides the
- * concrete implementations via this interface. Only one active cache2k
- * implementation is supported by the API.
+ * Controls lifetime of different cache managers.
  *
- * <p>Right now, there is only one implementation within the core package.
- * Maybe there will be stripped or extended implementations, or special
- * build implementations, e.g. for Android in the future.
- *
- * <p>This is for internal use by the API to locate the implementation.
- * Do not use or rely on this.
- *
- * @author Jens Wilke
+ * @author Jens Wilke; created: 2015-03-26
  */
-public abstract class Cache2kCoreProvider {
+public interface Cache2kCoreProvider {
 
-  public abstract Cache2kManagerProvider getManagerProvider();
+  /**
+   * @see CacheManager#setDefaultName(String)
+   */
+  void setDefaultManagerName(ClassLoader cl, String s);
 
-  public abstract <K,V> Cache<K,V> createCache(CacheManager m, Cache2kConfiguration<K,V> cfg);
+  String getDefaultManagerName(ClassLoader cl);
+
+  CacheManager getManager(ClassLoader cl, String _name);
+
+  ClassLoader getDefaultClassLoader();
+
+  void close();
+
+  void close(ClassLoader l);
+
+  void close(ClassLoader l, String _name);
+
+  <K,V> Cache<K,V> createCache(CacheManager m, Cache2kConfiguration<K,V> cfg);
 
 }

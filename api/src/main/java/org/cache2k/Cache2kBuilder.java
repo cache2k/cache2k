@@ -33,8 +33,6 @@ import org.cache2k.integration.CacheLoader;
 import org.cache2k.integration.CacheWriter;
 import org.cache2k.integration.ExceptionPropagator;
 import org.cache2k.integration.ResiliencePolicy;
-import org.cache2k.spi.Cache2kCoreProvider;
-import org.cache2k.spi.SingleProviderResolver;
 
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
@@ -73,12 +71,7 @@ import java.util.concurrent.TimeUnit;
  */
 public class Cache2kBuilder<K, V> implements Cloneable {
 
-  private static final Cache2kCoreProvider CORE_PROVIDER;
   private static final String MSG_NO_TYPES = "Use Cache2kBuilder.forUnknownTypes(), to construct a builder with no key and value types";
-
-  static {
-    CORE_PROVIDER = SingleProviderResolver.resolveMandatory(Cache2kCoreProvider.class);
-  }
 
   /**
    * Create a new cache builder for a cache that has no type restrictions
@@ -635,7 +628,7 @@ public class Cache2kBuilder<K, V> implements Cloneable {
    * configuration. The builder is not thread safe.
    */
   public final Cache<K, V> build() {
-    return CORE_PROVIDER.createCache(manager, config());
+    return CacheManager.PROVIDER.createCache(manager, config());
   }
 
 }

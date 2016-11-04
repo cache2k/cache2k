@@ -21,9 +21,8 @@ package org.cache2k;
  */
 
 import org.cache2k.configuration.Cache2kConfiguration;
-import org.cache2k.spi.Cache2kCoreProvider;
 import org.cache2k.spi.Cache2kExtensionProvider;
-import org.cache2k.spi.Cache2kManagerProvider;
+import org.cache2k.spi.Cache2kCoreProvider;
 import org.cache2k.spi.SingleProviderResolver;
 
 import java.io.Closeable;
@@ -43,10 +42,10 @@ import java.util.ServiceLoader;
  */
 public abstract class CacheManager implements Iterable<Cache>, Closeable {
 
-  protected static Cache2kManagerProvider PROVIDER;
+  static protected Cache2kCoreProvider PROVIDER =
+    SingleProviderResolver.resolveMandatory(Cache2kCoreProvider.class);
 
   static {
-    PROVIDER = SingleProviderResolver.resolveMandatory(Cache2kCoreProvider.class).getManagerProvider();
     ServiceLoader<Cache2kExtensionProvider> _loader =
       ServiceLoader.load(Cache2kExtensionProvider.class, CacheManager.class.getClassLoader());
     for (Cache2kExtensionProvider p : _loader) {

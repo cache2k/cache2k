@@ -96,9 +96,9 @@ public class CacheManagerImpl extends CacheManager {
   private String version;
   private String buildNumber;
   private boolean defaultManager;
-  private Cache2kManagerProviderImpl provider;
+  private Cache2kCoreProviderImpl provider;
 
-  public CacheManagerImpl(Cache2kManagerProviderImpl _provider, ClassLoader cl, String _name, boolean _default) {
+  public CacheManagerImpl(Cache2kCoreProviderImpl _provider, ClassLoader cl, String _name, boolean _default) {
     provider = _provider;
     defaultManager = _default;
     classLoader = cl;
@@ -210,8 +210,8 @@ public class CacheManagerImpl extends CacheManager {
 
   @Override
   public Cache2kConfiguration getDefaultConfiguration() {
-    if (Cache2kManagerProviderImpl.CACHE_CONFIGURATION_PROVIDER != null) {
-      return Cache2kManagerProviderImpl.CACHE_CONFIGURATION_PROVIDER.getDefaultConfiguration(this);
+    if (Cache2kCoreProviderImpl.CACHE_CONFIGURATION_PROVIDER != null) {
+      return Cache2kCoreProviderImpl.CACHE_CONFIGURATION_PROVIDER.getDefaultConfiguration(this);
     }
     return new Cache2kConfiguration();
   }
@@ -314,7 +314,7 @@ public class CacheManagerImpl extends CacheManager {
       } catch (Throwable t) {
         _suppressedExceptions.add(t);
       }
-      ((Cache2kManagerProviderImpl) PROVIDER).removeManager(this);
+      ((Cache2kCoreProviderImpl) PROVIDER).removeManager(this);
       eventuallyThrowException(_suppressedExceptions);
     }
   }
@@ -397,7 +397,7 @@ public class CacheManagerImpl extends CacheManager {
     return buildNumber;
   }
 
-  public Cache2kManagerProviderImpl getProvider() {
+  public Cache2kCoreProviderImpl getProvider() {
     return provider;
   }
 

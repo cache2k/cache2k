@@ -20,9 +20,8 @@ package org.cache2k.jcache.provider;
  * #L%
  */
 
-import org.cache2k.core.Cache2kManagerProviderImpl;
+import org.cache2k.core.Cache2kCoreProviderImpl;
 import org.cache2k.spi.Cache2kCoreProvider;
-import org.cache2k.spi.Cache2kManagerProvider;
 import org.cache2k.spi.SingleProviderResolver;
 
 import javax.cache.CacheManager;
@@ -36,18 +35,20 @@ import java.util.Properties;
 import java.util.WeakHashMap;
 
 /**
- * @author Jens Wilke; created: 2014-10-19
+ * JSR107 caching provider on top of cache2k.
+ *
+ * @author Jens Wilke
  */
 public class JCacheProvider implements CachingProvider {
 
-  private final Cache2kManagerProvider forwardProvider =
-    SingleProviderResolver.resolveMandatory(Cache2kCoreProvider.class).getManagerProvider();
+  private final Cache2kCoreProvider forwardProvider =
+    SingleProviderResolver.resolveMandatory(Cache2kCoreProvider.class);
 
   private final Map<ClassLoader, Map<URI, JCacheManagerAdapter>> classLoader2uri2cache =
       new WeakHashMap<ClassLoader, Map<URI, JCacheManagerAdapter>>();
 
   private Object getLockObject() {
-    return ((Cache2kManagerProviderImpl) forwardProvider).getLockObject();
+    return ((Cache2kCoreProviderImpl) forwardProvider).getLockObject();
   }
 
   public URI name2Uri(String _name) {
