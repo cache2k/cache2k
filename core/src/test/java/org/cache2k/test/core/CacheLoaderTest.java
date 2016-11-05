@@ -268,7 +268,9 @@ public class CacheLoaderTest {
     assertTrue(isLoadStarted(c));
     w.awaitCompletion();
     assertTrue(c.containsKey(3));
-    assertTrue(latestInfo(c).getAsyncLoadsStarted() == 2);
+    assertEquals(
+      "expect 2 started loads, since 1 is in the cache (flaky?)",
+      2, latestInfo(c).getAsyncLoadsStarted());
   }
 
   @Test
