@@ -44,11 +44,13 @@ import java.util.Timer;
 @SuppressWarnings("unchecked")
 public abstract class TimingHandler<K,V>  {
 
-  final static int PURGE_INTERVAL = TunableFactory.get(Tunable.class).purgeInterval;
-  final static long SAFETY_GAP_MILLIS = HeapCache.TUNABLE.sharpExpirySafetyGapMillis;
+  /** Used as default */
   final static TimingHandler ETERNAL = new Eternal();
-  final static TimingHandler IMMEDIATE = new Immediate();
   final static TimingHandler ETERNAL_IMMEDIATE = new EternalImmediate();
+
+  private final static TimingHandler IMMEDIATE = new Immediate();
+  private final static int PURGE_INTERVAL = TunableFactory.get(Tunable.class).purgeInterval;
+  private final static long SAFETY_GAP_MILLIS = HeapCache.TUNABLE.sharpExpirySafetyGapMillis;
 
   /**
    * Instance of expiry calculator that extracts the expiry time from the value.
@@ -161,7 +163,7 @@ public abstract class TimingHandler<K,V>  {
   /**
    * Start timer for expiring an entry on the separate refresh hash.
    */
-  public boolean startRefreshProbationTimer(Entry<K,V> e, long _nextRefreshTimern) {
+  public boolean startRefreshProbationTimer(Entry<K,V> e, long _nextRefreshTime) {
     return true;
   }
 
@@ -175,7 +177,7 @@ public abstract class TimingHandler<K,V>  {
    */
   public void scheduleFinalTimerForSharpExpiry(Entry<K, V> e) { }
 
-  static class Eternal<K,V> extends TimingHandler<K,V> {
+  private static class Eternal<K,V> extends TimingHandler<K,V> {
 
     @Override
     public long calculateNextRefreshTime(final Entry<K,V> e, final V v, final long _loadTime) {
@@ -314,7 +316,7 @@ public abstract class TimingHandler<K,V>  {
 
     @Override
     public long calculateNextRefreshTime(final Entry<K,V> e, final V v, final long _loadTime) {
-      return calcNextRefreshTime(e.getKey(), v, _loadTime, e, null, maxLinger);
+      return calcNextRefreshTime(e.getKey(), v, _loadTime, e, null, maxLinger, sharpExpiry);
     }
 
     @Override
@@ -376,9 +378,6 @@ public abstract class TimingHandler<K,V>  {
       if (Math.abs(_expiryTime) <= now) {
         return expiredEventuallyStartBackgroundRefresh(e, _expiryTime < 0);
       }
-      if (sharpExpiry && _expiryTime > 0) {
-        _expiryTime = -_expiryTime;
-      }
       if (_expiryTime < 0) {
         long _timerTime = -_expiryTime - SAFETY_GAP_MILLIS;
         if (_timerTime >= now) {
@@ -405,10 +404,11 @@ public abstract class TimingHandler<K,V>  {
         e.setNextRefreshTime(Entry.EXPIRED);
         return true;
       }
-      e.setRefreshProbationNextRefreshTime(_nextRefreshTime);
+      long _absTime = Math.abs(_nextRefreshTime);
+      e.setRefreshProbationNextRefreshTime(_absTime);
       e.setNextRefreshTime(Entry.EXPIRED_REFRESHED);
       e.setTask(new RefreshExpireTask<K,V>().to(cache, e));
-      scheduleTask(Math.abs(_nextRefreshTime), e);
+      scheduleTask(_absTime, e);
       return false;
     }
 
@@ -530,28 +530,30 @@ public abstract class TimingHandler<K,V>  {
     long calcNextRefreshTime(K _key, V _newObject, long now, Entry _entry) {
       return calcNextRefreshTime(
         _key, _newObject, now, _entry,
-        expiryPolicy, maxLinger);
+        expiryPolicy, maxLinger, sharpExpiry);
     }
 
     public long calculateNextRefreshTime(Entry<K, V> _entry, V _newValue, long _loadTime) {
+      long t;
       if (_entry.isDataValid() || _entry.isExpired() || _entry.nextRefreshTime == Entry.EXPIRED_REFRESH_PENDING) {
-        return calcNextRefreshTime(_entry.getKey(), _newValue, _loadTime, _entry);
+        t = calcNextRefreshTime(_entry.getKey(), _newValue, _loadTime, _entry);
       } else {
-        return calcNextRefreshTime(_entry.getKey(), _newValue, _loadTime, null);
+        t = calcNextRefreshTime(_entry.getKey(), _newValue, _loadTime, null);
       }
+      return t;
     }
 
   }
 
-  static <K, T>  long calcNextRefreshTime(
+  static <K, T> long calcNextRefreshTime(
     K _key, T _newObject, long now, org.cache2k.core.Entry _entry,
-    ExpiryPolicy<K, T> ec, long _maxLinger) {
+    ExpiryPolicy<K, T> ec, long _maxLinger, boolean _sharpExpiryEnabled) {
     if (_maxLinger == 0) {
       return 0;
     }
     if (ec != null) {
       long t = ec.calculateExpiryTime(_key, _newObject, now, _entry);
-      return limitExpiryToMaxLinger(now, _maxLinger, t);
+      return limitExpiryToMaxLinger(now, _maxLinger, t, _sharpExpiryEnabled);
     }
     if (_maxLinger < ExpiryPolicy.ETERNAL) {
       return _maxLinger + now;
@@ -559,17 +561,40 @@ public abstract class TimingHandler<K,V>  {
     return _maxLinger;
   }
 
-  static long limitExpiryToMaxLinger(long now, long _maxLinger, long t) {
+  /**
+   * Ignore the value of the expiry policy if later then the maximum expiry time.
+   * If max linger takes over, we do not request sharp expiry.
+   *
+   * <p>The situation becomes messy if the point in time for the maximum expiry is
+   * close to the requested expiry time and sharp expiry is requested. The expiry or
+   * a reload (with refresh ahead) may come to late and overlap the expiry time. As
+   * incomplete fix we use the safety gap, but if loaders are taking longer then the
+   * safety gap a value becomes visible that should be expired. The solutions would
+   * be to pass on two times from here: a refresh time and the point in time for sharp
+   * expiry, and expiry correctly while a concurrent load is proceeding.
+   */
+  static long limitExpiryToMaxLinger(long now, long _maxLinger, long _requestedExpiryTime, boolean _sharpExpiryEnabled) {
+    if (_sharpExpiryEnabled && _requestedExpiryTime > ExpiryPolicy.REFRESH && _requestedExpiryTime < ExpiryPolicy.ETERNAL) {
+      _requestedExpiryTime = -_requestedExpiryTime;
+    }
     if (_maxLinger > 0 && _maxLinger < ExpiryPolicy.ETERNAL) {
       long _tMaximum = _maxLinger + now;
-      if (t > _tMaximum) {
+      if (_requestedExpiryTime > _tMaximum) {
         return _tMaximum;
       }
-      if (t < -1 && -t > _tMaximum) {
-        return -_tMaximum;
+      if (_requestedExpiryTime < -1 && -_requestedExpiryTime > _tMaximum) {
+        long _pitMinusSafetyGap = -_requestedExpiryTime - SAFETY_GAP_MILLIS;
+        if (_pitMinusSafetyGap < _tMaximum) {
+          if (_pitMinusSafetyGap > now) {
+            return _pitMinusSafetyGap;
+          } else {
+            return (_tMaximum - now) / 2 + now;
+          }
+        }
+        return _tMaximum;
       }
     }
-    return t;
+    return _requestedExpiryTime;
   }
 
   public static class Tunable extends TunableConstants {

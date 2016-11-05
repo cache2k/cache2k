@@ -15,22 +15,26 @@ created or modification with a custom `ExpiryPolicy`.
 
 [NOTE]
 _Expiry after access_ or _time to idle_ is not supported, since it would compromise the high performance
-of cache2k. Typically there is no functional requirement for TTI, but it is used
+of cache2k. There is seldom a functional requirement for TTI, but it is used
 very often to minimize memory consumption in times of low activity. How a similar feature can be
-constructed that at the same time is not counter productive for performance needs further research.
+constructed that, at the same time, is not counter productive for performance needs further research.
 For discussion, see: https://github.com/cache2k/cache2k/issues/39[GH 39]
 
 === Variable Expiry
 
 Each entry may have a different expiry time. This can be achieved by specifying an `ExpiryPolicy`. The `ExpiryPolicy` calculates a point in time, where an entry expires. The configuration parameter `expireAfterWrite` is used as a maximum value.
 
+=== Lagging Expiry
+
+In standard operation time checks when accessing the entry are saved and the actual expiry of an entry
+may lag behind, meaning that entries that should expire are visible some milliseconds longer.
+
 === Sharp Expiry
 
-Although the expiry policy returns a point in time and not a duration the time of the expiry will
-lag a few milliseconds behind. This is the most effective mode of operation. In case there is a business
-requirement that data becomes invalid or needs refreshed at a defined point in time the parameter
-`sharpExpiry` can be enabled. This will cause that the expiry happens exactly at the point in time determined
-by the expiry policy. For more details see the JavaDoc or `Cache2kBuilder.sharpExpiry` and `ExpiryPolicy`.
+In case there is a business requirement that data becomes invalid or needs refreshed at a defined point
+in time the parameter `sharpExpiry` can be enabled. This will cause that the expiry happens exactly at
+the point in time determined by the expiry policy. For more details see the JavaDoc or
+`Cache2kBuilder.sharpExpiry` and `ExpiryPolicy`.
 
 If _sharp expiry and refresh ahead_ is enabled in combination the contract of refresh ahead
 is relaxed. This will lead to:
@@ -39,6 +43,16 @@ is relaxed. This will lead to:
  - A refresh starts at expiry time
  - `contains()` is `false`, if the entry is expired and not yet refreshed
  - A `get()` on the expired entry will stall until refreshed
+
+Sharp expiry and normal, lagging expiry can be combined. For example, if the parameter `expiryAfterWrite` and an
+`ExpiryPolicy` is specified and `sharpExpiry` is enabled. The sharp expiry will be used for the
+time calculated by the `ExpiryPolicy`, but the duration in `expireAfterWrite` is used if this will be sooner.
+If the expiry is result of a duration calculation via `expireAfterWrite` sharp expiry of the entry will not be
+enabled.
+
+[NOTE]
+Combining sharp expiry, lagging expiry and refresh ahead, leads to an operation mode that
+cannot guarantee the sharp expiry contract if load operations take too long.
 
 === Loader Exceptions and Expiry
 

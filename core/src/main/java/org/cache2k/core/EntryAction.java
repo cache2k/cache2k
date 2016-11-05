@@ -600,7 +600,7 @@ public abstract class EntryAction<K, V, R> implements
       checkKeepOrRemove();
       return;
     } else {
-      if (expiry > 0 || expiry == -1) {
+      if (expiry > 0 || expiry == -1 || (expiry < 0 && -expiry > loadStartedTime)) {
         if (entry.isVirgin()) {
           metrics().putNewEntry();
         } else {
