@@ -32,15 +32,13 @@ public class StandardPropertyParser implements PropertyParser {
 
   private static final Map<String, Long> UNIT2LONG = new HashMap<String, Long>() {{
     put("KiB", 1024L);
-    put("MiB", 1024 * 1024L);
-    put("GiB", 1024 * 1024 * 1024L);
-    put("TiB", 1024 * 1024 * 1024 * 1024L);
-    put("kb", 1000L);
-    put("kB", 1000L);
-    put("KB", 1000L);
-    put("MB", 1000 * 1000L);
-    put("GB", 1000 * 1000 * 1000L);
-    put("TB", 1000 * 1000 * 1000 * 1000L);
+    put("MiB", 1024L * 1024);
+    put("GiB", 1024L * 1024 * 1024);
+    put("TiB", 1024L * 1024 * 1024 * 1024);
+    put("k", 1000L);
+    put("M", 1000L * 1000);
+    put("G", 1000L * 1000 * 1000);
+    put("T", 1000L * 1000 * 1000 * 1000);
     put("s", 1000L);
     put("m", 1000L * 60);
     put("h", 1000L * 60 * 60);
