@@ -339,7 +339,7 @@ public abstract class TimingHandler<K,V>  {
       if (refreshAhead) {
         e.setTask(new RefreshTask<K,V>().to(cache, e));
         scheduleTask(0, e);
-        return sharpExpiry || _sharpExpiry ? Entry.EXPIRED_REFRESH_PENDING : Entry.DATA_VALID;
+        return _sharpExpiry ? Entry.EXPIRED_REFRESH_PENDING : Entry.DATA_VALID;
       }
       return Entry.EXPIRED;
     }
