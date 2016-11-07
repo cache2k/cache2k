@@ -39,7 +39,8 @@ import static org.junit.Assert.*;
 @Category(FastTests.class)
 public class TimingHandlerTest {
 
-  final long POINT_IN_TIME = 10000000;
+  private final Entry ENTRY = new Entry();
+  private final long POINT_IN_TIME = 10000000;
 
   @Test
   public void eternalSpecified() {
@@ -58,6 +59,50 @@ public class TimingHandlerTest {
         .toConfiguration()
     );
     assertEquals(TimingHandler.ETERNAL_IMMEDIATE.getClass(), h.getClass());
+  }
+
+  @Test
+  public void expireAfterWrite_overflow() {
+    TimingHandler h = TimingHandler.of(
+      Cache2kBuilder.forUnknownTypes()
+        .expireAfterWrite(Long.MAX_VALUE - 47, TimeUnit.SECONDS)
+        .toConfiguration()
+    );
+    assertEquals(TimingHandler.ETERNAL_IMMEDIATE.getClass(), h.getClass());
+  }
+
+  @Test
+  public void almostEternal_noOverflow() {
+    long _BIG_VALUE = Long.MAX_VALUE - 47;
+    TimingHandler h = TimingHandler.of(
+      Cache2kBuilder.forUnknownTypes()
+        .expireAfterWrite(_BIG_VALUE, TimeUnit.MILLISECONDS)
+        .toConfiguration()
+    );
+    long t = h.calculateNextRefreshTime(ENTRY, null, 0);
+    assertEquals(_BIG_VALUE, t);
+    t = h.calculateNextRefreshTime(ENTRY, null, 48);
+    assertEquals(Long.MAX_VALUE, t);
+  }
+
+  @Test
+  public void almostEternal_expiryPolicy_noOverflow() {
+    long _BIG_VALUE = Long.MAX_VALUE - 47;
+    TimingHandler h = TimingHandler.of(
+      Cache2kBuilder.forUnknownTypes()
+        .expiryPolicy(new ExpiryPolicy() {
+          @Override
+          public long calculateExpiryTime(final Object key, final Object value, final long loadTime, final CacheEntry oldEntry) {
+            return ETERNAL;
+          }
+        })
+        .expireAfterWrite(_BIG_VALUE, TimeUnit.MILLISECONDS)
+        .toConfiguration()
+    );
+    long t = h.calculateNextRefreshTime(ENTRY, null, 0);
+    assertEquals(_BIG_VALUE, t);
+    t = h.calculateNextRefreshTime(ENTRY, null, 48);
+    assertEquals(Long.MAX_VALUE, t);
   }
 
   /**

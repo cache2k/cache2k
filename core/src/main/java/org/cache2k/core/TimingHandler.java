@@ -25,6 +25,7 @@ import org.cache2k.CacheEntry;
 import org.cache2k.configuration.CustomizationFactory;
 import org.cache2k.configuration.ReferenceFactory;
 import org.cache2k.core.util.Util;
+import org.cache2k.expiry.Expiry;
 import org.cache2k.expiry.ExpiryPolicy;
 import org.cache2k.expiry.ExpiryTimeValues;
 import org.cache2k.expiry.ValueWithExpiryTime;
@@ -556,9 +557,12 @@ public abstract class TimingHandler<K,V>  {
       return limitExpiryToMaxLinger(now, _maxLinger, t, _sharpExpiryEnabled);
     }
     if (_maxLinger < ExpiryPolicy.ETERNAL) {
-      return _maxLinger + now;
+      long t = _maxLinger + now;
+      if (t >= 0) {
+        return t;
+      }
     }
-    return _maxLinger;
+    return ExpiryPolicy.ETERNAL;
   }
 
   /**
@@ -579,6 +583,9 @@ public abstract class TimingHandler<K,V>  {
     }
     if (_maxLinger > 0 && _maxLinger < ExpiryPolicy.ETERNAL) {
       long _tMaximum = _maxLinger + now;
+      if (_tMaximum <= 0) {
+        _tMaximum = Expiry.ETERNAL;
+      }
       if (_requestedExpiryTime > _tMaximum) {
         return _tMaximum;
       }
