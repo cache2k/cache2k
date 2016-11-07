@@ -33,8 +33,8 @@ import static org.junit.Assert.*;
 public class StandardPropertyParserTest {
 
   @Test
-  public void parseLong_123MB() {
-    assertEquals(123 * 1000 * 1000, StandardPropertyParser.parseLongWithUnitSuffix("123MB"));
+  public void parseLong_123M() {
+    assertEquals(123 * 1000 * 1000, StandardPropertyParser.parseLongWithUnitSuffix("123M"));
   }
 
   @Test
