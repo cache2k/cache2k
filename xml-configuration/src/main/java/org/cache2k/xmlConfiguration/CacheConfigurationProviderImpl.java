@@ -35,6 +35,7 @@ import java.io.InputStream;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.Serializable;
+import java.lang.reflect.InvocationTargetException;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -282,10 +283,22 @@ public class CacheConfigurationProviderImpl implements CacheConfigurationProvide
         }
         throw new ConfigurationException("Unknown property '" + p.getName() + "'", p.getSource(), p.getLineNumber());
       }
+      Object obj;
       try {
-        m.mutate(_bean, p.getName(), propertyParser.parse(_propertyType, p.getValue()));
+        obj = propertyParser.parse(_propertyType, p.getValue());
       } catch (Exception ex) {
         throw new ConfigurationException("Cannot parse property: " + ex, p.getSource(), p.getLineNumber());
+      }
+      try {
+        m.mutate(_bean, p.getName(), obj);
+      } catch (InvocationTargetException ex) {
+        Throwable t =  ex.getTargetException();
+        if (t instanceof IllegalArgumentException) {
+          throw new ConfigurationException("Value '" + p.getValue() + "' rejected: " + t.getMessage(), p.getSource(), p.getLineNumber());
+        }
+        throw new ConfigurationException("Setting property: " + ex, p.getSource(), p.getLineNumber());
+      } catch (Exception ex) {
+        throw new ConfigurationException("Setting property: " + ex, p.getSource(), p.getLineNumber());
       }
     }
   }

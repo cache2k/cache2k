@@ -49,7 +49,7 @@ public class BeanPropertyMutator {
   }
 
   public void mutate(Object _target, String _propertyName, Object _value)
-    throws IllegalAccessException, IllegalArgumentException, InvocationTargetException {
+    throws IllegalAccessException, InvocationTargetException {
     Method m = settersLookupMap.get(_propertyName);
     m.invoke(_target, _value);
   }
