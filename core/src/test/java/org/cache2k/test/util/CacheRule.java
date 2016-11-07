@@ -72,8 +72,7 @@ public class CacheRule<K,V> implements TestRule {
     return Cache2kBuilder.forUnknownTypes()
       .keyType(keyType)
       .valueType(valueType)
-      .entryCapacity(10000)
-      .eternal(true);
+      .entryCapacity(10000);
   }
 
   public CacheRule<K,V> config(Specialization<K,V> rb) {

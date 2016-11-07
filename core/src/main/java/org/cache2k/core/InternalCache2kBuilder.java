@@ -293,6 +293,10 @@ public class InternalCache2kBuilder<K, V> {
   }
 
   private void checkConfiguration() {
+    if (config.getExpireAfterWrite() == Cache2kConfiguration.EXPIRY_NOT_ETERNAL &&
+        config.getExpiryPolicy() == null) {
+      throw new IllegalArgumentException("not eternal is set, but expire value is missing");
+    }
   }
 
   static class AsyncCreatedListener<K,V> implements CacheEntryCreatedListener<K,V> {

@@ -56,6 +56,8 @@ import java.util.List;
 @SuppressWarnings("unused")
 public class Cache2kConfiguration<K, V> implements Serializable, ConfigurationWithSections {
 
+  public static final long EXPIRY_NOT_ETERNAL = Long.MAX_VALUE - 1;
+
   private boolean storeByReference;
   private String name;
   private CacheType<K> keyType;
@@ -267,7 +269,9 @@ public class Cache2kConfiguration<K, V> implements Serializable, ConfigurationWi
    */
   public void setEternal(boolean v) {
     if (v) {
-      this.expireAfterWrite = ExpiryTimeValues.ETERNAL;
+      setExpireAfterWrite(ExpiryTimeValues.ETERNAL);
+    } else {
+      setExpireAfterWrite(EXPIRY_NOT_ETERNAL);
     }
   }
 
@@ -299,6 +303,17 @@ public class Cache2kConfiguration<K, V> implements Serializable, ConfigurationWi
    * @see Cache2kBuilder#expireAfterWrite
    */
   public void setExpireAfterWrite(long _millis) {
+    if (_millis == expireAfterWrite) {
+      return;
+    }
+    if (expireAfterWrite != -1) {
+      if (_millis == Expiry.ETERNAL) {
+        throw new IllegalArgumentException("not eternal or expiry was set, refusing to reset back to eternal");
+      }
+      if (expireAfterWrite == Expiry.ETERNAL) {
+        throw new IllegalArgumentException("eternal was set, refusing to reset to expire time span");
+      }
+    }
     this.expireAfterWrite = _millis;
   }
 

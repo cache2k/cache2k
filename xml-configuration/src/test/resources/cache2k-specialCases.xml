@@ -49,6 +49,14 @@
         </bla>
       </sections>
     </cache>
+    <cache>
+      <name>withExpiry</name>
+      <expireAfterWrite>2d</expireAfterWrite>
+    </cache>
+    <cache>
+      <name>eternal</name>
+      <eternal>true</eternal>
+    </cache>
   </caches>
 
 </cache2k>

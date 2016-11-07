@@ -341,14 +341,19 @@ public class Cache2kBuilder<K, V> implements Cloneable {
   /**
    * When set to true, cached values do not expire by time. Entries will need to be removed
    * from the cache explicitly or will be evicted if capacity constraints are reached.
-   * When no expiry is specified, eternal is the default.
+
+   * <p>Setting eternal to false signals that the data should expire, but there is no
+   * predefined expiry value at programmatic level. This value needs to be set by other
+   * means, e.g. within a configuration file.
    *
-   * <p>Setting eternal to false has no effect, instead it is needed to configure a specific
-   * expiry via {@link #expireAfterWrite(long, TimeUnit)}.
+   * <p>The default behavior of the cache is identical to the setting eternal, meaning no
+   * expiry.
    *
-   * <p>Exceptions: If there is no explicit expiry configured for exceptions
-   * with {@link #retryInterval(long, TimeUnit)}, exceptions will
-   * not be cached and expire immediately.
+   * <p>Exceptions: If set to eternal with default setting and if there is no
+   * explicit expiry configured for exceptions with {@link #retryInterval(long, TimeUnit)},
+   * exceptions will not be cached and expire immediately.
+   *
+   * @throws IllegalArgumentException in case a previous setting is reset
    */
   public final Cache2kBuilder<K, V> eternal(boolean v) {
     config().setEternal(v);
@@ -382,6 +387,8 @@ public class Cache2kBuilder<K, V> implements Cloneable {
    * <p>A value of {@code 0} means every entry should expire immediately. Low values or
    * {@code 0} together with read through operation mode with a {@link CacheLoader} should be
    * avoided in production environments.
+   *
+   * @throws IllegalArgumentException if {@link #eternal(boolean)} was set to true
    */
   public final Cache2kBuilder<K, V> expireAfterWrite(long v, TimeUnit u) {
     config().setExpireAfterWrite(u.toMillis(v));

@@ -188,6 +188,22 @@ public class IntegrationTest {
   }
 
   @Test
+  public void eternal_configExpire() {
+    try {
+      Cache c =
+        new Cache2kBuilder<String, String>() {}
+          .manager(CacheManager.getInstance("specialCases"))
+          .name("withExpiry")
+          .eternal(true)
+          .build();
+      c.close();
+      fail("expect exception");
+    } catch (ConfigurationException ex) {
+      assertThat(ex.getMessage(), containsString("Value '2d' rejected: eternal was set, refusing to reset to expire time span at"));
+    }
+  }
+
+  @Test
   public void notSerializableSection() {
     try {
       new Cache2kBuilder<String, String>() { }
