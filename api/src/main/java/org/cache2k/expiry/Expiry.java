@@ -21,9 +21,12 @@ package org.cache2k.expiry;
  */
 
 /**
- * Utility methods and constants for expiry.
+ * Utility methods and constants to inside expire policy and friends.
  *
  * @author Jens Wilke
+ * @see ExpiryPolicy
+ * @see org.cache2k.integration.ResiliencePolicy
+ * @see org.cache2k.Cache#expireAt
  */
 public class Expiry implements ExpiryTimeValues {
 
@@ -76,6 +79,15 @@ public class Expiry implements ExpiryTimeValues {
    * If the refresh time is too close to the requested point an earlier refresh
    * time is used to keep maximum distance to the requested point time, which is
    * {@code abs(pointInTime) - refreshAfter}
+   *
+   * <p>Rationale: Usually the expiry is allowed to lag behind. This is okay
+   * when a normal expiry interval is used. If sharp expiry is requested an
+   * old value may not be visible at or after the expiry time. Refresh ahead
+   * implies lagging expiry, since the refresh is triggered when the value would
+   * usually expire. The two concepts can be combined in the expiry policy, e.g.
+   * using an interval for triggering refresh ahead and requesting a sharp expiry
+   * only when needed. If effective expiry time for the lagging variant and the
+   * for the sharp variant are in close proximity, conflicts need to be resolved.
    *
    * @param loadTime time when the load was started
    * @param refreshAfter time span in milliseconds when the next refresh should happen

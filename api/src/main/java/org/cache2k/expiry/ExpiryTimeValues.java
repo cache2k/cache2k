@@ -25,10 +25,14 @@ package org.cache2k.expiry;
  * customizations {@link org.cache2k.integration.ResiliencePolicy} and {@link ExpiryPolicy}
  * as well as {@link org.cache2k.Cache#expireAt(Object, long)}.
  *
+ * <p>Users may want to use the class {@link Expiry} with additional utility methods as
+ * alternative.
+ *
  * @author Jens Wilke
  * @see ExpiryPolicy
  * @see org.cache2k.integration.ResiliencePolicy
  * @see org.cache2k.Cache#expireAt
+ * @see Expiry
  */
 public interface ExpiryTimeValues {
 
