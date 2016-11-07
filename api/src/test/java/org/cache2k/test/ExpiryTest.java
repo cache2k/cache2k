@@ -23,6 +23,8 @@ package org.cache2k.test;
 import static org.cache2k.expiry.Expiry.*;
 
 import static org.junit.Assert.*;
+
+import org.cache2k.expiry.Expiry;
 import org.junit.Test;
 
 /**
@@ -78,6 +80,27 @@ public class ExpiryTest {
   @Test
   public void mix_shorterTimeSpanIfPitIsNear() {
     assertEquals(101, mixTimeSpanAndPointInTime(100, 5, 106));
+  }
+
+  @Test
+  public void testEarliestTime() {
+    assertEquals(123, Expiry.earliestTime(100, 123, 150));
+    assertEquals(123, Expiry.earliestTime(100, 150, 123));
+    assertEquals(123, Expiry.earliestTime(100, 123, 88));
+    assertEquals(123, Expiry.earliestTime(100, 88, 123));
+
+    assertEquals(123, Expiry.earliestTime(100, 123, 150));
+    assertEquals(123, Expiry.earliestTime(100, 150, 123));
+    assertEquals(123, Expiry.earliestTime(100, 123, 0));
+    assertEquals(123, Expiry.earliestTime(100, 0, 123));
+
+    assertEquals(123, Expiry.earliestTime(123, 123, 150));
+    assertEquals(123, Expiry.earliestTime(123, 150, 123));
+    assertEquals(123, Expiry.earliestTime(123, 123, 88));
+    assertEquals(123, Expiry.earliestTime(123, 88, 123));
+
+    assertEquals(Long.MAX_VALUE, Expiry.earliestTime(100, 0, 0));
+    assertEquals(Long.MAX_VALUE, Expiry.earliestTime(100, 88, 88));
   }
 
 }
