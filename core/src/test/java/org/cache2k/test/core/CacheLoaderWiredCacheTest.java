@@ -47,7 +47,7 @@ import static org.junit.Assert.assertTrue;
 public class CacheLoaderWiredCacheTest extends CacheLoaderTest {
 
   {
-    target.enforecWiredCache();
+    target.enforceWiredCache();
   }
 
   @Test

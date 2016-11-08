@@ -20,7 +20,6 @@ package org.cache2k.test.core;
  * #L%
  */
 
-import net.jcip.annotations.NotThreadSafe;
 import org.cache2k.Cache2kBuilder;
 import org.cache2k.junit.FastTests;
 import org.cache2k.test.util.CacheRule;
@@ -34,7 +33,7 @@ import static org.cache2k.test.core.StaticUtil.*;
 /**
  * @author Jens Wilke
  */
-@Category(FastTests.class) @NotThreadSafe
+@Category(FastTests.class)
 public class RejectNullValueWiredCacheTest extends RejectNullValueTest {
 
   @ClassRule

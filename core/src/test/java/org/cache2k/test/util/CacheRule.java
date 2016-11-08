@@ -81,7 +81,7 @@ public class CacheRule<K,V> implements TestRule {
     return this;
   }
 
-  public CacheRule<K,V> enforecWiredCache() {
+  public CacheRule<K,V> enforceWiredCache() {
     checkAlready();
     configurationSpecialization.add(new Specialization() {
       @Override
@@ -199,8 +199,7 @@ public class CacheRule<K,V> implements TestRule {
   }
 
   public void closeCache() {
-    cache.clear();
-    cache.close();
+    cache.clearAndClose();
     cache = null;
     statistics = null;
   }

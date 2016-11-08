@@ -20,7 +20,6 @@ package org.cache2k.test.core;
  * #L%
  */
 
-import net.jcip.annotations.NotThreadSafe;
 import org.cache2k.Cache;
 import org.cache2k.Cache2kBuilder;
 import org.cache2k.CacheEntry;
@@ -42,7 +41,7 @@ import static org.cache2k.test.core.StaticUtil.*;
 /**
  * @author Jens Wilke
  */
-@Category(FastTests.class) @NotThreadSafe
+@Category(FastTests.class)
 public class RejectNullValueTest {
 
   private final static Integer KEY = 1;
