@@ -501,11 +501,11 @@
               <parallel>classes</parallel>
               <perCoreThreadCount>true</perCoreThreadCount>
               <threadCount>1</threadCount>
-              <argLine>-Xmx128m -XX:+HeapDumpOnOutOfMemoryError -XX:+PrintGCDetails -XX:OnOutOfMemoryError="kill -3 %p"</argLine>
+              <!-- Reduce heap memory to detect leaks. -->
+              <argLine>-Xmx128m -XX:+HeapDumpOnOutOfMemoryError -XX:OnOutOfMemoryError="kill -3 %p"</argLine>
               <!-- make this test more verbose to investigate a VM crash
+              <argLine>-Xmx128m -XX:+HeapDumpOnOutOfMemoryError -XX:+PrintGCDetails -XX:OnOutOfMemoryError="kill -3 %p"</argLine>
               <argLine>-XX:+HeapDumpOnOutOfMemoryError -XX:+PrintGC -XX:+PrintCompilation</argLine>
-               -->
-              <!--
               <argLine>-XX:+PrintGC</argLine>
               -->
               <!--
