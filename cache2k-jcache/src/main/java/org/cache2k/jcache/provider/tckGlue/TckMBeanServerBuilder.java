@@ -2,7 +2,7 @@ package org.cache2k.jcache.provider.tckGlue;
 
 /*
  * #%L
- * cache2k JSR107 support
+ * cache2k JCache provider
  * %%
  * Copyright (C) 2000 - 2016 headissue GmbH, Munich
  * %%

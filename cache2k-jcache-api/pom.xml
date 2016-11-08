@@ -13,7 +13,7 @@
 
   <artifactId>cache2k-jcache-api</artifactId>
   <version>0.29-SNAPSHOT</version>
-  <name>cache2k API for JSR107 support</name>
+  <name>cache2k JCache provider API</name>
 
   <description>
     A light weight and high performance Java caching library.

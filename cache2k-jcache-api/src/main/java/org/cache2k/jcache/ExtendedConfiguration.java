@@ -2,7 +2,7 @@ package org.cache2k.jcache;
 
 /*
  * #%L
- * cache2k API for JSR107 support
+ * cache2k JCache provider API
  * %%
  * Copyright (C) 2000 - 2016 headissue GmbH, Munich
  * %%
