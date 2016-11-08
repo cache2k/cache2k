@@ -914,10 +914,21 @@ public interface Cache<K, V> extends
   void destroy();
 
   /**
+   * This is currently identical to {@link Cache#close()}.
+   *
+   * <p>This method is to future proof the API, when a persistence feature is added.
+   * In this case the method will stop cache operations and remove all stored external data.
+   *
+   * <p>Rationale: The corresponding method in JSR107 is {@code CacheManager.destroyCache()}.
+   * Decided to put it on the cache interface, because: An application can finish its operation on
+   * a cache with one API call; to destroy all the cached data the cache must read the configuration
+   * and build its internal representation, which leads to a "half activated" cache; the additional
+   * call may lead to a race conditions.
+   */
+  void clearAndClose();
+
+  /**
    * Free all resources and remove the cache from the CacheManager.
-   * If persistence support is enabled, the cache may flush unwritten data. Depending on the
-   * configuration of the persistence, this method only returns after all unwritten data is
-   * flushed to disk.
    *
    * <p>The method is designed to free resources and finish operations as gracefully and fast
    * as possible. Some cache operations take an unpredictable long time such as the call of
@@ -929,6 +940,9 @@ public interface Cache<K, V> extends
    * call to close will not throw an exception.
    *
    * <p>If all caches need to be closed it is more effective to use {@link CacheManager#close()}
+   *
+   * <p>The next releases of cache2k may store cache entries between restarts. If an application will
+   * never use the cached content again, the method {@link #clearAndClose()} should be used instead.
    */
   void close();
 

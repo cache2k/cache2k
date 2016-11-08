@@ -232,4 +232,10 @@ public abstract class AbstractCache<K, V> implements InternalCache<K, V> {
       throw new CacheMisconfigurationException("Initialization of customization failed", ex);
     }
   }
+
+  @Override
+  public void clearAndClose() {
+    close();
+  }
+  
 }

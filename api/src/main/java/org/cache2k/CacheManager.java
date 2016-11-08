@@ -179,7 +179,7 @@ public abstract class CacheManager implements Iterable<Cache>, Closeable {
    */
   public abstract <K,V> Cache<K,V> createCache(Cache2kConfiguration<K, V> cfg);
 
-  /** Clear all caches associated to this cache manager */
+  /** Clear all currently active caches in this cache manager */
   public abstract void clear();
 
   /**

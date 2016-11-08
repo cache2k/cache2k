@@ -292,4 +292,10 @@ public class CacheWrapper<K,V> implements Cache<K, V> {
   public ConcurrentMap<K, V> asMap() {
     return cache.asMap();
   }
+
+  @Override
+  public void clearAndClose() {
+    cache.clearAndClose();
+  }
+
 }
