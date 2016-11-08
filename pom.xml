@@ -45,17 +45,21 @@
   </developers>
 
   <modules>
-    <module>api</module>
-    <module>jmx-api</module>
-    <module>core</module>
-    <module>ee</module>
-    <module>junit-util</module>
-    <module>variant/all</module>
-    <module>osgi-test</module>
-    <module>xml-configuration</module>
-    <module>doc</module>
-    <module>jcache/provider</module>
-    <module>jcache/api</module>
+    <module>cache2k-all</module>
+    <!-- included in all -->
+    <module>cache2k-api</module>
+    <module>cache2k-xml-configuration</module>
+    <module>cache2k-core</module>
+    <module>cache2k-jmx-api</module>
+    <module>cache2k-server-side</module>
+    <!-- JSR107 -->
+    <module>cache2k-jcache-api</module>
+    <module>cache2k-jcache</module>
+    <!-- other, deployed -->
+    <module>cache2k-testing</module>
+    <!-- not deployed -->
+    <module>test-osgi</module>
+    <module>documentation</module>
   </modules>
 
   <properties>
@@ -524,14 +528,7 @@
     <profile>
       <id>android</id>
       <modules>
-        <module>android-test</module>
-      </modules>
-    </profile>
-
-    <profile>
-      <id>osgi-test</id>
-      <modules>
-        <module>osgi-test</module>
+        <module>test-android</module>
       </modules>
     </profile>
 

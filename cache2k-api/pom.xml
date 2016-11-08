@@ -1,0 +1,54 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0
+                             http://maven.apache.org/maven-v4_0_0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+  
+  <parent>
+    <groupId>org.cache2k</groupId>
+    <artifactId>cache2k-parent</artifactId>
+    <version>0.29-SNAPSHOT</version>
+    <relativePath>../pom.xml</relativePath>
+  </parent>
+
+  <artifactId>cache2k-api</artifactId>
+  <version>0.29-SNAPSHOT</version>
+  <name>cache2k API</name>
+
+  <description>
+    A light weight and high performance Java caching library. API only artifact.
+    This artifact is included in cache2k-all.
+  </description>
+
+  <dependencies>
+
+    <dependency>
+      <groupId>org.cache2k</groupId>
+      <artifactId>cache2k-testing</artifactId>
+      <version>${project.version}</version>
+      <scope>test</scope>
+    </dependency>
+
+  </dependencies>
+
+  <build>
+    <plugins>
+      <!-- print a clirr report with:  mvn clirr:check -->
+      <plugin>
+        <groupId>org.codehaus.mojo</groupId>
+        <artifactId>clirr-maven-plugin</artifactId>
+        <version>2.6.1</version>
+        <configuration>
+          <comparisonArtifacts>
+            <comparisonArtifact>
+              <groupId>org.cache2k</groupId>
+              <artifactId>cache2k-api</artifactId>
+              <version>0.19.1</version>
+            </comparisonArtifact>
+          </comparisonArtifacts>
+        </configuration>
+      </plugin>
+    </plugins>
+  </build>
+
+</project>
