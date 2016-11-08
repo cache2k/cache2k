@@ -73,12 +73,13 @@ public class StandardPropertyParser implements PropertyParser {
       @Override
       public Boolean parse(String v) {
         v = v.toLowerCase();
-        return !(
-          "off".equals(v) ||
-          "false".equals(v) ||
-          "disable".equals(v) ||
-          "n".equals(v) ||
-          "no".equals(v));
+        if ("true".equals(v)) {
+          return true;
+        }
+        if ("false".equals(v)) {
+          return false;
+        }
+        throw new IllegalArgumentException("no boolean, true/false expected");
       }
     });
     addParser(Long.TYPE, Long.class, new ValueConverter<Long>() {
@@ -102,6 +103,7 @@ public class StandardPropertyParser implements PropertyParser {
   }
 
   static long parseLongWithUnitSuffix(String v) {
+    v = v.replace("_", "");
     long _multiplier = 1;
     int pos = v.length();
     while(--pos >= 0 && !Character.isDigit(v.charAt(pos)));

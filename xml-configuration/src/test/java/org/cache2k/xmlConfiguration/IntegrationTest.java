@@ -187,11 +187,21 @@ public class IntegrationTest {
     c.close();
   }
 
+  @Test(expected = ConfigurationException.class)
+  public void illegalBoolean() {
+    Cache c =
+      new Cache2kBuilder<String, String>() { }
+        .manager(CacheManager.getInstance("specialCases"))
+        .name("illegalBoolean")
+        .build();
+    c.close();
+  }
+
   @Test
   public void eternal_configExpire() {
     try {
       Cache c =
-        new Cache2kBuilder<String, String>() {}
+        new Cache2kBuilder<String, String>() { }
           .manager(CacheManager.getInstance("specialCases"))
           .name("withExpiry")
           .eternal(true)

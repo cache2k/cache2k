@@ -20,47 +20,38 @@
 <cache2k>
 
   <version>1.0</version>
-  <skipCheckOnStartup>true</skipCheckOnStartup>
-  <ignoreAnonymousCache>true</ignoreAnonymousCache>
-  <ignoreMissingCacheConfiguration>true</ignoreMissingCacheConfiguration>
+  <defaultCacheManager>default</defaultCacheManager>
+  <skipCheckOnStartup>false</skipCheckOnStartup>
+  <ignoreAnonymousCache>false</ignoreAnonymousCache>
+  <ignoreMissingCacheConfiguration>false</ignoreMissingCacheConfiguration>
 
+  <properties>
+    <user>
+
+    </user>
+  </properties>
+
+  <defaults>
+    <cache>
+      <expireAfterWrite>13ms</expireAfterWrite>
+    </cache>
+  </defaults>
+  <templates>
+    <cache>
+      <name>template1</name>
+      <expireAfterWrite>13ms</expireAfterWrite>
+    </cache>
+    <cache>
+      <name>template2</name>
+      <expireAfterWrite>13ms</expireAfterWrite>
+    </cache>
+  </templates>
   <caches>
     <cache>
-      <name>unknownProperty</name>
-      <bigBrownFox>47</bigBrownFox>
+      <name>cache1</name>
     </cache>
     <cache>
-      <name>sectionTypeNotFound</name>
-      <sections>
-        <bla>
-          <type>tld.some.class</type>
-        </bla>
-      </sections>
-    </cache>
-    <cache>
-      <name>templateNotFound</name>
-      <include>notThere</include>
-    </cache>
-    <cache>
-      <name>sectionTypeMissing</name>
-      <sections>
-        <bla>
-          <dummy></dummy>
-        </bla>
-      </sections>
-    </cache>
-    <cache>
-      <name>withExpiry</name>
-      <expireAfterWrite>2d</expireAfterWrite>
-    </cache>
-    <cache>
-      <name>eternal</name>
-      <eternal>true</eternal>
-    </cache>
-    <cache>
-      <name>illegalBoolean</name>
-      <eternal>foo</eternal>
+      <name>cache2</name>
     </cache>
   </caches>
-
 </cache2k>

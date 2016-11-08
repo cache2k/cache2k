@@ -42,6 +42,11 @@ public class StandardPropertyParserTest {
     assertEquals(123, StandardPropertyParser.parseLongWithUnitSuffix("123"));
   }
 
+  @Test
+  public void parseLong_123_5678() {
+    assertEquals(1235678, StandardPropertyParser.parseLongWithUnitSuffix("123_5678"));
+  }
+
   @Test(expected = NumberFormatException.class)
   public void parseLong_123xy() {
     StandardPropertyParser.parseLongWithUnitSuffix("123xy");

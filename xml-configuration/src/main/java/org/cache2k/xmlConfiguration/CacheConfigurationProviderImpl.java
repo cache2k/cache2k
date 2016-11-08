@@ -287,6 +287,9 @@ public class CacheConfigurationProviderImpl implements CacheConfigurationProvide
       try {
         obj = propertyParser.parse(_propertyType, p.getValue());
       } catch (Exception ex) {
+        if (ex instanceof IllegalArgumentException) {
+          throw new ConfigurationException("Value '" + p.getValue() + "' rejected: " + ex.getMessage(), p.getSource(), p.getLineNumber());
+        }
         throw new ConfigurationException("Cannot parse property: " + ex, p.getSource(), p.getLineNumber());
       }
       try {

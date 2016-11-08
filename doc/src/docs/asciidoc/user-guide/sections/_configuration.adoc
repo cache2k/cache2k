@@ -1,0 +1,48 @@
+== XML Configuration
+
+===
+
+=== Types
+
+The configuration supports basic types.
+
+.Supported Types in XML Configuration
+[width="70",options="header"]
+,===
+type,example,description
+boolean,`true`,Boolean value either true of false
+int,4711,Integer value
+long,20_000MB,Long value with suffixes (see below)
+String,"alice",A string value
+,===
+
+For additional convenience the long type supports a range of suffixes:
+
+[width="70",options="header"]
+,===
+suffix,value
+KiB, 1024
+MiB, 1024^2
+GiB, 1024^3
+TiB, 1024^4
+k, 1000
+M, 1000^2
+G, 1000^3
+T, 1000^4
+s, 1000
+m, 1000*60
+h, 1000*60*60
+d, 1000*60*60*24
+,===
+
+A long value may also contain the character '_' for structuring. This character is ignored. Example: `12_000_000`.
+
+=== Parameters
+
+The values may contain the typical parameters in the the style `${name}`.
+
+
+
+=== Default
+
+=== Templates
