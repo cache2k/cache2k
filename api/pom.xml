@@ -16,7 +16,8 @@
   <name>cache2k API</name>
 
   <description>
-    A light weight and high performance Java cache library. API only jar.
+    A light weight and high performance Java caching library. API only artifact.
+    This artifact is included in cache2k-all.
   </description>
 
   <dependencies>

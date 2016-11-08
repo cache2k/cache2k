@@ -16,8 +16,8 @@
   <name>cache2k API for JSR107 support</name>
 
   <description>
-    A light weight and high performance Java cache library.
-    JCache/JSR107 support / API package.
+    A light weight and high performance Java caching library.
+    JCache/JSR107 support. API package with additional configuration options.
   </description>
 
   <dependencies>
@@ -25,6 +25,7 @@
       <groupId>${project.groupId}</groupId>
       <artifactId>cache2k-api</artifactId>
       <version>${project.version}</version>
+      <scope>provided</scope>
     </dependency>
     <!--
       The scope of the cache-api dependency is intentionally "provided"

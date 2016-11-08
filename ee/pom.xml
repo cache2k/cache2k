@@ -15,7 +15,8 @@
   <name>cache2k ee</name>
 
   <description>
-    A light weight and high performance Java cache library. Extension for adding JMX support.
+    A light weight and high performance Java caching library. Extension for adding JMX support.
+    This artifact is included in cache2k-all.
   </description>
 
   <dependencies>

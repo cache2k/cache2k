@@ -12,7 +12,8 @@
   <name>cache2k JMX API</name>
 
   <description>
-    A light weight and high performance Java cache library. JMX API only jar.
+    A light weight and high performance Java caching library. JMX API definitions.
+    This artifact is included in cache2k-all.
   </description>
 
   <dependencies>

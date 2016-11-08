@@ -12,7 +12,8 @@
   <name>cache2k XML configuration</name>
 
   <description>
-    XML configuration parser
+    A light weight and high performance Java caching library. XML configuration file support.
+    This artifact is included in cache2k-all.
   </description>
 
   <dependencies>
@@ -35,13 +36,6 @@
           <version>${project.version}</version>
           <scope>test</scope>
       </dependency>
-
-    <dependency>
-      <groupId>org.cache2k</groupId>
-      <artifactId>cache2k-jcache</artifactId>
-      <version>${project.version}</version>
-      <scope>test</scope>
-    </dependency>
 
     <dependency>
         <groupId>xpp3</groupId>

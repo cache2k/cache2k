@@ -12,7 +12,8 @@
   <name>cache2k core</name>
 
   <description>
-      A light weight and high performance Java cache library. Android compatible core library.
+    A light weight and high performance Java caching library. Android and Java 6 compatible core library.
+    This artifact is included in cache2k-all.
   </description>
 
   <dependencies>

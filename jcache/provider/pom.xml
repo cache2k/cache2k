@@ -16,30 +16,50 @@
   <name>cache2k JSR107 support</name>
 
   <description>
-    A light weight and high performance Java cache library. JCache/JSR107 support.
+    A light weight and high performance Java caching library. JCache/JSR107 support.
+    Dependency to javax.cache:cache-api must be additionally declared.
   </description>
 
   <dependencies>
+
     <dependency>
       <groupId>${project.groupId}</groupId>
-      <artifactId>cache2k-core</artifactId>
+      <artifactId>cache2k-all</artifactId>
+      <version>${project.version}</version>
+      <scope>runtime</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.cache2k</groupId>
+      <artifactId>cache2k-jcache-api</artifactId>
       <version>${project.version}</version>
     </dependency>
+
+    <!-- Additional compile time dependencies, included in cache2k-all -->
     <dependency>
       <groupId>${project.groupId}</groupId>
       <artifactId>cache2k-jmx-api</artifactId>
       <version>${project.version}</version>
+      <scope>provided</scope>
     </dependency>
     <dependency>
       <groupId>${project.groupId}</groupId>
       <artifactId>cache2k-ee</artifactId>
       <version>${project.version}</version>
+      <scope>provided</scope>
     </dependency>
     <dependency>
       <groupId>${project.groupId}</groupId>
       <artifactId>cache2k-api</artifactId>
       <version>${project.version}</version>
+      <scope>provided</scope>
     </dependency>
+    <dependency>
+      <groupId>${project.groupId}</groupId>
+      <artifactId>cache2k-xml-configuration</artifactId>
+      <version>${project.version}</version>
+      <scope>provided</scope>
+    </dependency>
+
     <!--
       The scope of the cache-api dependency is intentionally "provided"
       because it is not Apache licensed. This way, users have to add the dependency
@@ -52,17 +72,15 @@
       <version>${jcache.version}</version>
       <scope>provided</scope>
     </dependency>
+
+    <!-- testing -->
     <dependency>
       <groupId>org.cache2k</groupId>
       <artifactId>cache2k-junit-util</artifactId>
       <version>${project.version}</version>
       <scope>test</scope>
     </dependency>
-    <dependency>
-      <groupId>org.cache2k</groupId>
-      <artifactId>cache2k-jcache-api</artifactId>
-      <version>${project.version}</version>
-    </dependency>
+
   </dependencies>
 
 </project>

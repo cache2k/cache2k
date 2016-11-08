@@ -25,7 +25,6 @@ import org.cache2k.Cache2kBuilder;
 import org.cache2k.CacheManager;
 import org.cache2k.CacheMisconfigurationException;
 import org.cache2k.configuration.Cache2kConfiguration;
-import org.cache2k.jcache.JCacheConfiguration;
 import org.junit.Test;
 import static org.junit.Assert.*;
 import static org.hamcrest.CoreMatchers.*;
@@ -64,34 +63,6 @@ public class IntegrationTest {
     assertEquals(1234, cfg.getEntryCapacity());
     assertEquals(47000, cfg.getExpireAfterWrite());
     c.close();
-  }
-
-  @Test
-  public void sectionIsThere() {
-    Cache2kBuilder<String, String> b =
-      new Cache2kBuilder<String, String>(){}.name("withSection");
-    Cache2kConfiguration<String, String> cfg = b.toConfiguration();
-    Cache<String, String> c = b.build();
-    assertEquals("default is false", false, new JCacheConfiguration().isAlwaysFlushJmxStatistics());
-    assertEquals("config applied", true, cfg.getSections().getSection(JCacheConfiguration.class).isAlwaysFlushJmxStatistics());
-    c.close();
-  }
-
-  @Test
-  public void sectionIsThereViaStandardElementName() {
-    Cache2kBuilder<String, String> b =
-      new Cache2kBuilder<String, String>(){}.name("withJCacheSection");
-    Cache2kConfiguration<String, String> cfg = b.toConfiguration();
-    Cache<String, String> c = b.build();
-    assertEquals("default is false", false, new JCacheConfiguration().isAlwaysFlushJmxStatistics());
-    assertEquals("config applied", true, cfg.getSections().getSection(JCacheConfiguration.class).isAlwaysFlushJmxStatistics());
-    c.close();
-  }
-
-  @Test
-  public void testBoth() {
-    new Cache2kBuilder<String, String>(){}.name("withSection");
-    new Cache2kBuilder<String, String>(){}.name("flowers");
   }
 
   @Test(expected = ConfigurationException.class)
