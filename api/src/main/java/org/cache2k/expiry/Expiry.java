@@ -103,6 +103,9 @@ public class Expiry implements ExpiryTimeValues {
     if (pointInTime == ETERNAL) {
       return _refreshTime;
     }
+    if (pointInTime > _refreshTime) {
+      return _refreshTime;
+    }
     long _absPointInTime = Math.abs(pointInTime);
     if (_absPointInTime <= _refreshTime) {
       return pointInTime;

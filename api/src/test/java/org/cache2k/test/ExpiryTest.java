@@ -79,7 +79,12 @@ public class ExpiryTest {
 
   @Test
   public void mix_shorterTimeSpanIfPitIsNear() {
-    assertEquals(101, mixTimeSpanAndPointInTime(100, 5, 106));
+    assertEquals(101, mixTimeSpanAndPointInTime(100, 5, -106));
+  }
+
+  @Test
+  public void mix_noSharp_passIfPitIsNear() {
+    assertEquals(105, mixTimeSpanAndPointInTime(100, 5, 106));
   }
 
   @Test

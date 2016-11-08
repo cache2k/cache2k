@@ -581,27 +581,7 @@ public abstract class TimingHandler<K,V>  {
     if (_sharpExpiryEnabled && _requestedExpiryTime > ExpiryPolicy.REFRESH && _requestedExpiryTime < ExpiryPolicy.ETERNAL) {
       _requestedExpiryTime = -_requestedExpiryTime;
     }
-    if (_maxLinger > 0 && _maxLinger < ExpiryPolicy.ETERNAL) {
-      long _tMaximum = _maxLinger + now;
-      if (_tMaximum <= 0) {
-        _tMaximum = Expiry.ETERNAL;
-      }
-      if (_requestedExpiryTime > _tMaximum) {
-        return _tMaximum;
-      }
-      if (_requestedExpiryTime < -1 && -_requestedExpiryTime > _tMaximum) {
-        long _pitMinusSafetyGap = -_requestedExpiryTime - SAFETY_GAP_MILLIS;
-        if (_pitMinusSafetyGap < _tMaximum) {
-          if (_pitMinusSafetyGap > now) {
-            return _pitMinusSafetyGap;
-          } else {
-            return (_tMaximum - now) / 2 + now;
-          }
-        }
-        return _tMaximum;
-      }
-    }
-    return _requestedExpiryTime;
+    return Expiry.mixTimeSpanAndPointInTime(now, _maxLinger, _requestedExpiryTime);
   }
 
   public static class Tunable extends TunableConstants {

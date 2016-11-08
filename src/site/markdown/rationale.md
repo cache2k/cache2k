@@ -1,8 +1,8 @@
 Don't make the same mistake twice. Let's write down some design decisions.
 
-## Why get(? extends K) instread of get(Object)?
+## Why get(? extends K) instead of get(Object)?
 
-Java's Map interface as well as Guava use `get(Object)`. This allows for every object to be passed
+Java's Map interface as well as Guava use `get(Object)`. This allows for every key type to be passed
 in. Details about the background can be found here: 
 [What are the reasons why Map.get(Object key) is not (fully) generic](http://stackoverflow.com/questions/857420/what-are-the-reasons-why-map-getobject-key-is-not-fully-generic)
 
@@ -107,7 +107,7 @@ complicating clients. The choice was made against good API design practices, to 
 Using arrays as values is not supported, because the cache operations testing for equality, 
 like `Cache.replaceIfEquals` will not work as desired on arrays. 
 
-Supporting arrays is feasible, some cache implementations allow arrays and solve the problem of equality by
+In general, supporting arrays is feasible, some cache implementations allow arrays and solve the problem of equality by
  making the equality a customization option. The only argument for arrays is to save the extra object instance.
 Supporting arrays, would make the cache code base more complex with little benefit.
 
@@ -116,4 +116,3 @@ To support caching of arrays of primitive types, some standard wrapper object sh
 Maybe we should drop the check of array value type in the configuration, since it will never
 completely protect against the usage of arrays. In case the cache is by-reference only and
  no operations are used that check for equality, arrays would work as values.
- 

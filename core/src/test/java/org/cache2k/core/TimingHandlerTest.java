@@ -22,7 +22,6 @@ package org.cache2k.core;
 
 import org.cache2k.Cache2kBuilder;
 import org.cache2k.CacheEntry;
-import org.cache2k.expiry.Expiry;
 import org.cache2k.expiry.ExpiryPolicy;
 import org.cache2k.junit.FastTests;
 import org.junit.Test;
@@ -40,7 +39,7 @@ import static org.junit.Assert.*;
 public class TimingHandlerTest {
 
   private final Entry ENTRY = new Entry();
-  private final long POINT_IN_TIME = 10000000;
+  private final long NOW = 10000000;
 
   @Test
   public void eternalSpecified() {
@@ -122,8 +121,8 @@ public class TimingHandlerTest {
         .toConfiguration()
     );
     Entry e = new Entry();
-    long t = h.calculateNextRefreshTime(e, null, POINT_IN_TIME);
-    assertEquals(-POINT_IN_TIME - 1, t);
+    long t = h.calculateNextRefreshTime(e, null, NOW);
+    assertEquals(-NOW - 1, t);
   }
 
   /**
@@ -143,11 +142,11 @@ public class TimingHandlerTest {
         .toConfiguration()
     );
     Entry e = new Entry();
-    long t = h.calculateNextRefreshTime(e, null, POINT_IN_TIME);
+    long t = h.calculateNextRefreshTime(e, null, NOW);
     assertNotEquals(Long.MAX_VALUE, t);
-    assertEquals(POINT_IN_TIME + TimeUnit.MINUTES.toMillis(5), t);
-    t = h.calculateNextRefreshTime(e, null, POINT_IN_TIME);
-    assertEquals(POINT_IN_TIME + TimeUnit.MINUTES.toMillis(5), t);
+    assertEquals(NOW + TimeUnit.MINUTES.toMillis(5), t);
+    t = h.calculateNextRefreshTime(e, null, NOW);
+    assertEquals(NOW + TimeUnit.MINUTES.toMillis(5), t);
   }
 
   /**
@@ -156,7 +155,7 @@ public class TimingHandlerTest {
   @Test
   public void expireAfterWrite_policy_limit_sharp() {
     long _DURATION = 1000000;
-    final long _SHARP_POINT_IN_TIME = POINT_IN_TIME + 5000000;
+    final long _SHARP_POINT_IN_TIME = NOW + 5000000;
     TimingHandler h = TimingHandler.of(
       Cache2kBuilder.forUnknownTypes()
         .expiryPolicy(new ExpiryPolicy() {
@@ -169,10 +168,10 @@ public class TimingHandlerTest {
         .toConfiguration()
     );
     Entry e = new Entry();
-    long t = h.calculateNextRefreshTime(e, null, POINT_IN_TIME);
+    long t = h.calculateNextRefreshTime(e, null, NOW);
     assertNotEquals(Long.MAX_VALUE, t);
-    assertEquals("max expiry, but not sharp", POINT_IN_TIME + _DURATION , t);
-    long _later = POINT_IN_TIME + _DURATION;
+    assertEquals("max expiry, but not sharp", NOW + _DURATION , t);
+    long _later = NOW + _DURATION;
     t = h.calculateNextRefreshTime(e, null, _later);
     assertEquals(_later + _DURATION, t);
     _later = _SHARP_POINT_IN_TIME - _DURATION / 2;
@@ -180,9 +179,39 @@ public class TimingHandlerTest {
     assertEquals("requested expiry via duration too close", -_SHARP_POINT_IN_TIME, t);
     _later = _SHARP_POINT_IN_TIME - _DURATION - 1;
     t = h.calculateNextRefreshTime(e, null, _later);
-    if (HeapCache.TUNABLE.sharpExpirySafetyGapMillis < _DURATION) {
-      assertEquals("keep gap to point in time ", _SHARP_POINT_IN_TIME - HeapCache.TUNABLE.sharpExpirySafetyGapMillis, t);
-    }
+    assertTrue(t <= _later + _DURATION);
+    assertEquals(_later + 1, t);
+  }
+
+  @Test
+  public void expireAfterWrite_policy_limit_nonSharp() {
+    long _DURATION = 1000000;
+    final long _POINT_IN_TIME = NOW + 5000000;
+    TimingHandler h = TimingHandler.of(
+      Cache2kBuilder.forUnknownTypes()
+        .expiryPolicy(new ExpiryPolicy() {
+          @Override
+          public long calculateExpiryTime(Object key, Object value, long loadTime, CacheEntry oldEntry) {
+            return _POINT_IN_TIME;
+          }
+        })
+        .expireAfterWrite(_DURATION, TimeUnit.MILLISECONDS)
+        .toConfiguration()
+    );
+    Entry e = new Entry();
+    long t = h.calculateNextRefreshTime(e, null, NOW);
+    assertNotEquals(Long.MAX_VALUE, t);
+    assertEquals("max expiry, but not sharp", NOW + _DURATION , t);
+    long _later = NOW + _DURATION;
+    t = h.calculateNextRefreshTime(e, null, _later);
+    assertEquals(_later + _DURATION, t);
+    _later = _POINT_IN_TIME - _DURATION / 2;
+    t = h.calculateNextRefreshTime(e, null, _later);
+    assertEquals("requested expiry via duration too close", _POINT_IN_TIME, t);
+    _later = _POINT_IN_TIME - _DURATION - 1;
+    t = h.calculateNextRefreshTime(e, null, _later);
+    assertTrue(t <= _later + _DURATION);
+    assertEquals(_later + _DURATION, t);
   }
 
   /**
@@ -192,7 +221,7 @@ public class TimingHandlerTest {
   @Test
   public void expireAfterWrite_policy_limit_sharp_close() {
     long _DURATION = 100;
-    final long _SHARP_POINT_IN_TIME = POINT_IN_TIME + 5000;
+    final long _SHARP_POINT_IN_TIME = NOW + 5000;
     TimingHandler h = TimingHandler.of(
       Cache2kBuilder.forUnknownTypes()
         .expiryPolicy(new ExpiryPolicy() {
@@ -209,7 +238,7 @@ public class TimingHandlerTest {
     long t = h.calculateNextRefreshTime(e, null, _later);
     assertTrue("expect gap bigger then duration", HeapCache.TUNABLE.sharpExpirySafetyGapMillis > _DURATION);
     assertNotEquals(_SHARP_POINT_IN_TIME - HeapCache.TUNABLE.sharpExpirySafetyGapMillis, t);
-    assertTrue(Math.abs(t) > POINT_IN_TIME);
+    assertTrue(Math.abs(t) > NOW);
     assertTrue(Math.abs(t) < _SHARP_POINT_IN_TIME);
   }
 

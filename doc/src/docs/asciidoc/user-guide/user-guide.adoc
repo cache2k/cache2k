@@ -13,6 +13,8 @@ include::sections/_loading.adoc[]
 
 include::sections/_expiry.adoc[]
 
+include::sections/_refresh.adoc[]
+
 include::sections/_null.adoc[]
 
 include::sections/_types.adoc[]

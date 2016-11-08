@@ -22,7 +22,9 @@ For discussion, see: https://github.com/cache2k/cache2k/issues/39[GH 39]
 
 === Variable Expiry
 
-Each entry may have a different expiry time. This can be achieved by specifying an `ExpiryPolicy`. The `ExpiryPolicy` calculates a point in time, where an entry expires. The configuration parameter `expireAfterWrite` is used as a maximum value.
+Each entry may have a different expiry time. This can be achieved by specifying an `ExpiryPolicy`.
+The `ExpiryPolicy` calculates a point in time, when a value expires. The configuration parameter
+`expireAfterWrite` is used as a maximum value.
 
 === Lagging Expiry
 
@@ -50,10 +52,6 @@ time calculated by the `ExpiryPolicy`, but the duration in `expireAfterWrite` is
 If the expiry is result of a duration calculation via `expireAfterWrite` sharp expiry of the entry will not be
 enabled.
 
-[NOTE]
-Combining sharp expiry, lagging expiry and refresh ahead, leads to an operation mode that
-cannot guarantee the sharp expiry contract if load operations take too long.
-
 === Loader Exceptions and Expiry
 
 When an expiry duration is specified via `expireAfterWrite`, resilience features are automatically
@@ -75,7 +73,7 @@ Expiry.ETERNAL, keep indefinitly or to a maximum of whats set with via `expireAf
 It is possible to atomically examine a cached entry and update its expiry with the `EntryProcessor` and
 `MutableCacheEntry.setExpiry()`.
 
-== Wall Clock and Clock Skew
+=== Wall Clock and Clock Skew
 
 For timing reference the Java `System.currentTimeMillis()` is used. As with any application that relies on
 time, it is good practice that the system clock is synchronized with a time reference. When the system time
