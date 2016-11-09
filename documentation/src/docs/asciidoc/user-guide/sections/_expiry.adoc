@@ -61,7 +61,7 @@ active. See the resilience chapter for details.
 
 The expiry value can be reset with the method `Cache.expireAt(key, time)`. Some special values exist:
 
-.Cache.expireAt constants
+.`Cache.expireAt` constants
 [width="70",options="header"]
 ,===
 constant,meaning
