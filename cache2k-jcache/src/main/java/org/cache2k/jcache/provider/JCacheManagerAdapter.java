@@ -184,6 +184,7 @@ public class JCacheManagerAdapter implements CacheManager {
 
   @Override
   public Iterable<String> getCacheNames() {
+    checkClosed();
     Set<String> _names = new HashSet<String>();
     for (org.cache2k.Cache c : manager) {
       _names.add(c.getName());
