@@ -135,28 +135,21 @@ public class JCacheManagerAdapter implements CacheManager {
 
   @Override @SuppressWarnings("unchecked")
   public <K, V> Cache<K, V> getCache(String _cacheName, final Class<K> _keyType, final Class<V> _valueType) {
-    checkClosed();
-    synchronized (getLockObject()) {
-      Cache<K, V> c = name2adapter.get(_cacheName);
-      if (c != null && manager.getCache(_cacheName) == c.unwrap(org.cache2k.Cache.class) && !c.isClosed()) {
-        Configuration cfg = c.getConfiguration(Configuration.class);
-        if (!cfg.getKeyType().equals(_keyType)) {
-          if (_keyType.equals(Object.class)) {
-            throw new IllegalArgumentException("Available cache by requested name has runtime type parameters.");
-          }
-          throw new ClassCastException("key type mismatch, expected: " + cfg.getKeyType().getName());
-        }
-        if (!cfg.getValueType().equals(_valueType)) {
-          if (_valueType.equals(Object.class)) {
-            throw new IllegalArgumentException("Available cache by requested name has runtime type parameters.");
-          }
-          throw new ClassCastException("value type mismatch, expected: " + cfg.getValueType().getName());
-        }
-        return c;
-      }
-
+    if (_keyType == null || _valueType == null) {
+      throw new NullPointerException();
+    }
+    Cache<K, V> c = getCache(_cacheName);
+    if (c == null) {
       return null;
     }
+    Configuration cfg = c.getConfiguration(Configuration.class);
+    if (!cfg.getKeyType().equals(_keyType)) {
+      throw new ClassCastException("key type mismatch, expected: " + cfg.getKeyType().getName());
+    }
+    if (!cfg.getValueType().equals(_valueType)) {
+      throw new ClassCastException("value type mismatch, expected: " + cfg.getValueType().getName());
+    }
+    return c;
   }
 
   private JCacheAdapter getAdapter(String _name) {
@@ -179,7 +172,15 @@ public class JCacheManagerAdapter implements CacheManager {
   @SuppressWarnings("unchecked")
   @Override
   public <K, V> Cache<K, V> getCache(String _cacheName) {
-    return (Cache<K, V>) getCache(_cacheName, Object.class, Object.class);
+    checkClosed();
+    checkNonNullCacheName(_cacheName);
+    synchronized (getLockObject()) {
+      Cache<K, V> c = name2adapter.get(_cacheName);
+      if (c != null && manager.getCache(_cacheName) == c.unwrap(org.cache2k.Cache.class) && !c.isClosed()) {
+        return c;
+      }
+    }
+    return null;
   }
 
   @Override
