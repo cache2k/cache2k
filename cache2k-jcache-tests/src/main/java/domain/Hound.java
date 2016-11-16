@@ -14,23 +14,23 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package org.jsr107.tck.annotation;
 
-import manager.BlogManager;
-import manager.UsingDefaultCacheNameBlogManagerImpl;
+package domain;
 
 /**
- * @author Rick Hightower
+ * A hound which is a dog most characterised by its sound, a cross between a howl and a bark.
+ *
+ * @author Greg Luck
  */
-public class InterceptionUsingDefaultCacheNameTest extends
-    AbstractBlogManagerInterceptionTest {
+public interface Hound {
 
   /**
+   * Tells the hound to bay
    *
+   * @param loudness 0 for mute, 1 is the softest and 255 is the loudest
+   * @param duration the duraction of the bay in seconds
    */
-  @Override
-  protected BlogManager getBlogManager() {
-    return getBeanByType(UsingDefaultCacheNameBlogManagerImpl.class);
-  }
+  void bay(int loudness, int duration);
+
 
 }

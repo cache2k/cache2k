@@ -26,8 +26,6 @@
     </description>
 
     <properties>
-        <domain-lib-dir>${project.build.directory}/domainlib</domain-lib-dir>
-        <domain-jar>domain.jar</domain-jar>
         <jcache-spec-version>1.0.1</jcache-spec-version>
     </properties>
 
@@ -37,12 +35,6 @@
             <groupId>junit</groupId>
             <artifactId>junit</artifactId>
             <version>4.11</version>
-        </dependency>
-
-        <dependency>
-            <groupId>javax.cache</groupId>
-            <artifactId>test-domain</artifactId>
-            <version>1.0.1</version>
         </dependency>
 
         <dependency>
@@ -143,7 +135,6 @@
                         <configuration>
                             <systemPropertyVariables>
                                 <java.net.preferIPv4Stack>${java.net.preferIPv4Stack}</java.net.preferIPv4Stack>
-                                <domainJar>${domain-lib-dir}/${domain-jar}</domainJar>
                                 <javax.management.builder.initial>org.cache2k.jcache.provider.tckGlue.TckMBeanServerBuilder
                                 </javax.management.builder.initial>
                                 <org.jsr107.tck.management.agentId>someUniqueString</org.jsr107.tck.management.agentId>

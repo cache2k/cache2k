@@ -14,23 +14,24 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package org.jsr107.tck.annotation;
 
-import manager.BlogManager;
-import manager.ClassLevelCacheConfigBlogManagerImpl;
+package domain;
 
 /**
- * @author Rick Hightower
+ * @author Greg Luck
  */
-public class InterceptionUsingCacheConfigTest extends
-    AbstractBlogManagerInterceptionTest {
+public class BorderCollie extends Dog implements Collie {
 
   /**
-   *
+   * Tells the Collie to herd
    */
   @Override
-  protected BlogManager getBlogManager() {
-    return getBeanByType(ClassLevelCacheConfigBlogManagerImpl.class);
+  public void herd() {
+
   }
 
+  protected BorderCollie getThis() {
+    return this;
+  }
 }
+

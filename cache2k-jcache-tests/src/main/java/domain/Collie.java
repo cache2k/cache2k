@@ -15,12 +15,21 @@
  *  limitations under the License.
  */
 
+package domain;
+
+import java.io.Serializable;
+
 /**
- This package contains the TCK for JSR107.
-
- The tests use JUnit and should run both from an IDE and Maven using the supplied pom.xml.
-
-
- @author Greg Luck
+ * A Collie which is can be characterised by its herding instinct.
+ *
+ * @author Greg Luck
  */
-package org.jsr107.tck.annotation;
+public interface Collie extends Serializable {
+
+  /**
+   * Tells the hound to bay
+   */
+  void herd();
+
+
+}

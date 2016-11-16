@@ -14,23 +14,27 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package org.jsr107.tck.annotation;
+package manager;
 
-import manager.BlogManager;
-import manager.CacheNameOnEachMethodBlogManagerImpl;
+import domain.Blog;
 
 /**
  * @author Rick Hightower
  */
-public class InterceptionCacheNameOnEachMethodTest extends
-    AbstractBlogManagerInterceptionTest {
+public interface BlogManager {
 
-  /**
-   *
-   */
-  @Override
-  protected BlogManager getBlogManager() {
-    return getBeanByType(CacheNameOnEachMethodBlogManagerImpl.class);
-  }
+  Blog getEntryCached(String title);
+
+  Blog getEntryCached(String randomArg, String title, String randomArg2);
+
+  Blog getEntryRaw(String title);
+
+  void clearEntryFromCache(String title);
+
+  void clearEntry(String title);
+
+  void clearCache();
+
+  void createEntry(Blog blog);
 
 }
