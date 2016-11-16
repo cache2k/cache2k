@@ -142,9 +142,6 @@
                                 <javax.cache.Cache>org.cache2k.Cache</javax.cache.Cache>
                                 <javax.cache.Cache.Entry>org.cache2k.CacheEntry</javax.cache.Cache.Entry>
                             </systemPropertyVariables>
-                            <excludes>
-                                <exclude>**/annotation/*Test.java</exclude>
-                            </excludes>
                         </configuration>
                     </plugin>
                 </plugins>
