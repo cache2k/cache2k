@@ -533,9 +533,9 @@
     </profile>
 
     <profile>
-      <id>jcache-tck-test-clone</id>
+      <id>cache2k-jcache-tests</id>
       <modules>
-        <module>jcache/tck-test-clone</module>
+        <module>cache2k-jcache-tests</module>
       </modules>
     </profile>
 
