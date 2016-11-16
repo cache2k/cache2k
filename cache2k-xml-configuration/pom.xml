@@ -32,7 +32,7 @@
 
       <dependency>
           <groupId>org.cache2k</groupId>
-          <artifactId>cache2k-junit-util</artifactId>
+          <artifactId>cache2k-testing</artifactId>
           <version>${project.version}</version>
           <scope>test</scope>
       </dependency>

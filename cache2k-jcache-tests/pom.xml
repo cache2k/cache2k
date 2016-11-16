@@ -1,153 +1,154 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0"
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
-    <modelVersion>4.0.0</modelVersion>
+  <modelVersion>4.0.0</modelVersion>
 
-    <parent>
-      <groupId>org.cache2k</groupId>
-      <artifactId>cache2k-parent</artifactId>
-      <version>0.29-SNAPSHOT</version>
-      <relativePath>../pom.xml</relativePath>
-    </parent>
-
+  <parent>
     <groupId>org.cache2k</groupId>
-    <artifactId>cache2k-jcache-tests</artifactId>
+    <artifactId>cache2k-parent</artifactId>
+    <version>0.29-SNAPSHOT</version>
+    <relativePath>../pom.xml</relativePath>
+  </parent>
 
-    <packaging>jar</packaging>
+  <groupId>org.cache2k</groupId>
+  <artifactId>cache2k-jcache-tests</artifactId>
 
-    <name>cache2k JCache tests</name>
-    
-    <url>https://github.com/jsr107/jsr107tck</url>
-    <description>
-      Tests for JSR107 compliant caches. These are tests from the JSR107 TCK
-      that were published as Open Source. The artifact may also contain additional
-      tests and improvements. For compliance testing use the original TCK as published
-      via jcp.org.
-    </description>
+  <packaging>jar</packaging>
 
-    <properties>
-        <jcache-spec-version>1.0.1</jcache-spec-version>
-    </properties>
+  <name>cache2k JCache tests</name>
 
-    <dependencies>
+  <url>https://github.com/jsr107/jsr107tck</url>
+  <description>
+    Tests for JSR107 compliant caches. These are tests from the JSR107 TCK
+    that were published as Open Source. The artifact may also contain additional
+    tests and improvements. For compliance testing use the original TCK as published
+    via jcp.org.
+  </description>
 
-        <dependency>
-            <groupId>junit</groupId>
-            <artifactId>junit</artifactId>
-            <version>4.11</version>
-        </dependency>
+  <properties>
+    <jcache-spec-version>1.0.1</jcache-spec-version>
+  </properties>
 
-        <dependency>
-            <groupId>javax.cache</groupId>
-            <artifactId>cache-api</artifactId>
-            <version>${jcache.version}</version>
-        </dependency>
+  <dependencies>
 
-        <dependency>
-            <groupId>org.hamcrest</groupId>
-            <artifactId>hamcrest-all</artifactId>
-            <version>1.3</version>
-            <scope>test</scope>
-        </dependency>
+    <dependency>
+      <groupId>junit</groupId>
+      <artifactId>junit</artifactId>
+      <version>4.11</version>
+    </dependency>
 
-    </dependencies>
+    <dependency>
+      <groupId>javax.cache</groupId>
+      <artifactId>cache-api</artifactId>
+      <version>${jcache.version}</version>
+    </dependency>
 
-    <build>
-        <!--The rest come from the parent pom-->
-        <plugins>
-           <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-surefire-plugin</artifactId>
-                <version>2.9</version>
-                <configuration>
-                    <skipTests>true</skipTests>
-                </configuration>
-            </plugin>
-           <plugin>
-                <artifactId>maven-compiler-plugin</artifactId>
-                <version>2.3.2</version>
-                <configuration>
-                    <source>1.7</source>
-                    <target>1.7</target>
-                </configuration>
-            </plugin>
-            <!-- skip deploy -->
-            <plugin>
-              <groupId>org.apache.maven.plugins</groupId>
-              <artifactId>maven-deploy-plugin</artifactId>
-              <configuration>
-                <skip>true</skip>
-              </configuration>
-            </plugin>
-        </plugins>
-    </build>
+    <dependency>
+      <groupId>org.hamcrest</groupId>
+      <artifactId>hamcrest-all</artifactId>
+      <version>1.3</version>
+      <scope>test</scope>
+    </dependency>
 
+  </dependencies>
+
+  <build>
+    <!--The rest come from the parent pom-->
     <plugins>
       <plugin>
-        <groupId>org.codehaus.mojo</groupId>
-        <artifactId>license-maven-plugin</artifactId>
-        <executions>
-          <execution>
-            <id>first</id>
-            <goals>
-              <goal>update-file-header</goal>
-            </goals>
-            <phase>process-sources</phase>
-            <configuration>
-              <excludes>
-                <exclude>src/main/java/org/jsr107/**</exclude>
-                <exclude>src/test/java/org/jsr107/**</exclude>
-              </excludes>
-            </configuration>
-          </execution>
-        </executions>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-surefire-plugin</artifactId>
+        <version>2.9</version>
+        <configuration>
+          <skipTests>true</skipTests>
+        </configuration>
+      </plugin>
+      <!-- The original TCK code is only compatible to Java 7 -->
+      <plugin>
+        <artifactId>maven-compiler-plugin</artifactId>
+        <version>2.3.2</version>
+        <configuration>
+          <source>1.7</source>
+          <target>1.7</target>
+        </configuration>
+      </plugin>
+      <!-- skip deploy -->
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-deploy-plugin</artifactId>
+        <configuration>
+          <skip>true</skip>
+        </configuration>
       </plugin>
     </plugins>
+  </build>
 
-    <profiles>
-        <!-- Turn this on to run TCK tests from the IDE. Without it no caching provider will be found. -->
-        <profile>
-            <id>cache2k-jcache-tests-with-cache2k</id>
-            <activation>
-                <activeByDefault>true</activeByDefault>
-            </activation>
+  <plugins>
+    <plugin>
+      <groupId>org.codehaus.mojo</groupId>
+      <artifactId>license-maven-plugin</artifactId>
+      <executions>
+        <execution>
+          <id>first</id>
+          <goals>
+            <goal>update-file-header</goal>
+          </goals>
+          <phase>process-sources</phase>
+          <configuration>
+            <excludes>
+              <exclude>src/main/java/org/jsr107/**</exclude>
+              <exclude>src/test/java/org/jsr107/**</exclude>
+            </excludes>
+          </configuration>
+        </execution>
+      </executions>
+    </plugin>
+  </plugins>
 
-          <dependencies>
-            <dependency>
-              <groupId>${project.groupId}</groupId>
-              <artifactId>cache2k-core</artifactId>
-              <version>${project.version}</version>
-              <scope>test</scope>
-            </dependency>
-            <dependency>
-              <groupId>org.cache2k</groupId>
-              <artifactId>cache2k-jcache</artifactId>
-              <version>${project.version}</version>
-              <scope>test</scope>
-            </dependency>
-          </dependencies>
+  <profiles>
+    <!-- Turn this on to run TCK tests from the IDE. Without it no caching provider will be found. -->
+    <profile>
+      <id>cache2k-jcache-tests-with-cache2k</id>
+      <activation>
+        <activeByDefault>true</activeByDefault>
+      </activation>
 
-            <build>
-                <plugins>
-                    <plugin>
-                        <groupId>org.apache.maven.plugins</groupId>
-                        <artifactId>maven-surefire-plugin</artifactId>
-                        <configuration>
-                            <systemPropertyVariables>
-                                <java.net.preferIPv4Stack>${java.net.preferIPv4Stack}</java.net.preferIPv4Stack>
-                                <javax.management.builder.initial>org.cache2k.jcache.provider.tckGlue.TckMBeanServerBuilder
-                                </javax.management.builder.initial>
-                                <org.jsr107.tck.management.agentId>someUniqueString</org.jsr107.tck.management.agentId>
-                                <javax.cache.CacheManager>org.cache2k.CacheManger</javax.cache.CacheManager>
-                                <javax.cache.Cache>org.cache2k.Cache</javax.cache.Cache>
-                                <javax.cache.Cache.Entry>org.cache2k.CacheEntry</javax.cache.Cache.Entry>
-                            </systemPropertyVariables>
-                        </configuration>
-                    </plugin>
-                </plugins>
-            </build>
+      <dependencies>
+        <dependency>
+          <groupId>${project.groupId}</groupId>
+          <artifactId>cache2k-core</artifactId>
+          <version>${project.version}</version>
+          <scope>test</scope>
+        </dependency>
+        <dependency>
+          <groupId>org.cache2k</groupId>
+          <artifactId>cache2k-jcache</artifactId>
+          <version>${project.version}</version>
+          <scope>test</scope>
+        </dependency>
+      </dependencies>
 
-        </profile>
-    </profiles>
+      <build>
+        <plugins>
+          <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-surefire-plugin</artifactId>
+            <configuration>
+              <systemPropertyVariables>
+                <java.net.preferIPv4Stack>${java.net.preferIPv4Stack}</java.net.preferIPv4Stack>
+                <javax.management.builder.initial>org.cache2k.jcache.provider.tckGlue.TckMBeanServerBuilder
+                </javax.management.builder.initial>
+                <org.jsr107.tck.management.agentId>someUniqueString</org.jsr107.tck.management.agentId>
+                <javax.cache.CacheManager>org.cache2k.CacheManger</javax.cache.CacheManager>
+                <javax.cache.Cache>org.cache2k.Cache</javax.cache.Cache>
+                <javax.cache.Cache.Entry>org.cache2k.CacheEntry</javax.cache.Cache.Entry>
+              </systemPropertyVariables>
+            </configuration>
+          </plugin>
+        </plugins>
+      </build>
+
+    </profile>
+  </profiles>
 
 </project>
