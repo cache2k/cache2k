@@ -1,4 +1,4 @@
-package org.cache2k.junit;
+package org.cache2k.testing.category;
 
 /*
  * #%L
@@ -21,10 +21,14 @@ package org.cache2k.junit;
  */
 
 /**
- * Mark test that checks some timing. This test may only run on a unloaded machine and not
- * in parallel with other tests. In general tests like this should be avoided. Timing
- * dependent tests may go into the {@link SlowTests}, too, in case the test copes with the
- * fact that the CPU might get no processing time for an indefinite amount of time.
+ * Slow tests like stress tests that run for seconds. Timing dependent tests should go
+ * to {@link TimingTests} or may go into the {@link SlowTests}, too, in case the test copes
+ * with the fact that the CPU might get no processing time for an indefinite amount of time.
+ * If this is the case a test should wait at least 8 seconds for a predicted event to happen.
+ * Assertions that fail, because they are timing related should indicate in the text message
+ * with "(may flap)".
+ *
+ * @author Jens Wilke
  */
-public interface TimingTests {
+public interface SlowTests {
 }

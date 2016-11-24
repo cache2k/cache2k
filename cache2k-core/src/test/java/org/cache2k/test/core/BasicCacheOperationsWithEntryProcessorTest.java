@@ -23,7 +23,7 @@ package org.cache2k.test.core;
 import org.cache2k.Cache;
 import org.cache2k.Cache2kBuilder;
 import org.cache2k.core.InternalCache;
-import org.cache2k.junit.FastTests;
+import org.cache2k.testing.category.FastTests;
 import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Before;

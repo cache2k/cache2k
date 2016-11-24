@@ -19,7 +19,7 @@
  */
 import org.cache2k.Cache;
 import org.cache2k.Cache2kBuilder;
-import org.cache2k.junit.TimingTests;
+import org.cache2k.testing.category.TimingTests;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 

@@ -26,7 +26,7 @@ import org.cache2k.CacheEntry;
 import org.cache2k.expiry.ExpiryPolicy;
 import org.cache2k.integration.CacheLoader;
 import org.cache2k.integration.CacheLoaderException;
-import org.cache2k.junit.FastTests;
+import org.cache2k.testing.category.FastTests;
 import org.cache2k.test.util.CacheRule;
 import org.cache2k.test.util.IntCacheRule;
 import org.junit.Before;

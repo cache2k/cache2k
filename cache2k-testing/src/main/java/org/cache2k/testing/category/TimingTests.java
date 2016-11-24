@@ -1,4 +1,4 @@
-package org.cache2k.junit;
+package org.cache2k.testing.category;
 
 /*
  * #%L
@@ -21,9 +21,10 @@ package org.cache2k.junit;
  */
 
 /**
- * Category for storage tests. Used to exclude storage related tests, since they currently may cause trouble.
- *
- * @author Jens Wilke
+ * Mark test that checks some timing. This test may only run on a unloaded machine and not
+ * in parallel with other tests. In general tests like this should be avoided. Timing
+ * dependent tests may go into the {@link SlowTests}, too, in case the test copes with the
+ * fact that the CPU might get no processing time for an indefinite amount of time.
  */
-public interface StorageTests {
+public interface TimingTests {
 }

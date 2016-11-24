@@ -27,7 +27,7 @@ import static org.junit.Assert.*;
 
 import org.cache2k.core.CacheManagerImpl;
 import org.cache2k.core.util.Log;
-import org.cache2k.junit.FastTests;
+import org.cache2k.testing.category.FastTests;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 

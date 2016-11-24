@@ -29,7 +29,7 @@ import org.cache2k.integration.CacheLoaderException;
 import org.cache2k.integration.CacheWriter;
 import org.cache2k.integration.ExceptionInformation;
 import org.cache2k.integration.ResiliencePolicy;
-import org.cache2k.junit.FastTests;
+import org.cache2k.testing.category.FastTests;
 import org.cache2k.processor.EntryProcessingException;
 import org.cache2k.processor.EntryProcessor;
 import org.cache2k.processor.EntryProcessingResult;

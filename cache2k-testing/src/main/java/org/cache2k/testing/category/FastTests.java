@@ -1,4 +1,4 @@
-package org.cache2k.junit;
+package org.cache2k.testing.category;
 
 /*
  * #%L
@@ -21,9 +21,9 @@ package org.cache2k.junit;
  */
 
 /**
- * Marker for tests that may not run with anything else in parallel
+ * Category marker for all fast tests.
  *
  * @author Jens Wilke
  */
-public interface ExclusiveTests {
+public interface FastTests {
 }

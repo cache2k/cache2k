@@ -22,7 +22,7 @@ package org.cache2k.test.util;
 
 import net.jcip.annotations.NotThreadSafe;
 import org.cache2k.Cache;
-import org.cache2k.junit.FastTests;
+import org.cache2k.testing.category.FastTests;
 import org.junit.ClassRule;
 import org.junit.Rule;
 import org.junit.Test;

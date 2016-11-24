@@ -20,7 +20,7 @@ package org.cache2k.xmlConfiguration;
  * #L%
  */
 
-import org.cache2k.junit.FastTests;
+import org.cache2k.testing.category.FastTests;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 

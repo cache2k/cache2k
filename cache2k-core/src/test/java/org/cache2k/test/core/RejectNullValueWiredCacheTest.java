@@ -21,7 +21,7 @@ package org.cache2k.test.core;
  */
 
 import org.cache2k.Cache2kBuilder;
-import org.cache2k.junit.FastTests;
+import org.cache2k.testing.category.FastTests;
 import org.cache2k.test.util.CacheRule;
 import org.cache2k.test.util.IntCacheRule;
 import org.junit.Before;

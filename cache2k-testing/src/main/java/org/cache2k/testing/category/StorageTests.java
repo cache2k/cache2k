@@ -1,4 +1,4 @@
-package org.cache2k.junit;
+package org.cache2k.testing.category;
 
 /*
  * #%L
@@ -21,14 +21,9 @@ package org.cache2k.junit;
  */
 
 /**
- * Slow tests like stress tests that run for seconds. Timing dependent tests should go
- * to {@link TimingTests} or may go into the {@link SlowTests}, too, in case the test copes
- * with the fact that the CPU might get no processing time for an indefinite amount of time.
- * If this is the case a test should wait at least 8 seconds for a predicted event to happen.
- * Assertions that fail, because they are timing related should indicate in the text message
- * with "(may flap)".
+ * Category for storage tests. Used to exclude storage related tests, since they currently may cause trouble.
  *
  * @author Jens Wilke
  */
-public interface SlowTests {
+public interface StorageTests {
 }

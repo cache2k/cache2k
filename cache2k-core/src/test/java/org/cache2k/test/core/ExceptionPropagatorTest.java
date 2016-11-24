@@ -24,7 +24,7 @@ import org.cache2k.Cache;
 import org.cache2k.core.ExceptionWrapper;
 import org.cache2k.core.StandardExceptionPropagatorTest;
 import org.cache2k.integration.CacheLoaderException;
-import org.cache2k.junit.FastTests;
+import org.cache2k.testing.category.FastTests;
 import org.cache2k.processor.EntryProcessingException;
 import org.cache2k.processor.EntryProcessor;
 import org.cache2k.processor.MutableCacheEntry;

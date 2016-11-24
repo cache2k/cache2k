@@ -28,7 +28,7 @@ import org.cache2k.expiry.ExpiryTimeValues;
 import org.cache2k.integration.CacheLoaderException;
 import org.cache2k.core.ExceptionWrapper;
 import org.cache2k.core.InternalCache;
-import org.cache2k.junit.FastTests;
+import org.cache2k.testing.category.FastTests;
 import org.junit.*;
 import org.junit.experimental.categories.Category;
 

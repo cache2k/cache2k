@@ -21,7 +21,7 @@ package org.cache2k.test.core;
  */
 
 import org.cache2k.CacheManager;
-import org.cache2k.junit.ExclusiveTests;
+import org.cache2k.testing.category.ExclusiveTests;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 

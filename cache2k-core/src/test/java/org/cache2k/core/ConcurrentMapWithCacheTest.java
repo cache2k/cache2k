@@ -22,11 +22,8 @@ package org.cache2k.core;
 
 import org.cache2k.Cache;
 import org.cache2k.Cache2kBuilder;
-import org.cache2k.junit.FastTests;
+import org.cache2k.testing.category.FastTests;
 import org.junit.experimental.categories.Category;
-
-import java.util.concurrent.ConcurrentMap;
-import static org.junit.Assert.*;
 
 /**
  * @author Jens Wilke

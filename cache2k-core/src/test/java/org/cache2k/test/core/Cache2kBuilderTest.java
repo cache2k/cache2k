@@ -25,7 +25,7 @@ import org.cache2k.Cache2kBuilder;
 import org.cache2k.CacheManager;
 import org.cache2k.configuration.CacheTypeCapture;
 import org.cache2k.core.util.Log;
-import org.cache2k.junit.FastTests;
+import org.cache2k.testing.category.FastTests;
 import static org.cache2k.test.core.StaticUtil.*;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;

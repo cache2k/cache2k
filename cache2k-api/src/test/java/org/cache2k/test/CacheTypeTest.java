@@ -23,7 +23,7 @@ package org.cache2k.test;
 import org.cache2k.configuration.Cache2kConfiguration;
 import org.cache2k.configuration.CacheTypeCapture;
 import org.cache2k.configuration.CacheType;
-import org.cache2k.junit.FastTests;
+import org.cache2k.testing.category.FastTests;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
