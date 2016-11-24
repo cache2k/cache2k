@@ -58,6 +58,7 @@
     <!-- other, deployed -->
     <module>cache2k-testing</module>
     <!-- not deployed -->
+    <module>cache2k-jcache-tests</module>
     <module>test-osgi</module>
     <module>documentation</module>
   </modules>
@@ -534,13 +535,6 @@
       <id>android</id>
       <modules>
         <module>test-android</module>
-      </modules>
-    </profile>
-
-    <profile>
-      <id>cache2k-jcache-tests</id>
-      <modules>
-        <module>cache2k-jcache-tests</module>
       </modules>
     </profile>
 

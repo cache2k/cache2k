@@ -53,6 +53,27 @@
   </dependencies>
 
   <build>
+
+    <pluginManagement>
+      <plugins>
+        <plugin>
+          <groupId>org.codehaus.mojo</groupId>
+          <artifactId>license-maven-plugin</artifactId>
+          <version>1.5</version>
+          <configuration>
+            <licenseName>apache_v2</licenseName>
+            <!-- do not touch header in original TCK code -->
+            <excludes>
+              <exclude>main/java/domain/**</exclude>
+              <exclude>main/java/manager/**</exclude>
+              <exclude>main/java/org/jsr107/**</exclude>
+              <exclude>test/java/org/jsr107/**</exclude>
+            </excludes>
+          </configuration>
+        </plugin>
+      </plugins>
+    </pluginManagement>
+
     <!--The rest come from the parent pom-->
     <plugins>
       <plugin>
@@ -60,7 +81,9 @@
         <artifactId>maven-surefire-plugin</artifactId>
         <version>2.9</version>
         <configuration>
-          <skipTests>true</skipTests>
+          <!-- disable the standard parallelism configuration from the parent -->
+          <perCoreThreadCount>false</perCoreThreadCount>
+          <threadCount>1</threadCount>
         </configuration>
       </plugin>
       <!-- The original TCK code is only compatible to Java 7 -->
@@ -82,28 +105,6 @@
       </plugin>
     </plugins>
   </build>
-
-  <plugins>
-    <plugin>
-      <groupId>org.codehaus.mojo</groupId>
-      <artifactId>license-maven-plugin</artifactId>
-      <executions>
-        <execution>
-          <id>first</id>
-          <goals>
-            <goal>update-file-header</goal>
-          </goals>
-          <phase>process-sources</phase>
-          <configuration>
-            <excludes>
-              <exclude>src/main/java/org/jsr107/**</exclude>
-              <exclude>src/test/java/org/jsr107/**</exclude>
-            </excludes>
-          </configuration>
-        </execution>
-      </executions>
-    </plugin>
-  </plugins>
 
   <profiles>
     <!-- Turn this on to run TCK tests from the IDE. Without it no caching provider will be found. -->

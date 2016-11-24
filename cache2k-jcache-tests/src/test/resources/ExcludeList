@@ -1,0 +1,4 @@
+# Syntax: FULL_CLASS_NAME#METHOD_NAME
+
+# dummy test that fails always.
+org.jsr107.tck.CachingTest#dummyTest
