@@ -538,11 +538,10 @@
       </modules>
     </profile>
 
-    <!-- automatically disable doclint, as proposed here:
-         http://stackoverflow.com/questions/15886209/maven-is-not-working-in-java-8-when-javadoc-tags-are-incomplete
-         -->
+    <!-- run doclint when java8 is available but do not complain
+         if documentation is missing for parameter or return statement -->
     <profile>
-      <id>doclint-java8-disable</id>
+      <id>doclint-java8-all-but-missing</id>
       <activation>
         <jdk>[1.8,)</jdk>
       </activation>
