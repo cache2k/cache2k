@@ -122,4 +122,26 @@
     </plugins>
   </build>
 
+  <profiles>
+
+    <!-- Tests don't run on Java 6 -->
+    <profile>
+      <id>cache2k-jcache-tests=disable-java6</id>
+      <activation>
+        <jdk>(,1.6)</jdk>
+      </activation>
+      <build>
+        <plugins>
+          <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-failsafe-plugin</artifactId>
+            <configuration>
+              <skip>true</skip>
+            </configuration>
+          </plugin>
+        </plugins>
+      </build>
+    </profile>
+  </profiles>
+
 </project>
