@@ -1,8 +1,8 @@
 == Null Values
 
-While a `HashMap` supports a `null` key and `null` values most cache implementations and the JCache standard
- do not. By default, cache2k does not permit `null` values, but storing null values can be allowed
- with a configuration parameter.
+While a `HashMap` supports `null` keys and `null` values most cache implementations and the JCache standard
+do not. By default, cache2k does not permit `null` values, but storing `null` values can be allowed
+with a configuration parameter.
 
 === The Pros and Cons of Nulls
 
@@ -13,19 +13,23 @@ is null instead of storing a mapping to a null value. For a cache it is a differ
 absence of a mapping can mean two things: The data was not requested from the source yet, or,
 there is no data.
 
-Storing a `null` value in a cache can make sense, when the data source is regularly producing a `null`.
-A use case is the request of a database entry by primary key, for example via JPA's
-`EntityManager.find()` which returns an object if it is available in the database or `null` if it
-is not. There may be applications that regularly test for non existing entries. Then, caching
-that an entry is not existing may be equally important to cache an existing entry.
+Storing a `null` value in a cache can make sense, when the data source connected via the `CacheLoader`
+is regularly producing a `null`. A use case is the request of a database entry by primary key,
+for example via JPA's `EntityManager.find()` which returns an object if it is available in the database
+or `null` if it is not. There may be applications that regularly test for non existing entries.
+In this case, caching that the entry is not existing may be equally important as caching an existing entry.
+
+In a JCache application a `null` from the `CacheLoader` means the entry should be removed from the cache.
+This semantic is a consistent definition, but if `Cache.get()` is used to check whether data is
+existing, no caching happens.
 
 Being able to store a `null` value is no essential cache feature, since it is always possible
 to store a wrapper object in the cache. However, with the `null` support in cache2k, it is
-possible to store nulls with no additional overhead.
+possible to store a null value with no additional overhead.
 
 === Default Behavior
 
-By default, every attempt to store a null in the cache will yield a `NullPointerException`.
+By default, every attempt to store a `null` in the cache will yield a `NullPointerException`.
 
 In case `peek()` returns null, this means there is no associated entry to this
 key in the cache. The same holds for `get()` if no loader is defined. For one point
@@ -48,7 +52,7 @@ Storing of null values can be enabled by `permitNullValues(true)`. Example:
 
 === How to Operate with Null Values
 
-As soon as null values are legal additional care must be taken when operating with the cache.
+If `null` values are legal, additional care must be taken when operating with the cache.
 The typical cache aside pattern becomes invalid:
 
 [source,java]
@@ -64,11 +68,11 @@ The typical cache aside pattern becomes invalid:
     }
 ----
 
-In case `retrievePerson` returns null for a non existing person, it will get called again the next
-time the same person is requested. To check whether a mapping is existing `containsKey`. However,
- using `containsKey()` and `get()` sequentially is faulty. To check for the existence of a cache
-  entry and return its value the method `peekEntry` (or `getEntry` with loader) can be used.
-  The fixed version is:
+In case `retrievePerson` returns `null` for a non existing person, it will get called again the next
+time the same person is requested. To check whether there is a cached entry `containsKey` could be used.
+However, using `containsKey()` and `get()` sequentially is faulty. To check for the existence of a cache
+entry and return its value the method `peekEntry` (or `getEntry` with loader) can be used.
+The fixed version is:
 
 [source,java]
 ----
@@ -103,7 +107,7 @@ In case the loader returns `null` and this should not lead to an exception the f
   Sometimes it is desirable to transport more information anyway. E.g. when requesting
   a resource via HTTP null can mean "resource not available", however it may be
   better to pass on the cause from the HTTP status code.
-- Enable null value support
+- Enable `null` value support
 - Remove entries from the cache when the loader returns null (as in JCache)
 
 The expiry policy can be used to remove entries from the cache when the loader returns null:
@@ -128,17 +132,17 @@ This works, since the cache checks the null value only after the expiry policy h
 
 === Performance
 
-Storing nulls has no additional memory or CPU overhead.
+Storing `null` values has no additional memory or CPU overhead.
 
 === Rationale
 
-==== Why support nulls?
+==== Why support `null`?
 
 Supporting nulls needs a more careful design inside the cache. When
 this is done, it basically comes for free and makes the cache very effective for use cases
 where nulls are common, e.g. database persistence layers.
 
-==== Why is rejecting null values the default?
+==== Why is rejecting `null` values the default?
 
 We were using cache2k for 16 years, with the capability
  to store nulls by default. For the 1.0 version we changed this behavior and don't allow nulls.
@@ -150,7 +154,7 @@ We were using cache2k for 16 years, with the capability
 - In case a null is allowed it is better to specify this explicitly to make the different
   behavior more obvious
 
-==== Why rejecting nulls from the loader?
+==== Why rejecting `null` from the loader?
 
 If the loader returns null, a `NullPointerException` is generated and propagated via
 the `CacheLoaderException`. This behavior is different from JSR107/JCache which defines that an entry
@@ -158,9 +162,9 @@ is removed, if the loader returns null.
 
 The JCache behavior is consistent, since a `get()` in JCache returns null only in the case that
 no entry is present. The JCache behavior is also useful, since nulls from the loader pass through
-transparently. But as soon as nulls are passed through regularly, the cache will become void.
-This will be unnoticed during development but will lead to trouble in production and is a DOS attack
-vector as well.
+transparently. But as soon as nulls are passed through regularly, the cache is rendered useless, since
+a null from the loader means "no caching". This will be unnoticed during development but will lead to trouble
+in production and is a DOS attack vector as well.
 
 In cache2k there a different options when `null` comes into play. A consistent fail fast
 by default will lead to an explicit choice for the best option.

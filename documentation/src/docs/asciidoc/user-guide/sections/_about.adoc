@@ -3,10 +3,10 @@
 cache2k is a compact in process cache implementation that has the following main design goals:
 
 Performance:: To achieve high performance cache2k is designed fundamentally different from ground up
-  is leveraging an eviction algorithm that allows concurrent read access without locking overhead.
+  and is leveraging an eviction algorithm that allows concurrent read access without locking overhead.
 Ease of use:: Well documented API, provide features beyond standard cache libraries for typical problems,
   the typical configuration should be as small as possible
-Compact and modular:: Keep a small core size, additional features
+Compact and modular:: Keep a small core size, additional features may go in separate artifacts
 
 === Features
 
@@ -33,18 +33,17 @@ List of current features:
 
 === Versioning
 
-A semantic versioning with Tick-Tock scheme is used. Development versions are marked
-by an odd minor version number. Examples:
+The JBoss versioning scheme is followed (https://developer.jboss.org/wiki/JBossProjectVersioning).
+Furthermore, a Tick-Tock scheme is used to mark development releases. Examples:
 
-1.0:: Major version, adds and removes features, incompatible changes to the previous version
-1.1.0-BETA:: Odd minor version, development version, possibly unstable API and untested new features
-1.2.0:: Even minor version, stable release, new features and compatible to the previous version.
+1.0.0.Final:: Major version
+1.0.1.Final:: Service release. Should be binary compatible to previous release.
+1.1.0.Beta:: *Odd minor version*, development version. A beta version may be used in production, but
+ additional features may still change the API and may not completely tested.
+1.2.0:: *Even minor version*, stable release, new features and compatible changes to the previous version.
      Not be strictly binary compatible to the previous stable release. Interfaces not meant for
      extension may get new methods.
-1.0.1:: Service release. Adds enhancements or fixes bugs. Strictly compatible to the stable release.
-
-Rationale: OSGi doesn't allow alphanumeric qualifiers, so every semantic information is
-in the numbers.
+2.0.0.Final:: New Major version, adds and removes features, maybe more incompatible changes to the previous version
 
 === How to read the documentation
 
