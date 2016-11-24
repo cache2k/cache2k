@@ -53,13 +53,13 @@ public class OsgiIT {
   @Configuration
   public Option[] config() {
     String _userDir = System.getProperty("user.dir");
-    String _ownPath = "/osgi-test";
+    String _ownPath = "/test-osgi";
     String _workspaceDir = _userDir;
     if (_workspaceDir.endsWith(_ownPath)) {
       _workspaceDir = _workspaceDir.substring(0,_workspaceDir.length() -  _ownPath.length());
     }
     return options(
-      bundle("file:///" + _workspaceDir + "/variant/all/target/cache2k-all-" + System.getProperty("cache2k.version") + ".jar"),
+      bundle("file:///" + _workspaceDir + "/cache2k-all/target/cache2k-all-" + System.getProperty("cache2k.version") + ".jar"),
 
 
       junitBundles()
