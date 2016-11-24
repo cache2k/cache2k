@@ -60,8 +60,6 @@ public class OsgiIT {
     }
     return options(
       bundle("file:///" + _workspaceDir + "/cache2k-all/target/cache2k-all-" + System.getProperty("cache2k.version") + ".jar"),
-
-
       junitBundles()
     );
   }
