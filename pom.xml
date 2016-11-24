@@ -63,6 +63,8 @@
   </modules>
 
   <properties>
+    <buildNumber>undefined</buildNumber>
+    <timestamp>0</timestamp>
     <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <jcache.version>1.0.0</jcache.version>
@@ -182,6 +184,8 @@
     </pluginManagement>
 
     <plugins>
+
+      <!-- Gives terrible warnings if not build on git
       <plugin>
         <groupId>org.codehaus.mojo</groupId>
         <artifactId>buildnumber-maven-plugin</artifactId>
@@ -205,6 +209,7 @@
           </items>
         </configuration>
       </plugin>
+      -->
 
       <!-- taken from sonatype oss parent -->
       <plugin>

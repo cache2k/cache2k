@@ -41,20 +41,25 @@ public class Cache2kVersion {
         Properties p = new Properties();
         p.load(in);
         String s = p.getProperty("buildNumber");
-        if (s != null && s.length() > 0) {
+        if (isDefined(s)) {
           buildNumber = s;
         }
-        version = p.getProperty("version");
+        s = p.getProperty("version");
+        if (isDefined(s)) {
+          version = s;
+        }
         s = p.getProperty("timestamp");
-        if ( s != null && s.length() > 0 && !"${timestamp}".equals(s)) {
+        if (isDefined(s)) {
           timestamp = Long.parseLong(s);
-        } else {
-          timestamp = 4711;
         }
       }
     } catch (Exception e) {
       Log.getLog(Cache2kVersion.class).warn("error parsing version properties", e);
     }
+  }
+
+  static private boolean isDefined(String s) {
+    return s != null && s.length() > 0 && !s.startsWith("$");
   }
 
   public static String getBuildNumber() {
