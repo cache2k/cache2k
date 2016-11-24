@@ -106,8 +106,29 @@
     </plugins>
   </build>
 
+
   <profiles>
-    <!-- Turn this on to run TCK tests from the IDE. Without it no caching provider will be found. -->
+
+    <!-- Tests don't run on Java 6 -->
+    <profile>
+      <id>cache2k-jcache-tests=disable-java6</id>
+      <activation>
+        <jdk>(,1.6)</jdk>
+      </activation>
+      <build>
+        <plugins>
+          <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-surefire-plugin</artifactId>
+            <configuration>
+              <skip>true</skip>
+            </configuration>
+          </plugin>
+        </plugins>
+      </build>
+    </profile>
+
+    <!-- By default run the tests with cache2k. -->
     <profile>
       <id>cache2k-jcache-tests-with-cache2k</id>
       <activation>
