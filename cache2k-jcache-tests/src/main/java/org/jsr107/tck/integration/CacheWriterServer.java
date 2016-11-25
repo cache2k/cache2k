@@ -76,6 +76,10 @@ public class CacheWriterServer<K, V> extends Server {
         this.cacheWriter = cacheWriter;
     }
 
+    public CacheWriter<K, V> getCacheWriter() {
+        return cacheWriter;
+    }
+
     /**
      * The {@link OperationHandler} for a {@link CacheWriter#deleteAll(java.util.Collection)}} operation.
      */

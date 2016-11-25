@@ -140,8 +140,9 @@ public class CacheExpiryTest extends CacheTestSupport<Integer, Integer> {
   @Test
   public void testCacheStatisticsRemoveAll() throws Exception {
 
+    long _EXPIRY_MILLIS = 3;
     //cannot be zero or will not be added to the cache
-    ExpiryPolicy policy = new CreatedExpiryPolicy(new Duration(TimeUnit.MILLISECONDS, 20));
+    ExpiryPolicy policy = new CreatedExpiryPolicy(new Duration(TimeUnit.MILLISECONDS, _EXPIRY_MILLIS));
     expiryPolicyServer.setExpiryPolicy(policy);
 
     MutableConfiguration<Integer, Integer> config = new MutableConfiguration<>();
@@ -152,7 +153,7 @@ public class CacheExpiryTest extends CacheTestSupport<Integer, Integer> {
       cache.put(i, i+100);
     }
     //should work with all implementations
-    Thread.sleep(1100);
+    Thread.sleep(_EXPIRY_MILLIS);
     cache.removeAll();
 
     assertEquals(100L, lookupManagementAttribute(cache, CacheStatistics, "CachePuts"));
@@ -171,13 +172,10 @@ public class CacheExpiryTest extends CacheTestSupport<Integer, Integer> {
     config.setExpiryPolicyFactory(FactoryBuilder.factoryOf(expiryPolicyClient))
         .setStatisticsEnabled(true);
     Cache<Integer, Integer> cache = getCacheManager().createCache(getTestCacheName(), config);
-
     for (int i = 0; i < 100; i++) {
       cache.put(i, i+100);
     }
-
     cache.removeAll();
-
     assertEquals(100L, lookupManagementAttribute(cache, CacheStatistics, "CachePuts"));
     assertEquals(100L, lookupManagementAttribute(cache, CacheStatistics, "CacheRemovals"));
   }

@@ -19,6 +19,7 @@ package org.jsr107.tck.event;
 
 import org.jsr107.tck.support.CacheClient;
 import org.jsr107.tck.support.Operation;
+import org.jsr107.tck.support.Server;
 
 import javax.cache.event.CacheEntryCreatedListener;
 import javax.cache.event.CacheEntryEvent;
@@ -47,6 +48,8 @@ public class CacheEntryListenerClient<K, V> extends CacheClient
   CacheEntryCreatedListener<K, V>, CacheEntryUpdatedListener<K, V>,
   CacheEntryRemovedListener<K, V>, CacheEntryExpiredListener<K, V> {
 
+  private transient CacheEntryListenerServer<K,V> directServer;
+
   /**
    * Constructs a {@link CacheEntryListenerClient}.
    *
@@ -56,12 +59,28 @@ public class CacheEntryListenerClient<K, V> extends CacheClient
    */
   public CacheEntryListenerClient(InetAddress address, int port) {
     super(address, port);
+  }
 
-    this.client = null;
+  @Override
+  protected boolean checkDirectCallsPossible() {
+    Server server = Server.lookupServerAtLocalMachine(port);
+    if (server != null) {
+      directServer = ((CacheEntryListenerServer) server);
+      return true;
+    }
+    return false;
   }
 
   @Override
   public void onCreated(Iterable<CacheEntryEvent<? extends K, ? extends V>> cacheEntryEvents) throws CacheEntryListenerException {
+    if (isDirectCallable()) {
+      for (CacheEntryListener<K,V> l : directServer.getListeners()) {
+        if (l instanceof CacheEntryCreatedListener) {
+          ((CacheEntryCreatedListener<K,V>) l).onCreated(cacheEntryEvents);
+        }
+      }
+      return;
+    }
     for (CacheEntryEvent<? extends K, ? extends V> event : cacheEntryEvents) {
       getClient().invoke(new OnCacheEntryEventHandler<K, V>(event));
     }
@@ -69,7 +88,14 @@ public class CacheEntryListenerClient<K, V> extends CacheClient
 
   @Override
   public void onExpired(Iterable<CacheEntryEvent<? extends K, ? extends V>> cacheEntryEvents) throws CacheEntryListenerException {
-
+    if (isDirectCallable()) {
+      for (CacheEntryListener<K,V> l : directServer.getListeners()) {
+        if (l instanceof CacheEntryExpiredListener) {
+          ((CacheEntryExpiredListener<K,V>) l).onExpired(cacheEntryEvents);
+        }
+      }
+      return;
+    }
     // since ExpiryEvents are processed asynchronously, this may cause issues.
     // the test do not currently delay waiting for asynchronous expiry events to complete processing.
     // not breaking anything now, so leaving in for time being.
@@ -80,6 +106,14 @@ public class CacheEntryListenerClient<K, V> extends CacheClient
 
   @Override
   public void onRemoved(Iterable<CacheEntryEvent<? extends K, ? extends V>> cacheEntryEvents) throws CacheEntryListenerException {
+    if (isDirectCallable()) {
+      for (CacheEntryListener<K,V> l : directServer.getListeners()) {
+        if (l instanceof CacheEntryRemovedListener) {
+          ((CacheEntryRemovedListener<K,V>) l).onRemoved(cacheEntryEvents);
+        }
+      }
+      return;
+    }
     for (CacheEntryEvent<? extends K, ? extends V> event : cacheEntryEvents) {
       getClient().invoke(new OnCacheEntryEventHandler<K, V>(event));
     }
@@ -88,6 +122,14 @@ public class CacheEntryListenerClient<K, V> extends CacheClient
   @Override
   public void onUpdated(Iterable<CacheEntryEvent<? extends K, ? extends V>> cacheEntryEvents)
     throws CacheEntryListenerException {
+    if (isDirectCallable()) {
+      for (CacheEntryListener<K,V> l : directServer.getListeners()) {
+        if (l instanceof CacheEntryUpdatedListener) {
+          ((CacheEntryUpdatedListener<K,V>) l).onUpdated(cacheEntryEvents);
+        }
+      }
+      return;
+    }
     for (CacheEntryEvent<? extends K, ? extends V> event : cacheEntryEvents) {
       getClient().invoke(new OnCacheEntryEventHandler<K, V>(event));
     }
@@ -144,8 +186,25 @@ public class CacheEntryListenerClient<K, V> extends CacheClient
       } catch (Throwable t) {
         t.printStackTrace();
       }
+      /*
+         original TCK code only throws exception when CacheEntryListenerException is detected
+         this swallows the exception from the test IOError and UnsupportedOperationException.
+         See test: CacheListenerTest.testBrokenCacheEntryListener() ;jw
+       */
       if (result instanceof CacheEntryListenerException) {
         throw ((CacheEntryListenerException)result);
+      }
+
+      /* Also throw other exceptions ;jw */
+      if (result instanceof Error) {
+        throw (Error) result;
+      }
+      if (result instanceof RuntimeException) {
+        throw (RuntimeException) result;
+      }
+      if (result instanceof Throwable) {
+        // The listener methods don't have declared checked exceptions, so we never should get here.
+        throw new RuntimeException("got checked exception, never happens since not declared on method", (Throwable) result);
       }
 
       // nothing to return.

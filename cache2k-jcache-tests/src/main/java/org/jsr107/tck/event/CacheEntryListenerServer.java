@@ -88,6 +88,10 @@ public class CacheEntryListenerServer<K, V> extends Server {
     }
   }
 
+  public Set<CacheEntryListener<K, V>> getListeners() {
+    return listeners;
+  }
+
   /**
    * The {@link org.jsr107.tck.support.OperationHandler} for a {@link javax.cache.event.CacheEntryListener} handlers.
    */

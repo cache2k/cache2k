@@ -41,6 +41,9 @@ public class CacheClient implements AutoCloseable, Serializable {
      */
     protected transient Client client;
 
+    private transient boolean checkedForDirectCallsPossible;
+    private transient boolean useDirectCalls;
+
     protected CacheClient(InetAddress address, int port) {
         this.address = address;
         this.port = port;
@@ -65,6 +68,16 @@ public class CacheClient implements AutoCloseable, Serializable {
 
         return client;
     }
+
+    protected synchronized boolean isDirectCallable() {
+        if (!checkedForDirectCallsPossible) {
+            useDirectCalls = checkDirectCallsPossible();
+            checkedForDirectCallsPossible = true;
+        }
+        return useDirectCalls;
+    }
+
+    protected boolean checkDirectCallsPossible() { return false; }
 
     /**
      * {@inheritDoc}

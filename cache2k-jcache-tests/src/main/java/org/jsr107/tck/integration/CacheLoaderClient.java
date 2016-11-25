@@ -18,6 +18,7 @@ package org.jsr107.tck.integration;
 
 import org.jsr107.tck.support.CacheClient;
 import org.jsr107.tck.support.Operation;
+import org.jsr107.tck.support.Server;
 
 import javax.cache.Cache;
 import javax.cache.integration.CacheLoader;
@@ -38,6 +39,8 @@ import java.util.concurrent.ExecutionException;
  */
 public class CacheLoaderClient<K, V> extends CacheClient implements CacheLoader<K, V> {
 
+  private CacheLoaderServer<K,V> directServer;
+
   /**
    * Constructs a {@link CacheLoaderClient}.
    *
@@ -46,12 +49,23 @@ public class CacheLoaderClient<K, V> extends CacheClient implements CacheLoader<
    */
   public CacheLoaderClient(InetAddress address, int port) {
     super(address, port);
+  }
 
-    this.client = null;
+  @Override
+  protected boolean checkDirectCallsPossible() {
+    Server server = Server.lookupServerAtLocalMachine(port);
+    if (server != null) {
+      directServer = (CacheLoaderServer) server;
+      return true;
+    }
+    return false;
   }
 
   @Override
   public V load(final K key) {
+    if (isDirectCallable()) {
+      return directServer.getCacheLoader().load(key);
+    }
     return getClient().invoke(new LoadOperation<K, V>(key));
   }
 
@@ -60,6 +74,9 @@ public class CacheLoaderClient<K, V> extends CacheClient implements CacheLoader<
    */
   @Override
   public Map<K, V> loadAll(Iterable<? extends K> keys) {
+    if (isDirectCallable()) {
+      return directServer.getCacheLoader().loadAll(keys);
+    }
     return getClient().invoke(new LoadAllOperation<K, V>(keys));
   }
 

@@ -1,6 +1,7 @@
 /**
  *  Copyright 2011-2013 Terracotta, Inc.
  *  Copyright 2011-2013 Oracle, Inc.
+ *  Copyright 2016 headissue GmbH
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -28,7 +29,9 @@ import java.net.Socket;
 import java.net.SocketException;
 import java.net.UnknownHostException;
 import java.util.Enumeration;
+import java.util.Queue;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.LinkedBlockingDeque;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -39,6 +42,7 @@ import java.util.logging.Logger;
  * {@link Client}s.
  *
  * @author Brian Oliver
+ * @author Jens Wilke
  * @see Client
  * @see Operation
  * @see OperationHandler
@@ -46,15 +50,36 @@ import java.util.logging.Logger;
 public class Server implements AutoCloseable {
 
     /**
+     * If false, always communicate over TCP and don't try to use direct method in the local VM
+     */
+    private static final boolean ALLOW_DIRECT_CALLS =
+      System.getProperty("org.jsr107.tck.support.server.alwaysUseTcp") == null;
+
+    /**
+     * If a server and socket is unused, put it in a queue and reuse it.
+     * This way we can save the TCP connection overhead and thread start if
+     * it is possible to communicate directly within the local machine.
+     */
+    private static final Queue<SocketThread> SOCKET_THREADS = new LinkedBlockingDeque<>(10);
+
+    /**
+     * Contains the servers that run on the respective port. The client can lookup its server
+     * in the hash table. If it is present, it runs in the local VM. If it is not present
+     * the client must connect via TCP.
+     */
+    private static final ConcurrentHashMap<Integer, Server> PORT_2_SERVER = new ConcurrentHashMap<>();
+
+    /**
+     * Returns the server for this port, if running in the local machine.
+     */
+    public static Server lookupServerAtLocalMachine(int port) {
+        return PORT_2_SERVER.get(port);
+    }
+
+    /**
      * Logger
      */
     public static final  Logger LOG = Logger.getLogger(Server.class.getName());
-
-
-    /**
-     * The port on which the {@link Server} will accept {@link Client} connections.
-     */
-    private int port;
 
     /**
      * The {@link OperationHandler}s by operation.
@@ -62,19 +87,11 @@ public class Server implements AutoCloseable {
     private ConcurrentHashMap<String, OperationHandler> operationHandlers;
 
     /**
-     * The {@link ServerSocket} that will be used to accept {@link Client}
-     * connections and requests.
-     * <p>
-     * When this is <code>null</code> the {@link Server} is not running.
-     */
-    private ServerSocket serverSocket;
-
-    /**
      * The {@link Thread} that will manage accepting {@link Client} connections.
      * <p>
      * When this is <code>null</code> the {@link Server} is not running.
      */
-    private Thread serverThread;
+    private SocketThread serverThread;
 
     /**
      * A map of {@link ClientConnection} by connection number.
@@ -83,23 +100,14 @@ public class Server implements AutoCloseable {
 
 
     /**
-     * Should the running {@link Server} terminate as soon as possible?
-     */
-    private AtomicBoolean isTerminating;
-
-    /**
      * Construct a {@link Server} that will accept {@link Client} connections
      * and requests on the specified port.
      *
      * @param port the port on which to accept {@link Client} connections and requests
      */
     public Server(int port) {
-        this.port = port;
         this.operationHandlers = new ConcurrentHashMap<String, OperationHandler>();
-        this.serverSocket = null;
-        this.serverThread = null;
         this.clientConnections = new ConcurrentHashMap<Integer, ClientConnection>();
-        this.isTerminating = new AtomicBoolean(false);
     }
 
     /**
@@ -121,32 +129,21 @@ public class Server implements AutoCloseable {
      * @throws IOException if not able to create ServerSocket
      */
     public synchronized InetAddress open() throws IOException {
-        if (serverSocket == null) {
-            serverSocket = createServerSocket();
-            serverThread = new Thread(new Runnable() {
-                @Override
-                public void run() {
-                    try {
-                        int connectionId = 0;
-
-                        while (!isTerminating.get()) {
-                            Socket socket = serverSocket.accept();
-
-                            ClientConnection clientConnection = new ClientConnection(connectionId++, socket);
-                            clientConnections.put(clientConnection.getIdentity(), clientConnection);
-                            clientConnection.start();
-                        }
-                    } catch (NullPointerException e) {
-                        isTerminating.compareAndSet(false, true);
-                    } catch (IOException e) {
-                        isTerminating.compareAndSet(false, true);
-                    }
-                }
-            });
-
-            serverThread.start();
+        if (serverThread == null) {
+            if (ALLOW_DIRECT_CALLS) {
+                serverThread = SOCKET_THREADS.poll();
+            }
+            if (serverThread == null) {
+                serverThread = new SocketThread(createServerSocket());
+                serverThread.start();
+            } else {
+                assert !serverThread.wasUsed();
+            }
+            serverThread.setServer(this);
+            if (ALLOW_DIRECT_CALLS) {
+                PORT_2_SERVER.put(serverThread.serverSocket.getLocalPort(), this);
+            }
         }
-
         return getInetAddress();
     }
 
@@ -156,7 +153,8 @@ public class Server implements AutoCloseable {
      * @return the {@link InetAddress}
      */
     public synchronized InetAddress getInetAddress() {
-        if (serverSocket != null) {
+        if (serverThread != null) {
+            ServerSocket serverSocket = serverThread.serverSocket;
             try {
                 return getServerInetAddress();
             } catch (SocketException e) {
@@ -175,8 +173,8 @@ public class Server implements AutoCloseable {
      * @return the port
      */
     public synchronized int getPort() {
-        if (serverSocket != null) {
-            return port;
+        if (serverThread != null) {
+            return serverThread.serverSocket.getLocalPort();
         } else {
             throw new IllegalStateException("Server is not open");
         }
@@ -188,20 +186,14 @@ public class Server implements AutoCloseable {
      * Does nothing if the {@link Server} is already stopped.
      */
     public synchronized void close() {
-        if (serverSocket != null) {
-            //we're now terminating
-            isTerminating.set(true);
+        if (serverThread != null) {
+            PORT_2_SERVER.remove(getPort());
 
-            //stop the server socket
-            try {
-                serverSocket.close();
-            } catch (IOException e) {
-                //failed to close the server socket - but we don't care
+            if (!serverThread.wasUsed()) {
+                SOCKET_THREADS.offer(serverThread);
+            } else {
+                serverThread.terminate();
             }
-            serverSocket = null;
-
-            //interrupt the server thread
-            serverThread.interrupt();
             serverThread = null;
 
             //stop the clients
@@ -209,8 +201,6 @@ public class Server implements AutoCloseable {
                 clientConnection.close();
             }
             this.clientConnections = new ConcurrentHashMap<Integer, ClientConnection>();
-
-            isTerminating.set(false);
         }
     }
 
@@ -218,7 +208,9 @@ public class Server implements AutoCloseable {
      * Asynchronously handles {@link Client} requests via a {@link Socket} using the
      * defined {@link OperationHandler}s.
      */
-    private class ClientConnection extends Thread implements AutoCloseable {
+    private static class ClientConnection extends Thread implements AutoCloseable {
+
+        private Server server;
 
         /**
          * The {@link ClientConnection} identity.
@@ -237,7 +229,8 @@ public class Server implements AutoCloseable {
          * @param socket   the {@link Socket} on which to receive and respond to
          *                 {@link Client} requests
          */
-        public ClientConnection(int identity, Socket socket) {
+        public ClientConnection(Server server, int identity, Socket socket) {
+            this.server = server;
             this.identity = identity;
             this.socket = socket;
         }
@@ -256,7 +249,6 @@ public class Server implements AutoCloseable {
          */
         @Override
         public void run() {
-
             try {
                 ObjectOutputStream oos = new ObjectOutputStream(socket.getOutputStream());
                 ObjectInputStream ois = new ObjectInputStream(socket.getInputStream());
@@ -264,11 +256,7 @@ public class Server implements AutoCloseable {
                 while (true) {
                     try {
                         String operation = (String) ois.readObject();
-                        OperationHandler handler = Server.this.operationHandlers.get(operation);
-
-                        if (handler != null) {
-                            handler.onProcess(ois, oos);
-                        }
+                        server.executeOperation(operation, ois, oos);
                     } catch (ClassNotFoundException e) {
                         e.printStackTrace();
                     }
@@ -286,7 +274,7 @@ public class Server implements AutoCloseable {
                 }
 
                 //remove this from the server
-                Server.this.clientConnections.remove(identity);
+                server.clientConnections.remove(identity);
             }
         }
 
@@ -304,25 +292,21 @@ public class Server implements AutoCloseable {
         }
     }
 
+    public void executeOperation(String operation, ObjectInputStream ois, ObjectOutputStream oos) throws ClassNotFoundException, IOException {
+        OperationHandler handler = operationHandlers.get(operation);
+        if (handler != null) {
+            handler.onProcess(ois, oos);
+        }
+    }
+
     private static InetAddress serverSocketAddress = null;
 
     private ServerSocket createServerSocket() throws IOException {
-
         final int ephemeralPort = 0;
-        ServerSocket result = null;
-        try {
-            result = new ServerSocket(port, 50, getServerInetAddress());
-        } catch (IOException e) {
-
-            // requested port may still be in use due to linger on close on some OSs,
-            // use ephemeral port for server socket
-            result = new ServerSocket(ephemeralPort, 50, getServerInetAddress());
-            LOG.warning("createServerSocket: unable to use requested port " + port +
-                    "; using ephemeral port " + result.getLocalPort());
-            this.port = result.getLocalPort();
-        }
+        // JW: change from original TCK: always use ephemeral port!
+        ServerSocket result = new ServerSocket(ephemeralPort, 50, getServerInetAddress());
         LOG.log(Level.INFO, "Starting " + this.getClass().getCanonicalName() +
-                " server at address:" + getServerInetAddress() + " port:" + port);
+                " server at address:" + getServerInetAddress() + " port:" + result.getLocalPort());
         return result;
     }
 
@@ -344,7 +328,7 @@ public class Server implements AutoCloseable {
      * @throws SocketException
      * @throws UnknownHostException
      */
-    private InetAddress getServerInetAddress() throws SocketException, UnknownHostException {
+    private static InetAddress getServerInetAddress() throws SocketException, UnknownHostException {
         if (serverSocketAddress == null) {
             boolean preferIPV4Stack = Boolean.getBoolean("java.net.preferIPv4Stack");
             boolean preferIPV6Addresses = Boolean.getBoolean("java.net.preferIPv6Addresses") && !preferIPV4Stack;
@@ -450,4 +434,70 @@ public class Server implements AutoCloseable {
         }
         return result;
     }
+
+    static class SocketThread extends Thread {
+
+        private volatile Server server;
+        private ServerSocket serverSocket;
+        private int connectionId = 0;
+
+        /**
+         * Should the running {@link Server} terminate as soon as possible?
+         */
+        private AtomicBoolean isTerminating = new AtomicBoolean(false);
+
+        private AtomicBoolean wasUsed = new AtomicBoolean();
+
+        public SocketThread(final ServerSocket serverSocket) {
+            this.serverSocket = serverSocket;
+        }
+
+        /**
+         * Reuse and set server
+         */
+        public void setServer(final Server server) {
+            this.server = server;
+        }
+
+        public boolean wasUsed() {
+            return wasUsed.get();
+        }
+
+        @Override
+        public void run() {
+            try {
+                while (!isTerminating.get()) {
+                    Socket socket = serverSocket.accept();
+                    wasUsed.set(true);
+                    ClientConnection clientConnection = new ClientConnection(server, connectionId++, socket);
+                    server.clientConnections.put(clientConnection.getIdentity(), clientConnection);
+                    clientConnection.start();
+                }
+                wasUsed.set(true);
+            } catch (NullPointerException e) {
+                isTerminating.compareAndSet(false, true);
+            } catch (IOException e) {
+                isTerminating.compareAndSet(false, true);
+            }
+        }
+
+        public void terminate() {
+            //we're now terminating
+            isTerminating.set(true);
+
+            //stop the server socket
+            try {
+                serverSocket.close();
+            } catch (IOException e) {
+                //failed to close the server socket - but we don't care
+            }
+            serverSocket = null;
+
+            //interrupt the server thread
+            this.interrupt();
+        }
+
+    }
+
+
 }

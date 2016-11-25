@@ -93,6 +93,10 @@ public class ExpiryPolicyServer extends Server {
     this.expiryPolicy = expiryPolicy;
   }
 
+  public ExpiryPolicy getExpiryPolicy() {
+    return expiryPolicy;
+  }
+
   /**
    * The {@link OperationHandler} for a {@link ExpiryPolicy} operation.
    */

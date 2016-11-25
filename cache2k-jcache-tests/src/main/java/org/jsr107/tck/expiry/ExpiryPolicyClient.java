@@ -18,6 +18,7 @@ package org.jsr107.tck.expiry;
 
 import org.jsr107.tck.support.CacheClient;
 import org.jsr107.tck.support.Operation;
+import org.jsr107.tck.support.Server;
 
 import javax.cache.expiry.Duration;
 import javax.cache.expiry.ExpiryPolicy;
@@ -30,6 +31,8 @@ import java.net.InetAddress;
  */
 public class ExpiryPolicyClient extends CacheClient implements ExpiryPolicy {
 
+  private transient ExpiryPolicy forwardPolicy = null;
+
   /**
    * Constructs a {@link ExpiryPolicyClient}.
    *
@@ -38,8 +41,16 @@ public class ExpiryPolicyClient extends CacheClient implements ExpiryPolicy {
    */
   public ExpiryPolicyClient(InetAddress address, int port) {
     super(address, port);
+  }
 
-    this.client = null;
+  @Override
+  protected boolean checkDirectCallsPossible() {
+    Server server = Server.lookupServerAtLocalMachine(port);
+    if (server == null) {
+      return false;
+    }
+    forwardPolicy = ((ExpiryPolicyServer) server).getExpiryPolicy();
+    return true;
   }
 
   /**
@@ -47,6 +58,9 @@ public class ExpiryPolicyClient extends CacheClient implements ExpiryPolicy {
    */
   @Override
   public Duration getExpiryForCreation() {
+    if (isDirectCallable()) {
+      return forwardPolicy.getExpiryForCreation();
+    }
     return getClient().invoke(new GetExpiryOperation(ExpiryPolicyServer.EntryOperation.CREATION));
   }
 
@@ -55,6 +69,9 @@ public class ExpiryPolicyClient extends CacheClient implements ExpiryPolicy {
    */
   @Override
   public Duration getExpiryForAccess() {
+    if (isDirectCallable()) {
+      return forwardPolicy.getExpiryForAccess();
+    }
     return getClient().invoke(new GetExpiryOperation(ExpiryPolicyServer.EntryOperation.ACCESSED));
   }
 
@@ -63,6 +80,9 @@ public class ExpiryPolicyClient extends CacheClient implements ExpiryPolicy {
    */
   @Override
   public Duration getExpiryForUpdate() {
+    if (isDirectCallable()) {
+      return forwardPolicy.getExpiryForUpdate();
+    }
     return getClient().invoke(new GetExpiryOperation(ExpiryPolicyServer.EntryOperation.UPDATED));
   }
 

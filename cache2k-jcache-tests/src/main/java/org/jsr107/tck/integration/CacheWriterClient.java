@@ -21,6 +21,7 @@ package org.jsr107.tck.integration;
 
 import org.jsr107.tck.support.CacheClient;
 import org.jsr107.tck.support.Operation;
+import org.jsr107.tck.support.Server;
 
 import javax.cache.Cache;
 import javax.cache.integration.CacheWriter;
@@ -44,6 +45,8 @@ import java.util.concurrent.ExecutionException;
  */
 public class CacheWriterClient<K, V> extends CacheClient implements CacheWriter<K, V> {
 
+    private CacheWriterServer<K,V> shortCircuitServer;
+
     /**
      * Constructs a {@link CacheWriterClient}.
      *
@@ -54,11 +57,25 @@ public class CacheWriterClient<K, V> extends CacheClient implements CacheWriter<
         super(address, port);
     }
 
+    @Override
+    protected boolean checkDirectCallsPossible() {
+        Server server = Server.lookupServerAtLocalMachine(port);
+        if (server != null) {
+            shortCircuitServer = ((CacheWriterServer) server);
+            return true;
+        }
+        return false;
+    }
+
     /**
      * {@inheritDoc}
      */
     @Override
     public void write(Cache.Entry<? extends K, ? extends V> entry) {
+        if (isDirectCallable()) {
+            shortCircuitServer.getCacheWriter().write(entry);
+            return;
+        }
         getClient().invoke(new WriteOperation<>(entry));
     }
 
@@ -67,17 +84,29 @@ public class CacheWriterClient<K, V> extends CacheClient implements CacheWriter<
      */
     @Override
     public void writeAll(Collection<Cache.Entry<? extends K, ? extends V>> entries) {
+        if (isDirectCallable()) {
+            shortCircuitServer.getCacheWriter().writeAll(entries);
+            return;
+        }
         getClient().invoke(new WriteAllOperation<>(entries));
     }
 
     @Override
     public void delete(Object key) {
+        if (isDirectCallable()) {
+            shortCircuitServer.getCacheWriter().delete(key);
+            return;
+        }
         getClient().invoke(new DeleteOperation<K, V>((K)key));
 
     }
 
     @Override
     public void deleteAll(Collection<?> keys) {
+        if (isDirectCallable()) {
+            shortCircuitServer.getCacheWriter().deleteAll(keys);
+            return;
+        }
         getClient().invoke(new DeleteAllOperation<K, V>((Collection<K>) keys));
     }
 

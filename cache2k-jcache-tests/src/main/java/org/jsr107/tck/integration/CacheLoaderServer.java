@@ -78,6 +78,10 @@ public class CacheLoaderServer<K, V> extends Server {
     this.cacheLoader = cacheLoader;
   }
 
+  public CacheLoader<K, V> getCacheLoader() {
+    return cacheLoader;
+  }
+
   /**
    * The {@link OperationHandler} for a {@link CacheLoader#loadAll(Iterable)}} operation.
    */
