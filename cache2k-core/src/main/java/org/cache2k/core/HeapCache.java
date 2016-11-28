@@ -41,6 +41,7 @@ import org.cache2k.integration.ExceptionPropagator;
 import org.cache2k.CacheOperationCompletionListener;
 import org.cache2k.processor.EntryProcessor;
 
+import java.io.Closeable;
 import java.security.SecureRandom;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -50,8 +51,7 @@ import java.util.NoSuchElementException;
 import java.util.Random;
 import java.util.Set;
 import java.util.concurrent.Executor;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.LinkedBlockingDeque;
+import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
@@ -251,15 +251,40 @@ public class HeapCache<K, V>
   }
 
   Executor provideDefaultLoaderExecutor(int _threadCount) {
-    if (_threadCount <= 0) {
-      _threadCount = Runtime.getRuntime().availableProcessors() * TUNABLE.loaderThreadCountCpuFactor;
+    return new LocalExecutor(_threadCount, getThreadNamePrefix());
+  }
+
+  static class LocalExecutor implements Executor, Closeable {
+
+    ThreadPoolExecutor threadPoolExecutor;
+
+    public LocalExecutor(int _threadCount, String _threadNamePrefix) {
+      if (_threadCount <= 0) {
+        _threadCount = Runtime.getRuntime().availableProcessors() * TUNABLE.loaderThreadCountCpuFactor;
+      }
+      final int _corePoolThreadSize = _threadCount;
+      threadPoolExecutor =
+        new ThreadPoolExecutor(_corePoolThreadSize, _threadCount,
+          21, TimeUnit.SECONDS,
+          new LinkedBlockingQueue<Runnable>(),
+          TUNABLE.threadFactoryProvider.newThreadFactory(_threadNamePrefix),
+          new ThreadPoolExecutor.AbortPolicy());
     }
-    return
-      new ThreadPoolExecutor(_threadCount, _threadCount,
-        21, TimeUnit.SECONDS,
-        new LinkedBlockingDeque<Runnable>(),
-        TUNABLE.threadFactoryProvider.newThreadFactory(getThreadNamePrefix()),
-        new ThreadPoolExecutor.AbortPolicy());
+
+    @Override
+    public void execute(final Runnable cmd) {
+      threadPoolExecutor.execute(cmd);
+    }
+
+    public ThreadPoolExecutor getThreadPoolExecutor() {
+      return threadPoolExecutor;
+    }
+
+    @Override
+    public void close() {
+      threadPoolExecutor.shutdown();
+    }
+
   }
 
   public void setTiming(final TimingHandler<K,V> rh) {
@@ -386,9 +411,7 @@ public class HeapCache<K, V>
         return null;
       }
     });
-    if (loaderExecutor instanceof ExecutorService) {
-      ((ExecutorService) loaderExecutor).shutdown();
-    }
+    closeIfNeeded(loaderExecutor, "loaderExecutor");
     cancelTimerJobs();
   }
 
@@ -413,6 +436,16 @@ public class HeapCache<K, V>
         return null;
       }
     }, false);
+  }
+
+  private void closeIfNeeded(Object obj, String _name) {
+    if (obj instanceof Closeable) {
+      try {
+        ((Closeable) obj).close();
+      } catch (Throwable t) {
+        getLog().warn("Exception when closing " + _name, t);
+      }
+    }
   }
 
   @Override
@@ -931,8 +964,8 @@ public class HeapCache<K, V>
    */
   boolean isLoaderThreadAvailableForPrefetching() {
     Executor _loaderExecutor = loaderExecutor;
-    if (_loaderExecutor instanceof ThreadPoolExecutor) {
-      ThreadPoolExecutor ex = (ThreadPoolExecutor) _loaderExecutor;
+    if (_loaderExecutor instanceof LocalExecutor) {
+      ThreadPoolExecutor ex = ((LocalExecutor) _loaderExecutor).getThreadPoolExecutor();
       return ex.getQueue().size() == 0;
     }
     if (_loaderExecutor instanceof DummyExecutor) {

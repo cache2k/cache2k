@@ -301,12 +301,24 @@ public interface InternalCacheInfo {
 
   String getExtraStatistics();
 
+  /**
+   * 0 if not a exclusive thread pool is used.
+   */
   long getAsyncLoadsStarted();
 
+  /**
+   * 0 if not a exclusive thread pool is used.
+   */
   long getAsyncLoadsInFlight();
 
+  /**
+   * 0 if not a exclusive thread pool is used.
+   */
   int getLoaderThreadsLimit();
 
+  /**
+   * 0 if not a exclusive thread pool is used.
+   */
   int getLoaderThreadsMaxActive();
 
 }

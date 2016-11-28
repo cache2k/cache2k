@@ -49,11 +49,12 @@ class CacheBaseInfo implements InternalCacheInfo {
   private CollisionInfo collisionInfo;
   private String extraStatistics;
   private IntegrityState integrityState;
+  private long totalLoadCnt;
+
+  private int loaderThreadsLimit = 0;
   private long asyncLoadsStarted = 0;
   private long asyncLoadsInFlight = 0;
-  private int loaderThreadsLimit = 0;
   private int loaderThreadsMaxActive = 0;
-  private long totalLoadCnt;
 
   /*
    * Consistent copies from heap cache. for 32 bit machines the access
@@ -101,8 +102,8 @@ class CacheBaseInfo implements InternalCacheInfo {
     storageMissCnt = storageMetrics.getReadMissCount() + storageMetrics.getReadNonFreshCount();
     hitCnt = em.getHitCount();
     correctedPutCnt = metrics.getPutNewEntryCount() + metrics.getPutHitCount() + metrics.getPutNoReadHitCount();
-    if (_heapCache.loaderExecutor instanceof ThreadPoolExecutor) {
-      ThreadPoolExecutor ex = (ThreadPoolExecutor) _heapCache.loaderExecutor;
+    if (_heapCache.loaderExecutor instanceof HeapCache.LocalExecutor) {
+      ThreadPoolExecutor ex = ((HeapCache.LocalExecutor) _heapCache.loaderExecutor).getThreadPoolExecutor();
       asyncLoadsInFlight = ex.getActiveCount();
       asyncLoadsStarted = ex.getTaskCount();
       loaderThreadsLimit = ex.getCorePoolSize();
