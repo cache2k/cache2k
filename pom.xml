@@ -507,7 +507,6 @@
             <artifactId>maven-surefire-plugin</artifactId>
             <configuration>
               <groups>org.cache2k.testing.category.SlowTests</groups>
-              <excludedGroups>org.cache2k.testing.category.StorageTests,org.cache2k.testing.category.TimingTests</excludedGroups>
               <parallel>classes</parallel>
               <perCoreThreadCount>true</perCoreThreadCount>
               <threadCount>1</threadCount>
