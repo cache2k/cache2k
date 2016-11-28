@@ -494,9 +494,9 @@ public class Cache2kBuilder<K, V> implements Cloneable {
 
   /**
    * By default the expiry time is not exact, which means, a value might be visible a few
-   * milliseconds after the time of expiry. The timing depends on the system load.
-   * Switching to true, means an entry is not visible exactly at and after the time of
-   * expiry.
+   * milliseconds after the time of expiry. The time lag depends on the system load.
+   * Switching to true, means that values will not be visible when the time is reached that
+   * {@link ExpiryPolicy} returned.
    */
   public final Cache2kBuilder<K, V> sharpExpiry(boolean f) {
     config().setSharpExpiry(f);

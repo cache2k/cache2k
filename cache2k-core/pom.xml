@@ -81,6 +81,9 @@
   </dependencies>
 
   <build>
+      <!-- Filtering adds the version, buildNumber and timestamp to org.cache2k.impl.version.txt
+           We use this mechanism instead of accessing the manifest, since it is working reliable on Android, too
+      -->
       <resources>
           <resource>
             <directory>src/main/resources</directory>
@@ -88,47 +91,5 @@
           </resource>
       </resources>
   </build>
-
-  <profiles>
-      <!-- An experimental configuration with pro guard. -->
-      <profile>
-          <id>proguard</id>
-          <build>
-              <plugins>
-                  <plugin>
-                      <groupId>com.github.wvengen</groupId>
-                      <artifactId>proguard-maven-plugin</artifactId>
-                      <version>2.0.8</version>
-                      <dependencies>
-                          <dependency>
-                              <groupId>net.sf.proguard</groupId>
-                              <artifactId>proguard-base</artifactId>
-                              <version>5.0</version>
-                              <scope>runtime</scope>
-                          </dependency>
-                      </dependencies>
-                      <executions>
-                          <execution>
-                              <phase>package</phase>
-                              <goals><goal>proguard</goal></goals>
-                          </execution>
-                      </executions>
-                      <configuration>
-                          <options>
-                              <option>-allowaccessmodification</option>
-                              <option>-keepattributes Exceptions,InnerClasses,Signature,
-                                  Deprecated,SourceFile,LineNumberTable,*Annotation*,
-                                  EnclosingMethod</option>
-                              <option>-keep public class * { public protected *; }</option>
-                          </options>
-                          <libs>
-                              <lib>${java.home}/lib/rt.jar</lib>
-                          </libs>
-                      </configuration>
-                  </plugin>
-              </plugins>
-          </build>
-      </profile>
-  </profiles>
 
 </project>

@@ -89,7 +89,7 @@ public interface ExpiryPolicy<K, V> extends ExpiryTimeValues {
    *         be longer than the configured expiry value via {@link Cache2kBuilder#expireAfterWrite(long, TimeUnit)}.
    *         If a negative value is returned, the negated value will be the expiry time
    *         used, but sharp expiry is requested. Use {@link Expiry#toSharpTime(long)} to have a more
-   *         expressive code. See also {@link Cache2kBuilder#sharpExpiry(boolean)}.
+   *         expressive code. Switching on {@link Cache2kBuilder#sharpExpiry(boolean)} means always sharp expiry.
    *
    * @see ValueWithExpiryTime#getCacheExpiryTime()
    */

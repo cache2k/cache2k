@@ -154,6 +154,11 @@ public abstract class CacheManager implements Iterable<Cache>, Closeable {
    */
   public abstract Cache2kConfiguration getDefaultConfiguration();
 
+  /**
+   * The name to uniquely identify the manager within a VM instance.
+   *
+   * @see CacheManager#getInstance(String)
+   */
   public abstract String getName();
 
   /**
@@ -170,12 +175,21 @@ public abstract class CacheManager implements Iterable<Cache>, Closeable {
   public abstract Iterable<Cache> getActiveCaches();
 
   /**
-   * Return a known cache that must be created before via the {@link Cache2kBuilder}.
+   * Return a known cache that must be created before via the {@link Cache2kBuilder}
+   * or {@link #createCache(Cache2kConfiguration)}
    */
   public abstract <K,V> Cache<K,V> getCache(String name);
 
   /**
-   * Create a new cache from the configuration.
+   * Create a new cache from the configuration. The recommended way is to use the {@link Cache2kBuilder}
+   * to create a new cache. This method is identical to and a shorthand to:
+   *
+   * <pre>{@code
+   *    CacheManager manager = ...
+   *    Cache2kConfiguration<K,V> config = ...
+   *    Cache<K,V> cache = Cache2kBuilder.of(config).manager(manager).build();
+   * }</pre>
+   *
    */
   public abstract <K,V> Cache<K,V> createCache(Cache2kConfiguration<K, V> cfg);
 
