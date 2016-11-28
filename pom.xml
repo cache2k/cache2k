@@ -70,7 +70,7 @@
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <jcache.version>1.0.0</jcache.version>
     <jacoco-maven-plugin-version>0.7.5.201505241946</jacoco-maven-plugin-version>
-    <h7e.recycle.test.coverage>jacoco-instrument,fast-tests</h7e.recycle.test.coverage>
+    <h7e.recycle.test.coverage>jacoco-instrument</h7e.recycle.test.coverage>
   </properties>
 
   <build>
@@ -486,7 +486,7 @@
           <plugin>
             <groupId>org.apache.maven.plugins</groupId>
             <artifactId>maven-surefire-plugin</artifactId>
-            <!-- we only exclude, so the TCK tests are run, too -->
+            <!-- we only exclude, so TCK tests or unmarked tests run also -->
             <configuration>
               <excludedGroups>org.cache2k.testing.category.StorageTests,org.cache2k.testing.category.SlowTests,org.cache2k.testing.category.TimingTests,org.cache2k.testing.category.ExclusiveTests</excludedGroups>
               <!-- jacoco instrumentation is not working GC debugging....
