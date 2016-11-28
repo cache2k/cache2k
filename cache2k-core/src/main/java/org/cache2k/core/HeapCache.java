@@ -1961,7 +1961,7 @@ public class HeapCache<K, V>
     /**
      * Number of maximum loader threads, depending on the CPUs.
      */
-    public int loaderThreadCountCpuFactor = 2;
+    public int loaderThreadCountCpuFactor = 1;
 
     public StandardCommonMetricsFactory commonMetricsFactory = new StandardCommonMetricsFactory();
 
