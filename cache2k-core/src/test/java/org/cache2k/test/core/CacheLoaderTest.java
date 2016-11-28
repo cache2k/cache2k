@@ -342,12 +342,15 @@ public class CacheLoaderTest {
   }
 
   /**
-   * We should always have two loader threads.
+   * Start two overlapping loads, expect that one is done in the caller thread,
+   * since only one thread is available.
    */
   @Test
   public void testOneLoaderThreadsAndPoolInfo() throws Exception {
+    final Thread _callingThread = Thread.currentThread();
     final CountDownLatch _inLoader = new CountDownLatch(1);
     final CountDownLatch _releaseLoader = new CountDownLatch(1);
+    final AtomicInteger _asyncCount = new AtomicInteger();
     Cache<Integer,Integer> c = target.cache(new CacheRule.Specialization<Integer, Integer>() {
       @Override
       public void extend(final Cache2kBuilder<Integer, Integer> b) {
@@ -355,8 +358,11 @@ public class CacheLoaderTest {
           .loader(new CacheLoader<Integer, Integer>() {
           @Override
           public Integer load(final Integer key) throws Exception {
-            _inLoader.countDown();
-            _releaseLoader.await();
+            if (_callingThread != Thread.currentThread()) {
+              _asyncCount.incrementAndGet();
+              _inLoader.countDown();
+              _releaseLoader.await();
+            }
             return key * 2;
           }
         });
@@ -365,7 +371,8 @@ public class CacheLoaderTest {
     c.loadAll(null, asSet(1));
     c.loadAll(null, asSet(2));
     _inLoader.await();
-    assertEquals(2, latestInfo(c).getAsyncLoadsStarted());
+    assertEquals("only one load is separate thread", 1, latestInfo(c).getAsyncLoadsStarted());
+    assertEquals("only one load is separate thread", 1, _asyncCount.get());
     assertEquals(1, latestInfo(c).getAsyncLoadsInFlight());
     assertEquals(1, latestInfo(c).getLoaderThreadsMaxActive());
     _releaseLoader.countDown();

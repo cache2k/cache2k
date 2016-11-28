@@ -52,7 +52,6 @@ import java.util.Random;
 import java.util.Set;
 import java.util.concurrent.Executor;
 import java.util.concurrent.RejectedExecutionException;
-import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.cache2k.core.util.Util.*;
@@ -922,22 +921,8 @@ public class HeapCache<K, V>
     }
   }
 
-  /**
-   * True if we have spare threads in the thread pool that we can use for
-   * prefetching. If we get an instruction to prefetch, only do so if there
-   * are enough resources available, since we don't want to block out potentially
-   * more important refresh tasks from executing.
-   */
-  boolean isLoaderThreadAvailableForPrefetching() {
-    Executor _loaderExecutor = loaderExecutor;
-    if (_loaderExecutor instanceof ExclusiveExecutor) {
-      ThreadPoolExecutor ex = ((ExclusiveExecutor) _loaderExecutor).getThreadPoolExecutor();
-      return ex.getQueue().size() == 0;
-    }
-    if (_loaderExecutor instanceof DummyExecutor) {
-      return true;
-    }
-    return false;
+  public Executor getPrefetchExecutor() {
+    return loaderExecutor;
   }
 
   @Override
@@ -949,13 +934,14 @@ public class HeapCache<K, V>
     if (e != null && e.hasFreshData()) {
       return;
     }
-    if (isLoaderThreadAvailableForPrefetching()) {
-      loaderExecutor.execute(new RunWithCatch(this) {
+    try {
+      getPrefetchExecutor().execute(new RunWithCatch(this) {
         @Override
         public void action() {
           getEntryInternal(key);
         }
       });
+    } catch (RejectedExecutionException ignore) {
     }
   }
 
@@ -970,8 +956,8 @@ public class HeapCache<K, V>
       _listener.onCompleted();
       return;
     }
-    if (isLoaderThreadAvailableForPrefetching()) {
-      loaderExecutor.execute(new RunWithCatch(this) {
+    try {
+      getPrefetchExecutor().execute(new RunWithCatch(this) {
         @Override
         public void action() {
           try {
@@ -981,6 +967,7 @@ public class HeapCache<K, V>
           }
         }
       });
+    } catch (RejectedExecutionException ignore) {
     }
   }
 
@@ -995,16 +982,15 @@ public class HeapCache<K, V>
     Set<K> _keysToLoad = checkAllPresent(_keys);
     for (K k : _keysToLoad) {
       final K key = k;
-      if (!isLoaderThreadAvailableForPrefetching()) {
-        return;
-      }
       Runnable r = new RunWithCatch(this) {
         @Override
         public void action() {
           getEntryInternal(key);
         }
       };
-      loaderExecutor.execute(r);
+      try {
+        getPrefetchExecutor().execute(r);
+      } catch (RejectedExecutionException ignore) { }
     }
   }
 
@@ -1019,9 +1005,6 @@ public class HeapCache<K, V>
     try {
       for (K k : _keysToLoad) {
         final K key = k;
-        if (!isLoaderThreadAvailableForPrefetching()) {
-          return;
-        }
         Runnable r = new RunWithCatch(this) {
           @Override
           public void action() {
@@ -1034,8 +1017,10 @@ public class HeapCache<K, V>
             }
           }
         };
-        loaderExecutor.execute(r);
-        _count.incrementAndGet();
+        try {
+          getPrefetchExecutor().execute(r);
+          _count.incrementAndGet();
+        } catch (RejectedExecutionException ignore) { }
       }
     } finally {
       if (_count.addAndGet(-2) == 0) {
@@ -1068,7 +1053,11 @@ public class HeapCache<K, V>
           }
         }
       };
-      loaderExecutor.execute(r);
+      try {
+        loaderExecutor.execute(r);
+      } catch (RejectedExecutionException ex) {
+        r.run();
+      }
     }
   }
 
@@ -1092,7 +1081,12 @@ public class HeapCache<K, V>
           }
         }
       };
-      loaderExecutor.execute(r);
+      try {
+        loaderExecutor.execute(r);
+      } catch (RejectedExecutionException ex) {
+        r.run();
+      }
+
     }
   }
 

@@ -134,19 +134,18 @@ public class WiredCache<K, V> extends AbstractCache<K, V>
     if (loader == null) {
       return;
     }
-    if (!heapCache.isLoaderThreadAvailableForPrefetching()) {
-      return;
-    }
     Entry<K,V> e = heapCache.lookupEntryNoHitRecord(key);
     if (e != null && e.hasFreshData()) {
       return;
     }
-    heapCache.loaderExecutor.execute(new HeapCache.RunWithCatch(this) {
-      @Override
-      public void action() {
-        load(key);
-      }
-    });
+    try {
+      heapCache.getPrefetchExecutor().execute(new HeapCache.RunWithCatch(this) {
+        @Override
+        public void action() {
+          load(key);
+        }
+      });
+    } catch (RejectedExecutionException ignore) { }
   }
 
   @Override
@@ -156,9 +155,6 @@ public class WiredCache<K, V> extends AbstractCache<K, V>
     }
     Set<K> _keysToLoad = heapCache.checkAllPresent(keys);
     for (K k : _keysToLoad) {
-      if (!heapCache.isLoaderThreadAvailableForPrefetching()) {
-        return;
-      }
       final K key = k;
       Runnable r = new HeapCache.RunWithCatch(this) {
         @Override
@@ -166,13 +162,15 @@ public class WiredCache<K, V> extends AbstractCache<K, V>
           load(key);
         }
       };
-      heapCache.loaderExecutor.execute(r);
+      try {
+        heapCache.getPrefetchExecutor().execute(r);
+      } catch (RejectedExecutionException ignore) { }
     }
   }
 
   @Override
   public void prefetch(final CacheOperationCompletionListener _listener, final K key) {
-    if (loader == null || !heapCache.isLoaderThreadAvailableForPrefetching()) {
+    if (loader == null) {
       _listener.onCompleted();
       return;
     }
@@ -181,16 +179,20 @@ public class WiredCache<K, V> extends AbstractCache<K, V>
       _listener.onCompleted();
       return;
     }
-    heapCache.loaderExecutor.execute(new HeapCache.RunWithCatch(this) {
-      @Override
-      public void action() {
-        try {
-          load(key);
-        } finally {
-          _listener.onCompleted();
+    try {
+      heapCache.getPrefetchExecutor().execute(new HeapCache.RunWithCatch(this) {
+        @Override
+        public void action() {
+          try {
+            load(key);
+          } finally {
+            _listener.onCompleted();
+          }
         }
-      }
-    });
+      });
+    } catch (RejectedExecutionException ex) {
+      _listener.onCompleted();
+    }
   }
 
   @Override
@@ -203,9 +205,6 @@ public class WiredCache<K, V> extends AbstractCache<K, V>
     try {
       Set<K> _keysToLoad = heapCache.checkAllPresent(_keys);
       for (K k : _keysToLoad) {
-        if (!heapCache.isLoaderThreadAvailableForPrefetching()) {
-          return;
-        }
         final K key = k;
         Runnable r = new HeapCache.RunWithCatch(this) {
           @Override
@@ -219,8 +218,10 @@ public class WiredCache<K, V> extends AbstractCache<K, V>
             }
           }
         };
-        heapCache.loaderExecutor.execute(r);
-        _count.incrementAndGet();
+        try {
+          heapCache.getPrefetchExecutor().execute(r);
+          _count.incrementAndGet();
+        } catch (RejectedExecutionException ignore) { }
       }
     } finally {
       if (_count.addAndGet(-2) == 0) {
@@ -317,7 +318,11 @@ public class WiredCache<K, V> extends AbstractCache<K, V>
           }
         }
       };
-      heapCache.loaderExecutor.execute(r);
+      try {
+        heapCache.loaderExecutor.execute(r);
+      } catch (RejectedExecutionException ex) {
+        r.run();
+      }
     }
   }
 
@@ -341,7 +346,11 @@ public class WiredCache<K, V> extends AbstractCache<K, V>
           }
         }
       };
-      heapCache.loaderExecutor.execute(r);
+      try {
+        heapCache.loaderExecutor.execute(r);
+      } catch (RejectedExecutionException ex) {
+        r.run();
+      }
     }
   }
 

@@ -22,7 +22,7 @@ package org.cache2k.core;
 
 import java.io.Closeable;
 import java.util.concurrent.Executor;
-import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.SynchronousQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
@@ -40,7 +40,7 @@ public class ExclusiveExecutor implements Executor, Closeable {
     threadPoolExecutor =
       new ThreadPoolExecutor(_corePoolThreadSize, _threadCount,
         21, TimeUnit.SECONDS,
-        new LinkedBlockingQueue<Runnable>(),
+        new SynchronousQueue<Runnable>(),
         HeapCache.TUNABLE.threadFactoryProvider.newThreadFactory(_threadNamePrefix),
         new ThreadPoolExecutor.AbortPolicy());
   }
