@@ -51,10 +51,8 @@ import java.util.NoSuchElementException;
 import java.util.Random;
 import java.util.Set;
 import java.util.concurrent.Executor;
-import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.ThreadPoolExecutor;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.cache2k.core.util.Util.*;
@@ -157,7 +155,8 @@ public class HeapCache<K, V>
 
     @Override
     public synchronized void execute(final Runnable _command) {
-      cache.loaderExecutor = cache.provideDefaultLoaderExecutor(0);
+      int _threadCount = Runtime.getRuntime().availableProcessors() * HeapCache.TUNABLE.loaderThreadCountCpuFactor;
+      cache.loaderExecutor = cache.provideDefaultLoaderExecutor(_threadCount);
       cache.loaderExecutor.execute(_command);
     }
   }
@@ -251,40 +250,7 @@ public class HeapCache<K, V>
   }
 
   Executor provideDefaultLoaderExecutor(int _threadCount) {
-    return new LocalExecutor(_threadCount, getThreadNamePrefix());
-  }
-
-  static class LocalExecutor implements Executor, Closeable {
-
-    ThreadPoolExecutor threadPoolExecutor;
-
-    public LocalExecutor(int _threadCount, String _threadNamePrefix) {
-      if (_threadCount <= 0) {
-        _threadCount = Runtime.getRuntime().availableProcessors() * TUNABLE.loaderThreadCountCpuFactor;
-      }
-      final int _corePoolThreadSize = _threadCount;
-      threadPoolExecutor =
-        new ThreadPoolExecutor(_corePoolThreadSize, _threadCount,
-          21, TimeUnit.SECONDS,
-          new LinkedBlockingQueue<Runnable>(),
-          TUNABLE.threadFactoryProvider.newThreadFactory(_threadNamePrefix),
-          new ThreadPoolExecutor.AbortPolicy());
-    }
-
-    @Override
-    public void execute(final Runnable cmd) {
-      threadPoolExecutor.execute(cmd);
-    }
-
-    public ThreadPoolExecutor getThreadPoolExecutor() {
-      return threadPoolExecutor;
-    }
-
-    @Override
-    public void close() {
-      threadPoolExecutor.shutdown();
-    }
-
+    return new ExclusiveExecutor(_threadCount, getThreadNamePrefix());
   }
 
   public void setTiming(final TimingHandler<K,V> rh) {
@@ -964,8 +930,8 @@ public class HeapCache<K, V>
    */
   boolean isLoaderThreadAvailableForPrefetching() {
     Executor _loaderExecutor = loaderExecutor;
-    if (_loaderExecutor instanceof LocalExecutor) {
-      ThreadPoolExecutor ex = ((LocalExecutor) _loaderExecutor).getThreadPoolExecutor();
+    if (_loaderExecutor instanceof ExclusiveExecutor) {
+      ThreadPoolExecutor ex = ((ExclusiveExecutor) _loaderExecutor).getThreadPoolExecutor();
       return ex.getQueue().size() == 0;
     }
     if (_loaderExecutor instanceof DummyExecutor) {
