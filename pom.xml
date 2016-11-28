@@ -66,6 +66,8 @@
   <properties>
     <buildNumber>undefined</buildNumber>
     <timestamp>0</timestamp>
+    <gitBranch>unknown</gitBranch>
+    <gitSha1>unknown</gitSha1>
     <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <jcache.version>1.0.0</jcache.version>
@@ -106,6 +108,8 @@
               </manifest>
               <manifestEntries>
                 <Implementation-Build>${buildNumber}</Implementation-Build>
+                <X-Git-Branch>${gitBranch}</X-Git-Branch>
+                <X-Git-SHA1>${gitSha1}</X-Git-SHA1>
               </manifestEntries>
             </archive>
           </configuration>
@@ -185,32 +189,6 @@
     </pluginManagement>
 
     <plugins>
-
-      <!-- Gives terrible warnings if not build on git
-      <plugin>
-        <groupId>org.codehaus.mojo</groupId>
-        <artifactId>buildnumber-maven-plugin</artifactId>
-        <version>1.4</version>
-        <executions>
-          <execution>
-            <phase>validate</phase>
-            <goals>
-              <goal>create</goal>
-            </goals>
-          </execution>
-        </executions>
-        <configuration>
-          <doCheck>false</doCheck>
-          <doUpdate>false</doUpdate>
-          <getRevisionOnlyOnce>true</getRevisionOnlyOnce>
-          <format>{0}-{1,date,yyyyMMddHHmmss}</format>
-          <items>
-            <item>scmVersion</item>
-            <item>timestamp</item>
-          </items>
-        </configuration>
-      </plugin>
-      -->
 
       <!-- taken from sonatype oss parent -->
       <plugin>
