@@ -26,7 +26,7 @@ import org.cache2k.configuration.Cache2kConfiguration;
 
 /**
  * Interface to the cache2k implementation. This interface is not intended for the application
- * usage. Use the static methods on the {@lin CacheManger}.
+ * usage. Use the static methods on the {@link CacheManager}.
  *
  * @author Jens Wilke; created: 2015-03-26
  */
