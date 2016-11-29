@@ -62,7 +62,7 @@ public interface ExpiryPolicy<K, V> extends ExpiryTimeValues {
    * cache entry is updated. However, it is legal that the cache calls the
    * method at arbitrary times during the entry lifecycle.
    *
-   * <p><b>null values:</b> If the loader returns a {@code null} value, the expiry
+   * <p><b>{@code null} values:</b> If the loader returns a {@code null} value, the expiry
    * policy will be called, regardless of the {@link Cache2kBuilder#permitNullValues} setting.
    * If the expiry policy returns a {@link #NO_CACHE} the entry will be removed. If the expiry
    * policy returns a different time value, a {@code NullPointerException} will be propagated
@@ -75,12 +75,12 @@ public interface ExpiryPolicy<K, V> extends ExpiryTimeValues {
    * needed by the implementation are available directly. The downside, OTOH, 4-arity breaks Java 8 lambdas.
    *
    * @param key the cache key used for inserting or loading
-   * @param value the value to be cached. May be null if the loader returns null, regardless of the
+   * @param value the value to be cached. May be {@code null} if the loader returns {@code null}, regardless of the
    *               {@link Cache2kBuilder#permitNullValues} setting.
    * @param loadTime The time the entry was inserted or loaded. If a loader was used,
    *                 this is the time before the loader was called.
    * @param oldEntry entry representing the current mapping, if there is a value present.
-   *                  If the old entry holds an exception, this is null. Expired entries will be
+   *                  If the old entry holds an exception, this is {@code null}. Expired entries will be
    *                 passed in as well if still in the cache.
    * @return time the time of expiry in millis since epoch. {@link #NO_CACHE} if it should not cached.
    *         If {@link Cache2kBuilder#refreshAhead} is enabled the return value {@link #NO_CACHE} will remove
