@@ -22,8 +22,8 @@ package org.cache2k.core;
 
 import org.cache2k.configuration.Cache2kConfiguration;
 import org.cache2k.CacheEntry;
-import org.cache2k.configuration.CustomizationFactory;
-import org.cache2k.configuration.ReferenceFactory;
+import org.cache2k.configuration.CustomizationSupplier;
+import org.cache2k.configuration.CustomizationReferenceSupplier;
 import org.cache2k.core.util.Util;
 import org.cache2k.expiry.Expiry;
 import org.cache2k.expiry.ExpiryPolicy;
@@ -243,7 +243,7 @@ public abstract class TimingHandler<K,V>  {
     /** Dirty counter, intentionally only 32 bit */
     int timerCancelCount = 0;
     ResiliencePolicy<K,V> resiliencePolicy;
-    CustomizationFactory<ResiliencePolicy<K,V>> resiliencePolicyFactory;
+    CustomizationSupplier<ResiliencePolicy<K,V>> resiliencePolicyFactory;
 
     void configureStatic(final Cache2kConfiguration<K, V> c) {
       long _expiryMillis  = c.getExpireAfterWrite();
@@ -277,9 +277,9 @@ public abstract class TimingHandler<K,V>  {
       if (resiliencePolicyFactory == null) {
         resiliencePolicy = new DefaultResiliencePolicy<K, V>();
       } else {
-        if (resiliencePolicyFactory instanceof ReferenceFactory) {
+        if (resiliencePolicyFactory instanceof CustomizationReferenceSupplier) {
           try {
-            resiliencePolicy = resiliencePolicyFactory.create(null);
+            resiliencePolicy = resiliencePolicyFactory.supply(null);
           } catch (Exception ignore) { }
         }
       }
@@ -499,15 +499,15 @@ public abstract class TimingHandler<K,V>  {
     private ExpiryPolicy<K, V> expiryPolicy;
 
     /** Store policy factory until init is called and we have the cache reference */
-    private CustomizationFactory<ExpiryPolicy<K, V>> policyFactory;
+    private CustomizationSupplier<ExpiryPolicy<K, V>> policyFactory;
 
     @SuppressWarnings("unchecked")
     void configure(Cache2kConfiguration<K,V> c) {
       configureStatic(c);
       policyFactory = c.getExpiryPolicy();
-      if (policyFactory instanceof ReferenceFactory) {
+      if (policyFactory instanceof CustomizationReferenceSupplier) {
         try {
-          expiryPolicy = policyFactory.create(null);
+          expiryPolicy = policyFactory.supply(null);
         } catch (Exception ignore) { }
       }
       if (c.getValueType() != null &&

@@ -78,17 +78,17 @@ public class Cache2kConfiguration<K, V> implements Serializable, ConfigurationWi
   private boolean disableStatistics = false;
   private int evictionSegmentCount = -1;
 
-  private CustomizationFactory<Executor> loaderExecutor;
-  private CustomizationFactory<Executor> prefetchExecutor;
-  private CustomizationFactory<ExpiryPolicy<K,V>> expiryPolicy;
-  private CustomizationFactory<ResiliencePolicy<K,V>> resiliencePolicy;
-  private CustomizationFactory<CacheLoader<K,V>> loader;
-  private CustomizationFactory<CacheWriter<K,V>> writer;
-  private CustomizationFactory<AdvancedCacheLoader<K,V>> advancedLoader;
-  private CustomizationFactory<ExceptionPropagator<K>> exceptionPropagator;
+  private CustomizationSupplier<Executor> loaderExecutor;
+  private CustomizationSupplier<Executor> prefetchExecutor;
+  private CustomizationSupplier<ExpiryPolicy<K,V>> expiryPolicy;
+  private CustomizationSupplier<ResiliencePolicy<K,V>> resiliencePolicy;
+  private CustomizationSupplier<CacheLoader<K,V>> loader;
+  private CustomizationSupplier<CacheWriter<K,V>> writer;
+  private CustomizationSupplier<AdvancedCacheLoader<K,V>> advancedLoader;
+  private CustomizationSupplier<ExceptionPropagator<K>> exceptionPropagator;
 
-  private Collection<CustomizationFactory<CacheEntryOperationListener<K,V>>> listeners;
-  private Collection<CustomizationFactory<CacheEntryOperationListener<K,V>>> asyncListeners;
+  private Collection<CustomizationSupplier<CacheEntryOperationListener<K,V>>> listeners;
+  private Collection<CustomizationSupplier<CacheEntryOperationListener<K,V>>> asyncListeners;
 
   private ConfigurationSectionContainer sections;
 
@@ -405,19 +405,19 @@ public class Cache2kConfiguration<K, V> implements Serializable, ConfigurationWi
     return sections;
   }
 
-  public CustomizationFactory<CacheLoader<K,V>> getLoader() {
+  public CustomizationSupplier<CacheLoader<K,V>> getLoader() {
     return loader;
   }
 
-  public void setLoader(final CustomizationFactory<CacheLoader<K,V>> v) {
+  public void setLoader(final CustomizationSupplier<CacheLoader<K,V>> v) {
     loader = v;
   }
 
-  public CustomizationFactory<AdvancedCacheLoader<K, V>> getAdvancedLoader() {
+  public CustomizationSupplier<AdvancedCacheLoader<K, V>> getAdvancedLoader() {
     return advancedLoader;
   }
 
-  public void setAdvancedLoader(final CustomizationFactory<AdvancedCacheLoader<K, V>> v) {
+  public void setAdvancedLoader(final CustomizationSupplier<AdvancedCacheLoader<K, V>> v) {
     advancedLoader = v;
   }
 
@@ -432,22 +432,22 @@ public class Cache2kConfiguration<K, V> implements Serializable, ConfigurationWi
     loaderThreadCount = v;
   }
 
-  public CustomizationFactory<ExpiryPolicy<K, V>> getExpiryPolicy() {
+  public CustomizationSupplier<ExpiryPolicy<K, V>> getExpiryPolicy() {
     return expiryPolicy;
   }
 
-  public void setExpiryPolicy(final CustomizationFactory<ExpiryPolicy<K, V>> _expiryPolicy) {
+  public void setExpiryPolicy(final CustomizationSupplier<ExpiryPolicy<K, V>> _expiryPolicy) {
     expiryPolicy = _expiryPolicy;
   }
 
-  public CustomizationFactory<CacheWriter<K, V>> getWriter() {
+  public CustomizationSupplier<CacheWriter<K, V>> getWriter() {
     return writer;
   }
 
   /**
    * @see Cache2kBuilder#writer(CacheWriter)
    */
-  public void setWriter(final CustomizationFactory<CacheWriter<K, V>> v) {
+  public void setWriter(final CustomizationSupplier<CacheWriter<K, V>> v) {
     writer = v;
   }
 
@@ -462,14 +462,14 @@ public class Cache2kConfiguration<K, V> implements Serializable, ConfigurationWi
     storeByReference = v;
   }
 
-  public CustomizationFactory<ExceptionPropagator<K>> getExceptionPropagator() {
+  public CustomizationSupplier<ExceptionPropagator<K>> getExceptionPropagator() {
     return exceptionPropagator;
   }
 
   /**
    * @see Cache2kBuilder#exceptionPropagator(ExceptionPropagator)
    */
-  public void setExceptionPropagator(final CustomizationFactory<ExceptionPropagator<K>> v) {
+  public void setExceptionPropagator(final CustomizationSupplier<ExceptionPropagator<K>> v) {
     exceptionPropagator = v;
   }
 
@@ -484,9 +484,9 @@ public class Cache2kConfiguration<K, V> implements Serializable, ConfigurationWi
    *
    * @return Mutable collection of listeners
    */
-  public Collection<CustomizationFactory<CacheEntryOperationListener<K,V>>> getListeners() {
+  public Collection<CustomizationSupplier<CacheEntryOperationListener<K,V>>> getListeners() {
     if (listeners == null) {
-      listeners = new HashSet<CustomizationFactory<CacheEntryOperationListener<K,V>>>();
+      listeners = new HashSet<CustomizationSupplier<CacheEntryOperationListener<K,V>>>();
     }
     return listeners;
   }
@@ -504,9 +504,9 @@ public class Cache2kConfiguration<K, V> implements Serializable, ConfigurationWi
    *
    * @return Mutable collection of listeners
    */
-  public Collection<CustomizationFactory<CacheEntryOperationListener<K,V>>> getAsyncListeners() {
+  public Collection<CustomizationSupplier<CacheEntryOperationListener<K,V>>> getAsyncListeners() {
     if (asyncListeners == null) {
-      asyncListeners = new HashSet<CustomizationFactory<CacheEntryOperationListener<K,V>>>();
+      asyncListeners = new HashSet<CustomizationSupplier<CacheEntryOperationListener<K,V>>>();
     }
     return asyncListeners;
   }
@@ -518,14 +518,14 @@ public class Cache2kConfiguration<K, V> implements Serializable, ConfigurationWi
     return asyncListeners != null && !asyncListeners.isEmpty();
   }
 
-  public CustomizationFactory<ResiliencePolicy<K, V>> getResiliencePolicy() {
+  public CustomizationSupplier<ResiliencePolicy<K, V>> getResiliencePolicy() {
     return resiliencePolicy;
   }
 
   /**
    * @see Cache2kBuilder#resiliencePolicy
    */
-  public void setResiliencePolicy(final CustomizationFactory<ResiliencePolicy<K, V>> _resiliencePolicy) {
+  public void setResiliencePolicy(final CustomizationSupplier<ResiliencePolicy<K, V>> _resiliencePolicy) {
     resiliencePolicy = _resiliencePolicy;
   }
 
@@ -574,25 +574,25 @@ public class Cache2kConfiguration<K, V> implements Serializable, ConfigurationWi
     evictionSegmentCount = v;
   }
 
-  public CustomizationFactory<Executor> getLoaderExecutor() {
+  public CustomizationSupplier<Executor> getLoaderExecutor() {
     return loaderExecutor;
   }
 
   /**
    * @see Cache2kBuilder#loaderExecutor(Executor)
    */
-  public void setLoaderExecutor(final CustomizationFactory<Executor> v) {
+  public void setLoaderExecutor(final CustomizationSupplier<Executor> v) {
     loaderExecutor = v;
   }
 
-  public CustomizationFactory<Executor> getPrefetchExecutor() {
+  public CustomizationSupplier<Executor> getPrefetchExecutor() {
     return prefetchExecutor;
   }
 
   /**
    * @see Cache2kBuilder#prefetchExecutor(Executor)
    */
-  public void setPrefetchExecutor(final CustomizationFactory<Executor> v) {
+  public void setPrefetchExecutor(final CustomizationSupplier<Executor> v) {
     prefetchExecutor = v;
   }
 

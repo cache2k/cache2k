@@ -23,7 +23,7 @@ package org.cache2k.core;
 import org.cache2k.Cache;
 import org.cache2k.CacheEntry;
 import org.cache2k.configuration.CacheType;
-import org.cache2k.configuration.CustomizationFactory;
+import org.cache2k.configuration.CustomizationSupplier;
 import org.cache2k.core.util.Log;
 import org.cache2k.core.storageApi.StorageAdapter;
 
@@ -91,6 +91,6 @@ public interface InternalCache<K, V> extends Cache<K, V>, CanCheckIntegrity {
    *
    * @param f factory or null. If null, then null is returned.
    */
-  <T> T createCustomization(CustomizationFactory<T> f);
+  <T> T createCustomization(CustomizationSupplier<T> f);
 
 }

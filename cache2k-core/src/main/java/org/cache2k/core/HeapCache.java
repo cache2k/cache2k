@@ -23,7 +23,7 @@ package org.cache2k.core;
 import org.cache2k.*;
 import org.cache2k.configuration.Cache2kConfiguration;
 import org.cache2k.configuration.CacheType;
-import org.cache2k.configuration.CustomizationFactory;
+import org.cache2k.configuration.CustomizationSupplier;
 import org.cache2k.core.operation.ExaminationEntry;
 import org.cache2k.core.operation.ReadOnlyCacheEntry;
 import org.cache2k.core.operation.Semantic;
@@ -259,14 +259,14 @@ public class HeapCache<K, V>
     });
 
     if (c.getLoaderExecutor() != null) {
-      loaderExecutor = createCustomization((CustomizationFactory<Executor>) c.getLoaderExecutor());
+      loaderExecutor = createCustomization((CustomizationSupplier<Executor>) c.getLoaderExecutor());
     } else {
       if (c.getLoaderThreadCount() > 0) {
         loaderExecutor = provideDefaultLoaderExecutor(c.getLoaderThreadCount());
       }
     }
     if (c.getPrefetchExecutor() != null) {
-      prefetchExecutor = createCustomization((CustomizationFactory<Executor>) c.getPrefetchExecutor());
+      prefetchExecutor = createCustomization((CustomizationSupplier<Executor>) c.getPrefetchExecutor());
     }
   }
 

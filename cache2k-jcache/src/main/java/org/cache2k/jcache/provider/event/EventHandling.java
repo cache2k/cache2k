@@ -23,8 +23,8 @@ package org.cache2k.jcache.provider.event;
 import org.cache2k.Cache;
 import org.cache2k.CacheEntry;
 import org.cache2k.configuration.Cache2kConfiguration;
-import org.cache2k.configuration.CustomizationFactory;
-import org.cache2k.configuration.ReferenceFactory;
+import org.cache2k.configuration.CustomizationSupplier;
+import org.cache2k.configuration.CustomizationReferenceSupplier;
 import org.cache2k.event.CacheEntryOperationListener;
 import org.cache2k.jcache.provider.JCacheManagerAdapter;
 
@@ -169,11 +169,11 @@ public class EventHandling<K,V> {
   }
 
   public void registerCache2kListeners(Cache2kConfiguration<K,V> cfg) {
-    Collection<CustomizationFactory<CacheEntryOperationListener<K,V>>> _listeners = cfg.getListeners();
-    _listeners.add(new ReferenceFactory<CacheEntryOperationListener<K, V>>(new CreatedListenerAdapter()));
-    _listeners.add(new ReferenceFactory<CacheEntryOperationListener<K, V>>(new UpdatedListenerAdapter()));
-    _listeners.add(new ReferenceFactory<CacheEntryOperationListener<K, V>>(new RemovedListenerAdapter()));
-    _listeners.add(new ReferenceFactory<CacheEntryOperationListener<K, V>>(new ExpiredListenerAdapter()));
+    Collection<CustomizationSupplier<CacheEntryOperationListener<K,V>>> _listeners = cfg.getListeners();
+    _listeners.add(new CustomizationReferenceSupplier<CacheEntryOperationListener<K, V>>(new CreatedListenerAdapter()));
+    _listeners.add(new CustomizationReferenceSupplier<CacheEntryOperationListener<K, V>>(new UpdatedListenerAdapter()));
+    _listeners.add(new CustomizationReferenceSupplier<CacheEntryOperationListener<K, V>>(new RemovedListenerAdapter()));
+    _listeners.add(new CustomizationReferenceSupplier<CacheEntryOperationListener<K, V>>(new ExpiredListenerAdapter()));
   }
 
   private V extractValue(V _value) { return _value; }

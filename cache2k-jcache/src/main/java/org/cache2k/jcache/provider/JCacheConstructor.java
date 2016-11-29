@@ -24,7 +24,7 @@ import org.cache2k.Cache2kBuilder;
 import org.cache2k.CacheEntry;
 import org.cache2k.configuration.Cache2kConfiguration;
 import org.cache2k.configuration.CacheType;
-import org.cache2k.configuration.ReferenceFactory;
+import org.cache2k.configuration.CustomizationReferenceSupplier;
 import org.cache2k.integration.CacheWriter;
 import org.cache2k.integration.ExceptionPropagator;
 import org.cache2k.integration.ExceptionInformation;
@@ -172,7 +172,7 @@ public class JCacheConstructor<K,V> {
     if (cache2kConfiguration.getExceptionPropagator() != null) {
       return;
     }
-    cache2kConfiguration.setExceptionPropagator(new ReferenceFactory<ExceptionPropagator<K>>(new ExceptionPropagator() {
+    cache2kConfiguration.setExceptionPropagator(new CustomizationReferenceSupplier<ExceptionPropagator<K>>(new ExceptionPropagator() {
       @Override
       public RuntimeException propagateException(Object key, final ExceptionInformation exceptionInformation) {
         return new CacheLoaderException("propagate previous loader exception", exceptionInformation.getException());
@@ -187,7 +187,7 @@ public class JCacheConstructor<K,V> {
     if (config.getCacheLoaderFactory() != null) {
       final CacheLoader<K, V> clf = config.getCacheLoaderFactory().create();
       cache2kConfiguration.setLoader(
-        new ReferenceFactory<org.cache2k.integration.CacheLoader<K, V>>(
+        new CustomizationReferenceSupplier<org.cache2k.integration.CacheLoader<K, V>>(
           new org.cache2k.integration.CacheLoader<K,V>() {
             @Override
             public V load(K k) {
@@ -197,7 +197,7 @@ public class JCacheConstructor<K,V> {
     }
     if (config.isWriteThrough()) {
       final javax.cache.integration.CacheWriter<? super K, ? super V> cw = config.getCacheWriterFactory().create();
-      cache2kConfiguration.setWriter(new ReferenceFactory<CacheWriter<K, V>>(new CacheWriter<K,V>() {
+      cache2kConfiguration.setWriter(new CustomizationReferenceSupplier<CacheWriter<K, V>>(new CacheWriter<K,V>() {
         @Override
         public void write(final K key, final V value) throws Exception {
           Cache.Entry<K, V> ce = new Cache.Entry<K, V>() {
@@ -239,12 +239,12 @@ public class JCacheConstructor<K,V> {
       if (cache2kConfiguration.getExpiryPolicy() != null) {
         org.cache2k.expiry.ExpiryPolicy<K, V> ep0;
         try {
-          ep0 = cache2kConfiguration.getExpiryPolicy().create(manager.getCache2kManager());
+          ep0 = cache2kConfiguration.getExpiryPolicy().supply(manager.getCache2kManager());
         } catch (Exception ex) {
           throw new CacheException("couldn't initialize expiry policy", ex);
         }
         final org.cache2k.expiry.ExpiryPolicy<K, V> ep = ep0;
-        cache2kConfiguration.setExpiryPolicy(new ReferenceFactory<org.cache2k.expiry.ExpiryPolicy<K, V>>(
+        cache2kConfiguration.setExpiryPolicy(new CustomizationReferenceSupplier<org.cache2k.expiry.ExpiryPolicy<K, V>>(
           new org.cache2k.expiry.ExpiryPolicy<K, V>() {
           @Override
           public long calculateExpiryTime(final K key, final V value, final long loadTime, final CacheEntry<K, V> oldEntry) {
@@ -265,7 +265,7 @@ public class JCacheConstructor<K,V> {
       expiryPolicy = config.getExpiryPolicyFactory().create();
     }
     if (expiryPolicy == null || expiryPolicy instanceof EternalExpiryPolicy) {
-      cache2kConfiguration.setExpiryPolicy(new ReferenceFactory<org.cache2k.expiry.ExpiryPolicy<K, V>>(new org.cache2k.expiry.ExpiryPolicy<K, V>() {
+      cache2kConfiguration.setExpiryPolicy(new CustomizationReferenceSupplier<org.cache2k.expiry.ExpiryPolicy<K, V>>(new org.cache2k.expiry.ExpiryPolicy<K, V>() {
         @Override
         public long calculateExpiryTime(final K key, final V value, final long loadTime, final CacheEntry<K, V> oldEntry) {
           if (value == null) {
@@ -280,7 +280,7 @@ public class JCacheConstructor<K,V> {
       Duration d = expiryPolicy.getExpiryForCreation();
       final long _millisDuration = d.getTimeUnit().toMillis(d.getDurationAmount());
       if (_millisDuration == 0) {
-        cache2kConfiguration.setExpiryPolicy(new ReferenceFactory<org.cache2k.expiry.ExpiryPolicy<K, V>>(new org.cache2k.expiry.ExpiryPolicy<K, V>() {
+        cache2kConfiguration.setExpiryPolicy(new CustomizationReferenceSupplier<org.cache2k.expiry.ExpiryPolicy<K, V>>(new org.cache2k.expiry.ExpiryPolicy<K, V>() {
           @Override
           public long calculateExpiryTime(final K key, final V value, final long loadTime, final CacheEntry<K, V> oldEntry) {
             return NO_CACHE;
@@ -288,7 +288,7 @@ public class JCacheConstructor<K,V> {
         }));
         return;
       }
-      cache2kConfiguration.setExpiryPolicy(new ReferenceFactory<org.cache2k.expiry.ExpiryPolicy<K, V>>(new org.cache2k.expiry.ExpiryPolicy<K, V>() {
+      cache2kConfiguration.setExpiryPolicy(new CustomizationReferenceSupplier<org.cache2k.expiry.ExpiryPolicy<K, V>>(new org.cache2k.expiry.ExpiryPolicy<K, V>() {
         @Override
         public long calculateExpiryTime(final K key, final V value, final long loadTime, final CacheEntry<K, V> oldEntry) {
           if (value == null) {
@@ -304,7 +304,7 @@ public class JCacheConstructor<K,V> {
       Duration d = expiryPolicy.getExpiryForCreation();
       final long _millisDuration = d.getTimeUnit().toMillis(d.getDurationAmount());
       if (_millisDuration == 0) {
-        cache2kConfiguration.setExpiryPolicy(new ReferenceFactory<org.cache2k.expiry.ExpiryPolicy<K, V>>(new org.cache2k.expiry.ExpiryPolicy<K, V>() {
+        cache2kConfiguration.setExpiryPolicy(new CustomizationReferenceSupplier<org.cache2k.expiry.ExpiryPolicy<K, V>>(new org.cache2k.expiry.ExpiryPolicy<K, V>() {
           @Override
           public long calculateExpiryTime(final K key, final V value, final long loadTime, final CacheEntry<K, V> oldEntry) {
             return NO_CACHE;
@@ -312,7 +312,7 @@ public class JCacheConstructor<K,V> {
         }));
         return;
       }
-      cache2kConfiguration.setExpiryPolicy(new ReferenceFactory<org.cache2k.expiry.ExpiryPolicy<K, V>>(new org.cache2k.expiry.ExpiryPolicy<K, V>() {
+      cache2kConfiguration.setExpiryPolicy(new CustomizationReferenceSupplier<org.cache2k.expiry.ExpiryPolicy<K, V>>(new org.cache2k.expiry.ExpiryPolicy<K, V>() {
         @Override
         public long calculateExpiryTime(final K key, final V value, final long loadTime, final CacheEntry<K, V> oldEntry) {
           if (value == null) {
@@ -328,7 +328,7 @@ public class JCacheConstructor<K,V> {
       return;
     }
     needsTouchyWrapper = true;
-    cache2kConfiguration.setExpiryPolicy(new ReferenceFactory<org.cache2k.expiry.ExpiryPolicy<K, V>>(new TouchyJCacheAdapter.ExpiryPolicyAdapter<K,V>(expiryPolicy)));
+    cache2kConfiguration.setExpiryPolicy(new CustomizationReferenceSupplier<org.cache2k.expiry.ExpiryPolicy<K, V>>(new TouchyJCacheAdapter.ExpiryPolicyAdapter<K,V>(expiryPolicy)));
   }
 
   private void setupEventHandling() {

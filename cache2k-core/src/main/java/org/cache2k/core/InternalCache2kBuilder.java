@@ -24,7 +24,7 @@ import org.cache2k.Cache2kBuilder;
 import org.cache2k.CacheBuilder;
 import org.cache2k.CacheEntry;
 import org.cache2k.CacheMisconfigurationException;
-import org.cache2k.configuration.CustomizationFactory;
+import org.cache2k.configuration.CustomizationSupplier;
 import org.cache2k.event.CacheEntryCreatedListener;
 import org.cache2k.event.CacheEntryExpiredListener;
 import org.cache2k.event.CacheEntryOperationListener;
@@ -177,7 +177,7 @@ public class InternalCache2kBuilder<K, V> {
       List<CacheEntryExpiredListener<K, V>> _syncExpiredListeners = new ArrayList<CacheEntryExpiredListener<K, V>>();
       List<CacheEntryExpiredListener<K, V>> _expiredListeners = new ArrayList<CacheEntryExpiredListener<K, V>>();
       if (config.hasListeners()) {
-        for (CustomizationFactory<CacheEntryOperationListener<K, V>> f : config.getListeners()) {
+        for (CustomizationSupplier<CacheEntryOperationListener<K, V>> f : config.getListeners()) {
           CacheEntryOperationListener<K, V> el = ( CacheEntryOperationListener<K, V>) bc.createCustomization(f);
           if (el instanceof CacheEntryCreatedListener) {
             _syncCreatedListeners.add((CacheEntryCreatedListener) el);
@@ -199,7 +199,7 @@ public class InternalCache2kBuilder<K, V> {
         List<CacheEntryUpdatedListener<K, V>> ull = new ArrayList<CacheEntryUpdatedListener<K, V>>();
         List<CacheEntryRemovedListener<K, V>> rll = new ArrayList<CacheEntryRemovedListener<K, V>>();
         List<CacheEntryExpiredListener<K, V>> ell = new ArrayList<CacheEntryExpiredListener<K, V>>();
-        for (CustomizationFactory<CacheEntryOperationListener<K, V>> f : config.getAsyncListeners()) {
+        for (CustomizationSupplier<CacheEntryOperationListener<K, V>> f : config.getAsyncListeners()) {
           CacheEntryOperationListener<K, V> el = (CacheEntryOperationListener<K, V>) bc.createCustomization(f);
           if (el instanceof CacheEntryCreatedListener) {
             cll.add((CacheEntryCreatedListener) el);

@@ -23,7 +23,7 @@ package org.cache2k.core;
 import org.cache2k.CacheEntry;
 import org.cache2k.CacheMisconfigurationException;
 import org.cache2k.CacheOperationCompletionListener;
-import org.cache2k.configuration.CustomizationFactory;
+import org.cache2k.configuration.CustomizationSupplier;
 import org.cache2k.processor.EntryProcessingException;
 import org.cache2k.processor.EntryProcessor;
 import org.cache2k.processor.EntryProcessingResult;
@@ -222,12 +222,12 @@ public abstract class AbstractCache<K, V> implements InternalCache<K, V> {
   }
 
   @Override
-  public <T> T createCustomization(final CustomizationFactory<T> f) {
+  public <T> T createCustomization(final CustomizationSupplier<T> f) {
     if (f == null) {
       return null;
     }
     try {
-      return f.create(getCacheManager());
+      return f.supply(getCacheManager());
     } catch (Exception ex) {
       throw new CacheMisconfigurationException("Initialization of customization failed", ex);
     }

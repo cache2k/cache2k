@@ -23,12 +23,12 @@ package org.cache2k.configuration;
 import org.cache2k.CacheManager;
 
 /**
- * Factory for cache customizations like {@code ExpiryPolicy} or {@code CacheLoader}.
+ * Supplies a cache customizations like {@code ExpiryPolicy} or {@code CacheLoader}.
  * An implementation must implement proper a {@code hashCode} and {@code equals} method.
  *
  * @author Jens Wilke
  */
-public interface CustomizationFactory<T> {
+public interface CustomizationSupplier<T> {
 
   /**
    * Create or return an existing customization instance.
@@ -40,6 +40,6 @@ public interface CustomizationFactory<T> {
    *                   rethrown. When the creation of a customization fails, the
    *                   cache will not be usable.
    */
-  T create(CacheManager manager) throws Exception;
+  T supply(CacheManager manager) throws Exception;
 
 }

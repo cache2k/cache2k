@@ -28,7 +28,7 @@ import org.cache2k.CacheManager;
  *
  * @author Jens Wilke
  */
-public final class ReferenceFactory<T> implements CustomizationFactory<T> {
+public final class CustomizationReferenceSupplier<T> implements CustomizationSupplier<T> {
 
   private T object;
 
@@ -37,7 +37,7 @@ public final class ReferenceFactory<T> implements CustomizationFactory<T> {
    *
    * @param obj reference to a customization. Not null.
    */
-  public ReferenceFactory(final T obj) {
+  public CustomizationReferenceSupplier(final T obj) {
     if (obj == null) {
       throw new NullPointerException("object reference");
     }
@@ -45,15 +45,15 @@ public final class ReferenceFactory<T> implements CustomizationFactory<T> {
   }
 
   @Override
-  public T create(final CacheManager ignored) {
+  public T supply(final CacheManager ignored) {
     return object;
   }
 
   @Override
   public boolean equals(final Object other) {
     if (this == other) return true;
-    if (!(other instanceof ReferenceFactory)) return false;
-    ReferenceFactory<?> _that = (ReferenceFactory<?>) other;
+    if (!(other instanceof CustomizationReferenceSupplier)) return false;
+    CustomizationReferenceSupplier<?> _that = (CustomizationReferenceSupplier<?>) other;
     return object.equals(_that.object);
   }
 

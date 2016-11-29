@@ -25,7 +25,7 @@ import org.cache2k.configuration.CacheTypeCapture;
 import org.cache2k.configuration.CacheType;
 import org.cache2k.configuration.ConfigurationSection;
 import org.cache2k.configuration.ConfigurationSectionBuilder;
-import org.cache2k.configuration.ReferenceFactory;
+import org.cache2k.configuration.CustomizationReferenceSupplier;
 import org.cache2k.expiry.ExpiryPolicy;
 import org.cache2k.event.CacheEntryOperationListener;
 import org.cache2k.integration.AdvancedCacheLoader;
@@ -402,9 +402,9 @@ public class Cache2kBuilder<K, V> implements Cloneable {
   }
 
   /** Wraps to factory but passes on nulls. */
-  private static <T> ReferenceFactory<T> wrapCustomizationInstance(T obj) {
+  private static <T> CustomizationReferenceSupplier<T> wrapCustomizationInstance(T obj) {
     if (obj == null) { return null; }
-    return new ReferenceFactory<T>(obj);
+    return new CustomizationReferenceSupplier<T>(obj);
   }
 
   public final Cache2kBuilder<K, V> loader(CacheLoader<K, V> l) {
@@ -642,7 +642,7 @@ public class Cache2kBuilder<K, V> implements Cloneable {
    * @see #prefetchExecutor(Executor)
    */
   public final Cache2kBuilder<K,V> loaderExecutor(Executor v) {
-    config().setLoaderExecutor(new ReferenceFactory<Executor>(v));
+    config().setLoaderExecutor(new CustomizationReferenceSupplier<Executor>(v));
     return this;
   }
 
@@ -655,7 +655,7 @@ public class Cache2kBuilder<K, V> implements Cloneable {
    * @see #loaderExecutor(Executor)
    */
   public final Cache2kBuilder<K,V> prefetchExecutor(Executor v) {
-    config().setPrefetchExecutor(new ReferenceFactory<Executor>(v));
+    config().setPrefetchExecutor(new CustomizationReferenceSupplier<Executor>(v));
     return this;
   }
 
