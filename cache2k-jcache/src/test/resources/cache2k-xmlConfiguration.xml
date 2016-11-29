@@ -39,6 +39,10 @@
         </jcache>
       </sections>
     </cache>
+    <cache>
+      <name>withExpiry</name>
+      <expireAfterWrite>2s</expireAfterWrite>
+    </cache>
   </caches>
 
 </cache2k>

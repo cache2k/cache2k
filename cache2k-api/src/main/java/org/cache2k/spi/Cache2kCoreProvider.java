@@ -25,7 +25,8 @@ import org.cache2k.CacheManager;
 import org.cache2k.configuration.Cache2kConfiguration;
 
 /**
- * Controls lifetime of different cache managers.
+ * Interface to the cache2k implementation. This interface is not intended for the application
+ * usage. Use the static methods on the {@lin CacheManger}.
  *
  * @author Jens Wilke; created: 2015-03-26
  */
@@ -36,10 +37,19 @@ public interface Cache2kCoreProvider {
    */
   void setDefaultManagerName(ClassLoader cl, String s);
 
+  /**
+   * @see CacheManager#getDefaultName()
+   */
   String getDefaultManagerName(ClassLoader cl);
 
+  /**
+   * @see CacheManager#getInstance(ClassLoader, String)
+   */
   CacheManager getManager(ClassLoader cl, String _name);
 
+  /**
+   *
+   */
   ClassLoader getDefaultClassLoader();
 
   void close();
@@ -48,6 +58,9 @@ public interface Cache2kCoreProvider {
 
   void close(ClassLoader l, String _name);
 
+  /**
+   * Create a cache, apply external configuration before creating it.
+   */
   <K,V> Cache<K,V> createCache(CacheManager m, Cache2kConfiguration<K,V> cfg);
 
 }

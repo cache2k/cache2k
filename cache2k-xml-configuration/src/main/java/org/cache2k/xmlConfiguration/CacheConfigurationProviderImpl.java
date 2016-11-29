@@ -94,18 +94,20 @@ public class CacheConfigurationProviderImpl implements CacheConfigurationProvide
         "Consider parameter: ignoreAnonymousCache");
     }
     ParsedConfiguration pc = readManagerConfigurationWithExceptionHandling(mgr.getClassLoader(), getFileName(mgr));
-    ParsedConfiguration _cacheCfg = extractCacheSection(pc);
-    if (_cacheCfg != null) { _cacheCfg = _cacheCfg.getSection(_cacheName); }
+    ParsedConfiguration _cacheCfg = null;
+    ParsedConfiguration _section = extractCacheSection(pc);
+    if (_section != null) { _cacheCfg = _section.getSection(_cacheName); }
     if (_cacheCfg == null) {
       if (ctx.isIgnoreMissingCacheConfiguration()) {
         return;
       }
-      String _exeptionText =
+      String _exceptionText =
         "Configuration for cache '" + _cacheName + "' is missing. " +
           "Consider parameter: ignoreMissingCacheConfiguration";
-      throw new ConfigurationException(_exeptionText, pc.getSource());
+      throw new ConfigurationException(_exceptionText, pc.getSource());
     }
     apply(_cacheCfg, extractTemplates(pc), _bean);
+    _bean.setExternalConfigurationPresent(true);
   }
 
   private static String getFileName(CacheManager mgr) {

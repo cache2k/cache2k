@@ -25,10 +25,13 @@ import org.cache2k.CacheEntry;
 import org.cache2k.configuration.Cache2kConfiguration;
 import org.cache2k.configuration.CacheType;
 import org.cache2k.configuration.CustomizationReferenceSupplier;
+import org.cache2k.core.Cache2kCoreProviderImpl;
+import org.cache2k.core.InternalCache2kBuilder;
 import org.cache2k.integration.CacheWriter;
 import org.cache2k.integration.ExceptionPropagator;
 import org.cache2k.integration.ExceptionInformation;
 import org.cache2k.jcache.ExtendedConfiguration;
+import org.cache2k.jcache.ExtendedMutableConfiguration;
 import org.cache2k.jcache.JCacheConfiguration;
 import org.cache2k.jcache.provider.event.EventHandling;
 import org.cache2k.jcache.provider.generic.storeByValueSimulation.CopyCacheProxy;
@@ -57,7 +60,7 @@ import java.util.concurrent.Executors;
  *
  * @author Jens Wilke
  */
-public class JCacheConstructor<K,V> {
+public class JCacheBuilder<K,V> {
 
   private String name;
   private JCacheManagerAdapter manager;
@@ -72,7 +75,7 @@ public class JCacheConstructor<K,V> {
   private EventHandling<K,V> eventHandling;
   private boolean needsTouchyWrapper;
 
-  public JCacheConstructor(String _name, JCacheManagerAdapter _manager) {
+  public JCacheBuilder(String _name, JCacheManagerAdapter _manager) {
     name = _name;
     manager = _manager;
   }
@@ -83,6 +86,9 @@ public class JCacheConstructor<K,V> {
       if (cfg instanceof ExtendedConfiguration) {
         cache2kConfiguration = ((ExtendedConfiguration<K,V>) cfg).getCache2kConfiguration();
         if (cache2kConfiguration != null) {
+          if (cache2kConfiguration.getName() != null && !cache2kConfiguration.getName().equals(name)) {
+            throw new IllegalArgumentException("cache name mismatch.");
+          }
           cache2kConfigurationWasProvided = true;
           extraConfiguration = CACHE2K_DEFAULTS;
           JCacheConfiguration _extraConfigurationSpecified =
@@ -99,13 +105,18 @@ public class JCacheConstructor<K,V> {
       config = _cfgCopy;
     }
     if (cache2kConfiguration == null) {
-      cache2kConfiguration = new Cache2kConfiguration<K, V>();
+      cache2kConfiguration = manager.getCache2kManager().getDefaultConfiguration();
+      if (cfg instanceof ExtendedMutableConfiguration) {
+        ((ExtendedMutableConfiguration) cfg).setCache2kConfiguration(cache2kConfiguration);
+      }
     }
+    cache2kConfiguration.setName(name);
+    Cache2kCoreProviderImpl.augmentConfiguration(manager.getCache2kManager(), cache2kConfiguration);
+    cache2kConfigurationWasProvided |= cache2kConfiguration.isExternalConfigurationPresent();
   }
 
   public Cache<K,V> build() {
     setupTypes();
-    setupName();
     setupDefaults();
     setupExceptionPropagator();
     setupCacheThrough();
@@ -144,13 +155,6 @@ public class JCacheConstructor<K,V> {
     if (!config.getValueType().equals(Object.class) && !config.getValueType().equals(valueType.getType())) {
       throw new IllegalArgumentException("Value type mismatch between JCache and cache2k configuration");
     }
-  }
-
-  private void setupName() {
-    if (cache2kConfiguration.getName() != null && !cache2kConfiguration.getName().equals(name)) {
-      throw new IllegalArgumentException("cache name mismatch.");
-    }
-    cache2kConfiguration.setName(name);
   }
 
   /**
@@ -235,7 +239,6 @@ public class JCacheConstructor<K,V> {
    */
   private void setupExpiryPolicy() {
     if (cache2kConfigurationWasProvided) {
-
       if (cache2kConfiguration.getExpiryPolicy() != null) {
         org.cache2k.expiry.ExpiryPolicy<K, V> ep0;
         try {
@@ -344,7 +347,7 @@ public class JCacheConstructor<K,V> {
     JCacheAdapter<K, V> _adapter =
       new JCacheAdapter<K, V>(
         manager,
-        Cache2kBuilder.of(cache2kConfiguration).manager(manager.getCache2kManager()).build());
+        new InternalCache2kBuilder<K,V>(cache2kConfiguration, manager.getCache2kManager()).buildAsIs());
     _adapter.valueType = valueType.getType();
     _adapter.keyType = keyType.getType();
     if (config.getCacheLoaderFactory() != null) {

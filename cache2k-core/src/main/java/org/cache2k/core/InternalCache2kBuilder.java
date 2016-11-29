@@ -129,11 +129,16 @@ public class InternalCache2kBuilder<K, V> {
     }
   }
 
-  @SuppressWarnings({"unchecked", "SuspiciousToArrayCall"})
   public Cache<K, V> build() {
-    if (Cache2kCoreProviderImpl.CACHE_CONFIGURATION_PROVIDER != null) {
-      Cache2kCoreProviderImpl.CACHE_CONFIGURATION_PROVIDER.augmentConfiguration(manager, config);
-    }
+    Cache2kCoreProviderImpl.augmentConfiguration(manager, config);
+    return buildAsIs();
+  }
+
+  /**
+   * Build without applying external configuration. Needed for JCache.
+   */
+  @SuppressWarnings({"unchecked", "SuspiciousToArrayCall"})
+  public Cache<K, V> buildAsIs() {
     if (config.getValueType() == null) {
       config.setValueType(Object.class);
     }

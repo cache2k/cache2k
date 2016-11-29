@@ -77,6 +77,7 @@ public class Cache2kConfiguration<K, V> implements Serializable, ConfigurationWi
   private boolean permitNullValues = false;
   private boolean disableStatistics = false;
   private int evictionSegmentCount = -1;
+  private boolean externalConfigurationPresent = false;
 
   private CustomizationSupplier<Executor> loaderExecutor;
   private CustomizationSupplier<Executor> prefetchExecutor;
@@ -393,6 +394,17 @@ public class Cache2kConfiguration<K, V> implements Serializable, ConfigurationWi
    */
   public void setSuppressExceptions(boolean v) {
     this.suppressExceptions = v;
+  }
+
+  public boolean isExternalConfigurationPresent() {
+    return externalConfigurationPresent;
+  }
+
+  /**
+   * True, if an external configuration for the cache was found and is applied.
+   */
+  public void setExternalConfigurationPresent(final boolean v) {
+    externalConfigurationPresent = v;
   }
 
   /**

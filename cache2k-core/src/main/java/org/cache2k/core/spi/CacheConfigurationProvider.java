@@ -32,6 +32,9 @@ import org.cache2k.configuration.Cache2kConfiguration;
  */
 public interface CacheConfigurationProvider {
 
+  /**
+   * Name for the default manager for the given class loader.
+   */
   String getDefaultManagerName(ClassLoader classLoader);
 
   /**

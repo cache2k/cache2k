@@ -41,18 +41,23 @@ import java.util.WeakHashMap;
 public class Cache2kCoreProviderImpl implements Cache2kCoreProvider {
 
   public final static String STANDARD_DEFAULT_MANAGER_NAME = "default";
-  static final CacheConfigurationProvider CACHE_CONFIGURATION_PROVIDER =
+  public static final CacheConfigurationProvider CACHE_CONFIGURATION_PROVIDER =
     SingleProviderResolver.resolve(CacheConfigurationProvider.class);
+
+  public static <K,V> void augmentConfiguration(CacheManager mgr, Cache2kConfiguration<K,V> cfg) {
+    if (CACHE_CONFIGURATION_PROVIDER != null) {
+      CACHE_CONFIGURATION_PROVIDER.augmentConfiguration(mgr, cfg);
+    }
+  }
 
   private Object lock = new Object();
   private volatile Map<ClassLoader, String> loader2defaultName = Collections.EMPTY_MAP;
   private volatile Map<ClassLoader, Map<String, CacheManager>> loader2name2manager = Collections.EMPTY_MAP;
   private String version;
   private String buildNumber;
-  private Log log;
 
   {
-    log = Log.getLog(this.getClass());
+    Log log = Log.getLog(this.getClass());
     buildNumber = Cache2kVersion.getBuildNumber();
     version = Cache2kVersion.getVersion();
     StringBuilder sb = new StringBuilder();
