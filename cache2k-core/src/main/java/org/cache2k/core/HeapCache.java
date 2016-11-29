@@ -23,6 +23,7 @@ package org.cache2k.core;
 import org.cache2k.*;
 import org.cache2k.configuration.Cache2kConfiguration;
 import org.cache2k.configuration.CacheType;
+import org.cache2k.configuration.CustomizationFactory;
 import org.cache2k.core.operation.ExaminationEntry;
 import org.cache2k.core.operation.ReadOnlyCacheEntry;
 import org.cache2k.core.operation.Semantic;
@@ -143,20 +144,38 @@ public class HeapCache<K, V>
    */
   protected long internalExceptionCnt = 0;
 
-  protected volatile Executor loaderExecutor = new DummyExecutor(this);
+  protected volatile Executor loaderExecutor = new LazyLoaderExecutor();
 
-  static class DummyExecutor implements Executor {
-    HeapCache cache;
-
-    public DummyExecutor(final HeapCache _cache) {
-      cache = _cache;
-    }
-
+  /**
+   * Create executor only if needed.
+   */
+  private class LazyLoaderExecutor implements Executor {
     @Override
-    public synchronized void execute(final Runnable _command) {
-      int _threadCount = Runtime.getRuntime().availableProcessors() * HeapCache.TUNABLE.loaderThreadCountCpuFactor;
-      cache.loaderExecutor = cache.provideDefaultLoaderExecutor(_threadCount);
-      cache.loaderExecutor.execute(_command);
+    public void execute(final Runnable _command) {
+      synchronized (lock) {
+        checkClosed();
+        if (loaderExecutor == this) {
+          int _threadCount = Runtime.getRuntime().availableProcessors() * HeapCache.TUNABLE.loaderThreadCountCpuFactor;
+          loaderExecutor = provideDefaultLoaderExecutor(_threadCount);
+        }
+        loaderExecutor.execute(_command);
+      }
+    }
+  }
+
+  protected volatile Executor prefetchExecutor = new LazyPrefetchExecutor();
+
+  /**
+   * Create executor only if needed.
+   */
+  private class LazyPrefetchExecutor implements Executor {
+    @Override
+    public void execute(final Runnable _command) {
+      synchronized (lock) {
+        checkClosed();
+        loaderExecutor.execute(_command);
+        prefetchExecutor = loaderExecutor;
+      }
     }
   }
 
@@ -239,8 +258,15 @@ public class HeapCache<K, V>
       }
     });
 
-    if (c.getLoaderThreadCount() > 0) {
-      loaderExecutor = provideDefaultLoaderExecutor(c.getLoaderThreadCount());
+    if (c.getLoaderExecutor() != null) {
+      loaderExecutor = createCustomization((CustomizationFactory<Executor>) c.getLoaderExecutor());
+    } else {
+      if (c.getLoaderThreadCount() > 0) {
+        loaderExecutor = provideDefaultLoaderExecutor(c.getLoaderThreadCount());
+      }
+    }
+    if (c.getPrefetchExecutor() != null) {
+      prefetchExecutor = createCustomization((CustomizationFactory<Executor>) c.getPrefetchExecutor());
     }
   }
 
@@ -922,7 +948,7 @@ public class HeapCache<K, V>
   }
 
   public Executor getPrefetchExecutor() {
-    return loaderExecutor;
+    return prefetchExecutor;
   }
 
   @Override

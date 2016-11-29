@@ -35,6 +35,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
+import java.util.concurrent.Executor;
 
 /**
  * Configuration for a cache2k cache.
@@ -77,6 +78,8 @@ public class Cache2kConfiguration<K, V> implements Serializable, ConfigurationWi
   private boolean disableStatistics = false;
   private int evictionSegmentCount = -1;
 
+  private CustomizationFactory<Executor> loaderExecutor;
+  private CustomizationFactory<Executor> prefetchExecutor;
   private CustomizationFactory<ExpiryPolicy<K,V>> expiryPolicy;
   private CustomizationFactory<ResiliencePolicy<K,V>> resiliencePolicy;
   private CustomizationFactory<CacheLoader<K,V>> loader;
@@ -302,19 +305,19 @@ public class Cache2kConfiguration<K, V> implements Serializable, ConfigurationWi
   /**
    * @see Cache2kBuilder#expireAfterWrite
    */
-  public void setExpireAfterWrite(long _millis) {
-    if (_millis == expireAfterWrite) {
+  public void setExpireAfterWrite(long millis) {
+    if (millis == expireAfterWrite) {
       return;
     }
     if (expireAfterWrite != -1) {
-      if (_millis == Expiry.ETERNAL) {
+      if (millis == Expiry.ETERNAL) {
         throw new IllegalArgumentException("not eternal or expiry was set, refusing to reset back to eternal");
       }
       if (expireAfterWrite == Expiry.ETERNAL) {
         throw new IllegalArgumentException("eternal was set, refusing to reset to expire time span");
       }
     }
-    this.expireAfterWrite = _millis;
+    this.expireAfterWrite = millis;
   }
 
   /**
@@ -327,8 +330,8 @@ public class Cache2kConfiguration<K, V> implements Serializable, ConfigurationWi
   /**
    * @see Cache2kBuilder#retryInterval
    */
-  public void setRetryInterval(long _millis) {
-    retryInterval = _millis;
+  public void setRetryInterval(long millis) {
+    retryInterval = millis;
   }
 
   /**
@@ -341,8 +344,8 @@ public class Cache2kConfiguration<K, V> implements Serializable, ConfigurationWi
   /**
    * @see Cache2kBuilder#maxRetryInterval
    */
-  public void setMaxRetryInterval(long _millis) {
-    maxRetryInterval = _millis;
+  public void setMaxRetryInterval(long millis) {
+    maxRetryInterval = millis;
   }
 
   /**
@@ -355,8 +358,8 @@ public class Cache2kConfiguration<K, V> implements Serializable, ConfigurationWi
   /**
    * @see Cache2kBuilder#resilienceDuration
    */
-  public void setResilienceDuration(long _millis) {
-    resilienceDuration = _millis;
+  public void setResilienceDuration(long millis) {
+    resilienceDuration = millis;
   }
 
   public boolean isKeepDataAfterExpired() {
@@ -377,8 +380,8 @@ public class Cache2kConfiguration<K, V> implements Serializable, ConfigurationWi
   /**
    * @see Cache2kBuilder#sharpExpiry(boolean)
    */
-  public void setSharpExpiry(boolean sharpExpiry) {
-    this.sharpExpiry = sharpExpiry;
+  public void setSharpExpiry(boolean v) {
+    this.sharpExpiry = v;
   }
 
   public boolean isSuppressExceptions() {
@@ -388,8 +391,8 @@ public class Cache2kConfiguration<K, V> implements Serializable, ConfigurationWi
   /**
    * @see Cache2kBuilder#suppressExceptions(boolean)
    */
-  public void setSuppressExceptions(boolean suppressExceptions) {
-    this.suppressExceptions = suppressExceptions;
+  public void setSuppressExceptions(boolean v) {
+    this.suppressExceptions = v;
   }
 
   /**
@@ -455,8 +458,8 @@ public class Cache2kConfiguration<K, V> implements Serializable, ConfigurationWi
   /**
    * @see Cache2kBuilder#storeByReference(boolean)
    */
-  public void setStoreByReference(final boolean _storeByReference) {
-    storeByReference = _storeByReference;
+  public void setStoreByReference(final boolean v) {
+    storeByReference = v;
   }
 
   public CustomizationFactory<ExceptionPropagator<K>> getExceptionPropagator() {
@@ -466,8 +469,8 @@ public class Cache2kConfiguration<K, V> implements Serializable, ConfigurationWi
   /**
    * @see Cache2kBuilder#exceptionPropagator(ExceptionPropagator)
    */
-  public void setExceptionPropagator(final CustomizationFactory<ExceptionPropagator<K>> _exceptionPropagator) {
-    exceptionPropagator = _exceptionPropagator;
+  public void setExceptionPropagator(final CustomizationFactory<ExceptionPropagator<K>> v) {
+    exceptionPropagator = v;
   }
 
   /**
@@ -555,8 +558,8 @@ public class Cache2kConfiguration<K, V> implements Serializable, ConfigurationWi
   /**
    * @see Cache2kBuilder#disableStatistics
    */
-  public void setDisableStatistics(final boolean _disableStatistics) {
-    disableStatistics = _disableStatistics;
+  public void setDisableStatistics(final boolean v) {
+    disableStatistics = v;
   }
 
   public int getEvictionSegmentCount() {
@@ -567,8 +570,30 @@ public class Cache2kConfiguration<K, V> implements Serializable, ConfigurationWi
    *
    * @see Cache2kBuilder#evictionSegmentCount(int)
    */
-  public void setEvictionSegmentCount(final int _evictionSegmentCount) {
-    evictionSegmentCount = _evictionSegmentCount;
+  public void setEvictionSegmentCount(final int v) {
+    evictionSegmentCount = v;
+  }
+
+  public CustomizationFactory<Executor> getLoaderExecutor() {
+    return loaderExecutor;
+  }
+
+  /**
+   * @see Cache2kBuilder#loaderExecutor(Executor)
+   */
+  public void setLoaderExecutor(final CustomizationFactory<Executor> v) {
+    loaderExecutor = v;
+  }
+
+  public CustomizationFactory<Executor> getPrefetchExecutor() {
+    return prefetchExecutor;
+  }
+
+  /**
+   * @see Cache2kBuilder#prefetchExecutor(Executor)
+   */
+  public void setPrefetchExecutor(final CustomizationFactory<Executor> v) {
+    prefetchExecutor = v;
   }
 
 

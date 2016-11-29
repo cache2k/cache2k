@@ -31,12 +31,16 @@ import org.cache2k.integration.CacheLoader;
 import org.cache2k.CacheOperationCompletionListener;
 import org.cache2k.testing.category.FastTests;
 import org.cache2k.test.util.IntCacheRule;
+import org.junit.AfterClass;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
 import java.util.Collections;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.Executor;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.junit.Assert.*;
@@ -54,8 +58,92 @@ import static org.cache2k.test.core.StaticUtil.*;
 @Category(FastTests.class)
 public class CacheLoaderTest {
 
+  private static ExecutorService EXECUTOR = Executors.newCachedThreadPool();
+
+  @AfterClass
+  public static void tearDown() {
+    EXECUTOR.shutdown();
+  }
+
   @Rule
   public IntCacheRule target = new IntCacheRule();
+
+  @Test
+  public void testSeparateLoaderExecutor() {
+    final AtomicInteger _executionCount = new AtomicInteger(0);
+    Cache<Integer,Integer> c = target.cache(new CacheRule.Specialization<Integer, Integer>() {
+      @Override
+      public void extend(final Cache2kBuilder<Integer, Integer> b) {
+        b.loader(new CacheLoader<Integer, Integer>() {
+          @Override
+          public Integer load(final Integer key) throws Exception {
+            return key * 2;
+          }
+        });
+        b.loaderExecutor(new Executor() {
+          @Override
+          public void execute(final Runnable command) {
+            _executionCount.incrementAndGet();
+            EXECUTOR.execute(command);
+          }
+        });
+      }
+    });
+    assertEquals((Integer) 10, c.get(5));
+    assertEquals((Integer) 20, c.get(10));
+    assertEquals(0, _executionCount.get());
+    CompletionWaiter _waiter = new CompletionWaiter();
+    c.loadAll(_waiter, asSet(1, 2, 3));
+    _waiter.awaitCompletion();
+    assertEquals("executor is used", 3, _executionCount.get());
+    _waiter = new CompletionWaiter();
+    c.prefetchAll(_waiter, asSet(6, 7, 8));
+    _waiter.awaitCompletion();
+    assertEquals("prefetch uses executor, too", 6, _executionCount.get());
+  }
+
+  @Test
+  public void testSeparatePrefetchExecutor() {
+    final AtomicInteger _executionCount = new AtomicInteger(0);
+    final AtomicInteger _prefetchExecutionCount = new AtomicInteger(0);
+    Cache<Integer,Integer> c = target.cache(new CacheRule.Specialization<Integer, Integer>() {
+      @Override
+      public void extend(final Cache2kBuilder<Integer, Integer> b) {
+        b.loader(new CacheLoader<Integer, Integer>() {
+          @Override
+          public Integer load(final Integer key) throws Exception {
+            return key * 2;
+          }
+        });
+        b.loaderExecutor(new Executor() {
+          @Override
+          public void execute(final Runnable command) {
+            _executionCount.incrementAndGet();
+            EXECUTOR.execute(command);
+          }
+        });
+        b.prefetchExecutor(new Executor() {
+          @Override
+          public void execute(final Runnable command) {
+            _prefetchExecutionCount.incrementAndGet();
+            EXECUTOR.execute(command);
+          }
+        });
+      }
+    });
+    assertEquals((Integer) 10, c.get(5));
+    assertEquals((Integer) 20, c.get(10));
+    assertEquals(0, _executionCount.get());
+    CompletionWaiter _waiter = new CompletionWaiter();
+    c.loadAll(_waiter, asSet(1, 2, 3));
+    _waiter.awaitCompletion();
+    assertEquals("executor is used", 3, _executionCount.get());
+    _waiter = new CompletionWaiter();
+    c.prefetchAll(_waiter, asSet(6, 7, 8));
+    _waiter.awaitCompletion();
+    assertEquals("prefetch does not use loader executor", 3, _executionCount.get());
+    assertEquals("extra executor for prefetch used", 3, _prefetchExecutionCount.get());
+  }
 
   @Test
   public void testLoader() {

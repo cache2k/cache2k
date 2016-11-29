@@ -167,40 +167,33 @@ public interface Cache<K, V> extends
   CacheEntry<K, V> getEntry(K key);
 
   /**
-   * Notify about the intend to retrieve the value for this key in the
+   * Notifies about the intend to retrieve the value for this key in the
    * near future.
    *
    * <p>The method will return immediately and the cache will load the
-   * the value asynchronously if not yet present in the cache.
+   * the value asynchronously if not yet present in the cache. Prefetching
+   * is done via a separate thread pool if specified via
+   * {@link Cache2kBuilder#prefetchExecutor(Executor)}.
    *
    * <p>No action is performed, if no reasonable action can be taken
    * for a cache configuration, for example no {@link CacheLoader} is defined.
-   * The cache may also do nothing, if not enough threads or other resources
-   * are available.
    *
-   * <p>This method doesn't throw an exception if the loading fails.
-   * Exceptions will be propagated when the value is accessed.
+   * <p>This method doesn't throw an exception in case the loader produced
+   * an exception. Exceptions will be propagated when the value is accessed.
    *
-   * @param key the key that should be loaded, not null
+   * @param key the key that should be loaded, not {@code null}
+   * @see Cache2kBuilder#loaderThreadCount(int)
+   * @see Cache2kBuilder#prefetchExecutor(Executor)
    */
   void prefetch(K key);
 
   /**
-   * Notify about the intend to retrieve the value for this key in the
-   * near future.
+   * Notifies about the intend to retrieve the value for this key in the
+   * near future. See {@link #prefetch(Object)} for detailed explanation.
    *
-   * <p>The method will return immediately and the cache will load the
-   * the value asynchronously if not yet present in the cache.
+   * <p>Exceptions from the loader will not be propagated via the listener.
    *
-   * <p>No action is performed, if no reasonable action can be taken
-   * for a cache configuration, for example no {@link CacheLoader} is defined.
-   * The cache may also do nothing, if not enough threads or other resources
-   * are available.
-   *
-   * <p>This method doesn't throw an exception if the loading fails.
-   * Exceptions will be propagated when the value is accessed.
-   *
-   * @param key the key that should be loaded, not null
+   * @param key the key that should be loaded, not {@code null}
    * @param listener A listener that gets notified when the prefetch operation is finished
    */
   void prefetch(CacheOperationCompletionListener listener, K key);
@@ -211,48 +204,18 @@ public interface Cache<K, V> extends
   void prefetch(Iterable<? extends K> keys);
 
   /**
-   * Notify about the intend to retrieve the value for the keys in the
-   * near future.
-   *
-   * <p>The method will return immediately and the cache will load the
-   * the value asynchronously if not yet present in the cache.
-   *
-   * <p>No action is performed, if no reasonable action can be taken
-   * for a cache configuration, for example no {@link CacheLoader} is defined.
-   * The cache may also do nothing, if not enough threads or other resources
-   * are available.
-   *
-   * <p>The method will return immediately and the cache will load the
-   * the value asynchronously if not yet present in the cache. The cache may
-   * ignore the request, if not enough internal resources are available to
-   * load the value in background.
-   *
-   * <p>This method doesn't throw an exception if the loading fails.
-   * Exceptions will be propagated when the value is accessed.
+   * Notifies about the intend to retrieve the value for the keys in the
+   * near future. See {@link #prefetch(Object)} for detailed explanation.
    *
    * @param keys the keys which should be loaded
    */
   void prefetchAll(Iterable<? extends K> keys);
 
   /**
-   * Notify about the intend to retrieve the value for the keys in the
-   * near future.
+   * Notifies about the intend to retrieve the value for this key in the
+   * near future. See {@link #prefetch(Object)} for detailed explanation.
    *
-   * <p>The method will return immediately and the cache will load the
-   * the value asynchronously if not yet present in the cache.
-   *
-   * <p>No action is performed, if no reasonable action can be taken
-   * for a cache configuration, for example no {@link CacheLoader} is defined.
-   * The cache may also do nothing, if not enough threads or other resources
-   * are available.
-   *
-   * <p>The method will return immediately and the cache will load the
-   * the value asynchronously if not yet present in the cache. The cache may
-   * ignore the request, if not enough internal resources are available to
-   * load the value in background.
-   *
-   * <p>This method doesn't throw an exception if the loading fails.
-   * Exceptions will be propagated when the value is accessed.
+   * <p>Exceptions from the loader will not be propagated via the listener.
    *
    * @param keys the keys which should be loaded
    * @param listener A listener that gets notified when the prefetch operation is finished
@@ -260,24 +223,8 @@ public interface Cache<K, V> extends
   void prefetchAll(CacheOperationCompletionListener listener, Iterable<? extends K> keys);
 
   /**
-   * Notify about the intend to retrieve the value for the keys in the
-   * near future.
-   *
-   * <p>The method will return immediately and the cache will load the
-   * the value asynchronously if not yet present in the cache.
-   *
-   * <p>No action is performed, if no reasonable action can be taken
-   * for a cache configuration, for example no {@link CacheLoader} is defined.
-   * The cache may also do nothing, if not enough threads or other resources
-   * are available.
-   *
-   * <p>The method will return immediately and the cache will load the
-   * the value asynchronously if not yet present in the cache. The cache may
-   * ignore the request, if not enough internal resources are available to
-   * load the value in background.
-   *
-   * <p>This method doesn't throw an exception if the loading fails.
-   * Exceptions will be propagated when the value is accessed.
+   * Notifies about the intend to retrieve the value for this key in the
+   * near future. See {@link #prefetch(Object)} for detailed explanation.
    *
    * @param keys the keys which should be loaded
    * @param listener A listener that gets notified when the prefetch operation is finished
@@ -676,11 +623,9 @@ public interface Cache<K, V> extends
    * Asynchronously loads the given set of keys into the cache. Only missing or expired
    * values will be loaded.
    *
-   * <p>The cache uses multiple threads to load the values in parallel. If there
-   * are not sufficient threads available, the load tasks will be queued and executed
-   * in a first come first serve manner. The loader thread pool will be also
-   * used for refresh operation after an entry is expired, which means, heavy load
-   * operation may delay a refresh of an entry.
+   * <p>The cache uses multiple threads to load the values in parallel. If thread resources
+   * are not sufficient, meaning the used executor is throwing {@link java.util.concurrent.RejectedExecutionException}
+   * the calling thread is used to produce back pressure.
    *
    * <p>If no loader is defined, the method will throw an immediate exception.
    *
@@ -694,21 +639,16 @@ public interface Cache<K, V> extends
   void loadAll(CacheOperationCompletionListener l, Iterable<? extends K> keys);
 
   /**
-   * Asynchronously loads the given set of keys into the cache. Invokes load for all keys
+   * Asynchronously loads the given set of keys into the cache. Always invokes load for all keys
    * and replaces values already in the cache.
    *
-   * <p>The cache uses multiple threads to load the values in parallel. If there
-   * are not sufficient threads available, the load tasks will be queued and executed
-   * in a first come first serve manner. The loader thread pool will be also
-   * used for refresh operation after an entry is expired, which means, heavy load
-   * operation may delay a refresh of an entry.
+   * <p>The cache uses multiple threads to load the values in parallel. If thread resources
+   * are not sufficient, meaning the used executor is throwing {@link java.util.concurrent.RejectedExecutionException}
+   * the calling thread is used to produce back pressure.
    *
    * <p>If no loader is defined, the method will throw an immediate exception.
    *
    * <p>After the load is completed, the completion listener will be called, if provided.
-   *
-   * <p>Rationale: Actually the name is not perfect, it should be {@code reallyLoad}, because it loads the
-   * value also, when some value was inserted view {@code put}.
    *
    * @param l Listener interface that is invoked upon completion. May be null if no
    *          completion notification is needed.

@@ -36,7 +36,7 @@ public class ExclusiveExecutor implements Executor, Closeable {
   private ThreadPoolExecutor threadPoolExecutor;
 
   public ExclusiveExecutor(int _threadCount, String _threadNamePrefix) {
-    final int _corePoolThreadSize = _threadCount;
+    final int _corePoolThreadSize = 0;
     threadPoolExecutor =
       new ThreadPoolExecutor(_corePoolThreadSize, _threadCount,
         21, TimeUnit.SECONDS,

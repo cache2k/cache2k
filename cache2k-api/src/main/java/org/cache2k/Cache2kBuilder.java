@@ -36,6 +36,7 @@ import org.cache2k.integration.ResiliencePolicy;
 
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
+import java.util.concurrent.Executor;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -504,7 +505,15 @@ public class Cache2kBuilder<K, V> implements Cloneable {
   }
 
   /**
-   * Maximum number of threads this cache should use for calls to the {@link CacheLoader}
+   * If no separate executor is set via {@link #loaderExecutor(Executor)} the cache will
+   * create a separate thread pool used exclusively by it. Defines the maximum number of threads
+   * this cache should use for calls to the {@link CacheLoader}. The default is one thread
+   * per available CPU.
+   *
+   * <p>If a separate executor is defined the parameter has no effect.
+   *
+   * @see #loaderExecutor(Executor)
+   * @see #prefetchExecutor(Executor)
    */
   public final Cache2kBuilder<K, V> loaderThreadCount(int v) {
     config().setLoaderThreadCount(v);
@@ -622,6 +631,31 @@ public class Cache2kBuilder<K, V> implements Cloneable {
    */
   public final Cache2kBuilder<K,V> evictionSegmentCount(int v) {
     config().setEvictionSegmentCount(v);
+    return this;
+  }
+
+  /**
+   * Thread pool / executor service to use for asynchronous load operations. If no executor is specified
+   * the cache will create a thread pool, if needed.
+   *
+   * @see #loaderThreadCount(int)
+   * @see #prefetchExecutor(Executor)
+   */
+  public final Cache2kBuilder<K,V> loaderExecutor(Executor v) {
+    config().setLoaderExecutor(new ReferenceFactory<Executor>(v));
+    return this;
+  }
+
+  /**
+   * Thread pool / executor service to use for refresh ahead and prefetch operations. If not specified the
+   * same refresh ahead operation will use the thread pool defined by {@link #loaderExecutor(Executor)}
+   * or a cache local pool is created.
+   *
+   * @see #loaderThreadCount(int)
+   * @see #loaderExecutor(Executor)
+   */
+  public final Cache2kBuilder<K,V> prefetchExecutor(Executor v) {
+    config().setPrefetchExecutor(new ReferenceFactory<Executor>(v));
     return this;
   }
 
