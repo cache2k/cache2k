@@ -160,7 +160,7 @@
                 <javax.management.builder.initial>org.cache2k.jcache.provider.tckGlue.TckMBeanServerBuilder
                 </javax.management.builder.initial>
                 <org.jsr107.tck.management.agentId>someUniqueString</org.jsr107.tck.management.agentId>
-                <javax.cache.CacheManager>org.cache2k.CacheManger</javax.cache.CacheManager>
+                <javax.cache.CacheManager>org.cache2k.CacheManager</javax.cache.CacheManager>
                 <javax.cache.Cache>org.cache2k.Cache</javax.cache.Cache>
                 <javax.cache.Cache.Entry>org.cache2k.CacheEntry</javax.cache.Cache.Entry>
               </systemPropertyVariables>
