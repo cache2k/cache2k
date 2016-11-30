@@ -94,12 +94,6 @@ public class StandardPropertyParser implements PropertyParser {
         return v;
       }
     });
-    addParser(Class.class, new ValueConverter<Class>() {
-      @Override
-      public Class<?> parse(final String v) throws Exception {
-        return Class.forName(v);
-      }
-    });
   }
 
   static long parseLongWithUnitSuffix(String v) {
