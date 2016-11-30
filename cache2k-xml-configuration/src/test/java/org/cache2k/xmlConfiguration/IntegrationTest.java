@@ -25,6 +25,8 @@ import org.cache2k.Cache2kBuilder;
 import org.cache2k.CacheManager;
 import org.cache2k.CacheMisconfigurationException;
 import org.cache2k.configuration.Cache2kConfiguration;
+import org.cache2k.configuration.CustomizationSupplierByClass;
+import org.cache2k.core.Cache2kCoreProviderImpl;
 import org.junit.Test;
 import static org.junit.Assert.*;
 import static org.hamcrest.CoreMatchers.*;
@@ -35,6 +37,13 @@ import static org.hamcrest.CoreMatchers.*;
  * @author Jens Wilke
  */
 public class IntegrationTest {
+
+  @Test
+  public void loaderClassName() {
+    Cache2kConfiguration cfg = Cache2kBuilder.forUnknownTypes().name("withLoader").toConfiguration();
+    Cache2kCoreProviderImpl.augmentConfiguration(CacheManager.getInstance(), cfg);
+    assertEquals("x.y.z", ((CustomizationSupplierByClass) cfg.getLoader()).getClassName());
+  }
 
   /**
    * The name of the default manager is set by the configuration.
@@ -122,7 +131,7 @@ public class IntegrationTest {
         .build();
       fail("expect exception");
     } catch (Exception ex) {
-      assertThat(ex.toString(), containsString("section type missing"));
+      assertThat(ex.toString(), containsString("type missing"));
     }
   }
 

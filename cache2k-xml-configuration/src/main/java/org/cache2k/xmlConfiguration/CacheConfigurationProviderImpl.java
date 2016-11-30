@@ -36,7 +36,9 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.Serializable;
 import java.lang.reflect.InvocationTargetException;
+import java.util.Collection;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -50,7 +52,6 @@ public class CacheConfigurationProviderImpl implements CacheConfigurationProvide
   private PropertyParser propertyParser = new StandardPropertyParser();
   private TokenizerFactory tokenizerFactory = new FlexibleXmlTokenizerFactory();
   private volatile Map<Class<?>, BeanPropertyMutator> type2mutator = new HashMap<Class<?>, BeanPropertyMutator>();
-  private final Log log = Log.getLog(this.getClass());
   private volatile ConfigurationContext defaultManagerContext = null;
   private volatile Map<CacheManager, ConfigurationContext> manager2defaultConfig = new HashMap<CacheManager, ConfigurationContext>();
   private final Map<String, String> standardSectionTypes = new HashMap<String, String>();
@@ -79,12 +80,12 @@ public class CacheConfigurationProviderImpl implements CacheConfigurationProvide
   }
 
   @Override
-  public <K, V> void augmentConfiguration(final CacheManager mgr, final Cache2kConfiguration<K, V> _bean) {
+  public <K, V> void augmentConfiguration(final CacheManager mgr, final Cache2kConfiguration<K, V> cfg) {
     ConfigurationContext ctx =  getManagerContext(mgr);
     if (!ctx.isConfigurationPresent()) {
       return;
     }
-    final String _cacheName = _bean.getName();
+    final String _cacheName = cfg.getName();
     if (_cacheName == null) {
       if (ctx.isIgnoreAnonymousCache()) {
         return;
@@ -93,21 +94,21 @@ public class CacheConfigurationProviderImpl implements CacheConfigurationProvide
         "Cache name missing, cannot apply XML configuration. " +
         "Consider parameter: ignoreAnonymousCache");
     }
-    ParsedConfiguration pc = readManagerConfigurationWithExceptionHandling(mgr.getClassLoader(), getFileName(mgr));
-    ParsedConfiguration _cacheCfg = null;
-    ParsedConfiguration _section = extractCacheSection(pc);
-    if (_section != null) { _cacheCfg = _section.getSection(_cacheName); }
-    if (_cacheCfg == null) {
+    ParsedConfiguration _parsedTop = readManagerConfigurationWithExceptionHandling(mgr.getClassLoader(), getFileName(mgr));
+    ParsedConfiguration _parsedCache = null;
+    ParsedConfiguration _section = extractCacheSection(_parsedTop);
+    if (_section != null) { _parsedCache = _section.getSection(_cacheName); }
+    if (_parsedCache == null) {
       if (ctx.isIgnoreMissingCacheConfiguration()) {
         return;
       }
       String _exceptionText =
         "Configuration for cache '" + _cacheName + "' is missing. " +
           "Consider parameter: ignoreMissingCacheConfiguration";
-      throw new ConfigurationException(_exceptionText, pc.getSource());
+      throw new ConfigurationException(_exceptionText, _parsedTop.getSource());
     }
-    apply(_cacheCfg, extractTemplates(pc), _bean);
-    _bean.setExternalConfigurationPresent(true);
+    apply(_parsedCache, extractTemplates(_parsedTop), cfg);
+    cfg.setExternalConfigurationPresent(true);
   }
 
   private static String getFileName(CacheManager mgr) {
@@ -227,8 +228,8 @@ public class CacheConfigurationProviderImpl implements CacheConfigurationProvide
   }
 
   /** Set properties in configuration bean based on the parsed configuration. Called by unit test. */
-  void apply(ParsedConfiguration cfg, ParsedConfiguration _templates, Object _bean) {
-    ConfigurationTokenizer.Property _include = cfg.getPropertyMap().get("include");
+  void apply(ParsedConfiguration _parsedCfg, ParsedConfiguration _templates, Object cfg) {
+    ConfigurationTokenizer.Property _include = _parsedCfg.getPropertyMap().get("include");
     if (_include != null) {
       for (String _template : _include.getValue().split(",")) {
         ParsedConfiguration c2 = null;
@@ -236,41 +237,80 @@ public class CacheConfigurationProviderImpl implements CacheConfigurationProvide
         if (c2 == null) {
           throw new ConfigurationException("Template not found \'" + _template + "\'", _include.getSource(), _include.getLineNumber());
         }
-        apply(c2, _templates, _bean);
+        apply(c2, _templates, cfg);
       }
     }
-    applyPropertyValues(cfg, _bean);
-    if (!(_bean instanceof ConfigurationWithSections)) {
+    applyPropertyValues(_parsedCfg, cfg);
+
+    if (!(cfg instanceof ConfigurationWithSections)) {
       return;
     }
-    ConfigurationWithSections _configurationWithSections = (ConfigurationWithSections) _bean;
-    for(ParsedConfiguration sc : cfg.getSections()) {
-      String _sectionType = standardSectionTypes.get(sc.getName());
+    ConfigurationWithSections _configurationWithSections = (ConfigurationWithSections) cfg;
+    for(ParsedConfiguration _parsedSection : _parsedCfg.getSections()) {
+      String _sectionType = standardSectionTypes.get(_parsedSection.getName());
       if (_sectionType == null) {
-        _sectionType = sc.getType();
+        _sectionType = _parsedSection.getType();
       }
       if (_sectionType == null) {
-        throw new ConfigurationException("section type missing", sc.getSource(), sc.getLineNumber());
+        throw new ConfigurationException("type missing or unknown", _parsedSection.getSource(), _parsedSection.getLineNumber());
       }
       Class<?> _type;
       try {
         _type = Class.forName(_sectionType);
       } catch (ClassNotFoundException ex) {
         throw new ConfigurationException(
-          "section configuration class not found '" + _sectionType + "'", sc.getSource(), sc.getLineNumber());
+          "class not found '" + _sectionType + "'", _parsedSection.getSource(), _parsedSection.getLineNumber());
       }
-      ConfigurationSection _sectionBean =
-        _configurationWithSections.getSections().getSection((Class<ConfigurationSection>) _type);
-      if (_sectionBean == null) {
-        try {
-          _sectionBean = (ConfigurationSection)  _type.newInstance();
-        } catch (Exception ex) {
-          throw new ConfigurationException("Cannot instantiate section class: " + ex, sc.getSource(), sc.getLineNumber());
-        }
-        _configurationWithSections.getSections().add(_sectionBean);
+      String _containerElementName = _parsedSection.getContainer();
+      if ("sections".equals(_containerElementName)) {
+        handleSection(_type, _configurationWithSections, _parsedSection, _templates);
+      } if (!handleBean(_type, cfg, _parsedSection, _templates)) {
       }
-      apply(sc, _templates, _sectionBean);
     }
+  }
+
+  private boolean handleBean(final Class<?> _type, final Object cfg, final ParsedConfiguration _parsedCfg, final ParsedConfiguration _templates) {
+    String _containerName = _parsedCfg.getContainer();
+    BeanPropertyMutator m = provideMutator(cfg.getClass());
+    Class<?> _targetType = m.getType(_containerName);
+    if (_targetType == null) {
+     return false;
+    }
+    if (!_targetType.isAssignableFrom(_type)) {
+      throw new ConfigurationException("Type mismatch, expected: '" + _targetType.getName() + "'", _parsedCfg.getSource(), _parsedCfg.getLineNumber());
+    }
+    Object _bean;
+    try {
+      _bean = _type.newInstance();
+    } catch (Exception ex) {
+      throw new ConfigurationException("Cannot instantiate bean: " + ex, _parsedCfg.getSource(), _parsedCfg.getLineNumber());
+    }
+    apply(_parsedCfg, _templates, _bean);
+    try {
+      m.mutate(cfg, _containerName, _bean);
+    } catch (InvocationTargetException ex) {
+      Throwable t =  ex.getTargetException();
+      if (t instanceof IllegalArgumentException) {
+        throw new ConfigurationException("Value '" + _bean + "' rejected: " + t.getMessage(), _parsedCfg.getSource(), _parsedCfg.getLineNumber());
+      }
+      throw new ConfigurationException("Setting property: " + ex, _parsedCfg.getSource(), _parsedCfg.getLineNumber());
+    } catch (Exception ex) {
+      throw new ConfigurationException("Setting property: " + ex, _parsedCfg.getSource(), _parsedCfg.getLineNumber());
+    }
+    return true;
+  }
+
+  private void handleSection(final Class<?> _type, final ConfigurationWithSections cfg, final ParsedConfiguration sc, final ParsedConfiguration _templates) {
+    ConfigurationSection _sectionBean = cfg.getSections().getSection((Class<ConfigurationSection>) _type);
+    if (_sectionBean == null) {
+      try {
+        _sectionBean = (ConfigurationSection)  _type.newInstance();
+      } catch (Exception ex) {
+        throw new ConfigurationException("Cannot instantiate section class: " + ex, sc.getSource(), sc.getLineNumber());
+      }
+      cfg.getSections().add(_sectionBean);
+    }
+    apply(sc, _templates, _sectionBean);
   }
 
   private void applyPropertyValues(final ParsedConfiguration cfg, final Object _bean) {
@@ -294,17 +334,21 @@ public class CacheConfigurationProviderImpl implements CacheConfigurationProvide
         }
         throw new ConfigurationException("Cannot parse property: " + ex, p.getSource(), p.getLineNumber());
       }
-      try {
-        m.mutate(_bean, p.getName(), obj);
-      } catch (InvocationTargetException ex) {
-        Throwable t =  ex.getTargetException();
-        if (t instanceof IllegalArgumentException) {
-          throw new ConfigurationException("Value '" + p.getValue() + "' rejected: " + t.getMessage(), p.getSource(), p.getLineNumber());
-        }
-        throw new ConfigurationException("Setting property: " + ex, p.getSource(), p.getLineNumber());
-      } catch (Exception ex) {
-        throw new ConfigurationException("Setting property: " + ex, p.getSource(), p.getLineNumber());
+      mutateAndCatch(_bean, m, p, obj);
+    }
+  }
+
+  private void mutateAndCatch(final Object cfg, final BeanPropertyMutator m, final ConfigurationTokenizer.Property p, final Object obj) {
+    try {
+      m.mutate(cfg, p.getName(), obj);
+    } catch (InvocationTargetException ex) {
+      Throwable t =  ex.getTargetException();
+      if (t instanceof IllegalArgumentException) {
+        throw new ConfigurationException("Value '" + p.getValue() + "' rejected: " + t.getMessage(), p.getSource(), p.getLineNumber());
       }
+      throw new ConfigurationException("Setting property: " + ex, p.getSource(), p.getLineNumber());
+    } catch (Exception ex) {
+      throw new ConfigurationException("Setting property: " + ex, p.getSource(), p.getLineNumber());
     }
   }
 

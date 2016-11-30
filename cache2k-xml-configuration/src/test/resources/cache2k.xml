@@ -37,6 +37,17 @@
       <expireAfterWrite>47s</expireAfterWrite>
     </cache>
 
+    <cache>
+      <name>withLoader</name>
+      <loader>
+        <bean>
+          <type>org.cache2k.configuration.CustomizationSupplierByClass</type>
+          <!-- The bean just holds the class name, must not be valid. Will fail when we create a cache. -->
+          <className>x.y.z</className>
+        </bean>
+      </loader>
+    </cache>
+
   </caches>
 
 </cache2k>

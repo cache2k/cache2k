@@ -35,6 +35,11 @@ public final class CustomizationSupplierByClass<T> implements CustomizationSuppl
   private String className;
 
   /**
+   * Default constructor for beans.
+   */
+  public CustomizationSupplierByClass() { }
+
+  /**
    * Construct a customization factory based on the class name.
    *
    * @param className Fully qualified class name, used to create the class instance
@@ -46,6 +51,14 @@ public final class CustomizationSupplierByClass<T> implements CustomizationSuppl
       throw new NullPointerException("className");
     }
     this.className = className;
+  }
+
+  public String getClassName() {
+    return className;
+  }
+
+  public void setClassName(final String _className) {
+    className = _className;
   }
 
   @Override

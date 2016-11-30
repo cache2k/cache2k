@@ -36,11 +36,15 @@ import static org.junit.Assert.*;
  */
 public class ParseCompleteTest {
 
-  @Test
-  public void parseIt() throws Exception {
+  ParsedConfiguration parse() throws Exception {
     InputStream is = this.getClass().getResourceAsStream("/config.xml");
     ConfigurationTokenizer pp = new XppConfigTokenizer("/config.xml", is, null);
-    ParsedConfiguration _topLevel = ConfigurationParser.parse(pp);
+    return ConfigurationParser.parse(pp);
+  }
+
+  @Test
+  public void parseIt() throws Exception {
+    ParsedConfiguration _topLevel = parse();
     assertEquals("1.0", _topLevel.getPropertyMap().get("version").getValue());
     ParsedConfiguration _defaults = _topLevel.getSection("defaults");
     assertNotNull(_defaults);

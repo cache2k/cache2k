@@ -36,6 +36,7 @@ public class ParsedConfiguration {
   private int lineNumber;
   private String name;
   private String type;
+  private String container;
   private String propertyContext;
   private Map<String, ConfigurationTokenizer.Property> properties = new HashMap<String, ConfigurationTokenizer.Property>();
   private List<ParsedConfiguration> sections = new ArrayList<ParsedConfiguration>();
@@ -51,6 +52,17 @@ public class ParsedConfiguration {
 
   public int getLineNumber() {
     return lineNumber;
+  }
+
+  /**
+   * Element name containing a section or bean.
+   */
+  public String getContainer() {
+    return container;
+  }
+
+  public void setContainer(final String _container) {
+    container = _container;
   }
 
   public String getName() {
@@ -83,6 +95,16 @@ public class ParsedConfiguration {
 
   public List<ParsedConfiguration> getSections() {
     return sections;
+  }
+
+  public List<ParsedConfiguration> getSectionsInContainer(String _containerName) {
+    List<ParsedConfiguration> _prep = new ArrayList<ParsedConfiguration>();
+    for (ParsedConfiguration pc : sections) {
+      if (_containerName.equals(pc.getContainer())) {
+        _prep.add(pc);
+      }
+    }
+    return _prep;
   }
 
   public void addProperty(ConfigurationTokenizer.Property p) {
@@ -129,6 +151,13 @@ public class ParsedConfiguration {
       return null;
     }
     return p;
+  }
+
+  public String toString() {
+    return "ParsedSection{" +
+      "container=" + container + ", " +
+      "name=" + name + ", " +
+      "type=" + type;
   }
 
 }

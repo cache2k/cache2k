@@ -102,6 +102,31 @@
       <entryCapacity>123</entryCapacity>
     </cache>
 
+    <cache>
+      <name>withLoader</name>
+      <loader>
+        <supplyByClass>
+          <className>x.y.z</className>
+        </supplyByClass>
+      </loader>
+      <writer>
+        <bla>
+          <type>CustomizationSupplierByClass</type>
+          <className>x.y.z</className>
+        </bla>
+      </writer>
+      <listeners>
+        <listener>
+          <type>CustomizationSupplierByClass</type>
+          <className>x.y.z</className>
+        </listener>
+        <listener>
+          <type>CustomizationSupplierByClass</type>
+          <className>x.y.z</className>
+        </listener>
+      </listeners>
+    </cache>
+
   </caches>
 
 </cache2k-configuration>
