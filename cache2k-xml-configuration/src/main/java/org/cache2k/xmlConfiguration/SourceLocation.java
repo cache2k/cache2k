@@ -21,12 +21,20 @@ package org.cache2k.xmlConfiguration;
  */
 
 /**
- * Parse and convert a string to an object.
+ * Common interface for parts with a source location.
  *
  * @author Jens Wilke
  */
-public interface ValueConverter<T> {
+public interface SourceLocation {
 
-  T parse(String v) throws Exception;
+  /**
+   * File name or URL of the (configuration) source
+   */
+  String getSource();
+
+  /**
+   * Line number of the configuration source
+   */
+  int getLineNumber();
 
 }

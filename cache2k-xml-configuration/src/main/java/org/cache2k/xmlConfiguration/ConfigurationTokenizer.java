@@ -23,7 +23,7 @@ package org.cache2k.xmlConfiguration;
 /**
  * @author Jens Wilke
  */
-public interface ConfigurationTokenizer {
+public interface ConfigurationTokenizer extends SourceLocation {
 
   String getSource();
 
@@ -34,7 +34,7 @@ public interface ConfigurationTokenizer {
    */
   Item next() throws Exception;
 
-  interface Item {
+  interface Item extends SourceLocation {
     String getSource();
     int getLineNumber();
   }

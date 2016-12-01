@@ -74,7 +74,7 @@ public class StandardVariableExpander implements VariableExpander {
     private final ParsedConfiguration top;
     private ParsedConfiguration current;
     private int forwardReference = 0;
-    private ConfigurationTokenizer.Property lastTroubemaker;
+    private ConfigurationTokenizer.Property lastTroublemaker;
 
     Process(final ParsedConfiguration _top, final Map<String, ValueAccessor> _scope2resolver) {
       top = _top;
@@ -93,7 +93,7 @@ public class StandardVariableExpander implements VariableExpander {
         forwardReference = 0;
         recurse(top);
         if (lastCounter > 0 && lastCounter == forwardReference) {
-          throw new ConfigurationException("Cyclic reference", lastTroubemaker.getSource(), lastTroubemaker.getLineNumber());
+          throw new ConfigurationException("Cyclic reference", lastTroublemaker);
         }
       } while(forwardReference > 0);
     }
@@ -113,7 +113,7 @@ public class StandardVariableExpander implements VariableExpander {
           p.setExpanded(true);
         } catch(NeedsExpansion ex) {
           forwardReference++;
-          lastTroubemaker = p;
+          lastTroublemaker = p;
         }
       }
       for (ParsedConfiguration c2 : cfg.getSections()) {

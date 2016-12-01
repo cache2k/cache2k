@@ -236,7 +236,7 @@ public class CacheConfigurationProviderImpl implements CacheConfigurationProvide
         ParsedConfiguration c2 = null;
         if (_templates != null) { c2 = _templates.getSection(_template); }
         if (c2 == null) {
-          throw new ConfigurationException("Template not found \'" + _template + "\'", _include.getSource(), _include.getLineNumber());
+          throw new ConfigurationException("Template not found \'" + _template + "\'", _include);
         }
         apply(c2, _templates, cfg);
       }
@@ -253,21 +253,21 @@ public class CacheConfigurationProviderImpl implements CacheConfigurationProvide
         _sectionType = _parsedSection.getType();
       }
       if (_sectionType == null) {
-        throw new ConfigurationException("type missing or unknown", _parsedSection.getSource(), _parsedSection.getLineNumber());
+        throw new ConfigurationException("type missing or unknown", _parsedSection);
       }
       Class<?> _type;
       try {
         _type = Class.forName(_sectionType);
       } catch (ClassNotFoundException ex) {
         throw new ConfigurationException(
-          "class not found '" + _sectionType + "'", _parsedSection.getSource(), _parsedSection.getLineNumber());
+          "class not found '" + _sectionType + "'", _parsedSection);
       }
       String _containerName = _parsedSection.getContainer();
       if ("sections".equals(_containerName)) {
         handleSection(_type, _configurationWithSections, _parsedSection, _templates);
       } else if (!handleBean(_type, cfg, _parsedSection, _templates)
         && !handleCollection(_type, cfg, _parsedSection, _templates)) {
-        throw new ConfigurationException("Unknown property  '" + _containerName + "'", _parsedSection.getSource(), _parsedSection.getLineNumber());
+        throw new ConfigurationException("Unknown property  '" + _containerName + "'", _parsedSection);
       }
     }
   }
@@ -283,13 +283,13 @@ public class CacheConfigurationProviderImpl implements CacheConfigurationProvide
      return false;
     }
     if (!_targetType.isAssignableFrom(_type)) {
-      throw new ConfigurationException("Type mismatch, expected: '" + _targetType.getName() + "'", _parsedCfg.getSource(), _parsedCfg.getLineNumber());
+      throw new ConfigurationException("Type mismatch, expected: '" + _targetType.getName() + "'", _parsedCfg);
     }
     Object _bean;
     try {
       _bean = _type.newInstance();
     } catch (Exception ex) {
-      throw new ConfigurationException("Cannot instantiate bean: " + ex, _parsedCfg.getSource(), _parsedCfg.getLineNumber());
+      throw new ConfigurationException("Cannot instantiate bean: " + ex, _parsedCfg);
     }
     apply(_parsedCfg, _templates, _bean);
     try {
@@ -297,11 +297,11 @@ public class CacheConfigurationProviderImpl implements CacheConfigurationProvide
     } catch (InvocationTargetException ex) {
       Throwable t =  ex.getTargetException();
       if (t instanceof IllegalArgumentException) {
-        throw new ConfigurationException("Value '" + _bean + "' rejected: " + t.getMessage(), _parsedCfg.getSource(), _parsedCfg.getLineNumber());
+        throw new ConfigurationException("Value '" + _bean + "' rejected: " + t.getMessage(), _parsedCfg);
       }
-      throw new ConfigurationException("Setting property: " + ex, _parsedCfg.getSource(), _parsedCfg.getLineNumber());
+      throw new ConfigurationException("Setting property: " + ex, _parsedCfg);
     } catch (Exception ex) {
-      throw new ConfigurationException("Setting property: " + ex, _parsedCfg.getSource(), _parsedCfg.getLineNumber());
+      throw new ConfigurationException("Setting property: " + ex, _parsedCfg);
     }
     return true;
   }
@@ -324,19 +324,19 @@ public class CacheConfigurationProviderImpl implements CacheConfigurationProvide
     try {
       c = (Collection) m.invoke(cfg);
     } catch (Exception ex) {
-      throw new ConfigurationException("Cannot access collection for '" + _containerName + "' " + ex, _parsedCfg.getSource(), _parsedCfg.getLineNumber());
+      throw new ConfigurationException("Cannot access collection for '" + _containerName + "' " + ex, _parsedCfg);
     }
     Object _bean;
     try {
       _bean = _type.newInstance();
     } catch (Exception ex) {
-      throw new ConfigurationException("Cannot instantiate bean: " + ex, _parsedCfg.getSource(), _parsedCfg.getLineNumber());
+      throw new ConfigurationException("Cannot instantiate bean: " + ex, _parsedCfg);
     }
     apply(_parsedCfg, _templates, _bean);
     try {
       c.add(_bean);
     } catch (IllegalArgumentException ex) {
-      throw new ConfigurationException("Rejected when adding to '" + _containerName + "': " + ex.getMessage(), _parsedCfg.getSource(), _parsedCfg.getLineNumber());
+      throw new ConfigurationException("Rejected when adding to '" + _containerName + "': " + ex.getMessage(), _parsedCfg);
     }
     return true;
   }
@@ -347,7 +347,7 @@ public class CacheConfigurationProviderImpl implements CacheConfigurationProvide
       try {
         _sectionBean = (ConfigurationSection)  _type.newInstance();
       } catch (Exception ex) {
-        throw new ConfigurationException("Cannot instantiate section class: " + ex, sc.getSource(), sc.getLineNumber());
+        throw new ConfigurationException("Cannot instantiate section class: " + ex, sc);
       }
       cfg.getSections().add(_sectionBean);
     }
@@ -364,16 +364,16 @@ public class CacheConfigurationProviderImpl implements CacheConfigurationProvide
           "type".equals(p.getName())) {
           continue;
         }
-        throw new ConfigurationException("Unknown property '" + p.getName() + "'", p.getSource(), p.getLineNumber());
+        throw new ConfigurationException("Unknown property '" + p.getName() + "'", p);
       }
       Object obj;
       try {
         obj = propertyParser.parse(_propertyType, p.getValue());
       } catch (Exception ex) {
         if (ex instanceof IllegalArgumentException) {
-          throw new ConfigurationException("Value '" + p.getValue() + "' rejected: " + ex.getMessage(), p.getSource(), p.getLineNumber());
+          throw new ConfigurationException("Value '" + p.getValue() + "' rejected: " + ex.getMessage(), p);
         }
-        throw new ConfigurationException("Cannot parse property: " + ex, p.getSource(), p.getLineNumber());
+        throw new ConfigurationException("Cannot parse property: " + ex, p);
       }
       mutateAndCatch(_bean, m, p, obj);
     }
@@ -385,11 +385,11 @@ public class CacheConfigurationProviderImpl implements CacheConfigurationProvide
     } catch (InvocationTargetException ex) {
       Throwable t =  ex.getTargetException();
       if (t instanceof IllegalArgumentException) {
-        throw new ConfigurationException("Value '" + p.getValue() + "' rejected: " + t.getMessage(), p.getSource(), p.getLineNumber());
+        throw new ConfigurationException("Value '" + p.getValue() + "' rejected: " + t.getMessage(), p);
       }
-      throw new ConfigurationException("Setting property: " + ex, p.getSource(), p.getLineNumber());
+      throw new ConfigurationException("Setting property: " + ex, p);
     } catch (Exception ex) {
-      throw new ConfigurationException("Setting property: " + ex, p.getSource(), p.getLineNumber());
+      throw new ConfigurationException("Setting property: " + ex, p);
     }
   }
 

@@ -26,11 +26,11 @@ import java.util.List;
 import java.util.Map;
 
 /**
- *
+ * Holds the complete parsed configuration or parts of it.
  *
  * @author Jens Wilke
  */
-public class ParsedConfiguration {
+public class ParsedConfiguration implements SourceLocation {
 
   private String source;
   private int lineNumber;

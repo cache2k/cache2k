@@ -36,7 +36,7 @@ public class ConfigurationParser {
     for (;;) {
       ConfigurationTokenizer.Item _item = _parser.next();
       if (_item == null) {
-        throw new ConfigurationException("null item", _parser.getSource(), _parser.getLineNumber());
+        throw new ConfigurationException("null item", _parser);
       }
       if (_item instanceof ConfigurationTokenizer.Unnest) {
         return;

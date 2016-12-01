@@ -23,6 +23,10 @@ package org.cache2k.xmlConfiguration;
 import org.cache2k.CacheMisconfigurationException;
 
 /**
+ * Exception indicating something is wrong with the external (XML) configuration.
+ * We do not use this exception inside the API and core package, instead
+ * {@link IllegalArgumentException} is used.
+ *
  * @author Jens Wilke
  */
 public class ConfigurationException extends CacheMisconfigurationException {
@@ -35,8 +39,8 @@ public class ConfigurationException extends CacheMisconfigurationException {
     super(message + " at " + _source);
   }
 
-  public ConfigurationException(final String message, final String _source, final int _lineNumber) {
-    super(message + " at " + _source + ":" + _lineNumber);
+  public ConfigurationException(final String _message, final SourceLocation _location) {
+    super(_message + " at " + _location.getSource() + ":" + _location.getLineNumber());
   }
 
 }
