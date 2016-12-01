@@ -28,14 +28,14 @@ import org.cache2k.CacheManager;
  *
  * @author Jens Wilke
  */
-public final class CustomizationSupplierByClass<T> implements CustomizationSupplier<T>, ConfigurationBean {
+public final class CustomizationSupplierByClassName<T> implements CustomizationSupplier<T>, ConfigurationBean {
 
   private String className;
 
   /**
    * Default constructor for beans.
    */
-  public CustomizationSupplierByClass() { }
+  public CustomizationSupplierByClassName() { }
 
   /**
    * Construct a customization factory based on the class name.
@@ -44,7 +44,7 @@ public final class CustomizationSupplierByClass<T> implements CustomizationSuppl
    *                  via a {@link ClassLoader#loadClass(String)}. The class must have
    *                  a default constructor. Not null.
    */
-  public CustomizationSupplierByClass(final String className) {
+  public CustomizationSupplierByClassName(final String className) {
     if (className == null) {
       throw new NullPointerException("className");
     }
@@ -67,8 +67,8 @@ public final class CustomizationSupplierByClass<T> implements CustomizationSuppl
   @Override
   public boolean equals(final Object other) {
     if (this == other) return true;
-    if (!(other instanceof CustomizationSupplierByClass)) return false;
-    CustomizationSupplierByClass<?> _that = (CustomizationSupplierByClass<?>) other;
+    if (!(other instanceof CustomizationSupplierByClassName)) return false;
+    CustomizationSupplierByClassName<?> _that = (CustomizationSupplierByClassName<?>) other;
     return className.equals(_that.className);
   }
 

@@ -23,9 +23,8 @@ package org.cache2k.xmlConfiguration;
 import org.cache2k.Cache;
 import org.cache2k.Cache2kBuilder;
 import org.cache2k.CacheManager;
-import org.cache2k.CacheMisconfigurationException;
 import org.cache2k.configuration.Cache2kConfiguration;
-import org.cache2k.configuration.CustomizationSupplierByClass;
+import org.cache2k.configuration.CustomizationSupplierByClassName;
 import org.cache2k.core.Cache2kCoreProviderImpl;
 import org.junit.Test;
 import static org.junit.Assert.*;
@@ -41,14 +40,14 @@ public class IntegrationTest {
   @Test
   public void loaderByClassName() {
     Cache2kConfiguration cfg = cacheCfgWithLoader();
-    assertEquals("x.y.z", ((CustomizationSupplierByClass) cfg.getLoader()).getClassName());
+    assertEquals("x.y.z", ((CustomizationSupplierByClassName) cfg.getLoader()).getClassName());
   }
 
   @Test
   public void listenerByClassName() {
     Cache2kConfiguration cfg = cacheCfgWithLoader();
     assertEquals(2, cfg.getListeners().size());
-    assertEquals("a.b.c", ((CustomizationSupplierByClass) cfg.getListeners().iterator().next()).getClassName());
+    assertEquals("a.b.c", ((CustomizationSupplierByClassName) cfg.getListeners().iterator().next()).getClassName());
   }
 
   private Cache2kConfiguration cacheCfgWithLoader() {

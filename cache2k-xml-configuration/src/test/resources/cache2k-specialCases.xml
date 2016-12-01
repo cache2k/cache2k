@@ -65,11 +65,11 @@
       <name>duplicateListener</name>
       <listeners>
         <listener>
-          <type>org.cache2k.configuration.CustomizationSupplierByClass</type>
+          <type>org.cache2k.configuration.CustomizationSupplierByClassName</type>
           <className>a.b.c</className>
         </listener>
         <listener>
-          <type>org.cache2k.configuration.CustomizationSupplierByClass</type>
+          <type>org.cache2k.configuration.CustomizationSupplierByClassName</type>
           <className>a.b.c</className>
         </listener>
       </listeners>

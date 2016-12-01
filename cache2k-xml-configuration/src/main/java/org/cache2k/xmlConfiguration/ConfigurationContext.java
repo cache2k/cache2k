@@ -22,6 +22,8 @@ package org.cache2k.xmlConfiguration;
 
 import org.cache2k.configuration.Cache2kConfiguration;
 
+import java.util.Map;
+
 /**
  * Manager configuration context containing the default configuration and
  * global properties.
@@ -38,6 +40,8 @@ class ConfigurationContext {
   private boolean configurationPresent = false;
   private ClassLoader classLoader;
   private Cache2kConfiguration<?, ?> defaultManagerConfiguration;
+  private Map<String, String> predefinedSectionTypes;
+  private ParsedConfiguration templates;
 
   public Cache2kConfiguration<?, ?> getDefaultManagerConfiguration() {
     return defaultManagerConfiguration;
@@ -102,4 +106,21 @@ class ConfigurationContext {
   public void setClassLoader(final ClassLoader _classLoader) {
     classLoader = _classLoader;
   }
+
+  public Map<String, String> getPredefinedSectionTypes() {
+    return predefinedSectionTypes;
+  }
+
+  public void setPredefinedSectionTypes(final Map<String, String> v) {
+    predefinedSectionTypes = v;
+  }
+
+  public ParsedConfiguration getTemplates() {
+    return templates;
+  }
+
+  public void setTemplates(final ParsedConfiguration _templates) {
+    templates = _templates;
+  }
+
 }
