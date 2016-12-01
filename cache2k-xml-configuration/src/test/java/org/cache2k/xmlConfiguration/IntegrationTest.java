@@ -189,6 +189,16 @@ public class IntegrationTest {
     c.close();
   }
 
+  @Test(expected = ConfigurationException.class)
+  public void duplicateListener() {
+    Cache c =
+      new Cache2kBuilder<String, String>() { }
+        .manager(CacheManager.getInstance("specialCases"))
+        .name("duplicateListener")
+        .build();
+    c.close();
+  }
+
   @Test
   public void eternal_configExpire() {
     try {

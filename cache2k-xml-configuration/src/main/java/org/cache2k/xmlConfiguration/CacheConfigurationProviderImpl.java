@@ -320,10 +320,11 @@ public class CacheConfigurationProviderImpl implements CacheConfigurationProvide
     if (!Collection.class.isAssignableFrom(m.getReturnType())) {
       return false;
     }
-    Collection c = null;
+    Collection c;
     try {
       c = (Collection) m.invoke(cfg);
     } catch (Exception ex) {
+      throw new ConfigurationException("Cannot access collection for '" + _containerName + "' " + ex, _parsedCfg.getSource(), _parsedCfg.getLineNumber());
     }
     Object _bean;
     try {
@@ -332,7 +333,11 @@ public class CacheConfigurationProviderImpl implements CacheConfigurationProvide
       throw new ConfigurationException("Cannot instantiate bean: " + ex, _parsedCfg.getSource(), _parsedCfg.getLineNumber());
     }
     apply(_parsedCfg, _templates, _bean);
-    c.add(_bean);
+    try {
+      c.add(_bean);
+    } catch (IllegalArgumentException ex) {
+      throw new ConfigurationException("Rejected when adding to '" + _containerName + "': " + ex.getMessage(), _parsedCfg.getSource(), _parsedCfg.getLineNumber());
+    }
     return true;
   }
 
