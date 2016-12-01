@@ -20,7 +20,7 @@ package org.cache2k.xmlConfiguration;
  * #L%
  */
 
-import org.cache2k.CacheMisconfigurationException;
+import org.cache2k.CacheException;
 
 /**
  * Exception indicating something is wrong with the external (XML) configuration.
@@ -29,10 +29,14 @@ import org.cache2k.CacheMisconfigurationException;
  *
  * @author Jens Wilke
  */
-public class ConfigurationException extends CacheMisconfigurationException {
+public class ConfigurationException extends CacheException {
 
-  public ConfigurationException(final String message, final ConfigurationTokenizer.Item _item) {
-    super(message + " at " + _item.getSource() + ":" + _item.getLineNumber());
+  public ConfigurationException(final String message) {
+    super(message);
+  }
+
+  public ConfigurationException(final String message, final Throwable cause) {
+    super(message, cause);
   }
 
   public ConfigurationException(final String message, final String _source) {

@@ -91,7 +91,7 @@ public class IntegrationTest {
     new Cache2kBuilder<String, String>(){}.name("missingDummy").build();
   }
 
-  @Test(expected = CacheMisconfigurationException.class)
+  @Test(expected = ConfigurationException.class)
   public void failIfNameIsMissing() {
     new Cache2kBuilder<String, String>(){}.build();
   }
@@ -199,6 +199,16 @@ public class IntegrationTest {
     c.close();
   }
 
+  @Test(expected = ConfigurationException.class)
+  public void typeMismatch() {
+    Cache c =
+      new Cache2kBuilder<String, String>() { }
+        .manager(CacheManager.getInstance("specialCases"))
+        .name("typeMismatch")
+        .build();
+    c.close();
+  }
+
   @Test
   public void eternal_configExpire() {
     try {
@@ -240,16 +250,11 @@ public class IntegrationTest {
     }
   }
 
-  @Test
+  @Test(expected = ConfigurationException.class)
   public void parseErrorWrongXml() {
-    try {
       new Cache2kBuilder<String, String>() { }
         .manager(CacheManager.getInstance("parseErrorWrongXml"))
         .entryCapacity(1234);
-      fail("expect exception");
-    } catch (Exception ex) {
-      assertThat(ex.toString(), containsString("CacheMisconfigurationException"));
-    }
   }
 
   @Test

@@ -110,20 +110,20 @@
         </supplyByClass>
       </loader>
       <writer>
-        <bla>
+        <bean>
           <type>CustomizationSupplierByClass</type>
           <className>x.y.z</className>
-        </bla>
+        </bean>
       </writer>
       <listeners>
-        <listener>
+        <bean>
           <type>CustomizationSupplierByClass</type>
           <className>x.y.z</className>
-        </listener>
-        <listener>
+        </bean>
+        <bean>
           <type>CustomizationSupplierByClass</type>
           <className>x.y.z</className>
-        </listener>
+        </bean>
       </listeners>
     </cache>
 

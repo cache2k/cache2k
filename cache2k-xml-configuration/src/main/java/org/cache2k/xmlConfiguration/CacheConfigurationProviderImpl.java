@@ -22,12 +22,11 @@ package org.cache2k.xmlConfiguration;
 
 import org.cache2k.CacheException;
 import org.cache2k.CacheManager;
-import org.cache2k.CacheMisconfigurationException;
 import org.cache2k.configuration.Cache2kConfiguration;
 import org.cache2k.configuration.ConfigurationSection;
 import org.cache2k.configuration.ConfigurationWithSections;
+import org.cache2k.configuration.SingletonConfigurationSection;
 import org.cache2k.core.spi.CacheConfigurationProvider;
-import org.cache2k.core.util.Log;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -39,7 +38,6 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.Collection;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 /**
@@ -72,12 +70,7 @@ public class CacheConfigurationProviderImpl implements CacheConfigurationProvide
   @Override
   public Cache2kConfiguration getDefaultConfiguration(final CacheManager mgr) {
     Cache2kConfiguration cfg = getManagerContext(mgr).getDefaultManagerConfiguration();
-    try {
-      return copyViaSerialization(mgr, cfg);
-    } catch (Exception ex) {
-      throw new CacheMisconfigurationException(
-        "Copying default cache configuration for manager '" + mgr.getName() + "'", ex);
-    }
+    return copyViaSerialization(mgr, cfg);
   }
 
   @Override
@@ -91,7 +84,7 @@ public class CacheConfigurationProviderImpl implements CacheConfigurationProvide
       if (ctx.isIgnoreAnonymousCache()) {
         return;
       }
-      throw new CacheMisconfigurationException(
+      throw new ConfigurationException(
         "Cache name missing, cannot apply XML configuration. " +
         "Consider parameter: ignoreAnonymousCache");
     }
@@ -198,7 +191,7 @@ public class CacheConfigurationProviderImpl implements CacheConfigurationProvide
     } catch (CacheException ex) {
       throw ex;
     } catch (Exception ex) {
-      throw new CacheMisconfigurationException("Reading configuration for manager from '" + _fileName + "'", ex);
+      throw new ConfigurationException("Reading configuration for manager from '" + _fileName + "'", ex);
     }
     return pc;
   }
@@ -223,8 +216,7 @@ public class CacheConfigurationProviderImpl implements CacheConfigurationProvide
       ByteArrayInputStream bin = new ByteArrayInputStream(bos.toByteArray());
       return (T) new ObjectInputStream(bin).readObject();
     } catch (Exception ex) {
-      throw new CacheMisconfigurationException(
-        "Copying default configuration for manager '" + mgr.getName() + "'", ex);
+      throw new ConfigurationException("Copying default cache configuration for manager '" + mgr.getName() + "'", ex);
     }
   }
 
@@ -262,20 +254,24 @@ public class CacheConfigurationProviderImpl implements CacheConfigurationProvide
         throw new ConfigurationException(
           "class not found '" + _sectionType + "'", _parsedSection);
       }
-      String _containerName = _parsedSection.getContainer();
-      if ("sections".equals(_containerName)) {
-        handleSection(_type, _configurationWithSections, _parsedSection, _templates);
-      } else if (!handleBean(_type, cfg, _parsedSection, _templates)
+      if (!handleSection(_type, _configurationWithSections, _parsedSection, _templates)
+        && !handleBean(_type, cfg, _parsedSection, _templates)
         && !handleCollection(_type, cfg, _parsedSection, _templates)) {
-        throw new ConfigurationException("Unknown property  '" + _containerName + "'", _parsedSection);
+        throw new ConfigurationException("Unknown property  '" +  _parsedSection.getContainer() + "'", _parsedSection);
       }
     }
   }
 
   /**
-   * @return true, if applied
+   * Create the bean, apply configuration to it and set it.
+   *
+   * @return true, if applied, false if not a property
    */
-  private boolean handleBean(final Class<?> _type, final Object cfg, final ParsedConfiguration _parsedCfg, final ParsedConfiguration _templates) {
+  private boolean handleBean(
+    final Class<?> _type,
+    final Object cfg,
+    final ParsedConfiguration _parsedCfg,
+    final ParsedConfiguration _templates) {
     String _containerName = _parsedCfg.getContainer();
     BeanPropertyMutator m = provideMutator(cfg.getClass());
     Class<?> _targetType = m.getType(_containerName);
@@ -285,35 +281,26 @@ public class CacheConfigurationProviderImpl implements CacheConfigurationProvide
     if (!_targetType.isAssignableFrom(_type)) {
       throw new ConfigurationException("Type mismatch, expected: '" + _targetType.getName() + "'", _parsedCfg);
     }
-    Object _bean;
-    try {
-      _bean = _type.newInstance();
-    } catch (Exception ex) {
-      throw new ConfigurationException("Cannot instantiate bean: " + ex, _parsedCfg);
-    }
-    apply(_parsedCfg, _templates, _bean);
-    try {
-      m.mutate(cfg, _containerName, _bean);
-    } catch (InvocationTargetException ex) {
-      Throwable t =  ex.getTargetException();
-      if (t instanceof IllegalArgumentException) {
-        throw new ConfigurationException("Value '" + _bean + "' rejected: " + t.getMessage(), _parsedCfg);
-      }
-      throw new ConfigurationException("Setting property: " + ex, _parsedCfg);
-    } catch (Exception ex) {
-      throw new ConfigurationException("Setting property: " + ex, _parsedCfg);
-    }
+    Object _bean = createBeanAndApplyConfiguration(_type, _parsedCfg, _templates);
+    mutateAndCatch(cfg, m, _containerName, _bean, _parsedCfg, _bean);
     return true;
   }
 
   /**
-   * @return True, if applied
+   * Get appropriate collection e.g. {@link Cache2kConfiguration#getListeners()} create the bean
+   * and add it to the collection.
+   *
+   * @return True, if applied, false if there is no getter for a collection.
    */
-  private boolean handleCollection(final Class<?> _type, final Object cfg, final ParsedConfiguration _parsedCfg, final ParsedConfiguration _templates) {
+  private boolean handleCollection(
+    final Class<?> _type,
+    final Object cfg,
+    final ParsedConfiguration _parsedCfg,
+    final ParsedConfiguration _templates) {
     String _containerName = _parsedCfg.getContainer();
     Method m;
     try {
-      m = cfg.getClass().getMethod("get" + Character.toUpperCase(_containerName.charAt(0)) + _containerName.substring(1));
+      m = cfg.getClass().getMethod(constructGetterName(_containerName));
     } catch (NoSuchMethodException ex) {
       return false;
     }
@@ -326,6 +313,23 @@ public class CacheConfigurationProviderImpl implements CacheConfigurationProvide
     } catch (Exception ex) {
       throw new ConfigurationException("Cannot access collection for '" + _containerName + "' " + ex, _parsedCfg);
     }
+    Object _bean = createBeanAndApplyConfiguration(_type, _parsedCfg, _templates);
+    try {
+      c.add(_bean);
+    } catch (IllegalArgumentException ex) {
+      throw new ConfigurationException("Rejected add '" + _containerName + "': " + ex.getMessage(), _parsedCfg);
+    }
+    return true;
+  }
+
+  private static String constructGetterName(final String _containerName) {
+    return "get" + Character.toUpperCase(_containerName.charAt(0)) + _containerName.substring(1);
+  }
+
+  private Object createBeanAndApplyConfiguration(
+    final Class<?> _type,
+    final ParsedConfiguration _parsedCfg,
+    final ParsedConfiguration _templates) {
     Object _bean;
     try {
       _bean = _type.newInstance();
@@ -333,17 +337,30 @@ public class CacheConfigurationProviderImpl implements CacheConfigurationProvide
       throw new ConfigurationException("Cannot instantiate bean: " + ex, _parsedCfg);
     }
     apply(_parsedCfg, _templates, _bean);
-    try {
-      c.add(_bean);
-    } catch (IllegalArgumentException ex) {
-      throw new ConfigurationException("Rejected when adding to '" + _containerName + "': " + ex.getMessage(), _parsedCfg);
-    }
-    return true;
+    return _bean;
   }
 
-  private void handleSection(final Class<?> _type, final ConfigurationWithSections cfg, final ParsedConfiguration sc, final ParsedConfiguration _templates) {
+  /**
+   * Create a new configuration section or reuse an existing section, if it is a singleton.
+   *
+   * <p>No support for writing on existing sections, which means it is not possible to define a non singleton
+   * in the defaults section and then override values later in the cache specific configuration.
+   * This is not needed for version 1.0. If we want to add it later, it is best to use the name to select the
+   * correct section.
+   *
+   * @return true if applied, false if not a section.
+   */
+  private boolean handleSection(
+    final Class<?> _type,
+    final ConfigurationWithSections cfg,
+    final ParsedConfiguration sc,
+    final ParsedConfiguration _templates) {
+    String _containerName = sc.getContainer();
+    if (!"sections".equals(_containerName)) {
+      return false;
+    }
     ConfigurationSection _sectionBean = cfg.getSections().getSection((Class<ConfigurationSection>) _type);
-    if (_sectionBean == null) {
+    if (_sectionBean == null || !(_sectionBean instanceof SingletonConfigurationSection)) {
       try {
         _sectionBean = (ConfigurationSection)  _type.newInstance();
       } catch (Exception ex) {
@@ -352,6 +369,7 @@ public class CacheConfigurationProviderImpl implements CacheConfigurationProvide
       cfg.getSections().add(_sectionBean);
     }
     apply(sc, _templates, _sectionBean);
+    return true;
   }
 
   private void applyPropertyValues(final ParsedConfiguration cfg, final Object _bean) {
@@ -379,17 +397,31 @@ public class CacheConfigurationProviderImpl implements CacheConfigurationProvide
     }
   }
 
-  private void mutateAndCatch(final Object cfg, final BeanPropertyMutator m, final ConfigurationTokenizer.Property p, final Object obj) {
+  private void mutateAndCatch(
+    final Object cfg,
+    final BeanPropertyMutator m,
+    final ConfigurationTokenizer.Property p,
+    final Object obj) {
+    mutateAndCatch(cfg, m, p.getName(), p.getValue(), p, obj);
+  }
+
+  private void mutateAndCatch(
+    final Object cfg,
+    final BeanPropertyMutator m,
+    final String _name,
+    final Object _valueForExceptionText,
+    final SourceLocation loc,
+    final Object obj) {
     try {
-      m.mutate(cfg, p.getName(), obj);
+      m.mutate(cfg, _name, obj);
     } catch (InvocationTargetException ex) {
       Throwable t =  ex.getTargetException();
       if (t instanceof IllegalArgumentException) {
-        throw new ConfigurationException("Value '" + p.getValue() + "' rejected: " + t.getMessage(), p);
+        throw new ConfigurationException("Value '" + _valueForExceptionText + "' rejected: " + t.getMessage(), loc);
       }
-      throw new ConfigurationException("Setting property: " + ex, p);
+      throw new ConfigurationException("Setting property: " + ex, loc);
     } catch (Exception ex) {
-      throw new ConfigurationException("Setting property: " + ex, p);
+      throw new ConfigurationException("Setting property: " + ex, loc);
     }
   }
 

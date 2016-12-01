@@ -74,6 +74,14 @@
         </listener>
       </listeners>
     </cache>
+    <cache>
+      <name>typeMismatch</name>
+      <loader>
+        <bean>
+          <type>java.util.Date</type>
+        </bean>
+      </loader>
+    </cache>
   </caches>
 
 </cache2k>
