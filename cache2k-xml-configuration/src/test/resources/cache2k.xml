@@ -46,6 +46,16 @@
           <className>x.y.z</className>
         </bean>
       </loader>
+      <listeners>
+        <listener>
+          <type>org.cache2k.configuration.CustomizationSupplierByClass</type>
+          <className>a.b.c</className>
+        </listener>
+        <listener>
+          <type>org.cache2k.configuration.CustomizationSupplierByClass</type>
+          <className>x.y.z</className>
+        </listener>
+      </listeners>
     </cache>
 
   </caches>

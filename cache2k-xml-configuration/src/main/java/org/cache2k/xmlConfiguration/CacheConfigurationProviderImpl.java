@@ -36,6 +36,7 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.Serializable;
 import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
@@ -261,14 +262,19 @@ public class CacheConfigurationProviderImpl implements CacheConfigurationProvide
         throw new ConfigurationException(
           "class not found '" + _sectionType + "'", _parsedSection.getSource(), _parsedSection.getLineNumber());
       }
-      String _containerElementName = _parsedSection.getContainer();
-      if ("sections".equals(_containerElementName)) {
+      String _containerName = _parsedSection.getContainer();
+      if ("sections".equals(_containerName)) {
         handleSection(_type, _configurationWithSections, _parsedSection, _templates);
-      } if (!handleBean(_type, cfg, _parsedSection, _templates)) {
+      } else if (!handleBean(_type, cfg, _parsedSection, _templates)
+        && !handleCollection(_type, cfg, _parsedSection, _templates)) {
+        throw new ConfigurationException("Unknown property  '" + _containerName + "'", _parsedSection.getSource(), _parsedSection.getLineNumber());
       }
     }
   }
 
+  /**
+   * @return true, if applied
+   */
   private boolean handleBean(final Class<?> _type, final Object cfg, final ParsedConfiguration _parsedCfg, final ParsedConfiguration _templates) {
     String _containerName = _parsedCfg.getContainer();
     BeanPropertyMutator m = provideMutator(cfg.getClass());
@@ -297,6 +303,36 @@ public class CacheConfigurationProviderImpl implements CacheConfigurationProvide
     } catch (Exception ex) {
       throw new ConfigurationException("Setting property: " + ex, _parsedCfg.getSource(), _parsedCfg.getLineNumber());
     }
+    return true;
+  }
+
+  /**
+   * @return True, if applied
+   */
+  private boolean handleCollection(final Class<?> _type, final Object cfg, final ParsedConfiguration _parsedCfg, final ParsedConfiguration _templates) {
+    String _containerName = _parsedCfg.getContainer();
+    Method m;
+    try {
+      m = cfg.getClass().getMethod("get" + Character.toUpperCase(_containerName.charAt(0)) + _containerName.substring(1));
+    } catch (NoSuchMethodException ex) {
+      return false;
+    }
+    if (!Collection.class.isAssignableFrom(m.getReturnType())) {
+      return false;
+    }
+    Collection c = null;
+    try {
+      c = (Collection) m.invoke(cfg);
+    } catch (Exception ex) {
+    }
+    Object _bean;
+    try {
+      _bean = _type.newInstance();
+    } catch (Exception ex) {
+      throw new ConfigurationException("Cannot instantiate bean: " + ex, _parsedCfg.getSource(), _parsedCfg.getLineNumber());
+    }
+    apply(_parsedCfg, _templates, _bean);
+    c.add(_bean);
     return true;
   }
 

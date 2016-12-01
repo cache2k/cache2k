@@ -39,10 +39,22 @@ import static org.hamcrest.CoreMatchers.*;
 public class IntegrationTest {
 
   @Test
-  public void loaderClassName() {
+  public void loaderByClassName() {
+    Cache2kConfiguration cfg = cacheCfgWithLoader();
+    assertEquals("x.y.z", ((CustomizationSupplierByClass) cfg.getLoader()).getClassName());
+  }
+
+  @Test
+  public void listenerByClassName() {
+    Cache2kConfiguration cfg = cacheCfgWithLoader();
+    assertEquals(2, cfg.getListeners().size());
+    assertEquals("a.b.c", ((CustomizationSupplierByClass) cfg.getListeners().iterator().next()).getClassName());
+  }
+
+  private Cache2kConfiguration cacheCfgWithLoader() {
     Cache2kConfiguration cfg = Cache2kBuilder.forUnknownTypes().name("withLoader").toConfiguration();
     Cache2kCoreProviderImpl.augmentConfiguration(CacheManager.getInstance(), cfg);
-    assertEquals("x.y.z", ((CustomizationSupplierByClass) cfg.getLoader()).getClassName());
+    return cfg;
   }
 
   /**

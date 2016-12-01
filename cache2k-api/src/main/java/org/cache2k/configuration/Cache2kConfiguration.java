@@ -88,8 +88,8 @@ public class Cache2kConfiguration<K, V> implements Serializable, ConfigurationWi
   private CustomizationSupplier<AdvancedCacheLoader<K,V>> advancedLoader;
   private CustomizationSupplier<ExceptionPropagator<K>> exceptionPropagator;
 
-  private Collection<CustomizationSupplier<CacheEntryOperationListener<K,V>>> listeners;
-  private Collection<CustomizationSupplier<CacheEntryOperationListener<K,V>>> asyncListeners;
+  private CustomizationCollection<CacheEntryOperationListener<K,V>> listeners;
+  private CustomizationCollection<CacheEntryOperationListener<K,V>> asyncListeners;
 
   private ConfigurationSectionContainer sections;
 
@@ -496,9 +496,9 @@ public class Cache2kConfiguration<K, V> implements Serializable, ConfigurationWi
    *
    * @return Mutable collection of listeners
    */
-  public Collection<CustomizationSupplier<CacheEntryOperationListener<K,V>>> getListeners() {
+  public CustomizationCollection<CacheEntryOperationListener<K,V>> getListeners() {
     if (listeners == null) {
-      listeners = new HashSet<CustomizationSupplier<CacheEntryOperationListener<K,V>>>();
+      listeners = new DefaultCustomizationCollection<CacheEntryOperationListener<K, V>>();
     }
     return listeners;
   }
@@ -516,9 +516,9 @@ public class Cache2kConfiguration<K, V> implements Serializable, ConfigurationWi
    *
    * @return Mutable collection of listeners
    */
-  public Collection<CustomizationSupplier<CacheEntryOperationListener<K,V>>> getAsyncListeners() {
+  public CustomizationCollection<CacheEntryOperationListener<K,V>> getAsyncListeners() {
     if (asyncListeners == null) {
-      asyncListeners = new HashSet<CustomizationSupplier<CacheEntryOperationListener<K,V>>>();
+      asyncListeners = new DefaultCustomizationCollection<CacheEntryOperationListener<K, V>>();
     }
     return asyncListeners;
   }
