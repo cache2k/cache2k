@@ -26,9 +26,11 @@ import org.cache2k.CacheManager;
 import org.cache2k.configuration.Cache2kConfiguration;
 import org.cache2k.jcache.ExtendedMutableConfiguration;
 import org.cache2k.jcache.JCacheConfiguration;
+import org.cache2k.xmlConfiguration.ConfigurationException;
 import org.junit.Test;
 
 import javax.cache.Caching;
+import javax.cache.configuration.MutableConfiguration;
 import javax.cache.spi.CachingProvider;
 import java.math.BigDecimal;
 import java.net.URI;
@@ -91,6 +93,33 @@ public class XmlConfigurationTest {
     assertFalse(mc.getCache2kConfiguration().isEternal());
     assertEquals(2000, mc.getCache2kConfiguration().getExpireAfterWrite());
     c.close();
+  }
+
+  @Test(expected = ConfigurationException.class)
+  public void configurationMissing() throws Exception {
+    javax.cache.CacheManager _manager =
+      Caching.getCachingProvider().getCacheManager(new URI("xmlConfiguration"), null);
+    _manager.createCache("missing", new MutableConfiguration<Object,Object>());
+  }
+
+  @Test
+  public void configurationPresent_defaults() throws Exception {
+    javax.cache.CacheManager _manager =
+      Caching.getCachingProvider().getCacheManager(new URI("xmlConfiguration"), null);
+    JCacheBuilder b = new JCacheBuilder("default", (JCacheManagerAdapter) _manager);
+    b.setConfiguration(new MutableConfiguration());
+    assertEquals(false, b.getExtraConfiguration().isAlwaysFlushJmxStatistics());
+    assertEquals(false, b.getExtraConfiguration().isCopyAlwaysIfRequested());
+  }
+
+  @Test
+  public void configurationPresent_changed() throws Exception {
+    javax.cache.CacheManager _manager =
+      Caching.getCachingProvider().getCacheManager(new URI("xmlConfiguration"), null);
+    JCacheBuilder b = new JCacheBuilder("withJCacheSection", (JCacheManagerAdapter) _manager);
+    b.setConfiguration(new MutableConfiguration());
+    assertEquals(true, b.getExtraConfiguration().isAlwaysFlushJmxStatistics());
+    assertEquals(false, b.getExtraConfiguration().isCopyAlwaysIfRequested());
   }
 
 }

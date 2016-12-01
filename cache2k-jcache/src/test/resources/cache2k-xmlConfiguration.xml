@@ -40,6 +40,9 @@
       </sections>
     </cache>
     <cache>
+      <name>default</name>
+    </cache>
+    <cache>
       <name>withExpiry</name>
       <expireAfterWrite>2s</expireAfterWrite>
     </cache>

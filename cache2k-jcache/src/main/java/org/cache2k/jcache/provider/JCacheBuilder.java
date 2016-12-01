@@ -90,12 +90,6 @@ public class JCacheBuilder<K,V> {
             throw new IllegalArgumentException("cache name mismatch.");
           }
           cache2kConfigurationWasProvided = true;
-          extraConfiguration = CACHE2K_DEFAULTS;
-          JCacheConfiguration _extraConfigurationSpecified =
-            cache2kConfiguration.getSections().getSection(JCacheConfiguration.class);
-          if (_extraConfigurationSpecified != null) {
-            extraConfiguration = _extraConfigurationSpecified;
-          }
         }
       }
     } else {
@@ -113,6 +107,14 @@ public class JCacheBuilder<K,V> {
     cache2kConfiguration.setName(name);
     Cache2kCoreProviderImpl.augmentConfiguration(manager.getCache2kManager(), cache2kConfiguration);
     cache2kConfigurationWasProvided |= cache2kConfiguration.isExternalConfigurationPresent();
+    if (cache2kConfigurationWasProvided) {
+      extraConfiguration = CACHE2K_DEFAULTS;
+      JCacheConfiguration _extraConfigurationSpecified =
+        cache2kConfiguration.getSections().getSection(JCacheConfiguration.class);
+      if (_extraConfigurationSpecified != null) {
+        extraConfiguration = _extraConfigurationSpecified;
+      }
+    }
   }
 
   public Cache<K,V> build() {
@@ -130,6 +132,14 @@ public class JCacheBuilder<K,V> {
 
   public CompleteConfiguration<K,V> getCompleteConfiguration() {
     return config;
+  }
+
+  Cache2kConfiguration<K,V> getCache2kConfiguration() {
+    return cache2kConfiguration;
+  }
+
+  JCacheConfiguration getExtraConfiguration() {
+    return extraConfiguration;
   }
 
   /**
