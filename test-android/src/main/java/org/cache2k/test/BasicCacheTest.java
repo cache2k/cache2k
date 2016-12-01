@@ -24,8 +24,8 @@ package org.cache2k.test;
 
 import junit.framework.TestCase;
 import org.cache2k.Cache;
-import org.cache2k.CacheBuilder;
-import org.cache2k.CacheSource;
+import org.cache2k.Cache2kBuilder;
+import org.cache2k.integration.CacheLoader;
 
 /**
  * Basic sanity checks and examples.
@@ -36,30 +36,30 @@ public class BasicCacheTest extends TestCase {
 
   public void testPeekAndPut() {
     Cache<String,String> c =
-      CacheBuilder.newCache(String.class, String.class)
+      Cache2kBuilder.of(String.class, String.class)
         .eternal(true)
         .build();
     String val = c.peek("something");
     c.put("something", "hello");
     val = c.get("something");
-    c.destroy();
+    c.close();
   }
 
   public void testGetWithSource() {
-    CacheSource<String,Integer> _lengthCountingSource = new CacheSource<String, Integer>() {
+    CacheLoader<String,Integer> _lengthCountingSource = new CacheLoader<String, Integer>() {
       @Override
-      public Integer get(String o) throws Throwable {
+      public Integer load(String o) {
         return o.length();
       }
     };
     Cache<String,Integer> c =
-      CacheBuilder.newCache(String.class, Integer.class)
-        .source(_lengthCountingSource)
+      Cache2kBuilder.of(String.class, Integer.class)
+        .loader(_lengthCountingSource)
         .eternal(true)
         .build();
     int v = c.get("hallo");
     v = c.get("long string");
-    c.destroy();
+    c.close();
   }
 
 }
