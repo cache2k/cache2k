@@ -29,11 +29,8 @@ import org.cache2k.integration.CacheWriter;
 import org.cache2k.integration.ExceptionPropagator;
 import org.cache2k.integration.ResiliencePolicy;
 
-import java.io.Serializable;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Collections;
-import java.util.HashSet;
 import java.util.List;
 import java.util.concurrent.Executor;
 
@@ -47,15 +44,15 @@ import java.util.concurrent.Executor;
  * <p>The configuration bean is designed to be serializable. This is used for example to copy
  * default configurations. The builder allows object references to customizations to be set.
  * If this happens the configuration is not serializable. Such configuration is only used for
- * immediate creation of one cache.
+ * immediate creation of one cache via the builder.
  *
  * <p>The configuration may contain additional beans, called configuration sections, that are
- * used to configure extensions or sub modules.</p>
+ * used to configure extensions or sub modules.
  *
  * @author Jens Wilke
  */
 @SuppressWarnings("unused")
-public class Cache2kConfiguration<K, V> implements Serializable, ConfigurationWithSections {
+public class Cache2kConfiguration<K, V> implements ConfigurationBean, ConfigurationWithSections {
 
   public static final long EXPIRY_NOT_ETERNAL = Long.MAX_VALUE - 1;
 

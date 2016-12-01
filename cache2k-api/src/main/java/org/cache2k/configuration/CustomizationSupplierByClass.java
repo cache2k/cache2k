@@ -22,15 +22,13 @@ package org.cache2k.configuration;
 
 import org.cache2k.CacheManager;
 
-import java.io.Serializable;
-
 /**
  * Creates a new instance of the customization based on the class name and the class loader
  * in effect by the cache.
  *
  * @author Jens Wilke
  */
-public final class CustomizationSupplierByClass<T> implements CustomizationSupplier<T>, Serializable {
+public final class CustomizationSupplierByClass<T> implements CustomizationSupplier<T>, ConfigurationBean {
 
   private String className;
 
@@ -57,8 +55,8 @@ public final class CustomizationSupplierByClass<T> implements CustomizationSuppl
     return className;
   }
 
-  public void setClassName(final String _className) {
-    className = _className;
+  public void setClassName(final String v) {
+    className = v;
   }
 
   @Override

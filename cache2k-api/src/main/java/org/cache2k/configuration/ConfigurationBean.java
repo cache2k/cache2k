@@ -20,10 +20,15 @@ package org.cache2k.configuration;
  * #L%
  */
 
+import java.io.Serializable;
+
 /**
- * Marker interface for additional configuration section beans.
+ * Marker for cache configuration beans. The marker is not mandatory.
+ *
+ * <p>Every bean that is used in a cache configuration should adhere to the Java Beans standard.
+ * The objects need to be serializable since this is used to copy the default configuration.
  *
  * @author Jens Wilke
  */
-public interface ConfigurationSection extends ConfigurationBean {
+public interface ConfigurationBean extends Serializable {
 }
