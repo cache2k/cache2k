@@ -83,8 +83,7 @@
               javax.xml.stream,
               org.apache.commons.logging;resolution:=optional
             </Import-Package>
-            <!-- TODO: link to doc? -->
-            <Bundle-DocURL>http://cache2k.org</Bundle-DocURL>
+            <Bundle-DocURL>https://cache2k.org</Bundle-DocURL>
             <!-- Add regular jar manifest information -->
             <Implementation-Build>${buildNumber}</Implementation-Build>
             <Implementation-Version>${project.version}</Implementation-Version>
