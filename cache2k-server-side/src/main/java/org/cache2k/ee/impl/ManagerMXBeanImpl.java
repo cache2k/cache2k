@@ -45,7 +45,7 @@ public class ManagerMXBeanImpl implements CacheManagerMXBean {
   @Override
   public String getHealthStatus() {
     List<HealthInfoElement> li = new ArrayList<HealthInfoElement>();
-    for (Cache c : manager) {
+    for (Cache c : manager.getActiveCaches()) {
       InternalCache ic = (InternalCache) c;
       li.addAll(ic.getInfo().getHealth());
     }

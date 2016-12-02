@@ -26,7 +26,6 @@ import org.cache2k.spi.Cache2kCoreProvider;
 import org.cache2k.spi.SingleProviderResolver;
 
 import java.io.Closeable;
-import java.util.Iterator;
 import java.util.Properties;
 import java.util.ServiceLoader;
 
@@ -40,7 +39,7 @@ import java.util.ServiceLoader;
  *
  * @author Jens Wilke
  */
-public abstract class CacheManager implements Iterable<Cache>, Closeable {
+public abstract class CacheManager implements Closeable {
 
   static protected final Cache2kCoreProvider PROVIDER;
 
@@ -147,27 +146,11 @@ public abstract class CacheManager implements Iterable<Cache>, Closeable {
   public abstract boolean isDefaultManager();
 
   /**
-   * Return the effective default configuration for this manager. A different default
-   * configuration may be provided by the configuration system.
-   *
-   * @return mutable configuration instance containing the effective configuration defaults, never {@code null}
-   */
-  public abstract Cache2kConfiguration getDefaultConfiguration();
-
-  /**
    * The name to uniquely identify the manager within a VM instance.
    *
    * @see CacheManager#getInstance(String)
    */
   public abstract String getName();
-
-  /**
-   * Returns all caches that were not closed before. If the cache manager is closed by itself, always
-   * returns nothing.
-   *
-   * @deprecated use {@link #getActiveCaches()}
-   */
-  public abstract Iterator<Cache> iterator();
 
   /**
    * Returns all caches created in this cache manager instance.

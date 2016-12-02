@@ -48,19 +48,36 @@ public interface Cache2kCoreProvider {
   CacheManager getManager(ClassLoader cl, String _name);
 
   /**
-   *
+   * Default class loader, this is the class loader used to load the cache implementation.
    */
   ClassLoader getDefaultClassLoader();
 
+  /**
+   * Close all cache2k cache managers.
+   */
   void close();
 
+  /**
+   * Close all cache manager associated to this class loader.
+   */
   void close(ClassLoader l);
 
-  void close(ClassLoader l, String _name);
+  /**
+   * Close a specific cache manager by its name.
+   */
+  void close(ClassLoader l, String managerName);
 
   /**
    * Create a cache, apply external configuration before creating it.
    */
   <K,V> Cache<K,V> createCache(CacheManager m, Cache2kConfiguration<K,V> cfg);
+
+  /**
+   * Return the effective default configuration for this manager. A different default
+   * configuration may be provided by the configuration system.
+   *
+   * @return mutable configuration instance containing the effective configuration defaults, never {@code null}
+   */
+  Cache2kConfiguration getDefaultConfiguration(CacheManager m);
 
 }

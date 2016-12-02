@@ -20,12 +20,12 @@ package org.cache2k.jcache.provider;
  * #L%
  */
 
-import org.cache2k.Cache2kBuilder;
 import org.cache2k.CacheEntry;
 import org.cache2k.configuration.Cache2kConfiguration;
 import org.cache2k.configuration.CacheType;
 import org.cache2k.configuration.CustomizationReferenceSupplier;
 import org.cache2k.core.Cache2kCoreProviderImpl;
+import org.cache2k.core.CacheManagerImpl;
 import org.cache2k.core.InternalCache2kBuilder;
 import org.cache2k.integration.CacheWriter;
 import org.cache2k.integration.ExceptionPropagator;
@@ -99,7 +99,7 @@ public class JCacheBuilder<K,V> {
       config = _cfgCopy;
     }
     if (cache2kConfiguration == null) {
-      cache2kConfiguration = manager.getCache2kManager().getDefaultConfiguration();
+      cache2kConfiguration = CacheManagerImpl.PROVIDER.getDefaultConfiguration(manager.getCache2kManager());
       if (cfg instanceof ExtendedMutableConfiguration) {
         ((ExtendedMutableConfiguration) cfg).setCache2kConfiguration(cache2kConfiguration);
       }

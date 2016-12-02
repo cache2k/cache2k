@@ -70,7 +70,7 @@ import java.util.concurrent.TimeUnit;
  * @author Jens Wilke
  * @since 1.0
  */
-public class Cache2kBuilder<K, V> implements Cloneable {
+public class Cache2kBuilder<K, V> {
 
   private static final String MSG_NO_TYPES = "Use Cache2kBuilder.forUnknownTypes(), to construct a builder with no key and value types";
 
@@ -152,7 +152,7 @@ public class Cache2kBuilder<K, V> implements Cloneable {
       if (manager == null) {
         manager = CacheManager.getInstance();
       }
-      config = manager.getDefaultConfiguration();
+      config = CacheManager.PROVIDER.getDefaultConfiguration(manager);
       if (keyType != null) {
         config.setKeyType(keyType);
       }
@@ -665,6 +665,15 @@ public class Cache2kBuilder<K, V> implements Cloneable {
     return this;
   }
 
+  /**
+   * Returns the configuration object this builder operates on. Changes to the configuration also
+   * will influence the created cache when {@link #build()} is called. The method does not
+   * return the effective configuration if additional external/XML configuration is present, since
+   * this is applied when {@code build} is called. On the other hand, the method can be used
+   * to inspect the effective configuration after {@code build} completed.
+   *
+   * @return configuration objects with the parameters set in the builder.
+   */
   public final Cache2kConfiguration<K,V> toConfiguration() {
     return config();
   }

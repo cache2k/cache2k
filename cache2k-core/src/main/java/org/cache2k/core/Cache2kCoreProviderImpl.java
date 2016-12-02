@@ -186,14 +186,14 @@ public class Cache2kCoreProviderImpl implements Cache2kCoreProvider {
   }
 
   @Override
-  public void close(ClassLoader cl, String _name) {
+  public void close(ClassLoader cl, String managerName) {
     if (cl == null) {
       cl = getDefaultClassLoader();
     }
     CacheManager cm;
     Map<String, CacheManager> map = loader2name2manager.get(cl);
     if (map == null) { return; }
-    cm = map.get(_name);
+    cm = map.get(managerName);
     if (cm == null) { return; }
     cm.close();
   }
@@ -209,6 +209,13 @@ public class Cache2kCoreProviderImpl implements Cache2kCoreProvider {
 
   public String getBuildNumber() {
     return buildNumber;
+  }
+
+  public Cache2kConfiguration getDefaultConfiguration(CacheManager mgr) {
+    if (CACHE_CONFIGURATION_PROVIDER != null) {
+      return CACHE_CONFIGURATION_PROVIDER.getDefaultConfiguration(mgr);
+    }
+    return new Cache2kConfiguration();
   }
 
 }

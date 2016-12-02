@@ -294,9 +294,9 @@ public class Cache2kBuilderTest {
       .manager(cm)
       .name(_NAME)
       .build();
-    assertEquals(c, cm.iterator().next());
+    assertEquals(c, cm.getActiveCaches().iterator().next());
     c.close();
-    assertFalse(cm.iterator().hasNext());
+    assertFalse(cm.getActiveCaches().iterator().hasNext());
   }
 
   @Test
@@ -308,9 +308,9 @@ public class Cache2kBuilderTest {
       .name(_NAME);
     StaticUtil.enforceWiredCache(_builder);
     Cache c = _builder.build();
-    assertEquals(c, cm.iterator().next());
+    assertEquals(c, cm.getActiveCaches().iterator().next());
     c.close();
-    assertFalse(cm.iterator().hasNext());
+    assertFalse(cm.getActiveCaches().iterator().hasNext());
   }
 
   static class BuildCacheInConstructor0 {

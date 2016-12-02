@@ -28,6 +28,7 @@ import org.cache2k.configuration.Cache2kConfiguration;
 import org.cache2k.core.spi.CacheLifeCycleListener;
 import org.cache2k.core.spi.CacheManagerLifeCycleListener;
 import org.cache2k.core.util.Log;
+import org.cache2k.spi.Cache2kCoreProvider;
 
 import java.lang.reflect.Array;
 import java.util.ArrayList;
@@ -46,6 +47,8 @@ import java.util.concurrent.ExecutionException;
  */
 @SuppressWarnings("WeakerAccess")
 public class CacheManagerImpl extends CacheManager {
+
+  public static final Cache2kCoreProvider PROVIDER = CacheManager.PROVIDER;
 
   private static final Iterable<CacheLifeCycleListener> cacheLifeCycleListeners =
     constructAllServiceImplementations(CacheLifeCycleListener.class);
@@ -212,14 +215,6 @@ public class CacheManagerImpl extends CacheManager {
   }
 
   @Override
-  public Cache2kConfiguration getDefaultConfiguration() {
-    if (Cache2kCoreProviderImpl.CACHE_CONFIGURATION_PROVIDER != null) {
-      return Cache2kCoreProviderImpl.CACHE_CONFIGURATION_PROVIDER.getDefaultConfiguration(this);
-    }
-    return new Cache2kConfiguration();
-  }
-
-  @Override
   public String getName() {
     return name;
   }
@@ -227,11 +222,6 @@ public class CacheManagerImpl extends CacheManager {
   @Override
   public Iterable<Cache> getActiveCaches() {
     return cachesCopy();
-  }
-
-  @Override
-  public Iterator<Cache> iterator() {
-    return cachesCopy().iterator();
   }
 
   private Iterable<Cache> cachesCopy() {
