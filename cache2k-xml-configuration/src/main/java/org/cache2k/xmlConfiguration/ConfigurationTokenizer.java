@@ -21,6 +21,9 @@ package org.cache2k.xmlConfiguration;
  */
 
 /**
+ * The configuration tokenizer reads in a text representation of a configuration in a tokenized
+ * form. This abstracts the actual representation and makes it possible to not support only XML.
+ *
  * @author Jens Wilke
  */
 public interface ConfigurationTokenizer extends SourceLocation {

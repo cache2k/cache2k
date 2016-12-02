@@ -22,8 +22,11 @@ package org.cache2k.configuration;
 
 /**
  * If the configuration bean has additional sub configuration beans, then it implements this interface.
+ * Section are essentially Java beans. The mechanism is intended to allow extension modules to come with
+ * an additional configuration, but, at the same time, do not let the core API depend on it.
  *
  * @author Jens Wilke
+ * @see org.cache2k.Cache2kBuilder#with(ConfigurationSectionBuilder[])
  */
 public interface ConfigurationWithSections {
 

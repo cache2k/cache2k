@@ -29,6 +29,7 @@ import java.util.List;
  * and checks that one type is only added once.
  *
  * @author Jens Wilke
+ * @see ConfigurationWithSections
  */
 public class ConfigurationSectionContainer implements Iterable<ConfigurationSection> {
 

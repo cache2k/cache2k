@@ -583,6 +583,8 @@ public class Cache2kBuilder<K, V> implements Cloneable {
 
   /**
    * Add a new configuration sub section.
+   *
+   * @see org.cache2k.configuration.ConfigurationWithSections
    */
   public final Cache2kBuilder<K, V> with(ConfigurationSectionBuilder<? extends ConfigurationSection>... sectionBuilders) {
     for (ConfigurationSectionBuilder<? extends ConfigurationSection> b : sectionBuilders) {
