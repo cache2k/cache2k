@@ -98,7 +98,6 @@ public class CacheManagerImpl extends CacheManager {
   private boolean defaultManager;
   private Cache2kCoreProviderImpl provider;
   private boolean closing;
-  private Exception closeStackTrace;
 
   public CacheManagerImpl(Cache2kCoreProviderImpl _provider, ClassLoader cl, String _name, boolean _default) {
     provider = _provider;
@@ -289,7 +288,6 @@ public class CacheManagerImpl extends CacheManager {
       }
       _caches = cachesCopy();
       closing = true;
-      closeStackTrace = new StackTrace();
     }
     logPhase("close");
     List<Throwable> _suppressedExceptions = new ArrayList<Throwable>();
@@ -377,7 +375,6 @@ public class CacheManagerImpl extends CacheManager {
 
   private void checkClosed() {
     if (closing) {
-      log.warn("CacheManager already closed => closing stack trace", closeStackTrace);
       throw new IllegalStateException("CacheManager already closed");
     }
   }
