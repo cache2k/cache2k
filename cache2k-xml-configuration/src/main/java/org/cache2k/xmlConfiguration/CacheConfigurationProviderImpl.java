@@ -93,7 +93,7 @@ public class CacheConfigurationProviderImpl implements CacheConfigurationProvide
     }
     ParsedConfiguration _parsedTop = readManagerConfigurationWithExceptionHandling(mgr.getClassLoader(), getFileName(mgr));
     ParsedConfiguration _parsedCache = null;
-    ParsedConfiguration _section = extractCacheSection(_parsedTop);
+    ParsedConfiguration _section = extractCachesSection(_parsedTop);
     if (_section != null) { _parsedCache = _section.getSection(_cacheName); }
     if (_parsedCache == null) {
       if (ctx.isIgnoreMissingCacheConfiguration()) {
@@ -127,7 +127,7 @@ public class CacheConfigurationProviderImpl implements CacheConfigurationProvide
     return cfg;
   }
 
-  private ParsedConfiguration extractCacheSection(ParsedConfiguration pc) {
+  private ParsedConfiguration extractCachesSection(ParsedConfiguration pc) {
     ParsedConfiguration _cachesSection = pc.getSection("caches");
     if (_cachesSection == null) {
       return null;
