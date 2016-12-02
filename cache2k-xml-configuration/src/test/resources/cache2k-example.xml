@@ -18,40 +18,44 @@
   #L%
   -->
 <cache2k>
-
+  <!-- An configuration example for the documentation -->
   <version>1.0</version>
-  <defaultCacheManager>default</defaultCacheManager>
-  <skipCheckOnStartup>false</skipCheckOnStartup>
-  <ignoreAnonymousCache>false</ignoreAnonymousCache>
-  <ignoreMissingCacheConfiguration>false</ignoreMissingCacheConfiguration>
-
+  <defaultManagerName>default</defaultManagerName>
+  <skipCheckOnStartup>true</skipCheckOnStartup>
   <properties>
     <user>
-
+      <smallCacheCapacity>12_000</smallCacheCapacity>
+      <userHome>${ENV.HOME}</userHome>
     </user>
   </properties>
-
   <defaults>
     <cache>
-      <expireAfterWrite>13ms</expireAfterWrite>
+      <entryCapacity>100_000</entryCapacity>
     </cache>
   </defaults>
   <templates>
     <cache>
-      <name>template1</name>
-      <expireAfterWrite>13ms</expireAfterWrite>
+      <name>regularExpiry</name>
+      <expireAfterWrite>5m</expireAfterWrite>
     </cache>
     <cache>
-      <name>template2</name>
-      <expireAfterWrite>13ms</expireAfterWrite>
+      <name>lessResilient</name>
+      <resilienceDuration>1m</resilienceDuration>
     </cache>
   </templates>
   <caches>
     <cache>
-      <name>cache1</name>
+      <name>users</name>
+      <entryCapacity>${TOP.properties.user.smallCacheCapacity}</entryCapacity>
+      <loader>
+        <byClassName>
+          <className>org.example.MyLoader</className>
+        </byClassName>
+      </loader>
     </cache>
     <cache>
-      <name>cache2</name>
+      <name>products</name>
+      <include>regularExpiry,lessResilient</include>
     </cache>
   </caches>
 </cache2k>

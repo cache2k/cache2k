@@ -46,6 +46,12 @@
           <className>x.y.z</className>
         </bean>
       </loader>
+      <name>withLoaderShort</name>
+      <loader>
+        <supplyByClassName>
+          <className>org.example.MyLoader</className>
+        </supplyByClassName>
+      </loader>
       <listeners>
         <listener>
           <type>org.cache2k.configuration.CustomizationSupplierByClassName</type>

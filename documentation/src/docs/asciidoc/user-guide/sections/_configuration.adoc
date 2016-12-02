@@ -1,8 +1,117 @@
-== XML Configuration
+== Configuration via XML
 
-===
+cache2k supports an XML configuration file. The configuration file can contain additional settings that should
+not be "buried" inside the applications code.
 
-=== Types
+=== Using the XML Configuration
+
+When `cache2k-all` artifact is used the configuration via XML is included, otherwise the artifact
+`cache2k-xml-configuration` must be added as dependency. In a Java SE environment the default SAX parser
+is used. In an Android environment the XML pull parser is used. There are no additional dependencies to
+other libraries.
+
+If only one cache manager is used, a configuration file can be put at `/cache2k.xml` in the class path.
+Here is an example:
+
+[source,xml]
+----
+include::../../../../../../cache2k-xml-configuration/src/test/resources/cache2k-example.xml[]
+----
+
+=== Combine Programmatic and XML Configuration
+
+The XML configuration can provide a default setup and a specific setup for a named cache.
+The specific setup from the XML configuration is applied after setup from the builder, thus
+overwriting any defaults or settings via the builder from the program code.
+
+When a cache is created via the builder it needs to have mandatory properties on
+the programmatic level:
+
+- Type for key and value
+- Cache name
+- Manager with classloader, if another manager or classloader should be used
+
+It is recommended to do settings in the builder, that belong to the application code, for example:
+
+`eternal(true)`:: if no expiry is needed, in case the values are immutable or never change
+`eternal(false)`:: if entries need to expire, but no specific time is set on programmatic level
+`permitNullValues(true)`:: if the application needs to store `nulls` in the cache
+`storeByReference(true)`:: if the application relies on the fact that the objects are only
+                           stored in the heap and not copied.
+
+For example, the cache is created in the code with:
+
+[source,Java]
+----
+    Cache<String, String> b =
+      new Cache2kBuilder<String, String>(){}
+        .name("various")
+        .eternal(true)
+        .permitNullValues(true)
+        .build();
+----
+
+In the configuration file only the capacity is altered:
+
+[source,Java]
+----
+  <cache>
+    <name>various</name>
+    <entryCapacity>10K</entryCapacity>
+  </cache>
+----
+
+=== Reference Documentation
+
+==== File Location
+
+The configuration for the default cache manager (`CacheManager.getInstance()`) is searched via the
+class loader `/cache2k.xml`. If a different class loader is provided, that is used to look for a configuration.
+If multiple cache managers are used, each cache manager can have its own configuration, which is looked after at
+`/cache2k-${managerName}.xml`.
+
+==== Options
+
+Some options control how the configuration is interpreted.
+
+version:: Version which controls how the configuration is interpreted. Needed for possible
+          future changes. Always `1.0` at the moment.
+defaultManagerName:: Set another name for the default cache manager, default is `"default"`.
+ignoreAnonymousCache:: If true, allows cache without names. If a cache has no name
+                     a special configuration cannot be applied. The default is `false`,
+                     enforcing that all caches are named on the programmatic level.
+skipCheckOnStartup:: Do not check whether all cache configurations can be applied
+                     properly at startup. Default is `false`.
+
+==== Default Configuration
+
+A default configuration may be provided in `defaults.cache` (see example above). The defaults will be used
+for every cache created in the cache manager.
+
+==== Templates
+
+Multiple template configurations can be provided under `templates`. Templates have a name.
+In the cache configuration, a template can be included via `include`. Multiple templates can be included
+when separated with comma.
+
+Templates can be used for other configuration sections as well.
+
+==== Parameters
+
+The values may contain the parameters in the the style `${scope.name}`. A parameter name starts with a scope.
+Predefined scopes are:
+
+ENV:: environment variable, e.g. `${ENV.HOME}` is the user home directory.
+TOP:: references the configuration root, e.g. `${TOP.caches.flights.entryCapacity}` references the value of the
+      `entryCapacity` of the cache named `flights`.
+PROP:: a Java system property, e.g. `${PROP.java.home}` for the JDK installation directory.
+
+The scope prefix can also reference a parent element name. If the scope prefix is empty an value of the same level
+is references.
+
+A configuration can contain user defined properties in the `properties.user` section.
+
+==== Primitive Types
 
 The configuration supports basic types.
 
@@ -16,7 +125,7 @@ long,20_000MB,Long value with suffixes (see below)
 String,"alice",A string value
 ,===
 
-For additional convenience the long type supports a range of suffixes:
+For additional convenience the long type supports a unit suffix:
 
 [width="70",options="header"]
 ,===
@@ -36,13 +145,52 @@ d, 1000*60*60*24
 ,===
 
 A long value may also contain the character '_' for structuring. This character is ignored. Example: `12_000_000`.
+The unit suffix is intended to make the configuration more readable. There is no enforcement that a unit actually
+matches with the intended unit of the configuration value.
 
-=== Parameters
+==== Sections
 
-The values may contain the typical parameters in the the style `${name}`.
+The cache configuration may contain additional sections. At the moment only the section `jcache` is available
+which tweaks JCache semantics.
 
+==== Customizations
 
+Customizations, for example, loaders, expiry policy and listeners, may be configured. The simplest
+method is to specify a class name of the customization that gets created when the cache is build (see also example above).
 
-=== Default
+[source,XML]
+----
+  <loader>
+    <byClassName>
+      <className>org.example.MyLoader</className>
+    </byClassName>
+  </loader>
+----
 
-=== Templates
+I is also possible to implement an own `CustomizationSupplier` which can take additional parameters for additional
+configuration of the customization. In this case the `type` element is used to specify the supplier class.
+
+[source,XML]
+----
+  <loader>
+    <bean>
+      <type>org.exmample.LoaderSupplier</type>
+      <!-- Additional bean properties to set on the supplier follow. -->
+      <database>jdbc://....</database>
+    </bean>
+  </loader>
+----
+
+=== Rationale
+
+Most of the configuration processing is not limited to XML. The general structure of the configuration can
+be represented in YAML or JSON as well. This is why we do not use any XML attributes. Readers for
+other formats can implement the `ConfigurationTokenizer`.
+
+The configuration code is mostly generic and uses reflection. In case new properties or configuration classes
+are added, there is no need to update configuration code. This way the extra code for the XML configuration keeps
+small. Eventually we will separate the configuration into another project so is can be used by other applications or
+libraries with their configuration beans.
+
+The structure adheres to a strict scheme of `container.type.property.type.properties [ .type.property ...]`.
+This simplifies the processing and also leaves room for extensions.

@@ -17,7 +17,7 @@
   limitations under the License.
   #L%
   -->
-<cache2k-configuration>
+<cache2k>
 
   <version>1.0</version>
   <defaultManagerName>myApp</defaultManagerName>
@@ -25,6 +25,11 @@
   <ignoreMissingConfiguration>false</ignoreMissingConfiguration>
 
   <properties>
+    <!-- may be we add manager properties here later.
+    <manager>
+      <hello>123</hello>
+    </manager>
+    -->
     <user>
       <bigCacheCapacity>12000</bigCacheCapacity>
       <homeDirectory>${ENV.HOME}</homeDirectory>
@@ -129,4 +134,4 @@
 
   </caches>
 
-</cache2k-configuration>
+</cache2k>

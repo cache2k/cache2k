@@ -12,7 +12,7 @@ Compact and modular:: Keep a small core size, additional features may go in sepa
 
 List of current features:
 
- - The fastest cache (compared to other caches available to us), see http:/benchmarks[the benchmarks]
+ - The fastest cache (compared to other caches available to us), see link:/benchmarks[the benchmarks]
  - Java 6 and Android compatible
  - Leverages Java 8 to increase performance, when available
  - Portable Java code, no use of `sun.misc.Unsafe`
@@ -51,3 +51,5 @@ The documentation is intended as a overview guide through the functionality of c
 you to discover every important feature. At some points rationale or background
 information is given. It is not complete. You will find additional information in the API JavaDoc,
 in examples, and in the test cases.
+
+A PDF version of the documentations is available: link:user-guide.pdf[cache2k User Guide PDF Version].

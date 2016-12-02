@@ -1,3 +1,36 @@
 == Android
 
-TODO
+Cache2k is compatible with Java 6 and Android. Regular testing is done against API level 16.
+
+=== Usage
+
+Include the following dependencies:
+
+[source,xml]
+----
+    <dependency>
+      <groupId>org.cache2k</groupId>
+      <artifactId>cache2k-api</artifactId>
+      <version>${cache2k-version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.cache2k</groupId>
+      <artifactId>cache2k-core</artifactId>
+      <version>${cache2k-version}</version>
+      <scope>runtime</scope>
+    </dependency>
+----
+
+=== XML Configuration
+
+The XML configuration is usable for Android. The additional library needs to be included:
+
+[source,xml]
+----
+    <dependency>
+      <groupId>org.cache2k</groupId>
+      <artifactId>cache2k-xml-configuration</artifactId>
+      <version>${cache2k-version}</version>
+      <scope>runtime</scope>
+    </dependency>
+----

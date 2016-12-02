@@ -6,18 +6,18 @@ cache2k supports the JCache API standard. The implementation is compatible to th
 
 Additionally to the normal cache2k dependencies the following dependencies need to be added:
 
-[source,xml,subs="attributes+"]
+[source,xml]
 ----
     <dependency>
       <groupId>org.cache2k</groupId>
       <artifactId>cache2k-all</artifactId>
-      <version>${cache2k.version}</version>
+      <version>${cache2k-version}</version>
       <scope>runtime</scope>
     </dependency>
     <dependency>
       <groupId>org.cache2k</groupId>
       <artifactId>cache2k-jcache</artifactId>
-      <version>${cache2k.version}</version>
+      <version>${cache2k-version}</version>
       <scope>runtime</scope>
     </dependency>
     <dependency>
@@ -49,18 +49,18 @@ To create a JCache with an additional cache2k configuration the interface `Exten
 and the class `MutableExtendedConfiguration` is provided. The configuration classes are available in
 separate API packages, that need to be included in the compile scope:
 
-[source,xml,subs="attributes+"]
+[source,xml]
 ----
     <dependency>
       <groupId>org.cache2k</groupId>
       <artifactId>cache2k-api</artifactId>
-      <version>${cache2k.version}</version>
+      <version>${cache2k-version}</version>
       <scope>provided</scope>
     </dependency>
     <dependency>
       <groupId>org.cache2k</groupId>
       <artifactId>cache2k-jcache-api</artifactId>
-      <version>${cache2k.version}</version>
+      <version>${cache2k-version}</version>
     </dependency>
 ----
 
