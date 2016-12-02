@@ -177,4 +177,3 @@ which you should take a look on:
   * Andrius Velykis for his [maven reflow theme](http://andriusvelykis.github.io/reflow-maven-skin)
   * Maximilian Richt for customizing the reflow theme and polishing the cache2k.org site design
   * Dr. Song Jiang for support, [Hompage of Dr. Song Jiang](http://www.ece.eng.wayne.edu/~sjiang)
-  * Dawid Weiss for the [JUnit Benchmarks](http://labs.carrotsearch.com/junit-benchmarks.html) extension
