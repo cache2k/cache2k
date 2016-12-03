@@ -48,7 +48,7 @@ public abstract class CacheManager implements Closeable {
     ServiceLoader<Cache2kExtensionProvider> _loader =
       ServiceLoader.load(Cache2kExtensionProvider.class, CacheManager.class.getClassLoader());
     for (Cache2kExtensionProvider p : _loader) {
-      p.register();
+      p.registerCache2kExtension();
     }
   }
 

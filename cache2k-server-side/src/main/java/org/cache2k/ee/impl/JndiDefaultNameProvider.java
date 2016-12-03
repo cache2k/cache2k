@@ -32,7 +32,7 @@ import javax.naming.InitialContext;
 public class JndiDefaultNameProvider implements Cache2kExtensionProvider {
 
   @Override
-  public void register() {
+  public void registerCache2kExtension() {
     try {
       Context ctx = new InitialContext();
       ctx = (Context) ctx.lookup("java:comp/env");

@@ -22,13 +22,13 @@ package org.cache2k.spi;
 
 /**
  * Interface for a generic cache2k extension. The extension
- * {@link #register()} gets called before the first cache manager
+ * {@link #registerCache2kExtension()} gets called before the first cache manager
  * is constructed.
  *
- * @author Jens Wilke; created: 2014-10-10
+ * @author Jens Wilke
  */
 public interface Cache2kExtensionProvider {
 
-  void register();
+  void registerCache2kExtension();
 
 }
