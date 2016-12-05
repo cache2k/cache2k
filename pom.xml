@@ -13,6 +13,7 @@
   </description>
   <url>http://cache2k.org</url>
   <inceptionYear>2000</inceptionYear>
+
   <organization>
     <name>headissue GmbH, Munich</name>
     <url>http://headissue.com</url>
@@ -20,7 +21,7 @@
 
   <issueManagement>
     <system>GitHub</system>
-    <url>https://github.com/headissue/cache2k/issues</url>
+    <url>https://github.com/cache2k/cache2k/issues</url>
   </issueManagement>
 
   <licenses>
@@ -32,9 +33,9 @@
   </licenses>
 
   <scm>
-    <connection>scm:git:git@github.com:headissue/cache2k.git</connection>
-    <developerConnection>scm:git:git@github.com:headissue/cache2k.git</developerConnection>
-    <url>https://github.com/headissue/cache2k.git</url>
+    <connection>scm:git:git@github.com:cache2k/cache2k.git</connection>
+    <developerConnection>scm:git:git@github.com:cache2k/cache2k.git</developerConnection>
+    <url>https://github.com/cache2k/cache2k.git</url>
   </scm>
 
   <developers>
