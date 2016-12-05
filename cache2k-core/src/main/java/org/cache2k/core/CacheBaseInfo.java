@@ -20,6 +20,8 @@ package org.cache2k.core;
  * #L%
  */
 
+import org.cache2k.CacheManager;
+
 import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -292,50 +294,56 @@ class CacheBaseInfo implements InternalCacheInfo {
   }
 
   public String toString() {
-    return "Cache{" + heapCache.name + "}("
-            + "size=" + getSize() + ", "
-            + "capacity=" + (getHeapCapacity() != Long.MAX_VALUE ? getHeapCapacity() : "unlimited") + ", "
-            + "get=" + getGetCount() + ", "
-            + "miss=" + getMissCount() + ", "
-            + "put=" + getPutCount() + ", "
-            + "load=" + getLoadCount() + ", "
-            + "reload=" + getReloadCount() + ", "
-            + "heapHit=" + getHeapHitCount() + ", "
-            + "refresh=" + getRefreshCount() + ", "
-            + "refreshFailed=" + getRefreshFailedCount() + ", "
-            + "refreshedHit=" + getRefreshedHitCount() + ", "
-            + "loadException=" + getLoadExceptionCount() + ", "
-            + "suppressedException=" + getSuppressedExceptionCount() + ", "
-            + "new=" + getNewEntryCount() + ", "
-            + "expire=" + getExpiredCount() + ", "
-            + "remove=" + getRemoveCount() + ", "
-            + "clear=" + getClearCount() + ", "
-            + "removeByClear=" + getClearedEntriesCount() + ", "
-            + "evict=" + getEvictedCount() + ", "
-            + "timer=" + getTimerEventCount() + ", "
-            + "goneSpin=" + getGoneSpinCount() + ", "
-            + "hitRate=" + getHitRateString() + ", "
-            + "msecs/load=" + formatMillisPerLoad(getMillisPerLoad())  + ", "
-            + "asyncLoadsStarted=" + asyncLoadsStarted + ", "
-            + "asyncLoadsInFlight=" + asyncLoadsInFlight + ", "
-            + "loaderThreadsLimit=" + loaderThreadsLimit + ", "
-            + "loaderThreadsMaxActive=" + loaderThreadsMaxActive + ", "
-            + "created=" + timestampToString(getStartedTime()) + ", "
-            + "cleared=" + timestampToString(getClearedTime()) + ", "
-            + "infoCreated=" + timestampToString(getInfoCreatedTime()) + ", "
-            + "infoCreationDeltaMs=" + getInfoCreationDeltaMs() + ", "
-            + "collisions=" + getHashCollisionCount() + ", "
-            + "collisionSlots=" + getHashCollisionSlotCount() + ", "
-            + "longestSlot=" + getHashLongestSlotSize() + ", "
-            + "hashQuality=" + getHashQuality() + ", "
-            + "noCollisionPercent=" + getNoCollisionPercent() + ", "
-            + "impl=" + getImplementation() + ", "
-            + getExtraStatistics() + ", "
-            + "evictionRunning=" + getEvictionRunningCount() + ", "
-            + "keyMutation=" + getKeyMutationCount() + ", "
-            + "internalException=" + getInternalExceptionCount() + ", "
-            + "integrityState=" + getIntegrityDescriptor()
-      + ")";
+    StringBuilder sb = new StringBuilder();
+    sb.append("Cache{");
+    CacheManager cm = cache.getCacheManager();
+    if (!cache.getCacheManager().isDefaultManager()) {
+      sb.append(cm.getName()).append(':');
+    }
+    sb.append(heapCache.name).append("}(");
+    sb.append("size=").append(getSize()).append(", ")
+      .append("capacity=").append(getHeapCapacity() != Long.MAX_VALUE ? getHeapCapacity() : "unlimited").append(", ")
+      .append("get=").append(getGetCount()).append(", ")
+      .append("miss=").append(getMissCount()).append(", ")
+      .append("put=").append(getPutCount()).append(", ")
+      .append("load=").append(getLoadCount()).append(", ")
+      .append("reload=").append(getReloadCount()).append(", ")
+      .append("heapHit=").append(getHeapHitCount()).append(", ")
+      .append("refresh=").append(getRefreshCount()).append(", ")
+      .append("refreshFailed=").append(getRefreshFailedCount()).append(", ")
+      .append("refreshedHit=").append(getRefreshedHitCount()).append(", ")
+      .append("loadException=").append(getLoadExceptionCount()).append(", ")
+      .append("suppressedException=").append(getSuppressedExceptionCount()).append(", ")
+      .append("new=").append(getNewEntryCount()).append(", ")
+      .append("expire=").append(getExpiredCount()).append(", ")
+      .append("remove=").append(getRemoveCount()).append(", ")
+      .append("clear=").append(getClearCount()).append(", ")
+      .append("removeByClear=").append(getClearedEntriesCount()).append(", ")
+      .append("evict=").append(getEvictedCount()).append(", ")
+      .append("timer=").append(getTimerEventCount()).append(", ")
+      .append("goneSpin=").append(getGoneSpinCount()).append(", ")
+      .append("hitRate=").append(getHitRateString()).append(", ")
+      .append("msecs/load=").append(formatMillisPerLoad(getMillisPerLoad())).append(", ")
+      .append("asyncLoadsStarted=").append(asyncLoadsStarted).append(", ")
+      .append("asyncLoadsInFlight=").append(asyncLoadsInFlight).append(", ")
+      .append("loaderThreadsLimit=").append(loaderThreadsLimit).append(", ")
+      .append("loaderThreadsMaxActive=").append(loaderThreadsMaxActive).append(", ")
+      .append("created=").append(timestampToString(getStartedTime())).append(", ")
+      .append("cleared=").append(timestampToString(getClearedTime())).append(", ")
+      .append("infoCreated=").append(timestampToString(getInfoCreatedTime())).append(", ")
+      .append("infoCreationDeltaMs=").append(getInfoCreationDeltaMs()).append(", ")
+      .append("collisions=").append(getHashCollisionCount()).append(", ")
+      .append("collisionSlots=").append(getHashCollisionSlotCount()).append(", ")
+      .append("longestSlot=").append(getHashLongestSlotSize()).append(", ")
+      .append("hashQuality=").append(getHashQuality()).append(", ")
+      .append("noCollisionPercent=").append(getNoCollisionPercent()).append(", ")
+      .append("impl=").append(getImplementation()).append(", ")
+      .append(getExtraStatistics()).append(", ")
+      .append("evictionRunning=").append(getEvictionRunningCount()).append(", ")
+      .append("keyMutation=").append(getKeyMutationCount()).append(", ")
+      .append("internalException=").append(getInternalExceptionCount()).append(", ")
+      .append("integrityState=").append(getIntegrityDescriptor()).append(")");
+    return sb.toString();
   }
 
   static String formatMillisPerLoad(double val) {

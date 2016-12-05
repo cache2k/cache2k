@@ -20,8 +20,12 @@ package org.cache2k.test.core;
  * #L%
  */
 
+import org.cache2k.Cache;
 import org.cache2k.Cache2kBuilder;
+import org.cache2k.CacheManager;
 import org.cache2k.testing.category.FastTests;
+import static org.junit.Assert.*;
+import static org.hamcrest.Matchers.*;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
@@ -54,6 +58,15 @@ public class CacheNameTest {
   @Test
   public void spaceCharacter() {
     Cache2kBuilder.forUnknownTypes().name("CacheNameTest space").build().close();
+  }
+
+  @Test
+  public void managerNameInToString() {
+    final String _MANAGER_NAME = "managerNameInToString123";
+    CacheManager cm = CacheManager.getInstance(_MANAGER_NAME);
+    Cache c = Cache2kBuilder.forUnknownTypes().manager(cm).build();
+    assertThat(c.toString(), containsString(_MANAGER_NAME));
+    cm.close();
   }
 
 }
