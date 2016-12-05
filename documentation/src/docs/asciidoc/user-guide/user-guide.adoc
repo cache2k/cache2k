@@ -1,5 +1,6 @@
 = Cache2k User Guide
 Jens Wilke
+:cache2k_docs: https://cache2k.org/docs/stable
 :revnumber: {cache2kversion}
 :doctype: book
 :toc: left
