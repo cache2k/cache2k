@@ -119,7 +119,7 @@
     <menu name="Documentation" inherit="bottom">
       <item name="User Guide" href="/docs/stable/user-guide.html" />
       <item name="cache2k API" href="/docs/stable/apidocs/cache2k-api/index.html" />
-      <item name="cache2k JMX API" href="/docs/stable/apidocs/cache2k-api/index.html" />
+      <item name="cache2k JMX API" href="/docs/stable/apidocs/cache2k-jmx-api/index.html" />
       <item name="cache2k JCache API" href="/docs/stable/apidocs/cache2k-jcache-api/index.html" />
     </menu>
     <!--<menu name="Maven documentation" ref="reports" inherit="bottom"/>-->
