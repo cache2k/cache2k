@@ -274,27 +274,4 @@ public class JmxSupportTest {
     getCacheInfo(_name);
   }
 
-  @Test
-  public void cacheNameDisambiguation() {
-    final String _uniqueName =
-      this.getClass().getName() + ".cacheNameDisambiguation";
-    Log.SuppressionCounter sc = new Log.SuppressionCounter();
-    Log.registerSuppression(CacheManager.class.getName() + ":" + _uniqueName, sc);
-    CacheManager cm = CacheManager.getInstance(_uniqueName);
-    Cache c0 = Cache2kBuilder.forUnknownTypes()
-      .manager(cm)
-      .eternal(true)
-      .name(_uniqueName)
-      .build();
-    Cache c1 = Cache2kBuilder.forUnknownTypes()
-      .manager(cm)
-      .eternal(true)
-      .name(_uniqueName)
-      .build();
-    assertEquals("org.cache2k.ee.impl.JmxSupportTest.cacheNameDisambiguation~1", c1.getName());
-    c0.close();
-    c1.close();
-    assertEquals(2, sc.getWarnCount());
-  }
-
 }
