@@ -231,23 +231,26 @@ public class Cache2kBuilderTest {
   }
 
   @Test
-  public void cacheNameDisambiguation() {
-    String _managerName = getClass().getName() + ".cacheNameDisambiguation";
+  public void duplicateCacheName() {
+    String _managerName = getClass().getName() + ".duplicateCacheName";
     Log.registerSuppression(CacheManager.class.getName() + ":" + _managerName, new Log.SuppressionCounter());
     CacheManager mgr = CacheManager.getInstance(_managerName);
-    Cache c0 = Cache2kBuilder.forUnknownTypes()
-      .manager(mgr)
-      .eternal(true)
-      .name(this.getClass(), "cacheNameDisambiguation")
-      .build();
-    Cache c1 = Cache2kBuilder.forUnknownTypes()
-      .manager(mgr)
-      .eternal(true)
-      .name(this.getClass(), "cacheNameDisambiguation")
-      .build();
-    assertEquals(CLASSNAME + ".cacheNameDisambiguation~1", c1.getName());
-    c0.close();
-    c1.close();
+    try {
+      Cache c0 = Cache2kBuilder.forUnknownTypes()
+        .manager(mgr)
+        .eternal(true)
+        .name(this.getClass(), "same")
+        .build();
+      Cache c1 = Cache2kBuilder.forUnknownTypes()
+        .manager(mgr)
+        .eternal(true)
+        .name(this.getClass(), "same")
+        .build();
+      fail("exception expected");
+    } catch (IllegalArgumentException ex) {
+
+    }
+    mgr.close();
   }
 
   @Test(expected = IllegalStateException.class)

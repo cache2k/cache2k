@@ -91,8 +91,6 @@ public class CacheManagerImpl extends CacheManager {
   private Log log;
   private String name;
   private Map<String, InternalCache> cacheNames = new HashMap<String, InternalCache>();
-  private Set<Cache> caches = new HashSet<Cache>();
-  private int disambiguationCounter = 1;
   private final Properties properties = new Properties();
   private ClassLoader classLoader;
   private boolean defaultManager;
@@ -170,27 +168,19 @@ public class CacheManagerImpl extends CacheManager {
 
   /**
    *
-   * @throws IllegalStateException if cache manager was closed or is closeing
+   * @throws IllegalStateException if cache manager was closed or is closing
    */
   public String newCache(InternalCache c, String _requestedName) {
     synchronized (lock) {
       checkClosed();
       String _name = _requestedName;
-      while (cacheNames.containsKey(_name)) {
-        _name = _requestedName + "~" + Integer.toString(disambiguationCounter++, 36);
-      }
-      if (!_requestedName.equals(_name)) {
-        log.warn("duplicate name, disambiguating: " + _requestedName + " -> " + _name, new StackTrace());
-        if (name2CreationStackTrace != null) {
-          log.warn("initial creation of " + _requestedName, name2CreationStackTrace.get(_requestedName));
-        }
+      if (cacheNames.containsKey(_name)) {
+        throw new IllegalArgumentException("duplicate name: '" + _requestedName + "'");
       }
       checkName(_name);
-
       if (name2CreationStackTrace != null) {
         name2CreationStackTrace.put(_name, new StackTrace());
       }
-      caches.add(c);
       cacheNames.put(_name, c);
       return _name;
     }
@@ -200,10 +190,6 @@ public class CacheManagerImpl extends CacheManager {
   public void cacheDestroyed(Cache c) {
     synchronized (lock) {
       cacheNames.remove(c.getName());
-      if (name2CreationStackTrace != null) {
-        name2CreationStackTrace.remove(c.getName());
-      }
-      caches.remove(c);
       sendDestroyedEvent(c);
     }
   }
@@ -227,7 +213,7 @@ public class CacheManagerImpl extends CacheManager {
     Set<Cache> _caches = new HashSet<Cache>();
     synchronized (lock) {
       if (!isClosed()) {
-        for (Cache c : caches) {
+        for (Cache c : cacheNames.values()) {
           if (!c.isClosed()) {
             _caches.add(c);
           }
@@ -310,12 +296,11 @@ public class CacheManagerImpl extends CacheManager {
     }
     ((Cache2kCoreProviderImpl) PROVIDER).removeManager(this);
     synchronized (lock) {
-      for (Cache c : caches) {
+      for (Cache c : cacheNames.values()) {
         log.warn("unable to close cache: " + c.getName());
       }
     }
     eventuallyThrowException(_suppressedExceptions);
-    caches = null;
     cacheNames = null;
   }
 
@@ -363,7 +348,7 @@ public class CacheManagerImpl extends CacheManager {
 
   @Override
   public boolean isClosed() {
-    return caches == null;
+    return closing;
   }
 
   /**

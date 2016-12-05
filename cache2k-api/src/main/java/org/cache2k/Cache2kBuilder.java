@@ -682,6 +682,8 @@ public class Cache2kBuilder<K, V> {
    * Builds a cache with the specified configuration parameters.
    * The builder reused to build caches with similar or identical
    * configuration. The builder is not thread safe.
+   *
+   * @throws IllegalArgumentException if a cache of the same name is already active in the cache manager
    */
   public final Cache<K, V> build() {
     return CacheManager.PROVIDER.createCache(manager, config());
