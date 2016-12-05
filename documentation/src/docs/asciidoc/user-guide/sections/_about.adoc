@@ -40,7 +40,7 @@ Furthermore, a Tick-Tock scheme is used to mark development releases. Examples:
 1.0.1.Final:: Service release. Should be binary compatible to previous release.
 1.1.0.Beta:: *Odd minor version*, development version. A beta version may be used in production, but
  additional features may still change the API and may not completely tested.
-1.2.0:: *Even minor version*, stable release, new features and compatible changes to the previous version.
+1.2.0.Final:: *Even minor version*, stable release, new features and compatible changes to the previous version.
      Not be strictly binary compatible to the previous stable release. Interfaces not meant for
      extension may get new methods.
 2.0.0.Final:: New Major version, adds and removes features, maybe more incompatible changes to the previous version

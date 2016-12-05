@@ -30,12 +30,8 @@ import javax.cache.management.CacheStatisticsMXBean;
  */
 public class CacheJmxStatistics implements CacheStatisticsMXBean {
 
-  InternalCache cache;
-  JCacheAdapter adapter;
-
-  InternalCacheInfo getInfo() {
-    return adapter.flushJmxStatistics ? cache.getLatestInfo() : cache.getInfo();
-  }
+  private InternalCache cache;
+  private JCacheAdapter adapter;
 
   public CacheJmxStatistics(JCacheAdapter _cache) {
     cache = _cache.cacheImpl;
@@ -44,7 +40,7 @@ public class CacheJmxStatistics implements CacheStatisticsMXBean {
 
   @Override
   public void clear() {
-
+    cache.clear();
   }
 
   @Override
@@ -121,4 +117,9 @@ public class CacheJmxStatistics implements CacheStatisticsMXBean {
   public float getAverageRemoveTime() {
     return 0;
   }
+
+  private InternalCacheInfo getInfo() {
+    return adapter.flushJmxStatistics ? cache.getLatestInfo() : cache.getInfo();
+  }
+
 }

@@ -143,7 +143,7 @@ mode has various advantages:
 - Automatic refreshing of expired values (refresh ahead)
 - Build-in exception handling like suppression and retries (see Resilience chapter)
 
-=== Null Values
+=== Using Null Values
 
 The simple example has a major design problem. What happens if no airline is found? Typically caches don't allow
 `null` values. When you try to store or load a `null` value into cache2k you will get a `NullPointerException`.
@@ -151,9 +151,9 @@ Sometimes it is better to avoid `null` values, in our example we could return a 
  be empty.
 
 In case a `null` value is the best choice, it is possible to store it in cache2k by enabling it with
-`permitNullValues(true)`. More on nulls, see the separate chapter.
+`permitNullValues(true)`. See the <<null,Null Values chapter>> for more details.
 
-=== Keys
+=== Composite Keys
 
 In the example the key is constructed by concatenating the origin and destination airport. This is ineffective for
 several reasons. The string concatenation allocates two temporary objects (the `StringBuilder` and
@@ -199,6 +199,8 @@ is to define a dedicated class for the cache key that is a tuple of origin and d
 
 Cache keys needs to define a proper `hashCode` and `equals` method.
 
+=== Keys Need to be Immutable
+
 [IMPORTANT]
 .Don't mutate keys
 ====
@@ -211,7 +213,7 @@ The above isn't special to caching or cache2k, it applies identically when using
 
 === Mutating Values
 
-It is illegal to mutate a cached value instance after stored in the cache, unless `storeByReference`
+It is illegal to mutate a cached value after stored in the cache, unless `storeByReference`
  is enabled. This parameter instructs the cache to keep all cached values inside the heap.
 
 Background: cache2k stores its values in the Java heap by the object reference. This means
@@ -224,9 +226,9 @@ results.
 
 When using read through and a global expiry time (`expireAfterWrite`) is set, exceptions
 will be cached and/or suppressed. A cached exception will be rethrown every time the
- key is accessed and after some time, shorter then the expiry time, the loader will
- be called again. A cached exception can be detected by containing the expiry time
- in the exception text, for example:
+key is accessed and after some time, shorter then the expiry time, the loader will
+be called again. A cached exception can be detected by containing the expiry time
+in the exception text, for example:
 
 ----
 `org.cache2k.integration.CacheLoaderException: expiry=2016-06-04 06:08:14.967, cause: java.lang.NullPointerException`
@@ -234,8 +236,8 @@ will be cached and/or suppressed. A cached exception will be rethrown every time
 
 Cached exceptions can be misleading, because you may see 100 exceptions in your log, but only
 one was generated from the loader. When a previous value is available a subsequent loader exception
-is suppressed an exception for a short time. For more details on this behavior see the *Resilience*
-chapter.
+is suppressed an exception for a short time. For more details on this behavior see the <<resilience,Resilience
+chapter>>.
 
 === Don't Panic!
 

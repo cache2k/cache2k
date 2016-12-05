@@ -64,7 +64,9 @@ public interface InternalCache<K, V> extends Cache<K, V>, CanCheckIntegrity {
   InternalCacheInfo getInfo();
 
   /**
-   * Generate fresh statistics. This version is used by internal tests.
+   * Generate fresh statistics. This version is used by internal tests. This method
+   * is not intended to be called at high frequencies or for attaching monitoring or logging.
+   * Use the {@link #getInfo} method for requesting information for monitoring.
    */
   InternalCacheInfo getLatestInfo();
 

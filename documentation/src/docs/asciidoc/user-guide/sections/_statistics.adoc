@@ -1,0 +1,96 @@
+== Statistics
+[[statistics]]
+
+=== JMX Metrics
+
+When using the `cache2k-all` artifact for runtime, JMX support ist available. Otherwise the additional
+`cache2k-server-side` artifact needs to be added as dependency.
+
+The magement beans are registered with the platform MBean server. The object name of a cache follows the
+pattern `org.cache2k:type=Cache,manager=<managerName>,name=<cacheName>`, the object name of a cache manager
+follows the pattern `org.cache2k:type=CacheManager,name=<managerName>`.
+
+More detailed information can be found in the API documentation:
+
+- link:apidocs/cache2k-jmx-api/index.html?org/cache2k/jmx/CacheInfoMXBean.html[MXBean for the cache]
+- link:apidocs/cache2k-jmx-api/index.html?org/cache2k/jmx/CacheManagerInfoMXBean.html[MXBean for the cache manager]
+
+==== Conflicting Manager Names in JMX
+
+Multiple cache managers with the identical name may coexist under different class loaders. With JMX enabled, this
+will lead to identical JMX objects and refusal of operation. A workaround is to use unique cache manager names.
+The name of the default manager, which is usually `"default"` can be changed via the XML configuration, JNDI or
+a call to `CacheManager.setDefaultName` early in the application startup.
+
+=== `toString()` Output
+
+The output of the `toString()` method is extensive and also includes internal statistics. Example:
+
+----
+Cache{database}(size=50003, capacity=50000, get=102876307, miss=1513517, put=0, load=4388352, reload=0, heapHit=101362790, refresh=2874835, refreshFailed=42166, refreshedHit=2102885, loadException=0, suppressedException=0, new=1513517, expire=587294, remove=8156, clear=0, removeByClear=0, evict=868064, timer=3462129, goneSpin=0, hitRate=98.52%, msecs/load=0.425, asyncLoadsStarted=2874835, asyncLoadsInFlight=0, loaderThreadsLimit=8, loaderThreadsMaxActive=8, created=2016-12-02 03:41:34.367, cleared=-, infoCreated=2016-12-02 14:34:34.503, infoCreationDeltaMs=21, collisions=8288, collisionSlots=7355, longestSlot=5, hashQuality=83, noCollisionPercent=83, impl=HeapCache, eviction0(impl=ClockProPlusEviction, chunkSize=11, coldSize=749, hotSize=24252, hotMaxSize=24250, ghostSize=12501, coldHits=11357227, hotHits=38721511, ghostHits=294065, coldRunCnt=444807, coldScanCnt=698524, hotRunCnt=370773, hotScanCnt=2820434), eviction1(impl=ClockProPlusEviction, chunkSize=11, coldSize=778, hotSize=24224, hotMaxSize=24250, ghostSize=12501, coldHits=11775594, hotHits=39508458, ghostHits=283324, coldRunCnt=423258, coldScanCnt=674762, hotRunCnt=357457, hotScanCnt=2689129), evictionRunning=0, keyMutation=0, internalException=0, integrityState=0.17.a6c585b1)
+----
+
+[WARNING]
+====
+Do to the internal organization of the internal data structures retrieving statistics is a very costly
+operation, since it involves scanning through the cache content.
+====
+
+[WARNING]
+====
+The output of `toString()` may change between releases. It should give valuable information for debugging,
+but it shouldn't be consumed by application logic.
+====
+
+=== Accuracy, Overhead and Performance
+
+The statistics gathering has a very low operational overhead and is enabled by default. Obtaining the statistics
+is a costly operation, since the cache needs to aggregate counters of all cache entries.
+
+Since high poll frequencies on the statistic values may produce a high system load, the cache has
+countermeasures and only aggregates new data after some time has passed. The `toString` output and the JMX bean
+contains the timestamp `infoCreated` and the value `infoCreationDeltaMs` to get more insight in this behavior.
+
+The switch `disableStatistics` disables some statistic values that have a significant overhead, for example the
+counter for misses or updates.
+
+The metric `getCount` is not totally accurate and may count fewer accesses depending on the amount of concurrency.
+The implementation uses a dirty counter per cache entry. The counter is used for the eviction as well, thus the
+access statistics are a by-product. The error is relatively small. Future releases may contain the option to
+obtain precise statistics.
+
+=== Internal Statistics
+
+The cache implementation a lot statistics counters, which are exposed in an internal interface. This
+can be revealed via `((InternalCache) cache).getInfo()` and needs the `cache2k-core` artifact in the compile scope.
+Please mind that an application relying on an internal interface may break from release to release. Usage
+should be limited.
+
+=== Noteworthy Metrics
+
+Some special metrics need some more explanation.
+
+==== Hash Quality
+
+The is a single value between 100 and 0 to help evaluate the quality of the hashing function.
+100 means perfect. This metric takes into account the collision to size ratio, the longest collision size
+and the collision to slot ratio. The value reads 0 if the longest collision size gets more
+then 20.
+
+The number of collisions and the longest size of a collision slot are also available via JMX.
+
+==== Key Mutation Counter
+
+Storing objects by reference means it is possible for the application to alter the object
+value after it was involved in a cache operation. In case of the key object, this means that the
+internal data structure of the cache will be invalid after an illegal mutation.
+
+Within the cache eviction a key mutation is detected. The counter is incremented and a warning
+is written to the log. Per cache the warning is only logged once.
+
+Whenever `keyMutationCount` is non-zero, check and correct your application.
+
+==== Alert
+
+The cache as well as the cache manager have a single value health status which is intended for
+systems monitoring. The value 0 means everything is okay, 1 means warning, 2 means failure.

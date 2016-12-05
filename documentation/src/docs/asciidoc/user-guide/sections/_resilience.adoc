@@ -1,4 +1,5 @@
 == Exceptions and Resilience
+[[resilence]]
 
 In a read through configuration the cache can tolerate temporary loader failures.
 The write trough does not provide resilience capabilities at the moment, which means

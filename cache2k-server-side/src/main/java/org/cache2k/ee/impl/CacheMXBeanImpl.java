@@ -33,7 +33,7 @@ import java.util.Iterator;
  */
 public class CacheMXBeanImpl implements CacheMXBean {
 
-  InternalCache cache;
+  private InternalCache cache;
 
   @Override
   public String getKeyType() {

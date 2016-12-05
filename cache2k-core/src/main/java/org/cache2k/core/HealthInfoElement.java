@@ -24,6 +24,8 @@ package org.cache2k.core;
  * Describes a single problem of a cache, for example a bad hash quality.
  * A collection of these element comprise the complete health information.
  *
+ * <p>Preparation to
+ *
  * @author Jens Wilke
  */
 public interface HealthInfoElement {
