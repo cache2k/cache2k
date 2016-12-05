@@ -27,7 +27,7 @@ package org.cache2k.processor;
  *
  * <p>With the entry processor it is possible to realize arbitrary operation
  * semantics for an entry. For example, the method {@link org.cache2k.Cache#replaceIfEquals}
- * can be formulated with the entry processor as follows:
+ * can be expressed with the entry processor as follows:
  *
  *  <pre> {@code
  *

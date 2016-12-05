@@ -23,6 +23,7 @@ package org.cache2k.processor;
 /**
  * Result tuple for {@code Cache.invokeAll()}.
  *
+ * @see EntryProcessor
  * @see org.cache2k.Cache#invokeAll
  * @author Jens Wilke
  */
