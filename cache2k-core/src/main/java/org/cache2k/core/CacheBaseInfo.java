@@ -296,7 +296,7 @@ class CacheBaseInfo implements InternalCacheInfo {
   public String toString() {
     StringBuilder sb = new StringBuilder();
     sb.append("Cache{");
-    CacheManager cm = cache.getCacheManager();
+    CacheManagerImpl cm = (CacheManagerImpl) (cache.getCacheManager());
     if (!cache.getCacheManager().isDefaultManager()) {
       sb.append(cm.getName()).append(':');
     }
@@ -342,7 +342,8 @@ class CacheBaseInfo implements InternalCacheInfo {
       .append("evictionRunning=").append(getEvictionRunningCount()).append(", ")
       .append("keyMutation=").append(getKeyMutationCount()).append(", ")
       .append("internalException=").append(getInternalExceptionCount()).append(", ")
-      .append("integrityState=").append(getIntegrityDescriptor()).append(")");
+      .append("integrityState=").append(getIntegrityDescriptor()).append(", ")
+      .append("version=").append(cm.getProvider().getVersion()).append(")");
     return sb.toString();
   }
 
