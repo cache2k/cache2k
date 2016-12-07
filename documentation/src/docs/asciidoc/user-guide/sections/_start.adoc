@@ -106,7 +106,7 @@ and find the airline we liked the most. If we never did fly on that route it ask
 
 The above pattern is called _cache aside_.
 
-=== Loading / Read Through
+=== Read Through
 
 An alternative way to use the cache is the so called _read through_ operation. The cache configuration
 gets extended by a loader, so the cache knows how to retrieve missing values.
