@@ -76,6 +76,7 @@
         <column>Main</column>
         <column>Contribute</column>
         <column>Documentation</column>
+        <column>Legal</column>
         <!--<column>reports</column>-->
       </bottomNav>
 
