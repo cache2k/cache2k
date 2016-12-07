@@ -1,8 +1,7 @@
 # cache2k – High Performance Java Caching
 
 cache2k focuses on providing a well engineered in-memory object cache implementation for
-Java applications. The implementation leads back to a project started in 2000, hence
-the name cache2k.
+Java applications. 
 
 ## Features at a glance
 
@@ -10,38 +9,32 @@ The main goal is a small footprint cache implementation.
 
  * One of the fastest cache for JVM local caching, see [the benchmarks page](benchmarks.html)
  * Java 6 and Android compatible
- * Leverages Java 8 to increase performance, when available
+ * Leverages Java 8 to increase performance (when available)
  * Portable Java code, no use of `sun.misc.Unsafe`
- * Resilience: Smart exception handling
- * Null value support
- * Expiry: duration or point in time
- * Variable expiry per entry
- * CacheLoader with blocking read through
+ * Resilience: Smart exception handling, see [User Guide - Exceptions and Resilience](docs/stable/user-guide.html#exceptions-and-resilience)
+ * Null value support, see [User Guide - Null Values](docs/stable/user-guide.html#null-values)
+ * Expiry: duration or point in time, variable expiry per entry, delta calculations, see [Expiry and Refresh](docs/stable/user-guide.html#expiry-and-refresh)
+ * CacheLoader with blocking read through, see [User Guide - Loading and Read Through](docs/stable/user-guide.html#loading-read-through)
  * CacheWriter
  * Events
- * Refresh ahead
+ * Refresh ahead, see [User Guide - Refresh Ahead](docs/stable/user-guide.html#refresh-ahead)
  * Build-in, efficient statistics
- * JMX support
+ * JMX support, see [User Guide - Statistics](docs/stable/user-guide.html#statistics)
  * Separate API with concise interface
- * JCache support
-
-## Status
-
-We use every cache2k release within production environments. However, some of the basic features
-are still evolving and there may be API breaking changes until we reach version 1.0.
+ * JCache support, see [User Guide - JCache documentation section](docs/stable/user-guide.html#jcache)
 
 ## Road map
 
-  * _1.0_, finalize JSR107 JCache support, stabilize API, documentation
   * _1.2_, improve Bulk performance, reduce threads needed for timing
   * _1.4_, async support
   * _1.6_, persistence and off-heap features
   
-The road map represents a rough plan, the dates and features may change.
+The road map represents a rough plan.
 
 ## News
 
-  * **Version 0.28-BETA, 2016-09-02**: Minor bug fixes, SLF4J Support, statistics cleanup See [Version 0.28 release notes](0/28.html)
+  * **Version 1.0.0.CR1, 2016-12-05**: More cleanups, XML configuration has arrived. See [Version 1.0.CR1 release notes](1/0.0.CR1.html)
+  * **Version 0.28-BETA, 2016-09-02**: Minor bug fixes, SLF4J Support, statistics cleanup. See [Version 0.28 release notes](0/28.html)
   * **Version 0.27-BETA, 2016-07-26**: Performance improvements, leveraging Java 8, more API restructuring, cleanup and minor bug fixes. See [Version 0.27 release notes](0/27.html)
   * **Version 0.26-BETA, 2016-05-06**: Resilience policy, more API restructuring, cleanup and minor bug fixes. See [Version 0.26 release notes](0/26.html)
   * **Version 0.25-BETA, 2016-04-21**: API restructuring, expiry and asynchronous notifications. See [Version 0.25 release notes](0/25.html)
@@ -73,17 +66,21 @@ chacke2k is on maven central. If you use maven, add to your project pom:
     <groupId>org.cache2k</groupId>
     <artifactId>cache2k-api</artifactId>
     <version>${cache2k-version}</version>
+    <scope>provided</scope>
   </dependency>
   <dependency>
-      <groupId>org.cache2k</groupId>
-      <artifactId>cache2k-core</artifactId>
-      <version>${cache2k-version}</version>
-      <scope>runtime</scope>
+    <groupId>org.cache2k</groupId>
+    <artifactId>cache2k-all</artifactId>
+    <version>${cache2k-version}</version>
+    <scope>runtime</scope>
   </dependency>
 </dependencies>
 ```
 
-Please replace `${cache2k-version}` with the latest version. The cache2k-core 
+Please replace `${cache2k-version}` with the latest version. See 
+
+
+The cache2k-core 
 module is compatible with Java 6 environments including android.
 
 For Java enterprise applications, you can use a OSGi enabled bundle (cache2k-all) that contains everything in a single jar: 
