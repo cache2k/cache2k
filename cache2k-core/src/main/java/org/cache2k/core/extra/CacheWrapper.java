@@ -28,16 +28,14 @@ import org.cache2k.processor.EntryProcessingResult;
 import org.cache2k.CacheOperationCompletionListener;
 
 import java.util.Iterator;
-import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.concurrent.ConcurrentMap;
 
 /**
  * Wrap a cache and delegate all calls to it. This can be used to intercept methods calls, e.g. for
  * tracing or additional statistics counting, etc.
  */
-@SuppressWarnings({"unused", "deprecation"})
+@SuppressWarnings({"unused"})
 public class CacheWrapper<K,V> implements Cache<K, V> {
 
   Cache<K, V> cache;
@@ -72,18 +70,8 @@ public class CacheWrapper<K,V> implements Cache<K, V> {
   }
 
   @Override
-  public void prefetch(Iterable<? extends K> keys) {
-    cache.prefetch(keys);
-  }
-
-  @Override
   public void prefetchAll(Iterable<? extends K> keys) {
     cache.prefetchAll(keys);
-  }
-
-  @Override
-  public void prefetch(List<? extends K> keys, int _startIndex, int _afterEndIndex) {
-    cache.prefetch(keys, _startIndex, _afterEndIndex);
   }
 
   @Override
@@ -119,11 +107,6 @@ public class CacheWrapper<K,V> implements Cache<K, V> {
   @Override
   public CacheEntry<K, V> peekEntry(K key) {
     return cache.peekEntry(key);
-  }
-
-  @Override
-  public boolean contains(K key) {
-    return cache.contains(key);
   }
 
   @Override
@@ -180,11 +163,6 @@ public class CacheWrapper<K,V> implements Cache<K, V> {
   }
 
   @Override
-  public void removeAllAtOnce(Set<K> key) {
-    cache.removeAllAtOnce(key);
-  }
-
-  @Override
   public <R> R invoke(K key, EntryProcessor<K, V, R> entryProcessor) {
     return cache.invoke(key, entryProcessor);
   }
@@ -215,11 +193,6 @@ public class CacheWrapper<K,V> implements Cache<K, V> {
   }
 
   @Override
-  public int getTotalEntryCount() {
-    return cache.getTotalEntryCount();
-  }
-
-  @Override
   public Iterator<CacheEntry<K, V>> iterator() {
     return cache.iterator();
   }
@@ -242,21 +215,6 @@ public class CacheWrapper<K,V> implements Cache<K, V> {
   @Override
   public void removeAll() {
     cache.removeAll();
-  }
-
-  @Override
-  public void purge() {
-    cache.purge();
-  }
-
-  @Override
-  public void flush() {
-    cache.flush();
-  }
-
-  @Override
-  public void destroy() {
-    cache.destroy();
   }
 
   @Override

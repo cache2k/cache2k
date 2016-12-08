@@ -85,11 +85,6 @@ public abstract class AbstractCache<K, V> implements InternalCache<K, V> {
   }
 
   @Override
-  public void removeAllAtOnce(Set<K> _keys) {
-    throw new UnsupportedOperationException();
-  }
-
-  @Override
   public void removeAll() {
     for (CacheEntry<K, V> e : this) {
       remove(e.getKey());
@@ -123,16 +118,6 @@ public abstract class AbstractCache<K, V> implements InternalCache<K, V> {
 
   @Override
   public StorageAdapter getStorage() { return null; }
-
-  @Override
-  public void flush() {
-
-  }
-
-  @Override
-  public void purge() {
-
-  }
 
   @Override
   public <R> Map<K, EntryProcessingResult<R>> invokeAll(Iterable<? extends K> keys, EntryProcessor<K, V, R> entryProcessor) {
@@ -197,23 +182,8 @@ public abstract class AbstractCache<K, V> implements InternalCache<K, V> {
   }
 
   @Override
-  public void prefetch(final List<? extends K> keys, final int _startIndex, final int _endIndexExclusive) {
-    prefetch(keys.subList(_startIndex, _endIndexExclusive));
-  }
-
-  @Override
-  public void prefetch(final Iterable<? extends K> keys) {
-    prefetchAll(keys);
-  }
-
-  @Override
   public StorageMetrics getStorageMetrics() {
     return StorageMetrics.DUMMY;
-  }
-
-  @Override
-  public boolean contains(final K key) {
-    return containsKey(key);
   }
 
   @Override

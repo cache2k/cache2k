@@ -385,11 +385,6 @@ public class HeapCache<K, V>
     return closing;
   }
 
-  @Override
-  public void destroy() {
-    close();
-  }
-
   /**
    *
    * @throws CacheClosedException if cache is closed or closing is initiated by another thread.
@@ -1640,11 +1635,6 @@ public class HeapCache<K, V>
    */
   public final ConcurrentEntryIterator<K,V> iterateAllHeapEntries() {
     return new ConcurrentEntryIterator<K,V>(this);
-  }
-
-  @Override
-  public void removeAllAtOnce(Set<K> _keys) {
-    throw new UnsupportedOperationException();
   }
 
   /**

@@ -199,11 +199,6 @@ public interface Cache<K, V> extends
   void prefetch(CacheOperationCompletionListener listener, K key);
 
   /**
-   * @deprecated Renamed to {@link #prefetchAll}
-   */
-  void prefetch(Iterable<? extends K> keys);
-
-  /**
    * Notifies about the intend to retrieve the value for the keys in the
    * near future. See {@link #prefetch(Object)} for detailed explanation.
    *
@@ -230,11 +225,6 @@ public interface Cache<K, V> extends
    * @param listener A listener that gets notified when the prefetch operation is finished
    */
   void prefetchAll(CacheOperationCompletionListener listener, K... keys);
-
-  /**
-   * @deprecated use a sublist and {@link #prefetch(Iterable)}
-   */
-  void prefetch(List<? extends K> keys, int _startIndex, int _afterEndIndex);
 
   /**
    * Returns the value if it is mapped within the cache and it is not
@@ -281,11 +271,6 @@ public interface Cache<K, V> extends
    *          return different instances of the entry object.
    */
   CacheEntry<K, V> peekEntry(K key);
-
-  /**
-   * @deprecated use {@link #containsKey(Object)}
-   */
-  boolean contains(K key);
 
   /**
    * Returns true, if there is a mapping for the specified key.
@@ -536,14 +521,6 @@ public interface Cache<K, V> extends
   boolean removeIfEquals(K key, V expectedValue);
 
   /**
-   * This was for atomic removal of a bunch of entries. Not supported any more.
-   *
-   * @deprecated no replacement planed, will be removed
-   * @throws UnsupportedOperationException always throws exceptions
-   */
-  void removeAllAtOnce(java.util.Set<K> key);
-
-  /**
    * Removes a set of keys. This has the same semantics of calling
    * remove to every key, except that the cache is trying to optimize the
    * bulk operation.
@@ -755,42 +732,6 @@ public interface Cache<K, V> extends
    void putAll(Map<? extends K, ? extends V> valueMap);
 
   /**
-   * Will be removed. Returns always -1. Use the JMX bean.
-   */
-  @Deprecated
-  int getTotalEntryCount();
-
-  /**
-   * Iterate all entries in the cache.
-   *
-   * <p>Contract: All entries present in the cache by the call of the method call will
-   * be iterated if not removed during the iteration goes on. The iteration may or may not
-   * iterate entries inserted while the iteration is in progress. The iteration never
-   * iterates duplicate entries.
-   *
-   * <p>The iteration is usable concurrently. Concurrent operations will not be
-   * influenced. Mutations of the cache, like remove or put, will not stop the iteration.
-   *
-   * <p>The iterator itself is not thread safe. Calls to one iterator instance from
-   * different threads are illegal or need proper synchronization.
-   *
-   *
-   * <p>Statistics: Iteration is neutral to the cache statistics. Counting hits for iterated
-   * entries would effectively render the hitrate metric meaningless if iterations are used.
-   *
-   * <p>In case a storage (off heap or persistence) is attached the iterated entries are
-   * always inserted into the heap cache. This will affect statistics.
-   *
-   * <p>{@link Cache2kBuilder#refreshAhead(boolean)} is enabled there is a minimal chance
-   * that an entry in the cache will not be iterated if the iteration takes
-   * longer then the refresh/expiry time of one entry.
-   *
-   * @deprecated use {@link #keys()}
-   */
-  @Override
-  Iterator<CacheEntry<K, V>> iterator();
-
-  /**
    * Iterate all keys in the cache.
    *
    * <p>Contract: The iteration is usable while concurrent operations happen on the cache.
@@ -833,25 +774,6 @@ public interface Cache<K, V> extends
    * Clear the cache in a fast way, causing minimal disruption. Not calling the listeners.
    */
   void clear();
-
-  /**
-   * Remove persistent entries, that are not longer needed. Only has an effect
-   * if a storage is defined.
-   * @deprecated
-   */
-  void purge();
-
-  /**
-   * Ensure that any transient data is stored in the persistence storage.
-   * Nothing will be done if no persistent storage is configured.
-   * @deprecated
-   */
-  void flush();
-
-  /**
-   * @deprecated use {@link #close()}
-   */
-  void destroy();
 
   /**
    * This is currently identical to {@link Cache#close()}.

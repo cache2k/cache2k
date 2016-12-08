@@ -510,11 +510,6 @@ public class WiredCache<K, V> extends AbstractCache<K, V>
   }
 
   @Override
-  public void destroy() {
-    close();
-  }
-
-  @Override
   public boolean isClosed() {
     return heapCache.isClosed();
   }
@@ -542,20 +537,6 @@ public class WiredCache<K, V> extends AbstractCache<K, V>
       if (storage != null) {
         storage.cancelTimerJobs();
       }
-    }
-  }
-
-  @Override
-  public void purge() {
-    if (storage != null) {
-      storage.purge();
-    }
-  }
-
-  @Override
-  public void flush() {
-    if (storage != null) {
-      storage.flush();
     }
   }
 
