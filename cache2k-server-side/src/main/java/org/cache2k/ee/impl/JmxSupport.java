@@ -44,13 +44,13 @@ public class JmxSupport implements CacheLifeCycleListener, CacheManagerLifeCycle
 
   @Override
   public void cacheCreated(Cache c) {
-    MBeanServer mbs = ManagementFactory.getPlatformMBeanServer();
-    if (c instanceof InternalCache) {
+    InternalCache ic = (InternalCache) c;
+    if (!ic.getCommonMetrics().isDisabled()) {
+      MBeanServer mbs = ManagementFactory.getPlatformMBeanServer();
       String _name = standardName(c.getCacheManager(), c);
       try {
         mbs.registerMBean(
-          new CacheMXBeanImpl((InternalCache) c),
-          new ObjectName(_name));
+          new CacheMXBeanImpl(ic), new ObjectName(_name));
       } catch (InstanceAlreadyExistsException ignore) {
       } catch (Exception e) {
         throw new CacheException("register JMX bean, ObjectName: " + _name, e);
@@ -61,14 +61,12 @@ public class JmxSupport implements CacheLifeCycleListener, CacheManagerLifeCycle
   @Override
   public void cacheDestroyed(Cache c) {
     MBeanServer mbs = ManagementFactory.getPlatformMBeanServer();
-    if (c instanceof InternalCache) {
-      String _name = standardName(c.getCacheManager(), c);
-      try {
-        mbs.unregisterMBean(new ObjectName(_name));
-      } catch (InstanceNotFoundException ignore) {
-      } catch (Exception e) {
-        throw new CacheException("unregister JMX bean, ObjectName: " + _name, e);
-      }
+    String _name = standardName(c.getCacheManager(), c);
+    try {
+      mbs.unregisterMBean(new ObjectName(_name));
+    } catch (InstanceNotFoundException ignore) {
+    } catch (Exception e) {
+      throw new CacheException("unregister JMX bean, ObjectName: " + _name, e);
     }
   }
 

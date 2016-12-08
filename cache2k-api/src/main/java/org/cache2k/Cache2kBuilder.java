@@ -619,10 +619,8 @@ public class Cache2kBuilder<K, V> {
   }
 
   /**
-   * By default statistic gathering is enabled. Set true to disable statistics. Disabling statistics
-   * will minimize overhead and switch off any counters that are present for informational purposes only.
-   * Counters that don't have a significant overhead or are maintained in any case are still available.
-   * The setting doesn't affect whether JMX values are exposed or not.
+   * By default statistic gathering is enabled. Switching this to {@code true} will disable all statistics
+   * that have significant overhead. The cache will also no be accessible via JMX.
    */
   public final Cache2kBuilder<K,V> disableStatistics(boolean flag) {
     config().setDisableStatistics(flag);

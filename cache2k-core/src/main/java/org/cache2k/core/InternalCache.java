@@ -34,6 +34,8 @@ import org.cache2k.core.storageApi.StorageAdapter;
  */
 public interface InternalCache<K, V> extends Cache<K, V>, CanCheckIntegrity {
 
+  CommonMetrics getCommonMetrics();
+
   /** used from the cache manager */
   Log getLog();
 

@@ -1814,6 +1814,11 @@ public class HeapCache<K, V>
     return info;
   }
 
+  @Override
+  public CommonMetrics getCommonMetrics() {
+    return metrics;
+  }
+
   /** Internal marker object */
   private static final Object RESTART_AFTER_EVICTION = new Object();
 

@@ -238,6 +238,23 @@ public class JmxSupportTest {
     c.close();
   }
 
+  @Test
+  public void testDisabled() throws Exception {
+    String _name = getClass().getName() + ".testInitialProperties";
+    Cache c = new Cache2kBuilder<Long, List<Collection<Long>>> () {}
+      .name(_name)
+      .disableStatistics(true)
+      .eternal(true)
+      .build();
+    objectName = constructCacheObjectName(_name);
+    try {
+      retrieve("Alert");
+      fail("exception expected");
+    } catch (InstanceNotFoundException ex) {
+    }
+    c.close();
+  }
+
   private void checkAttribute(String _name, Object _expected) throws Exception {
     Object v = retrieve(_name);
     assertEquals("Value of attribute '" + _name + "'", _expected, v);

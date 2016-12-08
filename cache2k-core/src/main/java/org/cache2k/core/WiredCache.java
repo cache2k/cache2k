@@ -495,6 +495,11 @@ public class WiredCache<K, V> extends AbstractCache<K, V>
   }
 
   @Override
+  public CommonMetrics getCommonMetrics() {
+    return heapCache.getCommonMetrics();
+  }
+
+  @Override
   public void logAndCountInternalException(final String s, final Throwable t) {
     heapCache.logAndCountInternalException(s, t);
   }
