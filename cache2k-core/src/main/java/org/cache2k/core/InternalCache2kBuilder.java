@@ -21,9 +21,7 @@ package org.cache2k.core;
  */
 
 import org.cache2k.Cache2kBuilder;
-import org.cache2k.CacheBuilder;
 import org.cache2k.CacheEntry;
-import org.cache2k.CacheMisconfigurationException;
 import org.cache2k.configuration.CustomizationSupplier;
 import org.cache2k.event.CacheEntryCreatedListener;
 import org.cache2k.event.CacheEntryExpiredListener;
@@ -73,8 +71,7 @@ public class InternalCache2kBuilder<K, V> {
   }
 
   private static boolean isBuilderClass(String _className) {
-    return CacheBuilder.class.getName().equals(_className) ||
-        Cache2kBuilder.class.getName().equals(_className);
+    return Cache2kBuilder.class.getName().equals(_className);
   }
 
   private static String deriveNameFromStackTrace() {
@@ -125,7 +122,7 @@ public class InternalCache2kBuilder<K, V> {
     try {
       return (HeapCache<K, V>) cls.newInstance();
     } catch (Exception e) {
-      throw new CacheMisconfigurationException("Not able to instantiate cache implementation", e);
+      throw new IllegalArgumentException("Not able to instantiate cache implementation", e);
     }
   }
 

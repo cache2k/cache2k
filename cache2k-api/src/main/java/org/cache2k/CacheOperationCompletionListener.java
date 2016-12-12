@@ -23,10 +23,12 @@ package org.cache2k;
 import java.util.EventListener;
 
 /**
- * A listener implemented by the applications to get notifications after a
- * {@link Cache#loadAll} or (@link Cache#reload} has been completed.
+ * A listener implemented by the cache client to get notification about the
+ * completion of a load or prefetch operation.
  *
  * @author Jens Wilke
+ * @see Cache#loadAll(CacheOperationCompletionListener, Iterable)
+ * @see Cache#prefetchAll(CacheOperationCompletionListener, Iterable)
  */
 public interface CacheOperationCompletionListener extends EventListener {
 

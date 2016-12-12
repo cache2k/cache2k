@@ -23,9 +23,8 @@ package org.cache2k;
 import org.cache2k.expiry.ExpiryPolicy;
 
 /**
- * Wraps an exception that happened during processing of one entry, e.g. when the
- * {@link ExpiryPolicy} was throwing it. For async operations
- * these can happen on other threads, so we consequently wrap them.
+ * Wraps an exceptions thrown from a cache customization such as the
+ * {@link ExpiryPolicy} or {@link org.cache2k.integration.CacheLoader}.
  *
  * @author Jens Wilke
  */

@@ -333,7 +333,7 @@ public class HeapCache<K, V>
       initializeHeapCache();
       if (hasBackgroundRefresh() &&
         loader == null) {
-        throw new CacheMisconfigurationException("backgroundRefresh, but no loader defined");
+        throw new IllegalArgumentException("backgroundRefresh, but no loader defined");
       }
       closing = false;
     }

@@ -21,8 +21,8 @@ package org.cache2k.core;
  */
 
 import org.cache2k.CacheEntry;
-import org.cache2k.CacheMisconfigurationException;
 import org.cache2k.CacheOperationCompletionListener;
+import org.cache2k.CustomizationException;
 import org.cache2k.configuration.CustomizationSupplier;
 import org.cache2k.processor.EntryProcessingException;
 import org.cache2k.processor.EntryProcessor;
@@ -33,9 +33,7 @@ import org.cache2k.core.storageApi.StorageAdapter;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Iterator;
-import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.concurrent.ConcurrentMap;
 
 /**
@@ -199,7 +197,7 @@ public abstract class AbstractCache<K, V> implements InternalCache<K, V> {
     try {
       return f.supply(getCacheManager());
     } catch (Exception ex) {
-      throw new CacheMisconfigurationException("Initialization of customization failed", ex);
+      throw new CustomizationException("Initialization of customization failed", ex);
     }
   }
 

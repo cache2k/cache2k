@@ -20,7 +20,7 @@ package org.cache2k.integration;
  * #L%
  */
 
-import org.cache2k.PropagatedCacheException;
+import org.cache2k.CustomizationException;
 
 /**
  * Exception to wrap a loader exception. When an exception is thrown by the loader
@@ -46,7 +46,7 @@ import org.cache2k.PropagatedCacheException;
  *
  * @author Jens Wilke
  */
-public class CacheLoaderException extends PropagatedCacheException {
+public class CacheLoaderException extends CustomizationException {
 
   public CacheLoaderException(String _message, Throwable ex) {
     super(_message, ex);
