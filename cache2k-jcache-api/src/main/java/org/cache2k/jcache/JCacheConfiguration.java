@@ -25,7 +25,7 @@ import org.cache2k.configuration.SingletonConfigurationSection;
 
 /**
  * Configuration section for the cache2k configuration to control additional
- * behavior.
+ * behavior related to JCache.
  *
  * @author Jens Wilke
  */
