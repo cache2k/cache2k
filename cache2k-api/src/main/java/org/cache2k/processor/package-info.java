@@ -1,9 +1,9 @@
 /**
- * Events that are fired on behalf of a cache operation.
+ * Entry processor and supporting types to for custom atomic operation on a cache entry.
  *
  * @author Jens Wilke
  */
-package org.cache2k.event;
+package org.cache2k.processor;
 
 /*
  * #%L

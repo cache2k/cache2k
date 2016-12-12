@@ -1,9 +1,14 @@
 /**
- * Events that are fired on behalf of a cache operation.
+ * API package for cache2k Java caching library.
+ *
+ * <p>A {@link org.cache2k.Cache} can be created the {@link org.cache2k.Cache2kBuilder}. Besides the
+ * parameters that can be set via the builder, a cache can be further customized and extended via
+ * a {@link org.cache2k.integration.CacheLoader}, {@link org.cache2k.integration.CacheWriter},
+ * {@link org.cache2k.expiry.ExpiryPolicy} or {@link org.cache2k.integration.ResiliencePolicy}.
  *
  * @author Jens Wilke
  */
-package org.cache2k.event;
+package org.cache2k;
 
 /*
  * #%L

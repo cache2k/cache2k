@@ -1,9 +1,9 @@
 /**
- * Events that are fired on behalf of a cache operation.
+ * The cache configuration as a Java bean and support types.
  *
  * @author Jens Wilke
  */
-package org.cache2k.event;
+package org.cache2k.configuration;
 
 /*
  * #%L

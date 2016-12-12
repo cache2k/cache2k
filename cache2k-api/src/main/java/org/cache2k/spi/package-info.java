@@ -1,9 +1,10 @@
 /**
- * Events that are fired on behalf of a cache operation.
+ * Service provider interface that is used by the cache2k implementation. Not intended for the
+ * use of normal cache clients.
  *
  * @author Jens Wilke
  */
-package org.cache2k.event;
+package org.cache2k.spi;
 
 /*
  * #%L

@@ -1,9 +1,9 @@
 /**
- * Events that are fired on behalf of a cache operation.
+ * Loader and writer to integrate with external data sources.
  *
  * @author Jens Wilke
  */
-package org.cache2k.event;
+package org.cache2k.integration;
 
 /*
  * #%L
