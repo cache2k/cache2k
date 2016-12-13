@@ -487,6 +487,7 @@ public class Cache2kBuilder<K, V> {
    *
    * @see CacheLoader
    * @see #loaderThreadCount(int)
+   * @see #prefetchExecutor(Executor)
    */
   public final Cache2kBuilder<K, V> refreshAhead(boolean f) {
     config().setRefreshAhead(f);
