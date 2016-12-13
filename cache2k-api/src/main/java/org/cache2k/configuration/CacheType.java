@@ -39,22 +39,28 @@ package org.cache2k.configuration;
  * the type information.
  *
  * @see CacheTypeCapture
+ * @see <a href="https://github.com/google/guava/wiki/ReflectionExplained">ReflectionExplained - Google Guava Documentation</a>
  */
 public interface CacheType<T> {
 
-  /** The used prefix for the toString() output. */
+  /** The used prefix for the toString() output. {@value #DESCRIPTOR_TO_STRING_PREFIX}. */
   String DESCRIPTOR_TO_STRING_PREFIX = "CacheTypeDescriptor#";
 
   /** Class type if not an array. */
   Class<T> getType();
 
   /**
-   * This ia a parameterized type and the concrete types are known.
+   * The type has generic type parameters and the concrete types are known.
    * {@link #getTypeArguments()} returns the the arguments.
    */
   boolean hasTypeArguments();
 
-  /** This type is an array. */
+  /**
+   * This type is an array. To analyze a multi dimensional array descend to the component, for example
+   * {@code getComponentType().isArray()}.
+   *
+   * @see #getComponentType()
+   */
   boolean isArray();
 
   /** The component type in case of an array */
