@@ -20,126 +20,50 @@ package org.cache2k.jcache.provider.tckGlue;
  * #L%
  */
 
-import com.sun.jmx.mbeanserver.JmxMBeanServer;
-
-import javax.management.ListenerNotFoundException;
-import javax.management.MBeanNotificationInfo;
 import javax.management.MBeanServer;
 import javax.management.MBeanServerBuilder;
-import javax.management.Notification;
-import javax.management.NotificationFilter;
-import javax.management.NotificationListener;
+import javax.management.MBeanServerDelegate;
 
 /**
- * This is actually a copy of the RI code, which is only needed for the TCK.
+ * A tricky MBean server builder which produces an mbean server
+ * with id "TckMBeanServer" for any requested server. The platform
+ * MBean server becomes available under this name, too, which allows
+ * as to pass JCache TCK version 1.0 and hopefully TCK version 1.1.
  *
- * @author Jens Wilke; created: 2015-04-29
+ * <p>Ideally this class is redundant for TCK version 1.1 onwards.
+ *
+ * @author Jens Wilke
  */
 public class TckMBeanServerBuilder extends MBeanServerBuilder {
 
-   /**
-   * Empty public constructor as required
-   */
-  public TckMBeanServerBuilder() {
-    super();
+  @Override
+  public javax.management.MBeanServerDelegate newMBeanServerDelegate() {
+    return new WrapperMBeanServerDelegate();
   }
 
   @Override
   public MBeanServer newMBeanServer(String defaultDomain, MBeanServer outer,
                                     javax.management.MBeanServerDelegate delegate) {
-    javax.management.MBeanServerDelegate decoratingDelegate = new MBeanServerDelegate(delegate);
-    return JmxMBeanServer.newMBeanServer(defaultDomain, outer,
-        decoratingDelegate, false);
+    return super.newMBeanServer(defaultDomain, outer, delegate);
   }
 
-  /**
-   * A decorator around the MBeanServerDelegate which sets the mBeanServerId
-   * to the value of the <code>org.jsr107.tck.management.agentId</code> system
-   * property so that the TCK can precisely identify the correct MBeanServer
-   * when running tests.
-   */
-  public class MBeanServerDelegate extends javax.management.MBeanServerDelegate {
+  public class WrapperMBeanServerDelegate extends MBeanServerDelegate {
 
-    private javax.management.MBeanServerDelegate delegate;
-
-    /**
-     * Constructor
-     *
-     * @param delegate the provided delegate
-     */
-    public MBeanServerDelegate(javax.management.MBeanServerDelegate delegate) {
-      this.delegate = delegate;
+    public WrapperMBeanServerDelegate() {
     }
 
-    @Override
-    public String getSpecificationName() {
-      return delegate.getSpecificationName();
+    public String getMBeanServerId() {
+      return "TckMBeanServer";
     }
 
-    @Override
-    public String getSpecificationVersion() {
-      return delegate.getSpecificationVersion();
-    }
-
-    @Override
-    public String getSpecificationVendor() {
-      return delegate.getSpecificationVendor();
-    }
-
-    @Override
-    public String getImplementationName() {
-      return delegate.getImplementationName();
-    }
-
-    @Override
     public String getImplementationVersion() {
-      return delegate.getImplementationVersion();
+      return "1.0";
     }
 
-    @Override
     public String getImplementationVendor() {
-      return delegate.getImplementationVendor();
+      return "cache2k.org";
     }
 
-    @Override
-    public MBeanNotificationInfo[] getNotificationInfo() {
-      return delegate.getNotificationInfo();
-    }
-
-    @Override
-    public synchronized void addNotificationListener(NotificationListener listener,
-                                                     NotificationFilter filter,
-                                                     Object handback) throws
-        IllegalArgumentException {
-      delegate.addNotificationListener(listener, filter, handback);
-    }
-
-    @Override
-    public synchronized void removeNotificationListener(NotificationListener
-                                                                listener,
-                                                        NotificationFilter
-                                                            filter,
-                                                        Object handback) throws
-        ListenerNotFoundException {
-      delegate.removeNotificationListener(listener, filter, handback);
-    }
-
-    @Override
-    public synchronized void removeNotificationListener(NotificationListener
-                                                                listener) throws
-        ListenerNotFoundException {
-      delegate.removeNotificationListener(listener);
-    }
-
-    @Override
-    public void sendNotification(Notification notification) {
-      delegate.sendNotification(notification);
-    }
-
-    @Override
-    public synchronized String getMBeanServerId() {
-      return System.getProperty("org.jsr107.tck.management.agentId");
-    }
   }
 
 }

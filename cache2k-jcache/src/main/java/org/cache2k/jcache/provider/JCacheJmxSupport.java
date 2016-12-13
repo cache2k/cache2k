@@ -28,6 +28,7 @@ import javax.management.InstanceNotFoundException;
 import javax.management.MBeanServer;
 import javax.management.MBeanServerFactory;
 import javax.management.ObjectName;
+import java.lang.management.ManagementFactory;
 
 /**
  * @author Jens Wilke; created: 2015-04-29
@@ -35,7 +36,7 @@ import javax.management.ObjectName;
 @SuppressWarnings("WeakerAccess")
 public class JCacheJmxSupport implements CacheLifeCycleListener {
 
-  private final MBeanServer mBeanServer = MBeanServerFactory.createMBeanServer();
+  private final MBeanServer mBeanServer = ManagementFactory.getPlatformMBeanServer();
 
   @Override
   public void cacheCreated(Cache c) {
