@@ -5,23 +5,24 @@ Java applications.
 
 ## Features at a glance
 
-The main goal is a small footprint cache implementation.
-
+ * Single small library (< 500k) with no external dependencies
+ * Even smaller library, for use with [Android](docs/stable/user-guide.html#android)
  * One of the fastest cache for JVM local caching, see [the benchmarks page](benchmarks.html)
- * Java 6 and Android compatible
- * Leverages Java 8 to increase performance (when available)
- * Portable Java code, no use of `sun.misc.Unsafe`
+ * Java 6 and [Android](docs/stable/user-guide.html#android) compatible
+ * Leverages Java 8 to increase performance (if possible)
+ * Pure Java code, no use of `sun.misc.Unsafe`
+ * Thread safe, with a complete set of atomic operations
  * Resilience: Smart exception handling, see [User Guide - Exceptions and Resilience](docs/stable/user-guide.html#exceptions-and-resilience)
  * Null value support, see [User Guide - Null Values](docs/stable/user-guide.html#null-values)
- * Expiry: duration or point in time, variable expiry per entry, delta calculations, see [Expiry and Refresh](docs/stable/user-guide.html#expiry-and-refresh)
+ * Automatic [Expiry and Refresh](docs/stable/user-guide.html#expiry-and-refresh): duration or point in time, variable expiry per entry, delta calculations
  * CacheLoader with blocking read through, see [User Guide - Loading and Read Through](docs/stable/user-guide.html#loading-read-through)
  * CacheWriter
  * Events
- * Refresh ahead, see [User Guide - Refresh Ahead](docs/stable/user-guide.html#refresh-ahead)
- * Build-in, efficient statistics
- * JMX support, see [User Guide - Statistics](docs/stable/user-guide.html#statistics)
- * Separate API with concise interface
- * JCache support, see [User Guide - JCache documentation section](docs/stable/user-guide.html#jcache)
+ * [Refresh ahead](docs/stable/user-guide.html#refresh-ahead) reduces latency
+ * [Low Overhead Statistics](docs/stable/user-guide.html#statistics) and JMX support
+ * [Separate API](/docs/stable/apidocs/cache2k-api/index.html) with stable and concise interface
+ * [complete JCache / JSR107 support](docs/stable/user-guide.html#jcache)
+ * [XML based configuration](docs/stable/user-guide.html#configuration), to separate cache tuning from logic
 
 ## Road map
 
@@ -33,7 +34,7 @@ The road map represents a rough plan.
 
 ## News
 
-  * **Version 1.0.0.CR1, 2016-12-05**: More cleanups, XML configuration has arrived. See [Version 1.0.CR1 release notes](1/0.0.CR1.html)
+  * **Version 1.0.0.CR1, 2016-12-05**: More cleanups, XML configuration has arrived. See [Version 1.0.0.CR1 release notes](1/0.0.CR1.html)
   * **Version 0.28-BETA, 2016-09-02**: Minor bug fixes, SLF4J Support, statistics cleanup. See [Version 0.28 release notes](0/28.html)
   * **Version 0.27-BETA, 2016-07-26**: Performance improvements, leveraging Java 8, more API restructuring, cleanup and minor bug fixes. See [Version 0.27 release notes](0/27.html)
   * **Version 0.26-BETA, 2016-05-06**: Resilience policy, more API restructuring, cleanup and minor bug fixes. See [Version 0.26 release notes](0/26.html)
