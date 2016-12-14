@@ -12,6 +12,8 @@ include::sections/_start.adoc[]
 
 include::sections/_types.adoc[]
 
+include::sections/_atomic.adoc[]
+
 include::sections/_loading.adoc[]
 
 include::sections/_expiry.adoc[]
@@ -21,6 +23,8 @@ include::sections/_refresh.adoc[]
 include::sections/_null.adoc[]
 
 include::sections/_resilience.adoc[]
+
+include::sections/_events.adoc[]
 
 include::sections/_configuration.adoc[]
 

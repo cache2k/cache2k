@@ -1,0 +1,76 @@
+== Atomic Operations
+
+Here is what atomic operations exist and what you can do with it.
+
+=== Build in Atomic Operations
+
+Atomic operations allow the to read or compare and modify a cache value in an
+ atomic way. For example, the method `Cache.replaceIfEquals()` has the following semantics:
+
+[source,java]
+----
+    if (cache.containsKey(key) && Objects.equals(cache.get(key), oldValue)) {
+      cache.put(key, newValue);
+      return true;
+    } else
+      return false;
+    }
+----
+
+When executing the above statements sequentially, the outcome can vary because other threads can interfere.
+The atomic operation semantic guarantees that this is not possible.
+
+These kind of operations are also called CAS (compare and swap) operations.
+
+All operation on a single entry have atomic guarantee. Bulk operations, meaning operations on
+multiple keys, like `getAll()`, don't have atomic guarantees.
+
+.
+[width="70",options="header"]
+|===
+|Operation|Description
+|`boolean containsAndRemove(key)`| remove and return true if something was present
+|`V peekAndRemove(key)`| remove and return existing value
+|`boolean putIfAbsent(key, value)`| insert value only if no value is present
+|`V peekAndReplace(key, value)`| Replace value and return old value
+|`boolean Cache.replace(key, value)`| Replace value and return true when successful
+|`V peekAndPut(key, value)`| Insert or update value and return the previous value
+|`boolean replaceIfEquals(key, expectedValue, newValue)`| Replace value only when old value is present in the cache
+|`boolean removeIfEquals(key, expectedValue)`| Remove only if present value matches
+|===
+
+=== Entry Processor
+
+With the entry processor its possible to implement arbitrary operations that are processed atomically.
+The interface `EntryProcessor` must be implemented with the desired semantics and invoked on a cached value
+via `Cache.invoke()`. Here is an example which implements the same semantics as `replaceIfEquals()`:
+
+[source,java]
+----
+      final K key = ...
+      final V oldValue = ...
+      final V newValue = ...
+      EntryProcessor<K, V, Boolean> p = new EntryProcessor<K, V, Boolean>() {
+        public Boolean process(MutableCacheEntry<K, V> entry) {
+          if (!entry.exists()) {
+            return false;
+          }
+          if (oldValue == null) {
+            if (null != entry.getValue()) {
+              return false;
+            }
+          } else {
+            if (!oldValue.equals(entry.getValue())) {
+              return false;
+            }
+          }
+          entry.setValue(newValue);
+          return true;
+        }
+      };
+      return cache.invoke(key, p);
+    }
+----
+
+The bulk operation `Cache.invokeAll()` is available to process multiple cache entries
+with one entry processor.

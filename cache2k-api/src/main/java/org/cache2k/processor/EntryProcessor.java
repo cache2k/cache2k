@@ -33,7 +33,7 @@ package org.cache2k.processor;
  *
  *    public boolean replaceIfEquals(final K key, final V oldValue, final V newValue) {
  *      EntryProcessor<K, V, Boolean> p = new EntryProcessor<K, V, Boolean>() {
- *        public Boolean process(MutableCacheEntry<K, V> entry) throws Exception {
+ *        public Boolean process(MutableCacheEntry<K, V> entry) {
  *          if (!entry.exists()) {
  *            return false;
  *          }
