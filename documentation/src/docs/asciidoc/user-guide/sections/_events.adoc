@@ -1,0 +1,36 @@
+== Events
+
+The cache generates events when an entry gets inserted or updated.
+
+=== Listening to Events
+
+Event listeners can be added via the cache builder, for example:
+
+[source,java]
+----
+    Cache2kBuilder.of(Integer.class, Integer.class)
+      .addListener(new CacheEntryCreatedListener<Integer, Integer>() {
+        @Override
+        public void onEntryCreated(final Cache<Integer, Integer> cache,
+                                   final CacheEntry<Integer, Integer> entry) {
+          System.err.println("inserted: " + entry.getKey());
+        }
+      });
+----
+
+Different listener types are available for insert, update, removal and expiry. The is currently
+no possibility to listen to an eviction.
+
+Listeners are executed synchronous, meaning the cache operation will not complete until all listeners
+are run. The expiry event is always asynchronous.
+
+WARNING: It is illegal to mutate cache values inside the listeners.
+
+=== Async Listeners
+
+Listeners will be executed asynchronously when added with `addAsyncListener()`. By default a shared unbounded
+executor is used. A custom executor can be set via `asyncListenerExecutor`.
+
+WARNING: The cached value is not copied during the cache operation. If a value instance is mutated after
+it was handed over to the cache, asynchronous listeners may not see the value as it was present during
+the cache operation.
