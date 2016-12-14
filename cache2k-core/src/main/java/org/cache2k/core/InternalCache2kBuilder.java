@@ -40,6 +40,7 @@ import org.cache2k.integration.ExceptionPropagator;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.Executor;
 import java.util.concurrent.LinkedBlockingDeque;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
@@ -54,7 +55,7 @@ public class InternalCache2kBuilder<K, V> {
 
   private static final AtomicLong DERIVED_NAME_COUNTER =
     new AtomicLong(System.currentTimeMillis() % 1234);
-  private static final ThreadPoolExecutor ASYNC_EXECUTOR =
+  private static final ThreadPoolExecutor DEFAULT_ASYNC_EXECUTOR =
     new ThreadPoolExecutor(
       Runtime.getRuntime().availableProcessors(), Runtime.getRuntime().availableProcessors(),
       21, TimeUnit.SECONDS,
@@ -196,7 +197,11 @@ public class InternalCache2kBuilder<K, V> {
         }
       }
       if (config.hasAsyncListeners() || !_expiredListeners.isEmpty()) {
-        AsyncDispatcher<K> _asyncDispatcher = new AsyncDispatcher<K>(wc, ASYNC_EXECUTOR);
+        Executor _executor = DEFAULT_ASYNC_EXECUTOR;
+        if (config.getAsyncListenerExecutor() != null) {
+          _executor = _cache.createCustomization(config.getAsyncListenerExecutor());
+        }
+        AsyncDispatcher<K> _asyncDispatcher = new AsyncDispatcher<K>(wc, _executor);
         List<CacheEntryCreatedListener<K, V>> cll = new ArrayList<CacheEntryCreatedListener<K, V>>();
         List<CacheEntryUpdatedListener<K, V>> ull = new ArrayList<CacheEntryUpdatedListener<K, V>>();
         List<CacheEntryRemovedListener<K, V>> rll = new ArrayList<CacheEntryRemovedListener<K, V>>();

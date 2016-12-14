@@ -23,6 +23,7 @@ package org.cache2k.test.core;
 import org.cache2k.Cache;
 import org.cache2k.Cache2kBuilder;
 import org.cache2k.CacheEntry;
+import org.cache2k.core.ExclusiveExecutor;
 import org.cache2k.expiry.ExpiryPolicy;
 import org.cache2k.test.util.CacheRule;
 import org.cache2k.test.util.ConcurrencyHelper;
@@ -44,6 +45,7 @@ import static org.cache2k.test.core.StaticUtil.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.Executor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -471,6 +473,39 @@ public class ListenerTest {
     });
     assertEquals(0, latestInfo(c).getSize());
     assertEquals(1, latestInfo(c).getExpiredCount());
+  }
+
+  @Test
+  public void listenerExampleForDocumentation() {
+    Cache2kBuilder.of(Integer.class, Integer.class)
+      .addListener(new CacheEntryCreatedListener<Integer, Integer>() {
+        @Override
+        public void onEntryCreated(final Cache<Integer, Integer> cache, final CacheEntry<Integer, Integer> entry) {
+          System.err.println("inserted: " + entry.getValue());
+        }
+      });
+  }
+
+  @Test
+  public void customExecutor() {
+    final AtomicInteger _counter = new AtomicInteger();
+    Cache<Integer, Integer> c =
+      Cache2kBuilder.of(Integer.class, Integer.class)
+        .addAsyncListener(new CacheEntryCreatedListener<Integer, Integer>() {
+          @Override
+          public void onEntryCreated(final Cache<Integer, Integer> cache, final CacheEntry<Integer, Integer> entry) {
+          }
+        })
+        .asyncListenerExecutor(new Executor() {
+          @Override
+          public void execute(final Runnable command) {
+            _counter.incrementAndGet();
+          }
+        })
+        .build();
+    c.put(1,2);
+    c.close();
+    assertEquals(1, _counter.get());
   }
 
 }

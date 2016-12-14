@@ -78,6 +78,7 @@ public class Cache2kConfiguration<K, V> implements ConfigurationBean, Configurat
 
   private CustomizationSupplier<Executor> loaderExecutor;
   private CustomizationSupplier<Executor> prefetchExecutor;
+  private CustomizationSupplier<Executor> asyncListenerExecutor;
   private CustomizationSupplier<ExpiryPolicy<K,V>> expiryPolicy;
   private CustomizationSupplier<ResiliencePolicy<K,V>> resiliencePolicy;
   private CustomizationSupplier<CacheLoader<K,V>> loader;
@@ -603,6 +604,17 @@ public class Cache2kConfiguration<K, V> implements ConfigurationBean, Configurat
    */
   public void setPrefetchExecutor(final CustomizationSupplier<Executor> v) {
     prefetchExecutor = v;
+  }
+
+  public CustomizationSupplier<Executor> getAsyncListenerExecutor() {
+    return asyncListenerExecutor;
+  }
+
+  /**
+   * @see Cache2kBuilder#asyncListenerExecutor(Executor)
+   */
+  public void setAsyncListenerExecutor(final CustomizationSupplier<Executor> v) {
+    asyncListenerExecutor = v;
   }
 
 

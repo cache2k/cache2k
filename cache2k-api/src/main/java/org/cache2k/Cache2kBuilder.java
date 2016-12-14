@@ -440,8 +440,7 @@ public class Cache2kBuilder<K, V> {
 
   /**
    * A set of listeners. Listeners added in this collection will be
-   * executed in a synchronous mode, meaning, further processing for
-   * an entry will stall until a registered listener is executed.
+   * executed in a asynchronous mode.
    *
    * @throws IllegalArgumentException if an identical listener is already added.
    * @param listener The listener to add
@@ -664,6 +663,17 @@ public class Cache2kBuilder<K, V> {
    */
   public final Cache2kBuilder<K,V> prefetchExecutor(Executor v) {
     config().setPrefetchExecutor(new CustomizationReferenceSupplier<Executor>(v));
+    return this;
+  }
+
+  /**
+   * Executor for asynchronous listeners. If no executor is specified, an internal
+   * executor is used that has unbounded thread capacity.
+   *
+   * @see #addAsyncListener(CacheEntryOperationListener)
+   */
+  public final Cache2kBuilder<K,V> asyncListenerExecutor(Executor v) {
+    config().setAsyncListenerExecutor(new CustomizationReferenceSupplier<Executor>(v));
     return this;
   }
 
