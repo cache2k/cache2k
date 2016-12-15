@@ -11,8 +11,8 @@ Java applications.
  * Java 6 and [Android](docs/stable/user-guide.html#android) compatible
  * Leverages Java 8 to increase performance (if possible)
  * Pure Java code, no use of `sun.misc.Unsafe`
- * Thread safe, with a complete set of atomic operations
- * Resilience: Smart exception handling, see [User Guide - Exceptions and Resilience](docs/stable/user-guide.html#exceptions-and-resilience)
+ * Thread safe, with a complete set of [atomic operations](docs/stable/user-guide.html#atomic)
+ * [Resilience and smart exception handling](docs/stable/user-guide.html#exceptions-and-resilience) 
  * Null value support, see [User Guide - Null Values](docs/stable/user-guide.html#null-values)
  * Automatic [Expiry and Refresh](docs/stable/user-guide.html#expiry-and-refresh): duration or point in time, variable expiry per entry, delta calculations
  * CacheLoader with blocking read through, see [User Guide - Loading and Read Through](docs/stable/user-guide.html#loading-read-through)
