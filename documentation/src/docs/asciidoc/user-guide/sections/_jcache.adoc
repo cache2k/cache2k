@@ -133,10 +133,11 @@ That means that some semantics in corner cases might differ to other JSR107 impl
 .Corrected JSR107 Semantics since TCK 1.0
 [width="70",options="header"]
 ,===
-Affected Component,JSR107 TCK GitHub issue
+Affected Component,JSR107 GitHub issue
 Statistics of `Cache.putIfAbsent()`, https://github.com/jsr107/jsr107tck/issues/63
 `CacheManager.getCacheNames()`, https://github.com/jsr107/jsr107tck/issues/87
 `CacheManager.getCache()`, https://github.com/jsr107/jsr107spec/issues/340
+JMX statistics,  https://github.com/jsr107/jsr107tck/issues/83
 ,===
 
 ==== Expiry Policy
