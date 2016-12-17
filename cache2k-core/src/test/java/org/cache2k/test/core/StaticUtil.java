@@ -40,8 +40,8 @@ import static org.junit.Assert.assertFalse;
  */
 public class StaticUtil {
 
-  public static <T> Set<T> asSet(T... keys) {
-    return new HashSet<T>(Arrays.asList(keys));
+  public static <T> Iterable<T> toIterable(T... keys) {
+    return Arrays.asList(keys);
   }
 
   public static InternalCacheInfo latestInfo(Cache c) {
@@ -83,13 +83,13 @@ public class StaticUtil {
 
   public static <K,V> void load(Cache<K,V> c, K ...keys) {
     CacheLoaderTest.CompletionWaiter w = new CacheLoaderTest.CompletionWaiter();
-    c.loadAll(w, asSet(keys));
+    c.loadAll(toIterable(keys), w);
     w.awaitCompletion();
   }
 
   public static <K,V> void reload(Cache<K,V> c, K ...keys) {
     CacheLoaderTest.CompletionWaiter w = new CacheLoaderTest.CompletionWaiter();
-    c.reloadAll(w, asSet(keys));
+    c.reloadAll(toIterable(keys), w);
     w.awaitCompletion();
   }
 

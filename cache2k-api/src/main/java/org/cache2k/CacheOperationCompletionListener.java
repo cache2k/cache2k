@@ -27,8 +27,8 @@ import java.util.EventListener;
  * completion of a load or prefetch operation.
  *
  * @author Jens Wilke
- * @see Cache#loadAll(CacheOperationCompletionListener, Iterable)
- * @see Cache#prefetchAll(CacheOperationCompletionListener, Iterable)
+ * @see Cache#loadAll(Iterable, CacheOperationCompletionListener)
+ * @see AdvancedKeyValueSource#prefetchAll(Iterable, CacheOperationCompletionListener)
  */
 public interface CacheOperationCompletionListener extends EventListener {
 

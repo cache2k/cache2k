@@ -967,56 +967,8 @@ public class HeapCache<K, V>
   }
 
   @Override
-  public void prefetch(final CacheOperationCompletionListener _listener, final K key) {
-    if (loader == null) {
-      _listener.onCompleted();
-      return;
-    }
-    Entry<K,V> e = lookupEntryNoHitRecord(key);
-    if (e != null && e.hasFreshData()) {
-      _listener.onCompleted();
-      return;
-    }
-    try {
-      getPrefetchExecutor().execute(new RunWithCatch(this) {
-        @Override
-        public void action() {
-          try {
-            getEntryInternal(key);
-          } finally {
-            _listener.onCompleted();
-          }
-        }
-      });
-    } catch (RejectedExecutionException ignore) {
-    }
-  }
-
-  /**
-   *
-   */
-  @Override
-  public void prefetchAll(final Iterable<? extends K> _keys) {
-    if (loader == null) {
-      return;
-    }
-    Set<K> _keysToLoad = checkAllPresent(_keys);
-    for (K k : _keysToLoad) {
-      final K key = k;
-      Runnable r = new RunWithCatch(this) {
-        @Override
-        public void action() {
-          getEntryInternal(key);
-        }
-      };
-      try {
-        getPrefetchExecutor().execute(r);
-      } catch (RejectedExecutionException ignore) { }
-    }
-  }
-
-  @Override
-  public void prefetchAll(final CacheOperationCompletionListener _listener, final Iterable<? extends K> _keys) {
+  public void prefetchAll(final Iterable<? extends K> _keys, final CacheOperationCompletionListener l) {
+    final CacheOperationCompletionListener _listener= l != null ? l : DUMMY_LOAD_COMPLETED_LISTENER;
     if (loader == null) {
       _listener.onCompleted();
       return;
@@ -1051,7 +1003,7 @@ public class HeapCache<K, V>
   }
 
   @Override
-  public void loadAll(final CacheOperationCompletionListener l, final Iterable<? extends K> _keys) {
+  public void loadAll(final Iterable<? extends K> _keys, final CacheOperationCompletionListener l) {
     checkLoaderPresent();
     final CacheOperationCompletionListener _listener= l != null ? l : DUMMY_LOAD_COMPLETED_LISTENER;
     Set<K> _keysToLoad = checkAllPresent(_keys);
@@ -1083,7 +1035,7 @@ public class HeapCache<K, V>
   }
 
   @Override
-  public void reloadAll(final CacheOperationCompletionListener l, final Iterable<? extends K> _keys) {
+  public void reloadAll(final Iterable<? extends K> _keys, final CacheOperationCompletionListener l) {
     checkLoaderPresent();
     final CacheOperationCompletionListener _listener= l != null ? l : DUMMY_LOAD_COMPLETED_LISTENER;
     Set<K> _keySet = generateKeySet(_keys);

@@ -32,8 +32,6 @@ import org.cache2k.processor.EntryProcessor;
 import org.cache2k.processor.EntryProcessingResult;
 
 import java.io.Closeable;
-import java.util.Iterator;
-import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.Executor;
@@ -175,8 +173,7 @@ public interface Cache<K, V> extends
    * is done via a separate thread pool if specified via
    * {@link Cache2kBuilder#prefetchExecutor(Executor)}.
    *
-   * <p>No action is performed, if no reasonable action can be taken
-   * for a cache configuration, for example no {@link CacheLoader} is defined.
+   * <p>If no {@link CacheLoader} is defined the method will do nothing.
    *
    * <p>This method doesn't throw an exception in case the loader produced
    * an exception. Exceptions will be propagated when the value is accessed.
@@ -189,42 +186,23 @@ public interface Cache<K, V> extends
 
   /**
    * Notifies about the intend to retrieve the value for this key in the
-   * near future. See {@link #prefetch(Object)} for detailed explanation.
+   * near future.
+   *
+   * <p>The method will return immediately and the cache will load the
+   * the value asynchronously if not yet present in the cache. Prefetching
+   * is done via a separate thread pool if specified via
+   * {@link Cache2kBuilder#prefetchExecutor(Executor)}.
+   *
+   * <p>If no {@link CacheLoader} is defined the method will do nothing.
    *
    * <p>Exceptions from the loader will not be propagated via the listener.
+   * Exceptions will be propagated when the respective value is accessed.
    *
-   * @param key the key that should be loaded, not {@code null}
-   * @param listener A listener that gets notified when the prefetch operation is finished
+   * @param keys the keys which should be loaded, not {@code null}
+   * @param listener Listener interface that is invoked upon completion. May be {@code null} if no
+   *          completion notification is needed.
    */
-  void prefetch(CacheOperationCompletionListener listener, K key);
-
-  /**
-   * Notifies about the intend to retrieve the value for the keys in the
-   * near future. See {@link #prefetch(Object)} for detailed explanation.
-   *
-   * @param keys the keys which should be loaded
-   */
-  void prefetchAll(Iterable<? extends K> keys);
-
-  /**
-   * Notifies about the intend to retrieve the value for this key in the
-   * near future. See {@link #prefetch(Object)} for detailed explanation.
-   *
-   * <p>Exceptions from the loader will not be propagated via the listener.
-   *
-   * @param keys the keys which should be loaded
-   * @param listener A listener that gets notified when the prefetch operation is finished
-   */
-  void prefetchAll(CacheOperationCompletionListener listener, Iterable<? extends K> keys);
-
-  /**
-   * Notifies about the intend to retrieve the value for this key in the
-   * near future. See {@link #prefetch(Object)} for detailed explanation.
-   *
-   * @param keys the keys which should be loaded
-   * @param listener A listener that gets notified when the prefetch operation is finished
-   */
-  void prefetchAll(CacheOperationCompletionListener listener, K... keys);
+  void prefetchAll(Iterable<? extends K> keys, CacheOperationCompletionListener listener);
 
   /**
    * Returns the value if it is mapped within the cache and it is not
@@ -608,31 +586,31 @@ public interface Cache<K, V> extends
    *
    * <p>After the load is completed, the completion listener will be called, if provided.
    *
-   * @param l Listener interface that is invoked upon completion. May be null if no
-   *          completion notification is needed.
    * @param keys The keys to be loaded
+   * @param listener Listener interface that is invoked upon completion. May be {@code null} if no
+   *          completion notification is needed.
    * @throws UnsupportedOperationException if no loader is defined
    */
-  void loadAll(CacheOperationCompletionListener l, Iterable<? extends K> keys);
+  void loadAll(Iterable<? extends K> keys, CacheOperationCompletionListener listener);
 
   /**
    * Asynchronously loads the given set of keys into the cache. Always invokes load for all keys
    * and replaces values already in the cache.
    *
    * <p>The cache uses multiple threads to load the values in parallel. If thread resources
-   * are not sufficient, meaning the used executor is throwing {@link java.util.concurrent.RejectedExecutionException}
-   * the calling thread is used to produce back pressure.
+   * are not sufficient, meaning the used executor is throwing
+   * {@link java.util.concurrent.RejectedExecutionException} the calling thread is used to produce back pressure.
    *
    * <p>If no loader is defined, the method will throw an immediate exception.
    *
    * <p>After the load is completed, the completion listener will be called, if provided.
    *
-   * @param l Listener interface that is invoked upon completion. May be null if no
-   *          completion notification is needed.
    * @param keys The keys to be loaded
+   * @param listener Listener interface that is invoked upon completion. May be {@code null} if no
+   *          completion notification is needed.
    * @throws UnsupportedOperationException if no loader is defined
    */
-  void reloadAll(CacheOperationCompletionListener l, Iterable<? extends K> keys);
+  void reloadAll(Iterable<? extends K> keys, CacheOperationCompletionListener listener);
 
   /**
    * Invoke a user defined function on a cache entry.
@@ -689,7 +667,7 @@ public interface Cache<K, V> extends
    * loader methods either {@link CacheLoader#loadAll(Iterable, Executor)} or
    *  {@link CacheLoader#load(Object)}.
    *
-   * <p>Performance: A better technique is using {@link Cache#prefetchAll(Iterable)}
+   * <p>Performance: A better technique is using {@link Cache#prefetchAll}
    * and then {@link Cache#get(Object)} to request the the values.
    *
    * @throws NullPointerException if one of the specified keys is null

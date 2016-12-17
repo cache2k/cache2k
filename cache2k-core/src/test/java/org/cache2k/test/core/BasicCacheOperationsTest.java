@@ -588,11 +588,11 @@ public class BasicCacheOperationsTest {
    */
   @Test
   public void peekAll() {
-    Map<Integer, Integer> m = cache.peekAll(asSet(KEY, OTHER_KEY));
+    Map<Integer, Integer> m = cache.peekAll(toIterable(KEY, OTHER_KEY));
     assertEquals(0, m.size());
     assertTrue(m.isEmpty());
     cache.put(KEY, VALUE);
-    m = cache.peekAll(asSet(KEY, OTHER_KEY));
+    m = cache.peekAll(toIterable(KEY, OTHER_KEY));
     assertEquals(1, m.size());
     assertEquals(VALUE, m.get(KEY));
     assertTrue(m.containsKey(KEY));
@@ -603,20 +603,20 @@ public class BasicCacheOperationsTest {
   @Test
   public void peekAll_Null() {
     cache.put(KEY, null);
-    Map<Integer, Integer> m = cache.peekAll(asSet(KEY, OTHER_KEY));
+    Map<Integer, Integer> m = cache.peekAll(toIterable(KEY, OTHER_KEY));
     assertEquals(1, m.size());
     assertNull(m.get(KEY));
   }
 
   @Test(expected = NullPointerException.class)
   public void peekAll_NullKey() {
-    cache.peekAll(asSet(new Integer[]{null}));
+    cache.peekAll(toIterable(new Integer[]{null}));
   }
 
   @Test
   public void peekAll_Exception() {
     ((Cache) cache).put(KEY, new ExceptionWrapper(OUCH));
-    Map<Integer, Integer> m = cache.peekAll(asSet(KEY, OTHER_KEY));
+    Map<Integer, Integer> m = cache.peekAll(toIterable(KEY, OTHER_KEY));
     assertEquals(1, m.size());
     assertEquals(1, m.values().size());
     assertEquals(1, m.keySet().size());
@@ -651,7 +651,7 @@ public class BasicCacheOperationsTest {
   @Test
   public void peekAll_MutationMethodsUnsupported() {
     cache.put(KEY, VALUE);
-    Map<Integer, Integer> m = cache.peekAll(asSet(KEY, OTHER_KEY));
+    Map<Integer, Integer> m = cache.peekAll(toIterable(KEY, OTHER_KEY));
     assertEquals(1, m.size());
     try {
       m.clear();
@@ -707,7 +707,7 @@ public class BasicCacheOperationsTest {
   public void getAll() {
     cache.put(KEY, VALUE);
     cache.put(OTHER_KEY, VALUE);
-    Map<Integer, Integer> m = cache.getAll(asSet(KEY, OTHER_KEY));
+    Map<Integer, Integer> m = cache.getAll(toIterable(KEY, OTHER_KEY));
     assertEquals(2, m.size());
     assertEquals(VALUE, m.get(KEY));
     assertTrue(m.containsKey(KEY));
@@ -716,12 +716,12 @@ public class BasicCacheOperationsTest {
 
   @Test(expected = NullPointerException.class)
   public void getAll_NullKey() {
-    cache.getAll((asSet(new Integer[]{null})));
+    cache.getAll((toIterable(new Integer[]{null})));
   }
 
   @Test
   public void getAll_not_present_no_loader() {
-    Map<Integer, Integer> m = cache.getAll(asSet(KEY, OTHER_KEY));
+    Map<Integer, Integer> m = cache.getAll(toIterable(KEY, OTHER_KEY));
     assertEquals(0, m.size());
   }
 
@@ -965,12 +965,12 @@ public class BasicCacheOperationsTest {
 
   @Test(expected=UnsupportedOperationException.class)
   public void loadAll() throws Exception {
-    cache.loadAll(null, asSet(KEY, OTHER_KEY));
+    cache.loadAll(toIterable(KEY, OTHER_KEY), null);
   }
 
   @Test(expected=UnsupportedOperationException.class)
   public void reloadAll() throws Exception {
-    cache.reloadAll(null, asSet(KEY, OTHER_KEY));
+    cache.reloadAll(toIterable(KEY, OTHER_KEY), null);
   }
 
   @Test
@@ -980,7 +980,7 @@ public class BasicCacheOperationsTest {
 
   @Test
   public void prefetchAll()  {
-    cache.prefetchAll(asSet(KEY, OTHER_KEY));
+    cache.prefetchAll(toIterable(KEY, OTHER_KEY), null);
   }
 
   @Test

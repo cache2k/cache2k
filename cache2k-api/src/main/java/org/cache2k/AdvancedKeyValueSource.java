@@ -51,8 +51,8 @@ public interface AdvancedKeyValueSource<K,V> extends KeyValueSource<K,V> {
    * Notify about the intend to retrieve the value for the keys in the
    * near future.
    *
-   * @see Cache#prefetchAll(CacheOperationCompletionListener, Iterable)
+   * @see AdvancedKeyValueSource#prefetchAll(Iterable, CacheOperationCompletionListener)
    */
-  void prefetchAll(CacheOperationCompletionListener listener, Iterable<? extends K> keys);
+  void prefetchAll(Iterable<? extends K> keys, CacheOperationCompletionListener listener);
 
 }

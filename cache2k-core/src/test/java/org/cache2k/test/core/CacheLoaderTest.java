@@ -93,11 +93,11 @@ public class CacheLoaderTest {
     assertEquals((Integer) 20, c.get(10));
     assertEquals(0, _executionCount.get());
     CompletionWaiter _waiter = new CompletionWaiter();
-    c.loadAll(_waiter, asSet(1, 2, 3));
+    c.loadAll(toIterable(1, 2, 3), _waiter);
     _waiter.awaitCompletion();
     assertEquals("executor is used", 3, _executionCount.get());
     _waiter = new CompletionWaiter();
-    c.prefetchAll(_waiter, asSet(6, 7, 8));
+    c.prefetchAll(toIterable(6, 7, 8), _waiter);
     _waiter.awaitCompletion();
     assertEquals("prefetch uses executor, too", 6, _executionCount.get());
   }
@@ -135,11 +135,11 @@ public class CacheLoaderTest {
     assertEquals((Integer) 20, c.get(10));
     assertEquals(0, _executionCount.get());
     CompletionWaiter _waiter = new CompletionWaiter();
-    c.loadAll(_waiter, asSet(1, 2, 3));
+    c.loadAll(toIterable(1, 2, 3), _waiter);
     _waiter.awaitCompletion();
     assertEquals("executor is used", 3, _executionCount.get());
     _waiter = new CompletionWaiter();
-    c.prefetchAll(_waiter, asSet(6, 7, 8));
+    c.prefetchAll(toIterable(6, 7, 8), _waiter);
     _waiter.awaitCompletion();
     assertEquals("prefetch does not use loader executor", 3, _executionCount.get());
     assertEquals("extra executor for prefetch used", 3, _prefetchExecutionCount.get());
@@ -217,12 +217,12 @@ public class CacheLoaderTest {
     });
     c.get(5);
     CompletionWaiter w = new CompletionWaiter();
-    c.loadAll(w, asSet(5, 6));
+    c.loadAll(toIterable(5, 6), w);
     w.awaitCompletion();
     assertEquals(2, _countLoad.get());
     assertEquals((Integer) 2, c.get(6));
-    c.loadAll(null, asSet(5, 6));
-    c.loadAll(null, Collections.EMPTY_SET);
+    c.loadAll(toIterable(5, 6), null);
+    c.loadAll(Collections.EMPTY_SET, null);
   }
 
   @Test
@@ -241,17 +241,17 @@ public class CacheLoaderTest {
     });
     c.get(5);
     CompletionWaiter w = new CompletionWaiter();
-    c.reloadAll(w, asSet(5, 6));
+    c.reloadAll(toIterable(5, 6), w);
     w.awaitCompletion();
     assertEquals(3, _countLoad.get());
-    c.reloadAll(null, asSet(5, 6));
-    c.reloadAll(null, Collections.EMPTY_SET);
+    c.reloadAll(toIterable(5, 6), null);
+    c.reloadAll(Collections.EMPTY_SET, null);
   }
 
   @Test
   public void prefetch_noLoader() {
     Cache<Integer,Integer> c = target.cache();
-    c.prefetchAll(asSet(1,2,3));
+    c.prefetchAll(toIterable(1,2,3), null);
     assertEquals(0, latestInfo(c).getAsyncLoadsStarted());
   }
 
@@ -279,7 +279,7 @@ public class CacheLoaderTest {
   @Test
   public void prefetchAll() {
     final Cache<Integer,Integer> c = cacheWithLoader();
-    c.prefetchAll(asSet(1,2,3));
+    c.prefetchAll(toIterable(1,2,3), null);
     assertTrue(isLoadStarted(c));
     ConcurrencyHelper.await(new Condition() {
       @Override
@@ -293,7 +293,7 @@ public class CacheLoaderTest {
   public void prefetch_noLoader_listener() {
     Cache<Integer,Integer> c = target.cache();
     CompletionWaiter w = new CompletionWaiter();
-    c.prefetch(w, 1);
+    c.prefetchAll(toIterable(1), w);
     w.awaitCompletion();
   }
 
@@ -301,7 +301,7 @@ public class CacheLoaderTest {
   public void prefetch_listener() {
     final Cache<Integer,Integer> c = cacheWithLoader();
     CompletionWaiter w = new CompletionWaiter();
-    c.prefetch(w, 1);
+    c.prefetchAll(toIterable(1), w);
     assertTrue(isLoadStarted(c));
     w.awaitCompletion();
     assertTrue(c.containsKey(1));
@@ -312,7 +312,7 @@ public class CacheLoaderTest {
     final Cache<Integer,Integer> c = cacheWithLoader();
     CompletionWaiter w = new CompletionWaiter();
     c.put(1, 1);
-    c.prefetch(w, 1);
+    c.prefetchAll(toIterable(1), w);
     w.awaitCompletion();
     assertTrue(c.containsKey(1));
     assertTrue(latestInfo(c).getAsyncLoadsStarted() == 0);
@@ -322,7 +322,7 @@ public class CacheLoaderTest {
   public void prefetchAll_noLoader_listener() {
     Cache<Integer,Integer> c = target.cache();
     CompletionWaiter w = new CompletionWaiter();
-    c.prefetchAll(w, asSet(1));
+    c.prefetchAll(toIterable(1), w);
     w.awaitCompletion();
   }
 
@@ -330,7 +330,7 @@ public class CacheLoaderTest {
   public void prefetchAll_listener() {
     final Cache<Integer,Integer> c = cacheWithLoader();
     CompletionWaiter w = new CompletionWaiter();
-    c.prefetchAll(w, asSet(1));
+    c.prefetchAll(toIterable(1), w);
     assertTrue(isLoadStarted(c));
     w.awaitCompletion();
     assertTrue(c.containsKey(1));
@@ -341,7 +341,7 @@ public class CacheLoaderTest {
     final Cache<Integer,Integer> c = cacheWithLoader();
     CompletionWaiter w = new CompletionWaiter();
     c.put(1, 1);
-    c.prefetchAll(w, asSet(1));
+    c.prefetchAll(toIterable(1), w);
     w.awaitCompletion();
     assertTrue(c.containsKey(1));
     assertTrue(latestInfo(c).getAsyncLoadsStarted() == 0);
@@ -352,7 +352,7 @@ public class CacheLoaderTest {
     final Cache<Integer,Integer> c = cacheWithLoader();
     CompletionWaiter w = new CompletionWaiter();
     c.put(1, 1);
-    c.prefetchAll(w, asSet(1, 2, 3));
+    c.prefetchAll(toIterable(1, 2, 3), w);
     assertTrue(isLoadStarted(c));
     w.awaitCompletion();
     assertTrue(c.containsKey(3));
@@ -396,7 +396,7 @@ public class CacheLoaderTest {
     c.put(1,1);
     c.put(2,2);
     c.put(3,3);
-    c.prefetchAll(asSet(1,2,3));
+    c.prefetchAll(toIterable(1,2,3), null);
     assertTrue(latestInfo(c).getAsyncLoadsStarted() == 0);
   }
 
@@ -420,8 +420,8 @@ public class CacheLoaderTest {
         });
       }
     });
-    c.loadAll(null, asSet(1));
-    c.loadAll(null, asSet(2));
+    c.loadAll(toIterable(1), null);
+    c.loadAll(toIterable(2), null);
     _inLoader.await();
     assertEquals(2, latestInfo(c).getAsyncLoadsStarted());
     assertEquals(2, latestInfo(c).getAsyncLoadsInFlight());
@@ -456,8 +456,8 @@ public class CacheLoaderTest {
         });
       }
     });
-    c.loadAll(null, asSet(1));
-    c.loadAll(null, asSet(2));
+    c.loadAll(toIterable(1), null);
+    c.loadAll(toIterable(2), null);
     _inLoader.await();
     assertEquals("only one load is separate thread", 1, latestInfo(c).getAsyncLoadsStarted());
     assertEquals("only one load is separate thread", 1, _asyncCount.get());

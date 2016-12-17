@@ -213,7 +213,7 @@ public class EntryProcessorTest {
   @Test
   public void invokeAll_exception() {
     Cache<Integer, Integer> c = target.cache();
-    Map<Integer, EntryProcessingResult<Object>> _resultMap = c.invokeAll(asSet(KEY), new EntryProcessor<Integer, Integer, Object>() {
+    Map<Integer, EntryProcessingResult<Object>> _resultMap = c.invokeAll(toIterable(KEY), new EntryProcessor<Integer, Integer, Object>() {
       @Override
       public Object process(final MutableCacheEntry<Integer, Integer> entry) throws Exception {
         throw new IllegalStateException("test");

@@ -149,54 +149,8 @@ public class WiredCache<K, V> extends AbstractCache<K, V>
   }
 
   @Override
-  public void prefetchAll(Iterable<? extends K> keys) {
-    if (loader == null) {
-      return;
-    }
-    Set<K> _keysToLoad = heapCache.checkAllPresent(keys);
-    for (K k : _keysToLoad) {
-      final K key = k;
-      Runnable r = new HeapCache.RunWithCatch(this) {
-        @Override
-        public void action() {
-          load(key);
-        }
-      };
-      try {
-        heapCache.getPrefetchExecutor().execute(r);
-      } catch (RejectedExecutionException ignore) { }
-    }
-  }
-
-  @Override
-  public void prefetch(final CacheOperationCompletionListener _listener, final K key) {
-    if (loader == null) {
-      _listener.onCompleted();
-      return;
-    }
-    Entry<K,V> e = heapCache.lookupEntryNoHitRecord(key);
-    if (e != null && e.hasFreshData()) {
-      _listener.onCompleted();
-      return;
-    }
-    try {
-      heapCache.getPrefetchExecutor().execute(new HeapCache.RunWithCatch(this) {
-        @Override
-        public void action() {
-          try {
-            load(key);
-          } finally {
-            _listener.onCompleted();
-          }
-        }
-      });
-    } catch (RejectedExecutionException ex) {
-      _listener.onCompleted();
-    }
-  }
-
-  @Override
-  public void prefetchAll(final CacheOperationCompletionListener _listener, final Iterable<? extends K> _keys) {
+  public void prefetchAll(final Iterable<? extends K> _keys, final CacheOperationCompletionListener l) {
+    final CacheOperationCompletionListener _listener= l != null ? l : HeapCache.DUMMY_LOAD_COMPLETED_LISTENER;
     if (loader == null) {
       _listener.onCompleted();
       return;
@@ -295,7 +249,7 @@ public class WiredCache<K, V> extends AbstractCache<K, V>
   }
 
   @Override
-  public void loadAll(final CacheOperationCompletionListener l, final Iterable<? extends K> _keys) {
+  public void loadAll(final Iterable<? extends K> _keys, final CacheOperationCompletionListener l) {
     checkLoaderPresent();
     final CacheOperationCompletionListener _listener= l != null ? l : HeapCache.DUMMY_LOAD_COMPLETED_LISTENER;
     Set<K> _keysToLoad = heapCache.checkAllPresent(_keys);
@@ -327,7 +281,7 @@ public class WiredCache<K, V> extends AbstractCache<K, V>
   }
 
   @Override
-  public void reloadAll(final CacheOperationCompletionListener l, final Iterable<? extends K> _keys) {
+  public void reloadAll(final Iterable<? extends K> _keys, final CacheOperationCompletionListener l) {
     checkLoaderPresent();
     final CacheOperationCompletionListener _listener= l != null ? l : HeapCache.DUMMY_LOAD_COMPLETED_LISTENER;
     Set<K> _keySet = heapCache.generateKeySet(_keys);

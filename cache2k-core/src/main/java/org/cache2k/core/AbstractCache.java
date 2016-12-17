@@ -185,11 +185,6 @@ public abstract class AbstractCache<K, V> implements InternalCache<K, V> {
   }
 
   @Override
-  public void prefetchAll(final CacheOperationCompletionListener _listener, final K... _keys) {
-    prefetchAll(_listener, Arrays.asList(_keys));
-  }
-
-  @Override
   public <T> T createCustomization(final CustomizationSupplier<T> f) {
     if (f == null) {
       return null;

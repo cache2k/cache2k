@@ -65,7 +65,7 @@ public class CacheClosedTest {
 
   @Test(expected = IllegalStateException.class)
   public void peekAll() {
-    cache.peekAll(StaticUtil.asSet(KEY));
+    cache.peekAll(StaticUtil.toIterable(KEY));
   }
 
   @Test(expected = IllegalStateException.class)

@@ -70,33 +70,18 @@ public class CacheWrapper<K,V> implements Cache<K, V> {
   }
 
   @Override
-  public void prefetchAll(Iterable<? extends K> keys) {
-    cache.prefetchAll(keys);
+  public void prefetchAll(final Iterable<? extends K> keys, final CacheOperationCompletionListener listener) {
+    cache.prefetchAll(keys, listener);
   }
 
   @Override
-  public void prefetch(final CacheOperationCompletionListener listener, final K key) {
-    cache.prefetch(listener, key);
+  public void loadAll(final Iterable<? extends K> keys, final CacheOperationCompletionListener l) {
+    cache.loadAll(keys, l);
   }
 
   @Override
-  public void prefetchAll(final CacheOperationCompletionListener listener, final Iterable<? extends K> keys) {
-    cache.prefetchAll(listener, keys);
-  }
-
-  @Override
-  public void prefetchAll(final CacheOperationCompletionListener listener, final K... keys) {
-    cache.prefetchAll(listener, keys);
-  }
-
-  @Override
-  public void loadAll(final CacheOperationCompletionListener l, final Iterable<? extends K> keys) {
-    cache.loadAll(l, keys);
-  }
-
-  @Override
-  public void reloadAll(final CacheOperationCompletionListener l, final Iterable<? extends K> keys) {
-    cache.reloadAll(l, keys);
+  public void reloadAll(final Iterable<? extends K> keys, final CacheOperationCompletionListener l) {
+    cache.reloadAll(keys, l);
   }
 
   @Override

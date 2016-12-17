@@ -38,7 +38,7 @@ import java.util.concurrent.Executor;
  * the cache or it is expired, by the cache methods {@code get()}, {@code getAll()}
  * or {@code getEntry()} as well as {@link MutableCacheEntry#getValue()}.
  *
- * <p>The cache loader can be invoked explicitly via {@link Cache#reloadAll(CacheOperationCompletionListener, Iterable)}.
+ * <p>The cache loader can be invoked explicitly via {@link Cache#reloadAll(Iterable, CacheOperationCompletionListener)}.
  *
  * <p><b>Blocking</b>: If the loader is invoked by {@link Cache#get} or other methods that allow transparent access
  * (see above) concurrent requests on the same key will block until the loading is completed.
