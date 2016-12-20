@@ -8,29 +8,6 @@ Ease of use:: Well documented API, provide features beyond standard cache librar
   the typical configuration should be as small as possible
 Compact and modular:: Keep a small core size, additional features may go in separate artifacts
 
-=== Features
-
-List of current features:
-
- - The fastest cache (compared to other caches available to us), see link:/benchmarks[the benchmarks]
- - Java 6 and Android compatible
- - Leverages Java 8 to increase performance, when available
- - Portable Java code, no use of `sun.misc.Unsafe`
- - Resilience: Smart exception handling
- - Null value support
- - Expiry: duration or point in time
- - Variable expiry per entry
- - CacheLoader with blocking read through
- - AdvancedLoader for smart requests (e.g. if-modified-since)
- - CacheWriter
- - Events
- - Refresh ahead
- - Efficient statistics
- - JMX support
- - Separate, well defined API
- - Complete, single JAR file for deployment (with OSGi support)
- - JCache support
-
 === Versioning
 
 The JBoss versioning scheme is followed (https://developer.jboss.org/wiki/JBossProjectVersioning).
