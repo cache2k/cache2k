@@ -3,6 +3,11 @@
 cache2k focuses on providing a well engineered in-memory object cache implementation for
 Java applications. 
 
+![GitHub Stars](https://x.h7e.eu/badges/xz/q/github/starGazers/gh-stargazers/cache2k/cache2k)
+[![License](https://x.h7e.eu/badges/xz/txt/license/apache)](https://www.apache.org/licenses/LICENSE-2.0.html)
+[![Stack Overflow](https://x.h7e.eu/badges/xz/txt/stackoverflow/cache2k)](https://stackoverflow.com/questions/tagged/cache2k)
+
+
 ## Features at a glance
 
  * Single small library (< 500k) with no external dependencies
@@ -17,7 +22,7 @@ Java applications.
  * Automatic [Expiry and Refresh](docs/stable/user-guide.html#expiry-and-refresh): duration or point in time, variable expiry per entry, delta calculations
  * CacheLoader with blocking read through, see [User Guide - Loading and Read Through](docs/stable/user-guide.html#loading-read-through)
  * CacheWriter
- * Events
+ * [Event listeners](docs/stable/user-guide.html#events)
  * [Refresh ahead](docs/stable/user-guide.html#refresh-ahead) reduces latency
  * [Low Overhead Statistics](docs/stable/user-guide.html#statistics) and JMX support
  * [Separate API](/docs/stable/apidocs/cache2k-api/index.html) with stable and concise interface
