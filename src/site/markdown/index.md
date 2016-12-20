@@ -3,15 +3,15 @@
 cache2k focuses on providing a well engineered in-memory object cache implementation for
 Java applications. 
 
-![GitHub Stars](https://x.h7e.eu/badges/xz/q/github/starGazers/gh-stargazers/cache2k/cache2k)
+[![GitHub Stars](https://x.h7e.eu/badges/xz/q/github/starGazers/gh-stargazers/cache2k/cache2k)](https://github.com/cache2k/cache2k/stargazers)
 [![License](https://x.h7e.eu/badges/xz/txt/license/apache)](https://www.apache.org/licenses/LICENSE-2.0.html)
 [![Stack Overflow](https://x.h7e.eu/badges/xz/txt/stackoverflow/cache2k)](https://stackoverflow.com/questions/tagged/cache2k)
 
 
 ## Features at a glance
 
- * Single small library (< 500k) with no external dependencies
- * Even smaller library, for use with [Android](docs/stable/user-guide.html#android)
+ * Single small Jar File (< 500k) with no external dependencies
+ * Even smaller, for use with [Android](docs/stable/user-guide.html#android)
  * One of the fastest cache for JVM local caching, see [the benchmarks page](benchmarks.html)
  * Java 6 and [Android](docs/stable/user-guide.html#android) compatible
  * Leverages Java 8 to increase performance (if possible)
@@ -25,17 +25,27 @@ Java applications.
  * [Event listeners](docs/stable/user-guide.html#events)
  * [Refresh ahead](docs/stable/user-guide.html#refresh-ahead) reduces latency
  * [Low Overhead Statistics](docs/stable/user-guide.html#statistics) and JMX support
- * [Separate API](/docs/stable/apidocs/cache2k-api/index.html) with stable and concise interface
+ * [Separated and defined API](/docs/stable/apidocs/cache2k-api/index.html) with stable and concise interface
  * [complete JCache / JSR107 support](docs/stable/user-guide.html#jcache)
  * [XML based configuration](docs/stable/user-guide.html#configuration), to separate cache tuning from logic
 
 ## Road map
 
-  * _1.2_, improve Bulk performance, reduce threads needed for timing
-  * _1.4_, async support
-  * _1.6_, persistence and off-heap features
-  
-The road map represents a rough plan.
+Is cache2k perfect yet? No, a lot is missing. Here is a rough plan for the future:
+
+### 1.2
+
+- improve bulk performance
+- reduce threads needed for expiry
+- More options for refresh ahead 
+
+### 1.4
+
+- Async support
+
+### 1.6
+
+- Persistence and off-heap features
 
 ## News
 
