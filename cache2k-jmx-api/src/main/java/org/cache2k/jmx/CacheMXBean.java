@@ -23,7 +23,7 @@ package org.cache2k.jmx;
 /**
  * Adds actions to the cache mx bean.
  *
- * @author Jens Wilke; created: 2013-07-15
+ * @author Jens Wilke
  */
 @SuppressWarnings("unused")
 public interface CacheMXBean extends CacheInfoMXBean {

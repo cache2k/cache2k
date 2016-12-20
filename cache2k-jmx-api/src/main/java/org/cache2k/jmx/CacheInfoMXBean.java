@@ -28,7 +28,7 @@ import java.util.Date;
 /**
  * Exposed statistics via JMX from a cache.
  *
- * @author Jens Wilke; created: 2013-07-16
+ * @author Jens Wilke
  */
 @SuppressWarnings("unused")
 public interface CacheInfoMXBean {

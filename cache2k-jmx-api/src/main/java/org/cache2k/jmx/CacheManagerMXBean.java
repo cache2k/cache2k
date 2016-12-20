@@ -21,7 +21,9 @@ package org.cache2k.jmx;
  */
 
 /**
- * @author Jens Wilke; created: 2013-12-20
+ * Bean representing a cache manager.
+ *
+ * @author Jens Wilke
  */
 @SuppressWarnings("unused")
 public interface CacheManagerMXBean {
