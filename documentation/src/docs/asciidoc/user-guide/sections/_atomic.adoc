@@ -22,7 +22,7 @@ The atomic operation semantic guarantees that this is not possible.
 
 These kind of operations are also called CAS (compare and swap) operations.
 
-All operation on a single entry have atomic guarantee. Bulk operations, meaning operations on
+In general all operations on a single entry have atomic guarantee. Bulk operations, meaning operations on
 multiple keys, like `getAll()`, don't have atomic guarantees.
 
 .
@@ -41,9 +41,12 @@ multiple keys, like `getAll()`, don't have atomic guarantees.
 
 === Entry Processor
 
-With the entry processor its possible to implement arbitrary operations that are processed atomically.
+With the entry processor it is possible to implement arbitrary operations that are processed atomically.
 The interface `EntryProcessor` must be implemented with the desired semantics and invoked on a cached value
-via `Cache.invoke()`. Here is an example which implements the same semantics as `replaceIfEquals()`:
+via `Cache.invoke()`. The bulk operation `Cache.invokeAll()` is available to process multiple cache entries
+with one entry processor.
+
+Here is an example which implements the same semantics as `replaceIfEquals()`:
 
 [source,java]
 ----
@@ -72,5 +75,21 @@ via `Cache.invoke()`. Here is an example which implements the same semantics as 
     }
 ----
 
-The bulk operation `Cache.invokeAll()` is available to process multiple cache entries
-with one entry processor.
+Since it is an atomic operation multiple calls on
+link:{cache2k_docs}/apidocs/cache2k-api/index.html?org/cache2k/processor/MutableCacheEntry.html[`MutableCacheEntry`] may have no effect if
+neutralising each other. For example:
+
+[source,java]
+----
+     entry.setValue("xy");
+     entry.setValue("abc");
+     entry.remove();
+----
+
+The effect will be:
+
+- If an entry for the key is existing, the entry will be removed
+- If no entry for the key is existing, the cache state will not change
+- If a cache writer is attached, `CacheWriter.delete()` will be called in any case
+
+
