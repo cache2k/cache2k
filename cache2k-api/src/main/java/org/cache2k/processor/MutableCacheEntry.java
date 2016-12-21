@@ -25,14 +25,14 @@ import org.cache2k.integration.CacheLoader;
 
 /**
  * A mutable entry is used inside the {@link EntryProcessor} to perform
- * updates and retrieve information if the entry is existing in the cache.
+ * updates and retrieve information from a cache entry.
  *
  * <p>A mutation is only done if a method for mutation is called, e.g.
  * {@code setValue} or {@code remove}. If multiple mutate methods
- * are called only the last method will be accounted for.
+ * are called in sequence only the last method will have an effect.
  *
- * <p>One instance is only intended for usage by a single thread. And
- * shouldn't passed or hold longer than the entry processor call.
+ * <p>One instance is only usable by a single thread and for
+ * one call of {@link EntryProcessor#process(MutableCacheEntry)}.
  *
  * @see EntryProcessor
  * @author Jens Wilke
