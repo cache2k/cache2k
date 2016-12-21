@@ -29,24 +29,6 @@ Java applications.
  * [complete JCache / JSR107 support](docs/stable/user-guide.html#jcache)
  * [XML based configuration](docs/stable/user-guide.html#configuration), to separate cache tuning from logic
 
-## Road map
-
-Is cache2k perfect yet? No, a lot is missing. Here is a rough plan for the future:
-
-### 1.2
-
-- improve bulk performance
-- reduce threads needed for expiry
-- More options for refresh ahead 
-
-### 1.4
-
-- Async support
-
-### 1.6
-
-- Persistence and off-heap features
-
 ## News
 
   * **Version 1.0.0.CR1, 2016-12-05**: More cleanups, XML configuration has arrived. See [Version 1.0.0.CR1 release notes](1/0.0.CR1.html)
