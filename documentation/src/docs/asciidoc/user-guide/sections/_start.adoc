@@ -28,14 +28,13 @@ in your project is to add the following dependencies:
 ----
 
 This will add the single `cache2k-all` JAR file to your application deliverable. For compiling and development
-the `cache2k-api` is included which contains API classes meant for cache clients and no implementation classes.
-Everything inside the API is kept stable and is well documented.
-
-The above requires at least a `Java SE 6` compatible runtime. For usage with Android, see the Android chapter.
+the `cache2k-api` is included which contains API classes only. The above requires at least a `Java SE 6` compatible
+runtime. For usage with Android, see the <<android,Android>> chapter.
 
 === Using a Cache
 
-For starting with cache2k, let's construct a cache that maps one of our frequent flight routes to our airline of choice.
+For starting with cache2k, let's construct a cache that looks up the preferred airline for one of our frequent flight
+routes.
 
 [source,java]
 ----
@@ -63,24 +62,23 @@ For starting with cache2k, let's construct a cache that maps one of our frequent
     }
 ----
 
-To obtain the cache a new `Cache2kBuilder` is created, mind the untypical `{}`. There are a dozens of
+To obtain the cache a new `Cache2kBuilder` is created, mind the trailing `{}`. There are a dozens of
 options that can alter the behavior of a cache. In the example above the cache gets a name and is instructed
 to keep entries forever via `eternal(true)`. A name needs to be unique and may be used to find and apply additional
 configuration parameters and to make statistics available via JMX. See the JavaDoc of `Cache2kBuilder.name()`.
-Building a cache with the same name twice leads to an error.
 
 The cache has a maximum capacity of 100 entries. When the limit is reached an entry is automatically removed that
  is not used very often. This is called eviction.
 
-In the further example `Cache.put` is used to store values. The cache content is queried with `Cache.peek` and
+In the example `Cache.put()` is used to store values. The cache content is queried with `Cache.peek` and
 `Cache.containsKey`.
 
 === Cache Aside
 
-Let's consider we have an operation called `findFavoriteAirline`, that checks all our previous flights
-and find the airline we liked the most. If we never did fly on that route it asks all our friends.
+Let's consider we have an operation called `findFavoriteAirline()`, that checks all our previous flights
+and finds the airline we liked the most. If we never did fly on that route it will ask all our friends.
  Of course this is very time consuming, so we first ask the cache, whether something for that flight
- route is already known, if not we call the expansive operation.
+ route is already known, if not, we call the expansive operation.
 
 [source,java]
 ----
@@ -109,7 +107,7 @@ The above pattern is called _cache aside_.
 === Read Through
 
 An alternative way to use the cache is the so called _read through_ operation. The cache configuration
-gets extended by a loader, so the cache knows how to retrieve missing values.
+gets customized with a loader, so the cache knows how to retrieve missing values.
 
 [source,java]
 ----
@@ -135,13 +133,13 @@ gets extended by a loader, so the cache knows how to retrieve missing values.
 ----
 
 Now we use `Cache.get` to request a value from the cache, which transparently invokes
-the loader and populates the cache, if a value is missing. Using a cache in read through
+the loader and populates the cache, if the requested value is missing. Using a cache in read through
 mode has various advantages:
 
 - No boilerplate code as in cache aside
 - Protection against the cache stampede (See https://en.wikipedia.org/wiki/Cache_stampede[Wikipedia: Cache Stampede])
-- Automatic refreshing of expired values (refresh ahead)
-- Build-in exception handling like suppression and retries (see Resilience chapter)
+- Automatic refreshing of expired values is possible (<<refresh,refresh ahead>>)
+- Build-in exception handling like suppression and retries (see <<resiliance,Resilience>> chapter)
 
 === Using Null Values
 
@@ -157,7 +155,7 @@ In case a `null` value is the best choice, it is possible to store it in cache2k
 
 In the example the key is constructed by concatenating the origin and destination airport. This is ineffective for
 several reasons. The string concatenation allocates two temporary objects (the `StringBuilder` and
-its character array); if we need the two ports again we have to split the string again. A better way
+its character array); if we need the two parts again we have to split the string again. A better way
 is to define a dedicated class for the cache key that is a tuple of origin and destination.
 
 [source,java]
@@ -205,7 +203,7 @@ Cache keys needs to define a proper `hashCode` and `equals` method.
 .Don't mutate keys
 ====
 For a key instance it is illegal to change its value after it is used for a cache operation.
-The cache uses the key instance in its own data structure. When defining your own keys, it is a therefore a
+The cache uses the key instance in its own data structure. When defining your own keys, it is therefore a
 good idea to design them as immutable object.
 ====
 
@@ -225,9 +223,10 @@ results.
 === Exceptions and Caching
 
 When using read through and a global expiry time (`expireAfterWrite`) is set, exceptions
-will be cached and/or suppressed. A cached exception will be rethrown every time the
-key is accessed and after some time, shorter then the expiry time, the loader will
-be called again. A cached exception can be detected by containing the expiry time
+will be cached and/or suppressed.
+
+A cached exception will be rethrown every time the key is accessed and after some time, after some
+time passes the loader will be called again. A cached exception can be spotted by the expiry time
 in the exception text, for example:
 
 ----
@@ -235,15 +234,17 @@ in the exception text, for example:
 ----
 
 Cached exceptions can be misleading, because you may see 100 exceptions in your log, but only
-one was generated from the loader. When a previous value is available a subsequent loader exception
-is suppressed an exception for a short time. For more details on this behavior see the <<resilience,Resilience
-chapter>>.
+one was generated from the loader. That's why the expiry of an exception is typically shorter then
+the configured expiry time.
+
+When a previous value is available a subsequent loader exception is suppressed for a short time.
+For more details on this behavior see the <<resilience,Resilience chapter>>.
 
 === Don't Panic!
 
 Also those familiar with caching might get confused by the many parameters and operations of cache2k controlling
 nuances of caching semantics. Except for the exceptions caching described above everything will work as you will
-expect from a cache. There is no need to know every feature in detail. Think of them as a parachute. Usually you
+expect from a cache. There is no need to know every feature in detail, yet. Think of them as a parachute. Usually you
 don't need them, but when in trouble, there is one parameter that will save you.
 
 Whenever in doubt: For asking questions please use the _Stackoverflow_ tag `cache2k`. Please describe your scenario

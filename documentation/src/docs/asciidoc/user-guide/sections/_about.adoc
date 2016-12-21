@@ -1,12 +1,10 @@
 == About
 
-cache2k is a compact in process cache implementation that has the following main design goals:
+cache2k is a compact in-process cache implementation that has the following main design goals:
 
-Performance:: To achieve high performance cache2k is designed fundamentally different from ground up
-  and is leveraging an eviction algorithm that allows concurrent read access without locking overhead.
-Ease of use:: Well documented API, provide features beyond standard cache libraries for typical problems,
-  the typical configuration should be as small as possible
-Compact and modular:: Keep a small core size, additional features may go in separate artifacts
+Performance:: fundamentally different eviction algorithm to allow fast and lock free reads.
+Ease of use:: defined API, solve common problems with one configuration option
+Compact and modular:: small core size
 
 === Versioning
 
@@ -29,4 +27,4 @@ you to discover every important feature. At some points rationale or background
 information is given. It is not complete. You will find additional information in the API JavaDoc,
 in examples, and in the test cases.
 
-A PDF version of the documentations is available: link:user-guide.pdf[cache2k User Guide PDF Version].
+A link:user-guide.pdf[cache2k User Guide PDF Version] is available as well.
