@@ -18,13 +18,17 @@ Furthermore, a Tick-Tock scheme is used to mark development releases. Examples:
 1.2.0.Final:: *Even minor version*, stable release, new features and compatible changes to the previous version.
      Not be strictly binary compatible to the previous stable release. Interfaces not meant for
      extension may get new methods.
-2.0.0.Final:: New Major version, adds and removes features, maybe more incompatible changes to the previous version
+2.0.0.Final:: New Major version, adds and removes features, may have incompatible changes to the previous version
 
 === How to read the documentation
 
 The documentation is intended as a overview guide through the functionality of cache2k and will help
-you to discover every important feature. At some points rationale or background
+you discover every important feature. At some points rationale or background
 information is given. It is not complete. You will find additional information in the API JavaDoc,
 in examples, and in the test cases.
 
 A link:user-guide.pdf[cache2k User Guide PDF Version] is available as well.
+
+=== Copyright
+
+The documentation is licensed under the terms of https://creativecommons.org/licenses/by/4.0/[CC BY 4.0].

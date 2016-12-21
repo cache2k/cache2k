@@ -65,8 +65,8 @@ In the configuration file only the capacity is altered:
 
 ==== File Location
 
-The configuration for the default cache manager (`CacheManager.getInstance()`) is searched via the
-class loader `/cache2k.xml`. If a different class loader is provided, that is used to look for a configuration.
+The configuration for the default cache manager (`CacheManager.getInstance()`) is expected in the class path at
+`/cache2k.xml`. If a different class loader is used to create the cache manager, that is used to look up the configuration.
 If multiple cache managers are used, each cache manager can have its own configuration, which is looked after at
 `/cache2k-${managerName}.xml`.
 
@@ -106,8 +106,8 @@ TOP:: references the configuration root, e.g. `${TOP.caches.flights.entryCapacit
       `entryCapacity` of the cache named `flights`.
 PROP:: a Java system property, e.g. `${PROP.java.home}` for the JDK installation directory.
 
-The scope prefix can also reference a parent element name. If the scope prefix is empty an value of the same level
-is references.
+The scope prefix can also reference a parent element name. If the scope prefix is empty an value at the same level
+is referenced.
 
 A configuration can contain user defined properties in the `properties.user` section.
 

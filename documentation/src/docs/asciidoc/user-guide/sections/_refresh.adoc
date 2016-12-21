@@ -14,26 +14,24 @@ A (possibly shared) thread pool for refreshing can be configured via `prefetchEx
 The main purpose of refresh ahead is to ensure that the cache contains fresh data
 and that an application never is delayed when data expires and needs a reload.
 This leads to several compromises: Expired values will be visible until the new
-data is available from the load operation, more then needed requests will be send
-to the loader, more memory could be used.
+data is available from the load operation, more then the needed requests will be send
+to the loader.
 
 After the expiry time of a value is reached, the loader is invoked to fetch a fresh value.
 The old value will be returned by the cache, although it is expired, and will be replaced
-by the new value, once the loader is finished. In the case there are not enough loader
-threads available, the value will expire immediately and the next `get() request
-will trigger the load. Once refreshed, the entry is in a trail period. If it is not accessed
-until the next expiry, no refresh will be done and the entry expires regularly.
+by the new value, once the loader is finished. When a refresh is needed and not enough loader
+threads are available, the value will expire immediately and the next `get()` request
+will trigger the load.
 
 Once refreshed, the entry is in a trail period. If it is not accessed until the next
-expiry, no refresh will be done and the entry expires regularly. This means that the
-time an entry stays within the trail period is determined by the configured expiry time
-or the the {@code ExpiryPolicy}. In case an entry is not accessed any more it needs to
-reach the expiry time twice before removed from the cache.
+expiry, no refresh will be done, the entry expires and will be removed from the cache.
+This means that the time an entry stays within the trail period is determined by the
+configured expiry time or the the `ExpiryPolicy`.
 
 NOTE: Refresh ahead only works together with the methods invoking the loader, for example
 `get()` and `getAll()`. After a value is refreshed, an entry will not be visible with
 `containsKey` or `peek`. The first call to `get()` or `load()` on a previously refreshed
-item will put it into the cache.
+item will make the loaded value available in the cache.
 
 === Sharp Timeout vs. Refresh Ahead
 

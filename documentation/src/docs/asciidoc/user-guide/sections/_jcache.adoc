@@ -94,7 +94,7 @@ have to be resolved. The policy is as follows:
 Expiry settings:: Settings in cache2k configuration take precedence. A configured expiry policy in the standard
   JCache `CacheConfiguration` will be ignored if either `expiryAfterWrite` or `expiryPolicy` is specified in
   the cache2k configuration.
-Loader and Writer:: Settings in JCache configuration take precedence. If a loader or a write is specified in the
+Loader and Writer:: Settings in JCache configuration take precedence. If a loader or a writer is specified in the
   JCache `CacheConfiguration` the setting in the cache2k configuration is ignored.
 Event listeners:: Registered listeners of both configurations will be used.
 
@@ -157,7 +157,7 @@ If configured via cache2k mechanisms, store by value semantics are not provided 
 Instead the usual in process semantics are provided. Applications should not rely on the fact
 that values or keys are copied by the cache in general.
 
-For heap protected cache2k is able to copy keys and values. This can be enabled via the parameter
+For heap protection cache2k is able to copy keys and values. This can be enabled via the parameter
 `JCacheConfiguration.setCopyAlwaysIfRequested`, see the configuration example above.
 
 ==== Loader exceptions

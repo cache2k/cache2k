@@ -20,12 +20,11 @@ __Getting started__ chapter.
 ----
 
 The `{}` is a trick which constructs an anonymous class, which contains the complete type information.
- If just an object would be created the complete type information would not be available at runtime and could
- not be used for configuring the cache.
+If just an object would be created the complete type information would not be available at runtime and could
+not be used for configuring the cache.
 
-It is also possible to construct caches with arbitrary types dynamically, for example in generic code like
-a factory method. If generic type information should be passed, the interface `CacheType` can be implemented.
-A plain Java class is also supported.
+Caches can be constructed dynamically with arbitrary generic types. The type information can be
+specified via the interface `CacheType`.
 
 === Constructing a Cache without Generic Types
 
@@ -50,12 +49,12 @@ The key type needs to implement `equals` and `hashCode`. Arrays are not valid fo
 
 Using arrays as values is not supported, because some cache operations testing for equality,
 like `Cache.replaceIfEquals`, will not work as desired on arrays. See the rationale for discussion.
-To prevent against problems, cache2k refuses to build a cache with an array value type specified
+To prevent problems, cache2k refuses to build a cache with an array value type specified
 at the configuration. However, this protection can be circumvented by not providing the
 proper type in the cache configuration.
 
 If the value type is implementing
-link:{cache2k_docs}/apidocs/cache2k-api/index.html?org/cache2k/expiry/ValueWithExpiryTime.html[`ValueWithExpiryTime`],
+{api_link}/expiry/ValueWithExpiryTime.html[`ValueWithExpiryTime`],
 an expiry policy is added automatically.
 
 === Untyped Caches

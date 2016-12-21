@@ -7,23 +7,31 @@ The write trough does not provide resilience capabilities at the moment, which m
 
 === Behavior
 
-The default behavior depends on the general expiry (`expiryAfterWrite`) setting of the cache.
-If no expiry is specified, all exceptions will be propagated to the client. The loader will be
-called immediately again, if the key is requested again. When expiry is specified, the cache
-also enables the resilience features.
+The default behavior depends on the general expiry (`expiryAfterWrite` or `eternal`) setting of the cache.
 
-If a load yields an exception and there is data in the cache: The exception is not propagated
-to the client, and the cache answers requests with the current cache content. Subsequent
-load attempts that yield an exception, will also be _suppressed_, if the time span to the
-first exception is below the resilience duration setting. If the loader produces
-subsequent exceptions that is longer then the resilience duration,
+==== No Expiry
+
+If no expiry is specified or `eternal(true)` is specified, all exceptions will be propagated to the client.
+The loader will be called immediately again, if the key is requested again.
+
+==== With Expiry
+
+When an expiry time is specified, the cache also enables the resilience features.
+
+If a load yields an exception and there is data in the cache: The exception will not be
+propagated to the client, and the cache answers requests with the current cache content.
+Subsequent reload attempts that yield an exception, will also be _suppressed_, if the time span to the
+first exception is below the resilience duration setting.
+
+If the loader produces subsequent exceptions that is longer then the resilience duration,
 the exception will be _propagated_. The resilience duration can be set with the parameter
-`resilienceDuration` and is identical to the `expiryAfterWrite` time span.
+`resilienceDuration`, if not set explicitly it is identical to the `expiryAfterWrite`
+time span.
 
 === Retry
 
 After an exception happens the cache will do a retry to load the value again. The retry
-is started after the configured retry interval (`retryInterval`), or,  if not
+is started after the configured retry interval (`retryInterval`), or, if not
 explicitly configured after 5% of the resilience duration. The load is started when the client accesses
 the value again, or the cache is doing this by itself if `refreshAhead` is enabled.
 
@@ -79,14 +87,15 @@ mayRetryInterval:: The maximum time interval after a retry attempt is made. Defa
 retryInterval:: Initial time interval after a retry attempt is made. Defaults to 10% of `mayRetryInterval`, or a minimum of 2 seconds.
 resiliencePolicy:: Sets a custom resilience policy to control the cache behavior in the presence of exceptions
 exceptionPropagator:: Sets a custom behavior for exception propagation
-refreshAhead:: Either the option `refreshAhead` or `keepDataAfterExpired` must be able to do exception suppression if an expiry is specified
-keepDataAfterExpired:: Either the option `refreshAhead` or `keepDataAfterExpired` must be able to do exception suppression if an expiry is specified
+refreshAhead:: Either the option `refreshAhead` or `keepDataAfterExpired` must be enabled to do exception suppression if an expiry is specified
+keepDataAfterExpired:: Either the option `refreshAhead` or `keepDataAfterExpired` must be enabled to do exception suppression if an expiry is specified
 
 === Examples
 
 ==== No expiry
 
-Values do not expire, exceptions are not suppressed and an immediately retry is done.
+Values do not expire, exceptions are not suppressed. After an exception, the next `Cache.get()` will trigger
+a load.
 
 [source,java]
 ----
@@ -99,9 +108,9 @@ Values do not expire, exceptions are not suppressed and an immediately retry is 
 ==== Expire after 10 minutes
 
 Values expire after 10 minutes. Exceptions are suppressed for 10 minutes
-as well, if possible. A retry attempt is made until 1 minute. If the cache
+as well, if possible. A retry attempt is made after 1 minute. If the cache
 continuously receives exceptions for a key, the retry intervals are exponentially
-increased up to 10 minutes.
+increased up to a maximum interval time of 10 minutes.
 
 [source,java]
 ----
@@ -114,11 +123,11 @@ increased up to 10 minutes.
 
 ==== Reduced suppression time
 
-Expire entries after 10 minutes. If an exceptions happens we do not want
- the cache to continue to service the previous (and expired) value for too long. In this scenario
- it is preferred to propagate an exception rather than serving a potentially outdated value.
- On the other side, there may be temporary outages of the network for a maximum of 30 seconds
- we like to cover for.
+Expire entries after 10 minutes. If an exception happens we do not want
+the cache to continue to service the previous (and expired) value for too long. In this scenario
+it is preferred to propagate an exception rather than serving a potentially outdated value.
+On the other side, there may be temporary outages of the network for a maximum of 30 seconds
+we like to cover for.
 
 [source,java]
 ----
@@ -151,9 +160,9 @@ The retry interval does not increase, since a maximum timer interval is not spec
 
 === Custom resilience policy
 
-By registering a custom implementation of the resilience policy it is possible to
-implement a special behavior that is used to determine the durations an exception should be
-suppressed or cached. Use the existing implementation as an example and starting point.
+By registering a custom implementation of the `ResiliencePolicy` it is possible to
+implement a special behavior that is used to determine the cache duration of an
+suppressed or cached an exception . Use the existing implementation as an example and starting point.
 
 === Debugging
 

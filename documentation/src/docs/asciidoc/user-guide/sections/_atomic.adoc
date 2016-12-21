@@ -1,11 +1,11 @@
 == Atomic Operations
 
-Here is what atomic operations exist and what you can do with it.
+Here which atomic operations exist and what you can do with it.
 
-=== Build in Atomic Operations
+=== Built-in Atomic Operations
 
-Atomic operations allow the to read or compare and modify a cache value in an
- atomic way. For example, the method `Cache.replaceIfEquals()` has the following semantics:
+Atomic operations allow to read, compare and modify a cache value in an
+atomic way. For example, the method `Cache.replaceIfEquals()` has the following semantics:
 
 [source,java]
 ----

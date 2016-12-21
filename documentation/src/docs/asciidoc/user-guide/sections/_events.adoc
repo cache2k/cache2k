@@ -1,6 +1,6 @@
 == Event Listeners
 
-The cache generates events when an entry gets inserted or updated.
+The cache generates events when an entry is inserted or updated.
 
 === Listening to Events
 

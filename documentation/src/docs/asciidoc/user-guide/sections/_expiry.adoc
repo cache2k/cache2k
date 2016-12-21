@@ -38,8 +38,8 @@ in time the parameter `sharpExpiry` can be enabled. This will cause that the exp
 the point in time determined by the expiry policy. For more details see the JavaDoc or
 `Cache2kBuilder.sharpExpiry` and `ExpiryPolicy`.
 
-If _sharp expiry and refresh ahead_ is enabled in combination the contract of refresh ahead
-is relaxed. This will lead to:
+If _sharp expiry and refresh ahead_ is both enabled, the contract of refresh ahead is relaxed.
+The resulting semantics will be:
 
  - Entries will expire exactly at the specified time
  - A refresh starts at expiry time
@@ -81,8 +81,8 @@ needs to be corrected, it should adapt slowly to the correct time and keep conti
 
 In case a clock skew happens regularly a premature or late cache expiry may cause troubles. It is possible
 to do some countermeasures. If the time decreases, entries may expire more early. This can be detected and with the
-`AdvancedCacheLoader` the previously loaded value can be reused. If the time increases, expiry can be triggered
-programmatically with `expireAt`.
+`AdvancedCacheLoader` the previously loaded value can be reused. If there is a time skew forward, expiry can
+be triggered programmatically with `expireAt`.
 
-See also the Rationale section. It is planed for version 1.2 to have a configurable time source, which enables
+Outlook: It is planed for version 1.2 to have a configurable time source, which enables
 better adaption to different operating environments. Ideas and requests are welcome.

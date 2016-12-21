@@ -1,13 +1,17 @@
 == Loading / Read Through
 
-When caching reads, using the cache in read through operation is recommended since
- it has several advantages:
+In read through operation the cache will fetch the value by itself when the value is retrieved, for
+example by `Cache.get()`.
+
+=== Benefits of Read Through Operation
+
+When caching reads, using the cache in read through operation has several advantages:
 
  - No boilerplate code as in cache aside
  - Data source becomes configurable
  - Protection against the cache stampede (See https://en.wikipedia.org/wiki/Cache_stampede[Wikipedia: Cache Stampede])
  - Automatic refreshing of expired values (refresh ahead)
- - Build-in exception handling like suppression and retries (see Resilience chapter)
+ - Build-in exception handling like suppression and retries (see <<resilience,Resilience>> chapter)
 
 === Defining a Loader
 
@@ -20,8 +24,8 @@ V load(K key) throws Exception;
 ----
 
 The loader actions may only depend on the input key parameter. In case the load operation
-will yield an exception it can be passed to the cache. How exceptions are handled is defined
-by the resilience policy.
+will yield an exception it may be passed on to the cache. How exceptions are handled by the cache
+is defined by the resilience policy.
 
 === Advanced Loader
 
@@ -32,8 +36,8 @@ For more sophisticated load operations the `AdvancedCacheLoader` is available.
  V load(K key, long currentTime, CacheEntry<K,V> currentEntry) throws Exception;
 ----
 
-The information of the current entry can be used to optimize the data request. For example
-if the data is requested by HTTP the header `If-Modified-Since` can be set from
+The information of the current entry can be used to optimize the data request. For example,
+if the data is requested by HTTP the header, `If-Modified-Since` can be set from
 `Entry.getLastModification()`.
 
 === Prefetching
@@ -50,7 +54,7 @@ are available.
 === Invalidating
 
 In case the data was updated in the external source, the current cache content
- becomes invalid. To notify the cache and eventually update the cached value
+becomes invalid. To notify the cache and eventually update the cached value
 several options exist.
 
 `Cache.remove(key)`::
@@ -59,7 +63,8 @@ Invalidating an entry with `Cache.remove()` will cause the entry to be removed f
 The next time the entry is requested with `Cache.get(key)` the cache will invoke the loader (if defined).
 In case the loader yields an exception, this exception will be propagated to the application since there
 is no previous value for fallback. `Cache.remove(key)` is useful if the data is outdated and old data is
- not allowed to be delivered. Priority is on data consistency.
+not allowed to be delivered. `Cache.remove()` will also invoke `CacheWriter.delete()`, if specified.
+Priority is on data consistency.
 
 `Cache.expireAt(key, Expiry.NOW)`::
 
@@ -79,4 +84,17 @@ expired. The operation will have no effect, if there is no cached entry associat
 is still available in the cache as fallback if a loader exception occurs. This variant is the better
 choice if outdated values are allowed to be visible and the cache should continuously serve data.
 Priority is on availability.
+
+=== Transparent Access
+
+When using the cache in read through and/or in write through operation, some methods on the
+cache will often be misinterpreted and present pitfalls. For example, the method
+`Cache.containsKey` will not return true when the value exists in the system of authority,
+but only reflects the cache state.
+
+To prevent pitfalls a reduced set of interfaces is available:
+{api_link}/KeyValueSource.html[`KeyValueSource`],
+{api_link}/AdvancedKeyValueSource.html[`AdvancedKeyValueSource`] and
+{api_link}/KeyValueStore.html[`KeyValueStore]` are available. These interfaces only contain
+methods that act transparently when a loader or writer is defined.
 

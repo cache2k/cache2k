@@ -61,10 +61,9 @@ obtain precise statistics.
 
 === Internal Statistics
 
-The cache implementation a lot statistics counters, which are exposed in an internal interface. This
-can be revealed via `((InternalCache) cache).getInfo()` and needs the `cache2k-core` artifact in the compile scope.
-Please mind that an application relying on an internal interface may break from release to release. Usage
-should be limited.
+The cache implementation has a lot statistics counters, that are exposed in an internal interface. This
+can be revealed via `((InternalCache) cache).getInfo()` and needs the `cache2k-core` artifact in the
+compile scope. However, internal interfaces may change from release to release.
 
 === Noteworthy Metrics
 
@@ -72,12 +71,12 @@ Some special metrics need some more explanation.
 
 ==== Hash Quality
 
-The is a single value between 100 and 0 to help evaluate the quality of the hashing function.
+Value between 100 and 0 to help evaluate the quality of the hashing function.
 100 means perfect. This metric takes into account the collision to size ratio, the longest collision size
 and the collision to slot ratio. The value reads 0 if the longest collision size gets more
 then 20.
 
-The number of collisions and the longest size of a collision slot are also available via JMX.
+The number of collisions and the longest size of a collision slot is also available via JMX.
 
 ==== Key Mutation Counter
 

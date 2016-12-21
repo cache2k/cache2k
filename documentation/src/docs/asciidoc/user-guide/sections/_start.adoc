@@ -78,7 +78,7 @@ In the example `Cache.put()` is used to store values. The cache content is queri
 Let's consider we have an operation called `findFavoriteAirline()`, that checks all our previous flights
 and finds the airline we liked the most. If we never did fly on that route it will ask all our friends.
  Of course this is very time consuming, so we first ask the cache, whether something for that flight
- route is already known, if not, we call the expansive operation.
+ route is already known, if not, we call the expensive operation.
 
 [source,java]
 ----
@@ -87,7 +87,7 @@ and finds the airline we liked the most. If we never did fly on that route it wi
       .build();
 
     private String findFavoriteAirline(String origin, String destination) {
-      // expansive operation to find the best airline for this route
+      // expensive operation to find the best airline for this route
       // for example, ask all friends...
     }
 
@@ -123,7 +123,7 @@ gets customized with a loader, so the cache knows how to retrieve missing values
     .build();
 
   private String findFavoriteAirline(String origin, String destination) {
-    // expansive operation to find the best airline for this route
+    // expensive operation to find the best airline for this route
   }
 
   public String lookupFavoirteAirline(String origin, String destination) {
@@ -139,7 +139,7 @@ mode has various advantages:
 - No boilerplate code as in cache aside
 - Protection against the cache stampede (See https://en.wikipedia.org/wiki/Cache_stampede[Wikipedia: Cache Stampede])
 - Automatic refreshing of expired values is possible (<<refresh,refresh ahead>>)
-- Build-in exception handling like suppression and retries (see <<resiliance,Resilience>> chapter)
+- Built-in exception handling like suppression and retries (see <<resiliance,Resilience>> chapter)
 
 === Using Null Values
 
@@ -211,7 +211,7 @@ The above isn't special to caching or cache2k, it applies identically when using
 
 === Mutating Values
 
-It is illegal to mutate a cached value after stored in the cache, unless `storeByReference`
+It is illegal to mutate a cached value after it was stored in the cache, unless `storeByReference`
  is enabled. This parameter instructs the cache to keep all cached values inside the heap.
 
 Background: cache2k stores its values in the Java heap by the object reference. This means
@@ -225,8 +225,8 @@ results.
 When using read through and a global expiry time (`expireAfterWrite`) is set, exceptions
 will be cached and/or suppressed.
 
-A cached exception will be rethrown every time the key is accessed and after some time, after some
-time passes the loader will be called again. A cached exception can be spotted by the expiry time
+A cached exception will be rethrown every time the key is accessed. After some
+time passes, the loader will be called again. A cached exception can be spotted by the expiry time
 in the exception text, for example:
 
 ----

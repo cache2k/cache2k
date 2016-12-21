@@ -9,10 +9,9 @@ can be allowed with a configuration parameter.
 
 A good writeup of the topic can be found at
 https://github.com/google/guava/wiki/UsingAndAvoidingNullExplained[Using and Avoiding Null Explained].
-The bottom line is, that for a map it is always better to do not store a mapping if the value
-is null instead of storing a mapping to a null value. For a cache it is a different story, since the
-absence of a mapping can mean two things: The data was not requested from the source yet, or,
-there is no data.
+The bottom line is, that for a map it is always better to store no mapping instead of a mapping to a `null` value.
+For a cache it is a different story, since the absence of a mapping can mean two things: The data was
+not requested from the source yet, or, there is no data.
 
 Storing a `null` value in a cache can make sense, when the data source connected via the `CacheLoader`
 is regularly producing a `null`. A use case is the request of a database entry by primary key,
@@ -94,21 +93,18 @@ use read through and define a loader.
 === Loader and Null Values
 
 If a loader is defined a call of `get()` will either return a non-null value or yield an exception.
-If the loader returns null, a `NullPointerException` is generated and wrapped and propagated via
+If the loader returns `null`, a `NullPointerException` is generated and wrapped and propagated via
 a `CacheLoaderException`.
 
-This behavior is different from JSR107/JCache which defines that an entry is removed, if the loader
-returns null. Within cache2k the default behavior is to fail fast. This intentional, see the
-rationale.
+This behavior is different from JSR107/JCache which defines that an entry is removed, when the loader
+returns `null`. Within cache2k the default behavior is to fail fast.
 
 In case the loader returns `null` and this should not lead to an exception the following options exist:
 
-- Always return a non-null object and include a predicate for the null case.
-  Sometimes it is desirable to transport more information anyway. E.g. when requesting
-  a resource via HTTP null can mean "resource not available", however it may be
-  better to pass on the cause from the HTTP status code.
+- Always return a non-null object and include a predicate for the `null` case, use a list
+  or Java 8 `Optional`
 - Enable `null` value support
-- Remove entries from the cache when the loader returns null (as in JCache)
+- Remove entries from the cache when the loader returns `null` (as in JCache)
 
 The expiry policy can be used to remove entries from the cache when the loader returns null:
 
@@ -127,8 +123,8 @@ The expiry policy can be used to remove entries from the cache when the loader r
     ...
 ----
 
-This works, since the cache checks the null value only after the expiry policy has run and
- had decided to store the value.
+This works, since the cache checks the `null` value only after the expiry policy has run and
+had decided to store the value.
 
 === Performance
 
@@ -145,26 +141,26 @@ where nulls are common, e.g. database persistence layers.
 ==== Why is rejecting `null` values the default?
 
 We were using cache2k for 16 years, with the capability
- to store nulls by default. For the 1.0 version we changed this behavior and don't allow nulls.
- Here is why:
+to store `null` values by default. For the 1.0 version we changed this behavior and don't allow nulls.
+Here is why:
 
-- Most caches do not support null values. Allowing null by default may lead to unexpected behavior.
-- Use cases with null are rare.
-- Returning ore storing a null may be a mistake most of the time, so better fail fast.
-- In case a null is allowed it is better to specify this explicitly to make the different
-  behavior more obvious
+- Most caches do not support `null` values. Allowing `null` by default may lead to unexpected and incompatible behavior.
+- Use cases with `null` are rare.
+- Returning or storing a `null` may be a mistake most of the time.
+- In case a `null` is allowed it is better to specify this explicitly to make the different
+  behavior more obvious.
 
 ==== Why rejecting `null` from the loader?
 
-If the loader returns null, a `NullPointerException` is generated and propagated via
+If the loader returns `null`, a `NullPointerException` is generated and propagated via
 the `CacheLoaderException`. This behavior is different from JSR107/JCache which defines that an entry
-is removed, if the loader returns null.
+is removed, if the loader returns `null`.
 
-The JCache behavior is consistent, since a `get()` in JCache returns null only in the case that
+The JCache behavior is consistent, since a `get()` in JCache returns `null` only in the case that
 no entry is present. The JCache behavior is also useful, since nulls from the loader pass through
 transparently. But as soon as nulls are passed through regularly, the cache is rendered useless, since
-a null from the loader means "no caching". This will be unnoticed during development but will lead to trouble
-in production and is a DOS attack vector as well.
+a `null` from the loader means "no caching". This will be unnoticed during development but will lead to
+performance trouble in production.
 
 In cache2k there a different options when `null` comes into play. A consistent fail fast
 by default will lead to an explicit choice for the best option.
