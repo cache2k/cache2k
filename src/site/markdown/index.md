@@ -7,7 +7,7 @@ Java applications.
 [![License](https://x.h7e.eu/badges/xz/txt/license/apache)](https://www.apache.org/licenses/LICENSE-2.0.html)
 [![Stack Overflow](https://x.h7e.eu/badges/xz/txt/stackoverflow/cache2k)](https://stackoverflow.com/questions/tagged/cache2k)
 
-```java
+````java
   Cache<String,String> cache = new Cache2kBuilder<String, String>() {}
     .expireAfterWrite(5, TimeUnit.MINUTES)    // expire/refresh after 5 minutes
     .resilienceDuration(30, TimeUnit.SECONDS) // cope with at most 30 seconds
