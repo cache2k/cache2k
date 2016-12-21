@@ -88,7 +88,7 @@ public class HeapCache<K, V>
   static final Random SEED_RANDOM = new Random(new SecureRandom().nextLong());
   static int cacheCnt = 0;
 
-  protected static final Tunable TUNABLE = TunableFactory.get(Tunable.class);
+  public static final Tunable TUNABLE = TunableFactory.get(Tunable.class);
 
   final static ExceptionPropagator DEFAULT_EXCEPTION_PROPAGATOR = TUNABLE.exceptionPropagator;
 
@@ -709,10 +709,9 @@ public class HeapCache<K, V>
           }
         }
         putValue(e, _value);
-        break;
       }
+      return returnValue(_previousValue);
     }
-    return returnValue(_previousValue);
   }
 
   @Override
@@ -732,8 +731,8 @@ public class HeapCache<K, V>
           putValue(e, _value);
           return returnValue(_previousValue);
         }
+        break;
       }
-      break;
     }
     metrics.peekMiss();
     return null;
