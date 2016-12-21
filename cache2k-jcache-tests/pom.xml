@@ -16,8 +16,6 @@
   <packaging>jar</packaging>
 
   <name>cache2k JCache tests</name>
-
-  <url>https://github.com/jsr107/jsr107tck</url>
   <description>
     Tests for JSR107 compliant caches. These are tests from the JSR107 TCK
     that were published as Open Source. The artifact may also contain additional

@@ -11,7 +11,8 @@
     then existing cache solutions. cache2k comes with a clean and concise API. The API is currently
     still evolving until version 1.0 is reached.
   </description>
-  <url>http://cache2k.org</url>
+
+  <url>https://cache2k.org</url>
   <inceptionYear>2000</inceptionYear>
 
   <organization>
@@ -65,6 +66,7 @@
   </modules>
 
   <properties>
+    <series>1.0</series>
     <buildNumber>undefined</buildNumber>
     <timestamp>0</timestamp>
     <gitBranch>unknown</gitBranch>
@@ -82,11 +84,12 @@
         <plugin>
           <groupId>org.apache.maven.plugins</groupId>
           <artifactId>maven-compiler-plugin</artifactId>
-          <version>3.5.1</version>
+          <version>3.6.0</version>
           <configuration>
             <useIncrementalCompilation>false</useIncrementalCompilation>
             <source>1.6</source>
             <target>1.6</target>
+            <compilerArgument>-Xlint:unchecked</compilerArgument>
           </configuration>
         </plugin>
         <plugin>
@@ -226,9 +229,11 @@
           <encoding>${commons.encoding}</encoding>
           <docEncoding>${commons.docEncoding}</docEncoding>
           -->
+          <!--
           <linksource>true</linksource>
+          -->
           <links>
-            <link>http://docs.oracle.com/javase/7/docs/api/</link>
+            <link>http://docs.oracle.com/javase/8/docs/api/</link>
           </links>
           <quiet>true</quiet>
           <bottom>
@@ -254,58 +259,55 @@
     </site>
   </distributionManagement>
 
+  <reporting>
+    <plugins>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-project-info-reports-plugin</artifactId>
+        <version>2.7</version>
+        <reportSets>
+          <reportSet>
+            <reports>
+            </reports>
+          </reportSet>
+        </reportSets>
+      </plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-javadoc-plugin</artifactId>
+        <configuration>
+          <additionalparam>-Xdoclint:all -Xdoclint:-missing</additionalparam>
+          <!-- no aggregation, we want to have docs on the API package alone -->
+          <aggregate>false</aggregate>
+          <!--
+          <source>${maven.compile.source}</source>
+          <encoding>${commons.encoding}</encoding>
+          <docEncoding>${commons.docEncoding}</docEncoding>
+          -->
+          <!-- Creates an HTML version of each source file (with line numbers) and adds links to them from the standard HTML documentation. -->
+          <linksource>true</linksource>
+          <links>
+            <link>http://docs.oracle.com/javase/8/docs/api/</link>
+          </links>
+          <quiet>true</quiet>
+          <bottom>
+            <![CDATA[<a href="https://cache2k.org" target="_blank">cache2k</a> API documentation. Copyright &#169; {inceptionYear}&#x2013;{currentYear} <a href="https://headissue.com" target="_blank">headissue GmbH, Munich</a>.]]>
+          </bottom>
+          <detectOfflineLinks>false</detectOfflineLinks>
+        </configuration>
+        <reportSets>
+          <reportSet>
+            <id>html</id>
+            <reports>
+              <report>javadoc</report>
+            </reports>
+          </reportSet>
+        </reportSets>
+      </plugin>
+    </plugins>
+  </reporting>
+
   <profiles>
-
-    <!-- profile for site build of cache2k.org -->
-    <profile>
-      <id>site</id>
-
-      <reporting>
-        <plugins>
-          <plugin>
-            <groupId>org.apache.maven.plugins</groupId>
-            <artifactId>maven-project-info-reports-plugin</artifactId>
-            <version>2.7</version>
-            <reportSets>
-              <reportSet>
-                <reports>
-                </reports>
-              </reportSet>
-            </reportSets>
-          </plugin>
-          <plugin>
-            <groupId>org.apache.maven.plugins</groupId>
-            <artifactId>maven-javadoc-plugin</artifactId>
-            <configuration>
-              <additionalparam>-Xdoclint:all -Xdoclint:-missing</additionalparam>
-              <!-- no aggregation, we want to have docs on the API package alone -->
-              <aggregate>false</aggregate>
-              <!--
-              <source>${maven.compile.source}</source>
-              <encoding>${commons.encoding}</encoding>
-              <docEncoding>${commons.docEncoding}</docEncoding>
-              -->
-              <linksource>true</linksource>
-              <links>
-                <link>http://docs.oracle.com/javase/7/docs/api/</link>
-              </links>
-              <quiet>true</quiet>
-              <bottom>
-                <![CDATA[<a href="http://cache2k.org" target="_blank">cache2k</a> API documentation. Copyright &#169; {inceptionYear}&#x2013;{currentYear} <a href="https://headissue.com" target="_blank">headissue GmbH, Munich</a>.]]>
-              </bottom>
-            </configuration>
-            <reportSets>
-              <reportSet>
-                <id>html</id>
-                <reports>
-                  <report>javadoc</report>
-                </reports>
-              </reportSet>
-            </reportSets>
-          </plugin>
-        </plugins>
-      </reporting>
-    </profile>
 
     <!--
          Profile is used to deploy an internal pre release for integration tests with the

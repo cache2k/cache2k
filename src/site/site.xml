@@ -122,10 +122,10 @@
       <item name="GitHub Project" href="https://github.com/headissue/cache2k" />
     </menu>
     <menu name="Documentation" inherit="bottom">
-      <item name="User Guide" href="/docs/stable/user-guide.html" />
-      <item name="cache2k API" href="/docs/stable/apidocs/cache2k-api/index.html" />
-      <item name="cache2k JMX API" href="/docs/stable/apidocs/cache2k-jmx-api/index.html" />
-      <item name="cache2k JCache API" href="/docs/stable/apidocs/cache2k-jcache-api/index.html" />
+      <item name="User Guide" href="/docs/1.0/user-guide.html" />
+      <item name="cache2k API" href="/docs/1.0/apidocs/cache2k-api/index.html" />
+      <item name="cache2k JMX API" href="/docs/1.0/apidocs/cache2k-jmx-api/index.html" />
+      <item name="cache2k JCache API" href="/docs/1.0/apidocs/cache2k-jcache-api/index.html" />
     </menu>
     <menu name="Legal" inherit="bottom">
       <item name="Imprint" href="https://headissue.com/imprint.html" />
