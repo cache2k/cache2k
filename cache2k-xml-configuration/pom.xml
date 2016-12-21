@@ -46,4 +46,20 @@
 
   </dependencies>
 
+  <build>
+    <plugins>
+      <plugin>
+        <groupId>org.codehaus.mojo</groupId>
+        <artifactId>license-maven-plugin</artifactId>
+        <configuration>
+          <licenseName>apache_v2</licenseName>
+          <!-- Don't add header to XML config files. -->
+          <excludes>
+            <exclude>test/resources/**</exclude>
+          </excludes>
+        </configuration>
+      </plugin>
+    </plugins>
+  </build>
+
 </project>
