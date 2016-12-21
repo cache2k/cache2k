@@ -113,6 +113,7 @@
                                 <idprefix/>
                                 <idseparator>-</idseparator>
                                 <cache2kversion>${project.version}</cache2kversion>
+                                <cache2k_docs>https://cache2k.org/docs/${series}</cache2k_docs>
                             </attributes>
                         </configuration>
                     </execution>
