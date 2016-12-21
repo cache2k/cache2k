@@ -1,6 +1,6 @@
 == Types
 
-In this chapter you will learn:
+This section covers:
 
 - How to construct a cache with concrete types
 - Why you should use types
@@ -20,43 +20,49 @@ __Getting started__ chapter.
 ----
 
 The `{}` is a trick which constructs an anonymous class, which contains the complete type information.
- If just an object would be created the type information would not be available at runtime and could
- not be use for configuring the cache.
+ If just an object would be created the complete type information would not be available at runtime and could
+ not be used for configuring the cache.
 
 It is also possible to construct caches with arbitrary types dynamically, for example in generic code like
 a factory method. If generic type information should be passed, the interface `CacheType` can be implemented.
 A plain Java class is also supported.
 
+=== Constructing a Cache without Generic Types
+
+If the cache types do not contain generic types, then the following simpler builder pattern
+can be used:
+
+[source,java]
+----
+    Cache<Long, String> cache =
+      new Cache2kBuilder.of(Long.class, String.class)
+        .eternal(true)
+        .build();
+----
+
+The additional generated class as in the previous version is not needed, which saves a few byes program code.
+
 === Key Type
 
-The key type need to implement `equals` and `hashCode`. Arrays are not valid for keys.
+The key type needs to implement `equals` and `hashCode`. Arrays are not valid for keys.
 
 === Value Type
 
-Using arrays as values is not supported, because the cache operations testing for equality,
-like `Cache.replaceIfEquals` will not work as desired on arrays. See the rationale for discussion.
-To prevent against problems, cache2k refuses to build a cache with a array value type specified
+Using arrays as values is not supported, because some cache operations testing for equality,
+like `Cache.replaceIfEquals`, will not work as desired on arrays. See the rationale for discussion.
+To prevent against problems, cache2k refuses to build a cache with an array value type specified
 at the configuration. However, this protection can be circumvented by not providing the
 proper type in the cache configuration.
 
-If the value type is implementing `ValueWithExpiryTime`, an expiry policy is added automatically. The
-the class documentation for further information.
+If the value type is implementing
+link:{cache2k_docs}/apidocs/cache2k-api/index.html?org/cache2k/expiry/ValueWithExpiryTime.html[`ValueWithExpiryTime`],
+an expiry policy is added automatically.
 
 === Untyped Caches
 
-It is possible to construct a untyped cache via `Cache2kBuilder.forUnknownTypes`, however, the
-used of untyped caches is discouraged. If different types need to be stored in a cache, construct
+It is possible to construct a untyped cache via `Cache2kBuilder.forUnknownTypes`. But, the
+use of untyped caches is discouraged. If different types need to be stored in a cache, construct
 a separate cache for each type with the proper type information.
-
-[IMPORTANT]
-.Don't use untyped caches
-====
-The need for an untyped cache could be an indicator for a misdirected organization of developer resources
-or an architectural problem. The typical pattern is, that someone needs to do a 'caching layer',
-since the application needs caching, which should handle arbitrary types. Caching isn't a single layer
-in a software architecture, it is a cross-cutting concern. At every interface
-boundary there is potential for caching. Inside every component there is potential for caching.
-====
 
 === Future Enhancements
 
