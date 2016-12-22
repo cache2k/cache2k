@@ -4,11 +4,11 @@
   <parent>
     <groupId>org.cache2k</groupId>
     <artifactId>cache2k-parent</artifactId>
-    <version>1.0-SNAPSHOT</version>
+    <version>1.0.0.CR2</version>
   </parent>
 
   <artifactId>documentation</artifactId>
-  <version>1.0-SNAPSHOT</version>
+  <version>1.0.0.CR2</version>
   <name>cache2k documentation</name>
 
   <description>
