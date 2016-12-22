@@ -1,3 +1,4 @@
+[[expiry-and-refresh]]
 == Expiry and Refresh
 
 A cached value may expire after some specified time. When expired, the value is not

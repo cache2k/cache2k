@@ -1,3 +1,4 @@
+[[jcache]]
 == JCache
 
 cache2k supports the JCache API standard. The implementation is compatible to the JSR107 TCK.

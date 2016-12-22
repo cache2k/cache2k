@@ -1,7 +1,8 @@
 == Loading / Read Through
+[[loading-read-through]]
 
 In read through operation the cache will fetch the value by itself when the value is retrieved, for
-example by `Cache.get()`.
+example by `Cache.get()`. This is also called a loading cache or a self populating cache.
 
 === Benefits of Read Through Operation
 

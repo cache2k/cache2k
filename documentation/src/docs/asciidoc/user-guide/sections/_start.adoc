@@ -1,4 +1,5 @@
 == Getting Started
+[[getting-started]]
 
 === Obtaining cache2k
 

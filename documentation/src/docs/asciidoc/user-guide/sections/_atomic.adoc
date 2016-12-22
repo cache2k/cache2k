@@ -1,3 +1,4 @@
+[[atomic-operations]]
 == Atomic Operations
 
 Here which atomic operations exist and what you can do with it.

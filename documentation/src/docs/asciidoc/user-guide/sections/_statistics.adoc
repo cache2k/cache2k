@@ -1,12 +1,14 @@
-== Statistics
 [[statistics]]
+== Statistics
+
+cache2k collects statistics by default and exposes them via JMX.
 
 === JMX Metrics
 
 When using the `cache2k-all` artifact for runtime, JMX support ist available. Otherwise the additional
 `cache2k-server-side` artifact needs to be added as dependency.
 
-The magement beans are registered with the platform MBean server. The object name of a cache follows the
+The management beans are registered with the platform MBean server. The object name of a cache follows the
 pattern `org.cache2k:type=Cache,manager=<managerName>,name=<cacheName>`, the object name of a cache manager
 follows the pattern `org.cache2k:type=CacheManager,name=<managerName>`.
 

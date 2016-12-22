@@ -1,3 +1,4 @@
+[[xml-configuration]]
 == Configuration via XML
 
 cache2k supports an XML configuration file. The configuration file can contain additional settings that should

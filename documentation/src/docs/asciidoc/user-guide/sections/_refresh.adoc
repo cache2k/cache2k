@@ -1,3 +1,4 @@
+[[refresh-ahead]]
 == Refresh Ahead
 
 With refresh ahead (or background refresh), in a read through configuration,

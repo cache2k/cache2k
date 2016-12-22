@@ -1,3 +1,4 @@
+[[event-listeners]]
 == Event Listeners
 
 The cache generates events when an entry is inserted or updated.

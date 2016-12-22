@@ -11,8 +11,9 @@ Java applications.
   Cache<String,String> cache = new Cache2kBuilder<String, String>() {}
     .expireAfterWrite(5, TimeUnit.MINUTES)    // expire/refresh after 5 minutes
     .resilienceDuration(30, TimeUnit.SECONDS) // cope with at most 30 seconds
-                                              // outage before propagating exceptions
-    .refreshAhead(true)                       // make sure a fresh value is always there
+                                              // outage before propagating 
+                                              // exceptions
+    .refreshAhead(true)                       // keep fresh when expiring
     .loader(new CacheLoader<String, String>() {
       @Override
       public String load(final String key) throws Exception {
@@ -22,7 +23,7 @@ Java applications.
     .build();
 ````
 
-For a detailed introduction continue with [Getting Started](docs/1.0/user-guide.html#start).
+For a detailed introduction continue with [Getting Started](docs/1.0/user-guide.html#getting-started).
 
 ## Features at a glance
 
@@ -32,21 +33,22 @@ For a detailed introduction continue with [Getting Started](docs/1.0/user-guide.
  * Java 6 and [Android](docs/1.0/user-guide.html#android) compatible
  * Leverages Java 8 to increase performance (if possible)
  * Pure Java code, no use of `sun.misc.Unsafe`
- * Thread safe, with a complete set of [atomic operations](docs/1.0/user-guide.html#atomic)
- * [Resilience and smart exception handling](docs/1.0/user-guide.html#exceptions-and-resilience) 
+ * Thread safe, with a complete set of [atomic operations](docs/1.0/user-guide.html#atomic-operations)
+ * [Resilience and smart exception handling](docs/1.0/user-guide.html#resilience-and-exceptions) 
  * Null value support, see [User Guide - Null Values](docs/1.0/user-guide.html#null-values)
  * Automatic [Expiry and Refresh](docs/1.0/user-guide.html#expiry-and-refresh): duration or point in time, variable expiry per entry, delta calculations
  * CacheLoader with blocking read through, see [User Guide - Loading and Read Through](docs/1.0/user-guide.html#loading-read-through)
  * CacheWriter
- * [Event listeners](docs/1.0/user-guide.html#events)
+ * [Event listeners](docs/1.0/user-guide.html#event-listeners)
  * [Refresh ahead](docs/1.0/user-guide.html#refresh-ahead) reduces latency
  * [Low Overhead Statistics](docs/1.0/user-guide.html#statistics) and JMX support
- * [Separated and defined API](/docs/1.0/apidocs/cache2k-api/index.html) with stable and concise interface
+ * [Separate and defined API](docs/1.0/apidocs/cache2k-api/index.html) with stable and concise interface
  * [complete JCache / JSR107 support](docs/1.0/user-guide.html#jcache)
- * [XML based configuration](docs/1.0/user-guide.html#configuration), to separate cache tuning from logic
+ * [XML based configuration](docs/1.0/user-guide.html#xml-configuration), to separate cache tuning from logic
 
 ## News
 
+  * **Version 1.0.0.CR2, 2016-12-22**: Remove deprecated methods. Cleanups. Documentation. See [Version 1.0.0.CR2 release notes](1/0.0.CR2.html)
   * **Version 1.0.0.CR1, 2016-12-05**: More cleanups, XML configuration has arrived. See [Version 1.0.0.CR1 release notes](1/0.0.CR1.html)
   * **Version 0.28-BETA, 2016-09-02**: Minor bug fixes, SLF4J Support, statistics cleanup. See [Version 0.28 release notes](0/28.html)
   * **Version 0.27-BETA, 2016-07-26**: Performance improvements, leveraging Java 8, more API restructuring, cleanup and minor bug fixes. See [Version 0.27 release notes](0/27.html)
@@ -54,10 +56,9 @@ For a detailed introduction continue with [Getting Started](docs/1.0/user-guide.
 
 ## Integrating cache2k in your project
 
-chacke2k is on maven central. If you use maven, add to your project pom:
+chacke2k is on maven central. Maven users add the following dependencies:
 
 ```xml
-<dependencies>
   <dependency>
     <groupId>org.cache2k</groupId>
     <artifactId>cache2k-api</artifactId>
@@ -70,7 +71,6 @@ chacke2k is on maven central. If you use maven, add to your project pom:
     <version>${cache2k-version}</version>
     <scope>runtime</scope>
   </dependency>
-</dependencies>
 ```
 
 Please replace `${cache2k-version}` with the latest version.
@@ -92,8 +92,14 @@ which you should take a look on:
  * Google Guava Cache
  * EHCache
  * JCS
- * JBoss Infinispan
  * Caffeine
+ 
+Distributed caches:
+
+ * Infinispan
+ * hazelcast
+ * redsisson
+ * Apache ignite
 
 ## Credits
 

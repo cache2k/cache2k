@@ -1,3 +1,4 @@
+[[android]]
 == Android
 
 Cache2k is compatible with Java 6 and Android. Regular testing is done against API level 16.

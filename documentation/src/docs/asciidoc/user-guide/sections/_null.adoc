@@ -1,5 +1,5 @@
+[[null-values]]
 == Null Values
-[[null]]
 
 While a `HashMap` supports `null` keys and `null` values most cache implementations and the JCache standard
 do not. By default, cache2k does not permit `null` values, to avoid surprises, but storing `null` values
