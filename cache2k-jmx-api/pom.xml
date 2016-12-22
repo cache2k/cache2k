@@ -25,6 +25,19 @@
     </dependency>
   </dependencies>
 
+  <build>
+    <plugins>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-javadoc-plugin</artifactId>
+        <!-- proper link to the cache2k-api module -->
+        <configuration>
+          <additionalparam>-linkoffline https://cache2k.org/docs/${series}/apidocs/cache2k-api ${project.basedir}/../cache2k-api/target/apidocs</additionalparam>
+        </configuration>
+      </plugin>
+    </plugins>
+  </build>
+
   <reporting>
     <plugins>
       <plugin>
