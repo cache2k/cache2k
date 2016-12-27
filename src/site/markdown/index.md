@@ -27,7 +27,7 @@ For a detailed introduction continue with [Getting Started](docs/1.0/user-guide.
 
 ## Features at a glance
 
- * Single small Jar File (< 500k) with no external dependencies
+ * Single small jar file (less than 400k) with no external dependencies
  * Even smaller, for use with [Android](docs/1.0/user-guide.html#android)
  * One of the fastest cache for JVM local caching, see [the benchmarks page](benchmarks.html)
  * Java 6 and [Android](docs/1.0/user-guide.html#android) compatible
