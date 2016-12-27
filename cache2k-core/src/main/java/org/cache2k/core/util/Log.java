@@ -122,7 +122,7 @@ public abstract class Log {
     loggers.put(s, l);
   }
 
-  public static synchronized void unregisterSuppression(String s) {
+  public static synchronized void deregisterSuppression(String s) {
     loggers.remove(s);
   }
 

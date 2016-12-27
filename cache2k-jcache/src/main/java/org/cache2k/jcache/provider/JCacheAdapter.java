@@ -428,7 +428,7 @@ public class JCacheAdapter<K, V> implements javax.cache.Cache<K, V> {
     if (cfg == null) {
       throw new NullPointerException();
     }
-    eventHandling.unregisterListener(cfg);
+    eventHandling.deregisterListener(cfg);
   }
 
   /**

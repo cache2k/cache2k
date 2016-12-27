@@ -92,7 +92,7 @@ public class EventHandling<K,V> {
     return false;
   }
 
-  public boolean unregisterListener(CacheEntryListenerConfiguration<K,V> cfg) {
+  public boolean deregisterListener(CacheEntryListenerConfiguration<K,V> cfg) {
     boolean _found = false;
     _found |= removeCfgMatch(cfg, createdListener);
     _found |= removeCfgMatch(cfg, updatedListener);
