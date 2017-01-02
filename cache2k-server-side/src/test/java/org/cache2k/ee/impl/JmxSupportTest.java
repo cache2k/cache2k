@@ -129,8 +129,8 @@ public class JmxSupportTest {
       "WARNING: [cacheWithBadHashing] hash quality is 7 (threshold: 20); " +
       "WARNING: [cacheWithKeyMutation] key mutation detected; " +
       "WARNING: [cacheWithMultipleIssues] key mutation detected", _health);
-    Log.unregisterSuppression(_SUPPRESS1);
-    Log.unregisterSuppression(_SUPPRESS2);
+    Log.deregisterSuppression(_SUPPRESS1);
+    Log.deregisterSuppression(_SUPPRESS2);
     m.close();
   }
 
