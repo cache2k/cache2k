@@ -75,6 +75,7 @@ public class Cache2kConfiguration<K, V> implements ConfigurationBean, Configurat
   private boolean disableStatistics = false;
   private int evictionSegmentCount = -1;
   private boolean externalConfigurationPresent = false;
+  private boolean maximizeConcurrency = true;
 
   private CustomizationSupplier<Executor> loaderExecutor;
   private CustomizationSupplier<Executor> prefetchExecutor;
@@ -615,6 +616,14 @@ public class Cache2kConfiguration<K, V> implements ConfigurationBean, Configurat
    */
   public void setAsyncListenerExecutor(final CustomizationSupplier<Executor> v) {
     asyncListenerExecutor = v;
+  }
+
+  public boolean isMaximizeConcurrency() {
+    return maximizeConcurrency;
+  }
+
+  public void setMaximizeConcurrency(final boolean _maximizeConcurrency) {
+    maximizeConcurrency = _maximizeConcurrency;
   }
 
 

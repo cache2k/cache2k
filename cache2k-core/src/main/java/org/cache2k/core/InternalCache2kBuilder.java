@@ -273,6 +273,10 @@ public class InternalCache2kBuilder<K, V> {
     int _segmentCount = 1;
     if (Runtime.getRuntime().availableProcessors() > 1) {
       _segmentCount = 2;
+      if (config.isMaximizeConcurrency()) {
+        int _ncpu = Runtime.getRuntime().availableProcessors();
+        _segmentCount = 2 << (31 - Integer.numberOfLeadingZeros(_ncpu));
+      }
     }
     if (config.getEvictionSegmentCount() > 0) {
       _segmentCount = config.getEvictionSegmentCount();

@@ -237,7 +237,8 @@ public abstract class TimingHandler<K,V>  {
 
     boolean sharpExpiry;
     boolean refreshAhead;
-    Timer timer;
+    Timer[] timer;
+    int timerMask;
     long maxLinger;
     InternalCache cache;
     /** Dirty counter, intentionally only 32 bit */
@@ -286,6 +287,13 @@ public abstract class TimingHandler<K,V>  {
       resiliencePolicy.init(ctx);
       refreshAhead = c.isRefreshAhead();
       sharpExpiry = c.isSharpExpiry();
+      int _timerCount = 1;
+      if (c.isMaximizeConcurrency()) {
+        int _ncpu = Runtime.getRuntime().availableProcessors();
+        _timerCount = 2 << (31 - Integer.numberOfLeadingZeros(_ncpu));
+      }
+      timer = new Timer[_timerCount];
+      timerMask = _timerCount - 1;
     }
 
     @Override
@@ -302,16 +310,19 @@ public abstract class TimingHandler<K,V>  {
     @Override
     public synchronized  void reset() {
       shutdown();
-      if (timer == null) {
-        timer = new Timer(cache.getName(), true);
+      for (int i = 0; i <= timerMask; i++) {
+        if (timer[i] != null) { continue; }
+        timer[i] =  new Timer(cache.getName(), true);
       }
     }
 
     @Override
     public synchronized void shutdown() {
-      if (timer != null) {
-        timer.cancel();
-        timer = null;
+      Timer _timer;
+      for (int i = 0; i <= timerMask; i++) {
+        if ((_timer = timer[i]) == null) { continue; }
+        _timer.cancel();
+        timer[i] = null;
       }
     }
 
@@ -432,7 +443,7 @@ public abstract class TimingHandler<K,V>  {
     }
 
     void scheduleTask(final long _nextRefreshTime, final Entry e) {
-      Timer _timer = timer;
+      Timer _timer = timer[e.hashCode & timerMask];
       if (_timer != null) {
         try {
           _timer.schedule(e.getTask(), new Date(_nextRefreshTime));
@@ -445,8 +456,8 @@ public abstract class TimingHandler<K,V>  {
       if (e.cancelTimerTask()) {
         timerCancelCount++;
         if (timerCancelCount >= PURGE_INTERVAL) {
-          timer.purge();
-          timerCancelCount = 0;
+          timer[timerCancelCount & timerMask].purge();
+          timerCancelCount &= timerMask;
         }
       }
     }
