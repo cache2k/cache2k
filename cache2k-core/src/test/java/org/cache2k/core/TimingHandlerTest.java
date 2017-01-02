@@ -20,10 +20,14 @@ package org.cache2k.core;
  * #L%
  */
 
+import org.cache2k.Cache;
 import org.cache2k.Cache2kBuilder;
 import org.cache2k.CacheEntry;
+import org.cache2k.core.util.TunableFactory;
 import org.cache2k.expiry.ExpiryPolicy;
+import org.cache2k.integration.CacheLoader;
 import org.cache2k.testing.category.FastTests;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
@@ -240,6 +244,30 @@ public class TimingHandlerTest {
     assertNotEquals(_SHARP_POINT_IN_TIME - HeapCache.TUNABLE.sharpExpirySafetyGapMillis, t);
     assertTrue(Math.abs(t) > NOW);
     assertTrue(Math.abs(t) < _SHARP_POINT_IN_TIME);
+  }
+
+  @Test @Ignore("purgeCalled: move to slow tests")
+  public void purgeCalled() {
+    int _SIZE = 1000;
+    int _PURGE_INTERVAL = TunableFactory.get(TimingHandler.Tunable.class).purgeInterval;
+    Cache<Integer, Integer> c = Cache2kBuilder.of(Integer.class, Integer.class)
+      .entryCapacity(_SIZE)
+      .expireAfterWrite(5, TimeUnit.MINUTES)
+      .loader(new CacheLoader<Integer, Integer>() {
+        @Override
+        public Integer load(final Integer key) throws Exception {
+          return key + 123;
+        }
+      })
+      .build();
+    for (int i = 0; i < _PURGE_INTERVAL + _SIZE + 125; i++) {
+      c.get(i);
+    }
+    assertEquals(10000, _PURGE_INTERVAL);
+    int _timerCacnelCount =
+      ((TimingHandler.Static) c.requestInterface(HeapCache.class).timing).timerCancelCount;
+    assertTrue("purge called", _timerCacnelCount < _PURGE_INTERVAL);
+    c.close();
   }
 
 }

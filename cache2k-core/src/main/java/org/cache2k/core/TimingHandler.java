@@ -243,6 +243,7 @@ public abstract class TimingHandler<K,V>  {
     InternalCache cache;
     /** Dirty counter, intentionally only 32 bit */
     int timerCancelCount = 0;
+    int purgeIndex = 0;
     ResiliencePolicy<K,V> resiliencePolicy;
     CustomizationSupplier<ResiliencePolicy<K,V>> resiliencePolicyFactory;
 
@@ -407,7 +408,7 @@ public abstract class TimingHandler<K,V>  {
 
     @Override
     public boolean startRefreshProbationTimer(Entry<K,V> e, long _nextRefreshTime) {
-      e.cancelTimerTask();
+      cancelExpiryTimer(e);
       if (_nextRefreshTime == ExpiryTimeValues.ETERNAL) {
         e.setNextRefreshTime(_nextRefreshTime);
         return false;
@@ -453,11 +454,17 @@ public abstract class TimingHandler<K,V>  {
     }
 
     public void cancelExpiryTimer(Entry<K, V> e) {
-      if (e.cancelTimerTask()) {
+      CommonTask tsk = (CommonTask) e.getTask();
+      if (tsk != null && tsk.cancel()) {
+        tsk.cache = null;
+        tsk.entry = null;
         timerCancelCount++;
         if (timerCancelCount >= PURGE_INTERVAL) {
-          timer[timerCancelCount & timerMask].purge();
-          timerCancelCount &= timerMask;
+          synchronized (timer) {
+            int _purgedCount = timer[purgeIndex].purge();
+            purgeIndex = (purgeIndex + 1) & timerMask;
+            timerCancelCount = 0;
+          }
         }
       }
     }

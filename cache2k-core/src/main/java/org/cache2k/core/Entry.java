@@ -608,23 +608,6 @@ public class Entry<K, T> extends CompactEntry<K,T>
     return null;
   }
 
-  public boolean cancelTimerTask() {
-    Object o = misc;
-    if (o instanceof TimerTask) {
-      misc = null;
-      return ((TimerTask) o).cancel();
-    }
-    TimerTaskPiggyBack pb = getPiggyBack(TimerTaskPiggyBack.class);
-    if (pb != null) {
-      TimerTask tt = pb.task;
-      if (tt != null) {
-        pb.task = null;
-        return tt.cancel();
-      }
-    }
-    return false;
-  }
-
   public <X> X getPiggyBack(Class<X> _class) {
     Object obj = misc;
     if (!(obj instanceof PiggyBack)) {

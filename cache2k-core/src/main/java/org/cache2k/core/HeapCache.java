@@ -1225,7 +1225,7 @@ public class HeapCache<K, V>
 
   /**
    * Remove the entry from the hash table. The entry is already removed from the replacement list.
-   * stop to timer, if needed. Called under big lock. The remove races with a clear. The clear
+   * Stop the timer, if needed. The remove races with a clear. The clear
    * is not updating each entry state to e.isGone() but just drops the whole hash table instead.
    * This is why we return a flag whether the entry was really present or not at this time.
    *
