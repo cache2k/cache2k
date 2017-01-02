@@ -4,7 +4,7 @@ package org.cache2k.xmlConfiguration;
  * #%L
  * cache2k XML configuration
  * %%
- * Copyright (C) 2000 - 2016 headissue GmbH, Munich
+ * Copyright (C) 2000 - 2017 headissue GmbH, Munich
  * %%
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
