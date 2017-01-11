@@ -24,9 +24,7 @@ import org.cache2k.CacheEntry;
 import org.cache2k.expiry.ExpiryTimeValues;
 import org.cache2k.processor.EntryProcessingException;
 import org.cache2k.processor.EntryProcessor;
-import org.cache2k.processor.MutableCacheEntry;
 import org.cache2k.processor.RestartException;
-import org.cache2k.core.ExceptionWrapper;
 
 /**
  * Semantics of all cache operations on entries.
@@ -333,123 +331,6 @@ public class Operations<K, V> {
       }
 
     };
-  }
-
-  static class MutableEntryOnProgress<K, V> implements MutableCacheEntry<K, V> {
-
-    ExaminationEntry<K, V> entry;
-    Progress<K, V, ?> progress;
-    boolean originalExists = false;
-    boolean mutate = false;
-    boolean remove = false;
-    boolean exists = false;
-    V value = null;
-    boolean readThrough = false;
-    boolean customExpiry = false;
-    long expiry;
-
-    /**
-     * Sets exists and value together since it must be guaranteed that getValue() returns
-     * a value after exists yields true. It is critical that the isPresentOrMiss() check is
-     * only done once, since it depends on the current time.
-     */
-    public MutableEntryOnProgress(final Progress<K, V, ?> _progress, final ExaminationEntry<K, V> _entry, boolean _readThrough) {
-      readThrough = _readThrough;
-      entry = _entry;
-      progress = _progress;
-      if (_progress.isPresentOrMiss()) {
-        value = entry.getValueOrException();
-        originalExists = exists = true;
-      }
-    }
-
-    @Override
-    public boolean exists() {
-      return exists;
-    }
-
-    @Override
-    public void setValue(final V v) {
-      mutate = true;
-      exists = true;
-      remove = false;
-      value = v;
-    }
-
-    @Override
-    public void setException(final Throwable ex) {
-      mutate = true;
-      exists = true;
-      remove = false;
-      value = (V) new ExceptionWrapper(ex);
-    }
-
-    @Override
-    public void setExpiry(final long t) {
-      customExpiry = true;
-      expiry = t;
-    }
-
-    @Override
-    public void remove() {
-      if (mutate && !originalExists) {
-        mutate = false;
-      } else {
-        mutate = remove = true;
-      }
-      exists = false;
-      value = null;
-    }
-
-    @Override
-    public K getKey() {
-      return entry.getKey();
-    }
-
-    @Override
-    public V getValue() {
-      if (!exists && !mutate && readThrough) {
-        throw new NeedsLoadRestartException();
-      }
-      if (value instanceof ExceptionWrapper) {
-        throw progress.propagateException(entry.getKey(), (ExceptionWrapper) value);
-      }
-      return value;
-    }
-
-    @Override
-    public Throwable getException() {
-      if (!exists && !mutate && readThrough) {
-        throw new NeedsLoadRestartException();
-      }
-      if (value instanceof ExceptionWrapper) {
-        return ((ExceptionWrapper) value).getException();
-      }
-      return null;
-    }
-
-    @Override
-    public long getLastModification() {
-      return entry.getLastModification();
-    }
-
-    public void sendMutationCommandIfNeeded() {
-      if (mutate) {
-        if (remove) {
-          progress.remove();
-          return;
-        }
-        if (customExpiry) {
-          progress.putAndSetExpiry(value, expiry);
-          return;
-        }
-        progress.put(value);
-        return;
-      }
-      if (customExpiry) {
-        progress.expire(expiry);
-      }
-    }
   }
 
   public <R> Semantic<K, V, R> invoke(final K key, final boolean _readThrough, final EntryProcessor<K, V, R> _processor) {
