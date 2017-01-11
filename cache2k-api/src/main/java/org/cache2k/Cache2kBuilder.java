@@ -628,16 +628,13 @@ public class Cache2kBuilder<K, V> {
   }
 
   /**
-   * Number of eviction segments. The default is one or two if the available processor
-   * count is more than one. In case the workload has lots of concurrent inserts or eviction
-   * the segment count may be increased if the cache eviction becomes the bottle neck.
-   * A value higher then the processor count is ineffective. Setting a higher value has
-   * a negative impact on the eviction efficiency. There will be hardly any application with
-   * a little positive effect when this parameter is set. Usual applications that do mostly
-   * concurrent reads, do not need an increase.
+   * When {@code true}, optimize for high core counts and applications that do lots of mutations
+   * in the cache. Typical, mostly read applications, do not need to enable this.
+   * When switched on, the cache will occupy slightly more memory and eviction efficiency
+   * may drop slightly. This overhead is negligible for big cache sizes (100K and more).
    */
-  public final Cache2kBuilder<K,V> evictionSegmentCount(int v) {
-    config().setEvictionSegmentCount(v);
+  public final Cache2kBuilder<K,V> maximizeConcurrency(boolean f) {
+    config().setMaximizeConcurrency(f);
     return this;
   }
 

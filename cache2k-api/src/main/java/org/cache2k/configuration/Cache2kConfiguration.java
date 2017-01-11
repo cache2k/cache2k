@@ -73,9 +73,8 @@ public class Cache2kConfiguration<K, V> implements ConfigurationBean, Configurat
   private int loaderThreadCount;
   private boolean permitNullValues = false;
   private boolean disableStatistics = false;
-  private int evictionSegmentCount = -1;
   private boolean externalConfigurationPresent = false;
-  private boolean maximizeConcurrency = true;
+  private boolean maximizeConcurrency = false;
 
   private CustomizationSupplier<Executor> loaderExecutor;
   private CustomizationSupplier<Executor> prefetchExecutor;
@@ -571,18 +570,6 @@ public class Cache2kConfiguration<K, V> implements ConfigurationBean, Configurat
    */
   public void setDisableStatistics(final boolean v) {
     disableStatistics = v;
-  }
-
-  public int getEvictionSegmentCount() {
-    return evictionSegmentCount;
-  }
-
-  /**
-   *
-   * @see Cache2kBuilder#evictionSegmentCount(int)
-   */
-  public void setEvictionSegmentCount(final int v) {
-    evictionSegmentCount = v;
   }
 
   public CustomizationSupplier<Executor> getLoaderExecutor() {

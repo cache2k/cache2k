@@ -278,14 +278,14 @@ public class InternalCache2kBuilder<K, V> {
         _segmentCount = 2 << (31 - Integer.numberOfLeadingZeros(_ncpu));
       }
     }
-    if (config.getEvictionSegmentCount() > 0) {
-      _segmentCount = config.getEvictionSegmentCount();
-    }
     if (config.getEntryCapacity() < 1000) {
       _segmentCount = 1;
     }
     int _maxSegments = Runtime.getRuntime().availableProcessors() * 2;
     _segmentCount = Math.min(_segmentCount, _maxSegments);
+    if (config.isStrictEviction()) {
+      _segmentCount = 1;
+    }
     Eviction[] _segments = new Eviction[_segmentCount];
     long _maxSize = config.getEntryCapacity() / _segmentCount;
     if (config.getEntryCapacity() == Long.MAX_VALUE) {
