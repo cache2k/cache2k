@@ -32,14 +32,15 @@ import java.io.Closeable;
 public interface KeyValueSource<K, V> extends Closeable {
 
   /**
-   * Returns object via the key.
+   * Returns a value associated with this key.
    *
    * @see Cache#get(Object)
    */
   V get(K key);
 
   /**
-   * Close the data source.
+   * Release all resources associated to this object. This resource needs to
+   * be closed explicitly after finishing with its use.
    */
   @Override
   void close();

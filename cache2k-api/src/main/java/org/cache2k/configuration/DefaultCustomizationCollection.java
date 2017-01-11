@@ -70,7 +70,7 @@ public class DefaultCustomizationCollection<T> implements CustomizationCollectio
   /**
    * Adds a customization to the collection.
    *
-   * @return alsways {@code true}
+   * @return always {@code true}
    * @throws IllegalArgumentException if the entry is already existing.
    */
   @Override

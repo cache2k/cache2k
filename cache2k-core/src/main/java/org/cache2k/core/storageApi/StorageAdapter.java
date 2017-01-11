@@ -48,7 +48,7 @@ public abstract class StorageAdapter {
   public abstract boolean checkStorageStillDisconnectedForClear();
   public abstract void disconnectStorageForClear();
 
-  /** Starts the parallel clearing process, returns immediatly */
+  /** Starts the parallel clearing process, returns immediately */
   public abstract Future<Void> clearAndReconnect();
 
   /**

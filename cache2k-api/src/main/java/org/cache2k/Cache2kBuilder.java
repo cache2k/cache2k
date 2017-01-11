@@ -281,19 +281,19 @@ public class Cache2kBuilder<K, V> {
    *
    * <p>If a name is not specified the cache generates a name automatically. The name is
    * inferred from the call stack trace and contains the simple class name, the method and
-   * the line number of the of the caller to <code>build()</code>. The name also contains
+   * the line number of the of the caller to {@code build()}. The name also contains
    * a random number. Automatically generated names don't allow reliable management, logging and
    * additional configuration of caches. If no name is set, {@link #build()} will always create
    * a new cache with a new unique name within the cache manager. Automatically generated
-   * cache names start with the character <code>'_'</code> as prefix to separate the names from the
+   * cache names start with the character {@code '_'} as prefix to separate the names from the
    * usual class name space.
    *
    * <p>In case of a name collision the cache is generating a unique name by adding a counter value.
    * This behavior may change.
    *
    * <p>Allowed characters for a cache name, are URL non-reserved characters,
-   * these are: <code>[A-Z]</code>, <code>[a-z]</code>, <code>[0-9]</code> and <code>[~-_.]</code>,
-   * see RFC3986 as well as the characters: <code>[()]</code>. The characters <code>[@, ]</code> are supported
+   * these are: {@code [A-Z]}, {@code [a-z]}, {@code [0-9]} and {@code [~-_.]},
+   * see RFC3986 as well as the characters: {@code [()]}. The characters {@code [@, ]} are supported
    * as well, but should be avoided.
    *
    * <p>The reason for restricting the characters in names, is that the names may be used to derive

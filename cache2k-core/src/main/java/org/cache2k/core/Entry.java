@@ -152,7 +152,7 @@ public class Entry<K, T> extends CompactEntry<K,T>
   /** @see #isExpired() */
   static final int EXPIRED = 4;
 
-  /** Expired, but protect entry from remval, since refresh is started. */
+  /** Expired, but protect entry from removal, since refresh is started. */
   static final int EXPIRED_REFRESH_PENDING = 5;
 
   static final int EXPIRED_REFRESHED = 6;

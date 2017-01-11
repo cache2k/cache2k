@@ -98,9 +98,7 @@ import java.util.concurrent.TimeUnit;
  * @author Jens Wilke
  */
 @SuppressWarnings("UnusedDeclaration")
-public interface Cache<K, V> extends
-  AdvancedKeyValueSource<K, V>, KeyValueStore<K,V>,
-  Iterable<CacheEntry<K, V>>, Closeable {
+public interface Cache<K, V> extends KeyValueStore<K,V>, Iterable<CacheEntry<K, V>>, Closeable {
 
   /**
    * A configured or generated name of this cache instance.
@@ -111,11 +109,10 @@ public interface Cache<K, V> extends
   String getName();
 
   /**
-   * Returns a value associated by the given key, that contains a non expired value.
-   * If no value is present or it is expired the cache loader
-   * is invoked, if configured, or {@code null} is returned.
+   * Returns a value associated with the given key.  If no value is present or it
+   * is expired the cache loader is invoked, if configured, or {@code null} is returned.
    *
-   * <p>If the loader is invoked, subsequent requests of the same key will block
+   * <p>If the {@link CacheLoader} is invoked, subsequent requests of the same key will block
    * until the loading is completed. Details see {@link CacheLoader}.
    *
    * <p>As an alternative {@link #peek} can be used if the loader should
@@ -128,7 +125,7 @@ public interface Cache<K, V> extends
    *         previously associated {@code null} with the key)
    * @throws ClassCastException if the class of the specified key
    *         prevents it from being stored in this cache
-   * @throws NullPointerException if the specified key is null
+   * @throws NullPointerException if the specified key is {@code null}
    * @throws IllegalArgumentException if some property of the specified key
    *         prevents it from being stored in this cache
    * @throws CacheLoaderException if the loading produced an exception .
@@ -137,7 +134,7 @@ public interface Cache<K, V> extends
   V get(K key);
 
   /**
-   * Returns an entry associated by the given key, that contains a non expired value.
+   * Returns an entry that contains the cache value associated with the given key.
    * If no entry is present or the value is expired, either the loader is invoked
    * or {@code null} is returned.
    *
@@ -165,10 +162,10 @@ public interface Cache<K, V> extends
   CacheEntry<K, V> getEntry(K key);
 
   /**
-   * Notifies about the intend to retrieve the value for this key in the
+   * Notifies the cache about the intention to retrieve the value for this key in the
    * near future.
    *
-   * <p>The method will return immediately and the cache will load the
+   * <p>The method will return immediately and the cache will load
    * the value asynchronously if not yet present in the cache. Prefetching
    * is done via a separate thread pool if specified via
    * {@link Cache2kBuilder#prefetchExecutor(Executor)}.
@@ -182,13 +179,14 @@ public interface Cache<K, V> extends
    * @see Cache2kBuilder#loaderThreadCount(int)
    * @see Cache2kBuilder#prefetchExecutor(Executor)
    */
+  @Override
   void prefetch(K key);
 
   /**
-   * Notifies about the intend to retrieve the value for this key in the
+   * Notifies the cache about the intention to retrieve the value for this key in the
    * near future.
    *
-   * <p>The method will return immediately and the cache will load the
+   * <p>The method will return immediately and the cache will load
    * the value asynchronously if not yet present in the cache. Prefetching
    * is done via a separate thread pool if specified via
    * {@link Cache2kBuilder#prefetchExecutor(Executor)}.
@@ -205,6 +203,7 @@ public interface Cache<K, V> extends
   void prefetchAll(Iterable<? extends K> keys, CacheOperationCompletionListener listener);
 
   /**
+   * FIXME mapped to what?
    * Returns the value if it is mapped within the cache and it is not
    * expired, or null.
    *
@@ -230,6 +229,7 @@ public interface Cache<K, V> extends
   V peek(K key);
 
   /**
+   * FIXME s.o.
    * Returns an entry associated by the given key, that contains a non expired value.
    * The loader will not be invoked by this method.
    *
@@ -253,6 +253,7 @@ public interface Cache<K, V> extends
   /**
    * Returns true, if there is a mapping for the specified key.
    *
+   * FIXME use bold/italic font for "Statistics"?
    * <p>Statistics: The operation does increase the usage counter if a mapping is present,
    * but does not count as read and therefore does not influence miss or hit values.
    *
@@ -266,12 +267,12 @@ public interface Cache<K, V> extends
   boolean containsKey(K key);
 
   /**
-   * Updates an existing cache entry for the specified key, so it associates
-   * the given value, or, insert a new cache entry for this key and value.
+   * Inserts a new value associated with the given key or updates an
+   * existing association of the same key with the new value.
    *
    * <p>If an {@link ExpiryPolicy} is specified in the
    * cache configuration it is called and will determine the expiry time.
-   * If a {@link CacheWriter} is configured in, then it is called with the
+   * If a {@link CacheWriter} is registered, then it is called with the
    * new value. If the {@link ExpiryPolicy} or {@link CacheWriter}
    * yield an exception the operation will be aborted and the previous
    * mapping will be preserved.
@@ -476,6 +477,8 @@ public interface Cache<K, V> extends
    *   <li>{@link #peekAndRemove(Object)}, returning the removed value</li>
    *   <li>{@link #removeIfEquals(Object, Object)}, conditional removal matching on the current value</li>
    * </ul>
+   *
+   * <p>See {@link KeyValueStore#remove(Object)}, for an explanation why no flag or object is returned.
    *
    * @param key key which mapping is to be removed from the cache, not null
    * @throws NullPointerException if a specified key is null

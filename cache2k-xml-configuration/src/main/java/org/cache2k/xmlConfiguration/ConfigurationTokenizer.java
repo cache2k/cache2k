@@ -47,7 +47,7 @@ public interface ConfigurationTokenizer extends SourceLocation {
     String getValue();
     /** Value is mutable for variable expansion */
     void setValue(String v);
-    /** Indicates that variable expansion has occured. */
+    /** Indicates that variable expansion has occurred. */
     boolean isExpanded();
     void setExpanded(boolean v);
   }

@@ -26,14 +26,15 @@ import java.util.Map;
  * Reduced interface for read/write data access.
  *
  * <p>This interface contains no methods that expose or mutate the
- * cache state.
+ * cache state. This is intended as a reduced interface that
+ * has transparent semantics in cache through operation.
  *
  * @author Jens Wilke
  */
 public interface KeyValueStore<K, V> extends AdvancedKeyValueSource<K,V> {
 
   /**
-   * Insert a new value and call the writer, if registered.
+   * Insert or update a value associated with the given key.
    *
    * @see Cache#put(Object, Object)
    * @param key key with which the specified value is associated
@@ -42,7 +43,7 @@ public interface KeyValueStore<K, V> extends AdvancedKeyValueSource<K,V> {
   void put(K key, V value);
 
   /**
-   * Insert all elements of the map into the cache and call the writer, if registered.
+   * Insert or update all elements of the map into the cache.
    *
    * @param valueMap Map of keys with associated values to be inserted in the cache
    * @throws NullPointerException if one of the specified keys is null
@@ -50,7 +51,15 @@ public interface KeyValueStore<K, V> extends AdvancedKeyValueSource<K,V> {
   void putAll(Map<? extends K, ? extends V> valueMap);
 
   /**
-   * Remove a mapping from the cache and call the writer, if registered.
+   * Remove a value from the cache that is associated with the key.
+   *
+   * <p>Rationale: It is intentional that this method does not return
+   * a boolean or the previous entry. When operating in cache through
+   * configuration (which means {@link org.cache2k.integration.CacheWriter}
+   * {@link org.cache2k.integration.CacheLoader} is registered) a boolean
+   * could mean two different things: the value was present in the cache or
+   * the value was present in the system of authority. The purpose of this
+   * interface is a reduced set of methods that cannot be misinterpreted.
    *
    * @see Cache#remove
    * @param key key which mapping is to be removed from the cache, not null
@@ -58,7 +67,7 @@ public interface KeyValueStore<K, V> extends AdvancedKeyValueSource<K,V> {
   void remove(K key);
 
   /**
-   * Remove mappings from the cache and call the writer, if registered.
+   * Remove mappings from the cache.
    *
    * @see Cache#removeAll
    * @param keys keys is to be removed from the cache

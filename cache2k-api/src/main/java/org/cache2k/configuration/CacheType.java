@@ -66,7 +66,7 @@ public interface CacheType<T> {
   /** The component type in case of an array */
   CacheType getComponentType();
 
-  /** Known type arguments, if the type is a parameterized type. */
+  /** Known type arguments, if the type is a parametrized type. */
   CacheType[] getTypeArguments();
 
   /** Java language compatible type name */

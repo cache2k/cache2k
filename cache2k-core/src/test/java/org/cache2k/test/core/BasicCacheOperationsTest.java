@@ -141,7 +141,7 @@ public class BasicCacheOperationsTest {
   }
 
   /**
-   * Yields "org.cache2k.PropagatedCacheException: (expiry=none) org.cache2k.impl.CacheUsageExcpetion: source not set".
+   * Yields "org.cache2k.PropagatedCacheException: (expiry=none) org.cache2k.impl.CacheUsageException: source not set".
    * This is intentional, but maybe we change it in the future. At least check that we are consistent for now.
    */
   @Test

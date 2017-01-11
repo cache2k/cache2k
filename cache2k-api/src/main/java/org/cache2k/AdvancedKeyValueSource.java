@@ -23,7 +23,7 @@ package org.cache2k;
 import java.util.Map;
 
 /**
- * Key/value source with bulk get and prefetching.
+ * {@link KeyValueSource} with bulk {@link #get(Object) get} and prefetching.
  *
  * @author Jens Wilke
  * @since 1.0
@@ -31,7 +31,7 @@ import java.util.Map;
 public interface AdvancedKeyValueSource<K,V> extends KeyValueSource<K,V> {
 
   /**
-   * Retrieves all objects via the key. For a more detailed descriptions see
+   * Retrieves all values for the given keys. For a more detailed description see
    * the cache interface.
    *
    * @see Cache#getAll(Iterable)
@@ -39,19 +39,18 @@ public interface AdvancedKeyValueSource<K,V> extends KeyValueSource<K,V> {
   Map<K, V> getAll(Iterable<? extends K> keys);
 
   /**
-   * Notify about the intend to retrieve the value for this key in the
-   * near future. For a more detailed descriptions see
-   * the cache interface.
+   * Notify the cache about the intention to retrieve the value for this key in the
+   * near future. For a more detailed description see the cache interface.
    *
    * @see Cache#prefetch(Object)
    */
   void prefetch(K key);
 
   /**
-   * Notify about the intend to retrieve the value for the keys in the
-   * near future.
+   * Notify the cache about the intention to retrieve the value for the keys in the
+   * near future. For a more detailed description see the cache interface.
    *
-   * @see AdvancedKeyValueSource#prefetchAll(Iterable, CacheOperationCompletionListener)
+   * @see Cache#prefetchAll(Iterable, CacheOperationCompletionListener)
    */
   void prefetchAll(Iterable<? extends K> keys, CacheOperationCompletionListener listener);
 

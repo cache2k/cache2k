@@ -27,7 +27,7 @@ import org.cache2k.core.util.TunableFactory;
  * CLOCK Pro implementation with 3 clocks.
  *
  * <p>This version uses a static allocation for hot and cold space sizes. No online or dynamic
- * optimization is done yet. However, the hitrate for all measured access traces is better
+ * optimization is done yet. However, the hit rate for all measured access traces is better
  * then LRU and it is resistant to scans.
  *
  * @author Jens Wilke; created: 2013-07-12

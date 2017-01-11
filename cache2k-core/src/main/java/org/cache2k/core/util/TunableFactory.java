@@ -121,7 +121,7 @@ public final class TunableFactory {
       try {
         cfg = c.newInstance();
       } catch (Exception ex) {
-        throw new CacheInternalError("cannot instantiate tunables", ex);
+        throw new CacheInternalError("cannot instantiate tunable constants", ex);
       }
       apply(defaultProperties, cfg);
       apply(customProperties, cfg);

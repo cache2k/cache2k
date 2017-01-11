@@ -46,7 +46,7 @@ public interface Progress<K, V, R> {
   boolean isPresent();
 
   /**
-   * Same as {@link #isPresent()} but also true if the entry is in refrsh probation.
+   * Same as {@link #isPresent()} but also true if the entry is in refresh probation.
    */
   boolean isPresentOrInRefreshProbation();
 
