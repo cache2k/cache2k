@@ -123,7 +123,7 @@ public class BasicCacheOperationsTest {
 
   @Test
   public void initial_Iterator() {
-    assertFalse(cache.iterator().hasNext());
+    assertFalse(cache.entries().iterator().hasNext());
   }
 
   @Test
@@ -930,12 +930,12 @@ public class BasicCacheOperationsTest {
 
   @Test
   public void iterator() {
-    assertFalse(cache.iterator().hasNext());
+    assertFalse(cache.entries().iterator().hasNext());
     cache.put(KEY, VALUE);
     cache.put(OTHER_KEY, OTHER_VALUE);
     statistics().reset();
     Map<Integer,Integer> map = new HashMap<Integer, Integer>();
-    for (CacheEntry<Integer, Integer> ce : cache) {
+    for (CacheEntry<Integer, Integer> ce : cache.entries()) {
       map.put(ce.getKey(), ce.getValue());
     }
     assertEquals(2, map.size());
@@ -946,7 +946,7 @@ public class BasicCacheOperationsTest {
 
   @Test(expected = NoSuchElementException.class)
   public void iterator_Next_Exception() {
-    Iterator it = cache.iterator();
+    Iterator it = cache.entries().iterator();
     assertFalse(it.hasNext());
     it.next();
   }
@@ -956,7 +956,7 @@ public class BasicCacheOperationsTest {
   public void iterator_clear() {
     cache.put(KEY, VALUE);
     cache.put(OTHER_KEY, OTHER_VALUE);
-    Iterator it = cache.iterator();
+    Iterator it = cache.entries().iterator();
     assertTrue(it.hasNext());
     it.next();
     cache.clear();

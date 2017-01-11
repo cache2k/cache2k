@@ -178,11 +178,6 @@ public class CacheWrapper<K,V> implements Cache<K, V> {
   }
 
   @Override
-  public Iterator<CacheEntry<K, V>> iterator() {
-    return cache.iterator();
-  }
-
-  @Override
   public Iterable<K> keys() {
     return cache.keys();
   }

@@ -43,6 +43,8 @@ import java.util.concurrent.ConcurrentMap;
  */
 public abstract class AbstractCache<K, V> implements InternalCache<K, V> {
 
+  protected abstract Iterator<CacheEntry<K, V>> iterator();
+
   /**
    * Key iteration on top of normal iterator.
    */
@@ -84,8 +86,8 @@ public abstract class AbstractCache<K, V> implements InternalCache<K, V> {
 
   @Override
   public void removeAll() {
-    for (CacheEntry<K, V> e : this) {
-      remove(e.getKey());
+    for (K key : keys()) {
+      remove(key);
     }
   }
 

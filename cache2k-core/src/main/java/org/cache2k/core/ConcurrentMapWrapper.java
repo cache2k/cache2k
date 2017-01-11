@@ -120,13 +120,13 @@ public class ConcurrentMapWrapper<K,V> implements ConcurrentMap<K, V> {
       if (!permitNull) {
         throw new NullPointerException();
       }
-      for (CacheEntry<K, V> e : cache) {
+      for (CacheEntry<K, V> e : cache.entries()) {
         if (e.getValue() == null) {
           return true;
         }
       }
     } else {
-      for (CacheEntry<K, V> e : cache) {
+      for (CacheEntry<K, V> e : cache.entries()) {
         if (value.equals(e.getValue())) {
           return true;
         }
@@ -187,7 +187,7 @@ public class ConcurrentMapWrapper<K,V> implements ConcurrentMap<K, V> {
     return new AbstractSet<K>() {
       @Override
       public Iterator<K> iterator() {
-        final Iterator<CacheEntry<K,V>> it = cache.iterator();
+        final Iterator<CacheEntry<K,V>> it = cache.entries().iterator();
         return new Iterator<K>() {
 
           @Override
@@ -224,7 +224,7 @@ public class ConcurrentMapWrapper<K,V> implements ConcurrentMap<K, V> {
     return new AbstractSet<V>() {
       @Override
       public Iterator<V> iterator() {
-        final Iterator<CacheEntry<K,V>> it = cache.iterator();
+        final Iterator<CacheEntry<K,V>> it = cache.entries().iterator();
         return new Iterator<V>() {
 
           @Override
@@ -256,7 +256,7 @@ public class ConcurrentMapWrapper<K,V> implements ConcurrentMap<K, V> {
     return new AbstractSet<Entry<K, V>>() {
       @Override
       public Iterator<Entry<K, V>> iterator() {
-        final Iterator<CacheEntry<K,V>> it = cache.iterator();
+        final Iterator<CacheEntry<K,V>> it = cache.entries().iterator();
         return new Iterator<Entry<K, V>>() {
 
           @Override

@@ -98,7 +98,7 @@ import java.util.concurrent.TimeUnit;
  * @author Jens Wilke
  */
 @SuppressWarnings("UnusedDeclaration")
-public interface Cache<K, V> extends KeyValueStore<K,V>, Iterable<CacheEntry<K, V>>, Closeable {
+public interface Cache<K, V> extends KeyValueStore<K,V>, Closeable {
 
   /**
    * A configured or generated name of this cache instance.
@@ -716,8 +716,8 @@ public interface Cache<K, V> extends KeyValueStore<K,V>, Iterable<CacheEntry<K, 
    * Iterate all keys in the cache.
    *
    * <p>Contract: The iteration is usable while concurrent operations happen on the cache.
-   * All entry keys will be iterated when present in the cache in the moment
-   * of the call to {@link Iterable#iterator()}. An expiration or mutation of an entry
+   * All entry keys will be iterated when present in the cache at the moment
+   * of the call to {@link Iterable#iterator()}. An expiration or mutation
    * happening during the iteration, may or may not be reflected. Separate calls to
    * {@link Iterable#iterator()} to the identical {@code Iterable} instance start
    * a separate iteration. It is ensured that every key is only iterated once.

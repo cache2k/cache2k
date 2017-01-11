@@ -52,13 +52,13 @@ public class SharedCacheProviderTest {
 
   @Test
   public void testEmptyAndPut() {
-    assertFalse(cache.iterator().hasNext());
+    assertFalse(cache.entries().iterator().hasNext());
     cache.put(1,2);
   }
 
   @Test
   public void testEmptyAndPut2() {
-    assertFalse(cache.iterator().hasNext());
+    assertFalse(cache.entries().iterator().hasNext());
     cache.put(1,2);
   }
 
