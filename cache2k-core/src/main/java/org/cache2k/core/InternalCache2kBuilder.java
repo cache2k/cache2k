@@ -37,6 +37,7 @@ import org.cache2k.integration.AdvancedCacheLoader;
 import org.cache2k.integration.CacheLoader;
 import org.cache2k.integration.CacheWriter;
 import org.cache2k.integration.ExceptionPropagator;
+import org.cache2k.integration.FunctionalCacheLoader;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -101,15 +102,32 @@ public class InternalCache2kBuilder<K, V> {
    * Explicitly call the wiring methods.
    */
   @SuppressWarnings("unchecked")
-  private void configureViaSettersDirect(HeapCache c) {
+  private void configureViaSettersDirect(HeapCache<K,V> c) {
     if (config.getLoader() != null) {
-      c.setLoader((CacheLoader<K, V>) c.createCustomization(config.getLoader()));
+      Object obj =  c.createCustomization(config.getLoader());
+      if (obj instanceof CacheLoader) {
+        final CacheLoader<K,V> _loader = (CacheLoader) obj;
+        c.setAdvancedLoader(new AdvancedCacheLoader<K, V>() {
+          @Override
+          public V load(final K key, final long currentTime, final CacheEntry<K, V> currentEntry) throws Exception {
+            return _loader.load(key);
+          }
+        });
+      } else {
+        final FunctionalCacheLoader<K,V> _loader = (FunctionalCacheLoader) obj;
+        c.setAdvancedLoader(new AdvancedCacheLoader<K, V>() {
+          @Override
+          public V load(final K key, final long currentTime, final CacheEntry<K, V> currentEntry) throws Exception {
+            return _loader.load(key);
+          }
+        });
+      }
     }
     if (config.getAdvancedLoader() != null) {
-      c.setAdvancedLoader((AdvancedCacheLoader<K, V>) c.createCustomization(config.getAdvancedLoader()));
+      c.setAdvancedLoader(c.createCustomization(config.getAdvancedLoader()));
     }
     if (config.getExceptionPropagator() != null) {
-      c.setExceptionPropagator((ExceptionPropagator<K>) c.createCustomization(config.getExceptionPropagator()));
+      c.setExceptionPropagator(c.createCustomization(config.getExceptionPropagator()));
     }
     if (config != null) {
       c.setCacheConfig(config);

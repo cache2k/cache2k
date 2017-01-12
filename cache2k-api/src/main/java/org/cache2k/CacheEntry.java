@@ -25,7 +25,7 @@ import org.cache2k.integration.CacheLoaderException;
 /**
  * Object representing a cache entry. With the cache entry, it can be
  * checked whether a mapping in the cache is present, even if the cache
- * contains {@code null} or an exception. Entries can be retrieved by
+ * contains {@code null} or contains an exception. Entries can be retrieved by
  * {@link Cache#peekEntry(Object)} or {@link Cache#getEntry(Object)} or
  * via iterated via {@link Cache#entries()}.
  *

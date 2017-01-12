@@ -33,7 +33,6 @@ import org.cache2k.CacheEntry;
  *
  * @author Jens Wilke
  * @see CacheLoader
- * @since 0.24
  */
 public abstract class AdvancedCacheLoader<K,V> {
 

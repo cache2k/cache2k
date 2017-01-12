@@ -286,15 +286,6 @@ public class HeapCache<K, V>
     exceptionPropagator = ep;
   }
 
-  public void setLoader(final CacheLoader<K,V> l) {
-    loader = new AdvancedCacheLoader<K, V>() {
-      @Override
-      public V load(final K key, final long currentTime, final CacheEntry<K, V> previousEntry) throws Exception {
-        return l.load(key);
-      }
-    };
-  }
-
   public void setAdvancedLoader(final AdvancedCacheLoader<K,V> al) {
     loader = al;
   }

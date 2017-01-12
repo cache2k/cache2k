@@ -20,6 +20,7 @@ package org.cache2k.test.core;
  * #L%
  */
 
+import org.cache2k.integration.FunctionalCacheLoader;
 import org.cache2k.test.util.CacheRule;
 import org.cache2k.test.util.Condition;
 import org.cache2k.test.util.ConcurrencyHelper;
@@ -67,6 +68,23 @@ public class CacheLoaderTest {
 
   @Rule
   public IntCacheRule target = new IntCacheRule();
+
+  @Test
+  public void testFunctionalLoader() {
+    Cache<Integer,Integer> c = target.cache(new CacheRule.Specialization<Integer, Integer>() {
+      @Override
+      public void extend(final Cache2kBuilder<Integer, Integer> b) {
+        b.loader(new FunctionalCacheLoader<Integer, Integer>() {
+          @Override
+          public Integer load(final Integer key) throws Exception {
+            return key * 7;
+          }
+        });
+      }
+    });
+    int v = c.get(1);
+    assertEquals(7, v);
+  }
 
   @Test
   public void testSeparateLoaderExecutor() {

@@ -24,9 +24,9 @@ import org.cache2k.Cache2kBuilder;
 import org.cache2k.expiry.*;
 import org.cache2k.event.CacheEntryOperationListener;
 import org.cache2k.integration.AdvancedCacheLoader;
-import org.cache2k.integration.CacheLoader;
 import org.cache2k.integration.CacheWriter;
 import org.cache2k.integration.ExceptionPropagator;
+import org.cache2k.integration.FunctionalCacheLoader;
 import org.cache2k.integration.ResiliencePolicy;
 
 import java.util.ArrayList;
@@ -81,7 +81,7 @@ public class Cache2kConfiguration<K, V> implements ConfigurationBean, Configurat
   private CustomizationSupplier<Executor> asyncListenerExecutor;
   private CustomizationSupplier<ExpiryPolicy<K,V>> expiryPolicy;
   private CustomizationSupplier<ResiliencePolicy<K,V>> resiliencePolicy;
-  private CustomizationSupplier<CacheLoader<K,V>> loader;
+  private CustomizationSupplier<? extends FunctionalCacheLoader<K,V>> loader;
   private CustomizationSupplier<CacheWriter<K,V>> writer;
   private CustomizationSupplier<AdvancedCacheLoader<K,V>> advancedLoader;
   private CustomizationSupplier<ExceptionPropagator<K>> exceptionPropagator;
@@ -415,11 +415,11 @@ public class Cache2kConfiguration<K, V> implements ConfigurationBean, Configurat
     return sections;
   }
 
-  public CustomizationSupplier<CacheLoader<K,V>> getLoader() {
+  public CustomizationSupplier<? extends FunctionalCacheLoader<K,V>> getLoader() {
     return loader;
   }
 
-  public void setLoader(final CustomizationSupplier<CacheLoader<K,V>> v) {
+  public void setLoader(final CustomizationSupplier<? extends FunctionalCacheLoader<K,V>> v) {
     loader = v;
   }
 

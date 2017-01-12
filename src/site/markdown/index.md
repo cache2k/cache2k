@@ -14,12 +14,7 @@ Java applications.
                                               // outage before propagating 
                                               // exceptions
     .refreshAhead(true)                       // keep fresh when expiring
-    .loader(new CacheLoader<String, String>() {
-      @Override
-      public String load(final String key) throws Exception {
-        return ....;
-      }
-    })
+    .loader(this::expensiveOperation)         // auto populating function
     .build();
 ````
 

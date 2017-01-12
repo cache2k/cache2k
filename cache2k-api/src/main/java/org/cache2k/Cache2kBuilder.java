@@ -32,6 +32,7 @@ import org.cache2k.integration.AdvancedCacheLoader;
 import org.cache2k.integration.CacheLoader;
 import org.cache2k.integration.CacheWriter;
 import org.cache2k.integration.ExceptionPropagator;
+import org.cache2k.integration.FunctionalCacheLoader;
 import org.cache2k.integration.ResiliencePolicy;
 
 import java.lang.reflect.ParameterizedType;
@@ -407,7 +408,7 @@ public class Cache2kBuilder<K, V> {
     return new CustomizationReferenceSupplier<T>(obj);
   }
 
-  public final Cache2kBuilder<K, V> loader(CacheLoader<K, V> l) {
+  public final Cache2kBuilder<K, V> loader(FunctionalCacheLoader<K, V> l) {
     config().setLoader(wrapCustomizationInstance(l));
     return this;
   }

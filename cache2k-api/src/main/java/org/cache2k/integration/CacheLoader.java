@@ -55,11 +55,13 @@ import java.util.concurrent.Executor;
  * <p>The alternative loader interface {@link AdvancedCacheLoader} provides the loader
  * with the current cache value.
  *
+ * <p>The {@linkplain FunctionalCacheLoader functional loader} interface can be used
+ * if only a single method should be provided or with Java 8 lambdas or method references.
+ *
  * @author Jens Wilke
  * @see AdvancedCacheLoader
- * @since 0.24
  */
-public abstract class CacheLoader<K, V> {
+public abstract class CacheLoader<K, V> implements FunctionalCacheLoader<K,V> {
 
   /**
    * Retrieves or generates data based on the key.
