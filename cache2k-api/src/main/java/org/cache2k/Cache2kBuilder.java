@@ -629,6 +629,18 @@ public class Cache2kBuilder<K, V> {
   }
 
   /**
+   * Disable that the last modification time is available at {@link CacheEntry#getLastModification()}.
+   * This also disables the recording of the average load time that can be retrieved via JMX.
+   *
+   * <p>When expiry is used, this parameter has no effect. The last modification time may be used
+   * by the loaders, expiry policy or resilience policy.
+   */
+  public final Cache2kBuilder<K,V> disableLastModificationTime(boolean flag) {
+    config().setDisableLastModificationTime(flag);
+    return this;
+  }
+
+  /**
    * When {@code true}, optimize for high core counts and applications that do lots of mutations
    * in the cache. When switched on, the cache will occupy slightly more memory and eviction efficiency
    * may drop slightly. This overhead is negligible for big cache sizes (100K and more).

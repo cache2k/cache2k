@@ -37,7 +37,6 @@ import org.cache2k.core.util.Log;
 import org.cache2k.core.util.TunableConstants;
 import org.cache2k.core.util.TunableFactory;
 import org.cache2k.integration.AdvancedCacheLoader;
-import org.cache2k.integration.CacheLoader;
 import org.cache2k.integration.ExceptionPropagator;
 import org.cache2k.CacheOperationCompletionListener;
 import org.cache2k.processor.EntryProcessor;
@@ -194,6 +193,7 @@ public class HeapCache<K, V>
   private static final int KEEP_AFTER_EXPIRED = 2;
   private static final int REJECT_NULL_VALUES = 8;
   private static final int BACKGROUND_REFRESH = 16;
+  private static final int NO_LAST_MODIFICATION_TIME = 32;
 
   protected final boolean hasKeepAfterExpired() {
     return (featureBits & KEEP_AFTER_EXPIRED) > 0;
@@ -206,6 +206,8 @@ public class HeapCache<K, V>
   public final boolean isNullValuePermitted() { return !hasRejectNullValues(); }
 
   protected final boolean hasBackgroundRefresh() { return (featureBits & BACKGROUND_REFRESH) > 0; }
+
+  protected final boolean isNoLastModificationTime() { return (featureBits & NO_LAST_MODIFICATION_TIME) > 0; }
 
   protected final void setFeatureBit(int _bitmask, boolean _flag) {
     if (_flag) {
@@ -245,6 +247,7 @@ public class HeapCache<K, V>
     setFeatureBit(KEEP_AFTER_EXPIRED, c.isKeepDataAfterExpired());
     setFeatureBit(REJECT_NULL_VALUES, !c.isPermitNullValues());
     setFeatureBit(BACKGROUND_REFRESH, c.isRefreshAhead());
+    setFeatureBit(NO_LAST_MODIFICATION_TIME, c.isDisableLastModificationTime());
 
     metrics = TUNABLE.commonMetricsFactory.create(new CommonMetricsFactory.Parameters() {
       @Override
@@ -280,6 +283,9 @@ public class HeapCache<K, V>
 
   public void setTiming(final TimingHandler<K,V> rh) {
     timing = rh;
+    if (!(rh instanceof TimingHandler.EternalImmediate)) {
+      setFeatureBit(NO_LAST_MODIFICATION_TIME, false);
+    }
   }
 
   public void setExceptionPropagator(ExceptionPropagator ep) {
@@ -734,8 +740,12 @@ public class HeapCache<K, V>
    * entry processing we do not need to notify any waiting threads.
    */
   private void putValue(final Entry e, final V _value) {
-    long t = System.currentTimeMillis();
-    insertOrUpdateAndCalculateExpiry(e, _value, t, t, INSERT_STAT_PUT);
+    if (isNoLastModificationTime()) {
+      insertOrUpdateAndCalculateExpiry(e, _value, 0, 0, INSERT_STAT_PUT);
+    } else {
+      long t = System.currentTimeMillis();
+      insertOrUpdateAndCalculateExpiry(e, _value, t, t, INSERT_STAT_PUT);
+    }
   }
 
   @Override
@@ -1260,7 +1270,7 @@ public class HeapCache<K, V>
 
   protected void load(Entry<K, V> e) {
     V v;
-    long t0 = System.currentTimeMillis();
+    long t0 = isNoLastModificationTime() ? 0 : System.currentTimeMillis();
     if (e.getNextRefreshTime() == Entry.EXPIRED_REFRESHED) {
       if (entryInRefreshProbationAccessed(e, t0)) {
         return;
@@ -1412,14 +1422,16 @@ public class HeapCache<K, V>
           metrics.loadException();
         }
       }
-      long _millis = t - t0;
-      if (e.isGettingRefresh()) {
-        metrics.refresh(_millis);
-      } else {
-        if (e.isVirgin()) {
-          metrics.load(_millis);
+      if (!isNoLastModificationTime()) {
+        long _millis = t - t0;
+        if (e.isGettingRefresh()) {
+          metrics.refresh(_millis);
         } else {
-          metrics.reload(_millis);
+          if (e.isVirgin()) {
+            metrics.load(_millis);
+          } else {
+            metrics.reload(_millis);
+          }
         }
       }
     } else {

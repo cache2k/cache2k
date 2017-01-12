@@ -128,9 +128,7 @@ public class InternalCache2kBuilder<K, V> {
     if (config.getExceptionPropagator() != null) {
       c.setExceptionPropagator(c.createCustomization(config.getExceptionPropagator()));
     }
-    if (config != null) {
-      c.setCacheConfig(config);
-    }
+    c.setCacheConfig(config);
   }
 
   private HeapCache<K, V> constructImplementationAndFillParameters(Class<?> cls) {

@@ -73,6 +73,7 @@ public class Cache2kConfiguration<K, V> implements ConfigurationBean, Configurat
   private int loaderThreadCount;
   private boolean permitNullValues = false;
   private boolean disableStatistics = false;
+  private boolean disableLastModificationTime = false;
   private boolean externalConfigurationPresent = false;
   private boolean boostConcurrency = false;
 
@@ -574,6 +575,17 @@ public class Cache2kConfiguration<K, V> implements ConfigurationBean, Configurat
 
   public CustomizationSupplier<Executor> getLoaderExecutor() {
     return loaderExecutor;
+  }
+
+  public boolean isDisableLastModificationTime() {
+    return disableLastModificationTime;
+  }
+
+  /**
+   * @see Cache2kBuilder#disableLastModificationTime
+   */
+  public void setDisableLastModificationTime(final boolean v) {
+    disableLastModificationTime = v;
   }
 
   /**
