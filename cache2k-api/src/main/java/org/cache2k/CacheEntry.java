@@ -27,7 +27,7 @@ import org.cache2k.integration.CacheLoaderException;
  * checked whether a mapping in the cache is present, even if the cache
  * contains {@code null} or an exception. Entries can be retrieved by
  * {@link Cache#peekEntry(Object)} or {@link Cache#getEntry(Object)} or
- * via {@link Cache#iterator()}.
+ * via iterated via {@link Cache#entries()}.
  *
  * <p>After retrieved, the entry instance does not change its values, even
  * if the value for its key is updated in the cache.
@@ -39,7 +39,7 @@ import org.cache2k.integration.CacheLoaderException;
  * @author Jens Wilke
  * @see Cache#peekEntry(Object)
  * @see Cache#getEntry(Object)
- * @see Cache#iterator()
+ * @see Cache#entries()
  */
 public interface CacheEntry<K, V> {
 
