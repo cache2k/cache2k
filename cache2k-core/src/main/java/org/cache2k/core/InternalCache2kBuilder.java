@@ -36,7 +36,6 @@ import org.cache2k.core.event.AsyncEvent;
 import org.cache2k.integration.AdvancedCacheLoader;
 import org.cache2k.integration.CacheLoader;
 import org.cache2k.integration.CacheWriter;
-import org.cache2k.integration.ExceptionPropagator;
 import org.cache2k.integration.FunctionalCacheLoader;
 
 import java.util.ArrayList;
@@ -291,7 +290,7 @@ public class InternalCache2kBuilder<K, V> {
     int _segmentCount = 1;
     if (Runtime.getRuntime().availableProcessors() > 1) {
       _segmentCount = 2;
-      if (config.isMaximizeConcurrency()) {
+      if (config.isBoostConcurrency()) {
         int _ncpu = Runtime.getRuntime().availableProcessors();
         _segmentCount = 2 << (31 - Integer.numberOfLeadingZeros(_ncpu));
       }

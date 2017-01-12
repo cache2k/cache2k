@@ -630,12 +630,14 @@ public class Cache2kBuilder<K, V> {
 
   /**
    * When {@code true}, optimize for high core counts and applications that do lots of mutations
-   * in the cache. Typical, mostly read applications, do not need to enable this.
-   * When switched on, the cache will occupy slightly more memory and eviction efficiency
+   * in the cache. When switched on, the cache will occupy slightly more memory and eviction efficiency
    * may drop slightly. This overhead is negligible for big cache sizes (100K and more).
+   *
+   * <p>Typical interactive do not need to enable this. May improve concurrency for applications
+   * that utilize all cores and cache operations account for most CPU cycles.
    */
-  public final Cache2kBuilder<K,V> maximizeConcurrency(boolean f) {
-    config().setMaximizeConcurrency(f);
+  public final Cache2kBuilder<K,V> boostConcurrency(boolean f) {
+    config().setBoostConcurrency(f);
     return this;
   }
 

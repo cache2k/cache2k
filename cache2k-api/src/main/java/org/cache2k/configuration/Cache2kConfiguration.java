@@ -74,7 +74,7 @@ public class Cache2kConfiguration<K, V> implements ConfigurationBean, Configurat
   private boolean permitNullValues = false;
   private boolean disableStatistics = false;
   private boolean externalConfigurationPresent = false;
-  private boolean maximizeConcurrency = false;
+  private boolean boostConcurrency = false;
 
   private CustomizationSupplier<Executor> loaderExecutor;
   private CustomizationSupplier<Executor> prefetchExecutor;
@@ -605,12 +605,15 @@ public class Cache2kConfiguration<K, V> implements ConfigurationBean, Configurat
     asyncListenerExecutor = v;
   }
 
-  public boolean isMaximizeConcurrency() {
-    return maximizeConcurrency;
+  public boolean isBoostConcurrency() {
+    return boostConcurrency;
   }
 
-  public void setMaximizeConcurrency(final boolean _maximizeConcurrency) {
-    maximizeConcurrency = _maximizeConcurrency;
+  /**
+   * @see Cache2kBuilder#boostConcurrency(boolean)
+   */
+  public void setBoostConcurrency(final boolean v) {
+    boostConcurrency = v;
   }
 
 

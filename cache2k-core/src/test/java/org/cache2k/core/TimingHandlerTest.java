@@ -276,7 +276,7 @@ public class TimingHandlerTest {
   @Test
   public void maximizeConcurrency() {
     Cache<Integer, Integer> c = Cache2kBuilder.of(Integer.class, Integer.class)
-      .maximizeConcurrency(true)
+      .boostConcurrency(true)
       .expireAfterWrite(5, TimeUnit.MINUTES)
       .loader(new CacheLoader<Integer, Integer>() {
         @Override

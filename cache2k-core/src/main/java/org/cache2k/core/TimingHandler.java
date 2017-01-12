@@ -289,7 +289,7 @@ public abstract class TimingHandler<K,V>  {
       refreshAhead = c.isRefreshAhead();
       sharpExpiry = c.isSharpExpiry();
       int _timerCount = 1;
-      if (c.isMaximizeConcurrency()) {
+      if (c.isBoostConcurrency()) {
         int _ncpu = Runtime.getRuntime().availableProcessors();
         _timerCount = 2 << (31 - Integer.numberOfLeadingZeros(_ncpu));
       }
