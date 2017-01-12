@@ -203,12 +203,10 @@ public interface Cache<K, V> extends KeyValueStore<K,V>, Closeable {
   void prefetchAll(Iterable<? extends K> keys, CacheOperationCompletionListener listener);
 
   /**
-   * FIXME mapped to what?
-   * Returns the value if it is mapped within the cache and it is not
-   * expired, or null.
+   * Returns the value associated to the given key.
    *
    * <p>In contrast to {@link #get(Object)} this method solely operates
-   * on the cache content and does not invoke the loader.
+   * on the cache content and does not invoke the {@linkplain CacheLoader cache loader}.
    *
    * <p>API rationale: Consequently all methods that do not invoke the loader
    * but return a value or a cache entry are prefixed with {@code peek} within this interface
@@ -229,12 +227,13 @@ public interface Cache<K, V> extends KeyValueStore<K,V>, Closeable {
   V peek(K key);
 
   /**
-   * FIXME s.o.
-   * Returns an entry associated by the given key, that contains a non expired value.
-   * The loader will not be invoked by this method.
+   * Returns an entry that contains the cache value associated with the given key.
+   * If no entry is present or the value is expired, {@code null} is returned.
+   * The {@linkplain CacheLoader cache loader} will not be invoked by this method.
    *
-   * <p>In case the cache loader yields an exception, the entry object will
-   * be returned. The exception can be retrieved via {@link CacheEntry#getException()}.
+   * <p>In case an exception is present, for example from a load operation carried out
+   * previously, the entry object will be returned. The exception can be
+   * retrieved via {@link CacheEntry#getException()}.
    *
    * <p>If {@code null} values are present the method can be used to
    * check for an existent mapping and retrieve the value in one API call.
@@ -251,10 +250,9 @@ public interface Cache<K, V> extends KeyValueStore<K,V>, Closeable {
   CacheEntry<K, V> peekEntry(K key);
 
   /**
-   * Returns true, if there is a mapping for the specified key.
+   * Returns {@code true}, if there is a mapping for the specified key.
    *
-   * FIXME use bold/italic font for "Statistics"?
-   * <p>Statistics: The operation does increase the usage counter if a mapping is present,
+   * <p>Effect on statistics: The operation does increase the usage counter if a mapping is present,
    * but does not count as read and therefore does not influence miss or hit values.
    *
    * @param key key which association should be checked
@@ -454,7 +452,7 @@ public interface Cache<K, V> extends KeyValueStore<K,V>, Closeable {
   V peekAndRemove(K key);
 
   /**
-   * Removes the mapping for a key from the cache and returns true if it
+   * Removes the mapping for a key from the cache and returns {@code true} if it
    * one was present.
    *
    * @param key key whose mapping is to be removed from the cache
@@ -795,7 +793,7 @@ public interface Cache<K, V> extends KeyValueStore<K,V>, Closeable {
   CacheManager getCacheManager();
 
   /**
-   * True if cache was closed or closing is in progress.
+   * Returns {@code true} if cache was closed or closing is in progress.
    */
   boolean isClosed();
 
@@ -818,14 +816,14 @@ public interface Cache<K, V> extends KeyValueStore<K,V>, Closeable {
    * <p>The returned map supports {@code null} values if enabled via
    * {@link Cache2kBuilder#permitNullValues(boolean)}.
    *
-   * <p>The {@code equals} and {@code hashCode} methods of the {@code Map} are forwarded to the cache, so a
+   * <p>The {@code equals} and {@code hashCode} methods of the {@code Map} are forwarded to the cache. A
    * map is considered identical when from the same cache instance. This is not compatible to the general
    * {@code Map} contract.
    *
    * <p>Multiple calls to this method return a new object instance which is a wrapper of the cache
    * instance. Calling this method is a cheap operation.
    *
-   * <p>The current {@code ConcurrentMap} implementation minimalistic and not optimized for all
+   * <p>The current {@code ConcurrentMap} implementation is minimalistic and not optimized for all
    * usage aspects. Calling the cache methods directly could be more effective.
    *
    * @return {@code ConcurrentMap} wrapper for this cache instance
