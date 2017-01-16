@@ -1,5 +1,5 @@
 /**
- * Entry processor and supporting types to for custom atomic operation on a cache entry.
+ * Entry processor and supporting types for custom atomic operations on a cache entry.
  *
  * @author Jens Wilke
  */

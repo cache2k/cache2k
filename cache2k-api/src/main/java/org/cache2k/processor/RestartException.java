@@ -23,9 +23,8 @@ package org.cache2k.processor;
 import org.cache2k.CacheException;
 
 /**
- * Used with in the entry processor to abort the processing to let the cache
- * do some, possibly asynchronous processing, for example the load of a value, or,
- * the retrieval of data from secondary storage.
+ * Used by the entry processor to abort the processing to carry out
+ * some, possibly asynchronous, processing.
  *
  * @author Jens Wilke
  */

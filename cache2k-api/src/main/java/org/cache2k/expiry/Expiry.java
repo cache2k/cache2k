@@ -21,7 +21,7 @@ package org.cache2k.expiry;
  */
 
 /**
- * Utility methods and constants to inside expire policy and friends.
+ * Utility methods and constants to use inside expire policy and friends.
  *
  * @author Jens Wilke
  * @see ExpiryPolicy

@@ -85,7 +85,7 @@ public class Cache2kBuilder<K, V> {
   }
 
   /**
-   * Create a new cache builder for key and value types are classes with no generic parameters.
+   * Create a new cache builder for key and value types of classes with no generic parameters.
    *
    * @see #keyType(Class)
    * @see #valueType(Class)
@@ -363,15 +363,14 @@ public class Cache2kBuilder<K, V> {
   }
 
   /**
-   * If an exceptions gets thrown by the cache loader, suppress it if there is
-   * a previous value. When this is active, and an exception was suppressed
-   * the expiry is determined by {@link #retryInterval(long, TimeUnit)}.
+   * Suppress an exception from the cache loader, if there is previous data.
+   * When a load was not successful, the operation is retried at shorter interval then
+   * the normal expiry, see {@link #retryInterval(long, TimeUnit)}.
    *
-   * <p>Setting this to false, will disable suppression or caching (aka resilience).
-   * Default value: true
+   * <p>Setting this to {@code false}, will disable suppression or caching (aka resilience).
+   * Default value: {@code true}
    *
-   * <p>Additional information can be found under <b>resilience</b> in
-   * the documentation.
+   * @see <a href="https://cache2k.org/docs/1.0/user-guide.html#resilience-and-exceptions">cache2k user guide - Exceptions and Resilience</a>
    */
   public final Cache2kBuilder<K, V> suppressExceptions(boolean v) {
     config().setSuppressExceptions(v);

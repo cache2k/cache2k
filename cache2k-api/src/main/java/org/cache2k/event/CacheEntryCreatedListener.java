@@ -32,7 +32,7 @@ import org.cache2k.CacheEntry;
 public interface CacheEntryCreatedListener<K, V> extends CacheEntryOperationListener<K, V> {
 
   /**
-   * Called after a creation of a cache entry and after all cache writer ran successfully.
+   * Called after a creation of a cache entry and after all cache writers ran successfully.
    *
    * <p>Exceptions thrown by asynchronous listeners will be propagated to the cache client
    * directly.

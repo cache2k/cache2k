@@ -81,7 +81,7 @@ public abstract class ResiliencePolicy<K, V> implements ExpiryTimeValues {
    * relevant configuration settings.
    *
    * <p>Compatibility: This interface is not intended for implementation
-   * or extension by a cache client and may get additional methods in a new minor release.
+   * or extension by a cache client and may get additional methods in minor releases.
    */
   public interface Context {
 
@@ -101,14 +101,14 @@ public abstract class ResiliencePolicy<K, V> implements ExpiryTimeValues {
     long getResilienceDurationMillis();
 
     /**
-     * Retry after the first exceptions happened for a key. -1 if not specified.
+     * Retry interval after the first exception happened for a key. -1 if not specified.
      *
      * @see org.cache2k.Cache2kBuilder#retryInterval
      */
     long getRetryIntervalMillis();
 
     /**
-     * Retry after the first exceptions happened for a key. -1 if not specified.
+     * Maximum retry interval. -1 if not specified.
      *
      * @see org.cache2k.Cache2kBuilder#maxRetryInterval
      */
