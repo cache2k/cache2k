@@ -1,12 +1,12 @@
 [[atomic-operations]]
 == Atomic Operations
 
-Here which atomic operations exist and what you can do with it.
+Atomic operations allow a combination of read or compare and modify a cached entry
+without interference of another thread.
 
-=== Built-in Atomic Operations
+=== Example
 
-Atomic operations allow to read, compare and modify a cache value in an
-atomic way. For example, the method `Cache.replaceIfEquals()` has the following semantics:
+The method `Cache.replaceIfEquals()` has the following semantics:
 
 [source,java]
 ----
@@ -23,10 +23,11 @@ The atomic operation semantic guarantees that this is not possible.
 
 These kind of operations are also called CAS (compare and swap) operations.
 
+=== Built-in Atomic Operations
+
 In general all operations on a single entry have atomic guarantee. Bulk operations, meaning operations on
 multiple keys, like `getAll()`, don't have atomic guarantees.
 
-.
 [width="70",options="header"]
 |===
 |Operation|Description

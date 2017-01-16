@@ -43,12 +43,12 @@ The additional generated class as in the previous version is not needed, which s
 
 === Key Type
 
-The key type needs to implement `equals` and `hashCode`. Arrays are not valid for keys.
+The key type needs to implement `equals()` and `hashCode()`. Arrays are not valid for keys.
 
 === Value Type
 
-Using arrays as values is not supported, because some cache operations testing for equality,
-like `Cache.replaceIfEquals`, will not work as desired on arrays. See the rationale for discussion.
+Using arrays as values is discouraged, because some cache operations testing for value equality,
+like `Cache.replaceIfEquals()`, will not work as desired on arrays.
 To prevent problems, cache2k refuses to build a cache with an array value type specified
 at the configuration. However, this protection can be circumvented by not providing the
 proper type in the cache configuration.
@@ -59,7 +59,7 @@ an expiry policy is added automatically.
 
 === Untyped Caches
 
-It is possible to construct a untyped cache via `Cache2kBuilder.forUnknownTypes`. But, the
+It is possible to construct an untyped cache via `Cache2kBuilder.forUnknownTypes()`. But, the
 use of untyped caches is discouraged. If different types need to be stored in a cache, construct
 a separate cache for each type with the proper type information.
 

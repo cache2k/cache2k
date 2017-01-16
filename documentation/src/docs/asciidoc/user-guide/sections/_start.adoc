@@ -67,7 +67,7 @@ To obtain the cache a new `Cache2kBuilder` is created. Mind the trailing `{}`. T
 options that can alter the behavior of a cache. In the example above the cache gets a name and is instructed
 to keep entries forever via `eternal(true)`. A name needs to be unique and may be used to find and apply additional
 configuration parameters and to make statistics available via JMX. Find the details about naming a cache
-at in JavaDoc of link:{cache2k_docs}/apidocs/cache2k-api/index.html?org/cache2k/Cache2kBuilder.html#name[`Cache2kBuilder.name()`].
+at in JavaDoc of link:{cache2k_docs}/apidocs/cache2k-api/index.html?org/cache2k/Cache2kBuilder.html#name-java.lang.String-[`Cache2kBuilder.name()`].
 
 The cache has a maximum capacity of 100 entries. When the limit is reached an entry is automatically removed that
  is not used very often. This is called eviction.
@@ -183,9 +183,9 @@ is to define a dedicated class for the cache key that is a tuple of origin and d
     public boolean equals(final Object other) {
       if (this == other) return true;
       if (other == null || getClass() != other.getClass()) return false;
-      Route __route = (Route) other;
-      if (!origin.equals(__route.origin)) return false;
-      return destination.equals(__route.destination);
+      Route route = (Route) other;
+      if (!origin.equals(route.origin)) return false;
+      return destination.equals(route.destination);
     }
 
     @Override
@@ -197,7 +197,7 @@ is to define a dedicated class for the cache key that is a tuple of origin and d
   }
 ----
 
-Cache keys needs to define a proper `hashCode` and `equals` method.
+Cache keys needs to define a proper `hashCode()` and `equals()` method.
 
 === Keys Need to be Immutable
 
@@ -232,7 +232,7 @@ time passes, the loader will be called again. A cached exception can be spotted 
 in the exception text, for example:
 
 ----
-`org.cache2k.integration.CacheLoaderException: expiry=2016-06-04 06:08:14.967, cause: java.lang.NullPointerException`
+org.cache2k.integration.CacheLoaderException: expiry=2016-06-04 06:08:14.967, cause: java.lang.NullPointerException
 ----
 
 Cached exceptions can be misleading, because you may see 100 exceptions in your log, but only
@@ -250,5 +250,5 @@ expect from a cache. There is no need to know every feature in detail, yet. Thin
 don't need them, but when in trouble, there is one parameter that will save you.
 
 Whenever in doubt: For asking questions please use the _Stackoverflow_ tag `cache2k`. Please describe your scenario
-and the problem you try to solve first before asking for specific features of `cache2k` and how they might
+and the problem you try to solve first before asking for specific features of cache2k and how they might
 help you.

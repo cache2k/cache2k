@@ -2,7 +2,7 @@
 [[loading-read-through]]
 
 In read through operation the cache will fetch the value by itself when the value is retrieved, for
-example by `Cache.get()`. This is also called a loading cache or a self populating cache.
+example by `Cache.get()`. This is also called a _loading cache_ or a _self populating cache_.
 
 === Benefits of Read Through Operation
 
@@ -10,23 +10,26 @@ When caching reads, using the cache in read through operation has several advant
 
  - No boilerplate code as in cache aside
  - Data source becomes configurable
- - Protection against the cache stampede (See https://en.wikipedia.org/wiki/Cache_stampede[Wikipedia: Cache Stampede])
+ - Blocking load operations for identical keys, protection against the cache stampede (See https://en.wikipedia.org/wiki/Cache_stampede[Wikipedia: Cache Stampede])
  - Automatic refreshing of expired values (refresh ahead)
  - Build-in exception handling like suppression and retries (see <<resilience,Resilience>> chapter)
 
 === Defining a Loader
 
-A loader is defined by implementing the abstract class `CacheLoader`. See the getting
-started example.
+A loader is defined by implementing the abstract class `CacheLoader`. See the <<getting
+started>> example about read through.
 
 [source,java]
 ----
-V load(K key) throws Exception;
+ V load(K key) throws Exception;
 ----
 
 The loader actions may only depend on the input key parameter. In case the load operation
 will yield an exception it may be passed on to the cache. How exceptions are handled by the cache
-is defined by the resilience policy.
+is defined by the resilience policy and explained in the <<resilience,Resilience chapter>>.
+
+The JavaDoc about the link:{cache2k_docs}/apidocs/cache2k-api/index.html?org/cache2k/integration/CacheLoader.html[`CacheLoader`]
+contains additional details.
 
 === Advanced Loader
 
@@ -37,9 +40,17 @@ For more sophisticated load operations the `AdvancedCacheLoader` is available.
  V load(K key, long currentTime, CacheEntry<K,V> currentEntry) throws Exception;
 ----
 
-The information of the current entry can be used to optimize the data request. For example,
-if the data is requested by HTTP the header, `If-Modified-Since` can be set from
-`Entry.getLastModification()`.
+The information of the current entry can be used to optimize the data request. A typical
+example is the optimization of HTTP requests. When the current cached value and its time
+is known the request header `If-Modified-Since` can be set from `Entry.getLastModification()`.
+
+The JavaDoc about the link:{cache2k_docs}/apidocs/cache2k-api/index.html?org/cache2k/integration/AdvancedCacheLoader.html[`AdvancedCacheLoader`]
+contains additional details.
+
+=== Using Lambda Loaders in Java 8
+
+Instead the abstract loader class, there is also a functional interface available for use with
+Java 8.
 
 === Prefetching
 
