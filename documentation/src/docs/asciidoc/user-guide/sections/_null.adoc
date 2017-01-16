@@ -92,12 +92,10 @@ use read through and define a loader.
 
 === Loader and Null Values
 
-If a loader is defined a call of `get()` will either return a non-null value or yield an exception.
+If a loader is defined a call of `Cache.get()` will either return a non-null value or yield an exception.
 If the loader returns `null`, a `NullPointerException` is generated and wrapped and propagated via
-a `CacheLoaderException`.
-
-This behavior is different from JSR107/JCache which defines that an entry is removed, when the loader
-returns `null`. Within cache2k the default behavior is to fail fast.
+a `CacheLoaderException`. This behavior is different from JSR107/JCache which defines that an
+entry is removed, when the loader returns `null`.
 
 In case the loader returns `null` and this should not lead to an exception the following options exist:
 
@@ -106,7 +104,7 @@ In case the loader returns `null` and this should not lead to an exception the f
 - Enable `null` value support
 - Remove entries from the cache when the loader returns `null` (as in JCache)
 
-The expiry policy can be used to remove entries from the cache when the loader returns null:
+The expiry policy can be used to remove entries from the cache when the loader returns `null`:
 
 [source,java]
 ----
@@ -162,5 +160,5 @@ transparently. But as soon as nulls are passed through regularly, the cache is r
 a `null` from the loader means "no caching". This will be unnoticed during development but will lead to
 performance trouble in production.
 
-In cache2k there a different options when `null` comes into play. A consistent fail fast
+In cache2k there a different options when `null` comes into play. A failure
 by default will lead to an explicit choice for the best option.

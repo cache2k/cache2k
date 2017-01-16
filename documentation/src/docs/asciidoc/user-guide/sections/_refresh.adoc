@@ -1,12 +1,12 @@
 [[refresh-ahead]]
 == Refresh Ahead
 
-With refresh ahead (or background refresh), in a read through configuration,
+With _((refresh ahead))_ (or _((background refresh))_, in a read through configuration,
 values about to expire will be refreshed automatically by the cache.
 
 === Setup
 
-Refresh ahead (or background refresh) can be enabled via `refreshAhead()` switch.
+Refresh ahead can be enabled via `refreshAhead` switch.
 The number of threads used for refreshing is configured by `loaderThreadCount()`.
 A (possibly shared) thread pool for refreshing can be configured via `prefetchExecutor()`.
 
@@ -34,19 +34,20 @@ NOTE: Refresh ahead only works together with the methods invoking the loader, fo
 `containsKey` or `peek`. The first call to `get()` or `load()` on a previously refreshed
 item will make the loaded value available in the cache.
 
-=== Sharp Timeout vs. Refresh Ahead
+=== Sharp Expiry vs. Refresh Ahead
 
-The setting `sharpTimeout` conflicts with the idea of refresh ahead. When using
-refresh ahead and sharp timeout in combination, the value will expire at the specified
+The setting `sharpExpiry` conflicts with the idea of refresh ahead. When using
+refresh ahead and sharp expiry in combination, the value will expire at the specified
 time and the background refresh is initiated. When the application requests the value
 between the expiry and before the new value is loaded, it blocks until the new value
-is available. Avoid using sharp timeout in combination with refresh ahead. Sharp timeout can also applied
-on a per entry basis only when needed.
+is available.
 
 [NOTE]
 Combining sharp expiry, lagging expiry and refresh ahead, leads to an operation mode that
-cannot guarantee the sharp expiry contract under all circumstances. A an ongoing load operation
-is not finished before a sharp expiry time, non fresh data will become visible.
+cannot guarantee the sharp expiry contract under all circumstances. If an ongoing load operation
+is not finished before a sharp expiry point in time, non fresh data will become visible.
+
+Sharp timeout can also applied on a dynamic per entry basis only when needed.
 
 === Rationale: No separate refresh timing parameter?
 

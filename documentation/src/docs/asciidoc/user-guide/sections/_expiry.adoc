@@ -3,10 +3,10 @@
 
 A cached value may expire after some specified time. When expired, the value is not
 returned by the cache any more. The cache may be instructed to do an automatic
-reload of an expired value, this is called refresh ahead.
+reload of an expired value, this is called _refresh ahead_.
 
 Expiry does not mean that a cache entry is removed from the cache. The actual
-removal from the cache may lag behind.
+removal from the cache may lag behind the time of expiry.
 
 === Specifying an Expiry Duration
 
@@ -62,13 +62,13 @@ active. See the resilience chapter for details.
 
 The expiry value can be reset with the method `Cache.expireAt(key, time)`. Some special values exist:
 
-.`Cache.expireAt` constants
+.`Cache.expireAt()` constants
 [width="70",options="header"]
 ,===
 constant,meaning
-Expiry.NOW, The value expires immediately. An immediate load is triggered if refreshAhead is enabled.
-Expiry.REFRESH, An immediate load is triggered if refreshAhead is enabled. If loading is not possible the value expires.
-Expiry.ETERNAL, keep indefinitly or to a maximum of whats set with via `expireAfterWrite`    
+`Expiry.NOW`, The value expires immediately. An immediate load is triggered if refreshAhead is enabled.
+`Expiry.REFRESH`, An immediate load is triggered if refreshAhead is enabled. If loading is not possible the value expires.
+`Expiry.ETERNAL`, keep indefinitly or to a maximum of whats set with via `expireAfterWrite`
 ,===
 
 It is possible to atomically examine a cached entry and update its expiry with the `EntryProcessor` and
@@ -83,7 +83,7 @@ needs to be corrected, it should adapt slowly to the correct time and keep conti
 In case a clock skew happens regularly a premature or late cache expiry may cause troubles. It is possible
 to do some countermeasures. If the time decreases, entries may expire more early. This can be detected and with the
 `AdvancedCacheLoader` the previously loaded value can be reused. If there is a time skew forward, expiry can
-be triggered programmatically with `expireAt`.
+be triggered programmatically with `expireAt()`.
 
 Outlook: It is planed for version 1.2 to have a configurable time source, which enables
 better adaption to different operating environments. Ideas and requests are welcome.
