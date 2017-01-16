@@ -246,11 +246,6 @@ public class CacheManagerImpl extends CacheManager {
     }
   }
 
-  @Override
-  public void destroy() {
-    close();
-  }
-
   /**
    * The shutdown takes place in two phases. First all caches are notified to
    * cancel their scheduled timer jobs, after that the shutdown is done. Cancelling
@@ -338,12 +333,6 @@ public class CacheManagerImpl extends CacheManager {
       throw new CacheInternalError(_text, _error);
     }
     throw new CacheException(_text, _suppressedExceptions.get(0));
-  }
-
-  @Override
-  @Deprecated
-  public boolean isDestroyed() {
-    return isClosed();
   }
 
   @Override

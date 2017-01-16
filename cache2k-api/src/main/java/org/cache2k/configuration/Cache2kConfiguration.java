@@ -189,24 +189,6 @@ public class Cache2kConfiguration<K, V> implements ConfigurationBean, Configurat
     this.refreshAhead = v;
   }
 
-  /**
-   * @deprecated use {@link #isRefreshAhead()}
-   *
-   * @see Cache2kBuilder#refreshAhead(boolean)
-   */
-  public boolean isBackgroundRefresh() {
-    return refreshAhead;
-  }
-
-  /**
-   * @deprecated use {@link #setRefreshAhead(boolean)}
-   *
-   * @see Cache2kBuilder#refreshAhead(boolean)
-   */
-  public void setBackgroundRefresh(boolean v) {
-    refreshAhead = v;
-  }
-
   public CacheType<K> getKeyType() {
     return keyType;
   }
@@ -276,26 +258,6 @@ public class Cache2kConfiguration<K, V> implements ConfigurationBean, Configurat
     } else {
       setExpireAfterWrite(EXPIRY_NOT_ETERNAL);
     }
-  }
-
-  /**
-   * @deprecated use {@link #setExpireAfterWrite}
-   */
-  public void setExpirySeconds(int v) {
-    if (v == -1 || v == Integer.MAX_VALUE) {
-      expireAfterWrite = -1;
-    }
-    expireAfterWrite = v * 1000L;
-  }
-
-  /**
-   * @deprecated use {@link #getExpireAfterWrite}
-   */
-  public int getExpirySeconds() {
-    if (isEternal()) {
-      return -1;
-    }
-    return (int) (expireAfterWrite / 1000);
   }
 
   public long getExpireAfterWrite() {

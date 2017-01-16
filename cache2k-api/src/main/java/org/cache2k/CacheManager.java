@@ -180,11 +180,6 @@ public abstract class CacheManager implements Closeable {
   public abstract void clear();
 
   /**
-   * @deprecated Use {@link #close()}
-   */
-  public abstract void destroy();
-
-  /**
    * Free all resources from managed caches. Same as calling all {@link org.cache2k.Cache#close()} methods.
    * A closed manager cannot be use the create new caches. A new instance of the same name may be requested
    * via {@link #getInstance(String)}.
@@ -192,12 +187,6 @@ public abstract class CacheManager implements Closeable {
    * <p>Multiple calls to close have no effect.
    */
   public abstract void close();
-
-  /**
-   *
-   * @deprecated use {@link #isClosed()}
-   */
-  public abstract boolean isDestroyed();
 
   /**
    * Returns true if this cache manager was closed.
