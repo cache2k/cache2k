@@ -28,23 +28,23 @@ import org.cache2k.processor.MutableCacheEntry;
  */
 class MutableEntryOnProgress<K, V> implements MutableCacheEntry<K, V> {
 
-  ExaminationEntry<K, V> entry;
-  Progress<K, V, ?> progress;
-  boolean originalExists = false;
-  boolean mutate = false;
-  boolean remove = false;
-  boolean exists = false;
-  V value = null;
-  boolean readThrough = false;
-  boolean customExpiry = false;
-  long expiry;
+  private ExaminationEntry<K, V> entry;
+  private Progress<K, V, ?> progress;
+  private boolean originalExists = false;
+  private boolean mutate = false;
+  private boolean remove = false;
+  private boolean exists = false;
+  private V value = null;
+  private boolean readThrough = false;
+  private boolean customExpiry = false;
+  private long expiry;
 
   /**
    * Sets exists and value together since it must be guaranteed that getValue() returns
    * a value after exists yields true. It is critical that the isPresentOrMiss() check is
    * only done once, since it depends on the current time.
    */
-  public MutableEntryOnProgress(final Progress<K, V, ?> _progress, final ExaminationEntry<K, V> _entry, boolean _readThrough) {
+  public MutableEntryOnProgress(final Progress<K, V, ?> _progress, final ExaminationEntry<K, V> _entry, final boolean _readThrough) {
     readThrough = _readThrough;
     entry = _entry;
     progress = _progress;
@@ -60,29 +60,32 @@ class MutableEntryOnProgress<K, V> implements MutableCacheEntry<K, V> {
   }
 
   @Override
-  public void setValue(final V v) {
+  public MutableCacheEntry<K, V> setValue(final V v) {
     mutate = true;
     exists = true;
     remove = false;
     value = v;
+    return this;
   }
 
   @Override
-  public void setException(final Throwable ex) {
+  public MutableCacheEntry<K, V> setException(final Throwable ex) {
     mutate = true;
     exists = true;
     remove = false;
     value = (V) new ExceptionWrapper(ex);
+    return this;
   }
 
   @Override
-  public void setExpiry(final long t) {
+  public MutableCacheEntry<K, V> setExpiry(final long t) {
     customExpiry = true;
     expiry = t;
+    return this;
   }
 
   @Override
-  public void remove() {
+  public MutableCacheEntry<K, V> remove() {
     if (mutate && !originalExists) {
       mutate = false;
     } else {
@@ -90,6 +93,7 @@ class MutableEntryOnProgress<K, V> implements MutableCacheEntry<K, V> {
     }
     exists = false;
     value = null;
+    return this;
   }
 
   @Override
@@ -106,6 +110,23 @@ class MutableEntryOnProgress<K, V> implements MutableCacheEntry<K, V> {
       throw progress.propagateException(entry.getKey(), (ExceptionWrapper) value);
     }
     return value;
+  }
+
+  @Override
+  public V getOldValue() {
+    if (!originalExists || (entry instanceof LoadedEntry)) {
+      return null;
+    }
+    V _value = entry.getValueOrException();
+    if (_value instanceof ExceptionWrapper) {
+      throw progress.propagateException(entry.getKey(), (ExceptionWrapper) _value);
+    }
+    return _value;
+  }
+
+  @Override
+  public boolean wasExisting() {
+    return originalExists && !(entry instanceof LoadedEntry);
   }
 
   @Override

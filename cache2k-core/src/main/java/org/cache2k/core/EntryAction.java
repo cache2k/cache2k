@@ -21,6 +21,7 @@ package org.cache2k.core;
  */
 
 import org.cache2k.CacheEntry;
+import org.cache2k.core.operation.LoadedEntry;
 import org.cache2k.expiry.ExpiryPolicy;
 import org.cache2k.event.CacheEntryExpiredListener;
 import org.cache2k.expiry.ExpiryTimeValues;
@@ -618,7 +619,7 @@ public abstract class EntryAction<K, V, R> implements
   public void loadAndExpiryCalculatedMutateAgain() {
     load = loadAndMutate = false;
     needsFinish = successfulLoad = true;
-    ExaminationEntry ee = new ExaminationEntry() {
+    ExaminationEntry ee = new LoadedEntry() {
       @Override
       public Object getKey() {
         return entry.getKey();

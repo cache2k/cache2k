@@ -66,7 +66,7 @@ public interface CacheEntry<K, V> {
   Throwable getException();
 
   /**
-   * Time in millis the entry was last modified either by load or put.
+   * Time in millis the entry was last modified.
    */
   long getLastModification();
 

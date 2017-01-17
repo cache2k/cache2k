@@ -263,18 +263,18 @@ public class TouchyJCacheAdapter<K, V> implements Cache<K, V> {
     }
     EntryProcessor<K,V,Boolean> ep = new EntryProcessor<K, V, Boolean>() {
       @Override
-      public Boolean process(final MutableCacheEntry<K, V> entry) throws Exception {
-        if (!entry.exists()) {
+      public Boolean process(final MutableCacheEntry<K, V> e) throws Exception {
+        if (!e.exists()) {
           return false;
         }
-        V _existingValue = entry.getValue();
+        V _existingValue = e.getValue();
         if (_existingValue.equals(oldValue)) {
-          entry.remove();
+          e.remove();
           return true;
         }
         Duration d = expiryPolicy.getExpiryForAccess();
         if (d != null) {
-          entry.setExpiry(calculateExpiry(d));
+          e.setExpiry(calculateExpiry(d));
         }
         return false;
       }

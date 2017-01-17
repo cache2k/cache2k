@@ -39,6 +39,7 @@ public class ExceptionWrapper<K> implements ExceptionInformation {
   K key;
 
   public ExceptionWrapper(Throwable ex) {
+    loadTime = System.currentTimeMillis();
     exception = ex;
   }
 

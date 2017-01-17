@@ -73,11 +73,11 @@ public interface EntryProcessor<K, V, R> {
    * <p>The method may not have any side effects except on the processed entry.
    * The cache may call the method multiple times for each invocation via the cache, when needed.
    *
-   * @param entry the entry to examine or mutate. The reference is only valid within a method call,
+   * @param e the entry to examine or mutate. The reference is only valid within a method call,
    *              don't pass or store it
    * @return a user defined result, that will be passed through and returned
    * @throws Exception an arbitrary exception that will be wrapped into a {@link EntryProcessingException}
    */
-  R process(MutableCacheEntry<K, V> entry) throws Exception;
+  R process(MutableCacheEntry<K, V> e) throws Exception;
 
 }

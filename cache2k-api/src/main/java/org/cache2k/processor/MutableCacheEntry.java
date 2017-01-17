@@ -44,16 +44,16 @@ public interface MutableCacheEntry<K, V> extends CacheEntry<K, V> {
    * or {@code null} if the cache contains no mapping for this key.
    * {@code null} is also returned if this entry contains an exception.
    *
-   * <p>If the cache does permit null values, then a return value of
+   * <p>If the cache does permit {@code null} values, then a return value of
    * {@code null} does not necessarily indicate that the cache
    * contained no mapping for the key. It is also possible that the cache
    * explicitly associated the key to the value {@code null}. Use {@link #exists()}
    * to check whether an entry is existing instead of a null check.
    *
-   * <p>If read through operation is enabled and the entry not yet existing
+   * <p>If read through operation is enabled and the entry is not yet existing
    * in the cache, the call to this method triggers a call to the cache loader.
    *
-   * <p>In contrast to the main Cache interface there is no no peekValue method,
+   * <p>In contrast to the main cache interface there is no no peekValue method,
    * since the same effect can be achieved by the combination of {@link #exists()}
    * and {@link #getValue()}.
    *
@@ -82,13 +82,39 @@ public interface MutableCacheEntry<K, V> extends CacheEntry<K, V> {
   boolean exists();
 
   /**
+   * The current value in the cache. Identical to {@link #getValue()}, but not modified
+   * after a mutation method is called. Intended for fluent operation.
+   *
+   * <p>If read through operation is enabled and the entry is not yet existing
+   * in the cache, the call to this method triggers a call to the cache loader.
+   *
+   * @throws RestartException If the information is not yet available and the cache
+   *                          needs to do an asynchronous operation to supply it.
+   *                          After completion, the entry processor will be
+   *                          executed again.
+   */
+  V getOldValue();
+
+  /**
+   * True if a mapping exists in the cache, never invokes the loader / cache source.
+   * Identical to {@link #exists()}, but not modified
+   * after a mutation method is called. Intended for fluent operation.
+   *
+   * @throws RestartException If the information is not yet available and the cache
+   *                          needs to do an asynchronous operation to supply it.
+   *                          After completion, the entry processor will be
+   *                          executed again.
+   */
+  boolean wasExisting();
+
+  /**
    * Insert or updates the cache value assigned to this key. After calling this method
    * {@code exists} will return true and {@code getValue} will return the set value.
    *
    * <p>If a writer is registered, the {@link org.cache2k.integration.CacheWriter#write(Object, Object)}
    * is called.
    */
-  void setValue(V v);
+  MutableCacheEntry<K,V> setValue(V v);
 
   /**
    * Removes an entry from the cache.
@@ -99,7 +125,7 @@ public interface MutableCacheEntry<K, V> extends CacheEntry<K, V> {
    *
    * @see <a href="https://github.com/jsr107/jsr107tck/issues/84">JSR107 TCK issue 84</a>
    */
-  void remove();
+  MutableCacheEntry<K,V> remove();
 
   /**
    * Insert or update the entry and sets an exception. The exception will be
@@ -110,7 +136,7 @@ public interface MutableCacheEntry<K, V> extends CacheEntry<K, V> {
    * default behavior will be that the set exception expires immediately, so
    * the effect will be similar to {@code remove} in this case.
    */
-  void setException(Throwable ex);
+  MutableCacheEntry<K,V> setException(Throwable ex);
 
   /**
    * Set a new expiry time for the entry. If combined with {@link #setValue} the entry
@@ -121,6 +147,6 @@ public interface MutableCacheEntry<K, V> extends CacheEntry<K, V> {
    *
    * @param t Time in millis since epoch.
    */
-  void setExpiry(long t);
+  MutableCacheEntry<K,V> setExpiry(long t);
 
 }

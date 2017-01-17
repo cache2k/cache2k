@@ -36,6 +36,7 @@ import org.cache2k.processor.EntryProcessingResult;
 import org.cache2k.processor.MutableCacheEntry;
 import org.cache2k.test.util.CacheRule;
 import org.cache2k.test.util.IntCacheRule;
+import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -75,7 +76,7 @@ public class EntryProcessorTest {
     Cache<Integer, Integer> c = target.cache();
     EntryProcessor p = new EntryProcessor() {
       @Override
-      public Object process(MutableCacheEntry entry) throws Exception {
+      public Object process(MutableCacheEntry e) throws Exception {
         return null;
       }
     };
@@ -88,7 +89,7 @@ public class EntryProcessorTest {
     Cache<Integer, Integer> c = target.cache();
     EntryProcessor p = new EntryProcessor() {
       @Override
-      public Object process(MutableCacheEntry entry) throws Exception {
+      public Object process(MutableCacheEntry e) throws Exception {
         return null;
       }
     };
@@ -104,7 +105,7 @@ public class EntryProcessorTest {
     Cache<Integer, Integer> c = target.cache();
     c.invoke(KEY, new EntryProcessor<Integer, Integer, Object>() {
       @Override
-      public Object process(final MutableCacheEntry<Integer, Integer> entry) throws Exception {
+      public Object process(final MutableCacheEntry<Integer, Integer> e) throws Exception {
         throw new IllegalStateException("test");
       }
     });
@@ -117,10 +118,10 @@ public class EntryProcessorTest {
     final int _KEY = 123;
     EntryProcessor p = new EntryProcessor() {
       @Override
-      public Object process(MutableCacheEntry _entry) throws Exception {
-        assertFalse(_entry.exists());
-        assertEquals(0, _entry.getLastModification());
-        assertEquals(_KEY, _entry.getKey());
+      public Object process(MutableCacheEntry e) throws Exception {
+        assertFalse(e.exists());
+        assertEquals(0, e.getLastModification());
+        assertEquals(_KEY, e.getKey());
         _reached.set(true);
         return null;
       }
@@ -135,8 +136,8 @@ public class EntryProcessorTest {
     final AtomicBoolean _reached = new AtomicBoolean(false);
     EntryProcessor p = new EntryProcessor() {
       @Override
-      public Object process(MutableCacheEntry _entry) throws Exception {
-        assertNull(_entry.getValue());
+      public Object process(MutableCacheEntry e) throws Exception {
+        assertNull(e.getValue());
         _reached.set(true);
         return null;
       }
@@ -153,7 +154,7 @@ public class EntryProcessorTest {
     Cache<Integer, Integer> c = target.cache();
     EntryProcessor p = new EntryProcessor() {
       @Override
-      public Object process(MutableCacheEntry _entry) throws Exception {
+      public Object process(MutableCacheEntry e) throws Exception {
         return "abc";
       }
     };
@@ -166,8 +167,8 @@ public class EntryProcessorTest {
     Cache<Integer, Integer> c = target.cache();
     c.invoke(KEY, new EntryProcessor<Integer, Integer, Object>() {
       @Override
-      public Object process(final MutableCacheEntry<Integer, Integer> entry) throws Exception {
-        assertFalse(entry.exists());
+      public Object process(final MutableCacheEntry<Integer, Integer> e) throws Exception {
+        assertFalse(e.exists());
         return null;
       }
     });
@@ -179,8 +180,8 @@ public class EntryProcessorTest {
     Cache<Integer, Integer> c = target.cache();
     EntryProcessor p = new EntryProcessor() {
       @Override
-      public Object process(MutableCacheEntry _entry) throws Exception {
-        _entry.setValue("dummy");
+      public Object process(MutableCacheEntry e) throws Exception {
+        e.setValue("dummy");
         return "abc";
       }
     };
@@ -194,10 +195,10 @@ public class EntryProcessorTest {
     Cache<Integer, Integer> c = target.cache();
     EntryProcessor p = new EntryProcessor() {
       @Override
-      public Object process(MutableCacheEntry _entry) throws Exception {
-        Object o = _entry.getValue();
+      public Object process(MutableCacheEntry e) throws Exception {
+        Object o = e.getValue();
         assertNull(o);
-        _entry.setValue("dummy");
+        e.setValue("dummy");
         return "abc";
       }
     };
@@ -215,7 +216,7 @@ public class EntryProcessorTest {
     Cache<Integer, Integer> c = target.cache();
     Map<Integer, EntryProcessingResult<Object>> _resultMap = c.invokeAll(toIterable(KEY), new EntryProcessor<Integer, Integer, Object>() {
       @Override
-      public Object process(final MutableCacheEntry<Integer, Integer> entry) throws Exception {
+      public Object process(final MutableCacheEntry<Integer, Integer> e) throws Exception {
         throw new IllegalStateException("test");
       }
     });
@@ -264,15 +265,30 @@ public class EntryProcessorTest {
     return c;
   }
 
+  /**
+   * Set expiry which keeps exceptions
+   */
+  CacheWithLoader cacheWithLoaderKeepExceptions() {
+    final CacheWithLoader c = new CacheWithLoader();
+    c.cache = target.cache(new CacheRule.Specialization<Integer, Integer>() {
+      @Override
+      public void extend(final Cache2kBuilder<Integer, Integer> b) {
+        b.loader(c.loader);
+        b.expireAfterWrite(999, TimeUnit.DAYS);
+      }
+    });
+    return c;
+  }
+
   @Test
   public void getValue_triggerLoad() {
     CacheWithLoader wl = cacheWithLoader();
     wl.cache.invoke(KEY, new EntryProcessor<Integer, Integer, Void>() {
       @Override
-      public Void process(final MutableCacheEntry<Integer, Integer> entry) throws Exception {
-        Integer v = entry.getValue();
+      public Void process(final MutableCacheEntry<Integer, Integer> e) throws Exception {
+        Integer v = e.getValue();
         assertEquals(KEY, v);
-        assertTrue(entry.exists());
+        assertTrue(e.exists());
         return null;
       }
     });
@@ -286,11 +302,11 @@ public class EntryProcessorTest {
     CacheWithLoader wl = cacheWithLoader();
     wl.cache.invoke(KEY, new EntryProcessor<Integer, Integer, Void>() {
       @Override
-      public Void process(final MutableCacheEntry<Integer, Integer> entry) throws Exception {
-        Throwable t = entry.getException();
+      public Void process(final MutableCacheEntry<Integer, Integer> e) throws Exception {
+        Throwable t = e.getException();
         assertNull(t);
-        assertTrue(entry.exists());
-        Integer v = entry.getValue();
+        assertTrue(e.exists());
+        Integer v = e.getValue();
         assertEquals(KEY, v);
         return null;
       }
@@ -303,17 +319,69 @@ public class EntryProcessorTest {
     CacheWithLoader wl = cacheWithLoader();
     wl.cache.invoke(KEY, new EntryProcessor<Integer, Integer, Void>() {
       @Override
-      public Void process(final MutableCacheEntry<Integer, Integer> entry) throws Exception {
-        Integer v = entry.getValue();
+      public Void process(final MutableCacheEntry<Integer, Integer> e) throws Exception {
+        Integer v = e.getValue();
         assertEquals(KEY, v);
-        assertTrue(entry.exists());
-        entry.remove();
-        assertFalse(entry.exists());
+        assertTrue(e.exists());
+        e.remove();
+        assertFalse(e.exists());
+        assertNull(e.getValue());
         return null;
       }
     });
     assertEquals(1, wl.loader.getCount());
     assertFalse(wl.cache.containsKey(KEY));
+  }
+
+  @Test
+  public void getOldValue_wasExisting_initial() {
+    CacheWithLoader wl = cacheWithLoader();
+    wl.cache.invoke(KEY, new EntryProcessor<Integer, Integer, Void>() {
+      @Override
+      public Void process(final MutableCacheEntry<Integer, Integer> e) throws Exception {
+        assertNull(e.getOldValue());
+        assertFalse(e.wasExisting());
+        return null;
+      }
+    });
+  }
+
+  /**
+   * Trigger a load but expect that old value is null, since
+   * nothing is in the cache yet
+   */
+  @Test
+  public void getOldValue_wasExisting_after_triggerLoad() {
+    CacheWithLoader wl = cacheWithLoader();
+    wl.cache.invoke(KEY, new EntryProcessor<Integer, Integer, Void>() {
+      @Override
+      public Void process(final MutableCacheEntry<Integer, Integer> e) throws Exception {
+        Integer v = e.getValue();
+        assertEquals(KEY, v);
+        assertNull(e.getOldValue());
+        assertFalse(e.wasExisting());
+        return null;
+      }
+    });
+  }
+
+  @Test
+  public void getOldValue_wasExisting_with_value() {
+    CacheWithLoader wl = cacheWithLoader();
+    wl.cache.put(KEY, KEY);
+    wl.cache.invoke(KEY, new EntryProcessor<Integer, Integer, Void>() {
+      @Override
+      public Void process(final MutableCacheEntry<Integer, Integer> e) throws Exception {
+        assertEquals(KEY, e.getOldValue());
+        assertTrue(e.wasExisting());
+        Integer v = e.getValue();
+        assertEquals(KEY, v);
+        e.setValue(123);
+        assertEquals(KEY, e.getOldValue());
+        assertTrue(e.wasExisting());
+        return null;
+      }
+    });
   }
 
   /**
@@ -325,10 +393,10 @@ public class EntryProcessorTest {
     target.statistics();
     wl.cache.invoke(123, new EntryProcessor<Integer, Integer, Void>() {
       @Override
-      public Void process(final MutableCacheEntry<Integer, Integer> entry) throws Exception {
-        Integer v = entry.getValue();
+      public Void process(final MutableCacheEntry<Integer, Integer> e) throws Exception {
+        Integer v = e.getValue();
         assertEquals(123, (int) v);
-        entry.remove();
+        e.remove();
         return null;
       }
     });
@@ -348,11 +416,11 @@ public class EntryProcessorTest {
     CacheWithLoader wl = cacheWithLoader();
     wl.cache.invoke(KEY, new EntryProcessor<Integer, Integer, Void>() {
       @Override
-      public Void process(final MutableCacheEntry<Integer, Integer> entry) throws Exception {
-        Integer v = entry.getValue();
+      public Void process(final MutableCacheEntry<Integer, Integer> e) throws Exception {
+        Integer v = e.getValue();
         assertEquals(KEY, v);
-        assertTrue(entry.exists());
-        entry.setValue(4711);
+        assertTrue(e.exists());
+        e.setValue(4711);
         return null;
       }
     });
@@ -366,11 +434,11 @@ public class EntryProcessorTest {
     CacheWithLoader wl = cacheWithLoader();
     wl.cache.invoke(KEY, new EntryProcessor<Integer, Integer, Void>() {
       @Override
-      public Void process(final MutableCacheEntry<Integer, Integer> entry) throws Exception {
-        Integer v = entry.getValue();
+      public Void process(final MutableCacheEntry<Integer, Integer> e) throws Exception {
+        Integer v = e.getValue();
         assertEquals(KEY, v);
-        assertTrue(entry.exists());
-        entry.setException(new NoSuchElementException());
+        assertTrue(e.exists());
+        e.setException(new NoSuchElementException());
         return null;
       }
     });
@@ -379,15 +447,74 @@ public class EntryProcessorTest {
   }
 
   @Test
+  public void setException_getException_getValue() {
+    CacheWithLoader wl = cacheWithLoader();
+    wl.cache.invoke(KEY, new EntryProcessor<Integer, Integer, Void>() {
+      @Override
+      public Void process(final MutableCacheEntry<Integer, Integer> e) throws Exception {
+        e.setException(new NoSuchElementException());
+        assertTrue(e.getException() instanceof  NoSuchElementException);
+        try {
+          e.getValue();
+          fail("exception expected");
+        } catch (CacheLoaderException ex) {
+        }
+        return null;
+      }
+    });
+  }
+
+  @Test
+  public void getOldValue_with_exception() {
+    CacheWithLoader wl = cacheWithLoader();
+    wl.cache.invoke(KEY, new EntryProcessor<Integer, Integer, Void>() {
+        @Override
+        public Void process(final MutableCacheEntry<Integer, Integer> e) throws Exception {
+          e.setException(new NoSuchElementException());
+          e.setExpiry(Expiry.ETERNAL);
+          return null;
+        }
+      });
+    wl.cache.invoke(KEY, new EntryProcessor<Integer, Integer, Void>() {
+      @Override
+      public Void process(final MutableCacheEntry<Integer, Integer> e) throws Exception {
+        try {
+          e.getOldValue();
+          fail("exception expected");
+        } catch (CacheLoaderException ex) {
+        }
+        return null;
+      }
+    });
+  }
+
+  @Test
+  public void setException_keep_exception() {
+    CacheWithLoader wl = cacheWithLoaderKeepExceptions();
+    wl.cache.invoke(KEY, new EntryProcessor<Integer, Integer, Void>() {
+      @Override
+      public Void process(final MutableCacheEntry<Integer, Integer> e) throws Exception {
+        e.setException(new NoSuchElementException());
+        return null;
+      }
+    });
+    try {
+      wl.cache.get(KEY);
+      fail("exception expected");
+    } catch (CacheLoaderException ex) {
+    }
+  }
+
+  @Test
   public void getValue_triggerLoad_setExpiry() {
     CacheWithLoader wl = cacheWithLoader();
     wl.cache.invoke(KEY, new EntryProcessor<Integer, Integer, Void>() {
       @Override
-      public Void process(final MutableCacheEntry<Integer, Integer> entry) throws Exception {
-        Integer v = entry.getValue();
+      public Void process(final MutableCacheEntry<Integer, Integer> e) throws Exception {
+        Integer v = e.getValue();
         assertEquals(KEY, v);
-        assertTrue(entry.exists());
-        entry.setExpiry(Expiry.NO_CACHE);
+        assertTrue(e.exists());
+        e.setExpiry(Expiry.NO_CACHE);
         return null;
       }
     });
@@ -434,8 +561,8 @@ public class EntryProcessorTest {
     CacheWithWriter ww = cacheWithWriter();
     ww.cache.invoke(KEY, new EntryProcessor<Integer, Integer, Object>() {
       @Override
-      public Object process(final MutableCacheEntry<Integer, Integer> entry) throws Exception {
-        entry.remove();
+      public Object process(final MutableCacheEntry<Integer, Integer> e) throws Exception {
+        e.remove();
         return null;
       }
     });
@@ -447,8 +574,8 @@ public class EntryProcessorTest {
     CacheWithWriter ww = cacheWithWriter();
     ww.cache.invoke(KEY, new EntryProcessor<Integer, Integer, Object>() {
       @Override
-      public Object process(final MutableCacheEntry<Integer, Integer> entry) throws Exception {
-        entry.setValue(123);
+      public Object process(final MutableCacheEntry<Integer, Integer> e) throws Exception {
+        e.setValue(123);
         return null;
       }
     });
@@ -467,8 +594,8 @@ public class EntryProcessorTest {
     });
     c.invoke(KEY, new EntryProcessor<Integer, Integer, Object>() {
       @Override
-      public Object process(final MutableCacheEntry<Integer, Integer> entry) throws Exception {
-        entry.setException(new IllegalStateException(_TEXT));
+      public Object process(final MutableCacheEntry<Integer, Integer> e) throws Exception {
+        e.setException(new IllegalStateException(_TEXT));
         return null;
       }
     });
@@ -504,8 +631,8 @@ public class EntryProcessorTest {
     });
     c.invoke(KEY, new EntryProcessor<Integer, Integer, Object>() {
       @Override
-      public Object process(final MutableCacheEntry<Integer, Integer> entry) throws Exception {
-        entry.setException(new IllegalStateException(_TEXT));
+      public Object process(final MutableCacheEntry<Integer, Integer> e) throws Exception {
+        e.setException(new IllegalStateException(_TEXT));
         return null;
       }
     });

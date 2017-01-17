@@ -84,8 +84,8 @@ public class ExceptionPropagatorTest {
     try {
       prepCache().invoke(KEY, new EntryProcessor<Integer, Integer, Void>() {
         @Override
-        public Void process(final MutableCacheEntry<Integer, Integer> entry) throws Exception {
-          entry.getValue();
+        public Void process(final MutableCacheEntry<Integer, Integer> e) throws Exception {
+          e.getValue();
           return null;
         }
       });

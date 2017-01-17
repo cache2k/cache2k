@@ -53,11 +53,11 @@ public class EntryProcessorCacheWrapper<K, V> extends CacheWrapper<K, V> {
   public V peek(K key) {
     EntryProcessor<K, V, V> p = new EntryProcessor<K, V, V>() {
       @Override
-      public V process(MutableCacheEntry<K, V> entry) throws Exception {
-        if (!entry.exists()) {
+      public V process(MutableCacheEntry<K, V> e) throws Exception {
+        if (!e.exists()) {
           return null;
         }
-        return entry.getValue();
+        return e.getValue();
       }
     };
     return invoke(key, p);
@@ -67,8 +67,8 @@ public class EntryProcessorCacheWrapper<K, V> extends CacheWrapper<K, V> {
   public boolean containsKey(K key) {
     EntryProcessor<K, V, Boolean> p = new EntryProcessor<K, V, Boolean>() {
       @Override
-      public Boolean process(MutableCacheEntry<K, V> entry) throws Exception {
-        if (!entry.exists()) {
+      public Boolean process(MutableCacheEntry<K, V> e) throws Exception {
+        if (!e.exists()) {
           return false;
         }
         return true;
@@ -84,8 +84,8 @@ public class EntryProcessorCacheWrapper<K, V> extends CacheWrapper<K, V> {
   public void put(K key, final V value) {
     EntryProcessor<K, V, Void> p = new EntryProcessor<K, V, Void>() {
       @Override
-      public Void process(MutableCacheEntry<K, V> entry) throws Exception {
-        entry.setValue(value);
+      public Void process(MutableCacheEntry<K, V> e) throws Exception {
+        e.setValue(value);
         return null;
       }
     };
@@ -96,11 +96,11 @@ public class EntryProcessorCacheWrapper<K, V> extends CacheWrapper<K, V> {
   public boolean replace(final K key, final V _newValue) {
     EntryProcessor<K, V, Boolean> p = new EntryProcessor<K, V, Boolean>() {
       @Override
-      public Boolean process(MutableCacheEntry<K, V> entry) throws Exception {
-        if (!entry.exists()) {
+      public Boolean process(MutableCacheEntry<K, V> e) throws Exception {
+        if (!e.exists()) {
           return false;
         }
-        entry.setValue(_newValue);
+        e.setValue(_newValue);
         return true;
       }
     };
@@ -111,20 +111,20 @@ public class EntryProcessorCacheWrapper<K, V> extends CacheWrapper<K, V> {
   public boolean replaceIfEquals(final K key, final V _oldValue, final V _newValue) {
     EntryProcessor<K, V, Boolean> p = new EntryProcessor<K, V, Boolean>() {
       @Override
-      public Boolean process(MutableCacheEntry<K, V> entry) throws Exception {
-        if (!entry.exists()) {
+      public Boolean process(MutableCacheEntry<K, V> e) throws Exception {
+        if (!e.exists()) {
           return false;
         }
         if (_oldValue == null) {
-          if (null != entry.getValue()) {
+          if (null != e.getValue()) {
             return false;
           }
         } else {
-          if (!_oldValue.equals(entry.getValue())) {
+          if (!_oldValue.equals(e.getValue())) {
             return false;
           }
         }
-        entry.setValue(_newValue);
+        e.setValue(_newValue);
         return true;
       }
     };
