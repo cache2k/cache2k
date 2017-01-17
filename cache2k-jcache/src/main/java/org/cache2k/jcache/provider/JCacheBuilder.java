@@ -345,12 +345,11 @@ public class JCacheBuilder<K,V> {
   }
 
   private void setupEventHandling() {
-    eventHandling = new EventHandling<K, V>();
+    eventHandling = new EventHandling<K, V>(manager, Executors.newCachedThreadPool());
     eventHandling.registerCache2kListeners(cache2kConfiguration);
     for (CacheEntryListenerConfiguration<K,V> cfg : config.getCacheEntryListenerConfigurations()) {
       eventHandling.registerListener(cfg);
     }
-    eventHandling.init(manager, Executors.newCachedThreadPool());
   }
 
   private void buildAdapterCache() {

@@ -52,12 +52,13 @@ import java.util.concurrent.atomic.AtomicInteger;
  */
 public class AsyncDispatcher<K,V> {
 
-  static final int KEY_LOCKS_LEN = Runtime.getRuntime().availableProcessors() * 3;
-  static Object[] KEY_LOCKS;
+  private static final int KEY_LOCKS_MASK =
+    2 << (31 - Integer.numberOfLeadingZeros(Runtime.getRuntime().availableProcessors())) - 1;
+  private static Object[] KEY_LOCKS;
 
   static {
-    KEY_LOCKS = new Object[KEY_LOCKS_LEN];
-    for (int i = 0; i < KEY_LOCKS_LEN; i++) {
+    KEY_LOCKS = new Object[KEY_LOCKS_MASK + 1];
+    for (int i = 0; i < KEY_LOCKS.length; i++) {
       KEY_LOCKS[i] = new Object();
     }
   }
@@ -68,24 +69,28 @@ public class AsyncDispatcher<K,V> {
    * entry mutation operation.
    */
   static Object getLockObject(Object key) {
-    return KEY_LOCKS[key.hashCode() % KEY_LOCKS_LEN];
+    return KEY_LOCKS[key.hashCode() & KEY_LOCKS_MASK];
   }
 
-  Executor executor;
+  private Executor executor;
 
   /**
    * A hash map updated concurrently for events on different keys. For the queue we
    * use a non thread safe linked list, because only one operation happens per key
    * at once.
    */
-  Map<K, Queue<EntryEvent<K, V>>> keyQueue = new ConcurrentHashMap<K, Queue<EntryEvent<K, V>>>();
-  Map<EventType, List<Listener<K,V>>> asyncListenerByType;
+  private Map<K, Queue<EntryEvent<K, V>>> keyQueue = new ConcurrentHashMap<K, Queue<EntryEvent<K, V>>>();
+  private Map<EventType, List<Listener<K,V>>> asyncListenerByType;
 
   {
     asyncListenerByType = new HashMap<EventType, List<Listener<K, V>>>();
     for (EventType t : EventType.values()) {
       asyncListenerByType.put(t, new CopyOnWriteArrayList<Listener<K, V>>());
     }
+  }
+
+  public AsyncDispatcher(final Executor _executor) {
+    executor = _executor;
   }
 
   void addAsyncListener(Listener<K,V> l) {

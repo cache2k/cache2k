@@ -36,12 +36,13 @@ import java.util.concurrent.Executor;
  */
 public class AsyncDispatcher<K> {
 
-  static final int KEY_LOCKS_LEN = Runtime.getRuntime().availableProcessors() * 3;
-  static Object[] KEY_LOCKS;
+  private static final int KEY_LOCKS_MASK =
+    2 << (31 - Integer.numberOfLeadingZeros(Runtime.getRuntime().availableProcessors())) - 1;
+  private static Object[] KEY_LOCKS;
 
   static {
-    KEY_LOCKS = new Object[KEY_LOCKS_LEN];
-    for (int i = 0; i < KEY_LOCKS_LEN; i++) {
+    KEY_LOCKS = new Object[KEY_LOCKS_MASK + 1];
+    for (int i = 0; i < KEY_LOCKS.length; i++) {
       KEY_LOCKS[i] = new Object();
     }
   }
@@ -51,13 +52,14 @@ public class AsyncDispatcher<K> {
    * The additional locking we introduce here is currently run synchronously inside the
    * entry mutation operation.
    */
-  static Object getLockObject(Object key) {
-    return KEY_LOCKS[key.hashCode() % KEY_LOCKS_LEN];
+  private static Object getLockObject(Object key) {
+    int hc = key.hashCode();
+    return KEY_LOCKS[hc & KEY_LOCKS_MASK];
   }
 
-  Map<K, Queue<AsyncEvent<K>>> keyQueue = new ConcurrentHashMap<K, Queue<AsyncEvent<K>>>();
-  Executor executor;
-  InternalCache cache;
+  private Map<K, Queue<AsyncEvent<K>>> keyQueue = new ConcurrentHashMap<K, Queue<AsyncEvent<K>>>();
+  private Executor executor;
+  private InternalCache cache;
 
   public AsyncDispatcher(InternalCache _cache, final Executor _executor) {
     cache = _cache;

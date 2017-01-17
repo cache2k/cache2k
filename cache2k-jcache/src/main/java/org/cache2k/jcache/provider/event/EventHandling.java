@@ -60,17 +60,17 @@ import java.util.concurrent.Executor;
  */
 public class EventHandling<K,V> {
 
-  JCacheManagerAdapter manager;
-  javax.cache.Cache jCache;
-  List<Listener.Created<K,V>> createdListener = new CopyOnWriteArrayList<Listener.Created<K, V>>();
-  List<Listener.Updated<K,V>> updatedListener = new CopyOnWriteArrayList<Listener.Updated<K, V>>();
-  List<Listener.Removed<K,V>> removedListener = new CopyOnWriteArrayList<Listener.Removed<K, V>>();
-  List<Listener.Expired<K,V>> expiredListener = new CopyOnWriteArrayList<Listener.Expired<K, V>>();
-  AsyncDispatcher<K,V> asyncDispatcher = new AsyncDispatcher<K, V>();
+  private javax.cache.Cache resolvedJCache;
+  private final List<Listener.Created<K,V>> createdListener = new CopyOnWriteArrayList<Listener.Created<K, V>>();
+  private final List<Listener.Updated<K,V>> updatedListener = new CopyOnWriteArrayList<Listener.Updated<K, V>>();
+  private final List<Listener.Removed<K,V>> removedListener = new CopyOnWriteArrayList<Listener.Removed<K, V>>();
+  private final List<Listener.Expired<K,V>> expiredListener = new CopyOnWriteArrayList<Listener.Expired<K, V>>();
+  private final AsyncDispatcher<K,V> asyncDispatcher;
+  private final JCacheManagerAdapter manager;
 
-  public void init(JCacheManagerAdapter m, Executor ex) {
+  public EventHandling(JCacheManagerAdapter m, Executor ex) {
+    asyncDispatcher = new AsyncDispatcher<K, V>(ex);
     manager = m;
-    asyncDispatcher.executor = ex;
   }
 
   void addAsyncListener(Listener<K,V> l) {
@@ -238,10 +238,10 @@ public class EventHandling<K,V> {
   }
 
   private javax.cache.Cache getCache(final Cache<K, V> c) {
-    if (jCache != null) {
-      return jCache;
+    if (resolvedJCache != null) {
+      return resolvedJCache;
     }
-    return jCache = manager.resolveCacheWrapper(c);
+    return resolvedJCache = manager.resolveCacheWrapper(c);
   }
 
   @SuppressWarnings("unchecked")
