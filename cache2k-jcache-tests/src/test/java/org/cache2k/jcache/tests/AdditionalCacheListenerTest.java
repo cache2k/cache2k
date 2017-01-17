@@ -20,7 +20,6 @@ package org.cache2k.jcache.tests;
  * #L%
  */
 
-import org.cache2k.expiry.ExpiryPolicy;
 import org.jsr107.tck.event.CacheEntryListenerClient;
 import org.jsr107.tck.event.CacheEntryListenerServer;
 import org.jsr107.tck.testutil.CacheTestSupport;
@@ -40,14 +39,11 @@ import javax.cache.event.CacheEntryListenerException;
 import javax.cache.event.CacheEntryRemovedListener;
 import javax.cache.event.CacheEntryUpdatedListener;
 import javax.cache.event.EventType;
-import javax.cache.expiry.Duration;
-import javax.cache.expiry.ModifiedExpiryPolicy;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
 /**
