@@ -40,6 +40,6 @@ For a detailed introduction continue with [Getting Started](https://cache2k.org/
  * [complete JCache / JSR107 support](https://cache2k.org/docs/1.0/user-guide.html#jcache)
  * [XML based configuration](https://cache2k.org/docs/1.0/user-guide.html#xml-configuration), to separate cache tuning from logic
 
-# More...
+## More...
 
 For more documentation and latest news, see the [cache2k homepage](https://cache2k.org).
