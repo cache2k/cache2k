@@ -78,7 +78,7 @@ Some options control how the configuration is interpreted.
 version:: Version which controls how the configuration is interpreted. Needed for possible
           future changes. Always `1.0` at the moment.
 defaultManagerName:: Set another name for the default cache manager, default is `"default"`.
-ignoreAnonymousCache:: If true, allows cache without names. If a cache has no name
+ignoreAnonymousCache:: If `true`, allows cache without name. If a cache has no name
                      a special configuration cannot be applied. The default is `false`,
                      enforcing that all caches are named on the programmatic level.
 skipCheckOnStartup:: Do not check whether all cache configurations can be applied
@@ -121,9 +121,9 @@ The configuration supports basic types.
 ,===
 type,example,description
 boolean,`true`,Boolean value either true of false
-int,4711,Integer value
-long,20_000MB,Long value with suffixes (see below)
-String,"alice",A string value
+int,`4711`,Integer value
+long,`20_000MiB`,Long value with optional suffixes (see below)
+String,`alice`,A string value
 ,===
 
 For additional convenience the long type supports a unit suffix:
