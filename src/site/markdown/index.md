@@ -6,6 +6,7 @@ Java applications.
 [![GitHub Stars](https://x.h7e.eu/badges/xz/q/github/starGazers/gh-stargazers/cache2k/cache2k)](https://github.com/cache2k/cache2k/stargazers)
 [![License](https://x.h7e.eu/badges/xz/txt/license/apache)](https://www.apache.org/licenses/LICENSE-2.0.html)
 [![Stack Overflow](https://x.h7e.eu/badges/xz/txt/stackoverflow/cache2k)](https://stackoverflow.com/questions/tagged/cache2k)
+![Maven Central](https://x.h7e.eu/badges/xz/q/maven/latestVersion/maven-central/org.cache2k/cache2k-api)
 
 ````java
   Cache<String,String> cache = new Cache2kBuilder<String, String>() {}
@@ -43,6 +44,7 @@ For a detailed introduction continue with [Getting Started](docs/1.0/user-guide.
 
 ## News
 
+  * **Version 1.0.0.CR3, 2017-01-17**: Cleanups&Documentation, improvements for Java 8, See [Version 1.0.0.CR3 release notes](1/0.0.CR3.html)
   * **Version 1.0.0.CR2, 2016-12-22**: Remove deprecated methods. Cleanups. Documentation. See [Version 1.0.0.CR2 release notes](1/0.0.CR2.html)
   * **Version 1.0.0.CR1, 2016-12-05**: More cleanups, XML configuration has arrived. See [Version 1.0.0.CR1 release notes](1/0.0.CR1.html)
   * **Version 0.28-BETA, 2016-09-02**: Minor bug fixes, SLF4J Support, statistics cleanup. See [Version 0.28 release notes](0/28.html)
