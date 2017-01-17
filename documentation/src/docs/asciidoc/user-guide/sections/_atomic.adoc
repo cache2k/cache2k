@@ -43,8 +43,8 @@ multiple keys, like `getAll()`, don't have atomic guarantees.
 
 === Entry Processor
 
-With the entry processor it is possible to implement arbitrary operations that are processed atomically.
-The interface `EntryProcessor` must be implemented with the desired semantics and invoked on a cached value
+With the entry processor it is possible to implement arbitrary complex operations that are processed atomically
+on a cache entry. The interface `EntryProcessor` must be implemented with the desired semantics and invoked on a cached value
 via `Cache.invoke()`. The bulk operation `Cache.invokeAll()` is available to process multiple cache entries
 with one entry processor.
 
@@ -94,4 +94,13 @@ The effect will be:
 - If no entry for the key is existing, the cache state will not change
 - If a cache writer is attached, `CacheWriter.delete()` will be called in any case
 
+Via the entry processor, it is also possible to specify an expiry time directly.
+Here is an example formulated as Java 8 lambda expression, which inserts a value and
+sets the expiry after 120 minutes:
 
+[source,java]
+----
+     cache.invoke("key",
+       e -> e.setValue("value")
+             .setExpiry(System.currentTimeMillis() + TimeUnit.MINUTES.toMillis(120)));
+----
