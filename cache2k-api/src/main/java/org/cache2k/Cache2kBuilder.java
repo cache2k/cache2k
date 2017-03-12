@@ -343,7 +343,7 @@ public class Cache2kBuilder<K, V> {
   /**
    * When set to true, cached values do not expire by time. Entries will need to be removed
    * from the cache explicitly or will be evicted if capacity constraints are reached.
-
+   *
    * <p>Setting eternal to false signals that the data should expire, but there is no
    * predefined expiry value at programmatic level. This value needs to be set by other
    * means, e.g. within a configuration file.

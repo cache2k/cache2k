@@ -32,11 +32,13 @@ import org.cache2k.testing.category.FastTests;
 import org.junit.*;
 import org.junit.experimental.categories.Category;
 
+import java.io.IOException;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.NoSuchElementException;
+import java.util.concurrent.Callable;
 import java.util.concurrent.TimeUnit;
 
 import static org.junit.Assert.*;
@@ -208,6 +210,78 @@ public class BasicCacheOperationsTest {
     assertTrue(cache.containsKey(OTHER_KEY));
     assertNull(cache.peek(OTHER_KEY));
     assertEquals(VALUE, cache.peek(KEY));
+  }
+
+  /*
+   * computeIfAbsent
+   */
+
+  @Test
+  public void computeIfAbsent() {
+    Integer v = cache.computeIfAbsent(KEY, new Callable<Integer>() {
+      @Override
+      public Integer call() throws Exception {
+        return VALUE;
+      }
+    });
+    statistics()
+      .getCount.expect(1)
+      .missCount.expect(1)
+      .putCount.expect(1)
+      .expectAllZero();
+    assertEquals(VALUE, v);
+    assertTrue(cache.containsKey(KEY));
+    assertEquals(KEY, cache.peek(KEY));
+    statistics()
+      .getCount.expect(1)
+      .expectAllZero();
+    v = cache.computeIfAbsent(KEY, new Callable<Integer>() {
+      @Override
+      public Integer call() throws Exception {
+        return OTHER_VALUE;
+      }
+    });
+    statistics()
+      .getCount.expect(1)
+      .missCount.expect(0)
+      .putCount.expect(0)
+      .expectAllZero();
+    assertEquals(VALUE, v);
+    assertTrue(cache.containsKey(KEY));
+    assertEquals(VALUE, cache.peek(KEY));
+    cache.put(KEY, VALUE);
+  }
+
+  @Test
+  public void computeIfAbsent_Null() {
+    cache.computeIfAbsent(KEY, new Callable<Integer>() {
+      @Override
+      public Integer call() throws Exception {
+        return null;
+      }
+    });
+    assertTrue(cache.containsKey(KEY));
+    assertNull(cache.peek(KEY));
+  }
+
+  @Test
+  public void computeIfAbsent_Exception() {
+    try {
+      cache.computeIfAbsent(KEY, new Callable<Integer>() {
+        @Override
+        public Integer call() throws Exception {
+          throw new IOException("for testing");
+        }
+      });
+      fail("CacheLoaderException expected");
+    } catch (CacheLoaderException ex) {
+    }
+    statistics()
+      .getCount.expect(1)
+      .missCount.expect(1)
+      .putCount.expect(0)
+      .expectAllZero();
+    assertFalse(cache.containsKey(KEY));
   }
 
   /*

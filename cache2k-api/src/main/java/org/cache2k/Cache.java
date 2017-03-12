@@ -33,6 +33,7 @@ import org.cache2k.processor.EntryProcessingResult;
 
 import java.io.Closeable;
 import java.util.Map;
+import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.Executor;
 import java.util.concurrent.TimeUnit;
@@ -289,6 +290,48 @@ public interface Cache<K, V> extends KeyValueStore<K,V>, Closeable {
    */
   @Override
   void put(K key, V value);
+
+  /**
+   * If the specified key is not already associated with a value (or exception),
+   * call the provided task and associate it with the returned value. This is equivalent to
+   *
+   *  <pre> {@code
+   * if (!cache.containsKey(key)) {
+   *   V value = callable.call();
+   *   cache.put(key, value);
+   *   return value;
+   * } else {
+   *   return cache.peek(key);
+   * }}</pre>
+   *
+   * except that the action is performed atomically.
+   *
+   * <p>See {@link #put(Object, Object)} for the effects on the cache writer and
+   * expiry calculation.
+   *
+   * <p>Statistics: If an entry exists this operation counts as a hit, if the entry
+   * is missing, a miss and put is counted.
+   *
+   * <p>Exceptions: If call throws an exception the cache contents will
+   * not be modified and the exception is propagated. The customized exception propagator is not
+   * used for this method.
+   *
+   * <p>Rationale: The {@code Function} interface that {@code Map.computeIfAbsent} uses is only
+   * available in Java 8. {@code Callable} is a useful fallback and we can use it directly
+   * for the Spring integration.
+   *
+   * @param key key with which the specified value is to be associated
+   * @param callable task that computes the value
+   * @return the associated value in the cache
+   * @throws CacheLoaderException if an exception happens in the function
+   * @throws ClassCastException if the class of the specified key or value
+   *         prevents it from being stored in this cache
+   * @throws NullPointerException if the specified key is {@code null} or the
+   *         value is {@code null} and the cache does not permit {@code null} values
+   * @throws IllegalArgumentException if some property of the specified key
+   *         or value prevents it from being stored in this cache
+   */
+  V computeIfAbsent(K key, Callable<V> callable);
 
   /**
    * If the specified key is not already associated

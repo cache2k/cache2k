@@ -27,8 +27,8 @@ import org.cache2k.CacheManager;
 import org.cache2k.processor.EntryProcessingResult;
 import org.cache2k.CacheOperationCompletionListener;
 
-import java.util.Iterator;
 import java.util.Map;
+import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentMap;
 
 /**
@@ -107,6 +107,11 @@ public class CacheWrapper<K,V> implements Cache<K, V> {
   @Override
   public boolean putIfAbsent(K key, V value) {
     return cache.putIfAbsent(key, value);
+  }
+
+  @Override
+  public V computeIfAbsent(final K key, final Callable<V> callable) {
+    return cache.computeIfAbsent(key, callable);
   }
 
   @Override

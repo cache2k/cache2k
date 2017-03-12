@@ -44,6 +44,7 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.Callable;
 import java.util.concurrent.Future;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -107,6 +108,11 @@ public class WiredCache<K, V> extends AbstractCache<K, V>
   @Override
   public CacheManager getCacheManager() {
     return heapCache.getCacheManager();
+  }
+
+  @Override
+  public V computeIfAbsent(final K key, final Callable<V> callable) {
+    return returnValue(execute(key, SPEC.computeIfAbsent(key, callable)));
   }
 
   @Override

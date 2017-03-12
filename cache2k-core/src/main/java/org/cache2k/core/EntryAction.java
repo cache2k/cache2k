@@ -876,6 +876,7 @@ public abstract class EntryAction<K, V, R> implements
    */
   @Override
   public void failure(RuntimeException t) {
+    updateOnlyReadStatistics();
     mutationAbort(t);
   }
 

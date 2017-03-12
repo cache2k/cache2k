@@ -37,6 +37,7 @@ import org.cache2k.core.util.Log;
 import org.cache2k.core.util.TunableConstants;
 import org.cache2k.core.util.TunableFactory;
 import org.cache2k.integration.AdvancedCacheLoader;
+import org.cache2k.integration.CacheLoaderException;
 import org.cache2k.integration.ExceptionPropagator;
 import org.cache2k.CacheOperationCompletionListener;
 import org.cache2k.processor.EntryProcessor;
@@ -50,6 +51,7 @@ import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Random;
 import java.util.Set;
+import java.util.concurrent.Callable;
 import java.util.concurrent.Executor;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -838,6 +840,58 @@ public class HeapCache<K, V>
   @Override
   public CacheEntry<K, V> peekEntry(K key) {
     return returnEntry(peekEntryInternal(key));
+  }
+
+  /**
+   * Code duplicates with {@link Cache#get(Object)}
+   */
+  @Override
+  public V computeIfAbsent(final K key, final Callable<V> callable) {
+    Entry<K,V> e;
+    for (;;) {
+      e = lookupOrNewEntry(key);
+      if (e.hasFreshData()) {
+        return returnValue(e);
+      }
+      synchronized (e) {
+        e.waitForProcessing();
+        if (e.hasFreshData()) {
+          return returnValue(e);
+        }
+        if (e.isGone()) {
+          metrics.goneSpin();
+          continue;
+        }
+        e.startProcessing();
+        break;
+      }
+    }
+    metrics.peekMiss();
+    boolean _finished = false;
+    long t = 0, t0 = 0;
+    V _value;
+    try {
+      if (isNoLastModificationTime()) {
+        _value = callable.call();
+      } else {
+        t0 = System.currentTimeMillis();
+        _value = callable.call();
+        t = System.currentTimeMillis();
+      }
+      synchronized (e) {
+        insertOrUpdateAndCalculateExpiry(e, _value, t0, t, INSERT_STAT_PUT);
+        e.processingDone();
+      }
+      _finished = true;
+    } catch (Exception ex) {
+      throw new CacheLoaderException(ex);
+    } finally {
+      e.ensureAbort(_finished);
+    }
+    if (e.getValueOrException() == null && hasRejectNullValues()) {
+      return null;
+    }
+    return returnValue(e);
   }
 
   @Override

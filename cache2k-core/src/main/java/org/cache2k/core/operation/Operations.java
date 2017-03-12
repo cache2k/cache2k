@@ -22,9 +22,12 @@ package org.cache2k.core.operation;
 
 import org.cache2k.CacheEntry;
 import org.cache2k.expiry.ExpiryTimeValues;
+import org.cache2k.integration.CacheLoaderException;
 import org.cache2k.processor.EntryProcessingException;
 import org.cache2k.processor.EntryProcessor;
 import org.cache2k.processor.RestartException;
+
+import java.util.concurrent.Callable;
 
 /**
  * Semantics of all cache operations on entries.
@@ -218,6 +221,27 @@ public class Operations<K, V> {
           c.result(e.getValueOrException());
         }
         c.put(value);
+      }
+
+    };
+  }
+
+  public Semantic<K, V, V> computeIfAbsent(final K key, final Callable<V> _function) {
+    return new Semantic.UpdateExisting<K, V, V>() {
+
+      @Override
+      public void update(Progress<K, V, V> c, ExaminationEntry<K, V> e) {
+        if (c.isPresentOrMiss()) {
+          c.result(e.getValueOrException());
+        } else {
+          try {
+            V _value = _function.call();
+            c.put(_value);
+            c.result(_value);
+          } catch (Exception ex) {
+            c.failure(new CacheLoaderException(ex));
+          }
+        }
       }
 
     };
