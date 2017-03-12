@@ -52,9 +52,12 @@ public class ConcurrentMapWrapper<K,V> implements ConcurrentMap<K, V> {
     valueType = cache.getValueType().getType();
   }
 
+  /**
+   * We cannot use {@link Cache#putIfAbsent(Object, Object)} since the map returns the value.
+   */
   @Override
   public V putIfAbsent(K key, final V value) {
-    EntryProcessor<K, V, V> p = new EntryProcessor<K, V, V>() {
+    return cache.invoke(key, new EntryProcessor<K, V, V>() {
       @Override
       public V process(MutableCacheEntry<K, V> e) throws Exception {
         if (!e.exists()) {
@@ -63,8 +66,7 @@ public class ConcurrentMapWrapper<K,V> implements ConcurrentMap<K, V> {
         }
         return e.getValue();
       }
-    };
-    return cache.invoke(key, p);
+    });
   }
 
   @Override
