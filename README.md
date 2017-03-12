@@ -23,7 +23,7 @@ For a detailed introduction continue with [Getting Started](https://cache2k.org/
 
  * Single small jar file (less than 400k) with no external dependencies
  * Even smaller, for use with [Android](https://cache2k.org/docs/1.0/user-guide.html#android)
- * One of the fastest cache for JVM local caching, see [the benchmarks page](benchmarks.html)
+ * One of the fastest cache for JVM local caching, see [the benchmarks page](https://cache2k.org/benchmarks.html)
  * Java 6 and [Android](https://cache2k.org/docs/1.0/user-guide.html#android) compatible
  * Leverages Java 8 to increase performance (if possible)
  * Pure Java code, no use of `sun.misc.Unsafe`
