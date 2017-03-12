@@ -40,7 +40,7 @@ public interface Progress<K, V, R> {
   void wantData();
 
   /**
-   * Entry has valid data in the cache and is not expired. This is used for all
+   * Entry has valid data in the cache and is not expired. This is used for
    * operations that do not want to access the value.
    */
   boolean isPresent();
@@ -51,8 +51,8 @@ public interface Progress<K, V, R> {
   boolean isPresentOrInRefreshProbation();
 
   /**
-   * Entry has valid data in the cache and is not expired. This is used for all
-   * operations that do not want to access the value.
+   * Entry has valid data in the cache and is not expired. Counts a miss, if no entry is
+   * available, this is used for operations that do want to access the value.
    */
   boolean isPresentOrMiss();
 
