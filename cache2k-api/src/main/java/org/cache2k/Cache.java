@@ -30,6 +30,7 @@ import org.cache2k.integration.CacheWriterException;
 import org.cache2k.processor.EntryProcessingException;
 import org.cache2k.processor.EntryProcessor;
 import org.cache2k.processor.EntryProcessingResult;
+import org.cache2k.processor.MutableCacheEntry;
 
 import java.io.Closeable;
 import java.util.Map;
@@ -665,7 +666,8 @@ public interface Cache<K, V> extends KeyValueStore<K,V>, Closeable {
    * @param key the key of the cache entry that should be processed
    * @param entryProcessor processor instance to be invoked
    * @param <R> type of the result
-   * @throws EntryProcessingException if the {@code invoke} had thrown an exception
+   * @throws EntryProcessingException if an exception happened inside
+   *         {@link EntryProcessor#process(MutableCacheEntry)}
    * @return result provided by the entry processor
    * @see EntryProcessor
    * @see org.cache2k.processor.MutableCacheEntry

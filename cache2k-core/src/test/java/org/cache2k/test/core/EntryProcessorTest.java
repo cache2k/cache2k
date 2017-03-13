@@ -36,7 +36,6 @@ import org.cache2k.processor.EntryProcessingResult;
 import org.cache2k.processor.MutableCacheEntry;
 import org.cache2k.test.util.CacheRule;
 import org.cache2k.test.util.IntCacheRule;
-import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -63,6 +62,7 @@ import static org.cache2k.test.core.StaticUtil.*;
 public class EntryProcessorTest {
 
   final static Integer KEY = 3;
+  final static Integer VALUE = 7;
 
   /** Provide unique standard cache per method */
   @Rule public IntCacheRule target = new IntCacheRule();
@@ -462,6 +462,29 @@ public class EntryProcessorTest {
         return null;
       }
     });
+    assertFalse(wl.cache.containsKey(KEY));
+  }
+
+  /**
+   * An exception within the entry processor aborts the processing and the
+   * cache content is not altered.
+   */
+  @Test
+  public void setValue_throwException() {
+    CacheWithLoader wl = cacheWithLoader();
+    try {
+      wl.cache.invoke(KEY, new EntryProcessor<Integer, Integer, Void>() {
+        @Override
+        public Void process(final MutableCacheEntry<Integer, Integer> e) throws Exception {
+          e.setValue(VALUE);
+          throw new RuntimeException("terminate with exception");
+        }
+      });
+      fail("exception expected");
+    } catch (EntryProcessingException _expected) {
+    }
+    assertFalse(wl.cache.containsKey(KEY));
+    wl.cache.put(KEY, VALUE);
   }
 
   @Test
