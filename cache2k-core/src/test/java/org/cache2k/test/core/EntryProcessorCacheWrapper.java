@@ -21,9 +21,9 @@ package org.cache2k.test.core;
  */
 
 import org.cache2k.Cache;
+import org.cache2k.ForwardingCache;
 import org.cache2k.processor.EntryProcessor;
 import org.cache2k.processor.MutableCacheEntry;
-import org.cache2k.core.extra.CacheWrapper;
 
 /**
  * Override operations mutating or querying the cache by using the entry processor.
@@ -32,10 +32,17 @@ import org.cache2k.core.extra.CacheWrapper;
  *
  * @author Jens Wilke
  */
-public class EntryProcessorCacheWrapper<K, V> extends CacheWrapper<K, V> {
+public class EntryProcessorCacheWrapper<K, V> extends ForwardingCache<K, V> {
 
-  public EntryProcessorCacheWrapper(Cache<K, V> cache) {
-    super(cache);
+  private Cache<K,V> cache;
+
+  public EntryProcessorCacheWrapper(Cache<K, V> _cache) {
+    this.cache = _cache;
+  }
+
+  @Override
+  protected Cache<K, V> delegate() {
+    return cache;
   }
 
   /**
@@ -129,6 +136,10 @@ public class EntryProcessorCacheWrapper<K, V> extends CacheWrapper<K, V> {
       }
     };
     return invoke(key, p);
+  }
+
+  public Cache<K, V> getWrappedCache() {
+    return cache;
   }
 
 }
