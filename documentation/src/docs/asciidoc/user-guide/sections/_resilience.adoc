@@ -2,7 +2,7 @@
 == Exceptions and Resilience
 
 In a read through configuration the cache can tolerate temporary loader failures.
-The write trough does not provide resilience capabilities at the moment, which means
+The write through does not provide resilience capabilities at the moment, which means
  a writer exception will always propagated to the cache client.
 
 === Behavior
@@ -74,6 +74,16 @@ the usage scenario and whether availability or consistency has to be priority.
 To be able to use the resilience features and increase availability in the event of failure
 the method `expireAt` should be preferred for invalidation. See the detailed discussion in the
 loading chapter.
+
+=== Entry Status and `containsKey`
+
+In case an exception is present, the method `containsKey` will return `true`, the methods
+`putIfAbsent` and `computeIfAbsent` act consequently. This means `pufIfAbsent` can not be used
+to overwrite an entry in exception state with a value.
+
+To examine the state of an entry, e.g. whether it contains a value or exception, the method
+`Cache.peekEntry` can be used. To examine the state of an entry and modify it, the entry processor
+can be used.
 
 === Configuration options
 
