@@ -581,9 +581,9 @@ public abstract class EntryAction<K, V, R> implements
 
   private void setUntil(final ExceptionWrapper _ew) {
     if (expiry < 0) {
-      _ew.until = -expiry;
+      _ew.setUntil(-expiry);
     } else if (expiry >= Entry.EXPIRY_TIME_MIN) {
-      _ew.until = expiry;
+      _ew.setUntil(expiry);
     }
   }
 

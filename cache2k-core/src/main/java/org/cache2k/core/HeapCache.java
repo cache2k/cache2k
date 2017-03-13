@@ -1393,7 +1393,7 @@ public class HeapCache<K, V>
         e.setLastModification(t0);
         e.setValueOrException((V) _value);
       }
-      _value.until = Math.abs(_nextRefreshTime);
+      _value.setUntil(Math.abs(_nextRefreshTime));
       finishLoadOrEviction(e, _nextRefreshTime);
     }
   }

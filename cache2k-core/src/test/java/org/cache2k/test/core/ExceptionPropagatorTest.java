@@ -98,6 +98,7 @@ public class ExceptionPropagatorTest {
   Cache<Integer, Integer> prepCache() {
     Cache c = target.cache();
     c.put(KEY, new ExceptionWrapper(new IllegalArgumentException("Test")));
+    assertTrue(c.containsKey(KEY));
     return c;
   }
 

@@ -31,12 +31,12 @@ package org.cache2k.core;
  */
 public class ExceptionWrapper<K> implements ExceptionInformation {
 
-  Throwable exception;
-  long loadTime;
-  long until;
-  int count;
-  long since;
-  K key;
+  private Throwable exception;
+  private long loadTime;
+  private long until;
+  private int count;
+  private long since;
+  private K key;
 
   public ExceptionWrapper(Throwable ex) {
     loadTime = System.currentTimeMillis();
@@ -75,6 +75,10 @@ public class ExceptionWrapper<K> implements ExceptionInformation {
     } else {
       since = loadTime;
     }
+  }
+
+  public void setUntil(final long _until) {
+    until = _until;
   }
 
   public K getKey() {
