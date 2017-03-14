@@ -94,6 +94,10 @@ import java.util.concurrent.TimeUnit;
  * {@link #replaceIfEquals}. To allow arbitrary semantics that operate atomically on an {@link EntryProcessor}
  * can be implemented and executed via {@link Cache#invoke}.
  *
+ * <p><b>Compatibility:</b> Future versions of cache2k may introduce new methods to this interface.
+ * To improve upward compatibility applications that need to implement this interface should use
+ * {@link AbstractCache} or {@link ForwardingCache}.
+ *
  * @param <K> type of the key
  * @param <V> type of the stores values
  * @see Cache2kBuilder
