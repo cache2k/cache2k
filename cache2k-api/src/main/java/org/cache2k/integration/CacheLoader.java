@@ -60,6 +60,7 @@ import java.util.concurrent.Executor;
  *
  * @author Jens Wilke
  * @see AdvancedCacheLoader
+ * @see FunctionalCacheLoader
  */
 public abstract class CacheLoader<K, V> implements FunctionalCacheLoader<K,V> {
 

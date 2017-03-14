@@ -273,10 +273,10 @@ public class Cache2kConfiguration<K, V> implements ConfigurationBean, Configurat
     }
     if (expireAfterWrite != -1) {
       if (millis == Expiry.ETERNAL) {
-        throw new IllegalArgumentException("not eternal or expiry was set, refusing to reset back to eternal");
+        throw new IllegalArgumentException("eternal disabled or expiry was set, refusing to reset back to eternal");
       }
       if (expireAfterWrite == Expiry.ETERNAL) {
-        throw new IllegalArgumentException("eternal was set, refusing to reset to expire time span");
+        throw new IllegalArgumentException("eternal enabled explicitly, refusing to enable expiry");
       }
     }
     this.expireAfterWrite = millis;

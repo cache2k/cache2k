@@ -332,7 +332,7 @@ public class Cache2kBuilder<K, V> {
    *
    * <p>The value {@code Long.MAX_VALUE} means the capacity is not limited.
    *
-   * <p>The default value is: 2000. The default value is conservative, so the application
+   * <p>The default value is 2000. The default value is conservative, so the application
    * will usually run stable without tuning or setting a reasonable size.
    */
   public final Cache2kBuilder<K, V> entryCapacity(long v) {
@@ -341,15 +341,16 @@ public class Cache2kBuilder<K, V> {
   }
 
   /**
-   * When set to true, cached values do not expire by time. Entries will need to be removed
+   * When set to {@code true}, cached values do not expire by time. Entries will need to be removed
    * from the cache explicitly or will be evicted if capacity constraints are reached.
    *
-   * <p>Setting eternal to false signals that the data should expire, but there is no
+   * <p>Setting eternal to {@code false} signals that the data should expire, but there is no
    * predefined expiry value at programmatic level. This value needs to be set by other
    * means, e.g. within a configuration file.
    *
-   * <p>The default behavior of the cache is identical to the setting eternal, meaning no
-   * expiry.
+   * <p>The default behavior of the cache is identical to the setting of eternal. Entries will not expire.
+   * When eternal was set explicitly it cannot be reset to another value afterwards. This should protect against
+   * misconfiguration.
    *
    * <p>Exceptions: If set to eternal with default setting and if there is no
    * explicit expiry configured for exceptions with {@link #retryInterval(long, TimeUnit)},
@@ -367,7 +368,11 @@ public class Cache2kBuilder<K, V> {
    * When a load was not successful, the operation is retried at shorter interval then
    * the normal expiry, see {@link #retryInterval(long, TimeUnit)}.
    *
-   * <p>Setting this to {@code false}, will disable suppression or caching (aka resilience).
+   * <p>Exception suppression is only active when entries expire (eternal is not true) or the explicit
+   * configuration of the timing parameters for resilience, e.g. {@link #resilienceDuration(long, TimeUnit)}.
+   * Check the user guide chapter for details.
+   *
+   * <p>Setting this to {@code false}, will disable exceptions suppression or caching (aka resilience).
    * Default value: {@code true}
    *
    * @see <a href="https://cache2k.org/docs/1.0/user-guide.html#resilience-and-exceptions">cache2k user guide - Exceptions and Resilience</a>
@@ -396,6 +401,10 @@ public class Cache2kBuilder<K, V> {
     return this;
   }
 
+  /**
+   * Sets customization for propagating loader exceptions. By default loader exceptions
+   * are wrapped into a {@link org.cache2k.integration.CacheLoaderException}.
+   */
   public final Cache2kBuilder<K, V> exceptionPropagator(ExceptionPropagator<K> ep) {
     config().setExceptionPropagator(wrapCustomizationInstance(ep));
     return this;
@@ -407,16 +416,34 @@ public class Cache2kBuilder<K, V> {
     return new CustomizationReferenceSupplier<T>(obj);
   }
 
+  /**
+   * Enables read through operation and sets a cache loader that provides the the
+   * cached data. By default read through is not enabled, which means
+   * the methods {@link Cache#get} and {@link Cache#peek} have identical behavior.
+   *
+   * @see CacheLoader for general discussion on cache loaders
+   */
   public final Cache2kBuilder<K, V> loader(FunctionalCacheLoader<K, V> l) {
     config().setLoader(wrapCustomizationInstance(l));
     return this;
   }
 
+  /**
+   * Enables read through operation and sets a cache loader that provides the the
+   * cached data. By default read through is not enabled, which means
+   * the methods {@link Cache#get} and {@link Cache#peek} have identical behavior.
+   *
+   * @see CacheLoader for general discussion on cache loaders
+   */
   public final Cache2kBuilder<K, V> loader(AdvancedCacheLoader<K, V> l) {
     config().setAdvancedLoader(wrapCustomizationInstance(l));
     return this;
   }
 
+  /**
+   * Enables write through operation and sets a writer customization that gets
+   * called synchronously upon cache mutations. By default write through is not enabled.
+   */
   public final Cache2kBuilder<K, V> writer(CacheWriter<K, V> w) {
     config().setWriter(wrapCustomizationInstance(w));
     return this;
