@@ -72,7 +72,7 @@ import static org.cache2k.core.util.Util.*;
  */
 @SuppressWarnings({"unchecked", "SynchronizationOnLocalVariableOrMethodParameter", "WeakerAccess"})
 public class HeapCache<K, V>
-  extends AbstractCache<K, V> {
+  extends BaseCache<K, V> {
 
   static final CacheOperationCompletionListener DUMMY_LOAD_COMPLETED_LISTENER = new CacheOperationCompletionListener() {
     @Override

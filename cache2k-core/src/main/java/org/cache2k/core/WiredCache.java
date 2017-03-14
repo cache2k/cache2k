@@ -55,7 +55,7 @@ import java.util.concurrent.atomic.AtomicInteger;
  *
  * @author Jens Wilke
  */
-public class WiredCache<K, V> extends AbstractCache<K, V>
+public class WiredCache<K, V> extends BaseCache<K, V>
   implements  StorageAdapter.Parent, HeapCacheListener<K,V> {
 
   @SuppressWarnings("unchecked")

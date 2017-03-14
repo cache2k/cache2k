@@ -21,7 +21,6 @@ package org.cache2k.core;
  */
 
 import org.cache2k.CacheEntry;
-import org.cache2k.CacheOperationCompletionListener;
 import org.cache2k.CustomizationException;
 import org.cache2k.configuration.CustomizationSupplier;
 import org.cache2k.processor.EntryProcessingException;
@@ -30,7 +29,6 @@ import org.cache2k.processor.EntryProcessingResult;
 import org.cache2k.core.operation.Semantic;
 import org.cache2k.core.storageApi.StorageAdapter;
 
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
@@ -41,7 +39,7 @@ import java.util.concurrent.ConcurrentMap;
  *
  * @author Jens Wilke
  */
-public abstract class AbstractCache<K, V> implements InternalCache<K, V> {
+public abstract class BaseCache<K, V> implements InternalCache<K, V> {
 
   protected abstract Iterator<CacheEntry<K, V>> iterator();
 
@@ -53,7 +51,7 @@ public abstract class AbstractCache<K, V> implements InternalCache<K, V> {
     return new Iterable<K>() {
       @Override
       public Iterator<K> iterator() {
-        final Iterator<CacheEntry<K,V>> it = AbstractCache.this.iterator();
+        final Iterator<CacheEntry<K,V>> it = BaseCache.this.iterator();
         return new Iterator<K>() {
           @Override
           public boolean hasNext() {
@@ -79,7 +77,7 @@ public abstract class AbstractCache<K, V> implements InternalCache<K, V> {
     return new Iterable<CacheEntry<K, V>>() {
       @Override
       public Iterator<CacheEntry<K, V>> iterator() {
-        return AbstractCache.this.iterator();
+        return BaseCache.this.iterator();
       }
     };
   }
