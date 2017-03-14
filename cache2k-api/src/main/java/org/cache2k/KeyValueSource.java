@@ -20,8 +20,6 @@ package org.cache2k;
  * #L%
  */
 
-import java.io.Closeable;
-
 /**
  * Reduced interface to return a value selected by a key object. Cache users
  * of a read-through cache may choose this simple interface for requesting data
@@ -29,7 +27,7 @@ import java.io.Closeable;
  *
  * @author Jens Wilke
  */
-public interface KeyValueSource<K, V> extends Closeable {
+public interface KeyValueSource<K, V> {
 
   /**
    * Returns a value associated with this key.
@@ -37,12 +35,5 @@ public interface KeyValueSource<K, V> extends Closeable {
    * @see Cache#get(Object)
    */
   V get(K key);
-
-  /**
-   * Release all resources associated to this object. This resource needs to
-   * be closed explicitly after finishing with its use.
-   */
-  @Override
-  void close();
 
 }
