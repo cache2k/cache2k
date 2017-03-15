@@ -435,6 +435,18 @@ public class Cache2kBuilder<K, V> {
    *
    * @see CacheLoader for general discussion on cache loaders
    */
+  public final Cache2kBuilder<K, V> loader(CacheLoader<K, V> l) {
+    config().setLoader(wrapCustomizationInstance(l));
+    return this;
+  }
+
+  /**
+   * Enables read through operation and sets a cache loader that provides the the
+   * cached data. By default read through is not enabled, which means
+   * the methods {@link Cache#get} and {@link Cache#peek} have identical behavior.
+   *
+   * @see CacheLoader for general discussion on cache loaders
+   */
   public final Cache2kBuilder<K, V> loader(AdvancedCacheLoader<K, V> l) {
     config().setAdvancedLoader(wrapCustomizationInstance(l));
     return this;
