@@ -120,6 +120,11 @@ public class CacheManagerManagementTest {
 
   }
 
+  /**
+   * https://github.com/jsr107/jsr107tck/issues/87
+   * changed in 1.1, CacheManager.getCacheNames()
+   * @throws MalformedObjectNameException
+   */
   @After
   public void tearDown() throws MalformedObjectNameException {
     //assertEquals(0, mBeanServer.queryNames(new ObjectName("java.cache:*"), null).size());

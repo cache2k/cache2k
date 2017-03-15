@@ -184,6 +184,10 @@ public class CacheManagerTest extends TestSupport {
     assertNotSame(cacheManager, otherCacheManager);
   }
 
+  /**
+   * https://github.com/jsr107/jsr107tck/issues/104
+   * Changed in 1.1, don't do getCache(..., null, null)
+   */
   @Test
   public void testReuseCacheManagerGetCache() throws Exception {
     CachingProvider provider = Caching.getCachingProvider();
@@ -354,6 +358,11 @@ public class CacheManagerTest extends TestSupport {
     cacheManager.close();
   }
 
+  /**
+   * https://github.com/jsr107/jsr107tck/issues/87
+   *
+   * Changed in 1.1, getCacheNames() throws exception after closing.
+   */
   @Test
   public void close_cachesEmpty() {
     CacheManager cacheManager = getCacheManager();
@@ -593,6 +602,8 @@ public class CacheManagerTest extends TestSupport {
     cacheManager.createCache("typed-cache", config);
 
     Cache cache = cacheManager.getCache("typed-cache");
+
+    assertNotNull("getCache() returns cache reference for typed caches, since 1.1", cache);
   }
 
   @Test(expected = NullPointerException.class)
