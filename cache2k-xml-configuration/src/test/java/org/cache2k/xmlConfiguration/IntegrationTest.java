@@ -220,7 +220,7 @@ public class IntegrationTest {
       c.close();
       fail("expect exception");
     } catch (ConfigurationException ex) {
-      assertThat(ex.getMessage(), containsString("Value '2d' rejected: eternal was set, refusing to reset to expire time span at"));
+      assertThat(ex.getMessage(), containsString("Value '2d' rejected: eternal enabled explicitly, refusing to enable expiry at"));
     }
   }
 
