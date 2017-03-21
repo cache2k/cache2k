@@ -10,6 +10,7 @@
   <artifactId>documentation</artifactId>
   <version>1.0-SNAPSHOT</version>
   <name>cache2k documentation</name>
+  <packaging>pom</packaging>
 
   <description>
     A light weight and high performance Java cache library. Android compatible core library.
