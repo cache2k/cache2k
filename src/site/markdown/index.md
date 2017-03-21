@@ -44,6 +44,7 @@ For a detailed introduction continue with [Getting Started](docs/1.0/user-guide.
 
 ## News
 
+  * **Version 1.0.0.CR4, 2017-03-21**: Final cleanups and and API tweaks, `Cache.computeIfAbsent()`, See [Version 1.0.0.CR4 release notes](1/0.0.CR4.html)
   * **Version 1.0.0.CR3, 2017-01-17**: Cleanups&Documentation, improvements for Java 8, See [Version 1.0.0.CR3 release notes](1/0.0.CR3.html)
   * **Version 1.0.0.CR2, 2016-12-22**: Remove deprecated methods. Cleanups. Documentation. See [Version 1.0.0.CR2 release notes](1/0.0.CR2.html)
   * **Version 1.0.0.CR1, 2016-12-05**: More cleanups, XML configuration has arrived. See [Version 1.0.0.CR1 release notes](1/0.0.CR1.html)
