@@ -32,7 +32,7 @@
         <artifactId>maven-javadoc-plugin</artifactId>
         <!-- proper link to the cache2k-api module -->
         <configuration>
-          <additionalparam>-linkoffline https://cache2k.org/docs/${series}/apidocs/cache2k-api ${project.basedir}/../cache2k-api/target/apidocs</additionalparam>
+          <additionalparam>-linkoffline https://cache2k.org/docs/${series}/apidocs/cache2k-api ${project.basedir}/../cache2k-api/target/apidocs -Xdoclint:all -Xdoclint:-missing</additionalparam>
         </configuration>
       </plugin>
     </plugins>
@@ -45,7 +45,7 @@
         <artifactId>maven-javadoc-plugin</artifactId>
         <!-- proper link to the cache2k-api module -->
         <configuration>
-          <additionalparam>-linkoffline https://cache2k.org/docs/${series}/apidocs/cache2k-api ${project.basedir}/../cache2k-api/target/site/apidocs</additionalparam>
+          <additionalparam>-linkoffline https://cache2k.org/docs/${series}/apidocs/cache2k-api ${project.basedir}/../cache2k-api/target/site/apidocs -Xdoclint:all -Xdoclint:-missing</additionalparam>
         </configuration>
       </plugin>
     </plugins>
