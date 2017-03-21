@@ -6,7 +6,7 @@
   <parent>
     <groupId>org.cache2k</groupId>
     <artifactId>cache2k-parent</artifactId>
-    <version>1.0-SNAPSHOT</version>
+    <version>1.0.0.CR4</version>
   </parent>
 
   <description>
@@ -16,7 +16,7 @@
   </description>
 
   <artifactId>cache2k-testing</artifactId>
-  <version>1.0-SNAPSHOT</version>
+  <version>1.0.0.CR4</version>
   <name>cache2k testing</name>
 
   <dependencies>
