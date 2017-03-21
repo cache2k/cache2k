@@ -437,6 +437,8 @@
       <id>static-analysis</id>
       <reporting>
         <plugins>
+          <!-- Browsing through the PMD warnings most of it is legit code.
+               We don't use PMD for now.
           <plugin>
             <groupId>org.apache.maven.plugins</groupId>
             <artifactId>maven-pmd-plugin</artifactId>
@@ -445,6 +447,7 @@
               <skipEmptyReport>false</skipEmptyReport>
             </configuration>
           </plugin>
+          -->
           <plugin>
             <groupId>org.apache.maven.plugins</groupId>
             <artifactId>maven-project-info-reports-plugin</artifactId>
