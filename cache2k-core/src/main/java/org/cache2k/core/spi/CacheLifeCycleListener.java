@@ -21,7 +21,6 @@ package org.cache2k.core.spi;
  */
 
 import org.cache2k.Cache;
-import org.cache2k.CacheManager;
 
 /**
  * Interface to implement additional service providers that get notified

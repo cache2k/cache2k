@@ -39,7 +39,6 @@ import org.cache2k.core.util.TunableFactory;
 import org.cache2k.integration.AdvancedCacheLoader;
 import org.cache2k.integration.CacheLoaderException;
 import org.cache2k.integration.ExceptionPropagator;
-import org.cache2k.CacheOperationCompletionListener;
 import org.cache2k.processor.EntryProcessor;
 
 import java.io.Closeable;

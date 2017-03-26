@@ -43,9 +43,9 @@ public interface PurgeableStorage {
    *           {@link StorageEntry#getEntryExpiryTime()}
    * @return statistical result of the operation, if nothing was done null.
    */
-  public PurgeResult purge(PurgeContext ctx, long _valueExpiryTime, long _entryExpiryTime) throws Exception;
+  PurgeResult purge(PurgeContext ctx, long _valueExpiryTime, long _entryExpiryTime) throws Exception;
 
-  public static interface PurgeContext extends CacheStorage.MultiThreadedContext {
+  interface PurgeContext extends CacheStorage.MultiThreadedContext {
 
     /**
      * Runs the action under the entry lock for the key. The actual purge
@@ -60,7 +60,7 @@ public interface PurgeableStorage {
   /**
    * Statistics
    */
-  public static interface PurgeResult {
+  interface PurgeResult {
 
     /**
      * Free space reclaimed. -1 if not supported

@@ -37,7 +37,7 @@ public interface CacheStorage {
    * <p>Depending on the cache configuration,  an exception on get is not severe.
    * The cache will try other sources or return null.
    */
-  public StorageEntry get(Object key) throws Exception;
+  StorageEntry get(Object key) throws Exception;
 
   /**
    * Stores the entry in the storage. The entry instance is solely for transferring
@@ -49,9 +49,9 @@ public interface CacheStorage {
    *
    * @throws IOException may be thrown if hope is lost
    */
-  public void put(StorageEntry e) throws Exception;
+  void put(StorageEntry e) throws Exception;
 
-  public boolean remove(Object key) throws Exception;
+  boolean remove(Object key) throws Exception;
 
   /**
    * Returns true if there is a mapping for the key.
@@ -59,7 +59,7 @@ public interface CacheStorage {
    * <p>An exception on contains is not severe. The cache will try other sources or
    * return null.
    */
-  public boolean contains(Object key) throws Exception;
+  boolean contains(Object key) throws Exception;
 
   /**
    * Remove all entries from the cache and free resources. This operation is called
@@ -69,12 +69,12 @@ public interface CacheStorage {
    * CacheStorage.clear() to the persisted storage. Alternatively, all objects can
    * be removed via remove().
    */
-  public void clear() throws Exception;
+  void clear() throws Exception;
 
   /**
    * Free all resources and stop operations immediately.
    */
-  public void close() throws Exception;
+  void close() throws Exception;
 
   /**
    * Iterate over all stored entries and call the entry visitor. It is generally safe to
@@ -85,11 +85,11 @@ public interface CacheStorage {
    * <p>If the {@link ExecutorService} is used, the method may return immediately without
    * the waiting for all threads to finish. This is done by the caller, when needed.
    */
-  public void visit(VisitContext ctx, EntryFilter f, EntryVisitor v) throws Exception;
+  void visit(VisitContext ctx, EntryFilter f, EntryVisitor v) throws Exception;
 
-  public int getEntryCount();
+  int getEntryCount();
 
-  public static interface MultiThreadedContext {
+  interface MultiThreadedContext {
 
     /**
      * A private executor service for this operation to run in multiple threads.

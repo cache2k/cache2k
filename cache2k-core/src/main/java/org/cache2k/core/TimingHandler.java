@@ -461,7 +461,7 @@ public abstract class TimingHandler<K,V>  {
         timerCancelCount++;
         if (timerCancelCount >= PURGE_INTERVAL) {
           synchronized (timer) {
-            int _purgedCount = timer[purgeIndex].purge();
+            timer[purgeIndex].purge();
             purgeIndex = (purgeIndex + 1) & timerMask;
             timerCancelCount = 0;
           }

@@ -25,6 +25,7 @@ import java.util.concurrent.atomic.AtomicLongFieldUpdater;
 /**
  * @author Jens Wilke
  */
+@SuppressWarnings({"unused"})
 public class StandardCommonMetrics implements CommonMetrics.Updater {
 
   static final AtomicLongFieldUpdater<StandardCommonMetrics> PUT_NEW_ENTRY_UPDATER =

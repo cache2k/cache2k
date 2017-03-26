@@ -49,8 +49,6 @@ public abstract class AbstractEviction implements Eviction, EvictionMetrics {
   private int chunkSize;
   private int evictionRunningCount = 0;
 
-  private int noEvictionContentionCount = 0;
-
   public AbstractEviction(final HeapCache _heapCache, final HeapCacheListener _listener, final long _maxSize) {
     heapCache = _heapCache;
     listener = _listener;
@@ -191,7 +189,7 @@ public abstract class AbstractEviction implements Eviction, EvictionMetrics {
         if (e.isGone() || e.isProcessing()) {
           _chunk[i] = null; continue;
         }
-        boolean f = heapCache.removeEntryForEviction(e);
+        heapCache.removeEntryForEviction(e);
       }
     }
   }
@@ -208,7 +206,7 @@ public abstract class AbstractEviction implements Eviction, EvictionMetrics {
       listener.onEvictionFromHeap(e);
       synchronized (e) {
         e.processingDone();
-        boolean f = heapCache.removeEntryForEviction(e);
+        heapCache.removeEntryForEviction(e);
       }
     }
   }

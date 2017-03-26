@@ -25,6 +25,7 @@ import java.util.concurrent.atomic.AtomicLongFieldUpdater;
 /**
  * @author Jens Wilke
  */
+@SuppressWarnings("unused")
 public class StandardStorageMetrics implements StorageMetrics.Updater {
 
   static final AtomicLongFieldUpdater<StandardStorageMetrics> READ_HIT_UPDATER =
