@@ -435,19 +435,30 @@
     -->
     <profile>
       <id>static-analysis</id>
-      <reporting>
+      <!-- pmd gets called directly via pmd:pmd, which uses the configuration in the build scope
+           and not the reporting scope used by site builds.
+           we don't use the site build, since this generates documentation etc. and we want
+           like to generate the static analytics metrics separately.
+      -->
+      <build>
         <plugins>
-          <!-- Browsing through the PMD warnings most of it is legit code.
-               We don't use PMD for now.
           <plugin>
             <groupId>org.apache.maven.plugins</groupId>
             <artifactId>maven-pmd-plugin</artifactId>
             <version>3.7</version>
             <configuration>
+              <targetJdk>1.8</targetJdk>
+              <linkXRef>false</linkXRef>
+			  <rulesets>
+			  	<ruleset>${user.dir}/config/pmd-rulesets.xml</ruleset>
+			  </rulesets>
               <skipEmptyReport>false</skipEmptyReport>
             </configuration>
           </plugin>
-          -->
+        </plugins>
+      </build>
+      <reporting>
+        <plugins>
           <plugin>
             <groupId>org.apache.maven.plugins</groupId>
             <artifactId>maven-project-info-reports-plugin</artifactId>
