@@ -25,7 +25,8 @@ package org.cache2k.jcache.provider.generic.storeByValueSimulation;
  */
 public interface ObjectTransformer<E, I> {
 
-  public final static ObjectTransformer IDENT_TRANSFORM = new ObjectTransformer<Object, Object>() {
+  ObjectTransformer IDENT_TRANSFORM = new ObjectTransformer<Object, Object>() {
+
     @Override
     public Object expand(Object _internal) {
       return _internal;
