@@ -22,9 +22,6 @@ package org.cache2k.integration;
 
 import org.cache2k.Cache;
 
-import java.util.Map;
-import java.util.concurrent.Executor;
-
 /**
  * Writer for write-through configurations. Any mutation of the cache via the
  * {@link Cache}  interface, e.g.  {@link Cache#put(Object, Object)} or
