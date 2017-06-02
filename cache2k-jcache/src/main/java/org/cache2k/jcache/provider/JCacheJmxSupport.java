@@ -21,12 +21,10 @@ package org.cache2k.jcache.provider;
  */
 
 import org.cache2k.Cache;
-import org.cache2k.CacheManager;
 import org.cache2k.core.spi.CacheLifeCycleListener;
 
 import javax.management.InstanceNotFoundException;
 import javax.management.MBeanServer;
-import javax.management.MBeanServerFactory;
 import javax.management.ObjectName;
 import java.lang.management.ManagementFactory;
 
