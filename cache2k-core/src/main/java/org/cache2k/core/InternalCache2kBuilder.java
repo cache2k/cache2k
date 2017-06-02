@@ -285,27 +285,17 @@ public class InternalCache2kBuilder<K, V> {
    * there is no effect on read performance.
    */
   private Eviction constructEviction(HeapCache hc, HeapCacheListener l, Cache2kConfiguration config) {
-    int _segmentCount = 1;
-    if (Runtime.getRuntime().availableProcessors() > 1) {
-      _segmentCount = 2;
-      if (config.isBoostConcurrency()) {
-        int _ncpu = Runtime.getRuntime().availableProcessors();
-        _segmentCount = 2 << (31 - Integer.numberOfLeadingZeros(_ncpu));
-      }
-    }
-    if (config.getEntryCapacity() < 1000) {
-      _segmentCount = 1;
-    }
-    int _maxSegments = Runtime.getRuntime().availableProcessors() * 2;
-    _segmentCount = Math.min(_segmentCount, _maxSegments);
-    if (config.isStrictEviction()) {
-      _segmentCount = 1;
-    }
+    final boolean _strictEviction = config.isStrictEviction();
+    final int _availableProcessors = Runtime.getRuntime().availableProcessors();
+    final boolean _boostConcurrency = config.isBoostConcurrency();
+    final long _entryCapacity = config.getEntryCapacity();
+    final int _segmentCountOverride = HeapCache.TUNABLE.segmentCountOverride;
+    int _segmentCount = determineSegmentCount(_strictEviction, _availableProcessors, _boostConcurrency, _entryCapacity, _segmentCountOverride);
     Eviction[] _segments = new Eviction[_segmentCount];
-    long _maxSize = config.getEntryCapacity() / _segmentCount;
-    if (config.getEntryCapacity() == Long.MAX_VALUE) {
+    long _maxSize = _entryCapacity / _segmentCount;
+    if (_entryCapacity == Long.MAX_VALUE) {
       _maxSize = Long.MAX_VALUE;
-    } else if (config.getEntryCapacity() % _segmentCount > 0) {
+    } else if (_entryCapacity % _segmentCount > 0) {
       _maxSize++;
     }
     for (int i = 0; i < _segments.length; i++) {
@@ -316,6 +306,29 @@ public class InternalCache2kBuilder<K, V> {
       return _segments[0];
     }
     return new SegmentedEviction(_segments);
+  }
+
+  static int determineSegmentCount(final boolean _strictEviction, final int _availableProcessors, final boolean _boostConcurrency, final long _entryCapacity, final int _segmentCountOverride) {
+    int _segmentCount = 1;
+    if (_availableProcessors > 1) {
+      _segmentCount = 2;
+      if (_boostConcurrency) {
+        _segmentCount = 2 << (31 - Integer.numberOfLeadingZeros(_availableProcessors));
+      }
+    }
+    if (_segmentCountOverride > 0) {
+      _segmentCount = 1 << (32 - Integer.numberOfLeadingZeros(_segmentCountOverride - 1));
+    } else {
+      int _maxSegments = _availableProcessors * 2;
+      _segmentCount = Math.min(_segmentCount, _maxSegments);
+    }
+    if (_entryCapacity < 1000) {
+      _segmentCount = 1;
+    }
+    if (_strictEviction) {
+      _segmentCount = 1;
+    }
+    return _segmentCount;
   }
 
   private void checkConfiguration() {
