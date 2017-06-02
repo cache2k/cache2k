@@ -37,13 +37,12 @@ import javax.management.MBeanServerDelegate;
 public class TckMBeanServerBuilder extends MBeanServerBuilder {
 
   @Override
-  public javax.management.MBeanServerDelegate newMBeanServerDelegate() {
+  public MBeanServerDelegate newMBeanServerDelegate() {
     return new WrapperMBeanServerDelegate();
   }
 
   @Override
-  public MBeanServer newMBeanServer(String defaultDomain, MBeanServer outer,
-                                    javax.management.MBeanServerDelegate delegate) {
+  public MBeanServer newMBeanServer(String defaultDomain, MBeanServer outer, MBeanServerDelegate delegate) {
     return super.newMBeanServer(defaultDomain, outer, delegate);
   }
 
