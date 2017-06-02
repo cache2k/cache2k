@@ -453,6 +453,11 @@
 			  	<ruleset>${user.dir}/config/pmd-rulesets.xml</ruleset>
 			  </rulesets>
               <skipEmptyReport>false</skipEmptyReport>
+              <excludes>
+                <!-- exclusions for code from JSR107 TCK -->
+                <exclude>org/jsr107/**/*.java</exclude>
+                <exclude>domain/*.java</exclude>
+              </excludes>
             </configuration>
           </plugin>
         </plugins>
