@@ -48,7 +48,7 @@ import java.util.Set;
  *
  * @author Jens Wilke
  */
-public class TransformingCacheProxy<K, V, K0, V0> implements javax.cache.Cache<K, V> {
+public class TransformingCacheProxy<K, V, K0, V0> implements Cache<K, V> {
 
   protected ObjectTransformer<K, K0> keyTransformer;
   protected ObjectTransformer<V, V0> valueTransformer;
