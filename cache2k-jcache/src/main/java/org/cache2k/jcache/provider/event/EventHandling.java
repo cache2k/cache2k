@@ -40,7 +40,6 @@ import javax.cache.event.EventType;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -80,9 +79,7 @@ public class EventHandling<K,V> {
   static <T extends Listener<K,V>, K, V> boolean removeCfgMatch(
     final CacheEntryListenerConfiguration<K,V> cfg,
     final List<T> _listenerList) {
-    Iterator<T> it = _listenerList.iterator();
-    while (it.hasNext()) {
-      Listener<K,V> l = it.next();
+    for (final T l : _listenerList) {
       if (l.config.equals(cfg)) {
         _listenerList.remove(l);
         removeCfgMatch(cfg, _listenerList);
@@ -93,8 +90,8 @@ public class EventHandling<K,V> {
   }
 
   public boolean deregisterListener(CacheEntryListenerConfiguration<K,V> cfg) {
-    boolean _found = false;
-    _found |= removeCfgMatch(cfg, createdListener);
+    boolean _found;
+    _found = removeCfgMatch(cfg, createdListener);
     _found |= removeCfgMatch(cfg, updatedListener);
     _found |= removeCfgMatch(cfg, removedListener);
     _found |= removeCfgMatch(cfg, expiredListener);
@@ -182,9 +179,7 @@ public class EventHandling<K,V> {
   class CreatedListenerAdapter implements org.cache2k.event.CacheEntryCreatedListener<K, V> {
 
     @Override
-    public void onEntryCreated(
-        final org.cache2k.Cache<K, V> c,
-        final CacheEntry<K, V> e) {
+    public void onEntryCreated(final Cache<K, V> c, final CacheEntry<K, V> e) {
       if (e.getException() != null) {
         return;
       }
@@ -248,9 +243,7 @@ public class EventHandling<K,V> {
   class RemovedListenerAdapter implements org.cache2k.event.CacheEntryRemovedListener<K, V> {
 
     @Override
-    public void onEntryRemoved(
-      final org.cache2k.Cache<K, V> c,
-      final CacheEntry<K, V> e) {
+    public void onEntryRemoved(final Cache<K, V> c, final CacheEntry<K, V> e) {
       if (e.getException() != null) {
         return;
       }
@@ -269,9 +262,7 @@ public class EventHandling<K,V> {
   class ExpiredListenerAdapter implements org.cache2k.event.CacheEntryExpiredListener<K, V> {
 
     @Override
-    public void onEntryExpired(
-      final org.cache2k.Cache<K, V> c,
-      final CacheEntry<K, V> e) {
+    public void onEntryExpired(final Cache<K, V> c, final CacheEntry<K, V> e) {
       if (e.getException() != null) {
         return;
       }
