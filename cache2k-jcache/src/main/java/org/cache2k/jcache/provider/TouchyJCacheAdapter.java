@@ -539,9 +539,9 @@ public class TouchyJCacheAdapter<K, V> implements Cache<K, V> {
 
   public static class ExpiryPolicyAdapter<K, V> implements org.cache2k.expiry.ExpiryPolicy<K, V> {
 
-    javax.cache.expiry.ExpiryPolicy policy;
+    ExpiryPolicy policy;
 
-    public ExpiryPolicyAdapter(javax.cache.expiry.ExpiryPolicy policy) {
+    public ExpiryPolicyAdapter(ExpiryPolicy policy) {
       this.policy = policy;
     }
 
