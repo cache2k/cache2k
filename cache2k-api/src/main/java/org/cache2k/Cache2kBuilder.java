@@ -499,7 +499,7 @@ public class Cache2kBuilder<K, V> {
    * {@link #expireAfterWrite}. If {@link #expireAfterWrite(long, java.util.concurrent.TimeUnit)}
    * is set to 0 then expiry calculation is not used, all entries expire immediately.
    *
-   * <p>If no maximum expiry is specified via {@link #expireAfterWrite} at leas the
+   * <p>If no maximum expiry is specified via {@link #expireAfterWrite} at least the
    * {@link #resilienceDuration} needs to be specified, if resilience should be enabled.
    */
   public final Cache2kBuilder<K, V> expiryPolicy(ExpiryPolicy<K, V> c) {
