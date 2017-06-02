@@ -2002,6 +2002,12 @@ public class HeapCache<K, V>
      */
     public int hashQualityErrorThreshold = 5;
 
+    /**
+     * Override parameter for segment count. Has to be power of two, e.g. 2, 4, 8, etc.
+     * Invalid numbers will be replaced by the next higher power of two. Default is 0, no override.
+     */
+    public int segmentCountOverride = 0;
+
 
   }
 
