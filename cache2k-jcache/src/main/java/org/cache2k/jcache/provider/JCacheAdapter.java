@@ -182,7 +182,6 @@ public class JCacheAdapter<K, V> implements javax.cache.Cache<K, V> {
       throw new NullPointerException("null key not allowed");
     }
     for (Map.Entry<? extends K, ? extends V> e : map.entrySet()) {
-      V v = e.getValue();
       checkNullValue(e.getValue());
     }
     try {
