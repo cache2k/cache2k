@@ -270,6 +270,45 @@ public class Cache2kBuilderTest {
     c0.close();
   }
 
+  @Test(expected = IllegalArgumentException.class)
+  public void illegalCharacterInCacheName_hash() {
+    Cache2kBuilder.forUnknownTypes()
+      .name("name#")
+      .build();
+  }
+
+  @Test(expected = IllegalArgumentException.class)
+  public void illegalCharacterInCacheName_percent() {
+    Cache2kBuilder.forUnknownTypes()
+      .name("name%")
+      .build();
+  }
+
+  @Test
+  public void illegalCharacterInCacheName_unsafeSet() {
+    String _illegalChars = "{}|\\#!^&*=+\"';:<>?/";
+    for (char c : _illegalChars.toCharArray()) {
+      try {
+        Cache _cache = Cache2kBuilder.forUnknownTypes()
+          .name("illegalCharName" + c)
+          .build();
+        _cache.close();
+        fail("Expect exception for illegal name in character '" + c + "'");
+      } catch (IllegalArgumentException ex) {
+      }
+    }
+  }
+
+  @Test
+  public void legalCharacterInCacheName() {
+    String _legalChars = ".~,@ ()";
+    _legalChars += "$-_abcABC0123";
+    Cache c = Cache2kBuilder.forUnknownTypes()
+      .name(_legalChars)
+      .build();
+    c.close();
+  }
+
   @Test
   public void cacheCapacityDefault2000() {
     Cache c0 = Cache2kBuilder.forUnknownTypes().build();
