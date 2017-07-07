@@ -284,16 +284,22 @@ public class Cache2kBuilderTest {
       .build();
   }
 
+  final static String ILLEGAL_CHARACTERS_IN_NAME =
+    "{}|\\#!^&*=+\"';:<>?/" +
+      ((char) 27) +
+      ((char) 127) +
+      ((char) 128) +
+      "äßà";
+
   @Test
   public void illegalCharacterInCacheName_unsafeSet() {
-    String _illegalChars = "{}|\\#!^&*=+\"';:<>?/";
-    for (char c : _illegalChars.toCharArray()) {
+    for (char c : ILLEGAL_CHARACTERS_IN_NAME.toCharArray()) {
       try {
         Cache _cache = Cache2kBuilder.forUnknownTypes()
           .name("illegalCharName" + c)
           .build();
         _cache.close();
-        fail("Expect exception for illegal name in character '" + c + "'");
+        fail("Expect exception for illegal name in character '" + c + "', code " + ((int) c));
       } catch (IllegalArgumentException ex) {
       }
     }

@@ -157,7 +157,7 @@ public class CacheManagerImpl extends CacheManager {
         ) {
         continue;
       }
-      if (!Character.isJavaIdentifierPart(c)) {
+      if (c < 32 || c >= 127 || !Character.isJavaIdentifierPart(c)) {
         throw new IllegalArgumentException(
           "Cache name contains illegal character: '" + c + "', name=\"" + s + "\"");
       }
