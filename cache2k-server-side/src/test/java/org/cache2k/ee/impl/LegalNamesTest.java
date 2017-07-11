@@ -47,7 +47,7 @@ import static org.junit.Assert.*;
 public class LegalNamesTest {
 
   private static final String LEGAL_CHARACTERS =
-    ",-()~_.#+!'%#";
+    ",-()~_.+!'%#";
 
   @Parameters
   public static Collection<Object[]> data() {
@@ -66,15 +66,10 @@ public class LegalNamesTest {
 
   @Test
   public void testCache() throws Exception {
-    Cache c = null;
     String _name = LegalNamesTest.class.getName() + "-test-with-char-" + aChar;
-    try {
-      c = Cache2kBuilder.forUnknownTypes()
+    Cache c = Cache2kBuilder.forUnknownTypes()
         .name(_name)
         .build();
-    } catch (IllegalArgumentException expected) {
-      fail("unexpected exception for cache name with " + aChar);
-    }
     assertEquals("default", c.getCacheManager().getName());
     assertTrue(c.getCacheManager().isDefaultManager());
     assertEquals(_name, c.getName());
@@ -87,12 +82,7 @@ public class LegalNamesTest {
 
   @Test
   public void testManager() throws Exception {
-    CacheManager cm = null;
-    try {
-       cm = CacheManager.getInstance(LegalNamesTest.class.getName() + "-char-" + aChar);
-    } catch (IllegalArgumentException expected) {
-      fail("unexpected exception for cache manager name with " + aChar);
-    }
+    CacheManager cm = CacheManager.getInstance(LegalNamesTest.class.getName() + "-char-" + aChar);
     MBeanInfo inf = JmxSupportTest.getCacheManagerInfo(cm.getName());
     assertNotNull(inf);
     Cache2kBuilder.forUnknownTypes().manager(cm).name("dummy").build();
