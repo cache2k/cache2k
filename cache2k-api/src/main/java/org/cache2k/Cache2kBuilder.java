@@ -289,17 +289,11 @@ public class Cache2kBuilder<K, V> {
    * cache names start with the character {@code '_'} as prefix to separate the names from the
    * usual class name space.
    *
-   * <p>In case of a name collision the cache is generating a unique name by adding a counter value.
-   * This behavior may change.
-   *
-   * <p>Allowed characters for a cache name, are URL non-reserved characters,
-   * these are: {@code [A-Z]}, {@code [a-z]}, {@code [0-9]} and {@code [~-_.]},
-   * see RFC3986 as well as the characters: {@code [()]}. The characters {@code [@, ]} are supported
-   * as well, but should be avoided.
-   *
-   * <p>The reason for restricting the characters in names, is that the names may be used to derive
-   * other resource names from it, e.g. for file based storage. The cache might not enforce the allowed
-   * character set for efficiency reasons.
+   * <p>For maximum compatibility cache names should only be composed with the characters
+   * {@code [-_.a-zA-Z0-9]}. The characters {@code {}|\^&=";:<>*?/} are not allowed in a cache name.
+   * The reason for restricting the characters in names, is that the names may be used to derive
+   * other resource names from it, e.g. for file based storage. The characters {@code *} and {@code ?}
+   * are used for wildcards in JMX and cannot be used in an object name.
    *
    * <p>The method is overloaded with variants to provide a naming convention of names.
    *
