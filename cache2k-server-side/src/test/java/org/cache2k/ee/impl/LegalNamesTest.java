@@ -31,8 +31,6 @@ import org.junit.runners.Parameterized;
 import org.junit.runners.Parameterized.Parameters;
 
 import javax.management.MBeanInfo;
-import javax.management.MBeanServerConnection;
-import java.lang.management.ManagementFactory;
 import java.util.ArrayList;
 import java.util.Collection;
 
@@ -48,15 +46,13 @@ import static org.junit.Assert.*;
 @Category(FastTests.class) @RunWith(Parameterized.class)
 public class LegalNamesTest {
 
-  private static final MBeanServerConnection server =  ManagementFactory.getPlatformMBeanServer();
-
-  private static final char[] LEGAL_CHARACTERS =
-    new char[]{',', '-', '(', ')', '~', '_', '.' };
+  private static final String LEGAL_CHARACTERS =
+    ",-()~_.#+!'%#";
 
   @Parameters
   public static Collection<Object[]> data() {
     ArrayList<Object[]> l = new ArrayList<Object[]>();
-    for (char c : LEGAL_CHARACTERS) {
+    for (char c : LEGAL_CHARACTERS.toCharArray()) {
       l.add(new Object[]{c});
     }
     return l;

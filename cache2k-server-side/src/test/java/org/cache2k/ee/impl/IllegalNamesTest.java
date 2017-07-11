@@ -44,7 +44,7 @@ import static org.junit.Assert.*;
 public class IllegalNamesTest {
 
   private static final char[] ILLEGAL_CHARACTERS =
-    new char[]{'"', '!', '*', '{', '}', '[', ']' , '\'', '+', ':', '=', '\\'};
+    new char[]{'"', '*', '{', '}', '[', ']' , ':', '=', '\\'};
 
   @Parameters
   public static Collection<Object[]> data() {

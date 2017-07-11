@@ -270,26 +270,12 @@ public class Cache2kBuilderTest {
     c0.close();
   }
 
-  @Test(expected = IllegalArgumentException.class)
-  public void illegalCharacterInCacheName_hash() {
-    Cache2kBuilder.forUnknownTypes()
-      .name("name#")
-      .build();
-  }
-
-  @Test(expected = IllegalArgumentException.class)
-  public void illegalCharacterInCacheName_percent() {
-    Cache2kBuilder.forUnknownTypes()
-      .name("name%")
-      .build();
-  }
-
   final static String ILLEGAL_CHARACTERS_IN_NAME =
-    "{}|\\#!^&*=+\"';:<>?/" +
+    "{}|\\^&=\";:<>*?/" +
       ((char) 27) +
       ((char) 127) +
       ((char) 128) +
-      "äßà";
+      "äßà\ufefe";
 
   @Test
   public void illegalCharacterInCacheName_unsafeSet() {

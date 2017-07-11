@@ -153,8 +153,12 @@ public class CacheManagerImpl extends CacheManager {
           c == '@' ||
           c == ' ' ||
           c == '(' ||
-          c == ')'
-        ) {
+          c == ')' ||
+          c == '+' ||
+          c == '!' ||
+          c == '\'' ||
+          c == '%' ||
+          c == '#') {
         continue;
       }
       if (c < 32 || c >= 127 || !Character.isJavaIdentifierPart(c)) {
