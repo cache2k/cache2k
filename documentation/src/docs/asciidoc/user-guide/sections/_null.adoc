@@ -13,15 +13,22 @@ The bottom line is, that for a map it is always better to store no mapping inste
 For a cache it is a different story, since the absence of a mapping can mean two things: The data was
 not requested from the source yet, or, there is no data.
 
-Storing a `null` value in a cache can make sense, when the data source connected via the `CacheLoader`
-is regularly producing a `null`. A use case is the request of a database entry by primary key,
-for example via JPA's `EntityManager.find()` which returns an object if it is available in the database
-or `null` if it is not. There may be applications that regularly test for existing and non existing entries.
-In this case, caching that the entry is not existing may be equally important as caching an existing entry.
+=== Negative Result Caching
+
+Caching that there is no result or a failure, is also called "negative result caching" or "negative caching".
+An example use case is the request of a database entry by primary key, for example via JPA's `EntityManager.find()`
+which returns an object if it is available in the database or `null` if it is not. Caching a negative result
+can make sense when requests that generate a negative result are common.
+
+In a Java API negative results are quite often modeled with a `null` value. By enabling `null` support in
+cache2k no further wrapping is required.
+
+=== Alternatives
 
 In a JCache application a `null` from the `CacheLoader` means the entry should be removed from the cache.
 This semantic is a consistent definition, but if `Cache.get()` is used to check whether data is
-existing, no caching happens if no data is present.
+existing, no caching happens if no data is present. A `null` value is passed through consistently, however,
+the cache performs badly if a `null` response is common.
 
 Being able to store a `null` value is no essential cache feature, since it is always possible
 to store a wrapper object in the cache. However, with the `null` support in cache2k, it is
@@ -132,15 +139,14 @@ Storing `null` values has no additional memory or CPU overhead.
 
 ==== Why support `null`?
 
-Supporting nulls needs a more careful design inside the cache. When
+Supporting `null` needs a more careful design inside the cache and its API. When
 this is done, it basically comes for free and makes the cache very effective for use cases
-where nulls are common, e.g. database persistence layers.
+where `null` values are common.
 
 ==== Why is rejecting `null` values the default?
 
-We were using cache2k for 16 years, with the capability
-to store `null` values by default. For the 1.0 version we changed this behavior and don't allow nulls.
-Here is why:
+We were using cache2k for 16 years, with the capability to store `null` values by default. For the 1.0 version
+we changed this behavior and don't allow nulls. Here is why:
 
 - Most caches do not support `null` values. Allowing `null` by default may lead to unexpected and incompatible behavior.
 - Use cases with `null` are rare.
@@ -160,5 +166,5 @@ transparently. But as soon as nulls are passed through regularly, the cache is r
 a `null` from the loader means "no caching". This will be unnoticed during development but will lead to
 performance trouble in production.
 
-In cache2k there a different options when `null` comes into play. A failure
-by default will lead to an explicit choice for the best option.
+In cache2k there are different options when `null` comes into play. A failure
+by default will, hopefully, lead to an explicit choice for the best option.
