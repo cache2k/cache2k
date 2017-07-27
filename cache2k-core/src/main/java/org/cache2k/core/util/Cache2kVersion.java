@@ -20,6 +20,7 @@ package org.cache2k.core.util;
  * #L%
  */
 
+import java.io.IOException;
 import java.io.InputStream;
 import java.util.Properties;
 
@@ -35,26 +36,37 @@ public class Cache2kVersion {
   private static long timestamp = 0;
 
   static {
-    InputStream in = Cache2kVersion.class.getResourceAsStream("/org.cache2k.impl.version.txt");
+    InputStream in = null;
     try {
-      if (in != null) {
-        Properties p = new Properties();
-        p.load(in);
-        String s = p.getProperty("buildNumber");
-        if (isDefined(s)) {
-          buildNumber = s;
+      in = Cache2kVersion.class.getResourceAsStream("/org.cache2k.impl.version.txt");
+      try {
+        if (in != null) {
+          Properties p = new Properties();
+          p.load(in);
+          String s = p.getProperty("buildNumber");
+          if (isDefined(s)) {
+            buildNumber = s;
+          }
+          s = p.getProperty("version");
+          if (isDefined(s)) {
+            version = s;
+          }
+          s = p.getProperty("timestamp");
+          if (isDefined(s)) {
+            timestamp = Long.parseLong(s);
+          }
         }
-        s = p.getProperty("version");
-        if (isDefined(s)) {
-          version = s;
-        }
-        s = p.getProperty("timestamp");
-        if (isDefined(s)) {
-          timestamp = Long.parseLong(s);
-        }
+      } catch (Exception e) {
+        Log.getLog(Cache2kVersion.class).warn("error parsing version properties", e);
       }
-    } catch (Exception e) {
-      Log.getLog(Cache2kVersion.class).warn("error parsing version properties", e);
+    } finally {
+      try {
+        if (in != null) {
+          in.close();
+        }
+      } catch (IOException e) {
+        Log.getLog(Cache2kVersion.class).warn("error closing version file input stream", e);
+      }
     }
   }
 
