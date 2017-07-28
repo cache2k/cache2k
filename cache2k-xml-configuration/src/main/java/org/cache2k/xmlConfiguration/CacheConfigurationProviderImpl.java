@@ -122,6 +122,7 @@ public class CacheConfigurationProviderImpl implements CacheConfigurationProvide
     }
     ConfigurationTokenizer tkn = tokenizerFactory.createTokenizer(_fileName, is, null);
     ParsedConfiguration cfg = ConfigurationParser.parse(tkn);
+    is.close();
     VariableExpander _expander = new StandardVariableExpander();
     _expander.expand(cfg);
     return cfg;

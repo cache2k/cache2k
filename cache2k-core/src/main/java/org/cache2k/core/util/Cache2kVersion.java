@@ -36,10 +36,11 @@ public class Cache2kVersion {
 
   static {
     InputStream in = Cache2kVersion.class.getResourceAsStream("/org.cache2k.impl.version.txt");
-    try {
-      if (in != null) {
+    if (in != null) {
+      try {
         Properties p = new Properties();
         p.load(in);
+        in.close();
         String s = p.getProperty("buildNumber");
         if (isDefined(s)) {
           buildNumber = s;
@@ -52,9 +53,9 @@ public class Cache2kVersion {
         if (isDefined(s)) {
           timestamp = Long.parseLong(s);
         }
+      } catch (Exception e) {
+        Log.getLog(Cache2kVersion.class).warn("error parsing version properties", e);
       }
-    } catch (Exception e) {
-      Log.getLog(Cache2kVersion.class).warn("error parsing version properties", e);
     }
   }
 

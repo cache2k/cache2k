@@ -91,20 +91,27 @@ public class SingleProviderResolver {
     }
   }
 
+  /**
+   * Read the first line of a file in the classpath into a string.
+   */
   private static String readFile(String _name) throws IOException {
     InputStream in = SingleProviderResolver.class.getClassLoader().getResourceAsStream(_name);
     if (in == null) {
       return null;
     }
-    LineNumberReader r = new LineNumberReader(new InputStreamReader(in));
-    String l = r.readLine();
-    while (l != null) {
-      if (!l.startsWith("#")) {
-        return l;
+    try {
+      LineNumberReader r = new LineNumberReader(new InputStreamReader(in));
+      String l = r.readLine();
+      while (l != null) {
+        if (!l.startsWith("#")) {
+          return l;
+        }
+        l = r.readLine();
       }
-      l = r.readLine();
+    } finally {
+      in.close();
     }
-    throw new IOException("No class file name in resource: " + _name);
+    return null;
   }
 
 }
