@@ -34,7 +34,7 @@ can be used:
 [source,java]
 ----
     Cache<Long, String> cache =
-      new Cache2kBuilder.of(Long.class, String.class)
+      Cache2kBuilder.of(Long.class, String.class)
         .eternal(true)
         .build();
 ----
