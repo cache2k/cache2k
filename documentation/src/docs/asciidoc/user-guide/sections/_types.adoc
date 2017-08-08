@@ -39,7 +39,7 @@ can be used:
         .build();
 ----
 
-The additional generated class as in the previous version is not needed, which saves a few byes program code.
+The additional generated class as in the previous version is not needed, which saves a few bytes program code.
 
 === Key Type
 
