@@ -99,6 +99,11 @@ class CompactEntry<K,T> {
     return valueOrException.equals(v);
   }
 
+  /**
+   * Should never be called on the entry directly.
+   *
+   * @deprecated
+   */
   public T getValue() {
     if (valueOrException instanceof ExceptionWrapper) { return null; }
     return valueOrException;
@@ -116,9 +121,17 @@ class CompactEntry<K,T> {
 }
 
 /**
- * The cache entry. This is a combined hashtable entry with hashCode and
+ * The cache entry. This is a combined hash table entry with hashCode and
  * and collision list (other field) and it contains a double linked list
  * (next and previous) for the eviction algorithm.
+ *
+ * <p>When an entry is present and its value is updated, the entry objects
+ * stays the same. The entry object is used for locking and coordination of
+ * all concurrent accesses to it.
+ *
+ * <p>The entry is only used as {@link CacheEntry} directly and handed to the
+ * application when it is locked and the values are stable, that is for example
+ * when the loader is called.
  *
  * @author Jens Wilke
  */
