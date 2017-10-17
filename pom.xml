@@ -551,8 +551,10 @@
       </modules>
     </profile>
 
-    <!-- run doclint when java8 is available but do not complain
-         if documentation is missing for parameter or return statement -->
+    <!-- run doclint on java8.
+         but do not complain if documentation is missing for parameter or return statement.
+         the profile enables automatically on java 8. this is backwards compatible,
+         if someone wants to build on java 7. -->
     <profile>
       <id>doclint-java8-all-but-missing</id>
       <activation>
