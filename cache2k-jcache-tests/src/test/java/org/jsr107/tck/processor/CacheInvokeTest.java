@@ -212,8 +212,9 @@ public class CacheInvokeTest extends CacheTestSupport<Integer, String> {
       cache.invoke(key, new CombineEntryProcessor(processors));
       fail();
     } catch (CacheException e) {
-      assertTrue("expected IllegalAccessError; observed " + e.getCause(),
-          e.getCause() instanceof IllegalAccessError);
+      Throwable rootCause = getRootCause(e);
+      assertTrue("expected IllegalAccessError; observed " + rootCause,
+          rootCause instanceof IllegalAccessError);
     }
     assertFalse(cache.containsKey(key));
   }
@@ -240,6 +241,13 @@ public class CacheInvokeTest extends CacheTestSupport<Integer, String> {
     assertEquals(newValue, cache.get(key));
   }
 
+  private static Throwable getRootCause(Throwable t) {
+    if (t.getCause() == null) {
+      return t;
+    }
+    return getRootCause(t.getCause());
+  }
+
   @Test
   public void existingException() {
     final Integer key = 123;
@@ -256,8 +264,9 @@ public class CacheInvokeTest extends CacheTestSupport<Integer, String> {
       cache.invoke(key, new CombineEntryProcessor<Integer, String>(processors));
       fail();
     } catch (CacheException e) {
-      assertTrue("expected IllegalAccessError; observed " + e.getCause(),
-          e.getCause() instanceof IllegalAccessError);
+      Throwable rootCause = getRootCause(e);
+      assertTrue("expected IllegalAccessError; observed " + rootCause,
+         rootCause instanceof IllegalAccessError);
     }
     assertEquals(oldValue, cache.get(key));
   }
@@ -297,8 +306,9 @@ public class CacheInvokeTest extends CacheTestSupport<Integer, String> {
       cache.invoke(key, new ThrowExceptionEntryProcessor<Integer, String, Void>(IllegalAccessError.class));
       fail();
     } catch (CacheException e) {
-      assertTrue("expected IllegalAccessError; observed " + e.getCause(),
-          e.getCause() instanceof IllegalAccessError);
+      Throwable t = getRootCause(e);
+      assertTrue("expected IllegalAccessError; observed " + t,
+          t instanceof IllegalAccessError);
     }
     assertEquals(oldValue, cache.get(key));
   }
