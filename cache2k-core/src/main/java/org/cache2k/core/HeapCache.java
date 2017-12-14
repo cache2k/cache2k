@@ -375,7 +375,7 @@ public class HeapCache<K, V>
    */
   @Override
   public void cancelTimerJobs() {
-    timing.shutdown();
+    timing.close();
   }
 
   @Override
@@ -407,6 +407,7 @@ public class HeapCache<K, V>
       return;
     }
     closePart2(this);
+    closeCustomization(loader);
   }
 
   public void closePart2(final InternalCache _userCache) {

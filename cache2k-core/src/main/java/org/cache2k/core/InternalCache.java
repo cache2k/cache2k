@@ -97,4 +97,10 @@ public interface InternalCache<K, V> extends Cache<K, V>, CanCheckIntegrity {
    */
   <T> T createCustomization(CustomizationSupplier<T> f);
 
+  /**
+   * Call close on the customization if the {@link java.io.Closeable} interface
+   * is implemented
+   */
+  void closeCustomization(final Object _customization);
+
 }

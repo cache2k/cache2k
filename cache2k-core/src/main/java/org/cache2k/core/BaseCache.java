@@ -21,6 +21,7 @@ package org.cache2k.core;
  */
 
 import org.cache2k.CacheEntry;
+import org.cache2k.CacheException;
 import org.cache2k.CustomizationException;
 import org.cache2k.configuration.CustomizationSupplier;
 import org.cache2k.processor.EntryProcessingException;
@@ -29,6 +30,7 @@ import org.cache2k.processor.EntryProcessingResult;
 import org.cache2k.core.operation.Semantic;
 import org.cache2k.core.storageApi.StorageAdapter;
 
+import java.io.Closeable;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
@@ -193,6 +195,17 @@ public abstract class BaseCache<K, V> implements InternalCache<K, V> {
       return f.supply(getCacheManager());
     } catch (Exception ex) {
       throw new CustomizationException("Initialization of customization failed", ex);
+    }
+  }
+
+  @Override
+  public void closeCustomization(final Object _customization) {
+    if (_customization instanceof Closeable) {
+      try {
+        ((Closeable) _customization).close();
+      } catch (Exception e) {
+        throw new CacheException("exception on customization close", e);
+      }
     }
   }
 

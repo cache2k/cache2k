@@ -122,6 +122,8 @@ public abstract class TimingHandler<K,V>  {
    */
   public void shutdown() { }
 
+  public void close() { shutdown(); }
+
   /**
    * Calculates the expiry time for a value that was just loaded or inserted into the cache.
    *
@@ -560,6 +562,12 @@ public abstract class TimingHandler<K,V>  {
         t = calcNextRefreshTime(_entry.getKey(), _newValue, _loadTime, null);
       }
       return t;
+    }
+
+    @Override
+    public synchronized void close() {
+      super.shutdown();
+      cache.closeCustomization(expiryPolicy);
     }
 
   }
