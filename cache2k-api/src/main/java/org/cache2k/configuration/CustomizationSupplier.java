@@ -33,6 +33,10 @@ public interface CustomizationSupplier<T> {
   /**
    * Create or return an existing customization instance.
    *
+   * <p>Developer note: The interface lacks context where the customization is used,
+   * e.g. the cache name. With the cache name, different customizations could share
+   * data or expose themselves
+   *
    * @param manager The manager can be used to retrieve the class loader or
    *                additional properties needed to configure the customization.
    * @throws Exception the method may throw arbitrary exceptions. The exception
