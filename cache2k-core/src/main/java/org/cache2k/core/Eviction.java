@@ -40,14 +40,14 @@ public interface Eviction {
 
   /**
    * Submit to eviction for inserting or removing from the replacement list.
-   * However, eviction should be triggered (which in turn triggers a hash table
+   * However, eviction should not be triggered (which in turn triggers a hash table
    * update) since the hash segment lock is hold at the moment.
    */
   boolean submitWithoutEviction(Entry e);
 
   /**
    * Evict if needed, focused on the segment addressed by the hash code.
-   * Called when eviction is probably needed.
+   * Called when eviction is might be needed after a new entry was inserted.
    */
   void evictEventually(int _hashCode);
 
