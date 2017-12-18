@@ -868,6 +868,7 @@ public class CacheLoaderTest {
     //wait for the load to complete
     try{
       future.get();
+      fail(); // new since TCK 1.1
     } catch (ExecutionException e) {
       assertThat(e.getCause(), instanceOf(CacheLoaderException.class));
     }

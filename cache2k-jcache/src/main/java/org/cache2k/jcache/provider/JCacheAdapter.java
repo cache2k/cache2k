@@ -101,7 +101,7 @@ public class JCacheAdapter<K, V> implements javax.cache.Cache<K, V> {
   }
 
   @Override
-  public void loadAll(Set<? extends K> keys, boolean replaceExistingValues, final CompletionListener completionListener) {
+  public void loadAll(final Set<? extends K> keys, final boolean replaceExistingValues, final CompletionListener completionListener) {
     checkClosed();
     if (!loaderConfigured) {
       if (completionListener != null) {
@@ -114,6 +114,14 @@ public class JCacheAdapter<K, V> implements javax.cache.Cache<K, V> {
       l = new CacheOperationCompletionListener() {
         @Override
         public void onCompleted() {
+          try {
+            for (K k : keys) {
+              cache.peek(k);
+            }
+          } catch (CacheLoaderException ex) {
+            completionListener.onException(ex);
+            return;
+          }
           completionListener.onCompletion();
         }
 
