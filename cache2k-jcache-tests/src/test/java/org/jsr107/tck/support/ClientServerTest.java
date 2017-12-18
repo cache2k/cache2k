@@ -52,6 +52,7 @@ public class ClientServerTest {
     @Override
     public String onInvoke(ObjectInputStream ois, ObjectOutputStream oos) throws IOException, ClassNotFoundException {
       oos.writeObject("ping");
+      oos.flush();
       return (String) ois.readObject();
     }
 

@@ -17,6 +17,7 @@
  */
 package org.jsr107.tck.support;
 
+import java.io.EOFException;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
@@ -33,6 +34,8 @@ import java.util.Queue;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.LinkedBlockingDeque;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -82,6 +85,35 @@ public class Server implements AutoCloseable {
     public static final  Logger LOG = Logger.getLogger(Server.class.getName());
 
     /**
+     * Special operation to signal the server that the client has been closed.
+￼    */
+   public static final Operation<Void> CLOSE_OPERATION = new Operation<Void>() {
+
+        public String getType() {
+            return "CLOSE";
+        }
+
+       /**
+￼       * The connections are closed by the server upon receiving the closed operation.
+￼       * We need to block in the client until the server performed the close, to make
+￼       * sure the server has removed the client from the client collection map.
+￼       *
+￼       * <p>This is executed in the client after the close command is sent.
+￼       *
+￼       * @see Client#invoke(Operation)
+￼       */
+        public Void onInvoke(final ObjectInputStream ois, final ObjectOutputStream oos) throws IOException {
+            try {
+                ois.readByte();
+                throw new IOException("Unexpected data received from the server after close.");
+            } catch (EOFException expected) {
+                // connection successfully closed by the server
+            }
+            return null;
+        }
+    };
+
+    /**
      * The {@link OperationHandler}s by operation.
      */
     private ConcurrentHashMap<String, OperationHandler> operationHandlers;
@@ -94,9 +126,18 @@ public class Server implements AutoCloseable {
     private SocketThread serverThread;
 
     /**
+     * Should the running {@link Server} terminate as soon as possible?
+     */
+    private AtomicBoolean isTerminating = new AtomicBoolean(false);
+
+    private ServerSocket serverSocket;
+
+    /**
      * A map of {@link ClientConnection} by connection number.
      */
     private ConcurrentHashMap<Integer, ClientConnection> clientConnections;
+
+    private int serverDirectUsage = 0;
 
 
     /**
@@ -134,14 +175,18 @@ public class Server implements AutoCloseable {
                 serverThread = SOCKET_THREADS.poll();
             }
             if (serverThread == null) {
-                serverThread = new SocketThread(createServerSocket());
+                serverSocket = createServerSocket();
+                serverThread = new SocketThread();
+                serverThread.serverSocket = serverSocket;
+                serverThread.setBoundServer(this);
                 serverThread.start();
             } else {
+                serverSocket = serverThread.serverSocket;
+                serverThread.setBoundServer(this);
                 assert !serverThread.wasUsed();
             }
-            serverThread.setServer(this);
             if (ALLOW_DIRECT_CALLS) {
-                PORT_2_SERVER.put(serverThread.serverSocket.getLocalPort(), this);
+                PORT_2_SERVER.put(serverSocket.getLocalPort(), this);
             }
         }
         return getInetAddress();
@@ -154,7 +199,6 @@ public class Server implements AutoCloseable {
      */
     public synchronized InetAddress getInetAddress() {
         if (serverThread != null) {
-            ServerSocket serverSocket = serverThread.serverSocket;
             try {
                 return getServerInetAddress();
             } catch (SocketException e) {
@@ -174,10 +218,23 @@ public class Server implements AutoCloseable {
      */
     public synchronized int getPort() {
         if (serverThread != null) {
-            return serverThread.serverSocket.getLocalPort();
+            return serverSocket.getLocalPort();
         } else {
             throw new IllegalStateException("Server is not open");
         }
+    }
+
+    public synchronized void clientConnectedDirectly() {
+        serverDirectUsage++;
+    }
+
+    public synchronized void closeWasCalledOnClient() {
+        if (serverDirectUsage == 0) {
+            throw new IllegalStateException(
+              "customization already closed, class: "
+              + this.getClass().getSimpleName());
+        }
+        serverDirectUsage--;
     }
 
     /**
@@ -189,10 +246,43 @@ public class Server implements AutoCloseable {
         if (serverThread != null) {
             PORT_2_SERVER.remove(getPort());
 
+            if (ALLOW_DIRECT_CALLS) {
+                if (serverDirectUsage > 0) {
+                    throw new IllegalStateException(
+                      "The close() method was not called. " +
+                        "Customizations implementing Closeable need to be closed. " +
+                        "See https://github.com/jsr107/jsr107tck/issues/100" +
+                        ", server type " + this.getClass().getSimpleName()
+                    );
+                }
+            }
+
             if (!serverThread.wasUsed()) {
                 SOCKET_THREADS.offer(serverThread);
             } else {
-                serverThread.terminate();
+                //we're now terminating
+                isTerminating.set(true);
+
+                if (clientConnections.size() > 0) {
+                    LOG.warning("Open client connections: " + clientConnections);
+                    throw new IllegalStateException(
+                      "Excepting no open client connections. " +
+                        "Customizations implementing Closeable need to be closed. " +
+                        "See https://github.com/jsr107/jsr107tck/issues/100" +
+                        ", server type " + this.getClass().getSimpleName()
+                    );
+                }
+
+                //stop the server socket
+                try {
+                    serverSocket.close();
+                } catch (IOException e) {
+                    //failed to close the server socket - but we don't care
+                }
+                serverSocket = null;
+
+                //interrupt the server thread
+                serverThread.interrupt();
             }
             serverThread = null;
 
@@ -256,6 +346,15 @@ public class Server implements AutoCloseable {
                 while (true) {
                     try {
                         String operation = (String) ois.readObject();
+                        if (CLOSE_OPERATION.getType().equals(operation)) {
+                            // regular close, remove before closing
+                            server.clientConnections.remove(identity);
+                            // connection close means we acknowledge to the client and the client may
+                            // complete the close operation.
+                            socket.close();
+                            socket = null;
+                            break;
+                        }
                         server.executeOperation(operation, ois, oos);
                     } catch (ClassNotFoundException e) {
                         e.printStackTrace();
@@ -296,6 +395,8 @@ public class Server implements AutoCloseable {
         OperationHandler handler = operationHandlers.get(operation);
         if (handler != null) {
             handler.onProcess(ois, oos);
+        } else {
+            throw new IllegalArgumentException("no handler for: " + operation);
         }
     }
 
@@ -435,28 +536,19 @@ public class Server implements AutoCloseable {
         return result;
     }
 
+    static AtomicInteger connectionId = new AtomicInteger();
+
+
     static class SocketThread extends Thread {
-
-        private volatile Server server;
-        private ServerSocket serverSocket;
-        private int connectionId = 0;
-
-        /**
-         * Should the running {@link Server} terminate as soon as possible?
-         */
-        private AtomicBoolean isTerminating = new AtomicBoolean(false);
 
         private AtomicBoolean wasUsed = new AtomicBoolean();
 
-        public SocketThread(final ServerSocket serverSocket) {
-            this.serverSocket = serverSocket;
-        }
+        ServerSocket serverSocket;
 
-        /**
-         * Reuse and set server
-         */
-        public void setServer(final Server server) {
-            this.server = server;
+        volatile Server boundServer;
+
+        public void setBoundServer(final Server _boundServer) {
+            boundServer = _boundServer;
         }
 
         public boolean wasUsed() {
@@ -466,35 +558,18 @@ public class Server implements AutoCloseable {
         @Override
         public void run() {
             try {
-                while (!isTerminating.get()) {
+                while (!boundServer.isTerminating.get()) {
                     Socket socket = serverSocket.accept();
                     wasUsed.set(true);
-                    ClientConnection clientConnection = new ClientConnection(server, connectionId++, socket);
-                    server.clientConnections.put(clientConnection.getIdentity(), clientConnection);
+                    ClientConnection clientConnection = new ClientConnection(boundServer, connectionId.incrementAndGet(), socket);
+                    boundServer.clientConnections.put(clientConnection.getIdentity(), clientConnection);
                     clientConnection.start();
                 }
+            } catch (IOException e) {
+                // ignore
+            } finally {
                 wasUsed.set(true);
-            } catch (NullPointerException e) {
-                isTerminating.compareAndSet(false, true);
-            } catch (IOException e) {
-                isTerminating.compareAndSet(false, true);
             }
-        }
-
-        public void terminate() {
-            //we're now terminating
-            isTerminating.set(true);
-
-            //stop the server socket
-            try {
-                serverSocket.close();
-            } catch (IOException e) {
-                //failed to close the server socket - but we don't care
-            }
-            serverSocket = null;
-
-            //interrupt the server thread
-            this.interrupt();
         }
 
     }

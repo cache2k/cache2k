@@ -3,6 +3,8 @@ package org.jsr107.tck.integration;
 import org.junit.Assert;
 import org.junit.Test;
 
+import java.io.IOException;
+
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.CoreMatchers.nullValue;
@@ -21,54 +23,40 @@ public class CacheLoaderClientServerTest {
    * the {@link CacheLoaderServer}.
    */
   @Test
-  public void shouldLoadFromServerWithClient() {
-
+  public void shouldLoadFromServerWithClient() throws IOException {
     RecordingCacheLoader<String> recordingCacheLoader = new RecordingCacheLoader<String>();
-
-
     CacheLoaderServer<String, String> serverCacheLoader = new CacheLoaderServer<String, String>(10000, recordingCacheLoader);
 
-    try {
-      serverCacheLoader.open();
+    serverCacheLoader.open();
 
-      CacheLoaderClient<String, String> clientCacheLoader = new CacheLoaderClient<>(serverCacheLoader.getInetAddress(), serverCacheLoader.getPort());
+    CacheLoaderClient<String, String> clientCacheLoader = new CacheLoaderClient<>(serverCacheLoader.getInetAddress(), serverCacheLoader.getPort());
 
-      String value = clientCacheLoader.load("gudday");
+    String value = clientCacheLoader.load("gudday");
 
-      Assert.assertThat(value, is(notNullValue()));
-      Assert.assertThat(value, is("gudday"));
-      Assert.assertThat(recordingCacheLoader.hasLoaded("gudday"), is(true));
-    } catch (Exception e) {
-
-    } finally {
-      serverCacheLoader.close();
-    }
+    Assert.assertThat(value, is(notNullValue()));
+    Assert.assertThat(value, is("gudday"));
+    Assert.assertThat(recordingCacheLoader.hasLoaded("gudday"), is(true));
+    clientCacheLoader.close();
+    serverCacheLoader.close();
   }
 
   /**
    * Ensure that exceptions thrown by an underlying cache loader are re-thrown.
    */
   @Test
-  public void shouldRethrowExceptions() {
-
+  public void shouldRethrowExceptions() throws IOException {
     FailingCacheLoader<String, String> failingCacheLoader = new FailingCacheLoader<>();
-
-
     CacheLoaderServer<String, String> serverCacheLoader = new CacheLoaderServer<String, String>(10000, failingCacheLoader);
-
+    serverCacheLoader.open();
+    CacheLoaderClient<String, String> clientCacheLoader = new CacheLoaderClient<>(serverCacheLoader.getInetAddress(), serverCacheLoader.getPort());
     try {
-      serverCacheLoader.open();
-
-      CacheLoaderClient<String, String> clientCacheLoader = new CacheLoaderClient<>(serverCacheLoader.getInetAddress(), serverCacheLoader.getPort());
-
       String value = clientCacheLoader.load("gudday");
-
       fail("An UnsupportedOperationException should have been thrown");
-    } catch (Exception e) {
-
-    } finally {
-      serverCacheLoader.close();
+    } catch (UnsupportedOperationException e) {
+      // expected
     }
+    clientCacheLoader.close();
+    serverCacheLoader.close();
   }
 
   /**
@@ -76,25 +64,15 @@ public class CacheLoaderClientServerTest {
    * {@link CacheLoaderServer} back to the {@link CacheLoaderClient}.
    */
   @Test
-  public void shouldLoadNullValuesFromServerWithClient() {
-
+  public void shouldLoadNullValuesFromServerWithClient() throws IOException {
     NullValueCacheLoader<String, String> nullCacheLoader = new NullValueCacheLoader<>();
-
     CacheLoaderServer<String, String> serverCacheLoader = new CacheLoaderServer<String, String>(10000, nullCacheLoader);
-
-    try {
-      serverCacheLoader.open();
-
-      CacheLoaderClient<String, String> clientCacheLoader = new CacheLoaderClient<>(serverCacheLoader.getInetAddress(), serverCacheLoader.getPort());
-
-      String value = clientCacheLoader.load("gudday");
-
-      Assert.assertThat(value, is(nullValue()));
-    } catch (Exception e) {
-
-    } finally {
-      serverCacheLoader.close();
-    }
+    serverCacheLoader.open();
+    CacheLoaderClient<String, String> clientCacheLoader = new CacheLoaderClient<>(serverCacheLoader.getInetAddress(), serverCacheLoader.getPort());
+    String value = clientCacheLoader.load("gudday");
+    Assert.assertThat(value, is(nullValue()));
+    clientCacheLoader.close();
+    serverCacheLoader.close();
   }
 
 }

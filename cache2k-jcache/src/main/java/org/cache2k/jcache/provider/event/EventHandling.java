@@ -28,6 +28,7 @@ import org.cache2k.configuration.CustomizationReferenceSupplier;
 import org.cache2k.event.CacheEntryOperationListener;
 import org.cache2k.jcache.provider.JCacheManagerAdapter;
 
+import javax.cache.CacheException;
 import javax.cache.configuration.CacheEntryListenerConfiguration;
 import javax.cache.configuration.Factory;
 import javax.cache.event.CacheEntryCreatedListener;
@@ -37,6 +38,8 @@ import javax.cache.event.CacheEntryListener;
 import javax.cache.event.CacheEntryRemovedListener;
 import javax.cache.event.CacheEntryUpdatedListener;
 import javax.cache.event.EventType;
+import java.io.Closeable;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
@@ -100,17 +103,38 @@ public class EventHandling<K,V> {
   }
 
   public Collection<CacheEntryListenerConfiguration<K,V>> getAllListenerConfigurations() {
+    Collection<Listener<K, V>> l = getAllListeners();
+    Set<CacheEntryListenerConfiguration<K,V>> _cfgs = new HashSet<CacheEntryListenerConfiguration<K, V>>();
+    for (Listener<K,V> li : l) {
+      _cfgs.add(li.config);
+    }
+    return _cfgs;
+  }
+
+  private Collection<Listener<K, V>> getAllListeners() {
     Collection<Listener<K,V>> l = new ArrayList<Listener<K,V>>();
     l.addAll(createdListener);
     l.addAll(updatedListener);
     l.addAll(removedListener);
     l.addAll(expiredListener);
     asyncDispatcher.collectListeners(l);
-    Set<CacheEntryListenerConfiguration<K,V>> _cfgs = new HashSet<CacheEntryListenerConfiguration<K, V>>();
-    for (Listener<K,V> li : l) {
-      _cfgs.add(li.config);
+    return l;
+  }
+
+  public void close() {
+    Set<CacheEntryListener> ls = new HashSet<CacheEntryListener>();
+    for (Listener l : getAllListeners()) {
+      ls.add(l.entryListener);
     }
-    return _cfgs;
+    for (CacheEntryListener cl : ls) {
+      if (cl instanceof Closeable) {
+        try {
+          ((Closeable) cl).close();
+        } catch (Exception e) {
+          throw new CacheException("closing listener", e);
+        }
+      }
+    }
   }
 
   @SuppressWarnings("unchecked")

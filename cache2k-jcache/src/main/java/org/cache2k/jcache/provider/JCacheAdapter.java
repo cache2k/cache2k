@@ -376,9 +376,6 @@ public class JCacheAdapter<K, V> implements javax.cache.Cache<K, V> {
         public T get() throws EntryProcessorException {
           Throwable t = pr.getException();
           if (t != null) {
-            if (t instanceof EntryProcessorException) {
-              throw (EntryProcessorException) t;
-            }
             throw new EntryProcessorException(t);
           }
           return pr.getResult();
@@ -402,6 +399,7 @@ public class JCacheAdapter<K, V> implements javax.cache.Cache<K, V> {
   @Override
   public void close() {
     cache.close();
+    eventHandling.close();
   }
 
   @Override

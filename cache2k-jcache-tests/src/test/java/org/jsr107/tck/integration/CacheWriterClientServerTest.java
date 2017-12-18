@@ -22,57 +22,54 @@ public class CacheWriterClientServerTest {
      * the {@link CacheWriterServer}.
      */
     @Test
-    public void shouldWriteFromServerWithClient() {
+    public void shouldWriteFromServerWithClient() throws Exception {
 
         RecordingCacheWriter<String, String> recordingCacheWriter = new RecordingCacheWriter<>();
 
         CacheWriterServer<String, String> serverCacheWriter = new CacheWriterServer<>(10000,
                                                                   recordingCacheWriter);
+        serverCacheWriter.open();
 
-        try {
-            serverCacheWriter.open();
+        CacheWriterClient<String, String> clientCacheWriter =
+            new CacheWriterClient<>(serverCacheWriter.getInetAddress(), serverCacheWriter.getPort());
+        Cache.Entry<String, String> entry = new Entry<>("hello", "gudday");
+        clientCacheWriter.write(entry);
+        String writtenValue = recordingCacheWriter.get("hello");
 
-            CacheWriterClient<String, String> clientCacheWriter =
-                new CacheWriterClient<>(serverCacheWriter.getInetAddress(), serverCacheWriter.getPort());
-            Cache.Entry<String, String> entry = new Entry<>("hello", "gudday");
-            clientCacheWriter.write(entry);
-            String writtenValue = recordingCacheWriter.get("hello");
-
-            Assert.assertThat(writtenValue, is(notNullValue()));
-            Assert.assertThat(writtenValue, is("gudday"));
-            Assert.assertThat(recordingCacheWriter.hasWritten("hello"), is(true));
-        } catch (Exception e) {}
-        finally {
-            serverCacheWriter.close();
-        }
+        Assert.assertThat(writtenValue, is(notNullValue()));
+        Assert.assertThat(writtenValue, is("gudday"));
+        Assert.assertThat(recordingCacheWriter.hasWritten("hello"), is(true));
+        clientCacheWriter.close();
+        serverCacheWriter.close();
     }
 
     /**
      * Ensure that exceptions thrown by an underlying cache Writer are re-thrown.
      */
     @Test
-    public void shouldRethrowExceptions() {
+    public void shouldRethrowExceptions() throws Exception {
 
         FailingCacheWriter<String, String> failingCacheWriter = new FailingCacheWriter<>();
 
         CacheWriterServer<String, String> serverCacheWriter = new CacheWriterServer<>(10000,
                                                                   failingCacheWriter);
 
+        serverCacheWriter.open();
+
+        CacheWriterClient<String, String> clientCacheWriter =
+          new CacheWriterClient<>(serverCacheWriter.getInetAddress(), serverCacheWriter.getPort());
+
+        Cache.Entry<String, String> entry = new Entry<>("hello", "gudday");
         try {
-            serverCacheWriter.open();
-
-            CacheWriterClient<String, String> clientCacheWriter =
-                new CacheWriterClient<>(serverCacheWriter.getInetAddress(), serverCacheWriter.getPort());
-
-            Cache.Entry<String, String> entry = new Entry<>("hello", "gudday");
 
             clientCacheWriter.write(entry);
 
             fail("An UnsupportedOperationException should have been thrown");
-        } catch (Exception e) {}
-        finally {
-            serverCacheWriter.close();
+        } catch (UnsupportedOperationException e) {
+            // expected
         }
+        clientCacheWriter.close();
+        serverCacheWriter.close();
     }
 
     /**
@@ -119,12 +116,12 @@ public class CacheWriterClientServerTest {
 
         @Override
         public K getKey() {
-            throw new UnsupportedOperationException("not implemented");
+            return key;
         }
 
         @Override
         public V getValue() {
-            throw new UnsupportedOperationException("not implemented");
+            return value;
         }
 
         @Override

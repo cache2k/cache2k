@@ -36,6 +36,8 @@ import javax.cache.integration.CompletionListener;
 import javax.cache.processor.EntryProcessorException;
 import javax.cache.processor.EntryProcessorResult;
 import javax.cache.processor.MutableEntry;
+import java.io.Closeable;
+import java.io.IOException;
 import java.util.AbstractCollection;
 import java.util.AbstractSet;
 import java.util.Collection;
@@ -537,9 +539,10 @@ public class TouchyJCacheAdapter<K, V> implements Cache<K, V> {
     return getClass().getSimpleName() + "@" + c2kCache.toString();
   }
 
-  public static class ExpiryPolicyAdapter<K, V> implements org.cache2k.expiry.ExpiryPolicy<K, V> {
+  public static class ExpiryPolicyAdapter<K, V>
+    implements org.cache2k.expiry.ExpiryPolicy<K, V>, Closeable {
 
-    ExpiryPolicy policy;
+    private ExpiryPolicy policy;
 
     public ExpiryPolicyAdapter(ExpiryPolicy policy) {
       this.policy = policy;
@@ -567,6 +570,14 @@ public class TouchyJCacheAdapter<K, V> implements Cache<K, V> {
       }
       return _loadTime + d.getTimeUnit().toMillis(d.getDurationAmount());
     }
+
+    @Override
+    public void close() throws IOException {
+      if (policy instanceof Closeable) {
+        ((Closeable) policy).close();
+      }
+    }
+
   }
 
 }

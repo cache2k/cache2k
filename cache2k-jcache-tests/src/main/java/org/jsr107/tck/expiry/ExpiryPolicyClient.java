@@ -44,13 +44,12 @@ public class ExpiryPolicyClient extends CacheClient implements ExpiryPolicy {
   }
 
   @Override
-  protected boolean checkDirectCallsPossible() {
-    Server server = Server.lookupServerAtLocalMachine(port);
-    if (server == null) {
-      return false;
+  protected void checkDirectCallsPossible() {
+    super.checkDirectCallsPossible();
+    if (directServer == null) {
+      return;
     }
-    forwardPolicy = ((ExpiryPolicyServer) server).getExpiryPolicy();
-    return true;
+    forwardPolicy = ((ExpiryPolicyServer) directServer).getExpiryPolicy();
   }
 
   /**

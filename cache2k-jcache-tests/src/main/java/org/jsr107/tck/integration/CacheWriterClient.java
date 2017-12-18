@@ -58,13 +58,11 @@ public class CacheWriterClient<K, V> extends CacheClient implements CacheWriter<
     }
 
     @Override
-    protected boolean checkDirectCallsPossible() {
-        Server server = Server.lookupServerAtLocalMachine(port);
-        if (server != null) {
-            shortCircuitServer = ((CacheWriterServer) server);
-            return true;
+    protected void checkDirectCallsPossible() {
+        super.checkDirectCallsPossible();
+        if (directServer != null) {
+            shortCircuitServer = ((CacheWriterServer) directServer);
         }
-        return false;
     }
 
     /**

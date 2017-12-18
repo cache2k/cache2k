@@ -24,6 +24,7 @@ import javax.cache.configuration.CacheEntryListenerConfiguration;
 import javax.cache.event.CacheEntryCreatedListener;
 import javax.cache.event.CacheEntryEventFilter;
 import javax.cache.event.CacheEntryExpiredListener;
+import javax.cache.event.CacheEntryListener;
 import javax.cache.event.CacheEntryRemovedListener;
 import javax.cache.event.CacheEntryUpdatedListener;
 import javax.cache.event.EventType;
@@ -37,10 +38,13 @@ abstract class Listener<K, V> {
 
   CacheEntryListenerConfiguration<K, V> config;
   CacheEntryEventFilter<K, V> filter;
+  CacheEntryListener<K,V> entryListener;
 
-  public Listener(final CacheEntryListenerConfiguration<K, V> _config, final CacheEntryEventFilter<K, V> _filter) {
+  public Listener(final CacheEntryListenerConfiguration<K, V> _config,
+                  final CacheEntryEventFilter<K, V> _filter, final CacheEntryListener<K,V> _entryListener) {
     config = _config;
     filter = _filter;
+    entryListener = _entryListener;
   }
 
   public abstract EventType getEventType();
@@ -52,7 +56,7 @@ abstract class Listener<K, V> {
     CacheEntryCreatedListener<K, V> listener;
 
     public Created(final CacheEntryListenerConfiguration<K, V> _config, final CacheEntryEventFilter<K, V> _filter, final CacheEntryCreatedListener<K, V> _listener) {
-      super(_config, _filter);
+      super(_config, _filter, _listener);
       listener = _listener;
     }
 
@@ -75,7 +79,7 @@ abstract class Listener<K, V> {
     CacheEntryUpdatedListener<K, V> listener;
 
     public Updated(final CacheEntryListenerConfiguration<K, V> _config, final CacheEntryEventFilter<K, V> _filter, final CacheEntryUpdatedListener<K, V> _listener) {
-      super(_config, _filter);
+      super(_config, _filter, _listener);
       listener = _listener;
     }
 
@@ -98,7 +102,7 @@ abstract class Listener<K, V> {
     CacheEntryRemovedListener<K, V> listener;
 
     public Removed(final CacheEntryListenerConfiguration<K, V> _config, final CacheEntryEventFilter<K, V> _filter, final CacheEntryRemovedListener<K, V> _listener) {
-      super(_config, _filter);
+      super(_config, _filter, _listener);
       listener = _listener;
     }
 
@@ -121,7 +125,7 @@ abstract class Listener<K, V> {
     CacheEntryExpiredListener<K, V> listener;
 
     public Expired(final CacheEntryListenerConfiguration<K, V> _config, final CacheEntryEventFilter<K, V> _filter, final CacheEntryExpiredListener<K, V> _listener) {
-      super(_config, _filter);
+      super(_config, _filter, _listener);
       listener = _listener;
     }
 

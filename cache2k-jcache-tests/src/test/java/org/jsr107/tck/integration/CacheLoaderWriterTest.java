@@ -456,5 +456,6 @@ public class CacheLoaderWriterTest {
     //ensure nothing has been written
     assertThat(recordingCacheWriter.getWriteCount(), is(4L));
     assertThat(recordingCacheWriter.getDeleteCount(), is(0L));
+
   }
 }

@@ -39,7 +39,7 @@ import java.util.concurrent.ExecutionException;
  */
 public class CacheLoaderClient<K, V> extends CacheClient implements CacheLoader<K, V> {
 
-  private CacheLoaderServer<K,V> directServer;
+  private CacheLoaderServer<K,V> loaderServer;
 
   /**
    * Constructs a {@link CacheLoaderClient}.
@@ -52,19 +52,17 @@ public class CacheLoaderClient<K, V> extends CacheClient implements CacheLoader<
   }
 
   @Override
-  protected boolean checkDirectCallsPossible() {
-    Server server = Server.lookupServerAtLocalMachine(port);
-    if (server != null) {
-      directServer = (CacheLoaderServer) server;
-      return true;
+  protected void checkDirectCallsPossible() {
+    super.checkDirectCallsPossible();
+    if (directServer != null) {
+      loaderServer = (CacheLoaderServer) directServer;
     }
-    return false;
   }
 
   @Override
   public V load(final K key) {
     if (isDirectCallable()) {
-      return directServer.getCacheLoader().load(key);
+      return loaderServer.getCacheLoader().load(key);
     }
     return getClient().invoke(new LoadOperation<K, V>(key));
   }
@@ -75,7 +73,7 @@ public class CacheLoaderClient<K, V> extends CacheClient implements CacheLoader<
   @Override
   public Map<K, V> loadAll(Iterable<? extends K> keys) {
     if (isDirectCallable()) {
-      return directServer.getCacheLoader().loadAll(keys);
+      return loaderServer.getCacheLoader().loadAll(keys);
     }
     return getClient().invoke(new LoadAllOperation<K, V>(keys));
   }

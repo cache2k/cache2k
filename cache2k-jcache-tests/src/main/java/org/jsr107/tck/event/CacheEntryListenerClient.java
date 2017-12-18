@@ -48,7 +48,7 @@ public class CacheEntryListenerClient<K, V> extends CacheClient
   CacheEntryCreatedListener<K, V>, CacheEntryUpdatedListener<K, V>,
   CacheEntryRemovedListener<K, V>, CacheEntryExpiredListener<K, V> {
 
-  private transient CacheEntryListenerServer<K,V> directServer;
+  private transient CacheEntryListenerServer<K,V> listenerServer;
 
   /**
    * Constructs a {@link CacheEntryListenerClient}.
@@ -62,19 +62,17 @@ public class CacheEntryListenerClient<K, V> extends CacheClient
   }
 
   @Override
-  protected boolean checkDirectCallsPossible() {
-    Server server = Server.lookupServerAtLocalMachine(port);
-    if (server != null) {
-      directServer = ((CacheEntryListenerServer) server);
-      return true;
+  protected void checkDirectCallsPossible() {
+    super.checkDirectCallsPossible();
+    if (directServer != null) {
+      listenerServer = ((CacheEntryListenerServer) directServer);
     }
-    return false;
   }
 
   @Override
   public void onCreated(Iterable<CacheEntryEvent<? extends K, ? extends V>> cacheEntryEvents) throws CacheEntryListenerException {
     if (isDirectCallable()) {
-      for (CacheEntryListener<K,V> l : directServer.getListeners()) {
+      for (CacheEntryListener<K,V> l : listenerServer.getListeners()) {
         if (l instanceof CacheEntryCreatedListener) {
           ((CacheEntryCreatedListener<K,V>) l).onCreated(cacheEntryEvents);
         }
@@ -89,7 +87,7 @@ public class CacheEntryListenerClient<K, V> extends CacheClient
   @Override
   public void onExpired(Iterable<CacheEntryEvent<? extends K, ? extends V>> cacheEntryEvents) throws CacheEntryListenerException {
     if (isDirectCallable()) {
-      for (CacheEntryListener<K,V> l : directServer.getListeners()) {
+      for (CacheEntryListener<K,V> l : listenerServer.getListeners()) {
         if (l instanceof CacheEntryExpiredListener) {
           ((CacheEntryExpiredListener<K,V>) l).onExpired(cacheEntryEvents);
         }
@@ -107,7 +105,7 @@ public class CacheEntryListenerClient<K, V> extends CacheClient
   @Override
   public void onRemoved(Iterable<CacheEntryEvent<? extends K, ? extends V>> cacheEntryEvents) throws CacheEntryListenerException {
     if (isDirectCallable()) {
-      for (CacheEntryListener<K,V> l : directServer.getListeners()) {
+      for (CacheEntryListener<K,V> l : listenerServer.getListeners()) {
         if (l instanceof CacheEntryRemovedListener) {
           ((CacheEntryRemovedListener<K,V>) l).onRemoved(cacheEntryEvents);
         }
@@ -123,7 +121,7 @@ public class CacheEntryListenerClient<K, V> extends CacheClient
   public void onUpdated(Iterable<CacheEntryEvent<? extends K, ? extends V>> cacheEntryEvents)
     throws CacheEntryListenerException {
     if (isDirectCallable()) {
-      for (CacheEntryListener<K,V> l : directServer.getListeners()) {
+      for (CacheEntryListener<K,V> l : listenerServer.getListeners()) {
         if (l instanceof CacheEntryUpdatedListener) {
           ((CacheEntryUpdatedListener<K,V>) l).onUpdated(cacheEntryEvents);
         }

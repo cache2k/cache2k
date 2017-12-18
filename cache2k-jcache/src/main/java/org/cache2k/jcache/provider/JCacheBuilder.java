@@ -27,6 +27,8 @@ import org.cache2k.configuration.CustomizationReferenceSupplier;
 import org.cache2k.core.Cache2kCoreProviderImpl;
 import org.cache2k.core.CacheManagerImpl;
 import org.cache2k.core.InternalCache2kBuilder;
+import org.cache2k.event.CacheClosedListener;
+import org.cache2k.integration.AdvancedCacheLoader;
 import org.cache2k.integration.CacheWriter;
 import org.cache2k.integration.ExceptionPropagator;
 import org.cache2k.integration.ExceptionInformation;
@@ -53,6 +55,8 @@ import javax.cache.expiry.ExpiryPolicy;
 import javax.cache.expiry.ModifiedExpiryPolicy;
 import javax.cache.integration.CacheLoader;
 import javax.cache.integration.CacheLoaderException;
+import java.io.Closeable;
+import java.io.IOException;
 import java.util.concurrent.Executors;
 
 /**
@@ -194,24 +198,36 @@ public class JCacheBuilder<K,V> {
     }));
   }
 
+  abstract class CloseableLoader<K,V> extends AdvancedCacheLoader<K,V> implements Closeable {}
+  abstract class CloseableWriter<K,V> extends CacheWriter<K,V> implements Closeable {}
+
   /**
    * Configure loader and writer.
    */
   private void setupCacheThrough() {
     if (config.getCacheLoaderFactory() != null) {
       final CacheLoader<K, V> clf = config.getCacheLoaderFactory().create();
-      cache2kConfiguration.setLoader(
-        new CustomizationReferenceSupplier<org.cache2k.integration.CacheLoader<K, V>>(
-          new org.cache2k.integration.CacheLoader<K,V>() {
+      cache2kConfiguration.setAdvancedLoader(
+        new CustomizationReferenceSupplier<AdvancedCacheLoader<K, V>>(
+          new CloseableLoader<K,V>() {
+
             @Override
-            public V load(K k) {
-              return clf.load(k);
+            public void close() throws IOException {
+              if (clf instanceof Closeable) {
+                ((Closeable) clf).close();
+              }
             }
+
+            @Override
+            public V load(final K key, final long currentTime, final CacheEntry<K, V> currentEntry) throws Exception {
+              return clf.load(key);
+            }
+
           }));
     }
     if (config.isWriteThrough()) {
       final javax.cache.integration.CacheWriter<? super K, ? super V> cw = config.getCacheWriterFactory().create();
-      cache2kConfiguration.setWriter(new CustomizationReferenceSupplier<CacheWriter<K, V>>(new CacheWriter<K,V>() {
+      cache2kConfiguration.setWriter(new CustomizationReferenceSupplier<CacheWriter<K, V>>(new CloseableWriter<K, V>() {
         @Override
         public void write(final K key, final V value) throws Exception {
           Cache.Entry<K, V> ce = new Cache.Entry<K, V>() {
@@ -236,6 +252,13 @@ public class JCacheBuilder<K,V> {
         @Override
         public void delete(final Object key) throws Exception {
           cw.delete(key);
+        }
+
+        @Override
+        public void close() throws IOException {
+          if (cw instanceof Closeable) {
+            ((Closeable) cw).close();
+          }
         }
       }));
     }
@@ -344,12 +367,29 @@ public class JCacheBuilder<K,V> {
     cache2kConfiguration.setExpiryPolicy(new CustomizationReferenceSupplier<org.cache2k.expiry.ExpiryPolicy<K, V>>(new TouchyJCacheAdapter.ExpiryPolicyAdapter<K,V>(expiryPolicy)));
   }
 
+  static class EventHandlingCloser implements CacheClosedListener {
+
+    private EventHandling eventHandling;
+
+    public EventHandlingCloser(final EventHandling _eventHandling) {
+      eventHandling = _eventHandling;
+    }
+
+    @Override
+    public void onCacheClosed(final org.cache2k.Cache cache) {
+      eventHandling.close();
+    }
+
+  }
+
   private void setupEventHandling() {
     eventHandling = new EventHandling<K, V>(manager, Executors.newCachedThreadPool());
     eventHandling.registerCache2kListeners(cache2kConfiguration);
     for (CacheEntryListenerConfiguration<K,V> cfg : config.getCacheEntryListenerConfigurations()) {
       eventHandling.registerListener(cfg);
     }
+    cache2kConfiguration.getCacheClosedListeners().add(
+      new CustomizationReferenceSupplier<CacheClosedListener>(new EventHandlingCloser(eventHandling)));
   }
 
   private void buildAdapterCache() {

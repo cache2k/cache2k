@@ -16,6 +16,7 @@
  */
 package org.jsr107.tck.support;
 
+import java.io.Closeable;
 import java.io.Serializable;
 import java.net.InetAddress;
 
@@ -25,7 +26,7 @@ import java.net.InetAddress;
  * @author Brian Oliver
  * @author Joe Fialli
  */
-public class CacheClient implements AutoCloseable, Serializable {
+public class CacheClient implements Closeable, Serializable {
     /**
      * The {@link java.net.InetAddress} on which to connect to the {@link org.jsr107.tck.integration.CacheLoaderServer}.
      */
@@ -43,6 +44,8 @@ public class CacheClient implements AutoCloseable, Serializable {
 
     private transient boolean checkedForDirectCallsPossible;
     private transient boolean useDirectCalls;
+
+    protected transient Server directServer;
 
     protected CacheClient(InetAddress address, int port) {
         this.address = address;
@@ -71,21 +74,31 @@ public class CacheClient implements AutoCloseable, Serializable {
 
     protected synchronized boolean isDirectCallable() {
         if (!checkedForDirectCallsPossible) {
-            useDirectCalls = checkDirectCallsPossible();
+            checkDirectCallsPossible();
+            useDirectCalls = directServer != null;
             checkedForDirectCallsPossible = true;
         }
         return useDirectCalls;
     }
 
-    protected boolean checkDirectCallsPossible() { return false; }
+    protected void checkDirectCallsPossible() {
+        directServer = Server.lookupServerAtLocalMachine(port);
+        if (directServer != null) {
+            directServer.clientConnectedDirectly();
+        }
+    }
 
     /**
      * {@inheritDoc}
      */
     @Override
-    public synchronized void close() throws Exception {
+    public synchronized void close() {
+        if (directServer != null) {
+            directServer.closeWasCalledOnClient();
+        }
         if (client != null) {
             try {
+                client.invoke(Server.CLOSE_OPERATION);
                 client.close();
             } finally {
                 client = null;
