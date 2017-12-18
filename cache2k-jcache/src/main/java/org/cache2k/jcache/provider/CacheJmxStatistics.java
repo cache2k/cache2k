@@ -24,14 +24,21 @@ import org.cache2k.core.InternalCache;
 import org.cache2k.core.InternalCacheInfo;
 
 import javax.cache.management.CacheStatisticsMXBean;
+import java.util.concurrent.atomic.AtomicLong;
 
 /**
  * @author Jens Wilke; created: 2015-04-29
  */
 public class CacheJmxStatistics implements CacheStatisticsMXBean {
 
-  private InternalCache cache;
-  private JCacheAdapter adapter;
+  private final InternalCache cache;
+  private final JCacheAdapter adapter;
+  private final AtomicLong missOffset = new AtomicLong();
+  private final AtomicLong putsOffset = new AtomicLong();
+  private final AtomicLong getsOffset = new AtomicLong();
+  private final AtomicLong evictionsOffset = new AtomicLong();
+  private final AtomicLong removalsOffset = new AtomicLong();
+  private final AtomicLong hitsOffset = new AtomicLong();
 
   public CacheJmxStatistics(JCacheAdapter _cache) {
     cache = _cache.cacheImpl;
@@ -40,13 +47,18 @@ public class CacheJmxStatistics implements CacheStatisticsMXBean {
 
   @Override
   public void clear() {
-    cache.clear();
+    evictionsOffset.addAndGet(getCacheEvictions());
+    putsOffset.addAndGet(getCachePuts());
+    getsOffset.addAndGet(getCacheGets());
+    removalsOffset.addAndGet(getCacheRemovals());
+    hitsOffset.addAndGet(getCacheHits());
+    missOffset.addAndGet(getCacheMisses());
   }
 
   @Override
   public long getCacheHits() {
     InternalCacheInfo inf = getInfo();
-    return calcHits(inf);
+    return calcHits(inf) - hitsOffset.get();
   }
 
   private long calcHits(InternalCacheInfo inf) {
@@ -70,7 +82,7 @@ public class CacheJmxStatistics implements CacheStatisticsMXBean {
   @Override
   public long getCacheMisses() {
     InternalCacheInfo inf = getInfo();
-    return calcMisses(inf);
+    return calcMisses(inf) - missOffset.get();
   }
 
   private long calcMisses(InternalCacheInfo inf) {
@@ -85,22 +97,22 @@ public class CacheJmxStatistics implements CacheStatisticsMXBean {
 
   @Override
   public long getCacheGets() {
-    return getInfo().getGetCount() + adapter.iterationHitCorrectionCounter.get();
+    return getInfo().getGetCount() + adapter.iterationHitCorrectionCounter.get() - getsOffset.get();
   }
 
   @Override
   public long getCachePuts() {
-    return getInfo().getPutCount();
+    return getInfo().getPutCount() - putsOffset.get();
   }
 
   @Override
   public long getCacheRemovals() {
-    return getInfo().getRemoveCount();
+    return getInfo().getRemoveCount() - removalsOffset.get();
   }
 
   @Override
   public long getCacheEvictions() {
-    return getInfo().getEvictedCount();
+    return getInfo().getEvictedCount() - evictionsOffset.get();
   }
 
   @Override

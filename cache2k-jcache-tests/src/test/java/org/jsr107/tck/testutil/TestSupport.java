@@ -20,10 +20,14 @@ import javax.cache.Cache;
 import javax.cache.CacheException;
 import javax.cache.CacheManager;
 import javax.cache.Caching;
+import javax.management.AttributeNotFoundException;
+import javax.management.InstanceNotFoundException;
+import javax.management.MBeanException;
 import javax.management.MBeanServer;
 import javax.management.MBeanServerFactory;
 import javax.management.MalformedObjectNameException;
 import javax.management.ObjectName;
+import javax.management.ReflectionException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -53,13 +57,14 @@ public class TestSupport {
    *
    * @throws javax.cache.CacheException - all exceptions are wrapped in CacheException
    */
-  public static Object lookupManagementAttribute(Cache cache, MBeanType type, String attributeName) throws Exception {
-
-    MBeanServer mBeanServer = TestSupport.resolveMBeanServer();
-
-    ObjectName objectName = calculateObjectName(cache, type);
-    Object attribute = mBeanServer.getAttribute(objectName, attributeName);
-    return attribute;
+  public static Object lookupManagementAttribute(Cache cache, MBeanType type, String attributeName) {
+    try {
+      MBeanServer mBeanServer = TestSupport.resolveMBeanServer();
+      ObjectName objectName = calculateObjectName(cache, type);
+      return mBeanServer.getAttribute(objectName, attributeName);
+    } catch (Exception e) {
+      throw new RuntimeException(e);
+    }
   }
 
   /**

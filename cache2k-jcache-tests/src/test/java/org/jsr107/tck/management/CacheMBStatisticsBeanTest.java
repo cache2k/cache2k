@@ -6,6 +6,7 @@ import org.jsr107.tck.processor.RemoveEntryProcessor;
 import org.jsr107.tck.processor.SetEntryProcessor;
 import org.jsr107.tck.testutil.CacheTestSupport;
 import org.jsr107.tck.testutil.ExcludeListExcluder;
+import org.jsr107.tck.testutil.TestSupport;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
@@ -17,6 +18,8 @@ import javax.cache.configuration.FactoryBuilder;
 import javax.cache.configuration.MutableConfiguration;
 import javax.cache.expiry.Duration;
 import javax.cache.expiry.ExpiryPolicy;
+import javax.management.MBeanServer;
+import javax.management.ObjectName;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
@@ -34,10 +37,21 @@ import static org.junit.Assert.assertThat;
  * Tests cache statistics
  *
  * @author Greg Luck
+ * @author Jens Wilke
  */
 public class CacheMBStatisticsBeanTest extends CacheTestSupport<Long, String> {
 
+  /**
+   * Override statics update time.
+   */
+  public static final String STATISTICS_UPDATE_TIMEOUT_PROPERTY = "org.jsr107.tck.management.statistics.timeout.seconds";
 
+  public static final long STATISTICS_UPDATE_TIMEOUT_MILLIS;
+
+  static {
+    STATISTICS_UPDATE_TIMEOUT_MILLIS =
+      Long.parseLong(System.getProperty(STATISTICS_UPDATE_TIMEOUT_PROPERTY, "30")) * 1000;
+  }
 
   @Before
   public void moreSetUp() {
@@ -654,25 +668,68 @@ public class CacheMBStatisticsBeanTest extends CacheTestSupport<Long, String> {
       assertEquals(0L, lookupManagementAttribute(cache, CacheStatistics, "CachePuts"));
   }
 
-    /**
-     * An {@link javax.cache.expiry.ExpiryPolicy} that will expire {@link Cache} entries
-     * before they are created.
-     */
-    public static class ExpireOnCreationPolicy implements ExpiryPolicy
-    {
-        @Override
-        public Duration getExpiryForCreation() {
-            return Duration.ZERO;
-        }
 
-        @Override
-        public Duration getExpiryForAccess() {
-            return Duration.ZERO;
-        }
+  @Test
+  public void testClear() throws Exception {
+    // increment all counters
+    cache.get(1L);
+    cache.put(1L, "Put one");
+    cache.get(1L);
+    cache.remove(1L);
+    // clear statistics
+    MBeanServer mBeanServer = TestSupport.resolveMBeanServer();
+    ObjectName objectName = calculateObjectName(cache, CacheStatistics);
+    mBeanServer.invoke(objectName, "clear", null, null);
+    assertEventually(new Runnable() {
+      @Override
+      public void run() {
+        assertEquals(0L, lookupManagementAttribute(cache, CacheStatistics, "CachePuts"));
+        assertEquals(0L, lookupManagementAttribute(cache, CacheStatistics, "CacheHits"));
+        assertEquals(0L, lookupManagementAttribute(cache, CacheStatistics, "CacheGets"));
+        assertEquals(0L, lookupManagementAttribute(cache, CacheStatistics, "CacheRemovals"));
+        assertEquals(0L, lookupManagementAttribute(cache, CacheStatistics, "CacheMisses"));
+        assertEquals(0f, lookupManagementAttribute(cache, CacheStatistics, "AverageGetTime"));
+        assertEquals(0f, lookupManagementAttribute(cache, CacheStatistics, "AveragePutTime"));
+        assertEquals(0f, lookupManagementAttribute(cache, CacheStatistics, "AverageRemoveTime"));
+      }
+    });
+  }
 
-        @Override
-        public Duration getExpiryForUpdate() {
-            return Duration.ZERO;
-        }
+  static void assertEventually(Runnable r) {
+    long t0 = System.currentTimeMillis();
+    while (System.currentTimeMillis() - t0 < STATISTICS_UPDATE_TIMEOUT_MILLIS) {
+      try {
+        r.run();
+        // test passed, exit!
+        return;
+      } catch (Throwable ignore) {
+        /// ignore and loop
+      }
     }
+    // timeout, run tests again, this time propagate exceptions
+    r.run();
+  }
+
+
+  /**
+   * An {@link javax.cache.expiry.ExpiryPolicy} that will expire {@link Cache} entries
+   * before they are created.
+   */
+  public static class ExpireOnCreationPolicy implements ExpiryPolicy
+  {
+      @Override
+      public Duration getExpiryForCreation() {
+          return Duration.ZERO;
+      }
+
+      @Override
+      public Duration getExpiryForAccess() {
+          return Duration.ZERO;
+      }
+
+      @Override
+      public Duration getExpiryForUpdate() {
+          return Duration.ZERO;
+      }
+  }
 }

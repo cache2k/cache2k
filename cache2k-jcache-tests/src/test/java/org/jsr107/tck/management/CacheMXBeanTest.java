@@ -2,6 +2,7 @@ package org.jsr107.tck.management;
 
 import org.jsr107.tck.testutil.CacheTestSupport;
 import org.jsr107.tck.testutil.ExcludeListExcluder;
+import org.jsr107.tck.testutil.TestSupport;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
@@ -10,6 +11,8 @@ import org.junit.rules.MethodRule;
 import javax.cache.Cache;
 import javax.cache.CacheManager;
 import javax.cache.configuration.MutableConfiguration;
+import javax.management.MBeanServer;
+import javax.management.ObjectName;
 
 import static junit.framework.TestCase.fail;
 import static org.jsr107.tck.testutil.TestSupport.MBeanType.CacheConfiguration;
@@ -66,7 +69,9 @@ public class CacheMXBeanTest extends CacheTestSupport<Long, String> {
   public void testCacheMXBeanManagementTurnedOff() throws Exception {
     cache.getCacheManager().enableManagement(cache.getName(), false);
     try {
-      lookupManagementAttribute(cache, CacheConfiguration, "ReadThrough");
+      MBeanServer mBeanServer = TestSupport.resolveMBeanServer();
+      ObjectName objectName = calculateObjectName(cache, CacheConfiguration);
+      mBeanServer.getAttribute(objectName, "ReadThrough");
       fail();
     } catch (javax.management.InstanceNotFoundException e) {
       //expected. Shouldn't be there
