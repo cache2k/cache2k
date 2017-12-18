@@ -21,6 +21,7 @@ package org.cache2k.configuration;
  */
 
 import org.cache2k.Cache2kBuilder;
+import org.cache2k.event.CacheClosedListener;
 import org.cache2k.expiry.*;
 import org.cache2k.event.CacheEntryOperationListener;
 import org.cache2k.integration.AdvancedCacheLoader;
@@ -89,6 +90,7 @@ public class Cache2kConfiguration<K, V> implements ConfigurationBean, Configurat
 
   private CustomizationCollection<CacheEntryOperationListener<K,V>> listeners;
   private CustomizationCollection<CacheEntryOperationListener<K,V>> asyncListeners;
+  private CustomizationCollection<CacheClosedListener> closedListeners;
 
   private ConfigurationSectionContainer sections;
 
@@ -489,6 +491,26 @@ public class Cache2kConfiguration<K, V> implements ConfigurationBean, Configurat
    */
   public boolean hasAsyncListeners() {
     return asyncListeners != null && !asyncListeners.isEmpty();
+  }
+
+  /**
+   * A set of listeners. A listener can be added by adding it to the collection.
+   * Duplicate (in terms of equal objects) listeners will be ignored.
+   *
+   * @return Mutable collection of listeners
+   */
+  public CustomizationCollection<CacheClosedListener> getCacheClosedListeners() {
+    if (closedListeners == null) {
+      closedListeners = new DefaultCustomizationCollection<CacheClosedListener>();
+    }
+    return closedListeners;
+  }
+
+  /**
+   * @return True if listeners are added to this configuration.
+   */
+  public boolean hasCacheClosedListeners() {
+    return closedListeners != null && !closedListeners.isEmpty();
   }
 
   public CustomizationSupplier<ResiliencePolicy<K, V>> getResiliencePolicy() {

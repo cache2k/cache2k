@@ -167,6 +167,9 @@ public class InternalCache2kBuilder<K, V> {
 
     HeapCache bc = (HeapCache) _cache;
     bc.setCacheManager(manager);
+    if (config.hasCacheClosedListeners()) {
+      bc.setCacheClosedListeners(config.getCacheClosedListeners());
+    }
     configureViaSettersDirect(bc);
 
     boolean _wrap = false;

@@ -36,6 +36,7 @@ import org.cache2k.core.concurrency.ThreadFactoryProvider;
 import org.cache2k.core.util.Log;
 import org.cache2k.core.util.TunableConstants;
 import org.cache2k.core.util.TunableFactory;
+import org.cache2k.event.CacheClosedListener;
 import org.cache2k.integration.AdvancedCacheLoader;
 import org.cache2k.integration.CacheLoaderException;
 import org.cache2k.integration.ExceptionPropagator;
@@ -43,6 +44,8 @@ import org.cache2k.processor.EntryProcessor;
 
 import java.io.Closeable;
 import java.security.SecureRandom;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -188,6 +191,8 @@ public class HeapCache<K, V>
   protected CacheType valueType;
 
   protected ExceptionPropagator exceptionPropagator = DEFAULT_EXCEPTION_PROPAGATOR;
+
+  private Collection<CustomizationSupplier<CacheClosedListener>> cacheClosedListeners = Collections.EMPTY_LIST;
 
   private int featureBits = 0;
 
@@ -407,7 +412,6 @@ public class HeapCache<K, V>
       return;
     }
     closePart2(this);
-    closeCustomization(loader);
   }
 
   public void closePart2(final InternalCache _userCache) {
@@ -417,10 +421,18 @@ public class HeapCache<K, V>
         eviction.close();
         timing.shutdown();
         hash.close();
+        closeCustomization(loader);
+        for (CustomizationSupplier<CacheClosedListener> s : cacheClosedListeners) {
+          createCustomization(s).onCacheClosed(_userCache);
+        }
         manager.cacheDestroyed(_userCache);
         return null;
       }
     }, false);
+  }
+
+  public void setCacheClosedListeners(final Collection<CustomizationSupplier<CacheClosedListener>> l) {
+    cacheClosedListeners = l;
   }
 
   private void closeIfNeeded(Object obj, String _name) {

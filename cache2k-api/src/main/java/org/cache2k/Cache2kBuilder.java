@@ -26,6 +26,7 @@ import org.cache2k.configuration.CacheType;
 import org.cache2k.configuration.ConfigurationSection;
 import org.cache2k.configuration.ConfigurationSectionBuilder;
 import org.cache2k.configuration.CustomizationReferenceSupplier;
+import org.cache2k.event.CacheClosedListener;
 import org.cache2k.expiry.ExpiryPolicy;
 import org.cache2k.event.CacheEntryOperationListener;
 import org.cache2k.integration.AdvancedCacheLoader;
@@ -452,6 +453,17 @@ public class Cache2kBuilder<K, V> {
    */
   public final Cache2kBuilder<K, V> writer(CacheWriter<K, V> w) {
     config().setWriter(wrapCustomizationInstance(w));
+    return this;
+  }
+
+  /**
+   * Listener that is called after a cache is closed. This is mainly used for the JCache integration.
+   */
+  public final Cache2kBuilder<K, V> addCacheClosedListener(CacheClosedListener listener) {
+    boolean _inserted = config().getCacheClosedListeners().add(wrapCustomizationInstance(listener));
+    if (!_inserted) {
+      throw new IllegalArgumentException("Listener already added");
+    }
     return this;
   }
 

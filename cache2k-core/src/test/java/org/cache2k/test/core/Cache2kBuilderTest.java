@@ -25,6 +25,7 @@ import org.cache2k.Cache2kBuilder;
 import org.cache2k.CacheManager;
 import org.cache2k.configuration.CacheTypeCapture;
 import org.cache2k.core.util.Log;
+import org.cache2k.event.CacheClosedListener;
 import org.cache2k.testing.category.FastTests;
 import static org.cache2k.test.core.StaticUtil.*;
 import org.junit.Test;
@@ -32,6 +33,7 @@ import org.junit.experimental.categories.Category;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import static org.junit.Assert.*;
 import static org.hamcrest.CoreMatchers.*;
@@ -345,6 +347,33 @@ public class Cache2kBuilderTest {
     assertEquals(c, cm.getActiveCaches().iterator().next());
     c.close();
     assertFalse(cm.getActiveCaches().iterator().hasNext());
+  }
+
+  private void cacheClosedEventFired(boolean _wiredCache) {
+    final AtomicBoolean _FIRED = new AtomicBoolean();
+    Cache2kBuilder _builder = Cache2kBuilder.forUnknownTypes();
+    _builder.addCacheClosedListener(new CacheClosedListener() {
+      @Override
+      public void onCacheClosed(final Cache cache) {
+        _FIRED.set(true);
+      }
+    });
+    if (_wiredCache) {
+     StaticUtil.enforceWiredCache(_builder);
+    }
+    Cache c = _builder.build();
+    c.close();
+    assertTrue(_FIRED.get());
+  }
+
+  @Test
+  public void cacheClosedEventFired() {
+    cacheClosedEventFired(false);
+  }
+
+  @Test
+  public void cacheClosedEventFired_WiredCache() {
+    cacheClosedEventFired(true);
   }
 
   static class BuildCacheInConstructor0 {

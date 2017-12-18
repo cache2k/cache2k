@@ -531,6 +531,27 @@ public class WiredCache<K, V> extends BaseCache<K, V>
       storage = null;
     }
     heapCache.closePart2(this);
+    closeCustomization(writer);
+    if (syncEntryCreatedListeners != null) {
+      for (Object l : syncEntryCreatedListeners) {
+        closeCustomization(l);
+      }
+    }
+    if (syncEntryUpdatedListeners != null) {
+      for (Object l : syncEntryUpdatedListeners) {
+        closeCustomization(l);
+      }
+    }
+    if (syncEntryRemovedListeners != null) {
+      for (Object l : syncEntryRemovedListeners) {
+        closeCustomization(l);
+      }
+    }
+    if (syncEntryExpiredListeners != null) {
+      for (Object l : syncEntryExpiredListeners) {
+        closeCustomization(l);
+      }
+    }
   }
 
   private Object lockObject() {
