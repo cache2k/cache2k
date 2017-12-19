@@ -272,8 +272,9 @@ public class EventHandling<K,V> {
         return;
       }
       javax.cache.Cache<K,V> _jCache = getCache(c);
+      V val = extractValue(e.getValue());
       EntryEvent<K, V> cee =
-        new EntryEvent<K, V>(_jCache, EventType.REMOVED, e.getKey(), extractValue(e.getValue()));
+        new EntryEventWithOldValue<K, V>(_jCache, EventType.REMOVED, e.getKey(), val, val);
       asyncDispatcher.deliverAsyncEvent(cee);
       for (Listener<K,V> t : removedListener) {
         t.fire(cee);

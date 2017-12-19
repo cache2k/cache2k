@@ -39,6 +39,8 @@ import static javax.cache.event.EventType.CREATED;
 import static javax.cache.event.EventType.REMOVED;
 import static javax.cache.event.EventType.UPDATED;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 
 /**
  * Unit test support base class
@@ -158,6 +160,9 @@ public abstract class CacheTestSupport<K, V> extends TestSupport {
     public void onRemoved(Iterable<CacheEntryEvent<? extends K, ? extends V>> events) throws CacheEntryListenerException {
       for (CacheEntryEvent<? extends K, ? extends V> event : events) {
         assertEquals(REMOVED, event.getEventType());
+        assertTrue("isOldValueAvailable() for onRemoved", event.isOldValueAvailable());
+        assertNotNull("old value non-null for onRemoved", event.getOldValue());
+        assertEquals("old value identical to value at onRemoved", event.getOldValue(), event.getValue());
         removed.incrementAndGet();
         event.getKey();
         if (event.isOldValueAvailable()) {
@@ -170,6 +175,8 @@ public abstract class CacheTestSupport<K, V> extends TestSupport {
     public void onUpdated(Iterable<CacheEntryEvent<? extends K, ? extends V>> events) throws CacheEntryListenerException {
       for (CacheEntryEvent<? extends K, ? extends V> event : events) {
         assertEquals(UPDATED, event.getEventType());
+        assertTrue("isOldValueAvailable() for onUpdated", event.isOldValueAvailable());
+        assertNotNull("old value non-null for onUpdated", event.getOldValue());
         updated.incrementAndGet();
         event.getKey();
         if (event.isOldValueAvailable()) {
