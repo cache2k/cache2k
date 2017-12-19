@@ -24,11 +24,9 @@ Additionally to the normal cache2k dependencies the following dependencies need 
     <dependency>
       <groupId>javax.cache</groupId>
       <artifactId>cache-api</artifactId>
-      <version>1.0.0</version>
+      <version>1.1.0</version>
     </dependency>
 ----
-
-JCache 1.0 is not released with an Open Source license. When using JCache, please review the JCache licensing terms.
 
 === Getting Started with the JCache API
 
@@ -125,16 +123,18 @@ to the cache or retrieved from the cache.
 
 === Implementation Details
 
-==== Compatibility
+==== Semantic Changes Since JCache 1.0
 
 The JCache specification team has made some changes to its TCK since the original 1.0 release.
-The cache2k implementation already adheres to the latest corrected (but unreleased) TCK.
-That means that some semantics in corner cases might differ to other JSR107 implementations.
+The cache2k implementation already adheres to the latest corrected TCK 1.1.
 
-.Corrected JSR107 Semantics since TCK 1.0
+.Corrected or Enforced JSR107 Semantics in TCK 1.1
 [width="70",options="header"]
 ,===
 Affected Component,JSR107 GitHub issue
+`EntryProcessorException`, https://github.com/jsr107/jsr107tck/issues/85
+Customizations may implement `Closeable`, https://github.com/jsr107/jsr107tck/issues/100
+`CacheEntry.getOldValue()` for removed event, https://github.com/jsr107/jsr107spec/issues/391
 Statistics of `Cache.putIfAbsent()`, https://github.com/jsr107/jsr107tck/issues/63
 `CacheManager.getCacheNames()`, https://github.com/jsr107/jsr107tck/issues/87
 `CacheManager.getCache()`, https://github.com/jsr107/jsr107spec/issues/340
@@ -195,3 +195,12 @@ Some design choices in JCache lead to additional overhead, for example:
  - Expiry policy needs to be called for every access
  - Store-by-value semantics require keys and values to be copied
 
+=== Compliance Testing
+
+To pass the TCK tests on statistics, which partially enforce that statistic values need to be updated immediately.
+For compliance testing the following system properties need to be set:
+
+- `org.cache2k.core.HeapCache.Tunable.minimumStatisticsCreationTimeDeltaFactor=0`
+- `org.cache2k.core.HeapCache.Tunable.minimumStatisticsCreationDeltaMillis=-1`
+
+Since immediate statistics update is not a requirement by the JSR107 spec this is needed for testing purposes only.
