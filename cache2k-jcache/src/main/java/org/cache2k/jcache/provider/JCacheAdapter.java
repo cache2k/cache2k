@@ -64,7 +64,6 @@ public class JCacheAdapter<K, V> implements javax.cache.Cache<K, V> {
   boolean readThrough = false;
   boolean statisticsEnabled = false;
   boolean configurationEnabled = false;
-  boolean flushJmxStatistics = false;
   Class<K> keyType;
   Class<V> valueType;
   AtomicLong iterationHitCorrectionCounter = new AtomicLong();

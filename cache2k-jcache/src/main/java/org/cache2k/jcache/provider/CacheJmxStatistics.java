@@ -131,7 +131,7 @@ public class CacheJmxStatistics implements CacheStatisticsMXBean {
   }
 
   private InternalCacheInfo getInfo() {
-    return adapter.flushJmxStatistics ? cache.getLatestInfo() : cache.getInfo();
+    return cache.getInfo();
   }
 
 }

@@ -39,9 +39,8 @@ public class JCacheConfiguration implements SingletonConfigurationSection {
   }
 
   /**
-   * @see JCacheConfiguration.Builder#setAlwaysFlushJmxStatistics
+   * @see JCacheConfiguration.Builder#alwaysFlushJmxStatistics
    */
-
   public void setAlwaysFlushJmxStatistics(final boolean f) {
     alwaysFlushJmxStatistics = f;
   }
@@ -62,10 +61,9 @@ public class JCacheConfiguration implements SingletonConfigurationSection {
     private JCacheConfiguration config = new JCacheConfiguration();
 
     /**
-     * Whenever a JMX property is accessed aggregate the most recent statistic
-     * values. Useful for testing. Never enable in production.
-     * Default in JCache configuration mode: {@code true}.
-     * Default in cache2k configuration mode: {@code false}.
+     * Enabling this was needed for passing the JCache 1.0 tests.
+     * Sine JCache 1.1 this is no longer needed. This flat has no
+     * effect since cache2k version 1.0.2.
      */
     public Builder alwaysFlushJmxStatistics(boolean f) {
       config.setAlwaysFlushJmxStatistics(f);
