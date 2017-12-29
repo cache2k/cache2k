@@ -4,7 +4,7 @@
   <groupId>org.cache2k</groupId>
   <artifactId>cache2k-parent</artifactId>
   <packaging>pom</packaging>
-  <version>1.0.2.Final</version>
+  <version>1.1-SNAPSHOT</version>
   <name>cache2k parent</name>
   <description>cache2k is a well engineered high performance in-memory Java cache. It implements
     latest eviction algorithms and coding techniques to achieve performance about 10 times better
