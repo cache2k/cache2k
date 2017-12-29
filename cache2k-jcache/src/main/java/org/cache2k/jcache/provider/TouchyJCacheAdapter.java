@@ -70,7 +70,7 @@ public class TouchyJCacheAdapter<K, V> implements Cache<K, V> {
   public TouchyJCacheAdapter(JCacheAdapter<K,V> _cache, ExpiryPolicy _expiryPolicy) {
     expiryPolicy = _expiryPolicy;
     cache = _cache;
-    c2kCache = _cache.cacheImpl;
+    c2kCache = _cache.cache;
   }
 
   @Override

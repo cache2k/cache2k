@@ -41,7 +41,7 @@ public class CacheJmxStatistics implements CacheStatisticsMXBean {
   private final AtomicLong hitsOffset = new AtomicLong();
 
   public CacheJmxStatistics(JCacheAdapter _cache) {
-    cache = _cache.cacheImpl;
+    cache = _cache.cache;
     adapter = _cache;
   }
 

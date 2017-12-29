@@ -214,14 +214,14 @@ public class JCacheManagerAdapter implements CacheManager {
       }
       Cache c = name2adapter.get(_cacheName);
       if (enabled) {
-        if (!ca.configurationEnabled) {
-          jmxSupport.enableConfiguration(ca.cache, c);
-          ca.configurationEnabled = true;
+        if (!ca.jmxEnabled) {
+          jmxSupport.enableJmx(ca.cache, c);
+          ca.jmxEnabled = true;
         }
       } else {
-        if (ca.configurationEnabled) {
-          jmxSupport.disableConfiguration(ca.cache);
-          ca.configurationEnabled = false;
+        if (ca.jmxEnabled) {
+          jmxSupport.disableJmx(ca.cache);
+          ca.jmxEnabled = false;
         }
       }
     }
@@ -242,9 +242,9 @@ public class JCacheManagerAdapter implements CacheManager {
         JCacheAdapter ca = getAdapter(_cacheName);
         if (ca != null) {
           synchronized (ca.cache) {
-            if (!ca.statisticsEnabled) {
+            if (!ca.jmxStatisticsEnabled) {
               jmxSupport.enableStatistics(ca);
-              ca.statisticsEnabled = true;
+              ca.jmxStatisticsEnabled = true;
             }
           }
         }
@@ -252,9 +252,9 @@ public class JCacheManagerAdapter implements CacheManager {
         JCacheAdapter ca = getAdapter(_cacheName);
         if (ca != null) {
           synchronized (ca.cache) {
-            if (ca.statisticsEnabled) {
+            if (ca.jmxStatisticsEnabled) {
               jmxSupport.disableStatistics(ca.cache);
-              ca.statisticsEnabled = false;
+              ca.jmxStatisticsEnabled = false;
             }
           }
         }

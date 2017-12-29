@@ -43,7 +43,7 @@ public class JCacheJmxSupport implements CacheLifeCycleListener {
   @Override
   public void cacheDestroyed(Cache c) {
     disableStatistics(c);
-    disableConfiguration(c);
+    disableJmx(c);
   }
 
   public void enableStatistics(JCacheAdapter c) {
@@ -69,9 +69,9 @@ public class JCacheJmxSupport implements CacheLifeCycleListener {
     }
   }
 
-  public void enableConfiguration(Cache c, javax.cache.Cache ca) {
+  public void enableJmx(Cache c, javax.cache.Cache ca) {
     MBeanServer mbs = mBeanServer;
-    String _name = createConfigurationObjectName(c);
+    String _name = createJmxObjectName(c);
     try {
        mbs.registerMBean(new CacheJmxConfiguration(ca), new ObjectName(_name));
     } catch (Exception e) {
@@ -79,9 +79,9 @@ public class JCacheJmxSupport implements CacheLifeCycleListener {
     }
   }
 
-  public void disableConfiguration(Cache c) {
+  public void disableJmx(Cache c) {
     MBeanServer mbs = mBeanServer;
-    String _name = createConfigurationObjectName(c);
+    String _name = createJmxObjectName(c);
     try {
       mbs.unregisterMBean(new ObjectName(_name));
     } catch (InstanceNotFoundException ignore) {
@@ -96,7 +96,7 @@ public class JCacheJmxSupport implements CacheLifeCycleListener {
           ",Cache=" + sanitizeName(cache.getName());
   }
 
-  public String createConfigurationObjectName(Cache cache) {
+  public String createJmxObjectName(Cache cache) {
     return "javax.cache:type=CacheConfiguration," +
           "CacheManager=" + sanitizeName(cache.getCacheManager().getName()) +
           ",Cache=" + sanitizeName(cache.getName());

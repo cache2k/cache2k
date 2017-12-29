@@ -396,17 +396,11 @@ public class JCacheBuilder<K,V> {
     JCacheAdapter<K, V> _adapter =
       new JCacheAdapter<K, V>(
         manager,
-        new InternalCache2kBuilder<K,V>(cache2kConfiguration, manager.getCache2kManager()).buildAsIs());
-    _adapter.valueType = valueType.getType();
-    _adapter.keyType = keyType.getType();
-    if (config.getCacheLoaderFactory() != null) {
-      _adapter.loaderConfigured = true;
-    }
-    _adapter.readThrough = config.isReadThrough();
-    _adapter.eventHandling = eventHandling;
-    if (config.isStoreByValue()) {
-      _adapter.storeByValue = true;
-    }
+        new InternalCache2kBuilder<K,V>(cache2kConfiguration, manager.getCache2kManager()).buildAsIs(),
+        keyType.getType(), valueType.getType(),
+        config.isStoreByValue(), config.isReadThrough(), config.getCacheLoaderFactory() != null,
+        eventHandling
+      );
     createdCache = _adapter;
   }
 

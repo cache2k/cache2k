@@ -52,27 +52,36 @@ import java.util.Set;
 import java.util.concurrent.atomic.AtomicLong;
 
 /**
- * @author Jens Wilke; created: 2015-03-28
+ * Forward cache operations to cache2k cache implementation.
+ *
+ * @author Jens Wilke
  */
 public class JCacheAdapter<K, V> implements javax.cache.Cache<K, V> {
 
-  JCacheManagerAdapter manager;
-  Cache<K, V> cache;
-  InternalCache<K, V> cacheImpl;
-  boolean storeByValue;
-  boolean loaderConfigured = false;
-  boolean readThrough = false;
-  boolean statisticsEnabled = false;
-  boolean configurationEnabled = false;
-  Class<K> keyType;
-  Class<V> valueType;
-  AtomicLong iterationHitCorrectionCounter = new AtomicLong();
-  EventHandling<K,V> eventHandling;
+  private final JCacheManagerAdapter manager;
+  protected final InternalCache<K, V> cache;
+  private final boolean storeByValue;
+  private final boolean loaderConfigured;
+  protected final boolean readThrough;
+  private final Class<K> keyType;
+  private final Class<V> valueType;
+  private final EventHandling<K,V> eventHandling;
+  protected final AtomicLong iterationHitCorrectionCounter = new AtomicLong();
+  protected volatile boolean jmxStatisticsEnabled = false;
+  protected volatile boolean jmxEnabled = false;
 
-  public JCacheAdapter(JCacheManagerAdapter _manager, Cache<K, V> _cache) {
+  public JCacheAdapter(JCacheManagerAdapter _manager, Cache<K, V> _cache,
+                       Class<K> _keyType, Class<V> _valueType,
+                       boolean _storeByValue, boolean _readThrough, boolean _loaderConfigured,
+                       EventHandling<K,V> _eventHandling) {
     manager = _manager;
-    cache = _cache;
-    cacheImpl = (InternalCache<K, V>) _cache;
+    cache = (InternalCache<K, V>) _cache;
+    keyType = _keyType;
+    valueType = _valueType;
+    storeByValue = _storeByValue;
+    readThrough = _readThrough;
+    loaderConfigured = _loaderConfigured;
+    eventHandling = _eventHandling;
   }
 
   @Override
@@ -217,7 +226,7 @@ public class JCacheAdapter<K, V> implements javax.cache.Cache<K, V> {
   public boolean remove(K key) {
     checkClosed();
     try {
-      return cacheImpl.containsAndRemove(key);
+      return cache.containsAndRemove(key);
     } catch (EntryAction.ListenerException ex) {
       throw new javax.cache.event.CacheEntryListenerException(ex);
     } catch (CacheWriterException ex) {
@@ -325,8 +334,8 @@ public class JCacheAdapter<K, V> implements javax.cache.Cache<K, V> {
     if (CompleteConfiguration.class.isAssignableFrom(_class)) {
       MutableConfiguration<K, V> cfg = new MutableConfiguration<K, V>();
       cfg.setTypes(keyType, valueType);
-      cfg.setStatisticsEnabled(statisticsEnabled);
-      cfg.setManagementEnabled(configurationEnabled);
+      cfg.setStatisticsEnabled(jmxStatisticsEnabled);
+      cfg.setManagementEnabled(jmxEnabled);
       cfg.setStoreByValue(storeByValue);
       Collection<CacheEntryListenerConfiguration<K,V>> _listenerConfigurations = eventHandling.getAllListenerConfigurations();
       for (CacheEntryListenerConfiguration<K,V> _listenerConfig : _listenerConfigurations) {
