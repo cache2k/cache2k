@@ -58,14 +58,14 @@ public class ConcurrencyHelper {
    * Wait for an event the maximum test time.
    */
   public static void await(String _description, final Condition c) {
-    await(_description, TestingParameters.MAX_FINISH_WAIT, c);
+    await(_description, TestingParameters.MAX_FINISH_WAIT_MILLIS, c);
   }
 
   /**
-   * Wait for an event the maximum test time, as defined at {@link TestingParameters#MAX_FINISH_WAIT}
+   * Wait for an event the maximum test time, as defined at {@link TestingParameters#MAX_FINISH_WAIT_MILLIS}
    */
   public static void await(final Condition c) {
-    await(null, TestingParameters.MAX_FINISH_WAIT, c);
+    await(null, TestingParameters.MAX_FINISH_WAIT_MILLIS, c);
   }
 
   static class TimeoutException extends RuntimeException {

@@ -32,14 +32,18 @@ public class TestingParameters {
   /**
    * Maximum time in millis we wait for an event to finish. Might need to be increased in loaded environments.
    */
-  public static final int MAX_FINISH_WAIT = 60000;
+  public static final long MAX_FINISH_WAIT_MILLIS = 60000;
 
   /**
    * Minimum amount of time that we expect to pass in waiting for an event.
    */
-  public static final int MINIMAL_TICK_MILLIS = 3;
+  public static final long MINIMAL_TICK_MILLIS = 3;
 
-  static int calculateMaxFinishWait() {
+  /**
+   * We cannot use this at the moment since the constant {@link #MAX_FINISH_WAIT_MILLIS}
+   * is used inside test annotations.
+   */
+  static long calculateMaxFinishWait() {
     if (System.getProperty("idea.launcher.port") != null) {
       return 3456;
     } else {

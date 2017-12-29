@@ -23,7 +23,6 @@ package org.cache2k.test.core;
 import org.cache2k.Cache;
 import org.cache2k.Cache2kBuilder;
 import org.cache2k.CacheEntry;
-import org.cache2k.core.ExclusiveExecutor;
 import org.cache2k.expiry.ExpiryPolicy;
 import org.cache2k.test.util.CacheRule;
 import org.cache2k.test.util.ConcurrencyHelper;
@@ -131,7 +130,7 @@ public class ListenerTest {
   }
 
   /** If the listener is not executed in separate thread, this would block */
-  @Test(timeout = TestingParameters.MAX_FINISH_WAIT)
+  @Test(timeout = TestingParameters.MAX_FINISH_WAIT_MILLIS)
   public void asyncCreatedListenerCalled() {
     final AtomicInteger _callCount = new AtomicInteger();
     final CountDownLatch _fire = new CountDownLatch(1);
@@ -161,7 +160,7 @@ public class ListenerTest {
   }
 
   /** If the listener is not executed in separate thread, this would block */
-  @Test(timeout = TestingParameters.MAX_FINISH_WAIT)
+  @Test(timeout = TestingParameters.MAX_FINISH_WAIT_MILLIS)
   public void asyncUpdateListenerCalled() {
     final AtomicInteger _callCount = new AtomicInteger();
     final CountDownLatch _fire = new CountDownLatch(1);
@@ -196,7 +195,7 @@ public class ListenerTest {
   }
 
   /** If the listener is not executed in separate thread, this would block */
-  @Test(timeout = TestingParameters.MAX_FINISH_WAIT)
+  @Test(timeout = TestingParameters.MAX_FINISH_WAIT_MILLIS)
   public void asyncRemovedListenerCalled() {
     final AtomicInteger _callCount = new AtomicInteger();
     final CountDownLatch _fire = new CountDownLatch(1);
@@ -231,7 +230,7 @@ public class ListenerTest {
   }
 
   /** Check that we do not miss events. */
-  @Test(timeout = TestingParameters.MAX_FINISH_WAIT)
+  @Test(timeout = TestingParameters.MAX_FINISH_WAIT_MILLIS)
   public void manyAsyncUpdateListenerCalled() {
     final AtomicInteger _callCount = new AtomicInteger();
     final ConcurrentMap<Integer, Integer> _seenValues = new ConcurrentHashMap<Integer, Integer>();
