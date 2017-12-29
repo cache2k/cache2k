@@ -39,19 +39,19 @@ For a detailed introduction continue with [Getting Started](docs/1.0/user-guide.
  * [Refresh ahead](docs/1.0/user-guide.html#refresh-ahead) reduces latency
  * [Low Overhead Statistics](docs/1.0/user-guide.html#statistics) and JMX support
  * [Separate and defined API](docs/1.0/apidocs/cache2k-api/index.html) with stable and concise interface
- * [complete JCache / JSR107 support](docs/1.0/user-guide.html#jcache)
+ * [complete JCache / JSR107 support, complatible to JCache Specification 1.1](docs/1.0/user-guide.html#jcache)
  * [XML based configuration](docs/1.0/user-guide.html#xml-configuration), to separate cache tuning from logic
 
 ## News
 
+  * **Version 1.0.2.Final, 2017-12-29**: Support JCache standard 1.1, See [Version 1.0.2.Final release notes](1/0.2.Final.html)
+  * **Version 1.0.1.Final, 2017-07-11**: minor bugfix release, See [Version 1.0.1.Final release notes](1/0.1.Final.html)
   * **Version 1.0.0.Final, 2017-07-11**: Minor documentation tweaks, allow more chars in a cache name, See [Version 1.0.0.Final release notes](1/0.0.Final.html)
   * **Version 1.0.0.CR4, 2017-03-21**: Final cleanups and and API tweaks, `Cache.computeIfAbsent()`, See [Version 1.0.0.CR4 release notes](1/0.0.CR4.html)
   * **Version 1.0.0.CR3, 2017-01-17**: Cleanups&Documentation, improvements for Java 8, See [Version 1.0.0.CR3 release notes](1/0.0.CR3.html)
   * **Version 1.0.0.CR2, 2016-12-22**: Remove deprecated methods. Cleanups. Documentation. See [Version 1.0.0.CR2 release notes](1/0.0.CR2.html)
   * **Version 1.0.0.CR1, 2016-12-05**: More cleanups, XML configuration has arrived. See [Version 1.0.0.CR1 release notes](1/0.0.CR1.html)
   * **Version 0.28-BETA, 2016-09-02**: Minor bug fixes, SLF4J Support, statistics cleanup. See [Version 0.28 release notes](0/28.html)
-  * **Version 0.27-BETA, 2016-07-26**: Performance improvements, leveraging Java 8, more API restructuring, cleanup and minor bug fixes. See [Version 0.27 release notes](0/27.html)
-  * **Version 0.26-BETA, 2016-05-06**: Resilience policy, more API restructuring, cleanup and minor bug fixes. See [Version 0.26 release notes](0/26.html)
 
 ## Integrating cache2k in your project
 
