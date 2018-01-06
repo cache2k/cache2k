@@ -87,7 +87,7 @@ public class WarpableClock implements InternalClock {
   }
 
   @Override
-  public void runLocked(final Notifier n, final Runnable r) {
+  public void runExclusive(final Notifier n, final Runnable r) {
     synchronized (((NotifyList) n).waitLock) {
       r.run();
     }

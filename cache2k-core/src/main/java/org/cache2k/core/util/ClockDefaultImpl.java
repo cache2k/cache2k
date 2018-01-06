@@ -48,7 +48,7 @@ public class ClockDefaultImpl implements InternalClock {
   }
 
   @Override
-  public void runLocked(final Notifier n, final Runnable r) {
+  public void runExclusive(final Notifier n, final Runnable r) {
     MyNotifier m = ((MyNotifier) n);
     synchronized (m.internal) {
       r.run();

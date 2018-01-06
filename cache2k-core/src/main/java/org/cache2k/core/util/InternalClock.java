@@ -35,15 +35,27 @@ public interface InternalClock {
    */
   void waitMillis(long _millis) throws InterruptedException;
 
+  /**
+   * Create a notifier instance that can be used to call waiting
+   * threads using the {@link #waitMillis(Notifier, long)} method.
+   */
   Notifier createNotifier();
 
   /**
    * Wait until the specified amount of time or stop when the notifier is
-   * called.
+   * called. A call to this method is only valid when within a runnable
+   * that is called via {@link #runExclusive(Notifier, Runnable)}
    */
   void waitMillis(Notifier n, long _millis) throws InterruptedException;
 
-  void runLocked(Notifier n, Runnable r);
+  /**
+   * In order to wait until notified the runnable code section must run exclusively
+   * for one notifier instance.
+   *
+   * @param n the notifier instance
+   * @param r the code
+   */
+  void runExclusive(Notifier n, Runnable r);
 
   interface Notifier {
 
