@@ -24,6 +24,9 @@ import org.cache2k.configuration.Cache2kConfiguration;
 import org.cache2k.CacheEntry;
 import org.cache2k.configuration.CustomizationSupplier;
 import org.cache2k.configuration.CustomizationReferenceSupplier;
+import org.cache2k.core.util.InternalClock;
+import org.cache2k.core.util.SimpleTimer;
+import org.cache2k.core.util.SimpleTask;
 import org.cache2k.core.util.Util;
 import org.cache2k.expiry.Expiry;
 import org.cache2k.expiry.ExpiryPolicy;
@@ -35,7 +38,6 @@ import org.cache2k.integration.ExceptionInformation;
 import org.cache2k.integration.ResiliencePolicy;
 
 import java.util.Date;
-import java.util.Timer;
 
 /**
  * Encapsulates logic for expiry times calculation and timer handling.
@@ -74,7 +76,7 @@ public abstract class TimingHandler<K,V>  {
     return t == 0 || t == -1;
   }
 
-  public static <K, V> TimingHandler<K,V> of(Cache2kConfiguration<K,V> cfg) {
+  public static <K, V> TimingHandler<K,V> of(InternalClock _clock, Cache2kConfiguration<K,V> cfg) {
     if (cfg.getExpireAfterWrite() == 0
       && zeroOrUnspecified(cfg.getRetryInterval())) {
       return IMMEDIATE;
@@ -82,8 +84,7 @@ public abstract class TimingHandler<K,V>  {
     if (cfg.getExpiryPolicy() != null
       || (cfg.getValueType() != null && ValueWithExpiryTime.class.isAssignableFrom(cfg.getValueType().getType()))
       || cfg.getResiliencePolicy() != null) {
-      TimingHandler.Dynamic<K,V> h = new TimingHandler.Dynamic<K, V>();
-      h.configure(cfg);
+      TimingHandler.Dynamic<K,V> h = new TimingHandler.Dynamic<K, V>(_clock, cfg);
       return h;
     }
     if (cfg.getResilienceDuration() > 0 && !cfg.isSuppressExceptions()) {
@@ -92,8 +93,7 @@ public abstract class TimingHandler<K,V>  {
     if (realDuration(cfg.getExpireAfterWrite())
       || realDuration(cfg.getRetryInterval())
       || realDuration(cfg.getResilienceDuration())) {
-      TimingHandler.Static<K,V> h = new TimingHandler.Static<K, V>();
-      h.configureStatic(cfg);
+      TimingHandler.Static<K,V> h = new TimingHandler.Static<K, V>(_clock, cfg);
       return h;
     }
     if ((cfg.getExpireAfterWrite() == ExpiryPolicy.ETERNAL || cfg.getExpireAfterWrite() == -1)) {
@@ -237,9 +237,10 @@ public abstract class TimingHandler<K,V>  {
 
   static class Static<K,V> extends TimingHandler<K,V> {
 
+    final InternalClock clock;
     boolean sharpExpiry;
     boolean refreshAhead;
-    Timer[] timer;
+    SimpleTimer[] timer;
     int timerMask;
     long maxLinger;
     InternalCache cache;
@@ -249,7 +250,12 @@ public abstract class TimingHandler<K,V>  {
     ResiliencePolicy<K,V> resiliencePolicy;
     CustomizationSupplier<ResiliencePolicy<K,V>> resiliencePolicyFactory;
 
-    void configureStatic(final Cache2kConfiguration<K, V> c) {
+    public Static(InternalClock c, final Cache2kConfiguration<K, V> cc) {
+      clock = c;
+      configure(cc);
+    }
+
+    void configure(final Cache2kConfiguration<K, V> c) {
       long _expiryMillis  = c.getExpireAfterWrite();
       if (_expiryMillis == ExpiryPolicy.ETERNAL || _expiryMillis < 0) {
         maxLinger = ExpiryPolicy.ETERNAL;
@@ -295,7 +301,7 @@ public abstract class TimingHandler<K,V>  {
         int _ncpu = Runtime.getRuntime().availableProcessors();
         _timerCount = 2 << (31 - Integer.numberOfLeadingZeros(_ncpu));
       }
-      timer = new Timer[_timerCount];
+      timer = new SimpleTimer[_timerCount];
       timerMask = _timerCount - 1;
     }
 
@@ -315,13 +321,13 @@ public abstract class TimingHandler<K,V>  {
       shutdown();
       for (int i = 0; i <= timerMask; i++) {
         if (timer[i] != null) { continue; }
-        timer[i] =  new Timer(cache.getName(), true);
+        timer[i] =  new SimpleTimer(clock, cache.getName(), true);
       }
     }
 
     @Override
     public synchronized void shutdown() {
-      Timer _timer;
+      SimpleTimer _timer;
       for (int i = 0; i <= timerMask; i++) {
         if ((_timer = timer[i]) == null) { continue; }
         _timer.cancel();
@@ -446,7 +452,7 @@ public abstract class TimingHandler<K,V>  {
     }
 
     void scheduleTask(final long _nextRefreshTime, final Entry e) {
-      Timer _timer = timer[e.hashCode & timerMask];
+      SimpleTimer _timer = timer[e.hashCode & timerMask];
       if (_timer != null) {
         try {
           _timer.schedule(e.getTask(), new Date(_nextRefreshTime));
@@ -473,7 +479,7 @@ public abstract class TimingHandler<K,V>  {
 
   }
 
-  static abstract class CommonTask<K,V> extends java.util.TimerTask {
+  static abstract class CommonTask<K,V> extends SimpleTask {
     Entry<K,V> entry;
     InternalCache<K,V> cache;
 
@@ -521,9 +527,12 @@ public abstract class TimingHandler<K,V>  {
     /** Store policy factory until init is called and we have the cache reference */
     private CustomizationSupplier<ExpiryPolicy<K, V>> policyFactory;
 
-    @SuppressWarnings("unchecked")
+    public Dynamic(InternalClock c, final Cache2kConfiguration<K, V> cc) {
+      super(c, cc);
+    }
+
     void configure(Cache2kConfiguration<K,V> c) {
-      configureStatic(c);
+      super.configure(c);
       policyFactory = c.getExpiryPolicy();
       if (policyFactory instanceof CustomizationReferenceSupplier) {
         try {

@@ -33,6 +33,7 @@ import org.cache2k.core.concurrency.Job;
 import org.cache2k.core.concurrency.OptimisticLock;
 import org.cache2k.core.concurrency.ThreadFactoryProvider;
 
+import org.cache2k.core.util.InternalClock;
 import org.cache2k.core.util.Log;
 import org.cache2k.core.util.TunableConstants;
 import org.cache2k.core.util.TunableFactory;
@@ -108,6 +109,7 @@ public class HeapCache<K, V>
   protected String name;
   public CacheManagerImpl manager;
   protected AdvancedCacheLoader<K,V> loader;
+  protected InternalClock clock;
   protected TimingHandler<K,V> timing = TimingHandler.ETERNAL;
 
   /**
@@ -294,6 +296,10 @@ public class HeapCache<K, V>
     }
   }
 
+  public void setClock(final InternalClock _clock) {
+    clock = _clock;
+  }
+
   public void setExceptionPropagator(ExceptionPropagator ep) {
     exceptionPropagator = ep;
   }
@@ -364,12 +370,12 @@ public class HeapCache<K, V>
     clearCnt++;
     initializeHeapCache();
     hash.clearWhenLocked();
-    clearedTime = System.currentTimeMillis();
+    clearedTime = clock.millis();
   }
 
   protected void initializeHeapCache() {
     if (startedTime == 0) {
-      startedTime = System.currentTimeMillis();
+      startedTime = clock.millis();
     }
     timing.reset();
   }
@@ -485,7 +491,7 @@ public class HeapCache<K, V>
       while (iterator.hasNext()) {
         Entry e = iterator.next();
         if (filter) {
-          if (e.hasFreshData()) {
+          if (e.hasFreshData(cache.getClock())) {
             entry = e;
             return true;
           }
@@ -621,12 +627,12 @@ public class HeapCache<K, V>
     Entry e;
     for (;;) {
       e = lookupOrNewEntry(key);
-      if (e.hasFreshData()) {
+      if (e.hasFreshData(clock)) {
         return e;
       }
       synchronized (e) {
         e.waitForProcessing();
-        if (e.hasFreshData()) {
+        if (e.hasFreshData(clock)) {
           return e;
         }
         if (e.isGone()) {
@@ -709,7 +715,7 @@ public class HeapCache<K, V>
           metrics.goneSpin();
           continue;
         }
-        _hasFreshData = e.hasFreshData();
+        _hasFreshData = e.hasFreshData(clock);
         if (_hasFreshData) {
           _previousValue = (V) e.getValueOrException();
         } else {
@@ -737,7 +743,7 @@ public class HeapCache<K, V>
           metrics.goneSpin();
           continue;
         }
-        if (e.hasFreshData()) {
+        if (e.hasFreshData(clock)) {
           V _previousValue = (V) e.getValueOrException();
           putValue(e, _value);
           return returnValue(_previousValue);
@@ -757,7 +763,7 @@ public class HeapCache<K, V>
     if (isNoLastModificationTime()) {
       insertOrUpdateAndCalculateExpiry(e, _value, 0, 0, INSERT_STAT_PUT);
     } else {
-      long t = System.currentTimeMillis();
+      long t = clock.millis();
       insertOrUpdateAndCalculateExpiry(e, _value, t, t, INSERT_STAT_PUT);
     }
   }
@@ -796,7 +802,7 @@ public class HeapCache<K, V>
     }
     synchronized (e) {
       e.waitForProcessing();
-      if (e.isGone() || !e.hasFreshData()) {
+      if (e.isGone() || !e.hasFreshData(clock)) {
         return (Entry) DUMMY_ENTRY_NO_REPLACE;
       }
       if (_compare && !e.equalsValue(_oldValue)) {
@@ -821,7 +827,7 @@ public class HeapCache<K, V>
       metrics.peekMiss();
       return null;
     }
-    if (e.hasFreshData()) {
+    if (e.hasFreshData(clock)) {
       return e;
     }
     metrics.peekHitNotFresh();
@@ -833,7 +839,7 @@ public class HeapCache<K, V>
     Entry e = lookupEntry(key);
     if (e != null) {
       metrics.heapHitButNoRead();
-      if (e.hasFreshData()) {
+      if (e.hasFreshData(clock)) {
         return true;
       }
     }
@@ -862,12 +868,12 @@ public class HeapCache<K, V>
     Entry<K,V> e;
     for (;;) {
       e = lookupOrNewEntry(key);
-      if (e.hasFreshData()) {
+      if (e.hasFreshData(clock)) {
         return returnValue(e);
       }
       synchronized (e) {
         e.waitForProcessing();
-        if (e.hasFreshData()) {
+        if (e.hasFreshData(clock)) {
           return returnValue(e);
         }
         if (e.isGone()) {
@@ -886,9 +892,9 @@ public class HeapCache<K, V>
       if (isNoLastModificationTime()) {
         _value = callable.call();
       } else {
-        t0 = System.currentTimeMillis();
+        t0 = clock.millis();
         _value = callable.call();
-        t = System.currentTimeMillis();
+        t = clock.millis();
       }
       synchronized (e) {
         insertOrUpdateAndCalculateExpiry(e, _value, t0, t, INSERT_STAT_PUT);
@@ -913,7 +919,7 @@ public class HeapCache<K, V>
           metrics.goneSpin();
           continue;
         }
-        if (e.hasFreshData()) {
+        if (e.hasFreshData(clock)) {
           return false;
         }
         metrics.peekMiss();
@@ -965,7 +971,7 @@ public class HeapCache<K, V>
       if (e.isGone()) {
         return false;
       }
-      boolean f = e.hasFreshData();
+      boolean f = e.hasFreshData(clock);
       if (_checkValue) {
         if (!f || !e.equalsValue(_value)) {
           return false;
@@ -994,7 +1000,7 @@ public class HeapCache<K, V>
         return null;
       }
       V _value = null;
-      boolean f = e.hasFreshData();
+      boolean f = e.hasFreshData(clock);
       if (f) {
         _value = (V) e.getValueOrException();
       } else {
@@ -1015,7 +1021,7 @@ public class HeapCache<K, V>
       return;
     }
     Entry<K,V> e = lookupEntryNoHitRecord(key);
-    if (e != null && e.hasFreshData()) {
+    if (e != null && e.hasFreshData(clock)) {
       return;
     }
     try {
@@ -1162,7 +1168,7 @@ public class HeapCache<K, V>
     Set<K> _keysToLoad = new HashSet<K>();
     for (K k : keys) {
       Entry<K,V> e = lookupEntryNoHitRecord(k);
-      if (e == null || !e.hasFreshData()) {
+      if (e == null || !e.hasFreshData(clock)) {
         _keysToLoad.add(k);
       }
     }
@@ -1333,7 +1339,7 @@ public class HeapCache<K, V>
 
   protected void load(Entry<K, V> e) {
     V v;
-    long t0 = isNoLastModificationTime() ? 0 : System.currentTimeMillis();
+    long t0 = isNoLastModificationTime() ? 0 : clock.millis();
     if (e.getNextRefreshTime() == Entry.EXPIRED_REFRESHED) {
       if (entryInRefreshProbationAccessed(e, t0)) {
         return;
@@ -1349,14 +1355,14 @@ public class HeapCache<K, V>
     } catch (Throwable _ouch) {
       long t = t0;
       if (!metrics.isDisabled()) {
-        t = System.currentTimeMillis();
+        t = clock.millis();
       }
       loadGotException(e, t0, t, _ouch);
       return;
     }
     long t = t0;
     if (!metrics.isDisabled()) {
-      t = System.currentTimeMillis();
+      t = clock.millis();
     }
     insertOrUpdateAndCalculateExpiry(e, v, t0, t, INSERT_STAT_LOAD);
   }
@@ -1595,7 +1601,7 @@ public class HeapCache<K, V>
     if (e.isGone() || e.isExpired()) {
       return;
     }
-    long t = System.currentTimeMillis();
+    long t = clock.millis();
     if (t >= Math.abs(nrt)) {
       try {
         expireEntry(e);
@@ -1773,7 +1779,7 @@ public class HeapCache<K, V>
       public Void call() {
         IntegrityState is = getIntegrityState();
         if (is.getStateFlags() > 0) {
-          throw new CacheIntegrityError(is.getStateDescriptor(), is.getFailingChecks(), generateInfoUnderLock(HeapCache.this, System.currentTimeMillis()).toString());
+          throw new CacheIntegrityError(is.getStateDescriptor(), is.getFailingChecks(), generateInfoUnderLock(HeapCache.this, clock.millis()).toString());
         }
         return null;
       }
@@ -1792,7 +1798,7 @@ public class HeapCache<K, V>
 
   public final InternalCacheInfo getInfo(InternalCache _userCache) {
     synchronized (lock) {
-      long t = System.currentTimeMillis();
+      long t = clock.millis();
       if (info != null &&
         (info.getInfoCreatedTime() + info.getInfoCreationDeltaMs() * TUNABLE.minimumStatisticsCreationTimeDeltaFactor + TUNABLE.minimumStatisticsCreationDeltaMillis > t)) {
         return info;
@@ -1803,7 +1809,7 @@ public class HeapCache<K, V>
   }
 
   public final InternalCacheInfo getLatestInfo(InternalCache _userCache) {
-    return generateInfo(_userCache, System.currentTimeMillis());
+    return generateInfo(_userCache, clock.millis());
   }
 
   private CacheBaseInfo generateInfo(final InternalCache _userCache, final long t) {
@@ -1817,7 +1823,7 @@ public class HeapCache<K, V>
 
   private CacheBaseInfo generateInfoUnderLock(final InternalCache _userCache, final long t) {
     info = new CacheBaseInfo(HeapCache.this, _userCache, t);
-    info.setInfoCreationDeltaMs((int) (System.currentTimeMillis() - t));
+    info.setInfoCreationDeltaMs((int) (clock.millis() - t));
     return info;
   }
 
@@ -1895,6 +1901,11 @@ public class HeapCache<K, V>
         eviction.start();
       }
     }
+  }
+
+  @Override
+  public final InternalClock getClock() {
+    return clock;
   }
 
   @Override

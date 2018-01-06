@@ -21,6 +21,8 @@ package org.cache2k.core;
  */
 
 import org.cache2k.CacheEntry;
+import org.cache2k.core.util.InternalClock;
+import org.cache2k.core.util.SimpleTask;
 import org.cache2k.expiry.ExpiryPolicy;
 import org.cache2k.core.operation.ExaminationEntry;
 import org.cache2k.core.storageApi.StorageEntry;
@@ -29,7 +31,6 @@ import org.cache2k.integration.ExceptionInformation;
 import static org.cache2k.core.util.Util.*;
 
 import java.lang.reflect.Field;
-import java.util.TimerTask;
 
 /**
  * Separate with relevant fields for read access only for optimizing the object layout.
@@ -443,12 +444,12 @@ public class Entry<K, T> extends CompactEntry<K,T>
   /**
    * Returns true if the entry has a valid value and is fresh / not expired.
    */
-  public final boolean hasFreshData() {
+  public final boolean hasFreshData(InternalClock t) {
     if (nextRefreshTime >= DATA_VALID) {
       return true;
     }
     if (needsTimeCheck()) {
-      return System.currentTimeMillis() < -nextRefreshTime;
+      return t.millis() < -nextRefreshTime;
     }
     return false;
   }
@@ -587,7 +588,7 @@ public class Entry<K, T> extends CompactEntry<K,T>
       if (getTask() != null) {
         String _timerState = "<unavailable>";
         try {
-          Field f = TimerTask.class.getDeclaredField("state");
+          Field f = SimpleTask.class.getDeclaredField("state");
           f.setAccessible(true);
           int _state = f.getInt(getTask());
           _timerState = String.valueOf(_state);
@@ -610,11 +611,11 @@ public class Entry<K, T> extends CompactEntry<K,T>
     return toString(null);
   }
 
-  public TimerTask getTask() {
-    if (misc instanceof TimerTask) {
-      return (TimerTask) misc;
+  public SimpleTask getTask() {
+    if (misc instanceof SimpleTask) {
+      return (SimpleTask) misc;
     }
-    TimerTaskPiggyBack pb = getPiggyBack(TimerTaskPiggyBack.class);
+    TaskPiggyBack pb = getPiggyBack(TaskPiggyBack.class);
     if (pb != null) {
       return pb.task;
     }
@@ -636,17 +637,17 @@ public class Entry<K, T> extends CompactEntry<K,T>
     return null;
   }
 
-  public void setTask(TimerTask v) {
-    if (misc == null || misc instanceof TimerTask) {
+  public void setTask(SimpleTask v) {
+    if (misc == null || misc instanceof SimpleTask) {
       misc = v;
       return;
     }
-    TimerTaskPiggyBack pb = getPiggyBack(TimerTaskPiggyBack.class);
+    TaskPiggyBack pb = getPiggyBack(TaskPiggyBack.class);
     if (pb != null) {
       pb.task = v;
       return;
     }
-    misc = new TimerTaskPiggyBack(v, (PiggyBack) misc);
+    misc = new TaskPiggyBack(v, (PiggyBack) misc);
   }
 
   /**
@@ -655,8 +656,8 @@ public class Entry<K, T> extends CompactEntry<K,T>
    */
   private PiggyBack existingPiggyBackForInserting() {
     Object _misc = misc;
-    if (_misc instanceof TimerTask) {
-      return new TimerTaskPiggyBack((TimerTask) _misc, null);
+    if (_misc instanceof SimpleTask) {
+      return new TaskPiggyBack((SimpleTask) _misc, null);
     }
     return (PiggyBack) _misc;
   }
@@ -707,10 +708,10 @@ public class Entry<K, T> extends CompactEntry<K,T>
     }
   }
 
-  static class TimerTaskPiggyBack extends PiggyBack {
-    TimerTask task;
+  static class TaskPiggyBack extends PiggyBack {
+    SimpleTask task;
 
-    public TimerTaskPiggyBack(final TimerTask _task, final PiggyBack _next) {
+    public TaskPiggyBack(final SimpleTask _task, final PiggyBack _next) {
       super(_next);
       task = _task;
     }

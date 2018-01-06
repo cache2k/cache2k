@@ -23,6 +23,8 @@ package org.cache2k.core;
 import org.cache2k.Cache;
 import org.cache2k.Cache2kBuilder;
 import org.cache2k.CacheEntry;
+import org.cache2k.core.util.ClockDefaultImpl;
+import org.cache2k.core.util.InternalClock;
 import org.cache2k.core.util.TunableFactory;
 import org.cache2k.expiry.ExpiryPolicy;
 import org.cache2k.integration.CacheLoader;
@@ -44,10 +46,12 @@ public class TimingHandlerTest {
 
   private final Entry ENTRY = new Entry();
   private final long NOW = 10000000;
+  private static final InternalClock CLOCK = new ClockDefaultImpl();
 
   @Test
   public void eternalSpecified() {
     TimingHandler h = TimingHandler.of(
+      CLOCK,
       Cache2kBuilder.forUnknownTypes()
         .eternal(true)
         .toConfiguration()
@@ -58,6 +62,7 @@ public class TimingHandlerTest {
   @Test
   public void eternalNotSpecified() {
     TimingHandler h = TimingHandler.of(
+      CLOCK,
       Cache2kBuilder.forUnknownTypes()
         .toConfiguration()
     );
@@ -67,6 +72,7 @@ public class TimingHandlerTest {
   @Test
   public void expireAfterWrite_overflow() {
     TimingHandler h = TimingHandler.of(
+      CLOCK,
       Cache2kBuilder.forUnknownTypes()
         .expireAfterWrite(Long.MAX_VALUE - 47, TimeUnit.SECONDS)
         .toConfiguration()
@@ -78,6 +84,7 @@ public class TimingHandlerTest {
   public void almostEternal_noOverflow() {
     long _BIG_VALUE = Long.MAX_VALUE - 47;
     TimingHandler h = TimingHandler.of(
+      CLOCK,
       Cache2kBuilder.forUnknownTypes()
         .expireAfterWrite(_BIG_VALUE, TimeUnit.MILLISECONDS)
         .toConfiguration()
@@ -92,6 +99,7 @@ public class TimingHandlerTest {
   public void almostEternal_expiryPolicy_noOverflow() {
     long _BIG_VALUE = Long.MAX_VALUE - 47;
     TimingHandler h = TimingHandler.of(
+      CLOCK,
       Cache2kBuilder.forUnknownTypes()
         .expiryPolicy(new ExpiryPolicy() {
           @Override
@@ -114,6 +122,7 @@ public class TimingHandlerTest {
   @Test
   public void policy_sharp() {
     TimingHandler h = TimingHandler.of(
+      CLOCK,
       Cache2kBuilder.forUnknownTypes()
         .expiryPolicy(new ExpiryPolicy() {
           @Override
@@ -135,6 +144,7 @@ public class TimingHandlerTest {
   @Test
   public void expireAfterWrite_policy_limit() {
     TimingHandler h = TimingHandler.of(
+      CLOCK,
       Cache2kBuilder.forUnknownTypes()
         .expiryPolicy(new ExpiryPolicy() {
           @Override
@@ -161,6 +171,7 @@ public class TimingHandlerTest {
     long _DURATION = 1000000;
     final long _SHARP_POINT_IN_TIME = NOW + 5000000;
     TimingHandler h = TimingHandler.of(
+      CLOCK,
       Cache2kBuilder.forUnknownTypes()
         .expiryPolicy(new ExpiryPolicy() {
           @Override
@@ -192,6 +203,7 @@ public class TimingHandlerTest {
     long _DURATION = 1000000;
     final long _POINT_IN_TIME = NOW + 5000000;
     TimingHandler h = TimingHandler.of(
+      CLOCK,
       Cache2kBuilder.forUnknownTypes()
         .expiryPolicy(new ExpiryPolicy() {
           @Override
@@ -227,6 +239,7 @@ public class TimingHandlerTest {
     long _DURATION = 100;
     final long _SHARP_POINT_IN_TIME = NOW + 5000;
     TimingHandler h = TimingHandler.of(
+      CLOCK,
       Cache2kBuilder.forUnknownTypes()
         .expiryPolicy(new ExpiryPolicy() {
           @Override

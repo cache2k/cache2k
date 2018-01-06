@@ -176,7 +176,7 @@ public abstract class EntryAction<K, V, R> implements
   @Override
   public boolean isPresent() {
     doNotCountAccess = true;
-    return successfulLoad || entry.hasFreshData();
+    return successfulLoad || entry.hasFreshData(heapCache.getClock());
   }
 
   @Override
@@ -185,12 +185,12 @@ public abstract class EntryAction<K, V, R> implements
     return
       successfulLoad ||
       entry.getNextRefreshTime() == Entry.EXPIRED_REFRESHED ||
-      entry.hasFreshData();
+      entry.hasFreshData(heapCache.getClock());
   }
 
   @Override
   public boolean isPresentOrMiss() {
-    if (successfulLoad || entry.hasFreshData()) {
+    if (successfulLoad || entry.hasFreshData(heapCache.getClock())) {
       return true;
     }
     countMiss = true;

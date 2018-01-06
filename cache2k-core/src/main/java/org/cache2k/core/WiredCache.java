@@ -21,6 +21,7 @@ package org.cache2k.core;
  */
 
 import org.cache2k.configuration.CacheType;
+import org.cache2k.core.util.InternalClock;
 import org.cache2k.event.CacheEntryExpiredListener;
 import org.cache2k.integration.AdvancedCacheLoader;
 import org.cache2k.CacheEntry;
@@ -86,6 +87,11 @@ public class WiredCache<K, V> extends BaseCache<K, V>
   }
 
   @Override
+  public InternalClock getClock() {
+    return heapCache.getClock();
+  }
+
+  @Override
   public boolean isNullValuePermitted() {
     return heapCache.isNullValuePermitted();
   }
@@ -141,7 +147,7 @@ public class WiredCache<K, V> extends BaseCache<K, V>
       return;
     }
     Entry<K,V> e = heapCache.lookupEntryNoHitRecord(key);
-    if (e != null && e.hasFreshData()) {
+    if (e != null && e.hasFreshData(getClock())) {
       return;
     }
     try {
@@ -192,7 +198,7 @@ public class WiredCache<K, V> extends BaseCache<K, V>
 
   private void load(final K key) {
     Entry<K, V> e = lookupQuick(key);
-    if (e != null && e.hasFreshData()) {
+    if (e != null && e.hasFreshData(getClock())) {
       return;
     }
     load(key, e);
@@ -341,7 +347,7 @@ public class WiredCache<K, V> extends BaseCache<K, V>
   @Override
   public V get(K key) {
     Entry<K, V> e = lookupQuick(key);
-    if (e != null && e.hasFreshData()) {
+    if (e != null && e.hasFreshData(getClock())) {
       return returnValue(e);
     }
     return returnValue(execute(key, e, SPEC.get(key)));
@@ -421,7 +427,7 @@ public class WiredCache<K, V> extends BaseCache<K, V>
   @Override
   public V peek(K key) {
     Entry<K, V> e = lookupQuick(key);
-    if (e != null && e.hasFreshData()) {
+    if (e != null && e.hasFreshData(getClock())) {
       return returnValue(e);
     }
     return returnValue(execute(key, SPEC.peek(key)));
@@ -585,7 +591,7 @@ public class WiredCache<K, V> extends BaseCache<K, V>
     boolean _storeEvenImmediatelyExpired =
       heapCache.hasKeepAfterExpired() && (e.isDataValid() || e.isExpired());
     boolean _shouldStore =
-      (storage != null) && (_storeEvenImmediatelyExpired || e.hasFreshData());
+      (storage != null) && (_storeEvenImmediatelyExpired || e.hasFreshData(getClock()));
     if (_shouldStore) {
       storage.evict(e);
     }

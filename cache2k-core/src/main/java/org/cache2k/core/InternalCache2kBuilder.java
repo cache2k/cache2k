@@ -23,6 +23,8 @@ package org.cache2k.core;
 import org.cache2k.Cache2kBuilder;
 import org.cache2k.CacheEntry;
 import org.cache2k.configuration.CustomizationSupplier;
+import org.cache2k.core.util.ClockDefaultImpl;
+import org.cache2k.core.util.InternalClock;
 import org.cache2k.event.CacheEntryCreatedListener;
 import org.cache2k.event.CacheEntryExpiredListener;
 import org.cache2k.event.CacheEntryOperationListener;
@@ -164,13 +166,14 @@ public class InternalCache2kBuilder<K, V> {
     checkConfiguration();
     Class<?> _implClass = HeapCache.TUNABLE.defaultImplementation;
     InternalCache<K, V> _cache = constructImplementationAndFillParameters(_implClass);
-
+    InternalClock _timeReference = new ClockDefaultImpl();
     HeapCache bc = (HeapCache) _cache;
     bc.setCacheManager(manager);
     if (config.hasCacheClosedListeners()) {
       bc.setCacheClosedListeners(config.getCacheClosedListeners());
     }
     configureViaSettersDirect(bc);
+    bc.setClock(_timeReference);
 
     boolean _wrap = false;
 
@@ -268,11 +271,11 @@ public class InternalCache2kBuilder<K, V> {
         wc.syncEntryExpiredListeners = _syncExpiredListeners.toArray(new CacheEntryExpiredListener[_syncExpiredListeners.size()]);
       }
       bc.eviction = constructEviction(bc, wc, config);
-      TimingHandler rh = TimingHandler.of(config);
+      TimingHandler rh = TimingHandler.of(_timeReference, config);
       bc.setTiming(rh);
       wc.init();
     } else {
-      TimingHandler rh = TimingHandler.of(config);
+      TimingHandler rh = TimingHandler.of(_timeReference, config);
       bc.setTiming(rh);
       bc.eviction = constructEviction(bc, new HeapCacheListener.NoOperation(), config);
       bc.init();
