@@ -32,16 +32,23 @@ import java.util.concurrent.atomic.AtomicLong;
  */
 public class WarpableClock implements InternalClock {
 
+  final Log log = Log.getLog(WarpableClock.class);
   final Object structureLock = new Object();
   final int maxProgress;
   volatile boolean running = true;
   final AtomicLong wakeupCounter = new AtomicLong();
-  final AtomicLong now = new AtomicLong();
+  final AtomicLong now;
   final TreeMap<Waiter, Waiter> tree = new TreeMap<Waiter, Waiter>();
   final Thread thread;
+  final AtomicLong counter = new AtomicLong();
 
-  public WarpableClock(final int _maxProgress) {
-    maxProgress = _maxProgress;
+  public WarpableClock() {
+    this(System.currentTimeMillis() + new Random().nextInt() * 123);
+  }
+
+  public WarpableClock(long _initialMillis) {
+    now = new AtomicLong(_initialMillis);
+    maxProgress = 1;
     thread = new Thread() {
       @Override
       public void run() {
@@ -54,18 +61,22 @@ public class WarpableClock implements InternalClock {
 
   @Override
   public long millis() {
+    if (counter.incrementAndGet() % 1000 == 0) {
+      synchronized (structureLock) {
+        structureLock.notify();
+      }
+    }
     return now.get();
   }
 
   @Override
-  public void waitMillis(final long _millis) throws InterruptedException {
-    long _startTime = now.get();
-    long _wakeupTime = _startTime + _millis;
-    final Waiter w = new Waiter(this, null, _wakeupTime, wakeupCounter.getAndIncrement());
-    synchronized (structureLock) {
-      tree.put(w, w);
-      w.waitUntil();
+  public void waitMillis(final long _waitMillis) throws InterruptedException {
+    long _startTime = millis();
+    long _wakeupTime = _startTime + _waitMillis;
+    if (_wakeupTime < 0) {
+      _wakeupTime = Long.MAX_VALUE;
     }
+    _waitMillis(null, _wakeupTime);
   }
 
   @Override
@@ -74,16 +85,34 @@ public class WarpableClock implements InternalClock {
   }
 
   @Override
-  public void waitMillis(final Notifier n, final long _millis) throws InterruptedException {
+  public void waitMillis(final Notifier n, final long _waitMillis) throws InterruptedException {
     NotifyList l = (NotifyList) n;
-    long _startTime = now.get();
-    long _wakeupTime = _startTime + _millis;
-    final Waiter w = new Waiter(this, l, _wakeupTime, wakeupCounter.getAndIncrement());
-    synchronized (structureLock) {
-      tree.put(w, w);
-      l.add(w);
-      w.waitUntil();
+    checkLock(l);
+    long _startTime = millis();
+    long _wakeupTime = _startTime + _waitMillis;
+    if (_wakeupTime < 0 || _waitMillis == 0) {
+      _wakeupTime = Long.MAX_VALUE;
     }
+
+    _waitMillis(l, _wakeupTime);
+  }
+
+  private void checkLock(final NotifyList _l) {
+    if (!Thread.holdsLock(_l.waitLock)) {
+      throw new IllegalStateException("must be run from within runExclusive");
+    }
+  }
+
+  private void _waitMillis(final NotifyList _l, final long _wakeupTime) throws InterruptedException {
+    final Waiter w = new Waiter(_l, _wakeupTime, wakeupCounter.getAndIncrement());
+    synchronized (structureLock) {
+      if (_wakeupTime < Long.MAX_VALUE) {
+        tree.put(w, w);
+      }
+      w.notifyList.add(w);
+      structureLock.notify();
+    }
+    w.waitUntil();
   }
 
   @Override
@@ -95,7 +124,7 @@ public class WarpableClock implements InternalClock {
 
   void remove(final Waiter w, final NotifyList l) {
     synchronized (structureLock) {
-      tree.remove(this);
+      tree.remove(w);
       if (l != null) {
         l.remove(w);
       }
@@ -108,48 +137,35 @@ public class WarpableClock implements InternalClock {
   }
 
   void progressThread() {
-    Random r = new Random();
-    try {
-      Thread.sleep(1);
-    } catch (InterruptedException ignore) {
-    }
-    now.addAndGet(r.nextInt(maxProgress));
+    Thread.yield();
     while (running) {
-      try {
-        long _nextWakeup = wakeupWaiters();
-        if (_nextWakeup > 0) {
-          long _progress =
-            Math.max(1, r.nextInt((int) Math.min(Integer.MAX_VALUE, _nextWakeup - now.get()) / 3 * 2));
-          _progress = Math.min(maxProgress, _progress);
-          now.addAndGet(_progress);
-          if (_progress <= 1) {
-            Thread.sleep(1);
-          }
-          continue;
-        } else {
-          Thread.sleep(1);
-          now.addAndGet(maxProgress);
-        }
-      } catch (InterruptedException ignore) {
-      }
+      waitAndWakeupWaiters();
+      now.incrementAndGet();
+      Thread.yield();
     }
   }
 
-  private long wakeupWaiters() {
-    synchronized (structureLock) {
-      for (; ; ) {
+  private long waitAndWakeupWaiters() {
+    while (running) {
+      Waiter u;
+      synchronized (structureLock) {
         Map.Entry<Waiter, Waiter> e = tree.pollFirstEntry();
-        if (e != null) {
-          Waiter u = e.getKey();
-          if (u.wakeupTime <= now.get()) {
-            u.timeout();
-            continue;
+        if (e == null) {
+          try {
+            structureLock.wait();
+          } catch (InterruptedException ignore) {
           }
+          return 0;
+        }
+        u = e.getKey();
+        if (u.wakeupTime > now.get()) {
           tree.put(u, u);
           return u.wakeupTime;
         }
       }
+      u.timeout();
     }
+    return 0;
   }
 
   class NotifyList implements Notifier {
@@ -159,12 +175,13 @@ public class WarpableClock implements InternalClock {
 
     @Override
     public void sendNotify() {
+      checkLock(this);
       List<Notifier> copy;
       synchronized (structureLock) {
         copy = new ArrayList<Notifier>(list);
       }
       for (Notifier n : copy) {
-        n.notify();
+        n.sendNotify();
       }
     }
 
@@ -178,39 +195,47 @@ public class WarpableClock implements InternalClock {
 
   }
 
-  static class Waiter implements Notifier, Comparable<Waiter> {
+  class Waiter implements Notifier, Comparable<Waiter> {
 
-    volatile boolean wakeup = false;
+    volatile boolean notified = false;
     final long wakeupTime;
     final long uniqueId;
+    final boolean noNotification;
     final NotifyList notifyList;
-    final WarpableClock clock;
 
-    public Waiter(WarpableClock c, final NotifyList l, final long _wakeupTime, final long _uniqueId) {
-      clock = c;
-      notifyList = l;
+    public Waiter(final NotifyList l, final long _wakeupTime, final long _uniqueId) {
+      noNotification = l == null;
+      notifyList = l == null ? new NotifyList() : l;
       wakeupTime = _wakeupTime;
       uniqueId = _uniqueId;
     }
 
     public void sendNotify() {
-      wakeup = true;
+      notified = true;
       notifyList.waitLock.notifyAll();
     }
 
     public void timeout() {
-      notifyList.waitLock.notifyAll();
+      synchronized (notifyList.waitLock) {
+        notifyList.waitLock.notifyAll();
+      }
     }
 
     void waitUntil() throws InterruptedException {
+      log.debug(this + " waiting...");
       try {
-        while (clock.millis() < wakeupTime || !wakeup) {
-          synchronized (notifyList.waitLock) {
+        synchronized (notifyList.waitLock) {
+          while (millis() < wakeupTime && !notified) {
             notifyList.waitLock.wait();
           }
         }
       } finally {
-        clock.remove(this, notifyList);
+        remove(this, notifyList);
+      }
+      if (notified) {
+        log.debug(millis() + " " + toString() + " was notified");
+      } else {
+        log.debug(millis() + " " + toString() + " had timeout");
       }
     }
 
@@ -229,6 +254,12 @@ public class WarpableClock implements InternalClock {
         return 1;
       }
       return 0;
+    }
+
+    public String toString() {
+      return "Waiter#" + uniqueId + "{time=" +
+        (wakeupTime == Long.MAX_VALUE ? "forever" : Long.toString(wakeupTime))
+        + "}";
     }
   }
 
