@@ -20,10 +20,12 @@ package org.cache2k.core.util;
  * #L%
  */
 
+import org.cache2k.Clock;
+
 /**
  * @author Jens Wilke
  */
-public interface InternalClock {
+public interface InternalClock extends Clock {
 
   /**
    * Returns the milliseconds since epoch.

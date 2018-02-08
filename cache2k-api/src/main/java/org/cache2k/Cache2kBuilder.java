@@ -734,6 +734,14 @@ public class Cache2kBuilder<K, V> {
   }
 
   /**
+   * Clock to be used by the cache as time reference.
+   */
+  public final Cache2kBuilder<K, V> clock(Clock v) {
+    config().setClock(new CustomizationReferenceSupplier<Clock>(v));
+    return this;
+  }
+
+  /**
    * Returns the configuration object this builder operates on. Changes to the configuration also
    * will influence the created cache when {@link #build()} is called. The method does not
    * return the effective configuration if additional external/XML configuration is present, since

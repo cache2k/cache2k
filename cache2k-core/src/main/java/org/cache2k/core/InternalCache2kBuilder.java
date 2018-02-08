@@ -166,7 +166,10 @@ public class InternalCache2kBuilder<K, V> {
     checkConfiguration();
     Class<?> _implClass = HeapCache.TUNABLE.defaultImplementation;
     InternalCache<K, V> _cache = constructImplementationAndFillParameters(_implClass);
-    InternalClock _timeReference = new ClockDefaultImpl();
+    InternalClock _timeReference = (InternalClock) _cache.createCustomization(config.getClock());
+    if (_timeReference == null) {
+      _timeReference = new ClockDefaultImpl();
+    }
     HeapCache bc = (HeapCache) _cache;
     bc.setCacheManager(manager);
     if (config.hasCacheClosedListeners()) {

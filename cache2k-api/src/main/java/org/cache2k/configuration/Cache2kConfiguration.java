@@ -21,6 +21,7 @@ package org.cache2k.configuration;
  */
 
 import org.cache2k.Cache2kBuilder;
+import org.cache2k.Clock;
 import org.cache2k.event.CacheClosedListener;
 import org.cache2k.expiry.*;
 import org.cache2k.event.CacheEntryOperationListener;
@@ -87,6 +88,7 @@ public class Cache2kConfiguration<K, V> implements ConfigurationBean, Configurat
   private CustomizationSupplier<CacheWriter<K,V>> writer;
   private CustomizationSupplier<AdvancedCacheLoader<K,V>> advancedLoader;
   private CustomizationSupplier<ExceptionPropagator<K>> exceptionPropagator;
+  private CustomizationSupplier<Clock> clock;
 
   private CustomizationCollection<CacheEntryOperationListener<K,V>> listeners;
   private CustomizationCollection<CacheEntryOperationListener<K,V>> asyncListeners;
@@ -498,6 +500,7 @@ public class Cache2kConfiguration<K, V> implements ConfigurationBean, Configurat
    * Duplicate (in terms of equal objects) listeners will be ignored.
    *
    * @return Mutable collection of listeners
+   * @since 1.0.2
    */
   public CustomizationCollection<CacheClosedListener> getCacheClosedListeners() {
     if (closedListeners == null) {
@@ -599,6 +602,17 @@ public class Cache2kConfiguration<K, V> implements ConfigurationBean, Configurat
    */
   public void setAsyncListenerExecutor(final CustomizationSupplier<Executor> v) {
     asyncListenerExecutor = v;
+  }
+
+  public CustomizationSupplier<Clock> getClock() {
+    return clock;
+  }
+
+  /**
+   * @see Cache2kBuilder#clock(Clock)
+   */
+  public void setClock(final CustomizationSupplier<Clock> _clock) {
+    clock = _clock;
   }
 
   public boolean isBoostConcurrency() {
