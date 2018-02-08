@@ -395,7 +395,7 @@ public abstract class TimingHandler<K,V>  {
       if (_expiryTime == ExpiryTimeValues.REFRESH) {
         return expiredEventuallyStartBackgroundRefresh(e, false);
       }
-      final long now = System.currentTimeMillis();
+      final long now = clock.millis();
       if (Math.abs(_expiryTime) <= now) {
         return expiredEventuallyStartBackgroundRefresh(e, _expiryTime < 0);
       }
