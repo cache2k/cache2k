@@ -149,4 +149,13 @@ public abstract class SimpleTask implements Runnable {
     }
   }
 
+  @Override
+  public String toString() {
+    return "SimpleTask{" +
+      "lock=" + lock +
+      ", state=" + state +
+      ", nextExecutionTime=" + nextExecutionTime +
+      ", period=" + period +
+      '}';
+  }
 }
