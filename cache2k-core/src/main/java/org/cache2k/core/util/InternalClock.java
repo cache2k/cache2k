@@ -47,6 +47,9 @@ public interface InternalClock extends Clock {
    * Wait until the specified amount of time or stop when the notifier is
    * called. A call to this method is only valid when within a runnable
    * that is called via {@link #runExclusive(Notifier, Runnable)}
+   *
+   * @param _millis waiting time {@code 0} or {@link Long#MAX_VALUE} wait endless
+   * @throws IllegalStateException if not run within exclusive
    */
   void waitMillis(Notifier n, long _millis) throws InterruptedException;
 
