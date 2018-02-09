@@ -46,7 +46,7 @@ public class TimingHandlerTest {
 
   private final Entry ENTRY = new Entry();
   private final long NOW = 10000000;
-  private static final InternalClock CLOCK = new ClockDefaultImpl();
+  private static final InternalClock CLOCK = ClockDefaultImpl.INSTANCE;
 
   @Test
   public void eternalSpecified() {

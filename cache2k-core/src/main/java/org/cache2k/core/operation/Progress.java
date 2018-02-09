@@ -20,6 +20,7 @@ package org.cache2k.core.operation;
  * #L%
  */
 
+import org.cache2k.core.util.InternalClock;
 import org.cache2k.integration.ExceptionInformation;
 
 /**
@@ -120,5 +121,7 @@ public interface Progress<K, V, R> {
    * Set new value, skip expiry calculation and set expiry time directly.
    */
   void putAndSetExpiry(V value, long t);
+
+  InternalClock getClock();
 
 }

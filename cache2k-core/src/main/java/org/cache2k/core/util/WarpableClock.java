@@ -24,7 +24,6 @@ import java.io.Closeable;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.Random;
 import java.util.TreeMap;
 import java.util.concurrent.atomic.AtomicLong;
 
@@ -42,10 +41,6 @@ public class WarpableClock implements InternalClock, Closeable {
   final TreeMap<Waiter, Waiter> tree = new TreeMap<Waiter, Waiter>();
   final Thread thread;
   final AtomicLong counter = new AtomicLong();
-
-  public WarpableClock() {
-    this(System.currentTimeMillis() + new Random().nextInt() * 123);
-  }
 
   public WarpableClock(long _initialMillis) {
     now = new AtomicLong(_initialMillis);
@@ -72,12 +67,43 @@ public class WarpableClock implements InternalClock, Closeable {
 
   @Override
   public void waitMillis(final long _waitMillis) throws InterruptedException {
+    if (_waitMillis == 0) {
+      Thread.yield();
+      return;
+    }
+    if (_waitMillis == 1) {
+      sleepForAtLeastOneMillisecond();
+      return;
+    }
     long _startTime = millis();
     long _wakeupTime = _startTime + _waitMillis;
     if (_wakeupTime < 0) {
       _wakeupTime = Long.MAX_VALUE;
     }
     _waitMillis(null, _wakeupTime);
+  }
+
+  /**
+   * Optimization for code that does {@code sleep(1)} to make some time pass by.
+   */
+  private void sleepForAtLeastOneMillisecond() {
+    long t0 = millis();
+    int _yields = 3;
+    for (; _yields > 0; _yields--) {
+      if (millis() > t0) {
+        return;
+      }
+      Thread.yield();
+    }
+    if (millis() > t0) {
+      return;
+    }
+    synchronized (structureLock) {
+      structureLock.notify();
+    }
+    while (millis() <= t0) {
+      Thread.yield();
+    }
   }
 
   @Override
@@ -144,7 +170,7 @@ public class WarpableClock implements InternalClock, Closeable {
     thread.interrupt();
   }
 
-  void progressThread() {
+  private void progressThread() {
     Thread.yield();
     while (running) {
       waitAndWakeupWaiters();

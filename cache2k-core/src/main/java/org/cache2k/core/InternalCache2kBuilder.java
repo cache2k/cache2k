@@ -168,7 +168,7 @@ public class InternalCache2kBuilder<K, V> {
     InternalCache<K, V> _cache = constructImplementationAndFillParameters(_implClass);
     InternalClock _timeReference = (InternalClock) _cache.createCustomization(config.getClock());
     if (_timeReference == null) {
-      _timeReference = new ClockDefaultImpl();
+      _timeReference = ClockDefaultImpl.INSTANCE;
     }
     HeapCache bc = (HeapCache) _cache;
     bc.setCacheManager(manager);

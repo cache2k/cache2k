@@ -22,6 +22,7 @@ package org.cache2k.core;
 
 import org.cache2k.CacheEntry;
 import org.cache2k.core.operation.LoadedEntry;
+import org.cache2k.core.util.InternalClock;
 import org.cache2k.expiry.ExpiryPolicy;
 import org.cache2k.event.CacheEntryExpiredListener;
 import org.cache2k.expiry.ExpiryTimeValues;
@@ -174,6 +175,11 @@ public abstract class EntryAction<K, V, R> implements
   protected abstract TimingHandler<K,V> timing(); //  { return RefreshHandler.ETERNAL; }
 
   @Override
+  public InternalClock getClock() {
+    return heapCache.getClock();
+  }
+
+  @Override
   public boolean isPresent() {
     doNotCountAccess = true;
     return successfulLoad || entry.hasFreshData(heapCache.getClock());
@@ -215,11 +221,15 @@ public abstract class EntryAction<K, V, R> implements
     heapHit(e);
   }
 
+  private long millis() {
+    return heapCache.getClock().millis();
+  }
+
   public void storageReadHit(StorageEntry se) {
     Entry<K, V> e = entry;
     synchronized (e) {
       e.setLastModificationFromStorage(se.getCreatedOrUpdated());
-      long now = System.currentTimeMillis();
+      long now = millis();
       V v = (V) se.getValueOrException();
       e.setValueOrException(v);
       long _nextRefreshTime;
@@ -320,7 +330,7 @@ public abstract class EntryAction<K, V, R> implements
     needsFinish = false;
     load = true;
     Entry<K, V> e = entry;
-    long t0 = lastModificationTime = loadStartedTime = System.currentTimeMillis();
+    long t0 = lastModificationTime = loadStartedTime = millis();
     if (e.getNextRefreshTime() == Entry.EXPIRED_REFRESHED) {
       long nrt = e.getRefreshProbationNextRefreshTime();
       if (nrt > t0) {
@@ -424,7 +434,7 @@ public abstract class EntryAction<K, V, R> implements
 
   public void loadCompleted() {
     entry.nextProcessingStep(Entry.ProcessingState.LOAD_COMPLETE);
-    loadCompletedTime = System.currentTimeMillis();
+    loadCompletedTime = millis();
     long _delta = loadCompletedTime - loadStartedTime;
     if (refresh) {
       metrics().refresh(_delta);
@@ -456,7 +466,7 @@ public abstract class EntryAction<K, V, R> implements
     lockFor(Entry.ProcessingState.MUTATE);
     needsFinish = false;
     newValueOrException = value;
-    lastModificationTime = System.currentTimeMillis();
+    lastModificationTime = millis();
     mutationCalculateExpiry();
   }
 
@@ -465,7 +475,7 @@ public abstract class EntryAction<K, V, R> implements
     lockForNoHit(Entry.ProcessingState.MUTATE);
     needsFinish = false;
     remove = true;
-    lastModificationTime = System.currentTimeMillis();
+    lastModificationTime = millis();
     mutationMayCallWriter();
   }
 
@@ -487,7 +497,7 @@ public abstract class EntryAction<K, V, R> implements
     lockFor(Entry.ProcessingState.MUTATE);
     needsFinish = false;
     newValueOrException = value;
-    lastModificationTime = System.currentTimeMillis();
+    lastModificationTime = millis();
     expiry = t;
     if (newValueOrException instanceof ExceptionWrapper) {
       setUntil(ExceptionWrapper.class.cast(newValueOrException));

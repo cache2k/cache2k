@@ -38,8 +38,15 @@ public class ExceptionWrapper<K> implements ExceptionInformation {
   private long since;
   private K key;
 
+  /**
+   * Constructs a wrapper with time set to 0. Used for testing purposes.
+   */
   public ExceptionWrapper(Throwable ex) {
-    loadTime = System.currentTimeMillis();
+    this(0, ex);
+  }
+
+  public ExceptionWrapper(long now, Throwable ex) {
+    loadTime = now;
     exception = ex;
   }
 
