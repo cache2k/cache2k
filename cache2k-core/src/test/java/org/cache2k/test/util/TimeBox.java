@@ -20,6 +20,9 @@ package org.cache2k.test.util;
  * #L%
  */
 
+import org.cache2k.core.util.ClockDefaultImpl;
+import org.cache2k.core.util.InternalClock;
+
 /**
  * Execute a piece of work and assertions. The assertions are only
  * respected if everything happens in a given timebox.
@@ -28,17 +31,23 @@ package org.cache2k.test.util;
  */
 public class TimeBox {
 
-  long startTime = System.currentTimeMillis();
-  long timeBox;
+  private InternalClock clock;
+  private long startTime = System.currentTimeMillis();
+  private long timeBox;
 
   public static TimeBox millis(long t) {
-    TimeBox b = new TimeBox();
-    b.timeBox = t;
+    TimeBox b = new TimeBox(ClockDefaultImpl.INSTANCE, t);
     return b;
   }
 
   public static TimeBox seconds(long t) {
     return millis(t * 1000);
+  }
+
+  public TimeBox(final InternalClock _clock, final long _timeBox) {
+    clock = _clock;
+    startTime = _clock.millis();
+    timeBox = _timeBox;
   }
 
   /**
@@ -52,13 +61,13 @@ public class TimeBox {
 
   /**
    * Execute the runnable. AssertionErrors will be suppressed if the execution
-   * is not happening within the given timebox.
+   * is not happening within the given time box.
    */
   public void check(Runnable r) {
     try {
       r.run();
     } catch (AssertionError ex) {
-      if (System.currentTimeMillis() - startTime < timeBox) {
+      if (clock.millis() - startTime < timeBox) {
         throw ex;
       }
     }
