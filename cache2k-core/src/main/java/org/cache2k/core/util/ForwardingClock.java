@@ -20,10 +20,13 @@ package org.cache2k.core.util;
  * #L%
  */
 
+import java.io.Closeable;
+import java.io.IOException;
+
 /**
  * @author Jens Wilke
  */
-public class ForwardingClock implements InternalClock {
+public class ForwardingClock implements InternalClock, Closeable {
 
   private final InternalClock clock;
 
@@ -54,5 +57,17 @@ public class ForwardingClock implements InternalClock {
   @Override
   public void runExclusive(final Notifier n, final Runnable r) {
     clock.runExclusive(n, r);
+  }
+
+  @Override
+  public <T, R> R runExclusive(final Notifier n, final T v, final ExclusiveFunction<T, R> r) {
+    return runExclusive(n, v, r);
+  }
+
+  @Override
+  public void close() throws IOException {
+    if (clock instanceof Closeable) {
+      ((Closeable) clock).close();
+    }
   }
 }

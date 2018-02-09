@@ -56,6 +56,14 @@ public class ClockDefaultImpl implements InternalClock {
     }
   }
 
+  @Override
+  public <T, R> R runExclusive(final Notifier n, T v, final ExclusiveFunction<T, R> r) {
+    MyNotifier m = ((MyNotifier) n);
+    synchronized (m.internal) {
+      return r.apply(v);
+    }
+  }
+
   static class MyNotifier implements Notifier {
 
     final Object internal = new Object();

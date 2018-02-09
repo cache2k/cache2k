@@ -62,6 +62,20 @@ public interface InternalClock extends Clock {
    */
   void runExclusive(Notifier n, Runnable r);
 
+  /**
+   * In order to wait until notified the runnable code section must run exclusively
+   * for one notifier instance. This method is using a functional interface to
+   * avoid an additional object allocation for the runnable.
+   *
+   * @param n the notifier instance
+   * @param r the code
+   */
+  <T,R> R runExclusive(Notifier n, T v, ExclusiveFunction<T, R> r);
+
+  interface ExclusiveFunction<T, R> {
+    R apply(T v);
+  }
+
   interface Notifier {
 
     void sendNotify();

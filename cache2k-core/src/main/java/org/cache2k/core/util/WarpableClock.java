@@ -20,6 +20,7 @@ package org.cache2k.core.util;
  * #L%
  */
 
+import java.io.Closeable;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -30,7 +31,7 @@ import java.util.concurrent.atomic.AtomicLong;
 /**
  * @author Jens Wilke
  */
-public class WarpableClock implements InternalClock {
+public class WarpableClock implements InternalClock, Closeable {
 
   final Log log = Log.getLog(WarpableClock.class);
   final Object structureLock = new Object();
@@ -119,6 +120,13 @@ public class WarpableClock implements InternalClock {
   public void runExclusive(final Notifier n, final Runnable r) {
     synchronized (((NotifyList) n).waitLock) {
       r.run();
+    }
+  }
+
+  @Override
+  public <T, R> R runExclusive(final Notifier n, final T v, final ExclusiveFunction<T, R> r) {
+    synchronized (((NotifyList) n).waitLock) {
+      return r.apply(v);
     }
   }
 
