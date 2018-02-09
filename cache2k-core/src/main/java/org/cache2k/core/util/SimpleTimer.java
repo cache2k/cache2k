@@ -351,7 +351,7 @@ public class SimpleTimer {
    *         cancelled, timer was cancelled, or timer thread terminated.
    * @throws NullPointerException if {@code task} is null
    */
-  private void sched(final SimpleTask task, final long time, long period) {
+  private void sched(SimpleTask task, final long time, long period) {
     if (time < 0)
       throw new IllegalArgumentException("Illegal execution time.");
 
@@ -360,9 +360,9 @@ public class SimpleTimer {
 
     final long finalPeriod = period;
 
-    clock.runExclusive(notifier, new Runnable() {
+    clock.runExclusive(notifier, task, new InternalClock.ExclusiveFunction<SimpleTask, Object>() {
       @Override
-      public void run() {
+      public Object apply(SimpleTask task) {
         if (!thread.newTasksMayBeScheduled)
           throw new IllegalStateException("Timer already cancelled.");
 
@@ -378,6 +378,7 @@ public class SimpleTimer {
         queue.add(task);
         if (queue.getMin() == task)
           notifier.sendNotify();
+        return null;
       }
     });
 
@@ -543,8 +544,7 @@ class TimerThread extends Thread {
             if (firedTask.get() == null) {
               clock.waitMillis(notifier, executionTime - currentTime);
             }
-          } catch (InterruptedException e) {
-
+          } catch (InterruptedException ignore) {
           }
         }
       }); {
