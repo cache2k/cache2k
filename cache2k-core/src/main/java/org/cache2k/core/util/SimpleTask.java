@@ -114,6 +114,10 @@ public abstract class SimpleTask implements Runnable {
     return state == CANCELLED;
   }
 
+  public boolean isScheduled() {
+    return state == SCHEDULED;
+  }
+
   /**
    * Returns the <i>scheduled</i> execution time of the most recent
    * <i>actual</i> execution of this task.  (If this method is invoked
@@ -148,7 +152,7 @@ public abstract class SimpleTask implements Runnable {
 
   @Override
   public String toString() {
-    return "SimpleTask{" +
+    return this.getClass().getSimpleName() + "{" +
       "state=" + state +
       ", nextExecutionTime=" + nextExecutionTime +
       '}';

@@ -35,6 +35,26 @@ public class ForwardingClock implements InternalClock, Closeable {
   }
 
   @Override
+  public boolean isJobSchedulable() {
+    return clock.isJobSchedulable();
+  }
+
+  @Override
+  public TimeReachedJob createJob(final TimeReachedEvent ev) {
+    return clock.createJob(ev);
+  }
+
+  @Override
+  public void schedule(final TimeReachedJob j, final long _millis) {
+    clock.schedule(j, _millis);
+  }
+
+  @Override
+  public void disableJob(final TimeReachedJob j) {
+    clock.disableJob(j);
+  }
+
+  @Override
   public long millis() {
     return clock.millis();
   }
@@ -42,26 +62,6 @@ public class ForwardingClock implements InternalClock, Closeable {
   @Override
   public void sleep(final long _millis) throws InterruptedException {
     clock.sleep(_millis);
-  }
-
-  @Override
-  public Notifier createNotifier() {
-    return clock.createNotifier();
-  }
-
-  @Override
-  public void waitMillis(final Notifier n, final long _millis) throws InterruptedException {
-    clock.waitMillis(n, _millis);
-  }
-
-  @Override
-  public void runExclusive(final Notifier n, final Runnable r) {
-    clock.runExclusive(n, r);
-  }
-
-  @Override
-  public <T, R> R runExclusive(final Notifier n, final T v, final ExclusiveFunction<T, R> r) {
-    return runExclusive(n, v, r);
   }
 
   @Override

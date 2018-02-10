@@ -38,12 +38,6 @@ public class RangeCheckClock extends ForwardingClock {
     super.sleep(_millis);
   }
 
-  @Override
-  public void waitMillis(final Notifier n, final long _millis) throws InterruptedException {
-    checkMaxTime(_millis);
-    super.waitMillis(n, _millis);
-  }
-
   private void checkMaxTime(final long _millis) {
     if (_millis > maxWaitMillis && _millis != Long.MAX_VALUE) {
       throw new IllegalArgumentException("max wait time exceeded: " + _millis + " > " + maxWaitMillis);

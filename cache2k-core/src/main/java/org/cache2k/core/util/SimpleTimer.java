@@ -22,11 +22,10 @@ package org.cache2k.core.util;
 
 import java.util.Arrays;
 import java.util.Date;
-import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicInteger;
-import java.util.concurrent.atomic.AtomicReference;
+import java.util.concurrent.locks.Condition;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 
 /**
  * Copy from {@link java.util.Timer} to work on top of the {@link InternalClock}
@@ -91,7 +90,8 @@ import java.util.concurrent.atomic.AtomicReference;
  */
 public class SimpleTimer {
 
-  private final InternalClock.Notifier notifier;
+  private final Lock lock = new ReentrantLock();
+  private final Condition condition = lock.newCondition();
 
   private final InternalClock clock;
 
@@ -108,10 +108,7 @@ public class SimpleTimer {
    */
   private final TimerThread thread;
 
-  /**
-   * Make sure the timer thread is running when we enqueue the first event.
-   */
-  private boolean ensureThreadStartup = true;
+  private final InternalClock.TimeReachedJob reachedJob;
 
   /**
    * This object causes the timer's task execution thread to exit
@@ -122,13 +119,13 @@ public class SimpleTimer {
    */
   private final Object threadReaper = new Object() {
     protected void finalize() throws Throwable {
-      clock.runExclusive(notifier, new Runnable() {
-        @Override
-        public void run() {
-          thread.newTasksMayBeScheduled = false;
-          notifier.sendNotify();
-        }
-      });
+      lock.lock();
+      try {
+        thread.newTasksMayBeScheduled = false;
+        condition.signal();
+      } finally {
+        lock.unlock();
+      }
     }
   };
   /**
@@ -143,28 +140,20 @@ public class SimpleTimer {
    */
   public SimpleTimer(InternalClock c, String name, boolean isDaemon) {
     this.clock = c;
-    this.notifier = c.createNotifier();
-    thread = new TimerThread(clock, notifier, queue);
-    thread.setName(name);
-    thread.setDaemon(isDaemon);
-    thread.start();
-  }
-
-  /**
-   * Schedules the specified task for execution after the specified delay.
-   *
-   * @param task  task to be scheduled.
-   * @param delay delay in milliseconds before task is to be executed.
-   * @throws IllegalArgumentException if <tt>delay</tt> is negative, or
-   *         <tt>delay + System.currentTimeMillis()</tt> is negative.
-   * @throws IllegalStateException if task was already scheduled or
-   *         cancelled, timer was cancelled, or timer thread terminated.
-   * @throws NullPointerException if {@code task} is null
-   */
-  public void schedule(SimpleTask task, long delay) {
-    if (delay < 0)
-      throw new IllegalArgumentException("Negative delay.");
-    sched(task, clock.millis() + delay, 0);
+    thread = new TimerThread(clock, lock, condition, queue);
+    if (!c.isJobSchedulable()) {
+      thread.setName(name);
+      thread.setDaemon(isDaemon);
+      thread.start();
+      reachedJob = null;
+    } else {
+      reachedJob = clock.createJob(new InternalClock.TimeReachedEvent() {
+        @Override
+        public void timeIsReached(final long _millis) {
+          timeReachedEvent(_millis);
+        }
+      });
+    }
   }
 
   /**
@@ -179,169 +168,7 @@ public class SimpleTimer {
    * @throws NullPointerException if {@code task} or {@code time} is null
    */
   public void schedule(SimpleTask task, Date time) {
-    sched(task, time.getTime(), 0);
-  }
-
-  /**
-   * Schedules the specified task for repeated <i>fixed-delay execution</i>,
-   * beginning after the specified delay.  Subsequent executions take place
-   * at approximately regular intervals separated by the specified period.
-   *
-   * <p>In fixed-delay execution, each execution is scheduled relative to
-   * the actual execution time of the previous execution.  If an execution
-   * is delayed for any reason (such as garbage collection or other
-   * background activity), subsequent executions will be delayed as well.
-   * In the long run, the frequency of execution will generally be slightly
-   * lower than the reciprocal of the specified period (assuming the system
-   * clock underlying <tt>Object.wait(long)</tt> is accurate).
-   *
-   * <p>Fixed-delay execution is appropriate for recurring activities
-   * that require "smoothness."  In other words, it is appropriate for
-   * activities where it is more important to keep the frequency accurate
-   * in the short run than in the long run.  This includes most animation
-   * tasks, such as blinking a cursor at regular intervals.  It also includes
-   * tasks wherein regular activity is performed in response to human
-   * input, such as automatically repeating a character as long as a key
-   * is held down.
-   *
-   * @param task   task to be scheduled.
-   * @param delay  delay in milliseconds before task is to be executed.
-   * @param period time in milliseconds between successive task executions.
-   * @throws IllegalArgumentException if {@code delay < 0}, or
-   *         {@code delay + System.currentTimeMillis() < 0}, or
-   *         {@code period <= 0}
-   * @throws IllegalStateException if task was already scheduled or
-   *         cancelled, timer was cancelled, or timer thread terminated.
-   * @throws NullPointerException if {@code task} is null
-   */
-  public void schedule(SimpleTask task, long delay, long period) {
-    if (delay < 0)
-      throw new IllegalArgumentException("Negative delay.");
-    if (period <= 0)
-      throw new IllegalArgumentException("Non-positive period.");
-    sched(task, clock.millis() + delay, -period);
-  }
-
-  /**
-   * Schedules the specified task for repeated <i>fixed-delay execution</i>,
-   * beginning at the specified time. Subsequent executions take place at
-   * approximately regular intervals, separated by the specified period.
-   *
-   * <p>In fixed-delay execution, each execution is scheduled relative to
-   * the actual execution time of the previous execution.  If an execution
-   * is delayed for any reason (such as garbage collection or other
-   * background activity), subsequent executions will be delayed as well.
-   * In the long run, the frequency of execution will generally be slightly
-   * lower than the reciprocal of the specified period (assuming the system
-   * clock underlying <tt>Object.wait(long)</tt> is accurate).  As a
-   * consequence of the above, if the scheduled first time is in the past,
-   * it is scheduled for immediate execution.
-   *
-   * <p>Fixed-delay execution is appropriate for recurring activities
-   * that require "smoothness."  In other words, it is appropriate for
-   * activities where it is more important to keep the frequency accurate
-   * in the short run than in the long run.  This includes most animation
-   * tasks, such as blinking a cursor at regular intervals.  It also includes
-   * tasks wherein regular activity is performed in response to human
-   * input, such as automatically repeating a character as long as a key
-   * is held down.
-   *
-   * @param task   task to be scheduled.
-   * @param firstTime First time at which task is to be executed.
-   * @param period time in milliseconds between successive task executions.
-   * @throws IllegalArgumentException if {@code firstTime.getTime() < 0}, or
-   *         {@code period <= 0}
-   * @throws IllegalStateException if task was already scheduled or
-   *         cancelled, timer was cancelled, or timer thread terminated.
-   * @throws NullPointerException if {@code task} or {@code firstTime} is null
-   */
-  public void schedule(SimpleTask task, Date firstTime, long period) {
-    if (period <= 0)
-      throw new IllegalArgumentException("Non-positive period.");
-    sched(task, firstTime.getTime(), -period);
-  }
-
-  /**
-   * Schedules the specified task for repeated <i>fixed-rate execution</i>,
-   * beginning after the specified delay.  Subsequent executions take place
-   * at approximately regular intervals, separated by the specified period.
-   *
-   * <p>In fixed-rate execution, each execution is scheduled relative to the
-   * scheduled execution time of the initial execution.  If an execution is
-   * delayed for any reason (such as garbage collection or other background
-   * activity), two or more executions will occur in rapid succession to
-   * "catch up."  In the long run, the frequency of execution will be
-   * exactly the reciprocal of the specified period (assuming the system
-   * clock underlying <tt>Object.wait(long)</tt> is accurate).
-   *
-   * <p>Fixed-rate execution is appropriate for recurring activities that
-   * are sensitive to <i>absolute</i> time, such as ringing a chime every
-   * hour on the hour, or running scheduled maintenance every day at a
-   * particular time.  It is also appropriate for recurring activities
-   * where the total time to perform a fixed number of executions is
-   * important, such as a countdown timer that ticks once every second for
-   * ten seconds.  Finally, fixed-rate execution is appropriate for
-   * scheduling multiple repeating timer tasks that must remain synchronized
-   * with respect to one another.
-   *
-   * @param task   task to be scheduled.
-   * @param delay  delay in milliseconds before task is to be executed.
-   * @param period time in milliseconds between successive task executions.
-   * @throws IllegalArgumentException if {@code delay < 0}, or
-   *         {@code delay + System.currentTimeMillis() < 0}, or
-   *         {@code period <= 0}
-   * @throws IllegalStateException if task was already scheduled or
-   *         cancelled, timer was cancelled, or timer thread terminated.
-   * @throws NullPointerException if {@code task} is null
-   */
-  public void scheduleAtFixedRate(SimpleTask task, long delay, long period) {
-    if (delay < 0)
-      throw new IllegalArgumentException("Negative delay.");
-    if (period <= 0)
-      throw new IllegalArgumentException("Non-positive period.");
-    sched(task, clock.millis() + delay, period);
-  }
-
-  /**
-   * Schedules the specified task for repeated <i>fixed-rate execution</i>,
-   * beginning at the specified time. Subsequent executions take place at
-   * approximately regular intervals, separated by the specified period.
-   *
-   * <p>In fixed-rate execution, each execution is scheduled relative to the
-   * scheduled execution time of the initial execution.  If an execution is
-   * delayed for any reason (such as garbage collection or other background
-   * activity), two or more executions will occur in rapid succession to
-   * "catch up."  In the long run, the frequency of execution will be
-   * exactly the reciprocal of the specified period (assuming the system
-   * clock underlying <tt>Object.wait(long)</tt> is accurate).  As a
-   * consequence of the above, if the scheduled first time is in the past,
-   * then any "missed" executions will be scheduled for immediate "catch up"
-   * execution.
-   *
-   * <p>Fixed-rate execution is appropriate for recurring activities that
-   * are sensitive to <i>absolute</i> time, such as ringing a chime every
-   * hour on the hour, or running scheduled maintenance every day at a
-   * particular time.  It is also appropriate for recurring activities
-   * where the total time to perform a fixed number of executions is
-   * important, such as a countdown timer that ticks once every second for
-   * ten seconds.  Finally, fixed-rate execution is appropriate for
-   * scheduling multiple repeating timer tasks that must remain synchronized
-   * with respect to one another.
-   *
-   * @param task   task to be scheduled.
-   * @param firstTime First time at which task is to be executed.
-   * @param period time in milliseconds between successive task executions.
-   * @throws IllegalArgumentException if {@code firstTime.getTime() < 0} or
-   *         {@code period <= 0}
-   * @throws IllegalStateException if task was already scheduled or
-   *         cancelled, timer was cancelled, or timer thread terminated.
-   * @throws NullPointerException if {@code task} or {@code firstTime} is null
-   */
-  public void scheduleAtFixedRate(SimpleTask task, Date firstTime,
-                                  long period) {
-    if (period <= 0)
-      throw new IllegalArgumentException("Non-positive period.");
-    sched(task, firstTime.getTime(), period);
+    sched(task, time.getTime());
   }
 
   /**
@@ -357,42 +184,29 @@ public class SimpleTimer {
    *         cancelled, timer was cancelled, or timer thread terminated.
    * @throws NullPointerException if {@code task} is null
    */
-  private void sched(SimpleTask task, final long time, long period) {
-    if (time < 0)
+  private void sched(SimpleTask task, final long time) {
+    if (time < 0) {
       throw new IllegalArgumentException("Illegal execution time.");
-
-    if (Math.abs(period) > (Long.MAX_VALUE >> 1))
-      period >>= 1;
-
-    final long finalPeriod = period;
-
-    clock.runExclusive(notifier, task, new InternalClock.ExclusiveFunction<SimpleTask, Object>() {
-      @Override
-      public Object apply(SimpleTask task) {
-        if (!thread.newTasksMayBeScheduled)
-          throw new IllegalStateException("Timer already cancelled.");
-
-        if (!task.schedule()) {
-          throw new IllegalStateException(
-            "Task already scheduled or cancelled");
-        }
-        task.nextExecutionTime = time;
-        queue.add(task);
-        if (queue.getMin() == task) {
-          notifier.sendNotify();
-        }
-        return null;
-      }
-    });
-    while (ensureThreadStartup) {
-      try {
-        thread.threadStarted.await(1234, TimeUnit.MILLISECONDS);
-      } catch (InterruptedException ex) {
-        Thread.currentThread().interrupt();
-      }
-      ensureThreadStartup = false;
     }
-
+    if (!task.schedule()) {
+      throw new IllegalStateException(
+        "Task already scheduled or cancelled");
+    }
+    task.nextExecutionTime = time;
+    lock.lock();
+    try {
+      if (!thread.newTasksMayBeScheduled)
+        throw new IllegalStateException("Timer already cancelled.");
+      queue.add(task);
+      if (queue.getMin() == task) {
+        condition.signal();
+        if (reachedJob != null) {
+          clock.schedule(reachedJob, time);
+        }
+      }
+    } finally {
+      lock.unlock();
+    }
   }
 
   /**
@@ -410,14 +224,17 @@ public class SimpleTimer {
    * calls have no effect.
    */
   public void cancel() {
-    clock.runExclusive(notifier, new Runnable() {
-      @Override
-      public void run() {
-        thread.newTasksMayBeScheduled = false;
-        queue.clear();
-        notifier.sendNotify();
+    lock.lock();
+    try {
+      thread.newTasksMayBeScheduled = false;
+      queue.clear();
+      condition.signal();
+      if (reachedJob != null) {
+        clock.disableJob(reachedJob);
       }
-    });
+    } finally {
+      lock.unlock();
+    }
   }
 
   /**
@@ -441,28 +258,62 @@ public class SimpleTimer {
    * @since 1.5
    */
   public int purge() {
-    final AtomicInteger result = new AtomicInteger();
-
-    clock.runExclusive(notifier, new Runnable() {
-      @Override
-      public void run() {
-        int count = 0;
-        for (int i = queue.size(); i > 0; i--) {
-          if (queue.get(i).isCancelled()) {
-            queue.quickRemove(i);
-            count++;
-          }
+    lock.lock();
+    try {
+      int count = 0;
+      for (int i = queue.size(); i > 0; i--) {
+        if (queue.get(i).isCancelled()) {
+          queue.quickRemove(i);
+          count++;
         }
-
-        if (count != 0) {
-          queue.heapify();
-        }
-        result.set(count);
       }
-    });
-    return result.get();
+      if (count != 0) {
+        queue.heapify();
+      }
+      return count;
+    } finally {
+      lock.unlock();
+    }
   }
-}
+
+  void timeReachedEvent(final long currentTime) {
+    while (true) {
+      SimpleTask task = null;
+      lock.lock();
+      try {
+        while (true) {
+          if (queue.isEmpty()) {
+            return;
+          }
+          task = queue.getMin();
+          if (task.isCancelled()) {
+            queue.removeMin();
+            continue;
+          }
+          long executionTime = task.nextExecutionTime;
+          boolean fired = executionTime <= currentTime;
+          if (fired) {
+            queue.removeMin();
+            if (!task.execute()) {
+              continue;
+            }
+          }
+          break;
+        }
+      } finally {
+        lock.unlock();
+      }
+      if (task == null) {
+        return;
+      }
+      if (!task.isScheduled()) {
+        task.run();
+      } else {
+        clock.schedule(reachedJob, task.scheduledExecutionTime());
+        break;
+      }
+    }
+  }
 
 /**
  * This "helper class" implements the timer's task execution thread, which
@@ -480,8 +331,6 @@ class TimerThread extends Thread {
    */
   boolean newTasksMayBeScheduled = true;
 
-  final CountDownLatch threadStarted = new CountDownLatch(1);
-
   /**
    * Our Timer's queue.  We store this reference in preference to
    * a reference to the Timer so the reference graph remains acyclic.
@@ -490,12 +339,14 @@ class TimerThread extends Thread {
    */
   private TaskQueue queue;
 
-  private final InternalClock.Notifier notifier;
-
   private final InternalClock clock;
 
-  TimerThread(InternalClock clock, InternalClock.Notifier n, TaskQueue queue) {
-    this.notifier = n;
+  private final Lock lock;
+  private final Condition condition;
+
+  TimerThread(InternalClock clock, Lock l, Condition c, TaskQueue queue) {
+    lock = l;
+    condition = c;
     this.clock = clock;
     this.queue = queue;
     setPriority(MAX_PRIORITY);
@@ -505,67 +356,57 @@ class TimerThread extends Thread {
     try {
       mainLoop();
     } finally {
-      clock.runExclusive(notifier, new Runnable() {
-        @Override
-        public void run() {
-          newTasksMayBeScheduled = false;
-          queue.clear();
-        }
-      });
+      lock.lock();
+      try {
+        newTasksMayBeScheduled = false;
+        queue.clear();
+      } finally {
+        lock.unlock();
+      }
     }
 
   }
-
-  SimpleTask firedTask;
-
-  final Runnable mainLoopCore = new Runnable() {
-    @Override
-    public void run() {
-      while (true) {
-        firedTask = null;
-        try {
-          while (queue.isEmpty() && newTasksMayBeScheduled) {
-            clock.waitMillis(notifier, Long.MAX_VALUE);
-          }
-          threadStarted.countDown();
-          if (!newTasksMayBeScheduled) {
-            return;
-          }
-          long currentTime, executionTime;
-          SimpleTask task = queue.getMin();
-          if (task.isCancelled()) {
-            queue.removeMin();
-            continue;
-          }
-          currentTime = clock.millis();
-          executionTime = task.nextExecutionTime;
-          boolean fired = executionTime <= currentTime;
-          if (fired) {
-            queue.removeMin();
-            if (!task.execute()) {
-              continue;
-            }
-            firedTask = task;
-            return;
-          }
-          if (firedTask == null) {
-            clock.waitMillis(notifier, executionTime - currentTime);
-          }
-        } catch (InterruptedException ignore) {
-        }
-      }
-    }
-  };
 
   /**
    * The main timer loop.  (See class comment.)
    */
   private void mainLoop() {
+    SimpleTask firedTask;
     while (newTasksMayBeScheduled) {
-      clock.runExclusive(notifier, mainLoopCore);
-      if (firedTask != null) {
-        firedTask.run();
+      lock.lock();
+      try {
+        while (true) {
+          try {
+            while (queue.isEmpty() && newTasksMayBeScheduled) {
+              condition.await();
+            }
+            if (!newTasksMayBeScheduled) {
+              return;
+            }
+            SimpleTask task = queue.getMin();
+            if (task.isCancelled()) {
+              queue.removeMin();
+              continue;
+            }
+            long currentTime = clock.millis();
+            long executionTime = task.nextExecutionTime;
+            boolean fired = executionTime <= currentTime;
+            if (fired) {
+              queue.removeMin();
+              if (!task.execute()) {
+                continue;
+              }
+              firedTask = task;
+              break;
+            }
+            condition.await(executionTime - currentTime, TimeUnit.MILLISECONDS);
+          } catch(InterruptedException ignore) {
+          }
+        }
+      } finally {
+        lock.unlock();
       }
+      firedTask.run();
     }
   }
 }
@@ -726,4 +567,5 @@ class TaskQueue {
       fixDown(i);
   }
 
+}
 }

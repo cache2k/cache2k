@@ -31,6 +31,26 @@ public class ClockDefaultImpl implements InternalClock {
   }
 
   @Override
+  public boolean isJobSchedulable() {
+    return false;
+  }
+
+  @Override
+  public TimeReachedJob createJob(final TimeReachedEvent ev) {
+    throw new UnsupportedOperationException();
+  }
+
+  @Override
+  public void schedule(final TimeReachedJob j, final long _millis) {
+    throw new UnsupportedOperationException();
+  }
+
+  @Override
+  public void disableJob(final TimeReachedJob j) {
+    throw new UnsupportedOperationException();
+  }
+
+  @Override
   public long millis() {
     return System.currentTimeMillis();
   }
@@ -38,43 +58,6 @@ public class ClockDefaultImpl implements InternalClock {
   @Override
   public void sleep(final long _millis) throws InterruptedException {
     Thread.sleep(_millis);
-  }
-
-  @Override
-  public Notifier createNotifier() {
-    return new MyNotifier();
-  }
-
-  @Override
-  public void waitMillis(final Notifier n, final long _millis) throws InterruptedException {
-    ((MyNotifier) n).internal.wait(_millis);
-  }
-
-  @Override
-  public void runExclusive(final Notifier n, final Runnable r) {
-    MyNotifier m = ((MyNotifier) n);
-    synchronized (m.internal) {
-      r.run();
-    }
-  }
-
-  @Override
-  public <T, R> R runExclusive(final Notifier n, T v, final ExclusiveFunction<T, R> r) {
-    MyNotifier m = ((MyNotifier) n);
-    synchronized (m.internal) {
-      return r.apply(v);
-    }
-  }
-
-  static class MyNotifier implements Notifier {
-
-    final Object internal = new Object();
-
-    @Override
-    public void sendNotify() {
-      internal.notifyAll();
-    }
-
   }
 
 }

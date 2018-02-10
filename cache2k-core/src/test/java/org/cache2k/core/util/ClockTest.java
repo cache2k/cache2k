@@ -20,10 +20,11 @@ package org.cache2k.core.util;
  * #L%
  */
 
-import org.junit.Assert;
+import static org.junit.Assert.*;
 import org.junit.Test;
 
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * @author Jens Wilke
@@ -31,6 +32,21 @@ import java.util.concurrent.CountDownLatch;
 public class ClockTest {
 
   private InternalClock clock = new WarpableClock(100000);
+
+  @Test(timeout = 10000)
+  public void create() throws InterruptedException {
+    assertEquals(100000, clock.millis());
+    final AtomicBoolean TRIGGER = new AtomicBoolean();
+    InternalClock.TimeReachedJob job = clock.createJob(new InternalClock.TimeReachedEvent() {
+      @Override
+      public void timeIsReached(final long _millis) {
+        TRIGGER.set(true);
+      }
+    });
+    clock.schedule(job, 100005);
+    clock.sleep(10);
+    assertTrue(TRIGGER.get());
+  }
 
   @Test(timeout = 10000)
   public void waitSomeMillis() throws Exception {
@@ -41,50 +57,7 @@ public class ClockTest {
   public void clockAdvancing() throws Exception {
     long t0 = clock.millis();
     while (clock.millis() == t0) { }
-    Assert.assertTrue(clock.millis() > t0);
-  }
-
-  @Test(expected = IllegalStateException.class)
-  public void noWaitOutsideExclusive() throws Exception {
-    final InternalClock.Notifier n = clock.createNotifier();
-    clock.waitMillis(n, 0);
-  }
-
-  @Test(timeout = 10000)
-  public void waitUntilNotified() throws Exception {
-    final CountDownLatch _waiting = new CountDownLatch(1);
-    final CountDownLatch _notified = new CountDownLatch(1);
-    final InternalClock.Notifier n = clock.createNotifier();
-    Thread t = new Thread() {
-      @Override
-      public void run() {
-        try {
-          clock.runExclusive(n, new Runnable() {
-            @Override
-            public void run() {
-              _waiting.countDown();
-              try {
-                clock.waitMillis(n, 0);
-                _notified.countDown();
-              } catch (InterruptedException ex) {
-                Thread.currentThread().interrupt();
-              }
-            }
-          });
-        } catch (Exception ex) {
-          ex.printStackTrace();
-        }
-      }
-    };
-    t.start();
-    _waiting.await();
-    clock.runExclusive(n, new Runnable() {
-      @Override
-      public void run() {
-        n.sendNotify();
-      }
-    });
-    _notified.await();
+    assertTrue(clock.millis() > t0);
   }
 
   @Test(timeout = 10000)

@@ -20,40 +20,17 @@ package org.cache2k.core.util;
  * #L%
  */
 
-import org.cache2k.Clock;
-
 /**
  * @author Jens Wilke
  */
-public interface InternalClock extends Clock {
+public interface ScheduledClock {
 
-  /**
-   * Returns the milliseconds since epoch.
-   */
-  long millis();
-
-  /**
-   * Wait for the specified amount of time in milliseconds.
-   * The value of 0 means that the thread may sleep some tiny amount of time
-   * or not at all.
-   */
-  void sleep(long _millis) throws InterruptedException;
-
-  /**
-   *
-   */
   boolean isJobSchedulable();
 
-  TimeReachedJob createJob(TimeReachedEvent ev);
+  Job createJob(Runnable r);
 
-  void schedule(TimeReachedJob j, long _millis);
+  void schedule(Job j, long _millis);
 
-  void disableJob(TimeReachedJob j);
-
-  interface TimeReachedEvent {
-    void timeIsReached(long _millis);
-  }
-
-  interface TimeReachedJob { }
+  interface Job { }
 
 }
