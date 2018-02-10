@@ -66,7 +66,7 @@ public class WarpableClock implements InternalClock, Closeable {
   }
 
   @Override
-  public void waitMillis(final long _waitMillis) throws InterruptedException {
+  public void sleep(final long _waitMillis) throws InterruptedException {
     if (_waitMillis == 0) {
       Thread.yield();
       return;

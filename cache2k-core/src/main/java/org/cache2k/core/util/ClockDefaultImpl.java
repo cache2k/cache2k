@@ -36,7 +36,7 @@ public class ClockDefaultImpl implements InternalClock {
   }
 
   @Override
-  public void waitMillis(final long _millis) throws InterruptedException {
+  public void sleep(final long _millis) throws InterruptedException {
     Thread.sleep(_millis);
   }
 

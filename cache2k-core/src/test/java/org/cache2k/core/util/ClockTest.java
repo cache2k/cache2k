@@ -34,7 +34,7 @@ public class ClockTest {
 
   @Test(timeout = 10000)
   public void waitSomeMillis() throws Exception {
-    clock.waitMillis(1);
+    clock.sleep(1);
   }
 
   @Test(timeout = 10000)
@@ -94,7 +94,7 @@ public class ClockTest {
       @Override
       public void run() {
         try {
-          clock.waitMillis( 7);
+          clock.sleep( 7);
           _wakeup.countDown();
         } catch (InterruptedException ex) {
           ex.printStackTrace();
@@ -106,7 +106,7 @@ public class ClockTest {
       @Override
       public void run() {
         try {
-          clock.waitMillis( 12);
+          clock.sleep( 12);
           _wakeup.countDown();
         } catch (InterruptedException ex) {
           ex.printStackTrace();

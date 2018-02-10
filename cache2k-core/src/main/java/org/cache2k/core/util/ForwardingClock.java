@@ -40,8 +40,8 @@ public class ForwardingClock implements InternalClock, Closeable {
   }
 
   @Override
-  public void waitMillis(final long _millis) throws InterruptedException {
-    clock.waitMillis(_millis);
+  public void sleep(final long _millis) throws InterruptedException {
+    clock.sleep(_millis);
   }
 
   @Override

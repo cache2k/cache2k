@@ -22,6 +22,8 @@ package org.cache2k.core.util;
 
 import java.util.Arrays;
 import java.util.Date;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
@@ -376,8 +378,14 @@ public class SimpleTimer {
         }
 
         queue.add(task);
-        if (queue.getMin() == task)
+        if (queue.getMin() == task) {
           notifier.sendNotify();
+          try {
+            thread.threadStarted.await(1234, TimeUnit.MILLISECONDS);
+          } catch (InterruptedException ex) {
+            Thread.currentThread().interrupt();
+          }
+        }
         return null;
       }
     });
@@ -469,6 +477,8 @@ class TimerThread extends Thread {
    */
   boolean newTasksMayBeScheduled = true;
 
+  final CountDownLatch threadStarted = new CountDownLatch(1);
+
   /**
    * Our Timer's queue.  We store this reference in preference to
    * a reference to the Timer so the reference graph remains acyclic.
@@ -499,61 +509,61 @@ class TimerThread extends Thread {
         }
       });
     }
+
   }
+
+  SimpleTask firedTask;
+
+  final Runnable mainLoopCore = new Runnable() {
+    @Override
+    public void run() {
+      firedTask = null;
+      try {
+        while (queue.isEmpty() && newTasksMayBeScheduled) {
+          clock.waitMillis(notifier, Long.MAX_VALUE);
+        }
+        if (!newTasksMayBeScheduled) {
+          return;
+        }
+        long currentTime, executionTime;
+        SimpleTask task = queue.getMin();
+        synchronized (task.lock) {
+          if (task.state == SimpleTask.CANCELLED) {
+            queue.removeMin();
+            return;
+          }
+          currentTime = clock.millis();
+          executionTime = task.nextExecutionTime;
+          boolean fired = executionTime <= currentTime;
+          if (fired) {
+            firedTask = task;
+            if (task.period == 0) {
+              queue.removeMin();
+              task.state = SimpleTask.EXECUTED;
+            } else {
+              queue.rescheduleMin(
+                task.period < 0 ? currentTime - task.period
+                  : executionTime + task.period);
+            }
+          }
+        }
+        if (firedTask == null) {
+          clock.waitMillis(notifier, executionTime - currentTime);
+        }
+      } catch (InterruptedException ignore) {
+      }
+    }
+  };
 
   /**
    * The main timer loop.  (See class comment.)
    */
   private void mainLoop() {
-    while (true) {
-      final AtomicReference<SimpleTask> firedTask = new AtomicReference<SimpleTask>();
-      final AtomicBoolean needsBreak = new AtomicBoolean(false);
-      clock.runExclusive(notifier, new Runnable() {
-        @Override
-        public void run() {
-          try {
-            while (queue.isEmpty() && newTasksMayBeScheduled) {
-              clock.waitMillis(notifier, Long.MAX_VALUE);
-            }
-            if (queue.isEmpty()) {
-              needsBreak.set(true);
-              return;
-            }
-            long currentTime, executionTime;
-            SimpleTask task = queue.getMin();
-            synchronized (task.lock) {
-              if (task.state == SimpleTask.CANCELLED) {
-                queue.removeMin();
-                return;
-              }
-              currentTime = clock.millis();
-              executionTime = task.nextExecutionTime;
-              boolean fired = executionTime <= currentTime;
-              if (fired) {
-                firedTask.set(task);
-                if (task.period == 0) {
-                  queue.removeMin();
-                  task.state = SimpleTask.EXECUTED;
-                } else {
-                  queue.rescheduleMin(
-                    task.period < 0 ? currentTime - task.period
-                      : executionTime + task.period);
-                }
-              }
-            }
-            if (firedTask.get() == null) {
-              clock.waitMillis(notifier, executionTime - currentTime);
-            }
-          } catch (InterruptedException ignore) {
-          }
-        }
-      }); {
-      }
-      if (needsBreak.get()) {
-        break;
-      }
-      if (firedTask.get() != null) {
-        firedTask.get().run();
+    threadStarted.countDown();
+    while (newTasksMayBeScheduled) {
+      clock.runExclusive(notifier, mainLoopCore);
+      if (firedTask != null) {
+        firedTask.run();
       }
     }
   }

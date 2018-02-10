@@ -48,7 +48,7 @@ public class TimeStepper {
             throw new TimeoutException("waiting for " + _timeoutMillis + " milliseconds");
           }
         }
-        clock.waitMillis(1);
+        clock.sleep(1);
       }
     } catch (InterruptedException ex) {
       Thread.currentThread().interrupt();

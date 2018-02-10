@@ -33,9 +33,9 @@ public class RangeCheckClock extends ForwardingClock {
   }
 
   @Override
-  public void waitMillis(final long _millis) throws InterruptedException {
+  public void sleep(final long _millis) throws InterruptedException {
     checkMaxTime(_millis);
-    super.waitMillis(_millis);
+    super.sleep(_millis);
   }
 
   @Override

@@ -33,9 +33,11 @@ public interface InternalClock extends Clock {
   long millis();
 
   /**
-   * Wait for the specified amount of time.
+   * Wait for the specified amount of time in milliseconds.
+   * The value of 0 means that the thread may sleep some tiny amount of time
+   * or not at all.
    */
-  void waitMillis(long _millis) throws InterruptedException;
+  void sleep(long _millis) throws InterruptedException;
 
   /**
    * Create a notifier instance that can be used to call waiting
