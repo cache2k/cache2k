@@ -25,6 +25,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 
 /**
@@ -170,12 +172,28 @@ public class WarpableClock implements InternalClock, Closeable {
     thread.interrupt();
   }
 
+  long nextWakeup;
+
   private void progressThread() {
     Thread.yield();
     while (running) {
+      long _nextWakeup = waitAndWakeupWaiters();
+      if (_nextWakeup > 0 && nextWakeup != _nextWakeup) {
+        long _delta = _nextWakeup - millis();
+        if (_delta > 100) {
+          try {
+            Thread.sleep(1);
+          } catch (InterruptedException _e) {
+          }
+        }
+        nextWakeup = _nextWakeup;
+      }
+      Thread.yield();
+      Thread.yield();
+      Thread.yield();
+      Thread.yield();
       waitAndWakeupWaiters();
       now.incrementAndGet();
-      Thread.yield();
     }
   }
 
@@ -236,6 +254,7 @@ public class WarpableClock implements InternalClock, Closeable {
     final long uniqueId;
     final boolean noNotification;
     final NotifyList notifyList;
+    final CountDownLatch waitUntilProceeding = new CountDownLatch(1);
 
     public Waiter(final NotifyList l, final long _wakeupTime, final long _uniqueId) {
       noNotification = l == null;
@@ -253,6 +272,11 @@ public class WarpableClock implements InternalClock, Closeable {
       synchronized (notifyList.waitLock) {
         notifyList.waitLock.notifyAll();
       }
+      try {
+        waitUntilProceeding.await(1234, TimeUnit.MILLISECONDS);
+      } catch (InterruptedException ex) {
+        Thread.currentThread().interrupt();
+      }
     }
 
     void waitUntil() throws InterruptedException {
@@ -266,6 +290,7 @@ public class WarpableClock implements InternalClock, Closeable {
       } finally {
         remove(this, notifyList);
       }
+      waitUntilProceeding.countDown();
       if (notified) {
         log.debug(millis() + " " + toString() + " was notified");
       } else {

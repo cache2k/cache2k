@@ -109,6 +109,11 @@ public class SimpleTimer {
   private final TimerThread thread;
 
   /**
+   * Make sure the timer thread is running when we enqueue the first event.
+   */
+  private boolean ensureThreadStartup = true;
+
+  /**
    * This object causes the timer's task execution thread to exit
    * gracefully when there are no live references to the Timer object and no
    * tasks in the timer queue.  It is used in preference to a finalizer on
@@ -126,7 +131,6 @@ public class SimpleTimer {
       });
     }
   };
-
   /**
    * Creates a new timer whose associated thread has the specified name,
    * and may be specified to
@@ -380,15 +384,18 @@ public class SimpleTimer {
         queue.add(task);
         if (queue.getMin() == task) {
           notifier.sendNotify();
-          try {
-            thread.threadStarted.await(1234, TimeUnit.MILLISECONDS);
-          } catch (InterruptedException ex) {
-            Thread.currentThread().interrupt();
-          }
         }
         return null;
       }
     });
+    while (ensureThreadStartup) {
+      try {
+        thread.threadStarted.await(1234, TimeUnit.MILLISECONDS);
+      } catch (InterruptedException ex) {
+        Thread.currentThread().interrupt();
+      }
+      ensureThreadStartup = false;
+    }
 
   }
 
@@ -495,6 +502,7 @@ class TimerThread extends Thread {
     this.notifier = n;
     this.clock = clock;
     this.queue = queue;
+    setPriority(MAX_PRIORITY);
   }
 
   public void run() {
@@ -522,6 +530,7 @@ class TimerThread extends Thread {
         while (queue.isEmpty() && newTasksMayBeScheduled) {
           clock.waitMillis(notifier, Long.MAX_VALUE);
         }
+        threadStarted.countDown();
         if (!newTasksMayBeScheduled) {
           return;
         }
@@ -559,7 +568,6 @@ class TimerThread extends Thread {
    * The main timer loop.  (See class comment.)
    */
   private void mainLoop() {
-    threadStarted.countDown();
     while (newTasksMayBeScheduled) {
       clock.runExclusive(notifier, mainLoopCore);
       if (firedTask != null) {
