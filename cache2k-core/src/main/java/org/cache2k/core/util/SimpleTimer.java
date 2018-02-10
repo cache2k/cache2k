@@ -372,15 +372,11 @@ public class SimpleTimer {
         if (!thread.newTasksMayBeScheduled)
           throw new IllegalStateException("Timer already cancelled.");
 
-        synchronized(task.lock) {
-          if (task.state != SimpleTask.VIRGIN)
-            throw new IllegalStateException(
-              "Task already scheduled or cancelled");
-          task.nextExecutionTime = time;
-          task.period = finalPeriod;
-          task.state = SimpleTask.SCHEDULED;
+        if (!task.schedule()) {
+          throw new IllegalStateException(
+            "Task already scheduled or cancelled");
         }
-
+        task.nextExecutionTime = time;
         queue.add(task);
         if (queue.getMin() == task) {
           notifier.sendNotify();
@@ -452,7 +448,7 @@ public class SimpleTimer {
       public void run() {
         int count = 0;
         for (int i = queue.size(); i > 0; i--) {
-          if (queue.get(i).state == SimpleTask.CANCELLED) {
+          if (queue.get(i).isCancelled()) {
             queue.quickRemove(i);
             count++;
           }
@@ -525,41 +521,38 @@ class TimerThread extends Thread {
   final Runnable mainLoopCore = new Runnable() {
     @Override
     public void run() {
-      firedTask = null;
-      try {
-        while (queue.isEmpty() && newTasksMayBeScheduled) {
-          clock.waitMillis(notifier, Long.MAX_VALUE);
-        }
-        threadStarted.countDown();
-        if (!newTasksMayBeScheduled) {
-          return;
-        }
-        long currentTime, executionTime;
-        SimpleTask task = queue.getMin();
-        synchronized (task.lock) {
-          if (task.state == SimpleTask.CANCELLED) {
-            queue.removeMin();
+      while (true) {
+        firedTask = null;
+        try {
+          while (queue.isEmpty() && newTasksMayBeScheduled) {
+            clock.waitMillis(notifier, Long.MAX_VALUE);
+          }
+          threadStarted.countDown();
+          if (!newTasksMayBeScheduled) {
             return;
+          }
+          long currentTime, executionTime;
+          SimpleTask task = queue.getMin();
+          if (task.isCancelled()) {
+            queue.removeMin();
+            continue;
           }
           currentTime = clock.millis();
           executionTime = task.nextExecutionTime;
           boolean fired = executionTime <= currentTime;
           if (fired) {
-            firedTask = task;
-            if (task.period == 0) {
-              queue.removeMin();
-              task.state = SimpleTask.EXECUTED;
-            } else {
-              queue.rescheduleMin(
-                task.period < 0 ? currentTime - task.period
-                  : executionTime + task.period);
+            queue.removeMin();
+            if (!task.execute()) {
+              continue;
             }
+            firedTask = task;
+            return;
           }
+          if (firedTask == null) {
+            clock.waitMillis(notifier, executionTime - currentTime);
+          }
+        } catch (InterruptedException ignore) {
         }
-        if (firedTask == null) {
-          clock.waitMillis(notifier, executionTime - currentTime);
-        }
-      } catch (InterruptedException ignore) {
       }
     }
   };

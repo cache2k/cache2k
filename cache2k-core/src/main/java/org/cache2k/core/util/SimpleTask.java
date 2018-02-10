@@ -21,6 +21,7 @@ package org.cache2k.core.util;
  */
 
 import java.util.Date;
+import java.util.concurrent.atomic.AtomicIntegerFieldUpdater;
 
 /**
  * @author Jens Wilke
@@ -28,14 +29,12 @@ import java.util.Date;
 public abstract class SimpleTask implements Runnable {
 
   /**
-   * This object is used to control access to the TimerTask internals.
-   */
-  final Object lock = new Object();
-
-  /**
    * The state of this task, chosen from the constants below.
    */
-  int state = VIRGIN;
+  private volatile int state = VIRGIN;
+
+  static final AtomicIntegerFieldUpdater stateUpdater =
+    AtomicIntegerFieldUpdater.newUpdater(SimpleTask.class, "state");
 
   /**
    * This task has not yet been scheduled.
@@ -64,14 +63,7 @@ public abstract class SimpleTask implements Runnable {
    * System.currentTimeMillis, assuming this task is scheduled for execution.
    * For repeating tasks, this field is updated prior to each task execution.
    */
-  long nextExecutionTime;
-
-  /**
-   * Period in milliseconds for repeating tasks.  A positive value indicates
-   * fixed-rate execution.  A negative value indicates fixed-delay execution.
-   * A value of 0 indicates a non-repeating task.
-   */
-  long period = 0;
+  volatile long nextExecutionTime;
 
   /**
    * Creates a new timer task.
@@ -107,11 +99,19 @@ public abstract class SimpleTask implements Runnable {
    *         executions from taking place.)
    */
   public boolean cancel() {
-    synchronized(lock) {
-      boolean result = (state == SCHEDULED);
-      state = CANCELLED;
-      return result;
-    }
+    return stateUpdater.compareAndSet(this, SCHEDULED, CANCELLED);
+  }
+
+  public boolean execute() {
+    return stateUpdater.compareAndSet(this, SCHEDULED, EXECUTED);
+  }
+
+  public boolean schedule() {
+    return stateUpdater.compareAndSet(this, VIRGIN, SCHEDULED);
+  }
+
+  public boolean isCancelled() {
+    return state == CANCELLED;
   }
 
   /**
@@ -143,19 +143,14 @@ public abstract class SimpleTask implements Runnable {
    * @see Date#getTime()
    */
   public long scheduledExecutionTime() {
-    synchronized(lock) {
-      return (period < 0 ? nextExecutionTime + period
-        : nextExecutionTime - period);
-    }
+    return nextExecutionTime;
   }
 
   @Override
   public String toString() {
     return "SimpleTask{" +
-      "lock=" + lock +
-      ", state=" + state +
+      "state=" + state +
       ", nextExecutionTime=" + nextExecutionTime +
-      ", period=" + period +
       '}';
   }
 }
