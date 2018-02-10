@@ -80,6 +80,9 @@ public interface InternalClock extends Clock {
 
   interface Notifier {
 
+    /**
+     * Notify blocked threads waiting within {@link #waitMillis(Notifier, long)}
+     */
     void sendNotify();
 
   }
