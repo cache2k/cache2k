@@ -23,31 +23,48 @@ package org.cache2k.core.util;
 import org.cache2k.Clock;
 
 /**
+ * Abstraction for the system wall clock. A simulated clock implementation is used to
+ * test timing related code in a faster way.
+ *
  * @author Jens Wilke
  */
 public interface InternalClock extends Clock {
 
   /**
-   * Returns the milliseconds since epoch.
+   * Returns the milliseconds since epoch. When using a simulated clock
+   * either this method or #sleep needs to be called to make time pass and
+   * make this method return an increased number.
    */
   long millis();
 
   /**
-   * Wait for the specified amount of time in milliseconds.
-   * The value of 0 means that the thread may sleep some tiny amount of time
-   * or not at all.
+   * Wait for the specified amount of time in milliseconds. The value of 0 means that
+   * the thread may sleep some tiny amount of time or not at all.
+   *
+   * <p>When using a simulated clock either this method or #millis needs to be called to make time pass and
+   * make #millis return an increased number.
    */
   void sleep(long _millis) throws InterruptedException;
 
   /**
-   *
+   * The clock is capable to execute code when a certain time is reached and before the time advances further.
    */
   boolean isJobSchedulable();
 
+  /**
+   * Creates a job object for the specified event callback.
+   */
   TimeReachedJob createJob(TimeReachedEvent ev);
 
+  /**
+   * Schedules or reschedules the timer event job to be run at the
+   * specified point in time.
+   */
   void schedule(TimeReachedJob j, long _millis);
 
+  /**
+   * Disable the job clearing used resources.
+   */
   void disableJob(TimeReachedJob j);
 
   interface TimeReachedEvent {
