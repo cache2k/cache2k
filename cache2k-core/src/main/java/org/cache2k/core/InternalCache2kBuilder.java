@@ -280,7 +280,7 @@ public class InternalCache2kBuilder<K, V> {
     } else {
       TimingHandler rh = TimingHandler.of(_timeReference, config);
       bc.setTiming(rh);
-      bc.eviction = constructEviction(bc, new HeapCacheListener.NoOperation(), config);
+       bc.eviction = constructEviction(bc, HeapCacheListener.NO_OPERATION, config);
       bc.init();
     }
     manager.sendCreatedEvent(_cache);
