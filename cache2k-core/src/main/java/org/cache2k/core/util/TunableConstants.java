@@ -26,7 +26,7 @@ package org.cache2k.core.util;
  * The rationale behind this is explained in the following.
  *
  * <p>Wisely chosen constants are sometimes buried within the code.
- * These are the so called "magic numbers". So lets give them a default
+ * These are the so called "magic numbers". So let's give them a default
  * place.
  *
  * <p>There may be a need to change such a "constant". This provides a simple system
@@ -38,17 +38,17 @@ package org.cache2k.core.util;
  * reorganizing. For testing purposes we can trigger these situations by
  * de-tuning.
  *
- * <p>If there is a constant need to change a constant, please open a change
- * request. Either it is better to change the tunable constant to a real parameter
+ * <p>If there is a constant need to change a constant, please open an issue.
+ * Either it is better to change the tunable constant to a real parameter
  * or a assign it to another value which fits the general purpose better.
  *
- * @author Jens Wilke; created: 2014-04-27
+ * @author Jens Wilke
  */
 public class TunableConstants implements Cloneable {
 
   @SuppressWarnings("CloneDoesntDeclareCloneNotSupportedException")
   @Override
-  public  Object clone() {
+  public Object clone() {
     try {
       Object o = super.clone();
       return o;
