@@ -286,10 +286,6 @@ public class SimpleTimer {
             return;
           }
           task = queue.getMin();
-          if (task.isCancelled()) {
-            queue.removeMin();
-            continue;
-          }
           long executionTime = task.nextExecutionTime;
           boolean fired = executionTime <= currentTime;
           if (fired) {
@@ -297,6 +293,10 @@ public class SimpleTimer {
             if (!task.execute()) {
               continue;
             }
+          }
+          if (task.isCancelled()) {
+            queue.removeMin();
+            continue;
           }
           break;
         }
