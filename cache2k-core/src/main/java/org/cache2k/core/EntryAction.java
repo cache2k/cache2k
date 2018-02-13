@@ -370,11 +370,7 @@ public abstract class EntryAction<K, V, R> implements
     if (e == NON_FRESH_DUMMY) {
       e = heapCache.lookupOrNewEntry(key);
     }
-    int _spinCount = HeapCache.TUNABLE.maximumEntryLockSpins;
     for (; ; ) {
-      if (_spinCount-- <= 0) {
-        throw new CacheLockSpinsExceededError();
-      }
       synchronized (e) {
         e.waitForProcessing();
         if (!e.isGone()) {
@@ -399,11 +395,7 @@ public abstract class EntryAction<K, V, R> implements
     if (e == NON_FRESH_DUMMY) {
       e = heapCache.lookupOrNewEntryNoHitRecord(key);
     }
-    int _spinCount = HeapCache.TUNABLE.maximumEntryLockSpins;
     for (; ; ) {
-      if (_spinCount-- <= 0) {
-        throw new CacheLockSpinsExceededError();
-      }
       synchronized (e) {
         e.waitForProcessing();
         if (!e.isGone()) {

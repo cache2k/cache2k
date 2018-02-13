@@ -1949,14 +1949,6 @@ public class HeapCache<K, V>
     public Class<? extends InternalCache> defaultImplementation = HeapCache.class;
 
     /**
-     * Limits the number of spins until an entry lock is expected to
-     * succeed. The limit is to detect deadlock issues during development
-     * and testing. It is set to an arbitrary high value to result in
-     * an exception after about one second of spinning.
-     */
-    public int maximumEntryLockSpins = 333333;
-
-    /**
      * Size of the hash table before inserting the first entry. Must be power
      * of two. Default: 64.
      */
