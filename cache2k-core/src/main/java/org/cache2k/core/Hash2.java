@@ -131,88 +131,7 @@ public class Hash2<K,V> {
     }
   }
 
-  /**
-   * Insert an entry. Checks if an entry already exists.
-   */
-  public Entry<K,V> insert(Entry<K,V> e) {
-    long _size;
-    int _hash = e.hashCode; K key = e.key;
-    OptimisticLock[] _locks = locks;
-    int si = _hash & LOCK_MASK;
-    OptimisticLock l = _locks[si];
-    long _stamp = l.writeLock();
-    try {
-      Entry f; Object ek; Entry<K,V>[] tab = entries;
-      if (tab == null) {
-        throw new CacheClosedException();
-      }
-      int n = tab.length, _mask = n - 1, idx = _hash & (_mask);
-      f = tab[idx];
-      while (f != null) {
-        if (f.hashCode == _hash && ((ek = f.key) == key || (ek.equals(key)))) {
-          return f;
-        }
-        f = f.another;
-      }
-      e.another = tab[idx];
-      tab[idx] = e;
-      _size = segmentSize[si].incrementAndGet();
 
-    } finally {
-      l.unlockWrite(_stamp);
-    }
-    if (_size > segmentMaxFill) {
-      eventuallyExpand(si);
-    }
-    return e;
-  }
-
-  /**
-   * Insert entry and overwrite existing entry.
-   */
-  public void insertOverwrite(Entry<K,V> e) {
-    long _size;
-    int _hash = e.hashCode; K key = e.key;
-    OptimisticLock[] _locks = locks;
-    int si = _hash & LOCK_MASK;
-    OptimisticLock l = _locks[si];
-    long _stamp = l.writeLock();
-    try {
-      Entry f; Object ek; Entry<K,V>[] tab = entries;
-      if (tab == null) {
-        throw new CacheClosedException();
-      }
-      int n = tab.length, _mask = n - 1, idx = _hash & (_mask);
-      f = tab[idx];
-      if (f != null) {
-        if (f.hashCode == _hash && ((ek = f.key) == key || (ek.equals(key)))) {
-          tab[idx] = e;
-          e.another = f.another;
-          return;
-        }
-        Entry _previous = f;
-        f = f.another;
-        while (f != null) {
-          if (f.hashCode == _hash && ((ek = f.key) == key || (ek.equals(key)))) {
-            e.another = f.another;
-            _previous.another = e;
-            return;
-          }
-          _previous = f;
-          f = f.another;
-        }
-      }
-      e.another = tab[idx];
-      tab[idx] = e;
-      _size = segmentSize[si].incrementAndGet();
-
-    } finally {
-      l.unlockWrite(_stamp);
-    }
-    if (_size > segmentMaxFill) {
-      eventuallyExpand(si);
-    }
-  }
 
   /**
    * Insert an entry. Checks if an entry already exists.
@@ -321,46 +240,6 @@ public class Hash2<K,V> {
     return false;
   }
 
-  /**
-   * Remove entry by the key.
-   *
-   * @return  The removed entry or null if not found.
-   */
-  public Entry<K,V> remove(Object key, int _hash) {
-    OptimisticLock[] _locks = locks;
-    int si = _hash & LOCK_MASK;
-    OptimisticLock l = _locks[si];
-    long _stamp = l.writeLock();
-    try {
-      Entry e; Object ek; Entry<K,V>[] tab = entries;
-      if (tab == null) {
-        throw new CacheClosedException();
-      }
-      int n = tab.length, _mask = n - 1, idx = _hash & (_mask);
-      e = tab[idx];
-      if (e == null) {
-        return null;
-      }
-      if (e.hashCode == _hash && ((ek = e.key) == key || (ek.equals(key)))) {
-        tab[idx] = e.another;
-        segmentSize[si].decrementAndGet();
-        return e;
-      }
-      Entry _previous = e; e = e.another;
-      while (e != null) {
-        if (e.hashCode == _hash && ((ek = e.key) == key || (ek.equals(key)))) {
-          _previous.another = e.another;
-          segmentSize[si].decrementAndGet();
-          return e;
-        }
-        _previous = e;
-        e = e.another;
-      }
-    } finally {
-      l.unlockWrite(_stamp);
-    }
-    return null;
-  }
 
   /**
    * Acquire all segment locks and rehash, if really needed.
