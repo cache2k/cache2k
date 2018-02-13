@@ -29,23 +29,12 @@ package org.cache2k.core;
  */
 public class CacheInternalError extends Error {
 
-  public CacheInternalError() {
-  }
-
   public CacheInternalError(String message) {
     super(message);
   }
 
   public CacheInternalError(String message, Throwable cause) {
     super(message, cause);
-  }
-
-  public CacheInternalError(Throwable cause) {
-    super(cause);
-  }
-
-  public CacheInternalError(String message, Throwable cause, boolean enableSuppression, boolean writableStackTrace) {
-    super(message, cause, enableSuppression, writableStackTrace);
   }
 
 }

@@ -166,9 +166,6 @@ public abstract class BaseCache<K, V> implements InternalCache<K, V> {
 
   protected <R> R execute(Semantic<K, V, R> op, final EntryAction<K, V, R> _action) {
     op.start(_action);
-    if (_action.entryLocked) {
-      throw new CacheInternalError("entry not unlocked?");
-    }
     RuntimeException t = _action.exceptionToPropagate;
     if (t != null) {
       t.fillInStackTrace();

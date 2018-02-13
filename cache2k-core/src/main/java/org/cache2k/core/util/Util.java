@@ -41,15 +41,6 @@ public class Util {
     return new Timestamp(_millis).toString();
   }
 
-  /**
-   * Always throws exception. Used to mark a place in the code that needs work.
-   *
-   * @throws UnsupportedOperationException always throws an exception
-   */
-  public static void TODO() {
-    throw new UnsupportedOperationException("TODO");
-  }
-
   public static String compactFullName(CacheManager mgr, String _cacheName) {
     if (!Cache2kCoreProviderImpl.STANDARD_DEFAULT_MANAGER_NAME.equals(mgr.getName())) {
       return mgr.getName() + NAME_SEPARATOR + _cacheName;

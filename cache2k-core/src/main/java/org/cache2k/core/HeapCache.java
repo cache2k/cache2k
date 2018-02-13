@@ -1779,7 +1779,9 @@ public class HeapCache<K, V>
       public Void call() {
         IntegrityState is = getIntegrityState();
         if (is.getStateFlags() > 0) {
-          throw new CacheIntegrityError(is.getStateDescriptor(), is.getFailingChecks(), generateInfoUnderLock(HeapCache.this, clock.millis()).toString());
+          throw new Error(
+            "cache2k integrity error: " +
+            is.getStateDescriptor() + ", " + is.getFailingChecks() + ", " + generateInfoUnderLock(HeapCache.this, clock.millis()).toString());
         }
         return null;
       }
