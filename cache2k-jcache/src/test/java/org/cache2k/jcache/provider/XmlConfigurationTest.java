@@ -52,9 +52,9 @@ public class XmlConfigurationTest {
         .name("withSection");
     Cache2kConfiguration<String, String> cfg = b.toConfiguration();
     Cache<String, String> c = b.build();
-    assertEquals("default is false", false, new JCacheConfiguration().isAlwaysFlushJmxStatistics());
+    assertEquals("default is false", false, new JCacheConfiguration().isCopyAlwaysIfRequested());
     assertNotNull("section present", cfg.getSections().getSection(JCacheConfiguration.class));
-    assertEquals("config applied", true, cfg.getSections().getSection(JCacheConfiguration.class).isAlwaysFlushJmxStatistics());
+    assertEquals("config applied", true, cfg.getSections().getSection(JCacheConfiguration.class).isCopyAlwaysIfRequested());
     c.close();
   }
 
@@ -66,9 +66,9 @@ public class XmlConfigurationTest {
         .name("withJCacheSection");
     Cache2kConfiguration<String, String> cfg = b.toConfiguration();
     Cache<String, String> c = b.build();
-    assertEquals("default is false", false, new JCacheConfiguration().isAlwaysFlushJmxStatistics());
+    assertEquals("default is false", false, new JCacheConfiguration().isCopyAlwaysIfRequested());
     assertNotNull("section present", cfg.getSections().getSection(JCacheConfiguration.class));
-    assertEquals("config applied", true, cfg.getSections().getSection(JCacheConfiguration.class).isAlwaysFlushJmxStatistics());
+    assertEquals("config applied", true, cfg.getSections().getSection(JCacheConfiguration.class).isCopyAlwaysIfRequested());
     c.close();
   }
 
@@ -108,7 +108,6 @@ public class XmlConfigurationTest {
       Caching.getCachingProvider().getCacheManager(new URI("xmlConfiguration"), null);
     JCacheBuilder b = new JCacheBuilder("default", (JCacheManagerAdapter) _manager);
     b.setConfiguration(new MutableConfiguration());
-    assertEquals(false, b.getExtraConfiguration().isAlwaysFlushJmxStatistics());
     assertEquals(false, b.getExtraConfiguration().isCopyAlwaysIfRequested());
   }
 
@@ -118,8 +117,7 @@ public class XmlConfigurationTest {
       Caching.getCachingProvider().getCacheManager(new URI("xmlConfiguration"), null);
     JCacheBuilder b = new JCacheBuilder("withJCacheSection", (JCacheManagerAdapter) _manager);
     b.setConfiguration(new MutableConfiguration());
-    assertEquals(true, b.getExtraConfiguration().isAlwaysFlushJmxStatistics());
-    assertEquals(false, b.getExtraConfiguration().isCopyAlwaysIfRequested());
+    assertEquals(true, b.getExtraConfiguration().isCopyAlwaysIfRequested());
   }
 
 }

@@ -32,17 +32,22 @@ import org.cache2k.configuration.SingletonConfigurationSection;
 public class JCacheConfiguration implements SingletonConfigurationSection {
 
   private boolean copyAlwaysIfRequested = false;
-  private boolean alwaysFlushJmxStatistics = false;
 
+  /**
+   * Always false since version 1.0.2
+   *
+   * @see JCacheConfiguration.Builder#alwaysFlushJmxStatistics
+   * @deprecated since 1.0.2
+   */
   public boolean isAlwaysFlushJmxStatistics() {
-    return alwaysFlushJmxStatistics;
+    return false;
   }
 
   /**
    * @see JCacheConfiguration.Builder#alwaysFlushJmxStatistics
+   * @deprecated since 1.0.2
    */
   public void setAlwaysFlushJmxStatistics(final boolean f) {
-    alwaysFlushJmxStatistics = f;
   }
 
   public boolean isCopyAlwaysIfRequested() {
@@ -62,8 +67,10 @@ public class JCacheConfiguration implements SingletonConfigurationSection {
 
     /**
      * Enabling this was needed for passing the JCache 1.0 tests.
-     * Sine JCache 1.1 this is no longer needed. This flat has no
+     * Sine JCache 1.1 this is no longer needed. This flag has no
      * effect since cache2k version 1.0.2.
+     *
+     * @deprecated since 1.0.2
      */
     public Builder alwaysFlushJmxStatistics(boolean f) {
       config.setAlwaysFlushJmxStatistics(f);

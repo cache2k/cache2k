@@ -27,7 +27,7 @@
       <sections>
         <jcacheNonStandard>
           <type>org.cache2k.jcache.JCacheConfiguration</type>
-          <alwaysFlushJmxStatistics>true</alwaysFlushJmxStatistics>
+          <copyAlwaysIfRequested>true</copyAlwaysIfRequested>
         </jcacheNonStandard>
       </sections>
     </cache>
@@ -35,7 +35,7 @@
       <name>withJCacheSection</name>
       <sections>
         <jcache>
-          <alwaysFlushJmxStatistics>true</alwaysFlushJmxStatistics>
+          <copyAlwaysIfRequested>true</copyAlwaysIfRequested>
         </jcache>
       </sections>
     </cache>

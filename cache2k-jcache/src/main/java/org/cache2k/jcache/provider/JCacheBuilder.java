@@ -431,7 +431,6 @@ public class JCacheBuilder<K,V> {
    */
   private static final JCacheConfiguration JCACHE_DEFAULTS =
     new JCacheConfiguration.Builder()
-      .alwaysFlushJmxStatistics(true)
       .copyAlwaysIfRequested(true)
       .buildConfigurationSection();
 
@@ -441,7 +440,6 @@ public class JCacheBuilder<K,V> {
    */
   private static final JCacheConfiguration CACHE2K_DEFAULTS =
     new JCacheConfiguration.Builder()
-      .alwaysFlushJmxStatistics(false)
       .copyAlwaysIfRequested(false)
       .buildConfigurationSection();
 
