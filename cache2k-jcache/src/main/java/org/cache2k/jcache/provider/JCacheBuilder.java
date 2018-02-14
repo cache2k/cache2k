@@ -271,32 +271,26 @@ public class JCacheBuilder<K,V> {
    * to cache2k to provide this behavior.
    */
   private void setupExpiryPolicy() {
-    if (cache2kConfigurationWasProvided) {
-      if (cache2kConfiguration.getExpiryPolicy() != null) {
-        org.cache2k.expiry.ExpiryPolicy<K, V> ep0;
-        try {
-          ep0 = cache2kConfiguration.getExpiryPolicy().supply(manager.getCache2kManager());
-        } catch (Exception ex) {
-          throw new CacheException("couldn't initialize expiry policy", ex);
-        }
-        final org.cache2k.expiry.ExpiryPolicy<K, V> ep = ep0;
-        cache2kConfiguration.setExpiryPolicy(new CustomizationReferenceSupplier<org.cache2k.expiry.ExpiryPolicy<K, V>>(
-          new org.cache2k.expiry.ExpiryPolicy<K, V>() {
-          @Override
-          public long calculateExpiryTime(final K key, final V value, final long loadTime, final CacheEntry<K, V> oldEntry) {
-            if (value == null) {
-              return NO_CACHE;
-            }
-            return ep.calculateExpiryTime(key, value, loadTime, oldEntry);
+    if (cache2kConfiguration.getExpiryPolicy() != null) {
+      org.cache2k.expiry.ExpiryPolicy<K, V> ep0;
+      try {
+        ep0 = cache2kConfiguration.getExpiryPolicy().supply(manager.getCache2kManager());
+      } catch (Exception ex) {
+        throw new CacheException("couldn't initialize expiry policy", ex);
+      }
+      final org.cache2k.expiry.ExpiryPolicy<K, V> ep = ep0;
+      cache2kConfiguration.setExpiryPolicy(new CustomizationReferenceSupplier<org.cache2k.expiry.ExpiryPolicy<K, V>>(
+        new org.cache2k.expiry.ExpiryPolicy<K, V>() {
+        @Override
+        public long calculateExpiryTime(final K key, final V value, final long loadTime, final CacheEntry<K, V> oldEntry) {
+          if (value == null) {
+            return NO_CACHE;
           }
-        }));
-        return;
-      }
-      if (cache2kConfiguration.getExpireAfterWrite() >= 0) {
-        return;
-      }
+          return ep.calculateExpiryTime(key, value, loadTime, oldEntry);
+        }
+      }));
+      return;
     }
-    cache2kConfiguration.setEternal(true);
     if (config.getExpiryPolicyFactory() != null) {
       expiryPolicy = config.getExpiryPolicyFactory().create();
     }

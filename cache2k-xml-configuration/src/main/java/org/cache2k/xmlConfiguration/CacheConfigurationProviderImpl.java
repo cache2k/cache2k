@@ -212,6 +212,7 @@ public class CacheConfigurationProviderImpl implements CacheConfigurationProvide
     }
     if (_defaults != null) {
       apply(ctx, _defaults, _defaultConfiguration);
+      _defaultConfiguration.setExternalConfigurationPresent(true);
     }
   }
 

@@ -279,6 +279,13 @@ public class IntegrationTest {
       .name("anyCache")
       .build();
     c.close();
+    Cache2kConfiguration<String, String> cfg =
+      new Cache2kBuilder<String, String>() { }
+      .manager(CacheManager.getInstance("onlyDefault"))
+      .name("anyCache")
+      .toConfiguration();
+    assertEquals(1234, cfg.getEntryCapacity());
+    assertTrue(cfg.isExternalConfigurationPresent());
   }
 
   @Test (expected = ConfigurationException.class)
