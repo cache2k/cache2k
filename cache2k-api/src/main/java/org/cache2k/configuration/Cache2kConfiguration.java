@@ -361,13 +361,15 @@ public class Cache2kConfiguration<K, V> implements ConfigurationBean, Configurat
     this.suppressExceptions = v;
   }
 
+  /**
+   * An external configuration for the cache was found and is applied.
+   * This is {@code true} if default values are set via the XML configuration or
+   * if there is a specific section for the cache name.
+   */
   public boolean isExternalConfigurationPresent() {
     return externalConfigurationPresent;
   }
 
-  /**
-   * True, if an external configuration for the cache was found and is applied.
-   */
   public void setExternalConfigurationPresent(final boolean v) {
     externalConfigurationPresent = v;
   }

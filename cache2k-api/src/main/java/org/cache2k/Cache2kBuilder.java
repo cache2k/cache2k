@@ -383,7 +383,7 @@ public class Cache2kBuilder<K, V> {
    * To switch off time based expiry use {@link #eternal(boolean)}.
    *
    * <p>If an {@link ExpiryPolicy} is specified, the maximum expiry duration
-   * will not exceed the value that is specified here.
+   * is capped to the value specified here.
    *
    * <p>A value of {@code 0} means every entry should expire immediately. Low values or
    * {@code 0} together with read through operation mode with a {@link CacheLoader} should be

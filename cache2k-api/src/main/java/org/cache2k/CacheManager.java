@@ -34,6 +34,11 @@ import java.util.ServiceLoader;
  * same class loader and may have a different default configuration. If a cache manager
  * is not specified a default manager is used.
  *
+ * <p>Usually there is one cache manager per application which is retrieved by {@link #getInstance()}.
+ * Multiple cache managers can be used to separate different caching aspects. This may help
+ * with a better organization of the cache configuration and operate with reasonable defaults within
+ * each aspect.
+ *
  * <p>Cache managers are identified by a unique name. If no name is specified the name
  * {@code "default"} is used. The default name in use may be changed, see {@link #setDefaultName(String)}.
  *
@@ -78,6 +83,9 @@ public abstract class CacheManager implements Closeable {
   /**
    * Get the default cache manager for the default class loader. The default class loader
    * is the class loader used to load the cache2k implementation classes.
+   *
+   * <p>The name of default cache manager is {@code "default"}.
+   * This may be changed, by {@link #setDefaultName(String)}.
    */
   public static CacheManager getInstance() {
     ClassLoader _defaultClassLoader = PROVIDER.getDefaultClassLoader();
@@ -153,7 +161,7 @@ public abstract class CacheManager implements Closeable {
   public abstract String getName();
 
   /**
-   * Returns an all caches associated with this cache manager. A iterated cache was
+   * Returns all caches associated with this cache manager. An iterated cache was
    * created via {@link #getInstance()} or {@link Cache2kBuilder#build()} and is not
    * closed yet.
    */
