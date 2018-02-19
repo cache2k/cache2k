@@ -23,6 +23,7 @@ package org.cache2k.xmlConfiguration;
 import org.cache2k.Cache;
 import org.cache2k.Cache2kBuilder;
 import org.cache2k.CacheManager;
+import org.cache2k.UnknownCacheException;
 import org.cache2k.configuration.Cache2kConfiguration;
 import org.cache2k.configuration.CustomizationSupplierByClassName;
 import org.cache2k.core.Cache2kCoreProviderImpl;
@@ -85,7 +86,7 @@ public class IntegrationTest {
     c.close();
   }
 
-  @Test(expected = ConfigurationException.class)
+  @Test(expected = UnknownCacheException.class)
   public void failIfConfigurationIsMissing() {
     new Cache2kBuilder<String, String>(){}.name("missingDummy").build();
   }
@@ -288,7 +289,7 @@ public class IntegrationTest {
     assertTrue(cfg.isExternalConfigurationPresent());
   }
 
-  @Test (expected = ConfigurationException.class)
+  @Test (expected = UnknownCacheException.class)
   public void empty() {
     Cache c = new Cache2kBuilder<String, String>() { }
       .manager(CacheManager.getInstance("empty"))

@@ -760,6 +760,7 @@ public class Cache2kBuilder<K, V> {
    * configuration. The builder is not thread safe.
    *
    * @throws IllegalArgumentException if a cache of the same name is already active in the cache manager
+   * @throws UnknownCacheException there is no configuration entry for the named cache
    */
   public final Cache<K, V> build() {
     return CacheManager.PROVIDER.createCache(manager, config());

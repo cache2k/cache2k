@@ -22,6 +22,7 @@ package org.cache2k.xmlConfiguration;
 
 import org.cache2k.CacheException;
 import org.cache2k.CacheManager;
+import org.cache2k.UnknownCacheException;
 import org.cache2k.configuration.Cache2kConfiguration;
 import org.cache2k.configuration.ConfigurationSection;
 import org.cache2k.configuration.ConfigurationWithSections;
@@ -101,8 +102,9 @@ public class CacheConfigurationProviderImpl implements CacheConfigurationProvide
       }
       String _exceptionText =
         "Configuration for cache '" + _cacheName + "' is missing. " +
-          "Consider parameter: ignoreMissingCacheConfiguration";
-      throw new ConfigurationException(_exceptionText, _parsedTop.getSource());
+          "Consider parameter: ignoreMissingCacheConfiguration" +
+          " at " + _parsedTop.getSource();
+      throw new UnknownCacheException(_exceptionText);
     }
     apply(ctx, _parsedCache, cfg);
     cfg.setExternalConfigurationPresent(true);
