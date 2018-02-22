@@ -249,7 +249,7 @@ public class Cache2kBuilderTest {
         .name(this.getClass(), "same")
         .build();
       fail("exception expected");
-    } catch (IllegalArgumentException ex) {
+    } catch (IllegalStateException ex) {
 
     }
     mgr.close();

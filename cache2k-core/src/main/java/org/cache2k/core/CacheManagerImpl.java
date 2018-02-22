@@ -173,13 +173,14 @@ public class CacheManagerImpl extends CacheManager {
   /**
    *
    * @throws IllegalStateException if cache manager was closed or is closing
+   * @throws IllegalStateException if cache already created
    */
   public String newCache(InternalCache c, String _requestedName) {
     synchronized (lock) {
       checkClosed();
       String _name = _requestedName;
       if (cacheNames.containsKey(_name)) {
-        throw new IllegalArgumentException("duplicate name: '" + _requestedName + "'");
+        throw new IllegalStateException("Cache already created: '" + _requestedName + "'");
       }
       checkName(_name);
       if (name2CreationStackTrace != null) {

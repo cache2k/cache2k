@@ -23,6 +23,7 @@ package org.cache2k.jcache.provider;
 import org.cache2k.Cache;
 import org.cache2k.Cache2kBuilder;
 import org.cache2k.CacheManager;
+import org.cache2k.UnknownCacheException;
 import org.cache2k.configuration.Cache2kConfiguration;
 import org.cache2k.jcache.ExtendedMutableConfiguration;
 import org.cache2k.jcache.JCacheConfiguration;
@@ -95,7 +96,7 @@ public class XmlConfigurationTest {
     c.close();
   }
 
-  @Test(expected = ConfigurationException.class)
+  @Test(expected = UnknownCacheException.class)
   public void configurationMissing() throws Exception {
     javax.cache.CacheManager _manager =
       Caching.getCachingProvider().getCacheManager(new URI("xmlConfiguration"), null);
