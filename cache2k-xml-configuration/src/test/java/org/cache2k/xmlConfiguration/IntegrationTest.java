@@ -52,8 +52,13 @@ public class IntegrationTest {
   }
 
   private Cache2kConfiguration cacheCfgWithLoader() {
-    Cache2kConfiguration cfg = Cache2kBuilder.forUnknownTypes().name("withLoader").toConfiguration();
-    Cache2kCoreProviderImpl.augmentConfiguration(CacheManager.getInstance(), cfg);
+    CacheManager mgr = CacheManager.getInstance("customizationExample");
+    Cache2kConfiguration cfg = Cache2kBuilder.forUnknownTypes()
+      .manager(mgr)
+      .name("withLoader").toConfiguration();
+    assertNull("no loader yet, default configuration returned", cfg.getLoader());
+    Cache2kCoreProviderImpl.augmentConfiguration(mgr, cfg);
+    assertNotNull("loader defined", cfg.getLoader());
     return cfg;
   }
 

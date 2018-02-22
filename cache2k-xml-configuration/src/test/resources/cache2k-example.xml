@@ -1,5 +1,5 @@
 <cache2k>
-  <!-- An configuration example for the documentation -->
+  <!-- The configuration example for the documentation -->
   <version>1.0</version>
   <defaultManagerName>default</defaultManagerName>
   <skipCheckOnStartup>true</skipCheckOnStartup>
