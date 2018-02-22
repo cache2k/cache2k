@@ -45,11 +45,13 @@ import static org.junit.Assert.*;
  */
 public class XmlConfigurationTest {
 
+  private static final String MANAGER_NAME = "jcacheExample";
+
   @Test
   public void sectionIsThere() {
     Cache2kBuilder<String, String> b =
       new Cache2kBuilder<String, String>(){}
-        .manager(CacheManager.getInstance("xmlConfiguration"))
+        .manager(CacheManager.getInstance(MANAGER_NAME))
         .name("withSection");
     Cache2kConfiguration<String, String> cfg = b.toConfiguration();
     Cache<String, String> c = b.build();
@@ -63,7 +65,7 @@ public class XmlConfigurationTest {
   public void sectionIsThereViaStandardElementName() {
     Cache2kBuilder<String, String> b =
       new Cache2kBuilder<String, String>(){}
-        .manager(CacheManager.getInstance("xmlConfiguration"))
+        .manager(CacheManager.getInstance(MANAGER_NAME))
         .name("withJCacheSection");
     Cache2kConfiguration<String, String> cfg = b.toConfiguration();
     Cache<String, String> c = b.build();
@@ -87,7 +89,7 @@ public class XmlConfigurationTest {
   @Test
   public void xmlConfigurationIsApplied() throws Exception {
     CachingProvider p = Caching.getCachingProvider();
-    javax.cache.CacheManager cm = p.getCacheManager(new URI("xmlConfiguration"), null);
+    javax.cache.CacheManager cm = p.getCacheManager(new URI(MANAGER_NAME), null);
     ExtendedMutableConfiguration<String, BigDecimal> mc = new ExtendedMutableConfiguration<String, BigDecimal>();
     mc.setTypes(String.class, BigDecimal.class);
     javax.cache.Cache<String, BigDecimal> c = cm.createCache("withExpiry", mc);
@@ -99,14 +101,14 @@ public class XmlConfigurationTest {
   @Test(expected = UnknownCacheException.class)
   public void configurationMissing() throws Exception {
     javax.cache.CacheManager _manager =
-      Caching.getCachingProvider().getCacheManager(new URI("xmlConfiguration"), null);
+      Caching.getCachingProvider().getCacheManager(new URI(MANAGER_NAME), null);
     _manager.createCache("missing", new MutableConfiguration<Object,Object>());
   }
 
   @Test
   public void configurationPresent_defaults() throws Exception {
     javax.cache.CacheManager _manager =
-      Caching.getCachingProvider().getCacheManager(new URI("xmlConfiguration"), null);
+      Caching.getCachingProvider().getCacheManager(new URI(MANAGER_NAME), null);
     JCacheBuilder b = new JCacheBuilder("default", (JCacheManagerAdapter) _manager);
     b.setConfiguration(new MutableConfiguration());
     assertEquals(false, b.getExtraConfiguration().isCopyAlwaysIfRequested());
@@ -115,7 +117,7 @@ public class XmlConfigurationTest {
   @Test
   public void configurationPresent_changed() throws Exception {
     javax.cache.CacheManager _manager =
-      Caching.getCachingProvider().getCacheManager(new URI("xmlConfiguration"), null);
+      Caching.getCachingProvider().getCacheManager(new URI(MANAGER_NAME), null);
     JCacheBuilder b = new JCacheBuilder("withJCacheSection", (JCacheManagerAdapter) _manager);
     b.setConfiguration(new MutableConfiguration());
     assertEquals(true, b.getExtraConfiguration().isCopyAlwaysIfRequested());

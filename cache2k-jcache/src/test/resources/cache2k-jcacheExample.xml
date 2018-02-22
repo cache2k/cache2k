@@ -19,7 +19,7 @@
   -->
 <!--
      configuration of cache2k with an additional configuration section
-     to switch JCache semantics.
+     to influence JCache semantics.
      Furthermore, an example how to use additional configuration sections
 -->
 <cache2k>
