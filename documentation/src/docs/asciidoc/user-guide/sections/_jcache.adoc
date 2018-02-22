@@ -97,9 +97,9 @@ Loader and Writer:: Settings in JCache configuration take precedence. If a loade
   JCache `CacheConfiguration` the setting in the cache2k configuration is ignored.
 Event listeners:: Registered listeners of both configurations will be used.
 
-=== Control Additional JCache Semantics
+=== Control Custom JCache Semantics
 
-The JCache implementation has additional options that control its semantics. These options are available in
+The cache2k JCache implementation has additional options that control its semantics. These options are available in
 the `JCacheConfiguration` configuration section, which is provided by the `cache2k-jcache-api` module.
 
 Example usage:
@@ -120,6 +120,16 @@ Example usage:
 
 The example enables store by value semantics again and requests that keys and values are copied when passed
 to the cache or retrieved from the cache.
+
+=== Don't Mix APIs
+
+The cache2k JCache implementation wraps a native cache2k. For a JCache cache instance it is possible to retrieve the
+underlying cache2k implementation, for example by using `Cache.unwrap`. Using the native API in combination with
+the JCache API may have unexpected results. The reason is, that a native cache is configured differently by
+the JCache implementation to support the JCache behavior (e.g. the `ExceptionPropagator` is used).
+
+An application that mixes APIs may break between cache2k version changes, in case there is an incompatible
+change in the adapter layer. There is no guarantee this will never happen.
 
 === Implementation Details
 
