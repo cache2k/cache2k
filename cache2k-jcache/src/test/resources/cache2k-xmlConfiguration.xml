@@ -17,23 +17,35 @@
   limitations under the License.
   #L%
   -->
+<!--
+     configuration of cache2k with an additional configuration section
+     to switch JCache semantics.
+     Furthermore, an example how to use additional configuration sections
+-->
 <cache2k>
-
   <version>1.0</version>
 
   <caches>
     <cache>
       <name>withSection</name>
       <sections>
-        <jcacheNonStandard>
+        <!-- A section may contain any configuration bean which is selected by type
+             inside the section the elements type and name are defined. Furthermore,
+             the section may contain unrestricted elements.
+         -->
+        <section>
           <type>org.cache2k.jcache.JCacheConfiguration</type>
           <copyAlwaysIfRequested>true</copyAlwaysIfRequested>
-        </jcacheNonStandard>
+        </section>
       </sections>
     </cache>
     <cache>
       <name>withJCacheSection</name>
       <sections>
+        <!-- The jcache tag is wired to the type org.cache2k.jcache.JCacheConfiguration
+             to make the configuration smaller and allow the content to be covered in the XSD schema
+             The tag name jcache is defined in CacheConfigurationProviderImpl.
+         -->
         <jcache>
           <copyAlwaysIfRequested>true</copyAlwaysIfRequested>
         </jcache>
