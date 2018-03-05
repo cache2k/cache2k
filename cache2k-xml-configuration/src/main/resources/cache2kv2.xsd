@@ -1,0 +1,792 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema"
+    xmlns:vc="http://www.w3.org/2007/XMLSchema-versioning" elementFormDefault="qualified"
+    vc:minVersion="1.0" vc:maxVersion="1.1">
+    
+    <xs:simpleType name="classNameType">
+        <xs:restriction base="xs:string">
+            <xs:pattern value="([a-z]+[.]{1}([a-z]+.)*[A-Z]{1}[a-zA-Z]+)|[a-zA-Z]+"></xs:pattern>
+        </xs:restriction>
+    </xs:simpleType>
+    
+    <xs:simpleType name="longType">
+        <xs:annotation>
+            <xs:documentation>
+                <![CDATA[ long type supports a unit suffix:
+
+                suffix,value
+                KiB, 1024
+                MiB, 1024^2
+                GiB, 1024^3
+                TiB, 1024^4
+                k, 1000
+                M, 1000^2
+                G, 1000^3
+                T, 1000^4
+                s, 1000
+                m, 1000*60
+                h, 1000*60*60
+                d, 1000*60*60*24
+                
+               A long value may also contain the character '_' for structuring. This character is ignored. Example: `12_000_000`.
+               The unit suffix is intended to make the configuration more readable. There is no enforcement that a unit actually
+               matches with the intended unit of the configuration value.]]>
+            </xs:documentation>
+        </xs:annotation>
+        <xs:restriction base="xs:token">
+            <xs:pattern value="(-?[0-9]+)|(-?[0-9]+[_]?[0-9]+)|(-?[0-9]+(KiB|MiB|GiB|TiB|k|M|G|T|s|m|h|d)?)|([-]?[0-9]+[_]?[0-9]+(KiB|MiB|GiB|TiB|k|M|G|T|s|m|h|d)?)"></xs:pattern>
+        </xs:restriction>
+    </xs:simpleType>
+    
+    <xs:simpleType name="envType">
+        <xs:annotation>
+            <xs:documentation>
+                <![CDATA[parameters in the style ${scope.property}. Predefined scopes are:
+
+                        ENV:: environment variable, e.g. `${ENV.HOME}` is the user home directory.
+                        TOP:: references the configuration root, e.g. `${TOP.caches.flights.entryCapacity}` references the value of the
+                              `entryCapacity` of the cache named `flights`.
+                        PROP:: a Java system property, e.g. `${PROP.java.home}` for the JDK installation directory.
+
+                        The scope prefix can also reference a parent element name. If the scope prefix is empty an value at the same level is referenced.]]>
+            </xs:documentation>
+        </xs:annotation>
+        <xs:restriction base="xs:token">
+            <xs:pattern value="${1}\{{1}([a-zA-Z0-9]+.{1}[a-zA-Z0-9]+)+\}{1}"></xs:pattern>
+        </xs:restriction>
+    </xs:simpleType>
+    
+    <xs:simpleType name="envOrLongType">
+        <xs:union memberTypes="longType envType"></xs:union>
+    </xs:simpleType>
+    
+    <xs:simpleType name="nameType">
+        <xs:restriction base="xs:Name">
+            <xs:pattern value="[-_.a-zA-Z0-9]+"></xs:pattern>
+        </xs:restriction>
+    </xs:simpleType> 
+    
+    <xs:simpleType name="version">
+        <xs:restriction base="xs:string">
+            <xs:pattern value="[1-9]+.[0-9]{1}"></xs:pattern>
+        </xs:restriction>      
+    </xs:simpleType>
+    
+    <xs:simpleType name="include">
+        <xs:restriction base="xs:token">
+            <xs:pattern value="[-_.a-zA-Z0-9]+|([-_.a-zA-Z0-9]+,{1}[-_.a-zA-Z0-9]+)+"></xs:pattern>
+        </xs:restriction>
+    </xs:simpleType>
+    
+    
+    <!-- complexe types-->
+    <xs:complexType name="anytype">
+        <xs:sequence>
+            <xs:any processContents="skip" minOccurs="0" maxOccurs="unbounded"/>
+        </xs:sequence>
+    </xs:complexType>
+    
+    <xs:complexType name="customizationSupplier">
+        <xs:annotation>
+            <xs:documentation>
+                <![CDATA[Supplies a cache customizations like {@code ExpiryPolicy} or {@code CacheLoader} or Listeners.
+                         An implementation must implement proper a {@code hashCode} and {@code equals} method.]]>
+            </xs:documentation>
+        </xs:annotation>
+        <xs:choice>
+            <xs:element maxOccurs="1"  minOccurs="1" name="byClassName" type="byClassName"/>
+            <xs:element maxOccurs="1"  minOccurs="1" name="bean" type="bean"/>
+        </xs:choice>       
+    </xs:complexType>
+    
+    <xs:complexType name="cacheType">
+        <xs:annotation>
+            <xs:documentation>
+                <![CDATA[ A data structure to retain all known type information from the key and value types, including generic
+                          parameters within the cache configuration. A caching application typically constructs a type descriptor
+                          with the use of a {@link CacheTypeCapture}.
+    
+                         <p>While the type descriptor contains implementation classes, interface consumers must not rely on the
+                             implementation types.
+ 
+                         <p><b>About types:</b>
+                            If no type information is provided it defaults to the Object class. The provided type information
+                            is used inside the cache for optimizations and as well as to select appropriate default transformation
+                            schemes for copying objects or marshalling. The correct types are not strictly enforced at all levels by the cache
+                            for performance reasons. The cache application guarantees that only the specified types will be used.
+                            The cache will check the type compatibility at critical points, e.g. when reconnecting to an external storage.
+                            Generic types: An application may provide more detailed type information to the cache, which
+                            contains also generic type parameters by providing a {@link CacheTypeCapture} where the cache can extract
+                            the type information.
+        
+                            @see CacheTypeCapture
+                            @see <a href="https://github.com/google/guava/wiki/ReflectionExplained">ReflectionExplained - Google Guava Documentation</a>]]>
+            </xs:documentation>
+        </xs:annotation>
+        <xs:sequence>
+            <xs:element name="type" type="classNameType" maxOccurs="1" minOccurs="1"/>         
+        </xs:sequence>
+    </xs:complexType>
+     
+    <xs:complexType name="byClassName">
+        <xs:annotation>
+            <xs:documentation>
+                <![CDATA[specifies a class name of the customization that gets created when the cache is build (see example above). 
+                         [source,XML]
+                         ----
+                         <loader>
+                            <byClassName>
+                                <className>org.example.MyLoader</className>
+                            </byClassName>
+                        </loader>]]>
+            </xs:documentation>
+        </xs:annotation>
+        <xs:sequence>
+            <xs:element name="className" type="classNameType" maxOccurs="1" minOccurs="1"/>
+        </xs:sequence>
+    </xs:complexType>
+       
+    <xs:complexType name="bean"> 
+        <xs:annotation>
+            <xs:documentation>
+                <![CDATA[It is possible to implement an own `CustomizationSupplier` which can take additional parameters for additional
+                         configuration of the customization. In this case the `type` element is used to specify the supplier class (see example above).
+                         [source,XML]
+                         ----
+                         <loader>
+                           <bean>
+                              <type>org.exmample.LoaderSupplier</type>
+                              <!-- Additional bean properties to set on the supplier follow. -->
+                              <database>jdbc://....</database>
+                          </bean>
+                        </loader> ]]>
+            </xs:documentation>
+        </xs:annotation>
+        <xs:sequence>
+            <xs:element name="type" type="classNameType" maxOccurs="1" minOccurs="1"/>
+            <xs:element name="className" type="classNameType" maxOccurs="1" minOccurs="1"/>
+        </xs:sequence>
+    </xs:complexType>
+    
+    <xs:complexType name="customizationCollection">
+        <xs:annotation>
+            <xs:documentation>
+                <![CDATA[ Collection of customizations. The order of inserting is preserved. The first element inserted is returned first by the iteration. Duplicate entries will be rejected.
+                          
+                          <p>Typically the implementation {@link DefaultCustomizationCollection} will be used.]]>
+            </xs:documentation>
+        </xs:annotation>
+        <xs:sequence>
+            <xs:element maxOccurs="unbounded" minOccurs="1" name="listener" type="bean"/>
+        </xs:sequence>
+    </xs:complexType>
+    
+    <xs:complexType name="sectionType">
+        <xs:sequence>
+            <xs:element name="type" type="classNameType" maxOccurs="1" minOccurs="0" default="org.cache2k.jcache.JCacheConfiguration">
+                <xs:annotation>
+                    <xs:documentation>
+                        <![CDATA[the class name for a cache configuration. Currently only org.cache2k.jcache.JCacheConfiguration is supported ]]>
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+               
+            <xs:element name="copyAlwaysIfRequested" type="xs:boolean" maxOccurs="1" minOccurs="0">
+                <xs:annotation>
+                    <xs:documentation>
+                        <![CDATA[Copy keys and values when entering and leaving the cache in case
+                                 store by value semantics are requested by the application.
+                                 Default in JCache configuration mode: {@code true}.
+                                 Default in cache2k configuration mode: {@code false}.]]>
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+        </xs:sequence>
+    </xs:complexType>
+    
+    <xs:complexType name="cachesType">
+        <xs:sequence>
+            <xs:element maxOccurs="unbounded"  minOccurs="1" name="cache" type="cache"/>
+        </xs:sequence>
+    </xs:complexType>
+    
+   
+        <xs:complexType name="cacheManager">
+            <xs:sequence>
+                <xs:element name="managerName" type="nameType" maxOccurs="1"  minOccurs="1"/>
+                <xs:element name="classLoader" type="classNameType" maxOccurs="1"  minOccurs="1"/>
+                <xs:element name="isDefaultManager" type="xs:boolean" maxOccurs="1"  minOccurs="0" default="true"/>
+            </xs:sequence>
+        </xs:complexType>
+    
+   
+        <xs:complexType name="defaults">
+            <xs:complexContent>
+                <xs:restriction base="cachesType">
+                    <xs:sequence>
+                        <xs:element maxOccurs="1"  minOccurs="1" name="cache" type="cache" />                     
+                    </xs:sequence>                   
+                </xs:restriction>                   
+            </xs:complexContent>
+        </xs:complexType>
+    
+        <xs:complexType name="properties">
+            <xs:sequence>
+                <xs:element name="user" type="anytype" maxOccurs="1" minOccurs="1" />
+            </xs:sequence>          
+        </xs:complexType>
+    
+   
+        <xs:complexType  name="cache">
+            <xs:annotation>
+                <xs:documentation>
+                    Configuration to create a Cache instance. 
+                </xs:documentation>
+            </xs:annotation>
+            <xs:sequence>
+                <xs:element name="name" type="nameType" minOccurs="0" maxOccurs="1">
+                    <xs:annotation>
+                        <xs:documentation>
+                            <![CDATA[Sets the name of a cache. If a name is specified it must be ensured it is unique within
+                                    the cache manager. Cache names are used at several places to have a unique ID of a cache.
+                                    For example, for referencing additional configuration or to register JMX beans.
+                
+                                    <p>If a name is not specified the cache generates a name automatically. The name is
+                                       inferred from the call stack trace and contains the simple class name, the method and
+                                       the line number of the of the caller to {@code build()}. The name also contains
+                                       a random number. Automatically generated names don't allow reliable management, logging and
+                                       additional configuration of caches. If no name is set, {@link #build()} will always create
+                                       a new cache with a new unique name within the cache manager. Automatically generated
+                                       cache names start with the character {@code '_'} as prefix to separate the names from the
+                                       usual class name space.
+   
+                                    <p>For maximum compatibility cache names should only be composed with the characters
+                                       {@code [-_.a-zA-Z0-9]}. The characters {@code {}|\^&=";:<>*?/} are not allowed in a cache name.
+                                       The reason for restricting the characters in names, is that the names may be used to derive
+                                       other resource names from it, e.g. for file based storage. The characters {@code *} and {@code ?}
+                                       are used for wildcards in JMX and cannot be used in an object name.]]>
+                        </xs:documentation>
+                    </xs:annotation>
+                </xs:element>
+                <xs:element name="entryCapacity" type="envOrLongType" minOccurs="0" maxOccurs="1" default="2000">
+                    <xs:annotation>
+                        <xs:documentation>
+                            <![CDATA[The maximum number of entries hold by the cache. When the maximum size is reached, by
+                                     inserting new entries, the cache eviction algorithm will remove one or more entries
+                                     to keep the size within the configured limit.]]>
+                        </xs:documentation>
+                    </xs:annotation>
+                </xs:element>
+                <xs:element name="expireAfterWrite" type="envOrLongType" minOccurs="0" maxOccurs="1" default="-1">
+                    <xs:annotation>
+                        <xs:documentation>
+                            <![CDATA[Time duration after insert or updated an cache entry expires.
+                                     To switch off time based expiry use {@link #eternal(boolean)}.
+   
+                                     <p>If an {@link ExpiryPolicy} is specified, the maximum expiry duration
+                                        is capped to the value specified here.
+   
+                                    <p>A value of {@code 0} means every entry should expire immediately. Low values or
+                                       {@code 0} together with read through operation mode with a {@link CacheLoader} should be
+                                        avoided in production environments.]]>
+                        </xs:documentation>
+                    </xs:annotation>
+                </xs:element>
+                <xs:element name="resilienceDuration" type="envOrLongType" minOccurs="0" maxOccurs="1" default="-1">
+                    <xs:annotation>
+                        <xs:documentation>
+                            <![CDATA[Time span the cache will suppress loader exceptions if a value is available from
+                                      a previous load. After the time span is passed the cache will start propagating
+                                      loader exceptions. If {@link #suppressExceptions} is switched off, this setting
+                                      has no effect.
+   
+                                      <p>Defaults to {@link #expireAfterWrite}. If {@link #suppressExceptions}
+                                      is switched off, this setting has no effect.]]>
+                        </xs:documentation>
+                    </xs:annotation>
+                </xs:element>
+                <xs:element name="keyType" type="cacheType" minOccurs="0" maxOccurs="1">
+                    <xs:annotation>
+                        <xs:documentation>
+                            <![CDATA[The used type of the cache key. A suitable cache key must provide a useful {@code equals} and {@code hashCode} method. Arrays are not valid for cache keys.]]>
+                        </xs:documentation>
+                    </xs:annotation>
+                </xs:element>
+                <xs:element name="valueType" type="cacheType" minOccurs="0" maxOccurs="1">
+                    <xs:annotation>
+                        <xs:documentation>
+                            <![CDATA[Sets the value type to use. Arrays are not supported.]]>
+                        </xs:documentation>
+                    </xs:annotation>
+                </xs:element>
+                <xs:element name="storeByReference" type="xs:boolean" maxOccurs="1"  minOccurs="0">
+                    <xs:annotation>
+                        <xs:documentation>
+                            <![CDATA[Ensure that the cache value is stored via direct object reference and that
+                                     no serialization takes place. Cache clients leveraging the fact that an in heap
+                                     cache stores object references directly should set this value.
+   
+                                    <p>If this value is not set to true this means: The key and value objects need to have a
+                                       defined serialization mechanism and the cache may choose to transfer off the heap.
+                                       For cache2k version 1.0 this value has no effect. It should be used by application developers to future proof 
+                                       the applications with upcoming versions.]]>
+                        </xs:documentation>
+                    </xs:annotation>
+                </xs:element>
+                <xs:element name="strictEviction" type="xs:boolean" maxOccurs="1"  minOccurs="0" default="false">
+                    <xs:annotation>
+                        <xs:documentation>
+                            <![CDATA[To increase performance cache2k optimizes the eviction and does eviction in
+                                     greater chunks. With strict eviction, the eviction is done for one entry
+                                     as soon as the capacity constraint is met. This is primarily used for
+                                     testing and evaluation purposes.]]>
+                        </xs:documentation>
+                    </xs:annotation>
+                </xs:element>
+                <xs:element name="refreshAhead" type="xs:boolean" maxOccurs="1"  minOccurs="0" default="false">
+                    <xs:annotation>
+                        <xs:documentation>
+                            <![CDATA[When true, enable background refresh / refresh ahead. After the expiry time of a value is reached,
+                                     the loader is invoked to fetch a fresh value. The old value will be returned by the cache, although
+                                     it is expired, and will be replaced by the new value, once the loader is finished. In the case
+                                     there are not enough loader threads available, the value will expire immediately and
+                                     the next {@code get()} request will trigger the load.
+   
+                                    <p>Once refreshed, the entry is in a trail period. If it is not accessed until the next
+                                       expiry, no refresh will be done and the entry expires regularly. This means that the
+                                       time an entry stays within the trail period is determined by the configured expiry time
+                                       or the the {@code ExpiryPolicy}. In case an entry is not accessed any more it needs to
+                                       reach the expiry time twice before removed from the cache.
+   
+                                      <p>The number of threads used to do the refresh are configured via
+                                         {@link #loaderThreadCount(int)}]]>
+                        </xs:documentation>
+                    </xs:annotation>
+                </xs:element>
+                <xs:element name="retryInterval" type="envOrLongType" maxOccurs="1"  minOccurs="0" default="-1">
+                    <xs:annotation>
+                        <xs:documentation>
+                            <![CDATA[If a loader exception happens, this is the time interval after a
+                                     retry attempt is made. If not specified, 10% of {@link #maxRetryInterval}.]]>
+                        </xs:documentation>
+                    </xs:annotation>
+                </xs:element>
+                <xs:element name="maxRetryInterval" type="envOrLongType" maxOccurs="1"  minOccurs="0" default="-1">
+                    <xs:annotation>
+                        <xs:documentation>
+                            <![CDATA[If a loader exception happens, this is the maximum time interval after a
+                                     retry attempt is made. For retries an exponential backoff algorithm is used.
+                                     It starts with the retry time and then increases the time to the maximum
+                                     according to an exponential pattern.
+   
+                                     <p>By default identical to {@link #resilienceDuration}]]>
+                        </xs:documentation>
+                    </xs:annotation>
+                </xs:element>
+                <xs:element name="keepDataAfterExpired" type="xs:boolean" maxOccurs="1"  minOccurs="0" default="false">
+                    <xs:annotation>
+                        <xs:documentation>
+                            <![CDATA[Expired data is kept in the cache until the entry is evicted. This consumes memory,
+                                    but if the data is accessed again the previous data can be used by the cache loader
+                                    for optimizing (e.g. if-modified-since for a HTTP request). Default value: false]]>
+                        </xs:documentation>
+                    </xs:annotation>
+                </xs:element>
+                <xs:element name="sharpExpiry" type="xs:boolean" maxOccurs="1"  minOccurs="0" default="false">
+                    <xs:annotation>
+                        <xs:documentation>
+                            <![CDATA[ By default the expiry time is not exact, which means, a value might be visible a few
+                                      milliseconds after the time of expiry. The time lag depends on the system load.
+                                      Switching to true, means that values will not be visible when the time is reached that
+                                      {@link ExpiryPolicy} returned.]]>
+                        </xs:documentation>
+                    </xs:annotation>
+                </xs:element>
+                <xs:element name="suppressExceptions" type="xs:boolean" maxOccurs="1"  minOccurs="0" default="true">
+                    <xs:annotation>
+                        <xs:documentation>
+                            <![CDATA[Suppress an exception from the cache loader, if there is previous data.
+                                    When a load was not successful, the operation is retried at shorter interval then
+                                    the normal expiry, see {@link #retryInterval(long, TimeUnit)}.
+   
+                                    <p>Exception suppression is only active when entries expire (eternal is not true) or the explicit
+                                    configuration of the timing parameters for resilience, e.g. {@link #resilienceDuration(long, TimeUnit)}.
+                                    Check the user guide chapter for details.
+   
+                                    <p>Setting this to {@code false}, will disable exceptions suppression or caching (aka resilience).
+                                       Default value: {@code true}
+   
+                                    @see <a href="https://cache2k.org/docs/1.0/user-guide.html#resilience-and-exceptions">cache2k user guide - Exceptions and Resilience</a>]]>
+                        </xs:documentation>
+                    </xs:annotation>
+                </xs:element>
+                <xs:element name="loaderThreadCount" type="xs:int" maxOccurs="1"  minOccurs="0">
+                    <xs:annotation>
+                        <xs:documentation>
+                            <![CDATA[If no separate executor is set via {@link #loaderExecutor(Executor)} the cache will
+                                     create a separate thread pool used exclusively by it. Defines the maximum number of threads
+                                     this cache should use for calls to the {@link CacheLoader}. The default is one thread
+                                     per available CPU.
+        
+                                    <p>If a separate executor is defined the parameter has no effect.]]>
+                        </xs:documentation>
+                    </xs:annotation>
+                </xs:element>
+                <xs:element name="permitNullValues" type="xs:boolean" maxOccurs="1"  minOccurs="0" default="false">
+                    <xs:annotation>
+                        <xs:documentation>
+                            <![CDATA[When {@code true}, {@code null} values are allowed in the cache. In the default configuration
+                                     {@code null} values are prohibited.
+   
+                                     <p>See the chapter in the user guide for details on {@code null} values.]]>
+                        </xs:documentation>
+                    </xs:annotation>
+                </xs:element>
+                <xs:element name="disableStatistics" type="xs:boolean" maxOccurs="1"  minOccurs="0" default="false">
+                    <xs:annotation>
+                        <xs:documentation>
+                            <![CDATA[By default statistic gathering is enabled. Switching this to {@code true} will disable all statistics
+                                    that have significant overhead. The cache will also no be accessible via JMX.]]>
+                        </xs:documentation>
+                    </xs:annotation>
+                </xs:element>
+                <xs:element name="disableLastModificationTime" type="xs:boolean" maxOccurs="1"  minOccurs="0" default="false">
+                    <xs:annotation>
+                        <xs:documentation>
+                            <![CDATA[Disable that the last modification time is available at {@link CacheEntry#getLastModification()}.
+                                      This also disables the recording of the average load time that can be retrieved via JMX.
+   
+                                     <p>When expiry is used, this parameter has no effect. The last modification time may be used
+                                        by the loaders, expiry policy or resilience policy.]]>
+                        </xs:documentation>
+                    </xs:annotation>
+                </xs:element>
+                <xs:element name="boostConcurrency" type="xs:boolean" maxOccurs="1"  minOccurs="0" default="false">
+                    <xs:annotation>
+                        <xs:documentation>
+                            <![CDATA[When {@code true}, optimize for high core counts and applications that do lots of mutations
+                                     in the cache. When switched on, the cache will occupy slightly more memory and eviction efficiency
+                                     may drop slightly. This overhead is negligible for big cache sizes (100K and more).
+   
+                                    <p>Typical interactive do not need to enable this. May improve concurrency for applications
+                                       that utilize all cores and cache operations account for most CPU cycles.]]>
+                        </xs:documentation>
+                    </xs:annotation>
+                </xs:element>
+                <xs:element name="eternal" type="xs:boolean" maxOccurs="1"  minOccurs="0">
+                    <xs:annotation>
+                        <xs:documentation>
+                            <![CDATA[ When set to {@code true}, cached values do not expire by time. Entries will need to be removed
+                                      from the cache explicitly or will be evicted if capacity constraints are reached.
+   
+                                      <p>Setting eternal to {@code false} signals that the data should expire, but there is no
+                                         predefined expiry value at programmatic level. This value needs to be set by other
+                                         means, e.g. within a configuration file.
+  
+                                     <p>The default behavior of the cache is identical to the setting of eternal. Entries will not expire.
+                                        When eternal was set explicitly it cannot be reset to another value afterwards. This should protect against
+                                        misconfiguration.
+    
+                                    <p>Exceptions: If set to eternal with default setting and if there is no
+                                       explicit expiry configured for exceptions with {@link #retryInterval(long, TimeUnit)},
+                                       exceptions will not be cached and expire immediately.]]>
+                        </xs:documentation>
+                    </xs:annotation>
+                </xs:element>
+                
+                <xs:element minOccurs="0" maxOccurs="1" name="loader" type="customizationSupplier">
+                    <xs:annotation>
+                        <xs:documentation>
+                            <![CDATA[ Enables read through operation and sets a cache loader that provides the the
+                                      cached data. By default read through is not enabled, which means
+                                      the methods {@link Cache#get} and {@link Cache#peek} have identical behavior.]]>
+                        </xs:documentation>
+                    </xs:annotation>
+                </xs:element>
+                <!-- not sure if loader and advancerloader should be both in the xsd  -->
+                <xs:element minOccurs="0" maxOccurs="1" name="advancedLoader" type="customizationSupplier">
+                    <xs:annotation>
+                        <xs:documentation>
+                            <![CDATA[ Enables read through operation and sets a cache loader that provides the the
+                                      cached data. By default read through is not enabled, which means
+                                      the methods {@link Cache#get} and {@link Cache#peek} have identical behavior.]]> 
+                        </xs:documentation>
+                    </xs:annotation>
+                </xs:element>
+                <xs:element minOccurs="0" maxOccurs="1" name="writer" type="customizationSupplier">
+                    <xs:annotation>
+                        <xs:documentation>
+                            <![CDATA[ Enables write through operation and sets a writer customization that gets
+                                       called synchronously upon cache mutations. By default write through is not enabled.]]>
+                        </xs:documentation>
+                    </xs:annotation>
+                </xs:element>
+                <xs:element maxOccurs="1" minOccurs="0" name="expiryPolicy" type="customizationSupplier">
+                    <xs:annotation>
+                        <xs:documentation>
+                            <![CDATA[Set expiry policy to use.
+   
+                                    <p>If this is specified the maximum expiry time is still limited to the value in
+                                       {@link #expireAfterWrite}. If {@link #expireAfterWrite(long, java.util.concurrent.TimeUnit)}
+                                       is set to 0 then expiry calculation is not used, all entries expire immediately.
+   
+                                    <p>If no maximum expiry is specified via {@link #expireAfterWrite} at least the
+                                        {@link #resilienceDuration} needs to be specified, if resilience should be enabled.]]>
+                        </xs:documentation>
+                    </xs:annotation>
+                </xs:element>
+                <xs:element maxOccurs="1" minOccurs="0" name="resiliencePolicy" type="customizationSupplier">
+                    <xs:annotation>
+                        <xs:documentation>
+                            <![CDATA[ Sets a custom resilience policy to control the cache behavior in the presence
+                                      of exceptions from the loader. A specified policy will be ignored if
+                                      {@link #expireAfterWrite} is set to 0.]]>
+                        </xs:documentation>
+                    </xs:annotation>
+                </xs:element>
+                <xs:element minOccurs="0" maxOccurs="1" name="exceptionPropagator" type="customizationSupplier">
+                    <xs:annotation>
+                        <xs:documentation>
+                            <![CDATA[Sets customization for propagating loader exceptions. By default loader exceptions
+                                     are wrapped into a {@link org.cache2k.integration.CacheLoaderException}.]]>
+                        </xs:documentation>
+                    </xs:annotation>
+                </xs:element>
+                <xs:element minOccurs="0" maxOccurs="1" name="loaderExecutor" type="customizationSupplier">
+                    <xs:annotation>
+                        <xs:documentation>
+                            <![CDATA[Thread pool / executor service to use for asynchronous load operations. If no executor is specified
+                                     the cache will create a thread pool, if needed.]]>
+                        </xs:documentation>
+                    </xs:annotation>
+                </xs:element>
+                <xs:element minOccurs="0" maxOccurs="1" name="prefetchExecutor" type="customizationSupplier">
+                    <xs:annotation>
+                        <xs:documentation>
+                            <![CDATA[ Thread pool / executor service to use for refresh ahead and prefetch operations. If not specified the
+                                      same refresh ahead operation will use the thread pool defined by {@link #loaderExecutor(Executor)}
+                                      or a cache local pool is created.]]>
+                        </xs:documentation>
+                    </xs:annotation>
+                </xs:element>
+                <xs:element minOccurs="0" maxOccurs="1" name="asyncListenerExecutor" type="customizationSupplier">
+                    <xs:annotation>
+                        <xs:documentation>
+                            <![CDATA[Executor for asynchronous listeners. If no executor is specified, an internal
+                                     executor is used that has unbounded thread capacity.]]>
+                        </xs:documentation>
+                    </xs:annotation>
+                </xs:element>
+                <xs:element minOccurs="0" maxOccurs="1" name="clock" type="customizationSupplier">
+                    <xs:annotation>
+                        <xs:documentation>
+                            <![CDATA[Clock to be used by the cache as time reference.]]>
+                        </xs:documentation>
+                    </xs:annotation>
+                </xs:element>
+                
+                <xs:element minOccurs="0" maxOccurs="1" name="listeners" type="customizationCollection">
+                    <xs:annotation>
+                        <xs:documentation>
+                            <![CDATA[A set of listener that will be executed in a synchronous mode,meaning, further processing for an entry will stall until a registered listener is executed.
+                            The expiry will be always executed asynchronously.]]>
+                        </xs:documentation>
+                    </xs:annotation>
+                </xs:element>
+                <xs:element minOccurs="0" maxOccurs="1" name="asyncListeners" type="customizationCollection">
+                    <xs:annotation>
+                        <xs:documentation>
+                            A set of listener that will be executed in a asynchronous mode
+                        </xs:documentation>
+                    </xs:annotation>
+                </xs:element>
+                <xs:element minOccurs="0" maxOccurs="1" name="closedListeners" type="customizationCollection">
+                    <xs:annotation>
+                        <xs:documentation>
+                            A set of listeners that are called after a cache is closed. This is mainly used for the JCache integration.
+                        </xs:documentation>
+                    </xs:annotation>
+                </xs:element>
+                
+                <xs:element minOccurs="0" maxOccurs="1" name="sections"  type="sections">
+                    <xs:annotation>
+                        <xs:documentation>
+                            <![CDATA[A set of Section element. A section may contain any configuration bean which is selected by type.
+                                    
+                                    Inside the section the elements type and name are defined. Furthermore, the section may contain unrestricted elements.]]>
+                        </xs:documentation>
+                    </xs:annotation>
+                </xs:element>
+                
+                <xs:element  maxOccurs="1"  minOccurs="0" name="include" type="include">
+                    <xs:annotation>
+                        <xs:documentation>
+                            <![CDATA[lists cache names that have been defined in the xml document. 
+                            e.g.<include>regularExpiry,lessResilient</include> where regularExpiry and lessResilient are names of two caches already defined in the document]]>
+                        </xs:documentation>
+                    </xs:annotation>
+                </xs:element>
+            </xs:sequence>  
+            
+        </xs:complexType>
+    
+        <xs:complexType name="jcache">
+            <xs:all>
+                <xs:element name="alwaysFlushJmxStatistics" type="xs:boolean" maxOccurs="1"  minOccurs="0" default="false">
+                    <xs:annotation>
+                        <xs:documentation>
+                            <![CDATA[Enabling this was needed for passing the JCache 1.0 tests.
+                                     Sine JCache 1.1 this is no longer needed. This flag has no
+                                     effect since cache2k version 1.0.2.]]>
+                        </xs:documentation>
+                    </xs:annotation>
+                </xs:element>
+                <xs:element name="copyAlwaysIfRequested" type="xs:boolean" maxOccurs="1"  minOccurs="0" default="true">
+                    <xs:annotation>
+                        <xs:documentation>
+                            <![CDATA[Copy keys and values when entering and leaving the cache in case store by value semantics are requested by the application.
+                                     Default in JCache configuration mode: {@code true}.
+                                     Default in cache2k configuration mode: {@code false}.]]>
+                        </xs:documentation>
+                    </xs:annotation>
+                </xs:element>
+            </xs:all>
+        </xs:complexType>
+     
+        <xs:complexType name="sections">
+            <xs:choice>
+                <!-- see how often section element can occur inside sections element-->
+                <xs:element maxOccurs="unbounded" minOccurs="1" name="section" type="sectionType">
+                    <xs:annotation>
+                        <xs:documentation>
+                            Configuration section for the cache2k configuration
+                        </xs:documentation>
+                    </xs:annotation>
+                </xs:element>
+                <xs:element maxOccurs="1" minOccurs="1" name="jcache" type="jcache">
+                    <xs:annotation>
+                        <xs:documentation>
+                            Configuration section for the cache2k configuration to control additional behavior related to JCache.
+                        </xs:documentation>
+                    </xs:annotation>            
+                </xs:element>
+            </xs:choice>
+        </xs:complexType>
+    
+    
+    <!-- elements -->
+    
+    <xs:element name="cache2k">   
+        <xs:annotation>
+            <xs:documentation>
+                Defines the configuration for cache2k, for the cacheManager, for the default cache, for the template caches, and for the named caches
+            </xs:documentation>
+        </xs:annotation>
+        <xs:complexType>
+            <xs:sequence>
+                <!-- ask if version is mandatory in the xml configuration file, use pattern instead of string ? -->
+                <xs:element maxOccurs="1"  minOccurs="1" name="version" type="version"  default="1.0">
+                    <xs:annotation>
+                        <xs:documentation>
+                            Version which controls how the configuration is interpreted. Needed for possible
+                            future changes. Always '1.0' at the moment.
+                        </xs:documentation>
+                    </xs:annotation>
+                </xs:element>
+                <xs:element name ="defaultManagerName" type="xs:string" maxOccurs="1"  minOccurs="0" default="default">
+                    <xs:annotation>
+                        <xs:documentation>
+                            default cache manager is used when no cache manager is explicitly defined. 
+                            Set another name for the default cache manager, default is "default".
+                        </xs:documentation>
+                    </xs:annotation>
+                </xs:element>
+                <xs:element maxOccurs="1"  minOccurs="0" name="cacheManager" type="cacheManager">
+                    <xs:annotation>
+                        <xs:documentation>
+                            The manager, the created cache will belong to. 
+                        </xs:documentation>
+                    </xs:annotation>
+                </xs:element>
+                <xs:element name="ignoreAnonymousCache" type="xs:boolean" maxOccurs="1"  minOccurs="0" default="false">
+                    <xs:annotation>
+                        <xs:documentation>
+                            <![CDATA[If 'true', allows cache without name. If a cache has no name,
+                                      a special configuration cannot be applied. The default is 'false',
+                                      enforcing that all caches are named on the programmatic level.]]>
+                        </xs:documentation>
+                    </xs:annotation>
+                </xs:element>
+                <xs:element name="skipCheckOnStartup" type="xs:boolean" maxOccurs="1"  minOccurs="0" default="false">
+                    <xs:annotation>
+                        <xs:documentation>
+                            <![CDATA[Do not check whether all cache configurations can be applied
+                                     properly at startup. Default is 'false']]>
+                        </xs:documentation>
+                    </xs:annotation>
+                </xs:element>
+                <xs:element  maxOccurs="1"  minOccurs="0" name="properties" type="properties">
+                    <xs:annotation>
+                        <xs:documentation>
+                            <![CDATA[conatins user defined properties. see example above
+                                      [source,XML]
+                                      ----
+                                      <properties>
+                                        <user>
+                                           <smallCacheCapacity>12_000</smallCacheCapacity>
+                                           <userHome>${ENV.HOME}</userHome>
+                                        </user>
+                                     </properties>]]>
+                        </xs:documentation>
+                    </xs:annotation>
+                </xs:element>
+                <!-- see if defaults element can also contain one or more cache elements-->
+                <xs:element  maxOccurs="1"  minOccurs="0" name="defaults" type="defaults">
+                    <xs:annotation>
+                        <xs:documentation>
+                            <![CDATA[A default configuration may be provided in `defaults.cache` (see example above). The defaults will be used
+                                     for every cache created in the cache manager.
+                                     [source,XML]
+                                      ----
+                                     <defaults>
+                                        <cache>
+                                            <entryCapacity>100_000</entryCapacity>
+                                        </cache>
+                                    </defaults>]]>
+                        </xs:documentation>
+                    </xs:annotation>
+                </xs:element>
+                <!-- check whether cache names should be unique in the entire xml file or just within the parent elemet -->
+                <xs:element  maxOccurs="1"  minOccurs="0" name="templates" type="cachesType">
+                    <xs:annotation>
+                        <xs:documentation>
+                            <![CDATA[Multiple template configurations can be provided under 'templates'. Templates have a name.
+                                     In the cache configuration, a template can be included via 'include'. Multiple templates can be included
+                                     when separated with comma. Templates can be used for other configuration sections as well.]]>
+                        </xs:documentation>
+                    </xs:annotation>
+                    <xs:unique name="templates_cache_name">
+                        <xs:selector xpath=".//cache"></xs:selector>
+                        <xs:field xpath="name"></xs:field>
+                    </xs:unique>
+                </xs:element>
+                <xs:element  maxOccurs="1"  minOccurs="1" name="caches" type="cachesType">
+                    <xs:annotation>
+                        <xs:documentation>
+                            contains a set of named caches.
+                        </xs:documentation>
+                    </xs:annotation>
+                    <xs:unique name="caches_cache_name">
+                        <xs:selector xpath=".//cache"></xs:selector>
+                        <xs:field xpath="name"></xs:field>
+                    </xs:unique>
+                </xs:element>
+            </xs:sequence>
+            
+        </xs:complexType>
+    </xs:element>
+    
+    
+    
+    
+</xs:schema>
