@@ -1,31 +1,33 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <cache2k xmlns:vc="http://www.w3.org/2007/XMLSchema-versioning"
  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
- xsi:noNamespaceSchemaLocation="file:/Users/rokia/Documents/Upwork/XSD-Cache/cache2kv2.xsd">
+ xsi:noNamespaceSchemaLocation="file:../../main/resources/cache2kv2.xsd">
     <version>1.0</version>
     <defaultManagerName>default</defaultManagerName>
     <cacheManager>
-        <managerName>managerName0</managerName>
-        <classLoader>a.AA</classLoader>
+        <managerName>default</managerName>
+        <classLoader>org.cache.MyClassLoader</classLoader>
         <isDefaultManager>true</isDefaultManager>
     </cacheManager>
     <ignoreAnonymousCache>false</ignoreAnonymousCache>
     <skipCheckOnStartup>false</skipCheckOnStartup>
     <properties>
         <user>
+             <smallCacheCapacity>12_000</smallCacheCapacity>
+      		 <userHome>${ENV.HOME}</userHome>
         </user>
     </properties>
     <defaults>
         <cache>
-            <name>name0</name>
+            <name>name_0</name>
             <entryCapacity>2000</entryCapacity>
             <expireAfterWrite>-1</expireAfterWrite>
             <resilienceDuration>-1</resilienceDuration>
             <keyType>
-                <type>a.AA</type>
+                <type>org.cache.KeyType</type>
             </keyType>
             <valueType>
-                <type>a.AA</type>
+                <type>org.cache.ValueType</type>
             </valueType>
             <storeByReference>false</storeByReference>
             <strictEviction>false</strictEviction>
@@ -35,160 +37,144 @@
             <keepDataAfterExpired>false</keepDataAfterExpired>
             <sharpExpiry>false</sharpExpiry>
             <suppressExceptions>true</suppressExceptions>
-            <loaderThreadCount>0</loaderThreadCount>
+            <loaderThreadCount>2</loaderThreadCount>
             <permitNullValues>false</permitNullValues>
             <disableStatistics>false</disableStatistics>
             <disableLastModificationTime>false</disableLastModificationTime>
             <boostConcurrency>false</boostConcurrency>
-            <eternal>false</eternal>
+            <eternal>true</eternal>
             <loader>
-                <byClassName>
-                    <className>a.AA</className>
-                </byClassName>
-<!--                <bean>
-                    <type>a.AA</type>
-                    <className>a.AA</className>
-                </bean>-->
+<!--                <byClassName>
+                    <className></className>
+                </byClassName>-->
+                <bean>
+                    <type>org.cache2k.MyType</type>
+                    <className>MyClass</className>
+                </bean>
             </loader>
             <advancedLoader>
                 <byClassName>
-                    <className>a.AA</className>
+                    <className>org.cache2k.MyAdvancedLoaderClass</className>
                 </byClassName>
 <!--                <bean>
-                    <type>a.AA</type>
-                    <className>a.AA</className>
+                    <type></type>
+                    <className></className>
                 </bean>-->
             </advancedLoader>
             <writer>
                 <byClassName>
-                    <className>a.AA</className>
+                    <className>org.cache2k.MyWriterClass</className>
                 </byClassName>
 <!--                <bean>
-                    <type>a.AA</type>
-                    <className>a.AA</className>
+                    <type></type>
+                    <className></className>
                 </bean>-->
             </writer>
             <expiryPolicy>
-                <byClassName>
-                    <className>a.AA</className>
-                </byClassName>
-<!--                <bean>
-                    <type>a.AA</type>
-                    <className>a.AA</className>
-                </bean>-->
+<!--                <byClassName>
+                    <className></className>
+                </byClassName>-->
+                <bean>
+                    <type>org.cache2k.ExpiryPolicyClass</type>
+                    <className>MyExpiryPolicyClass</className>
+                </bean>
             </expiryPolicy>
             <resiliencePolicy>
-                <byClassName>
-                    <className>a.AA</className>
-                </byClassName>
-<!--                <bean>
-                    <type>a.AA</type>
-                    <className>a.AA</className>
-                </bean>-->
+<!--                <byClassName>
+                    <className></className>
+                </byClassName>-->
+                <bean>
+                    <type>org.cache2k.ResiliencePolicyClass</type>
+                    <className>MyResiliencePolicyClass</className>
+                </bean>
             </resiliencePolicy>
             <exceptionPropagator>
                 <byClassName>
-                    <className>a.AA</className>
+                    <className>MyExceptionPropagatorClass</className>
                 </byClassName>
 <!--                <bean>
-                    <type>a.AA</type>
-                    <className>a.AA</className>
+                    <type></type>
+                    <className></className>
                 </bean>-->
             </exceptionPropagator>
             <loaderExecutor>
                 <byClassName>
-                    <className>a.AA</className>
+                    <className>MyLoaderExecutorClass</className>
                 </byClassName>
 <!--                <bean>
-                    <type>a.AA</type>
-                    <className>a.AA</className>
+                    <type></type>
+                    <className></className>
                 </bean>-->
             </loaderExecutor>
             <prefetchExecutor>
                 <byClassName>
-                    <className>a.AA</className>
+                    <className>MyPrefetchExecutorClass</className>
                 </byClassName>
 <!--                <bean>
-                    <type>a.AA</type>
-                    <className>a.AA</className>
+                    <type></type>
+                    <className></className>
                 </bean>-->
             </prefetchExecutor>
             <asyncListenerExecutor>
-                <byClassName>
-                    <className>a.AA</className>
-                </byClassName>
-<!--                <bean>
-                    <type>a.AA</type>
-                    <className>a.AA</className>
-                </bean>-->
+<!--                <byClassName>
+                    <className></className>
+                </byClassName>-->
+                <bean>
+                    <type>org.cache2k.AsyncListenerExecutorClass</type>
+                    <className>MyAsyncListenerExecutorClass</className>
+                </bean>
             </asyncListenerExecutor>
             <clock>
                 <byClassName>
-                    <className>a.AA</className>
+                    <className>MyClass</className>
                 </byClassName>
 <!--                <bean>
-                    <type>a.AA</type>
-                    <className>a.AA</className>
+                    <type></type>
+                    <className></className>
                 </bean>-->
             </clock>
             <listeners>
                 <listener>
-                    <type>a.AA</type>
-                    <className>a.AA</className>
-                </listener>
-                <listener>
-                    <type>a.AA</type>
-                    <className>a.AA</className>
+                    <type>org.cache2k.ListenerClass</type>
+                    <className>MyListenerClass</className>
                 </listener>
             </listeners>
             <asyncListeners>
                 <listener>
-                    <type>a.AA</type>
-                    <className>a.AA</className>
-                </listener>
-                <listener>
-                    <type>a.AA</type>
-                    <className>a.AA</className>
+                    <type>org.cache2k.AsyncListenerClass</type>
+                    <className>MyAsyncListenerClass</className>
                 </listener>
             </asyncListeners>
             <closedListeners>
                 <listener>
-                    <type>a.AA</type>
-                    <className>a.AA</className>
-                </listener>
-                <listener>
-                    <type>a.AA</type>
-                    <className>a.AA</className>
+                    <type>org.cache2k.ClosedListenerClass</type>
+                    <className>MyClosedListenerClass</className>
                 </listener>
             </closedListeners>
             <sections>
-                <section>
+<!--                <section>
                     <type>org.cache2k.jcache.JCacheConfiguration</type>
-                    <copyAlwaysIfRequested>false</copyAlwaysIfRequested>
-                </section>
-                <section>
-                    <type>org.cache2k.jcache.JCacheConfiguration</type>
-                    <copyAlwaysIfRequested>false</copyAlwaysIfRequested>
-                </section>
-<!--                <jcache>
+                    <copyAlwaysIfRequested></copyAlwaysIfRequested>
+                </section>-->
+                <jcache>
                     <alwaysFlushJmxStatistics>false</alwaysFlushJmxStatistics>
                     <copyAlwaysIfRequested>true</copyAlwaysIfRequested>
-                </jcache>-->
+                </jcache>
             </sections>
-            <include>include0</include>
+            <include>include0,include1</include>
         </cache>
     </defaults>
     <templates>
         <cache>
-            <name>name1</name>
+            <name>name_0</name>
             <entryCapacity>2000</entryCapacity>
             <expireAfterWrite>-1</expireAfterWrite>
             <resilienceDuration>-1</resilienceDuration>
             <keyType>
-                <type>a.AA</type>
+                <type>org.cache.KeyType</type>
             </keyType>
             <valueType>
-                <type>a.AA</type>
+                <type>org.cache.ValueType</type>
             </valueType>
             <storeByReference>false</storeByReference>
             <strictEviction>false</strictEviction>
@@ -198,321 +184,144 @@
             <keepDataAfterExpired>false</keepDataAfterExpired>
             <sharpExpiry>false</sharpExpiry>
             <suppressExceptions>true</suppressExceptions>
-            <loaderThreadCount>0</loaderThreadCount>
+            <loaderThreadCount>2</loaderThreadCount>
             <permitNullValues>false</permitNullValues>
             <disableStatistics>false</disableStatistics>
             <disableLastModificationTime>false</disableLastModificationTime>
             <boostConcurrency>false</boostConcurrency>
-            <eternal>false</eternal>
+            <eternal>true</eternal>
             <loader>
-                <byClassName>
-                    <className>a.AA</className>
-                </byClassName>
-<!--                <bean>
-                    <type>a.AA</type>
-                    <className>a.AA</className>
-                </bean>-->
+                <!--                <byClassName>
+                    <className></className>
+                </byClassName>-->
+                <bean>
+                    <type>org.cache2k.MyType</type>
+                    <className>MyClass</className>
+                </bean>
             </loader>
             <advancedLoader>
                 <byClassName>
-                    <className>a.AA</className>
+                    <className>org.cache2k.MyAdvancedLoaderClass</className>
                 </byClassName>
-<!--                <bean>
-                    <type>a.AA</type>
-                    <className>a.AA</className>
+                <!--                <bean>
+                    <type></type>
+                    <className></className>
                 </bean>-->
             </advancedLoader>
             <writer>
                 <byClassName>
-                    <className>a.AA</className>
+                    <className>org.cache2k.MyWriterClass</className>
                 </byClassName>
-<!--                <bean>
-                    <type>a.AA</type>
-                    <className>a.AA</className>
+                <!--                <bean>
+                    <type></type>
+                    <className></className>
                 </bean>-->
             </writer>
             <expiryPolicy>
-                <byClassName>
-                    <className>a.AA</className>
-                </byClassName>
-<!--                <bean>
-                    <type>a.AA</type>
-                    <className>a.AA</className>
-                </bean>-->
+                <!--                <byClassName>
+                    <className></className>
+                </byClassName>-->
+                <bean>
+                    <type>org.cache2k.ExpiryPolicyClass</type>
+                    <className>MyExpiryPolicyClass</className>
+                </bean>
             </expiryPolicy>
             <resiliencePolicy>
-                <byClassName>
-                    <className>a.AA</className>
-                </byClassName>
-<!--                <bean>
-                    <type>a.AA</type>
-                    <className>a.AA</className>
-                </bean>-->
+                <!--                <byClassName>
+                    <className></className>
+                </byClassName>-->
+                <bean>
+                    <type>org.cache2k.ResiliencePolicyClass</type>
+                    <className>MyResiliencePolicyClass</className>
+                </bean>
             </resiliencePolicy>
             <exceptionPropagator>
                 <byClassName>
-                    <className>a.AA</className>
+                    <className>MyExceptionPropagatorClass</className>
                 </byClassName>
-<!--                <bean>
-                    <type>a.AA</type>
-                    <className>a.AA</className>
+                <!--                <bean>
+                    <type></type>
+                    <className></className>
                 </bean>-->
             </exceptionPropagator>
             <loaderExecutor>
                 <byClassName>
-                    <className>a.AA</className>
+                    <className>MyLoaderExecutorClass</className>
                 </byClassName>
-<!--                <bean>
-                    <type>a.AA</type>
-                    <className>a.AA</className>
+                <!--                <bean>
+                    <type></type>
+                    <className></className>
                 </bean>-->
             </loaderExecutor>
             <prefetchExecutor>
                 <byClassName>
-                    <className>a.AA</className>
+                    <className>MyPrefetchExecutorClass</className>
                 </byClassName>
-<!--                <bean>
-                    <type>a.AA</type>
-                    <className>a.AA</className>
+                <!--                <bean>
+                    <type></type>
+                    <className></className>
                 </bean>-->
             </prefetchExecutor>
             <asyncListenerExecutor>
-                <byClassName>
-                    <className>a.AA</className>
-                </byClassName>
-<!--                <bean>
-                    <type>a.AA</type>
-                    <className>a.AA</className>
-                </bean>-->
+                <!--                <byClassName>
+                    <className></className>
+                </byClassName>-->
+                <bean>
+                    <type>org.cache2k.AsyncListenerExecutorClass</type>
+                    <className>MyAsyncListenerExecutorClass</className>
+                </bean>
             </asyncListenerExecutor>
             <clock>
                 <byClassName>
-                    <className>a.AA</className>
+                    <className>MyClass</className>
                 </byClassName>
-<!--                <bean>
-                    <type>a.AA</type>
-                    <className>a.AA</className>
+                <!--                <bean>
+                    <type></type>
+                    <className></className>
                 </bean>-->
             </clock>
             <listeners>
                 <listener>
-                    <type>a.AA</type>
-                    <className>a.AA</className>
-                </listener>
-                <listener>
-                    <type>a.AA</type>
-                    <className>a.AA</className>
+                    <type>org.cache2k.ListenerClass</type>
+                    <className>MyListenerClass</className>
                 </listener>
             </listeners>
             <asyncListeners>
                 <listener>
-                    <type>a.AA</type>
-                    <className>a.AA</className>
-                </listener>
-                <listener>
-                    <type>a.AA</type>
-                    <className>a.AA</className>
+                    <type>org.cache2k.AsyncListenerClass</type>
+                    <className>MyAsyncListenerClass</className>
                 </listener>
             </asyncListeners>
             <closedListeners>
                 <listener>
-                    <type>a.AA</type>
-                    <className>a.AA</className>
-                </listener>
-                <listener>
-                    <type>a.AA</type>
-                    <className>a.AA</className>
+                    <type>org.cache2k.ClosedListenerClass</type>
+                    <className>MyClosedListenerClass</className>
                 </listener>
             </closedListeners>
             <sections>
-                <section>
+                <!--                <section>
                     <type>org.cache2k.jcache.JCacheConfiguration</type>
-                    <copyAlwaysIfRequested>false</copyAlwaysIfRequested>
-                </section>
-                <section>
-                    <type>org.cache2k.jcache.JCacheConfiguration</type>
-                    <copyAlwaysIfRequested>false</copyAlwaysIfRequested>
-                </section>
-<!--                <jcache>
+                    <copyAlwaysIfRequested></copyAlwaysIfRequested>
+                </section>-->
+                <jcache>
                     <alwaysFlushJmxStatistics>false</alwaysFlushJmxStatistics>
                     <copyAlwaysIfRequested>true</copyAlwaysIfRequested>
-                </jcache>-->
+                </jcache>
             </sections>
-            <include>include1</include>
-        </cache>
-        <cache>
-            <name>name2</name>
-            <entryCapacity>2000</entryCapacity>
-            <expireAfterWrite>-1</expireAfterWrite>
-            <resilienceDuration>-1</resilienceDuration>
-            <keyType>
-                <type>a.AA</type>
-            </keyType>
-            <valueType>
-                <type>a.AA</type>
-            </valueType>
-            <storeByReference>false</storeByReference>
-            <strictEviction>false</strictEviction>
-            <refreshAhead>false</refreshAhead>
-            <retryInterval>-1</retryInterval>
-            <maxRetryInterval>-1</maxRetryInterval>
-            <keepDataAfterExpired>false</keepDataAfterExpired>
-            <sharpExpiry>false</sharpExpiry>
-            <suppressExceptions>true</suppressExceptions>
-            <loaderThreadCount>0</loaderThreadCount>
-            <permitNullValues>false</permitNullValues>
-            <disableStatistics>false</disableStatistics>
-            <disableLastModificationTime>false</disableLastModificationTime>
-            <boostConcurrency>false</boostConcurrency>
-            <eternal>false</eternal>
-            <loader>
-                <byClassName>
-                    <className>a.AA</className>
-                </byClassName>
-<!--                <bean>
-                    <type>a.AA</type>
-                    <className>a.AA</className>
-                </bean>-->
-            </loader>
-            <advancedLoader>
-                <byClassName>
-                    <className>a.AA</className>
-                </byClassName>
-<!--                <bean>
-                    <type>a.AA</type>
-                    <className>a.AA</className>
-                </bean>-->
-            </advancedLoader>
-            <writer>
-                <byClassName>
-                    <className>a.AA</className>
-                </byClassName>
-<!--                <bean>
-                    <type>a.AA</type>
-                    <className>a.AA</className>
-                </bean>-->
-            </writer>
-            <expiryPolicy>
-                <byClassName>
-                    <className>a.AA</className>
-                </byClassName>
-<!--                <bean>
-                    <type>a.AA</type>
-                    <className>a.AA</className>
-                </bean>-->
-            </expiryPolicy>
-            <resiliencePolicy>
-                <byClassName>
-                    <className>a.AA</className>
-                </byClassName>
-<!--                <bean>
-                    <type>a.AA</type>
-                    <className>a.AA</className>
-                </bean>-->
-            </resiliencePolicy>
-            <exceptionPropagator>
-                <byClassName>
-                    <className>a.AA</className>
-                </byClassName>
-<!--                <bean>
-                    <type>a.AA</type>
-                    <className>a.AA</className>
-                </bean>-->
-            </exceptionPropagator>
-            <loaderExecutor>
-                <byClassName>
-                    <className>a.AA</className>
-                </byClassName>
-<!--                <bean>
-                    <type>a.AA</type>
-                    <className>a.AA</className>
-                </bean>-->
-            </loaderExecutor>
-            <prefetchExecutor>
-                <byClassName>
-                    <className>a.AA</className>
-                </byClassName>
-<!--                <bean>
-                    <type>a.AA</type>
-                    <className>a.AA</className>
-                </bean>-->
-            </prefetchExecutor>
-            <asyncListenerExecutor>
-                <byClassName>
-                    <className>a.AA</className>
-                </byClassName>
-<!--                <bean>
-                    <type>a.AA</type>
-                    <className>a.AA</className>
-                </bean>-->
-            </asyncListenerExecutor>
-            <clock>
-                <byClassName>
-                    <className>a.AA</className>
-                </byClassName>
-<!--                <bean>
-                    <type>a.AA</type>
-                    <className>a.AA</className>
-                </bean>-->
-            </clock>
-            <listeners>
-                <listener>
-                    <type>a.AA</type>
-                    <className>a.AA</className>
-                </listener>
-                <listener>
-                    <type>a.AA</type>
-                    <className>a.AA</className>
-                </listener>
-            </listeners>
-            <asyncListeners>
-                <listener>
-                    <type>a.AA</type>
-                    <className>a.AA</className>
-                </listener>
-                <listener>
-                    <type>a.AA</type>
-                    <className>a.AA</className>
-                </listener>
-            </asyncListeners>
-            <closedListeners>
-                <listener>
-                    <type>a.AA</type>
-                    <className>a.AA</className>
-                </listener>
-                <listener>
-                    <type>a.AA</type>
-                    <className>a.AA</className>
-                </listener>
-            </closedListeners>
-            <sections>
-                <section>
-                    <type>org.cache2k.jcache.JCacheConfiguration</type>
-                    <copyAlwaysIfRequested>false</copyAlwaysIfRequested>
-                </section>
-                <section>
-                    <type>org.cache2k.jcache.JCacheConfiguration</type>
-                    <copyAlwaysIfRequested>false</copyAlwaysIfRequested>
-                </section>
-<!--                <jcache>
-                    <alwaysFlushJmxStatistics>false</alwaysFlushJmxStatistics>
-                    <copyAlwaysIfRequested>true</copyAlwaysIfRequested>
-                </jcache>-->
-            </sections>
-            <include>include2</include>
+            <include>include0,include1</include>
         </cache>
     </templates>
     <caches>
         <cache>
-            <name>name3</name>
+            <name>name_0</name>
             <entryCapacity>2000</entryCapacity>
             <expireAfterWrite>-1</expireAfterWrite>
             <resilienceDuration>-1</resilienceDuration>
             <keyType>
-                <type>a.AA</type>
+                <type>org.cache.KeyType</type>
             </keyType>
             <valueType>
-                <type>a.AA</type>
+                <type>org.cache.ValueType</type>
             </valueType>
             <storeByReference>false</storeByReference>
             <strictEviction>false</strictEviction>
@@ -522,308 +331,131 @@
             <keepDataAfterExpired>false</keepDataAfterExpired>
             <sharpExpiry>false</sharpExpiry>
             <suppressExceptions>true</suppressExceptions>
-            <loaderThreadCount>0</loaderThreadCount>
+            <loaderThreadCount>2</loaderThreadCount>
             <permitNullValues>false</permitNullValues>
             <disableStatistics>false</disableStatistics>
             <disableLastModificationTime>false</disableLastModificationTime>
             <boostConcurrency>false</boostConcurrency>
-            <eternal>false</eternal>
+            <eternal>true</eternal>
             <loader>
-                <byClassName>
-                    <className>a.AA</className>
-                </byClassName>
-<!--                <bean>
-                    <type>a.AA</type>
-                    <className>a.AA</className>
-                </bean>-->
+                <!--                <byClassName>
+                    <className></className>
+                </byClassName>-->
+                <bean>
+                    <type>org.cache2k.MyType</type>
+                    <className>MyClass</className>
+                </bean>
             </loader>
             <advancedLoader>
                 <byClassName>
-                    <className>a.AA</className>
+                    <className>org.cache2k.MyAdvancedLoaderClass</className>
                 </byClassName>
-<!--                <bean>
-                    <type>a.AA</type>
-                    <className>a.AA</className>
+                <!--                <bean>
+                    <type></type>
+                    <className></className>
                 </bean>-->
             </advancedLoader>
             <writer>
                 <byClassName>
-                    <className>a.AA</className>
+                    <className>org.cache2k.MyWriterClass</className>
                 </byClassName>
-<!--                <bean>
-                    <type>a.AA</type>
-                    <className>a.AA</className>
+                <!--                <bean>
+                    <type></type>
+                    <className></className>
                 </bean>-->
             </writer>
             <expiryPolicy>
-                <byClassName>
-                    <className>a.AA</className>
-                </byClassName>
-<!--                <bean>
-                    <type>a.AA</type>
-                    <className>a.AA</className>
-                </bean>-->
+                <!--                <byClassName>
+                    <className></className>
+                </byClassName>-->
+                <bean>
+                    <type>org.cache2k.ExpiryPolicyClass</type>
+                    <className>MyExpiryPolicyClass</className>
+                </bean>
             </expiryPolicy>
             <resiliencePolicy>
-                <byClassName>
-                    <className>a.AA</className>
-                </byClassName>
-<!--                <bean>
-                    <type>a.AA</type>
-                    <className>a.AA</className>
-                </bean>-->
+                <!--                <byClassName>
+                    <className></className>
+                </byClassName>-->
+                <bean>
+                    <type>org.cache2k.ResiliencePolicyClass</type>
+                    <className>MyResiliencePolicyClass</className>
+                </bean>
             </resiliencePolicy>
             <exceptionPropagator>
                 <byClassName>
-                    <className>a.AA</className>
+                    <className>MyExceptionPropagatorClass</className>
                 </byClassName>
-<!--                <bean>
-                    <type>a.AA</type>
-                    <className>a.AA</className>
+                <!--                <bean>
+                    <type></type>
+                    <className></className>
                 </bean>-->
             </exceptionPropagator>
             <loaderExecutor>
                 <byClassName>
-                    <className>a.AA</className>
+                    <className>MyLoaderExecutorClass</className>
                 </byClassName>
-<!--                <bean>
-                    <type>a.AA</type>
-                    <className>a.AA</className>
+                <!--                <bean>
+                    <type></type>
+                    <className></className>
                 </bean>-->
             </loaderExecutor>
             <prefetchExecutor>
                 <byClassName>
-                    <className>a.AA</className>
+                    <className>MyPrefetchExecutorClass</className>
                 </byClassName>
-<!--                <bean>
-                    <type>a.AA</type>
-                    <className>a.AA</className>
+                <!--                <bean>
+                    <type></type>
+                    <className></className>
                 </bean>-->
             </prefetchExecutor>
             <asyncListenerExecutor>
-                <byClassName>
-                    <className>a.AA</className>
-                </byClassName>
-<!--                <bean>
-                    <type>a.AA</type>
-                    <className>a.AA</className>
-                </bean>-->
+                <!--                <byClassName>
+                    <className></className>
+                </byClassName>-->
+                <bean>
+                    <type>org.cache2k.AsyncListenerExecutorClass</type>
+                    <className>MyAsyncListenerExecutorClass</className>
+                </bean>
             </asyncListenerExecutor>
             <clock>
                 <byClassName>
-                    <className>a.AA</className>
+                    <className>MyClass</className>
                 </byClassName>
-<!--                <bean>
-                    <type>a.AA</type>
-                    <className>a.AA</className>
+                <!--                <bean>
+                    <type></type>
+                    <className></className>
                 </bean>-->
             </clock>
             <listeners>
                 <listener>
-                    <type>a.AA</type>
-                    <className>a.AA</className>
-                </listener>
-                <listener>
-                    <type>a.AA</type>
-                    <className>a.AA</className>
+                    <type>org.cache2k.ListenerClass</type>
+                    <className>MyListenerClass</className>
                 </listener>
             </listeners>
             <asyncListeners>
                 <listener>
-                    <type>a.AA</type>
-                    <className>a.AA</className>
-                </listener>
-                <listener>
-                    <type>a.AA</type>
-                    <className>a.AA</className>
+                    <type>org.cache2k.AsyncListenerClass</type>
+                    <className>MyAsyncListenerClass</className>
                 </listener>
             </asyncListeners>
             <closedListeners>
                 <listener>
-                    <type>a.AA</type>
-                    <className>a.AA</className>
-                </listener>
-                <listener>
-                    <type>a.AA</type>
-                    <className>a.AA</className>
+                    <type>org.cache2k.ClosedListenerClass</type>
+                    <className>MyClosedListenerClass</className>
                 </listener>
             </closedListeners>
             <sections>
-                <section>
+                <!--                <section>
                     <type>org.cache2k.jcache.JCacheConfiguration</type>
-                    <copyAlwaysIfRequested>false</copyAlwaysIfRequested>
-                </section>
-                <section>
-                    <type>org.cache2k.jcache.JCacheConfiguration</type>
-                    <copyAlwaysIfRequested>false</copyAlwaysIfRequested>
-                </section>
-<!--                <jcache>
+                    <copyAlwaysIfRequested></copyAlwaysIfRequested>
+                </section>-->
+                <jcache>
                     <alwaysFlushJmxStatistics>false</alwaysFlushJmxStatistics>
                     <copyAlwaysIfRequested>true</copyAlwaysIfRequested>
-                </jcache>-->
+                </jcache>
             </sections>
-            <include>include3</include>
-        </cache>
-        <cache>
-            <name>name4</name>
-            <entryCapacity>2000</entryCapacity>
-            <expireAfterWrite>-1</expireAfterWrite>
-            <resilienceDuration>-1</resilienceDuration>
-            <keyType>
-                <type>a.AA</type>
-            </keyType>
-            <valueType>
-                <type>a.AA</type>
-            </valueType>
-            <storeByReference>false</storeByReference>
-            <strictEviction>false</strictEviction>
-            <refreshAhead>false</refreshAhead>
-            <retryInterval>-1</retryInterval>
-            <maxRetryInterval>-1</maxRetryInterval>
-            <keepDataAfterExpired>false</keepDataAfterExpired>
-            <sharpExpiry>false</sharpExpiry>
-            <suppressExceptions>true</suppressExceptions>
-            <loaderThreadCount>0</loaderThreadCount>
-            <permitNullValues>false</permitNullValues>
-            <disableStatistics>false</disableStatistics>
-            <disableLastModificationTime>false</disableLastModificationTime>
-            <boostConcurrency>false</boostConcurrency>
-            <eternal>false</eternal>
-            <loader>
-                <byClassName>
-                    <className>a.AA</className>
-                </byClassName>
-<!--                <bean>
-                    <type>a.AA</type>
-                    <className>a.AA</className>
-                </bean>-->
-            </loader>
-            <advancedLoader>
-                <byClassName>
-                    <className>a.AA</className>
-                </byClassName>
-<!--                <bean>
-                    <type>a.AA</type>
-                    <className>a.AA</className>
-                </bean>-->
-            </advancedLoader>
-            <writer>
-                <byClassName>
-                    <className>a.AA</className>
-                </byClassName>
-<!--                <bean>
-                    <type>a.AA</type>
-                    <className>a.AA</className>
-                </bean>-->
-            </writer>
-            <expiryPolicy>
-                <byClassName>
-                    <className>a.AA</className>
-                </byClassName>
-<!--                <bean>
-                    <type>a.AA</type>
-                    <className>a.AA</className>
-                </bean>-->
-            </expiryPolicy>
-            <resiliencePolicy>
-                <byClassName>
-                    <className>a.AA</className>
-                </byClassName>
-<!--                <bean>
-                    <type>a.AA</type>
-                    <className>a.AA</className>
-                </bean>-->
-            </resiliencePolicy>
-            <exceptionPropagator>
-                <byClassName>
-                    <className>a.AA</className>
-                </byClassName>
-<!--                <bean>
-                    <type>a.AA</type>
-                    <className>a.AA</className>
-                </bean>-->
-            </exceptionPropagator>
-            <loaderExecutor>
-                <byClassName>
-                    <className>a.AA</className>
-                </byClassName>
-<!--                <bean>
-                    <type>a.AA</type>
-                    <className>a.AA</className>
-                </bean>-->
-            </loaderExecutor>
-            <prefetchExecutor>
-                <byClassName>
-                    <className>a.AA</className>
-                </byClassName>
-<!--                <bean>
-                    <type>a.AA</type>
-                    <className>a.AA</className>
-                </bean>-->
-            </prefetchExecutor>
-            <asyncListenerExecutor>
-                <byClassName>
-                    <className>a.AA</className>
-                </byClassName>
-<!--                <bean>
-                    <type>a.AA</type>
-                    <className>a.AA</className>
-                </bean>-->
-            </asyncListenerExecutor>
-            <clock>
-                <byClassName>
-                    <className>a.AA</className>
-                </byClassName>
-<!--                <bean>
-                    <type>a.AA</type>
-                    <className>a.AA</className>
-                </bean>-->
-            </clock>
-            <listeners>
-                <listener>
-                    <type>a.AA</type>
-                    <className>a.AA</className>
-                </listener>
-                <listener>
-                    <type>a.AA</type>
-                    <className>a.AA</className>
-                </listener>
-            </listeners>
-            <asyncListeners>
-                <listener>
-                    <type>a.AA</type>
-                    <className>a.AA</className>
-                </listener>
-                <listener>
-                    <type>a.AA</type>
-                    <className>a.AA</className>
-                </listener>
-            </asyncListeners>
-            <closedListeners>
-                <listener>
-                    <type>a.AA</type>
-                    <className>a.AA</className>
-                </listener>
-                <listener>
-                    <type>a.AA</type>
-                    <className>a.AA</className>
-                </listener>
-            </closedListeners>
-            <sections>
-                <section>
-                    <type>org.cache2k.jcache.JCacheConfiguration</type>
-                    <copyAlwaysIfRequested>false</copyAlwaysIfRequested>
-                </section>
-                <section>
-                    <type>org.cache2k.jcache.JCacheConfiguration</type>
-                    <copyAlwaysIfRequested>false</copyAlwaysIfRequested>
-                </section>
-<!--                <jcache>
-                    <alwaysFlushJmxStatistics>false</alwaysFlushJmxStatistics>
-                    <copyAlwaysIfRequested>true</copyAlwaysIfRequested>
-                </jcache>-->
-            </sections>
-            <include>include4</include>
+            <include>include0,include1</include>
         </cache>
     </caches>
 </cache2k>

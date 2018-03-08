@@ -1,194 +1,33 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <cache2k xmlns:vc="http://www.w3.org/2007/XMLSchema-versioning"
  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
- xsi:noNamespaceSchemaLocation="file:/Users/rokia/Documents/Upwork/XSD-Cache/cache2kv2.xsd">
+ xsi:noNamespaceSchemaLocation="file:../../main/resources/cache2kv2.xsd">
     <version>1.0</version>
     <defaultManagerName>default</defaultManagerName>
     <cacheManager>
-        <managerName>_</managerName>
-        <classLoader>UYGa</classLoader>
+        <managerName>managerName0</managerName>
+        <classLoader>$.A$</classLoader>
         <isDefaultManager>true</isDefaultManager>
     </cacheManager>
     <ignoreAnonymousCache>false</ignoreAnonymousCache>
     <skipCheckOnStartup>false</skipCheckOnStartup>
     <properties>
         <user>
+             <smallCacheCapacity>12_000</smallCacheCapacity>
+      		<userHome>${ENV.HOME}</userHome>
         </user>
     </properties>
     <defaults>
         <cache>
-            <name>q</name>
+            <name>name0</name>
             <entryCapacity>2000</entryCapacity>
             <expireAfterWrite>-1</expireAfterWrite>
             <resilienceDuration>-1</resilienceDuration>
             <keyType>
-                <type>cLK</type>
+                <type>$.A$</type>
             </keyType>
             <valueType>
-                <type>I</type>
-            </valueType>
-            <storeByReference>1</storeByReference>
-            <strictEviction>false</strictEviction>
-            <refreshAhead>false</refreshAhead>
-            <retryInterval>-1</retryInterval>
-            <maxRetryInterval>-1</maxRetryInterval>
-            <keepDataAfterExpired>false</keepDataAfterExpired>
-            <sharpExpiry>false</sharpExpiry>
-            <suppressExceptions>true</suppressExceptions>
-            <loaderThreadCount>1677378060</loaderThreadCount>
-            <permitNullValues>false</permitNullValues>
-            <disableStatistics>false</disableStatistics>
-            <disableLastModificationTime>false</disableLastModificationTime>
-            <boostConcurrency>false</boostConcurrency>
-            <eternal>false</eternal>
-            <loader>
-                <byClassName>
-                    <className>fS</className>
-                </byClassName>
-<!--                <bean>
-                    <type>s.NK</type>
-                    <className>the.TItRz</className>
-                </bean>-->
-            </loader>
-            <advancedLoader>
-                <byClassName>
-                    <className>j.WFPo</className>
-                </byClassName>
-<!--                <bean>
-                    <type>a.qtAn</type>
-                    <className>h.Ys</className>
-                </bean>-->
-            </advancedLoader>
-            <writer>
-                <byClassName>
-                    <className>n</className>
-                </byClassName>
-<!--                <bean>
-                    <type>j.QE</type>
-                    <className>a</className>
-                </bean>-->
-            </writer>
-            <expiryPolicy>
-                <byClassName>
-                    <className>p.QS</className>
-                </byClassName>
-<!--                <bean>
-                    <type>RoUH</type>
-                    <className>M</className>
-                </bean>-->
-            </expiryPolicy>
-            <resiliencePolicy>
-                <byClassName>
-                    <className>U</className>
-                </byClassName>
-<!--                <bean>
-                    <type>W</type>
-                    <className>q.pmErna</className>
-                </bean>-->
-            </resiliencePolicy>
-            <exceptionPropagator>
-<!--                <byClassName>
-                    <className>n</className>
-                </byClassName>-->
-                <bean>
-                    <type>w.QgmSi</type>
-                    <className>C</className>
-                </bean>
-            </exceptionPropagator>
-            <loaderExecutor>
-<!--                <byClassName>
-                    <className>n.SdCw</className>
-                </byClassName>-->
-                <bean>
-                    <type>gr.VZO</type>
-                    <className>h</className>
-                </bean>
-            </loaderExecutor>
-            <prefetchExecutor>
-<!--                <byClassName>
-                    <className>F</className>
-                </byClassName>-->
-                <bean>
-                    <type>mls.nxnfzjuWOh</type>
-                    <className>ik</className>
-                </bean>
-            </prefetchExecutor>
-            <asyncListenerExecutor>
-<!--                <byClassName>
-                    <className>vY</className>
-                </byClassName>-->
-                <bean>
-                    <type>kq.SS</type>
-                    <className>k.gxximazQY</className>
-                </bean>
-            </asyncListenerExecutor>
-            <clock>
-                <byClassName>
-                    <className>bT</className>
-                </byClassName>
-<!--                <bean>
-                    <type>fqxx.DG</type>
-                    <className>f.vlpcFK</className>
-                </bean>-->
-            </clock>
-            <listeners>
-                <listener>
-                    <type>xakz.Bg</type>
-                    <className>K</className>
-                </listener>
-                <listener>
-                    <type>mXU</type>
-                    <className>cMLG</className>
-                </listener>
-            </listeners>
-            <asyncListeners>
-                <listener>
-                    <type>qxhc.OyG</type>
-                    <className>Q</className>
-                </listener>
-                <listener>
-                    <type>f</type>
-                    <className>zEak</className>
-                </listener>
-            </asyncListeners>
-            <closedListeners>
-                <listener>
-                    <type>fLyj</type>
-                    <className>eT</className>
-                </listener>
-                <listener>
-                    <type>y</type>
-                    <className>o.alKZbjP</className>
-                </listener>
-            </closedListeners>
-            <sections>
-                <section>
-                    <type>org.cache2k.jcache.JCacheConfiguration</type>
-                    <copyAlwaysIfRequested>true</copyAlwaysIfRequested>
-                </section>
-                <section>
-                    <type>org.cache2k.jcache.JCacheConfiguration</type>
-                    <copyAlwaysIfRequested>false</copyAlwaysIfRequested>
-                </section>
-<!--                <jcache>
-                    <alwaysFlushJmxStatistics>false</alwaysFlushJmxStatistics>
-                    <copyAlwaysIfRequested>true</copyAlwaysIfRequested>
-                </jcache>-->
-            </sections>
-            <include>__.-</include>
-        </cache>
-    </defaults>
-    <templates>
-        <cache>
-            <name>lW-T</name>
-            <entryCapacity>2000</entryCapacity>
-            <expireAfterWrite>-1</expireAfterWrite>
-            <resilienceDuration>-1</resilienceDuration>
-            <keyType>
-                <type>omak.gehdapjbzDp</type>
-            </keyType>
-            <valueType>
-                <type>hw.FK</type>
+                <type>$.A$</type>
             </valueType>
             <storeByReference>false</storeByReference>
             <strictEviction>false</strictEviction>
@@ -198,7 +37,7 @@
             <keepDataAfterExpired>false</keepDataAfterExpired>
             <sharpExpiry>false</sharpExpiry>
             <suppressExceptions>true</suppressExceptions>
-            <loaderThreadCount>-662334887</loaderThreadCount>
+            <loaderThreadCount>0</loaderThreadCount>
             <permitNullValues>false</permitNullValues>
             <disableStatistics>false</disableStatistics>
             <disableLastModificationTime>false</disableLastModificationTime>
@@ -206,129 +45,260 @@
             <eternal>false</eternal>
             <loader>
 <!--                <byClassName>
-                    <className>D</className>
+                    <className>$.A$</className>
                 </byClassName>-->
                 <bean>
-                    <type>k.EK</type>
-                    <className>v.Em</className>
+                    <type>$.A$</type>
+                    <className>$.A$</className>
                 </bean>
             </loader>
             <advancedLoader>
                 <byClassName>
-                    <className>kAuR</className>
+                    <className>$.A$</className>
                 </byClassName>
 <!--                <bean>
-                    <type>yBE</type>
-                    <className>k</className>
+                    <type>$.A$</type>
+                    <className>$.A$</className>
                 </bean>-->
             </advancedLoader>
             <writer>
 <!--                <byClassName>
-                    <className>eB</className>
+                    <className>$.A$</className>
                 </byClassName>-->
                 <bean>
-                    <type>Um</type>
-                    <className>f.MB</className>
+                    <type>$.A$</type>
+                    <className>$.A$</className>
                 </bean>
             </writer>
             <expiryPolicy>
-                <byClassName>
-                    <className>NDVo</className>
-                </byClassName>
-<!--                <bean>
-                    <type>P</type>
-                    <className>br.Jr</className>
-                </bean>-->
+<!--                <byClassName>
+                    <className>$.A$</className>
+                </byClassName>-->
+                <bean>
+                    <type>$.A$</type>
+                    <className>$.A$</className>
+                </bean>
             </expiryPolicy>
             <resiliencePolicy>
-<!--                <byClassName>
-                    <className>r</className>
-                </byClassName>-->
-                <bean>
-                    <type>v.XjL</type>
-                    <className>x</className>
-                </bean>
-            </resiliencePolicy>
-            <exceptionPropagator>
-<!--                <byClassName>
-                    <className>pmxo.hiktvbSY</className>
-                </byClassName>-->
-                <bean>
-                    <type>wn.VQ</type>
-                    <className>z.myptZp</className>
-                </bean>
-            </exceptionPropagator>
-            <loaderExecutor>
                 <byClassName>
-                    <className>urs.BELVa</className>
+                    <className>$.A$</className>
                 </byClassName>
 <!--                <bean>
-                    <type>j.IZ</type>
-                    <className>x.Zz</className>
+                    <type>$.A$</type>
+                    <className>$.A$</className>
                 </bean>-->
+            </resiliencePolicy>
+            <exceptionPropagator>
+                <byClassName>
+                    <className>$.A$</className>
+                </byClassName>
+<!--                <bean>
+                    <type>$.A$</type>
+                    <className>$.A$</className>
+                </bean>-->
+            </exceptionPropagator>
+            <loaderExecutor>
+<!--                <byClassName>
+                    <className>$.A$</className>
+                </byClassName>-->
+                <bean>
+                    <type>$.A$</type>
+                    <className>$.A$</className>
+                </bean>
             </loaderExecutor>
             <prefetchExecutor>
                 <byClassName>
-                    <className>x</className>
+                    <className>$.A$</className>
                 </byClassName>
 <!--                <bean>
-                    <type>IjI</type>
-                    <className>Z</className>
+                    <type>$.A$</type>
+                    <className>$.A$</className>
                 </bean>-->
             </prefetchExecutor>
             <asyncListenerExecutor>
 <!--                <byClassName>
-                    <className>s</className>
+                    <className>$.A$</className>
                 </byClassName>-->
                 <bean>
-                    <type>g.Uo</type>
-                    <className>sziw.kzupDQ</className>
+                    <type>$.A$</type>
+                    <className>$.A$</className>
                 </bean>
             </asyncListenerExecutor>
             <clock>
-                <byClassName>
-                    <className>mGOv</className>
-                </byClassName>
-<!--                <bean>
-                    <type>b.fonuzfTAbOX</type>
-                    <className>c</className>
-                </bean>-->
+<!--                <byClassName>
+                    <className>$.A$</className>
+                </byClassName>-->
+                <bean>
+                    <type>$.A$</type>
+                    <className>$.A$</className>
+                </bean>
             </clock>
             <listeners>
                 <listener>
-                    <type>x.GLZrl</type>
-                    <className>x</className>
-                </listener>
-                <listener>
-                    <type>p.gwjpMR</type>
-                    <className>U</className>
+                    <type>$.A$</type>
+                    <className>$.A$</className>
                 </listener>
             </listeners>
             <asyncListeners>
                 <listener>
-                    <type>T</type>
-                    <className>Qyh</className>
-                </listener>
-                <listener>
-                    <type>xqc.Kh</type>
-                    <className>v.JZ</className>
+                    <type>$.A$</type>
+                    <className>$.A$</className>
                 </listener>
             </asyncListeners>
             <closedListeners>
                 <listener>
-                    <type>Ict</type>
-                    <className>jpu.galsganoAXY</className>
-                </listener>
-                <listener>
-                    <type>sCsJ</type>
-                    <className>g</className>
+                    <type>$.A$</type>
+                    <className>$.A$</className>
                 </listener>
             </closedListeners>
             <sections>
-<!--                <section>
+                <section>
                     <type>org.cache2k.jcache.JCacheConfiguration</type>
-                    <copyAlwaysIfRequested>0</copyAlwaysIfRequested>
-                </section>-->
+                    <copyAlwaysIfRequested>false</copyAlwaysIfRequested>
+                </section>
+<!--                <jcache>
+                    <alwaysFlushJmxStatistics>false</alwaysFlushJmxStatistics>
+                    <copyAlwaysIfRequested>true</copyAlwaysIfRequested>
+                </jcache>-->
+            </sections>
+            <include>include0</include>
+        </cache>
+    </defaults>
+    <templates>
+        <cache>
+            <name>name1</name>
+            <entryCapacity>2000</entryCapacity>
+            <expireAfterWrite>-1</expireAfterWrite>
+            <resilienceDuration>-1</resilienceDuration>
+            <keyType>
+                <type>$.A$</type>
+            </keyType>
+            <valueType>
+                <type>$.A$</type>
+            </valueType>
+            <storeByReference>false</storeByReference>
+            <strictEviction>false</strictEviction>
+            <refreshAhead>false</refreshAhead>
+            <retryInterval>-1</retryInterval>
+            <maxRetryInterval>-1</maxRetryInterval>
+            <keepDataAfterExpired>false</keepDataAfterExpired>
+            <sharpExpiry>false</sharpExpiry>
+            <suppressExceptions>true</suppressExceptions>
+            <loaderThreadCount>0</loaderThreadCount>
+            <permitNullValues>false</permitNullValues>
+            <disableStatistics>false</disableStatistics>
+            <disableLastModificationTime>false</disableLastModificationTime>
+            <boostConcurrency>false</boostConcurrency>
+            <eternal>false</eternal>
+            <loader>
+<!--                <byClassName>
+                    <className>$.A$</className>
+                </byClassName>-->
+                <bean>
+                    <type>$.A$</type>
+                    <className>$.A$</className>
+                </bean>
+            </loader>
+            <advancedLoader>
+                <byClassName>
+                    <className>$.A$</className>
+                </byClassName>
+<!--                <bean>
+                    <type>$.A$</type>
+                    <className>$.A$</className>
+                </bean>-->
+            </advancedLoader>
+            <writer>
+<!--                <byClassName>
+                    <className>$.A$</className>
+                </byClassName>-->
+                <bean>
+                    <type>$.A$</type>
+                    <className>$.A$</className>
+                </bean>
+            </writer>
+            <expiryPolicy>
+                <byClassName>
+                    <className>$.A$</className>
+                </byClassName>
+<!--                <bean>
+                    <type>$.A$</type>
+                    <className>$.A$</className>
+                </bean>-->
+            </expiryPolicy>
+            <resiliencePolicy>
+                <byClassName>
+                    <className>$.A$</className>
+                </byClassName>
+<!--                <bean>
+                    <type>$.A$</type>
+                    <className>$.A$</className>
+                </bean>-->
+            </resiliencePolicy>
+            <exceptionPropagator>
+                <byClassName>
+                    <className>$.A$</className>
+                </byClassName>
+<!--                <bean>
+                    <type>$.A$</type>
+                    <className>$.A$</className>
+                </bean>-->
+            </exceptionPropagator>
+            <loaderExecutor>
+<!--                <byClassName>
+                    <className>$.A$</className>
+                </byClassName>-->
+                <bean>
+                    <type>$.A$</type>
+                    <className>$.A$</className>
+                </bean>
+            </loaderExecutor>
+            <prefetchExecutor>
+                <byClassName>
+                    <className>$.A$</className>
+                </byClassName>
+<!--                <bean>
+                    <type>$.A$</type>
+                    <className>$.A$</className>
+                </bean>-->
+            </prefetchExecutor>
+            <asyncListenerExecutor>
+                <byClassName>
+                    <className>$.A$</className>
+                </byClassName>
+<!--                <bean>
+                    <type>$.A$</type>
+                    <className>$.A$</className>
+                </bean>-->
+            </asyncListenerExecutor>
+            <clock>
+                <byClassName>
+                    <className>$.A$</className>
+                </byClassName>
+<!--                <bean>
+                    <type>$.A$</type>
+                    <className>$.A$</className>
+                </bean>-->
+            </clock>
+            <listeners>
+                <listener>
+                    <type>$.A$</type>
+                    <className>$.A$</className>
+                </listener>
+            </listeners>
+            <asyncListeners>
+                <listener>
+                    <type>$.A$</type>
+                    <className>$.A$</className>
+                </listener>
+            </asyncListeners>
+            <closedListeners>
+                <listener>
+                    <type>$.A$</type>
+                    <className>$.A$</className>
+                </listener>
+            </closedListeners>
+            <sections>
 <!--                <section>
                     <type>org.cache2k.jcache.JCacheConfiguration</type>
                     <copyAlwaysIfRequested>false</copyAlwaysIfRequested>
@@ -338,183 +308,22 @@
                     <copyAlwaysIfRequested>true</copyAlwaysIfRequested>
                 </jcache>
             </sections>
-            <include>Ap57Vc0J</include>
-        </cache>
-        <cache>
-            <name>.</name>
-            <entryCapacity>2000</entryCapacity>
-            <expireAfterWrite>-1</expireAfterWrite>
-            <resilienceDuration>-1</resilienceDuration>
-            <keyType>
-                <type>x.nfawHJp</type>
-            </keyType>
-            <valueType>
-                <type>BBvm</type>
-            </valueType>
-            <storeByReference>0</storeByReference>
-            <strictEviction>false</strictEviction>
-            <refreshAhead>false</refreshAhead>
-            <retryInterval>-1</retryInterval>
-            <maxRetryInterval>-1</maxRetryInterval>
-            <keepDataAfterExpired>false</keepDataAfterExpired>
-            <sharpExpiry>false</sharpExpiry>
-            <suppressExceptions>true</suppressExceptions>
-            <loaderThreadCount>369035633</loaderThreadCount>
-            <permitNullValues>false</permitNullValues>
-            <disableStatistics>false</disableStatistics>
-            <disableLastModificationTime>false</disableLastModificationTime>
-            <boostConcurrency>false</boostConcurrency>
-            <eternal>1</eternal>
-            <loader>
-<!--                <byClassName>
-                    <className>hr.QXU</className>
-                </byClassName>-->
-                <bean>
-                    <type>D</type>
-                    <className>uKB</className>
-                </bean>
-            </loader>
-            <advancedLoader>
-                <byClassName>
-                    <className>B</className>
-                </byClassName>
-<!--                <bean>
-                    <type>NM</type>
-                    <className>cet.UC</className>
-                </bean>-->
-            </advancedLoader>
-            <writer>
-                <byClassName>
-                    <className>U</className>
-                </byClassName>
-<!--                <bean>
-                    <type>McR</type>
-                    <className>j.MQ</className>
-                </bean>-->
-            </writer>
-            <expiryPolicy>
-                <byClassName>
-                    <className>qQ</className>
-                </byClassName>
-<!--                <bean>
-                    <type>nPwZ</type>
-                    <className>i.JD</className>
-                </bean>-->
-            </expiryPolicy>
-            <resiliencePolicy>
-<!--                <byClassName>
-                    <className>s.Hg</className>
-                </byClassName>-->
-                <bean>
-                    <type>r.Ea</type>
-                    <className>y.BG</className>
-                </bean>
-            </resiliencePolicy>
-            <exceptionPropagator>
-                <byClassName>
-                    <className>b.Ko</className>
-                </byClassName>
-<!--                <bean>
-                    <type>j</type>
-                    <className>t.avyoXg</className>
-                </bean>-->
-            </exceptionPropagator>
-            <loaderExecutor>
-<!--                <byClassName>
-                    <className>IE</className>
-                </byClassName>-->
-                <bean>
-                    <type>s.XUoz</type>
-                    <className>QzY</className>
-                </bean>
-            </loaderExecutor>
-            <prefetchExecutor>
-                <byClassName>
-                    <className>c.buvtCjxHL</className>
-                </byClassName>
-<!--                <bean>
-                    <type>P</type>
-                    <className>N</className>
-                </bean>-->
-            </prefetchExecutor>
-            <asyncListenerExecutor>
-                <byClassName>
-                    <className>xrbo.VcddP</className>
-                </byClassName>
-<!--                <bean>
-                    <type>FS</type>
-                    <className>xd</className>
-                </bean>-->
-            </asyncListenerExecutor>
-            <clock>
-<!--                <byClassName>
-                    <className>ofix.zqjukYY</className>
-                </byClassName>-->
-                <bean>
-                    <type>r.EquaZ</type>
-                    <className>rzb.Tg</className>
-                </bean>
-            </clock>
-            <listeners>
-                <listener>
-                    <type>mxg</type>
-                    <className>p</className>
-                </listener>
-                <listener>
-                    <type>csh.HicNP</type>
-                    <className>r</className>
-                </listener>
-            </listeners>
-            <asyncListeners>
-                <listener>
-                    <type>m.Pa</type>
-                    <className>WDnx</className>
-                </listener>
-                <listener>
-                    <type>j.GT</type>
-                    <className>u</className>
-                </listener>
-            </asyncListeners>
-            <closedListeners>
-                <listener>
-                    <type>U</type>
-                    <className>ppBa</className>
-                </listener>
-                <listener>
-                    <type>axcb.If</type>
-                    <className>l.Pm</className>
-                </listener>
-            </closedListeners>
-            <sections>
-<!--                <section>
-                    <type>org.cache2k.jcache.JCacheConfiguration</type>
-                    <copyAlwaysIfRequested>0</copyAlwaysIfRequested>
-                </section>-->
-<!--                <section>
-                    <type>org.cache2k.jcache.JCacheConfiguration</type>
-                    <copyAlwaysIfRequested>0</copyAlwaysIfRequested>
-                </section>-->
-                <jcache>
-                    <alwaysFlushJmxStatistics>false</alwaysFlushJmxStatistics>
-                    <copyAlwaysIfRequested>true</copyAlwaysIfRequested>
-                </jcache>
-            </sections>
-            <include>2wU</include>
+            <include>include1</include>
         </cache>
     </templates>
     <caches>
         <cache>
-            <name>r</name>
+            <name>name2</name>
             <entryCapacity>2000</entryCapacity>
             <expireAfterWrite>-1</expireAfterWrite>
             <resilienceDuration>-1</resilienceDuration>
             <keyType>
-                <type>o.UHGM</type>
+                <type>$.A$</type>
             </keyType>
             <valueType>
-                <type>lzYF</type>
+                <type>$.A$</type>
             </valueType>
-            <storeByReference>true</storeByReference>
+            <storeByReference>false</storeByReference>
             <strictEviction>false</strictEviction>
             <refreshAhead>false</refreshAhead>
             <retryInterval>-1</retryInterval>
@@ -522,7 +331,7 @@
             <keepDataAfterExpired>false</keepDataAfterExpired>
             <sharpExpiry>false</sharpExpiry>
             <suppressExceptions>true</suppressExceptions>
-            <loaderThreadCount>-99785313</loaderThreadCount>
+            <loaderThreadCount>0</loaderThreadCount>
             <permitNullValues>false</permitNullValues>
             <disableStatistics>false</disableStatistics>
             <disableLastModificationTime>false</disableLastModificationTime>
@@ -530,300 +339,123 @@
             <eternal>false</eternal>
             <loader>
                 <byClassName>
-                    <className>VsJ</className>
+                    <className>$.A$</className>
                 </byClassName>
 <!--                <bean>
-                    <type>WLmJ</type>
-                    <className>wnXg</className>
+                    <type>$.A$</type>
+                    <className>$.A$</className>
                 </bean>-->
             </loader>
             <advancedLoader>
-                <byClassName>
-                    <className>n.UzvuF</className>
-                </byClassName>
-<!--                <bean>
-                    <type>v.FCX</type>
-                    <className>DdBb</className>
-                </bean>-->
-            </advancedLoader>
-            <writer>
 <!--                <byClassName>
-                    <className>Uws</className>
+                    <className>$.A$</className>
                 </byClassName>-->
                 <bean>
-                    <type>y.OtE</type>
-                    <className>Y</className>
+                    <type>$.A$</type>
+                    <className>$.A$</className>
                 </bean>
-            </writer>
-            <expiryPolicy>
+            </advancedLoader>
+            <writer>
                 <byClassName>
-                    <className>vt</className>
+                    <className>$.A$</className>
                 </byClassName>
 <!--                <bean>
-                    <type>oygk.NN</type>
-                    <className>u.fqBY</className>
+                    <type>$.A$</type>
+                    <className>$.A$</className>
                 </bean>-->
+            </writer>
+            <expiryPolicy>
+<!--                <byClassName>
+                    <className>$.A$</className>
+                </byClassName>-->
+                <bean>
+                    <type>$.A$</type>
+                    <className>$.A$</className>
+                </bean>
             </expiryPolicy>
             <resiliencePolicy>
 <!--                <byClassName>
-                    <className>n</className>
+                    <className>$.A$</className>
                 </byClassName>-->
                 <bean>
-                    <type>I</type>
-                    <className>tbw.lyfhwjbkjRy</className>
+                    <type>$.A$</type>
+                    <className>$.A$</className>
                 </bean>
             </resiliencePolicy>
             <exceptionPropagator>
-                <byClassName>
-                    <className>J</className>
-                </byClassName>
-<!--                <bean>
-                    <type>d</type>
-                    <className>j</className>
-                </bean>-->
-            </exceptionPropagator>
-            <loaderExecutor>
 <!--                <byClassName>
-                    <className>s.MZ</className>
+                    <className>$.A$</className>
                 </byClassName>-->
                 <bean>
-                    <type>c.hpgnhejQE</type>
-                    <className>sGsB</className>
+                    <type>$.A$</type>
+                    <className>$.A$</className>
                 </bean>
+            </exceptionPropagator>
+            <loaderExecutor>
+                <byClassName>
+                    <className>$.A$</className>
+                </byClassName>
+<!--                <bean>
+                    <type>$.A$</type>
+                    <className>$.A$</className>
+                </bean>-->
             </loaderExecutor>
             <prefetchExecutor>
 <!--                <byClassName>
-                    <className>vusb.Ba</className>
+                    <className>$.A$</className>
                 </byClassName>-->
                 <bean>
-                    <type>n</type>
-                    <className>V</className>
+                    <type>$.A$</type>
+                    <className>$.A$</className>
                 </bean>
             </prefetchExecutor>
             <asyncListenerExecutor>
-<!--                <byClassName>
-                    <className>p</className>
-                </byClassName>-->
-                <bean>
-                    <type>gly.fqaYZhGe</type>
-                    <className>vfks.Dpx</className>
-                </bean>
+                <byClassName>
+                    <className>$.A$</className>
+                </byClassName>
+<!--                <bean>
+                    <type>$.A$</type>
+                    <className>$.A$</className>
+                </bean>-->
             </asyncListenerExecutor>
             <clock>
-<!--                <byClassName>
-                    <className>cc.mqcdwcDdmqb</className>
-                </byClassName>-->
-                <bean>
-                    <type>v.OO</type>
-                    <className>y</className>
-                </bean>
+                <byClassName>
+                    <className>$.A$</className>
+                </byClassName>
+<!--                <bean>
+                    <type>$.A$</type>
+                    <className>$.A$</className>
+                </bean>-->
             </clock>
             <listeners>
                 <listener>
-                    <type>z.abcwolhpUZ</type>
-                    <className>a</className>
-                </listener>
-                <listener>
-                    <type>ug.CL</type>
-                    <className>x.GDrts</className>
+                    <type>$.A$</type>
+                    <className>$.A$</className>
                 </listener>
             </listeners>
             <asyncListeners>
                 <listener>
-                    <type>p</type>
-                    <className>elol.xpulblofxLbwR</className>
-                </listener>
-                <listener>
-                    <type>wyz.azotMsGb</type>
-                    <className>v.Ur</className>
+                    <type>$.A$</type>
+                    <className>$.A$</className>
                 </listener>
             </asyncListeners>
             <closedListeners>
                 <listener>
-                    <type>Tn</type>
-                    <className>p.YBzMO</className>
-                </listener>
-                <listener>
-                    <type>dqK</type>
-                    <className>o.SN</className>
+                    <type>$.A$</type>
+                    <className>$.A$</className>
                 </listener>
             </closedListeners>
             <sections>
                 <section>
                     <type>org.cache2k.jcache.JCacheConfiguration</type>
-                    <copyAlwaysIfRequested>0</copyAlwaysIfRequested>
-                </section>
-                <section>
-                    <type>org.cache2k.jcache.JCacheConfiguration</type>
-                    <copyAlwaysIfRequested>0</copyAlwaysIfRequested>
+                    <copyAlwaysIfRequested>false</copyAlwaysIfRequested>
                 </section>
 <!--                <jcache>
                     <alwaysFlushJmxStatistics>false</alwaysFlushJmxStatistics>
                     <copyAlwaysIfRequested>true</copyAlwaysIfRequested>
                 </jcache>-->
             </sections>
-            <include>iF.ldb.V</include>
-        </cache>
-        <cache>
-            <name>6</name>
-            <entryCapacity>2000</entryCapacity>
-            <expireAfterWrite>-1</expireAfterWrite>
-            <resilienceDuration>-1</resilienceDuration>
-            <keyType>
-                <type>Kjb</type>
-            </keyType>
-            <valueType>
-                <type>D</type>
-            </valueType>
-            <storeByReference>0</storeByReference>
-            <strictEviction>false</strictEviction>
-            <refreshAhead>false</refreshAhead>
-            <retryInterval>-1</retryInterval>
-            <maxRetryInterval>-1</maxRetryInterval>
-            <keepDataAfterExpired>false</keepDataAfterExpired>
-            <sharpExpiry>false</sharpExpiry>
-            <suppressExceptions>true</suppressExceptions>
-            <loaderThreadCount>271524760</loaderThreadCount>
-            <permitNullValues>false</permitNullValues>
-            <disableStatistics>false</disableStatistics>
-            <disableLastModificationTime>false</disableLastModificationTime>
-            <boostConcurrency>false</boostConcurrency>
-            <eternal>0</eternal>
-            <loader>
-<!--                <byClassName>
-                    <className>wmi.dgxlmksnHNykn</className>
-                </byClassName>-->
-                <bean>
-                    <type>g.Vs</type>
-                    <className>g</className>
-                </bean>
-            </loader>
-            <advancedLoader>
-<!--                <byClassName>
-                    <className>j</className>
-                </byClassName>-->
-                <bean>
-                    <type>j.oizezkkrhKNRK</type>
-                    <className>t</className>
-                </bean>
-            </advancedLoader>
-            <writer>
-<!--                <byClassName>
-                    <className>e.afldEs</className>
-                </byClassName>-->
-                <bean>
-                    <type>bcbh</type>
-                    <className>b.Fg</className>
-                </bean>
-            </writer>
-            <expiryPolicy>
-<!--                <byClassName>
-                    <className>G</className>
-                </byClassName>-->
-                <bean>
-                    <type>k</type>
-                    <className>h.kjopnfcbKK</className>
-                </bean>
-            </expiryPolicy>
-            <resiliencePolicy>
-<!--                <byClassName>
-                    <className>zzS</className>
-                </byClassName>-->
-                <bean>
-                    <type>v.jvfpLkt</type>
-                    <className>C</className>
-                </bean>
-            </resiliencePolicy>
-            <exceptionPropagator>
-                <byClassName>
-                    <className>s.Ew</className>
-                </byClassName>
-<!--                <bean>
-                    <type>ax.Pa</type>
-                    <className>B</className>
-                </bean>-->
-            </exceptionPropagator>
-            <loaderExecutor>
-<!--                <byClassName>
-                    <className>J</className>
-                </byClassName>-->
-                <bean>
-                    <type>oaj</type>
-                    <className>r.LYHc</className>
-                </bean>
-            </loaderExecutor>
-            <prefetchExecutor>
-                <byClassName>
-                    <className>i.nehlckQbGhX</className>
-                </byClassName>
-<!--                <bean>
-                    <type>c.tamrtSR</type>
-                    <className>sgK</className>
-                </bean>-->
-            </prefetchExecutor>
-            <asyncListenerExecutor>
-<!--                <byClassName>
-                    <className>i</className>
-                </byClassName>-->
-                <bean>
-                    <type>mUU</type>
-                    <className>dyz.Nnaf</className>
-                </bean>
-            </asyncListenerExecutor>
-            <clock>
-<!--                <byClassName>
-                    <className>H</className>
-                </byClassName>-->
-                <bean>
-                    <type>cl.LP</type>
-                    <className>c</className>
-                </bean>
-            </clock>
-            <listeners>
-                <listener>
-                    <type>ekj</type>
-                    <className>I</className>
-                </listener>
-                <listener>
-                    <type>r.HXKr</type>
-                    <className>EXDd</className>
-                </listener>
-            </listeners>
-            <asyncListeners>
-                <listener>
-                    <type>aV</type>
-                    <className>Y</className>
-                </listener>
-                <listener>
-                    <type>K</type>
-                    <className>O</className>
-                </listener>
-            </asyncListeners>
-            <closedListeners>
-                <listener>
-                    <type>E</type>
-                    <className>I</className>
-                </listener>
-                <listener>
-                    <type>f.vpAk</type>
-                    <className>m.WvR</className>
-                </listener>
-            </closedListeners>
-            <sections>
-<!--                <section>
-                    <type>org.cache2k.jcache.JCacheConfiguration</type>
-                    <copyAlwaysIfRequested>1</copyAlwaysIfRequested>
-                </section>-->
-<!--                <section>
-                    <type>org.cache2k.jcache.JCacheConfiguration</type>
-                    <copyAlwaysIfRequested>0</copyAlwaysIfRequested>
-                </section>-->
-                <jcache>
-                    <alwaysFlushJmxStatistics>false</alwaysFlushJmxStatistics>
-                    <copyAlwaysIfRequested>true</copyAlwaysIfRequested>
-                </jcache>
-            </sections>
-            <include>juRt3-rF</include>
+            <include>include2</include>
         </cache>
     </caches>
 </cache2k>
