@@ -4,8 +4,8 @@
     vc:minVersion="1.0" vc:maxVersion="1.1">
     
     <xs:simpleType name="classNameType">
-        <xs:restriction base="xs:string">
-            <xs:pattern value="([a-z]+[.]{1}([a-z]+.)*[A-Z]{1}[a-zA-Z]+)|[a-zA-Z]+"></xs:pattern>
+        <xs:restriction base="xs:Name">
+            <xs:pattern value="([a-z_$]+\.([a-z]+[A-Za-z0-9_$]+\.)*([A-Z]{1}[a-zA-Z0-9_$]+))|[A-Z]{1}[a-zA-Z0-9_$]+"></xs:pattern>
         </xs:restriction>
     </xs:simpleType>
     
@@ -52,7 +52,7 @@
             </xs:documentation>
         </xs:annotation>
         <xs:restriction base="xs:token">
-            <xs:pattern value="${1}\{{1}([a-zA-Z0-9]+.{1}[a-zA-Z0-9]+)+\}{1}"></xs:pattern>
+            <xs:pattern value="$\{(.+\..+)+\}"></xs:pattern>
         </xs:restriction>
     </xs:simpleType>
     
@@ -68,13 +68,13 @@
     
     <xs:simpleType name="version">
         <xs:restriction base="xs:string">
-            <xs:pattern value="[1-9]+.[0-9]{1}"></xs:pattern>
+            <xs:pattern value="[1-9][0-9]*\.[0-9]{1}"></xs:pattern>
         </xs:restriction>      
     </xs:simpleType>
     
     <xs:simpleType name="include">
         <xs:restriction base="xs:token">
-            <xs:pattern value="[-_.a-zA-Z0-9]+|([-_.a-zA-Z0-9]+,{1}[-_.a-zA-Z0-9]+)+"></xs:pattern>
+            <xs:pattern value="[a-zA-Z][-_.a-zA-Z0-9]+|([a-zA-Z][-_.a-zA-Z0-9]+,[a-zA-Z][-_.a-zA-Z0-9]+)+"></xs:pattern>
         </xs:restriction>
     </xs:simpleType>
     
