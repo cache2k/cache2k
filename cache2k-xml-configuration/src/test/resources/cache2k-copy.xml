@@ -1,0 +1,51 @@
+<cache2k>
+
+  <version>1.0</version>
+  <defaultManagerName>myApp</defaultManagerName>
+
+  <defaults>
+
+    <cache>
+      <entryCapacity>1234</entryCapacity>
+    </cache>
+
+  </defaults>
+
+  <caches>
+
+    <cache>
+      <name>flowers</name>
+      <expireAfterWrite>47s</expireAfterWrite>
+    </cache>
+
+    <cache>
+      <name>withLoader</name>
+      <loader>
+        <bean>
+          <type>org.cache2k.configuration.CustomizationSupplierByClassName</type>
+          <!-- The bean just holds the class name, must not be valid. Will fail when we create a cache. -->
+          <className>x.y.z</className>
+        </bean>
+      </loader>
+      <listeners>
+        <listener>
+          <type>org.cache2k.configuration.CustomizationSupplierByClassName</type>
+          <className>a.b.c</className>
+        </listener>
+        <listener>
+          <type>org.cache2k.configuration.CustomizationSupplierByClassName</type>
+          <className>x.y.z</className>
+        </listener>
+      </listeners>
+    </cache>
+    <cache>
+      <name>withLoaderShort</name>
+      <loader>
+        <byClassName>
+          <className>org.example.MyLoader</className>
+        </byClassName>
+      </loader>
+    </cache>
+  </caches>
+
+</cache2k>
