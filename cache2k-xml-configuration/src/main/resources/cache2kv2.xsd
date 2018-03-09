@@ -5,7 +5,7 @@
     
     <xs:simpleType name="classNameType">
         <xs:restriction base="xs:Name">
-            <xs:pattern value="([a-z_$]+\.([a-z]+[A-Za-z0-9_$]+\.)*([A-Z]{1}[a-zA-Z0-9_$]+))|[A-Z]{1}[a-zA-Z0-9_$]+"></xs:pattern>
+            <xs:pattern value="([a-z_$][A-Za-z0-9_$]*\.([a-z_$][A-Za-z0-9_$]*\.)*([A-Z][a-zA-Z0-9_$]*))|[A-Z][a-zA-Z0-9_$]*"></xs:pattern>
         </xs:restriction>
     </xs:simpleType>
     
@@ -74,7 +74,7 @@
     
     <xs:simpleType name="include">
         <xs:restriction base="xs:token">
-            <xs:pattern value="[a-zA-Z][-_.a-zA-Z0-9]+|([a-zA-Z][-_.a-zA-Z0-9]+,[a-zA-Z][-_.a-zA-Z0-9]+)+"></xs:pattern>
+            <xs:pattern value="[a-zA-Z][-_.a-zA-Z0-9]*|([a-zA-Z][-_.a-zA-Z0-9]*,[a-zA-Z][-_.a-zA-Z0-9]*)+"></xs:pattern>
         </xs:restriction>
     </xs:simpleType>
     
