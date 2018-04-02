@@ -52,7 +52,6 @@
     <!-- included in all -->
     <module>cache2k-api</module>
     <!-- JSR107 -->
-    <module>cache2k-jcache-api</module>
     <module>cache2k-jcache</module>
     <!-- other, deployed -->
     <module>cache2k-testing</module>

@@ -22,6 +22,15 @@
 
   <dependencies>
 
+    <!-- needed to compile extended JCache configuration
+    -->
+    <dependency>
+      <groupId>javax.cache</groupId>
+      <artifactId>cache-api</artifactId>
+      <version>${jcache.version}</version>
+      <scope>provided</scope>
+    </dependency>
+
     <dependency>
       <groupId>org.cache2k</groupId>
       <artifactId>cache2k-testing</artifactId>
