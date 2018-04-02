@@ -104,7 +104,7 @@ public class CachingTest {
     properties.put("dummy.com", "goofy");
     provider.getCacheManager(provider.getDefaultURI(), provider.getDefaultClassLoader(), properties);
     CacheManager manager = provider.getCacheManager();
-    assertEquals(properties, manager.getProperties());
+    assertEquals("goofy", manager.getProperties().get("dummy.com"));
   }
 
   /**

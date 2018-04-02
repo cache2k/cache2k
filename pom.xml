@@ -48,12 +48,9 @@
 
   <modules>
     <module>cache2k-all</module>
+    <module>cache2k-impl</module>
     <!-- included in all -->
     <module>cache2k-api</module>
-    <module>cache2k-xml-configuration</module>
-    <module>cache2k-core</module>
-    <module>cache2k-jmx-api</module>
-    <module>cache2k-server-side</module>
     <!-- JSR107 -->
     <module>cache2k-jcache-api</module>
     <module>cache2k-jcache</module>
@@ -548,6 +545,7 @@
       <id>android</id>
       <modules>
         <module>test-android</module>
+        <module>test-android-proguard</module>
       </modules>
     </profile>
 
