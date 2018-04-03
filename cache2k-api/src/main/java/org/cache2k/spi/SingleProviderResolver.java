@@ -25,7 +25,9 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.LineNumberReader;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.Map;
+import java.util.ServiceLoader;
 
 /**
  * Resolves a service provider by its interface. This is used for the cache2k
@@ -33,8 +35,13 @@ import java.util.Map;
  *
  * <p>This class is in principle similar to the {@link java.util.ServiceLoader}.
  * The design is a little bit simpler, because there is always one provider for each
- * interface. We cannot use the original ServiceLoader, since it is not working on
- * android.
+ * interface. The java own {@code ServiceLoader} has troubles in Android, because the
+ * the {@code META-INF} contents are not merged automatically when building an Android
+ * application.
+ *
+ * <p>The implementation falls back to the normal {@code ServiceLoader} mechanism, if the custom
+ * mechanism is not working. This is needed for OSGi environments to resolve the implementation
+ * from the API package.
  *
  * @author Jens Wilke; created: 2014-06-19
  * @see <a href="https://code.google.com/p/android/issues/detail?id=59658">android service loader issue</a>
@@ -57,7 +64,6 @@ public class SingleProviderResolver {
     T obj = resolve(c);
     if (obj == null) {
       Error err = new LinkageError("No implementation found for: " + c.getName());
-      err.printStackTrace();
       throw err;
     }
     return obj;
@@ -78,10 +84,16 @@ public class SingleProviderResolver {
     }
     try {
       String _className = readFile("org/cache2k/services/" + c.getName());
+      T obj = null;
       if (_className == null) {
-        return null;
+        ServiceLoader<T> sl = ServiceLoader.load(c);
+        Iterator<T> it = sl.iterator();
+        if (it.hasNext()) {
+          obj = it.next();
+        }
+      } else {
+        obj = (T) SingleProviderResolver.class.getClassLoader().loadClass(_className).newInstance();
       }
-      T obj = (T) SingleProviderResolver.class.getClassLoader().loadClass(_className).newInstance();
       providers.put(c, obj);
       return obj;
     } catch (Exception ex) {
