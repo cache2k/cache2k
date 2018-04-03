@@ -1,4 +1,4 @@
-package org.cache2k.xmlConfiguration;
+package org.cache2k.impl.xmlConfiguration;
 
 /*
  * #%L
@@ -20,22 +20,13 @@ package org.cache2k.xmlConfiguration;
  * #L%
  */
 
-import java.io.InputStream;
-
 /**
- * Construct a tokenizer to use.
+ * Parse and convert a string to an object.
  *
  * @author Jens Wilke
- * @see ConfigurationTokenizer
  */
-public interface TokenizerFactory {
+public interface ValueConverter<T> {
 
-  /**
-   * @param _source Name of the source, this is used only for exceptions
-   * @param in Input stream to read from
-   * @param _encoding character encoding to use
-   * @return the created tokenizer
-   */
-  ConfigurationTokenizer createTokenizer(final String _source, InputStream in, String _encoding) throws Exception;
+  T parse(String v) throws Exception;
 
 }

@@ -1,4 +1,4 @@
-package org.cache2k.xmlConfiguration;
+package org.cache2k.impl.xmlConfiguration;
 
 /*
  * #%L
@@ -20,6 +20,14 @@ package org.cache2k.xmlConfiguration;
  * #L%
  */
 
+import org.cache2k.impl.xmlConfiguration.ConfigurationException;
+import org.cache2k.impl.xmlConfiguration.ConfigurationParser;
+import org.cache2k.impl.xmlConfiguration.ConfigurationTokenizer;
+import org.cache2k.impl.xmlConfiguration.ParsedConfiguration;
+import org.cache2k.impl.xmlConfiguration.StandardVariableExpander;
+import org.cache2k.impl.xmlConfiguration.StaxConfigTokenizer;
+import org.cache2k.impl.xmlConfiguration.VariableExpander;
+import org.cache2k.impl.xmlConfiguration.XppConfigTokenizer;
 import org.junit.Test;
 
 import java.io.InputStream;

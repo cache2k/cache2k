@@ -1,4 +1,4 @@
-package org.cache2k.xmlConfiguration;
+package org.cache2k.impl.xmlConfiguration;
 
 /*
  * #%L
@@ -20,21 +20,10 @@ package org.cache2k.xmlConfiguration;
  * #L%
  */
 
+import org.cache2k.configuration.ConfigurationSection;
+
 /**
- * Common interface for parts with a source location.
- *
  * @author Jens Wilke
  */
-public interface SourceLocation {
-
-  /**
-   * File name or URL of the (configuration) source
-   */
-  String getSource();
-
-  /**
-   * Line number of the configuration source
-   */
-  int getLineNumber();
-
+public class NotSerializable implements ConfigurationSection {
 }

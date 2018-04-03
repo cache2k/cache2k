@@ -28,7 +28,7 @@
     <cache>
       <sections>
         <section>
-          <type>org.cache2k.xmlConfiguration.NotSerializable</type>
+          <type>org.cache2k.impl.xmlConfiguration.NotSerializable</type>
         </section>
       </sections>
     </cache>

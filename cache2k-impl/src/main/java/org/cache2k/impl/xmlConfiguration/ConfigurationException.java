@@ -1,4 +1,4 @@
-package org.cache2k.xmlConfiguration;
+package org.cache2k.impl.xmlConfiguration;
 
 /*
  * #%L

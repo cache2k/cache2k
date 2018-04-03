@@ -27,7 +27,6 @@ import org.cache2k.UnknownCacheException;
 import org.cache2k.configuration.Cache2kConfiguration;
 import org.cache2k.jcache.ExtendedMutableConfiguration;
 import org.cache2k.jcache.JCacheConfiguration;
-import org.cache2k.xmlConfiguration.ConfigurationException;
 import org.junit.Test;
 
 import javax.cache.Caching;

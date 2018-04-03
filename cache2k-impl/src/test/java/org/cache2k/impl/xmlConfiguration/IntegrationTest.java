@@ -1,4 +1,4 @@
-package org.cache2k.xmlConfiguration;
+package org.cache2k.impl.xmlConfiguration;
 
 /*
  * #%L
@@ -27,6 +27,7 @@ import org.cache2k.UnknownCacheException;
 import org.cache2k.configuration.Cache2kConfiguration;
 import org.cache2k.configuration.CustomizationSupplierByClassName;
 import org.cache2k.core.Cache2kCoreProviderImpl;
+import org.cache2k.impl.xmlConfiguration.ConfigurationException;
 import org.cache2k.testing.category.FastTests;
 import org.junit.Ignore;
 import org.junit.Test;

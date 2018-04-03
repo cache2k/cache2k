@@ -1,4 +1,4 @@
-package org.cache2k.xmlConfiguration;
+package org.cache2k.impl.xmlConfiguration;
 
 /*
  * #%L
@@ -20,6 +20,7 @@ package org.cache2k.xmlConfiguration;
  * #L%
  */
 
+import org.cache2k.impl.xmlConfiguration.StandardPropertyParser;
 import org.cache2k.testing.category.FastTests;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
