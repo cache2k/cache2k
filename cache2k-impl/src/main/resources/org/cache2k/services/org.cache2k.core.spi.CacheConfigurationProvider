@@ -1,1 +1,1 @@
-org.cache2k.xmlConfiguration.CacheConfigurationProviderImpl
+org.cache2k.impl.xmlConfiguration.CacheConfigurationProviderImpl

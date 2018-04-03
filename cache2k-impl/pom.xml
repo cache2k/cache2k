@@ -100,6 +100,9 @@
       </resources>
 
     <plugins>
+
+      <!-- add OSGi bundle information. does not work yet.
+           https://github.com/cache2k/cache2k/issues/83
       <plugin>
         <artifactId>maven-jar-plugin</artifactId>
         <configuration>
@@ -108,9 +111,6 @@
           </archive>
         </configuration>
       </plugin>
-
-      <!-- add OSGi bundle information. does not work yet.
-           https://github.com/cache2k/cache2k/issues/83
       <plugin>
         <groupId>org.apache.felix</groupId>
         <artifactId>maven-bundle-plugin</artifactId>
