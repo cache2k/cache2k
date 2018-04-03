@@ -1,4 +1,4 @@
-package org.cache2k.ee.impl;
+package org.cache2k.impl.serverSide;
 
 /*
  * #%L
