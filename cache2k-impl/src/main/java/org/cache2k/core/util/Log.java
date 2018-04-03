@@ -20,8 +20,6 @@ package org.cache2k.core.util;
  * #L%
  */
 
-import org.slf4j.helpers.NOPLoggerFactory;
-
 import java.util.HashMap;
 import java.util.Map;
 import java.util.ServiceLoader;
