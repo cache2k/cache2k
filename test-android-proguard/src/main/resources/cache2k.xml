@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<cache2k xmlns:vc="http://www.w3.org/2007/XMLSchema-versioning"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:noNamespaceSchemaLocation="file:../../../../cache2k-api/src/main/resources/cache2k.xsd">
+  <version>1.0</version>
+  <ignoreMissingCacheConfiguration>true</ignoreMissingCacheConfiguration>
+  <ignoreAnonymousCache>true</ignoreAnonymousCache>
+
+  <defaults>
+    <cache>
+      <entryCapacity>1234</entryCapacity>
+    </cache>
+  </defaults>
+  <caches>
+    <cache>
+      <name>IntegrationTest-defaultAndIndividualIsApplied</name>
+      <expireAfterWrite>47s</expireAfterWrite>
+    </cache>
+    <cache>
+      <name>withoutstatistics</name>
+      <disableStatistics>true</disableStatistics>
+    </cache>
+  </caches>
+</cache2k>
