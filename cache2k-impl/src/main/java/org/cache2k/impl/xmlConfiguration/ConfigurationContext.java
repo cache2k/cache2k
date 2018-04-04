@@ -30,7 +30,7 @@ import java.util.Map;
  *
  * @author Jens Wilke
  */
-class ConfigurationContext {
+public class ConfigurationContext {
 
   private String version = null;
   private String defaultManagerName = null;

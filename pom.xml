@@ -72,6 +72,7 @@
     <jcache.version>1.1.0</jcache.version>
     <jacoco-maven-plugin-version>0.7.5.201505241946</jacoco-maven-plugin-version>
     <h7e.recycle.test.coverage>jacoco-instrument</h7e.recycle.test.coverage>
+    <android.plugin.version>4.5.0</android.plugin.version>
   </properties>
 
   <build>
