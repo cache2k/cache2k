@@ -1,0 +1,9 @@
+[[osgi]]
+== OSGi
+
+The Jar-Files `cache2k-api` and `cache2k-impl` currently lack OSGi bundle information. For OSGi users
+the bundle `cache2k-osgi-bundle` provided which is a combination of both artifacts including the needed
+OSGi meta information.
+
+Eventually `cache2k-api` and `cache2k-impl` should become proper meta information and be usable with
+OSGi drirectly. Volunteers using OSGi please check https://github.com/cache2k/cache2k/issues/83[GH 83]

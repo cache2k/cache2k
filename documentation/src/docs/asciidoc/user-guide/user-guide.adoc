@@ -31,10 +31,8 @@ include::sections/_logging.adoc[]
 
 include::sections/_statistics.adoc[]
 
-include::sections/_android.adoc[]
-
 include::sections/_jcache.adoc[]
 
+include::sections/_android.adoc[]
 
-
-
+include::sections/_osgi.adoc[]
