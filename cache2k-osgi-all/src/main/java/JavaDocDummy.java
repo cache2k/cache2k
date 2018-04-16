@@ -1,6 +1,6 @@
 /*
  * #%L
- * cache2k all
+ * cache2k OSGi all
  * %%
  * Copyright (C) 2000 - 2018 headissue GmbH, Munich
  * %%

@@ -47,7 +47,7 @@
   </developers>
 
   <modules>
-    <module>cache2k-all</module>
+    <module>cache2k-osgi-all</module>
     <module>cache2k-impl</module>
     <!-- included in all -->
     <module>cache2k-api</module>

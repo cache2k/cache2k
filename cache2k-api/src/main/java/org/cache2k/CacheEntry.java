@@ -49,7 +49,8 @@ public interface CacheEntry<K, V> {
   K getKey();
 
   /**
-   * Value of the entry. The value may be null if nulls are permitted. If the
+   * Value of the entry. The value may be {@code null} if permitted for this cache
+   * via {@link Cache2kBuilder#permitNullValues(boolean)}. If the
    * entry had a loader exception which is not suppressed, this exception will be
    * propagated.
    *

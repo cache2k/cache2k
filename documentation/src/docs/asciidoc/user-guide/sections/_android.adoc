@@ -24,14 +24,15 @@ Include the following dependencies:
 
 === XML Configuration
 
-XML configuration is usable in android as well. In Android environment the build-in XML Pull Parser is
-instead of Stax. If Proguard is used the XML configuration code can be remove, if not used.
+XML configuration is usable in Android as well. The build-in XML Pull Parser is
+used instead of Stax. The XML configuration code will be removed via Proguard, if not used. See below.
 
 === Proguard Rules
 
 The `cache2k-impl` contains code relevant for server based software or enterprise software that is
-usualle not needed within Android. One example is the exposure of statistics via JMX. To minimize
-the footprint of the application the unused code can be removed via Proguard rules.
+usually not needed within Android. One example is the exposure of statistics via JMX. The code base is
+modular, and code needed within server environments is usually not loaded whithin Android applications.
+To minimize the footprint of the application the unused code can be removed via Proguard rules.
 
 [source]
 ----
@@ -54,4 +55,3 @@ the footprint of the application the unused code can be removed via Proguard rul
     public ** get*();
 }
 ----
-

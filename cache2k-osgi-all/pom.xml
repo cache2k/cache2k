@@ -10,12 +10,12 @@
     <relativePath>../pom.xml</relativePath>
   </parent>
 
-  <artifactId>cache2k-all</artifactId>
-  <name>cache2k all</name>
+  <artifactId>cache2k-osgi-all</artifactId>
+  <name>cache2k OSGi all</name>
 
   <description>
-    A light weight and high performance Java cache library. Complete runtime bundle.
-    This jar also provides OSGi meta information.
+    A light weight and high performance Java cache library. Complete runtime bundle for use with OSGi environments with
+    OSGi meta information. OSGi users are encouraged to look on https://github.com/cache2k/cache2k/issues/83.
   </description>
 
   <dependencies>
