@@ -21,6 +21,7 @@ package org.cache2k;
  */
 
 import org.cache2k.integration.CacheLoaderException;
+import org.cache2k.integration.ExceptionPropagator;
 
 /**
  * Object representing a cache entry. With the cache entry, it can be
@@ -52,7 +53,8 @@ public interface CacheEntry<K, V> {
    * Value of the entry. The value may be {@code null} if permitted for this cache
    * via {@link Cache2kBuilder#permitNullValues(boolean)}. If the
    * entry had a loader exception which is not suppressed, this exception will be
-   * propagated.
+   * propagated. This method does ignore a custom exception propagator set via
+   * {@link Cache2kBuilder#exceptionPropagator(ExceptionPropagator)}
    *
    * @throws CacheLoaderException if the loading produced an exception .
    */

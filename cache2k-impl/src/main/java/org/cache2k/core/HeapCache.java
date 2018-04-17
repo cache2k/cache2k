@@ -94,7 +94,7 @@ public class HeapCache<K, V>
 
   public static final Tunable TUNABLE = TunableFactory.get(Tunable.class);
 
-  final static ExceptionPropagator DEFAULT_EXCEPTION_PROPAGATOR = TUNABLE.exceptionPropagator;
+  public final static ExceptionPropagator DEFAULT_EXCEPTION_PROPAGATOR = TUNABLE.exceptionPropagator;
 
   protected final int hashSeed;
 
@@ -585,7 +585,7 @@ public class HeapCache<K, V>
       @Override
       public V getValue() {
         if (_valueOrException instanceof ExceptionWrapper) {
-          throw exceptionPropagator.propagateException(_key, (ExceptionWrapper) _valueOrException);
+          throw DEFAULT_EXCEPTION_PROPAGATOR.propagateException(_key, (ExceptionWrapper) _valueOrException);
         }
         return _valueOrException;
       }
