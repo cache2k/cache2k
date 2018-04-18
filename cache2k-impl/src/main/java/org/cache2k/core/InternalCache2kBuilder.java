@@ -23,6 +23,7 @@ package org.cache2k.core;
 import org.cache2k.Cache2kBuilder;
 import org.cache2k.CacheEntry;
 import org.cache2k.configuration.CustomizationSupplier;
+import org.cache2k.core.operation.ExaminationEntry;
 import org.cache2k.core.util.ClockDefaultImpl;
 import org.cache2k.core.util.InternalClock;
 import org.cache2k.event.CacheEntryCreatedListener;
@@ -125,7 +126,17 @@ public class InternalCache2kBuilder<K, V> {
       }
     }
     if (config.getAdvancedLoader() != null) {
-      c.setAdvancedLoader(c.createCustomization(config.getAdvancedLoader()));
+      final AdvancedCacheLoader<K,V> _loader = c.createCustomization(config.getAdvancedLoader());
+      AdvancedCacheLoader<K,V> _wrappedLoader = new AdvancedCacheLoader<K, V>() {
+        @Override
+        public V load(final K key, final long currentTime, final CacheEntry<K, V> currentEntry) throws Exception {
+          if (currentEntry == null) {
+            return _loader.load(key, currentTime, null);
+          }
+          return _loader.load(key, currentTime, HeapCache.returnCacheEntry((ExaminationEntry<K, V>) currentEntry));
+        }
+      };
+      c.setAdvancedLoader(_wrappedLoader);
     }
     if (config.getExceptionPropagator() != null) {
       c.setExceptionPropagator(c.createCustomization(config.getExceptionPropagator()));
