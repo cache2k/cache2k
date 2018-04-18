@@ -560,7 +560,7 @@ public class HeapCache<K, V>
       return null;
     }
     synchronized (e) {
-      return returnCacheEntry(e.getKey(), e.getValueOrException(), e.getLastModification());
+      return returnCacheEntry(e);
     }
   }
 
@@ -575,7 +575,11 @@ public class HeapCache<K, V>
     }
   }
 
-  protected CacheEntry<K, V> returnCacheEntry(final K _key, final V _valueOrException, final long _lastModification) {
+  public static <K,V> CacheEntry<K, V> returnCacheEntry(ExaminationEntry<K,V> _entry) {
+    return returnCacheEntry(_entry.getKey(), _entry.getValueOrException(), _entry.getLastModification());
+  }
+
+  public static <K,V> CacheEntry<K, V> returnCacheEntry(final K _key, final V _valueOrException, final long _lastModification) {
     CacheEntry<K, V> ce = new CacheEntry<K, V>() {
       @Override
       public K getKey() {
@@ -618,6 +622,51 @@ public class HeapCache<K, V>
   @Override
   public CacheEntry<K, V> getEntry(K key) {
     return returnEntry(getEntryInternal(key));
+  }
+
+  /**
+   * Wrap the cache entry into a new entry object and return it.
+   */
+  public static <K,V> SimpleCacheEntry<K,V> returnSimpleEntry(Entry<K,V> _entry) {
+    if (_entry == null) {
+      return null;
+    }
+    final V _valueOrException = _entry.getValueOrException();
+    final K _key = _entry.getKey();
+    return new SimpleCacheEntry<K, V>() {
+      @Override
+      public K getKey() {
+        return _key;
+      }
+
+      @Override
+      public V getValue() {
+        V v = _valueOrException;
+        if (v instanceof ExceptionWrapper) {
+          throw HeapCache.DEFAULT_EXCEPTION_PROPAGATOR.propagateException(_key, ((ExceptionWrapper<K>) v));
+        }
+        return v;
+      }
+
+      @Override
+      public Throwable getException() {
+        V v = _valueOrException;
+        if (v instanceof ExceptionWrapper) {
+          return ((ExceptionWrapper<K>) v).getException();
+        }
+        return null;
+      }
+    };
+  }
+
+  @Override
+  public SimpleCacheEntry<K, V> getSimpleEntry(final K key) {
+    return returnSimpleEntry(getEntryInternal(key));
+  }
+
+  @Override
+  public SimpleCacheEntry<K, V> peekSimpleEntry(final K key) {
+    return returnSimpleEntry(peekEntryInternal(key));
   }
 
   protected Entry getEntryInternal(K key) {

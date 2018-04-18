@@ -41,4 +41,7 @@ public interface ExaminationEntry<K, V> {
 
   long getLastModification();
 
+  /** Entry is locked and does not need synchronization to read values consistently */
+  boolean isStable();
+
 }

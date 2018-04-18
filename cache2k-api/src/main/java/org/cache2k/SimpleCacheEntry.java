@@ -26,28 +26,26 @@ import org.cache2k.integration.ExceptionPropagator;
 /**
  * Object representing a cache entry. With the cache entry, it can be
  * checked whether a mapping in the cache is present, even if the cache
- * contains {@code null} or contains an exception. Entries can be retrieved by
- * {@link Cache#peekEntry(Object)} or {@link Cache#getEntry(Object)} or
- * via iterated via {@link Cache#entries()}.
+ * contains {@code null} or contains an exception. The simple entry does not
+ * provide a timestamp of the last modification, which allows the entry
+ * to be retrieved at a lower cost.
+ *
+ * Entries can be retrieved by
+ * {@link Cache#peekSimpleEntry(Object)} or {@link Cache#getSimpleEntry(Object)}.
  *
  * <p>After retrieved, the entry instance does not change its values, even
  * if the value for its key is updated in the cache.
  *
- * <p>Design note: The cache is generally also aware of the time the
- * object will be refreshed next or when it will expire. This is not exposed
- * to applications by intention.
- *
  * @author Jens Wilke
- * @see Cache#peekEntry(Object)
- * @see Cache#getEntry(Object)
- * @see Cache#entries()
+ * @see Cache#peekSimpleEntry(Object)
+ * @see Cache#getSimpleEntry(Object)
+ * @author Jens Wilke
  */
-public interface CacheEntry<K, V> extends SimpleCacheEntry<K,V> {
+public interface SimpleCacheEntry<K,V> {
 
   /**
    * Key associated with this entry.
    */
-  @Override
   K getKey();
 
   /**
@@ -59,7 +57,6 @@ public interface CacheEntry<K, V> extends SimpleCacheEntry<K,V> {
    *
    * @throws CacheLoaderException if the loading produced an exception .
    */
-  @Override
   V getValue();
 
   /**
@@ -68,12 +65,6 @@ public interface CacheEntry<K, V> extends SimpleCacheEntry<K,V> {
    * happened or it was suppressed. If {@code null} then {@link #getValue}
    * returns a value and does not throw an exception.
    */
-  @Override
   Throwable getException();
-
-  /**
-   * Time in millis the entry was last modified.
-   */
-  long getLastModification();
 
 }

@@ -355,7 +355,7 @@ public abstract class EntryAction<K, V, R> implements
   public void reviveRefreshedEntry(long nrt) {
     metrics().refreshedHit();
     Entry<K, V> e = entry;
-    newValueOrException = e.getValue();
+    newValueOrException = e.getValueOrException();
     lastModificationTime = e.getLastModification();
     expiry = nrt;
     expiryCalculated();
@@ -475,7 +475,7 @@ public abstract class EntryAction<K, V, R> implements
   public void expire(long t) {
     lockForNoHit(Entry.ProcessingState.MUTATE);
     needsFinish = false;
-    newValueOrException = entry.getValue();
+    newValueOrException = entry.getValueOrException();
     lastModificationTime = entry.getLastModification();
     expiry = t;
     if (newValueOrException instanceof ExceptionWrapper) {
@@ -508,7 +508,7 @@ public abstract class EntryAction<K, V, R> implements
         }
         if (expiry > loadStartedTime) {
           suppressException = true;
-          newValueOrException = entry.getValue();
+          newValueOrException = entry.getValueOrException();
           lastModificationTime = entry.getLastModification();
           metrics().suppressedException();
           entry.setSuppressedLoadExceptionInformation(ew);
@@ -636,6 +636,9 @@ public abstract class EntryAction<K, V, R> implements
       public long getLastModification() {
         return lastModificationTime;
       }
+
+      @Override
+      public boolean isStable() { return true; }
     };
     operation.update(this, ee);
     if (needsFinish) {
@@ -768,7 +771,7 @@ public abstract class EntryAction<K, V, R> implements
       mutationReleaseLockAndStartTimer();
       return;
     }
-    CacheEntry<K,V> _currentEntry = heapCache.returnEntry(entry);
+    CacheEntry<K,V> _currentEntry = HeapCache.returnCacheEntry(entry);
     if (expiredImmediately) {
       if (storageDataValid || heapDataValid) {
         if (entryExpiredListeners() != null) {

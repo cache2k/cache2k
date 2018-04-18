@@ -101,13 +101,13 @@ class CompactEntry<K,T> {
   }
 
   /**
-   * Should never be called on the entry directly.
+   * Should never be called on the entry directly!
    *
    * @deprecated
    */
   public T getValue() {
-    if (valueOrException instanceof ExceptionWrapper) { return null; }
-    return valueOrException;
+    Thread.dumpStack();
+    return null;
   }
 
   /**
@@ -372,6 +372,8 @@ public class Entry<K, T> extends CompactEntry<K,T>
   public boolean isProcessing() {
     return getProcessingState() != ProcessingState.DONE;
   }
+
+  public boolean isStable() { return isProcessing(); }
 
   public void waitForProcessing() {
     if (!isProcessing()) {

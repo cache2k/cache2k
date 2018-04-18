@@ -628,10 +628,11 @@ public class WiredCache<K, V> extends BaseCache<K, V>
     }
   }
 
-  private void callExpiryListeners(final Entry<K, V> e) {
+  private void callExpiryListeners(Entry<K, V> e) {
     if (syncEntryExpiredListeners != null) {
+      CacheEntry<K,V> _entryCopy = HeapCache.returnCacheEntry(e);
       for (CacheEntryExpiredListener<K, V> l : syncEntryExpiredListeners) {
-        l.onEntryExpired(this, e);
+        l.onEntryExpired(this, _entryCopy);
       }
     }
   }

@@ -91,4 +91,9 @@ public class ReadOnlyCacheEntry<K, V> implements ResultEntry<K, V> {
     return valueOrException;
   }
 
+  @Override
+  public boolean isStable() {
+    return true;
+  }
+
 }

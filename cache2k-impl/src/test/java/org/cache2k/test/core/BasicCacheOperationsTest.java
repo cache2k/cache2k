@@ -23,6 +23,7 @@ package org.cache2k.test.core;
 import org.cache2k.Cache;
 import org.cache2k.Cache2kBuilder;
 import org.cache2k.CacheEntry;
+import org.cache2k.SimpleCacheEntry;
 import org.cache2k.core.InternalCacheInfo;
 import org.cache2k.expiry.ExpiryTimeValues;
 import org.cache2k.integration.CacheLoaderException;
@@ -582,6 +583,7 @@ public class BasicCacheOperationsTest {
     e = cache.peekEntry(KEY);
     assertEquals(KEY, e.getKey());
     assertEquals(VALUE, e.getValue());
+    assertNull(e.getException());
     assertTrue(e.getLastModification() >= t0);
   }
 
@@ -612,8 +614,55 @@ public class BasicCacheOperationsTest {
   }
 
   /*
+   * peekSimpleEntry
+   */
+
+  @Test
+  public void peekSimpleEntry_Initial() {
+    SimpleCacheEntry<Integer, Integer> e = cache.peekSimpleEntry(KEY);
+    assertNull(e);
+    assertEquals(0, size());
+  }
+
+  @Test
+  public void peekSimpleEntry() {
+    SimpleCacheEntry<Integer, Integer> e = cache.peekSimpleEntry(KEY);
+    assertNull(e);
+    cache.put(KEY, VALUE);
+    e = cache.peekSimpleEntry(KEY);
+    assertEquals(KEY, e.getKey());
+    assertEquals(VALUE, e.getValue());
+    assertNull(e.getException());
+  }
+
+  @Test
+  public void peekSimpleEntry_Null() {
+    SimpleCacheEntry<Integer, Integer> e = cache.peekSimpleEntry(KEY);
+    assertNull(e);
+    cache.put(KEY, null);
+    e = cache.peekSimpleEntry(KEY);
+    assertEquals(KEY, e.getKey());
+    assertNull(e.getValue());
+  }
+
+  @Test(expected = NullPointerException.class)
+  public void peekSimpleEntry_NullKey() {
+    cache.peekSimpleEntry(null);
+  }
+
+  @Test
+  public void peekSimpleEntry_Exception() {
+    ((Cache) cache).put(KEY, new ExceptionWrapper(OUCH));
+    SimpleCacheEntry<Integer, Integer> e = cache.peekSimpleEntry(KEY);
+    assertEquals(KEY, e.getKey());
+    entryHasException(e);
+    assertEquals(OUCH, e.getException());
+  }
+
+  /*
    * getEntry
    */
+
   @Test
   public void getEntry() {
     long t0 = System.currentTimeMillis();
@@ -622,6 +671,7 @@ public class BasicCacheOperationsTest {
     assertEquals(KEY, e.getKey());
     assertEquals(VALUE, e.getValue());
     assertTrue(e.getLastModification() >= t0);
+    assertNull(e.getException());
   }
 
   @Test
@@ -648,7 +698,42 @@ public class BasicCacheOperationsTest {
     assertEquals(OUCH, e.getException());
   }
 
-  private static void entryHasException(final CacheEntry<Integer, Integer> e) {
+  /*
+   * getSimpleEntry
+   */
+
+  @Test
+  public void getSimpleEntry() {
+    cache.put(KEY, VALUE);
+    SimpleCacheEntry<Integer, Integer> e = cache.getSimpleEntry(KEY);
+    assertEquals(KEY, e.getKey());
+    assertEquals(VALUE, e.getValue());
+    assertNull(e.getException());
+  }
+
+  @Test
+  public void getSimpleEntry_Null() {
+    cache.put(KEY, null);
+    SimpleCacheEntry<Integer, Integer> e = cache.getSimpleEntry(KEY);
+    assertEquals(KEY, e.getKey());
+    assertNull(e.getValue());
+  }
+
+  @Test(expected = NullPointerException.class)
+  public void getSimpleEntry_NullKey() {
+    cache.getSimpleEntry(null);
+  }
+
+  @Test
+  public void getSimpleEntry_Exception() {
+    ((Cache) cache).put(KEY, new ExceptionWrapper(OUCH));
+    SimpleCacheEntry<Integer, Integer> e = cache.getSimpleEntry(KEY);
+    assertEquals(KEY, e.getKey());
+    entryHasException(e);
+    assertEquals(OUCH, e.getException());
+  }
+
+  private static void entryHasException(final SimpleCacheEntry<Integer, Integer> e) {
     try {
       e.getValue();
       fail("exception expected");

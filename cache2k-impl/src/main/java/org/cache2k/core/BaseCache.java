@@ -23,6 +23,7 @@ package org.cache2k.core;
 import org.cache2k.CacheEntry;
 import org.cache2k.CacheException;
 import org.cache2k.CustomizationException;
+import org.cache2k.SimpleCacheEntry;
 import org.cache2k.configuration.CustomizationSupplier;
 import org.cache2k.processor.EntryProcessingException;
 import org.cache2k.processor.EntryProcessor;
@@ -210,5 +211,15 @@ public abstract class BaseCache<K, V> implements InternalCache<K, V> {
   public void clearAndClose() {
     close();
   }
-  
+
+  @Override
+  public SimpleCacheEntry<K, V> peekSimpleEntry(final K key) {
+    return peekEntry(key);
+  }
+
+  @Override
+  public SimpleCacheEntry<K, V> getSimpleEntry(final K key) {
+    return getEntry(key);
+  }
+
 }
