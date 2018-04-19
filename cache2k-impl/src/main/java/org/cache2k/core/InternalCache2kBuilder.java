@@ -41,6 +41,8 @@ import org.cache2k.integration.CacheLoader;
 import org.cache2k.integration.CacheWriter;
 import org.cache2k.integration.FunctionalCacheLoader;
 
+import java.io.Closeable;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.Executor;
@@ -127,21 +129,37 @@ public class InternalCache2kBuilder<K, V> {
     }
     if (config.getAdvancedLoader() != null) {
       final AdvancedCacheLoader<K,V> _loader = c.createCustomization(config.getAdvancedLoader());
-      AdvancedCacheLoader<K,V> _wrappedLoader = new AdvancedCacheLoader<K, V>() {
-        @Override
-        public V load(final K key, final long currentTime, final CacheEntry<K, V> currentEntry) throws Exception {
-          if (currentEntry == null) {
-            return _loader.load(key, currentTime, null);
-          }
-          return _loader.load(key, currentTime, HeapCache.returnCacheEntry((ExaminationEntry<K, V>) currentEntry));
-        }
-      };
+      AdvancedCacheLoader<K,V> _wrappedLoader = new WrappedAdvancedCacheLoader<K, V>(_loader);
       c.setAdvancedLoader(_wrappedLoader);
     }
     if (config.getExceptionPropagator() != null) {
       c.setExceptionPropagator(c.createCustomization(config.getExceptionPropagator()));
     }
     c.setCacheConfig(config);
+  }
+
+  private static class WrappedAdvancedCacheLoader<K,V> extends AdvancedCacheLoader<K,V> implements Closeable {
+
+    private final AdvancedCacheLoader<K,V> forward;
+
+    public WrappedAdvancedCacheLoader(final AdvancedCacheLoader<K, V> _forward) {
+      forward = _forward;
+    }
+
+    @Override
+    public void close() throws IOException {
+      if (forward instanceof Closeable) {
+        ((Closeable) forward).close();
+      }
+    }
+
+    @Override
+    public V load(final K key, final long currentTime, final CacheEntry<K, V> currentEntry) throws Exception {
+      if (currentEntry == null) {
+        return forward.load(key, currentTime, null);
+      }
+      return forward.load(key, currentTime, HeapCache.returnCacheEntry((ExaminationEntry<K, V>) currentEntry));
+    }
   }
 
   private HeapCache<K, V> constructImplementationAndFillParameters(Class<?> cls) {
