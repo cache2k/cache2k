@@ -62,7 +62,7 @@
   </modules>
 
   <properties>
-    <series>1.0</series>
+    <series>unstable</series>
     <buildNumber>undefined</buildNumber>
     <timestamp>0</timestamp>
     <gitBranch>unknown</gitBranch>

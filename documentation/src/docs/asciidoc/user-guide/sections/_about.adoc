@@ -1,10 +1,24 @@
 == About
 
-cache2k is a compact in-process cache implementation that has the following main design goals:
+you are reading the cache2k user guide which walks through all major
+feature in a separate section to give an overview of the functionality.
 
-Performance:: fundamentally different eviction algorithm to allow fast and lock free reads
-Ease of use:: defined API, solve common problems with one configuration option
-Compact and modular:: small core size
+You are reading a documentation that is currently work in process and updated.
+Some parts of the documentation may already refer to features in a upcoming cache2k version.
+
+The documentation of the stable 1.0 version of cache2k is available at:
+
+- https://cache2k.org/docs/1.0/user-guide.html[User Guide - Version 1.0 - HTML version]
+- https://cache2k.org/docs/1.0/user-guide.pdf[User Guide - Version 1.0 - PDF verison]
+- https://cache2k.org/docs/1.0/apidocs/cache2k-api/index.html[API - Version 1.0 ]
+- https://cache2k.org/docs/1.0/apidocs/cache2k-jmx-api/index.html[JMX-API - Version 1.0]
+- https://cache2k.org/docs/1.0/apidocs/cache2k-jcache-api/index.html[JCache API - Version 1.0]
+
+The latest documentation for development for cache2k is available at:
+
+- link:user-guide.html[User Guide - HTML Version ]
+- link:user-guide.pdf[User Guide - PDF Version]
+- link:apidocs/cache2k-api/index.html[API Java Doc]
 
 === Versioning
 
