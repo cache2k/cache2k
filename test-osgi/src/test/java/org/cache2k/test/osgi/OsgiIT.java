@@ -59,7 +59,7 @@ public class OsgiIT {
       _workspaceDir = _workspaceDir.substring(0,_workspaceDir.length() -  _ownPath.length());
     }
     return options(
-      bundle("file:///" + _workspaceDir + "/cache2k-all/target/cache2k-all-" + System.getProperty("cache2k.version") + ".jar"),
+      bundle("file:///" + _workspaceDir + "/cache2k-osgi-all/target/cache2k-osgi-all-" + System.getProperty("cache2k.version") + ".jar"),
       /*
       try to use api and impl directly
       https://github.com/cache2k/cache2k/issues/83
