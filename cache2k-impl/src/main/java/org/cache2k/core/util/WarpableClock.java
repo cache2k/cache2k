@@ -29,31 +29,69 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.locks.ReentrantLock;
 
 /**
+ * Simulated clock implementation that moves fast when {@link #sleep} is called and
+ * is delivering timer events whenever a scheduled time is passed.
+ *
  * @author Jens Wilke
  */
 public class WarpableClock implements InternalClock, Closeable {
+
+  final static Log LOG = Log.getLog(WarpableClock.class);
+
+  /**
+   * Current time of the clock in millis.
+   */
+  final AtomicLong now;
 
   /**
    * Use a fair lock implementation to ensure that there is no bias towards
    * the progress thread.
    */
   final ReentrantLock structureLock = new ReentrantLock();
-  final Log log = Log.getLog(WarpableClock.class);
+
+  /**
+   * Set to false on close to stop progress thread and avoid usage.
+   */
   volatile boolean running = true;
+
+  /**
+   * Unique number for each waiter object
+   */
   final AtomicLong waiterCounter = new AtomicLong();
-  final AtomicLong now;
+
+  /**
+   * The tree sorts the timer events.
+   */
   final TreeMap<Waiter, Waiter> tree = new TreeMap<Waiter, Waiter>();
+
+  /**
+   * Hold the progress thread.
+   */
   final Thread progressThread;
-  volatile int pongCounter = 0;
+
   /**
    * queue needs capacity, otherwise we deadlock
    */
   final BlockingQueue<Long> queue = new ArrayBlockingQueue<Long>(10);
-  final AtomicLong counter = new AtomicLong();
 
+  /**
+   * Every time we look on the clock we count this.
+   */
+  final AtomicLong clockReadingCounter = new AtomicLong();
+
+  /**
+   * Clock makes a milli second progress after this many readings.
+   */
+  final static int CLOCK_READING_PROGRESS = 1000;
+
+  /**
+   * Create a clock with the initial time.
+   *
+   * @param _initialMillis
+   */
   public WarpableClock(long _initialMillis) {
     now = new AtomicLong(_initialMillis);
-    progressThread = new Thread("clock-progress") {
+    progressThread = new Thread("warpableclock-progress") {
       @Override
       public void run() {
         progressThread();
@@ -68,13 +106,6 @@ public class WarpableClock implements InternalClock, Closeable {
     return true;
   }
 
-  static class TRJ implements TimeReachedJob {
-    Waiter waiter;
-    public TRJ(final Waiter w) {
-      waiter = w;
-    }
-  }
-
   @Override
   public TimeReachedJob createJob(final TimeReachedEvent ev) {
     return new TRJ(new Waiter(-1, waiterCounter.getAndIncrement(), ev));
@@ -82,7 +113,7 @@ public class WarpableClock implements InternalClock, Closeable {
 
   @Override
   public void schedule(final TimeReachedJob j, final long _millis) {
-    log.debug(now.get() + " job " + _millis);
+    LOG.debug(now.get() + " job " + _millis);
     final TRJ w = (TRJ) j;
     structureLock.lock();
     try {
@@ -112,9 +143,13 @@ public class WarpableClock implements InternalClock, Closeable {
     }
   }
 
+  /**
+   * Returns the current simulated time. Schedules a clock progress by one milli if
+   * this was called {@value CLOCK_READING_PROGRESS} times.
+   */
   @Override
   public long millis() {
-    if (counter.incrementAndGet() % 1000 == 0) {
+    if (clockReadingCounter.incrementAndGet() % CLOCK_READING_PROGRESS == 0) {
       try {
         queue.put(now.get() + 1L);
       } catch (InterruptedException ex) {
@@ -124,15 +159,32 @@ public class WarpableClock implements InternalClock, Closeable {
     return now.get();
   }
 
+  private final TimeReachedEvent wakeUpSleep = new TimeReachedEvent() {
+    @Override
+    public synchronized  void timeIsReached(final long _millis) {
+      notifyAll();
+    }
+  };
+
+  /**
+   * A sleep of {@code 0} waits an undefined amount of time and makes sure that the next timer
+   * events for the next upcoming millisecond are executed. A value greater then {@code 0}s advances the
+   * time just by the specified amount.
+   */
   @Override
   public void sleep(final long _waitMillis) throws InterruptedException {
     if (!running) {
       throw new IllegalStateException();
     }
     long _startTime = now.get();
-    log.debug(now.get() + " sleep(" + _waitMillis + ")");
+    LOG.debug(now.get() + " sleep(" + _waitMillis + ")");
     if (_waitMillis == 0) {
-      Thread.yield();
+      synchronized (queue) {
+        if (queue.isEmpty()) {
+          queue.put(0L);
+        }
+        queue.wait();
+      }
       return;
     }
     long _wakeupTime = _startTime + _waitMillis;
@@ -140,8 +192,12 @@ public class WarpableClock implements InternalClock, Closeable {
       _wakeupTime = Long.MAX_VALUE;
     }
     queue.put(_wakeupTime);
-    while (now.get() < _wakeupTime) {
-      Thread.yield();
+    TimeReachedJob j = createJob(wakeUpSleep);
+    synchronized (wakeUpSleep) {
+      schedule(j, _wakeupTime);
+      while (now.get() < _wakeupTime) {
+        wakeUpSleep.wait();
+      }
     }
   }
 
@@ -153,23 +209,34 @@ public class WarpableClock implements InternalClock, Closeable {
   private void progressThread() {
     while (running) {
       long _token = 0;
+      long _nextWakeup;
       try {
+        synchronized (queue) {
+          queue.notifyAll();
+        }
         _token = queue.take();
       } catch (InterruptedException ex) {
         close();
       }
-      wakeupWaiters();
+      _nextWakeup = wakeupWaiters();
       if (_token == 0) {
+        if (_nextWakeup > now.get()) {
+          now.addAndGet(Math.max((now.get() - _nextWakeup) / 2, 1));
+        } else {
+          now.incrementAndGet();
+        }
+        wakeupWaiters();
         continue;
       }
       while (_token > now.get()) {
-        now.incrementAndGet();
-        wakeupWaiters();
+        long t = (_nextWakeup > 0) ? Math.min(_nextWakeup, _token) : _token;
+        now.addAndGet(Math.max((now.get() - t) / 2, 1));
+        _nextWakeup = wakeupWaiters();
       }
     }
   }
 
-  private void wakeupWaiters() {
+  private long wakeupWaiters() {
     while (running) {
       Waiter u;
       Map.Entry<Waiter, Waiter> e;
@@ -180,25 +247,33 @@ public class WarpableClock implements InternalClock, Closeable {
           u = e.getKey();
           if (u.wakeupTime > now.get()) {
             tree.put(u, u);
-            return;
+            return u.wakeupTime;
           }
         } else {
-          return;
+          break;
         }
       } finally {
         structureLock.unlock();
       }
-      log.debug(now.get() + " " + e.getKey() + " notify timeout");
-      e.getKey().timeout();
+      LOG.debug(now.get() + " " + e.getKey() + " notify timeout");
+      e.getKey().timeIsReached();
     }
+    return -1;
   }
 
   public String toString() {
     structureLock.lock();
     try {
-      return "clock{time=" + now + ", pongs=" + pongCounter + ", waiters=" + tree + "}";
+      return "clock{time=" + now + ", waiters=" + tree + "}";
     } finally {
       structureLock.unlock();
+    }
+  }
+
+  static class TRJ implements TimeReachedJob {
+    Waiter waiter;
+    public TRJ(final Waiter w) {
+      waiter = w;
     }
   }
 
@@ -214,9 +289,13 @@ public class WarpableClock implements InternalClock, Closeable {
       event = _event;
     }
 
-    public void timeout() {
+    public void timeIsReached() {
       if (event != null) {
-        event.timeIsReached(wakeupTime);
+        try {
+          event.timeIsReached(wakeupTime);
+        } catch (Throwable t) {
+          LOG.warn("Error from time reached event", t);
+        }
       }
     }
 
@@ -226,12 +305,6 @@ public class WarpableClock implements InternalClock, Closeable {
         return -1;
       }
       if (wakeupTime > o.wakeupTime) {
-        return 1;
-      }
-      if (uniqueId < o.uniqueId) {
-        return -1;
-      }
-      if (uniqueId > o.uniqueId) {
         return 1;
       }
       return 0;
