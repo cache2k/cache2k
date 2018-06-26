@@ -125,7 +125,9 @@ public class WarpableClock implements InternalClock, Closeable {
     }
     if (Thread.currentThread() != progressThread) {
       try {
-        queue.put(0L);
+        if (queue.isEmpty()) {
+          queue.put(-1L);
+        }
       } catch (InterruptedException ex) {
         Thread.currentThread().interrupt();
       }
@@ -187,16 +189,16 @@ public class WarpableClock implements InternalClock, Closeable {
       }
       return;
     }
-    long _wakeupTime = _startTime + _waitMillis;
+    long _wakeupTime = _startTime + _waitMillis + 1;
     if (_wakeupTime < 0) {
       _wakeupTime = Long.MAX_VALUE;
     }
-    queue.put(_wakeupTime);
     TimeReachedJob j = createJob(wakeUpSleep);
+    queue.put(_wakeupTime);
     synchronized (wakeUpSleep) {
       schedule(j, _wakeupTime);
       while (now.get() < _wakeupTime) {
-        wakeUpSleep.wait();
+        wakeUpSleep.wait(5);
       }
     }
   }
@@ -219,9 +221,12 @@ public class WarpableClock implements InternalClock, Closeable {
         close();
       }
       _nextWakeup = wakeupWaiters();
+      if (_token == -1) {
+        continue;
+      }
       if (_token == 0) {
         if (_nextWakeup > now.get()) {
-          now.addAndGet(Math.max((now.get() - _nextWakeup) / 2, 1));
+          now.set(_nextWakeup);
         } else {
           now.incrementAndGet();
         }
