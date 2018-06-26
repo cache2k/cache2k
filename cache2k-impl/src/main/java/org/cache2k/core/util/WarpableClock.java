@@ -87,7 +87,7 @@ public class WarpableClock implements InternalClock, Closeable {
   /**
    * Create a clock with the initial time.
    *
-   * @param _initialMillis
+   * @param _initialMillis initial time in millis since epoch, can start 0 for easy debugging
    */
   public WarpableClock(long _initialMillis) {
     now = new AtomicLong(_initialMillis);

@@ -41,7 +41,7 @@ public interface InternalClock extends Clock {
    * Wait for the specified amount of time in milliseconds. The value of 0 means that
    * the thread may sleep some tiny amount of time or not at all.
    *
-   * <p>When using a simulated clock either this method or {@llink #millis} needs to be
+   * <p>When using a simulated clock either this method or {@link #millis} needs to be
    * called to make time pass and make {@link #millis} return an increased number.
    */
   void sleep(long _millis) throws InterruptedException;
