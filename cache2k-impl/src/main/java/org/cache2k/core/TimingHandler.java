@@ -307,9 +307,7 @@ public abstract class TimingHandler<K,V>  {
 
     @Override
     public synchronized void init(InternalCache<K,V> c) {
-      if (cache == null) {
-        cache = c;
-      }
+      cache = c;
       if (resiliencePolicy == null) {
         resiliencePolicy = c.createCustomization(resiliencePolicyFactory);
       }

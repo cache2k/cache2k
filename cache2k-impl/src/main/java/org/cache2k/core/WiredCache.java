@@ -494,7 +494,7 @@ public class WiredCache<K, V> extends BaseCache<K, V>
     }
 
     heapCache.timing.init(this);
-    heapCache.init();
+    heapCache.initWithoutTimerHandler();
   }
 
   @Override

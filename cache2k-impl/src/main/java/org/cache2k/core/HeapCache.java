@@ -334,14 +334,18 @@ public class HeapCache<K, V>
   public CacheType getValueType() { return valueType; }
 
   public void init() {
+    timing.init(this);
+    initWithoutTimerHandler();
+
+  }
+
+  public void initWithoutTimerHandler() {
+    if (name == null) {
+      name = String.valueOf(cacheCnt++);
+    }
     synchronized (lock) {
-      if (name == null) {
-        name = String.valueOf(cacheCnt++);
-      }
-      timing.init(this);
       initializeHeapCache();
-      if (hasBackgroundRefresh() &&
-        loader == null) {
+      if (hasBackgroundRefresh() && loader == null) {
         throw new IllegalArgumentException("backgroundRefresh, but no loader defined");
       }
       closing = false;
