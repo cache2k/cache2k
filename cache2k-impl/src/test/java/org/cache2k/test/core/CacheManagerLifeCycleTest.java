@@ -65,10 +65,14 @@ public class CacheManagerLifeCycleTest {
     assertNotSame(cm1, cm2);
     assertFalse(cm1.isClosed());
     assertFalse(cm2.isClosed());
+    Cache c1 = Cache2kBuilder.forUnknownTypes().manager(cm1).build();
+    Cache c2 = Cache2kBuilder.forUnknownTypes().manager(cm2).build();
     CacheManager.closeAll(cl1);
     CacheManager.closeAll(cl2);
     assertTrue(cm1.isClosed());
     assertTrue(cm2.isClosed());
+    assertTrue(c1.isClosed());
+    assertTrue(c2.isClosed());
   }
 
   @Test
