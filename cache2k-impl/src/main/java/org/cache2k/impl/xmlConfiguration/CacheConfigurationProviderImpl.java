@@ -60,15 +60,26 @@ public class CacheConfigurationProviderImpl implements CacheConfigurationProvide
   private PropertyParser propertyParser = new StandardPropertyParser();
   private TokenizerFactory tokenizerFactory = new FlexibleXmlTokenizerFactory();
   private volatile Map<Class<?>, BeanPropertyMutator> type2mutator = new HashMap<Class<?>, BeanPropertyMutator>();
-  private volatile ConfigurationContext defaultManagerContext = null;
-  private volatile Map<CacheManager, ConfigurationContext> manager2defaultConfig = new HashMap<CacheManager, ConfigurationContext>();
+  private volatile Map<CacheManager, ConfigurationContext> manager2defaultConfig =
+    new HashMap<CacheManager, ConfigurationContext>();
+  private volatile Map<ClassLoader, ConfigurationContext> classLoader2config =
+    new HashMap<ClassLoader, ConfigurationContext>();
 
+  /**
+   * The name of the default manager may be changed in the configuration file.
+   * Load the default configuration file and save the loaded context for the respective
+   * classloader, so we do not load the context twice when we create the first cache.
+   */
   @Override
   public String getDefaultManagerName(ClassLoader cl) {
-    synchronized (this) {
-      defaultManagerContext = createContext(cl, null, DEFAULT_CONFIGURATION_FILE);
+    ConfigurationContext ctx = classLoader2config.get(cl);
+    if (ctx == null) {
+      ctx = createContext(cl, null, DEFAULT_CONFIGURATION_FILE);
+      Map<ClassLoader, ConfigurationContext> m2 = new HashMap<ClassLoader, ConfigurationContext>(classLoader2config);
+      m2.put(cl, ctx);
+      classLoader2config = m2;
     }
-    return defaultManagerContext.getDefaultManagerName();
+    return ctx.getDefaultManagerName();
   }
 
   @Override
@@ -158,9 +169,14 @@ public class CacheConfigurationProviderImpl implements CacheConfigurationProvide
       return ctx;
     }
     synchronized (this) {
-      if (mgr.isDefaultManager() && defaultManagerContext != null) {
-        ctx = defaultManagerContext;
-      } else {
+      ctx = manager2defaultConfig.get(mgr);
+      if (ctx != null) {
+        return ctx;
+      }
+      if (mgr.isDefaultManager()) {
+        ctx = classLoader2config.get(mgr.getClassLoader());
+      }
+      if (ctx == null) {
         ctx = createContext(mgr.getClassLoader(), mgr.getName(), getFileName(mgr));
       }
       Map<CacheManager, ConfigurationContext> m2 =
