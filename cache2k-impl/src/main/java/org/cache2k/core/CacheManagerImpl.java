@@ -282,6 +282,9 @@ public class CacheManagerImpl extends CacheManager {
    */
   @Override
   public void close() {
+    if (isDefaultManager() && getClass().getClassLoader() == classLoader) {
+      log.info("Closing default CacheManager");
+    }
     Iterable<Cache> _caches;
     synchronized (lock) {
       if (closing) {
