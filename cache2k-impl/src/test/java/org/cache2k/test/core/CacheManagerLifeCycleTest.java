@@ -58,6 +58,7 @@ public class CacheManagerLifeCycleTest {
 
   @Test
   public void differentClassLoaderDifferentManager() {
+    CacheManager.getInstance();
     ClassLoader cl1 = new URLClassLoader(new URL[0], this.getClass().getClassLoader());
     ClassLoader cl2 = new URLClassLoader(new URL[0], this.getClass().getClassLoader());
     CacheManager cm1 = CacheManager.getInstance(cl1);
@@ -77,8 +78,10 @@ public class CacheManagerLifeCycleTest {
 
   @Test
   public void closeSpecific() {
+    CacheManager cm0 = CacheManager.getInstance();
     ClassLoader cl1 = new URLClassLoader(new URL[0], this.getClass().getClassLoader());
     CacheManager cm1 = CacheManager.getInstance(cl1);
+    assertNotEquals(cm0.getClassLoader(), cm1.getClassLoader());
     CacheManager.close(cl1, "something");
     assertFalse(cm1.isClosed());
     CacheManager.close(cl1, "default");
