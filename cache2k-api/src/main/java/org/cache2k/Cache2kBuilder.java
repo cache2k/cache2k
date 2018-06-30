@@ -541,7 +541,7 @@ public class Cache2kBuilder<K, V> {
   /**
    * By default the expiry time is not exact, which means, a value might be visible a few
    * milliseconds after the time of expiry. The time lag depends on the system load.
-   * Switching to true, means that values will not be visible when the time is reached that
+   * Switching to {@code true}, means that values will not be visible when the time is reached that
    * {@link ExpiryPolicy} returned.
    */
   public final Cache2kBuilder<K, V> sharpExpiry(boolean f) {
