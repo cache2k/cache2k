@@ -92,7 +92,7 @@ public class CacheManagerImpl extends CacheManager {
   private String name;
   private Map<String, InternalCache> cacheNames = new HashMap<String, InternalCache>();
   private final Properties properties = new Properties();
-  private ClassLoader classLoader;
+  private final ClassLoader classLoader;
   private boolean defaultManager;
   private Cache2kCoreProviderImpl provider;
   private boolean closing;
@@ -102,7 +102,7 @@ public class CacheManagerImpl extends CacheManager {
     defaultManager = _default;
     classLoader = cl;
     name = _name;
-    log = Log.getLog(CacheManager.class.getName() + ':' + name);
+    log = Log.getLog(CacheManager.class.getName() + '.' + name);
     boolean _traceCacheCreation = log.isDebugEnabled();
     boolean _assertionsEnabled = false;
     _traceCacheCreation |= _assertionsEnabled;
@@ -117,10 +117,19 @@ public class CacheManagerImpl extends CacheManager {
 
   private void logPhase(String _phase) {
     if (log.isDebugEnabled()) {
-      log.debug(_phase + " name=" + name +
-        ", id=" + Integer.toString(System.identityHashCode(this), 36) +
-        ", classloaderId=" + Integer.toString(System.identityHashCode(classLoader), 36));
+      log.debug(_phase + ": " + toStringValues());
     }
+  }
+
+  private String toStringValues() {
+    return "name=" + name +
+      ", id=" + Integer.toString(System.identityHashCode(this), 36) +
+      ", classloaderId=" + Integer.toString(System.identityHashCode(classLoader), 36) +
+      ", default=" + defaultManager;
+  }
+
+  public String toString() {
+    return "CacheManager(" + toStringValues() + ")";
   }
 
   public static Iterable<CacheLifeCycleListener> getCacheLifeCycleListeners() {
