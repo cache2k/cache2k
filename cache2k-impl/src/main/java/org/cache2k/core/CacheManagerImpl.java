@@ -38,6 +38,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
+import java.util.ServiceConfigurationError;
 import java.util.ServiceLoader;
 import java.util.Set;
 import java.util.concurrent.ExecutionException;
@@ -63,14 +64,19 @@ public class CacheManagerImpl extends CacheManager {
   private static <S> Iterable<S> constructAllServiceImplementations(Class<S> _service) {
     ClassLoader cl = CacheManagerImpl.class.getClassLoader();
     ArrayList<S> li = new ArrayList<S>();
-    for (S l : ServiceLoader.load(_service, cl)) {
-      li.add(l);
+    Iterator<S> it = ServiceLoader.load(_service, cl).iterator();
+    while (it.hasNext()) {
+      try {
+        li.add(it.next());
+      } catch (ServiceConfigurationError ex) {
+        Log.getLog(CacheManager.class.getName()).debug("Error loading service '" + _service + "'", ex);
+      }
     }
     final S[] a = (S[]) Array.newInstance(_service, li.size());
     li.toArray(a);
     return new Iterable<S>() {
       public Iterator<S> iterator() {
-       return new Iterator<S>() {
+        return new Iterator<S>() {
           private int pos = 0;
           public boolean hasNext() {
             return pos < a.length;
@@ -84,7 +90,7 @@ public class CacheManagerImpl extends CacheManager {
         };
       }
     };
-  }
+}
 
   private Map<String, StackTrace> name2CreationStackTrace = null;
   private final Object lock = new Object();

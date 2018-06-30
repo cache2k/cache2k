@@ -27,11 +27,15 @@ import org.cache2k.core.spi.CacheConfigurationProvider;
 import org.cache2k.core.util.Cache2kVersion;
 import org.cache2k.core.util.Log;
 import org.cache2k.spi.Cache2kCoreProvider;
+import org.cache2k.spi.Cache2kExtensionProvider;
 import org.cache2k.spi.SingleProviderResolver;
 
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.Map;
+import java.util.ServiceConfigurationError;
+import java.util.ServiceLoader;
 import java.util.WeakHashMap;
 
 /**
@@ -56,6 +60,11 @@ public class Cache2kCoreProviderImpl implements Cache2kCoreProvider {
   private String buildNumber;
 
   {
+    extractVersionAndGreet();
+    registerExtensions();
+  }
+
+  private void extractVersionAndGreet() {
     Log log = Log.getLog(this.getClass());
     buildNumber = Cache2kVersion.getBuildNumber();
     version = Cache2kVersion.getVersion();
@@ -68,6 +77,18 @@ public class Cache2kCoreProviderImpl implements Cache2kCoreProvider {
     sb.append(", defaultImplementation=");
     sb.append(HeapCache.TUNABLE.defaultImplementation.getSimpleName());
     log.info(sb.toString());
+  }
+
+  private void registerExtensions() {
+    Iterator<Cache2kExtensionProvider> it =
+      ServiceLoader.load(Cache2kExtensionProvider.class, CacheManager.class.getClassLoader()).iterator();
+    while (it.hasNext()) {
+      try {
+        it.next().registerCache2kExtension();
+      } catch (ServiceConfigurationError ex) {
+        Log.getLog(CacheManager.class.getName()).debug("Error loading cache2k extension", ex);
+      }
+    }
   }
 
   public Object getLockObject() {
