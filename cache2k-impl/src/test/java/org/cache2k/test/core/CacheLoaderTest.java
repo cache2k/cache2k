@@ -36,6 +36,7 @@ import org.junit.AfterClass;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
+import org.junit.rules.Timeout;
 
 import java.util.Collections;
 import java.util.concurrent.CountDownLatch;
@@ -45,6 +46,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.junit.Assert.*;
+import static org.hamcrest.Matchers.*;
 import static org.cache2k.test.core.StaticUtil.*;
 
 /**
@@ -67,7 +69,24 @@ public class CacheLoaderTest {
   }
 
   @Rule
-  public IntCacheRule target = new IntCacheRule();
+  public CacheRule<Integer, Integer> target = new IntCacheRule();
+
+  @Rule
+  public Timeout globalTimeout = new Timeout((int) TestingParameters.MAX_FINISH_WAIT_MILLIS);
+
+  /**
+   * Some tests expect that there are at least two loader threads.
+   */
+  @Test
+  public void testThreadCount() {
+    Cache<Integer,Integer> c = target.cache(new CacheRule.Specialization<Integer, Integer>() {
+      @Override
+      public void extend(final Cache2kBuilder<Integer, Integer> b) {
+        assertThat("minimum thread count",
+          b.toConfiguration().getLoaderThreadCount(), greaterThanOrEqualTo(2));
+      }
+    });
+  }
 
   @Test
   public void testFunctionalLoader() {

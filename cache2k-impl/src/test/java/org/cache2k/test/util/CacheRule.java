@@ -68,11 +68,12 @@ public class CacheRule<K,V> implements TestRule {
       (CacheType<V>) CacheTypeCapture.of(_types[1]).getBeanRepresentation();
   }
 
-  private Cache2kBuilder<K, V> getInitialBuilder() {
+  protected Cache2kBuilder<K, V> getInitialBuilder() {
     return Cache2kBuilder.forUnknownTypes()
       .keyType(keyType)
       .valueType(valueType)
-      .entryCapacity(10000);
+      .entryCapacity(10000)
+      .loaderThreadCount(4);
   }
 
   public CacheRule<K,V> config(Specialization<K,V> rb) {
