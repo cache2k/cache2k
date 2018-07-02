@@ -304,9 +304,9 @@ public class Cache2kBuilderTest {
   }
 
   @Test
-  public void cacheCapacityDefault1234() {
+  public void cacheCapacityDefault2000() {
     Cache c0 = Cache2kBuilder.forUnknownTypes().build();
-    assertEquals(1234, latestInfo(c0).getHeapCapacity());
+    assertEquals(2000, latestInfo(c0).getHeapCapacity());
     c0.close();
   }
 

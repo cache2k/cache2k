@@ -28,7 +28,9 @@ import org.cache2k.impl.xmlConfiguration.StandardVariableExpander;
 import org.cache2k.impl.xmlConfiguration.StaxConfigTokenizer;
 import org.cache2k.impl.xmlConfiguration.VariableExpander;
 import org.cache2k.impl.xmlConfiguration.XppConfigTokenizer;
+import org.cache2k.testing.category.FastTests;
 import org.junit.Test;
+import org.junit.experimental.categories.Category;
 
 import java.io.InputStream;
 import java.util.ArrayList;
@@ -42,6 +44,7 @@ import static org.junit.Assert.*;
 /**
  * @author Jens Wilke
  */
+@Category(FastTests.class)
 public class ParseCompleteTest {
 
   ParsedConfiguration parse() throws Exception {

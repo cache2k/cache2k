@@ -208,7 +208,7 @@ public class JmxSupportTest {
     checkAttribute("KeyType", "Long");
     checkAttribute("ValueType", "java.util.List<java.util.Collection<Long>>");
     checkAttribute("Size", 0L);
-    checkAttribute("EntryCapacity", 1234L);
+    checkAttribute("EntryCapacity", 2000L);
     checkAttribute("InsertCount", 0L);
     checkAttribute("MissCount", 0L);
     checkAttribute("RefreshCount", 0L);

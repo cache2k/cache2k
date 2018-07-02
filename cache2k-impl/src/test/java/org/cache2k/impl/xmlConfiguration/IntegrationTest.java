@@ -81,7 +81,7 @@ public class IntegrationTest {
 
   @Test
   public void defaultIsApplied() {
-    assertEquals(1234, new Cache2kBuilder<String, String>(){}.toConfiguration().getEntryCapacity());
+    assertEquals(5, new Cache2kBuilder<String, String>(){}.toConfiguration().getLoaderThreadCount());
   }
 
   @Test
@@ -89,10 +89,11 @@ public class IntegrationTest {
     Cache2kBuilder<String, String> b =
       new Cache2kBuilder<String, String>(){}.name("IntegrationTest-defaultAndIndividualIsApplied");
     Cache2kConfiguration<String, String> cfg = b.toConfiguration();
-    assertEquals(1234, cfg.getEntryCapacity());
+    assertEquals(2000, cfg.getEntryCapacity());
+    assertEquals(5, cfg.getLoaderThreadCount());
     assertEquals(-1, cfg.getExpireAfterWrite());
     Cache<String, String> c = b.build();
-    assertEquals(1234, cfg.getEntryCapacity());
+    assertEquals(2000, cfg.getEntryCapacity());
     assertEquals(47000, cfg.getExpireAfterWrite());
     c.close();
   }
