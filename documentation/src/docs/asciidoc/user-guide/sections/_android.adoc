@@ -3,6 +3,12 @@
 
 cache2k is compatible with Java 6 and Android. Regular testing is done against API level 16.
 
+[CAUTION]
+===============================
+This section describes the new jar file structure. For version 1.0 of cache2k dependencies
+declaration needs to be different, see https://cache2k.org/docs/1.0/user-guide.html#android[Andriod section Verion 1.0 user guide]
+===============================
+
 === Usage
 
 Include the following dependencies:
