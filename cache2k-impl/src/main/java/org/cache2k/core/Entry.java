@@ -50,7 +50,7 @@ class CompactEntry<K,T> {
    */
   protected volatile long nextRefreshTime;
 
-  public final K key;
+  private final K key;
 
   /**
    * Holds the associated entry value or an exception via the {@link ExceptionWrapper}
@@ -117,6 +117,17 @@ class CompactEntry<K,T> {
    */
   public T getValueOrException() {
     return valueOrException;
+  }
+
+  public K getKey() {
+    if (key == null) {
+      return (K) Integer.valueOf(hashCode);
+    }
+    return key;
+  }
+
+  public K getKeyObj() {
+    return key;
   }
 
 }
@@ -513,11 +524,6 @@ public class Entry<K, T> extends CompactEntry<K,T>
   }
 
 
-  @Override
-  public K getKey() {
-    return key;
-  }
-
   /**
    * Expiry time or 0.
    */
@@ -556,11 +562,12 @@ public class Entry<K, T> extends CompactEntry<K,T>
     sb.append("id=").append(System.identityHashCode(this));
     sb.append(", lock=").append(num2processingStateText(getProcessingState()));
     sb.append(", key=");
-    if (key == null) {
-      sb.append("null");
+    Object _key = getKeyObj();
+    if (_key == null) {
+      sb.append(hashCode);
     } else {
-      sb.append(key);
-      if (c != null && (c.modifiedHash(key.hashCode()) != hashCode)) {
+      sb.append(_key);
+      if (c != null && (c.modifiedHash(_key.hashCode()) != hashCode)) {
         sb.append(", keyMutation=true");
       }
     }

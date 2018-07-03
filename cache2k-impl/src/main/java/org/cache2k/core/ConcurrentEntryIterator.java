@@ -120,7 +120,7 @@ public class ConcurrentEntryIterator<K,V> implements Iterator<Entry<K,V>> {
           return e;
         }
       }
-      idx = (lastEntry.hashCode & (hashArray.length - 1) )+ 1;
+      idx = (cache.extractModifiedHash(lastEntry) & (hashArray.length - 1) ) + 1;
     }
     for (;;) {
       if (idx >= hashArray.length) {
@@ -147,9 +147,10 @@ public class ConcurrentEntryIterator<K,V> implements Iterator<Entry<K,V>> {
 
   private Entry<K,V> checkIteratedOrNext(Entry<K,V> e) {
     do {
-      boolean _notYetIterated = !seen.containsKey(e.key);
+      K _key = cache.extractKeyObj(e);
+      boolean _notYetIterated = !seen.containsKey(_key);
       if (_notYetIterated) {
-        markIterated(e.key, e.hashCode);
+        markIterated(_key, cache.extractModifiedHash(e));
         return e;
       }
       e = e.another;

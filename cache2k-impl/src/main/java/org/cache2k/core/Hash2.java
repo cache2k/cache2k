@@ -85,7 +85,7 @@ public class Hash2<K,V> {
   /**
    * Lookup the entry in the hash table and return it. First tries an optimistic read.
    */
-  public Entry<K,V> lookup(K key, int _hash) {
+  public Entry<K,V> lookup(K key, int _hash, int _keyValue) {
     OptimisticLock[] _locks = locks;
     int si = _hash & LOCK_MASK;
     OptimisticLock l = _locks[si];
@@ -101,7 +101,7 @@ public class Hash2<K,V> {
     int idx = _hash & (_mask);
     e = tab[idx];
     while (e != null) {
-      if (e.hashCode == _hash && ((ek = e.key) == key || (ek.equals(key)))) {
+      if (e.hashCode == _keyValue && keyObjIsEqual(key, e)) {
         return e;
       }
       e = e.another;
@@ -120,7 +120,7 @@ public class Hash2<K,V> {
       idx = _hash & (_mask);
       e = tab[idx];
       while (e != null) {
-        if (e.hashCode == _hash && ((ek = e.key) == key || (ek.equals(key)))) {
+        if (e.hashCode == _keyValue && (keyObjIsEqual(key, e))) {
           return e;
         }
         e = e.another;
@@ -131,13 +131,18 @@ public class Hash2<K,V> {
     }
   }
 
+  protected boolean keyObjIsEqual(final K key, final Entry e) {
+    Object ek;
+    return (ek = e.getKeyObj()) == key || (ek.equals(key));
+  }
+
 
 
   /**
    * Insert an entry. Checks if an entry already exists.
    */
-  public Entry<K,V> insertWithinLock(Entry<K,V> e, int _hash) {
-    K key = e.key;
+  public Entry<K,V> insertWithinLock(Entry<K,V> e, int _hash, int _keyValue) {
+    K key = e.getKeyObj();
     int si = _hash & LOCK_MASK;
     Entry f; Object ek; Entry<K,V>[] tab = entries;
     if (tab == null) {
@@ -146,7 +151,7 @@ public class Hash2<K,V> {
     int n = tab.length, _mask = n - 1, idx = _hash & (_mask);
     f = tab[idx];
     while (f != null) {
-      if (f.hashCode == _hash && ((ek = f.key) == key || (ek.equals(key)))) {
+      if (f.hashCode == _keyValue && ((ek = f.getKeyObj()) == key || (ek.equals(key)))) {
         return f;
       }
       f = f.another;
@@ -158,7 +163,7 @@ public class Hash2<K,V> {
   }
 
   /**
-   * Checks whether expansion is needed and expand when {@link #insertWithinLock(Entry, int)} is used.
+   * Checks whether expansion is needed and expand when {@link #insertWithinLock(Entry, int, int)} is used.
    * No lock may be hold when calling this method, since the table must be locked completely using
    * the proper lock order.
    *
@@ -182,8 +187,7 @@ public class Hash2<K,V> {
    *
    * @return true, if entry was found and removed.
    */
-  public boolean remove(Entry<K,V> e) {
-    int _hash = e.hashCode;
+  public boolean remove(Entry<K,V> e, int _hash) {
     OptimisticLock[] _locks = locks;
     int si = _hash & LOCK_MASK;
     OptimisticLock l = _locks[si];
@@ -284,6 +288,10 @@ public class Hash2<K,V> {
     }
   }
 
+  protected int modifiedHashCode(int hc) {
+    return hc;
+  }
+
   /**
    * Double the hash table size and rehash the entries. Assumes total lock.
    */
@@ -298,7 +306,7 @@ public class Hash2<K,V> {
     for (i = 0; i < sl; i++) {
       e = src[i];
       while (e != null) {
-        _count++; _next = e.another; idx = e.hashCode & _mask;
+        _count++; _next = e.another; idx = modifiedHashCode(e.hashCode) & _mask;
         e.another = tab[idx]; tab[idx] = e;
         e = _next;
       }

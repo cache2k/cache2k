@@ -341,9 +341,9 @@ public abstract class EntryAction<K, V, R> implements
     V v;
     try {
       if (e.isVirgin()) {
-        v = _loader.load(e.key, t0, null);
+        v = _loader.load(heapCache.extractKeyObj(e), t0, null);
       } else {
-        v = _loader.load(e.key, t0, e);
+        v = _loader.load(heapCache.extractKeyObj(e), t0, e);
       }
     } catch (Throwable _ouch) {
       onLoadFailure(_ouch);

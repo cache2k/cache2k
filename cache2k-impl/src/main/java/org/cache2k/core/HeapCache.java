@@ -184,7 +184,7 @@ public class HeapCache<K, V>
     }
   }
 
-  protected final Hash2<K,V> hash = new Hash2<K,V>();
+  protected final Hash2<K,V> hash = createHashTable();
 
   private volatile boolean closing = true;
 
@@ -631,12 +631,12 @@ public class HeapCache<K, V>
   /**
    * Wrap the cache entry into a new entry object and return it.
    */
-  public static <K,V> SimpleCacheEntry<K,V> returnSimpleEntry(Entry<K,V> _entry) {
+  public SimpleCacheEntry<K,V> returnSimpleEntry(Entry<K,V> _entry) {
     if (_entry == null) {
       return null;
     }
     final V _valueOrException = _entry.getValueOrException();
-    final K _key = _entry.getKey();
+    final K _key = extractKeyObj(_entry);
     return new SimpleCacheEntry<K, V>() {
       @Override
       public K getKey() {
@@ -674,12 +674,17 @@ public class HeapCache<K, V>
   }
 
   protected Entry getEntryInternal(K key) {
+    int hc = modifiedHash(key.hashCode());
+    return getEntryInternal(key, hc, extractIntKeyValue(key, hc));
+  }
+
+  protected Entry getEntryInternal(K key, int hc, int val) {
     if (loader == null) {
-      return peekEntryInternal(key);
+      return peekEntryInternal(key, hc, val);
     }
     Entry e;
     for (;;) {
-      e = lookupOrNewEntry(key);
+      e = lookupOrNewEntry(key, hc, val);
       if (e.hasFreshData(clock)) {
         return e;
       }
@@ -736,7 +741,7 @@ public class HeapCache<K, V>
    * entry.
    */
   protected boolean removeEntry(Entry e) {
-    int hc = e.hashCode;
+    int hc = extractModifiedHash(e);
     boolean _removed;
     OptimisticLock l = hash.getSegmentLock(hc);
     long _stamp = l.writeLock();
@@ -757,11 +762,12 @@ public class HeapCache<K, V>
   @Override
   public V peekAndPut(K key, V _value) {
     final int hc = modifiedHash(key.hashCode());
+    final int val = extractIntKeyValue(key, hc);
     boolean _hasFreshData;
     V _previousValue = null;
     Entry e;
     for (;;) {
-      e = lookupOrNewEntry(key, hc);
+      e = lookupOrNewEntry(key, hc, val);
       synchronized (e) {
         e.waitForProcessing();
         if (e.isGone()) {
@@ -812,7 +818,7 @@ public class HeapCache<K, V>
    * Update the value directly within entry lock. Since we did not start
    * entry processing we do not need to notify any waiting threads.
    */
-  private void putValue(final Entry e, final V _value) {
+  protected final void putValue(final Entry e, final V _value) {
     if (isNoLastModificationTime()) {
       insertOrUpdateAndCalculateExpiry(e, _value, 0, 0, INSERT_STAT_PUT);
     } else {
@@ -875,7 +881,12 @@ public class HeapCache<K, V>
    * cache.
    */
   final protected Entry<K, V> peekEntryInternal(K key) {
-    Entry e = lookupEntry(key);
+    int hc = modifiedHash(key.hashCode());
+    return peekEntryInternal(key, hc, extractIntKeyValue(key, hc));
+  }
+
+  final protected Entry<K, V> peekEntryInternal(K key, int hc, int val) {
+    Entry e = lookupEntry(key, hc, val);
     if (e == null) {
       metrics.peekMiss();
       return null;
@@ -1261,22 +1272,22 @@ public class HeapCache<K, V>
    */
   protected Entry<K, V> lookupOrNewEntry(K key) {
     int hc = modifiedHash(key.hashCode());
-    return lookupOrNewEntry(key, hc);
+    return lookupOrNewEntry(key, hc, extractIntKeyValue(key, hc));
   }
 
-  protected Entry<K, V> lookupOrNewEntry(K key, int hc) {
-    Entry e = lookupEntry(key, hc);
+  protected Entry<K, V> lookupOrNewEntry(K key, int hc, int val) {
+    Entry e = lookupEntry(key, hc, val);
     if (e == null) {
-      return insertNewEntry(key, hc);
+      return insertNewEntry(key, hc, val);
     }
     return e;
   }
 
   protected Entry<K, V> lookupOrNewEntryNoHitRecord(K key) {
     int hc = modifiedHash(key.hashCode());
-    Entry e = lookupEntryNoHitRecord(key, hc);
+    Entry e = lookupEntryNoHitRecord(key, hc, extractIntKeyValue(key, hc));
     if (e == null) {
-      e = insertNewEntry(key, hc);
+      e = insertNewEntry(key, hc, extractIntKeyValue(key, hc));
     }
     return e;
   }
@@ -1300,16 +1311,16 @@ public class HeapCache<K, V>
 
   protected Entry<K, V> lookupEntry(K key) {
     int hc = modifiedHash(key.hashCode());
-    return lookupEntry(key, hc);
+    return lookupEntry(key, hc, extractIntKeyValue(key, hc));
   }
 
   protected Entry lookupEntryNoHitRecord(K key) {
     int hc = modifiedHash(key.hashCode());
-    return lookupEntryNoHitRecord(key, hc);
+    return lookupEntryNoHitRecord(key, hc, extractIntKeyValue(key, hc));
   }
 
-  protected final Entry<K, V> lookupEntry(K key, int hc) {
-    Entry e = hash.lookup(key, hc);
+  protected final Entry<K, V> lookupEntry(K key, int hc, int val) {
+    Entry e = lookupEntryNoHitRecord(key, hc, val);
     if (e != null) {
       recordHit(e);
       return e;
@@ -1317,22 +1328,22 @@ public class HeapCache<K, V>
     return null;
   }
 
-  protected final Entry lookupEntryNoHitRecord(K key, int hc) {
-    return hash.lookup(key, hc);
+  protected final Entry<K, V> lookupEntryNoHitRecord(K key, int hc, int val) {
+    return hash.lookup(extractIntKeyObj(key), hc, val);
   }
 
   /**
    * Insert new entry in all structures (hash and eviction). The insert at the eviction
    * needs to be done under the same lock, to allow a check of the consistency.
    */
-  protected Entry<K, V> insertNewEntry(K key, int hc) {
-    Entry<K,V> e = new Entry<K,V>(key, hc);
+  protected Entry<K, V> insertNewEntry(K key, int hc, int val) {
+    Entry<K,V> e = new Entry<K,V>(extractIntKeyObj(key), val);
     Entry<K, V> e2;
     final OptimisticLock l = hash.getSegmentLock(hc);
     final long _stamp = l.writeLock();
     boolean _needsEviction = false;
     try {
-      e2 = hash.insertWithinLock(e, hc);
+      e2 = hash.insertWithinLock(e, hc, val);
       if (e == e2) {
         _needsEviction = eviction.submitWithoutEviction(e);
       }
@@ -1359,7 +1370,7 @@ public class HeapCache<K, V>
    * @return True, if the entry was present in the hash table.
    */
   public boolean removeEntryForEviction(Entry<K, V> e) {
-    boolean f = hash.remove(e);
+    boolean f = hash.remove(e, extractModifiedHash(e));
     checkForHashCodeChange(e);
     timing.cancelExpiryTimer(e);
     e.setGone();
@@ -1373,12 +1384,13 @@ public class HeapCache<K, V>
    * the item is evicted very fast.
    */
   private void checkForHashCodeChange(Entry<K, V> e) {
-    if (modifiedHash(e.key.hashCode()) != e.hashCode) {
+    K key = extractKeyObj(e);
+    if (extractIntKeyValue(key, modifiedHash(key.hashCode())) != e.hashCode) {
       if (keyMutationCnt ==  0) {
-        getLog().warn("Key mismatch! Key hashcode changed! keyClass=" + e.key.getClass().getName());
+        getLog().warn("Key mismatch! Key hashcode changed! keyClass=" + e.getKey().getClass().getName());
         String s;
         try {
-          s = e.key.toString();
+          s = e.getKey().toString();
           if (s != null) {
             getLog().warn("Key mismatch! key.toString(): " + s);
           }
@@ -1401,9 +1413,9 @@ public class HeapCache<K, V>
     try {
       checkLoaderPresent();
       if (e.isVirgin()) {
-        v = loader.load(e.key, t0, null);
+        v = loader.load(extractKeyObj(e), t0, null);
       } else {
-        v = loader.load(e.key, t0, e);
+        v = loader.load(extractKeyObj(e), t0, e);
       }
     } catch (Throwable _ouch) {
       long t = t0;
@@ -1440,7 +1452,7 @@ public class HeapCache<K, V>
   }
 
   private void loadGotException(final Entry<K, V> e, final long t0, final long t, final Throwable _wrappedException) {
-    ExceptionWrapper<K> _value = new ExceptionWrapper(e.key, _wrappedException, t0, e);
+    ExceptionWrapper<K> _value = new ExceptionWrapper(extractKeyObj(e), _wrappedException, t0, e);
     long _nextRefreshTime = 0;
     boolean _suppressException = false;
     try {
@@ -1474,7 +1486,7 @@ public class HeapCache<K, V>
    * one from the resilience policy. We propagate the more severe one from the resilience policy.
    */
   private void resiliencePolicyException(final Entry<K, V> e, final long t0, final long t, Throwable _exception) {
-    ExceptionWrapper<K> _value = new ExceptionWrapper(e.key, _exception, t0, e);
+    ExceptionWrapper<K> _value = new ExceptionWrapper(extractKeyObj(e), _exception, t0, e);
     insert(e, (V) _value, t0, t, INSERT_STAT_LOAD, 0);
   }
 
@@ -1724,7 +1736,7 @@ public class HeapCache<K, V>
     for (K k : _inputKeys) {
       Entry<K,V> e = getEntryInternal(k);
       if (e != null) {
-        map.put(e.getKey(), ReadOnlyCacheEntry.of(e));
+        map.put(extractKeyObj(e), ReadOnlyCacheEntry.of(e));
       }
     }
     return convertValueMap(map);
@@ -1991,12 +2003,36 @@ public class HeapCache<K, V>
    * This is actually a slightly reduced version of the java.util.HashMap
    * hash modification.
    */
-  public final int modifiedHash(int h) {
+  public int modifiedHash(int h) {
     h ^= hashSeed;
     h ^= h >>> 7;
     h ^= h >>> 15;
     return h;
 
+  }
+
+  /**
+   * Modified hash code or integer value for integer keyed caches
+   */
+  public int extractIntKeyValue(K key, int hc) {
+    return hc;
+  }
+
+  /**
+   * The key object or null, for integer keyed caches
+   */
+  public K extractIntKeyObj(K key) {
+    return key;
+  }
+
+  public int extractModifiedHash(Entry e) {
+    return e.hashCode;
+  }
+
+  public K extractKeyObj(Entry<K,V> e) { return e.getKeyObj(); }
+
+  public Hash2<K,V> createHashTable() {
+    return new Hash2<K, V>();
   }
 
   public static class Tunable extends TunableConstants {

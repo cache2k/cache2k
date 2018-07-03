@@ -194,6 +194,9 @@ public class InternalCache2kBuilder<K, V> {
     }
     checkConfiguration();
     Class<?> _implClass = HeapCache.TUNABLE.defaultImplementation;
+    if (config.getKeyType().getType() == Integer.class) {
+      _implClass = IntHeapCache.class;
+    }
     InternalCache<K, V> _cache = constructImplementationAndFillParameters(_implClass);
     InternalClock _timeReference = (InternalClock) _cache.createCustomization(config.getClock());
     if (_timeReference == null) {
