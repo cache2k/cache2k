@@ -756,14 +756,52 @@ public class Cache2kBuilder<K, V> {
 
   /**
    * Builds a cache with the specified configuration parameters.
-   * The builder reused to build caches with similar or identical
-   * configuration. The builder is not thread safe.
+   *
+   * <p>Returns specialized interfaces for the key types {@conde Integer} and {@code Long}.
    *
    * @throws IllegalArgumentException if a cache of the same name is already active in the cache manager
    * @throws UnknownCacheException there is no configuration entry for the named cache
+   * @returns {@link IntCache} if the key type is {@code Integer}
+   * @returns {@link LongCache} if the key type is {@code Long}
    */
   public final Cache<K, V> build() {
     return CacheManager.PROVIDER.createCache(manager, config());
+  }
+
+  /**
+   * Builds a cache with the specified configuration parameters.
+   * The behavior is identical to {@link #build()} except that it checks that
+   * the key type is {@code Integer} and casts the created cache to the specialized
+   * interface.
+   *
+   * @throws IllegalArgumentException if a cache of the same name is already active in the cache manager
+   * @throws IllegalArgumentException if key type is unexpected
+   * @throws UnknownCacheException there is no configuration entry for the named cache
+   */
+  public final IntCache<V> buildForIntKey() {
+    Cache2kConfiguration<K,V> cfg = config();
+    if (cfg.getKeyType().getType() != Integer.class) {
+      throw new IllegalArgumentException("Integer key type expected, was: " + cfg.getKeyType());
+    }
+    return (IntCache<V>) CacheManager.PROVIDER.createCache(manager, config());
+  }
+
+  /**
+   * Builds a cache with the specified configuration parameters.
+   * The behavior is identical to {@link #build()} except that it checks that
+   * the key type is {@code Integer} and casts the created cache to the specialized
+   * interface.
+   *
+   * @throws IllegalArgumentException if a cache of the same name is already active in the cache manager
+   * @throws IllegalArgumentException if key type is unexpected
+   * @throws UnknownCacheException there is no configuration entry for the named cache
+   */
+  public final LongCache<V> buildForLongKey() {
+    Cache2kConfiguration<K,V> cfg = config();
+    if (cfg.getKeyType().getType() != Long.class) {
+      throw new IllegalArgumentException("Long key type expected, was: " + cfg.getKeyType());
+    }
+    return (LongCache<V>) CacheManager.PROVIDER.createCache(manager, config());
   }
 
 }
