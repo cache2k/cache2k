@@ -194,8 +194,11 @@ public class InternalCache2kBuilder<K, V> {
     }
     checkConfiguration();
     Class<?> _implClass = HeapCache.TUNABLE.defaultImplementation;
-    if (config.getKeyType().getType() == Integer.class) {
+    Class<?> _keyType = config.getKeyType().getType();
+    if (_keyType == Integer.class) {
       _implClass = IntHeapCache.class;
+    } else if (_keyType == Long.class) {
+      _implClass = LongHeapCache.class;
     }
     InternalCache<K, V> _cache = constructImplementationAndFillParameters(_implClass);
     InternalClock _timeReference = (InternalClock) _cache.createCustomization(config.getClock());
@@ -218,7 +221,13 @@ public class InternalCache2kBuilder<K, V> {
 
     WiredCache<K, V> wc = null;
     if (_wrap) {
-      wc = new WiredCache<K, V>();
+      if (_keyType == Integer.class) {
+        wc = (WiredCache<K, V>) new IntWiredCache<V>();
+      } else if (_keyType == Long.class) {
+        wc = (WiredCache<K, V>) new LongWiredCache<V>();
+      } else {
+        wc = new WiredCache<K, V>();
+      }
       wc.heapCache = bc;
       _cache = wc;
     }

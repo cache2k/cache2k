@@ -1,4 +1,4 @@
-package org.cache2k.core.experimentalApi;
+package org.cache2k.core;
 
 /*
  * #%L
@@ -20,11 +20,38 @@ package org.cache2k.core.experimentalApi;
  * #L%
  */
 
-import org.cache2k.Cache;
+import org.cache2k.IntCache;
 
 /**
+ * Just delegate to the non specialized versions for now.
+ *
  * @author Jens Wilke
  */
-public interface IntCache<V> extends org.cache2k.IntCache<V> {
+public class IntWiredCache<V> extends WiredCache<Integer, V> implements IntCache<V> {
+
+  @Override
+  public V peek(final int key) {
+    return super.peek(key);
+  }
+
+  @Override
+  public boolean containsKey(final int key) {
+    return super.containsKey(key);
+  }
+
+  @Override
+  public void put(final int key, final V value) {
+    super.put(key, value);
+  }
+
+  @Override
+  public V get(final int key) {
+    return super.get(key);
+  }
+
+  @Override
+  public void remove(final int key) {
+    super.remove(key);
+  }
 
 }

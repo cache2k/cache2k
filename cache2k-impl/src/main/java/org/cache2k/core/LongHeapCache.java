@@ -1,4 +1,4 @@
-package org.cache2k.core.experimentalApi;
+package org.cache2k.core;
 
 /*
  * #%L
@@ -20,11 +20,38 @@ package org.cache2k.core.experimentalApi;
  * #L%
  */
 
-import org.cache2k.Cache;
+import org.cache2k.LongCache;
 
 /**
+ * Just delegate to the non specialized versions for now.
+ *
  * @author Jens Wilke
  */
-public interface IntCache<V> extends org.cache2k.IntCache<V> {
+public class LongHeapCache<V> extends HeapCache<Long, V> implements LongCache<V> {
+
+  @Override
+  public V peek(final long key) {
+    return super.peek(key);
+  }
+
+  @Override
+  public boolean containsKey(final long key) {
+    return super.containsKey(key);
+  }
+
+  @Override
+  public void put(final long key, final V value) {
+    super.put(key, value);
+  }
+
+  @Override
+  public V get(final long key) {
+    return super.get(key);
+  }
+
+  @Override
+  public void remove(final long key) {
+    super.remove(key);
+  }
 
 }

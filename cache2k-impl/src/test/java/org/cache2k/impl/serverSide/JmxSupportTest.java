@@ -227,7 +227,7 @@ public class JmxSupportTest {
     checkAttribute("HashQuality", 100);
     checkAttribute("MillisPerLoad", 0.0);
     checkAttribute("TotalLoadMillis", 0L);
-    checkAttribute("Implementation", "HeapCache");
+    checkAttribute("Implementation", "LongHeapCache");
     checkAttribute("ClearedTime", null);
     checkAttribute("Alert", 0);
     assertTrue("reasonable CreatedTime", ((Date) retrieve("CreatedTime")).compareTo(_beforeCreateion) >= 0);

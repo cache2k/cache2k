@@ -71,11 +71,6 @@ public class IntHeapCache<V> extends HeapCache<Integer, V> implements IntCache<V
   }
 
   @Override
-  public void prefetch(final int key) {
-    prefetch(key);
-  }
-
-  @Override
   public V peek(final int key) {
     Entry<Integer, V> e = peekEntryInternal(null, modifiedHash(key), key);
     if (e != null) {
@@ -122,6 +117,11 @@ public class IntHeapCache<V> extends HeapCache<Integer, V> implements IntCache<V
       return null;
     }
     return (V) returnValue(e);
+  }
+
+  @Override
+  public void remove(final int key) {
+    super.remove(key);
   }
 
 }
