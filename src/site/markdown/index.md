@@ -19,28 +19,28 @@ Java applications.
     .build();
 ````
 
-For a detailed introduction continue with [Getting Started](docs/1.0/user-guide.html#getting-started).
+For a detailed introduction continue with [Getting Started](docs/latest/user-guide.html#getting-started).
 
 ## Features at a glance
 
  * Single small jar file (less than 400k) with no external dependencies
- * Even smaller, for use with [Android](docs/1.0/user-guide.html#android)
+ * Even smaller, for use with [Android](docs/latest/user-guide.html#android)
  * One of the fastest cache for JVM local caching, see [the benchmarks page](benchmarks.html)
- * Java 6 and [Android](docs/1.0/user-guide.html#android) compatible
+ * Java 6 and [Android](docs/latest/user-guide.html#android) compatible
  * Leverages Java 8 to increase performance (if possible)
  * Pure Java code, no use of `sun.misc.Unsafe`
- * Thread safe, with a complete set of [atomic operations](docs/1.0/user-guide.html#atomic-operations)
- * [Resilience and smart exception handling](docs/1.0/user-guide.html#resilience-and-exceptions) 
- * Null value support, see [User Guide - Null Values](docs/1.0/user-guide.html#null-values)
- * Automatic [Expiry and Refresh](docs/1.0/user-guide.html#expiry-and-refresh): duration or point in time, variable expiry per entry, delta calculations
- * CacheLoader with blocking read through, see [User Guide - Loading and Read Through](docs/1.0/user-guide.html#loading-read-through)
+ * Thread safe, with a complete set of [atomic operations](docs/latest/user-guide.html#atomic-operations)
+ * [Resilience and smart exception handling](docs/latest/user-guide.html#resilience-and-exceptions) 
+ * Null value support, see [User Guide - Null Values](docs/latest/user-guide.html#null-values)
+ * Automatic [Expiry and Refresh](docs/latest/user-guide.html#expiry-and-refresh): duration or point in time, variable expiry per entry, delta calculations
+ * CacheLoader with blocking read through, see [User Guide - Loading and Read Through](docs/latest/user-guide.html#loading-read-through)
  * CacheWriter
- * [Event listeners](docs/1.0/user-guide.html#event-listeners)
- * [Refresh ahead](docs/1.0/user-guide.html#refresh-ahead) reduces latency
- * [Low Overhead Statistics](docs/1.0/user-guide.html#statistics) and JMX support
- * [Separate and defined API](docs/1.0/apidocs/cache2k-api/index.html) with stable and concise interface
- * [complete JCache / JSR107 support, complatible to JCache Specification 1.1](docs/1.0/user-guide.html#jcache)
- * [XML based configuration](docs/1.0/user-guide.html#xml-configuration), to separate cache tuning from logic
+ * [Event listeners](docs/latest/user-guide.html#event-listeners)
+ * [Refresh ahead](docs/latest/user-guide.html#refresh-ahead) reduces latency
+ * [Low Overhead Statistics](docs/latest/user-guide.html#statistics) and JMX support
+ * [Separate and defined API](docs/latest/apidocs/cache2k-api/index.html) with stable and concise interface
+ * [complete JCache / JSR107 support, complatible to JCache Specification 1.1](docs/latest/user-guide.html#jcache)
+ * [XML based configuration](docs/latest/user-guide.html#xml-configuration), to separate cache tuning from logic
 
 ## News
 
