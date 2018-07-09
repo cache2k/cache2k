@@ -177,10 +177,6 @@ public abstract class BaseCache<K, V> implements InternalCache<K, V> {
     return execute(key, null, op);
   }
 
-  @Override
-  public StorageMetrics getStorageMetrics() {
-    return StorageMetrics.DUMMY;
-  }
 
   @Override
   public <T> T createCustomization(final CustomizationSupplier<T> f) {

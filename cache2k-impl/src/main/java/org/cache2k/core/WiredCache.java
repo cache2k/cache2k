@@ -70,7 +70,6 @@ public class WiredCache<K, V> extends BaseCache<K, V>
   CacheEntryCreatedListener<K,V>[] syncEntryCreatedListeners;
   CacheEntryUpdatedListener<K,V>[] syncEntryUpdatedListeners;
   CacheEntryExpiredListener<K,V>[] syncEntryExpiredListeners;
-  StorageMetrics.Updater storageMetrics = new StandardStorageMetrics();
 
   private CommonMetrics.Updater metrics() {
     return heapCache.metrics;

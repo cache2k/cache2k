@@ -85,11 +85,6 @@ public interface InternalCache<K, V> extends Cache<K, V>, CanCheckIntegrity {
    */
   int getTotalEntryCount();
 
-  /**
-   * Return storage metrics if storage attached.
-   */
-  StorageMetrics getStorageMetrics();
-
   void logAndCountInternalException(String s, Throwable t);
 
   boolean isNullValuePermitted();
@@ -111,5 +106,6 @@ public interface InternalCache<K, V> extends Cache<K, V>, CanCheckIntegrity {
    * Time reference for the cache.
    */
   InternalClock getClock();
+
 
 }

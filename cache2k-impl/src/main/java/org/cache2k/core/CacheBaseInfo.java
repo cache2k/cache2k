@@ -36,14 +36,12 @@ import static org.cache2k.core.util.Util.formatMillis;
 class CacheBaseInfo implements InternalCacheInfo {
 
   private CommonMetrics metrics;
-  private StorageMetrics storageMetrics = StorageMetrics.DUMMY;
   private HeapCache heapCache;
   private InternalCache cache;
   private long size;
   private long infoCreatedTime;
   private int infoCreationDeltaMs;
   private long missCnt;
-  private long storageMissCnt;
   private long hitCnt;
   private long correctedPutCnt;
   private CollisionInfo collisionInfo;
@@ -90,7 +88,6 @@ class CacheBaseInfo implements InternalCacheInfo {
     internalExceptionCnt = _heapCache.internalExceptionCnt;
     evictionRunningCnt = em.getEvictionRunningCount();
     integrityState = _heapCache.getIntegrityState();
-    storageMetrics = _userCache.getStorageMetrics();
     collisionInfo = new CollisionInfo();
     _heapCache.hash.calcHashCollisionInfo(collisionInfo);
     extraStatistics = em.getExtraStatistics();
@@ -99,7 +96,6 @@ class CacheBaseInfo implements InternalCacheInfo {
     }
     size = heapCache.getLocalSize();
     missCnt = metrics.getLoadCount() + metrics.getReloadCount() + metrics.getPeekHitNotFreshCount() + metrics.getPeekMissCount();
-    storageMissCnt = storageMetrics.getReadMissCount() + storageMetrics.getReadNonFreshCount();
     hitCnt = em.getHitCount();
     correctedPutCnt = metrics.getPutNewEntryCount() + metrics.getPutHitCount() + metrics.getPutNoReadHitCount();
     if (_heapCache.loaderExecutor instanceof ExclusiveExecutor) {
@@ -135,11 +131,7 @@ class CacheBaseInfo implements InternalCacheInfo {
   public long getSize() { return size; }
   @Override
   public long getHeapCapacity() { return maxSize; }
-  @Override
-  public long getStorageHitCnt() { return storageMetrics.getReadHitCount(); }
 
-  @Override
-  public long getStorageMissCnt() { return storageMissCnt; }
   @Override
   public long getGetCount() {
     long _putHit = metrics.getPutNoReadHitCount();

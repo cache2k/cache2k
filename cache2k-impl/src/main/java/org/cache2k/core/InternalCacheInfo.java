@@ -55,11 +55,6 @@ public interface InternalCacheInfo {
    */
   long getHeapCapacity();
 
-  /** To be removed. */
-  long getStorageHitCnt();
-
-   /** To be removed. */
-  long getStorageMissCnt();
 
   /**
    * Total counted hits on the heap cache data. The counter is increased when an entry is present
