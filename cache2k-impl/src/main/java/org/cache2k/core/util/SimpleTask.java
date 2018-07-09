@@ -63,7 +63,7 @@ public abstract class SimpleTask implements Runnable {
    * System.currentTimeMillis, assuming this task is scheduled for execution.
    * For repeating tasks, this field is updated prior to each task execution.
    */
-  volatile long nextExecutionTime;
+  volatile long executionTime;
 
   /**
    * Creates a new timer task.
@@ -147,14 +147,14 @@ public abstract class SimpleTask implements Runnable {
    * @see Date#getTime()
    */
   public long scheduledExecutionTime() {
-    return nextExecutionTime;
+    return executionTime;
   }
 
   @Override
   public String toString() {
     return this.getClass().getSimpleName() + "{" +
       "state=" + state +
-      ", nextExecutionTime=" + nextExecutionTime +
+      ", executionTime=" + executionTime +
       '}';
   }
 }

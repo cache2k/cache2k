@@ -454,7 +454,7 @@ public abstract class TimingHandler<K,V>  {
       SimpleTimer _timer = timer[e.hashCode & timerMask];
       if (_timer != null) {
         try {
-          _timer.schedule(e.getTask(), new Date(_nextRefreshTime));
+          _timer.schedule(e.getTask(), _nextRefreshTime);
         } catch (IllegalStateException ignore) {
         }
       }

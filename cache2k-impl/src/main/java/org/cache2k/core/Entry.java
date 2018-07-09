@@ -164,7 +164,6 @@ public class Entry<K, T> extends CompactEntry<K,T>
   /** @see #isVirgin() */
   static final int VIRGIN = 0;
 
-  /** @see #isReadNonValid() */
   static final int READ_NON_VALID = 1;
 
   /**
@@ -590,21 +589,11 @@ public class Entry<K, T> extends CompactEntry<K,T>
     }
     if (Thread.holdsLock(this)) {
       if (getTask() != null) {
-        String _timerState = "<unavailable>";
-        try {
-          Field f = SimpleTask.class.getDeclaredField("state");
-          f.setAccessible(true);
-          int _state = f.getInt(getTask());
-          _timerState = String.valueOf(_state);
-        } catch (Exception x) {
-          _timerState = x.toString();
-        }
-        sb.append(", timerState=").append(_timerState);
+        sb.append(", timerState=").append(getTask());
       }
     } else {
       sb.append(", timerState=skipped/notLocked");
     }
-
     sb.append(", dirty=").append(isDirty());
     sb.append("}");
     return sb.toString();
@@ -756,23 +745,6 @@ public class Entry<K, T> extends CompactEntry<K,T>
     _head.next = e;
   }
 
-  public static final int getListEntryCount(final Entry _head) {
-    Entry e = _head.next;
-    int cnt = 0;
-    while (e != _head) {
-      cnt++;
-      if (e == null) {
-        return -cnt;
-      }
-      e = e.next;
-    }
-    return cnt;
-  }
-
-  public static final <E extends Entry> void moveToFront(final E _head, final E e) {
-    removeFromList(e);
-    insertInList(_head, e);
-  }
 
   public static final <E extends Entry> E insertIntoTailCyclicList(final E _head, final E e) {
     if (_head == null) {
@@ -785,31 +757,6 @@ public class Entry<K, T> extends CompactEntry<K,T>
     return _head;
   }
 
-  /**
-   * Insert X into A B C, yields: A X B C.
-   */
-  public static final <E extends Entry> E insertAfterHeadCyclicList(final E _head, final E e) {
-    if (_head == null) {
-      return (E) e.shortCircuit();
-    }
-    e.prev = _head;
-    e.next = _head.next;
-    _head.next.prev = e;
-    _head.next = e;
-    return _head;
-  }
-
-  /** Insert element at the head of the list */
-  public static final <E extends Entry> E insertIntoHeadCyclicList(final E _head, final E e) {
-    if (_head == null) {
-      return (E) e.shortCircuit();
-    }
-    e.next = _head;
-    e.prev = _head.prev;
-    _head.prev.next = e;
-    _head.prev = e;
-    return e;
-  }
 
   public static <E extends Entry> E removeFromCyclicList(final E _head, E e) {
     if (e.next == e) {

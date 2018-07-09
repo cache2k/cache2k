@@ -28,6 +28,8 @@ import java.util.concurrent.TimeUnit;
 
 /**
  * Wraps a thread pool executor that is used by one cache exclusively.
+ * Used to decide whether the {@link HeapCache#toString()) should include the
+ * thread pool statistics.
  *
  * @author Jens Wilke
  */

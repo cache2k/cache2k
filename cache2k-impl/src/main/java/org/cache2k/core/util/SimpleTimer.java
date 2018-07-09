@@ -157,21 +157,6 @@ public class SimpleTimer {
   }
 
   /**
-   * Schedules the specified task for execution at the specified time.  If
-   * the time is in the past, the task is scheduled for immediate execution.
-   *
-   * @param task task to be scheduled.
-   * @param time time at which task is to be executed.
-   * @throws IllegalArgumentException if <tt>time.getTime()</tt> is negative.
-   * @throws IllegalStateException if task was already scheduled or
-   *         cancelled, timer was cancelled, or timer thread terminated.
-   * @throws NullPointerException if {@code task} or {@code time} is null
-   */
-  public void schedule(SimpleTask task, Date time) {
-    sched(task, time.getTime());
-  }
-
-  /**
    * Schedule the specified timer task for execution at the specified
    * time with the specified period, in milliseconds.  If period is
    * positive, the task is scheduled for repeated execution; if period is
@@ -184,7 +169,7 @@ public class SimpleTimer {
    *         cancelled, timer was cancelled, or timer thread terminated.
    * @throws NullPointerException if {@code task} is null
    */
-  private void sched(SimpleTask task, final long time) {
+  public void schedule(SimpleTask task, final long time) {
     if (time < 0) {
       throw new IllegalArgumentException("Illegal execution time.");
     }
@@ -192,7 +177,7 @@ public class SimpleTimer {
       throw new IllegalStateException(
         "Task already scheduled or cancelled");
     }
-    task.nextExecutionTime = time;
+    task.executionTime = time;
     lock.lock();
     try {
       if (!thread.newTasksMayBeScheduled)
@@ -286,7 +271,7 @@ public class SimpleTimer {
             return;
           }
           task = queue.getMin();
-          long executionTime = task.nextExecutionTime;
+          long executionTime = task.executionTime;
           boolean fired = executionTime <= currentTime;
           if (fired) {
             queue.removeMin();
@@ -389,7 +374,7 @@ class TimerThread extends Thread {
               continue;
             }
             long currentTime = clock.millis();
-            long executionTime = task.nextExecutionTime;
+            long executionTime = task.executionTime;
             boolean fired = executionTime <= currentTime;
             if (fired) {
               queue.removeMin();
@@ -491,15 +476,6 @@ class TaskQueue {
   }
 
   /**
-   * Sets the nextExecutionTime associated with the head task to the
-   * specified value, and adjusts priority queue accordingly.
-   */
-  void rescheduleMin(long newTime) {
-    queue[1].nextExecutionTime = newTime;
-    fixDown(1);
-  }
-
-  /**
    * Returns true if the priority queue contains no elements.
    */
   boolean isEmpty() {
@@ -528,7 +504,7 @@ class TaskQueue {
   private void fixUp(int k) {
     while (k > 1) {
       int j = k >> 1;
-      if (queue[j].nextExecutionTime <= queue[k].nextExecutionTime)
+      if (queue[j].executionTime <= queue[k].executionTime)
         break;
       SimpleTask tmp = queue[j];  queue[j] = queue[k]; queue[k] = tmp;
       k = j;
@@ -549,9 +525,9 @@ class TaskQueue {
     int j;
     while ((j = k << 1) <= size && j > 0) {
       if (j < size &&
-        queue[j].nextExecutionTime > queue[j+1].nextExecutionTime)
+        queue[j].executionTime > queue[j+1].executionTime)
         j++; // j indexes smallest kid
-      if (queue[k].nextExecutionTime <= queue[j].nextExecutionTime)
+      if (queue[k].executionTime <= queue[j].executionTime)
         break;
       SimpleTask tmp = queue[j];  queue[j] = queue[k]; queue[k] = tmp;
       k = j;
