@@ -48,7 +48,7 @@ public class BasicLongWiredCacheOperationsTest extends BasicLongCacheOperationsT
   @BeforeClass
   public static void setUp() {
     Cache2kBuilder<Long, Integer> _builder = Cache2kBuilder.of(Long.class, Integer.class)
-      .name(BasicCacheOperationsWiredCacheTest.class)
+      .name(BasicLongWiredCacheOperationsTest.class)
       .eternal(true)
       .retryInterval(Long.MAX_VALUE, TimeUnit.MILLISECONDS)
       .permitNullValues(true)

@@ -47,7 +47,7 @@ public class BasicIntWiredCacheOperationsTest extends BasicIntCacheOperationsTes
   @BeforeClass
   public static void setUp() {
     Cache2kBuilder<Integer, Integer> _builder = Cache2kBuilder.of(Integer.class, Integer.class)
-      .name(BasicCacheOperationsWiredCacheTest.class)
+      .name(BasicIntWiredCacheOperationsTest.class)
       .eternal(true)
       .retryInterval(Long.MAX_VALUE, TimeUnit.MILLISECONDS)
       .permitNullValues(true)
