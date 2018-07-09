@@ -68,16 +68,18 @@ public class BasicCacheOperationsForwardingAndAbstractTest extends BasicCacheOpe
 
     InvocationHandler h = new InvocationHandler() {
       @Override
-      public Object invoke(final Object proxy, final Method method, final Object[] args) throws Throwable {
+      public Object invoke(final Object _proxy, final Method _method, final Object[] _args) throws Throwable {
         try {
-          method.invoke(_abstractCache, args);
-          fail("exception expected");
+          _method.invoke(_abstractCache, _args);
+          if (!_method.getName().equals("toString")) {
+            fail("exception expected for method: " + _method);
+          }
         } catch(InvocationTargetException ex) {
           assertEquals("expected exception",
             UnsupportedOperationException.class, ex.getTargetException().getClass());
         }
         try {
-          return method.invoke(_forwardingCache, args);
+          return _method.invoke(_forwardingCache, _args);
         } catch(InvocationTargetException ex) {
           throw ex.getTargetException();
         }
