@@ -87,9 +87,7 @@ public abstract class BaseCache<K, V> implements InternalCache<K, V> {
 
   @Override
   public void removeAll() {
-    for (K key : keys()) {
-      remove(key);
-    }
+    removeAll(keys());
   }
 
   @Override

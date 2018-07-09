@@ -377,12 +377,10 @@ public class WiredCache<K, V> extends BaseCache<K, V>
 
   @Override
   public int getTotalEntryCount() {
-    synchronized (lockObject()) {
-      if (storage != null) {
-        return (int) storage.getTotalEntryCount();
-      }
-      return (int) heapCache.getLocalSize();
+    if (storage != null) {
+      return (int) storage.getTotalEntryCount();
     }
+    return heapCache.getTotalEntryCount();
   }
 
   @Override

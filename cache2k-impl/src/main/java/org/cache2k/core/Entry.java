@@ -477,11 +477,6 @@ public class Entry<K, T> extends CompactEntry<K,T>
     return false;
   }
 
-  /** Storage was checked, no data available */
-  public boolean isReadNonValid() {
-    return nextRefreshTime == READ_NON_VALID;
-  }
-
   /** Entry is kept in the cache but has expired */
   public void setExpiredState() {
     nextRefreshTime = EXPIRED;

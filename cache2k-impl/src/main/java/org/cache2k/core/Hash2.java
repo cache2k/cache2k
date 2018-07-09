@@ -187,7 +187,8 @@ public class Hash2<K,V> {
    *
    * @return true, if entry was found and removed.
    */
-  public boolean remove(Entry<K,V> e, int _hash) {
+  public boolean remove(Entry<K,V> e) {
+    int _hash = modifiedHashCode(e.hashCode);
     OptimisticLock[] _locks = locks;
     int si = _hash & LOCK_MASK;
     OptimisticLock l = _locks[si];

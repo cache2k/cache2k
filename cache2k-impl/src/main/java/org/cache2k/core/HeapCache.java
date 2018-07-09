@@ -1370,7 +1370,7 @@ public class HeapCache<K, V>
    * @return True, if the entry was present in the hash table.
    */
   public boolean removeEntryForEviction(Entry<K, V> e) {
-    boolean f = hash.remove(e, extractModifiedHash(e));
+    boolean f = hash.remove(e);
     checkForHashCodeChange(e);
     timing.cancelExpiryTimer(e);
     e.setGone();

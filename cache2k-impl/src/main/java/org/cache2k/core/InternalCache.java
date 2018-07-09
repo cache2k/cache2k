@@ -80,6 +80,9 @@ public interface InternalCache<K, V> extends Cache<K, V>, CanCheckIntegrity {
 
   String getEntryState(K key);
 
+  /**
+   * This method is used for {@link ConcurrentMapWrapper#size()}
+   */
   int getTotalEntryCount();
 
   /**
