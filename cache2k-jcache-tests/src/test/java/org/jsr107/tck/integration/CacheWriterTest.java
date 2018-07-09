@@ -36,7 +36,6 @@ import javax.cache.Caching;
 import javax.cache.configuration.FactoryBuilder;
 import javax.cache.configuration.MutableConfiguration;
 import javax.cache.integration.CacheWriterException;
-import javax.cache.integration.CompletionListenerFuture;
 import javax.cache.processor.EntryProcessor;
 import java.io.IOException;
 import java.util.HashMap;
