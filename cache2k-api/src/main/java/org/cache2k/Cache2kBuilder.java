@@ -757,12 +757,12 @@ public class Cache2kBuilder<K, V> {
   /**
    * Builds a cache with the specified configuration parameters.
    *
-   * <p>Returns specialized interfaces for the key types {@conde Integer} and {@code Long}.
+   * <p>Returns specialized interfaces for the key types {@code Integer} and {@code Long}.
    *
    * @throws IllegalArgumentException if a cache of the same name is already active in the cache manager
    * @throws UnknownCacheException there is no configuration entry for the named cache
-   * @returns {@link IntCache} if the key type is {@code Integer}
-   * @returns {@link LongCache} if the key type is {@code Long}
+   * @return {@link IntCache} if the key type is {@code Integer}
+   * @return {@link LongCache} if the key type is {@code Long}
    */
   public final Cache<K, V> build() {
     return CacheManager.PROVIDER.createCache(manager, config());
