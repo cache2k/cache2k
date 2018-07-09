@@ -29,6 +29,9 @@ import org.cache2k.expiry.ExpiryTimeValues;
 import org.cache2k.integration.CacheLoaderException;
 import org.cache2k.core.ExceptionWrapper;
 import org.cache2k.core.InternalCache;
+import org.cache2k.processor.EntryProcessingResult;
+import org.cache2k.processor.EntryProcessor;
+import org.cache2k.processor.MutableCacheEntry;
 import org.cache2k.testing.category.FastTests;
 import org.junit.*;
 import org.junit.experimental.categories.Category;
@@ -125,6 +128,14 @@ public class BasicCacheOperationsTest {
    */
 
   @Test
+  public void intital_Static_Stuff() {
+    assertFalse(cache.isClosed());
+    assertNotNull(cache.getName());
+    assertNotNull(cache.getCacheManager());
+    assertNotNull(cache.toString());
+  }
+
+  @Test
   public void initial_Iterator() {
     assertFalse(cache.entries().iterator().hasNext());
   }
@@ -140,7 +151,6 @@ public class BasicCacheOperationsTest {
   public void initial_Contains() {
     assertFalse(cache.containsKey(KEY));
     assertFalse(cache.containsKey(OTHER_KEY));
-    assertEquals(0, size());
   }
 
   /**
@@ -151,6 +161,12 @@ public class BasicCacheOperationsTest {
   public void initial_Get() {
     Object obj = cache.get(KEY);
     assertNull(obj);
+  }
+
+  @Test
+  public void initial_Size() {
+    assertEquals(0, size());
+    assertEquals(0, cache.asMap().size());
   }
 
   /*
@@ -1122,13 +1138,33 @@ public class BasicCacheOperationsTest {
     assertFalse(it.hasNext());
   }
 
+  /*
+   * Misc
+   */
+
+  @Test
+  public void removeAll() {
+    cache.put(KEY, VALUE);
+    cache.put(OTHER_KEY, OTHER_VALUE);
+    cache.removeAll();
+    assertFalse(cache.keys().iterator().hasNext());
+  }
+
+  @Test
+  public void removeAllSortCircuit() {
+    cache.put(KEY, VALUE);
+    cache.put(OTHER_KEY, OTHER_VALUE);
+    cache.removeAll(cache.keys());
+    assertFalse(cache.keys().iterator().hasNext());
+  }
+
   @Test(expected=UnsupportedOperationException.class)
-  public void loadAll() throws Exception {
+  public void loadAll() {
     cache.loadAll(toIterable(KEY, OTHER_KEY), null);
   }
 
   @Test(expected=UnsupportedOperationException.class)
-  public void reloadAll() throws Exception {
+  public void reloadAll() {
     cache.reloadAll(toIterable(KEY, OTHER_KEY), null);
   }
 
@@ -1166,4 +1202,36 @@ public class BasicCacheOperationsTest {
     assertTrue(s.contains("exception="));
   }
 
+  @Test
+  public void requstInterface() {
+    assertNull(cache.requestInterface(Integer.class));
+    assertTrue(cache.requestInterface(Map.class) instanceof Map);
+  }
+
+  @Test
+  public void invoke() {
+    cache.put(KEY, VALUE);
+    boolean f = cache.invoke(KEY, new EntryProcessor<Integer, Integer, Boolean>() {
+      @Override
+      public Boolean process(final MutableCacheEntry<Integer, Integer> e) throws Exception {
+        return e.exists();
+      }
+    });
+    assertTrue(f);
+  }
+
+  @Test
+  public void invokeAll() {
+    cache.put(KEY, VALUE);
+    Map<Integer, EntryProcessingResult<Boolean>> res =
+      cache.invokeAll(cache.keys(), new EntryProcessor<Integer, Integer, Boolean>() {
+      @Override
+      public Boolean process(final MutableCacheEntry<Integer, Integer> e) throws Exception {
+        return e.exists();
+      }
+    });
+    assertEquals(1, res.size());
+    assertNull(res.get(KEY).getException());
+    assertTrue(res.get(KEY).getResult());
+  }
 }
