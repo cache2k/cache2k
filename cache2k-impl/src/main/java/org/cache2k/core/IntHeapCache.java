@@ -20,7 +20,7 @@ package org.cache2k.core;
  * #L%
  */
 
-import org.cache2k.core.experimentalApi.IntCache;
+import org.cache2k.IntCache;
 
 /**
  * Overwrite methods so the integer value gets stored directly in the
