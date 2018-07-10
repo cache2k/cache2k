@@ -26,16 +26,19 @@ import java.util.Properties;
 /**
  * Static helper class to provide the cache2k version.
  *
- * @author Jens Wilke; created: 2015-06-11
+ * @author Jens Wilke
  */
 public class Cache2kVersion {
 
   private static String buildNumber = "<unknown>";
   private static String version = "<unknown>";
-  private static long timestamp = 0;
 
   static {
     InputStream in = Cache2kVersion.class.getResourceAsStream("/org.cache2k.impl.version.txt");
+    parse(in);
+  }
+
+  static void parse(InputStream in) {
     if (in != null) {
       try {
         Properties p = new Properties();
@@ -49,17 +52,13 @@ public class Cache2kVersion {
         if (isDefined(s)) {
           version = s;
         }
-        s = p.getProperty("timestamp");
-        if (isDefined(s)) {
-          timestamp = Long.parseLong(s);
-        }
       } catch (Exception e) {
         Log.getLog(Cache2kVersion.class).warn("error parsing version properties", e);
       }
     }
   }
 
-  static private boolean isDefined(String s) {
+  static boolean isDefined(String s) {
     return s != null && s.length() > 0 && !s.startsWith("$");
   }
 
@@ -69,10 +68,6 @@ public class Cache2kVersion {
 
   public static String getVersion() {
     return version;
-  }
-
-  public static long getTimestamp() {
-    return timestamp;
   }
 
 }

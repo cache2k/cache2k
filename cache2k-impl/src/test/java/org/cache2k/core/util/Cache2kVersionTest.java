@@ -20,9 +20,13 @@ package org.cache2k.core.util;
  * #L%
  */
 
+import org.cache2k.configuration.Cache2kConfiguration;
 import org.cache2k.testing.category.FastTests;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
+
+import java.io.IOException;
+import java.io.InputStream;
 
 import static org.junit.Assert.*;
 
@@ -40,6 +44,25 @@ public class Cache2kVersionTest {
     assertTrue("Either version is not replaced or something that looks like a version",
         v.equals("${version}") ||
         v.matches("[0-9]+\\..*"));
+  }
+
+  @Test
+  public void skipVariables() {
+    assertFalse(Cache2kVersion.isDefined("${version}"));
+  }
+
+  @Test
+  public void exception() {
+    Log.SuppressionCounter l = new Log.SuppressionCounter();
+    Log.registerSuppression(Cache2kVersion.class.getName(), l);
+    Cache2kVersion.parse(new InputStream() {
+      @Override
+      public int read() throws IOException {
+        throw new IOException("ouch");
+      }
+    });
+    assertTrue("a warning", l.getWarnCount() > 0);
+    Log.deregisterSuppression(Cache2kVersion.class.getName());
   }
 
 }
