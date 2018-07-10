@@ -106,14 +106,11 @@ class CompactEntry<K,T> {
    * @deprecated
    */
   public T getValue() {
-    Thread.dumpStack();
-    return null;
+    throw new UnsupportedOperationException();
   }
 
   /**
-   * Used for the storage interface.
-   *
-   * @see StorageEntry
+   * The value of the entry or an {@link ExceptionWrapper}.
    */
   public T getValueOrException() {
     return valueOrException;
@@ -126,6 +123,9 @@ class CompactEntry<K,T> {
     return key;
   }
 
+  /**
+   * Get the raw object reference. Is {@code null} for the {@link IntHeapCache}.
+   */
   public K getKeyObj() {
     return key;
   }
@@ -266,28 +266,28 @@ public class Entry<K, T> extends CompactEntry<K,T>
    * Different possible processing states. The code only uses fetch now, rest is preparation.
    * We don't use enums, since enums produce object garbage.
    */
-  static class ProcessingState {
-    static final int DONE = 0;
-    static final int READ = 1;
-    static final int READ_COMPLETE = 2;
-    static final int MUTATE = 3;
-    static final int LOAD = 4;
-    static final int LOAD_COMPLETE = 5;
-    static final int FETCH = 6;
-    static final int REFRESH = 7;
-    static final int EXPIRY = 8;
-    static final int EXPIRY_COMPLETE = 9;
-    static final int WRITE = 10;
-    static final int WRITE_COMPLETE = 11;
-    static final int STORE = 12;
-    static final int STORE_COMPLETE = 13;
-    static final int NOTIFY = 14;
-    static final int PINNED = 15;
-    static final int EVICT = 16;
-    static final int LAST = 17;
+  public static class ProcessingState {
+    public static final int DONE = 0;
+    public static final int READ = 1;
+    public static final int READ_COMPLETE = 2;
+    public static final int MUTATE = 3;
+    public static final int LOAD = 4;
+    public static final int LOAD_COMPLETE = 5;
+    public static final int COMPUTE = 6;
+    public static final int REFRESH = 7;
+    public static final int EXPIRY = 8;
+    public static final int EXPIRY_COMPLETE = 9;
+    public static final int WRITE = 10;
+    public static final int WRITE_COMPLETE = 11;
+    public static final int STORE = 12;
+    public static final int STORE_COMPLETE = 13;
+    public static final int NOTIFY = 14;
+    public static final int PINNED = 15;
+    public static final int EVICT = 16;
+    public static final int LAST = 17;
   }
 
-  String num2processingStateText(int ps) {
+  public static String num2processingStateText(int ps) {
     switch (ps) {
       case ProcessingState.DONE: return "DONE";
       case ProcessingState.READ: return "READ";
@@ -295,7 +295,7 @@ public class Entry<K, T> extends CompactEntry<K,T>
       case ProcessingState.MUTATE: return "MUTATE";
       case ProcessingState.LOAD: return "LOAD";
       case ProcessingState.LOAD_COMPLETE: return "LOAD_COMPLETE";
-      case ProcessingState.FETCH: return "FETCH";
+      case ProcessingState.COMPUTE: return "COMPUTE";
       case ProcessingState.REFRESH: return "REFRESH";
       case ProcessingState.EXPIRY: return "EXPIRY";
       case ProcessingState.EXPIRY_COMPLETE: return "EXPIRY_COMPLETE";
@@ -326,10 +326,6 @@ public class Entry<K, T> extends CompactEntry<K,T>
   /**
    * Starts long operation on entry. Pins the entry in the cache.
    */
-  public void startProcessing() {
-    setProcessingState(ProcessingState.FETCH);
-  }
-
   public void startProcessing(int ps) {
     setProcessingState(ps);
   }
@@ -797,9 +793,6 @@ public class Entry<K, T> extends CompactEntry<K,T>
     Entry _head = e;
     do {
       if (e.next == null) {
-        return false;
-      }
-      if (e.next.prev == null) {
         return false;
       }
       if (e.next.prev != e) {

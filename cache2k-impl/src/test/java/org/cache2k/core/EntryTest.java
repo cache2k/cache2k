@@ -190,4 +190,29 @@ public class EntryTest {
     assertEquals(24, _days);
   }
 
+  @Test(expected = UnsupportedOperationException.class)
+  public void getValue() {
+    new Entry().getValue();
+  }
+
+  @Test
+  public void num2processingState() {
+    assertEquals("DONE", Entry.num2processingStateText(Entry.ProcessingState.DONE));
+    assertEquals("READ", Entry.num2processingStateText(Entry.ProcessingState.READ));
+    assertEquals("READ_COMPLETE", Entry.num2processingStateText(Entry.ProcessingState.READ_COMPLETE));
+    assertEquals("MUTATE", Entry.num2processingStateText(Entry.ProcessingState.MUTATE));
+    assertEquals("LOAD", Entry.num2processingStateText(Entry.ProcessingState.LOAD));
+    assertEquals("COMPUTE", Entry.num2processingStateText(Entry.ProcessingState.COMPUTE));
+    assertEquals("REFRESH", Entry.num2processingStateText(Entry.ProcessingState.REFRESH));
+    assertEquals("EXPIRY", Entry.num2processingStateText(Entry.ProcessingState.EXPIRY));
+    assertEquals("EXPIRY_COMPLETE", Entry.num2processingStateText(Entry.ProcessingState.EXPIRY_COMPLETE));
+    assertEquals("WRITE", Entry.num2processingStateText(Entry.ProcessingState.WRITE));
+    assertEquals("WRITE_COMPLETE", Entry.num2processingStateText(Entry.ProcessingState.WRITE_COMPLETE));
+    assertEquals("STORE", Entry.num2processingStateText(Entry.ProcessingState.STORE));
+    assertEquals("STORE_COMPLETE", Entry.num2processingStateText(Entry.ProcessingState.STORE_COMPLETE));
+    assertEquals("NOTIFY", Entry.num2processingStateText(Entry.ProcessingState.NOTIFY));
+    assertEquals("PINNED", Entry.num2processingStateText(Entry.ProcessingState.PINNED));
+    assertEquals("LAST", Entry.num2processingStateText(Entry.ProcessingState.LAST));
+  }
+
 }

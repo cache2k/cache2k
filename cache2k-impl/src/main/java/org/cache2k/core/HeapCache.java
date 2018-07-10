@@ -697,7 +697,7 @@ public class HeapCache<K, V>
           metrics.goneSpin();
           continue;
         }
-        e.startProcessing();
+        e.startProcessing(Entry.ProcessingState.LOAD);
         break;
       }
     }
@@ -944,7 +944,7 @@ public class HeapCache<K, V>
           metrics.goneSpin();
           continue;
         }
-        e.startProcessing();
+        e.startProcessing(Entry.ProcessingState.COMPUTE);
         break;
       }
     }
@@ -1253,7 +1253,7 @@ public class HeapCache<K, V>
           metrics.goneSpin();
           continue;
         }
-        e.startProcessing();
+        e.startProcessing(Entry.ProcessingState.LOAD);
         break;
       }
     }
