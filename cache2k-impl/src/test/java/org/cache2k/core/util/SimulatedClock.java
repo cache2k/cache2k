@@ -25,6 +25,9 @@ import java.util.Map;
 import java.util.TreeMap;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.Executor;
+import java.util.concurrent.RejectedExecutionException;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.locks.ReentrantLock;
 
@@ -37,6 +40,8 @@ import java.util.concurrent.locks.ReentrantLock;
 public class SimulatedClock implements InternalClock, Closeable {
 
   private final static Log LOG = Log.getLog(SimulatedClock.class);
+
+  private final long initialMillis;
 
   /**
    * Current time of the clock in millis.
@@ -61,6 +66,7 @@ public class SimulatedClock implements InternalClock, Closeable {
 
   /**
    * The tree sorts the timer events.
+   * Locked by: {@link #structureLock}.
    */
   private final TreeMap<Waiter, Waiter> tree = new TreeMap<Waiter, Waiter>();
 
@@ -85,11 +91,36 @@ public class SimulatedClock implements InternalClock, Closeable {
   private final static int CLOCK_READING_PROGRESS = 1000;
 
   /**
+   * If an executor is wrapped, the number of tasks that are waiting or executing.
+   */
+  private final AtomicInteger tasksWaitingForExecution = new AtomicInteger(0);
+
+  /**
+   * Lock and wait object, if we want to wait until all parallel tasks are executed.
+   */
+  private final Object parallelExecutionsWaiter = new Object();
+
+  /**
+   * don't wrap executors to wait for concurrent task execution,
+   * also does not restart clock from 0 after {@link #reset()}
+   */
+  private final boolean skipWrapping;
+
+  /**
+   * Don't expect that we can wait for more than this millis.
+   */
+  private final long cutOffDeltaMillis = Long.MAX_VALUE >> 10;
+
+  /**
    * Create a clock with the initial time.
    *
    * @param _initialMillis initial time in millis since epoch, can start 0 for easy debugging
+   * @param _skipExecutorWrapping don't wrap executors to wait for concurrent task execution,
+   *                              also does not restart clock from 0 after {@link #reset()}
    */
-  public SimulatedClock(long _initialMillis) {
+  public SimulatedClock(long _initialMillis, boolean _skipExecutorWrapping) {
+    skipWrapping = _skipExecutorWrapping;
+    initialMillis = _initialMillis;
     now = new AtomicLong(_initialMillis);
     progressThread = new Thread("warpableclock-progress") {
       @Override
@@ -118,6 +149,9 @@ public class SimulatedClock implements InternalClock, Closeable {
     structureLock.lock();
     try {
       tree.remove(w.waiter);
+      if ((_millis - now.get()) > cutOffDeltaMillis) {
+        return;
+      }
       w.waiter = new Waiter(_millis, waiterCounter.getAndIncrement(), w.waiter.event);
       tree.put(w.waiter, w.waiter);
     } finally {
@@ -181,6 +215,10 @@ public class SimulatedClock implements InternalClock, Closeable {
     long _startTime = now.get();
     LOG.debug(now.get() + " sleep(" + _waitMillis + ")");
     if (_waitMillis == 0) {
+      if (isTasksWaiting()) {
+        waitForParallelExecutions();
+        return;
+      }
       synchronized (queue) {
         if (queue.isEmpty()) {
           queue.put(0L);
@@ -200,6 +238,39 @@ public class SimulatedClock implements InternalClock, Closeable {
       while (now.get() < _wakeupTime) {
         wakeUpSleep.wait(5);
       }
+    }
+  }
+
+  public Executor wrapExecutor(Executor ex) {
+    if (skipWrapping) {
+      return ex;
+    }
+    return new WrappedExecutor(ex);
+  }
+
+  public void reset() {
+    long t0 = System.currentTimeMillis();
+    for (;;) {
+      try {
+        structureLock.lock();
+        if (tree.isEmpty() && !isTasksWaiting() && queue.isEmpty()) {
+          break;
+        }
+      } finally {
+        structureLock.unlock();
+      }
+      try {
+        sleep(0);
+      } catch (InterruptedException e) {
+        Thread.currentThread().interrupt();
+      }
+      if ((System.currentTimeMillis() - t0) > 5000) {
+        throw new IllegalStateException("max wait time reached");
+      }
+    }
+    if (!skipWrapping) {
+      waiterCounter.set(0);
+      now.set(initialMillis);
     }
   }
 
@@ -269,7 +340,7 @@ public class SimulatedClock implements InternalClock, Closeable {
   public String toString() {
     structureLock.lock();
     try {
-      return "clock{time=" + now + ", waiters=" + tree + "}";
+      return "clock{time=" + now + ", tasksWaitingForExecution=" + tasksWaitingForExecution.get() + ", waiters=" + tree + "}";
     } finally {
       structureLock.unlock();
     }
@@ -319,6 +390,69 @@ public class SimulatedClock implements InternalClock, Closeable {
       return "Waiter#" + uniqueId + "{time=" +
         (wakeupTime == Long.MAX_VALUE ? "forever" : Long.toString(wakeupTime))
         + "}";
+    }
+  }
+
+  final void waitForParallelExecutions() {
+    if (!isTasksWaiting()) {
+      return;
+    }
+    synchronized (parallelExecutionsWaiter) {
+      try {
+        while (isTasksWaiting()) {
+          parallelExecutionsWaiter.wait(5);
+        }
+      } catch (InterruptedException e) {
+        Thread.currentThread().interrupt();
+      }
+    }
+  }
+
+  final boolean isTasksWaiting() {
+    return tasksWaitingForExecution.get() > 0;
+  }
+
+  private void taskFinished() {
+    int v = tasksWaitingForExecution.decrementAndGet();
+    if (v == 0) {
+      synchronized (parallelExecutionsWaiter) {
+        parallelExecutionsWaiter.notifyAll();
+      }
+    }
+  }
+
+  class WrappedExecutor implements Executor {
+
+    Executor executor;
+
+    public WrappedExecutor(final Executor ex) {
+      executor = ex;
+    }
+
+    @Override
+    public void execute(final Runnable r) {
+      tasksWaitingForExecution.incrementAndGet();
+      try {
+        executor.execute(new Runnable() {
+          @Override
+          public void run() {
+            try {
+              r.run();
+            } finally {
+              taskFinished();
+            }
+          }
+        });
+      } catch(RejectedExecutionException ex) {
+        taskFinished();
+      }
+    }
+
+    @Override
+    public String toString() {
+      return "WrappedExecutor{totalTasksWaitingInAssociatedClockInstance=" + tasksWaitingForExecution.get() +
+        ", executor=" + executor +
+        '}';
     }
   }
 
