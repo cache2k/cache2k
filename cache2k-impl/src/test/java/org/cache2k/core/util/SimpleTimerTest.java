@@ -1,0 +1,72 @@
+package org.cache2k.core.util;
+
+/*
+ * #%L
+ * cache2k implementation
+ * %%
+ * Copyright (C) 2000 - 2018 headissue GmbH, Munich
+ * %%
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ * 
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ * 
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ * #L%
+ */
+
+import org.cache2k.testing.category.FastTests;
+import org.junit.Test;
+import org.junit.experimental.categories.Category;
+
+import static org.junit.Assert.assertEquals;
+
+/**
+ * Only test special cases not covered by normal testing.
+ *
+ * @author Jens Wilke
+ */
+@Category(FastTests.class)
+public class SimpleTimerTest {
+
+  @Test
+  public void purge() {
+    long _START_TIME = 100;
+    int _SIZE = 123;
+    SimpleTimer t =
+      new SimpleTimer(
+        new SimulatedClock(_START_TIME, true),
+        SimpleTimerTest.class.getName(), true);
+    MyTask[] arr = new MyTask[_SIZE];
+    for (int i = 0; i < _SIZE; i++) {
+      arr[i] = new MyTask();
+      t.schedule(arr[i], _START_TIME + i);
+      if (i%3 == 0) {
+        arr[i].cancel();
+      }
+    }
+    t.purge();
+    t.timeReachedEvent(_START_TIME + _SIZE);
+    int count = 0;
+    for (int i = 0; i < _SIZE; i++) {
+      if (arr[i].executed) {
+        count++;
+      }
+    }
+    assertEquals(82, count);
+  }
+
+  static class MyTask extends SimpleTask {
+    volatile boolean executed = false;
+    @Override
+    public void run() {
+      executed = true;
+    }
+  }
+
+}

@@ -263,7 +263,7 @@ public class SimpleTimer {
 
   void timeReachedEvent(final long currentTime) {
     while (true) {
-      SimpleTask task = null;
+      SimpleTask task;
       lock.lock();
       try {
         while (true) {
@@ -287,9 +287,6 @@ public class SimpleTimer {
         }
       } finally {
         lock.unlock();
-      }
-      if (task == null) {
-        return;
       }
       if (!task.isScheduled()) {
         task.run();

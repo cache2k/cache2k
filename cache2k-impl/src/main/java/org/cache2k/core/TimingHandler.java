@@ -37,8 +37,6 @@ import org.cache2k.core.util.TunableFactory;
 import org.cache2k.integration.ExceptionInformation;
 import org.cache2k.integration.ResiliencePolicy;
 
-import java.util.Date;
-
 /**
  * Encapsulates logic for expiry times calculation and timer handling.
  *
