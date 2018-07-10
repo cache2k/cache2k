@@ -25,8 +25,10 @@ import java.util.Map;
 import java.util.TreeMap;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executor;
 import java.util.concurrent.RejectedExecutionException;
+import java.util.concurrent.Semaphore;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.locks.ReentrantLock;
@@ -35,11 +37,19 @@ import java.util.concurrent.locks.ReentrantLock;
  * Simulated clock implementation that moves fast when {@link #sleep} is called and
  * is delivering timer events whenever a scheduled time is passed.
  *
+ * <p>In case the testing target is starting parallel tasks via an executor, those
+ * can be wrapped via {@link #wrapExecutor(Executor)}. If an execution is pending
+ * the call to {@link #sleep} will not advance time but wait for the executions.
+ *
  * @author Jens Wilke
  */
 public class SimulatedClock implements InternalClock, Closeable {
 
   private final static Log LOG = Log.getLog(SimulatedClock.class);
+
+  final long QUEUE_TOKEN_EXECUTE_WAITING_JOB = -1L;
+
+  final long QUEUE_TOKEN_RESET = -2L;
 
   private final long initialMillis;
 
@@ -112,6 +122,11 @@ public class SimulatedClock implements InternalClock, Closeable {
   private final long cutOffDeltaMillis = Long.MAX_VALUE >> 10;
 
   /**
+   * For waiting until reset is done in progress thread.
+   */
+  final Semaphore resetDone = new Semaphore(0);
+
+  /**
    * Create a clock with the initial time.
    *
    * @param _initialMillis initial time in millis since epoch, can start 0 for easy debugging
@@ -160,7 +175,7 @@ public class SimulatedClock implements InternalClock, Closeable {
     if (Thread.currentThread() != progressThread) {
       try {
         if (queue.isEmpty()) {
-          queue.put(-1L);
+          queue.put(QUEUE_TOKEN_EXECUTE_WAITING_JOB);
         }
       } catch (InterruptedException ex) {
         Thread.currentThread().interrupt();
@@ -249,28 +264,12 @@ public class SimulatedClock implements InternalClock, Closeable {
   }
 
   public void reset() {
-    long t0 = System.currentTimeMillis();
-    for (;;) {
-      try {
-        structureLock.lock();
-        if (tree.isEmpty() && !isTasksWaiting() && queue.isEmpty()) {
-          break;
-        }
-      } finally {
-        structureLock.unlock();
-      }
-      try {
-        sleep(0);
-      } catch (InterruptedException e) {
-        Thread.currentThread().interrupt();
-      }
-      if ((System.currentTimeMillis() - t0) > 5000) {
-        throw new IllegalStateException("max wait time reached");
-      }
-    }
-    if (!skipWrapping) {
-      waiterCounter.set(0);
-      now.set(initialMillis);
+    try {
+      queue.put(QUEUE_TOKEN_RESET);
+      resetDone.acquire();
+    } catch (InterruptedException ex) {
+      close();
+      Thread.currentThread().interrupt();
     }
   }
 
@@ -290,9 +289,14 @@ public class SimulatedClock implements InternalClock, Closeable {
         _token = queue.take();
       } catch (InterruptedException ex) {
         close();
+        break;
+      }
+      if (_token == QUEUE_TOKEN_RESET) {
+        resetInProgressThread();
+        continue;
       }
       _nextWakeup = wakeupWaiters();
-      if (_token == -1) {
+      if (_token == QUEUE_TOKEN_EXECUTE_WAITING_JOB) {
         continue;
       }
       if (_token == 0) {
@@ -306,10 +310,43 @@ public class SimulatedClock implements InternalClock, Closeable {
       }
       while (_token > now.get()) {
         long t = (_nextWakeup > 0) ? Math.min(_nextWakeup, _token) : _token;
-        now.addAndGet(Math.max((now.get() - t) / 2, 1));
+        if (t > now.get()) {
+          now.set(t);
+        }
         _nextWakeup = wakeupWaiters();
       }
     }
+  }
+
+  protected void resetInProgressThread() {
+    boolean _settleMore;
+    do {
+      _settleMore = false;
+      long _MAX_WAIT = 5000;
+      long t0 = System.currentTimeMillis();
+      while (isTasksWaiting()) {
+        if ((System.currentTimeMillis() - t0) > _MAX_WAIT) {
+          close();
+          throw new IllegalStateException("Timeout waiting " + _MAX_WAIT + " for parallel tasks to finish");
+        }
+        synchronized (wakeUpSleep) {
+          wakeUpSleep.notifyAll();
+        }
+      }
+      long _nextWakeup = wakeupWaiters();
+      while (_nextWakeup > 0) {
+        _settleMore = true;
+        if (_nextWakeup > now.get()) {
+          now.set(_nextWakeup);
+        }
+        _nextWakeup = wakeupWaiters();
+      }
+    } while (_settleMore);
+    if (!skipWrapping) {
+      waiterCounter.set(0);
+      now.set(initialMillis);
+    }
+    resetDone.release();
   }
 
   private long wakeupWaiters() {
