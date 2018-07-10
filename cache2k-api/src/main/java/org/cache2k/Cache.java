@@ -669,10 +669,11 @@ public interface Cache<K, V> extends KeyValueStore<K,V>, Closeable {
    * <p>If the expiry time is in the past, the entry will expire immediately and
    * refresh ahead is triggered, if enabled.
    *
-   * <p>Also the special time value {@link org.cache2k.expiry.Expiry#NOW} might turn
-   * into a removal, the writer is not called, since the method is for cache control only.
+   * <p>Although the special time value {@link org.cache2k.expiry.Expiry#NOW} will lead
+   * to an effective removal of the cache entry, the writer is not called, since the
+   * method is for cache control only.
    *
-   * <p>If the cache must be configured with a {@link ExpiryPolicy} or
+   * <p>The cache must be configured with a {@link ExpiryPolicy} or
    * {@link Cache2kBuilder#expireAfterWrite(long, TimeUnit)} otherwise expiry
    * timing is not available and this method will throw an exception.
    *
