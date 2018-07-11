@@ -675,7 +675,8 @@ public interface Cache<K, V> extends KeyValueStore<K,V>, Closeable {
    *
    * <p>The cache must be configured with a {@link ExpiryPolicy} or
    * {@link Cache2kBuilder#expireAfterWrite(long, TimeUnit)} otherwise expiry
-   * timing is not available and this method will throw an exception.
+   * timing is not available and this method will throw an exception. An immediate expire
+   * via {@link org.cache2k.expiry.Expiry#NOW} is always working.
    *
    * @param key key with which the specified value is associated
    * @param millis Time in milliseconds since epoch when the entry should expire.
