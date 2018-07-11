@@ -86,6 +86,8 @@ public class BasicCacheOperationsTest {
 
   Statistics statistics = new Statistics();
 
+  boolean withLastModified = true;
+
   public Statistics statistics() {
     statistics.sample(cache);
     return statistics;
@@ -184,6 +186,19 @@ public class BasicCacheOperationsTest {
     assertTrue(cache.containsKey(KEY));
     assertEquals(VALUE, cache.get(KEY));
     assertEquals(VALUE, cache.peek(KEY));
+    checkLastModified(cache.peekEntry(KEY));
+  }
+
+  void checkLastModified(CacheEntry e) {
+    if (withLastModified) {
+      assertTrue(cache.peekEntry(KEY).getLastModification() > 0);
+    } else {
+      try {
+        cache.peekEntry(KEY).getLastModification();
+        fail("expected UnsupportedOperationException");
+      } catch (UnsupportedOperationException ex) {
+      }
+    }
   }
 
   @Test
@@ -227,6 +242,7 @@ public class BasicCacheOperationsTest {
     assertTrue(cache.containsKey(OTHER_KEY));
     assertNull(cache.peek(OTHER_KEY));
     assertEquals(VALUE, cache.peek(KEY));
+    checkLastModified(cache.peekEntry(KEY));
   }
 
   /*
@@ -266,6 +282,7 @@ public class BasicCacheOperationsTest {
     assertEquals(VALUE, v);
     assertTrue(cache.containsKey(KEY));
     assertEquals(VALUE, cache.peek(KEY));
+    checkLastModified(cache.peekEntry(KEY));
     cache.put(KEY, VALUE);
   }
 
@@ -384,6 +401,7 @@ public class BasicCacheOperationsTest {
       .expectAllZero();
     assertTrue(cache.containsKey(KEY));
     assertEquals(VALUE, cache.peek(KEY));
+    checkLastModified(cache.peekEntry(KEY));
   }
 
   @Test
@@ -414,6 +432,7 @@ public class BasicCacheOperationsTest {
       .missCount.expect(0)
       .putCount.expect(1)
       .expectAllZero();
+    checkLastModified(cache.peekEntry(KEY));
   }
 
   @Test(expected = NullPointerException.class)
@@ -1072,6 +1091,7 @@ public class BasicCacheOperationsTest {
       .missCount.expect(0)
       .putCount.expect(0)
       .expectAllZero();
+    checkLastModified(cache.peekEntry(KEY));
   }
 
   @Test
