@@ -291,7 +291,7 @@ public class HeapCache<K, V>
 
   public void setTiming(final TimingHandler<K,V> rh) {
     timing = rh;
-    if (!(rh instanceof TimingHandler.EternalImmediate)) {
+    if (!(rh instanceof TimingHandler.TimeAgnostic)) {
       setFeatureBit(NO_LAST_MODIFICATION_TIME, false);
     }
   }

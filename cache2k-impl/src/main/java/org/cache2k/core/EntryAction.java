@@ -458,7 +458,11 @@ public abstract class EntryAction<K, V, R> implements
     lockFor(Entry.ProcessingState.MUTATE);
     needsFinish = false;
     newValueOrException = value;
-    lastModificationTime = millis();
+    if (heapCache.isNoLastModificationTime()) {
+      lastModificationTime = 0;
+    } else {
+      lastModificationTime = millis();
+    }
     mutationCalculateExpiry();
   }
 
@@ -467,7 +471,6 @@ public abstract class EntryAction<K, V, R> implements
     lockForNoHit(Entry.ProcessingState.MUTATE);
     needsFinish = false;
     remove = true;
-    lastModificationTime = millis();
     mutationMayCallWriter();
   }
 

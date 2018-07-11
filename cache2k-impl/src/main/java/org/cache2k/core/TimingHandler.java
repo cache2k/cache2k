@@ -178,7 +178,14 @@ public abstract class TimingHandler<K,V>  {
    */
   public void scheduleFinalTimerForSharpExpiry(Entry<K, V> e) { }
 
-  private static class Eternal<K,V> extends TimingHandler<K,V> {
+  /**
+   * Base class for all timing handlers that actually need not to know the current time.
+   */
+  static abstract class TimeAgnostic<K,V> extends TimingHandler<K,V> {
+
+  }
+
+  private static class Eternal<K,V> extends TimeAgnostic<K,V> {
 
     @Override
     public long calculateNextRefreshTime(final Entry<K,V> e, final V v, final long _loadTime) {
@@ -196,7 +203,7 @@ public abstract class TimingHandler<K,V>  {
     }
   }
 
-  static class EternalImmediate<K,V> extends TimingHandler<K,V> {
+  static class EternalImmediate<K,V> extends TimeAgnostic<K,V> {
 
     @Override
     public long calculateNextRefreshTime(final Entry<K,V> e, final V v, final long _loadTime) {
@@ -215,7 +222,7 @@ public abstract class TimingHandler<K,V>  {
 
   }
 
-  static class Immediate<K,V> extends TimingHandler<K,V> {
+  static class Immediate<K,V> extends TimeAgnostic<K,V> {
 
     @Override
     public long calculateNextRefreshTime(final Entry<K,V> e, final V v, final long _loadTime) {
