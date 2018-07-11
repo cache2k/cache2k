@@ -608,6 +608,9 @@ public class HeapCache<K, V>
 
       @Override
       public long getLastModification() {
+        if (_lastModification == 0) {
+          throw new UnsupportedOperationException("time stamps for modification time are switched off");
+        }
         return _lastModification;
       }
 

@@ -72,7 +72,10 @@ public interface CacheEntry<K, V> extends SimpleCacheEntry<K,V> {
   Throwable getException();
 
   /**
-   * Time in millis the entry was last modified.
+   * Time in millis the entry was last modified. The recording of the last modification
+   * time may be switched off via {@link Cache2kBuilder#disableLastModificationTime(boolean)}
+   *
+   * @throws UnsupportedOperationException if switched off
    */
   long getLastModification();
 
