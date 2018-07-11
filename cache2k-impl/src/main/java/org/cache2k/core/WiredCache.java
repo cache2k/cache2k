@@ -584,15 +584,11 @@ public class WiredCache<K, V> extends BaseCache<K, V>
     throw new UnsupportedOperationException();
   }
 
+  /**
+   * Nothing done here. Will notify the storage about eviction in some future version.
+   */
   @Override
   public void onEvictionFromHeap(final Entry<K, V> e) {
-    boolean _storeEvenImmediatelyExpired =
-      heapCache.hasKeepAfterExpired() && (e.isDataValid() || e.isExpired());
-    boolean _shouldStore =
-      (storage != null) && (_storeEvenImmediatelyExpired || e.hasFreshData(getClock()));
-    if (_shouldStore) {
-      storage.evict(e);
-    }
   }
 
 
