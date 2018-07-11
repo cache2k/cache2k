@@ -736,8 +736,8 @@ public class Cache2kBuilder<K, V> {
   /**
    * Clock to be used by the cache as time reference.
    */
-  public final Cache2kBuilder<K, V> clock(Clock v) {
-    config().setClock(new CustomizationReferenceSupplier<Clock>(v));
+  public final Cache2kBuilder<K, V> clock(TimeReference v) {
+    config().setClock(new CustomizationReferenceSupplier<TimeReference>(v));
     return this;
   }
 

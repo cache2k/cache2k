@@ -21,7 +21,7 @@ package org.cache2k.configuration;
  */
 
 import org.cache2k.Cache2kBuilder;
-import org.cache2k.Clock;
+import org.cache2k.TimeReference;
 import org.cache2k.event.CacheClosedListener;
 import org.cache2k.expiry.*;
 import org.cache2k.event.CacheEntryOperationListener;
@@ -88,7 +88,7 @@ public class Cache2kConfiguration<K, V> implements ConfigurationBean, Configurat
   private CustomizationSupplier<CacheWriter<K,V>> writer;
   private CustomizationSupplier<AdvancedCacheLoader<K,V>> advancedLoader;
   private CustomizationSupplier<ExceptionPropagator<K>> exceptionPropagator;
-  private CustomizationSupplier<Clock> clock;
+  private CustomizationSupplier<TimeReference> clock;
 
   private CustomizationCollection<CacheEntryOperationListener<K,V>> listeners;
   private CustomizationCollection<CacheEntryOperationListener<K,V>> asyncListeners;
@@ -606,14 +606,14 @@ public class Cache2kConfiguration<K, V> implements ConfigurationBean, Configurat
     asyncListenerExecutor = v;
   }
 
-  public CustomizationSupplier<Clock> getClock() {
+  public CustomizationSupplier<TimeReference> getClock() {
     return clock;
   }
 
   /**
-   * @see Cache2kBuilder#clock(Clock)
+   * @see Cache2kBuilder#clock(TimeReference)
    */
-  public void setClock(final CustomizationSupplier<Clock> _clock) {
+  public void setClock(final CustomizationSupplier<TimeReference> _clock) {
     clock = _clock;
   }
 

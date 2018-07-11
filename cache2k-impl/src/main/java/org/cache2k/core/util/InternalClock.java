@@ -20,7 +20,7 @@ package org.cache2k.core.util;
  * #L%
  */
 
-import org.cache2k.Clock;
+import org.cache2k.TimeReference;
 
 /**
  * Abstraction for the system clock. A simulated clock implementation is used to
@@ -28,7 +28,7 @@ import org.cache2k.Clock;
  *
  * @author Jens Wilke
  */
-public interface InternalClock extends Clock {
+public interface InternalClock extends TimeReference {
 
   /**
    * Returns the milliseconds since epoch. When using a simulated clock

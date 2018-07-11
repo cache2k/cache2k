@@ -26,5 +26,5 @@ package org.cache2k;
  *
  * @author Jens Wilke
  */
-public interface Clock {
+public interface TimeReference {
 }
