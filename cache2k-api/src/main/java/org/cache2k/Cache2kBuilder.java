@@ -367,10 +367,10 @@ public class Cache2kBuilder<K, V> {
    * configuration of the timing parameters for resilience, e.g. {@link #resilienceDuration(long, TimeUnit)}.
    * Check the user guide chapter for details.
    *
-   * <p>Setting this to {@code false}, will disable exceptions suppression or caching (aka resilience).
-   * Default value: {@code true}
+   * <p>Exception suppression is enabled by default. Setting this to {@code false}, will disable
+   * exceptions suppression (aka resilience).
    *
-   * @see <a href="https://cache2k.org/docs/1.0/user-guide.html#resilience-and-exceptions">cache2k user guide - Exceptions and Resilience</a>
+   * @see <a href="https://cache2k.org/docs/latest/user-guide.html#resilience-and-exceptions">cache2k user guide - Exceptions and Resilience</a>
    */
   public final Cache2kBuilder<K, V> suppressExceptions(boolean v) {
     config().setSuppressExceptions(v);
@@ -390,6 +390,7 @@ public class Cache2kBuilder<K, V> {
    * avoided in production environments.
    *
    * @throws IllegalArgumentException if {@link #eternal(boolean)} was set to true
+   * @see <a href="https://cache2k.org/docs/latest/user-guide.html#expiry-and-refresh">cache2k user guide - Expiry and Refresh</a>
    */
   public final Cache2kBuilder<K, V> expireAfterWrite(long v, TimeUnit u) {
     config().setExpireAfterWrite(u.toMillis(v));
@@ -514,7 +515,7 @@ public class Cache2kBuilder<K, V> {
   }
 
   /**
-   * When true, enable background refresh / refresh ahead. After the expiry time of a value is reached,
+   * When {@code true}, enable background refresh / refresh ahead. After the expiry time of a value is reached,
    * the loader is invoked to fetch a fresh value. The old value will be returned by the cache, although
    * it is expired, and will be replaced by the new value, once the loader is finished. In the case
    * there are not enough loader threads available, the value will expire immediately and
@@ -528,6 +529,8 @@ public class Cache2kBuilder<K, V> {
    *
    * <p>The number of threads used to do the refresh are configured via
    * {@link #loaderThreadCount(int)}
+   *
+   * <p>By default, refresh ahead is not enabled.
    *
    * @see CacheLoader
    * @see #loaderThreadCount(int)

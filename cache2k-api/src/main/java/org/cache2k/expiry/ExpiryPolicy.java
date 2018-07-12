@@ -34,17 +34,24 @@ import java.util.concurrent.TimeUnit;
  * it is passed to this method. Expired old entries will be passed in also, if still present
  * in the cache.
  *
- * @author Jens Wilke; created: 2014-10-14
+ * <p>The expiry policy is also used for refresh ahead, determining the time when an entry should
+ * be automatically refreshed.
+ *
+ * @author Jens Wilke
  * @since 0.20
+ * @see <a href="https://cache2k.org/docs/latest/user-guide.html#expiry-and-refresh">cache2k user guide - Expiry and Refresh</a>
+ * @see Cache2kBuilder#expiryPolicy(ExpiryPolicy)
+ * @see Cache2kBuilder#refreshAhead(boolean)
+ * @see Cache2kBuilder#expireAfterWrite(long, TimeUnit)
  */
 public interface ExpiryPolicy<K, V> extends ExpiryTimeValues {
 
   /**
    * Returns the time of expiry in milliseconds since epoch.
    *
-   * <p>By default expiry itself happens lenient, zero or some milliseconds after
-   * the returned value. If sharp expiry is requested, the value will not be
-   * returned any more by the cache when the point in time is reached.
+   * <p>By default expiry itself happens lenient, which means the expiry happens
+   * zero or some milliseconds after the obtained time. If sharp expiry is requested,
+   * the value will not be returned any more by the cache when the point in time is reached.
    * The cache parameters {@link Cache2kBuilder#sharpExpiry(boolean)}
    * and {@link Cache2kBuilder#refreshAhead(boolean)} influence the behaviour.
    * It is also possible to request a sharp timeout for some entries. This is done
