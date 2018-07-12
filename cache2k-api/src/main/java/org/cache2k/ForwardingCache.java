@@ -57,11 +57,6 @@ public abstract class ForwardingCache<K, V> implements Cache<K, V> {
   }
 
   @Override
-  public SimpleCacheEntry<K, V> getSimpleEntry(final K key) {
-    return delegate().getSimpleEntry(key);
-  }
-
-  @Override
   public void prefetch(final K key) {
     delegate().prefetch(key);
   }
@@ -78,11 +73,6 @@ public abstract class ForwardingCache<K, V> implements Cache<K, V> {
 
   @Override
   public CacheEntry<K, V> peekEntry(final K key) {
-    return delegate().peekEntry(key);
-  }
-
-  @Override
-  public SimpleCacheEntry<K, V> peekSimpleEntry(final K key) {
     return delegate().peekEntry(key);
   }
 

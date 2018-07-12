@@ -42,12 +42,11 @@ import org.cache2k.integration.ExceptionPropagator;
  * @see Cache#getEntry(Object)
  * @see Cache#entries()
  */
-public interface CacheEntry<K, V> extends SimpleCacheEntry<K,V> {
+public interface CacheEntry<K, V> {
 
   /**
    * Key associated with this entry.
    */
-  @Override
   K getKey();
 
   /**
@@ -59,7 +58,6 @@ public interface CacheEntry<K, V> extends SimpleCacheEntry<K,V> {
    *
    * @throws CacheLoaderException if the loading produced an exception .
    */
-  @Override
   V getValue();
 
   /**
@@ -68,12 +66,12 @@ public interface CacheEntry<K, V> extends SimpleCacheEntry<K,V> {
    * happened or it was suppressed. If {@code null} then {@link #getValue}
    * returns a value and does not throw an exception.
    */
-  @Override
   Throwable getException();
 
   /**
-   * Time in millis the entry was last modified. The recording of the last modification
-   * time may be switched off via {@link Cache2kBuilder#disableLastModificationTime(boolean)}
+   * Time in millis the entry was last modified.
+   * The recording of the last modification time may be switched off via
+   * {@link Cache2kBuilder#disableLastModificationTime(boolean)}
    *
    * @throws UnsupportedOperationException if switched off
    */

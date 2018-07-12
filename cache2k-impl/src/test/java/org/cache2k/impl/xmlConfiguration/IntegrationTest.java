@@ -63,7 +63,7 @@ public class IntegrationTest {
       .manager(mgr)
       .name("withLoader").toConfiguration();
     assertNull("no loader yet, default configuration returned", cfg.getLoader());
-    Cache2kCoreProviderImpl.augmentConfiguration(mgr, cfg);
+    Cache2kCoreProviderImpl.CACHE_CONFIGURATION_PROVIDER.augmentConfiguration(mgr, cfg);
     assertNotNull("loader defined", cfg.getLoader());
     return cfg;
   }

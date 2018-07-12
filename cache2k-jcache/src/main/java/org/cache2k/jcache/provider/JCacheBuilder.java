@@ -109,7 +109,7 @@ public class JCacheBuilder<K,V> {
       }
     }
     cache2kConfiguration.setName(name);
-    Cache2kCoreProviderImpl.augmentConfiguration(manager.getCache2kManager(), cache2kConfiguration);
+    Cache2kCoreProviderImpl.CACHE_CONFIGURATION_PROVIDER.augmentConfiguration(manager.getCache2kManager(), cache2kConfiguration);
     cache2kConfigurationWasProvided |= cache2kConfiguration.isExternalConfigurationPresent();
     if (cache2kConfigurationWasProvided) {
       extraConfiguration = CACHE2K_DEFAULTS;

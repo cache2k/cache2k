@@ -75,10 +75,24 @@ public class SingleProviderResolver {
    * @param c the provider interface that is implemented
    * @param <T> type of provider interface
    *
-   * @return instance of the provider or null if not found
+   * @return instance of the provider or {@code null} if not found
    * @throws java.lang.LinkageError if there is a problem instantiating the provider
    */
-  public synchronized static <T> T resolve(Class<T> c) {
+  public static <T> T resolve(Class<T> c) {
+    return resolve(c, null);
+  }
+
+  /**
+   * Return a provider for this interface.
+   *
+   * @param c the provider interface that is implemented
+   * @param defaultImpl if no provider is found, instantiate the default implementation
+   * @param <T> type of provider interface
+   *
+   * @return instance of the provider or {@code null} if not found
+   * @throws java.lang.LinkageError if there is a problem instantiating the provider
+   */
+  public synchronized static <T> T resolve(Class<T> c, Class<? extends T> defaultImpl) {
     if (providers.containsKey(c)) {
       return (T) providers.get(c);
     }
@@ -93,6 +107,9 @@ public class SingleProviderResolver {
         }
       } else {
         obj = (T) SingleProviderResolver.class.getClassLoader().loadClass(_className).newInstance();
+      }
+      if (obj == null && defaultImpl != null) {
+        obj = defaultImpl.newInstance();
       }
       providers.put(c, obj);
       return obj;

@@ -156,9 +156,6 @@ public interface Cache<K, V> extends KeyValueStore<K,V>, Closeable {
    * <p>The alternative method {@link #peekEntry} can be used if the loader
    * should not be invoked.
    *
-   * <p>If the modification time is not needed the method {@link #getSimpleEntry(Object)}
-   * can be used alternatively for faster access.
-   *
    * @param key key to retrieve the associated with the cache entry
    * @throws ClassCastException if the class of the specified key
    *         prevents it from being stored in this cache
@@ -169,37 +166,6 @@ public interface Cache<K, V> extends KeyValueStore<K,V>, Closeable {
    *          return different instances of the entry object.
    */
   CacheEntry<K, V> getEntry(K key);
-
-  /**
-   * Returns an entry that contains the cache value associated with the given key.
-   * If no entry is present or the value is expired, either the loader is invoked
-   * or {@code null} is returned.
-   *
-   * <p>If the loader is invoked, subsequent requests of the same key will block
-   * until the loading is completed, details see {@link CacheLoader}
-   *
-   * <p>In case the cache loader yields an exception, the entry object will
-   * be returned. The exception can be retrieved via {@link SimpleCacheEntry#getException()}.
-   *
-   * <p>If {@code null} values are present the method can be used to
-   * check for an existent mapping and retrieve the value in one API call.
-   *
-   * <p>The alternative method {@link #peekSimpleEntry} can be used if the loader
-   * should not be invoked.
-   *
-   * <p>If the last modification time is needed the method {@link #getEntry(Object)}
-   * can be used alternatively.
-   *
-   * @param key key to retrieve the associated with the cache entry
-   * @throws ClassCastException if the class of the specified key
-   *         prevents it from being stored in this cache
-   * @throws NullPointerException if the specified key is null
-   * @throws IllegalArgumentException if some property of the specified key
-   *         prevents it from being stored in this cache
-   * @return An entry representing the cache mapping. Multiple calls for the same key may
-   *          return different instances of the entry object.
-   */
-  SimpleCacheEntry<K, V> getSimpleEntry(K key);
 
   /**
    * Notifies the cache about the intention to retrieve the value for this key in the
@@ -278,9 +244,6 @@ public interface Cache<K, V> extends KeyValueStore<K,V>, Closeable {
    * <p>If {@code null} values are present the method can be used to
    * check for an existent mapping and retrieve the value in one API call.
    *
-   * <p>If the modification time is not needed, the alternative method
-   * {@link #peekSimpleEntry(Object)} can be used instead.
-   *
    * @param key key to retrieve the associated with the cache entry
    * @throws ClassCastException if the class of the specified key
    *         prevents it from being stored in this cache
@@ -291,29 +254,6 @@ public interface Cache<K, V> extends KeyValueStore<K,V>, Closeable {
    *          return different instances of the entry object.
    */
   CacheEntry<K, V> peekEntry(K key);
-
-  /**
-   * Returns an entry that contains the cache value associated with the given key.
-   * If no entry is present or the value is expired, {@code null} is returned.
-   * The {@linkplain CacheLoader cache loader} will not be invoked by this method.
-   *
-   * <p>In case an exception is present, for example from a load operation carried out
-   * previously, the entry object will be returned. The exception can be
-   * retrieved via {@link SimpleCacheEntry#getException()}.
-   *
-   * <p>If {@code null} values are present the method can be used to
-   * check for an existent mapping and retrieve the value in one API call.
-   **
-   * @param key key to retrieve the associated with the cache entry
-   * @throws ClassCastException if the class of the specified key
-   *         prevents it from being stored in this cache
-   * @throws NullPointerException if the specified key is null
-   * @throws IllegalArgumentException if some property of the specified key
-   *         prevents it from being stored in this cache
-   * @return An entry representing the cache mapping. Multiple calls for the same key may
-   *          return different instances of the entry object.
-   */
-  SimpleCacheEntry<K, V> peekSimpleEntry(K key);
 
   /**
    * Returns {@code true}, if there is a mapping for the specified key.

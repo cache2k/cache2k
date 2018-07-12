@@ -25,7 +25,6 @@ import org.cache2k.Cache;
 import org.cache2k.Cache2kBuilder;
 import org.cache2k.CacheEntry;
 import org.cache2k.ForwardingCache;
-import org.cache2k.SimpleCacheEntry;
 import org.cache2k.core.ExceptionWrapper;
 import org.cache2k.core.InternalCache;
 import org.cache2k.core.InternalCacheInfo;
@@ -748,52 +747,6 @@ public class BasicCacheOperationsWithoutCustomizationsTest {
   }
 
   /*
-   * peekSimpleEntry
-   */
-
-  @Test
-  public void peekSimpleEntry_Initial() {
-    SimpleCacheEntry<Integer, Integer> e = cache.peekSimpleEntry(KEY);
-    assertNull(e);
-    assertEquals(0, size());
-  }
-
-  @Test
-  public void peekSimpleEntry() {
-    SimpleCacheEntry<Integer, Integer> e = cache.peekSimpleEntry(KEY);
-    assertNull(e);
-    cache.put(KEY, VALUE);
-    e = cache.peekSimpleEntry(KEY);
-    assertEquals(KEY, e.getKey());
-    assertEquals(VALUE, e.getValue());
-    assertNull(e.getException());
-  }
-
-  @Test
-  public void peekSimpleEntry_Null() {
-    SimpleCacheEntry<Integer, Integer> e = cache.peekSimpleEntry(KEY);
-    assertNull(e);
-    cache.put(KEY, null);
-    e = cache.peekSimpleEntry(KEY);
-    assertEquals(KEY, e.getKey());
-    assertNull(e.getValue());
-  }
-
-  @Test(expected = NullPointerException.class)
-  public void peekSimpleEntry_NullKey() {
-    cache.peekSimpleEntry(null);
-  }
-
-  @Test
-  public void peekSimpleEntry_Exception() {
-    ((Cache) cache).put(KEY, new ExceptionWrapper(OUCH));
-    SimpleCacheEntry<Integer, Integer> e = cache.peekSimpleEntry(KEY);
-    assertEquals(KEY, e.getKey());
-    entryHasException(e);
-    assertEquals(OUCH, e.getException());
-  }
-
-  /*
    * getEntry
    */
 
@@ -830,42 +783,7 @@ public class BasicCacheOperationsWithoutCustomizationsTest {
     assertEquals(OUCH, e.getException());
   }
 
-  /*
-   * getSimpleEntry
-   */
-
-  @Test
-  public void getSimpleEntry() {
-    cache.put(KEY, VALUE);
-    SimpleCacheEntry<Integer, Integer> e = cache.getSimpleEntry(KEY);
-    assertEquals(KEY, e.getKey());
-    assertEquals(VALUE, e.getValue());
-    assertNull(e.getException());
-  }
-
-  @Test
-  public void getSimpleEntry_Null() {
-    cache.put(KEY, null);
-    SimpleCacheEntry<Integer, Integer> e = cache.getSimpleEntry(KEY);
-    assertEquals(KEY, e.getKey());
-    assertNull(e.getValue());
-  }
-
-  @Test(expected = NullPointerException.class)
-  public void getSimpleEntry_NullKey() {
-    cache.getSimpleEntry(null);
-  }
-
-  @Test
-  public void getSimpleEntry_Exception() {
-    ((Cache) cache).put(KEY, new ExceptionWrapper(OUCH));
-    SimpleCacheEntry<Integer, Integer> e = cache.getSimpleEntry(KEY);
-    assertEquals(KEY, e.getKey());
-    entryHasException(e);
-    assertEquals(OUCH, e.getException());
-  }
-
-  private static void entryHasException(final SimpleCacheEntry<Integer, Integer> e) {
+  private static void entryHasException(final CacheEntry<Integer, Integer> e) {
     try {
       e.getValue();
       fail("exception expected");

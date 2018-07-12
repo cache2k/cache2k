@@ -90,7 +90,7 @@ public class CacheManagerImpl extends CacheManager {
         };
       }
     };
-}
+  }
 
   private Map<String, StackTrace> name2CreationStackTrace = null;
   private final Object lock = new Object();

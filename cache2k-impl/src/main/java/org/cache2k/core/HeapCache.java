@@ -631,51 +631,6 @@ public class HeapCache<K, V>
     return returnEntry(getEntryInternal(key));
   }
 
-  /**
-   * Wrap the cache entry into a new entry object and return it.
-   */
-  public SimpleCacheEntry<K,V> returnSimpleEntry(Entry<K,V> _entry) {
-    if (_entry == null) {
-      return null;
-    }
-    final V _valueOrException = _entry.getValueOrException();
-    final K _key = extractKeyObj(_entry);
-    return new SimpleCacheEntry<K, V>() {
-      @Override
-      public K getKey() {
-        return _key;
-      }
-
-      @Override
-      public V getValue() {
-        V v = _valueOrException;
-        if (v instanceof ExceptionWrapper) {
-          throw HeapCache.DEFAULT_EXCEPTION_PROPAGATOR.propagateException(_key, ((ExceptionWrapper<K>) v));
-        }
-        return v;
-      }
-
-      @Override
-      public Throwable getException() {
-        V v = _valueOrException;
-        if (v instanceof ExceptionWrapper) {
-          return ((ExceptionWrapper<K>) v).getException();
-        }
-        return null;
-      }
-    };
-  }
-
-  @Override
-  public SimpleCacheEntry<K, V> getSimpleEntry(final K key) {
-    return returnSimpleEntry(getEntryInternal(key));
-  }
-
-  @Override
-  public SimpleCacheEntry<K, V> peekSimpleEntry(final K key) {
-    return returnSimpleEntry(peekEntryInternal(key));
-  }
-
   protected Entry getEntryInternal(K key) {
     int hc = modifiedHash(key.hashCode());
     return getEntryInternal(key, hc, extractIntKeyValue(key, hc));

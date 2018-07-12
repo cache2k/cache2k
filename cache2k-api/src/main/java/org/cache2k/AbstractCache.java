@@ -50,15 +50,6 @@ public class AbstractCache<K, V> implements Cache<K, V> {
     throw new UnsupportedOperationException();
   }
 
-  /**
-   * Calls {@link #getEntry(Object)} to be backwards compatible to 1.0
-   * @since 1.2
-   */
-  @Override
-  public SimpleCacheEntry<K, V> getSimpleEntry(final K key) {
-    return getEntry(key);
-  }
-
   @Override
   public void prefetch(final K key) {
     throw new UnsupportedOperationException();
@@ -77,15 +68,6 @@ public class AbstractCache<K, V> implements Cache<K, V> {
   @Override
   public CacheEntry<K, V> peekEntry(final K key) {
     throw new UnsupportedOperationException();
-  }
-
-  /**
-   * Calls {@link #peekEntry(Object)}, to be backwards compatible to 1.0
-   * @since 1.2
-   */
-  @Override
-  public SimpleCacheEntry<K, V> peekSimpleEntry(final K key) {
-    return peekEntry(key);
   }
 
   @Override

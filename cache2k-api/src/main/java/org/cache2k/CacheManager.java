@@ -158,9 +158,9 @@ public abstract class CacheManager implements Closeable {
   public abstract String getName();
 
   /**
-   * Returns all caches associated with this cache manager. An iterated cache was
-   * created via {@link #getInstance()} or {@link Cache2kBuilder#build()} and is not
-   * closed yet.
+   * Returns all open caches associated with this cache manager. A cache returned by the iteration
+   * was created via {@link #createCache(Cache2kConfiguration)} or
+   * {@link Cache2kBuilder#build()} and is not closed yet.
    */
   public abstract Iterable<Cache> getActiveCaches();
 

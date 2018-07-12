@@ -45,13 +45,7 @@ public class Cache2kCoreProviderImpl implements Cache2kCoreProvider {
 
   public final static String STANDARD_DEFAULT_MANAGER_NAME = "default";
   public static final CacheConfigurationProvider CACHE_CONFIGURATION_PROVIDER =
-    SingleProviderResolver.resolve(CacheConfigurationProvider.class);
-
-  public static <K,V> void augmentConfiguration(CacheManager mgr, Cache2kConfiguration<K,V> cfg) {
-    if (CACHE_CONFIGURATION_PROVIDER != null) {
-      CACHE_CONFIGURATION_PROVIDER.augmentConfiguration(mgr, cfg);
-    }
-  }
+    SingleProviderResolver.resolve(CacheConfigurationProvider.class, DummyConfigurationProvider.class);
 
   private Object lock = new Object();
   private volatile Map<ClassLoader, String> loader2defaultName = Collections.EMPTY_MAP;
@@ -116,9 +110,7 @@ public class Cache2kCoreProviderImpl implements Cache2kCoreProvider {
       if (n != null) {
         return n;
       }
-      if (CACHE_CONFIGURATION_PROVIDER != null) {
-        n = CACHE_CONFIGURATION_PROVIDER.getDefaultManagerName(cl);
-      }
+      n = CACHE_CONFIGURATION_PROVIDER.getDefaultManagerName(cl);
       if (n == null) {
         n = STANDARD_DEFAULT_MANAGER_NAME;
       }
@@ -234,10 +226,7 @@ public class Cache2kCoreProviderImpl implements Cache2kCoreProvider {
   }
 
   public Cache2kConfiguration getDefaultConfiguration(CacheManager mgr) {
-    if (CACHE_CONFIGURATION_PROVIDER != null) {
-      return CACHE_CONFIGURATION_PROVIDER.getDefaultConfiguration(mgr);
-    }
-    return new Cache2kConfiguration();
+    return CACHE_CONFIGURATION_PROVIDER.getDefaultConfiguration(mgr);
   }
 
 }
