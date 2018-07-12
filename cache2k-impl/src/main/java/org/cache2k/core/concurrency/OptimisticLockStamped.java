@@ -62,13 +62,4 @@ public class OptimisticLockStamped implements OptimisticLock {
     lock.unlockWrite(stamp);
   }
 
-  @Override
-  public boolean canCheckHolder() {
-    return false;
-  }
-
-  @Override
-  public boolean isHoldingWriteLock() {
-    return false;
-  }
 }

@@ -23,7 +23,7 @@ package org.cache2k.core.util;
 /**
  * @author Jens Wilke
  */
-public class ClockDefaultImpl implements InternalClock {
+public final class ClockDefaultImpl implements InternalClock {
 
   public final static ClockDefaultImpl INSTANCE = new ClockDefaultImpl();
 

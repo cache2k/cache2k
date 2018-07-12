@@ -24,6 +24,7 @@ import java.util.concurrent.locks.AbstractQueuedSynchronizer;
 
 /**
  * Fallback locking mechanism when {@code StampedLock} is not available. This
+ * lock denies optimistic locking and uses a single write lock.
  *
  * <p>Optimistic locking is only possible on a Java 8 VM that support the
  * {@code loadFence} instructions. Otherwise loads might get reordered after
@@ -74,16 +75,6 @@ public class NonOptimisticLock implements OptimisticLock {
   @Override
   public void unlockWrite(final long stamp) {
     sync.release(DUMMY);
-  }
-
-  @Override
-  public boolean canCheckHolder() {
-    return true;
-  }
-
-  @Override
-  public boolean isHoldingWriteLock() {
-    return sync.isHeldExclusively();
   }
 
   private static final class Sync extends AbstractQueuedSynchronizer {

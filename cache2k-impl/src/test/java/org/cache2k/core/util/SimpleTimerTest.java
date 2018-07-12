@@ -62,6 +62,31 @@ public class SimpleTimerTest {
     assertEquals(82, count);
   }
 
+  @Test
+  public void misc() {
+    long _START_TIME = 100;
+    SimpleTimer st =
+      new SimpleTimer(
+        new SimulatedClock(_START_TIME, true),
+        SimpleTimerTest.class.getName(), true);
+    SimpleTask t = new MyTask();
+    try {
+      st.schedule(t, -5);
+    } catch (IllegalArgumentException ex) {
+    }
+    st.schedule(t, 10);
+    try {
+      st.schedule(t, 15);
+    } catch (IllegalStateException ex) {
+    }
+    t = new MyTask();
+    st.cancel();
+    try {
+      st.schedule(t, 15);
+    } catch (IllegalStateException ex) {
+    }
+  }
+
   static class MyTask extends SimpleTask {
     volatile boolean executed = false;
     @Override

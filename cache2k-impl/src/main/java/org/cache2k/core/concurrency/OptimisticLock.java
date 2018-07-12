@@ -29,9 +29,6 @@ package org.cache2k.core.concurrency;
  * the platform. If not supported, {@link #validate(long)} returns always false.
  * This allows the identical usage pattern for both variants.
  *
- * <p>The implementation may support owner checks with {@link #isHoldingWriteLock()}.
- * This can be used for debugging.
- *
  * @author Jens Wilke
  */
 public interface OptimisticLock {
@@ -94,16 +91,5 @@ public interface OptimisticLock {
    * not match the current state of this lock
    */
   void unlockWrite(long stamp);
-
-  /**
-   * True if this lock supports {@link #isHoldingWriteLock()}
-   */
-  boolean canCheckHolder();
-
-  /**
-   * Checks whether current thread is holding the write lock.
-   * If not supported always false.
-   */
-  boolean isHoldingWriteLock();
 
 }

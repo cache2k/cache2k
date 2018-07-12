@@ -174,8 +174,7 @@ public class SimpleTimer {
       throw new IllegalArgumentException("Illegal execution time.");
     }
     if (!task.schedule()) {
-      throw new IllegalStateException(
-        "Task already scheduled or cancelled");
+      throw new IllegalStateException("Task already scheduled or cancelled");
     }
     task.executionTime = time;
     lock.lock();
@@ -382,7 +381,7 @@ class TimerThread extends Thread {
               break;
             }
             condition.await(executionTime - currentTime, TimeUnit.MILLISECONDS);
-          } catch(InterruptedException ignore) {
+          } catch (InterruptedException ignore) {
           }
         }
       } finally {

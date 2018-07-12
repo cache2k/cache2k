@@ -336,18 +336,6 @@ public class Hash2<K,V> {
     }
   }
 
-  /**
-   * True if all locks are held be the current thread. If locking
-   * does not support holder check then always true.
-   */
-  private boolean allLocked() {
-    for (OptimisticLock l : locks) {
-      if (!l.canCheckHolder()) { return true; }
-      if (!l.isHoldingWriteLock()) { return false; }
-    }
-    return true;
-  }
-
   public void clearWhenLocked() {
     for (AtomicLong aSegmentSize : segmentSize) {
       aSegmentSize.set(0);

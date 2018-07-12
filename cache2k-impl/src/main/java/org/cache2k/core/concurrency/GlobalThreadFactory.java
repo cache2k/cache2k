@@ -28,19 +28,16 @@ import java.util.concurrent.ThreadFactory;
  * Factory which names the threads uniquely. If threads stop the previous numbers
  * will be reused.
  *
- * @author Jens Wilke; created: 2014-06-10
+ * @author Jens Wilke
  */
 public class GlobalThreadFactory implements ThreadFactory {
 
-  final static ConcurrentMap<String,String> NAMES_RUNNING =
+  private final static ConcurrentMap<String,String> NAMES_RUNNING =
     new ConcurrentHashMap<String, String>();
 
-  String prefix;
+  private String prefix;
 
   public GlobalThreadFactory(String _threadNamePrefix) {
-    if (_threadNamePrefix == null) {
-      throw new NullPointerException("Missing thread name prefix");
-    }
     prefix = _threadNamePrefix;
   }
 
