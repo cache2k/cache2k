@@ -454,7 +454,7 @@ public class BasicCacheOperationsWithoutCustomizationsTest {
     cache.expireAt(KEY, ExpiryTimeValues.NOW);
     assertNull(cache.peek(KEY));
     statistics()
-      .getCount.expect(1)
+      .getCount.expect(pars.keepDataAfterExpired && pars.withWiredCache ? 2 : 1)
       .missCount.expect(1)
       .expectAllZero();
   }
@@ -654,7 +654,7 @@ public class BasicCacheOperationsWithoutCustomizationsTest {
     statistics()
       .getCount.expect(1)
       .missCount.expect(1)
-      .removeCount.expect(0)
+      .removeCount.expect(pars.keepDataAfterExpired && pars.withWiredCache ? 1: 0)
       .expectAllZero();
   }
 
@@ -1461,6 +1461,7 @@ public class BasicCacheOperationsWithoutCustomizationsTest {
               .disableStatistics(nextBoolean())
               .withEntryProcessor(nextBoolean())
               .withWiredCache(nextBoolean())
+              .keepDataAfterExpired(nextBoolean())
               .build();
           }
 
