@@ -122,4 +122,10 @@ public class XmlConfigurationTest {
     assertEquals(true, b.getExtraConfiguration().isCopyAlwaysIfRequested());
   }
 
+  @Test
+  public void getCache_creates() throws Exception {
+    javax.cache.CacheManager _manager =
+      Caching.getCachingProvider().getCacheManager(new URI(MANAGER_NAME), null);
+  }
+
 }

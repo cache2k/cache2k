@@ -55,6 +55,7 @@
     <module>cache2k-jcache</module>
     <!-- other, deployed -->
     <module>cache2k-testing</module>
+    <module>cache2k-spring</module>
     <!-- not deployed -->
     <module>cache2k-jcache-tests</module>
     <module>test-osgi</module>

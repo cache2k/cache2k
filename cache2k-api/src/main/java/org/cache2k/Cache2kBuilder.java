@@ -758,6 +758,13 @@ public class Cache2kBuilder<K, V> {
   }
 
   /**
+   * Get associated cache manager.
+   */
+  public final CacheManager getManager() {
+    return manager;
+  }
+
+  /**
    * Builds a cache with the specified configuration parameters.
    *
    * <p>Returns specialized interfaces for the key types {@code Integer} and {@code Long}.
