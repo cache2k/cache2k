@@ -323,12 +323,14 @@ public interface Cache<K, V> extends KeyValueStore<K,V>, Closeable {
    *
    * <p>Rationale: The {@code Function} interface that {@code Map.computeIfAbsent} uses is only
    * available in Java 8. {@code Callable} is a useful fallback and we can use it directly
-   * for the Spring integration.
+   * for the Spring integration. A mismatch is that {@code Callable.call()} declares a checked exception but
+   * the cache access method do not.
    *
    * @param key key with which the specified value is to be associated
    * @param callable task that computes the value
    * @return the associated value in the cache
-   * @throws CacheLoaderException if an exception happens in the function
+   * @throws CacheLoaderException if a checked exception is thrown it is wrapped into a {@code CacheLoaderException}
+   * @throws RuntimeException in case {@link Callable#call} yields a runtime exception, this is thrown directly
    * @throws ClassCastException if the class of the specified key or value
    *         prevents it from being stored in this cache
    * @throws NullPointerException if the specified key is {@code null} or the

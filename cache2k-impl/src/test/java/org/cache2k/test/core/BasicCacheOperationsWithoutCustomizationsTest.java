@@ -51,12 +51,10 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
-import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.concurrent.TimeUnit;
 
@@ -409,6 +407,28 @@ public class BasicCacheOperationsWithoutCustomizationsTest {
       });
       fail("CacheLoaderException expected");
     } catch (CacheLoaderException ex) {
+      assertTrue(ex.getCause() instanceof IOException);
+    }
+    statistics()
+      .getCount.expect(1)
+      .missCount.expect(1)
+      .putCount.expect(0)
+      .expectAllZero();
+    assertFalse(cache.containsKey(KEY));
+  }
+
+  @Test
+  public void computeIfAbsent_RuntimeException() {
+    try {
+      cache.computeIfAbsent(KEY, new Callable<Integer>() {
+        @Override
+        public Integer call() throws Exception {
+          throw new IllegalArgumentException("for testing");
+        }
+      });
+      fail("RuntimeException expected");
+    } catch (RuntimeException ex) {
+      assertTrue(ex instanceof IllegalArgumentException);
     }
     statistics()
       .getCount.expect(1)

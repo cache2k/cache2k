@@ -923,6 +923,9 @@ public class HeapCache<K, V>
         e.processingDone();
       }
       _finished = true;
+
+    } catch (RuntimeException ex) {
+      throw ex;
     } catch (Exception ex) {
       throw new CacheLoaderException(ex);
     } finally {

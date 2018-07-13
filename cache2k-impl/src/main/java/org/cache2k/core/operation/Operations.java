@@ -238,6 +238,8 @@ public class Operations<K, V> {
             V _value = _function.call();
             c.put(_value);
             c.result(_value);
+          } catch (RuntimeException ex) {
+            c.failure(ex);
           } catch (Exception ex) {
             c.failure(new CacheLoaderException(ex));
           }
