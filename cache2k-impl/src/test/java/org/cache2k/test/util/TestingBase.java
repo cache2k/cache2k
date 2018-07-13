@@ -210,7 +210,7 @@ public class TestingBase {
     cacheName =
       deriveNameFromTestMethod(this) + "-" + Long.toString(uniqueNameCounter.incrementAndGet(), 36);
     Cache2kBuilder<K,T> b = Cache2kBuilder.of(k,t)
-      .clock(getClock())
+      .timeReference(getClock())
       .name(cacheName)
       .entryCapacity(DEFAULT_MAX_SIZE)
       .loaderExecutor(executor);

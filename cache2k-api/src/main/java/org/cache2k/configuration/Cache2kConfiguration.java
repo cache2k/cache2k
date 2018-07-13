@@ -88,7 +88,7 @@ public class Cache2kConfiguration<K, V> implements ConfigurationBean, Configurat
   private CustomizationSupplier<CacheWriter<K,V>> writer;
   private CustomizationSupplier<AdvancedCacheLoader<K,V>> advancedLoader;
   private CustomizationSupplier<ExceptionPropagator<K>> exceptionPropagator;
-  private CustomizationSupplier<TimeReference> clock;
+  private CustomizationSupplier<TimeReference> timeReference;
 
   private CustomizationCollection<CacheEntryOperationListener<K,V>> listeners;
   private CustomizationCollection<CacheEntryOperationListener<K,V>> asyncListeners;
@@ -606,15 +606,15 @@ public class Cache2kConfiguration<K, V> implements ConfigurationBean, Configurat
     asyncListenerExecutor = v;
   }
 
-  public CustomizationSupplier<TimeReference> getClock() {
-    return clock;
+  public CustomizationSupplier<TimeReference> getTimeReference() {
+    return timeReference;
   }
 
   /**
-   * @see Cache2kBuilder#clock(TimeReference)
+   * @see Cache2kBuilder#timeReference(TimeReference)
    */
-  public void setClock(final CustomizationSupplier<TimeReference> _clock) {
-    clock = _clock;
+  public void setTimeReference(final CustomizationSupplier<TimeReference> v) {
+    timeReference = v;
   }
 
   public boolean isBoostConcurrency() {

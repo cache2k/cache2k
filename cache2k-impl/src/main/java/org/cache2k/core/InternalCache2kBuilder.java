@@ -201,7 +201,7 @@ public class InternalCache2kBuilder<K, V> {
       _implClass = LongHeapCache.class;
     }
     InternalCache<K, V> _cache = constructImplementationAndFillParameters(_implClass);
-    InternalClock _timeReference = (InternalClock) _cache.createCustomization(config.getClock());
+    InternalClock _timeReference = (InternalClock) _cache.createCustomization(config.getTimeReference());
     if (_timeReference == null) {
       _timeReference = ClockDefaultImpl.INSTANCE;
     }
