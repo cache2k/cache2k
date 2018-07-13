@@ -73,6 +73,9 @@ public interface CacheEntry<K, V> {
    * The recording of the last modification time may be switched off via
    * {@link Cache2kBuilder#disableLastModificationTime(boolean)}
    *
+   * <p>It is under consideration to remove support for this in the future.
+   * See <a href="https://github.com/cache2k/cache2k/issues/84">GH#84</a>
+   *
    * @throws UnsupportedOperationException if switched off
    */
   long getLastModification();
