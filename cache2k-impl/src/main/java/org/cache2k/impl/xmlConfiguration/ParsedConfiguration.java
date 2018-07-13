@@ -97,15 +97,6 @@ public class ParsedConfiguration implements SourceLocation {
     return sections;
   }
 
-  public List<ParsedConfiguration> getSectionsInContainer(String _containerName) {
-    List<ParsedConfiguration> _prep = new ArrayList<ParsedConfiguration>();
-    for (ParsedConfiguration pc : sections) {
-      if (_containerName.equals(pc.getContainer())) {
-        _prep.add(pc);
-      }
-    }
-    return _prep;
-  }
 
   public void addProperty(ConfigurationTokenizer.Property p) {
     if ("name".equals(p.getName())) {

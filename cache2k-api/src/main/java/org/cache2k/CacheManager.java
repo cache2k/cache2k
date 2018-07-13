@@ -165,6 +165,11 @@ public abstract class CacheManager implements Closeable {
   public abstract Iterable<Cache> getActiveCaches();
 
   /**
+   * Returns a list of caches that are found in the XML based configuration.
+   */
+  public abstract Iterable<String> getConfiguredCacheNames();
+
+  /**
    * Return a known cache that must be created before via the {@link Cache2kBuilder}
    * or {@link #createCache(Cache2kConfiguration)}
    */

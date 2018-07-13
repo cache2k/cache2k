@@ -24,6 +24,8 @@ import org.cache2k.CacheManager;
 import org.cache2k.configuration.Cache2kConfiguration;
 import org.cache2k.core.spi.CacheConfigurationProvider;
 
+import java.util.Collections;
+
 /**
  * The configuration via XML can be removed (e.g. via ProGuard in Android environments).
  * This is a dummy placeholder.
@@ -45,6 +47,11 @@ public class DummyConfigurationProvider implements CacheConfigurationProvider {
   @Override
   public <K, V> void augmentConfiguration(final CacheManager mgr, final Cache2kConfiguration<K, V> cfg) {
 
+  }
+
+  @Override
+  public Iterable<String> getConfiguredCacheNames(final CacheManager mgr) {
+    return Collections.EMPTY_LIST;
   }
 
 }

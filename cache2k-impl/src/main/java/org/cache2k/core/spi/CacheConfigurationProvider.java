@@ -57,4 +57,9 @@ public interface CacheConfigurationProvider {
    */
   <K,V> void augmentConfiguration(CacheManager mgr, Cache2kConfiguration<K,V> cfg);
 
+  /**
+   * List of cache names found in the configuration.
+   */
+  Iterable<String> getConfiguredCacheNames(final CacheManager mgr);
+
 }

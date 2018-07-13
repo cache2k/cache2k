@@ -243,6 +243,11 @@ public class CacheManagerImpl extends CacheManager {
     return _caches;
   }
 
+  @Override
+  public Iterable<String> getConfiguredCacheNames() {
+    return Cache2kCoreProviderImpl.CACHE_CONFIGURATION_PROVIDER.getConfiguredCacheNames(this);
+  }
+
   @SuppressWarnings("unchecked")
   @Override
   public <K,V> Cache<K,V> getCache(String name) {

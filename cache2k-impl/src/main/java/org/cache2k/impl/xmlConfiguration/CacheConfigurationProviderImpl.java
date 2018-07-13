@@ -38,8 +38,11 @@ import java.io.ObjectOutputStream;
 import java.io.Serializable;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -104,8 +107,8 @@ public class CacheConfigurationProviderImpl implements CacheConfigurationProvide
         "Consider parameter: ignoreAnonymousCache");
     }
     ParsedConfiguration _parsedTop = readManagerConfigurationWithExceptionHandling(mgr.getClassLoader(), getFileName(mgr));
-    ParsedConfiguration _parsedCache = null;
     ParsedConfiguration _section = extractCachesSection(_parsedTop);
+    ParsedConfiguration _parsedCache = null;
     if (_section != null) { _parsedCache = _section.getSection(_cacheName); }
     if (_parsedCache == null) {
       if (ctx.isIgnoreMissingCacheConfiguration()) {
@@ -119,6 +122,24 @@ public class CacheConfigurationProviderImpl implements CacheConfigurationProvide
     }
     apply(ctx, _parsedCache, cfg);
     cfg.setExternalConfigurationPresent(true);
+  }
+
+  @Override
+  public Iterable<String> getConfiguredCacheNames(final CacheManager mgr) {
+    ConfigurationContext ctx =  getManagerContext(mgr);
+    if (!ctx.isConfigurationPresent()) {
+      return Collections.EMPTY_LIST;
+    }
+    ParsedConfiguration _parsedTop = readManagerConfigurationWithExceptionHandling(mgr.getClassLoader(), getFileName(mgr));
+    ParsedConfiguration _section = extractCachesSection(_parsedTop);
+    if (_section == null) {
+      return Collections.EMPTY_LIST;
+    }
+    List<String> _names = new ArrayList<String>();
+    for (ParsedConfiguration pc : _section.getSections()) {
+      _names.add(pc.getName());
+    }
+    return _names;
   }
 
   private static String getFileName(CacheManager mgr) {

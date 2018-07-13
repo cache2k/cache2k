@@ -28,6 +28,7 @@ import javax.cache.Cache;
 import javax.cache.CacheException;
 import javax.cache.CacheManager;
 import javax.cache.configuration.Configuration;
+import javax.cache.configuration.MutableConfiguration;
 import javax.cache.spi.CachingProvider;
 import java.net.URI;
 import java.util.Collections;
@@ -39,7 +40,7 @@ import java.util.Set;
 import java.util.WeakHashMap;
 
 /**
- * @author Jens Wilke; created: 2015-03-27
+ * @author Jens Wilke
  */
 public class JCacheManagerAdapter implements CacheManager {
 
@@ -72,9 +73,16 @@ public class JCacheManagerAdapter implements CacheManager {
    */
   private volatile Map<org.cache2k.Cache, Cache> c2k2jCache = Collections.emptyMap();
 
+  private final Set<String> configuredCacheNames;
+
   public JCacheManagerAdapter(JCacheProvider p, org.cache2k.CacheManager cm) {
     manager = cm;
     provider = p;
+    Set<String> _names = new HashSet<String>();
+    for (String s : manager.getConfiguredCacheNames()) {
+      _names.add(s);
+    }
+    configuredCacheNames = Collections.unmodifiableSet(_names);
   }
 
   @Override
@@ -179,6 +187,9 @@ public class JCacheManagerAdapter implements CacheManager {
       if (c != null && manager.getCache(_cacheName) == c.unwrap(org.cache2k.Cache.class) && !c.isClosed()) {
         return c;
       }
+      if (configuredCacheNames.contains(_cacheName)) {
+        return createCache(_cacheName, new MutableConfiguration<K, V>());
+      }
     }
     return null;
   }
@@ -190,6 +201,7 @@ public class JCacheManagerAdapter implements CacheManager {
     for (org.cache2k.Cache c : manager.getActiveCaches()) {
       _names.add(c.getName());
     }
+    _names.addAll(configuredCacheNames);
     return Collections.unmodifiableSet(_names);
   }
 

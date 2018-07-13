@@ -27,7 +27,6 @@ import org.cache2k.UnknownCacheException;
 import org.cache2k.configuration.Cache2kConfiguration;
 import org.cache2k.configuration.CustomizationSupplierByClassName;
 import org.cache2k.core.Cache2kCoreProviderImpl;
-import org.cache2k.impl.xmlConfiguration.ConfigurationException;
 import org.cache2k.testing.category.FastTests;
 import org.junit.Ignore;
 import org.junit.Test;
@@ -43,6 +42,18 @@ import static org.hamcrest.CoreMatchers.*;
  */
 @Category(FastTests.class)
 public class IntegrationTest {
+
+  @Test
+  public void listNames() {
+    CacheManager mgr = CacheManager.getInstance("customizationExample");
+    assertThat(mgr.getConfiguredCacheNames(), hasItems("flowers", "withLoader", "withLoaderShort"));
+  }
+
+  @Test
+  public void listNamesEmpty() {
+    CacheManager mgr = CacheManager.getInstance("unknown");
+    assertFalse("no names", mgr.getConfiguredCacheNames().iterator().hasNext());
+  }
 
   @Test
   public void loaderByClassName() {
