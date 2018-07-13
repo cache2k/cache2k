@@ -26,6 +26,8 @@ import org.cache2k.CacheManager;
 import static org.junit.Assert.*;
 import org.junit.Test;
 
+import java.util.Collections;
+
 /**
  *
  *
@@ -65,19 +67,28 @@ public class Cache2kCacheManagerTest {
         Cache2kCacheManagerTest.class.getSimpleName() + "separate"));
   }
 
-  @Test
-  public void testAll() {
+  @Test(expected=IllegalArgumentException.class)
+  public void testMissing() {
     Cache2kCacheManager m =
       new Cache2kCacheManager(
         CacheManager.getInstance(
           Cache2kCacheManagerTest.class.getSimpleName() + "notConfigured"));
+    m.getCache("testUnknown");
+  }
+
+  @Test
+  public void testAll() {
+    Cache2kCacheManager m =
+      new Cache2kCacheManager(Cache2kCacheManagerTest.class.getSimpleName() + "notConfigured");
+    m.setAllowUnknownCache(true);
+    assertTrue(m.isAllowUnknownCache());
     assertEquals(0, m.getCacheNames().size());
     assertEquals(0, m.getCacheMap().size());
     m.getCache("test");
     assertEquals(1, m.getCacheNames().size());
     assertEquals(1, m.getCacheMap().size());
-    m.addCache(Cache2kBuilder.forUnknownTypes()
-      .name("other").toConfiguration());
+    m.setCaches(Collections.singletonList(
+      Cache2kBuilder.forUnknownTypes().name("other").toConfiguration()));
     assertEquals(2, m.getCacheNames().size());
   }
 

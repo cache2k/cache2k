@@ -21,7 +21,6 @@ package org.cache2k.extra.spring;
  */
 
 import org.cache2k.CacheEntry;
-import org.cache2k.integration.CacheLoaderException;
 import org.springframework.cache.Cache;
 import org.springframework.util.Assert;
 
@@ -80,6 +79,10 @@ public class Cache2kCache implements Cache {
     return (T) value;
   }
 
+  /**
+   * This method is called instead of {@link #get} and {@link #put} in case {@code sync=true} is
+   * specified on the {@code Cachable} annotation.
+   */
   @SuppressWarnings("unchecked")
   @Override
   public <T> T get(final Object key, final Callable<T> valueLoader) {

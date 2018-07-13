@@ -33,8 +33,15 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.Function;
 
 /**
+ * Manages and wraps cache2k caches. The manager delegates to the cache2k
+ * native {@link org.cache2k.CacheManager}. The available caches can be
+ * configured programmatically in a Spring configuration class via the use
+ * of {@link #addCaches(Function[])}, via a Spring XML configuration
+ * and {@link #setCaches(Collection)} or via cache2k's own XML configuration.
+ *
  * @author Jens Wilke
  */
 public class Cache2kCacheManager implements CacheManager {
@@ -45,6 +52,8 @@ public class Cache2kCacheManager implements CacheManager {
 
   private final Set<String> configuredCacheNames = new HashSet<>();
 
+  private boolean allowUnknownCache = false;
+
   /**
    * Construct a spring cache manager, using the default cache2k cache manager instance.
    *
@@ -53,6 +62,18 @@ public class Cache2kCacheManager implements CacheManager {
    */
   public Cache2kCacheManager() {
     this(org.cache2k.CacheManager.getInstance());
+  }
+
+  /**
+   * Construct a spring cache manager, using the cache2k cache manager instance
+   * with the specified name.
+   *
+   * @see org.cache2k.CacheManager
+   * @see org.cache2k.CacheManager#getInstance()
+   *
+   */
+  public Cache2kCacheManager(String name) {
+    this(org.cache2k.CacheManager.getInstance(name));
   }
 
   /**
@@ -72,30 +93,37 @@ public class Cache2kCacheManager implements CacheManager {
   @SuppressWarnings("unchecked")
   @Override
   public Cache2kCache getCache(final String name) {
-    return name2cache.computeIfAbsent(name, n ->
-      buildAndWrap(configureCache(Cache2kBuilder.forUnknownTypes().manager(manager).name(n))));
+    return name2cache.computeIfAbsent(name, n -> {
+        if (!allowUnknownCache && !configuredCacheNames.contains(n)) {
+          throw new IllegalArgumentException("Cache configuration missing for: " + n);
+        }
+        return buildAndWrap(configureCache(Cache2kBuilder.forUnknownTypes().manager(manager).name(n)));
+      });
   }
 
   /**
-   * Add a cache to this cache manager that is configured via the {@link Cache2kBuilder}.
-   * The configuration parameters {@link Cache2kBuilder#exceptionPropagator}
-   * and {@link Cache2kBuilder#permitNullValues} are managed by this class. The
-   * {@link Cache2kBuilder#manager} must be identical to the one wrapped by this class,
-   * so it is best to create the builder with
-   * {@code Cache2kBuilder.of(...).manager(manager,getNativeManager())}
+   * Adds a caches to this cache manager that maybe is configured via the {@link Cache2kBuilder}.
+   * The configuration parameter {@link Cache2kBuilder#exceptionPropagator}
+   * is managed by this class and cannot be used. This method can be used in case a programmatic
+   * configuration of a cache manager is preferred.
    *
-   * <p>This method can be used in case a programmatic configuration of a cache manager
-   * is preferred.
+   * <p>Rationale: The method provides a builder that is already seeded with the effective manager.
+   * This makes it possible to use the builder without code bloat. Sincd the actual build is done
+   * within this class, it is also possible to reset specific settings or do assertions.
    *
-   * @param builder builder with configuration, with a name and the identical cache manager
-   * @return the wrapped spring cache
    * @throws IllegalArgumentException if cache is already created
    */
-  public Cache2kCache addCache(final Cache2kBuilder builder) {
+  public Cache2kCacheManager addCaches(Function<Cache2kBuilder<?,?>, Cache2kBuilder<?,?>>... fs) {
+    for (Function<Cache2kBuilder<?,?>, Cache2kBuilder<?,?>> f : fs) {
+      addCache(f.apply(Cache2kBuilder.forUnknownTypes().manager(manager)));
+    }
+    return this;
+  }
+
+  Cache2kCache addCache(final Cache2kBuilder builder) {
     String name = builder.toConfiguration().getName();
     Assert.notNull(name, "Name must be set via Cache2kBuilder.name()");
-    Assert.isTrue(builder.getManager() == manager,
-      "Manager must be identical in builder. Do Cache2kBuilder.manager(manager.getNativeManager()");
+    Assert.isTrue(builder.getManager() == manager, "Manager must be identical in builder.");
     return name2cache.compute(name, (name2, existingCache) -> {
       Assert.isNull(existingCache, "Cache is not yet configured");
       return buildAndWrap(configureCache(builder));
@@ -103,21 +131,20 @@ public class Cache2kCacheManager implements CacheManager {
   }
 
   /**
-   * Add a cache to this cache manager that is configured via the {@link Cache2kConfiguration}.
-   *
-   * <p>This method can be used in case a programmatic configuration of a cache manager
-   * is preferred.
-   *
-   * @param cfg the cache configuration object
-   * @return the wrapped spring cache
-   * @throws IllegalArgumentException if cache is already created
+   * Configure the known caches via the configuration bean. This method is intended to
+   * be used together with Springs' own XML bean configuration. If a cache2k XML is present
+   * as well the configurations are merged.
    */
-  public Cache2kCache addCache(final Cache2kConfiguration cfg) {
+  public void setCaches(Collection<Cache2kConfiguration> cacheConfigurationList) {
+    cacheConfigurationList.forEach(cfg -> addCache(cfg));
+  }
+
+  Cache2kCache addCache(final Cache2kConfiguration cfg) {
     return addCache(Cache2kBuilder.of(cfg).manager(manager));
   }
 
   /**
-   * Get a list of known caches. Depending on the configuration caches may be created
+   * Get a list of known caches. Depending on the configuration, caches may be created
    * dynamically without providing a configuration for a specific cache name. Because of this
    * combine the known names from configuration and activated caches.
    */
@@ -139,10 +166,24 @@ public class Cache2kCacheManager implements CacheManager {
   }
 
   /**
-   * Expose the map of known wrapped caches.
+   * Expose the map of created and wrapped caches.
    */
   public Map<String, Cache2kCache> getCacheMap() {
-    return name2cache;
+    return Collections.unmodifiableMap(name2cache);
+  }
+
+  public boolean isAllowUnknownCache() {
+    return allowUnknownCache;
+  }
+
+  /**
+   * By default the cache manager only manages a cache if added via {@link #addCaches},
+   * {@link #setCaches(Collection)} or enlisted in the cache2k XML configuration.
+   * Setting this to {@code true} will create a cache with a default configuration if the requested
+   * cache name is not known.
+   */
+  public void setAllowUnknownCache(final boolean v) {
+    allowUnknownCache = v;
   }
 
   public static final Callable<Object> DUMMY_CALLABLE = new Callable<Object>() {
@@ -155,15 +196,14 @@ public class Cache2kCacheManager implements CacheManager {
     }
   };
 
-  public static Cache2kBuilder<Object,Object> configureCache(Cache2kBuilder<Object, Object> builder) {
+  static Cache2kBuilder<Object,Object> configureCache(Cache2kBuilder<Object, Object> builder) {
     return builder
-      .permitNullValues(true)
       .exceptionPropagator(
         (key, exceptionInformation) ->
           new Cache.ValueRetrievalException(key, DUMMY_CALLABLE, exceptionInformation.getException()));
   }
 
-  public static Cache2kCache buildAndWrap(Cache2kBuilder<Object, Object> builder) {
+  static Cache2kCache buildAndWrap(Cache2kBuilder<Object, Object> builder) {
     org.cache2k.Cache<Object, Object> nativeCache = builder.build();
     Cache2kConfiguration<?,?> cfg = builder.toConfiguration();
     boolean loaderPresent = cfg.getLoader() != null || cfg.getAdvancedLoader() != null;
