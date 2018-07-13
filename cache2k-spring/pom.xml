@@ -72,4 +72,24 @@
 
   </dependencies>
 
+  <profiles>
+    <!-- Tests don't run on Java 6. -->
+    <profile>
+      <id>skip-for-java6</id>
+      <!-- activation via jdk is not working since we run maven with the latest JDK but switch
+           to another for testing via -Djvm -->
+      <build>
+        <plugins>
+          <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-surefire-plugin</artifactId>
+            <configuration>
+              <skip>true</skip>
+            </configuration>
+          </plugin>
+        </plugins>
+      </build>
+    </profile>
+  </profiles>
+
 </project>

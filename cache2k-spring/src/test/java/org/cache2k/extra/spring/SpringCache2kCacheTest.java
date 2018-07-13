@@ -21,34 +21,42 @@ package org.cache2k.extra.spring;
  */
 
 import org.cache2k.Cache;
-import org.cache2k.integration.CacheLoaderException;
+import org.cache2k.Cache2kBuilder;
+import org.junit.After;
+import org.junit.Before;
 
-import java.util.concurrent.Callable;
+import static org.junit.Assert.assertNull;
 
 /**
- * Specialized cache wrapper in case a loader is configured. See {@link #get(Object, Callable)}
+ * Execute the generic spring tests
  *
  * @author Jens Wilke
  */
-public class LoadingCache2kCache extends Cache2kCache {
+public class SpringCache2kCacheTest extends AbstractCacheTests<Cache2kCache> {
 
-  public LoadingCache2kCache(final Cache<Object, Object> cache) {
-    super(cache);
+  private Cache nativeCache;
+  private Cache2kCache cache;
+
+  @Before
+  public void setUp() {
+    Cache2kBuilder builder = Cache2kCacheManager.configureCache(Cache2kBuilder.forUnknownTypes().name(CACHE_NAME));
+    cache = Cache2kCacheManager.buildAndWrap(builder);
+    nativeCache = cache.getNativeCache();
   }
 
-  /**
-   * <p>Ignore the {@code valueLoader} parameter in case a loader is present. This makes
-   * sure the loader is consistently used and we make use of the cache2k features
-   * refresh ahead and resilience.
-   */
-  @SuppressWarnings("unchecked")
+  @After
+  public void tearDown() {
+    nativeCache.close();
+  }
+
   @Override
-  public <T> T get(final Object key, final Callable<T> valueLoader) {
-    return (T) cache.get(key);
+  protected Cache2kCache getCache() {
+    return cache;
   }
 
-  public boolean isLoaderPresent() {
-    return true;
+  @Override
+  protected Cache getNativeCache() {
+    return nativeCache;
   }
 
 }

@@ -51,6 +51,10 @@ import java.util.concurrent.Executor;
  * <p>The configuration may contain additional beans, called configuration sections, that are
  * used to configure extensions or sub modules.
  *
+ * <p>Within the XML configuraiton of a cache manager different default configuration
+ * values may be specified. To get a configuration bean with the effective defaults of
+ * a specific manager do {@code Cache2kBuilder.forUnknownTypes().manager(...).toConfiguration()}
+ *
  * @author Jens Wilke
  */
 @SuppressWarnings("unused")

@@ -28,6 +28,8 @@ import org.springframework.util.Assert;
 import java.util.concurrent.Callable;
 
 /**
+ * Cache wrapper for the spring cache abstraction.
+ *
  * @author Jens Wilke
  */
 public class Cache2kCache implements Cache {
@@ -65,12 +67,7 @@ public class Cache2kCache implements Cache {
   }
 
   private ValueWrapper returnWrappedValue(final CacheEntry<Object, Object> entry) {
-    return new ValueWrapper() {
-      @Override
-      public Object get() {
-        return entry.getValue();
-      }
-    };
+    return () -> entry.getValue();
   }
 
   @SuppressWarnings("unchecked")
@@ -83,10 +80,6 @@ public class Cache2kCache implements Cache {
     return (T) value;
   }
 
-  /**
-   * cache2k will throw an exception if the callable yields and exception.
-   * Future versions may throw a {@code RuntimeException} directly so wrap this.
-   */
   @SuppressWarnings("unchecked")
   @Override
   public <T> T get(final Object key, final Callable<T> valueLoader) {

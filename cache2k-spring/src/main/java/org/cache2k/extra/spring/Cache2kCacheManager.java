@@ -41,7 +41,7 @@ public class Cache2kCacheManager implements CacheManager {
 
   private final org.cache2k.CacheManager manager;
 
-  private final Map<String, Cache> name2cache = new ConcurrentHashMap<>();
+  private final Map<String, Cache2kCache> name2cache = new ConcurrentHashMap<>();
 
   private final Set<String> configuredCacheNames = new HashSet<>();
 
@@ -71,7 +71,7 @@ public class Cache2kCacheManager implements CacheManager {
 
   @SuppressWarnings("unchecked")
   @Override
-  public Cache getCache(final String name) {
+  public Cache2kCache getCache(final String name) {
     return name2cache.computeIfAbsent(name, n ->
       buildAndWrap(configureCache(Cache2kBuilder.forUnknownTypes().manager(manager).name(n))));
   }
@@ -84,11 +84,14 @@ public class Cache2kCacheManager implements CacheManager {
    * so it is best to create the builder with
    * {@code Cache2kBuilder.of(...).manager(manager,getNativeManager())}
    *
+   * <p>This method can be used in case a programmatic configuration of a cache manager
+   * is preferred.
+   *
    * @param builder builder with configuration, with a name and the identical cache manager
    * @return the wrapped spring cache
    * @throws IllegalArgumentException if cache is already created
    */
-  public Cache addCache(final Cache2kBuilder builder) {
+  public Cache2kCache addCache(final Cache2kBuilder builder) {
     String name = builder.toConfiguration().getName();
     Assert.notNull(name, "Name must be set via Cache2kBuilder.name()");
     Assert.isTrue(builder.getManager() == manager,
@@ -102,12 +105,15 @@ public class Cache2kCacheManager implements CacheManager {
   /**
    * Add a cache to this cache manager that is configured via the {@link Cache2kConfiguration}.
    *
+   * <p>This method can be used in case a programmatic configuration of a cache manager
+   * is preferred.
+   *
    * @param cfg the cache configuration object
    * @return the wrapped spring cache
    * @throws IllegalArgumentException if cache is already created
    */
-  public Cache addCache(final Cache2kConfiguration cfg) {
-    return addCache(Cache2kBuilder.of(cfg));
+  public Cache2kCache addCache(final Cache2kConfiguration cfg) {
+    return addCache(Cache2kBuilder.of(cfg).manager(manager));
   }
 
   /**
@@ -135,11 +141,11 @@ public class Cache2kCacheManager implements CacheManager {
   /**
    * Expose the map of known wrapped caches.
    */
-  public Map<String, Cache> getCacheMap() {
+  public Map<String, Cache2kCache> getCacheMap() {
     return name2cache;
   }
 
-  private static final Callable<Object> DUMMY_CALLABLE = new Callable<Object>() {
+  public static final Callable<Object> DUMMY_CALLABLE = new Callable<Object>() {
     @Override
     public Object call() {
       return null;
