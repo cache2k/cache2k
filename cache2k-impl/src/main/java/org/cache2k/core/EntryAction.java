@@ -492,7 +492,9 @@ public abstract class EntryAction<K, V, R> implements
     lockFor(Entry.ProcessingState.MUTATE);
     needsFinish = false;
     newValueOrException = value;
-    lastModificationTime = millis();
+    if (!heapCache.isNoModificationTimeRecording()) {
+      lastModificationTime = millis();
+    }
     expiry = t;
     if (newValueOrException instanceof ExceptionWrapper) {
       setUntil(ExceptionWrapper.class.cast(newValueOrException));

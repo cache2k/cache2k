@@ -25,6 +25,8 @@ import org.cache2k.Cache;
 import org.cache2k.Cache2kBuilder;
 import org.cache2k.CacheEntry;
 import org.cache2k.ForwardingCache;
+import org.cache2k.IntCache;
+import org.cache2k.core.CacheClosedException;
 import org.cache2k.core.InternalCache;
 import org.cache2k.core.InternalCacheInfo;
 import org.cache2k.expiry.ExpiryTimeValues;
@@ -60,6 +62,7 @@ import java.util.concurrent.TimeUnit;
 
 import static org.cache2k.test.core.StaticUtil.toIterable;
 import static org.junit.Assert.*;
+import static org.hamcrest.Matchers.*;
 
 /**
  * Test basic cache operations on a shared cache in a simple configuration.
@@ -122,24 +125,28 @@ public class BasicCacheOperationsWithoutCustomizationsTest {
       }
     }
     statistics = new Statistics(pars.disableStatistics || pars.withEntryProcessor);
+    lastModificationAvailable = !pars.disableLastModified || pars.withExpiryAfterWrite;
   }
 
   protected Cache<Integer,Integer> createCache() {
-    Cache2kBuilder b =
-      Cache2kBuilder.of(Integer.class, Integer.class)
-        .name(this.getClass().getSimpleName() + "-" + pars.toString().replace('=','~'))
-        .retryInterval(Long.MAX_VALUE, TimeUnit.MILLISECONDS)
-        .entryCapacity(1000)
-        .permitNullValues(true)
-        .keepDataAfterExpired(pars.keepDataAfterExpired)
-        .disableLastModificationTime(pars.disableLastModified)
-        .disableStatistics(pars.disableStatistics);
+    Cache2kBuilder b;
+    if (pars.useObjectKey) {
+      b = Cache2kBuilder.forUnknownTypes();
+    } else {
+      b = Cache2kBuilder.of(Integer.class, Integer.class);
+    }
+    b.name(this.getClass().getSimpleName() + "-" + pars.toString().replace('=', '~'))
+      .retryInterval(Long.MAX_VALUE, TimeUnit.MILLISECONDS)
+      .entryCapacity(1000)
+      .permitNullValues(true)
+      .keepDataAfterExpired(pars.keepDataAfterExpired)
+      .disableLastModificationTime(pars.disableLastModified)
+      .disableStatistics(pars.disableStatistics);
     if (pars.withExpiryAfterWrite) {
       b.expireAfterWrite(TestingParameters.MAX_FINISH_WAIT_MILLIS, TimeUnit.MILLISECONDS);
     } else {
       b.eternal(true);
     }
-    lastModificationAvailable = !pars.disableLastModified || pars.withExpiryAfterWrite;
     if (pars.withWiredCache) {
       StaticUtil.enforceWiredCache(b);
     }
@@ -227,6 +234,25 @@ public class BasicCacheOperationsWithoutCustomizationsTest {
       c.clearAndClose();
       c.close();
       assertTrue(c.isClosed());
+      assertNotNull("getName working in closed state", c.getName());
+      String txt = c.toString();
+      assertThat(txt, containsString(c.getName()));
+      assertThat(txt, containsString("closed"));
+      try {
+        c.get(KEY);
+        fail("CacheClosedException expected");
+      } catch (CacheClosedException expected) {
+      }
+      try {
+        c.peek(KEY);
+        fail("CacheClosedException expected");
+      } catch (CacheClosedException expected) {
+      }
+      try {
+        c.put(KEY, VALUE);
+        fail("CacheClosedException expected");
+      } catch (CacheClosedException expected) {
+      }
     }
   }
 
@@ -299,6 +325,17 @@ public class BasicCacheOperationsWithoutCustomizationsTest {
       long t = cache.peekEntry(e.getKey()).getLastModification();
       fail("expected UnsupportedOperationException");
     } catch (UnsupportedOperationException ex) {
+    }
+    long t = cache.invoke(e.getKey(), new EntryProcessor<Integer, Integer, Long>() {
+      @Override
+      public Long process(final MutableCacheEntry<Integer, Integer> e) throws Exception {
+        return e.getLastModification();
+      }
+    });
+    if (lastModificationAvailable) {
+      assertThat("Timestamp byond start", t, greaterThanOrEqualTo(START_TIME));
+    } else {
+      assertEquals("No time set", 0, t);
     }
   }
 
@@ -1197,6 +1234,64 @@ public class BasicCacheOperationsWithoutCustomizationsTest {
   }
 
   /*
+   * Entry processor
+   */
+
+  @Test
+  public void invoke_exists() {
+    cache.put(KEY, VALUE);
+    boolean f = cache.invoke(KEY, new EntryProcessor<Integer, Integer, Boolean>() {
+      @Override
+      public Boolean process(final MutableCacheEntry<Integer, Integer> e) throws Exception {
+        return e.exists();
+      }
+    });
+    assertTrue(f);
+  }
+
+  @Test
+  public void invoke_mutateWithExpiry() {
+    cache.invoke(KEY, new EntryProcessor<Integer, Integer, Object>() {
+      @Override
+      public Boolean process(final MutableCacheEntry<Integer, Integer> e) throws Exception {
+        e.setValue(VALUE);
+        e.setExpiry(ExpiryTimeValues.ETERNAL);
+        return null;
+      }
+    });
+    checkLastModified(cache.getEntry(KEY));
+  }
+
+  @Test
+  public void invoke_mutateWithImmediateExpiry() {
+    cache.invoke(KEY, new EntryProcessor<Integer, Integer, Object>() {
+      @Override
+      public Boolean process(final MutableCacheEntry<Integer, Integer> e) throws Exception {
+        e.setValue(VALUE);
+        e.setExpiry(ExpiryTimeValues.NOW);
+        return null;
+      }
+    });
+    assertFalse(cache.containsKey(KEY));
+  }
+
+
+  @Test
+  public void invokeAll() {
+    cache.put(KEY, VALUE);
+    Map<Integer, EntryProcessingResult<Boolean>> res =
+      cache.invokeAll(cache.keys(), new EntryProcessor<Integer, Integer, Boolean>() {
+        @Override
+        public Boolean process(final MutableCacheEntry<Integer, Integer> e) throws Exception {
+          return e.exists();
+        }
+      });
+    assertEquals(1, res.size());
+    assertNull(res.get(KEY).getException());
+    assertTrue(res.get(KEY).getResult());
+  }
+
+  /*
    * Misc
    */
 
@@ -1278,30 +1373,13 @@ public class BasicCacheOperationsWithoutCustomizationsTest {
   }
 
   @Test
-  public void invoke() {
-    cache.put(KEY, VALUE);
-    boolean f = cache.invoke(KEY, new EntryProcessor<Integer, Integer, Boolean>() {
-      @Override
-      public Boolean process(final MutableCacheEntry<Integer, Integer> e) throws Exception {
-        return e.exists();
-      }
-    });
-    assertTrue(f);
-  }
-
-  @Test
-  public void invokeAll() {
-    cache.put(KEY, VALUE);
-    Map<Integer, EntryProcessingResult<Boolean>> res =
-      cache.invokeAll(cache.keys(), new EntryProcessor<Integer, Integer, Boolean>() {
-      @Override
-      public Boolean process(final MutableCacheEntry<Integer, Integer> e) throws Exception {
-        return e.exists();
-      }
-    });
-    assertEquals(1, res.size());
-    assertNull(res.get(KEY).getException());
-    assertTrue(res.get(KEY).getResult());
+  public void checkImpl() {
+    InternalCache ic = cache.requestInterface(InternalCache.class);
+    if (pars.useObjectKey) {
+      assertThat(ic, not(instanceOf(IntCache.class)));
+    } else {
+      assertThat(ic, instanceOf(IntCache.class));
+    }
   }
 
   static class Pars {
@@ -1314,6 +1392,7 @@ public class BasicCacheOperationsWithoutCustomizationsTest {
     boolean withForwardingAndAbstract = false;
     boolean keepDataAfterExpired = false;
     boolean withExpiryAfterWrite = false;
+    boolean useObjectKey = false;
 
     @Override
     public boolean equals(final Object o) {
@@ -1329,6 +1408,7 @@ public class BasicCacheOperationsWithoutCustomizationsTest {
       if (withWiredCache != p.withWiredCache) return false;
       if (withForwardingAndAbstract != p.withForwardingAndAbstract) return false;
       if (withExpiryAfterWrite != p.withExpiryAfterWrite) return false;
+      if (useObjectKey != p.useObjectKey) return false;
       return keepDataAfterExpired == p.keepDataAfterExpired;
     }
 
@@ -1342,6 +1422,7 @@ public class BasicCacheOperationsWithoutCustomizationsTest {
       _result = 31 * _result + (withForwardingAndAbstract ? 1 : 0);
       _result = 31 * _result + (keepDataAfterExpired ? 1 : 0);
       _result = 31 * _result + (withExpiryAfterWrite ? 1 : 0);
+      _result = 31 * _result + (useObjectKey ? 1 : 0);
       return _result;
     }
 
@@ -1349,13 +1430,14 @@ public class BasicCacheOperationsWithoutCustomizationsTest {
     public String toString() {
       return
         "strict=" + strictEviction +
-        ", noLastModified=" + disableLastModified +
-        ", noStats=" + disableStatistics +
+        ", disableLastModified=" + disableLastModified +
+        ", disableStats=" + disableStatistics +
         ", entryProcessor=" + withEntryProcessor +
         ", wired=" + withWiredCache +
         ", forwarding=" + withForwardingAndAbstract +
         ", keep=" + keepDataAfterExpired +
-        ", expiry=" + withExpiryAfterWrite;
+        ", expiry=" + withExpiryAfterWrite +
+        ", useObjectKey=" + useObjectKey;
     }
 
     static class Builder {
@@ -1396,6 +1478,10 @@ public class BasicCacheOperationsWithoutCustomizationsTest {
         pars.withExpiryAfterWrite = v; return this;
       }
 
+      public Builder useObjectKey(final boolean v) {
+        pars.useObjectKey = v; return this;
+      }
+
     }
 
     static class TestVariants implements Iterable<Pars> {
@@ -1423,6 +1509,7 @@ public class BasicCacheOperationsWithoutCustomizationsTest {
               .withWiredCache(nextBoolean())
               .keepDataAfterExpired(nextBoolean())
               .withExpiryAfterWrite(nextBoolean())
+              .useObjectKey(nextBoolean())
               .build();
           }
 
