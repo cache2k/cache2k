@@ -758,7 +758,7 @@ public class Cache2kBuilder<K, V> {
   }
 
   /**
-   * Get associated cache manager.
+   * Get the associated cache manager.
    */
   public final CacheManager getManager() {
     return manager;
