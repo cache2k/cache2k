@@ -40,8 +40,6 @@ public interface InternalCache<K, V> extends Cache<K, V>, CanCheckIntegrity {
   /** used from the cache manager */
   Log getLog();
 
-  String getName();
-
   StorageAdapter getStorage();
 
   CacheType getKeyType();

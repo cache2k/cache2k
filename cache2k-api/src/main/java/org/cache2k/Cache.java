@@ -107,10 +107,11 @@ import java.util.concurrent.TimeUnit;
 public interface Cache<K, V> extends KeyValueStore<K,V>, Closeable {
 
   /**
-   * A configured or generated name of this cache instance.
+   * A configured or generated name of this cache instance. A cache in close state will still
+   * return its name.
    *
    * @see Cache2kBuilder#name(String)
-   * @return name of this cache or null for anonymous caches.
+   * @return name of this cache
    */
   String getName();
 
@@ -852,8 +853,8 @@ public interface Cache<K, V> extends KeyValueStore<K,V>, Closeable {
 
   /**
    * Returns internal information. This is an expensive operation, since internal statistics are
-   * collected. During the call, concurrent operations on the cache may be blocked, to check
-   * consistency.
+   * collected. During the call, concurrent operations on the cache may be blocked. If the cache is
+   * closed, no statistics are available any more.
    */
   String toString();
 
