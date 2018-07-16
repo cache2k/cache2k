@@ -225,7 +225,7 @@ public class JCacheBuilder<K,V> {
 
           }));
     }
-    if (config.isWriteThrough()) {
+    if (config.getCacheWriterFactory() != null) {
       final javax.cache.integration.CacheWriter<? super K, ? super V> cw = config.getCacheWriterFactory().create();
       cache2kConfiguration.setWriter(new CustomizationReferenceSupplier<CacheWriter<K, V>>(new CloseableWriter<K, V>() {
         @Override
