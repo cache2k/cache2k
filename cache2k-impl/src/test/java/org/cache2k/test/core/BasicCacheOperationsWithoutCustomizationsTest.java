@@ -1275,6 +1275,45 @@ public class BasicCacheOperationsWithoutCustomizationsTest {
     assertFalse(cache.containsKey(KEY));
   }
 
+  final long MILLIS_IN_FUTURE = (2345 - 1970) * 365L * 24 * 60 * 60 * 1000;
+
+  @Test
+  public void invoke_mutateWithRealExpiry() {
+    boolean gotException = false;
+    try {
+      cache.invoke(KEY, new EntryProcessor<Integer, Integer, Object>() {
+        @Override
+        public Boolean process(final MutableCacheEntry<Integer, Integer> e) throws Exception {
+          e.setValue(VALUE);
+          e.setExpiry(MILLIS_IN_FUTURE);
+          return null;
+        }
+      });
+    } catch (IllegalArgumentException ex) {
+      gotException = true;
+    }
+    if (pars.withExpiryAfterWrite) {
+      assertTrue(cache.containsKey(KEY));
+    } else {
+      assertTrue(gotException);
+    }
+  }
+
+  @Test
+  public void expireAt_mutateWithRealExpiry() {
+    boolean gotException = false;
+    try {
+      cache.put(KEY, VALUE);
+      cache.expireAt(KEY, MILLIS_IN_FUTURE);
+    } catch (IllegalArgumentException ex) {
+      gotException = true;
+    }
+    if (pars.withExpiryAfterWrite) {
+      assertTrue(cache.containsKey(KEY));
+    } else {
+      assertTrue(gotException);
+    }
+  }
 
   @Test
   public void invokeAll() {
