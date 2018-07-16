@@ -56,6 +56,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.concurrent.Callable;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 
 import static org.cache2k.test.core.StaticUtil.toIterable;
@@ -68,7 +69,7 @@ import static org.junit.Assert.*;
 @Category(FastTests.class) @RunWith(Parameterized.class)
 public class BasicCacheOperationsWithoutCustomizationsTest {
 
-  final static Map<Pars, Cache> PARS2CACHE = new HashMap<Pars, Cache>();
+  final static Map<Pars, Cache> PARS2CACHE = new ConcurrentHashMap<Pars, Cache>();
 
   @SuppressWarnings("ThrowableInstanceNeverThrown")
   final static Exception OUCH = new Exception("ouch");
@@ -124,8 +125,8 @@ public class BasicCacheOperationsWithoutCustomizationsTest {
 
   protected Cache<Integer,Integer> createCache() {
     Cache2kBuilder b =
-      Cache2kBuilder
-        .of(Integer.class, Integer.class)
+      Cache2kBuilder.of(Integer.class, Integer.class)
+        .name(this.getClass().getSimpleName() + "-" + pars.toString().replace('=','~'))
         .retryInterval(Long.MAX_VALUE, TimeUnit.MILLISECONDS)
         .eternal(true)
         .entryCapacity(1000)
@@ -1301,19 +1302,19 @@ public class BasicCacheOperationsWithoutCustomizationsTest {
     boolean keepDataAfterExpired = false;
 
     @Override
-    public boolean equals(final Object __o) {
-      if (this == __o) return true;
-      if (__o == null || getClass() != __o.getClass()) return false;
+    public boolean equals(final Object o) {
+      if (this == o) return true;
+      if (o == null || getClass() != o.getClass()) return false;
 
-      Pars __pars = (Pars) __o;
+      Pars p = (Pars) o;
 
-      if (strictEviction != __pars.strictEviction) return false;
-      if (disableLastModified != __pars.disableLastModified) return false;
-      if (disableStatistics != __pars.disableStatistics) return false;
-      if (withEntryProcessor != __pars.withEntryProcessor) return false;
-      if (withWiredCache != __pars.withWiredCache) return false;
-      if (withForwardingAndAbstract != __pars.withForwardingAndAbstract) return false;
-      return keepDataAfterExpired == __pars.keepDataAfterExpired;
+      if (strictEviction != p.strictEviction) return false;
+      if (disableLastModified != p.disableLastModified) return false;
+      if (disableStatistics != p.disableStatistics) return false;
+      if (withEntryProcessor != p.withEntryProcessor) return false;
+      if (withWiredCache != p.withWiredCache) return false;
+      if (withForwardingAndAbstract != p.withForwardingAndAbstract) return false;
+      return keepDataAfterExpired == p.keepDataAfterExpired;
     }
 
     @Override
@@ -1330,15 +1331,14 @@ public class BasicCacheOperationsWithoutCustomizationsTest {
 
     @Override
     public String toString() {
-      return "{" +
+      return
         "strictEviction=" + strictEviction +
         ", disableLastModified=" + disableLastModified +
         ", disableStatistics=" + disableStatistics +
         ", withEntryProcessor=" + withEntryProcessor +
         ", withWiredCache=" + withWiredCache +
         ", withForwardingAndAbstract=" + withForwardingAndAbstract +
-        ", keepDataAfterExpired=" + keepDataAfterExpired +
-        '}';
+        ", keepDataAfterExpired=" + keepDataAfterExpired;
     }
 
     static class Builder {
