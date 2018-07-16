@@ -29,7 +29,7 @@ import org.junit.Test;
 import java.util.Collections;
 
 /**
- *
+ * Tests for evey method of the Spring cache2k cache manager.
  *
  * @author Jens Wilke
  */
@@ -90,6 +90,24 @@ public class Cache2kCacheManagerTest {
     m.setCaches(Collections.singletonList(
       Cache2kBuilder.forUnknownTypes().name("other").toConfiguration()));
     assertEquals(2, m.getCacheNames().size());
+  }
+
+  @Test
+  public void testAddCaches() {
+    Cache2kCacheManager m =
+      new Cache2kCacheManager(Cache2kCacheManagerTest.class.getSimpleName() + "addCaches");
+    m.addCaches(b -> b.name("cache1"));
+    assertNotNull(m.getCache("cache1"));
+  }
+
+  @Test
+  public void testDefaultSetup() {
+    Cache2kCacheManager m =
+      new Cache2kCacheManager(Cache2kCacheManagerTest.class.getSimpleName() + "defaultSetup");
+    m.defaultSetup(b -> b.name("cache1"));
+    m.addCaches(b->b, b->b.name("cache2"));
+    assertNotNull(m.getCache("cache1"));
+    assertNotNull(m.getCache("cache2"));
   }
 
 }

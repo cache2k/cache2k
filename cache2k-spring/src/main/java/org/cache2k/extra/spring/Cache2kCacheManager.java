@@ -54,6 +54,14 @@ public class Cache2kCacheManager implements CacheManager {
 
   private boolean allowUnknownCache = false;
 
+  private Function<Cache2kBuilder<?,?>, Cache2kBuilder<?,?>> defaultSetup =
+    new Function<Cache2kBuilder<?, ?>, Cache2kBuilder<?, ?>>() {
+      @Override
+      public Cache2kBuilder<?, ?> apply(final Cache2kBuilder<?, ?> b) {
+        return b;
+      }
+    };
+
   /**
    * Construct a spring cache manager, using the default cache2k cache manager instance.
    *
@@ -102,6 +110,14 @@ public class Cache2kCacheManager implements CacheManager {
   }
 
   /**
+   * Function providing default settings for caches added to the manager via {@link #addCaches}
+   */
+  public Cache2kCacheManager defaultSetup(Function<Cache2kBuilder<?,?>, Cache2kBuilder<?,?>> f) {
+    defaultSetup = f;
+    return this;
+  }
+
+  /**
    * Adds a caches to this cache manager that maybe is configured via the {@link Cache2kBuilder}.
    * The configuration parameter {@link Cache2kBuilder#exceptionPropagator}
    * is managed by this class and cannot be used. This method can be used in case a programmatic
@@ -115,7 +131,7 @@ public class Cache2kCacheManager implements CacheManager {
    */
   public Cache2kCacheManager addCaches(Function<Cache2kBuilder<?,?>, Cache2kBuilder<?,?>>... fs) {
     for (Function<Cache2kBuilder<?,?>, Cache2kBuilder<?,?>> f : fs) {
-      addCache(f.apply(Cache2kBuilder.forUnknownTypes().manager(manager)));
+      addCache(f.apply(defaultSetup.apply(Cache2kBuilder.forUnknownTypes().manager(manager))));
     }
     return this;
   }

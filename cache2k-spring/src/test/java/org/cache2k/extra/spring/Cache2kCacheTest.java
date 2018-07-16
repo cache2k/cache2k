@@ -49,6 +49,7 @@ public class Cache2kCacheTest {
   protected Cache2kCache getCache() {
     return cache =
       new Cache2kCacheManager()
+        .defaultSetup(b->b.entryCapacity(10_000))
         .addCaches(b->b.name(SpringCache2kCacheTest.class.getSimpleName()))
         .getCache(SpringCache2kCacheTest.class.getSimpleName());
   }
