@@ -22,6 +22,7 @@ package org.cache2k;
 
 import org.cache2k.integration.CacheLoaderException;
 import org.cache2k.integration.ExceptionPropagator;
+import org.cache2k.processor.MutableCacheEntry;
 
 /**
  * Object representing a cache entry. With the cache entry, it can be
@@ -72,14 +73,15 @@ public interface CacheEntry<K, V> {
    * Permanently throws {@link UnsupportedOperationException}.
    *
    * <p>Functionality was present in version 1.0, but was removed
-   * for version 1.2. More rationale see
-   * <a href="https://github.com/cache2k/cache2k/issues/84">GH#84</a>.
+   * for version 1.2. To access the last modification time it is possible to
+   * use {@link MutableCacheEntry#getLastModification()}
+   *
+   *  More rationale see
+   *  <a href="https://github.com/cache2k/cache2k/issues/84">GH#84</a>.
    * The method is planed to be removed for version 2.0.
    *
-   * <p>
-   *
-   * @throws UnsupportedOperationException
-   * @deprecated
+   * @throws UnsupportedOperationException always thrown
+   * @deprecated permanently not supported any more, you may use {@link MutableCacheEntry#getLastModification()}
    */
   long getLastModification();
 
