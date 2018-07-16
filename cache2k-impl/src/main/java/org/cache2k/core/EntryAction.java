@@ -61,11 +61,9 @@ public abstract class EntryAction<K, V, R> implements
   Entry<K, V> entry;
   V newValueOrException;
   V oldValueOrException;
-  long previousModificationTime;
   R result;
   long lastModificationTime;
   long loadStartedTime;
-  long loadCompletedTime;
   RuntimeException exceptionToPropagate;
   boolean remove;
   /** Special case of remove, expiry is in the past */
@@ -426,14 +424,16 @@ public abstract class EntryAction<K, V, R> implements
 
   public void loadCompleted() {
     entry.nextProcessingStep(Entry.ProcessingState.LOAD_COMPLETE);
-    loadCompletedTime = millis();
-    long _delta = loadCompletedTime - loadStartedTime;
-    if (refresh) {
-      metrics().refresh(_delta);
-    } else if (entry.isVirgin() || !storageRead) {
-      metrics().load(_delta);
-    } else {
-      metrics().reload(_delta);
+    if (!metrics().isDisabled() && !heapCache.isNoModificationTimeRecording()) {
+      long _loadCompletedTime = millis();
+      long _delta = _loadCompletedTime - loadStartedTime;
+      if (refresh) {
+        metrics().refresh(_delta);
+      } else if (entry.isVirgin() || !storageRead) {
+        metrics().load(_delta);
+      } else {
+        metrics().reload(_delta);
+      }
     }
     mutationCalculateExpiry();
   }
@@ -458,7 +458,7 @@ public abstract class EntryAction<K, V, R> implements
     lockFor(Entry.ProcessingState.MUTATE);
     needsFinish = false;
     newValueOrException = value;
-    if (heapCache.isNoLastModificationTime()) {
+    if (heapCache.isNoModificationTimeRecording()) {
       lastModificationTime = 0;
     } else {
       lastModificationTime = millis();
@@ -751,7 +751,6 @@ public abstract class EntryAction<K, V, R> implements
         }
       } else {
         oldValueOrException = entry.getValueOrException();
-        previousModificationTime = entry.getLastModification();
         entry.setValueOrException(newValueOrException);
       }
     }
@@ -803,7 +802,7 @@ public abstract class EntryAction<K, V, R> implements
       if (storageDataValid || heapDataValid) {
         if (entryUpdatedListeners() != null) {
           CacheEntry<K,V> _previousEntry =
-            heapCache.returnCacheEntry(entry.getKey(), oldValueOrException, previousModificationTime);
+            heapCache.returnCacheEntry(entry.getKey(), oldValueOrException);
           for (CacheEntryUpdatedListener l : entryUpdatedListeners()) {
             try {
               l.onEntryUpdated(userCache, _previousEntry, _currentEntry);
@@ -860,10 +859,10 @@ public abstract class EntryAction<K, V, R> implements
   }
 
   public void updateMutationStatistics() {
-    if (loadCompletedTime > 0) {
-    } else {
-      updateOnlyReadStatistics();
+    if (loadStartedTime > 0) {
+      return;
     }
+    updateOnlyReadStatistics();
   }
 
   public void updateOnlyReadStatistics() {

@@ -69,14 +69,17 @@ public interface CacheEntry<K, V> {
   Throwable getException();
 
   /**
-   * Time in millis the entry was last modified.
-   * The recording of the last modification time may be switched off via
-   * {@link Cache2kBuilder#disableLastModificationTime(boolean)}
+   * Permanently throws {@link UnsupportedOperationException}.
    *
-   * <p>It is under consideration to remove support for this in the future.
-   * See <a href="https://github.com/cache2k/cache2k/issues/84">GH#84</a>
+   * <p>Functionality was present in version 1.0, but was removed
+   * for version 1.2. More rationale see
+   * <a href="https://github.com/cache2k/cache2k/issues/84">GH#84</a>.
+   * The method is planed to be removed for version 2.0.
    *
-   * @throws UnsupportedOperationException if switched off
+   * <p>
+   *
+   * @throws UnsupportedOperationException
+   * @deprecated
    */
   long getLastModification();
 

@@ -149,4 +149,15 @@ public interface MutableCacheEntry<K, V> extends CacheEntry<K, V> {
    */
   MutableCacheEntry<K,V> setExpiry(long t);
 
+  /**
+   * Timestamp of the last modification of the cached value. This is the start time
+   * (before the loader was called) of a successful load operation, or the time
+   * the value was modified directly via {@link org.cache2k.Cache#put} or other sorts
+   * of mutation.
+   *
+   * <p>For optimizations it is possible to disable time recording. In this case a
+   * {@code 0} is returned.
+   */
+  long getLastModification();
+
 }

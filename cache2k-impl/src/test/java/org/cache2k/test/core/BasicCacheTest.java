@@ -33,6 +33,8 @@ import org.cache2k.expiry.ValueWithExpiryTime;
 import org.cache2k.core.InternalCacheInfo;
 import org.cache2k.integration.ExceptionInformation;
 import org.cache2k.integration.ResiliencePolicy;
+import org.cache2k.processor.EntryProcessor;
+import org.cache2k.processor.MutableCacheEntry;
 import org.cache2k.test.util.TestingBase;
 import org.cache2k.testing.category.FastTests;
 import org.junit.Test;
@@ -447,12 +449,12 @@ public class BasicCacheTest extends TestingBase {
       fail("exception expected");
     } catch (CacheLoaderException e) {
     }
-    assertTrue("modified timestamp is set for exception", c.getEntry(1).getLastModification() > 0);
+    assertTrue("modified timestamp is set for exception", getLastModification(c, 1) > 0);
     try {
       c.get(2);
-      long _modified = c.getEntry(2).getLastModification();
+      long _modified = getLastModification(c, 2);
       c.get(2);
-      assertEquals("timestamp not modified if exception is suppressed", _modified, c.getEntry(2).getLastModification());
+      assertEquals("timestamp not modified if exception is suppressed", _modified, getLastModification(c, 2));
     } catch (CacheLoaderException e) {
       fail("no exception expected");
     }
@@ -461,6 +463,15 @@ public class BasicCacheTest extends TestingBase {
     assertEquals(2, inf.getLoadExceptionCount());
     assertNotNull(src.key2count.get(2));
     assertEquals(2, src.key2count.get(2).get());
+  }
+
+  long getLastModification(Cache<Integer, Integer> c, int key) {
+    return c.invoke(key, new EntryProcessor<Integer, Integer, Long>() {
+      @Override
+      public Long process(final MutableCacheEntry<Integer, Integer> e) throws Exception {
+        return e.getLastModification();
+      }
+    });
   }
 
   @Test

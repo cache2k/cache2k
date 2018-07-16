@@ -25,7 +25,6 @@ import org.cache2k.Cache;
 import org.cache2k.Cache2kBuilder;
 import org.cache2k.CacheEntry;
 import org.cache2k.ForwardingCache;
-import org.cache2k.core.ExceptionWrapper;
 import org.cache2k.core.InternalCache;
 import org.cache2k.core.InternalCacheInfo;
 import org.cache2k.expiry.ExpiryTimeValues;
@@ -111,6 +110,8 @@ public class BasicCacheOperationsWithoutCustomizationsTest {
 
   Pars pars;
 
+  boolean lastModificationAvailable;
+
   public BasicCacheOperationsWithoutCustomizationsTest(Pars p) {
     pars = p;
     synchronized (PARS2CACHE) {
@@ -128,12 +129,17 @@ public class BasicCacheOperationsWithoutCustomizationsTest {
       Cache2kBuilder.of(Integer.class, Integer.class)
         .name(this.getClass().getSimpleName() + "-" + pars.toString().replace('=','~'))
         .retryInterval(Long.MAX_VALUE, TimeUnit.MILLISECONDS)
-        .eternal(true)
         .entryCapacity(1000)
         .permitNullValues(true)
         .keepDataAfterExpired(pars.keepDataAfterExpired)
         .disableLastModificationTime(pars.disableLastModified)
         .disableStatistics(pars.disableStatistics);
+    if (pars.withExpiryAfterWrite) {
+      b.expireAfterWrite(TestingParameters.MAX_FINISH_WAIT_MILLIS, TimeUnit.MILLISECONDS);
+    } else {
+      b.eternal(true);
+    }
+    lastModificationAvailable = !pars.disableLastModified || pars.withExpiryAfterWrite;
     if (pars.withWiredCache) {
       StaticUtil.enforceWiredCache(b);
     }
@@ -288,15 +294,11 @@ public class BasicCacheOperationsWithoutCustomizationsTest {
     checkLastModified(cache.peekEntry(KEY));
   }
 
-  void checkLastModified(CacheEntry e) {
-    if (!pars.disableLastModified) {
-      assertTrue(cache.peekEntry(KEY).getLastModification() >= START_TIME);
-    } else {
-      try {
-        long t = cache.peekEntry(KEY).getLastModification();
-        fail("expected UnsupportedOperationException");
-      } catch (UnsupportedOperationException ex) {
-      }
+  void checkLastModified(CacheEntry<Integer, Integer> e) {
+    try {
+      long t = cache.peekEntry(e.getKey()).getLastModification();
+      fail("expected UnsupportedOperationException");
+    } catch (UnsupportedOperationException ex) {
     }
   }
 
@@ -589,7 +591,7 @@ public class BasicCacheOperationsWithoutCustomizationsTest {
 
   @Test(expected = CacheLoaderException.class)
   public void peekAndPut_Exception() {
-    ((Cache) cache).put(KEY, new ExceptionWrapper(OUCH));
+    assignException(KEY);
     cache.peekAndPut(KEY, VALUE);
   }
 
@@ -656,7 +658,7 @@ public class BasicCacheOperationsWithoutCustomizationsTest {
 
   @Test
   public void peekAndRemove_Exception() {
-    ((Cache) cache).put(KEY, new ExceptionWrapper(OUCH));
+    assignException(KEY);
     try {
       cache.peekAndRemove(KEY);
       fail("exception expected");
@@ -715,7 +717,7 @@ public class BasicCacheOperationsWithoutCustomizationsTest {
 
   @Test(expected = CacheLoaderException.class)
   public void peekAndReplace_Exception() {
-    ((Cache) cache).put(KEY, new ExceptionWrapper(OUCH));
+    assignException(KEY);
     cache.peekAndReplace(KEY, VALUE);
   }
 
@@ -760,7 +762,7 @@ public class BasicCacheOperationsWithoutCustomizationsTest {
 
   @Test
   public void peekEntry_Exception() {
-    ((Cache) cache).put(KEY, new ExceptionWrapper(OUCH));
+    assignException(KEY);
     CacheEntry<Integer, Integer> e = cache.peekEntry(KEY);
     assertEquals(KEY, e.getKey());
     entryHasException(e);
@@ -797,7 +799,7 @@ public class BasicCacheOperationsWithoutCustomizationsTest {
 
   @Test
   public void getEntry_Exception() {
-    ((Cache) cache).put(KEY, new ExceptionWrapper(OUCH));
+    assignException(KEY);
     CacheEntry<Integer, Integer> e = cache.getEntry(KEY);
     assertEquals(KEY, e.getKey());
     entryHasException(e);
@@ -845,7 +847,7 @@ public class BasicCacheOperationsWithoutCustomizationsTest {
 
   @Test
   public void peekAll_Exception() {
-    ((Cache) cache).put(KEY, new ExceptionWrapper(OUCH));
+    assignException(KEY);
     Map<Integer, Integer> m = cache.peekAll(toIterable(KEY, OTHER_KEY));
     assertEquals(1, m.size());
     assertEquals(1, m.values().size());
@@ -1252,10 +1254,21 @@ public class BasicCacheOperationsWithoutCustomizationsTest {
     if (!(cache instanceof InternalCache)) {
       return;
     }
-    ((Cache) cache).put(KEY, new ExceptionWrapper(OUCH));
+    Integer k = KEY;
+    assignException(k);
     InternalCache c = (InternalCache) cache;
     String s = c.getEntryState(KEY);
     assertTrue(s.contains("exception="));
+  }
+
+  private void assignException(final Integer key) {
+    cache.invoke(key, new EntryProcessor<Integer, Integer, Object>() {
+      @Override
+      public Object process(final MutableCacheEntry<Integer, Integer> e) throws Exception {
+        e.setException(OUCH);
+        return null;
+      }
+    });
   }
 
   @Test
@@ -1300,6 +1313,7 @@ public class BasicCacheOperationsWithoutCustomizationsTest {
     boolean withWiredCache = false;
     boolean withForwardingAndAbstract = false;
     boolean keepDataAfterExpired = false;
+    boolean withExpiryAfterWrite = false;
 
     @Override
     public boolean equals(final Object o) {
@@ -1314,6 +1328,7 @@ public class BasicCacheOperationsWithoutCustomizationsTest {
       if (withEntryProcessor != p.withEntryProcessor) return false;
       if (withWiredCache != p.withWiredCache) return false;
       if (withForwardingAndAbstract != p.withForwardingAndAbstract) return false;
+      if (withExpiryAfterWrite != p.withExpiryAfterWrite) return false;
       return keepDataAfterExpired == p.keepDataAfterExpired;
     }
 
@@ -1326,19 +1341,21 @@ public class BasicCacheOperationsWithoutCustomizationsTest {
       _result = 31 * _result + (withWiredCache ? 1 : 0);
       _result = 31 * _result + (withForwardingAndAbstract ? 1 : 0);
       _result = 31 * _result + (keepDataAfterExpired ? 1 : 0);
+      _result = 31 * _result + (withExpiryAfterWrite ? 1 : 0);
       return _result;
     }
 
     @Override
     public String toString() {
       return
-        "strictEviction=" + strictEviction +
-        ", disableLastModified=" + disableLastModified +
-        ", disableStatistics=" + disableStatistics +
-        ", withEntryProcessor=" + withEntryProcessor +
-        ", withWiredCache=" + withWiredCache +
-        ", withForwardingAndAbstract=" + withForwardingAndAbstract +
-        ", keepDataAfterExpired=" + keepDataAfterExpired;
+        "strict=" + strictEviction +
+        ", noLastModified=" + disableLastModified +
+        ", noStats=" + disableStatistics +
+        ", entryProcessor=" + withEntryProcessor +
+        ", wired=" + withWiredCache +
+        ", forwarding=" + withForwardingAndAbstract +
+        ", keep=" + keepDataAfterExpired +
+        ", expiry=" + withExpiryAfterWrite;
     }
 
     static class Builder {
@@ -1374,6 +1391,11 @@ public class BasicCacheOperationsWithoutCustomizationsTest {
       public Builder withForwardingAndAbstract(final boolean v) {
         pars.withForwardingAndAbstract = v; return this;
         }
+
+      public Builder withExpiryAfterWrite(final boolean v) {
+        pars.withExpiryAfterWrite = v; return this;
+      }
+
     }
 
     static class TestVariants implements Iterable<Pars> {
@@ -1400,6 +1422,7 @@ public class BasicCacheOperationsWithoutCustomizationsTest {
               .withEntryProcessor(nextBoolean())
               .withWiredCache(nextBoolean())
               .keepDataAfterExpired(nextBoolean())
+              .withExpiryAfterWrite(nextBoolean())
               .build();
           }
 

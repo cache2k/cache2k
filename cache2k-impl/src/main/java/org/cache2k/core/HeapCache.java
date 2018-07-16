@@ -74,8 +74,7 @@ import static org.cache2k.core.util.Util.*;
  * @author Jens Wilke; created: 2013-07-09
  */
 @SuppressWarnings({"unchecked", "SynchronizationOnLocalVariableOrMethodParameter", "WeakerAccess"})
-public class HeapCache<K, V>
-  extends BaseCache<K, V> {
+public class HeapCache<K, V> extends BaseCache<K, V> {
 
   static final CacheOperationCompletionListener DUMMY_LOAD_COMPLETED_LISTENER = new CacheOperationCompletionListener() {
     @Override
@@ -201,7 +200,7 @@ public class HeapCache<K, V>
   private static final int KEEP_AFTER_EXPIRED = 2;
   private static final int REJECT_NULL_VALUES = 8;
   private static final int BACKGROUND_REFRESH = 16;
-  private static final int NO_LAST_MODIFICATION_TIME = 32;
+  private static final int NO_MODIFICATION_TIME_RECORDING = 32;
 
   protected final boolean hasKeepAfterExpired() {
     return (featureBits & KEEP_AFTER_EXPIRED) > 0;
@@ -215,7 +214,10 @@ public class HeapCache<K, V>
 
   protected final boolean hasBackgroundRefresh() { return (featureBits & BACKGROUND_REFRESH) > 0; }
 
-  protected final boolean isNoLastModificationTime() { return (featureBits & NO_LAST_MODIFICATION_TIME) > 0; }
+  /**
+   * Don't update the entry last modification time and no expiry calculations are needed.
+   */
+  protected final boolean isNoModificationTimeRecording() { return (featureBits & NO_MODIFICATION_TIME_RECORDING) > 0; }
 
   protected final void setFeatureBit(int _bitmask, boolean _flag) {
     if (_flag) {
@@ -255,7 +257,7 @@ public class HeapCache<K, V>
     setFeatureBit(KEEP_AFTER_EXPIRED, c.isKeepDataAfterExpired());
     setFeatureBit(REJECT_NULL_VALUES, !c.isPermitNullValues());
     setFeatureBit(BACKGROUND_REFRESH, c.isRefreshAhead());
-    setFeatureBit(NO_LAST_MODIFICATION_TIME, c.isDisableLastModificationTime());
+    setFeatureBit(NO_MODIFICATION_TIME_RECORDING, c.isDisableLastModificationTime());
 
     metrics = TUNABLE.commonMetricsFactory.create(new CommonMetricsFactory.Parameters() {
       @Override
@@ -292,7 +294,7 @@ public class HeapCache<K, V>
   public void setTiming(final TimingHandler<K,V> rh) {
     timing = rh;
     if (!(rh instanceof TimingHandler.TimeAgnostic)) {
-      setFeatureBit(NO_LAST_MODIFICATION_TIME, false);
+      setFeatureBit(NO_MODIFICATION_TIME_RECORDING, false);
     }
   }
 
@@ -563,9 +565,7 @@ public class HeapCache<K, V>
     if (e == null) {
       return null;
     }
-    synchronized (e) {
-      return returnCacheEntry(e);
-    }
+    return returnCacheEntry(e);
   }
 
   @Override
@@ -580,10 +580,10 @@ public class HeapCache<K, V>
   }
 
   public static <K,V> CacheEntry<K, V> returnCacheEntry(ExaminationEntry<K,V> _entry) {
-    return returnCacheEntry(_entry.getKey(), _entry.getValueOrException(), _entry.getLastModification());
+    return returnCacheEntry(_entry.getKey(), _entry.getValueOrException());
   }
 
-  public static <K,V> CacheEntry<K, V> returnCacheEntry(final K _key, final V _valueOrException, final long _lastModification) {
+  public static <K,V> CacheEntry<K, V> returnCacheEntry(final K _key, final V _valueOrException) {
     CacheEntry<K, V> ce = new CacheEntry<K, V>() {
       @Override
       public K getKey() {
@@ -608,18 +608,14 @@ public class HeapCache<K, V>
 
       @Override
       public long getLastModification() {
-        if (_lastModification == 0) {
-          throw new UnsupportedOperationException("time stamps for modification time are switched off");
-        }
-        return _lastModification;
+        throw new UnsupportedOperationException("modification timestamp no longer available in CacheEntry");
       }
 
       @Override
       public String toString() {
         return "CacheEntry(" +
             "key=" + getKey() +
-            ((getException() != null) ? ", exception=" + getException() + ", " : ", value=" + getValue()) +
-            ", modified=" + formatMillis(getLastModification());
+            ((getException() != null) ? ", exception=" + getException() + ", " : ", value=" + getValue());
       }
 
     };
@@ -777,7 +773,7 @@ public class HeapCache<K, V>
    * entry processing we do not need to notify any waiting threads.
    */
   protected final void putValue(final Entry e, final V _value) {
-    if (isNoLastModificationTime()) {
+    if (isNoModificationTimeRecording()) {
       insertOrUpdateAndCalculateExpiry(e, _value, 0, 0, INSERT_STAT_PUT);
     } else {
       long t = clock.millis();
@@ -911,12 +907,14 @@ public class HeapCache<K, V>
     long t = 0, t0 = 0;
     V _value;
     try {
-      if (isNoLastModificationTime()) {
+      if (isNoModificationTimeRecording()) {
         _value = callable.call();
       } else {
         t0 = clock.millis();
         _value = callable.call();
-        t = clock.millis();
+        if (!metrics.isDisabled()) {
+          t = clock.millis();
+        }
       }
       synchronized (e) {
         insertOrUpdateAndCalculateExpiry(e, _value, t0, t, INSERT_STAT_PUT);
@@ -1365,7 +1363,7 @@ public class HeapCache<K, V>
 
   protected void load(Entry<K, V> e) {
     V v;
-    long t0 = isNoLastModificationTime() ? 0 : clock.millis();
+    long t0 = isNoModificationTimeRecording() ? 0 : clock.millis();
     if (e.getNextRefreshTime() == Entry.EXPIRED_REFRESHED) {
       if (entryInRefreshProbationAccessed(e, t0)) {
         return;
@@ -1380,14 +1378,14 @@ public class HeapCache<K, V>
       }
     } catch (Throwable _ouch) {
       long t = t0;
-      if (!metrics.isDisabled()) {
+      if (!metrics.isDisabled() && !isNoModificationTimeRecording()) {
         t = clock.millis();
       }
       loadGotException(e, t0, t, _ouch);
       return;
     }
     long t = t0;
-    if (!metrics.isDisabled()) {
+    if (!metrics.isDisabled() && !isNoModificationTimeRecording()) {
       t = clock.millis();
     }
     insertOrUpdateAndCalculateExpiry(e, v, t0, t, INSERT_STAT_LOAD);
@@ -1464,7 +1462,7 @@ public class HeapCache<K, V>
     long _nextRefreshTime;
     try {
       _nextRefreshTime = timing.calculateNextRefreshTime(e, v, t0);
-    } catch (Throwable ex) {
+    } catch (Exception ex) {
       RuntimeException _wrappedException = new ExpiryPolicyException(ex);
       if (_updateStatistics == INSERT_STAT_LOAD) {
         loadGotException(e, t0, t, _wrappedException);
@@ -1517,20 +1515,18 @@ public class HeapCache<K, V>
           metrics.loadException();
         }
       }
-      if (!isNoLastModificationTime()) {
-        long _millis = t - t0;
-        if (e.isGettingRefresh()) {
-          metrics.refresh(_millis);
+      long _millis = t - t0;
+      if (e.isGettingRefresh()) {
+        metrics.refresh(_millis);
+      } else {
+        if (e.isVirgin()) {
+          metrics.load(_millis);
         } else {
-          if (e.isVirgin()) {
-            metrics.load(_millis);
-          } else {
-            metrics.reload(_millis);
-          }
+          metrics.reload(_millis);
         }
       }
     } else {
-      if (e.hasFreshData(t, _nextRefreshTime)) {
+      if (_nextRefreshTime != 0) {
         metrics.putNewEntry();
       }
     }

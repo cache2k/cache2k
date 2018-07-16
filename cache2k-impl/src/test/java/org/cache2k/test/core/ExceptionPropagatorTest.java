@@ -21,9 +21,10 @@ package org.cache2k.test.core;
  */
 
 import org.cache2k.Cache;
-import org.cache2k.core.ExceptionWrapper;
+import org.cache2k.Cache2kBuilder;
 import org.cache2k.core.StandardExceptionPropagatorTest;
 import org.cache2k.integration.CacheLoaderException;
+import org.cache2k.test.util.CacheRule;
 import org.cache2k.testing.category.FastTests;
 import org.cache2k.processor.EntryProcessingException;
 import org.cache2k.processor.EntryProcessor;
@@ -32,6 +33,8 @@ import org.cache2k.test.util.IntCacheRule;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
+
+import java.util.concurrent.TimeUnit;
 
 import static org.junit.Assert.*;
 
@@ -47,7 +50,13 @@ public class ExceptionPropagatorTest {
   final static Integer KEY = 1;
 
   /** Provide unique standard cache per method */
-  @Rule public IntCacheRule target = new IntCacheRule();
+  @Rule public IntCacheRule target = (IntCacheRule)
+    new IntCacheRule().config(new CacheRule.Specialization<Integer, Integer>() {
+      @Override
+      public void extend(final Cache2kBuilder<Integer, Integer> b) {
+        b.retryInterval(Long.MAX_VALUE, TimeUnit.MILLISECONDS);
+      }
+    });
 
   @Test(expected = CacheLoaderException.class)
   public void peekAndRemove_throws() {
@@ -97,7 +106,13 @@ public class ExceptionPropagatorTest {
 
   Cache<Integer, Integer> prepCache() {
     Cache c = target.cache();
-    c.put(KEY, new ExceptionWrapper(new IllegalArgumentException("Test")));
+    c.invoke(KEY, new EntryProcessor<Integer, Integer, Object>() {
+      @Override
+      public Object process(final MutableCacheEntry<Integer, Integer> e) throws Exception {
+        e.setException(new IllegalArgumentException("Test"));
+        return null;
+      }
+    });
     assertTrue(c.containsKey(KEY));
     return c;
   }

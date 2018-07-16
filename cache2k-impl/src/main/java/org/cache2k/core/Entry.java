@@ -462,16 +462,6 @@ public class Entry<K, T> extends CompactEntry<K,T>
     return false;
   }
 
-  public final boolean hasFreshData(long now, long _nextRefreshTime) {
-    if (_nextRefreshTime >= DATA_VALID) {
-      return true;
-    }
-    if (_nextRefreshTime < 0) {
-      return now < -_nextRefreshTime;
-    }
-    return false;
-  }
-
   /** Entry is kept in the cache but has expired */
   public void setExpiredState() {
     nextRefreshTime = EXPIRED;

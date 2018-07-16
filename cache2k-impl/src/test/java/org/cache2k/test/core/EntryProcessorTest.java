@@ -400,14 +400,17 @@ public class EntryProcessorTest {
         return null;
       }
     });
+    target.statistics()
+      .getCount.expect(1)
+      .missCount.expect(1)
+      .loadCount.expect(1)
+      .expectAllZero();
     assertFalse(wl.cache.containsKey(123));
     Integer v = wl.cache.peek(123);
     assertNull(v);
     target.statistics()
-      .getCount.expect(2)
-      .missCount.expect(2)
-      .loadCount.expect(1)
-      .removeCount.expect(0)
+      .getCount.expect(1)
+      .missCount.expect(1)
       .expectAllZero();
   }
 
