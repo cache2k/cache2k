@@ -1,0 +1,95 @@
+[[spring]]
+== Spring Integration
+
+=== Enable Cache2k Spring Support
+
+To use cache2k in you Spring project, add the following libraries:
+
+[source,xml,subs="attributes+"]
+----
+    <properties>
+      <cache2k-version>{cache2kversion}</cache2k-version>
+    </properties>
+
+    <dependency>
+      <groupId>org.cache2k</groupId>
+      <artifactId>cache2k-api</artifactId>
+      <version>${cache2k-version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.cache2k</groupId>
+      <artifactId>cache2k-impl</artifactId>
+      <version>${cache2k-version}</version>
+      <scope>runtime</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.cache2k</groupId>
+      <artifactId>cache2k-spring</artifactId>
+      <version>${cache2k-version}</version>
+    </dependency>
+----
+
+To enable your application to use caching via cache2k, typically define a `CachingConfig` class
+which makes the `Cache2kCacheManager` available:
+
+[source,java]
+----
+@Configuration
+@EnableCaching
+public class CachingConfig {
+
+  @Bean
+  public CacheManager cacheManager() {
+    return new Cache2kCacheManager();
+  }
+
+}
+----
+
+By default, there needs to be a cache configuration (see below) for every used cache. If
+the cache manager should return a cache, even the name is unknown, then use `setAllowUnknownCache(true)`.
+See link:{cache2k_docs}/apidocs/cache2k-spring/index.html?org/cache2k/extra/spring/Cache2kCacheManager.html[`Cache2kCacheManager API documentation`] for a complete method reference.
+
+=== XML Based Setup
+
+When enabled as shown above, the cache2k cache manager will create caches as requested by the application.
+For the default cache manager, the cache configuration is looked up in the file `cache2k.xml`.
+For further details see the <<xml-configuration,Configuration via XML>> chapter.
+
+=== Programmatic Setup
+
+It is possible to configure various caches with different configuration parameters via the builder pattern of cache2k:
+
+[source,java]
+----
+  @Bean
+  public CacheManager cacheManager() {
+    return new Cache2kCacheManager()
+      .defaultSetup(b->b.entryCapacity(2000))
+      .addCaches(
+        b->b.name("countries"),
+        b->b.name("test1").expireAfterWrite(30, TimeUnit.SECONDS).entryCapacity(10000),
+        b->b.name("anotherCache").entryCapacity(1000));
+  }
+----
+
+The makes three caches available. The method `addCaches` adds one or more caches by modifying a builder with the
+specified parameters. The method `defaultSetup` can be used to apply default settings which should be
+used for all caches. It is possible to mix the programmatic setup with the XML configuration of cache2k, in this case
+the order of application is:
+
+- XML setup default section
+- `Cache2kCacheManager.defaultSetup`
+- `Cache2kCacheManager.addCaches`
+- XML setup cache section
+
+Cache2k supports multiple cache managers. If a caches are used with other parts of the application it may be
+useful to use a separate application cache manager, e.g. with `new Cache2kCacheManager("spring")`.
+
+For further details, see link:{cache2k_docs}/apidocs/cache2k-spring/index.html?org/cache2k/extra/spring/Cache2kCacheManager.html[`Cache2kCacheManager API documentation`].
+
+=== Spring Bean XML Configuration
+
+For completeness, together with the `Cache2kConfiguration` bean, it is also possible to use the Spring bean XML configuration.
+
+
