@@ -99,7 +99,20 @@
           </resource>
       </resources>
 
+
+
     <plugins>
+      <plugin>
+        <groupId>org.codehaus.mojo</groupId>
+        <artifactId>license-maven-plugin</artifactId>
+        <configuration>
+          <licenseName>apache_v2</licenseName>
+          <!-- Don't add header to XML config files. -->
+          <excludes>
+            <exclude>test/resources/**</exclude>
+          </excludes>
+        </configuration>
+      </plugin>
 
       <!-- add OSGi bundle information. does not work yet.
            https://github.com/cache2k/cache2k/issues/83
