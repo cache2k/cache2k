@@ -387,8 +387,7 @@
             <configuration>
               <serverId>sonatype-nexus-staging</serverId>
               <nexusUrl>https://oss.sonatype.org/</nexusUrl>
-              <!-- automatically releases to maven central.
-              <autoReleaseAfterClose>true</autoReleaseAfterClose>
+              <!-- skip remote stating lets us inspect the locally staged artifacts first
               -->
               <skipRemoteStaging>true</skipRemoteStaging>
             </configuration>
