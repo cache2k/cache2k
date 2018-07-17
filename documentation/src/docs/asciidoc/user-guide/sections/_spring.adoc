@@ -1,5 +1,5 @@
 [[spring]]
-== Spring Integration
+== Spring Framework
 
 === Enable Cache2k Spring Support
 
@@ -69,7 +69,7 @@ It is possible to configure various caches with different configuration paramete
       .addCaches(
         b->b.name("countries"),
         b->b.name("test1").expireAfterWrite(30, TimeUnit.SECONDS).entryCapacity(10000),
-        b->b.name("anotherCache").entryCapacity(1000));
+        b->b.name("anotherCache").entryCapacity(1000)).permitNullValues(true);
   }
 ----
 
@@ -92,4 +92,7 @@ For further details, see link:{cache2k_docs}/apidocs/cache2k-spring/index.html?o
 
 For completeness, together with the `Cache2kConfiguration` bean, it is also possible to use the Spring bean XML configuration.
 
+=== Null Value Support
 
+The cache abstraction of Spring is supporting `null` values. If the application relies on `null` storage this has to be
+enabled, e.g. via `Cache2kBuilder.permitNullValues(true)`, see <<null-values,Null Values>>.
