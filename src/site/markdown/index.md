@@ -52,7 +52,8 @@ For a detailed introduction continue with [Getting Started](docs/latest/user-gui
 
 ## News
 
-  * **Version 1.1.1.Alpha, 2018-07-02**: Development preview release, new jar file structure, See [Version 1.1.1.Alpha release notes](1/1.1.Alpha.html)
+  * **Version 1.1.2.Alpha, 2018-07-17**: Preview. Spring integration, JCache cache creation, IntCache optimization, See [Version 1.1.2.Alpha release notes](1/1.2.Alpha.html)
+  * **Version 1.1.1.Alpha, 2018-07-02**: Preview. new jar file structure, See [Version 1.1.1.Alpha release notes](1/1.1.Alpha.html)
   * **Version 1.0.2.Final, 2017-12-29**: Support JCache standard 1.1, See [Version 1.0.2.Final release notes](1/0.2.Final.html)
   * **Version 1.0.1.Final, 2017-08-14**: minor bugfix release, See [Version 1.0.1.Final release notes](1/0.1.Final.html)
   * **Version 1.0.0.Final, 2017-07-11**: Minor documentation tweaks, allow more chars in a cache name, See [Version 1.0.0.Final release notes](1/0.0.Final.html)
