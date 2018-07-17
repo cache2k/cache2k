@@ -47,19 +47,19 @@
   </developers>
 
   <modules>
-    <module>cache2k-osgi-all</module>
-    <module>cache2k-impl</module>
-    <!-- included in all -->
     <module>cache2k-api</module>
-    <!-- JSR107 -->
-    <module>cache2k-jcache</module>
-    <!-- other, deployed -->
-    <module>cache2k-testing</module>
-    <module>cache2k-spring</module>
-    <!-- not deployed -->
+    <module>cache2k-impl</module>
+    <module>cache2k-osgi-all</module>
+    <!-- not deployed on OSS central -->
     <module>cache2k-jcache-tests</module>
     <module>test-osgi</module>
     <module>documentation</module>
+    <module>cache2k-testing</module>
+    <!-- other, deployed -->
+    <module>cache2k-spring</module>
+    <module>cache2k-jcache</module>
+    <!-- a deployed module must be last for the
+         nexus staging deploy / OSS release -->
   </modules>
 
   <properties>
@@ -193,6 +193,12 @@
           <groupId>org.apache.maven.plugins</groupId>
           <artifactId>maven-javadoc-plugin</artifactId>
           <version>2.10.4</version>
+        </plugin>
+
+        <plugin>
+          <groupId>org.sonatype.plugins</groupId>
+          <artifactId>nexus-staging-maven-plugin</artifactId>
+          <version>1.6.8</version>
         </plugin>
 
       </plugins>
@@ -377,13 +383,13 @@
           <plugin>
             <groupId>org.sonatype.plugins</groupId>
             <artifactId>nexus-staging-maven-plugin</artifactId>
-            <version>1.6.8</version>
             <extensions>true</extensions>
             <configuration>
               <serverId>sonatype-nexus-staging</serverId>
               <nexusUrl>https://oss.sonatype.org/</nexusUrl>
-              <!-- automatically releases to maven central. -->
+              <!-- automatically releases to maven central.
               <autoReleaseAfterClose>true</autoReleaseAfterClose>
+              -->
             </configuration>
           </plugin>
         </plugins>
