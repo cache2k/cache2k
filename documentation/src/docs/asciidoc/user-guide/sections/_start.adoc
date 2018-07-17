@@ -148,7 +148,7 @@ Sometimes it is better to avoid `null` values, in our example we could return a 
  be empty.
 
 In case a `null` value is the best choice, it is possible to store it in cache2k by enabling it with
-`permitNullValues(true)`. See the <<null,Null Values chapter>> for more details.
+`permitNullValues(true)`. See the <<null-values,Null Values chapter>> for more details.
 
 === Composite Keys
 

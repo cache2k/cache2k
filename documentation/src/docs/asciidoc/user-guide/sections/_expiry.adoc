@@ -84,6 +84,3 @@ In case a clock skew happens regularly a premature or late cache expiry may caus
 to do some countermeasures. If the time decreases, entries may expire more early. This can be detected and with the
 `AdvancedCacheLoader` the previously loaded value can be reused. If there is a time skew forward, expiry can
 be triggered programmatically with `expireAt()`.
-
-Outlook: It is planed for version 1.2 to have a configurable time source, which enables
-better adaption to different operating environments. Ideas and requests are welcome.
