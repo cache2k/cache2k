@@ -63,7 +63,7 @@
   </modules>
 
   <properties>
-    <series>unstable</series>
+    <series>latest</series>
     <buildNumber>undefined</buildNumber>
     <timestamp>0</timestamp>
     <gitBranch>unknown</gitBranch>
