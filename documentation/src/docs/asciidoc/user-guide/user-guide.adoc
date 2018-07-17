@@ -36,3 +36,5 @@ include::sections/_jcache.adoc[]
 include::sections/_android.adoc[]
 
 include::sections/_osgi.adoc[]
+
+include::sections/_spring.adoc[]

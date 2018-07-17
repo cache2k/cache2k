@@ -30,7 +30,7 @@ done
 DOC=$DEST/docs/latest
 mkdir -p $DOC
 cp documentation/target/generated-docs/user-* $DOC
-for I in cache2k-api; do
+for I in cache2k-api cache2k-spring; do
   mkdir -p $DOC/apidocs/$I;
   cp -a $I/target/site/apidocs/* $DOC/apidocs/$I/;
 done

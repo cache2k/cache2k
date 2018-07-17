@@ -36,11 +36,11 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;
 
 /**
- * Manages and wraps cache2k caches. The manager delegates to the cache2k
+ * Spring cache manager that manages wraps cache2k caches. The manager delegates to the cache2k
  * native {@link org.cache2k.CacheManager}. The available caches can be
  * configured programmatically in a Spring configuration class via the use
  * of {@link #addCaches(Function[])}, via a Spring XML configuration
- * and {@link #setCaches(Collection)} or via cache2k's own XML configuration.
+ * and {@link #setCaches(Collection)} or via the cache2k XML configuration.
  *
  * @author Jens Wilke
  */
@@ -54,13 +54,7 @@ public class Cache2kCacheManager implements CacheManager {
 
   private boolean allowUnknownCache = false;
 
-  private Function<Cache2kBuilder<?,?>, Cache2kBuilder<?,?>> defaultSetup =
-    new Function<Cache2kBuilder<?, ?>, Cache2kBuilder<?, ?>>() {
-      @Override
-      public Cache2kBuilder<?, ?> apply(final Cache2kBuilder<?, ?> b) {
-        return b;
-      }
-    };
+  private Function<Cache2kBuilder<?,?>, Cache2kBuilder<?,?>> defaultSetup = b -> b;
 
   /**
    * Construct a spring cache manager, using the default cache2k cache manager instance.
@@ -202,7 +196,7 @@ public class Cache2kCacheManager implements CacheManager {
     allowUnknownCache = v;
   }
 
-  public static final Callable<Object> DUMMY_CALLABLE = new Callable<Object>() {
+  static final Callable<Object> DUMMY_CALLABLE = new Callable<Object>() {
     @Override
     public Object call() {
       return null;
