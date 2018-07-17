@@ -64,9 +64,10 @@ public class Cache2kCache implements Cache {
     }
     return returnWrappedValue(entry);
   }
-
-  private ValueWrapper returnWrappedValue(final CacheEntry<Object, Object> entry) {
-    return () -> entry.getValue();
+  
+  private ValueWrapper returnWrappedValue(CacheEntry<Object, Object> entry) {
+    final Object v = entry.getValue();
+    return () -> v;
   }
 
   @SuppressWarnings("unchecked")

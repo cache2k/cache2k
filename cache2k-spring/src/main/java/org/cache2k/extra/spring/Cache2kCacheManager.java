@@ -196,21 +196,12 @@ public class Cache2kCacheManager implements CacheManager {
     allowUnknownCache = v;
   }
 
-  static final Callable<Object> DUMMY_CALLABLE = new Callable<Object>() {
-    @Override
-    public Object call() {
-      return null;
-    }
-    public String toString() {
-      return "Callable(DUMMY)";
-    }
-  };
-
+  /**
+   * Configures the cache, in case we need some modifications to comply with
+   * the needed Spring semantics.
+   */
   static Cache2kBuilder<Object,Object> configureCache(Cache2kBuilder<Object, Object> builder) {
-    return builder
-      .exceptionPropagator(
-        (key, exceptionInformation) ->
-          new Cache.ValueRetrievalException(key, DUMMY_CALLABLE, exceptionInformation.getException()));
+    return builder;
   }
 
   static Cache2kCache buildAndWrap(Cache2kBuilder<Object, Object> builder) {

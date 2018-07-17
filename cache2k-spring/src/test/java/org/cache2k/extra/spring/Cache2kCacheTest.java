@@ -23,6 +23,7 @@ package org.cache2k.extra.spring;
 import org.cache2k.Cache2kBuilder;
 import org.cache2k.CacheEntry;
 import org.cache2k.integration.AdvancedCacheLoader;
+import org.cache2k.integration.CacheLoaderException;
 import org.junit.After;
 import org.junit.Test;
 
@@ -96,10 +97,8 @@ public class Cache2kCacheTest {
     cacheWithLoader.getNativeCache().close();
   }
 
-  @Test(expected = org.springframework.cache.Cache.ValueRetrievalException.class)
+  @Test(expected = CacheLoaderException.class)
   public void testLoadingCacheWithException() throws Exception {
-    assertNotNull(Cache2kCacheManager.DUMMY_CALLABLE.toString());
-    assertNull(Cache2kCacheManager.DUMMY_CALLABLE.call());
     Cache2kCache cacheWithLoader =
       new Cache2kCacheManager().addCache(
         Cache2kBuilder.forUnknownTypes()
