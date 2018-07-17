@@ -42,33 +42,20 @@ For a detailed introduction continue with [Getting Started](docs/latest/user-gui
  * [complete JCache / JSR107 support, complatible to JCache Specification 1.1](docs/latest/user-guide.html#jcache)
  * [XML based configuration](docs/latest/user-guide.html#xml-configuration), to separate cache tuning from logic
 
+## Integrations
+
+ * [Spring Framework](docs/latest/user-guide.html#spring)
+ * [Scala Cache](https://github.com/cb372/scalacache)
+ * Datanucleus (via JCache)
+ * Hibernate (via JCache)
+ * .... and probably more, please raise an issue and get it listed! 
+
 ## News
 
   * **Version 1.1.1.Alpha, 2018-07-02**: Development preview release, new jar file structure, See [Version 1.1.1.Alpha release notes](1/1.1.Alpha.html)
   * **Version 1.0.2.Final, 2017-12-29**: Support JCache standard 1.1, See [Version 1.0.2.Final release notes](1/0.2.Final.html)
   * **Version 1.0.1.Final, 2017-08-14**: minor bugfix release, See [Version 1.0.1.Final release notes](1/0.1.Final.html)
   * **Version 1.0.0.Final, 2017-07-11**: Minor documentation tweaks, allow more chars in a cache name, See [Version 1.0.0.Final release notes](1/0.0.Final.html)
-
-## Integrating cache2k in your project
-
-chacke2k is on maven central. Maven users add the following dependencies:
-
-```xml
-  <dependency>
-    <groupId>org.cache2k</groupId>
-    <artifactId>cache2k-api</artifactId>
-    <version>${cache2k-version}</version>
-    <scope>provided</scope>
-  </dependency>
-  <dependency>
-    <groupId>org.cache2k</groupId>
-    <artifactId>cache2k-all</artifactId>
-    <version>${cache2k-version}</version>
-    <scope>runtime</scope>
-  </dependency>
-```
-
-Please replace `${cache2k-version}` with the latest version.
 
 ## Feedback
 
