@@ -395,10 +395,6 @@ public class CacheManagerImpl extends CacheManager {
     return provider.getVersion();
   }
 
-  public String getBuildNumber() {
-    return provider.getBuildNumber();
-  }
-
   public Cache2kCoreProviderImpl getProvider() {
     return provider;
   }

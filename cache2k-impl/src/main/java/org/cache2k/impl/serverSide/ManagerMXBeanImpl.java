@@ -91,6 +91,6 @@ public class ManagerMXBeanImpl implements CacheManagerMXBean {
   public String getVersion() { return manager.getVersion(); }
 
   @Override
-  public String getBuildNumber() { return manager.getBuildNumber(); }
+  public String getBuildNumber() { return "not used"; }
 
 }

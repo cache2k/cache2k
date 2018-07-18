@@ -30,7 +30,6 @@ import java.util.Properties;
  */
 public class Cache2kVersion {
 
-  private static String buildNumber = "<unknown>";
   private static String version = "<unknown>";
 
   static {
@@ -44,11 +43,7 @@ public class Cache2kVersion {
         Properties p = new Properties();
         p.load(in);
         in.close();
-        String s = p.getProperty("buildNumber");
-        if (isDefined(s)) {
-          buildNumber = s;
-        }
-        s = p.getProperty("version");
+        String s = p.getProperty("version");
         if (isDefined(s)) {
           version = s;
         }
@@ -60,10 +55,6 @@ public class Cache2kVersion {
 
   static boolean isDefined(String s) {
     return s != null && s.length() > 0 && !s.startsWith("$");
-  }
-
-  public static String getBuildNumber() {
-    return buildNumber;
   }
 
   public static String getVersion() {

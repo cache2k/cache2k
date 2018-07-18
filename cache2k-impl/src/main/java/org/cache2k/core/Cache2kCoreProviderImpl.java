@@ -51,7 +51,6 @@ public class Cache2kCoreProviderImpl implements Cache2kCoreProvider {
   private volatile Map<ClassLoader, String> loader2defaultName = Collections.EMPTY_MAP;
   private volatile Map<ClassLoader, Map<String, CacheManager>> loader2name2manager = Collections.EMPTY_MAP;
   private String version;
-  private String buildNumber;
 
   {
     extractVersionAndGreet();
@@ -60,16 +59,11 @@ public class Cache2kCoreProviderImpl implements Cache2kCoreProvider {
 
   private void extractVersionAndGreet() {
     Log log = Log.getLog(this.getClass());
-    buildNumber = Cache2kVersion.getBuildNumber();
     version = Cache2kVersion.getVersion();
     StringBuilder sb = new StringBuilder();
     sb.append("cache2k starting. ");
     sb.append("version=");
     sb.append(version);
-    sb.append(", build=");
-    sb.append(buildNumber);
-    sb.append(", defaultImplementation=");
-    sb.append(HeapCache.TUNABLE.defaultImplementation.getSimpleName());
     log.info(sb.toString());
   }
 
@@ -219,10 +213,6 @@ public class Cache2kCoreProviderImpl implements Cache2kCoreProvider {
 
   public String getVersion() {
     return version;
-  }
-
-  public String getBuildNumber() {
-    return buildNumber;
   }
 
   public Cache2kConfiguration getDefaultConfiguration(CacheManager mgr) {

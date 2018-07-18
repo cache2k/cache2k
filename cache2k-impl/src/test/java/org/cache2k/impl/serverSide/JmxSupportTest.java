@@ -180,7 +180,7 @@ public class JmxSupportTest {
     CacheManager m = CacheManager.getInstance(_name);
     objectName = getCacheManagerObjectName(_name);
     checkAttribute("Version", ((CacheManagerImpl) m).getVersion());
-    checkAttribute("BuildNumber", ((CacheManagerImpl) m).getBuildNumber());
+    checkAttribute("BuildNumber", "not used");
     m.close();
   }
 

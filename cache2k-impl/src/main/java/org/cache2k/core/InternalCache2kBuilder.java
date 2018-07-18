@@ -193,7 +193,7 @@ public class InternalCache2kBuilder<K, V> {
       config.setName(deriveNameFromStackTrace());
     }
     checkConfiguration();
-    Class<?> _implClass = HeapCache.TUNABLE.defaultImplementation;
+    Class<?> _implClass = HeapCache.class;
     Class<?> _keyType = config.getKeyType().getType();
     if (_keyType == Integer.class) {
       _implClass = IntHeapCache.class;

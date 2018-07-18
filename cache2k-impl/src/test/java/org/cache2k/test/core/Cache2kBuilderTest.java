@@ -379,6 +379,26 @@ public class Cache2kBuilderTest {
     cacheClosedEventFired(true);
   }
 
+  @Test
+  public void cacheNameUnique() {
+    Cache2kBuilder _builder = Cache2kBuilder.forUnknownTypes();
+    _builder.name("hello", this.getClass(), "field");
+    assertEquals("hello~org.cache2k.test.core.Cache2kBuilderTest.field", _builder.toConfiguration().getName());
+  }
+
+  @Test
+  public void cacheNameUniqueNull() {
+    Cache2kBuilder _builder = Cache2kBuilder.forUnknownTypes();
+    _builder.name(null, this.getClass(), "field");
+    assertEquals("org.cache2k.test.core.Cache2kBuilderTest.field", _builder.toConfiguration().getName());
+  }
+
+  @Test(expected = NullPointerException.class)
+  public void cacheNameException() {
+    Cache2kBuilder _builder = Cache2kBuilder.forUnknownTypes();
+    _builder.name(null, this.getClass(), null);
+  }
+
   static class BuildCacheInConstructor0 {
     Cache<?,?> cache = Cache2kBuilder.forUnknownTypes().eternal(true).build();
   }

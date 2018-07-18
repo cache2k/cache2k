@@ -1990,8 +1990,6 @@ public class HeapCache<K, V> extends BaseCache<K, V> {
 
   public static class Tunable extends TunableConstants {
 
-    public Class<? extends InternalCache> defaultImplementation = HeapCache.class;
-
     /**
      * Size of the hash table before inserting the first entry. Must be power
      * of two. Default: 64.
