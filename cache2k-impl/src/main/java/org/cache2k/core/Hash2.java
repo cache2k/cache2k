@@ -20,6 +20,7 @@ package org.cache2k.core;
  * #L%
  */
 
+import org.cache2k.Cache;
 import org.cache2k.core.concurrency.Job;
 import org.cache2k.core.concurrency.Locks;
 import org.cache2k.core.concurrency.OptimisticLock;
@@ -49,7 +50,6 @@ public class Hash2<K,V> {
    * Counts clear and close operation on the hash. Needed for the iterator to detect the need for an abort.
    */
   private volatile int clearOrCloseCount = 0;
-  private volatile boolean closed = false;
 
   /**
    * Maximum size of one segment, after we expand.
@@ -59,6 +59,12 @@ public class Hash2<K,V> {
   private Entry<K,V>[] entries;
   private final OptimisticLock[] locks;
   private final AtomicLong[] segmentSize;
+
+  private final Cache cache;
+
+  public Hash2(final Cache _cache) {
+    cache = _cache;
+  }
 
   {
     locks = new OptimisticLock[LOCK_SEGMENTS];
@@ -92,7 +98,7 @@ public class Hash2<K,V> {
     long _stamp = l.tryOptimisticRead();
     Entry<K,V>[] tab = entries;
     if (tab == null) {
-      throw new CacheClosedException();
+      throw new CacheClosedException(cache);
     }
     Entry e;
     Object ek;
@@ -113,7 +119,7 @@ public class Hash2<K,V> {
     try {
       tab = entries;
       if (tab == null) {
-        throw new CacheClosedException();
+        throw new CacheClosedException(cache);
       }
       n = tab.length;
       _mask = n - 1;
@@ -146,7 +152,7 @@ public class Hash2<K,V> {
     int si = _hash & LOCK_MASK;
     Entry f; Object ek; Entry<K,V>[] tab = entries;
     if (tab == null) {
-      throw new CacheClosedException();
+      throw new CacheClosedException(cache);
     }
     int n = tab.length, _mask = n - 1, idx = _hash & (_mask);
     f = tab[idx];
@@ -196,7 +202,7 @@ public class Hash2<K,V> {
     try {
       Entry f; Entry<K,V>[] tab = entries;
       if (tab == null) {
-        throw new CacheClosedException();
+        throw new CacheClosedException(cache);
       }
       int n = tab.length, _mask = n - 1, idx = _hash & (_mask);
       f = tab[idx];
@@ -224,7 +230,7 @@ public class Hash2<K,V> {
     int si = _hash & LOCK_MASK;
     Entry f; Entry<K,V>[] tab = entries;
     if (tab == null) {
-      throw new CacheClosedException();
+      throw new CacheClosedException(cache);
     }
     int n = tab.length, _mask = n - 1, idx = _hash & (_mask);
     f = tab[idx];
@@ -299,7 +305,7 @@ public class Hash2<K,V> {
   private void rehash() {
     Entry<K,V>[] src = entries;
     if (src == null) {
-      throw new CacheClosedException();
+      throw new CacheClosedException(cache);
     }
     int i, sl = src.length, n = sl * 2, _mask = n - 1, idx;
     Entry<K,V>[] tab = new Entry[n];
@@ -358,7 +364,6 @@ public class Hash2<K,V> {
   public void close() {
     clearOrCloseCount++;
     entries = null;
-    closed = true;
   }
 
   public void calcHashCollisionInfo(CollisionInfo inf) {
@@ -402,10 +407,6 @@ public class Hash2<K,V> {
    */
   public Entry<K,V>[] getEntries() {
     return entries;
-  }
-
-  public boolean isClosed() {
-    return closed;
   }
 
 }

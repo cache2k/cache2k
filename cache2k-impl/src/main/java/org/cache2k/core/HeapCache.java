@@ -231,10 +231,7 @@ public class HeapCache<K, V> extends BaseCache<K, V> {
    * Returns name of the cache with manager name.
    */
   public String getCompleteName() {
-    if (manager != null) {
-      return manager.getName() + ":" + name;
-    }
-    return name;
+    return manager.getName() + ":" + name;
   }
 
   /**
@@ -338,7 +335,6 @@ public class HeapCache<K, V> extends BaseCache<K, V> {
   public void init() {
     timing.init(this);
     initWithoutTimerHandler();
-
   }
 
   public void initWithoutTimerHandler() {
@@ -356,7 +352,7 @@ public class HeapCache<K, V> extends BaseCache<K, V> {
 
   public void checkClosed() {
     if (closing) {
-      throw new CacheClosedException();
+      throw new CacheClosedException(this);
     }
   }
 
@@ -1989,7 +1985,7 @@ public class HeapCache<K, V> extends BaseCache<K, V> {
   public K extractKeyObj(Entry<K,V> e) { return e.getKeyObj(); }
 
   public Hash2<K,V> createHashTable() {
-    return new Hash2<K, V>();
+    return new Hash2<K, V>(this);
   }
 
   public static class Tunable extends TunableConstants {

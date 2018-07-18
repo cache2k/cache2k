@@ -57,7 +57,7 @@ public class IntHeapCache<V> extends HeapCache<Integer, V> implements IntCache<V
    */
   @Override
   public Hash2<Integer, V> createHashTable() {
-    return new Hash2<Integer, V>() {
+    return new Hash2<Integer, V>(this) {
       @Override
       protected int modifiedHashCode(final int hc) {
         return IntHeapCache.this.modifiedHash(hc);

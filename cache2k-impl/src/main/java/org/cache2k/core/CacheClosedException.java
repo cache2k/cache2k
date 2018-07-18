@@ -20,6 +20,8 @@ package org.cache2k.core;
  * #L%
  */
 
+import org.cache2k.Cache;
+
 /**
  * Consistently this exception is thrown, when an operation detects that the
  * cache is closed.
@@ -28,7 +30,19 @@ package org.cache2k.core;
  * and not a {@link org.cache2k.CacheException} since the JSR107 defines
  * it.
  *
- * @author Jens Wilke; created: 2014-06-07
+ * @author Jens Wilke
  */
 public class CacheClosedException extends IllegalStateException {
+
+  private static String constructDetailMessage(Cache cache) {
+    return "manager=" + cache.getCacheManager().getName() + ", cache=" + cache.getName();
+  }
+
+  /**
+   * Included manager and cache name in the detail message, preferred.
+   */
+  public CacheClosedException(final Cache cache) {
+    super(constructDetailMessage(cache));
+  }
+
 }

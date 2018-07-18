@@ -103,9 +103,9 @@ public class ConcurrentEntryIterator<K,V> implements Iterator<Entry<K,V>> {
       return null;
     }
     if (needsAbort()) {
-      if (hash != null && hash.isClosed()) {
+      if (hash != null && cache.isClosed()) {
         clearOutReferences();
-        throw new CacheClosedException();
+        throw new CacheClosedException(cache);
       }
       clearOutReferences();
       return null;
@@ -190,7 +190,7 @@ public class ConcurrentEntryIterator<K,V> implements Iterator<Entry<K,V>> {
     boolean _cacheClosed = hashArray == null;
     if (_cacheClosed) {
       clearOutReferences();
-      throw new CacheClosedException();
+      throw new CacheClosedException(cache);
     }
     return false;
   }
@@ -201,7 +201,6 @@ public class ConcurrentEntryIterator<K,V> implements Iterator<Entry<K,V>> {
    * being garbage collected.
    */
   private void clearOutReferences() {
-    cache = null;
     hash = null;
     hashArray = null;
     seen = null;
