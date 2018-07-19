@@ -461,10 +461,7 @@ public class Cache2kBuilder<K, V> {
    * Listener that is called after a cache is closed. This is mainly used for the JCache integration.
    */
   public final Cache2kBuilder<K, V> addCacheClosedListener(CacheClosedListener listener) {
-    boolean _inserted = config().getCacheClosedListeners().add(wrapCustomizationInstance(listener));
-    if (!_inserted) {
-      throw new IllegalArgumentException("Listener already added");
-    }
+    config().getCacheClosedListeners().add(wrapCustomizationInstance(listener));
     return this;
   }
 
@@ -477,10 +474,7 @@ public class Cache2kBuilder<K, V> {
    * @param listener The listener to add
    */
   public final Cache2kBuilder<K, V> addListener(CacheEntryOperationListener<K,V> listener) {
-    boolean _inserted = config().getListeners().add(wrapCustomizationInstance(listener));
-    if (!_inserted) {
-      throw new IllegalArgumentException("Listener already added");
-    }
+    config().getListeners().add(wrapCustomizationInstance(listener));
     return this;
   }
 
@@ -492,10 +486,7 @@ public class Cache2kBuilder<K, V> {
    * @param listener The listener to add
    */
   public final Cache2kBuilder<K,V> addAsyncListener(CacheEntryOperationListener<K,V> listener) {
-    boolean _inserted = config().getAsyncListeners().add(wrapCustomizationInstance(listener));
-    if (!_inserted) {
-      throw new IllegalArgumentException("Listener already added");
-    }
+    config().getAsyncListeners().add(wrapCustomizationInstance(listener));
     return this;
   }
 
