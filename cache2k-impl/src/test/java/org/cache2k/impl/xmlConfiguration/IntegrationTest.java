@@ -28,9 +28,12 @@ import org.cache2k.configuration.Cache2kConfiguration;
 import org.cache2k.configuration.CustomizationSupplierByClassName;
 import org.cache2k.core.Cache2kCoreProviderImpl;
 import org.cache2k.testing.category.FastTests;
+import org.hamcrest.CoreMatchers;
 import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
+
+import java.io.Serializable;
 
 import static org.junit.Assert.*;
 import static org.hamcrest.CoreMatchers.*;
@@ -262,6 +265,7 @@ public class IntegrationTest {
       fail("expect exception");
     } catch (Exception ex) {
       assertThat(ex.toString(), containsString("Copying default cache configuration"));
+      assertThat(ex.getCause(), CoreMatchers.<Throwable>instanceOf(Serializable.class));
     }
   }
 

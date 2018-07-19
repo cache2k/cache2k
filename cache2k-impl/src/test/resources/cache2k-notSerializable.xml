@@ -7,11 +7,11 @@
 
   <defaults>
     <cache>
-      <sections>
-        <section>
+      <loader>
+        <bean>
           <type>org.cache2k.impl.xmlConfiguration.NotSerializable</type>
-        </section>
-      </sections>
+        </bean>
+      </loader>
     </cache>
   </defaults>
 

@@ -20,10 +20,19 @@ package org.cache2k.impl.xmlConfiguration;
  * #L%
  */
 
-import org.cache2k.configuration.ConfigurationSection;
+import org.cache2k.CacheManager;
+import org.cache2k.configuration.CustomizationSupplier;
 
 /**
  * @author Jens Wilke
  */
-public class NotSerializable implements ConfigurationSection {
+public class NotSerializable implements CustomizationSupplier {
+
+  private int xy;
+
+  @Override
+  public Object supply(final CacheManager manager) throws Exception {
+    return null;
+  }
+
 }
