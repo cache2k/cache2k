@@ -20,6 +20,7 @@ package org.cache2k.configuration;
  * #L%
  */
 
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
@@ -31,7 +32,7 @@ import java.util.List;
  * @author Jens Wilke
  * @see ConfigurationWithSections
  */
-public class ConfigurationSectionContainer implements Iterable<ConfigurationSection> {
+public class ConfigurationSectionContainer implements Iterable<ConfigurationSection>, Serializable {
 
   private List<ConfigurationSection> sections = new ArrayList<ConfigurationSection>();
 
