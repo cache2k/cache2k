@@ -24,7 +24,7 @@ import org.cache2k.CacheManager;
 
 /**
  * A reference to the customization to be used is set while building the cache.
- * The reference is returned. The class loader can be ignored.
+ * The reference is returned. The class loader is ignored.
  *
  * @author Jens Wilke
  */
@@ -39,7 +39,7 @@ public final class CustomizationReferenceSupplier<T> implements CustomizationSup
    */
   public CustomizationReferenceSupplier(final T obj) {
     if (obj == null) {
-      throw new NullPointerException("object reference");
+      throw new NullPointerException("object reference missing");
     }
     object = obj;
   }
@@ -51,10 +51,14 @@ public final class CustomizationReferenceSupplier<T> implements CustomizationSup
 
   @Override
   public boolean equals(final Object other) {
-    if (this == other) return true;
-    if (!(other instanceof CustomizationReferenceSupplier)) return false;
-    CustomizationReferenceSupplier<?> _that = (CustomizationReferenceSupplier<?>) other;
-    return object.equals(_that.object);
+    if (this == other) {
+      return true;
+    }
+    if (!(other instanceof CustomizationReferenceSupplier)) {
+      return false;
+    }
+    CustomizationReferenceSupplier<?> obj = (CustomizationReferenceSupplier<?>) other;
+    return object.equals(obj.object);
   }
 
   @Override
