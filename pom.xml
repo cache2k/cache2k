@@ -522,7 +522,6 @@
       </build>
     </profile>
 
-    <!-- fast tests are run with coverage -->
     <profile>
       <id>fast-tests-real-clock</id>
       <build>
