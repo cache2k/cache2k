@@ -853,8 +853,9 @@ public interface Cache<K, V> extends KeyValueStore<K,V>, Closeable {
 
   /**
    * Returns internal information. This is an expensive operation, since internal statistics are
-   * collected. During the call, concurrent operations on the cache may be blocked. If the cache is
-   * closed, no statistics are available any more.
+   * collected. During the call, concurrent operations on the cache may be blocked. This method will
+   * not throw the {@link IllegalStateException} in case the cache is closed, but return the
+   * solely the cache name and no statistics.
    */
   String toString();
 

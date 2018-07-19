@@ -477,11 +477,6 @@ public class WiredCache<K, V> extends BaseCache<K, V>
     return heapCache.isClosed();
   }
 
-  @Override
-  public String toString() {
-    return heapCache.toString();
-  }
-
   public void init() {
     if (storage == null  && heapCache.eviction.getMetrics().getMaxSize() == 0) {
       throw new IllegalArgumentException("maxElements must be >0");

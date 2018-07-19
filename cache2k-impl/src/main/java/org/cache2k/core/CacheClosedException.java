@@ -28,7 +28,10 @@ import org.cache2k.Cache;
  *
  * <p>Rationale: It is a subtype of {@link java.lang.IllegalStateException}
  * and not a {@link org.cache2k.CacheException} since the JSR107 defines
- * it.
+ * it.  On the API level we specify {@link IllegalStateException} to not
+ * introduce a new exception type. Moving this to the API level, makes it more
+ * difficult to introduce improvements here, since we need to keep stuff for BC.
+ * Better keep it internal.
  *
  * @author Jens Wilke
  */

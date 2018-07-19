@@ -205,4 +205,18 @@ public abstract class BaseCache<K, V> implements InternalCache<K, V> {
     close();
   }
 
+  /**
+   * Return status information. The status collection is time consuming, so this
+   * is an expensive operation.
+   */
+  @Override
+  public String toString() {
+    try {
+      InternalCacheInfo fo = getLatestInfo();
+      return fo.toString();
+    } catch (CacheClosedException ex) {
+      return "Cache{" + getName() + "}(closed)";
+    }
+  }
+
 }

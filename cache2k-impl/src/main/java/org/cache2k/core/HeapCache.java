@@ -1934,21 +1934,6 @@ public class HeapCache<K, V> extends BaseCache<K, V> {
   }
 
   /**
-   * Return status information. The status collection is time consuming, so this
-   * is an expensive operation.
-   */
-  @Override
-  public String toString() {
-    synchronized (lock) {
-      if (isClosed()) {
-        return "Cache{" + name + "}(closed)";
-      }
-    }
-    InternalCacheInfo fo = getLatestInfo();
-    return fo.toString();
-  }
-
-  /**
    * This function calculates a modified hash code. The intention is to
    * "rehash" the incoming integer hash codes to overcome weak hash code
    * implementations. We expect good results for integers also.
