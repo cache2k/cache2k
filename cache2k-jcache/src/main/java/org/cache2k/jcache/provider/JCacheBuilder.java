@@ -36,6 +36,7 @@ import org.cache2k.jcache.ExtendedConfiguration;
 import org.cache2k.jcache.ExtendedMutableConfiguration;
 import org.cache2k.jcache.JCacheConfiguration;
 import org.cache2k.jcache.provider.event.EventHandling;
+import org.cache2k.jcache.provider.event.EventHandlingImpl;
 import org.cache2k.jcache.provider.generic.storeByValueSimulation.CopyCacheProxy;
 import org.cache2k.jcache.provider.generic.storeByValueSimulation.ObjectCopyFactory;
 import org.cache2k.jcache.provider.generic.storeByValueSimulation.ObjectTransformer;
@@ -361,29 +362,21 @@ public class JCacheBuilder<K,V> {
     cache2kConfiguration.setExpiryPolicy(new CustomizationReferenceSupplier<org.cache2k.expiry.ExpiryPolicy<K, V>>(new TouchyJCacheAdapter.ExpiryPolicyAdapter<K,V>(expiryPolicy)));
   }
 
-  static class EventHandlingCloser implements CacheClosedListener {
-
-    private EventHandling eventHandling;
-
-    public EventHandlingCloser(final EventHandling _eventHandling) {
-      eventHandling = _eventHandling;
-    }
-
-    @Override
-    public void onCacheClosed(final org.cache2k.Cache cache) {
-      eventHandling.close();
-    }
-
-  }
-
   private void setupEventHandling() {
-    eventHandling = new EventHandling<K, V>(manager, Executors.newCachedThreadPool());
-    eventHandling.registerCache2kListeners(cache2kConfiguration);
-    for (CacheEntryListenerConfiguration<K,V> cfg : config.getCacheEntryListenerConfigurations()) {
-      eventHandling.registerListener(cfg);
+    if ((config.getCacheEntryListenerConfigurations() == null ||
+      !config.getCacheEntryListenerConfigurations().iterator().hasNext()) &&
+      !extraConfiguration.isSupportOnlineListenerAttachment()) {
+      eventHandling = EventHandling.DISABLED;
+      return;
     }
+    EventHandlingImpl<K,V> _eventHandling = new EventHandlingImpl<K, V>(manager, Executors.newCachedThreadPool());
+    _eventHandling.addInternalListenersToCache2kConfiguration(cache2kConfiguration);
+    for (CacheEntryListenerConfiguration<K,V> cfg : config.getCacheEntryListenerConfigurations()) {
+      _eventHandling.registerListener(cfg);
+    }
+    eventHandling = _eventHandling;
     cache2kConfiguration.getCacheClosedListeners().add(
-      new CustomizationReferenceSupplier<CacheClosedListener>(new EventHandlingCloser(eventHandling)));
+      new CustomizationReferenceSupplier<CacheClosedListener>(_eventHandling));
   }
 
   private void buildAdapterCache() {
@@ -432,6 +425,7 @@ public class JCacheBuilder<K,V> {
   private static final JCacheConfiguration JCACHE_DEFAULTS =
     new JCacheConfiguration.Builder()
       .copyAlwaysIfRequested(true)
+      .supportOnlineListenerAttachment(true)
       .buildConfigurationSection();
 
   /**
@@ -441,6 +435,7 @@ public class JCacheBuilder<K,V> {
   private static final JCacheConfiguration CACHE2K_DEFAULTS =
     new JCacheConfiguration.Builder()
       .copyAlwaysIfRequested(false)
+      .supportOnlineListenerAttachment(false)
       .buildConfigurationSection();
 
 }

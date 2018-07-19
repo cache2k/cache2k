@@ -22,6 +22,7 @@ package org.cache2k.jcache.provider;
 
 import org.cache2k.Cache;
 import org.cache2k.CacheEntry;
+import org.cache2k.jcache.provider.event.EventHandling;
 import org.cache2k.processor.EntryProcessor;
 import org.cache2k.integration.CacheWriterException;
 import org.cache2k.processor.EntryProcessingResult;
@@ -29,7 +30,6 @@ import org.cache2k.CacheOperationCompletionListener;
 import org.cache2k.processor.MutableCacheEntry;
 import org.cache2k.core.EntryAction;
 import org.cache2k.core.InternalCache;
-import org.cache2k.jcache.provider.event.EventHandling;
 
 import javax.cache.CacheManager;
 import javax.cache.configuration.CacheEntryListenerConfiguration;
@@ -415,7 +415,6 @@ public class JCacheAdapter<K, V> implements javax.cache.Cache<K, V> {
   @Override
   public void close() {
     cache.close();
-    eventHandling.close();
   }
 
   @Override

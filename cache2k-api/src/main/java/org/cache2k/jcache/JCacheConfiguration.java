@@ -32,6 +32,7 @@ import org.cache2k.configuration.SingletonConfigurationSection;
 public class JCacheConfiguration implements SingletonConfigurationSection {
 
   private boolean copyAlwaysIfRequested = false;
+  private boolean supportOnlineListenerAttachment = true;
 
   /**
    * Always false since version 1.0.2
@@ -61,6 +62,14 @@ public class JCacheConfiguration implements SingletonConfigurationSection {
     copyAlwaysIfRequested = f;
   }
 
+  public boolean isSupportOnlineListenerAttachment() {
+    return supportOnlineListenerAttachment;
+  }
+
+  public void setSupportOnlineListenerAttachment(final boolean f) {
+    supportOnlineListenerAttachment = f;
+  }
+
   public static class Builder implements ConfigurationSectionBuilder<JCacheConfiguration> {
 
     private JCacheConfiguration config = new JCacheConfiguration();
@@ -85,6 +94,11 @@ public class JCacheConfiguration implements SingletonConfigurationSection {
      */
     public Builder copyAlwaysIfRequested(boolean f) {
       config.setCopyAlwaysIfRequested(f);
+      return this;
+    }
+
+    public Builder supportOnlineListenerAttachment(boolean f) {
+      config.setSupportOnlineListenerAttachment(f);
       return this;
     }
 

@@ -100,7 +100,7 @@ public class AsyncDispatcher<K,V> {
   boolean removeAsyncListener(CacheEntryListenerConfiguration<K,V> cfg) {
     boolean _found = false;
     for (EventType t : EventType.values()) {
-      _found |= EventHandling.removeCfgMatch(cfg, asyncListenerByType.get(t));
+      _found |= EventHandlingImpl.removeCfgMatch(cfg, asyncListenerByType.get(t));
     }
     return _found;
   }
