@@ -25,6 +25,7 @@ import org.cache2k.Cache2kBuilder;
 import org.cache2k.CacheManager;
 import org.cache2k.configuration.CacheTypeCapture;
 import org.cache2k.core.InternalCache;
+import org.cache2k.core.StandardExceptionPropagator;
 import org.cache2k.core.util.Log;
 import org.cache2k.event.CacheClosedListener;
 import org.cache2k.testing.category.FastTests;
@@ -396,7 +397,33 @@ public class Cache2kBuilderTest {
   @Test(expected = NullPointerException.class)
   public void cacheNameException() {
     Cache2kBuilder _builder = Cache2kBuilder.forUnknownTypes();
-    _builder.name(null, this.getClass(), null);
+    _builder.name(this.getClass(), null);
+  }
+
+  @Test
+  public void set_ExceptionPropagator() {
+    Cache2kBuilder _builder = Cache2kBuilder.forUnknownTypes();
+    _builder.exceptionPropagator(new StandardExceptionPropagator());
+    assertNotNull(_builder.toConfiguration().getExceptionPropagator());
+  }
+
+  @Test
+  public void set_storeByReference() {
+    Cache2kBuilder _builder = Cache2kBuilder.forUnknownTypes();
+    _builder.storeByReference(true);
+    assertTrue(_builder.toConfiguration().isStoreByReference());
+  }
+
+  @Test(expected = IllegalArgumentException.class)
+  public void buildIntKey() {
+    Cache2kBuilder _builder = Cache2kBuilder.of(String.class, String.class);
+    _builder.buildForIntKey();
+  }
+
+  @Test(expected = IllegalArgumentException.class)
+  public void buildLongKey() {
+    Cache2kBuilder _builder = Cache2kBuilder.of(String.class, String.class);
+    _builder.buildForLongKey();
   }
 
   static class BuildCacheInConstructor0 {
