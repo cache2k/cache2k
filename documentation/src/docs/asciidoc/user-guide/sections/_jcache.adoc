@@ -71,11 +71,11 @@ is requested, another XML configuration applies.
 
 ==== Optimizations and Semantic Differences
 
-WARNING: In case in the creation context of a JCache a cache2k configuration is present, the created JCache
-has different semantics then those defined in the JCache specification. The reason is, because cache2k has
-different defaults, which are optimized during performance if a specific feature ore semantic is not needed.
+WARNING: In case a JCache cache is created with a cache2k configuration present, the generated JCache cache
+has slightly different semantics then those defined in the JCache specification. cache2k has
+different default settings, which are optimized towards performance.
 The following sections explains the differences and how to switch back to the standard behavior,
-if this is needed.
+if this might be really needed.
 
 Expiry:: With pure JCache configuration the expiry is set to sharp expiry by default for maximum compatiblity. When the
    cache2k configuration is used, sharp expiry is off and need to be enabled explicitly.
@@ -87,8 +87,7 @@ Expiry:: With pure JCache configuration the expiry is set to sharp expiry by def
    `JCacheConfiguration.Builder.supportOnlineListenerAttachment`. If no listeners are needed, which is most
    often the case, cache2k switches to a faster internal processing mode.
 
-To enable full JCache compliance by default via the XML configuration, use these defaults
-in the setup:
+To enable full JCache compliance by default via the XML configuration, use these defaults in the setup:
 
 [source,xml]
 ----
@@ -107,6 +106,9 @@ in the setup:
   </defaults>
 </cache2k>
 ----
+
+There are more optimizations in cache2k happening transparently, e.g. when a expiry policy with a static
+setting is detected. For this reason avoid using a custom expiry policy class.
 
 ==== Merging of JCache and cache2k Configuration
 
