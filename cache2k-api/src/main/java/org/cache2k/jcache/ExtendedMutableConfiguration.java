@@ -23,6 +23,7 @@ package org.cache2k.jcache;
 import org.cache2k.Cache2kBuilder;
 import org.cache2k.configuration.Cache2kConfiguration;
 
+import javax.cache.configuration.Factory;
 import javax.cache.configuration.MutableConfiguration;
 
 /**
@@ -33,6 +34,15 @@ import javax.cache.configuration.MutableConfiguration;
 public final class ExtendedMutableConfiguration<K,V>
   extends MutableConfiguration<K,V> implements ExtendedConfiguration<K,V> {
 
+  /**
+   * The preferred way to construct a JCache based on a cache2k configuration.
+   * It is not needed to set any original parameters from {@link MutableConfiguration}.
+   * It is possible to set parameters defined by JCache, e.g.
+   * {@link MutableConfiguration#setCacheLoaderFactory(Factory)}. In this case the
+   * settings will be merged. See the documentation.
+   *
+   * @see <a href="https://cache2k.org/docs/latest/user-guide.html#jcache">User Guide - JCache</a>
+   */
   public static <K,V> ExtendedMutableConfiguration<K,V> of(Cache2kBuilder<K,V> builder) {
     return of(builder.toConfiguration());
   }
