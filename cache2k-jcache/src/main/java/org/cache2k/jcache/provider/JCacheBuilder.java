@@ -178,7 +178,6 @@ public class JCacheBuilder<K,V> {
   private void setupDefaults() {
     if (!cache2kConfigurationWasProvided) {
       cache2kConfiguration.setSharpExpiry(true);
-      cache2kConfiguration.setKeepDataAfterExpired(false);
     }
   }
 
@@ -380,7 +379,7 @@ public class JCacheBuilder<K,V> {
   }
 
   private void buildAdapterCache() {
-    JCacheAdapter<K, V> _adapter =
+    createdCache =
       new JCacheAdapter<K, V>(
         manager,
         new InternalCache2kBuilder<K,V>(cache2kConfiguration, manager.getCache2kManager()).buildAsIs(),
@@ -388,7 +387,6 @@ public class JCacheBuilder<K,V> {
         config.isStoreByValue(), config.isReadThrough(), config.getCacheLoaderFactory() != null,
         eventHandling
       );
-    createdCache = _adapter;
   }
 
   private void wrapForExpiryPolicy() {

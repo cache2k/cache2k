@@ -19,6 +19,12 @@
   -->
 <cache2k>
   <version>1.0</version>
+
+  <!-- The TCK is using CacheManager.createCache to create a new cache. In
+       case the configuration XML is present, cache2k will complain that
+       the cache is unknown. Either we need a blank configuration section for
+       every cache created or we need to ignore that the configuration
+       section is missing. -->
   <ignoreMissingCacheConfiguration>true</ignoreMissingCacheConfiguration>
 
   <defaults>
@@ -28,6 +34,7 @@
           <copyAlwaysIfRequested>true</copyAlwaysIfRequested>
         </jcache>
       </sections>
+      <sharpExpiry>true</sharpExpiry>
     </cache>
   </defaults>
 

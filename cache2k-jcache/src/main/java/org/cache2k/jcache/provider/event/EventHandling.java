@@ -27,6 +27,9 @@ import java.util.Collection;
 import java.util.Collections;
 
 /**
+ * Handles registering event listeners and event dispatching according to the JCache spec.
+ * See Impl.
+ *
  * @author Jens Wilke
  */
 public interface EventHandling<K, V> {
