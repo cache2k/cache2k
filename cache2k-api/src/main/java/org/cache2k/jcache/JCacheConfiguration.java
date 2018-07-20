@@ -32,7 +32,7 @@ import org.cache2k.configuration.SingletonConfigurationSection;
 public class JCacheConfiguration implements SingletonConfigurationSection {
 
   private boolean copyAlwaysIfRequested = false;
-  private boolean supportOnlineListenerAttachment = true;
+  private boolean supportOnlineListenerAttachment = false;
 
   /**
    * Always false since version 1.0.2

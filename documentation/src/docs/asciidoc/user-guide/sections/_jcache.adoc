@@ -63,15 +63,52 @@ and the class `MutableExtendedConfiguration` is provided. Example usage:
     ));
 ----
 
-When a cache2k configuration is provided, the default behavior is not 100% JCache compatible any more, because
-the defaults of cache2k apply. Strict JCache behavior can be enabled again, if needed. The areas of difference
-are explained below:
+==== Configuration via XML
+
+The XML configuration sections do apply for caches requested via `CacheManager.createCache` or
+`CacheManager.getCache`, see <<xml-configuration,XML configuration>>. In case not the default manager
+is requested, another XML configuration applies.
+
+==== Optimizations and Semantic Differences
+
+WARNING: In case in the creation context of a JCache a cache2k configuration is present, the created JCache
+has different semantics then those defined in the JCache specification. The reason is, because cache2k has
+different defaults, which are optimized during performance if a specific feature ore semantic is not needed.
+The following sections explains the differences and how to switch back to the standard behavior,
+if this is needed.
 
 Expiry:: With pure JCache configuration the expiry is set to sharp expiry by default for maximum compatiblity. When the
    cache2k configuration is used, sharp expiry is off and need to be enabled explicitly.
-`Configuration.isStoreByValue`:: When the cache2k configuration is active the parameter will be ignored, if true.
+`Configuration.isStoreByValue`:: When the cache2k configuration is active the parameter will be ignored.
    Store by value semantics can enabled again in the JCache configuration section of cache2k
    `JCacheConfiguration.Builder.copyAlwaysIfRequested`. See example below how to specify the additional parameters.
+`Cache.registerCacheEntryListener`:: Online attachment of listeners is not supported unless listeners are already
+   present in the initial configuration, or if explicitly enabled via
+   `JCacheConfiguration.Builder.supportOnlineListenerAttachment`. If no listeners are needed, which is most
+   often the case, cache2k switches to a faster internal processing mode.
+
+To enable full JCache compliance by default via the XML configuration, use these defaults
+in the setup:
+
+[source,xml]
+----
+<cache2k>
+  <version>1.0</version>
+  <defaults>
+    <cache>
+      <sections>
+        <jcache>
+          <copyAlwaysIfRequested>true</copyAlwaysIfRequested>
+          <supportOnlineListenerAttachment>true</supportOnlineListenerAttachment>
+        </jcache>
+      </sections>
+      <sharpExpiry>true</sharpExpiry>
+    </cache>
+  </defaults>
+</cache2k>
+----
+
+==== Merging of JCache and cache2k Configuration
 
 The JCache configuration and the cache2k configuration may have settings that control the same
 feature, for example expiry. In this case the two configurations need to be merged and conflicting settings

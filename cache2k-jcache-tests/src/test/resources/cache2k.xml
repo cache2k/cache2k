@@ -32,8 +32,14 @@
       <sections>
         <jcache>
           <copyAlwaysIfRequested>true</copyAlwaysIfRequested>
+          <!-- for JCache compliance needs to be switched to true,
+               however the TCK tests don't check the fact, so we keep it
+               at its default -->
+          <supportOnlineListenerAttachment>false</supportOnlineListenerAttachment>
         </jcache>
       </sections>
+      <!-- Expiry tests in the TCK dont't expect the expiry to be lenient
+      -->
       <sharpExpiry>true</sharpExpiry>
     </cache>
   </defaults>

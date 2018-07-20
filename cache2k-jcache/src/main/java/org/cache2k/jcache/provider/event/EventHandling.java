@@ -35,7 +35,7 @@ import java.util.Collections;
 public interface EventHandling<K, V> {
 
   EventHandling DISABLED = new EventHandling() {
-    private static final String ERROR = "online listener attachment not supported, enable via supportOnlineListenerAttachment";
+    private static final String ERROR = "online listener attachment not supported, enable it in the configuration";
     @Override
     public boolean deregisterListener(final CacheEntryListenerConfiguration cfg) {
       throw new UnsupportedOperationException(ERROR);

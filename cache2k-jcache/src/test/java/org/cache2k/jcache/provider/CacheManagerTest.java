@@ -31,8 +31,12 @@ import static org.junit.Assert.*;
 import javax.cache.Cache;
 import javax.cache.CacheManager;
 import javax.cache.Caching;
+import javax.cache.configuration.CacheEntryListenerConfiguration;
 import javax.cache.configuration.Configuration;
+import javax.cache.configuration.Factory;
 import javax.cache.configuration.MutableConfiguration;
+import javax.cache.event.CacheEntryEventFilter;
+import javax.cache.event.CacheEntryListener;
 import javax.cache.spi.CachingProvider;
 import java.math.BigDecimal;
 import java.util.concurrent.TimeUnit;
@@ -130,6 +134,37 @@ public class CacheManagerTest {
     CacheManager cm = p.getCacheManager();
     MutableConfiguration cfg = ExtendedMutableConfiguration.of(new Cache2kBuilder<Long, Double>(){});
     Cache<Integer, Double> cache = cm.createCache("aCache",  cfg.setTypes(Long.class, Float.class));
+    cache.close();
+  }
+
+  @Test(expected=UnsupportedOperationException.class)
+  public void no_online_listener_attachment_with_cache2k_defaults() {
+    CachingProvider p = Caching.getCachingProvider();
+    CacheManager cm = p.getCacheManager();
+    MutableConfiguration cfg = ExtendedMutableConfiguration.of(new Cache2kBuilder<Long, Double>(){});
+    Cache cache = cm.createCache("mute",  cfg);
+    cache.registerCacheEntryListener(new CacheEntryListenerConfiguration() {
+      @Override
+      public Factory<CacheEntryListener> getCacheEntryListenerFactory() {
+        fail("not expected to be called");
+        return null;
+      }
+
+      @Override
+      public boolean isOldValueRequired() {
+        return false;
+      }
+
+      @Override
+      public Factory<CacheEntryEventFilter> getCacheEntryEventFilterFactory() {
+        return null;
+      }
+
+      @Override
+      public boolean isSynchronous() {
+        return false;
+      }
+    });
     cache.close();
   }
 
