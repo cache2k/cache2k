@@ -1000,7 +1000,6 @@ public class BasicCacheOperationsWithoutCustomizationsTest {
 
   @Test
   public void remove_NotExisting() {
-    statistics().reset();
     cache.remove(KEY);
     statistics().expectAllZero();
     assertFalse(cache.containsKey(KEY));
@@ -1035,19 +1034,27 @@ public class BasicCacheOperationsWithoutCustomizationsTest {
   @Test
   public void containsAndRemove() {
     boolean f = cache.containsAndRemove(KEY);
+    statistics()
+      .missCount.expect(0)
+      .expectAllZero();
     assertFalse(f);
     assertFalse(cache.containsKey(KEY));
     cache.put(KEY, VALUE);
     assertTrue(cache.containsKey(KEY));
     f = cache.containsAndRemove(KEY);
-    assertFalse(cache.containsKey(KEY));
     assertTrue(f);
+    assertFalse(cache.containsKey(KEY));
+    statistics()
+      .putCount.expect(1)
+      .removeCount.expect(1)
+      .expectAllZero();
   }
 
   @Test
   public void containsAndRemove_Null() {
     cache.put(KEY, null);
-    cache.containsAndRemove(KEY);
+    boolean f = cache.containsAndRemove(KEY);
+    assertTrue(f);
     assertFalse(cache.containsKey(KEY));
   }
 
@@ -1065,11 +1072,25 @@ public class BasicCacheOperationsWithoutCustomizationsTest {
     boolean f = cache.removeIfEquals(KEY, VALUE);
     assertFalse(f);
     assertFalse(cache.containsKey(KEY));
+    statistics()
+      .missCount.expect(1)
+      .getCount.expect(1)
+      .expectAllZero();
     cache.put(KEY, VALUE);
     assertTrue(cache.containsKey(KEY));
+    statistics().reset();
     f = cache.removeIfEquals(KEY, OTHER_VALUE);
+    statistics()
+      .missCount.expect(0)
+      .getCount.expect(1)
+      .expectAllZero();
     assertFalse(f);
     f = cache.removeIfEquals(KEY, VALUE);
+    statistics()
+      .missCount.expect(0)
+      .getCount.expect(1)
+      .removeCount.expect(1)
+      .expectAllZero();
     assertFalse(cache.containsKey(KEY));
     assertTrue(f);
     f = cache.removeIfEquals(KEY, VALUE);

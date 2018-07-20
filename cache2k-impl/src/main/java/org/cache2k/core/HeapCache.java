@@ -968,19 +968,7 @@ public class HeapCache<K, V> extends BaseCache<K, V> {
   }
 
   @Override
-  public boolean removeIfEquals(K key, V _value) {
-    return removeWithFlag(key, true, _value);
-  }
-
-  @Override
   public boolean containsAndRemove(K key) {
-    return removeWithFlag(key, false, null);
-  }
-
-  /**
-   * Remove the object from the cache.
-   */
-  public boolean removeWithFlag(K key, boolean _checkValue, V _value) {
     Entry e = lookupEntryNoHitRecord(key);
     if (e == null) {
       return false;
@@ -991,15 +979,40 @@ public class HeapCache<K, V> extends BaseCache<K, V> {
         return false;
       }
       boolean f = e.hasFreshData(clock);
-      if (_checkValue) {
-        if (!f || !e.equalsValue(_value)) {
+      removeEntry(e);
+      return f;
+    }
+  }
+
+  /**
+   * Remove the object from the cache.
+   */
+  @Override
+  public boolean removeIfEquals(K key, V _value) {
+    Entry e = lookupEntry(key);
+    if (e == null) {
+      metrics.peekMiss();
+      return false;
+    }
+    synchronized (e) {
+      e.waitForProcessing();
+      if (e.isGone()) {
+        metrics.peekMiss();
+        return false;
+      }
+      boolean f = e.hasFreshData(clock);
+      if (f) {
+        if (!e.equalsValue(_value)) {
           return false;
         }
+      } else {
+        metrics.peekHitNotFresh();
+        return false;
       }
       removeEntry(e);
       return f;
     }
-}
+  }
 
   @Override
   public void remove(K key) {
