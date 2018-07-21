@@ -48,7 +48,7 @@
 
   <modules>
     <module>cache2k-api</module>
-    <module>cache2k-impl</module>
+    <module>cache2k-core</module>
     <module>cache2k-osgi-all</module>
     <!-- not deployed on OSS central -->
     <module>cache2k-jcache-tests</module>

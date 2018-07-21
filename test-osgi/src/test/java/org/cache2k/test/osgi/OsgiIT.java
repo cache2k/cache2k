@@ -64,7 +64,7 @@ public class OsgiIT {
       try to use api and impl directly
       https://github.com/cache2k/cache2k/issues/83
       bundle("file:///" + _workspaceDir + "/cache2k-api/target/cache2k-api-" + System.getProperty("cache2k.version") + ".jar"),
-      bundle("file:///" + _workspaceDir + "/cache2k-impl/target/cache2k-impl-" + System.getProperty("cache2k.version") + ".jar"),
+      bundle("file:///" + _workspaceDir + "/cache2k-core/target/cache2k-core-" + System.getProperty("cache2k.version") + ".jar"),
       */
       junitBundles()
     );
