@@ -127,6 +127,7 @@
       <item name="Spring Framework Integration API - Latest / Development" href="/docs/latest/apidocs/cache2k-spring/index.html" />
       <item name="User Guide - Version 1.0" href="/docs/1.0/user-guide.html" />
       <item name="Cache API - Version 1.0" href="/docs/1.0/apidocs/cache2k-api/index.html" />
+      <item name="JCache / JSR107 API - Version 1.1" href="/docs/jcache/1.1.0/apidocs/cache-api/index.html" />
     </menu>
     <menu name="Legal" inherit="bottom">
       <item name="Imprint" href="https://headissue.com/imprint.html" />

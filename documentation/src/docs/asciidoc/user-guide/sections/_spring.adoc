@@ -83,8 +83,8 @@ the order of application is:
 - `SpringCache2kCacheManager.addCaches`
 - XML setup cache section
 
-Cache2k supports multiple cache managers. If a caches are used with other parts of the application it may be
-useful to use a separate application cache manager, e.g. with `new SpringCache2kCacheManager("spring")`.
+Cache2k supports multiple cache managers. Caches used within the Spring DI context, could be separated into
+another cache manager, e.g. with `new SpringCache2kCacheManager("spring")`.
 
 For further details, see link:{cache2k_docs}/apidocs/cache2k-spring/index.html?org/cache2k/extra/spring/SpringCache2kCacheManager.html[`SpringCache2kCacheManager API documentation`].
 
