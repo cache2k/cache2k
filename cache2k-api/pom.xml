@@ -17,12 +17,14 @@
 
   <description>
     A light weight and high performance Java caching library. Android and Java 6 compatible.
-    API only atrifact.
+    This artifact contains the official API of cache2k. It is intended to be stable and
+    well documented.
   </description>
 
   <dependencies>
 
-    <!-- needed to compile extended JCache configuration
+    <!--
+         Optional. For the extended JCache configuration
     -->
     <dependency>
       <groupId>javax.cache</groupId>
@@ -53,7 +55,7 @@
             <comparisonArtifact>
               <groupId>org.cache2k</groupId>
               <artifactId>cache2k-api</artifactId>
-              <version>0.19.1</version>
+              <version>1.0.0.Final</version>
             </comparisonArtifact>
           </comparisonArtifacts>
         </configuration>

@@ -5,33 +5,65 @@ cache2k supports the JCache API standard. The implementation is compatible to th
 
 === Maven Dependencies
 
-To use cache2k via JCache the following dependencies need to be added:
+To use cache2k as JCache caching provider for local caching add the following dependency:
 
-[source,xml]
+[source,xml,subs="attributes+"]
 ----
-    <dependency>
-      <groupId>org.cache2k</groupId>
-      <artifactId>cache2k-api</artifactId>
-      <version>${cache2k-version}</version>
-    </dependency>
-    <dependency>
-      <groupId>org.cache2k</groupId>
-      <artifactId>cache2k-core</artifactId>
-      <version>${cache2k-version}</version>
-      <scope>runtime</scope>
-    </dependency>
+    <dependencies>
+      <dependency>
+        <groupId>org.cache2k</groupId>
+        <artifactId>cache2k-jcache</artifactId>
+        <version>{cache2kversion}</version>
+        <type>pom</type>
+        <scope>runtime</scope>
+      </dependency>
+    </dependencies>
+----
+
+The `cache2k-jcache` artifact transitive dependencies provide everything
+for the local caching functionality at runtime.
+
+For applications that need the JCache API or cache2k API in compile scope,
+use this scheme:
+
+[source,xml,subs="attributes+"]
+----
+    <properties>
+      <cache2k-version>{cache2kversion}</cache2k-version>
+    </properties>
+
+    <!--
+          Provides the cache2k JCache implementation and depends on
+          everything needed at runtime.
+      -->
     <dependency>
       <groupId>org.cache2k</groupId>
       <artifactId>cache2k-jcache</artifactId>
       <version>${cache2k-version}</version>
       <scope>runtime</scope>
     </dependency>
+    <!--
+         Optional. When application code depends on JCache API.
+      -->
     <dependency>
       <groupId>javax.cache</groupId>
       <artifactId>cache-api</artifactId>
       <version>1.1.0</version>
     </dependency>
+    <!--
+         Optional. When application code depends on the cache2k API.
+         Needed for the programmatic configuration inside the application.
+      -->
+    <dependency>
+      <groupId>org.cache2k</groupId>
+      <artifactId>cache2k-api</artifactId>
+      <version>${cache2k-version}</version>
+    </dependency>
 ----
+
+=== Getting the Caching Provider
+
+
 
 === Getting Started with the JCache API
 

@@ -6,11 +6,8 @@
   <packaging>pom</packaging>
   <version>1.2-SNAPSHOT</version>
   <name>cache2k parent</name>
-  <description>cache2k is a well engineered high performance in-memory Java cache. It implements
-    latest eviction algorithms and coding techniques to achieve performance about 10 times better
-    then existing cache solutions. cache2k comes with a clean and concise API. The API is currently
-    still evolving until version 1.0 is reached.
-  </description>
+
+  <description>A light weight and high performance Java caching library. Android and Java 6 compatible.</description>
 
   <url>https://cache2k.org</url>
   <inceptionYear>2000</inceptionYear>
@@ -39,6 +36,10 @@
     <url>https://github.com/cache2k/cache2k.git</url>
   </scm>
 
+  <prerequisites>
+    <maven>3.0.5</maven>
+  </prerequisites>
+
   <developers>
     <developer>
       <name>Jens Wilke</name>
@@ -47,6 +48,7 @@
   </developers>
 
   <modules>
+    <module>cache2k-base-bom</module>
     <module>cache2k-api</module>
     <module>cache2k-core</module>
     <module>cache2k-osgi-all</module>
@@ -188,12 +190,17 @@
           <artifactId>maven-bundle-plugin</artifactId>
           <version>3.0.1</version>
         </plugin>
-
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-source-plugin</artifactId>
+          <version>3.0.1</version>
+        </plugin>
         <plugin>
           <groupId>org.apache.maven.plugins</groupId>
           <artifactId>maven-javadoc-plugin</artifactId>
-          <version>2.10.4</version>
+          <version>3.0.1</version>
         </plugin>
+
 
         <plugin>
           <groupId>org.sonatype.plugins</groupId>
@@ -210,7 +217,6 @@
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-source-plugin</artifactId>
-        <version>2.4</version>
         <executions>
           <execution>
             <id>attach-sources</id>
@@ -245,7 +251,8 @@
           <linksource>true</linksource>
           -->
           <links>
-            <link>http://docs.oracle.com/javase/8/docs/api/</link>
+            <link>https://docs.oracle.com/javase/8/docs/api/</link>
+            <link>https://cache2k.org/docs/jcache/1.1.0/apidocs/cache-api/</link>
           </links>
           <quiet>true</quiet>
           <bottom>

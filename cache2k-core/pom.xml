@@ -13,7 +13,10 @@
 
   <description>
     A light weight and high performance Java caching library. Android and Java 6 compatible.
-    Implementation jar. Do not use this as compile time dependency.
+    This artifact contains the implementation of the core functionality of cache2k.
+    For using and integrating cache2k in applications please use the definitions in the cache2k-api
+    artifact only. Classes within the implementation code are not stable within releases and may
+    move or even disappear.
   </description>
 
   <dependencies>

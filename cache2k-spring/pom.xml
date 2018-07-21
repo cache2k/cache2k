@@ -38,6 +38,17 @@
 
   <dependencies>
 
+    <!-- we dont't use the BOM since this gives us a failure from javadoc:
+         [ERROR] Error fetching link: ......../cache2k/cache2k-base-bom/target/apidocs/package-list. Ignored it.
+         we only depend on the official API, use the BOM
+    <dependency>
+      <groupId>${project.groupId}</groupId>
+      <artifactId>cache2k-base-bom</artifactId>
+      <version>${project.version}</version>
+      <type>pom</type>
+    </dependency>
+    -->
+
     <dependency>
       <groupId>${project.groupId}</groupId>
       <artifactId>cache2k-api</artifactId>
@@ -47,7 +58,12 @@
       <groupId>${project.groupId}</groupId>
       <artifactId>cache2k-core</artifactId>
       <version>${project.version}</version>
+      <scope>runtime</scope>
     </dependency>
+
+    <!--
+         Use outdated Spring for compilation to make sure we are compatible.
+     -->
     <dependency>
       <groupId>org.springframework</groupId>
       <artifactId>spring-context</artifactId>
@@ -60,7 +76,6 @@
       <version>4.3.14.RELEASE</version>
       <scope>provided</scope>
     </dependency>
-
 
     <!-- testing -->
     <dependency>

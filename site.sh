@@ -23,7 +23,7 @@ for I in cache2k-api cache2k-jmx-api cache2k-jcache-api; do
   ( cd  $DOC/apidocs/$I/; jar xf $fn )
 done
 
-DOC=$DEST/docs/jcache/1.1.0/cache-api/apidocs
+DOC=$DEST/docs/jcache/1.1.0/apidocs/cache-api
 # JSR107 JCache
 fn=~/.m2/repository/javax/cache/cache-api/1.1.0/cache-api-1.1.0-javadoc.jar;
 test -f $fn || mvn org.apache.maven.plugins:maven-dependency-plugin:3.1.0:get -Dartifact=javax.cache:cache-api:1.1.0:jar:javadoc
