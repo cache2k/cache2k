@@ -33,53 +33,53 @@ import java.util.Collections;
  *
  * @author Jens Wilke
  */
-public class Cache2kCacheManagerTest {
+public class SpringCache2KCacheManagerTest {
 
   @Test(expected=IllegalArgumentException.class)
   public void nameAndManagerMissing() {
-    Cache2kCacheManager m = getManager();
+    SpringCache2kCacheManager m = getManager();
     m.addCache(Cache2kBuilder.forUnknownTypes());
   }
 
   @Test(expected=IllegalArgumentException.class)
   public void nameMissing() {
-    Cache2kCacheManager m = getManager();
+    SpringCache2kCacheManager m = getManager();
     m.addCache(Cache2kBuilder.forUnknownTypes().manager(m.getNativeCacheManager()));
   }
 
   @Test(expected=IllegalArgumentException.class)
   public void managerMissing() {
-    Cache2kCacheManager m = getManager();
+    SpringCache2kCacheManager m = getManager();
     m.addCache(Cache2kBuilder.forUnknownTypes().name("abc"));
   }
 
   @Test(expected=IllegalArgumentException.class)
   public void doubleAdd() {
-    Cache2kCacheManager m = getManager();
+    SpringCache2kCacheManager m = getManager();
     assertNotNull(m.getCache("abc"));
     assertNotNull(m.getCache("abc"));
     m.addCache(Cache2kBuilder.forUnknownTypes().name("abc"));
   }
 
-  private Cache2kCacheManager getManager() {
-    return new Cache2kCacheManager(
+  private SpringCache2kCacheManager getManager() {
+    return new SpringCache2kCacheManager(
       CacheManager.getInstance(
-        Cache2kCacheManagerTest.class.getSimpleName() + "separate"));
+        SpringCache2KCacheManagerTest.class.getSimpleName() + "separate"));
   }
 
   @Test(expected=IllegalArgumentException.class)
   public void testMissing() {
-    Cache2kCacheManager m =
-      new Cache2kCacheManager(
+    SpringCache2kCacheManager m =
+      new SpringCache2kCacheManager(
         CacheManager.getInstance(
-          Cache2kCacheManagerTest.class.getSimpleName() + "notConfigured"));
+          SpringCache2KCacheManagerTest.class.getSimpleName() + "notConfigured"));
     m.getCache("testUnknown");
   }
 
   @Test
   public void testAll() {
-    Cache2kCacheManager m =
-      new Cache2kCacheManager(Cache2kCacheManagerTest.class.getSimpleName() + "notConfigured");
+    SpringCache2kCacheManager m =
+      new SpringCache2kCacheManager(SpringCache2KCacheManagerTest.class.getSimpleName() + "notConfigured");
     m.setAllowUnknownCache(true);
     assertTrue(m.isAllowUnknownCache());
     assertEquals(0, m.getCacheNames().size());
@@ -94,16 +94,16 @@ public class Cache2kCacheManagerTest {
 
   @Test
   public void testAddCaches() {
-    Cache2kCacheManager m =
-      new Cache2kCacheManager(Cache2kCacheManagerTest.class.getSimpleName() + "addCaches");
+    SpringCache2kCacheManager m =
+      new SpringCache2kCacheManager(SpringCache2KCacheManagerTest.class.getSimpleName() + "addCaches");
     m.addCaches(b -> b.name("cache1"));
     assertNotNull(m.getCache("cache1"));
   }
 
   @Test
   public void testDefaultSetup() {
-    Cache2kCacheManager m =
-      new Cache2kCacheManager(Cache2kCacheManagerTest.class.getSimpleName() + "defaultSetup");
+    SpringCache2kCacheManager m =
+      new SpringCache2kCacheManager(SpringCache2KCacheManagerTest.class.getSimpleName() + "defaultSetup");
     m.defaultSetup(b -> b.name("cache1"));
     m.addCaches(b->b, b->b.name("cache2"));
     assertNotNull(m.getCache("cache1"));

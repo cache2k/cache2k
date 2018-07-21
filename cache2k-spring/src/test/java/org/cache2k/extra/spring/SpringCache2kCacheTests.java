@@ -28,20 +28,19 @@ import org.junit.Before;
 import static org.junit.Assert.assertNull;
 
 /**
- * Execute the generic spring tests
+ * Execute spring test suite.
  *
  * @author Jens Wilke
  */
-public class SpringCache2kCacheTest extends AbstractCacheTests<Cache2kCache> {
+public class SpringCache2kCacheTests extends AbstractCacheTests<SpringCache2kCache> {
 
   private Cache nativeCache;
-  private Cache2kCache cache;
+  private SpringCache2kCache cache;
 
   @Before
   public void setUp() {
-    Cache2kBuilder builder =
-      Cache2kCacheManager.configureCache(Cache2kBuilder.forUnknownTypes().name(CACHE_NAME).permitNullValues(true));
-    cache = Cache2kCacheManager.buildAndWrap(builder);
+    Cache2kBuilder builder = Cache2kBuilder.forUnknownTypes().name(CACHE_NAME).permitNullValues(true);
+    cache = SpringCache2kCacheManager.buildAndWrap(builder);
     nativeCache = cache.getNativeCache();
   }
 
@@ -51,7 +50,7 @@ public class SpringCache2kCacheTest extends AbstractCacheTests<Cache2kCache> {
   }
 
   @Override
-  protected Cache2kCache getCache() {
+  protected SpringCache2kCache getCache() {
     return cache;
   }
 

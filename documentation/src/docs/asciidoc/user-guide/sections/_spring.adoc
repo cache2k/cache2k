@@ -30,7 +30,7 @@ To use cache2k in you Spring project, add the following libraries:
 ----
 
 To enable your application to use caching via cache2k, typically define a `CachingConfig` class
-which makes the `Cache2kCacheManager` available:
+which makes the `SpringCache2kCacheManager` available:
 
 [source,java]
 ----
@@ -40,7 +40,7 @@ public class CachingConfig {
 
   @Bean
   public CacheManager cacheManager() {
-    return new Cache2kCacheManager();
+    return new SpringCache2kCacheManager();
   }
 
 }
@@ -48,7 +48,7 @@ public class CachingConfig {
 
 By default, there needs to be a cache configuration (see below) for every used cache. If
 the cache manager should return a cache, even the name is unknown, then use `setAllowUnknownCache(true)`.
-See link:{cache2k_docs}/apidocs/cache2k-spring/index.html?org/cache2k/extra/spring/Cache2kCacheManager.html[`Cache2kCacheManager API documentation`] for a complete method reference.
+See link:{cache2k_docs}/apidocs/cache2k-spring/index.html?org/cache2k/extra/spring/SpringCache2kCacheManager.html[`SpringCache2kCacheManager API documentation`] for a complete method reference.
 
 === XML Based Setup
 
@@ -64,7 +64,7 @@ It is possible to configure various caches with different configuration paramete
 ----
   @Bean
   public CacheManager cacheManager() {
-    return new Cache2kCacheManager()
+    return new SpringCache2kCacheManager()
       .defaultSetup(b->b.entryCapacity(2000))
       .addCaches(
         b->b.name("countries"),
@@ -79,14 +79,14 @@ used for all caches. It is possible to mix the programmatic setup with the XML c
 the order of application is:
 
 - XML setup default section
-- `Cache2kCacheManager.defaultSetup`
-- `Cache2kCacheManager.addCaches`
+- `SpringCache2kCacheManager.defaultSetup`
+- `SpringCache2kCacheManager.addCaches`
 - XML setup cache section
 
 Cache2k supports multiple cache managers. If a caches are used with other parts of the application it may be
-useful to use a separate application cache manager, e.g. with `new Cache2kCacheManager("spring")`.
+useful to use a separate application cache manager, e.g. with `new SpringCache2kCacheManager("spring")`.
 
-For further details, see link:{cache2k_docs}/apidocs/cache2k-spring/index.html?org/cache2k/extra/spring/Cache2kCacheManager.html[`Cache2kCacheManager API documentation`].
+For further details, see link:{cache2k_docs}/apidocs/cache2k-spring/index.html?org/cache2k/extra/spring/SpringCache2kCacheManager.html[`SpringCache2kCacheManager API documentation`].
 
 === Spring Bean XML Configuration
 

@@ -31,7 +31,7 @@ import java.util.concurrent.Callable;
  *
  * @author Jens Wilke
  */
-public class Cache2kCache implements Cache {
+class SpringCache2kCache implements Cache {
 
   protected final org.cache2k.Cache<Object,Object> cache;
 
@@ -41,7 +41,7 @@ public class Cache2kCache implements Cache {
    * @param cache the cache2k cache instance to adapt
    * values for this cache
    */
-  public Cache2kCache(org.cache2k.Cache<Object,Object> cache) {
+  public SpringCache2kCache(org.cache2k.Cache<Object,Object> cache) {
     Assert.notNull(cache, "Cache must not be null");
     this.cache = cache;
   }

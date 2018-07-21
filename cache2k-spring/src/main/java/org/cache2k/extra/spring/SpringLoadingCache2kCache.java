@@ -21,7 +21,6 @@ package org.cache2k.extra.spring;
  */
 
 import org.cache2k.Cache;
-import org.cache2k.integration.CacheLoaderException;
 
 import java.util.concurrent.Callable;
 
@@ -30,9 +29,9 @@ import java.util.concurrent.Callable;
  *
  * @author Jens Wilke
  */
-public class LoadingCache2kCache extends Cache2kCache {
+class SpringLoadingCache2kCache extends SpringCache2kCache {
 
-  public LoadingCache2kCache(final Cache<Object, Object> cache) {
+  public SpringLoadingCache2kCache(final Cache<Object, Object> cache) {
     super(cache);
   }
 

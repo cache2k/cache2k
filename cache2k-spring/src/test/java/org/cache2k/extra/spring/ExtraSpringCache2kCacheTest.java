@@ -33,13 +33,13 @@ import java.util.concurrent.Callable;
 import static org.junit.Assert.*;
 
 /**
- * Some extra tests not covered by {@link SpringCache2kCacheTest}
+ * Some extra tests not covered by {@link SpringCache2kCacheTests}
  *
  * @author Jens Wilke
  */
-public class Cache2kCacheTest {
+public class ExtraSpringCache2kCacheTest {
 
-  Cache2kCache cache;
+  SpringCache2kCache cache;
 
   @After
   public void tearDown() {
@@ -47,12 +47,12 @@ public class Cache2kCacheTest {
       cache.getNativeCache().close();
     }
   }
-  protected Cache2kCache getCache() {
+  protected SpringCache2kCache getCache() {
     return cache =
-      new Cache2kCacheManager()
+      new SpringCache2kCacheManager()
         .defaultSetup(b->b.entryCapacity(10_000))
-        .addCaches(b->b.name(SpringCache2kCacheTest.class.getSimpleName()))
-        .getCache(SpringCache2kCacheTest.class.getSimpleName());
+        .addCaches(b->b.name(SpringCache2kCacheTests.class.getSimpleName()))
+        .getCache(SpringCache2kCacheTests.class.getSimpleName());
   }
 
   @Test
@@ -65,7 +65,7 @@ public class Cache2kCacheTest {
    */
   @Test
   public void testEvict() {
-    Cache2kCache cache = getCache();
+    SpringCache2kCache cache = getCache();
     String key = AbstractCacheTests.createRandomKey();
     Object value = "george";
     cache.put(key, value);
@@ -79,7 +79,7 @@ public class Cache2kCacheTest {
    */
   @Test(expected = IllegalStateException.class)
   public void testTypeCheck() {
-    Cache2kCache cache = getCache();
+    SpringCache2kCache cache = getCache();
     String key = AbstractCacheTests.createRandomKey();
     Object value = "george";
     cache.put(key, value);
@@ -88,10 +88,10 @@ public class Cache2kCacheTest {
 
   @Test
   public void testLoadingCache() {
-    Cache2kCache cacheWithLoader =
-      new Cache2kCacheManager().addCache(
+    SpringCache2kCache cacheWithLoader =
+      new SpringCache2kCacheManager().addCache(
         Cache2kBuilder.forUnknownTypes()
-          .name(Cache2kCacheTest.class.getSimpleName() + "-withLoader")
+          .name(ExtraSpringCache2kCacheTest.class.getSimpleName() + "-withLoader")
           .loader(key -> "123"));
     assertTrue(cacheWithLoader.isLoaderPresent());
     cacheWithLoader.getNativeCache().close();
@@ -99,10 +99,10 @@ public class Cache2kCacheTest {
 
   @Test(expected = CacheLoaderException.class)
   public void testLoadingCacheWithException() throws Exception {
-    Cache2kCache cacheWithLoader =
-      new Cache2kCacheManager().addCache(
+    SpringCache2kCache cacheWithLoader =
+      new SpringCache2kCacheManager().addCache(
         Cache2kBuilder.forUnknownTypes()
-          .name(Cache2kCacheTest.class.getSimpleName() + "-withLoaderException")
+          .name(ExtraSpringCache2kCacheTest.class.getSimpleName() + "-withLoaderException")
           .loader(key -> { throw new IOException("ouch"); }));
     try {
       cacheWithLoader.get("123", (Callable) null);
@@ -113,10 +113,10 @@ public class Cache2kCacheTest {
 
   @Test
   public void testLoadingCacheAdvancedLoader() {
-    Cache2kCache cacheWithLoader =
-      new Cache2kCacheManager().addCache(
+    SpringCache2kCache cacheWithLoader =
+      new SpringCache2kCacheManager().addCache(
         Cache2kBuilder.forUnknownTypes()
-          .name(Cache2kCacheTest.class.getSimpleName() + "-withAdvancedLoader")
+          .name(ExtraSpringCache2kCacheTest.class.getSimpleName() + "-withAdvancedLoader")
           .loader(new AdvancedCacheLoader() {
             @Override
             public Object load(

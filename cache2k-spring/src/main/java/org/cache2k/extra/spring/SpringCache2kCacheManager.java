@@ -22,7 +22,6 @@ package org.cache2k.extra.spring;
 
 import org.cache2k.Cache2kBuilder;
 import org.cache2k.configuration.Cache2kConfiguration;
-import org.springframework.cache.Cache;
 import org.springframework.cache.CacheManager;
 import org.springframework.util.Assert;
 
@@ -31,24 +30,24 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;
 
 /**
- * Spring cache manager that manages wraps cache2k caches. The manager delegates to the cache2k
+ * A Spring cache manager that manages cache2k caches. The manager delegates to the cache2k
  * native {@link org.cache2k.CacheManager}. The available caches can be
  * configured programmatically in a Spring configuration class via the use
  * of {@link #addCaches(Function[])}, via a Spring XML configuration
  * and {@link #setCaches(Collection)} or via the cache2k XML configuration.
  *
  * @author Jens Wilke
+ * @see <a href="https://cache2k.org/docs/latest/user-guide.html#spring">Spring Framework - cache2k User Guide</a>
  */
-public class Cache2kCacheManager implements CacheManager {
+class SpringCache2kCacheManager implements CacheManager {
 
   private final org.cache2k.CacheManager manager;
 
-  private final Map<String, Cache2kCache> name2cache = new ConcurrentHashMap<>();
+  private final Map<String, SpringCache2kCache> name2cache = new ConcurrentHashMap<>();
 
   private final Set<String> configuredCacheNames = new HashSet<>();
 
@@ -62,7 +61,7 @@ public class Cache2kCacheManager implements CacheManager {
    * @see org.cache2k.CacheManager
    * @see org.cache2k.CacheManager#getInstance()
    */
-  public Cache2kCacheManager() {
+  public SpringCache2kCacheManager() {
     this(org.cache2k.CacheManager.getInstance());
   }
 
@@ -74,7 +73,7 @@ public class Cache2kCacheManager implements CacheManager {
    * @see org.cache2k.CacheManager#getInstance()
    *
    */
-  public Cache2kCacheManager(String name) {
+  public SpringCache2kCacheManager(String name) {
     this(org.cache2k.CacheManager.getInstance(name));
   }
 
@@ -87,26 +86,29 @@ public class Cache2kCacheManager implements CacheManager {
    * @see org.cache2k.CacheManager#getInstance(ClassLoader)
    * @see org.cache2k.CacheManager#getInstance(ClassLoader, String)
    */
-  public Cache2kCacheManager(org.cache2k.CacheManager manager) {
+  public SpringCache2kCacheManager(org.cache2k.CacheManager manager) {
     this.manager = manager;
     manager.getConfiguredCacheNames().forEach(configuredCacheNames::add);
   }
 
+  /**
+   * Returns an existing cache or retrieves and wraps a cache from cache2k.
+   */
   @SuppressWarnings("unchecked")
   @Override
-  public Cache2kCache getCache(final String name) {
+  public SpringCache2kCache getCache(final String name) {
     return name2cache.computeIfAbsent(name, n -> {
         if (!allowUnknownCache && !configuredCacheNames.contains(n)) {
           throw new IllegalArgumentException("Cache configuration missing for: " + n);
         }
-        return buildAndWrap(configureCache(Cache2kBuilder.forUnknownTypes().manager(manager).name(n)));
+        return buildAndWrap(Cache2kBuilder.forUnknownTypes().manager(manager).name(n));
       });
   }
 
   /**
    * Function providing default settings for caches added to the manager via {@link #addCaches}
    */
-  public Cache2kCacheManager defaultSetup(Function<Cache2kBuilder<?,?>, Cache2kBuilder<?,?>> f) {
+  public SpringCache2kCacheManager defaultSetup(Function<Cache2kBuilder<?,?>, Cache2kBuilder<?,?>> f) {
     defaultSetup = f;
     return this;
   }
@@ -123,20 +125,20 @@ public class Cache2kCacheManager implements CacheManager {
    *
    * @throws IllegalArgumentException if cache is already created
    */
-  public Cache2kCacheManager addCaches(Function<Cache2kBuilder<?,?>, Cache2kBuilder<?,?>>... fs) {
+  public SpringCache2kCacheManager addCaches(Function<Cache2kBuilder<?,?>, Cache2kBuilder<?,?>>... fs) {
     for (Function<Cache2kBuilder<?,?>, Cache2kBuilder<?,?>> f : fs) {
       addCache(f.apply(defaultSetup.apply(Cache2kBuilder.forUnknownTypes().manager(manager))));
     }
     return this;
   }
 
-  Cache2kCache addCache(final Cache2kBuilder builder) {
+  SpringCache2kCache addCache(final Cache2kBuilder builder) {
     String name = builder.toConfiguration().getName();
     Assert.notNull(name, "Name must be set via Cache2kBuilder.name()");
     Assert.isTrue(builder.getManager() == manager, "Manager must be identical in builder.");
     return name2cache.compute(name, (name2, existingCache) -> {
       Assert.isNull(existingCache, "Cache is not yet configured");
-      return buildAndWrap(configureCache(builder));
+      return buildAndWrap(builder);
     });
   }
 
@@ -149,7 +151,7 @@ public class Cache2kCacheManager implements CacheManager {
     cacheConfigurationList.forEach(cfg -> addCache(cfg));
   }
 
-  Cache2kCache addCache(final Cache2kConfiguration cfg) {
+  SpringCache2kCache addCache(final Cache2kConfiguration cfg) {
     return addCache(Cache2kBuilder.of(cfg).manager(manager));
   }
 
@@ -178,7 +180,7 @@ public class Cache2kCacheManager implements CacheManager {
   /**
    * Expose the map of created and wrapped caches.
    */
-  public Map<String, Cache2kCache> getCacheMap() {
+  public Map<String, SpringCache2kCache> getCacheMap() {
     return Collections.unmodifiableMap(name2cache);
   }
 
@@ -196,19 +198,11 @@ public class Cache2kCacheManager implements CacheManager {
     allowUnknownCache = v;
   }
 
-  /**
-   * Configures the cache, in case we need some modifications to comply with
-   * the needed Spring semantics.
-   */
-  static Cache2kBuilder<Object,Object> configureCache(Cache2kBuilder<Object, Object> builder) {
-    return builder;
-  }
-
-  static Cache2kCache buildAndWrap(Cache2kBuilder<Object, Object> builder) {
+  static SpringCache2kCache buildAndWrap(Cache2kBuilder<Object, Object> builder) {
     org.cache2k.Cache<Object, Object> nativeCache = builder.build();
     Cache2kConfiguration<?,?> cfg = builder.toConfiguration();
     boolean loaderPresent = cfg.getLoader() != null || cfg.getAdvancedLoader() != null;
-    return loaderPresent ? new LoadingCache2kCache(nativeCache) : new Cache2kCache(nativeCache);
+    return loaderPresent ? new SpringLoadingCache2kCache(nativeCache) : new SpringCache2kCache(nativeCache);
   }
 
 }
