@@ -43,7 +43,7 @@ import java.util.function.Function;
  * @author Jens Wilke
  * @see <a href="https://cache2k.org/docs/latest/user-guide.html#spring">Spring Framework - cache2k User Guide</a>
  */
-class SpringCache2kCacheManager implements CacheManager {
+public class SpringCache2kCacheManager implements CacheManager {
 
   private final org.cache2k.CacheManager manager;
 
