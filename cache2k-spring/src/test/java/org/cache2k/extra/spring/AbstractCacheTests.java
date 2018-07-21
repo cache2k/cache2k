@@ -34,7 +34,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * Copy of the generic spring framework cache test. This should be kept in sync with the
- * spring tests.
+ * spring tests, so we only do minimal modifications here but don't add other stuff.
  *
  * @author Stephane Nicoll
  * @see <a href="https://github.com/spring-projects/spring-framework/blob/master/spring-context/src/test/java/org/springframework/cache/AbstractCacheTests.java">AbstractCacheTests.java</a>
