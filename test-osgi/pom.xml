@@ -5,9 +5,9 @@
   
   <parent>
     <groupId>org.cache2k</groupId>
-    <artifactId>cache2k-parent</artifactId>
+    <artifactId>test-parent</artifactId>
     <version>1.2-SNAPSHOT</version>
-    <relativePath>../pom.xml</relativePath>
+    <relativePath>../test-parent/pom.xml</relativePath>
   </parent>
 
   <description>
@@ -112,21 +112,6 @@
           </systemPropertyVariables>
         </configuration>
       </plugin>
-      <!-- skip install and deploy for this module -->
-      <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-install-plugin</artifactId>
-        <configuration>
-          <skip>true</skip>
-        </configuration>
-      </plugin>
-      <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-deploy-plugin</artifactId>
-        <configuration>
-          <skip>true</skip>
-        </configuration>
-      </plugin>
     </plugins>
   </build>
 
@@ -144,22 +129,6 @@
             <artifactId>maven-failsafe-plugin</artifactId>
             <configuration>
               <skip>true</skip>
-            </configuration>
-          </plugin>
-        </plugins>
-      </build>
-    </profile>
-
-    <!-- this module is not deployed to OSS -->
-    <profile>
-      <id>sonatype-oss-release</id>
-      <build>
-        <plugins>
-          <plugin>
-            <groupId>org.sonatype.plugins</groupId>
-            <artifactId>nexus-staging-maven-plugin</artifactId>
-            <configuration>
-              <skipNexusStagingDeployMojo>true</skipNexusStagingDeployMojo>
             </configuration>
           </plugin>
         </plugins>
