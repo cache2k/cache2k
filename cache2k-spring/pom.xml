@@ -20,45 +20,15 @@
     with 4.3 and beyond.
   </description>
 
-  <build>
-    <pluginManagement>
-      <plugins>
-        <plugin>
-          <groupId>org.apache.maven.plugins</groupId>
-          <artifactId>maven-compiler-plugin</artifactId>
-          <configuration>
-            <useIncrementalCompilation>false</useIncrementalCompilation>
-            <source>1.8</source>
-            <target>1.8</target>
-          </configuration>
-        </plugin>
-      </plugins>
-    </pluginManagement>
-  </build>
-
   <dependencies>
 
-    <!-- we dont't use the BOM since this gives us a failure from javadoc:
-         [ERROR] Error fetching link: ......../cache2k/cache2k-base-bom/target/apidocs/package-list. Ignored it.
-         we only depend on the official API, use the BOM
+    <!-- hint in case this produces JavaDoc complaints again: <detectOfflineLinks>false</detectOfflineLinks> -->
+    <!-- we only depend on the official API, use the BOM -->
     <dependency>
       <groupId>${project.groupId}</groupId>
       <artifactId>cache2k-base-bom</artifactId>
       <version>${project.version}</version>
       <type>pom</type>
-    </dependency>
-    -->
-
-    <dependency>
-      <groupId>${project.groupId}</groupId>
-      <artifactId>cache2k-api</artifactId>
-      <version>${project.version}</version>
-    </dependency>
-    <dependency>
-      <groupId>${project.groupId}</groupId>
-      <artifactId>cache2k-core</artifactId>
-      <version>${project.version}</version>
-      <scope>runtime</scope>
     </dependency>
 
     <!--
@@ -86,6 +56,20 @@
     </dependency>
 
   </dependencies>
+
+  <build>
+    <plugins>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-compiler-plugin</artifactId>
+        <configuration>
+          <useIncrementalCompilation>false</useIncrementalCompilation>
+          <source>1.8</source>
+          <target>1.8</target>
+        </configuration>
+      </plugin>
+    </plugins>
+  </build>
 
   <profiles>
     <!-- Tests don't run on Java 6. -->
