@@ -36,10 +36,6 @@
     <url>https://github.com/cache2k/cache2k.git</url>
   </scm>
 
-  <prerequisites>
-    <maven>3.0.5</maven>
-  </prerequisites>
-
   <developers>
     <developer>
       <name>Jens Wilke</name>
@@ -53,6 +49,7 @@
     <module>cache2k-core</module>
     <module>cache2k-osgi-all</module>
     <!-- not deployed on OSS central -->
+    <module>test-parent</module>
     <module>cache2k-jcache-tests</module>
     <module>test-osgi</module>
     <module>documentation</module>
@@ -82,9 +79,17 @@
     <pluginManagement>
       <plugins>
         <plugin>
+          <artifactId>maven-clean-plugin</artifactId>
+          <version>3.1.0</version>
+        </plugin>
+        <plugin>
+          <artifactId>maven-resources-plugin</artifactId>
+          <version>3.1.0</version>
+        </plugin>
+        <plugin>
           <groupId>org.apache.maven.plugins</groupId>
           <artifactId>maven-compiler-plugin</artifactId>
-          <version>3.6.0</version>
+          <version>3.7.0</version>
           <configuration>
             <useIncrementalCompilation>false</useIncrementalCompilation>
             <source>1.6</source>
@@ -92,6 +97,8 @@
             <!-- various warnings pop up when enabling this.
             <compilerArgument>-Xlint:unchecked</compilerArgument>
             -->
+            <compilerArgument>-Xlint:deprecation</compilerArgument>
+            <compilerArgument>-Xlint:unchecked</compilerArgument>
           </configuration>
         </plugin>
         <plugin>
@@ -106,7 +113,7 @@
         <plugin>
           <groupId>org.apache.maven.plugins</groupId>
           <artifactId>maven-jar-plugin</artifactId>
-          <version>2.4</version>
+          <version>3.1.0</version>
           <configuration>
             <archive>
               <manifest>
@@ -199,6 +206,26 @@
           <groupId>org.apache.maven.plugins</groupId>
           <artifactId>maven-javadoc-plugin</artifactId>
           <version>3.0.1</version>
+
+          <configuration>
+            <additionalparam>-Xdoclint:all -Xdoclint:-missing</additionalparam>
+            <additionalJOption>-Xdoclint:all</additionalJOption>
+            <additionalJOption>-Xdoclint:-missing</additionalJOption>
+            <!-- no aggregation, we want to have docs on the API package alone -->
+            <aggregate>false</aggregate>
+            <!--
+            <linksource>true</linksource>
+            -->
+            <links>
+              <link>https://docs.oracle.com/javase/8/docs/api/</link>
+              <link>https://cache2k.org/docs/jcache/1.1.0/apidocs/cache-api/</link>
+            </links>
+            <quiet>true</quiet>
+            <bottom>
+              <![CDATA[<a href="http://cache2k.org" target="_blank">cache2k</a> API documentation. Copyright &#169; {inceptionYear}&#x2013;{currentYear} <a href="http://headissue.com" target="_blank">headissue GmbH, Munich</a>.]]>
+            </bottom>
+            <detectOfflineLinks>false</detectOfflineLinks>
+          </configuration>
         </plugin>
 
 
@@ -238,28 +265,32 @@
             </goals>
           </execution>
         </executions>
-
-        <configuration>
-          <!-- no aggregation, we want to have docs on the API package alone -->
-          <aggregate>false</aggregate>
-          <!--
-          <source>${maven.compile.source}</source>
-          <encoding>${commons.encoding}</encoding>
-          <docEncoding>${commons.docEncoding}</docEncoding>
-          -->
-          <!--
-          <linksource>true</linksource>
-          -->
-          <links>
-            <link>https://docs.oracle.com/javase/8/docs/api/</link>
-            <link>https://cache2k.org/docs/jcache/1.1.0/apidocs/cache-api/</link>
-          </links>
-          <quiet>true</quiet>
-          <bottom>
-            <![CDATA[<a href="http://cache2k.org" target="_blank">cache2k</a> API documentation. Copyright &#169; {inceptionYear}&#x2013;{currentYear} <a href="http://headissue.com" target="_blank">headissue GmbH, Munich</a>.]]>
-          </bottom>
-        </configuration>
       </plugin>
+
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-enforcer-plugin</artifactId>
+        <version>3.0.0-M2</version>
+        <executions>
+          <execution>
+            <id>enforce-versions</id>
+            <goals>
+              <goal>enforce</goal>
+            </goals>
+            <configuration>
+              <rules>
+                <requireMavenVersion>
+                  <version>3.0.5</version>
+                </requireMavenVersion>
+                <requireJavaVersion>
+                  <version>1.8</version>
+                </requireJavaVersion>
+              </rules>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+
     </plugins>
 
     <extensions>
@@ -295,24 +326,7 @@
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-javadoc-plugin</artifactId>
         <configuration>
-          <additionalparam>-Xdoclint:all -Xdoclint:-missing</additionalparam>
-          <!-- no aggregation, we want to have docs on the API package alone -->
-          <aggregate>false</aggregate>
-          <!--
-          <source>${maven.compile.source}</source>
-          <encoding>${commons.encoding}</encoding>
-          <docEncoding>${commons.docEncoding}</docEncoding>
-          -->
-          <!-- Creates an HTML version of each source file (with line numbers) and adds links to them from the standard HTML documentation. -->
-          <linksource>true</linksource>
-          <links>
-            <link>http://docs.oracle.com/javase/8/docs/api/</link>
-          </links>
-          <quiet>true</quiet>
-          <bottom>
-            <![CDATA[<a href="https://cache2k.org" target="_blank">cache2k</a> API documentation. Copyright &#169; {inceptionYear}&#x2013;{currentYear} <a href="https://headissue.com" target="_blank">headissue GmbH, Munich</a>.]]>
-          </bottom>
-          <detectOfflineLinks>false</detectOfflineLinks>
+          <!-- from plugin management -->
         </configuration>
         <reportSets>
           <reportSet>
@@ -586,29 +600,6 @@
         <module>test-android</module>
         <module>test-android-proguard</module>
       </modules>
-    </profile>
-
-    <!-- run doclint on java8.
-         but do not complain if documentation is missing for parameter or return statement.
-         the profile enables automatically on java 8. this is backwards compatible,
-         if someone wants to build on java 7. -->
-    <profile>
-      <id>doclint-java8-all-but-missing</id>
-      <activation>
-        <jdk>[1.8,)</jdk>
-      </activation>
-
-      <build>
-        <plugins>
-          <plugin>
-            <groupId>org.apache.maven.plugins</groupId>
-            <artifactId>maven-javadoc-plugin</artifactId>
-            <configuration>
-              <additionalparam>-Xdoclint:all -Xdoclint:-missing</additionalparam>
-            </configuration>
-          </plugin>
-        </plugins>
-      </build>
     </profile>
 
   </profiles>
