@@ -312,6 +312,7 @@ public class TouchyJCacheAdapter<K, V> implements Cache<K, V> {
     }
   };
 
+  @SuppressWarnings("unchecked")
   @Override
   public boolean replace(K key, V oldValue, V newValue) {
     checkClosed();

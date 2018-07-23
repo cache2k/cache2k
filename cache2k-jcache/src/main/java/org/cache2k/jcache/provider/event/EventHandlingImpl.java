@@ -94,13 +94,12 @@ public class EventHandlingImpl<K,V> implements EventHandling<K, V>, CacheClosedL
 
   @Override
   public boolean deregisterListener(CacheEntryListenerConfiguration<K, V> cfg) {
-    boolean _found;
-    _found = removeCfgMatch(cfg, createdListener);
-    _found |= removeCfgMatch(cfg, updatedListener);
-    _found |= removeCfgMatch(cfg, removedListener);
-    _found |= removeCfgMatch(cfg, expiredListener);
-    _found |= asyncDispatcher.removeAsyncListener(cfg);
-    return _found;
+    return
+      removeCfgMatch(cfg, createdListener)
+      | removeCfgMatch(cfg, updatedListener)
+      | removeCfgMatch(cfg, removedListener)
+      | removeCfgMatch(cfg, expiredListener)
+      | asyncDispatcher.removeAsyncListener(cfg);
   }
 
   @Override

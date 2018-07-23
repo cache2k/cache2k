@@ -33,6 +33,7 @@ public class RuntimeCopyTransformer extends CopyTransformer<Object>  {
     serializableCopyTransformer = new SerializableCopyTransformer(_classLoader);
   }
 
+  @SuppressWarnings("unchecked")
   @Override
   public Object copy(Object obj) {
     if (obj == null) {

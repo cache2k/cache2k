@@ -43,7 +43,7 @@ public interface EventHandling<K, V> {
 
     @Override
     public Collection<CacheEntryListenerConfiguration> getAllListenerConfigurations() {
-      return Collections.EMPTY_LIST;
+      return Collections.emptyList();
     }
 
     @Override
@@ -59,6 +59,7 @@ public interface EventHandling<K, V> {
 
   void registerListener(CacheEntryListenerConfiguration<K, V> cfg);
 
+  @SuppressWarnings("UnusedReturnValue")
   boolean deregisterListener(CacheEntryListenerConfiguration<K, V> cfg);
 
   Collection<CacheEntryListenerConfiguration<K,V>> getAllListenerConfigurations();

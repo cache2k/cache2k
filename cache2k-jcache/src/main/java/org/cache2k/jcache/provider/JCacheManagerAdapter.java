@@ -44,7 +44,7 @@ import java.util.WeakHashMap;
  */
 public class JCacheManagerAdapter implements CacheManager {
 
-  private final static JCacheJmxSupport jmxSupport = findJCacheJmxSupportInstance();
+  private final static JCacheJmxSupport JMX_SUPPORT = findJCacheJmxSupportInstance();
 
   /**
    * The JMX support is already created via the serviceloader
@@ -55,7 +55,7 @@ public class JCacheManagerAdapter implements CacheManager {
         return (JCacheJmxSupport) l;
       }
     }
-    return null;
+    throw new LinkageError("JCacheJmxSupport not loaded");
   }
 
   private org.cache2k.CacheManager manager;
@@ -122,8 +122,7 @@ public class JCacheManagerAdapter implements CacheManager {
       _builder.setConfiguration(cfg);
       Cache<K,V> _cache = _builder.build();
       org.cache2k.Cache _cache2k = _cache.unwrap(org.cache2k.Cache.class);
-      Map<org.cache2k.Cache, Cache> _cloneC2k2jCache = new WeakHashMap<org.cache2k.Cache, Cache>();
-      _cloneC2k2jCache.putAll(c2k2jCache);
+      Map<org.cache2k.Cache, Cache> _cloneC2k2jCache = new WeakHashMap<org.cache2k.Cache, Cache>(c2k2jCache);
       _cloneC2k2jCache.put(_cache2k, _cache);
       c2k2jCache = _cloneC2k2jCache;
       name2adapter.put(_cache.getName(), _cache);
@@ -227,12 +226,12 @@ public class JCacheManagerAdapter implements CacheManager {
       Cache c = name2adapter.get(_cacheName);
       if (enabled) {
         if (!ca.jmxEnabled) {
-          jmxSupport.enableJmx(ca.cache, c);
+          JMX_SUPPORT.enableJmx(ca.cache, c);
           ca.jmxEnabled = true;
         }
       } else {
         if (ca.jmxEnabled) {
-          jmxSupport.disableJmx(ca.cache);
+          JMX_SUPPORT.disableJmx(ca.cache);
           ca.jmxEnabled = false;
         }
       }
@@ -255,7 +254,7 @@ public class JCacheManagerAdapter implements CacheManager {
         if (ca != null) {
           synchronized (ca.cache) {
             if (!ca.jmxStatisticsEnabled) {
-              jmxSupport.enableStatistics(ca);
+              JMX_SUPPORT.enableStatistics(ca);
               ca.jmxStatisticsEnabled = true;
             }
           }
@@ -265,7 +264,7 @@ public class JCacheManagerAdapter implements CacheManager {
         if (ca != null) {
           synchronized (ca.cache) {
             if (ca.jmxStatisticsEnabled) {
-              jmxSupport.disableStatistics(ca.cache);
+              JMX_SUPPORT.disableStatistics(ca.cache);
               ca.jmxStatisticsEnabled = false;
             }
           }
@@ -284,6 +283,7 @@ public class JCacheManagerAdapter implements CacheManager {
     return manager.isClosed();
   }
 
+  @SuppressWarnings("unchecked")
   @Override
   public <T> T unwrap(Class<T> _class) {
     if (org.cache2k.CacheManager.class.isAssignableFrom(_class)) {

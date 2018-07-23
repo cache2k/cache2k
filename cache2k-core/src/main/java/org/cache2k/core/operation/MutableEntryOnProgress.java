@@ -35,7 +35,7 @@ class MutableEntryOnProgress<K, V> implements MutableCacheEntry<K, V> {
   private boolean remove = false;
   private boolean exists = false;
   private V value = null;
-  private boolean readThrough = false;
+  private boolean readThrough;
   private boolean customExpiry = false;
   private long expiry;
 
@@ -68,6 +68,7 @@ class MutableEntryOnProgress<K, V> implements MutableCacheEntry<K, V> {
     return this;
   }
 
+  @SuppressWarnings("unchecked")
   @Override
   public MutableCacheEntry<K, V> setException(final Throwable ex) {
     mutate = true;
