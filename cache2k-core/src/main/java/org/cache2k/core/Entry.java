@@ -30,8 +30,6 @@ import org.cache2k.integration.ExceptionInformation;
 
 import static org.cache2k.core.util.Util.*;
 
-import java.lang.reflect.Field;
-
 /**
  * Separate with relevant fields for read access only for optimizing the object layout.
  *
@@ -39,7 +37,7 @@ import java.lang.reflect.Field;
  */
 class CompactEntry<K,T> {
 
-  private static class InitialValueInEntryNeverReturned extends Object { }
+  private static class InitialValueInEntryNeverReturned { }
 
   protected final static InitialValueInEntryNeverReturned INITIAL_VALUE = new InitialValueInEntryNeverReturned();
 
@@ -55,6 +53,7 @@ class CompactEntry<K,T> {
   /**
    * Holds the associated entry value or an exception via the {@link ExceptionWrapper}
    */
+  @SuppressWarnings("unchecked")
   private volatile T valueOrException = (T) INITIAL_VALUE;
 
   /**
@@ -102,9 +101,8 @@ class CompactEntry<K,T> {
 
   /**
    * Should never be called on the entry directly!
-   *
-   * @deprecated
    */
+  @Deprecated
   public T getValue() {
     throw new UnsupportedOperationException();
   }
@@ -116,6 +114,7 @@ class CompactEntry<K,T> {
     return valueOrException;
   }
 
+  @SuppressWarnings("unchecked")
   public K getKey() {
     if (key == null) {
       return (K) Integer.valueOf(hashCode);
@@ -257,6 +256,7 @@ public class Entry<K, T> extends CompactEntry<K,T>
     fetchedTime = fetchedTime | 1;
   }
 
+  @SuppressWarnings("deprecation")
   @Override
   public long getLastModification() {
     return (fetchedTime & MODIFICATION_TIME_MASK) >> MODIFICATION_TIME_SHIFT;
@@ -732,7 +732,7 @@ public class Entry<K, T> extends CompactEntry<K,T>
   }
 
 
-  public static final <E extends Entry> E insertIntoTailCyclicList(final E _head, final E e) {
+  public static <E extends Entry> E insertIntoTailCyclicList(final E _head, final E e) {
     if (_head == null) {
       return (E) e.shortCircuit();
     }

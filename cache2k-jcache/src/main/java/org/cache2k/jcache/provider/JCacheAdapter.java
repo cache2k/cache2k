@@ -377,8 +377,8 @@ public class JCacheAdapter<K, V> implements javax.cache.Cache<K, V> {
     }
     EntryProcessor<K, V, T> p = new EntryProcessor<K, V, T>() {
       @Override
-      public T process(final MutableCacheEntry<K, V> e) throws Exception {
-        MutableEntryAdapter<K, V> me = new MutableEntryAdapter<K, V>(e);
+      public T process(final MutableCacheEntry<K, V> e) {
+        MutableEntryAdapter me = new MutableEntryAdapter(e);
         T _result = entryProcessor.process(me, arguments);
         return _result;
       }
@@ -422,6 +422,7 @@ public class JCacheAdapter<K, V> implements javax.cache.Cache<K, V> {
     return cache.isClosed();
   }
 
+  @SuppressWarnings("unchecked")
   @Override
   public <T> T unwrap(Class<T> clazz) {
     if (Cache.class.equals(clazz)) {
@@ -482,6 +483,7 @@ public class JCacheAdapter<K, V> implements javax.cache.Cache<K, V> {
             return entry.getValue();
           }
 
+          @SuppressWarnings("unchecked")
           @Override
           public <T> T unwrap(Class<T> _class) {
             if (CacheEntry.class.equals(_class)) {
@@ -508,7 +510,7 @@ public class JCacheAdapter<K, V> implements javax.cache.Cache<K, V> {
     }
   }
 
-  private class MutableEntryAdapter<K, V> implements MutableEntry<K, V> {
+  private class MutableEntryAdapter implements MutableEntry<K, V> {
 
     private final MutableCacheEntry<K, V> entry;
 

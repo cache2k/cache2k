@@ -158,6 +158,8 @@ public interface MutableCacheEntry<K, V> extends CacheEntry<K, V> {
    * <p>For optimizations it is possible to disable time recording. In this case a
    * {@code 0} is returned.
    */
+  @SuppressWarnings("deprecation")
+  @Override
   long getLastModification();
 
 }

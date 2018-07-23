@@ -265,7 +265,7 @@ public class TouchyJCacheAdapter<K, V> implements Cache<K, V> {
     }
     EntryProcessor<K,V,Boolean> ep = new EntryProcessor<K, V, Boolean>() {
       @Override
-      public Boolean process(final MutableCacheEntry<K, V> e) throws Exception {
+      public Boolean process(final MutableCacheEntry<K, V> e) {
         if (!e.exists()) {
           return false;
         }
@@ -289,14 +289,14 @@ public class TouchyJCacheAdapter<K, V> implements Cache<K, V> {
     return cache.getAndRemove(key);
   }
 
-  final CacheEntry<K, V> DUMMY_ENTRY = new CacheEntry<K, V>() {
+  private final static CacheEntry DUMMY_ENTRY = new CacheEntry() {
     @Override
-    public K getKey() {
+    public Object getKey() {
       return null;
     }
 
     @Override
-    public V getValue() {
+    public Object getValue() {
       return null;
     }
 
@@ -305,6 +305,7 @@ public class TouchyJCacheAdapter<K, V> implements Cache<K, V> {
       return null;
     }
 
+    @SuppressWarnings("deprecation")
     @Override
     public long getLastModification() {
       return 0;

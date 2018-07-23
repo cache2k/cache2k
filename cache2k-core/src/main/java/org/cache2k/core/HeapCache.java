@@ -468,7 +468,7 @@ public class HeapCache<K, V> extends BaseCache<K, V> {
     Iterator<Entry<K,V>> iterator;
     Entry entry;
     CacheEntry<K, V> lastEntry;
-    boolean filter = true;
+    boolean filter;
 
     IteratorFilterEntry2Entry(HeapCache<K,V> c, Iterator<Entry<K,V>> it, boolean _filter) {
       cache = c;
@@ -602,6 +602,7 @@ public class HeapCache<K, V> extends BaseCache<K, V> {
         return null;
       }
 
+      @SuppressWarnings("deprecation")
       @Override
       public long getLastModification() {
         throw new UnsupportedOperationException("modification timestamp no longer available in CacheEntry");

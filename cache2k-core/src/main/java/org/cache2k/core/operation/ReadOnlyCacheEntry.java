@@ -31,9 +31,9 @@ import org.cache2k.core.ExceptionWrapper;
  */
 public class ReadOnlyCacheEntry<K, V> implements ResultEntry<K, V> {
 
-  K key;
-  V valueOrException;
-  long lastModification;
+  private K key;
+  private V valueOrException;
+  private long lastModification;
 
   public static <K,V> ReadOnlyCacheEntry<K,V> of(CacheEntry<K,V> entry) {
     if (entry instanceof ReadOnlyCacheEntry) {
@@ -48,10 +48,6 @@ public class ReadOnlyCacheEntry<K, V> implements ResultEntry<K, V> {
 
   private void setValues(final Entry<K, V> entry) {
     setValues(entry.getKey(), entry.getValueOrException(), entry.getLastModification());
-  }
-
-  public ReadOnlyCacheEntry(final K _key, final V _valueOrException, final long _lastModification) {
-    setValues(_key, _valueOrException, _lastModification);
   }
 
   private void setValues(final K _key, final V _valueOrException, final long _lastModification) {
@@ -73,6 +69,7 @@ public class ReadOnlyCacheEntry<K, V> implements ResultEntry<K, V> {
     return key;
   }
 
+  @SuppressWarnings("deprecation")
   @Override
   public long getLastModification() {
     return lastModification;

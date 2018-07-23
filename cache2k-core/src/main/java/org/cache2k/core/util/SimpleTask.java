@@ -24,6 +24,8 @@ import java.util.Date;
 import java.util.concurrent.atomic.AtomicIntegerFieldUpdater;
 
 /**
+ * Task for the simple timer
+ *
  * @author Jens Wilke
  */
 public abstract class SimpleTask implements Runnable {
@@ -33,7 +35,7 @@ public abstract class SimpleTask implements Runnable {
    */
   private volatile int state = VIRGIN;
 
-  static final AtomicIntegerFieldUpdater stateUpdater =
+  static final AtomicIntegerFieldUpdater<SimpleTask> stateUpdater =
     AtomicIntegerFieldUpdater.newUpdater(SimpleTask.class, "state");
 
   /**

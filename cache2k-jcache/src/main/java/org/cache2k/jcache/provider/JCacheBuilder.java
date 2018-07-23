@@ -85,6 +85,7 @@ public class JCacheBuilder<K,V> {
     manager = _manager;
   }
 
+  @SuppressWarnings("unchecked")
   public void setConfiguration(Configuration<K,V> cfg) {
     if (cfg instanceof CompleteConfiguration) {
       config = (CompleteConfiguration<K,V>) cfg;
@@ -139,10 +140,6 @@ public class JCacheBuilder<K,V> {
     return config;
   }
 
-  Cache2kConfiguration<K,V> getCache2kConfiguration() {
-    return cache2kConfiguration;
-  }
-
   JCacheConfiguration getExtraConfiguration() {
     return extraConfiguration;
   }
@@ -190,7 +187,8 @@ public class JCacheBuilder<K,V> {
     if (cache2kConfiguration.getExceptionPropagator() != null) {
       return;
     }
-    cache2kConfiguration.setExceptionPropagator(new CustomizationReferenceSupplier<ExceptionPropagator<K>>(new ExceptionPropagator() {
+    cache2kConfiguration.setExceptionPropagator(
+      new CustomizationReferenceSupplier<ExceptionPropagator<K>>(new ExceptionPropagator<K>() {
       @Override
       public RuntimeException propagateException(Object key, final ExceptionInformation exceptionInformation) {
         return new CacheLoaderException("propagate previous loader exception", exceptionInformation.getException());
@@ -198,8 +196,8 @@ public class JCacheBuilder<K,V> {
     }));
   }
 
-  abstract class CloseableLoader<K,V> extends AdvancedCacheLoader<K,V> implements Closeable {}
-  abstract class CloseableWriter<K,V> extends CacheWriter<K,V> implements Closeable {}
+  abstract class CloseableLoader extends AdvancedCacheLoader<K,V> implements Closeable {}
+  abstract class CloseableWriter extends CacheWriter<K,V> implements Closeable {}
 
   /**
    * Configure loader and writer.
@@ -209,7 +207,7 @@ public class JCacheBuilder<K,V> {
       final CacheLoader<K, V> clf = config.getCacheLoaderFactory().create();
       cache2kConfiguration.setAdvancedLoader(
         new CustomizationReferenceSupplier<AdvancedCacheLoader<K, V>>(
-          new CloseableLoader<K,V>() {
+          new CloseableLoader() {
 
             @Override
             public void close() throws IOException {
@@ -219,7 +217,7 @@ public class JCacheBuilder<K,V> {
             }
 
             @Override
-            public V load(final K key, final long currentTime, final CacheEntry<K, V> currentEntry) throws Exception {
+            public V load(final K key, final long currentTime, final CacheEntry<K, V> currentEntry) {
               return clf.load(key);
             }
 
@@ -227,9 +225,9 @@ public class JCacheBuilder<K,V> {
     }
     if (config.getCacheWriterFactory() != null) {
       final javax.cache.integration.CacheWriter<? super K, ? super V> cw = config.getCacheWriterFactory().create();
-      cache2kConfiguration.setWriter(new CustomizationReferenceSupplier<CacheWriter<K, V>>(new CloseableWriter<K, V>() {
+      cache2kConfiguration.setWriter(new CustomizationReferenceSupplier<CacheWriter<K, V>>(new CloseableWriter() {
         @Override
-        public void write(final K key, final V value) throws Exception {
+        public void write(final K key, final V value) {
           Cache.Entry<K, V> ce = new Cache.Entry<K, V>() {
             @Override
             public K getKey() {
@@ -250,7 +248,7 @@ public class JCacheBuilder<K,V> {
         }
 
         @Override
-        public void delete(final Object key) throws Exception {
+        public void delete(final Object key) {
           cw.delete(key);
         }
 
@@ -361,11 +359,12 @@ public class JCacheBuilder<K,V> {
     cache2kConfiguration.setExpiryPolicy(new CustomizationReferenceSupplier<org.cache2k.expiry.ExpiryPolicy<K, V>>(new TouchyJCacheAdapter.ExpiryPolicyAdapter<K,V>(expiryPolicy)));
   }
 
+  @SuppressWarnings("unchecked")
   private void setupEventHandling() {
     if ((config.getCacheEntryListenerConfigurations() == null ||
       !config.getCacheEntryListenerConfigurations().iterator().hasNext()) &&
       !extraConfiguration.isSupportOnlineListenerAttachment()) {
-      eventHandling = EventHandling.DISABLED;
+      eventHandling = (EventHandling<K,V>) EventHandling.DISABLED;
       return;
     }
     EventHandlingImpl<K,V> _eventHandling = new EventHandlingImpl<K, V>(manager, Executors.newCachedThreadPool());
