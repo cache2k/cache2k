@@ -1146,11 +1146,15 @@ public class BasicCacheOperationsWithoutCustomizationsTest {
 
   @Test
   public void replaceIfEquals_Null() {
-    cache.replaceIfEquals(KEY, null, null);
+    boolean f = cache.replaceIfEquals(KEY, null, null);
+    assertFalse(f);
     cache.put(KEY, null);
-    cache.replaceIfEquals(KEY, null, VALUE);
+    f = cache.replaceIfEquals(KEY, null, VALUE);
+    assertTrue(f);
     assertEquals(VALUE, cache.peek(KEY));
     cache.replaceIfEquals(KEY, OTHER_VALUE, null);
+    assertEquals(VALUE, cache.peek(KEY));
+    cache.replaceIfEquals(KEY, null, null);
     assertEquals(VALUE, cache.peek(KEY));
     cache.replaceIfEquals(KEY, VALUE, null);
     assertTrue(cache.containsKey(KEY));

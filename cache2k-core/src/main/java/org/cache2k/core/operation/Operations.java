@@ -308,8 +308,8 @@ public class Operations<K, V> {
       @Override
       public void update(Progress<K, V, Boolean> c, ExaminationEntry<K, V> e) {
         if (c.isPresentOrMiss() &&
-          ( (value == null && e.getValueOrException() == null) ||
-            value.equals(e.getValueOrException())) ) {
+          ( (value ==  e.getValueOrException()) ||
+            (value != null && value.equals(e.getValueOrException()))) ) {
           c.result(true);
           c.put(newValue);
           return;
