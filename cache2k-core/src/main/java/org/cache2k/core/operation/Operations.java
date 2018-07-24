@@ -320,27 +320,6 @@ public class Operations<K, V> {
     };
   }
 
-  public Semantic<K, V, CacheEntry<K,V>> replaceOrGet(final K key, final V value,
-                                                      final V newValue, final CacheEntry<K, V> dummyEntry) {
-    return new Semantic.UpdateExisting<K, V, CacheEntry<K,V>>() {
-
-      @Override
-      public void update(Progress<K, V, CacheEntry<K, V>> c, ExaminationEntry<K, V> e) {
-        if (c.isPresentOrMiss()) {
-          if (e.getValueOrException().equals(value)) {
-            c.result(null);
-            c.put(newValue);
-            return;
-          }
-          c.entryResult(e);
-          return;
-        }
-        c.result(dummyEntry);
-      }
-
-    };
-  }
-
   public Semantic<K, V, Boolean> remove(final K key, final V value) {
     return new Semantic.UpdateExisting<K, V, Boolean>() {
 

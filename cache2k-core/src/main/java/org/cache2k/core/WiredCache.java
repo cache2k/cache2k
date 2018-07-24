@@ -255,11 +255,6 @@ public class WiredCache<K, V> extends BaseCache<K, V>
   }
 
   @Override
-  public CacheEntry<K, V> replaceOrGet(K key, V _oldValue, V _newValue, CacheEntry<K, V> _dummyEntry) {
-    return execute(key, SPEC.replaceOrGet(key, _oldValue, _newValue, _dummyEntry));
-  }
-
-  @Override
   public void loadAll(final Iterable<? extends K> _keys, final CacheOperationCompletionListener l) {
     checkLoaderPresent();
     final CacheOperationCompletionListener _listener= l != null ? l : HeapCache.DUMMY_LOAD_COMPLETED_LISTENER;

@@ -21,7 +21,6 @@ package org.cache2k.jcache.provider;
  */
 
 import org.cache2k.CacheEntry;
-import org.cache2k.core.InternalCache;
 import org.cache2k.expiry.ExpiryTimeValues;
 import org.cache2k.processor.EntryProcessor;
 import org.cache2k.processor.MutableCacheEntry;
@@ -63,7 +62,7 @@ import java.util.Set;
  */
 public class TouchyJCacheAdapter<K, V> implements Cache<K, V> {
 
-  InternalCache<K, V> c2kCache;
+  org.cache2k.Cache<K, V> c2kCache;
   JCacheAdapter<K, V> cache;
   ExpiryPolicy expiryPolicy;
 
@@ -314,20 +313,28 @@ public class TouchyJCacheAdapter<K, V> implements Cache<K, V> {
 
   @SuppressWarnings("unchecked")
   @Override
-  public boolean replace(K key, V oldValue, V newValue) {
+  public boolean replace(K key, final V oldValue, final V newValue) {
     checkClosed();
     checkNullValue(newValue);
     checkNullValue(oldValue);
-    CacheEntry<K, V> e =
-      c2kCache.replaceOrGet(
-        key,
-        oldValue,
-        newValue,
-        DUMMY_ENTRY);
-    if (e != null && e != DUMMY_ENTRY) {
-      touchEntry(key);
-    }
-    return e == null;
+    return
+      c2kCache.invoke(key, new EntryProcessor<K, V, Boolean>() {
+      @Override
+      public Boolean process(final MutableCacheEntry<K, V> e) {
+        if (e.exists()) {
+          if (oldValue.equals(e.getValue())) {
+            e.setValue(newValue);
+            return true;
+          } else {
+            Duration d = expiryPolicy.getExpiryForAccess();
+            if (d != null) {
+              e.setExpiry(calculateExpiry(d));
+            }
+          }
+        }
+        return false;
+      }
+    });
   }
 
   @Override

@@ -72,11 +72,6 @@ public interface InternalCache<K, V> extends Cache<K, V>, CanCheckIntegrity {
    */
   InternalCacheInfo getLatestInfo();
 
-  /**
-   * Used by JCache impl, since access needs to trigger the TTI maybe use EP instead?
-   */
-  CacheEntry<K, V> replaceOrGet(K key, V _oldValue, V _newValue, CacheEntry<K, V> _dummyEntry);
-
   String getEntryState(K key);
 
   /**

@@ -771,47 +771,34 @@ public class HeapCache<K, V> extends BaseCache<K, V> {
 
   @Override
   public boolean replace(K key, V _newValue) {
-    return replace(key, false, null, _newValue) == null;
+    return replace(key, false, null, _newValue);
   }
 
   @Override
   public boolean replaceIfEquals(K key, V _oldValue, V _newValue) {
-    return replace(key, true, _oldValue, _newValue) == null;
+    return replace(key, true, _oldValue, _newValue);
   }
-
-  @Override
-  public CacheEntry<K, V> replaceOrGet(K key, V _oldValue, V _newValue, CacheEntry<K, V> _dummyEntry) {
-    Entry e = replace(key, true, _oldValue, _newValue);
-    if (e == DUMMY_ENTRY_NO_REPLACE) {
-      return _dummyEntry;
-    } else if (e != null) {
-      return returnEntry(e);
-    }
-    return null;
-  }
-
-  final Entry DUMMY_ENTRY_NO_REPLACE = new org.cache2k.core.Entry(null, 4711);
 
   /**
    * replace if value matches. if value not matches, return the existing entry or the dummy entry.
    */
-  protected Entry<K, V> replace(final K key, final boolean _compare, final V _oldValue, final V _newValue) {
+  protected boolean replace(final K key, final boolean _compare, final V _oldValue, final V _newValue) {
     Entry e = lookupEntry(key);
     if (e == null) {
       metrics.peekMiss();
-      return DUMMY_ENTRY_NO_REPLACE;
+      return false;
     }
     synchronized (e) {
       e.waitForProcessing();
       if (e.isGone() || !e.hasFreshData(clock)) {
-        return (Entry) DUMMY_ENTRY_NO_REPLACE;
+        return false;
       }
       if (_compare && !e.equalsValue(_oldValue)) {
-        return e;
+        return false;
       }
       putValue(e, _newValue);
     }
-    return null;
+    return true;
   }
 
   /**
