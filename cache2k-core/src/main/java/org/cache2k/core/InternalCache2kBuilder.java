@@ -129,7 +129,7 @@ public class InternalCache2kBuilder<K, V> {
     }
     if (config.getAdvancedLoader() != null) {
       final AdvancedCacheLoader<K,V> _loader = c.createCustomization(config.getAdvancedLoader());
-      AdvancedCacheLoader<K,V> _wrappedLoader = new WrappedAdvancedCacheLoader<K, V>(_loader);
+      AdvancedCacheLoader<K,V> _wrappedLoader = new WrappedAdvancedCacheLoader<K, V>(c, _loader);
       c.setAdvancedLoader(_wrappedLoader);
     }
     if (config.getExceptionPropagator() != null) {
@@ -140,9 +140,11 @@ public class InternalCache2kBuilder<K, V> {
 
   private static class WrappedAdvancedCacheLoader<K,V> extends AdvancedCacheLoader<K,V> implements Closeable {
 
+    HeapCache<K,V> heapCache;
     private final AdvancedCacheLoader<K,V> forward;
 
-    public WrappedAdvancedCacheLoader(final AdvancedCacheLoader<K, V> _forward) {
+    public WrappedAdvancedCacheLoader(final HeapCache<K, V> _heapCache, final AdvancedCacheLoader<K, V> _forward) {
+      heapCache = _heapCache;
       forward = _forward;
     }
 
@@ -158,7 +160,7 @@ public class InternalCache2kBuilder<K, V> {
       if (currentEntry == null) {
         return forward.load(key, currentTime, null);
       }
-      return forward.load(key, currentTime, HeapCache.returnCacheEntry((ExaminationEntry<K, V>) currentEntry));
+      return forward.load(key, currentTime, heapCache.returnCacheEntry((ExaminationEntry<K, V>) currentEntry));
     }
   }
 

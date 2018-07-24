@@ -27,7 +27,7 @@ import org.cache2k.core.concurrency.Job;
  *
  * @author Jens Wilke
  */
-@SuppressWarnings({"WeakerAccess", "SynchronizationOnLocalVariableOrMethodParameter"})
+@SuppressWarnings({"WeakerAccess", "SynchronizationOnLocalVariableOrMethodParameter", "unchecked"})
 public abstract class AbstractEviction implements Eviction, EvictionMetrics {
 
   public static final int MINIMAL_CHUNK_SIZE = 4;
@@ -60,9 +60,6 @@ public abstract class AbstractEviction implements Eviction, EvictionMetrics {
       chunkSize = Math.min(MAXIMAL_CHUNK_SIZE, chunkSize);
     }
     noListenerCall = _listener instanceof HeapCacheListener.NoOperation;
-    /**
-     * Avoid integer overflow when calculating with the max size.
-     */
     if (maxSize == Long.MAX_VALUE) {
       correctedMaxSize = Long.MAX_VALUE >> 1;
     } else {
@@ -252,6 +249,15 @@ public abstract class AbstractEviction implements Eviction, EvictionMetrics {
 
   protected void removeFromReplacementListOnEvict(Entry e) { removeFromReplacementList(e); }
 
+  /**
+   * Find a candidate for eviction. The caller needs to provide the previous eviction
+   * candidate if this method is called multiple times until a fit is found.
+   *
+   * @param e {@code null} or previous found eviction candidate returned by this method.
+   *                      This is currently not used by the implemented eviction methods
+   *                      but might be in the future.
+   */
+  @SuppressWarnings("SameParameterValue")
   protected abstract Entry findEvictionCandidate(Entry e);
   protected abstract void removeFromReplacementList(Entry e);
   protected abstract void insertIntoReplacementList(Entry e);

@@ -530,27 +530,32 @@ public class WiredCache<K, V> extends BaseCache<K, V>
       storage = null;
     }
     heapCache.closePart2(this);
-    closeCustomization(writer);
+    closeCustomization(writer, "writer");
     if (syncEntryCreatedListeners != null) {
       for (Object l : syncEntryCreatedListeners) {
-        closeCustomization(l);
+        closeCustomization(l, "entryCreatedListener");
       }
     }
     if (syncEntryUpdatedListeners != null) {
       for (Object l : syncEntryUpdatedListeners) {
-        closeCustomization(l);
+        closeCustomization(l, "entryUpdatedListener");
       }
     }
     if (syncEntryRemovedListeners != null) {
       for (Object l : syncEntryRemovedListeners) {
-        closeCustomization(l);
+        closeCustomization(l, "entryRemovedListener");
       }
     }
     if (syncEntryExpiredListeners != null) {
       for (Object l : syncEntryExpiredListeners) {
-        closeCustomization(l);
+        closeCustomization(l, "entryExpiredListener");
       }
     }
+  }
+
+  @Override
+  public CacheEntry<K, V> returnCacheEntry(final ExaminationEntry<K, V> e) {
+    return heapCache.returnCacheEntry(e);
   }
 
   private Object lockObject() {
@@ -618,7 +623,7 @@ public class WiredCache<K, V> extends BaseCache<K, V>
 
   private void callExpiryListeners(Entry<K, V> e) {
     if (syncEntryExpiredListeners != null) {
-      CacheEntry<K,V> _entryCopy = HeapCache.returnCacheEntry(e);
+      CacheEntry<K,V> _entryCopy = heapCache.returnCacheEntry(e);
       for (CacheEntryExpiredListener<K, V> l : syncEntryExpiredListeners) {
         l.onEntryExpired(this, _entryCopy);
       }

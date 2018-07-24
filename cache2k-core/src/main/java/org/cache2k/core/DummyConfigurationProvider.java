@@ -45,13 +45,11 @@ public class DummyConfigurationProvider implements CacheConfigurationProvider {
   }
 
   @Override
-  public <K, V> void augmentConfiguration(final CacheManager mgr, final Cache2kConfiguration<K, V> cfg) {
-
-  }
+  public <K, V> void augmentConfiguration(final CacheManager mgr, final Cache2kConfiguration<K, V> cfg) { }
 
   @Override
   public Iterable<String> getConfiguredCacheNames(final CacheManager mgr) {
-    return Collections.EMPTY_LIST;
+    return Collections.emptyList();
   }
 
 }

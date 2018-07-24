@@ -191,7 +191,7 @@ public class HeapCache<K, V> extends BaseCache<K, V> {
 
   protected CacheType valueType;
 
-  protected ExceptionPropagator exceptionPropagator = DEFAULT_EXCEPTION_PROPAGATOR;
+  protected ExceptionPropagator<K> exceptionPropagator = DEFAULT_EXCEPTION_PROPAGATOR;
 
   private Collection<CustomizationSupplier<CacheClosedListener>> cacheClosedListeners = Collections.EMPTY_LIST;
 
@@ -408,7 +408,7 @@ public class HeapCache<K, V> extends BaseCache<K, V> {
         return null;
       }
     });
-    closeIfNeeded(loaderExecutor, "loaderExecutor");
+    closeCustomization(loaderExecutor, "loaderExecutor");
     cancelTimerJobs();
   }
 
@@ -429,7 +429,7 @@ public class HeapCache<K, V> extends BaseCache<K, V> {
         eviction.close();
         timing.shutdown();
         hash.close();
-        closeCustomization(loader);
+        closeCustomization(loader, "loader");
         for (CustomizationSupplier<CacheClosedListener> s : cacheClosedListeners) {
           createCustomization(s).onCacheClosed(_userCache);
         }
@@ -441,16 +441,6 @@ public class HeapCache<K, V> extends BaseCache<K, V> {
 
   public void setCacheClosedListeners(final Collection<CustomizationSupplier<CacheClosedListener>> l) {
     cacheClosedListeners = l;
-  }
-
-  private void closeIfNeeded(Object obj, String _name) {
-    if (obj instanceof Closeable) {
-      try {
-        ((Closeable) obj).close();
-      } catch (Throwable t) {
-        getLog().warn("Exception when closing " + _name, t);
-      }
-    }
   }
 
   @Override
@@ -575,48 +565,49 @@ public class HeapCache<K, V> extends BaseCache<K, V> {
     }
   }
 
-  public static <K,V> CacheEntry<K, V> returnCacheEntry(ExaminationEntry<K,V> _entry) {
+  @Override
+  public CacheEntry<K, V> returnCacheEntry(ExaminationEntry<K,V> _entry) {
     return returnCacheEntry(_entry.getKey(), _entry.getValueOrException());
   }
 
-  public static <K,V> CacheEntry<K, V> returnCacheEntry(final K _key, final V _valueOrException) {
-    CacheEntry<K, V> ce = new CacheEntry<K, V>() {
-      @Override
-      public K getKey() {
-        return _key;
-      }
 
-      @Override
-      public V getValue() {
-        if (_valueOrException instanceof ExceptionWrapper) {
-          throw DEFAULT_EXCEPTION_PROPAGATOR.propagateException(_key, (ExceptionWrapper) _valueOrException);
+  public CacheEntry<K, V> returnCacheEntry(final K key, final V _valueOrException) {
+    if (_valueOrException instanceof ExceptionWrapper) {
+      final ExceptionWrapper _warpper = (ExceptionWrapper) _valueOrException;
+      final ExceptionPropagator<K> _exceptionPropagator = exceptionPropagator;
+      return new BaseCacheEntry<K, V>() {
+        @Override public K getKey() {
+          return key;
         }
-        return _valueOrException;
+        @Override public V getValue() { throw _exceptionPropagator.propagateException(key, _warpper); }
+        @Override public Throwable getException() { return _warpper.getException(); }
+      };
+    }
+    return new BaseCacheEntry<K, V>() {
+      V _value = _valueOrException;
+      @Override public K getKey() {
+        return key;
       }
-
-      @Override
-      public Throwable getException() {
-        if (_valueOrException instanceof ExceptionWrapper) {
-          return ((ExceptionWrapper) _valueOrException).getException();
-        }
-        return null;
-      }
-
-      @SuppressWarnings("deprecation")
-      @Override
-      public long getLastModification() {
-        throw new UnsupportedOperationException("modification timestamp no longer available in CacheEntry");
-      }
-
-      @Override
-      public String toString() {
-        return "CacheEntry(" +
-            "key=" + getKey() +
-            ((getException() != null) ? ", exception=" + getException() + ", " : ", value=" + getValue());
-      }
-
+      @Override public V getValue() { return _value; }
     };
-    return ce;
+  }
+
+  static abstract class BaseCacheEntry<K,V> implements CacheEntry<K,V> {
+    @Override
+    public Throwable getException() {
+      return null;
+    }
+    @SuppressWarnings("deprecation")
+    @Override
+    public long getLastModification() {
+      throw new UnsupportedOperationException("modification timestamp no longer available in CacheEntry");
+    }
+    @Override
+    public String toString() {
+      return "CacheEntry(" +
+        "key=" + getKey() +
+        ((getException() != null) ? ", exception=" + getException() + ", " : ", value=" + getValue());
+    }
   }
 
   @Override
@@ -854,9 +845,7 @@ public class HeapCache<K, V> extends BaseCache<K, V> {
     Entry e = lookupEntry(key);
     if (e != null) {
       metrics.heapHitButNoRead();
-      if (e.hasFreshData(clock)) {
-        return true;
-      }
+      return e.hasFreshData(clock);
     }
     return false;
   }
@@ -1263,7 +1252,7 @@ public class HeapCache<K, V> extends BaseCache<K, V> {
 
   protected V returnValue(V v) {
     if (v instanceof ExceptionWrapper) {
-      ExceptionWrapper w = (ExceptionWrapper) v;
+      ExceptionWrapper<K> w = (ExceptionWrapper<K>) v;
       throw exceptionPropagator.propagateException(w.getKey(), w);
     }
     return v;
@@ -1272,7 +1261,7 @@ public class HeapCache<K, V> extends BaseCache<K, V> {
   protected V returnValue(Entry<K, V> e) {
     V v = e.getValueOrException();
     if (v instanceof ExceptionWrapper) {
-      ExceptionWrapper w = (ExceptionWrapper) v;
+      ExceptionWrapper<K> w = (ExceptionWrapper<K>) v;
       throw exceptionPropagator.propagateException(w.getKey(), w);
     }
     return v;
@@ -1330,20 +1319,17 @@ public class HeapCache<K, V> extends BaseCache<K, V> {
    * Remove the entry from the hash table. The entry is already removed from the replacement list.
    * Stop the timer, if needed. The remove races with a clear. The clear
    * is not updating each entry state to e.isGone() but just drops the whole hash table instead.
-   * This is why we return a flag whether the entry was really present or not at this time.
    *
    * <p>With completion of the method the entry content is no more visible. "Nulling" out the key
    * or value of the entry is incorrect, since there can be another thread which is just about to
    * return the entry contents.
    *
-   * @return True, if the entry was present in the hash table.
    */
-  public boolean removeEntryForEviction(Entry<K, V> e) {
+  public void removeEntryForEviction(Entry<K, V> e) {
     boolean f = hash.remove(e);
     checkForHashCodeChange(e);
     timing.cancelExpiryTimer(e);
     e.setGone();
-    return f;
   }
 
   /**

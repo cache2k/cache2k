@@ -346,7 +346,7 @@ public abstract class TimingHandler<K,V>  {
     @Override
     public long suppressExceptionUntil(final Entry<K, V> e, final ExceptionInformation inf) {
       return resiliencePolicy.suppressExceptionUntil(
-        e.getKey(), inf, HeapCache.returnCacheEntry(e));
+        e.getKey(), inf, cache.returnCacheEntry(e));
     }
 
     @Override
@@ -580,7 +580,7 @@ public abstract class TimingHandler<K,V>  {
     @Override
     public synchronized void close() {
       super.shutdown();
-      cache.closeCustomization(expiryPolicy);
+      cache.closeCustomization(expiryPolicy, "expiryPolicy");
     }
 
   }

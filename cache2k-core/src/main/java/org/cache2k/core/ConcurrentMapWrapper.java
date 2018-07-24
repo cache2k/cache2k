@@ -38,6 +38,7 @@ import java.util.concurrent.ConcurrentMap;
  *
  * @author Jens Wilke
  */
+@SuppressWarnings("unchecked")
 public class ConcurrentMapWrapper<K,V> implements ConcurrentMap<K, V> {
 
   private boolean permitNull;
@@ -59,7 +60,7 @@ public class ConcurrentMapWrapper<K,V> implements ConcurrentMap<K, V> {
   public V putIfAbsent(K key, final V value) {
     return cache.invoke(key, new EntryProcessor<K, V, V>() {
       @Override
-      public V process(MutableCacheEntry<K, V> e) throws Exception {
+      public V process(MutableCacheEntry<K, V> e) {
         if (!e.exists()) {
           e.setValue(value);
           return null;
@@ -86,7 +87,7 @@ public class ConcurrentMapWrapper<K,V> implements ConcurrentMap<K, V> {
   public V replace(K key, final V value) {
     EntryProcessor<K, V, V> p = new EntryProcessor<K, V, V>() {
       @Override
-      public V process(MutableCacheEntry<K, V> e) throws Exception {
+      public V process(MutableCacheEntry<K, V> e) {
         if (e.exists()) {
           V result = e.getValue();
           e.setValue(value);
@@ -149,7 +150,7 @@ public class ConcurrentMapWrapper<K,V> implements ConcurrentMap<K, V> {
   public V put(final K key, final V value) {
     EntryProcessor<K, V, V> p = new EntryProcessor<K, V, V>() {
       @Override
-      public V process(MutableCacheEntry<K, V> e) throws Exception {
+      public V process(MutableCacheEntry<K, V> e) {
         V result = e.getValue();
         e.setValue(value);
         return result;
@@ -165,7 +166,7 @@ public class ConcurrentMapWrapper<K,V> implements ConcurrentMap<K, V> {
     }
     EntryProcessor<K, V, V> p = new EntryProcessor<K, V, V>() {
       @Override
-      public V process(MutableCacheEntry<K, V> e) throws Exception {
+      public V process(MutableCacheEntry<K, V> e) {
         V result = e.getValue();
         e.remove();
         return result;

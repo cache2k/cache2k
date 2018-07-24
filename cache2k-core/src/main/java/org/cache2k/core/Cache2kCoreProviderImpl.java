@@ -32,14 +32,13 @@ import org.cache2k.spi.SingleProviderResolver;
 
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.Map;
 import java.util.ServiceConfigurationError;
 import java.util.ServiceLoader;
 import java.util.WeakHashMap;
 
 /**
- * @author Jens Wilke; created: 2015-03-26
+ * @author Jens Wilke
  */
 public class Cache2kCoreProviderImpl implements Cache2kCoreProvider {
 
@@ -48,8 +47,8 @@ public class Cache2kCoreProviderImpl implements Cache2kCoreProvider {
     SingleProviderResolver.resolve(CacheConfigurationProvider.class, DummyConfigurationProvider.class);
 
   private Object lock = new Object();
-  private volatile Map<ClassLoader, String> loader2defaultName = Collections.EMPTY_MAP;
-  private volatile Map<ClassLoader, Map<String, CacheManager>> loader2name2manager = Collections.EMPTY_MAP;
+  private volatile Map<ClassLoader, String> loader2defaultName = Collections.emptyMap();
+  private volatile Map<ClassLoader, Map<String, CacheManager>> loader2name2manager = Collections.emptyMap();
   private String version;
 
   {
@@ -67,12 +66,15 @@ public class Cache2kCoreProviderImpl implements Cache2kCoreProvider {
     log.info(sb.toString());
   }
 
+  /**
+   * ignore load errors, so we can remove the serverSide or the xmlConfiguration code
+   * and cache2k core still works
+   */
   private void registerExtensions() {
-    Iterator<Cache2kExtensionProvider> it =
-      ServiceLoader.load(Cache2kExtensionProvider.class, CacheManager.class.getClassLoader()).iterator();
-    while (it.hasNext()) {
+    for (final Cache2kExtensionProvider p :
+      ServiceLoader.load(Cache2kExtensionProvider.class, CacheManager.class.getClassLoader())) {
       try {
-        it.next().registerCache2kExtension();
+        p.registerCache2kExtension();
       } catch (ServiceConfigurationError ex) {
         Log.getLog(CacheManager.class.getName()).debug("Error loading cache2k extension", ex);
       }

@@ -97,8 +97,8 @@ public class ConcurrentEntryIterator<K,V> implements Iterator<Entry<K,V>> {
     seen.put(key, key);
   }
 
-  private Entry nextEntry() {
-    Entry e;
+  private Entry<K,V> nextEntry() {
+    Entry<K,V> e;
     if (hashArray == null) {
       return null;
     }

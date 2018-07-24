@@ -384,6 +384,7 @@ public abstract class EntryAction<K, V, R> implements
     }
   }
 
+  @SuppressWarnings("SameParameterValue")
   void lockForNoHit(int ps) {
     if (entryLocked) {
       entry.nextProcessingStep(ps);
@@ -443,6 +444,7 @@ public abstract class EntryAction<K, V, R> implements
     result = r;
   }
 
+  @SuppressWarnings("unchecked")
   @Override
   public void entryResult(final ExaminationEntry e) {
     result = (R) heapCache.returnEntry(e);
@@ -626,14 +628,14 @@ public abstract class EntryAction<K, V, R> implements
   public void loadAndExpiryCalculatedMutateAgain() {
     load = loadAndMutate = false;
     needsFinish = successfulLoad = true;
-    ExaminationEntry ee = new LoadedEntry() {
+    ExaminationEntry<K,V> ee = new LoadedEntry<K,V>() {
       @Override
-      public Object getKey() {
+      public K getKey() {
         return entry.getKey();
       }
 
       @Override
-      public Object getValueOrException() {
+      public V getValueOrException() {
         return newValueOrException;
       }
 
@@ -775,11 +777,11 @@ public abstract class EntryAction<K, V, R> implements
       mutationReleaseLockAndStartTimer();
       return;
     }
-    CacheEntry<K,V> _currentEntry = HeapCache.returnCacheEntry(entry);
+    CacheEntry<K,V> _currentEntry = heapCache.returnCacheEntry(entry);
     if (expiredImmediately) {
       if (storageDataValid || heapDataValid) {
         if (entryExpiredListeners() != null) {
-          for (CacheEntryExpiredListener l : entryExpiredListeners()) {
+          for (CacheEntryExpiredListener<K,V> l : entryExpiredListeners()) {
             try {
               l.onEntryExpired(userCache, _currentEntry);
             } catch (Throwable t) {
@@ -791,7 +793,7 @@ public abstract class EntryAction<K, V, R> implements
     } else if (remove) {
       if (storageDataValid || heapDataValid) {
         if (entryRemovedListeners() != null) {
-          for (CacheEntryRemovedListener l : entryRemovedListeners()) {
+          for (CacheEntryRemovedListener<K,V> l : entryRemovedListeners()) {
             try {
               l.onEntryRemoved(userCache, _currentEntry);
             } catch (Throwable t) {
@@ -805,7 +807,7 @@ public abstract class EntryAction<K, V, R> implements
         if (entryUpdatedListeners() != null) {
           CacheEntry<K,V> _previousEntry =
             heapCache.returnCacheEntry(entry.getKey(), oldValueOrException);
-          for (CacheEntryUpdatedListener l : entryUpdatedListeners()) {
+          for (CacheEntryUpdatedListener<K,V> l : entryUpdatedListeners()) {
             try {
               l.onEntryUpdated(userCache, _previousEntry, _currentEntry);
             } catch (Throwable t) {
@@ -815,7 +817,7 @@ public abstract class EntryAction<K, V, R> implements
         }
       } else {
         if (entryCreatedListeners() != null) {
-          for (CacheEntryCreatedListener l : entryCreatedListeners()) {
+          for (CacheEntryCreatedListener<K,V> l : entryCreatedListeners()) {
             try {
               l.onEntryCreated(userCache, _currentEntry);
             } catch (Throwable t) {

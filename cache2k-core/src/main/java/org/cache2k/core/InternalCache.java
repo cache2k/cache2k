@@ -24,6 +24,7 @@ import org.cache2k.Cache;
 import org.cache2k.CacheEntry;
 import org.cache2k.configuration.CacheType;
 import org.cache2k.configuration.CustomizationSupplier;
+import org.cache2k.core.operation.ExaminationEntry;
 import org.cache2k.core.util.InternalClock;
 import org.cache2k.core.util.Log;
 import org.cache2k.core.storageApi.StorageAdapter;
@@ -98,12 +99,14 @@ public interface InternalCache<K, V> extends Cache<K, V>, CanCheckIntegrity {
    * Call close on the customization if the {@link java.io.Closeable} interface
    * is implemented
    */
-  void closeCustomization(final Object _customization);
+  void closeCustomization(final Object _customization, final String _name);
 
   /**
    * Time reference for the cache.
    */
   InternalClock getClock();
+
+  CacheEntry<K,V> returnCacheEntry(ExaminationEntry<K,V> e);
 
 
 }

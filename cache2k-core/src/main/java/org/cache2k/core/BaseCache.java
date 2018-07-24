@@ -190,11 +190,12 @@ public abstract class BaseCache<K, V> implements InternalCache<K, V> {
   }
 
   @Override
-  public void closeCustomization(final Object _customization) {
+  public void closeCustomization(final Object _customization, String _customizationName) {
     if (_customization instanceof Closeable) {
       try {
         ((Closeable) _customization).close();
       } catch (Exception e) {
+        String txt = _customizationName + ": Exception on close call";
         throw new CacheException("exception on customization close", e);
       }
     }

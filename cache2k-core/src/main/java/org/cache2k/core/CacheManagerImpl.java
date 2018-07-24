@@ -61,13 +61,13 @@ public class CacheManagerImpl extends CacheManager {
    * Retrieve all implementations from the service loader and return an read-only iterable
    * backed by an array.
    */
+  @SuppressWarnings("unchecked")
   private static <S> Iterable<S> constructAllServiceImplementations(Class<S> _service) {
     ClassLoader cl = CacheManagerImpl.class.getClassLoader();
     ArrayList<S> li = new ArrayList<S>();
-    Iterator<S> it = ServiceLoader.load(_service, cl).iterator();
-    while (it.hasNext()) {
+    for (final S s : ServiceLoader.load(_service, cl)) {
       try {
-        li.add(it.next());
+        li.add(s);
       } catch (ServiceConfigurationError ex) {
         Log.getLog(CacheManager.class.getName()).debug("Error loading service '" + _service + "'", ex);
       }
