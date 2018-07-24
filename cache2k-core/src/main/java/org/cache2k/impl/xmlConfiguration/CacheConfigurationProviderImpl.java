@@ -121,7 +121,6 @@ public class CacheConfigurationProviderImpl implements CacheConfigurationProvide
       throw new UnknownCacheException(_exceptionText);
     }
     apply(ctx, _parsedCache, cfg);
-    cfg.setExternalConfigurationPresent(true);
   }
 
   @Override
@@ -216,6 +215,7 @@ public class CacheConfigurationProviderImpl implements CacheConfigurationProvide
     ctx.setDefaultManagerConfiguration(_defaultConfiguration);
     ctx.setDefaultManagerName(_managerName);
     if (pc != null) {
+      _defaultConfiguration.setExternalConfigurationPresent(true);
       ctx.setTemplates(extractTemplates(pc));
       apply(ctx, pc, ctx);
       if (ctx.getVersion() != null && ctx.getVersion().startsWith("1.")) {
@@ -251,7 +251,6 @@ public class CacheConfigurationProviderImpl implements CacheConfigurationProvide
     }
     if (_defaults != null) {
       apply(ctx, _defaults, _defaultConfiguration);
-      _defaultConfiguration.setExternalConfigurationPresent(true);
     }
   }
 

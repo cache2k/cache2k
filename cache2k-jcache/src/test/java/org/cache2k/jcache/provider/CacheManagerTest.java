@@ -21,6 +21,7 @@ package org.cache2k.jcache.provider;
  */
 
 import org.cache2k.Cache2kBuilder;
+import org.cache2k.core.WiredCache;
 import org.cache2k.jcache.ExtendedMutableConfiguration;
 import org.cache2k.jcache.JCacheConfiguration;
 import org.cache2k.jcache.provider.generic.storeByValueSimulation.CopyCacheProxy;
@@ -100,6 +101,8 @@ public class CacheManagerTest {
         .expireAfterWrite(5, TimeUnit.MINUTES)
     ));
     assertFalse(cache instanceof CopyCacheProxy);
+    assertNull(cache.unwrap(org.cache2k.Cache.class).requestInterface(WiredCache.class));
+    System.err.println(cache.toString());
     cache.close();
   }
 

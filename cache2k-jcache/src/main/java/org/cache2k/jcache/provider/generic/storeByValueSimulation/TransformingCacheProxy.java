@@ -469,7 +469,7 @@ public class TransformingCacheProxy<K, V, K0, V0> implements Cache<K, V> {
   }
 
   public String toString() {
-    return getClass().getSimpleName() + "(" + cache + ")";
+    return getClass().getSimpleName() + "@" + cache;
   }
 
 }

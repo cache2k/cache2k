@@ -27,6 +27,7 @@ import org.cache2k.UnknownCacheException;
 import org.cache2k.configuration.Cache2kConfiguration;
 import org.cache2k.jcache.ExtendedMutableConfiguration;
 import org.cache2k.jcache.JCacheConfiguration;
+import org.cache2k.jcache.provider.generic.storeByValueSimulation.CopyCacheProxy;
 import org.junit.Test;
 
 import javax.cache.Caching;
@@ -126,6 +127,24 @@ public class XmlConfigurationTest {
   public void getCache_creates() throws Exception {
     javax.cache.CacheManager _manager =
       Caching.getCachingProvider().getCacheManager(new URI(MANAGER_NAME), null);
+  }
+
+  @Test
+  public void standardJCacheSemanticsIfNoExternalConfiguration() throws Exception {
+    CachingProvider p = Caching.getCachingProvider();
+    javax.cache.CacheManager cm = p.getCacheManager();
+    javax.cache.Cache<String, BigDecimal> c =
+      cm.createCache("test", new MutableConfiguration<String, BigDecimal>());
+    assertTrue(c instanceof CopyCacheProxy);
+  }
+
+  @Test
+  public void cache2kSemanticsIfEmptyConfigurationPresent() throws Exception {
+    CachingProvider p = Caching.getCachingProvider();
+    javax.cache.CacheManager cm = p.getCacheManager(new URI("empty"), null);
+    javax.cache.Cache<String, BigDecimal> c =
+      cm.createCache("test2", new MutableConfiguration<String, BigDecimal>());
+    assertTrue(c instanceof JCacheAdapter);
   }
 
 }
