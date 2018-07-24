@@ -35,6 +35,7 @@ public class ReadOnlyCacheEntry<K, V> implements ResultEntry<K, V> {
   private V valueOrException;
   private long lastModification;
 
+  @SuppressWarnings("unchecked")
   public static <K,V> ReadOnlyCacheEntry<K,V> of(CacheEntry<K,V> entry) {
     if (entry instanceof ReadOnlyCacheEntry) {
       return (ReadOnlyCacheEntry) entry;

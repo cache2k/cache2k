@@ -155,6 +155,7 @@ public class InternalCache2kBuilder<K, V> {
       }
     }
 
+    @SuppressWarnings("unchecked")
     @Override
     public V load(final K key, final long currentTime, final CacheEntry<K, V> currentEntry) throws Exception {
       if (currentEntry == null) {
@@ -164,6 +165,7 @@ public class InternalCache2kBuilder<K, V> {
     }
   }
 
+  @SuppressWarnings("unchecked")
   private HeapCache<K, V> constructImplementationAndFillParameters(Class<?> cls) {
     if (!HeapCache.class.isAssignableFrom(cls)) {
       throw new IllegalArgumentException("Specified impl not a cache" + cls.getName());
@@ -305,16 +307,16 @@ public class InternalCache2kBuilder<K, V> {
         }
       }
       if (!_syncCreatedListeners.isEmpty()) {
-        wc.syncEntryCreatedListeners = _syncCreatedListeners.toArray(new CacheEntryCreatedListener[_syncCreatedListeners.size()]);
+        wc.syncEntryCreatedListeners = _syncCreatedListeners.toArray(new CacheEntryCreatedListener[0]);
       }
       if (!_syncUpdatedListeners.isEmpty()) {
-        wc.syncEntryUpdatedListeners = _syncUpdatedListeners.toArray(new CacheEntryUpdatedListener[_syncUpdatedListeners.size()]);
+        wc.syncEntryUpdatedListeners = _syncUpdatedListeners.toArray(new CacheEntryUpdatedListener[0]);
       }
       if (!_syncRemovedListeners.isEmpty()) {
-        wc.syncEntryRemovedListeners = _syncRemovedListeners.toArray(new CacheEntryRemovedListener[_syncRemovedListeners.size()]);
+        wc.syncEntryRemovedListeners = _syncRemovedListeners.toArray(new CacheEntryRemovedListener[0]);
       }
       if (!_syncExpiredListeners.isEmpty()) {
-        wc.syncEntryExpiredListeners = _syncExpiredListeners.toArray(new CacheEntryExpiredListener[_syncExpiredListeners.size()]);
+        wc.syncEntryExpiredListeners = _syncExpiredListeners.toArray(new CacheEntryExpiredListener[0]);
       }
       bc.eviction = constructEviction(bc, wc, config);
       TimingHandler rh = TimingHandler.of(_timeReference, config);

@@ -128,12 +128,12 @@ public class CacheConfigurationProviderImpl implements CacheConfigurationProvide
   public Iterable<String> getConfiguredCacheNames(final CacheManager mgr) {
     ConfigurationContext ctx =  getManagerContext(mgr);
     if (!ctx.isConfigurationPresent()) {
-      return Collections.EMPTY_LIST;
+      return Collections.emptyList();
     }
     ParsedConfiguration _parsedTop = readManagerConfigurationWithExceptionHandling(mgr.getClassLoader(), getFileName(mgr));
     ParsedConfiguration _section = extractCachesSection(_parsedTop);
     if (_section == null) {
-      return Collections.EMPTY_LIST;
+      return Collections.emptyList();
     }
     List<String> _names = new ArrayList<String>();
     for (ParsedConfiguration pc : _section.getSections()) {
@@ -255,6 +255,7 @@ public class CacheConfigurationProviderImpl implements CacheConfigurationProvide
     }
   }
 
+  @SuppressWarnings("unchecked")
   private static <T extends Serializable> T copyViaSerialization(CacheManager mgr, T obj) {
     try {
       ByteArrayOutputStream bos = new ByteArrayOutputStream();
@@ -340,6 +341,7 @@ public class CacheConfigurationProviderImpl implements CacheConfigurationProvide
    *
    * @return True, if applied, false if there is no getter for a collection.
    */
+  @SuppressWarnings("unchecked")
   private boolean handleCollection(
     final ConfigurationContext ctx,
     final Class<?> _type,
@@ -407,8 +409,8 @@ public class CacheConfigurationProviderImpl implements CacheConfigurationProvide
     if (!"sections".equals(_containerName)) {
       return false;
     }
-    ConfigurationSection _sectionBean = cfg.getSections().getSection((Class<ConfigurationSection>) _type);
-    if (_sectionBean == null || !(_sectionBean instanceof SingletonConfigurationSection)) {
+    @SuppressWarnings("unchecked") ConfigurationSection _sectionBean = cfg.getSections().getSection((Class<ConfigurationSection>) _type);
+    if (!(_sectionBean instanceof SingletonConfigurationSection)) {
       try {
         _sectionBean = (ConfigurationSection)  _type.newInstance();
       } catch (Exception ex) {

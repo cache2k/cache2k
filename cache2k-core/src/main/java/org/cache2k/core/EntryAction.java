@@ -104,6 +104,7 @@ public abstract class EntryAction<K, V, R> implements
 
   boolean suppressException = false;
 
+  @SuppressWarnings("unchecked")
   public EntryAction(HeapCache<K,V> _heapCache, InternalCache<K,V> _userCache, Semantic<K, V, R> op, K k, Entry<K, V> e) {
     heapCache = _heapCache;
     userCache = _userCache;
@@ -112,7 +113,7 @@ public abstract class EntryAction<K, V, R> implements
     if (e != null) {
       entry = e;
     } else {
-      entry = NON_FRESH_DUMMY;
+      entry = (Entry<K,V>) NON_FRESH_DUMMY;
     }
   }
 
@@ -228,7 +229,7 @@ public abstract class EntryAction<K, V, R> implements
     synchronized (e) {
       e.setLastModificationFromStorage(se.getCreatedOrUpdated());
       long now = millis();
-      V v = (V) se.getValueOrException();
+      @SuppressWarnings("unchecked") V v = (V) se.getValueOrException();
       e.setValueOrException(v);
       long _nextRefreshTime;
       long _expiryTimeFromStorage = se.getValueExpiryTime();

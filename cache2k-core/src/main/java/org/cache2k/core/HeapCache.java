@@ -620,7 +620,7 @@ public class HeapCache<K, V> extends BaseCache<K, V> {
     return getEntryInternal(key, hc, extractIntKeyValue(key, hc));
   }
 
-  protected Entry getEntryInternal(K key, int hc, int val) {
+  protected Entry<K,V> getEntryInternal(K key, int hc, int val) {
     if (loader == null) {
       return peekEntryInternal(key, hc, val);
     }

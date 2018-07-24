@@ -88,6 +88,7 @@ public final class TunableFactory {
    * @param <T> type of requested tunable class
    * @return Created and initialized object
    */
+  @SuppressWarnings("unchecked")
   public synchronized static <T extends TunableConstants> T get(Properties p, Class<T> c) {
     T cfg = getDefault(c);
     if (p != null

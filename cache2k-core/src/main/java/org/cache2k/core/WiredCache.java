@@ -300,10 +300,11 @@ public class WiredCache<K, V> extends BaseCache<K, V>
     for (K k : _keySet) {
       final K key = k;
       Runnable r = new HeapCache.RunWithCatch(this) {
+        @SuppressWarnings("unchecked")
         @Override
         public void action() {
           try {
-            execute(key, SPEC.UNCONDITIONAL_LOAD);
+            execute(key, (Semantic<K, V, Void>) SPEC.UNCONDITIONAL_LOAD);
           } finally {
             if (_countDown.decrementAndGet() == 0) {
               _listener.onCompleted();
@@ -387,6 +388,7 @@ public class WiredCache<K, V> extends BaseCache<K, V>
     return execute(key, SPEC.invoke(key, loader != null, entryProcessor));
   }
 
+  @SuppressWarnings("unchecked")
   @Override
   public Iterator<CacheEntry<K, V>> iterator() {
     Iterator<CacheEntry<K, V>> tor;
@@ -638,6 +640,7 @@ public class WiredCache<K, V> extends BaseCache<K, V>
         return;
       }
         Runnable r = new Runnable() {
+          @SuppressWarnings("unchecked")
           @Override
           public void run() {
             if (storage == null) {
@@ -649,7 +652,7 @@ public class WiredCache<K, V> extends BaseCache<K, V>
               }
             }
             try {
-              execute(e.getKey(), e, SPEC.REFRESH);
+              execute(e.getKey(), e, (Semantic<K,V,Void>) Operations.REFRESH);
             } catch (CacheClosedException ignore) {
             } catch (Throwable ex) {
               logAndCountInternalException("Refresh exception", ex);

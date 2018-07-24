@@ -54,10 +54,10 @@ public interface CacheEntry<K, V> {
    * Value of the entry. The value may be {@code null} if permitted for this cache
    * via {@link Cache2kBuilder#permitNullValues(boolean)}. If the
    * entry had a loader exception which is not suppressed, this exception will be
-   * propagated. This method does ignore a custom exception propagator set via
+   * propagated. This can be customized with
    * {@link Cache2kBuilder#exceptionPropagator(ExceptionPropagator)}
    *
-   * @throws CacheLoaderException if the loading produced an exception .
+   * @throws CacheLoaderException if the loading produced an exception
    */
   V getValue();
 

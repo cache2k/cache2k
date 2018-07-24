@@ -159,7 +159,6 @@ public interface MutableCacheEntry<K, V> extends CacheEntry<K, V> {
    * {@code 0} is returned.
    */
   @SuppressWarnings("deprecation")
-  @Override
   long getLastModification();
 
 }

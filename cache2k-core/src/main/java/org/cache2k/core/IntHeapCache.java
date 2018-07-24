@@ -39,7 +39,7 @@ public class IntHeapCache<V> extends HeapCache<Integer, V> implements IntCache<V
 
   @Override
   public int extractIntKeyValue(final Integer key, final int hc) {
-    return key.intValue();
+    return key;
   }
 
   @Override
@@ -49,7 +49,7 @@ public class IntHeapCache<V> extends HeapCache<Integer, V> implements IntCache<V
 
   @Override
   public Integer extractKeyObj(final Entry<Integer, V> e) {
-    return Integer.valueOf(e.hashCode);
+    return e.hashCode;
   }
 
   /**
@@ -84,9 +84,7 @@ public class IntHeapCache<V> extends HeapCache<Integer, V> implements IntCache<V
     Entry e = lookupEntry(null, modifiedHash(key), key);
     if (e != null) {
       metrics.heapHitButNoRead();
-      if (e.hasFreshData(clock)) {
-        return true;
-      }
+      return e.hasFreshData(clock);
     }
     return false;
   }
@@ -116,7 +114,7 @@ public class IntHeapCache<V> extends HeapCache<Integer, V> implements IntCache<V
     if (e == null) {
       return null;
     }
-    return (V) returnValue(e);
+    return returnValue(e);
   }
 
   @Override

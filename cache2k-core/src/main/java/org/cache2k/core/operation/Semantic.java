@@ -61,6 +61,7 @@ public interface Semantic<K, V, R> {
      *
      * @param e the entry containing the old data
      */
+    @SuppressWarnings("unchecked")
     @Override
     public void loaded(final Progress<K, V, R> c, final ExaminationEntry<K, V> e) {
       c.result((R) e.getValueOrException());

@@ -32,6 +32,7 @@ import org.cache2k.spi.SingleProviderResolver;
 
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.Map;
 import java.util.ServiceConfigurationError;
 import java.util.ServiceLoader;
@@ -71,10 +72,11 @@ public class Cache2kCoreProviderImpl implements Cache2kCoreProvider {
    * and cache2k core still works
    */
   private void registerExtensions() {
-    for (final Cache2kExtensionProvider p :
-      ServiceLoader.load(Cache2kExtensionProvider.class, CacheManager.class.getClassLoader())) {
+    Iterator<Cache2kExtensionProvider> it =
+      ServiceLoader.load(Cache2kExtensionProvider.class, CacheManager.class.getClassLoader()).iterator();
+    while (it.hasNext()) {
       try {
-        p.registerCache2kExtension();
+        it.next().registerCache2kExtension();
       } catch (ServiceConfigurationError ex) {
         Log.getLog(CacheManager.class.getName()).debug("Error loading cache2k extension", ex);
       }
