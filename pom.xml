@@ -325,8 +325,24 @@
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-javadoc-plugin</artifactId>
         <configuration>
-          <!-- from plugin management -->
-        </configuration>
+          <!-- COPY OF BUILD SECTION -->
+          <additionalparam>-Xdoclint:all -Xdoclint:-missing</additionalparam>
+          <additionalJOption>-Xdoclint:all</additionalJOption>
+          <additionalJOption>-Xdoclint:-missing</additionalJOption>
+          <!-- no aggregation, we want to have docs on the API package alone -->
+          <aggregate>false</aggregate>
+          <!--
+          <linksource>true</linksource>
+          -->
+          <links>
+            <link>https://docs.oracle.com/javase/8/docs/api/</link>
+            <link>https://cache2k.org/docs/jcache/1.1.0/apidocs/cache-api/</link>
+          </links>
+          <quiet>true</quiet>
+          <bottom>
+            <![CDATA[<a href="http://cache2k.org" target="_blank">cache2k</a> API documentation. Copyright &#169; {inceptionYear}&#x2013;{currentYear} <a href="http://headissue.com" target="_blank">headissue GmbH, Munich</a>.]]>
+          </bottom>
+          <detectOfflineLinks>false</detectOfflineLinks>        </configuration>
         <reportSets>
           <reportSet>
             <id>html</id>
