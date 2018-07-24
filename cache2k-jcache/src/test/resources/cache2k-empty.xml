@@ -20,7 +20,4 @@
 <cache2k>
   <version>1.0</version>
   <ignoreMissingCacheConfiguration>true</ignoreMissingCacheConfiguration>
-  <default>
-
-  </default>
 </cache2k>
