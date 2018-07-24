@@ -53,6 +53,7 @@ public class ConfigurationSectionContainer implements Iterable<ConfigurationSect
   /**
    * Retrieve a single section from the container.
    */
+  @SuppressWarnings("unchecked")
   public <T extends ConfigurationSection> T getSection(Class<T> sectionType) {
     for (ConfigurationSection s : sections) {
       if (sectionType.equals(s.getClass())) {

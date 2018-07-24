@@ -64,10 +64,10 @@ public interface CacheType<T> {
   boolean isArray();
 
   /** The component type in case of an array */
-  CacheType getComponentType();
+  CacheType<?> getComponentType();
 
   /** Known type arguments, if the type is a parametrized type. */
-  CacheType[] getTypeArguments();
+  CacheType<?>[] getTypeArguments();
 
   /** Java language compatible type name */
   String getTypeName();
@@ -75,6 +75,6 @@ public interface CacheType<T> {
   /**
    * Return a serializable version of this type descriptor.
    */
-  CacheType getBeanRepresentation();
+  CacheType<T> getBeanRepresentation();
 
 }

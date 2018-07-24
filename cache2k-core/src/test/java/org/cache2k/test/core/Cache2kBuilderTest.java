@@ -356,7 +356,7 @@ public class Cache2kBuilderTest {
   private void cacheClosedEventFired(boolean _wiredCache) {
     final AtomicBoolean _FIRED = new AtomicBoolean();
     Cache2kBuilder _builder = Cache2kBuilder.forUnknownTypes();
-    _builder.addCacheClosedListener(new CacheClosedListener() {
+    _builder = _builder.addCacheClosedListener(new CacheClosedListener() {
       @Override
       public void onCacheClosed(final Cache cache) {
         _FIRED.set(true);

@@ -81,6 +81,7 @@ public class Cache2kBuilder<K, V> {
    * or to set the type information later via the builder methods {@link #keyType} or
    * {@link #valueType}.
    */
+  @SuppressWarnings("unchecked")
   public static Cache2kBuilder forUnknownTypes() {
     return new Cache2kBuilder(null, null);
   }
@@ -149,6 +150,7 @@ public class Cache2kBuilder<K, V> {
     config = cfg;
   }
 
+  @SuppressWarnings("unchecked")
   private Cache2kConfiguration<K, V> config() {
     if (config == null) {
       if (manager == null) {
@@ -188,9 +190,11 @@ public class Cache2kBuilder<K, V> {
    * @throws IllegalArgumentException in case the type is illegal
    * @see CacheType for a general discussion on types
    */
+  @SuppressWarnings("unchecked")
   public final <K2> Cache2kBuilder<K2, V> keyType(Class<K2> t) {
-    config().setKeyType(t);
-    return (Cache2kBuilder<K2, V>) this;
+    Cache2kBuilder<K2, V> me = (Cache2kBuilder<K2, V>) this;
+    me.config().setKeyType(t);
+    return me;
   }
 
   /**
@@ -199,9 +203,11 @@ public class Cache2kBuilder<K, V> {
    * @throws IllegalArgumentException in case the type is illegal
    * @see CacheType for a general discussion on types
    */
+  @SuppressWarnings("unchecked")
   public final <T2> Cache2kBuilder<K, T2> valueType(Class<T2> t) {
-    config().setValueType(t);
-    return (Cache2kBuilder<K, T2>) this;
+    Cache2kBuilder<K, T2> me = (Cache2kBuilder<K, T2>) this;
+    me.config().setValueType(t);
+    return me;
   }
 
   /**
@@ -211,9 +217,11 @@ public class Cache2kBuilder<K, V> {
    * @throws IllegalArgumentException in case the type is illegal
    * @see CacheType for a general discussion on types
    */
+  @SuppressWarnings("unchecked")
   public final <K2> Cache2kBuilder<K2, V> keyType(CacheType<K2> t) {
-    config().setKeyType(t);
-    return (Cache2kBuilder<K2, V>) this;
+    Cache2kBuilder<K2, V> me = (Cache2kBuilder<K2, V>) this;
+    me.config().setKeyType(t);
+    return me;
   }
 
   /**
@@ -222,9 +230,11 @@ public class Cache2kBuilder<K, V> {
    * @throws IllegalArgumentException in case the type is illegal
    * @see CacheType for a general discussion on types
    */
+  @SuppressWarnings("unchecked")
   public final <T2> Cache2kBuilder<K, T2> valueType(CacheType<T2> t) {
-    config().setValueType(t);
-    return (Cache2kBuilder<K, T2>) this;
+    Cache2kBuilder<K, T2> me = (Cache2kBuilder<K, T2>) this;
+    me.config().setValueType(t);
+    return me;
   }
 
   /**
@@ -762,8 +772,8 @@ public class Cache2kBuilder<K, V> {
    *
    * @throws IllegalArgumentException if a cache of the same name is already active in the cache manager
    * @throws UnknownCacheException there is no configuration entry for the named cache
-   * @return {@link IntCache} if the key type is {@code Integer}
-   * @return {@link LongCache} if the key type is {@code Long}
+   * @return {@link IntCache} if the key type is {@code Integer} or {@link LongCache}
+   *         if the key type is {@code Long}
    */
   public final Cache<K, V> build() {
     return CacheManager.PROVIDER.createCache(manager, config());
@@ -779,6 +789,7 @@ public class Cache2kBuilder<K, V> {
    * @throws IllegalArgumentException if key type is unexpected
    * @throws UnknownCacheException there is no configuration entry for the named cache
    */
+  @SuppressWarnings("unchecked")
   public final IntCache<V> buildForIntKey() {
     Cache2kConfiguration<K,V> cfg = config();
     if (cfg.getKeyType().getType() != Integer.class) {
@@ -797,6 +808,7 @@ public class Cache2kBuilder<K, V> {
    * @throws IllegalArgumentException if key type is unexpected
    * @throws UnknownCacheException there is no configuration entry for the named cache
    */
+  @SuppressWarnings("unchecked")
   public final LongCache<V> buildForLongKey() {
     Cache2kConfiguration<K,V> cfg = config();
     if (cfg.getKeyType().getType() != Long.class) {

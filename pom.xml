@@ -94,11 +94,10 @@
             <useIncrementalCompilation>false</useIncrementalCompilation>
             <source>1.6</source>
             <target>1.6</target>
-            <!-- various warnings pop up when enabling this.
-            <compilerArgument>-Xlint:unchecked</compilerArgument>
-            -->
-            <compilerArgument>-Xlint:deprecation</compilerArgument>
-            <compilerArgument>-Xlint:unchecked</compilerArgument>
+            <compilerArgs>
+              <arg>-Xlint:deprecation</arg>
+              <arg>-Xlint:unchecked</arg>
+            </compilerArgs>
           </configuration>
         </plugin>
         <plugin>

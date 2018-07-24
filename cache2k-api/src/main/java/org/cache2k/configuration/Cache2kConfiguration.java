@@ -51,7 +51,7 @@ import java.util.concurrent.Executor;
  * <p>The configuration may contain additional beans, called configuration sections, that are
  * used to configure extensions or sub modules.
  *
- * <p>Within the XML configuraiton of a cache manager different default configuration
+ * <p>Within the XML configuration of a cache manager different default configuration
  * values may be specified. To get a configuration bean with the effective defaults of
  * a specific manager do {@code Cache2kBuilder.forUnknownTypes().manager(...).toConfiguration()}
  *
@@ -108,10 +108,10 @@ public class Cache2kConfiguration<K, V> implements ConfigurationBean, Configurat
    * @see Cache2kBuilder#valueType(Class)
    */
   public static <K,V> Cache2kConfiguration<K, V> of(Class<K> keyType, Class<V> valueType) {
-    Cache2kConfiguration c = new Cache2kConfiguration();
+    Cache2kConfiguration<K,V> c = new Cache2kConfiguration<K,V>();
     c.setKeyType(keyType);
     c.setValueType(valueType);
-    return (Cache2kConfiguration<K, V>) c;
+    return c;
   }
 
   /**
@@ -122,10 +122,10 @@ public class Cache2kConfiguration<K, V> implements ConfigurationBean, Configurat
    * @see Cache2kBuilder#valueType(CacheType)
    */
   public static <K,V> Cache2kConfiguration<K, V> of(Class<K> keyType, CacheType<V> valueType) {
-    Cache2kConfiguration c = new Cache2kConfiguration();
+    Cache2kConfiguration<K,V> c = new Cache2kConfiguration<K,V>();
     c.setKeyType(keyType);
     c.setValueType(valueType);
-    return (Cache2kConfiguration<K, V>) c;
+    return c;
   }
 
   /**
@@ -136,10 +136,10 @@ public class Cache2kConfiguration<K, V> implements ConfigurationBean, Configurat
    * @see Cache2kBuilder#valueType(Class)
    */
   public static <K,V> Cache2kConfiguration<K, V> of(CacheType<K> keyType, Class<V> valueType) {
-    Cache2kConfiguration c = new Cache2kConfiguration();
+    Cache2kConfiguration<K,V> c = new Cache2kConfiguration<K,V>();
     c.setKeyType(keyType);
     c.setValueType(valueType);
-    return (Cache2kConfiguration<K, V>) c;
+    return c;
   }
 
   /**
@@ -150,10 +150,10 @@ public class Cache2kConfiguration<K, V> implements ConfigurationBean, Configurat
    * @see Cache2kBuilder#valueType(CacheType)
    */
   public static <K,V> Cache2kConfiguration<K, V> of(CacheType<K> keyType, CacheType<V> valueType) {
-    Cache2kConfiguration c = new Cache2kConfiguration();
+    Cache2kConfiguration<K,V> c = new Cache2kConfiguration<K,V>();
     c.setKeyType(keyType);
     c.setValueType(valueType);
-    return (Cache2kConfiguration<K, V>) c;
+    return c;
   }
 
   /**
@@ -211,7 +211,7 @@ public class Cache2kConfiguration<K, V> implements ConfigurationBean, Configurat
    * @see Cache2kBuilder#keyType(Class)
    * @see CacheType for a general discussion on types
    */
-  public void setKeyType(Class<?> v) {
+  public void setKeyType(Class<K> v) {
     checkNull(v);
     setKeyType(CacheTypeCapture.of(v));
   }
@@ -220,7 +220,7 @@ public class Cache2kConfiguration<K, V> implements ConfigurationBean, Configurat
    * @see Cache2kBuilder#keyType(CacheType)
    * @see CacheType for a general discussion on types
    */
-  public void setKeyType(CacheType v) {
+  public void setKeyType(CacheType<K> v) {
     checkNull(v);
     if (v.isArray()) {
       throw new IllegalArgumentException("Arrays are not supported for keys");
@@ -236,7 +236,7 @@ public class Cache2kConfiguration<K, V> implements ConfigurationBean, Configurat
    * @see Cache2kBuilder#valueType(Class)
    * @see CacheType for a general discussion on types
    */
-  public void setValueType(Class<?> v) {
+  public void setValueType(Class<V> v) {
     checkNull(v);
     setValueType(CacheTypeCapture.of(v));
   }
@@ -245,7 +245,7 @@ public class Cache2kConfiguration<K, V> implements ConfigurationBean, Configurat
    * @see Cache2kBuilder#valueType(CacheType)
    * @see CacheType for a general discussion on types
    */
-  public void setValueType(CacheType v) {
+  public void setValueType(CacheType<V> v) {
     checkNull(v);
     if (v.isArray()) {
       throw new IllegalArgumentException("Arrays are not supported for values");

@@ -47,7 +47,8 @@ public class Hash2<K,V> {
   }
 
   /**
-   * Counts clear and close operation on the hash. Needed for the iterator to detect the need for an abort.
+   * Counts clear and close operation on the hash.
+   * Needed for the iterator to detect the need for an abort.
    */
   private volatile int clearOrCloseCount = 0;
 
@@ -78,6 +79,7 @@ public class Hash2<K,V> {
     initArray();
   }
 
+  @SuppressWarnings("unchecked")
   private void initArray() {
     int len = Math.max(HeapCache.TUNABLE.initialHashSize, LOCK_SEGMENTS * 4);
     entries = new Entry[len];
@@ -100,8 +102,7 @@ public class Hash2<K,V> {
     if (tab == null) {
       throw new CacheClosedException(cache);
     }
-    Entry e;
-    Object ek;
+    Entry<K,V> e;
     int n = tab.length;
     int _mask = n - 1;
     int idx = _hash & (_mask);
@@ -150,7 +151,7 @@ public class Hash2<K,V> {
   public Entry<K,V> insertWithinLock(Entry<K,V> e, int _hash, int _keyValue) {
     K key = e.getKeyObj();
     int si = _hash & LOCK_MASK;
-    Entry f; Object ek; Entry<K,V>[] tab = entries;
+    Entry<K,V> f; Object ek; Entry<K,V>[] tab = entries;
     if (tab == null) {
       throw new CacheClosedException(cache);
     }
@@ -200,7 +201,7 @@ public class Hash2<K,V> {
     OptimisticLock l = _locks[si];
     long _stamp = l.writeLock();
     try {
-      Entry f; Entry<K,V>[] tab = entries;
+      Entry<K,V> f; Entry<K,V>[] tab = entries;
       if (tab == null) {
         throw new CacheClosedException(cache);
       }
@@ -212,7 +213,7 @@ public class Hash2<K,V> {
         return true;
       }
       while (f != null) {
-        Entry _another = f.another;
+        Entry<K,V> _another = f.another;
         if (_another == e) {
           f.another = _another.another;
           segmentSize[si].decrementAndGet();
@@ -228,7 +229,7 @@ public class Hash2<K,V> {
 
   public boolean removeWithinLock(Entry<K,V> e, int _hash) {
     int si = _hash & LOCK_MASK;
-    Entry f; Entry<K,V>[] tab = entries;
+    Entry<K,V> f; Entry<K,V>[] tab = entries;
     if (tab == null) {
       throw new CacheClosedException(cache);
     }
@@ -240,7 +241,7 @@ public class Hash2<K,V> {
       return true;
     }
     while (f != null) {
-      Entry _another = f.another;
+      Entry<K,V> _another = f.another;
       if (_another == e) {
         f.another = _another.another;
         segmentSize[si].decrementAndGet();
@@ -302,6 +303,7 @@ public class Hash2<K,V> {
   /**
    * Double the hash table size and rehash the entries. Assumes total lock.
    */
+  @SuppressWarnings("unchecked")
   private void rehash() {
     Entry<K,V>[] src = entries;
     if (src == null) {

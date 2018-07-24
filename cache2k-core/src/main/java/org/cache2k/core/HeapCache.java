@@ -1283,7 +1283,7 @@ public class HeapCache<K, V> extends BaseCache<K, V> {
     return lookupEntry(key, hc, extractIntKeyValue(key, hc));
   }
 
-  protected Entry lookupEntryNoHitRecord(K key) {
+  protected Entry<K,V> lookupEntryNoHitRecord(K key) {
     int hc = modifiedHash(key.hashCode());
     return lookupEntryNoHitRecord(key, hc, extractIntKeyValue(key, hc));
   }

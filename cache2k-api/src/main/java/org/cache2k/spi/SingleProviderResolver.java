@@ -92,6 +92,7 @@ public class SingleProviderResolver {
    * @return instance of the provider or {@code null} if not found
    * @throws java.lang.LinkageError if there is a problem instantiating the provider
    */
+  @SuppressWarnings("unchecked")
   public synchronized static <T> T resolve(Class<T> c, Class<? extends T> defaultImpl) {
     if (providers.containsKey(c)) {
       return (T) providers.get(c);

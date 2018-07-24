@@ -184,10 +184,10 @@ public class InternalCache2kBuilder<K, V> {
   @SuppressWarnings({"unchecked", "SuspiciousToArrayCall"})
   public Cache<K, V> buildAsIs() {
     if (config.getValueType() == null) {
-      config.setValueType(Object.class);
+      config.setValueType((Class<V>) Object.class);
     }
     if (config.getKeyType() == null) {
-      config.setKeyType(Object.class);
+      config.setKeyType((Class<K>) Object.class);
     }
     if (config.getName() == null) {
       config.setName(deriveNameFromStackTrace());

@@ -82,7 +82,7 @@ public class Operations<K, V> {
     }
   };
 
-  public static final Semantic UNCONDITIONAL_LOAD = new Semantic.Update() {
+  public final Semantic UNCONDITIONAL_LOAD = new Semantic.Update() {
     @Override
     public void update(final Progress c, final ExaminationEntry e) {
       c.load();

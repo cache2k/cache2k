@@ -45,12 +45,18 @@ import java.util.Arrays;
  */
 public class CacheTypeCapture<T> implements CacheType<T> {
 
-  private CacheType descriptor;
+  @SuppressWarnings("unchecked")
+  private final CacheType<T> descriptor =
+    of(((ParameterizedType) this.getClass().getGenericSuperclass()).getActualTypeArguments()[0]);
 
-  protected CacheTypeCapture() {
-    descriptor = of(((ParameterizedType) this.getClass().getGenericSuperclass()).getActualTypeArguments()[0]);
+  protected CacheTypeCapture() { }
+
+  @SuppressWarnings("unchecked")
+  public static <T> CacheType<T> of(Class<T> t) {
+    return of((Type) t);
   }
 
+  @SuppressWarnings("unchecked")
   public static CacheType of(Type t) {
     if (t instanceof ParameterizedType) {
       ParameterizedType pt = (ParameterizedType) t;
@@ -75,12 +81,12 @@ public class CacheTypeCapture<T> implements CacheType<T> {
   }
 
   @Override
-  public CacheType getBeanRepresentation() {
+  public CacheType<T> getBeanRepresentation() {
     return descriptor;
   }
 
   @Override
-  public CacheType getComponentType() {
+  public CacheType<?> getComponentType() {
     return descriptor.getComponentType();
   }
 
@@ -90,7 +96,7 @@ public class CacheTypeCapture<T> implements CacheType<T> {
   }
 
   @Override
-  public CacheType[] getTypeArguments() {
+  public CacheType<?>[] getTypeArguments() {
     return descriptor.getTypeArguments();
   }
 
@@ -109,6 +115,7 @@ public class CacheTypeCapture<T> implements CacheType<T> {
     return descriptor.isArray();
   }
 
+  @SuppressWarnings("EqualsWhichDoesntCheckParameterClass")
   @Override
   public boolean equals(Object o) {
     return descriptor.equals(o);
@@ -127,7 +134,7 @@ public class CacheTypeCapture<T> implements CacheType<T> {
     }
 
     @Override
-    public Class<?> getType() {
+    public Class getType() {
       return null;
     }
 

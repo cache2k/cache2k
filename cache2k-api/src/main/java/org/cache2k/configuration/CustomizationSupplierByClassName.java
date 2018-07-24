@@ -59,6 +59,7 @@ public final class CustomizationSupplierByClassName<T> implements CustomizationS
     className = v;
   }
 
+  @SuppressWarnings("unchecked")
   @Override
   public T supply(final CacheManager manager) throws Exception {
     return (T) manager.getClassLoader().loadClass(className).newInstance();
