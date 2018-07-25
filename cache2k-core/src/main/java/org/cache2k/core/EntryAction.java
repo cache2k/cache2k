@@ -324,6 +324,7 @@ public abstract class EntryAction<K, V, R> implements
     load();
   }
 
+  @SuppressWarnings("unchecked")
   @Override
   public void load() {
     AdvancedCacheLoader<K, V> _loader = loader();
@@ -355,7 +356,7 @@ public abstract class EntryAction<K, V, R> implements
         v = _loader.load(heapCache.extractKeyObj(e), t0, e);
       }
       if (v instanceof RefreshTimeWrapper) {
-        RefreshTimeWrapper wr = RefreshTimeWrapper.class.cast(v);
+        RefreshTimeWrapper wr = (RefreshTimeWrapper<V>)v;
         lastRefreshTime = wr.getRefreshTime();
         v = (V) wr.getValue();
       }
