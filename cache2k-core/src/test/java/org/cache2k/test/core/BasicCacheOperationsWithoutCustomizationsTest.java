@@ -48,14 +48,18 @@ import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
+import java.util.AbstractCollection;
+import java.util.AbstractSet;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
+import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
@@ -93,7 +97,7 @@ public class BasicCacheOperationsWithoutCustomizationsTest {
   @Parameterized.Parameters(name = "{0}")
   public static Collection<Object[]> data() {
     List<Object[]> l = new ArrayList<Object[]>();
-    for (Pars o : new Pars.TestVariants()) {
+    for (Pars o : new TestVariants()) {
       l.add(new Object[]{o});
     }
     extend(l,
@@ -1548,44 +1552,63 @@ public class BasicCacheOperationsWithoutCustomizationsTest {
 
     }
 
-    static class TestVariants implements Iterable<Pars> {
+  }
 
-      @Override
-      public Iterator<Pars> iterator() {
-        return new Iterator<Pars>() {
+  static class TestVariants extends HashSet<Pars> {
 
-          long currentVariant;
-          long shiftRight;
+    {
+      addAll(new VariantIterator<Pars>() {
 
-          @Override
-          public boolean hasNext() {
-            return shiftRight == 0;
-          }
+        @Override
+        protected Pars generate() {
+          return new Pars.Builder()
+            .disableLastModified(nextBoolean())
+            .disableStatistics(nextBoolean())
+            .withWiredCache(nextBoolean())
+            .keepDataAfterExpired(nextBoolean())
+            .withExpiryAfterWrite(nextBoolean())
+            .build();
+        }
 
-          @Override
-          public Pars next() {
-            shiftRight = currentVariant;
-            currentVariant++;
-            return new Builder()
-              .disableLastModified(nextBoolean())
-              .disableStatistics(nextBoolean())
-              .withEntryProcessor(nextBoolean())
-              .withWiredCache(nextBoolean())
-              .keepDataAfterExpired(nextBoolean())
-              .withExpiryAfterWrite(nextBoolean())
-              .useObjectKey(nextBoolean())
-              .build();
-          }
+      });
+      add(new Pars.Builder().withEntryProcessor(true).build());
+      add(new Pars.Builder().withEntryProcessor(true).withWiredCache(true).build());
+      add(new Pars.Builder().useObjectKey(true).build());
+      add(new Pars.Builder().useObjectKey(true).withWiredCache(true).build());
+    }
 
-          protected boolean nextBoolean() {
-            boolean v = (shiftRight & 0x01) == 1L;
-            shiftRight >>>= 1;
-            return v;
-          }
+  }
 
-        };
+  static abstract class VariantIterator<T> extends AbstractCollection<T> {
+
+    private long variant = 0;
+    private long shiftRight;
+    private Set<T> collection = new HashSet<T>();
+
+    {
+      while (shiftRight == 0) {
+        shiftRight = variant;
+        variant++;
+        collection.add(generate());
       }
+    }
 
+    protected final boolean nextBoolean() {
+      boolean v = (shiftRight & 0x01) == 1L;
+      shiftRight >>>= 1;
+      return v;
+    }
+
+    protected abstract T generate();
+
+    @Override
+    public Iterator<T> iterator() {
+      return collection.iterator();
+    }
+
+    @Override
+    public int size() {
+      return collection.size();
     }
 
   }
