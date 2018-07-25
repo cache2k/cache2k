@@ -370,7 +370,7 @@ public abstract class EntryAction<K, V, R> implements
     metrics().refreshedHit();
     Entry<K, V> e = entry;
     newValueOrException = e.getValueOrException();
-    lastRefreshTime = e.getLastModification();
+    lastRefreshTime = e.getRefreshTime();
     expiry = nrt;
     expiryCalculated();
   }
@@ -498,7 +498,7 @@ public abstract class EntryAction<K, V, R> implements
     needsFinish = false;
     newValueOrException = entry.getValueOrException();
     if (!heapCache.isNoModificationTimeRecording()) {
-      lastRefreshTime = entry.getLastModification();
+      lastRefreshTime = entry.getRefreshTime();
     }
     expiry = expiryTime;
     if (newValueOrException instanceof ExceptionWrapper) {
@@ -542,7 +542,7 @@ public abstract class EntryAction<K, V, R> implements
         if (expiry > loadStartedTime) {
           suppressException = true;
           newValueOrException = entry.getValueOrException();
-          lastRefreshTime = entry.getLastModification();
+          lastRefreshTime = entry.getRefreshTime();
           metrics().suppressedException();
           entry.setSuppressedLoadExceptionInformation(ew);
         } else {
@@ -666,7 +666,7 @@ public abstract class EntryAction<K, V, R> implements
       }
 
       @Override
-      public long getLastModification() {
+      public long getRefreshTime() {
         return lastRefreshTime;
       }
 
@@ -769,7 +769,7 @@ public abstract class EntryAction<K, V, R> implements
 
   public void mutationUpdateHeap() {
     synchronized (entry) {
-      entry.setLastModification(lastRefreshTime);
+      entry.setRefreshTime(lastRefreshTime);
       if (remove) {
         if (expiredImmediately) {
           entry.setNextRefreshTime(Entry.EXPIRED);

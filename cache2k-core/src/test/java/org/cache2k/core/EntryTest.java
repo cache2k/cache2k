@@ -40,10 +40,10 @@ public class EntryTest {
   public void testLastModifiedStoresValue() {
     Entry e = new Entry();
     synchronized (e) {
-      e.setLastModification(4711);
-      assertEquals(4711, e.getLastModification());
-      e.setLastModification(123456);
-      assertEquals(123456, e.getLastModification());
+      e.setRefreshTime(4711);
+      assertEquals(4711, e.getRefreshTime());
+      e.setRefreshTime(123456);
+      assertEquals(123456, e.getRefreshTime());
     }
   }
 
@@ -51,9 +51,9 @@ public class EntryTest {
   public void testLastModifiedDirty() {
     Entry e = new Entry();
     synchronized (e) {
-      e.setLastModification(4711);
+      e.setRefreshTime(4711);
       assertTrue(e.isDirty());
-      assertEquals(4711, e.getLastModification());
+      assertEquals(4711, e.getRefreshTime());
     }
   }
 
@@ -61,11 +61,11 @@ public class EntryTest {
   public void testLastModifiedResetDirty() {
     Entry e = new Entry();
     synchronized (e) {
-      e.setLastModification(4711);
-      assertEquals(4711, e.getLastModification());
+      e.setRefreshTime(4711);
+      assertEquals(4711, e.getRefreshTime());
       e.resetDirty();
       assertFalse(e.isDirty());
-      assertEquals(4711, e.getLastModification());
+      assertEquals(4711, e.getRefreshTime());
     }
   }
 
@@ -75,7 +75,7 @@ public class EntryTest {
     synchronized (e) {
       e.setLastModificationFromStorage(4711);
       assertFalse(e.isDirty());
-      assertEquals(4711, e.getLastModification());
+      assertEquals(4711, e.getRefreshTime());
     }
   }
 
@@ -85,8 +85,8 @@ public class EntryTest {
     long t = System.currentTimeMillis() + _50yearsMillis;
     Entry e = new Entry();
     synchronized (e) {
-      e.setLastModification(t);
-      assertEquals(t, e.getLastModification());
+      e.setRefreshTime(t);
+      assertEquals(t, e.getRefreshTime());
     }
   }
 
@@ -94,10 +94,10 @@ public class EntryTest {
   public void testLastModifiedMaxRange() {
     Entry e = new Entry();
     synchronized (e) {
-      e.setLastModification(Long.MAX_VALUE);
+      e.setRefreshTime(Long.MAX_VALUE);
       SimpleDateFormat df = new SimpleDateFormat("yyyy-MMM-dd HH:mm:ss");
       df.setTimeZone(TimeZone.getTimeZone("GMT"));
-      assertEquals("2248-Sep-26 15:10:22", df.format(new Date(e.getLastModification())));
+      assertEquals("2248-Sep-26 15:10:22", df.format(new Date(e.getRefreshTime())));
     }
   }
 
@@ -113,9 +113,9 @@ public class EntryTest {
     Entry e = new Entry();
     long _time = 4711;
     synchronized (e) {
-      e.setLastModification(_time);
+      e.setRefreshTime(_time);
       assertTrue(e.isDirty());
-      assertEquals(_time, e.getLastModification());
+      assertEquals(_time, e.getRefreshTime());
     }
   }
 
@@ -124,9 +124,9 @@ public class EntryTest {
     Entry e = new Entry();
     long _time = 4711;
     synchronized (e) {
-      e.setLastModification(_time);
+      e.setRefreshTime(_time);
       assertTrue(e.isDirty());
-      assertEquals(_time, e.getLastModification());
+      assertEquals(_time, e.getRefreshTime());
       e.resetDirty();
       assertFalse(e.isDirty());
     }
@@ -139,7 +139,7 @@ public class EntryTest {
     synchronized (e) {
       e.setLastModificationFromStorage(_time);
       assertFalse(e.isDirty());
-      assertEquals(_time, e.getLastModification());
+      assertEquals(_time, e.getRefreshTime());
     }
   }
 

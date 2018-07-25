@@ -228,7 +228,7 @@ public class Entry<K, T> extends CompactEntry<K,T>
    *
    * @param _clean 1 means not modified
    */
-  void setLastModification(long t, int _clean) {
+  void setRefreshTime(long t, int _clean) {
     fetchedTime =
       fetchedTime & ~MODIFICATION_TIME_MASK |
         ((((t - MODIFICATION_TIME_BASE) << MODIFICATION_TIME_SHIFT) + _clean) & MODIFICATION_TIME_MASK);
@@ -237,8 +237,14 @@ public class Entry<K, T> extends CompactEntry<K,T>
   /**
    * Set modification time and marks entry as dirty.
    */
-  public void setLastModification(long t) {
-    setLastModification(t, DIRTY);
+  public void setRefreshTime(long t) {
+    setRefreshTime(t, DIRTY);
+  }
+
+  @SuppressWarnings("deprecation")
+  @Override @Deprecated
+  public long getLastModification() {
+    throw new UnsupportedOperationException();
   }
 
   /**
@@ -249,16 +255,15 @@ public class Entry<K, T> extends CompactEntry<K,T>
   }
 
   public void setLastModificationFromStorage(long t) {
-    setLastModification(t, CLEAN);
+    setRefreshTime(t, CLEAN);
   }
 
   public void resetDirty() {
     fetchedTime = fetchedTime | 1;
   }
 
-  @SuppressWarnings("deprecation")
   @Override
-  public long getLastModification() {
+  public long getRefreshTime() {
     return (fetchedTime & MODIFICATION_TIME_MASK) >> MODIFICATION_TIME_SHIFT;
   }
 
@@ -522,7 +527,7 @@ public class Entry<K, T> extends CompactEntry<K,T>
    */
   @Override
   public long getCreatedOrUpdated() {
-    return getLastModification();
+    return getRefreshTime();
   }
 
   /**
@@ -559,7 +564,7 @@ public class Entry<K, T> extends CompactEntry<K,T>
     } else {
       sb.append(", value=null");
     }
-    long t = getLastModification();
+    long t = getRefreshTime();
     if (t > 0) {
       sb.append(", refresh=").append(formatMillis(t));
     }

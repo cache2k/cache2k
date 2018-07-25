@@ -33,7 +33,7 @@ public class ReadOnlyCacheEntry<K, V> implements ResultEntry<K, V> {
 
   private K key;
   private V valueOrException;
-  private long lastModification;
+  private long refreshTime;
 
   @SuppressWarnings("unchecked")
   public static <K,V> ReadOnlyCacheEntry<K,V> of(CacheEntry<K,V> entry) {
@@ -48,12 +48,12 @@ public class ReadOnlyCacheEntry<K, V> implements ResultEntry<K, V> {
   }
 
   private void setValues(final Entry<K, V> entry) {
-    setValues(entry.getKey(), entry.getValueOrException(), entry.getLastModification());
+    setValues(entry.getKey(), entry.getValueOrException(), entry.getRefreshTime());
   }
 
-  private void setValues(final K _key, final V _valueOrException, final long _lastModification) {
+  private void setValues(final K _key, final V _valueOrException, final long _refreshTime) {
     key = _key;
-    lastModification = _lastModification;
+    refreshTime = _refreshTime;
     valueOrException = _valueOrException;
   }
 
@@ -72,8 +72,8 @@ public class ReadOnlyCacheEntry<K, V> implements ResultEntry<K, V> {
 
   @SuppressWarnings("deprecation")
   @Override
-  public long getLastModification() {
-    return lastModification;
+  public long getRefreshTime() {
+    return refreshTime;
   }
 
   @Override
@@ -92,6 +92,12 @@ public class ReadOnlyCacheEntry<K, V> implements ResultEntry<K, V> {
   @Override
   public boolean isStable() {
     return true;
+  }
+
+  @SuppressWarnings("deprecation")
+  @Override @Deprecated
+  public long getLastModification() {
+    throw new UnsupportedOperationException();
   }
 
 }

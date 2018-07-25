@@ -1421,7 +1421,7 @@ public class HeapCache<K, V> extends BaseCache<K, V> {
       if (_suppressException) {
         e.setSuppressedLoadExceptionInformation(_value);
       } else {
-        e.setLastModification(t0);
+        e.setRefreshTime(t0);
         e.setValueOrException((V) _value);
       }
       _value.setUntil(Math.abs(_nextRefreshTime));
@@ -1477,7 +1477,7 @@ public class HeapCache<K, V> extends BaseCache<K, V> {
         return;
       }
       synchronized (e) {
-        e.setLastModification(_refreshTime);
+        e.setRefreshTime(_refreshTime);
         insertUpdateStats(e, _value, t0, t, _updateStatistics, _nextRefreshTime, false);
         e.setValueOrException(_value);
         e.resetSuppressedLoadExceptionInformation();
@@ -1487,7 +1487,7 @@ public class HeapCache<K, V> extends BaseCache<K, V> {
       if (_value == null && hasRejectNullValues()) {
         throw returnNullValueDetectedException();
       }
-      e.setLastModification(_refreshTime);
+      e.setRefreshTime(_refreshTime);
       e.setValueOrException(_value);
       e.resetSuppressedLoadExceptionInformation();
       insertUpdateStats(e, _value, t0, t, _updateStatistics, _nextRefreshTime, false);

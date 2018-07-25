@@ -39,7 +39,7 @@ public interface ExaminationEntry<K, V> {
   /** Associated value or the {@link org.cache2k.core.ExceptionWrapper} */
   V getValueOrException();
 
-  long getLastModification();
+  long getRefreshTime();
 
   /** Entry is locked and does not need synchronization to read values consistently */
   boolean isStable();
