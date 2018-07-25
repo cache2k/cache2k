@@ -22,6 +22,7 @@ package org.cache2k.processor;
 
 import org.cache2k.CacheEntry;
 import org.cache2k.integration.CacheLoader;
+import org.cache2k.integration.ExceptionInformation;
 
 /**
  * A mutable entry is used inside the {@link EntryProcessor} to perform
@@ -108,6 +109,15 @@ public interface MutableCacheEntry<K, V> extends CacheEntry<K, V> {
   boolean wasExisting();
 
   /**
+   * Current time as provided by the internal time source (usually {@code System.currentTimeMillis()}.
+   * The time is retrieved once when the entry processor is invoked and will not change afterwards.
+   * If a load is triggered this value will be identical to
+   * {@link org.cache2k.integration.AdvancedCacheLoader#load(Object, long, CacheEntry)} and
+   * {@link ExceptionInformation#getLoadTime()}
+   */
+  long getCurrentTime();
+
+  /**
    * Insert or updates the cache value assigned to this key. After calling this method
    * {@code exists} will return true and {@code getValue} will return the set value.
    *
@@ -147,18 +157,25 @@ public interface MutableCacheEntry<K, V> extends CacheEntry<K, V> {
    *
    * @param t Time in millis since epoch.
    */
-  MutableCacheEntry<K,V> setExpiry(long t);
+  MutableCacheEntry<K,V> setExpiryTime(long t);
 
   /**
-   * Timestamp of the last modification of the cached value. This is the start time
+   * Timestamp of the last refresh of the cached value. This is the start time
    * (before the loader was called) of a successful load operation, or the time
    * the value was modified directly via {@link org.cache2k.Cache#put} or other sorts
    * of mutation.
    *
-   * <p>For optimizations it is possible to disable time recording. In this case a
-   * {@code 0} is returned.
+   * <p>Rationale: We call it "refresh" time since we don't know whether the value
+   * actually changed. If a load produces the same value as before the entry is refreshed but
+   * effectively not updated or modified.
    */
-  @SuppressWarnings("deprecation")
-  long getLastModification();
+  long getRefreshTime();
+
+  /**
+   * In {@link #setValue(Object)} is used, this sets an alternative refresh time for
+   * expiry calculations. The entry refresh time is not updated, if the entry is
+   * not mutated.
+   */
+  MutableCacheEntry<K,V> setRefreshTime(long t);
 
 }

@@ -23,6 +23,8 @@ package org.cache2k.core.operation;
 import org.cache2k.core.ExceptionWrapper;
 import org.cache2k.processor.MutableCacheEntry;
 
+import static org.cache2k.expiry.ExpiryTimeValues.NEUTRAL;
+
 /**
  * @author Jens Wilke
  */
@@ -37,7 +39,8 @@ class MutableEntryOnProgress<K, V> implements MutableCacheEntry<K, V> {
   private V value = null;
   private boolean readThrough;
   private boolean customExpiry = false;
-  private long expiry;
+  private long expiryTime = NEUTRAL;
+  private long refreshTime = expiryTime;
 
   /**
    * Sets exists and value together since it must be guaranteed that getValue() returns
@@ -52,6 +55,11 @@ class MutableEntryOnProgress<K, V> implements MutableCacheEntry<K, V> {
       value = entry.getValueOrException();
       originalExists = exists = true;
     }
+  }
+
+  @Override
+  public long getCurrentTime() {
+    return progress.getCurrentTime();
   }
 
   @Override
@@ -79,9 +87,9 @@ class MutableEntryOnProgress<K, V> implements MutableCacheEntry<K, V> {
   }
 
   @Override
-  public MutableCacheEntry<K, V> setExpiry(final long t) {
+  public MutableCacheEntry<K, V> setExpiryTime(final long t) {
     customExpiry = true;
-    expiry = t;
+    expiryTime = t;
     return this;
   }
 
@@ -142,8 +150,23 @@ class MutableEntryOnProgress<K, V> implements MutableCacheEntry<K, V> {
   }
 
   @Override
-  public long getLastModification() {
+  public long getRefreshTime() {
+    if (refreshTime != NEUTRAL) {
+      return refreshTime;
+    }
     return entry.getLastModification();
+  }
+
+  @Override
+  public MutableCacheEntry<K, V> setRefreshTime(final long t) {
+    refreshTime = t;
+    return this;
+  }
+
+  @SuppressWarnings("deprecation")
+  @Override
+  public long getLastModification() {
+    throw new UnsupportedOperationException();
   }
 
   public void sendMutationCommandIfNeeded() {
@@ -152,15 +175,16 @@ class MutableEntryOnProgress<K, V> implements MutableCacheEntry<K, V> {
         progress.remove();
         return;
       }
-      if (customExpiry) {
-        progress.putAndSetExpiry(value, expiry);
+      if (customExpiry || refreshTime != NEUTRAL) {
+        progress.putAndSetExpiry(value, expiryTime, refreshTime);
         return;
       }
       progress.put(value);
       return;
     }
     if (customExpiry) {
-      progress.expire(expiry);
+      progress.expire(expiryTime);
     }
   }
+
 }

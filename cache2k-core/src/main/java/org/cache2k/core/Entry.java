@@ -561,7 +561,7 @@ public class Entry<K, T> extends CompactEntry<K,T>
     }
     long t = getLastModification();
     if (t > 0) {
-      sb.append(", modified=").append(formatMillis(t));
+      sb.append(", refresh=").append(formatMillis(t));
     }
     long nrt = nextRefreshTime;
     if (nrt < 0) {

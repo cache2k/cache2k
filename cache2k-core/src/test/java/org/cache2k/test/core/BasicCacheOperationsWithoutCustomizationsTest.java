@@ -329,7 +329,7 @@ public class BasicCacheOperationsWithoutCustomizationsTest {
     long t = cache.invoke(e.getKey(), new EntryProcessor<Integer, Integer, Long>() {
       @Override
       public Long process(final MutableCacheEntry<Integer, Integer> e) throws Exception {
-        return e.getLastModification();
+        return e.getRefreshTime();
       }
     });
     if (lastModificationAvailable) {
@@ -1280,7 +1280,7 @@ public class BasicCacheOperationsWithoutCustomizationsTest {
       @Override
       public Boolean process(final MutableCacheEntry<Integer, Integer> e) throws Exception {
         e.setValue(VALUE);
-        e.setExpiry(ExpiryTimeValues.ETERNAL);
+        e.setExpiryTime(ExpiryTimeValues.ETERNAL);
         return null;
       }
     });
@@ -1293,7 +1293,7 @@ public class BasicCacheOperationsWithoutCustomizationsTest {
       @Override
       public Boolean process(final MutableCacheEntry<Integer, Integer> e) throws Exception {
         e.setValue(VALUE);
-        e.setExpiry(ExpiryTimeValues.NOW);
+        e.setExpiryTime(ExpiryTimeValues.NOW);
         return null;
       }
     });
@@ -1310,7 +1310,7 @@ public class BasicCacheOperationsWithoutCustomizationsTest {
         @Override
         public Boolean process(final MutableCacheEntry<Integer, Integer> e) throws Exception {
           e.setValue(VALUE);
-          e.setExpiry(MILLIS_IN_FUTURE);
+          e.setExpiryTime(MILLIS_IN_FUTURE);
           return null;
         }
       });

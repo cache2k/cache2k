@@ -469,7 +469,7 @@ public class BasicCacheTest extends TestingBase {
     return c.invoke(key, new EntryProcessor<Integer, Integer, Long>() {
       @Override
       public Long process(final MutableCacheEntry<Integer, Integer> e) throws Exception {
-        return e.getLastModification();
+        return e.getRefreshTime();
       }
     });
   }

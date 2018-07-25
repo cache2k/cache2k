@@ -1,4 +1,4 @@
-package org.cache2k;
+package org.cache2k.integration;
 
 /*
  * #%L
@@ -21,15 +21,33 @@ package org.cache2k;
  */
 
 /**
- * Thrown if only configured caches are allowed and the requested cache name is
- * not mentioned in the configuration.
+ * A loaded value may be wrapped by the loader to transport auxiliary information
+ * to the cache. Use the utility methods in {@link Loaders}
  *
  * @author Jens Wilke
  */
-public class UnknownCacheException extends CacheException {
+public abstract class LoadDetail<V> {
 
-  public UnknownCacheException(final String message) {
-    super(message);
+  private Object value;
+
+  public LoadDetail(final Object valueOrWrapper) {
+    value = valueOrWrapper;
+  }
+
+  @SuppressWarnings("unchecked")
+  public V getValue() {
+    if (value instanceof LoadDetail) {
+      return ((LoadDetail<V>) value).getValue();
+    }
+    return (V) value;
+  }
+
+  @SuppressWarnings("unchecked")
+  public LoadDetail<V> getNextInChain() {
+    if (value instanceof LoadDetail) {
+      return ((LoadDetail<V>) value);
+    }
+    return null;
   }
 
 }

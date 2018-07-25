@@ -42,6 +42,7 @@ import org.cache2k.core.storageApi.StorageCallback;
 import org.cache2k.core.storageApi.StorageAdapter;
 import org.cache2k.core.storageApi.StorageEntry;
 import org.cache2k.integration.ExceptionInformation;
+import org.cache2k.integration.RefreshTimeWrapper;
 
 /**
  * This is a method object to perform an operation on an entry.
@@ -62,7 +63,8 @@ public abstract class EntryAction<K, V, R> implements
   V newValueOrException;
   V oldValueOrException;
   R result;
-  long lastModificationTime;
+  long currentTime;
+  long lastRefreshTime;
   long loadStartedTime;
   RuntimeException exceptionToPropagate;
   boolean remove;
@@ -172,6 +174,14 @@ public abstract class EntryAction<K, V, R> implements
 
   @SuppressWarnings("unchecked")
   protected abstract TimingHandler<K,V> timing(); //  { return RefreshHandler.ETERNAL; }
+
+  @Override
+  public long getCurrentTime() {
+    if (currentTime > 0) {
+      return currentTime;
+    }
+    return currentTime = millis();
+  }
 
   @Override
   public InternalClock getClock() {
@@ -329,7 +339,7 @@ public abstract class EntryAction<K, V, R> implements
     needsFinish = false;
     load = true;
     Entry<K, V> e = entry;
-    long t0 = lastModificationTime = loadStartedTime = millis();
+    long t0 = lastRefreshTime = loadStartedTime = getCurrentTime();
     if (e.getNextRefreshTime() == Entry.EXPIRED_REFRESHED) {
       long nrt = e.getRefreshProbationNextRefreshTime();
       if (nrt > t0) {
@@ -344,6 +354,11 @@ public abstract class EntryAction<K, V, R> implements
       } else {
         v = _loader.load(heapCache.extractKeyObj(e), t0, e);
       }
+      if (v instanceof RefreshTimeWrapper) {
+        RefreshTimeWrapper wr = RefreshTimeWrapper.class.cast(v);
+        lastRefreshTime = wr.getRefreshTime();
+        v = (V) wr.getValue();
+      }
     } catch (Throwable _ouch) {
       onLoadFailure(_ouch);
       return;
@@ -355,7 +370,7 @@ public abstract class EntryAction<K, V, R> implements
     metrics().refreshedHit();
     Entry<K, V> e = entry;
     newValueOrException = e.getValueOrException();
-    lastModificationTime = e.getLastModification();
+    lastRefreshTime = e.getLastModification();
     expiry = nrt;
     expiryCalculated();
   }
@@ -462,9 +477,9 @@ public abstract class EntryAction<K, V, R> implements
     needsFinish = false;
     newValueOrException = value;
     if (heapCache.isNoModificationTimeRecording()) {
-      lastModificationTime = 0;
+      lastRefreshTime = 0;
     } else {
-      lastModificationTime = millis();
+      lastRefreshTime = millis();
     }
     mutationCalculateExpiry();
   }
@@ -478,12 +493,14 @@ public abstract class EntryAction<K, V, R> implements
   }
 
   @Override
-  public void expire(long t) {
+  public void expire(long expiryTime) {
     lockForNoHit(Entry.ProcessingState.MUTATE);
     needsFinish = false;
     newValueOrException = entry.getValueOrException();
-    lastModificationTime = entry.getLastModification();
-    expiry = t;
+    if (!heapCache.isNoModificationTimeRecording()) {
+      lastRefreshTime = entry.getLastModification();
+    }
+    expiry = expiryTime;
     if (newValueOrException instanceof ExceptionWrapper) {
       setUntil(ExceptionWrapper.class.cast(newValueOrException));
     }
@@ -491,18 +508,26 @@ public abstract class EntryAction<K, V, R> implements
   }
 
   @Override
-  public void putAndSetExpiry(final V value, final long t) {
+  public void putAndSetExpiry(final V value, final long expiryTime, final long refreshTime) {
     lockFor(Entry.ProcessingState.MUTATE);
     needsFinish = false;
     newValueOrException = value;
-    if (!heapCache.isNoModificationTimeRecording()) {
-      lastModificationTime = millis();
+    if (refreshTime >= 0) {
+      lastRefreshTime = refreshTime;
+    } else {
+      if (!heapCache.isNoModificationTimeRecording()) {
+        lastRefreshTime = getCurrentTime();
+      }
     }
-    expiry = t;
     if (newValueOrException instanceof ExceptionWrapper) {
       setUntil(ExceptionWrapper.class.cast(newValueOrException));
     }
-    expiryCalculated();
+    if (expiryTime != ExpiryTimeValues.NEUTRAL) {
+      expiry = expiryTime;
+      expiryCalculated();
+    } else {
+      mutationCalculateExpiry();
+    }
   }
 
   public void mutationCalculateExpiry() {
@@ -517,7 +542,7 @@ public abstract class EntryAction<K, V, R> implements
         if (expiry > loadStartedTime) {
           suppressException = true;
           newValueOrException = entry.getValueOrException();
-          lastModificationTime = entry.getLastModification();
+          lastRefreshTime = entry.getLastModification();
           metrics().suppressedException();
           entry.setSuppressedLoadExceptionInformation(ew);
         } else {
@@ -539,7 +564,7 @@ public abstract class EntryAction<K, V, R> implements
       try {
         expiry = timing().calculateNextRefreshTime(
           entry, newValueOrException,
-          lastModificationTime);
+          lastRefreshTime);
         if (newValueOrException == null && heapCache.hasRejectNullValues() && expiry != ExpiryTimeValues.NO_CACHE) {
           RuntimeException _ouch = heapCache.returnNullValueDetectedException();
           if (load) {
@@ -642,7 +667,7 @@ public abstract class EntryAction<K, V, R> implements
 
       @Override
       public long getLastModification() {
-        return lastModificationTime;
+        return lastRefreshTime;
       }
 
       @Override
@@ -744,7 +769,7 @@ public abstract class EntryAction<K, V, R> implements
 
   public void mutationUpdateHeap() {
     synchronized (entry) {
-      entry.setLastModification(lastModificationTime);
+      entry.setLastModification(lastRefreshTime);
       if (remove) {
         if (expiredImmediately) {
           entry.setNextRefreshTime(Entry.EXPIRED);

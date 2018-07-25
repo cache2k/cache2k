@@ -1,4 +1,4 @@
-package org.cache2k;
+package org.cache2k.integration;
 
 /*
  * #%L
@@ -20,16 +20,29 @@ package org.cache2k;
  * #L%
  */
 
+import org.cache2k.CacheEntry;
+
 /**
- * Thrown if only configured caches are allowed and the requested cache name is
- * not mentioned in the configuration.
+ * Utility methods for cache loaders
  *
  * @author Jens Wilke
  */
-public class UnknownCacheException extends CacheException {
+public class Loaders {
 
-  public UnknownCacheException(final String message) {
-    super(message);
+  /**
+   * Wraps a loaded value to add the refresh value.
+   *
+   * @see CacheLoader#load(Object)
+   * @see AdvancedCacheLoader#load(Object, long, CacheEntry)
+   * @see FunctionalCacheLoader#load(Object)
+   */
+  @SuppressWarnings("unchecked")
+  public static <V> LoadDetail<V> wrapRefreshTime(V value, long refreshTimeInMillis) {
+    return new RefreshTimeWrapper<V>(value, refreshTimeInMillis);
+  }
+
+  public static <V> LoadDetail<V> wrapRefreshTime(LoadDetail<V> value, long refreshTimeInMillis) {
+    return new RefreshTimeWrapper<V>(value, refreshTimeInMillis);
   }
 
 }

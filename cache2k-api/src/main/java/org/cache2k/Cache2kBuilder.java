@@ -26,6 +26,7 @@ import org.cache2k.configuration.CacheType;
 import org.cache2k.configuration.ConfigurationSection;
 import org.cache2k.configuration.ConfigurationSectionBuilder;
 import org.cache2k.configuration.CustomizationReferenceSupplier;
+import org.cache2k.configuration.CustomizationSupplier;
 import org.cache2k.event.CacheClosedListener;
 import org.cache2k.expiry.ExpiryPolicy;
 import org.cache2k.event.CacheEntryOperationListener;
@@ -34,6 +35,7 @@ import org.cache2k.integration.CacheLoader;
 import org.cache2k.integration.CacheWriter;
 import org.cache2k.integration.ExceptionPropagator;
 import org.cache2k.integration.FunctionalCacheLoader;
+import org.cache2k.integration.LoadDetail;
 import org.cache2k.integration.ResiliencePolicy;
 
 import java.lang.reflect.ParameterizedType;
@@ -455,6 +457,20 @@ public class Cache2kBuilder<K, V> {
    */
   public final Cache2kBuilder<K, V> loader(AdvancedCacheLoader<K, V> l) {
     config().setAdvancedLoader(wrapCustomizationInstance(l));
+    return this;
+  }
+
+  /**
+   * Enables read through operation and sets a cache loader that provides the the
+   * cached data. By default read through is not enabled, which means
+   * the methods {@link Cache#get} and {@link Cache#peek} have identical behavior.
+   *
+   * @see CacheLoader for general discussion on cache loaders
+   */
+  @SuppressWarnings("unchecked")
+  public final Cache2kBuilder<K, V> wrappingLoader(AdvancedCacheLoader<K, LoadDetail<V>> l) {
+    config().setAdvancedLoader((
+      CustomizationSupplier<AdvancedCacheLoader<K, V>>) (Object) wrapCustomizationInstance(l));
     return this;
   }
 

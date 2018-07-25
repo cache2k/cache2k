@@ -20,7 +20,6 @@ package org.cache2k.core.operation;
  * #L%
  */
 
-import org.cache2k.CacheEntry;
 import org.cache2k.expiry.ExpiryTimeValues;
 import org.cache2k.integration.CacheLoaderException;
 import org.cache2k.processor.EntryProcessingException;

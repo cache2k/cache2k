@@ -1236,7 +1236,7 @@ public class ExpiryTest extends TestingBase {
     c.invoke(1, new EntryProcessor<Integer, Integer, Object>() {
       @Override
       public Object process(final MutableCacheEntry<Integer, Integer> e) throws Exception {
-        e.setExpiry(millis() + LONG_DELTA);
+        e.setExpiryTime(millis() + LONG_DELTA);
         e.setValue(7);
         return null;
       }
@@ -1261,7 +1261,7 @@ public class ExpiryTest extends TestingBase {
     c.invoke(1, new EntryProcessor<Integer, Integer, Object>() {
       @Override
       public Object process(final MutableCacheEntry<Integer, Integer> e) throws Exception {
-        e.setExpiry(-millis());
+        e.setExpiryTime(-millis());
         return null;
       }
     });

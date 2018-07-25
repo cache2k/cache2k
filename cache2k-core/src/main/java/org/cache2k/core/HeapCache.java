@@ -41,9 +41,9 @@ import org.cache2k.event.CacheClosedListener;
 import org.cache2k.integration.AdvancedCacheLoader;
 import org.cache2k.integration.CacheLoaderException;
 import org.cache2k.integration.ExceptionPropagator;
+import org.cache2k.integration.RefreshTimeWrapper;
 import org.cache2k.processor.EntryProcessor;
 
-import java.io.Closeable;
 import java.security.SecureRandom;
 import java.util.Collection;
 import java.util.Collections;
@@ -762,10 +762,10 @@ public class HeapCache<K, V> extends BaseCache<K, V> {
    */
   protected final void putValue(final Entry e, final V _value) {
     if (isNoModificationTimeRecording()) {
-      insertOrUpdateAndCalculateExpiry(e, _value, 0, 0, INSERT_STAT_PUT);
+      insertOrUpdateAndCalculateExpiry(e, _value, 0, 0, 0 , INSERT_STAT_PUT);
     } else {
       long t = clock.millis();
-      insertOrUpdateAndCalculateExpiry(e, _value, t, t, INSERT_STAT_PUT);
+      insertOrUpdateAndCalculateExpiry(e, _value, t, t, t, INSERT_STAT_PUT);
     }
   }
 
@@ -890,7 +890,7 @@ public class HeapCache<K, V> extends BaseCache<K, V> {
         }
       }
       synchronized (e) {
-        insertOrUpdateAndCalculateExpiry(e, _value, t0, t, INSERT_STAT_PUT);
+        insertOrUpdateAndCalculateExpiry(e, _value, t0, t, t0, INSERT_STAT_PUT);
         e.processingDone();
       }
       _finished = true;
@@ -1347,6 +1347,7 @@ public class HeapCache<K, V> extends BaseCache<K, V> {
   protected void load(Entry<K, V> e) {
     V v;
     long t0 = isNoModificationTimeRecording() ? 0 : clock.millis();
+    long refreshTime = t0;
     if (e.getNextRefreshTime() == Entry.EXPIRED_REFRESHED) {
       if (entryInRefreshProbationAccessed(e, t0)) {
         return;
@@ -1358,6 +1359,11 @@ public class HeapCache<K, V> extends BaseCache<K, V> {
         v = loader.load(extractKeyObj(e), t0, null);
       } else {
         v = loader.load(extractKeyObj(e), t0, e);
+      }
+      if (v instanceof RefreshTimeWrapper) {
+        RefreshTimeWrapper wr = RefreshTimeWrapper.class.cast(v);
+        refreshTime = wr.getRefreshTime();
+        v = (V) wr.getValue();
       }
     } catch (Throwable _ouch) {
       long t = t0;
@@ -1371,7 +1377,7 @@ public class HeapCache<K, V> extends BaseCache<K, V> {
     if (!metrics.isDisabled() && !isNoModificationTimeRecording()) {
       t = clock.millis();
     }
-    insertOrUpdateAndCalculateExpiry(e, v, t0, t, INSERT_STAT_LOAD);
+    insertOrUpdateAndCalculateExpiry(e, v, t0, t, refreshTime, INSERT_STAT_LOAD);
   }
 
   /**
@@ -1429,7 +1435,7 @@ public class HeapCache<K, V> extends BaseCache<K, V> {
    */
   private void resiliencePolicyException(final Entry<K, V> e, final long t0, final long t, Throwable _exception) {
     ExceptionWrapper<K> _value = new ExceptionWrapper(extractKeyObj(e), _exception, t0, e);
-    insert(e, (V) _value, t0, t, INSERT_STAT_LOAD, 0);
+    insert(e, (V) _value, t0, t, t0, INSERT_STAT_LOAD, 0);
   }
 
   private void checkLoaderPresent() {
@@ -1441,10 +1447,10 @@ public class HeapCache<K, V> extends BaseCache<K, V> {
   /**
    * Calculate the next refresh time if a timer / expiry is needed and call insert.
    */
-  protected final void insertOrUpdateAndCalculateExpiry(Entry<K, V> e, V v, long t0, long t, byte _updateStatistics) {
+  protected final void insertOrUpdateAndCalculateExpiry(Entry<K, V> e, V v, long t0, long t, final long _refreshTime, byte _updateStatistics) {
     long _nextRefreshTime;
     try {
-      _nextRefreshTime = timing.calculateNextRefreshTime(e, v, t0);
+      _nextRefreshTime = timing.calculateNextRefreshTime(e, v, _refreshTime);
     } catch (Exception ex) {
       RuntimeException _wrappedException = new ExpiryPolicyException(ex);
       if (_updateStatistics == INSERT_STAT_LOAD) {
@@ -1454,7 +1460,7 @@ public class HeapCache<K, V> extends BaseCache<K, V> {
       insertUpdateStats(e, v, t0, t, _updateStatistics, Long.MAX_VALUE, false);
       throw _wrappedException;
     }
-    insert(e, v, t0, t, _updateStatistics, _nextRefreshTime);
+    insert(e, v, t0, t, _refreshTime, _updateStatistics, _nextRefreshTime);
   }
 
   final static byte INSERT_STAT_LOAD = 1;
@@ -1464,14 +1470,14 @@ public class HeapCache<K, V> extends BaseCache<K, V> {
     return new NullPointerException("null value not allowed");
   }
 
-  protected final void insert(Entry<K, V> e, V _value, long t0, long t, byte _updateStatistics, long _nextRefreshTime) {
+  protected final void insert(Entry<K, V> e, V _value, long t0, long t, final long _refreshTime, byte _updateStatistics, long _nextRefreshTime) {
     if (_updateStatistics == INSERT_STAT_LOAD) {
       if (_value == null && hasRejectNullValues() && _nextRefreshTime != 0) {
         loadGotException(e, t0, t, returnNullValueDetectedException());
         return;
       }
       synchronized (e) {
-        e.setLastModification(t0);
+        e.setLastModification(_refreshTime);
         insertUpdateStats(e, _value, t0, t, _updateStatistics, _nextRefreshTime, false);
         e.setValueOrException(_value);
         e.resetSuppressedLoadExceptionInformation();
@@ -1481,7 +1487,7 @@ public class HeapCache<K, V> extends BaseCache<K, V> {
       if (_value == null && hasRejectNullValues()) {
         throw returnNullValueDetectedException();
       }
-      e.setLastModification(t0);
+      e.setLastModification(_refreshTime);
       e.setValueOrException(_value);
       e.resetSuppressedLoadExceptionInformation();
       insertUpdateStats(e, _value, t0, t, _updateStatistics, _nextRefreshTime, false);

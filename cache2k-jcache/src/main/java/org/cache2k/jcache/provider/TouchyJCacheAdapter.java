@@ -275,7 +275,7 @@ public class TouchyJCacheAdapter<K, V> implements Cache<K, V> {
         }
         Duration d = expiryPolicy.getExpiryForAccess();
         if (d != null) {
-          e.setExpiry(calculateExpiry(d));
+          e.setExpiryTime(calculateExpiry(d));
         }
         return false;
       }
@@ -328,7 +328,7 @@ public class TouchyJCacheAdapter<K, V> implements Cache<K, V> {
           } else {
             Duration d = expiryPolicy.getExpiryForAccess();
             if (d != null) {
-              e.setExpiry(calculateExpiry(d));
+              e.setExpiryTime(calculateExpiry(d));
             }
           }
         }

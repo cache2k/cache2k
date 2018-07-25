@@ -1,4 +1,4 @@
-package org.cache2k;
+package org.cache2k.integration;
 
 /*
  * #%L
@@ -21,15 +21,26 @@ package org.cache2k;
  */
 
 /**
- * Thrown if only configured caches are allowed and the requested cache name is
- * not mentioned in the configuration.
+ * Instruct the case to use a different refresh time than the current time
+ * for a loaded value. Use {@link Loaders#wrapRefreshTime(Object, long)}.
+ * Don't use directly.
  *
  * @author Jens Wilke
  */
-public class UnknownCacheException extends CacheException {
+public final class RefreshTimeWrapper<V> extends LoadDetail<V> {
 
-  public UnknownCacheException(final String message) {
-    super(message);
+  private final long refreshTime;
+
+  /**
+   * Use {@link Loaders#wrapRefreshTime(Object, long)}
+   */
+  public RefreshTimeWrapper(final Object value, final long refreshTime) {
+    super(value);
+    this.refreshTime = refreshTime;
+  }
+
+  public long getRefreshTime() {
+    return refreshTime;
   }
 
 }

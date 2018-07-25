@@ -33,6 +33,11 @@ import org.cache2k.integration.ExceptionInformation;
 public interface Progress<K, V, R> {
 
   /**
+   * The current time in millis or the value when it was first called.
+   */
+  long getCurrentTime();
+
+  /**
    * Requests that the cache content for an entry will be provided.
    * If the cache is tiered, the data will be read into the heap cache.
    * Last command of semantic method. Calls back on
@@ -98,7 +103,7 @@ public interface Progress<K, V, R> {
   /**
    * Reset expiry to the specified value. Don't change the value.
    */
-  void expire(long t);
+  void expire(long expiryTime);
 
   /**
    * The entry will be removed. Last command of semantic method.
@@ -120,7 +125,7 @@ public interface Progress<K, V, R> {
   /**
    * Set new value, skip expiry calculation and set expiry time directly.
    */
-  void putAndSetExpiry(V value, long t);
+  void putAndSetExpiry(V value, long expiryTime, final long refreshTime);
 
   InternalClock getClock();
 
