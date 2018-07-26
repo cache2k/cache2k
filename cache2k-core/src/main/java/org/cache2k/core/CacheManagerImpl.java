@@ -93,7 +93,6 @@ public class CacheManagerImpl extends CacheManager {
     };
   }
 
-  private Map<String, StackTrace> name2CreationStackTrace = null;
   private final Object lock = new Object();
   private Log log;
   private String name;
@@ -110,14 +109,8 @@ public class CacheManagerImpl extends CacheManager {
     classLoader = cl;
     name = _name;
     log = Log.getLog(CacheManager.class.getName() + '.' + name);
-    boolean _traceCacheCreation = log.isDebugEnabled();
-    boolean _assertionsEnabled = false;
-    _traceCacheCreation |= _assertionsEnabled;
     for (CacheManagerLifeCycleListener lc : cacheManagerLifeCycleListeners) {
       lc.managerCreated(this);
-    }
-    if (_traceCacheCreation) {
-      name2CreationStackTrace = new HashMap<String, StackTrace>();
     }
     logPhase("open");
   }
@@ -184,8 +177,6 @@ public class CacheManagerImpl extends CacheManager {
     }
   }
 
-  static class StackTrace extends Exception { }
-
   /**
    *
    * @throws IllegalStateException if cache manager was closed or is closing
@@ -199,9 +190,6 @@ public class CacheManagerImpl extends CacheManager {
         throw new IllegalStateException("Cache already created: '" + _requestedName + "'");
       }
       checkName(_name);
-      if (name2CreationStackTrace != null) {
-        name2CreationStackTrace.put(_name, new StackTrace());
-      }
       cacheNames.put(_name, c);
       return _name;
     }
