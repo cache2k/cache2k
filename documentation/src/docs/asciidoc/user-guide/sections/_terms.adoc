@@ -1,0 +1,14 @@
+== Caching Terms
+
+This is a collection of terms related to caching.
+
+
+Draft, not included in the guide yet!
+
+=== Negative Caching
+
+=== Refresh Ahead
+
+=== Near Cache
+
+
