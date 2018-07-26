@@ -116,7 +116,7 @@ public class EntryTest {
     assertEquals(24, _days);
   }
 
-  @Test(expected = UnsupportedOperationException.class)
+  @Test
   public void getValue() {
     new Entry().getValue();
   }
