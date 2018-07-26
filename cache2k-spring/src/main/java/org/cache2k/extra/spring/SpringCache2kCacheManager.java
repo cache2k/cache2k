@@ -31,6 +31,7 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.function.Function;
 
 /**
@@ -49,7 +50,7 @@ public class SpringCache2kCacheManager implements CacheManager {
 
   private final Map<String, SpringCache2kCache> name2cache = new ConcurrentHashMap<>();
 
-  private final Set<String> configuredCacheNames = new HashSet<>();
+  private final Set<String> configuredCacheNames = new CopyOnWriteArraySet<>();
 
   private boolean allowUnknownCache = false;
 
@@ -145,8 +146,8 @@ public class SpringCache2kCacheManager implements CacheManager {
 
   /**
    * Configure the known caches via the configuration bean. This method is intended to
-   * be used together with Springs' own XML bean configuration. If a cache2k XML is present
-   * as well the configurations are merged.
+   * be used together with Springs' own XML bean configuration. If a cache name
+   * is configured also with a cache2k XML configuration, the configuration is merged.
    */
   public void setCaches(Collection<Cache2kConfiguration<?,?>> cacheConfigurationList) {
     cacheConfigurationList.forEach(this::addCache);
