@@ -154,7 +154,7 @@ class MutableEntryOnProgress<K, V> implements MutableCacheEntry<K, V> {
     if (refreshTime != NEUTRAL) {
       return refreshTime;
     }
-    return entry.getRefreshTime();
+    return originalExists ? entry.getRefreshTime() : 0;
   }
 
   @Override

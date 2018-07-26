@@ -200,7 +200,8 @@ public class HeapCache<K, V> extends BaseCache<K, V> {
   private static final int KEEP_AFTER_EXPIRED = 2;
   private static final int REJECT_NULL_VALUES = 8;
   private static final int BACKGROUND_REFRESH = 16;
-  private static final int NO_MODIFICATION_TIME_RECORDING = 32;
+  private static final int UPDATE_TIME_NEEDED = 32;
+  private static final int RECORD_REFRESH_TIME = 64;
 
   protected final boolean hasKeepAfterExpired() {
     return (featureBits & KEEP_AFTER_EXPIRED) > 0;
@@ -217,7 +218,9 @@ public class HeapCache<K, V> extends BaseCache<K, V> {
   /**
    * Don't update the entry last modification time and no expiry calculations are needed.
    */
-  protected final boolean isNoModificationTimeRecording() { return (featureBits & NO_MODIFICATION_TIME_RECORDING) > 0; }
+  protected final boolean isUpdateTimeNeeded() { return (featureBits & UPDATE_TIME_NEEDED) > 0; }
+
+  protected final boolean isRecordRefreshTime() { return (featureBits & RECORD_REFRESH_TIME) > 0; }
 
   protected final void setFeatureBit(int _bitmask, boolean _flag) {
     if (_flag) {
@@ -254,7 +257,8 @@ public class HeapCache<K, V> extends BaseCache<K, V> {
     setFeatureBit(KEEP_AFTER_EXPIRED, c.isKeepDataAfterExpired());
     setFeatureBit(REJECT_NULL_VALUES, !c.isPermitNullValues());
     setFeatureBit(BACKGROUND_REFRESH, c.isRefreshAhead());
-    setFeatureBit(NO_MODIFICATION_TIME_RECORDING, c.isDisableLastModificationTime());
+    setFeatureBit(UPDATE_TIME_NEEDED, c.isRecordRefreshTime());
+    setFeatureBit(RECORD_REFRESH_TIME, c.isRecordRefreshTime());
 
     metrics = TUNABLE.commonMetricsFactory.create(new CommonMetricsFactory.Parameters() {
       @Override
@@ -291,7 +295,7 @@ public class HeapCache<K, V> extends BaseCache<K, V> {
   public void setTiming(final TimingHandler<K,V> rh) {
     timing = rh;
     if (!(rh instanceof TimingHandler.TimeAgnostic)) {
-      setFeatureBit(NO_MODIFICATION_TIME_RECORDING, false);
+      setFeatureBit(UPDATE_TIME_NEEDED, true);
     }
   }
 
@@ -761,7 +765,7 @@ public class HeapCache<K, V> extends BaseCache<K, V> {
    * entry processing we do not need to notify any waiting threads.
    */
   protected final void putValue(final Entry e, final V _value) {
-    if (isNoModificationTimeRecording()) {
+    if (!isUpdateTimeNeeded()) {
       insertOrUpdateAndCalculateExpiry(e, _value, 0, 0, 0 , INSERT_STAT_PUT);
     } else {
       long t = clock.millis();
@@ -880,7 +884,7 @@ public class HeapCache<K, V> extends BaseCache<K, V> {
     long t = 0, t0 = 0;
     V _value;
     try {
-      if (isNoModificationTimeRecording()) {
+      if (!isUpdateTimeNeeded()) {
         _value = callable.call();
       } else {
         t0 = clock.millis();
@@ -1346,7 +1350,7 @@ public class HeapCache<K, V> extends BaseCache<K, V> {
 
   protected void load(Entry<K, V> e) {
     V v;
-    long t0 = isNoModificationTimeRecording() ? 0 : clock.millis();
+    long t0 = !isUpdateTimeNeeded() ? 0 : clock.millis();
     long refreshTime = t0;
     if (e.getNextRefreshTime() == Entry.EXPIRED_REFRESHED) {
       if (entryInRefreshProbationAccessed(e, t0)) {
@@ -1367,14 +1371,14 @@ public class HeapCache<K, V> extends BaseCache<K, V> {
       }
     } catch (Throwable _ouch) {
       long t = t0;
-      if (!metrics.isDisabled() && !isNoModificationTimeRecording()) {
+      if (!metrics.isDisabled() && isUpdateTimeNeeded()) {
         t = clock.millis();
       }
       loadGotException(e, t0, t, _ouch);
       return;
     }
     long t = t0;
-    if (!metrics.isDisabled() && !isNoModificationTimeRecording()) {
+    if (!metrics.isDisabled() && isUpdateTimeNeeded()) {
       t = clock.millis();
     }
     insertOrUpdateAndCalculateExpiry(e, v, t0, t, refreshTime, INSERT_STAT_LOAD);
@@ -1421,7 +1425,9 @@ public class HeapCache<K, V> extends BaseCache<K, V> {
       if (_suppressException) {
         e.setSuppressedLoadExceptionInformation(_value);
       } else {
-        e.setRefreshTime(t0);
+        if (isRecordRefreshTime()) {
+          e.setRefreshTime(t0);
+        }
         e.setValueOrException((V) _value);
       }
       _value.setUntil(Math.abs(_nextRefreshTime));
@@ -1477,7 +1483,9 @@ public class HeapCache<K, V> extends BaseCache<K, V> {
         return;
       }
       synchronized (e) {
-        e.setRefreshTime(_refreshTime);
+        if (isRecordRefreshTime()) {
+          e.setRefreshTime(_refreshTime);
+        }
         insertUpdateStats(e, _value, t0, t, _updateStatistics, _nextRefreshTime, false);
         e.setValueOrException(_value);
         e.resetSuppressedLoadExceptionInformation();
@@ -1487,7 +1495,9 @@ public class HeapCache<K, V> extends BaseCache<K, V> {
       if (_value == null && hasRejectNullValues()) {
         throw returnNullValueDetectedException();
       }
-      e.setRefreshTime(_refreshTime);
+      if (isRecordRefreshTime()) {
+        e.setRefreshTime(_refreshTime);
+      }
       e.setValueOrException(_value);
       e.resetSuppressedLoadExceptionInformation();
       insertUpdateStats(e, _value, t0, t, _updateStatistics, _nextRefreshTime, false);

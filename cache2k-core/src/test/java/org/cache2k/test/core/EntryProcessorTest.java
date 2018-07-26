@@ -258,7 +258,12 @@ public class EntryProcessorTest {
 
   @Test
   public void getCurrentTime_getRefreshTime_setRefreshTime_setValue() {
-    Cache<Integer,Integer> c = target.cache();
+    Cache<Integer,Integer> c = target.cache(new CacheRule.Specialization<Integer, Integer>() {
+      @Override
+      public void extend(final Cache2kBuilder<Integer, Integer> b) {
+        b.recordRefreshTime(true);
+      }
+    });
     final long t0 = millis();
     final long early = t0 - 10;
     c.put(1,1);
@@ -312,7 +317,8 @@ public class EntryProcessorTest {
     Cache<Integer,Integer> c = target.cache(new CacheRule.Specialization<Integer, Integer>() {
       @Override
       public void extend(final Cache2kBuilder<Integer, Integer> b) {
-        b.wrappingLoader(new AdvancedCacheLoader<Integer, LoadDetail<Integer>>() {
+        b.recordRefreshTime(true)
+         .wrappingLoader(new AdvancedCacheLoader<Integer, LoadDetail<Integer>>() {
           @Override
           public LoadDetail<Integer> load(final Integer key, final long currentTime,
                                           final CacheEntry<Integer,
@@ -333,12 +339,13 @@ public class EntryProcessorTest {
   }
 
   @Test
-  public void load_changeRefreshTimeInLoader_triggered() {
+  public void load_changeRefreshTimeInLoader_triggeredViaEntryProcessor() {
     final long _probeTime = 4711;
     Cache<Integer,Integer> c = target.cache(new CacheRule.Specialization<Integer, Integer>() {
       @Override
       public void extend(final Cache2kBuilder<Integer, Integer> b) {
-        b.wrappingLoader(new AdvancedCacheLoader<Integer, LoadDetail<Integer>>() {
+        b.recordRefreshTime(true)
+         .wrappingLoader(new AdvancedCacheLoader<Integer, LoadDetail<Integer>>() {
           @Override
           public LoadDetail<Integer> load(final Integer key, final long currentTime,
                                           final CacheEntry<Integer,
@@ -353,6 +360,32 @@ public class EntryProcessorTest {
       public Object process(final MutableCacheEntry<Integer, Integer> e) {
         Integer v = e.getValue();
         assertEquals(_probeTime, e.getRefreshTime());
+        return null;
+      }
+    });
+  }
+
+  @Test
+  public void load_changeRefreshTimeInLoaderNoRecord() {
+    final long _probeTime = 4711;
+    Cache<Integer,Integer> c = target.cache(new CacheRule.Specialization<Integer, Integer>() {
+      @Override
+      public void extend(final Cache2kBuilder<Integer, Integer> b) {
+        b.wrappingLoader(new AdvancedCacheLoader<Integer, LoadDetail<Integer>>() {
+            @Override
+            public LoadDetail<Integer> load(final Integer key, final long currentTime,
+                                            final CacheEntry<Integer,
+                                              LoadDetail<Integer>> currentEntry) throws Exception {
+              return Loaders.wrapRefreshTime(key, _probeTime);
+            }
+          });
+      }
+    });
+    c.get(1);
+    c.invoke(1, new EntryProcessor<Integer, Integer, Object>() {
+      @Override
+      public Object process(final MutableCacheEntry<Integer, Integer> e) {
+        assertEquals(0, e.getRefreshTime());
         return null;
       }
     });
@@ -398,6 +431,7 @@ public class EntryProcessorTest {
       @Override
       public void extend(final Cache2kBuilder<Integer, Integer> b) {
         b.loader(c.loader);
+        b.recordRefreshTime(true);
       }
     });
     return c;

@@ -195,7 +195,7 @@ public class Entry<K, T> extends CompactEntry<K,T>
    * The time is the time in millis times 2. A set bit 1 means the entry is fetched from
    * the storage and not modified since then.
    */
-  private volatile long fetchedTime;
+  private volatile long refreshTimeAndState;
 
   /** Lru list: pointer to next element or list head */
   public Entry next;
@@ -218,53 +218,25 @@ public class Entry<K, T> extends CompactEntry<K,T>
   /** including dirty */
   private static final long MODIFICATION_TIME_MASK = (1L << MODIFICATION_TIME_BITS) - 1;
 
-  private static final int DIRTY = 0;
-  private static final int CLEAN = 1;
-
   /**
-   * Set modification time and marks entry. We use {@value MODIFICATION_TIME_BITS} bit to store
-   * the time, including 1 bit for the dirty state. Since everything is stored in a long field,
-   * we have bits left that we can use for other purposes.
-   *
-   * @param _clean 1 means not modified
-   */
-  void setRefreshTime(long t, int _clean) {
-    fetchedTime =
-      fetchedTime & ~MODIFICATION_TIME_MASK |
-        ((((t - MODIFICATION_TIME_BASE) << MODIFICATION_TIME_SHIFT) + _clean) & MODIFICATION_TIME_MASK);
-  }
-
-  /**
-   * Set modification time and marks entry as dirty.
+   * Set modification time and marks entry as dirty. Bit 0 was used as dirty bit for the
+   * storage attachment. Not used at the moment.
    */
   public void setRefreshTime(long t) {
-    setRefreshTime(t, DIRTY);
+    refreshTimeAndState =
+      refreshTimeAndState & ~MODIFICATION_TIME_MASK |
+        ((((t - MODIFICATION_TIME_BASE) << MODIFICATION_TIME_SHIFT)) & MODIFICATION_TIME_MASK);
+  }
+
+  @Override
+  public long getRefreshTime() {
+    return (refreshTimeAndState & MODIFICATION_TIME_MASK) >> MODIFICATION_TIME_SHIFT;
   }
 
   @SuppressWarnings("deprecation")
   @Override @Deprecated
   public long getLastModification() {
     throw new UnsupportedOperationException();
-  }
-
-  /**
-   * Memory entry needs to be send to the storage.
-   */
-  public boolean isDirty() {
-    return (fetchedTime & MODIFICATION_TIME_SHIFT) == DIRTY;
-  }
-
-  public void setLastModificationFromStorage(long t) {
-    setRefreshTime(t, CLEAN);
-  }
-
-  public void resetDirty() {
-    fetchedTime = fetchedTime | 1;
-  }
-
-  @Override
-  public long getRefreshTime() {
-    return (fetchedTime & MODIFICATION_TIME_MASK) >> MODIFICATION_TIME_SHIFT;
   }
 
   /**
@@ -321,11 +293,11 @@ public class Entry<K, T> extends CompactEntry<K,T>
   private static final int PS_POS = MODIFICATION_TIME_BITS;
 
   public int getProcessingState() {
-    return (int) ((fetchedTime >> PS_POS) & PS_MASK);
+    return (int) ((refreshTimeAndState >> PS_POS) & PS_MASK);
   }
 
   private void setProcessingState(int v) {
-    fetchedTime = fetchedTime & ~((long) PS_MASK << PS_POS) | (((long) v) << PS_POS);
+    refreshTimeAndState = refreshTimeAndState & ~((long) PS_MASK << PS_POS) | (((long) v) << PS_POS);
   }
 
   /**
@@ -585,7 +557,6 @@ public class Entry<K, T> extends CompactEntry<K,T>
     } else {
       sb.append(", timerState=skipped/notLocked");
     }
-    sb.append(", dirty=").append(isDirty());
     sb.append("}");
     return sb.toString();
   }

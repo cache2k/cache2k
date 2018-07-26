@@ -49,7 +49,6 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
 import java.util.AbstractCollection;
-import java.util.AbstractSet;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -117,7 +116,7 @@ public class BasicCacheOperationsWithoutCustomizationsTest {
 
   Pars pars;
 
-  boolean lastModificationAvailable;
+  boolean refreshTimeAvailable;
 
   public BasicCacheOperationsWithoutCustomizationsTest(Pars p) {
     pars = p;
@@ -129,7 +128,7 @@ public class BasicCacheOperationsWithoutCustomizationsTest {
       }
     }
     statistics = new Statistics(pars.disableStatistics || pars.withEntryProcessor);
-    lastModificationAvailable = !pars.disableLastModified || pars.withExpiryAfterWrite;
+    refreshTimeAvailable = pars.recordRefreshTime;
   }
 
   protected Cache<Integer,Integer> createCache() {
@@ -144,7 +143,7 @@ public class BasicCacheOperationsWithoutCustomizationsTest {
       .entryCapacity(1000)
       .permitNullValues(true)
       .keepDataAfterExpired(pars.keepDataAfterExpired)
-      .disableLastModificationTime(pars.disableLastModified)
+      .recordRefreshTime(pars.recordRefreshTime)
       .disableStatistics(pars.disableStatistics);
     if (pars.withExpiryAfterWrite) {
       b.expireAfterWrite(TestingParameters.MAX_FINISH_WAIT_MILLIS, TimeUnit.MILLISECONDS);
@@ -336,7 +335,7 @@ public class BasicCacheOperationsWithoutCustomizationsTest {
         return e.getRefreshTime();
       }
     });
-    if (lastModificationAvailable) {
+    if (refreshTimeAvailable) {
       assertThat("Timestamp byond start", t, greaterThanOrEqualTo(START_TIME));
     } else {
       assertEquals("No time set", 0, t);
@@ -1453,7 +1452,7 @@ public class BasicCacheOperationsWithoutCustomizationsTest {
   static class Pars {
 
     boolean strictEviction = false;
-    boolean disableLastModified = false;
+    boolean recordRefreshTime = false;
     boolean disableStatistics = false;
     boolean withEntryProcessor = false;
     boolean withWiredCache = false;
@@ -1470,7 +1469,7 @@ public class BasicCacheOperationsWithoutCustomizationsTest {
       Pars p = (Pars) o;
 
       if (strictEviction != p.strictEviction) return false;
-      if (disableLastModified != p.disableLastModified) return false;
+      if (recordRefreshTime != p.recordRefreshTime) return false;
       if (disableStatistics != p.disableStatistics) return false;
       if (withEntryProcessor != p.withEntryProcessor) return false;
       if (withWiredCache != p.withWiredCache) return false;
@@ -1483,7 +1482,7 @@ public class BasicCacheOperationsWithoutCustomizationsTest {
     @Override
     public int hashCode() {
       int _result = (strictEviction ? 1 : 0);
-      _result = 31 * _result + (disableLastModified ? 1 : 0);
+      _result = 31 * _result + (recordRefreshTime ? 1 : 0);
       _result = 31 * _result + (disableStatistics ? 1 : 0);
       _result = 31 * _result + (withEntryProcessor ? 1 : 0);
       _result = 31 * _result + (withWiredCache ? 1 : 0);
@@ -1498,7 +1497,7 @@ public class BasicCacheOperationsWithoutCustomizationsTest {
     public String toString() {
       return
         "strict=" + strictEviction +
-        ", disableLastModified=" + disableLastModified +
+        ", recordRefresh=" + recordRefreshTime +
         ", disableStats=" + disableStatistics +
         ", entryProcessor=" + withEntryProcessor +
         ", wired=" + withWiredCache +
@@ -1514,8 +1513,8 @@ public class BasicCacheOperationsWithoutCustomizationsTest {
 
       Pars build() { return pars; }
 
-      Pars.Builder disableLastModified(boolean v) {
-        pars.disableLastModified = v; return this;
+      Pars.Builder recordRefreshTime(boolean v) {
+        pars.recordRefreshTime = v; return this;
       }
 
       Pars.Builder disableStatistics(boolean v) {
@@ -1562,7 +1561,7 @@ public class BasicCacheOperationsWithoutCustomizationsTest {
         @Override
         protected Pars generate() {
           return new Pars.Builder()
-            .disableLastModified(nextBoolean())
+            .recordRefreshTime(nextBoolean())
             .disableStatistics(nextBoolean())
             .withWiredCache(nextBoolean())
             .keepDataAfterExpired(nextBoolean())

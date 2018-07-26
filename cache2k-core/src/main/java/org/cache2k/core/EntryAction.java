@@ -234,44 +234,6 @@ public abstract class EntryAction<K, V, R> implements
     return heapCache.getClock().millis();
   }
 
-  public void storageReadHit(StorageEntry se) {
-    Entry<K, V> e = entry;
-    synchronized (e) {
-      e.setLastModificationFromStorage(se.getCreatedOrUpdated());
-      long now = millis();
-      @SuppressWarnings("unchecked") V v = (V) se.getValueOrException();
-      e.setValueOrException(v);
-      long _nextRefreshTime;
-      long _expiryTimeFromStorage = se.getValueExpiryTime();
-      boolean _expired = _expiryTimeFromStorage != 0 && _expiryTimeFromStorage <= now;
-      if (!_expired) {
-        _nextRefreshTime = timing().calculateNextRefreshTime(e, v, now);
-        expiry = _nextRefreshTime;
-        if (_nextRefreshTime == ExpiryPolicy.ETERNAL) {
-          e.setNextRefreshTime(Entry.DATA_VALID);
-          storageDataValid = true;
-        } else if (_nextRefreshTime == 0) {
-          e.setNextRefreshTime(Entry.READ_NON_VALID);
-        } else {
-          if (_nextRefreshTime < 0) {
-            e.setNextRefreshTime(_nextRefreshTime);
-            storageDataValid = true;
-          }
-          if (_nextRefreshTime <= now) {
-            e.setNextRefreshTime(Entry.READ_NON_VALID);
-          } else {
-            e.setNextRefreshTime(-_nextRefreshTime);
-            storageDataValid = true;
-          }
-        }
-      } else {
-        e.setNextRefreshTime(Entry.READ_NON_VALID);
-      }
-      e.nextProcessingStep(Entry.ProcessingState.READ_COMPLETE);
-    }
-    examine();
-  }
-
   public void heapMiss() {
     heapMiss = true;
     examine();
@@ -442,7 +404,7 @@ public abstract class EntryAction<K, V, R> implements
 
   public void loadCompleted() {
     entry.nextProcessingStep(Entry.ProcessingState.LOAD_COMPLETE);
-    if (!metrics().isDisabled() && !heapCache.isNoModificationTimeRecording()) {
+    if (!metrics().isDisabled() && heapCache.isUpdateTimeNeeded()) {
       long _loadCompletedTime = millis();
       long _delta = _loadCompletedTime - loadStartedTime;
       if (refresh) {
@@ -477,10 +439,10 @@ public abstract class EntryAction<K, V, R> implements
     lockFor(Entry.ProcessingState.MUTATE);
     needsFinish = false;
     newValueOrException = value;
-    if (heapCache.isNoModificationTimeRecording()) {
+    if (!heapCache.isUpdateTimeNeeded()) {
       lastRefreshTime = 0;
     } else {
-      lastRefreshTime = millis();
+      lastRefreshTime = getCurrentTime();
     }
     mutationCalculateExpiry();
   }
@@ -498,7 +460,7 @@ public abstract class EntryAction<K, V, R> implements
     lockForNoHit(Entry.ProcessingState.MUTATE);
     needsFinish = false;
     newValueOrException = entry.getValueOrException();
-    if (!heapCache.isNoModificationTimeRecording()) {
+    if (heapCache.isUpdateTimeNeeded()) {
       lastRefreshTime = entry.getRefreshTime();
     }
     expiry = expiryTime;
@@ -516,7 +478,7 @@ public abstract class EntryAction<K, V, R> implements
     if (refreshTime >= 0) {
       lastRefreshTime = refreshTime;
     } else {
-      if (!heapCache.isNoModificationTimeRecording()) {
+      if (heapCache.isUpdateTimeNeeded()) {
         lastRefreshTime = getCurrentTime();
       }
     }
@@ -770,7 +732,9 @@ public abstract class EntryAction<K, V, R> implements
 
   public void mutationUpdateHeap() {
     synchronized (entry) {
-      entry.setRefreshTime(lastRefreshTime);
+      if (heapCache.isRecordRefreshTime()) {
+        entry.setRefreshTime(lastRefreshTime);
+      }
       if (remove) {
         if (expiredImmediately) {
           entry.setNextRefreshTime(Entry.EXPIRED);

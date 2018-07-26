@@ -37,6 +37,7 @@ import org.cache2k.integration.ExceptionPropagator;
 import org.cache2k.integration.FunctionalCacheLoader;
 import org.cache2k.integration.LoadDetail;
 import org.cache2k.integration.ResiliencePolicy;
+import org.cache2k.processor.MutableCacheEntry;
 
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
@@ -693,14 +694,19 @@ public class Cache2kBuilder<K, V> {
   }
 
   /**
-   * Disable that the last modification time is available at {@link CacheEntry#getLastModification()}.
-   * This also disables the recording of the average load time that can be retrieved via JMX.
-   *
-   * <p>When expiry is used, this parameter has no effect. The last modification time may be used
-   * by the loaders, expiry policy or resilience policy.
+   * Deprecated since version 1.2. Method has no effect and will be removed in future releases.
+   * Time recording is disabled by default and needs to be enabled via {@link #recordRefreshTime(boolean)}.
    */
+  @Deprecated
   public final Cache2kBuilder<K,V> disableLastModificationTime(boolean flag) {
-    config().setDisableLastModificationTime(flag);
+    return this;
+  }
+
+  /**
+   * Enables that the refresh time is available at {@link MutableCacheEntry#getRefreshTime()}.
+   */
+  public final Cache2kBuilder<K,V> recordRefreshTime(boolean flag) {
+    config().setRecordRefreshTime(flag);
     return this;
   }
 

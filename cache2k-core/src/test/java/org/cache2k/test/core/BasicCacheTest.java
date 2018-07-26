@@ -49,6 +49,8 @@ import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import static org.hamcrest.Matchers.greaterThanOrEqualTo;
+import static org.hamcrest.Matchers.lessThanOrEqualTo;
 import static org.junit.Assert.*;
 
 /**
@@ -435,26 +437,42 @@ public class BasicCacheTest extends TestingBase {
   }
 
   @Test
-  public void testExceptionExpirySuppress() throws Exception {
+  public void testTimestampIsSetForException() {
     OccasionalExceptionSource src = new OccasionalExceptionSource();
     Cache<Integer, Integer> c = builder(Integer.class, Integer.class)
       .expireAfterWrite(0, TimeUnit.MINUTES)
       .retryInterval(8, TimeUnit.MINUTES)
       .resilienceDuration(33, TimeUnit.HOURS)
+      .recordRefreshTime(true)
       .keepDataAfterExpired(true)
       .loader(src)
       .build();
+    long t0 = millis();
     try {
       c.get(1);
       fail("exception expected");
     } catch (CacheLoaderException e) {
     }
-    assertTrue("modified timestamp is set for exception", getLastModification(c, 1) > 0);
+    checkExistingAndTimeStampGreaterOrEquals(c, 1, t0);
     try {
       c.get(2);
-      long _modified = getLastModification(c, 2);
+      final long refreshedBefore = millis();
+      assertFalse("entry disappears since expiry=0", c.containsKey(2));
+      assertEquals("entry has no time since suppressed", 0, getLastModification(c, 2));
+      sleep(3);
       c.get(2);
-      assertEquals("timestamp not modified if exception is suppressed", _modified, getLastModification(c, 2));
+      c.invoke(2, new EntryProcessor<Integer, Integer, Long>() {
+        @Override
+        public Long process(final MutableCacheEntry<Integer, Integer> e) {
+          assertNull("exception suppressed", e.getException());
+          assertTrue("entry present", e.exists());
+          assertThat("refresh time of entry, not when exception happened",
+            e.getRefreshTime(),
+            lessThanOrEqualTo(refreshedBefore));
+          return null;
+        }
+      });
+
     } catch (CacheLoaderException e) {
       fail("no exception expected");
     }
@@ -463,6 +481,18 @@ public class BasicCacheTest extends TestingBase {
     assertEquals(2, inf.getLoadExceptionCount());
     assertNotNull(src.key2count.get(2));
     assertEquals(2, src.key2count.get(2).get());
+  }
+
+  void checkExistingAndTimeStampGreaterOrEquals(Cache<Integer, Integer> c, int key, final long t) {
+    assertTrue(c.containsKey(key));
+    c.invoke(key, new EntryProcessor<Integer, Integer, Long>() {
+      @Override
+      public Long process(final MutableCacheEntry<Integer, Integer> e) throws Exception {
+        assertTrue("entry present", e.exists());
+        assertThat(e.getRefreshTime(), greaterThanOrEqualTo(t));
+        return null;
+      }
+    });
   }
 
   long getLastModification(Cache<Integer, Integer> c, int key) {

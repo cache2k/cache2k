@@ -79,7 +79,7 @@ public class Cache2kConfiguration<K, V> implements ConfigurationBean, Configurat
   private int loaderThreadCount;
   private boolean permitNullValues = false;
   private boolean disableStatistics = false;
-  private boolean disableLastModificationTime = false;
+  private boolean recordRefreshTime = false;
   private boolean externalConfigurationPresent = false;
   private boolean boostConcurrency = false;
 
@@ -570,15 +570,26 @@ public class Cache2kConfiguration<K, V> implements ConfigurationBean, Configurat
     return loaderExecutor;
   }
 
+  @Deprecated
   public boolean isDisableLastModificationTime() {
-    return disableLastModificationTime;
+    return false;
   }
 
   /**
    * @see Cache2kBuilder#disableLastModificationTime
    */
-  public void setDisableLastModificationTime(final boolean v) {
-    disableLastModificationTime = v;
+  @Deprecated
+  public void setDisableLastModificationTime(final boolean v) { }
+
+  public boolean isRecordRefreshTime() {
+    return recordRefreshTime;
+  }
+
+  /**
+   * @see Cache2kBuilder#recordRefreshTime
+   */
+  public void setRecordRefreshTime(final boolean v) {
+    recordRefreshTime = v;
   }
 
   /**

@@ -48,38 +48,6 @@ public class EntryTest {
   }
 
   @Test
-  public void testLastModifiedDirty() {
-    Entry e = new Entry();
-    synchronized (e) {
-      e.setRefreshTime(4711);
-      assertTrue(e.isDirty());
-      assertEquals(4711, e.getRefreshTime());
-    }
-  }
-
-  @Test
-  public void testLastModifiedResetDirty() {
-    Entry e = new Entry();
-    synchronized (e) {
-      e.setRefreshTime(4711);
-      assertEquals(4711, e.getRefreshTime());
-      e.resetDirty();
-      assertFalse(e.isDirty());
-      assertEquals(4711, e.getRefreshTime());
-    }
-  }
-
-  @Test
-  public void testLastModifiedClean() {
-    Entry e = new Entry();
-    synchronized (e) {
-      e.setLastModificationFromStorage(4711);
-      assertFalse(e.isDirty());
-      assertEquals(4711, e.getRefreshTime());
-    }
-  }
-
-  @Test
   public void testLastModified50YearsRange() {
     long _50yearsMillis = 50L * 365 * 24 * 60 * 60 * 1000;
     long t = System.currentTimeMillis() + _50yearsMillis;
@@ -98,48 +66,6 @@ public class EntryTest {
       SimpleDateFormat df = new SimpleDateFormat("yyyy-MMM-dd HH:mm:ss");
       df.setTimeZone(TimeZone.getTimeZone("GMT"));
       assertEquals("2248-Sep-26 15:10:22", df.format(new Date(e.getRefreshTime())));
-    }
-  }
-
-  /** initial value, pretty meaningless, since we always should set the modification time */
-  @Test
-  public void testDirtyInitial() {
-    Entry e = new Entry();
-    assertTrue(e.isDirty());
-  }
-
-  @Test
-  public void testDirtySetModificationTime() {
-    Entry e = new Entry();
-    long _time = 4711;
-    synchronized (e) {
-      e.setRefreshTime(_time);
-      assertTrue(e.isDirty());
-      assertEquals(_time, e.getRefreshTime());
-    }
-  }
-
-  @Test
-  public void testDirtySetModificationTimeResetDirty() {
-    Entry e = new Entry();
-    long _time = 4711;
-    synchronized (e) {
-      e.setRefreshTime(_time);
-      assertTrue(e.isDirty());
-      assertEquals(_time, e.getRefreshTime());
-      e.resetDirty();
-      assertFalse(e.isDirty());
-    }
-  }
-
-  @Test
-  public void testDirtySetModificationTimeFromStorage() {
-    Entry e = new Entry();
-    long _time = 4711;
-    synchronized (e) {
-      e.setLastModificationFromStorage(_time);
-      assertFalse(e.isDirty());
-      assertEquals(_time, e.getRefreshTime());
     }
   }
 
