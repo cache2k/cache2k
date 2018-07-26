@@ -905,7 +905,7 @@ public class ExpiryTest extends TestingBase {
     assertFalse(c.containsKey(1));
   }
 
-  @Test
+  @Test(expected = IllegalArgumentException.class)
   public void testRefreshWithKeepData() {
     Cache<Integer, Integer> c = builder(Integer.class, Integer.class)
       .refreshAhead(true)

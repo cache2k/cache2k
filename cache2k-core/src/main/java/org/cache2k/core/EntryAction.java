@@ -302,7 +302,7 @@ public abstract class EntryAction<K, V, R> implements
     needsFinish = false;
     load = true;
     Entry<K, V> e = entry;
-    long t0 = lastRefreshTime = loadStartedTime = getCurrentTime();
+    long t0 = heapCache.isUpdateTimeNeeded() ? lastRefreshTime = loadStartedTime = getCurrentTime() : 0;
     if (e.getNextRefreshTime() == Entry.EXPIRED_REFRESHED) {
       long nrt = e.getRefreshProbationNextRefreshTime();
       if (nrt > t0) {

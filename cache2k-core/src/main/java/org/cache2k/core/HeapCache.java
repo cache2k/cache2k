@@ -213,7 +213,7 @@ public class HeapCache<K, V> extends BaseCache<K, V> {
 
   public final boolean isNullValuePermitted() { return !hasRejectNullValues(); }
 
-  protected final boolean hasBackgroundRefresh() { return (featureBits & BACKGROUND_REFRESH) > 0; }
+  protected final boolean isRefreshAhead() { return (featureBits & BACKGROUND_REFRESH) > 0; }
 
   /**
    * Don't update the entry last modification time and no expiry calculations are needed.
@@ -347,8 +347,11 @@ public class HeapCache<K, V> extends BaseCache<K, V> {
     }
     synchronized (lock) {
       initializeHeapCache();
-      if (hasBackgroundRefresh() && loader == null) {
-        throw new IllegalArgumentException("backgroundRefresh, but no loader defined");
+      if (isRefreshAhead() && loader == null) {
+        throw new IllegalArgumentException("refresh ahead enabled, but no loader defined");
+      }
+      if (isRefreshAhead() && timing instanceof TimingHandler.TimeAgnostic) {
+        throw new IllegalArgumentException("refresh ahead enabled, but no expiry variant defined");
       }
       closing = false;
     }

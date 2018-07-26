@@ -28,6 +28,7 @@ import org.cache2k.core.InternalCache;
 import org.cache2k.core.StandardExceptionPropagator;
 import org.cache2k.core.util.Log;
 import org.cache2k.event.CacheClosedListener;
+import org.cache2k.integration.FunctionalCacheLoader;
 import org.cache2k.testing.category.FastTests;
 import static org.cache2k.test.core.StaticUtil.*;
 import org.junit.Test;
@@ -424,6 +425,25 @@ public class Cache2kBuilderTest {
   public void buildLongKey() {
     Cache2kBuilder _builder = Cache2kBuilder.of(String.class, String.class);
     _builder.buildForLongKey();
+  }
+
+  @Test(expected = IllegalArgumentException.class)
+  public void refreshAheadButNoLoader() {
+    Cache c = Cache2kBuilder.forUnknownTypes().refreshAhead(true).build();
+    c.close();
+  }
+
+  @Test(expected = IllegalArgumentException.class)
+  public void refreshAheadButNoExpiry() {
+    Cache c = Cache2kBuilder.forUnknownTypes()
+      .loader(new FunctionalCacheLoader() {
+        @Override
+        public Object load(final Object key) throws Exception {
+          return null;
+        }
+      })
+      .refreshAhead(true).build();
+    c.close();
   }
 
   static class BuildCacheInConstructor0 {
