@@ -285,6 +285,19 @@ public class BasicCacheTest extends TestingBase {
   }
 
   @Test
+  public void testEntryExpiryCalculator8MinKeepOldEntry() {
+    MyExpiryPolicy _expiryCalc = new MyExpiryPolicy();
+    Cache<String, String> c = builder(String.class, String.class)
+      .expireAfterWrite(8, TimeUnit.MINUTES)
+      .expiryPolicy(_expiryCalc)
+      .keepDataAfterExpired(true)
+      .build();
+    c.put("nocache", "foo");
+    c.put("nocache", "foo");
+    assertEquals(1, _expiryCalc.oldEntrySeen.get());
+  }
+
+  @Test
   public void testPeekGetPutSequence() {
     MyExpiryPolicy _expiryCalc = new MyExpiryPolicy();
     Cache<String, String> c = builder(String.class, String.class)
@@ -301,6 +314,7 @@ public class BasicCacheTest extends TestingBase {
 
   public static class MyExpiryPolicy implements ExpiryPolicy<String, String> {
     public final Map<String, AtomicInteger> key2count = new HashMap<String, AtomicInteger>();
+    public final AtomicInteger oldEntrySeen = new AtomicInteger();
     @Override
     public long calculateExpiryTime(String _key, String _value, long _loadTime,
                                     CacheEntry<String, String> _oldEntry) {
@@ -312,6 +326,10 @@ public class BasicCacheTest extends TestingBase {
           key2count.put(_key, _count);
         }
         _count.incrementAndGet();
+      }
+
+      if (_oldEntry != null) {
+        oldEntrySeen.incrementAndGet();
       }
 
       if (_key.startsWith("nocache")) {

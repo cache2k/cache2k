@@ -86,25 +86,22 @@ class CompactEntry<K,T> {
   }
 
   public Throwable getException() {
-    if (valueOrException instanceof ExceptionWrapper) {
-      return ((ExceptionWrapper) valueOrException).getException();
-    }
+    T v = valueOrException;
+    if (v instanceof ExceptionWrapper) { return ((ExceptionWrapper) v).getException(); }
     return null;
   }
 
   public boolean equalsValue(T v) {
-    if (valueOrException == null) {
-      return v == valueOrException;
+    T ve = valueOrException;
+    if (ve == null) {
+      return v == ve;
     }
-    return valueOrException.equals(v);
+    return ve.equals(v);
   }
 
-  /**
-   * Should never be called on the entry directly!
-   */
   @Deprecated
   public T getValue() {
-    throw new UnsupportedOperationException();
+    return valueOrException;
   }
 
   /**
