@@ -82,7 +82,7 @@ class MutableEntryOnProgress<K, V> implements MutableCacheEntry<K, V> {
     mutate = true;
     exists = true;
     remove = false;
-    value = (V) new ExceptionWrapper(progress.getClock().millis(), ex);
+    value = (V) new ExceptionWrapper(progress.getCurrentTime(), ex);
     return this;
   }
 

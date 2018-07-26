@@ -184,11 +184,6 @@ public abstract class EntryAction<K, V, R> implements
   }
 
   @Override
-  public InternalClock getClock() {
-    return heapCache.getClock();
-  }
-
-  @Override
   public boolean isPresent() {
     doNotCountAccess = true;
     return successfulLoad || entry.hasFreshData(heapCache.getClock());

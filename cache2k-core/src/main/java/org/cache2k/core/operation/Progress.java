@@ -127,6 +127,4 @@ public interface Progress<K, V, R> {
    */
   void putAndSetExpiry(V value, long expiryTime, final long refreshTime);
 
-  InternalClock getClock();
-
 }
