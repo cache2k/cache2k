@@ -23,7 +23,7 @@ For a detailed introduction continue with [Getting Started](https://cache2k.org/
 
  * Single small jar file (less than 400k) with no external dependencies
  * Even smaller, for use with [Android](https://cache2k.org/docs/latest/user-guide.html#android)
- * One of the fastest cache for JVM local caching, see [the benchmarks page](https://cache2k.org/benchmarks.html)
+ * Fastest access times, due to non blocking and wait free access of cached values, [Blog article](https://cruftex.net/2017/09/01/Java-Caching-Benchmarks-Part-3.html)
  * Java 6 and [Android](https://cache2k.org/docs/latest/user-guide.html#android) compatible
  * Leverages Java 8 to increase performance (if possible)
  * Pure Java code, no use of `sun.misc.Unsafe`
@@ -36,7 +36,7 @@ For a detailed introduction continue with [Getting Started](https://cache2k.org/
  * [Event listeners](https://cache2k.org/docs/latest/user-guide.html#event-listeners)
  * [Refresh ahead](https://cache2k.org/docs/latest/user-guide.html#refresh-ahead) reduces latency
  * [Low Overhead Statistics](https://cache2k.org/docs/latest/user-guide.html#statistics) and JMX support
- * [Separate and defined API](https://cache2k.org/docs/latest/apidocs/cache2k-api/index.html) with stable and concise interface
+ * [Separate API](https://cache2k.org/docs/latest/apidocs/cache2k-api/index.html) with stable and concise interface
  * [complete JCache / JSR107 support](https://cache2k.org/docs/latest/user-guide.html#jcache)
  * [XML based configuration](https://cache2k.org/docs/latest/user-guide.html#xml-configuration), to separate cache tuning from logic
 
