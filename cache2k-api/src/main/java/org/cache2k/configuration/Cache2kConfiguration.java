@@ -82,6 +82,7 @@ public class Cache2kConfiguration<K, V> implements ConfigurationBean, Configurat
   private boolean recordRefreshTime = false;
   private boolean externalConfigurationPresent = false;
   private boolean boostConcurrency = false;
+  private boolean enableJmx = false;
 
   private CustomizationSupplier<Executor> loaderExecutor;
   private CustomizationSupplier<Executor> prefetchExecutor;
@@ -641,6 +642,17 @@ public class Cache2kConfiguration<K, V> implements ConfigurationBean, Configurat
    */
   public void setBoostConcurrency(final boolean v) {
     boostConcurrency = v;
+  }
+
+  public boolean isEnableJmx() {
+    return enableJmx;
+  }
+
+  /**
+   * @see Cache2kBuilder#enableJmx(boolean)
+   */
+  public void setEnableJmx(final boolean v) {
+    enableJmx = v;
   }
 
 

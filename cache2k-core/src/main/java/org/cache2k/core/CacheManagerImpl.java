@@ -136,9 +136,9 @@ public class CacheManagerImpl extends CacheManager {
     return cacheLifeCycleListeners;
   }
 
-  public void sendCreatedEvent(Cache c) {
+  public void sendCreatedEvent(Cache c, final Cache2kConfiguration _configuration) {
     for (CacheLifeCycleListener e : cacheLifeCycleListeners) {
-      e.cacheCreated(c);
+      e.cacheCreated(c, _configuration);
     }
   }
 

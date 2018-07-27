@@ -190,6 +190,19 @@ public class JmxSupportTest {
     Cache c = Cache2kBuilder.of(Object.class, Object.class)
       .name(_name)
       .eternal(true)
+      .enableJmx(true)
+      .build();
+    MBeanInfo i = getCacheInfo(_name);
+    assertEquals(CacheMXBeanImpl.class.getName(), i.getClassName());
+    c.close();
+  }
+
+  @Test(expected = InstanceNotFoundException.class)
+  public void testCacheCreated_notFound() throws Exception {
+    String _name = getClass().getName() + ".testCacheCreated";
+    Cache c = Cache2kBuilder.of(Object.class, Object.class)
+      .name(_name)
+      .eternal(true)
       .build();
     MBeanInfo i = getCacheInfo(_name);
     assertEquals(CacheMXBeanImpl.class.getName(), i.getClassName());
@@ -203,6 +216,7 @@ public class JmxSupportTest {
     Cache c = new Cache2kBuilder<Long, List<Collection<Long>>> () {}
       .name(_name)
       .eternal(true)
+      .enableJmx(true)
       .build();
     objectName = constructCacheObjectName(_name);
     checkAttribute("KeyType", "Long");

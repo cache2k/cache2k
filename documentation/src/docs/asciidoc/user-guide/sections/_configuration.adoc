@@ -6,10 +6,9 @@ not be "buried" inside the applications code.
 
 === Using the XML Configuration
 
-When `cache2k-all` artifact is used the configuration via XML is included, otherwise the artifact
-`cache2k-xml-configuration` must be added as dependency. In a Java SE environment the default SAX parser
-is used. In an Android environment the XML pull parser is used. There are no additional dependencies to
-other libraries.
+Since verison 1.2 the XML configuration is included in the `cache2k-core` jar file.
+In a Java SE environment the default SAX parser is used. In an Android environment the XML pull parser
+is used. There are no additional dependencies to other libraries.
 
 If only one cache manager is used, a configuration file can be put at `/cache2k.xml` in the class path.
 Here is an example:
@@ -54,7 +53,7 @@ For example, the cache is created in the code with:
 
 In the configuration file only the capacity is altered:
 
-[source,Java]
+[source,xml]
 ----
   <cache>
     <name>various</name>

@@ -21,6 +21,7 @@ package org.cache2k.core.spi;
  */
 
 import org.cache2k.Cache;
+import org.cache2k.configuration.Cache2kConfiguration;
 
 /**
  * Interface to implement additional service providers that get notified
@@ -30,7 +31,7 @@ import org.cache2k.Cache;
  */
 public interface CacheLifeCycleListener {
 
-  void cacheCreated(Cache c);
+  void cacheCreated(Cache c, final Cache2kConfiguration cfg);
 
   void cacheDestroyed(Cache c);
 

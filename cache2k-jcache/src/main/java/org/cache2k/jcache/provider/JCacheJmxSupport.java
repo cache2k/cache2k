@@ -21,6 +21,7 @@ package org.cache2k.jcache.provider;
  */
 
 import org.cache2k.Cache;
+import org.cache2k.configuration.Cache2kConfiguration;
 import org.cache2k.core.spi.CacheLifeCycleListener;
 
 import javax.management.InstanceNotFoundException;
@@ -37,7 +38,7 @@ public class JCacheJmxSupport implements CacheLifeCycleListener {
   private final MBeanServer mBeanServer = ManagementFactory.getPlatformMBeanServer();
 
   @Override
-  public void cacheCreated(Cache c) {
+  public void cacheCreated(Cache c, final Cache2kConfiguration cfg) {
   }
 
   @Override

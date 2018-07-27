@@ -23,6 +23,7 @@ package org.cache2k.impl.serverSide;
 import org.cache2k.Cache;
 import org.cache2k.CacheException;
 import org.cache2k.CacheManager;
+import org.cache2k.configuration.Cache2kConfiguration;
 import org.cache2k.core.spi.CacheLifeCycleListener;
 import org.cache2k.core.CacheManagerImpl;
 import org.cache2k.core.InternalCache;
@@ -47,14 +48,13 @@ public class JmxSupport implements CacheLifeCycleListener, CacheManagerLifeCycle
   private Log log = Log.getLog(JmxSupport.class);
 
   @Override
-  public void cacheCreated(Cache c) {
+  public void cacheCreated(Cache c, final Cache2kConfiguration cfg) {
     InternalCache ic = (InternalCache) c;
-    if (!ic.getCommonMetrics().isDisabled()) {
+    if (cfg.isEnableJmx()) {
       MBeanServer mbs = ManagementFactory.getPlatformMBeanServer();
       String _name = standardName(c.getCacheManager(), c);
       try {
-        mbs.registerMBean(
-          new CacheMXBeanImpl(ic), new ObjectName(_name));
+        mbs.registerMBean(new CacheMXBeanImpl(ic), new ObjectName(_name));
       } catch (InstanceAlreadyExistsException ignore) {
         log.debug("register failure, cache: " + c.getName(), ignore);
       } catch (Exception e) {
@@ -70,7 +70,6 @@ public class JmxSupport implements CacheLifeCycleListener, CacheManagerLifeCycle
     try {
       mbs.unregisterMBean(new ObjectName(_name));
     } catch (InstanceNotFoundException ignore) {
-      log.debug("unregister failure, cache: " + c.getName(), ignore);
     } catch (Exception e) {
       throw new CacheException("unregister JMX bean, ObjectName: " + _name, e);
     }

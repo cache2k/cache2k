@@ -68,8 +68,9 @@ public class LegalNamesTest {
   public void testCache() throws Exception {
     String _name = LegalNamesTest.class.getName() + "-test-with-char-" + aChar;
     Cache c = Cache2kBuilder.forUnknownTypes()
-        .name(_name)
-        .build();
+      .name(_name)
+      .enableJmx(true)
+      .build();
     assertEquals("default", c.getCacheManager().getName());
     assertTrue(c.getCacheManager().isDefaultManager());
     assertEquals(_name, c.getName());

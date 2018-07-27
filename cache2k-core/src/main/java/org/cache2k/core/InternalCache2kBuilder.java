@@ -328,7 +328,7 @@ public class InternalCache2kBuilder<K, V> {
        bc.eviction = constructEviction(bc, HeapCacheListener.NO_OPERATION, config);
       bc.init();
     }
-    manager.sendCreatedEvent(_cache);
+    manager.sendCreatedEvent(_cache, config);
     return _cache;
   }
 

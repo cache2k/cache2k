@@ -724,6 +724,16 @@ public class Cache2kBuilder<K, V> {
   }
 
   /**
+   * When {@code true} expose statistics via JMX. Disabled by default. It is possible to enable
+   * JMX even there is no cache name specified with {@link #name(String)}, since a name will
+   * be generated internally, thus enabling JMX by default for all caches is feasible.
+   */
+  public final Cache2kBuilder<K,V> enableJmx(boolean f) {
+    config().setEnableJmx(f);
+    return this;
+  }
+
+  /**
    * Thread pool / executor service to use for asynchronous load operations. If no executor is specified
    * the cache will create a thread pool, if needed.
    *

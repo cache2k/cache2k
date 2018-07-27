@@ -5,8 +5,21 @@ cache2k collects statistics by default and exposes them via JMX.
 
 === JMX Metrics
 
-When using the `cache2k-all` artifact for runtime, JMX support ist available. Otherwise the additional
-`cache2k-server-side` artifact needs to be added as dependency.
+JMX support is present in `cache2k-core`. Registration of JMX beans is disabled by default and needs to be
+enabled via `Cache2kBuilder.enableJmx`. In server environments it is a good idea to enable JMX for all caches by
+default:
+
+[source,xml]
+----
+<cache2k>
+  <version>1.0</version>
+  <defaults>
+    <cache>
+      <enableJmx>true</enableJmx>
+    </cache>
+  </defaults>
+</cache2k>
+----
 
 The management beans are registered with the platform MBean server. The object name of a cache follows the
 pattern `org.cache2k:type=Cache,manager=<managerName>,name=<cacheName>`, the object name of a cache manager
