@@ -22,7 +22,6 @@ package org.cache2k.core;
 
 import org.cache2k.CacheEntry;
 import org.cache2k.core.operation.LoadedEntry;
-import org.cache2k.core.util.InternalClock;
 import org.cache2k.expiry.ExpiryPolicy;
 import org.cache2k.event.CacheEntryExpiredListener;
 import org.cache2k.expiry.ExpiryTimeValues;
@@ -523,7 +522,7 @@ public abstract class EntryAction<K, V, R> implements
         expiry = timing().calculateNextRefreshTime(
           entry, newValueOrException,
           lastRefreshTime);
-        if (newValueOrException == null && heapCache.hasRejectNullValues() && expiry != ExpiryTimeValues.NO_CACHE) {
+        if (newValueOrException == null && heapCache.isRejectNullValues() && expiry != ExpiryTimeValues.NO_CACHE) {
           RuntimeException _ouch = heapCache.returnNullValueDetectedException();
           if (load) {
             decideForLoaderExceptionAfterExpiryCalculation(new ResiliencePolicyException(_ouch));
@@ -628,8 +627,6 @@ public abstract class EntryAction<K, V, R> implements
         return lastRefreshTime;
       }
 
-      @Override
-      public boolean isStable() { return true; }
     };
     operation.update(this, ee);
     if (needsFinish) {
@@ -700,7 +697,7 @@ public abstract class EntryAction<K, V, R> implements
    * keep the data.
    */
   public void checkKeepOrRemove() {
-    boolean _hasKeepAfterExpired = heapCache.hasKeepAfterExpired();
+    boolean _hasKeepAfterExpired = heapCache.isKeepAfterExpired();
     if (expiry != 0 || remove || _hasKeepAfterExpired) {
       mutationUpdateHeap();
       return;
@@ -819,7 +816,7 @@ public abstract class EntryAction<K, V, R> implements
   public void mutationReleaseLockAndStartTimer() {
     if (load) {
       if (!remove ||
-        !(entry.getValueOrException() == null && heapCache.hasRejectNullValues())) {
+        !(entry.getValueOrException() == null && heapCache.isRejectNullValues())) {
         operation.loaded(this, entry);
       }
     }

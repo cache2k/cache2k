@@ -43,9 +43,9 @@ public class SimpleTimerTest {
       new SimpleTimer(
         new SimulatedClock(_START_TIME, true),
         SimpleTimerTest.class.getName(), true);
-    MyTask[] arr = new MyTask[_SIZE];
+    MyTimerTask[] arr = new MyTimerTask[_SIZE];
     for (int i = 0; i < _SIZE; i++) {
-      arr[i] = new MyTask();
+      arr[i] = new MyTimerTask();
       t.schedule(arr[i], _START_TIME + i + _OFFSET);
       if (i%3 == 0) {
         arr[i].cancel();
@@ -69,7 +69,7 @@ public class SimpleTimerTest {
       new SimpleTimer(
         new SimulatedClock(_START_TIME, true),
         SimpleTimerTest.class.getName(), true);
-    SimpleTask t = new MyTask();
+    SimpleTimerTask t = new MyTimerTask();
     try {
       st.schedule(t, -5);
     } catch (IllegalArgumentException ex) {
@@ -79,7 +79,7 @@ public class SimpleTimerTest {
       st.schedule(t, 15);
     } catch (IllegalStateException ex) {
     }
-    t = new MyTask();
+    t = new MyTimerTask();
     st.cancel();
     try {
       st.schedule(t, 15);
@@ -87,7 +87,7 @@ public class SimpleTimerTest {
     }
   }
 
-  static class MyTask extends SimpleTask {
+  static class MyTimerTask extends SimpleTimerTask {
     volatile boolean executed = false;
     @Override
     public void run() {

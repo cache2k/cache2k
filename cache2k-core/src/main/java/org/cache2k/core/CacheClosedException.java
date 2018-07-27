@@ -37,7 +37,7 @@ import org.cache2k.Cache;
  */
 public class CacheClosedException extends IllegalStateException {
 
-  private static String constructDetailMessage(Cache cache) {
+  public static String nameQualifyier(Cache cache) {
     return "manager=" + cache.getCacheManager().getName() + ", cache=" + cache.getName();
   }
 
@@ -45,7 +45,7 @@ public class CacheClosedException extends IllegalStateException {
    * Included manager and cache name in the detail message, preferred.
    */
   public CacheClosedException(final Cache cache) {
-    super(constructDetailMessage(cache));
+    super(nameQualifyier(cache));
   }
 
 }

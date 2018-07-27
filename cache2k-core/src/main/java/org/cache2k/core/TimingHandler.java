@@ -26,7 +26,7 @@ import org.cache2k.configuration.CustomizationSupplier;
 import org.cache2k.configuration.CustomizationReferenceSupplier;
 import org.cache2k.core.util.InternalClock;
 import org.cache2k.core.util.SimpleTimer;
-import org.cache2k.core.util.SimpleTask;
+import org.cache2k.core.util.SimpleTimerTask;
 import org.cache2k.core.util.Util;
 import org.cache2k.expiry.Expiry;
 import org.cache2k.expiry.ExpiryPolicy;
@@ -362,7 +362,7 @@ public abstract class TimingHandler<K,V>  {
      */
     long expiredEventuallyStartBackgroundRefresh(final Entry e, boolean _sharpExpiry) {
       if (refreshAhead) {
-        e.setTask(new RefreshTask<K,V>().to(cache, e));
+        e.setTask(new RefreshTimerTask<K,V>().to(cache, e));
         scheduleTask(0, e);
         return _sharpExpiry ? Entry.EXPIRED_REFRESH_PENDING : Entry.DATA_VALID;
       }
@@ -406,7 +406,7 @@ public abstract class TimingHandler<K,V>  {
       if (_expiryTime < 0) {
         long _timerTime = -_expiryTime - SAFETY_GAP_MILLIS;
         if (_timerTime >= now) {
-          e.setTask(new ExpireTask().to(cache, e));
+          e.setTask(new ExpireTimerTask().to(cache, e));
           scheduleTask(_timerTime, e);
           _expiryTime = -_expiryTime;
         } else {
@@ -432,7 +432,7 @@ public abstract class TimingHandler<K,V>  {
       long _absTime = Math.abs(_nextRefreshTime);
       e.setRefreshProbationNextRefreshTime(_absTime);
       e.setNextRefreshTime(Entry.EXPIRED_REFRESHED);
-      e.setTask(new RefreshExpireTask<K,V>().to(cache, e));
+      e.setTask(new RefreshExpireTimerTask<K,V>().to(cache, e));
       scheduleTask(_absTime, e);
       return false;
     }
@@ -448,9 +448,9 @@ public abstract class TimingHandler<K,V>  {
      */
     void scheduleFinalExpireWithOptionalRefresh(final Entry<K, V> e, long t) {
       if (refreshAhead) {
-        e.setTask(new RefreshTask().to(cache, e));
+        e.setTask(new RefreshTimerTask().to(cache, e));
       } else {
-        e.setTask(new ExpireTask().to(cache, e));
+        e.setTask(new ExpireTimerTask().to(cache, e));
       }
       scheduleTask(t, e);
     }
@@ -466,7 +466,7 @@ public abstract class TimingHandler<K,V>  {
     }
 
     public void cancelExpiryTimer(Entry<K, V> e) {
-      CommonTask tsk = (CommonTask) e.getTask();
+      CommonTimerTask tsk = (CommonTimerTask) e.getTask();
       if (tsk != null && tsk.cancel()) {
         tsk.cache = null;
         tsk.entry = null;
@@ -483,11 +483,11 @@ public abstract class TimingHandler<K,V>  {
 
   }
 
-  static abstract class CommonTask<K,V> extends SimpleTask {
+  static abstract class CommonTimerTask<K,V> extends SimpleTimerTask {
     Entry<K,V> entry;
     InternalCache<K,V> cache;
 
-    CommonTask<K,V> to(final InternalCache<K,V> c, final Entry<K, V> e) {
+    CommonTimerTask<K,V> to(final InternalCache<K,V> c, final Entry<K, V> e) {
       cache = c;
       entry = e;
       return this;
@@ -506,19 +506,19 @@ public abstract class TimingHandler<K,V>  {
 
   }
 
-  static class RefreshTask<K,V> extends CommonTask<K,V> {
+  static class RefreshTimerTask<K,V> extends CommonTimerTask<K,V> {
     public void fire() {
       cache.timerEventRefresh(entry);
     }
   }
 
-  static class ExpireTask<K,V> extends CommonTask<K,V> {
+  static class ExpireTimerTask<K,V> extends CommonTimerTask<K,V> {
     public void fire() {
       cache.timerEventExpireEntry(entry);
     }
   }
 
-  static class RefreshExpireTask<K,V> extends CommonTask<K,V> {
+  static class RefreshExpireTimerTask<K,V> extends CommonTimerTask<K,V> {
     public void fire() {
       cache.timerEventProbationTerminated(entry);
     }

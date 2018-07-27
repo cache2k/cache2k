@@ -21,7 +21,6 @@ package org.cache2k.core.util;
  */
 
 import java.util.Arrays;
-import java.util.Date;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.Lock;
@@ -169,7 +168,7 @@ public class SimpleTimer {
    *         cancelled, timer was cancelled, or timer thread terminated.
    * @throws NullPointerException if {@code task} is null
    */
-  public void schedule(SimpleTask task, final long time) {
+  public void schedule(SimpleTimerTask task, final long time) {
     if (time < 0) {
       throw new IllegalArgumentException("Illegal execution time.");
     }
@@ -262,7 +261,7 @@ public class SimpleTimer {
 
   void timeReachedEvent(final long currentTime) {
     while (true) {
-      SimpleTask task;
+      SimpleTimerTask task;
       lock.lock();
       try {
         while (true) {
@@ -352,7 +351,7 @@ class TimerThread extends Thread {
    * The main timer loop.  (See class comment.)
    */
   private void mainLoop() {
-    SimpleTask firedTask;
+    SimpleTimerTask firedTask;
     while (newTasksMayBeScheduled) {
       lock.lock();
       try {
@@ -364,7 +363,7 @@ class TimerThread extends Thread {
             if (!newTasksMayBeScheduled) {
               return;
             }
-            SimpleTask task = queue.getMin();
+            SimpleTimerTask task = queue.getMin();
             if (task.isCancelled()) {
               queue.removeMin();
               continue;
@@ -408,7 +407,7 @@ class TaskQueue {
    * each node n in the heap, and each descendant of n, d,
    * n.nextExecutionTime <= d.nextExecutionTime.
    */
-  private SimpleTask[] queue = new SimpleTask[128];
+  private SimpleTimerTask[] queue = new SimpleTimerTask[128];
 
   /**
    * The number of tasks in the priority queue.  (The tasks are stored in
@@ -426,7 +425,7 @@ class TaskQueue {
   /**
    * Adds a new task to the priority queue.
    */
-  void add(SimpleTask task) {
+  void add(SimpleTimerTask task) {
     if (size + 1 == queue.length)
       queue = Arrays.copyOf(queue, 2*queue.length);
 
@@ -438,7 +437,7 @@ class TaskQueue {
    * Return the "head task" of the priority queue.  (The head task is an
    * task with the lowest nextExecutionTime.)
    */
-  SimpleTask getMin() {
+  SimpleTimerTask getMin() {
     return queue[1];
   }
 
@@ -447,7 +446,7 @@ class TaskQueue {
    * head task, which is returned by getMin) to the number of tasks on the
    * queue, inclusive.
    */
-  SimpleTask get(int i) {
+  SimpleTimerTask get(int i) {
     return queue[i];
   }
 
@@ -502,7 +501,7 @@ class TaskQueue {
       int j = k >> 1;
       if (queue[j].executionTime <= queue[k].executionTime)
         break;
-      SimpleTask tmp = queue[j];  queue[j] = queue[k]; queue[k] = tmp;
+      SimpleTimerTask tmp = queue[j];  queue[j] = queue[k]; queue[k] = tmp;
       k = j;
     }
   }
@@ -525,7 +524,7 @@ class TaskQueue {
         j++; // j indexes smallest kid
       if (queue[k].executionTime <= queue[j].executionTime)
         break;
-      SimpleTask tmp = queue[j];  queue[j] = queue[k]; queue[k] = tmp;
+      SimpleTimerTask tmp = queue[j];  queue[j] = queue[k]; queue[k] = tmp;
       k = j;
     }
   }

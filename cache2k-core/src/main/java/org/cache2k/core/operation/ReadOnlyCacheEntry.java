@@ -89,11 +89,6 @@ public class ReadOnlyCacheEntry<K, V> implements ResultEntry<K, V> {
     return valueOrException;
   }
 
-  @Override
-  public boolean isStable() {
-    return true;
-  }
-
   @SuppressWarnings("deprecation")
   @Override @Deprecated
   public long getLastModification() {

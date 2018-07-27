@@ -203,15 +203,15 @@ public class HeapCache<K, V> extends BaseCache<K, V> {
   private static final int UPDATE_TIME_NEEDED = 32;
   private static final int RECORD_REFRESH_TIME = 64;
 
-  protected final boolean hasKeepAfterExpired() {
+  protected final boolean isKeepAfterExpired() {
     return (featureBits & KEEP_AFTER_EXPIRED) > 0;
   }
 
-  protected final boolean hasRejectNullValues() {
+  protected final boolean isRejectNullValues() {
     return (featureBits & REJECT_NULL_VALUES) > 0;
   }
 
-  public final boolean isNullValuePermitted() { return !hasRejectNullValues(); }
+  public final boolean isNullValuePermitted() { return !isRejectNullValues(); }
 
   protected final boolean isRefreshAhead() { return (featureBits & BACKGROUND_REFRESH) > 0; }
 
@@ -657,7 +657,7 @@ public class HeapCache<K, V> extends BaseCache<K, V> {
     } finally {
       e.ensureAbort(_finished);
     }
-    if (e.getValueOrException() == null && hasRejectNullValues()) {
+    if (e.getValueOrException() == null && isRejectNullValues()) {
       return null;
     }
     return e;
@@ -1481,7 +1481,7 @@ public class HeapCache<K, V> extends BaseCache<K, V> {
 
   protected final void insert(Entry<K, V> e, V _value, long t0, long t, final long _refreshTime, byte _updateStatistics, long _nextRefreshTime) {
     if (_updateStatistics == INSERT_STAT_LOAD) {
-      if (_value == null && hasRejectNullValues() && _nextRefreshTime != 0) {
+      if (_value == null && isRejectNullValues() && _nextRefreshTime != 0) {
         loadGotException(e, t0, t, returnNullValueDetectedException());
         return;
       }
@@ -1495,7 +1495,7 @@ public class HeapCache<K, V> extends BaseCache<K, V> {
         finishLoadOrEviction(e, _nextRefreshTime);
       }
     } else {
-      if (_value == null && hasRejectNullValues()) {
+      if (_value == null && isRejectNullValues()) {
         throw returnNullValueDetectedException();
       }
       if (isRecordRefreshTime()) {
@@ -1654,7 +1654,7 @@ public class HeapCache<K, V> extends BaseCache<K, V> {
    * @see #expireAndRemoveEventuallyAfterProcessing(Entry)
    */
   private void expireAndRemoveEventually(final Entry e) {
-    if (hasKeepAfterExpired() || e.isProcessing()) {
+    if (isKeepAfterExpired() || e.isProcessing()) {
       metrics.expiredKept();
     } else {
 
@@ -1669,7 +1669,7 @@ public class HeapCache<K, V> extends BaseCache<K, V> {
    * @see #expireAndRemoveEventually
    */
   private void expireAndRemoveEventuallyAfterProcessing(final Entry e) {
-    if (hasKeepAfterExpired()) {
+    if (isKeepAfterExpired()) {
       metrics.expiredKept();
     } else {
       removeEntry(e);

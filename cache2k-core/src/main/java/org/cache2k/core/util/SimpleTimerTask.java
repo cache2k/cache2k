@@ -28,15 +28,15 @@ import java.util.concurrent.atomic.AtomicIntegerFieldUpdater;
  *
  * @author Jens Wilke
  */
-public abstract class SimpleTask implements Runnable {
+public abstract class SimpleTimerTask implements Runnable {
 
   /**
    * The state of this task, chosen from the constants below.
    */
   private volatile int state = VIRGIN;
 
-  static final AtomicIntegerFieldUpdater<SimpleTask> stateUpdater =
-    AtomicIntegerFieldUpdater.newUpdater(SimpleTask.class, "state");
+  static final AtomicIntegerFieldUpdater<SimpleTimerTask> stateUpdater =
+    AtomicIntegerFieldUpdater.newUpdater(SimpleTimerTask.class, "state");
 
   /**
    * This task has not yet been scheduled.
@@ -70,7 +70,7 @@ public abstract class SimpleTask implements Runnable {
   /**
    * Creates a new timer task.
    */
-  protected SimpleTask() {
+  protected SimpleTimerTask() {
   }
 
   /**

@@ -320,15 +320,10 @@ public class BasicCacheOperationsWithoutCustomizationsTest {
     assertTrue(cache.containsKey(KEY));
     assertEquals(VALUE, cache.get(KEY));
     assertEquals(VALUE, cache.peek(KEY));
-    checkLastModified(cache.peekEntry(KEY));
+    checkRefreshTime(cache.peekEntry(KEY));
   }
 
-  void checkLastModified(CacheEntry<Integer, Integer> e) {
-    try {
-      long t = cache.peekEntry(e.getKey()).getLastModification();
-      fail("expected UnsupportedOperationException");
-    } catch (UnsupportedOperationException ex) {
-    }
+  void checkRefreshTime(CacheEntry<Integer, Integer> e) {
     long t = cache.invoke(e.getKey(), new EntryProcessor<Integer, Integer, Long>() {
       @Override
       public Long process(final MutableCacheEntry<Integer, Integer> e) throws Exception {
@@ -383,7 +378,7 @@ public class BasicCacheOperationsWithoutCustomizationsTest {
     assertTrue(cache.containsKey(OTHER_KEY));
     assertNull(cache.peek(OTHER_KEY));
     assertEquals(VALUE, cache.peek(KEY));
-    checkLastModified(cache.peekEntry(KEY));
+    checkRefreshTime(cache.peekEntry(KEY));
   }
 
   /*
@@ -423,7 +418,7 @@ public class BasicCacheOperationsWithoutCustomizationsTest {
     assertEquals(VALUE, v);
     assertTrue(cache.containsKey(KEY));
     assertEquals(VALUE, cache.peek(KEY));
-    checkLastModified(cache.peekEntry(KEY));
+    checkRefreshTime(cache.peekEntry(KEY));
     cache.put(KEY, VALUE);
   }
 
@@ -564,7 +559,7 @@ public class BasicCacheOperationsWithoutCustomizationsTest {
       .expectAllZero();
     assertTrue(cache.containsKey(KEY));
     assertEquals(VALUE, cache.peek(KEY));
-    checkLastModified(cache.peekEntry(KEY));
+    checkRefreshTime(cache.peekEntry(KEY));
   }
 
   @Test
@@ -595,7 +590,7 @@ public class BasicCacheOperationsWithoutCustomizationsTest {
       .missCount.expect(0)
       .putCount.expect(1)
       .expectAllZero();
-    checkLastModified(cache.peekEntry(KEY));
+    checkRefreshTime(cache.peekEntry(KEY));
   }
 
   @Test(expected = NullPointerException.class)
@@ -781,7 +776,7 @@ public class BasicCacheOperationsWithoutCustomizationsTest {
     assertEquals(KEY, e.getKey());
     assertEquals(VALUE, e.getValue());
     assertNull(e.getException());
-    checkLastModified(e);
+    checkRefreshTime(e);
   }
 
   @Test
@@ -792,7 +787,7 @@ public class BasicCacheOperationsWithoutCustomizationsTest {
     e = cache.peekEntry(KEY);
     assertEquals(KEY, e.getKey());
     assertNull(e.getValue());
-    checkLastModified(e);
+    checkRefreshTime(e);
   }
 
   @Test(expected = NullPointerException.class)
@@ -809,6 +804,17 @@ public class BasicCacheOperationsWithoutCustomizationsTest {
     assertEquals(OUCH, e.getException());
   }
 
+  @Test
+  public void peekEntry_lastModification() {
+    cache.put(KEY, VALUE);
+    CacheEntry<Integer, Integer> e = cache.peekEntry(KEY);
+    try {
+      long t = cache.peekEntry(e.getKey()).getLastModification();
+      fail("expected UnsupportedOperationException");
+    } catch (UnsupportedOperationException ex) {
+    }
+  }
+
   /*
    * getEntry
    */
@@ -820,7 +826,7 @@ public class BasicCacheOperationsWithoutCustomizationsTest {
     assertEquals(KEY, e.getKey());
     assertEquals(VALUE, e.getValue());
     assertNull(e.getException());
-    checkLastModified(e);
+    checkRefreshTime(e);
   }
 
   @Test
@@ -829,7 +835,7 @@ public class BasicCacheOperationsWithoutCustomizationsTest {
     CacheEntry<Integer, Integer> e = cache.getEntry(KEY);
     assertEquals(KEY, e.getKey());
     assertNull(e.getValue());
-    checkLastModified(e);
+    checkRefreshTime(e);
   }
 
   @Test(expected = NullPointerException.class)
@@ -844,6 +850,17 @@ public class BasicCacheOperationsWithoutCustomizationsTest {
     assertEquals(KEY, e.getKey());
     entryHasException(e);
     assertEquals(OUCH, e.getException());
+  }
+
+  @Test
+  public void getEntry_lastModification() {
+    cache.put(KEY, VALUE);
+    CacheEntry<Integer, Integer> e = cache.getEntry(KEY);
+    try {
+      long t = cache.peekEntry(e.getKey()).getLastModification();
+      fail("expected UnsupportedOperationException");
+    } catch (UnsupportedOperationException ex) {
+    }
   }
 
   private static void entryHasException(final CacheEntry<Integer, Integer> e) {
@@ -1194,7 +1211,7 @@ public class BasicCacheOperationsWithoutCustomizationsTest {
       .missCount.expect(0)
       .putCount.expect(0)
       .expectAllZero();
-    checkLastModified(cache.peekEntry(KEY));
+    checkRefreshTime(cache.peekEntry(KEY));
   }
 
   @Test
@@ -1287,7 +1304,7 @@ public class BasicCacheOperationsWithoutCustomizationsTest {
         return null;
       }
     });
-    checkLastModified(cache.getEntry(KEY));
+    checkRefreshTime(cache.getEntry(KEY));
   }
 
   @Test

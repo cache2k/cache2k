@@ -41,7 +41,4 @@ public interface ExaminationEntry<K, V> {
 
   long getRefreshTime();
 
-  /** Entry is locked and does not need synchronization to read values consistently */
-  boolean isStable();
-
 }
