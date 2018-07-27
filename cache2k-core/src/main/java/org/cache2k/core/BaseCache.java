@@ -196,7 +196,7 @@ public abstract class BaseCache<K, V> implements InternalCache<K, V> {
         ((Closeable) _customization).close();
       } catch (Exception e) {
         String _message =
-          _customizationName + ".close() exception (" + CacheClosedException.nameQualifyier(this) + ")";
+          _customizationName + ".close() exception (" + CacheClosedException.nameQualifier(this) + ")";
         throw new CacheException(_message, e);
       }
     }
