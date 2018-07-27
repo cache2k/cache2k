@@ -38,7 +38,7 @@ import static org.junit.Assert.*;
  * @author Jens Wilke
  */
 @Category(FastTests.class)
-public class CacheManagerLifeCycleTest {
+public class CacheManagerTest {
 
   @Test(expected = IllegalStateException.class)
   public void setDefaultManagerName_Exception() {
@@ -97,7 +97,12 @@ public class CacheManagerLifeCycleTest {
       .name("dummy")
       .build();
     assertSame(cm, c.getCacheManager());
+    assertTrue(cm.toString().contains(", activeCaches=[dummy]"));
     cm.close();
+    String s = cm.toString();
+    assertTrue(s.contains(", closed=true"));
+    assertTrue(s.contains(", objectId="));
+    assertTrue(s.contains("name=\'" + _uniqueName));
     assertTrue(c.isClosed());
   }
 

@@ -32,6 +32,7 @@ import org.cache2k.spi.Cache2kCoreProvider;
 
 import java.lang.reflect.Array;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -113,23 +114,6 @@ public class CacheManagerImpl extends CacheManager {
       lc.managerCreated(this);
     }
     logPhase("open");
-  }
-
-  private void logPhase(String _phase) {
-    if (log.isDebugEnabled()) {
-      log.debug(_phase + ": " + toStringValues());
-    }
-  }
-
-  private String toStringValues() {
-    return "name=" + name +
-      ", id=" + Integer.toString(System.identityHashCode(this), 36) +
-      ", classloaderId=" + Integer.toString(System.identityHashCode(classLoader), 36) +
-      ", default=" + defaultManager;
-  }
-
-  public String toString() {
-    return "CacheManager(" + toStringValues() + ")";
   }
 
   public static Iterable<CacheLifeCycleListener> getCacheLifeCycleListeners() {
@@ -225,6 +209,20 @@ public class CacheManagerImpl extends CacheManager {
         for (Cache c : cacheNames.values()) {
           if (!c.isClosed()) {
             _caches.add(c);
+          }
+        }
+      }
+    }
+    return _caches;
+  }
+
+  private Collection<String> getActiveCacheNames() {
+    Set<String> _caches = new HashSet<String>();
+    synchronized (lock) {
+      if (!isClosed()) {
+        for (Cache c : cacheNames.values()) {
+          if (!c.isClosed()) {
+            _caches.add(c.getName());
           }
         }
       }
@@ -353,6 +351,24 @@ public class CacheManagerImpl extends CacheManager {
   }
 
   @Override
+  public Properties getProperties() {
+    return properties;
+  }
+
+  @Override
+  public ClassLoader getClassLoader() {
+    return classLoader;
+  }
+
+  public String getVersion() {
+    return provider.getVersion();
+  }
+
+  public Cache2kCoreProviderImpl getProvider() {
+    return provider;
+  }
+
+  @Override
   public boolean isClosed() {
     return closing;
   }
@@ -370,22 +386,33 @@ public class CacheManagerImpl extends CacheManager {
     }
   }
 
-  @Override
-  public Properties getProperties() {
-    return properties;
+  private void logPhase(String _phase) {
+    if (log.isDebugEnabled()) {
+      log.debug(_phase + ": " + getManagerId());
+    }
   }
 
-  @Override
-  public ClassLoader getClassLoader() {
-    return classLoader;
+  /**
+   * Relevant information to id a manager.
+   */
+  private String getManagerId() {
+    return "name='" + name +
+      "', objectId=" + Integer.toString(System.identityHashCode(this), 36) +
+      ", classloaderId=" + Integer.toString(System.identityHashCode(classLoader), 36) +
+      ", default=" + defaultManager;
   }
 
-  public String getVersion() {
-    return provider.getVersion();
-  }
-
-  public Cache2kCoreProviderImpl getProvider() {
-    return provider;
+  public String toString() {
+    StringBuilder sb = new StringBuilder();
+    sb.append("CacheManager(");
+    sb.append(getManagerId());
+    if (isClosed()) {
+      sb.append(", closed=true");
+    } else {
+      sb.append(", activeCaches=");
+      sb.append(getActiveCacheNames());
+    }
+    return sb.append(')').toString();
   }
 
 }
