@@ -532,9 +532,7 @@ public class TouchyJCacheAdapter<K, V> implements Cache<K, V> {
   }
 
   private void checkClosed() {
-    if (cache.isClosed()) {
-      throw new IllegalStateException("cache is closed");
-    }
+    cache.checkClosed();
   }
 
   private void checkNullValue(V _value) {

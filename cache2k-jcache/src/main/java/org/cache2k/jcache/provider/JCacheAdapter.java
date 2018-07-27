@@ -22,6 +22,7 @@ package org.cache2k.jcache.provider;
 
 import org.cache2k.Cache;
 import org.cache2k.CacheEntry;
+import org.cache2k.core.CacheClosedException;
 import org.cache2k.jcache.provider.event.EventHandling;
 import org.cache2k.processor.EntryProcessor;
 import org.cache2k.integration.CacheWriterException;
@@ -504,9 +505,13 @@ public class JCacheAdapter<K, V> implements javax.cache.Cache<K, V> {
     };
   }
 
-  private void checkClosed() {
+  /**
+   * The TCK checks that cache closed exception is triggered before the exceptions about the
+   * illegal argument, so first screen whether cache is closed.
+   */
+  void checkClosed() {
     if (cache.isClosed()) {
-      throw new IllegalStateException("cache is closed");
+      throw new CacheClosedException(cache);
     }
   }
 
