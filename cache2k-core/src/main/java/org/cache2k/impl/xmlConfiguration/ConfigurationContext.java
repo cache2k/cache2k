@@ -21,6 +21,7 @@ package org.cache2k.impl.xmlConfiguration;
  */
 
 import org.cache2k.configuration.Cache2kConfiguration;
+import org.cache2k.configuration.Cache2kManagerConfiguration;
 
 import java.util.Map;
 
@@ -30,13 +31,8 @@ import java.util.Map;
  *
  * @author Jens Wilke
  */
-public class ConfigurationContext {
+public class ConfigurationContext extends Cache2kManagerConfiguration {
 
-  private String version = null;
-  private String defaultManagerName = null;
-  private boolean ignoreMissingCacheConfiguration = false;
-  private boolean skipCheckOnStartup = false;
-  private boolean ignoreAnonymousCache = false;
   private boolean configurationPresent = false;
   private ClassLoader classLoader;
   private Cache2kConfiguration<?, ?> defaultManagerConfiguration;
@@ -49,46 +45,6 @@ public class ConfigurationContext {
 
   public void setDefaultManagerConfiguration(final Cache2kConfiguration<?, ?> _defaultManagerConfiguration) {
     defaultManagerConfiguration = _defaultManagerConfiguration;
-  }
-
-  public boolean isIgnoreMissingCacheConfiguration() {
-    return ignoreMissingCacheConfiguration;
-  }
-
-  public void setIgnoreMissingCacheConfiguration(final boolean _ignoreMissingCacheConfiguration) {
-    ignoreMissingCacheConfiguration = _ignoreMissingCacheConfiguration;
-  }
-
-  public String getDefaultManagerName() {
-    return defaultManagerName;
-  }
-
-  public void setDefaultManagerName(final String _defaultManagerName) {
-    defaultManagerName = _defaultManagerName;
-  }
-
-  public String getVersion() {
-    return version;
-  }
-
-  public void setVersion(final String _version) {
-    version = _version;
-  }
-
-  public boolean isSkipCheckOnStartup() {
-    return skipCheckOnStartup;
-  }
-
-  public void setSkipCheckOnStartup(final boolean _skipCheckOnStartup) {
-    skipCheckOnStartup = _skipCheckOnStartup;
-  }
-
-  public boolean isIgnoreAnonymousCache() {
-    return ignoreAnonymousCache;
-  }
-
-  public void setIgnoreAnonymousCache(final boolean _ignoreAnonymousCache) {
-    ignoreAnonymousCache = _ignoreAnonymousCache;
   }
 
   public boolean isConfigurationPresent() {

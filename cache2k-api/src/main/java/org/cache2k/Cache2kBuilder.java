@@ -793,7 +793,7 @@ public class Cache2kBuilder<K, V> {
    * <p>Returns specialized interfaces for the key types {@code Integer} and {@code Long}.
    *
    * @throws IllegalArgumentException if a cache of the same name is already active in the cache manager
-   * @throws UnknownCacheException there is no configuration entry for the named cache
+   * @throws IllegalArgumentException if a configuration entry for the named cache is required but not present
    * @return {@link IntCache} if the key type is {@code Integer} or {@link LongCache}
    *         if the key type is {@code Long}
    */
@@ -809,7 +809,7 @@ public class Cache2kBuilder<K, V> {
    *
    * @throws IllegalArgumentException if a cache of the same name is already active in the cache manager
    * @throws IllegalArgumentException if key type is unexpected
-   * @throws UnknownCacheException there is no configuration entry for the named cache
+   * @throws IllegalArgumentException if a configuration entry for the named cache is required but not present
    */
   @SuppressWarnings("unchecked")
   public final IntCache<V> buildForIntKey() {
@@ -828,7 +828,7 @@ public class Cache2kBuilder<K, V> {
    *
    * @throws IllegalArgumentException if a cache of the same name is already active in the cache manager
    * @throws IllegalArgumentException if key type is unexpected
-   * @throws UnknownCacheException there is no configuration entry for the named cache
+   * @throws IllegalArgumentException if a configuration entry for the named cache is required but not present
    */
   @SuppressWarnings("unchecked")
   public final LongCache<V> buildForLongKey() {
