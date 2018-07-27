@@ -543,7 +543,7 @@ public class TouchyJCacheAdapter<K, V> implements Cache<K, V> {
 
   @Override
   public String toString() {
-    return getClass().getSimpleName() + "@" + c2kCache.toString();
+    return getClass().getSimpleName() + "!" + cache.toString();
   }
 
   public static class ExpiryPolicyAdapter<K, V>

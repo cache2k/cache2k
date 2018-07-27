@@ -393,7 +393,8 @@ public class CacheManagerImpl extends CacheManager {
   }
 
   /**
-   * Relevant information to id a manager.
+   * Relevant information to id a manager. Since there could be multiple cache managers for each class loader,
+   * better
    */
   private String getManagerId() {
     return "name='" + name +

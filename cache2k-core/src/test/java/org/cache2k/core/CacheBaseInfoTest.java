@@ -22,10 +22,12 @@ package org.cache2k.core;
 
 import org.cache2k.Cache;
 import org.cache2k.Cache2kBuilder;
+import org.cache2k.CacheManager;
 import org.cache2k.testing.category.FastTests;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
+import static org.hamcrest.CoreMatchers.containsString;
 import static org.junit.Assert.*;
 
 /**
@@ -92,16 +94,6 @@ public class CacheBaseInfoTest {
   @Test
   public void testHashQuality50_50() {
     assertEquals(11, CacheBaseInfo.hashQuality(50, 50));
-  }
-
-  @Test
-  public void testToString() {
-    Cache<Integer, Integer> c =
-      Cache2kBuilder.of(Integer.class, Integer.class)
-        .eternal(true)
-        .build();
-    c.toString();
-    c.close();
   }
 
 }

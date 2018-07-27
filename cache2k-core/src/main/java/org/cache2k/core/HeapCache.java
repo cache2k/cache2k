@@ -233,7 +233,7 @@ public class HeapCache<K, V> extends BaseCache<K, V> {
   /**
    * Returns name of the cache with manager name.
    *
-   * @see CacheClosedException#nameQualifier(Cache) similar
+   * @see BaseCache#nameQualifier(Cache) similar
    */
   public String getCompleteName() {
     return manager.getName() + ":" + name;

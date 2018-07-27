@@ -20,6 +20,7 @@ package org.cache2k.core;
  * #L%
  */
 
+import org.cache2k.Cache;
 import org.cache2k.CacheEntry;
 import org.cache2k.CacheException;
 import org.cache2k.CustomizationException;
@@ -42,6 +43,19 @@ import java.util.concurrent.ConcurrentMap;
  * @author Jens Wilke
  */
 public abstract class BaseCache<K, V> implements InternalCache<K, V> {
+
+  /**
+   *
+   * @see HeapCache#getCompleteName() similar
+   */
+  public static String nameQualifier(Cache cache) {
+    StringBuilder sb = new StringBuilder();
+    sb.append('\'').append(cache.getName()).append('\'');
+    if (!cache.getCacheManager(). isDefaultManager()) {
+      sb.append(", manager='").append(cache.getCacheManager().getName()).append('\'');
+    }
+    return sb.toString();
+  }
 
   protected abstract Iterator<CacheEntry<K, V>> iterator();
 
@@ -196,7 +210,7 @@ public abstract class BaseCache<K, V> implements InternalCache<K, V> {
         ((Closeable) _customization).close();
       } catch (Exception e) {
         String _message =
-          _customizationName + ".close() exception (" + CacheClosedException.nameQualifier(this) + ")";
+          _customizationName + ".close() exception (" + nameQualifier(this) + ")";
         throw new CacheException(_message, e);
       }
     }
@@ -217,7 +231,7 @@ public abstract class BaseCache<K, V> implements InternalCache<K, V> {
       InternalCacheInfo fo = getLatestInfo();
       return fo.toString();
     } catch (CacheClosedException ex) {
-      return "Cache{" + getName() + "}(closed)";
+      return "Cache(name=" + BaseCache.nameQualifier (this) + ", closed=true)";
     }
   }
 

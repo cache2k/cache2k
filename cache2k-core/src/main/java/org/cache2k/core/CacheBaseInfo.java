@@ -285,13 +285,10 @@ class CacheBaseInfo implements InternalCacheInfo {
 
   public String toString() {
     StringBuilder sb = new StringBuilder();
-    sb.append("Cache{");
+    sb.append("Cache(");
     CacheManagerImpl cm = (CacheManagerImpl) (cache.getCacheManager());
-    if (!cache.getCacheManager().isDefaultManager()) {
-      sb.append(cm.getName()).append(':');
-    }
-    sb.append(heapCache.name).append("}(");
-    sb.append("size=").append(getSize()).append(", ")
+    sb.append("name=").append(BaseCache.nameQualifier(cache)).append(", ")
+      .append("size=").append(getSize()).append(", ")
       .append("capacity=").append(getHeapCapacity() != Long.MAX_VALUE ? getHeapCapacity() : "unlimited").append(", ")
       .append("get=").append(getGetCount()).append(", ")
       .append("miss=").append(getMissCount()).append(", ")

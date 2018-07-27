@@ -221,9 +221,12 @@ public abstract class ForwardingCache<K, V> implements Cache<K, V> {
     return delegate().isClosed();
   }
 
+  /**
+   * Forwards to delegate but adds the simple class name to the output.
+   */
   @Override
   public String toString() {
-    return delegate().toString();
+    return this.getClass().getSimpleName() + "!" + delegate().toString();
   }
 
   @Override

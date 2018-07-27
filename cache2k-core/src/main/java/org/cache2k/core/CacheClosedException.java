@@ -38,18 +38,10 @@ import org.cache2k.Cache;
 public class CacheClosedException extends IllegalStateException {
 
   /**
-   *
-   * @see HeapCache#getCompleteName() similar
-   */
-  public static String nameQualifier(Cache cache) {
-    return "manager=" + cache.getCacheManager().getName() + ", cache=" + cache.getName();
-  }
-
-  /**
    * Included manager and cache name in the detail message, preferred.
    */
   public CacheClosedException(final Cache cache) {
-    super(nameQualifier(cache));
+    super(BaseCache.nameQualifier(cache));
   }
 
 }

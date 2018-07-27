@@ -30,6 +30,7 @@ import org.junit.experimental.categories.Category;
 import java.net.URL;
 import java.net.URLClassLoader;
 
+import static org.hamcrest.CoreMatchers.containsString;
 import static org.junit.Assert.*;
 
 /**
@@ -38,7 +39,7 @@ import static org.junit.Assert.*;
  * @author Jens Wilke
  */
 @Category(FastTests.class)
-public class CacheManagerTest {
+public class CacheManagerAndCacheLifeCycleTest {
 
   @Test(expected = IllegalStateException.class)
   public void setDefaultManagerName_Exception() {
@@ -150,6 +151,44 @@ public class CacheManagerTest {
     Cache c = b.build();
     assertEquals("one cache active", 1, StaticUtil.count(cm.getActiveCaches()));
     cm.close();
+  }
+
+  @Test
+  public void testToStringAnon() {
+    Cache<Integer, Integer> c =
+      Cache2kBuilder.of(Integer.class, Integer.class)
+        .eternal(true)
+        .build();
+    c.toString();
+    c.close();
+  }
+
+  @Test
+  public void testToString() {
+    Cache<Integer, Integer> c =
+      Cache2kBuilder.of(Integer.class, Integer.class)
+        .name("testToString")
+        .eternal(true)
+        .build();
+    assertThat(c.toString(), containsString("Cache(name='testToString', size"));
+    c.close();
+    assertThat(c.toString(), containsString("Cache(name='testToString', closed=true"));
+  }
+
+  @Test
+  public void testToStringWithManager() {
+    String _managerName = this.getClass().getSimpleName();
+    CacheManager cm = CacheManager.getInstance(_managerName);
+    Cache<Integer, Integer> c =
+      Cache2kBuilder.of(Integer.class, Integer.class)
+        .manager(cm)
+        .name("testToString")
+        .eternal(true)
+        .build();
+    assertThat(c.toString(), containsString("Cache(name='testToString', manager='" + _managerName + "'" ));
+    c.close();
+    cm.close();
+    assertThat(c.toString(), containsString("Cache(name='testToString', manager='" + _managerName + "'" ));
   }
 
 }

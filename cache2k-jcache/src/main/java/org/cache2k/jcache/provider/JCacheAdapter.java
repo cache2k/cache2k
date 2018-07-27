@@ -559,7 +559,7 @@ public class JCacheAdapter<K, V> implements javax.cache.Cache<K, V> {
   }
 
   public String toString() {
-    return getClass().getSimpleName() + "@" + cache;
+    return getClass().getSimpleName() + "!" + cache;
   }
 
 }
