@@ -21,9 +21,12 @@ package org.cache2k.configuration;
  */
 
 /**
+ * Configuration options for a cache manager. The options can only be changed if a
+ * XML file is provided. This bean is in the API artifact for documentation purposes.
+ *
  * @author Jens Wilke
  */
-public class Cache2kManagerConfiguration {
+public class Cache2kManagerConfiguration implements ConfigurationBean {
 
   private String version = null;
   private String defaultManagerName = null;
@@ -35,6 +38,9 @@ public class Cache2kManagerConfiguration {
     return ignoreMissingCacheConfiguration;
   }
 
+  /**
+   * Configure a cache with default parameters if configuration has no specific section for it.
+   */
   public void setIgnoreMissingCacheConfiguration(final boolean f) {
     ignoreMissingCacheConfiguration = f;
   }
@@ -43,14 +49,21 @@ public class Cache2kManagerConfiguration {
     return defaultManagerName;
   }
 
-  public void setDefaultManagerName(final String f) {
-    defaultManagerName = f;
+  /**
+   * Replace the default name of the default cache manager.
+   */
+  public void setDefaultManagerName(final String v) {
+    defaultManagerName = v;
   }
 
   public String getVersion() {
     return version;
   }
 
+  /**
+   * Version of the configuration. Mandatory in every cache configuration. The version affects
+   * how the configuration XML file is interpreted.
+   */
   public void setVersion(final String v) {
     version = v;
   }
@@ -59,6 +72,9 @@ public class Cache2kManagerConfiguration {
     return skipCheckOnStartup;
   }
 
+  /**
+   * The configuration for each cache is parsed and checked as soon as the cache manager is created.
+   */
   public void setSkipCheckOnStartup(final boolean f) {
     skipCheckOnStartup = f;
   }
@@ -67,6 +83,10 @@ public class Cache2kManagerConfiguration {
     return ignoreAnonymousCache;
   }
 
+  /**
+   * When a configuration is present, every cache needs a cache name so that the configuration
+   * can be applied.
+   */
   public void setIgnoreAnonymousCache(final boolean f) {
     ignoreAnonymousCache = f;
   }

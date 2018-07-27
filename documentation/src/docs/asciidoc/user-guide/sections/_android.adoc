@@ -51,11 +51,7 @@ To minimize the footprint of the application the unused code can be removed via 
 # if only programmatic configuration is used, these rules may be ommitted
 -keep interface org.cache2k.core.spi.CacheConfigurationProvider
 -keep public class * extends org.cache2k.core.spi.CacheConfigurationProvider
--keepclassmembers public class org.cache2k.impl.xmlConfiguration.ConfigurationContext {
-    public void set*(...);
-    public ** get*();
-}
--keepclassmembers public class org.cache2k.configuration.Cache2kConfiguration {
+-keepclassmembers public class * extends org.cache2k.configuration.ConfigurationBean {
     public void set*(...);
     public ** get*();
 }

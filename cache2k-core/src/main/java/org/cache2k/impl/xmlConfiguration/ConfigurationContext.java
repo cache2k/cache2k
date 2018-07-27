@@ -31,8 +31,9 @@ import java.util.Map;
  *
  * @author Jens Wilke
  */
-public class ConfigurationContext extends Cache2kManagerConfiguration {
+public class ConfigurationContext {
 
+  private final Cache2kManagerConfiguration managerConfiguration = new Cache2kManagerConfiguration();
   private boolean configurationPresent = false;
   private ClassLoader classLoader;
   private Cache2kConfiguration<?, ?> defaultManagerConfiguration;
@@ -77,6 +78,10 @@ public class ConfigurationContext extends Cache2kManagerConfiguration {
 
   public void setTemplates(final ParsedConfiguration _templates) {
     templates = _templates;
+  }
+
+  public Cache2kManagerConfiguration getManagerConfiguration() {
+    return managerConfiguration;
   }
 
 }

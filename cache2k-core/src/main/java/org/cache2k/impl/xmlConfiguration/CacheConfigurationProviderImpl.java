@@ -81,7 +81,7 @@ public class CacheConfigurationProviderImpl implements CacheConfigurationProvide
       m2.put(cl, ctx);
       classLoader2config = m2;
     }
-    return ctx.getDefaultManagerName();
+    return ctx.getManagerConfiguration().getDefaultManagerName();
   }
 
   @Override
@@ -98,7 +98,7 @@ public class CacheConfigurationProviderImpl implements CacheConfigurationProvide
     }
     final String _cacheName = cfg.getName();
     if (_cacheName == null) {
-      if (ctx.isIgnoreAnonymousCache()) {
+      if (ctx.getManagerConfiguration().isIgnoreAnonymousCache()) {
         return;
       }
       throw new ConfigurationException(
@@ -110,7 +110,7 @@ public class CacheConfigurationProviderImpl implements CacheConfigurationProvide
     ParsedConfiguration _parsedCache = null;
     if (_section != null) { _parsedCache = _section.getSection(_cacheName); }
     if (_parsedCache == null) {
-      if (ctx.isIgnoreMissingCacheConfiguration()) {
+      if (ctx.getManagerConfiguration().isIgnoreMissingCacheConfiguration()) {
         return;
       }
       String _exceptionText =
@@ -212,17 +212,17 @@ public class CacheConfigurationProviderImpl implements CacheConfigurationProvide
     ctx.setClassLoader(cl);
     Cache2kConfiguration _defaultConfiguration = new Cache2kConfiguration();
     ctx.setDefaultManagerConfiguration(_defaultConfiguration);
-    ctx.setDefaultManagerName(_managerName);
+    ctx.getManagerConfiguration().setDefaultManagerName(_managerName);
     if (pc != null) {
       _defaultConfiguration.setExternalConfigurationPresent(true);
       ctx.setTemplates(extractTemplates(pc));
-      apply(ctx, pc, ctx);
-      if (ctx.getVersion() != null && ctx.getVersion().startsWith("1.")) {
+      apply(ctx, pc, ctx.getManagerConfiguration());
+      if (ctx.getManagerConfiguration().getVersion() != null && ctx.getManagerConfiguration().getVersion().startsWith("1.")) {
         ctx.setPredefinedSectionTypes(version1SectionTypes);
       }
       applyDefaultConfigurationIfPresent(ctx, pc, _defaultConfiguration);
       ctx. setConfigurationPresent(true);
-      if (!ctx.isSkipCheckOnStartup()) {
+      if (!ctx.getManagerConfiguration().isSkipCheckOnStartup()) {
         checkCacheConfigurationOnStartup(ctx, pc);
       }
     }
