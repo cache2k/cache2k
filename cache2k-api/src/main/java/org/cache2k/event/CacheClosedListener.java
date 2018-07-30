@@ -25,13 +25,19 @@ import org.cache2k.Cache;
 import java.util.EventListener;
 
 /**
- * Listener called when cache is closed. The listener is called
- * after all cache operations stopped.
+ * Listener called when cache is closed. This is intended for resource cleanup
+ * of cache customizations.
  *
  * @author Jens Wilke
  */
 public interface CacheClosedListener extends EventListener {
 
+  /**
+   * Called when cache closes. This is intended for resource cleanup. No heavy operations
+   * are allowed, like flushing I/O.
+   *
+   * @param cache The cache that is closing. No cache operations on entries are allowed.
+   */
   void onCacheClosed(Cache cache);
 
 }

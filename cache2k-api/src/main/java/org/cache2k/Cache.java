@@ -39,13 +39,16 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.Executor;
 import java.util.concurrent.TimeUnit;
 
-/*
+/* Credits
+ *
  * Descriptions derive partly from the java.util.concurrent.ConcurrentMap.
  * Original copyright:
  *
  * Written by Doug Lea with assistance from members of JCP JSR-166
  * Expert Group and released to the public domain, as explained at
  * http://creativecommons.org/publicdomain/zero/1.0/
+ *
+ * Some inspiration is also from the JSR107 Java Caching standard.
  */
 
 /**
@@ -100,8 +103,11 @@ import java.util.concurrent.TimeUnit;
  *
  * @param <K> type of the key
  * @param <V> type of the stores values
- * @see Cache2kBuilder
  * @author Jens Wilke
+ * @see Cache2kBuilder to create a cache
+ * @see CacheManager to manage and retrieve created caches
+ * @see <a href="https://cache2k.org>cache2k homepage</a>
+ * @see <a href="https://cache2k.org/docs/latest/user-guide.html">cache2k User Guide</a>
  */
 @SuppressWarnings("UnusedDeclaration")
 public interface Cache<K, V> extends KeyValueStore<K,V>, Closeable {

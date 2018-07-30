@@ -58,7 +58,11 @@ import java.util.concurrent.Executor;
  * <p>The {@linkplain FunctionalCacheLoader functional loader} interface can be used
  * if only a single method should be provided or with Java 8 lambdas or method references.
  *
+ * <p>If no loader is enabled, the methods {@link Cache#get} and {@link Cache#peek}
+ * have identical behavior.
+ *
  * @author Jens Wilke
+ * @see <a href="https://cache2k.org/docs/latest/user-guide.html#loading-read-through">Loading / Read-Through - cache2k User Guide</a>
  * @see AdvancedCacheLoader
  * @see FunctionalCacheLoader
  */

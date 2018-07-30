@@ -426,9 +426,9 @@ public class Cache2kBuilder<K, V> {
   }
 
   /**
-   * Enables read through operation and sets a cache loader that provides the the
-   * cached data. By default read through is not enabled, which means
-   * the methods {@link Cache#get} and {@link Cache#peek} have identical behavior.
+   * Enables read through operation and sets a cache loader. Different loader types
+   * are available: {@link FunctionalCacheLoader}, {@link CacheLoader},
+   * {@link AdvancedCacheLoader}.
    *
    * @see CacheLoader for general discussion on cache loaders
    */
@@ -438,9 +438,9 @@ public class Cache2kBuilder<K, V> {
   }
 
   /**
-   * Enables read through operation and sets a cache loader that provides the the
-   * cached data. By default read through is not enabled, which means
-   * the methods {@link Cache#get} and {@link Cache#peek} have identical behavior.
+   * Enables read through operation and sets a cache loader. Different loader types
+   * are available: {@link FunctionalCacheLoader}, {@link CacheLoader},
+   * {@link AdvancedCacheLoader}.
    *
    * @see CacheLoader for general discussion on cache loaders
    */
@@ -450,9 +450,9 @@ public class Cache2kBuilder<K, V> {
   }
 
   /**
-   * Enables read through operation and sets a cache loader that provides the the
-   * cached data. By default read through is not enabled, which means
-   * the methods {@link Cache#get} and {@link Cache#peek} have identical behavior.
+   * Enables read through operation and sets a cache loader. Different loader types
+   * are available: {@link FunctionalCacheLoader}, {@link CacheLoader},
+   * {@link AdvancedCacheLoader}.
    *
    * @see CacheLoader for general discussion on cache loaders
    */
@@ -462,14 +462,36 @@ public class Cache2kBuilder<K, V> {
   }
 
   /**
-   * Enables read through operation and sets a cache loader that provides the the
-   * cached data. By default read through is not enabled, which means
-   * the methods {@link Cache#get} and {@link Cache#peek} have identical behavior.
+   * Enables read through operation and sets a cache loader
    *
    * @see CacheLoader for general discussion on cache loaders
    */
   @SuppressWarnings("unchecked")
   public final Cache2kBuilder<K, V> wrappingLoader(AdvancedCacheLoader<K, LoadDetail<V>> l) {
+    config().setAdvancedLoader((
+      CustomizationSupplier<AdvancedCacheLoader<K, V>>) (Object) wrapCustomizationInstance(l));
+    return this;
+  }
+
+  /**
+   * Enables read through operation and sets a cache loader
+   *
+   * @see CacheLoader for general discussion on cache loaders
+   */
+  @SuppressWarnings("unchecked")
+  public final Cache2kBuilder<K, V> wrappingLoader(FunctionalCacheLoader<K, LoadDetail<V>> l) {
+    config().setAdvancedLoader((
+      CustomizationSupplier<AdvancedCacheLoader<K, V>>) (Object) wrapCustomizationInstance(l));
+    return this;
+  }
+
+  /**
+   * Enables read through operation and sets a cache loader
+   *
+   * @see CacheLoader for general discussion on cache loaders
+   */
+  @SuppressWarnings("unchecked")
+  public final Cache2kBuilder<K, V> wrappingLoader(CacheLoader<K, LoadDetail<V>> l) {
     config().setAdvancedLoader((
       CustomizationSupplier<AdvancedCacheLoader<K, V>>) (Object) wrapCustomizationInstance(l));
     return this;
@@ -686,7 +708,8 @@ public class Cache2kBuilder<K, V> {
 
   /**
    * By default statistic gathering is enabled. Switching this to {@code true} will disable all statistics
-   * that have significant overhead. The cache will also no be accessible via JMX.
+   * that have significant overhead. Whether the values become accessible with JMX is controlled
+   * by {@link #enableJmx(boolean)}.
    */
   public final Cache2kBuilder<K,V> disableStatistics(boolean flag) {
     config().setDisableStatistics(flag);
