@@ -5,7 +5,7 @@ feature in a separate section to give an overview of the functionality.
 
 [CAUTION]
 ===============================
-You are reading a documentation for an unstable development version. The docuemntation is currently work in process
+You are reading a documentation for an unstable development version. The documentation is currently work in process
 and may get additional updates. Some parts of the documentation may refer to features in an unreleased or upcoming
 cache2k version.
 ===============================

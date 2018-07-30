@@ -167,7 +167,7 @@ method is to specify a class name of the customization that gets created when th
   </loader>
 ----
 
-I is also possible to implement an own `CustomizationSupplier` which can take additional parameters for additional
+It is also possible to implement an own `CustomizationSupplier` which can take additional parameters for additional
 configuration of the customization. In this case the `type` element is used to specify the supplier class.
 
 [source,XML]

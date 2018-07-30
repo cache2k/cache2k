@@ -1,0 +1,546 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema"
+           targetNamespace="https://cache2k.org/schema/v1.x"
+           elementFormDefault="qualified"
+           xmlns:t="https://cache2k.org/schema/v1.x"
+           xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
+
+  <!--
+
+    Hints for extension:
+
+    Only have one minimal sentence in an element description. If the configuration element is rather
+    special, it is better to leave out a description. Link to the appropriate method in the API documentation.
+
+
+   Don't use XSchema types. Specifying the correct types like xs:boolean is not a good idea since
+   there might be variables in the configuration like '${ENV.HOME}'. Instead we just use 'xs:string'.
+
+  -->
+
+  <xs:element name="cache2k">
+    <xs:annotation>
+      <xs:documentation>
+        Defines the configuration for cache2k. More information can be found at: <a href="https://cache2k.org/docs/latest/user-guide.html?utm_source=ide&amp;utm_medium=xsd#xml-configuration">XML Configuration - cache2k User Guide</a>
+      </xs:documentation>
+    </xs:annotation>
+    <xs:complexType>
+      <xs:all>
+        <xs:element name="version" type="xs:string"  default="1.0">
+          <xs:annotation>
+            <xs:documentation>
+              Version which controls how the configuration is interpreted. Needed for possible
+              future changes. Always '1.0' at the moment.
+            </xs:documentation>
+          </xs:annotation>
+        </xs:element>
+        <xs:element name="ignoreMissingCacheConfiguration" type="xs:string" default="false" minOccurs="0">
+          <xs:annotation>
+            <xs:documentation>
+              Don't stop operation if cache name is not mentioned in the cache configuration.
+              For a complete description, see <a href="https://cache2k.org/docs/latest/apidocs/cache2k-api/org/cache2k/configuration/Cache2kManagerConfiguration?utm_source=ide&amp;utm_medium=xsd#setIgnoreMissingCacheConfiguration-boolean-">API Documentation</a>
+            </xs:documentation>
+          </xs:annotation>
+        </xs:element>
+        <xs:element name ="defaultManagerName" type="xs:string" minOccurs="0" default="default">
+          <xs:annotation>
+            <xs:documentation>
+              default cache manager is used when no cache manager is explicitly defined.
+              Set another name for the default cache manager, default is "default".
+              For a complete description, see <a href="https://cache2k.org/docs/latest/apidocs/cache2k-api/org/cache2k/configuration/Cache2kManagerConfiguration?utm_source=ide&amp;utm_medium=xsd#setDefaultManagerName-String-">API Documentation</a>
+            </xs:documentation>
+          </xs:annotation>
+        </xs:element>
+        <xs:element name="ignoreAnonymousCache" type="xs:boolean" minOccurs="0" default="false">
+          <xs:annotation>
+            <xs:documentation>
+              If 'true', allows a cache without name.
+              For a complete description, see <a href="https://cache2k.org/docs/latest/apidocs/cache2k-api/org/cache2k/configuration/Cache2kManagerConfiguration?utm_source=ide&amp;utm_medium=xsd#setIgnoreAnonymousCache-String-">API Documentation</a>
+            </xs:documentation>
+          </xs:annotation>
+        </xs:element>
+        <xs:element name="skipCheckOnStartup" type="xs:boolean" minOccurs="0" default="false">
+          <xs:annotation>
+            <xs:documentation>
+              Do not check whether all cache configurations can be applied  properly at startup.
+              For a complete description, see <a href="https://cache2k.org/docs/latest/apidocs/cache2k-api/org/cache2k/configuration/Cache2kManagerConfiguration?utm_source=ide&amp;utm_medium=xsd#setSkipCheckOnStartup-String-">API Documentation</a>
+            </xs:documentation>
+          </xs:annotation>
+        </xs:element>
+
+        <xs:element  maxOccurs="1"  minOccurs="0" name="properties">
+          <xs:annotation>
+            <xs:documentation>
+              Contains user defined properties. Example:
+              <pre>
+  &lt;properties>
+    &lt;user>
+       &lt;smallCacheCapacity>12_000&lt;/smallCacheCapacity>
+       &lt;userHome>${ENV.HOME}&lt;/userHome>
+    &lt;user>
+  &lt;/properties>
+              </pre>
+              More information can be found at: <a href="https://cache2k.org/docs/latest/user-guide.html?utm_source=ide&amp;utm_medium=xsd#xml-configuration">XML Configuration - cache2k User Guide</a>
+            </xs:documentation>
+          </xs:annotation>
+          <xs:complexType>
+            <xs:sequence>
+              <xs:element name="user" maxOccurs="1" minOccurs="1">
+                <xs:complexType>
+                  <xs:sequence>
+                    <xs:any processContents="skip" maxOccurs="unbounded"/>
+                  </xs:sequence>
+                </xs:complexType>
+              </xs:element>
+            </xs:sequence>
+          </xs:complexType>
+        </xs:element>
+
+        <xs:element name ="defaults" minOccurs="0">
+          <xs:annotation>
+            <xs:documentation>
+              Section that defines default values for all caches.
+            </xs:documentation>
+          </xs:annotation>
+          <xs:complexType>
+            <xs:all>
+              <xs:element name="cache" type="t:cacheWithoutName">
+              </xs:element>
+            </xs:all>
+          </xs:complexType>
+        </xs:element>
+
+        <xs:element name ="templates" minOccurs="0">
+          <xs:annotation>
+            <xs:documentation>
+              Section that defines templates for caches.
+            </xs:documentation>
+          </xs:annotation>
+          <xs:complexType>
+            <xs:all>
+              <xs:element name="cache" type="t:template">
+              </xs:element>
+            </xs:all>
+          </xs:complexType>
+        </xs:element>
+
+        <xs:element name ="caches" minOccurs="0">
+          <xs:annotation>
+            <xs:documentation>
+              Section that defines the configuraton values for caches.
+            </xs:documentation>
+          </xs:annotation>
+          <xs:complexType>
+            <xs:all>
+              <xs:element name="cache" type="t:cacheWithNameAndInclude"/>
+            </xs:all>
+          </xs:complexType>
+        </xs:element>
+
+      </xs:all>
+
+    </xs:complexType>
+
+  </xs:element>
+
+  <xs:complexType name="customization">
+    <xs:all>
+      <xs:element name="bean" minOccurs="0">
+        <xs:complexType>
+          <xs:sequence>
+            <xs:element name="type" type="xs:string"/>
+            <xs:any processContents="skip" maxOccurs="unbounded"/>
+          </xs:sequence>
+        </xs:complexType>
+      </xs:element>
+      <xs:element name="byClassName" minOccurs="0">
+        <xs:complexType>
+          <xs:sequence>
+            <xs:element name="className" type="xs:string"/>
+          </xs:sequence>
+        </xs:complexType>
+      </xs:element>
+    </xs:all>
+  </xs:complexType>
+
+  <xs:complexType name="customizationCollection">
+    <xs:annotation>
+      <xs:documentation>
+       Collection of customizations. The order of inserting is preserved. Duplicate entries will be rejected.
+      </xs:documentation>
+    </xs:annotation>
+    <xs:sequence>
+      <xs:choice maxOccurs="unbounded">
+        <xs:element name="bean">
+          <xs:complexType>
+            <xs:sequence>
+              <xs:element name="type" type="xs:string"/>
+              <xs:any processContents="skip" maxOccurs="unbounded"/>
+            </xs:sequence>
+          </xs:complexType>
+        </xs:element>
+        <xs:element name="byClassName">
+          <xs:complexType>
+            <xs:sequence>
+              <xs:element name="className" type="xs:string"/>
+            </xs:sequence>
+          </xs:complexType>
+        </xs:element>
+      </xs:choice>
+    </xs:sequence>
+  </xs:complexType>
+
+  <xs:complexType name="sectionCollection">
+    <xs:annotation>
+      <xs:documentation>
+        Additional configuration for cache modules and customizations.
+      </xs:documentation>
+    </xs:annotation>
+    <xs:sequence>
+      <xs:choice maxOccurs="unbounded">
+        <xs:element name="section">
+          <xs:complexType>
+            <xs:sequence>
+              <xs:element name="type" type="xs:string"/>
+              <xs:any processContents="skip" maxOccurs="unbounded" minOccurs="0"/>
+            </xs:sequence>
+          </xs:complexType>
+        </xs:element>
+        <!-- TODO: actually jcache may appear only once. -->
+        <xs:element name="jcache" type="t:sectionJCache"/>
+      </xs:choice>
+    </xs:sequence>
+  </xs:complexType>
+
+  <xs:complexType name="template">
+    <xs:complexContent>
+      <xs:extension base="t:cacheWithoutName">
+        <xs:all>
+          <xs:element name="name" type="xs:string">
+            <xs:annotation>
+              <xs:documentation>
+                Name of the template.
+                For a complete description, see <a href="https://cache2k.org/docs/latest/apidocs/cache2k-api/org/cache2k/Cache2kBuilder.html?utm_source=ide&amp;utm_medium=xsd#name-String-">Cache2kBuilder API Documentation</a>
+              </xs:documentation>
+            </xs:annotation>
+          </xs:element>
+        </xs:all>
+      </xs:extension>
+    </xs:complexContent>
+  </xs:complexType>
+
+  <xs:complexType name="cacheWithNameAndInclude">
+    <xs:complexContent>
+      <xs:extension base="t:cacheWithoutName">
+        <xs:all>
+          <xs:element name="name" type="xs:string">
+            <xs:annotation>
+              <xs:documentation>
+                Name of the cache.
+                For a complete description, see <a href="https://cache2k.org/docs/latest/apidocs/cache2k-api/org/cache2k/Cache2kBuilder.html?utm_source=ide&amp;utm_medium=xsd#name-String-">Cache2kBuilder API Documentation</a>
+              </xs:documentation>
+            </xs:annotation>
+          </xs:element>
+          <xs:element name="include" type="xs:string" minOccurs="0">
+            <xs:annotation>
+              <xs:documentation>
+                Use configuration from the named template.
+              </xs:documentation>
+            </xs:annotation>
+          </xs:element>
+        </xs:all>
+      </xs:extension>
+    </xs:complexContent>
+  </xs:complexType>
+
+  <xs:complexType name="cacheWithoutName">
+    <xs:all minOccurs="0">
+      <xs:element name="entryCapacity" type="xs:string" minOccurs="0" default="2000">
+        <xs:annotation>
+          <xs:documentation>
+            The maximum number of entries hold by the cache.
+            The suffixes k, M, G may be used. Examples: 100, 1M, 200k.
+            For a complete description, see <a href="https://cache2k.org/docs/latest/apidocs/cache2k-api/org/cache2k/Cache2kBuilder.html?utm_source=ide&amp;utm_medium=xsd#entryCapacity-long-">Cache2kBuilder API Documentation</a>
+          </xs:documentation>
+        </xs:annotation>
+      </xs:element>
+      <xs:element name="expireAfterWrite" type="xs:string" minOccurs="0">
+        <xs:annotation>
+          <xs:documentation>
+            Duration after insert or update a cache entry expires.
+            Value is in milliseconds. The suffixes s, m, h, d may be used. Example: '27s' for 27 seconds.
+            For a complete description, see <a href="https://cache2k.org/docs/latest/apidocs/cache2k-api/org/cache2k/Cache2kBuilder.html?utm_source=ide&amp;utm_medium=xsd#expireAfterWrite-long-java.util.concurrent.TimeUnit-">Cache2kBuilder API Documentation</a>
+          </xs:documentation>
+        </xs:annotation>
+      </xs:element>
+      <xs:element name="resilienceDuration" type="xs:string" minOccurs="0">
+        <xs:annotation>
+          <xs:documentation>
+            Time span the cache will suppress loader exceptions if a value is available from a previous load.
+            Value is in milliseconds. The suffixes s, m, h, d may be used. Example: '27s' for 27 seconds.
+            For a complete description, see <a href="https://cache2k.org/docs/latest/apidocs/cache2k-api/org/cache2k/Cache2kBuilder.html?utm_source=ide&amp;utm_medium=xsd#resilienceDuration-long-java.util.concurrent.TimeUnit-">Cache2kBuilder API Documentation</a>
+          </xs:documentation>
+        </xs:annotation>
+      </xs:element>
+      <xs:element name="keyType" type="xs:string" minOccurs="0" >
+        <xs:annotation>
+          <xs:documentation>
+            Type or class used for the cache key.
+            For a complete description, see <a href="https://cache2k.org/docs/latest/apidocs/cache2k-api/org/cache2k/Cache2kBuilder.html?utm_source=ide&amp;utm_medium=xsd#keyType-org.cache2k.configuration.CacheType-">Cache2kBuilder API Documentation</a>
+          </xs:documentation>
+        </xs:annotation>
+      </xs:element>
+      <xs:element name="valueType" type="xs:string" minOccurs="0">
+        <xs:annotation>
+          <xs:documentation>
+            Type or class used for the cached value.
+            For a complete description, see <a href="https://cache2k.org/docs/latest/apidocs/cache2k-api/org/cache2k/Cache2kBuilder.html?utm_source=ide&amp;utm_medium=xsd#valueType-org.cache2k.configuration.CacheType-">Cache2kBuilder API Documentation</a>
+          </xs:documentation>
+        </xs:annotation>
+      </xs:element>
+      <xs:element name="storeByReference" type="xs:string" minOccurs="0">
+        <xs:annotation>
+          <xs:documentation>
+            Ensure that all cache values is stored via direct object references.
+            For a complete description, see <a href="https://cache2k.org/docs/latest/apidocs/cache2k-api/org/cache2k/Cache2kBuilder.html?utm_source=ide&amp;utm_medium=xsd#storeByReference-boolean-">Cache2kBuilder API Documentation</a>
+          </xs:documentation>
+        </xs:annotation>
+      </xs:element>
+      <xs:element name="strictEviction" type="xs:string" minOccurs="0" default="false">
+        <xs:annotation>
+          <xs:documentation>
+            Strictly apply capacity limit.
+            For a complete description, see <a href="https://cache2k.org/docs/latest/apidocs/cache2k-api/org/cache2k/Cache2kBuilder.html?utm_source=ide&amp;utm_medium=xsd#strictEviction-boolean-">Cache2kBuilder API Documentation</a>
+          </xs:documentation>
+        </xs:annotation>
+      </xs:element>
+      <xs:element name="refreshAhead" type="xs:string" minOccurs="0" default="false">
+        <xs:annotation>
+          <xs:documentation>
+            Enable refresh ahead. This refreshes expired values in the background.
+            For a complete description, see <a href="https://cache2k.org/docs/latest/apidocs/cache2k-api/org/cache2k/Cache2kBuilder.html?utm_source=ide&amp;utm_medium=xsd#refreshAhead-boolean-">Cache2kBuilder API Documentation</a>
+          </xs:documentation>
+        </xs:annotation>
+      </xs:element>
+      <xs:element name="retryInterval" type="xs:string" minOccurs="0">
+        <xs:annotation>
+          <xs:documentation>
+            For a complete description, see <a href="https://cache2k.org/docs/latest/apidocs/cache2k-api/org/cache2k/Cache2kBuilder.html?utm_source=ide&amp;utm_medium=xsd#retryInterval-long-java.util.concurrent.TimeUnit-">Cache2kBuilder API Documentation</a>
+          </xs:documentation>
+        </xs:annotation>
+      </xs:element>
+      <xs:element name="maxRetryInterval" type="xs:string" minOccurs="0" default="-1">
+        <xs:annotation>
+          <xs:documentation>
+            For a complete description, see <a href="https://cache2k.org/docs/latest/apidocs/cache2k-api/org/cache2k/Cache2kBuilder.html?utm_source=ide&amp;utm_medium=xsd#maxRetryInterval-long-java.util.concurrent.TimeUnit-">Cache2kBuilder API Documentation</a>
+          </xs:documentation>
+        </xs:annotation>
+      </xs:element>
+      <xs:element name="keepDataAfterExpired" type="xs:string" minOccurs="0" default="false">
+        <xs:annotation>
+          <xs:documentation>
+            Expired data is kept in the cache until the entry is evicted.
+            For a complete description, see <a href="https://cache2k.org/docs/latest/apidocs/cache2k-api/org/cache2k/Cache2kBuilder.html?utm_source=ide&amp;utm_medium=xsd#keepAfterExpired-boolean-">Cache2kBuilder API Documentation</a>
+          </xs:documentation>
+        </xs:annotation>
+      </xs:element>
+      <xs:element name="sharpExpiry" type="xs:string" minOccurs="0" default="false">
+        <xs:annotation>
+          <xs:documentation>
+            Expire a cached value with millisecond precision.
+            For a complete description, see <a href="https://cache2k.org/docs/latest/apidocs/cache2k-api/org/cache2k/Cache2kBuilder.html?utm_source=ide&amp;utm_medium=xsd#sharpExpiry-boolean-">Cache2kBuilder API Documentation</a>
+          </xs:documentation>
+        </xs:annotation>
+      </xs:element>
+      <xs:element name="suppressExceptions" type="xs:string" minOccurs="0" default="true">
+        <xs:annotation>
+          <xs:documentation>
+            Enables resilience. This is enabled (true) by default.
+            For a complete description, see <a href="https://cache2k.org/docs/latest/apidocs/cache2k-api/org/cache2k/Cache2kBuilder.html?utm_source=ide&amp;utm_medium=xsd#suppressExceptions-boolean-">Cache2kBuilder API Documentation</a>
+          </xs:documentation>
+        </xs:annotation>
+      </xs:element>
+      <xs:element name="loaderThreadCount" type="xs:string" minOccurs="0">
+        <xs:annotation>
+          <xs:documentation>
+            Thread count in loader thread pool.
+            For a complete description, see <a href="https://cache2k.org/docs/latest/apidocs/cache2k-api/org/cache2k/Cache2kBuilder.html?utm_source=ide&amp;utm_medium=xsd#loaderThreadCount-int-">Cache2kBuilder API Documentation</a>
+          </xs:documentation>
+        </xs:annotation>
+      </xs:element>
+      <xs:element name="permitNullValues" type="xs:string" minOccurs="0" default="false">
+        <xs:annotation>
+          <xs:documentation>
+            Allow null values.
+            For a complete description, see <a href="https://cache2k.org/docs/latest/apidocs/cache2k-api/org/cache2k/Cache2kBuilder.html?utm_source=ide&amp;utm_medium=xsd#permitNullValues-boolean-">Cache2kBuilder API Documentation</a>
+          </xs:documentation>
+        </xs:annotation>
+      </xs:element>
+      <xs:element name="disableStatistics" type="xs:boolean" minOccurs="0" default="false">
+        <xs:annotation>
+          <xs:documentation>
+            Switch off cache statistics. Enabled by default.
+            For a complete description, see <a href="https://cache2k.org/docs/latest/apidocs/cache2k-api/org/cache2k/Cache2kBuilder.html?utm_source=ide&amp;utm_medium=xsd#disableStatistics-boolean-">Cache2kBuilder API Documentation</a>
+          </xs:documentation>
+        </xs:annotation>
+      </xs:element>
+      <xs:element name="recordRefreshTime" type="xs:string" minOccurs="0" default="false">
+        <xs:annotation>
+          <xs:documentation>
+            Records refresh time in the entry.
+            For a complete description, see <a href="https://cache2k.org/docs/latest/apidocs/cache2k-api/org/cache2k/Cache2kBuilder.html?utm_source=ide&amp;utm_medium=xsd#recordRefreshTime-boolean-">Cache2kBuilder API Documentation</a>
+          </xs:documentation>
+        </xs:annotation>
+      </xs:element>
+      <xs:element name="boostConcurrency" type="xs:string" minOccurs="0" default="false">
+        <xs:annotation>
+          <xs:documentation>
+            Enable if lots of concurrent cache mutations (insert and remove) are expected.
+            For a complete description, see <a href="https://cache2k.org/docs/latest/apidocs/cache2k-api/org/cache2k/Cache2kBuilder.html?utm_source=ide&amp;utm_medium=xsd#boostConcurrency-boolean-">Cache2kBuilder API Documentation</a>
+          </xs:documentation>
+        </xs:annotation>
+      </xs:element>
+      <xs:element name="eternal" type="xs:string" minOccurs="0">
+        <xs:annotation>
+          <xs:documentation>
+            Entries do not expire.
+            For a complete description, see <a href="https://cache2k.org/docs/latest/apidocs/cache2k-api/org/cache2k/Cache2kBuilder.html?utm_source=ide&amp;utm_medium=xsd#eternal-boolean-">Cache2kBuilder API Documentation</a>
+          </xs:documentation>
+        </xs:annotation>
+      </xs:element>
+      <!-- single customizations -->
+      <xs:element name="loader" type="t:customization" minOccurs="0">
+        <xs:annotation>
+          <xs:documentation>
+            Enables read through operation and sets a cache loader.
+            For a complete description, see <a href="https://cache2k.org/docs/latest/apidocs/cache2k-api/org/cache2k/Cache2kBuilder.html?utm_source=ide&amp;utm_medium=xsd#loader-org.cache2k.integration.CacheLoader-">Cache2kBuilder API Documentation</a>
+          </xs:documentation>
+        </xs:annotation>
+      </xs:element>
+      <xs:element name="wrappingLoader" type="t:customization" minOccurs="0">
+        <xs:annotation>
+          <xs:documentation>
+            Enables read through operation and sets a cache loader.
+            For a complete description, see <a href="https://cache2k.org/docs/latest/apidocs/cache2k-api/org/cache2k/Cache2kBuilder.html?utm_source=ide&amp;utm_medium=xsd#wrappingLoader-org.cache2k.integration.CacheLoader-">Cache2kBuilder API Documentation</a>
+          </xs:documentation>
+        </xs:annotation>
+      </xs:element>
+      <xs:element name="writer" type="t:customization" minOccurs="0">
+        <xs:annotation>
+          <xs:documentation>
+            Enables write through operation and sets a cache writer.
+            For a complete description, see <a href="https://cache2k.org/docs/latest/apidocs/cache2k-api/org/cache2k/Cache2kBuilder.html?utm_source=ide&amp;utm_medium=xsd#writer-org.cache2k.integration.CacheWriter-">Cache2kBuilder API Documentation</a>
+          </xs:documentation>
+        </xs:annotation>
+      </xs:element>
+      <xs:element name="expiryPolicy" type="t:customization" minOccurs="0">
+        <xs:annotation>
+          <xs:documentation>
+            Set expiry policy to use.
+            For a complete description, see <a href="https://cache2k.org/docs/latest/apidocs/cache2k-api/org/cache2k/Cache2kBuilder.html?utm_source=ide&amp;utm_medium=xsd#expiryPolicy-org.cache2k.integration.ExpiryPolicy-">Cache2kBuilder API Documentation</a>
+          </xs:documentation>
+        </xs:annotation>
+      </xs:element>
+      <xs:element name="resiliencePolicy" type="t:customization" minOccurs="0">
+        <xs:annotation>
+          <xs:documentation>
+            Sets a custom resilience policy.
+            For a complete description, see <a href="https://cache2k.org/docs/latest/apidocs/cache2k-api/org/cache2k/Cache2kBuilder.html?utm_source=ide&amp;utm_medium=xsd#resiliencePolicy-org.cache2k.integration.ResiliencePolicy-">Cache2kBuilder API Documentation</a>
+          </xs:documentation>
+        </xs:annotation>
+      </xs:element>
+      <xs:element name="exceptionPropagator" type="t:customization" minOccurs="0">
+        <xs:annotation>
+          <xs:documentation>
+            Sets a custom exception propagator.
+            For a complete description, see <a href="https://cache2k.org/docs/latest/apidocs/cache2k-api/org/cache2k/Cache2kBuilder.html?utm_source=ide&amp;utm_medium=xsd#exceptionPropagator-org.cache2k.integration.ExceptionPropagator-">Cache2kBuilder API Documentation</a>
+          </xs:documentation>
+        </xs:annotation>
+      </xs:element>
+      <xs:element name="loaderExecutor" type="t:customization" minOccurs="0">
+        <xs:annotation>
+          <xs:documentation>
+            Sets a custom loader executor.
+            For a complete description, see <a href="https://cache2k.org/docs/latest/apidocs/cache2k-api/org/cache2k/Cache2kBuilder.html?utm_source=ide&amp;utm_medium=xsd#loaderExecutor-java.util.concurrent.Executor-">Cache2kBuilder API Documentation</a>
+          </xs:documentation>
+        </xs:annotation>
+      </xs:element>
+      <xs:element name="asyncListenerExecutor" type="t:customization" minOccurs="0">
+        <xs:annotation>
+          <xs:documentation>
+            Sets a custom listener executor.
+            For a complete description, see <a href="https://cache2k.org/docs/latest/apidocs/cache2k-api/org/cache2k/Cache2kBuilder.html?utm_source=ide&amp;utm_medium=xsd#asyncListenerExecutor-java.util.concurrent.Executor-">Cache2kBuilder API Documentation</a>
+          </xs:documentation>
+        </xs:annotation>
+      </xs:element>
+      <xs:element name="listeners" type="t:customizationCollection" minOccurs="0">
+        <xs:annotation>
+          <xs:documentation>
+            Listeners for cached entries.
+            For a complete description, see <a href="https://cache2k.org/docs/latest/apidocs/cache2k-api/org/cache2k/Cache2kBuilder.html?utm_source=ide&amp;utm_medium=xsd#addListener-org.cache2k.event.CacheEntryOperationListener-">Cache2kBuilder API Documentation</a>
+          </xs:documentation>
+        </xs:annotation>
+      </xs:element>
+      <xs:element name="asyncListeners" type="t:customizationCollection" minOccurs="0">
+        <xs:annotation>
+          <xs:documentation>
+            Listeners for cached entries executed asynchronously.
+            For a complete description, see <a href="https://cache2k.org/docs/latest/apidocs/cache2k-api/org/cache2k/Cache2kBuilder.html?utm_source=ide&amp;utm_medium=xsd#addListener-org.cache2k.event.CacheEntryOperationListener-">Cache2kBuilder API Documentation</a>
+          </xs:documentation>
+        </xs:annotation>
+      </xs:element>
+      <xs:element name="closedListeners" type="t:customizationCollection" minOccurs="0">
+        <xs:annotation>
+          <xs:documentation>
+            Listener for cache closing.
+            For a complete description, see <a href="https://cache2k.org/docs/latest/apidocs/cache2k-api/org/cache2k/Cache2kBuilder.html?utm_source=ide&amp;utm_medium=xsd#addCacheClosedListener-org.cache2k.event.CacheClosedListener-org.cache2k.event.CacheClosedListener">Cache2kBuilder API Documentation</a>
+          </xs:documentation>
+        </xs:annotation>
+      </xs:element>
+      <xs:element name="sections" type="t:sectionCollection" minOccurs="0">
+        <xs:annotation>
+          <xs:documentation>
+            Additional configuration sections for cache modules and customizations.
+          </xs:documentation>
+        </xs:annotation>
+      </xs:element>
+
+    </xs:all>
+  </xs:complexType>
+
+  <xs:complexType name="sectionJCache">
+    <xs:all>
+      <xs:element name="copyAlwaysIfRequested" type="xs:string" default="false" minOccurs="0">
+        <xs:annotation>
+          <xs:documentation>
+            Set to true, if the JCache Configuration.isStoreByValue() should be honored.
+            For a complete description, see <a href="https://cache2k.org/docs/latest/apidocs/cache2k-api/org/cache2k/jcache/JCacheConfiguration.Builder.html?utm_source=ide&amp;utm_medium=xsd#copyAlwaysIfRequested-boolean-">API Documentation</a>
+          </xs:documentation>
+        </xs:annotation>
+      </xs:element>
+      <xs:element name="supportOnlineListenerAttachment" type="xs:string" default="false" minOccurs="0">
+        <xs:annotation>
+          <xs:documentation>
+            Set to true, if online register and deregister of event listeners needs to be supported.
+            For a complete description, see <a href="https://cache2k.org/docs/latest/apidocs/cache2k-api/org/cache2k/jcache/JCacheConfiguration.Builder.html?utm_source=ide&amp;utm_medium=xsd#supportOnlineListenerAttachment-boolean-">API Documentation</a>
+          </xs:documentation>
+        </xs:annotation>
+      </xs:element>
+      <xs:element name="enableManagement" type="xs:string" default="false" minOccurs="0">
+        <xs:annotation>
+          <xs:documentation>
+            For a complete description, see <a href="https://cache2k.org/docs/latest/apidocs/cache2k-api/org/cache2k/jcache/JCacheConfiguration.Builder.html?utm_source=ide&amp;utm_medium=xsd#enableManagement-boolean-">API Documentation</a>
+          </xs:documentation>
+        </xs:annotation>
+      </xs:element>
+      <xs:element name="enableStatistics" type="xs:string" default="false" minOccurs="0">
+        <xs:annotation>
+          <xs:documentation>
+            For a complete description, see <a href="https://cache2k.org/docs/latest/apidocs/cache2k-api/org/cache2k/jcache/JCacheConfiguration.Builder.html?utm_source=ide&amp;utm_medium=xsd#enableStatistics-boolean-">API Documentation</a>
+          </xs:documentation>
+        </xs:annotation>
+      </xs:element>
+    </xs:all>
+  </xs:complexType>
+
+</xs:schema>

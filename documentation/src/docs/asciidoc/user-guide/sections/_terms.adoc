@@ -2,6 +2,21 @@
 
 This is a collection of terms related to caching.
 
+=== Eviction
+
+Throughout the documentation the term eviction means that the cache is removing the entry because
+resource constraints are hit. There is not enough space for all entries any more.
+
+
+
+=== Expiry
+
+
+=== Expire after write / Time To Live
+
+
+=== Expire after access / Time To Idle
+
 
 Draft, not included in the guide yet!
 
@@ -15,3 +30,23 @@ Draft, not included in the guide yet!
 
 === Lock Free / Wait Free
 
+
+- eviction
+- expiry
+- removal
+- invalidation
+- to refresh: Typically used in context of refresh ahead and read through.
+  A cached value is automatically loaded again because it is or would expire.
+- reload: In a read through configuration a cached loaded again
+- load:
+
+- refresh ahead
+
+- cache implementation
+- cache application
+- cache through
+- read through
+- write through
+- system of record
+
+- storage, persistence, off-heap

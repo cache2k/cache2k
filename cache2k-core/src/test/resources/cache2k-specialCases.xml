@@ -42,8 +42,7 @@
       <name>illegalBoolean</name>
       <eternal>foo</eternal>
     </cache>
-    <cache>
-      <name>duplicateListener</name>
+    <cache><name>duplicateListener</name>
       <listeners>
         <listener>
           <type>org.cache2k.configuration.CustomizationSupplierByClassName</type>

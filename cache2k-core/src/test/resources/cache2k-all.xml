@@ -1,0 +1,87 @@
+<cache2k xmlns:xsi='http://www.w3.org/2001/XMLSchema-instance'
+         xmlns='https://cache2k.org/schema/v1.x'
+         xsi:schemaLocation="https://cache2k.org/schema/v1.x ../../../../cache2k-schemas/src/main/resources/org/cache2k/schema/cache2k-core.xsd">
+
+  <!--
+       configuration that should contains almost every configuration value available to check
+       whether the XSD covers everything correctly.
+
+       TODO: run through an XML validator
+       TODO: correct dummy configuration values, so its actually applicable.
+  -->
+
+  <version>1.0</version>
+
+  <defaultManagerName>other</defaultManagerName>
+  <ignoreMissingCacheConfiguration>true</ignoreMissingCacheConfiguration>
+  <skipCheckOnStartup>true</skipCheckOnStartup>
+  
+  <properties>
+    <user>
+      <test>some stuff</test>
+      <var>123</var>
+    </user>
+  </properties>
+
+  <defaults>
+    <cache>
+      <entryCapacity>12</entryCapacity>
+      <expireAfterWrite>12s</expireAfterWrite>
+      <keyType>Integer</keyType>
+      <valueType>String</valueType>
+      <resilienceDuration>123s</resilienceDuration>
+      <storeByReference>false</storeByReference>
+      <permitNullValues>false</permitNullValues>
+      <disableStatistics>false</disableStatistics>
+      <recordRefreshTime>true</recordRefreshTime>
+      <boostConcurrency>true</boostConcurrency>
+      <eternal>true</eternal>
+      <loader>
+        <bean>
+          <type>xyz</type>
+          <property>124</property>
+        </bean>
+      </loader>
+      <listeners>
+        <byClassName>
+          <className>hello.com</className>
+        </byClassName>
+        <bean>
+          <type>bla.com</type>
+          <supplierPropery>hello</supplierPropery>
+        </bean>
+        <bean>
+          <type>bla.com</type>
+          <supplierPropery>hello</supplierPropery>
+        </bean>
+      </listeners>
+      <sections>
+        <jcache>
+          <copyAlwaysIfRequested>true</copyAlwaysIfRequested>
+          <enableManagement>true</enableManagement>
+          <supportOnlineListenerAttachment>true</supportOnlineListenerAttachment>
+          <enableStatistics>true</enableStatistics>
+        </jcache>
+        <section>
+          <type>bla.Eviction</type>
+          <restrict>123</restrict>
+        </section>
+      </sections>
+    </cache>
+  </defaults>
+
+  <templates>
+    <cache>
+      <name>hello</name>
+      <entryCapacity>1234</entryCapacity>
+    </cache>
+  </templates>
+
+  <caches>
+    <cache>
+      <name>test</name>
+      <include>hello</include>
+    </cache>
+  </caches>
+
+</cache2k>
