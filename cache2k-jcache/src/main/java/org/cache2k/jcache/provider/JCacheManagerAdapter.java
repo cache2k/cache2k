@@ -126,10 +126,10 @@ public class JCacheManagerAdapter implements CacheManager {
       _cloneC2k2jCache.put(_cache2k, _cache);
       c2k2jCache = _cloneC2k2jCache;
       name2adapter.put(_cache.getName(), _cache);
-      if (_builder.getCompleteConfiguration().isStatisticsEnabled()) {
+      if (_builder.isStatisticsEnabled()) {
         enableStatistics(_cacheName, true);
       }
-      if (_builder.getCompleteConfiguration().isManagementEnabled()) {
+      if (_builder.isManagementEnabled()) {
         enableManagement(_cacheName, true);
       }
       return _cache;

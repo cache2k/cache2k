@@ -136,8 +136,12 @@ public class JCacheBuilder<K,V> {
     return createdCache;
   }
 
-  public CompleteConfiguration<K,V> getCompleteConfiguration() {
-    return config;
+  public boolean isStatisticsEnabled() {
+    return config.isStatisticsEnabled() || extraConfiguration.isEnableStatistics();
+  }
+
+  public boolean isManagementEnabled() {
+    return config.isManagementEnabled() || extraConfiguration.isEnableManagement();
   }
 
   JCacheConfiguration getExtraConfiguration() {
