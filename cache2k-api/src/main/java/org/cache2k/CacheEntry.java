@@ -76,9 +76,11 @@ public interface CacheEntry<K, V> {
    * for version 1.2. To access the last modification time it is possible to
    * use {@link MutableCacheEntry#getRefreshTime()}
    *
-   *  More rationale see
+   * <p>More rationale see
    *  <a href="https://github.com/cache2k/cache2k/issues/84">GH#84</a>.
    * The method is planed to be removed for version 2.0.
+   *
+   * <p>{@link AbstractCacheEntry} can be used for implementations of this class to avoid implementing this method.
    *
    * @throws UnsupportedOperationException always thrown
    * @deprecated permanently not supported any more, you may use {@link MutableCacheEntry#getRefreshTime()}

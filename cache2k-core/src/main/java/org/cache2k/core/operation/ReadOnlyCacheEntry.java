@@ -20,6 +20,7 @@ package org.cache2k.core.operation;
  * #L%
  */
 
+import org.cache2k.AbstractCacheEntry;
 import org.cache2k.CacheEntry;
 import org.cache2k.core.Entry;
 import org.cache2k.core.ExceptionWrapper;
@@ -29,7 +30,7 @@ import org.cache2k.core.ExceptionWrapper;
  *
  * @author Jens Wilke
  */
-public class ReadOnlyCacheEntry<K, V> implements ResultEntry<K, V> {
+public class ReadOnlyCacheEntry<K, V> extends AbstractCacheEntry<K,V> implements ResultEntry<K, V> {
 
   private K key;
   private V valueOrException;
@@ -87,12 +88,6 @@ public class ReadOnlyCacheEntry<K, V> implements ResultEntry<K, V> {
   @Override
   public V getValueOrException() {
     return valueOrException;
-  }
-
-  @SuppressWarnings("deprecation")
-  @Override @Deprecated
-  public long getLastModification() {
-    throw new UnsupportedOperationException();
   }
 
 }

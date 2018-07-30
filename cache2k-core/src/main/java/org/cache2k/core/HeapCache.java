@@ -601,15 +601,10 @@ public class HeapCache<K, V> extends BaseCache<K, V> {
     };
   }
 
-  static abstract class BaseCacheEntry<K,V> implements CacheEntry<K,V> {
+  static abstract class BaseCacheEntry<K,V> extends AbstractCacheEntry<K,V> {
     @Override
     public Throwable getException() {
       return null;
-    }
-    @SuppressWarnings("deprecation")
-    @Override
-    public long getLastModification() {
-      throw new UnsupportedOperationException("modification timestamp no longer available in CacheEntry");
     }
     @Override
     public String toString() {
