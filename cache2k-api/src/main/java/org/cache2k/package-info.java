@@ -7,6 +7,8 @@
  * {@link org.cache2k.expiry.ExpiryPolicy} or {@link org.cache2k.integration.ResiliencePolicy}.
  *
  * @author Jens Wilke
+ * @see <a href="https://cache2k.org>cache2k homepage</a>
+ * @see <a href="https://cache2k.org/docs/latest/user-guide.html">cache2k User Guide</a>
  */
 package org.cache2k;
 
