@@ -46,6 +46,7 @@
   <modules>
     <module>cache2k-base-bom</module>
     <module>cache2k-api</module>
+    <module>cache2k-all</module>
     <module>cache2k-core</module>
     <module>cache2k-osgi-all</module>
     <module>cache2k-schemas</module>
