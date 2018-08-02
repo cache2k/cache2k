@@ -20,6 +20,7 @@ package org.cache2k.configuration;
  * #L%
  */
 
+import java.util.AbstractCollection;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Iterator;
@@ -33,7 +34,9 @@ import java.util.Iterator;
  *
  * @author Jens Wilke
  */
-public class DefaultCustomizationCollection<T> implements CustomizationCollection<T> {
+public class DefaultCustomizationCollection<T>
+  extends AbstractCollection<CustomizationSupplier<T>>
+  implements CustomizationCollection<T> {
 
   private Collection<CustomizationSupplier<T>> list = new ArrayList<CustomizationSupplier<T>>();
 
@@ -43,28 +46,8 @@ public class DefaultCustomizationCollection<T> implements CustomizationCollectio
   }
 
   @Override
-  public boolean isEmpty() {
-    return list.isEmpty();
-  }
-
-  @Override
-  public boolean contains(final Object o) {
-    return list.contains(o);
-  }
-
-  @Override
   public Iterator<CustomizationSupplier<T>> iterator() {
     return list.iterator();
-  }
-
-  @Override
-  public Object[] toArray() {
-    return list.toArray();
-  }
-
-  @Override
-  public <T> T[] toArray(final T[] a) {
-    return list.toArray(a);
   }
 
   /**
@@ -79,39 +62,6 @@ public class DefaultCustomizationCollection<T> implements CustomizationCollectio
       throw new IllegalArgumentException("duplicate entry");
     }
     return list.add(entry);
-  }
-
-  @Override
-  public boolean remove(final Object o) {
-    return list.remove(o);
-  }
-
-  @Override
-  public boolean containsAll(final Collection<?> c) {
-    return list.containsAll(c);
-  }
-
-  @Override
-  public boolean addAll(final Collection<? extends CustomizationSupplier<T>> c) {
-    for (CustomizationSupplier<T> e : c) {
-      add(e);
-    }
-    return true;
-  }
-
-  @Override
-  public boolean removeAll(final Collection<?> c) {
-    return list.removeAll(c);
-  }
-
-  @Override
-  public boolean retainAll(final Collection<?> c) {
-    return list.retainAll(c);
-  }
-
-  @Override
-  public void clear() {
-    list.clear();
   }
 
 }

@@ -21,9 +21,10 @@ package org.cache2k.configuration;
  */
 
 import java.io.Serializable;
+import java.util.AbstractCollection;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Iterator;
-import java.util.List;
 
 /**
  * Container for configuration objects. The container preserves the order of the sections
@@ -32,22 +33,24 @@ import java.util.List;
  * @author Jens Wilke
  * @see ConfigurationWithSections
  */
-public class ConfigurationSectionContainer implements Iterable<ConfigurationSection>, Serializable {
+public class ConfigurationSectionContainer extends AbstractCollection<ConfigurationSection>
+  implements Collection<ConfigurationSection>, Serializable {
 
-  private List<ConfigurationSection> sections = new ArrayList<ConfigurationSection>();
+  private Collection<ConfigurationSection> sections = new ArrayList<ConfigurationSection>();
 
   /**
    * Add a new configuration section to the container.
    *
    * @throws IllegalArgumentException if same type is already present and a singleton
+   * @return always {@code true}
    */
-  public void add(ConfigurationSection section) {
+  public boolean add(ConfigurationSection section) {
     if (section instanceof SingletonConfigurationSection) {
       if (getSection(section.getClass()) !=  null) {
         throw new IllegalArgumentException("Section of same type already inserted: " + section.getClass().getName());
       }
     }
-    sections.add(section);
+    return sections.add(section);
   }
 
   /**
@@ -66,6 +69,11 @@ public class ConfigurationSectionContainer implements Iterable<ConfigurationSect
   @Override
   public Iterator<ConfigurationSection> iterator() {
     return sections.iterator();
+  }
+
+  @Override
+  public int size() {
+    return sections.size();
   }
 
 }
