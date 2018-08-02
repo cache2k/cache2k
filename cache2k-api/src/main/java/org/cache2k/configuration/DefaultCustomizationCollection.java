@@ -34,7 +34,7 @@ import java.util.Iterator;
  *
  * @author Jens Wilke
  */
-public class DefaultCustomizationCollection<T>
+public final class DefaultCustomizationCollection<T>
   extends AbstractCollection<CustomizationSupplier<T>>
   implements CustomizationCollection<T> {
 
@@ -62,6 +62,10 @@ public class DefaultCustomizationCollection<T>
       throw new IllegalArgumentException("duplicate entry");
     }
     return list.add(entry);
+  }
+
+  public String toString() {
+    return getClass().getSimpleName() + list.toString();
   }
 
 }

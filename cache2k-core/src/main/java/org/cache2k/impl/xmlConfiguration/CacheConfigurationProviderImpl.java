@@ -302,8 +302,8 @@ public class CacheConfigurationProviderImpl implements CacheConfigurationProvide
           "class not found '" + _sectionType + "'", _parsedSection);
       }
       if (!handleSection(ctx, _type, _configurationWithSections, _parsedSection)
-        && !handleBean(ctx, _type, cfg, _parsedSection)
-        && !handleCollection(ctx, _type, cfg, _parsedSection)) {
+        && !handleCollection(ctx, _type, cfg, _parsedSection)
+        && !handleBean(ctx, _type, cfg, _parsedSection)) {
         throw new ConfigurationException("Unknown property  '" +  _parsedSection.getContainer() + "'", _parsedSection);
       }
     }

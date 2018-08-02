@@ -32,6 +32,7 @@ import org.cache2k.integration.FunctionalCacheLoader;
 import org.cache2k.integration.ResiliencePolicy;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.Executor;
@@ -389,6 +390,15 @@ public class Cache2kConfiguration<K, V> implements ConfigurationBean, Configurat
     return sections;
   }
 
+  /**
+   * Adds the collection of sections to the existing list. This method is intended to
+   * improve integration with bean configuration mechanisms that use the set method and
+   * construct a set or list, like Springs' bean XML configuration.
+   */
+  public void setSections(Collection<ConfigurationSection> c) {
+    getSections().addAll(c);
+  }
+
   public CustomizationSupplier<? extends FunctionalCacheLoader<K,V>> getLoader() {
     return loader;
   }
@@ -420,8 +430,8 @@ public class Cache2kConfiguration<K, V> implements ConfigurationBean, Configurat
     return expiryPolicy;
   }
 
-  public void setExpiryPolicy(final CustomizationSupplier<ExpiryPolicy<K, V>> _expiryPolicy) {
-    expiryPolicy = _expiryPolicy;
+  public void setExpiryPolicy(final CustomizationSupplier<ExpiryPolicy<K, V>> v) {
+    expiryPolicy = v;
   }
 
   public CustomizationSupplier<CacheWriter<K, V>> getWriter() {
@@ -483,6 +493,15 @@ public class Cache2kConfiguration<K, V> implements ConfigurationBean, Configurat
   }
 
   /**
+   * Adds the collection of customizations to the existing list. This method is intended to
+   * improve integration with bean configuration mechanisms that use the set method and
+   * construct a set or list, like Springs' bean XML configuration.
+   */
+  public void setListeners(Collection<CustomizationSupplier<CacheEntryOperationListener<K,V>>> c) {
+    getListeners().addAll(c);
+  }
+
+  /**
    * A set of listeners. A listener can be added by adding it to the collection.
    * Duplicate (in terms of equal objects) listeners will be ignored.
    *
@@ -500,6 +519,15 @@ public class Cache2kConfiguration<K, V> implements ConfigurationBean, Configurat
    */
   public boolean hasAsyncListeners() {
     return asyncListeners != null && !asyncListeners.isEmpty();
+  }
+
+  /**
+   * Adds the collection of customizations to the existing list. This method is intended to
+   * improve integration with bean configuration mechanisms that use the set method and
+   * construct a set or list, like Springs' bean XML configuration.
+   */
+  public void setAsyncListeners(Collection<CustomizationSupplier<CacheEntryOperationListener<K,V>>> c) {
+    getAsyncListeners().addAll(c);
   }
 
   /**
@@ -523,6 +551,15 @@ public class Cache2kConfiguration<K, V> implements ConfigurationBean, Configurat
     return closedListeners != null && !closedListeners.isEmpty();
   }
 
+  /**
+   * Adds the collection of customizations to the existing list. This method is intended to
+   * improve integration with bean configuration mechanisms that use the set method and
+   * construct a set or list, like Springs' bean XML configuration.
+   */
+  public void setCacheClosedListeners(Collection<CustomizationSupplier<CacheClosedListener>> c) {
+    getCacheClosedListeners().addAll(c);
+  }
+
   public CustomizationSupplier<ResiliencePolicy<K, V>> getResiliencePolicy() {
     return resiliencePolicy;
   }
@@ -530,8 +567,8 @@ public class Cache2kConfiguration<K, V> implements ConfigurationBean, Configurat
   /**
    * @see Cache2kBuilder#resiliencePolicy
    */
-  public void setResiliencePolicy(final CustomizationSupplier<ResiliencePolicy<K, V>> _resiliencePolicy) {
-    resiliencePolicy = _resiliencePolicy;
+  public void setResiliencePolicy(final CustomizationSupplier<ResiliencePolicy<K, V>> v) {
+    resiliencePolicy = v;
   }
 
   public boolean isStrictEviction() {

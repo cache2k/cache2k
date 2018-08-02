@@ -76,4 +76,9 @@ public class ConfigurationSectionContainer extends AbstractCollection<Configurat
     return sections.size();
   }
 
+  public String toString() {
+    return getClass().getSimpleName() + sections.toString();
+  }
+
 }
+
