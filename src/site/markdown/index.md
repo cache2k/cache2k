@@ -23,7 +23,7 @@ For a detailed introduction continue with [Getting Started](docs/latest/user-gui
 
 ## Features at a glance
 
- * Single small jar file (less than 400k) with no external dependencies
+ * Small jar file (less than 400k) with no external dependencies
  * Even smaller, for use with [Android](docs/latest/user-guide.html#android)
  * Fastest access times, due to non blocking and wait free access of cached values, [Blog article](https://cruftex.net/2017/09/01/Java-Caching-Benchmarks-Part-3.html)
  * Java 6 and [Android](docs/latest/user-guide.html#android) compatible
@@ -52,6 +52,7 @@ For a detailed introduction continue with [Getting Started](docs/latest/user-gui
 
 ## News
 
+  * **Version 1.1.3.Alpha, 2018-08-02**: Preview. Configuration infrastructure improvements, XSD Schema, See [Version 1.1.3.Alpha release notes](1/1.3.Alpha.html)
   * **Version 1.1.2.Alpha, 2018-07-17**: Preview. Spring integration, JCache cache creation, IntCache optimization, See [Version 1.1.2.Alpha release notes](1/1.2.Alpha.html)
   * **Version 1.1.1.Alpha, 2018-07-02**: Preview. new jar file structure, See [Version 1.1.1.Alpha release notes](1/1.1.Alpha.html)
   * **Version 1.0.2.Final, 2017-12-29**: Support JCache standard 1.1, See [Version 1.0.2.Final release notes](1/0.2.Final.html)

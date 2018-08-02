@@ -21,7 +21,7 @@ For a detailed introduction continue with [Getting Started](https://cache2k.org/
 
 ## Features at a glance
 
- * Single small jar file (less than 400k) with no external dependencies
+ * Small jar file (less than 400k) with no external dependencies
  * Even smaller, for use with [Android](https://cache2k.org/docs/latest/user-guide.html#android)
  * Fastest access times, due to non blocking and wait free access of cached values, [Blog article](https://cruftex.net/2017/09/01/Java-Caching-Benchmarks-Part-3.html)
  * Java 6 and [Android](https://cache2k.org/docs/latest/user-guide.html#android) compatible
