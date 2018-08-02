@@ -37,7 +37,11 @@ import java.util.WeakHashMap;
 /**
  * JSR107 caching provider on top of cache2k.
  *
+ * <p>Attention: Don't move or rename without a transition plan since users might to
+ * specify the provider explicitly.
+ *
  * @author Jens Wilke
+ * @see <a href="https://cache2k.org/docs/latest/user-guide.html#jcache">JCache - cache2k User Guide</a>
  */
 public class JCacheProvider implements CachingProvider {
 

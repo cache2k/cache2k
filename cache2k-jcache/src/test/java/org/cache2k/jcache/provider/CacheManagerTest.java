@@ -54,6 +54,17 @@ public class CacheManagerTest {
     assertTrue(p1 == p2);
   }
 
+  /**
+   * Test to ensure provider coordinates keep constant.
+   */
+  @Test
+  public void testGetExplicitProvider() {
+    CachingProvider cachingProvider =
+      Caching.getCachingProvider(
+        "org.cache2k.jcache.provider.JCacheProvider");
+    assertTrue(cachingProvider == Caching.getCachingProvider());
+  }
+
   @Test
   public void testSameCacheManager() {
     CachingProvider p = Caching.getCachingProvider();

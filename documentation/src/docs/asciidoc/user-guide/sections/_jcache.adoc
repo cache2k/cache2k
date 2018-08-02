@@ -63,7 +63,15 @@ use this scheme:
 
 === Getting the Caching Provider
 
-TODO
+If more then one JCache provider is present in the application, the cache2k JCache provider needs to
+be requested explicitly. The classname of the provider is `org.cache2k.jcache.provider.JCacheProvider`.
+To request the cache2k provider use:
+
+[source,java]
+----
+    CachingProvider cachingProvider =
+      Caching.getCachingProvider("org.cache2k.jcache.provider.JCacheProvider");
+----
 
 === Getting Started with the JCache API
 
