@@ -95,4 +95,11 @@ For completeness, together with the `Cache2kConfiguration` bean, it is also poss
 === Null Value Support
 
 The cache abstraction of Spring is supporting `null` values. If the application relies on `null` storage this has to be
-enabled, e.g. via `Cache2kBuilder.permitNullValues(true)`, see <<null-values,Null Values>>.
+enabled via `Cache2kBuilder.permitNullValues(true)`, see <<null-values,Null Values>>.
+
+=== Resources
+
+More information on the Spring Cache abstraction can be found here:
+
+- https://docs.spring.io/spring/docs/current/spring-framework-reference/integration.html#cache[Cache Abstraction - Spring Framework Reference]
+- https://www.foreach.be/blog/spring-cache-annotations-some-tips-tricks[Spring cache annotations: some tips & tricks - foreach.be blog]

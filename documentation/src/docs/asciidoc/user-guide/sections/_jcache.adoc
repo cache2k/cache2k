@@ -63,7 +63,7 @@ use this scheme:
 
 === Getting the Caching Provider
 
-
+TODO
 
 === Getting Started with the JCache API
 
@@ -101,16 +101,17 @@ The XML configuration sections do apply for caches requested via `CacheManager.c
 `CacheManager.getCache`, see <<xml-configuration,XML configuration>>. In case not the default manager
 is requested, another XML configuration applies.
 
+[[jcache-optimizations]]
 ==== Optimizations and Semantic Differences
 
 WARNING: In case a JCache cache is created with a cache2k configuration present, the generated JCache cache
 has slightly different semantics then those defined in the JCache specification. cache2k has
 different default settings, which are optimized towards performance.
-The following sections explains the differences and how to switch back to the standard behavior,
+This section explains the differences and how to switch back to the standard behavior,
 if this might be really needed.
 
 Expiry:: With pure JCache configuration the expiry is set to sharp expiry by default for maximum compatiblity. When the
-   cache2k configuration is used, sharp expiry is off and need to be enabled explicitly.
+   cache2k configuration is used, sharp expiry is off and needs to be enabled explicitly.
 `Configuration.isStoreByValue`:: When the cache2k configuration is active the parameter will be ignored.
    Store by value semantics can enabled again in the JCache configuration section of cache2k
    `JCacheConfiguration.Builder.copyAlwaysIfRequested`. See example below how to specify the additional parameters.
@@ -140,7 +141,7 @@ To enable full JCache compliance by default via the XML configuration, use these
 ----
 
 There are more optimizations in cache2k happening transparently, e.g. when a expiry policy with a static
-setting is detected. For this reason avoid using a custom expiry policy class.
+setting is detected. For this reason avoid using a custom expiry policy class if not needed.
 
 ==== Merging of JCache and cache2k Configuration
 
