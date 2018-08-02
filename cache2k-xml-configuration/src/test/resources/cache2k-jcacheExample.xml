@@ -1,0 +1,63 @@
+<!--
+  #%L
+  cache2k JCache provider
+  %%
+  Copyright (C) 2000 - 2018 headissue GmbH, Munich
+  %%
+  Licensed under the Apache License, Version 2.0 (the "License");
+  you may not use this file except in compliance with the License.
+  You may obtain a copy of the License at
+  
+       http://www.apache.org/licenses/LICENSE-2.0
+  
+  Unless required by applicable law or agreed to in writing, software
+  distributed under the License is distributed on an "AS IS" BASIS,
+  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  See the License for the specific language governing permissions and
+  limitations under the License.
+  #L%
+  -->
+<!--
+     configuration of cache2k with an additional configuration section
+     to influence JCache semantics.
+     Furthermore, an example how to use additional configuration sections
+-->
+<cache2k>
+  <version>1.0</version>
+
+  <caches>
+    <cache>
+      <name>withSection</name>
+      <sections>
+        <!-- A section may contain any configuration bean which is selected by type
+             inside the section the elements type and name are defined. Furthermore,
+             the section may contain unrestricted elements.
+         -->
+        <section>
+          <type>org.cache2k.jcache.JCacheConfiguration</type>
+          <copyAlwaysIfRequested>true</copyAlwaysIfRequested>
+        </section>
+      </sections>
+    </cache>
+    <cache>
+      <name>withJCacheSection</name>
+      <sections>
+        <!-- The jcache tag is wired to the type org.cache2k.jcache.JCacheConfiguration
+             to make the configuration smaller and allow the content to be covered in the XSD schema
+             The tag name jcache is defined in CacheConfigurationProviderImpl.
+         -->
+        <jcache>
+          <copyAlwaysIfRequested>true</copyAlwaysIfRequested>
+        </jcache>
+      </sections>
+    </cache>
+    <cache>
+      <name>default</name>
+    </cache>
+    <cache>
+      <name>withExpiry</name>
+      <expireAfterWrite>2s</expireAfterWrite>
+    </cache>
+  </caches>
+
+</cache2k>
