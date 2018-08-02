@@ -233,6 +233,11 @@
           <artifactId>nexus-staging-maven-plugin</artifactId>
           <version>1.6.8</version>
         </plugin>
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-gpg-plugin</artifactId>
+          <version>1.6</version>
+        </plugin>
 
       </plugins>
     </pluginManagement>
@@ -399,7 +404,6 @@
           <plugin>
             <groupId>org.apache.maven.plugins</groupId>
             <artifactId>maven-gpg-plugin</artifactId>
-            <version>1.4</version>
             <configuration>
               <keyname>D37F5C87</keyname>
             </configuration>
