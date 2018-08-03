@@ -128,7 +128,7 @@ public class EntryProcessorTest {
       @Override
       public Object process(MutableCacheEntry e) throws Exception {
         assertFalse(e.exists());
-        assertEquals(0, e.getRefreshTime());
+        assertEquals(0, e.getRefreshedTime());
         assertEquals(_KEY, e.getKey());
         _reached.set(true);
         return null;
@@ -250,7 +250,7 @@ public class EntryProcessorTest {
       @Override
       public Object process(final MutableCacheEntry<Integer, Integer> e) {
         assertThat(e.getCurrentTime(), greaterThanOrEqualTo(t0));
-        assertEquals(0, e.getRefreshTime());
+        assertEquals(0, e.getRefreshedTime());
         return null;
       }
     });
@@ -261,7 +261,7 @@ public class EntryProcessorTest {
     Cache<Integer,Integer> c = target.cache(new CacheRule.Specialization<Integer, Integer>() {
       @Override
       public void extend(final Cache2kBuilder<Integer, Integer> b) {
-        b.recordRefreshTime(true);
+        b.recordRefreshedTime(true);
       }
     });
     final long t0 = millis();
@@ -271,17 +271,17 @@ public class EntryProcessorTest {
       @Override
       public Object process(final MutableCacheEntry<Integer, Integer> e) {
         assertThat(e.getCurrentTime(), greaterThanOrEqualTo(t0));
-        assertThat("refresh time updated by put()", e.getRefreshTime(), greaterThanOrEqualTo(t0));
-        e.setRefreshTime(early);
-        assertEquals(early, e.getRefreshTime());
+        assertThat("refresh time updated by put()", e.getRefreshedTime(), greaterThanOrEqualTo(t0));
+        e.setRefreshedTime(early);
+        assertEquals(early, e.getRefreshedTime());
         return null;
       }
     });
     c.invoke(1, new EntryProcessor<Integer, Integer, Object>() {
       @Override
       public Object process(final MutableCacheEntry<Integer, Integer> e) {
-        assertThat("refresh time not updated", e.getRefreshTime(), greaterThanOrEqualTo(t0));
-        e.setRefreshTime(early);
+        assertThat("refresh time not updated", e.getRefreshedTime(), greaterThanOrEqualTo(t0));
+        e.setRefreshedTime(early);
         e.setValue(3);
         return null;
       }
@@ -289,7 +289,7 @@ public class EntryProcessorTest {
     c.invoke(1, new EntryProcessor<Integer, Integer, Object>() {
       @Override
       public Object process(final MutableCacheEntry<Integer, Integer> e) {
-        assertEquals("was update on setValue", early, e.getRefreshTime());
+        assertEquals("was update on setValue", early, e.getRefreshedTime());
         return null;
       }
     });
@@ -305,7 +305,7 @@ public class EntryProcessorTest {
       @Override
       public Object process(final MutableCacheEntry<Integer, Integer> e) {
         assertThat(e.getCurrentTime(), greaterThanOrEqualTo(t0));
-        assertThat("refresh time updated by put()", e.getRefreshTime(), greaterThanOrEqualTo(t0));
+        assertThat("refresh time updated by put()", e.getRefreshedTime(), greaterThanOrEqualTo(t0));
         return null;
       }
     });
@@ -317,13 +317,13 @@ public class EntryProcessorTest {
     Cache<Integer,Integer> c = target.cache(new CacheRule.Specialization<Integer, Integer>() {
       @Override
       public void extend(final Cache2kBuilder<Integer, Integer> b) {
-        b.recordRefreshTime(true)
+        b.recordRefreshedTime(true)
          .wrappingLoader(new AdvancedCacheLoader<Integer, LoadDetail<Integer>>() {
           @Override
           public LoadDetail<Integer> load(final Integer key, final long currentTime,
                                           final CacheEntry<Integer,
                                             LoadDetail<Integer>> currentEntry) throws Exception {
-            return Loaders.wrapRefreshTime(key, _probeTime);
+            return Loaders.wrapRefreshedTime(key, _probeTime);
           }
         });
       }
@@ -332,7 +332,7 @@ public class EntryProcessorTest {
     c.invoke(1, new EntryProcessor<Integer, Integer, Object>() {
       @Override
       public Object process(final MutableCacheEntry<Integer, Integer> e) {
-        assertEquals(_probeTime, e.getRefreshTime());
+        assertEquals(_probeTime, e.getRefreshedTime());
         return null;
       }
     });
@@ -344,13 +344,13 @@ public class EntryProcessorTest {
     Cache<Integer,Integer> c = target.cache(new CacheRule.Specialization<Integer, Integer>() {
       @Override
       public void extend(final Cache2kBuilder<Integer, Integer> b) {
-        b.recordRefreshTime(true)
+        b.recordRefreshedTime(true)
          .wrappingLoader(new AdvancedCacheLoader<Integer, LoadDetail<Integer>>() {
           @Override
           public LoadDetail<Integer> load(final Integer key, final long currentTime,
                                           final CacheEntry<Integer,
                                             LoadDetail<Integer>> currentEntry) throws Exception {
-            return Loaders.wrapRefreshTime(key, _probeTime);
+            return Loaders.wrapRefreshedTime(key, _probeTime);
           }
         });
       }
@@ -359,7 +359,7 @@ public class EntryProcessorTest {
       @Override
       public Object process(final MutableCacheEntry<Integer, Integer> e) {
         Integer v = e.getValue();
-        assertEquals(_probeTime, e.getRefreshTime());
+        assertEquals(_probeTime, e.getRefreshedTime());
         return null;
       }
     });
@@ -376,7 +376,7 @@ public class EntryProcessorTest {
             public LoadDetail<Integer> load(final Integer key, final long currentTime,
                                             final CacheEntry<Integer,
                                               LoadDetail<Integer>> currentEntry) throws Exception {
-              return Loaders.wrapRefreshTime(key, _probeTime);
+              return Loaders.wrapRefreshedTime(key, _probeTime);
             }
           });
       }
@@ -385,7 +385,7 @@ public class EntryProcessorTest {
     c.invoke(1, new EntryProcessor<Integer, Integer, Object>() {
       @Override
       public Object process(final MutableCacheEntry<Integer, Integer> e) {
-        assertEquals(0, e.getRefreshTime());
+        assertEquals(0, e.getRefreshedTime());
         return null;
       }
     });
@@ -398,7 +398,7 @@ public class EntryProcessorTest {
     c.invoke(1, new EntryProcessor<Integer, Integer, Object>() {
       @Override
       public Object process(final MutableCacheEntry<Integer, Integer> e) {
-        assertEquals(0L, e.getRefreshTime());
+        assertEquals(0L, e.getRefreshedTime());
         return null;
       }
     });
@@ -431,7 +431,7 @@ public class EntryProcessorTest {
       @Override
       public void extend(final Cache2kBuilder<Integer, Integer> b) {
         b.loader(c.loader);
-        b.recordRefreshTime(true);
+        b.recordRefreshedTime(true);
       }
     });
     return c;

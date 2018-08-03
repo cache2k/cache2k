@@ -150,7 +150,7 @@ class MutableEntryOnProgress<K, V> implements MutableCacheEntry<K, V> {
   }
 
   @Override
-  public long getRefreshTime() {
+  public long getRefreshedTime() {
     if (refreshTime != NEUTRAL) {
       return refreshTime;
     }
@@ -158,7 +158,7 @@ class MutableEntryOnProgress<K, V> implements MutableCacheEntry<K, V> {
   }
 
   @Override
-  public MutableCacheEntry<K, V> setRefreshTime(final long t) {
+  public MutableCacheEntry<K, V> setRefreshedTime(final long t) {
     refreshTime = t;
     return this;
   }

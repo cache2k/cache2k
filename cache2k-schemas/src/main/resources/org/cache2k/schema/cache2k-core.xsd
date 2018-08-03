@@ -384,11 +384,11 @@
           </xs:documentation>
         </xs:annotation>
       </xs:element>
-      <xs:element name="recordRefreshTime" type="xs:string" minOccurs="0" default="false">
+      <xs:element name="recordRefreshedTime" type="xs:string" minOccurs="0" default="false">
         <xs:annotation>
           <xs:documentation>
-            Records refresh time in the entry.
-            For a complete description, see <a href="https://cache2k.org/docs/latest/apidocs/cache2k-api/org/cache2k/Cache2kBuilder.html?utm_source=ide&amp;utm_medium=xsd#recordRefreshTime-boolean-">Cache2kBuilder API Documentation</a>
+            Records refreshed time in the entry.
+            For a complete description, see <a href="https://cache2k.org/docs/latest/apidocs/cache2k-api/org/cache2k/Cache2kBuilder.html?utm_source=ide&amp;utm_medium=xsd#recordRefreshedTime-boolean-">Cache2kBuilder API Documentation</a>
           </xs:documentation>
         </xs:annotation>
       </xs:element>

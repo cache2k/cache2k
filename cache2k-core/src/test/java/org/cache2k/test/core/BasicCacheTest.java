@@ -23,9 +23,6 @@ package org.cache2k.test.core;
 import org.cache2k.Cache;
 import org.cache2k.CacheEntry;
 import org.cache2k.CacheException;
-import org.cache2k.core.InternalCache;
-import org.cache2k.core.storageApi.CacheStorage;
-import org.cache2k.core.storageApi.StorageAdapter;
 import org.cache2k.expiry.ExpiryPolicy;
 import org.cache2k.integration.CacheLoader;
 import org.cache2k.integration.CacheLoaderException;
@@ -461,7 +458,7 @@ public class BasicCacheTest extends TestingBase {
       .expireAfterWrite(0, TimeUnit.MINUTES)
       .retryInterval(8, TimeUnit.MINUTES)
       .resilienceDuration(33, TimeUnit.HOURS)
-      .recordRefreshTime(true)
+      .recordRefreshedTime(true)
       .keepDataAfterExpired(true)
       .loader(src)
       .build();
@@ -485,7 +482,7 @@ public class BasicCacheTest extends TestingBase {
           assertNull("exception suppressed", e.getException());
           assertTrue("entry present", e.exists());
           assertThat("refresh time of entry, not when exception happened",
-            e.getRefreshTime(),
+            e.getRefreshedTime(),
             lessThanOrEqualTo(refreshedBefore));
           return null;
         }
@@ -507,7 +504,7 @@ public class BasicCacheTest extends TestingBase {
       @Override
       public Long process(final MutableCacheEntry<Integer, Integer> e) throws Exception {
         assertTrue("entry present", e.exists());
-        assertThat(e.getRefreshTime(), greaterThanOrEqualTo(t));
+        assertThat(e.getRefreshedTime(), greaterThanOrEqualTo(t));
         return null;
       }
     });
@@ -517,7 +514,7 @@ public class BasicCacheTest extends TestingBase {
     return c.invoke(key, new EntryProcessor<Integer, Integer, Long>() {
       @Override
       public Long process(final MutableCacheEntry<Integer, Integer> e) throws Exception {
-        return e.getRefreshTime();
+        return e.getRefreshedTime();
       }
     });
   }

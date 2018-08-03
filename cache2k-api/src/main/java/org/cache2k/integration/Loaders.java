@@ -30,19 +30,19 @@ import org.cache2k.CacheEntry;
 public class Loaders {
 
   /**
-   * Wraps a loaded value to add the refresh value.
+   * Wraps a loaded value to add the refreshed value.
    *
    * @see CacheLoader#load(Object)
    * @see AdvancedCacheLoader#load(Object, long, CacheEntry)
    * @see FunctionalCacheLoader#load(Object)
    */
   @SuppressWarnings("unchecked")
-  public static <V> LoadDetail<V> wrapRefreshTime(V value, long refreshTimeInMillis) {
-    return new RefreshTimeWrapper<V>(value, refreshTimeInMillis);
+  public static <V> LoadDetail<V> wrapRefreshedTime(V value, long refreshedTimeInMillis) {
+    return new RefreshedTimeWrapper<V>(value, refreshedTimeInMillis);
   }
 
-  public static <V> LoadDetail<V> wrapRefreshTime(LoadDetail<V> value, long refreshTimeInMillis) {
-    return new RefreshTimeWrapper<V>(value, refreshTimeInMillis);
+  public static <V> LoadDetail<V> wrapRefreshedTime(LoadDetail<V> value, long refreshedTimeInMillis) {
+    return new RefreshedTimeWrapper<V>(value, refreshedTimeInMillis);
   }
 
 }

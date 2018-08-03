@@ -718,7 +718,7 @@ public class Cache2kBuilder<K, V> {
 
   /**
    * Deprecated since version 1.2. Method has no effect and will be removed in future releases.
-   * Time recording is disabled by default and needs to be enabled via {@link #recordRefreshTime(boolean)}.
+   * Time recording is disabled by default and needs to be enabled via {@link #recordRefreshedTime(boolean)}.
    */
   @Deprecated
   public final Cache2kBuilder<K,V> disableLastModificationTime(boolean flag) {
@@ -726,10 +726,13 @@ public class Cache2kBuilder<K, V> {
   }
 
   /**
-   * Enables that the refresh time is available at {@link MutableCacheEntry#getRefreshTime()}.
+   * Enables that time of an refresh (means update or freshness check of a value) is
+   * available at {@link MutableCacheEntry#getRefreshedTime()}.
+   *
+   * @see MutableCacheEntry#getRefreshedTime()
    */
-  public final Cache2kBuilder<K,V> recordRefreshTime(boolean flag) {
-    config().setRecordRefreshTime(flag);
+  public final Cache2kBuilder<K,V> recordRefreshedTime(boolean flag) {
+    config().setRecordRefreshedTime(flag);
     return this;
   }
 

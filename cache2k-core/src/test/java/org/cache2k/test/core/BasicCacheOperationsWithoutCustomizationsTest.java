@@ -143,7 +143,7 @@ public class BasicCacheOperationsWithoutCustomizationsTest {
       .entryCapacity(1000)
       .permitNullValues(true)
       .keepDataAfterExpired(pars.keepDataAfterExpired)
-      .recordRefreshTime(pars.recordRefreshTime)
+      .recordRefreshedTime(pars.recordRefreshTime)
       .disableStatistics(pars.disableStatistics);
     if (pars.withExpiryAfterWrite) {
       b.expireAfterWrite(TestingParameters.MAX_FINISH_WAIT_MILLIS, TimeUnit.MILLISECONDS);
@@ -327,7 +327,7 @@ public class BasicCacheOperationsWithoutCustomizationsTest {
     long t = cache.invoke(e.getKey(), new EntryProcessor<Integer, Integer, Long>() {
       @Override
       public Long process(final MutableCacheEntry<Integer, Integer> e) throws Exception {
-        return e.getRefreshTime();
+        return e.getRefreshedTime();
       }
     });
     if (refreshTimeAvailable) {

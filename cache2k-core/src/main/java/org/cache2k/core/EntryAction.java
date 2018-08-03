@@ -41,7 +41,7 @@ import org.cache2k.core.storageApi.StorageCallback;
 import org.cache2k.core.storageApi.StorageAdapter;
 import org.cache2k.core.storageApi.StorageEntry;
 import org.cache2k.integration.ExceptionInformation;
-import org.cache2k.integration.RefreshTimeWrapper;
+import org.cache2k.integration.RefreshedTimeWrapper;
 
 /**
  * This is a method object to perform an operation on an entry.
@@ -311,8 +311,8 @@ public abstract class EntryAction<K, V, R> implements
       } else {
         v = _loader.load(heapCache.extractKeyObj(e), t0, e);
       }
-      if (v instanceof RefreshTimeWrapper) {
-        RefreshTimeWrapper wr = (RefreshTimeWrapper<V>)v;
+      if (v instanceof RefreshedTimeWrapper) {
+        RefreshedTimeWrapper wr = (RefreshedTimeWrapper<V>)v;
         lastRefreshTime = wr.getRefreshTime();
         v = (V) wr.getValue();
       }

@@ -165,17 +165,21 @@ public interface MutableCacheEntry<K, V> extends CacheEntry<K, V> {
    * the value was modified directly via {@link org.cache2k.Cache#put} or other sorts
    * of mutation.
    *
-   * <p>Rationale: We call it "refresh" time since we don't know whether the value
+   * <p>Rationale: We call it "refreshed" time since we don't know whether the value
    * actually changed. If a load produces the same value as before the entry is refreshed but
-   * effectively not updated or modified.
+   * effectively not updated or modified. The past tense means its the time of the last refresh and
+   * is not the upcoming refresh.
    */
-  long getRefreshTime();
+  long getRefreshedTime();
 
   /**
-   * In {@link #setValue(Object)} is used, this sets an alternative refresh time for
-   * expiry calculations. The entry refresh time is not updated, if the entry is
+   * If {@link #setValue(Object)} is used, this sets an alternative refreshed time for
+   * expiry calculations. The entry refreshed time is not updated, if the entry is
    * not mutated.
+   *
+   * <p>If refresh ahead is enabled via {@link org.cache2k.Cache2kBuilder#refreshAhead(boolean)},
+   * the next refresh time is controlled by the expiry time.
    */
-  MutableCacheEntry<K,V> setRefreshTime(long t);
+  MutableCacheEntry<K,V> setRefreshedTime(long t);
 
 }

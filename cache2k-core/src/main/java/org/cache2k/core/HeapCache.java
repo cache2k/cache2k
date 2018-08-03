@@ -41,7 +41,7 @@ import org.cache2k.event.CacheClosedListener;
 import org.cache2k.integration.AdvancedCacheLoader;
 import org.cache2k.integration.CacheLoaderException;
 import org.cache2k.integration.ExceptionPropagator;
-import org.cache2k.integration.RefreshTimeWrapper;
+import org.cache2k.integration.RefreshedTimeWrapper;
 import org.cache2k.processor.EntryProcessor;
 
 import java.security.SecureRandom;
@@ -259,8 +259,8 @@ public class HeapCache<K, V> extends BaseCache<K, V> {
     setFeatureBit(KEEP_AFTER_EXPIRED, c.isKeepDataAfterExpired());
     setFeatureBit(REJECT_NULL_VALUES, !c.isPermitNullValues());
     setFeatureBit(BACKGROUND_REFRESH, c.isRefreshAhead());
-    setFeatureBit(UPDATE_TIME_NEEDED, c.isRecordRefreshTime());
-    setFeatureBit(RECORD_REFRESH_TIME, c.isRecordRefreshTime());
+    setFeatureBit(UPDATE_TIME_NEEDED, c.isRecordRefreshedTime());
+    setFeatureBit(RECORD_REFRESH_TIME, c.isRecordRefreshedTime());
 
     metrics = TUNABLE.commonMetricsFactory.create(new CommonMetricsFactory.Parameters() {
       @Override
@@ -1364,8 +1364,8 @@ public class HeapCache<K, V> extends BaseCache<K, V> {
       } else {
         v = loader.load(extractKeyObj(e), t0, e);
       }
-      if (v instanceof RefreshTimeWrapper) {
-        RefreshTimeWrapper wr = RefreshTimeWrapper.class.cast(v);
+      if (v instanceof RefreshedTimeWrapper) {
+        RefreshedTimeWrapper wr = RefreshedTimeWrapper.class.cast(v);
         refreshTime = wr.getRefreshTime();
         v = (V) wr.getValue();
       }
