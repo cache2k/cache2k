@@ -20,6 +20,9 @@ package org.cache2k.impl.xmlConfiguration;
  * #L%
  */
 
+import org.cache2k.configuration.CacheType;
+import org.cache2k.configuration.CacheTypeCapture;
+
 import java.util.HashMap;
 import java.util.Map;
 
@@ -92,6 +95,15 @@ public class StandardPropertyParser implements PropertyParser {
       @Override
       public String parse(final String v) {
         return v;
+      }
+    });
+    addParser(CacheType.class, new ValueConverter<CacheType>() {
+      @Override
+      public CacheType parse(String v) throws Exception {
+        if (!v.contains(".")) {
+          v = "java.lang." + v;
+        }
+        return CacheTypeCapture.of(Class.forName(v));
       }
     });
   }

@@ -54,13 +54,28 @@ public class BeanPropertyMutator {
     m.invoke(_target, _value);
   }
 
+  /**
+   * Don't have a setter for a class, but use the cache type.
+   * @see org.cache2k.configuration.Cache2kConfiguration#keyType
+   * @see org.cache2k.configuration.Cache2kConfiguration#valueType
+   */
+  private static boolean preferCacheTypeAndNotClass(Class<?> c) {
+    return !Class.class.equals(c);
+  }
+
   static Map<String, Method> generateSetterLookupMap(Class<?> c) {
     Map<String, Method> map = new HashMap<String, Method>();
     for (Method m : c.getMethods()) {
       if (m.getName().startsWith(SETTER_PREFIX) &&
         m.getReturnType() == Void.TYPE &&
-        (m.getParameterTypes().length == 1)) {
-        map.put(generatePropertyNameFromSetter(m.getName()), m);
+        (m.getParameterTypes().length == 1) &&
+        preferCacheTypeAndNotClass(m.getParameterTypes()[0])) {
+        String _propertyName = generatePropertyNameFromSetter(m.getName());
+        Method m0 = map.put(_propertyName, m);
+        if (m0 != null) {
+          throw new IllegalArgumentException(
+            "Ambiguous setter for property '" + _propertyName + "' in class '" + c.getSimpleName() + "'");
+        }
       }
     }
     return map;
