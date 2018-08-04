@@ -22,9 +22,16 @@ package org.cache2k.configuration;
 
 import org.cache2k.CacheManager;
 
+import java.io.Serializable;
+
 /**
  * Supplies a cache customizations like {@code ExpiryPolicy} or {@code CacheLoader}.
  * An implementation must implement proper a {@code hashCode} and {@code equals} method.
+ *
+ * <p>Implementations of this class that should be usable within the XML configuration
+ * need to implement {@link Serializable}. This is not done so in this interface since
+ * there may be suppliers which are used within the program that are intentionally not
+ * serializable, such as {@link CustomizationReferenceSupplier}.
  *
  * @author Jens Wilke
  */
