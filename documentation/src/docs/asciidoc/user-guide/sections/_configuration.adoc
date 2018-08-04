@@ -6,11 +6,7 @@ not be "buried" inside the applications code.
 
 === Using the XML Configuration
 
-Since verison 1.2 the XML configuration is included in the `cache2k-core` jar file.
-In a Java SE environment the default SAX parser is used. In an Android environment the XML pull parser
-is used. There are no additional dependencies to other libraries.
-
-If only one cache manager is used, a configuration file can be put at `/cache2k.xml` in the class path.
+The configuration file for the default cache manager is located at `/cache2k.xml` in the class path.
 Here is an example:
 
 [source,xml]
@@ -181,7 +177,11 @@ configuration of the customization. In this case the `type` element is used to s
   </loader>
 ----
 
-=== Rationale
+=== Rationale and Internals
+
+Since verison 1.2 the XML configuration is included in the `cache2k-core` jar file.
+In a Java SE environment the default SAX parser is used. In an Android environment the XML pull parser
+is used. There are no additional dependencies to other libraries.
 
 Most of the configuration processing is not limited to XML. The general structure of the configuration can
 be represented in YAML or JSON as well. This is why we do not use any XML attributes. Readers for
