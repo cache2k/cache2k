@@ -7,14 +7,15 @@
 
   <!--
 
-    Hints for extension:
+   Hints for extension:
 
-    Only have one minimal sentence in an element description. If the configuration element is rather
-    special, it is better to leave out a description. Link to the appropriate method in the API documentation.
-
+   Only have one minimal sentence in an element description. If the configuration element is rather
+   special, it is better to leave out a description. Link to the appropriate method in the API documentation.
 
    Don't use XSchema types. Specifying the correct types like xs:boolean is not a good idea since
    there might be variables in the configuration like '${ENV.HOME}'. Instead we just use 'xs:string'.
+
+   Include every new option in the file configuration file cache2k-all.xml. This way its covered by tests.
 
   -->
 
@@ -104,7 +105,12 @@
           </xs:annotation>
           <xs:complexType>
             <xs:all>
-              <xs:element name="cache" type="t:cacheWithoutName">
+              <xs:element name="cache" minOccurs="1">
+                <xs:complexType>
+                  <xs:choice maxOccurs="unbounded">
+                    <xs:group ref="t:cacheWithoutName"/>
+                  </xs:choice>
+                </xs:complexType>
               </xs:element>
             </xs:all>
           </xs:complexType>
@@ -117,10 +123,9 @@
             </xs:documentation>
           </xs:annotation>
           <xs:complexType>
-            <xs:all>
-              <xs:element name="cache" type="t:template">
-              </xs:element>
-            </xs:all>
+            <xs:sequence maxOccurs="unbounded">
+              <xs:element name="cache" type="t:template"/>
+            </xs:sequence>
           </xs:complexType>
         </xs:element>
 
@@ -131,9 +136,9 @@
             </xs:documentation>
           </xs:annotation>
           <xs:complexType>
-            <xs:all>
+            <xs:sequence maxOccurs="unbounded">
               <xs:element name="cache" type="t:cacheWithNameAndInclude"/>
-            </xs:all>
+            </xs:sequence>
           </xs:complexType>
         </xs:element>
 
@@ -144,23 +149,25 @@
   </xs:element>
 
   <xs:complexType name="customization">
-    <xs:all>
-      <xs:element name="bean" minOccurs="0">
-        <xs:complexType>
-          <xs:sequence>
-            <xs:element name="type" type="xs:string"/>
-            <xs:any processContents="skip" maxOccurs="unbounded"/>
-          </xs:sequence>
-        </xs:complexType>
-      </xs:element>
-      <xs:element name="byClassName" minOccurs="0">
-        <xs:complexType>
-          <xs:sequence>
-            <xs:element name="className" type="xs:string"/>
-          </xs:sequence>
-        </xs:complexType>
-      </xs:element>
-    </xs:all>
+    <xs:sequence>
+      <xs:choice>
+        <xs:element name="bean" minOccurs="0">
+          <xs:complexType>
+            <xs:sequence>
+              <xs:element name="type" type="xs:string"/>
+              <xs:any processContents="lax" minOccurs="0" maxOccurs="unbounded"/>
+            </xs:sequence>
+          </xs:complexType>
+        </xs:element>
+        <xs:element name="byClassName" minOccurs="0">
+          <xs:complexType>
+            <xs:sequence>
+              <xs:element name="className" type="xs:string"/>
+            </xs:sequence>
+          </xs:complexType>
+        </xs:element>
+      </xs:choice>
+    </xs:sequence>
   </xs:complexType>
 
   <xs:complexType name="customizationCollection">
@@ -213,48 +220,46 @@
   </xs:complexType>
 
   <xs:complexType name="template">
-    <xs:complexContent>
-      <xs:extension base="t:cacheWithoutName">
-        <xs:all>
-          <xs:element name="name" type="xs:string">
-            <xs:annotation>
-              <xs:documentation>
-                Name of the template.
-                For a complete description, see <a href="https://cache2k.org/docs/latest/apidocs/cache2k-api/org/cache2k/Cache2kBuilder.html?utm_source=ide&amp;utm_medium=xsd#name-String-">Cache2kBuilder API Documentation</a>
-              </xs:documentation>
-            </xs:annotation>
-          </xs:element>
-        </xs:all>
-      </xs:extension>
-    </xs:complexContent>
+    <xs:sequence>
+      <xs:element name="name" type="xs:string">
+        <xs:annotation>
+          <xs:documentation>
+            Name of the template.
+            For a complete description, see <a href="https://cache2k.org/docs/latest/apidocs/cache2k-api/org/cache2k/Cache2kBuilder.html?utm_source=ide&amp;utm_medium=xsd#name-String-">Cache2kBuilder API Documentation</a>
+          </xs:documentation>
+        </xs:annotation>
+      </xs:element>
+      <xs:choice>
+        <xs:group ref="t:cacheWithoutName"/>
+      </xs:choice>
+    </xs:sequence>
   </xs:complexType>
 
   <xs:complexType name="cacheWithNameAndInclude">
-    <xs:complexContent>
-      <xs:extension base="t:cacheWithoutName">
-        <xs:all>
-          <xs:element name="name" type="xs:string">
-            <xs:annotation>
-              <xs:documentation>
-                Name of the cache.
-                For a complete description, see <a href="https://cache2k.org/docs/latest/apidocs/cache2k-api/org/cache2k/Cache2kBuilder.html?utm_source=ide&amp;utm_medium=xsd#name-String-">Cache2kBuilder API Documentation</a>
-              </xs:documentation>
-            </xs:annotation>
-          </xs:element>
-          <xs:element name="include" type="xs:string" minOccurs="0">
-            <xs:annotation>
-              <xs:documentation>
-                Use configuration from the named template.
-              </xs:documentation>
-            </xs:annotation>
-          </xs:element>
-        </xs:all>
-      </xs:extension>
-    </xs:complexContent>
+    <xs:sequence>
+      <xs:element name="name" type="xs:string">
+        <xs:annotation>
+          <xs:documentation>
+            Name of the cache.
+            For a complete description, see <a href="https://cache2k.org/docs/latest/apidocs/cache2k-api/org/cache2k/Cache2kBuilder.html?utm_source=ide&amp;utm_medium=xsd#name-String-">Cache2kBuilder API Documentation</a>
+          </xs:documentation>
+        </xs:annotation>
+      </xs:element>
+      <xs:element name="include" type="xs:string" minOccurs="0">
+        <xs:annotation>
+          <xs:documentation>
+            Use configuration from the named template.
+          </xs:documentation>
+        </xs:annotation>
+      </xs:element>
+      <xs:choice>
+        <xs:group ref="t:cacheWithoutName"/>
+      </xs:choice>
+    </xs:sequence>
   </xs:complexType>
 
-  <xs:complexType name="cacheWithoutName">
-    <xs:all minOccurs="0">
+  <xs:group name="cacheWithoutName">
+    <xs:sequence>
       <xs:element name="entryCapacity" type="xs:string" minOccurs="0" default="2000">
         <xs:annotation>
           <xs:documentation>
@@ -505,8 +510,8 @@
         </xs:annotation>
       </xs:element>
 
-    </xs:all>
-  </xs:complexType>
+    </xs:sequence>
+  </xs:group>
 
   <xs:complexType name="sectionJCache">
     <xs:all>

@@ -1,8 +1,8 @@
-package org.cache2k.schema;
+package org.cache2k.impl.xmlConfiguration;
 
 /*
  * #%L
- * cache2k XSD schemas
+ * cache2k implementation
  * %%
  * Copyright (C) 2000 - 2018 headissue GmbH, Munich
  * %%
@@ -20,10 +20,33 @@ package org.cache2k.schema;
  * #L%
  */
 
+import org.cache2k.CacheManager;
+import org.cache2k.configuration.CustomizationSupplier;
+
+import java.io.Serializable;
+
 /**
- * Dummy class for JavaDoc generation.
- *
  * @author Jens Wilke
  */
-public class Dummy {
+public class AnotherDummyListener<K,V> extends BaseDummyListener<K,V> {
+
+  static public class Supplier
+    implements CustomizationSupplier<AnotherDummyListener>, Serializable {
+
+    @Override
+    public AnotherDummyListener supply(final CacheManager manager) throws Exception {
+      return new AnotherDummyListener();
+    }
+
+    private String xy;
+
+    public String getXy() {
+      return xy;
+    }
+
+    public void setXy(final String v) {
+      xy = v;
+    }
+  }
+
 }

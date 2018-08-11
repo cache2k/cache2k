@@ -14,7 +14,7 @@
 
   <defaultManagerName>other</defaultManagerName>
   <ignoreMissingCacheConfiguration>true</ignoreMissingCacheConfiguration>
-  <skipCheckOnStartup>true</skipCheckOnStartup>
+  <skipCheckOnStartup>false</skipCheckOnStartup>
   
   <properties>
     <user>
@@ -28,32 +28,45 @@
       <entryCapacity>12</entryCapacity>
       <expireAfterWrite>12s</expireAfterWrite>
       <keyType>Integer</keyType>
-      <valueType>String</valueType>
+      <valueType>java.math.BigDecimal</valueType>
       <resilienceDuration>123s</resilienceDuration>
       <storeByReference>false</storeByReference>
       <permitNullValues>false</permitNullValues>
       <disableStatistics>false</disableStatistics>
-      <recordRefreshTime>true</recordRefreshTime>
+      <recordRefreshedTime>true</recordRefreshedTime>
       <boostConcurrency>true</boostConcurrency>
-      <eternal>true</eternal>
+      <eternal>false</eternal>
       <loader>
         <bean>
-          <type>xyz</type>
-          <property>124</property>
+          <type>org.cache2k.configuration.CustomizationSupplierByClassName</type>
+          <className>org.cache2k.impl.xmlConfiguration.DummyLoader</className>
         </bean>
       </loader>
       <listeners>
         <byClassName>
-          <className>hello.com</className>
+          <className>org.cache2k.impl.xmlConfiguration.DummyListener</className>
         </byClassName>
         <bean>
-          <type>bla.com</type>
-          <supplierPropery>hello</supplierPropery>
+          <type>org.cache2k.impl.xmlConfiguration.AnotherDummyListener$Supplier</type>
+          <!-- FIXME: it is not possible to leave out the "any" element, the XSD validation complains -->
+          <xy></xy>
         </bean>
         <bean>
-          <type>bla.com</type>
-          <supplierPropery>hello</supplierPropery>
+          <type>org.cache2k.impl.xmlConfiguration.AnotherDummyListener$Supplier</type>
+          <parameters>
+            <xy>
+              <nestmore></nestmore>
+            </xy>
+          </parameters>
         </bean>
+        <!-- better structure:
+        <supplier>
+          <type>org.cache2k.impl.xmlConfiguration.AnotherDummyListener$Supplier</type>
+          <parameters>
+            <xy>123</xy>
+          </parameters>
+        </supplier>
+        -->
       </listeners>
       <sections>
         <jcache>
@@ -63,8 +76,8 @@
           <enableStatistics>true</enableStatistics>
         </jcache>
         <section>
-          <type>bla.Eviction</type>
-          <restrict>123</restrict>
+          <type>org.cache2k.jcache.JCacheConfiguration</type>
+          <enableStatistics>true</enableStatistics>
         </section>
       </sections>
     </cache>
@@ -75,13 +88,26 @@
       <name>hello</name>
       <entryCapacity>1234</entryCapacity>
     </cache>
+    <cache>
+      <name>another</name>
+      <sharpExpiry>true</sharpExpiry>
+      <eternal>true</eternal>
+    </cache>
   </templates>
 
   <caches>
     <cache>
-      <name>test</name>
+      <name>testWithInclude</name>
       <include>hello</include>
+      <entryCapacity>1234</entryCapacity>
+      <expireAfterWrite>12</expireAfterWrite>
     </cache>
+    <cache>
+      <name>testWithoutInclude</name>
+      <entryCapacity>1234</entryCapacity>
+      <expireAfterWrite>12</expireAfterWrite>
+    </cache>
+
   </caches>
 
 </cache2k>
