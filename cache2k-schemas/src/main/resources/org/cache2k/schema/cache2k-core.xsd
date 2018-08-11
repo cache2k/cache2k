@@ -123,9 +123,12 @@
             </xs:documentation>
           </xs:annotation>
           <xs:complexType>
-            <xs:sequence maxOccurs="unbounded">
-              <xs:element name="cache" type="t:template"/>
-            </xs:sequence>
+            <xs:choice>
+              <xs:sequence>
+                <xs:element name="cache" type="t:cacheTemplate" maxOccurs="unbounded"/>
+                <xs:element name="jcache" type="t:jcacheTemplate" maxOccurs="unbounded"/>
+              </xs:sequence>
+            </xs:choice>
           </xs:complexType>
         </xs:element>
 
@@ -170,6 +173,23 @@
     </xs:sequence>
   </xs:complexType>
 
+  <xs:complexType name="typeInlcudeParameters">
+    <xs:choice>
+      <xs:sequence>
+        <xs:element name="type" type="xs:string"/>
+        <xs:element name="include" type="xs:string"/>
+        <xs:element name="parameters">
+          <xs:complexType>
+            <xs:sequence>
+              <xs:any processContents="lax" minOccurs="0" maxOccurs="unbounded"/>
+            </xs:sequence>
+            <xs:anyAttribute processContents="lax"/>
+          </xs:complexType>
+        </xs:element>
+      </xs:sequence>
+    </xs:choice>
+  </xs:complexType>
+
   <xs:complexType name="customizationCollection">
     <xs:annotation>
       <xs:documentation>
@@ -180,17 +200,26 @@
       <xs:choice maxOccurs="unbounded">
         <xs:element name="bean">
           <xs:complexType>
-            <xs:sequence>
+            <xs:all>
               <xs:element name="type" type="xs:string"/>
-              <xs:any processContents="skip" maxOccurs="unbounded"/>
-            </xs:sequence>
+              <xs:element name="include" type="xs:string" minOccurs="0"/>
+              <xs:element name="parameters" minOccurs="0">
+                <xs:complexType>
+                  <xs:sequence>
+                    <xs:any processContents="lax" minOccurs="0" maxOccurs="unbounded"/>
+                  </xs:sequence>
+                  <xs:anyAttribute processContents="lax"/>
+                </xs:complexType>
+              </xs:element>
+            </xs:all>
           </xs:complexType>
         </xs:element>
         <xs:element name="byClassName">
           <xs:complexType>
-            <xs:sequence>
-              <xs:element name="className" type="xs:string"/>
-            </xs:sequence>
+            <xs:all>
+              <xs:element name="include" type="xs:string" minOccurs="0"/>
+              <xs:element name="className" type="xs:string" />
+            </xs:all>
           </xs:complexType>
         </xs:element>
       </xs:choice>
@@ -205,13 +234,7 @@
     </xs:annotation>
     <xs:sequence>
       <xs:choice maxOccurs="unbounded">
-        <xs:element name="section">
-          <xs:complexType>
-            <xs:sequence>
-              <xs:element name="type" type="xs:string"/>
-              <xs:any processContents="skip" maxOccurs="unbounded" minOccurs="0"/>
-            </xs:sequence>
-          </xs:complexType>
+        <xs:element name="section" type="t:typeInlcudeParameters">
         </xs:element>
         <!-- TODO: actually jcache may appear only once. -->
         <xs:element name="jcache" type="t:sectionJCache"/>
@@ -219,18 +242,32 @@
     </xs:sequence>
   </xs:complexType>
 
-  <xs:complexType name="template">
+  <xs:complexType name="cacheTemplate">
     <xs:sequence>
       <xs:element name="name" type="xs:string">
         <xs:annotation>
           <xs:documentation>
             Name of the template.
-            For a complete description, see <a href="https://cache2k.org/docs/latest/apidocs/cache2k-api/org/cache2k/Cache2kBuilder.html?utm_source=ide&amp;utm_medium=xsd#name-String-">Cache2kBuilder API Documentation</a>
           </xs:documentation>
         </xs:annotation>
       </xs:element>
       <xs:choice>
         <xs:group ref="t:cacheWithoutName"/>
+      </xs:choice>
+    </xs:sequence>
+  </xs:complexType>
+
+  <xs:complexType name="jcacheTemplate">
+    <xs:sequence>
+      <xs:element name="name" type="xs:string">
+        <xs:annotation>
+          <xs:documentation>
+            Name of the template.
+          </xs:documentation>
+        </xs:annotation>
+      </xs:element>
+      <xs:choice>
+        <xs:group ref="t:jcacheGroup"/>
       </xs:choice>
     </xs:sequence>
   </xs:complexType>
@@ -514,7 +551,16 @@
   </xs:group>
 
   <xs:complexType name="sectionJCache">
-    <xs:all>
+    <xs:choice>
+      <xs:sequence maxOccurs="unbounded">
+        <xs:element name="include" type="xs:string" minOccurs="0"/>
+        <xs:group ref="t:jcacheGroup"/>
+      </xs:sequence>
+   </xs:choice>
+  </xs:complexType>
+
+  <xs:group name="jcacheGroup">
+    <xs:sequence>
       <xs:element name="copyAlwaysIfRequested" type="xs:string" default="false" minOccurs="0">
         <xs:annotation>
           <xs:documentation>
@@ -545,7 +591,7 @@
           </xs:documentation>
         </xs:annotation>
       </xs:element>
-    </xs:all>
-  </xs:complexType>
+    </xs:sequence>
+  </xs:group>
 
 </xs:schema>

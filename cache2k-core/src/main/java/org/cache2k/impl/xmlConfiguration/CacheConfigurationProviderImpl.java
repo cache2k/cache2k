@@ -27,6 +27,7 @@ import org.cache2k.configuration.ConfigurationSection;
 import org.cache2k.configuration.ConfigurationWithSections;
 import org.cache2k.configuration.CustomizationSupplierByClassName;
 import org.cache2k.configuration.SingletonConfigurationSection;
+import org.cache2k.configuration.ValidatingConfigurationBean;
 import org.cache2k.core.spi.CacheConfigurationProvider;
 
 import java.io.ByteArrayInputStream;
@@ -384,7 +385,15 @@ public class CacheConfigurationProviderImpl implements CacheConfigurationProvide
     } catch (Exception ex) {
       throw new ConfigurationException("Cannot instantiate bean: " + ex, _parsedCfg);
     }
-    apply(ctx, _parsedCfg, _bean);
+    ParsedConfiguration _parameters = _parsedCfg.getSection("parameters");
+    apply(ctx, _parameters != null ? _parameters : _parsedCfg, _bean);
+    if (_bean instanceof ValidatingConfigurationBean) {
+      try {
+        ((ValidatingConfigurationBean) _bean).validate();
+      } catch (IllegalArgumentException ex) {
+        throw new ConfigurationException("Validation error '" + _bean.getClass().getSimpleName() +"': " + ex.getMessage(), _parsedCfg);
+      }
+    }
     return _bean;
   }
 

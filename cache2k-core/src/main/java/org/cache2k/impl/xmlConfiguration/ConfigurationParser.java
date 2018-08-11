@@ -50,12 +50,23 @@ public class ConfigurationParser {
   }
 
   private static void parseSections(final String _containerName, final ConfigurationTokenizer _parser, final ParsedConfiguration _container) throws Exception {
+    boolean _maybeSection = true;
     for (;;) {
       ConfigurationTokenizer.Item _item = _parser.next();
       if (_item == null) {
         return;
       }
       if (_item instanceof ConfigurationTokenizer.Unnest) {
+        return;
+      }
+      if (_item instanceof ConfigurationTokenizer.Property && _maybeSection) {
+        ParsedConfiguration _nestedContainer = new ParsedConfiguration(_parser.getSource(), _parser.getLineNumber());
+        _nestedContainer.setName(_containerName);
+        _nestedContainer.setPropertyContext(_containerName);
+        _nestedContainer.setContainer("#DIRECT");
+        _nestedContainer.addProperty((ConfigurationTokenizer.Property) _item);
+        parseSection(_parser, _nestedContainer);
+        _container.addSection(_nestedContainer);
         return;
       }
       if (!(_item instanceof ConfigurationTokenizer.Nest)) {
@@ -68,6 +79,7 @@ public class ConfigurationParser {
       _nestedContainer.setContainer(_containerName);
       parseSection(_parser, _nestedContainer);
       _container.addSection(_nestedContainer);
+      _maybeSection = false;
     }
   }
 

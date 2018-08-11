@@ -17,6 +17,7 @@
   <skipCheckOnStartup>false</skipCheckOnStartup>
   
   <properties>
+    <!-- FIXME get rid of user!!! -->
     <user>
       <test>some stuff</test>
       <var>123</var>
@@ -39,7 +40,9 @@
       <loader>
         <bean>
           <type>org.cache2k.configuration.CustomizationSupplierByClassName</type>
-          <className>org.cache2k.impl.xmlConfiguration.DummyLoader</className>
+          <parameters>
+            <className>org.cache2k.impl.xmlConfiguration.DummyLoader</className>
+          </parameters>
         </bean>
       </loader>
       <listeners>
@@ -48,15 +51,13 @@
         </byClassName>
         <bean>
           <type>org.cache2k.impl.xmlConfiguration.AnotherDummyListener$Supplier</type>
-          <!-- FIXME: it is not possible to leave out the "any" element, the XSD validation complains -->
-          <xy></xy>
         </bean>
         <bean>
           <type>org.cache2k.impl.xmlConfiguration.AnotherDummyListener$Supplier</type>
+          <include>templateBean</include>
           <parameters>
-            <xy>
-              <nestmore></nestmore>
-            </xy>
+            <value1>123</value1>
+            <xy>yx</xy>
           </parameters>
         </bean>
         <!-- better structure:
@@ -70,15 +71,12 @@
       </listeners>
       <sections>
         <jcache>
+          <include>templateJCache1</include>
           <copyAlwaysIfRequested>true</copyAlwaysIfRequested>
           <enableManagement>true</enableManagement>
           <supportOnlineListenerAttachment>true</supportOnlineListenerAttachment>
           <enableStatistics>true</enableStatistics>
         </jcache>
-        <section>
-          <type>org.cache2k.jcache.JCacheConfiguration</type>
-          <enableStatistics>true</enableStatistics>
-        </section>
       </sections>
     </cache>
   </defaults>
@@ -93,6 +91,10 @@
       <sharpExpiry>true</sharpExpiry>
       <eternal>true</eternal>
     </cache>
+    <jcache>
+      <name>templateJCache1</name>
+      <enableStatistics>true</enableStatistics>
+    </jcache>
   </templates>
 
   <caches>
@@ -106,8 +108,32 @@
       <name>testWithoutInclude</name>
       <entryCapacity>1234</entryCapacity>
       <expireAfterWrite>12</expireAfterWrite>
+      <sections>
+        <section>
+          <type>org.cache2k.jcache.JCacheConfiguration</type>
+          <include>templateJCache1</include>
+          <parameters>
+            <enableStatistics>true</enableStatistics>
+          </parameters>
+        </section>
+      </sections>
     </cache>
-
+    <cache>
+      <name>jcache1</name>
+      <!-- FIXME: variable expansion
+      <entryCapacity>${var}</entryCapacity>
+      -->
+      <listeners>
+        <byClassName>
+          <className>org.cache2k.impl.xmlConfiguration.DummyListener</className>
+        </byClassName>
+      </listeners>
+      <sections>
+        <jcache>
+          <enableStatistics>true</enableStatistics>
+        </jcache>
+      </sections>
+    </cache>
   </caches>
 
 </cache2k>

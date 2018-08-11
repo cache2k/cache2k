@@ -283,7 +283,7 @@ public class IntegrationTest {
         .entryCapacity(1234);
       fail("expect exception");
     } catch (Exception ex) {
-      assertThat(ex.toString(), containsString("section start expected"));
+      assertThat(ex.toString(), containsString("type missing or unknown"));
     }
   }
 

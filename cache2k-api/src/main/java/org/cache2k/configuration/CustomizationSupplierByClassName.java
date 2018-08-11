@@ -28,7 +28,7 @@ import org.cache2k.CacheManager;
  *
  * @author Jens Wilke
  */
-public final class CustomizationSupplierByClassName<T> implements CustomizationSupplier<T>, ConfigurationBean {
+public final class CustomizationSupplierByClassName<T> implements CustomizationSupplier<T>, ValidatingConfigurationBean {
 
   private String className;
 
@@ -57,6 +57,13 @@ public final class CustomizationSupplierByClassName<T> implements CustomizationS
 
   public void setClassName(final String v) {
     className = v;
+  }
+
+  @Override
+  public void validate() {
+    if (className == null) {
+      throw new IllegalArgumentException("className not set");
+    }
   }
 
   @SuppressWarnings("unchecked")

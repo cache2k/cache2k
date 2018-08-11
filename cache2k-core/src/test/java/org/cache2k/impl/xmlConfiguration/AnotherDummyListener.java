@@ -39,6 +39,7 @@ public class AnotherDummyListener<K,V> extends BaseDummyListener<K,V> {
     }
 
     private String xy;
+    private String value1;
 
     public String getXy() {
       return xy;
@@ -46,6 +47,14 @@ public class AnotherDummyListener<K,V> extends BaseDummyListener<K,V> {
 
     public void setXy(final String v) {
       xy = v;
+    }
+
+    public String getValue1() {
+      return value1;
+    }
+
+    public void setValue1(final String v) {
+      value1 = v;
     }
   }
 
