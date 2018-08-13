@@ -75,10 +75,8 @@
               Contains user defined properties. Example:
               <pre>
   &lt;properties>
-    &lt;user>
-       &lt;smallCacheCapacity>12_000&lt;/smallCacheCapacity>
-       &lt;userHome>${ENV.HOME}&lt;/userHome>
-    &lt;user>
+     &lt;smallCacheCapacity>12_000&lt;/smallCacheCapacity>
+     &lt;userHome>${ENV.HOME}&lt;/userHome>
   &lt;/properties>
               </pre>
               More information can be found at: <a href="https://cache2k.org/docs/latest/user-guide.html?utm_source=ide&amp;utm_medium=xsd#xml-configuration">XML Configuration - cache2k User Guide</a>
@@ -86,13 +84,7 @@
           </xs:annotation>
           <xs:complexType>
             <xs:sequence>
-              <xs:element name="user" maxOccurs="1" minOccurs="1">
-                <xs:complexType>
-                  <xs:sequence>
-                    <xs:any processContents="skip" maxOccurs="unbounded"/>
-                  </xs:sequence>
-                </xs:complexType>
-              </xs:element>
+              <xs:any processContents="skip" maxOccurs="unbounded"/>
             </xs:sequence>
           </xs:complexType>
         </xs:element>

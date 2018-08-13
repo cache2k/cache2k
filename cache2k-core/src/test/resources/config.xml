@@ -11,17 +11,15 @@
       <hello>123</hello>
     </manager>
     -->
-    <user>
-      <bigCacheCapacity>12000</bigCacheCapacity>
-      <homeDirectory>${ENV.HOME}</homeDirectory>
-      <forward>${TOP.caches.products.eviction.cValue}</forward>
-      <illegalScope>${CHACKA.farusimatasa}</illegalScope>
-      <noClose>${ENV.HOME</noClose>
-      <noScope>${snoopy}</noScope>
-      <noVariable>${.</noVariable>
-      <illegalVariable>${.asdf}</illegalVariable>
-      <vendor>${PROP.java.vendor}</vendor>
-    </user>
+    <bigCacheCapacity>12000</bigCacheCapacity>
+    <homeDirectory>${ENV.HOME}</homeDirectory>
+    <forward>${TOP.caches.products.eviction.cValue}</forward>
+    <illegalScope>${CHACKA.farusimatasa}</illegalScope>
+    <noClose>${ENV.HOME</noClose>
+    <noScope>${snoopy}</noScope>
+    <noVariable>${.</noVariable>
+    <illegalVariable>${.asdf}</illegalVariable>
+    <vendor>${SYS.java.vendor}</vendor>
   </properties>
 
   <defaults>
@@ -65,7 +63,7 @@
           <type>EvictionConfiguration</type>
           <aValue>123</aValue>
           <duplicateName>${cache.name}</duplicateName>
-          <directory>${TOP.properties.user.homeDirectory}</directory>
+          <directory>${TOP.properties.homeDirectory}</directory>
           <bValue>${.aValue}</bValue>
           <cValue>${eviction.aValue}</cValue>
           <dValue>[${.aValue}]</dValue>

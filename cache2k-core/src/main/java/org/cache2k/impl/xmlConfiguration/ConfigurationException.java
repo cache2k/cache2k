@@ -44,7 +44,7 @@ public class ConfigurationException extends CacheException {
   }
 
   public ConfigurationException(final String _message, final SourceLocation _location) {
-    super(_message + " at " + _location.getSource() + ":" + _location.getLineNumber());
+    super(_message + " (" + _location.getSource() + ":" + _location.getLineNumber() + ")") ;
   }
 
 }

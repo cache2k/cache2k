@@ -103,6 +103,10 @@ public class ConfigurationParser {
         ParsedConfiguration _nestedContainer = new ParsedConfiguration(_parser.getSource(), _parser.getLineNumber());
         _nestedContainer.setName(_sectionStart.getSectionName());
         parseSections(((ConfigurationTokenizer.Nest) _item).getSectionName(), _parser, _nestedContainer);
+        if (_nestedContainer.getPropertyMap().isEmpty() && _nestedContainer.getSections().size() == 1 &&
+          _nestedContainer.getSections().get(0).getContainer().equals("#DIRECT")) {
+          _nestedContainer = _nestedContainer.getSections().get(0);
+        }
         _container.addSection(_nestedContainer);
       }
     }

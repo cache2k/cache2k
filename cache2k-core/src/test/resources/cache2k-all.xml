@@ -17,11 +17,8 @@
   <skipCheckOnStartup>false</skipCheckOnStartup>
   
   <properties>
-    <!-- FIXME get rid of user!!! -->
-    <user>
-      <test>some stuff</test>
-      <var>123</var>
-    </user>
+    <test>some stuff</test>
+    <smallSize>1153</smallSize>
   </properties>
 
   <defaults>
@@ -120,14 +117,8 @@
     </cache>
     <cache>
       <name>jcache1</name>
-      <!-- FIXME: variable expansion
-      <entryCapacity>${var}</entryCapacity>
-      -->
-      <listeners>
-        <byClassName>
-          <className>org.cache2k.impl.xmlConfiguration.DummyListener</className>
-        </byClassName>
-      </listeners>
+      <entryCapacity>${smallSize}</entryCapacity>
+      <maxRetryInterval>${SYS.expectedNotToExist:-123s}</maxRetryInterval>
       <sections>
         <jcache>
           <enableStatistics>true</enableStatistics>

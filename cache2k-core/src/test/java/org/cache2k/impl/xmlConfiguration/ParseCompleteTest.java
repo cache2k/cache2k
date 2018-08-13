@@ -77,8 +77,8 @@ public class ParseCompleteTest {
     VariableExpander _expander = new StandardVariableExpander();
     _expander.expand(cfg);
     String _homeDirectory = System.getenv("HOME");
-    assertEquals(_homeDirectory, cfg.getStringPropertyByPath("properties.user.homeDirectory"));
-    assertEquals("123", cfg.getStringPropertyByPath("properties.user.forward"));
+    assertEquals(_homeDirectory, cfg.getStringPropertyByPath("properties.homeDirectory"));
+    assertEquals("123", cfg.getStringPropertyByPath("properties.forward"));
     assertEquals("5", cfg.getStringPropertyByPath("caches.hallo.entryCapacity"));
     assertEquals("products", cfg.getStringPropertyByPath("caches.products.eviction.duplicateName"));
     assertEquals("123", cfg.getStringPropertyByPath("caches.products.eviction.bValue"));
@@ -86,8 +86,8 @@ public class ParseCompleteTest {
     assertEquals("[123]", cfg.getStringPropertyByPath("caches.products.eviction.dValue"));
     assertEquals("123-products", cfg.getStringPropertyByPath("caches.products.eviction.eValue"));
     assertEquals(_homeDirectory, cfg.getStringPropertyByPath("caches.products.eviction.directory"));
-    assertEquals("${CHACKA.farusimatasa}", cfg.getStringPropertyByPath("properties.user.illegalScope"));
-    assertEquals("${ENV.HOME", cfg.getStringPropertyByPath("properties.user.noClose"));
+    assertEquals("${CHACKA.farusimatasa}", cfg.getStringPropertyByPath("properties.illegalScope"));
+    assertEquals("${ENV.HOME", cfg.getStringPropertyByPath("properties.noClose"));
   }
 
   @Test(expected = ConfigurationException.class)

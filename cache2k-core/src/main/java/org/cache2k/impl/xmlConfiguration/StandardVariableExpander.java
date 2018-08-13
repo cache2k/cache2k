@@ -31,6 +31,10 @@ import java.util.Map;
 @SuppressWarnings("WeakerAccess")
 public class StandardVariableExpander implements VariableExpander {
 
+  /**
+   * Initial contents of the scopes. This map gets copied for each
+   * expansion process, so the scope gets shadowed by the XML elements.
+   */
   private Map<String, ValueAccessor> scope2resolver = new HashMap<String, ValueAccessor>();
 
   {
@@ -60,7 +64,17 @@ public class StandardVariableExpander implements VariableExpander {
         return checkAndReturnValue(p);
       }
     });
-
+    scope2resolver.put("PROPERTIES", new ValueAccessor() {
+      @Override
+      public String get(ExpanderContext ctx, final String _variable) {
+        ParsedConfiguration pc = ctx.getTopLevelConfiguration().getSection("properties");
+        if (pc == null) {
+          return null;
+        }
+        ConfigurationTokenizer.Property p = pc.getPropertyMap().get(_variable);
+        return checkAndReturnValue(p);
+      }
+    });
   }
 
   @Override
@@ -165,18 +179,31 @@ public class StandardVariableExpander implements VariableExpander {
           return s;
         }
         int _scopeIdx = s.indexOf('.', idx);
-        if (_scopeIdx < 0) {
-          continue;
+        String _scope;
+        if (_scopeIdx >= 0) {
+          _scope = s.substring(idx + 2, _scopeIdx);
+        } else {
+          _scope = "PROPERTIES";
+          _scopeIdx = idx + 1;
         }
-        String _scope = s.substring(idx + 2, _scopeIdx);
-        String _varName = s.substring(_scopeIdx + 1, _endIdx);
+        int _defaultIdx = s.indexOf(":-", idx);
+        int _varEndIdx = _endIdx;
+        String _defaultValue = null;
+        if (_defaultIdx >= 0 && _defaultIdx < _endIdx) {
+          _defaultValue = s.substring(_defaultIdx + 2, _endIdx);
+          _varEndIdx = _defaultIdx;
+        }
+        String _varName = s.substring(_scopeIdx + 1, _varEndIdx);
         ValueAccessor r = scope2resolver.get(_scope);
         if (r == null) {
           continue;
         }
         String _substitutionString = r.get(this, _varName);
         if (_substitutionString == null) {
-          continue;
+          if (_defaultValue == null) {
+            continue;
+          }
+          _substitutionString = _defaultValue;
         }
         s = s.substring(0, idx) + _substitutionString + s.substring(_endIdx + 1);
         _endIdx = idx + _substitutionString.length();
