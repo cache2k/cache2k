@@ -37,20 +37,22 @@ public class StandardVariableExpander implements VariableExpander {
    */
   private Map<String, ValueAccessor> scope2resolver = new HashMap<String, ValueAccessor>();
 
+  private static final String PROPERTIES = "PROPERTIES";
+
   {
-    scope2resolver.put("ENV", new ValueAccessor() {
+    scope2resolver.put("env", new ValueAccessor() {
       @Override
       public String get(final ExpanderContext ctx, final String _variable) {
         return System.getenv(_variable);
       }
     });
-    scope2resolver.put("PROP", new ValueAccessor() {
+    scope2resolver.put("sys", new ValueAccessor() {
       @Override
       public String get(ExpanderContext ctx, final String _variable) {
         return System.getProperty(_variable);
       }
     });
-    scope2resolver.put("TOP", new ValueAccessor() {
+    scope2resolver.put("top", new ValueAccessor() {
       @Override
       public String get(ExpanderContext ctx, final String _variable) {
         ConfigurationTokenizer.Property p = ctx.getTopLevelConfiguration().getPropertyByPath(_variable);
@@ -64,7 +66,7 @@ public class StandardVariableExpander implements VariableExpander {
         return checkAndReturnValue(p);
       }
     });
-    scope2resolver.put("PROPERTIES", new ValueAccessor() {
+    scope2resolver.put(PROPERTIES, new ValueAccessor() {
       @Override
       public String get(ExpanderContext ctx, final String _variable) {
         ParsedConfiguration pc = ctx.getTopLevelConfiguration().getSection("properties");
@@ -183,7 +185,7 @@ public class StandardVariableExpander implements VariableExpander {
         if (_scopeIdx >= 0) {
           _scope = s.substring(idx + 2, _scopeIdx);
         } else {
-          _scope = "PROPERTIES";
+          _scope = PROPERTIES;
           _scopeIdx = idx + 1;
         }
         int _defaultIdx = s.indexOf(":-", idx);

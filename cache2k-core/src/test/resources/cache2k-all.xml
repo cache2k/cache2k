@@ -118,7 +118,7 @@
     <cache>
       <name>jcache1</name>
       <entryCapacity>${smallSize}</entryCapacity>
-      <maxRetryInterval>${SYS.expectedNotToExist:-123s}</maxRetryInterval>
+      <maxRetryInterval>${sys.expectedNotToExist:-123s}</maxRetryInterval>
       <sections>
         <jcache>
           <enableStatistics>true</enableStatistics>

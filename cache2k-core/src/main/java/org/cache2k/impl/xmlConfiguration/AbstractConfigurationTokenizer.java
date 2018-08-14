@@ -120,8 +120,8 @@ public abstract class AbstractConfigurationTokenizer implements ConfigurationTok
     }
 
     @Override
-    public void setValue(final String _value) {
-      value = _value;
+    public void setValue(final String v) {
+      value = v;
     }
 
     @Override

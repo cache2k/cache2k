@@ -12,8 +12,8 @@
     </manager>
     -->
     <bigCacheCapacity>12000</bigCacheCapacity>
-    <homeDirectory>${ENV.HOME}</homeDirectory>
-    <forward>${TOP.caches.products.eviction.cValue}</forward>
+    <homeDirectory>${env.HOME}</homeDirectory>
+    <forward>${top.caches.products.eviction.cValue}</forward>
     <illegalScope>${CHACKA.farusimatasa}</illegalScope>
     <noClose>${ENV.HOME</noClose>
     <noScope>${snoopy}</noScope>
@@ -51,7 +51,7 @@
 
     <cache>
       <name>hallo</name>
-      <entryCapacity>${TOP.caches.products.entryCapacity}</entryCapacity>
+      <entryCapacity>${top.caches.products.entryCapacity}</entryCapacity>
     </cache>
 
     <cache>
@@ -63,7 +63,7 @@
           <type>EvictionConfiguration</type>
           <aValue>123</aValue>
           <duplicateName>${cache.name}</duplicateName>
-          <directory>${TOP.properties.homeDirectory}</directory>
+          <directory>${top.properties.homeDirectory}</directory>
           <bValue>${.aValue}</bValue>
           <cValue>${eviction.aValue}</cValue>
           <dValue>[${.aValue}]</dValue>
