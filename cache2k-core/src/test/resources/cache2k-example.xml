@@ -1,12 +1,13 @@
-<cache2k>
-  <!-- The configuration example for the documentation -->
+<cache2k xmlns:xsi='http://www.w3.org/2001/XMLSchema-instance'
+         xmlns='https://cache2k.org/schema/v1.x'
+         xsi:schemaLocation="https://cache2k.org/schema/v1.x https://cache2k.org/schema/cache2k-core-v1.x.xsd">
+<!-- The configuration example for the documentation -->
   <version>1.0</version>
-  <defaultManagerName>default</defaultManagerName>
   <skipCheckOnStartup>true</skipCheckOnStartup>
   <properties>
     <user>
       <smallCacheCapacity>12_000</smallCacheCapacity>
-      <userHome>${ENV.HOME}</userHome>
+      <userHome>${env.HOME}</userHome>
     </user>
   </properties>
   <defaults>
