@@ -117,8 +117,8 @@
           <xs:complexType>
             <xs:choice>
               <xs:sequence>
-                <xs:element name="cache" type="t:cacheTemplate" maxOccurs="unbounded"/>
-                <xs:element name="jcache" type="t:jcacheTemplate" maxOccurs="unbounded"/>
+                <xs:element name="cache" type="t:cacheTemplate" minOccurs="0" maxOccurs="unbounded"/>
+                <xs:element name="jcache" type="t:jcacheTemplate" minOccurs="0" maxOccurs="unbounded"/>
               </xs:sequence>
             </xs:choice>
           </xs:complexType>
