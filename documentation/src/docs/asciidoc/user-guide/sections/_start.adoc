@@ -12,7 +12,7 @@ in your project is to add the following dependencies:
       <dependency>
         <groupId>org.cache2k</groupId>
         <artifactId>cache2k-base-bom</artifactId>
-        <version>{cache2kversion}</version>
+        <version>{cache2k_version}</version>
         <type>pom</type>
       </dependency>
     </dependencies>
@@ -22,7 +22,7 @@ For gradle users, the following scheme is recommended:
 
 [source,groovy,subs="attributes+"]
 ----
-def cache2kVersion = '{cache2kversion}'
+def cache2kVersion = '{cache2k_version}'
 
 dependencies {
     implementation "org.cache2k:cache2k-api:${cache2kVersion}"

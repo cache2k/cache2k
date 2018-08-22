@@ -1,6 +1,6 @@
 = cache2k User Guide
 Jens Wilke
-:revnumber: {cache2kversion}
+:revnumber: {cache2k_version}
 :doctype: book
 :toc: left
 :numbered:

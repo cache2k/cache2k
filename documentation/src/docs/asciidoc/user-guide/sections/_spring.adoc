@@ -8,7 +8,7 @@ To use cache2k in you Spring project, add the following libraries:
 [source,xml,subs="attributes+"]
 ----
     <properties>
-      <cache2k-version>{cache2kversion}</cache2k-version>
+      <cache2k-version>{cache2k_version}</cache2k-version>
     </properties>
 
     <dependency>

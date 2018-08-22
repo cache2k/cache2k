@@ -87,7 +87,7 @@
                 <sectanchors>true</sectanchors>
                 <idprefix/>
                 <idseparator>-</idseparator>
-                <cache2kversion>${project.version}</cache2kversion>
+                <cache2k_version>${project.version}</cache2k_version>
                 <cache2k_docs>https://cache2k.org/docs/${series}</cache2k_docs>
                 <api_link>link:https://cache2k.org/docs/${series}/apidocs/cache2k-api/index.html?org/cache2k</api_link>
               </attributes>
@@ -110,7 +110,7 @@
                 <toc/>
                 <idprefix/>
                 <idseparator>-</idseparator>
-                <cache2kversion>${project.version}</cache2kversion>
+                <cache2k_version>${project.version}</cache2k_version>
                 <cache2k_docs>https://cache2k.org/docs/${series}</cache2k_docs>
                 <api_link>link:https://cache2k.org/docs/${series}/apidocs/cache2k-api/index.html?org/cache2k</api_link>
               </attributes>
