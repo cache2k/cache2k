@@ -381,6 +381,26 @@ public class BasicCacheOperationsWithoutCustomizationsTest {
     checkRefreshTime(cache.peekEntry(KEY));
   }
 
+  @Test
+  public void putAllChm() {
+    Map<Integer, Integer> map = new ConcurrentHashMap<Integer, Integer>();
+    map.put(KEY, VALUE);
+    map.put(OTHER_KEY, OTHER_VALUE);
+    cache.putAll(map);
+    assertTrue(cache.containsKey(KEY));
+    assertTrue(cache.containsKey(OTHER_KEY));
+    assertEquals(OTHER_VALUE, cache.peek(OTHER_KEY));
+    assertEquals(VALUE, cache.peek(KEY));
+    checkRefreshTime(cache.peekEntry(KEY));
+  }
+
+  @Test(expected = NullPointerException.class)
+  public void putAll_NullKey() {
+    Map<Integer, Integer> map = new HashMap<Integer, Integer>();
+    map.put(null, VALUE);
+    cache.putAll(map);
+  }
+
   /*
    * computeIfAbsent
    */

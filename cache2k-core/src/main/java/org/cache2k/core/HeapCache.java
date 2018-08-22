@@ -1728,9 +1728,6 @@ public class HeapCache<K, V> extends BaseCache<K, V> {
   }
 
   public void putAll(Map<? extends K, ? extends V> valueMap) {
-    if (valueMap.containsKey(null)) {
-      throw new NullPointerException("map contains null key");
-    }
     for (Map.Entry<? extends K, ? extends V> e : valueMap.entrySet()) {
       put(e.getKey(), e.getValue());
     }
