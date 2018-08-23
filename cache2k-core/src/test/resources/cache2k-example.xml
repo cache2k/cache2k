@@ -5,10 +5,8 @@
   <version>1.0</version>
   <skipCheckOnStartup>true</skipCheckOnStartup>
   <properties>
-    <user>
-      <smallCacheCapacity>12_000</smallCacheCapacity>
-      <userHome>${env.HOME}</userHome>
-    </user>
+    <smallCacheCapacity>12_000</smallCacheCapacity>
+    <userHome>${env.HOME}</userHome>
   </properties>
   <defaults>
     <cache>
@@ -28,7 +26,7 @@
   <caches>
     <cache>
       <name>users</name>
-      <entryCapacity>${TOP.properties.user.smallCacheCapacity}</entryCapacity>
+      <entryCapacity>${top.properties.user.smallCacheCapacity}</entryCapacity>
       <loader>
         <byClassName>
           <className>org.example.MyLoader</className>
