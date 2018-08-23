@@ -104,6 +104,7 @@ and the class `MutableExtendedConfiguration` is provided. Example usage:
 ----
 
 [[jcache-uri-exception]]
+[[cache-manager-and-xml-configuration]]
 ==== Cache Manager and XML Configuration
 
 To get the default cache manager, do:
@@ -129,15 +130,16 @@ or simply, if you don't need to specify properties or a classloader:
 
 In case there is a `cache2k.xml` present in the class path, this will be picked up automatically.
 
-If not the default manager is requested, another XML configuration applies. Only use the simple
-manager name within the URI, for example:
+Different cache manager URIs will create different cache manager have a separate XML configuration.
+The manager URI is not the path to the configuration file but simply the cache manager name as used within
+the cache2k API. For example:
 
 [source,java]
 ----
     provider.getCacheManager(new URI("special"), classloader, properties);
 ----
 
-In the above example `special`  is used as the name of the manager and the configuration is expected to be at
+In the above example `special` is used as the name of the manager and the configuration is expected to be at
 `cache2k-special.xml`. There is no need for an URI to have a scheme.
 For a rationale, see: (GH#91)[https://github.com/cache2k/cache2k/issues/91]
 

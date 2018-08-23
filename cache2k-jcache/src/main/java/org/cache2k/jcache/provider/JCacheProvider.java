@@ -67,7 +67,9 @@ public class JCacheProvider implements CachingProvider {
   public String uri2Name(URI uri) {
     String s = uri.toString();
     if (uri.getScheme() != null || s.contains(".xml") || s.contains(File.separator)) {
-      throw new IllegalArgumentException("Only cache manager name expected in the URI, not a file name or path");
+      throw new IllegalArgumentException(
+        "Only cache manager name, e.g. new URI(\"name\"), expected in the URI, " +
+        "not a file name or path, https://cache2k.org/docs/latest/user-guide.html#jcache-uri-exception");
     }
     return s;
   }
