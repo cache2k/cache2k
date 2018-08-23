@@ -97,10 +97,10 @@ Templates can be used for other configuration sections as well.
 The values may contain the parameters in the the style `${scope.name}`. A parameter name starts with a scope.
 Predefined scopes are:
 
-ENV:: environment variable, e.g. `${ENV.HOME}` is the user home directory.
-TOP:: references the configuration root, e.g. `${TOP.caches.flights.entryCapacity}` references the value of the
+env:: environment variable, e.g. `${env.HOME}` is the user home directory.
+top:: references the configuration root, e.g. `${top.caches.flights.entryCapacity}` references the value of the
       `entryCapacity` of the cache named `flights`.
-PROP:: a Java system property, e.g. `${PROP.java.home}` for the JDK installation directory.
+sys:: a Java system property, e.g. `${sys.java.home}` for the JDK installation directory.
 
 The scope prefix can also reference a parent element name. If the scope prefix is empty an value at the same level
 is referenced.
@@ -172,7 +172,9 @@ configuration of the customization. In this case the `type` element is used to s
     <bean>
       <type>org.exmample.LoaderSupplier</type>
       <!-- Additional bean properties to set on the supplier follow. -->
-      <database>jdbc://....</database>
+      <parameters>
+        <database>jdbc://....</database>
+      </parameters>
     </bean>
   </loader>
 ----
