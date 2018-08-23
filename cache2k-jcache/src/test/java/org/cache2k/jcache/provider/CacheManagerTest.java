@@ -40,6 +40,7 @@ import javax.cache.event.CacheEntryEventFilter;
 import javax.cache.event.CacheEntryListener;
 import javax.cache.spi.CachingProvider;
 import java.math.BigDecimal;
+import java.net.URI;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -113,7 +114,6 @@ public class CacheManagerTest {
     ));
     assertFalse(cache instanceof CopyCacheProxy);
     assertNull(cache.unwrap(org.cache2k.Cache.class).requestInterface(WiredCache.class));
-    System.err.println(cache.toString());
     cache.close();
   }
 
@@ -180,6 +180,24 @@ public class CacheManagerTest {
       }
     });
     cache.close();
+  }
+
+  @Test(expected = IllegalArgumentException.class)
+  public void testIllegalURI1() throws Exception {
+    CachingProvider p = Caching.getCachingProvider();
+    CacheManager cm = p.getCacheManager(new URI("file://hello.xml"), null);
+  }
+
+  @Test(expected = IllegalArgumentException.class)
+  public void testIllegalURI2() throws Exception {
+    CachingProvider p = Caching.getCachingProvider();
+    CacheManager cm = p.getCacheManager(new URI("/hello.xml"), null);
+  }
+
+  @Test(expected = IllegalArgumentException.class)
+  public void testIllegalURI3() throws Exception {
+    CachingProvider p = Caching.getCachingProvider();
+    CacheManager cm = p.getCacheManager(new URI("hello.xml"), null);
   }
 
 }

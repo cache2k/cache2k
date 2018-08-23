@@ -27,6 +27,7 @@ import org.cache2k.spi.SingleProviderResolver;
 import javax.cache.CacheManager;
 import javax.cache.configuration.OptionalFeature;
 import javax.cache.spi.CachingProvider;
+import java.io.File;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.HashMap;
@@ -64,7 +65,11 @@ public class JCacheProvider implements CachingProvider {
   }
 
   public String uri2Name(URI uri) {
-    return uri.toString();
+    String s = uri.toString();
+    if (uri.getScheme() != null || s.contains(".xml") || s.contains(File.separator)) {
+      throw new IllegalArgumentException("Only cache manager name expected in the URI, not a file name or path");
+    }
+    return s;
   }
 
   @Override
@@ -145,8 +150,7 @@ public class JCacheProvider implements CachingProvider {
 
   @Override
   public boolean isSupported(OptionalFeature v) {
-    if (v == OptionalFeature.STORE_BY_REFERENCE) { return true; }
-    return false;
+    return true;
   }
 
 }

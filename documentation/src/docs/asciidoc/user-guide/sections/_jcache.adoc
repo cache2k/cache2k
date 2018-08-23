@@ -103,11 +103,46 @@ and the class `MutableExtendedConfiguration` is provided. Example usage:
     ));
 ----
 
-==== Configuration via XML
+[[jcache-uri-exception]]
+==== Cache Manager and XML Configuration
 
-The XML configuration sections do apply for caches requested via `CacheManager.createCache` or
-`CacheManager.getCache`, see <<xml-configuration,XML configuration>>. In case not the default manager
-is requested, another XML configuration applies.
+To get the default cache manager, do:
+
+[source,java]
+----
+    provider.getCacheManager(null, classloader, properties);
+----
+
+or
+
+[source,java]
+----
+    provider.getCacheManager(getDefaultURI(), classloader, properties);
+----
+
+or simply, if you don't need to specify properties or a classloader:
+
+[source,java]
+----
+    provider.getCacheManager();
+----
+
+In case there is a `cache2k.xml` present in the class path, this will be picked up automatically.
+
+If not the default manager is requested, another XML configuration applies. Only use the simple
+manager name within the URI, for example:
+
+[source,java]
+----
+    provider.getCacheManager(new URI("special"), classloader, properties);
+----
+
+In the above example `special`  is used as the name of the manager and the configuration is expected to be at
+`cache2k-special.xml`. There is no need for an URI to have a scheme.
+For a rationale, see: (GH#91)[https://github.com/cache2k/cache2k/issues/91]
+
+Within the XML configuration the different sections for a cache do apply for caches
+requested via `CacheManager.createCache` or `CacheManager.getCache`, see <<xml-configuration,XML configuration>>.
 
 [[jcache-optimizations]]
 ==== Optimizations and Semantic Differences
