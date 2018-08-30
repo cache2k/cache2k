@@ -31,9 +31,9 @@ multiple keys, like `getAll()`, don't have atomic guarantees.
 [width="70",options="header"]
 |===
 |Operation|Description
-|`boolean containsAndRemove(key)`| remove and return true if something was present
-|`V peekAndRemove(key)`| remove and return existing value
-|`boolean putIfAbsent(key, value)`| insert value only if no value is present
+|`boolean containsAndRemove(key)`| Remove and return true if something was present
+|`V peekAndRemove(key)`| Remove and return existing value
+|`boolean putIfAbsent(key, value)`| Insert value only if no value is present
 |`V peekAndReplace(key, value)`| Replace value and return old value
 |`boolean Cache.replace(key, value)`| Replace value and return true when successful
 |`V peekAndPut(key, value)`| Insert or update value and return the previous value

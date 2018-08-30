@@ -1,7 +1,7 @@
 [[refresh-ahead]]
 == Refresh Ahead
 
-With _((refresh ahead))_ (or _((background refresh))_, in a read through configuration,
+With _((refresh ahead))_ (or _((background refresh))_), in a read through configuration,
 values about to expire will be refreshed automatically by the cache.
 
 === Setup

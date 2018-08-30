@@ -93,7 +93,7 @@ and finds the airline we liked the most. If we never did fly on that route it wi
       // for example, ask all friends...
     }
 
-    public String lookupFavoirteAirline(String origin, String destination) {
+    public String lookupFavoriteAirline(String origin, String destination) {
       String route = origin + "-" + destination;
       String airline = routeToAirline.peek(route);
       if (airline == null) {
