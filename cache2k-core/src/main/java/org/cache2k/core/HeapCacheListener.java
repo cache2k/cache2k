@@ -29,7 +29,7 @@ public interface HeapCacheListener<K,V> {
 
   void onEvictionFromHeap(Entry<K,V> e);
 
-  class NoOperation<K,V> implements HeapCacheListener<K,V> {
+  final class NoOperation<K,V> implements HeapCacheListener<K,V> {
 
     @Override
     public void onEvictionFromHeap(final Entry<K, V> e) {

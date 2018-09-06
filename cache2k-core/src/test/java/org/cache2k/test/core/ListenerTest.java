@@ -23,12 +23,8 @@ package org.cache2k.test.core;
 import org.cache2k.Cache;
 import org.cache2k.Cache2kBuilder;
 import org.cache2k.CacheEntry;
-import org.cache2k.configuration.Cache2kConfiguration;
-import org.cache2k.configuration.CustomizationSupplier;
-import org.cache2k.configuration.CustomizationSupplierByClassName;
-import org.cache2k.event.CacheEntryOperationListener;
+import org.cache2k.event.CacheEntryEvictedListener;
 import org.cache2k.expiry.ExpiryPolicy;
-import org.cache2k.jcache.JCacheConfiguration;
 import org.cache2k.test.util.CacheRule;
 import org.cache2k.test.util.ConcurrencyHelper;
 import org.cache2k.test.util.Condition;
@@ -40,14 +36,12 @@ import org.cache2k.event.CacheEntryRemovedListener;
 import org.cache2k.event.CacheEntryUpdatedListener;
 import org.cache2k.core.util.Log;
 import org.cache2k.testing.category.FastTests;
-import org.hamcrest.CoreMatchers;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import static org.junit.Assert.*;
 import static org.cache2k.test.core.StaticUtil.*;
 
-import java.util.Collections;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.CountDownLatch;
@@ -70,6 +64,7 @@ public class ListenerTest {
     final AtomicInteger updated = new AtomicInteger();
     final AtomicInteger removed = new AtomicInteger();
     final AtomicInteger created = new AtomicInteger();
+    final AtomicInteger evicted = new AtomicInteger();
 
     @Override
     public void extend(final Cache2kBuilder<Integer, Integer> b) {
@@ -92,8 +87,35 @@ public class ListenerTest {
           public void onEntryCreated(final Cache<Integer, Integer> c, final CacheEntry<Integer, Integer> e) {
             created.incrementAndGet();
           }
+        })
+        .addListener(new CacheEntryEvictedListener<Integer, Integer>() {
+          @Override
+          public void onEntryEvicted(final Cache<Integer, Integer> cache, final CacheEntry<Integer, Integer> entry) {
+            evicted.incrementAndGet();
+          }
         });
     }
+  }
+
+  @Test
+  public void evictedListenerCalled() {
+    target.run(new CountSyncEvents() {
+      @Override
+      public void extend(final Cache2kBuilder<Integer, Integer> b) {
+        super.extend(b);
+        b.entryCapacity(1);
+      }
+
+      @Override
+      public void run() {
+        assertEquals(0, evicted.get());
+        cache.put(1, 2);
+        assertEquals(0, evicted.get());
+        cache.put(2, 2);
+        assertEquals(1, evicted.get());
+      }
+    });
+
   }
 
   @Test
@@ -226,6 +248,40 @@ public class ListenerTest {
     c.put(1, 2);
     assertEquals(0, _callCount.get());
     c.remove(1);
+    assertEquals(0, _callCount.get());
+    _fire.countDown();
+    ConcurrencyHelper.await(new Condition() {
+      @Override
+      public boolean check() throws Exception {
+        return _callCount.get() == 1;
+      }
+    });
+  }
+
+  /** If the listener is not executed in separate thread, this would block */
+  @Test(timeout = TestingParameters.MAX_FINISH_WAIT_MILLIS)
+  public void asyncEvictedListenerCalled() {
+    final AtomicInteger _callCount = new AtomicInteger();
+    final CountDownLatch _fire = new CountDownLatch(1);
+    Cache<Integer, Integer> c = target.cache(new CacheRule.Specialization<Integer, Integer>() {
+      @Override
+      public void extend(final Cache2kBuilder<Integer, Integer> b) {
+        b.addAsyncListener(new CacheEntryEvictedListener<Integer, Integer>() {
+          @Override
+          public void onEntryEvicted(final Cache<Integer, Integer> c, final CacheEntry<Integer, Integer> e) {
+            try {
+              _fire.await();
+            } catch (InterruptedException ignore) {
+            }
+            _callCount.incrementAndGet();
+          }
+        })
+        .entryCapacity(1);
+      }
+    });
+    c.put(1, 2);
+    assertEquals(0, _callCount.get());
+    c.put(2, 2);
     assertEquals(0, _callCount.get());
     _fire.countDown();
     ConcurrencyHelper.await(new Condition() {

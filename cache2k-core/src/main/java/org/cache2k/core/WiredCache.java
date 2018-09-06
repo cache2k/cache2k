@@ -22,6 +22,7 @@ package org.cache2k.core;
 
 import org.cache2k.configuration.CacheType;
 import org.cache2k.core.util.InternalClock;
+import org.cache2k.event.CacheEntryEvictedListener;
 import org.cache2k.event.CacheEntryExpiredListener;
 import org.cache2k.integration.AdvancedCacheLoader;
 import org.cache2k.CacheEntry;
@@ -70,6 +71,7 @@ public class WiredCache<K, V> extends BaseCache<K, V>
   CacheEntryCreatedListener<K,V>[] syncEntryCreatedListeners;
   CacheEntryUpdatedListener<K,V>[] syncEntryUpdatedListeners;
   CacheEntryExpiredListener<K,V>[] syncEntryExpiredListeners;
+  CacheEntryEvictedListener<K,V>[] syncEntryEvictedListeners;
 
   private CommonMetrics.Updater metrics() {
     return heapCache.metrics;
@@ -586,6 +588,12 @@ public class WiredCache<K, V> extends BaseCache<K, V>
    */
   @Override
   public void onEvictionFromHeap(final Entry<K, V> e) {
+    CacheEntry<K,V> _currentEntry = heapCache.returnCacheEntry(e);
+    if (syncEntryEvictedListeners != null) {
+      for (CacheEntryEvictedListener<K, V> l : syncEntryEvictedListeners) {
+        l.onEntryEvicted(this, _currentEntry);
+      }
+    }
   }
 
 

@@ -27,6 +27,7 @@ import org.cache2k.core.operation.ExaminationEntry;
 import org.cache2k.core.util.ClockDefaultImpl;
 import org.cache2k.core.util.InternalClock;
 import org.cache2k.event.CacheEntryCreatedListener;
+import org.cache2k.event.CacheEntryEvictedListener;
 import org.cache2k.event.CacheEntryExpiredListener;
 import org.cache2k.event.CacheEntryOperationListener;
 import org.cache2k.event.CacheEntryRemovedListener;
@@ -247,6 +248,7 @@ public class InternalCache2kBuilder<K, V> {
       List<CacheEntryUpdatedListener<K, V>> _syncUpdatedListeners = new ArrayList<CacheEntryUpdatedListener<K, V>>();
       List<CacheEntryRemovedListener<K, V>> _syncRemovedListeners = new ArrayList<CacheEntryRemovedListener<K, V>>();
       List<CacheEntryExpiredListener<K, V>> _syncExpiredListeners = new ArrayList<CacheEntryExpiredListener<K, V>>();
+      List<CacheEntryEvictedListener<K, V>> _syncEvictedListeners = new ArrayList<CacheEntryEvictedListener<K,V>>();
       List<CacheEntryExpiredListener<K, V>> _expiredListeners = new ArrayList<CacheEntryExpiredListener<K, V>>();
       if (config.hasListeners()) {
         for (CustomizationSupplier<CacheEntryOperationListener<K, V>> f : config.getListeners()) {
@@ -263,6 +265,9 @@ public class InternalCache2kBuilder<K, V> {
           if (el instanceof CacheEntryExpiredListener) {
             _expiredListeners.add((CacheEntryExpiredListener) el);
           }
+          if (el instanceof CacheEntryEvictedListener) {
+            _syncEvictedListeners.add((CacheEntryEvictedListener) el);
+          }
         }
       }
       if (config.hasAsyncListeners() || !_expiredListeners.isEmpty()) {
@@ -275,6 +280,7 @@ public class InternalCache2kBuilder<K, V> {
         List<CacheEntryUpdatedListener<K, V>> ull = new ArrayList<CacheEntryUpdatedListener<K, V>>();
         List<CacheEntryRemovedListener<K, V>> rll = new ArrayList<CacheEntryRemovedListener<K, V>>();
         List<CacheEntryExpiredListener<K, V>> ell = new ArrayList<CacheEntryExpiredListener<K, V>>();
+        List<CacheEntryEvictedListener<K, V>> evl = new ArrayList<CacheEntryEvictedListener<K, V>>();
         for (CustomizationSupplier<CacheEntryOperationListener<K, V>> f : config.getAsyncListeners()) {
           CacheEntryOperationListener<K, V> el = (CacheEntryOperationListener<K, V>) bc.createCustomization(f);
           if (el instanceof CacheEntryCreatedListener) {
@@ -288,6 +294,9 @@ public class InternalCache2kBuilder<K, V> {
           }
           if (el instanceof CacheEntryExpiredListener) {
             ell.add((CacheEntryExpiredListener) el);
+          }
+          if (el instanceof CacheEntryEvictedListener) {
+            evl.add((CacheEntryEvictedListener) el);
           }
         }
         for (CacheEntryCreatedListener l : cll) {
@@ -305,6 +314,9 @@ public class InternalCache2kBuilder<K, V> {
         for (CacheEntryExpiredListener l : _expiredListeners) {
           _syncExpiredListeners.add(new AsyncExpiredListener<K, V>(_asyncDispatcher, l));
         }
+        for (CacheEntryEvictedListener l : evl) {
+          _syncEvictedListeners.add(new AsyncEvictedListener<K, V>(_asyncDispatcher, l));
+        }
       }
       if (!_syncCreatedListeners.isEmpty()) {
         wc.syncEntryCreatedListeners = _syncCreatedListeners.toArray(new CacheEntryCreatedListener[0]);
@@ -317,6 +329,9 @@ public class InternalCache2kBuilder<K, V> {
       }
       if (!_syncExpiredListeners.isEmpty()) {
         wc.syncEntryExpiredListeners = _syncExpiredListeners.toArray(new CacheEntryExpiredListener[0]);
+      }
+      if (!_syncEvictedListeners.isEmpty()) {
+        wc.syncEntryEvictedListeners = _syncEvictedListeners.toArray(new CacheEntryEvictedListener[0]);
       }
       bc.eviction = constructEviction(bc, wc, config);
       TimingHandler rh = TimingHandler.of(_timeReference, config);
@@ -489,6 +504,31 @@ public class InternalCache2kBuilder<K, V> {
         @Override
         public void execute() {
           listener.onEntryExpired(c, e);
+        }
+      });
+    }
+  }
+
+  private static class AsyncEvictedListener<K,V> implements CacheEntryEvictedListener<K,V> {
+    AsyncDispatcher<K> dispatcher;
+    CacheEntryEvictedListener<K,V> listener;
+
+    public AsyncEvictedListener(final AsyncDispatcher<K> _dispatcher, final CacheEntryEvictedListener<K, V> _listener) {
+      dispatcher = _dispatcher;
+      listener = _listener;
+    }
+
+    @Override
+    public void onEntryEvicted(final Cache<K, V> c, final CacheEntry<K, V> e) {
+      dispatcher.queue(new AsyncEvent<K>() {
+        @Override
+        public K getKey() {
+          return e.getKey();
+        }
+
+        @Override
+        public void execute() {
+          listener.onEntryEvicted(c, e);
         }
       });
     }

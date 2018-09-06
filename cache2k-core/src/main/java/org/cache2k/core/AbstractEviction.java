@@ -157,6 +157,10 @@ public abstract class AbstractEviction implements Eviction, EvictionMetrics {
   }
 
   private void removeFromHash(final Entry[] _chunk) {
+    if (!noListenerCall) {
+      removeFromHashWithListener(_chunk);
+      return;
+    }
     removeFromHashWithoutListener(_chunk);
   }
 
@@ -167,6 +171,23 @@ public abstract class AbstractEviction implements Eviction, EvictionMetrics {
         if (e.isGone() || e.isProcessing()) {
           _chunk[i] = null; continue;
         }
+        heapCache.removeEntryForEviction(e);
+      }
+    }
+  }
+
+  private void removeFromHashWithListener(final Entry[] _chunk) {
+    for (int i = 0; i < _chunk.length; i++) {
+      Entry e = _chunk[i];
+      synchronized (e) {
+        if (e.isGone() || e.isProcessing()) {
+          _chunk[i] = null; continue;
+        }
+        e.startProcessing(Entry.ProcessingState.EVICT);
+      }
+      listener.onEvictionFromHeap(e);
+      synchronized (e) {
+        e.processingDone();
         heapCache.removeEntryForEviction(e);
       }
     }

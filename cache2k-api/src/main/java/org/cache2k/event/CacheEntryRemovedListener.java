@@ -37,7 +37,7 @@ public interface CacheEntryRemovedListener<K,V> extends CacheEntryOperationListe
    * <p>Exceptions thrown by asynchronous listeners will be propagated to the cache client
    * directly.
    *
-   * @param cache Reference to the cache that generated the event.
+   * @param cache The cache that generated the event.
    * @param entry Entry containing the last data. It is only valid to access the object during the
    *                     call of this method. The object value may become invalid afterwards.
    */
