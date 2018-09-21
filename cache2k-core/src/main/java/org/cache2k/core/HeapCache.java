@@ -1177,6 +1177,12 @@ public class HeapCache<K, V> extends BaseCache<K, V> {
     return _keySet;
   }
 
+  /**
+   * Checks for entries being present and fresh. Used by {@code loadAll} and {@code prefetchAll}
+   *
+   * @param keys keys to check for
+   * @return keys not present in the cache
+   */
   public Set<K> checkAllPresent(final Iterable<? extends K> keys) {
     Set<K> _keysToLoad = new HashSet<K>();
     for (K k : keys) {
@@ -1263,7 +1269,7 @@ public class HeapCache<K, V> extends BaseCache<K, V> {
     return lookupEntry(key, hc, extractIntKeyValue(key, hc));
   }
 
-  protected Entry<K,V> lookupEntryNoHitRecord(K key) {
+  protected Entry<K, V> lookupEntryNoHitRecord(K key) {
     int hc = modifiedHash(key.hashCode());
     return lookupEntryNoHitRecord(key, hc, extractIntKeyValue(key, hc));
   }
