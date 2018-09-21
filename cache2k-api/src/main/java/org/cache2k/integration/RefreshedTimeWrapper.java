@@ -21,7 +21,7 @@ package org.cache2k.integration;
  */
 
 /**
- * Instruct the case to use a different refresh time than the current time
+ * Instruct the cache to use a different refresh time than the current time
  * for a loaded value. Use {@link Loaders#wrapRefreshedTime(Object, long)}.
  * Don't use directly.
  *
