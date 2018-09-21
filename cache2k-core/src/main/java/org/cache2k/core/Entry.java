@@ -201,7 +201,7 @@ public class Entry<K, V> extends CompactEntry<K, V>
   public Entry prev;
 
   /** Marker for Clock-PRO clock */
-  private boolean hot;
+  private int hotAndWeight;
 
   public Entry(final K _key, final int _hashCode) {
     super(_key, _hashCode);
@@ -469,10 +469,22 @@ public class Entry<K, V> extends CompactEntry<K, V>
   }
 
 
-  public boolean isHot() { return hot; }
+  public boolean isHot() { return hotAndWeight < 0; }
 
   public void setHot(boolean f) {
-    hot = f;
+    if (f) {
+      hotAndWeight = hotAndWeight | 0x80000000;
+    } else {
+      hotAndWeight = hotAndWeight & 0x7fffffff;
+    }
+  }
+
+  public void setWeight(int v) {
+    hotAndWeight = hotAndWeight & 0x80000000 | v;
+  }
+
+  public int getWeight() {
+    return hotAndWeight & 0x7fffffff;
   }
 
 
