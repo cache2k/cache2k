@@ -35,7 +35,7 @@ import static org.cache2k.core.util.Util.*;
  *
  * @author Jens Wilke
  */
-class CompactEntry<K,T> {
+class CompactEntry<K, V> {
 
   private static class InitialValueInEntryNeverReturned { }
 
@@ -54,7 +54,7 @@ class CompactEntry<K,T> {
    * Holds the associated entry value or an exception via the {@link ExceptionWrapper}
    */
   @SuppressWarnings("unchecked")
-  private volatile T valueOrException = (T) INITIAL_VALUE;
+  private volatile V valueOrException = (V) INITIAL_VALUE;
 
   /**
    * Hash implementation: the calculated, modified hash code, retrieved from the key when the entry is
@@ -67,7 +67,7 @@ class CompactEntry<K,T> {
   /**
    * Hash implementation: Link to another entry in the same hash table slot when the hash code collides.
    */
-  public Entry<K, T> another;
+  public Entry<K, V> another;
 
   /**
    * Hit counter. Modified directly by heap cache and eviction algorithm.
@@ -81,18 +81,18 @@ class CompactEntry<K,T> {
     hashCode = _hashCode;
   }
 
-  public void setValueOrException(T _valueOrException) {
+  public void setValueOrException(V _valueOrException) {
     valueOrException = _valueOrException;
   }
 
   public Throwable getException() {
-    T v = valueOrException;
+    V v = valueOrException;
     if (v instanceof ExceptionWrapper) { return ((ExceptionWrapper) v).getException(); }
     return null;
   }
 
-  public boolean equalsValue(T v) {
-    T ve = valueOrException;
+  public boolean equalsValue(V v) {
+    V ve = valueOrException;
     if (ve == null) {
       return v == ve;
     }
@@ -100,14 +100,14 @@ class CompactEntry<K,T> {
   }
 
   @Deprecated
-  public T getValue() {
+  public V getValue() {
     return valueOrException;
   }
 
   /**
    * The value of the entry or an {@link ExceptionWrapper}.
    */
-  public T getValueOrException() {
+  public V getValueOrException() {
     return valueOrException;
   }
 
@@ -144,8 +144,8 @@ class CompactEntry<K,T> {
  * @author Jens Wilke
  */
 @SuppressWarnings("unchecked")
-public class Entry<K, T> extends CompactEntry<K,T>
-  implements CacheEntry<K,T>, StorageEntry, ExaminationEntry<K, T> {
+public class Entry<K, V> extends CompactEntry<K, V>
+  implements CacheEntry<K, V>, StorageEntry, ExaminationEntry<K, V> {
 
   /**
    * A value greater as means it is a time value.
