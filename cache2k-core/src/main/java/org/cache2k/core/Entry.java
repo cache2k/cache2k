@@ -479,11 +479,14 @@ public class Entry<K, V> extends CompactEntry<K, V>
     }
   }
 
-  public void setWeight(int v) {
+  /**
+   * Store weight as 16 bit floating point number.
+   */
+  public void setCompressedWeight(int v) {
     hotAndWeight = hotAndWeight & 0x80000000 | v;
   }
 
-  public int getWeight() {
+  public int getCompressedWeight() {
     return hotAndWeight & 0x7fffffff;
   }
 

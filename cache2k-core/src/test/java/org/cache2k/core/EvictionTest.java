@@ -37,6 +37,28 @@ import static org.junit.Assert.*;
 public class EvictionTest {
 
   @Test
+  public void test1() {
+    final int _SIZE = 1;
+    Cache<Integer, Integer> c =
+      Cache2kBuilder.of(Integer.class, Integer.class)
+        .eternal(true)
+        .entryCapacity(_SIZE)
+        .build();
+    for (int i = 0; i < _SIZE * 2; i++) {
+      c.put(i, i);
+    }
+    for (int i = 0; i < _SIZE * 2; i++) {
+      c.put(i, i);
+    }
+    int _count = 0;
+    for (int k : c.keys()) {
+      _count++;
+    }
+    assertEquals(_SIZE, _count);
+    c.close();
+  }
+
+  @Test
   public void test30() {
     final int _SIZE = 30;
     Cache<Integer, Integer> c =

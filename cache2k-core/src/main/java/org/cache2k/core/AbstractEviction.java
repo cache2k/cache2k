@@ -21,6 +21,7 @@ package org.cache2k.core;
  */
 
 import org.cache2k.core.concurrency.Job;
+import org.cache2k.core.experimentalApi.Weigher;
 
 /**
  * Basic eviction functionality.
@@ -35,7 +36,7 @@ public abstract class AbstractEviction implements Eviction, EvictionMetrics {
   public static final long MINIMUM_CAPACITY_FOR_CHUNKING = 1000;
 
   protected final long maxSize;
-  protected final long correctedMaxSize;
+  protected final long correctedMaxSizeOrWeight;
   protected final HeapCache heapCache;
   private final Object lock = new Object();
   private long newEntryCounter;
@@ -43,11 +44,19 @@ public abstract class AbstractEviction implements Eviction, EvictionMetrics {
   private long expiredRemovedCnt;
   private long virginRemovedCnt;
   private long evictedCount;
+  private long totalWeight;
   private final HeapCacheListener listener;
   private final boolean noListenerCall;
   private Entry[] evictChunkReuse;
   private int chunkSize;
   private int evictionRunningCount = 0;
+  private long evictionRunningWeight = 0;
+  private Weigher weigher = new Weigher() {
+    @Override
+    public long weigh(final Object key, final Object value) {
+      return 1;
+    }
+  };
 
   public AbstractEviction(final HeapCache _heapCache, final HeapCacheListener _listener, final long _maxSize) {
     heapCache = _heapCache;
@@ -61,9 +70,75 @@ public abstract class AbstractEviction implements Eviction, EvictionMetrics {
     }
     noListenerCall = _listener instanceof HeapCacheListener.NoOperation;
     if (maxSize == Long.MAX_VALUE) {
-      correctedMaxSize = Long.MAX_VALUE >> 1;
+      correctedMaxSizeOrWeight = Long.MAX_VALUE >> 1;
     } else {
-      correctedMaxSize = maxSize;
+      correctedMaxSizeOrWeight = maxSize + chunkSize / 2;
+    }
+  }
+
+  protected boolean isWeigherPresent() {
+    return weigher != null;
+  }
+
+  protected static long getWeightFromEntry(Entry e) {
+    return LongTo16BitFloatingPoint.toLong(e.getCompressedWeight());
+  }
+
+  protected static void updateWeightInEntry(Entry e, long _weight) {
+    e.setCompressedWeight(LongTo16BitFloatingPoint.fromLong(_weight));
+  }
+
+  /**
+   * Exceptions have the minimum weight.
+   */
+  private long calculateWeight(final Entry e, final Object v) {
+    long _weight;
+    if (v instanceof ExceptionWrapper) {
+      _weight = 1;
+    } else {
+      _weight = weigher.weigh(e.getKey(), v);
+    }
+    return _weight;
+  }
+
+  protected void insertAndWeighInLock(Entry e) {
+    if (!isWeigherPresent()) {
+      return;
+    }
+    Object v = e.getValueOrException();
+    long _weight = calculateWeight(e, v);
+    totalWeight += _weight;
+    updateWeightInEntry(e, _weight);
+  }
+
+  protected void updateWeightInLock(Entry e) {
+    Object v = e.getValueOrException();
+    long _weight;
+    _weight = calculateWeight(e, v);
+    long _currentWeight = getWeightFromEntry(e);
+    if (_currentWeight != _weight) {
+      totalWeight += _weight - _currentWeight;
+      updateWeightInEntry(e, _weight);
+    }
+  }
+
+  /**
+   * Called upon eviction or deletion
+   */
+  protected void updateTotalWeightForRemove(Entry e) {
+    if (!isWeigherPresent()) {
+      return;
+    }
+    totalWeight -= getWeightFromEntry(e);
+  }
+
+  @Override
+  public void updateWeight(final Entry e) {
+    if (!isWeigherPresent()) {
+      return;
+    }
+    synchronized (lock) {
+      updateWeightInLock(e);
     }
   }
 
@@ -81,6 +156,7 @@ public abstract class AbstractEviction implements Eviction, EvictionMetrics {
   private void removeEventually(final Entry e) {
     if (!e.isRemovedFromReplacementList()) {
       removeFromReplacementList(e);
+      updateTotalWeightForRemove(e);
       long nrt = e.getNextRefreshTime();
       if (nrt == (Entry.GONE + Entry.EXPIRED)) {
         expiredRemovedCnt++;
@@ -97,20 +173,26 @@ public abstract class AbstractEviction implements Eviction, EvictionMetrics {
     synchronized (lock) {
       if (e.isNotYetInsertedInReplacementList()) {
         insertIntoReplacementList(e);
+        insertAndWeighInLock(e);
         newEntryCounter++;
       } else {
         removeEventually(e);
+        updateTotalWeightForRemove(e);
       }
-      return evictionNeeded();
+      return isEvictionNeeded();
     }
   }
 
   /**
    * Do we need to trigger an eviction? For chunks sizes more than 1 the eviction
-   * kicks later.
+   * kicks in later.
    */
-  boolean evictionNeeded() {
-    return getSize() > (correctedMaxSize + evictionRunningCount + chunkSize / 2);
+  boolean isEvictionNeeded() {
+    if (isWeigherPresent()) {
+      return totalWeight > (correctedMaxSizeOrWeight + evictionRunningWeight);
+    } else {
+      return getSize() > (correctedMaxSizeOrWeight + evictionRunningCount);
+    }
   }
 
   @Override
@@ -123,12 +205,12 @@ public abstract class AbstractEviction implements Eviction, EvictionMetrics {
   }
 
   @Override
-  public void evictEventually(final int hc) {
+  public void evictEventually(final int _hashCodeHint) {
     evictEventually();
   }
 
   private Entry[] fillEvictionChunk() {
-    if (!evictionNeeded()) {
+    if (!isEvictionNeeded()) {
       return null;
     }
     final Entry[] _chunk = reuseChunkArray();
@@ -142,6 +224,9 @@ public abstract class AbstractEviction implements Eviction, EvictionMetrics {
     evictionRunningCount += _chunk.length;
     for (int i = 0; i < _chunk.length; i++) {
       _chunk[i] = findEvictionCandidate(null);
+      if (isWeigherPresent()) {
+        evictionRunningWeight += getWeightFromEntry(_chunk[i]);
+      }
     }
     return _chunk;
   }
@@ -151,7 +236,6 @@ public abstract class AbstractEviction implements Eviction, EvictionMetrics {
     removeFromHash(_chunk);
     synchronized (lock) {
       removeAllFromReplacementListOnEvict(_chunk);
-      evictionRunningCount -= _chunk.length;
       evictChunkReuse = _chunk;
     }
   }
@@ -194,12 +278,17 @@ public abstract class AbstractEviction implements Eviction, EvictionMetrics {
   }
 
   private void removeAllFromReplacementListOnEvict(final Entry[] _chunk) {
+    evictionRunningCount -= _chunk.length;
     for (int i = 0; i < _chunk.length; i++) {
       Entry e = _chunk[i];
       if (e != null) {
         if (!e.isRemovedFromReplacementList()) {
           removeFromReplacementListOnEvict(e);
+          updateTotalWeightForRemove(e);
           evictedCount++;
+        }
+        if (isWeigherPresent()) {
+          evictionRunningWeight -= getWeightFromEntry(e);
         }
         /* we reuse the chunk array, null the array position to avoid memory leak */
         _chunk[i] = null;

@@ -37,10 +37,16 @@ public interface Eviction {
   boolean submitWithoutEviction(Entry e);
 
   /**
+   * Updates the weight on the entry and recalculates the total weight if needed.
+   * Since we need to lock the eviction structure, this could happen async in a separate thread.
+   */
+  void updateWeight(Entry e);
+
+  /**
    * Evict if needed, focused on the segment addressed by the hash code.
    * Called when eviction is might be needed after a new entry was inserted.
    */
-  void evictEventually(int _hashCode);
+  void evictEventually(int _hashCodeHint);
 
   /**
    * Evict if needed, checks all segments.

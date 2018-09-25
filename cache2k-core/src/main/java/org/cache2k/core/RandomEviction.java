@@ -34,6 +34,11 @@ public class RandomEviction extends AbstractEviction {
   }
 
   @Override
+  public void updateWeight(final Entry e) {
+
+  }
+
+  @Override
   protected void removeFromReplacementList(Entry e) {
     Entry.removeFromList(e);
   }

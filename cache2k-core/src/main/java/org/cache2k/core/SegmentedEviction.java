@@ -37,6 +37,15 @@ public class SegmentedEviction implements Eviction, EvictionMetrics {
 
 
   @Override
+  public void updateWeight(final Entry e) {
+    int hc = e.hashCode;
+    Eviction[] sgs = segments;
+    int _mask = sgs.length - 1;
+    int idx = hc & _mask;
+    sgs[idx].updateWeight(e);
+  }
+
+  @Override
   public boolean submitWithoutEviction(final Entry e) {
     int hc = e.hashCode;
     Eviction[] sgs = segments;
@@ -46,11 +55,11 @@ public class SegmentedEviction implements Eviction, EvictionMetrics {
   }
 
   @Override
-  public void evictEventually(int hc) {
+  public void evictEventually(int _hashCodeHint) {
     Eviction[] sgs = segments;
     int _mask = sgs.length - 1;
-    int idx = hc & _mask;
-    sgs[idx].evictEventually(hc);
+    int idx = _hashCodeHint & _mask;
+    sgs[idx].evictEventually(_hashCodeHint);
   }
 
   @Override

@@ -288,11 +288,7 @@ public abstract class EntryAction<K, V, R> implements
       mutationAbort(null);
       return;
     }
-    if (!entryLocked) {
-      lockFor(Entry.ProcessingState.LOAD);
-    } else {
-      entry.nextProcessingStep(Entry.ProcessingState.LOAD);
-    }
+    lockFor(Entry.ProcessingState.LOAD);
     needsFinish = false;
     load = true;
     Entry<K, V> e = entry;
