@@ -804,6 +804,30 @@ public class Cache2kBuilder<K, V> {
   }
 
   /**
+   * Set the weigher to be used to calculate the entry weight. The parameter {@link #maximumWeight(long)} needs
+   * to be specified as well.
+   */
+  public final Cache2kBuilder<K, V> weigher(Weigher<K,V> v) {
+    config().setWeigher(new CustomizationReferenceSupplier<Weigher>(v));
+    return this;
+  }
+
+  /**
+   * Specifies the maximum weight of entries the cache may contain. To obtain the entry weight a
+   * {@link Weigher} must be specified via {@link #weigher}.
+   * <p>
+   * The weight of an entry does not influence which entry is evicted next, but is only used to
+   * constrain the capacity of the cache. The cache implementation tries the best to keep the cache
+   * within its maximum weight limit, but eviction may kick in before or after reaching the limit.
+   * <p>
+   * The maximum weight setting cannot be used together with {@link #entryCapacity(long)}.
+   */
+  public final Cache2kBuilder<K, V> maximumWeight(long v) {
+    config().setMaximumWeight(v);
+    return this;
+  }
+
+  /**
    * Returns the configuration object this builder operates on. Changes to the configuration also
    * will influence the created cache when {@link #build()} is called. The method does not
    * return the effective configuration if additional external/XML configuration is present, since

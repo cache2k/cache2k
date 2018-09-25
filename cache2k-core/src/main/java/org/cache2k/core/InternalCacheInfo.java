@@ -51,9 +51,14 @@ public interface InternalCacheInfo {
   long getSize();
 
   /**
-   * Configured limit of the total cache entry capacity.
+   * Configured limit of the total cache entry capacity or -1 if weigher is used.
    */
   long getHeapCapacity();
+
+  /**
+   * Configured maximum weight or -1 if entry capacity is used.
+   */
+  long getMaximumWeight();
 
 
   /**

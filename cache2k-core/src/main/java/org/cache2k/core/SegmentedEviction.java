@@ -223,6 +223,25 @@ public class SegmentedEviction implements Eviction, EvictionMetrics {
       }
       sum += l;
     }
+    if (sum < 0) {
+      return -1;
+    }
+    return sum;
+  }
+
+  @Override
+  public long getMaxWeight() {
+    long sum = 0;
+    for (Eviction ev : segments) {
+      long l = ev.getMetrics().getMaxWeight();
+      if (l == Long.MAX_VALUE) {
+        return Long.MAX_VALUE;
+      }
+      sum += l;
+    }
+    if (sum < 0) {
+      return -1;
+    }
     return sum;
   }
 

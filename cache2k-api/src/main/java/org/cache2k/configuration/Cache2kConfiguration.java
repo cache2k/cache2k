@@ -22,6 +22,7 @@ package org.cache2k.configuration;
 
 import org.cache2k.Cache2kBuilder;
 import org.cache2k.TimeReference;
+import org.cache2k.Weigher;
 import org.cache2k.event.CacheClosedListener;
 import org.cache2k.expiry.*;
 import org.cache2k.event.CacheEntryOperationListener;
@@ -67,13 +68,14 @@ public class Cache2kConfiguration<K, V> implements ConfigurationBean, Configurat
   private String name;
   private CacheType<K> keyType;
   private CacheType<V> valueType;
-  private long entryCapacity = 2000;
+  private long entryCapacity = -1;
   private boolean strictEviction = false;
   private boolean refreshAhead = false;
   private long expireAfterWrite = -1;
   private long retryInterval = -1;
   private long maxRetryInterval = -1;
   private long resilienceDuration = -1;
+  private long maximumWeight = -1;
   private boolean keepDataAfterExpired = false;
   private boolean sharpExpiry = false;
   private boolean suppressExceptions = true;
@@ -95,6 +97,7 @@ public class Cache2kConfiguration<K, V> implements ConfigurationBean, Configurat
   private CustomizationSupplier<AdvancedCacheLoader<K,V>> advancedLoader;
   private CustomizationSupplier<ExceptionPropagator<K>> exceptionPropagator;
   private CustomizationSupplier<TimeReference> timeReference;
+  private CustomizationSupplier<Weigher> weigher;
 
   private CustomizationCollection<CacheEntryOperationListener<K,V>> listeners;
   private CustomizationCollection<CacheEntryOperationListener<K,V>> asyncListeners;
@@ -317,6 +320,9 @@ public class Cache2kConfiguration<K, V> implements ConfigurationBean, Configurat
    * @see Cache2kBuilder#maxRetryInterval
    */
   public void setMaxRetryInterval(long millis) {
+    if (entryCapacity >= 0) {
+
+    }
     maxRetryInterval = millis;
   }
 
@@ -336,6 +342,20 @@ public class Cache2kConfiguration<K, V> implements ConfigurationBean, Configurat
 
   public boolean isKeepDataAfterExpired() {
     return keepDataAfterExpired;
+  }
+
+  public long getMaximumWeight() {
+    return maximumWeight;
+  }
+
+  /**
+   * @see Cache2kBuilder#maximumWeight
+   */
+  public void setMaximumWeight(final long v) {
+    if (entryCapacity >= 0) {
+      throw new IllegalArgumentException("entryCapacity alread set, setting maximumWeight is illegal");
+    }
+    maximumWeight = v;
   }
 
   /**
@@ -668,6 +688,20 @@ public class Cache2kConfiguration<K, V> implements ConfigurationBean, Configurat
    */
   public void setTimeReference(final CustomizationSupplier<TimeReference> v) {
     timeReference = v;
+  }
+
+  public CustomizationSupplier<Weigher> getWeigher() {
+    return weigher;
+  }
+
+  /**
+   * @see Cache2kBuilder#weigher(Weigher)
+   */
+  public void setWeigher(final CustomizationSupplier<Weigher> v) {
+    if (entryCapacity >= 0) {
+      throw new IllegalArgumentException("entryCapacity already set, specifying a weigher is illegal");
+    }
+    weigher = v;
   }
 
   public boolean isBoostConcurrency() {

@@ -20,6 +20,8 @@ package org.cache2k.core;
  * #L%
  */
 
+import org.cache2k.Weigher;
+
 /**
  * @author Jens Wilke
  */
@@ -29,8 +31,9 @@ public class RandomEviction extends AbstractEviction {
   private long size = 0;
   private Entry head = new Entry().shortCircuit();
 
-  public RandomEviction(final HeapCache _heapCache, final HeapCacheListener _listener, final long _maxSize) {
-    super(_heapCache, _listener, _maxSize);
+  public RandomEviction(final HeapCache _heapCache, final HeapCacheListener _listener,
+                        final long _maxSize, final Weigher _weigher, final long _maxWeight) {
+    super(_heapCache, _listener, _maxSize, _weigher, _maxWeight);
   }
 
   @Override

@@ -737,6 +737,7 @@ public abstract class EntryAction<K, V, R> implements
         entry.setValueOrException(newValueOrException);
       }
     }
+    heapCache.eviction.updateWeight(entry);
     mutationMayStore();
   }
 

@@ -20,6 +20,7 @@ package org.cache2k.core;
  * #L%
  */
 
+import org.cache2k.Weigher;
 import org.cache2k.core.util.TunableConstants;
 import org.cache2k.core.util.TunableFactory;
 
@@ -35,7 +36,7 @@ import org.cache2k.core.util.TunableFactory;
 @SuppressWarnings("WeakerAccess")
 public class ClockProPlusEviction extends AbstractEviction {
 
-  private static final Tunable TUNABLE_CLOCK_PRO = TunableFactory.get(Tunable.class);
+  public static final Tunable TUNABLE_CLOCK_PRO = TunableFactory.get(Tunable.class);
 
   private long hotHits;
   private long coldHits;
@@ -50,8 +51,6 @@ public class ClockProPlusEviction extends AbstractEviction {
   private int hotSize;
 
   /** Maximum size of hot clock. 0 means normal clock behaviour */
-  private long hotMax;
-  private long ghostMax;
 
   private Entry handCold;
   private Entry handHot;
@@ -61,10 +60,9 @@ public class ClockProPlusEviction extends AbstractEviction {
   private int ghostSize = 0;
   private static final int GHOST_LOAD_PERCENT = 63;
 
-  public ClockProPlusEviction(final HeapCache _heapCache, final HeapCacheListener _listener, final long _maxSize) {
-    super(_heapCache, _listener, _maxSize);
-    ghostMax = maxSize / 2 + 1;
-    hotMax = maxSize * TUNABLE_CLOCK_PRO.hotMaxPercentage / 100;
+  public ClockProPlusEviction(final HeapCache _heapCache, final HeapCacheListener _listener,
+                              final long _maxSize, final Weigher _weigher, final long _maxWeight) {
+    super(_heapCache, _listener, _maxSize, _weigher, _maxWeight);
     coldSize = 0;
     hotSize = 0;
     handCold = null;
@@ -81,6 +79,14 @@ public class ClockProPlusEviction extends AbstractEviction {
       e = e.next;
     } while (e != _head);
     return cnt;
+  }
+
+  public long getHotMax() {
+    return getSize() * TUNABLE_CLOCK_PRO.hotMaxPercentage / 100;
+  }
+
+  public long getGhostMax() {
+    return getSize() / 2 + 1;
   }
 
   @Override
@@ -165,7 +171,7 @@ public class ClockProPlusEviction extends AbstractEviction {
       Ghost.moveToFront(ghostHead, g);
       return;
     }
-    if (ghostSize >= ghostMax) {
+    if (ghostSize >= getGhostMax()) {
       g = ghostHead.prev;
       Ghost.removeFromList(g);
       boolean f = removeGhost(g, g.hash);
@@ -227,7 +233,8 @@ public class ClockProPlusEviction extends AbstractEviction {
       _hand = _hand.next;
     }
     hotHits = _hotHits;
-    hotScanCnt += _initialMaxScan - _maxScan;
+    long _scanCount = _initialMaxScan - _maxScan;
+    hotScanCnt += _scanCount;
     handHot = Entry.removeFromCyclicList(_hand, _coldCandidate);
     hotSize--;
     _coldCandidate.setHot(false);
@@ -269,7 +276,8 @@ public class ClockProPlusEviction extends AbstractEviction {
   }
 
   private Entry refillFromHot(Entry _hand) {
-    while (hotSize > hotMax || _hand == null) {
+    long _hotMax = getHotMax();
+    while (hotSize >  _hotMax || _hand == null) {
       Entry e = runHandHot();
       if (e != null) {
         _hand =  Entry.insertIntoTailCyclicList(_hand, e);
@@ -282,7 +290,7 @@ public class ClockProPlusEviction extends AbstractEviction {
   @Override
   public void checkIntegrity(final IntegrityState is) {
     is.checkEquals("ghostSize == countGhostsInHash()", ghostSize, countGhostsInHash())
-      .check("hotMax <= maxElements", hotMax <= maxSize)
+      .check("hotMax <= size", getHotMax() <= getSize())
       .check("checkCyclicListIntegrity(handHot)", Entry.checkCyclicListIntegrity(handHot))
       .check("checkCyclicListIntegrity(handCold)", Entry.checkCyclicListIntegrity(handCold))
       .checkEquals("getCyclicListEntryCount(handHot) == hotSize", Entry.getCyclicListEntryCount(handHot), hotSize)
@@ -295,7 +303,7 @@ public class ClockProPlusEviction extends AbstractEviction {
     return super.getExtraStatistics() +
       ", coldSize=" + coldSize +
       ", hotSize=" + hotSize +
-      ", hotMaxSize=" + hotMax +
+      ", hotMaxSize=" + getHotMax() +
       ", ghostSize=" + ghostSize +
       ", coldHits=" + (coldHits + sumUpListHits(handCold)) +
       ", hotHits=" + (hotHits + sumUpListHits(handHot)) +

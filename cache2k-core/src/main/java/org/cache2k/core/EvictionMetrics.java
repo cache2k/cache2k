@@ -68,6 +68,8 @@ public interface EvictionMetrics {
   /** Size limit after eviction kicks in */
   long getMaxSize();
 
+  long getMaxWeight();
+
   /** Fragment that the eviction wants to add to the {@link Cache#toString()} output. */
   String getExtraStatistics();
 

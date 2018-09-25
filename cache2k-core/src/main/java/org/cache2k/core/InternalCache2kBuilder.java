@@ -22,6 +22,7 @@ package org.cache2k.core;
 
 import org.cache2k.Cache2kBuilder;
 import org.cache2k.CacheEntry;
+import org.cache2k.Weigher;
 import org.cache2k.configuration.CustomizationSupplier;
 import org.cache2k.core.operation.ExaminationEntry;
 import org.cache2k.core.util.ClockDefaultImpl;
@@ -218,11 +219,12 @@ public class InternalCache2kBuilder<K, V> {
     configureViaSettersDirect(bc);
     bc.setClock(_timeReference);
 
-    boolean _wrap = false;
+    boolean _wrap =
+      config.getWeigher() != null ||
+      config.hasListeners() ||
+      config.hasAsyncListeners() ||
+      config.getWriter() != null;
 
-    if (config.hasListeners()) { _wrap = true; }
-    if (config.hasAsyncListeners()) { _wrap = true; }
-    if (config.getWriter() != null) { _wrap = true; }
 
     WiredCache<K, V> wc = null;
     if (_wrap) {
@@ -357,18 +359,19 @@ public class InternalCache2kBuilder<K, V> {
     final boolean _strictEviction = config.isStrictEviction();
     final int _availableProcessors = Runtime.getRuntime().availableProcessors();
     final boolean _boostConcurrency = config.isBoostConcurrency();
-    final long _entryCapacity = config.getEntryCapacity();
+    final long _maximumWeight = config.getMaximumWeight();
+    long _entryCapacity = config.getEntryCapacity();
+    if (_entryCapacity < 0 && _maximumWeight < 0) {
+      _entryCapacity = 2000;
+    }
     final int _segmentCountOverride = HeapCache.TUNABLE.segmentCountOverride;
     int _segmentCount = determineSegmentCount(_strictEviction, _availableProcessors, _boostConcurrency, _entryCapacity, _segmentCountOverride);
     Eviction[] _segments = new Eviction[_segmentCount];
-    long _maxSize = _entryCapacity / _segmentCount;
-    if (_entryCapacity == Long.MAX_VALUE) {
-      _maxSize = Long.MAX_VALUE;
-    } else if (_entryCapacity % _segmentCount > 0) {
-      _maxSize++;
-    }
+    long _maxSize = determineMaxSize(_entryCapacity, _segmentCount);
+    long _maxWeight = determineMaxWeight(_maximumWeight, _segmentCount);
+    final Weigher _weigher = (Weigher) hc.createCustomization(config.getWeigher());
     for (int i = 0; i < _segments.length; i++) {
-      Eviction ev = new ClockProPlusEviction(hc, l, _maxSize);
+      Eviction ev = new ClockProPlusEviction(hc, l, _maxSize, _weigher, _maxWeight);
       _segments[i] = ev;
     }
     if (_segmentCount == 1) {
@@ -377,7 +380,35 @@ public class InternalCache2kBuilder<K, V> {
     return new SegmentedEviction(_segments);
   }
 
-  static int determineSegmentCount(final boolean _strictEviction, final int _availableProcessors, final boolean _boostConcurrency, final long _entryCapacity, final int _segmentCountOverride) {
+  static long determineMaxSize(final long _entryCapacity, final int _segmentCount) {
+    if (_entryCapacity < 0) {
+      return -1;
+    }
+    long _maxSize = _entryCapacity / _segmentCount;
+    if (_entryCapacity == Long.MAX_VALUE) {
+      _maxSize = Long.MAX_VALUE;
+    } else if (_entryCapacity % _segmentCount > 0) {
+      _maxSize++;
+    }
+    return _maxSize;
+  }
+
+  static long determineMaxWeight(final long _maximumWeight, final int _segmentCount) {
+    if (_maximumWeight < 0) {
+      return -1;
+    }
+    long _maxWeight = _maximumWeight / _segmentCount;
+    if (_maximumWeight == Long.MAX_VALUE) {
+      return Long.MAX_VALUE;
+    } else if (_maximumWeight % _segmentCount > 0) {
+      _maxWeight++;
+    }
+    return _maxWeight;
+  }
+
+  static int determineSegmentCount(final boolean _strictEviction, final int _availableProcessors,
+                                   final boolean _boostConcurrency, final long _entryCapacity,
+                                   final int _segmentCountOverride) {
     int _segmentCount = 1;
     if (_availableProcessors > 1) {
       _segmentCount = 2;
@@ -391,7 +422,7 @@ public class InternalCache2kBuilder<K, V> {
       int _maxSegments = _availableProcessors * 2;
       _segmentCount = Math.min(_segmentCount, _maxSegments);
     }
-    if (_entryCapacity < 1000) {
+    if (_entryCapacity >= 0 && _entryCapacity < 1000) {
       _segmentCount = 1;
     }
     if (_strictEviction) {

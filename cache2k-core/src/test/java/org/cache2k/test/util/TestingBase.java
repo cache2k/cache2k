@@ -45,6 +45,9 @@ import org.junit.runners.model.Statement;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Method;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 import java.util.concurrent.Executor;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.SynchronousQueue;
@@ -372,6 +375,7 @@ public class TestingBase {
   }
 
   public int countEntriesViaIteration() {
+    provideCache();
     int cnt = 0;
     for (CacheEntry e : ((Cache<?,?>) cache).entries()) {
       cnt++;
@@ -446,6 +450,20 @@ public class TestingBase {
     }
   }
 
+  public static class PatternLoader extends CacheLoader<Integer, Integer> {
+    AtomicInteger counter = new AtomicInteger();
+    int[] ints;
+
+    public PatternLoader(final int... _ints) {
+      ints = _ints;
+    }
+
+    @Override
+    public Integer load(final Integer key) throws Exception {
+      return ints[counter.getAndIncrement() % ints.length];
+    }
+  }
+
   public static class IdentCountingLoader extends CacheLoader<Integer, Integer> {
     AtomicInteger counter = new AtomicInteger();
 
@@ -483,6 +501,17 @@ public class TestingBase {
     void startLoad(CacheOperationCompletionListener l);
   }
 
+  public void reload(int... keys) {
+    provideCache();
+    CacheLoaderTest.CompletionWaiter w = new CacheLoaderTest.CompletionWaiter();
+    List<Integer> l = new ArrayList<Integer>();
+    for (int i : keys) {
+      l.add(i);
+    }
+    cache.reloadAll(l, w);
+    w.awaitCompletion();
+  }
+
   /**
    * Wrap shared executor to make sure that at least {@value MINIMAL_LOADER_THREADS} are available
    * for each test
@@ -512,6 +541,10 @@ public class TestingBase {
       }
     }
 
+  }
+
+  public static <T> Iterable<T> keys(T... keys) {
+    return Arrays.asList(keys);
   }
 
 }

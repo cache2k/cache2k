@@ -69,6 +69,7 @@ class CacheBaseInfo implements InternalCacheInfo {
   private long maxSize;
   private int evictionRunningCnt;
   private long internalExceptionCnt;
+  private long maxWeight;
 
   public CacheBaseInfo(HeapCache _heapCache, InternalCache _userCache, long now) {
     infoCreatedTime = now;
@@ -80,6 +81,7 @@ class CacheBaseInfo implements InternalCacheInfo {
     expiredRemoveCnt = em.getExpiredRemovedCount();
     evictedCnt = em.getEvictedCount();
     maxSize = em.getMaxSize();
+    maxWeight = em.getMaxWeight();
     clearedTime = _heapCache.clearedTime;
     keyMutationCnt = _heapCache.keyMutationCnt;
     removedCnt = em.getRemovedCount();
@@ -131,6 +133,11 @@ class CacheBaseInfo implements InternalCacheInfo {
   public long getSize() { return size; }
   @Override
   public long getHeapCapacity() { return maxSize; }
+
+  @Override
+  public long getMaximumWeight() {
+    return maxWeight;
+  }
 
   @Override
   public long getGetCount() {
@@ -288,9 +295,13 @@ class CacheBaseInfo implements InternalCacheInfo {
     sb.append("Cache(");
     CacheManagerImpl cm = (CacheManagerImpl) (cache.getCacheManager());
     sb.append("name=").append(BaseCache.nameQualifier(cache)).append(", ")
-      .append("size=").append(getSize()).append(", ")
-      .append("capacity=").append(getHeapCapacity() != Long.MAX_VALUE ? getHeapCapacity() : "unlimited").append(", ")
-      .append("get=").append(getGetCount()).append(", ")
+      .append("size=").append(getSize()).append(", ");
+    if (getHeapCapacity() >= 0) {
+      sb.append("capacity=").append(getHeapCapacity() != Long.MAX_VALUE ? getHeapCapacity() : "unlimited").append(", ");
+    } else {
+      sb.append("maximumWeight=").append(getMaximumWeight() != Long.MAX_VALUE ? getMaximumWeight() : "unlimited").append(", ");
+    }
+    sb.append("get=").append(getGetCount()).append(", ")
       .append("miss=").append(getMissCount()).append(", ")
       .append("put=").append(getPutCount()).append(", ")
       .append("load=").append(getLoadCount()).append(", ")
