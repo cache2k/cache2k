@@ -30,7 +30,7 @@ import java.util.concurrent.Executor;
  */
 public interface AsyncCacheLoader<K,V> {
 
-  void get(K key, V value, CacheEntry<K, V> entry, Callback<K, V> callback, Executor ex);
+  void load(K key, long _currentTime, CacheEntry<K, V> entry, Callback<K, V> callback, Executor ex);
 
   /**
    * Callback for async cache load.

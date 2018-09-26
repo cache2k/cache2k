@@ -47,6 +47,7 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.Callable;
+import java.util.concurrent.Executor;
 import java.util.concurrent.Future;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -728,6 +729,11 @@ public class WiredCache<K, V> extends BaseCache<K, V>
     @Override
     protected TimingHandler<K, V> timing() {
       return heapCache.timing;
+    }
+
+    @Override
+    protected Executor loaderExecutor() {
+      return heapCache.loaderExecutor;
     }
 
   }

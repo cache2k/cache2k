@@ -43,6 +43,8 @@ import org.cache2k.core.storageApi.StorageEntry;
 import org.cache2k.integration.ExceptionInformation;
 import org.cache2k.integration.RefreshedTimeWrapper;
 
+import java.util.concurrent.Executor;
+
 /**
  * This is a method object to perform an operation on an entry.
  *
@@ -105,8 +107,16 @@ public abstract class EntryAction<K, V, R> implements
 
   boolean suppressException = false;
 
+  /**
+   * Use async when available.
+   */
+  boolean preferAsync = false;
+
+  Thread syncThread;
+
   @SuppressWarnings("unchecked")
-  public EntryAction(HeapCache<K,V> _heapCache, InternalCache<K,V> _userCache, Semantic<K, V, R> op, K k, Entry<K, V> e) {
+  public EntryAction(HeapCache<K,V> _heapCache, InternalCache<K,V> _userCache,
+                     Semantic<K, V, R> op, K k, Entry<K, V> e) {
     heapCache = _heapCache;
     userCache = _userCache;
     operation = op;
@@ -124,6 +134,12 @@ public abstract class EntryAction<K, V, R> implements
   protected AdvancedCacheLoader<K, V> loader() {
     return heapCache.loader;
   }
+
+  protected AsyncCacheLoader<K, V> asyncLoader() {
+    return null;
+  }
+
+  protected abstract Executor loaderExecutor();
 
   /**
    * Provide the standard metrics for updating.
@@ -283,11 +299,6 @@ public abstract class EntryAction<K, V, R> implements
   @SuppressWarnings("unchecked")
   @Override
   public void load() {
-    AdvancedCacheLoader<K, V> _loader = loader();
-    if (_loader == null) {
-      mutationAbort(null);
-      return;
-    }
     lockFor(Entry.ProcessingState.LOAD);
     needsFinish = false;
     load = true;
@@ -299,6 +310,22 @@ public abstract class EntryAction<K, V, R> implements
         reviveRefreshedEntry(nrt);
         return;
       }
+    }
+    AsyncCacheLoader<K, V> _asyncLoader;
+    if (preferAsync && (_asyncLoader = asyncLoader()) != null) {
+      lockFor(Entry.ProcessingState.LOAD_ASYNC);
+      if (e.isVirgin()) {
+        _asyncLoader.load(heapCache.extractKeyObj(e), t0, null, this, loaderExecutor());
+      } else {
+        _asyncLoader.load(heapCache.extractKeyObj(e), t0, e, this, loaderExecutor());
+      }
+      asyncOperationStarted();
+      return;
+    }
+    AdvancedCacheLoader<K, V> _loader = loader();
+    if (_loader == null) {
+      mutationAbort(null);
+      return;
     }
     V v;
     try {
@@ -922,7 +949,23 @@ public abstract class EntryAction<K, V, R> implements
   public void ready() {
   }
 
-  public void maybeAsync() {
+  /**
+   * If thread is a synchronous call, wait until operation is complete.
+   * There is a little chance that the call back completes before we get
+   * here as well as some other operation changing the entry again.
+   */
+  public void asyncOperationStarted() {
+    if (syncThread == Thread.currentThread()) {
+      synchronized (entry) {
+        while (entry.isProcessing()) {
+          try {
+            entry.wait();
+          } catch (InterruptedException ex) {
+            Thread.currentThread().interrupt();
+          }
+        }
+      }
+    }
   }
 
   public static class StorageReadException extends CustomizationException {

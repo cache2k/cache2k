@@ -258,7 +258,9 @@ public class Entry<K, V> extends CompactEntry<K, V>
     public static final int NOTIFY = 14;
     public static final int PINNED = 15;
     public static final int EVICT = 16;
-    public static final int LAST = 17;
+    public static final int LOAD_ASYNC = 17;
+    public static final int WRITE_ASYNC = 18;
+    public static final int LAST = 19;
   }
 
   public static String num2processingStateText(int ps) {
@@ -280,6 +282,8 @@ public class Entry<K, V> extends CompactEntry<K, V>
       case ProcessingState.NOTIFY: return "NOTIFY";
       case ProcessingState.PINNED: return "PINNED";
       case ProcessingState.EVICT: return "EVICT";
+      case ProcessingState.LOAD_ASYNC: return "LOAD_ASYNC";
+      case ProcessingState.WRITE_ASYNC: return "WRITE_ASYNC";
       case ProcessingState.LAST: return "LAST";
     }
     return "UNKNOWN";

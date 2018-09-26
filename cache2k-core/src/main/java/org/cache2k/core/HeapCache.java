@@ -1748,6 +1748,11 @@ public class HeapCache<K, V> extends BaseCache<K, V> {
       protected TimingHandler<K, V> timing() {
         return timing;
       }
+
+      @Override
+      protected Executor loaderExecutor() {
+        return loaderExecutor;
+      }
     };
   }
 
