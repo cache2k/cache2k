@@ -32,7 +32,7 @@ import org.cache2k.event.CacheEntryUpdatedListener;
 import org.cache2k.integration.CacheWriter;
 import org.cache2k.integration.CacheWriterException;
 import org.cache2k.CustomizationException;
-import org.cache2k.core.experimentalApi.AsyncCacheLoader;
+import org.cache2k.integration.AsyncCacheLoader;
 import org.cache2k.core.experimentalApi.AsyncCacheWriter;
 import org.cache2k.core.operation.ExaminationEntry;
 import org.cache2k.core.operation.Progress;
@@ -110,7 +110,7 @@ public abstract class EntryAction<K, V, R> implements
   /**
    * Use async when available.
    */
-  boolean preferAsync = false;
+  boolean preferAsync = true;
 
   Thread syncThread;
 
@@ -126,6 +126,7 @@ public abstract class EntryAction<K, V, R> implements
     } else {
       entry = (Entry<K,V>) NON_FRESH_DUMMY;
     }
+    syncThread = Thread.currentThread();
   }
 
   /**
@@ -850,14 +851,13 @@ public abstract class EntryAction<K, V, R> implements
     }
     synchronized (entry) {
       entry.processingDone();
+      entryLocked = false;
       if (refresh) {
         heapCache.startRefreshProbationTimer(entry, expiry);
-        entryLocked = false;
         updateMutationStatistics();
         mutationDone();
         return;
       }
-      entryLocked = false;
 
       if (remove) {
         heapCache.removeEntry(entry);

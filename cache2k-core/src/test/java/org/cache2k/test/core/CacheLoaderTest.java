@@ -20,6 +20,7 @@ package org.cache2k.test.core;
  * #L%
  */
 
+import org.cache2k.integration.AsyncCacheLoader;
 import org.cache2k.integration.FunctionalCacheLoader;
 import org.cache2k.test.util.CacheRule;
 import org.cache2k.test.util.Condition;
@@ -501,6 +502,55 @@ public class CacheLoaderTest {
     assertEquals(1, latestInfo(c).getAsyncLoadsInFlight());
     assertEquals(1, latestInfo(c).getLoaderThreadsMaxActive());
     _releaseLoader.countDown();
+  }
+
+  @Test
+  public void testAsyncLoaderLoadViaExecutor() {
+    final AtomicInteger _loaderCalled = new AtomicInteger();
+    final AtomicInteger _loaderExecuted = new AtomicInteger();
+    Cache<Integer,Integer> c = target.cache(new CacheRule.Specialization<Integer, Integer>() {
+      @Override
+      public void extend(final Cache2kBuilder<Integer, Integer> b) {
+        b.loader(new AsyncCacheLoader<Integer, Integer>() {
+          @Override
+          public void load(final Integer key, final long _currentTime, final CacheEntry<Integer, Integer> entry, final Callback<Integer, Integer> callback, final Executor ex) {
+            _loaderCalled.incrementAndGet();
+             ex.execute(new Runnable() {
+               @Override
+               public void run() {
+                 _loaderExecuted.incrementAndGet();
+                 callback.onLoadSuccess(key, key);
+               }
+             });
+          }
+        });
+      }
+    });
+    Integer v = c.get(1);
+    assertEquals(1, (int) v);
+  }
+
+  /**
+   * Call the callback within the loading thread.
+   */
+  @Test
+  public void testAsyncLoaderLoadDirect() {
+    final AtomicInteger _loaderCalled = new AtomicInteger();
+    final AtomicInteger _loaderExecuted = new AtomicInteger();
+    Cache<Integer,Integer> c = target.cache(new CacheRule.Specialization<Integer, Integer>() {
+      @Override
+      public void extend(final Cache2kBuilder<Integer, Integer> b) {
+        b.loader(new AsyncCacheLoader<Integer, Integer>() {
+          @Override
+          public void load(final Integer key, final long _currentTime, final CacheEntry<Integer, Integer> entry, final Callback<Integer, Integer> callback, final Executor ex) {
+            _loaderCalled.incrementAndGet();
+            callback.onLoadSuccess(key, key);
+          }
+        });
+      }
+    });
+    Integer v = c.get(1);
+    assertEquals(1, (int) v);
   }
 
   volatile int loaderExecutionCount = 0;

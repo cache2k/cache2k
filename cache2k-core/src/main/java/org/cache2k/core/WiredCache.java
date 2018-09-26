@@ -27,6 +27,7 @@ import org.cache2k.event.CacheEntryExpiredListener;
 import org.cache2k.integration.AdvancedCacheLoader;
 import org.cache2k.CacheEntry;
 import org.cache2k.event.CacheEntryCreatedListener;
+import org.cache2k.integration.AsyncCacheLoader;
 import org.cache2k.processor.EntryProcessor;
 import org.cache2k.event.CacheEntryRemovedListener;
 import org.cache2k.event.CacheEntryUpdatedListener;
@@ -67,6 +68,7 @@ public class WiredCache<K, V> extends BaseCache<K, V>
   HeapCache<K,V> heapCache;
   StorageAdapter storage;
   AdvancedCacheLoader<K,V> loader;
+  AsyncCacheLoader<K,V> asyncLoader;
   CacheWriter<K, V> writer;
   CacheEntryRemovedListener<K,V>[] syncEntryRemovedListeners;
   CacheEntryCreatedListener<K,V>[] syncEntryCreatedListeners;
@@ -145,7 +147,7 @@ public class WiredCache<K, V> extends BaseCache<K, V>
 
   @Override
   public void prefetch(final K key) {
-    if (loader == null) {
+    if (!isLoaderAvailable()) {
       return;
     }
     Entry<K,V> e = heapCache.lookupEntryNoHitRecord(key);
@@ -165,7 +167,7 @@ public class WiredCache<K, V> extends BaseCache<K, V>
   @Override
   public void prefetchAll(final Iterable<? extends K> _keys, final CacheOperationCompletionListener l) {
     final CacheOperationCompletionListener _listener= l != null ? l : HeapCache.DUMMY_LOAD_COMPLETED_LISTENER;
-    if (loader == null) {
+    if (!isLoaderAvailable()) {
       _listener.onCompleted();
       return;
     }
@@ -324,9 +326,13 @@ public class WiredCache<K, V> extends BaseCache<K, V>
   }
 
   private void checkLoaderPresent() {
-    if (loader == null) {
+    if (!isLoaderAvailable()) {
       throw new UnsupportedOperationException("loader not set");
     }
+  }
+
+  private boolean isLoaderAvailable() {
+    return loader != null || asyncLoader != null;
   }
 
   V returnValue(V v) {
@@ -734,6 +740,11 @@ public class WiredCache<K, V> extends BaseCache<K, V>
     @Override
     protected Executor loaderExecutor() {
       return heapCache.loaderExecutor;
+    }
+
+    @Override
+    protected AsyncCacheLoader<K, V> asyncLoader() {
+      return asyncLoader;
     }
 
   }

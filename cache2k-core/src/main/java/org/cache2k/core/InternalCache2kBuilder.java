@@ -39,6 +39,7 @@ import org.cache2k.CacheManager;
 import org.cache2k.core.event.AsyncDispatcher;
 import org.cache2k.core.event.AsyncEvent;
 import org.cache2k.integration.AdvancedCacheLoader;
+import org.cache2k.integration.AsyncCacheLoader;
 import org.cache2k.integration.CacheLoader;
 import org.cache2k.integration.CacheWriter;
 import org.cache2k.integration.FunctionalCacheLoader;
@@ -223,7 +224,8 @@ public class InternalCache2kBuilder<K, V> {
       config.getWeigher() != null ||
       config.hasListeners() ||
       config.hasAsyncListeners() ||
-      config.getWriter() != null;
+      config.getWriter() != null ||
+      config.getAsyncLoader() != null;
 
 
     WiredCache<K, V> wc = null;
@@ -243,9 +245,8 @@ public class InternalCache2kBuilder<K, V> {
     bc.setName(_name);
     if (_wrap) {
       wc.loader = bc.loader;
-      if (config.getWriter() != null) {
-        wc.writer = (CacheWriter<K, V>) bc.createCustomization(config.getWriter());
-      }
+      wc.writer = (CacheWriter<K, V>) bc.createCustomization(config.getWriter());
+      wc.asyncLoader = (AsyncCacheLoader<K, V>) bc.createCustomization(config.getAsyncLoader());
       List<CacheEntryCreatedListener<K, V>> _syncCreatedListeners = new ArrayList<CacheEntryCreatedListener<K, V>>();
       List<CacheEntryUpdatedListener<K, V>> _syncUpdatedListeners = new ArrayList<CacheEntryUpdatedListener<K, V>>();
       List<CacheEntryRemovedListener<K, V>> _syncRemovedListeners = new ArrayList<CacheEntryRemovedListener<K, V>>();

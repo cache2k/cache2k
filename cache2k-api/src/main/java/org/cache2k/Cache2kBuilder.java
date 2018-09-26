@@ -31,6 +31,7 @@ import org.cache2k.event.CacheClosedListener;
 import org.cache2k.expiry.ExpiryPolicy;
 import org.cache2k.event.CacheEntryOperationListener;
 import org.cache2k.integration.AdvancedCacheLoader;
+import org.cache2k.integration.AsyncCacheLoader;
 import org.cache2k.integration.CacheLoader;
 import org.cache2k.integration.CacheWriter;
 import org.cache2k.integration.ExceptionPropagator;
@@ -462,6 +463,18 @@ public class Cache2kBuilder<K, V> {
   }
 
   /**
+   * Enables read through operation and sets a cache loader. Different loader types
+   * are available: {@link FunctionalCacheLoader}, {@link CacheLoader},
+   * {@link AdvancedCacheLoader}.
+   *
+   * @see CacheLoader for general discussion on cache loaders
+   */
+  public final Cache2kBuilder<K, V> loader(AsyncCacheLoader<K, V> l) {
+    config().setAsyncLoader(wrapCustomizationInstance(l));
+    return this;
+  }
+
+  /**
    * Enables read through operation and sets a cache loader
    *
    * @see CacheLoader for general discussion on cache loaders
@@ -593,7 +606,7 @@ public class Cache2kBuilder<K, V> {
   }
 
   /**
-   * If no separate executor is set via {@link #loaderExecutor(Executor)} the cache will
+   * If no separate executoru is set via {@link #loaderExecutor(Executor)} the cache will
    * create a separate thread pool used exclusively by it. Defines the maximum number of threads
    * this cache should use for calls to the {@link CacheLoader}. The default is one thread
    * per available CPU.

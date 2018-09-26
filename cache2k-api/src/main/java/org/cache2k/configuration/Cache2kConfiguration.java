@@ -27,6 +27,7 @@ import org.cache2k.event.CacheClosedListener;
 import org.cache2k.expiry.*;
 import org.cache2k.event.CacheEntryOperationListener;
 import org.cache2k.integration.AdvancedCacheLoader;
+import org.cache2k.integration.AsyncCacheLoader;
 import org.cache2k.integration.CacheWriter;
 import org.cache2k.integration.ExceptionPropagator;
 import org.cache2k.integration.FunctionalCacheLoader;
@@ -95,6 +96,7 @@ public class Cache2kConfiguration<K, V> implements ConfigurationBean, Configurat
   private CustomizationSupplier<? extends FunctionalCacheLoader<K,V>> loader;
   private CustomizationSupplier<CacheWriter<K,V>> writer;
   private CustomizationSupplier<AdvancedCacheLoader<K,V>> advancedLoader;
+  private CustomizationSupplier<AsyncCacheLoader<K,V>> asyncLoader;
   private CustomizationSupplier<ExceptionPropagator<K>> exceptionPropagator;
   private CustomizationSupplier<TimeReference> timeReference;
   private CustomizationSupplier<Weigher> weigher;
@@ -431,8 +433,19 @@ public class Cache2kConfiguration<K, V> implements ConfigurationBean, Configurat
     return advancedLoader;
   }
 
+  /**
+   * @see Cache2kBuilder#loader(AdvancedCacheLoader)
+   */
   public void setAdvancedLoader(final CustomizationSupplier<AdvancedCacheLoader<K, V>> v) {
     advancedLoader = v;
+  }
+
+  public CustomizationSupplier<AsyncCacheLoader<K, V>> getAsyncLoader() {
+    return asyncLoader;
+  }
+
+  public void setAsyncLoader(final CustomizationSupplier<AsyncCacheLoader<K, V>> v) {
+    asyncLoader = v;
   }
 
   public int getLoaderThreadCount() {

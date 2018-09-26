@@ -1,8 +1,8 @@
-package org.cache2k.core.experimentalApi;
+package org.cache2k.integration;
 
 /*
  * #%L
- * cache2k implementation
+ * cache2k API
  * %%
  * Copyright (C) 2000 - 2018 headissue GmbH, Munich
  * %%
