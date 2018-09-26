@@ -48,9 +48,9 @@ import org.cache2k.integration.RefreshedTimeWrapper;
  *
  * @author Jens Wilke
  */
-@SuppressWarnings("SynchronizeOnNonFinalField")
+@SuppressWarnings({"SynchronizeOnNonFinalField", "unchecked"})
 public abstract class EntryAction<K, V, R> implements
-  AsyncCacheLoader.Callback<V>, AsyncCacheWriter.Callback, Progress<K, V, R> {
+  AsyncCacheLoader.Callback<K, V>, AsyncCacheWriter.Callback, Progress<K, V, R> {
 
   static final Entry NON_FRESH_DUMMY = new Entry();
 
@@ -307,16 +307,11 @@ public abstract class EntryAction<K, V, R> implements
       } else {
         v = _loader.load(heapCache.extractKeyObj(e), t0, e);
       }
-      if (v instanceof RefreshedTimeWrapper) {
-        RefreshedTimeWrapper wr = (RefreshedTimeWrapper<V>)v;
-        lastRefreshTime = wr.getRefreshTime();
-        v = (V) wr.getValue();
-      }
     } catch (Throwable _ouch) {
       onLoadFailure(_ouch);
       return;
     }
-    onLoadSuccess(v);
+    onLoadSuccess(key , v);
   }
 
   public void reviveRefreshedEntry(long nrt) {
@@ -380,8 +375,17 @@ public abstract class EntryAction<K, V, R> implements
   }
 
   @Override
-  public void onLoadSuccess(V value) {
-    newValueOrException = value;
+  public void onLoadSuccess(K k, V v) {
+    if (k != key) {
+      throw new IllegalArgumentException("Callback on wrong key");
+    }
+    if (v instanceof RefreshedTimeWrapper) {
+      RefreshedTimeWrapper wr = (RefreshedTimeWrapper<V>)v;
+      lastRefreshTime = wr.getRefreshTime();
+      v = (V) wr.getValue();
+    }
+
+    newValueOrException = v;
     loadCompleted();
   }
 
@@ -916,6 +920,9 @@ public abstract class EntryAction<K, V, R> implements
   }
 
   public void ready() {
+  }
+
+  public void maybeAsync() {
   }
 
   public static class StorageReadException extends CustomizationException {
