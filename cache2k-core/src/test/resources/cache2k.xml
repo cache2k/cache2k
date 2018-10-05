@@ -7,7 +7,6 @@
 
   <defaults>
     <cache>
-      <entryCapacity>2000</entryCapacity>
       <loaderThreadCount>5</loaderThreadCount>
     </cache>
   </defaults>

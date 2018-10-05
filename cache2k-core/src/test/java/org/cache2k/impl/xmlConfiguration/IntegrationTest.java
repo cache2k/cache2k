@@ -109,7 +109,7 @@ public class IntegrationTest {
     Cache2kBuilder<String, String> b =
       new Cache2kBuilder<String, String>(){}.name("IntegrationTest-defaultAndIndividualIsApplied");
     Cache2kConfiguration<String, String> cfg = b.toConfiguration();
-    assertEquals(2000, cfg.getEntryCapacity());
+    assertEquals(-1, cfg.getEntryCapacity());
     assertEquals(5, cfg.getLoaderThreadCount());
     assertEquals(-1, cfg.getExpireAfterWrite());
     Cache<String, String> c = b.build();
