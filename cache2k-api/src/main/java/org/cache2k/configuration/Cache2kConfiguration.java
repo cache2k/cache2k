@@ -355,7 +355,7 @@ public class Cache2kConfiguration<K, V> implements ConfigurationBean, Configurat
    */
   public void setMaximumWeight(final long v) {
     if (entryCapacity >= 0) {
-      throw new IllegalArgumentException("entryCapacity alread set, setting maximumWeight is illegal");
+      throw new IllegalArgumentException("entryCapacity already set, setting maximumWeight is illegal");
     }
     maximumWeight = v;
   }
