@@ -581,9 +581,16 @@ public class CacheLoaderTest {
       }
     });
     CompletionWaiter w = new CompletionWaiter();
-    c.loadAll(TestingBase.keys(1), w);
+    c.loadAll(TestingBase.keys(1, 2, 1802), w);
     w.awaitCompletion();
     assertEquals(1, (int) c.peek(1));
+    Object o1 = c.peek(1802);
+    assertTrue(c.peek(1802) == o1);
+    w = new CompletionWaiter();
+    c.reloadAll(TestingBase.keys(1802, 4, 5), w);
+    w.awaitCompletion();
+    assertNotNull(c.peek(1802));
+    assertTrue(c.peek(1802) != o1);
   }
 
   volatile int loaderExecutionCount = 0;

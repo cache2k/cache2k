@@ -329,9 +329,9 @@ public abstract class EntryAction<K, V, R> implements
     if (preferAsync && (_asyncLoader = asyncLoader()) != null) {
       lockFor(Entry.ProcessingState.LOAD_ASYNC);
       if (e.isVirgin()) {
-        _asyncLoader.load(heapCache.extractKeyObj(e), t0, null, this, loaderExecutor());
+        _asyncLoader.load(key, t0, null, this, loaderExecutor());
       } else {
-        _asyncLoader.load(heapCache.extractKeyObj(e), t0, e, this, loaderExecutor());
+        _asyncLoader.load(key, t0, e, this, loaderExecutor());
       }
       asyncOperationStarted();
       return;
@@ -344,9 +344,9 @@ public abstract class EntryAction<K, V, R> implements
     V v;
     try {
       if (e.isVirgin()) {
-        v = _loader.load(heapCache.extractKeyObj(e), t0, null);
+        v = _loader.load(key, t0, null);
       } else {
-        v = _loader.load(heapCache.extractKeyObj(e), t0, e);
+        v = _loader.load(key, t0, e);
       }
     } catch (Throwable _ouch) {
       onLoadFailure(_ouch);
@@ -419,7 +419,7 @@ public abstract class EntryAction<K, V, R> implements
   public void onLoadSuccess(K k, V v) {
     checkEntryStateOnLoadCallback();
     if (k != key) {
-      throw new IllegalArgumentException("Callback on wrong key");
+      throw new IllegalArgumentException("Callback on wrong key, expect: " + key + ", got: " + k);
     }
     if (v instanceof RefreshedTimeWrapper) {
       RefreshedTimeWrapper wr = (RefreshedTimeWrapper<V>)v;
