@@ -70,6 +70,7 @@ class CacheBaseInfo implements InternalCacheInfo {
   private int evictionRunningCnt;
   private long internalExceptionCnt;
   private long maxWeight;
+  private long currentWeight;
 
   public CacheBaseInfo(HeapCache _heapCache, InternalCache _userCache, long now) {
     infoCreatedTime = now;
@@ -82,6 +83,7 @@ class CacheBaseInfo implements InternalCacheInfo {
     evictedCnt = em.getEvictedCount();
     maxSize = em.getMaxSize();
     maxWeight = em.getMaxWeight();
+    currentWeight = em.getCurrentWeight();
     clearedTime = _heapCache.clearedTime;
     keyMutationCnt = _heapCache.keyMutationCnt;
     removedCnt = em.getRemovedCount();
@@ -137,6 +139,11 @@ class CacheBaseInfo implements InternalCacheInfo {
   @Override
   public long getMaximumWeight() {
     return maxWeight;
+  }
+
+  @Override
+  public long getCurrentWeight() {
+    return currentWeight;
   }
 
   @Override
@@ -300,6 +307,7 @@ class CacheBaseInfo implements InternalCacheInfo {
       sb.append("capacity=").append(getHeapCapacity() != Long.MAX_VALUE ? getHeapCapacity() : "unlimited").append(", ");
     } else {
       sb.append("maximumWeight=").append(getMaximumWeight() != Long.MAX_VALUE ? getMaximumWeight() : "unlimited").append(", ");
+      sb.append("currentWeight=").append(getCurrentWeight()).append(", ");
     }
     sb.append("get=").append(getGetCount()).append(", ")
       .append("miss=").append(getMissCount()).append(", ")

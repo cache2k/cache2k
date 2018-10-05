@@ -45,7 +45,7 @@ public abstract class AbstractEviction implements Eviction, EvictionMetrics {
   private long expiredRemovedCnt;
   private long virginRemovedCnt;
   private long evictedCount;
-  private long totalWeight;
+  private long currentWeight;
   private final HeapCacheListener listener;
   private final boolean noListenerCall;
   private Entry[] evictChunkReuse;
@@ -128,7 +128,7 @@ public abstract class AbstractEviction implements Eviction, EvictionMetrics {
     _weight = calculateWeight(e, v);
     long _currentWeight = getWeightFromEntry(e);
     if (_currentWeight != _weight) {
-      totalWeight += _weight - _currentWeight;
+      currentWeight += _weight - _currentWeight;
       updateWeightInEntry(e, _weight);
     }
   }
@@ -140,7 +140,7 @@ public abstract class AbstractEviction implements Eviction, EvictionMetrics {
     if (!isWeigherPresent()) {
       return;
     }
-    totalWeight -= getWeightFromEntry(e);
+    currentWeight -= getWeightFromEntry(e);
   }
 
   /**
@@ -215,7 +215,7 @@ public abstract class AbstractEviction implements Eviction, EvictionMetrics {
    */
   boolean isEvictionNeeded() {
     if (isWeigherPresent()) {
-      return totalWeight > (correctedMaxSizeOrWeight + evictionRunningWeight);
+      return currentWeight > (correctedMaxSizeOrWeight + evictionRunningWeight);
     } else {
       return getSize() > (correctedMaxSizeOrWeight + evictionRunningCount);
     }
@@ -371,6 +371,11 @@ public abstract class AbstractEviction implements Eviction, EvictionMetrics {
   @Override
   public long getMaxWeight() {
     return maxWeight;
+  }
+
+  @Override
+  public long getCurrentWeight() {
+    return currentWeight;
   }
 
   @Override

@@ -62,6 +62,16 @@ public class CacheMXBeanImpl implements CacheMXBean {
   }
 
   @Override
+  public long getMaximumWeight() {
+    return getInfo().getMaximumWeight();
+  }
+
+  @Override
+  public long getCurrentWeight() {
+    return getInfo().getCurrentWeight();
+  }
+
+  @Override
   public long getMissCount() {
     return getInfo().getMissCount();
   }

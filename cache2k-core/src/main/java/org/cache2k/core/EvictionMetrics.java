@@ -70,6 +70,8 @@ public interface EvictionMetrics {
 
   long getMaxWeight();
 
+  long getCurrentWeight();
+
   /** Fragment that the eviction wants to add to the {@link Cache#toString()} output. */
   String getExtraStatistics();
 

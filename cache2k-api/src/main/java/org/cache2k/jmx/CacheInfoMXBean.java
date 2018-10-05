@@ -58,6 +58,22 @@ public interface CacheInfoMXBean {
   long getEntryCapacity();
 
   /**
+   * Configured maximum weight or -1.
+   *
+   * @see org.cache2k.Weigher
+   * @see Cache2kBuilder#maximumWeight(long)
+   */
+  long getMaximumWeight();
+
+  /**
+   * Total weight of all entries in the cache.
+   *
+   * @see org.cache2k.Weigher
+   * @see Cache2kBuilder#maximumWeight(long)
+   */
+  long getCurrentWeight();
+
+  /**
    * How many times a new entry was inserted into the cache.
    */
   long getInsertCount();

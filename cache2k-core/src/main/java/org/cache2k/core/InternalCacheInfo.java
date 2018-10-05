@@ -60,6 +60,11 @@ public interface InternalCacheInfo {
    */
   long getMaximumWeight();
 
+  /**
+   * Current sum of entry weights as returned by the {@link org.cache2k.Weigher}
+   */
+  long getCurrentWeight();
+
 
   /**
    * Total counted hits on the heap cache data. The counter is increased when an entry is present

@@ -246,6 +246,16 @@ public class SegmentedEviction implements Eviction, EvictionMetrics {
   }
 
   @Override
+  public long getCurrentWeight() {
+    long sum = 0;
+    for (Eviction ev : segments) {
+      long l = ev.getMetrics().getCurrentWeight();
+      sum += l;
+    }
+    return sum;
+  }
+
+  @Override
   public int getEvictionRunningCount() {
     int sum = 0;
     for (Eviction ev : segments) {

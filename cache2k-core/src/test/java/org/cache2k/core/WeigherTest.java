@@ -78,8 +78,9 @@ public class WeigherTest extends TestingBase {
   }
 
   /**
-   * The weight 0 is legal. Caffeine allows weight of 0 as well.
-   * Maybe a minimum weight of 1 is better.
+   * The weight 0 is legal. Caffeine/Guava allows weight of 0 as well.
+   * Maybe a minimum weight of 1 is a good idea, but better be compatible
+   * to the other caches.
    */
   @Test
   public void minimumWeight() {
@@ -99,6 +100,22 @@ public class WeigherTest extends TestingBase {
     c.put(1, 1);
     c.put(2, 1);
     assertEquals(2, countEntriesViaIteration());
+  }
+
+  @Test
+  public void unboundedWeight() {
+    Cache<Integer, Integer> c = builder(Integer.class, Integer.class)
+      .eternal(true)
+      .entryCapacity(-1)
+      .weigher(new Weigher<Integer, Integer>() {
+        @Override
+        public long weigh(final Integer key, final Integer value) {
+          return 0;
+        }
+      })
+      .maximumWeight(Long.MAX_VALUE)
+      .build();
+    assertEquals(Long.MAX_VALUE, getInfo().getMaximumWeight());
   }
 
   @Test

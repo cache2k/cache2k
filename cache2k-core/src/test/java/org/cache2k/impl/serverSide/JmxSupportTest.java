@@ -25,6 +25,7 @@ import org.cache2k.Cache2kBuilder;
 import org.cache2k.CacheManager;
 import static org.junit.Assert.*;
 
+import org.cache2k.Weigher;
 import org.cache2k.core.CacheManagerImpl;
 import org.cache2k.core.util.Log;
 import org.cache2k.testing.category.FastTests;
@@ -223,6 +224,8 @@ public class JmxSupportTest {
     checkAttribute("ValueType", "java.util.List<java.util.Collection<Long>>");
     checkAttribute("Size", 0L);
     checkAttribute("EntryCapacity", 2000L);
+    checkAttribute("MaximumWeight", -1L);
+    checkAttribute("CurrentWeight", 0L);
     checkAttribute("InsertCount", 0L);
     checkAttribute("MissCount", 0L);
     checkAttribute("RefreshCount", 0L);
@@ -249,6 +252,33 @@ public class JmxSupportTest {
     assertTrue("reasonable InfoCreatedDeltaMillis", ((Integer) retrieve("InfoCreatedDeltaMillis")) >= 0);
     assertTrue("reasonable EvictionStatistics", retrieve("EvictionStatistics").toString().contains("impl="));
     assertTrue("reasonable IntegrityDescriptor", retrieve("IntegrityDescriptor").toString().startsWith("0."));
+    c.close();
+  }
+
+  @Test
+  public void testWeigherWithSegmentation() throws Exception {
+    Date _beforeCreateion = new Date();
+    String _name = getClass().getName() + ".testInitialProperties";
+    Cache c = new Cache2kBuilder<Long, List<Collection<Long>>>() {}
+      .name(_name)
+      .eternal(true)
+      .enableJmx(true)
+      .maximumWeight(123456789L)
+      .weigher(new Weigher<Long, List<Collection<Long>>>() {
+        @Override
+        public long weigh(final Long key, final List<Collection<Long>> value) {
+          return 1;
+        }
+      })
+      .build();
+    objectName = constructCacheObjectName(_name);
+    checkAttribute("KeyType", "Long");
+    checkAttribute("ValueType", "java.util.List<java.util.Collection<Long>>");
+    checkAttribute("Size", 0L);
+    checkAttribute("EntryCapacity", -1L);
+    long v = (Long) retrieve("MaximumWeight");
+    assertTrue(v >= 123456789L);
+    checkAttribute("CurrentWeight", 0L);
     c.close();
   }
 
