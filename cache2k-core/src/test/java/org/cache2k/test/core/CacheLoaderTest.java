@@ -31,6 +31,7 @@ import org.cache2k.Cache2kBuilder;
 import org.cache2k.CacheEntry;
 import org.cache2k.integration.CacheLoader;
 import org.cache2k.CacheOperationCompletionListener;
+import org.cache2k.test.util.TestingBase;
 import org.cache2k.testing.category.FastTests;
 import org.cache2k.test.util.IntCacheRule;
 import org.junit.AfterClass;
@@ -39,6 +40,7 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.rules.Timeout;
 
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executor;
@@ -504,6 +506,9 @@ public class CacheLoaderTest {
     _releaseLoader.countDown();
   }
 
+  /**
+   * Execute loader in another thread.
+   */
   @Test
   public void testAsyncLoaderLoadViaExecutor() {
     final AtomicInteger _loaderCalled = new AtomicInteger();
@@ -551,6 +556,34 @@ public class CacheLoaderTest {
     });
     Integer v = c.get(1);
     assertEquals(1, (int) v);
+  }
+
+  @Test
+  public void testAsyncLoaderWithExecutorWithAsync() {
+    final AtomicInteger _loaderCalled = new AtomicInteger();
+    final AtomicInteger _loaderExecuted = new AtomicInteger();
+    Cache<Integer,Integer> c = target.cache(new CacheRule.Specialization<Integer, Integer>() {
+      @Override
+      public void extend(final Cache2kBuilder<Integer, Integer> b) {
+        b.loader(new AsyncCacheLoader<Integer, Integer>() {
+          @Override
+          public void load(final Integer key, final long _currentTime, final CacheEntry<Integer, Integer> entry, final Callback<Integer, Integer> callback, final Executor ex) {
+            _loaderCalled.incrementAndGet();
+             ex.execute(new Runnable() {
+               @Override
+               public void run() {
+                 _loaderExecuted.incrementAndGet();
+                 callback.onLoadSuccess(key, key);
+               }
+             });
+          }
+        });
+      }
+    });
+    CompletionWaiter w = new CompletionWaiter();
+    c.loadAll(TestingBase.keys(1), w);
+    w.awaitCompletion();
+    assertEquals(1, (int) c.peek(1));
   }
 
   volatile int loaderExecutionCount = 0;

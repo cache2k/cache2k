@@ -54,7 +54,7 @@ public class Operations<K, V> {
     return GET;
   }
 
-  static final Semantic GET = new Semantic.MightUpdateExisting() {
+  public static final Semantic GET = new Semantic.MightUpdateExisting() {
 
     @Override
     public void examine(Progress c, ExaminationEntry e) {

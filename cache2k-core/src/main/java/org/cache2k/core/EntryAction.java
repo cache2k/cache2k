@@ -114,9 +114,12 @@ public abstract class EntryAction<K, V, R> implements
 
   Thread syncThread;
 
+  ActionCompletedCallback completedCallback;
+  volatile boolean asyncStarted;
+
   @SuppressWarnings("unchecked")
   public EntryAction(HeapCache<K,V> _heapCache, InternalCache<K,V> _userCache,
-                     Semantic<K, V, R> op, K k, Entry<K, V> e) {
+                     Semantic<K, V, R> op, K k, Entry<K, V> e, ActionCompletedCallback cb) {
     heapCache = _heapCache;
     userCache = _userCache;
     operation = op;
@@ -126,7 +129,17 @@ public abstract class EntryAction<K, V, R> implements
     } else {
       entry = (Entry<K,V>) NON_FRESH_DUMMY;
     }
-    syncThread = Thread.currentThread();
+    if (cb == null) {
+      syncThread = Thread.currentThread();
+    } else {
+      completedCallback = cb;
+    }
+  }
+
+  @SuppressWarnings("unchecked")
+  public EntryAction(HeapCache<K,V> _heapCache, InternalCache<K,V> _userCache,
+                     Semantic<K, V, R> op, K k, Entry<K, V> e) {
+    this(_heapCache, _userCache, op, k, e, null);
   }
 
   /**
@@ -404,6 +417,7 @@ public abstract class EntryAction<K, V, R> implements
 
   @Override
   public void onLoadSuccess(K k, V v) {
+    checkEntryStateOnLoadCallback();
     if (k != key) {
       throw new IllegalArgumentException("Callback on wrong key");
     }
@@ -420,12 +434,22 @@ public abstract class EntryAction<K, V, R> implements
   @SuppressWarnings("unchecked")
   @Override
   public void onLoadFailure(Throwable t) {
+    checkEntryStateOnLoadCallback();
     newValueOrException = (V) new ExceptionWrapper(key, t, loadStartedTime, entry);
     loadCompleted();
   }
 
+  private void checkEntryStateOnLoadCallback() {
+    if (asyncStarted) {
+      if (entry.getProcessingState() != Entry.ProcessingState.LOAD_ASYNC) {
+        throw new IllegalStateException("async callback on wrong state");
+      }
+    }
+  }
+
   public void loadCompleted() {
     entry.nextProcessingStep(Entry.ProcessingState.LOAD_COMPLETE);
+    entryLocked = true;
     if (!metrics().isDisabled() && heapCache.isUpdateTimeNeeded()) {
       long _loadCompletedTime = millis();
       long _delta = _loadCompletedTime - loadStartedTime;
@@ -947,6 +971,9 @@ public abstract class EntryAction<K, V, R> implements
   }
 
   public void ready() {
+    if (completedCallback != null) {
+      completedCallback.entryActionCompleted(this);
+    }
   }
 
   /**
@@ -955,6 +982,7 @@ public abstract class EntryAction<K, V, R> implements
    * here as well as some other operation changing the entry again.
    */
   public void asyncOperationStarted() {
+    asyncStarted = true;
     if (syncThread == Thread.currentThread()) {
       synchronized (entry) {
         while (entry.isProcessing()) {
@@ -965,6 +993,8 @@ public abstract class EntryAction<K, V, R> implements
           }
         }
       }
+    } else {
+      entryLocked = false;
     }
   }
 
@@ -990,6 +1020,10 @@ public abstract class EntryAction<K, V, R> implements
     public ListenerException(final Throwable cause) {
       super(cause);
     }
+  }
+
+  public interface ActionCompletedCallback {
+    void entryActionCompleted(EntryAction ea);
   }
 
 }

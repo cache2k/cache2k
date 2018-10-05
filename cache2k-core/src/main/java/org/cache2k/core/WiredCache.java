@@ -60,7 +60,7 @@ import java.util.concurrent.atomic.AtomicInteger;
  * @author Jens Wilke
  */
 public class WiredCache<K, V> extends BaseCache<K, V>
-  implements  StorageAdapter.Parent, HeapCacheListener<K,V> {
+  implements StorageAdapter.Parent, HeapCacheListener<K,V> {
 
   @SuppressWarnings("unchecked")
   final Operations<K, V> SPEC = Operations.SINGLETON;
@@ -268,6 +268,31 @@ public class WiredCache<K, V> extends BaseCache<K, V>
       _listener.onCompleted();
       return;
     }
+    if (asyncLoader != null) {
+      loadAllWithAsyncLoader(_listener, _keysToLoad);
+    } else {
+      loadAllWithSyncLoader(_listener, _keysToLoad);
+    }
+  }
+
+  private void loadAllWithAsyncLoader(final CacheOperationCompletionListener _listener, final Set<K> _keysToLoad) {
+    final AtomicInteger _countDown = new AtomicInteger(_keysToLoad.size());
+    EntryAction.ActionCompletedCallback cb = new EntryAction.ActionCompletedCallback() {
+      @Override
+      public void entryActionCompleted(final EntryAction ea) {
+        if (_countDown.decrementAndGet() == 0) {
+          _listener.onCompleted();
+          return;
+        }
+      }
+    };
+    for (K k : _keysToLoad) {
+      final K key = k;
+      executeAsync(key, SPEC.GET, cb);
+    }
+  }
+
+  private void loadAllWithSyncLoader(final CacheOperationCompletionListener _listener, final Set<K> _keysToLoad) {
     final AtomicInteger _countDown = new AtomicInteger(_keysToLoad.size());
     for (K k : _keysToLoad) {
       final K key = k;
@@ -279,6 +304,7 @@ public class WiredCache<K, V> extends BaseCache<K, V>
           } finally {
             if (_countDown.decrementAndGet() == 0) {
               _listener.onCompleted();
+              return;
             }
           }
         }
@@ -296,6 +322,36 @@ public class WiredCache<K, V> extends BaseCache<K, V>
     checkLoaderPresent();
     final CacheOperationCompletionListener _listener= l != null ? l : HeapCache.DUMMY_LOAD_COMPLETED_LISTENER;
     Set<K> _keySet = heapCache.generateKeySet(_keys);
+    if (asyncLoader != null) {
+      reloadAllWithAsyncLoader(_listener, _keySet);
+    } else {
+      reloadAllWithSyncLoader(_listener, _keySet);
+    }
+  }
+
+  private void reloadAllWithAsyncLoader(final CacheOperationCompletionListener _listener, final Set<K> _keySet) {
+    final AtomicInteger _countDown = new AtomicInteger(_keySet.size());
+    EntryAction.ActionCompletedCallback cb = new EntryAction.ActionCompletedCallback() {
+      @Override
+      public void entryActionCompleted(final EntryAction ea) {
+        if (_countDown.decrementAndGet() == 0) {
+          _listener.onCompleted();
+        }
+      }
+    };
+    for (K k : _keySet) {
+      final K key = k;
+      executeAsync(key, SPEC.UNCONDITIONAL_LOAD, cb);
+    }
+  }
+
+  private <R> void executeAsync(K key, Semantic<K, V, R> op, EntryAction.ActionCompletedCallback cb) {
+    EntryAction<K, V, R> _action = new MyEntryAction<R>(op, key, null, cb);
+    execute(op, _action);
+
+  }
+
+  private void reloadAllWithSyncLoader(final CacheOperationCompletionListener _listener, final Set<K> _keySet) {
     final AtomicInteger _countDown = new AtomicInteger(_keySet.size());
     for (K k : _keySet) {
       final K key = k;
@@ -700,6 +756,11 @@ public class WiredCache<K, V> extends BaseCache<K, V>
 
     public MyEntryAction(final Semantic<K, V, R> op, final K _k, final Entry<K, V> e) {
       super(WiredCache.this.heapCache, WiredCache.this, op, _k, e);
+    }
+
+    public MyEntryAction(final Semantic<K, V, R> op, final K _k,
+                         final Entry<K, V> e, ActionCompletedCallback cb) {
+      super(WiredCache.this.heapCache, WiredCache.this, op, _k, e, cb);
     }
 
     @Override
