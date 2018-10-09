@@ -20,8 +20,6 @@ package org.cache2k.integration;
  * #L%
  */
 
-import org.cache2k.CacheEntry;
-
 import java.util.EventListener;
 import java.util.concurrent.Executor;
 
@@ -30,7 +28,46 @@ import java.util.concurrent.Executor;
  */
 public interface AsyncCacheLoader<K,V> {
 
-  void load(K key, long _currentTime, CacheEntry<K, V> entry, Callback<K, V> callback, Executor ex);
+  void load(K key, Context<K, V> context, Callback<K, V> callback);
+
+  /**
+   * Relevant context information for a single load request.
+   *
+   * <p>Rationale: Instead of a rather long parameter list, we define an interface.
+   * This allows us later to add some information without breaking implementations
+   * of the {@link AsyncCacheLoader}.
+   */
+  interface Context<K, V> {
+
+    /**
+     * Cache key for the load request.
+     */
+    K getKey();
+
+    /**
+     * The configured loader executor.
+     *
+     * @see org.cache2k.Cache2kBuilder#loaderExecutor(Executor)
+     */
+    Executor getLoaderExecutor();
+
+    /**
+     * Currently caches value. This is present even if it is expired.
+     */
+    V getCachedValue();
+
+    /**
+     * Currently cached exception. This present even if it is expired.
+     */
+    Throwable getCachedException();
+
+    /**
+     * Time in millis since epoch of start of load operation retrieved via the
+     * configured clock.
+     */
+    long getCurrentTime();
+
+  }
 
   /**
    * Callback for async cache load.
@@ -39,7 +76,7 @@ public interface AsyncCacheLoader<K,V> {
    */
   interface Callback<K, V> extends EventListener {
 
-    void onLoadSuccess(K key, V value);
+    void onLoadSuccess(V value);
 
     void onLoadFailure(Throwable t);
 

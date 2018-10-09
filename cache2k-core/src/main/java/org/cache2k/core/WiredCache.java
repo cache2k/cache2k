@@ -280,7 +280,8 @@ public class WiredCache<K, V> extends BaseCache<K, V>
     EntryAction.ActionCompletedCallback cb = new EntryAction.ActionCompletedCallback() {
       @Override
       public void entryActionCompleted(final EntryAction ea) {
-        if (_countDown.decrementAndGet() == 0) {
+        int v = _countDown.decrementAndGet();
+        if (v == 0) {
           _listener.onCompleted();
           return;
         }
@@ -799,7 +800,7 @@ public class WiredCache<K, V> extends BaseCache<K, V>
     }
 
     @Override
-    protected Executor loaderExecutor() {
+    public Executor getLoaderExecutor() {
       return heapCache.loaderExecutor;
     }
 

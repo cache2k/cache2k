@@ -1750,8 +1750,8 @@ public class HeapCache<K, V> extends BaseCache<K, V> {
       }
 
       @Override
-      protected Executor loaderExecutor() {
-        return loaderExecutor;
+      public Executor getLoaderExecutor() {
+        return null;
       }
     };
   }

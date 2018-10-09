@@ -40,7 +40,6 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.rules.Timeout;
 
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executor;
@@ -518,13 +517,13 @@ public class CacheLoaderTest {
       public void extend(final Cache2kBuilder<Integer, Integer> b) {
         b.loader(new AsyncCacheLoader<Integer, Integer>() {
           @Override
-          public void load(final Integer key, final long _currentTime, final CacheEntry<Integer, Integer> entry, final Callback<Integer, Integer> callback, final Executor ex) {
+          public void load(final Integer key, final AsyncCacheLoader.Context<Integer,Integer> ctx, final Callback<Integer, Integer> callback) {
             _loaderCalled.incrementAndGet();
-             ex.execute(new Runnable() {
+             ctx.getLoaderExecutor().execute(new Runnable() {
                @Override
                public void run() {
                  _loaderExecuted.incrementAndGet();
-                 callback.onLoadSuccess(key, key);
+                 callback.onLoadSuccess(key);
                }
              });
           }
@@ -547,9 +546,9 @@ public class CacheLoaderTest {
       public void extend(final Cache2kBuilder<Integer, Integer> b) {
         b.loader(new AsyncCacheLoader<Integer, Integer>() {
           @Override
-          public void load(final Integer key, final long _currentTime, final CacheEntry<Integer, Integer> entry, final Callback<Integer, Integer> callback, final Executor ex) {
+          public void load(final Integer key, final AsyncCacheLoader.Context<Integer,Integer> ctx, final Callback<Integer, Integer> callback) {
             _loaderCalled.incrementAndGet();
-            callback.onLoadSuccess(key, key);
+            callback.onLoadSuccess(key);
           }
         });
       }
@@ -567,13 +566,13 @@ public class CacheLoaderTest {
       public void extend(final Cache2kBuilder<Integer, Integer> b) {
         b.loader(new AsyncCacheLoader<Integer, Integer>() {
           @Override
-          public void load(final Integer key, final long _currentTime, final CacheEntry<Integer, Integer> entry, final Callback<Integer, Integer> callback, final Executor ex) {
+          public void load(final Integer key, final AsyncCacheLoader.Context<Integer,Integer> ctx, final Callback<Integer, Integer> callback) {
             _loaderCalled.incrementAndGet();
-             ex.execute(new Runnable() {
+             ctx.getLoaderExecutor().execute(new Runnable() {
                @Override
                public void run() {
                  _loaderExecuted.incrementAndGet();
-                 callback.onLoadSuccess(key, key);
+                 callback.onLoadSuccess(key);
                }
              });
           }
@@ -604,15 +603,15 @@ public class CacheLoaderTest {
       public void extend(final Cache2kBuilder<Integer, Integer> b) {
         b.loader(new AsyncCacheLoader<Integer, Integer>() {
           @Override
-          public void load(final Integer key, final long _currentTime, final CacheEntry<Integer, Integer> entry, final Callback<Integer, Integer> callback, final Executor ex) {
+          public void load(final Integer key, final AsyncCacheLoader.Context<Integer,Integer> ctx, final Callback<Integer, Integer> callback) {
             _loaderCalled.incrementAndGet();
-            ex.execute(new Runnable() {
+            ctx.getLoaderExecutor().execute(new Runnable() {
               @Override
               public void run() {
                 _loaderExecuted.incrementAndGet();
-                callback.onLoadSuccess(key, key);
+                callback.onLoadSuccess(key);
                 try {
-                  callback.onLoadSuccess(key, key);
+                  callback.onLoadSuccess(key);
                   _gotNoException.incrementAndGet();
                 } catch (IllegalStateException ex) {
                   _gotNoException.incrementAndGet();

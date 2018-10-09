@@ -43,8 +43,6 @@ import org.cache2k.core.storageApi.StorageEntry;
 import org.cache2k.integration.ExceptionInformation;
 import org.cache2k.integration.RefreshedTimeWrapper;
 
-import java.util.concurrent.Executor;
-
 /**
  * This is a method object to perform an operation on an entry.
  *
@@ -52,6 +50,7 @@ import java.util.concurrent.Executor;
  */
 @SuppressWarnings({"SynchronizeOnNonFinalField", "unchecked"})
 public abstract class EntryAction<K, V, R> implements
+  AsyncCacheLoader.Context<K, V>,
   AsyncCacheLoader.Callback<K, V>, AsyncCacheWriter.Callback, Progress<K, V, R> {
 
   static final Entry NON_FRESH_DUMMY = new Entry();
@@ -153,8 +152,6 @@ public abstract class EntryAction<K, V, R> implements
     return null;
   }
 
-  protected abstract Executor loaderExecutor();
-
   /**
    * Provide the standard metrics for updating.
    */
@@ -205,11 +202,32 @@ public abstract class EntryAction<K, V, R> implements
   protected abstract TimingHandler<K,V> timing(); //  { return RefreshHandler.ETERNAL; }
 
   @Override
+  public K getKey() {
+    return entry.getKey();
+  }
+
+  @Override
   public long getCurrentTime() {
     if (currentTime > 0) {
       return currentTime;
     }
     return currentTime = millis();
+  }
+
+  @Override
+  public V getCachedValue() {
+    V v = oldValueOrException;
+    if (v instanceof ExceptionWrapper) {
+      return null;
+    }
+    return v;
+  }
+
+  @Override
+  public Throwable getCachedException() {
+    V v = oldValueOrException;
+    if (v instanceof ExceptionWrapper) { return ((ExceptionWrapper) v).getException(); }
+    return null;
   }
 
   @Override
@@ -329,10 +347,10 @@ public abstract class EntryAction<K, V, R> implements
     if (preferAsync && (_asyncLoader = asyncLoader()) != null) {
       lockFor(Entry.ProcessingState.LOAD_ASYNC);
       asyncStarted = true;
-      if (e.isVirgin()) {
-        _asyncLoader.load(key, t0, null, this, loaderExecutor());
+      if (e.isVirgin() || e.getException() != null) {
+        _asyncLoader.load(key, this, this);
       } else {
-        _asyncLoader.load(key, t0, e, this, loaderExecutor());
+        _asyncLoader.load(key, this, this);
       }
       asyncOperationStarted();
       return;
@@ -353,7 +371,7 @@ public abstract class EntryAction<K, V, R> implements
       onLoadFailure(_ouch);
       return;
     }
-    onLoadSuccess(key , v);
+    onLoadSuccess(v);
   }
 
   public void reviveRefreshedEntry(long nrt) {
@@ -417,7 +435,7 @@ public abstract class EntryAction<K, V, R> implements
   }
 
   @Override
-  public void onLoadSuccess(K k, V v) {
+  public void onLoadSuccess(V v) {
     checkEntryStateOnLoadCallback();
     if (v instanceof RefreshedTimeWrapper) {
       RefreshedTimeWrapper wr = (RefreshedTimeWrapper<V>)v;
