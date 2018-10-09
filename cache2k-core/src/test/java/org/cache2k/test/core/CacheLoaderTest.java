@@ -593,6 +593,49 @@ public class CacheLoaderTest {
     assertTrue(c.peek(1802) != o1);
   }
 
+  @Test
+  public void testAsyncLoaderDoubleCallback() {
+    final AtomicInteger _loaderCalled = new AtomicInteger();
+    final AtomicInteger _loaderExecuted = new AtomicInteger();
+    final AtomicInteger _gotException = new AtomicInteger();
+    final AtomicInteger _gotNoException = new AtomicInteger();
+    Cache<Integer,Integer> c = target.cache(new CacheRule.Specialization<Integer, Integer>() {
+      @Override
+      public void extend(final Cache2kBuilder<Integer, Integer> b) {
+        b.loader(new AsyncCacheLoader<Integer, Integer>() {
+          @Override
+          public void load(final Integer key, final long _currentTime, final CacheEntry<Integer, Integer> entry, final Callback<Integer, Integer> callback, final Executor ex) {
+            _loaderCalled.incrementAndGet();
+            ex.execute(new Runnable() {
+              @Override
+              public void run() {
+                _loaderExecuted.incrementAndGet();
+                callback.onLoadSuccess(key, key);
+                try {
+                  callback.onLoadSuccess(key, key);
+                  _gotNoException.incrementAndGet();
+                } catch (IllegalStateException ex) {
+                  _gotNoException.incrementAndGet();
+                }
+              }
+            });
+          }
+        });
+      }
+    });
+    CompletionWaiter w = new CompletionWaiter();
+    c.loadAll(TestingBase.keys(1, 2, 1802), w);
+    w.awaitCompletion();
+    assertEquals(1, (int) c.peek(1));
+    Object o1 = c.peek(1802);
+    assertTrue(c.peek(1802) == o1);
+    w = new CompletionWaiter();
+    c.reloadAll(TestingBase.keys(1802, 4, 5), w);
+    w.awaitCompletion();
+    assertNotNull(c.peek(1802));
+    assertTrue(c.peek(1802) != o1);
+  }
+
   volatile int loaderExecutionCount = 0;
 
   protected Cache<Integer, Integer> cacheWithLoader() {

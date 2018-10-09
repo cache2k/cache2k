@@ -328,6 +328,7 @@ public abstract class EntryAction<K, V, R> implements
     AsyncCacheLoader<K, V> _asyncLoader;
     if (preferAsync && (_asyncLoader = asyncLoader()) != null) {
       lockFor(Entry.ProcessingState.LOAD_ASYNC);
+      asyncStarted = true;
       if (e.isVirgin()) {
         _asyncLoader.load(key, t0, null, this, loaderExecutor());
       } else {
@@ -418,9 +419,6 @@ public abstract class EntryAction<K, V, R> implements
   @Override
   public void onLoadSuccess(K k, V v) {
     checkEntryStateOnLoadCallback();
-    if (k != key) {
-      throw new IllegalArgumentException("Callback on wrong key, expect: " + key + ", got: " + k);
-    }
     if (v instanceof RefreshedTimeWrapper) {
       RefreshedTimeWrapper wr = (RefreshedTimeWrapper<V>)v;
       lastRefreshTime = wr.getRefreshTime();
@@ -442,7 +440,7 @@ public abstract class EntryAction<K, V, R> implements
   private void checkEntryStateOnLoadCallback() {
     if (asyncStarted) {
       if (entry.getProcessingState() != Entry.ProcessingState.LOAD_ASYNC) {
-        throw new IllegalStateException("async callback on wrong state");
+        throw new IllegalStateException("async callback on wrong entry state. duplicate callback?");
       }
     }
   }
@@ -982,7 +980,6 @@ public abstract class EntryAction<K, V, R> implements
    * here as well as some other operation changing the entry again.
    */
   public void asyncOperationStarted() {
-    asyncStarted = true;
     if (syncThread == Thread.currentThread()) {
       synchronized (entry) {
         while (entry.isProcessing()) {
