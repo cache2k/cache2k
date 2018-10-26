@@ -35,6 +35,7 @@ import org.cache2k.test.util.TestingBase;
 import org.cache2k.testing.category.FastTests;
 import org.cache2k.test.util.IntCacheRule;
 import org.junit.AfterClass;
+import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -46,6 +47,7 @@ import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
 
 import static org.junit.Assert.*;
 import static org.hamcrest.Matchers.*;
@@ -598,13 +600,13 @@ public class CacheLoaderTest {
     final AtomicInteger _loaderExecuted = new AtomicInteger();
     final AtomicInteger _gotException = new AtomicInteger();
     final AtomicInteger _gotNoException = new AtomicInteger();
+    final AtomicReference<Throwable> _otherException = new AtomicReference<Throwable>();
     Cache<Integer,Integer> c = target.cache(new CacheRule.Specialization<Integer, Integer>() {
       @Override
       public void extend(final Cache2kBuilder<Integer, Integer> b) {
         b.loader(new AsyncCacheLoader<Integer, Integer>() {
           @Override
           public void load(final Integer key, final AsyncCacheLoader.Context<Integer,Integer> ctx, final Callback<Integer, Integer> callback) {
-            _loaderCalled.incrementAndGet();
             ctx.getLoaderExecutor().execute(new Runnable() {
               @Override
               public void run() {
@@ -614,15 +616,119 @@ public class CacheLoaderTest {
                   callback.onLoadSuccess(key);
                   _gotNoException.incrementAndGet();
                 } catch (IllegalStateException ex) {
-                  _gotNoException.incrementAndGet();
+                  _gotException.incrementAndGet();
+                } catch (Throwable ex) {
+                  _otherException.set(ex);
                 }
               }
             });
+            _loaderCalled.incrementAndGet();
           }
         });
       }
     });
     CompletionWaiter w = new CompletionWaiter();
+    c.loadAll(Collections.EMPTY_LIST, w);
+    w.awaitCompletion();
+    w = new CompletionWaiter();
+    c.loadAll(TestingBase.keys(1, 2, 1802), w);
+    w.awaitCompletion();
+    assertNull(_otherException.get());
+    assertEquals("loader called", 3, _loaderCalled.get());
+    assertEquals("loader Executed", 3, _loaderExecuted.get());
+    ConcurrencyHelper.await("wait for 3 exceptions", new Condition() {
+      @Override
+      public boolean check() throws Exception {
+        return _gotException.get() == 3;
+      }
+    });
+    assertEquals("always throws exception", 0, _gotNoException.get());
+    w = new CompletionWaiter();
+    c.loadAll(TestingBase.keys(1, 2, 1802), w);
+    w.awaitCompletion();
+    assertEquals(1, (int) c.peek(1));
+    Object o1 = c.peek(1802);
+    assertTrue(c.peek(1802) == o1);
+    w = new CompletionWaiter();
+    c.reloadAll(TestingBase.keys(1802, 4, 5), w);
+    w.awaitCompletion();
+    assertNotNull(c.peek(1802));
+    assertTrue(c.peek(1802) != o1);
+  }
+
+  @Ignore
+  @Test
+  public void testAsyncLoaderDoubleCallbackDifferentThreads() {
+    final AtomicInteger _loaderCalled = new AtomicInteger();
+    final AtomicInteger _loaderExecuted = new AtomicInteger();
+    final AtomicInteger _gotException = new AtomicInteger();
+    final AtomicInteger _gotNoException = new AtomicInteger();
+    final AtomicReference<Throwable> _otherException = new AtomicReference<Throwable>();
+    Cache<Integer,Integer> c = target.cache(new CacheRule.Specialization<Integer, Integer>() {
+      @Override
+      public void extend(final Cache2kBuilder<Integer, Integer> b) {
+        b.loaderExecutor(Executors.newCachedThreadPool());
+        b.loader(new AsyncCacheLoader<Integer, Integer>() {
+          @Override
+          public void load(final Integer key, final AsyncCacheLoader.Context<Integer,Integer> ctx, final Callback<Integer, Integer> callback) {
+            ctx.getLoaderExecutor().execute(new Runnable() {
+              @Override
+              public void run() {
+                _loaderExecuted.incrementAndGet();
+                try {
+                  callback.onLoadSuccess(key);
+                  _gotNoException.incrementAndGet();
+                } catch (IllegalStateException ex) {
+                  _gotException.incrementAndGet();
+                } catch (Throwable ex) {
+                  _otherException.set(ex);
+                }
+              }
+            });
+            ctx.getLoaderExecutor().execute(new Runnable() {
+              @Override
+              public void run() {
+                _loaderExecuted.incrementAndGet();
+                try {
+                  callback.onLoadSuccess(key);
+                  _gotNoException.incrementAndGet();
+                } catch (IllegalStateException ex) {
+                  _gotException.incrementAndGet();
+                } catch (Throwable ex) {
+                  _otherException.set(ex);
+                }
+              }
+            });
+            _loaderCalled.incrementAndGet();
+          }
+        });
+      }
+    });
+    CompletionWaiter w = new CompletionWaiter();
+    c.loadAll(Collections.EMPTY_LIST, w);
+    w.awaitCompletion();
+    w = new CompletionWaiter();
+    c.loadAll(TestingBase.keys(1, 2, 1802), w);
+    w.awaitCompletion();
+    if (_otherException.get() != null) {
+      _otherException.get().printStackTrace();
+      assertNull(_otherException.get().toString(), _otherException.get());
+    }
+    assertEquals("loader called", 3, _loaderCalled.get());
+    ConcurrencyHelper.await("wait for 6 exceptions", new Condition() {
+      @Override
+      public boolean check() throws Exception {
+        return _loaderExecuted.get() == 6;
+      }
+    });
+    ConcurrencyHelper.await("wait for 3 exceptions", new Condition() {
+      @Override
+      public boolean check() throws Exception {
+        return _gotException.get() == 3;
+      }
+    });
+    assertEquals("always throws exception", 3, _gotNoException.get());
+    w = new CompletionWaiter();
     c.loadAll(TestingBase.keys(1, 2, 1802), w);
     w.awaitCompletion();
     assertEquals(1, (int) c.peek(1));
