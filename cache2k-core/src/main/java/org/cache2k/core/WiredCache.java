@@ -275,6 +275,10 @@ public class WiredCache<K, V> extends BaseCache<K, V>
     }
   }
 
+  /**
+   * Load the keys into the cache via the async path. The key set must always be non empty.
+   * The completion listener is called when all keys are loaded.
+   */
   private void loadAllWithAsyncLoader(final CacheOperationCompletionListener _listener, final Set<K> _keysToLoad) {
     final AtomicInteger _countDown = new AtomicInteger(_keysToLoad.size());
     EntryAction.ActionCompletedCallback cb = new EntryAction.ActionCompletedCallback() {
@@ -303,7 +307,8 @@ public class WiredCache<K, V> extends BaseCache<K, V>
           try {
             load(key);
           } finally {
-            if (_countDown.decrementAndGet() == 0) {
+            int v = _countDown.decrementAndGet();
+            if (v == 0) {
               _listener.onCompleted();
               return;
             }

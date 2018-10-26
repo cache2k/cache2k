@@ -114,7 +114,6 @@ public abstract class EntryAction<K, V, R> implements
   Thread syncThread;
 
   ActionCompletedCallback completedCallback;
-  volatile boolean asyncStarted;
 
   @SuppressWarnings("unchecked")
   public EntryAction(HeapCache<K,V> _heapCache, InternalCache<K,V> _userCache,
@@ -346,7 +345,6 @@ public abstract class EntryAction<K, V, R> implements
     AsyncCacheLoader<K, V> _asyncLoader;
     if (preferAsync && (_asyncLoader = asyncLoader()) != null) {
       lockFor(Entry.ProcessingState.LOAD_ASYNC);
-      asyncStarted = true;
       if (e.isVirgin() || e.getException() != null) {
         _asyncLoader.load(key, this, this);
       } else {
@@ -368,10 +366,10 @@ public abstract class EntryAction<K, V, R> implements
         v = _loader.load(key, t0, e);
       }
     } catch (Throwable _ouch) {
-      onLoadFailure(_ouch);
+      onLoadFailureIntern(_ouch);
       return;
     }
-    onLoadSuccess(v);
+    onLoadSuccessIntern(v);
   }
 
   public void reviveRefreshedEntry(long nrt) {
@@ -437,6 +435,23 @@ public abstract class EntryAction<K, V, R> implements
   @Override
   public void onLoadSuccess(V v) {
     checkEntryStateOnLoadCallback();
+    onLoadSuccessIntern(v);
+  }
+
+  @SuppressWarnings("unchecked")
+  @Override
+  public void onLoadFailure(Throwable t) {
+    checkEntryStateOnLoadCallback();
+    onLoadFailureIntern(t);
+  }
+
+  private void checkEntryStateOnLoadCallback() {
+    if (entry.getProcessingState() != Entry.ProcessingState.LOAD_ASYNC) {
+      throw new IllegalStateException("async callback on wrong entry state. duplicate callback?");
+    }
+  }
+
+  private void onLoadSuccessIntern(V v) {
     if (v instanceof RefreshedTimeWrapper) {
       RefreshedTimeWrapper wr = (RefreshedTimeWrapper<V>)v;
       lastRefreshTime = wr.getRefreshTime();
@@ -447,20 +462,10 @@ public abstract class EntryAction<K, V, R> implements
     loadCompleted();
   }
 
-  @SuppressWarnings("unchecked")
-  @Override
-  public void onLoadFailure(Throwable t) {
+  private void onLoadFailureIntern(Throwable t) {
     checkEntryStateOnLoadCallback();
     newValueOrException = (V) new ExceptionWrapper(key, t, loadStartedTime, entry);
     loadCompleted();
-  }
-
-  private void checkEntryStateOnLoadCallback() {
-    if (asyncStarted) {
-      if (entry.getProcessingState() != Entry.ProcessingState.LOAD_ASYNC) {
-        throw new IllegalStateException("async callback on wrong entry state. duplicate callback?");
-      }
-    }
   }
 
   public void loadCompleted() {
