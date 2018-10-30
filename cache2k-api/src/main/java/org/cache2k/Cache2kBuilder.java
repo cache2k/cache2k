@@ -818,7 +818,7 @@ public class Cache2kBuilder<K, V> {
 
   /**
    * Set the weigher to be used to calculate the entry weight. The parameter {@link #maximumWeight(long)} needs
-   * to be specified as well.
+   * to be specified as well. Using a weigher has a slightly performance impact on the update of existing entries.
    */
   public final Cache2kBuilder<K, V> weigher(Weigher<K,V> v) {
     config().setWeigher(new CustomizationReferenceSupplier<Weigher>(v));
