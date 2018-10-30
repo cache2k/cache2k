@@ -28,7 +28,15 @@ import java.util.concurrent.Executor;
  */
 public interface AsyncCacheLoader<K,V> {
 
-  void load(K key, Context<K, V> context, Callback<K, V> callback);
+  /**
+   * Starts an asynchronous load operation.
+   *
+   * @param key key of the value to load
+   * @param context additional context information for the load operation
+   * @param callback callback interface to notify on load completion
+   * @throws Exception an exception, if the load operation cannot be started
+   */
+  void load(K key, Context<K, V> context, Callback<K, V> callback) throws Exception;
 
   /**
    * Relevant context information for a single load request.
@@ -52,7 +60,7 @@ public interface AsyncCacheLoader<K,V> {
     Executor getLoaderExecutor();
 
     /**
-     * Currently caches value. This is present even if it is expired.
+     * Currently cached value. This is present even if it is expired.
      */
     V getCachedValue();
 
@@ -62,8 +70,7 @@ public interface AsyncCacheLoader<K,V> {
     Throwable getCachedException();
 
     /**
-     * Time in millis since epoch of start of load operation retrieved via the
-     * configured clock.
+     * Time in millis since epoch of start of load operation
      */
     long getCurrentTime();
 

@@ -29,6 +29,7 @@ import org.cache2k.integration.AdvancedCacheLoader;
 import org.cache2k.event.CacheEntryCreatedListener;
 import org.cache2k.event.CacheEntryRemovedListener;
 import org.cache2k.event.CacheEntryUpdatedListener;
+import org.cache2k.integration.CacheLoaderException;
 import org.cache2k.integration.CacheWriter;
 import org.cache2k.integration.CacheWriterException;
 import org.cache2k.CustomizationException;
@@ -346,10 +347,12 @@ public abstract class EntryAction<K, V, R> implements
     AsyncCacheLoader<K, V> _asyncLoader;
     if (preferAsync && (_asyncLoader = asyncLoader()) != null) {
       lockFor(LOAD_ASYNC);
-      if (e.isVirgin() || e.getException() != null) {
+      try {
         _asyncLoader.load(key, this, this);
-      } else {
-        _asyncLoader.load(key, this, this);
+      } catch (RuntimeException ex) {
+        mutationAbort(ex);
+      } catch (Exception ex) {
+        mutationAbort(new CacheLoaderException(ex));
       }
       asyncOperationStarted();
       return;

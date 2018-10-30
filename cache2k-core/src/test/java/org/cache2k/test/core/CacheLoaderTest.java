@@ -21,6 +21,7 @@ package org.cache2k.test.core;
  */
 
 import org.cache2k.integration.AsyncCacheLoader;
+import org.cache2k.integration.CacheLoaderException;
 import org.cache2k.integration.FunctionalCacheLoader;
 import org.cache2k.test.util.CacheRule;
 import org.cache2k.test.util.Condition;
@@ -31,6 +32,7 @@ import org.cache2k.Cache2kBuilder;
 import org.cache2k.CacheEntry;
 import org.cache2k.integration.CacheLoader;
 import org.cache2k.CacheOperationCompletionListener;
+import org.cache2k.test.util.ExpectedException;
 import org.cache2k.test.util.TestingBase;
 import org.cache2k.testing.category.FastTests;
 import org.cache2k.test.util.IntCacheRule;
@@ -41,6 +43,7 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.rules.Timeout;
 
+import java.io.IOException;
 import java.util.Collections;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executor;
@@ -565,7 +568,6 @@ public class CacheLoaderTest {
   @Test
   public void testAsyncLoaderException() {
     final AtomicInteger _loaderCalled = new AtomicInteger();
-    final AtomicInteger _loaderExecuted = new AtomicInteger();
     Cache<Integer,Integer> c = target.cache(new CacheRule.Specialization<Integer, Integer>() {
       @Override
       public void extend(final Cache2kBuilder<Integer, Integer> b) {
@@ -573,7 +575,7 @@ public class CacheLoaderTest {
           @Override
           public void load(final Integer key, final AsyncCacheLoader.Context<Integer,Integer> ctx, final Callback<Integer, Integer> callback) {
             _loaderCalled.incrementAndGet();
-            throw new RuntimeException("test exception");
+            throw new ExpectedException();
           }
         });
       }
@@ -581,8 +583,39 @@ public class CacheLoaderTest {
     try {
       Integer v = c.get(1);
       fail("exception expected");
-    } catch (RuntimeException expected) {
+    } catch (ExpectedException expected) {
+    } catch (Throwable other) {
+      assertNull("unexpected exception", other);
+    }
+    c.put(1, 1);
+    assertNotNull(c.get(1));
+  }
 
+  /**
+   * Check that non runtime exceptions from the async loader are wrapped.
+   */
+  @Test
+  public void testAsyncLoaderExceptionWrapped() {
+    final AtomicInteger _loaderCalled = new AtomicInteger();
+    Cache<Integer,Integer> c = target.cache(new CacheRule.Specialization<Integer, Integer>() {
+      @Override
+      public void extend(final Cache2kBuilder<Integer, Integer> b) {
+        b.loader(new AsyncCacheLoader<Integer, Integer>() {
+          @Override
+          public void load(final Integer key,
+                           final AsyncCacheLoader.Context<Integer,Integer> ctx,
+                           final Callback<Integer, Integer> callback)
+            throws Exception {
+            _loaderCalled.incrementAndGet();
+            throw new IOException("test exception");
+          }
+        });
+      }
+    });
+    try {
+      Integer v = c.get(1);
+      fail("exception expected");
+    } catch (CacheLoaderException expected) {
     } catch (Throwable other) {
       assertNull("unexpected exception", other);
     }
