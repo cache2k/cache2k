@@ -28,6 +28,8 @@ import org.cache2k.core.operation.ExaminationEntry;
 import org.cache2k.core.storageApi.StorageEntry;
 import org.cache2k.integration.ExceptionInformation;
 
+import java.util.concurrent.atomic.AtomicLongFieldUpdater;
+
 import static org.cache2k.core.util.Util.*;
 
 /**
@@ -193,6 +195,8 @@ public class Entry<K, V> extends CompactEntry<K, V>
    * the storage and not modified since then.
    */
   private volatile long refreshTimeAndState;
+  private static final AtomicLongFieldUpdater<Entry> STATE_UPDATER =
+    AtomicLongFieldUpdater.newUpdater(Entry.class, "refreshTimeAndState");
 
   /** Lru list: pointer to next element or list head */
   public Entry next;
@@ -298,7 +302,21 @@ public class Entry<K, V> extends CompactEntry<K, V>
   }
 
   private void setProcessingState(int v) {
-    refreshTimeAndState = refreshTimeAndState & ~((long) PS_MASK << PS_POS) | (((long) v) << PS_POS);
+    refreshTimeAndState = withState(refreshTimeAndState, v);
+  }
+
+  private long withState(final long _refreshTimeAndState, final long _state) {
+    return _refreshTimeAndState & ~((long) PS_MASK << PS_POS) | (_state << PS_POS);
+  }
+
+  /**
+   * Check and switch the processing state atomically.
+   */
+  public boolean checkAndSwitchProcessingState(int ps0, int ps) {
+    long rt = refreshTimeAndState;
+    long _expect = withState(rt, ps0);
+    long _update = withState(rt, ps);
+    return STATE_UPDATER.compareAndSet(this, _expect, _update);
   }
 
   /**

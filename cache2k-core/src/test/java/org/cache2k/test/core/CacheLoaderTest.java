@@ -559,6 +559,35 @@ public class CacheLoaderTest {
     assertEquals(1, (int) v);
   }
 
+  /**
+   * Check that exception isn't blocking anything
+   */
+  @Test
+  public void testAsyncLoaderException() {
+    final AtomicInteger _loaderCalled = new AtomicInteger();
+    final AtomicInteger _loaderExecuted = new AtomicInteger();
+    Cache<Integer,Integer> c = target.cache(new CacheRule.Specialization<Integer, Integer>() {
+      @Override
+      public void extend(final Cache2kBuilder<Integer, Integer> b) {
+        b.loader(new AsyncCacheLoader<Integer, Integer>() {
+          @Override
+          public void load(final Integer key, final AsyncCacheLoader.Context<Integer,Integer> ctx, final Callback<Integer, Integer> callback) {
+            _loaderCalled.incrementAndGet();
+            throw new RuntimeException("test exception");
+          }
+        });
+      }
+    });
+    try {
+      Integer v = c.get(1);
+      fail("exception expected");
+    } catch (RuntimeException expected) {
+
+    } catch (Throwable other) {
+      assertNull("unexpected exception", other);
+    }
+  }
+
   @Test
   public void testAsyncLoaderWithExecutorWithAsync() {
     final AtomicInteger _loaderCalled = new AtomicInteger();
@@ -656,7 +685,6 @@ public class CacheLoaderTest {
     assertTrue(c.peek(1802) != o1);
   }
 
-  @Ignore
   @Test
   public void testAsyncLoaderDoubleCallbackDifferentThreads() {
     final AtomicInteger _loaderCalled = new AtomicInteger();
@@ -727,7 +755,12 @@ public class CacheLoaderTest {
         return _gotException.get() == 3;
       }
     });
-    assertEquals("always throws exception", 3, _gotNoException.get());
+    ConcurrencyHelper.await("wait for 3 successful executions", new Condition() {
+      @Override
+      public boolean check() throws Exception {
+        return _gotNoException.get() == 3;
+      }
+    });
     w = new CompletionWaiter();
     c.loadAll(TestingBase.keys(1, 2, 1802), w);
     w.awaitCompletion();

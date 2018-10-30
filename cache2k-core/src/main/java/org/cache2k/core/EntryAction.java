@@ -42,6 +42,7 @@ import org.cache2k.core.storageApi.StorageAdapter;
 import org.cache2k.core.storageApi.StorageEntry;
 import org.cache2k.integration.ExceptionInformation;
 import org.cache2k.integration.RefreshedTimeWrapper;
+import static org.cache2k.core.Entry.ProcessingState.*;
 
 /**
  * This is a method object to perform an operation on an entry.
@@ -296,7 +297,7 @@ public abstract class EntryAction<K, V, R> implements
   @Override
   public void wantMutation() {
     if (!entryLocked && wantData) {
-      lockFor(Entry.ProcessingState.MUTATE);
+      lockFor(MUTATE);
       countMiss = false;
       operation.examine(this, entry);
       if (needsFinish) {
@@ -330,7 +331,7 @@ public abstract class EntryAction<K, V, R> implements
   @SuppressWarnings("unchecked")
   @Override
   public void load() {
-    lockFor(Entry.ProcessingState.LOAD);
+    lockFor(LOAD);
     needsFinish = false;
     load = true;
     Entry<K, V> e = entry;
@@ -344,7 +345,7 @@ public abstract class EntryAction<K, V, R> implements
     }
     AsyncCacheLoader<K, V> _asyncLoader;
     if (preferAsync && (_asyncLoader = asyncLoader()) != null) {
-      lockFor(Entry.ProcessingState.LOAD_ASYNC);
+      lockFor(LOAD_ASYNC);
       if (e.isVirgin() || e.getException() != null) {
         _asyncLoader.load(key, this, this);
       } else {
@@ -445,8 +446,11 @@ public abstract class EntryAction<K, V, R> implements
     onLoadFailureIntern(t);
   }
 
+  /**
+   * Make sure only one callback succeeds.
+   */
   private void checkEntryStateOnLoadCallback() {
-    if (entry.getProcessingState() != Entry.ProcessingState.LOAD_ASYNC) {
+    if (!entry.checkAndSwitchProcessingState(LOAD_ASYNC, LOAD_COMPLETE)) {
       throw new IllegalStateException("async callback on wrong entry state. duplicate callback?");
     }
   }
@@ -468,7 +472,7 @@ public abstract class EntryAction<K, V, R> implements
   }
 
   public void loadCompleted() {
-    entry.nextProcessingStep(Entry.ProcessingState.LOAD_COMPLETE);
+    entry.nextProcessingStep(LOAD_COMPLETE);
     entryLocked = true;
     if (!metrics().isDisabled() && heapCache.isUpdateTimeNeeded()) {
       long _loadCompletedTime = millis();
@@ -502,7 +506,7 @@ public abstract class EntryAction<K, V, R> implements
 
   @Override
   public void put(V value) {
-    lockFor(Entry.ProcessingState.MUTATE);
+    lockFor(MUTATE);
     needsFinish = false;
     newValueOrException = value;
     if (!heapCache.isUpdateTimeNeeded()) {
@@ -515,7 +519,7 @@ public abstract class EntryAction<K, V, R> implements
 
   @Override
   public void remove() {
-    lockForNoHit(Entry.ProcessingState.MUTATE);
+    lockForNoHit(MUTATE);
     needsFinish = false;
     remove = true;
     mutationMayCallWriter();
@@ -523,7 +527,7 @@ public abstract class EntryAction<K, V, R> implements
 
   @Override
   public void expire(long expiryTime) {
-    lockForNoHit(Entry.ProcessingState.MUTATE);
+    lockForNoHit(MUTATE);
     needsFinish = false;
     newValueOrException = entry.getValueOrException();
     if (heapCache.isUpdateTimeNeeded()) {
@@ -538,7 +542,7 @@ public abstract class EntryAction<K, V, R> implements
 
   @Override
   public void putAndSetExpiry(final V value, final long expiryTime, final long refreshTime) {
-    lockFor(Entry.ProcessingState.MUTATE);
+    lockFor(MUTATE);
     needsFinish = false;
     newValueOrException = value;
     if (refreshTime >= 0) {
@@ -560,7 +564,7 @@ public abstract class EntryAction<K, V, R> implements
   }
 
   public void mutationCalculateExpiry() {
-    entry.nextProcessingStep(Entry.ProcessingState.EXPIRY);
+    entry.nextProcessingStep(EXPIRY);
     if (newValueOrException instanceof ExceptionWrapper) {
       try {
         expiry = 0;
@@ -656,7 +660,7 @@ public abstract class EntryAction<K, V, R> implements
   }
 
   public void expiryCalculated() {
-    entry.nextProcessingStep(Entry.ProcessingState.EXPIRY_COMPLETE);
+    entry.nextProcessingStep(EXPIRY_COMPLETE);
     if (load) {
       if (loadAndMutate) {
         loadAndExpiryCalculatedMutateAgain();
@@ -721,7 +725,7 @@ public abstract class EntryAction<K, V, R> implements
     }
     if (remove) {
       try {
-        entry.nextProcessingStep(Entry.ProcessingState.WRITE);
+        entry.nextProcessingStep(WRITE);
         _writer.delete(key);
       } catch (Throwable t) {
         onWriteFailure(t);
@@ -734,7 +738,7 @@ public abstract class EntryAction<K, V, R> implements
       skipWritingForException();
       return;
     }
-    entry.nextProcessingStep(Entry.ProcessingState.WRITE);
+    entry.nextProcessingStep(WRITE);
     try {
       _writer.write(key, newValueOrException);
     } catch (Throwable t) {
@@ -746,7 +750,7 @@ public abstract class EntryAction<K, V, R> implements
 
   @Override
   public void onWriteSuccess() {
-    entry.nextProcessingStep(Entry.ProcessingState.WRITE_COMPLETE);
+    entry.nextProcessingStep(WRITE_COMPLETE);
     checkKeepOrRemove();
   }
 
