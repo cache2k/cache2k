@@ -463,7 +463,6 @@ public abstract class EntryAction<K, V, R> implements
   }
 
   private void onLoadFailureIntern(Throwable t) {
-    checkEntryStateOnLoadCallback();
     newValueOrException = (V) new ExceptionWrapper(key, t, loadStartedTime, entry);
     loadCompleted();
   }
