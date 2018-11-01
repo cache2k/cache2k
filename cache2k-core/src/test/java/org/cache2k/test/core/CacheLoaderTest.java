@@ -66,7 +66,7 @@ import static org.cache2k.test.core.StaticUtil.*;
  *
  */
 @Category(FastTests.class)
-public class CacheLoaderTest {
+public class CacheLoaderTest extends TestingBase {
 
   private static ExecutorService EXECUTOR = Executors.newCachedThreadPool();
 
@@ -545,7 +545,6 @@ public class CacheLoaderTest {
   @Test
   public void testAsyncLoaderLoadDirect() {
     final AtomicInteger _loaderCalled = new AtomicInteger();
-    final AtomicInteger _loaderExecuted = new AtomicInteger();
     Cache<Integer,Integer> c = target.cache(new CacheRule.Specialization<Integer, Integer>() {
       @Override
       public void extend(final Cache2kBuilder<Integer, Integer> b) {
@@ -583,7 +582,38 @@ public class CacheLoaderTest {
     try {
       Integer v = c.get(1);
       fail("exception expected");
-    } catch (ExpectedException expected) {
+    } catch (CacheLoaderException expected) {
+      assertTrue(expected.getCause() instanceof ExpectedException);
+    } catch (Throwable other) {
+      assertNull("unexpected exception", other);
+    }
+    c.put(1, 1);
+    assertNotNull(c.get(1));
+  }
+
+  /**
+   * Check that exception isn't blocking anything
+   */
+  @Test
+  public void testAsyncLoaderLoadYieldsException() {
+    final AtomicInteger _loaderCalled = new AtomicInteger();
+    Cache<Integer,Integer> c = target.cache(new CacheRule.Specialization<Integer, Integer>() {
+      @Override
+      public void extend(final Cache2kBuilder<Integer, Integer> b) {
+        b.loader(new AsyncCacheLoader<Integer, Integer>() {
+          @Override
+          public void load(final Integer key, final AsyncCacheLoader.Context<Integer,Integer> ctx, final Callback<Integer, Integer> callback) {
+            _loaderCalled.incrementAndGet();
+            throw new ExpectedException();
+          }
+        });
+      }
+    });
+    try {
+      load(c, 1);
+      fail("exception expected");
+    } catch (CacheLoaderException expected) {
+      assertTrue(expected.getCause() instanceof ExpectedException);
     } catch (Throwable other) {
       assertNull("unexpected exception", other);
     }

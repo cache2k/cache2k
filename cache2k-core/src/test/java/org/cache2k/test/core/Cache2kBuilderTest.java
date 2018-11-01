@@ -36,6 +36,7 @@ import org.junit.experimental.categories.Category;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import static org.junit.Assert.*;
@@ -429,7 +430,10 @@ public class Cache2kBuilderTest {
 
   @Test(expected = IllegalArgumentException.class)
   public void refreshAheadButNoLoader() {
-    Cache c = Cache2kBuilder.forUnknownTypes().refreshAhead(true).build();
+    Cache c = Cache2kBuilder.forUnknownTypes()
+      .refreshAhead(true)
+      .expireAfterWrite(10, TimeUnit.SECONDS)
+      .build();
     c.close();
   }
 

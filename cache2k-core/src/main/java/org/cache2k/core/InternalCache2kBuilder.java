@@ -220,6 +220,13 @@ public class InternalCache2kBuilder<K, V> {
     configureViaSettersDirect(bc);
     bc.setClock(_timeReference);
 
+    if (config.isRefreshAhead() && !(
+          config.getAsyncLoader() != null ||
+          config.getLoader() != null ||
+          config.getAdvancedLoader() != null)) {
+      throw new IllegalArgumentException("refresh ahead enabled, but no loader defined");
+    }
+
     boolean _wrap =
       config.getWeigher() != null ||
       config.hasListeners() ||

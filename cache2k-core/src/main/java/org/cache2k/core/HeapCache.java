@@ -349,9 +349,6 @@ public class HeapCache<K, V> extends BaseCache<K, V> {
     }
     synchronized (lock) {
       initializeHeapCache();
-      if (isRefreshAhead() && loader == null) {
-        throw new IllegalArgumentException("refresh ahead enabled, but no loader defined");
-      }
       if (isRefreshAhead() && timing instanceof TimingHandler.TimeAgnostic) {
         throw new IllegalArgumentException("refresh ahead enabled, but no expiry variant defined");
       }

@@ -711,38 +711,38 @@ public class WiredCache<K, V> extends BaseCache<K, V>
       if (e.isGone()) {
         return;
       }
-        Runnable r = new Runnable() {
-          @SuppressWarnings("unchecked")
-          @Override
-          public void run() {
-            if (storage == null) {
-              synchronized (e) {
-                e.waitForProcessing();
-                if (e.isGone()) {
-                  return;
-                }
-              }
-            }
-            try {
-              execute(e.getKey(), e, (Semantic<K,V,Void>) Operations.REFRESH);
-            } catch (CacheClosedException ignore) {
-            } catch (Throwable ex) {
-              logAndCountInternalException("Refresh exception", ex);
-              try {
-                synchronized (e) {
-                  heapCache.expireEntry(e);
-                }
-              } catch (CacheClosedException ignore) {
+      Runnable r = new Runnable() {
+        @SuppressWarnings("unchecked")
+        @Override
+        public void run() {
+          if (storage == null) {
+            synchronized (e) {
+              e.waitForProcessing();
+              if (e.isGone()) {
+                return;
               }
             }
           }
-        };
-        try {
-          heapCache.loaderExecutor.execute(r);
-          return;
-        } catch (RejectedExecutionException ignore) {
+          try {
+            execute(e.getKey(), e, (Semantic<K,V,Void>) Operations.REFRESH);
+          } catch (CacheClosedException ignore) {
+          } catch (Throwable ex) {
+            logAndCountInternalException("Refresh exception", ex);
+            try {
+              synchronized (e) {
+                heapCache.expireEntry(e);
+              }
+            } catch (CacheClosedException ignore) {
+            }
+          }
         }
-        metrics().refreshFailed();
+      };
+      try {
+        heapCache.loaderExecutor.execute(r);
+        return;
+      } catch (RejectedExecutionException ignore) {
+      }
+      metrics().refreshFailed();
       expireOrScheduleFinalExpireEvent(e);
     }
   }

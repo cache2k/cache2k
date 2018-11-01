@@ -349,10 +349,10 @@ public abstract class EntryAction<K, V, R> implements
       lockFor(LOAD_ASYNC);
       try {
         _asyncLoader.load(key, this, this);
-      } catch (RuntimeException ex) {
-        mutationAbort(ex);
       } catch (Exception ex) {
-        mutationAbort(new CacheLoaderException(ex));
+        onLoadFailure(ex);
+        exceptionToPropagate = new CacheLoaderException(ex);
+        return;
       }
       asyncOperationStarted();
       return;

@@ -20,6 +20,7 @@ package org.cache2k.test.core.expiry;
  * #L%
  */
 
+import org.cache2k.integration.AsyncCacheLoader;
 import org.cache2k.test.core.BasicCacheTest;
 import org.cache2k.test.util.TestingBase;
 import org.cache2k.test.util.IntCountingCacheSource;
@@ -43,6 +44,7 @@ import static org.junit.Assert.*;
 import static org.hamcrest.Matchers.*;
 
 import org.cache2k.testing.category.SlowTests;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
@@ -71,6 +73,47 @@ public class SlowExpiryTest extends TestingBase {
         .retryInterval(TestingParameters.MINIMAL_TICK_MILLIS, TimeUnit.MILLISECONDS)
         .loader(new BasicCacheTest.AlwaysExceptionSource())
         .build();
+    cache = c;
+    for (int i : new int[]{1, 2, 3, 4}) {
+      boolean _gotException = false;
+      try {
+        c.get(i);
+      } catch (CacheLoaderException e) {
+        _gotException = true;
+      }
+      assertTrue("got exception", _gotException);
+    }
+    await("All refreshed", new Condition() {
+      @Override
+      public boolean check() {
+        return getInfo().getRefreshCount() + getInfo().getRefreshFailedCount() >= _COUNT;
+      }
+    });
+    assertEquals("no internal exceptions",0, getInfo().getInternalExceptionCount());
+    assertTrue("got at least 8 - submitFailedCnt exceptions", getInfo().getLoadExceptionCount() >= getInfo().getRefreshFailedCount());
+    assertTrue("no alert", getInfo().getHealth().isEmpty());
+    await("All expired", new Condition() {
+      @Override
+      public boolean check() {
+        return getInfo().getExpiredCount() >= _COUNT;
+      }
+    });
+    assertEquals(0, getInfo().getSize());
+  }
+
+  @Test @Ignore
+  public void testExceptionWithRefreshAsyncLoader() {
+    final int _COUNT = 4;
+    Cache<Integer, Integer> c = builder(Integer.class, Integer.class)
+      .refreshAhead(true)
+      .retryInterval(TestingParameters.MINIMAL_TICK_MILLIS, TimeUnit.MILLISECONDS)
+      .loader(new AsyncCacheLoader<Integer, Integer>() {
+        @Override
+        public void load(final Integer key, final Context<Integer, Integer> context, final Callback<Integer, Integer> callback) throws Exception {
+          throw new RuntimeException("always");
+        }
+      })
+      .build();
     cache = c;
     for (int i : new int[]{1, 2, 3, 4}) {
       boolean _gotException = false;
