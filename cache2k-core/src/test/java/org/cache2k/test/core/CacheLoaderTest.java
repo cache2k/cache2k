@@ -561,6 +561,33 @@ public class CacheLoaderTest extends TestingBase {
     assertEquals(1, (int) v);
   }
 
+  @Test
+  public void testAsyncLoaderContextProperties() {
+    final AtomicInteger _loaderCalled = new AtomicInteger();
+    Cache<Integer,Integer> c = target.cache(new CacheRule.Specialization<Integer, Integer>() {
+      @Override
+      public void extend(final Cache2kBuilder<Integer, Integer> b) {
+        b.loader(new AsyncCacheLoader<Integer, Integer>() {
+          @Override
+          public void load(final Integer key, final AsyncCacheLoader.Context<Integer,Integer> ctx, final Callback<Integer, Integer> callback) {
+            int cnt = _loaderCalled.getAndIncrement();
+            if (cnt == 0) {
+              assertNull(ctx.getCachedValue());
+              assertNull(ctx.getCachedException());
+            } else {
+              assertEquals(key, ctx.getCachedValue());
+            }
+            callback.onLoadSuccess(key);
+          }
+        });
+      }
+    });
+    Integer v = c.get(1);
+    assertEquals(1, (int) v);
+    reload(c, 1);
+
+  }
+
   /**
    * Check that exception isn't blocking anything
    */

@@ -503,12 +503,16 @@ public class TestingBase {
 
   public void reload(int... keys) {
     provideCache();
+    reload(cache, keys);
+  }
+
+  public static void reload(Cache c, int... keys) {
     CacheLoaderTest.CompletionWaiter w = new CacheLoaderTest.CompletionWaiter();
     List<Integer> l = new ArrayList<Integer>();
     for (int i : keys) {
       l.add(i);
     }
-    cache.reloadAll(l, w);
+    c.reloadAll(l, w);
     w.awaitCompletion();
   }
 

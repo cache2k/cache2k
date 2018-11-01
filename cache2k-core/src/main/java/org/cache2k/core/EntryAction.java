@@ -217,8 +217,8 @@ public abstract class EntryAction<K, V, R> implements
 
   @Override
   public V getCachedValue() {
-    V v = oldValueOrException;
-    if (v instanceof ExceptionWrapper) {
+    V v = entry.getValueOrException();
+    if (v instanceof ExceptionWrapper || entry.isVirgin()) {
       return null;
     }
     return v;
