@@ -17,12 +17,14 @@
   limitations under the License.
   #L%
   -->
-<!--
-     configuration of cache2k with an additional configuration section
-     to influence JCache semantics.
-     Furthermore, an example how to use additional configuration sections
--->
-<cache2k>
+<cache2k xmlns:xsi='http://www.w3.org/2001/XMLSchema-instance'
+         xmlns='https://cache2k.org/schema/v1.x'
+         xsi:schemaLocation="https://cache2k.org/schema/v1.x  ../../../../cache2k-schemas/src/main/resources/org/cache2k/schema/cache2k-core.xsd">
+  <!--
+       configuration of cache2k with an additional configuration section
+       to influence JCache semantics.
+       Furthermore, an example how to use additional configuration sections
+  -->
   <version>1.0</version>
 
   <caches>
@@ -57,6 +59,27 @@
     <cache>
       <name>withExpiry</name>
       <expireAfterWrite>2s</expireAfterWrite>
+    </cache>
+    <cache>
+      <name>withCache2kLoaderNoReadThrough</name>
+      <loader>
+        <byClassName>
+          <className>org.cache2k.jcache.provider.ToStringLoader</className>
+        </byClassName>
+      </loader>
+    </cache>
+    <cache>
+      <name>withCache2kLoaderWithReadThrough</name>
+      <sections>
+        <jcache>
+          <enableReadThrough>true</enableReadThrough>
+        </jcache>
+      </sections>
+      <loader>
+        <byClassName>
+          <className>org.cache2k.jcache.provider.ToStringLoader</className>
+        </byClassName>
+      </loader>
     </cache>
   </caches>
 
