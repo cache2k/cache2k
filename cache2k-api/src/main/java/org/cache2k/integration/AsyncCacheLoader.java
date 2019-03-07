@@ -60,12 +60,12 @@ public interface AsyncCacheLoader<K,V> {
     Executor getLoaderExecutor();
 
     /**
-     * Currently cached value. This is present even if it is expired.
+     * Currently cached value. Available also when expired.
      */
     V getCachedValue();
 
     /**
-     * Currently cached exception. This present even if it is expired.
+     * Currently cached exception. Available also when expired.
      */
     Throwable getCachedException();
 
