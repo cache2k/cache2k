@@ -49,6 +49,7 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -576,6 +577,7 @@ public class CacheLoaderTest extends TestingBase {
               assertNull(ctx.getCachedException());
             } else {
               assertEquals(key, ctx.getCachedValue());
+              assertNull(ctx.getCachedException());
             }
             callback.onLoadSuccess(key);
           }
@@ -585,7 +587,39 @@ public class CacheLoaderTest extends TestingBase {
     Integer v = c.get(1);
     assertEquals(1, (int) v);
     reload(c, 1);
+  }
 
+  @Test
+  public void testAsyncLoaderContextProperties_withException() {
+    final AtomicInteger _loaderCalled = new AtomicInteger();
+    Cache<Integer,Integer> c = target.cache(new CacheRule.Specialization<Integer, Integer>() {
+      @Override
+      public void extend(final Cache2kBuilder<Integer, Integer> b) {
+        b.expireAfterWrite(TestingParameters.MAX_FINISH_WAIT_MILLIS, TimeUnit.MILLISECONDS);
+        b.loader(new AsyncCacheLoader<Integer, Integer>() {
+          @Override
+          public void load(final Integer key, final AsyncCacheLoader.Context<Integer,Integer> ctx, final Callback<Integer, Integer> callback) {
+            int cnt = _loaderCalled.getAndIncrement();
+            if (cnt == 0) {
+              assertNull(ctx.getCachedValue());
+              assertNull(ctx.getCachedException());
+            } else {
+              assertNull(ctx.getCachedValue());
+              assertNotNull(ctx.getCachedException());
+            }
+            callback.onLoadFailure(new ExpectedException());
+          }
+        });
+      }
+    });
+    try {
+      Integer v = c.get(1);
+      fail("exception expected");
+    } catch (CacheLoaderException ex) {
+      assertTrue(ex.getCause() instanceof ExpectedException);
+    }
+    assertNotNull("exception cached", c.peekEntry(1).getException());
+    reload(c, 1);
   }
 
   /**

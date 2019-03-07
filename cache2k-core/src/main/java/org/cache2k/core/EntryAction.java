@@ -226,7 +226,7 @@ public abstract class EntryAction<K, V, R> implements
 
   @Override
   public Throwable getCachedException() {
-    V v = oldValueOrException;
+    V v = entry.getValueOrException();
     if (v instanceof ExceptionWrapper) { return ((ExceptionWrapper) v).getException(); }
     return null;
   }
