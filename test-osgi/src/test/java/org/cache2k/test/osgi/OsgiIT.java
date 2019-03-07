@@ -4,7 +4,7 @@ package org.cache2k.test.osgi;
  * #%L
  * cache2k tests for OSGi
  * %%
- * Copyright (C) 2000 - 2018 headissue GmbH, Munich
+ * Copyright (C) 2000 - 2019 headissue GmbH, Munich
  * %%
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
