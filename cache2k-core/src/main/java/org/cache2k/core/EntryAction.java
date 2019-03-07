@@ -108,11 +108,6 @@ public abstract class EntryAction<K, V, R> implements
 
   boolean suppressException = false;
 
-  /**
-   * Use async when available.
-   */
-  boolean preferAsync = true;
-
   Thread syncThread;
 
   ActionCompletedCallback completedCallback;
@@ -345,7 +340,7 @@ public abstract class EntryAction<K, V, R> implements
       }
     }
     AsyncCacheLoader<K, V> _asyncLoader;
-    if (preferAsync && (_asyncLoader = asyncLoader()) != null) {
+    if ((_asyncLoader = asyncLoader()) != null) {
       lockFor(LOAD_ASYNC);
       try {
         _asyncLoader.load(key, this, this);
@@ -991,9 +986,7 @@ public abstract class EntryAction<K, V, R> implements
       }
       entryLocked = false;
     }
-    synchronized (heapCache.lock) {
-      updateOnlyReadStatistics();
-    }
+    updateOnlyReadStatistics();
     ready();
   }
 

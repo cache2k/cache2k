@@ -736,7 +736,7 @@ public class WiredCache<K, V> extends BaseCache<K, V>
             executeAsync(e.getKey(), e, (Semantic<K,V,Void>) Operations.REFRESH, NOOP_CALLBACK);
           } catch (CacheClosedException ignore) {
           } catch (Throwable ex) {
-            logAndCountInternalException("Refresh exception", ex);
+            getLog().warn("Refresh exception", ex);
             try {
               synchronized (e) {
                 heapCache.expireEntry(e);

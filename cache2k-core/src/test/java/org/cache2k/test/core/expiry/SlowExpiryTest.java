@@ -20,6 +20,7 @@ package org.cache2k.test.core.expiry;
  * #L%
  */
 
+import org.cache2k.core.util.Log;
 import org.cache2k.integration.AsyncCacheLoader;
 import org.cache2k.test.core.BasicCacheTest;
 import org.cache2k.test.util.TestingBase;
@@ -101,11 +102,15 @@ public class SlowExpiryTest extends TestingBase {
     assertEquals(0, getInfo().getSize());
   }
 
-  @Test @Ignore
+  @Test
   public void testExceptionWithRefreshAsyncLoader() {
+    String _cacheName = "CACHE-SlowExpiryTest.testExceptionWithRefreshAsyncLoader";
+    Log.SuppressionCounter cnt = new Log.SuppressionCounter();
+    Log.registerSuppression("org.cache2k.Cache/default:" + _cacheName, cnt);
     final int _COUNT = 4;
     Cache<Integer, Integer> c = builder(Integer.class, Integer.class)
       .refreshAhead(true)
+      .name(_cacheName)
       .retryInterval(TestingParameters.MINIMAL_TICK_MILLIS, TimeUnit.MILLISECONDS)
       .loader(new AsyncCacheLoader<Integer, Integer>() {
         @Override
@@ -119,6 +124,7 @@ public class SlowExpiryTest extends TestingBase {
       boolean _gotException = false;
       try {
         c.get(i);
+        fail("expect exception");
       } catch (CacheLoaderException e) {
         _gotException = true;
       }
@@ -140,6 +146,7 @@ public class SlowExpiryTest extends TestingBase {
       }
     });
     assertEquals(0, getInfo().getSize());
+    assertTrue(cnt.getWarnCount() >= 4);
   }
 
 
