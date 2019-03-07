@@ -293,7 +293,7 @@ public class WiredCache<K, V> extends BaseCache<K, V>
     };
     for (K k : _keysToLoad) {
       final K key = k;
-      executeAsync(key, SPEC.GET, cb);
+      executeAsync(key, null, SPEC.GET, cb);
     }
   }
 
@@ -347,14 +347,23 @@ public class WiredCache<K, V> extends BaseCache<K, V>
     };
     for (K k : _keySet) {
       final K key = k;
-      executeAsync(key, SPEC.UNCONDITIONAL_LOAD, cb);
+      executeAsync(key, null, SPEC.UNCONDITIONAL_LOAD, cb);
     }
   }
 
-  private <R> void executeAsync(K key, Semantic<K, V, R> op, EntryAction.ActionCompletedCallback cb) {
-    EntryAction<K, V, R> _action = new MyEntryAction<R>(op, key, null, cb);
-    execute(op, _action);
+  private static final EntryAction.ActionCompletedCallback NOOP_CALLBACK = new EntryAction.ActionCompletedCallback() {
+    @Override
+    public void entryActionCompleted(final EntryAction ea) {
+    }
+  };
 
+  /**
+   * @param key the key
+   * @param e the entry, optional, may be {@code null}
+   */
+  private <R> void executeAsync(K key, Entry<K,V> e, Semantic<K, V, R> op, EntryAction.ActionCompletedCallback cb) {
+    EntryAction<K, V, R> _action = new MyEntryAction<R>(op, key, e, cb);
+    execute(op, _action);
   }
 
   private void reloadAllWithSyncLoader(final CacheOperationCompletionListener _listener, final Set<K> _keySet) {
@@ -724,7 +733,7 @@ public class WiredCache<K, V> extends BaseCache<K, V>
             }
           }
           try {
-            execute(e.getKey(), e, (Semantic<K,V,Void>) Operations.REFRESH);
+            executeAsync(e.getKey(), e, (Semantic<K,V,Void>) Operations.REFRESH, NOOP_CALLBACK);
           } catch (CacheClosedException ignore) {
           } catch (Throwable ex) {
             logAndCountInternalException("Refresh exception", ex);

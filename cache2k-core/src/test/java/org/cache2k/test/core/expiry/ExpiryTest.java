@@ -20,6 +20,7 @@ package org.cache2k.test.core.expiry;
  * #L%
  */
 
+import org.cache2k.integration.AsyncCacheLoader;
 import org.cache2k.test.core.BasicCacheTest;
 import org.cache2k.test.util.TestingBase;
 import org.cache2k.test.util.IntCountingCacheSource;
@@ -47,6 +48,7 @@ import org.junit.Test;
 import java.sql.Timestamp;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.Executors;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -985,20 +987,28 @@ public class ExpiryTest extends TestingBase {
     final long startTime;
 
     {
-      cache = builder(Integer.class, Integer.class)
+      Cache2kBuilder<Integer,Integer> b = builder(Integer.class, Integer.class)
         .expireAfterWrite(LONG_DELTA, TimeUnit.MILLISECONDS)
         .refreshAhead(true)
-        .keepDataAfterExpired(false)
-        .loader(new CacheLoader<Integer, Integer>() {
-          @Override
-          public Integer load(final Integer key) throws Exception {
-            sem.acquire(); sem.release();
-            count.incrementAndGet();
-            return 4711;
-          }
-        })
-        .build();
+        .keepDataAfterExpired(false);
+      addLoader(b);
+      cache = b.build();
       startTime = getClock().millis();
+    }
+
+    protected void addLoader(Cache2kBuilder<Integer, Integer> b) {
+      b.loader(new CacheLoader<Integer, Integer>() {
+        @Override
+        public Integer load(final Integer key) throws Exception {
+          return loadDefault(key);
+        }
+      });
+    }
+
+    protected Integer loadDefault(Integer key) throws Exception {
+      sem.acquire(); sem.release();
+      count.incrementAndGet();
+      return 4711;
     }
 
     abstract void test() throws Exception;
@@ -1071,6 +1081,43 @@ public class ExpiryTest extends TestingBase {
   @Test
   public void manualExpire_refresh_refreshImmediately() throws Exception {
     new ManualExpireFixture() {
+      @Override
+      void test() throws Exception {
+        cache.put(1, 2);
+        sem.acquire();
+        cache.expireAt(1, ExpiryTimeValues.REFRESH);
+        likeRefreshImmediately();
+      }
+    }.test();
+  }
+
+  /**
+   * Refresh by manual expiry trigger. Use async loader and check that no more than one thread is
+   * needed to execute in parallel.
+   */
+  @Test
+  public void manualExpire_refresh_refreshImmediately_async() throws Exception {
+    new ManualExpireFixture() {
+      @Override
+      protected void addLoader(final Cache2kBuilder<Integer, Integer> b) {
+        b.loaderExecutor(Executors.newSingleThreadExecutor());
+        b.loader(new AsyncCacheLoader<Integer, Integer>() {
+          @Override
+          public void load(final Integer key, final Context<Integer, Integer> context, final Callback<Integer, Integer> callback) throws Exception {
+            context.getLoaderExecutor().execute(new Runnable() {
+              @Override
+              public void run() {
+                try {
+                  callback.onLoadSuccess(loadDefault(key));
+                } catch (Exception ex) {
+                  callback.onLoadFailure(ex);
+                }
+              }
+            });
+          }
+        });
+      }
+
       @Override
       void test() throws Exception {
         cache.put(1, 2);
