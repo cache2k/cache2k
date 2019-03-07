@@ -387,7 +387,12 @@ public class JCacheBuilder<K,V> {
         manager,
         new InternalCache2kBuilder<K,V>(cache2kConfiguration, manager.getCache2kManager()).buildAsIs(),
         keyType.getType(), valueType.getType(),
-        config.isStoreByValue(), config.isReadThrough(), config.getCacheLoaderFactory() != null,
+        config.isStoreByValue(),
+        config.isReadThrough() || extraConfiguration.isEnableReadThrough(),
+        config.getCacheLoaderFactory() != null ||
+          cache2kConfiguration.getLoader() != null ||
+          cache2kConfiguration.getAdvancedLoader() != null ||
+          cache2kConfiguration.getAsyncLoader() != null,
         eventHandling
       );
   }

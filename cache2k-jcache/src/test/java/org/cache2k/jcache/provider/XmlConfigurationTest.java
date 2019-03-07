@@ -31,9 +31,13 @@ import org.junit.Test;
 
 import javax.cache.Caching;
 import javax.cache.configuration.MutableConfiguration;
+import javax.cache.integration.CompletionListenerFuture;
 import javax.cache.spi.CachingProvider;
 import java.math.BigDecimal;
 import java.net.URI;
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.Set;
 
 import static org.junit.Assert.*;
 
@@ -144,6 +148,30 @@ public class XmlConfigurationTest {
     javax.cache.Cache<String, BigDecimal> c =
       cm.createCache("test2", new MutableConfiguration<String, BigDecimal>());
     assertTrue(c instanceof JCacheAdapter);
+  }
+
+  @Test
+  public void jcacheWithLoaderButNoReadThroughEnabled() throws Exception {
+    javax.cache.CacheManager _manager =
+      Caching.getCachingProvider().getCacheManager(new URI(MANAGER_NAME), null);
+    javax.cache.Cache<Integer, String> _cache =
+      _manager.getCache("withCache2kLoaderNoReadThrough");
+    assertNull(_cache.get(123));
+    CompletionListenerFuture _complete = new CompletionListenerFuture();
+    Set<Integer> _toLoad = new HashSet<Integer>();
+    _toLoad.add(123);
+    _cache.loadAll(_toLoad, true, _complete);
+    _complete.get();
+    assertNotNull(_cache.get(123));
+  }
+
+  @Test
+  public void jcacheWithLoaderReadThroughEnabled() throws Exception {
+    javax.cache.CacheManager _manager =
+      Caching.getCachingProvider().getCacheManager(new URI(MANAGER_NAME), null);
+    javax.cache.Cache<Integer, String> _cache =
+      _manager.getCache("withCache2kLoaderWithReadThrough");
+    assertNotNull(_cache.get(123));
   }
 
 }

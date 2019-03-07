@@ -583,6 +583,13 @@
           </xs:documentation>
         </xs:annotation>
       </xs:element>
+      <xs:element name="enableReadThrough" type="xs:string" default="false" minOccurs="0">
+        <xs:annotation>
+          <xs:documentation>
+            For a complete description, see <a href="https://cache2k.org/docs/latest/apidocs/cache2k-api/org/cache2k/jcache/JCacheConfiguration.Builder.html?utm_source=ide&amp;utm_medium=xsd#enableReadThrough-boolean-">API Documentation</a>
+          </xs:documentation>
+        </xs:annotation>
+      </xs:element>
     </xs:sequence>
   </xs:group>
 

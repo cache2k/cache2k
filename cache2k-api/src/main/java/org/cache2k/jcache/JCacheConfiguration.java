@@ -39,6 +39,7 @@ public class JCacheConfiguration implements SingletonConfigurationSection {
   private boolean supportOnlineListenerAttachment = false;
   private boolean enableStatistics = false;
   private boolean enableManagement = false;
+  private boolean enableReadThrough = false;
 
   public boolean isCopyAlwaysIfRequested() {
     return copyAlwaysIfRequested;
@@ -82,6 +83,17 @@ public class JCacheConfiguration implements SingletonConfigurationSection {
    */
   public void setEnableManagement(final boolean f) {
     enableManagement = f;
+  }
+
+  public boolean isEnableReadThrough() {
+    return enableReadThrough;
+  }
+
+  /**
+   * @see Builder#enableReadThrough
+   */
+  public void setEnableReadThrough(final boolean f) {
+    enableReadThrough = f;
   }
 
   public static class Builder implements ConfigurationSectionBuilder<JCacheConfiguration> {
@@ -132,6 +144,18 @@ public class JCacheConfiguration implements SingletonConfigurationSection {
      */
     public Builder enableStatistics(boolean f) {
       config.setEnableStatistics(f);
+      return this;
+    }
+
+    /**
+     * When {@code true}, operate cache in read through mode and use the configured
+     * loader when there is no mapping for a key yet. Identical to the flag in the JCache
+     * configuration object.
+     *
+     * @see CompleteConfiguration#isReadThrough()
+     */
+    public Builder enableReadThrough(boolean f) {
+      config.setEnableReadThrough(f);
       return this;
     }
 
