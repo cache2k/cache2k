@@ -52,6 +52,7 @@ For a detailed introduction continue with [Getting Started](docs/latest/user-gui
 
 ## News
 
+  * **Version 1.2.1.Final, 2019-03-08**: Service release for stable version, See [Version 1.2.1.Final release notes](1/2.1.Final.html)
   * **Version 1.2.0.Final, 2018-08-23**: Release of new stable version, See [Version 1.2.0.Final release notes](1/2.0.Final.html)
   * **Version 1.1.4.Beta, 2018-08-14**: Preview. XSD Schema improvements, first release candidate for 1.2, See [Version 1.1.4.Beta release notes](1/1.4.Beta.html)
   * **Version 1.1.3.Alpha, 2018-08-02**: Preview. Configuration infrastructure improvements, XSD Schema, See [Version 1.1.3.Alpha release notes](1/1.3.Alpha.html)
