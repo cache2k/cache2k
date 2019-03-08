@@ -391,8 +391,7 @@ public class JCacheBuilder<K,V> {
         config.isReadThrough() || extraConfiguration.isEnableReadThrough(),
         config.getCacheLoaderFactory() != null ||
           cache2kConfiguration.getLoader() != null ||
-          cache2kConfiguration.getAdvancedLoader() != null ||
-          cache2kConfiguration.getAsyncLoader() != null,
+          cache2kConfiguration.getAdvancedLoader() != null,
         eventHandling
       );
   }
