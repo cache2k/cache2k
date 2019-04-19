@@ -63,6 +63,10 @@ public class Hash2<K,V> {
 
   private final Cache cache;
 
+  /**
+   *
+   * @param _cache Cache reference only needed for the cache name in case of an exception
+   */
   public Hash2(final Cache _cache) {
     cache = _cache;
   }
@@ -86,8 +90,17 @@ public class Hash2<K,V> {
     calcMaxFill();
   }
 
+  public long getEntryCapacity() {
+    return entries.length * 1L * HeapCache.TUNABLE.hashLoadPercent / 100;
+  }
+
+  /** For testing */
+  public long getSegmentMaxFill() {
+    return segmentMaxFill;
+  }
+
   private void calcMaxFill() {
-    segmentMaxFill = entries.length * HeapCache.TUNABLE.hashLoadPercent / 100 / LOCK_SEGMENTS;
+    segmentMaxFill = getEntryCapacity() / LOCK_SEGMENTS;
   }
 
   /**
@@ -304,7 +317,7 @@ public class Hash2<K,V> {
    * Double the hash table size and rehash the entries. Assumes total lock.
    */
   @SuppressWarnings("unchecked")
-  private void rehash() {
+  void rehash() {
     Entry<K,V>[] src = entries;
     if (src == null) {
       throw new CacheClosedException(cache);
