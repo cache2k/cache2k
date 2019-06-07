@@ -44,6 +44,20 @@
 
   <build>
     <plugins>
+      <!-- Add a module name for Jigsaw
+           https://github.com/cache2k/cache2k/issues/109
+      -->
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-jar-plugin</artifactId>
+        <configuration>
+          <archive>
+            <manifestEntries>
+              <Automatic-Module-Name>org.cache2k.api</Automatic-Module-Name>
+            </manifestEntries>
+          </archive>
+        </configuration>
+      </plugin>
 
       <!-- print a clirr report with:  mvn clirr:check -->
       <plugin>
