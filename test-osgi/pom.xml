@@ -6,7 +6,7 @@
   <parent>
     <groupId>org.cache2k</groupId>
     <artifactId>test-parent</artifactId>
-    <version>1.2.1.Final</version>
+    <version>1.2.2.Final</version>
     <relativePath>../test-parent/pom.xml</relativePath>
   </parent>
 
@@ -14,7 +14,7 @@
   </description>
 
   <artifactId>test-osgi</artifactId>
-  <version>1.2.1.Final</version>
+  <version>1.2.2.Final</version>
   <name>cache2k tests for OSGi</name>
 
   <!-- https://ops4j1.jira.com/wiki/display/paxexam/Pax+Exam+Maven+Dependencies
