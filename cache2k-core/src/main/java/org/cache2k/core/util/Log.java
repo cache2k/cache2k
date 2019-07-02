@@ -78,11 +78,10 @@ public abstract class Log {
       return;
     }
     try {
-      final org.slf4j.ILoggerFactory lf = org.slf4j.LoggerFactory.getILoggerFactory();
       logFactory = new LogFactory() {
         @Override
         public Log getLog(String s) {
-          return new Slf4jLogger(lf.getLogger(s));
+          return new Slf4jLogger(org.slf4j.LoggerFactory.getLogger(s));
         }
       };
       log("New instance, using SLF4J logging");
