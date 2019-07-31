@@ -203,6 +203,10 @@ public class TestingBase {
   }
 
   protected <K,T> Cache2kBuilder<K,T> builder(Class<K> k, Class<T> t) {
+    return builder(generateUniqueCacheName(this), k, t);
+  }
+
+  protected <K,T> Cache2kBuilder<K,T> builder(String _cacheName, Class<K> k, Class<T> t) {
     provideCache();
     if (cache != null) {
       checkIntegrity();
@@ -210,11 +214,10 @@ public class TestingBase {
       cache.close();
       cache = null;
     }
-    cacheName =
-      deriveNameFromTestMethod(this) + "-" + Long.toString(uniqueNameCounter.incrementAndGet(), 36);
+    cacheName = _cacheName;
     Cache2kBuilder<K,T> b = Cache2kBuilder.of(k,t)
       .timeReference(getClock())
-      .name(cacheName)
+      .name(_cacheName)
       .entryCapacity(DEFAULT_MAX_SIZE)
       .loaderExecutor(executor);
     applyAdditionalOptions(b);
@@ -352,7 +355,11 @@ public class TestingBase {
     ((InternalCache) c).getLatestInfo();
   }
 
-  public static String deriveNameFromTestMethod(Object _testInstance) {
+  private static String uniqueCounterSuffix() {
+    return Long.toString(uniqueNameCounter.incrementAndGet(), 36);
+  }
+
+  private static String deriveNameFromTestMethod(Object _testInstance) {
     Exception ex = new Exception();
     String _methodName = "default";
     for (StackTraceElement e : ex.getStackTrace()) {
@@ -372,6 +379,10 @@ public class TestingBase {
       }
     }
     return _methodName;
+  }
+
+  public String generateUniqueCacheName(Object obj) {
+    return deriveNameFromTestMethod(obj) + "-" + uniqueCounterSuffix();
   }
 
   public int countEntriesViaIteration() {

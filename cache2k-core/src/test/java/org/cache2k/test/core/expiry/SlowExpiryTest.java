@@ -104,13 +104,12 @@ public class SlowExpiryTest extends TestingBase {
 
   @Test
   public void testExceptionWithRefreshAsyncLoader() {
-    String _cacheName = "CACHE-SlowExpiryTest.testExceptionWithRefreshAsyncLoader";
+    String _cacheName = generateUniqueCacheName(this);
     Log.SuppressionCounter cnt = new Log.SuppressionCounter();
     Log.registerSuppression("org.cache2k.Cache/default:" + _cacheName, cnt);
     final int _COUNT = 4;
-    Cache<Integer, Integer> c = builder(Integer.class, Integer.class)
+    Cache<Integer, Integer> c = builder(_cacheName, Integer.class, Integer.class)
       .refreshAhead(true)
-      .name(_cacheName)
       .retryInterval(TestingParameters.MINIMAL_TICK_MILLIS, TimeUnit.MILLISECONDS)
       .loader(new AsyncCacheLoader<Integer, Integer>() {
         @Override
