@@ -31,7 +31,7 @@ import java.util.concurrent.Callable;
  *
  * @author Jens Wilke
  */
-class SpringCache2kCache implements Cache {
+public class SpringCache2kCache implements Cache {
 
   protected final org.cache2k.Cache<Object,Object> cache;
 
