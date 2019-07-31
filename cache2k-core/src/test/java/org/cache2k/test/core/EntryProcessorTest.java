@@ -413,6 +413,9 @@ public class EntryProcessorTest {
 
     @Override
     public Integer load(final Integer key) throws Exception {
+      if (key == 4711) {
+        throw new Exception("load exception on 4711");
+      }
       counter.getAndIncrement();
       return key;
     }
@@ -583,6 +586,47 @@ public class EntryProcessorTest {
     target.statistics()
       .getCount.expect(1)
       .missCount.expect(1)
+      .expectAllZero();
+  }
+
+  /**
+   * Test that load count only counts successful loads.
+   */
+  @Test
+  public void getValue_triggerLoad_exception_count_successful_load() {
+    CacheWithLoader wl = cacheWithLoader();
+    target.statistics();
+    wl.cache.invoke(123, new EntryProcessor<Integer, Integer, Void>() {
+      @Override
+      public Void process(final MutableCacheEntry<Integer, Integer> e) throws Exception {
+        Integer v = e.getValue();
+        assertEquals(123, (int) v);
+        e.remove();
+        return null;
+      }
+    });
+    target.statistics()
+      .getCount.expect(1)
+      .missCount.expect(1)
+      .loadCount.expect(1)
+      .expectAllZero();
+    boolean _exceptionThrown = false;
+    try {
+      wl.cache.invoke(4711, new EntryProcessor<Integer, Integer, Void>() {
+        @Override
+        public Void process(final MutableCacheEntry<Integer, Integer> e) throws Exception {
+          Integer v = e.getValue();
+          return null;
+        }
+      });
+    } catch (EntryProcessingException ex) {
+      _exceptionThrown = true;
+    }
+    assertTrue(_exceptionThrown);
+    target.statistics()
+      .getCount.expect(2)
+      .missCount.expect(2)
+      .loadCount.expect(1)
       .expectAllZero();
   }
 
