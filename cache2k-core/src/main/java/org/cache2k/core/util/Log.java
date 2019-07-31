@@ -112,7 +112,8 @@ public abstract class Log {
   }
 
   /**
-   * Redirects log output, this is used for testing purposes.
+   * Redirects log output, this is used for testing purposes. Needs to be called before the log client
+   * is created.
    */
   public static synchronized void registerSuppression(String s, Log l) {
     loggers.put(s, l);

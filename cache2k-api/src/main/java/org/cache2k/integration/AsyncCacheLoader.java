@@ -31,6 +31,9 @@ public interface AsyncCacheLoader<K,V> {
   /**
    * Starts an asynchronous load operation.
    *
+   * <p>If this call throws an exception, its is assumed that the load operation is not
+   * started and the callback is not called.
+   *
    * @param key key of the value to load
    * @param context additional context information for the load operation
    * @param callback callback interface to notify on load completion
