@@ -1448,9 +1448,14 @@ public class HeapCache<K, V> extends BaseCache<K, V> {
   }
 
   private void checkLoaderPresent() {
-    if (loader == null) {
+    if (!isLoaderPresent()) {
       throw new UnsupportedOperationException("loader not set");
     }
+  }
+
+  @Override
+  public boolean isLoaderPresent() {
+    return loader != null;
   }
 
   /**

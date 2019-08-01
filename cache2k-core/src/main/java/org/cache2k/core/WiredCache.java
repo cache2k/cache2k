@@ -147,7 +147,7 @@ public class WiredCache<K, V> extends BaseCache<K, V>
 
   @Override
   public void prefetch(final K key) {
-    if (!isLoaderAvailable()) {
+    if (!isLoaderPresent()) {
       return;
     }
     Entry<K,V> e = heapCache.lookupEntryNoHitRecord(key);
@@ -167,7 +167,7 @@ public class WiredCache<K, V> extends BaseCache<K, V>
   @Override
   public void prefetchAll(final Iterable<? extends K> _keys, final CacheOperationCompletionListener l) {
     final CacheOperationCompletionListener _listener= l != null ? l : HeapCache.DUMMY_LOAD_COMPLETED_LISTENER;
-    if (!isLoaderAvailable()) {
+    if (!isLoaderPresent()) {
       _listener.onCompleted();
       return;
     }
@@ -397,12 +397,13 @@ public class WiredCache<K, V> extends BaseCache<K, V>
   }
 
   private void checkLoaderPresent() {
-    if (!isLoaderAvailable()) {
+    if (!isLoaderPresent()) {
       throw new UnsupportedOperationException("loader not set");
     }
   }
 
-  private boolean isLoaderAvailable() {
+  @Override
+  public boolean isLoaderPresent() {
     return loader != null || asyncLoader != null;
   }
 
