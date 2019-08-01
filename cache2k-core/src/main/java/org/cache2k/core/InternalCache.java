@@ -103,6 +103,8 @@ public interface InternalCache<K, V> extends Cache<K, V>, CanCheckIntegrity {
 
   CacheEntry<K,V> returnCacheEntry(ExaminationEntry<K,V> e);
 
+  boolean isWeigherPresent();
+
   boolean isLoaderPresent();
 
 

@@ -1458,6 +1458,11 @@ public class HeapCache<K, V> extends BaseCache<K, V> {
     return loader != null;
   }
 
+  @Override
+  public boolean isWeigherPresent() {
+    return eviction.isWeigherPresent();
+  }
+
   /**
    * Calculate the next refresh time if a timer / expiry is needed and call insert.
    */

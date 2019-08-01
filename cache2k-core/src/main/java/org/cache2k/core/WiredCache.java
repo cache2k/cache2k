@@ -403,6 +403,11 @@ public class WiredCache<K, V> extends BaseCache<K, V>
   }
 
   @Override
+  public boolean isWeigherPresent() {
+    return heapCache.eviction.isWeigherPresent();
+  }
+
+  @Override
   public boolean isLoaderPresent() {
     return loader != null || asyncLoader != null;
   }

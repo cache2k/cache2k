@@ -94,4 +94,6 @@ public interface Eviction {
 
   EvictionMetrics getMetrics();
 
+  boolean isWeigherPresent();
+
 }

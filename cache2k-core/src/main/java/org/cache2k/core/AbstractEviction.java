@@ -85,7 +85,8 @@ public abstract class AbstractEviction implements Eviction, EvictionMetrics {
     }
   }
 
-  protected boolean isWeigherPresent() {
+  @Override
+  public boolean isWeigherPresent() {
     return weigher != null;
   }
 

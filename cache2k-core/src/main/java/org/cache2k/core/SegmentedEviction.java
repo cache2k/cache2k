@@ -264,4 +264,9 @@ public class SegmentedEviction implements Eviction, EvictionMetrics {
     return sum;
   }
 
+  @Override
+  public boolean isWeigherPresent() {
+    return segments[0].isWeigherPresent();
+  }
+
 }
