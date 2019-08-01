@@ -95,7 +95,7 @@ public interface InternalCacheInfo {
   long getNewEntryCount();
 
   /**
-   * Loader calls including reloads and refresh.
+   * Successful loads including reloads and refresh.
    */
   long getLoadCount();
 
