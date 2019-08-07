@@ -237,4 +237,16 @@ public interface CacheInfoMXBean {
    */
   String getIntegrityDescriptor();
 
+  /**
+   * A loader is configured. This can be used to determine, whether it makes sense to
+   * send the report/monitor the loader metrics.
+   */
+  boolean isLoaderPresent();
+
+  /**
+   * A weigher is configured. This can be used to determine, whether it makes sense to
+   * send the report/monitor the weigher metrics.
+   */
+  boolean isWeigherPresent();
+
 }

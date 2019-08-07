@@ -227,4 +227,14 @@ public class CacheMXBeanImpl implements CacheMXBean {
     return getInfo().getExtraStatistics();
   }
 
+  @Override
+  public boolean isLoaderPresent() {
+    return cache.isLoaderPresent();
+  }
+
+  @Override
+  public boolean isWeigherPresent() {
+    return cache.isWeigherPresent();
+  }
+
 }
