@@ -45,7 +45,6 @@ import static org.junit.Assert.*;
 import static org.hamcrest.Matchers.*;
 
 import org.cache2k.testing.category.SlowTests;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
@@ -105,7 +104,7 @@ public class SlowExpiryTest extends TestingBase {
   @Test
   public void testExceptionWithRefreshAsyncLoader() {
     String _cacheName = generateUniqueCacheName(this);
-    Log.SuppressionCounter cnt = new Log.SuppressionCounter();
+    final Log.SuppressionCounter cnt = new Log.SuppressionCounter();
     Log.registerSuppression("org.cache2k.Cache/default:" + _cacheName, cnt);
     final int _COUNT = 4;
     Cache<Integer, Integer> c = builder(_cacheName, Integer.class, Integer.class)
@@ -135,6 +134,12 @@ public class SlowExpiryTest extends TestingBase {
         return getInfo().getRefreshCount() + getInfo().getRefreshFailedCount() >= _COUNT;
       }
     });
+    await("Warning log for failed refresh", new Condition() {
+      @Override
+      public boolean check() throws Exception {
+        return cnt.getWarnCount() >= _COUNT;
+      }
+    });
     assertEquals("no internal exceptions",0, getInfo().getInternalExceptionCount());
     assertTrue("got at least 8 - submitFailedCnt exceptions", getInfo().getLoadExceptionCount() >= getInfo().getRefreshFailedCount());
     assertTrue("no alert", getInfo().getHealth().isEmpty());
@@ -145,7 +150,6 @@ public class SlowExpiryTest extends TestingBase {
       }
     });
     assertEquals(0, getInfo().getSize());
-    assertTrue(cnt.getWarnCount() >= 4);
   }
 
 
