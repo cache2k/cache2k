@@ -21,7 +21,6 @@ package org.cache2k.core.util;
  */
 
 import org.cache2k.CacheManager;
-import org.cache2k.core.Cache2kCoreProviderImpl;
 
 import java.sql.Timestamp;
 
@@ -42,7 +41,7 @@ public class Util {
   }
 
   public static String compactFullName(CacheManager mgr, String _cacheName) {
-    if (!Cache2kCoreProviderImpl.STANDARD_DEFAULT_MANAGER_NAME.equals(mgr.getName())) {
+    if (!CacheManager.STANDARD_DEFAULT_MANAGER_NAME.equals(mgr.getName())) {
       return mgr.getName() + NAME_SEPARATOR + _cacheName;
     }
     return _cacheName;
