@@ -43,7 +43,6 @@ import java.util.WeakHashMap;
  */
 public class Cache2kCoreProviderImpl implements Cache2kCoreProvider {
 
-  public final static String STANDARD_DEFAULT_MANAGER_NAME = "default";
   public static final CacheConfigurationProvider CACHE_CONFIGURATION_PROVIDER =
     SingleProviderResolver.resolve(CacheConfigurationProvider.class, DummyConfigurationProvider.class);
 
@@ -93,7 +92,7 @@ public class Cache2kCoreProviderImpl implements Cache2kCoreProvider {
       if (loader2defaultName.containsKey(cl)) {
         throw new IllegalStateException("a CacheManager was already created");
       }
-      loader2defaultName.put(cl, s);
+      replaceDefaultName(cl, s);
     }
   }
 
@@ -104,19 +103,19 @@ public class Cache2kCoreProviderImpl implements Cache2kCoreProvider {
       return n;
     }
     synchronized (getLockObject()) {
-      n = loader2defaultName.get(cl);
-      if (n != null) {
-        return n;
-      }
       n = CACHE_CONFIGURATION_PROVIDER.getDefaultManagerName(cl);
       if (n == null) {
-        n = STANDARD_DEFAULT_MANAGER_NAME;
+        n = CacheManager.STANDARD_DEFAULT_MANAGER_NAME;
       }
-      Map<ClassLoader, String> _copy = new WeakHashMap<ClassLoader, String>(loader2defaultName);
-      _copy.put(cl, n);
-      loader2defaultName = _copy;
+      replaceDefaultName(cl, n);
     }
     return n;
+  }
+
+  private void replaceDefaultName(final ClassLoader cl, final String s) {
+    Map<ClassLoader, String> _copy = new WeakHashMap<ClassLoader, String>(loader2defaultName);
+    _copy.put(cl, s);
+    loader2defaultName = _copy;
   }
 
   @Override
