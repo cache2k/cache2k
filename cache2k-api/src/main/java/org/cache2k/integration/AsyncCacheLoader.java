@@ -27,6 +27,7 @@ import java.util.concurrent.Executor;
  * FIXME
  *
  * @author Jens Wilke
+ * @since 1.4
  */
 public interface AsyncCacheLoader<K, V> {
 

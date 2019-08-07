@@ -62,6 +62,7 @@ public interface CacheInfoMXBean {
    *
    * @see org.cache2k.Weigher
    * @see Cache2kBuilder#maximumWeight(long)
+   * @since 1.4
    */
   long getMaximumWeight();
 
@@ -70,6 +71,7 @@ public interface CacheInfoMXBean {
    *
    * @see org.cache2k.Weigher
    * @see Cache2kBuilder#maximumWeight(long)
+   * @since 1.4
    */
   long getCurrentWeight();
 
@@ -240,12 +242,16 @@ public interface CacheInfoMXBean {
   /**
    * A loader is configured. This can be used to determine, whether it makes sense to
    * send the report/monitor the loader metrics.
+   *
+   * @since 1.4
    */
   boolean isLoaderPresent();
 
   /**
    * A weigher is configured. This can be used to determine, whether it makes sense to
    * send the report/monitor the weigher metrics.
+   *
+   * @since 1.4
    */
   boolean isWeigherPresent();
 

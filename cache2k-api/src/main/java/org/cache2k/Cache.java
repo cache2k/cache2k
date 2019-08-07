@@ -895,6 +895,8 @@ public interface Cache<K, V> extends KeyValueStore<K,V>, Closeable {
   /**
    * Return cache statistics. The result is never {@code null} regardless of the settings
    * {@link Cache2kBuilder#enableJmx(boolean)} or {@link Cache2kBuilder#disableStatistics(boolean)}
+   *
+   * @since 1.4
    */
   CacheInfoMXBean getStatistics();
 

@@ -468,6 +468,7 @@ public class Cache2kBuilder<K, V> {
    * {@link AdvancedCacheLoader}.
    *
    * @see CacheLoader for general discussion on cache loaders
+   * @since 1.4
    */
   public final Cache2kBuilder<K, V> loader(AsyncCacheLoader<K, V> l) {
     config().setAsyncLoader(wrapCustomizationInstance(l));
