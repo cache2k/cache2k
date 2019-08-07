@@ -42,11 +42,18 @@ import java.util.ServiceLoader;
  * each aspect.
  *
  * <p>Cache managers are identified by a unique name. If no name is specified the name
- * {@code "default"} is used. The default name in use may be changed, see {@link #setDefaultName(String)}.
+ * {@value STANDARD_DEFAULT_MANAGER_NAME} is used. The default name in use may be
+ * changed, see {@link #setDefaultName(String)}.
  *
  * @author Jens Wilke
  */
 public abstract class CacheManager implements Closeable {
+
+  /**
+   * Name of the default cache manager if not overridden, see {@link #setDefaultName(String)}.
+   * @since 1.4
+   */
+  public final static String STANDARD_DEFAULT_MANAGER_NAME = "default";
 
   static protected final Cache2kCoreProvider PROVIDER;
 
@@ -55,7 +62,7 @@ public abstract class CacheManager implements Closeable {
   }
 
   /**
-   * Name of the default cache manager, which is "default" by default.
+   * Name of the default cache manager, which is "{@value STANDARD_DEFAULT_MANAGER_NAME}" by default.
    */
   public static String getDefaultName() {
     return PROVIDER.getDefaultManagerName(PROVIDER.getDefaultClassLoader());
@@ -81,7 +88,7 @@ public abstract class CacheManager implements Closeable {
    * Get the default cache manager for the default class loader. The default class loader
    * is the class loader used to load the cache2k implementation classes.
    *
-   * <p>The name of default cache manager is {@code "default"}.
+   * <p>The name of default cache manager is "{@value STANDARD_DEFAULT_MANAGER_NAME}".
    * This may be changed, by {@link #setDefaultName(String)}.
    */
   public static CacheManager getInstance() {
