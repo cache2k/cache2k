@@ -1,4 +1,4 @@
-package org.cache2k.impl.serverSide;
+package org.cache2k.core;
 
 /*
  * #%L
@@ -20,16 +20,13 @@ package org.cache2k.impl.serverSide;
  * #L%
  */
 
-import org.cache2k.core.HealthInfoElement;
-import org.cache2k.core.InternalCache;
-import org.cache2k.core.InternalCacheInfo;
 import org.cache2k.jmx.CacheMXBean;
 
 import java.util.Date;
 import java.util.Iterator;
 
 /**
- * @author Jens Wilke; created: 2014-10-09
+ * @author Jens Wilke
  */
 public class CacheMXBeanImpl implements CacheMXBean {
 

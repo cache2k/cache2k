@@ -26,6 +26,7 @@ import org.cache2k.CacheManager;
 import static org.junit.Assert.*;
 
 import org.cache2k.Weigher;
+import org.cache2k.core.CacheMXBeanImpl;
 import org.cache2k.core.CacheManagerImpl;
 import org.cache2k.core.util.Log;
 import org.cache2k.testing.category.FastTests;

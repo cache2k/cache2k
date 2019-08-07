@@ -26,7 +26,6 @@ import org.cache2k.CacheManager;
 import org.cache2k.configuration.Cache2kConfiguration;
 import org.cache2k.core.spi.CacheLifeCycleListener;
 import org.cache2k.core.CacheManagerImpl;
-import org.cache2k.core.InternalCache;
 import org.cache2k.core.spi.CacheManagerLifeCycleListener;
 import org.cache2k.core.util.Log;
 
@@ -49,12 +48,11 @@ public class JmxSupport implements CacheLifeCycleListener, CacheManagerLifeCycle
 
   @Override
   public void cacheCreated(Cache c, final Cache2kConfiguration cfg) {
-    InternalCache ic = (InternalCache) c;
     if (cfg.isEnableJmx()) {
       MBeanServer mbs = ManagementFactory.getPlatformMBeanServer();
       String _name = standardName(c.getCacheManager(), c);
       try {
-        mbs.registerMBean(new CacheMXBeanImpl(ic), new ObjectName(_name));
+        mbs.registerMBean(c.getStatistics(), new ObjectName(_name));
       } catch (InstanceAlreadyExistsException ignore) {
         log.debug("register failure, cache: " + c.getName(), ignore);
       } catch (Exception e) {

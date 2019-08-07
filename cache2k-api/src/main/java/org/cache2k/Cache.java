@@ -27,6 +27,7 @@ import org.cache2k.integration.CacheLoader;
 import org.cache2k.integration.CacheWriter;
 import org.cache2k.integration.CacheLoaderException;
 import org.cache2k.integration.CacheWriterException;
+import org.cache2k.jmx.CacheInfoMXBean;
 import org.cache2k.processor.EntryProcessingException;
 import org.cache2k.processor.EntryProcessor;
 import org.cache2k.processor.EntryProcessingResult;
@@ -890,5 +891,11 @@ public interface Cache<K, V> extends KeyValueStore<K,V>, Closeable {
    * @return {@code ConcurrentMap} wrapper for this cache instance
    */
   ConcurrentMap<K,V> asMap();
+
+  /**
+   * Return cache statistics. The result is never {@code null} regardless of the settings
+   * {@link Cache2kBuilder#enableJmx(boolean)} or {@link Cache2kBuilder#disableStatistics(boolean)}
+   */
+  CacheInfoMXBean getStatistics();
 
 }

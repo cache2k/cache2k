@@ -24,15 +24,17 @@ import java.util.EventListener;
 import java.util.concurrent.Executor;
 
 /**
+ * FIXME
+ *
  * @author Jens Wilke
  */
-public interface AsyncCacheLoader<K,V> {
+public interface AsyncCacheLoader<K, V> {
 
   /**
    * Starts an asynchronous load operation.
    *
-   * <p>If this call throws an exception, its is assumed that the load operation is not
-   * started and the callback is not called.
+   * <p>If this call throws an exception, it is assumed that the load operation is not
+   * started and the callback will not called.
    *
    * @param key key of the value to load
    * @param context additional context information for the load operation
@@ -81,6 +83,8 @@ public interface AsyncCacheLoader<K,V> {
 
   /**
    * Callback for async cache load.
+   *
+   * FIXME: K needed?
    *
    * @author Jens Wilke
    */

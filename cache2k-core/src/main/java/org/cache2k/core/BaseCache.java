@@ -25,6 +25,7 @@ import org.cache2k.CacheEntry;
 import org.cache2k.CacheException;
 import org.cache2k.CustomizationException;
 import org.cache2k.configuration.CustomizationSupplier;
+import org.cache2k.jmx.CacheInfoMXBean;
 import org.cache2k.processor.EntryProcessingException;
 import org.cache2k.processor.EntryProcessor;
 import org.cache2k.processor.EntryProcessingResult;
@@ -233,6 +234,11 @@ public abstract class BaseCache<K, V> implements InternalCache<K, V> {
     } catch (CacheClosedException ex) {
       return "Cache(name=" + BaseCache.nameQualifier (this) + ", closed=true)";
     }
+  }
+
+  @Override
+  public CacheInfoMXBean getStatistics() {
+    return new CacheMXBeanImpl(this);
   }
 
 }
