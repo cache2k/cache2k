@@ -668,7 +668,7 @@ public class WiredCache<K, V> extends BaseCache<K, V>
   }
 
   /**
-   * Nothing done here. Will notify the storage about eviction in some future version.
+   * Calls eviction listeners.
    */
   @Override
   public void onEvictionFromHeap(final Entry<K, V> e) {
