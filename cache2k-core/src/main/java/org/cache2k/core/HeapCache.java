@@ -44,7 +44,6 @@ import org.cache2k.integration.ExceptionPropagator;
 import org.cache2k.integration.RefreshedTimeWrapper;
 import org.cache2k.processor.EntryProcessor;
 
-import java.security.SecureRandom;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
@@ -52,7 +51,6 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.NoSuchElementException;
-import java.util.Random;
 import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.concurrent.Executor;
@@ -88,22 +86,11 @@ public class HeapCache<K, V> extends BaseCache<K, V> {
     }
   };
 
-  static final Random SEED_RANDOM = new Random(new SecureRandom().nextLong());
   static int cacheCnt = 0;
 
   public static final Tunable TUNABLE = TunableFactory.get(Tunable.class);
 
   public final static ExceptionPropagator DEFAULT_EXCEPTION_PROPAGATOR = TUNABLE.exceptionPropagator;
-
-  protected final int hashSeed;
-
-  {
-    if (TUNABLE.disableHashRandomization) {
-      hashSeed = TUNABLE.hashSeed;
-    } else {
-      hashSeed = SEED_RANDOM.nextInt();
-    }
-  }
 
   protected String name;
   public CacheManagerImpl manager;
@@ -1954,17 +1941,17 @@ public class HeapCache<K, V> extends BaseCache<K, V> {
   /**
    * This function calculates a modified hash code. The intention is to
    * "rehash" the incoming integer hash codes to overcome weak hash code
-   * implementations. We expect good results for integers also.
-   * Also add a random seed to the hash to protect against attacks on hashes.
-   * This is actually a slightly reduced version of the java.util.HashMap
-   * hash modification.
+   * implementations. Identical to latest Java VMs.
+   *
+   * <p>The mapping needs to be unique, so we can skip equals() check for
+   * integer key optimizations.
+   *
+   * @see java.util.HashMap#hash
+   * @see java.util.concurrent.ConcurrentHashMap#spread
    */
-  public int modifiedHash(int h) {
-    h ^= hashSeed;
-    h ^= h >>> 7;
-    h ^= h >>> 15;
-    return h;
-
+  @SuppressWarnings("JavadocReference")
+  public static int modifiedHash(int h) {
+    return h ^ h >>> 16;
   }
 
   /**
@@ -2004,17 +1991,6 @@ public class HeapCache<K, V> extends BaseCache<K, V> {
      * expanded. Default: 64.
      */
     public int hashLoadPercent = 64;
-
-    /**
-     * The hash code will randomized by default. This is a countermeasure
-     * against from outside that know the hash function.
-     */
-    public boolean disableHashRandomization = false;
-
-    /**
-     * Seed used when randomization is disabled. Default: 0.
-     */
-    public int hashSeed = 0;
 
     /**
      * When sharp expiry is enabled, the expiry timer goes
