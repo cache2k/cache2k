@@ -26,6 +26,7 @@ import org.cache2k.spi.Cache2kExtensionProvider;
 
 import javax.naming.Context;
 import javax.naming.InitialContext;
+import javax.naming.NoInitialContextException;
 
 /**
  * @author Jens Wilke; created: 2014-10-10
@@ -35,12 +36,15 @@ public class JndiDefaultNameProvider implements Cache2kExtensionProvider {
   @Override
   public void registerCache2kExtension() {
     try {
-      Context ctx = new InitialContext();
-      ctx = (Context) ctx.lookup("java:comp/env");
-      String _name =
-        (String) ctx.lookup("org.cache2k.CacheManager.defaultName");
-      if (_name != null) {
-        CacheManager.setDefaultName(_name);
+      try {
+        Context ctx = new InitialContext();
+        ctx = (Context) ctx.lookup("java:comp/env");
+        String _name =
+          (String) ctx.lookup("org.cache2k.CacheManager.defaultName");
+        if (_name != null) {
+          CacheManager.setDefaultName(_name);
+        }
+      } catch (NoInitialContextException ignore) {
       }
     } catch (NoClassDefFoundError ignore) {
     } catch (Exception ex) {

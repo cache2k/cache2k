@@ -53,7 +53,7 @@ public class JmxSupport implements CacheLifeCycleListener, CacheManagerLifeCycle
   static {
     boolean v;
     try {
-      v = getPlatformMBeanServer() != null;
+      v = getPlatformMBeanServer() == null;
     } catch (NoClassDefFoundError err) {
       v = true;
     }
