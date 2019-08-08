@@ -36,7 +36,7 @@ public interface CacheEntryEvictedListener<K,V> extends CacheEntryOperationListe
    *
    * @param cache The cache that generated the event.
    * @param entry Entry containing the latest data. It is only valid to access the object during the
-   *                     call of this method. The object value may become invalid afterwards.
+   *              call of this method. The object value may become invalid afterwards.
    */
   void onEntryEvicted(Cache<K,V> cache, CacheEntry<K,V> entry);
 
