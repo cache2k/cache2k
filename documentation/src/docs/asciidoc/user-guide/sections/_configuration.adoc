@@ -72,6 +72,9 @@ Some options control how the configuration is interpreted.
 
 version:: Version which controls how the configuration is interpreted. Needed for possible
           future changes. Always `1.0` at the moment.
+ignoreMissingCacheConfiguration:: If `true`, allows that there is no cache configuration present for
+                     a created cache. All the configuration can be provided at programmatic level, also the
+                     defaults from the configuration apply.
 defaultManagerName:: Set another name for the default cache manager, default is `"default"`.
 ignoreAnonymousCache:: If `true`, allows cache without name. If a cache has no name
                      a special configuration cannot be applied. The default is `false`,
@@ -181,7 +184,7 @@ configuration of the customization. In this case the `type` element is used to s
 
 === Rationale and Internals
 
-Since verison 1.2 the XML configuration is included in the `cache2k-core` jar file.
+Since version 1.2 the XML configuration is included in the `cache2k-core` jar file.
 In a Java SE environment the default SAX parser is used. In an Android environment the XML pull parser
 is used. There are no additional dependencies to other libraries.
 
