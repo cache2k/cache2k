@@ -38,6 +38,10 @@ To minimize the footprint of the application the unused code can be removed via 
 # mandatory proguard rules for cache2k to keep the core implementation
 -dontwarn org.slf4j.**
 -dontwarn javax.cache.**
+-dontwarn javax.management.**
+-dontwarn javax.naming.**
+-dontwarn org.cache2k.impl.xmlConfiguration.**
+-dontwarn org.cache2k.impl.serverSide.**
 -keep interface org.cache2k.spi.Cache2kCoreProvider
 -keep public class * extends org.cache2k.spi.Cache2kCoreProvider
 
