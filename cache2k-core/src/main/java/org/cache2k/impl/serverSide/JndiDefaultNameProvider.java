@@ -21,6 +21,7 @@ package org.cache2k.impl.serverSide;
  */
 
 import org.cache2k.CacheManager;
+import org.cache2k.core.util.Log;
 import org.cache2k.spi.Cache2kExtensionProvider;
 
 import javax.naming.Context;
@@ -41,7 +42,9 @@ public class JndiDefaultNameProvider implements Cache2kExtensionProvider {
       if (_name != null) {
         CacheManager.setDefaultName(_name);
       }
-    } catch (Exception ignore) {
+    } catch (NoClassDefFoundError ignore) {
+    } catch (Exception ex) {
+      Log.getLog(JndiDefaultNameProvider.class).warn("Exception setting default cache manager name", ex);
     }
   }
 

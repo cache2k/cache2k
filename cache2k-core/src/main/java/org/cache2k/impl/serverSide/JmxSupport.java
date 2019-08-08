@@ -45,27 +45,51 @@ import java.lang.management.ManagementFactory;
 public class JmxSupport implements CacheLifeCycleListener, CacheManagerLifeCycleListener {
 
   private final static String REGISTERED_FLAG = JmxSupport.class.getName() + ".registered";
+  private final static boolean MANAGEMENT_UNAVAILABLE;
   private Log log = Log.getLog(JmxSupport.class);
 
+  /**
+   * Check for JMX available. Might be not present on Android.
+   */
+  static {
+    boolean v;
+    try {
+      v = getPlatformMBeanServer() != null;
+    } catch (NoClassDefFoundError err) {
+      v = true;
+    }
+    MANAGEMENT_UNAVAILABLE = v;
+  }
+
+  /**
+   * Register management bean for the cache.
+   * Bean is registered in case JMX is enabled. If statistics are disabled,
+   * via{@link Cache2kConfiguration#setDisableStatistics(boolean)} this is registered
+   * anyway since the cache size or the clear operation might be of interest.
+   */
   @Override
   public void cacheCreated(Cache c, final Cache2kConfiguration cfg) {
+    if (MANAGEMENT_UNAVAILABLE || !cfg.isEnableJmx()) {
+      return;
+    }
     InternalCache ic = (InternalCache) c;
-    if (cfg.isEnableJmx()) {
-      MBeanServer mbs = ManagementFactory.getPlatformMBeanServer();
-      String _name = standardName(c.getCacheManager(), c);
-      try {
-        mbs.registerMBean(new CacheMXBeanImpl(ic), new ObjectName(_name));
-      } catch (InstanceAlreadyExistsException ignore) {
-        log.debug("register failure, cache: " + c.getName(), ignore);
-      } catch (Exception e) {
-        throw new CacheException("register JMX bean, ObjectName: " + _name, e);
-      }
+    MBeanServer mbs = getPlatformMBeanServer();
+    String _name = standardName(c.getCacheManager(), c);
+    try {
+      mbs.registerMBean(new CacheMXBeanImpl(ic), new ObjectName(_name));
+    } catch (InstanceAlreadyExistsException ignore) {
+      log.debug("register failure, cache: " + c.getName(), ignore);
+    } catch (Exception e) {
+      throw new CacheException("register JMX bean, ObjectName: " + _name, e);
     }
   }
 
   @Override
   public void cacheDestroyed(Cache c) {
-    MBeanServer mbs = ManagementFactory.getPlatformMBeanServer();
+    if (MANAGEMENT_UNAVAILABLE) {
+      return;
+    }
+    MBeanServer mbs = getPlatformMBeanServer();
     String _name = standardName(c.getCacheManager(), c);
     try {
       mbs.unregisterMBean(new ObjectName(_name));
@@ -77,7 +101,10 @@ public class JmxSupport implements CacheLifeCycleListener, CacheManagerLifeCycle
 
   @Override
   public void managerCreated(CacheManager m) {
-    MBeanServer mbs = ManagementFactory.getPlatformMBeanServer();
+    if (MANAGEMENT_UNAVAILABLE) {
+      return;
+    }
+    MBeanServer mbs = getPlatformMBeanServer();
     ManagerMXBeanImpl _mBean = new ManagerMXBeanImpl((CacheManagerImpl) m);
     String _name = managerName(m);
     try {
@@ -93,16 +120,23 @@ public class JmxSupport implements CacheLifeCycleListener, CacheManagerLifeCycle
 
   @Override
   public void managerDestroyed(CacheManager m) {
+    if (MANAGEMENT_UNAVAILABLE) {
+      return;
+    }
     if (!m.getProperties().containsKey(REGISTERED_FLAG)) {
       return;
     }
-    MBeanServer mbs = ManagementFactory.getPlatformMBeanServer();
+    MBeanServer mbs = getPlatformMBeanServer();
     String _name = managerName(m);
     try {
         mbs.unregisterMBean(new ObjectName(_name));
     } catch (Exception e) {
       throw new CacheException("Error unregister JMX bean, ObjectName: " + _name, e);
     }
+  }
+
+  private static MBeanServer getPlatformMBeanServer() {
+    return ManagementFactory.getPlatformMBeanServer();
   }
 
   private static String managerName(CacheManager cm) {
