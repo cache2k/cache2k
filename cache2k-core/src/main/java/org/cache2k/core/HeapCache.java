@@ -228,6 +228,10 @@ public class HeapCache<K, V> extends BaseCache<K, V> {
 
   /**
    * Normally a cache itself logs nothing, so just construct when needed.
+   * Not requesting the log at startup means that the potential log target
+   * is not showing up in some management interfaces. This is intentional,
+   * since if caches are created and closed dynamically, we would have a
+   * memory leak, since logs can not be closed.
    */
   @Override
   public Log getLog() {
