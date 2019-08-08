@@ -379,7 +379,7 @@ public class InternalCache2kBuilder<K, V> {
     long _maxWeight = determineMaxWeight(_maximumWeight, _segmentCount);
     final Weigher _weigher = (Weigher) hc.createCustomization(config.getWeigher());
     for (int i = 0; i < _segments.length; i++) {
-      Eviction ev = new ClockProPlusEviction(hc, l, _maxSize, _weigher, _maxWeight);
+      Eviction ev = new ClockProPlusEviction(hc, l, _maxSize, _weigher, _maxWeight, _strictEviction);
       _segments[i] = ev;
     }
     if (_segmentCount == 1) {

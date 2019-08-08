@@ -53,14 +53,16 @@ public abstract class AbstractEviction implements Eviction, EvictionMetrics {
   private int evictionRunningCount = 0;
   private long evictionRunningWeight = 0;
   private final Weigher weigher;
+
   public AbstractEviction(final HeapCache _heapCache, final HeapCacheListener _listener,
-                          final long _maxSize, final Weigher _weigher, final long _maxWeight) {
+                          final long _maxSize, final Weigher _weigher, final long _maxWeight,
+                          final boolean _noChunking) {
     weigher = _weigher;
     heapCache = _heapCache;
     listener = _listener;
     maxSize = _maxSize;
     maxWeight = _maxWeight;
-    if (_maxSize < MINIMUM_CAPACITY_FOR_CHUNKING) {
+    if (_maxSize < MINIMUM_CAPACITY_FOR_CHUNKING || _noChunking) {
       chunkSize = 1;
     } else {
       chunkSize = MINIMAL_CHUNK_SIZE + Runtime.getRuntime().availableProcessors() - 1;

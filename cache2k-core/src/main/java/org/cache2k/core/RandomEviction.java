@@ -33,7 +33,7 @@ public class RandomEviction extends AbstractEviction {
 
   public RandomEviction(final HeapCache _heapCache, final HeapCacheListener _listener,
                         final long _maxSize, final Weigher _weigher, final long _maxWeight) {
-    super(_heapCache, _listener, _maxSize, _weigher, _maxWeight);
+    super(_heapCache, _listener, _maxSize, _weigher, _maxWeight, false);
   }
 
   @Override

@@ -61,8 +61,9 @@ public class ClockProPlusEviction extends AbstractEviction {
   private static final int GHOST_LOAD_PERCENT = 63;
 
   public ClockProPlusEviction(final HeapCache _heapCache, final HeapCacheListener _listener,
-                              final long _maxSize, final Weigher _weigher, final long _maxWeight) {
-    super(_heapCache, _listener, _maxSize, _weigher, _maxWeight);
+                              final long _maxSize, final Weigher _weigher, final long _maxWeight,
+                              final boolean _noChunking) {
+    super(_heapCache, _listener, _maxSize, _weigher, _maxWeight, _noChunking);
     coldSize = 0;
     hotSize = 0;
     handCold = null;
