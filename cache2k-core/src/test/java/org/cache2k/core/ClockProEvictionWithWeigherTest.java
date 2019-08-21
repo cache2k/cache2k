@@ -22,12 +22,8 @@ package org.cache2k.core;
 
 import org.cache2k.Cache;
 import org.cache2k.Weigher;
-import org.cache2k.test.util.TestingBase;
 import org.cache2k.testing.category.FastTests;
-import org.junit.Test;
 import org.junit.experimental.categories.Category;
-
-import static org.junit.Assert.assertEquals;
 
 /**
  * Run simple access patterns that provide test coverage on the clock pro
@@ -41,7 +37,7 @@ public class ClockProEvictionWithWeigherTest extends ClockProEvictionTest {
   protected Cache<Integer, Integer> provideCache(long _size) {
     return builder(Integer.class, Integer.class)
       .eternal(true)
-      .entryCapacity(-1)
+      .entryCapacity(-1) // reset capacity, capacity is already set via builder()
       .weigher(new Weigher<Integer, Integer>() {
         @Override
         public long weigh(final Integer key, final Integer value) {

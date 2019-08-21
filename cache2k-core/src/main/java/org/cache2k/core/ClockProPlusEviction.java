@@ -25,13 +25,22 @@ import org.cache2k.core.util.TunableConstants;
 import org.cache2k.core.util.TunableFactory;
 
 /**
- * CLOCK Pro implementation with 3 clocks.
+ * Eviction algorithm inspired from CLOCK Pro with 3 clocks.
  *
- * <p>This version uses a static allocation for hot and cold space sizes. No online or dynamic
+ * <p>Uses a static allocation for hot and cold space sizes. No online or dynamic
  * optimization is done yet. However, the hit rate for all measured access traces is better
  * then LRU and it is resistant to scans.
  *
- * @author Jens Wilke; created: 2013-07-12
+ * <p>From cache2k version 1.2 to version 1.4 the implementation was simplefied and the
+ * demotion of hot entries removed. The result achieves similar or better hitrates.
+ *
+ * <p>The Clock-Pro algorithm is explained by the authors in
+ * <a href="http://www.ece.eng.wayne.edu/~sjiang/pubs/papers/jiang05_CLOCK-Pro.pdf">CLOCK-Pro:
+ * An Effective Improvement of the CLOCK Replacement</a>
+ * and <a href="http://www.slideshare.net/huliang64/clockpro">Clock-Pro: An Effective
+ * Replacement in OS Kernel</a>.
+ *
+ * @author Jens Wilke
  */
 @SuppressWarnings("WeakerAccess")
 public class ClockProPlusEviction extends AbstractEviction {
@@ -64,6 +73,7 @@ public class ClockProPlusEviction extends AbstractEviction {
                               final long maxSize, final Weigher weigher, final long maxWeight,
                               final boolean noChunking) {
     super(heapCache, listener, maxSize, weigher, maxWeight, noChunking);
+
     coldSize = 0;
     hotSize = 0;
     handCold = null;
@@ -83,7 +93,9 @@ public class ClockProPlusEviction extends AbstractEviction {
   }
 
   public long getHotMax() {
-    return getSize() * TUNABLE_CLOCK_PRO.hotMaxPercentage / 100;
+    return isWeigherPresent() ?
+      (getSize() * TUNABLE_CLOCK_PRO.hotMaxPercentage / 100) :
+      (getMaxSize() * TUNABLE_CLOCK_PRO.hotMaxPercentage / 100);
   }
 
   public long getGhostMax() {
@@ -166,9 +178,6 @@ public class ClockProPlusEviction extends AbstractEviction {
     int hc = e.hashCode;
     Ghost g = lookupGhost(hc);
     if (g != null) {
-      /*
-       * either this is a hash code collision, or a previous ghost hit that was not removed.
-       */
       Ghost.moveToFront(ghostHead, g);
       return;
     }
@@ -237,9 +246,7 @@ public class ClockProPlusEviction extends AbstractEviction {
     this.hotHits = hotHits;
     long scanCount = initialMaxScan - maxScan;
     hotScanCnt += scanCount;
-    handHot = Entry.removeFromCyclicList(hand, coldCandidate);
-    hotSize--;
-    coldCandidate.setHot(false);
+    handHot = hand;
     return coldCandidate;
   }
 
@@ -248,16 +255,18 @@ public class ClockProPlusEviction extends AbstractEviction {
    */
   @Override
   protected Entry findEvictionCandidate(Entry previous) {
-    coldRunCnt++;
     Entry hand = handCold;
-    int scanCnt = 1;
-    if (hand == null) {
-      hand = refillFromHot(hand);
+    if (hotSize > getHotMax() || hand == null) {
+      return runHandHot();
     }
+    coldRunCnt++;
+    int scanCnt = 1;
     if (hand.hitCnt > 0) {
-      hand = refillFromHot(hand);
+      Entry evictFromHot = null;
       do {
-        scanCnt++;
+        if (hotSize >= getHotMax() && handHot != null) {
+          evictFromHot = runHandHot();
+        }
         coldHits += hand.hitCnt;
         hand.hitCnt = 0;
         Entry e = hand;
@@ -266,33 +275,27 @@ public class ClockProPlusEviction extends AbstractEviction {
         e.setHot(true);
         hotSize++;
         handHot = Entry.insertIntoTailCyclicList(handHot, e);
+        if (evictFromHot != null) {
+          coldScanCnt += scanCnt;
+          handCold = hand;
+          return evictFromHot;
+        }
+        scanCnt++;
       } while (hand != null && hand.hitCnt > 0);
     }
-
-    if (hand == null) {
-      hand = refillFromHot(hand);
-    }
     coldScanCnt += scanCnt;
-    handCold = hand.next;
-    return hand;
-  }
-
-  private Entry refillFromHot(Entry hand) {
-    long hotMax = getHotMax();
-    while (hotSize >  hotMax || hand == null) {
-      Entry e = runHandHot();
-      if (e != null) {
-        hand =  Entry.insertIntoTailCyclicList(hand, e);
-        coldSize++;
-      }
+    if (hand == null) {
+      handCold = null;
+      return runHandHot();
     }
+    handCold = hand.next;
     return hand;
   }
 
   @Override
   public void checkIntegrity(final IntegrityState is) {
     is.checkEquals("ghostSize == countGhostsInHash()", ghostSize, countGhostsInHash())
-      .check("hotMax <= size", getHotMax() <= getSize())
+      .check("isWeigherPresent() || hotMax <= size", isWeigherPresent() || getHotMax() <= getMaxSize())
       .check("checkCyclicListIntegrity(handHot)", Entry.checkCyclicListIntegrity(handHot))
       .check("checkCyclicListIntegrity(handCold)", Entry.checkCyclicListIntegrity(handCold))
       .checkEquals("getCyclicListEntryCount(handHot) == hotSize",
