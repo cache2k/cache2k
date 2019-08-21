@@ -1282,19 +1282,16 @@ public class HeapCache<K, V> extends BaseCache<K, V> {
   protected Entry<K, V> insertNewEntry(K key, int hc, int val) {
     Entry<K,V> e = new Entry<K,V>(extractIntKeyObj(key), val);
     Entry<K, V> e2;
+    eviction.evictEventually(hc);
     final OptimisticLock l = hash.getSegmentLock(hc);
     final long _stamp = l.writeLock();
-    boolean _needsEviction = false;
     try {
       e2 = hash.insertWithinLock(e, hc, val);
       if (e == e2) {
-        _needsEviction = eviction.submitWithoutEviction(e);
+        eviction.submitWithoutEviction(e);
       }
     } finally {
       l.unlockWrite(_stamp);
-    }
-    if (_needsEviction) {
-      eviction.evictEventually(hc);
     }
     hash.checkExpand(hc);
     return e2;

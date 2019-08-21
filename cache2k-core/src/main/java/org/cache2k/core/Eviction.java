@@ -44,12 +44,13 @@ public interface Eviction {
 
   /**
    * Evict if needed, focused on the segment addressed by the hash code.
-   * Called when eviction is might be needed after a new entry was inserted.
+   * Called before a new entry is inserted (changed from after in v1.4)
    */
   void evictEventually(int _hashCodeHint);
 
   /**
    * Evict if needed, checks all segments.
+   * Called before a new entry is inserted (changed from after in v1.4)
    */
   void evictEventually();
 

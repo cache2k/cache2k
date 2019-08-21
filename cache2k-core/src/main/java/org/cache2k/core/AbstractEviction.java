@@ -218,9 +218,9 @@ public abstract class AbstractEviction implements Eviction, EvictionMetrics {
    */
   boolean isEvictionNeeded() {
     if (isWeigherPresent()) {
-      return currentWeight > (correctedMaxSizeOrWeight + evictionRunningWeight);
+      return currentWeight >= (correctedMaxSizeOrWeight + evictionRunningWeight);
     } else {
-      return getSize() > (correctedMaxSizeOrWeight + evictionRunningCount);
+      return getSize() >= (correctedMaxSizeOrWeight + evictionRunningCount);
     }
   }
 
