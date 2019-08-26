@@ -38,7 +38,7 @@ import java.util.concurrent.TimeUnit;
 public interface ValueWithExpiryTime {
 
   /**
-   * Point in time in milliseconds since when the value should expire.
+   * Point in time in milliseconds when the value should expire.
    *
    * @return time the time of expiry in millis since epoch. {@link ExpiryPolicy#NO_CACHE} if it should not cached.
    *              {@link ExpiryPolicy#ETERNAL} if there is no specific expiry time known or needed.
