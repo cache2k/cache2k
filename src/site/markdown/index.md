@@ -52,6 +52,7 @@ For a detailed introduction continue with [Getting Started](docs/latest/user-gui
 
 ## News
 
+  * **Version 1.3.1.Alpha, 2019-08-26**: First preview of version 1.4, See [Version 1.3.1.Alpha release notes](1/3.1.Alpha.html)
   * **Version 1.2.3.Final, 2019-08-08**: Service release for stable version, See [Version 1.2.3.Final release notes](1/2.3.Final.html)
   * **Version 1.2.2.Final, 2019-06-06**: Service release for stable version, See [Version 1.2.2.Final release notes](1/2.2.Final.html)
   * **Version 1.2.1.Final, 2019-03-08**: Service release for stable version, See [Version 1.2.1.Final release notes](1/2.1.Final.html)
