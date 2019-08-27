@@ -7,12 +7,12 @@
   <parent>
     <groupId>org.cache2k</groupId>
     <artifactId>cache2k-parent</artifactId>
-    <version>1.3.1.Alpha</version>
+    <version>1.4-SNAPSHOT</version>
     <relativePath>../pom.xml</relativePath>
   </parent>
 
   <artifactId>cache2k-jcache</artifactId>
-  <version>1.3.1.Alpha</version>
+  <version>1.4-SNAPSHOT</version>
   <name>cache2k JCache provider</name>
 
   <description>
