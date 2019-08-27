@@ -21,14 +21,16 @@ package org.cache2k.core.util;
  */
 
 /**
+ * Default clock implementation just using {@link System#currentTimeMillis()} as
+ * time reference.
+ *
  * @author Jens Wilke
  */
 public final class ClockDefaultImpl implements InternalClock {
 
   public final static ClockDefaultImpl INSTANCE = new ClockDefaultImpl();
 
-  private ClockDefaultImpl() {
-  }
+  private ClockDefaultImpl() { }
 
   @Override
   public boolean isJobSchedulable() {
@@ -41,7 +43,7 @@ public final class ClockDefaultImpl implements InternalClock {
   }
 
   @Override
-  public void schedule(final TimeReachedJob j, final long _millis) {
+  public void schedule(final TimeReachedJob j, final long millis) {
     throw new UnsupportedOperationException();
   }
 
@@ -56,8 +58,8 @@ public final class ClockDefaultImpl implements InternalClock {
   }
 
   @Override
-  public void sleep(final long _millis) throws InterruptedException {
-    Thread.sleep(_millis);
+  public void sleep(final long millis) throws InterruptedException {
+    Thread.sleep(millis);
   }
 
 }

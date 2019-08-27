@@ -44,7 +44,7 @@ public interface InternalClock extends TimeReference {
    * <p>When using a simulated clock either this method or {@link #millis} needs to be
    * called to make time pass and make {@link #millis} return an increased number.
    */
-  void sleep(long _millis) throws InterruptedException;
+  void sleep(long millis) throws InterruptedException;
 
   /**
    * The clock is capable to execute code when a certain time is reached and before
@@ -61,7 +61,7 @@ public interface InternalClock extends TimeReference {
    * Schedules or reschedules the timer event job to be run at the
    * specified point in time.
    */
-  void schedule(TimeReachedJob j, long _millis);
+  void schedule(TimeReachedJob j, long millis);
 
   /**
    * Disable the job clearing used resources.
@@ -69,7 +69,7 @@ public interface InternalClock extends TimeReference {
   void disableJob(TimeReachedJob j);
 
   interface TimeReachedEvent {
-    void timeIsReached(long _millis);
+    void timeIsReached(long millis);
   }
 
   interface TimeReachedJob { }
