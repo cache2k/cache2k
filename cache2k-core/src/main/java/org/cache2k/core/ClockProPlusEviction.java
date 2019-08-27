@@ -206,6 +206,8 @@ public class ClockProPlusEviction extends AbstractEviction {
        * removeGhost(g, g.hash);  Ghost.removeFromList(g);
        */
       ghostHits++;
+    }
+    if (g != null || (coldSize == 0 && hotSize < getHotMax())){
       e.setHot(true);
       hotSize++;
       handHot = Entry.insertIntoTailCyclicList(handHot, e);
