@@ -384,7 +384,8 @@ public class Cache2kBuilder<K, V> {
    * <p>Exception suppression is enabled by default. Setting this to {@code false}, will disable
    * exceptions suppression (aka resilience).
    *
-   * @see <a href="https://cache2k.org/docs/latest/user-guide.html#resilience-and-exceptions">cache2k user guide - Exceptions and Resilience</a>
+   * @see <a href="https://cache2k.org/docs/latest/user-guide.html#resilience-and-exceptions">
+   *   cache2k user guide - Exceptions and Resilience</a>
    */
   public final Cache2kBuilder<K, V> suppressExceptions(boolean v) {
     config().setSuppressExceptions(v);
@@ -394,17 +395,19 @@ public class Cache2kBuilder<K, V> {
 
   /**
    * Time duration after insert or updated an cache entry expires.
-   * To switch off time based expiry use {@link #eternal(boolean)}.
+   * To switch off time based expiry use {@link #eternal(boolean)}. The expiry
+   * happens via a timer event and is lagging a few milliseconds. For exact
+   * expiry use an {@link ExpiryPolicy} and enable {@link #sharpExpiry(boolean)}.
    *
    * <p>If an {@link ExpiryPolicy} is specified, the maximum expiry duration
    * is capped to the value specified here.
    *
-   * <p>A value of {@code 0} means every entry should expire immediately. Low values or
-   * {@code 0} together with read through operation mode with a {@link CacheLoader} should be
-   * avoided in production environments.
+   * <p>A value of {@code 0} means every entry should expire immediately. This can be useful
+   * to disable caching via configuration.
    *
    * @throws IllegalArgumentException if {@link #eternal(boolean)} was set to true
-   * @see <a href="https://cache2k.org/docs/latest/user-guide.html#expiry-and-refresh">cache2k user guide - Expiry and Refresh</a>
+   * @see <a href="https://cache2k.org/docs/latest/user-guide.html#expiry-and-refresh">
+   *   cache2k user guide - Expiry and Refresh</a>
    */
   public final Cache2kBuilder<K, V> expireAfterWrite(long v, TimeUnit u) {
     config().setExpireAfterWrite(u.toMillis(v));
@@ -599,7 +602,7 @@ public class Cache2kBuilder<K, V> {
    * By default the expiry time is not exact, which means, a value might be visible a few
    * milliseconds after the time of expiry. The time lag depends on the system load.
    * Switching to {@code true}, means that values will not be visible when the time is reached that
-   * {@link ExpiryPolicy} returned.
+   * {@link ExpiryPolicy} returned. This has no effect on {@link #expireAfterWrite(long, TimeUnit)}.
    */
   public final Cache2kBuilder<K, V> sharpExpiry(boolean f) {
     config().setSharpExpiry(f);
