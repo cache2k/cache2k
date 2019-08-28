@@ -88,6 +88,23 @@ another cache manager, e.g. with `new SpringCache2kCacheManager("spring")`.
 
 For further details, see link:{cache2k_docs}/apidocs/cache2k-spring/index.html?org/cache2k/extra/spring/SpringCache2kCacheManager.html[`SpringCache2kCacheManager API documentation`].
 
+=== Multiple Application Contexts
+
+In testing scenarios multiple applications contexts are created. To avoid conflicts its a good idea to have
+separate cache managers in each application context. Within testing a feasible trick is to use the hash code
+of the configuration object to create a unique name for the caching manager.
+
+[source,java]
+----
+  @Bean
+  public CacheManager cacheManager() {
+    return new SpringCache2kCacheManager("spring-" + hashCode());
+  }
+----
+
+However, this makes it impossible to use the cache2k external XML configuration since the configuration
+file name is derived from the manager name.
+
 === Spring Bean XML Configuration
 
 For completeness, together with the `Cache2kConfiguration` bean, it is also possible to use the Spring bean XML configuration.
