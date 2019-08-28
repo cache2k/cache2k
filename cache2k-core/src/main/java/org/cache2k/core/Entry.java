@@ -190,7 +190,7 @@ public class Entry<K, V> extends CompactEntry<K, V>
   private Object misc;
 
   /**
-   * Time the entry was last updated by put or by fetching it from the cache source.
+   * Time the entry was last updated by put or by fetching it from the cache loader.
    * The time is the time in millis times 2. A set bit 1 means the entry is fetched from
    * the storage and not modified since then.
    */

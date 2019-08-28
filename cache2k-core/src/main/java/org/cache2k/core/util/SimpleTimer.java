@@ -148,8 +148,8 @@ public class SimpleTimer {
     } else {
       reachedJob = clock.createJob(new InternalClock.TimeReachedEvent() {
         @Override
-        public void timeIsReached(final long _millis) {
-          timeReachedEvent(_millis);
+        public void timeIsReached(final long millis) {
+          timeReachedEvent(millis);
         }
       });
     }
