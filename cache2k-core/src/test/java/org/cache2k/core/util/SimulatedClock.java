@@ -292,7 +292,6 @@ public class SimulatedClock implements InternalClock, Closeable {
   }
 
   private void progressThread() {
-    System.err.println("Progress thread started " + Thread.currentThread());
     try {
       while (running) {
         long token = 0;
