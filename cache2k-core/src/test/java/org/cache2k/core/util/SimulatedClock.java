@@ -25,10 +25,10 @@ import java.util.Map;
 import java.util.TreeMap;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executor;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.Semaphore;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.locks.ReentrantLock;
@@ -122,6 +122,13 @@ public class SimulatedClock implements InternalClock, Closeable {
   private final long cutOffDeltaMillis = Long.MAX_VALUE >> 10;
 
   /**
+   * Scheduled jobs are executed some millis after the scheduled time was reached.
+   * That is to simulate that time passes during execution and that it is not possible
+   * to exactly execute at a point in time.
+   */
+  private final int jobExecutionLagMillis = 1;
+
+  /**
    * For waiting until reset is done in progress thread.
    */
   final Semaphore resetDone = new Semaphore(0);
@@ -129,14 +136,14 @@ public class SimulatedClock implements InternalClock, Closeable {
   /**
    * Create a clock with the initial time.
    *
-   * @param _initialMillis initial time in millis since epoch, can start 0 for easy debugging
-   * @param _skipExecutorWrapping don't wrap executors to wait for concurrent task execution,
+   * @param initialMillis initial time in millis since epoch, can start 0 for easy debugging
+   * @param skipExecutorWrapping don't wrap executors to wait for concurrent task execution,
    *                              also does not restart clock from 0 after {@link #reset()}
    */
-  public SimulatedClock(long _initialMillis, boolean _skipExecutorWrapping) {
-    skipWrapping = _skipExecutorWrapping;
-    initialMillis = _initialMillis;
-    now = new AtomicLong(_initialMillis);
+  public SimulatedClock(long initialMillis, boolean skipExecutorWrapping) {
+    skipWrapping = skipExecutorWrapping;
+    this.initialMillis = initialMillis;
+    now = new AtomicLong(initialMillis);
     progressThread = new Thread("warpableclock-progress") {
       @Override
       public void run() {
@@ -154,20 +161,24 @@ public class SimulatedClock implements InternalClock, Closeable {
 
   @Override
   public TimeReachedJob createJob(final TimeReachedEvent ev) {
-    return new TRJ(new Waiter(-1, waiterCounter.getAndIncrement(), ev));
+    return new TRJ(new Waiter(-1, -1, waiterCounter.getAndIncrement(), ev));
   }
 
   @Override
-  public void schedule(final TimeReachedJob j, final long _millis) {
-    LOG.debug(now.get() + " job " + _millis);
+  public void schedule(final TimeReachedJob j, final long millis) {
+    schedule(j, millis, millis + jobExecutionLagMillis);
+  }
+
+  public void schedule(final TimeReachedJob j, final long requestedMillis, final long millis) {
+    LOG.debug(now.get() + " job " + millis);
     final TRJ w = (TRJ) j;
     structureLock.lock();
     try {
       tree.remove(w.waiter);
-      if ((_millis - now.get()) > cutOffDeltaMillis) {
+      if ((millis - now.get()) > cutOffDeltaMillis) {
         return;
       }
-      w.waiter = new Waiter(_millis, waiterCounter.getAndIncrement(), w.waiter.event);
+      w.waiter = new Waiter(requestedMillis, millis, waiterCounter.getAndIncrement(), w.waiter.event);
       tree.put(w.waiter, w.waiter);
     } finally {
       structureLock.unlock();
@@ -212,24 +223,24 @@ public class SimulatedClock implements InternalClock, Closeable {
 
   private final TimeReachedEvent wakeUpSleep = new TimeReachedEvent() {
     @Override
-    public synchronized  void timeIsReached(final long _millis) {
+    public synchronized  void timeIsReached(final long millis) {
       notifyAll();
     }
   };
 
   /**
    * A sleep of {@code 0} waits an undefined amount of time and makes sure that the next timer
-   * events for the next upcoming millisecond are executed. A value greater then {@code 0}s advances the
-   * time just by the specified amount.
+   * events for the next upcoming millisecond are executed. A value greater then {@code 0}s
+   * advances the time just by the specified amount.
    */
   @Override
-  public void sleep(final long _waitMillis) throws InterruptedException {
+  public void sleep(final long millis) throws InterruptedException {
     if (!running) {
       throw new IllegalStateException();
     }
-    long _startTime = now.get();
-    LOG.debug(now.get() + " sleep(" + _waitMillis + ")");
-    if (_waitMillis == 0) {
+    long startTime = now.get();
+    LOG.debug(now.get() + " sleep(" + millis + ")");
+    if (millis == 0) {
       if (isTasksWaiting()) {
         waitForParallelExecutions();
         return;
@@ -242,15 +253,15 @@ public class SimulatedClock implements InternalClock, Closeable {
       }
       return;
     }
-    long _wakeupTime = _startTime + _waitMillis + 1;
-    if (_wakeupTime < 0) {
-      _wakeupTime = Long.MAX_VALUE;
+    long wakeupTime = startTime + millis;
+    if (wakeupTime < 0) {
+      wakeupTime = Long.MAX_VALUE;
     }
     TimeReachedJob j = createJob(wakeUpSleep);
-    queue.put(_wakeupTime);
+    queue.put(wakeupTime);
     synchronized (wakeUpSleep) {
-      schedule(j, _wakeupTime);
-      while (now.get() < _wakeupTime) {
+      schedule(j, wakeupTime, wakeupTime);
+      while (now.get() < wakeupTime) {
         wakeUpSleep.wait(5);
       }
     }
@@ -266,7 +277,9 @@ public class SimulatedClock implements InternalClock, Closeable {
   public void reset() {
     try {
       queue.put(QUEUE_TOKEN_RESET);
-      resetDone.acquire();
+      while (!resetDone.tryAcquire(3, TimeUnit.SECONDS)) {
+        System.err.println(this + ": Waiting for clock reset. Time progress thread blocked or stopped.");
+      }
     } catch (InterruptedException ex) {
       close();
       Thread.currentThread().interrupt();
@@ -279,69 +292,75 @@ public class SimulatedClock implements InternalClock, Closeable {
   }
 
   private void progressThread() {
-    while (running) {
-      long _token = 0;
-      long _nextWakeup;
-      try {
-        synchronized (queue) {
-          queue.notifyAll();
+    System.err.println("Progress thread started " + Thread.currentThread());
+    try {
+      while (running) {
+        long token = 0;
+        long nextWakeup;
+        try {
+          synchronized (queue) {
+            queue.notifyAll();
+          }
+          token = queue.take();
+        } catch (InterruptedException ex) {
+          close();
+          break;
         }
-        _token = queue.take();
-      } catch (InterruptedException ex) {
-        close();
-        break;
-      }
-      if (_token == QUEUE_TOKEN_RESET) {
-        resetInProgressThread();
-        continue;
-      }
-      _nextWakeup = wakeupWaiters();
-      if (_token == QUEUE_TOKEN_EXECUTE_WAITING_JOB) {
-        continue;
-      }
-      if (_token == 0) {
-        if (_nextWakeup > now.get()) {
-          now.set(_nextWakeup);
-        } else {
-          now.incrementAndGet();
+        if (token == QUEUE_TOKEN_RESET) {
+          resetInProgressThread();
+          continue;
         }
-        wakeupWaiters();
-        continue;
-      }
-      while (_token > now.get()) {
-        long t = (_nextWakeup > 0) ? Math.min(_nextWakeup, _token) : _token;
-        if (t > now.get()) {
-          now.set(t);
+        nextWakeup = wakeupWaiters();
+        if (token == QUEUE_TOKEN_EXECUTE_WAITING_JOB) {
+          continue;
         }
-        _nextWakeup = wakeupWaiters();
+        if (token == 0) {
+          if (nextWakeup > now.get()) {
+            now.set(nextWakeup);
+          } else {
+            now.incrementAndGet();
+          }
+          wakeupWaiters();
+          continue;
+        }
+        while (token > now.get()) {
+          long t = (nextWakeup > 0) ? Math.min(nextWakeup, token) : token;
+          if (t > now.get()) {
+            now.set(t);
+          }
+          nextWakeup = wakeupWaiters();
+        }
       }
+    } catch (Throwable t) {
+      System.err.println("Clock progress thread exception: " + t);
     }
+    System.err.println("Progress thread stopped");
   }
 
   protected void resetInProgressThread() {
-    boolean _settleMore;
+    boolean settleMore;
     do {
-      _settleMore = false;
-      long _MAX_WAIT = 5000;
+      settleMore = false;
+      long MAX_WAIT = 5000;
       long t0 = System.currentTimeMillis();
       while (isTasksWaiting()) {
-        if ((System.currentTimeMillis() - t0) > _MAX_WAIT) {
+        if ((System.currentTimeMillis() - t0) > MAX_WAIT) {
           close();
-          throw new IllegalStateException("Timeout waiting " + _MAX_WAIT + " for parallel tasks to finish");
+          throw new IllegalStateException("Timeout waiting " + MAX_WAIT + " for parallel tasks to finish");
         }
         synchronized (wakeUpSleep) {
           wakeUpSleep.notifyAll();
         }
       }
-      long _nextWakeup = wakeupWaiters();
-      while (_nextWakeup > 0) {
-        _settleMore = true;
-        if (_nextWakeup > now.get()) {
-          now.set(_nextWakeup);
+      long nextWakeup = wakeupWaiters();
+      while (nextWakeup > 0) {
+        settleMore = true;
+        if (nextWakeup > now.get()) {
+          now.set(nextWakeup);
         }
-        _nextWakeup = wakeupWaiters();
+        nextWakeup = wakeupWaiters();
       }
-    } while (_settleMore);
+    } while (settleMore);
     if (!skipWrapping) {
       waiterCounter.set(0);
       now.set(initialMillis);
@@ -392,20 +411,23 @@ public class SimulatedClock implements InternalClock, Closeable {
 
   class Waiter implements Comparable<Waiter>, TimeReachedJob {
 
+    final long requestedWakeupTime;
     final long wakeupTime;
     final long uniqueId;
     final TimeReachedEvent event;
 
-    public Waiter(final long _wakeupTime, final long _uniqueId, TimeReachedEvent _event) {
-      wakeupTime = _wakeupTime;
-      uniqueId = _uniqueId;
-      event = _event;
+    public Waiter(final long requestedWakeupTime, final long wakeupTime,
+                  final long uniqueId, TimeReachedEvent event) {
+      this.wakeupTime = wakeupTime;
+      this.requestedWakeupTime = requestedWakeupTime;
+      this.uniqueId = uniqueId;
+      this.event = event;
     }
 
     public void timeIsReached() {
       if (event != null) {
         try {
-          event.timeIsReached(wakeupTime);
+          event.timeIsReached(requestedWakeupTime);
         } catch (Throwable t) {
           LOG.warn("Error from time reached event", t);
         }

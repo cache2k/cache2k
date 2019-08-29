@@ -39,7 +39,7 @@ public class SimulatedClockTest {
     final AtomicBoolean TRIGGER = new AtomicBoolean();
     InternalClock.TimeReachedJob job = clock.createJob(new InternalClock.TimeReachedEvent() {
       @Override
-      public void timeIsReached(final long _millis) {
+      public void timeIsReached(final long millis) {
         TRIGGER.set(true);
       }
     });
