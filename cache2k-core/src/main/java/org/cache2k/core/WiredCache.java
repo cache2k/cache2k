@@ -24,6 +24,7 @@ import org.cache2k.configuration.CacheType;
 import org.cache2k.core.util.InternalClock;
 import org.cache2k.event.CacheEntryEvictedListener;
 import org.cache2k.event.CacheEntryExpiredListener;
+import org.cache2k.expiry.ExpiryTimeValues;
 import org.cache2k.integration.AdvancedCacheLoader;
 import org.cache2k.CacheEntry;
 import org.cache2k.event.CacheEntryCreatedListener;
@@ -691,32 +692,44 @@ public class WiredCache<K, V> extends BaseCache<K, V>
     return heapCache.getEntryState(key);
   }
 
+  /**
+   *
+   * Semantics double with {@link HeapCache#timerEventExpireEntry(Entry)}
+   */
   @Override
   public void timerEventExpireEntry(final Entry<K,V> e) {
     metrics().timerEvent();
     synchronized (e) {
-      expireOrScheduleFinalExpireEvent(e);
-    }
-  }
-
-  /**
-   * @see HeapCache#expireOrScheduleFinalExpireEvent(Entry)
-   */
-  @Override
-  public void expireOrScheduleFinalExpireEvent(final Entry<K, V> e) {
-    heapCache.expireOrScheduleFinalExpireEvent(e);
-    if (e.isExpired() || e.isGone()) {
-      callExpiryListeners(e);
-    }
-  }
-
-  private void callExpiryListeners(Entry<K, V> e) {
-    if (syncEntryExpiredListeners != null) {
-      CacheEntry<K,V> _entryCopy = heapCache.returnCacheEntry(e);
-      for (CacheEntryExpiredListener<K, V> l : syncEntryExpiredListeners) {
-        l.onEntryExpired(this, _entryCopy);
+      if (e.isGone() || e.isExpiredState()) {
+        return;
       }
+      long nrt = e.getNextRefreshTime();
+      long t = heapCache.clock.millis();
+      if (t < Math.abs(nrt)) {
+        if (nrt > 0) {
+          heapCache.timing.scheduleFinalTimerForSharpExpiry(e);
+          e.setNextRefreshTime(-nrt);
+        }
+        return;
+      }
+      if (syncEntryExpiredListeners == null) {
+        try {
+          heapCache.expireEntry(e);
+        } catch (CacheClosedException ignore) {
+        }
+        return;
+      }
+      e.waitForProcessing();
+      if (e.isGone() || e.isExpiredState()) {
+        return;
+      }
+      e.startProcessing(Entry.ProcessingState.EXPIRY);
     }
+    finishExpire(e);
+  }
+
+  private void finishExpire(final Entry<K, V> e) {
+    executeMutationForStartedProcessing(e.getKey(), e, SPEC.expire(e.getKey(), ExpiryTimeValues.NOW));
   }
 
   @Override
@@ -758,16 +771,29 @@ public class WiredCache<K, V> extends BaseCache<K, V>
       } catch (RejectedExecutionException ignore) {
       }
       metrics().refreshFailed();
-      expireOrScheduleFinalExpireEvent(e);
+      e.waitForProcessing();
+      if (e.isGone() || e.isExpiredState()) {
+        return;
+      }
+      e.startProcessing(Entry.ProcessingState.EXPIRY);
     }
+    finishExpire(e);
   }
 
   @Override
   public void timerEventProbationTerminated(final Entry<K, V> e) {
     metrics().timerEvent();
     synchronized (e) {
-      expireOrScheduleFinalExpireEvent(e);
+      if (e.isGone() || e.isExpiredState()) {
+        return;
+      }
+      e.waitForProcessing();
+      if (e.isGone() || e.isExpiredState()) {
+        return;
+      }
+      e.startProcessing(Entry.ProcessingState.EXPIRY);
     }
+    finishExpire(e);
   }
 
   /**

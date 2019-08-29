@@ -259,7 +259,6 @@ public class InternalCache2kBuilder<K, V> {
       List<CacheEntryRemovedListener<K, V>> _syncRemovedListeners = new ArrayList<CacheEntryRemovedListener<K, V>>();
       List<CacheEntryExpiredListener<K, V>> _syncExpiredListeners = new ArrayList<CacheEntryExpiredListener<K, V>>();
       List<CacheEntryEvictedListener<K, V>> _syncEvictedListeners = new ArrayList<CacheEntryEvictedListener<K,V>>();
-      List<CacheEntryExpiredListener<K, V>> _expiredListeners = new ArrayList<CacheEntryExpiredListener<K, V>>();
       if (config.hasListeners()) {
         for (CustomizationSupplier<CacheEntryOperationListener<K, V>> f : config.getListeners()) {
           CacheEntryOperationListener<K, V> el = ( CacheEntryOperationListener<K, V>) bc.createCustomization(f);
@@ -273,14 +272,14 @@ public class InternalCache2kBuilder<K, V> {
             _syncRemovedListeners.add((CacheEntryRemovedListener) el);
           }
           if (el instanceof CacheEntryExpiredListener) {
-            _expiredListeners.add((CacheEntryExpiredListener) el);
+            _syncExpiredListeners.add((CacheEntryExpiredListener) el);
           }
           if (el instanceof CacheEntryEvictedListener) {
             _syncEvictedListeners.add((CacheEntryEvictedListener) el);
           }
         }
       }
-      if (config.hasAsyncListeners() || !_expiredListeners.isEmpty()) {
+      if (config.hasAsyncListeners()) {
         Executor _executor = DEFAULT_ASYNC_LISTENER_EXECUTOR;
         if (config.getAsyncListenerExecutor() != null) {
           _executor = _cache.createCustomization(config.getAsyncListenerExecutor());
@@ -319,9 +318,6 @@ public class InternalCache2kBuilder<K, V> {
           _syncRemovedListeners.add(new AsyncRemovedListener<K, V>(_asyncDispatcher, l));
         }
         for (CacheEntryExpiredListener l : ell) {
-          _syncExpiredListeners.add(new AsyncExpiredListener<K, V>(_asyncDispatcher, l));
-        }
-        for (CacheEntryExpiredListener l : _expiredListeners) {
           _syncExpiredListeners.add(new AsyncExpiredListener<K, V>(_asyncDispatcher, l));
         }
         for (CacheEntryEvictedListener l : evl) {

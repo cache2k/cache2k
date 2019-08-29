@@ -170,6 +170,15 @@ public abstract class BaseCache<K, V> implements InternalCache<K, V> {
     return m;
   }
 
+  /**
+   * Execute a mutation operation with an already locked entry, for expiry events processing.
+   */
+  protected <R> R executeMutationForStartedProcessing(K key, Entry<K, V> e, Semantic<K, V, R> op) {
+    EntryAction<K, V, R> _action = createEntryAction(key, e, op);
+    _action.executeMutationForStartedProcessing();
+    return finishExecution(_action);
+  }
+
   protected <R> R execute(K key, Entry<K, V> e, Semantic<K, V, R> op) {
     EntryAction<K, V, R> _action = createEntryAction(key, e, op);
     return execute(op, _action);
@@ -179,6 +188,10 @@ public abstract class BaseCache<K, V> implements InternalCache<K, V> {
 
   protected <R> R execute(Semantic<K, V, R> op, final EntryAction<K, V, R> _action) {
     op.start(_action);
+    return finishExecution(_action);
+  }
+
+  private <R> R finishExecution(final EntryAction<K, V, R> _action) {
     RuntimeException t = _action.exceptionToPropagate;
     if (t != null) {
       t.fillInStackTrace();

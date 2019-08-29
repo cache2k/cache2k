@@ -1000,12 +1000,12 @@ public class ExpiryTest extends TestingBase {
       b.loader(new CacheLoader<Integer, Integer>() {
         @Override
         public Integer load(final Integer key) throws Exception {
-          return loadDefault(key);
+          return waitForSemaphoreAndLoad(key);
         }
       });
     }
 
-    protected Integer loadDefault(Integer key) throws Exception {
+    protected Integer waitForSemaphoreAndLoad(Integer key) throws Exception {
       sem.acquire(); sem.release();
       count.incrementAndGet();
       return 4711;
@@ -1032,7 +1032,7 @@ public class ExpiryTest extends TestingBase {
       try {
         assertEquals(1, getInfo().getSize());
       } catch (AssertionError e) {
-        if (getClock().millis() < (startTime + LONG_DELTA)) {
+        if (millis() < (startTime + LONG_DELTA)) {
           throw e;
         }
       }
@@ -1108,7 +1108,7 @@ public class ExpiryTest extends TestingBase {
               @Override
               public void run() {
                 try {
-                  callback.onLoadSuccess(loadDefault(key));
+                  callback.onLoadSuccess(waitForSemaphoreAndLoad(key));
                 } catch (Exception ex) {
                   callback.onLoadFailure(ex);
                 }

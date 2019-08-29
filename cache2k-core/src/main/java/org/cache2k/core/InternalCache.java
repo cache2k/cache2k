@@ -52,11 +52,13 @@ public interface InternalCache<K, V> extends Cache<K, V>, CanCheckIntegrity {
 
   void timerEventRefresh(Entry<K, V> e);
 
+  /**
+   * Called by the timer when an entry is expired or before actual expiry
+   * when the entry needs to switch into sharp expiry mode.
+   */
   void timerEventExpireEntry(Entry<K, V> e);
 
   void timerEventProbationTerminated(Entry<K, V> e);
-
-  void expireOrScheduleFinalExpireEvent(final Entry<K, V> e);
 
   /**
    * Generate cache statistics. Some of the statistic values involve scanning portions

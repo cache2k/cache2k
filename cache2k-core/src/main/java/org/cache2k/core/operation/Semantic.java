@@ -36,7 +36,8 @@ public interface Semantic<K, V, R> {
   /**
    * Called with the entry containing the recent content. If this method finishes with
    * {@link Progress#wantMutation()} it will be called again after the entry is locked
-   * for mutation to reevaluate the examination after other processing completed.
+   * for mutation to reevaluate the examination after concurrent operations on the
+   * same entry have completed.
    */
   void examine(Progress<K, V, R> c, ExaminationEntry<K, V> e);
 
@@ -83,6 +84,7 @@ public interface Semantic<K, V, R> {
     /** Instruct to lock the entry for the update. Again, since examine may be called when entry is there. */
     @Override
     public final void examine(Progress<K, V, R> c, ExaminationEntry<K, V> e) {
+      c.wantMutation();
     }
 
     /**

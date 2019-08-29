@@ -171,12 +171,13 @@ public class Entry<K, V> extends CompactEntry<K, V>
 
   static final int ABORTED = 3;
 
-  /** @see #isExpired() */
+  /** @see #isExpiredState() */
   static final int EXPIRED = 4;
 
   /** Expired, but protect entry from removal, since refresh is started. */
   static final int EXPIRED_REFRESH_PENDING = 5;
 
+  /** Entry is in refresh probation phase */
   static final int EXPIRED_REFRESHED = 6;
 
   /** @see #isGone() */
@@ -443,8 +444,14 @@ public class Entry<K, V> extends CompactEntry<K, V>
     return nextRefreshTime >= DATA_VALID || nextRefreshTime < 0;
   }
 
+  public final boolean isDataValidOrProbation() {
+    return isDataValid() || nextRefreshTime == Entry.EXPIRED_REFRESHED;
+  }
+
   /**
-   * Returns true if the entry has a valid value and is fresh / not expired.
+   * Entry has a valid value and is fresh / not expired. This predicate may depend on
+   * the clock, if the expiry of an entry was not yet detected by the cache, e.g.
+   * the internal expiry event is not yet delivered.
    */
   public final boolean hasFreshData(InternalClock t) {
     if (nextRefreshTime >= DATA_VALID) {
@@ -463,9 +470,11 @@ public class Entry<K, V> extends CompactEntry<K, V>
 
   /**
    * The entry expired, still in the cache and subject to removal from the cache
-   * if {@link HeapCache#isKeepAfterExpired()} is false.
+   * if {@link HeapCache#isKeepAfterExpired()} is false. {@code true} means that
+   * the expiry was detected by the cache. To find out whether the entry is valid
+   * and not expired {@link #hasFreshData(InternalClock)} needs to be used.
    */
-  public boolean isExpired() {
+  public boolean isExpiredState() {
     return nextRefreshTime == EXPIRED;
   }
 

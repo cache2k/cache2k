@@ -78,7 +78,8 @@ public abstract class EntryAction<K, V, R> implements
    */
   boolean entryLocked = false;
   /**
-   * True if entry had some data after locking. Expiry is not checked.
+   * True if entry had some data after locking. Clock for expiry is not checked.
+   * Also true if entry contains data in refresh probation.
    */
   boolean heapDataValid = false;
   boolean storageDataValid = false;
@@ -301,6 +302,51 @@ public abstract class EntryAction<K, V, R> implements
       }
       return;
     }
+    checkExpiryBeforeMutation();
+  }
+
+  /**
+   * Check whether the we are executed on an expired entry before the
+   * timer event for expiry was received. In case expiry listeners
+   * are present, we want to make sure that an expiry is sent before
+   * a mutation (especially load) happens.
+   *
+   * update counter, stop timer?
+   */
+  public void checkExpiryBeforeMutation() {
+    if (entryExpiredListeners() != null && entry == NON_FRESH_DUMMY) {
+      wantData();
+      return;
+    }
+    if (entryExpiredListeners() != null && entry.getNextRefreshTime() < 0) {
+      boolean justExpired = false;
+      synchronized (entry) {
+        if (entry.getNextRefreshTime() < 0) {
+          justExpired = true;
+          entry.setNextRefreshTime(Entry.EXPIRED);
+          timing().stopStartTimer(0, entry);
+        }
+      }
+      if (justExpired) {
+        CacheEntry<K, V> entryCopy = heapCache.returnCacheEntry(entry);
+        sendExpiryEvents(entryCopy);
+        metrics().expiredKept();
+      }
+    }
+    continueWithMutation();
+  }
+
+  /**
+   * Separate entry point used for expiry event to execute the expiry on the action context.
+   * In this case the entry is already locked.
+   */
+  public void executeMutationForStartedProcessing() {
+    entryLocked = true;
+    heapDataValid = entry.isDataValidOrProbation();
+    continueWithMutation();
+  }
+
+  public void continueWithMutation() {
     operation.update(this, entry);
     if (needsFinish) {
       finish();
@@ -395,7 +441,7 @@ public abstract class EntryAction<K, V, R> implements
         if (!e.isGone()) {
           e.startProcessing(ps);
           entryLocked = true;
-          heapDataValid = e.isDataValid();
+          heapDataValid = e.isDataValidOrProbation();
           heapHit = !e.isVirgin();
           entry = e;
           return;
@@ -421,7 +467,7 @@ public abstract class EntryAction<K, V, R> implements
         if (!e.isGone()) {
           e.startProcessing(ps);
           entryLocked = true;
-          heapDataValid = e.isDataValid();
+          heapDataValid = e.isDataValidOrProbation();
           heapHit = !e.isVirgin();
           entry = e;
           return;
@@ -567,7 +613,7 @@ public abstract class EntryAction<K, V, R> implements
       try {
         expiry = 0;
         ExceptionWrapper ew = (ExceptionWrapper) newValueOrException;
-        if ((entry.isDataValid() || entry.isExpired()) && entry.getException() == null) {
+        if ((entry.isDataValid() || entry.isExpiredState()) && entry.getException() == null) {
           expiry = timing().suppressExceptionUntil(entry, ew);
         }
         if (expiry > loadStartedTime) {
@@ -766,13 +812,13 @@ public abstract class EntryAction<K, V, R> implements
   }
 
   /**
-   * In case we have a expiry of 0, this means that the entry should
+   * In case we have an expiry of 0, this means that the entry should
    * not be cached. If there is a valid entry, we remove it if we do not
    * keep the data.
    */
   public void checkKeepOrRemove() {
     boolean _hasKeepAfterExpired = heapCache.isKeepAfterExpired();
-    if (expiry != 0 || remove || _hasKeepAfterExpired) {
+    if (expiry != 0 || remove) {
       mutationUpdateHeap();
       return;
     }
@@ -835,17 +881,11 @@ public abstract class EntryAction<K, V, R> implements
       mutationReleaseLockAndStartTimer();
       return;
     }
-    CacheEntry<K,V> _currentEntry = heapCache.returnCacheEntry(entry);
+    CacheEntry<K,V> entryCopy = heapCache.returnCacheEntry(entry);
     if (expiredImmediately) {
       if (storageDataValid || heapDataValid) {
         if (entryExpiredListeners() != null) {
-          for (CacheEntryExpiredListener<K,V> l : entryExpiredListeners()) {
-            try {
-              l.onEntryExpired(userCache, _currentEntry);
-            } catch (Throwable t) {
-              exceptionToPropagate = new ListenerException(t);
-            }
-          }
+          sendExpiryEvents(entryCopy);
         }
       }
     } else if (remove) {
@@ -853,7 +893,7 @@ public abstract class EntryAction<K, V, R> implements
         if (entryRemovedListeners() != null) {
           for (CacheEntryRemovedListener<K,V> l : entryRemovedListeners()) {
             try {
-              l.onEntryRemoved(userCache, _currentEntry);
+              l.onEntryRemoved(userCache, entryCopy);
             } catch (Throwable t) {
               exceptionToPropagate = new ListenerException(t);
             }
@@ -867,7 +907,7 @@ public abstract class EntryAction<K, V, R> implements
             heapCache.returnCacheEntry(entry.getKey(), oldValueOrException);
           for (CacheEntryUpdatedListener<K,V> l : entryUpdatedListeners()) {
             try {
-              l.onEntryUpdated(userCache, _previousEntry, _currentEntry);
+              l.onEntryUpdated(userCache, _previousEntry, entryCopy);
             } catch (Throwable t) {
               exceptionToPropagate = new ListenerException(t);
             }
@@ -877,7 +917,7 @@ public abstract class EntryAction<K, V, R> implements
         if (entryCreatedListeners() != null) {
           for (CacheEntryCreatedListener<K,V> l : entryCreatedListeners()) {
             try {
-              l.onEntryCreated(userCache, _currentEntry);
+              l.onEntryCreated(userCache, entryCopy);
             } catch (Throwable t) {
               exceptionToPropagate = new ListenerException(t);
             }
@@ -888,6 +928,20 @@ public abstract class EntryAction<K, V, R> implements
     mutationReleaseLockAndStartTimer();
   }
 
+  private void sendExpiryEvents(final CacheEntry<K, V> _entryCopy) {
+    for (CacheEntryExpiredListener<K,V> l : entryExpiredListeners()) {
+      try {
+        l.onEntryExpired(userCache, _entryCopy);
+      } catch (Throwable t) {
+        exceptionToPropagate = new ListenerException(t);
+      }
+    }
+  }
+
+  /**
+   * Mutate the entry and start timer for expiry.
+   * Entry mutation and start of expiry has to be done atomically to avoid races.
+   */
   public void mutationReleaseLockAndStartTimer() {
     if (load) {
       if (!remove ||
@@ -895,25 +949,30 @@ public abstract class EntryAction<K, V, R> implements
         operation.loaded(this, entry);
       }
     }
+    boolean justExpired = false;
     synchronized (entry) {
-      entry.processingDone();
-      entryLocked = false;
       if (refresh) {
         heapCache.startRefreshProbationTimer(entry, expiry);
         updateMutationStatistics();
         mutationDone();
-        return;
-      }
-
-      if (remove) {
+      } else if (remove) {
         heapCache.removeEntry(entry);
       } else {
         entry.setNextRefreshTime(timing().stopStartTimer(expiry, entry));
-        if (entry.isExpired()) {
-          entry.setNextRefreshTime(Entry.EXPIRY_TIME_MIN);
-          userCache.expireOrScheduleFinalExpireEvent(entry);
+        if (!expiredImmediately && entry.isExpiredState()) {
+          justExpired = true;
+          lockFor(EXPIRY);
         }
       }
+      if (!justExpired) {
+        entry.processingDone();
+        entryLocked = false;
+      }
+    }
+    if (justExpired) {
+      expiry = 0;
+      checkKeepOrRemove();
+      return;
     }
     updateMutationStatistics();
     mutationDone();
@@ -922,6 +981,9 @@ public abstract class EntryAction<K, V, R> implements
   public void updateMutationStatistics() {
     if (loadStartedTime > 0) {
       return;
+    }
+    if (expiredImmediately && !remove) {
+      metrics().expiredKept();
     }
     updateOnlyReadStatistics();
   }

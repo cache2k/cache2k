@@ -663,7 +663,7 @@ public class HeapCache<K, V> extends BaseCache<K, V> {
   }
 
   private void checkIfImmediatelyExpired(final Entry e) {
-    if (e.isExpired()) {
+    if (e.isExpiredState()) {
       expireAndRemoveEventuallyAfterProcessing(e);
     }
   }
@@ -1399,7 +1399,7 @@ public class HeapCache<K, V> extends BaseCache<K, V> {
     long _nextRefreshTime = 0;
     boolean _suppressException = false;
     try {
-      if ((e.isDataValid() || e.isExpired()) && e.getException() == null) {
+      if ((e.isDataValid() || e.isExpiredState()) && e.getException() == null) {
         _nextRefreshTime = timing.suppressExceptionUntil(e, _value);
       }
       if (_nextRefreshTime > t0) {
@@ -1617,19 +1617,18 @@ public class HeapCache<K, V> extends BaseCache<K, V> {
     }
   }
 
-  @Override
-  public void expireOrScheduleFinalExpireEvent(final Entry<K, V> e) {
-    long nrt = e.getNextRefreshTime();
-    if (e.isGone() || e.isExpired()) {
+  private void expireOrScheduleFinalExpireEvent(Entry<K,V> e) {
+    if (e.isGone() || e.isExpiredState()) {
       return;
     }
+    long nrt = e.getNextRefreshTime();
     long t = clock.millis();
     if (t >= Math.abs(nrt)) {
       try {
         expireEntry(e);
       } catch (CacheClosedException ignore) { }
     } else {
-      if (nrt <= 0) {
+      if (nrt < 0) {
         return;
       }
       timing.scheduleFinalTimerForSharpExpiry(e);
@@ -1638,7 +1637,7 @@ public class HeapCache<K, V> extends BaseCache<K, V> {
   }
 
   protected void expireEntry(Entry e) {
-    if (e.isGone() || e.isExpired()) {
+    if (e.isGone() || e.isExpiredState()) {
       return;
     }
     e.setExpiredState();
@@ -1655,7 +1654,6 @@ public class HeapCache<K, V> extends BaseCache<K, V> {
     if (isKeepAfterExpired() || e.isProcessing()) {
       metrics.expiredKept();
     } else {
-
       removeEntry(e);
     }
   }

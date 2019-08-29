@@ -342,9 +342,17 @@ public class TestingBase {
     return cache;
   }
 
-  protected InternalCacheInfo getInfo() {
+  protected InternalCache getInternalCache() {
     provideCache();
-    return ((InternalCache) cache).getLatestInfo();
+    return (InternalCache) cache;
+  }
+
+  protected InternalCacheInfo getInfo() {
+    return getInternalCache().getLatestInfo();
+  }
+
+  protected void debugEntry(Object key) {
+    System.out.println(getInternalCache().getEntryState(key));
   }
 
   protected void drainEvictionQueue() {
