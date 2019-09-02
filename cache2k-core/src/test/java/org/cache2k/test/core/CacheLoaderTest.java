@@ -20,6 +20,7 @@ package org.cache2k.test.core;
  * #L%
  */
 
+import org.cache2k.core.InternalCache;
 import org.cache2k.integration.AsyncCacheLoader;
 import org.cache2k.integration.CacheLoaderException;
 import org.cache2k.integration.FunctionalCacheLoader;
@@ -509,6 +510,110 @@ public class CacheLoaderTest extends TestingBase {
     assertEquals(1, latestInfo(c).getAsyncLoadsInFlight());
     assertEquals(1, latestInfo(c).getLoaderThreadsMaxActive());
     _releaseLoader.countDown();
+  }
+
+  @Test
+  public void multipleWaitersCompleteAfterLoad_noThreads_sync() throws Exception {
+    multipleWaitersCompleteAfterLoad(false, false);
+  }
+
+  @Test
+  public void multipleWaitersCompleteAfterLoad_threads_sync() throws Exception {
+    multipleWaitersCompleteAfterLoad(true, false);
+  }
+
+  @Test @Ignore
+  public void multipleWaitersCompleteAfterLoad_noThreads_async() throws Exception {
+    multipleWaitersCompleteAfterLoad(false, true);
+  }
+
+  @Test @Ignore
+  public void multipleWaitersCompleteAfterLoad_threads_async() throws Exception {
+    multipleWaitersCompleteAfterLoad(true, true);
+  }
+
+  /**
+   * Test multiple threads waiting for a single load to complete. Calls to
+   * {@link Cache#loadAll(Iterable, CacheOperationCompletionListener)} are not allowed to
+   * block. Multiple load requests only lead to one load. All requests are completed when the
+   * load is completed.
+   *
+   * @param useThreads
+   * @param async
+   */
+  private void multipleWaitersCompleteAfterLoad(boolean useThreads, boolean async) throws Exception {
+    final int ANY_KEY = 1;
+    final int waiters = 10;
+    final CountDownLatch complete = new CountDownLatch(waiters);
+    final CountDownLatch releaseLoader = new CountDownLatch(1);
+    final CountDownLatch threadsStarted = new CountDownLatch(waiters);
+    final CountDownLatch threadsCompleted = new CountDownLatch(waiters);
+    final AtomicInteger loaderCallCount = new AtomicInteger();
+    Cache2kBuilder<Integer, Integer> b = builder(Integer.class, Integer.class);
+    if (async) {
+      b.loader(new AsyncCacheLoader<Integer, Integer>() {
+        @Override
+        public void load(final Integer key, final Context<Integer, Integer> context, final Callback<Integer, Integer> callback) throws Exception {
+          loaderCallCount.incrementAndGet();
+          Thread t = new Thread(new Runnable() {
+            @Override
+            public void run() {
+              try {
+                releaseLoader.await();
+              } catch (InterruptedException ex) {
+                ex.printStackTrace();
+              }
+              callback.onLoadSuccess(123);
+            }
+          });
+          t.start();
+        }
+      });
+    } else {
+      b.loader(new CacheLoader<Integer, Integer>() {
+        @Override
+        public Integer load(final Integer key) throws Exception {
+          loaderCallCount.incrementAndGet();
+          releaseLoader.await();
+          return 123;
+        }
+      });
+    }
+    final Cache<Integer, Integer> c = b.build();
+    final CacheOperationCompletionListener l = new CacheOperationCompletionListener() {
+      @Override
+      public void onCompleted() {
+        complete.countDown();
+      }
+
+      @Override
+      public void onException(final Throwable exception) {
+
+      }
+    };
+    Thread[] ta = new Thread[waiters];
+    for (int i = 0; i < waiters; i++) {
+      if (useThreads) {
+        ta[i] = new Thread(new Runnable() {
+          @Override
+          public void run() {
+            threadsStarted.countDown();
+            c.loadAll(toIterable(ANY_KEY), l);
+            threadsCompleted.countDown();
+          }
+        });
+        ta[i].start();
+      } else {
+        c.loadAll(toIterable(ANY_KEY), l);
+      }
+    }
+    if (useThreads) {
+      threadsStarted.await();
+      threadsCompleted.await();
+    }
+    releaseLoader.countDown();
+    complete.await();
+    assertEquals(1, loaderCallCount.get());
   }
 
   /**

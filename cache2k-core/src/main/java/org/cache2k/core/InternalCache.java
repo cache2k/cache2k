@@ -34,7 +34,8 @@ import org.cache2k.core.storageApi.StorageAdapter;
  *
  * @author Jens Wilke
  */
-public interface InternalCache<K, V> extends Cache<K, V>, CanCheckIntegrity {
+public interface InternalCache<K, V>
+  extends Cache<K, V>, CanCheckIntegrity, TimerEventListener<K, V> {
 
   CommonMetrics getCommonMetrics();
 
@@ -49,16 +50,6 @@ public interface InternalCache<K, V> extends Cache<K, V>, CanCheckIntegrity {
 
   /** used from the cache manager for shutdown */
   void cancelTimerJobs();
-
-  void timerEventRefresh(Entry<K, V> e);
-
-  /**
-   * Called by the timer when an entry is expired or before actual expiry
-   * when the entry needs to switch into sharp expiry mode.
-   */
-  void timerEventExpireEntry(Entry<K, V> e);
-
-  void timerEventProbationTerminated(Entry<K, V> e);
 
   /**
    * Generate cache statistics. Some of the statistic values involve scanning portions

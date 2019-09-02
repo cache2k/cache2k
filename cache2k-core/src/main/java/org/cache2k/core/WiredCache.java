@@ -694,12 +694,13 @@ public class WiredCache<K, V> extends BaseCache<K, V>
 
   /**
    *
-   * Semantics double with {@link HeapCache#timerEventExpireEntry(Entry)}
+   * Semantics double with {@link TimerEventListener#timerEventExpireEntry(Entry, Object)}
    */
   @Override
-  public void timerEventExpireEntry(final Entry<K,V> e) {
+  public void timerEventExpireEntry(final Entry<K, V> e, final Object task) {
     metrics().timerEvent();
     synchronized (e) {
+      if (e.getTask() != task) { return; }
       if (e.isGone() || e.isExpiredState()) {
         return;
       }
@@ -733,9 +734,10 @@ public class WiredCache<K, V> extends BaseCache<K, V>
   }
 
   @Override
-  public void timerEventRefresh(final Entry<K,V> e) {
+  public void timerEventRefresh(final Entry<K, V> e, final Object task) {
     metrics().timerEvent();
     synchronized (e) {
+      if (e.getTask() != task) { return; }
       if (e.isGone()) {
         return;
       }
@@ -772,6 +774,7 @@ public class WiredCache<K, V> extends BaseCache<K, V>
       }
       metrics().refreshFailed();
       e.waitForProcessing();
+      if (e.getTask() != task) { return; }
       if (e.isGone() || e.isExpiredState()) {
         return;
       }
@@ -781,13 +784,15 @@ public class WiredCache<K, V> extends BaseCache<K, V>
   }
 
   @Override
-  public void timerEventProbationTerminated(final Entry<K, V> e) {
+  public void timerEventProbationTerminated(final Entry<K, V> e, final Object task) {
     metrics().timerEvent();
     synchronized (e) {
+      if (e.getTask() != task) { return; }
       if (e.isGone() || e.isExpiredState()) {
         return;
       }
       e.waitForProcessing();
+      if (e.getTask() != task) { return; }
       if (e.isGone() || e.isExpiredState()) {
         return;
       }

@@ -479,6 +479,7 @@ public abstract class TimingHandler<K,V>  {
           }
         }
       }
+      e.setTask(null);
     }
 
   }
@@ -508,19 +509,19 @@ public abstract class TimingHandler<K,V>  {
 
   static class RefreshTimerTask<K,V> extends CommonTimerTask<K,V> {
     public void fire() {
-      cache.timerEventRefresh(entry);
+      cache.timerEventRefresh(entry, this);
     }
   }
 
   static class ExpireTimerTask<K,V> extends CommonTimerTask<K,V> {
     public void fire() {
-      cache.timerEventExpireEntry(entry);
+      cache.timerEventExpireEntry(entry, this);
     }
   }
 
   static class RefreshExpireTimerTask<K,V> extends CommonTimerTask<K,V> {
     public void fire() {
-      cache.timerEventProbationTerminated(entry);
+      cache.timerEventProbationTerminated(entry, this);
     }
   }
 

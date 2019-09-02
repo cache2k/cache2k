@@ -1533,9 +1533,10 @@ public class HeapCache<K, V> extends BaseCache<K, V> {
   }
 
   @Override
-  public void timerEventRefresh(final Entry<K, V> e) {
+  public void timerEventRefresh(final Entry<K, V> e, final Object task) {
     metrics.timerEvent();
     synchronized (e) {
+      if (e.getTask() != task) { return; }
       if (e.isGone()) {
         return;
       }
@@ -1594,9 +1595,10 @@ public class HeapCache<K, V> extends BaseCache<K, V> {
   }
 
   @Override
-  public void timerEventProbationTerminated(final Entry<K, V> e) {
+  public void timerEventProbationTerminated(final Entry<K, V> e, final Object task) {
     metrics.timerEvent();
     synchronized (e) {
+      if (e.getTask() != task) { return; }
       expireEntry(e);
     }
   }
@@ -1610,9 +1612,10 @@ public class HeapCache<K, V> extends BaseCache<K, V> {
   }
 
   @Override
-  public void timerEventExpireEntry(Entry<K, V> e) {
+  public void timerEventExpireEntry(Entry<K, V> e, final Object task) {
     metrics.timerEvent();
     synchronized (e) {
+      if (e.getTask() != task) { return; }
       expireOrScheduleFinalExpireEvent(e);
     }
   }
