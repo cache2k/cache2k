@@ -550,6 +550,7 @@ public class CacheLoaderTest extends TestingBase {
     final CountDownLatch threadsCompleted = new CountDownLatch(waiters);
     final AtomicInteger loaderCallCount = new AtomicInteger();
     Cache2kBuilder<Integer, Integer> b = builder(Integer.class, Integer.class);
+    b.loaderExecutor(EXECUTOR);
     if (async) {
       b.loader(new AsyncCacheLoader<Integer, Integer>() {
         @Override
@@ -924,7 +925,7 @@ public class CacheLoaderTest extends TestingBase {
     Cache<Integer,Integer> c = target.cache(new CacheRule.Specialization<Integer, Integer>() {
       @Override
       public void extend(final Cache2kBuilder<Integer, Integer> b) {
-        b.loaderExecutor(Executors.newCachedThreadPool());
+        b.loaderExecutor(EXECUTOR);
         b.loader(new AsyncCacheLoader<Integer, Integer>() {
           @Override
           public void load(final Integer key, final AsyncCacheLoader.Context<Integer,Integer> ctx, final Callback<Integer, Integer> callback) {
