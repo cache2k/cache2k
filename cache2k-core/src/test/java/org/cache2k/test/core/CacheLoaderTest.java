@@ -20,7 +20,6 @@ package org.cache2k.test.core;
  * #L%
  */
 
-import org.cache2k.core.InternalCache;
 import org.cache2k.integration.AsyncCacheLoader;
 import org.cache2k.integration.CacheLoaderException;
 import org.cache2k.integration.FunctionalCacheLoader;
@@ -37,7 +36,6 @@ import org.cache2k.test.util.ExpectedException;
 import org.cache2k.test.util.TestingBase;
 import org.cache2k.testing.category.FastTests;
 import org.cache2k.test.util.IntCacheRule;
-import org.junit.AfterClass;
 import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
@@ -69,13 +67,6 @@ import static org.cache2k.test.core.StaticUtil.*;
  */
 @Category(FastTests.class)
 public class CacheLoaderTest extends TestingBase {
-
-  private static ExecutorService EXECUTOR = Executors.newCachedThreadPool();
-
-  @AfterClass
-  public static void tearDown() {
-    EXECUTOR.shutdown();
-  }
 
   @Rule
   public CacheRule<Integer, Integer> target = new IntCacheRule();
@@ -116,7 +107,7 @@ public class CacheLoaderTest extends TestingBase {
 
   @Test
   public void testSeparateLoaderExecutor() {
-    final AtomicInteger _executionCount = new AtomicInteger(0);
+    final AtomicInteger executionCount = new AtomicInteger(0);
     Cache<Integer,Integer> c = target.cache(new CacheRule.Specialization<Integer, Integer>() {
       @Override
       public void extend(final Cache2kBuilder<Integer, Integer> b) {
@@ -129,29 +120,29 @@ public class CacheLoaderTest extends TestingBase {
         b.loaderExecutor(new Executor() {
           @Override
           public void execute(final Runnable command) {
-            _executionCount.incrementAndGet();
-            EXECUTOR.execute(command);
+            executionCount.incrementAndGet();
+            getLoaderExector().execute(command);
           }
         });
       }
     });
     assertEquals((Integer) 10, c.get(5));
     assertEquals((Integer) 20, c.get(10));
-    assertEquals(0, _executionCount.get());
-    CompletionWaiter _waiter = new CompletionWaiter();
-    c.loadAll(toIterable(1, 2, 3), _waiter);
-    _waiter.awaitCompletion();
-    assertEquals("executor is used", 3, _executionCount.get());
-    _waiter = new CompletionWaiter();
-    c.prefetchAll(toIterable(6, 7, 8), _waiter);
-    _waiter.awaitCompletion();
-    assertEquals("prefetch uses executor, too", 6, _executionCount.get());
+    assertEquals(0, executionCount.get());
+    CompletionWaiter waiter = new CompletionWaiter();
+    c.loadAll(toIterable(1, 2, 3), waiter);
+    waiter.awaitCompletion();
+    assertEquals("executor is used", 3, executionCount.get());
+    waiter = new CompletionWaiter();
+    c.prefetchAll(toIterable(6, 7, 8), waiter);
+    waiter.awaitCompletion();
+    assertEquals("prefetch uses executor, too", 6, executionCount.get());
   }
 
   @Test
   public void testSeparatePrefetchExecutor() {
-    final AtomicInteger _executionCount = new AtomicInteger(0);
-    final AtomicInteger _prefetchExecutionCount = new AtomicInteger(0);
+    final AtomicInteger executionCount = new AtomicInteger(0);
+    final AtomicInteger prefetchExecutionCount = new AtomicInteger(0);
     Cache<Integer,Integer> c = target.cache(new CacheRule.Specialization<Integer, Integer>() {
       @Override
       public void extend(final Cache2kBuilder<Integer, Integer> b) {
@@ -164,31 +155,31 @@ public class CacheLoaderTest extends TestingBase {
         b.loaderExecutor(new Executor() {
           @Override
           public void execute(final Runnable command) {
-            _executionCount.incrementAndGet();
-            EXECUTOR.execute(command);
+            executionCount.incrementAndGet();
+            getLoaderExector().execute(command);
           }
         });
         b.prefetchExecutor(new Executor() {
           @Override
           public void execute(final Runnable command) {
-            _prefetchExecutionCount.incrementAndGet();
-            EXECUTOR.execute(command);
+            prefetchExecutionCount.incrementAndGet();
+            getLoaderExector().execute(command);
           }
         });
       }
     });
     assertEquals((Integer) 10, c.get(5));
     assertEquals((Integer) 20, c.get(10));
-    assertEquals(0, _executionCount.get());
-    CompletionWaiter _waiter = new CompletionWaiter();
-    c.loadAll(toIterable(1, 2, 3), _waiter);
-    _waiter.awaitCompletion();
-    assertEquals("executor is used", 3, _executionCount.get());
-    _waiter = new CompletionWaiter();
-    c.prefetchAll(toIterable(6, 7, 8), _waiter);
-    _waiter.awaitCompletion();
-    assertEquals("prefetch does not use loader executor", 3, _executionCount.get());
-    assertEquals("extra executor for prefetch used", 3, _prefetchExecutionCount.get());
+    assertEquals(0, executionCount.get());
+    CompletionWaiter waiter = new CompletionWaiter();
+    c.loadAll(toIterable(1, 2, 3), waiter);
+    waiter.awaitCompletion();
+    assertEquals("executor is used", 3, executionCount.get());
+    waiter = new CompletionWaiter();
+    c.prefetchAll(toIterable(6, 7, 8), waiter);
+    waiter.awaitCompletion();
+    assertEquals("prefetch does not use loader executor", 3, executionCount.get());
+    assertEquals("extra executor for prefetch used", 3, prefetchExecutionCount.get());
   }
 
   @Test
@@ -249,14 +240,14 @@ public class CacheLoaderTest extends TestingBase {
 
   @Test
   public void testLoadAll() throws Exception {
-    final AtomicInteger _countLoad =  new AtomicInteger();
+    final AtomicInteger countLoad =  new AtomicInteger();
     Cache<Integer,Integer> c = target.cache(new CacheRule.Specialization<Integer, Integer>() {
       @Override
       public void extend(final Cache2kBuilder<Integer, Integer> b) {
         b .loader(new CacheLoader<Integer, Integer>() {
           @Override
           public Integer load(final Integer key) throws Exception {
-            return _countLoad.incrementAndGet();
+            return countLoad.incrementAndGet();
           }
         });
       }
@@ -265,7 +256,7 @@ public class CacheLoaderTest extends TestingBase {
     CompletionWaiter w = new CompletionWaiter();
     c.loadAll(toIterable(5, 6), w);
     w.awaitCompletion();
-    assertEquals(2, _countLoad.get());
+    assertEquals(2, countLoad.get());
     assertEquals((Integer) 2, c.get(6));
     c.loadAll(toIterable(5, 6), null);
     c.loadAll(Collections.EMPTY_SET, null);
@@ -273,14 +264,14 @@ public class CacheLoaderTest extends TestingBase {
 
   @Test
   public void testReloadAll() throws Exception {
-    final AtomicInteger _countLoad =  new AtomicInteger();
+    final AtomicInteger countLoad =  new AtomicInteger();
     Cache<Integer,Integer> c = target.cache(new CacheRule.Specialization<Integer, Integer>() {
       @Override
       public void extend(final Cache2kBuilder<Integer, Integer> b) {
         b .loader(new CacheLoader<Integer, Integer>() {
           @Override
           public Integer load(final Integer key) throws Exception {
-            return _countLoad.incrementAndGet();
+            return countLoad.incrementAndGet();
           }
         });
       }
@@ -289,7 +280,7 @@ public class CacheLoaderTest extends TestingBase {
     CompletionWaiter w = new CompletionWaiter();
     c.reloadAll(toIterable(5, 6), w);
     w.awaitCompletion();
-    assertEquals(3, _countLoad.get());
+    assertEquals(3, countLoad.get());
     c.reloadAll(toIterable(5, 6), null);
     c.reloadAll(Collections.EMPTY_SET, null);
   }
@@ -423,8 +414,8 @@ public class CacheLoaderTest extends TestingBase {
    * be invoked, testing for the enqueued task is sufficient and faster.
    * Await the execution of the loader as fallback.
    */
-  private boolean isLoadStarted(final Cache<Integer, Integer> _c) {
-    if (latestInfo(_c).getAsyncLoadsStarted() > 0) {
+  private boolean isLoadStarted(final Cache<Integer, Integer> cache) {
+    if (latestInfo(cache).getAsyncLoadsStarted() > 0) {
       return true;
     }
     ConcurrencyHelper.await("Await loader execution", new Condition() {
@@ -451,16 +442,16 @@ public class CacheLoaderTest extends TestingBase {
    */
   @Test
   public void testTwoLoaderThreadsAndPoolInfo() throws Exception {
-    final CountDownLatch _inLoader = new CountDownLatch(2);
-    final CountDownLatch _releaseLoader = new CountDownLatch(1);
+    final CountDownLatch inLoader = new CountDownLatch(2);
+    final CountDownLatch releaseLoader = new CountDownLatch(1);
     Cache<Integer,Integer> c = target.cache(new CacheRule.Specialization<Integer, Integer>() {
       @Override
       public void extend(final Cache2kBuilder<Integer, Integer> b) {
         b .loader(new CacheLoader<Integer, Integer>() {
           @Override
           public Integer load(final Integer key) throws Exception {
-            _inLoader.countDown();
-            _releaseLoader.await();
+            inLoader.countDown();
+            releaseLoader.await();
             return key * 2;
           }
         });
@@ -468,11 +459,11 @@ public class CacheLoaderTest extends TestingBase {
     });
     c.loadAll(toIterable(1), null);
     c.loadAll(toIterable(2), null);
-    _inLoader.await();
+    inLoader.await();
     assertEquals(2, latestInfo(c).getAsyncLoadsStarted());
     assertEquals(2, latestInfo(c).getAsyncLoadsInFlight());
     assertEquals(2, latestInfo(c).getLoaderThreadsMaxActive());
-    _releaseLoader.countDown();
+    releaseLoader.countDown();
   }
 
   /**
@@ -481,10 +472,10 @@ public class CacheLoaderTest extends TestingBase {
    */
   @Test
   public void testOneLoaderThreadsAndPoolInfo() throws Exception {
-    final Thread _callingThread = Thread.currentThread();
-    final CountDownLatch _inLoader = new CountDownLatch(1);
-    final CountDownLatch _releaseLoader = new CountDownLatch(1);
-    final AtomicInteger _asyncCount = new AtomicInteger();
+    final Thread callingThread = Thread.currentThread();
+    final CountDownLatch inLoader = new CountDownLatch(1);
+    final CountDownLatch releaseLoader = new CountDownLatch(1);
+    final AtomicInteger asyncCount = new AtomicInteger();
     Cache<Integer,Integer> c = target.cache(new CacheRule.Specialization<Integer, Integer>() {
       @Override
       public void extend(final Cache2kBuilder<Integer, Integer> b) {
@@ -492,10 +483,10 @@ public class CacheLoaderTest extends TestingBase {
           .loader(new CacheLoader<Integer, Integer>() {
           @Override
           public Integer load(final Integer key) throws Exception {
-            if (_callingThread != Thread.currentThread()) {
-              _asyncCount.incrementAndGet();
-              _inLoader.countDown();
-              _releaseLoader.await();
+            if (callingThread != Thread.currentThread()) {
+              asyncCount.incrementAndGet();
+              inLoader.countDown();
+              releaseLoader.await();
             }
             return key * 2;
           }
@@ -504,12 +495,12 @@ public class CacheLoaderTest extends TestingBase {
     });
     c.loadAll(toIterable(1), null);
     c.loadAll(toIterable(2), null);
-    _inLoader.await();
+    inLoader.await();
     assertEquals("only one load is separate thread", 1, latestInfo(c).getAsyncLoadsStarted());
-    assertEquals("only one load is separate thread", 1, _asyncCount.get());
+    assertEquals("only one load is separate thread", 1, asyncCount.get());
     assertEquals(1, latestInfo(c).getAsyncLoadsInFlight());
     assertEquals(1, latestInfo(c).getLoaderThreadsMaxActive());
-    _releaseLoader.countDown();
+    releaseLoader.countDown();
   }
 
   @Test
@@ -550,7 +541,6 @@ public class CacheLoaderTest extends TestingBase {
     final CountDownLatch threadsCompleted = new CountDownLatch(waiters);
     final AtomicInteger loaderCallCount = new AtomicInteger();
     Cache2kBuilder<Integer, Integer> b = builder(Integer.class, Integer.class);
-    b.loaderExecutor(EXECUTOR);
     if (async) {
       b.loader(new AsyncCacheLoader<Integer, Integer>() {
         @Override
@@ -622,19 +612,19 @@ public class CacheLoaderTest extends TestingBase {
    */
   @Test
   public void testAsyncLoaderLoadViaExecutor() {
-    final AtomicInteger _loaderCalled = new AtomicInteger();
-    final AtomicInteger _loaderExecuted = new AtomicInteger();
+    final AtomicInteger loaderCalled = new AtomicInteger();
+    final AtomicInteger loaderExecuted = new AtomicInteger();
     Cache<Integer,Integer> c = target.cache(new CacheRule.Specialization<Integer, Integer>() {
       @Override
       public void extend(final Cache2kBuilder<Integer, Integer> b) {
         b.loader(new AsyncCacheLoader<Integer, Integer>() {
           @Override
           public void load(final Integer key, final AsyncCacheLoader.Context<Integer,Integer> ctx, final Callback<Integer, Integer> callback) {
-            _loaderCalled.incrementAndGet();
+            loaderCalled.incrementAndGet();
              ctx.getLoaderExecutor().execute(new Runnable() {
                @Override
                public void run() {
-                 _loaderExecuted.incrementAndGet();
+                 loaderExecuted.incrementAndGet();
                  callback.onLoadSuccess(key);
                }
              });
@@ -651,14 +641,14 @@ public class CacheLoaderTest extends TestingBase {
    */
   @Test
   public void testAsyncLoaderLoadDirect() {
-    final AtomicInteger _loaderCalled = new AtomicInteger();
+    final AtomicInteger loaderCalled = new AtomicInteger();
     Cache<Integer,Integer> c = target.cache(new CacheRule.Specialization<Integer, Integer>() {
       @Override
       public void extend(final Cache2kBuilder<Integer, Integer> b) {
         b.loader(new AsyncCacheLoader<Integer, Integer>() {
           @Override
           public void load(final Integer key, final AsyncCacheLoader.Context<Integer,Integer> ctx, final Callback<Integer, Integer> callback) {
-            _loaderCalled.incrementAndGet();
+            loaderCalled.incrementAndGet();
             callback.onLoadSuccess(key);
           }
         });
@@ -670,14 +660,14 @@ public class CacheLoaderTest extends TestingBase {
 
   @Test
   public void testAsyncLoaderContextProperties() {
-    final AtomicInteger _loaderCalled = new AtomicInteger();
+    final AtomicInteger loaderCalled = new AtomicInteger();
     Cache<Integer,Integer> c = target.cache(new CacheRule.Specialization<Integer, Integer>() {
       @Override
       public void extend(final Cache2kBuilder<Integer, Integer> b) {
         b.loader(new AsyncCacheLoader<Integer, Integer>() {
           @Override
           public void load(final Integer key, final AsyncCacheLoader.Context<Integer,Integer> ctx, final Callback<Integer, Integer> callback) {
-            int cnt = _loaderCalled.getAndIncrement();
+            int cnt = loaderCalled.getAndIncrement();
             if (cnt == 0) {
               assertNull(ctx.getCachedValue());
               assertNull(ctx.getCachedException());
@@ -697,7 +687,7 @@ public class CacheLoaderTest extends TestingBase {
 
   @Test
   public void testAsyncLoaderContextProperties_withException() {
-    final AtomicInteger _loaderCalled = new AtomicInteger();
+    final AtomicInteger loaderCalled = new AtomicInteger();
     Cache<Integer,Integer> c = target.cache(new CacheRule.Specialization<Integer, Integer>() {
       @Override
       public void extend(final Cache2kBuilder<Integer, Integer> b) {
@@ -705,7 +695,7 @@ public class CacheLoaderTest extends TestingBase {
         b.loader(new AsyncCacheLoader<Integer, Integer>() {
           @Override
           public void load(final Integer key, final AsyncCacheLoader.Context<Integer,Integer> ctx, final Callback<Integer, Integer> callback) {
-            int cnt = _loaderCalled.getAndIncrement();
+            int cnt = loaderCalled.getAndIncrement();
             if (cnt == 0) {
               assertNull(ctx.getCachedValue());
               assertNull(ctx.getCachedException());
@@ -733,14 +723,14 @@ public class CacheLoaderTest extends TestingBase {
    */
   @Test
   public void testAsyncLoaderException() {
-    final AtomicInteger _loaderCalled = new AtomicInteger();
+    final AtomicInteger loaderCalled = new AtomicInteger();
     Cache<Integer,Integer> c = target.cache(new CacheRule.Specialization<Integer, Integer>() {
       @Override
       public void extend(final Cache2kBuilder<Integer, Integer> b) {
         b.loader(new AsyncCacheLoader<Integer, Integer>() {
           @Override
           public void load(final Integer key, final AsyncCacheLoader.Context<Integer,Integer> ctx, final Callback<Integer, Integer> callback) {
-            _loaderCalled.incrementAndGet();
+            loaderCalled.incrementAndGet();
             throw new ExpectedException();
           }
         });
@@ -763,14 +753,14 @@ public class CacheLoaderTest extends TestingBase {
    */
   @Test
   public void testAsyncLoaderLoadYieldsException() {
-    final AtomicInteger _loaderCalled = new AtomicInteger();
+    final AtomicInteger loaderCalled = new AtomicInteger();
     Cache<Integer,Integer> c = target.cache(new CacheRule.Specialization<Integer, Integer>() {
       @Override
       public void extend(final Cache2kBuilder<Integer, Integer> b) {
         b.loader(new AsyncCacheLoader<Integer, Integer>() {
           @Override
           public void load(final Integer key, final AsyncCacheLoader.Context<Integer,Integer> ctx, final Callback<Integer, Integer> callback) {
-            _loaderCalled.incrementAndGet();
+            loaderCalled.incrementAndGet();
             throw new ExpectedException();
           }
         });
@@ -793,7 +783,7 @@ public class CacheLoaderTest extends TestingBase {
    */
   @Test
   public void testAsyncLoaderExceptionWrapped() {
-    final AtomicInteger _loaderCalled = new AtomicInteger();
+    final AtomicInteger loaderCalled = new AtomicInteger();
     Cache<Integer,Integer> c = target.cache(new CacheRule.Specialization<Integer, Integer>() {
       @Override
       public void extend(final Cache2kBuilder<Integer, Integer> b) {
@@ -803,7 +793,7 @@ public class CacheLoaderTest extends TestingBase {
                            final AsyncCacheLoader.Context<Integer,Integer> ctx,
                            final Callback<Integer, Integer> callback)
             throws Exception {
-            _loaderCalled.incrementAndGet();
+            loaderCalled.incrementAndGet();
             throw new IOException("test exception");
           }
         });
@@ -820,19 +810,19 @@ public class CacheLoaderTest extends TestingBase {
 
   @Test
   public void testAsyncLoaderWithExecutorWithAsync() {
-    final AtomicInteger _loaderCalled = new AtomicInteger();
-    final AtomicInteger _loaderExecuted = new AtomicInteger();
+    final AtomicInteger loaderCalled = new AtomicInteger();
+    final AtomicInteger loaderExecuted = new AtomicInteger();
     Cache<Integer,Integer> c = target.cache(new CacheRule.Specialization<Integer, Integer>() {
       @Override
       public void extend(final Cache2kBuilder<Integer, Integer> b) {
         b.loader(new AsyncCacheLoader<Integer, Integer>() {
           @Override
           public void load(final Integer key, final AsyncCacheLoader.Context<Integer,Integer> ctx, final Callback<Integer, Integer> callback) {
-            _loaderCalled.incrementAndGet();
+            loaderCalled.incrementAndGet();
              ctx.getLoaderExecutor().execute(new Runnable() {
                @Override
                public void run() {
-                 _loaderExecuted.incrementAndGet();
+                 loaderExecuted.incrementAndGet();
                  callback.onLoadSuccess(key);
                }
              });
@@ -855,11 +845,11 @@ public class CacheLoaderTest extends TestingBase {
 
   @Test
   public void testAsyncLoaderDoubleCallback() {
-    final AtomicInteger _loaderCalled = new AtomicInteger();
-    final AtomicInteger _loaderExecuted = new AtomicInteger();
-    final AtomicInteger _gotException = new AtomicInteger();
-    final AtomicInteger _gotNoException = new AtomicInteger();
-    final AtomicReference<Throwable> _otherException = new AtomicReference<Throwable>();
+    final AtomicInteger loaderCalled = new AtomicInteger();
+    final AtomicInteger loaderExecuted = new AtomicInteger();
+    final AtomicInteger gotException = new AtomicInteger();
+    final AtomicInteger gotNoException = new AtomicInteger();
+    final AtomicReference<Throwable> otherException = new AtomicReference<Throwable>();
     Cache<Integer,Integer> c = target.cache(new CacheRule.Specialization<Integer, Integer>() {
       @Override
       public void extend(final Cache2kBuilder<Integer, Integer> b) {
@@ -869,19 +859,19 @@ public class CacheLoaderTest extends TestingBase {
             ctx.getLoaderExecutor().execute(new Runnable() {
               @Override
               public void run() {
-                _loaderExecuted.incrementAndGet();
+                loaderExecuted.incrementAndGet();
                 callback.onLoadSuccess(key);
                 try {
                   callback.onLoadSuccess(key);
-                  _gotNoException.incrementAndGet();
+                  gotNoException.incrementAndGet();
                 } catch (IllegalStateException ex) {
-                  _gotException.incrementAndGet();
+                  gotException.incrementAndGet();
                 } catch (Throwable ex) {
-                  _otherException.set(ex);
+                  otherException.set(ex);
                 }
               }
             });
-            _loaderCalled.incrementAndGet();
+            loaderCalled.incrementAndGet();
           }
         });
       }
@@ -892,16 +882,16 @@ public class CacheLoaderTest extends TestingBase {
     w = new CompletionWaiter();
     c.loadAll(TestingBase.keys(1, 2, 1802), w);
     w.awaitCompletion();
-    assertNull(_otherException.get());
-    assertEquals("loader called", 3, _loaderCalled.get());
-    assertEquals("loader Executed", 3, _loaderExecuted.get());
+    assertNull(otherException.get());
+    assertEquals("loader called", 3, loaderCalled.get());
+    assertEquals("loader Executed", 3, loaderExecuted.get());
     ConcurrencyHelper.await("wait for 3 exceptions", new Condition() {
       @Override
       public boolean check() throws Exception {
-        return _gotException.get() == 3;
+        return gotException.get() == 3;
       }
     });
-    assertEquals("always throws exception", 0, _gotNoException.get());
+    assertEquals("always throws exception", 0, gotNoException.get());
     w = new CompletionWaiter();
     c.loadAll(TestingBase.keys(1, 2, 1802), w);
     w.awaitCompletion();
@@ -917,27 +907,27 @@ public class CacheLoaderTest extends TestingBase {
 
   @Test
   public void testAsyncLoaderDoubleCallbackDifferentThreads() {
-    final AtomicInteger _loaderCalled = new AtomicInteger();
-    final AtomicInteger _loaderExecuted = new AtomicInteger();
-    final AtomicInteger _gotException = new AtomicInteger();
-    final AtomicInteger _gotNoException = new AtomicInteger();
+    final AtomicInteger loaderCalled = new AtomicInteger();
+    final AtomicInteger loaderExecuted = new AtomicInteger();
+    final AtomicInteger gotException = new AtomicInteger();
+    final AtomicInteger gotNoException = new AtomicInteger();
     final AtomicReference<Throwable> _otherException = new AtomicReference<Throwable>();
     Cache<Integer,Integer> c = target.cache(new CacheRule.Specialization<Integer, Integer>() {
       @Override
       public void extend(final Cache2kBuilder<Integer, Integer> b) {
-        b.loaderExecutor(EXECUTOR);
+        b.loaderExecutor(Executors.newCachedThreadPool());
         b.loader(new AsyncCacheLoader<Integer, Integer>() {
           @Override
           public void load(final Integer key, final AsyncCacheLoader.Context<Integer,Integer> ctx, final Callback<Integer, Integer> callback) {
             ctx.getLoaderExecutor().execute(new Runnable() {
               @Override
               public void run() {
-                _loaderExecuted.incrementAndGet();
+                loaderExecuted.incrementAndGet();
                 try {
                   callback.onLoadSuccess(key);
-                  _gotNoException.incrementAndGet();
+                  gotNoException.incrementAndGet();
                 } catch (IllegalStateException ex) {
-                  _gotException.incrementAndGet();
+                  gotException.incrementAndGet();
                 } catch (Throwable ex) {
                   _otherException.set(ex);
                 }
@@ -946,18 +936,18 @@ public class CacheLoaderTest extends TestingBase {
             ctx.getLoaderExecutor().execute(new Runnable() {
               @Override
               public void run() {
-                _loaderExecuted.incrementAndGet();
+                loaderExecuted.incrementAndGet();
                 try {
                   callback.onLoadSuccess(key);
-                  _gotNoException.incrementAndGet();
+                  gotNoException.incrementAndGet();
                 } catch (IllegalStateException ex) {
-                  _gotException.incrementAndGet();
+                  gotException.incrementAndGet();
                 } catch (Throwable ex) {
                   _otherException.set(ex);
                 }
               }
             });
-            _loaderCalled.incrementAndGet();
+            loaderCalled.incrementAndGet();
           }
         });
       }
@@ -972,23 +962,23 @@ public class CacheLoaderTest extends TestingBase {
       _otherException.get().printStackTrace();
       assertNull(_otherException.get().toString(), _otherException.get());
     }
-    assertEquals("loader called", 3, _loaderCalled.get());
+    assertEquals("loader called", 3, loaderCalled.get());
     ConcurrencyHelper.await("wait for 6 exceptions", new Condition() {
       @Override
       public boolean check() throws Exception {
-        return _loaderExecuted.get() == 6;
+        return loaderExecuted.get() == 6;
       }
     });
     ConcurrencyHelper.await("wait for 3 exceptions", new Condition() {
       @Override
       public boolean check() throws Exception {
-        return _gotException.get() == 3;
+        return gotException.get() == 3;
       }
     });
     ConcurrencyHelper.await("wait for 3 successful executions", new Condition() {
       @Override
       public boolean check() throws Exception {
-        return _gotNoException.get() == 3;
+        return gotNoException.get() == 3;
       }
     });
     w = new CompletionWaiter();
@@ -1032,8 +1022,8 @@ public class CacheLoaderTest extends TestingBase {
     }
 
     @Override
-    public void onException(final Throwable _exception) {
-      exception = _exception;
+    public void onException(final Throwable exception) {
+      this.exception = exception;
       latch.countDown();
     }
 

@@ -92,7 +92,12 @@ public class TestingBase {
       HeapCache.TUNABLE.threadFactoryProvider.newThreadFactory("test-loader-pool"),
       new ThreadPoolExecutor.AbortPolicy());
 
-  private Executor executor = new ExecutorWrapper();
+  private Executor loaderExecutor = new ExecutorWrapper();
+
+  public Executor getLoaderExector() {
+    return loaderExecutor;
+  }
+
   private TimeStepper stepper;
   private InternalClock clock;
 
@@ -125,20 +130,20 @@ public class TestingBase {
                      provideOptionalCache();
                      if (cache != null) {
                        try {
-                         System.err.println(executor);
+                         System.err.println(loaderExecutor);
                          System.err.println(clock);
                          System.err.println(getInfo());
                          long _settleMillis = 345;
                          sleep(0);
                          sleep(_settleMillis);
                          System.err.println("After pausing for " + _settleMillis);
-                         System.err.println(executor);
+                         System.err.println(loaderExecutor);
                          System.err.println(clock);
                          System.err.println(getInfo());
                          sleep(0);
                          sleep(_settleMillis);
                          System.err.println("After pausing for " + _settleMillis);
-                         System.err.println(executor);
+                         System.err.println(loaderExecutor);
                          System.err.println(clock);
                          System.err.println(getInfo());
                        } catch (Throwable _getInfoException) {
@@ -182,7 +187,7 @@ public class TestingBase {
       return;
     }
     SimulatedClock c = THREAD_CLOCK.get();
-    executor = c.wrapExecutor(executor);
+    loaderExecutor = c.wrapExecutor(loaderExecutor);
     setClock(c);
   }
 
@@ -219,7 +224,7 @@ public class TestingBase {
       .timeReference(getClock())
       .name(_cacheName)
       .entryCapacity(DEFAULT_MAX_SIZE)
-      .loaderExecutor(executor);
+      .loaderExecutor(loaderExecutor);
     applyAdditionalOptions(b);
     return b;
   }
