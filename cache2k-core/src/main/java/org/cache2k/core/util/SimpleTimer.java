@@ -262,6 +262,7 @@ public class SimpleTimer {
   void timeReachedEvent(final long currentTime) {
     while (true) {
       SimpleTimerTask task;
+      boolean fired = false;
       lock.lock();
       try {
         while (true) {
@@ -269,24 +270,25 @@ public class SimpleTimer {
             return;
           }
           task = queue.getMin();
+          if (task.isCancelled()) {
+            queue.removeMin();
+            continue;
+          }
           long executionTime = task.executionTime;
-          boolean fired = executionTime <= currentTime;
-          if (fired) {
+          boolean reached = executionTime <= currentTime;
+          if (reached) {
             queue.removeMin();
             if (!task.execute()) {
               continue;
             }
-          }
-          if (task.isCancelled()) {
-            queue.removeMin();
-            continue;
+            fired = true;
           }
           break;
         }
       } finally {
         lock.unlock();
       }
-      if (!task.isScheduled()) {
+      if (fired) {
         task.run();
       } else {
         clock.schedule(reachedJob, task.scheduledExecutionTime());
