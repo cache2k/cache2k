@@ -26,10 +26,15 @@ import org.cache2k.spi.Cache2kExtensionProvider;
 
 import javax.naming.Context;
 import javax.naming.InitialContext;
+import javax.naming.NameNotFoundException;
 import javax.naming.NoInitialContextException;
 
 /**
- * @author Jens Wilke; created: 2014-10-10
+ * Set default name of the cache manager from the JNDI property {@code org.cache2k.CacheManager.defaultName}.
+ * The intention is to avoid naming conflicts in case multiple applications using cache2k
+ * are run within one Apache Tomcat.
+ *
+ * @author Jens Wilke
  */
 public class JndiDefaultNameProvider implements Cache2kExtensionProvider {
 
@@ -45,6 +50,7 @@ public class JndiDefaultNameProvider implements Cache2kExtensionProvider {
           CacheManager.setDefaultName(_name);
         }
       } catch (NoInitialContextException ignore) {
+      } catch (NameNotFoundException ignore) {
       }
     } catch (NoClassDefFoundError ignore) {
     } catch (Exception ex) {
