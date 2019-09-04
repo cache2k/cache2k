@@ -610,7 +610,7 @@ public class Cache2kBuilder<K, V> {
   }
 
   /**
-   * If no separate executoru is set via {@link #loaderExecutor(Executor)} the cache will
+   * If no separate executor is set via {@link #loaderExecutor(Executor)} the cache will
    * create a separate thread pool used exclusively by it. Defines the maximum number of threads
    * this cache should use for calls to the {@link CacheLoader}. The default is one thread
    * per available CPU.
