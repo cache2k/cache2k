@@ -468,8 +468,6 @@ public abstract class TimingHandler<K,V>  {
     public void cancelExpiryTimer(Entry<K, V> e) {
       CommonTimerTask tsk = (CommonTimerTask) e.getTask();
       if (tsk != null && tsk.cancel()) {
-        tsk.cache = null;
-        tsk.entry = null;
         timerCancelCount++;
         if (timerCancelCount >= PURGE_INTERVAL) {
           synchronized (timer) {
@@ -485,14 +483,30 @@ public abstract class TimingHandler<K,V>  {
   }
 
   static abstract class CommonTimerTask<K,V> extends SimpleTimerTask {
-    Entry<K,V> entry;
-    InternalCache<K,V> cache;
+    private Entry<K,V> entry;
+    private InternalCache<K,V> cache;
 
     CommonTimerTask<K,V> to(final InternalCache<K,V> c, final Entry<K, V> e) {
       cache = c;
       entry = e;
       return this;
     }
+
+    /**
+     * Null out references to avoid mem leaks, when timer is cancelled.
+     */
+    @Override
+    public boolean cancel() {
+      if (super.cancel()) {
+        cache = null;
+        entry = null;
+        return true;
+      }
+      return false;
+    }
+
+    protected InternalCache<K,V> getCache() { return cache; }
+    protected Entry<K,V> getEntry() { return entry; }
 
     public abstract void fire() throws Exception;
 
@@ -507,25 +521,25 @@ public abstract class TimingHandler<K,V>  {
 
   }
 
-  static class RefreshTimerTask<K,V> extends CommonTimerTask<K,V> {
+  private static class RefreshTimerTask<K,V> extends CommonTimerTask<K,V> {
     public void fire() {
-      cache.timerEventRefresh(entry, this);
+      getCache().timerEventRefresh(getEntry(), this);
     }
   }
 
-  static class ExpireTimerTask<K,V> extends CommonTimerTask<K,V> {
+  private static class ExpireTimerTask<K,V> extends CommonTimerTask<K,V> {
     public void fire() {
-      cache.timerEventExpireEntry(entry, this);
+      getCache().timerEventExpireEntry(getEntry(), this);
     }
   }
 
-  static class RefreshExpireTimerTask<K,V> extends CommonTimerTask<K,V> {
+  private static class RefreshExpireTimerTask<K,V> extends CommonTimerTask<K,V> {
     public void fire() {
-      cache.timerEventProbationTerminated(entry, this);
+      getCache().timerEventProbationTerminated(getEntry(), this);
     }
   }
 
-  static class Dynamic<K,V> extends Static<K,V> {
+  private static class Dynamic<K,V> extends Static<K,V> {
 
     private ExpiryPolicy<K, V> expiryPolicy;
 
