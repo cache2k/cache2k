@@ -89,7 +89,6 @@ public abstract class EntryAction<K, V, R> extends Entry.PiggyBack implements
    */
   boolean heapDataValid = false;
   boolean storageDataValid = false;
-  boolean needsFinish = true;
 
   boolean storageRead = false;
   boolean storageMiss = false;
@@ -283,7 +282,6 @@ public abstract class EntryAction<K, V, R> extends Entry.PiggyBack implements
    * Entry point to execute this action.
    */
   public void run() {
-    needsFinish = true;
     int callbackCount = semanticCallback;
     operation.start(this);
   }
@@ -325,9 +323,6 @@ public abstract class EntryAction<K, V, R> extends Entry.PiggyBack implements
   public void examine() {
     int callbackCount = semanticCallback;
     operation.examine(this, entry);
-    if (needsFinish) {
-      finish();
-    }
   }
 
   @Override
@@ -363,7 +358,6 @@ public abstract class EntryAction<K, V, R> extends Entry.PiggyBack implements
    */
   public void checkExpiryBeforeMutation() {
     if (entryExpiredListeners() != null && entry == NON_FRESH_DUMMY) {
-      needsFinish = true;
       wantData();
       return;
     }
@@ -390,7 +384,6 @@ public abstract class EntryAction<K, V, R> extends Entry.PiggyBack implements
    * In this case the entry is already locked.
    */
   public void executeMutationForStartedProcessing() {
-    needsFinish = true;
     entryLocked = true;
     heapDataValid = entry.isDataValidOrProbation();
     continueWithMutation();
@@ -399,13 +392,9 @@ public abstract class EntryAction<K, V, R> extends Entry.PiggyBack implements
   public void continueWithMutation() {
     int callbackCount = semanticCallback;
     operation.update(this, entry);
-    if (needsFinish) {
-      finish();
-    }
   }
 
   public void finish() {
-    needsFinish = false;
     noMutationRequested();
   }
 
@@ -427,7 +416,6 @@ public abstract class EntryAction<K, V, R> extends Entry.PiggyBack implements
     lockFor(LOAD);
     semanticCallback++;
     checkLocked();
-    needsFinish = false;
     load = true;
     Entry<K, V> e = entry;
     long t0 = heapCache.isUpdateTimeNeeded() ? lastRefreshTime = loadStartedTime = getCurrentTime() : 0;
@@ -611,7 +599,6 @@ public abstract class EntryAction<K, V, R> extends Entry.PiggyBack implements
   public void put(V value) {
     lockFor(MUTATE);
     semanticCallback++;
-    needsFinish = false;
     newValueOrException = value;
     if (!heapCache.isUpdateTimeNeeded()) {
       lastRefreshTime = 0;
@@ -625,7 +612,6 @@ public abstract class EntryAction<K, V, R> extends Entry.PiggyBack implements
   public void remove() {
     lockForNoHit(MUTATE);
     semanticCallback++;
-    needsFinish = false;
     remove = true;
     mutationMayCallWriter();
   }
@@ -634,7 +620,6 @@ public abstract class EntryAction<K, V, R> extends Entry.PiggyBack implements
   public void expire(long expiryTime) {
     lockForNoHit(EXPIRE);
     semanticCallback++;
-    needsFinish = false;
     newValueOrException = entry.getValueOrException();
     if (heapCache.isUpdateTimeNeeded()) {
       lastRefreshTime = entry.getRefreshTime();
@@ -650,7 +635,6 @@ public abstract class EntryAction<K, V, R> extends Entry.PiggyBack implements
   public void putAndSetExpiry(final V value, final long expiryTime, final long refreshTime) {
     lockFor(MUTATE);
     semanticCallback++;
-    needsFinish = false;
     newValueOrException = value;
     if (refreshTime >= 0) {
       lastRefreshTime = refreshTime;
@@ -793,7 +777,7 @@ public abstract class EntryAction<K, V, R> extends Entry.PiggyBack implements
 
   public void loadAndExpiryCalculatedMutateAgain() {
     load = loadAndMutate = false;
-    needsFinish = successfulLoad = true;
+    successfulLoad = true;
     ExaminationEntry<K,V> ee = new LoadedEntry<K,V>() {
       @Override
       public K getKey() {
@@ -813,10 +797,6 @@ public abstract class EntryAction<K, V, R> extends Entry.PiggyBack implements
     };
     int callbackCount = semanticCallback;
     operation.update(this, ee);
-    if (needsFinish) {
-      needsFinish = false;
-      updateDidNotTriggerDifferentMutationStoreLoadedValue();
-    }
   }
 
   public void updateDidNotTriggerDifferentMutationStoreLoadedValue() {
@@ -1012,7 +992,6 @@ public abstract class EntryAction<K, V, R> extends Entry.PiggyBack implements
    */
   public void mutationReleaseLockAndStartTimer() {
     checkLocked();
-    checkLocked();
     if (load) {
       if (!remove ||
         !(entry.getValueOrException() == null && heapCache.isRejectNullValues())) {
@@ -1095,7 +1074,6 @@ public abstract class EntryAction<K, V, R> extends Entry.PiggyBack implements
     synchronized (entry) {
       entry.processingDone(this);
       entryLocked = false;
-      needsFinish = false;
     }
     ready();
   }
@@ -1128,7 +1106,6 @@ public abstract class EntryAction<K, V, R> extends Entry.PiggyBack implements
    */
   public void ready() {
     completed = true;
-    needsFinish = false;
     if (completedCallback != null) {
       completedCallback.entryActionCompleted(this);
     }
