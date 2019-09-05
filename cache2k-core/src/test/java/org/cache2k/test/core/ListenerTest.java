@@ -38,6 +38,8 @@ import org.cache2k.testing.category.FastTests;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
+import org.junit.rules.Timeout;
+
 import static org.junit.Assert.*;
 import static org.cache2k.test.core.StaticUtil.*;
 
@@ -59,6 +61,9 @@ public class ListenerTest {
   /** Provide unique standard cache per method */
   @Rule
   public IntCacheRule target = new IntCacheRule();
+
+  @Rule
+  public Timeout globalTimeout = new Timeout((int) TestingParameters.MAX_FINISH_WAIT_MILLIS);
 
   static abstract class CountSyncEvents extends CacheRule.Context<Integer,Integer> {
 
@@ -158,7 +163,7 @@ public class ListenerTest {
   }
 
   /** If the listener is not executed in separate thread, this would block */
-  @Test(timeout = TestingParameters.MAX_FINISH_WAIT_MILLIS)
+  @Test
   public void asyncCreatedListenerCalled() {
     final AtomicInteger _callCount = new AtomicInteger();
     final CountDownLatch _fire = new CountDownLatch(1);
@@ -188,7 +193,7 @@ public class ListenerTest {
   }
 
   /** If the listener is not executed in separate thread, this would block */
-  @Test(timeout = TestingParameters.MAX_FINISH_WAIT_MILLIS)
+  @Test
   public void asyncUpdateListenerCalled() {
     final AtomicInteger _callCount = new AtomicInteger();
     final CountDownLatch _fire = new CountDownLatch(1);
@@ -223,7 +228,7 @@ public class ListenerTest {
   }
 
   /** If the listener is not executed in separate thread, this would block */
-  @Test(timeout = TestingParameters.MAX_FINISH_WAIT_MILLIS)
+  @Test
   public void asyncRemovedListenerCalled() {
     final AtomicInteger _callCount = new AtomicInteger();
     final CountDownLatch _fire = new CountDownLatch(1);
@@ -258,7 +263,7 @@ public class ListenerTest {
   }
 
   /** If the listener is not executed in separate thread, this would block */
-  @Test(timeout = TestingParameters.MAX_FINISH_WAIT_MILLIS)
+  @Test
   public void asyncEvictedListenerCalled() {
     final AtomicInteger _callCount = new AtomicInteger();
     final CountDownLatch _fire = new CountDownLatch(1);
@@ -292,7 +297,7 @@ public class ListenerTest {
   }
 
   /** Check that we do not miss events. */
-  @Test(timeout = TestingParameters.MAX_FINISH_WAIT_MILLIS)
+  @Test
   public void manyAsyncUpdateListenerCalled() {
     final AtomicInteger _callCount = new AtomicInteger();
     final ConcurrentMap<Integer, Integer> _seenValues = new ConcurrentHashMap<Integer, Integer>();

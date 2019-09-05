@@ -80,7 +80,7 @@ public class EntryTest {
     Entry e = new Entry();
     synchronized (e) {
       e.setNextRefreshTime(4711);
-      e.startProcessing(Entry.ProcessingState.REFRESH);
+      e.startProcessing(Entry.ProcessingState.REFRESH, null);
       assertTrue(e.isGettingRefresh());
       e.processingDone();
     }

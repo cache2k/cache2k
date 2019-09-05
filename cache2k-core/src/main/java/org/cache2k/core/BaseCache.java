@@ -170,28 +170,36 @@ public abstract class BaseCache<K, V> implements InternalCache<K, V> {
     return m;
   }
 
-  /**
-   * Execute a mutation operation with an already locked entry, for expiry events processing.
-   */
-  protected <R> R executeMutationForStartedProcessing(K key, Entry<K, V> e, Semantic<K, V, R> op) {
+  protected <R> EntryAction<K, V, R> actionForStartedProcessing(K key, Entry<K, V> e, Semantic<K, V, R> op) {
     EntryAction<K, V, R> _action = createEntryAction(key, e, op);
     _action.executeMutationForStartedProcessing();
-    return finishExecution(_action);
+    return _action;
   }
 
   protected <R> R execute(K key, Entry<K, V> e, Semantic<K, V, R> op) {
     EntryAction<K, V, R> _action = createEntryAction(key, e, op);
-    return execute(op, _action);
+    return execute(_action);
   }
 
   protected abstract <R> EntryAction<K, V, R> createEntryAction(K key, Entry<K, V> e, Semantic<K, V, R> op);
 
-  protected <R> R execute(Semantic<K, V, R> op, final EntryAction<K, V, R> _action) {
-    op.start(_action);
+  protected <R> R execute(final EntryAction<K, V, R> _action) {
+    _action.run();
     return finishExecution(_action);
   }
 
-  private <R> R finishExecution(final EntryAction<K, V, R> _action) {
+  /**
+   * Execute a mutation operation with an already locked entry, for expiry events processing.
+   */
+  protected <R> R executeStarted(final EntryAction<K, V, R> _action) {
+    _action.executeMutationForStartedProcessing();
+    return finishExecution(_action);
+  }
+
+  /**
+   * Not used for async, async will always report the exception via the callback.
+   */
+  protected <R> R finishExecution(final EntryAction<K, V, R> _action) {
     RuntimeException t = _action.exceptionToPropagate;
     if (t != null) {
       t.fillInStackTrace();

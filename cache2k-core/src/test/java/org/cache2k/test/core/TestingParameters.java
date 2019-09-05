@@ -32,7 +32,7 @@ public class TestingParameters {
   /**
    * Maximum time in millis we wait for an event to finish. Might need to be increased in loaded environments.
    */
-  public static final long MAX_FINISH_WAIT_MILLIS = 60000;
+  public static final long MAX_FINISH_WAIT_MILLIS = calculateMaxFinishWait();
 
   /**
    * Minimum amount of time that we expect to pass in waiting for an event.
@@ -44,8 +44,8 @@ public class TestingParameters {
    * is used inside test annotations.
    */
   static long calculateMaxFinishWait() {
-    if (System.getProperty("idea.launcher.port") != null) {
-      return 3456;
+    if (System.getProperty("org.cache2k.test.timeout") != null) {
+      return Long.parseLong(System.getProperty("org.cache2k.test.timeout"));
     } else {
       return 60000;
     }

@@ -134,12 +134,6 @@ public class SlowExpiryTest extends TestingBase {
         return getInfo().getRefreshCount() + getInfo().getRefreshFailedCount() >= _COUNT;
       }
     });
-    await("Warning log for failed refresh", new Condition() {
-      @Override
-      public boolean check() throws Exception {
-        return cnt.getWarnCount() >= _COUNT;
-      }
-    });
     assertEquals("no internal exceptions",0, getInfo().getInternalExceptionCount());
     assertTrue("got at least 8 - submitFailedCnt exceptions", getInfo().getLoadExceptionCount() >= getInfo().getRefreshFailedCount());
     assertTrue("no alert", getInfo().getHealth().isEmpty());

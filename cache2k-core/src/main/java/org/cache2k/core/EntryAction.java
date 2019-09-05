@@ -51,7 +51,8 @@ import static org.cache2k.core.Entry.ProcessingState.*;
  * @author Jens Wilke
  */
 @SuppressWarnings({"SynchronizeOnNonFinalField", "unchecked"})
-public abstract class EntryAction<K, V, R> implements
+public abstract class EntryAction<K, V, R> extends Entry.PiggyBack implements
+  Runnable,
   AsyncCacheLoader.Context<K, V>,
   AsyncCacheLoader.Callback<K, V>, AsyncCacheWriter.Callback, Progress<K, V, R> {
 
@@ -61,7 +62,12 @@ public abstract class EntryAction<K, V, R> implements
   HeapCache<K, V> heapCache;
   K key;
   Semantic<K, V, R> operation;
-  Entry<K, V> entry;
+
+  /**
+   * Reference to the entry we do processing for or the dummy entry {@link #NON_FRESH_DUMMY}
+   * The field is volatile, to be safe when we get a callback from a different thread.
+   */
+  volatile Entry<K, V> entry;
   V newValueOrException;
   V oldValueOrException;
   R result;
@@ -111,11 +117,31 @@ public abstract class EntryAction<K, V, R> implements
 
   Thread syncThread;
 
-  ActionCompletedCallback completedCallback;
+  /**
+   * Callback on on completion, set if client request is async.
+   */
+  CompletedCallback completedCallback;
+
+  private EntryAction nextAction = null;
+
+  /**
+   * Action is completed
+   */
+  private boolean completed;
+
+  public void enqueueToExecute(EntryAction v) {
+    EntryAction next;
+    EntryAction target = this;
+    while ((next = target.nextAction) != null) {
+      target = next;
+    }
+    target.nextAction = v;
+  }
 
   @SuppressWarnings("unchecked")
   public EntryAction(HeapCache<K,V> _heapCache, InternalCache<K,V> _userCache,
-                     Semantic<K, V, R> op, K k, Entry<K, V> e, ActionCompletedCallback cb) {
+                     Semantic<K, V, R> op, K k, Entry<K, V> e, CompletedCallback cb) {
+    super(null);
     heapCache = _heapCache;
     userCache = _userCache;
     operation = op;
@@ -196,7 +222,7 @@ public abstract class EntryAction<K, V, R> implements
   }
 
   @SuppressWarnings("unchecked")
-  protected abstract TimingHandler<K,V> timing(); //  { return RefreshHandler.ETERNAL; }
+  protected abstract TimingHandler<K,V> timing();
 
   @Override
   public K getKey() {
@@ -251,6 +277,14 @@ public abstract class EntryAction<K, V, R> implements
     return false;
   }
 
+  /**
+   * Entry point to execute this action.
+   */
+  public void run() {
+    needsFinish = true;
+    operation.start(this);
+  }
+
   @Override
   public void wantData() {
     wantData = true;
@@ -295,6 +329,7 @@ public abstract class EntryAction<K, V, R> implements
   public void wantMutation() {
     if (!entryLocked && wantData) {
       lockFor(MUTATE);
+      if (!entryLocked) { return; }
       countMiss = false;
       operation.examine(this, entry);
       if (needsFinish) {
@@ -306,7 +341,7 @@ public abstract class EntryAction<K, V, R> implements
   }
 
   /**
-   * Check whether the we are executed on an expired entry before the
+   * Check whether we are executed on an expired entry before the
    * timer event for expiry was received. In case expiry listeners
    * are present, we want to make sure that an expiry is sent before
    * a mutation (especially load) happens.
@@ -315,6 +350,7 @@ public abstract class EntryAction<K, V, R> implements
    */
   public void checkExpiryBeforeMutation() {
     if (entryExpiredListeners() != null && entry == NON_FRESH_DUMMY) {
+      needsFinish = true;
       wantData();
       return;
     }
@@ -341,6 +377,7 @@ public abstract class EntryAction<K, V, R> implements
    * In this case the entry is already locked.
    */
   public void executeMutationForStartedProcessing() {
+    needsFinish = true;
     entryLocked = true;
     heapDataValid = entry.isDataValidOrProbation();
     continueWithMutation();
@@ -374,6 +411,7 @@ public abstract class EntryAction<K, V, R> implements
   @Override
   public void load() {
     lockFor(LOAD);
+    checkLocked();
     needsFinish = false;
     load = true;
     Entry<K, V> e = entry;
@@ -395,7 +433,7 @@ public abstract class EntryAction<K, V, R> implements
         exceptionToPropagate = new CacheLoaderException(ex);
         return;
       }
-      asyncOperationStarted();
+      waitIfSynchronous();
       return;
     }
     AdvancedCacheLoader<K, V> _loader = loader();
@@ -435,23 +473,11 @@ public abstract class EntryAction<K, V, R> implements
     if (e == NON_FRESH_DUMMY) {
       e = heapCache.lookupOrNewEntry(key);
     }
-    for (; ; ) {
-      synchronized (e) {
-        e.waitForProcessing();
-        if (!e.isGone()) {
-          e.startProcessing(ps);
-          entryLocked = true;
-          heapDataValid = e.isDataValidOrProbation();
-          heapHit = !e.isVirgin();
-          entry = e;
-          return;
-        }
-      }
+    while(lockOrWait(ps, e)) {
       e = heapCache.lookupOrNewEntry(key);
     }
   }
 
-  @SuppressWarnings("SameParameterValue")
   void lockForNoHit(int ps) {
     if (entryLocked) {
       entry.nextProcessingStep(ps);
@@ -461,20 +487,28 @@ public abstract class EntryAction<K, V, R> implements
     if (e == NON_FRESH_DUMMY) {
       e = heapCache.lookupOrNewEntryNoHitRecord(key);
     }
-    for (; ; ) {
-      synchronized (e) {
-        e.waitForProcessing();
-        if (!e.isGone()) {
-          e.startProcessing(ps);
-          entryLocked = true;
-          heapDataValid = e.isDataValidOrProbation();
-          heapHit = !e.isVirgin();
-          entry = e;
-          return;
-        }
-      }
+    while (lockOrWait(ps, e)) {
       e = heapCache.lookupOrNewEntryNoHitRecord(key);
     }
+  }
+
+  /**
+   * In case another entry action is currently running and this is an async operation,
+   * don't block, just chain in the start of this action into the running action.
+   */
+  boolean lockOrWait(int ps, Entry e) {
+    synchronized (e) {
+      e.waitForProcessing();
+      if (!e.isGone()) {
+        e.startProcessing(ps, this);
+        entryLocked = true;
+        heapDataValid = e.isDataValidOrProbation();
+        heapHit = !e.isVirgin();
+        entry = e;
+        return false;
+      }
+    }
+    return true;
   }
 
   @Override
@@ -491,11 +525,21 @@ public abstract class EntryAction<K, V, R> implements
   }
 
   /**
-   * Make sure only one callback succeeds.
+   * Make sure only one callback succeeds. The entry reference is volatile,
+   * so we are sure its there.
    */
   private void checkEntryStateOnLoadCallback() {
-    if (!entry.checkAndSwitchProcessingState(LOAD_ASYNC, LOAD_COMPLETE)) {
-      throw new IllegalStateException("async callback on wrong entry state. duplicate callback?");
+    synchronized (entry) {
+      if (!entry.checkAndSwitchProcessingState(LOAD_ASYNC, LOAD_COMPLETE) || completed) {
+        throw new IllegalStateException("async callback on wrong entry state. duplicate callback?");
+      }
+    }
+    checkLocked();
+  }
+
+  private void checkLocked() {
+    if (!entryLocked) {
+      throw new AssertionError();
     }
   }
 
@@ -571,7 +615,7 @@ public abstract class EntryAction<K, V, R> implements
 
   @Override
   public void expire(long expiryTime) {
-    lockForNoHit(MUTATE);
+    lockForNoHit(EXPIRE);
     needsFinish = false;
     newValueOrException = entry.getValueOrException();
     if (heapCache.isUpdateTimeNeeded()) {
@@ -750,6 +794,7 @@ public abstract class EntryAction<K, V, R> implements
     };
     operation.update(this, ee);
     if (needsFinish) {
+      needsFinish = false;
       updateDidNotTriggerDifferentMutationStoreLoadedValue();
     }
   }
@@ -842,6 +887,9 @@ public abstract class EntryAction<K, V, R> implements
     mutationUpdateHeap();
   }
 
+  /**
+   * The final write in the entry is at {@link #mutationReleaseLockAndStartTimer()}
+   */
   public void mutationUpdateHeap() {
     synchronized (entry) {
       if (heapCache.isRecordRefreshTime()) {
@@ -943,6 +991,8 @@ public abstract class EntryAction<K, V, R> implements
    * Entry mutation and start of expiry has to be done atomically to avoid races.
    */
   public void mutationReleaseLockAndStartTimer() {
+    checkLocked();
+    checkLocked();
     if (load) {
       if (!remove ||
         !(entry.getValueOrException() == null && heapCache.isRejectNullValues())) {
@@ -953,19 +1003,17 @@ public abstract class EntryAction<K, V, R> implements
     synchronized (entry) {
       if (refresh) {
         heapCache.startRefreshProbationTimer(entry, expiry);
-        updateMutationStatistics();
-        mutationDone();
       } else if (remove) {
         heapCache.removeEntry(entry);
       } else {
         entry.setNextRefreshTime(timing().stopStartTimer(expiry, entry));
         if (!expiredImmediately && entry.isExpiredState()) {
           justExpired = true;
-          lockFor(EXPIRY);
+          lockFor(EXPIRE);
         }
       }
       if (!justExpired) {
-        entry.processingDone();
+        entry.processingDone(this);
         entryLocked = false;
       }
     }
@@ -1014,7 +1062,7 @@ public abstract class EntryAction<K, V, R> implements
     exceptionToPropagate = t;
     if (entryLocked) {
       synchronized (entry) {
-        entry.processingDone();
+        entry.processingDone(this);
         entryLocked = false;
       }
     }
@@ -1024,7 +1072,7 @@ public abstract class EntryAction<K, V, R> implements
   public void mutationAbort(RuntimeException t) {
     exceptionToPropagate = t;
     synchronized (entry) {
-      entry.processingDone();
+      entry.processingDone(this);
       entryLocked = false;
       needsFinish = false;
     }
@@ -1041,7 +1089,7 @@ public abstract class EntryAction<K, V, R> implements
   public void noMutationRequested() {
     if (entryLocked) {
       synchronized (entry) {
-        entry.processingDone();
+        entry.processingDone(this);
         if (entry.isVirgin()) {
           heapCache.removeEntry(entry);
         }
@@ -1052,30 +1100,32 @@ public abstract class EntryAction<K, V, R> implements
     ready();
   }
 
+  /**
+   * Execute any callback or other actions waiting for this one to complete.
+   * It is safe to access {@link #nextAction} here, also we don't hold the entry lock
+   * since the entry does not point on this action any more.
+   */
   public void ready() {
+    completed = true;
     if (completedCallback != null) {
       completedCallback.entryActionCompleted(this);
+    }
+    if (nextAction != null) {
+      nextAction.run();
     }
   }
 
   /**
    * If thread is a synchronous call, wait until operation is complete.
-   * There is a little chance that the call back completes before we get
+   * There is a little chance that the callback completes before we get
    * here as well as some other operation changing the entry again.
    */
-  public void asyncOperationStarted() {
+  public void waitIfSynchronous() {
     if (syncThread == Thread.currentThread()) {
       synchronized (entry) {
-        while (entry.isProcessing()) {
-          try {
-            entry.wait();
-          } catch (InterruptedException ex) {
-            Thread.currentThread().interrupt();
-          }
-        }
+        entry.waitForProcessing();
       }
     } else {
-      entryLocked = false;
     }
   }
 
@@ -1103,8 +1153,8 @@ public abstract class EntryAction<K, V, R> implements
     }
   }
 
-  public interface ActionCompletedCallback {
-    void entryActionCompleted(EntryAction ea);
+  public interface CompletedCallback<K,V,R> {
+    void entryActionCompleted(EntryAction<K,V,R> ea);
   }
 
 }

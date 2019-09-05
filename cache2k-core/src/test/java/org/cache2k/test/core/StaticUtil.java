@@ -81,16 +81,18 @@ public class StaticUtil {
     return w.getException();
   }
 
-  public static <K,V> void load(Cache<K,V> c, K ...keys) {
+  public static <K,V> CacheLoaderTest.CompletionWaiter load(Cache<K,V> c, K ...keys) {
     CacheLoaderTest.CompletionWaiter w = new CacheLoaderTest.CompletionWaiter();
     c.loadAll(toIterable(keys), w);
     w.awaitCompletion();
+    return w;
   }
 
-  public static <K,V> void reload(Cache<K,V> c, K ...keys) {
+  public static <K,V> CacheLoaderTest.CompletionWaiter reload(Cache<K,V> c, K ...keys) {
     CacheLoaderTest.CompletionWaiter w = new CacheLoaderTest.CompletionWaiter();
     c.reloadAll(toIterable(keys), w);
     w.awaitCompletion();
+    return w;
   }
 
   public interface LoaderRunner {

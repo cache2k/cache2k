@@ -265,7 +265,8 @@ public class Entry<K, V> extends CompactEntry<K, V>
     public static final int EVICT = 16;
     public static final int LOAD_ASYNC = 17;
     public static final int WRITE_ASYNC = 18;
-    public static final int LAST = 19;
+    public static final int EXPIRE = 19;
+    public static final int LAST = 20;
   }
 
   public static String num2processingStateText(int ps) {
@@ -323,8 +324,11 @@ public class Entry<K, V> extends CompactEntry<K, V>
   /**
    * Starts long operation on entry. Pins the entry in the cache.
    */
-  public void startProcessing(int ps) {
+  public void startProcessing(int ps, final EntryAction action) {
     setProcessingState(ps);
+    if (action != null) {
+      setEntryAction(action);
+    }
   }
 
   /**
@@ -338,9 +342,14 @@ public class Entry<K, V> extends CompactEntry<K, V>
    * Set processing state to done and notify all that wait for
    * processing this entry.
    */
+  public void processingDone(EntryAction action) {
+    processingDone();
+  }
+
   public void processingDone() {
     notifyAll();
     setProcessingState(ProcessingState.DONE);
+    resetEntryAction();
   }
 
   public long getNextRefreshTime() {
@@ -596,7 +605,7 @@ public class Entry<K, V> extends CompactEntry<K, V>
         sb.append(", timerState=").append(getTask());
       }
     } else {
-      sb.append(", timerState=skipped/notLocked");
+      sb.append(", timerState=NEEDS_LOCK");
     }
     sb.append("}");
     return sb.toString();
@@ -644,6 +653,44 @@ public class Entry<K, V> extends CompactEntry<K, V>
       return;
     }
     misc = new TaskPiggyBack(v, (PiggyBack) misc);
+  }
+
+  public void setEntryAction(EntryAction action) {
+    action.next = existingPiggyBackForInserting();
+    misc = action;
+  }
+
+  public EntryAction getEntryAction() {
+    if (!(misc instanceof PiggyBack)) {
+      return null;
+    }
+    PiggyBack at = ((PiggyBack) misc);
+    while (at != null) {
+      if (at instanceof EntryAction) {
+        return (EntryAction) at;
+      }
+      at = at.next;
+    }
+    return null;
+  }
+
+  public void resetEntryAction() {
+    if (!(misc instanceof PiggyBack)) {
+      return;
+    }
+    if (misc instanceof EntryAction) {
+      misc = ((PiggyBack) misc).next;
+      return;
+    }
+    PiggyBack at = ((PiggyBack) misc);
+    while (at != null) {
+      PiggyBack next = at.next;
+      if (next instanceof EntryAction) {
+        at.next = next.next;
+        return;
+      }
+      at = next;
+    }
   }
 
   /**
@@ -697,7 +744,7 @@ public class Entry<K, V> extends CompactEntry<K, V>
   }
 
   static class PiggyBack {
-    final PiggyBack next;
+    PiggyBack next;
 
     public PiggyBack(final PiggyBack _next) {
       next = _next;

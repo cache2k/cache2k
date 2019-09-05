@@ -86,13 +86,19 @@ public interface AsyncCacheLoader<K, V> {
    * Callback for async cache load.
    *
    * FIXME: K needed?
-   *
-   * @author Jens Wilke
    */
   interface Callback<K, V> extends EventListener {
 
+    /**
+     *
+     * @throws IllegalStateException
+     */
     void onLoadSuccess(V value);
 
+    /**
+     *
+     * @throws IllegalStateException
+     */
     void onLoadFailure(Throwable t);
 
   }

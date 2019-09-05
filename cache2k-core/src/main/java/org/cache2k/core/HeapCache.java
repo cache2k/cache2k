@@ -631,7 +631,7 @@ public class HeapCache<K, V> extends BaseCache<K, V> {
           metrics.goneSpin();
           continue;
         }
-        e.startProcessing(Entry.ProcessingState.LOAD);
+        e.startProcessing(Entry.ProcessingState.LOAD, null);
         break;
       }
     }
@@ -863,7 +863,7 @@ public class HeapCache<K, V> extends BaseCache<K, V> {
           metrics.goneSpin();
           continue;
         }
-        e.startProcessing(Entry.ProcessingState.COMPUTE);
+        e.startProcessing(Entry.ProcessingState.COMPUTE, null);
         break;
       }
     }
@@ -1196,7 +1196,7 @@ public class HeapCache<K, V> extends BaseCache<K, V> {
           metrics.goneSpin();
           continue;
         }
-        e.startProcessing(Entry.ProcessingState.LOAD);
+        e.startProcessing(Entry.ProcessingState.LOAD, null);
         break;
       }
     }
@@ -1567,7 +1567,7 @@ public class HeapCache<K, V> extends BaseCache<K, V> {
       if (e.isGone()) {
         return;
       }
-      e.startProcessing(Entry.ProcessingState.REFRESH);
+      e.startProcessing(Entry.ProcessingState.REFRESH, null);
     }
     boolean _finished = false;
     try {

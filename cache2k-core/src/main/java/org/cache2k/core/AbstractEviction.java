@@ -306,7 +306,7 @@ public abstract class AbstractEviction implements Eviction, EvictionMetrics {
           }
           chunk[i] = null; continue;
         }
-        e.startProcessing(Entry.ProcessingState.EVICT);
+        e.startProcessing(Entry.ProcessingState.EVICT, null);
       }
       listener.onEvictionFromHeap(e);
       synchronized (e) {

@@ -94,11 +94,12 @@ public class TestingBase {
 
   private Executor loaderExecutor = new ExecutorWrapper();
 
-  public Executor getLoaderExector() {
+  public Executor getLoaderExecutor() {
     return loaderExecutor;
   }
 
-  private TimeStepper stepper;
+  private final static TimeStepper defaultStepper = new TimeStepper(ClockDefaultImpl.INSTANCE);
+  private TimeStepper stepper = defaultStepper;
   private InternalClock clock;
 
   @Rule

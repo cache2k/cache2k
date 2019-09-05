@@ -282,7 +282,7 @@ public class WiredCache<K, V> extends BaseCache<K, V>
    */
   private void loadAllWithAsyncLoader(final CacheOperationCompletionListener _listener, final Set<K> _keysToLoad) {
     final AtomicInteger _countDown = new AtomicInteger(_keysToLoad.size());
-    EntryAction.ActionCompletedCallback cb = new EntryAction.ActionCompletedCallback() {
+    EntryAction.CompletedCallback cb = new EntryAction.CompletedCallback() {
       @Override
       public void entryActionCompleted(final EntryAction ea) {
         int v = _countDown.decrementAndGet();
@@ -338,7 +338,7 @@ public class WiredCache<K, V> extends BaseCache<K, V>
 
   private void reloadAllWithAsyncLoader(final CacheOperationCompletionListener _listener, final Set<K> _keySet) {
     final AtomicInteger _countDown = new AtomicInteger(_keySet.size());
-    EntryAction.ActionCompletedCallback cb = new EntryAction.ActionCompletedCallback() {
+    EntryAction.CompletedCallback cb = new EntryAction.CompletedCallback() {
       @Override
       public void entryActionCompleted(final EntryAction ea) {
         if (_countDown.decrementAndGet() == 0) {
@@ -352,19 +352,23 @@ public class WiredCache<K, V> extends BaseCache<K, V>
     }
   }
 
-  private static final EntryAction.ActionCompletedCallback NOOP_CALLBACK = new EntryAction.ActionCompletedCallback() {
+  private static final EntryAction.CompletedCallback NOOP_CALLBACK = new EntryAction.CompletedCallback() {
     @Override
     public void entryActionCompleted(final EntryAction ea) {
     }
   };
 
   /**
+   * Execute asynchronously, returns immediately and uses callback to notify on
+   * operation completion. Call does not block.
+   *
    * @param key the key
    * @param e the entry, optional, may be {@code null}
    */
-  private <R> void executeAsync(K key, Entry<K,V> e, Semantic<K, V, R> op, EntryAction.ActionCompletedCallback cb) {
-    EntryAction<K, V, R> _action = new MyEntryAction<R>(op, key, e, cb);
-    execute(op, _action);
+  private <R> void executeAsync(K key, Entry<K,V> e, Semantic<K,V,R> op,
+                                EntryAction.CompletedCallback<K,V,R> cb) {
+    EntryAction<K,V,R> _action = new MyEntryAction<R>(op, key, e, cb);
+    _action.run();
   }
 
   private void reloadAllWithSyncLoader(final CacheOperationCompletionListener _listener, final Set<K> _keySet) {
@@ -698,6 +702,7 @@ public class WiredCache<K, V> extends BaseCache<K, V>
    */
   @Override
   public void timerEventExpireEntry(final Entry<K, V> e, final Object task) {
+    EntryAction<K, V, ?> action;
     metrics().timerEvent();
     synchronized (e) {
       if (e.getTask() != task) { return; }
@@ -724,17 +729,19 @@ public class WiredCache<K, V> extends BaseCache<K, V>
       if (e.isGone() || e.isExpiredState()) {
         return;
       }
-      e.startProcessing(Entry.ProcessingState.EXPIRY);
+      action = createEntryAction(e.getKey(), e, SPEC.expire(e.getKey(), ExpiryTimeValues.NOW));
+      e.startProcessing(Entry.ProcessingState.EXPIRY, action);
     }
-    finishExpire(e);
+    executeStarted(action);
   }
 
   private void finishExpire(final Entry<K, V> e) {
-    executeMutationForStartedProcessing(e.getKey(), e, SPEC.expire(e.getKey(), ExpiryTimeValues.NOW));
+    actionForStartedProcessing(e.getKey(), e, SPEC.expire(e.getKey(), ExpiryTimeValues.NOW));
   }
 
   @Override
   public void timerEventRefresh(final Entry<K, V> e, final Object task) {
+    EntryAction<K, V, ?> action;
     metrics().timerEvent();
     synchronized (e) {
       if (e.getTask() != task) { return; }
@@ -756,14 +763,6 @@ public class WiredCache<K, V> extends BaseCache<K, V>
           try {
             executeAsync(e.getKey(), e, (Semantic<K,V,Void>) Operations.REFRESH, NOOP_CALLBACK);
           } catch (CacheClosedException ignore) {
-          } catch (Throwable ex) {
-            getLog().warn("Exception starting async refresh", ex);
-            try {
-              synchronized (e) {
-                heapCache.expireEntry(e);
-              }
-            } catch (CacheClosedException ignore) {
-            }
           }
         }
       };
@@ -778,13 +777,15 @@ public class WiredCache<K, V> extends BaseCache<K, V>
       if (e.isGone() || e.isExpiredState()) {
         return;
       }
-      e.startProcessing(Entry.ProcessingState.EXPIRY);
+      action = createEntryAction(e.getKey(), e, SPEC.expire(e.getKey(), ExpiryTimeValues.NOW));
+      e.startProcessing(Entry.ProcessingState.EXPIRY, action);
     }
-    finishExpire(e);
+    executeStarted(action);
   }
 
   @Override
   public void timerEventProbationTerminated(final Entry<K, V> e, final Object task) {
+    EntryAction<K,V,?> action;
     metrics().timerEvent();
     synchronized (e) {
       if (e.getTask() != task) { return; }
@@ -796,9 +797,10 @@ public class WiredCache<K, V> extends BaseCache<K, V>
       if (e.isGone() || e.isExpiredState()) {
         return;
       }
-      e.startProcessing(Entry.ProcessingState.EXPIRY);
+      action = createEntryAction(e.getKey(), e, SPEC.expire(e.getKey(), ExpiryTimeValues.NOW));
+      e.startProcessing(Entry.ProcessingState.EXPIRY, action);
     }
-    finishExpire(e);
+    executeStarted(action);
   }
 
   /**
@@ -811,7 +813,7 @@ public class WiredCache<K, V> extends BaseCache<K, V>
     }
 
     public MyEntryAction(final Semantic<K, V, R> op, final K _k,
-                         final Entry<K, V> e, ActionCompletedCallback cb) {
+                         final Entry<K, V> e, CompletedCallback cb) {
       super(WiredCache.this.heapCache, WiredCache.this, op, _k, e, cb);
     }
 
