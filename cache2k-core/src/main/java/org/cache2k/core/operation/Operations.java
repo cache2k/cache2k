@@ -47,6 +47,7 @@ public class Operations<K, V> {
       if (c.isPresentOrMiss()) {
         c.result(e.getValueOrException());
       }
+      c.noMutation();
     }
   };
 
@@ -60,6 +61,7 @@ public class Operations<K, V> {
     public void examine(Progress c, ExaminationEntry e) {
       if (c.isPresentOrMiss()) {
         c.result(e.getValueOrException());
+        c.noMutation();
       } else {
         c.wantMutation();
       }
@@ -105,6 +107,7 @@ public class Operations<K, V> {
     public void examine(Progress c, ExaminationEntry e) {
       if (c.isPresentOrMiss()) {
         c.entryResult(e);
+        c.noMutation();
       } else {
         c.wantMutation();
       }
@@ -132,6 +135,7 @@ public class Operations<K, V> {
       if (c.isPresentOrMiss()) {
         c.entryResult(e);
       }
+      c.noMutation();
     }
 
   };
@@ -174,12 +178,10 @@ public class Operations<K, V> {
 
     @Override
     public void examine(Progress c, ExaminationEntry e) {
-      if (c.isPresent()) {
-        c.result(true);
-        return;
-      }
-      c.result(false);
+      c.result(c.isPresent());
+      c.noMutation();
     }
+
   };
 
   public Semantic<K, V, V> peekAndRemove(K key) {
@@ -205,7 +207,9 @@ public class Operations<K, V> {
         if (c.isPresentOrMiss()) {
           c.result(e.getValueOrException());
           c.put(value);
+          return;
         }
+        c.noMutation();
       }
 
     };
@@ -226,22 +230,29 @@ public class Operations<K, V> {
   }
 
   public Semantic<K, V, V> computeIfAbsent(final K key, final Callable<V> _function) {
-    return new Semantic.UpdateExisting<K, V, V>() {
+    return new Semantic.MightUpdateExisting<K, V, V>() {
+
+      @Override
+      public void examine(final Progress<K, V, V> c, final ExaminationEntry<K, V> e) {
+        if (c.isPresentOrMiss()) {
+          c.result(e.getValueOrException());
+          c.noMutation();
+        } else {
+          c.wantMutation();
+        }
+      }
 
       @Override
       public void update(Progress<K, V, V> c, ExaminationEntry<K, V> e) {
-        if (c.isPresentOrMiss()) {
-          c.result(e.getValueOrException());
-        } else {
-          try {
-            V _value = _function.call();
-            c.put(_value);
-            c.result(_value);
-          } catch (RuntimeException ex) {
-            c.failure(ex);
-          } catch (Exception ex) {
-            c.failure(new CacheLoaderException(ex));
-          }
+        try {
+          V _value = _function.call();
+          c.result(_value);
+          c.put(_value);
+          return;
+        } catch (RuntimeException ex) {
+          c.failure(ex);
+        } catch (Exception ex) {
+          c.failure(new CacheLoaderException(ex));
         }
       }
 
@@ -275,6 +286,7 @@ public class Operations<K, V> {
           return;
         }
         c.result(false);
+        c.noMutation();
       }
 
     };
@@ -296,6 +308,7 @@ public class Operations<K, V> {
           return;
         }
         c.result(false);
+        c.noMutation();
       }
 
     };
@@ -314,6 +327,7 @@ public class Operations<K, V> {
           return;
         }
         c.result(false);
+        c.noMutation();
       }
 
     };
@@ -332,6 +346,7 @@ public class Operations<K, V> {
           return;
         }
         c.result(false);
+        c.noMutation();
       }
 
     };
@@ -369,11 +384,15 @@ public class Operations<K, V> {
             t == ExpiryTimeValues.REFRESH) {
           if (c.isPresentOrInRefreshProbation()) {
             c.expire(t);
+          } else {
+            c.noMutation();
           }
           return;
         }
         if (c.isPresent()) {
           c.expire(t);
+        } else {
+          c.noMutation();
         }
       }
     };

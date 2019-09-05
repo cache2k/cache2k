@@ -69,6 +69,11 @@ public interface Progress<K, V, R> {
   void wantMutation();
 
   /**
+   * No mutation is done. Last command of semantic method.
+   */
+  void noMutation();
+
+  /**
    * Sets the operation result.
    */
   void result(R result);
@@ -91,12 +96,12 @@ public interface Progress<K, V, R> {
   void load();
 
   /**
-   * Same as load but counting statistics as refresh.
+   * Same as load but counting statistics as refresh. Last command of semantic method.
    */
   void refresh();
 
   /**
-   * Request a load, however call update again for the final outcome.
+   * Request a load, and then call update again for the final outcome. Last command of semantic method.
    */
   void loadAndMutation();
 
@@ -118,7 +123,7 @@ public interface Progress<K, V, R> {
   /**
    * Bad things happened, propagate the exception to the client. The original exception
    * must be wrapped. The calling stacktrace will be filled into the wrapped exception
-   * before thrown.
+   * before thrown. Last command of semantic method.
    */
   void failure(RuntimeException t);
 

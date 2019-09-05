@@ -440,9 +440,9 @@ public class WiredCache<K, V> extends BaseCache<K, V>
    }
 
   /**
-   * We need to deal with possible null values and exceptions. This is
-   * a simple placeholder implementation that covers it all by working
-   * on the entry.
+   * Just a simple loop at the moment. We need to deal with possible null values
+   * and exceptions. This is a simple placeholder implementation that covers it
+   * all by working on the entry.
    */
   @Override
   public Map<K, V> getAll(final Iterable<? extends K> keys) {

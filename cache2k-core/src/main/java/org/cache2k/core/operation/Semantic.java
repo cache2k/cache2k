@@ -29,7 +29,10 @@ package org.cache2k.core.operation;
 public interface Semantic<K, V, R> {
 
   /**
-   * Start of the operation.
+   * Start of the operation. Either calls {@link Progress#wantData()} or
+   * {@link Progress#wantMutation()}. A {@link Progress#wantMutation()}
+   * at the start means we don't need the current data and will mutate the
+   * entry unconditionally.
    */
   void start(Progress<K, V, R> c);
 

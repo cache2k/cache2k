@@ -184,7 +184,9 @@ class MutableEntryOnProgress<K, V> implements MutableCacheEntry<K, V> {
     }
     if (customExpiry) {
       progress.expire(expiryTime);
+      return;
     }
+    progress.noMutation();
   }
 
 }
