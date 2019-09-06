@@ -511,12 +511,12 @@ public class CacheLoaderTest extends TestingBase {
     multipleWaitersCompleteAfterLoad(true, false);
   }
 
-  @Test @Ignore
+  @Test
   public void multipleWaitersCompleteAfterLoad_noThreads_async() throws Exception {
     multipleWaitersCompleteAfterLoad(false, true);
   }
 
-  @Test @Ignore
+  @Test
   public void multipleWaitersCompleteAfterLoad_threads_async() throws Exception {
     multipleWaitersCompleteAfterLoad(true, true);
   }

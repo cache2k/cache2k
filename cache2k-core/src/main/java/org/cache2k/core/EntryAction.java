@@ -339,8 +339,7 @@ public abstract class EntryAction<K, V, R> extends Entry.PiggyBack implements
   public void wantMutation() {
     semanticCallback++;
     if (!entryLocked && wantData) {
-      lockFor(MUTATE);
-      if (!entryLocked) { return; }
+      if (lockFor(MUTATE)) { return; }
       countMiss = false;
       examine();
       return;
@@ -413,7 +412,7 @@ public abstract class EntryAction<K, V, R> extends Entry.PiggyBack implements
   @SuppressWarnings("unchecked")
   @Override
   public void load() {
-    lockFor(LOAD);
+    if (lockFor(LOAD)) { return; }
     semanticCallback++;
     checkLocked();
     load = true;
@@ -428,7 +427,7 @@ public abstract class EntryAction<K, V, R> extends Entry.PiggyBack implements
     }
     AsyncCacheLoader<K, V> _asyncLoader;
     if ((_asyncLoader = asyncLoader()) != null) {
-      lockFor(LOAD_ASYNC);
+      entry.nextProcessingStep(LOAD_ASYNC);
       try {
         _asyncLoader.load(key, this, this);
       } catch (Exception ex) {
@@ -467,51 +466,77 @@ public abstract class EntryAction<K, V, R> extends Entry.PiggyBack implements
     expiryCalculated();
   }
 
-  void lockFor(int ps) {
-    if (entryLocked) {
-      entry.nextProcessingStep(ps);
-      return;
-    }
-    Entry<K, V> e = entry;
-    if (e == NON_FRESH_DUMMY) {
-      e = heapCache.lookupOrNewEntry(key);
-    }
-    while(lockOrWait(ps, e)) {
-      e = heapCache.lookupOrNewEntry(key);
-    }
+  /**
+   * @return true, in case this is an async call and enqueued the operation
+   *         in the running one
+   */
+  private boolean lockFor(int ps) {
+    return lockFor(ps, true);
   }
 
-  void lockForNoHit(int ps) {
+  /**
+   * @return true, in case this is an async call and enqueued the operation
+   *         in the running one
+   */
+  private boolean lockForNoHit(int ps) {
+    return lockFor(ps, false);
+  }
+
+  private boolean lockFor(int ps, boolean countHit) {
     if (entryLocked) {
       entry.nextProcessingStep(ps);
-      return;
+      return false;
     }
     Entry<K, V> e = entry;
     if (e == NON_FRESH_DUMMY) {
-      e = heapCache.lookupOrNewEntryNoHitRecord(key);
+      e = countHit ? heapCache.lookupOrNewEntry(key) : heapCache.lookupOrNewEntryNoHitRecord(key);
     }
-    while (lockOrWait(ps, e)) {
-      e = heapCache.lookupOrNewEntryNoHitRecord(key);
+    for(;;) {
+      synchronized (e) {
+        if (tryEnqueueOperationInCurrentlyProcessing(e)) {
+          return true;
+        }
+        if (waitForConcurrentProcessingOrStop(ps, e)) {
+          return false;
+        }
+      }
+      e = countHit ? heapCache.lookupOrNewEntry(key) : heapCache.lookupOrNewEntryNoHitRecord(key);
     }
   }
 
   /**
-   * In case another entry action is currently running and this is an async operation,
-   * don't block, just chain in the start of this action into the running action.
+   * If entry is currently processing, and this is an async request, we can
+   * enqueue this operation in a waitlist that gets executed when
+   * the processing has completed.
    */
-  boolean lockOrWait(int ps, Entry e) {
-    synchronized (e) {
-      e.waitForProcessing();
-      if (!e.isGone()) {
-        e.startProcessing(ps, this);
-        entryLocked = true;
-        heapDataValid = e.isDataValidOrProbation();
-        heapHit = !e.isVirgin();
-        entry = e;
-        return false;
+  private boolean tryEnqueueOperationInCurrentlyProcessing(Entry e) {
+    if (e.isProcessing() && completedCallback != null) {
+      EntryAction runningAction = e.getEntryAction();
+      if (runningAction != null) {
+        runningAction.enqueueToExecute(this);
+        return true;
       }
     }
-    return true;
+    return false;
+  }
+
+  /**
+   * Wait for concurrent processing. The entry might be gone as cause of the concurrent operation.
+   * In this case we need to insert a new entry.
+   *
+   * @return true if we got the entry lock, false if we need to spin
+   */
+  private boolean waitForConcurrentProcessingOrStop(int ps, Entry e) {
+    e.waitForProcessing();
+    if (!e.isGone()) {
+      e.startProcessing(ps, this);
+      entryLocked = true;
+      heapDataValid = e.isDataValidOrProbation();
+      heapHit = !e.isVirgin();
+      entry = e;
+      return true;
+    }
+    return false;
   }
 
   @Override
@@ -597,7 +622,7 @@ public abstract class EntryAction<K, V, R> extends Entry.PiggyBack implements
 
   @Override
   public void put(V value) {
-    lockFor(MUTATE);
+    if (lockFor(MUTATE)) { return; }
     semanticCallback++;
     newValueOrException = value;
     if (!heapCache.isUpdateTimeNeeded()) {
@@ -610,7 +635,7 @@ public abstract class EntryAction<K, V, R> extends Entry.PiggyBack implements
 
   @Override
   public void remove() {
-    lockForNoHit(MUTATE);
+    if (lockForNoHit(MUTATE)) { return; }
     semanticCallback++;
     remove = true;
     mutationMayCallWriter();
@@ -618,7 +643,7 @@ public abstract class EntryAction<K, V, R> extends Entry.PiggyBack implements
 
   @Override
   public void expire(long expiryTime) {
-    lockForNoHit(EXPIRE);
+    if (lockForNoHit(EXPIRE)) { return; }
     semanticCallback++;
     newValueOrException = entry.getValueOrException();
     if (heapCache.isUpdateTimeNeeded()) {
@@ -633,7 +658,7 @@ public abstract class EntryAction<K, V, R> extends Entry.PiggyBack implements
 
   @Override
   public void putAndSetExpiry(final V value, final long expiryTime, final long refreshTime) {
-    lockFor(MUTATE);
+    if (lockFor(MUTATE)) { return; }
     semanticCallback++;
     newValueOrException = value;
     if (refreshTime >= 0) {
@@ -1008,7 +1033,6 @@ public abstract class EntryAction<K, V, R> extends Entry.PiggyBack implements
         entry.setNextRefreshTime(timing().stopStartTimer(expiry, entry));
         if (!expiredImmediately && entry.isExpiredState()) {
           justExpired = true;
-          lockFor(EXPIRE);
         }
       }
       if (!justExpired) {
@@ -1017,6 +1041,7 @@ public abstract class EntryAction<K, V, R> extends Entry.PiggyBack implements
       }
     }
     if (justExpired) {
+      entry.nextProcessingStep(EXPIRE);
       expiry = 0;
       checkKeepOrRemove();
       return;
@@ -1066,7 +1091,7 @@ public abstract class EntryAction<K, V, R> extends Entry.PiggyBack implements
         entryLocked = false;
       }
     }
-    ready();
+    completeProcessCallbacks();
   }
 
   public void mutationAbort(RuntimeException t) {
@@ -1075,14 +1100,14 @@ public abstract class EntryAction<K, V, R> extends Entry.PiggyBack implements
       entry.processingDone(this);
       entryLocked = false;
     }
-    ready();
+    completeProcessCallbacks();
   }
 
   /**
    *
    */
   public void mutationDone() {
-    ready();
+    completeProcessCallbacks();
   }
 
   public void noMutationRequested() {
@@ -1096,7 +1121,7 @@ public abstract class EntryAction<K, V, R> extends Entry.PiggyBack implements
       entryLocked = false;
     }
     updateOnlyReadStatistics();
-    ready();
+    completeProcessCallbacks();
   }
 
   /**
@@ -1104,7 +1129,7 @@ public abstract class EntryAction<K, V, R> extends Entry.PiggyBack implements
    * It is safe to access {@link #nextAction} here, also we don't hold the entry lock
    * since the entry does not point on this action any more.
    */
-  public void ready() {
+  public void completeProcessCallbacks() {
     completed = true;
     if (completedCallback != null) {
       completedCallback.entryActionCompleted(this);
@@ -1112,6 +1137,10 @@ public abstract class EntryAction<K, V, R> extends Entry.PiggyBack implements
     if (nextAction != null) {
       nextAction.run();
     }
+    ready();
+  }
+
+  public void ready() {
   }
 
   /**
@@ -1119,7 +1148,7 @@ public abstract class EntryAction<K, V, R> extends Entry.PiggyBack implements
    * There is a little chance that the callback completes before we get
    * here as well as some other operation changing the entry again.
    */
-  public void waitIfSynchronous() {
+  private void waitIfSynchronous() {
     if (syncThread == Thread.currentThread()) {
       synchronized (entry) {
         entry.waitForProcessing();
