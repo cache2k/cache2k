@@ -36,11 +36,11 @@ public class StaxConfigTokenizer extends AbstractConfigurationTokenizer {
   private String startName;
   private String value;
 
-  public StaxConfigTokenizer(final String _source, final InputStream in, final String _encoding)
+  public StaxConfigTokenizer(final String source, final InputStream in, final String encoding)
     throws XMLStreamException {
-    super(_source);
+    super(source);
     XMLInputFactory f = XMLInputFactory.newInstance();
-    input = f.createXMLStreamReader(in, _encoding);
+    input = f.createXMLStreamReader(in, encoding);
   }
 
   @Override
@@ -51,8 +51,8 @@ public class StaxConfigTokenizer extends AbstractConfigurationTokenizer {
   @Override
   public Item next() throws Exception {
     while (input.hasNext()) {
-      int _type = input.next();
-      switch (_type) {
+      int type = input.next();
+      switch (type) {
         case XMLStreamReader.START_ELEMENT :
           if (startName != null) {
             hierarchy.push(startName);
@@ -63,12 +63,12 @@ public class StaxConfigTokenizer extends AbstractConfigurationTokenizer {
         case XMLStreamReader.CHARACTERS :
           value = input.getText(); break;
         case XMLStreamReader.END_ELEMENT :
-          String _name = input.getLocalName();
-          if (startName != null && startName.equals(_name)) {
+          String name = input.getLocalName();
+          if (startName != null && startName.equals(name)) {
             startName = null;
-            return returnProperty(_name, value);
+            return returnProperty(name, value);
           }
-          if (_name.equals(hierarchy.element())) {
+          if (name.equals(hierarchy.element())) {
             hierarchy.pop();
             return returnUnnest();
           }
@@ -81,9 +81,9 @@ public class StaxConfigTokenizer extends AbstractConfigurationTokenizer {
   public static class Factory implements TokenizerFactory {
 
     @Override
-    public ConfigurationTokenizer createTokenizer(final String _source, final InputStream in, final String _encoding)
+    public ConfigurationTokenizer createTokenizer(final String source, final InputStream in, final String encoding)
       throws XMLStreamException {
-      return new StaxConfigTokenizer(_source, in, _encoding);
+      return new StaxConfigTokenizer(source, in, encoding);
     }
   }
 

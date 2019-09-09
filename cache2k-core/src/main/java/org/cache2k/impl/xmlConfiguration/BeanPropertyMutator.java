@@ -36,28 +36,27 @@ public class BeanPropertyMutator {
 
   private final Map<String, Method> settersLookupMap;
 
-  public BeanPropertyMutator(Class<?> _class) {
-    settersLookupMap = generateSetterLookupMap(_class);
+  public BeanPropertyMutator(Class<?> clazz) {
+    settersLookupMap = generateSetterLookupMap(clazz);
   }
 
-  public Class<?> getType(String _propertyName) {
-    Method m = settersLookupMap.get(_propertyName);
+  public Class<?> getType(String propertyName) {
+    Method m = settersLookupMap.get(propertyName);
     if (m == null) {
       return null;
     }
     return m.getParameterTypes()[0];
   }
 
-  public void mutate(Object _target, String _propertyName, Object _value)
+  public void mutate(Object target, String propertyName, Object value)
     throws IllegalAccessException, InvocationTargetException {
-    Method m = settersLookupMap.get(_propertyName);
-    m.invoke(_target, _value);
+    Method m = settersLookupMap.get(propertyName);
+    m.invoke(target, value);
   }
 
   /**
-   * Don't have a setter for a class, but use the cache type.
-   * @see org.cache2k.configuration.Cache2kConfiguration#keyType
-   * @see org.cache2k.configuration.Cache2kConfiguration#valueType
+   * Don't have a setter for a class, but use the cache type. {@code Cache2kConfiguration.setKeyType()}
+   * TODO: generic setter preference?
    */
   private static boolean preferCacheTypeAndNotClass(Class<?> c) {
     return !Class.class.equals(c);
@@ -70,11 +69,11 @@ public class BeanPropertyMutator {
         m.getReturnType() == Void.TYPE &&
         (m.getParameterTypes().length == 1) &&
         preferCacheTypeAndNotClass(m.getParameterTypes()[0])) {
-        String _propertyName = generatePropertyNameFromSetter(m.getName());
-        Method m0 = map.put(_propertyName, m);
+        String propertyName = generatePropertyNameFromSetter(m.getName());
+        Method m0 = map.put(propertyName, m);
         if (m0 != null) {
           throw new IllegalArgumentException(
-            "Ambiguous setter for property '" + _propertyName + "' in class '" + c.getSimpleName() + "'");
+            "Ambiguous setter for property '" + propertyName + "' in class '" + c.getSimpleName() + "'");
         }
       }
     }

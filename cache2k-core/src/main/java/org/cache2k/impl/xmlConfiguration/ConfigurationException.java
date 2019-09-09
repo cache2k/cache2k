@@ -39,8 +39,8 @@ public class ConfigurationException extends CacheException {
     super(message, cause);
   }
 
-  public ConfigurationException(final String message, final String _source) {
-    super(message + " at " + _source);
+  public ConfigurationException(final String message, final String source) {
+    super(message + " at " + source);
   }
 
   public ConfigurationException(final String _message, final SourceLocation _location) {

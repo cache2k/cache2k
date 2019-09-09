@@ -42,38 +42,38 @@ public class StandardVariableExpander implements VariableExpander {
   {
     scope2resolver.put("env", new ValueAccessor() {
       @Override
-      public String get(final ExpanderContext ctx, final String _variable) {
-        return System.getenv(_variable);
+      public String get(final ExpanderContext ctx, final String variable) {
+        return System.getenv(variable);
       }
     });
     scope2resolver.put("sys", new ValueAccessor() {
       @Override
-      public String get(ExpanderContext ctx, final String _variable) {
-        return System.getProperty(_variable);
+      public String get(ExpanderContext ctx, final String variable) {
+        return System.getProperty(variable);
       }
     });
     scope2resolver.put("top", new ValueAccessor() {
       @Override
-      public String get(ExpanderContext ctx, final String _variable) {
-        ConfigurationTokenizer.Property p = ctx.getTopLevelConfiguration().getPropertyByPath(_variable);
+      public String get(ExpanderContext ctx, final String variable) {
+        ConfigurationTokenizer.Property p = ctx.getTopLevelConfiguration().getPropertyByPath(variable);
         return checkAndReturnValue(p);
       }
     });
     scope2resolver.put("", new ValueAccessor() {
       @Override
-      public String get(ExpanderContext ctx, final String _variable) {
-        ConfigurationTokenizer.Property p = ctx.getCurrentConfiguration().getPropertyByPath(_variable);
+      public String get(ExpanderContext ctx, final String variable) {
+        ConfigurationTokenizer.Property p = ctx.getCurrentConfiguration().getPropertyByPath(variable);
         return checkAndReturnValue(p);
       }
     });
     scope2resolver.put(PROPERTIES, new ValueAccessor() {
       @Override
-      public String get(ExpanderContext ctx, final String _variable) {
+      public String get(ExpanderContext ctx, final String variable) {
         ParsedConfiguration pc = ctx.getTopLevelConfiguration().getSection("properties");
         if (pc == null) {
           return null;
         }
-        ConfigurationTokenizer.Property p = pc.getPropertyMap().get(_variable);
+        ConfigurationTokenizer.Property p = pc.getPropertyMap().get(variable);
         return checkAndReturnValue(p);
       }
     });
@@ -92,9 +92,9 @@ public class StandardVariableExpander implements VariableExpander {
     private int forwardReference = 0;
     private ConfigurationTokenizer.Property lastTroublemaker;
 
-    Process(final ParsedConfiguration _top, final Map<String, ValueAccessor> _scope2resolver) {
-      top = _top;
-      scope2resolver = _scope2resolver;
+    Process(final ParsedConfiguration top, final Map<String, ValueAccessor> scope2resolver) {
+      this.top = top;
+      this.scope2resolver = scope2resolver;
     }
 
     /**
@@ -133,21 +133,21 @@ public class StandardVariableExpander implements VariableExpander {
         }
       }
       for (ParsedConfiguration c2 : cfg.getSections()) {
-        String _context = c2.getPropertyContext();
-        ValueAccessor _savedAccessor = null;
-        if (_context != null) {
-          _savedAccessor = scope2resolver.get(_context);
-          final ParsedConfiguration _localScope = c2;
-          scope2resolver.put(_context, new ValueAccessor() {
+        String context = c2.getPropertyContext();
+        ValueAccessor savedAccessor = null;
+        if (context != null) {
+          savedAccessor = scope2resolver.get(context);
+          final ParsedConfiguration localScope = c2;
+          scope2resolver.put(context, new ValueAccessor() {
             @Override
-            public String get(final ExpanderContext ctx, final String _variable) {
-              return _localScope.getStringPropertyByPath(_variable);
+            public String get(final ExpanderContext ctx, final String variable) {
+              return localScope.getStringPropertyByPath(variable);
             }
           });
         }
         recurse(c2);
-        if (_savedAccessor != null) {
-          scope2resolver.put(_context, _savedAccessor);
+        if (savedAccessor != null) {
+          scope2resolver.put(context, savedAccessor);
         }
       }
     }
@@ -170,45 +170,45 @@ public class StandardVariableExpander implements VariableExpander {
      */
     private String expand(String s) {
       int idx = 0;
-      int _endIdx;
-      for (; ; idx = _endIdx) {
+      int endIdx;
+      for (; ; idx = endIdx) {
         idx = s.indexOf("${", idx);
         if (idx < 0) {
           return s;
         }
-        _endIdx = s.indexOf('}', idx);
-        if (_endIdx < 0) {
+        endIdx = s.indexOf('}', idx);
+        if (endIdx < 0) {
           return s;
         }
-        int _scopeIdx = s.indexOf('.', idx);
-        String _scope;
-        if (_scopeIdx >= 0) {
-          _scope = s.substring(idx + 2, _scopeIdx);
+        int scopeIdx = s.indexOf('.', idx);
+        String scope;
+        if (scopeIdx >= 0) {
+          scope = s.substring(idx + 2, scopeIdx);
         } else {
-          _scope = PROPERTIES;
-          _scopeIdx = idx + 1;
+          scope = PROPERTIES;
+          scopeIdx = idx + 1;
         }
-        int _defaultIdx = s.indexOf(":-", idx);
-        int _varEndIdx = _endIdx;
-        String _defaultValue = null;
-        if (_defaultIdx >= 0 && _defaultIdx < _endIdx) {
-          _defaultValue = s.substring(_defaultIdx + 2, _endIdx);
-          _varEndIdx = _defaultIdx;
+        int defaultIdx = s.indexOf(":-", idx);
+        int varEndIdx = endIdx;
+        String defaultValue = null;
+        if (defaultIdx >= 0 && defaultIdx < endIdx) {
+          defaultValue = s.substring(defaultIdx + 2, endIdx);
+          varEndIdx = defaultIdx;
         }
-        String _varName = s.substring(_scopeIdx + 1, _varEndIdx);
-        ValueAccessor r = scope2resolver.get(_scope);
+        String varName = s.substring(scopeIdx + 1, varEndIdx);
+        ValueAccessor r = scope2resolver.get(scope);
         if (r == null) {
           continue;
         }
-        String _substitutionString = r.get(this, _varName);
-        if (_substitutionString == null) {
-          if (_defaultValue == null) {
+        String substitutionString = r.get(this, varName);
+        if (substitutionString == null) {
+          if (defaultValue == null) {
             continue;
           }
-          _substitutionString = _defaultValue;
+          substitutionString = defaultValue;
         }
-        s = s.substring(0, idx) + _substitutionString + s.substring(_endIdx + 1);
-        _endIdx = idx + _substitutionString.length();
+        s = s.substring(0, idx) + substitutionString + s.substring(endIdx + 1);
+        endIdx = idx + substitutionString.length();
       }
     }
 

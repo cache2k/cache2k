@@ -38,11 +38,11 @@ public interface VariableExpander {
     /**
      *
      * @param ctx current expander context
-     * @param _variable name of the variable to retrieve
+     * @param variable name of the variable to retrieve
      * @return the value or null, if nothing known
      * @throws NeedsExpansion if a property is referenced that needs expansion
      */
-    String get(ExpanderContext ctx, String _variable);
+    String get(ExpanderContext ctx, String variable);
   }
 
   class NeedsExpansion extends RuntimeException {}

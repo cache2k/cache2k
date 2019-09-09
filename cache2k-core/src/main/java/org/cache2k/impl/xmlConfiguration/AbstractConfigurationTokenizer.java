@@ -27,31 +27,31 @@ public abstract class AbstractConfigurationTokenizer implements ConfigurationTok
 
   private final String source;
 
-  public AbstractConfigurationTokenizer(final String _source) {
-    source = _source;
+  public AbstractConfigurationTokenizer(final String source) {
+    this.source = source;
   }
 
   public String getSource() { return source; }
 
-  protected final Nest returnNest(final String _sectionName) {
-    return new MyNest(getSource(), getLineNumber(), _sectionName);
+  protected final Nest returnNest(final String sectionName) {
+    return new MyNest(getSource(), getLineNumber(), sectionName);
   }
 
   protected final Unnest returnUnnest() {
     return new MyUnnest(getSource(), getLineNumber());
   }
 
-  protected final Property returnProperty(final String _name, final String _property) {
-    return new MyProperty(getSource(), getLineNumber(), _name, _property);
+  protected final Property returnProperty(final String name, final String property) {
+    return new MyProperty(getSource(), getLineNumber(), name, property);
   }
 
   private static class MyItem implements Item {
     private final String source;
     private final int lineNumber;
 
-    public MyItem(final String _source, final int _lineNumber) {
-      lineNumber = _lineNumber;
-      source = _source;
+    public MyItem(final String source, final int lineNumber) {
+      this.lineNumber = lineNumber;
+      this.source = source;
     }
 
     @Override
@@ -69,9 +69,9 @@ public abstract class AbstractConfigurationTokenizer implements ConfigurationTok
 
     private final String sectionName;
 
-    public MyNest(final String _source, final int _lineNumber, final String _sectionName) {
-      super(_source, _lineNumber);
-      sectionName = _sectionName;
+    public MyNest(final String source, final int lineNumber, final String sectionName) {
+      super(source, lineNumber);
+      this.sectionName = sectionName;
     }
 
     @Override
@@ -88,8 +88,8 @@ public abstract class AbstractConfigurationTokenizer implements ConfigurationTok
   }
 
   private static class MyUnnest extends MyItem implements Unnest {
-    public MyUnnest(final String _source, final int _lineNumber) {
-      super(_source, _lineNumber);
+    public MyUnnest(final String source, final int lineNumber) {
+      super(source, lineNumber);
     }
 
     @Override
@@ -103,10 +103,10 @@ public abstract class AbstractConfigurationTokenizer implements ConfigurationTok
     private String value;
     private boolean expanded;
 
-    public MyProperty(final String _source, final int _lineNumber, final String _name, final String _value) {
-      super(_source, _lineNumber);
-      name = _name;
-      value = _value;
+    public MyProperty(final String source, final int lineNumber, final String name, final String value) {
+      super(source, lineNumber);
+      this.name = name;
+      this.value = value;
     }
 
     @Override
@@ -130,8 +130,8 @@ public abstract class AbstractConfigurationTokenizer implements ConfigurationTok
     }
 
     @Override
-    public void setExpanded(final boolean _expanded) {
-      expanded = _expanded;
+    public void setExpanded(final boolean v) {
+      expanded = v;
     }
 
     @Override

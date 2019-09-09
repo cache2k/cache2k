@@ -48,21 +48,21 @@ public class StandardPropertyParser implements PropertyParser {
     put("d", 1000L * 60 * 60 * 24);
   }};
 
-  public Object parse(Class<?> _targetType, String _value) throws Exception {
-    ValueConverter p = type2parser.get(_targetType);
+  public Object parse(Class<?> targetType, String value) throws Exception {
+    ValueConverter p = type2parser.get(targetType);
     if (p == null) {
-      throw new IllegalArgumentException("Unknown target type: " + _targetType);
+      throw new IllegalArgumentException("Unknown target type: " + targetType);
     }
-    return p.parse(_value);
+    return p.parse(value);
   }
 
-  private void addParser(Class<?> _type, ValueConverter<?> p) {
-    type2parser.put(_type, p);
+  private void addParser(Class<?> type, ValueConverter<?> p) {
+    type2parser.put(type, p);
   }
 
-  private void addParser(Class<?> _primitiveType, Class<?> _type, ValueConverter<?> p) {
-    type2parser.put(_primitiveType, p);
-    type2parser.put(_type, p);
+  private void addParser(Class<?> primitiveType, Class<?> type, ValueConverter<?> p) {
+    type2parser.put(primitiveType, p);
+    type2parser.put(type, p);
   }
 
   {

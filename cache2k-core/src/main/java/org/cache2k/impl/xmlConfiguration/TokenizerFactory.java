@@ -31,11 +31,11 @@ import java.io.InputStream;
 public interface TokenizerFactory {
 
   /**
-   * @param _source Name of the source, this is used only for exceptions
+   * @param source Name of the source, this is used only for exceptions
    * @param in Input stream to read from
-   * @param _encoding character encoding to use
+   * @param encoding character encoding to use
    * @return the created tokenizer
    */
-  ConfigurationTokenizer createTokenizer(final String _source, InputStream in, String _encoding) throws Exception;
+  ConfigurationTokenizer createTokenizer(final String source, InputStream in, String encoding) throws Exception;
 
 }

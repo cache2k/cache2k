@@ -27,6 +27,6 @@ package org.cache2k.impl.xmlConfiguration;
  */
 public interface PropertyParser {
 
-  Object parse(Class<?> _targetType, String _value) throws Exception;
+  Object parse(Class<?> targetType, String value) throws Exception;
 
 }

@@ -25,89 +25,89 @@ package org.cache2k.impl.xmlConfiguration;
  */
 public class ConfigurationParser {
 
-  static ParsedConfiguration parse(ConfigurationTokenizer _parser) throws Exception {
-    ParsedConfiguration c = new ParsedConfiguration(_parser.getSource(), _parser.getLineNumber());
-    parseTopLevelSections(_parser, c);
-    ConfigurationTokenizer.Item _item = _parser.next();
+  static ParsedConfiguration parse(ConfigurationTokenizer parser) throws Exception {
+    ParsedConfiguration c = new ParsedConfiguration(parser.getSource(), parser.getLineNumber());
+    parseTopLevelSections(parser, c);
+    ConfigurationTokenizer.Item item = parser.next();
     return c;
   }
 
-  private static void parseSection(ConfigurationTokenizer _parser, ParsedConfiguration _container) throws Exception {
+  private static void parseSection(ConfigurationTokenizer parser, ParsedConfiguration container) throws Exception {
     for (;;) {
-      ConfigurationTokenizer.Item _item = _parser.next();
-      if (_item == null) {
-        throw new ConfigurationException("null item", _parser);
+      ConfigurationTokenizer.Item item = parser.next();
+      if (item == null) {
+        throw new ConfigurationException("null item", parser);
       }
-      if (_item instanceof ConfigurationTokenizer.Unnest) {
+      if (item instanceof ConfigurationTokenizer.Unnest) {
         return;
       }
-      if (_item instanceof ConfigurationTokenizer.Property) {
-        _container.addProperty((ConfigurationTokenizer.Property) _item);
-      } else if (_item instanceof ConfigurationTokenizer.Nest) {
-        parseSections(((ConfigurationTokenizer.Nest) _item).getSectionName(), _parser, _container);
+      if (item instanceof ConfigurationTokenizer.Property) {
+        container.addProperty((ConfigurationTokenizer.Property) item);
+      } else if (item instanceof ConfigurationTokenizer.Nest) {
+        parseSections(((ConfigurationTokenizer.Nest) item).getSectionName(), parser, container);
       }
     }
   }
 
-  private static void parseSections(final String _containerName, final ConfigurationTokenizer _parser, final ParsedConfiguration _container) throws Exception {
-    boolean _maybeSection = true;
+  private static void parseSections(final String containerName, final ConfigurationTokenizer parser, final ParsedConfiguration container) throws Exception {
+    boolean maybeSection = true;
     for (;;) {
-      ConfigurationTokenizer.Item _item = _parser.next();
-      if (_item == null) {
+      ConfigurationTokenizer.Item item = parser.next();
+      if (item == null) {
         return;
       }
-      if (_item instanceof ConfigurationTokenizer.Unnest) {
+      if (item instanceof ConfigurationTokenizer.Unnest) {
         return;
       }
-      if (_item instanceof ConfigurationTokenizer.Property && _maybeSection) {
-        ParsedConfiguration _nestedContainer = new ParsedConfiguration(_parser.getSource(), _parser.getLineNumber());
-        _nestedContainer.setName(_containerName);
-        _nestedContainer.setPropertyContext(_containerName);
-        _nestedContainer.setContainer("#DIRECT");
-        _nestedContainer.addProperty((ConfigurationTokenizer.Property) _item);
-        parseSection(_parser, _nestedContainer);
-        _container.addSection(_nestedContainer);
+      if (item instanceof ConfigurationTokenizer.Property && maybeSection) {
+        ParsedConfiguration nestedContainer = new ParsedConfiguration(parser.getSource(), parser.getLineNumber());
+        nestedContainer.setName(containerName);
+        nestedContainer.setPropertyContext(containerName);
+        nestedContainer.setContainer("#DIRECT");
+        nestedContainer.addProperty((ConfigurationTokenizer.Property) item);
+        parseSection(parser, nestedContainer);
+        container.addSection(nestedContainer);
         return;
       }
-      if (!(_item instanceof ConfigurationTokenizer.Nest)) {
-        throw new ConfigurationException("section start expected", _item);
+      if (!(item instanceof ConfigurationTokenizer.Nest)) {
+        throw new ConfigurationException("section start expected", item);
       }
-      ConfigurationTokenizer.Nest _sectionStart = (ConfigurationTokenizer.Nest) _item;
-      ParsedConfiguration _nestedContainer = new ParsedConfiguration(_parser.getSource(), _parser.getLineNumber());
-      _nestedContainer.setName(_sectionStart.getSectionName());
-      _nestedContainer.setPropertyContext(_sectionStart.getSectionName());
-      _nestedContainer.setContainer(_containerName);
-      parseSection(_parser, _nestedContainer);
-      _container.addSection(_nestedContainer);
-      _maybeSection = false;
+      ConfigurationTokenizer.Nest sectionStart = (ConfigurationTokenizer.Nest) item;
+      ParsedConfiguration nestedContainer = new ParsedConfiguration(parser.getSource(), parser.getLineNumber());
+      nestedContainer.setName(sectionStart.getSectionName());
+      nestedContainer.setPropertyContext(sectionStart.getSectionName());
+      nestedContainer.setContainer(containerName);
+      parseSection(parser, nestedContainer);
+      container.addSection(nestedContainer);
+      maybeSection = false;
     }
   }
 
-  private static void parseTopLevelSections(final ConfigurationTokenizer _parser, final ParsedConfiguration _container) throws Exception {
-    ConfigurationTokenizer.Item _item = _parser.next();
-    if (!(_item instanceof ConfigurationTokenizer.Nest)) {
-      throw new ConfigurationException("start expected", _item);
+  private static void parseTopLevelSections(final ConfigurationTokenizer parser, final ParsedConfiguration _container) throws Exception {
+    ConfigurationTokenizer.Item item = parser.next();
+    if (!(item instanceof ConfigurationTokenizer.Nest)) {
+      throw new ConfigurationException("start expected", item);
     }
     for (;;) {
-      _item = _parser.next();
-      if (_item == null) {
+      item = parser.next();
+      if (item == null) {
         return;
       }
-      if (_item instanceof ConfigurationTokenizer.Unnest) {
+      if (item instanceof ConfigurationTokenizer.Unnest) {
         return;
       }
-      if (_item instanceof ConfigurationTokenizer.Property) {
-        _container.addProperty((ConfigurationTokenizer.Property) _item);
-      }  else if (_item instanceof ConfigurationTokenizer.Nest) {
-        ConfigurationTokenizer.Nest _sectionStart = (ConfigurationTokenizer.Nest) _item;
-        ParsedConfiguration _nestedContainer = new ParsedConfiguration(_parser.getSource(), _parser.getLineNumber());
-        _nestedContainer.setName(_sectionStart.getSectionName());
-        parseSections(((ConfigurationTokenizer.Nest) _item).getSectionName(), _parser, _nestedContainer);
-        if (_nestedContainer.getPropertyMap().isEmpty() && _nestedContainer.getSections().size() == 1 &&
-          _nestedContainer.getSections().get(0).getContainer().equals("#DIRECT")) {
-          _nestedContainer = _nestedContainer.getSections().get(0);
+      if (item instanceof ConfigurationTokenizer.Property) {
+        _container.addProperty((ConfigurationTokenizer.Property) item);
+      }  else if (item instanceof ConfigurationTokenizer.Nest) {
+        ConfigurationTokenizer.Nest _sectionStart = (ConfigurationTokenizer.Nest) item;
+        ParsedConfiguration nestedContainer = new ParsedConfiguration(parser.getSource(), parser.getLineNumber());
+        nestedContainer.setName(_sectionStart.getSectionName());
+        parseSections(((ConfigurationTokenizer.Nest) item).getSectionName(), parser, nestedContainer);
+        if (nestedContainer.getPropertyMap().isEmpty() && nestedContainer.getSections().size() == 1 &&
+          nestedContainer.getSections().get(0).getContainer().equals("#DIRECT")) {
+          nestedContainer = nestedContainer.getSections().get(0);
         }
-        _container.addSection(_nestedContainer);
+        _container.addSection(nestedContainer);
       }
     }
   }

@@ -41,9 +41,9 @@ public class ParsedConfiguration implements SourceLocation {
   private Map<String, ConfigurationTokenizer.Property> properties = new HashMap<String, ConfigurationTokenizer.Property>();
   private List<ParsedConfiguration> sections = new ArrayList<ParsedConfiguration>();
 
-  public ParsedConfiguration(final String _source, final int _lineNumber) {
-    lineNumber = _lineNumber;
-    source = _source;
+  public ParsedConfiguration(final String source, final int lineNumber) {
+    this.lineNumber = lineNumber;
+    this.source = source;
   }
 
   public String getSource() {
@@ -61,32 +61,32 @@ public class ParsedConfiguration implements SourceLocation {
     return container;
   }
 
-  public void setContainer(final String _container) {
-    container = _container;
+  public void setContainer(final String v) {
+    this.container = v;
   }
 
   public String getName() {
     return name;
   }
 
-  public void setName(final String _name) {
-    name = _name;
+  public void setName(final String v) {
+    name = v;
   }
 
   public String getType() {
     return type;
   }
 
-  public void setType(final String _type) {
-    type = _type;
+  public void setType(final String v) {
+    type = v;
   }
 
   public String getPropertyContext() {
     return propertyContext;
   }
 
-  public void setPropertyContext(final String _propertyContext) {
-    propertyContext = _propertyContext;
+  public void setPropertyContext(final String v) {
+    propertyContext = v;
   }
 
   public Map<String, ConfigurationTokenizer.Property> getPropertyMap() {
