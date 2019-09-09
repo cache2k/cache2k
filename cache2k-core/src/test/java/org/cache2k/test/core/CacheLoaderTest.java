@@ -35,7 +35,6 @@ import org.cache2k.test.util.ExpectedException;
 import org.cache2k.test.util.TestingBase;
 import org.cache2k.testing.category.FastTests;
 import org.cache2k.test.util.IntCacheRule;
-import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;

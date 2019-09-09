@@ -124,9 +124,9 @@ public class SimulatedClock implements InternalClock, Closeable {
   /**
    * Scheduled jobs are executed some millis after the scheduled time was reached.
    * That is to simulate that time passes during execution and that it is not possible
-   * to exactly execute at a point in time.
+   * to exactly execute at a point in time. Randomized by default.
    */
-  private final int jobExecutionLagMillis = 1;
+  private final int jobExecutionLagMillis = (int) (System.currentTimeMillis() % 2);
 
   /**
    * For waiting until reset is done in progress thread.

@@ -24,7 +24,6 @@ import org.cache2k.configuration.CacheType;
 import org.cache2k.core.util.InternalClock;
 import org.cache2k.event.CacheEntryEvictedListener;
 import org.cache2k.event.CacheEntryExpiredListener;
-import org.cache2k.expiry.ExpiryTimeValues;
 import org.cache2k.integration.AdvancedCacheLoader;
 import org.cache2k.CacheEntry;
 import org.cache2k.event.CacheEntryCreatedListener;
@@ -368,7 +367,12 @@ public class WiredCache<K, V> extends BaseCache<K, V>
   private <R> void executeAsync(K key, Entry<K,V> e, Semantic<K,V,R> op,
                                 EntryAction.CompletedCallback<K,V,R> cb) {
     EntryAction<K,V,R> _action = new MyEntryAction<R>(op, key, e, cb);
-    _action.run();
+    _action.start();
+  }
+
+  private <R> void enqueueTimerAction(Entry<K,V> e, Semantic<K,V,R> op) {
+    EntryAction<K,V,R> _action = new MyEntryAction<R>(op, e.getKey(), e, NOOP_CALLBACK);
+    heapCache.executor.execute(_action);
   }
 
   private void reloadAllWithSyncLoader(final CacheOperationCompletionListener _listener, final Set<K> _keySet) {
@@ -697,69 +701,41 @@ public class WiredCache<K, V> extends BaseCache<K, V>
   }
 
   /**
+   * If not expired yet, negate time to enforce time checks, schedule task for expiry
+   * otherwise.
    *
-   * Semantics double with {@link TimerEventListener#timerEventExpireEntry(Entry, Object)}
+   * Semantics double with {@link HeapCache#timerEventExpireEntry(Entry, Object)}
    */
   @Override
   public void timerEventExpireEntry(final Entry<K, V> e, final Object task) {
-    EntryAction<K, V, ?> action;
     metrics().timerEvent();
     synchronized (e) {
       if (e.getTask() != task) { return; }
-      if (e.isGone() || e.isExpiredState()) {
-        return;
-      }
       long nrt = e.getNextRefreshTime();
-      long t = heapCache.clock.millis();
-      if (t < Math.abs(nrt)) {
+      long now = heapCache.clock.millis();
+      if (now < Math.abs(nrt)) {
         if (nrt > 0) {
           heapCache.timing.scheduleFinalTimerForSharpExpiry(e);
           e.setNextRefreshTime(-nrt);
         }
         return;
       }
-      if (syncEntryExpiredListeners == null) {
-        try {
-          heapCache.expireEntry(e);
-        } catch (CacheClosedException ignore) {
-        }
-        return;
-      }
-      e.waitForProcessing();
-      if (e.isGone() || e.isExpiredState()) {
-        return;
-      }
-      action = createEntryAction(e.getKey(), e, SPEC.expire(e.getKey(), ExpiryTimeValues.NOW));
-      e.startProcessing(Entry.ProcessingState.EXPIRY, action);
     }
-    executeStarted(action);
+    enqueueTimerAction(e, SPEC.EXPIRE_EVENT);
   }
 
-  private void finishExpire(final Entry<K, V> e) {
-    actionForStartedProcessing(e.getKey(), e, SPEC.expire(e.getKey(), ExpiryTimeValues.NOW));
-  }
-
+  /**
+   * Starts a refresh operation or expires if no threads in the loader thread pool are available.
+   */
   @Override
   public void timerEventRefresh(final Entry<K, V> e, final Object task) {
-    EntryAction<K, V, ?> action;
     metrics().timerEvent();
     synchronized (e) {
       if (e.getTask() != task) { return; }
-      if (e.isGone()) {
-        return;
-      }
       Runnable r = new Runnable() {
         @SuppressWarnings("unchecked")
         @Override
         public void run() {
-          if (storage == null) {
-            synchronized (e) {
-              e.waitForProcessing();
-              if (e.isGone()) {
-                return;
-              }
-            }
-          }
           try {
             executeAsync(e.getKey(), e, (Semantic<K,V,Void>) Operations.REFRESH, NOOP_CALLBACK);
           } catch (CacheClosedException ignore) {
@@ -772,35 +748,17 @@ public class WiredCache<K, V> extends BaseCache<K, V>
       } catch (RejectedExecutionException ignore) {
       }
       metrics().refreshFailed();
-      e.waitForProcessing();
-      if (e.getTask() != task) { return; }
-      if (e.isGone() || e.isExpiredState()) {
-        return;
-      }
-      action = createEntryAction(e.getKey(), e, SPEC.expire(e.getKey(), ExpiryTimeValues.NOW));
-      e.startProcessing(Entry.ProcessingState.EXPIRY, action);
+      enqueueTimerAction(e, SPEC.EXPIRE_EVENT);
     }
-    executeStarted(action);
   }
 
   @Override
   public void timerEventProbationTerminated(final Entry<K, V> e, final Object task) {
-    EntryAction<K,V,?> action;
     metrics().timerEvent();
     synchronized (e) {
       if (e.getTask() != task) { return; }
-      if (e.isGone() || e.isExpiredState()) {
-        return;
-      }
-      e.waitForProcessing();
-      if (e.getTask() != task) { return; }
-      if (e.isGone() || e.isExpiredState()) {
-        return;
-      }
-      action = createEntryAction(e.getKey(), e, SPEC.expire(e.getKey(), ExpiryTimeValues.NOW));
-      e.startProcessing(Entry.ProcessingState.EXPIRY, action);
     }
-    executeStarted(action);
+    enqueueTimerAction(e, SPEC.EXPIRE_EVENT);
   }
 
   /**

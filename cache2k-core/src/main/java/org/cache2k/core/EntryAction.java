@@ -275,6 +275,19 @@ public abstract class EntryAction<K, V, R> extends Entry.PiggyBack implements
   }
 
   @Override
+  public boolean isExpiryTimeReachedOrInRefreshProbation() {
+    doNotCountAccess = true;
+    long nrt = entry.getNextRefreshTime();
+    if (nrt == Entry.EXPIRED_REFRESHED) {
+      return true;
+    }
+    if (nrt >=0 && nrt < Entry.DATA_VALID) {
+      return false;
+    }
+    return Math.abs(nrt) <= millis();
+  }
+
+  @Override
   public boolean isPresentOrInRefreshProbation() {
     doNotCountAccess = true;
     return
@@ -292,10 +305,18 @@ public abstract class EntryAction<K, V, R> extends Entry.PiggyBack implements
     return false;
   }
 
+  @Override
+  public void run() {
+    try {
+      start();
+    } catch (CacheClosedException ignore) {
+    }
+  }
+
   /**
    * Entry point to execute this action.
    */
-  public void run() {
+  public void start() {
     int callbackCount = semanticCallback;
     operation.start(this);
   }
@@ -363,24 +384,29 @@ public abstract class EntryAction<K, V, R> extends Entry.PiggyBack implements
 
   /**
    * Check whether we are executed on an expired entry before the
-   * timer event for expiry was received. In case expiry listeners
+   * timer event for the expiry was received. In case expiry listeners
    * are present, we want to make sure that an expiry is sent before
    * a mutation (especially load) happens.
-   *
-   * update counter, stop timer?
    */
   public void checkExpiryBeforeMutation() {
-    if (entryExpiredListeners() != null && entry == NON_FRESH_DUMMY) {
+    if (entryExpiredListeners() == null) {
+      noExpiryListenersPresent();
+      return;
+    }
+    if (entry == NON_FRESH_DUMMY) {
       wantData();
       return;
     }
-    if (entryExpiredListeners() != null && entry.getNextRefreshTime() < 0) {
+    long nrt = entry.getNextRefreshTime();
+    if (nrt < 0 && millis() >= -nrt) {
       boolean justExpired = false;
       synchronized (entry) {
-        if (entry.getNextRefreshTime() < 0) {
+        nrt = entry.getNextRefreshTime();
+        if (nrt < 0 && millis() >= -nrt) {
           justExpired = true;
           entry.setNextRefreshTime(Entry.EXPIRED);
           timing().stopStartTimer(0, entry);
+          heapDataValid = false;
         }
       }
       if (justExpired) {
@@ -392,13 +418,7 @@ public abstract class EntryAction<K, V, R> extends Entry.PiggyBack implements
     continueWithMutation();
   }
 
-  /**
-   * Separate entry point used for expiry event to execute the expiry on the action context.
-   * In this case the entry is already locked.
-   */
-  public void executeMutationForStartedProcessing() {
-    entryLocked = true;
-    heapDataValid = entry.isDataValidOrProbation();
+  public void noExpiryListenersPresent() {
     continueWithMutation();
   }
 

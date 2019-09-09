@@ -90,7 +90,7 @@ public class Operations<K, V> {
     }
   };
 
-  public static final Semantic REFRESH = new Semantic.Update() {
+  public static final Semantic REFRESH = new Semantic.UpdateExisting() {
     @Override
     public void update(final Progress c, final ExaminationEntry e) {
       c.refresh();
@@ -397,6 +397,23 @@ public class Operations<K, V> {
       }
     };
   }
+
+  public final Semantic<K,V, Void> EXPIRE_EVENT = new Semantic.MightUpdateExisting<K, V, Void>() {
+
+    @Override
+    public void examine(final Progress<K, V, Void> c, final ExaminationEntry<K, V> e) {
+      if (c.isExpiryTimeReachedOrInRefreshProbation()) {
+        c.wantMutation();
+        return;
+      }
+      c.noMutation();
+    }
+
+    @Override
+    public void update(final Progress<K, V, Void> c, final ExaminationEntry<K, V> e) {
+      c.expire(ExpiryTimeValues.NO_CACHE);
+    }
+  };
 
   public static class NeedsLoadRestartException extends RestartException { }
 

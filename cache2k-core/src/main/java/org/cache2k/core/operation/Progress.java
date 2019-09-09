@@ -20,7 +20,6 @@ package org.cache2k.core.operation;
  * #L%
  */
 
-import org.cache2k.core.util.InternalClock;
 import org.cache2k.integration.ExceptionInformation;
 
 /**
@@ -50,6 +49,12 @@ public interface Progress<K, V, R> {
    * operations that do not want to access the value.
    */
   boolean isPresent();
+
+  /**
+   * Entry reached the expiry time and expiry event can be sent and
+   * entry state can be changed to expired.
+   */
+  boolean isExpiryTimeReachedOrInRefreshProbation();
 
   /**
    * Same as {@link #isPresent()} but also true if the entry is in refresh probation.

@@ -1564,9 +1564,6 @@ public class HeapCache<K, V> extends BaseCache<K, V> {
     metrics.timerEvent();
     synchronized (e) {
       if (e.getTask() != task) { return; }
-      if (e.isGone()) {
-        return;
-      }
       Runnable r = new Runnable() {
         @Override
         public void run() {
@@ -1648,9 +1645,6 @@ public class HeapCache<K, V> extends BaseCache<K, V> {
   }
 
   private void expireOrScheduleFinalExpireEvent(Entry<K,V> e) {
-    if (e.isGone() || e.isExpiredState()) {
-      return;
-    }
     long nrt = e.getNextRefreshTime();
     long t = clock.millis();
     if (t >= Math.abs(nrt)) {

@@ -22,11 +22,11 @@ package org.cache2k.test.core;
 
 import org.cache2k.Cache2kBuilder;
 import org.cache2k.expiry.ExpiryPolicy;
+import org.cache2k.expiry.ExpiryTimeValues;
 import org.cache2k.integration.AdvancedCacheLoader;
 import org.cache2k.test.util.TestingBase;
 import org.cache2k.Cache;
 import org.cache2k.CacheEntry;
-import org.cache2k.test.core.TestingParameters;
 import org.cache2k.test.util.Condition;
 import org.cache2k.event.CacheEntryExpiredListener;
 import org.cache2k.core.HeapCache;
@@ -92,6 +92,79 @@ public class ExpiryListenerTest extends TestingBase {
   }
 
   @Test
+  public void expireAtSendsOneEvent() {
+    final AtomicInteger listenerCallCount = new AtomicInteger();
+    final Cache<Integer, Integer> c = builder(Integer.class, Integer.class)
+      .addListener(new CacheEntryExpiredListener<Integer, Integer>() {
+        @Override
+        public void onEntryExpired(final Cache<Integer, Integer> c, final CacheEntry<Integer, Integer> e) {
+          listenerCallCount.incrementAndGet();
+        }
+      })
+      .build();
+    final int ANY_KEY = 1;
+    c.put(ANY_KEY, 4711);
+    c.expireAt(ANY_KEY, ExpiryTimeValues.NOW);
+    assertEquals("expiry event before put", 1, listenerCallCount.get());
+  }
+
+  @Test
+  public void normalExpireSendsOneEvent() throws Exception {
+    final long EXPIRY_MILLIS = TestingParameters.MINIMAL_TICK_MILLIS;
+    final AtomicInteger listenerCallCount = new AtomicInteger();
+    final Cache<Integer, Integer> c = builder(Integer.class, Integer.class)
+      .addListener(new CacheEntryExpiredListener<Integer, Integer>() {
+        @Override
+        public void onEntryExpired(final Cache<Integer, Integer> c, final CacheEntry<Integer, Integer> e) {
+          listenerCallCount.incrementAndGet();
+        }
+      })
+      .expireAfterWrite(EXPIRY_MILLIS, TimeUnit.MILLISECONDS)
+      .build();
+    final int ANY_KEY = 1;
+    c.put(ANY_KEY, 4711);
+    await(new Condition() {
+      @Override
+      public boolean check() throws Exception {
+        return listenerCallCount.get() > 0;
+      }
+    });
+    sleep(EXPIRY_MILLIS);
+    assertEquals("expiry event before put", 1, listenerCallCount.get());
+  }
+
+  @Test
+  public void normalExpireSendsOneEvent_sharp() throws Exception {
+    final long EXPIRY_MILLIS = TestingParameters.MINIMAL_TICK_MILLIS;
+    final AtomicInteger listenerCallCount = new AtomicInteger();
+    final Cache<Integer, Integer> c = builder(Integer.class, Integer.class)
+      .addListener(new CacheEntryExpiredListener<Integer, Integer>() {
+        @Override
+        public void onEntryExpired(final Cache<Integer, Integer> c, final CacheEntry<Integer, Integer> e) {
+          listenerCallCount.incrementAndGet();
+        }
+      })
+      .expiryPolicy(new ExpiryPolicy<Integer, Integer>() {
+        @Override
+        public long calculateExpiryTime(final Integer key, final Integer value, final long loadTime, final CacheEntry<Integer, Integer> oldEntry) {
+          return loadTime + EXPIRY_MILLIS;
+        }
+      })
+      .sharpExpiry(true)
+      .build();
+    final int ANY_KEY = 1;
+    c.put(ANY_KEY, 4711);
+    await(new Condition() {
+      @Override
+      public boolean check() throws Exception {
+        return listenerCallCount.get() > 0;
+      }
+    });
+    sleep(EXPIRY_MILLIS);
+    assertEquals("expect exactly one", 1, listenerCallCount.get());
+  }
+
+  @Test
   public void expireAfterRefreshProbationEnded() {
     final AtomicInteger loaderCount = new AtomicInteger();
     final AtomicInteger eventCount = new AtomicInteger();
@@ -138,7 +211,7 @@ public class ExpiryListenerTest extends TestingBase {
   }
 
   private void expireBeforeLoad(boolean sharpExpiry) {
-    final AtomicInteger callCount = new AtomicInteger();
+    final AtomicInteger listenerCallCount = new AtomicInteger();
     final long EXPIRY_MILLIS = 432;
     Cache2kBuilder<Integer, Integer> builder =
       builder(Integer.class, Integer.class)
@@ -146,7 +219,7 @@ public class ExpiryListenerTest extends TestingBase {
         @Override
         public Integer load(final Integer key, final long currentTime, final CacheEntry<Integer, Integer> currentEntry) {
           if (currentEntry != null) {
-            assertEquals(1, callCount.get());
+            assertEquals(1, listenerCallCount.get());
             return 0;
           }
           return 1;
@@ -156,7 +229,7 @@ public class ExpiryListenerTest extends TestingBase {
       .addListener(new CacheEntryExpiredListener<Integer, Integer>() {
         @Override
         public void onEntryExpired(final Cache<Integer, Integer> c, final CacheEntry<Integer, Integer> e) {
-          callCount.incrementAndGet();
+          listenerCallCount.incrementAndGet();
         }
       });
     if (sharpExpiry) {
@@ -221,6 +294,8 @@ public class ExpiryListenerTest extends TestingBase {
           assertTrue(c.containsKey(ANY_KEY));
         }
       });
+    sleep(_EXPIRY_MILLIS * 2);
+    assertThat(_callCount.get(), lessThanOrEqualTo(1));
     await(new Condition() {
       @Override
       public boolean check() throws Exception {
@@ -231,8 +306,8 @@ public class ExpiryListenerTest extends TestingBase {
 
   @Test
   public void asyncExpiredListenerAfterRefreshCalled() {
-    final AtomicInteger _callCount = new AtomicInteger();
-    final AtomicInteger _loaderCallCount = new AtomicInteger();
+    final AtomicInteger listenerCallCount = new AtomicInteger();
+    final AtomicInteger loaderCallCount = new AtomicInteger();
     HeapCache.Tunable t = TunableFactory.get(HeapCache.Tunable.class);
     final long _EXTRA_GAP = TestingParameters.MINIMAL_TICK_MILLIS;
     final long _EXPIRY_MILLIS = t.sharpExpirySafetyGapMillis + _EXTRA_GAP ;
@@ -240,7 +315,7 @@ public class ExpiryListenerTest extends TestingBase {
       .addListener(new CacheEntryExpiredListener<Integer, Integer>() {
         @Override
         public void onEntryExpired(final Cache<Integer, Integer> c, final CacheEntry<Integer, Integer> e) {
-          _callCount.incrementAndGet();
+          listenerCallCount.incrementAndGet();
         }
       })
       .expireAfterWrite(_EXPIRY_MILLIS, TimeUnit.MILLISECONDS)
@@ -248,13 +323,13 @@ public class ExpiryListenerTest extends TestingBase {
       .loader(new CacheLoader<Integer, Integer>() {
         @Override
         public Integer load(final Integer key) throws Exception {
-          _loaderCallCount.incrementAndGet();
+          loaderCallCount.incrementAndGet();
           return 123;
         }
       })
       .build();
     final int ANY_KEY = 1;
-    within(_EXPIRY_MILLIS * 2)
+    within(_EXPIRY_MILLIS)
       .work(new Runnable() {
         @Override
         public void run() {
@@ -264,17 +339,17 @@ public class ExpiryListenerTest extends TestingBase {
       .check(new Runnable() {
         @Override
         public void run() {
-          assertEquals(0, _callCount.get());
+          assertEquals(0, listenerCallCount.get());
           assertTrue(c.containsKey(ANY_KEY));
         }
       });
     await(new Condition() {
       @Override
       public boolean check() throws Exception {
-        return _callCount.get() == 1;
+        return listenerCallCount.get() == 1;
       }
     });
-    assertEquals(2, _loaderCallCount.get());
+    assertEquals(2, loaderCallCount.get());
   }
 
 }

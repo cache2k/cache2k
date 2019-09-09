@@ -20,7 +20,6 @@ package org.cache2k.test.core;
  * #L%
  */
 
-import org.cache2k.test.core.ExpiryListenerTest;
 import org.cache2k.testing.category.FastTests;
 import org.junit.experimental.categories.Category;
 

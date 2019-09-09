@@ -1043,12 +1043,12 @@ public class ExpiryTest extends TestingBase {
    * Refreshing cache, expire with no cache => item not visible any more, loader not called
    */
   @Test
-  public void manualExpire_refresh_noCache_gone() throws Exception {
+  public void manualExpire_refresh_now_gone() throws Exception {
     new ManualExpireFixture() {
       @Override
       void test() {
         cache.put(1, 2);
-        cache.expireAt(1, ExpiryTimeValues.NO_CACHE);
+        cache.expireAt(1, ExpiryTimeValues.NOW);
         assertFalse(cache.containsKey(1));
         assertEquals(0, count.get());
         assertEquals(0, getInfo().getSize());
