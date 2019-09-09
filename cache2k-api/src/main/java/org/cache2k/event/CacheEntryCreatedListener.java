@@ -32,7 +32,9 @@ import org.cache2k.CacheEntry;
 public interface CacheEntryCreatedListener<K, V> extends CacheEntryOperationListener<K, V> {
 
   /**
-   * Called after a creation of a cache entry and after all cache writers ran successfully.
+   * Called for the creation of a cache entry and after all cache writers ran successfully.
+   * A synchronous event is executed before the entry becomes visible for cache clients.
+   * If an inserted or loaded value expires immediately, no created event is sent.
    *
    * <p>Exceptions thrown by asynchronous listeners will be propagated to the cache client
    * directly.
