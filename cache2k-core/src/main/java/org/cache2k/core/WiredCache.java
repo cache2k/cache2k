@@ -862,6 +862,9 @@ public class WiredCache<K, V> extends BaseCache<K, V>
       return asyncLoader;
     }
 
+    @Override
+    protected Executor executor() { return heapCache.executor; }
+
   }
 
 }

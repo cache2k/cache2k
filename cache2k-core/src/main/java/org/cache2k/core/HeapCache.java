@@ -54,7 +54,11 @@ import java.util.NoSuchElementException;
 import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.concurrent.Executor;
+import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.RejectedExecutionException;
+import java.util.concurrent.SynchronousQueue;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.cache2k.core.util.Util.*;
@@ -134,6 +138,8 @@ public class HeapCache<K, V> extends BaseCache<K, V> {
    *  @see InternalCacheInfo#getInternalExceptionCount()
    */
   protected long internalExceptionCnt = 0;
+
+  protected Executor executor;
 
   protected volatile Executor loaderExecutor = new LazyLoaderExecutor();
 
@@ -275,7 +281,28 @@ public class HeapCache<K, V> extends BaseCache<K, V> {
     if (c.getPrefetchExecutor() != null) {
       prefetchExecutor = createCustomization((CustomizationSupplier<Executor>) c.getPrefetchExecutor());
     }
+    if (executor == null) {
+      executor = SHARED_EXECUTOR;
+    }
   }
+
+  /**
+   * Use ForkJoinPool in Java 8, otherwise create a simple executor
+   */
+  private static Executor provideSharedExecutor() {
+    try {
+      return ForkJoinPool.commonPool();
+    } catch (NoClassDefFoundError ignore) {
+    } catch (NoSuchMethodError ignore) {
+    }
+    return new ThreadPoolExecutor(0, Integer.MAX_VALUE,
+      21, TimeUnit.SECONDS,
+      new SynchronousQueue<Runnable>(),
+      HeapCache.TUNABLE.threadFactoryProvider.newThreadFactory("cache2k-executor"),
+      new ThreadPoolExecutor.AbortPolicy());
+  }
+
+  static final Executor SHARED_EXECUTOR = provideSharedExecutor();
 
   String getThreadNamePrefix() {
     return "cache2k-loader-" + compactFullName(manager, name);
@@ -1749,6 +1776,9 @@ public class HeapCache<K, V> extends BaseCache<K, V> {
       public Executor getLoaderExecutor() {
         return null;
       }
+
+      @Override
+      protected Executor executor() { return executor; }
     };
   }
 

@@ -43,6 +43,9 @@ import org.cache2k.core.storageApi.StorageAdapter;
 import org.cache2k.core.storageApi.StorageEntry;
 import org.cache2k.integration.ExceptionInformation;
 import org.cache2k.integration.RefreshedTimeWrapper;
+
+import java.util.concurrent.Executor;
+
 import static org.cache2k.core.Entry.ProcessingState.*;
 
 /**
@@ -121,6 +124,10 @@ public abstract class EntryAction<K, V, R> extends Entry.PiggyBack implements
    */
   CompletedCallback completedCallback;
 
+  /**
+   * Linked list of actions waiting for execution after this one.
+   * Guarded by the entry lock.
+   */
   private EntryAction nextAction = null;
 
   private int semanticCallback = 0;
@@ -130,6 +137,11 @@ public abstract class EntryAction<K, V, R> extends Entry.PiggyBack implements
    */
   private boolean completed;
 
+  /**
+   * Called on the processing action to enqueue another action
+   * to be executed next. Insert at the tail of the double linked
+   * list. We are not part of the list.
+   */
   public void enqueueToExecute(EntryAction v) {
     EntryAction next;
     EntryAction target = this;
@@ -164,6 +176,8 @@ public abstract class EntryAction<K, V, R> extends Entry.PiggyBack implements
                      Semantic<K, V, R> op, K k, Entry<K, V> e) {
     this(_heapCache, _userCache, op, k, e, null);
   }
+
+  protected abstract Executor executor();
 
   /**
    * Provide the cache loader, if present.
@@ -435,7 +449,7 @@ public abstract class EntryAction<K, V, R> extends Entry.PiggyBack implements
         exceptionToPropagate = new CacheLoaderException(ex);
         return;
       }
-      waitIfSynchronous();
+      asyncExecutionStartedWaitIfSynchronousCall();
       return;
     }
     AdvancedCacheLoader<K, V> _loader = loader();
@@ -1131,11 +1145,11 @@ public abstract class EntryAction<K, V, R> extends Entry.PiggyBack implements
    */
   public void completeProcessCallbacks() {
     completed = true;
+    if (nextAction != null) {
+      executor().execute(nextAction);
+    }
     if (completedCallback != null) {
       completedCallback.entryActionCompleted(this);
-    }
-    if (nextAction != null) {
-      nextAction.run();
     }
     ready();
   }
@@ -1146,14 +1160,13 @@ public abstract class EntryAction<K, V, R> extends Entry.PiggyBack implements
   /**
    * If thread is a synchronous call, wait until operation is complete.
    * There is a little chance that the callback completes before we get
-   * here as well as some other operation changing the entry again.
+   * here as well as some other operation mutating the entry again.
    */
-  private void waitIfSynchronous() {
+  private void asyncExecutionStartedWaitIfSynchronousCall() {
     if (syncThread == Thread.currentThread()) {
       synchronized (entry) {
         entry.waitForProcessing();
       }
-    } else {
     }
   }
 

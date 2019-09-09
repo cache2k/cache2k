@@ -609,6 +609,57 @@ public class CacheLoaderTest extends TestingBase {
    * Execute loader in another thread.
    */
   @Test
+  public void blockAndComplete() throws Exception {
+    final int count = 1000;
+    final AtomicInteger loaderCalled = new AtomicInteger();
+    final CountDownLatch complete = new CountDownLatch(count);
+    final AtomicInteger loaderExecuted = new AtomicInteger();
+    final CountDownLatch releaseLoader = new CountDownLatch(1);
+    Cache<Integer,Integer> c = target.cache(new CacheRule.Specialization<Integer, Integer>() {
+      @Override
+      public void extend(final Cache2kBuilder<Integer, Integer> b) {
+        b.loader(new AsyncCacheLoader<Integer, Integer>() {
+          @Override
+          public void load(final Integer key, final AsyncCacheLoader.Context<Integer,Integer> ctx, final Callback<Integer, Integer> callback) {
+            loaderCalled.incrementAndGet();
+            ctx.getLoaderExecutor().execute(new Runnable() {
+              @Override
+              public void run() {
+                try {
+                  releaseLoader.await();
+                } catch (InterruptedException ex) {
+                  ex.printStackTrace();
+                }
+                loaderExecuted.incrementAndGet();
+                callback.onLoadSuccess(key);
+              }
+            });
+          }
+        });
+      }
+    });
+    final CacheOperationCompletionListener l = new CacheOperationCompletionListener() {
+      @Override
+      public void onCompleted() {
+        complete.countDown();
+      }
+
+      @Override
+      public void onException(final Throwable exception) {
+
+      }
+    };
+    for (int i = 0; i < count; i++) {
+      c.loadAll(toIterable(1,2,3), l);
+    }
+    releaseLoader.countDown();
+    complete.await(TestingParameters.MAX_FINISH_WAIT_MILLIS, TimeUnit.MILLISECONDS);
+  }
+
+  /**
+   * Execute loader in another thread.
+   */
+  @Test
   public void testAsyncLoaderLoadViaExecutor() {
     final AtomicInteger loaderCalled = new AtomicInteger();
     final AtomicInteger loaderExecuted = new AtomicInteger();
