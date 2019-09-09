@@ -293,7 +293,7 @@ public class WiredCache<K, V> extends BaseCache<K, V>
     };
     for (K k : _keysToLoad) {
       final K key = k;
-      executeAsync(key, null, SPEC.GET, cb);
+      executeAsyncLoadOrRefresh(key, null, SPEC.GET, cb);
     }
   }
 
@@ -347,7 +347,7 @@ public class WiredCache<K, V> extends BaseCache<K, V>
     };
     for (K k : _keySet) {
       final K key = k;
-      executeAsync(key, null, SPEC.UNCONDITIONAL_LOAD, cb);
+      executeAsyncLoadOrRefresh(key, null, SPEC.UNCONDITIONAL_LOAD, cb);
     }
   }
 
@@ -364,15 +364,19 @@ public class WiredCache<K, V> extends BaseCache<K, V>
    * @param key the key
    * @param e the entry, optional, may be {@code null}
    */
-  private <R> void executeAsync(K key, Entry<K,V> e, Semantic<K,V,R> op,
-                                EntryAction.CompletedCallback<K,V,R> cb) {
+  private <R> void executeAsyncLoadOrRefresh(K key, Entry<K,V> e, Semantic<K,V,R> op,
+                                             EntryAction.CompletedCallback<K,V,R> cb) {
     EntryAction<K,V,R> _action = new MyEntryAction<R>(op, key, e, cb);
     _action.start();
   }
 
   private <R> void enqueueTimerAction(Entry<K,V> e, Semantic<K,V,R> op) {
-    EntryAction<K,V,R> _action = new MyEntryAction<R>(op, e.getKey(), e, NOOP_CALLBACK);
+    EntryAction<K,V,R> _action = createFireAndForgetAction(e, op);
     heapCache.executor.execute(_action);
+  }
+
+  private <R> MyEntryAction<R> createFireAndForgetAction(final Entry<K, V> e, final Semantic<K, V, R> op) {
+    return new MyEntryAction<R>(op, e.getKey(), e, NOOP_CALLBACK);
   }
 
   private void reloadAllWithSyncLoader(final CacheOperationCompletionListener _listener, final Set<K> _keySet) {
@@ -726,24 +730,20 @@ public class WiredCache<K, V> extends BaseCache<K, V>
 
   /**
    * Starts a refresh operation or expires if no threads in the loader thread pool are available.
+   * If no async loader is available we execute the synchronous loader via the loader
+   * thread pool.
    */
   @Override
   public void timerEventRefresh(final Entry<K, V> e, final Object task) {
     metrics().timerEvent();
     synchronized (e) {
       if (e.getTask() != task) { return; }
-      Runnable r = new Runnable() {
-        @SuppressWarnings("unchecked")
-        @Override
-        public void run() {
-          try {
-            executeAsync(e.getKey(), e, (Semantic<K,V,Void>) Operations.REFRESH, NOOP_CALLBACK);
-          } catch (CacheClosedException ignore) {
-          }
-        }
-      };
+      if (asyncLoader != null) {
+        enqueueTimerAction(e, SPEC.REFRESH);
+        return;
+      }
       try {
-        heapCache.loaderExecutor.execute(r);
+        heapCache.loaderExecutor.execute(createFireAndForgetAction(e, SPEC.REFRESH));
         return;
       } catch (RejectedExecutionException ignore) {
       }

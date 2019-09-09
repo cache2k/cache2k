@@ -90,9 +90,9 @@ public class Operations<K, V> {
     }
   };
 
-  public static final Semantic REFRESH = new Semantic.UpdateExisting() {
+  public final Semantic<K,V,Void> REFRESH = new Semantic.UpdateExisting<K,V,Void>() {
     @Override
-    public void update(final Progress c, final ExaminationEntry e) {
+    public void update(final Progress<K,V,Void> c, final ExaminationEntry<K,V> e) {
       c.refresh();
     }
   };
