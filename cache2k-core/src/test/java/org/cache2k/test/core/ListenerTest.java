@@ -25,6 +25,7 @@ import org.cache2k.Cache2kBuilder;
 import org.cache2k.CacheEntry;
 import org.cache2k.event.CacheEntryEvictedListener;
 import org.cache2k.expiry.ExpiryPolicy;
+import org.cache2k.integration.CacheLoader;
 import org.cache2k.test.util.CacheRule;
 import org.cache2k.test.util.ConcurrencyHelper;
 import org.cache2k.test.util.Condition;
@@ -47,6 +48,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executor;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
@@ -130,6 +132,31 @@ public class ListenerTest {
         assertEquals(0, created.get());
         cache.put(1, 2);
         assertEquals(1, created.get());
+      }
+    });
+  }
+
+  @Test
+  public void createdListenerNotCalledForImmediateExpiry() {
+    target.run(new CountSyncEvents() {
+      @Override
+      public void extend(final Cache2kBuilder<Integer, Integer> b) {
+        b.expireAfterWrite(0, TimeUnit.MILLISECONDS);
+        b.loader(new CacheLoader<Integer, Integer>() {
+          @Override
+          public Integer load(final Integer key) throws Exception {
+            return key;
+          }
+        });
+        super.extend(b);
+      }
+      @Override
+      public void run() {
+        assertEquals(0, created.get());
+        cache.put(1, 2);
+        assertEquals(0, created.get());
+        assertEquals(123, (int) cache.get(123));
+        assertEquals(0, created.get());
       }
     });
   }

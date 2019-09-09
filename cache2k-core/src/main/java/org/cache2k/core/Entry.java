@@ -157,32 +157,32 @@ public class Entry<K, V> extends CompactEntry<K, V>
   /**
    * bigger or equal means entry has / contains valid data
    */
-  static final int DATA_VALID = 16;
+  public static final int DATA_VALID = 16;
 
   /** @see #isVirgin() */
-  static final int VIRGIN = 0;
+  public static final int VIRGIN = 0;
 
-  static final int READ_NON_VALID = 1;
+  public static final int READ_NON_VALID = 1;
 
   /**
    * Cache.remove() operation received. Needs to be send to storage.
    */
-  static final int REMOVE_PENDING = 2;
+  public static final int REMOVE_PENDING = 2;
 
-  static final int ABORTED = 3;
+  public static final int ABORTED = 3;
 
   /** @see #isExpiredState() */
-  static final int EXPIRED = 4;
+  public static final int EXPIRED = 4;
 
   /** Expired, but protect entry from removal, since refresh is started. */
-  static final int EXPIRED_REFRESH_PENDING = 5;
+  public static final int EXPIRED_REFRESH_PENDING = 5;
 
   /** Entry is in refresh probation phase */
-  static final int EXPIRED_REFRESHED = 6;
+  public static final int EXPIRED_REFRESHED = 6;
 
   /** @see #isGone() */
-  static final int GONE = 8;
-  static final int GONE_OTHER = 15;
+  public static final int GONE = 8;
+  public static final int GONE_OTHER = 15;
 
   /**
    * Usually this contains the reference to the timer task. In some cases, like when exceptions

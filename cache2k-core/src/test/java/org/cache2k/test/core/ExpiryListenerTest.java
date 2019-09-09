@@ -21,6 +21,7 @@ package org.cache2k.test.core;
  */
 
 import org.cache2k.Cache2kBuilder;
+import org.cache2k.event.CacheEntryCreatedListener;
 import org.cache2k.expiry.ExpiryPolicy;
 import org.cache2k.expiry.ExpiryTimeValues;
 import org.cache2k.integration.AdvancedCacheLoader;
@@ -37,6 +38,7 @@ import static org.hamcrest.Matchers.*;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -350,6 +352,78 @@ public class ExpiryListenerTest extends TestingBase {
       }
     });
     assertEquals(2, loaderCallCount.get());
+  }
+
+  /**
+   * We hold up the insert task with the created listener. Checks that we get an expired
+   * event after the insert event. Also checks that the cache entry is not visible.
+   */
+  @Test
+  public void expiresDuringInsert() {
+    final AtomicInteger gotExpired = new AtomicInteger();
+    final AtomicInteger gotCreated = new AtomicInteger();
+    final long EXPIRY_MILLIS = TestingParameters.MINIMAL_TICK_MILLIS;
+    final CountDownLatch waitInCreated = new CountDownLatch(1);
+    final Cache<Integer, Integer> c = builder(Integer.class, Integer.class)
+      .addListener(new CacheEntryExpiredListener<Integer, Integer>() {
+        @Override
+        public void onEntryExpired(final Cache<Integer, Integer> c, final CacheEntry<Integer, Integer> e) {
+          gotExpired.incrementAndGet();
+        }
+      })
+      .addListener(new CacheEntryCreatedListener<Integer, Integer>() {
+        @Override
+        public void onEntryCreated(final Cache<Integer, Integer> cache, final CacheEntry<Integer, Integer> entry) {
+          assertEquals(123, (long) entry.getValue());
+          gotCreated.incrementAndGet();
+          try {
+            waitInCreated.await();
+          } catch (InterruptedException ex) {
+            Thread.currentThread().interrupt();
+          }
+        }
+      })
+      .expireAfterWrite(EXPIRY_MILLIS, TimeUnit.MILLISECONDS)
+      .loader(new CacheLoader<Integer, Integer>() {
+        @Override
+        public Integer load(final Integer key) throws Exception {
+          return 123;
+        }
+      })
+      .build();
+    final int ANY_KEY = 1;
+    final Thread t = new Thread(new Runnable() {
+      @Override
+      public void run() {
+        c.get(ANY_KEY);
+      }
+    });
+    within(EXPIRY_MILLIS)
+      .work(new Runnable() {
+        @Override
+        public void run() {
+          t.start();
+          await(new Condition() {
+            @Override
+            public boolean check() throws Exception {
+              return gotCreated.get() == 1;
+            }
+          });
+        }
+      }).check(new Runnable() {
+      @Override
+      public void run() {
+        assertTrue("entry is not visible", !c.containsKey(ANY_KEY));
+      }
+    });
+    sleep(EXPIRY_MILLIS);
+    waitInCreated.countDown();
+    await(new Condition() {
+      @Override
+      public boolean check() throws Exception {
+        return gotExpired.get() > 0;
+      }
+    });
   }
 
 }

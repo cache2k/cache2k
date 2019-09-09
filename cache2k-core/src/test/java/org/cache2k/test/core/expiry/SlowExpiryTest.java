@@ -104,12 +104,11 @@ public class SlowExpiryTest extends TestingBase {
   @Test
   public void testExceptionWithRefreshAsyncLoader() {
     String _cacheName = generateUniqueCacheName(this);
-    final Log.SuppressionCounter cnt = new Log.SuppressionCounter();
-    Log.registerSuppression("org.cache2k.Cache/default:" + _cacheName, cnt);
-    final int _COUNT = 4;
-    Cache<Integer, Integer> c = builder(_cacheName, Integer.class, Integer.class)
+    final int COUNT = 4;
+    final long TIMESPAN =  TestingParameters.MINIMAL_TICK_MILLIS;
+    final Cache<Integer, Integer> c = builder(_cacheName, Integer.class, Integer.class)
       .refreshAhead(true)
-      .retryInterval(TestingParameters.MINIMAL_TICK_MILLIS, TimeUnit.MILLISECONDS)
+      .retryInterval(TIMESPAN, TimeUnit.MILLISECONDS)
       .loader(new AsyncCacheLoader<Integer, Integer>() {
         @Override
         public void load(final Integer key, final Context<Integer, Integer> context, final Callback<Integer, Integer> callback) throws Exception {
@@ -118,20 +117,34 @@ public class SlowExpiryTest extends TestingBase {
       })
       .build();
     cache = c;
-    for (int i : new int[]{1, 2, 3, 4}) {
-      boolean _gotException = false;
-      try {
-        c.get(i);
-        fail("expect exception");
-      } catch (CacheLoaderException e) {
-        _gotException = true;
-      }
-      assertTrue("got exception", _gotException);
-    }
+    within(TIMESPAN)
+      .work(new Runnable() {
+        @Override
+        public void run() {
+          for (int i = 1; i <= COUNT; i++) {
+            boolean _gotException = false;
+            try {
+              c.get(i);
+              fail("expect exception");
+            } catch (CacheLoaderException e) {
+              _gotException = true;
+            }
+            assertTrue("got exception", _gotException);
+          }
+        }
+      })
+      .check(new Runnable() {
+         @Override
+         public void run() {
+           assertEquals(COUNT, getInfo().getSize());
+           assertEquals(0, getInfo().getRefreshCount());
+         }
+       }
+      );
     await("All refreshed", new Condition() {
       @Override
       public boolean check() {
-        return getInfo().getRefreshCount() + getInfo().getRefreshFailedCount() >= _COUNT;
+        return getInfo().getRefreshCount() + getInfo().getRefreshFailedCount() >= COUNT;
       }
     });
     assertEquals("no internal exceptions",0, getInfo().getInternalExceptionCount());
@@ -140,7 +153,7 @@ public class SlowExpiryTest extends TestingBase {
     await("All expired", new Condition() {
       @Override
       public boolean check() {
-        return getInfo().getExpiredCount() >= _COUNT;
+        return getInfo().getExpiredCount() >= COUNT;
       }
     });
     assertEquals(0, getInfo().getSize());
@@ -910,6 +923,7 @@ public class SlowExpiryTest extends TestingBase {
         return getInfo().getSize() == 0;
       }
     });
+    assertEquals(2, _LOADER.getCount());
   }
 
   @Test

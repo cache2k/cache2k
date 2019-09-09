@@ -1075,6 +1075,7 @@ public abstract class EntryAction<K, V, R> extends Entry.PiggyBack implements
       }
     }
     if (justExpired) {
+      heapDataValid = true;
       entry.nextProcessingStep(EXPIRE);
       expiry = 0;
       checkKeepOrRemove();
