@@ -1,4 +1,4 @@
-package org.cache2k.impl.xmlConfiguration;
+package org.cache2k.impl.xmlConfiguration.generic;
 
 /*
  * #%L
@@ -19,6 +19,8 @@ package org.cache2k.impl.xmlConfiguration;
  * limitations under the License.
  * #L%
  */
+
+import org.cache2k.impl.xmlConfiguration.generic.ParsedConfiguration;
 
 /**
  * Runs through all properties in the configuration, checks for variable references and expand them.

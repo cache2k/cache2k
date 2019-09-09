@@ -1,4 +1,4 @@
-package org.cache2k.impl.xmlConfiguration;
+package org.cache2k.impl.xmlConfiguration.generic;
 
 /*
  * #%L
@@ -39,7 +39,7 @@ public class XppConfigTokenizer extends AbstractConfigurationTokenizer {
   private String value;
   private boolean startFlag = true;
 
-  XppConfigTokenizer(final String _source, final InputStream is, final String _encoding)
+  public XppConfigTokenizer(final String _source, final InputStream is, final String _encoding)
     throws XmlPullParserException {
     super(_source);
     XmlPullParserFactory factory = XmlPullParserFactory.newInstance();

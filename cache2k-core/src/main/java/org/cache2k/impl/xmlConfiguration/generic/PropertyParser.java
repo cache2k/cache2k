@@ -1,4 +1,4 @@
-package org.cache2k.impl.xmlConfiguration;
+package org.cache2k.impl.xmlConfiguration.generic;
 
 /*
  * #%L
@@ -21,12 +21,12 @@ package org.cache2k.impl.xmlConfiguration;
  */
 
 /**
- * Parse and convert a string to an object.
+ * Knows how to parse and convert string values to the target object type.
  *
  * @author Jens Wilke
  */
-public interface ValueConverter<T> {
+public interface PropertyParser {
 
-  T parse(String v) throws Exception;
+  Object parse(Class<?> targetType, String value) throws Exception;
 
 }

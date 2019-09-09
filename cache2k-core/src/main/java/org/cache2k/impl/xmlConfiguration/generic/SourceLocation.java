@@ -1,4 +1,4 @@
-package org.cache2k.impl.xmlConfiguration;
+package org.cache2k.impl.xmlConfiguration.generic;
 
 /*
  * #%L
@@ -21,12 +21,20 @@ package org.cache2k.impl.xmlConfiguration;
  */
 
 /**
- * Knows how to parse and convert string values to the target object type.
+ * Common interface for parts with a source location.
  *
  * @author Jens Wilke
  */
-public interface PropertyParser {
+public interface SourceLocation {
 
-  Object parse(Class<?> targetType, String value) throws Exception;
+  /**
+   * File name or URL of the (configuration) source
+   */
+  String getSource();
+
+  /**
+   * Line number of the configuration source
+   */
+  int getLineNumber();
 
 }

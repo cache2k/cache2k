@@ -22,6 +22,7 @@ package org.cache2k.impl.xmlConfiguration;
 
 import org.cache2k.configuration.Cache2kConfiguration;
 import org.cache2k.configuration.Cache2kManagerConfiguration;
+import org.cache2k.impl.xmlConfiguration.generic.ParsedConfiguration;
 
 import java.util.Map;
 
@@ -44,24 +45,24 @@ public class ConfigurationContext {
     return defaultManagerConfiguration;
   }
 
-  public void setDefaultManagerConfiguration(final Cache2kConfiguration<?, ?> _defaultManagerConfiguration) {
-    defaultManagerConfiguration = _defaultManagerConfiguration;
+  public void setDefaultManagerConfiguration(final Cache2kConfiguration<?, ?> v) {
+    defaultManagerConfiguration = v;
   }
 
   public boolean isConfigurationPresent() {
     return configurationPresent;
   }
 
-  public void setConfigurationPresent(final boolean _configurationPresent) {
-    configurationPresent = _configurationPresent;
+  public void setConfigurationPresent(final boolean v) {
+    configurationPresent = v;
   }
 
   public ClassLoader getClassLoader() {
     return classLoader;
   }
 
-  public void setClassLoader(final ClassLoader _classLoader) {
-    classLoader = _classLoader;
+  public void setClassLoader(final ClassLoader v) {
+    classLoader = v;
   }
 
   public Map<String, String> getPredefinedSectionTypes() {
@@ -76,8 +77,8 @@ public class ConfigurationContext {
     return templates;
   }
 
-  public void setTemplates(final ParsedConfiguration _templates) {
-    templates = _templates;
+  public void setTemplates(final ParsedConfiguration v) {
+    templates = v;
   }
 
   public Cache2kManagerConfiguration getManagerConfiguration() {

@@ -1,4 +1,4 @@
-package org.cache2k.impl.xmlConfiguration;
+package org.cache2k.impl.xmlConfiguration.generic;
 
 /*
  * #%L
@@ -25,7 +25,7 @@ package org.cache2k.impl.xmlConfiguration;
  */
 public class ConfigurationParser {
 
-  static ParsedConfiguration parse(ConfigurationTokenizer parser) throws Exception {
+  public static ParsedConfiguration parse(ConfigurationTokenizer parser) throws Exception {
     ParsedConfiguration c = new ParsedConfiguration(parser.getSource(), parser.getLineNumber());
     parseTopLevelSections(parser, c);
     ConfigurationTokenizer.Item item = parser.next();

@@ -1,4 +1,4 @@
-package org.cache2k.impl.xmlConfiguration;
+package org.cache2k.impl.xmlConfiguration.generic;
 
 /*
  * #%L
@@ -108,7 +108,7 @@ public class StandardPropertyParser implements PropertyParser {
     });
   }
 
-  static long parseLongWithUnitSuffix(String v) {
+  public static long parseLongWithUnitSuffix(String v) {
     v = v.replace("_", "");
     long _multiplier = 1;
     int pos = v.length();

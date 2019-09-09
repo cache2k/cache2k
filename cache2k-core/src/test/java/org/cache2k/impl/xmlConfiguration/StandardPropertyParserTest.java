@@ -20,7 +20,7 @@ package org.cache2k.impl.xmlConfiguration;
  * #L%
  */
 
-import org.cache2k.impl.xmlConfiguration.StandardPropertyParser;
+import org.cache2k.impl.xmlConfiguration.generic.StandardPropertyParser;
 import org.cache2k.testing.category.FastTests;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;

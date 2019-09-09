@@ -20,14 +20,14 @@ package org.cache2k.impl.xmlConfiguration;
  * #L%
  */
 
-import org.cache2k.impl.xmlConfiguration.ConfigurationException;
-import org.cache2k.impl.xmlConfiguration.ConfigurationParser;
-import org.cache2k.impl.xmlConfiguration.ConfigurationTokenizer;
-import org.cache2k.impl.xmlConfiguration.ParsedConfiguration;
-import org.cache2k.impl.xmlConfiguration.StandardVariableExpander;
-import org.cache2k.impl.xmlConfiguration.StaxConfigTokenizer;
-import org.cache2k.impl.xmlConfiguration.VariableExpander;
-import org.cache2k.impl.xmlConfiguration.XppConfigTokenizer;
+import org.cache2k.impl.xmlConfiguration.generic.ConfigurationException;
+import org.cache2k.impl.xmlConfiguration.generic.ConfigurationParser;
+import org.cache2k.impl.xmlConfiguration.generic.ConfigurationTokenizer;
+import org.cache2k.impl.xmlConfiguration.generic.ParsedConfiguration;
+import org.cache2k.impl.xmlConfiguration.generic.StandardVariableExpander;
+import org.cache2k.impl.xmlConfiguration.generic.StaxConfigTokenizer;
+import org.cache2k.impl.xmlConfiguration.generic.VariableExpander;
+import org.cache2k.impl.xmlConfiguration.generic.XppConfigTokenizer;
 import org.cache2k.testing.category.FastTests;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
