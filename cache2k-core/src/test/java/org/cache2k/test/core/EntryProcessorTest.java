@@ -90,6 +90,27 @@ public class EntryProcessorTest {
     };
     Object _result = c.invoke(123, p);
     assertNull(_result);
+    EntryProcessor<Integer, Integer, String> p2 = new EntryProcessor<Integer, Integer, String>() {
+      @Override
+      public String process(final MutableCacheEntry<Integer, Integer> e) throws Exception {
+        return "hello";
+      }
+    };
+    String result = c.invoke(123, p2);
+    assertEquals("hello", result);
+  }
+
+  @Test
+  public void intial_otherResult() {
+    Cache<Integer, Integer> c = target.cache();
+    EntryProcessor p = new EntryProcessor() {
+      @Override
+      public Object process(MutableCacheEntry e) throws Exception {
+        return null;
+      }
+    };
+    Object _result = c.invoke(123, p);
+    assertNull(_result);
   }
 
   @Test(expected = NullPointerException.class)

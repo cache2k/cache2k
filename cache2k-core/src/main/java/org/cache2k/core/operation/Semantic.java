@@ -46,8 +46,9 @@ public interface Semantic<K, V, R> {
 
   /**
    * Perform the mutation. The mutation is done by calling the methods on {@link Progress}.
+   *
    */
-  void update(Progress<K, V, R> c, ExaminationEntry<K, V> e);
+  void mutate(Progress<K, V, R> c, ExaminationEntry<K, V> e);
 
   /**
    * Load is complete.
@@ -76,7 +77,7 @@ public interface Semantic<K, V, R> {
   /**
    * Only update the entry. This does not need the entry to be present in the heap.
    */
-  abstract class Update<K, V, R> extends Base<K, V, R> {
+  abstract class InsertOrUpdate<K, V, R> extends Base<K, V, R> {
 
     /** Instruct to lock the entry for the update. */
     @Override
@@ -90,47 +91,44 @@ public interface Semantic<K, V, R> {
       c.wantMutation();
     }
 
-    /**
-     * Called to update the entry.
-     *
-     * @param e The entry locked for update. The entry value may not represent the latest cache data.
-     */
-    @Override
-    public abstract void update(final Progress<K, V, R> c, final ExaminationEntry<K, V> e);
-
   }
 
   /**
    * Read a cache entry and do an optional update. Based on the current state and value of the entry
    * this operation will do an update or not.
    */
-  abstract class UpdateExisting<K, V, R> extends Base<K, V, R> {
+  abstract class MightUpdate<K, V, R> extends Base<K, V, R> {
 
-    /** Request latest data. */
+    /** Reqeust latest data */
     @Override
     public final void start(Progress<K, V, R> c) {
       c.wantData();
     }
 
+  }
+
+  /**
+   * Read a cache entry and do an update. Based on the current state and value of the entry
+   * this operation will do an update or not.
+   */
+  abstract class Update<K, V, R> extends MightUpdate<K, V, R> {
+
     /** Unconditionally request mutation lock. */
     @Override
     public final void examine(Progress<K, V, R> c, ExaminationEntry<K, V> e) { c.wantMutation(); }
 
-    /** Inspect the element state and issue and update of it. */
-    @Override
-    public abstract void update(Progress<K, V, R> c, ExaminationEntry<K, V> e);
-
   }
 
-  /**
-   * Read a cache entry and do an optional update. Based on the current state and value of the entry
-   * this operation will do an update or not.
-   */
-  abstract class MightUpdateExisting<K, V, R> extends Base<K, V, R> {
+  abstract class UpdateIfPresent<K, V, R> extends MightUpdate<K, V, R> {
 
+    /** Unconditionally request mutation lock. */
     @Override
-    public final void start(Progress<K, V, R> c) {
-      c.wantData();
+    public final void examine(Progress<K, V, R> c, ExaminationEntry<K, V> e) {
+      if (c.isPresentOrMiss()) {
+        c.wantMutation();
+      } else {
+        c.noMutation();
+      }
     }
 
   }
@@ -148,7 +146,7 @@ public interface Semantic<K, V, R> {
 
     /** No operation. */
     @Override
-    public final void update(Progress<K, V, R> c, ExaminationEntry<K, V> e) { }
+    public final void mutate(Progress<K, V, R> c, ExaminationEntry<K, V> e) { }
 
   }
 

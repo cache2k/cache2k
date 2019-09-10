@@ -59,7 +59,7 @@ public abstract class EntryAction<K, V, R> extends Entry.PiggyBack implements
   AsyncCacheLoader.Context<K, V>,
   AsyncCacheLoader.Callback<K, V>, AsyncCacheWriter.Callback, Progress<K, V, R> {
 
-  static final Entry NON_FRESH_DUMMY = new Entry();
+  public static final Entry NON_FRESH_DUMMY = new Entry();
 
   InternalCache<K, V> userCache;
   HeapCache<K, V> heapCache;
@@ -70,7 +70,8 @@ public abstract class EntryAction<K, V, R> extends Entry.PiggyBack implements
    * Reference to the entry we do processing for or the dummy entry {@link #NON_FRESH_DUMMY}
    * The field is volatile, to be safe when we get a callback from a different thread.
    */
-  volatile Entry<K, V> entry;
+  volatile Entry<K, V> heapEntry;
+  ExaminationEntry<K, V> heapOrLoadedEntry;
   V newValueOrException;
   V oldValueOrException;
   R result;
@@ -103,14 +104,14 @@ public abstract class EntryAction<K, V, R> extends Entry.PiggyBack implements
   boolean heapHit = false;
   boolean doNotCountAccess = false;
 
-  boolean loadAndMutate = false;
+  boolean loadAndRestart = false;
   boolean load = false;
 
   /** Stats for load should be counted as refresh */
   boolean refresh = false;
 
   /**
-   * Fresh load in first round with {@link #loadAndMutate}.
+   * Fresh load in first round with {@link #loadAndRestart}.
    * Triggers that we always say it is present.
    */
   boolean successfulLoad = false;
@@ -160,9 +161,9 @@ public abstract class EntryAction<K, V, R> extends Entry.PiggyBack implements
     operation = op;
     key = k;
     if (e != null) {
-      entry = e;
+      heapEntry = e;
     } else {
-      entry = (Entry<K,V>) NON_FRESH_DUMMY;
+      heapEntry = (Entry<K,V>) NON_FRESH_DUMMY;
     }
     if (cb == null) {
       syncThread = Thread.currentThread();
@@ -241,7 +242,7 @@ public abstract class EntryAction<K, V, R> extends Entry.PiggyBack implements
 
   @Override
   public K getKey() {
-    return entry.getKey();
+    return heapEntry.getKey();
   }
 
   @Override
@@ -254,8 +255,8 @@ public abstract class EntryAction<K, V, R> extends Entry.PiggyBack implements
 
   @Override
   public V getCachedValue() {
-    V v = entry.getValueOrException();
-    if (v instanceof ExceptionWrapper || entry.isVirgin()) {
+    V v = heapEntry.getValueOrException();
+    if (v instanceof ExceptionWrapper || heapEntry.isVirgin()) {
       return null;
     }
     return v;
@@ -263,21 +264,26 @@ public abstract class EntryAction<K, V, R> extends Entry.PiggyBack implements
 
   @Override
   public Throwable getCachedException() {
-    V v = entry.getValueOrException();
+    V v = heapEntry.getValueOrException();
     if (v instanceof ExceptionWrapper) { return ((ExceptionWrapper) v).getException(); }
     return null;
   }
 
   @Override
+  public boolean isLoaderPresent() {
+    return userCache.isLoaderPresent();
+  }
+
+  @Override
   public boolean isPresent() {
     doNotCountAccess = true;
-    return successfulLoad || entry.hasFreshData(heapCache.getClock());
+    return successfulLoad || heapEntry.hasFreshData(heapCache.getClock());
   }
 
   @Override
   public boolean isExpiryTimeReachedOrInRefreshProbation() {
     doNotCountAccess = true;
-    long nrt = entry.getNextRefreshTime();
+    long nrt = heapEntry.getNextRefreshTime();
     if (nrt == Entry.EXPIRED_REFRESHED) {
       return true;
     }
@@ -292,13 +298,13 @@ public abstract class EntryAction<K, V, R> extends Entry.PiggyBack implements
     doNotCountAccess = true;
     return
       successfulLoad ||
-      entry.getNextRefreshTime() == Entry.EXPIRED_REFRESHED ||
-      entry.hasFreshData(heapCache.getClock());
+      heapEntry.getNextRefreshTime() == Entry.EXPIRED_REFRESHED ||
+      heapEntry.hasFreshData(heapCache.getClock());
   }
 
   @Override
   public boolean isPresentOrMiss() {
-    if (successfulLoad || entry.hasFreshData(heapCache.getClock())) {
+    if (successfulLoad || heapEntry.hasFreshData(heapCache.getClock())) {
       return true;
     }
     countMiss = true;
@@ -329,7 +335,7 @@ public abstract class EntryAction<K, V, R> extends Entry.PiggyBack implements
   }
 
   public void retrieveDataFromHeap() {
-    Entry<K, V> e = entry;
+    Entry<K, V> e = heapEntry;
     if (e == NON_FRESH_DUMMY) {
       e = heapCache.lookupEntry(key);
       if (e == null) {
@@ -346,18 +352,20 @@ public abstract class EntryAction<K, V, R> extends Entry.PiggyBack implements
 
   public void heapMiss() {
     heapMiss = true;
+    heapOrLoadedEntry = heapEntry;
     examine();
   }
 
   public void heapHit(Entry<K, V> e) {
     heapHit = true;
-    entry = e;
+    heapEntry = e;
+    heapOrLoadedEntry = heapEntry;
     examine();
   }
 
   public void examine() {
     int callbackCount = semanticCallback;
-    operation.examine(this, entry);
+    operation.examine(this, heapOrLoadedEntry);
   }
 
   @Override
@@ -393,24 +401,24 @@ public abstract class EntryAction<K, V, R> extends Entry.PiggyBack implements
       noExpiryListenersPresent();
       return;
     }
-    if (entry == NON_FRESH_DUMMY) {
+    if (heapEntry == NON_FRESH_DUMMY) {
       wantData();
       return;
     }
-    long nrt = entry.getNextRefreshTime();
+    long nrt = heapEntry.getNextRefreshTime();
     if (nrt < 0 && millis() >= -nrt) {
       boolean justExpired = false;
-      synchronized (entry) {
-        nrt = entry.getNextRefreshTime();
+      synchronized (heapEntry) {
+        nrt = heapEntry.getNextRefreshTime();
         if (nrt < 0 && millis() >= -nrt) {
           justExpired = true;
-          entry.setNextRefreshTime(Entry.EXPIRED);
-          timing().stopStartTimer(0, entry);
+          heapEntry.setNextRefreshTime(Entry.EXPIRED);
+          timing().stopStartTimer(0, heapEntry);
           heapDataValid = false;
         }
       }
       if (justExpired) {
-        CacheEntry<K, V> entryCopy = heapCache.returnCacheEntry(entry);
+        CacheEntry<K, V> entryCopy = heapCache.returnCacheEntry(heapEntry);
         sendExpiryEvents(entryCopy);
         metrics().expiredKept();
       }
@@ -424,7 +432,7 @@ public abstract class EntryAction<K, V, R> extends Entry.PiggyBack implements
 
   public void continueWithMutation() {
     int callbackCount = semanticCallback;
-    operation.update(this, entry);
+    operation.mutate(this, heapOrLoadedEntry);
   }
 
   public void finish() {
@@ -432,8 +440,8 @@ public abstract class EntryAction<K, V, R> extends Entry.PiggyBack implements
   }
 
   @Override
-  public void loadAndMutation() {
-    loadAndMutate = true;
+  public void loadAndRestart() {
+    loadAndRestart = true;
     load();
   }
 
@@ -450,7 +458,7 @@ public abstract class EntryAction<K, V, R> extends Entry.PiggyBack implements
     semanticCallback++;
     checkLocked();
     load = true;
-    Entry<K, V> e = entry;
+    Entry<K, V> e = heapEntry;
     long t0 = heapCache.isUpdateTimeNeeded() ? lastRefreshTime = loadStartedTime = getCurrentTime() : 0;
     if (e.getNextRefreshTime() == Entry.EXPIRED_REFRESHED) {
       long nrt = e.getRefreshProbationNextRefreshTime();
@@ -461,7 +469,7 @@ public abstract class EntryAction<K, V, R> extends Entry.PiggyBack implements
     }
     AsyncCacheLoader<K, V> _asyncLoader;
     if ((_asyncLoader = asyncLoader()) != null) {
-      entry.nextProcessingStep(LOAD_ASYNC);
+      heapEntry.nextProcessingStep(LOAD_ASYNC);
       try {
         _asyncLoader.load(key, this, this);
       } catch (Exception ex) {
@@ -493,7 +501,7 @@ public abstract class EntryAction<K, V, R> extends Entry.PiggyBack implements
 
   public void reviveRefreshedEntry(long nrt) {
     metrics().refreshedHit();
-    Entry<K, V> e = entry;
+    Entry<K, V> e = heapEntry;
     newValueOrException = e.getValueOrException();
     lastRefreshTime = e.getRefreshTime();
     expiry = nrt;
@@ -518,10 +526,10 @@ public abstract class EntryAction<K, V, R> extends Entry.PiggyBack implements
 
   private boolean lockFor(int ps, boolean countHit) {
     if (entryLocked) {
-      entry.nextProcessingStep(ps);
+      heapEntry.nextProcessingStep(ps);
       return false;
     }
-    Entry<K, V> e = entry;
+    Entry<K, V> e = heapEntry;
     if (e == NON_FRESH_DUMMY) {
       e = countHit ? heapCache.lookupOrNewEntry(key) : heapCache.lookupOrNewEntryNoHitRecord(key);
     }
@@ -567,7 +575,7 @@ public abstract class EntryAction<K, V, R> extends Entry.PiggyBack implements
       entryLocked = true;
       heapDataValid = e.isDataValidOrProbation();
       heapHit = !e.isVirgin();
-      entry = e;
+      heapEntry = e;
       return true;
     }
     return false;
@@ -591,8 +599,8 @@ public abstract class EntryAction<K, V, R> extends Entry.PiggyBack implements
    * so we are sure its there.
    */
   private void checkEntryStateOnLoadCallback() {
-    synchronized (entry) {
-      if (!entry.checkAndSwitchProcessingState(LOAD_ASYNC, LOAD_COMPLETE) || completed) {
+    synchronized (heapEntry) {
+      if (!heapEntry.checkAndSwitchProcessingState(LOAD_ASYNC, LOAD_COMPLETE) || completed) {
         throw new IllegalStateException("async callback on wrong entry state. duplicate callback?");
       }
     }
@@ -617,19 +625,19 @@ public abstract class EntryAction<K, V, R> extends Entry.PiggyBack implements
   }
 
   private void onLoadFailureIntern(Throwable t) {
-    newValueOrException = (V) new ExceptionWrapper(key, t, loadStartedTime, entry);
+    newValueOrException = (V) new ExceptionWrapper(key, t, loadStartedTime, heapEntry);
     loadCompleted();
   }
 
   public void loadCompleted() {
-    entry.nextProcessingStep(LOAD_COMPLETE);
+    heapEntry.nextProcessingStep(LOAD_COMPLETE);
     entryLocked = true;
     if (!metrics().isDisabled() && heapCache.isUpdateTimeNeeded()) {
       long _loadCompletedTime = millis();
       long _delta = _loadCompletedTime - loadStartedTime;
       if (refresh) {
         metrics().refresh(_delta);
-      } else if (entry.isVirgin() || !storageRead) {
+      } else if (heapEntry.isVirgin() || !storageRead) {
         metrics().load(_delta);
       } else {
         metrics().reload(_delta);
@@ -679,9 +687,9 @@ public abstract class EntryAction<K, V, R> extends Entry.PiggyBack implements
   public void expire(long expiryTime) {
     if (lockForNoHit(EXPIRE)) { return; }
     semanticCallback++;
-    newValueOrException = entry.getValueOrException();
+    newValueOrException = heapEntry.getValueOrException();
     if (heapCache.isUpdateTimeNeeded()) {
-      lastRefreshTime = entry.getRefreshTime();
+      lastRefreshTime = heapEntry.getRefreshTime();
     }
     expiry = expiryTime;
     if (newValueOrException instanceof ExceptionWrapper) {
@@ -714,25 +722,25 @@ public abstract class EntryAction<K, V, R> extends Entry.PiggyBack implements
   }
 
   public void mutationCalculateExpiry() {
-    entry.nextProcessingStep(EXPIRY);
+    heapEntry.nextProcessingStep(EXPIRY);
     if (newValueOrException instanceof ExceptionWrapper) {
       try {
         expiry = 0;
         ExceptionWrapper ew = (ExceptionWrapper) newValueOrException;
-        if ((entry.isDataValid() || entry.isExpiredState()) && entry.getException() == null) {
-          expiry = timing().suppressExceptionUntil(entry, ew);
+        if ((heapEntry.isDataValid() || heapEntry.isExpiredState()) && heapEntry.getException() == null) {
+          expiry = timing().suppressExceptionUntil(heapEntry, ew);
         }
         if (expiry > loadStartedTime) {
           suppressException = true;
-          newValueOrException = entry.getValueOrException();
-          lastRefreshTime = entry.getRefreshTime();
+          newValueOrException = heapEntry.getValueOrException();
+          lastRefreshTime = heapEntry.getRefreshTime();
           metrics().suppressedException();
-          entry.setSuppressedLoadExceptionInformation(ew);
+          heapEntry.setSuppressedLoadExceptionInformation(ew);
         } else {
           if (load) {
             metrics().loadException();
           }
-          expiry = timing().cacheExceptionUntil(entry, ew);
+          expiry = timing().cacheExceptionUntil(heapEntry, ew);
         }
         setUntil(ew);
       } catch (Throwable ex) {
@@ -746,7 +754,7 @@ public abstract class EntryAction<K, V, R> extends Entry.PiggyBack implements
     } else {
       try {
         expiry = timing().calculateNextRefreshTime(
-          entry, newValueOrException,
+          heapEntry, newValueOrException,
           lastRefreshTime);
         if (newValueOrException == null && heapCache.isRejectNullValues() && expiry != ExpiryTimeValues.NO_CACHE) {
           RuntimeException _ouch = heapCache.returnNullValueDetectedException();
@@ -758,7 +766,7 @@ public abstract class EntryAction<K, V, R> extends Entry.PiggyBack implements
             return;
           }
         }
-        entry.resetSuppressedLoadExceptionInformation();
+        heapEntry.resetSuppressedLoadExceptionInformation();
       } catch (Throwable ex) {
         if (load) {
           decideForLoaderExceptionAfterExpiryCalculation(new ExpiryPolicyException(ex));
@@ -779,7 +787,7 @@ public abstract class EntryAction<K, V, R> extends Entry.PiggyBack implements
    */
   @SuppressWarnings("unchecked")
   private void decideForLoaderExceptionAfterExpiryCalculation(RuntimeException _ouch) {
-    newValueOrException = (V) new ExceptionWrapper<K>(key, _ouch, loadStartedTime, entry);
+    newValueOrException = (V) new ExceptionWrapper<K>(key, _ouch, loadStartedTime, heapEntry);
     expiry = 0;
     mutationCalculateExpiry();
   }
@@ -792,7 +800,7 @@ public abstract class EntryAction<K, V, R> extends Entry.PiggyBack implements
   @SuppressWarnings("unchecked")
   private void resiliencePolicyException(RuntimeException _ouch) {
     newValueOrException = (V)
-      new ExceptionWrapper<K>(key, _ouch, loadStartedTime, entry);
+      new ExceptionWrapper<K>(key, _ouch, loadStartedTime, heapEntry);
     expiry = 0;
     expiryCalculated();
   }
@@ -810,17 +818,17 @@ public abstract class EntryAction<K, V, R> extends Entry.PiggyBack implements
   }
 
   public void expiryCalculated() {
-    entry.nextProcessingStep(EXPIRY_COMPLETE);
+    heapEntry.nextProcessingStep(EXPIRY_COMPLETE);
     if (load) {
-      if (loadAndMutate) {
-        loadAndExpiryCalculatedMutateAgain();
+      if (loadAndRestart) {
+        loadAndExpiryCalculatedExamineAgain();
         return;
       }
       checkKeepOrRemove();
       return;
     } else {
       if (expiry > 0 || expiry == -1 || (expiry < 0 && -expiry > loadStartedTime)) {
-        if (entry.isVirgin()) {
+        if (heapEntry.isVirgin()) {
           metrics().putNewEntry();
         } else {
           if (!wantData) {
@@ -834,13 +842,13 @@ public abstract class EntryAction<K, V, R> extends Entry.PiggyBack implements
     mutationMayCallWriter();
   }
 
-  public void loadAndExpiryCalculatedMutateAgain() {
-    load = loadAndMutate = false;
+  public void loadAndExpiryCalculatedExamineAgain() {
+    load = loadAndRestart = false;
     successfulLoad = true;
-    ExaminationEntry<K,V> ee = new LoadedEntry<K,V>() {
+    heapOrLoadedEntry = new LoadedEntry<K,V>() {
       @Override
       public K getKey() {
-        return entry.getKey();
+        return heapEntry.getKey();
       }
 
       @Override
@@ -854,8 +862,7 @@ public abstract class EntryAction<K, V, R> extends Entry.PiggyBack implements
       }
 
     };
-    int callbackCount = semanticCallback;
-    operation.update(this, ee);
+    examine();
   }
 
   public void updateDidNotTriggerDifferentMutationStoreLoadedValue() {
@@ -873,7 +880,7 @@ public abstract class EntryAction<K, V, R> extends Entry.PiggyBack implements
     }
     if (remove) {
       try {
-        entry.nextProcessingStep(WRITE);
+        heapEntry.nextProcessingStep(WRITE);
         _writer.delete(key);
       } catch (Throwable t) {
         onWriteFailure(t);
@@ -886,7 +893,7 @@ public abstract class EntryAction<K, V, R> extends Entry.PiggyBack implements
       skipWritingForException();
       return;
     }
-    entry.nextProcessingStep(WRITE);
+    heapEntry.nextProcessingStep(WRITE);
     try {
       _writer.write(key, newValueOrException);
     } catch (Throwable t) {
@@ -898,7 +905,7 @@ public abstract class EntryAction<K, V, R> extends Entry.PiggyBack implements
 
   @Override
   public void onWriteSuccess() {
-    entry.nextProcessingStep(WRITE_COMPLETE);
+    heapEntry.nextProcessingStep(WRITE_COMPLETE);
     checkKeepOrRemove();
   }
 
@@ -950,25 +957,25 @@ public abstract class EntryAction<K, V, R> extends Entry.PiggyBack implements
    * The final write in the entry is at {@link #mutationReleaseLockAndStartTimer()}
    */
   public void mutationUpdateHeap() {
-    synchronized (entry) {
+    synchronized (heapEntry) {
       if (heapCache.isRecordRefreshTime()) {
-        entry.setRefreshTime(lastRefreshTime);
+        heapEntry.setRefreshTime(lastRefreshTime);
       }
       if (remove) {
         if (expiredImmediately) {
-          entry.setNextRefreshTime(Entry.EXPIRED);
-          entry.setValueOrException(newValueOrException);
+          heapEntry.setNextRefreshTime(Entry.EXPIRED);
+          heapEntry.setValueOrException(newValueOrException);
         } else {
-          if (!entry.isVirgin()) {
-            entry.setNextRefreshTime(Entry.REMOVE_PENDING);
+          if (!heapEntry.isVirgin()) {
+            heapEntry.setNextRefreshTime(Entry.REMOVE_PENDING);
           }
         }
       } else {
-        oldValueOrException = entry.getValueOrException();
-        entry.setValueOrException(newValueOrException);
+        oldValueOrException = heapEntry.getValueOrException();
+        heapEntry.setValueOrException(newValueOrException);
       }
     }
-    heapCache.eviction.updateWeight(entry);
+    heapCache.eviction.updateWeight(heapEntry);
     mutationMayStore();
   }
 
@@ -988,7 +995,7 @@ public abstract class EntryAction<K, V, R> extends Entry.PiggyBack implements
       mutationReleaseLockAndStartTimer();
       return;
     }
-    CacheEntry<K,V> entryCopy = heapCache.returnCacheEntry(entry);
+    CacheEntry<K,V> entryCopy = heapCache.returnCacheEntry(heapEntry);
     if (expiredImmediately) {
       if (storageDataValid || heapDataValid) {
         if (entryExpiredListeners() != null) {
@@ -1011,7 +1018,7 @@ public abstract class EntryAction<K, V, R> extends Entry.PiggyBack implements
       if (storageDataValid || heapDataValid) {
         if (entryUpdatedListeners() != null) {
           CacheEntry<K,V> _previousEntry =
-            heapCache.returnCacheEntry(entry.getKey(), oldValueOrException);
+            heapCache.returnCacheEntry(heapEntry.getKey(), oldValueOrException);
           for (CacheEntryUpdatedListener<K,V> l : entryUpdatedListeners()) {
             try {
               l.onEntryUpdated(userCache, _previousEntry, entryCopy);
@@ -1053,30 +1060,30 @@ public abstract class EntryAction<K, V, R> extends Entry.PiggyBack implements
     checkLocked();
     if (load) {
       if (!remove ||
-        !(entry.getValueOrException() == null && heapCache.isRejectNullValues())) {
-        operation.loaded(this, entry);
+        !(heapEntry.getValueOrException() == null && heapCache.isRejectNullValues())) {
+        operation.loaded(this, heapEntry);
       }
     }
     boolean justExpired = false;
-    synchronized (entry) {
+    synchronized (heapEntry) {
       if (refresh) {
-        heapCache.startRefreshProbationTimer(entry, expiry);
+        heapCache.startRefreshProbationTimer(heapEntry, expiry);
       } else if (remove) {
-        heapCache.removeEntry(entry);
+        heapCache.removeEntry(heapEntry);
       } else {
-        entry.setNextRefreshTime(timing().stopStartTimer(expiry, entry));
-        if (!expiredImmediately && entry.isExpiredState()) {
+        heapEntry.setNextRefreshTime(timing().stopStartTimer(expiry, heapEntry));
+        if (!expiredImmediately && heapEntry.isExpiredState()) {
           justExpired = true;
         }
       }
       if (!justExpired) {
-        entry.processingDone(this);
+        heapEntry.processingDone(this);
         entryLocked = false;
       }
     }
     if (justExpired) {
       heapDataValid = true;
-      entry.nextProcessingStep(EXPIRE);
+      heapEntry.nextProcessingStep(EXPIRE);
       expiry = 0;
       checkKeepOrRemove();
       return;
@@ -1121,8 +1128,8 @@ public abstract class EntryAction<K, V, R> extends Entry.PiggyBack implements
   public void examinationAbort(CustomizationException t) {
     exceptionToPropagate = t;
     if (entryLocked) {
-      synchronized (entry) {
-        entry.processingDone(this);
+      synchronized (heapEntry) {
+        heapEntry.processingDone(this);
         entryLocked = false;
       }
     }
@@ -1131,9 +1138,11 @@ public abstract class EntryAction<K, V, R> extends Entry.PiggyBack implements
 
   public void mutationAbort(RuntimeException t) {
     exceptionToPropagate = t;
-    synchronized (entry) {
-      entry.processingDone(this);
-      entryLocked = false;
+    if (entryLocked) {
+      synchronized (heapEntry) {
+        heapEntry.processingDone(this);
+        entryLocked = false;
+      }
     }
     completeProcessCallbacks();
   }
@@ -1147,10 +1156,10 @@ public abstract class EntryAction<K, V, R> extends Entry.PiggyBack implements
 
   public void noMutationRequested() {
     if (entryLocked) {
-      synchronized (entry) {
-        entry.processingDone(this);
-        if (entry.isVirgin()) {
-          heapCache.removeEntry(entry);
+      synchronized (heapEntry) {
+        heapEntry.processingDone(this);
+        if (heapEntry.isVirgin()) {
+          heapCache.removeEntry(heapEntry);
         }
       }
       entryLocked = false;
@@ -1185,8 +1194,8 @@ public abstract class EntryAction<K, V, R> extends Entry.PiggyBack implements
    */
   private void asyncExecutionStartedWaitIfSynchronousCall() {
     if (syncThread == Thread.currentThread()) {
-      synchronized (entry) {
-        entry.waitForProcessing();
+      synchronized (heapEntry) {
+        heapEntry.waitForProcessing();
       }
     }
   }

@@ -134,19 +134,6 @@ public class TestingBase {
                          System.err.println(loaderExecutor);
                          System.err.println(clock);
                          System.err.println(getInfo());
-                         long _settleMillis = 345;
-                         sleep(0);
-                         sleep(_settleMillis);
-                         System.err.println("After pausing for " + _settleMillis);
-                         System.err.println(loaderExecutor);
-                         System.err.println(clock);
-                         System.err.println(getInfo());
-                         sleep(0);
-                         sleep(_settleMillis);
-                         System.err.println("After pausing for " + _settleMillis);
-                         System.err.println(loaderExecutor);
-                         System.err.println(clock);
-                         System.err.println(getInfo());
                        } catch (Throwable _getInfoException) {
                          System.err.println("Cannot print info");
                          _getInfoException.printStackTrace();

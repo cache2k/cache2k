@@ -473,7 +473,7 @@ public class BasicCacheTest extends TestingBase {
       c.get(2);
       final long refreshedBefore = millis();
       assertFalse("entry disappears since expiry=0", c.containsKey(2));
-      assertEquals("entry has no time since suppressed", 0, getLastModification(c, 2));
+      assertEquals("entry has no refreshed time since suppressed", 0, getRefreshedTimeViaEntryProcessor(c, 2));
       sleep(3);
       c.get(2);
       c.invoke(2, new EntryProcessor<Integer, Integer, Long>() {
@@ -510,7 +510,7 @@ public class BasicCacheTest extends TestingBase {
     });
   }
 
-  long getLastModification(Cache<Integer, Integer> c, int key) {
+  long getRefreshedTimeViaEntryProcessor(Cache<Integer, Integer> c, int key) {
     return c.invoke(key, new EntryProcessor<Integer, Integer, Long>() {
       @Override
       public Long process(final MutableCacheEntry<Integer, Integer> e) throws Exception {

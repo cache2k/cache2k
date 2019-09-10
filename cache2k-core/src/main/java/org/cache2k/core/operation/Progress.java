@@ -45,6 +45,11 @@ public interface Progress<K, V, R> {
   void wantData();
 
   /**
+   * A loader is present and the cache operates in read through.
+   */
+  boolean isLoaderPresent();
+
+  /**
    * Entry has valid data in the cache and is not expired. This is used for
    * operations that do not want to access the value.
    */
@@ -69,7 +74,7 @@ public interface Progress<K, V, R> {
 
   /**
    * The entry gets locked for mutation. Last command of semantic method.
-   * Calls back on {@link Semantic#update(Progress, ExaminationEntry)}
+   * Calls back on {@link Semantic#mutate(Progress, ExaminationEntry)}
    */
   void wantMutation();
 
@@ -106,9 +111,9 @@ public interface Progress<K, V, R> {
   void refresh();
 
   /**
-   * Request a load, and then call update again for the final outcome. Last command of semantic method.
+   * Request a load, and then call examine again to reevaluate. Last command of semantic method.
    */
-  void loadAndMutation();
+  void loadAndRestart();
 
   /**
    * Reset expiry to the specified value. Don't change the value.
