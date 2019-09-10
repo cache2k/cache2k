@@ -84,8 +84,8 @@ public class CacheConfigurationProviderImpl
 
   @Override
   public Cache2kConfiguration getDefaultConfiguration(final CacheManager mgr) {
-    try {
     Cache2kConfiguration cfg = getManagerContext(mgr).getDefaultManagerConfiguration();
+    try {
       return Util.copyViaSerialization(cfg);
     } catch (Exception ex) {
       throw new ConfigurationException("Copying default cache configuration for manager '" + mgr.getName() + "'", ex);

@@ -131,6 +131,11 @@ public class IntegrationTest {
       .build();
   }
 
+  /**
+   * As soon as we use the manager for building the cache the configuration
+   * is read. This configuration file disables {@code skipCheckOnStartup}
+   * so it should fail immediately.
+   */
   @Test
   public void unknownPropertyYieldsExceptionOnStartup() {
     try {
