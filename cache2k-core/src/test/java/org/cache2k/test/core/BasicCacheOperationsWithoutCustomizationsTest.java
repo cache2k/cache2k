@@ -100,11 +100,7 @@ public class BasicCacheOperationsWithoutCustomizationsTest {
     for (Pars o : new TestVariants()) {
       l.add(new Object[]{o});
     }
-    extend(l,
-      pars().withForwardingAndAbstract(true)
-      );
     return l;
-
   }
 
   /**
@@ -153,6 +149,14 @@ public class BasicCacheOperationsWithoutCustomizationsTest {
     }
     if (pars.withWiredCache) {
       StaticUtil.enforceWiredCache(b);
+    }
+    if (pars.withExpiryListener) {
+      b.addListener(new CacheEntryExpiredListener() {
+        @Override
+        public void onEntryExpired(final Cache cache, final CacheEntry entry) {
+
+        }
+      });
     }
     Cache<Integer,Integer> c = b.build();
     if (pars.withEntryProcessor) {
@@ -290,10 +294,6 @@ public class BasicCacheOperationsWithoutCustomizationsTest {
     assertFalse(cache.containsKey(OTHER_KEY));
   }
 
-  /**
-   * Yields "org.cache2k.PropagatedCacheException: (expiry=none) org.cache2k.impl.CacheUsageException: source not set".
-   * This is intentional, but maybe we change it in the future. At least check that we are consistent for now.
-   */
   @Test
   public void initial_Get() {
     Object obj = cache.get(KEY);
@@ -533,6 +533,46 @@ public class BasicCacheOperationsWithoutCustomizationsTest {
     assertNull(cache.peek(KEY));
     statistics()
       .getCount.expect(pars.keepDataAfterExpired && pars.withWiredCache ? 2 : 1)
+      .missCount.expect(1)
+      .expectAllZero();
+  }
+
+  /*
+   * get
+   */
+
+  @Test
+  public void get_Miss() {
+    assertNull(cache.get(KEY));
+    statistics()
+      .getCount.expect(1)
+      .missCount.expect(1)
+      .expectAllZero();
+  }
+
+  @Test
+  public void get_Hit() {
+    cache.put(KEY, VALUE);
+    statistics()
+      .putCount.expect(1)
+      .expectAllZero();
+    assertNotNull(cache.get(KEY));
+    statistics()
+      .getCount.expect(1)
+      .missCount.expect(0)
+      .expectAllZero();
+  }
+
+  @Test
+  public void get_NotFresh() {
+    cache.put(KEY, VALUE);
+    statistics()
+      .putCount.expect(1)
+      .expectAllZero();
+    cache.expireAt(KEY, ExpiryTimeValues.NOW);
+    assertNull(cache.get(KEY));
+    statistics()
+      .getCount.expect(1)
       .missCount.expect(1)
       .expectAllZero();
   }
@@ -1498,37 +1538,40 @@ public class BasicCacheOperationsWithoutCustomizationsTest {
     boolean keepDataAfterExpired = false;
     boolean withExpiryAfterWrite = false;
     boolean useObjectKey = false;
+    boolean withExpiryListener = false;
 
     @Override
     public boolean equals(final Object o) {
       if (this == o) return true;
       if (o == null || getClass() != o.getClass()) return false;
 
-      Pars p = (Pars) o;
+      Pars pars = (Pars) o;
 
-      if (strictEviction != p.strictEviction) return false;
-      if (recordRefreshTime != p.recordRefreshTime) return false;
-      if (disableStatistics != p.disableStatistics) return false;
-      if (withEntryProcessor != p.withEntryProcessor) return false;
-      if (withWiredCache != p.withWiredCache) return false;
-      if (withForwardingAndAbstract != p.withForwardingAndAbstract) return false;
-      if (withExpiryAfterWrite != p.withExpiryAfterWrite) return false;
-      if (useObjectKey != p.useObjectKey) return false;
-      return keepDataAfterExpired == p.keepDataAfterExpired;
+      if (strictEviction != pars.strictEviction) return false;
+      if (recordRefreshTime != pars.recordRefreshTime) return false;
+      if (disableStatistics != pars.disableStatistics) return false;
+      if (withEntryProcessor != pars.withEntryProcessor) return false;
+      if (withWiredCache != pars.withWiredCache) return false;
+      if (withForwardingAndAbstract != pars.withForwardingAndAbstract) return false;
+      if (keepDataAfterExpired != pars.keepDataAfterExpired) return false;
+      if (withExpiryAfterWrite != pars.withExpiryAfterWrite) return false;
+      if (useObjectKey != pars.useObjectKey) return false;
+      return withExpiryListener == pars.withExpiryListener;
     }
 
     @Override
     public int hashCode() {
-      int _result = (strictEviction ? 1 : 0);
-      _result = 31 * _result + (recordRefreshTime ? 1 : 0);
-      _result = 31 * _result + (disableStatistics ? 1 : 0);
-      _result = 31 * _result + (withEntryProcessor ? 1 : 0);
-      _result = 31 * _result + (withWiredCache ? 1 : 0);
-      _result = 31 * _result + (withForwardingAndAbstract ? 1 : 0);
-      _result = 31 * _result + (keepDataAfterExpired ? 1 : 0);
-      _result = 31 * _result + (withExpiryAfterWrite ? 1 : 0);
-      _result = 31 * _result + (useObjectKey ? 1 : 0);
-      return _result;
+      int result = (strictEviction ? 1 : 0);
+      result = 31 * result + (recordRefreshTime ? 1 : 0);
+      result = 31 * result + (disableStatistics ? 1 : 0);
+      result = 31 * result + (withEntryProcessor ? 1 : 0);
+      result = 31 * result + (withWiredCache ? 1 : 0);
+      result = 31 * result + (withForwardingAndAbstract ? 1 : 0);
+      result = 31 * result + (keepDataAfterExpired ? 1 : 0);
+      result = 31 * result + (withExpiryAfterWrite ? 1 : 0);
+      result = 31 * result + (useObjectKey ? 1 : 0);
+      result = 31 * result + (withExpiryListener ? 1 : 0);
+      return result;
     }
 
     @Override
@@ -1542,7 +1585,8 @@ public class BasicCacheOperationsWithoutCustomizationsTest {
         ", forwarding=" + withForwardingAndAbstract +
         ", keep=" + keepDataAfterExpired +
         ", expiry=" + withExpiryAfterWrite +
-        ", useObjectKey=" + useObjectKey;
+        ", useObjectKey=" + useObjectKey +
+        ", withExpiryListener=" + withExpiryListener;
     }
 
     static class Builder {
@@ -1587,6 +1631,10 @@ public class BasicCacheOperationsWithoutCustomizationsTest {
         pars.useObjectKey = v; return this;
       }
 
+      public Builder withExpiryListener(final boolean v) {
+        pars.withExpiryListener = v; return this;
+      }
+
     }
 
   }
@@ -1612,6 +1660,8 @@ public class BasicCacheOperationsWithoutCustomizationsTest {
       add(new Pars.Builder().withEntryProcessor(true).withWiredCache(true).build());
       add(new Pars.Builder().useObjectKey(true).build());
       add(new Pars.Builder().useObjectKey(true).withWiredCache(true).build());
+      add(pars().withForwardingAndAbstract(true).build());
+      add(pars().withExpiryListener(true).build());
     }
 
   }

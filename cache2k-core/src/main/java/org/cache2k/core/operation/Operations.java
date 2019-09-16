@@ -63,7 +63,11 @@ public class Operations<K, V> {
         c.result(e.getValueOrException());
         c.noMutation();
       } else {
-        c.wantMutation();
+        if (c.isLoaderPresent()) {
+          c.wantMutation();
+        } else {
+          c.noMutation();
+        }
       }
     }
 
@@ -99,7 +103,11 @@ public class Operations<K, V> {
         c.entryResult(e);
         c.noMutation();
       } else {
-        c.wantMutation();
+        if (c.isLoaderPresent()) {
+          c.wantMutation();
+        } else {
+          c.noMutation();
+        }
       }
     }
 
@@ -190,16 +198,21 @@ public class Operations<K, V> {
   };
 
   public Semantic<K, V, V> peekAndReplace(final K key, final V value) {
-    return new Semantic.Update<K, V, V>() {
+    return new Semantic.MightUpdate<K, V, V>() {
 
       @Override
-      public void mutate(Progress<K, V, V> c, ExaminationEntry<K, V> e) {
+      public void examine(final Progress<K, V, V> c, final ExaminationEntry<K, V> e) {
         if (c.isPresentOrMiss()) {
           c.result(e.getValueOrException());
-          c.put(value);
+          c.wantMutation();
           return;
         }
         c.noMutation();
+      }
+
+      @Override
+      public void mutate(Progress<K, V, V> c, ExaminationEntry<K, V> e) {
+        c.put(value);
       }
 
     };
@@ -265,17 +278,22 @@ public class Operations<K, V> {
    * @see org.cache2k.Cache#putIfAbsent(Object, Object)
    */
   public Semantic<K, V, Boolean> putIfAbsent(final K key, final V value) {
-    return new Semantic.Update<K, V, Boolean>() {
+    return new Semantic.MightUpdate<K, V, Boolean>() {
+
+      @Override
+      public void examine(final Progress<K, V, Boolean> c, final ExaminationEntry<K, V> e) {
+        if (!c.isPresentOrMiss()) {
+          c.result(true);
+          c.wantMutation();
+        } else {
+          c.result(false);
+          c.noMutation();
+        }
+      }
 
       @Override
       public void mutate(Progress<K, V, Boolean> c, ExaminationEntry<K, V> e) {
-        if (!c.isPresentOrMiss()) {
-          c.result(true);
-          c.put(value);
-          return;
-        }
-        c.result(false);
-        c.noMutation();
+        c.put(value);
       }
 
     };
@@ -341,7 +359,7 @@ public class Operations<K, V> {
           ( (value == null && e.getValueOrException() == null) ||
             value.equals(e.getValueOrException())) ) {
           c.result(true);
-          c.remove();
+          c.wantMutation();
         } else {
           c.result(false);
           c.noMutation();
@@ -428,23 +446,27 @@ public class Operations<K, V> {
   public static class NeedsLoadRestartException extends RestartException { }
 
   public Semantic<K, V, Void> expire(K key, final long t) {
-    return new Semantic.Update<K, V, Void>() {
+    return new Semantic.MightUpdate<K, V, Void>() {
+
       @Override
-      public void mutate(Progress c, ExaminationEntry e) {
+      public void examine(final Progress<K, V, Void> c, final ExaminationEntry<K, V> e) {
         if (t == ExpiryTimeValues.NO_CACHE ||
-            t == ExpiryTimeValues.REFRESH) {
+          t == ExpiryTimeValues.REFRESH) {
           if (c.isPresentOrInRefreshProbation()) {
-            c.expire(t);
+            c.wantMutation();
           } else {
             c.noMutation();
           }
-          return;
-        }
-        if (c.isPresent()) {
-          c.expire(t);
+        } else if (c.isPresent()) {
+          c.wantMutation();
         } else {
           c.noMutation();
         }
+      }
+
+      @Override
+      public void mutate(Progress c, ExaminationEntry e) {
+        c.expire(t);
       }
     };
   }

@@ -42,15 +42,6 @@ public interface CommonMetrics {
   long getPutHitCount();
 
   /**
-   * Counted for a put that updates an existing cache entry. It incremented the
-   * entry hit counter, but shouldn't be counted as read.
-   *
-   * @see InternalCacheInfo#getPutCount()
-   * @see CacheBaseInfo#getGetCount()
-   */
-  long getPutNoReadHitCount();
-
-  /**
    * Operation was accessing a heap entry and counted a hit it is existing, but
    * it should not be counted as read/get operation (e.g. {@code contains}). This
    * is a correction counter applied to the get counter.
@@ -163,9 +154,6 @@ public interface CommonMetrics {
     void putHit();
     void putHit(long cnt);
 
-    void putNoReadHit();
-    void putNoReadHit(long cnt);
-
     void heapHitButNoRead();
     void heapHitButNoRead(long cnt);
 
@@ -226,16 +214,6 @@ public interface CommonMetrics {
 
     @Override
     public void putHit(final long cnt) {
-
-    }
-
-    @Override
-    public void putNoReadHit() {
-
-    }
-
-    @Override
-    public void putNoReadHit(final long cnt) {
 
     }
 
@@ -376,11 +354,6 @@ public interface CommonMetrics {
 
     @Override
     public long getPutHitCount() {
-      return 0;
-    }
-
-    @Override
-    public long getPutNoReadHitCount() {
       return 0;
     }
 

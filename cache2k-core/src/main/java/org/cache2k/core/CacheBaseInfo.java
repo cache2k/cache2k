@@ -101,7 +101,7 @@ class CacheBaseInfo implements InternalCacheInfo {
     size = heapCache.getLocalSize();
     missCnt = metrics.getLoadCount() + metrics.getReloadCount() + metrics.getPeekHitNotFreshCount() + metrics.getPeekMissCount();
     hitCnt = em.getHitCount();
-    correctedPutCnt = metrics.getPutNewEntryCount() + metrics.getPutHitCount() + metrics.getPutNoReadHitCount();
+    correctedPutCnt = metrics.getPutNewEntryCount() + metrics.getPutHitCount();
     if (_heapCache.loaderExecutor instanceof ExclusiveExecutor) {
       ThreadPoolExecutor ex = ((ExclusiveExecutor) _heapCache.loaderExecutor).getThreadPoolExecutor();
       asyncLoadsInFlight = ex.getActiveCount();
@@ -148,11 +148,10 @@ class CacheBaseInfo implements InternalCacheInfo {
 
   @Override
   public long getGetCount() {
-    long _putHit = metrics.getPutNoReadHitCount();
     long _heapHitButNoRead = metrics.getHeapHitButNoReadCount();
     return
       hitCnt + metrics.getPeekMissCount()
-      + metrics.getLoadCount() - _putHit - _heapHitButNoRead;
+      + metrics.getLoadCount() - _heapHitButNoRead;
   }
   @Override
   public long getMissCount() { return missCnt; }

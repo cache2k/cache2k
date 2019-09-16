@@ -21,6 +21,7 @@ package org.cache2k.core;
  */
 
 import org.cache2k.CacheEntry;
+import org.cache2k.CacheException;
 import org.cache2k.core.operation.LoadedEntry;
 import org.cache2k.expiry.ExpiryPolicy;
 import org.cache2k.event.CacheEntryExpiredListener;
@@ -381,11 +382,15 @@ public abstract class EntryAction<K, V, R> extends Entry.PiggyBack implements
   @Override
   public void wantMutation() {
     semanticCallback++;
-    if (!entryLocked && wantData) {
-      if (lockFor(MUTATE)) { return; }
-      countMiss = false;
-      examine();
-      return;
+    if (!entryLocked) {
+      if (lockForNoHit(MUTATE)) { return; }
+      if (wantData) {
+        countMiss = false;
+        examine();
+        return;
+      }
+    } else {
+      heapEntry.nextProcessingStep(MUTATE);
     }
     checkExpiryBeforeMutation();
   }
@@ -454,8 +459,12 @@ public abstract class EntryAction<K, V, R> extends Entry.PiggyBack implements
   @SuppressWarnings("unchecked")
   @Override
   public void load() {
-    if (lockFor(LOAD)) { return; }
     semanticCallback++;
+    if (!isLoaderPresent()) {
+      mutationAbort(new CacheException("load requested but no loader defined"));
+      return;
+    }
+    heapEntry.nextProcessingStep(LOAD);
     checkLocked();
     load = true;
     Entry<K, V> e = heapEntry;
@@ -512,26 +521,14 @@ public abstract class EntryAction<K, V, R> extends Entry.PiggyBack implements
    * @return true, in case this is an async call and enqueued the operation
    *         in the running one
    */
-  private boolean lockFor(int ps) {
-    return lockFor(ps, true);
-  }
-
-  /**
-   * @return true, in case this is an async call and enqueued the operation
-   *         in the running one
-   */
   private boolean lockForNoHit(int ps) {
-    return lockFor(ps, false);
-  }
-
-  private boolean lockFor(int ps, boolean countHit) {
     if (entryLocked) {
       heapEntry.nextProcessingStep(ps);
       return false;
     }
     Entry<K, V> e = heapEntry;
     if (e == NON_FRESH_DUMMY) {
-      e = countHit ? heapCache.lookupOrNewEntry(key) : heapCache.lookupOrNewEntryNoHitRecord(key);
+      e = heapCache.lookupOrNewEntryNoHitRecord(key);
     }
     for(;;) {
       synchronized (e) {
@@ -542,7 +539,7 @@ public abstract class EntryAction<K, V, R> extends Entry.PiggyBack implements
           return false;
         }
       }
-      e = countHit ? heapCache.lookupOrNewEntry(key) : heapCache.lookupOrNewEntryNoHitRecord(key);
+      e = heapCache.lookupOrNewEntryNoHitRecord(key);
     }
   }
 
@@ -664,8 +661,8 @@ public abstract class EntryAction<K, V, R> extends Entry.PiggyBack implements
 
   @Override
   public void put(V value) {
-    if (lockFor(MUTATE)) { return; }
     semanticCallback++;
+    heapEntry.nextProcessingStep(MUTATE);
     newValueOrException = value;
     if (!heapCache.isUpdateTimeNeeded()) {
       lastRefreshTime = 0;
@@ -677,16 +674,16 @@ public abstract class EntryAction<K, V, R> extends Entry.PiggyBack implements
 
   @Override
   public void remove() {
-    if (lockForNoHit(MUTATE)) { return; }
     semanticCallback++;
+    heapEntry.nextProcessingStep(MUTATE);
     remove = true;
     mutationMayCallWriter();
   }
 
   @Override
   public void expire(long expiryTime) {
-    if (lockForNoHit(EXPIRE)) { return; }
     semanticCallback++;
+    heapEntry.nextProcessingStep(EXPIRE);
     newValueOrException = heapEntry.getValueOrException();
     if (heapCache.isUpdateTimeNeeded()) {
       lastRefreshTime = heapEntry.getRefreshTime();
@@ -700,8 +697,8 @@ public abstract class EntryAction<K, V, R> extends Entry.PiggyBack implements
 
   @Override
   public void putAndSetExpiry(final V value, final long expiryTime, final long refreshTime) {
-    if (lockFor(MUTATE)) { return; }
     semanticCallback++;
+    heapEntry.nextProcessingStep(MUTATE);
     newValueOrException = value;
     if (refreshTime >= 0) {
       lastRefreshTime = refreshTime;
@@ -831,11 +828,7 @@ public abstract class EntryAction<K, V, R> extends Entry.PiggyBack implements
         if (heapEntry.isVirgin()) {
           metrics().putNewEntry();
         } else {
-          if (!wantData) {
-            metrics().putNoReadHit();
-          } else {
-            metrics().putHit();
-          }
+          metrics().putHit();
         }
       }
     }

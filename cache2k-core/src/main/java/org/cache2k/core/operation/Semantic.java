@@ -94,8 +94,7 @@ public interface Semantic<K, V, R> {
   }
 
   /**
-   * Read a cache entry and do an optional update. Based on the current state and value of the entry
-   * this operation will do an update or not.
+   * Read a cache entry and do an optional mutation.
    */
   abstract class MightUpdate<K, V, R> extends Base<K, V, R> {
 
@@ -108,28 +107,13 @@ public interface Semantic<K, V, R> {
   }
 
   /**
-   * Read a cache entry and do an update. Based on the current state and value of the entry
-   * this operation will do an update or not.
+   * Read a cache entry and do an mutation maybe based on the existing values.
    */
   abstract class Update<K, V, R> extends MightUpdate<K, V, R> {
 
     /** Unconditionally request mutation lock. */
     @Override
     public final void examine(Progress<K, V, R> c, ExaminationEntry<K, V> e) { c.wantMutation(); }
-
-  }
-
-  abstract class UpdateIfPresent<K, V, R> extends MightUpdate<K, V, R> {
-
-    /** Unconditionally request mutation lock. */
-    @Override
-    public final void examine(Progress<K, V, R> c, ExaminationEntry<K, V> e) {
-      if (c.isPresentOrMiss()) {
-        c.wantMutation();
-      } else {
-        c.noMutation();
-      }
-    }
 
   }
 
@@ -146,7 +130,8 @@ public interface Semantic<K, V, R> {
 
     /** No operation. */
     @Override
-    public final void mutate(Progress<K, V, R> c, ExaminationEntry<K, V> e) { }
+    public final void mutate(Progress<K, V, R> c, ExaminationEntry<K, V> e) {
+    }
 
   }
 
