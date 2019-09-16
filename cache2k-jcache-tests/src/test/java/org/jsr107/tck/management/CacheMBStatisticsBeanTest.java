@@ -8,6 +8,7 @@ import org.jsr107.tck.testutil.CacheTestSupport;
 import org.jsr107.tck.testutil.ExcludeListExcluder;
 import org.jsr107.tck.testutil.TestSupport;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.MethodRule;
@@ -437,7 +438,7 @@ public class CacheMBStatisticsBeanTest extends CacheTestSupport<Long, String> {
    * The lookup and locking of the key is enough to invoke the hit or miss. No
    * Cache.Entry or MutableEntry operation is required.
    */
-  @Test
+  @Test @Ignore("https://github.com/cache2k/cache2k/issues/132")
   public void testCacheStatisticsInvokeEntryProcessorNoOp() throws Exception {
 
     cache.put(1l, "Sooty");
@@ -466,9 +467,43 @@ public class CacheMBStatisticsBeanTest extends CacheTestSupport<Long, String> {
     });
   }
 
-
-
+  /**
+   * The lookup and locking of the key is enough to invoke the hit or miss. No
+   * Cache.Entry or MutableEntry operation is required.
+   */
   @Test
+  public void testCacheStatisticsInvokeEntryProcessorNoOp_ReplaceTckOriginal() throws Exception {
+
+    cache.put(1l, "Sooty");
+
+    // Original TCK assumption: existent key. cache hit even though this entry processor does not call anything
+    // cache2k: No access, no hit.
+    cache.invoke(1l, new NoOpEntryProcessor<Long, String>());
+    cache.invoke(1l, new NoOpEntryProcessor<Long, String>());
+
+    // Original TCK assumption: non-existent key. cache miss.
+    // cache2k: No access, no hit.
+    cache.invoke(1000l, new NoOpEntryProcessor<Long, String>());
+
+    assertEventually(new Runnable() {
+      @Override
+      public void run() {
+        assertEquals(0L, lookupManagementAttribute(cache, CacheStatistics, "CacheHits"));
+        assertThat((Float) lookupManagementAttribute(cache, CacheStatistics, "CacheHitPercentage"), greaterThanOrEqualTo(0.0f));
+        assertEquals(0L, lookupManagementAttribute(cache, CacheStatistics, "CacheMisses"));
+        assertThat((Float) lookupManagementAttribute(cache, CacheStatistics, "CacheMissPercentage"), lessThanOrEqualTo(0.0f));
+        assertEquals(1L, lookupManagementAttribute(cache, CacheStatistics, "CachePuts"));
+        assertEquals(0L, lookupManagementAttribute(cache, CacheStatistics, "CacheRemovals"));
+        assertEquals(0L, lookupManagementAttribute(cache, CacheStatistics, "CacheEvictions"));
+        assertThat((Float) lookupManagementAttribute(cache, CacheStatistics, "AverageGetTime"), greaterThanOrEqualTo(0f));
+        assertThat((Float) lookupManagementAttribute(cache, CacheStatistics, "AveragePutTime"), greaterThanOrEqualTo(0f));
+        assertThat((Float) lookupManagementAttribute(cache, CacheStatistics, "AverageRemoveTime"), greaterThanOrEqualTo(0f));
+      }
+    });
+  }
+
+
+  @Test @Ignore("https://github.com/cache2k/cache2k/issues/132")
   public void testCacheStatisticsInvokeEntryProcessorGet() throws Exception {
 
     cache.put(1l, "Sooty");
@@ -501,8 +536,43 @@ public class CacheMBStatisticsBeanTest extends CacheTestSupport<Long, String> {
     });
   }
 
-
   @Test
+  public void testCacheStatisticsInvokeEntryProcessorGet_ReplaceTckOriginal() throws Exception {
+
+    cache.put(1l, "Sooty");
+
+    //cache hit
+    String result = cache.invoke(1l, new GetEntryProcessor<Long, String>());
+
+    //existent key. cache hit even though this entry processor does not call anything
+    // No: Neutral to the statistics, nothing is accessed
+    cache.invoke(1l, new NoOpEntryProcessor<Long, String>());
+
+    //non-existent key. cache miss.
+    // No: Neutral to the statistics, nothing is accessed
+    cache.invoke(1000l, new NoOpEntryProcessor<Long, String>());
+
+    assertEquals(result, "Sooty");
+
+    assertEventually(new Runnable() {
+      @Override
+      public void run() {
+        assertEquals(1L, lookupManagementAttribute(cache, CacheStatistics, "CacheHits"));
+        assertThat((Float) lookupManagementAttribute(cache, CacheStatistics, "CacheHitPercentage"), greaterThanOrEqualTo(66.65f));
+        assertEquals(0L, lookupManagementAttribute(cache, CacheStatistics, "CacheMisses"));
+        assertThat((Float) lookupManagementAttribute(cache, CacheStatistics, "CacheMissPercentage"), lessThanOrEqualTo(33.34f));
+        assertEquals(1L, lookupManagementAttribute(cache, CacheStatistics, "CachePuts"));
+        assertEquals(0L, lookupManagementAttribute(cache, CacheStatistics, "CacheRemovals"));
+        assertEquals(0L, lookupManagementAttribute(cache, CacheStatistics, "CacheEvictions"));
+        assertThat((Float) lookupManagementAttribute(cache, CacheStatistics, "AverageGetTime"), greaterThanOrEqualTo(0f));
+        assertThat((Float) lookupManagementAttribute(cache, CacheStatistics, "AveragePutTime"), greaterThanOrEqualTo(0f));
+        assertThat((Float) lookupManagementAttribute(cache, CacheStatistics, "AverageRemoveTime"), greaterThanOrEqualTo(0f));
+      }
+    });
+  }
+
+
+  @Test @Ignore("https://github.com/cache2k/cache2k/issues/132")
   public void testCacheStatisticsInvokeEntryProcessorUpdate() throws Exception {
 
     cache.put(1l, "Sooty");
@@ -513,6 +583,29 @@ public class CacheMBStatisticsBeanTest extends CacheTestSupport<Long, String> {
       public void run() {
         assertEquals(1L, lookupManagementAttribute(cache, CacheStatistics, "CacheHits"));
         assertEquals(100.0f, lookupManagementAttribute(cache, CacheStatistics, "CacheHitPercentage"));
+        assertEquals(0L, lookupManagementAttribute(cache, CacheStatistics, "CacheMisses"));
+        assertEquals(0f, lookupManagementAttribute(cache, CacheStatistics, "CacheMissPercentage"));
+        assertEquals(2L, lookupManagementAttribute(cache, CacheStatistics, "CachePuts"));
+        assertEquals(0L, lookupManagementAttribute(cache, CacheStatistics, "CacheRemovals"));
+        assertEquals(0L, lookupManagementAttribute(cache, CacheStatistics, "CacheEvictions"));
+        assertThat((Float) lookupManagementAttribute(cache, CacheStatistics, "AverageGetTime"), greaterThanOrEqualTo(0f));
+        assertThat((Float) lookupManagementAttribute(cache, CacheStatistics, "AveragePutTime"), greaterThanOrEqualTo(0f));
+        assertThat((Float) lookupManagementAttribute(cache, CacheStatistics, "AverageRemoveTime"), greaterThanOrEqualTo(0f));
+      }
+    });
+  }
+
+  @Test
+  public void testCacheStatisticsInvokeEntryProcessorUpdate_ReplaceTckOriginal() throws Exception {
+
+    cache.put(1l, "Sooty");
+    String result = cache.invoke(1l, new SetEntryProcessor<Long, String>("Trinity"));
+    assertEquals(result, "Trinity");
+    assertEventually(new Runnable() {
+      @Override
+      public void run() {
+        assertEquals(0L, lookupManagementAttribute(cache, CacheStatistics, "CacheHits"));
+        assertEquals(0.0f, lookupManagementAttribute(cache, CacheStatistics, "CacheHitPercentage"));
         assertEquals(0L, lookupManagementAttribute(cache, CacheStatistics, "CacheMisses"));
         assertEquals(0f, lookupManagementAttribute(cache, CacheStatistics, "CacheMissPercentage"));
         assertEquals(2L, lookupManagementAttribute(cache, CacheStatistics, "CachePuts"));
