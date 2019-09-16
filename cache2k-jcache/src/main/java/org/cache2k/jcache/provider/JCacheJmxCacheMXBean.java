@@ -28,11 +28,11 @@ import javax.cache.management.CacheMXBean;
 /**
  * @author Jens Wilke
  */
-public class CacheJmxConfiguration implements CacheMXBean {
+public class JCacheJmxCacheMXBean implements CacheMXBean {
 
   private Cache<?,?> cache;
 
-  public CacheJmxConfiguration(Cache cache) {
+  public JCacheJmxCacheMXBean(Cache cache) {
     this.cache = cache;
   }
 

@@ -52,7 +52,7 @@ public class JCacheJmxSupport implements CacheLifeCycleListener {
     String _name = createStatisticsObjectName(c.cache);
     try {
        mbs.registerMBean(
-         new CacheJmxStatistics(c),
+         new JCacheJmxStatisticsMXBean(c),
          new ObjectName(_name));
     } catch (Exception e) {
       throw new IllegalStateException("Error registering JMX bean, name='" + _name + "'", e);
@@ -74,7 +74,7 @@ public class JCacheJmxSupport implements CacheLifeCycleListener {
     MBeanServer mbs = mBeanServer;
     String _name = createJmxObjectName(c);
     try {
-       mbs.registerMBean(new CacheJmxConfiguration(ca), new ObjectName(_name));
+       mbs.registerMBean(new JCacheJmxCacheMXBean(ca), new ObjectName(_name));
     } catch (Exception e) {
       throw new IllegalStateException("Error register JMX bean, name='" + _name + "'", e);
     }

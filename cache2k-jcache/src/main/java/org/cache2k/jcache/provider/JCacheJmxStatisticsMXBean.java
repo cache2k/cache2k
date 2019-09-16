@@ -29,7 +29,7 @@ import java.util.concurrent.atomic.AtomicLong;
 /**
  * @author Jens Wilke; created: 2015-04-29
  */
-public class CacheJmxStatistics implements CacheStatisticsMXBean {
+public class JCacheJmxStatisticsMXBean implements CacheStatisticsMXBean {
 
   private final InternalCache cache;
   private final JCacheAdapter adapter;
@@ -40,7 +40,7 @@ public class CacheJmxStatistics implements CacheStatisticsMXBean {
   private final AtomicLong removalsOffset = new AtomicLong();
   private final AtomicLong hitsOffset = new AtomicLong();
 
-  public CacheJmxStatistics(JCacheAdapter _cache) {
+  public JCacheJmxStatisticsMXBean(JCacheAdapter _cache) {
     cache = _cache.cache;
     adapter = _cache;
   }
