@@ -48,8 +48,12 @@ import org.cache2k.CustomizationException;
  */
 public class CacheLoaderException extends CustomizationException {
 
-  public CacheLoaderException(String _message, Throwable ex) {
-    super(_message, ex);
+  public CacheLoaderException(String message) {
+    super(message);
+  }
+
+  public CacheLoaderException(String message, Throwable ex) {
+    super(message, ex);
   }
 
   public CacheLoaderException(Throwable ex) {
