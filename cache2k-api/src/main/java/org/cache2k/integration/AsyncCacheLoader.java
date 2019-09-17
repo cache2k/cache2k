@@ -42,7 +42,7 @@ public interface AsyncCacheLoader<K, V> {
    * @param callback callback interface to notify on load completion
    * @throws Exception an exception, if the load operation cannot be started
    */
-  void load(K key, Context<K, V> context, Callback<K, V> callback) throws Exception;
+  void load(K key, Context<K, V> context, Callback<V> callback) throws Exception;
 
   /**
    * Relevant context information for a single load request.
@@ -57,6 +57,13 @@ public interface AsyncCacheLoader<K, V> {
      * Cache key for the load request.
      */
     K getKey();
+
+    /**
+     * The configured executor for async operations.
+     *
+     * @see org.cache2k.Cache2kBuilder#executor(Executor)
+     */
+    Executor getExecutor();
 
     /**
      * The configured loader executor.
@@ -84,20 +91,18 @@ public interface AsyncCacheLoader<K, V> {
 
   /**
    * Callback for async cache load.
-   *
-   * FIXME: K needed?
    */
-  interface Callback<K, V> extends EventListener {
+  interface Callback<V> extends EventListener {
 
     /**
      *
-     * @throws IllegalStateException
+     * @throws IllegalStateException if the callback was already made
      */
     void onLoadSuccess(V value);
 
     /**
      *
-     * @throws IllegalStateException
+     * @throws IllegalStateException if the callback was already made
      */
     void onLoadFailure(Throwable t);
 

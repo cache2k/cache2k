@@ -281,7 +281,9 @@ public class HeapCache<K, V> extends BaseCache<K, V> {
     if (c.getPrefetchExecutor() != null) {
       prefetchExecutor = createCustomization((CustomizationSupplier<Executor>) c.getPrefetchExecutor());
     }
-    if (executor == null) {
+    if (c.getExecutor() != null) {
+      executor = createCustomization((CustomizationSupplier<Executor>) c.getExecutor());
+    } else {
       executor = SHARED_EXECUTOR;
     }
   }

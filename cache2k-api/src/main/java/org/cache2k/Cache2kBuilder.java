@@ -43,6 +43,7 @@ import org.cache2k.processor.MutableCacheEntry;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.util.concurrent.Executor;
+import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -798,6 +799,16 @@ public class Cache2kBuilder<K, V> {
    */
   public final Cache2kBuilder<K,V> prefetchExecutor(Executor v) {
     config().setPrefetchExecutor(new CustomizationReferenceSupplier<Executor>(v));
+    return this;
+  }
+
+  /**
+   * Executor for asynchronous operations. On Java 8 and above the
+   * {@link ForkJoinPool#commonPool()} is used by default or an internal
+   * executor is used that has unbounded thread capacity otherwise.
+   */
+  public final Cache2kBuilder<K,V> executor(Executor v) {
+    config().setExecutor(new CustomizationReferenceSupplier<Executor>(v));
     return this;
   }
 

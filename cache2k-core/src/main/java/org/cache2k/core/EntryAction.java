@@ -58,7 +58,7 @@ import static org.cache2k.core.Entry.ProcessingState.*;
 public abstract class EntryAction<K, V, R> extends Entry.PiggyBack implements
   Runnable,
   AsyncCacheLoader.Context<K, V>,
-  AsyncCacheLoader.Callback<K, V>, AsyncCacheWriter.Callback, Progress<K, V, R> {
+  AsyncCacheLoader.Callback<V>, AsyncCacheWriter.Callback, Progress<K, V, R> {
 
   public static final Entry NON_FRESH_DUMMY = new Entry();
 
@@ -177,6 +177,11 @@ public abstract class EntryAction<K, V, R> extends Entry.PiggyBack implements
   public EntryAction(HeapCache<K,V> _heapCache, InternalCache<K,V> _userCache,
                      Semantic<K, V, R> op, K k, Entry<K, V> e) {
     this(_heapCache, _userCache, op, k, e, null);
+  }
+
+  @Override
+  public Executor getExecutor() {
+    return executor();
   }
 
   protected abstract Executor executor();

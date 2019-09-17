@@ -541,7 +541,7 @@ public class CacheLoaderTest extends TestingBase {
     if (async) {
       b.loader(new AsyncCacheLoader<Integer, Integer>() {
         @Override
-        public void load(final Integer key, final Context<Integer, Integer> context, final Callback<Integer, Integer> callback) throws Exception {
+        public void load(final Integer key, final Context<Integer, Integer> context, final Callback<Integer> callback) throws Exception {
           loaderCallCount.incrementAndGet();
           Thread t = new Thread(new Runnable() {
             @Override
@@ -619,7 +619,7 @@ public class CacheLoaderTest extends TestingBase {
       public void extend(final Cache2kBuilder<Integer, Integer> b) {
         b.loader(new AsyncCacheLoader<Integer, Integer>() {
           @Override
-          public void load(final Integer key, final AsyncCacheLoader.Context<Integer,Integer> ctx, final Callback<Integer, Integer> callback) {
+          public void load(final Integer key, final AsyncCacheLoader.Context<Integer,Integer> ctx, final Callback<Integer> callback) {
             loaderCalled.incrementAndGet();
             ctx.getLoaderExecutor().execute(new Runnable() {
               @Override
@@ -667,7 +667,7 @@ public class CacheLoaderTest extends TestingBase {
       public void extend(final Cache2kBuilder<Integer, Integer> b) {
         b.loader(new AsyncCacheLoader<Integer, Integer>() {
           @Override
-          public void load(final Integer key, final AsyncCacheLoader.Context<Integer,Integer> ctx, final Callback<Integer, Integer> callback) {
+          public void load(final Integer key, final AsyncCacheLoader.Context<Integer,Integer> ctx, final Callback<Integer> callback) {
             loaderCalled.incrementAndGet();
              ctx.getLoaderExecutor().execute(new Runnable() {
                @Override
@@ -695,7 +695,7 @@ public class CacheLoaderTest extends TestingBase {
       public void extend(final Cache2kBuilder<Integer, Integer> b) {
         b.loader(new AsyncCacheLoader<Integer, Integer>() {
           @Override
-          public void load(final Integer key, final AsyncCacheLoader.Context<Integer,Integer> ctx, final Callback<Integer, Integer> callback) {
+          public void load(final Integer key, final AsyncCacheLoader.Context<Integer,Integer> ctx, final Callback<Integer> callback) {
             loaderCalled.incrementAndGet();
             callback.onLoadSuccess(key);
           }
@@ -714,7 +714,7 @@ public class CacheLoaderTest extends TestingBase {
       public void extend(final Cache2kBuilder<Integer, Integer> b) {
         b.loader(new AsyncCacheLoader<Integer, Integer>() {
           @Override
-          public void load(final Integer key, final AsyncCacheLoader.Context<Integer,Integer> ctx, final Callback<Integer, Integer> callback) {
+          public void load(final Integer key, final AsyncCacheLoader.Context<Integer,Integer> ctx, final Callback<Integer> callback) {
             int cnt = loaderCalled.getAndIncrement();
             if (cnt == 0) {
               assertNull(ctx.getCachedValue());
@@ -742,7 +742,7 @@ public class CacheLoaderTest extends TestingBase {
         b.expireAfterWrite(TestingParameters.MAX_FINISH_WAIT_MILLIS, TimeUnit.MILLISECONDS);
         b.loader(new AsyncCacheLoader<Integer, Integer>() {
           @Override
-          public void load(final Integer key, final AsyncCacheLoader.Context<Integer,Integer> ctx, final Callback<Integer, Integer> callback) {
+          public void load(final Integer key, final AsyncCacheLoader.Context<Integer,Integer> ctx, final Callback<Integer> callback) {
             int cnt = loaderCalled.getAndIncrement();
             if (cnt == 0) {
               assertNull(ctx.getCachedValue());
@@ -777,7 +777,7 @@ public class CacheLoaderTest extends TestingBase {
       public void extend(final Cache2kBuilder<Integer, Integer> b) {
         b.loader(new AsyncCacheLoader<Integer, Integer>() {
           @Override
-          public void load(final Integer key, final AsyncCacheLoader.Context<Integer,Integer> ctx, final Callback<Integer, Integer> callback) {
+          public void load(final Integer key, final AsyncCacheLoader.Context<Integer,Integer> ctx, final Callback<Integer> callback) {
             loaderCalled.incrementAndGet();
             throw new ExpectedException();
           }
@@ -810,7 +810,7 @@ public class CacheLoaderTest extends TestingBase {
       public void extend(final Cache2kBuilder<Integer, Integer> b) {
         b.loader(new AsyncCacheLoader<Integer, Integer>() {
           @Override
-          public void load(final Integer key, final AsyncCacheLoader.Context<Integer,Integer> ctx, final Callback<Integer, Integer> callback) {
+          public void load(final Integer key, final AsyncCacheLoader.Context<Integer,Integer> ctx, final Callback<Integer> callback) {
             loaderCalled.incrementAndGet();
             throw new ExpectedException();
           }
@@ -847,7 +847,7 @@ public class CacheLoaderTest extends TestingBase {
           @Override
           public void load(final Integer key,
                            final AsyncCacheLoader.Context<Integer,Integer> ctx,
-                           final Callback<Integer, Integer> callback)
+                           final Callback<Integer> callback)
             throws Exception {
             loaderCalled.incrementAndGet();
             throw new IOException("test exception");
@@ -873,7 +873,7 @@ public class CacheLoaderTest extends TestingBase {
       public void extend(final Cache2kBuilder<Integer, Integer> b) {
         b.loader(new AsyncCacheLoader<Integer, Integer>() {
           @Override
-          public void load(final Integer key, final AsyncCacheLoader.Context<Integer,Integer> ctx, final Callback<Integer, Integer> callback) {
+          public void load(final Integer key, final AsyncCacheLoader.Context<Integer,Integer> ctx, final Callback<Integer> callback) {
             loaderCalled.incrementAndGet();
              ctx.getLoaderExecutor().execute(new Runnable() {
                @Override
@@ -911,7 +911,7 @@ public class CacheLoaderTest extends TestingBase {
       public void extend(final Cache2kBuilder<Integer, Integer> b) {
         b.loader(new AsyncCacheLoader<Integer, Integer>() {
           @Override
-          public void load(final Integer key, final AsyncCacheLoader.Context<Integer,Integer> ctx, final Callback<Integer, Integer> callback) {
+          public void load(final Integer key, final AsyncCacheLoader.Context<Integer,Integer> ctx, final Callback<Integer> callback) {
             ctx.getLoaderExecutor().execute(new Runnable() {
               @Override
               public void run() {
@@ -975,7 +975,7 @@ public class CacheLoaderTest extends TestingBase {
         b.loaderExecutor(Executors.newCachedThreadPool());
         b.loader(new AsyncCacheLoader<Integer, Integer>() {
           @Override
-          public void load(final Integer key, final AsyncCacheLoader.Context<Integer,Integer> ctx, final Callback<Integer, Integer> callback) {
+          public void load(final Integer key, final AsyncCacheLoader.Context<Integer,Integer> ctx, final Callback<Integer> callback) {
             Runnable command = new Runnable() {
               @Override
               public void run() {

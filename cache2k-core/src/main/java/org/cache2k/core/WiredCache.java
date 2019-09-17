@@ -813,6 +813,11 @@ public class WiredCache<K, V> extends BaseCache<K, V>
       return heapCache.timing;
     }
 
+    /**
+     * Provides async loader context
+     *
+     * @see AsyncCacheLoader.Context
+     */
     @Override
     public Executor getLoaderExecutor() {
       return heapCache.loaderExecutor;
@@ -825,6 +830,16 @@ public class WiredCache<K, V> extends BaseCache<K, V>
 
     @Override
     protected Executor executor() { return heapCache.executor; }
+
+    /**
+     * Provides async loader context
+     *
+     * @see AsyncCacheLoader.Context
+     */
+    @Override
+    public Executor getExecutor() {
+      return executor();
+    }
 
   }
 

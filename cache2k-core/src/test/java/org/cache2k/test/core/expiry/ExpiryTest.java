@@ -1103,7 +1103,7 @@ public class ExpiryTest extends TestingBase {
         b.loaderExecutor(Executors.newSingleThreadExecutor());
         b.loader(new AsyncCacheLoader<Integer, Integer>() {
           @Override
-          public void load(final Integer key, final Context<Integer, Integer> context, final Callback<Integer, Integer> callback) throws Exception {
+          public void load(final Integer key, final Context<Integer, Integer> context, final Callback<Integer> callback) throws Exception {
             context.getLoaderExecutor().execute(new Runnable() {
               @Override
               public void run() {

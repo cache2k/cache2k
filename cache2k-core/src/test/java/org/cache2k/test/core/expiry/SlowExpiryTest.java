@@ -111,7 +111,7 @@ public class SlowExpiryTest extends TestingBase {
       .retryInterval(TIMESPAN, TimeUnit.MILLISECONDS)
       .loader(new AsyncCacheLoader<Integer, Integer>() {
         @Override
-        public void load(final Integer key, final Context<Integer, Integer> context, final Callback<Integer, Integer> callback) throws Exception {
+        public void load(final Integer key, final Context<Integer, Integer> context, final Callback<Integer> callback) throws Exception {
           throw new RuntimeException("always");
         }
       })
