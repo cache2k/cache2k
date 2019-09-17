@@ -163,7 +163,7 @@ public interface MutableCacheEntry<K, V> extends CacheEntry<K, V> {
    * Timestamp of the last refresh of the cached value. This is the start time
    * (before the loader was called) of a successful load operation, or the time
    * the value was modified directly via {@link org.cache2k.Cache#put} or other sorts
-   * of mutation.
+   * of mutation. Does not trigger a load.
    *
    * <p>Rationale: We call it "refreshed" time since we don't know whether the value
    * actually changed. If a load produces the same value as before the entry is refreshed but

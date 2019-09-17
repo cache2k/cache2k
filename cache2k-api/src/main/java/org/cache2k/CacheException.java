@@ -23,7 +23,7 @@ package org.cache2k;
 /**
  * Base class of all cache exceptions.
  *
- * @author Jens Wilke; created: 2014-06-07
+ * @author Jens Wilke
  */
 public class CacheException extends RuntimeException {
 

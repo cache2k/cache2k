@@ -57,6 +57,9 @@ public interface CacheEntry<K, V> {
    * propagated. This can be customized with
    * {@link Cache2kBuilder#exceptionPropagator(ExceptionPropagator)}
    *
+   * <p>If a loader is present and the entry is not yet loaded or expired, a
+   * load is triggered.
+   *
    * @throws CacheLoaderException if the loading produced an exception
    */
   V getValue();
@@ -66,6 +69,9 @@ public interface CacheEntry<K, V> {
    * the exception could not be suppressed. {@code null} if no exception
    * happened or it was suppressed. If {@code null} then {@link #getValue}
    * returns a value and does not throw an exception.
+   *
+   * <p>If a loader is present and the entry is not yet loaded or expired, a
+   * load is triggered.
    */
   Throwable getException();
 
