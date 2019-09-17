@@ -389,10 +389,6 @@ public class Operations<K, V> {
         } catch (WantsDataRestartException rs) {
           c.wantData();
           return;
-        } catch (NeedsLoadRestartException rs) {
-          needsLoad = true;
-          c.wantMutation();
-          return;
         } catch (Throwable t) {
           c.failure(new EntryProcessingException(t));
           return;
