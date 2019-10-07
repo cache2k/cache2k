@@ -64,7 +64,12 @@ class MutableEntryOnProgress<K, V> implements MutableCacheEntry<K, V> {
 
   @Override
   public long getCurrentTime() {
-    return progress.getCurrentTime();
+    return progress.getMutationStartTime();
+  }
+
+  @Override
+  public long getStartTime() {
+    return progress.getMutationStartTime();
   }
 
   @Override
@@ -88,7 +93,7 @@ class MutableEntryOnProgress<K, V> implements MutableCacheEntry<K, V> {
     mutate = true;
     exists = true;
     remove = false;
-    value = (V) new ExceptionWrapper(progress.getCurrentTime(), ex);
+    value = (V) new ExceptionWrapper(progress.getMutationStartTime(), ex);
     return this;
   }
 

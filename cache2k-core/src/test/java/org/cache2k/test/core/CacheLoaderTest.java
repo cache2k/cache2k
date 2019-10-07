@@ -717,11 +717,10 @@ public class CacheLoaderTest extends TestingBase {
           public void load(final Integer key, final Context<Integer, Integer> ctx, final Callback<Integer> callback) {
             int cnt = loaderCalled.getAndIncrement();
             if (cnt == 0) {
-              assertNull(ctx.getCachedValue());
-              assertNull(ctx.getCachedException());
+              assertNull(ctx.getCurrentEntry());
             } else {
-              assertEquals(key, ctx.getCachedValue());
-              assertNull(ctx.getCachedException());
+              assertEquals(key, ctx.getCurrentEntry().getValue());
+              assertNull(ctx.getCurrentEntry().getException());
             }
             callback.onLoadSuccess(key);
           }
@@ -745,11 +744,10 @@ public class CacheLoaderTest extends TestingBase {
           public void load(final Integer key, final Context<Integer, Integer> ctx, final Callback<Integer> callback) {
             int cnt = loaderCalled.getAndIncrement();
             if (cnt == 0) {
-              assertNull(ctx.getCachedValue());
-              assertNull(ctx.getCachedException());
+              assertNull(ctx.getCurrentEntry());
             } else {
-              assertNull(ctx.getCachedValue());
-              assertNotNull(ctx.getCachedException());
+              assertNull(ctx.getCurrentEntry().getValue());
+              assertNotNull(ctx.getCurrentEntry().getException());
             }
             callback.onLoadFailure(new ExpectedException());
           }

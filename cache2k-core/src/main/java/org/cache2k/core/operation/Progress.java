@@ -34,7 +34,7 @@ public interface Progress<K, V, R> {
   /**
    * The current time in millis or the value when it was first called.
    */
-  long getCurrentTime();
+  long getMutationStartTime();
 
   /**
    * Requests that the cache content for an entry will be provided.

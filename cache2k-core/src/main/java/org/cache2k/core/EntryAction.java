@@ -30,7 +30,6 @@ import org.cache2k.integration.AdvancedCacheLoader;
 import org.cache2k.event.CacheEntryCreatedListener;
 import org.cache2k.event.CacheEntryRemovedListener;
 import org.cache2k.event.CacheEntryUpdatedListener;
-import org.cache2k.integration.CacheLoaderException;
 import org.cache2k.integration.CacheWriter;
 import org.cache2k.integration.CacheWriterException;
 import org.cache2k.CustomizationException;
@@ -76,7 +75,12 @@ public abstract class EntryAction<K, V, R> extends Entry.PiggyBack implements
   V newValueOrException;
   V oldValueOrException;
   R result;
-  long currentTime;
+
+  /**
+   * Only set on request, use getter {@link #getMutationStartTime()}
+   */
+  long mutationStartTime;
+
   long lastRefreshTime;
   long loadStartedTime;
   RuntimeException exceptionToPropagate;
@@ -252,27 +256,24 @@ public abstract class EntryAction<K, V, R> extends Entry.PiggyBack implements
   }
 
   @Override
-  public long getCurrentTime() {
-    if (currentTime > 0) {
-      return currentTime;
-    }
-    return currentTime = millis();
+  public long getLoadStartTime() {
+    return getMutationStartTime();
   }
 
   @Override
-  public V getCachedValue() {
-    V v = heapEntry.getValueOrException();
-    if (v instanceof ExceptionWrapper || heapEntry.isVirgin()) {
+  public long getMutationStartTime() {
+    if (mutationStartTime > 0) {
+      return mutationStartTime;
+    }
+    return mutationStartTime = millis();
+  }
+
+  @Override
+  public CacheEntry<K, V> getCurrentEntry() {
+    if (heapEntry.isVirgin()) {
       return null;
     }
-    return v;
-  }
-
-  @Override
-  public Throwable getCachedException() {
-    V v = heapEntry.getValueOrException();
-    if (v instanceof ExceptionWrapper) { return ((ExceptionWrapper) v).getException(); }
-    return null;
+    return heapCache.returnEntry(heapEntry);
   }
 
   @Override
@@ -473,7 +474,7 @@ public abstract class EntryAction<K, V, R> extends Entry.PiggyBack implements
     checkLocked();
     load = true;
     Entry<K, V> e = heapEntry;
-    long t0 = heapCache.isUpdateTimeNeeded() ? lastRefreshTime = loadStartedTime = getCurrentTime() : 0;
+    long t0 = heapCache.isUpdateTimeNeeded() ? lastRefreshTime = loadStartedTime = getMutationStartTime() : 0;
     if (e.getNextRefreshTime() == Entry.EXPIRED_REFRESHED) {
       long nrt = e.getRefreshProbationNextRefreshTime();
       if (nrt > t0) {
@@ -488,26 +489,26 @@ public abstract class EntryAction<K, V, R> extends Entry.PiggyBack implements
         _asyncLoader.load(key, this, this);
       } catch (Exception ex) {
         onLoadFailure(ex);
-        exceptionToPropagate = new CacheLoaderException(ex);
+        /*
+        Don't propagate exception to the direct caller here via exceptionToPropagate.
+        The exception might be temporarily e.g. no execution reject and masked
+        by the resilience.
+         */
         return;
       }
       asyncExecutionStartedWaitIfSynchronousCall();
       return;
     }
-    AdvancedCacheLoader<K, V> _loader = loader();
-    if (_loader == null) {
-      mutationAbort(null);
-      return;
-    }
+    AdvancedCacheLoader<K, V> loader = loader();
     V v;
     try {
       if (e.isVirgin()) {
-        v = _loader.load(key, t0, null);
+        v = loader.load(key, t0, null);
       } else {
-        v = _loader.load(key, t0, e);
+        v = loader.load(key, t0, e);
       }
-    } catch (Throwable _ouch) {
-      onLoadFailureIntern(_ouch);
+    } catch (Throwable ouch) {
+      onLoadFailureIntern(ouch);
       return;
     }
     onLoadSuccessIntern(v);
@@ -589,6 +590,9 @@ public abstract class EntryAction<K, V, R> extends Entry.PiggyBack implements
     onLoadSuccessIntern(v);
   }
 
+  /**
+   * The load failed, resilience and refreshing needs to be triggered
+   */
   @SuppressWarnings("unchecked")
   @Override
   public void onLoadFailure(Throwable t) {
@@ -672,7 +676,7 @@ public abstract class EntryAction<K, V, R> extends Entry.PiggyBack implements
     if (!heapCache.isUpdateTimeNeeded()) {
       lastRefreshTime = 0;
     } else {
-      lastRefreshTime = getCurrentTime();
+      lastRefreshTime = getMutationStartTime();
     }
     mutationCalculateExpiry();
   }
@@ -709,7 +713,7 @@ public abstract class EntryAction<K, V, R> extends Entry.PiggyBack implements
       lastRefreshTime = refreshTime;
     } else {
       if (heapCache.isUpdateTimeNeeded()) {
-        lastRefreshTime = getCurrentTime();
+        lastRefreshTime = getMutationStartTime();
       }
     }
     if (newValueOrException instanceof ExceptionWrapper) {

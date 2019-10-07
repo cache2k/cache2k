@@ -20,6 +20,8 @@ package org.cache2k.integration;
  * #L%
  */
 
+import org.cache2k.CacheEntry;
+
 import java.util.EventListener;
 import java.util.concurrent.Executor;
 
@@ -49,12 +51,20 @@ public interface AsyncCacheLoader<K, V> {
    *
    * <p>Rationale: Instead of a rather long parameter list, we define an interface.
    * This allows us later to add some information without breaking implementations
-   * of the {@link AsyncCacheLoader}.
+   * of the {@link AsyncCacheLoader}. The context does not include the cache, since the
+   * loader should not depend on it and do any other operations on the cache while loading.
    */
   interface Context<K, V> {
 
     /**
-     * Cache key for the load request.
+     * Time in millis since epoch of start of load operation
+     */
+    long getLoadStartTime();
+
+    /**
+     * Cache key for the load request. Although the key is a call parameter
+     * its repeated here, so users can choose to pass on the key or the
+     * whole context.
      */
     K getKey();
 
@@ -72,20 +82,7 @@ public interface AsyncCacheLoader<K, V> {
      */
     Executor getLoaderExecutor();
 
-    /**
-     * Currently cached value. Available also when expired.
-     */
-    V getCachedValue();
-
-    /**
-     * Currently cached exception. Available also when expired.
-     */
-    Throwable getCachedException();
-
-    /**
-     * Time in millis since epoch of start of load operation
-     */
-    long getCurrentTime();
+    CacheEntry<K,V> getCurrentEntry();
 
   }
 

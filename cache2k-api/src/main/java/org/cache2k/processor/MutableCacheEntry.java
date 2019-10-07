@@ -21,7 +21,9 @@ package org.cache2k.processor;
  */
 
 import org.cache2k.CacheEntry;
+import org.cache2k.integration.AsyncCacheLoader;
 import org.cache2k.integration.CacheLoader;
+import org.cache2k.integration.CacheLoaderException;
 import org.cache2k.integration.ExceptionInformation;
 
 /**
@@ -62,10 +64,23 @@ public interface MutableCacheEntry<K, V> extends CacheEntry<K, V> {
    *                          needs to do an asynchronous operation to supply it.
    *                          After completion, the entry processor will be
    *                          executed again.
+   * @throws CacheLoaderException if loading produced an exception
    * @see CacheLoader
    */
   @Override
   V getValue();
+
+  /**
+   * The exception happened when the value was loaded and
+   * the exception could not be suppressed. {@code null} if no exception
+   * happened or it was suppressed. If {@code null} then {@link #getValue}
+   * returns a value and does not throw an exception.
+   *
+   * <p>If a loader is present and the entry is not yet loaded or expired, a
+   * load is triggered.
+   */
+  @Override
+  Throwable getException();
 
   /**
    * True if a mapping exists in the cache, never invokes the loader / cache source.
@@ -114,8 +129,19 @@ public interface MutableCacheEntry<K, V> extends CacheEntry<K, V> {
    * If a load is triggered this value will be identical to
    * {@link org.cache2k.integration.AdvancedCacheLoader#load(Object, long, CacheEntry)} and
    * {@link ExceptionInformation#getLoadTime()}
+   *
+   * @deprecated Replaced with {@link #getStartTime()}
    */
   long getCurrentTime();
+
+  /**
+   * Current time as provided by the internal time source (usually {@code System.currentTimeMillis()}.
+   * The time is retrieved once when the entry processor is invoked and will not change afterwards.
+   * If a load is triggered this value will be identical to the {@code startTime}
+   * {@link org.cache2k.integration.AdvancedCacheLoader#load},
+   * {@link ExceptionInformation#getLoadTime()} or {@link AsyncCacheLoader.Context#getLoadStartTime()}
+   */
+  long getStartTime();
 
   /**
    * Insert or updates the cache value assigned to this key. After calling this method
@@ -139,7 +165,7 @@ public interface MutableCacheEntry<K, V> extends CacheEntry<K, V> {
 
   /**
    * Insert or update the entry and sets an exception. The exception will be
-   * propagated as {@link org.cache2k.integration.CacheLoaderException}.
+   * propagated as {@link CacheLoaderException}.
    *
    * <p>Identical to {@code setValue} an expiry of the exception will be determined
    * according to the resilience settings. Hint: If no expiry is configured the
