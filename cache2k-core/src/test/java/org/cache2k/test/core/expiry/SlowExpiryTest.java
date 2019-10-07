@@ -20,7 +20,6 @@ package org.cache2k.test.core.expiry;
  * #L%
  */
 
-import org.cache2k.core.util.Log;
 import org.cache2k.integration.AsyncCacheLoader;
 import org.cache2k.test.core.BasicCacheTest;
 import org.cache2k.test.util.TestingBase;

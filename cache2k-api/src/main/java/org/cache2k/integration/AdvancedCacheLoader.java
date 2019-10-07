@@ -40,7 +40,7 @@ public abstract class AdvancedCacheLoader<K,V> {
    * Retrieves or generates data based on the key.
    *
    * @param key The non-null key to provide the value for.
-   * @param currentTime Time in millis, retrieved before the call.
+   * @param startTime Time in millis, retrieved before the call.
    * @param currentEntry entry currently in the cache, regardless whether expired or not.
    *                     However, there is no guarantee that an expired entry will be provided to the loader.
    *                     Depending on the passed time and configuration expired entries, may be purged from
@@ -52,6 +52,6 @@ public abstract class AdvancedCacheLoader<K,V> {
    * @throws Exception Unhandled exception from the loader. Exceptions are suppressed or
    *                   wrapped and rethrown via a {@link CacheLoaderException}
    */
-  public abstract V load(K key, long currentTime, CacheEntry<K,V> currentEntry) throws Exception;
+  public abstract V load(K key, long startTime, CacheEntry<K,V> currentEntry) throws Exception;
 
 }

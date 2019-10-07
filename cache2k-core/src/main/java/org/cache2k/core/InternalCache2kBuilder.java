@@ -116,7 +116,7 @@ public class InternalCache2kBuilder<K, V> {
         final CacheLoader<K,V> _loader = (CacheLoader) obj;
         c.setAdvancedLoader(new AdvancedCacheLoader<K, V>() {
           @Override
-          public V load(final K key, final long currentTime, final CacheEntry<K, V> currentEntry) throws Exception {
+          public V load(final K key, final long startTime, final CacheEntry<K, V> currentEntry) throws Exception {
             return _loader.load(key);
           }
         });
@@ -124,7 +124,7 @@ public class InternalCache2kBuilder<K, V> {
         final FunctionalCacheLoader<K,V> _loader = (FunctionalCacheLoader) obj;
         c.setAdvancedLoader(new AdvancedCacheLoader<K, V>() {
           @Override
-          public V load(final K key, final long currentTime, final CacheEntry<K, V> currentEntry) throws Exception {
+          public V load(final K key, final long startTime, final CacheEntry<K, V> currentEntry) throws Exception {
             return _loader.load(key);
           }
         });
@@ -160,11 +160,11 @@ public class InternalCache2kBuilder<K, V> {
 
     @SuppressWarnings("unchecked")
     @Override
-    public V load(final K key, final long currentTime, final CacheEntry<K, V> currentEntry) throws Exception {
+    public V load(final K key, final long startTime, final CacheEntry<K, V> currentEntry) throws Exception {
       if (currentEntry == null) {
-        return forward.load(key, currentTime, null);
+        return forward.load(key, startTime, null);
       }
-      return forward.load(key, currentTime, heapCache.returnCacheEntry((ExaminationEntry<K, V>) currentEntry));
+      return forward.load(key, startTime, heapCache.returnCacheEntry((ExaminationEntry<K, V>) currentEntry));
     }
   }
 

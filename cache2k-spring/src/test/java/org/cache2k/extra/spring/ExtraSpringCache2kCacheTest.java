@@ -120,7 +120,7 @@ public class ExtraSpringCache2kCacheTest {
           .loader(new AdvancedCacheLoader() {
             @Override
             public Object load(
-              final Object key, final long currentTime, final CacheEntry currentEntry) {
+              final Object key, final long startTime, final CacheEntry currentEntry) {
               return "123";
             }
           }));

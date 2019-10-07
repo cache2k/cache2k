@@ -341,7 +341,7 @@ public class EntryProcessorTest {
         b.recordRefreshedTime(true)
          .wrappingLoader(new AdvancedCacheLoader<Integer, LoadDetail<Integer>>() {
           @Override
-          public LoadDetail<Integer> load(final Integer key, final long currentTime,
+          public LoadDetail<Integer> load(final Integer key, final long startTime,
                                           final CacheEntry<Integer,
                                             LoadDetail<Integer>> currentEntry) throws Exception {
             return Loaders.wrapRefreshedTime(key, _probeTime);
@@ -368,7 +368,7 @@ public class EntryProcessorTest {
         b.recordRefreshedTime(true)
          .wrappingLoader(new AdvancedCacheLoader<Integer, LoadDetail<Integer>>() {
           @Override
-          public LoadDetail<Integer> load(final Integer key, final long currentTime,
+          public LoadDetail<Integer> load(final Integer key, final long startTime,
                                           final CacheEntry<Integer,
                                             LoadDetail<Integer>> currentEntry) throws Exception {
             return Loaders.wrapRefreshedTime(key, _probeTime);
@@ -394,7 +394,7 @@ public class EntryProcessorTest {
       public void extend(final Cache2kBuilder<Integer, Integer> b) {
         b.wrappingLoader(new AdvancedCacheLoader<Integer, LoadDetail<Integer>>() {
             @Override
-            public LoadDetail<Integer> load(final Integer key, final long currentTime,
+            public LoadDetail<Integer> load(final Integer key, final long startTime,
                                             final CacheEntry<Integer,
                                               LoadDetail<Integer>> currentEntry) throws Exception {
               return Loaders.wrapRefreshedTime(key, _probeTime);

@@ -175,7 +175,7 @@ public class ExpiryListenerTest extends TestingBase {
       builder(Integer.class, Integer.class)
         .loader(new AdvancedCacheLoader<Integer, Integer>() {
           @Override
-          public Integer load(final Integer key, final long currentTime, final CacheEntry<Integer, Integer> currentEntry) {
+          public Integer load(final Integer key, final long startTime, final CacheEntry<Integer, Integer> currentEntry) {
             loaderCount.getAndIncrement();
             assertEquals(0, eventCount.get());
             return key;
@@ -219,7 +219,7 @@ public class ExpiryListenerTest extends TestingBase {
       builder(Integer.class, Integer.class)
       .loader(new AdvancedCacheLoader<Integer, Integer>() {
         @Override
-        public Integer load(final Integer key, final long currentTime, final CacheEntry<Integer, Integer> currentEntry) {
+        public Integer load(final Integer key, final long startTime, final CacheEntry<Integer, Integer> currentEntry) {
           if (currentEntry != null) {
             assertEquals(1, listenerCallCount.get());
             return 0;

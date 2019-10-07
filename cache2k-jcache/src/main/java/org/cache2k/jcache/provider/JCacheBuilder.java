@@ -221,7 +221,7 @@ public class JCacheBuilder<K,V> {
             }
 
             @Override
-            public V load(final K key, final long currentTime, final CacheEntry<K, V> currentEntry) {
+            public V load(final K key, final long startTime, final CacheEntry<K, V> currentEntry) {
               return clf.load(key);
             }
 
