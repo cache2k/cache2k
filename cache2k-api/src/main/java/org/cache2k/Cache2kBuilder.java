@@ -97,8 +97,8 @@ public class Cache2kBuilder<K, V> {
    * @see #keyType(Class)
    * @see #valueType(Class)
    */
-  public static <K,T> Cache2kBuilder<K,T> of(Class<K> _keyType, Class<T> _valueType) {
-    return new Cache2kBuilder<K, T>(CacheTypeCapture.of(_keyType), CacheTypeCapture.of(_valueType));
+  public static <K,T> Cache2kBuilder<K,T> of(Class<K> keyType, Class<T> valueType) {
+    return new Cache2kBuilder<K, T>(CacheTypeCapture.of(keyType), CacheTypeCapture.of(valueType));
   }
 
   /**
@@ -137,18 +137,18 @@ public class Cache2kBuilder<K, V> {
     if (!(t instanceof ParameterizedType)) {
       throw new IllegalArgumentException(MSG_NO_TYPES);
     }
-    Type[] _types = ((ParameterizedType) t).getActualTypeArguments();
-    keyType = (CacheType<K>) CacheTypeCapture.of(_types[0]).getBeanRepresentation();
-    valueType = (CacheType<V>) CacheTypeCapture.of(_types[1]).getBeanRepresentation();
+    Type[] types = ((ParameterizedType) t).getActualTypeArguments();
+    keyType = (CacheType<K>) CacheTypeCapture.of(types[0]).getBeanRepresentation();
+    valueType = (CacheType<V>) CacheTypeCapture.of(types[1]).getBeanRepresentation();
     if (Object.class.equals(keyType.getType()) &&
       Object.class.equals(valueType.getType())) {
       throw new IllegalArgumentException(MSG_NO_TYPES);
     }
   }
 
-  private Cache2kBuilder(CacheType<K> _keyType, CacheType<V> _valueType) {
-    keyType = _keyType;
-    valueType = _valueType;
+  private Cache2kBuilder(CacheType<K> keyType, CacheType<V> valueType) {
+    this.keyType = keyType;
+    this.valueType = valueType;
   }
 
   private void withConfig(Cache2kConfiguration<K,V> cfg) {
@@ -248,18 +248,18 @@ public class Cache2kBuilder<K, V> {
    *
    * <p>See {@link #name(String)} for a general discussion about cache names.
    *
-   * @param _uniqueName unique name differentiating multiple components of the same type.
+   * @param uniqueName unique name differentiating multiple components of the same type.
    *                    May be {@code null}.
    * @see #name(String)
    */
-  public final Cache2kBuilder<K, V> name(String _uniqueName, Class<?> _class, String _fieldName) {
-    if (_fieldName == null) {
+  public final Cache2kBuilder<K, V> name(String uniqueName, Class<?> clazz, String fieldName) {
+    if (fieldName == null) {
       throw new NullPointerException();
     }
-    if (_uniqueName == null) {
-      return name(_class, _fieldName);
+    if (uniqueName == null) {
+      return name(clazz, fieldName);
     }
-    config().setName(_uniqueName + '~' + _class.getName() + "." + _fieldName);
+    config().setName(uniqueName + '~' + clazz.getName() + "." + fieldName);
     return this;
   }
 
@@ -271,11 +271,11 @@ public class Cache2kBuilder<K, V> {
    *
    * @see #name(String)
    */
-  public final Cache2kBuilder<K, V> name(Class<?> _class, String _fieldName) {
-    if (_fieldName == null) {
+  public final Cache2kBuilder<K, V> name(Class<?> clazz, String fieldName) {
+    if (fieldName == null) {
       throw new NullPointerException();
     }
-    config().setName(_class.getName() + "." + _fieldName);
+    config().setName(clazz.getName() + "." + fieldName);
     return this;
   }
 
@@ -286,8 +286,8 @@ public class Cache2kBuilder<K, V> {
    *
    * @see #name(String)
    */
-  public final Cache2kBuilder<K, V> name(Class<?> _class) {
-    config().setName(_class.getName());
+  public final Cache2kBuilder<K, V> name(Class<?> clazz) {
+    config().setName(clazz.getName());
     return this;
   }
 
