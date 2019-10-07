@@ -412,10 +412,6 @@ public abstract class EntryAction<K, V, R> extends Entry.PiggyBack implements
       noExpiryListenersPresent();
       return;
     }
-    if (heapEntry == NON_FRESH_DUMMY) {
-      wantData();
-      return;
-    }
     long nrt = heapEntry.getNextRefreshTime();
     if (nrt < 0 && millis() >= -nrt) {
       boolean justExpired = false;
@@ -487,8 +483,8 @@ public abstract class EntryAction<K, V, R> extends Entry.PiggyBack implements
       heapEntry.nextProcessingStep(LOAD_ASYNC);
       try {
         _asyncLoader.load(key, this, this);
-      } catch (Exception ex) {
-        onLoadFailure(ex);
+      } catch (Throwable ouch) {
+        onLoadFailure(ouch);
         /*
         Don't propagate exception to the direct caller here via exceptionToPropagate.
         The exception might be temporarily e.g. no execution reject and masked
