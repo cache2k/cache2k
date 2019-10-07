@@ -57,8 +57,9 @@ public interface CacheEntry<K, V> {
    * propagated. This can be customized with
    * {@link Cache2kBuilder#exceptionPropagator(ExceptionPropagator)}
    *
-   * <p>If a loader is present and the entry is not yet loaded or expired, a
-   * load is triggered.
+   * <p>For usage within the {@link org.cache2k.processor.EntryProcessor}:
+   * If a loader is present and the entry is not yet loaded or expired, a
+   * load is triggered. See the details at: {@link MutableCacheEntry#getValue()}
    *
    * @throws CacheLoaderException if the loading produced an exception
    */
