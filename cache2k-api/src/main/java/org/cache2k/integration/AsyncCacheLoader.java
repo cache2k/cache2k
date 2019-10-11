@@ -26,10 +26,11 @@ import java.util.EventListener;
 import java.util.concurrent.Executor;
 
 /**
- * FIXME
+ * Alternative interface to {@link CacheLoader} for asynchronous operation.
  *
  * @author Jens Wilke
  * @since 1.4
+ * @see CacheLoader
  */
 public interface AsyncCacheLoader<K, V> {
 
@@ -41,7 +42,7 @@ public interface AsyncCacheLoader<K, V> {
    *
    * @param key key of the value to load
    * @param context additional context information for the load operation
-   * @param callback callback interface to notify on load completion
+   * @param callback interface to notify for load completion
    * @throws Exception an exception, if the load operation cannot be started
    */
   void load(K key, Context<K, V> context, Callback<V> callback) throws Exception;
@@ -82,6 +83,9 @@ public interface AsyncCacheLoader<K, V> {
      */
     Executor getLoaderExecutor();
 
+    /**
+     * The existing cache entry or {@code null} if the no mapping exists.
+     */
     CacheEntry<K,V> getCurrentEntry();
 
   }
@@ -92,12 +96,15 @@ public interface AsyncCacheLoader<K, V> {
   interface Callback<V> extends EventListener {
 
     /**
+     * Called to provide the loaded value to be stored in the cache.
      *
      * @throws IllegalStateException if the callback was already made
      */
     void onLoadSuccess(V value);
 
     /**
+     * Called if a failure happened. The exceptions is propagated to
+     * the clients accessing the associated key.
      *
      * @throws IllegalStateException if the callback was already made
      */
