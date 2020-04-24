@@ -58,6 +58,8 @@ import static org.junit.Assert.*;
 @Category(FastTests.class)
 public class BasicCacheTest extends TestingBase {
 
+  { enableFastClock(); }
+
   @Test
   public void testPeekAndReplaceWoExisting() {
     Cache<Integer, Integer> c = freshCache(Integer.class, Integer.class, null, 100, -1);
@@ -592,14 +594,14 @@ public class BasicCacheTest extends TestingBase {
 
   @Test
   public void testInfoPropertyStarted() {
-    long t = System.currentTimeMillis();
+    long t = millis();
     freshCacheForInfoTest();
     assertTrue("started set", getInfo().getStartedTime() >= t);
   }
 
   @Test
   public void testInfoPropertyCleared() {
-    long t = System.currentTimeMillis();
+    long t = millis();
     freshCacheForInfoTest();
     assertEquals("not yet cleared", 0, getInfo().getClearedTime());
     cache.clear();
