@@ -53,7 +53,10 @@ public class Hash2<K,V> {
   private volatile int clearOrCloseCount = 0;
 
   /**
-   * Maximum size of one segment, after we expand.
+   * Maximum size of one segment, after we expand. Although there are concurrent updates/reads
+   * this field does not need to be volatile, since expansion occurs very seldom.
+   * Instead of adding volatile overhead, there might be unnecessary locks immediately after
+   * an expansion.
    */
   private long segmentMaxFill;
 
