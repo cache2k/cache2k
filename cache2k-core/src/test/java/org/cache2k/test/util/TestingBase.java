@@ -50,6 +50,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.Executor;
 import java.util.concurrent.RejectedExecutionException;
+import java.util.concurrent.RejectedExecutionHandler;
 import java.util.concurrent.SynchronousQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
@@ -543,7 +544,12 @@ public class TestingBase {
             21, TimeUnit.SECONDS,
             new SynchronousQueue<Runnable>(),
             HeapCache.TUNABLE.threadFactoryProvider.newThreadFactory(Thread.currentThread().getName() + "-loader-pool"),
-            new ThreadPoolExecutor.AbortPolicy());
+            new RejectedExecutionHandler() {
+              @Override
+              public void rejectedExecution(final Runnable r, final ThreadPoolExecutor executor) {
+                throw new Error("more threads are needed then expected");
+              }
+            });
       }
       return fallBackExecutor;
     }

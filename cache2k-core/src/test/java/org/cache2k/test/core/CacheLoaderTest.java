@@ -531,11 +531,11 @@ public class CacheLoaderTest extends TestingBase {
    */
   private void multipleWaitersCompleteAfterLoad(boolean useThreads, boolean async) throws Exception {
     final int ANY_KEY = 1;
-    final int waiters = 10;
-    final CountDownLatch complete = new CountDownLatch(waiters);
+    final int WAITER_COUNT = MINIMAL_LOADER_THREADS;
+    final CountDownLatch complete = new CountDownLatch(WAITER_COUNT);
     final CountDownLatch releaseLoader = new CountDownLatch(1);
-    final CountDownLatch threadsStarted = new CountDownLatch(waiters);
-    final CountDownLatch threadsCompleted = new CountDownLatch(waiters);
+    final CountDownLatch threadsStarted = new CountDownLatch(WAITER_COUNT);
+    final CountDownLatch threadsCompleted = new CountDownLatch(WAITER_COUNT);
     final AtomicInteger loaderCallCount = new AtomicInteger();
     Cache2kBuilder<Integer, Integer> b = builder(Integer.class, Integer.class);
     if (async) {
@@ -579,8 +579,8 @@ public class CacheLoaderTest extends TestingBase {
 
       }
     };
-    Thread[] ta = new Thread[waiters];
-    for (int i = 0; i < waiters; i++) {
+    Thread[] ta = new Thread[WAITER_COUNT];
+    for (int i = 0; i < WAITER_COUNT; i++) {
       if (useThreads) {
         ta[i] = new Thread(new Runnable() {
           @Override
@@ -596,12 +596,24 @@ public class CacheLoaderTest extends TestingBase {
       }
     }
     if (useThreads) {
-      threadsStarted.await();
-      threadsCompleted.await();
+      awaitCountdown(threadsStarted);
+      awaitCountdown(threadsCompleted);
     }
     releaseLoader.countDown();
-    complete.await();
+    awaitCountdown(complete);
     assertEquals(1, loaderCallCount.get());
+  }
+
+  void awaitCountdown(CountDownLatch latch) {
+    try {
+      boolean gotTimeout = !latch.await(TestingParameters.MAX_FINISH_WAIT_MILLIS / 2, TimeUnit.MILLISECONDS);
+      if (gotTimeout) {
+        fail("timeout");
+      }
+    } catch (InterruptedException ex) {
+      Thread.currentThread().interrupt();
+    }
+
   }
 
   /**
