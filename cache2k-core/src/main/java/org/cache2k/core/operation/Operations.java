@@ -448,7 +448,7 @@ public class Operations<K, V> {
       public void examine(final Progress<K, V, Void> c, final ExaminationEntry<K, V> e) {
         if (t == ExpiryTimeValues.NO_CACHE ||
           t == ExpiryTimeValues.REFRESH) {
-          if (c.isPresentOrInRefreshProbation()) {
+          if (c.isPresentOrRefreshing()) {
             c.wantMutation();
           } else {
             c.noMutation();

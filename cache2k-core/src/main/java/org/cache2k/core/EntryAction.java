@@ -301,11 +301,13 @@ public abstract class EntryAction<K, V, R> extends Entry.PiggyBack implements
   }
 
   @Override
-  public boolean isPresentOrInRefreshProbation() {
+  public boolean isPresentOrRefreshing() {
     doNotCountAccess = true;
+    if (successfulLoad) { return true; }
+    long nrt = heapEntry.getNextRefreshTime();
     return
-      successfulLoad ||
-      heapEntry.getNextRefreshTime() == Entry.EXPIRED_REFRESHED ||
+      nrt == Entry.EXPIRED_REFRESHED ||
+      nrt == Entry.EXPIRED_REFRESH_PENDING ||
       heapEntry.hasFreshData(heapCache.getClock());
   }
 
