@@ -111,8 +111,13 @@ public abstract class EntryAction<K, V, R> extends Entry.PiggyBack implements
   boolean heapMiss = false;
 
   boolean wantData = false;
-  boolean countMiss = false;
   boolean heapHit = false;
+
+  /**
+   * Entry value was requested, cache entry was not available or
+   * not valid/expired
+   */
+  boolean countMiss = false;
   boolean doNotCountAccess = false;
 
   boolean loadAndRestart = false;
@@ -346,7 +351,14 @@ public abstract class EntryAction<K, V, R> extends Entry.PiggyBack implements
   public void wantData() {
     semanticCallback++;
     wantData = true;
-    retrieveDataFromHeap();
+    if (heapEntry == NON_FRESH_DUMMY) {
+      retrieveDataFromHeap();
+    } else {
+      if (completedCallback != NOOP_CALLBACK) {
+        heapHit = true;
+      }
+      skipHeapAccessEntryPresent();
+    }
   }
 
   public void retrieveDataFromHeap() {
@@ -374,6 +386,11 @@ public abstract class EntryAction<K, V, R> extends Entry.PiggyBack implements
   public void heapHit(Entry<K, V> e) {
     heapHit = true;
     heapEntry = e;
+    heapOrLoadedEntry = heapEntry;
+    examine();
+  }
+
+  public void skipHeapAccessEntryPresent() {
     heapOrLoadedEntry = heapEntry;
     examine();
   }
@@ -581,7 +598,6 @@ public abstract class EntryAction<K, V, R> extends Entry.PiggyBack implements
       e.startProcessing(ps, this);
       entryLocked = true;
       heapDataValid = e.isDataValidOrProbation();
-      heapHit = !e.isVirgin();
       heapEntry = e;
       return true;
     }
