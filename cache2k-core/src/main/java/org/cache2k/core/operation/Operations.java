@@ -84,7 +84,21 @@ public class Operations<K, V> {
     }
   };
 
-  public final Semantic<K,V,Void> REFRESH = new Semantic.Update<K,V,Void>() {
+  public final Semantic<K,V,Void> REFRESH = new Semantic.MightUpdate<K,V,Void>() {
+
+    /**
+     * Only refresh if the entry is still existing. If an entry is deleted before the
+     * refresh, the refresh should do nothing.
+     */
+    @Override
+    public void examine(final Progress<K, V, Void> c, final ExaminationEntry<K, V> e) {
+      if (c.isPresentOrRefreshing() || c.isExpiryTimeReachedOrInRefreshProbation()) {
+        c.wantMutation();
+      } else {
+        c.noMutation();
+      }
+    }
+
     @Override
     public void mutate(final Progress<K,V,Void> c, final ExaminationEntry<K,V> e) {
       c.refresh();

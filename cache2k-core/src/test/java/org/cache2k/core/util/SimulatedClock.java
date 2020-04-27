@@ -503,6 +503,7 @@ public class SimulatedClock implements InternalClock, Closeable {
         });
       } catch(RejectedExecutionException ex) {
         taskFinished();
+        throw new RejectedExecutionException(ex);
       }
     }
 

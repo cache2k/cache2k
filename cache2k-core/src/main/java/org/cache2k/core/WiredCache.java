@@ -63,7 +63,7 @@ public class WiredCache<K, V> extends BaseCache<K, V>
   implements StorageAdapter.Parent, HeapCacheListener<K,V> {
 
   @SuppressWarnings("unchecked")
-  final Operations<K, V> SPEC = Operations.SINGLETON;
+  final Operations<K, V> OPS = Operations.SINGLETON;
 
   HeapCache<K,V> heapCache;
   StorageAdapter storage;
@@ -122,27 +122,27 @@ public class WiredCache<K, V> extends BaseCache<K, V>
 
   @Override
   public V computeIfAbsent(final K key, final Callable<V> callable) {
-    return returnValue(execute(key, SPEC.computeIfAbsent(key, callable)));
+    return returnValue(execute(key, OPS.computeIfAbsent(key, callable)));
   }
 
   @Override
   public V peekAndPut(K key, V value) {
-    return returnValue(execute(key, SPEC.peekAndPut(key, value)));
+    return returnValue(execute(key, OPS.peekAndPut(key, value)));
   }
 
   @Override
   public V peekAndRemove(K key) {
-    return returnValue(execute(key, SPEC.peekAndRemove(key)));
+    return returnValue(execute(key, OPS.peekAndRemove(key)));
   }
 
   @Override
   public V peekAndReplace(K key, V value) {
-    return returnValue(execute(key, SPEC.peekAndReplace(key, value)));
+    return returnValue(execute(key, OPS.peekAndReplace(key, value)));
   }
 
   @Override
   public CacheEntry<K, V> peekEntry(K key) {
-    return execute(key, SPEC.peekEntry(key));
+    return execute(key, OPS.peekEntry(key));
   }
 
   @Override
@@ -209,22 +209,22 @@ public class WiredCache<K, V> extends BaseCache<K, V>
   }
 
   private void load(final K key, final Entry<K, V> _e) {
-    execute(key, _e, SPEC.get(key));
+    execute(key, _e, OPS.get(key));
   }
 
   @Override
   public boolean containsKey(K key) {
-    return execute(key, SPEC.contains(key));
+    return execute(key, OPS.contains(key));
   }
 
   @Override
   public boolean putIfAbsent(K key, V value) {
-    return execute(key, SPEC.putIfAbsent(key, value));
+    return execute(key, OPS.putIfAbsent(key, value));
   }
 
   @Override
   public void put(K key, V value) {
-    execute(key, SPEC.put(key, value));
+    execute(key, OPS.put(key, value));
   }
 
   @Override
@@ -236,27 +236,27 @@ public class WiredCache<K, V> extends BaseCache<K, V>
 
   @Override
   public void remove(K key) {
-    execute(key, SPEC.remove(key));
+    execute(key, OPS.remove(key));
   }
 
   @Override
   public boolean removeIfEquals(K key, V value) {
-    return execute(key, SPEC.remove(key, value));
+    return execute(key, OPS.remove(key, value));
   }
 
   @Override
   public boolean containsAndRemove(K key) {
-    return execute(key, SPEC.containsAndRemove(key));
+    return execute(key, OPS.containsAndRemove(key));
   }
 
   @Override
   public boolean replace(K key, V _newValue) {
-    return execute(key, SPEC.replace(key, _newValue));
+    return execute(key, OPS.replace(key, _newValue));
   }
 
   @Override
   public boolean replaceIfEquals(K key, V _oldValue, V _newValue) {
-    return execute(key, SPEC.replace(key, _oldValue, _newValue));
+    return execute(key, OPS.replace(key, _oldValue, _newValue));
   }
 
   @Override
@@ -293,7 +293,7 @@ public class WiredCache<K, V> extends BaseCache<K, V>
     };
     for (K k : _keysToLoad) {
       final K key = k;
-      executeAsyncLoadOrRefresh(key, null, SPEC.GET, cb);
+      executeAsyncLoadOrRefresh(key, null, OPS.GET, cb);
     }
   }
 
@@ -347,15 +347,9 @@ public class WiredCache<K, V> extends BaseCache<K, V>
     };
     for (K k : _keySet) {
       final K key = k;
-      executeAsyncLoadOrRefresh(key, null, SPEC.UNCONDITIONAL_LOAD, cb);
+      executeAsyncLoadOrRefresh(key, null, OPS.UNCONDITIONAL_LOAD, cb);
     }
   }
-
-  private static final EntryAction.CompletedCallback NOOP_CALLBACK = new EntryAction.CompletedCallback() {
-    @Override
-    public void entryActionCompleted(final EntryAction ea) {
-    }
-  };
 
   /**
    * Execute asynchronously, returns immediately and uses callback to notify on
@@ -370,13 +364,13 @@ public class WiredCache<K, V> extends BaseCache<K, V>
     _action.start();
   }
 
-  private <R> void enqueueTimerAction(Entry<K,V> e, Semantic<K,V,R> op) {
-    EntryAction<K,V,R> _action = createFireAndForgetAction(e, op);
-    heapCache.executor.execute(_action);
+  protected <R> MyEntryAction<R> createFireAndForgetAction(final Entry<K, V> e, final Semantic<K, V, R> op) {
+    return new MyEntryAction<R>(op, e.getKey(), e, EntryAction.NOOP_CALLBACK);
   }
 
-  private <R> MyEntryAction<R> createFireAndForgetAction(final Entry<K, V> e, final Semantic<K, V, R> op) {
-    return new MyEntryAction<R>(op, e.getKey(), e, NOOP_CALLBACK);
+  @Override
+  public Executor getExecutor() {
+    return heapCache.getExecutor();
   }
 
   private void reloadAllWithSyncLoader(final CacheOperationCompletionListener _listener, final Set<K> _keySet) {
@@ -388,7 +382,7 @@ public class WiredCache<K, V> extends BaseCache<K, V>
         @Override
         public void action() {
           try {
-            execute(key, (Semantic<K, V, Void>) SPEC.UNCONDITIONAL_LOAD);
+            execute(key, (Semantic<K, V, Void>) OPS.UNCONDITIONAL_LOAD);
           } finally {
             if (_countDown.decrementAndGet() == 0) {
               _listener.onCompleted();
@@ -406,7 +400,7 @@ public class WiredCache<K, V> extends BaseCache<K, V>
 
   @Override
   public void expireAt(final K key, final long _millis) {
-    execute(key, SPEC.expire(key, _millis));
+    execute(key, OPS.expire(key, _millis));
   }
 
   private void checkLoaderPresent() {
@@ -444,7 +438,7 @@ public class WiredCache<K, V> extends BaseCache<K, V>
     if (e != null && e.hasFreshData(getClock())) {
       return returnValue(e);
     }
-    return returnValue(execute(key, e, SPEC.get(key)));
+    return returnValue(execute(key, e, OPS.get(key)));
    }
 
   /**
@@ -456,7 +450,7 @@ public class WiredCache<K, V> extends BaseCache<K, V>
   public Map<K, V> getAll(final Iterable<? extends K> keys) {
     Map<K, CacheEntry<K, V>> map = new HashMap<K, CacheEntry<K, V>>();
     for (K k : keys) {
-      CacheEntry<K, V> e = execute(k, SPEC.getEntry(k));
+      CacheEntry<K, V> e = execute(k, OPS.getEntry(k));
       if (e != null) {
         map.put(k, e);
       }
@@ -466,7 +460,7 @@ public class WiredCache<K, V> extends BaseCache<K, V>
 
   @Override
   public CacheEntry<K, V> getEntry(K key) {
-    return execute(key, SPEC.getEntry(key));
+    return execute(key, OPS.getEntry(key));
   }
 
   @Override
@@ -482,7 +476,7 @@ public class WiredCache<K, V> extends BaseCache<K, V>
     if (key == null) {
       throw new NullPointerException();
     }
-    return execute(key, SPEC.invoke(key, entryProcessor));
+    return execute(key, OPS.invoke(key, entryProcessor));
   }
 
   @SuppressWarnings("unchecked")
@@ -526,7 +520,7 @@ public class WiredCache<K, V> extends BaseCache<K, V>
     if (e != null && e.hasFreshData(getClock())) {
       return returnValue(e);
     }
-    return returnValue(execute(key, SPEC.peek(key)));
+    return returnValue(execute(key, OPS.peek(key)));
   }
 
   /**
@@ -538,7 +532,7 @@ public class WiredCache<K, V> extends BaseCache<K, V>
   public Map<K, V> peekAll(final Iterable<? extends K> keys) {
     Map<K, CacheEntry<K, V>> map = new HashMap<K, CacheEntry<K, V>>();
     for (K k : keys) {
-      CacheEntry<K, V> e = execute(k, SPEC.peekEntry(k));
+      CacheEntry<K, V> e = execute(k, OPS.peekEntry(k));
       if (e != null) {
         map.put(k, e);
       }
@@ -728,7 +722,12 @@ public class WiredCache<K, V> extends BaseCache<K, V>
         return;
       }
     }
-    enqueueTimerAction(e, SPEC.EXPIRE_EVENT);
+    enqueueTimerAction(e, OPS.EXPIRE_EVENT);
+  }
+
+  private <R> void enqueueTimerAction(Entry<K,V> e, Semantic<K,V,R> op) {
+    EntryAction<K,V,R> _action = createFireAndForgetAction(e, op);
+    getExecutor().execute(_action);
   }
 
   /**
@@ -742,16 +741,16 @@ public class WiredCache<K, V> extends BaseCache<K, V>
     synchronized (e) {
       if (e.getTask() != task) { return; }
       if (asyncLoader != null) {
-        enqueueTimerAction(e, SPEC.REFRESH);
+        enqueueTimerAction(e, OPS.REFRESH);
         return;
       }
       try {
-        heapCache.loaderExecutor.execute(createFireAndForgetAction(e, SPEC.REFRESH));
+        heapCache.loaderExecutor.execute(createFireAndForgetAction(e, OPS.REFRESH));
         return;
       } catch (RejectedExecutionException ignore) {
       }
       metrics().refreshFailed();
-      enqueueTimerAction(e, SPEC.EXPIRE_EVENT);
+      enqueueTimerAction(e, OPS.EXPIRE_EVENT);
     }
   }
 
@@ -761,7 +760,7 @@ public class WiredCache<K, V> extends BaseCache<K, V>
     synchronized (e) {
       if (e.getTask() != task) { return; }
     }
-    enqueueTimerAction(e, SPEC.EXPIRE_EVENT);
+    enqueueTimerAction(e, OPS.EXPIRE_EVENT);
   }
 
   /**
@@ -829,7 +828,7 @@ public class WiredCache<K, V> extends BaseCache<K, V>
     }
 
     @Override
-    protected Executor executor() { return heapCache.executor; }
+    protected Executor executor() { return heapCache.getExecutor(); }
 
     /**
      * Provides async loader context

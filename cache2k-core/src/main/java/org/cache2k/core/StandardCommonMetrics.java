@@ -118,21 +118,21 @@ public class StandardCommonMetrics implements CommonMetrics.Updater {
     loadMillisUpdater.addAndGet(this, _millis);
   }
 
-  static final AtomicLongFieldUpdater<StandardCommonMetrics> loadUpdater =
-    AtomicLongFieldUpdater.newUpdater(StandardCommonMetrics.class, "load");
-  private volatile long load;
+  static final AtomicLongFieldUpdater<StandardCommonMetrics> readThroughUpdater =
+    AtomicLongFieldUpdater.newUpdater(StandardCommonMetrics.class, "readThrough");
+  private volatile long readThrough;
   @Override
-  public long getLoadCount() {
-    return loadUpdater.get(this);
+  public long getReadThroughCount() {
+    return readThroughUpdater.get(this);
   }
   @Override
   public void load(final long _millis) {
-    loadUpdater.incrementAndGet(this);
+    readThroughUpdater.incrementAndGet(this);
     loadMillisUpdater.addAndGet(this, _millis);
   }
   @Override
   public void load(final long cnt, final long _millis) {
-    loadUpdater.addAndGet(this, cnt);
+    readThroughUpdater.addAndGet(this, cnt);
     loadMillisUpdater.addAndGet(this, _millis);
   }
 

@@ -37,6 +37,7 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.Executor;
 
 /**
  * Some default implementations for a cache.
@@ -44,6 +45,11 @@ import java.util.concurrent.ConcurrentMap;
  * @author Jens Wilke
  */
 public abstract class BaseCache<K, V> implements InternalCache<K, V> {
+
+  public abstract Executor getExecutor();
+
+  protected abstract <R> EntryAction<K,V,R> createFireAndForgetAction(
+    final Entry<K, V> e, final Semantic<K,V,R> op);
 
   /**
    *

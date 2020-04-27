@@ -61,6 +61,12 @@ public abstract class EntryAction<K, V, R> extends Entry.PiggyBack implements
 
   public static final Entry NON_FRESH_DUMMY = new Entry();
 
+  static final CompletedCallback NOOP_CALLBACK = new CompletedCallback() {
+    @Override
+    public void entryActionCompleted(final EntryAction ea) {
+    }
+  };
+
   InternalCache<K, V> userCache;
   HeapCache<K, V> heapCache;
   K key;

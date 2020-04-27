@@ -99,7 +99,8 @@ class CacheBaseInfo implements InternalCacheInfo {
       extraStatistics = extraStatistics.substring(2);
     }
     size = heapCache.getLocalSize();
-    missCnt = metrics.getLoadCount() + metrics.getReloadCount() + metrics.getPeekHitNotFreshCount() + metrics.getPeekMissCount();
+    missCnt = metrics.getReadThroughCount() + metrics.getReloadCount() +
+      metrics.getPeekHitNotFreshCount() + metrics.getPeekMissCount();
     hitCnt = em.getHitCount();
     correctedPutCnt = metrics.getPutNewEntryCount() + metrics.getPutHitCount();
     if (_heapCache.loaderExecutor instanceof ExclusiveExecutor) {
@@ -109,7 +110,8 @@ class CacheBaseInfo implements InternalCacheInfo {
       loaderThreadsLimit = ex.getCorePoolSize();
       loaderThreadsMaxActive = ex.getLargestPoolSize();
     }
-    totalLoadCnt = metrics.getLoadCount() + metrics.getReloadCount() + metrics.getRefreshCount();
+    totalLoadCnt = metrics.getReadThroughCount() + metrics.getReloadCount() +
+      metrics.getRefreshCount();
   }
 
   String percentString(double d) {
@@ -148,10 +150,9 @@ class CacheBaseInfo implements InternalCacheInfo {
 
   @Override
   public long getGetCount() {
-    long _heapHitButNoRead = metrics.getHeapHitButNoReadCount();
     return
       hitCnt + metrics.getPeekMissCount()
-      + metrics.getLoadCount() - _heapHitButNoRead;
+      + metrics.getReadThroughCount() -  metrics.getHeapHitButNoReadCount();
   }
   @Override
   public long getMissCount() { return missCnt; }

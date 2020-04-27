@@ -139,7 +139,7 @@ public class HeapCache<K, V> extends BaseCache<K, V> {
    */
   protected long internalExceptionCnt = 0;
 
-  protected Executor executor;
+  private Executor executor;
 
   protected volatile Executor loaderExecutor = new LazyLoaderExecutor();
 
@@ -657,6 +657,7 @@ public class HeapCache<K, V> extends BaseCache<K, V> {
           return e;
         }
         if (e.isGone()) {
+          metrics.heapHitButNoRead();
           metrics.goneSpin();
           continue;
         }
@@ -1566,50 +1567,13 @@ public class HeapCache<K, V> extends BaseCache<K, V> {
     metrics.timerEvent();
     synchronized (e) {
       if (e.getTask() != task) { return; }
-      Runnable r = new Runnable() {
-        @Override
-        public void run() {
-          refreshEntry(e);
-        }
-      };
       try {
-        loaderExecutor.execute(r);
+        loaderExecutor.execute(createFireAndForgetAction(e, Operations.SINGLETON.REFRESH));
         return;
       } catch (RejectedExecutionException ignore) {
       }
       metrics.refreshFailed();
       expireOrScheduleFinalExpireEvent(e);
-    }
-  }
-
-  /**
-   * Executed in loader thread. Load the entry again. After the load we copy the entry to the
-   * refresh hash and expire it in the main hash. The entry needs to stay in the main hash
-   * during the load, to block out concurrent reads.
-   */
-  private void refreshEntry(final Entry<K, V> e) {
-    synchronized (e) {
-      e.waitForProcessing();
-      if (e.isGone()) {
-        return;
-      }
-      e.startProcessing(Entry.ProcessingState.REFRESH, null);
-    }
-    boolean _finished = false;
-    try {
-      load(e);
-      _finished = true;
-    } catch (CacheClosedException ignore) {
-    } catch (Throwable ex) {
-      logAndCountInternalException("Refresh exception", ex);
-      try {
-        synchronized (e) {
-          expireEntry(e);
-        }
-      } catch (CacheClosedException ignore) {
-      }
-    } finally {
-      e.ensureAbort(_finished);
     }
   }
 
@@ -1762,23 +1726,46 @@ public class HeapCache<K, V> extends BaseCache<K, V> {
 
   @Override
   protected <R> EntryAction<K, V, R> createEntryAction(final K key, final Entry<K, V> e, final Semantic<K, V, R> op) {
-    return new EntryAction<K, V, R>(this, this, op, key, e) {
-      @Override
-      protected TimingHandler<K, V> timing() {
-        return timing;
-      }
-
-      @Override
-      public Executor getLoaderExecutor() {
-        return null;
-      }
-
-      @Override
-      protected Executor executor() { return executor; }
-    };
+    return new MyEntryAction<R>(op, key, e);
   }
 
-  /**
+  @Override
+  protected <R> MyEntryAction<R> createFireAndForgetAction(final Entry<K, V> e, final Semantic<K, V, R> op) {
+    return new MyEntryAction<R>(op, e.getKey(), e, EntryAction.NOOP_CALLBACK);
+  }
+
+  @Override
+  public Executor getExecutor() {
+    return executor;
+  }
+
+  class MyEntryAction<R> extends EntryAction<K, V, R> {
+
+    public MyEntryAction(final Semantic<K, V, R> op, final K _k, final Entry<K, V> e) {
+      super(HeapCache.this, HeapCache.this, op, _k, e);
+    }
+
+    public MyEntryAction(final Semantic<K, V, R> op, final K _k,
+                         final Entry<K, V> e, CompletedCallback cb) {
+      super(HeapCache.this, HeapCache.this, op, _k, e, cb);
+    }
+
+    @Override
+    protected TimingHandler<K, V> timing() {
+      return timing;
+    }
+
+    @Override
+    public Executor getLoaderExecutor() {
+      return null;
+    }
+
+    @Override
+    protected Executor executor() { return executor; }
+
+  }
+
+    /**
    * Simply the {@link EntryAction} based code to provide the entry processor. If we code it directly this
    * might be a little bit more efficient, but it gives quite a code bloat which has lots of
    * corner cases for loader and exception handling.

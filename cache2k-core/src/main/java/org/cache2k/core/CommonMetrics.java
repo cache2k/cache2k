@@ -62,7 +62,7 @@ public interface CommonMetrics {
    *
    * @see InternalCacheInfo#getLoadCount()
    */
-  long getLoadCount();
+  long getReadThroughCount();
 
   /**
    * Entry was loaded again, e.g. when expired, triggered by a get() or reload()
@@ -368,7 +368,7 @@ public interface CommonMetrics {
     }
 
     @Override
-    public long getLoadCount() {
+    public long getReadThroughCount() {
       return 0;
     }
 
