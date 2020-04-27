@@ -745,7 +745,7 @@ public class WiredCache<K, V> extends BaseCache<K, V>
         return;
       }
       try {
-        heapCache.loaderExecutor.execute(createFireAndForgetAction(e, OPS.REFRESH));
+        heapCache.prefetchExecutor.execute(createFireAndForgetAction(e, OPS.REFRESH));
         return;
       } catch (RejectedExecutionException ignore) {
       }
