@@ -86,8 +86,8 @@ public class TestingBase {
   };
 
   private static final AtomicLong uniqueNameCounter = new AtomicLong();
-  private static final Executor SHARED_EXECUTOR =
-    new ThreadPoolExecutor(4, 4 * Runtime.getRuntime().availableProcessors() ^ 2,
+  public static final Executor SHARED_EXECUTOR =
+    new ThreadPoolExecutor(4, 4 * Runtime.getRuntime().availableProcessors(),
       21, TimeUnit.SECONDS,
       new SynchronousQueue<Runnable>(),
       HeapCache.TUNABLE.threadFactoryProvider.newThreadFactory("test-loader-pool"),
