@@ -794,6 +794,9 @@ public class Cache2kBuilder<K, V> {
    * same refresh ahead operation will use the thread pool defined by {@link #loaderExecutor(Executor)}
    * or a cache local pool is created.
    *
+   * <p>The executor for refresh operations may reject execution when not enough resources
+   * are available. In this case the cache entry expires.
+   *
    * @see #loaderThreadCount(int)
    * @see #loaderExecutor(Executor)
    */
