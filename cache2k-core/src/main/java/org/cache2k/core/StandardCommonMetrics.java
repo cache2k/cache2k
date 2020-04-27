@@ -126,12 +126,12 @@ public class StandardCommonMetrics implements CommonMetrics.Updater {
     return readThroughUpdater.get(this);
   }
   @Override
-  public void load(final long _millis) {
+  public void readThrough(final long _millis) {
     readThroughUpdater.incrementAndGet(this);
     loadMillisUpdater.addAndGet(this, _millis);
   }
   @Override
-  public void load(final long cnt, final long _millis) {
+  public void readThrough(final long cnt, final long _millis) {
     readThroughUpdater.addAndGet(this, cnt);
     loadMillisUpdater.addAndGet(this, _millis);
   }
@@ -144,12 +144,12 @@ public class StandardCommonMetrics implements CommonMetrics.Updater {
     return reloadUpdater.get(this);
   }
   @Override
-  public void reload(final long _millis) {
+  public void explicitLoad(final long _millis) {
     reloadUpdater.incrementAndGet(this);
     loadMillisUpdater.addAndGet(this, _millis);
   }
   @Override
-  public void reload(final long cnt, final long _millis) {
+  public void explicitLoad(final long cnt, final long _millis) {
     reloadUpdater.addAndGet(this, cnt);
     loadMillisUpdater.addAndGet(this, _millis);
   }

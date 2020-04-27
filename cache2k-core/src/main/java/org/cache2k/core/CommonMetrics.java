@@ -58,14 +58,15 @@ public interface CommonMetrics {
   long getTimerEventCount();
 
   /**
-   * Entry was loaded, triggered by a get()
+   * Entry was loaded, triggered by a get(). A read through event means also
+   * a get, load and miss event.
    *
    * @see InternalCacheInfo#getLoadCount()
    */
   long getReadThroughCount();
 
   /**
-   * Entry was loaded again, e.g. when expired, triggered by a get() or reload()
+   * Entry was explicitly loaded
    *
    * @see InternalCacheInfo#getReloadCount()
    */
@@ -160,11 +161,11 @@ public interface CommonMetrics {
     void timerEvent();
     void timerEvent(long cnt);
 
-    void load(long _millis);
-    void load(long cnt, long _millis);
+    void readThrough(long _millis);
+    void readThrough(long cnt, long _millis);
 
-    void reload(long _millis);
-    void reload(long cnt, long _millis);
+    void explicitLoad(long _millis);
+    void explicitLoad(long cnt, long _millis);
 
     void refresh(long _millis);
     void refresh(long cnt, long _millis);
@@ -238,22 +239,22 @@ public interface CommonMetrics {
     }
 
     @Override
-    public void load(final long _millis) {
+    public void readThrough(final long _millis) {
 
     }
 
     @Override
-    public void load(final long cnt, final long _millis) {
+    public void readThrough(final long cnt, final long _millis) {
 
     }
 
     @Override
-    public void reload(final long _millis) {
+    public void explicitLoad(final long _millis) {
 
     }
 
     @Override
-    public void reload(final long cnt, final long _millis) {
+    public void explicitLoad(final long cnt, final long _millis) {
 
     }
 

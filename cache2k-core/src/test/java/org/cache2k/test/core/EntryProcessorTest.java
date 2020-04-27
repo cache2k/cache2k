@@ -645,9 +645,9 @@ public class EntryProcessorTest {
     }
     assertTrue(_exceptionThrown);
     target.statistics()
-      .getCount.expect(2)
-      .missCount.expect(2)
-      .loadCount.expect(1)
+      .getCount.expect(1)
+      .missCount.expect(1)
+      .loadCount.expect(0)
       .expectAllZero();
   }
 

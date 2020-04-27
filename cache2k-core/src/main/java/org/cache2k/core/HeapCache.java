@@ -209,7 +209,8 @@ public class HeapCache<K, V> extends BaseCache<K, V> {
   protected final boolean isRefreshAhead() { return (featureBits & BACKGROUND_REFRESH) > 0; }
 
   /**
-   * Don't update the entry last modification time and no expiry calculations are needed.
+   * No need to update the entry last modification time.
+   * False, if no time dependent expiry calculations are done.
    */
   protected final boolean isUpdateTimeNeeded() { return (featureBits & UPDATE_TIME_NEEDED) > 0; }
 
@@ -1550,9 +1551,9 @@ public class HeapCache<K, V> extends BaseCache<K, V> {
         metrics.refresh(_millis);
       } else {
         if (e.isVirgin()) {
-          metrics.load(_millis);
+          metrics.readThrough(_millis);
         } else {
-          metrics.reload(_millis);
+          metrics.explicitLoad(_millis);
         }
       }
     } else {

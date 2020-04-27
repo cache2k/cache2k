@@ -341,6 +341,10 @@ public class TestingBase {
     return (InternalCache) cache;
   }
 
+  protected void printStats() {
+    System.err.println(getInfo());
+  }
+
   protected InternalCacheInfo getInfo() {
     return getInternalCache().getLatestInfo();
   }

@@ -155,6 +155,10 @@ public class CacheRule<K,V> implements TestRule {
     return cache.requestInterface(InternalCache.class).getLatestInfo();
   }
 
+  public void printStats() {
+    System.err.println(info());
+  }
+
   @Override
   public Statement apply(final Statement st, final Description d) {
     if (d.isSuite()) {
