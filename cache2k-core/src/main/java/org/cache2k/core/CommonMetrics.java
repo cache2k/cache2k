@@ -42,7 +42,7 @@ public interface CommonMetrics {
   long getPutHitCount();
 
   /**
-   * Operation was accessing a heap entry and counted a hit it is existing, but
+   * Operation was accessing a heap entry and counted a hit if it is existing, but
    * it should not be counted as read/get operation (e.g. {@code contains}). This
    * is a correction counter applied to the get counter.
    *
