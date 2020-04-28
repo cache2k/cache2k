@@ -31,6 +31,7 @@ package org.cache2k.integration;
  * available.
  *
  * @author Jens Wilke
+ * @deprecated to be removed in 2.2, <a href='https://github.com/cache2k/cache2k/issues/138'>GH#138</a>
  */
 public interface ExceptionPropagator<K> {
 
