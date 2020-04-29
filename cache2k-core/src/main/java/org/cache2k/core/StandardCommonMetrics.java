@@ -39,10 +39,6 @@ public class StandardCommonMetrics implements CommonMetrics.Updater {
   public long getPutNewEntryCount() {
     return PUT_NEW_ENTRY_UPDATER.get(this);
   }
-  @Override
-  public void putNewEntry(final long cnt) {
-    PUT_NEW_ENTRY_UPDATER.addAndGet(this, cnt);
-  }
 
   static final AtomicLongFieldUpdater<StandardCommonMetrics> putHitUpdater =
     AtomicLongFieldUpdater.newUpdater(StandardCommonMetrics.class, "putHit");
@@ -54,10 +50,6 @@ public class StandardCommonMetrics implements CommonMetrics.Updater {
   @Override
   public long getPutHitCount() {
     return putHitUpdater.get(this);
-  }
-  @Override
-  public void putHit(final long cnt) {
-    putHitUpdater.addAndGet(this, cnt);
   }
 
   static final AtomicLongFieldUpdater<StandardCommonMetrics> heapHitButNoReadUpdater =
@@ -71,10 +63,6 @@ public class StandardCommonMetrics implements CommonMetrics.Updater {
   public long getHeapHitButNoReadCount() {
     return heapHitButNoReadUpdater.get(this);
   }
-  @Override
-  public void heapHitButNoRead(final long cnt) {
-    heapHitButNoReadUpdater.addAndGet(this, cnt);
-  }
 
   static final AtomicLongFieldUpdater<StandardCommonMetrics> timerEventUpdater =
     AtomicLongFieldUpdater.newUpdater(StandardCommonMetrics.class, "timerEvent");
@@ -86,10 +74,6 @@ public class StandardCommonMetrics implements CommonMetrics.Updater {
   @Override
   public long getTimerEventCount() {
     return timerEventUpdater.get(this);
-  }
-  @Override
-  public void timerEvent(final long cnt) {
-    timerEventUpdater.addAndGet(this, cnt);
   }
 
   static final AtomicLongFieldUpdater<StandardCommonMetrics> loadMillisUpdater =
@@ -112,11 +96,6 @@ public class StandardCommonMetrics implements CommonMetrics.Updater {
     refreshUpdater.incrementAndGet(this);
     loadMillisUpdater.addAndGet(this, _millis);
   }
-  @Override
-  public void refresh(final long cnt, final long _millis) {
-    refreshUpdater.addAndGet(this, cnt);
-    loadMillisUpdater.addAndGet(this, _millis);
-  }
 
   static final AtomicLongFieldUpdater<StandardCommonMetrics> readThroughUpdater =
     AtomicLongFieldUpdater.newUpdater(StandardCommonMetrics.class, "readThrough");
@@ -128,11 +107,6 @@ public class StandardCommonMetrics implements CommonMetrics.Updater {
   @Override
   public void readThrough(final long _millis) {
     readThroughUpdater.incrementAndGet(this);
-    loadMillisUpdater.addAndGet(this, _millis);
-  }
-  @Override
-  public void readThrough(final long cnt, final long _millis) {
-    readThroughUpdater.addAndGet(this, cnt);
     loadMillisUpdater.addAndGet(this, _millis);
   }
 
@@ -148,11 +122,6 @@ public class StandardCommonMetrics implements CommonMetrics.Updater {
     reloadUpdater.incrementAndGet(this);
     loadMillisUpdater.addAndGet(this, _millis);
   }
-  @Override
-  public void explicitLoad(final long cnt, final long _millis) {
-    reloadUpdater.addAndGet(this, cnt);
-    loadMillisUpdater.addAndGet(this, _millis);
-  }
 
   static final AtomicLongFieldUpdater<StandardCommonMetrics> loadExceptionUpdater =
     AtomicLongFieldUpdater.newUpdater(StandardCommonMetrics.class, "loadException");
@@ -164,10 +133,6 @@ public class StandardCommonMetrics implements CommonMetrics.Updater {
   @Override
   public void loadException() {
     loadExceptionUpdater.incrementAndGet(this);
-  }
-  @Override
-  public void loadException(final long cnt) {
-    loadExceptionUpdater.addAndGet(this, cnt);
   }
 
   static final AtomicLongFieldUpdater<StandardCommonMetrics> suppressedExceptionUpdater =
@@ -181,10 +146,6 @@ public class StandardCommonMetrics implements CommonMetrics.Updater {
   public void suppressedException() {
     suppressedExceptionUpdater.incrementAndGet(this);
   }
-  @Override
-  public void suppressedException(final long cnt) {
-    suppressedExceptionUpdater.addAndGet(this, cnt);
-  }
 
   static final AtomicLongFieldUpdater<StandardCommonMetrics> expiredKeptUpdater =
     AtomicLongFieldUpdater.newUpdater(StandardCommonMetrics.class, "expiredKept");
@@ -196,10 +157,6 @@ public class StandardCommonMetrics implements CommonMetrics.Updater {
   @Override
   public void expiredKept() {
     expiredKeptUpdater.incrementAndGet(this);
-  }
-  @Override
-  public void expiredKept(final long cnt) {
-    expiredKeptUpdater.addAndGet(this, cnt);
   }
 
   static final AtomicLongFieldUpdater<StandardCommonMetrics> peekMissUpdater =
@@ -213,10 +170,6 @@ public class StandardCommonMetrics implements CommonMetrics.Updater {
   public void peekMiss() {
     peekMissUpdater.incrementAndGet(this);
   }
-  @Override
-  public void peekMiss(final long cnt) {
-    peekMissUpdater.addAndGet(this, cnt);
-  }
 
   static final AtomicLongFieldUpdater<StandardCommonMetrics> peekHitNotFreshUpdater =
     AtomicLongFieldUpdater.newUpdater(StandardCommonMetrics.class, "peekHitNotFresh");
@@ -228,10 +181,6 @@ public class StandardCommonMetrics implements CommonMetrics.Updater {
   @Override
   public void peekHitNotFresh() {
     peekHitNotFreshUpdater.incrementAndGet(this);
-  }
-  @Override
-  public void peekHitNotFresh(final long cnt) {
-    peekHitNotFreshUpdater.addAndGet(this, cnt);
   }
 
   static final AtomicLongFieldUpdater<StandardCommonMetrics> refreshHitUpdater =
@@ -245,10 +194,6 @@ public class StandardCommonMetrics implements CommonMetrics.Updater {
   public void refreshedHit() {
     refreshHitUpdater.incrementAndGet(this);
   }
-  @Override
-  public void refreshedHit(final long cnt) {
-    refreshHitUpdater.addAndGet(this, cnt);
-  }
 
   static final AtomicLongFieldUpdater<StandardCommonMetrics> refreshSubmitFailedUpdater =
     AtomicLongFieldUpdater.newUpdater(StandardCommonMetrics.class, "refreshSubmitFailed");
@@ -260,10 +205,6 @@ public class StandardCommonMetrics implements CommonMetrics.Updater {
   @Override
   public void refreshFailed() {
     refreshSubmitFailedUpdater.incrementAndGet(this);
-  }
-  @Override
-  public void refreshFailed(final long cnt) {
-    refreshSubmitFailedUpdater.addAndGet(this, cnt);
   }
 
   @Override
@@ -281,10 +222,6 @@ public class StandardCommonMetrics implements CommonMetrics.Updater {
   @Override
   public void goneSpin() {
     goneSpinUpdater.incrementAndGet(this);
-  }
-  @Override
-  public void goneSpin(final long cnt) {
-    goneSpinUpdater.addAndGet(this, cnt);
   }
 
 }

@@ -150,49 +150,34 @@ public interface CommonMetrics {
   interface Updater extends CommonMetrics {
 
     void putNewEntry();
-    void putNewEntry(long cnt);
 
     void putHit();
-    void putHit(long cnt);
 
     void heapHitButNoRead();
-    void heapHitButNoRead(long cnt);
 
     void timerEvent();
-    void timerEvent(long cnt);
 
     void readThrough(long _millis);
-    void readThrough(long cnt, long _millis);
 
     void explicitLoad(long _millis);
-    void explicitLoad(long cnt, long _millis);
 
     void refresh(long _millis);
-    void refresh(long cnt, long _millis);
 
     void loadException();
-    void loadException(long cnt);
 
     void suppressedException();
-    void suppressedException(long cnt);
 
     void expiredKept();
-    void expiredKept(long cnt);
 
     void peekMiss();
-    void peekMiss(long cnt);
 
     void peekHitNotFresh();
-    void peekHitNotFresh(long cnt);
 
     void refreshedHit();
-    void refreshedHit(long cnt);
 
     void refreshFailed();
-    void refreshFailed(long cnt);
 
     void goneSpin();
-    void goneSpin(long cnt);
 
   }
 
@@ -204,17 +189,7 @@ public interface CommonMetrics {
     }
 
     @Override
-    public void putNewEntry(final long cnt) {
-
-    }
-
-    @Override
     public void putHit() {
-
-    }
-
-    @Override
-    public void putHit(final long cnt) {
 
     }
 
@@ -224,17 +199,7 @@ public interface CommonMetrics {
     }
 
     @Override
-    public void heapHitButNoRead(final long cnt) {
-
-    }
-
-    @Override
     public void timerEvent() {
-
-    }
-
-    @Override
-    public void timerEvent(final long cnt) {
 
     }
 
@@ -244,17 +209,7 @@ public interface CommonMetrics {
     }
 
     @Override
-    public void readThrough(final long cnt, final long _millis) {
-
-    }
-
-    @Override
     public void explicitLoad(final long _millis) {
-
-    }
-
-    @Override
-    public void explicitLoad(final long cnt, final long _millis) {
 
     }
 
@@ -264,17 +219,7 @@ public interface CommonMetrics {
     }
 
     @Override
-    public void refresh(final long cnt, final long _millis) {
-
-    }
-
-    @Override
     public void loadException() {
-
-    }
-
-    @Override
-    public void loadException(final long cnt) {
 
     }
 
@@ -284,17 +229,7 @@ public interface CommonMetrics {
     }
 
     @Override
-    public void suppressedException(final long cnt) {
-
-    }
-
-    @Override
     public void expiredKept() {
-
-    }
-
-    @Override
-    public void expiredKept(final long cnt) {
 
     }
 
@@ -304,17 +239,7 @@ public interface CommonMetrics {
     }
 
     @Override
-    public void peekMiss(final long cnt) {
-
-    }
-
-    @Override
     public void peekHitNotFresh() {
-
-    }
-
-    @Override
-    public void peekHitNotFresh(final long cnt) {
 
     }
 
@@ -324,27 +249,12 @@ public interface CommonMetrics {
     }
 
     @Override
-    public void refreshedHit(final long cnt) {
-
-    }
-
-    @Override
     public void refreshFailed() {
 
     }
 
     @Override
-    public void refreshFailed(final long cnt) {
-
-    }
-
-    @Override
     public void goneSpin() {
-
-    }
-
-    @Override
-    public void goneSpin(final long cnt) {
 
     }
 
