@@ -23,6 +23,8 @@ package org.cache2k.test.util;
 import org.cache2k.core.util.ClockDefaultImpl;
 import org.cache2k.core.util.InternalClock;
 
+import java.sql.Timestamp;
+
 /**
  * Execute a piece of work and assertions. The assertions are only
  * respected if everything happens in a given timebox.
@@ -67,10 +69,20 @@ public class TimeBox {
     try {
       r.run();
     } catch (AssertionError ex) {
-      if (clock.millis() - startTime < timeBox) {
-        throw ex;
+      long ms = clock.millis();
+      long delta = ms - startTime;
+      if (delta < timeBox) {
+        throw new PropagateAssertionError(startTime, delta, ex);
       }
     }
+  }
+
+  public static class PropagateAssertionError extends AssertionError {
+
+    public PropagateAssertionError(final long startTime, final long delta, final Throwable cause) {
+      super("Assertion failed at start time " + (new Timestamp(startTime)) + " + " +  delta, cause);
+    }
+
   }
 
 }
