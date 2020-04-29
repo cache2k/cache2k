@@ -20,6 +20,8 @@ package org.cache2k.test.core.expiry;
  * #L%
  */
 
+import org.cache2k.Cache2kBuilder;
+import org.cache2k.Cache2kBuilder;
 import org.cache2k.integration.AsyncCacheLoader;
 import org.cache2k.test.core.BasicCacheTest;
 import org.cache2k.test.util.TestingBase;
@@ -66,26 +68,59 @@ public class SlowExpiryTest extends TestingBase {
    */
   @Test
   public void testExceptionWithRefresh() {
-    final int _COUNT = 4;
-    Cache<Integer, Integer> c = builder(Integer.class, Integer.class)
-        .refreshAhead(true)
-        .retryInterval(TestingParameters.MINIMAL_TICK_MILLIS, TimeUnit.MILLISECONDS)
-        .loader(new BasicCacheTest.AlwaysExceptionSource())
-        .build();
-    cache = c;
-    for (int i : new int[]{1, 2, 3, 4}) {
-      boolean _gotException = false;
-      try {
-        c.get(i);
-      } catch (CacheLoaderException e) {
-        _gotException = true;
-      }
-      assertTrue("got exception", _gotException);
+    testExceptionWithRefreshAndLoader(false);
+  }
+
+  @Test
+  public void testExceptionWithRefreshAsyncLoader() {
+    testExceptionWithRefreshAndLoader(true);
+  }
+
+  public void testExceptionWithRefreshAndLoader(boolean asyncLoader) {
+    String _cacheName = generateUniqueCacheName(this);
+    final int COUNT = 4;
+    final long TIMESPAN =  TestingParameters.MINIMAL_TICK_MILLIS;
+    final Cache2kBuilder<Integer, Integer> cb = builder(_cacheName, Integer.class, Integer.class)
+      .refreshAhead(true)
+      .retryInterval(TIMESPAN, TimeUnit.MILLISECONDS);
+    if (asyncLoader) {
+      cb.loader(new AsyncCacheLoader<Integer, Integer>() {
+        @Override
+        public void load(final Integer key, final Context<Integer, Integer> context, final Callback<Integer> callback) throws Exception {
+          throw new RuntimeException("always");
+        }
+      });
+    } else {
+      cb.loader(new BasicCacheTest.AlwaysExceptionSource());
     }
+    final Cache<Integer, Integer> c = cb.build();
+    cache = c;
+    within(TIMESPAN)
+      .work(new Runnable() {
+        @Override
+        public void run() {
+          for (int i = 1; i <= COUNT; i++) {
+            try {
+              c.get(i);
+              fail("expect exception");
+            } catch (CacheLoaderException ignore) { }
+          }
+        }
+      })
+      .check(new Runnable() {
+         @Override
+         public void run() {
+           assertEquals(COUNT, getInfo().getSize());
+           assertEquals("no refresh yet", 0,
+             getInfo().getRefreshCount() + getInfo().getRefreshFailedCount()
+           );
+         }
+       }
+      );
     await("All refreshed", new Condition() {
       @Override
       public boolean check() {
-        return getInfo().getRefreshCount() + getInfo().getRefreshFailedCount() >= _COUNT;
+        return getInfo().getRefreshCount() + getInfo().getRefreshFailedCount() >= COUNT;
       }
     });
     assertEquals("no internal exceptions",0, getInfo().getInternalExceptionCount());
@@ -94,25 +129,26 @@ public class SlowExpiryTest extends TestingBase {
     await("All expired", new Condition() {
       @Override
       public boolean check() {
-        return getInfo().getExpiredCount() >= _COUNT;
+        return getInfo().getExpiredCount() >= COUNT;
       }
     });
     assertEquals(0, getInfo().getSize());
   }
 
   @Test
-  public void testExceptionWithRefreshAsyncLoader() {
+  public void testExceptionWithRefreshSyncLoader() {
     String _cacheName = generateUniqueCacheName(this);
     final int COUNT = 4;
     final long TIMESPAN =  TestingParameters.MINIMAL_TICK_MILLIS;
     final Cache<Integer, Integer> c = builder(_cacheName, Integer.class, Integer.class)
       .refreshAhead(true)
       .retryInterval(TIMESPAN, TimeUnit.MILLISECONDS)
-      .loader(new AsyncCacheLoader<Integer, Integer>() {
+      .loader(new CacheLoader<Integer, Integer>() {
         @Override
-        public void load(final Integer key, final Context<Integer, Integer> context, final Callback<Integer> callback) throws Exception {
+        public Integer load(final Integer key) throws Exception {
           throw new RuntimeException("always");
         }
+
       })
       .build();
     cache = c;
@@ -133,12 +169,14 @@ public class SlowExpiryTest extends TestingBase {
         }
       })
       .check(new Runnable() {
-         @Override
-         public void run() {
-           assertEquals(COUNT, getInfo().getSize());
-           assertEquals(0, getInfo().getRefreshCount());
-         }
-       }
+               @Override
+               public void run() {
+                 assertEquals(COUNT, getInfo().getSize());
+                 assertEquals("no refresh yet", 0,
+                   getInfo().getRefreshCount() + getInfo().getRefreshFailedCount()
+                 );
+               }
+             }
       );
     await("All refreshed", new Condition() {
       @Override

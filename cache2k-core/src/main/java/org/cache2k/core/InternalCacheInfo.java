@@ -107,7 +107,9 @@ public interface InternalCacheInfo {
   long getReloadCount();
 
   /**
-   * Entry was loaded again, triggered by timer
+   * Entry was loaded again, triggered by timer. The count includes all triggered and tried
+   * refresh actions, including those that produced and exception as result. A refresh
+   * is also counted as load in {@link #getLoadCount()}
    *
    * @see CommonMetrics#getRefreshCount()
    */

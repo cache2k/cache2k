@@ -138,7 +138,7 @@ public class DefaultResiliencePolicy<K,V> extends ResiliencePolicy<K,V> {
   private long calculateRetryDelta(final ExceptionInformation exceptionInformation) {
     long _delta = (long)
       (retryInterval * Math.pow(multiplier, exceptionInformation.getRetryCount()));
-    _delta -= SHARED_RANDOM.nextDouble() * randomization * _delta;
+    _delta += SHARED_RANDOM.nextDouble() * randomization * _delta;
     return Math.min(_delta, maxRetryInterval);
   }
 
