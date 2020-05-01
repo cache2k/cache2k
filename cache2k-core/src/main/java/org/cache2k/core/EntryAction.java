@@ -1130,6 +1130,9 @@ public abstract class EntryAction<K, V, R> extends Entry.PiggyBack implements
   }
 
   public void updateMutationStatistics() {
+    if (expiredImmediately && !remove) {
+      metrics().expiredKept();
+    }
     if (loaderReallyCalled) {
       long _delta = loadCompletedTime - loadStartedTime;
       if (refresh) {
@@ -1145,9 +1148,6 @@ public abstract class EntryAction<K, V, R> extends Entry.PiggyBack implements
         }
       }
       return;
-    }
-    if (expiredImmediately && !remove) {
-      metrics().expiredKept();
     }
     updateReadStatistics();
   }

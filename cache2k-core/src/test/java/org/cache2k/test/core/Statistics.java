@@ -46,8 +46,7 @@ public class Statistics {
   private List<Counter> counters = new ArrayList<Counter>();
   private boolean disable = false;
 
-  public Statistics() {
-  }
+  public Statistics() { }
 
   public Statistics(final boolean _disable) {
     disable = _disable;
@@ -88,6 +87,13 @@ public class Statistics {
     }
   };
 
+  public final Counter expiredCount = new Counter("expired") {
+    @Override
+    protected long getCounterValue(final InternalCacheInfo inf) {
+      return inf.getExpiredCount();
+    }
+  };
+
   /** Reset all counters */
   public void reset() {
     for (Counter c : counters) {
@@ -109,6 +115,10 @@ public class Statistics {
 
   }
 
+  public void dump() {
+    System.err.println(info);
+  }
+
   public abstract class Counter {
 
     long baseValue;
@@ -121,7 +131,7 @@ public class Statistics {
 
     protected abstract long getCounterValue(InternalCacheInfo inf);
 
-    public Statistics reset() {
+    public final Statistics reset() {
       baseValue += get();
       return Statistics.this;
     }
@@ -129,7 +139,7 @@ public class Statistics {
     /**
      * The counter value, actually the delta value since the last reset.
      */
-    public long get() {
+    public final long get() {
       return getCounterValue(info) - baseValue;
     }
 
@@ -138,7 +148,7 @@ public class Statistics {
      * this operation can be followed by {@link #expectAllZero()} to check
      * that all other counters are 0.
      */
-    public Statistics expect(long v) {
+    public final Statistics expect(long v) {
       if (!disable) {
         assertEquals(name + " counter", v, get());
       }

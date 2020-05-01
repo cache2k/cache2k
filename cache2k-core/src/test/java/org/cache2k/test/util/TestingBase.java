@@ -35,6 +35,7 @@ import org.cache2k.core.util.SimulatedClock;
 import org.cache2k.integration.CacheLoader;
 import org.cache2k.CacheOperationCompletionListener;
 import org.cache2k.test.core.CacheLoaderTest;
+import org.cache2k.test.core.Statistics;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExternalResource;
@@ -102,6 +103,7 @@ public class TestingBase {
   private final static TimeStepper defaultStepper = new TimeStepper(ClockDefaultImpl.INSTANCE);
   private TimeStepper stepper = defaultStepper;
   private InternalClock clock;
+  private Statistics statistics;
 
   @Rule
   public TestRule checkAndCleanup =
@@ -290,6 +292,13 @@ public class TestingBase {
     if (cache instanceof CanCheckIntegrity) {
       ((CanCheckIntegrity) cache).checkIntegrity();
     }
+  }
+
+  protected Statistics statistics() {
+    if (statistics == null) {
+      statistics = new Statistics();
+    }
+    return statistics.sample(cache);
   }
 
   protected void provideOptionalCache() {

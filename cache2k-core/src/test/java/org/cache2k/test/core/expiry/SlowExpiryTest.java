@@ -328,6 +328,35 @@ public class SlowExpiryTest extends TestingBase {
   }
 
   /**
+   * Test with short expiry time to trip a special case during the expiry calculation:
+   * the expiry happens during the calculation
+   */
+  @Test
+  public void testShortExpiryTime() throws Exception {
+    boolean keepData = true;
+    final Cache<Integer, Integer> c = builder(Integer.class, Integer.class)
+      .expireAfterWrite(1, TimeUnit.MILLISECONDS)
+      .retryInterval(TestingParameters.MINIMAL_TICK_MILLIS, TimeUnit.MILLISECONDS)
+      .resilienceDuration(Long.MAX_VALUE, TimeUnit.MILLISECONDS)
+      .keepDataAfterExpired(keepData)
+      .loader(new IdentIntSource())
+      .build();
+    final int COUNT = 100;
+    for (int i = 0; i < COUNT; i++) {
+      c.get(i);
+    }
+    await("wait for expiry", new Condition() {
+      @Override
+      public boolean check() throws Exception {
+        return getInfo().getExpiredCount() >= COUNT;
+      }
+    });
+    if (keepData) {
+      assertEquals(COUNT, getInfo().getSize());
+    }
+  }
+
+  /**
    * Switch keep data off.
    * Should this refuse operation right away since suppressException and keepDataAfterExpired
    * makes no sense in combination? No, since load requests should suppress exceptions, too.
