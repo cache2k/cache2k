@@ -63,7 +63,7 @@ public interface Progress<K, V, R> {
 
   /**
    * Same as {@link #isPresent()} but also true if the entry is refreshing
-   * or in refreshed and refresh probation. We need to take into account
+   * or refreshed and in refresh probation. We need to take into account
    * refreshed entries for deciding whether we need to mutate for removal
    * or not.
    */

@@ -386,13 +386,14 @@ public class CacheLoaderTest extends TestingBase {
     final Cache<Integer,Integer> c = cacheWithLoader();
     CompletionWaiter w = new CompletionWaiter();
     c.put(1, 1);
-    c.prefetchAll(toIterable(1, 2, 3), w);
+    c.put(2, 2);
+    c.prefetchAll(toIterable(1, 2, 3, 4), w);
     assertTrue(isLoadStarted(c));
     w.awaitCompletion();
     assertTrue(c.containsKey(3));
-    assertEquals(
-      "expect 2 started loads, since 1 is in the cache (flaky?)",
-      2, latestInfo(c).getAsyncLoadsStarted());
+    assertThat("expect 2 started loads, since 1 is in the cache",
+      latestInfo(c).getAsyncLoadsStarted(),
+      allOf(greaterThanOrEqualTo(2L), lessThanOrEqualTo(3L)));
   }
 
   @Test

@@ -21,7 +21,6 @@ package org.cache2k.test.core.expiry;
  */
 
 import org.cache2k.Cache2kBuilder;
-import org.cache2k.Cache2kBuilder;
 import org.cache2k.integration.AsyncCacheLoader;
 import org.cache2k.test.core.BasicCacheTest;
 import org.cache2k.test.util.TestingBase;
@@ -361,7 +360,6 @@ public class SlowExpiryTest extends TestingBase {
     if (keepData) {
       assertEquals(COUNT, getInfo().getSize());
     }
-    statistics().dump();
   }
 
   /**
@@ -644,7 +642,7 @@ public class SlowExpiryTest extends TestingBase {
       .loader(_LOADER)
       .build();
     final int v = c.get(KEY);
-    assertTrue(_EXPIRY_TIME.get() > 0);
+    assertTrue("expiry policy called", _EXPIRY_TIME.get() > 0);
     if (v == 0) {
       await("Get returns fresh", new Condition() {
         @Override
@@ -655,7 +653,7 @@ public class SlowExpiryTest extends TestingBase {
           assertNotNull(v);
           assertTrue("Only see 0 before expiry time", !(v == 0) || t0 < _EXPIRY_TIME.get());
           assertTrue("Only see 1 after expiry time", !(v == 1) || t1 >= _EXPIRY_TIME.get());
-          assertTrue(v <= 3);
+          assertThat("maximum loads minus 1", v, lessThanOrEqualTo( 3));
           return v > 0;
         }
       });
@@ -663,10 +661,18 @@ public class SlowExpiryTest extends TestingBase {
       long t1 = millis();
       assertTrue("Only see 1 after expiry time", t1 >= _EXPIRY_TIME.get());
     }
-    int _LOADS_TRIGGERED_BY_GET = 2;
-    int _ADDITIONAL_LOADS_BECAUSE_OF_REFRESH = 2;
-    assertTrue(getInfo().getLoadCount() >= _LOADS_TRIGGERED_BY_GET);
-    assertTrue(getInfo().getLoadCount() <= _LOADS_TRIGGERED_BY_GET + _ADDITIONAL_LOADS_BECAUSE_OF_REFRESH);
+    final long _LOADS_TRIGGERED_BY_GET = 2;
+    long _ADDITIONAL_LOADS_BECAUSE_OF_REFRESH = 2;
+    await("minimum loads", new Condition() {
+      @Override
+      public boolean check() throws Exception {
+        return getInfo().getLoadCount() > _LOADS_TRIGGERED_BY_GET;
+      }
+    });
+    assertThat("minimum loads triggered", getInfo().getLoadCount(),
+      greaterThanOrEqualTo(_LOADS_TRIGGERED_BY_GET));
+    assertThat("maximum loads triggered", getInfo().getLoadCount(),
+      lessThanOrEqualTo(_LOADS_TRIGGERED_BY_GET + _ADDITIONAL_LOADS_BECAUSE_OF_REFRESH));
     await("Timer triggered", new Condition() {
       @Override
       public boolean check() throws Exception {
