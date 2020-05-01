@@ -1101,7 +1101,8 @@ public abstract class EntryAction<K, V, R> extends Entry.PiggyBack implements
         heapCache.removeEntry(heapEntry);
       } else {
         heapEntry.setNextRefreshTime(timing().stopStartTimer(expiry, heapEntry));
-        if (!expiredImmediately && heapEntry.isExpiredState()) {
+        boolean entryExpired = heapEntry.isExpiredState();
+        if (!expiredImmediately && entryExpired) {
           justExpired = true;
         }
       }

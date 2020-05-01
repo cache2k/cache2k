@@ -971,12 +971,17 @@ public class ExpiryTest extends TestingBase {
 
   @Test
   public void manualExpire_aboutNow() {
-    Cache<Integer, Integer> c = builder(Integer.class, Integer.class)
+    Cache<Integer, Integer> c = cache = builder(Integer.class, Integer.class)
       .expireAfterWrite(LONG_DELTA, TimeUnit.MILLISECONDS)
       .build();
     c.put(1,2);
+    assertTrue(c.containsKey(1));
     c.expireAt(1, millis());
     assertFalse(c.containsKey(1));
+    statistics()
+      .putCount.expect(1)
+      .expiredCount.expect(1)
+      .expectAllZero();
   }
 
   abstract class ManualExpireFixture {

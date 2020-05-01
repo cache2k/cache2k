@@ -534,6 +534,7 @@ public class BasicCacheOperationsWithoutCustomizationsTest {
     statistics()
       .getCount.expect(pars.keepDataAfterExpired && pars.withWiredCache ? 2 : 1)
       .missCount.expect(1)
+      .expiredCount.expect(1)
       .expectAllZero();
   }
 
@@ -574,6 +575,7 @@ public class BasicCacheOperationsWithoutCustomizationsTest {
     statistics()
       .getCount.expect(1)
       .missCount.expect(1)
+      .expiredCount.expect(1)
       .expectAllZero();
   }
 
@@ -773,6 +775,7 @@ public class BasicCacheOperationsWithoutCustomizationsTest {
       .getCount.expect(1)
       .missCount.expect(1)
       .removeCount.expect(pars.keepDataAfterExpired && pars.withWiredCache ? 1: 0)
+      .expiredCount.expect(pars.keepDataAfterExpired && !pars.withWiredCache ? 1: 0)
       .expectAllZero();
   }
 

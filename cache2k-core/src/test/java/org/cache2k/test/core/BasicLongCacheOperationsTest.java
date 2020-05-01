@@ -275,6 +275,7 @@ public class BasicLongCacheOperationsTest {
     statistics()
       .getCount.expect(1)
       .missCount.expect(1)
+      .expiredCount.expect(1)
       .expectAllZero();
   }
 

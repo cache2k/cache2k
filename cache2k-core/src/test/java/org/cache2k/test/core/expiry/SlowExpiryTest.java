@@ -332,16 +332,23 @@ public class SlowExpiryTest extends TestingBase {
    * the expiry happens during the calculation
    */
   @Test
-  public void testShortExpiryTime() throws Exception {
+  public void testShortExpiryTimeDelayLoad() throws Exception {
     boolean keepData = true;
     final Cache<Integer, Integer> c = builder(Integer.class, Integer.class)
       .expireAfterWrite(1, TimeUnit.MILLISECONDS)
       .retryInterval(TestingParameters.MINIMAL_TICK_MILLIS, TimeUnit.MILLISECONDS)
       .resilienceDuration(Long.MAX_VALUE, TimeUnit.MILLISECONDS)
       .keepDataAfterExpired(keepData)
-      .loader(new IdentIntSource())
+      .loader(new CacheLoader<Integer, Integer>() {
+        @Override
+        public Integer load(final Integer key) throws Exception {
+          sleep(2);
+          return key;
+        }
+      })
       .build();
-    final int COUNT = 100;
+    final int COUNT = 1;
+    c.get(0);
     for (int i = 0; i < COUNT; i++) {
       c.get(i);
     }
@@ -354,6 +361,7 @@ public class SlowExpiryTest extends TestingBase {
     if (keepData) {
       assertEquals(COUNT, getInfo().getSize());
     }
+    statistics().dump();
   }
 
   /**
