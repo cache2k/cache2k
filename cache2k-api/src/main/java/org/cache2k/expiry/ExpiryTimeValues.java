@@ -50,12 +50,12 @@ public interface ExpiryTimeValues {
   /**
    * Identical to {@link #NO_CACHE}. More meaningful when used together with
    * {@link org.cache2k.Cache#expireAt}. The value expires immediately. An immediate
-   * load is triggered if refreshAhead is enabled.
+   * load is triggered if {@link org.cache2k.Cache2kBuilder#refreshAhead} is enabled.
    */
   long NOW = 0;
 
   /**
-   * An immediate load is triggered if refreshAhead is enabled. If the refresh is not
+   * An immediate load is triggered if {@link org.cache2k.Cache2kBuilder#refreshAhead} is enabled. If the refresh is not
    * possible, for example because of no loader threads are available the value will expire.
    *
    * <p>After the load operation is completed, the entry is in a special area and not accessible
