@@ -99,7 +99,7 @@ class CacheBaseInfo implements InternalCacheInfo {
       extraStatistics = extraStatistics.substring(2);
     }
     size = heapCache.getLocalSize();
-    missCnt = metrics.getReadThroughCount() + metrics.getReloadCount() +
+    missCnt = metrics.getReadThroughCount() + metrics.getExplicitLoadCount() +
       metrics.getPeekHitNotFreshCount() + metrics.getPeekMissCount();
     hitCnt = em.getHitCount();
     correctedPutCnt = metrics.getPutNewEntryCount() + metrics.getPutHitCount();
@@ -110,7 +110,7 @@ class CacheBaseInfo implements InternalCacheInfo {
       loaderThreadsLimit = ex.getCorePoolSize();
       loaderThreadsMaxActive = ex.getLargestPoolSize();
     }
-    totalLoadCnt = metrics.getReadThroughCount() + metrics.getReloadCount() +
+    totalLoadCnt = metrics.getReadThroughCount() + metrics.getExplicitLoadCount() +
       metrics.getRefreshCount();
   }
 
@@ -129,8 +129,8 @@ class CacheBaseInfo implements InternalCacheInfo {
   public String getImplementation() { return cache.getClass().getSimpleName(); }
 
   @Override
-  public long getReloadCount() {
-    return metrics.getReloadCount();
+  public long getExplicitLoadCount() {
+    return metrics.getExplicitLoadCount();
   }
 
   @Override
@@ -313,7 +313,7 @@ class CacheBaseInfo implements InternalCacheInfo {
       .append("miss=").append(getMissCount()).append(", ")
       .append("put=").append(getPutCount()).append(", ")
       .append("load=").append(getLoadCount()).append(", ")
-      .append("reload=").append(getReloadCount()).append(", ")
+      .append("reload=").append(getExplicitLoadCount()).append(", ")
       .append("heapHit=").append(getHeapHitCount()).append(", ")
       .append("refresh=").append(getRefreshCount()).append(", ")
       .append("refreshFailed=").append(getRefreshFailedCount()).append(", ")

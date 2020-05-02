@@ -102,9 +102,9 @@ public interface InternalCacheInfo {
   /**
    * Entry was loaded again, e.g. when expired, triggered by a get() or reload().
    *
-   * @see CommonMetrics#getReloadCount()
+   * @see CommonMetrics#getExplicitLoadCount()
    */
-  long getReloadCount();
+  long getExplicitLoadCount();
 
   /**
    * Entry was loaded again, triggered by timer. The count includes all triggered and tried

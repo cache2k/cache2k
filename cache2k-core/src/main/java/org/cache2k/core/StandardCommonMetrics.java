@@ -114,7 +114,7 @@ public class StandardCommonMetrics implements CommonMetrics.Updater {
     AtomicLongFieldUpdater.newUpdater(StandardCommonMetrics.class, "reload");
   private volatile long reload;
   @Override
-  public long getReloadCount() {
+  public long getExplicitLoadCount() {
     return reloadUpdater.get(this);
   }
   @Override

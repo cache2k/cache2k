@@ -66,11 +66,11 @@ public interface CommonMetrics {
   long getReadThroughCount();
 
   /**
-   * Entry was explicitly loaded
+   * Entry was explicitly loaded, that is every load that is not read through or refresh.
    *
-   * @see InternalCacheInfo#getReloadCount()
+   * @see InternalCacheInfo#getExplicitLoadCount()
    */
-  long getReloadCount();
+  long getExplicitLoadCount();
 
   /**
    * Entry was loaded again, triggered by timer
@@ -109,7 +109,9 @@ public interface CommonMetrics {
   long getExpiredKeptCount();
 
   /**
-   * Peek operation (or get() if no loader is present), has no hit.
+   * Incremented if data is requested from the cache but no entry is present
+   * (e.g. via peek or get). If a load is started this is not incremented,
+   * since the actual miss is recorded via the load/readThrough counter.
    */
   long getPeekMissCount();
 
@@ -284,7 +286,7 @@ public interface CommonMetrics {
     }
 
     @Override
-    public long getReloadCount() {
+    public long getExplicitLoadCount() {
       return 0;
     }
 
