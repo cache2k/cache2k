@@ -30,6 +30,7 @@ import org.cache2k.integration.AdvancedCacheLoader;
 import org.cache2k.event.CacheEntryCreatedListener;
 import org.cache2k.event.CacheEntryRemovedListener;
 import org.cache2k.event.CacheEntryUpdatedListener;
+import org.cache2k.integration.CacheLoaderException;
 import org.cache2k.integration.CacheWriter;
 import org.cache2k.integration.CacheWriterException;
 import org.cache2k.CustomizationException;
@@ -121,17 +122,28 @@ public abstract class EntryAction<K, V, R> extends Entry.PiggyBack implements
   boolean countMiss = false;
   boolean doNotCountAccess = false;
 
+  /**
+   * Load the value and restart the processing. Used if a load is triggered
+   * within the EntryProcessor.
+   */
   boolean loadAndRestart = false;
 
   /**
    * Loader was called or an refreshed entry was revived
    */
-  boolean loaderCalled = false;
+  boolean valueLoadedOrRevived = false;
 
   /**
-   * Loader was called
+   * The effective value was loaded. This may be false although the loader
+   * was called, if the loaded value is rejected in the entry processor.
    */
-  boolean loaderReallyCalled = false;
+  boolean valueDefinitelyLoaded = false;
+
+  /**
+   * Loader was called by this action, tracked for statistics updates.
+   * The entry processor may override a loaded value, resetting valueWasLoaded, etc.
+   */
+  boolean loaderWasCalled = false;
 
   /** Stats for load should be counted as refresh */
   boolean refresh = false;
@@ -508,7 +520,7 @@ public abstract class EntryAction<K, V, R> extends Entry.PiggyBack implements
     heapEntry.nextProcessingStep(LOAD);
     checkLocked();
     Entry<K, V> e = heapEntry;
-    loaderCalled = true;
+    valueLoadedOrRevived = true;
     long t0 = needsLoadTimes() ? lastRefreshTime = loadStartedTime = getMutationStartTime() : 0;
     if (e.getNextRefreshTime() == Entry.EXPIRED_REFRESHED) {
       long nrt = e.getRefreshProbationNextRefreshTime();
@@ -517,7 +529,8 @@ public abstract class EntryAction<K, V, R> extends Entry.PiggyBack implements
         return;
       }
     }
-    loaderReallyCalled = true;
+    valueDefinitelyLoaded = true;
+    loaderWasCalled = true;
     AsyncCacheLoader<K, V> _asyncLoader;
     if ((_asyncLoader = asyncLoader()) != null) {
       heapEntry.nextProcessingStep(LOAD_ASYNC);
@@ -770,14 +783,14 @@ public abstract class EntryAction<K, V, R> extends Entry.PiggyBack implements
           metrics().suppressedException();
           heapEntry.setSuppressedLoadExceptionInformation(ew);
         } else {
-          if (loaderCalled) {
+          if (valueDefinitelyLoaded) {
             metrics().loadException();
           }
           expiry = timing().cacheExceptionUntil(heapEntry, ew);
         }
         setUntil(ew);
       } catch (Throwable ex) {
-        if (loaderCalled) {
+        if (valueDefinitelyLoaded) {
           resiliencePolicyException(new ResiliencePolicyException(ex));
           return;
         }
@@ -791,8 +804,8 @@ public abstract class EntryAction<K, V, R> extends Entry.PiggyBack implements
           lastRefreshTime);
         if (newValueOrException == null && heapCache.isRejectNullValues() && expiry != ExpiryTimeValues.NO_CACHE) {
           RuntimeException _ouch = heapCache.returnNullValueDetectedException();
-          if (loaderCalled) {
-            decideForLoaderExceptionAfterExpiryCalculation(new ResiliencePolicyException(_ouch));
+          if (valueDefinitelyLoaded) {
+            decideForLoaderExceptionAfterExpiryCalculation(new CacheLoaderException(_ouch));
             return;
           } else {
             mutationAbort(_ouch);
@@ -801,7 +814,7 @@ public abstract class EntryAction<K, V, R> extends Entry.PiggyBack implements
         }
         heapEntry.resetSuppressedLoadExceptionInformation();
       } catch (Throwable ex) {
-        if (loaderCalled) {
+        if (valueDefinitelyLoaded) {
           decideForLoaderExceptionAfterExpiryCalculation(new ExpiryPolicyException(ex));
           return;
         }
@@ -852,7 +865,7 @@ public abstract class EntryAction<K, V, R> extends Entry.PiggyBack implements
 
   public void expiryCalculated() {
     heapEntry.nextProcessingStep(EXPIRY_COMPLETE);
-    if (loaderCalled) {
+    if (valueLoadedOrRevived) {
       if (loadAndRestart) {
         loadAndExpiryCalculatedExamineAgain();
         return;
@@ -872,7 +885,7 @@ public abstract class EntryAction<K, V, R> extends Entry.PiggyBack implements
   }
 
   public void loadAndExpiryCalculatedExamineAgain() {
-    loaderCalled = loadAndRestart = false;
+    valueDefinitelyLoaded = valueLoadedOrRevived = loadAndRestart = false;
     successfulLoad = true;
     heapOrLoadedEntry = new LoadedEntry<K,V>() {
       @Override
@@ -1087,7 +1100,7 @@ public abstract class EntryAction<K, V, R> extends Entry.PiggyBack implements
    */
   public void mutationReleaseLockAndStartTimer() {
     checkLocked();
-    if (loaderCalled) {
+    if (valueLoadedOrRevived) {
       if (!remove ||
         !(heapEntry.getValueOrException() == null && heapCache.isRejectNullValues())) {
         operation.loaded(this, heapEntry);
@@ -1134,7 +1147,7 @@ public abstract class EntryAction<K, V, R> extends Entry.PiggyBack implements
     if (expiredImmediately && !remove) {
       metrics().expiredKept();
     }
-    if (loaderReallyCalled) {
+    if (loaderWasCalled) {
       long _delta = loadCompletedTime - loadStartedTime;
       if (refresh) {
         metrics().refresh(_delta);

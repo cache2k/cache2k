@@ -20,6 +20,7 @@ package org.cache2k.test.core;
  * #L%
  */
 
+import org.cache2k.expiry.ExpiryPolicy;
 import org.cache2k.integration.AsyncCacheLoader;
 import org.cache2k.integration.CacheLoaderException;
 import org.cache2k.integration.FunctionalCacheLoader;
@@ -214,6 +215,48 @@ public class CacheLoaderTest extends TestingBase {
     });
     assertNull(c.get(5));
     assertTrue(c.containsKey(5));
+  }
+
+  @Test
+  public void testLoadNull_Reject() {
+    Cache<Integer,Integer> c = target.cache(new CacheRule.Specialization<Integer, Integer>() {
+      @Override
+      public void extend(final Cache2kBuilder<Integer, Integer> b) {
+        b .loader(new CacheLoader<Integer, Integer>() {
+          @Override
+          public Integer load(final Integer key) throws Exception {
+            return null;
+          }
+        });
+      }
+    });
+    try {
+      c.get(5);
+      fail();
+    } catch (CacheLoaderException ex) { }
+  }
+
+  @Test
+  public void testLoadNull_NoCache() {
+    Cache<Integer,Integer> c = target.cache(new CacheRule.Specialization<Integer, Integer>() {
+      @Override
+      public void extend(final Cache2kBuilder<Integer, Integer> b) {
+        b .loader(new CacheLoader<Integer, Integer>() {
+          @Override
+          public Integer load(final Integer key) throws Exception {
+            return null;
+          }
+        })
+        .expiryPolicy(new ExpiryPolicy<Integer, Integer>() {
+          @Override
+          public long calculateExpiryTime(final Integer key, final Integer value, final long loadTime, final CacheEntry<Integer, Integer> oldEntry) {
+            return NO_CACHE;
+          }
+        });
+      }
+    });
+    assertNull(c.get(5));
+    assertFalse(c.containsKey(5));
   }
 
   @Test
