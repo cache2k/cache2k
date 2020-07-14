@@ -28,6 +28,7 @@ import org.cache2k.integration.AdvancedCacheLoader;
 import org.cache2k.CacheEntry;
 import org.cache2k.event.CacheEntryCreatedListener;
 import org.cache2k.integration.AsyncCacheLoader;
+import org.cache2k.integration.ExceptionPropagator;
 import org.cache2k.processor.EntryProcessor;
 import org.cache2k.event.CacheEntryRemovedListener;
 import org.cache2k.event.CacheEntryUpdatedListener;
@@ -838,6 +839,11 @@ public class WiredCache<K, V> extends BaseCache<K, V>
     @Override
     public Executor getExecutor() {
       return executor();
+    }
+
+    @Override
+    public ExceptionPropagator getExceptionPropagator() {
+      return heapCache.exceptionPropagator;
     }
 
   }

@@ -23,6 +23,7 @@ package org.cache2k.core;
 import org.cache2k.Cache;
 import org.cache2k.Cache2kBuilder;
 import org.cache2k.integration.ExceptionInformation;
+import org.cache2k.integration.ExceptionPropagator;
 import org.cache2k.integration.ResiliencePolicy;
 import org.cache2k.testing.category.FastTests;
 import org.junit.Test;
@@ -309,6 +310,9 @@ public class DefaultResiliencePolicyUnitTest {
     long loadTime;
     long sinceTime;
     long until;
+
+    @Override
+    public ExceptionPropagator getExceptionPropagator() { return null; }
 
     public void incrementRetryCount() {
       retryCount++;

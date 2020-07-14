@@ -601,12 +601,11 @@ public class HeapCache<K, V> extends BaseCache<K, V> {
   public CacheEntry<K, V> returnCacheEntry(final K key, final V _valueOrException) {
     if (_valueOrException instanceof ExceptionWrapper) {
       final ExceptionWrapper _warpper = (ExceptionWrapper) _valueOrException;
-      final ExceptionPropagator<K> _exceptionPropagator = exceptionPropagator;
       return new BaseCacheEntry<K, V>() {
         @Override public K getKey() {
           return key;
         }
-        @Override public V getValue() { throw _exceptionPropagator.propagateException(key, _warpper); }
+        @Override public V getValue() { return (V)_warpper.propagateException(); }
         @Override public Throwable getException() { return _warpper.getException(); }
       };
     }
@@ -1268,8 +1267,7 @@ public class HeapCache<K, V> extends BaseCache<K, V> {
 
   protected V returnValue(V v) {
     if (v instanceof ExceptionWrapper) {
-      ExceptionWrapper<K> w = (ExceptionWrapper<K>) v;
-      throw exceptionPropagator.propagateException(w.getKey(), w);
+      ((ExceptionWrapper<K>) v).propagateException();
     }
     return v;
   }
@@ -1277,8 +1275,7 @@ public class HeapCache<K, V> extends BaseCache<K, V> {
   protected V returnValue(Entry<K, V> e) {
     V v = e.getValueOrException();
     if (v instanceof ExceptionWrapper) {
-      ExceptionWrapper<K> w = (ExceptionWrapper<K>) v;
-      throw exceptionPropagator.propagateException(w.getKey(), w);
+      ((ExceptionWrapper<K>) v).propagateException();
     }
     return v;
   }
@@ -1426,7 +1423,8 @@ public class HeapCache<K, V> extends BaseCache<K, V> {
   }
 
   private void loadGotException(final Entry<K, V> e, final long t0, final long t, final Throwable _wrappedException) {
-    ExceptionWrapper<K> _value = new ExceptionWrapper(extractKeyObj(e), _wrappedException, t0, e);
+    ExceptionWrapper<K> _value =
+      new ExceptionWrapper(extractKeyObj(e), _wrappedException, t0, e, exceptionPropagator);
     long _nextRefreshTime = 0;
     boolean _suppressException = false;
     try {
@@ -1462,7 +1460,8 @@ public class HeapCache<K, V> extends BaseCache<K, V> {
    * one from the resilience policy. We propagate the more severe one from the resilience policy.
    */
   private void resiliencePolicyException(final Entry<K, V> e, final long t0, final long t, Throwable _exception) {
-    ExceptionWrapper<K> _value = new ExceptionWrapper(extractKeyObj(e), _exception, t0, e);
+    ExceptionWrapper<K> _value =
+      new ExceptionWrapper(extractKeyObj(e), _exception, t0, e, exceptionPropagator);
     insert(e, (V) _value, t0, t, t0, INSERT_STAT_LOAD, 0);
   }
 
@@ -1763,6 +1762,11 @@ public class HeapCache<K, V> extends BaseCache<K, V> {
 
     @Override
     protected Executor executor() { return executor; }
+
+    @Override
+    public ExceptionPropagator getExceptionPropagator() {
+      return exceptionPropagator;
+    }
 
   }
 

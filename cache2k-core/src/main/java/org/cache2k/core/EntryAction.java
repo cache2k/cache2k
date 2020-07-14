@@ -679,7 +679,8 @@ public abstract class EntryAction<K, V, R> extends Entry.PiggyBack implements
   }
 
   private void onLoadFailureIntern(Throwable t) {
-    newValueOrException = (V) new ExceptionWrapper(key, t, loadStartedTime, heapEntry);
+    newValueOrException =
+      (V) new ExceptionWrapper(key, t, loadStartedTime, heapEntry, getExceptionPropagator());
     loadCompleted();
   }
 
@@ -701,11 +702,6 @@ public abstract class EntryAction<K, V, R> extends Entry.PiggyBack implements
   @Override
   public void entryResult(final ExaminationEntry e) {
     result = (R) heapCache.returnEntry(e);
-  }
-
-  @Override
-  public RuntimeException propagateException(final K key, final ExceptionInformation inf) {
-    return heapCache.exceptionPropagator.propagateException(key, inf);
   }
 
   @Override
@@ -833,7 +829,10 @@ public abstract class EntryAction<K, V, R> extends Entry.PiggyBack implements
    */
   @SuppressWarnings("unchecked")
   private void decideForLoaderExceptionAfterExpiryCalculation(RuntimeException _ouch) {
-    newValueOrException = (V) new ExceptionWrapper<K>(key, _ouch, loadStartedTime, heapEntry);
+    newValueOrException = (V)
+      new ExceptionWrapper<K>(
+        key, _ouch, loadStartedTime,
+        heapEntry, getExceptionPropagator());
     expiry = 0;
     mutationCalculateExpiry();
   }
@@ -846,7 +845,7 @@ public abstract class EntryAction<K, V, R> extends Entry.PiggyBack implements
   @SuppressWarnings("unchecked")
   private void resiliencePolicyException(RuntimeException _ouch) {
     newValueOrException = (V)
-      new ExceptionWrapper<K>(key, _ouch, loadStartedTime, heapEntry);
+      new ExceptionWrapper<K>(key, _ouch, loadStartedTime, heapEntry, getExceptionPropagator());
     expiry = 0;
     expiryCalculated();
   }

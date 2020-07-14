@@ -21,6 +21,8 @@ package org.cache2k.core.operation;
  */
 
 import org.cache2k.integration.ExceptionInformation;
+import org.cache2k.integration.ExceptionPropagator;
+import sun.reflect.annotation.ExceptionProxy;
 
 /**
  * Interface for cache operation semantics to control the progress of the processing.
@@ -97,9 +99,9 @@ public interface Progress<K, V, R> {
   void entryResult(ExaminationEntry e);
 
   /**
-   * Needed for the mutable entry getValue() to throw an exception.
+   * Exception propagator in effect.
    */
-  RuntimeException propagateException(K key, ExceptionInformation inf);
+  ExceptionPropagator getExceptionPropagator();
 
   /**
    * Request that the entry value gets loaded from loader. Last command of semantic method.

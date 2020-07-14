@@ -93,7 +93,9 @@ class MutableEntryOnProgress<K, V> implements MutableCacheEntry<K, V> {
     mutate = true;
     exists = true;
     remove = false;
-    value = (V) new ExceptionWrapper(progress.getMutationStartTime(), ex);
+    value = (V) new ExceptionWrapper(
+      progress.getMutationStartTime(), ex,
+      progress.getExceptionPropagator());
     return this;
   }
 
@@ -152,9 +154,10 @@ class MutableEntryOnProgress<K, V> implements MutableCacheEntry<K, V> {
     return value;
   }
 
+  @SuppressWarnings("unchecked")
   private void checkAndThrowException(final V value) {
     if (value instanceof ExceptionWrapper) {
-      throw progress.propagateException(key, (ExceptionWrapper) value);
+      ((ExceptionWrapper<K>) value).propagateException();
     }
   }
 

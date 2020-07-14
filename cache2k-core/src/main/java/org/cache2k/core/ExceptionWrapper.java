@@ -21,13 +21,14 @@ package org.cache2k.core;
  */
 
  import org.cache2k.integration.ExceptionInformation;
+ import org.cache2k.integration.ExceptionPropagator;
 
 /**
  * We use instances of the exception wrapper for the value field in the entry.
  * This way we can store exceptions without needing additional memory, if no exceptions
  * happen.
  *
- * @author Jens Wilke; created: 2013-07-12
+ * @author Jens Wilke
  */
 public class ExceptionWrapper<K> implements ExceptionInformation {
 
@@ -37,17 +38,12 @@ public class ExceptionWrapper<K> implements ExceptionInformation {
   private int count;
   private long since;
   private K key;
+  private ExceptionPropagator<K> propagator;
 
-  /**
-   * Constructs a wrapper with time set to 0. Used for testing purposes.
-   */
-  public ExceptionWrapper(Throwable ex) {
-    this(0, ex);
-  }
-
-  public ExceptionWrapper(long now, Throwable ex) {
+  public ExceptionWrapper(long now, Throwable ex, ExceptionPropagator<K> p) {
     loadTime = now;
     exception = ex;
+    propagator = p;
   }
 
   /**
@@ -55,7 +51,8 @@ public class ExceptionWrapper<K> implements ExceptionInformation {
    * no exception, an existing cached exception or a suppressed exception.
    */
   public ExceptionWrapper(final K _key, final Throwable _exception,
-                          final long _loadTime, final Entry e) {
+                          final long _loadTime, final Entry e,
+                          ExceptionPropagator<K> p) {
     ExceptionInformation _recentExceptionInfo;
     Object _oldValue = e.getValueOrException();
     if (_oldValue instanceof ExceptionWrapper) {
@@ -63,16 +60,19 @@ public class ExceptionWrapper<K> implements ExceptionInformation {
     } else {
       _recentExceptionInfo = e.getSuppressedLoadExceptionInformation();
     }
-    init(_key, _exception, _loadTime, _recentExceptionInfo);
+    init(_key, _exception, _loadTime, _recentExceptionInfo, p);
   }
 
   public ExceptionWrapper(final K _key, final Throwable _exception,
-                          final long _loadTime, final ExceptionInformation w) {
-    init(_key, _exception, _loadTime, w);
+                          final long _loadTime, final ExceptionInformation w,
+                          ExceptionPropagator<K> p) {
+    init(_key, _exception, _loadTime, w, p);
   }
 
   private void init(final K _key, final Throwable _exception,
-                    final long _loadTime, final ExceptionInformation w) {
+                    final long _loadTime, final ExceptionInformation w,
+                    ExceptionPropagator<K> p) {
+    propagator = p;
     exception = _exception;
     key = _key;
     loadTime = _loadTime;
@@ -91,6 +91,9 @@ public class ExceptionWrapper<K> implements ExceptionInformation {
   public K getKey() {
     return key;
   }
+
+  @Override
+  public ExceptionPropagator getExceptionPropagator() { return propagator; }
 
   @Override
   public Throwable getException() {
@@ -115,6 +118,18 @@ public class ExceptionWrapper<K> implements ExceptionInformation {
   @Override
   public long getSinceTime() {
     return since;
+  }
+
+  /**
+   * Propagate the exception based by the information here. Used when it is tried to
+   * access the value.
+   */
+  @SuppressWarnings("unchecked")
+  public Object propagateException() {
+    if (1 == 1) {
+      throw getExceptionPropagator().propagateException(key, this);
+    }
+    return null;
   }
 
   public String toString() {

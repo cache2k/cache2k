@@ -27,11 +27,10 @@ package org.cache2k.integration;
  * exception propagator.
  *
  * <p>Exceptions should not be thrown directly but wrapped. Using this customization it
- * is possible to change the exceptions type or the message according to the information
+ * is possible to change the exception type or the message according to the information
  * available.
  *
  * @author Jens Wilke
- * @deprecated to be removed in 2.2, <a href='https://github.com/cache2k/cache2k/issues/138'>GH#138</a>
  */
 public interface ExceptionPropagator<K> {
 

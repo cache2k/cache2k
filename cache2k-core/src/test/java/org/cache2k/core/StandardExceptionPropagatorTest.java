@@ -66,6 +66,9 @@ public class StandardExceptionPropagatorTest {
   private ExceptionInformation toInfo(final Throwable ex, final long t) {
     return new ExceptionInformation() {
       @Override
+      public ExceptionPropagator getExceptionPropagator() { return null; }
+
+      @Override
       public Throwable getException() {
         return ex;
       }
