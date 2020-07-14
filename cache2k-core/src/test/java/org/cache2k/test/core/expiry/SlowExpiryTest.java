@@ -666,7 +666,7 @@ public class SlowExpiryTest extends TestingBase {
     await("minimum loads", new Condition() {
       @Override
       public boolean check() throws Exception {
-        return getInfo().getLoadCount() > _LOADS_TRIGGERED_BY_GET;
+        return getInfo().getLoadCount() >= _LOADS_TRIGGERED_BY_GET;
       }
     });
     assertThat("minimum loads triggered", getInfo().getLoadCount(),
