@@ -42,7 +42,6 @@ import org.cache2k.core.operation.Semantic;
 import org.cache2k.core.storageApi.StorageCallback;
 import org.cache2k.core.storageApi.StorageAdapter;
 import org.cache2k.core.storageApi.StorageEntry;
-import org.cache2k.integration.ExceptionInformation;
 import org.cache2k.integration.RefreshedTimeWrapper;
 
 import java.util.concurrent.Executor;
@@ -734,9 +733,7 @@ public abstract class EntryAction<K, V, R> extends Entry.PiggyBack implements
       lastRefreshTime = heapEntry.getRefreshTime();
     }
     expiry = expiryTime;
-    if (newValueOrException instanceof ExceptionWrapper) {
-      setUntil(ExceptionWrapper.class.cast(newValueOrException));
-    }
+    setUntilInExceptionWrapper();
     checkKeepOrRemove();
   }
 
@@ -752,9 +749,7 @@ public abstract class EntryAction<K, V, R> extends Entry.PiggyBack implements
         lastRefreshTime = getMutationStartTime();
       }
     }
-    if (newValueOrException instanceof ExceptionWrapper) {
-      setUntil(ExceptionWrapper.class.cast(newValueOrException));
-    }
+    setUntilInExceptionWrapper();
     if (expiryTime != ExpiryTimeValues.NEUTRAL) {
       expiry = expiryTime;
       expiryCalculated();
@@ -784,7 +779,7 @@ public abstract class EntryAction<K, V, R> extends Entry.PiggyBack implements
           }
           expiry = timing().cacheExceptionUntil(heapEntry, ew);
         }
-        setUntil(ew);
+        setUntilInExceptionWrapper(); ew = null;
       } catch (Throwable ex) {
         if (valueDefinitelyLoaded) {
           resiliencePolicyException(new ResiliencePolicyException(ex));
@@ -850,11 +845,18 @@ public abstract class EntryAction<K, V, R> extends Entry.PiggyBack implements
     expiryCalculated();
   }
 
-  private void setUntil(final ExceptionWrapper _ew) {
-    if (expiry < 0) {
-      _ew.setUntil(-expiry);
-    } else if (expiry >= Entry.EXPIRY_TIME_MIN) {
-      _ew.setUntil(expiry);
+  /**
+   * In case current value is an exception, set until information, so this can
+   * be used by generated exceptions.
+   */
+  private void setUntilInExceptionWrapper() {
+    if (newValueOrException instanceof ExceptionWrapper) {
+      ExceptionWrapper ew = (ExceptionWrapper) newValueOrException;
+      if (expiry < 0) {
+        newValueOrException = (V) new ExceptionWrapper<K>(ew, -expiry);
+      } else if (expiry >= Entry.EXPIRY_TIME_MIN) {
+        newValueOrException = (V) new ExceptionWrapper<K>(ew, expiry);
+      }
     }
   }
 

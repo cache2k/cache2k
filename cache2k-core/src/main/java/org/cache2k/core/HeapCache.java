@@ -600,21 +600,13 @@ public class HeapCache<K, V> extends BaseCache<K, V> {
 
   public CacheEntry<K, V> returnCacheEntry(final K key, final V _valueOrException) {
     if (_valueOrException instanceof ExceptionWrapper) {
-      final ExceptionWrapper _warpper = (ExceptionWrapper) _valueOrException;
-      return new BaseCacheEntry<K, V>() {
-        @Override public K getKey() {
-          return key;
-        }
-        @Override public V getValue() { return (V)_warpper.propagateException(); }
-        @Override public Throwable getException() { return _warpper.getException(); }
-      };
+      return (ExceptionWrapper) _valueOrException;
     }
     return new BaseCacheEntry<K, V>() {
-      V _value = _valueOrException;
       @Override public K getKey() {
         return key;
       }
-      @Override public V getValue() { return _value; }
+      @Override public V getValue() { return _valueOrException; }
     };
   }
 
@@ -1440,6 +1432,7 @@ public class HeapCache<K, V> extends BaseCache<K, V> {
       resiliencePolicyException(e, t0, t, new ResiliencePolicyException(ex));
       return;
     }
+    _value = new ExceptionWrapper<K>(_value, Math.abs(_nextRefreshTime));
     synchronized (e) {
       insertUpdateStats(e, (V) _value, t0, t, INSERT_STAT_LOAD, _nextRefreshTime, _suppressException);
       if (_suppressException) {
@@ -1450,7 +1443,6 @@ public class HeapCache<K, V> extends BaseCache<K, V> {
         }
         e.setValueOrException((V) _value);
       }
-      _value.setUntil(Math.abs(_nextRefreshTime));
       finishLoadOrEviction(e, _nextRefreshTime);
     }
   }
