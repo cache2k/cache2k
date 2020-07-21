@@ -122,6 +122,12 @@ public class EventHandlingImpl<K,V> implements EventHandling<K, V>, CacheClosedL
     return l;
   }
 
+  /**
+   * Copy to a set first, because some listener instances may implement multiple interfaces
+   * and show up in the all listeners list more then once
+   *
+   * @param cache The cache that is closing. No cache operations on entries are allowed.
+   */
   @Override
   public void onCacheClosed(final org.cache2k.Cache cache) {
     Set<CacheEntryListener> ls = new HashSet<CacheEntryListener>();
