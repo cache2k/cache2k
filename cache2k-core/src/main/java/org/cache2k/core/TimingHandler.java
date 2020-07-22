@@ -118,9 +118,9 @@ public abstract class TimingHandler<K,V>  {
   /**
    * Cancels all pending timer events.
    */
-  public void shutdown() { }
+  public void cancelAll() { }
 
-  public void close() { shutdown(); }
+  public void close() { cancelAll(); }
 
   /**
    * Calculates the expiry time for a value that was just loaded or inserted into the cache.
@@ -321,7 +321,7 @@ public abstract class TimingHandler<K,V>  {
 
     @Override
     public synchronized  void reset() {
-      shutdown();
+      cancelAll();
       for (int i = 0; i <= timerMask; i++) {
         if (timer[i] != null) { continue; }
         timer[i] =  new SimpleTimer(clock, cache.getName(), true);
@@ -329,7 +329,7 @@ public abstract class TimingHandler<K,V>  {
     }
 
     @Override
-    public synchronized void shutdown() {
+    public synchronized void cancelAll() {
       SimpleTimer _timer;
       for (int i = 0; i <= timerMask; i++) {
         if ((_timer = timer[i]) == null) { continue; }
@@ -594,7 +594,7 @@ public abstract class TimingHandler<K,V>  {
 
     @Override
     public synchronized void close() {
-      super.shutdown();
+      super.cancelAll();
       cache.closeCustomization(expiryPolicy, "expiryPolicy");
     }
 

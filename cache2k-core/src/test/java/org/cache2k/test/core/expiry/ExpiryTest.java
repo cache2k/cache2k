@@ -45,12 +45,15 @@ import org.cache2k.test.util.TimeBox;
 import org.junit.experimental.categories.Category;
 import org.junit.Test;
 
+import java.io.Closeable;
+import java.io.IOException;
 import java.sql.Timestamp;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 
@@ -1390,6 +1393,28 @@ public class ExpiryTest extends TestingBase {
       return _key;
     }
 
+  }
+
+  private static class ClosingExpiryPolicy implements ExpiryPolicy, Closeable {
+
+    AtomicBoolean closeCalled = new AtomicBoolean(false);
+
+    @Override
+    public void close() throws IOException {
+      closeCalled.set(true);
+    }
+
+    @Override
+    public long calculateExpiryTime(final Object key, final Object value, final long loadTime, final CacheEntry oldEntry) {
+      return 0;
+    }
+  }
+
+  @Test
+  public void close_called() {
+    ClosingExpiryPolicy ep = new ClosingExpiryPolicy();
+    builder().expiryPolicy(ep).build().close();
+    assertTrue(ep.closeCalled.get());
   }
 
 }

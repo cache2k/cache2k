@@ -415,7 +415,7 @@ public class HeapCache<K, V> extends BaseCache<K, V> {
    */
   @Override
   public void cancelTimerJobs() {
-    timing.close();
+    timing.cancelAll();
   }
 
   @Override
@@ -454,7 +454,7 @@ public class HeapCache<K, V> extends BaseCache<K, V> {
       @Override
       public Void call() {
         eviction.close();
-        timing.shutdown();
+        timing.close();
         hash.close();
         closeCustomization(loader, "loader");
         for (CustomizationSupplier<CacheClosedListener> s : cacheClosedListeners) {
