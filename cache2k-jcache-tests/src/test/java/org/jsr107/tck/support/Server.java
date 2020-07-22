@@ -224,6 +224,9 @@ public class Server implements AutoCloseable {
     }
 
     public synchronized void clientConnectedDirectly() {
+        if (serverDirectUsage > 0) {
+            throw new IllegalStateException("called twice");
+        }
         serverDirectUsage++;
     }
 

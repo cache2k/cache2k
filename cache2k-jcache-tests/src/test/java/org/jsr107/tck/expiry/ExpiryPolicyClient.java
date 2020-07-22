@@ -30,7 +30,7 @@ import java.net.InetAddress;
  */
 public class ExpiryPolicyClient extends CacheClient implements ExpiryPolicy {
 
-  private transient ExpiryPolicy forwardPolicy = null;
+  private transient ExpiryPolicy forwardPolicy;
 
   /**
    * Constructs a {@link ExpiryPolicyClient}.
@@ -49,6 +49,7 @@ public class ExpiryPolicyClient extends CacheClient implements ExpiryPolicy {
       return;
     }
     forwardPolicy = ((ExpiryPolicyServer) directServer).getExpiryPolicy();
+    assert forwardPolicy != null;
   }
 
   /**

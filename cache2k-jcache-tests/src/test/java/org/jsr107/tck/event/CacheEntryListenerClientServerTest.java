@@ -15,6 +15,9 @@ import static org.hamcrest.CoreMatchers.is;
  * {@link org.jsr107.tck.event.CacheEntryListenerServer}
  * classes.
  *
+ * <p>Original TCK test code does not test anything, because an exception
+ * happens within the catch block. Disabled. (jw).
+ *
  * @author Joe Fialli
  */
 public class CacheEntryListenerClientServerTest {
@@ -23,8 +26,7 @@ public class CacheEntryListenerClientServerTest {
    * Ensure that values can be loaded from the {@link org.jsr107.tck.event.CacheEntryListenerClient} via
    * the {@link org.jsr107.tck.event.CacheEntryListenerServer}.
    */
-  @Test
-  public void shouldHandleCacheEntryEventFromServerWithClient() {
+  public void shouldHandleCacheEntryEventFromServerWithClient() throws Exception {
 
     CacheTestSupport.MyCacheEntryListener<String, String> listener = new CacheTestSupport.MyCacheEntryListener<>();
 
@@ -64,15 +66,12 @@ public class CacheEntryListenerClientServerTest {
       Assert.assertThat(listener.getUpdated(), is(1));
       Assert.assertThat(listener.getCreated(), is(1));
 
-    } catch (Exception e) {
-
     } finally {
       serverListener.close();
     }
   }
 
-  @Test
-  public void testMultipleTimes() {
+  public void testMultipleTimes() throws Exception {
     for (int i = 0; i < 10 ; i++ ) {
       shouldHandleCacheEntryEventFromServerWithClient();
     }

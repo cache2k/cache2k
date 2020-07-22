@@ -51,6 +51,10 @@ public class CacheClient implements Closeable, Serializable {
         this.address = address;
         this.port = port;
         this.client = null;
+        // check for server at creation time
+        // if only checked when used we get into trouble, since an
+        // event dispatch may even happen after a close and the port number is reused
+        checkDirectCallsPossible();
     }
 
     /**
@@ -75,8 +79,6 @@ public class CacheClient implements Closeable, Serializable {
     protected synchronized boolean isDirectCallable() {
         if (!checkedForDirectCallsPossible) {
             checkDirectCallsPossible();
-            useDirectCalls = directServer != null;
-            checkedForDirectCallsPossible = true;
         }
         return useDirectCalls;
     }
@@ -86,6 +88,8 @@ public class CacheClient implements Closeable, Serializable {
         if (directServer != null) {
             directServer.clientConnectedDirectly();
         }
+        useDirectCalls = directServer != null;
+        checkedForDirectCallsPossible = true;
     }
 
     /**
@@ -95,6 +99,7 @@ public class CacheClient implements Closeable, Serializable {
     public synchronized void close() {
         if (directServer != null) {
             directServer.closeWasCalledOnClient();
+            directServer = null;
         }
         if (client != null) {
             try {
@@ -104,5 +109,12 @@ public class CacheClient implements Closeable, Serializable {
                 client = null;
             }
         }
+    }
+
+    @Override
+    public String toString() {
+        return this.getClass().getSimpleName() + "{" +
+          "port=" + port +
+          '}';
     }
 }

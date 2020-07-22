@@ -71,6 +71,7 @@ import static org.junit.Assert.fail;
  */
 public class CacheListenerTest extends CacheTestSupport<Long, String> {
 
+  private CacheEntryListenerClient<Long, String> clientListener;
   /**
    * Rule used to exclude tests
    */
@@ -117,7 +118,7 @@ public class CacheListenerTest extends CacheTestSupport<Long, String> {
 
     //establish a CacheEntryListenerClient that a Cache can use for CacheEntryListening
     //(via the CacheEntryListenerServer)
-    CacheEntryListenerClient<Long, String> clientListener =
+    clientListener =
       new CacheEntryListenerClient<>(cacheEntryListenerServer.getInetAddress(), cacheEntryListenerServer.getPort());
     listenerConfiguration = new MutableCacheEntryListenerConfiguration<Long, String>(FactoryBuilder.factoryOf(clientListener), null, true, true);
     return configuration.addCacheEntryListenerConfiguration(listenerConfiguration);
@@ -234,8 +235,6 @@ public class CacheListenerTest extends CacheTestSupport<Long, String> {
 
     //setup
     MyBrokenCacheEntryListener<Long, String> brokenListener = new MyBrokenCacheEntryListener<Long, String>();
-    CacheEntryListenerClient<Long, String> clientListener =
-      new CacheEntryListenerClient<>(cacheEntryListenerServer.getInetAddress(), cacheEntryListenerServer.getPort());
     listenerConfiguration = new MutableCacheEntryListenerConfiguration<Long, String>(FactoryBuilder.factoryOf(clientListener), null, true, true);
     cache.registerCacheEntryListener(listenerConfiguration);
     cacheEntryListenerServer.addCacheEventListener(brokenListener);
@@ -375,8 +374,10 @@ public void testFilteredListener() throws InterruptedException {
   cacheEntryListenerServer.removeCacheEventListener(this.listener);
   cache.deregisterCacheEntryListener(this.listenerConfiguration);
 
+  /*
   CacheEntryListenerClient<Long, String> clientListener =
     new CacheEntryListenerClient<>(cacheEntryListenerServer.getInetAddress(), cacheEntryListenerServer.getPort());
+*/
 
   MyCacheEntryListener<Long, String> filteredListener = new MyCacheEntryListener<>();
   CacheEntryListenerConfiguration<Long, String> listenerConfiguration =
@@ -537,6 +538,9 @@ public void testFilteredListener() throws InterruptedException {
     //Deregister the listener registered at configuration time
     cache.deregisterCacheEntryListener(listenerConfiguration);
     assertEquals(0, getConfigurationCacheEntryListenerConfigurationSize(cache));
+
+    // close explicitly. will not closed by the case, since deregistered.
+    cacheEntryListenerServer.closeWasCalledOnClient();
   }
 
   /**

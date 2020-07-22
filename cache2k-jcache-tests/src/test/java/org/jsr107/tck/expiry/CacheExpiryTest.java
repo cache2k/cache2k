@@ -72,6 +72,9 @@ import static org.junit.Assert.assertTrue;
 /**
  * Unit Tests for expiring cache entries with {@link javax.cache.expiry.ExpiryPolicy}s.
  *
+ * <p>Change from original TCK implementation: Only initialize listener or expiry policy
+ * if needed.</p>
+ *
  * @author Brian Oliver
  * @author Joe Fialli
  */
@@ -86,23 +89,44 @@ public class CacheExpiryTest extends CacheTestSupport<Integer, Integer> {
   private ExpiryPolicyServer expiryPolicyServer;
   private ExpiryPolicyClient expiryPolicyClient;
 
-  @Before
-  public void setUp() throws IOException {
+  private CacheEntryListenerServer<Integer, Integer> cacheEntryListenerServer;
+  private CacheEntryListenerClient<Integer, Integer> cacheEntryListerClient;
+
+  private void setupExpiryPolicyClientServer(ExpiryPolicy policy) {
+    assert expiryPolicyServer == null;
     //establish and open a ExpiryPolicyServer to handle cache
     //cache loading requests from a ExpiryPolicyClient
     expiryPolicyServer = new ExpiryPolicyServer(10005);
-    expiryPolicyServer.open();
+    expiryPolicyServer.setExpiryPolicy(policy);
+    try {
+      expiryPolicyServer.open();
+    } catch (IOException ex) {
+      throw new RuntimeException(ex);
+    }
 
     //establish a ExpiryPolicyClient that a Cache can use for computing expiry policy
     //(via the ExpiryPolicyServer)
     expiryPolicyClient =
-        new ExpiryPolicyClient(expiryPolicyServer.getInetAddress(), expiryPolicyServer.getPort());
+      new ExpiryPolicyClient(expiryPolicyServer.getInetAddress(), expiryPolicyServer.getPort());
+  }
 
+  public void setupListenerClientServer() {
+    try {
     cacheEntryListenerServer = new CacheEntryListenerServer<Integer, Integer>(10011, Integer.class, Integer.class);
-    cacheEntryListenerServer.open();
+      cacheEntryListenerServer.open();
     cacheEntryListerClient =
       new CacheEntryListenerClient<>(cacheEntryListenerServer.getInetAddress(), cacheEntryListenerServer.getPort());
+    } catch (IOException ex) {
+      throw new RuntimeException(ex);
+    }
   }
+
+  /**
+   * Switch off standard cache creation
+   */
+  @Before
+  @Override
+  public void setUp() { }
 
   @Override
   protected MutableConfiguration<Integer, Integer> newMutableConfiguration() {
@@ -111,6 +135,9 @@ public class CacheExpiryTest extends CacheTestSupport<Integer, Integer> {
 
   @Override
   protected MutableConfiguration<Integer, Integer> extraSetup(MutableConfiguration<Integer, Integer> configuration) {
+    if (cacheEntryListenerServer == null) {
+      return configuration;
+    }
     listener = new CacheTestSupport.MyCacheEntryListener<Integer, Integer>();
 
     //establish a CacheEntryListenerClient that a Cache can use for CacheEntryListening
@@ -128,12 +155,14 @@ public class CacheExpiryTest extends CacheTestSupport<Integer, Integer> {
     for (String cacheName : getCacheManager().getCacheNames()) {
       getCacheManager().destroyCache(cacheName);
     }
-    expiryPolicyServer.close();
-    expiryPolicyServer = null;
-
-    //close the server
-    cacheEntryListenerServer.close();
-    cacheEntryListenerServer = null;
+    if (expiryPolicyServer != null) {
+      expiryPolicyServer.close();
+      expiryPolicyServer = null;
+    }
+    if (cacheEntryListenerServer != null) {
+      cacheEntryListenerServer.close();
+      cacheEntryListenerServer = null;
+    }
   }
 
   /**
@@ -150,7 +179,7 @@ public class CacheExpiryTest extends CacheTestSupport<Integer, Integer> {
     long _EXPIRY_MILLIS = 3;
     //cannot be zero or will not be added to the cache
     ExpiryPolicy policy = new CreatedExpiryPolicy(new Duration(TimeUnit.MILLISECONDS, _EXPIRY_MILLIS));
-    expiryPolicyServer.setExpiryPolicy(policy);
+    setupExpiryPolicyClientServer(policy);
 
     MutableConfiguration<Integer, Integer> config = new MutableConfiguration<>();
     config.setExpiryPolicyFactory(FactoryBuilder.factoryOf(expiryPolicyClient)).setStatisticsEnabled(true);
@@ -173,7 +202,7 @@ public class CacheExpiryTest extends CacheTestSupport<Integer, Integer> {
   public void testCacheStatisticsRemoveAllNoneExpired() throws Exception {
 
     ExpiryPolicy policy = new CreatedExpiryPolicy(Duration.ETERNAL);
-    expiryPolicyServer.setExpiryPolicy(policy);
+    setupExpiryPolicyClientServer(policy);
 
     MutableConfiguration<Integer, Integer> config = new MutableConfiguration<>();
     config.setExpiryPolicyFactory(FactoryBuilder.factoryOf(expiryPolicyClient))
@@ -209,6 +238,7 @@ public class CacheExpiryTest extends CacheTestSupport<Integer, Integer> {
    * expire the entries.
    */
   private void expire_whenCreated(Factory<? extends ExpiryPolicy> expiryPolicyFactory) {
+    setupListenerClientServer();
     MutableConfiguration<Integer, Integer> config = new MutableConfiguration<Integer, Integer>();
     config.setTypes(Integer.class, Integer.class);
     config.setExpiryPolicyFactory(expiryPolicyFactory);
@@ -487,7 +517,7 @@ public class CacheExpiryTest extends CacheTestSupport<Integer, Integer> {
   public void containsKeyShouldNotCallExpiryPolicyMethods() {
 
     CountingExpiryPolicy expiryPolicy = new CountingExpiryPolicy();
-    expiryPolicyServer.setExpiryPolicy(expiryPolicy);
+    setupExpiryPolicyClientServer(expiryPolicy);
 
     MutableConfiguration<Integer, Integer> config = new MutableConfiguration<>();
     config.setExpiryPolicyFactory(FactoryBuilder.factoryOf(expiryPolicyClient));
@@ -517,7 +547,7 @@ public class CacheExpiryTest extends CacheTestSupport<Integer, Integer> {
   @Test
   public void getShouldCallGetExpiryForAccessedEntry() {
     CountingExpiryPolicy expiryPolicy = new CountingExpiryPolicy();
-    expiryPolicyServer.setExpiryPolicy(expiryPolicy);
+    setupExpiryPolicyClientServer(expiryPolicy);
 
     MutableConfiguration<Integer, Integer> config = new MutableConfiguration<>();
     config.setExpiryPolicyFactory(FactoryBuilder.factoryOf(expiryPolicyClient));
@@ -555,7 +585,7 @@ public class CacheExpiryTest extends CacheTestSupport<Integer, Integer> {
   @Test
   public void getAllShouldCallGetExpiryForAccessedEntry() {
     CountingExpiryPolicy expiryPolicy = new CountingExpiryPolicy();
-    expiryPolicyServer.setExpiryPolicy(expiryPolicy);
+    setupExpiryPolicyClientServer(expiryPolicy);
 
     MutableConfiguration<Integer, Integer> config = new MutableConfiguration<>();
     config.setExpiryPolicyFactory(FactoryBuilder.factoryOf(expiryPolicyClient));
@@ -592,7 +622,7 @@ public class CacheExpiryTest extends CacheTestSupport<Integer, Integer> {
   @Test
   public void getAndPutShouldCallEitherCreatedOrModifiedExpiryPolicy() {
     CountingExpiryPolicy expiryPolicy = new CountingExpiryPolicy();
-    expiryPolicyServer.setExpiryPolicy(expiryPolicy);
+    setupExpiryPolicyClientServer(expiryPolicy);
 
     MutableConfiguration<Integer, Integer> config = new MutableConfiguration<>();
     config.setExpiryPolicyFactory(FactoryBuilder.factoryOf(expiryPolicyClient));
@@ -622,7 +652,7 @@ public class CacheExpiryTest extends CacheTestSupport<Integer, Integer> {
   @Test
   public void getAndRemoveShouldNotCallExpiryPolicyMethods() {
     CountingExpiryPolicy expiryPolicy = new CountingExpiryPolicy();
-    expiryPolicyServer.setExpiryPolicy(expiryPolicy);
+    setupExpiryPolicyClientServer(expiryPolicy);
 
     MutableConfiguration<Integer, Integer> config = new MutableConfiguration<>();
     config.setExpiryPolicyFactory(FactoryBuilder.factoryOf(expiryPolicyClient));
@@ -660,7 +690,7 @@ public class CacheExpiryTest extends CacheTestSupport<Integer, Integer> {
   @Test
   public void getAndReplaceShouldCallGetExpiryForModifiedEntry() {
     CountingExpiryPolicy expiryPolicy = new CountingExpiryPolicy();
-    expiryPolicyServer.setExpiryPolicy(expiryPolicy);
+    setupExpiryPolicyClientServer(expiryPolicy);
 
     MutableConfiguration<Integer, Integer> config = new MutableConfiguration<>();
     config.setExpiryPolicyFactory(FactoryBuilder.factoryOf(expiryPolicyClient));
@@ -700,7 +730,7 @@ public class CacheExpiryTest extends CacheTestSupport<Integer, Integer> {
   @Test
   public void iteratorNextShouldCallGetExpiryForAccessedEntry() {
     CountingExpiryPolicy expiryPolicy = new CountingExpiryPolicy();
-    expiryPolicyServer.setExpiryPolicy(expiryPolicy);
+    setupExpiryPolicyClientServer(expiryPolicy);
 
     MutableConfiguration<Integer, Integer> config = new MutableConfiguration<>();
     config.setExpiryPolicyFactory(FactoryBuilder.factoryOf(expiryPolicyClient));
@@ -747,7 +777,7 @@ public class CacheExpiryTest extends CacheTestSupport<Integer, Integer> {
           new CacheLoaderClient<>(cacheLoaderServer.getInetAddress(), cacheLoaderServer.getPort());
 
       CountingExpiryPolicy expiryPolicy = new CountingExpiryPolicy();
-      expiryPolicyServer.setExpiryPolicy(expiryPolicy);
+      setupExpiryPolicyClientServer(expiryPolicy);
 
       MutableConfiguration<Integer, Integer> config = new MutableConfiguration<>();
       config.setExpiryPolicyFactory(FactoryBuilder.factoryOf(expiryPolicyClient));
@@ -815,7 +845,7 @@ public class CacheExpiryTest extends CacheTestSupport<Integer, Integer> {
   @Test
   public void putShouldCallGetExpiry() {
     CountingExpiryPolicy expiryPolicy = new CountingExpiryPolicy();
-    expiryPolicyServer.setExpiryPolicy(expiryPolicy);
+    setupExpiryPolicyClientServer(expiryPolicy);
 
     MutableConfiguration<Integer, Integer> config = new MutableConfiguration<>();
     config.setExpiryPolicyFactory(FactoryBuilder.factoryOf(expiryPolicyClient));
@@ -845,7 +875,7 @@ public class CacheExpiryTest extends CacheTestSupport<Integer, Integer> {
   @Test
   public void putAllShouldCallGetExpiry() {
     CountingExpiryPolicy expiryPolicy = new CountingExpiryPolicy();
-    expiryPolicyServer.setExpiryPolicy(expiryPolicy);
+    setupExpiryPolicyClientServer(expiryPolicy);
 
     MutableConfiguration<Integer, Integer> config = new MutableConfiguration<>();
     config.setExpiryPolicyFactory(FactoryBuilder.factoryOf(expiryPolicyClient));
@@ -873,7 +903,7 @@ public class CacheExpiryTest extends CacheTestSupport<Integer, Integer> {
   @Test
   public void putIfAbsentShouldCallGetExpiry() {
     CountingExpiryPolicy expiryPolicy = new CountingExpiryPolicy();
-    expiryPolicyServer.setExpiryPolicy(expiryPolicy);
+    setupExpiryPolicyClientServer(expiryPolicy);
 
     MutableConfiguration<Integer, Integer> config = new MutableConfiguration<>();
     config.setExpiryPolicyFactory(FactoryBuilder.factoryOf(expiryPolicyClient));
@@ -904,7 +934,7 @@ public class CacheExpiryTest extends CacheTestSupport<Integer, Integer> {
   @Test
   public void removeEntryShouldNotCallExpiryPolicyMethods() {
     CountingExpiryPolicy expiryPolicy = new CountingExpiryPolicy();
-    expiryPolicyServer.setExpiryPolicy(expiryPolicy);
+    setupExpiryPolicyClientServer(expiryPolicy);
 
     MutableConfiguration<Integer, Integer> config = new MutableConfiguration<>();
     config.setExpiryPolicyFactory(FactoryBuilder.factoryOf(expiryPolicyClient));
@@ -935,7 +965,7 @@ public class CacheExpiryTest extends CacheTestSupport<Integer, Integer> {
   @Test
   public void removeSpecifiedEntryShouldNotCallExpiryPolicyMethods() {
     CountingExpiryPolicy expiryPolicy = new CountingExpiryPolicy();
-    expiryPolicyServer.setExpiryPolicy(expiryPolicy);
+    setupExpiryPolicyClientServer(expiryPolicy);
 
     MutableConfiguration<Integer, Integer> config = new MutableConfiguration<>();
     config.setExpiryPolicyFactory(FactoryBuilder.factoryOf(expiryPolicyClient));
@@ -976,7 +1006,7 @@ public class CacheExpiryTest extends CacheTestSupport<Integer, Integer> {
   public void invokeSetValueShouldCallGetExpiry() {
 
     CountingExpiryPolicy expiryPolicy = new CountingExpiryPolicy();
-    expiryPolicyServer.setExpiryPolicy(expiryPolicy);
+    setupExpiryPolicyClientServer(expiryPolicy);
 
     MutableConfiguration<Integer, Integer> config = new MutableConfiguration<>();
     config.setExpiryPolicyFactory(FactoryBuilder.factoryOf(expiryPolicyClient));
@@ -1019,7 +1049,7 @@ public class CacheExpiryTest extends CacheTestSupport<Integer, Integer> {
   public void invokeMultiSetValueShouldCallGetExpiry() {
 
     CountingExpiryPolicy expiryPolicy = new CountingExpiryPolicy();
-    expiryPolicyServer.setExpiryPolicy(expiryPolicy);
+    setupExpiryPolicyClientServer(expiryPolicy);
 
     MutableConfiguration<Integer, Integer> config = new MutableConfiguration<>();
     config.setExpiryPolicyFactory(FactoryBuilder.factoryOf(expiryPolicyClient));
@@ -1053,7 +1083,7 @@ public class CacheExpiryTest extends CacheTestSupport<Integer, Integer> {
   @Test
   public void invokeGetValueShouldCallGetExpiry() {
     CountingExpiryPolicy expiryPolicy = new CountingExpiryPolicy();
-    expiryPolicyServer.setExpiryPolicy(expiryPolicy);
+    setupExpiryPolicyClientServer(expiryPolicy);
 
     MutableConfiguration<Integer, Integer> config = new MutableConfiguration<>();
     config.setExpiryPolicyFactory(FactoryBuilder.factoryOf(expiryPolicyClient));
@@ -1089,6 +1119,8 @@ public class CacheExpiryTest extends CacheTestSupport<Integer, Integer> {
 
   @Test
   public void invokeGetValueWithReadThroughForNonExistentEntryShouldCallGetExpiryForCreatedEntry() throws IOException {
+    CountingExpiryPolicy expiryPolicy = new CountingExpiryPolicy();
+    setupExpiryPolicyClientServer(expiryPolicy);
 
     //establish and open a CacheLoaderServer to handle cache
     //cache loading requests from a CacheLoaderClient
@@ -1102,9 +1134,6 @@ public class CacheExpiryTest extends CacheTestSupport<Integer, Integer> {
       //(via the CacheLoaderServer)
       CacheLoaderClient<Integer, Integer> cacheLoader =
           new CacheLoaderClient<>(cacheLoaderServer.getInetAddress(), cacheLoaderServer.getPort());
-
-      CountingExpiryPolicy expiryPolicy = new CountingExpiryPolicy();
-      expiryPolicyServer.setExpiryPolicy(expiryPolicy);
 
       MutableConfiguration<Integer, Integer> config = new MutableConfiguration<>();
       config.setExpiryPolicyFactory(FactoryBuilder.factoryOf(expiryPolicyClient));
@@ -1132,7 +1161,7 @@ public class CacheExpiryTest extends CacheTestSupport<Integer, Integer> {
   public void invokeAllSetValueShouldCallGetExpiry() {
 
     CountingExpiryPolicy expiryPolicy = new CountingExpiryPolicy();
-    expiryPolicyServer.setExpiryPolicy(expiryPolicy);
+    setupExpiryPolicyClientServer(expiryPolicy);
 
     MutableConfiguration<Integer, Integer> config = new MutableConfiguration<>();
     config.setExpiryPolicyFactory(FactoryBuilder.factoryOf(expiryPolicyClient));
@@ -1191,7 +1220,7 @@ public class CacheExpiryTest extends CacheTestSupport<Integer, Integer> {
           new CacheLoaderClient<>(cacheLoaderServer.getInetAddress(), cacheLoaderServer.getPort());
 
       CountingExpiryPolicy expiryPolicy = new CountingExpiryPolicy();
-      expiryPolicyServer.setExpiryPolicy(expiryPolicy);
+      setupExpiryPolicyClientServer(expiryPolicy);
 
       MutableConfiguration<Integer, Integer> config = new MutableConfiguration<>();
       config.setExpiryPolicyFactory(FactoryBuilder.factoryOf(expiryPolicyClient));
@@ -1223,7 +1252,7 @@ public class CacheExpiryTest extends CacheTestSupport<Integer, Integer> {
   @Test
   public void replaceShouldCallGetExpiryForModifiedEntry() {
     CountingExpiryPolicy expiryPolicy = new CountingExpiryPolicy();
-    expiryPolicyServer.setExpiryPolicy(expiryPolicy);
+    setupExpiryPolicyClientServer(expiryPolicy);
 
     MutableConfiguration<Integer, Integer> config = new MutableConfiguration<>();
     config.setExpiryPolicyFactory(FactoryBuilder.factoryOf(expiryPolicyClient));
@@ -1264,7 +1293,7 @@ public class CacheExpiryTest extends CacheTestSupport<Integer, Integer> {
   @Test
   public void replaceSpecificShouldCallGetExpiry() {
     CountingExpiryPolicy expiryPolicy = new CountingExpiryPolicy();
-    expiryPolicyServer.setExpiryPolicy(expiryPolicy);
+    setupExpiryPolicyClientServer(expiryPolicy);
 
     MutableConfiguration<Integer, Integer> config = new MutableConfiguration<>();
     config.setExpiryPolicyFactory(FactoryBuilder.factoryOf(expiryPolicyClient));
@@ -1473,6 +1502,4 @@ public class CacheExpiryTest extends CacheTestSupport<Integer, Integer> {
     }
   }
 
-  private CacheEntryListenerServer<Integer, Integer> cacheEntryListenerServer;
-  private CacheEntryListenerClient<Integer, Integer> cacheEntryListerClient;
 }
