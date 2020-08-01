@@ -359,7 +359,7 @@ public class ExpiryListenerTest extends TestingBase {
    * event after the insert event. Also checks that the cache entry is not visible.
    */
   @Test
-  public void expiresDuringInsert() {
+  public void expiresDuringInsert() throws InterruptedException {
     final AtomicInteger gotExpired = new AtomicInteger();
     final AtomicInteger gotCreated = new AtomicInteger();
     final long EXPIRY_MILLIS = TestingParameters.MINIMAL_TICK_MILLIS;
@@ -424,6 +424,7 @@ public class ExpiryListenerTest extends TestingBase {
         return gotExpired.get() > 0;
       }
     });
+    t.join();
   }
 
 }
