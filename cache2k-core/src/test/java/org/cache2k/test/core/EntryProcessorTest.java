@@ -908,4 +908,29 @@ public class EntryProcessorTest {
     assertEquals(1, _retryLoadAfter.get());
   }
 
+  @Test
+  public void increment() {
+    final Cache<Integer, Integer> c = target.cache();
+    c.put(1, 0);
+    final AtomicInteger count0 = new AtomicInteger();
+    final AtomicInteger count1 = new AtomicInteger();
+    c.invoke(1, new EntryProcessor<Integer, Integer, Object>() {
+      @Override
+      public Object process(final MutableCacheEntry<Integer, Integer> e) throws Exception {
+        count0.incrementAndGet();
+        int val = e.getValue();
+        e.setValue(val + 1);
+        count1.incrementAndGet();
+        return null;
+      }
+    });
+    assertEquals(1, (int) c.get(1));
+    assertEquals(
+      "passed 3 times: initial, after installation read, after mutation lock",
+      3, count0.get());
+    assertEquals(
+      "passed 2 times: after installation read, after mutation lock",
+      2, count1.get());
+  }
+
 }

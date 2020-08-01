@@ -23,9 +23,12 @@ package org.cache2k.test.core;
 import org.cache2k.Cache;
 import org.cache2k.Cache2kBuilder;
 import org.cache2k.CacheEntry;
+import org.cache2k.core.util.SimulatedClock;
 import org.cache2k.event.CacheEntryEvictedListener;
 import org.cache2k.expiry.ExpiryPolicy;
 import org.cache2k.integration.CacheLoader;
+import org.cache2k.processor.EntryProcessor;
+import org.cache2k.processor.MutableCacheEntry;
 import org.cache2k.test.util.CacheRule;
 import org.cache2k.test.util.ConcurrencyHelper;
 import org.cache2k.test.util.Condition;
@@ -35,6 +38,7 @@ import org.cache2k.event.CacheEntryExpiredListener;
 import org.cache2k.event.CacheEntryRemovedListener;
 import org.cache2k.event.CacheEntryUpdatedListener;
 import org.cache2k.core.util.Log;
+import org.cache2k.test.util.TestingBase;
 import org.cache2k.testing.category.FastTests;
 import org.junit.Rule;
 import org.junit.Test;
@@ -73,10 +77,22 @@ public class ListenerTest {
     final AtomicInteger removed = new AtomicInteger();
     final AtomicInteger created = new AtomicInteger();
     final AtomicInteger evicted = new AtomicInteger();
+    final AtomicInteger expired = new AtomicInteger();
+
+    private void checkCondition() {
+      assertTrue("Get a created event before something is removed, evicted or expired",
+        created.get() >= (evicted.get() + expired.get() + removed.get()));
+    }
 
     @Override
     public void extend(final Cache2kBuilder<Integer, Integer> b) {
-      b .addListener(new CacheEntryUpdatedListener<Integer, Integer>() {
+      b .addListener(new CacheEntryCreatedListener<Integer, Integer>() {
+        @Override
+        public void onEntryCreated(final Cache<Integer, Integer> c, final CacheEntry<Integer, Integer> e) {
+          created.incrementAndGet();
+        }
+        })
+        .addListener(new CacheEntryUpdatedListener<Integer, Integer>() {
           @Override
           public void onEntryUpdated(final Cache<Integer, Integer> cache, final CacheEntry<Integer, Integer> currentEntry, final CacheEntry<Integer, Integer> entryWithNewData) {
             updated.incrementAndGet();
@@ -86,18 +102,21 @@ public class ListenerTest {
           @Override
           public void onEntryRemoved(final Cache<Integer, Integer> c, final CacheEntry<Integer, Integer> e) {
             removed.incrementAndGet();
-          }
-        })
-        .addListener(new CacheEntryCreatedListener<Integer, Integer>() {
-          @Override
-          public void onEntryCreated(final Cache<Integer, Integer> c, final CacheEntry<Integer, Integer> e) {
-            created.incrementAndGet();
+            checkCondition();
           }
         })
         .addListener(new CacheEntryEvictedListener<Integer, Integer>() {
           @Override
           public void onEntryEvicted(final Cache<Integer, Integer> cache, final CacheEntry<Integer, Integer> entry) {
             evicted.incrementAndGet();
+            checkCondition();
+          }
+        })
+        .addListener(new CacheEntryExpiredListener<Integer, Integer>() {
+          @Override
+          public void onEntryExpired(final Cache<Integer, Integer> cache, final CacheEntry<Integer, Integer> entry) {
+            expired.incrementAndGet();
+            checkCondition();
           }
         });
     }
@@ -157,6 +176,7 @@ public class ListenerTest {
         assertEquals(0, created.get());
         assertEquals(123, (int) cache.get(123));
         assertEquals(0, created.get());
+        assertEquals(0, expired.get());
       }
     });
   }
@@ -554,6 +574,109 @@ public class ListenerTest {
     c.put(1,2);
     c.close();
     assertEquals(1, _counter.get());
+  }
+
+  /**
+   * The reference point in time for the expiry is the start time of the operation.
+   * In case the operation takes longer then the expiry timespan the entry would
+   * expire at the end of the operation. That is a special case, since if the entry is
+   * expired already the timer event will not be scheduled.
+   */
+  @Test
+  public void expiredWhileInitialLoad() {
+    final long EXPIRE_AFTER_WRITE = 123;
+    final SimulatedClock clock = new SimulatedClock(1000, true);
+    target.run(new CountSyncEvents() {
+      @Override
+      public void extend(final Cache2kBuilder<Integer, Integer> b) {
+        b.timeReference(clock);
+        b.expireAfterWrite(EXPIRE_AFTER_WRITE, TimeUnit.MILLISECONDS);
+        b.loader(new CacheLoader<Integer, Integer>() {
+          @Override
+          public Integer load(final Integer key) throws Exception {
+            clock.sleep(EXPIRE_AFTER_WRITE * 2);
+            return key;
+          }
+        });
+        super.extend(b);
+      }
+
+      @Override
+      public void run() {
+        cache.get(123);
+        assertEquals("created", 1, created.get());
+        assertEquals("expired", 1, expired.get());
+      }
+    });
+
+  }
+
+  /**
+   * No expiry event during load. Entry expires at end of load operation.
+   */
+  @Test
+  public void expiredWhileReload() {
+    final long EXPIRE_AFTER_WRITE = 123;
+    final SimulatedClock clock = new SimulatedClock(1000, true);
+    target.run(new CountSyncEvents() {
+      @Override
+      public void extend(final Cache2kBuilder<Integer, Integer> b) {
+        b.timeReference(clock);
+        b.expireAfterWrite(EXPIRE_AFTER_WRITE, TimeUnit.MILLISECONDS);
+        b.loader(new CacheLoader<Integer, Integer>() {
+          @Override
+          public Integer load(final Integer key) throws Exception {
+            clock.sleep(EXPIRE_AFTER_WRITE * 2);
+            return key;
+          }
+        });
+        super.extend(b);
+      }
+
+      @Override
+      public void run() {
+        cache.put(123, 5);
+        assertEquals("created", 1, created.get());
+        TestingBase.reload(cache, 123);
+        assertEquals("expired", 1, expired.get());
+      }
+    });
+  }
+
+  /**
+   * The value expires during load operation. Since the entry is not removed but locked
+   * for the load an update is sent.
+   */
+  @Test
+  public void expiredWhileReloadUpdate() {
+    final long EXPIRE_AFTER_WRITE = 60;
+    final SimulatedClock clock = new SimulatedClock(1000, true);
+    target.run(new CountSyncEvents() {
+      @Override
+      public void extend(final Cache2kBuilder<Integer, Integer> b) {
+        b.timeReference(clock);
+        b.expireAfterWrite(EXPIRE_AFTER_WRITE, TimeUnit.MILLISECONDS);
+        b.loader(new CacheLoader<Integer, Integer>() {
+          @Override
+          public Integer load(final Integer key) throws Exception {
+            clock.sleep(EXPIRE_AFTER_WRITE / 3 * 2);
+            return key;
+          }
+        });
+        super.extend(b);
+      }
+
+      @Override
+      public void run() {
+        cache.put(123, 5);
+        try {
+          clock.sleep(EXPIRE_AFTER_WRITE / 3 * 2);
+        } catch (InterruptedException ignore) { }
+        assertEquals("created", 1, created.get());
+        TestingBase.reload(cache, 123);
+        assertEquals("updated", 1, updated.get());
+      }
+    });
   }
 
 }
