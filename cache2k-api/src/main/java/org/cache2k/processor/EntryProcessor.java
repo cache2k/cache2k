@@ -67,16 +67,18 @@ public interface EntryProcessor<K, V, R> {
   /**
    * Examines or mutates an entry.
    *
-   * <p>From inside this method it is illegal to call methods on the same cache. This
-   * may cause a deadlock.
+   * <p><b>Important:</b> The method must not have any side effects except on the processed entry.
+   * For one call to {@link org.cache2k.Cache#invoke} the method might be called several times.
+   * Some methods of {@link MutableCacheEntry} throw exceptions that are consumed by the
+   * cache to do asynchronous processing.
    *
-   * <p>The method may not have any side effects except on the processed entry.
-   * The cache may call the method multiple times for each invocation via the cache, when needed.
+   * <p><b>Caveat about modification time and expiry:</b> The point in time of the last
+   * modification, in case the entry is modified, is after the method completes.
+   * It is possible to set an alternative time with {@link MutableCacheEntry#setRefreshedTime(long)}
    *
-   * <p>The cache is only modified, if the method complete successfully.
+   * <p>The cache is only modified, if the method completes without exception.
    *
-   * @param e the entry to examine or mutate. The reference is only valid within a method call,
-   *              don't pass or store it
+   * @param entry the entry to examine or mutate. The reference is only valid within a method call
    * @return a user defined result, that will be passed through and returned
    * @throws Exception an arbitrary exception that will be wrapped into a {@link EntryProcessingException}.
    *                   If an exception happens no modifications the cache content will not be altered.
