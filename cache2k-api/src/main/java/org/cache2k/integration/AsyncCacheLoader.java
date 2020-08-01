@@ -44,6 +44,8 @@ public interface AsyncCacheLoader<K, V> {
    * @param context additional context information for the load operation
    * @param callback interface to notify for load completion
    * @throws Exception an exception, if the load operation cannot be started
+   *
+   * @since 1.4
    */
   void load(K key, Context<K, V> context, Callback<V> callback) throws Exception;
 

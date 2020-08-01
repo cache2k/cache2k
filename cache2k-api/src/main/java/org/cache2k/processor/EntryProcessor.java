@@ -81,6 +81,6 @@ public interface EntryProcessor<K, V, R> {
    * @throws Exception an arbitrary exception that will be wrapped into a {@link EntryProcessingException}.
    *                   If an exception happens no modifications the cache content will not be altered.
    */
-  R process(MutableCacheEntry<K, V> e) throws Exception;
+  R process(MutableCacheEntry<K, V> entry) throws Exception;
 
 }
