@@ -471,11 +471,24 @@ public abstract class EntryAction<K, V, R> extends Entry.PiggyBack implements
         }
       }
       if (justExpired) {
-        CacheEntry<K, V> entryCopy = heapCache.returnCacheEntry(heapEntry);
-        sendExpiryEvents(entryCopy);
-        metrics().expiredKept();
+        existingEntryExpiredBeforeMutationSendExpiryEvents();
+        return;
       }
     }
+    continueWithMutation();
+  }
+
+  /**
+   * The entry logically expired before the mutation. Send expiry event.
+   * Example: A get() triggers a load().
+   * Also the expiry timer event sends out the events via this method.
+   *
+   * @see org.cache2k.core.operation.Operations#EXPIRE_EVENT
+   */
+  public void existingEntryExpiredBeforeMutationSendExpiryEvents() {
+    CacheEntry<K, V> entryCopy = heapCache.returnCacheEntry(heapEntry);
+    sendExpiryEvents(entryCopy);
+    metrics().expiredKept();
     continueWithMutation();
   }
 
@@ -1040,11 +1053,7 @@ public abstract class EntryAction<K, V, R> extends Entry.PiggyBack implements
     }
     CacheEntry<K,V> entryCopy = heapCache.returnCacheEntry(heapEntry);
     if (expiredImmediately) {
-      if (storageDataValid || heapDataValid) {
-        if (entryExpiredListeners() != null) {
-          sendExpiryEvents(entryCopy);
-        }
-      }
+      sendExpiryEventsWhenExpiredDuringOperation(entryCopy);
     } else if (remove) {
       if (storageDataValid || heapDataValid) {
         if (entryRemovedListeners() != null) {
@@ -1083,6 +1092,25 @@ public abstract class EntryAction<K, V, R> extends Entry.PiggyBack implements
       }
     }
     mutationReleaseLockAndStartTimer();
+  }
+
+  /**
+   * Entry was expired during the operation, e.g. by calling setExpiry.
+   * In case the entry is freshly created
+   * <p>If an entry is created or updated, the expiry listener might be called
+   * later in the process, after the timer event was tried to be scheduled.
+   * <p>Don't send events in case the entry never was inserted,
+   * because in that case we don't send a created event either. Rationale: A created
+   * and expiry event only makes sense if something is visible for a short time.
+   *
+   * @param entryCopy copy of entry for sending to the listener
+   */
+  private void sendExpiryEventsWhenExpiredDuringOperation(CacheEntry<K,V> entryCopy) {
+    if (storageDataValid || heapDataValid) {
+      if (entryExpiredListeners() != null) {
+        sendExpiryEvents(entryCopy);
+      }
+    }
   }
 
   private void sendExpiryEvents(final CacheEntry<K, V> _entryCopy) {
@@ -1126,14 +1154,23 @@ public abstract class EntryAction<K, V, R> extends Entry.PiggyBack implements
       }
     }
     if (justExpired) {
-      heapDataValid = true;
-      heapEntry.nextProcessingStep(EXPIRE);
-      expiry = 0;
-      checkKeepOrRemove();
+      expiredAtEndOfOperationStartOver();
       return;
     }
     updateMutationStatistics();
     mutationDone();
+  }
+
+  /**
+   * Entry expired during progress of the action, reentry at a previous processing
+   * state to call listeners and update heap.
+   * <p>We could get rid of this path in case the timer would just execute immediately.
+   */
+  public void expiredAtEndOfOperationStartOver() {
+    heapDataValid = true;
+    heapEntry.nextProcessingStep(EXPIRE);
+    expiry = 0;
+    checkKeepOrRemove();
   }
 
   /**

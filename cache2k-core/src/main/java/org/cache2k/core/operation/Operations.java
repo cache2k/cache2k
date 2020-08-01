@@ -481,7 +481,9 @@ public class Operations<K, V> {
     };
   }
 
-  public final Semantic<K,V, Void> EXPIRE_EVENT = new Semantic.MightUpdate<K, V, Void>() {
+  public final Semantic<K,V, Void> EXPIRE_EVENT = new ExpireEvent<K, V>();
+
+  public static class ExpireEvent<K, V> extends Semantic.MightUpdate<K, V, Void> {
 
     @Override
     public void examine(final Progress<K, V, Void> c, final ExaminationEntry<K, V> e) {
