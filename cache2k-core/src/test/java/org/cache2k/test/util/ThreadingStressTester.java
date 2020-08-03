@@ -267,10 +267,10 @@ public class ThreadingStressTester {
    * Add the same runnable multiple times, resulting in the amount of threads
    * running the same runnable.
    *
-   * @param _multipleCount number of threads for this runnable
+   * @param multipleCount number of threads for this runnable
    */
-  public final void addTask(int _multipleCount, Runnable r) {
-    for (int i = 0; i < _multipleCount; i++) {
+  public final void addTask(int multipleCount, Runnable r) {
+    for (int i = 0; i < multipleCount; i++) {
       tasks.add(r);
     }
   }
@@ -291,19 +291,19 @@ public class ThreadingStressTester {
     return stopTime;
   }
 
-  private boolean ignoreException(final Throwable _exception) {
-    Throwable _rootCause = _exception;
-    while (_rootCause.getCause() != null) {
-      _rootCause = _rootCause.getCause();
+  private boolean ignoreException(final Throwable exception) {
+    Throwable rootCause = exception;
+    while (rootCause.getCause() != null) {
+      rootCause = rootCause.getCause();
     }
-    return ignoreException(_exception, _rootCause);
+    return ignoreException(exception, rootCause);
   }
-  protected boolean ignoreException(Throwable _exception, Throwable _rootCause) {
+  protected boolean ignoreException(Throwable exception, Throwable rootCause) {
     for (Class c : ignoredExceptions) {
-      if (_exception.getClass().equals(c)) {
+      if (exception.getClass().equals(c)) {
         return true;
       }
-      if (_rootCause.getClass().equals(c)) {
+      if (rootCause.getClass().equals(c)) {
         return true;
       }
     }
@@ -318,12 +318,12 @@ public class ThreadingStressTester {
   }
 
   public final void run() {
-    int _taskCount = tasks.size();
-    threads = new Thread[_taskCount];
-    threadException = new Throwable[_taskCount];
-    barrier =  new CyclicBarrier(_taskCount + 1);
-    allStoppedLatch = new CountDownLatch(_taskCount);
-    for (int i = 0; i < _taskCount; i++) {
+    int taskCount = tasks.size();
+    threads = new Thread[taskCount];
+    threadException = new Throwable[taskCount];
+    barrier =  new CyclicBarrier(taskCount + 1);
+    allStoppedLatch = new CountDownLatch(taskCount);
+    for (int i = 0; i < taskCount; i++) {
       Runnable r;
       if (isOneShotMode()) {
         r = new OneShotRunWrapper(i, tasks.get(i));
@@ -339,32 +339,32 @@ public class ThreadingStressTester {
     try {
       barrier.await();
       startTime = System.currentTimeMillis();
-      boolean _allStopped;
-      boolean _timeout = false;
+      boolean allStopped;
+      boolean timeout = false;
       if (testTimeMillis > 0) {
-        _allStopped = allStoppedLatch.await(testTimeMillis, TimeUnit.MILLISECONDS);
+        allStopped = allStoppedLatch.await(testTimeMillis, TimeUnit.MILLISECONDS);
       } else {
-        _allStopped = allStoppedLatch.await(oneShotTimeoutMillis, TimeUnit.MILLISECONDS);
-        _timeout = !_allStopped;
+        allStopped = allStoppedLatch.await(oneShotTimeoutMillis, TimeUnit.MILLISECONDS);
+        timeout = !allStopped;
       }
-      if (!_allStopped) {
+      if (!allStopped) {
         shouldStop = true;
         if (!doNotInterrupt) {
           sendInterrupt();
         }
-        boolean _timeoutAfterInterrupt = !allStoppedLatch.await(timeoutAfterInterruptMillis, TimeUnit.MILLISECONDS);
+        boolean timeoutAfterInterrupt = !allStoppedLatch.await(timeoutAfterInterruptMillis, TimeUnit.MILLISECONDS);
         stopTime = System.currentTimeMillis();
-        if (_timeoutAfterInterrupt) {
-          String _timeoutReason = "Threads ignoring interrupt signal. " +
+        if (timeoutAfterInterrupt) {
+          String timeoutReason = "Threads ignoring interrupt signal. " +
             "Timeout after " + (stopTime - startTime ) + " milliseconds.";
-          printTimeoutInfo(_timeoutReason);
-          throw new TimeoutThreadingStressTestException(_timeoutReason);
+          printTimeoutInfo(timeoutReason);
+          throw new TimeoutThreadingStressTestException(timeoutReason);
         }
       }
-      if (_timeout) {
-        String _timeoutReason = "Timeout after " + (stopTime - startTime ) + " milliseconds.";
-        printTimeoutInfo(_timeoutReason);
-        throw new TimeoutThreadingStressTestException(_timeoutReason);
+      if (timeout) {
+        String timeoutReason = "Timeout after " + (stopTime - startTime ) + " milliseconds.";
+        printTimeoutInfo(timeoutReason);
+        throw new TimeoutThreadingStressTestException(timeoutReason);
       }
     } catch (BrokenBarrierException e) {
       throw new UnexpectedThreadingStressTestException(e);
@@ -387,9 +387,9 @@ public class ThreadingStressTester {
     }
   }
 
-  private void printTimeoutInfo(String _reason) {
+  private void printTimeoutInfo(String reason) {
     errorOutput.println("*** TIMEOUT ***");
-    errorOutput.println(_reason);
+    errorOutput.println(reason);
     errorOutput.println(
       "testTimeMillis=" + testTimeMillis + ", timeoutMillis=" + oneShotTimeoutMillis +
       ", timeoutAfterInterruptMillis=" + timeoutAfterInterruptMillis);
