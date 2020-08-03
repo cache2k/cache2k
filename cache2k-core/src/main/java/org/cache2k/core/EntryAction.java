@@ -437,14 +437,23 @@ public abstract class EntryAction<K, V, R> extends Entry.PiggyBack implements
     if (!entryLocked) {
       if (lockForNoHit(MUTATE)) { return; }
       if (wantData) {
-        countMiss = false;
-        examine();
+        examineAgainAfterLock();
         return;
       }
     } else {
       heapEntry.nextProcessingStep(MUTATE);
     }
     checkExpiryBeforeMutation();
+  }
+
+  /**
+   * Entry state may have changed between the first examination and obtaining
+   * the entry lock. Examine again.
+   */
+  public void examineAgainAfterLock() {
+    countMiss = false;
+    examine();
+    return;
   }
 
   /**
