@@ -128,7 +128,7 @@ public abstract class EntryAction<K, V, R> extends Entry.PiggyBack implements
   boolean loadAndRestart = false;
 
   /**
-   * Loader was called or an refreshed entry was revived
+   * Loader was called or a refreshed entry was revived
    */
   boolean valueLoadedOrRevived = false;
 
@@ -539,7 +539,6 @@ public abstract class EntryAction<K, V, R> extends Entry.PiggyBack implements
       return;
     }
     heapEntry.nextProcessingStep(LOAD);
-    checkLocked();
     Entry<K, V> e = heapEntry;
     valueLoadedOrRevived = true;
     long t0 = needsLoadTimes() ? lastRefreshTime = loadStartedTime = getMutationStartTime() : 0;
@@ -678,13 +677,6 @@ public abstract class EntryAction<K, V, R> extends Entry.PiggyBack implements
       if (!heapEntry.checkAndSwitchProcessingState(LOAD_ASYNC, LOAD_COMPLETE) || completed) {
         throw new IllegalStateException("async callback on wrong entry state. duplicate callback?");
       }
-    }
-    checkLocked();
-  }
-
-  private void checkLocked() {
-    if (!entryLocked) {
-      throw new AssertionError();
     }
   }
 
@@ -938,15 +930,18 @@ public abstract class EntryAction<K, V, R> extends Entry.PiggyBack implements
    * Entry mutation, call writer if needed or skip to {@link #mutationMayStore()}
    */
   public void mutationMayCallWriter() {
-    CacheWriter<K, V> _writer = writer();
-    if (_writer == null) {
+    if (writer() == null) {
       skipWritingNoWriter();
       return;
     }
+    mutationCallWriter();
+  }
+
+  public void mutationCallWriter() {
     if (remove) {
       try {
         heapEntry.nextProcessingStep(WRITE);
-        _writer.delete(key);
+        writer().delete(key);
       } catch (Throwable t) {
         onWriteFailure(t);
         return;
@@ -960,7 +955,7 @@ public abstract class EntryAction<K, V, R> extends Entry.PiggyBack implements
     }
     heapEntry.nextProcessingStep(WRITE);
     try {
-      _writer.write(key, newValueOrException);
+      writer().write(key, newValueOrException);
     } catch (Throwable t) {
       onWriteFailure(t);
       return;
@@ -1137,7 +1132,6 @@ public abstract class EntryAction<K, V, R> extends Entry.PiggyBack implements
    * Entry mutation and start of expiry has to be done atomically to avoid races.
    */
   public void mutationReleaseLockAndStartTimer() {
-    checkLocked();
     if (valueLoadedOrRevived) {
       if (!remove ||
         !(heapEntry.getValueOrException() == null && heapCache.isRejectNullValues())) {
