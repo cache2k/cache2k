@@ -399,11 +399,6 @@ public class WiredCache<K, V> extends BaseCache<K, V>
     }
   }
 
-  @Override
-  public void expireAt(final K key, final long _millis) {
-    execute(key, OPS.expire(key, _millis));
-  }
-
   private void checkLoaderPresent() {
     if (!isLoaderPresent()) {
       throw new UnsupportedOperationException("loader not set");

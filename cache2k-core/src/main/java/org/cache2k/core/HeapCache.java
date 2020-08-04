@@ -1775,11 +1775,6 @@ public class HeapCache<K, V> extends BaseCache<K, V> {
     return execute(key, spec().invoke(key, entryProcessor));
   }
 
-  @Override
-  public void expireAt(final K key, final long _millis) {
-    execute(key, spec().expire(key, _millis));
-  }
-
   public final long getLocalSize() {
     return hash.getSize();
   }

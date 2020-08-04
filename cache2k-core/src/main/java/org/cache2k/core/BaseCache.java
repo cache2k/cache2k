@@ -25,6 +25,7 @@ import org.cache2k.CacheEntry;
 import org.cache2k.CacheException;
 import org.cache2k.CustomizationException;
 import org.cache2k.configuration.CustomizationSupplier;
+import org.cache2k.core.operation.Operations;
 import org.cache2k.jmx.CacheInfoMXBean;
 import org.cache2k.processor.EntryProcessingException;
 import org.cache2k.processor.EntryProcessor;
@@ -174,6 +175,11 @@ public abstract class BaseCache<K, V> implements InternalCache<K, V> {
       }
     }
     return m;
+  }
+
+  @Override
+  public void expireAt(final K key, final long _millis) {
+    execute(key, Operations.SINGLETON.expire(key, _millis));
   }
 
   protected <R> R execute(K key, Entry<K, V> e, Semantic<K, V, R> op) {

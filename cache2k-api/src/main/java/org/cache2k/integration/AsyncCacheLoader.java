@@ -66,7 +66,7 @@ public interface AsyncCacheLoader<K, V> {
 
     /**
      * Cache key for the load request. Although the key is a call parameter
-     * its repeated here, so users can choose to pass on the key or the
+     * it is repeated here, so users can choose to pass on the key or the
      * whole context.
      */
     K getKey();

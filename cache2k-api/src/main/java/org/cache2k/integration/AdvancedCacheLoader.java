@@ -37,7 +37,7 @@ import org.cache2k.CacheEntry;
 public abstract class AdvancedCacheLoader<K,V> {
 
   /**
-   * Retrieves or generates data based on the key.
+   * Retrieves or generates data based on the key parameter.
    *
    * @param key The non-null key to provide the value for.
    * @param startTime Time in millis, retrieved before the call.
