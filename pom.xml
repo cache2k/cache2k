@@ -57,6 +57,8 @@
     <module>test-init</module>
     <module>documentation</module>
     <module>cache2k-testing</module>
+    <!-- other, maybe deployed later -->
+    <module>cache2k-pinpoint</module>
     <!-- other, deployed -->
     <module>cache2k-spring</module>
     <module>cache2k-jcache</module>
