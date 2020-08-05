@@ -1,4 +1,4 @@
-package org.cache2k.pinpoint.pairwise;
+package org.cache2k.pinpoint.stress.pairwise;
 
 /*
  * #%L
