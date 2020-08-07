@@ -25,6 +25,7 @@ package org.cache2k.pinpoint.stress.pairwise;
  *
  * @author Jens Wilke
  * @param <R> the result of the actor
+ * @see ActorPairSuite
  */
 public interface ActorPair<R> {
 
@@ -48,10 +49,40 @@ public interface ActorPair<R> {
   R actor2();
 
   /**
+   * Checks the outcome after both actors have finished. The method is expected
+   * to throw an exception or assertion error in case the result is unexpected.
    *
    * @param r1 outcome of {@link #actor1()}
    * @param r2 outcome of {@link #actor2()}
    */
   void check(R r1, R r2);
 
+  /**
+   * Useful for assertions based on success of each actor.
+   */
+  public class SuccessTuple {
+    private final boolean success1;
+    private final boolean success2;
+
+    public SuccessTuple(final boolean success1, final boolean success2) {
+      this.success1 = success1;
+      this.success2 = success2;
+    }
+
+    public boolean isSuccess1() { return success1; }
+
+    public boolean isSuccess2() { return success2; }
+
+    public boolean isBothSucceed() { return success1 && success2; }
+
+    public boolean isOneSucceeds() { return success1 != success2; }
+
+    @Override
+    public String toString() {
+      return "SuccessTuple{" +
+        "success1=" + success1 +
+        ", success2=" + success2 +
+        '}';
+    }
+  }
 }

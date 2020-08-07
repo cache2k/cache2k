@@ -128,11 +128,18 @@ public class ActorPairSuiteTest {
 
   @Test
   public void noExceptionOneshot() {
+    final AtomicBoolean wasRun = new AtomicBoolean();
     ActorPairSuite s = new ActorPairSuite()
       .runMillis(0)
       .maxParallel(1234)
-      .addPair(new DefaultPair<Object>());
+      .addPair(new DefaultPair<Object>() {
+        @Override
+        public void setup() {
+          wasRun.set(true);
+        }
+      });
     s.run();
+    assertTrue(wasRun.get());
   }
 
   @Test

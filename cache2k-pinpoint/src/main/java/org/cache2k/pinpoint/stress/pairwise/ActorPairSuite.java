@@ -33,7 +33,11 @@ import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 
 /**
+ * Executes the actor pairs in parallem for a configurable amount of time.
+ * Any exception within the actor methods will be propagated.
+ *
  * @author Jens Wilke
+ * @see ActorPair
  */
 public class ActorPairSuite {
 
@@ -113,7 +117,12 @@ public class ActorPairSuite {
       pairRunners.add(new OneShotPairRunner<Object>(p));
     }
     for (int i = 0; i < maxParallel; i++) {
-      runNext();
+      executor.execute(new Runnable() {
+        @Override
+        public void run() {
+          runLoop();
+        }
+      });
     }
     try {
       finishLatch.await();
@@ -131,47 +140,23 @@ public class ActorPairSuite {
     OneShotPairRunner<?> r;
     do {
       r = pairRunners.get(random.nextInt(pairRunners.size()));
-    } while (running.containsKey(r));
+    } while (running.putIfAbsent(r, r) != null);
     return r;
   }
 
-  private void completedWithException(OneShotPairRunner<?> r, Throwable ex) {
-    exceptions.add(ex);
-    completed(r);
-  }
-
-  private void completedSuccessful(OneShotPairRunner<?> r) {
-    completed(r);
-  }
-
-  private void completed(OneShotPairRunner<?> r) {
-    running.remove(r);
-    eventuallyRunNext();
-  }
-
-  private void eventuallyRunNext() {
-    if (!stopRunning()) {
-      runNext();
-    } else if (running.isEmpty()) {
+  private void runLoop() {
+    do {
+      final OneShotPairRunner<?> runner = nextRunner();
+      try {
+        runner.run(executor);
+      } catch (Throwable t) {
+        exceptions.add(t);
+      }
+      running.remove(runner);
+    } while (!stopRunning());
+    if (running.isEmpty()) {
       finishLatch.countDown();
     }
-  }
-
-  private void runNext() {
-    final OneShotPairRunner<?> r2 = nextRunner();
-    Runnable run = new Runnable() {
-      @Override
-      public void run() {
-        try {
-          r2.run(executor);
-        } catch (Throwable t) {
-          completedWithException(r2, t);
-        }
-        completedSuccessful(r2);
-      }
-    };
-    running.put(r2, r2);
-    executor.execute(run);
   }
 
   private boolean stopRunning() {
