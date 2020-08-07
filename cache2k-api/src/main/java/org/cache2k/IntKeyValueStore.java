@@ -27,6 +27,7 @@ import java.util.Map;
  *
  * @author Jens Wilke
  * @since 1.2
+ * @deprecated Will be removed in version 2.0
  */
 public interface IntKeyValueStore<V> extends AdvancedKeyValueSource<Integer, V>, IntKeyValueSource<V>  {
 

@@ -31,6 +31,7 @@ package org.cache2k;
  *
  * @author Jens Wilke
  * @since 1.2
+ * @deprecated will be removed in version 2.0
  */
 public interface LongCache<V> extends Cache<Long, V>, LongKeyValueStore<V> {
 

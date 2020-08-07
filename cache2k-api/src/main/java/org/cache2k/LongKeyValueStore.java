@@ -25,6 +25,7 @@ package org.cache2k;
  *
  * @author Jens Wilke
  * @since 1.2
+ * @deprecated will be removed in version 2.0
  */
 public interface LongKeyValueStore<V> extends AdvancedKeyValueSource<Long, V>, LongKeyValueSource<V>  {
 
