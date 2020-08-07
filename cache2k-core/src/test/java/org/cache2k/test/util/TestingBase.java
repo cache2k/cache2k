@@ -546,7 +546,7 @@ public class TestingBase {
    * Wrap shared executor to make sure that at least {@value MINIMAL_LOADER_THREADS} are available
    * for each test
    */
-  static class ExecutorWrapper implements Executor{
+  static class ExecutorWrapper implements Executor {
 
     volatile Executor fallBackExecutor;
 
