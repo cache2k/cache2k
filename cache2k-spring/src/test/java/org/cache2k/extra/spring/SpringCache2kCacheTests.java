@@ -39,8 +39,9 @@ public class SpringCache2kCacheTests extends AbstractCacheTests<SpringCache2kCac
 
   @Before
   public void setUp() {
-    Cache2kBuilder builder = Cache2kBuilder.forUnknownTypes().name(CACHE_NAME).permitNullValues(true);
-    cache = SpringCache2kCacheManager.buildAndWrap(builder);
+    SpringCache2kCacheManager mgm = new SpringCache2kCacheManager();
+    Cache2kBuilder builder = mgm.getDefaultBuilder().name(CACHE_NAME);
+    cache = mgm.buildAndWrap(builder);
     nativeCache = cache.getNativeCache();
   }
 

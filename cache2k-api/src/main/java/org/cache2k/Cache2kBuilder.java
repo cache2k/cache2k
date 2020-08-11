@@ -716,6 +716,8 @@ public class Cache2kBuilder<K, V> {
    *
    * <p>See the chapter in the user guide for details on {@code null} values.
    *
+   * <p>When used within Spring, {@code null} are allowed by default.
+   *
    * @see CacheLoader#load(Object)
    * @see ExpiryPolicy#calculateExpiryTime(Object, Object, long, CacheEntry)
    */
@@ -881,12 +883,11 @@ public class Cache2kBuilder<K, V> {
   /**
    * Builds a cache with the specified configuration parameters.
    *
-   * <p>Returns specialized interfaces for the key types {@code Integer} and {@code Long}.
+   * <p>If XML configuration is present, the section for the cache name is looked up and
+   * the configuration in it applied, before the cache is build.
    *
    * @throws IllegalArgumentException if a cache of the same name is already active in the cache manager
    * @throws IllegalArgumentException if a configuration entry for the named cache is required but not present
-   * @return {@link IntCache} if the key type is {@code Integer} or {@link LongCache}
-   *         if the key type is {@code Long}
    */
   public final Cache<K, V> build() {
     return CacheManager.PROVIDER.createCache(manager, config());
@@ -901,6 +902,7 @@ public class Cache2kBuilder<K, V> {
    * @throws IllegalArgumentException if a cache of the same name is already active in the cache manager
    * @throws IllegalArgumentException if key type is unexpected
    * @throws IllegalArgumentException if a configuration entry for the named cache is required but not present
+   * @deprecated Will be removed in version 2.0
    */
   @SuppressWarnings("unchecked")
   public final IntCache<V> buildForIntKey() {
@@ -920,6 +922,7 @@ public class Cache2kBuilder<K, V> {
    * @throws IllegalArgumentException if a cache of the same name is already active in the cache manager
    * @throws IllegalArgumentException if key type is unexpected
    * @throws IllegalArgumentException if a configuration entry for the named cache is required but not present
+   * @deprecated Will be removed in version 2.0
    */
   @SuppressWarnings("unchecked")
   public final LongCache<V> buildForLongKey() {

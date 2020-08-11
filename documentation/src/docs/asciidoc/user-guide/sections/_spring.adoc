@@ -111,8 +111,11 @@ For completeness, together with the `Cache2kConfiguration` bean, it is also poss
 
 === Null Value Support
 
-The cache abstraction of Spring is supporting `null` values. If the application relies on `null` storage this has to be
-enabled via `Cache2kBuilder.permitNullValues(true)`, see <<null-values,Null Values>>.
+The cache abstraction of Spring is supporting `null` values. To support this a cache used by Spring is
+build with `Cache2kBuilder.permitNullValues(true)` by default. See <<null-values,Null Values>>.
+
+In case the application does not store `null` values its good practise to include
+`permitNullValues(false)` in the cache configuration, to document and enforce this fact.
 
 === Resources
 

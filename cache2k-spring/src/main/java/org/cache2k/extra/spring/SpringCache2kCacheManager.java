@@ -95,14 +95,13 @@ public class SpringCache2kCacheManager implements CacheManager {
   /**
    * Returns an existing cache or retrieves and wraps a cache from cache2k.
    */
-  @SuppressWarnings("unchecked")
   @Override
   public SpringCache2kCache getCache(final String name) {
     return name2cache.computeIfAbsent(name, n -> {
         if (!allowUnknownCache && !configuredCacheNames.contains(n)) {
           throw new IllegalArgumentException("Cache configuration missing for: " + n);
         }
-        return buildAndWrap(Cache2kBuilder.forUnknownTypes().manager(manager).name(n));
+        return buildAndWrap(getDefaultBuilder().name(n));
       });
   }
 
@@ -129,7 +128,7 @@ public class SpringCache2kCacheManager implements CacheManager {
   @SafeVarargs
   public final SpringCache2kCacheManager addCaches(Function<Cache2kBuilder<?,?>, Cache2kBuilder<?,?>>... fs) {
     for (Function<Cache2kBuilder<?,?>, Cache2kBuilder<?,?>> f : fs) {
-      addCache(f.apply(defaultSetup.apply(Cache2kBuilder.forUnknownTypes().manager(manager))));
+      addCache(f.apply(defaultSetup.apply(getDefaultBuilder())));
     }
     return this;
   }
@@ -153,8 +152,8 @@ public class SpringCache2kCacheManager implements CacheManager {
     cacheConfigurationList.forEach(this::addCache);
   }
 
-  SpringCache2kCache addCache(final Cache2kConfiguration<?,?> cfg) {
-    return addCache(Cache2kBuilder.of(cfg).manager(manager));
+  void addCache(final Cache2kConfiguration<?,?> cfg) {
+    addCache(Cache2kBuilder.of(cfg).manager(manager));
   }
 
   /**
@@ -200,8 +199,16 @@ public class SpringCache2kCacheManager implements CacheManager {
     allowUnknownCache = v;
   }
 
+  /**
+   * Cache2k builder with reasonable default for Spring. Permit nulls because, "Spring caches"
+   * allow storage of null values.
+   */
+  Cache2kBuilder getDefaultBuilder() {
+    return Cache2kBuilder.forUnknownTypes().manager(manager).permitNullValues(true);
+  }
+
   @SuppressWarnings("unchecked")
-  static SpringCache2kCache buildAndWrap(Cache2kBuilder<?, ?> builder) {
+  SpringCache2kCache buildAndWrap(Cache2kBuilder<?, ?> builder) {
     org.cache2k.Cache nativeCache = builder.build();
     Cache2kConfiguration<?,?> cfg = builder.toConfiguration();
     boolean loaderPresent = cfg.getLoader() != null || cfg.getAdvancedLoader() != null;

@@ -167,10 +167,11 @@ public interface MutableCacheEntry<K, V> extends CacheEntry<K, V> {
    * Insert or update the entry and sets an exception. The exception will be
    * propagated as {@link CacheLoaderException}.
    *
-   * <p>Identical to {@code setValue} an expiry of the exception will be determined
-   * according to the resilience settings. Hint: If no expiry is configured the
-   * default behavior will be that the set exception expires immediately, so
-   * the effect will be similar to {@code remove} in this case.
+   * <p>The effect depends on expiry and resilience setting. An exception
+   * will be kept in the cache only if there is an expiry configured or
+   * the resilience policy is allowing that.
+   *
+   * @see org.cache2k.integration.ResiliencePolicy
    */
   MutableCacheEntry<K,V> setException(Throwable ex);
 
