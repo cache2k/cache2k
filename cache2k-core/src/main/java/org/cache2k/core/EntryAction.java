@@ -314,7 +314,7 @@ public abstract class EntryAction<K, V, R> extends Entry.PiggyBack implements
   }
 
   @Override
-  public boolean isPresent() {
+  public boolean isDataFresh() {
     doNotCountAccess = true;
     return successfulLoad || heapEntry.hasFreshData(heapCache.getClock());
   }
@@ -333,7 +333,7 @@ public abstract class EntryAction<K, V, R> extends Entry.PiggyBack implements
   }
 
   @Override
-  public boolean isPresentOrRefreshing() {
+  public boolean isDataFreshOrRefreshing() {
     doNotCountAccess = true;
     if (successfulLoad) { return true; }
     long nrt = heapEntry.getNextRefreshTime();
@@ -344,7 +344,7 @@ public abstract class EntryAction<K, V, R> extends Entry.PiggyBack implements
   }
 
   @Override
-  public boolean isPresentOrMiss() {
+  public boolean isDataFreshOrMiss() {
     if (successfulLoad || heapEntry.hasFreshData(heapCache.getClock())) {
       return true;
     }

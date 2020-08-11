@@ -44,7 +44,7 @@ public class Operations<K, V> {
   static final Semantic PEEK = new Semantic.Read() {
     @Override
     public void examine(Progress c, ExaminationEntry e) {
-      if (c.isPresentOrMiss()) {
+      if (c.isDataFreshOrMiss()) {
         c.result(e.getValueOrException());
       }
       c.noMutation();
@@ -59,7 +59,7 @@ public class Operations<K, V> {
 
     @Override
     public void examine(Progress c, ExaminationEntry e) {
-      if (c.isPresentOrMiss()) {
+      if (c.isDataFreshOrMiss()) {
         c.result(e.getValueOrException());
         c.noMutation();
       } else {
@@ -92,7 +92,7 @@ public class Operations<K, V> {
      */
     @Override
     public void examine(final Progress<K, V, Void> c, final ExaminationEntry<K, V> e) {
-      if (c.isPresentOrRefreshing() || c.isExpiryTimeReachedOrInRefreshProbation()) {
+      if (c.isDataFreshOrRefreshing() || c.isExpiryTimeReachedOrInRefreshProbation()) {
         c.wantMutation();
       } else {
         c.noMutation();
@@ -113,7 +113,7 @@ public class Operations<K, V> {
 
     @Override
     public void examine(Progress c, ExaminationEntry e) {
-      if (c.isPresentOrMiss()) {
+      if (c.isDataFreshOrMiss()) {
         c.entryResult(e);
         c.noMutation();
       } else {
@@ -144,7 +144,7 @@ public class Operations<K, V> {
 
     @Override
     public void examine(final Progress c, final ExaminationEntry e) {
-      if (c.isPresentOrMiss()) {
+      if (c.isDataFreshOrMiss()) {
         c.entryResult(e);
       }
       c.noMutation();
@@ -172,7 +172,7 @@ public class Operations<K, V> {
 
     @Override
     public void mutate(Progress c, ExaminationEntry e) {
-      if (c.isPresent()) {
+      if (c.isDataFresh()) {
         c.result(true);
         c.remove();
         return;
@@ -190,7 +190,7 @@ public class Operations<K, V> {
 
     @Override
     public void examine(Progress c, ExaminationEntry e) {
-      c.result(c.isPresent());
+      c.result(c.isDataFresh());
       c.noMutation();
     }
 
@@ -204,7 +204,7 @@ public class Operations<K, V> {
 
     @Override
     public void mutate(Progress c, ExaminationEntry e) {
-      if (c.isPresentOrMiss()) {
+      if (c.isDataFreshOrMiss()) {
         c.result(e.getValueOrException());
       }
       c.remove();
@@ -216,7 +216,7 @@ public class Operations<K, V> {
 
       @Override
       public void examine(final Progress<K, V, V> c, final ExaminationEntry<K, V> e) {
-        if (c.isPresentOrMiss()) {
+        if (c.isDataFreshOrMiss()) {
           c.result(e.getValueOrException());
           c.wantMutation();
           return;
@@ -237,7 +237,7 @@ public class Operations<K, V> {
 
       @Override
       public void mutate(Progress<K, V, V> c, ExaminationEntry<K, V> e) {
-        if (c.isPresentOrMiss()) {
+        if (c.isDataFreshOrMiss()) {
           c.result(e.getValueOrException());
         }
         c.put(value);
@@ -251,7 +251,7 @@ public class Operations<K, V> {
 
       @Override
       public void examine(final Progress<K, V, V> c, final ExaminationEntry<K, V> e) {
-        if (c.isPresentOrMiss()) {
+        if (c.isDataFreshOrMiss()) {
           c.result(e.getValueOrException());
           c.noMutation();
         } else {
@@ -296,7 +296,7 @@ public class Operations<K, V> {
 
       @Override
       public void examine(final Progress<K, V, Boolean> c, final ExaminationEntry<K, V> e) {
-        if (!c.isPresentOrMiss()) {
+        if (!c.isDataFreshOrMiss()) {
           c.result(true);
           c.wantMutation();
         } else {
@@ -323,7 +323,7 @@ public class Operations<K, V> {
 
       @Override
       public void examine(final Progress<K, V, Boolean> c, final ExaminationEntry<K, V> e) {
-        if (c.isPresentOrMiss()) {
+        if (c.isDataFreshOrMiss()) {
           c.result(true);
           c.wantMutation();
         } else {
@@ -345,7 +345,7 @@ public class Operations<K, V> {
 
       @Override
       public void examine(final Progress<K, V, Boolean> c, final ExaminationEntry<K, V> e) {
-        if (c.isPresentOrMiss() &&
+        if (c.isDataFreshOrMiss() &&
           ( (value ==  e.getValueOrException()) ||
             (value != null && value.equals(e.getValueOrException()))) ) {
           c.result(true);
@@ -369,7 +369,7 @@ public class Operations<K, V> {
 
       @Override
       public void examine(final Progress<K, V, Boolean> c, final ExaminationEntry<K, V> e) {
-        if (c.isPresentOrMiss() &&
+        if (c.isDataFreshOrMiss() &&
           ( (value == null && e.getValueOrException() == null) ||
             value.equals(e.getValueOrException())) ) {
           c.result(true);
@@ -462,12 +462,12 @@ public class Operations<K, V> {
       public void examine(final Progress<K, V, Void> c, final ExaminationEntry<K, V> e) {
         if (t == ExpiryTimeValues.NO_CACHE ||
           t == ExpiryTimeValues.REFRESH) {
-          if (c.isPresentOrRefreshing()) {
+          if (c.isDataFreshOrRefreshing()) {
             c.wantMutation();
           } else {
             c.noMutation();
           }
-        } else if (c.isPresent()) {
+        } else if (c.isDataFresh()) {
           c.wantMutation();
         } else {
           c.noMutation();

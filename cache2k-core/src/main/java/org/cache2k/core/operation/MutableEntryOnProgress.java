@@ -56,7 +56,7 @@ class MutableEntryOnProgress<K, V> implements MutableCacheEntry<K, V> {
     this.entry = entry;
     this.progress = progress;
     this.key = key;
-    if (entry != null && progress.isPresentOrMiss()) {
+    if (entry != null && progress.isDataFreshOrMiss()) {
       value = this.entry.getValueOrException();
       originalExists = exists = true;
     }

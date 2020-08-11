@@ -20,9 +20,7 @@ package org.cache2k.core.operation;
  * #L%
  */
 
-import org.cache2k.integration.ExceptionInformation;
 import org.cache2k.integration.ExceptionPropagator;
-import sun.reflect.annotation.ExceptionProxy;
 
 /**
  * Interface for cache operation semantics to control the progress of the processing.
@@ -53,9 +51,10 @@ public interface Progress<K, V, R> {
 
   /**
    * Entry has valid data in the cache and is not expired. This is used for
-   * operations that do not want to access the value.
+   * operations that do not want to access the value. If needed this will
+   * check the clock.
    */
-  boolean isPresent();
+  boolean isDataFresh();
 
   /**
    * Entry reached the expiry time and expiry event can be sent and
@@ -64,18 +63,18 @@ public interface Progress<K, V, R> {
   boolean isExpiryTimeReachedOrInRefreshProbation();
 
   /**
-   * Same as {@link #isPresent()} but also true if the entry is refreshing
+   * Same as {@link #isDataFresh()} but also true if the entry is refreshing
    * or refreshed and in refresh probation. We need to take into account
    * refreshed entries for deciding whether we need to mutate for removal
    * or not.
    */
-  boolean isPresentOrRefreshing();
+  boolean isDataFreshOrRefreshing();
 
   /**
    * Entry has valid data in the cache and is not expired. Counts a miss, if no entry is
    * available, this is used for operations that do want to access the value.
    */
-  boolean isPresentOrMiss();
+  boolean isDataFreshOrMiss();
 
   /**
    * The entry gets locked for mutation. Last command of semantic method.
