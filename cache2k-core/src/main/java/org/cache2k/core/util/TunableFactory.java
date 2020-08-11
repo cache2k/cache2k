@@ -34,7 +34,7 @@ import java.util.Properties;
  * from configuration file or system properties.
  *
  * @see TunableConstants
- * @author Jens Wilke; created: 2014-04-27
+ * @author Jens Wilke
  */
 public final class TunableFactory {
 
@@ -64,9 +64,9 @@ public final class TunableFactory {
     defaultProperties = loadFile(DEFAULT_TUNING_FILE_NAME);
   }
 
-  static Properties loadFile(final String _fileName) {
+  static Properties loadFile(final String fileName) {
     InputStream in =
-      TunableConstants.class.getResourceAsStream(_fileName);
+      TunableConstants.class.getResourceAsStream(fileName);
     if (in != null) {
       try {
         Properties p = new Properties();
@@ -136,15 +136,15 @@ public final class TunableFactory {
     if (p == null) {
       return;
     }
-    String _propName = null;
+    String propName = null;
     try {
       for (Field f : cfg.getClass().getFields()) {
-        _propName =
+        propName =
           cfg.getClass().getName().replace('$', '.') + "." + f.getName();
-        String o = p.getProperty(_propName);
+        String o = p.getProperty(propName);
         if (o != null) {
-          final Class<?> _fieldType = f.getType();
-          if (_fieldType == Boolean.TYPE) {
+          final Class<?> fieldType = f.getType();
+          if (fieldType == Boolean.TYPE) {
             o = o.toLowerCase();
             if (
               "off".equals(o) ||
@@ -155,37 +155,37 @@ public final class TunableFactory {
               f.set(cfg, true);
             }
             if (log.isDebugEnabled()) {
-              log.debug(_propName + "=" + f.get(cfg));
+              log.debug(propName + "=" + f.get(cfg));
             }
-          } else if (_fieldType == Integer.TYPE) {
+          } else if (fieldType == Integer.TYPE) {
             f.set(cfg, Integer.valueOf(o));
             if (log.isDebugEnabled()) {
-              log.debug(_propName + "=" + f.get(cfg));
+              log.debug(propName + "=" + f.get(cfg));
             }
-          } else if (_fieldType == Long.TYPE) {
+          } else if (fieldType == Long.TYPE) {
             f.set(cfg, Long.valueOf(o));
             if (log.isDebugEnabled()) {
-              log.debug(_propName + "=" + f.get(cfg));
+              log.debug(propName + "=" + f.get(cfg));
             }
-          } else if (_fieldType == String.class) {
+          } else if (fieldType == String.class) {
             f.set(cfg, o);
             if (log.isDebugEnabled()) {
-              log.debug(_propName + "=" + f.get(cfg));
+              log.debug(propName + "=" + f.get(cfg));
             }
-          } else if (_fieldType == Class.class) {
+          } else if (fieldType == Class.class) {
             Class<?> c = Class.forName(o);
             f.set(cfg, c);
             if (log.isDebugEnabled()) {
-              log.debug(_propName + "=" + c.getName());
+              log.debug(propName + "=" + c.getName());
             }
           } else {
-            throw new CacheInternalError("Changing this tunable type is not supported. Tunable: " + _propName + ", " + _fieldType);
+            throw new CacheInternalError("Changing this tunable type is not supported. Tunable: " + propName + ", " + fieldType);
           }
         }
       }
     } catch (Exception ex) {
-      if (_propName != null) {
-        throw new CacheInternalError("error applying tuning setup, property=" + _propName, ex);
+      if (propName != null) {
+        throw new CacheInternalError("error applying tuning setup, property=" + propName, ex);
       } else {
         throw new CacheInternalError("error applying tuning setup" , ex);
       }
