@@ -110,14 +110,38 @@ public class SpringCache2kCache implements Cache {
     });
   }
 
+  /**
+   * May work async.
+   */
   @Override
   public void evict(final Object key) {
     cache.remove(key);
   }
 
+  /**
+   * May work async.
+   */
   @Override
   public void clear() {
     cache.clear();
+  }
+
+  /**
+   * Returns when evicted.
+   */
+  @Override
+  public boolean evictIfPresent(final Object key) {
+    return cache.containsAndRemove(key);
+  }
+
+  /**
+   * Like clear, but returns when everything is cleared.
+   */
+  @Override
+  public boolean invalidate() {
+    boolean notEmpty = !cache.asMap().isEmpty();
+    cache.clear();
+    return notEmpty;
   }
 
   public boolean isLoaderPresent() {
