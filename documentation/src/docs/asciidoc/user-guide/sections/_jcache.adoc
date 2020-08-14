@@ -255,6 +255,18 @@ Statistics of `Cache.putIfAbsent()`, https://github.com/jsr107/jsr107tck/issues/
 JMX statistics,  https://github.com/jsr107/jsr107tck/issues/83
 ,===
 
+==== Violations of TCK 1.1
+
+cache2k passes all TCK tests with currently one exception, which we believe is
+more correct.
+
+.Slightly different semantics in TCK 1.1
+[width="70",options="header"]
+,===
+Affected,JSR107 GitHub issue
+No statistics updates for no operation EntryProcessor, https://github.com/cache2k/cache2k/issues/132
+,===
+
 ==== Expiry Policy
 
 If configured via cache2k mechanisms, the cache2k expiry settings take precedence.
