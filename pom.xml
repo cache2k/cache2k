@@ -61,6 +61,7 @@
     <module>cache2k-pinpoint</module>
     <!-- other, deployed -->
     <module>cache2k-spring</module>
+    <module>cache2k-micrometer</module>
     <module>cache2k-jcache</module>
     <!-- a deployed module must be last for the
          nexus staging deploy / OSS release -->
