@@ -123,9 +123,9 @@ public interface InternalCacheInfo {
   /**
    * Entry was supposed to be refreshed, but there was no thread available for executing it.
    *
-   * @see CommonMetrics#getRefreshFailedCount()
+   * @see CommonMetrics#getRefreshRejectedCount()
    */
-  long getRefreshFailedCount();
+  long getRefreshRejectedCount();
 
   /**
    * Loader exception occurred, but the resilience policy decided to suppress the exception and

@@ -132,10 +132,8 @@ public interface CommonMetrics {
   /**
    * Refresh submit failed. Happens if the loader executor has not
    * enough available resources and rejects the refresh task.
-   *
-   * @see CommonMetrics#getRefreshFailedCount()
    */
-  long getRefreshFailedCount();
+  long getRefreshRejectedCount();
 
   /**
    * Entry was removed while waiting to get the mutation lock.
@@ -331,7 +329,7 @@ public interface CommonMetrics {
     }
 
     @Override
-    public long getRefreshFailedCount() {
+    public long getRefreshRejectedCount() {
       return 0;
     }
 

@@ -426,6 +426,8 @@ public class EntryProcessorTest {
   }
 
   public static class IdentCountingLoader extends CacheLoader<Integer, Integer> {
+
+    public static final int KEY_YIELDING_PERMANENT_EXCEPTION = 0xcafebabe;
     AtomicInteger counter = new AtomicInteger();
 
     public long getCount() {
@@ -434,8 +436,8 @@ public class EntryProcessorTest {
 
     @Override
     public Integer load(final Integer key) throws Exception {
-      if (key == 4711) {
-        throw new Exception("load exception on 4711");
+      if (key == KEY_YIELDING_PERMANENT_EXCEPTION) {
+        throw new Exception("load exception on " + KEY_YIELDING_PERMANENT_EXCEPTION);
       }
       counter.getAndIncrement();
       return key;
@@ -633,7 +635,7 @@ public class EntryProcessorTest {
       .expectAllZero();
     boolean _exceptionThrown = false;
     try {
-      wl.cache.invoke(4711, new EntryProcessor<Integer, Integer, Void>() {
+      wl.cache.invoke(IdentCountingLoader.KEY_YIELDING_PERMANENT_EXCEPTION, new EntryProcessor<Integer, Integer, Void>() {
         @Override
         public Void process(final MutableCacheEntry<Integer, Integer> e) throws Exception {
           Integer v = e.getValue();
@@ -649,6 +651,37 @@ public class EntryProcessorTest {
       .missCount.expect(1)
       .loadCount.expect(0)
       .expectAllZero();
+  }
+
+  /**
+   * Is entry lock given up after an exception?
+   */
+  @Test
+  public void exception_after_mutation() {
+    Cache<Integer, Integer> c = target.cache();
+    target.statistics();
+    final AtomicLong passCount = new AtomicLong();
+    try {
+      c.invoke(123, new EntryProcessor<Integer, Integer, Void>() {
+      @Override
+      public Void process(final MutableCacheEntry<Integer, Integer> e) throws Exception {
+        e.setValue(e.getValue());
+        System.err.println("pass");
+        if (passCount.incrementAndGet() == 2) {
+          throw new RuntimeException("exception in entry processor");
+        }
+        return null;
+        }
+    });
+      fail("expect exception");
+    } catch (EntryProcessingException ex) {
+    }
+    target.statistics()
+      .getCount.expect(1)
+      .missCount.expect(1)
+      .loadCount.expect(0)
+      .expectAllZero();
+    c.put(123, 123);
   }
 
   @Test

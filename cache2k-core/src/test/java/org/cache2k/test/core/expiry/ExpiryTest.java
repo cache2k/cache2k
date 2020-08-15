@@ -847,7 +847,7 @@ public class ExpiryTest extends TestingBase {
         return getInfo().getExpiredCount() >= _COUNT;
       }
     });
-    assertEquals(0, getInfo().getRefreshCount() + getInfo().getRefreshFailedCount());
+    assertEquals(0, getInfo().getRefreshCount() + getInfo().getRefreshRejectedCount());
     assertEquals(_COUNT, _countingLoader.getLoaderCalledCount());
     assertEquals(_COUNT, getInfo().getExpiredCount());
   }
@@ -882,7 +882,7 @@ public class ExpiryTest extends TestingBase {
         return getInfo().getExpiredCount() >= _COUNT;
       }
     });
-    assertEquals(0, getInfo().getRefreshCount() + getInfo().getRefreshFailedCount());
+    assertEquals(0, getInfo().getRefreshCount() + getInfo().getRefreshRejectedCount());
     assertEquals(_COUNT, _countingLoader.getLoaderCalledCount());
     assertEquals(_COUNT, getInfo().getExpiredCount());
   }
@@ -940,7 +940,7 @@ public class ExpiryTest extends TestingBase {
     await("All refreshed", new Condition() {
       @Override
       public boolean check() {
-        return getInfo().getRefreshCount() + getInfo().getRefreshFailedCount() >= _COUNT;
+        return getInfo().getRefreshCount() + getInfo().getRefreshRejectedCount() >= _COUNT;
       }
     });
     await("All expired", new Condition() {

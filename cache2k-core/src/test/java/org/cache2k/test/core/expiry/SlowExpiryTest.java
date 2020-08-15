@@ -111,7 +111,7 @@ public class SlowExpiryTest extends TestingBase {
          public void run() {
            assertEquals(COUNT, getInfo().getSize());
            assertEquals("no refresh yet", 0,
-             getInfo().getRefreshCount() + getInfo().getRefreshFailedCount()
+             getInfo().getRefreshCount() + getInfo().getRefreshRejectedCount()
            );
          }
        }
@@ -119,11 +119,11 @@ public class SlowExpiryTest extends TestingBase {
     await("All refreshed", new Condition() {
       @Override
       public boolean check() {
-        return getInfo().getRefreshCount() + getInfo().getRefreshFailedCount() >= COUNT;
+        return getInfo().getRefreshCount() + getInfo().getRefreshRejectedCount() >= COUNT;
       }
     });
     assertEquals("no internal exceptions",0, getInfo().getInternalExceptionCount());
-    assertTrue("got at least 8 - submitFailedCnt exceptions", getInfo().getLoadExceptionCount() >= getInfo().getRefreshFailedCount());
+    assertTrue("got at least 8 - submitFailedCnt exceptions", getInfo().getLoadExceptionCount() >= getInfo().getRefreshRejectedCount());
     assertTrue("no alert", getInfo().getHealth().isEmpty());
     await("All expired", new Condition() {
       @Override
@@ -172,7 +172,7 @@ public class SlowExpiryTest extends TestingBase {
                public void run() {
                  assertEquals(COUNT, getInfo().getSize());
                  assertEquals("no refresh yet", 0,
-                   getInfo().getRefreshCount() + getInfo().getRefreshFailedCount()
+                   getInfo().getRefreshCount() + getInfo().getRefreshRejectedCount()
                  );
                }
              }
@@ -180,11 +180,11 @@ public class SlowExpiryTest extends TestingBase {
     await("All refreshed", new Condition() {
       @Override
       public boolean check() {
-        return getInfo().getRefreshCount() + getInfo().getRefreshFailedCount() >= COUNT;
+        return getInfo().getRefreshCount() + getInfo().getRefreshRejectedCount() >= COUNT;
       }
     });
     assertEquals("no internal exceptions",0, getInfo().getInternalExceptionCount());
-    assertTrue("got at least 8 - submitFailedCnt exceptions", getInfo().getLoadExceptionCount() >= getInfo().getRefreshFailedCount());
+    assertTrue("got at least 8 - submitFailedCnt exceptions", getInfo().getLoadExceptionCount() >= getInfo().getRefreshRejectedCount());
     assertTrue("no alert", getInfo().getHealth().isEmpty());
     await("All expired", new Condition() {
       @Override

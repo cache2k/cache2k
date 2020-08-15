@@ -199,7 +199,7 @@ public class StandardCommonMetrics implements CommonMetrics.Updater {
     AtomicLongFieldUpdater.newUpdater(StandardCommonMetrics.class, "refreshSubmitFailed");
   private volatile long refreshSubmitFailed;
   @Override
-  public long getRefreshFailedCount() {
+  public long getRefreshRejectedCount() {
     return refreshSubmitFailedUpdater.get(this);
   }
   @Override
