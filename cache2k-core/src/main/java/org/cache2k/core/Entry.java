@@ -449,12 +449,12 @@ public class Entry<K, V> extends CompactEntry<K, V>
    * <p>Even if this is true, the data may be expired. Use hasFreshData() to
    * make sure to get not expired data.
    */
-  public final boolean isDataValid() {
+  public final boolean isDataAvailable() {
     return nextRefreshTime >= DATA_VALID || nextRefreshTime < 0;
   }
 
-  public final boolean isDataValidOrProbation() {
-    return isDataValid() || nextRefreshTime == Entry.EXPIRED_REFRESHED;
+  public final boolean isDataAvailableOrProbation() {
+    return isDataAvailable() || nextRefreshTime == Entry.EXPIRED_REFRESHED;
   }
 
   /**

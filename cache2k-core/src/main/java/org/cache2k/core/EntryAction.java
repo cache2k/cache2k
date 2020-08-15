@@ -645,7 +645,7 @@ public abstract class EntryAction<K, V, R> extends Entry.PiggyBack implements
     if (!e.isGone()) {
       e.startProcessing(ps, this);
       entryLocked = true;
-      heapDataValid = e.isDataValidOrProbation();
+      heapDataValid = e.isDataAvailableOrProbation();
       heapEntry = e;
       return true;
     }
@@ -778,7 +778,7 @@ public abstract class EntryAction<K, V, R> extends Entry.PiggyBack implements
       try {
         expiry = 0;
         ExceptionWrapper ew = (ExceptionWrapper) newValueOrException;
-        if ((heapEntry.isDataValid() || heapEntry.isExpiredState()) && heapEntry.getException() == null) {
+        if ((heapEntry.isDataAvailable() || heapEntry.isExpiredState()) && heapEntry.getException() == null) {
           expiry = timing().suppressExceptionUntil(heapEntry, ew);
         }
         if (expiry > loadStartedTime) {

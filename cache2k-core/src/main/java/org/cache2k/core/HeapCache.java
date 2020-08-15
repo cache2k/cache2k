@@ -1420,7 +1420,7 @@ public class HeapCache<K, V> extends BaseCache<K, V> {
     long _nextRefreshTime = 0;
     boolean _suppressException = false;
     try {
-      if ((e.isDataValid() || e.isExpiredState()) && e.getException() == null) {
+      if ((e.isDataAvailable() || e.isExpiredState()) && e.getException() == null) {
         _nextRefreshTime = timing.suppressExceptionUntil(e, _value);
       }
       if (_nextRefreshTime > t0) {
