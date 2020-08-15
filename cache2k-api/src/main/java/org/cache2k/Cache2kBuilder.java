@@ -780,6 +780,16 @@ public class Cache2kBuilder<K, V> {
   }
 
   /**
+   * Disables reporting of cache metrics to monitoring systems. This should be enabled, e.g. if
+   * a cache is created dynamically and intended to be short lived. All extensions for monitoring
+   * should respect this parameter.
+   */
+  public final Cache2kBuilder<K,V> disableMonitoring(boolean f) {
+    config().setDisableMonitoring(f);
+    return this;
+  }
+
+  /**
    * Thread pool / executor service to use for asynchronous load operations. If no executor is specified
    * the cache will create a thread pool, if needed.
    *

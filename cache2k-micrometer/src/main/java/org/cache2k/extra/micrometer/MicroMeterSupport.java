@@ -27,8 +27,7 @@ import org.cache2k.configuration.Cache2kConfiguration;
 import org.cache2k.core.spi.CacheLifeCycleListener;
 
 /**
- * Bind to micrometer automatically if enabled by configuration. Will be used by cache2k
- * internally, if present. Not for direct usage.
+ * Bind to micrometer automatically if not disabled by configuration.
  *
  * @author Jens Wilke
  */
@@ -38,18 +37,16 @@ public class MicroMeterSupport implements CacheLifeCycleListener {
 
   @Override
   public void cacheCreated(final Cache c, final Cache2kConfiguration cfg) {
-    if (cfg.getSections().stream()
-        .filter(v -> v instanceof MicroMeterConfiguration)
-        .findFirst().map(v -> (MicroMeterConfiguration) v)
-        .filter(v -> v.isEnable()).isPresent()) {
-      MeterRegistry registry =
-        (MeterRegistry)
-          c.getCacheManager().getProperties().get(MICROMETER_REGISTRY_MANAGER_PROPERTY);
-      if (registry == null) {
-        registry = Metrics.globalRegistry;
-      }
-      Cache2kCacheMetrics.monitor(registry, c);
+    if (cfg.isDisableMonitoring()) {
+      return;
     }
+    MeterRegistry registry =
+      (MeterRegistry)
+        c.getCacheManager().getProperties().get(MICROMETER_REGISTRY_MANAGER_PROPERTY);
+    if (registry == null) {
+      registry = Metrics.globalRegistry;
+    }
+    Cache2kCacheMetrics.monitor(registry, c);
   }
 
   /**

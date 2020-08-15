@@ -68,7 +68,7 @@ public class JmxSupport implements CacheLifeCycleListener, CacheManagerLifeCycle
    */
   @Override
   public void cacheCreated(Cache c, final Cache2kConfiguration cfg) {
-    if (MANAGEMENT_UNAVAILABLE || !cfg.isEnableJmx()) {
+    if (MANAGEMENT_UNAVAILABLE || !cfg.isEnableJmx() || cfg.isDisableMonitoring()) {
       return;
     }
     MBeanServer mbs = getPlatformMBeanServer();

@@ -28,7 +28,6 @@ import org.cache2k.CacheManager;
 import org.cache2k.extra.micrometer.Cache2kCacheMetrics;
 import static org.junit.Assert.*;
 
-import org.cache2k.extra.micrometer.MicroMeterConfiguration;
 import org.cache2k.extra.micrometer.MicroMeterSupport;
 import org.junit.Test;
 
@@ -50,12 +49,33 @@ public class MicroMeterTest {
   }
 
   @Test
+  public void notBoundToGlobalRegistryWhenDisabled() {
+    Cache cache = Cache2kBuilder.forUnknownTypes()
+      .name("bindToGlobalRegistryWhenDisabled")
+      .disableMonitoring(true)
+      .build();
+    try {
+      Metrics.globalRegistry.get("cache.puts")
+        .tag("cache", cache.getName()).meters();
+      fail("exception expected");
+    } catch (MeterNotFoundException expected) {}
+  }
+
+  @Test
   public void bindToGlobalRegistryWhenEnabled() {
     Cache cache = Cache2kBuilder.forUnknownTypes()
       .name("bindToGlobalRegistryWhenEnabled")
-      .with(new MicroMeterConfiguration.Builder()
-        .enable(true)
-        )
+      .disableMonitoring(false)
+      .build();
+    assertTrue(Metrics.globalRegistry.get("cache.puts")
+      .tag("cache", cache.getName())
+      .functionCounter().count() >= 0);
+  }
+
+  @Test
+  public void bindToGlobalRegistryWhenEnabledByDefault() {
+    Cache cache = Cache2kBuilder.forUnknownTypes()
+      .name("bindToGlobalRegistryWhenEnabledByDefault")
       .build();
     assertTrue(Metrics.globalRegistry.get("cache.puts")
       .tag("cache", cache.getName())
@@ -67,9 +87,6 @@ public class MicroMeterTest {
     Cache cache = Cache2kBuilder.forUnknownTypes()
       .disableStatistics(true)
       .name("bindWhenStatisticsDisabled")
-      .with(new MicroMeterConfiguration.Builder()
-        .enable(true)
-      )
       .build();
     assertTrue(Metrics.globalRegistry.get("cache.puts")
       .tag("cache", cache.getName())
@@ -83,9 +100,6 @@ public class MicroMeterTest {
     mgm.getProperties().put(MicroMeterSupport.MICROMETER_REGISTRY_MANAGER_PROPERTY, registry);
     Cache cache = Cache2kBuilder.forUnknownTypes()
       .manager(mgm)
-      .with(new MicroMeterConfiguration.Builder()
-        .enable(true)
-      )
       .build();
     try {
       Metrics.globalRegistry.get("cache.puts").tag("cache", cache.getName()).meters();

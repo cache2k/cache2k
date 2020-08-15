@@ -87,6 +87,7 @@ public class Cache2kConfiguration<K, V> implements ConfigurationBean, Configurat
   private boolean externalConfigurationPresent = false;
   private boolean boostConcurrency = false;
   private boolean enableJmx = false;
+  private boolean disableMonitoring = false;
 
   private CustomizationSupplier<Executor> loaderExecutor;
   private CustomizationSupplier<Executor> prefetchExecutor;
@@ -749,6 +750,17 @@ public class Cache2kConfiguration<K, V> implements ConfigurationBean, Configurat
    */
   public void setEnableJmx(final boolean v) {
     enableJmx = v;
+  }
+
+  public boolean isDisableMonitoring() {
+    return disableMonitoring;
+  }
+
+  /**
+   * @see Cache2kBuilder#disableMonitoring(boolean)
+   */
+  public void setDisableMonitoring(final boolean disableMonitoring) {
+    this.disableMonitoring = disableMonitoring;
   }
 
 
