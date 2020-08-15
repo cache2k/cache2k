@@ -73,6 +73,7 @@ public class SpringCache2KCacheManagerTest {
       new SpringCache2kCacheManager(
         CacheManager.getInstance(
           SpringCache2KCacheManagerTest.class.getSimpleName() + "notConfigured"));
+    m.setAllowUnknownCache(false);
     m.getCache("testUnknown");
   }
 
@@ -80,8 +81,7 @@ public class SpringCache2KCacheManagerTest {
   public void testAll() {
     SpringCache2kCacheManager m =
       new SpringCache2kCacheManager(SpringCache2KCacheManagerTest.class.getSimpleName() + "notConfigured");
-    m.setAllowUnknownCache(true);
-    assertTrue(m.isAllowUnknownCache());
+    assertTrue("allow unknown cache is default", m.isAllowUnknownCache());
     assertEquals(0, m.getCacheNames().size());
     assertEquals(0, m.getCacheMap().size());
     m.getCache("test");

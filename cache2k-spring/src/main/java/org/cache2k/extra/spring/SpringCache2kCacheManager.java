@@ -52,7 +52,7 @@ public class SpringCache2kCacheManager implements CacheManager {
 
   private final Set<String> configuredCacheNames = new CopyOnWriteArraySet<>();
 
-  private boolean allowUnknownCache = false;
+  private boolean allowUnknownCache = true;
 
   private Function<Cache2kBuilder<?,?>, Cache2kBuilder<?,?>> defaultSetup = b -> b;
 
@@ -200,10 +200,10 @@ public class SpringCache2kCacheManager implements CacheManager {
   }
 
   /**
-   * By default the cache manager only manages a cache if added via {@link #addCaches},
+   * If {@code false}, the cache manager only manages a cache if added via {@link #addCaches},
    * {@link #setCaches(Collection)} or enlisted in the cache2k XML configuration.
    * Setting this to {@code true} will create a cache with a default configuration if the requested
-   * cache name is not known.
+   * cache name is not known. The default is {@code true}.
    */
   public void setAllowUnknownCache(final boolean v) {
     allowUnknownCache = v;
