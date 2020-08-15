@@ -98,6 +98,7 @@ public class SpringCache2KCacheManagerTest {
       new SpringCache2kCacheManager(SpringCache2KCacheManagerTest.class.getSimpleName() + "addCaches");
     m.addCaches(b -> b.name("cache1"));
     assertNotNull(m.getCache("cache1"));
+    assertTrue(m.getConfiguredCacheNames().contains("cache1"));
   }
 
   @Test
@@ -108,6 +109,15 @@ public class SpringCache2KCacheManagerTest {
     m.addCaches(b->b, b->b.name("cache2"));
     assertNotNull(m.getCache("cache1"));
     assertNotNull(m.getCache("cache2"));
+  }
+
+  @Test
+  public void testDynamicCache() {
+    SpringCache2kCacheManager m =
+      new SpringCache2kCacheManager(SpringCache2KCacheManagerTest.class.getSimpleName() + "dynamicCache");
+    m.setAllowUnknownCache(true);
+    assertNotNull(m.getCache("cache1"));
+    assertTrue(m.getConfiguredCacheNames().isEmpty());
   }
 
 }

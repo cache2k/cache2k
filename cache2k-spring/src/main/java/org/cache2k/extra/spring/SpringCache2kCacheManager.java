@@ -119,9 +119,9 @@ public class SpringCache2kCacheManager implements CacheManager {
    * is managed by this class and cannot be used. This method can be used in case a programmatic
    * configuration of a cache manager is preferred.
    *
-   * <p>Rationale: The method provides a builder that is already seeded with the effective manager.
-   * This makes it possible to use the builder without code bloat. Since the actual build is done
-   * within this class, it is also possible to reset specific settings or do assertions.
+   * <p>Rationale: The method provides a builder that is already seeded with the effective cache2k
+   * cache manager. This makes it possible to use the builder without code bloat. Since the actual
+   * build is done within this class, it is also possible to reset specific settings or do assertions.
    *
    * @throws IllegalArgumentException if cache is already created
    */
@@ -137,6 +137,7 @@ public class SpringCache2kCacheManager implements CacheManager {
     String name = builder.toConfiguration().getName();
     Assert.notNull(name, "Name must be set via Cache2kBuilder.name()");
     Assert.isTrue(builder.getManager() == manager, "Manager must be identical in builder.");
+    configuredCacheNames.add(name);
     return name2cache.compute(name, (name2, existingCache) -> {
       Assert.isNull(existingCache, "Cache is not yet configured");
       return buildAndWrap(builder);
@@ -169,6 +170,15 @@ public class SpringCache2kCacheManager implements CacheManager {
     }
     cacheNames.addAll(configuredCacheNames);
     return Collections.unmodifiableSet(cacheNames);
+  }
+
+  /**
+   * List of configured cache names. These are caches configured in cache2k via XML and
+   * caches added to this cache manager with programmatic configuration {@link #addCache}.
+   * Used for testing purposes to determine whether a cache was added dynamically.
+   */
+  public Collection<String> getConfiguredCacheNames() {
+    return Collections.unmodifiableSet(configuredCacheNames);
   }
 
   /**
