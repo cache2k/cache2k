@@ -428,7 +428,7 @@ public abstract class EntryAction<K, V, R> extends Entry.PiggyBack implements
       updateDidNotTriggerDifferentMutationStoreLoadedValue();
       return;
     }
-    finish();
+    abort();
   }
 
   @Override
@@ -508,10 +508,6 @@ public abstract class EntryAction<K, V, R> extends Entry.PiggyBack implements
   public void continueWithMutation() {
     int callbackCount = semanticCallback;
     operation.mutate(this, heapOrLoadedEntry);
-  }
-
-  public void finish() {
-    noMutationRequested();
   }
 
   @Override
@@ -1204,10 +1200,10 @@ public abstract class EntryAction<K, V, R> extends Entry.PiggyBack implements
       }
       return;
     }
-    updateReadStatistics();
+    _updateReadStatistics();
   }
 
-  private void updateReadStatistics() {
+  private void _updateReadStatistics() {
     if (countMiss) {
       if (heapHit) {
         metrics().peekHitNotFresh();
@@ -1226,30 +1222,17 @@ public abstract class EntryAction<K, V, R> extends Entry.PiggyBack implements
   @Override
   public void failure(RuntimeException t) {
     semanticCallback++;
-    updateReadStatistics();
     mutationAbort(t);
   }
 
   public void examinationAbort(CustomizationException t) {
     exceptionToPropagate = t;
-    if (entryLocked) {
-      synchronized (heapEntry) {
-        heapEntry.processingDone(this);
-        entryLocked = false;
-      }
-    }
-    completeProcessCallbacks();
+    abort();
   }
 
   public void mutationAbort(RuntimeException t) {
     exceptionToPropagate = t;
-    if (entryLocked) {
-      synchronized (heapEntry) {
-        heapEntry.processingDone(this);
-        entryLocked = false;
-      }
-    }
-    completeProcessCallbacks();
+    abort();
   }
 
   /**
@@ -1259,8 +1242,34 @@ public abstract class EntryAction<K, V, R> extends Entry.PiggyBack implements
     completeProcessCallbacks();
   }
 
-  public void noMutationRequested() {
-    updateReadStatistics();
+  /**
+   * Abort, but check whether entry was locked before.
+   */
+  public void abort() {
+    if (entryLocked) {
+      abortReleaseLock();
+      return;
+    }
+    abortFinalize();
+  }
+
+  /**
+   * Release the lock. Cleanup entry if it was inserted on behalf of this
+   * operation.
+   */
+  public void abortReleaseLock() {
+    synchronized (heapEntry) {
+      heapEntry.processingDone(this);
+      if (heapEntry.isVirgin()) {
+        heapCache.removeEntry(heapEntry);
+      }
+      entryLocked = false;
+    }
+    abortFinalize();
+  }
+
+  public void abortFinalize() {
+    _updateReadStatistics();
     completeProcessCallbacks();
   }
 
