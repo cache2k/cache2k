@@ -33,4 +33,13 @@ public interface CacheMXBean extends CacheInfoMXBean {
    */
   void clear();
 
+  /**
+   * Change the maximum capacity of the cache. If a weigher is present
+   * this is the maximum weight of all cache entries, otherwise the maximum count
+   * of cache entries. The capacity is not allowed to be 0.
+   *
+   * @see org.cache2k.Weigher
+   */
+  void changeCapacity(long entryCountOrWeight);
+
 }

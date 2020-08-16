@@ -23,12 +23,12 @@ package org.cache2k.test.core;
 import org.cache2k.Cache;
 import org.cache2k.Cache2kBuilder;
 import org.cache2k.CacheEntry;
+import org.cache2k.core.CacheClosedException;
+import org.cache2k.core.InternalCache;
 import org.cache2k.core.util.SimulatedClock;
 import org.cache2k.event.CacheEntryEvictedListener;
 import org.cache2k.expiry.ExpiryPolicy;
 import org.cache2k.integration.CacheLoader;
-import org.cache2k.processor.EntryProcessor;
-import org.cache2k.processor.MutableCacheEntry;
 import org.cache2k.test.util.CacheRule;
 import org.cache2k.test.util.ConcurrencyHelper;
 import org.cache2k.test.util.Condition;
@@ -139,6 +139,32 @@ public class ListenerTest {
         cache.put(2, 2);
         assertEquals(1, evicted.get());
       }
+    });
+
+  }
+
+  /**
+   * @see ChangeCapacityOrResizeTest
+   */
+  @Test
+  public void evictedListenerCalledOnChangeCapacity() {
+    target.run(new CountSyncEvents() {
+      @Override
+      public void extend(final Cache2kBuilder<Integer, Integer> b) {
+        super.extend(b);
+        b.entryCapacity(10);
+      }
+
+      @Override
+      public void run() {
+        cache.put(1, 2);
+        cache.put(2, 2);
+        cache.put(3, 2);
+        assertEquals(0, evicted.get());
+        ((InternalCache) cache).getEviction().changeCapacity(1);
+        assertEquals(2, evicted.get());
+      }
+
     });
 
   }
@@ -312,8 +338,8 @@ public class ListenerTest {
   /** If the listener is not executed in separate thread, this would block */
   @Test
   public void asyncEvictedListenerCalled() {
-    final AtomicInteger _callCount = new AtomicInteger();
-    final CountDownLatch _fire = new CountDownLatch(1);
+    final AtomicInteger callCount = new AtomicInteger();
+    final CountDownLatch block = new CountDownLatch(1);
     Cache<Integer, Integer> c = target.cache(new CacheRule.Specialization<Integer, Integer>() {
       @Override
       public void extend(final Cache2kBuilder<Integer, Integer> b) {
@@ -321,26 +347,91 @@ public class ListenerTest {
           @Override
           public void onEntryEvicted(final Cache<Integer, Integer> c, final CacheEntry<Integer, Integer> e) {
             try {
-              _fire.await();
+              block.await();
             } catch (InterruptedException ignore) {
             }
-            _callCount.incrementAndGet();
+            callCount.incrementAndGet();
           }
         })
         .entryCapacity(1);
       }
     });
     c.put(1, 2);
-    assertEquals(0, _callCount.get());
+    assertEquals(0, callCount.get());
     c.put(2, 2);
-    assertEquals(0, _callCount.get());
-    _fire.countDown();
+    assertEquals(0, callCount.get());
+    c.put(1, 2);
+    assertEquals(0, callCount.get());
+    c.put(2, 2);
+    assertEquals(0, callCount.get());
+
+    block.countDown();
     ConcurrencyHelper.await(new Condition() {
       @Override
       public boolean check() throws Exception {
-        return _callCount.get() == 1;
+        return callCount.get() >= 1;
       }
     });
+  }
+
+  @Test
+  public void syncEvictedListenerDoesNotBlockCacheOps() {
+    final AtomicInteger callCount = new AtomicInteger();
+    final CountDownLatch block = new CountDownLatch(1);
+    final Cache<Integer, Integer> c = target.cache(new CacheRule.Specialization<Integer, Integer>() {
+      @Override
+      public void extend(final Cache2kBuilder<Integer, Integer> b) {
+        b.addListener(new CacheEntryEvictedListener<Integer, Integer>() {
+          @Override
+          public void onEntryEvicted(final Cache<Integer, Integer> c, final CacheEntry<Integer, Integer> e) {
+            callCount.incrementAndGet();
+            try {
+              block.await();
+            } catch (InterruptedException ignore) {
+            }
+          }
+        })
+          .entryCapacity(2);
+      }
+    });
+    c.put(1, 2);
+    assertEquals(0, callCount.get());
+    c.put(2, 2);
+    assertEquals(0, callCount.get());
+    Thread t = new Thread(new Runnable() {
+      @Override
+      public void run() {
+        try {
+          c.put(3, 2);
+        } catch (CacheClosedException likelyIgnore) { }
+      }
+    });
+    t.start();
+    ConcurrencyHelper.await(new Condition() {
+      @Override
+      public boolean check() throws Exception {
+        return callCount.get() >= 1;
+      }
+    });
+    if (isEvicting(c, 1)) {
+      assertTrue(c.containsKey(2));
+      c.put(2, 88); // update works!
+      c.remove(2);
+    } else {
+      assertTrue(c.containsKey(1));
+      c.put(1, 88); // update works!
+      c.remove(1);
+    }
+    block.countDown();
+  }
+
+  /**
+   * containsKey would return true for an entry currently being evicted.
+   * A mutation operation would block. Check the internal entry state.
+   */
+  public static <K> boolean isEvicting(Cache<K, ?> c, K key) {
+    InternalCache<K, ?> ic = (InternalCache<K,?>) c;
+    return ic.getEntryState(key).contains("lock=EVICT");
   }
 
   /** Check that we do not miss events. */

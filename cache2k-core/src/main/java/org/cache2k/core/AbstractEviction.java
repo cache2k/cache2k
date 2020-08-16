@@ -35,24 +35,28 @@ public abstract class AbstractEviction implements Eviction, EvictionMetrics {
   public static final int MAXIMAL_CHUNK_SIZE = 64;
   public static final long MINIMUM_CAPACITY_FOR_CHUNKING = 1000;
 
-  protected final long maxSize;
-  protected final long maxWeight;
-  protected final long correctedMaxSizeOrWeight;
+  private final Weigher weigher;
   protected final HeapCache heapCache;
   private final Object lock = new Object();
+  private final HeapCacheListener listener;
+  private final boolean noListenerCall;
+  private final boolean noChunking;
+
+  private int chunkSize = 1;
+  protected long maxSize;
+  protected long maxWeight;
+  protected long correctedMaxSizeOrWeight;
+
+  private int evictionRunningCount = 0;
+  private long evictionRunningWeight = 0;
   private long newEntryCounter;
   private long removedCnt;
   private long expiredRemovedCnt;
   private long virginRemovedCnt;
   private long evictedCount;
   private long currentWeight;
-  private final HeapCacheListener listener;
-  private final boolean noListenerCall;
+
   private Entry[] evictChunkReuse;
-  private int chunkSize;
-  private int evictionRunningCount = 0;
-  private long evictionRunningWeight = 0;
-  private final Weigher weigher;
 
   public AbstractEviction(final HeapCache heapCache, final HeapCacheListener listener,
                           final long maxSize, final Weigher weigher, final long maxWeight,
@@ -60,15 +64,20 @@ public abstract class AbstractEviction implements Eviction, EvictionMetrics {
     this.weigher = weigher;
     this.heapCache = heapCache;
     this.listener = listener;
+    noListenerCall = listener instanceof HeapCacheListener.NoOperation;
+    this.noChunking = noChunking;
+    updateLimits(maxSize, maxWeight);
+  }
+
+  private void updateLimits(final long maxSize, final long maxWeight) {
     this.maxSize = maxSize;
     this.maxWeight = maxWeight;
-    if (maxSize < MINIMUM_CAPACITY_FOR_CHUNKING || noChunking) {
+    if (maxSize < MINIMUM_CAPACITY_FOR_CHUNKING || this.noChunking) {
       chunkSize = 1;
     } else {
       chunkSize = MINIMAL_CHUNK_SIZE + Runtime.getRuntime().availableProcessors() - 1;
       chunkSize = Math.min(MAXIMAL_CHUNK_SIZE, chunkSize);
     }
-    noListenerCall = listener instanceof HeapCacheListener.NoOperation;
     if (this.maxSize >= 0) {
       if (this.maxSize == Long.MAX_VALUE) {
         correctedMaxSizeOrWeight = Long.MAX_VALUE >> 1;
@@ -211,6 +220,11 @@ public abstract class AbstractEviction implements Eviction, EvictionMetrics {
   /**
    * Do we need to trigger an eviction? For chunks sizes more than 1 the eviction
    * kicks in later.
+   *
+   * <p>Eviction happens one unit before the capacity is reached because this is called
+   * to make space on behalf of a new entry. Needs a redesign.
+   * We need to get rid of the getSize() > 0 here.
+   * TODO: Add a parameter to the eviction process about how much entries should be freed?
    */
   boolean isEvictionNeeded() {
     if (isWeigherPresent()) {
@@ -428,6 +442,47 @@ public abstract class AbstractEviction implements Eviction, EvictionMetrics {
     return
       "impl=" + this.getClass().getSimpleName() +
       ", chunkSize=" + chunkSize;
+  }
+
+  /**
+   * Update the limits and run eviction loop with chunks to get rid
+   * of entries fast. Gives up the lock to send events and allow
+   * other cache operations while adaption happens.
+   */
+  @Override
+  public void changeCapacity(final long entryCountOrWeight) {
+    if (entryCountOrWeight <= 0) {
+      throw new IllegalArgumentException("Capacity of 0 is not supported.");
+    }
+    Entry[] chunk;
+    synchronized (lock) {
+      if (entryCountOrWeight >= 0 && entryCountOrWeight < Long.MAX_VALUE) {
+        _changeCapacity(entryCountOrWeight + 1);
+      } else {
+        _changeCapacity(entryCountOrWeight);
+      }
+      synchronized (lock) {
+        evictChunkReuse = null;
+        chunk = fillEvictionChunk();
+      }
+    }
+    while (chunk != null) {
+      evictChunk(chunk);
+      synchronized (lock) {
+        chunk = fillEvictionChunk();
+      }
+    }
+    synchronized (lock) {
+      _changeCapacity(entryCountOrWeight);
+    }
+  }
+
+  private void _changeCapacity(final long entryCountOrWeight) {
+    if (isWeigherPresent()) {
+      updateLimits(maxSize, entryCountOrWeight);
+    } else {
+      updateLimits(entryCountOrWeight, maxWeight);
+    }
   }
 
 }

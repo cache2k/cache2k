@@ -269,4 +269,13 @@ public class SegmentedEviction implements Eviction, EvictionMetrics {
     return segments[0].isWeigherPresent();
   }
 
+  @Override
+  public void changeCapacity(final long entryCountOrWeight) {
+    long limitPerSegment = isWeigherPresent() ?
+      InternalCache2kBuilder.determineMaxWeight(entryCountOrWeight, segments.length) :
+      InternalCache2kBuilder.determineMaxSize(entryCountOrWeight, segments.length);
+    for (Eviction ev : segments) {
+      ev.changeCapacity(limitPerSegment);
+    }
+  }
 }

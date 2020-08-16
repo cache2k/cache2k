@@ -97,4 +97,10 @@ public interface Eviction {
 
   boolean isWeigherPresent();
 
+  /**
+   * Change the capacity. If capacity is reduced, it will evict entries
+   * before returning.
+   */
+  void changeCapacity(long entryCountOrWeight);
+
 }

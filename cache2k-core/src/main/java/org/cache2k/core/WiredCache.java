@@ -659,6 +659,11 @@ public class WiredCache<K, V> extends BaseCache<K, V>
   }
 
   @Override
+  public Eviction getEviction() {
+    return heapCache.getEviction();
+  }
+
+  @Override
   public StorageAdapter getStorage() {
     return storage;
   }

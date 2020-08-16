@@ -101,4 +101,6 @@ public interface InternalCache<K, V>
   boolean isLoaderPresent();
 
 
+  Eviction getEviction();
+
 }

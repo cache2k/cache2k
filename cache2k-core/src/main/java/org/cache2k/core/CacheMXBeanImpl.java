@@ -20,6 +20,7 @@ package org.cache2k.core;
  * #L%
  */
 
+import org.cache2k.core.concurrency.Job;
 import org.cache2k.jmx.CacheMXBean;
 
 import java.util.Date;
@@ -56,6 +57,11 @@ public class CacheMXBeanImpl implements CacheMXBean {
   @Override
   public long getEntryCapacity() {
     return getInfo().getHeapCapacity();
+  }
+
+  @Override
+  public long getCapacityLimit() {
+    return isWeigherPresent() ? getCurrentWeight() : getEntryCapacity();
   }
 
   @Override
@@ -204,6 +210,11 @@ public class CacheMXBeanImpl implements CacheMXBean {
 
   public void clear() {
     cache.clear();
+  }
+
+  @Override
+  public void changeCapacity(final long entryCountOrWeight) {
+    cache.getEviction().changeCapacity(entryCountOrWeight);
   }
 
   @Override

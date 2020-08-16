@@ -32,11 +32,11 @@ import org.cache2k.CacheEntry;
 public interface CacheEntryEvictedListener<K,V> extends CacheEntryOperationListener<K,V> {
 
   /**
-   * Called upon eviction of a cache entry.
+   * Called upon eviction of a cache entry. When used as synchronous listener other cache
+   * operations can still proceed except for this entry or {@link Cache#removeAll()}.
    *
-   * @param cache The cache that generated the event.
-   * @param entry Entry containing the latest data. It is only valid to access the object during the
-   *              call of this method. The object value may become invalid afterwards.
+   * @param cache The cache that generated the event
+   * @param entry Entry containing the recent data
    */
   void onEntryEvicted(Cache<K,V> cache, CacheEntry<K,V> entry);
 

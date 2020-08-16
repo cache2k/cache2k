@@ -1944,6 +1944,9 @@ public class HeapCache<K, V> extends BaseCache<K, V> {
   }
 
   @Override
+  public final Eviction getEviction() { return eviction; }
+
+  @Override
   public CacheManager getCacheManager() {
     return manager;
   }

@@ -76,6 +76,15 @@ public interface CacheInfoMXBean {
   long getCurrentWeight();
 
   /**
+   * Either {@link #getMaximumWeight()} or {@link #getEntryCapacity()} depending
+   * on whether a weigher is present or not.
+   *
+   * @see org.cache2k.Weigher
+   * @since 1.4
+   */
+  long getCapacityLimit();
+
+  /**
    * How many times a new entry was inserted into the cache.
    */
   long getInsertCount();
