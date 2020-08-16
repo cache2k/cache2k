@@ -666,7 +666,6 @@ public class EntryProcessorTest {
       @Override
       public Void process(final MutableCacheEntry<Integer, Integer> e) throws Exception {
         e.setValue(e.getValue());
-        System.err.println("pass");
         if (passCount.incrementAndGet() == 2) {
           throw new RuntimeException("exception in entry processor");
         }
