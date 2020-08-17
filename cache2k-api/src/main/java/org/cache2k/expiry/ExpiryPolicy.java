@@ -65,7 +65,7 @@ public interface ExpiryPolicy<K, V> extends ExpiryTimeValues {
    * cache methods from this method. The outcome is undefined and it can
    * cause a deadlock.
    *
-   * <p><b>Calling time:</b></p>The method is called from the cache, whenever a
+   * <p><b>Calling time:</b></p>The method is called from the cache whenever a
    * cache entry is updated. However, it is legal that the cache calls the
    * method at arbitrary times during the entry lifecycle.
    *

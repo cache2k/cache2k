@@ -96,25 +96,25 @@ public class Expiry implements ExpiryTimeValues {
    *             expiry is needed.
    */
   public static long mixTimeSpanAndPointInTime(long loadTime, long refreshAfter, long pointInTime) {
-    long _refreshTime = loadTime + refreshAfter;
-    if (_refreshTime < 0) {
-      _refreshTime = ETERNAL;
+    long refreshTime = loadTime + refreshAfter;
+    if (refreshTime < 0) {
+      refreshTime = ETERNAL;
     }
     if (pointInTime == ETERNAL) {
-      return _refreshTime;
+      return refreshTime;
     }
-    if (pointInTime > _refreshTime) {
-      return _refreshTime;
+    if (pointInTime > refreshTime) {
+      return refreshTime;
     }
-    long _absPointInTime = Math.abs(pointInTime);
-    if (_absPointInTime <= _refreshTime) {
+    long absPointInTime = Math.abs(pointInTime);
+    if (absPointInTime <= refreshTime) {
       return pointInTime;
     }
-    long _pointInTimeMinusDelta = _absPointInTime - refreshAfter;
-    if (_pointInTimeMinusDelta < _refreshTime) {
-      return _pointInTimeMinusDelta;
+    long pointInTimeMinusDelta = absPointInTime - refreshAfter;
+    if (pointInTimeMinusDelta < refreshTime) {
+      return pointInTimeMinusDelta;
     }
-    return _refreshTime;
+    return refreshTime;
   }
 
 }

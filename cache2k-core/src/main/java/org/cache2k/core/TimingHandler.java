@@ -42,7 +42,7 @@ import org.cache2k.integration.ResiliencePolicy;
  *
  * @author Jens Wilke
  */
-@SuppressWarnings("unchecked")
+@SuppressWarnings({"unchecked", "rawtypes"})
 public abstract class TimingHandler<K,V>  {
 
   /** Used as default */
@@ -60,9 +60,9 @@ public abstract class TimingHandler<K,V>  {
     new ExpiryPolicy<Object, ValueWithExpiryTime>() {
       @Override
       public long calculateExpiryTime(
-        Object _key, ValueWithExpiryTime _value, long _loadTime,
-        CacheEntry<Object, ValueWithExpiryTime> _oldEntry) {
-        return _value.getCacheExpiryTime();
+        Object key, ValueWithExpiryTime value, long loadTime,
+        CacheEntry<Object, ValueWithExpiryTime> oldEntry) {
+        return value.getCacheExpiryTime();
       }
     };
 
@@ -74,24 +74,26 @@ public abstract class TimingHandler<K,V>  {
     return t == 0 || t == -1;
   }
 
-  public static <K, V> TimingHandler<K,V> of(InternalClock _clock, Cache2kConfiguration<K,V> cfg) {
+  public static <K, V> TimingHandler<K,V> of(InternalClock clock, Cache2kConfiguration<K,V> cfg) {
     if (cfg.getExpireAfterWrite() == 0
       && zeroOrUnspecified(cfg.getRetryInterval())) {
       return IMMEDIATE;
     }
     if (cfg.getExpiryPolicy() != null
-      || (cfg.getValueType() != null && ValueWithExpiryTime.class.isAssignableFrom(cfg.getValueType().getType()))
+      || (cfg.getValueType() != null
+        && ValueWithExpiryTime.class.isAssignableFrom(cfg.getValueType().getType()))
       || cfg.getResiliencePolicy() != null) {
-      TimingHandler.Dynamic<K,V> h = new TimingHandler.Dynamic<K, V>(_clock, cfg);
+      TimingHandler.Dynamic<K,V> h = new TimingHandler.Dynamic<K, V>(clock, cfg);
       return h;
     }
     if (cfg.getResilienceDuration() > 0 && !cfg.isSuppressExceptions()) {
-      throw new IllegalArgumentException("Ambiguous: exceptions suppression is switched off, but resilience duration is specified");
+      throw new IllegalArgumentException(
+        "Ambiguous: exceptions suppression is switched off, but resilience duration is specified");
     }
     if (realDuration(cfg.getExpireAfterWrite())
       || realDuration(cfg.getRetryInterval())
       || realDuration(cfg.getResilienceDuration())) {
-      TimingHandler.Static<K,V> h = new TimingHandler.Static<K, V>(_clock, cfg);
+      TimingHandler.Static<K,V> h = new TimingHandler.Static<K, V>(clock, cfg);
       return h;
     }
     if ((cfg.getExpireAfterWrite() == ExpiryPolicy.ETERNAL || cfg.getExpireAfterWrite() == -1)) {
@@ -123,15 +125,20 @@ public abstract class TimingHandler<K,V>  {
   public void close() { cancelAll(); }
 
   /**
+   * Return effective expiry policy, or null
+   */
+  public ExpiryPolicy<K,V> getExpiryPolicy() { return null; }
+
+  /**
    * Calculates the expiry time for a value that was just loaded or inserted into the cache.
    *
    * @param e The entry, filled with the previous value if there is a value present alreay.
    * @param v The new value or an exception wrapped in {@link ExceptionWrapper}
-   * @param _loadTime the time immediately before the load started
+   * @param loadTime the time immediately before the load started
    * @return Point in time when the entry should expire. Meaning identical to
    *         {@link ExpiryPolicy#calculateExpiryTime(Object, Object, long, CacheEntry)}
    */
-  public abstract long calculateNextRefreshTime(Entry<K, V> e, V v, long _loadTime);
+  public abstract long calculateNextRefreshTime(Entry<K, V> e, V v, long loadTime);
 
   /**
    * Delegated to the resilience policy
@@ -151,20 +158,21 @@ public abstract class TimingHandler<K,V>  {
    * Convert expiry value to the entry field value, essentially maps 0 to {@link Entry#EXPIRED}
    * since 0 is a virgin entry. Restart the timer if needed.
    *
-   * @param _expiryTime calculated expiry time
+   * @param expiryTime calculated expiry time
    * @return sanitized nextRefreshTime for storage in the entry.
    */
-  public long stopStartTimer(long _expiryTime, Entry<K,V> e) {
-    if ((_expiryTime > 0 && _expiryTime < Long.MAX_VALUE) || _expiryTime < 0) {
-      throw new IllegalArgumentException("invalid expiry time, cache is not initialized with expiry: " + Util.formatMillis(_expiryTime));
+  public long stopStartTimer(long expiryTime, Entry<K,V> e) {
+    if ((expiryTime > 0 && expiryTime < Long.MAX_VALUE) || expiryTime < 0) {
+      throw new IllegalArgumentException(
+        "Cache is not configured for variable expiry: " + Util.formatMillis(expiryTime));
     }
-    return _expiryTime == 0 ? Entry.EXPIRED : _expiryTime;
+    return expiryTime == 0 ? Entry.EXPIRED : expiryTime;
   }
 
   /**
    * Start timer for expiring an entry on the separate refresh hash.
    */
-  public boolean startRefreshProbationTimer(Entry<K,V> e, long _nextRefreshTime) {
+  public boolean startRefreshProbationTimer(Entry<K,V> e, long nextRefreshTime) {
     return true;
   }
 
@@ -188,7 +196,7 @@ public abstract class TimingHandler<K,V>  {
   private static class Eternal<K,V> extends TimeAgnostic<K,V> {
 
     @Override
-    public long calculateNextRefreshTime(final Entry<K,V> e, final V v, final long _loadTime) {
+    public long calculateNextRefreshTime(final Entry<K,V> e, final V v, final long loadTime) {
       return ExpiryPolicy.ETERNAL;
     }
 
@@ -206,7 +214,7 @@ public abstract class TimingHandler<K,V>  {
   static class EternalImmediate<K,V> extends TimeAgnostic<K,V> {
 
     @Override
-    public long calculateNextRefreshTime(final Entry<K,V> e, final V v, final long _loadTime) {
+    public long calculateNextRefreshTime(final Entry<K,V> e, final V v, final long loadTime) {
       return ExpiryPolicy.ETERNAL;
     }
 
@@ -225,7 +233,7 @@ public abstract class TimingHandler<K,V>  {
   static class Immediate<K,V> extends TimeAgnostic<K,V> {
 
     @Override
-    public long calculateNextRefreshTime(final Entry<K,V> e, final V v, final long _loadTime) {
+    public long calculateNextRefreshTime(final Entry<K,V> e, final V v, final long loadTime) {
       return 0;
     }
 
@@ -261,11 +269,11 @@ public abstract class TimingHandler<K,V>  {
     }
 
     void configure(final Cache2kConfiguration<K, V> c) {
-      long _expiryMillis  = c.getExpireAfterWrite();
-      if (_expiryMillis == ExpiryPolicy.ETERNAL || _expiryMillis < 0) {
+      long expiryMillis  = c.getExpireAfterWrite();
+      if (expiryMillis == ExpiryPolicy.ETERNAL || expiryMillis < 0) {
         maxLinger = ExpiryPolicy.ETERNAL;
       } else {
-        maxLinger = _expiryMillis;
+        maxLinger = expiryMillis;
       }
       ResiliencePolicy.Context ctx = new ResiliencePolicy.Context() {
         @Override
@@ -301,13 +309,13 @@ public abstract class TimingHandler<K,V>  {
       resiliencePolicy.init(ctx);
       refreshAhead = c.isRefreshAhead();
       sharpExpiry = c.isSharpExpiry();
-      int _timerCount = 1;
+      int timerCount = 1;
       if (c.isBoostConcurrency()) {
         int _ncpu = Runtime.getRuntime().availableProcessors();
-        _timerCount = 2 << (31 - Integer.numberOfLeadingZeros(_ncpu));
+        timerCount = 2 << (31 - Integer.numberOfLeadingZeros(_ncpu));
       }
-      timer = new SimpleTimer[_timerCount];
-      timerMask = _timerCount - 1;
+      timer = new SimpleTimer[timerCount];
+      timerMask = timerCount - 1;
     }
 
     @Override
@@ -320,7 +328,7 @@ public abstract class TimingHandler<K,V>  {
     }
 
     @Override
-    public synchronized  void reset() {
+    public synchronized void reset() {
       cancelAll();
       for (int i = 0; i <= timerMask; i++) {
         if (timer[i] != null) { continue; }
@@ -330,17 +338,17 @@ public abstract class TimingHandler<K,V>  {
 
     @Override
     public synchronized void cancelAll() {
-      SimpleTimer _timer;
+      SimpleTimer timer;
       for (int i = 0; i <= timerMask; i++) {
-        if ((_timer = timer[i]) == null) { continue; }
-        _timer.cancel();
-        timer[i] = null;
+        if ((timer = this.timer[i]) == null) { continue; }
+        timer.cancel();
+        this.timer[i] = null;
       }
     }
 
     @Override
-    public long calculateNextRefreshTime(final Entry<K,V> e, final V v, final long _loadTime) {
-      return calcNextRefreshTime(e.getKey(), v, _loadTime, e, null, maxLinger, sharpExpiry);
+    public long calculateNextRefreshTime(final Entry<K,V> e, final V v, final long loadTime) {
+      return calcNextRefreshTime(e.getKey(), v, loadTime, e, null, maxLinger, sharpExpiry);
     }
 
     @Override
@@ -360,11 +368,11 @@ public abstract class TimingHandler<K,V>  {
      * This will also start a refresh task, if the entry just was refreshed and it is
      * expired immediately. The refresh task will handle this and expire the entry.
      */
-    long expiredEventuallyStartBackgroundRefresh(final Entry e, boolean _sharpExpiry) {
+    long expiredEventuallyStartBackgroundRefresh(final Entry e, boolean sharpExpiry) {
       if (refreshAhead) {
         e.setTask(new RefreshTimerTask<K,V>().to(cache, e));
         scheduleTask(0, e);
-        return _sharpExpiry ? Entry.EXPIRED_REFRESH_PENDING : Entry.DATA_VALID;
+        return sharpExpiry ? Entry.EXPIRED_REFRESH_PENDING : Entry.DATA_VALID;
       }
       return Entry.EXPIRED;
     }
@@ -376,64 +384,64 @@ public abstract class TimingHandler<K,V>  {
      * {@link Entry#EXPIRED} is returned. Callers need to check that and may
      * be remove the entry consequently from the cache.
      *
-     * @param _expiryTime expiry time with special values as defined in {@link ExpiryTimeValues}
+     * @param expiryTime expiry time with special values as defined in {@link ExpiryTimeValues}
      * @param e the entry
      * @return adjusted value for nextRefreshTime.
      */
     @Override
-    public long stopStartTimer(long _expiryTime, final Entry e) {
+    public long stopStartTimer(long expiryTime, final Entry e) {
       cancelExpiryTimer(e);
-      if (_expiryTime == ExpiryTimeValues.NO_CACHE) {
+      if (expiryTime == ExpiryTimeValues.NO_CACHE) {
         return Entry.EXPIRED;
       }
-      if (_expiryTime == ExpiryTimeValues.NEUTRAL) {
+      if (expiryTime == ExpiryTimeValues.NEUTRAL) {
         long nrt = e.getNextRefreshTime();
         if (nrt == 0) {
           throw new IllegalArgumentException("neutral expiry not allowed for creation");
         }
         return e.getNextRefreshTime();
       }
-      if (_expiryTime == ExpiryTimeValues.ETERNAL) {
-        return _expiryTime;
+      if (expiryTime == ExpiryTimeValues.ETERNAL) {
+        return expiryTime;
       }
-      if (_expiryTime == ExpiryTimeValues.REFRESH) {
+      if (expiryTime == ExpiryTimeValues.REFRESH) {
         return expiredEventuallyStartBackgroundRefresh(e, false);
       }
       final long now = clock.millis();
-      if (Math.abs(_expiryTime) <= now) {
-        return expiredEventuallyStartBackgroundRefresh(e, _expiryTime < 0);
+      if (Math.abs(expiryTime) <= now) {
+        return expiredEventuallyStartBackgroundRefresh(e, expiryTime < 0);
       }
-      if (_expiryTime < 0) {
-        long _timerTime = -_expiryTime - SAFETY_GAP_MILLIS;
-        if (_timerTime >= now) {
+      if (expiryTime < 0) {
+        long timerTime = -expiryTime - SAFETY_GAP_MILLIS;
+        if (timerTime >= now) {
           e.setTask(new ExpireTimerTask().to(cache, e));
-          scheduleTask(_timerTime, e);
-          _expiryTime = -_expiryTime;
+          scheduleTask(timerTime, e);
+          expiryTime = -expiryTime;
         } else {
-          scheduleFinalExpireWithOptionalRefresh(e, -_expiryTime);
+          scheduleFinalExpireWithOptionalRefresh(e, -expiryTime);
         }
       } else {
-        scheduleFinalExpireWithOptionalRefresh(e, _expiryTime);
+        scheduleFinalExpireWithOptionalRefresh(e, expiryTime);
       }
-      return _expiryTime;
+      return expiryTime;
     }
 
     @Override
-    public boolean startRefreshProbationTimer(Entry<K,V> e, long _nextRefreshTime) {
+    public boolean startRefreshProbationTimer(Entry<K,V> e, long nextRefreshTime) {
       cancelExpiryTimer(e);
-      if (_nextRefreshTime == ExpiryTimeValues.ETERNAL) {
-        e.setNextRefreshTime(_nextRefreshTime);
+      if (nextRefreshTime == ExpiryTimeValues.ETERNAL) {
+        e.setNextRefreshTime(nextRefreshTime);
         return false;
       }
-      if (_nextRefreshTime > 0 && _nextRefreshTime < Entry.EXPIRY_TIME_MIN) {
+      if (nextRefreshTime > 0 && nextRefreshTime < Entry.EXPIRY_TIME_MIN) {
         e.setNextRefreshTime(Entry.EXPIRED);
         return true;
       }
-      long _absTime = Math.abs(_nextRefreshTime);
-      e.setRefreshProbationNextRefreshTime(_absTime);
+      long absTime = Math.abs(nextRefreshTime);
+      e.setRefreshProbationNextRefreshTime(absTime);
       e.setNextRefreshTime(Entry.EXPIRED_REFRESHED);
       e.setTask(new RefreshExpireTimerTask<K,V>().to(cache, e));
-      scheduleTask(_absTime, e);
+      scheduleTask(absTime, e);
       return false;
     }
 
@@ -455,11 +463,11 @@ public abstract class TimingHandler<K,V>  {
       scheduleTask(t, e);
     }
 
-    void scheduleTask(final long _nextRefreshTime, final Entry e) {
+    void scheduleTask(final long nextRefreshTime, final Entry e) {
       SimpleTimer _timer = timer[e.hashCode & timerMask];
       if (_timer != null) {
         try {
-          _timer.schedule(e.getTask(), _nextRefreshTime);
+          _timer.schedule(e.getTask(), nextRefreshTime);
         } catch (IllegalStateException ignore) {
         }
       }
@@ -576,18 +584,19 @@ public abstract class TimingHandler<K,V>  {
       policyFactory = null;
     }
 
-    long calcNextRefreshTime(K _key, V _newObject, long now, Entry _entry) {
+    long calcNextRefreshTime(K key, V newObject, long now, Entry entry) {
       return calcNextRefreshTime(
-        _key, _newObject, now, _entry,
+        key, newObject, now, entry,
         expiryPolicy, maxLinger, sharpExpiry);
     }
 
-    public long calculateNextRefreshTime(Entry<K, V> _entry, V _newValue, long _loadTime) {
+    public long calculateNextRefreshTime(Entry<K, V> entry, V newValue, long loadTime) {
       long t;
-      if (_entry.isDataAvailable() || _entry.isExpiredState() || _entry.nextRefreshTime == Entry.EXPIRED_REFRESH_PENDING) {
-        t = calcNextRefreshTime(_entry.getKey(), _newValue, _loadTime, _entry);
+      if (entry.isDataAvailable() || entry.isExpiredState()
+        || entry.nextRefreshTime == Entry.EXPIRED_REFRESH_PENDING) {
+        t = calcNextRefreshTime(entry.getKey(), newValue, loadTime, entry);
       } else {
-        t = calcNextRefreshTime(_entry.getKey(), _newValue, _loadTime, null);
+        t = calcNextRefreshTime(entry.getKey(), newValue, loadTime, null);
       }
       return t;
     }
@@ -601,17 +610,17 @@ public abstract class TimingHandler<K,V>  {
   }
 
   static <K, T> long calcNextRefreshTime(
-    K _key, T _newObject, long now, org.cache2k.core.Entry _entry,
-    ExpiryPolicy<K, T> ec, long _maxLinger, boolean _sharpExpiryEnabled) {
-    if (_maxLinger == 0) {
+    K key, T newObject, long now, org.cache2k.core.Entry entry,
+    ExpiryPolicy<K, T> ec, long maxLinger, boolean sharpExpiryEnabled) {
+    if (maxLinger == 0) {
       return 0;
     }
     if (ec != null) {
-      long t = ec.calculateExpiryTime(_key, _newObject, now, _entry);
-      return limitExpiryToMaxLinger(now, _maxLinger, t, _sharpExpiryEnabled);
+      long t = ec.calculateExpiryTime(key, newObject, now, entry);
+      return limitExpiryToMaxLinger(now, maxLinger, t, sharpExpiryEnabled);
     }
-    if (_maxLinger < ExpiryPolicy.ETERNAL) {
-      long t = _maxLinger + now;
+    if (maxLinger < ExpiryPolicy.ETERNAL) {
+      long t = maxLinger + now;
       if (t >= 0) {
         return t;
       }
@@ -631,11 +640,13 @@ public abstract class TimingHandler<K,V>  {
    * be to pass on two times from here: a refresh time and the point in time for sharp
    * expiry, and expiry correctly while a concurrent load is proceeding.
    */
-  static long limitExpiryToMaxLinger(long now, long _maxLinger, long _requestedExpiryTime, boolean _sharpExpiryEnabled) {
-    if (_sharpExpiryEnabled && _requestedExpiryTime > ExpiryPolicy.REFRESH && _requestedExpiryTime < ExpiryPolicy.ETERNAL) {
-      _requestedExpiryTime = -_requestedExpiryTime;
+  static long limitExpiryToMaxLinger(long now, long maxLinger, long requestedExpiryTime,
+                                     boolean sharpExpiryEnabled) {
+    if (sharpExpiryEnabled && requestedExpiryTime > ExpiryPolicy.REFRESH
+      && requestedExpiryTime < ExpiryPolicy.ETERNAL) {
+      requestedExpiryTime = -requestedExpiryTime;
     }
-    return Expiry.mixTimeSpanAndPointInTime(now, _maxLinger, _requestedExpiryTime);
+    return Expiry.mixTimeSpanAndPointInTime(now, maxLinger, requestedExpiryTime);
   }
 
   public static class Tunable extends TunableConstants {

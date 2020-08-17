@@ -50,6 +50,7 @@ public interface CustomizationSupplier<T> {
    *                   is wrapped into a {@link org.cache2k.CacheException} and
    *                   rethrown. When the creation of a customization fails, the
    *                   cache will not be usable.
+   * @return created customization, never {@code null}
    */
   T supply(CacheManager manager) throws Exception;
 

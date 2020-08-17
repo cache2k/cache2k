@@ -57,25 +57,25 @@ public class DefaultResiliencePolicy<K,V> extends ResiliencePolicy<K,V> {
   /**
    * Construct a resilience policy with custom multiplier and randomization.
    */
-  public DefaultResiliencePolicy(double _multiplier, double _randomization) {
-    multiplier = _multiplier;
-    randomization = _randomization;
+  public DefaultResiliencePolicy(double multiplier, double randomization) {
+    this.multiplier = multiplier;
+    this.randomization = randomization;
   }
 
   public double getMultiplier() {
     return multiplier;
   }
 
-  public void setMultiplier(final double _multiplier) {
-    multiplier = _multiplier;
+  public void setMultiplier(final double multiplier) {
+    this.multiplier = multiplier;
   }
 
   public double getRandomization() {
     return randomization;
   }
 
-  public void setRandomization(final double _randomization) {
-    randomization = _randomization;
+  public void setRandomization(final double randomization) {
+    this.randomization = randomization;
   }
 
   public long getResilienceDuration() {
@@ -130,16 +130,16 @@ public class DefaultResiliencePolicy<K,V> extends ResiliencePolicy<K,V> {
     if (resilienceDuration == Long.MAX_VALUE) {
       return Long.MAX_VALUE;
     }
-    long _maxSuppressUntil = exceptionInformation.getSinceTime() + resilienceDuration;
-    long _deltaMs = calculateRetryDelta(exceptionInformation);
-    return Math.min(exceptionInformation.getLoadTime() + _deltaMs, _maxSuppressUntil);
+    long maxSuppressUntil = exceptionInformation.getSinceTime() + resilienceDuration;
+    long deltaMs = calculateRetryDelta(exceptionInformation);
+    return Math.min(exceptionInformation.getLoadTime() + deltaMs, maxSuppressUntil);
   }
 
   private long calculateRetryDelta(final ExceptionInformation exceptionInformation) {
-    long _delta = (long)
+    long delta = (long)
       (retryInterval * Math.pow(multiplier, exceptionInformation.getRetryCount()));
-    _delta += SHARED_RANDOM.nextDouble() * randomization * _delta;
-    return Math.min(_delta, maxRetryInterval);
+    delta += SHARED_RANDOM.nextDouble() * randomization * delta;
+    return Math.min(delta, maxRetryInterval);
   }
 
   @Override

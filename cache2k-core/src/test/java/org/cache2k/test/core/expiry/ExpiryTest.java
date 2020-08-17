@@ -42,6 +42,7 @@ import org.cache2k.expiry.ExpiryPolicy;
 import org.cache2k.core.InternalCache;
 import org.cache2k.testing.category.FastTests;
 import org.cache2k.test.util.TimeBox;
+import org.hamcrest.Matchers;
 import org.junit.experimental.categories.Category;
 import org.junit.Test;
 
@@ -223,11 +224,12 @@ public class ExpiryTest extends TestingBase {
    */
   @Test
   public void testEternal_keepData() throws Exception {
+    final int EXCEPTION_KEY = 99;
     IntCountingCacheSource g = new IntCountingCacheSource() {
       @Override
       public Integer load(final Integer o) {
         incrementLoadCalledCount();
-        if (o == 99) {
+        if (o == EXCEPTION_KEY) {
           throw new RuntimeException("ouch");
         }
         return o;
@@ -245,15 +247,16 @@ public class ExpiryTest extends TestingBase {
     assertEquals("one miss", 1, g.getLoaderCalledCount());
     assertTrue(((InternalCache) c).getEntryState(1802).contains("nextRefreshTime=ETERNAL"));
     try {
-      Integer obj = c.get(99);
+      Integer obj = c.get(EXCEPTION_KEY);
       fail("exception expected");
     } catch (CacheLoaderException ex) {
-      assertTrue("no expiry on exception", !ex.toString().contains(EXPIRY_MARKER));
+      assertThat("no expiry on exception", ex.toString(),
+        Matchers.not(Matchers.containsString(EXPIRY_MARKER)));
       assertTrue(ex.getCause() instanceof RuntimeException);
     }
     assertEquals("miss", 2, g.getLoaderCalledCount());
-    assertTrue(((InternalCache) c).getEntryState(99).contains("state=4"));
-    CacheEntry<Integer, Integer> e = c.getEntry(99);
+    assertTrue(((InternalCache) c).getEntryState(EXCEPTION_KEY).contains("state=4"));
+    CacheEntry<Integer, Integer> e = c.getEntry(EXCEPTION_KEY);
     entryHasException(e);
     assertEquals(RuntimeException.class, e.getException().getClass());
     assertEquals("miss", 3, g.getLoaderCalledCount());
@@ -264,11 +267,12 @@ public class ExpiryTest extends TestingBase {
    */
   @Test
   public void testEternal_noKeep() throws Exception {
+    final int EXCEPTION_KEY = 99;
     IntCountingCacheSource g = new IntCountingCacheSource() {
       @Override
       public Integer load(final Integer o) {
         incrementLoadCalledCount();
-        if (o == 99) {
+        if (o == EXCEPTION_KEY) {
           throw new RuntimeException("ouch");
         }
         return o;
@@ -285,14 +289,15 @@ public class ExpiryTest extends TestingBase {
     assertEquals("one miss", 1, g.getLoaderCalledCount());
     assertTrue(((InternalCache) c).getEntryState(1802).contains("nextRefreshTime=ETERNAL"));
     try {
-      Integer obj = c.get(99);
+      Integer obj = c.get(EXCEPTION_KEY);
       fail("exception expected");
     } catch (CacheLoaderException ex) {
-      assertTrue("no expiry on exception", !ex.toString().contains(EXPIRY_MARKER));
+      assertThat("no expiry on exception", ex.toString(),
+        Matchers.not(Matchers.containsString(EXPIRY_MARKER)));
       assertTrue(ex.getCause() instanceof RuntimeException);
     }
     assertEquals("miss", 2, g.getLoaderCalledCount());
-    CacheEntry<Integer, Integer> e = c.getEntry(99);
+    CacheEntry<Integer, Integer> e = c.getEntry(EXCEPTION_KEY);
     entryHasException(e);
     assertEquals(RuntimeException.class, e.getException().getClass());
     assertEquals("miss", 3, g.getLoaderCalledCount());
