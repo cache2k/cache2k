@@ -190,11 +190,11 @@ public abstract class EntryAction<K, V, R> extends Entry.PiggyBack implements
   }
 
   @SuppressWarnings("unchecked")
-  public EntryAction(HeapCache<K,V> _heapCache, InternalCache<K,V> _userCache,
+  public EntryAction(HeapCache<K,V> heapCache, InternalCache<K,V> userCache,
                      Semantic<K, V, R> op, K k, Entry<K, V> e, CompletedCallback cb) {
     super(null);
-    heapCache = _heapCache;
-    userCache = _userCache;
+    this.heapCache = heapCache;
+    this.userCache = userCache;
     operation = op;
     key = k;
     if (e != null) {
@@ -210,9 +210,9 @@ public abstract class EntryAction<K, V, R> extends Entry.PiggyBack implements
   }
 
   @SuppressWarnings("unchecked")
-  public EntryAction(HeapCache<K,V> _heapCache, InternalCache<K,V> _userCache,
+  public EntryAction(HeapCache<K,V> heapCache, InternalCache<K,V> userCache,
                      Semantic<K, V, R> op, K k, Entry<K, V> e) {
-    this(_heapCache, _userCache, op, k, e, null);
+    this(heapCache, userCache, op, k, e, null);
   }
 
   @Override
@@ -492,7 +492,7 @@ public abstract class EntryAction<K, V, R> extends Entry.PiggyBack implements
    * Example: A get() triggers a load().
    * Also the expiry timer event sends out the events via this method.
    *
-   * @see org.cache2k.core.operation.Operations#EXPIRE_EVENT
+   * @see org.cache2k.core.operation.Operations#expireEvent
    */
   public void existingEntryExpiredBeforeMutationSendExpiryEvents() {
     CacheEntry<K, V> entryCopy = heapCache.returnCacheEntry(heapEntry);
@@ -547,11 +547,11 @@ public abstract class EntryAction<K, V, R> extends Entry.PiggyBack implements
     }
     valueDefinitelyLoaded = true;
     loaderWasCalled = true;
-    AsyncCacheLoader<K, V> _asyncLoader;
-    if ((_asyncLoader = asyncLoader()) != null) {
+    AsyncCacheLoader<K, V> asyncLoader;
+    if ((asyncLoader = asyncLoader()) != null) {
       heapEntry.nextProcessingStep(LOAD_ASYNC);
       try {
-        _asyncLoader.load(key, this, this);
+        asyncLoader.load(key, this, this);
       } catch (Throwable ouch) {
         onLoadFailure(ouch);
         /*
@@ -774,7 +774,8 @@ public abstract class EntryAction<K, V, R> extends Entry.PiggyBack implements
       try {
         expiry = 0;
         ExceptionWrapper ew = (ExceptionWrapper) newValueOrException;
-        if ((heapEntry.isDataAvailable() || heapEntry.isExpiredState()) && heapEntry.getException() == null) {
+        if ((heapEntry.isDataAvailable() || heapEntry.isExpiredState()) &&
+          heapEntry.getException() == null) {
           expiry = timing().suppressExceptionUntil(heapEntry, ew);
         }
         if (expiry > loadStartedTime) {
@@ -803,13 +804,14 @@ public abstract class EntryAction<K, V, R> extends Entry.PiggyBack implements
         expiry = timing().calculateNextRefreshTime(
           heapEntry, newValueOrException,
           lastRefreshTime);
-        if (newValueOrException == null && heapCache.isRejectNullValues() && expiry != ExpiryTimeValues.NO_CACHE) {
-          RuntimeException _ouch = heapCache.returnNullValueDetectedException();
+        if (newValueOrException == null && heapCache.isRejectNullValues() &&
+          expiry != ExpiryTimeValues.NO_CACHE) {
+          RuntimeException ouch = heapCache.returnNullValueDetectedException();
           if (valueDefinitelyLoaded) {
-            decideForLoaderExceptionAfterExpiryCalculation(new CacheLoaderException(_ouch));
+            decideForLoaderExceptionAfterExpiryCalculation(new CacheLoaderException(ouch));
             return;
           } else {
-            mutationAbort(_ouch);
+            mutationAbort(ouch);
             return;
           }
         }
@@ -833,10 +835,10 @@ public abstract class EntryAction<K, V, R> extends Entry.PiggyBack implements
    * in the loaded value and may be temporary.
    */
   @SuppressWarnings("unchecked")
-  private void decideForLoaderExceptionAfterExpiryCalculation(RuntimeException _ouch) {
+  private void decideForLoaderExceptionAfterExpiryCalculation(RuntimeException ouch) {
     newValueOrException = (V)
       new ExceptionWrapper<K>(
-        key, _ouch, loadStartedTime,
+        key, ouch, loadStartedTime,
         heapEntry, getExceptionPropagator());
     expiry = 0;
     mutationCalculateExpiry();
@@ -848,9 +850,9 @@ public abstract class EntryAction<K, V, R> extends Entry.PiggyBack implements
    * the other, since this is a general configuration problem.
    */
   @SuppressWarnings("unchecked")
-  private void resiliencePolicyException(RuntimeException _ouch) {
+  private void resiliencePolicyException(RuntimeException ouch) {
     newValueOrException = (V)
-      new ExceptionWrapper<K>(key, _ouch, loadStartedTime, heapEntry, getExceptionPropagator());
+      new ExceptionWrapper<K>(key, ouch, loadStartedTime, heapEntry, getExceptionPropagator());
     expiry = 0;
     expiryCalculated();
   }
@@ -984,12 +986,12 @@ public abstract class EntryAction<K, V, R> extends Entry.PiggyBack implements
    * keep the data.
    */
   public void checkKeepOrRemove() {
-    boolean _hasKeepAfterExpired = heapCache.isKeepAfterExpired();
+    boolean hasKeepAfterExpired = heapCache.isKeepAfterExpired();
     if (expiry != 0 || remove) {
       mutationUpdateHeap();
       return;
     }
-    if (_hasKeepAfterExpired) {
+    if (hasKeepAfterExpired) {
       expiredImmediatelyKeepData();
       return;
     }
@@ -1069,11 +1071,11 @@ public abstract class EntryAction<K, V, R> extends Entry.PiggyBack implements
     } else {
       if (storageDataValid || heapDataValid) {
         if (entryUpdatedListeners() != null) {
-          CacheEntry<K,V> _previousEntry =
+          CacheEntry<K,V> previousEntry =
             heapCache.returnCacheEntry(heapEntry.getKey(), oldValueOrException);
           for (CacheEntryUpdatedListener<K,V> l : entryUpdatedListeners()) {
             try {
-              l.onEntryUpdated(userCache, _previousEntry, entryCopy);
+              l.onEntryUpdated(userCache, previousEntry, entryCopy);
             } catch (Throwable t) {
               exceptionToPropagate = new ListenerException(t);
             }
@@ -1113,10 +1115,10 @@ public abstract class EntryAction<K, V, R> extends Entry.PiggyBack implements
     }
   }
 
-  private void sendExpiryEvents(final CacheEntry<K, V> _entryCopy) {
+  private void sendExpiryEvents(final CacheEntry<K, V> entryCopy) {
     for (CacheEntryExpiredListener<K,V> l : entryExpiredListeners()) {
       try {
-        l.onEntryExpired(userCache, _entryCopy);
+        l.onEntryExpired(userCache, entryCopy);
       } catch (Throwable t) {
         exceptionToPropagate = new ListenerException(t);
       }
@@ -1185,13 +1187,13 @@ public abstract class EntryAction<K, V, R> extends Entry.PiggyBack implements
       metrics().expiredKept();
     }
     if (loaderWasCalled) {
-      long _delta = loadCompletedTime - loadStartedTime;
+      long delta = loadCompletedTime - loadStartedTime;
       if (refresh) {
-        metrics().refresh(_delta);
+        metrics().refresh(delta);
       } else if (isGetLike()) {
-        metrics().readThrough(_delta);
+        metrics().readThrough(delta);
       } else {
-        metrics().explicitLoad(_delta);
+        metrics().explicitLoad(delta);
       }
       if (countMiss) {
         if (heapHit) {
@@ -1200,10 +1202,10 @@ public abstract class EntryAction<K, V, R> extends Entry.PiggyBack implements
       }
       return;
     }
-    _updateReadStatistics();
+    updateReadStatisticsNoTailCall();
   }
 
-  private void _updateReadStatistics() {
+  private void updateReadStatisticsNoTailCall() {
     if (countMiss) {
       if (heapHit) {
         metrics().peekHitNotFresh();
@@ -1269,7 +1271,7 @@ public abstract class EntryAction<K, V, R> extends Entry.PiggyBack implements
   }
 
   public void abortFinalize() {
-    _updateReadStatistics();
+    updateReadStatisticsNoTailCall();
     completeProcessCallbacks();
   }
 

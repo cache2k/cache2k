@@ -457,9 +457,9 @@ public abstract class AbstractEviction implements Eviction, EvictionMetrics {
     Entry[] chunk;
     synchronized (lock) {
       if (entryCountOrWeight >= 0 && entryCountOrWeight < Long.MAX_VALUE) {
-        _changeCapacity(entryCountOrWeight + 1);
+        modifyCapacityLimits(entryCountOrWeight + 1);
       } else {
-        _changeCapacity(entryCountOrWeight);
+        modifyCapacityLimits(entryCountOrWeight);
       }
       synchronized (lock) {
         evictChunkReuse = null;
@@ -473,11 +473,11 @@ public abstract class AbstractEviction implements Eviction, EvictionMetrics {
       }
     }
     synchronized (lock) {
-      _changeCapacity(entryCountOrWeight);
+      modifyCapacityLimits(entryCountOrWeight);
     }
   }
 
-  private void _changeCapacity(final long entryCountOrWeight) {
+  private void modifyCapacityLimits(final long entryCountOrWeight) {
     if (isWeigherPresent()) {
       updateLimits(maxSize, entryCountOrWeight);
     } else {

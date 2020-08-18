@@ -40,13 +40,12 @@ public final class TunableFactory {
 
   static Log log = Log.getLog(TunableFactory.class);
 
-  public final static String DEFAULT_TUNING_FILE_NAME =
-    "/org/cache2k/default-tuning.properties";
+  public static final String DEFAULT_TUNING_FILE_NAME = "/org/cache2k/default-tuning.properties";
 
-  public final static String CUSTOM_TUNING_FILE_NAME =
+  public static final String CUSTOM_TUNING_FILE_NAME =
     "/org/cache2k/tuning.properties";
 
-  public final static String TUNE_MARKER = "org.cache2k.tuning";
+  public static final String TUNE_MARKER = "org.cache2k.tuning";
 
   private static Map<Class<?>, Object> map;
 
@@ -64,7 +63,7 @@ public final class TunableFactory {
     defaultProperties = loadFile(DEFAULT_TUNING_FILE_NAME);
   }
 
-  static Properties loadFile(final String fileName) {
+  static Properties loadFile(String fileName) {
     InputStream in =
       TunableConstants.class.getResourceAsStream(fileName);
     if (in != null) {
@@ -89,7 +88,7 @@ public final class TunableFactory {
    * @return Created and initialized object
    */
   @SuppressWarnings("unchecked")
-  public synchronized static <T extends TunableConstants> T get(Properties p, Class<T> c) {
+  public static synchronized <T extends TunableConstants> T get(Properties p, Class<T> c) {
     T cfg = getDefault(c);
     if (p != null
       && p.containsKey(TUNE_MARKER)
@@ -108,7 +107,7 @@ public final class TunableFactory {
    * @param <T> type of requested tunable class
    * @return Created and initialized object
    */
-  public synchronized static <T extends TunableConstants> T get(Class<T> c) {
+  public static synchronized <T extends TunableConstants> T get(Class<T> c) {
     return getDefault(c);
   }
 
@@ -143,7 +142,7 @@ public final class TunableFactory {
           cfg.getClass().getName().replace('$', '.') + "." + f.getName();
         String o = p.getProperty(propName);
         if (o != null) {
-          final Class<?> fieldType = f.getType();
+          Class<?> fieldType = f.getType();
           if (fieldType == Boolean.TYPE) {
             o = o.toLowerCase();
             if (
@@ -179,7 +178,8 @@ public final class TunableFactory {
               log.debug(propName + "=" + c.getName());
             }
           } else {
-            throw new CacheInternalError("Changing this tunable type is not supported. Tunable: " + propName + ", " + fieldType);
+            throw new CacheInternalError(
+              "Unsupported field type. Tunable: " + propName + ", " + fieldType);
           }
         }
       }

@@ -44,11 +44,13 @@ import java.util.WeakHashMap;
 public class Cache2kCoreProviderImpl implements Cache2kCoreProvider {
 
   public static final CacheConfigurationProvider CACHE_CONFIGURATION_PROVIDER =
-    SingleProviderResolver.resolve(CacheConfigurationProvider.class, DummyConfigurationProvider.class);
+    SingleProviderResolver.resolve(
+      CacheConfigurationProvider.class, DummyConfigurationProvider.class);
 
-  private Object lock = new Object();
+  private final Object lock = new Object();
   private volatile Map<ClassLoader, String> loader2defaultName = Collections.emptyMap();
-  private volatile Map<ClassLoader, Map<String, CacheManager>> loader2name2manager = Collections.emptyMap();
+  private volatile Map<ClassLoader, Map<String, CacheManager>> loader2name2manager =
+    Collections.emptyMap();
   private String version;
 
   {
@@ -72,7 +74,8 @@ public class Cache2kCoreProviderImpl implements Cache2kCoreProvider {
    */
   private void registerExtensions() {
     Iterator<Cache2kExtensionProvider> it =
-      ServiceLoader.load(Cache2kExtensionProvider.class, CacheManager.class.getClassLoader()).iterator();
+      ServiceLoader.load(
+        Cache2kExtensionProvider.class, CacheManager.class.getClassLoader()).iterator();
     while (it.hasNext()) {
       try {
         it.next().registerCache2kExtension();
@@ -112,10 +115,10 @@ public class Cache2kCoreProviderImpl implements Cache2kCoreProvider {
     return n;
   }
 
-  private void replaceDefaultName(final ClassLoader cl, final String s) {
-    Map<ClassLoader, String> _copy = new WeakHashMap<ClassLoader, String>(loader2defaultName);
-    _copy.put(cl, s);
-    loader2defaultName = _copy;
+  private void replaceDefaultName(ClassLoader cl, String s) {
+    Map<ClassLoader, String> copy = new WeakHashMap<ClassLoader, String>(loader2defaultName);
+    copy.put(cl, s);
+    loader2defaultName = copy;
   }
 
   @Override
@@ -124,41 +127,42 @@ public class Cache2kCoreProviderImpl implements Cache2kCoreProvider {
   }
 
   @Override
-  public CacheManager getManager(ClassLoader cl, String _name) {
-    CacheManagerImpl.checkName(_name);
+  public CacheManager getManager(ClassLoader cl, String name) {
+    CacheManagerImpl.checkName(name);
     if (cl == null) {
       throw new NullPointerException("classloader is null");
     }
-    return getManager(cl, _name, getDefaultManagerName(cl).equals(_name));
+    return getManager(cl, name, getDefaultManagerName(cl).equals(name));
   }
 
-  public CacheManager getManager(ClassLoader cl, String _name, boolean _default) {
+  public CacheManager getManager(ClassLoader cl, String name, boolean defaultFallback) {
     CacheManager mgr;
-    Map<String, CacheManager> _loader2managers = loader2name2manager.get(cl);
-    if (_loader2managers != null) {
-      mgr = _loader2managers.get(_name);
+    Map<String, CacheManager> loader2managers = loader2name2manager.get(cl);
+    if (loader2managers != null) {
+      mgr = loader2managers.get(name);
       if (mgr != null) {
         return mgr;
       }
     }
     synchronized (getLockObject()) {
-      _loader2managers = loader2name2manager.get(cl);
-      if (_loader2managers != null) {
-        mgr = _loader2managers.get(_name);
+      loader2managers = loader2name2manager.get(cl);
+      if (loader2managers != null) {
+        mgr = loader2managers.get(name);
         if (mgr != null) {
           return mgr;
         }
       }
-      if (_loader2managers != null) {
-        _loader2managers = new HashMap<String, CacheManager>(_loader2managers);
+      if (loader2managers != null) {
+        loader2managers = new HashMap<String, CacheManager>(loader2managers);
       } else {
-        _loader2managers = new HashMap<String, CacheManager>();
+        loader2managers = new HashMap<String, CacheManager>();
       }
-      mgr = new CacheManagerImpl(this, cl, _name, _default);
-      _loader2managers.put(_name, mgr);
-      Map<ClassLoader, Map<String, CacheManager>> _copy =  new WeakHashMap<ClassLoader, Map<String, CacheManager>>(loader2name2manager);
-      _copy.put(cl, _loader2managers);
-      loader2name2manager = _copy;
+      mgr = new CacheManagerImpl(this, cl, name, defaultFallback);
+      loader2managers.put(name, mgr);
+      Map<ClassLoader, Map<String, CacheManager>> copy =
+        new WeakHashMap<ClassLoader, Map<String, CacheManager>>(loader2name2manager);
+      copy.put(cl, loader2managers);
+      loader2name2manager = copy;
     }
     return mgr;
   }
@@ -168,16 +172,18 @@ public class Cache2kCoreProviderImpl implements Cache2kCoreProvider {
    */
   void removeManager(CacheManager cm) {
     synchronized (getLockObject()) {
-      Map<String, CacheManager> _name2managers = loader2name2manager.get(cm.getClassLoader());
-      _name2managers = new HashMap<String, CacheManager>(_name2managers);
-      Object _removed = _name2managers.remove(cm.getName());
-      Map<ClassLoader, Map<String, CacheManager>> _copy = new WeakHashMap<ClassLoader, Map<String, CacheManager>>(loader2name2manager);
-      _copy.put(cm.getClassLoader(), _name2managers);
-      loader2name2manager = _copy;
+      Map<String, CacheManager> name2managers = loader2name2manager.get(cm.getClassLoader());
+      name2managers = new HashMap<String, CacheManager>(name2managers);
+      Object removed = name2managers.remove(cm.getName());
+      Map<ClassLoader, Map<String, CacheManager>> copy =
+        new WeakHashMap<ClassLoader, Map<String, CacheManager>>(loader2name2manager);
+      copy.put(cm.getClassLoader(), name2managers);
+      loader2name2manager = copy;
       if (cm.isDefaultManager()) {
-        Map<ClassLoader, String> _defaultNameCopy = new WeakHashMap<ClassLoader, String>(loader2defaultName);
-        _defaultNameCopy.remove(cm.getClassLoader());
-        loader2defaultName = _defaultNameCopy;
+        Map<ClassLoader, String> defaultNameCopy =
+          new WeakHashMap<ClassLoader, String>(loader2defaultName);
+        defaultNameCopy.remove(cm.getClassLoader());
+        loader2defaultName = defaultNameCopy;
       }
     }
   }
@@ -210,7 +216,7 @@ public class Cache2kCoreProviderImpl implements Cache2kCoreProvider {
   }
 
   @Override
-  public <K, V> Cache<K, V> createCache(final CacheManager m, final Cache2kConfiguration<K, V> cfg) {
+  public <K, V> Cache<K, V> createCache(CacheManager m, Cache2kConfiguration<K, V> cfg) {
     return new InternalCache2kBuilder<K,V>(cfg, m).build();
   }
 

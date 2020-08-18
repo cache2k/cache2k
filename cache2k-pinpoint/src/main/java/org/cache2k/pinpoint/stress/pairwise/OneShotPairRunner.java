@@ -38,7 +38,7 @@ class OneShotPairRunner<R> {
   private AtomicReference<Throwable> exception1 = new AtomicReference<Throwable>();
   private AtomicReference<Throwable> exception2 = new AtomicReference<Throwable>();
 
-  public OneShotPairRunner(final ActorPair<R> actorPair) {
+  OneShotPairRunner(final ActorPair<R> actorPair) {
     this.actorPair = actorPair;
   }
 
@@ -90,7 +90,7 @@ class OneShotPairRunner<R> {
 
   static class ExceptionInActorThread extends AssertionError {
 
-    public ExceptionInActorThread(final Throwable cause) {
+    ExceptionInActorThread(final Throwable cause) {
       super(cause.toString(), cause);
     }
   }

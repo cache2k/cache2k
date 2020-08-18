@@ -47,7 +47,8 @@ public final class ExtendedMutableConfiguration<K,V>
     return of(builder.toConfiguration());
   }
 
-  public static <K,V> ExtendedMutableConfiguration<K,V> of(Cache2kConfiguration<K,V> configuration) {
+  public static <K,V> ExtendedMutableConfiguration<K,V> of(
+    Cache2kConfiguration<K,V> configuration) {
     ExtendedMutableConfiguration<K,V> cfg = new ExtendedMutableConfiguration<K, V>();
     cfg.cache2kConfiguration = configuration;
     return cfg;
@@ -59,8 +60,8 @@ public final class ExtendedMutableConfiguration<K,V>
     return cache2kConfiguration;
   }
 
-  public void setCache2kConfiguration(final Cache2kConfiguration<K, V> _cache2kConfiguration) {
-    cache2kConfiguration = _cache2kConfiguration;
+  public void setCache2kConfiguration(final Cache2kConfiguration<K, V> cache2kConfiguration) {
+    this.cache2kConfiguration = cache2kConfiguration;
   }
 
 }

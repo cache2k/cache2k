@@ -20,8 +20,6 @@ package org.cache2k.core;
  * #L%
  */
 
-import org.cache2k.Cache;
-
 /**
  * Access to eviction metrics. Consistent reads are only possible while inside the eviction lock.
  *
@@ -72,7 +70,7 @@ public interface EvictionMetrics {
 
   long getCurrentWeight();
 
-  /** Fragment that the eviction wants to add to the {@link Cache#toString()} output. */
+  /** Fragment that the eviction wants to add to the {@link org.cache2k.Cache#toString()} output. */
   String getExtraStatistics();
 
 }

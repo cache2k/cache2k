@@ -38,7 +38,8 @@ public class ParsedConfiguration implements SourceLocation {
   private String type;
   private String container;
   private String propertyContext;
-  private Map<String, ConfigurationTokenizer.Property> properties = new HashMap<String, ConfigurationTokenizer.Property>();
+  private Map<String, ConfigurationTokenizer.Property> properties =
+    new HashMap<String, ConfigurationTokenizer.Property>();
   private List<ParsedConfiguration> sections = new ArrayList<ParsedConfiguration>();
 
   public ParsedConfiguration(final String source, final int lineNumber) {
@@ -112,9 +113,9 @@ public class ParsedConfiguration implements SourceLocation {
     sections.add(c);
   }
 
-  public ParsedConfiguration getSection(String _name) {
+  public ParsedConfiguration getSection(String name) {
     for (ParsedConfiguration c : sections) {
-      if (_name.equals(c.getName())) {
+      if (name.equals(c.getName())) {
         return c;
       }
     }
@@ -129,15 +130,15 @@ public class ParsedConfiguration implements SourceLocation {
 
   public ConfigurationTokenizer.Property getPropertyByPath(final String s) {
     int idx = 0;
-    String[] _components = s.split("\\.");
+    String[] components = s.split("\\.");
     ParsedConfiguration cfg = this;
-    while (idx < _components.length - 1) {
-      cfg = cfg.getSection(_components[idx++]);
+    while (idx < components.length - 1) {
+      cfg = cfg.getSection(components[idx++]);
       if (cfg == null) {
         return null;
       }
     }
-    ConfigurationTokenizer.Property p = cfg.getPropertyMap().get(_components[idx]);
+    ConfigurationTokenizer.Property p = cfg.getPropertyMap().get(components[idx]);
     if (p == null) {
       return null;
     }

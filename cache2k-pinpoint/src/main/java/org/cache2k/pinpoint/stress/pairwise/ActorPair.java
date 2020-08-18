@@ -60,7 +60,7 @@ public interface ActorPair<R> {
   /**
    * Useful for assertions based on success of each actor.
    */
-  public class SuccessTuple {
+  class SuccessTuple {
     private final boolean success1;
     private final boolean success2;
 

@@ -57,25 +57,26 @@ public class SpringCache2kCache implements Cache {
   }
 
   @Override
-  public ValueWrapper get(final Object key) {
-    final CacheEntry<Object,Object> entry = cache.getEntry(key);
+  public ValueWrapper get(Object key) {
+    CacheEntry<Object,Object> entry = cache.getEntry(key);
     if (entry == null) {
       return null;
     }
     return returnWrappedValue(entry);
   }
-  
+
   private ValueWrapper returnWrappedValue(CacheEntry<Object, Object> entry) {
-    final Object v = entry.getValue();
+    Object v = entry.getValue();
     return () -> v;
   }
 
   @SuppressWarnings("unchecked")
   @Override
-  public <T> T get(final Object key, final Class<T> type) {
+  public <T> T get(Object key, Class<T> type) {
     Object value = cache.get(key);
     if (value != null && type != null && !type.isInstance(value)) {
-      throw new IllegalStateException("Cached value is not of required type [" + type.getName() + "]: " + value);
+      throw new IllegalStateException(
+        "Cached value is not of required type [" + type.getName() + "]: " + value);
     }
     return (T) value;
   }
@@ -86,7 +87,7 @@ public class SpringCache2kCache implements Cache {
    */
   @SuppressWarnings("unchecked")
   @Override
-  public <T> T get(final Object key, final Callable<T> valueLoader) {
+  public <T> T get(Object key, Callable<T> valueLoader) {
     try {
       return (T) cache.computeIfAbsent(key, (Callable<Object>) valueLoader);
     } catch (RuntimeException ex) {
@@ -95,12 +96,12 @@ public class SpringCache2kCache implements Cache {
   }
 
   @Override
-  public void put(final Object key, final Object value) {
+  public void put(Object key, Object value) {
     cache.put(key, value);
   }
 
   @Override
-  public ValueWrapper putIfAbsent(final Object key, final Object value) {
+  public ValueWrapper putIfAbsent(Object key, Object value) {
     return cache.invoke(key, e -> {
       if (e.exists()) {
         return returnWrappedValue(e);
@@ -114,7 +115,7 @@ public class SpringCache2kCache implements Cache {
    * May work async.
    */
   @Override
-  public void evict(final Object key) {
+  public void evict(Object key) {
     cache.remove(key);
   }
 
@@ -130,7 +131,7 @@ public class SpringCache2kCache implements Cache {
    * Returns when evicted.
    */
   @Override
-  public boolean evictIfPresent(final Object key) {
+  public boolean evictIfPresent(Object key) {
     return cache.containsAndRemove(key);
   }
 

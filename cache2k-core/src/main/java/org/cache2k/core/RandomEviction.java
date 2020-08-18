@@ -25,19 +25,20 @@ import org.cache2k.Weigher;
 /**
  * @author Jens Wilke
  */
+@SuppressWarnings("rawtypes")
 public class RandomEviction extends AbstractEviction {
 
   private int evictionIndex = 0;
   private long size = 0;
-  private Entry head = new Entry().shortCircuit();
+  private final Entry head = new Entry().shortCircuit();
 
-  public RandomEviction(final HeapCache _heapCache, final HeapCacheListener _listener,
-                        final long _maxSize, final Weigher _weigher, final long _maxWeight) {
-    super(_heapCache, _listener, _maxSize, _weigher, _maxWeight, false);
+  public RandomEviction(HeapCache heapCache, HeapCacheListener listener,
+                        long maxSize, Weigher weigher, long maxWeight) {
+    super(heapCache, listener, maxSize, weigher, maxWeight, false);
   }
 
   @Override
-  public void updateWeight(final Entry e) {
+  public void updateWeight(Entry e) {
 
   }
 
@@ -53,7 +54,7 @@ public class RandomEviction extends AbstractEviction {
   }
 
   @Override
-  protected Entry findEvictionCandidate(Entry _previous) {
+  protected Entry findEvictionCandidate(Entry previous) {
     Entry[] h0 = heapCache.hash.getEntries();
     int idx = evictionIndex % (h0.length);
     Entry e;
@@ -71,22 +72,22 @@ public class RandomEviction extends AbstractEviction {
   }
 
   @Override
-  public void checkIntegrity(final IntegrityState _integrityState) {
+  public void checkIntegrity(IntegrityState integrityState) {
 
   }
 
   @Override
   public long removeAll() {
-    long _count = 0;
-    Entry _head = head;
-    Entry e = head.prev;
-    while (e != _head) {
-      Entry _next = e.prev;
+    long count = 0;
+    Entry head = this.head;
+    Entry e = this.head.prev;
+    while (e != head) {
+      Entry next = e.prev;
       e.removedFromList();
-      _count++;
-      e = _next;
+      count++;
+      e = next;
     }
-    return _count;
+    return count;
   }
 
   @Override

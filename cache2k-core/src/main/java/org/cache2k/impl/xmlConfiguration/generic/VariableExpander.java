@@ -20,8 +20,6 @@ package org.cache2k.impl.xmlConfiguration.generic;
  * #L%
  */
 
-import org.cache2k.impl.xmlConfiguration.generic.ParsedConfiguration;
-
 /**
  * Runs through all properties in the configuration, checks for variable references and expand them.
  *

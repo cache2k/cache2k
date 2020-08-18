@@ -40,8 +40,8 @@ public interface CacheEntryCreatedListener<K, V> extends CacheEntryOperationList
    * directly.
    *
    * @param cache Reference to the cache that generated the event.
-   * @param entry Entry containing the current data. It is only valid to access the object during the
-   *                     call of this method. The object value may become invalid afterwards.
+   * @param entry Entry containing the current data. It is only valid to access the object during
+   *              the call of this method. The object value may become invalid afterwards.
    */
   void onEntryCreated(Cache<K,V> cache, CacheEntry<K,V> entry);
 

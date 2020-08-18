@@ -28,6 +28,6 @@ public class Constants {
   /**
    * Location of the schema file in the class path.
    */
-  public final static String CORE_SCHEMA_LOCATION =
+  public static final String CORE_SCHEMA_LOCATION =
     "/org/cache2k/schema/cache2k-core.xsd";
 }

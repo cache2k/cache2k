@@ -28,9 +28,11 @@ package org.cache2k;
 public interface Weigher<K,V> {
 
   /**
-   * Returns a weight for the given cached value. This will be called after a value is inserted or updated.
+   * Returns a weight for the given cached value. This will be called after a value is
+   * inserted or updated.
    *
-   * @return a positive long value representing the relative weight in comparison to the other entries in the cache.
+   * @return a positive long value representing the relative weight in comparison to the other
+   * entries in the cache.
    */
   long weigh(K key, V value);
 

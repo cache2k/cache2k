@@ -21,29 +21,31 @@ package org.cache2k.configuration;
  */
 
 /**
- * A data structure to retain all known type information from the key and value types, including generic
- * parameters within the cache configuration. A caching application typically constructs a type descriptor
- * with the use of a {@link CacheTypeCapture}.
+ * A data structure to retain all known type information from the key and value types, including
+ * generic parameters within the cache configuration. A caching application typically constructs a
+ * type descriptor with the use of a {@link CacheTypeCapture}.
  *
- * <p>While the type descriptor contains implementation classes, interface consumers must not rely on the
- * implementation types.
+ * <p>While the type descriptor contains implementation classes, interface consumers must not rely
+ * on the implementation types.
  *
  * <p><b>About types:</b>
  * If no type information is provided it defaults to the Object class. The provided type information
- * is used inside the cache for optimizations and as well as to select appropriate default transformation
- * schemes for copying objects or marshalling. The correct types are not strictly enforced at all levels by the cache
- * for performance reasons. The cache application guarantees that only the specified types will be used.
- * The cache will check the type compatibility at critical points, e.g. when reconnecting to an external storage.
- * Generic types: An application may provide more detailed type information to the cache, which
- * contains also generic type parameters by providing a {@link CacheTypeCapture} where the cache can extract
- * the type information.
+ * is used inside the cache for optimizations and as well as to select appropriate default
+ * transformation schemes for copying objects or marshalling. The correct types are not strictly
+ * enforced at all levels by the cache for performance reasons. The cache application guarantees
+ * that only the specified types will be used. The cache will check the type compatibility at
+ * critical points, e.g. when reconnecting to an external storage. Generic types: An application
+ * may provide more detailed type information to the cache, which contains also generic type
+ * parameters by providing a {@link CacheTypeCapture} where the cache can extract the type
+ * information.
  *
  * @see CacheTypeCapture
- * @see <a href="https://github.com/google/guava/wiki/ReflectionExplained">ReflectionExplained - Google Guava Documentation</a>
+ * @see <a href="https://github.com/google/guava/wiki/ReflectionExplained">
+ *   ReflectionExplained - Google Guava Documentation</a>
  */
 public interface CacheType<T> {
 
-  /** The used prefix for the toString() output. {@value #DESCRIPTOR_TO_STRING_PREFIX}. */
+  /** The used prefix for the toString() output. */
   String DESCRIPTOR_TO_STRING_PREFIX = "CacheTypeDescriptor#";
 
   /** Class type if not an array. */
@@ -56,8 +58,8 @@ public interface CacheType<T> {
   boolean hasTypeArguments();
 
   /**
-   * This type is an array. To analyze a multi dimensional array descend to the component, for example
-   * {@code getComponentType().isArray()}.
+   * This type is an array. To analyze a multi dimensional array descend to the component,
+   * for example {@code getComponentType().isArray()}.
    *
    * @see #getComponentType()
    */

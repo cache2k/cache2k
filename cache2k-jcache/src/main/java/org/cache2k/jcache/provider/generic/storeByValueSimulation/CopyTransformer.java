@@ -28,13 +28,13 @@ package org.cache2k.jcache.provider.generic.storeByValueSimulation;
 public abstract class CopyTransformer<T> implements ObjectTransformer<T, T> {
 
   @Override
-  public T compact(T _external) {
-    return copy(_external);
+  public T compact(T external) {
+    return copy(external);
   }
 
   @Override
-  public T expand(T _internal) {
-    return copy(_internal);
+  public T expand(T internal) {
+    return copy(internal);
   }
 
   protected abstract T copy(T o);

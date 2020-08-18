@@ -34,7 +34,8 @@ import java.util.Map;
  */
 public class ConfigurationContext {
 
-  private final Cache2kManagerConfiguration managerConfiguration = new Cache2kManagerConfiguration();
+  private final Cache2kManagerConfiguration managerConfiguration =
+    new Cache2kManagerConfiguration();
   private boolean configurationPresent = false;
   private ClassLoader classLoader;
   private Cache2kConfiguration<?, ?> defaultManagerConfiguration;

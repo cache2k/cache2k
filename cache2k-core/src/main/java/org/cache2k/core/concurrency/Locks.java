@@ -20,8 +20,6 @@ package org.cache2k.core.concurrency;
  * #L%
  */
 
-import java.util.concurrent.locks.StampedLock;
-
 /**
  * Internal factory for lock implementations.
  *

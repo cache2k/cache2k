@@ -40,13 +40,15 @@ public interface ValueWithExpiryTime {
   /**
    * Point in time in milliseconds when the value should expire.
    *
-   * @return time the time of expiry in millis since epoch. {@link ExpiryPolicy#NO_CACHE} if it should not cached.
-   *              {@link ExpiryPolicy#ETERNAL} if there is no specific expiry time known or needed.
-   *              The effective expiry duration will never be longer than the
-   *              configured expiry value via {@link Cache2kBuilder#expireAfterWrite(long, TimeUnit)} (long, TimeUnit)}.
-   *              If a negative value is returned, the negated value will be the expiry time
-   *              used, but sharp expiry is requested always,
-   *              ignoring {@link Cache2kBuilder#sharpExpiry(boolean)}.
+   * @return time the time of expiry in millis since epoch. {@link ExpiryPolicy#NO_CACHE} if it
+   *          should not cached. {@link ExpiryPolicy#ETERNAL} if there is no specific expiry time
+   *          known or needed.
+   *          The effective expiry duration will never be longer than the
+   *          configured expiry value via
+   *          {@link Cache2kBuilder#expireAfterWrite(long, TimeUnit)} (long, TimeUnit)}.
+   *          If a negative value is returned, the negated value will be the expiry time
+   *          used, but sharp expiry is requested always,
+   *          ignoring {@link Cache2kBuilder#sharpExpiry(boolean)}.
    */
   long getCacheExpiryTime();
 

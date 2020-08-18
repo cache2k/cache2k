@@ -110,19 +110,19 @@ public class StandardPropertyParser implements PropertyParser {
 
   public static long parseLongWithUnitSuffix(String v) {
     v = v.replace("_", "");
-    long _multiplier = 1;
+    long multiplier = 1;
     int pos = v.length();
     while(--pos >= 0 && !Character.isDigit(v.charAt(pos)));
     if (pos < v.length() - 1) {
-      String _unitSuffix = v.substring(pos + 1);
-      Long _newMultiplier = UNIT2LONG.get(_unitSuffix);
-      if (_newMultiplier == null) {
+      String unitSuffix = v.substring(pos + 1);
+      Long newMultiplier = UNIT2LONG.get(unitSuffix);
+      if (newMultiplier == null) {
         throw new NumberFormatException("Unknown unit suffix in: \"" + v + "\"");
       }
       v = v.substring(0, pos + 1);
-      _multiplier = _newMultiplier;
+      multiplier = newMultiplier;
     }
-    return Long.valueOf(v) * _multiplier;
+    return Long.valueOf(v) * multiplier;
   }
 
 }

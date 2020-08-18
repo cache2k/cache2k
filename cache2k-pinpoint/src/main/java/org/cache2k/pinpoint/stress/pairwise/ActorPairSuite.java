@@ -43,7 +43,8 @@ public class ActorPairSuite {
 
   private final Set<ActorPair<?>> pairs = new HashSet<ActorPair<?>>();
   private final List<OneShotPairRunner> pairRunners = new ArrayList<OneShotPairRunner>();
-  private final Map<OneShotPairRunner<?>, OneShotPairRunner<?>> running = new ConcurrentHashMap<OneShotPairRunner<?>, OneShotPairRunner<?>>();
+  private final Map<OneShotPairRunner<?>, OneShotPairRunner<?>> running =
+    new ConcurrentHashMap<OneShotPairRunner<?>, OneShotPairRunner<?>>();
   private final CountDownLatch finishLatch = new CountDownLatch(1);
   private final Random random = new Random(1802);
   private final List<Throwable> exceptions = new CopyOnWriteArrayList<Throwable>();
@@ -160,7 +161,8 @@ public class ActorPairSuite {
   }
 
   private boolean stopRunning() {
-    return (stopAtFirstException && !exceptions.isEmpty()) || (System.currentTimeMillis() >= finishTime);
+    return (stopAtFirstException && !exceptions.isEmpty()) ||
+      (System.currentTimeMillis() >= finishTime);
   }
 
   public static class ActorPairSuiteError extends AssertionError {

@@ -48,18 +48,19 @@ import java.util.Map;
  *
  * @author Jens Wilke
  */
+@SuppressWarnings("rawtypes")
 public class CacheConfigurationProviderImpl
   extends ConfigurationProvider implements CacheConfigurationProvider {
 
   private static final String DEFAULT_CONFIGURATION_FILE = "cache2k.xml";
-  private static final Map<String, String> version1SectionTypes = new HashMap<String, String>() {
+  private static final Map<String, String> VERSION_1_SECTION_TYPES = new HashMap<String, String>() {
     {
       put("jcache", JCacheConfiguration.class.getName());
       put("byClassName", CustomizationSupplierByClassName.class.getName());
     }
   };
 
-  private TokenizerFactory tokenizerFactory = new FlexibleXmlTokenizerFactory();
+  private final TokenizerFactory tokenizerFactory = new FlexibleXmlTokenizerFactory();
   private volatile Map<CacheManager, ConfigurationContext> manager2defaultConfig =
     new HashMap<CacheManager, ConfigurationContext>();
   private volatile Map<ClassLoader, ConfigurationContext> classLoader2config =
@@ -75,7 +76,8 @@ public class CacheConfigurationProviderImpl
     ConfigurationContext ctx = classLoader2config.get(cl);
     if (ctx == null) {
       ctx = createContext(cl, null, DEFAULT_CONFIGURATION_FILE);
-      Map<ClassLoader, ConfigurationContext> m2 = new HashMap<ClassLoader, ConfigurationContext>(classLoader2config);
+      Map<ClassLoader, ConfigurationContext> m2 =
+        new HashMap<ClassLoader, ConfigurationContext>(classLoader2config);
       m2.put(cl, ctx);
       classLoader2config = m2;
     }
@@ -83,22 +85,23 @@ public class CacheConfigurationProviderImpl
   }
 
   @Override
-  public Cache2kConfiguration getDefaultConfiguration(final CacheManager mgr) {
+  public Cache2kConfiguration getDefaultConfiguration(CacheManager mgr) {
     Cache2kConfiguration cfg = getManagerContext(mgr).getDefaultManagerConfiguration();
     try {
       return Util.copyViaSerialization(cfg);
     } catch (Exception ex) {
-      throw new ConfigurationException("Copying default cache configuration for manager '" + mgr.getName() + "'", ex);
+      throw new ConfigurationException(
+        "Copying default cache configuration for manager '" + mgr.getName() + "'", ex);
     }
   }
 
   @Override
-  public <K, V> void augmentConfiguration(final CacheManager mgr, final Cache2kConfiguration<K, V> cfg) {
+  public <K, V> void augmentConfiguration(CacheManager mgr, Cache2kConfiguration<K, V> cfg) {
     ConfigurationContext ctx =  getManagerContext(mgr);
     if (!ctx.isConfigurationPresent()) {
       return;
     }
-    final String cacheName = cfg.getName();
+    String cacheName = cfg.getName();
     if (cacheName == null) {
       if (ctx.getManagerConfiguration().isIgnoreAnonymousCache()) {
         return;
@@ -107,30 +110,32 @@ public class CacheConfigurationProviderImpl
         "Cache name missing, cannot apply XML configuration. " +
         "Consider parameter: ignoreAnonymousCache");
     }
-    ParsedConfiguration _parsedTop = readManagerConfigurationWithExceptionHandling(mgr.getClassLoader(), getFileName(mgr));
-    ParsedConfiguration _section = extractCachesSection(_parsedTop);
-    ParsedConfiguration _parsedCache = null;
-    if (_section != null) { _parsedCache = _section.getSection(cacheName); }
-    if (_parsedCache == null) {
+    ParsedConfiguration parsedTop =
+      readManagerConfigurationWithExceptionHandling(mgr.getClassLoader(), getFileName(mgr));
+    ParsedConfiguration section = extractCachesSection(parsedTop);
+    ParsedConfiguration parsedCache = null;
+    if (section != null) { parsedCache = section.getSection(cacheName); }
+    if (parsedCache == null) {
       if (ctx.getManagerConfiguration().isIgnoreMissingCacheConfiguration()) {
         return;
       }
-      String _exceptionText =
+      String exceptionText =
         "Configuration for cache '" + cacheName + "' is missing. " +
           "Consider parameter: ignoreMissingCacheConfiguration" +
-          " at " + _parsedTop.getSource();
-      throw new IllegalArgumentException(_exceptionText);
+          " at " + parsedTop.getSource();
+      throw new IllegalArgumentException(exceptionText);
     }
-    apply(ctx, _parsedCache, cfg);
+    apply(ctx, parsedCache, cfg);
   }
 
   @Override
-  public Iterable<String> getConfiguredCacheNames(final CacheManager mgr) {
+  public Iterable<String> getConfiguredCacheNames(CacheManager mgr) {
     ConfigurationContext ctx =  getManagerContext(mgr);
     if (!ctx.isConfigurationPresent()) {
       return Collections.emptyList();
     }
-    ParsedConfiguration parsedTop = readManagerConfigurationWithExceptionHandling(mgr.getClassLoader(), getFileName(mgr));
+    ParsedConfiguration parsedTop =
+      readManagerConfigurationWithExceptionHandling(mgr.getClassLoader(), getFileName(mgr));
     ParsedConfiguration section = extractCachesSection(parsedTop);
     if (section == null) {
       return Collections.emptyList();
@@ -149,7 +154,8 @@ public class CacheConfigurationProviderImpl
     return "cache2k-" + mgr.getName() + ".xml";
   }
 
-  private ParsedConfiguration readManagerConfiguration(ClassLoader cl, final String fileName) throws Exception {
+  private ParsedConfiguration readManagerConfiguration(ClassLoader cl, String fileName)
+    throws Exception {
     InputStream is = cl.getResourceAsStream(fileName);
     if (is == null) {
       return null;
@@ -164,13 +170,10 @@ public class CacheConfigurationProviderImpl
 
   private ParsedConfiguration extractCachesSection(ParsedConfiguration pc) {
     ParsedConfiguration cachesSection = pc.getSection("caches");
-    if (cachesSection == null) {
-      return null;
-    }
-   return cachesSection;
+    return cachesSection;
   }
 
-  private void checkCacheConfigurationOnStartup(final ConfigurationContext ctx, final ParsedConfiguration pc) {
+  private void checkCacheConfigurationOnStartup(ConfigurationContext ctx, ParsedConfiguration pc) {
     ParsedConfiguration cachesSection = pc.getSection("caches");
     if (cachesSection == null) {
       return;
@@ -181,10 +184,10 @@ public class CacheConfigurationProviderImpl
   }
 
   /**
-   * Hold the cache default configuration of a manager in a hash table. This is reused for all caches of
-   * one manager.
+   * Hold the cache default configuration of a manager in a hash table. This is reused for all
+   * caches of one manager.
    */
-  private ConfigurationContext getManagerContext(final CacheManager mgr) {
+  private ConfigurationContext getManagerContext(CacheManager mgr) {
     ConfigurationContext ctx = manager2defaultConfig.get(mgr);
     if (ctx != null) {
       return ctx;
@@ -219,8 +222,9 @@ public class CacheConfigurationProviderImpl
       defaultConfiguration.setExternalConfigurationPresent(true);
       ctx.setTemplates(extractTemplates(pc));
       apply(ctx, pc, ctx.getManagerConfiguration());
-      if (ctx.getManagerConfiguration().getVersion() != null && ctx.getManagerConfiguration().getVersion().startsWith("1.")) {
-        ctx.setPredefinedSectionTypes(version1SectionTypes);
+      if (ctx.getManagerConfiguration().getVersion() != null &&
+        ctx.getManagerConfiguration().getVersion().startsWith("1.")) {
+        ctx.setPredefinedSectionTypes(VERSION_1_SECTION_TYPES);
       }
       applyDefaultConfigurationIfPresent(ctx, pc, defaultConfiguration);
       ctx. setConfigurationPresent(true);
@@ -231,21 +235,23 @@ public class CacheConfigurationProviderImpl
     return ctx;
   }
 
-  private ParsedConfiguration readManagerConfigurationWithExceptionHandling(final ClassLoader cl, final String fileName) {
+  private ParsedConfiguration readManagerConfigurationWithExceptionHandling(ClassLoader cl,
+                                                                            String fileName) {
     ParsedConfiguration pc;
     try {
       pc = readManagerConfiguration(cl, fileName);
     } catch (CacheException ex) {
       throw ex;
     } catch (Exception ex) {
-      throw new ConfigurationException("Reading configuration for manager from '" + fileName + "'", ex);
+      throw new ConfigurationException(
+        "Reading configuration for manager from '" + fileName + "'", ex);
     }
     return pc;
   }
 
-  private void applyDefaultConfigurationIfPresent(final ConfigurationContext ctx,
-                                                  final ParsedConfiguration pc,
-                                                  final Cache2kConfiguration defaultConfiguration) {
+  private void applyDefaultConfigurationIfPresent(ConfigurationContext ctx,
+                                                  ParsedConfiguration pc,
+                                                  Cache2kConfiguration defaultConfiguration) {
     ParsedConfiguration defaults = pc.getSection("defaults");
     if (defaults != null) {
       defaults = defaults.getSection("cache");
@@ -255,7 +261,7 @@ public class CacheConfigurationProviderImpl
     }
   }
 
-  private ParsedConfiguration extractTemplates(final ParsedConfiguration pc) {
+  private ParsedConfiguration extractTemplates(ParsedConfiguration pc) {
     return pc.getSection("templates");
   }
 

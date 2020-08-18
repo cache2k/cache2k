@@ -27,6 +27,7 @@ import org.cache2k.core.concurrency.Job;
  *
  * @author Jens Wilke
  */
+@SuppressWarnings("rawtypes")
 public interface Eviction {
 
   /**
@@ -46,7 +47,7 @@ public interface Eviction {
    * Evict if needed, focused on the segment addressed by the hash code.
    * Called before a new entry is inserted (changed from after in v1.4)
    */
-  void evictEventually(int _hashCodeHint);
+  void evictEventually(int hashCodeHint);
 
   /**
    * Evict if needed, checks all segments.
@@ -91,7 +92,7 @@ public interface Eviction {
    */
   <T> T runLocked(Job<T> j);
 
-  void checkIntegrity(IntegrityState _integrityState);
+  void checkIntegrity(IntegrityState integrityState);
 
   EvictionMetrics getMetrics();
 

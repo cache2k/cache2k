@@ -27,7 +27,7 @@ public interface StorageCallback {
 
   void onReadSuccess(StorageEntry e);
   void onReadFailure(Throwable t);
-  void onStoreSuccess(boolean _entryRemoved);
+  void onStoreSuccess(boolean entryRemoved);
   void onStoreFailure(Throwable t);
 
 }

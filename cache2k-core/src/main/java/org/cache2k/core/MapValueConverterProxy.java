@@ -35,10 +35,10 @@ import java.util.Set;
  */
 public abstract class MapValueConverterProxy<K, V, S>  implements Map<K, V> {
 
-  private Map<K, S> map;
+  private final Map<K, S> map;
 
-  public MapValueConverterProxy(final Map<K, S> _map) {
-    map = _map;
+  public MapValueConverterProxy(Map<K, S> map) {
+    this.map = map;
   }
 
   /**
@@ -63,17 +63,17 @@ public abstract class MapValueConverterProxy<K, V, S>  implements Map<K, V> {
   }
 
   @Override
-  public boolean containsKey(final Object key) {
+  public boolean containsKey(Object key) {
     return map.containsKey(key);
   }
 
   @Override
-  public boolean containsValue(final Object value) {
+  public boolean containsValue(Object value) {
     return values().contains(value);
   }
 
   @Override
-  public V get(final Object key) {
+  public V get(Object key) {
     S v = map.get(key);
     if (v == null) {
       return null;
@@ -82,17 +82,17 @@ public abstract class MapValueConverterProxy<K, V, S>  implements Map<K, V> {
   }
 
   @Override
-  public V put(final K key, final V value) {
+  public V put(K key, V value) {
     throw new UnsupportedOperationException();
   }
 
   @Override
-  public V remove(final Object key) {
+  public V remove(Object key) {
     throw new UnsupportedOperationException();
   }
 
   @Override
-  public void putAll(final Map<? extends K, ? extends V> m) {
+  public void putAll(Map<? extends K, ? extends V> m) {
     throw new UnsupportedOperationException();
   }
 
@@ -161,7 +161,7 @@ public abstract class MapValueConverterProxy<K, V, S>  implements Map<K, V> {
               }
 
               @Override
-              public V setValue(final V value) {
+              public V setValue(V value) {
                 throw new UnsupportedOperationException();
               }
             };

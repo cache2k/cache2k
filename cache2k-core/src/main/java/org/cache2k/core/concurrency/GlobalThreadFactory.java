@@ -32,13 +32,13 @@ import java.util.concurrent.ThreadFactory;
  */
 public class GlobalThreadFactory implements ThreadFactory {
 
-  private final static ConcurrentMap<String,String> NAMES_RUNNING =
+  private static final ConcurrentMap<String,String> NAMES_RUNNING =
     new ConcurrentHashMap<String, String>();
 
-  private String prefix;
+  private final String prefix;
 
-  public GlobalThreadFactory(String _threadNamePrefix) {
-    prefix = _threadNamePrefix;
+  public GlobalThreadFactory(String threadNamePrefix) {
+    prefix = threadNamePrefix;
   }
 
   protected String generateName(int id) {
@@ -47,28 +47,28 @@ public class GlobalThreadFactory implements ThreadFactory {
 
   @Override
   public Thread newThread(final Runnable r) {
-    String _name;
+    String name;
     int id = 1;
     for (;;) {
-      _name = generateName(id);
-      if (NAMES_RUNNING.putIfAbsent(_name, _name) == null) {
+      name = generateName(id);
+      if (NAMES_RUNNING.putIfAbsent(name, name) == null) {
         break;
       }
       id++;
     }
-    final String _finalName = _name;
-    final Runnable _myRunnable = new Runnable() {
+    final String finalName = name;
+    Runnable myRunnable = new Runnable() {
       @Override
       public void run() {
         try {
           r.run();
         } finally {
-          NAMES_RUNNING.remove(_finalName);
+          NAMES_RUNNING.remove(finalName);
         }
       }
     };
-    Thread thr = new Thread(_myRunnable);
-    thr.setName(_name);
+    Thread thr = new Thread(myRunnable);
+    thr.setName(name);
     thr.setDaemon(true);
     return thr;
   }

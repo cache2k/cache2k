@@ -35,17 +35,19 @@ import java.sql.Timestamp;
 public final class StandardExceptionPropagator implements ExceptionPropagator {
 
   @Override
-  public RuntimeException propagateException(Object key, final ExceptionInformation exceptionInformation) {
-    long _expiry = exceptionInformation.getUntil();
+  public RuntimeException propagateException(Object key,
+                                             ExceptionInformation exceptionInformation) {
+    long expiry = exceptionInformation.getUntil();
     String txt = "";
-    if (_expiry > 0) {
-      if (_expiry == ExpiryTimeValues.ETERNAL) {
+    if (expiry > 0) {
+      if (expiry == ExpiryTimeValues.ETERNAL) {
         txt = "expiry=ETERNAL, cause: ";
       } else {
-        txt = "expiry=" + formatMillis(_expiry) + ", cause: ";
+        txt = "expiry=" + formatMillis(expiry) + ", cause: ";
       }
     }
-    return new CacheLoaderException(txt + exceptionInformation.getException(), exceptionInformation.getException());
+    return new CacheLoaderException(txt + exceptionInformation.getException(),
+      exceptionInformation.getException());
   }
 
   /**

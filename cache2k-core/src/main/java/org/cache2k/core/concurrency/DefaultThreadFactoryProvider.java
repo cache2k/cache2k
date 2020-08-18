@@ -30,8 +30,8 @@ import java.util.concurrent.ThreadFactory;
 public class DefaultThreadFactoryProvider implements ThreadFactoryProvider {
 
   @Override
-  public ThreadFactory newThreadFactory(String _namePrefix) {
-    return new GlobalThreadFactory(_namePrefix);
+  public ThreadFactory newThreadFactory(String namePrefix) {
+    return new GlobalThreadFactory(namePrefix);
   }
 
 }

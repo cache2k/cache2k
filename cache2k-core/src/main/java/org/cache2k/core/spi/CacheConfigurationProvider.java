@@ -20,7 +20,6 @@ package org.cache2k.core.spi;
  * #L%
  */
 
-import org.cache2k.Cache2kBuilder;
 import org.cache2k.CacheManager;
 import org.cache2k.configuration.Cache2kConfiguration;
 
@@ -48,8 +47,8 @@ public interface CacheConfigurationProvider {
   Cache2kConfiguration getDefaultConfiguration(CacheManager mgr);
 
   /**
-   * Called when {@link Cache2kBuilder#build()} was called before the configuration is used
-   * to create the cache. If no name was specified in the application, the name in the
+   * Called when {@link org.cache2k.Cache2kBuilder#build()} was called before the configuration
+   * is used to create the cache. If no name was specified in the application, the name in the
    * configuration is null.
    *
    * @param mgr Manager the new cache will live in
@@ -60,6 +59,6 @@ public interface CacheConfigurationProvider {
   /**
    * List of cache names found in the configuration.
    */
-  Iterable<String> getConfiguredCacheNames(final CacheManager mgr);
+  Iterable<String> getConfiguredCacheNames(CacheManager mgr);
 
 }

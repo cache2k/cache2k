@@ -59,6 +59,7 @@ import java.util.concurrent.atomic.AtomicLong;
  *
  * @author Jens Wilke
  */
+@SuppressWarnings("rawtypes")
 public class InternalCache2kBuilder<K, V> {
 
   private static final AtomicLong DERIVED_NAME_COUNTER =
@@ -71,11 +72,11 @@ public class InternalCache2kBuilder<K, V> {
       HeapCache.TUNABLE.threadFactoryProvider.newThreadFactory("cache2k-listener"),
       new ThreadPoolExecutor.AbortPolicy());
 
-  private CacheManagerImpl manager;
-  private Cache2kConfiguration<K, V> config;
+  private final CacheManagerImpl manager;
+  private final Cache2kConfiguration<K, V> config;
 
-  public InternalCache2kBuilder(final Cache2kConfiguration<K, V> config,
-                                final CacheManager manager) {
+  public InternalCache2kBuilder(Cache2kConfiguration<K, V> config,
+                                CacheManager manager) {
     this.config = config;
     this.manager = (CacheManagerImpl) (manager == null ? CacheManager.getInstance() : manager);
   }
@@ -117,7 +118,8 @@ public class InternalCache2kBuilder<K, V> {
         final CacheLoader<K,V> loader = (CacheLoader) obj;
         c.setAdvancedLoader(new AdvancedCacheLoader<K, V>() {
           @Override
-          public V load(final K key, final long startTime, final CacheEntry<K, V> currentEntry) throws Exception {
+          public V load(K key, long startTime, CacheEntry<K, V> currentEntry)
+            throws Exception {
             return loader.load(key);
           }
         });
@@ -125,14 +127,15 @@ public class InternalCache2kBuilder<K, V> {
         final FunctionalCacheLoader<K,V> loader = (FunctionalCacheLoader) obj;
         c.setAdvancedLoader(new AdvancedCacheLoader<K, V>() {
           @Override
-          public V load(final K key, final long startTime, final CacheEntry<K, V> currentEntry) throws Exception {
+          public V load(K key, long startTime, CacheEntry<K, V> currentEntry)
+            throws Exception {
             return loader.load(key);
           }
         });
       }
     }
     if (config.getAdvancedLoader() != null) {
-      final AdvancedCacheLoader<K,V> loader = c.createCustomization(config.getAdvancedLoader());
+      AdvancedCacheLoader<K,V> loader = c.createCustomization(config.getAdvancedLoader());
       AdvancedCacheLoader<K,V> wrappedLoader = new WrappedAdvancedCacheLoader<K, V>(c, loader);
       c.setAdvancedLoader(wrappedLoader);
     }
@@ -142,13 +145,14 @@ public class InternalCache2kBuilder<K, V> {
     c.setCacheConfig(config);
   }
 
-  private static class WrappedAdvancedCacheLoader<K,V> extends AdvancedCacheLoader<K,V> implements Closeable {
+  private static class WrappedAdvancedCacheLoader<K,V> extends AdvancedCacheLoader<K,V>
+    implements Closeable {
 
     HeapCache<K,V> heapCache;
     private final AdvancedCacheLoader<K,V> forward;
 
-    public WrappedAdvancedCacheLoader(final HeapCache<K, V> heapCache,
-                                      final AdvancedCacheLoader<K, V> forward) {
+    WrappedAdvancedCacheLoader(HeapCache<K, V> heapCache,
+                               AdvancedCacheLoader<K, V> forward) {
       this.heapCache = heapCache;
       this.forward = forward;
     }
@@ -162,11 +166,12 @@ public class InternalCache2kBuilder<K, V> {
 
     @SuppressWarnings("unchecked")
     @Override
-    public V load(final K key, final long startTime, final CacheEntry<K, V> currentEntry) throws Exception {
+    public V load(K key, long startTime, CacheEntry<K, V> currentEntry) throws Exception {
       if (currentEntry == null) {
         return forward.load(key, startTime, null);
       }
-      return forward.load(key, startTime, heapCache.returnCacheEntry((ExaminationEntry<K, V>) currentEntry));
+      return forward.load(key, startTime,
+        heapCache.returnCacheEntry((ExaminationEntry<K, V>) currentEntry));
     }
   }
 
@@ -190,7 +195,7 @@ public class InternalCache2kBuilder<K, V> {
   /**
    * Build without applying external configuration. Needed for JCache.
    */
-  @SuppressWarnings({"unchecked", "SuspiciousToArrayCall"})
+  @SuppressWarnings({"unchecked"})
   public Cache<K, V> buildAsIs() {
     if (config.getValueType() == null) {
       config.setValueType((Class<V>) Object.class);
@@ -210,7 +215,8 @@ public class InternalCache2kBuilder<K, V> {
       implClass = LongHeapCache.class;
     }
     InternalCache<K, V> cache = constructImplementationAndFillParameters(implClass);
-    InternalClock timeReference = (InternalClock) cache.createCustomization(config.getTimeReference());
+    InternalClock timeReference =
+      (InternalClock) cache.createCustomization(config.getTimeReference());
     if (timeReference == null) {
       timeReference = ClockDefaultImpl.INSTANCE;
     }
@@ -256,11 +262,16 @@ public class InternalCache2kBuilder<K, V> {
       wc.loader = bc.loader;
       wc.writer = (CacheWriter<K, V>) bc.createCustomization(config.getWriter());
       wc.asyncLoader = (AsyncCacheLoader<K, V>) bc.createCustomization(config.getAsyncLoader());
-      List<CacheEntryCreatedListener<K, V>> syncCreatedListeners = new ArrayList<CacheEntryCreatedListener<K, V>>();
-      List<CacheEntryUpdatedListener<K, V>> syncUpdatedListeners = new ArrayList<CacheEntryUpdatedListener<K, V>>();
-      List<CacheEntryRemovedListener<K, V>> syncRemovedListeners = new ArrayList<CacheEntryRemovedListener<K, V>>();
-      List<CacheEntryExpiredListener<K, V>> syncExpiredListeners = new ArrayList<CacheEntryExpiredListener<K, V>>();
-      List<CacheEntryEvictedListener<K, V>> syncEvictedListeners = new ArrayList<CacheEntryEvictedListener<K,V>>();
+      List<CacheEntryCreatedListener<K, V>> syncCreatedListeners =
+        new ArrayList<CacheEntryCreatedListener<K, V>>();
+      List<CacheEntryUpdatedListener<K, V>> syncUpdatedListeners =
+        new ArrayList<CacheEntryUpdatedListener<K, V>>();
+      List<CacheEntryRemovedListener<K, V>> syncRemovedListeners =
+        new ArrayList<CacheEntryRemovedListener<K, V>>();
+      List<CacheEntryExpiredListener<K, V>> syncExpiredListeners =
+        new ArrayList<CacheEntryExpiredListener<K, V>>();
+      List<CacheEntryEvictedListener<K, V>> syncEvictedListeners =
+        new ArrayList<CacheEntryEvictedListener<K,V>>();
       if (config.hasListeners()) {
         for (CustomizationSupplier<CacheEntryOperationListener<K, V>> f : config.getListeners()) {
           CacheEntryOperationListener<K, V> el =
@@ -288,13 +299,20 @@ public class InternalCache2kBuilder<K, V> {
           executor = cache.createCustomization(config.getAsyncListenerExecutor());
         }
         AsyncDispatcher<K> asyncDispatcher = new AsyncDispatcher<K>(wc, executor);
-        List<CacheEntryCreatedListener<K, V>> cll = new ArrayList<CacheEntryCreatedListener<K, V>>();
-        List<CacheEntryUpdatedListener<K, V>> ull = new ArrayList<CacheEntryUpdatedListener<K, V>>();
-        List<CacheEntryRemovedListener<K, V>> rll = new ArrayList<CacheEntryRemovedListener<K, V>>();
-        List<CacheEntryExpiredListener<K, V>> ell = new ArrayList<CacheEntryExpiredListener<K, V>>();
-        List<CacheEntryEvictedListener<K, V>> evl = new ArrayList<CacheEntryEvictedListener<K, V>>();
-        for (CustomizationSupplier<CacheEntryOperationListener<K, V>> f : config.getAsyncListeners()) {
-          CacheEntryOperationListener<K, V> el = (CacheEntryOperationListener<K, V>) bc.createCustomization(f);
+        List<CacheEntryCreatedListener<K, V>> cll =
+          new ArrayList<CacheEntryCreatedListener<K, V>>();
+        List<CacheEntryUpdatedListener<K, V>> ull =
+          new ArrayList<CacheEntryUpdatedListener<K, V>>();
+        List<CacheEntryRemovedListener<K, V>> rll =
+          new ArrayList<CacheEntryRemovedListener<K, V>>();
+        List<CacheEntryExpiredListener<K, V>> ell =
+          new ArrayList<CacheEntryExpiredListener<K, V>>();
+        List<CacheEntryEvictedListener<K, V>> evl =
+          new ArrayList<CacheEntryEvictedListener<K, V>>();
+        for (CustomizationSupplier<CacheEntryOperationListener<K, V>> f :
+          config.getAsyncListeners()) {
+          CacheEntryOperationListener<K, V> el =
+            (CacheEntryOperationListener<K, V>) bc.createCustomization(f);
           if (el instanceof CacheEntryCreatedListener) {
             cll.add((CacheEntryCreatedListener) el);
           }
@@ -328,19 +346,24 @@ public class InternalCache2kBuilder<K, V> {
         }
       }
       if (!syncCreatedListeners.isEmpty()) {
-        wc.syncEntryCreatedListeners = syncCreatedListeners.toArray(new CacheEntryCreatedListener[0]);
+        wc.syncEntryCreatedListeners =
+          syncCreatedListeners.toArray(new CacheEntryCreatedListener[0]);
       }
       if (!syncUpdatedListeners.isEmpty()) {
-        wc.syncEntryUpdatedListeners = syncUpdatedListeners.toArray(new CacheEntryUpdatedListener[0]);
+        wc.syncEntryUpdatedListeners =
+          syncUpdatedListeners.toArray(new CacheEntryUpdatedListener[0]);
       }
       if (!syncRemovedListeners.isEmpty()) {
-        wc.syncEntryRemovedListeners = syncRemovedListeners.toArray(new CacheEntryRemovedListener[0]);
+        wc.syncEntryRemovedListeners =
+          syncRemovedListeners.toArray(new CacheEntryRemovedListener[0]);
       }
       if (!syncExpiredListeners.isEmpty()) {
-        wc.syncEntryExpiredListeners = syncExpiredListeners.toArray(new CacheEntryExpiredListener[0]);
+        wc.syncEntryExpiredListeners =
+          syncExpiredListeners.toArray(new CacheEntryExpiredListener[0]);
       }
       if (!syncEvictedListeners.isEmpty()) {
-        wc.syncEntryEvictedListeners = syncEvictedListeners.toArray(new CacheEntryEvictedListener[0]);
+        wc.syncEntryEvictedListeners =
+          syncEvictedListeners.toArray(new CacheEntryEvictedListener[0]);
       }
       bc.eviction = constructEviction(bc, wc, config);
       TimingHandler rh = TimingHandler.of(timeReference, config);
@@ -362,16 +385,17 @@ public class InternalCache2kBuilder<K, V> {
    * Segmenting the eviction only improves for lots of concurrent inserts or evictions,
    * there is no effect on read performance.
    */
-  private Eviction constructEviction(HeapCache hc, HeapCacheListener l, Cache2kConfiguration config) {
-    final boolean strictEviction = config.isStrictEviction();
-    final int availableProcessors = Runtime.getRuntime().availableProcessors();
-    final boolean boostConcurrency = config.isBoostConcurrency();
-    final long maximumWeight = config.getMaximumWeight();
+  private Eviction constructEviction(HeapCache hc, HeapCacheListener l,
+                                     Cache2kConfiguration config) {
+    boolean strictEviction = config.isStrictEviction();
+    int availableProcessors = Runtime.getRuntime().availableProcessors();
+    boolean boostConcurrency = config.isBoostConcurrency();
+    long maximumWeight = config.getMaximumWeight();
     long entryCapacity = config.getEntryCapacity();
     if (entryCapacity < 0 && maximumWeight < 0) {
       entryCapacity = 2000;
     }
-    final int segmentCountOverride = HeapCache.TUNABLE.segmentCountOverride;
+    int segmentCountOverride = HeapCache.TUNABLE.segmentCountOverride;
     int segmentCount =
       determineSegmentCount(
         strictEviction, availableProcessors,
@@ -379,7 +403,7 @@ public class InternalCache2kBuilder<K, V> {
     Eviction[] segments = new Eviction[segmentCount];
     long maxSize = determineMaxSize(entryCapacity, segmentCount);
     long maxWeight = determineMaxWeight(maximumWeight, segmentCount);
-    final Weigher weigher = (Weigher) hc.createCustomization(config.getWeigher());
+    Weigher weigher = (Weigher) hc.createCustomization(config.getWeigher());
     for (int i = 0; i < segments.length; i++) {
       Eviction ev = new ClockProPlusEviction(hc, l, maxSize, weigher, maxWeight, strictEviction);
       segments[i] = ev;
@@ -390,7 +414,7 @@ public class InternalCache2kBuilder<K, V> {
     return new SegmentedEviction(segments);
   }
 
-  static long determineMaxSize(final long entryCapacity, final int segmentCount) {
+  static long determineMaxSize(long entryCapacity, int segmentCount) {
     if (entryCapacity < 0) {
       return -1;
     }
@@ -403,7 +427,7 @@ public class InternalCache2kBuilder<K, V> {
     return maxSize;
   }
 
-  static long determineMaxWeight(final long maximumWeight, final int segmentCount) {
+  static long determineMaxWeight(long maximumWeight, int segmentCount) {
     if (maximumWeight < 0) {
       return -1;
     }
@@ -416,9 +440,9 @@ public class InternalCache2kBuilder<K, V> {
     return maxWeight;
   }
 
-  static int determineSegmentCount(final boolean strictEviction, final int availableProcessors,
-                                   final boolean boostConcurrency, final long entryCapacity,
-                                   final int segmentCountOverride) {
+  static int determineSegmentCount(boolean strictEviction, int availableProcessors,
+                                   boolean boostConcurrency, long entryCapacity,
+                                   int segmentCountOverride) {
     int segmentCount = 1;
     if (availableProcessors > 1) {
       segmentCount = 2;
@@ -452,8 +476,8 @@ public class InternalCache2kBuilder<K, V> {
     AsyncDispatcher<K> dispatcher;
     CacheEntryCreatedListener<K,V> listener;
 
-    public AsyncCreatedListener(final AsyncDispatcher<K> dispatcher,
-                                final CacheEntryCreatedListener<K, V> listener) {
+    AsyncCreatedListener(AsyncDispatcher<K> dispatcher,
+                         CacheEntryCreatedListener<K, V> listener) {
       this.dispatcher = dispatcher;
       this.listener = listener;
     }
@@ -479,8 +503,8 @@ public class InternalCache2kBuilder<K, V> {
     AsyncDispatcher<K> dispatcher;
     CacheEntryUpdatedListener<K,V> listener;
 
-    public AsyncUpdatedListener(final AsyncDispatcher<K> dispatcher,
-                                final CacheEntryUpdatedListener<K, V> listener) {
+    AsyncUpdatedListener(AsyncDispatcher<K> dispatcher,
+                                CacheEntryUpdatedListener<K, V> listener) {
       this.dispatcher = dispatcher;
       this.listener = listener;
     }
@@ -507,8 +531,8 @@ public class InternalCache2kBuilder<K, V> {
     AsyncDispatcher<K> dispatcher;
     CacheEntryRemovedListener<K,V> listener;
 
-    public AsyncRemovedListener(final AsyncDispatcher<K> dispatcher,
-                                final CacheEntryRemovedListener<K, V> listener) {
+    AsyncRemovedListener(AsyncDispatcher<K> dispatcher,
+                                CacheEntryRemovedListener<K, V> listener) {
       this.dispatcher = dispatcher;
       this.listener = listener;
     }
@@ -533,8 +557,8 @@ public class InternalCache2kBuilder<K, V> {
     AsyncDispatcher<K> dispatcher;
     CacheEntryExpiredListener<K,V> listener;
 
-    public AsyncExpiredListener(final AsyncDispatcher<K> dispatcher,
-                                final CacheEntryExpiredListener<K, V> listener) {
+    AsyncExpiredListener(AsyncDispatcher<K> dispatcher,
+                                CacheEntryExpiredListener<K, V> listener) {
       this.dispatcher = dispatcher;
       this.listener = listener;
     }
@@ -559,8 +583,8 @@ public class InternalCache2kBuilder<K, V> {
     AsyncDispatcher<K> dispatcher;
     CacheEntryEvictedListener<K,V> listener;
 
-    public AsyncEvictedListener(final AsyncDispatcher<K> dispatcher,
-                                final CacheEntryEvictedListener<K, V> listener) {
+    AsyncEvictedListener(AsyncDispatcher<K> dispatcher,
+                         CacheEntryEvictedListener<K, V> listener) {
       this.dispatcher = dispatcher;
       this.listener = listener;
     }

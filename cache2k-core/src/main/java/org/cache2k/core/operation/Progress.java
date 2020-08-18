@@ -146,6 +146,6 @@ public interface Progress<K, V, R> {
   /**
    * Set new value, skip expiry calculation and set expiry time directly.
    */
-  void putAndSetExpiry(V value, long expiryTime, final long refreshTime);
+  void putAndSetExpiry(V value, long expiryTime, long refreshTime);
 
 }

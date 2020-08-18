@@ -32,7 +32,8 @@ import java.util.Collection;
  * @author Jens Wilke
  * @see DefaultCustomizationCollection
  */
-public interface CustomizationCollection<T> extends Collection<CustomizationSupplier<T>>, Serializable {
+public interface CustomizationCollection<T> extends
+  Collection<CustomizationSupplier<T>>, Serializable {
 
   /**
    * Adds a customization to the collection.

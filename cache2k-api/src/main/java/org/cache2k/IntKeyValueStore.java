@@ -20,8 +20,6 @@ package org.cache2k;
  * #L%
  */
 
-import java.util.Map;
-
 /**
  * Specialized version of {@link KeyValueStore} for int keys.
  *
@@ -29,7 +27,8 @@ import java.util.Map;
  * @since 1.2
  * @deprecated Will be removed in version 2.0
  */
-public interface IntKeyValueStore<V> extends AdvancedKeyValueSource<Integer, V>, IntKeyValueSource<V>  {
+public interface IntKeyValueStore<V> extends
+  AdvancedKeyValueSource<Integer, V>, IntKeyValueSource<V>  {
 
   /**
    * Insert or update a value associated with the given key.

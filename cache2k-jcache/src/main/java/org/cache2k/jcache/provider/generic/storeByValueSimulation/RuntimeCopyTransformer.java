@@ -29,8 +29,8 @@ public class RuntimeCopyTransformer extends CopyTransformer<Object>  {
 
   SerializableCopyTransformer serializableCopyTransformer;
 
-  public RuntimeCopyTransformer(final ClassLoader _classLoader) {
-    serializableCopyTransformer = new SerializableCopyTransformer(_classLoader);
+  public RuntimeCopyTransformer(final ClassLoader classLoader) {
+    serializableCopyTransformer = new SerializableCopyTransformer(classLoader);
   }
 
   @SuppressWarnings("unchecked")
@@ -45,7 +45,8 @@ public class RuntimeCopyTransformer extends CopyTransformer<Object>  {
     if (obj instanceof Serializable) {
       return serializableCopyTransformer.copy(obj);
     }
-    throw new IllegalArgumentException("Cannot determine copy / marshalling method for: " + obj.getClass().getName());
+    throw new IllegalArgumentException(
+      "Cannot determine copy / marshalling method for: " + obj.getClass().getName());
   }
 
 }

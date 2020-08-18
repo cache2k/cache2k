@@ -35,19 +35,19 @@ import static org.cache2k.core.util.Util.formatMillis;
  */
 class CacheBaseInfo implements InternalCacheInfo {
 
-  private CommonMetrics metrics;
-  private HeapCache heapCache;
-  private InternalCache cache;
-  private long size;
-  private long infoCreatedTime;
+  private final CommonMetrics metrics;
+  private final HeapCache heapCache;
+  private final InternalCache cache;
+  private final long size;
+  private final long infoCreatedTime;
   private int infoCreationDeltaMs;
-  private long missCnt;
-  private long hitCnt;
-  private long correctedPutCnt;
-  private CollisionInfo collisionInfo;
+  private final long missCnt;
+  private final long hitCnt;
+  private final long correctedPutCnt;
+  private final CollisionInfo collisionInfo;
   private String extraStatistics;
-  private IntegrityState integrityState;
-  private long totalLoadCnt;
+  private final IntegrityState integrityState;
+  private final long totalLoadCnt;
 
   private int loaderThreadsLimit = -1;
   private long asyncLoadsStarted = -1;
@@ -58,53 +58,54 @@ class CacheBaseInfo implements InternalCacheInfo {
    * Consistent copies from heap cache. for 32 bit machines the access
    * is not atomic. We copy the values while under big lock.
    */
-  private long clearedTime;
-  private long newEntryCnt;
-  private long keyMutationCnt;
-  private long removedCnt;
-  private long clearRemovedCnt;
-  private long clearCnt;
-  private long expiredRemoveCnt;
-  private long evictedCnt;
-  private long maxSize;
-  private int evictionRunningCnt;
-  private long internalExceptionCnt;
-  private long maxWeight;
-  private long currentWeight;
+  private final long clearedTime;
+  private final long newEntryCnt;
+  private final long keyMutationCnt;
+  private final long removedCnt;
+  private final long clearRemovedCnt;
+  private final long clearCnt;
+  private final long expiredRemoveCnt;
+  private final long evictedCnt;
+  private final long maxSize;
+  private final int evictionRunningCnt;
+  private final long internalExceptionCnt;
+  private final long maxWeight;
+  private final long currentWeight;
 
-  public CacheBaseInfo(HeapCache _heapCache, InternalCache _userCache, long now) {
+  CacheBaseInfo(HeapCache heapCache, InternalCache userCache, long now) {
     infoCreatedTime = now;
-    cache = _userCache;
-    heapCache = _heapCache;
-    metrics = _heapCache.metrics;
-    EvictionMetrics em = _heapCache.eviction.getMetrics();
+    cache = userCache;
+    this.heapCache = heapCache;
+    metrics = heapCache.metrics;
+    EvictionMetrics em = heapCache.eviction.getMetrics();
     newEntryCnt = em.getNewEntryCount();
     expiredRemoveCnt = em.getExpiredRemovedCount();
     evictedCnt = em.getEvictedCount();
     maxSize = em.getMaxSize();
     maxWeight = em.getMaxWeight();
     currentWeight = em.getCurrentWeight();
-    clearedTime = _heapCache.clearedTime;
-    keyMutationCnt = _heapCache.keyMutationCnt;
+    clearedTime = heapCache.clearedTime;
+    keyMutationCnt = heapCache.keyMutationCnt;
     removedCnt = em.getRemovedCount();
-    clearRemovedCnt = _heapCache.clearRemovedCnt;
-    clearCnt = _heapCache.clearCnt;
-    internalExceptionCnt = _heapCache.internalExceptionCnt;
+    clearRemovedCnt = heapCache.clearRemovedCnt;
+    clearCnt = heapCache.clearCnt;
+    internalExceptionCnt = heapCache.internalExceptionCnt;
     evictionRunningCnt = em.getEvictionRunningCount();
-    integrityState = _heapCache.getIntegrityState();
+    integrityState = heapCache.getIntegrityState();
     collisionInfo = new CollisionInfo();
-    _heapCache.hash.calcHashCollisionInfo(collisionInfo);
+    heapCache.hash.calcHashCollisionInfo(collisionInfo);
     extraStatistics = em.getExtraStatistics();
     if (extraStatistics.startsWith(", ")) {
       extraStatistics = extraStatistics.substring(2);
     }
-    size = heapCache.getLocalSize();
+    size = this.heapCache.getLocalSize();
     missCnt = metrics.getReadThroughCount() + metrics.getExplicitLoadCount() +
       metrics.getPeekHitNotFreshCount() + metrics.getPeekMissCount();
     hitCnt = em.getHitCount();
     correctedPutCnt = metrics.getPutNewEntryCount() + metrics.getPutHitCount();
-    if (_heapCache.loaderExecutor instanceof ExclusiveExecutor) {
-      ThreadPoolExecutor ex = ((ExclusiveExecutor) _heapCache.loaderExecutor).getThreadPoolExecutor();
+    if (heapCache.loaderExecutor instanceof ExclusiveExecutor) {
+      ThreadPoolExecutor ex =
+        ((ExclusiveExecutor) heapCache.loaderExecutor).getThreadPoolExecutor();
       asyncLoadsInFlight = ex.getActiveCount();
       asyncLoadsStarted = ex.getTaskCount();
       loaderThreadsLimit = ex.getCorePoolSize();
@@ -119,8 +120,8 @@ class CacheBaseInfo implements InternalCacheInfo {
     return (s.length() > 5 ? s.substring(0, 5) : s) + "%";
   }
 
-  public void setInfoCreationDeltaMs(int _millis) {
-    infoCreationDeltaMs = _millis;
+  public void setInfoCreationDeltaMs(int millis) {
+    infoCreationDeltaMs = millis;
   }
 
   @Override
@@ -171,7 +172,8 @@ class CacheBaseInfo implements InternalCacheInfo {
   @Override
   public long getSuppressedExceptionCount() { return metrics.getSuppressedExceptionCount(); }
   @Override
-  public long getLoadExceptionCount() { return metrics.getLoadExceptionCount() + metrics.getSuppressedExceptionCount(); }
+  public long getLoadExceptionCount() {
+    return metrics.getLoadExceptionCount() + metrics.getSuppressedExceptionCount(); }
   @Override
   public long getRefreshedHitCount() { return metrics.getRefreshedHitCount(); }
   @Override
@@ -216,7 +218,8 @@ class CacheBaseInfo implements InternalCacheInfo {
     return hashQuality(getNoCollisionPercent(), getHashLongestSlotSize());
   }
   @Override
-  public double getMillisPerLoad() { return getLoadCount() == 0 ? 0 : (metrics.getLoadMillis() * 1D / getLoadCount()); }
+  public double getMillisPerLoad() {
+    return getLoadCount() == 0 ? 0 : (metrics.getLoadMillis() * 1D / getLoadCount()); }
   @Override
   public long getLoadMillis() { return metrics.getLoadMillis(); }
   @Override
@@ -235,24 +238,33 @@ class CacheBaseInfo implements InternalCacheInfo {
   public long getInfoCreatedTime() { return infoCreatedTime; }
   @Override
   public int getInfoCreationDeltaMs() { return infoCreationDeltaMs; }
+
+  static final int WARNING_THRESHOLD = HeapCache.TUNABLE.hashQualityWarningThreshold;
+  static final int ERROR_THRESHOLD = HeapCache.TUNABLE.hashQualityErrorThreshold;
+
   @Override
   public Collection<HealthInfoElement> getHealth() {
     List<HealthInfoElement> l = new ArrayList<HealthInfoElement>();
     if (integrityState.getStateFlags() > 0) {
-      l.add(new HealthBean(cache, "integrity", HealthInfoElement.FAILURE, "Integrity check error: " + integrityState.getStateFlags()));
+      l.add(new HealthBean(cache, "integrity",
+        HealthInfoElement.FAILURE, "Integrity check error: " + integrityState.getStateFlags()));
     }
-    final int _WARNING_THRESHOLD = HeapCache.TUNABLE.hashQualityWarningThreshold;
-    final int _ERROR_THRESHOLD = HeapCache.TUNABLE.hashQualityErrorThreshold;
-    if (getHashQuality() < _ERROR_THRESHOLD) {
-      l.add(new HealthBean(cache, "hashing", HealthInfoElement.FAILURE, "hash quality is " + getHashQuality() + " (threshold: " + _ERROR_THRESHOLD  + ")"));
-    } else if (getHashQuality() < _WARNING_THRESHOLD) {
-      l.add(new HealthBean(cache, "hashing", HealthInfoElement.WARNING, "hash quality is " + getHashQuality() + " (threshold: " + _WARNING_THRESHOLD + ")"));
+    if (getHashQuality() < ERROR_THRESHOLD) {
+      l.add(new HealthBean(cache, "hashing",
+        HealthInfoElement.FAILURE,
+        "hash quality is " + getHashQuality() + " (threshold: " + ERROR_THRESHOLD  + ")"));
+    } else if (getHashQuality() < WARNING_THRESHOLD) {
+      l.add(new HealthBean(cache, "hashing",
+        HealthInfoElement.WARNING,
+        "hash quality is " + getHashQuality() + " (threshold: " + WARNING_THRESHOLD + ")"));
     }
     if (getKeyMutationCount() > 0) {
-      l.add(new HealthBean(cache, "keyMutation", HealthInfoElement.WARNING, "key mutation detected"));
+      l.add(new HealthBean(cache, "keyMutation",
+        HealthInfoElement.WARNING, "key mutation detected"));
     }
     if (getInternalExceptionCount() > 0) {
-      l.add(new HealthBean(cache, "internalException", HealthInfoElement.WARNING, "internal exception"));
+      l.add(new HealthBean(cache, "internalException",
+        HealthInfoElement.WARNING, "internal exception"));
     }
     return l;
   }
@@ -304,9 +316,11 @@ class CacheBaseInfo implements InternalCacheInfo {
     sb.append("name=").append(BaseCache.nameQualifier(cache)).append(", ")
       .append("size=").append(getSize()).append(", ");
     if (getHeapCapacity() >= 0) {
-      sb.append("capacity=").append(getHeapCapacity() != Long.MAX_VALUE ? getHeapCapacity() : "unlimited").append(", ");
+      sb.append("capacity=").append(
+        getHeapCapacity() != Long.MAX_VALUE ? getHeapCapacity() : "unlimited").append(", ");
     } else {
-      sb.append("maximumWeight=").append(getMaximumWeight() != Long.MAX_VALUE ? getMaximumWeight() : "unlimited").append(", ");
+      sb.append("maximumWeight=").append(
+        getMaximumWeight() != Long.MAX_VALUE ? getMaximumWeight() : "unlimited").append(", ");
       sb.append("currentWeight=").append(getCurrentWeight()).append(", ");
     }
     sb.append("get=").append(getGetCount()).append(", ")
@@ -362,16 +376,17 @@ class CacheBaseInfo implements InternalCacheInfo {
     return f.format(val);
   }
 
-  static int hashQuality(int _noCollisionPercent, int _longestSlot) {
-    if (_longestSlot == 0) {
+  static final double EXPONENT_CONSTANT = -0.011;
+  static final int SLOT_SIZE_MINIMUM = 5;
+
+  static int hashQuality(int noCollisionPercent, int longestSlot) {
+    if (longestSlot == 0) {
       return 100;
     }
-    final double _EXPONENT_CONSTANT = -0.011;
-    final int _SLOT_SIZE_MINIMUM = 5;
-    int _correctionForOversizeSlot = (int)
-      ((1 - Math.exp(_EXPONENT_CONSTANT * Math.max(0, _longestSlot - _SLOT_SIZE_MINIMUM))) * 100);
-    int _quality = _noCollisionPercent - _correctionForOversizeSlot;
-    return Math.max(0, Math.min(100, _quality));
+    int correctionForOversizeSlot = (int)
+      ((1 - Math.exp(EXPONENT_CONSTANT * Math.max(0, longestSlot - SLOT_SIZE_MINIMUM))) * 100);
+    int quality = noCollisionPercent - correctionForOversizeSlot;
+    return Math.max(0, Math.min(100, quality));
   }
 
   static class HealthBean implements HealthInfoElement {
@@ -381,11 +396,11 @@ class CacheBaseInfo implements InternalCacheInfo {
     String level;
     InternalCache cache;
 
-    public HealthBean(final InternalCache _cache, final String _id, final String _level, final String _message) {
-      cache = _cache;
-      id = _id;
-      level = _level;
-      message = _message;
+    HealthBean(InternalCache cache, String id, String level, String message) {
+      this.cache = cache;
+      this.id = id;
+      this.level = level;
+      this.message = message;
     }
 
     @Override

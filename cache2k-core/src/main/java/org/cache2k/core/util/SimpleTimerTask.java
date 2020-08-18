@@ -20,7 +20,6 @@ package org.cache2k.core.util;
  * #L%
  */
 
-import java.util.Date;
 import java.util.concurrent.atomic.AtomicIntegerFieldUpdater;
 
 /**
@@ -35,7 +34,7 @@ public abstract class SimpleTimerTask implements Runnable {
    */
   private volatile int state = VIRGIN;
 
-  static final AtomicIntegerFieldUpdater<SimpleTimerTask> stateUpdater =
+  static final AtomicIntegerFieldUpdater<SimpleTimerTask> STATE_UPDATER =
     AtomicIntegerFieldUpdater.newUpdater(SimpleTimerTask.class, "state");
 
   /**
@@ -101,15 +100,15 @@ public abstract class SimpleTimerTask implements Runnable {
    *         executions from taking place.)
    */
   public boolean cancel() {
-    return stateUpdater.compareAndSet(this, SCHEDULED, CANCELLED);
+    return STATE_UPDATER.compareAndSet(this, SCHEDULED, CANCELLED);
   }
 
   public boolean execute() {
-    return stateUpdater.compareAndSet(this, SCHEDULED, EXECUTED);
+    return STATE_UPDATER.compareAndSet(this, SCHEDULED, EXECUTED);
   }
 
   public boolean schedule() {
-    return stateUpdater.compareAndSet(this, VIRGIN, SCHEDULED);
+    return STATE_UPDATER.compareAndSet(this, VIRGIN, SCHEDULED);
   }
 
   public boolean isCancelled() {
@@ -146,7 +145,7 @@ public abstract class SimpleTimerTask implements Runnable {
    *         scheduled to occur, in the format returned by Date.getTime().
    *         The return value is undefined if the task has yet to commence
    *         its first execution.
-   * @see Date#getTime()
+   * @see java.util.Date#getTime()
    */
   public long scheduledExecutionTime() {
     return executionTime;

@@ -41,13 +41,14 @@ import java.lang.management.ManagementFactory;
  * <p>Registering a name may fail because cache manager names may be identical in different
  * class loaders.
  */
+@SuppressWarnings("rawtypes")
 public class JmxSupport implements CacheLifeCycleListener, CacheManagerLifeCycleListener {
 
-  private final static String REGISTERED_FLAG = JmxSupport.class.getName() + ".registered";
-  private final static boolean MANAGEMENT_UNAVAILABLE;
-  private Log log = Log.getLog(JmxSupport.class);
+  private static final String REGISTERED_FLAG = JmxSupport.class.getName() + ".registered";
+  private static final boolean MANAGEMENT_UNAVAILABLE;
+  private final Log log = Log.getLog(JmxSupport.class);
 
-  /**
+  /*
    * Check for JMX available. Might be not present on Android.
    */
   static {
@@ -67,18 +68,18 @@ public class JmxSupport implements CacheLifeCycleListener, CacheManagerLifeCycle
    * anyway since the cache size or the clear operation might be of interest.
    */
   @Override
-  public void cacheCreated(Cache c, final Cache2kConfiguration cfg) {
+  public void cacheCreated(Cache c, Cache2kConfiguration cfg) {
     if (MANAGEMENT_UNAVAILABLE || !cfg.isEnableJmx() || cfg.isDisableMonitoring()) {
       return;
     }
     MBeanServer mbs = getPlatformMBeanServer();
-    String _name = standardName(c.getCacheManager(), c);
+    String name = standardName(c.getCacheManager(), c);
     try {
-      mbs.registerMBean(c.getStatistics(), new ObjectName(_name));
-    } catch (InstanceAlreadyExistsException ignore) {
-      log.debug("register failure, cache: " + c.getName(), ignore);
+      mbs.registerMBean(c.getStatistics(), new ObjectName(name));
+    } catch (InstanceAlreadyExistsException existing) {
+      log.debug("register failure, cache: " + c.getName(), existing);
     } catch (Exception e) {
-      throw new CacheException("register JMX bean, ObjectName: " + _name, e);
+      throw new CacheException("register JMX bean, ObjectName: " + name, e);
     }
   }
 
@@ -88,12 +89,12 @@ public class JmxSupport implements CacheLifeCycleListener, CacheManagerLifeCycle
       return;
     }
     MBeanServer mbs = getPlatformMBeanServer();
-    String _name = standardName(c.getCacheManager(), c);
+    String name = standardName(c.getCacheManager(), c);
     try {
-      mbs.unregisterMBean(new ObjectName(_name));
+      mbs.unregisterMBean(new ObjectName(name));
     } catch (InstanceNotFoundException ignore) {
     } catch (Exception e) {
-      throw new CacheException("unregister JMX bean, ObjectName: " + _name, e);
+      throw new CacheException("unregister JMX bean, ObjectName: " + name, e);
     }
   }
 
@@ -103,16 +104,16 @@ public class JmxSupport implements CacheLifeCycleListener, CacheManagerLifeCycle
       return;
     }
     MBeanServer mbs = getPlatformMBeanServer();
-    ManagerMXBeanImpl _mBean = new ManagerMXBeanImpl((CacheManagerImpl) m);
-    String _name = managerName(m);
+    ManagerMXBeanImpl mBean = new ManagerMXBeanImpl((CacheManagerImpl) m);
+    String name = managerName(m);
     try {
-      mbs.registerMBean(_mBean, new ObjectName(_name));
+      mbs.registerMBean(mBean, new ObjectName(name));
       m.getProperties().put(REGISTERED_FLAG, true);
-      log.debug("Manager created and registered as: " + _name);
-    } catch (InstanceAlreadyExistsException ignore) {
-      log.debug("register failure, manager: " + m.getName(), ignore);
+      log.debug("Manager created and registered as: " + name);
+    } catch (InstanceAlreadyExistsException existing) {
+      log.debug("register failure, manager: " + m.getName(), existing);
     } catch (Exception e) {
-      throw new CacheException("register JMX bean, ObjectName: " + _name, e);
+      throw new CacheException("register JMX bean, ObjectName: " + name, e);
     }
   }
 
@@ -125,11 +126,11 @@ public class JmxSupport implements CacheLifeCycleListener, CacheManagerLifeCycle
       return;
     }
     MBeanServer mbs = getPlatformMBeanServer();
-    String _name = managerName(m);
+    String name = managerName(m);
     try {
-        mbs.unregisterMBean(new ObjectName(_name));
+        mbs.unregisterMBean(new ObjectName(name));
     } catch (Exception e) {
-      throw new CacheException("Error unregister JMX bean, ObjectName: " + _name, e);
+      throw new CacheException("Error unregister JMX bean, ObjectName: " + name, e);
     }
   }
 

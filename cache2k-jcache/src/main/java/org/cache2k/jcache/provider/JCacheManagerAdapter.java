@@ -44,7 +44,7 @@ import java.util.WeakHashMap;
  */
 public class JCacheManagerAdapter implements CacheManager {
 
-  private final static JCacheJmxSupport JMX_SUPPORT = findJCacheJmxSupportInstance();
+  private static final JCacheJmxSupport JMX_SUPPORT = findJCacheJmxSupportInstance();
 
   /**
    * The JMX support is already created via the serviceloader
@@ -58,14 +58,14 @@ public class JCacheManagerAdapter implements CacheManager {
     throw new LinkageError("JCacheJmxSupport not loaded");
   }
 
-  private org.cache2k.CacheManager manager;
-  private JCacheProvider provider;
+  private final org.cache2k.CacheManager manager;
+  private final JCacheProvider provider;
 
   /**
    * All caches. Currently closed caches stay in the map.
    * Guarded by getLockObject().
    */
-  private Map<String, Cache> name2adapter = new HashMap<String, Cache>();
+  private final Map<String, Cache> name2adapter = new HashMap<String, Cache>();
 
   /**
    * Needed for event delivery to find the corresponding JCache for a cache2k cache.
@@ -78,11 +78,11 @@ public class JCacheManagerAdapter implements CacheManager {
   public JCacheManagerAdapter(JCacheProvider p, org.cache2k.CacheManager cm) {
     manager = cm;
     provider = p;
-    Set<String> _names = new HashSet<String>();
+    Set<String> names = new HashSet<String>();
     for (String s : manager.getConfiguredCacheNames()) {
-      _names.add(s);
+      names.add(s);
     }
-    configuredCacheNames = Collections.unmodifiableSet(_names);
+    configuredCacheNames = Collections.unmodifiableSet(names);
   }
 
   @Override
@@ -105,34 +105,35 @@ public class JCacheManagerAdapter implements CacheManager {
     return manager.getProperties();
   }
 
-  public <K, V, C extends Configuration<K, V>> Cache<K, V> createCache(String _cacheName, C cfg)
+  public <K, V, C extends Configuration<K, V>> Cache<K, V> createCache(String cacheName, C cfg)
     throws IllegalArgumentException {
     checkClosed();
-    checkNonNullCacheName(_cacheName);
+    checkNonNullCacheName(cacheName);
     synchronized (getLockObject()) {
-      Cache _jsr107cache = name2adapter.get(_cacheName);
-      if (_jsr107cache != null && !_jsr107cache.isClosed()) {
-        throw new CacheException("cache already existing with name: " + _cacheName);
+      Cache jsr107cache = name2adapter.get(cacheName);
+      if (jsr107cache != null && !jsr107cache.isClosed()) {
+        throw new CacheException("cache already existing with name: " + cacheName);
       }
-      org.cache2k.Cache _existingCache = manager.getCache(_cacheName);
-      if (_existingCache != null && !_existingCache.isClosed()) {
-        throw new CacheException("A cache2k instance is already existing with name: " + _cacheName);
+      org.cache2k.Cache existingCache = manager.getCache(cacheName);
+      if (existingCache != null && !existingCache.isClosed()) {
+        throw new CacheException("A cache2k instance is already existing with name: " + cacheName);
       }
-      JCacheBuilder<K,V> _builder = new JCacheBuilder<K, V>(_cacheName, this);
-      _builder.setConfiguration(cfg);
-      Cache<K,V> _cache = _builder.build();
-      org.cache2k.Cache _cache2k = _cache.unwrap(org.cache2k.Cache.class);
-      Map<org.cache2k.Cache, Cache> _cloneC2k2jCache = new WeakHashMap<org.cache2k.Cache, Cache>(c2k2jCache);
-      _cloneC2k2jCache.put(_cache2k, _cache);
-      c2k2jCache = _cloneC2k2jCache;
-      name2adapter.put(_cache.getName(), _cache);
-      if (_builder.isStatisticsEnabled()) {
-        enableStatistics(_cacheName, true);
+      JCacheBuilder<K,V> builder = new JCacheBuilder<K, V>(cacheName, this);
+      builder.setConfiguration(cfg);
+      Cache<K,V> cache = builder.build();
+      org.cache2k.Cache cache2k = cache.unwrap(org.cache2k.Cache.class);
+      Map<org.cache2k.Cache, Cache> cloneC2k2jCache =
+        new WeakHashMap<org.cache2k.Cache, Cache>(c2k2jCache);
+      cloneC2k2jCache.put(cache2k, cache);
+      c2k2jCache = cloneC2k2jCache;
+      name2adapter.put(cache.getName(), cache);
+      if (builder.isStatisticsEnabled()) {
+        enableStatistics(cacheName, true);
       }
-      if (_builder.isManagementEnabled()) {
-        enableManagement(_cacheName, true);
+      if (builder.isManagementEnabled()) {
+        enableManagement(cacheName, true);
       }
-      return _cache;
+      return cache;
     }
   }
 
@@ -141,26 +142,28 @@ public class JCacheManagerAdapter implements CacheManager {
   }
 
   @Override @SuppressWarnings("unchecked")
-  public <K, V> Cache<K, V> getCache(String _cacheName, final Class<K> _keyType, final Class<V> _valueType) {
-    if (_keyType == null || _valueType == null) {
+  public <K, V> Cache<K, V> getCache(String cacheName, Class<K> keyType, Class<V> valueType) {
+    if (keyType == null || valueType == null) {
       throw new NullPointerException();
     }
-    Cache<K, V> c = getCache(_cacheName);
+    Cache<K, V> c = getCache(cacheName);
     if (c == null) {
       return null;
     }
     Configuration cfg = c.getConfiguration(Configuration.class);
-    if (!cfg.getKeyType().equals(_keyType)) {
-      throw new ClassCastException("key type mismatch, expected: " + cfg.getKeyType().getName());
+    if (!cfg.getKeyType().equals(keyType)) {
+      throw new ClassCastException(
+        "key type mismatch, expected: " + cfg.getKeyType().getName());
     }
-    if (!cfg.getValueType().equals(_valueType)) {
-      throw new ClassCastException("value type mismatch, expected: " + cfg.getValueType().getName());
+    if (!cfg.getValueType().equals(valueType)) {
+      throw new ClassCastException(
+        "value type mismatch, expected: " + cfg.getValueType().getName());
     }
     return c;
   }
 
-  private JCacheAdapter getAdapter(String _name) {
-    Cache ca = name2adapter.get(_name);
+  private JCacheAdapter getAdapter(String name) {
+    Cache ca = name2adapter.get(name);
     if (ca instanceof CopyCacheProxy) {
       ca = ((CopyCacheProxy) ca).getWrappedCache();
     }
@@ -170,24 +173,25 @@ public class JCacheManagerAdapter implements CacheManager {
     return (JCacheAdapter) ca;
   }
 
-  private void checkNonNullCacheName(String _cacheName) {
-    if (_cacheName == null) {
+  private void checkNonNullCacheName(String cacheName) {
+    if (cacheName == null) {
       throw new NullPointerException("cache name is null");
     }
   }
 
   @SuppressWarnings("unchecked")
   @Override
-  public <K, V> Cache<K, V> getCache(String _cacheName) {
+  public <K, V> Cache<K, V> getCache(String cacheName) {
     checkClosed();
-    checkNonNullCacheName(_cacheName);
+    checkNonNullCacheName(cacheName);
     synchronized (getLockObject()) {
-      Cache<K, V> c = name2adapter.get(_cacheName);
-      if (c != null && manager.getCache(_cacheName) == c.unwrap(org.cache2k.Cache.class) && !c.isClosed()) {
+      Cache<K, V> c = name2adapter.get(cacheName);
+      if (c != null && manager.getCache(cacheName) == c.unwrap(org.cache2k.Cache.class) &&
+        !c.isClosed()) {
         return c;
       }
-      if (configuredCacheNames.contains(_cacheName)) {
-        return createCache(_cacheName, new MutableConfiguration<K, V>());
+      if (configuredCacheNames.contains(cacheName)) {
+        return createCache(cacheName, new MutableConfiguration<K, V>());
       }
     }
     return null;
@@ -196,34 +200,34 @@ public class JCacheManagerAdapter implements CacheManager {
   @Override
   public Iterable<String> getCacheNames() {
     checkClosed();
-    Set<String> _names = new HashSet<String>();
+    Set<String> names = new HashSet<String>();
     for (org.cache2k.Cache c : manager.getActiveCaches()) {
-      _names.add(c.getName());
+      names.add(c.getName());
     }
-    _names.addAll(configuredCacheNames);
-    return Collections.unmodifiableSet(_names);
+    names.addAll(configuredCacheNames);
+    return Collections.unmodifiableSet(names);
   }
 
   @Override
-  public void destroyCache(String _cacheName) {
+  public void destroyCache(String cacheName) {
     checkClosed();
-    checkNonNullCacheName(_cacheName);
-    org.cache2k.Cache c = manager.getCache(_cacheName);
+    checkNonNullCacheName(cacheName);
+    org.cache2k.Cache c = manager.getCache(cacheName);
     if (c != null) {
       c.close();
     }
   }
 
   @Override
-  public void enableManagement(String _cacheName, boolean enabled) {
+  public void enableManagement(String cacheName, boolean enabled) {
     checkClosed();
-    checkNonNullCacheName(_cacheName);
+    checkNonNullCacheName(cacheName);
     synchronized (getLockObject()) {
-      JCacheAdapter ca = getAdapter(_cacheName);
+      JCacheAdapter ca = getAdapter(cacheName);
       if (ca == null) {
         return;
       }
-      Cache c = name2adapter.get(_cacheName);
+      Cache c = name2adapter.get(cacheName);
       if (enabled) {
         if (!ca.jmxEnabled) {
           JMX_SUPPORT.enableJmx(ca.cache, c);
@@ -245,12 +249,12 @@ public class JCacheManagerAdapter implements CacheManager {
   }
 
   @Override
-  public void enableStatistics(String _cacheName, boolean enabled) {
+  public void enableStatistics(String cacheName, boolean enabled) {
     checkClosed();
-    checkNonNullCacheName(_cacheName);
+    checkNonNullCacheName(cacheName);
     synchronized (getLockObject()) {
       if (enabled) {
-        JCacheAdapter ca = getAdapter(_cacheName);
+        JCacheAdapter ca = getAdapter(cacheName);
         if (ca != null) {
           synchronized (ca.cache) {
             if (!ca.jmxStatisticsEnabled) {
@@ -260,7 +264,7 @@ public class JCacheManagerAdapter implements CacheManager {
           }
         }
       } else {
-        JCacheAdapter ca = getAdapter(_cacheName);
+        JCacheAdapter ca = getAdapter(cacheName);
         if (ca != null) {
           synchronized (ca.cache) {
             if (ca.jmxStatisticsEnabled) {
@@ -285,8 +289,8 @@ public class JCacheManagerAdapter implements CacheManager {
 
   @SuppressWarnings("unchecked")
   @Override
-  public <T> T unwrap(Class<T> _class) {
-    if (org.cache2k.CacheManager.class.isAssignableFrom(_class)) {
+  public <T> T unwrap(Class<T> type) {
+    if (org.cache2k.CacheManager.class.isAssignableFrom(type)) {
       return (T) manager;
     }
     throw new IllegalArgumentException("requested unwrap class not available");
@@ -299,9 +303,9 @@ public class JCacheManagerAdapter implements CacheManager {
   /**
    * Return the JCache wrapper for a c2k cache.
    */
-  public Cache resolveCacheWrapper(org.cache2k.Cache _c2kCache) {
+  public Cache resolveCacheWrapper(org.cache2k.Cache c2kCache) {
     synchronized (getLockObject()) {
-      return c2k2jCache.get(_c2kCache);
+      return c2k2jCache.get(c2kCache);
     }
   }
 

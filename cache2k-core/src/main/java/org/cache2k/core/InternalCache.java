@@ -87,7 +87,7 @@ public interface InternalCache<K, V>
    * Call close on the customization if the {@link java.io.Closeable} interface
    * is implemented
    */
-  void closeCustomization(final Object _customization, final String _name);
+  void closeCustomization(Object customization, String name);
 
   /**
    * Time reference for the cache.

@@ -31,20 +31,20 @@ import org.cache2k.CacheException;
  */
 public class ConfigurationException extends CacheException {
 
-  public ConfigurationException(final String message) {
+  public ConfigurationException(String message) {
     super(message);
   }
 
-  public ConfigurationException(final String message, final Throwable cause) {
+  public ConfigurationException(String message, Throwable cause) {
     super(message, cause);
   }
 
-  public ConfigurationException(final String message, final String source) {
+  public ConfigurationException(String message, String source) {
     super(message + " at " + source);
   }
 
-  public ConfigurationException(final String _message, final SourceLocation _location) {
-    super(_message + " (" + _location.getSource() + ":" + _location.getLineNumber() + ")") ;
+  public ConfigurationException(String message, SourceLocation location) {
+    super(message + " (" + location.getSource() + ":" + location.getLineNumber() + ")") ;
   }
 
 }

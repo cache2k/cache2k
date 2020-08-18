@@ -39,7 +39,8 @@ public class SimpleObjectCopyFactory implements ObjectCopyFactory {
 
   @SuppressWarnings("unchecked")
   @Override
-  public <T> ObjectTransformer<T, T> createCopyTransformer(Class<T> clazz, ClassLoader classLoader) {
+  public <T> ObjectTransformer<T, T> createCopyTransformer(
+    Class<T> clazz, ClassLoader classLoader) {
     if (isImmutable(clazz)) {
       return ObjectTransformer.IDENT_TRANSFORM;
     }

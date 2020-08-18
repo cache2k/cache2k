@@ -27,13 +27,13 @@ public abstract class AbstractConfigurationTokenizer implements ConfigurationTok
 
   private final String source;
 
-  public AbstractConfigurationTokenizer(final String source) {
+  public AbstractConfigurationTokenizer(String source) {
     this.source = source;
   }
 
   public String getSource() { return source; }
 
-  protected final Nest returnNest(final String sectionName) {
+  protected final Nest returnNest(String sectionName) {
     return new MyNest(getSource(), getLineNumber(), sectionName);
   }
 
@@ -41,7 +41,7 @@ public abstract class AbstractConfigurationTokenizer implements ConfigurationTok
     return new MyUnnest(getSource(), getLineNumber());
   }
 
-  protected final Property returnProperty(final String name, final String property) {
+  protected final Property returnProperty(String name, String property) {
     return new MyProperty(getSource(), getLineNumber(), name, property);
   }
 
@@ -49,7 +49,7 @@ public abstract class AbstractConfigurationTokenizer implements ConfigurationTok
     private final String source;
     private final int lineNumber;
 
-    public MyItem(final String source, final int lineNumber) {
+    MyItem(String source, int lineNumber) {
       this.lineNumber = lineNumber;
       this.source = source;
     }
@@ -69,7 +69,7 @@ public abstract class AbstractConfigurationTokenizer implements ConfigurationTok
 
     private final String sectionName;
 
-    public MyNest(final String source, final int lineNumber, final String sectionName) {
+    MyNest(String source, int lineNumber, String sectionName) {
       super(source, lineNumber);
       this.sectionName = sectionName;
     }
@@ -88,7 +88,7 @@ public abstract class AbstractConfigurationTokenizer implements ConfigurationTok
   }
 
   private static class MyUnnest extends MyItem implements Unnest {
-    public MyUnnest(final String source, final int lineNumber) {
+    MyUnnest(String source, int lineNumber) {
       super(source, lineNumber);
     }
 
@@ -103,7 +103,7 @@ public abstract class AbstractConfigurationTokenizer implements ConfigurationTok
     private String value;
     private boolean expanded;
 
-    public MyProperty(final String source, final int lineNumber, final String name, final String value) {
+    MyProperty(String source, int lineNumber, String name, String value) {
       super(source, lineNumber);
       this.name = name;
       this.value = value;
@@ -120,7 +120,7 @@ public abstract class AbstractConfigurationTokenizer implements ConfigurationTok
     }
 
     @Override
-    public void setValue(final String v) {
+    public void setValue(String v) {
       value = v;
     }
 
@@ -130,7 +130,7 @@ public abstract class AbstractConfigurationTokenizer implements ConfigurationTok
     }
 
     @Override
-    public void setExpanded(final boolean v) {
+    public void setExpanded(boolean v) {
       expanded = v;
     }
 

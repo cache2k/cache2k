@@ -39,7 +39,8 @@ import java.util.Arrays;
  *
  * This constructs a cache with the known type {@code List<String>} for its value.
  *
- * @see <a href="https://github.com/google/guava/wiki/ReflectionExplained">Google Guava CacheType explaination</a>
+ * @see <a href="https://github.com/google/guava/wiki/ReflectionExplained">Google Guava
+ * CacheType explaination</a>
  *
  * @author Jens Wilke
  */
@@ -126,7 +127,7 @@ public class CacheTypeCapture<T> implements CacheType<T> {
     return descriptor.hashCode();
   }
 
-  private static abstract class BaseType implements CacheType, Serializable {
+  private abstract static class BaseType implements CacheType, Serializable {
 
     @Override
     public CacheType getComponentType() {
@@ -195,9 +196,9 @@ public class CacheTypeCapture<T> implements CacheType<T> {
     }
 
     static String shortenName(String s) {
-      final String _LANG_PREFIX = "java.lang.";
-      if (s.startsWith(_LANG_PREFIX)) {
-        return s.substring(_LANG_PREFIX.length());
+      final String langPrefix = "java.lang.";
+      if (s.startsWith(langPrefix)) {
+        return s.substring(langPrefix.length());
       }
       return s;
     }
@@ -276,13 +277,13 @@ public class CacheTypeCapture<T> implements CacheType<T> {
     @Override
     public String getTypeName() {
       StringBuilder sb = new StringBuilder();
-      int _dimensions = countDimensions(this);
-      if (_dimensions > 1) {
+      int dimensions = countDimensions(this);
+      if (dimensions > 1) {
         sb.append(finalPrimitiveType(this));
       } else {
         sb.append(getComponentType().getTypeName());
       }
-      for (int i = 0; i < _dimensions; i++) {
+      for (int i = 0; i < dimensions; i++) {
         sb.append("[]");
       }
       return sb.toString();

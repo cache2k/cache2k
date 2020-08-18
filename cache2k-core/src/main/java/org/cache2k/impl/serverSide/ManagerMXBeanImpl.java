@@ -32,7 +32,7 @@ import java.util.Comparator;
 import java.util.List;
 
 /**
-* @author Jens Wilke; created: 2014-10-09
+* @author Jens Wilke
 */
 public class ManagerMXBeanImpl implements CacheManagerMXBean {
 
@@ -53,10 +53,10 @@ public class ManagerMXBeanImpl implements CacheManagerMXBean {
     return constructHealthString(li);
   }
 
-  void sortHealthInfoList(final List<HealthInfoElement> li) {
+  void sortHealthInfoList(List<HealthInfoElement> li) {
     Collections.sort(li, new Comparator<HealthInfoElement>() {
       @Override
-      public int compare(final HealthInfoElement o1, final HealthInfoElement o2) {
+      public int compare(HealthInfoElement o1, HealthInfoElement o2) {
         if (!o1.getLevel().equals(o2.getLevel())) {
           return (HealthInfoElement.FAILURE.equals(o1.getLevel())) ? -1 : 1;
         }
@@ -65,19 +65,19 @@ public class ManagerMXBeanImpl implements CacheManagerMXBean {
     });
   }
 
-  static String constructHealthString(final List<HealthInfoElement> _sortedList) {
-    if (_sortedList.isEmpty()) {
+  static String constructHealthString(List<HealthInfoElement> sortedList) {
+    if (sortedList.isEmpty()) {
       return "ok";
     }
-    boolean _comma = false;
+    boolean comma = false;
     StringBuilder sb = new StringBuilder();
-    for (HealthInfoElement hi : _sortedList) {
-      if (_comma) {
+    for (HealthInfoElement hi : sortedList) {
+      if (comma) {
         sb.append("; ");
       }
       sb.append(hi.getLevel()).append(": ")
         .append("[").append(hi.getCache().getName() + "] ").append(hi.getMessage());
-      _comma = true;
+      comma = true;
     }
     return sb.toString();
   }

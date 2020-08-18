@@ -68,7 +68,7 @@ public interface Semantic<K, V, R> {
      */
     @SuppressWarnings("unchecked")
     @Override
-    public void loaded(final Progress<K, V, R> c, final ExaminationEntry<K, V> e) {
+    public void loaded(Progress<K, V, R> c, ExaminationEntry<K, V> e) {
       c.result((R) e.getValueOrException());
     }
 
@@ -85,7 +85,10 @@ public interface Semantic<K, V, R> {
       c.wantMutation();
     }
 
-    /** Instruct to lock the entry for the update. Again, since examine may be called when entry is there. */
+    /**
+     * Instruct to lock the entry for the update. Again, since examine may be called when
+     * entry is there.
+     */
     @Override
     public final void examine(Progress<K, V, R> c, ExaminationEntry<K, V> e) {
       c.wantMutation();

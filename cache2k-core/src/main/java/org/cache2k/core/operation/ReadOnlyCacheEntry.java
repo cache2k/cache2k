@@ -48,14 +48,14 @@ public class ReadOnlyCacheEntry<K, V> extends AbstractCacheEntry<K,V> implements
     setValues(entry);
   }
 
-  private void setValues(final Entry<K, V> entry) {
+  private void setValues(Entry<K, V> entry) {
     setValues(entry.getKey(), entry.getValueOrException(), entry.getRefreshTime());
   }
 
-  private void setValues(final K _key, final V _valueOrException, final long _refreshTime) {
-    key = _key;
-    refreshTime = _refreshTime;
-    valueOrException = _valueOrException;
+  private void setValues(K key, V valueOrException, long refreshTime) {
+    this.key = key;
+    this.refreshTime = refreshTime;
+    this.valueOrException = valueOrException;
   }
 
   @Override

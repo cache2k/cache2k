@@ -32,7 +32,7 @@ import java.util.Map;
  */
 public class BeanPropertyMutator {
 
-  private final static String SETTER_PREFIX = "set";
+  private static final String SETTER_PREFIX = "set";
 
   private final Map<String, Method> settersLookupMap;
 
@@ -55,7 +55,8 @@ public class BeanPropertyMutator {
   }
 
   /**
-   * Don't have a setter for a class, but use the cache type. {@code Cache2kConfiguration.setKeyType()}
+   * Don't have a setter for a class, but use the cache type.
+   * {@code Cache2kConfiguration.setKeyType()}
    * TODO: generic setter preference?
    */
   private static boolean preferCacheTypeAndNotClass(Class<?> c) {
@@ -73,7 +74,8 @@ public class BeanPropertyMutator {
         Method m0 = map.put(propertyName, m);
         if (m0 != null) {
           throw new IllegalArgumentException(
-            "Ambiguous setter for property '" + propertyName + "' in class '" + c.getSimpleName() + "'");
+            "Ambiguous setter for property '" + propertyName +
+              "' in class '" + c.getSimpleName() + "'");
         }
       }
     }

@@ -20,9 +20,6 @@ package org.cache2k;
  * #L%
  */
 
-import org.cache2k.Cache;
-import org.cache2k.IntKeyValueSource;
-
 /**
  * Specialized version of {@link Cache} for int keys.
  *

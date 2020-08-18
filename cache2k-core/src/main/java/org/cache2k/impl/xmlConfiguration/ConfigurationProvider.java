@@ -20,7 +20,6 @@ package org.cache2k.impl.xmlConfiguration;
  * #L%
  */
 
-import org.cache2k.configuration.Cache2kConfiguration;
 import org.cache2k.configuration.ConfigurationSection;
 import org.cache2k.configuration.ConfigurationWithSections;
 import org.cache2k.configuration.SingletonConfigurationSection;
@@ -43,15 +42,19 @@ import java.util.Map;
  * @author Jens Wilke
  */
 public class ConfigurationProvider {
-  private PropertyParser propertyParser = new StandardPropertyParser();
-  private volatile Map<Class<?>, BeanPropertyMutator> type2mutator = new HashMap<Class<?>, BeanPropertyMutator>();
+  private final PropertyParser propertyParser = new StandardPropertyParser();
+  private volatile Map<Class<?>, BeanPropertyMutator> type2mutator =
+    new HashMap<Class<?>, BeanPropertyMutator>();
 
-  private static String constructGetterName(final String containerName) {
+  private static String constructGetterName(String containerName) {
     return "get" + Character.toUpperCase(containerName.charAt(0)) + containerName.substring(1);
   }
 
-  /** Set properties in configuration bean based on the parsed configuration. Called by unit test. */
-  void apply(final ConfigurationContext ctx, final ParsedConfiguration parsedCfg, final Object cfg) {
+  /**
+   * Set properties in configuration bean based on the parsed configuration.
+   * Called by unit test.
+   */
+  void apply(ConfigurationContext ctx, ParsedConfiguration parsedCfg, Object cfg) {
     ParsedConfiguration templates = ctx.getTemplates();
     ConfigurationTokenizer.Property include = parsedCfg.getPropertyMap().get("include");
     if (include != null) {
@@ -59,7 +62,7 @@ public class ConfigurationProvider {
         ParsedConfiguration c2 = null;
         if (templates != null) { c2 = templates.getSection(template); }
         if (c2 == null) {
-          throw new ConfigurationException("Template not found \'" + template + "\'", include);
+          throw new ConfigurationException("Template not found '" + template + "'", include);
         }
         apply(ctx, c2, cfg);
       }
@@ -87,7 +90,8 @@ public class ConfigurationProvider {
       if (!handleSection(ctx, type, configurationWithSections, parsedSection)
         && !handleCollection(ctx, type, cfg, parsedSection)
         && !handleBean(ctx, type, cfg, parsedSection)) {
-        throw new ConfigurationException("Unknown property  '" +  parsedSection.getContainer() + "'", parsedSection);
+        throw new ConfigurationException(
+          "Unknown property  '" +  parsedSection.getContainer() + "'", parsedSection);
       }
     }
   }
@@ -98,10 +102,10 @@ public class ConfigurationProvider {
    * @return true, if applied, false if not a property
    */
   private boolean handleBean(
-    final ConfigurationContext ctx,
-    final Class<?> type,
-    final Object cfg,
-    final ParsedConfiguration parsedCfg) {
+    ConfigurationContext ctx,
+    Class<?> type,
+    Object cfg,
+    ParsedConfiguration parsedCfg) {
     String containerName = parsedCfg.getContainer();
     BeanPropertyMutator m = provideMutator(cfg.getClass());
     Class<?> targetType = m.getType(containerName);
@@ -109,7 +113,8 @@ public class ConfigurationProvider {
      return false;
     }
     if (!targetType.isAssignableFrom(type)) {
-      throw new ConfigurationException("Type mismatch, expected: '" + targetType.getName() + "'", parsedCfg);
+      throw new ConfigurationException(
+        "Type mismatch, expected: '" + targetType.getName() + "'", parsedCfg);
     }
     Object bean = createBeanAndApplyConfiguration(ctx, type, parsedCfg);
     mutateAndCatch(cfg, m, containerName, bean, parsedCfg, bean);
@@ -117,17 +122,18 @@ public class ConfigurationProvider {
   }
 
   /**
-   * Get appropriate collection e.g. {@link Cache2kConfiguration#getListeners()} create the bean
+   * Get appropriate collection e.g.
+   * {@link org.cache2k.configuration.Cache2kConfiguration#getListeners()} create the bean
    * and add it to the collection.
    *
    * @return True, if applied, false if there is no getter for a collection.
    */
   @SuppressWarnings("unchecked")
   private boolean handleCollection(
-    final ConfigurationContext ctx,
-    final Class<?> type,
-    final Object cfg,
-    final ParsedConfiguration parsedCfg) {
+    ConfigurationContext ctx,
+    Class<?> type,
+    Object cfg,
+    ParsedConfiguration parsedCfg) {
     String containerName = parsedCfg.getContainer();
     Method m;
     try {
@@ -142,21 +148,23 @@ public class ConfigurationProvider {
     try {
       c = (Collection) m.invoke(cfg);
     } catch (Exception ex) {
-      throw new ConfigurationException("Cannot access collection for '" + containerName + "' " + ex, parsedCfg);
+      throw new ConfigurationException(
+        "Cannot access collection for '" + containerName + "' " + ex, parsedCfg);
     }
     Object bean = createBeanAndApplyConfiguration(ctx, type, parsedCfg);
     try {
       c.add(bean);
     } catch (IllegalArgumentException ex) {
-      throw new ConfigurationException("Rejected add '" + containerName + "': " + ex.getMessage(), parsedCfg);
+      throw new ConfigurationException(
+        "Rejected add '" + containerName + "': " + ex.getMessage(), parsedCfg);
     }
     return true;
   }
 
   private Object createBeanAndApplyConfiguration(
-    final ConfigurationContext ctx,
-    final Class<?> type,
-    final ParsedConfiguration parsedCfg) {
+    ConfigurationContext ctx,
+    Class<?> type,
+    ParsedConfiguration parsedCfg) {
     Object bean;
     try {
       bean = type.newInstance();
@@ -169,7 +177,9 @@ public class ConfigurationProvider {
       try {
         ((ValidatingConfigurationBean) bean).validate();
       } catch (IllegalArgumentException ex) {
-        throw new ConfigurationException("Validation error '" + bean.getClass().getSimpleName() +"': " + ex.getMessage(), parsedCfg);
+        throw new ConfigurationException(
+          "Validation error '" +
+            bean.getClass().getSimpleName() +"': " + ex.getMessage(), parsedCfg);
       }
     }
     return bean;
@@ -178,23 +188,24 @@ public class ConfigurationProvider {
   /**
    * Create a new configuration section or reuse an existing section, if it is a singleton.
    *
-   * <p>No support for writing on existing sections, which means it is not possible to define a non singleton
-   * in the defaults section and then override values later in the cache specific configuration.
-   * This is not needed for version 1.0. If we want to add it later, it is best to use the name to select the
-   * correct section.
+   * <p>No support for writing on existing sections, which means it is not possible to define
+   * a non singleton in the defaults section and then override values later in the cache specific
+   * configuration. This is not needed for version 1.0. If we want to add it later, it is best to
+   * use the name to select the correct section.
    *
    * @return true if applied, false if not a section.
    */
   private boolean handleSection(
-    final ConfigurationContext ctx,
-    final Class<?> type,
-    final ConfigurationWithSections cfg,
-    final ParsedConfiguration sc) {
+    ConfigurationContext ctx,
+    Class<?> type,
+    ConfigurationWithSections cfg,
+    ParsedConfiguration sc) {
     String containerName = sc.getContainer();
     if (!"sections".equals(containerName)) {
       return false;
     }
-    @SuppressWarnings("unchecked") ConfigurationSection sectionBean = cfg.getSections().getSection((Class<ConfigurationSection>) type);
+    @SuppressWarnings("unchecked") ConfigurationSection sectionBean =
+      cfg.getSections().getSection((Class<ConfigurationSection>) type);
     if (!(sectionBean instanceof SingletonConfigurationSection)) {
       try {
         sectionBean = (ConfigurationSection)  type.newInstance();
@@ -207,7 +218,7 @@ public class ConfigurationProvider {
     return true;
   }
 
-  private void applyPropertyValues(final ParsedConfiguration cfg, final Object bean) {
+  private void applyPropertyValues(ParsedConfiguration cfg, Object bean) {
     BeanPropertyMutator m = provideMutator(bean.getClass());
     for (ConfigurationTokenizer.Property p : cfg.getPropertyMap().values()) {
       Class<?> propertyType = m.getType(p.getName());
@@ -226,7 +237,8 @@ public class ConfigurationProvider {
         if (ex instanceof NumberFormatException) {
           throw new ConfigurationException("Cannot parse number: '" + p.getValue() + "'", p);
         } else if (ex instanceof IllegalArgumentException) {
-          throw new ConfigurationException("Value '" + p.getValue() + "' parse error: " + ex.getMessage(), p);
+          throw new ConfigurationException(
+            "Value '" + p.getValue() + "' parse error: " + ex.getMessage(), p);
         }
         throw new ConfigurationException("Cannot parse property: " + ex, p);
       }
@@ -235,26 +247,27 @@ public class ConfigurationProvider {
   }
 
   private void mutateAndCatch(
-    final Object cfg,
-    final BeanPropertyMutator m,
-    final ConfigurationTokenizer.Property p,
-    final Object obj) {
+    Object cfg,
+    BeanPropertyMutator m,
+    ConfigurationTokenizer.Property p,
+    Object obj) {
     mutateAndCatch(cfg, m, p.getName(), p.getValue(), p, obj);
   }
 
   private void mutateAndCatch(
-    final Object cfg,
-    final BeanPropertyMutator m,
-    final String name,
-    final Object valueForExceptionText,
-    final SourceLocation loc,
-    final Object obj) {
+    Object cfg,
+    BeanPropertyMutator m,
+    String name,
+    Object valueForExceptionText,
+    SourceLocation loc,
+    Object obj) {
     try {
       m.mutate(cfg, name, obj);
     } catch (InvocationTargetException ex) {
       Throwable t =  ex.getTargetException();
       if (t instanceof IllegalArgumentException) {
-        throw new ConfigurationException("Value '" + valueForExceptionText + "' rejected: " + t.getMessage(), loc);
+        throw new ConfigurationException(
+          "Value '" + valueForExceptionText + "' rejected: " + t.getMessage(), loc);
       }
       throw new ConfigurationException("Setting property: " + ex, loc);
     } catch (Exception ex) {
@@ -267,7 +280,8 @@ public class ConfigurationProvider {
     if (m == null) {
       synchronized (this) {
         m = new BeanPropertyMutator(type);
-        Map<Class<?>, BeanPropertyMutator> m2 = new HashMap<Class<?>, BeanPropertyMutator>(type2mutator);
+        Map<Class<?>, BeanPropertyMutator> m2 =
+          new HashMap<Class<?>, BeanPropertyMutator>(type2mutator);
         m2.put(type, m);
         type2mutator = m2;
       }

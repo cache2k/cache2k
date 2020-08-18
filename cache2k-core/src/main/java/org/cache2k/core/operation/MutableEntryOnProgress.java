@@ -30,14 +30,14 @@ import static org.cache2k.expiry.ExpiryTimeValues.NEUTRAL;
  */
 class MutableEntryOnProgress<K, V> implements MutableCacheEntry<K, V> {
 
-  private K key;
+  private final K key;
 
   /**
    * Current content of the cache, or loaded, or {@code null} if data was not
    * yet requested.
    */
-  private ExaminationEntry<K, V> entry;
-  private Progress<K, V, ?> progress;
+  private final ExaminationEntry<K, V> entry;
+  private final Progress<K, V, ?> progress;
   private boolean originalExists = false;
   private boolean mutate = false;
   private boolean remove = false;
@@ -52,7 +52,7 @@ class MutableEntryOnProgress<K, V> implements MutableCacheEntry<K, V> {
    * a value after exists yields true. It is critical that the isPresentOrMiss() check is
    * only done once, since it depends on the current time.
    */
-  public MutableEntryOnProgress(final K key, final Progress<K, V, ?> progress, final ExaminationEntry<K, V> entry) {
+  MutableEntryOnProgress(K key, Progress<K, V, ?> progress, ExaminationEntry<K, V> entry) {
     this.entry = entry;
     this.progress = progress;
     this.key = key;
@@ -79,7 +79,7 @@ class MutableEntryOnProgress<K, V> implements MutableCacheEntry<K, V> {
   }
 
   @Override
-  public MutableCacheEntry<K, V> setValue(final V v) {
+  public MutableCacheEntry<K, V> setValue(V v) {
     mutate = true;
     exists = true;
     remove = false;
@@ -89,7 +89,7 @@ class MutableEntryOnProgress<K, V> implements MutableCacheEntry<K, V> {
 
   @SuppressWarnings("unchecked")
   @Override
-  public MutableCacheEntry<K, V> setException(final Throwable ex) {
+  public MutableCacheEntry<K, V> setException(Throwable ex) {
     mutate = true;
     exists = true;
     remove = false;
@@ -100,7 +100,7 @@ class MutableEntryOnProgress<K, V> implements MutableCacheEntry<K, V> {
   }
 
   @Override
-  public MutableCacheEntry<K, V> setExpiryTime(final long t) {
+  public MutableCacheEntry<K, V> setExpiryTime(long t) {
     customExpiry = true;
     expiryTime = t;
     return this;
@@ -155,7 +155,7 @@ class MutableEntryOnProgress<K, V> implements MutableCacheEntry<K, V> {
   }
 
   @SuppressWarnings("unchecked")
-  private void checkAndThrowException(final V value) {
+  private void checkAndThrowException(V value) {
     if (value instanceof ExceptionWrapper) {
       ((ExceptionWrapper<K>) value).propagateException();
     }
@@ -187,7 +187,7 @@ class MutableEntryOnProgress<K, V> implements MutableCacheEntry<K, V> {
   }
 
   @Override
-  public MutableCacheEntry<K, V> setRefreshedTime(final long t) {
+  public MutableCacheEntry<K, V> setRefreshedTime(long t) {
     refreshTime = t;
     return this;
   }

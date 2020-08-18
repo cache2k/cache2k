@@ -28,7 +28,7 @@ import java.util.Iterator;
 import java.util.concurrent.Future;
 
 /**
-* @author Jens Wilke; created: 2014-05-08
+* @author Jens Wilke
 */
 public abstract class StorageAdapter {
 
@@ -53,9 +53,10 @@ public abstract class StorageAdapter {
 
   /**
    *
-   * @param _nextRefreshTime value expiry time in millis, 0: expire immediately, {@link Long#MAX_VALUE}: no expiry
+   * @param nextRefreshTime value expiry time in millis, 0: expire immediately,
+   * {@link Long#MAX_VALUE}: no expiry
    */
-  public abstract void put(Entry e, long _nextRefreshTime);
+  public abstract void put(Entry e, long nextRefreshTime);
   public abstract StorageEntry get(Object key);
   public abstract boolean remove(Object key);
   public abstract void evict(Entry e);
@@ -78,7 +79,7 @@ public abstract class StorageAdapter {
   public interface Parent {
 
     /** Change the storage implementation to another one or null for a disconnect */
-    void resetStorage(StorageAdapter _current, StorageAdapter _new);
+    void resetStorage(StorageAdapter current, StorageAdapter replacement);
 
   }
 

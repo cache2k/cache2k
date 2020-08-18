@@ -25,19 +25,19 @@ package org.cache2k.jcache.provider;
  */
 public class Util {
 
-  public static <T> T checkKey(T _value) {
-    return requireNonNull(_value, "cache key");
+  public static <T> T checkKey(T value) {
+    return requireNonNull(value, "cache key");
   }
 
-  public static <T> T checkValue(T _value) {
-    return requireNonNull(_value, "cache value");
+  public static <T> T checkValue(T value) {
+    return requireNonNull(value, "cache value");
   }
 
-  public static <T> T requireNonNull(T _value, String _parameter) {
-    if (_value == null) {
-      throw new NullPointerException("null not allowed for: " + _parameter);
+  public static <T> T requireNonNull(T value, String parameter) {
+    if (value == null) {
+      throw new NullPointerException("null not allowed for: " + parameter);
     }
-    return _value;
+    return value;
   }
 
 }

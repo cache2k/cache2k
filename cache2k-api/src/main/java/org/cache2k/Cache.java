@@ -94,9 +94,9 @@ import java.util.concurrent.TimeUnit;
  * a subset interface, for example the {@link KeyValueSource} can be used.
  *
  * <p><b>CAS-Operations:</b> The cache has a set of operations that examine an entry
- * and do a mutation in an atomic way, for example {@link #putIfAbsent}, {@link #containsAndRemove} and
- * {@link #replaceIfEquals}. To allow arbitrary semantics that operate atomically on an {@link EntryProcessor}
- * can be implemented and executed via {@link Cache#invoke}.
+ * and do a mutation in an atomic way, for example {@link #putIfAbsent}, {@link #containsAndRemove}
+ * and {@link #replaceIfEquals}. To allow arbitrary semantics that operate atomically on an
+ * {@link EntryProcessor} can be implemented and executed via {@link Cache#invoke}.
  *
  * <p><b>Compatibility:</b> Future versions of cache2k may introduce new methods to this interface.
  * To improve upward compatibility applications that need to implement this interface should use
@@ -331,14 +331,16 @@ public interface Cache<K, V> extends KeyValueStore<K,V>, Closeable {
    *
    * <p>Rationale: The {@code Function} interface that {@code Map.computeIfAbsent} uses is only
    * available in Java 8. {@code Callable} is a useful fallback and we can use it directly
-   * for the Spring integration. A mismatch is that {@code Callable.call()} declares a checked exception but
-   * the cache access method do not.
+   * for the Spring integration. A mismatch is that {@code Callable.call()} declares a checked
+   * exception but the cache access method do not.
    *
    * @param key key with which the specified value is to be associated
    * @param callable task that computes the value
    * @return the associated value in the cache
-   * @throws CacheLoaderException if a checked exception is thrown it is wrapped into a {@code CacheLoaderException}
-   * @throws RuntimeException in case {@link Callable#call} yields a runtime exception, this is thrown directly
+   * @throws CacheLoaderException if a checked exception is thrown it is wrapped into a
+   *         {@code CacheLoaderException}
+   * @throws RuntimeException in case {@link Callable#call} yields a runtime exception,
+   *         this is thrown directly
    * @throws ClassCastException if the class of the specified key or value
    *         prevents it from being stored in this cache
    * @throws NullPointerException if the specified key is {@code null} or the
@@ -531,10 +533,12 @@ public interface Cache<K, V> extends KeyValueStore<K,V>, Closeable {
    * <ul>
    *   <li>{@link #containsAndRemove(Object)}, returning a success flag</li>
    *   <li>{@link #peekAndRemove(Object)}, returning the removed value</li>
-   *   <li>{@link #removeIfEquals(Object, Object)}, conditional removal matching on the current value</li>
+   *   <li>{@link #removeIfEquals(Object, Object)}, conditional removal matching on the current
+   *   value</li>
    * </ul>
    *
-   * <p>See {@link KeyValueStore#remove(Object)}, for an explanation why no flag or object is returned.
+   * <p>See {@link KeyValueStore#remove(Object)}, for an explanation why no flag or object is
+   * returned.
    *
    * @param key key which mapping is to be removed from the cache, not null
    * @throws NullPointerException if a specified key is null
@@ -640,8 +644,9 @@ public interface Cache<K, V> extends KeyValueStore<K,V>, Closeable {
    * values will be loaded.
    *
    * <p>The cache uses multiple threads to load the values in parallel. If thread resources
-   * are not sufficient, meaning the used executor is throwing {@link java.util.concurrent.RejectedExecutionException}
-   * the calling thread is used to produce back pressure.
+   * are not sufficient, meaning the used executor is throwing
+   * {@link java.util.concurrent.RejectedExecutionException} the calling thread is used to produce
+   * back pressure.
    *
    * <p>If no loader is defined, the method will throw an immediate exception.
    *
@@ -660,7 +665,8 @@ public interface Cache<K, V> extends KeyValueStore<K,V>, Closeable {
    *
    * <p>The cache uses multiple threads to load the values in parallel. If thread resources
    * are not sufficient, meaning the used executor is throwing
-   * {@link java.util.concurrent.RejectedExecutionException} the calling thread is used to produce back pressure.
+   * {@link java.util.concurrent.RejectedExecutionException} the calling thread is used to produce
+   * back pressure.
    *
    * <p>If no loader is defined, the method will throw an immediate exception.
    *
@@ -838,13 +844,14 @@ public interface Cache<K, V> extends KeyValueStore<K,V>, Closeable {
    * in use when this method returns.
    *
    * <p>After close, subsequent cache operations will throw a {@link IllegalStateException}.
-   * Cache operations currently in progress, may or may not terminated with an exception. A subsequent
-   * call to close will not throw an exception.
+   * Cache operations currently in progress, may or may not terminated with an exception.
+   * A subsequent call to close will not throw an exception.
    *
    * <p>If all caches need to be closed it is more effective to use {@link CacheManager#close()}
    *
-   * <p>The next releases of cache2k may store cache entries between restarts. If an application will
-   * never use the cached content again, the method {@link #clearAndClose()} should be used instead.
+   * <p>The next releases of cache2k may store cache entries between restarts. If an application
+   * will never use the cached content again, the method {@link #clearAndClose()} should be used
+   * instead.
    */
   void close();
 
@@ -869,7 +876,7 @@ public interface Cache<K, V> extends KeyValueStore<K,V>, Closeable {
   /**
    * Request an alternative interface for this cache instance.
    */
-  <X> X requestInterface(Class<X> _type);
+  <X> X requestInterface(Class<X> type);
 
   /**
    * Returns a map interface for operating with this cache. Operations on the map
@@ -878,9 +885,9 @@ public interface Cache<K, V> extends KeyValueStore<K,V>, Closeable {
    * <p>The returned map supports {@code null} values if enabled via
    * {@link Cache2kBuilder#permitNullValues(boolean)}.
    *
-   * <p>The {@code equals} and {@code hashCode} methods of the {@code Map} are forwarded to the cache. A
-   * map is considered identical when from the same cache instance. This is not compatible to the general
-   * {@code Map} contract.
+   * <p>The {@code equals} and {@code hashCode} methods of the {@code Map} are forwarded to the
+   * cache. A map is considered identical when from the same cache instance. This is not compatible
+   * to the general {@code Map} contract.
    *
    * <p>Multiple calls to this method return a new object instance which is a wrapper of the cache
    * instance. Calling this method is a cheap operation.

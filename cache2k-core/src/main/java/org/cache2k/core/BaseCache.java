@@ -50,13 +50,13 @@ public abstract class BaseCache<K, V> implements InternalCache<K, V> {
   public abstract Executor getExecutor();
 
   protected abstract <R> EntryAction<K,V,R> createFireAndForgetAction(
-    final Entry<K, V> e, final Semantic<K,V,R> op);
+    Entry<K, V> e, Semantic<K,V,R> op);
 
   /**
    *
    * @see HeapCache#getCompleteName() similar
    */
-  public static String nameQualifier(Cache cache) {
+  public static String nameQualifier(Cache<?,?> cache) {
     StringBuilder sb = new StringBuilder();
     sb.append('\'').append(cache.getName()).append('\'');
     if (!cache.getCacheManager(). isDefaultManager()) {
@@ -112,20 +112,20 @@ public abstract class BaseCache<K, V> implements InternalCache<K, V> {
   }
 
   @Override
-  public void removeAll(Iterable<? extends K> _keys) {
-    for (K k : _keys) {
+  public void removeAll(Iterable<? extends K> keys) {
+    for (K k : keys) {
       remove(k);
     }
   }
 
   @SuppressWarnings("unchecked")
   @Override
-  public <X> X requestInterface(Class<X> _type) {
-    if (_type.equals(ConcurrentMap.class) ||
-      _type.equals(Map.class)) {
+  public <X> X requestInterface(Class<X> type) {
+    if (type.equals(ConcurrentMap.class) ||
+      type.equals(Map.class)) {
       return (X) new ConcurrentMapWrapper<K, V>(this);
     }
-    if (_type.isAssignableFrom(this.getClass())) {
+    if (type.isAssignableFrom(this.getClass())) {
       return (X) this;
     }
     return null;
@@ -140,18 +140,19 @@ public abstract class BaseCache<K, V> implements InternalCache<K, V> {
   public StorageAdapter getStorage() { return null; }
 
   @Override
-  public <R> Map<K, EntryProcessingResult<R>> invokeAll(Iterable<? extends K> keys, EntryProcessor<K, V, R> entryProcessor) {
+  public <R> Map<K, EntryProcessingResult<R>> invokeAll(Iterable<? extends K> keys,
+                                                        EntryProcessor<K, V, R> entryProcessor) {
     Map<K, EntryProcessingResult<R>> m = new HashMap<K, EntryProcessingResult<R>>();
     for (K k : keys) {
       try {
-        final R _result = invoke(k, entryProcessor);
-        if (_result == null) {
+        final R result = invoke(k, entryProcessor);
+        if (result == null) {
           continue;
         }
         m.put(k, new EntryProcessingResult<R>() {
           @Override
           public R getResult() {
-            return _result;
+            return result;
           }
 
           @Override
@@ -160,16 +161,16 @@ public abstract class BaseCache<K, V> implements InternalCache<K, V> {
           }
         });
       } catch (EntryProcessingException t) {
-        final Throwable _cause = t.getCause();
+        final Throwable cause = t.getCause();
         m.put(k, new EntryProcessingResult<R>() {
           @Override
           public R getResult() {
-            throw new EntryProcessingException(_cause);
+            throw new EntryProcessingException(cause);
           }
 
           @Override
           public Throwable getException() {
-            return _cause;
+            return cause;
           }
         });
       }
@@ -177,33 +178,35 @@ public abstract class BaseCache<K, V> implements InternalCache<K, V> {
     return m;
   }
 
+  @SuppressWarnings("unchecked")
   @Override
-  public void expireAt(final K key, final long _millis) {
-    execute(key, Operations.SINGLETON.expire(key, _millis));
+  public void expireAt(K key, long millis) {
+    execute(key, Operations.SINGLETON.expire(key, millis));
   }
 
   protected <R> R execute(K key, Entry<K, V> e, Semantic<K, V, R> op) {
-    EntryAction<K, V, R> _action = createEntryAction(key, e, op);
-    return execute(_action);
+    EntryAction<K, V, R> action = createEntryAction(key, e, op);
+    return execute(action);
   }
 
-  protected abstract <R> EntryAction<K, V, R> createEntryAction(K key, Entry<K, V> e, Semantic<K, V, R> op);
+  protected abstract <R> EntryAction<K, V, R> createEntryAction(K key, Entry<K, V> e,
+                                                                Semantic<K, V, R> op);
 
-  protected <R> R execute(final EntryAction<K, V, R> _action) {
-    _action.start();
-    return finishExecution(_action);
+  protected <R> R execute(EntryAction<K, V, R> action) {
+    action.start();
+    return finishExecution(action);
   }
 
   /**
    * Not used for async, async will always report the exception via the callback.
    */
-  protected <R> R finishExecution(final EntryAction<K, V, R> _action) {
-    RuntimeException t = _action.exceptionToPropagate;
+  protected <R> R finishExecution(EntryAction<K, V, R> action) {
+    RuntimeException t = action.exceptionToPropagate;
     if (t != null) {
       t.fillInStackTrace();
       throw t;
     }
-    return _action.result;
+    return action.result;
   }
 
   protected <R> R execute(K key, Semantic<K, V, R> op) {
@@ -212,7 +215,7 @@ public abstract class BaseCache<K, V> implements InternalCache<K, V> {
 
 
   @Override
-  public <T> T createCustomization(final CustomizationSupplier<T> f) {
+  public <T> T createCustomization(CustomizationSupplier<T> f) {
     if (f == null) {
       return null;
     }
@@ -224,14 +227,14 @@ public abstract class BaseCache<K, V> implements InternalCache<K, V> {
   }
 
   @Override
-  public void closeCustomization(final Object _customization, String _customizationName) {
-    if (_customization instanceof Closeable) {
+  public void closeCustomization(Object customization, String customizationName) {
+    if (customization instanceof Closeable) {
       try {
-        ((Closeable) _customization).close();
+        ((Closeable) customization).close();
       } catch (Exception e) {
-        String _message =
-          _customizationName + ".close() exception (" + nameQualifier(this) + ")";
-        throw new CacheException(_message, e);
+        String message =
+          customizationName + ".close() exception (" + nameQualifier(this) + ")";
+        throw new CacheException(message, e);
       }
     }
   }

@@ -30,11 +30,11 @@ import org.cache2k.expiry.ExpiryPolicy;
  */
 public class CustomizationException extends CacheException {
 
-  public CustomizationException(final String message) {
+  public CustomizationException(String message) {
     super(message);
   }
 
-  public CustomizationException(final Throwable cause) {
+  public CustomizationException(Throwable cause) {
     super(cause);
   }
 

@@ -41,16 +41,16 @@ import java.util.logging.Logger;
  */
 public abstract class Log {
 
-  private static Map<String, Log> loggers = new HashMap<String, Log>();
+  private static final Map<String, Log> LOGGERS = new HashMap<String, Log>();
 
   private static LogFactory logFactory;
 
-  public static Log getLog(Class<?> _class) {
-    return getLog(_class.getName());
+  public static Log getLog(Class<?> type) {
+    return getLog(type.getName());
   }
 
   public static synchronized Log getLog(String s) {
-    Log l = loggers.get(s);
+    Log l = LOGGERS.get(s);
     if (l != null) {
       return l;
     }
@@ -58,7 +58,7 @@ public abstract class Log {
       initializeLogFactory();
     }
     l = logFactory.getLog(s);
-    loggers.put(s, l);
+    LOGGERS.put(s, l);
     return l;
   }
 
@@ -112,15 +112,15 @@ public abstract class Log {
   }
 
   /**
-   * Redirects log output, this is used for testing purposes. Needs to be called before the log client
-   * is created.
+   * Redirects log output, this is used for testing purposes. Needs to be called before the
+   * log client is created.
    */
   public static synchronized void registerSuppression(String s, Log l) {
-    loggers.put(s, l);
+    LOGGERS.put(s, l);
   }
 
   public static synchronized void deregisterSuppression(String s) {
-    loggers.remove(s);
+    LOGGERS.remove(s);
   }
 
   public abstract boolean isDebugEnabled();
@@ -192,8 +192,8 @@ public abstract class Log {
 
     org.slf4j.Logger logger;
 
-    private Slf4jLogger(org.slf4j.Logger _logger) {
-      this.logger = _logger;
+    private Slf4jLogger(org.slf4j.Logger logger) {
+      this.logger = logger;
     }
 
     @Override

@@ -55,12 +55,14 @@ public interface ExpiryTimeValues {
   long NOW = 0;
 
   /**
-   * An immediate load is triggered if {@link org.cache2k.Cache2kBuilder#refreshAhead} is enabled. If the refresh is not
-   * possible, for example because of no loader threads are available the value will expire.
+   * An immediate load is triggered if {@link org.cache2k.Cache2kBuilder#refreshAhead} is enabled.
+   * If the refresh is not possible, for example because of no loader threads are available the
+   * value will expire.
    *
    * <p>After the load operation is completed, the entry is in a special area and not accessible
    * by direct cache operations, meaning {@code containsKey} returns false. After an operation which
-   * would regularly trigger a load (e.g. {@code get} or {@code loadAll}), the entry is present in the cache.
+   * would regularly trigger a load (e.g. {@code get} or {@code loadAll}), the entry is present in
+   * the cache.
    */
   long REFRESH = 1;
 

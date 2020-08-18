@@ -20,7 +20,11 @@ package org.cache2k.core;
  * #L%
  */
 
-import org.cache2k.*;
+import org.cache2k.AbstractCacheEntry;
+import org.cache2k.Cache;
+import org.cache2k.CacheEntry;
+import org.cache2k.CacheManager;
+import org.cache2k.CacheOperationCompletionListener;
 import org.cache2k.configuration.Cache2kConfiguration;
 import org.cache2k.configuration.CacheType;
 import org.cache2k.configuration.CustomizationSupplier;
@@ -75,17 +79,18 @@ import static org.cache2k.core.util.Util.*;
  *
  * @author Jens Wilke; created: 2013-07-09
  */
-@SuppressWarnings({"unchecked", "SynchronizationOnLocalVariableOrMethodParameter", "WeakerAccess"})
+@SuppressWarnings("rawtypes")
 public class HeapCache<K, V> extends BaseCache<K, V> {
 
-  static final CacheOperationCompletionListener DUMMY_LOAD_COMPLETED_LISTENER = new CacheOperationCompletionListener() {
+  static final CacheOperationCompletionListener DUMMY_LOAD_COMPLETED_LISTENER =
+    new CacheOperationCompletionListener() {
     @Override
     public void onCompleted() {
 
     }
 
     @Override
-    public void onException(final Throwable _exception) {
+    public void onException(Throwable exception) {
 
     }
   };
@@ -94,7 +99,8 @@ public class HeapCache<K, V> extends BaseCache<K, V> {
 
   public static final Tunable TUNABLE = TunableFactory.get(Tunable.class);
 
-  public final static ExceptionPropagator DEFAULT_EXCEPTION_PROPAGATOR = TUNABLE.exceptionPropagator;
+  public static final ExceptionPropagator DEFAULT_EXCEPTION_PROPAGATOR =
+    TUNABLE.exceptionPropagator;
 
   protected String name;
   public CacheManagerImpl manager;
@@ -148,14 +154,15 @@ public class HeapCache<K, V> extends BaseCache<K, V> {
    */
   private class LazyLoaderExecutor implements Executor {
     @Override
-    public void execute(final Runnable _command) {
+    public void execute(Runnable command) {
       synchronized (lock) {
         checkClosed();
         if (loaderExecutor == this) {
-          int _threadCount = Runtime.getRuntime().availableProcessors() * HeapCache.TUNABLE.loaderThreadCountCpuFactor;
-          loaderExecutor = provideDefaultLoaderExecutor(_threadCount);
+          int threadCount =
+            Runtime.getRuntime().availableProcessors() * TUNABLE.loaderThreadCountCpuFactor;
+          loaderExecutor = provideDefaultLoaderExecutor(threadCount);
         }
-        loaderExecutor.execute(_command);
+        loaderExecutor.execute(command);
       }
     }
   }
@@ -167,10 +174,10 @@ public class HeapCache<K, V> extends BaseCache<K, V> {
    */
   private class LazyPrefetchExecutor implements Executor {
     @Override
-    public void execute(final Runnable _command) {
+    public void execute(Runnable command) {
       synchronized (lock) {
         checkClosed();
-        loaderExecutor.execute(_command);
+        loaderExecutor.execute(command);
         prefetchExecutor = loaderExecutor;
       }
     }
@@ -186,7 +193,8 @@ public class HeapCache<K, V> extends BaseCache<K, V> {
 
   protected ExceptionPropagator<K> exceptionPropagator = DEFAULT_EXCEPTION_PROPAGATOR;
 
-  private Collection<CustomizationSupplier<CacheClosedListener>> cacheClosedListeners = Collections.EMPTY_LIST;
+  private Collection<CustomizationSupplier<CacheClosedListener>> cacheClosedListeners =
+    Collections.EMPTY_LIST;
 
   private int featureBits = 0;
 
@@ -216,11 +224,11 @@ public class HeapCache<K, V> extends BaseCache<K, V> {
 
   protected final boolean isRecordRefreshTime() { return (featureBits & RECORD_REFRESH_TIME) > 0; }
 
-  protected final void setFeatureBit(int _bitmask, boolean _flag) {
-    if (_flag) {
-      featureBits |= _bitmask;
+  protected final void setFeatureBit(int bitmask, boolean flag) {
+    if (flag) {
+      featureBits |= bitmask;
     } else {
-      featureBits &= ~_bitmask;
+      featureBits &= ~bitmask;
     }
   }
 
@@ -280,7 +288,8 @@ public class HeapCache<K, V> extends BaseCache<K, V> {
       }
     }
     if (c.getPrefetchExecutor() != null) {
-      prefetchExecutor = createCustomization((CustomizationSupplier<Executor>) c.getPrefetchExecutor());
+      prefetchExecutor =
+        createCustomization((CustomizationSupplier<Executor>) c.getPrefetchExecutor());
     }
     if (c.getExecutor() != null) {
       executor = createCustomization((CustomizationSupplier<Executor>) c.getExecutor());
@@ -311,26 +320,26 @@ public class HeapCache<K, V> extends BaseCache<K, V> {
     return "cache2k-loader-" + compactFullName(manager, name);
   }
 
-  Executor provideDefaultLoaderExecutor(int _threadCount) {
-    return new ExclusiveExecutor(_threadCount, getThreadNamePrefix());
+  Executor provideDefaultLoaderExecutor(int threadCount) {
+    return new ExclusiveExecutor(threadCount, getThreadNamePrefix());
   }
 
-  public void setTiming(final TimingHandler<K,V> rh) {
+  public void setTiming(TimingHandler<K,V> rh) {
     timing = rh;
     if (!(rh instanceof TimingHandler.TimeAgnostic)) {
       setFeatureBit(UPDATE_TIME_NEEDED, true);
     }
   }
 
-  public void setClock(final InternalClock _clock) {
-    clock = _clock;
+  public void setClock(InternalClock clock) {
+    this.clock = clock;
   }
 
   public void setExceptionPropagator(ExceptionPropagator ep) {
     exceptionPropagator = ep;
   }
 
-  public void setAdvancedLoader(final AdvancedCacheLoader<K,V> al) {
+  public void setAdvancedLoader(AdvancedCacheLoader<K,V> al) {
     loader = al;
   }
 
@@ -394,8 +403,8 @@ public class HeapCache<K, V> extends BaseCache<K, V> {
   }
 
   public final void clearLocalCache() {
-    long _removed = eviction.removeAll();
-    clearRemovedCnt += _removed;
+    long removed = eviction.removeAll();
+    clearRemovedCnt += removed;
     clearCnt++;
     initializeHeapCache();
     hash.clearWhenLocked();
@@ -449,7 +458,7 @@ public class HeapCache<K, V> extends BaseCache<K, V> {
     closePart2(this);
   }
 
-  public void closePart2(final InternalCache _userCache) {
+  public void closePart2(final InternalCache userCache) {
     executeWithGlobalLock(new Job<Void>() {
       @Override
       public Void call() {
@@ -458,15 +467,15 @@ public class HeapCache<K, V> extends BaseCache<K, V> {
         hash.close();
         closeCustomization(loader, "loader");
         for (CustomizationSupplier<CacheClosedListener> s : cacheClosedListeners) {
-          createCustomization(s).onCacheClosed(_userCache);
+          createCustomization(s).onCacheClosed(userCache);
         }
-        manager.cacheDestroyed(_userCache);
+        manager.cacheDestroyed(userCache);
         return null;
       }
     }, false);
   }
 
-  public void setCacheClosedListeners(final Collection<CustomizationSupplier<CacheClosedListener>> l) {
+  public void setCacheClosedListeners(Collection<CustomizationSupplier<CacheClosedListener>> l) {
     cacheClosedListeners = l;
   }
 
@@ -481,16 +490,16 @@ public class HeapCache<K, V> extends BaseCache<K, V> {
    */
   static class IteratorFilterEntry2Entry<K,V> implements Iterator<CacheEntry<K, V>> {
 
-    HeapCache<K,V> cache;
-    Iterator<Entry<K,V>> iterator;
+    final HeapCache<K,V> cache;
+    final Iterator<Entry<K,V>> iterator;
     Entry entry;
     CacheEntry<K, V> lastEntry;
-    boolean filter;
+    final boolean filter;
 
-    IteratorFilterEntry2Entry(HeapCache<K,V> c, Iterator<Entry<K,V>> it, boolean _filter) {
+    IteratorFilterEntry2Entry(HeapCache<K,V> c, Iterator<Entry<K,V>> it, boolean filter) {
       cache = c;
       iterator = it;
-      filter = _filter;
+      this.filter = filter;
     }
 
     /**
@@ -536,7 +545,8 @@ public class HeapCache<K, V> extends BaseCache<K, V> {
     @Override
     public void remove() {
       if (lastEntry == null) {
-        throw new IllegalStateException("Unable to remove, hasNext() / next() not called or end of iteration reached");
+        throw new IllegalStateException(
+          "Unable to remove, hasNext() / next() not called or end of iteration reached");
       }
       cache.remove(lastEntry.getKey());
     }
@@ -546,10 +556,10 @@ public class HeapCache<K, V> extends BaseCache<K, V> {
    * Increment the hit counter, because entry was accessed.
    *
    * <p>The hit counter is a dirty counter. In case of multiple CPU cores incrementing the
-   * same entry counter, increments will be lost. For the functionality of the eviction algorithm this
-   * is not a real loss, since still the most accessed entries will have more counts then the
-   * others. On 32 bit systems word tearing may occur. This will also have no real observable negative
-   * impact on the eviction, so we do not compensate for it.
+   * same entry counter, increments will be lost. For the functionality of the eviction algorithm
+   * this is not a real loss, since still the most accessed entries will have more counts then the
+   * others. On 32 bit systems word tearing may occur. This will also have no real observable
+   * negative impact on the eviction, so we do not compensate for it.
    *
    * <p>The hit count is also used for access statistics. The dirty counting will effect
    * the exact correctness of the access statistics.
@@ -567,14 +577,14 @@ public class HeapCache<K, V> extends BaseCache<K, V> {
     if (e == null) {
       return null;
     }
-    return (V) returnValue(e);
+    return returnValue(e);
   }
 
   /**
    * Wrap entry in a separate object instance. We can return the entry directly, however we lock on
    * the entry object.
    */
-  protected CacheEntry<K, V> returnEntry(final ExaminationEntry<K, V> e) {
+  protected CacheEntry<K, V> returnEntry(ExaminationEntry<K, V> e) {
     if (e == null) {
       return null;
     }
@@ -593,24 +603,24 @@ public class HeapCache<K, V> extends BaseCache<K, V> {
   }
 
   @Override
-  public CacheEntry<K, V> returnCacheEntry(ExaminationEntry<K,V> _entry) {
-    return returnCacheEntry(_entry.getKey(), _entry.getValueOrException());
+  public CacheEntry<K, V> returnCacheEntry(ExaminationEntry<K,V> entry) {
+    return returnCacheEntry(entry.getKey(), entry.getValueOrException());
   }
 
 
-  public CacheEntry<K, V> returnCacheEntry(final K key, final V _valueOrException) {
-    if (_valueOrException instanceof ExceptionWrapper) {
-      return (ExceptionWrapper) _valueOrException;
+  public CacheEntry<K, V> returnCacheEntry(final K key, final V valueOrException) {
+    if (valueOrException instanceof ExceptionWrapper) {
+      return (ExceptionWrapper) valueOrException;
     }
     return new BaseCacheEntry<K, V>() {
       @Override public K getKey() {
         return key;
       }
-      @Override public V getValue() { return _valueOrException; }
+      @Override public V getValue() { return valueOrException; }
     };
   }
 
-  static abstract class BaseCacheEntry<K,V> extends AbstractCacheEntry<K,V> {
+  abstract static class BaseCacheEntry<K,V> extends AbstractCacheEntry<K,V> {
     @Override
     public Throwable getException() {
       return null;
@@ -619,7 +629,8 @@ public class HeapCache<K, V> extends BaseCache<K, V> {
     public String toString() {
       return "CacheEntry(" +
         "key=" + getKey() +
-        ((getException() != null) ? ", exception=" + getException() + ", " : ", value=" + getValue());
+        ((getException() != null) ? ", exception=" + getException() + ", " : ", " +
+          "value=" + getValue());
     }
   }
 
@@ -657,12 +668,12 @@ public class HeapCache<K, V> extends BaseCache<K, V> {
         break;
       }
     }
-    boolean _finished = false;
+    boolean finished = false;
     try {
       load(e);
-      _finished = true;
+      finished = true;
     } finally {
-      e.ensureAbort(_finished);
+      e.ensureAbort(finished);
     }
     if (e.getValueOrException() == null && isRejectNullValues()) {
       return null;
@@ -670,21 +681,21 @@ public class HeapCache<K, V> extends BaseCache<K, V> {
     return e;
   }
 
-  protected void finishLoadOrEviction(Entry e, long _nextRefreshTime) {
+  protected void finishLoadOrEviction(Entry e, long nextRefreshTime) {
     if (e.getProcessingState() != Entry.ProcessingState.REFRESH) {
-      restartTimer(e, _nextRefreshTime);
+      restartTimer(e, nextRefreshTime);
     } else {
-      startRefreshProbationTimer(e, _nextRefreshTime);
+      startRefreshProbationTimer(e, nextRefreshTime);
     }
     e.processingDone();
   }
 
-  private void restartTimer(final Entry e, final long _nextRefreshTime) {
-    e.setNextRefreshTime(timing.stopStartTimer(_nextRefreshTime, e));
+  private void restartTimer(Entry e, long nextRefreshTime) {
+    e.setNextRefreshTime(timing.stopStartTimer(nextRefreshTime, e));
     checkIfImmediatelyExpired(e);
   }
 
-  private void checkIfImmediatelyExpired(final Entry e) {
+  private void checkIfImmediatelyExpired(Entry e) {
     if (e.isExpiredState()) {
       expireAndRemoveEventuallyAfterProcessing(e);
     }
@@ -698,29 +709,29 @@ public class HeapCache<K, V> extends BaseCache<K, V> {
    */
   protected boolean removeEntry(Entry e) {
     int hc = extractModifiedHash(e);
-    boolean _removed;
+    boolean removed;
     OptimisticLock l = hash.getSegmentLock(hc);
-    long _stamp = l.writeLock();
+    long stamp = l.writeLock();
     try {
-      _removed = hash.removeWithinLock(e, hc);
+      removed = hash.removeWithinLock(e, hc);
       e.setGone();
-      if (_removed) {
+      if (removed) {
         eviction.submitWithoutEviction(e);
       }
     } finally {
-      l.unlockWrite(_stamp);
+      l.unlockWrite(stamp);
     }
     checkForHashCodeChange(e);
     timing.cancelExpiryTimer(e);
-    return _removed;
+    return removed;
   }
 
   @Override
-  public V peekAndPut(K key, V _value) {
-    final int hc = modifiedHash(key.hashCode());
-    final int val = extractIntKeyValue(key, hc);
-    boolean _hasFreshData;
-    V _previousValue = null;
+  public V peekAndPut(K key, V value) {
+    int hc = modifiedHash(key.hashCode());
+    int val = extractIntKeyValue(key, hc);
+    boolean hasFreshData;
+    V previousValue = null;
     Entry e;
     for (;;) {
       e = lookupOrNewEntry(key, hc, val);
@@ -730,9 +741,9 @@ public class HeapCache<K, V> extends BaseCache<K, V> {
           metrics.goneSpin();
           continue;
         }
-        _hasFreshData = e.hasFreshData(clock);
-        if (_hasFreshData) {
-          _previousValue = (V) e.getValueOrException();
+        hasFreshData = e.hasFreshData(clock);
+        if (hasFreshData) {
+          previousValue = (V) e.getValueOrException();
         } else {
           if (e.isVirgin()) {
             metrics.peekMiss();
@@ -740,14 +751,14 @@ public class HeapCache<K, V> extends BaseCache<K, V> {
             metrics.peekHitNotFresh();
           }
         }
-        putValue(e, _value);
+        putValue(e, value);
       }
-      return returnValue(_previousValue);
+      return returnValue(previousValue);
     }
   }
 
   @Override
-  public V peekAndReplace(K key, V _value) {
+  public V peekAndReplace(K key, V value) {
     Entry e;
     for (;;) {
       e = lookupEntry(key);
@@ -759,9 +770,9 @@ public class HeapCache<K, V> extends BaseCache<K, V> {
           continue;
         }
         if (e.hasFreshData(clock)) {
-          V _previousValue = (V) e.getValueOrException();
-          putValue(e, _value);
-          return returnValue(_previousValue);
+          V previousValue = (V) e.getValueOrException();
+          putValue(e, value);
+          return returnValue(previousValue);
         }
         break;
       }
@@ -774,29 +785,29 @@ public class HeapCache<K, V> extends BaseCache<K, V> {
    * Update the value directly within entry lock. Since we did not start
    * entry processing we do not need to notify any waiting threads.
    */
-  protected final void putValue(final Entry e, final V _value) {
+  protected final void putValue(Entry e, V value) {
     if (!isUpdateTimeNeeded()) {
-      insertOrUpdateAndCalculateExpiry(e, _value, 0, 0, 0 , INSERT_STAT_PUT);
+      insertOrUpdateAndCalculateExpiry(e, value, 0, 0, 0 , INSERT_STAT_PUT);
     } else {
       long t = clock.millis();
-      insertOrUpdateAndCalculateExpiry(e, _value, t, t, t, INSERT_STAT_PUT);
+      insertOrUpdateAndCalculateExpiry(e, value, t, t, t, INSERT_STAT_PUT);
     }
   }
 
   @Override
-  public boolean replace(K key, V _newValue) {
-    return replace(key, false, null, _newValue);
+  public boolean replace(K key, V newValue) {
+    return replace(key, false, null, newValue);
   }
 
   @Override
-  public boolean replaceIfEquals(K key, V _oldValue, V _newValue) {
-    return replace(key, true, _oldValue, _newValue);
+  public boolean replaceIfEquals(K key, V oldValue, V newValue) {
+    return replace(key, true, oldValue, newValue);
   }
 
   /**
    * replace if value matches. if value not matches, return the existing entry or the dummy entry.
    */
-  protected boolean replace(final K key, final boolean _compare, final V _oldValue, final V _newValue) {
+  protected boolean replace(K key, boolean compare, V oldValue, V newValue) {
     Entry e = lookupEntry(key);
     if (e == null) {
       metrics.peekMiss();
@@ -807,10 +818,10 @@ public class HeapCache<K, V> extends BaseCache<K, V> {
       if (e.isGone() || !e.hasFreshData(clock)) {
         return false;
       }
-      if (_compare && !e.equalsValue(_oldValue)) {
+      if (compare && !e.equalsValue(oldValue)) {
         return false;
       }
-      putValue(e, _newValue);
+      putValue(e, newValue);
     }
     return true;
   }
@@ -823,12 +834,12 @@ public class HeapCache<K, V> extends BaseCache<K, V> {
    * If the entry is not present, this result is cached in the local
    * cache.
    */
-  final protected Entry<K, V> peekEntryInternal(K key) {
+  protected final Entry<K, V> peekEntryInternal(K key) {
     int hc = modifiedHash(key.hashCode());
     return peekEntryInternal(key, hc, extractIntKeyValue(key, hc));
   }
 
-  final protected Entry<K, V> peekEntryInternal(K key, int hc, int val) {
+  protected final Entry<K, V> peekEntryInternal(K key, int hc, int val) {
     Entry e = lookupEntry(key, hc, val);
     if (e == null) {
       metrics.peekMiss();
@@ -869,7 +880,7 @@ public class HeapCache<K, V> extends BaseCache<K, V> {
    * Code duplicates with {@link Cache#get(Object)}
    */
   @Override
-  public V computeIfAbsent(final K key, final Callable<V> callable) {
+  public V computeIfAbsent(K key, Callable<V> callable) {
     Entry<K,V> e;
     for (;;) {
       e = lookupOrNewEntry(key);
@@ -890,31 +901,31 @@ public class HeapCache<K, V> extends BaseCache<K, V> {
       }
     }
     metrics.peekMiss();
-    boolean _finished = false;
+    boolean finished = false;
     long t = 0, t0 = 0;
-    V _value;
+    V value;
     try {
       if (!isUpdateTimeNeeded()) {
-        _value = callable.call();
+        value = callable.call();
       } else {
         t0 = clock.millis();
-        _value = callable.call();
+        value = callable.call();
         if (!metrics.isDisabled()) {
           t = clock.millis();
         }
       }
       synchronized (e) {
-        insertOrUpdateAndCalculateExpiry(e, _value, t0, t, t0, INSERT_STAT_PUT);
+        insertOrUpdateAndCalculateExpiry(e, value, t0, t, t0, INSERT_STAT_PUT);
         e.processingDone();
       }
-      _finished = true;
+      finished = true;
 
     } catch (RuntimeException ex) {
       throw ex;
     } catch (Exception ex) {
       throw new CacheLoaderException(ex);
     } finally {
-      e.ensureAbort(_finished);
+      e.ensureAbort(finished);
     }
     return returnValue(e);
   }
@@ -979,7 +990,7 @@ public class HeapCache<K, V> extends BaseCache<K, V> {
    * Remove the object from the cache.
    */
   @Override
-  public boolean removeIfEquals(K key, V _value) {
+  public boolean removeIfEquals(K key, V value) {
     Entry e = lookupEntry(key);
     if (e == null) {
       metrics.peekMiss();
@@ -993,7 +1004,7 @@ public class HeapCache<K, V> extends BaseCache<K, V> {
       }
       boolean f = e.hasFreshData(clock);
       if (f) {
-        if (!e.equalsValue(_value)) {
+        if (!e.equalsValue(value)) {
           return false;
         }
       } else {
@@ -1001,7 +1012,7 @@ public class HeapCache<K, V> extends BaseCache<K, V> {
         return false;
       }
       removeEntry(e);
-      return f;
+      return true;
     }
   }
 
@@ -1022,15 +1033,15 @@ public class HeapCache<K, V> extends BaseCache<K, V> {
         metrics.peekMiss();
         return null;
       }
-      V _value = null;
+      V value = null;
       boolean f = e.hasFreshData(clock);
       if (f) {
-        _value = (V) e.getValueOrException();
+        value = (V) e.getValueOrException();
       } else {
         metrics.peekHitNotFresh();
       }
       removeEntry(e);
-      return returnValue(_value);
+      return returnValue(value);
     }
   }
 
@@ -1059,16 +1070,16 @@ public class HeapCache<K, V> extends BaseCache<K, V> {
   }
 
   @Override
-  public void prefetchAll(final Iterable<? extends K> _keys, final CacheOperationCompletionListener l) {
-    final CacheOperationCompletionListener _listener= l != null ? l : DUMMY_LOAD_COMPLETED_LISTENER;
+  public void prefetchAll(Iterable<? extends K> keys, CacheOperationCompletionListener l) {
+    final CacheOperationCompletionListener listener= l != null ? l : DUMMY_LOAD_COMPLETED_LISTENER;
     if (loader == null) {
-      _listener.onCompleted();
+      listener.onCompleted();
       return;
     }
-    Set<K> _keysToLoad = checkAllPresent(_keys);
-    final AtomicInteger _count = new AtomicInteger(2);
+    Set<K> keysToLoad = checkAllPresent(keys);
+    final AtomicInteger count = new AtomicInteger(2);
     try {
-      for (K k : _keysToLoad) {
+      for (K k : keysToLoad) {
         final K key = k;
         Runnable r = new RunWithCatch(this) {
           @Override
@@ -1076,35 +1087,35 @@ public class HeapCache<K, V> extends BaseCache<K, V> {
             try {
               getEntryInternal(key);
             } finally {
-              if (_count.decrementAndGet() == 0) {
-                _listener.onCompleted();
+              if (count.decrementAndGet() == 0) {
+                listener.onCompleted();
               }
             }
           }
         };
         try {
           getPrefetchExecutor().execute(r);
-          _count.incrementAndGet();
+          count.incrementAndGet();
         } catch (RejectedExecutionException ignore) { }
       }
     } finally {
-      if (_count.addAndGet(-2) == 0) {
-        _listener.onCompleted();
+      if (count.addAndGet(-2) == 0) {
+        listener.onCompleted();
       }
     }
   }
 
   @Override
-  public void loadAll(final Iterable<? extends K> _keys, final CacheOperationCompletionListener l) {
+  public void loadAll(Iterable<? extends K> keys, CacheOperationCompletionListener l) {
     checkLoaderPresent();
-    final CacheOperationCompletionListener _listener= l != null ? l : DUMMY_LOAD_COMPLETED_LISTENER;
-    Set<K> _keysToLoad = checkAllPresent(_keys);
-    if (_keysToLoad.isEmpty()) {
-      _listener.onCompleted();
+    final CacheOperationCompletionListener listener= l != null ? l : DUMMY_LOAD_COMPLETED_LISTENER;
+    Set<K> keysToLoad = checkAllPresent(keys);
+    if (keysToLoad.isEmpty()) {
+      listener.onCompleted();
       return;
     }
-    final AtomicInteger _countDown = new AtomicInteger(_keysToLoad.size());
-    for (K k : _keysToLoad) {
+    final AtomicInteger countDown = new AtomicInteger(keysToLoad.size());
+    for (K k : keysToLoad) {
       final K key = k;
       Runnable r = new RunWithCatch(this) {
         @Override
@@ -1112,8 +1123,8 @@ public class HeapCache<K, V> extends BaseCache<K, V> {
           try {
             getEntryInternal(key);
           } finally {
-            if (_countDown.decrementAndGet() == 0) {
-              _listener.onCompleted();
+            if (countDown.decrementAndGet() == 0) {
+              listener.onCompleted();
             }
           }
         }
@@ -1127,12 +1138,12 @@ public class HeapCache<K, V> extends BaseCache<K, V> {
   }
 
   @Override
-  public void reloadAll(final Iterable<? extends K> _keys, final CacheOperationCompletionListener l) {
+  public void reloadAll(Iterable<? extends K> keys, CacheOperationCompletionListener l) {
     checkLoaderPresent();
-    final CacheOperationCompletionListener _listener= l != null ? l : DUMMY_LOAD_COMPLETED_LISTENER;
-    Set<K> _keySet = generateKeySet(_keys);
-    final AtomicInteger _countDown = new AtomicInteger(_keySet.size());
-    for (K k : _keySet) {
+    final CacheOperationCompletionListener listener= l != null ? l : DUMMY_LOAD_COMPLETED_LISTENER;
+    Set<K> keySet = generateKeySet(keys);
+    final AtomicInteger countDown = new AtomicInteger(keySet.size());
+    for (K k : keySet) {
       final K key = k;
       Runnable r = new RunWithCatch(this) {
         @Override
@@ -1140,8 +1151,8 @@ public class HeapCache<K, V> extends BaseCache<K, V> {
           try {
             loadAndReplace(key);
           } finally {
-            if (_countDown.decrementAndGet() == 0) {
-              _listener.onCompleted();
+            if (countDown.decrementAndGet() == 0) {
+              listener.onCompleted();
             }
           }
         }
@@ -1155,12 +1166,12 @@ public class HeapCache<K, V> extends BaseCache<K, V> {
     }
   }
 
-  public static abstract class RunWithCatch implements Runnable {
+  public abstract static class RunWithCatch implements Runnable {
 
-    InternalCache cache;
+    final InternalCache cache;
 
-    public RunWithCatch(final InternalCache _cache) {
-      cache = _cache;
+    public RunWithCatch(InternalCache cache) {
+      this.cache = cache;
     }
 
     protected abstract void action();
@@ -1174,17 +1185,18 @@ public class HeapCache<K, V> extends BaseCache<K, V> {
         action();
       } catch (CacheClosedException ignore) {
       } catch (Throwable t) {
-        cache.logAndCountInternalException("Loader thread exception (" + Thread.currentThread().getName() + ")", t);
+        cache.logAndCountInternalException("Loader thread exception (" +
+          Thread.currentThread().getName() + ")", t);
       }
     }
   }
 
-  public Set<K> generateKeySet(final Iterable<? extends K> _keys) {
-    Set<K> _keySet = new HashSet<K>();
-    for (K k : _keys) {
-      _keySet.add(k);
+  public Set<K> generateKeySet(Iterable<? extends K> keys) {
+    Set<K> keySet = new HashSet<K>();
+    for (K k : keys) {
+      keySet.add(k);
     }
-    return _keySet;
+    return keySet;
   }
 
   /**
@@ -1193,15 +1205,15 @@ public class HeapCache<K, V> extends BaseCache<K, V> {
    * @param keys keys to check for
    * @return keys not present in the cache
    */
-  public Set<K> checkAllPresent(final Iterable<? extends K> keys) {
-    Set<K> _keysToLoad = new HashSet<K>();
+  public Set<K> checkAllPresent(Iterable<? extends K> keys) {
+    Set<K> keysToLoad = new HashSet<K>();
     for (K k : keys) {
       Entry<K,V> e = lookupEntryNoHitRecord(k);
       if (e == null || !e.hasFreshData(clock)) {
-        _keysToLoad.add(k);
+        keysToLoad.add(k);
       }
     }
-    return _keysToLoad;
+    return keysToLoad;
   }
 
   /**
@@ -1222,12 +1234,12 @@ public class HeapCache<K, V> extends BaseCache<K, V> {
         break;
       }
     }
-    boolean _finished = false;
+    boolean finished = false;
     try {
       load(e);
-      _finished = true;
+      finished = true;
     } finally {
-      e.ensureAbort(_finished);
+      e.ensureAbort(finished);
     }
   }
 
@@ -1303,15 +1315,15 @@ public class HeapCache<K, V> extends BaseCache<K, V> {
     Entry<K,V> e = new Entry<K,V>(extractIntKeyObj(key), val);
     Entry<K, V> e2;
     eviction.evictEventually(hc);
-    final OptimisticLock l = hash.getSegmentLock(hc);
-    final long _stamp = l.writeLock();
+    OptimisticLock l = hash.getSegmentLock(hc);
+    long stamp = l.writeLock();
     try {
       e2 = hash.insertWithinLock(e, hc, val);
       if (e == e2) {
         eviction.submitWithoutEviction(e);
       }
     } finally {
-      l.unlockWrite(_stamp);
+      l.unlockWrite(stamp);
     }
     hash.checkExpand(hc);
     return e2;
@@ -1344,7 +1356,8 @@ public class HeapCache<K, V> extends BaseCache<K, V> {
     K key = extractKeyObj(e);
     if (extractIntKeyValue(key, modifiedHash(key.hashCode())) != e.hashCode) {
       if (keyMutationCnt ==  0) {
-        getLog().warn("Key mismatch! Key hashcode changed! keyClass=" + e.getKey().getClass().getName());
+        getLog().warn("Key mismatch! Key hashcode changed! keyClass=" +
+          e.getKey().getClass().getName());
         String s;
         try {
           s = e.getKey().toString();
@@ -1376,7 +1389,7 @@ public class HeapCache<K, V> extends BaseCache<K, V> {
         v = loader.load(extractKeyObj(e), t0, e);
       }
       if (v instanceof RefreshedTimeWrapper) {
-        RefreshedTimeWrapper wr = RefreshedTimeWrapper.class.cast(v);
+        RefreshedTimeWrapper wr = (RefreshedTimeWrapper) v;
         refreshTime = wr.getRefreshTime();
         v = (V) wr.getValue();
       }
@@ -1398,7 +1411,7 @@ public class HeapCache<K, V> extends BaseCache<K, V> {
   /**
    * Entry was refreshed before, reset timer and make entry visible again.
    */
-  private boolean entryInRefreshProbationAccessed(final Entry<K, V> e, final long now) {
+  private boolean entryInRefreshProbationAccessed(Entry<K, V> e, long now) {
     long  nrt = e.getRefreshProbationNextRefreshTime();
     if (nrt > now) {
       reviveRefreshedEntry(e, nrt);
@@ -1407,54 +1420,55 @@ public class HeapCache<K, V> extends BaseCache<K, V> {
     return false;
   }
 
-  private void reviveRefreshedEntry(final Entry<K, V> e, final long _nrt) {
+  private void reviveRefreshedEntry(Entry<K, V> e, long nrt) {
     synchronized (e) {
       metrics.refreshedHit();
-      finishLoadOrEviction(e, _nrt);
+      finishLoadOrEviction(e, nrt);
     }
   }
 
-  private void loadGotException(final Entry<K, V> e, final long t0, final long t, final Throwable _wrappedException) {
-    ExceptionWrapper<K> _value =
-      new ExceptionWrapper(extractKeyObj(e), _wrappedException, t0, e, exceptionPropagator);
-    long _nextRefreshTime = 0;
-    boolean _suppressException = false;
+  private void loadGotException(Entry<K, V> e, long t0, long t, Throwable wrappedException) {
+    ExceptionWrapper<K> value =
+      new ExceptionWrapper(extractKeyObj(e), wrappedException, t0, e, exceptionPropagator);
+    long nextRefreshTime = 0;
+    boolean suppressException = false;
     try {
       if ((e.isDataAvailable() || e.isExpiredState()) && e.getException() == null) {
-        _nextRefreshTime = timing.suppressExceptionUntil(e, _value);
+        nextRefreshTime = timing.suppressExceptionUntil(e, value);
       }
-      if (_nextRefreshTime > t0) {
-        _suppressException = true;
+      if (nextRefreshTime > t0) {
+        suppressException = true;
       } else {
-        _nextRefreshTime = timing.cacheExceptionUntil(e, _value);
+        nextRefreshTime = timing.cacheExceptionUntil(e, value);
       }
     } catch (Exception ex) {
       resiliencePolicyException(e, t0, t, new ResiliencePolicyException(ex));
       return;
     }
-    _value = new ExceptionWrapper<K>(_value, Math.abs(_nextRefreshTime));
+    value = new ExceptionWrapper<K>(value, Math.abs(nextRefreshTime));
     synchronized (e) {
-      insertUpdateStats(e, (V) _value, t0, t, INSERT_STAT_LOAD, _nextRefreshTime, _suppressException);
-      if (_suppressException) {
-        e.setSuppressedLoadExceptionInformation(_value);
+      insertUpdateStats(e, (V) value, t0, t, INSERT_STAT_LOAD, nextRefreshTime, suppressException);
+      if (suppressException) {
+        e.setSuppressedLoadExceptionInformation(value);
       } else {
         if (isRecordRefreshTime()) {
           e.setRefreshTime(t0);
         }
-        e.setValueOrException((V) _value);
+        e.setValueOrException((V) value);
       }
-      finishLoadOrEviction(e, _nextRefreshTime);
+      finishLoadOrEviction(e, nextRefreshTime);
     }
   }
 
   /**
-   * Exception from the resilience policy. We have two exceptions now. One from the loader or the expiry policy,
-   * one from the resilience policy. We propagate the more severe one from the resilience policy.
+   * Exception from the resilience policy. We have two exceptions now. One from the loader or
+   * the expiry policy, one from the resilience policy. We propagate the more severe one from
+   * the resilience policy.
    */
-  private void resiliencePolicyException(final Entry<K, V> e, final long t0, final long t, Throwable _exception) {
-    ExceptionWrapper<K> _value =
-      new ExceptionWrapper(extractKeyObj(e), _exception, t0, e, exceptionPropagator);
-    insert(e, (V) _value, t0, t, t0, INSERT_STAT_LOAD, 0);
+  private void resiliencePolicyException(Entry<K, V> e, long t0, long t, Throwable exception) {
+    ExceptionWrapper<K> value =
+      new ExceptionWrapper(extractKeyObj(e), exception, t0, e, exceptionPropagator);
+    insert(e, (V) value, t0, t, t0, INSERT_STAT_LOAD, 0);
   }
 
   private void checkLoaderPresent() {
@@ -1476,91 +1490,94 @@ public class HeapCache<K, V> extends BaseCache<K, V> {
   /**
    * Calculate the next refresh time if a timer / expiry is needed and call insert.
    */
-  protected final void insertOrUpdateAndCalculateExpiry(Entry<K, V> e, V v, long t0, long t, final long _refreshTime, byte _updateStatistics) {
-    long _nextRefreshTime;
+  protected final void insertOrUpdateAndCalculateExpiry(Entry<K, V> e, V v, long t0, long t,
+                                                        long refreshTime, byte updateStatistics) {
+    long nextRefreshTime;
     try {
-      _nextRefreshTime = timing.calculateNextRefreshTime(e, v, _refreshTime);
+      nextRefreshTime = timing.calculateNextRefreshTime(e, v, refreshTime);
     } catch (Exception ex) {
-      RuntimeException _wrappedException = new ExpiryPolicyException(ex);
-      if (_updateStatistics == INSERT_STAT_LOAD) {
-        loadGotException(e, t0, t, _wrappedException);
+      RuntimeException wrappedException = new ExpiryPolicyException(ex);
+      if (updateStatistics == INSERT_STAT_LOAD) {
+        loadGotException(e, t0, t, wrappedException);
         return;
       }
-      insertUpdateStats(e, v, t0, t, _updateStatistics, Long.MAX_VALUE, false);
-      throw _wrappedException;
+      insertUpdateStats(e, v, t0, t, updateStatistics, Long.MAX_VALUE, false);
+      throw wrappedException;
     }
-    insert(e, v, t0, t, _refreshTime, _updateStatistics, _nextRefreshTime);
+    insert(e, v, t0, t, refreshTime, updateStatistics, nextRefreshTime);
   }
 
-  final static byte INSERT_STAT_LOAD = 1;
-  final static byte INSERT_STAT_PUT = 2;
+  static final byte INSERT_STAT_LOAD = 1;
+  static final byte INSERT_STAT_PUT = 2;
 
   public RuntimeException returnNullValueDetectedException() {
     return new NullPointerException("null value not allowed");
   }
 
-  protected final void insert(Entry<K, V> e, V _value, long t0, long t, final long _refreshTime, byte _updateStatistics, long _nextRefreshTime) {
-    if (_updateStatistics == INSERT_STAT_LOAD) {
-      if (_value == null && isRejectNullValues() && _nextRefreshTime != 0) {
+  protected final void insert(Entry<K, V> e, V value, long t0, long t, long refreshTime,
+                              byte updateStatistics, long nextRefreshTime) {
+    if (updateStatistics == INSERT_STAT_LOAD) {
+      if (value == null && isRejectNullValues() && nextRefreshTime != 0) {
         loadGotException(e, t0, t, returnNullValueDetectedException());
         return;
       }
       synchronized (e) {
         if (isRecordRefreshTime()) {
-          e.setRefreshTime(_refreshTime);
+          e.setRefreshTime(refreshTime);
         }
-        insertUpdateStats(e, _value, t0, t, _updateStatistics, _nextRefreshTime, false);
-        e.setValueOrException(_value);
+        insertUpdateStats(e, value, t0, t, updateStatistics, nextRefreshTime, false);
+        e.setValueOrException(value);
         e.resetSuppressedLoadExceptionInformation();
-        finishLoadOrEviction(e, _nextRefreshTime);
+        finishLoadOrEviction(e, nextRefreshTime);
       }
     } else {
-      if (_value == null && isRejectNullValues()) {
+      if (value == null && isRejectNullValues()) {
         throw returnNullValueDetectedException();
       }
       if (isRecordRefreshTime()) {
-        e.setRefreshTime(_refreshTime);
+        e.setRefreshTime(refreshTime);
       }
-      e.setValueOrException(_value);
+      e.setValueOrException(value);
       e.resetSuppressedLoadExceptionInformation();
-      insertUpdateStats(e, _value, t0, t, _updateStatistics, _nextRefreshTime, false);
-      restartTimer(e, _nextRefreshTime);
+      insertUpdateStats(e, value, t0, t, updateStatistics, nextRefreshTime, false);
+      restartTimer(e, nextRefreshTime);
     }
   }
 
-  private void insertUpdateStats(final Entry<K, V> e, final V _value, final long t0, final long t, final byte _updateStatistics, final long _nextRefreshTime, final boolean _suppressException) {
-    if (_updateStatistics == INSERT_STAT_LOAD) {
-      if (_suppressException) {
+  private void insertUpdateStats(Entry<K, V> e, V value, long t0, long t, byte updateStatistics,
+                                 long nextRefreshTime, boolean suppressException) {
+    if (updateStatistics == INSERT_STAT_LOAD) {
+      if (suppressException) {
         metrics.suppressedException();
       } else {
-        if (_value instanceof ExceptionWrapper) {
+        if (value instanceof ExceptionWrapper) {
           metrics.loadException();
         }
       }
-      long _millis = t - t0;
+      long millis = t - t0;
       if (e.isGettingRefresh()) {
-        metrics.refresh(_millis);
+        metrics.refresh(millis);
       } else {
         if (e.isVirgin()) {
-          metrics.readThrough(_millis);
+          metrics.readThrough(millis);
         } else {
-          metrics.explicitLoad(_millis);
+          metrics.explicitLoad(millis);
         }
       }
     } else {
-      if (_nextRefreshTime != 0) {
+      if (nextRefreshTime != 0) {
         metrics.putNewEntry();
       }
     }
   }
 
   @Override
-  public void timerEventRefresh(final Entry<K, V> e, final Object task) {
+  public void timerEventRefresh(Entry<K, V> e, Object task) {
     metrics.timerEvent();
     synchronized (e) {
       if (e.getTask() != task) { return; }
       try {
-        prefetchExecutor.execute(createFireAndForgetAction(e, Operations.SINGLETON.REFRESH));
+        prefetchExecutor.execute(createFireAndForgetAction(e, Operations.SINGLETON.refresh));
         return;
       } catch (RejectedExecutionException ignore) {
       }
@@ -1569,15 +1586,15 @@ public class HeapCache<K, V> extends BaseCache<K, V> {
     }
   }
 
-  public void startRefreshProbationTimer(final Entry<K, V> e, long _nextRefreshTime) {
-    boolean _expired = timing.startRefreshProbationTimer(e, _nextRefreshTime);
-    if (_expired) {
+  public void startRefreshProbationTimer(Entry<K, V> e, long nextRefreshTime) {
+    boolean expired = timing.startRefreshProbationTimer(e, nextRefreshTime);
+    if (expired) {
       expireAndRemoveEventually(e);
     }
   }
 
   @Override
-  public void timerEventProbationTerminated(final Entry<K, V> e, final Object task) {
+  public void timerEventProbationTerminated(Entry<K, V> e, Object task) {
     metrics.timerEvent();
     synchronized (e) {
       if (e.getTask() != task) { return; }
@@ -1586,15 +1603,15 @@ public class HeapCache<K, V> extends BaseCache<K, V> {
   }
 
   @Override
-  public void logAndCountInternalException(final String _text, final Throwable _exception) {
+  public void logAndCountInternalException(String text, Throwable exception) {
     synchronized (lock) {
       internalExceptionCnt++;
     }
-    getLog().warn(_text, _exception);
+    getLog().warn(text, exception);
   }
 
   @Override
-  public void timerEventExpireEntry(Entry<K, V> e, final Object task) {
+  public void timerEventExpireEntry(Entry<K, V> e, Object task) {
     metrics.timerEvent();
     synchronized (e) {
       if (e.getTask() != task) { return; }
@@ -1632,7 +1649,7 @@ public class HeapCache<K, V> extends BaseCache<K, V> {
    *
    * @see #expireAndRemoveEventuallyAfterProcessing(Entry)
    */
-  private void expireAndRemoveEventually(final Entry e) {
+  private void expireAndRemoveEventually(Entry e) {
     if (isKeepAfterExpired() || e.isProcessing()) {
       metrics.expiredKept();
     } else {
@@ -1646,7 +1663,7 @@ public class HeapCache<K, V> extends BaseCache<K, V> {
    *
    * @see #expireAndRemoveEventually
    */
-  private void expireAndRemoveEventuallyAfterProcessing(final Entry e) {
+  private void expireAndRemoveEventuallyAfterProcessing(Entry e) {
     if (isKeepAfterExpired()) {
       metrics.expiredKept();
     } else {
@@ -1668,9 +1685,9 @@ public class HeapCache<K, V> extends BaseCache<K, V> {
    * is to be thrown when most specific. So exceptions are only thrown, when the value
    * which has produced an exception is requested from the map.
    */
-  public Map<K, V> getAll(final Iterable<? extends K> _inputKeys) {
+  public Map<K, V> getAll(Iterable<? extends K> inputKeys) {
     Map<K, ExaminationEntry<K, V>> map = new HashMap<K, ExaminationEntry<K, V>>();
-    for (K k : _inputKeys) {
+    for (K k : inputKeys) {
       Entry<K,V> e = getEntryInternal(k);
       if (e != null) {
         map.put(extractKeyObj(e), ReadOnlyCacheEntry.of(e));
@@ -1679,27 +1696,27 @@ public class HeapCache<K, V> extends BaseCache<K, V> {
     return convertValueMap(map);
   }
 
-  public Map<K, V> convertValueMap(final Map<K, ExaminationEntry<K, V>> _map) {
-    return new MapValueConverterProxy<K, V, ExaminationEntry<K, V>>(_map) {
+  public Map<K, V> convertValueMap(Map<K, ExaminationEntry<K, V>> map) {
+    return new MapValueConverterProxy<K, V, ExaminationEntry<K, V>>(map) {
       @Override
-      protected V convert(final ExaminationEntry<K, V> v) {
+      protected V convert(ExaminationEntry<K, V> v) {
         return returnValue(v.getValueOrException());
       }
     };
   }
 
-  public Map<K, V> convertCacheEntry2ValueMap(final Map<K, CacheEntry<K, V>> _map) {
-    return new MapValueConverterProxy<K, V, CacheEntry<K, V>>(_map) {
+  public Map<K, V> convertCacheEntry2ValueMap(Map<K, CacheEntry<K, V>> map) {
+    return new MapValueConverterProxy<K, V, CacheEntry<K, V>>(map) {
       @Override
-      protected V convert(final CacheEntry<K, V> v) {
+      protected V convert(CacheEntry<K, V> v) {
         return v.getValue();
       }
     };
   }
 
-  public Map<K, V> peekAll(final Iterable<? extends K> _inputKeys) {
+  public Map<K, V> peekAll(Iterable<? extends K> inputKeys) {
     Map<K, ExaminationEntry<K, V>> map = new HashMap<K, ExaminationEntry<K, V>>();
-    for (K k : _inputKeys) {
+    for (K k : inputKeys) {
       ExaminationEntry<K, V> e = peekEntryInternal(k);
       if (e != null) {
         map.put(k, e);
@@ -1717,12 +1734,12 @@ public class HeapCache<K, V> extends BaseCache<K, V> {
   Operations<K,V> spec() { return Operations.SINGLETON; }
 
   @Override
-  protected <R> EntryAction<K, V, R> createEntryAction(final K key, final Entry<K, V> e, final Semantic<K, V, R> op) {
+  protected <R> EntryAction<K, V, R> createEntryAction(K key, Entry<K, V> e, Semantic<K, V, R> op) {
     return new MyEntryAction<R>(op, key, e);
   }
 
   @Override
-  protected <R> MyEntryAction<R> createFireAndForgetAction(final Entry<K, V> e, final Semantic<K, V, R> op) {
+  protected <R> MyEntryAction<R> createFireAndForgetAction(Entry<K, V> e, Semantic<K, V, R> op) {
     return new MyEntryAction<R>(op, e.getKey(), e, EntryAction.NOOP_CALLBACK);
   }
 
@@ -1733,13 +1750,13 @@ public class HeapCache<K, V> extends BaseCache<K, V> {
 
   class MyEntryAction<R> extends EntryAction<K, V, R> {
 
-    public MyEntryAction(final Semantic<K, V, R> op, final K _k, final Entry<K, V> e) {
-      super(HeapCache.this, HeapCache.this, op, _k, e);
+    MyEntryAction(Semantic<K, V, R> op, K k, Entry<K, V> e) {
+      super(HeapCache.this, HeapCache.this, op, k, e);
     }
 
-    public MyEntryAction(final Semantic<K, V, R> op, final K _k,
-                         final Entry<K, V> e, CompletedCallback cb) {
-      super(HeapCache.this, HeapCache.this, op, _k, e, cb);
+    MyEntryAction(Semantic<K, V, R> op, K k,
+                         Entry<K, V> e, CompletedCallback cb) {
+      super(HeapCache.this, HeapCache.this, op, k, e, cb);
     }
 
     @Override
@@ -1762,10 +1779,10 @@ public class HeapCache<K, V> extends BaseCache<K, V> {
 
   }
 
-    /**
-   * Simply the {@link EntryAction} based code to provide the entry processor. If we code it directly this
-   * might be a little bit more efficient, but it gives quite a code bloat which has lots of
-   * corner cases for loader and exception handling.
+  /**
+   * Simply the {@link EntryAction} based code to provide the entry processor. If we code it
+   * directly this might be a little bit more efficient, but it gives quite a code bloat which has
+   * lots of corner cases for loader and exception handling.
    */
   @Override
   public <R> R invoke(K key, EntryProcessor<K, V, R> entryProcessor) {
@@ -1791,21 +1808,28 @@ public class HeapCache<K, V> extends BaseCache<K, V> {
   protected IntegrityState getIntegrityState() {
     EvictionMetrics em = eviction.getMetrics();
     IntegrityState is = new IntegrityState()
-      .checkEquals("hash.getSize() == hash.calcEntryCount()", hash.getSize(), hash.calcEntryCount());
+      .checkEquals("hash.getSize() == hash.calcEntryCount()",
+        hash.getSize(),
+        hash.calcEntryCount());
     if (em.getEvictionRunningCount() > 0) {
       is.check("eviction running: hash.getSize() == eviction.getSize()", true)
         .check("eviction running: newEntryCnt == hash.getSize() + evictedCnt ....", true);
     } else {
       is.checkEquals("hash.getSize() == eviction.getSize()", getLocalSize(), em.getSize())
-        .checkEquals("newEntryCnt == hash.getSize() + evictedCnt + expiredRemoveCnt + removeCnt + clearedCnt + virginRemovedCnt",
+        .checkEquals("newEntryCnt == hash.getSize() + evictedCnt + expiredRemoveCnt + " +
+            "removeCnt + clearedCnt + virginRemovedCnt",
           em.getNewEntryCount(), getLocalSize() + em.getEvictedCount() +
-            em.getExpiredRemovedCount() + em.getRemovedCount() + clearRemovedCnt + em.getVirginRemovedCount());
+            em.getExpiredRemovedCount() + em.getRemovedCount() + clearRemovedCnt +
+            em.getVirginRemovedCount());
     }
     eviction.checkIntegrity(is);
     return is;
   }
 
-  /** Check internal data structures and throw and exception if something is wrong, used for unit testing */
+  /**
+   * Check internal data structures and throw and exception if something is wrong, used for unit
+   * testing
+   */
   public final void checkIntegrity() {
     executeWithGlobalLock(new Job<Void>() {
       @Override
@@ -1814,7 +1838,8 @@ public class HeapCache<K, V> extends BaseCache<K, V> {
         if (is.getStateFlags() > 0) {
           throw new Error(
             "cache2k integrity error: " +
-            is.getStateDescriptor() + ", " + is.getFailingChecks() + ", " + generateInfoUnderLock(HeapCache.this, clock.millis()).toString());
+            is.getStateDescriptor() + ", " + is.getFailingChecks() + ", " +
+              generateInfoUnderLock(HeapCache.this, clock.millis()).toString());
         }
         return null;
       }
@@ -1831,33 +1856,35 @@ public class HeapCache<K, V> extends BaseCache<K, V> {
     return getLatestInfo(this);
   }
 
-  public final InternalCacheInfo getInfo(InternalCache _userCache) {
+  public final InternalCacheInfo getInfo(InternalCache userCache) {
     synchronized (lock) {
       long t = clock.millis();
       if (info != null &&
-        (info.getInfoCreatedTime() + info.getInfoCreationDeltaMs() * TUNABLE.minimumStatisticsCreationTimeDeltaFactor + TUNABLE.minimumStatisticsCreationDeltaMillis > t)) {
+        (info.getInfoCreatedTime() + info.getInfoCreationDeltaMs() *
+          TUNABLE.minimumStatisticsCreationTimeDeltaFactor +
+          TUNABLE.minimumStatisticsCreationDeltaMillis > t)) {
         return info;
       }
-      info = generateInfo(_userCache, t);
+      info = generateInfo(userCache, t);
     }
     return info;
   }
 
-  public final InternalCacheInfo getLatestInfo(InternalCache _userCache) {
-    return generateInfo(_userCache, clock.millis());
+  public final InternalCacheInfo getLatestInfo(InternalCache userCache) {
+    return generateInfo(userCache, clock.millis());
   }
 
-  private CacheBaseInfo generateInfo(final InternalCache _userCache, final long t) {
+  private CacheBaseInfo generateInfo(final InternalCache userCache, final long t) {
     return executeWithGlobalLock(new Job<CacheBaseInfo>() {
       @Override
       public CacheBaseInfo call() {
-        return generateInfoUnderLock(_userCache, t);
+        return generateInfoUnderLock(userCache, t);
       }
     });
   }
 
-  private CacheBaseInfo generateInfoUnderLock(final InternalCache _userCache, final long t) {
-    info = new CacheBaseInfo(HeapCache.this, _userCache, t);
+  private CacheBaseInfo generateInfoUnderLock(InternalCache userCache, long t) {
+    info = new CacheBaseInfo(HeapCache.this, userCache, t);
     info.setInfoCreationDeltaMs((int) (clock.millis() - t));
     return info;
   }
@@ -1879,7 +1906,7 @@ public class HeapCache<K, V> extends BaseCache<K, V> {
    * lifting the lock with do eviction and lock again. This ensures that all
    * queued entries are processed up to the point when the method was called.
    */
-  public <T> T executeWithGlobalLock(final Job<T> job) {
+  public <T> T executeWithGlobalLock(Job<T> job) {
     return executeWithGlobalLock(job, true);
   }
 
@@ -1892,17 +1919,17 @@ public class HeapCache<K, V> extends BaseCache<K, V> {
    * lifting the lock with do eviction and lock again. This ensures that all
    * queued entries are processed up to the point when the method was called.
    *
-   * @param _checkClosed variant, this method is needed once without check during the close itself
+   * @param checkClosed variant, this method is needed once without check during the close itself
    */
-  private <T> T executeWithGlobalLock(final Job<T> job, final boolean _checkClosed) {
+  private <T> T executeWithGlobalLock(final Job<T> job, final boolean checkClosed) {
     synchronized (lock) {
-      if (_checkClosed) { checkClosed(); }
+      if (checkClosed) { checkClosed(); }
       eviction.stop();
       try {
-        T _result = hash.runTotalLocked(new Job<T>() {
+        T result = hash.runTotalLocked(new Job<T>() {
           @Override
           public T call() {
-            if (_checkClosed) { checkClosed(); }
+            if (checkClosed) { checkClosed(); }
             boolean f = eviction.drain();
             if (f) {
               return (T) RESTART_AFTER_EVICTION;
@@ -1915,12 +1942,12 @@ public class HeapCache<K, V> extends BaseCache<K, V> {
             });
           }
         });
-        if (_result == RESTART_AFTER_EVICTION) {
+        if (result == RESTART_AFTER_EVICTION) {
           eviction.evictEventually();
-          _result = hash.runTotalLocked(new Job<T>() {
+          result = hash.runTotalLocked(new Job<T>() {
             @Override
             public T call() {
-              if (_checkClosed) { checkClosed(); }
+              if (checkClosed) { checkClosed(); }
               eviction.drain();
               return eviction.runLocked(new Job<T>() {
                 @Override
@@ -1931,7 +1958,7 @@ public class HeapCache<K, V> extends BaseCache<K, V> {
             }
           });
         }
-        return _result;
+        return result;
       } finally {
         eviction.start();
       }
@@ -1991,12 +2018,14 @@ public class HeapCache<K, V> extends BaseCache<K, V> {
     return new Hash2<K, V>(this);
   }
 
+  @SuppressWarnings({"ConstantConditions"})
   public static class Tunable extends TunableConstants {
 
     /**
      * Size of the hash table before inserting the first entry. Must be power
      * of two. Default: 64.
      */
+    @SuppressWarnings("CanBeFinal")
     public int initialHashSize = 64;
 
     /**
@@ -2021,26 +2050,28 @@ public class HeapCache<K, V> extends BaseCache<K, V> {
 
      /**
      * Some statistic values need processing time to gather and compute it. This is a safety
-     * time delta, to ensure that the machine is not busy due to statistics generation. Default: 333.
+     * time delta, to ensure that the machine is not busy due to statistics generation.
+      * Default: 333.
      */
-    public int minimumStatisticsCreationDeltaMillis = 333;
+    public final int minimumStatisticsCreationDeltaMillis = 333;
 
     /**
      *  Factor of the statistics creation time, that determines the time difference when new
      *  statistics are generated.
      */
-    public int minimumStatisticsCreationTimeDeltaFactor = 123;
+    public final int minimumStatisticsCreationTimeDeltaFactor = 123;
 
-    public ThreadFactoryProvider threadFactoryProvider = new DefaultThreadFactoryProvider();
+    public final ThreadFactoryProvider threadFactoryProvider = new DefaultThreadFactoryProvider();
 
     /**
      * Number of maximum loader threads, depending on the CPUs.
      */
-    public int loaderThreadCountCpuFactor = 1;
+    public final int loaderThreadCountCpuFactor = 1;
 
-    public StandardCommonMetricsFactory commonMetricsFactory = new StandardCommonMetricsFactory();
+    public final StandardCommonMetricsFactory commonMetricsFactory =
+      new StandardCommonMetricsFactory();
 
-    public ExceptionPropagator exceptionPropagator = new StandardExceptionPropagator();
+    public final ExceptionPropagator exceptionPropagator = new StandardExceptionPropagator();
 
     /**
      * Alert level error, when hash quality is below this threshold. Default 5.

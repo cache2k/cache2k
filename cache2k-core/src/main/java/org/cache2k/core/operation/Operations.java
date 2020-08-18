@@ -36,7 +36,7 @@ import java.util.concurrent.Callable;
 @SuppressWarnings({"unchecked", "UnusedParameters"})
 public class Operations<K, V> {
 
-  public final static Operations SINGLETON = new Operations();
+  public static final Operations SINGLETON = new Operations();
 
   public Semantic<K, V, V> peek(K key) {
     return PEEK;
@@ -77,21 +77,21 @@ public class Operations<K, V> {
     }
   };
 
-  public final Semantic UNCONDITIONAL_LOAD = new Semantic.InsertOrUpdate() {
+  public final Semantic unconditionalLoad = new Semantic.InsertOrUpdate() {
     @Override
-    public void mutate(final Progress c, final ExaminationEntry e) {
+    public void mutate(Progress c, ExaminationEntry e) {
       c.load();
     }
   };
 
-  public final Semantic<K,V,Void> REFRESH = new Semantic.MightUpdate<K,V,Void>() {
+  public final Semantic<K,V,Void> refresh = new Semantic.MightUpdate<K,V,Void>() {
 
     /**
      * Only refresh if the entry is still existing. If an entry is deleted before the
      * refresh, the refresh should do nothing.
      */
     @Override
-    public void examine(final Progress<K, V, Void> c, final ExaminationEntry<K, V> e) {
+    public void examine(Progress<K, V, Void> c, ExaminationEntry<K, V> e) {
       if (c.isDataFreshOrRefreshing() || c.isExpiryTimeReachedOrInRefreshProbation()) {
         c.wantMutation();
       } else {
@@ -100,7 +100,7 @@ public class Operations<K, V> {
     }
 
     @Override
-    public void mutate(final Progress<K,V,Void> c, final ExaminationEntry<K,V> e) {
+    public void mutate(Progress<K,V,Void> c, ExaminationEntry<K,V> e) {
       c.refresh();
     }
   };
@@ -126,12 +126,12 @@ public class Operations<K, V> {
     }
 
     @Override
-    public void mutate(final Progress c, final ExaminationEntry e) {
+    public void mutate(Progress c, ExaminationEntry e) {
       c.load();
     }
 
     @Override
-    public void loaded(final Progress c, final ExaminationEntry e) {
+    public void loaded(Progress c, ExaminationEntry e) {
       c.entryResult(e);
     }
   };
@@ -143,7 +143,7 @@ public class Operations<K, V> {
   static final Semantic PEEK_ENTRY = new Semantic.Read() {
 
     @Override
-    public void examine(final Progress c, final ExaminationEntry e) {
+    public void examine(Progress c, ExaminationEntry e) {
       if (c.isDataFreshOrMiss()) {
         c.entryResult(e);
       }
@@ -211,11 +211,11 @@ public class Operations<K, V> {
     }
   };
 
-  public Semantic<K, V, V> peekAndReplace(final K key, final V value) {
+  public Semantic<K, V, V> peekAndReplace(K key, final V value) {
     return new Semantic.MightUpdate<K, V, V>() {
 
       @Override
-      public void examine(final Progress<K, V, V> c, final ExaminationEntry<K, V> e) {
+      public void examine(Progress<K, V, V> c, ExaminationEntry<K, V> e) {
         if (c.isDataFreshOrMiss()) {
           c.result(e.getValueOrException());
           c.wantMutation();
@@ -232,7 +232,7 @@ public class Operations<K, V> {
     };
   }
 
-  public Semantic<K, V, V> peekAndPut(final K key, final V value) {
+  public Semantic<K, V, V> peekAndPut(K key, final V value) {
     return new Semantic.Update<K, V, V>() {
 
       @Override
@@ -246,11 +246,11 @@ public class Operations<K, V> {
     };
   }
 
-  public Semantic<K, V, V> computeIfAbsent(final K key, final Callable<V> _function) {
+  public Semantic<K, V, V> computeIfAbsent(K key, final Callable<V> function) {
     return new Semantic.MightUpdate<K, V, V>() {
 
       @Override
-      public void examine(final Progress<K, V, V> c, final ExaminationEntry<K, V> e) {
+      public void examine(Progress<K, V, V> c, ExaminationEntry<K, V> e) {
         if (c.isDataFreshOrMiss()) {
           c.result(e.getValueOrException());
           c.noMutation();
@@ -262,9 +262,9 @@ public class Operations<K, V> {
       @Override
       public void mutate(Progress<K, V, V> c, ExaminationEntry<K, V> e) {
         try {
-          V _value = _function.call();
-          c.result(_value);
-          c.put(_value);
+          V value = function.call();
+          c.result(value);
+          c.put(value);
         } catch (RuntimeException ex) {
           c.failure(ex);
         } catch (Exception ex) {
@@ -275,7 +275,7 @@ public class Operations<K, V> {
     };
   }
 
-  public Semantic<K, V, V> put(final K key, final V value) {
+  public Semantic<K, V, V> put(K key, final V value) {
     return new Semantic.InsertOrUpdate<K, V, V>() {
 
       @Override
@@ -291,11 +291,11 @@ public class Operations<K, V> {
    *
    * @see org.cache2k.Cache#putIfAbsent(Object, Object)
    */
-  public Semantic<K, V, Boolean> putIfAbsent(final K key, final V value) {
+  public Semantic<K, V, Boolean> putIfAbsent(K key, final V value) {
     return new Semantic.MightUpdate<K, V, Boolean>() {
 
       @Override
-      public void examine(final Progress<K, V, Boolean> c, final ExaminationEntry<K, V> e) {
+      public void examine(Progress<K, V, Boolean> c, ExaminationEntry<K, V> e) {
         if (!c.isDataFreshOrMiss()) {
           c.result(true);
           c.wantMutation();
@@ -318,11 +318,11 @@ public class Operations<K, V> {
    *
    * @see org.cache2k.Cache#replace(Object, Object)
    */
-  public Semantic<K, V, Boolean> replace(final K key, final V value) {
+  public Semantic<K, V, Boolean> replace(K key, final V value) {
     return new Semantic.MightUpdate<K, V, Boolean>() {
 
       @Override
-      public void examine(final Progress<K, V, Boolean> c, final ExaminationEntry<K, V> e) {
+      public void examine(Progress<K, V, Boolean> c, ExaminationEntry<K, V> e) {
         if (c.isDataFreshOrMiss()) {
           c.result(true);
           c.wantMutation();
@@ -340,11 +340,11 @@ public class Operations<K, V> {
     };
   }
 
-  public Semantic<K, V, Boolean> replace(final K key, final V value, final V newValue) {
+  public Semantic<K, V, Boolean> replace(K key, final V value, final V newValue) {
     return new Semantic.MightUpdate<K, V, Boolean>() {
 
       @Override
-      public void examine(final Progress<K, V, Boolean> c, final ExaminationEntry<K, V> e) {
+      public void examine(Progress<K, V, Boolean> c, ExaminationEntry<K, V> e) {
         if (c.isDataFreshOrMiss() &&
           ( (value ==  e.getValueOrException()) ||
             (value != null && value.equals(e.getValueOrException()))) ) {
@@ -364,11 +364,11 @@ public class Operations<K, V> {
     };
   }
 
-  public Semantic<K, V, Boolean> remove(final K key, final V value) {
+  public Semantic<K, V, Boolean> remove(K key, final V value) {
     return new Semantic.MightUpdate<K, V, Boolean>() {
 
       @Override
-      public void examine(final Progress<K, V, Boolean> c, final ExaminationEntry<K, V> e) {
+      public void examine(Progress<K, V, Boolean> c, ExaminationEntry<K, V> e) {
         if (c.isDataFreshOrMiss() &&
           ( (value == null && e.getValueOrException() == null) ||
             value.equals(e.getValueOrException())) ) {
@@ -395,11 +395,11 @@ public class Operations<K, V> {
       private boolean needsLoad;
 
       @Override
-      public void start(final Progress<K, V, R> c) {
+      public void start(Progress<K, V, R> c) {
         mutableEntryOnProgress = new MutableEntryOnProgress<K, V>(key, c, null);
         try {
-          R _result = processor.process(mutableEntryOnProgress);
-          c.result(_result);
+          R result = processor.process(mutableEntryOnProgress);
+          c.result(result);
         } catch (WantsDataRestartException rs) {
           c.wantData();
           return;
@@ -415,11 +415,11 @@ public class Operations<K, V> {
       }
 
       @Override
-      public void examine(final Progress<K, V, R> c, final ExaminationEntry<K, V> e) {
+      public void examine(Progress<K, V, R> c, ExaminationEntry<K, V> e) {
         mutableEntryOnProgress = new MutableEntryOnProgress<K, V>(key, c, e);
         try {
-          R _result = processor.process(mutableEntryOnProgress);
-          c.result(_result);
+          R result = processor.process(mutableEntryOnProgress);
+          c.result(result);
         } catch (NeedsLoadRestartException rs) {
           needsLoad = true;
           c.wantMutation();
@@ -436,7 +436,7 @@ public class Operations<K, V> {
       }
 
       @Override
-      public void mutate(final Progress<K, V, R> c, final ExaminationEntry<K, V> e) {
+      public void mutate(Progress<K, V, R> c, ExaminationEntry<K, V> e) {
         if (needsLoad) {
           needsLoad = false;
           c.loadAndRestart();
@@ -447,7 +447,7 @@ public class Operations<K, V> {
 
       /** No operation, result is set by the entry processor */
       @Override
-      public void loaded(final Progress<K, V, R> c, final ExaminationEntry<K, V> e) { }
+      public void loaded(Progress<K, V, R> c, ExaminationEntry<K, V> e) { }
     };
   }
 
@@ -459,7 +459,7 @@ public class Operations<K, V> {
     return new Semantic.MightUpdate<K, V, Void>() {
 
       @Override
-      public void examine(final Progress<K, V, Void> c, final ExaminationEntry<K, V> e) {
+      public void examine(Progress<K, V, Void> c, ExaminationEntry<K, V> e) {
         if (t == ExpiryTimeValues.NO_CACHE ||
           t == ExpiryTimeValues.REFRESH) {
           if (c.isDataFreshOrRefreshing()) {
@@ -481,12 +481,12 @@ public class Operations<K, V> {
     };
   }
 
-  public final Semantic<K,V, Void> EXPIRE_EVENT = new ExpireEvent<K, V>();
+  public final Semantic<K,V, Void> expireEvent = new ExpireEvent<K, V>();
 
   public static class ExpireEvent<K, V> extends Semantic.MightUpdate<K, V, Void> {
 
     @Override
-    public void examine(final Progress<K, V, Void> c, final ExaminationEntry<K, V> e) {
+    public void examine(Progress<K, V, Void> c, ExaminationEntry<K, V> e) {
       if (c.isExpiryTimeReachedOrInRefreshProbation()) {
         c.wantMutation();
         return;
@@ -495,9 +495,9 @@ public class Operations<K, V> {
     }
 
     @Override
-    public void mutate(final Progress<K, V, Void> c, final ExaminationEntry<K, V> e) {
+    public void mutate(Progress<K, V, Void> c, ExaminationEntry<K, V> e) {
       c.expire(ExpiryTimeValues.NO_CACHE);
     }
-  };
+  }
 
 }

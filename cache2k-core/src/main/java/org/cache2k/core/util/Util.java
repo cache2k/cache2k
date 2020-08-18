@@ -27,7 +27,7 @@ import java.sql.Timestamp;
 /**
  * A set of utility stuff we need often.
  *
- * @author Jens Wilke; created: 2014-12-18
+ * @author Jens Wilke
  */
 public class Util {
 
@@ -36,15 +36,15 @@ public class Util {
   /**
    * Format milliseconds since epoch to a compact timestamp.
    */
-  public static String formatMillis(long _millis) {
-    return new Timestamp(_millis).toString();
+  public static String formatMillis(long millis) {
+    return new Timestamp(millis).toString();
   }
 
-  public static String compactFullName(CacheManager mgr, String _cacheName) {
+  public static String compactFullName(CacheManager mgr, String cacheName) {
     if (!CacheManager.STANDARD_DEFAULT_MANAGER_NAME.equals(mgr.getName())) {
-      return mgr.getName() + NAME_SEPARATOR + _cacheName;
+      return mgr.getName() + NAME_SEPARATOR + cacheName;
     }
-    return _cacheName;
+    return cacheName;
   }
 
 }

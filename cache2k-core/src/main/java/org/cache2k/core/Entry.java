@@ -41,11 +41,12 @@ class CompactEntry<K, V> {
 
   private static class InitialValueInEntryNeverReturned { }
 
-  protected final static InitialValueInEntryNeverReturned INITIAL_VALUE = new InitialValueInEntryNeverReturned();
+  protected static final InitialValueInEntryNeverReturned INITIAL_VALUE =
+    new InitialValueInEntryNeverReturned();
 
   /**
-   * Contains the next time a refresh has to occur, or if no background refresh is configured, when the entry
-   * is expired. Low values have a special meaning, see defined constants.
+   * Contains the next time a refresh has to occur, or if no background refresh is configured,
+   * when the entry is expired. Low values have a special meaning, see defined constants.
    * Negative values means that we need to check against the wall clock.
    */
   protected volatile long nextRefreshTime;
@@ -59,15 +60,16 @@ class CompactEntry<K, V> {
   private volatile V valueOrException = (V) INITIAL_VALUE;
 
   /**
-   * Hash implementation: the calculated, modified hash code, retrieved from the key when the entry is
-   * inserted in the cache
+   * Hash implementation: the calculated, modified hash code, retrieved from the key when
+   * the entry is inserted in the cache
    *
    * @see HeapCache#modifiedHash(int)
    */
   public final int hashCode;
 
   /**
-   * Hash implementation: Link to another entry in the same hash table slot when the hash code collides.
+   * Hash implementation: Link to another entry in the same hash table slot when the hash
+   * code collides.
    */
   public Entry<K, V> another;
 
@@ -78,13 +80,13 @@ class CompactEntry<K, V> {
    */
   public long hitCnt;
 
-  public CompactEntry(final K _key, final int _hashCode) {
-    key = _key;
-    hashCode = _hashCode;
+  CompactEntry(K key, int hashCode) {
+    this.key = key;
+    this.hashCode = hashCode;
   }
 
-  public void setValueOrException(V _valueOrException) {
-    valueOrException = _valueOrException;
+  public void setValueOrException(V valueOrException) {
+    this.valueOrException = valueOrException;
   }
 
   public Throwable getException() {
@@ -208,8 +210,8 @@ public class Entry<K, V> extends CompactEntry<K, V>
   /** Marker for Clock-PRO clock */
   private int hotAndWeight;
 
-  public Entry(final K _key, final int _hashCode) {
-    super(_key, _hashCode);
+  public Entry(K key, int hashCode) {
+    super(key, hashCode);
   }
 
   public Entry() { this(null, 0); }
@@ -307,8 +309,8 @@ public class Entry<K, V> extends CompactEntry<K, V>
     refreshTimeAndState = withState(refreshTimeAndState, v);
   }
 
-  private long withState(final long _refreshTimeAndState, final long _state) {
-    return _refreshTimeAndState & ~((long) PS_MASK << PS_POS) | (_state << PS_POS);
+  private long withState(long refreshTimeAndState, long state) {
+    return refreshTimeAndState & ~((long) PS_MASK << PS_POS) | (state << PS_POS);
   }
 
   /**
@@ -316,15 +318,15 @@ public class Entry<K, V> extends CompactEntry<K, V>
    */
   public boolean checkAndSwitchProcessingState(int ps0, int ps) {
     long rt = refreshTimeAndState;
-    long _expect = withState(rt, ps0);
-    long _update = withState(rt, ps);
-    return STATE_UPDATER.compareAndSet(this, _expect, _update);
+    long expect = withState(rt, ps0);
+    long update = withState(rt, ps);
+    return STATE_UPDATER.compareAndSet(this, expect, update);
   }
 
   /**
    * Starts long operation on entry. Pins the entry in the cache.
    */
-  public void startProcessing(int ps, final EntryAction action) {
+  public void startProcessing(int ps, EntryAction action) {
     setProcessingState(ps);
     if (action != null) {
       setEntryAction(action);
@@ -356,8 +358,8 @@ public class Entry<K, V> extends CompactEntry<K, V>
     return nextRefreshTime;
   }
 
-  public void setNextRefreshTime(long _nextRefreshTime) {
-    nextRefreshTime = _nextRefreshTime;
+  public void setNextRefreshTime(long nextRefreshTime) {
+    this.nextRefreshTime = nextRefreshTime;
   }
 
   /**
@@ -367,8 +369,8 @@ public class Entry<K, V> extends CompactEntry<K, V>
    * <p>Usually no exceptions happens, but the CacheClosedException is happening out of order
    * and stops processing to properly finish.
    */
-  public void ensureAbort(boolean _finished) {
-    if (_finished) {
+  public void ensureAbort(boolean finished) {
+    if (finished) {
       return;
     }
     synchronized (this) {
@@ -389,15 +391,15 @@ public class Entry<K, V> extends CompactEntry<K, V>
     if (!isProcessing()) {
       return;
     }
-    boolean _interrupt = false;
+    boolean interrupt = false;
     do {
       try {
         wait();
       } catch (InterruptedException ignore) {
-        _interrupt = true;
+        interrupt = true;
       }
     } while (isProcessing());
-    if (_interrupt) {
+    if (interrupt) {
       Thread.currentThread().interrupt();
     }
   }
@@ -569,20 +571,21 @@ public class Entry<K, V> extends CompactEntry<K, V>
     sb.append("id=").append(System.identityHashCode(this));
     sb.append(", lock=").append(num2processingStateText(getProcessingState()));
     sb.append(", key=");
-    Object _key = getKeyObj();
-    if (_key == null) {
+    Object key = getKeyObj();
+    if (key == null) {
       sb.append(hashCode);
     } else {
-      sb.append(_key);
-      if (c != null && (c.modifiedHash(_key.hashCode()) != hashCode)) {
+      sb.append(key);
+      if (c != null && (HeapCache.modifiedHash(key.hashCode()) != hashCode)) {
         sb.append(", keyMutation=true");
       }
     }
-    Object _valueOrException = getValueOrException();
-    if (_valueOrException instanceof ExceptionWrapper) {
-      sb.append(", exception=").append((((ExceptionWrapper) _valueOrException).getException().getClass().getSimpleName()));
-    } else if (_valueOrException != null) {
-      sb.append(", valueId=").append(System.identityHashCode(_valueOrException));
+    Object valueOrException = getValueOrException();
+    if (valueOrException instanceof ExceptionWrapper) {
+      sb.append(", exception=")
+        .append((((ExceptionWrapper) valueOrException).getException().getClass().getSimpleName()));
+    } else if (valueOrException != null) {
+      sb.append(", valueId=").append(System.identityHashCode(valueOrException));
     } else {
       sb.append(", value=null");
     }
@@ -627,14 +630,14 @@ public class Entry<K, V> extends CompactEntry<K, V>
     return null;
   }
 
-  public <X> X getPiggyBack(Class<X> _class) {
+  public <X> X getPiggyBack(Class<X> type) {
     Object obj = misc;
     if (!(obj instanceof PiggyBack)) {
       return null;
     }
     PiggyBack pb = (PiggyBack) obj;
     do {
-      if (pb.getClass() == _class) {
+      if (pb.getClass() == type) {
         return (X) pb;
       }
       pb = pb.next;
@@ -698,11 +701,11 @@ public class Entry<K, V> extends CompactEntry<K, V>
    * piggy back.
    */
   private PiggyBack existingPiggyBackForInserting() {
-    Object _misc = misc;
-    if (_misc instanceof SimpleTimerTask) {
-      return new TaskPiggyBack((SimpleTimerTask) _misc, null);
+    Object misc = this.misc;
+    if (misc instanceof SimpleTimerTask) {
+      return new TaskPiggyBack((SimpleTimerTask) misc, null);
     }
-    return (PiggyBack) _misc;
+    return (PiggyBack) misc;
   }
 
   public void setSuppressedLoadExceptionInformation(ExceptionInformation w) {
@@ -746,91 +749,91 @@ public class Entry<K, V> extends CompactEntry<K, V>
   static class PiggyBack {
     PiggyBack next;
 
-    public PiggyBack(final PiggyBack _next) {
-      next = _next;
+    PiggyBack(PiggyBack next) {
+      this.next = next;
     }
   }
 
   static class TaskPiggyBack extends PiggyBack {
     SimpleTimerTask task;
 
-    public TaskPiggyBack(final SimpleTimerTask _task, final PiggyBack _next) {
-      super(_next);
-      task = _task;
+    TaskPiggyBack(SimpleTimerTask task, PiggyBack next) {
+      super(next);
+      this.task = task;
     }
   }
 
   static class LoadExceptionPiggyBack extends PiggyBack {
     ExceptionInformation info;
 
-    public LoadExceptionPiggyBack(final ExceptionInformation _info, final PiggyBack _next) {
-      super(_next);
-      info = _info;
+    LoadExceptionPiggyBack(ExceptionInformation info, PiggyBack next) {
+      super(next);
+      this.info = info;
     }
   }
 
   static class RefreshProbationPiggyBack extends PiggyBack {
     long nextRefreshTime;
 
-    public RefreshProbationPiggyBack(long _nextRefreshTime, final PiggyBack _next) {
-      super(_next);
-      nextRefreshTime = _nextRefreshTime;
+    RefreshProbationPiggyBack(long nextRefreshTime, PiggyBack next) {
+      super(next);
+      this.nextRefreshTime = nextRefreshTime;
     }
   }
 
   /*
-   * **************************************** LRU list operation *******************************************
+   * **************************************** LRU list operation ********************************
    */
 
-  public static void removeFromList(final Entry e) {
+  public static void removeFromList(Entry e) {
     e.prev.next = e.next;
     e.next.prev = e.prev;
     e.removedFromList();
   }
 
-  public static void insertInList(final Entry _head, final Entry e) {
-    e.prev = _head;
-    e.next = _head.next;
+  public static void insertInList(Entry head, Entry e) {
+    e.prev = head;
+    e.next = head.next;
     e.next.prev = e;
-    _head.next = e;
+    head.next = e;
   }
 
 
-  public static <E extends Entry> E insertIntoTailCyclicList(final E _head, final E e) {
-    if (_head == null) {
+  public static <E extends Entry> E insertIntoTailCyclicList(E head, E e) {
+    if (head == null) {
       return (E) e.shortCircuit();
     }
-    e.next = _head;
-    e.prev = _head.prev;
-    _head.prev = e;
+    e.next = head;
+    e.prev = head.prev;
+    head.prev = e;
     e.prev.next = e;
-    return _head;
+    return head;
   }
 
 
-  public static <E extends Entry> E removeFromCyclicList(final E _head, E e) {
+  public static <E extends Entry> E removeFromCyclicList(E head, E e) {
     if (e.next == e) {
       e.removedFromList();
       return null;
     }
-    Entry _eNext = e.next;
-    e.prev.next = _eNext;
+    Entry eNext = e.next;
+    e.prev.next = eNext;
     e.next.prev = e.prev;
     e.removedFromList();
-    return e == _head ? (E) _eNext : _head;
+    return e == head ? (E) eNext : head;
   }
 
-  public static Entry removeFromCyclicList(final Entry e) {
-    Entry _eNext = e.next;
-    e.prev.next = _eNext;
+  public static Entry removeFromCyclicList(Entry e) {
+    Entry eNext = e.next;
+    e.prev.next = eNext;
     e.next.prev = e.prev;
     e.removedFromList();
-    return _eNext == e ? null : _eNext;
+    return eNext == e ? null : eNext;
   }
 
   public static int getCyclicListEntryCount(Entry e) {
     if (e == null) { return 0; }
-    final Entry _head = e;
+    Entry head = e;
     int cnt = 0;
     do {
       cnt++;
@@ -838,13 +841,13 @@ public class Entry<K, V> extends CompactEntry<K, V>
       if (e == null) {
         return -cnt;
       }
-    } while (e != _head);
+    } while (e != head);
     return cnt;
   }
 
   public static boolean checkCyclicListIntegrity(Entry e) {
     if (e == null) { return true; }
-    Entry _head = e;
+    Entry head = e;
     do {
       if (e.next == null) {
         return false;
@@ -853,7 +856,7 @@ public class Entry<K, V> extends CompactEntry<K, V>
         return false;
       }
       e = e.next;
-    } while (e != _head);
+    } while (e != head);
     return true;
   }
 

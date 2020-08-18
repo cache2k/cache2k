@@ -36,7 +36,7 @@ public class NonOptimisticLock implements OptimisticLock {
 
   private static final int DUMMY = 4711;
 
-  private Sync sync = new Sync();
+  private final Sync sync = new Sync();
 
   @Override
   public long readLock() {
@@ -63,17 +63,17 @@ public class NonOptimisticLock implements OptimisticLock {
    * Always false, optimistic locking not supported.
    */
   @Override
-  public boolean validate(final long stamp) {
+  public boolean validate(long stamp) {
     return false;
   }
 
   @Override
-  public void unlockRead(final long stamp) {
+  public void unlockRead(long stamp) {
     sync.release(DUMMY);
   }
 
   @Override
-  public void unlockWrite(final long stamp) {
+  public void unlockWrite(long stamp) {
     sync.release(DUMMY);
   }
 
@@ -84,9 +84,9 @@ public class NonOptimisticLock implements OptimisticLock {
 
     @Override
     protected boolean tryAcquire(int acquires) {
-      int _state = getState();
-      if (_state == UNLOCKED) {
-        if (compareAndSetState(_state, LOCKED)) {
+      int state = getState();
+      if (state == UNLOCKED) {
+        if (compareAndSetState(state, LOCKED)) {
           setExclusiveOwnerThread(Thread.currentThread());
           return true;
         }

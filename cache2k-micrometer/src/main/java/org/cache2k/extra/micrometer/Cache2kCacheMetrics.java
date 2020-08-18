@@ -59,7 +59,8 @@ public class Cache2kCacheMetrics extends CacheMeterBinder {
    *
    * @param registry  The registry to bind metrics to.
    * @param cache     The cache to instrument.
-   * @param tags      Tags to apply to all recorded metrics. Must be an even number of arguments representing key/value pairs of tags.
+   * @param tags      Tags to apply to all recorded metrics. Must be an even number of arguments
+   *                  representing key/value pairs of tags.
    * @param <C>       The cache type.
    * @return the cache as passed in.
    */
@@ -139,12 +140,14 @@ public class Cache2kCacheMetrics extends CacheMeterBinder {
       FunctionCounter.builder("cache.load", cache,
         c -> { InternalCacheInfo info = c.getInfo(); return info.getLoadCount(); } )
         .tags(getTagsWithCacheName()).tags("result", "success")
-        .description("The number of times cache lookup methods have successfully loaded a new value")
+        .description(
+          "The number of times cache lookup methods have successfully loaded a new value")
         .register(registry);
 
       FunctionCounter.builder("cache.load", cache, c -> c.getInfo().getLoadExceptionCount())
         .tags(getTagsWithCacheName()).tags("result", "failure")
-        .description("The number of times cache lookup methods threw an exception while loading a new value")
+        .description(
+          "The number of times cache lookup methods threw an exception while loading a new value")
         .register(registry);
     }
 

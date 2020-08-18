@@ -42,137 +42,138 @@ public class AbstractCache<K, V> implements Cache<K, V> {
   }
 
   @Override
-  public V get(final K key) {
+  public V get(K key) {
     throw new UnsupportedOperationException();
   }
 
   @Override
-  public CacheEntry<K, V> getEntry(final K key) {
+  public CacheEntry<K, V> getEntry(K key) {
     throw new UnsupportedOperationException();
   }
 
   @Override
-  public void prefetch(final K key) {
+  public void prefetch(K key) {
     throw new UnsupportedOperationException();
   }
 
   @Override
-  public void prefetchAll(final Iterable<? extends K> keys, final CacheOperationCompletionListener listener) {
+  public void prefetchAll(Iterable<? extends K> keys, CacheOperationCompletionListener listener) {
     throw new UnsupportedOperationException();
   }
 
   @Override
-  public V peek(final K key) {
+  public V peek(K key) {
     throw new UnsupportedOperationException();
   }
 
   @Override
-  public CacheEntry<K, V> peekEntry(final K key) {
+  public CacheEntry<K, V> peekEntry(K key) {
     throw new UnsupportedOperationException();
   }
 
   @Override
-  public boolean containsKey(final K key) {
+  public boolean containsKey(K key) {
     throw new UnsupportedOperationException();
   }
 
   @Override
-  public void put(final K key, final V value) {
+  public void put(K key, V value) {
     throw new UnsupportedOperationException();
   }
 
   @Override
-  public V computeIfAbsent(final K key, final Callable<V> callable) {
+  public V computeIfAbsent(K key, Callable<V> callable) {
     throw new UnsupportedOperationException();
   }
 
   @Override
-  public boolean putIfAbsent(final K key, final V value) {
+  public boolean putIfAbsent(K key, V value) {
     throw new UnsupportedOperationException();
   }
 
   @Override
-  public V peekAndReplace(final K key, final V value) {
+  public V peekAndReplace(K key, V value) {
     throw new UnsupportedOperationException();
   }
 
   @Override
-  public boolean replace(final K key, final V value) {
+  public boolean replace(K key, V value) {
     throw new UnsupportedOperationException();
   }
 
   @Override
-  public boolean replaceIfEquals(final K key, final V oldValue, final V newValue) {
+  public boolean replaceIfEquals(K key, V oldValue, V newValue) {
     throw new UnsupportedOperationException();
   }
 
   @Override
-  public V peekAndRemove(final K key) {
+  public V peekAndRemove(K key) {
     throw new UnsupportedOperationException();
   }
 
   @Override
-  public boolean containsAndRemove(final K key) {
+  public boolean containsAndRemove(K key) {
     throw new UnsupportedOperationException();
   }
 
   @Override
-  public void remove(final K key) {
+  public void remove(K key) {
     throw new UnsupportedOperationException();
   }
 
   @Override
-  public boolean removeIfEquals(final K key, final V expectedValue) {
+  public boolean removeIfEquals(K key, V expectedValue) {
     throw new UnsupportedOperationException();
   }
 
   @Override
-  public void removeAll(final Iterable<? extends K> keys) {
+  public void removeAll(Iterable<? extends K> keys) {
     throw new UnsupportedOperationException();
   }
 
   @Override
-  public V peekAndPut(final K key, final V value) {
+  public V peekAndPut(K key, V value) {
     throw new UnsupportedOperationException();
   }
 
   @Override
-  public void expireAt(final K key, final long millis) {
+  public void expireAt(K key, long millis) {
     throw new UnsupportedOperationException();
   }
 
   @Override
-  public void loadAll(final Iterable<? extends K> keys, final CacheOperationCompletionListener listener) {
+  public void loadAll(Iterable<? extends K> keys, CacheOperationCompletionListener listener) {
     throw new UnsupportedOperationException();
   }
 
   @Override
-  public void reloadAll(final Iterable<? extends K> keys, final CacheOperationCompletionListener listener) {
+  public void reloadAll(Iterable<? extends K> keys, CacheOperationCompletionListener listener) {
     throw new UnsupportedOperationException();
   }
 
   @Override
-  public <R> R invoke(final K key, final EntryProcessor<K, V, R> entryProcessor) {
+  public <R> R invoke(K key, EntryProcessor<K, V, R> entryProcessor) {
     throw new UnsupportedOperationException();
   }
 
   @Override
-  public <R> Map<K, EntryProcessingResult<R>> invokeAll(final Iterable<? extends K> keys, final EntryProcessor<K, V, R> entryProcessor) {
+  public <R> Map<K, EntryProcessingResult<R>> invokeAll(
+    Iterable<? extends K> keys, EntryProcessor<K, V, R> entryProcessor) {
     throw new UnsupportedOperationException();
   }
 
   @Override
-  public Map<K, V> getAll(final Iterable<? extends K> keys) {
+  public Map<K, V> getAll(Iterable<? extends K> keys) {
     throw new UnsupportedOperationException();
   }
 
   @Override
-  public Map<K, V> peekAll(final Iterable<? extends K> keys) {
+  public Map<K, V> peekAll(Iterable<? extends K> keys) {
     throw new UnsupportedOperationException();
   }
 
   @Override
-  public void putAll(final Map<? extends K, ? extends V> valueMap) {
+  public void putAll(Map<? extends K, ? extends V> valueMap) {
     throw new UnsupportedOperationException();
   }
 
@@ -217,7 +218,7 @@ public class AbstractCache<K, V> implements Cache<K, V> {
   }
 
   @Override
-  public <X> X requestInterface(final Class<X> _type) {
+  public <X> X requestInterface(Class<X> type) {
     throw new UnsupportedOperationException();
   }
 

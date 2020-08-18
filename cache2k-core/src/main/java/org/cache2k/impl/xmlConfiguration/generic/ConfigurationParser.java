@@ -32,7 +32,8 @@ public class ConfigurationParser {
     return c;
   }
 
-  private static void parseSection(ConfigurationTokenizer parser, ParsedConfiguration container) throws Exception {
+  private static void parseSection(ConfigurationTokenizer parser, ParsedConfiguration container)
+    throws Exception {
     for (;;) {
       ConfigurationTokenizer.Item item = parser.next();
       if (item == null) {
@@ -49,7 +50,8 @@ public class ConfigurationParser {
     }
   }
 
-  private static void parseSections(final String containerName, final ConfigurationTokenizer parser, final ParsedConfiguration container) throws Exception {
+  private static void parseSections(String containerName, ConfigurationTokenizer parser,
+                                    ParsedConfiguration container) throws Exception {
     boolean maybeSection = true;
     for (;;) {
       ConfigurationTokenizer.Item item = parser.next();
@@ -60,7 +62,8 @@ public class ConfigurationParser {
         return;
       }
       if (item instanceof ConfigurationTokenizer.Property && maybeSection) {
-        ParsedConfiguration nestedContainer = new ParsedConfiguration(parser.getSource(), parser.getLineNumber());
+        ParsedConfiguration nestedContainer =
+          new ParsedConfiguration(parser.getSource(), parser.getLineNumber());
         nestedContainer.setName(containerName);
         nestedContainer.setPropertyContext(containerName);
         nestedContainer.setContainer("#DIRECT");
@@ -73,7 +76,8 @@ public class ConfigurationParser {
         throw new ConfigurationException("section start expected", item);
       }
       ConfigurationTokenizer.Nest sectionStart = (ConfigurationTokenizer.Nest) item;
-      ParsedConfiguration nestedContainer = new ParsedConfiguration(parser.getSource(), parser.getLineNumber());
+      ParsedConfiguration nestedContainer =
+        new ParsedConfiguration(parser.getSource(), parser.getLineNumber());
       nestedContainer.setName(sectionStart.getSectionName());
       nestedContainer.setPropertyContext(sectionStart.getSectionName());
       nestedContainer.setContainer(containerName);
@@ -83,7 +87,8 @@ public class ConfigurationParser {
     }
   }
 
-  private static void parseTopLevelSections(final ConfigurationTokenizer parser, final ParsedConfiguration _container) throws Exception {
+  private static void parseTopLevelSections(ConfigurationTokenizer parser,
+                                            ParsedConfiguration container) throws Exception {
     ConfigurationTokenizer.Item item = parser.next();
     if (!(item instanceof ConfigurationTokenizer.Nest)) {
       throw new ConfigurationException("start expected", item);
@@ -97,17 +102,20 @@ public class ConfigurationParser {
         return;
       }
       if (item instanceof ConfigurationTokenizer.Property) {
-        _container.addProperty((ConfigurationTokenizer.Property) item);
+        container.addProperty((ConfigurationTokenizer.Property) item);
       }  else if (item instanceof ConfigurationTokenizer.Nest) {
-        ConfigurationTokenizer.Nest _sectionStart = (ConfigurationTokenizer.Nest) item;
-        ParsedConfiguration nestedContainer = new ParsedConfiguration(parser.getSource(), parser.getLineNumber());
-        nestedContainer.setName(_sectionStart.getSectionName());
-        parseSections(((ConfigurationTokenizer.Nest) item).getSectionName(), parser, nestedContainer);
-        if (nestedContainer.getPropertyMap().isEmpty() && nestedContainer.getSections().size() == 1 &&
+        ConfigurationTokenizer.Nest sectionStart = (ConfigurationTokenizer.Nest) item;
+        ParsedConfiguration nestedContainer =
+          new ParsedConfiguration(parser.getSource(), parser.getLineNumber());
+        nestedContainer.setName(sectionStart.getSectionName());
+        parseSections(
+          ((ConfigurationTokenizer.Nest) item).getSectionName(), parser, nestedContainer);
+        if (nestedContainer.getPropertyMap().isEmpty() &&
+          nestedContainer.getSections().size() == 1 &&
           nestedContainer.getSections().get(0).getContainer().equals("#DIRECT")) {
           nestedContainer = nestedContainer.getSections().get(0);
         }
-        _container.addSection(nestedContainer);
+        container.addSection(nestedContainer);
       }
     }
   }

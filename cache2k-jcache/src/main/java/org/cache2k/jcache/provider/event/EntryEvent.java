@@ -31,15 +31,16 @@ import java.util.NoSuchElementException;
  *
  * @author Jens Wilke
  */
-public class EntryEvent<K, V> extends CacheEntryEvent<K, V> implements Iterable<CacheEntryEvent<? extends K, ? extends V>> {
+public class EntryEvent<K, V> extends CacheEntryEvent<K, V>
+  implements Iterable<CacheEntryEvent<? extends K, ? extends V>> {
 
-  private K key;
-  private V value;
+  private final K key;
+  private final V value;
 
-  public EntryEvent(final Cache source, final EventType eventType, final K _key, final V _value) {
+  public EntryEvent(Cache source, EventType eventType, K key, V value) {
     super(source, eventType);
-    key = _key;
-    value = _value;
+    this.key = key;
+    this.value = value;
   }
 
   @Override
@@ -63,7 +64,7 @@ public class EntryEvent<K, V> extends CacheEntryEvent<K, V> implements Iterable<
   }
 
   @Override
-  public <T> T unwrap(final Class<T> clazz) {
+  public <T> T unwrap(Class<T> clazz) {
     return null;
   }
 

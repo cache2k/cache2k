@@ -35,40 +35,42 @@ public class StandardVariableExpander implements VariableExpander {
    * Initial contents of the scopes. This map gets copied for each
    * expansion process, so the scope gets shadowed by the XML elements.
    */
-  private Map<String, ValueAccessor> scope2resolver = new HashMap<String, ValueAccessor>();
+  private final Map<String, ValueAccessor> scope2resolver = new HashMap<String, ValueAccessor>();
 
   private static final String PROPERTIES = "PROPERTIES";
 
   {
     scope2resolver.put("env", new ValueAccessor() {
       @Override
-      public String get(final ExpanderContext ctx, final String variable) {
+      public String get(ExpanderContext ctx, String variable) {
         return System.getenv(variable);
       }
     });
     scope2resolver.put("sys", new ValueAccessor() {
       @Override
-      public String get(ExpanderContext ctx, final String variable) {
+      public String get(ExpanderContext ctx, String variable) {
         return System.getProperty(variable);
       }
     });
     scope2resolver.put("top", new ValueAccessor() {
       @Override
-      public String get(ExpanderContext ctx, final String variable) {
-        ConfigurationTokenizer.Property p = ctx.getTopLevelConfiguration().getPropertyByPath(variable);
+      public String get(ExpanderContext ctx, String variable) {
+        ConfigurationTokenizer.Property p =
+          ctx.getTopLevelConfiguration().getPropertyByPath(variable);
         return checkAndReturnValue(p);
       }
     });
     scope2resolver.put("", new ValueAccessor() {
       @Override
-      public String get(ExpanderContext ctx, final String variable) {
-        ConfigurationTokenizer.Property p = ctx.getCurrentConfiguration().getPropertyByPath(variable);
+      public String get(ExpanderContext ctx, String variable) {
+        ConfigurationTokenizer.Property p =
+          ctx.getCurrentConfiguration().getPropertyByPath(variable);
         return checkAndReturnValue(p);
       }
     });
     scope2resolver.put(PROPERTIES, new ValueAccessor() {
       @Override
-      public String get(ExpanderContext ctx, final String variable) {
+      public String get(ExpanderContext ctx, String variable) {
         ParsedConfiguration pc = ctx.getTopLevelConfiguration().getSection("properties");
         if (pc == null) {
           return null;
@@ -80,7 +82,7 @@ public class StandardVariableExpander implements VariableExpander {
   }
 
   @Override
-  public void expand(final ParsedConfiguration cfg) {
+  public void expand(ParsedConfiguration cfg) {
     new Process(cfg, new HashMap<String, ValueAccessor>(scope2resolver)).expand();
   }
 
@@ -92,7 +94,7 @@ public class StandardVariableExpander implements VariableExpander {
     private int forwardReference = 0;
     private ConfigurationTokenizer.Property lastTroublemaker;
 
-    Process(final ParsedConfiguration top, final Map<String, ValueAccessor> scope2resolver) {
+    Process(ParsedConfiguration top, Map<String, ValueAccessor> scope2resolver) {
       this.top = top;
       this.scope2resolver = scope2resolver;
     }
@@ -140,7 +142,7 @@ public class StandardVariableExpander implements VariableExpander {
           final ParsedConfiguration localScope = c2;
           scope2resolver.put(context, new ValueAccessor() {
             @Override
-            public String get(final ExpanderContext ctx, final String variable) {
+            public String get(ExpanderContext ctx, String variable) {
               return localScope.getStringPropertyByPath(variable);
             }
           });
@@ -163,10 +165,11 @@ public class StandardVariableExpander implements VariableExpander {
     }
 
     /**
-     * Scan for sequences that look like a variable reference in the form of {@code ${scope.variablename}}
-     * lookup and replace the variable with the expanded value.
+     * Scan for sequences that look like a variable reference in the form of
+     * {@code ${scope.variablename}} lookup and replace the variable with the expanded value.
      *
-     * @return the identical string if nothing was expanded, a replacement string if something was expanded
+     * @return the identical string if nothing was expanded, a replacement string if
+     * something was expanded
      */
     private String expand(String s) {
       int idx = 0;
@@ -214,7 +217,7 @@ public class StandardVariableExpander implements VariableExpander {
 
   }
 
-  private String checkAndReturnValue(final ConfigurationTokenizer.Property p) {
+  private String checkAndReturnValue(ConfigurationTokenizer.Property p) {
     if (p == null) { return null; }
     if (!p.isExpanded()) {
       throw new NeedsExpansion();

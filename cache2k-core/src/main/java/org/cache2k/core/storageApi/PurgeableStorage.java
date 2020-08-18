@@ -37,13 +37,13 @@ public interface PurgeableStorage {
    *
    * @param ctx Provides a multi-threaded context. Thread resources for purge
    *            operations may be more limited or may have lower priority.
-   * @param _valueExpiryTime request to remove entries with lower value of
+   * @param valueExpiryTime request to remove entries with lower value of
    *           {@link StorageEntry#getValueExpiryTime()}
-   * @param _entryExpiryTime request to remove entries with with lower value of
+   * @param entryExpiryTime request to remove entries with with lower value of
    *           {@link StorageEntry#getEntryExpiryTime()}
    * @return statistical result of the operation, if nothing was done null.
    */
-  PurgeResult purge(PurgeContext ctx, long _valueExpiryTime, long _entryExpiryTime) throws Exception;
+  PurgeResult purge(PurgeContext ctx, long valueExpiryTime, long entryExpiryTime) throws Exception;
 
   interface PurgeContext extends CacheStorage.MultiThreadedContext {
 
@@ -53,7 +53,7 @@ public interface PurgeableStorage {
      * if the storage relies on the entry locking of the cache and has no
      * locking for the entry I/O itself.
      */
-    void lockAndRun(Object key, PurgeAction _action);
+    void lockAndRun(Object key, PurgeAction action);
 
   }
 

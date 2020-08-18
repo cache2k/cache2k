@@ -40,171 +40,171 @@ public class StandardCommonMetrics implements CommonMetrics.Updater {
     return PUT_NEW_ENTRY_UPDATER.get(this);
   }
 
-  static final AtomicLongFieldUpdater<StandardCommonMetrics> putHitUpdater =
+  static final AtomicLongFieldUpdater<StandardCommonMetrics> PUT_HIT_UPDATER =
     AtomicLongFieldUpdater.newUpdater(StandardCommonMetrics.class, "putHit");
   private volatile long putHit;
   @Override
   public void putHit() {
-    putHitUpdater.incrementAndGet(this);
+    PUT_HIT_UPDATER.incrementAndGet(this);
   }
   @Override
   public long getPutHitCount() {
-    return putHitUpdater.get(this);
+    return PUT_HIT_UPDATER.get(this);
   }
 
-  static final AtomicLongFieldUpdater<StandardCommonMetrics> heapHitButNoReadUpdater =
+  static final AtomicLongFieldUpdater<StandardCommonMetrics> HEAP_HIT_BUT_NO_READ_UPDATER =
     AtomicLongFieldUpdater.newUpdater(StandardCommonMetrics.class, "heapHitButNoRead");
   private volatile long heapHitButNoRead;
   @Override
   public void heapHitButNoRead() {
-    heapHitButNoReadUpdater.incrementAndGet(this);
+    HEAP_HIT_BUT_NO_READ_UPDATER.incrementAndGet(this);
   }
   @Override
   public long getHeapHitButNoReadCount() {
-    return heapHitButNoReadUpdater.get(this);
+    return HEAP_HIT_BUT_NO_READ_UPDATER.get(this);
   }
 
-  static final AtomicLongFieldUpdater<StandardCommonMetrics> timerEventUpdater =
+  static final AtomicLongFieldUpdater<StandardCommonMetrics> TIMER_EVENT_UPDATER =
     AtomicLongFieldUpdater.newUpdater(StandardCommonMetrics.class, "timerEvent");
   private volatile long timerEvent;
   @Override
   public void timerEvent() {
-    timerEventUpdater.incrementAndGet(this);
+    TIMER_EVENT_UPDATER.incrementAndGet(this);
   }
   @Override
   public long getTimerEventCount() {
-    return timerEventUpdater.get(this);
+    return TIMER_EVENT_UPDATER.get(this);
   }
 
-  static final AtomicLongFieldUpdater<StandardCommonMetrics> loadMillisUpdater =
+  static final AtomicLongFieldUpdater<StandardCommonMetrics> LOAD_MILLIS_UPDATER =
     AtomicLongFieldUpdater.newUpdater(StandardCommonMetrics.class, "loadMillis");
   private volatile long loadMillis;
   @Override
   public long getLoadMillis() {
-    return loadMillisUpdater.get(this);
+    return LOAD_MILLIS_UPDATER.get(this);
   }
 
-  static final AtomicLongFieldUpdater<StandardCommonMetrics> refreshUpdater =
+  static final AtomicLongFieldUpdater<StandardCommonMetrics> REFRESH_UPDATER =
     AtomicLongFieldUpdater.newUpdater(StandardCommonMetrics.class, "refresh");
   private volatile long refresh;
   @Override
   public long getRefreshCount() {
-    return refreshUpdater.get(this);
+    return REFRESH_UPDATER.get(this);
   }
   @Override
-  public void refresh(final long _millis) {
-    refreshUpdater.incrementAndGet(this);
-    loadMillisUpdater.addAndGet(this, _millis);
+  public void refresh(final long millis) {
+    REFRESH_UPDATER.incrementAndGet(this);
+    LOAD_MILLIS_UPDATER.addAndGet(this, millis);
   }
 
-  static final AtomicLongFieldUpdater<StandardCommonMetrics> readThroughUpdater =
+  static final AtomicLongFieldUpdater<StandardCommonMetrics> READ_THROUGH_UPDATER =
     AtomicLongFieldUpdater.newUpdater(StandardCommonMetrics.class, "readThrough");
   private volatile long readThrough;
   @Override
   public long getReadThroughCount() {
-    return readThroughUpdater.get(this);
+    return READ_THROUGH_UPDATER.get(this);
   }
   @Override
-  public void readThrough(final long _millis) {
-    readThroughUpdater.incrementAndGet(this);
-    loadMillisUpdater.addAndGet(this, _millis);
+  public void readThrough(final long millis) {
+    READ_THROUGH_UPDATER.incrementAndGet(this);
+    LOAD_MILLIS_UPDATER.addAndGet(this, millis);
   }
 
-  static final AtomicLongFieldUpdater<StandardCommonMetrics> reloadUpdater =
+  static final AtomicLongFieldUpdater<StandardCommonMetrics> RELOAD_UPDATER =
     AtomicLongFieldUpdater.newUpdater(StandardCommonMetrics.class, "reload");
   private volatile long reload;
   @Override
   public long getExplicitLoadCount() {
-    return reloadUpdater.get(this);
+    return RELOAD_UPDATER.get(this);
   }
   @Override
-  public void explicitLoad(final long _millis) {
-    reloadUpdater.incrementAndGet(this);
-    loadMillisUpdater.addAndGet(this, _millis);
+  public void explicitLoad(final long millis) {
+    RELOAD_UPDATER.incrementAndGet(this);
+    LOAD_MILLIS_UPDATER.addAndGet(this, millis);
   }
 
-  static final AtomicLongFieldUpdater<StandardCommonMetrics> loadExceptionUpdater =
+  static final AtomicLongFieldUpdater<StandardCommonMetrics> LOAD_EXCEPTION_UPDATER =
     AtomicLongFieldUpdater.newUpdater(StandardCommonMetrics.class, "loadException");
   private volatile long loadException;
   @Override
   public long getLoadExceptionCount() {
-    return loadExceptionUpdater.get(this);
+    return LOAD_EXCEPTION_UPDATER.get(this);
   }
   @Override
   public void loadException() {
-    loadExceptionUpdater.incrementAndGet(this);
+    LOAD_EXCEPTION_UPDATER.incrementAndGet(this);
   }
 
-  static final AtomicLongFieldUpdater<StandardCommonMetrics> suppressedExceptionUpdater =
+  static final AtomicLongFieldUpdater<StandardCommonMetrics> SUPPRESSED_EXCEPTION_UPDATER =
     AtomicLongFieldUpdater.newUpdater(StandardCommonMetrics.class, "suppressedException");
   private volatile long suppressedException;
   @Override
   public long getSuppressedExceptionCount() {
-    return suppressedExceptionUpdater.get(this);
+    return SUPPRESSED_EXCEPTION_UPDATER.get(this);
   }
   @Override
   public void suppressedException() {
-    suppressedExceptionUpdater.incrementAndGet(this);
+    SUPPRESSED_EXCEPTION_UPDATER.incrementAndGet(this);
   }
 
-  static final AtomicLongFieldUpdater<StandardCommonMetrics> expiredKeptUpdater =
+  static final AtomicLongFieldUpdater<StandardCommonMetrics> EXPIRED_KEPT_UPDATER =
     AtomicLongFieldUpdater.newUpdater(StandardCommonMetrics.class, "expiredKept");
   private volatile long expiredKept;
   @Override
   public long getExpiredKeptCount() {
-    return expiredKeptUpdater.get(this);
+    return EXPIRED_KEPT_UPDATER.get(this);
   }
   @Override
   public void expiredKept() {
-    expiredKeptUpdater.incrementAndGet(this);
+    EXPIRED_KEPT_UPDATER.incrementAndGet(this);
   }
 
-  static final AtomicLongFieldUpdater<StandardCommonMetrics> peekMissUpdater =
+  static final AtomicLongFieldUpdater<StandardCommonMetrics> PEEK_MISS_UPDATER =
     AtomicLongFieldUpdater.newUpdater(StandardCommonMetrics.class, "peekMiss");
   private volatile long peekMiss;
   @Override
   public long getPeekMissCount() {
-    return peekMissUpdater.get(this);
+    return PEEK_MISS_UPDATER.get(this);
   }
   @Override
   public void peekMiss() {
-    peekMissUpdater.incrementAndGet(this);
+    PEEK_MISS_UPDATER.incrementAndGet(this);
   }
 
-  static final AtomicLongFieldUpdater<StandardCommonMetrics> peekHitNotFreshUpdater =
+  static final AtomicLongFieldUpdater<StandardCommonMetrics> PEEK_HIT_NOT_FRESH_UPDATER =
     AtomicLongFieldUpdater.newUpdater(StandardCommonMetrics.class, "peekHitNotFresh");
   private volatile long peekHitNotFresh;
   @Override
   public long getPeekHitNotFreshCount() {
-    return peekHitNotFreshUpdater.get(this);
+    return PEEK_HIT_NOT_FRESH_UPDATER.get(this);
   }
   @Override
   public void peekHitNotFresh() {
-    peekHitNotFreshUpdater.incrementAndGet(this);
+    PEEK_HIT_NOT_FRESH_UPDATER.incrementAndGet(this);
   }
 
-  static final AtomicLongFieldUpdater<StandardCommonMetrics> refreshHitUpdater =
+  static final AtomicLongFieldUpdater<StandardCommonMetrics> REFRESH_HIT_UPDATER =
     AtomicLongFieldUpdater.newUpdater(StandardCommonMetrics.class, "refreshHit");
   private volatile long refreshHit;
   @Override
   public long getRefreshedHitCount() {
-    return refreshHitUpdater.get(this);
+    return REFRESH_HIT_UPDATER.get(this);
   }
   @Override
   public void refreshedHit() {
-    refreshHitUpdater.incrementAndGet(this);
+    REFRESH_HIT_UPDATER.incrementAndGet(this);
   }
 
-  static final AtomicLongFieldUpdater<StandardCommonMetrics> refreshSubmitFailedUpdater =
+  static final AtomicLongFieldUpdater<StandardCommonMetrics> REFRESH_SUBMIT_FAILED_UPDATER =
     AtomicLongFieldUpdater.newUpdater(StandardCommonMetrics.class, "refreshSubmitFailed");
   private volatile long refreshSubmitFailed;
   @Override
   public long getRefreshRejectedCount() {
-    return refreshSubmitFailedUpdater.get(this);
+    return REFRESH_SUBMIT_FAILED_UPDATER.get(this);
   }
   @Override
   public void refreshFailed() {
-    refreshSubmitFailedUpdater.incrementAndGet(this);
+    REFRESH_SUBMIT_FAILED_UPDATER.incrementAndGet(this);
   }
 
   @Override
@@ -212,16 +212,16 @@ public class StandardCommonMetrics implements CommonMetrics.Updater {
     return false;
   }
 
-  static final AtomicLongFieldUpdater<StandardCommonMetrics> goneSpinUpdater =
+  static final AtomicLongFieldUpdater<StandardCommonMetrics> GONE_SPIN_UPDATER =
     AtomicLongFieldUpdater.newUpdater(StandardCommonMetrics.class, "goneSpin");
   private volatile long goneSpin;
   @Override
   public long getGoneSpinCount() {
-    return goneSpinUpdater.get(this);
+    return GONE_SPIN_UPDATER.get(this);
   }
   @Override
   public void goneSpin() {
-    goneSpinUpdater.incrementAndGet(this);
+    GONE_SPIN_UPDATER.incrementAndGet(this);
   }
 
 }

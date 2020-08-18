@@ -84,10 +84,12 @@ public interface CacheEntry<K, V> {
    *  <a href="https://github.com/cache2k/cache2k/issues/84">GH#84</a>.
    * The method is planed to be removed for version 2.0.
    *
-   * <p>{@link AbstractCacheEntry} can be used for implementations of this class to avoid implementing this method.
+   * <p>{@link AbstractCacheEntry} can be used for implementations of this class to avoid
+   * implementing this method.
    *
    * @throws UnsupportedOperationException always thrown
-   * @deprecated permanently not supported any more, you may use {@link MutableCacheEntry#getRefreshedTime()}
+   * @deprecated permanently not supported any more, you may use
+   * {@link MutableCacheEntry#getRefreshedTime()}
    */
   long getLastModification();
 

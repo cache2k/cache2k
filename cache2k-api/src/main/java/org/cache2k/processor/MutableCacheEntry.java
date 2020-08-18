@@ -21,7 +21,6 @@ package org.cache2k.processor;
  */
 
 import org.cache2k.CacheEntry;
-import org.cache2k.integration.AsyncCacheLoader;
 import org.cache2k.integration.CacheLoader;
 import org.cache2k.integration.CacheLoaderException;
 import org.cache2k.integration.ExceptionInformation;
@@ -124,7 +123,8 @@ public interface MutableCacheEntry<K, V> extends CacheEntry<K, V> {
   boolean wasExisting();
 
   /**
-   * Current time as provided by the internal time source (usually {@code System.currentTimeMillis()}.
+   * Current time as provided by the internal time source
+   * (usually {@code System.currentTimeMillis()}.
    * The time is retrieved once when the entry processor is invoked and will not change afterwards.
    * If a load is triggered this value will be identical to
    * {@link org.cache2k.integration.AdvancedCacheLoader#load(Object, long, CacheEntry)} and
@@ -135,11 +135,13 @@ public interface MutableCacheEntry<K, V> extends CacheEntry<K, V> {
   long getCurrentTime();
 
   /**
-   * Current time as provided by the internal time source (usually {@code System.currentTimeMillis()}.
+   * Current time as provided by the internal time source
+   * (usually {@code System.currentTimeMillis()}.
    * The time is retrieved once when the entry processor is invoked and will not change afterwards.
    * If a load is triggered this value will be identical to the {@code startTime}
    * {@link org.cache2k.integration.AdvancedCacheLoader#load},
-   * {@link ExceptionInformation#getLoadTime()} or {@link AsyncCacheLoader.Context#getLoadStartTime()}
+   * {@link ExceptionInformation#getLoadTime()} or {
+   * @link AsyncCacheLoader.Context#getLoadStartTime()}
    */
   long getStartTime();
 
@@ -147,8 +149,8 @@ public interface MutableCacheEntry<K, V> extends CacheEntry<K, V> {
    * Insert or updates the cache value assigned to this key. After calling this method
    * {@code exists} will return true and {@code getValue} will return the set value.
    *
-   * <p>If a writer is registered, the {@link org.cache2k.integration.CacheWriter#write(Object, Object)}
-   * is called.
+   * <p>If a writer is registered, the
+   * {@link org.cache2k.integration.CacheWriter#write(Object, Object)} is called.
    */
   MutableCacheEntry<K,V> setValue(V v);
 

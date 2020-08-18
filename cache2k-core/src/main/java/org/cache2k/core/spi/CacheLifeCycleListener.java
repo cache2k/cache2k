@@ -27,11 +27,11 @@ import org.cache2k.configuration.Cache2kConfiguration;
  * Interface to implement additional service providers that get notified
  * on a lifecycle change of the cache. Used for JMX support.
  *
- * @author Jens Wilke; created: 2013-07-01
+ * @author Jens Wilke
  */
 public interface CacheLifeCycleListener {
 
-  void cacheCreated(Cache c, final Cache2kConfiguration cfg);
+  void cacheCreated(Cache c, Cache2kConfiguration cfg);
 
   void cacheDestroyed(Cache c);
 

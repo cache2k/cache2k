@@ -33,18 +33,18 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentMap;
 
 /**
- * ConcurrentMap interface wrapper on top of a cache. The map interface does not cause calls to the cache source.
- * An attached writer is called.
+ * ConcurrentMap interface wrapper on top of a cache. The map interface does not cause calls to
+ * the cache source. An attached writer is called.
  *
  * @author Jens Wilke
  */
 @SuppressWarnings("unchecked")
 public class ConcurrentMapWrapper<K,V> implements ConcurrentMap<K, V> {
 
-  private boolean permitNull;
-  private Cache<K, V> cache;
-  private Class<?> keyType;
-  private Class<?> valueType;
+  private final boolean permitNull;
+  private final Cache<K, V> cache;
+  private final Class<?> keyType;
+  private final Class<?> valueType;
 
   public ConcurrentMapWrapper(InternalCache<K, V> cache) {
     this.cache = cache;
@@ -101,7 +101,7 @@ public class ConcurrentMapWrapper<K,V> implements ConcurrentMap<K, V> {
 
   @Override
   public int size() {
-    return ((InternalCache) cache).getTotalEntryCount();
+    return ((InternalCache<?,?>) cache).getTotalEntryCount();
   }
 
   @Override
@@ -147,7 +147,7 @@ public class ConcurrentMapWrapper<K,V> implements ConcurrentMap<K, V> {
   }
 
   @Override
-  public V put(final K key, final V value) {
+  public V put(K key, final V value) {
     EntryProcessor<K, V, V> p = new EntryProcessor<K, V, V>() {
       @Override
       public V process(MutableCacheEntry<K, V> e) {
@@ -307,7 +307,7 @@ public class ConcurrentMapWrapper<K,V> implements ConcurrentMap<K, V> {
   @Override
   public boolean equals(Object o) {
     if (o instanceof ConcurrentMapWrapper) {
-      return cache.equals(((ConcurrentMapWrapper) o).cache);
+      return cache.equals(((ConcurrentMapWrapper<?,?>) o).cache);
     }
     return false;
   }

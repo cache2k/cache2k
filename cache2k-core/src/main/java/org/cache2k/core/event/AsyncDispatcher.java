@@ -38,7 +38,7 @@ public class AsyncDispatcher<K> {
 
   private static final int KEY_LOCKS_MASK =
     2 << (31 - Integer.numberOfLeadingZeros(Runtime.getRuntime().availableProcessors())) - 1;
-  private static Object[] KEY_LOCKS;
+  private static final Object[] KEY_LOCKS;
 
   static {
     KEY_LOCKS = new Object[KEY_LOCKS_MASK + 1];
@@ -57,13 +57,14 @@ public class AsyncDispatcher<K> {
     return KEY_LOCKS[hc & KEY_LOCKS_MASK];
   }
 
-  private Map<K, Queue<AsyncEvent<K>>> keyQueue = new ConcurrentHashMap<K, Queue<AsyncEvent<K>>>();
+  private final Map<K, Queue<AsyncEvent<K>>> keyQueue =
+    new ConcurrentHashMap<K, Queue<AsyncEvent<K>>>();
   private Executor executor;
   private InternalCache cache;
 
-  public AsyncDispatcher(InternalCache _cache, final Executor _executor) {
-    cache = _cache;
-    executor = _executor;
+  public AsyncDispatcher(InternalCache cache, final Executor executor) {
+    this.cache = cache;
+    this.executor = executor;
   }
 
   /**
@@ -71,12 +72,12 @@ public class AsyncDispatcher<K> {
    * is already executing for the identical key, queue the event and execute
    * the event with FIFO scheme, preserving the order of the arrival.
    */
-  public void queue(final AsyncEvent<K> _event) {
-    final K key = _event.getKey();
+  public void queue(final AsyncEvent<K> event) {
+    K key = event.getKey();
     synchronized (getLockObject(key)) {
       Queue<AsyncEvent<K>> q = keyQueue.get(key);
       if (q != null) {
-        q.add(_event);
+        q.add(event);
         return;
       }
       q = new LinkedList<AsyncEvent<K>>();
@@ -85,7 +86,7 @@ public class AsyncDispatcher<K> {
     Runnable r = new Runnable() {
       @Override
       public void run() {
-        runMoreOrStop(_event);
+        runMoreOrStop(event);
       }
     };
     executor.execute(r);
@@ -94,21 +95,21 @@ public class AsyncDispatcher<K> {
   /**
    * Run as long there is still an event for the key.
    */
-  public void runMoreOrStop(AsyncEvent<K> _event) {
+  public void runMoreOrStop(AsyncEvent<K> event) {
     for (;;) {
       try {
-        _event.execute();
+        event.execute();
       } catch (Throwable t) {
         cache.getLog().warn("Async event exception", t);
       }
-      final K key = _event.getKey();
+      K key = event.getKey();
       synchronized (getLockObject(key)) {
         Queue<AsyncEvent<K>> q = keyQueue.get(key);
         if (q.isEmpty()) {
           keyQueue.remove(key);
           return;
         }
-        _event = q.remove();
+        event = q.remove();
       }
     }
   }

@@ -80,8 +80,9 @@ public interface EntryProcessor<K, V, R> {
    *
    * @param entry the entry to examine or mutate. The reference is only valid within a method call
    * @return a user defined result, that will be passed through and returned
-   * @throws Exception an arbitrary exception that will be wrapped into a {@link EntryProcessingException}.
-   *                   If an exception happens no modifications the cache content will not be altered.
+   * @throws Exception an arbitrary exception that will be wrapped into a
+   *         {@link EntryProcessingException}.
+   *         If an exception happens no modifications the cache content will not be altered.
    */
   R process(MutableCacheEntry<K, V> entry) throws Exception;
 

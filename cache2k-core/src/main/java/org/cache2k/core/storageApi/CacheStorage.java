@@ -20,7 +20,6 @@ package org.cache2k.core.storageApi;
  * #L%
  */
 
-import java.io.IOException;
 import java.util.concurrent.ExecutorService;
 
 /**
@@ -47,7 +46,7 @@ public interface CacheStorage {
    * <p>If a put operation fails an implementation should try to remove an
    * existing entry bound to the key and then throw the exception.
    *
-   * @throws IOException may be thrown if hope is lost
+   * @throws java.io.IOException may be thrown if hope is lost
    */
   void put(StorageEntry e) throws Exception;
 
@@ -101,9 +100,11 @@ public interface CacheStorage {
      * task leads to an abort of the operation, see {@link #abortOnException(Throwable)}.
      *
      * <p>The methods
-     * {@link java.util.concurrent.ExecutorService#invokeAll(java.util.Collection, long, java.util.concurrent.TimeUnit)},
+     * {@link java.util.concurrent.ExecutorService#invokeAll(java.util.Collection,
+     * long, java.util.concurrent.TimeUnit)},
      * {@link java.util.concurrent.ExecutorService#invokeAny(java.util.Collection)},
-     * {@link java.util.concurrent.ExecutorService#invokeAny(java.util.Collection, long, java.util.concurrent.TimeUnit)}
+     * {@link java.util.concurrent.ExecutorService#invokeAny(java.util.Collection,
+     * long, java.util.concurrent.TimeUnit)}
      * are or may not be supported by the provided implementation.
      */
     ExecutorService getExecutorService();
@@ -133,7 +134,7 @@ public interface CacheStorage {
 
   interface EntryFilter {
 
-     boolean shouldInclude(Object _key);
+     boolean shouldInclude(Object key);
 
   }
 

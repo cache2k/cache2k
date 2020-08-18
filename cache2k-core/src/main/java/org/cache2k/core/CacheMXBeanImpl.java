@@ -20,7 +20,6 @@ package org.cache2k.core;
  * #L%
  */
 
-import org.cache2k.core.concurrency.Job;
 import org.cache2k.jmx.CacheMXBean;
 
 import java.util.Date;
@@ -31,7 +30,7 @@ import java.util.Iterator;
  */
 public class CacheMXBeanImpl implements CacheMXBean {
 
-  private InternalCache cache;
+  private final InternalCache cache;
 
   @Override
   public String getKeyType() {
@@ -194,8 +193,8 @@ public class CacheMXBeanImpl implements CacheMXBean {
     return new Date(getInfo().getInfoCreatedTime());
   }
 
-  Date optionalDate(long _millis) {
-    return _millis == 0 ? null : new Date(_millis);
+  Date optionalDate(long millis) {
+    return millis == 0 ? null : new Date(millis);
   }
 
   @Override
@@ -213,7 +212,7 @@ public class CacheMXBeanImpl implements CacheMXBean {
   }
 
   @Override
-  public void changeCapacity(final long entryCountOrWeight) {
+  public void changeCapacity(long entryCountOrWeight) {
     cache.getEviction().changeCapacity(entryCountOrWeight);
   }
 

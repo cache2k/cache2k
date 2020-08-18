@@ -21,25 +21,21 @@ package org.cache2k;
  */
 
 import org.cache2k.configuration.Cache2kConfiguration;
-import org.cache2k.spi.Cache2kExtensionProvider;
 import org.cache2k.spi.Cache2kCoreProvider;
-import org.cache2k.spi.SingleProviderResolver;;
+import org.cache2k.spi.SingleProviderResolver;
 
 import java.io.Closeable;
-import java.util.Iterator;
 import java.util.Properties;
-import java.util.ServiceConfigurationError;
-import java.util.ServiceLoader;
 
 /**
  * A cache manager holds a set of caches. Caches within a cache manager share the
  * same class loader and may have a different default configuration. If a cache manager
  * is not specified a default manager is used.
  *
- * <p>Usually there is one cache manager per application which is retrieved by {@link #getInstance()}.
- * Multiple cache managers can be used to separate different caching aspects. This may help
- * with a better organization of the cache configuration and operate with reasonable defaults within
- * each aspect.
+ * <p>Usually there is one cache manager per application which is retrieved by
+ * {@link #getInstance()}. Multiple cache managers can be used to separate different caching
+ * aspects. This may help with a better organization of the cache configuration and operate with
+ * reasonable defaults within each aspect.
  *
  * <p>Cache managers are identified by a unique name. If no name is specified the name
  * {@value STANDARD_DEFAULT_MANAGER_NAME} is used. The default name in use may be
@@ -53,30 +49,31 @@ public abstract class CacheManager implements Closeable {
    * Name of the default cache manager if not overridden, see {@link #setDefaultName(String)}.
    * @since 1.4
    */
-  public final static String STANDARD_DEFAULT_MANAGER_NAME = "default";
+  public static final String STANDARD_DEFAULT_MANAGER_NAME = "default";
 
-  static protected final Cache2kCoreProvider PROVIDER;
+  protected static final Cache2kCoreProvider PROVIDER;
 
   static {
     PROVIDER = SingleProviderResolver.resolveMandatory(Cache2kCoreProvider.class);
   }
 
   /**
-   * Name of the default cache manager, which is "{@value STANDARD_DEFAULT_MANAGER_NAME}" by default.
+   * Name of the default cache manager, which is "{@value STANDARD_DEFAULT_MANAGER_NAME}" by
+   * default.
    */
   public static String getDefaultName() {
     return PROVIDER.getDefaultManagerName(PROVIDER.getDefaultClassLoader());
   }
 
   /**
-   * Change the default manager name. The method can only be called once early in application startup,
-   * before the default manager instance is requested.
+   * Change the default manager name. The method can only be called once early in application
+   * startup, before the default manager instance is requested.
    *
    * <p>It is also possible to set a different default manager name via JNDI context
    * "java:comp/env" and name "org.cache2k.CacheManager.defaultName" or via the XML configuration.
    *
-   * <p>The allowed characters in a manager name are identical to the characters in a cache name, this is
-   * documented at {@link Cache2kBuilder#name(String)}
+   * <p>The allowed characters in a manager name are identical to the characters in a cache name,
+   * this is documented at {@link Cache2kBuilder#name(String)}
    *
    * @see Cache2kBuilder#name(String)
    */
@@ -92,8 +89,9 @@ public abstract class CacheManager implements Closeable {
    * This may be changed, by {@link #setDefaultName(String)}.
    */
   public static CacheManager getInstance() {
-    ClassLoader _defaultClassLoader = PROVIDER.getDefaultClassLoader();
-    return PROVIDER.getManager(_defaultClassLoader, PROVIDER.getDefaultManagerName(_defaultClassLoader));
+    ClassLoader defaultClassLoader = PROVIDER.getDefaultClassLoader();
+    return PROVIDER.getManager(
+      defaultClassLoader, PROVIDER.getDefaultManagerName(defaultClassLoader));
   }
 
   /**
@@ -108,8 +106,8 @@ public abstract class CacheManager implements Closeable {
    * is created. The default class loader is used. The default class loader
    * is the class loader used to load the cache2k implementation classes.
    *
-   * <p>The allowed characters in a manager name are identical to the characters in a cache name, this is
-   * documented at {@link Cache2kBuilder#name(String)}
+   * <p>The allowed characters in a manager name are identical to the characters in a cache name,
+   * this is documented at {@link Cache2kBuilder#name(String)}
    *
    * @see Cache2kBuilder#name(String)
    */
@@ -122,8 +120,8 @@ public abstract class CacheManager implements Closeable {
    * If not existing, a manager with that name is created. Different cache managers are
    * created for different class loaders. Manager names should be unique within one VM instance.
    *
-   * <p>The allowed characters in a manager name are identical to the characters in a cache name, this is
-   * documented at {@link Cache2kBuilder#name(String)}
+   * <p>The allowed characters in a manager name are identical to the characters in a cache name,
+   * this is documented at {@link Cache2kBuilder#name(String)}
    *
    * @see Cache2kBuilder#name(String)
    */
@@ -183,8 +181,8 @@ public abstract class CacheManager implements Closeable {
   public abstract <K,V> Cache<K,V> getCache(String name);
 
   /**
-   * Create a new cache from the configuration. The recommended way is to use the {@link Cache2kBuilder}
-   * to create a new cache. This method is identical to and a shorthand to:
+   * Create a new cache from the configuration. The recommended way is to use the
+   * {@link Cache2kBuilder} to create a new cache. This method is identical to and a shorthand to:
    *
    * <pre>{@code
    *    CacheManager manager = ...
@@ -199,9 +197,10 @@ public abstract class CacheManager implements Closeable {
   public abstract void clear();
 
   /**
-   * Free all resources from managed caches. Same as calling all {@link org.cache2k.Cache#close()} methods.
-   * A closed manager cannot be used to create new caches. A new {@code CacheManager} with the same
-   * name may be requested via {@link #getInstance(String)}. Multiple calls to close have no effect.
+   * Free all resources from managed caches. Same as calling all {@link org.cache2k.Cache#close()}
+   * methods. A closed manager cannot be used to create new caches. A new {@code CacheManager} with
+   * the same name may be requested via {@link #getInstance(String)}. Multiple calls to close have
+   * no effect.
    */
   public abstract void close();
 

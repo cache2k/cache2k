@@ -157,11 +157,11 @@ public interface CommonMetrics {
 
     void timerEvent();
 
-    void readThrough(long _millis);
+    void readThrough(long millis);
 
-    void explicitLoad(long _millis);
+    void explicitLoad(long millis);
 
-    void refresh(long _millis);
+    void refresh(long millis);
 
     void loadException();
 
@@ -204,17 +204,17 @@ public interface CommonMetrics {
     }
 
     @Override
-    public void readThrough(final long _millis) {
+    public void readThrough(long millis) {
 
     }
 
     @Override
-    public void explicitLoad(final long _millis) {
+    public void explicitLoad(long millis) {
 
     }
 
     @Override
-    public void refresh(final long _millis) {
+    public void refresh(long millis) {
 
     }
 

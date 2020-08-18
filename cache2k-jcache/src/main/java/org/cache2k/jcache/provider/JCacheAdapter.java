@@ -71,18 +71,18 @@ public class JCacheAdapter<K, V> implements javax.cache.Cache<K, V> {
   protected volatile boolean jmxStatisticsEnabled = false;
   protected volatile boolean jmxEnabled = false;
 
-  public JCacheAdapter(JCacheManagerAdapter _manager, Cache<K, V> _cache,
-                       Class<K> _keyType, Class<V> _valueType,
-                       boolean _storeByValue, boolean _readThrough, boolean _loaderConfigured,
-                       EventHandling<K,V> _eventHandling) {
-    manager = _manager;
-    cache = (InternalCache<K, V>) _cache;
-    keyType = _keyType;
-    valueType = _valueType;
-    storeByValue = _storeByValue;
-    readThrough = _readThrough;
-    loaderConfigured = _loaderConfigured;
-    eventHandling = _eventHandling;
+  public JCacheAdapter(JCacheManagerAdapter manager, Cache<K, V> cache,
+                       Class<K> keyType, Class<V> valueType,
+                       boolean storeByValue, boolean readThrough, boolean loaderConfigured,
+                       EventHandling<K,V> eventHandling) {
+    this.manager = manager;
+    this.cache = (InternalCache<K, V>) cache;
+    this.keyType = keyType;
+    this.valueType = valueType;
+    this.storeByValue = storeByValue;
+    this.readThrough = readThrough;
+    this.loaderConfigured = loaderConfigured;
+    this.eventHandling = eventHandling;
   }
 
   @Override
@@ -95,12 +95,12 @@ public class JCacheAdapter<K, V> implements javax.cache.Cache<K, V> {
   }
 
   @Override
-  public Map<K, V> getAll(Set<? extends K> _keys) {
+  public Map<K, V> getAll(Set<? extends K> keys) {
     checkClosed();
     if (readThrough) {
-      return cache.getAll(_keys);
+      return cache.getAll(keys);
     }
-    return cache.peekAll(_keys);
+    return cache.peekAll(keys);
   }
 
   @Override
@@ -110,7 +110,8 @@ public class JCacheAdapter<K, V> implements javax.cache.Cache<K, V> {
   }
 
   @Override
-  public void loadAll(final Set<? extends K> keys, final boolean replaceExistingValues, final CompletionListener completionListener) {
+  public void loadAll(final Set<? extends K> keys, boolean replaceExistingValues,
+                      final CompletionListener completionListener) {
     checkClosed();
     if (!loaderConfigured) {
       if (completionListener != null) {
@@ -135,11 +136,11 @@ public class JCacheAdapter<K, V> implements javax.cache.Cache<K, V> {
         }
 
         @Override
-        public void onException(Throwable _exception) {
-          if (_exception instanceof Exception) {
-            completionListener.onException((Exception) _exception);
+        public void onException(Throwable exception) {
+          if (exception instanceof Exception) {
+            completionListener.onException((Exception) exception);
           } else {
-            completionListener.onException(new CacheLoaderException(_exception));
+            completionListener.onException(new CacheLoaderException(exception));
           }
         }
       };
@@ -165,11 +166,11 @@ public class JCacheAdapter<K, V> implements javax.cache.Cache<K, V> {
   }
 
   @Override
-  public V getAndPut(K key, V _value) {
+  public V getAndPut(K key, V value) {
     checkClosed();
-    checkNullValue(_value);
+    checkNullValue(value);
     try {
-      return cache.peekAndPut(key, _value);
+      return cache.peekAndPut(key, value);
     } catch (CacheWriterException ex) {
       throw new javax.cache.integration.CacheWriterException(ex);
     } catch (EntryAction.ListenerException ex) {
@@ -177,8 +178,8 @@ public class JCacheAdapter<K, V> implements javax.cache.Cache<K, V> {
     }
   }
 
-  private static void checkNullValue(Object _value) {
-    if (_value == null) {
+  private static void checkNullValue(Object value) {
+    if (value == null) {
       throw new NullPointerException("null value not supported");
     }
   }
@@ -211,11 +212,11 @@ public class JCacheAdapter<K, V> implements javax.cache.Cache<K, V> {
   }
 
   @Override
-  public boolean putIfAbsent(K key, V _value) {
+  public boolean putIfAbsent(K key, V value) {
     checkClosed();
-    checkNullValue(_value);
+    checkNullValue(value);
     try {
-      return cache.putIfAbsent(key, _value);
+      return cache.putIfAbsent(key, value);
     } catch (EntryAction.ListenerException ex) {
       throw new javax.cache.event.CacheEntryListenerException(ex);
     } catch (CacheWriterException ex) {
@@ -236,11 +237,11 @@ public class JCacheAdapter<K, V> implements javax.cache.Cache<K, V> {
   }
 
   @Override
-  public boolean remove(K key, V _oldValue) {
+  public boolean remove(K key, V oldValue) {
     checkClosed();
-    checkNullValue(_oldValue);
+    checkNullValue(oldValue);
     try {
-      return cache.removeIfEquals(key, _oldValue);
+      return cache.removeIfEquals(key, oldValue);
     } catch (EntryAction.ListenerException ex) {
       throw new javax.cache.event.CacheEntryListenerException(ex);
     } catch (CacheWriterException ex) {
@@ -261,12 +262,12 @@ public class JCacheAdapter<K, V> implements javax.cache.Cache<K, V> {
   }
 
   @Override
-  public boolean replace(K key, V _oldValue, V _newValue) {
+  public boolean replace(K key, V oldValue, V newValue) {
     checkClosed();
-    checkNullValue(_oldValue);
-    checkNullValue(_newValue);
+    checkNullValue(oldValue);
+    checkNullValue(newValue);
     try {
-      return cache.replaceIfEquals(key, _oldValue, _newValue);
+      return cache.replaceIfEquals(key, oldValue, newValue);
     } catch (EntryAction.ListenerException ex) {
       throw new javax.cache.event.CacheEntryListenerException(ex);
     } catch (CacheWriterException ex) {
@@ -275,11 +276,11 @@ public class JCacheAdapter<K, V> implements javax.cache.Cache<K, V> {
   }
 
   @Override
-  public boolean replace(K key, V _value) {
+  public boolean replace(K key, V value) {
     checkClosed();
-    checkNullValue(_value);
+    checkNullValue(value);
     try {
-      return cache.replace(key, _value);
+      return cache.replace(key, value);
     } catch (EntryAction.ListenerException ex) {
       throw new javax.cache.event.CacheEntryListenerException(ex);
     } catch (CacheWriterException ex) {
@@ -288,11 +289,11 @@ public class JCacheAdapter<K, V> implements javax.cache.Cache<K, V> {
   }
 
   @Override
-  public V getAndReplace(K key, V _value) {
+  public V getAndReplace(K key, V value) {
     checkClosed();
-    checkNullValue(_value);
+    checkNullValue(value);
     try {
-      return cache.peekAndReplace(key, _value);
+      return cache.peekAndReplace(key, value);
     } catch (EntryAction.ListenerException ex) {
       throw new javax.cache.event.CacheEntryListenerException(ex);
     } catch (CacheWriterException ex) {
@@ -331,16 +332,17 @@ public class JCacheAdapter<K, V> implements javax.cache.Cache<K, V> {
 
   @SuppressWarnings("unchecked")
   @Override
-  public <C extends Configuration<K, V>> C getConfiguration(Class<C> _class) {
-    if (CompleteConfiguration.class.isAssignableFrom(_class)) {
+  public <C extends Configuration<K, V>> C getConfiguration(Class<C> type) {
+    if (CompleteConfiguration.class.isAssignableFrom(type)) {
       MutableConfiguration<K, V> cfg = new MutableConfiguration<K, V>();
       cfg.setTypes(keyType, valueType);
       cfg.setStatisticsEnabled(jmxStatisticsEnabled);
       cfg.setManagementEnabled(jmxEnabled);
       cfg.setStoreByValue(storeByValue);
-      Collection<CacheEntryListenerConfiguration<K,V>> _listenerConfigurations = eventHandling.getAllListenerConfigurations();
-      for (CacheEntryListenerConfiguration<K,V> _listenerConfig : _listenerConfigurations) {
-        cfg.addCacheEntryListenerConfiguration(_listenerConfig);
+      Collection<CacheEntryListenerConfiguration<K,V>> listenerConfigurations =
+        eventHandling.getAllListenerConfigurations();
+      for (CacheEntryListenerConfiguration<K,V> listenerConfig : listenerConfigurations) {
+        cfg.addCacheEntryListenerConfiguration(listenerConfig);
       }
       return (C) cfg;
     }
@@ -363,30 +365,35 @@ public class JCacheAdapter<K, V> implements javax.cache.Cache<K, V> {
   }
 
   @Override
-  public <T> T invoke(K key, javax.cache.processor.EntryProcessor<K,V,T> entryProcessor, Object... arguments) throws EntryProcessorException {
+  public <T> T invoke(
+    K key, javax.cache.processor.EntryProcessor<K,V,T> entryProcessor, Object... arguments)
+    throws EntryProcessorException {
     checkClosed();
     checkNullKey(key);
-    Map<K, EntryProcessorResult<T>> m = invokeAll(Collections.singleton(key), entryProcessor, arguments);
+    Map<K, EntryProcessorResult<T>> m =
+      invokeAll(Collections.singleton(key), entryProcessor, arguments);
     return !m.isEmpty() ? m.values().iterator().next().get() : null;
   }
 
   @Override
-  public <T> Map<K, EntryProcessorResult<T>> invokeAll(Set<? extends K> keys, final javax.cache.processor.EntryProcessor<K,V,T> entryProcessor, final Object... arguments) {
+  public <T> Map<K, EntryProcessorResult<T>> invokeAll(
+    Set<? extends K> keys, final javax.cache.processor.EntryProcessor<K,V,T> entryProcessor,
+    final Object... arguments) {
     checkClosed();
     if (entryProcessor == null) {
       throw new NullPointerException("processor is null");
     }
     EntryProcessor<K, V, T> p = new EntryProcessor<K, V, T>() {
       @Override
-      public T process(final MutableCacheEntry<K, V> e) {
+      public T process(MutableCacheEntry<K, V> e) {
         MutableEntryAdapter me = new MutableEntryAdapter(e);
-        T _result = entryProcessor.process(me, arguments);
-        return _result;
+        T result = entryProcessor.process(me, arguments);
+        return result;
       }
     };
-    Map<K, EntryProcessingResult<T>> _result = cache.invokeAll(keys, p);
-    Map<K, EntryProcessorResult<T>> _mappedResult = new HashMap<K, EntryProcessorResult<T>>();
-    for (Map.Entry<K, EntryProcessingResult<T>> e : _result.entrySet()) {
+    Map<K, EntryProcessingResult<T>> result = cache.invokeAll(keys, p);
+    Map<K, EntryProcessorResult<T>> mappedResult = new HashMap<K, EntryProcessorResult<T>>();
+    for (Map.Entry<K, EntryProcessingResult<T>> e : result.entrySet()) {
       final EntryProcessingResult<T> pr = e.getValue();
       EntryProcessorResult<T> epr = new EntryProcessorResult<T>() {
         @Override
@@ -398,9 +405,9 @@ public class JCacheAdapter<K, V> implements javax.cache.Cache<K, V> {
           return pr.getResult();
         }
       };
-      _mappedResult.put(e.getKey(), epr);
+      mappedResult.put(e.getKey(), epr);
     }
-    return _mappedResult;
+    return mappedResult;
   }
 
   @Override
@@ -451,15 +458,15 @@ public class JCacheAdapter<K, V> implements javax.cache.Cache<K, V> {
   @Override
   public Iterator<Entry<K,V>> iterator() {
     checkClosed();
-    final Iterator<K> _keyIterator = cache.keys().iterator();
+    final Iterator<K> keyIterator = cache.keys().iterator();
     return new Iterator<Entry<K, V>>() {
 
       CacheEntry<K, V> entry;
 
       @Override
       public boolean hasNext() {
-        while(_keyIterator.hasNext()) {
-          entry = cache.getEntry(_keyIterator.next());
+        while(keyIterator.hasNext()) {
+          entry = cache.getEntry(keyIterator.next());
           if (entry.getException() == null) {
             return true;
           }
@@ -486,8 +493,8 @@ public class JCacheAdapter<K, V> implements javax.cache.Cache<K, V> {
 
           @SuppressWarnings("unchecked")
           @Override
-          public <T> T unwrap(Class<T> _class) {
-            if (CacheEntry.class.equals(_class)) {
+          public <T> T unwrap(Class<T> type) {
+            if (CacheEntry.class.equals(type)) {
               return (T) entry;
             }
             return null;
@@ -498,7 +505,8 @@ public class JCacheAdapter<K, V> implements javax.cache.Cache<K, V> {
       @Override
       public void remove() {
         if (entry == null) {
-          throw new IllegalStateException("hasNext() / next() not called or end of iteration reached");
+          throw new IllegalStateException(
+            "hasNext() / next() not called or end of iteration reached");
         }
         cache.remove(entry.getKey());
       }

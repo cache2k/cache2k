@@ -44,7 +44,7 @@ public class FlexibleXmlTokenizerFactory implements TokenizerFactory {
   }
 
   @Override
-  public ConfigurationTokenizer createTokenizer(final String source, final InputStream in, final String encoding)
+  public ConfigurationTokenizer createTokenizer(String source, InputStream in, String encoding)
     throws Exception {
     return realTokenizer.createTokenizer(source, in, encoding);
   }

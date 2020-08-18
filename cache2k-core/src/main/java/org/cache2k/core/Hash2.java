@@ -34,15 +34,15 @@ import java.util.concurrent.atomic.AtomicLong;
  * @author Jens Wilke
  * @see OptimisticLock
  */
-@SuppressWarnings({"ConstantConditions", "WeakerAccess"})
+@SuppressWarnings({"WeakerAccess", "rawtypes"})
 public class Hash2<K,V> {
 
   private static final int LOCK_SEGMENTS;
   private static final int LOCK_MASK;
 
   static {
-    int _ncpu = Runtime.getRuntime().availableProcessors();
-    LOCK_SEGMENTS = 2 << (31 - Integer.numberOfLeadingZeros(_ncpu));
+    int ncpu = Runtime.getRuntime().availableProcessors();
+    LOCK_SEGMENTS = 2 << (31 - Integer.numberOfLeadingZeros(ncpu));
     LOCK_MASK = LOCK_SEGMENTS - 1;
   }
 
@@ -68,10 +68,10 @@ public class Hash2<K,V> {
 
   /**
    *
-   * @param _cache Cache reference only needed for the cache name in case of an exception
+   * @param cache Cache reference only needed for the cache name in case of an exception
    */
-  public Hash2(final Cache _cache) {
-    cache = _cache;
+  public Hash2(Cache cache) {
+    this.cache = cache;
   }
 
   {
@@ -109,52 +109,52 @@ public class Hash2<K,V> {
   /**
    * Lookup the entry in the hash table and return it. First tries an optimistic read.
    */
-  public Entry<K,V> lookup(K key, int _hash, int _keyValue) {
-    OptimisticLock[] _locks = locks;
-    int si = _hash & LOCK_MASK;
-    OptimisticLock l = _locks[si];
-    long _stamp = l.tryOptimisticRead();
+  public Entry<K,V> lookup(K key, int hash, int keyValue) {
+    OptimisticLock[] locks = this.locks;
+    int si = hash & LOCK_MASK;
+    OptimisticLock l = locks[si];
+    long stamp = l.tryOptimisticRead();
     Entry<K,V>[] tab = entries;
     if (tab == null) {
       throw new CacheClosedException(cache);
     }
     Entry<K,V> e;
     int n = tab.length;
-    int _mask = n - 1;
-    int idx = _hash & (_mask);
+    int mask = n - 1;
+    int idx = hash & (mask);
     e = tab[idx];
     while (e != null) {
-      if (e.hashCode == _keyValue && keyObjIsEqual(key, e)) {
+      if (e.hashCode == keyValue && keyObjIsEqual(key, e)) {
         return e;
       }
       e = e.another;
     }
-    if (l.validate(_stamp)) {
+    if (l.validate(stamp)) {
       return null;
     }
-    _stamp = l.readLock();
+    stamp = l.readLock();
     try {
       tab = entries;
       if (tab == null) {
         throw new CacheClosedException(cache);
       }
       n = tab.length;
-      _mask = n - 1;
-      idx = _hash & (_mask);
+      mask = n - 1;
+      idx = hash & (mask);
       e = tab[idx];
       while (e != null) {
-        if (e.hashCode == _keyValue && (keyObjIsEqual(key, e))) {
+        if (e.hashCode == keyValue && (keyObjIsEqual(key, e))) {
           return e;
         }
         e = e.another;
       }
       return null;
     } finally {
-      l.unlockRead(_stamp);
+      l.unlockRead(stamp);
     }
   }
 
-  protected boolean keyObjIsEqual(final K key, final Entry e) {
+  protected boolean keyObjIsEqual(K key, Entry e) {
     Object ek;
     return (ek = e.getKeyObj()) == key || (ek.equals(key));
   }
@@ -164,17 +164,17 @@ public class Hash2<K,V> {
   /**
    * Insert an entry. Checks if an entry already exists.
    */
-  public Entry<K,V> insertWithinLock(Entry<K,V> e, int _hash, int _keyValue) {
+  public Entry<K,V> insertWithinLock(Entry<K,V> e, int hash, int keyValue) {
     K key = e.getKeyObj();
-    int si = _hash & LOCK_MASK;
+    int si = hash & LOCK_MASK;
     Entry<K,V> f; Object ek; Entry<K,V>[] tab = entries;
     if (tab == null) {
       throw new CacheClosedException(cache);
     }
-    int n = tab.length, _mask = n - 1, idx = _hash & (_mask);
+    int n = tab.length, mask = n - 1, idx = hash & (mask);
     f = tab[idx];
     while (f != null) {
-      if (f.hashCode == _keyValue && ((ek = f.getKeyObj()) == key || (ek.equals(key)))) {
+      if (f.hashCode == keyValue && ((ek = f.getKeyObj()) == key || (ek.equals(key)))) {
         return f;
       }
       f = f.another;
@@ -186,23 +186,23 @@ public class Hash2<K,V> {
   }
 
   /**
-   * Checks whether expansion is needed and expand when {@link #insertWithinLock(Entry, int, int)} is used.
-   * No lock may be hold when calling this method, since the table must be locked completely using
-   * the proper lock order.
+   * Checks whether expansion is needed and expand when {@link #insertWithinLock(Entry, int, int)}
+   * is used. No lock may be hold when calling this method, since the table must be locked
+   * completely using the proper lock order.
    *
    * <p>Need for expansion is only checked by comparing whether the associated segment is
    * full. Should be called after insert after giving up the lock.
    */
-  public void checkExpand(int _hash) {
-    int si = _hash & LOCK_MASK;
-    long _size = segmentSize[si].get();
-    if (_size > segmentMaxFill) {
+  public void checkExpand(int hash) {
+    int si = hash & LOCK_MASK;
+    long size = segmentSize[si].get();
+    if (size > segmentMaxFill) {
       eventuallyExpand(si);
     }
   }
 
-  public OptimisticLock getSegmentLock(int _hash) {
-    return locks[_hash & LOCK_MASK];
+  public OptimisticLock getSegmentLock(int hash) {
+    return locks[hash & LOCK_MASK];
   }
 
   /**
@@ -211,17 +211,17 @@ public class Hash2<K,V> {
    * @return true, if entry was found and removed.
    */
   public boolean remove(Entry<K,V> e) {
-    int _hash = modifiedHashCode(e.hashCode);
-    OptimisticLock[] _locks = locks;
-    int si = _hash & LOCK_MASK;
-    OptimisticLock l = _locks[si];
-    long _stamp = l.writeLock();
+    int hash = modifiedHashCode(e.hashCode);
+    OptimisticLock[] locks = this.locks;
+    int si = hash & LOCK_MASK;
+    OptimisticLock l = locks[si];
+    long stamp = l.writeLock();
     try {
       Entry<K,V> f; Entry<K,V>[] tab = entries;
       if (tab == null) {
         throw new CacheClosedException(cache);
       }
-      int n = tab.length, _mask = n - 1, idx = _hash & (_mask);
+      int n = tab.length, mask = n - 1, idx = hash & (mask);
       f = tab[idx];
       if (f == e) {
         tab[idx] = f.another;
@@ -229,27 +229,27 @@ public class Hash2<K,V> {
         return true;
       }
       while (f != null) {
-        Entry<K,V> _another = f.another;
-        if (_another == e) {
-          f.another = _another.another;
+        Entry<K,V> another = f.another;
+        if (another == e) {
+          f.another = another.another;
           segmentSize[si].decrementAndGet();
           return true;
         }
-        f = _another;
+        f = another;
       }
     } finally {
-      l.unlockWrite(_stamp);
+      l.unlockWrite(stamp);
     }
     return false;
   }
 
-  public boolean removeWithinLock(Entry<K,V> e, int _hash) {
-    int si = _hash & LOCK_MASK;
+  public boolean removeWithinLock(Entry<K,V> e, int hash) {
+    int si = hash & LOCK_MASK;
     Entry<K,V> f; Entry<K,V>[] tab = entries;
     if (tab == null) {
       throw new CacheClosedException(cache);
     }
-    int n = tab.length, _mask = n - 1, idx = _hash & (_mask);
+    int n = tab.length, mask = n - 1, idx = hash & (mask);
     f = tab[idx];
     if (f == e) {
       tab[idx] = f.another;
@@ -257,13 +257,13 @@ public class Hash2<K,V> {
       return true;
     }
     while (f != null) {
-      Entry<K,V> _another = f.another;
-      if (_another == e) {
-        f.another = _another.another;
+      Entry<K,V> another = f.another;
+      if (another == e) {
+        f.another = another.another;
         segmentSize[si].decrementAndGet();
         return true;
       }
-      f = _another;
+      f = another;
     }
     return false;
   }
@@ -272,16 +272,16 @@ public class Hash2<K,V> {
   /**
    * Acquire all segment locks and rehash, if really needed.
    */
-  private void eventuallyExpand(int _segmentIndex) {
-    long[] _stamps = lockAll();
+  private void eventuallyExpand(int segmentIndex) {
+    long[] stamps = lockAll();
     try {
-      long _size = segmentSize[_segmentIndex].get();
-      if (_size <= segmentMaxFill) {
+      long size = segmentSize[segmentIndex].get();
+      if (size <= segmentMaxFill) {
         return;
       }
       rehash();
     } finally {
-      unlockAll(_stamps);
+      unlockAll(stamps);
     }
   }
 
@@ -289,26 +289,26 @@ public class Hash2<K,V> {
    * Acquire all segment locks and return an array with the lock stamps.
    */
   private long[] lockAll() {
-    OptimisticLock[] _locks = locks;
-    int sn = _locks.length;
-    long[] _stamps = new long[locks.length];
+    OptimisticLock[] locks = this.locks;
+    int sn = locks.length;
+    long[] stamps = new long[this.locks.length];
     for (int i = 0; i < sn; i++) {
-      OptimisticLock l = _locks[i];
-      _stamps[i] = l.writeLock();
+      OptimisticLock l = locks[i];
+      stamps[i] = l.writeLock();
     }
-    return _stamps;
+    return stamps;
   }
 
   /**
    * Release the all segment locks.
    *
-   * @param _stamps array with the lock stamps.
+   * @param stamps array with the lock stamps.
    */
-  private void unlockAll(long[] _stamps) {
-    OptimisticLock[] _locks = locks;
-    int sn = _locks.length;
+  private void unlockAll(long[] stamps) {
+    OptimisticLock[] locks = this.locks;
+    int sn = locks.length;
     for (int i = 0; i < sn; i++) {
-      _locks[i].unlockWrite(_stamps[i]);
+      locks[i].unlockWrite(stamps[i]);
     }
   }
 
@@ -325,15 +325,15 @@ public class Hash2<K,V> {
     if (src == null) {
       throw new CacheClosedException(cache);
     }
-    int i, sl = src.length, n = sl * 2, _mask = n - 1, idx;
+    int i, sl = src.length, n = sl * 2, mask = n - 1, idx;
     Entry<K,V>[] tab = new Entry[n];
-    long _count = 0; Entry _next, e;
+    long count = 0; Entry next, e;
     for (i = 0; i < sl; i++) {
       e = src[i];
       while (e != null) {
-        _count++; _next = e.another; idx = modifiedHashCode(e.hashCode) & _mask;
+        count++; next = e.another; idx = modifiedHashCode(e.hashCode) & mask;
         e.another = tab[idx]; tab[idx] = e;
-        e = _next;
+        e = next;
       }
     }
     entries = tab;
@@ -352,11 +352,11 @@ public class Hash2<K,V> {
    * Lock all segments and run the job.
    */
   public <T> T runTotalLocked(Job<T> j) {
-    long[] _stamps = lockAll();
+    long[] stamps = lockAll();
     try {
       return j.call();
     } finally {
-      unlockAll(_stamps);
+      unlockAll(stamps);
     }
   }
 
@@ -390,14 +390,14 @@ public class Hash2<K,V> {
         e = e.another;
         if (e != null) {
           inf.collisionSlotCnt++;
-          int _size = 1;
+          int size = 1;
           while (e != null) {
             inf.collisionCnt++;
             e = e.another;
-            _size++;
+            size++;
           }
-          if (inf.longestCollisionSize < _size) {
-            inf.longestCollisionSize = _size;
+          if (inf.longestCollisionSize < size) {
+            inf.longestCollisionSize = size;
           }
         }
       }
@@ -410,14 +410,14 @@ public class Hash2<K,V> {
    * This is used for integrity checks.
    */
   public long calcEntryCount() {
-    long _count = 0;
+    long count = 0;
     for (Entry e : entries) {
       while (e != null) {
-        _count++;
+        count++;
         e = e.another;
       }
     }
-    return _count;
+    return count;
   }
 
   /**

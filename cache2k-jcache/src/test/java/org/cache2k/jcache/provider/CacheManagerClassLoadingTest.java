@@ -54,7 +54,8 @@ public class CacheManagerClassLoadingTest {
   public void testCorrectClassLoaderForKey() throws Exception {
     SpecialClassLoader loader = new SpecialClassLoader();
     CachingProvider provider = Caching.getCachingProvider();
-    CacheManager mgr = Caching.getCachingProvider().getCacheManager(provider.getDefaultURI(), loader);
+    CacheManager mgr =
+      Caching.getCachingProvider().getCacheManager(provider.getDefaultURI(), loader);
     Cache<Object, Object> cache = mgr.createCache(CACHE_NAME, new MutableConfiguration());
     Class keyClass = loader.loadSpecial(DomainKey.class);
     assertEquals(keyClass.getClassLoader(), loader);
@@ -63,7 +64,8 @@ public class CacheManagerClassLoadingTest {
     String someValue = "Value";
     cache.put(key, someValue);
     Cache.Entry e = cache.iterator().next();
-    assertSame("class loaders identical", key.getClass().getClassLoader(), e.getKey().getClass().getClassLoader());
+    assertSame("class loaders identical",
+      key.getClass().getClassLoader(), e.getKey().getClass().getClassLoader());
     assertEquals(key, e.getKey());
     mgr.close();
   }
@@ -77,7 +79,8 @@ public class CacheManagerClassLoadingTest {
   public void testCorrectClassLoaderForValue() throws Exception {
     SpecialClassLoader loader = new SpecialClassLoader();
     CachingProvider provider = Caching.getCachingProvider();
-    CacheManager mgr = Caching.getCachingProvider().getCacheManager(provider.getDefaultURI(), loader);
+    CacheManager mgr =
+      Caching.getCachingProvider().getCacheManager(provider.getDefaultURI(), loader);
     Cache<Object, Object> cache = mgr.createCache(CACHE_NAME, new MutableConfiguration());
     Class valueClass = loader.loadSpecial(DomainValue.class);
     assertEquals(valueClass.getClassLoader(), loader);
@@ -86,7 +89,8 @@ public class CacheManagerClassLoadingTest {
     String someKey = "Key";
     cache.put(someKey, value);
     Cache.Entry e = cache.iterator().next();
-    assertSame("class loaders identical", value.getClass().getClassLoader(), e.getValue().getClass().getClassLoader());
+    assertSame("class loaders identical",
+      value.getClass().getClassLoader(), e.getValue().getClass().getClassLoader());
     assertEquals(value, e.getValue());
     mgr.close();
   }
@@ -112,8 +116,8 @@ public class CacheManagerClassLoadingTest {
     public boolean equals(final Object o) {
       if (this == o) return true;
       if (o == null || getClass() != o.getClass()) return false;
-      DomainKey _that = (DomainKey) o;
-      return value != null ? value.equals(_that.value) : _that.value == null;
+      DomainKey that = (DomainKey) o;
+      return value != null ? value.equals(that.value) : that.value == null;
     }
 
     @Override

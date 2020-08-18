@@ -29,8 +29,8 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentMap;
 
 /**
- * Wrapper class that forwards all method calls to a delegate. Can be used to implement extensions that
- * need to intercept calls to the cache.
+ * Wrapper class that forwards all method calls to a delegate. Can be used to implement extensions
+ * that need to intercept calls to the cache.
  *
  * @author Jens Wilke
  */
@@ -48,137 +48,138 @@ public abstract class ForwardingCache<K, V> implements Cache<K, V> {
   }
 
   @Override
-  public V get(final K key) {
+  public V get(K key) {
     return delegate().get(key);
   }
 
   @Override
-  public CacheEntry<K, V> getEntry(final K key) {
+  public CacheEntry<K, V> getEntry(K key) {
     return delegate().getEntry(key);
   }
 
   @Override
-  public void prefetch(final K key) {
+  public void prefetch(K key) {
     delegate().prefetch(key);
   }
 
   @Override
-  public void prefetchAll(final Iterable<? extends K> keys, final CacheOperationCompletionListener listener) {
+  public void prefetchAll(Iterable<? extends K> keys, CacheOperationCompletionListener listener) {
     delegate().prefetchAll(keys, listener);
   }
 
   @Override
-  public V peek(final K key) {
+  public V peek(K key) {
     return delegate().peek(key);
   }
 
   @Override
-  public CacheEntry<K, V> peekEntry(final K key) {
+  public CacheEntry<K, V> peekEntry(K key) {
     return delegate().peekEntry(key);
   }
 
   @Override
-  public boolean containsKey(final K key) {
+  public boolean containsKey(K key) {
     return delegate().containsKey(key);
   }
 
   @Override
-  public void put(final K key, final V value) {
+  public void put(K key, V value) {
     delegate().put(key, value);
   }
 
   @Override
-  public V computeIfAbsent(final K key, final Callable<V> callable) {
+  public V computeIfAbsent(K key, Callable<V> callable) {
     return delegate().computeIfAbsent(key, callable);
   }
 
   @Override
-  public boolean putIfAbsent(final K key, final V value) {
+  public boolean putIfAbsent(K key, V value) {
     return delegate().putIfAbsent(key, value);
   }
 
   @Override
-  public V peekAndReplace(final K key, final V value) {
+  public V peekAndReplace(K key, V value) {
     return delegate().peekAndReplace(key, value);
   }
 
   @Override
-  public boolean replace(final K key, final V value) {
+  public boolean replace(K key, V value) {
     return delegate().replace(key, value);
   }
 
   @Override
-  public boolean replaceIfEquals(final K key, final V oldValue, final V newValue) {
+  public boolean replaceIfEquals(K key, V oldValue, V newValue) {
     return delegate().replaceIfEquals(key, oldValue, newValue);
   }
 
   @Override
-  public V peekAndRemove(final K key) {
+  public V peekAndRemove(K key) {
     return delegate().peekAndRemove(key);
   }
 
   @Override
-  public boolean containsAndRemove(final K key) {
+  public boolean containsAndRemove(K key) {
     return delegate().containsAndRemove(key);
   }
 
   @Override
-  public void remove(final K key) {
+  public void remove(K key) {
     delegate().remove(key);
   }
 
   @Override
-  public boolean removeIfEquals(final K key, final V expectedValue) {
+  public boolean removeIfEquals(K key, V expectedValue) {
     return delegate().removeIfEquals(key, expectedValue);
   }
 
   @Override
-  public void removeAll(final Iterable<? extends K> keys) {
+  public void removeAll(Iterable<? extends K> keys) {
     delegate().removeAll(keys);
   }
 
   @Override
-  public V peekAndPut(final K key, final V value) {
+  public V peekAndPut(K key, V value) {
     return delegate().peekAndPut(key, value);
   }
 
   @Override
-  public void expireAt(final K key, final long millis) {
+  public void expireAt(K key, long millis) {
     delegate().expireAt(key, millis);
   }
 
   @Override
-  public void loadAll(final Iterable<? extends K> keys, final CacheOperationCompletionListener listener) {
+  public void loadAll(Iterable<? extends K> keys, CacheOperationCompletionListener listener) {
     delegate().loadAll(keys, listener);
   }
 
   @Override
-  public void reloadAll(final Iterable<? extends K> keys, final CacheOperationCompletionListener listener) {
+  public void reloadAll(Iterable<? extends K> keys, CacheOperationCompletionListener listener) {
     delegate().reloadAll(keys, listener);
   }
 
   @Override
-  public <R> R invoke(final K key, final EntryProcessor<K, V, R> entryProcessor) {
+  public <R> R invoke(K key, EntryProcessor<K, V, R> entryProcessor) {
     return delegate().invoke(key, entryProcessor);
   }
 
   @Override
-  public <R> Map<K, EntryProcessingResult<R>> invokeAll(final Iterable<? extends K> keys, final EntryProcessor<K, V, R> entryProcessor) {
+  public <R> Map<K, EntryProcessingResult<R>> invokeAll(
+    Iterable<? extends K> keys, EntryProcessor<K, V, R> entryProcessor) {
     return delegate().invokeAll(keys, entryProcessor);
   }
 
   @Override
-  public Map<K, V> getAll(final Iterable<? extends K> keys) {
+  public Map<K, V> getAll(Iterable<? extends K> keys) {
     return delegate().getAll(keys);
   }
 
   @Override
-  public Map<K, V> peekAll(final Iterable<? extends K> keys) {
+  public Map<K, V> peekAll(Iterable<? extends K> keys) {
     return delegate().peekAll(keys);
   }
 
   @Override
-  public void putAll(final Map<? extends K, ? extends V> valueMap) {
+  public void putAll(Map<? extends K, ? extends V> valueMap) {
     delegate().putAll(valueMap);
   }
 
@@ -231,8 +232,8 @@ public abstract class ForwardingCache<K, V> implements Cache<K, V> {
   }
 
   @Override
-  public <X> X requestInterface(final Class<X> _type) {
-    return delegate().requestInterface(_type);
+  public <X> X requestInterface(Class<X> type) {
+    return delegate().requestInterface(type);
   }
 
   @Override

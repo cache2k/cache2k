@@ -57,6 +57,7 @@
     <module>test-init</module>
     <module>documentation</module>
     <module>cache2k-testing</module>
+    <module>build-config</module>
     <!-- other, maybe deployed later -->
     <module>cache2k-pinpoint</module>
     <!-- other, deployed -->
@@ -301,6 +302,20 @@
           </execution>
         </executions>
       </plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-checkstyle-plugin</artifactId>
+        <version>3.1.1</version>
+        <!-- dependency means the jar needs to be installed. use absolute project path instead.
+        <dependencies>
+          <dependency>
+            <groupId>${pom.groupId}</groupId>
+            <artifactId>build-config</artifactId>
+            <version>${pom.version}</version>
+          </dependency>
+        </dependencies>
+        -->
+      </plugin>
 
     </plugins>
 
@@ -508,6 +523,7 @@
       -->
       <build>
         <plugins>
+          <!--
           <plugin>
             <groupId>org.apache.maven.plugins</groupId>
             <artifactId>maven-pmd-plugin</artifactId>
@@ -520,16 +536,26 @@
 			  </rulesets>
               <skipEmptyReport>false</skipEmptyReport>
               <excludes>
-                <!-- exclusions for code from JSR107 TCK -->
+                <COMMENT>exclusions for code from JSR107 TCK</COMMENT>
                 <exclude>org/jsr107/**/*.java</exclude>
                 <exclude>domain/*.java</exclude>
               </excludes>
             </configuration>
           </plugin>
+          -->
         </plugins>
       </build>
       <reporting>
         <plugins>
+          <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-checkstyle-plugin</artifactId>
+            <configuration>
+              <!-- Seems not to be set in Jenkins maven environment -->
+              <configLocation>${maven.multiModuleProjectDirectory}/build-config/src/main/resources/cache2k/checkstyle.xml</configLocation>
+            </configuration>
+          </plugin>
+          <!-- skip normal project info -->
           <plugin>
             <groupId>org.apache.maven.plugins</groupId>
             <artifactId>maven-project-info-reports-plugin</artifactId>
@@ -537,7 +563,6 @@
             <reportSets>
               <reportSet>
                 <reports>
-                  <!-- generate no normal report at all -->
                 </reports>
               </reportSet>
             </reportSets>

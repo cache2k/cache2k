@@ -28,7 +28,7 @@ package org.cache2k.core.util;
  */
 public final class ClockDefaultImpl implements InternalClock {
 
-  public final static ClockDefaultImpl INSTANCE = new ClockDefaultImpl();
+  public static final ClockDefaultImpl INSTANCE = new ClockDefaultImpl();
 
   private ClockDefaultImpl() { }
 
@@ -38,17 +38,17 @@ public final class ClockDefaultImpl implements InternalClock {
   }
 
   @Override
-  public TimeReachedJob createJob(final TimeReachedEvent ev) {
+  public TimeReachedJob createJob(TimeReachedEvent ev) {
     throw new UnsupportedOperationException();
   }
 
   @Override
-  public void schedule(final TimeReachedJob j, final long millis) {
+  public void schedule(TimeReachedJob j, long millis) {
     throw new UnsupportedOperationException();
   }
 
   @Override
-  public void disableJob(final TimeReachedJob j) {
+  public void disableJob(TimeReachedJob j) {
     throw new UnsupportedOperationException();
   }
 
@@ -58,7 +58,7 @@ public final class ClockDefaultImpl implements InternalClock {
   }
 
   @Override
-  public void sleep(final long millis) throws InterruptedException {
+  public void sleep(long millis) throws InterruptedException {
     Thread.sleep(millis);
   }
 

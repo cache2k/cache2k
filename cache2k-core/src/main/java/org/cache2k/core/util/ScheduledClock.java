@@ -29,7 +29,7 @@ public interface ScheduledClock {
 
   Job createJob(Runnable r);
 
-  void schedule(Job j, long _millis);
+  void schedule(Job j, long millis);
 
   interface Job { }
 

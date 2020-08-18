@@ -31,7 +31,8 @@ import javax.cache.configuration.CompleteConfiguration;
  * behavior related to JCache.
  *
  * @author Jens Wilke
- * @see <a href="https://cache2k.org/docs/latest/user-guide.html#jcache">JSR107 / JCache - cache2k User Guide</a>
+ * @see <a href="https://cache2k.org/docs/latest/user-guide.html#jcache">
+ *   JSR107 / JCache - cache2k User Guide</a>
  */
 public class JCacheConfiguration implements SingletonConfigurationSection {
 
@@ -48,7 +49,7 @@ public class JCacheConfiguration implements SingletonConfigurationSection {
   /**
    * @see JCacheConfiguration.Builder#copyAlwaysIfRequested
    */
-  public void setCopyAlwaysIfRequested(final boolean f) {
+  public void setCopyAlwaysIfRequested(boolean f) {
     copyAlwaysIfRequested = f;
   }
 
@@ -59,7 +60,7 @@ public class JCacheConfiguration implements SingletonConfigurationSection {
   /**
    * @see JCacheConfiguration.Builder#supportOnlineListenerAttachment(boolean)
    */
-  public void setSupportOnlineListenerAttachment(final boolean f) {
+  public void setSupportOnlineListenerAttachment(boolean f) {
     supportOnlineListenerAttachment = f;
   }
 
@@ -70,7 +71,7 @@ public class JCacheConfiguration implements SingletonConfigurationSection {
   /**
    * @see Builder#enableStatistics
    */
-  public void setEnableStatistics(final boolean f) {
+  public void setEnableStatistics(boolean f) {
     enableStatistics = f;
   }
 
@@ -81,7 +82,7 @@ public class JCacheConfiguration implements SingletonConfigurationSection {
   /**
    * @see Builder#enableManagement
    */
-  public void setEnableManagement(final boolean f) {
+  public void setEnableManagement(boolean f) {
     enableManagement = f;
   }
 
@@ -92,13 +93,13 @@ public class JCacheConfiguration implements SingletonConfigurationSection {
   /**
    * @see Builder#enableReadThrough
    */
-  public void setEnableReadThrough(final boolean f) {
+  public void setEnableReadThrough(boolean f) {
     enableReadThrough = f;
   }
 
   public static class Builder implements ConfigurationSectionBuilder<JCacheConfiguration> {
 
-    private JCacheConfiguration config = new JCacheConfiguration();
+    private final JCacheConfiguration config = new JCacheConfiguration();
 
     /**
      * When {@code true}, copy keys and values when entering and leaving

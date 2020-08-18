@@ -32,7 +32,8 @@ import java.util.NoSuchElementException;
  * <p>Hash expansion: During the iteration a hash expansion may happen, which means every
  * entry is rehashed. In this case it is most likely that entries are missed.
  * If an expansion occurred, the iteration will restart from the beginning. To ensure that every
- * entry is only iterated once, the iterator has an internal bookkeeping, what was previously iterated.
+ * entry is only iterated once, the iterator has an internal bookkeeping, what was previously
+ * iterated.
  *
  * <p>Clear: A clear operation stops current iterations.
  *
@@ -50,9 +51,9 @@ public class ConcurrentEntryIterator<K,V> implements Iterator<Entry<K,V>> {
   private Entry<K,V>[] hashArray;
   private HashMap<K,K> seen = new HashMap<K, K>();
 
-  public ConcurrentEntryIterator(HeapCache<K,V> _cache) {
-    cache = _cache;
-    hash = cache.hash;
+  public ConcurrentEntryIterator(HeapCache<K,V> cache) {
+    this.cache = cache;
+    hash = this.cache.hash;
     switchAndCheckAbort();
   }
 
@@ -81,7 +82,7 @@ public class ConcurrentEntryIterator<K,V> implements Iterator<Entry<K,V>> {
   }
 
   /** Used by the storage code to filter out already iterated keys */
-  public boolean hasBeenIterated(K key, @SuppressWarnings("UnusedParameters") int _hashCode) {
+  public boolean hasBeenIterated(K key, @SuppressWarnings("UnusedParameters") int hashCode) {
     return seen.containsKey(key);
   }
 
@@ -90,10 +91,10 @@ public class ConcurrentEntryIterator<K,V> implements Iterator<Entry<K,V>> {
    * need to scan throw twice ore more, e.g. in case of a hash table expansion.
    *
    * @param key key object
-   * @param _hashCode corresponding modified hash, unused but we keep it if we want to switch to
+   * @param hashCode corresponding modified hash, unused but we keep it if we want to switch to
    *                  a more efficient hash table
    */
-  public void markIterated(K key, @SuppressWarnings("UnusedParameters") int _hashCode) {
+  public void markIterated(K key, @SuppressWarnings("UnusedParameters") int hashCode) {
     seen.put(key, key);
   }
 
@@ -147,10 +148,10 @@ public class ConcurrentEntryIterator<K,V> implements Iterator<Entry<K,V>> {
 
   private Entry<K,V> checkIteratedOrNext(Entry<K,V> e) {
     do {
-      K _key = cache.extractKeyObj(e);
-      boolean _notYetIterated = !seen.containsKey(_key);
-      if (_notYetIterated) {
-        markIterated(_key, cache.extractModifiedHash(e));
+      K key = cache.extractKeyObj(e);
+      boolean notYetIterated = !seen.containsKey(key);
+      if (notYetIterated) {
+        markIterated(key, cache.extractModifiedHash(e));
         return e;
       }
       e = e.another;
@@ -187,8 +188,8 @@ public class ConcurrentEntryIterator<K,V> implements Iterator<Entry<K,V>> {
     }
     hashArray = hash.getEntries();
     clearCount = hash.getClearOrCloseCount();
-    boolean _cacheClosed = hashArray == null;
-    if (_cacheClosed) {
+    boolean cacheClosed = hashArray == null;
+    if (cacheClosed) {
       clearOutReferences();
       throw new CacheClosedException(cache);
     }

@@ -34,15 +34,16 @@ package org.cache2k.core;
  *
  * @author Jens Wilke
  */
+@SuppressWarnings("rawtypes")
 public class ExceptionWrapper<K> implements ExceptionInformation, CacheEntry<K, Void> {
 
-  final private Throwable exception;
-  final private long loadTime;
-  final private int count;
-  final private long since;
-  final private K key;
-  final private ExceptionPropagator<K> propagator;
-  final private long until;
+  private final Throwable exception;
+  private final long loadTime;
+  private final int count;
+  private final long since;
+  private final K key;
+  private final ExceptionPropagator<K> propagator;
+  private final long until;
 
   /**
    * Copy constructor to set until.
@@ -57,7 +58,7 @@ public class ExceptionWrapper<K> implements ExceptionInformation, CacheEntry<K, 
     this.until = until;
   }
 
-  public ExceptionWrapper(final K key, long now, Throwable ex, ExceptionPropagator<K> p) {
+  public ExceptionWrapper(K key, long now, Throwable ex, ExceptionPropagator<K> p) {
     this.key = key;
     loadTime = since = now;
     exception = ex;
@@ -70,28 +71,28 @@ public class ExceptionWrapper<K> implements ExceptionInformation, CacheEntry<K, 
    * Take over exception information from the entry, which either has
    * no exception, an existing cached exception or a suppressed exception.
    */
-  public ExceptionWrapper(final K _key, final Throwable _exception,
-                          final long _loadTime, final Entry e,
+  public ExceptionWrapper(K key, Throwable exception,
+                          long loadTime, Entry e,
                           ExceptionPropagator<K> p) {
-    this(_key, _exception, _loadTime,
+    this(key, exception, loadTime,
       (e.getValueOrException() instanceof ExceptionWrapper) ?
         (ExceptionInformation) e.getValueOrException() :
         e.getSuppressedLoadExceptionInformation(),
       p);
   }
 
-  public ExceptionWrapper(final K _key, final Throwable _exception,
-                          final long _loadTime, final ExceptionInformation w,
+  public ExceptionWrapper(K key, Throwable exception,
+                          long loadTime, ExceptionInformation w,
                           ExceptionPropagator<K> p) {
     propagator = p;
-    exception = _exception;
-    key = _key;
-    loadTime = _loadTime;
+    this.exception = exception;
+    this.key = key;
+    this.loadTime = loadTime;
     if (w != null) {
       since = w.getSinceTime();
       count = w.getRetryCount() + 1;
     } else {
-      since = loadTime;
+      since = this.loadTime;
       count = 0;
     }
     until = 0;
@@ -107,6 +108,7 @@ public class ExceptionWrapper<K> implements ExceptionInformation, CacheEntry<K, 
     return null;
   }
 
+  @SuppressWarnings("deprecation")
   @Override
   public long getLastModification() {
     throw new UnsupportedOperationException();
@@ -145,11 +147,8 @@ public class ExceptionWrapper<K> implements ExceptionInformation, CacheEntry<K, 
    * access the value.
    */
   @SuppressWarnings("unchecked")
-  public Object propagateException() {
-    if (1 == 1) {
-      throw getExceptionPropagator().propagateException(key, this);
-    }
-    return null;
+  public void propagateException() {
+    throw getExceptionPropagator().propagateException(key, this);
   }
 
   public String toString() {

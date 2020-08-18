@@ -45,13 +45,13 @@ public interface TimerEventListener<K, V> {
    * @param e see {@link #timerEventExpireEntry(Entry, Object)}
    * @param task see {@link #timerEventExpireEntry(Entry, Object)}
    */
-  void timerEventRefresh(Entry<K, V> e, final Object task);
+  void timerEventRefresh(Entry<K, V> e, Object task);
 
   /**
    *
    * @param e see {@link #timerEventExpireEntry(Entry, Object)}
    * @param task see {@link #timerEventExpireEntry(Entry, Object)}
    */
-  void timerEventProbationTerminated(Entry<K, V> e, final Object task);
+  void timerEventProbationTerminated(Entry<K, V> e, Object task);
 
 }

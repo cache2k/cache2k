@@ -49,45 +49,45 @@ public class JCacheJmxSupport implements CacheLifeCycleListener {
 
   public void enableStatistics(JCacheAdapter c) {
     MBeanServer mbs = mBeanServer;
-    String _name = createStatisticsObjectName(c.cache);
+    String name = createStatisticsObjectName(c.cache);
     try {
        mbs.registerMBean(
          new JCacheJmxStatisticsMXBean(c),
-         new ObjectName(_name));
+         new ObjectName(name));
     } catch (Exception e) {
-      throw new IllegalStateException("Error registering JMX bean, name='" + _name + "'", e);
+      throw new IllegalStateException("Error registering JMX bean, name='" + name + "'", e);
     }
   }
 
   public void disableStatistics(Cache c) {
     MBeanServer mbs = mBeanServer;
-    String _name = createStatisticsObjectName(c);
+    String name = createStatisticsObjectName(c);
     try {
-      mbs.unregisterMBean(new ObjectName(_name));
+      mbs.unregisterMBean(new ObjectName(name));
     } catch (InstanceNotFoundException ignore) {
     } catch (Exception e) {
-      throw new IllegalStateException("Error unregister JMX bean, name='" + _name + "'", e);
+      throw new IllegalStateException("Error unregister JMX bean, name='" + name + "'", e);
     }
   }
 
   public void enableJmx(Cache c, javax.cache.Cache ca) {
     MBeanServer mbs = mBeanServer;
-    String _name = createJmxObjectName(c);
+    String name = createJmxObjectName(c);
     try {
-       mbs.registerMBean(new JCacheJmxCacheMXBean(ca), new ObjectName(_name));
+       mbs.registerMBean(new JCacheJmxCacheMXBean(ca), new ObjectName(name));
     } catch (Exception e) {
-      throw new IllegalStateException("Error register JMX bean, name='" + _name + "'", e);
+      throw new IllegalStateException("Error register JMX bean, name='" + name + "'", e);
     }
   }
 
   public void disableJmx(Cache c) {
     MBeanServer mbs = mBeanServer;
-    String _name = createJmxObjectName(c);
+    String name = createJmxObjectName(c);
     try {
-      mbs.unregisterMBean(new ObjectName(_name));
+      mbs.unregisterMBean(new ObjectName(name));
     } catch (InstanceNotFoundException ignore) {
     } catch (Exception e) {
-      throw new IllegalStateException("Error unregister JMX bean, name='" + _name + "'", e);
+      throw new IllegalStateException("Error unregister JMX bean, name='" + name + "'", e);
     }
   }
 

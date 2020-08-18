@@ -30,9 +30,9 @@ import javax.naming.NameNotFoundException;
 import javax.naming.NoInitialContextException;
 
 /**
- * Set default name of the cache manager from the JNDI property {@code org.cache2k.CacheManager.defaultName}.
- * The intention is to avoid naming conflicts in case multiple applications using cache2k
- * are run within one Apache Tomcat.
+ * Set default name of the cache manager from the JNDI property
+ * {@code org.cache2k.CacheManager.defaultName}. The intention is to avoid naming conflicts in
+ * case multiple applications using cache2k are run within one Apache Tomcat.
  *
  * @author Jens Wilke
  */
@@ -44,17 +44,18 @@ public class JndiDefaultNameProvider implements Cache2kExtensionProvider {
       try {
         Context ctx = new InitialContext();
         ctx = (Context) ctx.lookup("java:comp/env");
-        String _name =
+        String name =
           (String) ctx.lookup("org.cache2k.CacheManager.defaultName");
-        if (_name != null) {
-          CacheManager.setDefaultName(_name);
+        if (name != null) {
+          CacheManager.setDefaultName(name);
         }
       } catch (NoInitialContextException ignore) {
       } catch (NameNotFoundException ignore) {
       }
     } catch (NoClassDefFoundError ignore) {
     } catch (Exception ex) {
-      Log.getLog(JndiDefaultNameProvider.class).warn("Exception setting default cache manager name", ex);
+      Log.getLog(JndiDefaultNameProvider.class).warn(
+        "Exception setting default cache manager name", ex);
     }
   }
 

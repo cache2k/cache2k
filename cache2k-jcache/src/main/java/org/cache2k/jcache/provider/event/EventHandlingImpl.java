@@ -63,10 +63,14 @@ import java.util.concurrent.Executor;
 public class EventHandlingImpl<K,V> implements EventHandling<K, V>, CacheClosedListener {
 
   private javax.cache.Cache resolvedJCache;
-  private final List<Listener.Created<K,V>> createdListener = new CopyOnWriteArrayList<Listener.Created<K, V>>();
-  private final List<Listener.Updated<K,V>> updatedListener = new CopyOnWriteArrayList<Listener.Updated<K, V>>();
-  private final List<Listener.Removed<K,V>> removedListener = new CopyOnWriteArrayList<Listener.Removed<K, V>>();
-  private final List<Listener.Expired<K,V>> expiredListener = new CopyOnWriteArrayList<Listener.Expired<K, V>>();
+  private final List<Listener.Created<K,V>> createdListener =
+    new CopyOnWriteArrayList<Listener.Created<K, V>>();
+  private final List<Listener.Updated<K,V>> updatedListener =
+    new CopyOnWriteArrayList<Listener.Updated<K, V>>();
+  private final List<Listener.Removed<K,V>> removedListener =
+    new CopyOnWriteArrayList<Listener.Removed<K, V>>();
+  private final List<Listener.Expired<K,V>> expiredListener =
+    new CopyOnWriteArrayList<Listener.Expired<K, V>>();
   private final AsyncDispatcher<K,V> asyncDispatcher;
   private final JCacheManagerAdapter manager;
 
@@ -80,12 +84,12 @@ public class EventHandlingImpl<K,V> implements EventHandling<K, V>, CacheClosedL
   }
 
   static <T extends Listener<K,V>, K, V> boolean removeCfgMatch(
-    final CacheEntryListenerConfiguration<K,V> cfg,
-    final List<T> _listenerList) {
-    for (final T l : _listenerList) {
+    CacheEntryListenerConfiguration<K,V> cfg,
+    List<T> listenerList) {
+    for (T l : listenerList) {
       if (l.config.equals(cfg)) {
-        _listenerList.remove(l);
-        removeCfgMatch(cfg, _listenerList);
+        listenerList.remove(l);
+        removeCfgMatch(cfg, listenerList);
         return true;
       }
     }
@@ -105,11 +109,12 @@ public class EventHandlingImpl<K,V> implements EventHandling<K, V>, CacheClosedL
   @Override
   public Collection<CacheEntryListenerConfiguration<K,V>> getAllListenerConfigurations() {
     Collection<Listener<K, V>> l = getAllListeners();
-    Set<CacheEntryListenerConfiguration<K,V>> _cfgs = new HashSet<CacheEntryListenerConfiguration<K, V>>();
+    Set<CacheEntryListenerConfiguration<K,V>> cfgs =
+      new HashSet<CacheEntryListenerConfiguration<K, V>>();
     for (Listener<K,V> li : l) {
-      _cfgs.add(li.config);
+      cfgs.add(li.config);
     }
-    return _cfgs;
+    return cfgs;
   }
 
   private Collection<Listener<K, V>> getAllListeners() {
@@ -129,7 +134,7 @@ public class EventHandlingImpl<K,V> implements EventHandling<K, V>, CacheClosedL
    * @param cache The cache that is closing. No cache operations on entries are allowed.
    */
   @Override
-  public void onCacheClosed(final org.cache2k.Cache cache) {
+  public void onCacheClosed(org.cache2k.Cache cache) {
     Set<CacheEntryListener> ls = new HashSet<CacheEntryListener>();
     for (Listener l : getAllListeners()) {
       ls.add(l.entryListener);
@@ -153,44 +158,50 @@ public class EventHandlingImpl<K,V> implements EventHandling<K, V>, CacheClosedL
         throw new IllegalArgumentException("configuration already registered");
       }
     }
-    Factory<CacheEntryEventFilter<? super K,? super V>> _filterFactory = cfg.getCacheEntryEventFilterFactory();
-    Factory<CacheEntryListener<? super K,? super V>> _listenerFactory = cfg.getCacheEntryListenerFactory();
-    if (_listenerFactory == null) {
+    Factory<CacheEntryEventFilter<? super K,? super V>> filterFactory =
+      cfg.getCacheEntryEventFilterFactory();
+    Factory<CacheEntryListener<? super K,? super V>> listenerFactory =
+      cfg.getCacheEntryListenerFactory();
+    if (listenerFactory == null) {
       throw new IllegalArgumentException("listener factory missing");
     }
-    CacheEntryEventFilter<K, V> _filter = null;
-    if (_filterFactory != null) {
-      _filter = (CacheEntryEventFilter<K, V>) _filterFactory.create();
+    CacheEntryEventFilter<K, V> filter = null;
+    if (filterFactory != null) {
+      filter = (CacheEntryEventFilter<K, V>) filterFactory.create();
     }
-    Object _listener = _listenerFactory.create();
-    boolean _synchronous = cfg.isSynchronous();
-    if (_listener instanceof CacheEntryCreatedListener) {
-      Listener.Created<K,V> l = new Listener.Created<K, V>(cfg, _filter, (CacheEntryCreatedListener<K,V>) _listener);
-      if (_synchronous) {
+    Object listener = listenerFactory.create();
+    boolean synchronous = cfg.isSynchronous();
+    if (listener instanceof CacheEntryCreatedListener) {
+      Listener.Created<K,V> l =
+        new Listener.Created<K, V>(cfg, filter, (CacheEntryCreatedListener<K,V>) listener);
+      if (synchronous) {
         createdListener.add(l);
       } else {
         addAsyncListener(l);
       }
     }
-    if (_listener instanceof CacheEntryUpdatedListener) {
-      Listener.Updated<K,V> l = new Listener.Updated<K, V>(cfg, _filter, (CacheEntryUpdatedListener<K,V>) _listener);
-      if (_synchronous) {
+    if (listener instanceof CacheEntryUpdatedListener) {
+      Listener.Updated<K,V> l =
+        new Listener.Updated<K, V>(cfg, filter, (CacheEntryUpdatedListener<K,V>) listener);
+      if (synchronous) {
         updatedListener.add(l);
       } else {
         addAsyncListener(l);
       }
     }
-    if (_listener instanceof CacheEntryRemovedListener) {
-      Listener.Removed<K,V> l = new Listener.Removed<K, V>(cfg, _filter, (CacheEntryRemovedListener<K,V>) _listener);
-      if (_synchronous) {
+    if (listener instanceof CacheEntryRemovedListener) {
+      Listener.Removed<K,V> l =
+        new Listener.Removed<K, V>(cfg, filter, (CacheEntryRemovedListener<K,V>) listener);
+      if (synchronous) {
         removedListener.add(l);
       } else {
         addAsyncListener(l);
       }
     }
-    if (_listener instanceof CacheEntryExpiredListener) {
-      Listener.Expired<K,V> l = new Listener.Expired<K, V>(cfg, _filter, (CacheEntryExpiredListener<K,V>) _listener);
-      if (_synchronous) {
+    if (listener instanceof CacheEntryExpiredListener) {
+      Listener.Expired<K,V> l =
+        new Listener.Expired<K, V>(cfg, filter, (CacheEntryExpiredListener<K,V>) listener);
+      if (synchronous) {
         expiredListener.add(l);
       } else {
         addAsyncListener(l);
@@ -200,32 +211,37 @@ public class EventHandlingImpl<K,V> implements EventHandling<K, V>, CacheClosedL
 
   @Override
   public void addInternalListenersToCache2kConfiguration(Cache2kConfiguration<K, V> cfg) {
-    Collection<CustomizationSupplier<CacheEntryOperationListener<K,V>>> _listeners = cfg.getListeners();
-    _listeners.add(new CustomizationReferenceSupplier<CacheEntryOperationListener<K, V>>(new CreatedListenerAdapter()));
-    _listeners.add(new CustomizationReferenceSupplier<CacheEntryOperationListener<K, V>>(new UpdatedListenerAdapter()));
-    _listeners.add(new CustomizationReferenceSupplier<CacheEntryOperationListener<K, V>>(new RemovedListenerAdapter()));
-    _listeners.add(new CustomizationReferenceSupplier<CacheEntryOperationListener<K, V>>(new ExpiredListenerAdapter()));
+    Collection<CustomizationSupplier<CacheEntryOperationListener<K,V>>> listeners =
+      cfg.getListeners();
+    listeners.add(new CustomizationReferenceSupplier<CacheEntryOperationListener<K, V>>(
+      new CreatedListenerAdapter()));
+    listeners.add(new CustomizationReferenceSupplier<CacheEntryOperationListener<K, V>>(
+      new UpdatedListenerAdapter()));
+    listeners.add(new CustomizationReferenceSupplier<CacheEntryOperationListener<K, V>>(
+      new RemovedListenerAdapter()));
+    listeners.add(new CustomizationReferenceSupplier<CacheEntryOperationListener<K, V>>(
+      new ExpiredListenerAdapter()));
   }
 
-  private V extractValue(V _value) { return _value; }
+  private V extractValue(V value) { return value; }
 
   @SuppressWarnings("unchecked")
   class CreatedListenerAdapter implements org.cache2k.event.CacheEntryCreatedListener<K, V> {
 
     @Override
-    public void onEntryCreated(final Cache<K, V> c, final CacheEntry<K, V> e) {
+    public void onEntryCreated(Cache<K, V> c, CacheEntry<K, V> e) {
       if (e.getException() != null) {
         return;
       }
-      javax.cache.Cache<K,V> _jCache = getCache(c);
-      fireCreated(_jCache, e);
+      javax.cache.Cache<K,V> jCache = getCache(c);
+      fireCreated(jCache, e);
     }
 
   }
 
-  private void fireCreated(final javax.cache.Cache<K, V> _jCache, final CacheEntry<K, V> e) {
+  private void fireCreated(javax.cache.Cache<K, V> jCache, CacheEntry<K, V> e) {
     EntryEvent<K, V> cee =
-      new EntryEvent<K, V>(_jCache, EventType.CREATED, e.getKey(), extractValue(e.getValue()));
+      new EntryEvent<K, V>(jCache, EventType.CREATED, e.getKey(), extractValue(e.getValue()));
     asyncDispatcher.deliverAsyncEvent(cee);
     for (Listener<K,V> t : createdListener) {
       t.fire(cee);
@@ -236,28 +252,31 @@ public class EventHandlingImpl<K,V> implements EventHandling<K, V>, CacheClosedL
   class UpdatedListenerAdapter implements org.cache2k.event.CacheEntryUpdatedListener<K, V> {
 
     @Override
-    public void onEntryUpdated(final Cache<K, V> c, final CacheEntry<K, V> _currentEntry, final CacheEntry<K, V> entryWithNewData) {
-      javax.cache.Cache<K,V> _jCache = getCache(c);
+    public void onEntryUpdated(Cache<K, V> c, CacheEntry<K, V> currentEntry,
+                               CacheEntry<K, V> entryWithNewData) {
+      javax.cache.Cache<K,V> jCache = getCache(c);
       if (entryWithNewData.getException() != null) {
-        if (_currentEntry.getException() != null) {
+        if (currentEntry.getException() != null) {
           return;
         }
         EntryEvent<K, V> cee =
-          new EntryEvent<K, V>(_jCache, EventType.REMOVED, entryWithNewData.getKey(), extractValue(_currentEntry.getValue()));
+          new EntryEvent<K, V>(jCache, EventType.REMOVED, entryWithNewData.getKey(),
+            extractValue(currentEntry.getValue()));
         asyncDispatcher.deliverAsyncEvent(cee);
         for (Listener<K,V> t : removedListener) {
           t.fire(cee);
         }
         return;
       }
-      if (_currentEntry.getException() != null) {
-        fireCreated(_jCache, entryWithNewData);
+      if (currentEntry.getException() != null) {
+        fireCreated(jCache, entryWithNewData);
         return;
       }
-      V v0 = _currentEntry.getValue();
+      V v0 = currentEntry.getValue();
       V v1 = entryWithNewData.getValue();
       EntryEvent<K, V> cee =
-        new EntryEventWithOldValue<K, V>(_jCache, EventType.UPDATED, entryWithNewData.getKey(), extractValue(v1), extractValue(v0));
+        new EntryEventWithOldValue<K, V>(jCache, EventType.UPDATED, entryWithNewData.getKey(),
+          extractValue(v1), extractValue(v0));
       asyncDispatcher.deliverAsyncEvent(cee);
       for (Listener<K,V> t : updatedListener) {
         t.fire(cee);
@@ -266,7 +285,7 @@ public class EventHandlingImpl<K,V> implements EventHandling<K, V>, CacheClosedL
 
   }
 
-  private javax.cache.Cache getCache(final Cache<K, V> c) {
+  private javax.cache.Cache getCache(Cache<K, V> c) {
     if (resolvedJCache != null) {
       return resolvedJCache;
     }
@@ -277,14 +296,14 @@ public class EventHandlingImpl<K,V> implements EventHandling<K, V>, CacheClosedL
   class RemovedListenerAdapter implements org.cache2k.event.CacheEntryRemovedListener<K, V> {
 
     @Override
-    public void onEntryRemoved(final Cache<K, V> c, final CacheEntry<K, V> e) {
+    public void onEntryRemoved(Cache<K, V> c, CacheEntry<K, V> e) {
       if (e.getException() != null) {
         return;
       }
-      javax.cache.Cache<K,V> _jCache = getCache(c);
+      javax.cache.Cache<K,V> jCache = getCache(c);
       V val = extractValue(e.getValue());
       EntryEvent<K, V> cee =
-        new EntryEventWithOldValue<K, V>(_jCache, EventType.REMOVED, e.getKey(), val, val);
+        new EntryEventWithOldValue<K, V>(jCache, EventType.REMOVED, e.getKey(), val, val);
       asyncDispatcher.deliverAsyncEvent(cee);
       for (Listener<K,V> t : removedListener) {
         t.fire(cee);
@@ -294,16 +313,17 @@ public class EventHandlingImpl<K,V> implements EventHandling<K, V>, CacheClosedL
   }
 
   @SuppressWarnings("unchecked")
-  class ExpiredListenerAdapter implements org.cache2k.event.CacheEntryExpiredListener<K, V> {
+  class ExpiredListenerAdapter
+    implements org.cache2k.event.CacheEntryExpiredListener<K, V> {
 
     @Override
-    public void onEntryExpired(final Cache<K, V> c, final CacheEntry<K, V> e) {
+    public void onEntryExpired(Cache<K, V> c, CacheEntry<K, V> e) {
       if (e.getException() != null) {
         return;
       }
-      javax.cache.Cache<K,V> _jCache = getCache(c);
+      javax.cache.Cache<K,V> jCache = getCache(c);
       EntryEvent<K, V> cee =
-        new EntryEvent<K, V>(_jCache, EventType.EXPIRED, e.getKey(), extractValue(e.getValue()));
+        new EntryEvent<K, V>(jCache, EventType.EXPIRED, e.getKey(), extractValue(e.getValue()));
       asyncDispatcher.deliverAsyncEvent(cee);
       for (Listener<K,V> t : expiredListener) {
         t.fire(cee);

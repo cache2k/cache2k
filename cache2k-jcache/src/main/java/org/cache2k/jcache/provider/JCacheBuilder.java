@@ -67,8 +67,8 @@ import java.util.concurrent.Executors;
  */
 public class JCacheBuilder<K,V> {
 
-  private String name;
-  private JCacheManagerAdapter manager;
+  private final String name;
+  private final JCacheManagerAdapter manager;
   private boolean cache2kConfigurationWasProvided = false;
   private CompleteConfiguration<K,V> config;
   private Cache2kConfiguration<K,V> cache2kConfiguration;
@@ -80,9 +80,9 @@ public class JCacheBuilder<K,V> {
   private EventHandling<K,V> eventHandling;
   private boolean needsTouchyWrapper;
 
-  public JCacheBuilder(String _name, JCacheManagerAdapter _manager) {
-    name = _name;
-    manager = _manager;
+  public JCacheBuilder(String name, JCacheManagerAdapter manager) {
+    this.name = name;
+    this.manager = manager;
   }
 
   @SuppressWarnings("unchecked")
@@ -92,33 +92,36 @@ public class JCacheBuilder<K,V> {
       if (cfg instanceof ExtendedConfiguration) {
         cache2kConfiguration = ((ExtendedConfiguration<K,V>) cfg).getCache2kConfiguration();
         if (cache2kConfiguration != null) {
-          if (cache2kConfiguration.getName() != null && !cache2kConfiguration.getName().equals(name)) {
+          if (cache2kConfiguration.getName() != null &&
+            !cache2kConfiguration.getName().equals(name)) {
             throw new IllegalArgumentException("cache name mismatch.");
           }
           cache2kConfigurationWasProvided = true;
         }
       }
     } else {
-      MutableConfiguration<K, V> _cfgCopy = new MutableConfiguration<K, V>();
-      _cfgCopy.setTypes(cfg.getKeyType(), cfg.getValueType());
-      _cfgCopy.setStoreByValue(cfg.isStoreByValue());
-      config = _cfgCopy;
+      MutableConfiguration<K, V> cfgCopy = new MutableConfiguration<K, V>();
+      cfgCopy.setTypes(cfg.getKeyType(), cfg.getValueType());
+      cfgCopy.setStoreByValue(cfg.isStoreByValue());
+      config = cfgCopy;
     }
     if (cache2kConfiguration == null) {
-      cache2kConfiguration = CacheManagerImpl.PROVIDER.getDefaultConfiguration(manager.getCache2kManager());
+      cache2kConfiguration =
+        CacheManagerImpl.PROVIDER.getDefaultConfiguration(manager.getCache2kManager());
       if (cfg instanceof ExtendedMutableConfiguration) {
         ((ExtendedMutableConfiguration) cfg).setCache2kConfiguration(cache2kConfiguration);
       }
     }
     cache2kConfiguration.setName(name);
-    Cache2kCoreProviderImpl.CACHE_CONFIGURATION_PROVIDER.augmentConfiguration(manager.getCache2kManager(), cache2kConfiguration);
+    Cache2kCoreProviderImpl.CACHE_CONFIGURATION_PROVIDER.augmentConfiguration(
+      manager.getCache2kManager(), cache2kConfiguration);
     cache2kConfigurationWasProvided |= cache2kConfiguration.isExternalConfigurationPresent();
     if (cache2kConfigurationWasProvided) {
       extraConfiguration = CACHE2K_DEFAULTS;
-      JCacheConfiguration _extraConfigurationSpecified =
+      JCacheConfiguration extraConfigurationSpecified =
         cache2kConfiguration.getSections().getSection(JCacheConfiguration.class);
-      if (_extraConfigurationSpecified != null) {
-        extraConfiguration = _extraConfigurationSpecified;
+      if (extraConfigurationSpecified != null) {
+        extraConfiguration = extraConfigurationSpecified;
       }
     }
   }
@@ -165,11 +168,15 @@ public class JCacheBuilder<K,V> {
     }
     keyType = cache2kConfiguration.getKeyType();
     valueType = cache2kConfiguration.getValueType();
-    if (!config.getKeyType().equals(Object.class) && !config.getKeyType().equals(keyType.getType())) {
-      throw new IllegalArgumentException("Key type mismatch between JCache and cache2k configuration");
+    if (!config.getKeyType().equals(Object.class) &&
+      !config.getKeyType().equals(keyType.getType())) {
+      throw new IllegalArgumentException(
+        "Key type mismatch between JCache and cache2k configuration");
     }
-    if (!config.getValueType().equals(Object.class) && !config.getValueType().equals(valueType.getType())) {
-      throw new IllegalArgumentException("Value type mismatch between JCache and cache2k configuration");
+    if (!config.getValueType().equals(Object.class) &&
+      !config.getValueType().equals(valueType.getType())) {
+      throw new IllegalArgumentException(
+        "Value type mismatch between JCache and cache2k configuration");
     }
   }
 
@@ -194,8 +201,10 @@ public class JCacheBuilder<K,V> {
     cache2kConfiguration.setExceptionPropagator(
       new CustomizationReferenceSupplier<ExceptionPropagator<K>>(new ExceptionPropagator<K>() {
       @Override
-      public RuntimeException propagateException(Object key, final ExceptionInformation exceptionInformation) {
-        return new CacheLoaderException("propagate previous loader exception", exceptionInformation.getException());
+      public RuntimeException propagateException(
+        Object key, ExceptionInformation exceptionInformation) {
+        return new CacheLoaderException(
+          "propagate previous loader exception", exceptionInformation.getException());
       }
     }));
   }
@@ -221,15 +230,17 @@ public class JCacheBuilder<K,V> {
             }
 
             @Override
-            public V load(final K key, final long startTime, final CacheEntry<K, V> currentEntry) {
+            public V load(K key, long startTime, CacheEntry<K, V> currentEntry) {
               return clf.load(key);
             }
 
           }));
     }
     if (config.getCacheWriterFactory() != null) {
-      final javax.cache.integration.CacheWriter<? super K, ? super V> cw = config.getCacheWriterFactory().create();
-      cache2kConfiguration.setWriter(new CustomizationReferenceSupplier<CacheWriter<K, V>>(new CloseableWriter() {
+      final javax.cache.integration.CacheWriter<? super K, ? super V> cw =
+        config.getCacheWriterFactory().create();
+      cache2kConfiguration.setWriter(
+        new CustomizationReferenceSupplier<CacheWriter<K, V>>(new CloseableWriter() {
         @Override
         public void write(final K key, final V value) {
           Cache.Entry<K, V> ce = new Cache.Entry<K, V>() {
@@ -252,7 +263,7 @@ public class JCacheBuilder<K,V> {
         }
 
         @Override
-        public void delete(final Object key) {
+        public void delete(Object key) {
           cw.delete(key);
         }
 
@@ -281,10 +292,12 @@ public class JCacheBuilder<K,V> {
         throw new CacheException("couldn't initialize expiry policy", ex);
       }
       final org.cache2k.expiry.ExpiryPolicy<K, V> ep = ep0;
-      cache2kConfiguration.setExpiryPolicy(new CustomizationReferenceSupplier<org.cache2k.expiry.ExpiryPolicy<K, V>>(
+      cache2kConfiguration.setExpiryPolicy(
+        new CustomizationReferenceSupplier<org.cache2k.expiry.ExpiryPolicy<K, V>>(
         new org.cache2k.expiry.ExpiryPolicy<K, V>() {
         @Override
-        public long calculateExpiryTime(final K key, final V value, final long loadTime, final CacheEntry<K, V> oldEntry) {
+        public long calculateExpiryTime(
+          K key, V value, long loadTime, CacheEntry<K, V> oldEntry) {
           if (value == null) {
             return NO_CACHE;
           }
@@ -297,9 +310,11 @@ public class JCacheBuilder<K,V> {
       expiryPolicy = config.getExpiryPolicyFactory().create();
     }
     if (expiryPolicy == null || expiryPolicy instanceof EternalExpiryPolicy) {
-      cache2kConfiguration.setExpiryPolicy(new CustomizationReferenceSupplier<org.cache2k.expiry.ExpiryPolicy<K, V>>(new org.cache2k.expiry.ExpiryPolicy<K, V>() {
+      cache2kConfiguration.setExpiryPolicy(
+        new CustomizationReferenceSupplier<org.cache2k.expiry.ExpiryPolicy<K, V>>(
+          new org.cache2k.expiry.ExpiryPolicy<K, V>() {
         @Override
-        public long calculateExpiryTime(final K key, final V value, final long loadTime, final CacheEntry<K, V> oldEntry) {
+        public long calculateExpiryTime(K key, V value, long loadTime, CacheEntry<K, V> oldEntry) {
           if (value == null) {
             return NO_CACHE;
           }
@@ -310,23 +325,28 @@ public class JCacheBuilder<K,V> {
     }
     if (expiryPolicy instanceof ModifiedExpiryPolicy) {
       Duration d = expiryPolicy.getExpiryForCreation();
-      final long _millisDuration = d.getTimeUnit().toMillis(d.getDurationAmount());
-      if (_millisDuration == 0) {
-        cache2kConfiguration.setExpiryPolicy(new CustomizationReferenceSupplier<org.cache2k.expiry.ExpiryPolicy<K, V>>(new org.cache2k.expiry.ExpiryPolicy<K, V>() {
+      final long millisDuration = d.getTimeUnit().toMillis(d.getDurationAmount());
+      if (millisDuration == 0) {
+        cache2kConfiguration.setExpiryPolicy(
+          new CustomizationReferenceSupplier<org.cache2k.expiry.ExpiryPolicy<K, V>>
+            (new org.cache2k.expiry.ExpiryPolicy<K, V>() {
           @Override
-          public long calculateExpiryTime(final K key, final V value, final long loadTime, final CacheEntry<K, V> oldEntry) {
+          public long calculateExpiryTime
+            (K key, V value, long loadTime, CacheEntry<K, V> oldEntry) {
             return NO_CACHE;
           }
         }));
         return;
       }
-      cache2kConfiguration.setExpiryPolicy(new CustomizationReferenceSupplier<org.cache2k.expiry.ExpiryPolicy<K, V>>(new org.cache2k.expiry.ExpiryPolicy<K, V>() {
+      cache2kConfiguration.setExpiryPolicy(
+        new CustomizationReferenceSupplier<org.cache2k.expiry.ExpiryPolicy<K, V>>
+          (new org.cache2k.expiry.ExpiryPolicy<K, V>() {
         @Override
-        public long calculateExpiryTime(final K key, final V value, final long loadTime, final CacheEntry<K, V> oldEntry) {
+        public long calculateExpiryTime(K key, V value, long loadTime, CacheEntry<K, V> oldEntry) {
           if (value == null) {
             return NO_CACHE;
           }
-          return loadTime + _millisDuration;
+          return loadTime + millisDuration;
         }
       }));
       return;
@@ -334,24 +354,29 @@ public class JCacheBuilder<K,V> {
     if (expiryPolicy instanceof CreatedExpiryPolicy) {
       cache2kConfiguration.setEternal(true);
       Duration d = expiryPolicy.getExpiryForCreation();
-      final long _millisDuration = d.getTimeUnit().toMillis(d.getDurationAmount());
-      if (_millisDuration == 0) {
-        cache2kConfiguration.setExpiryPolicy(new CustomizationReferenceSupplier<org.cache2k.expiry.ExpiryPolicy<K, V>>(new org.cache2k.expiry.ExpiryPolicy<K, V>() {
+      final long millisDuration = d.getTimeUnit().toMillis(d.getDurationAmount());
+      if (millisDuration == 0) {
+        cache2kConfiguration.setExpiryPolicy(
+          new CustomizationReferenceSupplier<org.cache2k.expiry.ExpiryPolicy<K, V>>
+            (new org.cache2k.expiry.ExpiryPolicy<K, V>() {
           @Override
-          public long calculateExpiryTime(final K key, final V value, final long loadTime, final CacheEntry<K, V> oldEntry) {
+          public long calculateExpiryTime(
+            K key, V value, long loadTime, CacheEntry<K, V> oldEntry) {
             return NO_CACHE;
           }
         }));
         return;
       }
-      cache2kConfiguration.setExpiryPolicy(new CustomizationReferenceSupplier<org.cache2k.expiry.ExpiryPolicy<K, V>>(new org.cache2k.expiry.ExpiryPolicy<K, V>() {
+      cache2kConfiguration.setExpiryPolicy(
+        new CustomizationReferenceSupplier<org.cache2k.expiry.ExpiryPolicy<K, V>>
+          (new org.cache2k.expiry.ExpiryPolicy<K, V>() {
         @Override
-        public long calculateExpiryTime(final K key, final V value, final long loadTime, final CacheEntry<K, V> oldEntry) {
+        public long calculateExpiryTime(K key, V value, long loadTime, CacheEntry<K, V> oldEntry) {
           if (value == null) {
             return NO_CACHE;
           }
           if (oldEntry == null) {
-            return loadTime + _millisDuration;
+            return loadTime + millisDuration;
           } else {
             return NEUTRAL;
           }
@@ -360,7 +385,9 @@ public class JCacheBuilder<K,V> {
       return;
     }
     needsTouchyWrapper = true;
-    cache2kConfiguration.setExpiryPolicy(new CustomizationReferenceSupplier<org.cache2k.expiry.ExpiryPolicy<K, V>>(new TouchyJCacheAdapter.ExpiryPolicyAdapter<K,V>(expiryPolicy)));
+    cache2kConfiguration.setExpiryPolicy(
+      new CustomizationReferenceSupplier<org.cache2k.expiry.ExpiryPolicy<K, V>>(
+        new TouchyJCacheAdapter.ExpiryPolicyAdapter<K,V>(expiryPolicy)));
   }
 
   @SuppressWarnings("unchecked")
@@ -371,21 +398,23 @@ public class JCacheBuilder<K,V> {
       eventHandling = (EventHandling<K,V>) EventHandling.DISABLED;
       return;
     }
-    EventHandlingImpl<K,V> _eventHandling = new EventHandlingImpl<K, V>(manager, Executors.newCachedThreadPool());
-    _eventHandling.addInternalListenersToCache2kConfiguration(cache2kConfiguration);
+    EventHandlingImpl<K,V> eventHandling =
+      new EventHandlingImpl<K, V>(manager, Executors.newCachedThreadPool());
+    eventHandling.addInternalListenersToCache2kConfiguration(cache2kConfiguration);
     for (CacheEntryListenerConfiguration<K,V> cfg : config.getCacheEntryListenerConfigurations()) {
-      _eventHandling.registerListener(cfg);
+      eventHandling.registerListener(cfg);
     }
-    eventHandling = _eventHandling;
+    this.eventHandling = eventHandling;
     cache2kConfiguration.getCacheClosedListeners().add(
-      new CustomizationReferenceSupplier<CacheClosedListener>(_eventHandling));
+      new CustomizationReferenceSupplier<CacheClosedListener>(eventHandling));
   }
 
   private void buildAdapterCache() {
     createdCache =
       new JCacheAdapter<K, V>(
         manager,
-        new InternalCache2kBuilder<K,V>(cache2kConfiguration, manager.getCache2kManager()).buildAsIs(),
+        new InternalCache2kBuilder<K,V>(
+          cache2kConfiguration, manager.getCache2kManager()).buildAsIs(),
         keyType.getType(), valueType.getType(),
         config.isStoreByValue(),
         config.isReadThrough() || extraConfiguration.isEnableReadThrough(),
@@ -399,30 +428,32 @@ public class JCacheBuilder<K,V> {
 
   private void wrapForExpiryPolicy() {
     if (needsTouchyWrapper) {
-      createdCache = new TouchyJCacheAdapter<K, V>((JCacheAdapter<K, V>) createdCache, expiryPolicy);
+      createdCache =
+        new TouchyJCacheAdapter<K, V>((JCacheAdapter<K, V>) createdCache, expiryPolicy);
     }
   }
 
   private void wrapIfCopyIsNeeded() {
     if (extraConfiguration.isCopyAlwaysIfRequested() && config.isStoreByValue()) {
-      final ObjectTransformer<K, K> _keyTransformer = createCopyTransformer(keyType);
-      final ObjectTransformer<V, V> _valueTransformer = createCopyTransformer(valueType);
+      ObjectTransformer<K, K> keyTransformer = createCopyTransformer(keyType);
+      ObjectTransformer<V, V> valueTransformer = createCopyTransformer(valueType);
       createdCache =
         new CopyCacheProxy<K,V>(
           createdCache,
-          _keyTransformer,
-          _valueTransformer);
+          keyTransformer,
+          valueTransformer);
     }
   }
 
   @SuppressWarnings("unchecked")
-  private <T> ObjectTransformer<T, T> createCopyTransformer(final CacheType<T> _type) {
+  private <T> ObjectTransformer<T, T> createCopyTransformer(CacheType<T> type) {
     ObjectCopyFactory f = new SimpleObjectCopyFactory();
-    ObjectTransformer<T, T> _keyTransformer = f.createCopyTransformer(_type.getType(), manager.getClassLoader());
-    if (_keyTransformer == null) {
-      _keyTransformer = (ObjectTransformer<T, T>) new RuntimeCopyTransformer(manager.getClassLoader());
-    }
-    return _keyTransformer;
+    ObjectTransformer<T, T> keyTransformer =
+      f.createCopyTransformer(type.getType(), manager.getClassLoader());
+    if (keyTransformer == null) {
+      keyTransformer =
+        (ObjectTransformer<T, T>) new RuntimeCopyTransformer(manager.getClassLoader());}
+    return keyTransformer;
   }
 
   /**

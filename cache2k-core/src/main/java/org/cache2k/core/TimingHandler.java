@@ -46,17 +46,17 @@ import org.cache2k.integration.ResiliencePolicy;
 public abstract class TimingHandler<K,V>  {
 
   /** Used as default */
-  final static TimingHandler ETERNAL = new Eternal();
-  final static TimingHandler ETERNAL_IMMEDIATE = new EternalImmediate();
+  static final TimingHandler ETERNAL = new Eternal();
+  static final TimingHandler ETERNAL_IMMEDIATE = new EternalImmediate();
 
-  private final static TimingHandler IMMEDIATE = new Immediate();
-  private final static int PURGE_INTERVAL = TunableFactory.get(Tunable.class).purgeInterval;
-  private final static long SAFETY_GAP_MILLIS = HeapCache.TUNABLE.sharpExpirySafetyGapMillis;
+  private static final TimingHandler IMMEDIATE = new Immediate();
+  private static final int PURGE_INTERVAL = TunableFactory.get(Tunable.class).purgeInterval;
+  private static final long SAFETY_GAP_MILLIS = HeapCache.TUNABLE.sharpExpirySafetyGapMillis;
 
   /**
    * Instance of expiry calculator that extracts the expiry time from the value.
    */
-  final static ExpiryPolicy<?, ValueWithExpiryTime> ENTRY_EXPIRY_CALCULATOR_FROM_VALUE =
+  static final ExpiryPolicy<?, ValueWithExpiryTime> ENTRY_EXPIRY_CALCULATOR_FROM_VALUE =
     new ExpiryPolicy<Object, ValueWithExpiryTime>() {
       @Override
       public long calculateExpiryTime(
@@ -189,24 +189,24 @@ public abstract class TimingHandler<K,V>  {
   /**
    * Base class for all timing handlers that actually need not to know the current time.
    */
-  static abstract class TimeAgnostic<K,V> extends TimingHandler<K,V> {
+  abstract static class TimeAgnostic<K,V> extends TimingHandler<K,V> {
 
   }
 
   private static class Eternal<K,V> extends TimeAgnostic<K,V> {
 
     @Override
-    public long calculateNextRefreshTime(final Entry<K,V> e, final V v, final long loadTime) {
+    public long calculateNextRefreshTime(Entry<K,V> e, V v, long loadTime) {
       return ExpiryPolicy.ETERNAL;
     }
 
     @Override
-    public long cacheExceptionUntil(final Entry<K, V> e, final ExceptionInformation inf) {
+    public long cacheExceptionUntil(Entry<K, V> e, ExceptionInformation inf) {
       return ExpiryPolicy.ETERNAL;
     }
 
     @Override
-    public long suppressExceptionUntil(final Entry<K, V> e, final ExceptionInformation inf) {
+    public long suppressExceptionUntil(Entry<K, V> e, ExceptionInformation inf) {
       return ExpiryPolicy.ETERNAL;
     }
   }
@@ -214,17 +214,17 @@ public abstract class TimingHandler<K,V>  {
   static class EternalImmediate<K,V> extends TimeAgnostic<K,V> {
 
     @Override
-    public long calculateNextRefreshTime(final Entry<K,V> e, final V v, final long loadTime) {
+    public long calculateNextRefreshTime(Entry<K,V> e, V v, long loadTime) {
       return ExpiryPolicy.ETERNAL;
     }
 
     @Override
-    public long cacheExceptionUntil(final Entry<K, V> e, final ExceptionInformation inf) {
+    public long cacheExceptionUntil(Entry<K, V> e, ExceptionInformation inf) {
       return 0;
     }
 
     @Override
-    public long suppressExceptionUntil(final Entry<K, V> e, final ExceptionInformation inf) {
+    public long suppressExceptionUntil(Entry<K, V> e, ExceptionInformation inf) {
       return 0;
     }
 
@@ -233,17 +233,17 @@ public abstract class TimingHandler<K,V>  {
   static class Immediate<K,V> extends TimeAgnostic<K,V> {
 
     @Override
-    public long calculateNextRefreshTime(final Entry<K,V> e, final V v, final long loadTime) {
+    public long calculateNextRefreshTime(Entry<K,V> e, V v, long loadTime) {
       return 0;
     }
 
     @Override
-    public long cacheExceptionUntil(final Entry<K, V> e, final ExceptionInformation inf) {
+    public long cacheExceptionUntil(Entry<K, V> e, ExceptionInformation inf) {
       return 0;
     }
 
     @Override
-    public long suppressExceptionUntil(final Entry<K, V> e, final ExceptionInformation inf) {
+    public long suppressExceptionUntil(Entry<K, V> e, ExceptionInformation inf) {
       return 0;
     }
   }
@@ -263,7 +263,7 @@ public abstract class TimingHandler<K,V>  {
     ResiliencePolicy<K,V> resiliencePolicy;
     CustomizationSupplier<ResiliencePolicy<K,V>> resiliencePolicyFactory;
 
-    public Static(InternalClock c, final Cache2kConfiguration<K, V> cc) {
+    Static(InternalClock c, Cache2kConfiguration<K, V> cc) {
       clock = c;
       configure(cc);
     }
@@ -311,8 +311,8 @@ public abstract class TimingHandler<K,V>  {
       sharpExpiry = c.isSharpExpiry();
       int timerCount = 1;
       if (c.isBoostConcurrency()) {
-        int _ncpu = Runtime.getRuntime().availableProcessors();
-        timerCount = 2 << (31 - Integer.numberOfLeadingZeros(_ncpu));
+        int ncpu = Runtime.getRuntime().availableProcessors();
+        timerCount = 2 << (31 - Integer.numberOfLeadingZeros(ncpu));
       }
       timer = new SimpleTimer[timerCount];
       timerMask = timerCount - 1;
@@ -347,18 +347,18 @@ public abstract class TimingHandler<K,V>  {
     }
 
     @Override
-    public long calculateNextRefreshTime(final Entry<K,V> e, final V v, final long loadTime) {
+    public long calculateNextRefreshTime(Entry<K,V> e, V v, long loadTime) {
       return calcNextRefreshTime(e.getKey(), v, loadTime, e, null, maxLinger, sharpExpiry);
     }
 
     @Override
-    public long suppressExceptionUntil(final Entry<K, V> e, final ExceptionInformation inf) {
+    public long suppressExceptionUntil(Entry<K, V> e, ExceptionInformation inf) {
       return resiliencePolicy.suppressExceptionUntil(
         e.getKey(), inf, cache.returnCacheEntry(e));
     }
 
     @Override
-    public long cacheExceptionUntil(final Entry<K, V> e, final ExceptionInformation inf) {
+    public long cacheExceptionUntil(Entry<K, V> e, ExceptionInformation inf) {
       return resiliencePolicy.retryLoadAfter(e.getKey(), inf);
     }
 
@@ -368,7 +368,7 @@ public abstract class TimingHandler<K,V>  {
      * This will also start a refresh task, if the entry just was refreshed and it is
      * expired immediately. The refresh task will handle this and expire the entry.
      */
-    long expiredEventuallyStartBackgroundRefresh(final Entry e, boolean sharpExpiry) {
+    long expiredEventuallyStartBackgroundRefresh(Entry e, boolean sharpExpiry) {
       if (refreshAhead) {
         e.setTask(new RefreshTimerTask<K,V>().to(cache, e));
         scheduleTask(0, e);
@@ -389,7 +389,7 @@ public abstract class TimingHandler<K,V>  {
      * @return adjusted value for nextRefreshTime.
      */
     @Override
-    public long stopStartTimer(long expiryTime, final Entry e) {
+    public long stopStartTimer(long expiryTime, Entry e) {
       cancelExpiryTimer(e);
       if (expiryTime == ExpiryTimeValues.NO_CACHE) {
         return Entry.EXPIRED;
@@ -407,7 +407,7 @@ public abstract class TimingHandler<K,V>  {
       if (expiryTime == ExpiryTimeValues.REFRESH) {
         return expiredEventuallyStartBackgroundRefresh(e, false);
       }
-      final long now = clock.millis();
+      long now = clock.millis();
       if (Math.abs(expiryTime) <= now) {
         return expiredEventuallyStartBackgroundRefresh(e, expiryTime < 0);
       }
@@ -446,7 +446,7 @@ public abstract class TimingHandler<K,V>  {
     }
 
     @Override
-    public void scheduleFinalTimerForSharpExpiry(final Entry<K, V> e) {
+    public void scheduleFinalTimerForSharpExpiry(Entry<K, V> e) {
       cancelExpiryTimer(e);
       scheduleFinalExpireWithOptionalRefresh(e, e.getNextRefreshTime());
     }
@@ -454,7 +454,7 @@ public abstract class TimingHandler<K,V>  {
     /**
      * Sharp expiry is requested: Either schedule refresh or expiry.
      */
-    void scheduleFinalExpireWithOptionalRefresh(final Entry<K, V> e, long t) {
+    void scheduleFinalExpireWithOptionalRefresh(Entry<K, V> e, long t) {
       if (refreshAhead) {
         e.setTask(new RefreshTimerTask().to(cache, e));
       } else {
@@ -463,11 +463,11 @@ public abstract class TimingHandler<K,V>  {
       scheduleTask(t, e);
     }
 
-    void scheduleTask(final long nextRefreshTime, final Entry e) {
-      SimpleTimer _timer = timer[e.hashCode & timerMask];
-      if (_timer != null) {
+    void scheduleTask(long nextRefreshTime, Entry e) {
+      SimpleTimer timer = this.timer[e.hashCode & timerMask];
+      if (timer != null) {
         try {
-          _timer.schedule(e.getTask(), nextRefreshTime);
+          timer.schedule(e.getTask(), nextRefreshTime);
         } catch (IllegalStateException ignore) {
         }
       }
@@ -490,11 +490,11 @@ public abstract class TimingHandler<K,V>  {
 
   }
 
-  static abstract class CommonTimerTask<K,V> extends SimpleTimerTask {
+  abstract static class CommonTimerTask<K,V> extends SimpleTimerTask {
     private Entry<K,V> entry;
     private InternalCache<K,V> cache;
 
-    CommonTimerTask<K,V> to(final InternalCache<K,V> c, final Entry<K, V> e) {
+    CommonTimerTask<K,V> to(InternalCache<K,V> c, Entry<K, V> e) {
       cache = c;
       entry = e;
       return this;
@@ -554,7 +554,7 @@ public abstract class TimingHandler<K,V>  {
     /** Store policy factory until init is called and we have the cache reference */
     private CustomizationSupplier<ExpiryPolicy<K, V>> policyFactory;
 
-    public Dynamic(InternalClock c, final Cache2kConfiguration<K, V> cc) {
+    Dynamic(InternalClock c, Cache2kConfiguration<K, V> cc) {
       super(c, cc);
     }
 
@@ -576,7 +576,7 @@ public abstract class TimingHandler<K,V>  {
     }
 
     @Override
-    public synchronized void init(final InternalCache<K, V> c) {
+    public synchronized void init(InternalCache<K, V> c) {
       super.init(c);
       if (expiryPolicy == null) {
         expiryPolicy = c.createCustomization(policyFactory);

@@ -44,11 +44,12 @@ import java.util.ServiceLoader;
  * from the API package.
  *
  * @author Jens Wilke; created: 2014-06-19
- * @see <a href="https://code.google.com/p/android/issues/detail?id=59658">android service loader issue</a>
+ * @see <a href="https://code.google.com/p/android/issues/detail?id=59658">
+ *   android service loader issue</a>
  */
 public class SingleProviderResolver {
 
-  private static Map<Class, Object> providers = new HashMap<Class, Object>();
+  private static final Map<Class, Object> PROVIDERS = new HashMap<Class, Object>();
 
   /**
    * Return a provider for this interface.
@@ -93,26 +94,26 @@ public class SingleProviderResolver {
    * @throws java.lang.LinkageError if there is a problem instantiating the provider
    */
   @SuppressWarnings("unchecked")
-  public synchronized static <T> T resolve(Class<T> c, Class<? extends T> defaultImpl) {
-    if (providers.containsKey(c)) {
-      return (T) providers.get(c);
+  public static synchronized <T> T resolve(Class<T> c, Class<? extends T> defaultImpl) {
+    if (PROVIDERS.containsKey(c)) {
+      return (T) PROVIDERS.get(c);
     }
     try {
-      String _className = readFile("org/cache2k/services/" + c.getName());
+      String className = readFile("org/cache2k/services/" + c.getName());
       T obj = null;
-      if (_className == null) {
+      if (className == null) {
         ServiceLoader<T> sl = ServiceLoader.load(c);
         Iterator<T> it = sl.iterator();
         if (it.hasNext()) {
           obj = it.next();
         }
       } else {
-        obj = (T) SingleProviderResolver.class.getClassLoader().loadClass(_className).newInstance();
+        obj = (T) SingleProviderResolver.class.getClassLoader().loadClass(className).newInstance();
       }
       if (obj == null && defaultImpl != null) {
         obj = defaultImpl.newInstance();
       }
-      providers.put(c, obj);
+      PROVIDERS.put(c, obj);
       return obj;
     } catch (Exception ex) {
       Error err = new LinkageError("Error instantiating " + c.getName(), ex);
@@ -124,8 +125,8 @@ public class SingleProviderResolver {
   /**
    * Read the first line of a file in the classpath into a string.
    */
-  private static String readFile(String _name) throws IOException {
-    InputStream in = SingleProviderResolver.class.getClassLoader().getResourceAsStream(_name);
+  private static String readFile(String name) throws IOException {
+    InputStream in = SingleProviderResolver.class.getClassLoader().getResourceAsStream(name);
     if (in == null) {
       return null;
     }

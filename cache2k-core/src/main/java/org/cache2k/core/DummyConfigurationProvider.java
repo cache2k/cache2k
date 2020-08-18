@@ -35,20 +35,20 @@ import java.util.Collections;
 public class DummyConfigurationProvider implements CacheConfigurationProvider {
 
   @Override
-  public String getDefaultManagerName(final ClassLoader classLoader) {
+  public String getDefaultManagerName(ClassLoader classLoader) {
     return null;
   }
 
   @Override
-  public Cache2kConfiguration getDefaultConfiguration(final CacheManager mgr) {
+  public Cache2kConfiguration getDefaultConfiguration(CacheManager mgr) {
     return new Cache2kConfiguration();
   }
 
   @Override
-  public <K, V> void augmentConfiguration(final CacheManager mgr, final Cache2kConfiguration<K, V> cfg) { }
+  public <K, V> void augmentConfiguration(CacheManager mgr, Cache2kConfiguration<K, V> cfg) { }
 
   @Override
-  public Iterable<String> getConfiguredCacheNames(final CacheManager mgr) {
+  public Iterable<String> getConfiguredCacheNames(CacheManager mgr) {
     return Collections.emptyList();
   }
 

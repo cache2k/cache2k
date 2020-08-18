@@ -28,7 +28,8 @@ import org.cache2k.CacheManager;
  *
  * @author Jens Wilke
  */
-public final class CustomizationSupplierByClassName<T> implements CustomizationSupplier<T>, ValidatingConfigurationBean {
+public final class CustomizationSupplierByClassName<T>
+  implements CustomizationSupplier<T>, ValidatingConfigurationBean {
 
   private String className;
 
@@ -44,7 +45,7 @@ public final class CustomizationSupplierByClassName<T> implements CustomizationS
    *                  via a {@link ClassLoader#loadClass(String)}. The class must have
    *                  a default constructor. Not null.
    */
-  public CustomizationSupplierByClassName(final String className) {
+  public CustomizationSupplierByClassName(String className) {
     if (className == null) {
       throw new NullPointerException("className");
     }
@@ -55,7 +56,7 @@ public final class CustomizationSupplierByClassName<T> implements CustomizationS
     return className;
   }
 
-  public void setClassName(final String v) {
+  public void setClassName(String v) {
     className = v;
   }
 
@@ -68,16 +69,16 @@ public final class CustomizationSupplierByClassName<T> implements CustomizationS
 
   @SuppressWarnings("unchecked")
   @Override
-  public T supply(final CacheManager manager) throws Exception {
+  public T supply(CacheManager manager) throws Exception {
     return (T) manager.getClassLoader().loadClass(className).newInstance();
   }
 
   @Override
-  public boolean equals(final Object other) {
+  public boolean equals(Object other) {
     if (this == other) return true;
     if (!(other instanceof CustomizationSupplierByClassName)) return false;
-    CustomizationSupplierByClassName<?> _that = (CustomizationSupplierByClassName<?>) other;
-    return className.equals(_that.className);
+    CustomizationSupplierByClassName<?> that = (CustomizationSupplierByClassName<?>) other;
+    return className.equals(that.className);
   }
 
   @Override

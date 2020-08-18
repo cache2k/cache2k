@@ -41,7 +41,8 @@ public class Loaders {
     return new RefreshedTimeWrapper<V>(value, refreshedTimeInMillis);
   }
 
-  public static <V> LoadDetail<V> wrapRefreshedTime(LoadDetail<V> value, long refreshedTimeInMillis) {
+  public static <V> LoadDetail<V> wrapRefreshedTime(
+    LoadDetail<V> value, long refreshedTimeInMillis) {
     return new RefreshedTimeWrapper<V>(value, refreshedTimeInMillis);
   }
 

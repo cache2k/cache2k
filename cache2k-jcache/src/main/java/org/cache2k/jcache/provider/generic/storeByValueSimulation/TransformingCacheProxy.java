@@ -61,8 +61,10 @@ public class TransformingCacheProxy<K, V, K0, V0> implements Cache<K, V> {
    * @param cache the wrapped cache
    * @param keyTransformer Keys that go in and out will be sent through
    * @param valueTransformer Values that go in and out will be sent through
-   * @param passingKeyTransformer Special transformer for keys that go in and are not stored by the cache (e.g. for #conatainsKey)
-   * @param passingValueTransformer Special transformer for keys that go in and are not stored by the cache (e.g. for the oldValue in replace)
+   * @param passingKeyTransformer Special transformer for keys that go in and are not stored by
+   *                              the cache (e.g. for #conatainsKey)
+   * @param passingValueTransformer Special transformer for keys that go in and are not stored by
+   *                                the cache (e.g. for the oldValue in replace)
    */
   public TransformingCacheProxy(
       Cache<K0, V0> cache,
@@ -92,7 +94,7 @@ public class TransformingCacheProxy<K, V, K0, V0> implements Cache<K, V> {
     if (keys == null) {
       return null;
     }
-    final int _size = keys.size();
+    final int size = keys.size();
     return new AbstractSet<I>() {
       @Override
       public Iterator<I> iterator() {
@@ -117,16 +119,17 @@ public class TransformingCacheProxy<K, V, K0, V0> implements Cache<K, V> {
 
       @Override
       public int size() {
-        return _size;
+        return size;
       }
     };
   }
 
-  static <E, I> Set<I> compactBoundedSet(final Set<? extends E> keys, final ObjectTransformer<E, I> tr) {
+  static <E, I> Set<I> compactBoundedSet(final Set<? extends E> keys,
+                                         final ObjectTransformer<E, I> tr) {
     if (keys == null) {
       return null;
     }
-    final int _size = keys.size();
+    final int size = keys.size();
     return new AbstractSet<I>() {
       @Override
       public Iterator<I> iterator() {
@@ -151,13 +154,13 @@ public class TransformingCacheProxy<K, V, K0, V0> implements Cache<K, V> {
 
       @Override
       public int size() {
-        return _size;
+        return size;
       }
     };
   }
 
   static <E, I> Set<E> expandSet(final Set<I> keys, final ObjectTransformer<E, I> tr) {
-    final int _size = keys.size();
+    final int size = keys.size();
     return new AbstractSet<E>() {
       @Override
       public Iterator<E> iterator() {
@@ -182,7 +185,7 @@ public class TransformingCacheProxy<K, V, K0, V0> implements Cache<K, V> {
 
       @Override
       public int size() {
-        return _size;
+        return size;
       }
     };
   }
@@ -232,7 +235,8 @@ public class TransformingCacheProxy<K, V, K0, V0> implements Cache<K, V> {
   }
 
   @Override
-  public void loadAll(Set<? extends K> keys, boolean replaceExistingValues, CompletionListener completionListener) {
+  public void loadAll(Set<? extends K> keys, boolean replaceExistingValues,
+                      CompletionListener completionListener) {
     cache.loadAll(compactBoundedKeys(keys), replaceExistingValues, completionListener);
   }
 
@@ -243,7 +247,8 @@ public class TransformingCacheProxy<K, V, K0, V0> implements Cache<K, V> {
 
   @Override
   public V getAndPut(K key, V value) {
-    return valueTransformer.expand(cache.getAndPut(keyTransformer.compact(key), valueTransformer.compact(value)));
+    return valueTransformer.expand(cache.getAndPut(keyTransformer.compact(key),
+      valueTransformer.compact(value)));
   }
 
   @Override
@@ -317,18 +322,21 @@ public class TransformingCacheProxy<K, V, K0, V0> implements Cache<K, V> {
 
   @Override
   public <T> T invoke(
-      K key, final EntryProcessor<K, V, T> entryProcessor, Object... arguments) throws EntryProcessorException {
+      K key, final EntryProcessor<K, V, T> entryProcessor, Object... arguments)
+    throws EntryProcessorException {
     EntryProcessor<K0, V0, T> processor = wrapEntryProcessor(entryProcessor);
     return cache.invoke(keyTransformer.compact(key), processor, arguments);
   }
 
-  private <T> EntryProcessor<K0, V0, T> wrapEntryProcessor(final EntryProcessor<K, V, T> entryProcessor) {
+  private <T> EntryProcessor<K0, V0, T> wrapEntryProcessor(
+    final EntryProcessor<K, V, T> entryProcessor) {
     if (entryProcessor == null) {
       throw new NullPointerException("null processor");
     }
     return new EntryProcessor<K0, V0, T>() {
       @Override
-      public T process(final MutableEntry<K0, V0> entry, Object... arguments) throws EntryProcessorException {
+      public T process(final MutableEntry<K0, V0> entry, Object... arguments)
+        throws EntryProcessorException {
         MutableEntry<K, V>  e = wrapMutableEntry(entry);
         return entryProcessor.process(e, arguments);
       }
@@ -373,7 +381,8 @@ public class TransformingCacheProxy<K, V, K0, V0> implements Cache<K, V> {
   public <T> Map<K, EntryProcessorResult<T>> invokeAll(
       Set<? extends K> keys, EntryProcessor<K, V, T> entryProcessor, Object... arguments) {
     EntryProcessor<K0, V0, T> processor = wrapEntryProcessor(entryProcessor);
-    Map<K0, EntryProcessorResult<T>> map = cache.invokeAll(compactBoundedKeys(keys), processor, arguments);
+    Map<K0, EntryProcessorResult<T>> map =
+      cache.invokeAll(compactBoundedKeys(keys), processor, arguments);
     Map<K, EntryProcessorResult<T>> m2 = new HashMap<K, EntryProcessorResult<T>>();
     for (Map.Entry<K0, EntryProcessorResult<T>> e : map.entrySet()) {
       m2.put(keyTransformer.expand(e.getKey()), e.getValue());
@@ -412,7 +421,8 @@ public class TransformingCacheProxy<K, V, K0, V0> implements Cache<K, V> {
    * @throws UnsupportedOperationException always throws exception
    */
   @Override
-  public void registerCacheEntryListener(CacheEntryListenerConfiguration<K, V> cacheEntryListenerConfiguration) {
+  public void registerCacheEntryListener(
+    CacheEntryListenerConfiguration<K, V> cacheEntryListenerConfiguration) {
     throw new UnsupportedOperationException();
   }
 
@@ -422,7 +432,8 @@ public class TransformingCacheProxy<K, V, K0, V0> implements Cache<K, V> {
    * @throws UnsupportedOperationException always throws exception
    */
   @Override
-  public void deregisterCacheEntryListener(CacheEntryListenerConfiguration<K, V> cacheEntryListenerConfiguration) {
+  public void deregisterCacheEntryListener(
+    CacheEntryListenerConfiguration<K, V> cacheEntryListenerConfiguration) {
     throw new UnsupportedOperationException();
   }
 

@@ -64,7 +64,7 @@ public class WiredCache<K, V> extends BaseCache<K, V>
   implements StorageAdapter.Parent, HeapCacheListener<K,V> {
 
   @SuppressWarnings("unchecked")
-  final Operations<K, V> OPS = Operations.SINGLETON;
+  final Operations<K, V> ops = Operations.SINGLETON;
 
   HeapCache<K,V> heapCache;
   StorageAdapter storage;
@@ -122,28 +122,28 @@ public class WiredCache<K, V> extends BaseCache<K, V>
   }
 
   @Override
-  public V computeIfAbsent(final K key, final Callable<V> callable) {
-    return returnValue(execute(key, OPS.computeIfAbsent(key, callable)));
+  public V computeIfAbsent(K key, Callable<V> callable) {
+    return returnValue(execute(key, ops.computeIfAbsent(key, callable)));
   }
 
   @Override
   public V peekAndPut(K key, V value) {
-    return returnValue(execute(key, OPS.peekAndPut(key, value)));
+    return returnValue(execute(key, ops.peekAndPut(key, value)));
   }
 
   @Override
   public V peekAndRemove(K key) {
-    return returnValue(execute(key, OPS.peekAndRemove(key)));
+    return returnValue(execute(key, ops.peekAndRemove(key)));
   }
 
   @Override
   public V peekAndReplace(K key, V value) {
-    return returnValue(execute(key, OPS.peekAndReplace(key, value)));
+    return returnValue(execute(key, ops.peekAndReplace(key, value)));
   }
 
   @Override
   public CacheEntry<K, V> peekEntry(K key) {
-    return execute(key, OPS.peekEntry(key));
+    return execute(key, ops.peekEntry(key));
   }
 
   @Override
@@ -166,16 +166,17 @@ public class WiredCache<K, V> extends BaseCache<K, V>
   }
 
   @Override
-  public void prefetchAll(final Iterable<? extends K> _keys, final CacheOperationCompletionListener l) {
-    final CacheOperationCompletionListener _listener= l != null ? l : HeapCache.DUMMY_LOAD_COMPLETED_LISTENER;
+  public void prefetchAll(Iterable<? extends K> keys, CacheOperationCompletionListener l) {
+    final CacheOperationCompletionListener listener =
+      l != null ? l : HeapCache.DUMMY_LOAD_COMPLETED_LISTENER;
     if (!isLoaderPresent()) {
-      _listener.onCompleted();
+      listener.onCompleted();
       return;
     }
-    final AtomicInteger _count = new AtomicInteger(2);
+    final AtomicInteger count = new AtomicInteger(2);
     try {
-      Set<K> _keysToLoad = heapCache.checkAllPresent(_keys);
-      for (K k : _keysToLoad) {
+      Set<K> keysToLoad = heapCache.checkAllPresent(keys);
+      for (K k : keysToLoad) {
         final K key = k;
         Runnable r = new HeapCache.RunWithCatch(this) {
           @Override
@@ -183,25 +184,25 @@ public class WiredCache<K, V> extends BaseCache<K, V>
             try {
               load(key);
             } finally {
-              if (_count.decrementAndGet() == 0) {
-                _listener.onCompleted();
+              if (count.decrementAndGet() == 0) {
+                listener.onCompleted();
               }
             }
           }
         };
         try {
           heapCache.getPrefetchExecutor().execute(r);
-          _count.incrementAndGet();
+          count.incrementAndGet();
         } catch (RejectedExecutionException ignore) { }
       }
     } finally {
-      if (_count.addAndGet(-2) == 0) {
-        _listener.onCompleted();
+      if (count.addAndGet(-2) == 0) {
+        listener.onCompleted();
       }
     }
   }
 
-  private void load(final K key) {
+  private void load(K key) {
     Entry<K, V> e = lookupQuick(key);
     if (e != null && e.hasFreshData(getClock())) {
       return;
@@ -209,23 +210,23 @@ public class WiredCache<K, V> extends BaseCache<K, V>
     load(key, e);
   }
 
-  private void load(final K key, final Entry<K, V> _e) {
-    execute(key, _e, OPS.get(key));
+  private void load(K key, Entry<K, V> e) {
+    execute(key, e, ops.get(key));
   }
 
   @Override
   public boolean containsKey(K key) {
-    return execute(key, OPS.contains(key));
+    return execute(key, ops.contains(key));
   }
 
   @Override
   public boolean putIfAbsent(K key, V value) {
-    return execute(key, OPS.putIfAbsent(key, value));
+    return execute(key, ops.putIfAbsent(key, value));
   }
 
   @Override
   public void put(K key, V value) {
-    execute(key, OPS.put(key, value));
+    execute(key, ops.put(key, value));
   }
 
   @Override
@@ -237,42 +238,43 @@ public class WiredCache<K, V> extends BaseCache<K, V>
 
   @Override
   public void remove(K key) {
-    execute(key, OPS.remove(key));
+    execute(key, ops.remove(key));
   }
 
   @Override
   public boolean removeIfEquals(K key, V value) {
-    return execute(key, OPS.remove(key, value));
+    return execute(key, ops.remove(key, value));
   }
 
   @Override
   public boolean containsAndRemove(K key) {
-    return execute(key, OPS.containsAndRemove(key));
+    return execute(key, ops.containsAndRemove(key));
   }
 
   @Override
-  public boolean replace(K key, V _newValue) {
-    return execute(key, OPS.replace(key, _newValue));
+  public boolean replace(K key, V newValue) {
+    return execute(key, ops.replace(key, newValue));
   }
 
   @Override
-  public boolean replaceIfEquals(K key, V _oldValue, V _newValue) {
-    return execute(key, OPS.replace(key, _oldValue, _newValue));
+  public boolean replaceIfEquals(K key, V oldValue, V newValue) {
+    return execute(key, ops.replace(key, oldValue, newValue));
   }
 
   @Override
-  public void loadAll(final Iterable<? extends K> _keys, final CacheOperationCompletionListener l) {
+  public void loadAll(Iterable<? extends K> keys, CacheOperationCompletionListener l) {
     checkLoaderPresent();
-    final CacheOperationCompletionListener _listener= l != null ? l : HeapCache.DUMMY_LOAD_COMPLETED_LISTENER;
-    Set<K> _keysToLoad = heapCache.checkAllPresent(_keys);
-    if (_keysToLoad.isEmpty()) {
-      _listener.onCompleted();
+    CacheOperationCompletionListener listener =
+      l != null ? l : HeapCache.DUMMY_LOAD_COMPLETED_LISTENER;
+    Set<K> keysToLoad = heapCache.checkAllPresent(keys);
+    if (keysToLoad.isEmpty()) {
+      listener.onCompleted();
       return;
     }
     if (asyncLoader != null) {
-      loadAllWithAsyncLoader(_listener, _keysToLoad);
+      loadAllWithAsyncLoader(listener, keysToLoad);
     } else {
-      loadAllWithSyncLoader(_listener, _keysToLoad);
+      loadAllWithSyncLoader(listener, keysToLoad);
     }
   }
 
@@ -280,27 +282,29 @@ public class WiredCache<K, V> extends BaseCache<K, V>
    * Load the keys into the cache via the async path. The key set must always be non empty.
    * The completion listener is called when all keys are loaded.
    */
-  private void loadAllWithAsyncLoader(final CacheOperationCompletionListener _listener, final Set<K> _keysToLoad) {
-    final AtomicInteger _countDown = new AtomicInteger(_keysToLoad.size());
+  private void loadAllWithAsyncLoader(final CacheOperationCompletionListener listener,
+                                      Set<K> keysToLoad) {
+    final AtomicInteger countDown = new AtomicInteger(keysToLoad.size());
     EntryAction.CompletedCallback cb = new EntryAction.CompletedCallback() {
       @Override
-      public void entryActionCompleted(final EntryAction ea) {
-        int v = _countDown.decrementAndGet();
+      public void entryActionCompleted(EntryAction ea) {
+        int v = countDown.decrementAndGet();
         if (v == 0) {
-          _listener.onCompleted();
+          listener.onCompleted();
           return;
         }
       }
     };
-    for (K k : _keysToLoad) {
-      final K key = k;
-      executeAsyncLoadOrRefresh(key, null, OPS.GET, cb);
+    for (K k : keysToLoad) {
+      K key = k;
+      executeAsyncLoadOrRefresh(key, null, Operations.GET, cb);
     }
   }
 
-  private void loadAllWithSyncLoader(final CacheOperationCompletionListener _listener, final Set<K> _keysToLoad) {
-    final AtomicInteger _countDown = new AtomicInteger(_keysToLoad.size());
-    for (K k : _keysToLoad) {
+  private void loadAllWithSyncLoader(final CacheOperationCompletionListener listener,
+                                     Set<K> keysToLoad) {
+    final AtomicInteger countDown = new AtomicInteger(keysToLoad.size());
+    for (K k : keysToLoad) {
       final K key = k;
       Runnable r = new HeapCache.RunWithCatch(this) {
         @Override
@@ -308,9 +312,9 @@ public class WiredCache<K, V> extends BaseCache<K, V>
           try {
             load(key);
           } finally {
-            int v = _countDown.decrementAndGet();
+            int v = countDown.decrementAndGet();
             if (v == 0) {
-              _listener.onCompleted();
+              listener.onCompleted();
               return;
             }
           }
@@ -325,30 +329,32 @@ public class WiredCache<K, V> extends BaseCache<K, V>
   }
 
   @Override
-  public void reloadAll(final Iterable<? extends K> _keys, final CacheOperationCompletionListener l) {
+  public void reloadAll(Iterable<? extends K> keys, CacheOperationCompletionListener l) {
     checkLoaderPresent();
-    final CacheOperationCompletionListener _listener= l != null ? l : HeapCache.DUMMY_LOAD_COMPLETED_LISTENER;
-    Set<K> _keySet = heapCache.generateKeySet(_keys);
+    CacheOperationCompletionListener listener =
+      l != null ? l : HeapCache.DUMMY_LOAD_COMPLETED_LISTENER;
+    Set<K> keySet = heapCache.generateKeySet(keys);
     if (asyncLoader != null) {
-      reloadAllWithAsyncLoader(_listener, _keySet);
+      reloadAllWithAsyncLoader(listener, keySet);
     } else {
-      reloadAllWithSyncLoader(_listener, _keySet);
+      reloadAllWithSyncLoader(listener, keySet);
     }
   }
 
-  private void reloadAllWithAsyncLoader(final CacheOperationCompletionListener _listener, final Set<K> _keySet) {
-    final AtomicInteger _countDown = new AtomicInteger(_keySet.size());
+  private void reloadAllWithAsyncLoader(final CacheOperationCompletionListener listener,
+                                        Set<K> keySet) {
+    final AtomicInteger countDown = new AtomicInteger(keySet.size());
     EntryAction.CompletedCallback cb = new EntryAction.CompletedCallback() {
       @Override
-      public void entryActionCompleted(final EntryAction ea) {
-        if (_countDown.decrementAndGet() == 0) {
-          _listener.onCompleted();
+      public void entryActionCompleted(EntryAction ea) {
+        if (countDown.decrementAndGet() == 0) {
+          listener.onCompleted();
         }
       }
     };
-    for (K k : _keySet) {
-      final K key = k;
-      executeAsyncLoadOrRefresh(key, null, OPS.UNCONDITIONAL_LOAD, cb);
+    for (K k : keySet) {
+      K key = k;
+      executeAsyncLoadOrRefresh(key, null, ops.unconditionalLoad, cb);
     }
   }
 
@@ -361,11 +367,11 @@ public class WiredCache<K, V> extends BaseCache<K, V>
    */
   private <R> void executeAsyncLoadOrRefresh(K key, Entry<K,V> e, Semantic<K,V,R> op,
                                              EntryAction.CompletedCallback<K,V,R> cb) {
-    EntryAction<K,V,R> _action = new MyEntryAction<R>(op, key, e, cb);
-    _action.start();
+    EntryAction<K,V,R> action = new MyEntryAction<R>(op, key, e, cb);
+    action.start();
   }
 
-  protected <R> MyEntryAction<R> createFireAndForgetAction(final Entry<K, V> e, final Semantic<K, V, R> op) {
+  protected <R> MyEntryAction<R> createFireAndForgetAction(Entry<K, V> e, Semantic<K, V, R> op) {
     return new MyEntryAction<R>(op, e.getKey(), e, EntryAction.NOOP_CALLBACK);
   }
 
@@ -374,19 +380,20 @@ public class WiredCache<K, V> extends BaseCache<K, V>
     return heapCache.getExecutor();
   }
 
-  private void reloadAllWithSyncLoader(final CacheOperationCompletionListener _listener, final Set<K> _keySet) {
-    final AtomicInteger _countDown = new AtomicInteger(_keySet.size());
-    for (K k : _keySet) {
+  private void reloadAllWithSyncLoader(final CacheOperationCompletionListener listener,
+                                       Set<K> keySet) {
+    final AtomicInteger countDown = new AtomicInteger(keySet.size());
+    for (K k : keySet) {
       final K key = k;
       Runnable r = new HeapCache.RunWithCatch(this) {
         @SuppressWarnings("unchecked")
         @Override
         public void action() {
           try {
-            execute(key, (Semantic<K, V, Void>) OPS.UNCONDITIONAL_LOAD);
+            execute(key, (Semantic<K, V, Void>) ops.unconditionalLoad);
           } finally {
-            if (_countDown.decrementAndGet() == 0) {
-              _listener.onCompleted();
+            if (countDown.decrementAndGet() == 0) {
+              listener.onCompleted();
             }
           }
         }
@@ -434,7 +441,7 @@ public class WiredCache<K, V> extends BaseCache<K, V>
     if (e != null && e.hasFreshData(getClock())) {
       return returnValue(e);
     }
-    return returnValue(execute(key, e, OPS.get(key)));
+    return returnValue(execute(key, e, ops.get(key)));
    }
 
   /**
@@ -443,10 +450,10 @@ public class WiredCache<K, V> extends BaseCache<K, V>
    * all by working on the entry.
    */
   @Override
-  public Map<K, V> getAll(final Iterable<? extends K> keys) {
+  public Map<K, V> getAll(Iterable<? extends K> keys) {
     Map<K, CacheEntry<K, V>> map = new HashMap<K, CacheEntry<K, V>>();
     for (K k : keys) {
-      CacheEntry<K, V> e = execute(k, OPS.getEntry(k));
+      CacheEntry<K, V> e = execute(k, ops.getEntry(k));
       if (e != null) {
         map.put(k, e);
       }
@@ -456,7 +463,7 @@ public class WiredCache<K, V> extends BaseCache<K, V>
 
   @Override
   public CacheEntry<K, V> getEntry(K key) {
-    return execute(key, OPS.getEntry(key));
+    return execute(key, ops.getEntry(key));
   }
 
   @Override
@@ -472,7 +479,7 @@ public class WiredCache<K, V> extends BaseCache<K, V>
     if (key == null) {
       throw new NullPointerException();
     }
-    return execute(key, OPS.invoke(key, entryProcessor));
+    return execute(key, ops.invoke(key, entryProcessor));
   }
 
   @SuppressWarnings("unchecked")
@@ -480,12 +487,14 @@ public class WiredCache<K, V> extends BaseCache<K, V>
   public Iterator<CacheEntry<K, V>> iterator() {
     Iterator<CacheEntry<K, V>> tor;
     if (storage == null) {
-      tor = new HeapCache.IteratorFilterEntry2Entry(heapCache, heapCache.iterateAllHeapEntries(), true);
+      tor = new HeapCache.IteratorFilterEntry2Entry(
+        heapCache, heapCache.iterateAllHeapEntries(), true);
     } else {
-      tor = new HeapCache.IteratorFilterEntry2Entry(heapCache, storage.iterateAll(), false);
+      tor = new HeapCache.IteratorFilterEntry2Entry(
+        heapCache, storage.iterateAll(), false);
     }
     final Iterator<CacheEntry<K, V>> it = tor;
-    Iterator<CacheEntry<K, V>> _adapted = new Iterator<CacheEntry<K, V>>() {
+    Iterator<CacheEntry<K, V>> adapted = new Iterator<CacheEntry<K, V>>() {
 
       CacheEntry<K, V> entry;
 
@@ -507,7 +516,7 @@ public class WiredCache<K, V> extends BaseCache<K, V>
         WiredCache.this.remove(entry.getKey());
       }
     };
-    return _adapted;
+    return adapted;
   }
 
   @Override
@@ -516,7 +525,7 @@ public class WiredCache<K, V> extends BaseCache<K, V>
     if (e != null && e.hasFreshData(getClock())) {
       return returnValue(e);
     }
-    return returnValue(execute(key, OPS.peek(key)));
+    return returnValue(execute(key, ops.peek(key)));
   }
 
   /**
@@ -525,10 +534,10 @@ public class WiredCache<K, V> extends BaseCache<K, V>
    * on the entry.
    */
   @Override
-  public Map<K, V> peekAll(final Iterable<? extends K> keys) {
+  public Map<K, V> peekAll(Iterable<? extends K> keys) {
     Map<K, CacheEntry<K, V>> map = new HashMap<K, CacheEntry<K, V>>();
     for (K k : keys) {
-      CacheEntry<K, V> e = execute(k, OPS.peekEntry(k));
+      CacheEntry<K, V> e = execute(k, ops.peekEntry(k));
       if (e != null) {
         map.put(k, e);
       }
@@ -552,7 +561,7 @@ public class WiredCache<K, V> extends BaseCache<K, V>
   }
 
   @Override
-  public void logAndCountInternalException(final String s, final Throwable t) {
+  public void logAndCountInternalException(String s, Throwable t) {
     heapCache.logAndCountInternalException(s, t);
   }
 
@@ -604,13 +613,13 @@ public class WiredCache<K, V> extends BaseCache<K, V>
     } catch (CacheClosedException ex) {
       return;
     }
-    Future<Void> _waitForStorage = null;
+    Future<Void> waitForStorage = null;
     if (storage != null) {
-      _waitForStorage = storage.shutdown();
+      waitForStorage = storage.shutdown();
     }
-    if (_waitForStorage != null) {
+    if (waitForStorage != null) {
       try {
-        _waitForStorage.get();
+        waitForStorage.get();
       } catch (Exception ex) {
         StorageAdapter.rethrow("shutdown", ex);
       }
@@ -643,7 +652,7 @@ public class WiredCache<K, V> extends BaseCache<K, V>
   }
 
   @Override
-  public CacheEntry<K, V> returnCacheEntry(final ExaminationEntry<K, V> e) {
+  public CacheEntry<K, V> returnCacheEntry(ExaminationEntry<K, V> e) {
     return heapCache.returnCacheEntry(e);
   }
 
@@ -652,9 +661,9 @@ public class WiredCache<K, V> extends BaseCache<K, V>
   }
 
   @Override
-  public void resetStorage(StorageAdapter _from, StorageAdapter to) {
+  public void resetStorage(StorageAdapter current, StorageAdapter replacement) {
     synchronized (lockObject()) {
-      storage = to;
+      storage = replacement;
     }
   }
 
@@ -674,7 +683,7 @@ public class WiredCache<K, V> extends BaseCache<K, V>
    * Called from storage. The entry referenced by the key is expired and
    * will be purged.
    */
-  public void lockAndRunForPurge(K key, PurgeableStorage.PurgeAction _action) {
+  public void lockAndRunForPurge(K key, PurgeableStorage.PurgeAction action) {
     throw new UnsupportedOperationException();
   }
 
@@ -682,23 +691,23 @@ public class WiredCache<K, V> extends BaseCache<K, V>
    * Calls eviction listeners.
    */
   @Override
-  public void onEvictionFromHeap(final Entry<K, V> e) {
-    CacheEntry<K,V> _currentEntry = heapCache.returnCacheEntry(e);
+  public void onEvictionFromHeap(Entry<K, V> e) {
+    CacheEntry<K,V> currentEntry = heapCache.returnCacheEntry(e);
     if (syncEntryEvictedListeners != null) {
       for (CacheEntryEvictedListener<K, V> l : syncEntryEvictedListeners) {
-        l.onEntryEvicted(this, _currentEntry);
+        l.onEntryEvicted(this, currentEntry);
       }
     }
   }
 
 
   @Override
-  protected <R> EntryAction<K, V, R> createEntryAction(final K key, final Entry<K, V> e, final Semantic<K, V, R> op) {
+  protected <R> EntryAction<K, V, R> createEntryAction(K key, Entry<K, V> e, Semantic<K, V, R> op) {
     return new MyEntryAction<R>(op, key, e);
   }
 
   @Override
-  public String getEntryState(final K key) {
+  public String getEntryState(K key) {
     return heapCache.getEntryState(key);
   }
 
@@ -709,7 +718,7 @@ public class WiredCache<K, V> extends BaseCache<K, V>
    * Semantics double with {@link HeapCache#timerEventExpireEntry(Entry, Object)}
    */
   @Override
-  public void timerEventExpireEntry(final Entry<K, V> e, final Object task) {
+  public void timerEventExpireEntry(Entry<K, V> e, Object task) {
     metrics().timerEvent();
     synchronized (e) {
       if (e.getTask() != task) { return; }
@@ -723,12 +732,12 @@ public class WiredCache<K, V> extends BaseCache<K, V>
         return;
       }
     }
-    enqueueTimerAction(e, OPS.EXPIRE_EVENT);
+    enqueueTimerAction(e, ops.expireEvent);
   }
 
   private <R> void enqueueTimerAction(Entry<K,V> e, Semantic<K,V,R> op) {
-    EntryAction<K,V,R> _action = createFireAndForgetAction(e, op);
-    getExecutor().execute(_action);
+    EntryAction<K,V,R> action = createFireAndForgetAction(e, op);
+    getExecutor().execute(action);
   }
 
   /**
@@ -737,31 +746,31 @@ public class WiredCache<K, V> extends BaseCache<K, V>
    * thread pool.
    */
   @Override
-  public void timerEventRefresh(final Entry<K, V> e, final Object task) {
+  public void timerEventRefresh(Entry<K, V> e, Object task) {
     metrics().timerEvent();
     synchronized (e) {
       if (e.getTask() != task) { return; }
       if (asyncLoader != null) {
-        enqueueTimerAction(e, OPS.REFRESH);
+        enqueueTimerAction(e, ops.refresh);
         return;
       }
       try {
-        heapCache.prefetchExecutor.execute(createFireAndForgetAction(e, OPS.REFRESH));
+        heapCache.prefetchExecutor.execute(createFireAndForgetAction(e, ops.refresh));
         return;
       } catch (RejectedExecutionException ignore) {
       }
       metrics().refreshFailed();
-      enqueueTimerAction(e, OPS.EXPIRE_EVENT);
+      enqueueTimerAction(e, ops.expireEvent);
     }
   }
 
   @Override
-  public void timerEventProbationTerminated(final Entry<K, V> e, final Object task) {
+  public void timerEventProbationTerminated(Entry<K, V> e, Object task) {
     metrics().timerEvent();
     synchronized (e) {
       if (e.getTask() != task) { return; }
     }
-    enqueueTimerAction(e, OPS.EXPIRE_EVENT);
+    enqueueTimerAction(e, ops.expireEvent);
   }
 
   /**
@@ -769,13 +778,13 @@ public class WiredCache<K, V> extends BaseCache<K, V>
    */
   class MyEntryAction<R> extends EntryAction<K,V, R> {
 
-    public MyEntryAction(final Semantic<K, V, R> op, final K _k, final Entry<K, V> e) {
-      super(WiredCache.this.heapCache, WiredCache.this, op, _k, e);
+    MyEntryAction(Semantic<K, V, R> op, K k, Entry<K, V> e) {
+      super(WiredCache.this.heapCache, WiredCache.this, op, k, e);
     }
 
-    public MyEntryAction(final Semantic<K, V, R> op, final K _k,
-                         final Entry<K, V> e, CompletedCallback cb) {
-      super(WiredCache.this.heapCache, WiredCache.this, op, _k, e, cb);
+    MyEntryAction(Semantic<K, V, R> op, K k,
+                  Entry<K, V> e, CompletedCallback cb) {
+      super(WiredCache.this.heapCache, WiredCache.this, op, k, e, cb);
     }
 
     @Override

@@ -40,9 +40,9 @@ public class JCacheJmxStatisticsMXBean implements CacheStatisticsMXBean {
   private final AtomicLong removalsOffset = new AtomicLong();
   private final AtomicLong hitsOffset = new AtomicLong();
 
-  public JCacheJmxStatisticsMXBean(JCacheAdapter _cache) {
-    cache = _cache.cache;
-    adapter = _cache;
+  public JCacheJmxStatisticsMXBean(JCacheAdapter cache) {
+    this.cache = cache.cache;
+    adapter = cache;
   }
 
   @Override
@@ -62,21 +62,21 @@ public class JCacheJmxStatisticsMXBean implements CacheStatisticsMXBean {
   }
 
   private long calcHits(InternalCacheInfo inf) {
-    long _readUsage = inf.getGetCount();
-    long _missCount = inf.getMissCount();
-    return _readUsage - _missCount +
+    long readUsage = inf.getGetCount();
+    long missCount = inf.getMissCount();
+    return readUsage - missCount +
       adapter.iterationHitCorrectionCounter.get();
   }
 
   @Override
   public float getCacheHitPercentage() {
     InternalCacheInfo inf = getInfo();
-    long _hits = calcHits(inf);
-    long _miss = calcMisses(inf);
-    if (_hits == 0) {
+    long hits = calcHits(inf);
+    long miss = calcMisses(inf);
+    if (hits == 0) {
       return 0.0F;
     }
-    return (float) _hits * 100F / (_hits + _miss);
+    return (float) hits * 100F / (hits + miss);
   }
 
   @Override

@@ -48,7 +48,8 @@ public interface CacheInfoMXBean {
    * When iterating the entries the cache will always return less or an identical number of entries.
    *
    * <p>Expired entries may stay in the cache {@link Cache2kBuilder#keepDataAfterExpired(boolean)}.
-   * These entries will be counted, but will not be returned by the iterator or a {@code peek} operation
+   * These entries will be counted, but will not be returned by the iterator or a {@code peek}
+   * operation
    */
   long getSize();
 
@@ -183,11 +184,11 @@ public interface CacheInfoMXBean {
   double getHitRate();
 
   /**
-   * A value between 0 and 100 to help evaluate the quality of the hashing function. 100 means perfect, there
-   * are no collisions. A value of 80 means that 80% of the entries are reachable without collision.
-   * The size of the longest collision list is also combined into this value, for example if the longest collision
-   * size is 20, then this value is 85 and below. This way this metrics can be used to detect bad hash function
-   * and hash collision attacks.
+   * A value between 0 and 100 to help evaluate the quality of the hashing function.
+   * 100 means perfect, there are no collisions. A value of 80 means that 80% of the entries are
+   * reachable without collision. The size of the longest collision list is also combined into this
+   * value, for example if the longest collision size is 20, then this value is 85 and below.
+   * This way this metrics can be used to detect bad hash function and hash collision attacks.
    */
   int getHashQuality();
 

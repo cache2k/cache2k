@@ -27,39 +27,40 @@ import org.cache2k.core.concurrency.Job;
  *
  * @author Jens Wilke
  */
+@SuppressWarnings("rawtypes")
 public class SegmentedEviction implements Eviction, EvictionMetrics {
 
-  private Eviction[] segments;
+  private final Eviction[] segments;
 
-  public SegmentedEviction(final Eviction[] _segments) {
-    segments = _segments;
+  public SegmentedEviction(Eviction[] segments) {
+    this.segments = segments;
   }
 
 
   @Override
-  public void updateWeight(final Entry e) {
+  public void updateWeight(Entry e) {
     int hc = e.hashCode;
     Eviction[] sgs = segments;
-    int _mask = sgs.length - 1;
-    int idx = hc & _mask;
+    int mask = sgs.length - 1;
+    int idx = hc & mask;
     sgs[idx].updateWeight(e);
   }
 
   @Override
-  public boolean submitWithoutEviction(final Entry e) {
+  public boolean submitWithoutEviction(Entry e) {
     int hc = e.hashCode;
     Eviction[] sgs = segments;
-    int _mask = sgs.length - 1;
-    int idx = hc & _mask;
+    int mask = sgs.length - 1;
+    int idx = hc & mask;
     return sgs[idx].submitWithoutEviction(e);
   }
 
   @Override
-  public void evictEventually(int _hashCodeHint) {
+  public void evictEventually(int hashCodeHint) {
     Eviction[] sgs = segments;
-    int _mask = sgs.length - 1;
-    int idx = _hashCodeHint & _mask;
-    sgs[idx].evictEventually(_hashCodeHint);
+    int mask = sgs.length - 1;
+    int idx = hashCodeHint & mask;
+    sgs[idx].evictEventually(hashCodeHint);
   }
 
   @Override
@@ -71,11 +72,11 @@ public class SegmentedEviction implements Eviction, EvictionMetrics {
 
   @Override
   public long removeAll() {
-    long _count = 0;
+    long count = 0;
     for (Eviction ev : segments) {
-      _count += ev.removeAll();
+      count += ev.removeAll();
     }
-    return _count;
+    return count;
   }
 
   @Override
@@ -109,7 +110,7 @@ public class SegmentedEviction implements Eviction, EvictionMetrics {
   }
 
   @Override
-  public <T> T runLocked(final Job<T> j) {
+  public <T> T runLocked(Job<T> j) {
     return runLocked(0, j);
   }
 
@@ -126,10 +127,10 @@ public class SegmentedEviction implements Eviction, EvictionMetrics {
   }
 
   @Override
-  public void checkIntegrity(final IntegrityState _integrityState) {
+  public void checkIntegrity(IntegrityState integrityState) {
     for (int i = 0; i < segments.length; i++) {
-      _integrityState.group("eviction" + i);
-      segments[i].checkIntegrity(_integrityState);
+      integrityState.group("eviction" + i);
+      segments[i].checkIntegrity(integrityState);
     }
   }
 
@@ -270,7 +271,7 @@ public class SegmentedEviction implements Eviction, EvictionMetrics {
   }
 
   @Override
-  public void changeCapacity(final long entryCountOrWeight) {
+  public void changeCapacity(long entryCountOrWeight) {
     long limitPerSegment = isWeigherPresent() ?
       InternalCache2kBuilder.determineMaxWeight(entryCountOrWeight, segments.length) :
       InternalCache2kBuilder.determineMaxSize(entryCountOrWeight, segments.length);
@@ -278,4 +279,5 @@ public class SegmentedEviction implements Eviction, EvictionMetrics {
       ev.changeCapacity(limitPerSegment);
     }
   }
+
 }

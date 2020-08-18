@@ -28,17 +28,17 @@ public interface ObjectTransformer<E, I> {
   ObjectTransformer IDENT_TRANSFORM = new ObjectTransformer<Object, Object>() {
 
     @Override
-    public Object expand(Object _internal) {
-      return _internal;
+    public Object expand(Object internal) {
+      return internal;
     }
 
     @Override
-    public Object compact(Object _external) {
-      return _external;
+    public Object compact(Object external) {
+      return external;
     }
   };
 
-  E expand(I _internal);
-  I compact(E _external);
+  E expand(I internal);
+  I compact(E external);
 
 }

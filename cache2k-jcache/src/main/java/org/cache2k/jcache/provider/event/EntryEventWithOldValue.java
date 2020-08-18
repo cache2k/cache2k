@@ -30,11 +30,11 @@ import javax.cache.event.EventType;
  */
 public class EntryEventWithOldValue<K, V> extends EntryEvent<K, V> {
 
-  private V oldValue;
+  private final V oldValue;
 
-  public EntryEventWithOldValue(final Cache source, final EventType eventType, final K _key, final V _value, final V _oldValue) {
-    super(source, eventType, _key, _value);
-    oldValue = _oldValue;
+  public EntryEventWithOldValue(Cache source, EventType eventType, K key, V value, V oldValue) {
+    super(source, eventType, key, value);
+    this.oldValue = oldValue;
   }
 
   @Override

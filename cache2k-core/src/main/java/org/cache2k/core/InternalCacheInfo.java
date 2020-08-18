@@ -20,8 +20,6 @@ package org.cache2k.core;
  * #L%
  */
 
-import org.cache2k.Cache;
-
 import java.util.Collection;
 
 /**
@@ -143,8 +141,9 @@ public interface InternalCacheInfo {
   long getLoadExceptionCount();
 
   /**
-   * A previously refreshed entry was accessed. The access is only counted once after a refresh operation,
-   * so the ration of refresh and refreshed hit is the efficiency of the refresh operation.
+   * A previously refreshed entry was accessed. The access is only counted once after a refresh
+   * operation, so the ration of refresh and refreshed hit is the efficiency of the refresh
+   * operation.
    *
    * @see CommonMetrics#getRefreshedHitCount()
    */
@@ -193,14 +192,14 @@ public interface InternalCacheInfo {
   /**
    * Number of entries removed from the cache by the {@code clear} operation.
    *
-   * @see Cache#clear()
+   * @see org.cache2k.Cache#clear()
    */
   long getClearedEntriesCount();
 
   /**
    * Number of calls to {@code clear} this cache has received.
    *
-   * @see Cache#clear()
+   * @see org.cache2k.Cache#clear()
    */
   long getClearCount();
 
@@ -232,10 +231,10 @@ public interface InternalCacheInfo {
   int getNoCollisionPercent();
 
   /**
-   * Value between 0 and 100 to help evaluate the quality of the hashing function. 100 means perfect, there
-   * are no collisions. This metric takes into account the collision to size ratio, the longest collision size
-   * and the collisions to slot ratio. The value reads 0 if the longest collision size gets more
-   * then 20.
+   * Value between 0 and 100 to help evaluate the quality of the hashing function. 100 means
+   * perfect, there are no collisions. This metric takes into account the collision to size ratio,
+   * the longest collision size and the collisions to slot ratio. The value reads 0 if the longest
+   * collision size gets more then 20.
    *
    * <p>Exposed via JMX {@code getHashQuality}
    */
@@ -291,9 +290,9 @@ public interface InternalCacheInfo {
   long getClearedTime();
 
   /**
-   * Time when the info object was created. The information needs time to collect. Whenever statistics
-   * are requested, a new values may be collected or old values are used. The recency of the information
-   * can be determined by this value.
+   * Time when the info object was created. The information needs time to collect. Whenever
+   * statistics are requested, a new values may be collected or old values are used. The recency
+   * of the information can be determined by this value.
    */
   long getInfoCreatedTime();
 

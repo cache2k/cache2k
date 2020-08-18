@@ -45,19 +45,19 @@ public class IntegrityState {
 
   /**
    *
-   * @param _check Name of the test. Used when we build an exception.
+   * @param check Name of the test. Used when we build an exception.
    * @param f test outcome, true when success
    */
-  protected IntegrityState check(String _check, String _note, boolean f) {
-    if (_check == null || _check.length() == 0) {
-      _check = "test#" + bitNr;
+  protected IntegrityState check(String check, String note, boolean f) {
+    if (check == null || check.length() == 0) {
+      check = "test#" + bitNr;
     }
-    stringsHashCode = stringsHashCode * 31 + _check.hashCode();
+    stringsHashCode = stringsHashCode * 31 + check.hashCode();
     if (!f) {
-      if (_note != null) {
-        failingTests.add(groupPrefix + '"' + _check + "\" => " + _note);
+      if (note != null) {
+        failingTests.add(groupPrefix + '"' + check + "\" => " + note);
       } else {
-        failingTests.add(groupPrefix + '"' + _check+ '"');
+        failingTests.add(groupPrefix + '"' + check+ '"');
       }
       state |= 1 << bitNr;
     }
@@ -65,66 +65,66 @@ public class IntegrityState {
     return this;
   }
 
-  public IntegrityState group(String _group) {
-    groupPrefix = _group + ": ";
+  public IntegrityState group(String group) {
+    groupPrefix = group + ": ";
     return this;
   }
 
-  public IntegrityState check(String _check, boolean f) {
-    check(_check, null, f);
+  public IntegrityState check(String check, boolean f) {
+    check(check, null, f);
     return this;
   }
 
-  public IntegrityState checkEquals(String _check, int v1, int v2) {
+  public IntegrityState checkEquals(String check, int v1, int v2) {
     if (v1 == v2) {
-      check(_check, null, true);
+      check(check, null, true);
     } else {
-      check(_check, v1 + "==" + v2, false);
+      check(check, v1 + "==" + v2, false);
     }
     return this;
   }
 
-  public IntegrityState checkEquals(String _check, long v1, long v2) {
+  public IntegrityState checkEquals(String check, long v1, long v2) {
     if (v1 == v2) {
-      check(_check, null, true);
+      check(check, null, true);
     } else {
-      check(_check, v1 + "==" + v2, false);
+      check(check, v1 + "==" + v2, false);
     }
     return this;
   }
 
-  public IntegrityState checkLessOrEquals(String _check, int v1, int v2) {
+  public IntegrityState checkLessOrEquals(String check, int v1, int v2) {
     if (v1 <= v2) {
-      check(_check, null, true);
+      check(check, null, true);
     } else {
-      check(_check, v1 + "<=" + v2, false);
+      check(check, v1 + "<=" + v2, false);
     }
     return this;
   }
 
-  public IntegrityState checkLess(String _check, int v1, int v2) {
+  public IntegrityState checkLess(String check, int v1, int v2) {
     if (v1 < v2) {
-      check(_check, null, true);
+      check(check, null, true);
     } else {
-      check(_check, v1 + "<" + v2, false);
+      check(check, v1 + "<" + v2, false);
     }
     return this;
   }
 
-  public IntegrityState checkGreaterOrEquals(String _check, int v1, int v2) {
+  public IntegrityState checkGreaterOrEquals(String check, int v1, int v2) {
     if (v1 >= v2) {
-      check(_check, null, true);
+      check(check, null, true);
     } else {
-      check(_check, v1 + ">=" + v2, false);
+      check(check, v1 + ">=" + v2, false);
     }
     return this;
   }
 
-  public IntegrityState checkGreater(String _check, int v1, int v2) {
+  public IntegrityState checkGreater(String check, int v1, int v2) {
     if (v1 > v2) {
-      check(_check, null, true);
+      check(check, null, true);
     } else {
-      check(_check, v1 + ">" + v2, false);
+      check(check, v1 + ">" + v2, false);
     }
     return this;
   }

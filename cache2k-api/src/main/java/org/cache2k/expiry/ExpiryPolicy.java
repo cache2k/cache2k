@@ -39,7 +39,8 @@ import java.util.concurrent.TimeUnit;
  *
  * @author Jens Wilke
  * @since 0.20
- * @see <a href="https://cache2k.org/docs/latest/user-guide.html#expiry-and-refresh">cache2k user guide - Expiry and Refresh</a>
+ * @see <a href="https://cache2k.org/docs/latest/user-guide.html#expiry-and-refresh">
+ *   cache2k user guide - Expiry and Refresh</a>
  * @see Cache2kBuilder#expiryPolicy(ExpiryPolicy)
  * @see Cache2kBuilder#refreshAhead(boolean)
  * @see Cache2kBuilder#expireAfterWrite(long, TimeUnit)
@@ -76,27 +77,30 @@ public interface ExpiryPolicy<K, V> extends ExpiryTimeValues {
    * if {@code null} values are not permitted.
    *
    * <p><b>API rationale:</b> The recently loaded or inserted data is not passed in via a cache
-   * entry object. Using a cache entry is desirable for API design reasons to have a thinner interface.
-   * But the "real" entry can only be filled after the expiry policy is done, passing in an entry object
-   * would mean to build a temporary object, increasing GC load. Second, the properties that are
-   * needed by the implementation are available directly. The downside, OTOH, 4-arity breaks Java 8 lambdas.
+   * entry object. Using a cache entry is desirable for API design reasons to have a thinner
+   * interface. But the "real" entry can only be filled after the expiry policy is done, passing
+   * in an entry object would mean to build a temporary object, increasing GC load. Second, the
+   * properties that are needed by the implementation are available directly. The downside, OTOH,
+   * 4-arity breaks Java 8 lambdas.
    *
    * @param key the cache key used for inserting or loading
-   * @param value the value to be cached. May be {@code null} if the loader returns {@code null}, regardless of the
-   *               {@link Cache2kBuilder#permitNullValues} setting.
+   * @param value the value to be cached. May be {@code null} if the loader returns {@code null},
+   *              regardless of the {@link Cache2kBuilder#permitNullValues} setting.
    * @param loadTime The time the entry was inserted or loaded. If a loader was used,
    *                 this is the time before the loader was called.
    * @param oldEntry entry representing the current mapping, if there is a value present.
-   *                  If the old entry holds an exception, this is {@code null}. Expired entries will be
-   *                 passed in as well if still in the cache.
-   * @return time the time of expiry in millis since epoch. {@link #NO_CACHE} if it should not cached.
-   *         If {@link Cache2kBuilder#refreshAhead} is enabled the return value {@link #NO_CACHE} will remove
-   *         the entry from the cache and trigger an immediate refresh. The return value {@link #ETERNAL} means
-   *         that there is no specific expiry time known or needed. The effective expiry duration will never
-   *         be longer than the configured expiry value via {@link Cache2kBuilder#expireAfterWrite(long, TimeUnit)}.
+   *                  If the old entry holds an exception, this is {@code null}. Expired entries
+   *                  will be passed in as well if still in the cache.
+   * @return time the time of expiry in millis since epoch. {@link #NO_CACHE} if it should not
+   *         cached. If {@link Cache2kBuilder#refreshAhead} is enabled the return value
+   *         {@link #NO_CACHE} will remove the entry from the cache and trigger an immediate
+   *         refresh. The return value {@link #ETERNAL} means that there is no specific expiry time
+   *         known or needed. The effective expiry duration will never be longer than the configured
+   *         expiry value via {@link Cache2kBuilder#expireAfterWrite(long, TimeUnit)}.
    *         If a negative value is returned, the negated value will be the expiry time
-   *         used, but sharp expiry is requested. Use {@link Expiry#toSharpTime(long)} to have a more
-   *         expressive code. Switching on {@link Cache2kBuilder#sharpExpiry(boolean)} means always sharp expiry.
+   *         used, but sharp expiry is requested. Use {@link Expiry#toSharpTime(long)} to have a
+   *         more expressive code. Switching on
+   *         {@link Cache2kBuilder#sharpExpiry(boolean)} means always sharp expiry.
    *
    * @see ValueWithExpiryTime#getCacheExpiryTime()
    */

@@ -24,8 +24,10 @@ import org.cache2k.Cache2kBuilder;
 import org.cache2k.TimeReference;
 import org.cache2k.Weigher;
 import org.cache2k.event.CacheClosedListener;
-import org.cache2k.expiry.*;
 import org.cache2k.event.CacheEntryOperationListener;
+import org.cache2k.expiry.Expiry;
+import org.cache2k.expiry.ExpiryPolicy;
+import org.cache2k.expiry.ExpiryTimeValues;
 import org.cache2k.integration.AdvancedCacheLoader;
 import org.cache2k.integration.AsyncCacheLoader;
 import org.cache2k.integration.CacheWriter;
@@ -290,7 +292,8 @@ public class Cache2kConfiguration<K, V> implements ConfigurationBean, Configurat
     }
     if (expireAfterWrite != -1) {
       if (millis == Expiry.ETERNAL) {
-        throw new IllegalArgumentException("eternal disabled or expiry was set, refusing to reset back to eternal");
+        throw new IllegalArgumentException(
+          "eternal disabled or expiry was set, refusing to reset back to eternal");
       }
       if (expireAfterWrite == Expiry.ETERNAL) {
         throw new IllegalArgumentException("eternal enabled explicitly, refusing to enable expiry");
@@ -357,7 +360,8 @@ public class Cache2kConfiguration<K, V> implements ConfigurationBean, Configurat
    */
   public void setMaximumWeight(final long v) {
     if (entryCapacity >= 0) {
-      throw new IllegalArgumentException("entryCapacity already set, setting maximumWeight is illegal");
+      throw new IllegalArgumentException(
+        "entryCapacity already set, setting maximumWeight is illegal");
     }
     maximumWeight = v;
   }
@@ -561,7 +565,8 @@ public class Cache2kConfiguration<K, V> implements ConfigurationBean, Configurat
    * improve integration with bean configuration mechanisms that use the set method and
    * construct a set or list, like Springs' bean XML configuration.
    */
-  public void setAsyncListeners(Collection<CustomizationSupplier<CacheEntryOperationListener<K,V>>> c) {
+  public void setAsyncListeners(
+    Collection<CustomizationSupplier<CacheEntryOperationListener<K,V>>> c) {
     getAsyncListeners().addAll(c);
   }
 
@@ -725,7 +730,8 @@ public class Cache2kConfiguration<K, V> implements ConfigurationBean, Configurat
    */
   public void setWeigher(final CustomizationSupplier<Weigher> v) {
     if (entryCapacity >= 0) {
-      throw new IllegalArgumentException("entryCapacity already set, specifying a weigher is illegal");
+      throw new IllegalArgumentException(
+        "entryCapacity already set, specifying a weigher is illegal");
     }
     weigher = v;
   }

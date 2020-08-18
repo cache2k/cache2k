@@ -39,12 +39,12 @@ public class XppConfigTokenizer extends AbstractConfigurationTokenizer {
   private String value;
   private boolean startFlag = true;
 
-  public XppConfigTokenizer(final String _source, final InputStream is, final String _encoding)
+  public XppConfigTokenizer(String source, InputStream is, String encoding)
     throws XmlPullParserException {
-    super(_source);
+    super(source);
     XmlPullParserFactory factory = XmlPullParserFactory.newInstance();
     input = factory.newPullParser();
-    input.setInput(is, _encoding);
+    input.setInput(is, encoding);
   }
 
   @Override
@@ -54,9 +54,9 @@ public class XppConfigTokenizer extends AbstractConfigurationTokenizer {
 
   @Override
   public Item next() throws Exception {
-    int _eventType;
-    while ((_eventType = nextEvent()) != XmlPullParser.END_DOCUMENT) {
-      switch (_eventType) {
+    int eventType;
+    while ((eventType = nextEvent()) != XmlPullParser.END_DOCUMENT) {
+      switch (eventType) {
         case XmlPullParser.START_TAG :
           if (startName != null) {
             hierarchy.push(startName);
@@ -68,12 +68,12 @@ public class XppConfigTokenizer extends AbstractConfigurationTokenizer {
           value = input.getText();
           break;
         case XmlPullParser.END_TAG :
-          String _name = input.getName();
-          if (startName != null && startName.equals(_name)) {
+          String name = input.getName();
+          if (startName != null && startName.equals(name)) {
             startName = null;
-            return returnProperty(_name, value);
+            return returnProperty(name, value);
           }
-          if (_name.equals(hierarchy.element())) {
+          if (name.equals(hierarchy.element())) {
             hierarchy.pop();
             return returnUnnest();
           }
@@ -94,7 +94,7 @@ public class XppConfigTokenizer extends AbstractConfigurationTokenizer {
   public static class Factory implements TokenizerFactory {
 
     @Override
-    public ConfigurationTokenizer createTokenizer(final String source, final InputStream in, final String encoding)
+    public ConfigurationTokenizer createTokenizer(String source, InputStream in, String encoding)
       throws XmlPullParserException {
       return new XppConfigTokenizer(source, in, encoding);
     }

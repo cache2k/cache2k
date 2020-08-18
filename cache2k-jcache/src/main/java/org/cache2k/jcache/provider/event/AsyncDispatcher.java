@@ -54,7 +54,7 @@ public class AsyncDispatcher<K,V> {
 
   private static final int KEY_LOCKS_MASK =
     2 << (31 - Integer.numberOfLeadingZeros(Runtime.getRuntime().availableProcessors())) - 1;
-  private static Object[] KEY_LOCKS;
+  private static final Object[] KEY_LOCKS;
 
   static {
     KEY_LOCKS = new Object[KEY_LOCKS_MASK + 1];
@@ -72,15 +72,16 @@ public class AsyncDispatcher<K,V> {
     return KEY_LOCKS[key.hashCode() & KEY_LOCKS_MASK];
   }
 
-  private Executor executor;
+  private final Executor executor;
 
   /**
    * A hash map updated concurrently for events on different keys. For the queue we
    * use a non thread safe linked list, because only one operation happens per key
    * at once.
    */
-  private Map<K, Queue<EntryEvent<K, V>>> keyQueue = new ConcurrentHashMap<K, Queue<EntryEvent<K, V>>>();
-  private Map<EventType, List<Listener<K,V>>> asyncListenerByType;
+  private final Map<K, Queue<EntryEvent<K, V>>> keyQueue =
+    new ConcurrentHashMap<K, Queue<EntryEvent<K, V>>>();
+  private final Map<EventType, List<Listener<K,V>>> asyncListenerByType;
 
   {
     asyncListenerByType = new HashMap<EventType, List<Listener<K, V>>>();
@@ -89,8 +90,8 @@ public class AsyncDispatcher<K,V> {
     }
   }
 
-  public AsyncDispatcher(final Executor _executor) {
-    executor = _executor;
+  public AsyncDispatcher(Executor executor) {
+    this.executor = executor;
   }
 
   void addAsyncListener(Listener<K,V> l) {
@@ -98,11 +99,11 @@ public class AsyncDispatcher<K,V> {
   }
 
   boolean removeAsyncListener(CacheEntryListenerConfiguration<K,V> cfg) {
-    boolean _found = false;
+    boolean found = false;
     for (EventType t : EventType.values()) {
-      _found |= EventHandlingImpl.removeCfgMatch(cfg, asyncListenerByType.get(t));
+      found |= EventHandlingImpl.removeCfgMatch(cfg, asyncListenerByType.get(t));
     }
-    return _found;
+    return found;
   }
 
   void collectListeners(Collection<Listener<K, V>> l) {
@@ -115,26 +116,26 @@ public class AsyncDispatcher<K,V> {
    * If listeners are registered for this event type, run the listeners or
    * queue the event, if already something is happening for this key.
    */
-  void deliverAsyncEvent(final EntryEvent<K,V> _event) {
-    if (asyncListenerByType.get(_event.getEventType()).isEmpty()) {
+  void deliverAsyncEvent(EntryEvent<K,V> event) {
+    if (asyncListenerByType.get(event.getEventType()).isEmpty()) {
       return;
     }
-    List<Listener<K,V>> _listeners =
-      new ArrayList<Listener<K, V>>(asyncListenerByType.get(_event.getEventType()));
-    if (_listeners.isEmpty()) {
+    List<Listener<K,V>> listeners =
+      new ArrayList<Listener<K, V>>(asyncListenerByType.get(event.getEventType()));
+    if (listeners.isEmpty()) {
       return;
     }
-    K key = _event.getKey();
+    K key = event.getKey();
     synchronized (getLockObject(key)) {
       Queue<EntryEvent<K,V>> q = keyQueue.get(key);
       if (q != null) {
-        q.add(_event);
+        q.add(event);
         return;
       }
       q = new LinkedList<EntryEvent<K, V>>();
       keyQueue.put(key, q);
     }
-    runAllListenersInParallel(_event, _listeners);
+    runAllListenersInParallel(event, listeners);
   }
 
   /**
@@ -143,20 +144,20 @@ public class AsyncDispatcher<K,V> {
    * decrementing a countdown. In case the event is processed completely, we check whether
    * more is queued up for this key meanwhile.
    */
-  void runAllListenersInParallel(final EntryEvent<K, V> _event, List<Listener<K, V>> _listeners) {
-    final AtomicInteger _countDown = new AtomicInteger(_listeners.size());
-    for (final Listener<K,V> l : _listeners) {
+  void runAllListenersInParallel(final EntryEvent<K, V> event, List<Listener<K, V>> listeners) {
+    final AtomicInteger countDown = new AtomicInteger(listeners.size());
+    for (final Listener<K,V> l : listeners) {
       Runnable r = new Runnable() {
         @Override
         public void run() {
           try {
-            l.fire(_event);
+            l.fire(event);
           } catch (Throwable t) {
             t.printStackTrace();
           }
-          int _done = _countDown.decrementAndGet();
-          if (_done == 0) {
-            runMoreOnKeyQueueOrStop(_event.getKey());
+          int done = countDown.decrementAndGet();
+          if (done == 0) {
+            runMoreOnKeyQueueOrStop(event.getKey());
           }
         }
       };
@@ -169,22 +170,22 @@ public class AsyncDispatcher<K,V> {
    * present remove the queue.
    */
   void runMoreOnKeyQueueOrStop(K key) {
-    EntryEvent<K,V> _event;
+    EntryEvent<K,V> event;
     synchronized (getLockObject(key)) {
       Queue<EntryEvent<K,V>> q = keyQueue.get(key);
       if (q.isEmpty()) {
         keyQueue.remove(key);
         return;
       }
-      _event = q.remove();
+      event = q.remove();
     }
-    List<Listener<K,V>> _listeners =
-      new ArrayList<Listener<K, V>>(asyncListenerByType.get(_event.getEventType()));
-    if (_listeners.isEmpty()) {
+    List<Listener<K,V>> listeners =
+      new ArrayList<Listener<K, V>>(asyncListenerByType.get(event.getEventType()));
+    if (listeners.isEmpty()) {
       runMoreOnKeyQueueOrStop(key);
       return;
     }
-    runAllListenersInParallel(_event, _listeners);
+    runAllListenersInParallel(event, listeners);
   }
 
 }

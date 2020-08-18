@@ -38,8 +38,10 @@ import javax.cache.integration.CacheWriter;
 public class CopyCacheProxy<K, T> extends TransformingCacheProxy<K, T, K, T> {
 
   @SuppressWarnings("unchecked")
-  public CopyCacheProxy(Cache<K, T> cache, ObjectTransformer<K, K> keyTransformer, ObjectTransformer<T, T> valueTransformer) {
-    super(cache, keyTransformer, valueTransformer, ObjectTransformer.IDENT_TRANSFORM, ObjectTransformer.IDENT_TRANSFORM);
+  public CopyCacheProxy(Cache<K, T> cache, ObjectTransformer<K, K> keyTransformer,
+                        ObjectTransformer<T, T> valueTransformer) {
+    super(cache, keyTransformer, valueTransformer, ObjectTransformer.IDENT_TRANSFORM,
+      ObjectTransformer.IDENT_TRANSFORM);
   }
 
   /**
@@ -53,7 +55,8 @@ public class CopyCacheProxy<K, T> extends TransformingCacheProxy<K, T, K, T> {
       final CompleteConfiguration<K, T> cc = (CompleteConfiguration<K,T>) c;
       return (C) new CompleteConfiguration<K, T>() {
         @Override
-        public Iterable<CacheEntryListenerConfiguration<K, T>> getCacheEntryListenerConfigurations() {
+        public Iterable<CacheEntryListenerConfiguration<K, T>>
+        getCacheEntryListenerConfigurations() {
           return cc.getCacheEntryListenerConfigurations();
         }
 
@@ -132,7 +135,8 @@ public class CopyCacheProxy<K, T> extends TransformingCacheProxy<K, T, K, T> {
    * Delegates to wrapped cache.
    */
   @Override
-  public void registerCacheEntryListener(CacheEntryListenerConfiguration<K, T> cacheEntryListenerConfiguration) {
+  public void registerCacheEntryListener(
+    CacheEntryListenerConfiguration<K, T> cacheEntryListenerConfiguration) {
     cache.registerCacheEntryListener(cacheEntryListenerConfiguration);
   }
 
@@ -140,7 +144,8 @@ public class CopyCacheProxy<K, T> extends TransformingCacheProxy<K, T, K, T> {
    * Delegates to wrapped cache.
    */
   @Override
-  public void deregisterCacheEntryListener(CacheEntryListenerConfiguration<K, T> cacheEntryListenerConfiguration) {
+  public void deregisterCacheEntryListener(
+    CacheEntryListenerConfiguration<K, T> cacheEntryListenerConfiguration) {
     cache.deregisterCacheEntryListener(cacheEntryListenerConfiguration);
   }
 

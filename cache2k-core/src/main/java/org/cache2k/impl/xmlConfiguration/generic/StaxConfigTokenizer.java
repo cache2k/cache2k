@@ -31,12 +31,12 @@ import java.util.LinkedList;
  */
 public class StaxConfigTokenizer extends AbstractConfigurationTokenizer {
 
-  private XMLStreamReader input;
-  private LinkedList<String> hierarchy = new LinkedList<String>();
+  private final XMLStreamReader input;
+  private final LinkedList<String> hierarchy = new LinkedList<String>();
   private String startName;
   private String value;
 
-  public StaxConfigTokenizer(final String source, final InputStream in, final String encoding)
+  public StaxConfigTokenizer(String source, InputStream in, String encoding)
     throws XMLStreamException {
     super(source);
     XMLInputFactory f = XMLInputFactory.newInstance();
@@ -81,7 +81,7 @@ public class StaxConfigTokenizer extends AbstractConfigurationTokenizer {
   public static class Factory implements TokenizerFactory {
 
     @Override
-    public ConfigurationTokenizer createTokenizer(final String source, final InputStream in, final String encoding)
+    public ConfigurationTokenizer createTokenizer(String source, InputStream in, String encoding)
       throws XMLStreamException {
       return new StaxConfigTokenizer(source, in, encoding);
     }

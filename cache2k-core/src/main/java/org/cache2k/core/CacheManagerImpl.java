@@ -52,9 +52,9 @@ public class CacheManagerImpl extends CacheManager {
 
   public static final Cache2kCoreProvider PROVIDER = CacheManager.PROVIDER;
 
-  private static final Iterable<CacheLifeCycleListener> cacheLifeCycleListeners =
+  private static final Iterable<CacheLifeCycleListener> CACHE_LIFE_CYCLE_LISTENERS =
     constructAllServiceImplementations(CacheLifeCycleListener.class);
-  private static final Iterable<CacheManagerLifeCycleListener> cacheManagerLifeCycleListeners =
+  private static final Iterable<CacheManagerLifeCycleListener> CACHE_MANAGER_LIFE_CYCLE_LISTENERS =
     constructAllServiceImplementations(CacheManagerLifeCycleListener.class);
 
   /**
@@ -63,18 +63,19 @@ public class CacheManagerImpl extends CacheManager {
    * backed by an array.
    */
   @SuppressWarnings("unchecked")
-  private static <S> Iterable<S> constructAllServiceImplementations(Class<S> _service) {
+  private static <S> Iterable<S> constructAllServiceImplementations(Class<S> service) {
     ClassLoader cl = CacheManagerImpl.class.getClassLoader();
     ArrayList<S> li = new ArrayList<S>();
-    Iterator<S> it = ServiceLoader.load(_service, cl).iterator();
+    Iterator<S> it = ServiceLoader.load(service, cl).iterator();
     while (it.hasNext()) {
       try {
         li.add(it.next());
       } catch (ServiceConfigurationError ex) {
-        Log.getLog(CacheManager.class.getName()).debug("Error loading service '" + _service + "'", ex);
+        Log.getLog(CacheManager.class.getName())
+          .debug("Error loading service '" + service + "'", ex);
       }
     }
-    final S[] a = (S[]) Array.newInstance(_service, li.size());
+    final S[] a = (S[]) Array.newInstance(service, li.size());
     li.toArray(a);
     return new Iterable<S>() {
       public Iterator<S> iterator() {
@@ -104,30 +105,31 @@ public class CacheManagerImpl extends CacheManager {
   private Cache2kCoreProviderImpl provider;
   private boolean closing;
 
-  public CacheManagerImpl(Cache2kCoreProviderImpl _provider, ClassLoader cl, String _name, boolean _default) {
-    provider = _provider;
-    defaultManager = _default;
+  public CacheManagerImpl(Cache2kCoreProviderImpl provider, ClassLoader cl, String name,
+                          boolean defaultManager) {
+    this.provider = provider;
+    this.defaultManager = defaultManager;
     classLoader = cl;
-    name = _name;
-    log = Log.getLog(CacheManager.class.getName() + '.' + name);
-    for (CacheManagerLifeCycleListener lc : cacheManagerLifeCycleListeners) {
+    this.name = name;
+    log = Log.getLog(CacheManager.class.getName() + '.' + this.name);
+    for (CacheManagerLifeCycleListener lc : CACHE_MANAGER_LIFE_CYCLE_LISTENERS) {
       lc.managerCreated(this);
     }
     logPhase("open");
   }
 
   public static Iterable<CacheLifeCycleListener> getCacheLifeCycleListeners() {
-    return cacheLifeCycleListeners;
+    return CACHE_LIFE_CYCLE_LISTENERS;
   }
 
-  public void sendCreatedEvent(Cache c, final Cache2kConfiguration _configuration) {
-    for (CacheLifeCycleListener e : cacheLifeCycleListeners) {
-      e.cacheCreated(c, _configuration);
+  public void sendCreatedEvent(Cache c, final Cache2kConfiguration configuration) {
+    for (CacheLifeCycleListener e : CACHE_LIFE_CYCLE_LISTENERS) {
+      e.cacheCreated(c, configuration);
     }
   }
 
   private void sendDestroyedEvent(Cache c) {
-    for (CacheLifeCycleListener e : cacheLifeCycleListeners) {
+    for (CacheLifeCycleListener e : CACHE_LIFE_CYCLE_LISTENERS) {
       e.cacheDestroyed(c);
     }
   }
@@ -166,16 +168,16 @@ public class CacheManagerImpl extends CacheManager {
    * @throws IllegalStateException if cache manager was closed or is closing
    * @throws IllegalStateException if cache already created
    */
-  public String newCache(InternalCache c, String _requestedName) {
+  public String newCache(InternalCache c, String requestedName) {
     synchronized (lock) {
       checkClosed();
-      String _name = _requestedName;
-      if (cacheNames.containsKey(_name)) {
-        throw new IllegalStateException("Cache already created: '" + _requestedName + "'");
+      String name = requestedName;
+      if (cacheNames.containsKey(name)) {
+        throw new IllegalStateException("Cache already created: '" + requestedName + "'");
       }
-      checkName(_name);
-      cacheNames.put(_name, c);
-      return _name;
+      checkName(name);
+      cacheNames.put(name, c);
+      return name;
     }
   }
 
@@ -203,31 +205,31 @@ public class CacheManagerImpl extends CacheManager {
   }
 
   private Iterable<Cache> cachesCopy() {
-    Set<Cache> _caches = new HashSet<Cache>();
+    Set<Cache> caches = new HashSet<Cache>();
     synchronized (lock) {
       if (!isClosed()) {
         for (Cache c : cacheNames.values()) {
           if (!c.isClosed()) {
-            _caches.add(c);
+            caches.add(c);
           }
         }
       }
     }
-    return _caches;
+    return caches;
   }
 
   private Collection<String> getActiveCacheNames() {
-    Set<String> _caches = new HashSet<String>();
+    Set<String> caches = new HashSet<String>();
     synchronized (lock) {
       if (!isClosed()) {
         for (Cache c : cacheNames.values()) {
           if (!c.isClosed()) {
-            _caches.add(c.getName());
+            caches.add(c.getName());
           }
         }
       }
     }
-    return _caches;
+    return caches;
   }
 
   @Override
@@ -277,32 +279,32 @@ public class CacheManagerImpl extends CacheManager {
     if (isDefaultManager() && getClass().getClassLoader() == classLoader) {
       log.info("Closing default CacheManager");
     }
-    Iterable<Cache> _caches;
+    Iterable<Cache> caches;
     synchronized (lock) {
       if (closing) {
         return;
       }
-      _caches = cachesCopy();
+      caches = cachesCopy();
       closing = true;
     }
     logPhase("close");
-    List<Throwable> _suppressedExceptions = new ArrayList<Throwable>();
-    for (Cache c : _caches) {
+    List<Throwable> suppressedExceptions = new ArrayList<Throwable>();
+    for (Cache c : caches) {
       ((InternalCache) c).cancelTimerJobs();
     }
-    for (Cache c : _caches) {
+    for (Cache c : caches) {
       try {
         c.close();
       } catch (Throwable t) {
-        _suppressedExceptions.add(t);
+        suppressedExceptions.add(t);
       }
     }
     try {
-      for (CacheManagerLifeCycleListener lc : cacheManagerLifeCycleListeners) {
+      for (CacheManagerLifeCycleListener lc : CACHE_MANAGER_LIFE_CYCLE_LISTENERS) {
         lc.managerDestroyed(this);
       }
     } catch (Throwable t) {
-      _suppressedExceptions.add(t);
+      suppressedExceptions.add(t);
     }
     ((Cache2kCoreProviderImpl) PROVIDER).removeManager(this);
     synchronized (lock) {
@@ -310,7 +312,7 @@ public class CacheManagerImpl extends CacheManager {
         log.warn("unable to close cache: " + c.getName());
       }
     }
-    eventuallyThrowException(_suppressedExceptions);
+    eventuallyThrowException(suppressedExceptions);
     cacheNames = null;
   }
 
@@ -327,27 +329,27 @@ public class CacheManagerImpl extends CacheManager {
    * @throws org.cache2k.core.CacheInternalError if list contains an error
    * @throws org.cache2k.CacheException if list does not contain an error
    */
-  static void eventuallyThrowException(List<Throwable> _suppressedExceptions) {
-    if (_suppressedExceptions.isEmpty()) {
+  static void eventuallyThrowException(List<Throwable> suppressedExceptions) {
+    if (suppressedExceptions.isEmpty()) {
       return;
     }
-    Throwable _error = null;
-    for (Throwable t : _suppressedExceptions) {
-      if (t instanceof Error) { _error = t; break; }
+    Throwable error = null;
+    for (Throwable t : suppressedExceptions) {
+      if (t instanceof Error) { error = t; break; }
       if (t instanceof ExecutionException &&
         t.getCause() instanceof Error) {
-        _error = t.getCause();
+        error = t.getCause();
         break;
       }
     }
-    String _text = "Exception(s) during shutdown";
-    if (_suppressedExceptions.size() > 1) {
-      _text = " (" + (_suppressedExceptions.size() - 1)+ " more suppressed exceptions)";
+    String text = "Exception(s) during shutdown";
+    if (suppressedExceptions.size() > 1) {
+      text = " (" + (suppressedExceptions.size() - 1)+ " more suppressed exceptions)";
     }
-    if (_error != null) {
-      throw new CacheInternalError(_text, _error);
+    if (error != null) {
+      throw new CacheInternalError(text, error);
     }
-    throw new CacheException(_text, _suppressedExceptions.get(0));
+    throw new CacheException(text, suppressedExceptions.get(0));
   }
 
   @Override
@@ -386,15 +388,15 @@ public class CacheManagerImpl extends CacheManager {
     }
   }
 
-  private void logPhase(String _phase) {
+  private void logPhase(String phase) {
     if (log.isDebugEnabled()) {
-      log.debug(_phase + ": " + getManagerId());
+      log.debug(phase + ": " + getManagerId());
     }
   }
 
   /**
-   * Relevant information to id a manager. Since there could be multiple cache managers for each class loader,
-   * better
+   * Relevant information to id a manager. Since there could be multiple cache managers for
+   * each class loader, better
    */
   private String getManagerId() {
     return "name='" + name +

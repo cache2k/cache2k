@@ -35,15 +35,15 @@ import java.util.concurrent.TimeUnit;
  */
 public class ExclusiveExecutor implements Executor, Closeable {
 
-  private ThreadPoolExecutor threadPoolExecutor;
+  private final ThreadPoolExecutor threadPoolExecutor;
 
-  public ExclusiveExecutor(int _threadCount, String _threadNamePrefix) {
-    final int _corePoolThreadSize = 0;
+  public ExclusiveExecutor(int threadCount, String threadNamePrefix) {
+    final int corePoolThreadSize = 0;
     threadPoolExecutor =
-      new ThreadPoolExecutor(_corePoolThreadSize, _threadCount,
+      new ThreadPoolExecutor(corePoolThreadSize, threadCount,
         21, TimeUnit.SECONDS,
         new SynchronousQueue<Runnable>(),
-        HeapCache.TUNABLE.threadFactoryProvider.newThreadFactory(_threadNamePrefix),
+        HeapCache.TUNABLE.threadFactoryProvider.newThreadFactory(threadNamePrefix),
         new ThreadPoolExecutor.AbortPolicy());
   }
 

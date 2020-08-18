@@ -57,8 +57,9 @@ import java.util.concurrent.TimeUnit;
  *        .build();
  * }</pre>
  *
- * <p>Caches belong to a cache manager. If no cache manager is set explicitly via {@link #manager} the
- * default cache manager will be used, as defined by {@link CacheManager#getInstance()}.
+ * <p>Caches belong to a cache manager. If no cache manager is set explicitly via
+ * {@link #manager} the default cache manager will be used, as defined by
+ * {@link CacheManager#getInstance()}.
  *
  * <p>To create a cache from a known configuration in a specified cache manager, use:
  *
@@ -72,14 +73,16 @@ import java.util.concurrent.TimeUnit;
  *       .build();
  * }</pre>
  *
- * <p>To create a cache without type parameters or {@code Cache<Object,Object>}, use {@link Cache2kBuilder#forUnknownTypes()}.
+ * <p>To create a cache without type parameters or {@code Cache<Object,Object>}, use
+ * {@link Cache2kBuilder#forUnknownTypes()}.
  *
  * @author Jens Wilke
  * @since 1.0
  */
 public class Cache2kBuilder<K, V> {
 
-  private static final String MSG_NO_TYPES = "Use Cache2kBuilder.forUnknownTypes(), to construct a builder with no key and value types";
+  private static final String MSG_NO_TYPES =
+    "Use Cache2kBuilder.forUnknownTypes(), to construct a builder with no key and value types";
 
   /**
    * Create a new cache builder for a cache that has no type restrictions
@@ -178,7 +181,8 @@ public class Cache2kBuilder<K, V> {
    *
    * @param manager The manager the created cache should belong to,
    *                or {@code null} if the default cache manager should be used
-   * @throws IllegalStateException if the manager is not provided immediately after the builder is created.
+   * @throws IllegalStateException if the manager is not provided immediately after the builder
+   *         is created.
    */
   public final Cache2kBuilder<K, V> manager(CacheManager manager) {
     if (this.manager != null) {
@@ -209,8 +213,8 @@ public class Cache2kBuilder<K, V> {
    * @see CacheType for a general discussion on types
    */
   @SuppressWarnings("unchecked")
-  public final <T2> Cache2kBuilder<K, T2> valueType(Class<T2> t) {
-    Cache2kBuilder<K, T2> me = (Cache2kBuilder<K, T2>) this;
+  public final <V2> Cache2kBuilder<K, V2> valueType(Class<V2> t) {
+    Cache2kBuilder<K, V2> me = (Cache2kBuilder<K, V2>) this;
     me.config().setValueType(t);
     return me;
   }
@@ -236,15 +240,16 @@ public class Cache2kBuilder<K, V> {
    * @see CacheType for a general discussion on types
    */
   @SuppressWarnings("unchecked")
-  public final <T2> Cache2kBuilder<K, T2> valueType(CacheType<T2> t) {
-    Cache2kBuilder<K, T2> me = (Cache2kBuilder<K, T2>) this;
+  public final <V2> Cache2kBuilder<K, V2> valueType(CacheType<V2> t) {
+    Cache2kBuilder<K, V2> me = (Cache2kBuilder<K, V2>) this;
     me.config().setValueType(t);
     return me;
   }
 
   /**
    * Constructs a cache name out of the class name, a field name and a unique name identifying the
-   * component in the application. Result example: {@code webImagePool~com.example.ImagePool.id2Image}
+   * component in the application. Result example:
+   * {@code webImagePool~com.example.ImagePool.id2Image}
    *
    * <p>See {@link #name(String)} for a general discussion about cache names.
    *
@@ -308,8 +313,8 @@ public class Cache2kBuilder<K, V> {
    * <p>For maximum compatibility cache names should only be composed with the characters
    * {@code [-_.a-zA-Z0-9]}. The characters {@code {}|\^&=";:<>*?/} are not allowed in a cache name.
    * The reason for restricting the characters in names, is that the names may be used to derive
-   * other resource names from it, e.g. for file based storage. The characters {@code *} and {@code ?}
-   * are used for wildcards in JMX and cannot be used in an object name.
+   * other resource names from it, e.g. for file based storage. The characters {@code *} and
+   * {@code ?} are used for wildcards in JMX and cannot be used in an object name.
    *
    * <p>The method is overloaded with variants to provide a naming convention of names.
    *
@@ -358,9 +363,9 @@ public class Cache2kBuilder<K, V> {
    * predefined expiry value at programmatic level. This value needs to be set by other
    * means, e.g. within a configuration file.
    *
-   * <p>The default behavior of the cache is identical to the setting of eternal. Entries will not expire.
-   * When eternal was set explicitly it cannot be reset to another value afterwards. This should protect against
-   * misconfiguration.
+   * <p>The default behavior of the cache is identical to the setting of eternal. Entries will
+   * not expire. When eternal was set explicitly it cannot be reset to another value afterwards.
+   * This should protect against misconfiguration.
    *
    * <p>Exceptions: If set to eternal with default setting and if there is no
    * explicit expiry configured for exceptions with {@link #retryInterval(long, TimeUnit)},
@@ -378,9 +383,9 @@ public class Cache2kBuilder<K, V> {
    * When a load was not successful, the operation is retried at shorter interval then
    * the normal expiry, see {@link #retryInterval(long, TimeUnit)}.
    *
-   * <p>Exception suppression is only active when entries expire (eternal is not true) or the explicit
-   * configuration of the timing parameters for resilience, e.g. {@link #resilienceDuration(long, TimeUnit)}.
-   * Check the user guide chapter for details.
+   * <p>Exception suppression is only active when entries expire (eternal is not true) or the
+   * explicit configuration of the timing parameters for resilience, e.g.
+   * {@link #resilienceDuration(long, TimeUnit)}. Check the user guide chapter for details.
    *
    * <p>Exception suppression is enabled by default. Setting this to {@code false}, will disable
    * exceptions suppression (aka resilience).
@@ -525,7 +530,8 @@ public class Cache2kBuilder<K, V> {
   }
 
   /**
-   * Listener that is called after a cache is closed. This is mainly used for the JCache integration.
+   * Listener that is called after a cache is closed. This is mainly used for the JCache
+   * integration.
    */
   public final Cache2kBuilder<K, V> addCacheClosedListener(CacheClosedListener listener) {
     config().getCacheClosedListeners().add(wrapCustomizationInstance(listener));
@@ -692,7 +698,8 @@ public class Cache2kBuilder<K, V> {
    *
    * @see org.cache2k.configuration.ConfigurationWithSections
    */
-  public final Cache2kBuilder<K, V> with(ConfigurationSectionBuilder<? extends ConfigurationSection>... sectionBuilders) {
+  public final Cache2kBuilder<K, V> with(
+    ConfigurationSectionBuilder<? extends ConfigurationSection>... sectionBuilders) {
     for (ConfigurationSectionBuilder<? extends ConfigurationSection> b : sectionBuilders) {
       config().getSections().add(b.buildConfigurationSection());
     }
@@ -727,9 +734,9 @@ public class Cache2kBuilder<K, V> {
   }
 
   /**
-   * By default statistic gathering is enabled. Switching this to {@code true} will disable all statistics
-   * that have significant overhead. Whether the values become accessible with JMX is controlled
-   * by {@link #enableJmx(boolean)}.
+   * By default statistic gathering is enabled. Switching this to {@code true} will disable all
+   * statistics that have significant overhead. Whether the values become accessible with JMX is
+   * controlled by {@link #enableJmx(boolean)}.
    */
   public final Cache2kBuilder<K,V> disableStatistics(boolean flag) {
     config().setDisableStatistics(flag);
@@ -738,7 +745,8 @@ public class Cache2kBuilder<K, V> {
 
   /**
    * Deprecated since version 1.2. Method has no effect and will be removed in future releases.
-   * Time recording is disabled by default and needs to be enabled via {@link #recordRefreshedTime(boolean)}.
+   * Time recording is disabled by default and needs to be enabled via
+   * {@link #recordRefreshedTime(boolean)}.
    */
   @Deprecated
   public final Cache2kBuilder<K,V> disableLastModificationTime(boolean flag) {
@@ -758,8 +766,8 @@ public class Cache2kBuilder<K, V> {
 
   /**
    * When {@code true}, optimize for high core counts and applications that do lots of mutations
-   * in the cache. When switched on, the cache will occupy slightly more memory and eviction efficiency
-   * may drop slightly. This overhead is negligible for big cache sizes (100K and more).
+   * in the cache. When switched on, the cache will occupy slightly more memory and eviction
+   * efficiency may drop slightly. This overhead is negligible for big cache sizes (100K and more).
    *
    * <p>Typical interactive do not need to enable this. May improve concurrency for applications
    * that utilize all cores and cache operations account for most CPU cycles.
@@ -790,8 +798,8 @@ public class Cache2kBuilder<K, V> {
   }
 
   /**
-   * Thread pool / executor service to use for asynchronous load operations. If no executor is specified
-   * the cache will create a thread pool, if needed.
+   * Thread pool / executor service to use for asynchronous load operations. If no executor is
+   * specified the cache will create a thread pool, if needed.
    *
    * @see #loaderThreadCount(int)
    * @see #prefetchExecutor(Executor)
@@ -802,9 +810,9 @@ public class Cache2kBuilder<K, V> {
   }
 
   /**
-   * Thread pool / executor service to use for refresh ahead and prefetch operations. If not specified the
-   * same refresh ahead operation will use the thread pool defined by {@link #loaderExecutor(Executor)}
-   * or a cache local pool is created.
+   * Thread pool / executor service to use for refresh ahead and prefetch operations. If not
+   * specified the same refresh ahead operation will use the thread pool defined by
+   * {@link #loaderExecutor(Executor)} or a cache local pool is created.
    *
    * <p>The executor for refresh operations may reject execution when not enough resources
    * are available. In this case the cache entry expires.
@@ -847,8 +855,9 @@ public class Cache2kBuilder<K, V> {
   }
 
   /**
-   * Set the weigher to be used to calculate the entry weight. The parameter {@link #maximumWeight(long)} needs
-   * to be specified as well. Using a weigher has a slightly performance impact on the update of existing entries.
+   * Set the weigher to be used to calculate the entry weight. The parameter
+   * {@link #maximumWeight(long)} needs to be specified as well. Using a weigher has a slightly
+   * performance impact on the update of existing entries.
    */
   public final Cache2kBuilder<K, V> weigher(Weigher<K,V> v) {
     config().setWeigher(new CustomizationReferenceSupplier<Weigher>(v));
@@ -896,8 +905,10 @@ public class Cache2kBuilder<K, V> {
    * <p>If XML configuration is present, the section for the cache name is looked up and
    * the configuration in it applied, before the cache is build.
    *
-   * @throws IllegalArgumentException if a cache of the same name is already active in the cache manager
-   * @throws IllegalArgumentException if a configuration entry for the named cache is required but not present
+   * @throws IllegalArgumentException if a cache of the same name is already active in the
+   *         cache manager
+   * @throws IllegalArgumentException if a configuration entry for the named cache is required but
+   *         not present
    */
   public final Cache<K, V> build() {
     return CacheManager.PROVIDER.createCache(manager, config());
@@ -909,9 +920,11 @@ public class Cache2kBuilder<K, V> {
    * the key type is {@code Integer} and casts the created cache to the specialized
    * interface.
    *
-   * @throws IllegalArgumentException if a cache of the same name is already active in the cache manager
+   * @throws IllegalArgumentException if a cache of the same name is already active in the
+   *         cache manager
    * @throws IllegalArgumentException if key type is unexpected
-   * @throws IllegalArgumentException if a configuration entry for the named cache is required but not present
+   * @throws IllegalArgumentException if a configuration entry for the named cache is required but
+   *         not present
    * @deprecated Will be removed in version 2.0
    */
   @SuppressWarnings("unchecked")
@@ -929,9 +942,11 @@ public class Cache2kBuilder<K, V> {
    * the key type is {@code Integer} and casts the created cache to the specialized
    * interface.
    *
-   * @throws IllegalArgumentException if a cache of the same name is already active in the cache manager
+   * @throws IllegalArgumentException if a cache of the same name is already active in the
+   *         cache manager
    * @throws IllegalArgumentException if key type is unexpected
-   * @throws IllegalArgumentException if a configuration entry for the named cache is required but not present
+   * @throws IllegalArgumentException if a configuration entry for the named cache is required but
+   *         not present
    * @deprecated Will be removed in version 2.0
    */
   @SuppressWarnings("unchecked")

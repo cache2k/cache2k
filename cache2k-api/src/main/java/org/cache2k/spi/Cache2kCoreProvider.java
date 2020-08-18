@@ -45,7 +45,7 @@ public interface Cache2kCoreProvider {
   /**
    * @see CacheManager#getInstance(ClassLoader, String)
    */
-  CacheManager getManager(ClassLoader cl, String _name);
+  CacheManager getManager(ClassLoader cl, String name);
 
   /**
    * Default class loader, this is the class loader used to load the cache implementation.
@@ -76,7 +76,8 @@ public interface Cache2kCoreProvider {
    * Return the effective default configuration for this manager. A different default
    * configuration may be provided by the configuration system.
    *
-   * @return mutable configuration instance containing the effective configuration defaults, never {@code null}
+   * @return mutable configuration instance containing the effective configuration defaults,
+   *         never {@code null}
    */
   Cache2kConfiguration getDefaultConfiguration(CacheManager m);
 

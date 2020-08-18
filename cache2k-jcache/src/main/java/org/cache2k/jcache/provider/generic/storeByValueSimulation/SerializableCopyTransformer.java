@@ -35,10 +35,10 @@ import java.io.ObjectStreamClass;
  */
 public class SerializableCopyTransformer<T> extends CopyTransformer<T> {
 
-  private ClassLoader classLoader;
+  private final ClassLoader classLoader;
 
-  public SerializableCopyTransformer(final ClassLoader _classLoader) {
-    classLoader = _classLoader;
+  public SerializableCopyTransformer(ClassLoader classLoader) {
+    this.classLoader = classLoader;
   }
 
   @SuppressWarnings("unchecked")
@@ -59,7 +59,8 @@ public class SerializableCopyTransformer<T> extends CopyTransformer<T> {
       ByteArrayInputStream bis = new ByteArrayInputStream(bos.toByteArray());
       ObjectInputStream in = new ObjectInputStream(bis) {
         @Override
-        protected Class<?> resolveClass(final ObjectStreamClass desc) throws IOException, ClassNotFoundException {
+        protected Class<?> resolveClass(ObjectStreamClass desc)
+          throws IOException, ClassNotFoundException {
           String name = desc.getName();
           try {
             return Class.forName(name, false, classLoader);

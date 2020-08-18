@@ -21,7 +21,8 @@ package org.cache2k.testing.category;
  */
 
 /**
- * Category for storage tests. Used to exclude storage related tests, since they currently may cause trouble.
+ * Category for storage tests. Used to exclude storage related tests, since they currently may
+ * cause trouble.
  *
  * @author Jens Wilke
  */

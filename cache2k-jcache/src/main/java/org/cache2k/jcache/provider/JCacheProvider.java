@@ -42,7 +42,8 @@ import java.util.WeakHashMap;
  * specify the provider explicitly.
  *
  * @author Jens Wilke
- * @see <a href="https://cache2k.org/docs/latest/user-guide.html#jcache">JCache - cache2k User Guide</a>
+ * @see <a href="https://cache2k.org/docs/latest/user-guide.html#jcache">
+ *   JCache - cache2k User Guide</a>
  */
 public class JCacheProvider implements CachingProvider {
 
@@ -56,9 +57,9 @@ public class JCacheProvider implements CachingProvider {
     return ((Cache2kCoreProviderImpl) forwardProvider).getLockObject();
   }
 
-  public URI name2Uri(String _name) {
+  public URI name2Uri(String name) {
     try {
-      return new URI(_name);
+      return new URI(name);
     } catch (URISyntaxException e) {
       throw new IllegalArgumentException(e);
     }
@@ -69,7 +70,8 @@ public class JCacheProvider implements CachingProvider {
     if (uri.getScheme() != null || s.contains(".xml") || s.contains(File.separator)) {
       throw new IllegalArgumentException(
         "Only cache manager name, e.g. new URI(\"name\"), expected in the URI, " +
-        "not a file name or path, https://cache2k.org/docs/latest/user-guide.html#jcache-uri-exception");
+        "not a file name or path, " +
+        "https://cache2k.org/docs/latest/user-guide.html#jcache-uri-exception");
     }
     return s;
   }
@@ -96,10 +98,10 @@ public class JCacheProvider implements CachingProvider {
           this,
           forwardProvider.getManager(cl, uri2Name(uri)));
        if (p != null && !p.isEmpty()) {
-        Properties _managerProperties = cm.getProperties();
+        Properties managerProperties = cm.getProperties();
         for (Map.Entry e : p.entrySet()) {
-          if (!_managerProperties.containsKey(e.getKey())) {
-            _managerProperties.put(e.getKey(), e.getValue());
+          if (!managerProperties.containsKey(e.getKey())) {
+            managerProperties.put(e.getKey(), e.getValue());
           }
         }
       }
@@ -115,9 +117,9 @@ public class JCacheProvider implements CachingProvider {
 
   @Override
   public URI getDefaultURI() {
-    String _defaultName = forwardProvider.getDefaultManagerName(getDefaultClassLoader());
-    URI _defaultUri = name2Uri(_defaultName);
-    return _defaultUri;
+    String defaultName = forwardProvider.getDefaultManagerName(getDefaultClassLoader());
+    URI defaultUri = name2Uri(defaultName);
+    return defaultUri;
   }
 
   @Override

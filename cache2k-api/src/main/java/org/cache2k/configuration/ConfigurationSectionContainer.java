@@ -36,7 +36,7 @@ import java.util.Iterator;
 public class ConfigurationSectionContainer extends AbstractCollection<ConfigurationSection>
   implements Collection<ConfigurationSection>, Serializable {
 
-  private Collection<ConfigurationSection> sections = new ArrayList<ConfigurationSection>();
+  private final Collection<ConfigurationSection> sections = new ArrayList<ConfigurationSection>();
 
   /**
    * Add a new configuration section to the container.
@@ -47,7 +47,8 @@ public class ConfigurationSectionContainer extends AbstractCollection<Configurat
   public boolean add(ConfigurationSection section) {
     if (section instanceof SingletonConfigurationSection) {
       if (getSection(section.getClass()) !=  null) {
-        throw new IllegalArgumentException("Section of same type already inserted: " + section.getClass().getName());
+        throw new IllegalArgumentException(
+          "Section of same type already inserted: " + section.getClass().getName());
       }
     }
     return sections.add(section);

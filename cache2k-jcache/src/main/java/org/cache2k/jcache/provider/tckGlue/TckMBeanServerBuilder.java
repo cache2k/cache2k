@@ -42,7 +42,8 @@ public class TckMBeanServerBuilder extends MBeanServerBuilder {
   }
 
   @Override
-  public MBeanServer newMBeanServer(String defaultDomain, MBeanServer outer, MBeanServerDelegate delegate) {
+  public MBeanServer newMBeanServer(String defaultDomain, MBeanServer outer,
+                                    MBeanServerDelegate delegate) {
     return super.newMBeanServer(defaultDomain, outer, delegate);
   }
 
