@@ -68,7 +68,8 @@ public interface EvictionMetrics {
 
   long getMaxWeight();
 
-  long getCurrentWeight();
+  /** Accumulated weight of all entries currently controlled by eviction. */
+  long getTotalWeight();
 
   /** Fragment that the eviction wants to add to the {@link org.cache2k.Cache#toString()} output. */
   String getExtraStatistics();

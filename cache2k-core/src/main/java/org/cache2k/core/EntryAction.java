@@ -1033,7 +1033,12 @@ public abstract class EntryAction<K, V, R> extends Entry.PiggyBack implements
         heapEntry.setValueOrException(newValueOrException);
       }
     }
-    heapCache.eviction.updateWeight(heapEntry);
+    if (!remove) {
+      boolean evictionHint = heapCache.eviction.updateWeight(heapEntry);
+      if (evictionHint) {
+        heapCache.eviction.evictEventually();
+      }
+    }
     mutationMayStore();
   }
 

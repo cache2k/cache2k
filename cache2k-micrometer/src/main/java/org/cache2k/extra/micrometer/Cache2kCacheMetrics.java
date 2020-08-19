@@ -124,7 +124,7 @@ public class Cache2kCacheMetrics extends CacheMeterBinder {
   protected void bindImplementationSpecificMetrics(MeterRegistry registry) {
     if (cache.isWeigherPresent()) {
       Gauge.builder("cache.currentWeight", cache,
-        c -> c.getInfo().getCurrentWeight())
+        c -> c.getInfo().getTotalWeight())
         .tags(getTagsWithCacheName())
         .description("The sum of weights of all cached entries.")
         .register(registry);

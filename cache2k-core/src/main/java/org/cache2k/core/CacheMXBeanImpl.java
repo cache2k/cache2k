@@ -60,7 +60,7 @@ public class CacheMXBeanImpl implements CacheMXBean {
 
   @Override
   public long getCapacityLimit() {
-    return isWeigherPresent() ? getCurrentWeight() : getEntryCapacity();
+    return isWeigherPresent() ? getTotalWeight() : getEntryCapacity();
   }
 
   @Override
@@ -69,8 +69,8 @@ public class CacheMXBeanImpl implements CacheMXBean {
   }
 
   @Override
-  public long getCurrentWeight() {
-    return getInfo().getCurrentWeight();
+  public long getTotalWeight() {
+    return getInfo().getTotalWeight();
   }
 
   @Override

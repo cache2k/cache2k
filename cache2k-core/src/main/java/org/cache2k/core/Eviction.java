@@ -39,19 +39,32 @@ public interface Eviction {
 
   /**
    * Updates the weight on the entry and recalculates the total weight if needed.
-   * Since we need to lock the eviction structure, this could happen async in a separate thread.
+   *
+   * <p>Expected not to hold the entry lock, which means, that this does not run
+   * in sync with the actual update. That is okay as long as its runs after every
+   * update.
+   *
+   * <p>Since we need to lock the eviction structure, this could happen async in a separate thread.
+   *
+   * @return hint whether eviction should be run. for bulk operations do eviction once.
+   *         so not do it within this method
    */
-  void updateWeight(Entry e);
+  boolean updateWeight(Entry e);
 
   /**
    * Evict if needed, focused on the segment addressed by the hash code.
    * Called before a new entry is inserted (changed from after in v1.4)
    */
-  void evictEventually(int hashCodeHint);
+  void evictEventuallyBeforeInsertOnSegment(int hashCodeHint);
 
   /**
    * Evict if needed, checks all segments.
    * Called before a new entry is inserted (changed from after in v1.4)
+   */
+  void evictEventuallyBeforeInsert();
+
+  /**
+   * Evict if needed, checks all segments.
    */
   void evictEventually();
 

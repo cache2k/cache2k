@@ -1314,7 +1314,7 @@ public class HeapCache<K, V> extends BaseCache<K, V> {
   protected Entry<K, V> insertNewEntry(K key, int hc, int val) {
     Entry<K, V> e = new Entry<K, V>(extractIntKeyObj(key), val);
     Entry<K, V> e2;
-    eviction.evictEventually(hc);
+    eviction.evictEventuallyBeforeInsertOnSegment(hc);
     OptimisticLock l = hash.getSegmentLock(hc);
     long stamp = l.writeLock();
     try {
@@ -1943,7 +1943,7 @@ public class HeapCache<K, V> extends BaseCache<K, V> {
           }
         });
         if (result == RESTART_AFTER_EVICTION) {
-          eviction.evictEventually();
+          eviction.evictEventuallyBeforeInsert();
           result = hash.runTotalLocked(new Job<T>() {
             @Override
             public T call() {

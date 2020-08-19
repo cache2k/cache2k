@@ -74,7 +74,7 @@ public interface CacheInfoMXBean {
    * @see Cache2kBuilder#maximumWeight(long)
    * @since 1.4
    */
-  long getCurrentWeight();
+  long getTotalWeight();
 
   /**
    * Either {@link #getMaximumWeight()} or {@link #getEntryCapacity()} depending

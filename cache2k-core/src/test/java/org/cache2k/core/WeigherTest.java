@@ -27,8 +27,6 @@ import org.cache2k.testing.category.FastTests;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
-import java.util.Arrays;
-
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
@@ -42,7 +40,7 @@ import static org.junit.Assert.assertTrue;
 @Category(FastTests.class)
 public class WeigherTest extends TestingBase {
 
-  protected Cache<Integer, Integer> provideCache(long _size) {
+  protected Cache<Integer, Integer> provideCache(long size) {
     return builder(Integer.class, Integer.class)
       .eternal(true)
       .entryCapacity(-1)
@@ -52,14 +50,20 @@ public class WeigherTest extends TestingBase {
           return 1;
         }
       })
-      .maximumWeight(_size)
+      .maximumWeight(size)
       .strictEviction(true)
       .build();
   }
 
   @Test
+  public void removeOnEmptyCache() {
+    Cache<Integer, Integer> c = provideCache(100);
+    c.remove(123);
+  }
+
+  @Test
   public void weightAccountedFor() {
-    long _size = 1;
+    long size = 1;
     Cache<Integer, Integer> c = builder(Integer.class, Integer.class)
       .eternal(true)
       .entryCapacity(-1)
@@ -69,7 +73,7 @@ public class WeigherTest extends TestingBase {
           return 1;
         }
       })
-      .maximumWeight(_size)
+      .maximumWeight(size)
       .strictEviction(true)
       .build();
     c.put(1, 1);
@@ -84,7 +88,7 @@ public class WeigherTest extends TestingBase {
    */
   @Test
   public void minimumWeight() {
-    long _size = 1;
+    long size = 1;
     Cache<Integer, Integer> c = builder(Integer.class, Integer.class)
       .eternal(true)
       .entryCapacity(-1)
@@ -94,7 +98,7 @@ public class WeigherTest extends TestingBase {
           return 0;
         }
       })
-      .maximumWeight(_size)
+      .maximumWeight(size)
       .strictEviction(true)
       .build();
     c.put(1, 1);
@@ -120,7 +124,7 @@ public class WeigherTest extends TestingBase {
 
   @Test
   public void weightUpdated() {
-    long _size = 2;
+    int size = 2;
     Cache<Integer, Integer> c = builder(Integer.class, Integer.class)
       .eternal(true)
       .entryCapacity(-1)
@@ -130,7 +134,7 @@ public class WeigherTest extends TestingBase {
           return value;
         }
       })
-      .maximumWeight(_size)
+      .maximumWeight(size)
       .strictEviction(true)
       .build();
     c.put(1, 1);
@@ -145,8 +149,8 @@ public class WeigherTest extends TestingBase {
   }
 
   @Test
-  public void weightUpdatedOnRemove() {
-    long _size = 2;
+  public void weightUpdatedBig() {
+    int size = 20000000;
     Cache<Integer, Integer> c = builder(Integer.class, Integer.class)
       .eternal(true)
       .entryCapacity(-1)
@@ -156,7 +160,58 @@ public class WeigherTest extends TestingBase {
           return value;
         }
       })
-      .maximumWeight(_size)
+      .maximumWeight(size)
+      .strictEviction(true)
+      .build();
+    c.put(1, 1);
+    c.put(2, 1);
+    assertEquals(2, countEntriesViaIteration());
+    c.put(2, size * 2);
+    assertEquals(1, countEntriesViaIteration());
+    assertTrue("the entry that is updated is never removed", c.containsKey(2));
+    c.put(1, 1);
+    assertEquals(1, countEntriesViaIteration());
+    assertFalse("the other entry is removed", c.containsKey(2));
+  }
+
+  @Test
+  public void putAndRemove() {
+    int size = 20000000;
+    Cache<Integer, Integer> c = builder(Integer.class, Integer.class)
+      .eternal(true)
+      .entryCapacity(-1)
+      .weigher(new Weigher<Integer, Integer>() {
+        @Override
+        public long weigh(final Integer key, final Integer value) {
+          return value;
+        }
+      })
+      .maximumWeight(size)
+      .strictEviction(true)
+      .build();
+    final int numEntries = 30;
+    for (int i = 0; i < numEntries; i++) {
+      c.put(i, (1 << i) + 1);
+    }
+    for (int i = 0; i < numEntries; i++) {
+      c.remove(i);
+    }
+    assertEquals(0, getInfo().getTotalWeight());
+  }
+
+  @Test
+  public void weightUpdatedOnRemove() {
+    long size = 2;
+    Cache<Integer, Integer> c = builder(Integer.class, Integer.class)
+      .eternal(true)
+      .entryCapacity(-1)
+      .weigher(new Weigher<Integer, Integer>() {
+        @Override
+        public long weigh(final Integer key, final Integer value) {
+          return value;
+        }
+      })
+      .maximumWeight(size)
       .strictEviction(true)
       .build();
     c.put(1, 1);
@@ -170,7 +225,7 @@ public class WeigherTest extends TestingBase {
 
   @Test
   public void weightAccountedForWithLoader() {
-    long _size = 1;
+    long size = 1;
     Cache<Integer, Integer> c = builder(Integer.class, Integer.class)
       .eternal(true)
       .entryCapacity(-1)
@@ -180,7 +235,7 @@ public class WeigherTest extends TestingBase {
           return 1;
         }
       })
-      .maximumWeight(_size)
+      .maximumWeight(size)
       .loader(new IdentIntSource())
       .strictEviction(true)
       .build();
@@ -191,7 +246,7 @@ public class WeigherTest extends TestingBase {
 
   @Test
   public void weightUpdatedWithLoader() {
-    long _size = 2;
+    long size = 2;
     Cache<Integer, Integer> c = builder(Integer.class, Integer.class)
       .eternal(true)
       .entryCapacity(-1)
@@ -201,7 +256,7 @@ public class WeigherTest extends TestingBase {
           return value;
         }
       })
-      .maximumWeight(_size)
+      .maximumWeight(size)
       .loader(new PatternLoader(1, 1, 100, 1))
       .strictEviction(true)
       .build();

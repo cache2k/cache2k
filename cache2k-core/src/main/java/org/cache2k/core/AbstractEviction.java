@@ -54,13 +54,13 @@ public abstract class AbstractEviction implements Eviction, EvictionMetrics {
   private long expiredRemovedCnt;
   private long virginRemovedCnt;
   private long evictedCount;
-  private long currentWeight;
+  private long totalWeight;
 
   private Entry[] evictChunkReuse;
 
-  public AbstractEviction(final HeapCache heapCache, final HeapCacheListener listener,
-                          final long maxSize, final Weigher weigher, final long maxWeight,
-                          final boolean noChunking) {
+  public AbstractEviction(HeapCache heapCache, HeapCacheListener listener,
+                          long maxSize, Weigher weigher, long maxWeight,
+                          boolean noChunking) {
     this.weigher = weigher;
     this.heapCache = heapCache;
     this.listener = listener;
@@ -69,7 +69,7 @@ public abstract class AbstractEviction implements Eviction, EvictionMetrics {
     updateLimits(maxSize, maxWeight);
   }
 
-  private void updateLimits(final long maxSize, final long maxWeight) {
+  private void updateLimits(long maxSize, long maxWeight) {
     this.maxSize = maxSize;
     this.maxWeight = maxWeight;
     if (maxSize < MINIMUM_CAPACITY_FOR_CHUNKING || this.noChunking) {
@@ -101,18 +101,18 @@ public abstract class AbstractEviction implements Eviction, EvictionMetrics {
     return weigher != null;
   }
 
-  protected static long getWeightFromEntry(Entry e) {
-    return LongTo16BitFloatingPoint.toLong(e.getCompressedWeight());
+  static long decompressWeight(int weight) {
+    return LongTo16BitFloatingPoint.toLong(weight);
   }
 
-  protected static void updateWeightInEntry(Entry e, long weight) {
-    e.setCompressedWeight(LongTo16BitFloatingPoint.fromLong(weight));
+  static int compressWeight(long weight) {
+    return LongTo16BitFloatingPoint.fromLong(weight);
   }
 
   /**
    * Exceptions have the minimum weight.
    */
-  private long calculateWeight(final Entry e, final Object v) {
+  private long calculateWeight(Entry e, Object v) {
     long weight;
     if (v instanceof ExceptionWrapper) {
       weight = 1;
@@ -126,22 +126,17 @@ public abstract class AbstractEviction implements Eviction, EvictionMetrics {
   }
 
   /**
-   * The value in the entry is not set yet. Use a standard weight of 0.
+   * To retrieve the consistent weight from the entry, we need to hold the
+   * eviction lock, since storage of weight is combined with hot marker.
    */
-  protected void insertAndWeighInLock(Entry e) {
-    if (!isWeigherPresent()) {
-      return;
-    }
-  }
-
-  protected void updateWeightInLock(Entry e) {
+  protected void updateAccumulatedWeightInLock(Entry e) {
     Object v = e.getValueOrException();
-    long weight;
-    weight = calculateWeight(e, v);
-    long currentWeight = getWeightFromEntry(e);
-    if (currentWeight != weight) {
-      this.currentWeight += weight - currentWeight;
-      updateWeightInEntry(e, weight);
+    int requestedCompressedWeight = compressWeight(calculateWeight(e, v));
+    if (e.getCompressedWeight() != requestedCompressedWeight) {
+      long decompressedEntryWeight = decompressWeight(e.getCompressedWeight());
+      long requestedWeightWithLostPrecision = decompressWeight(requestedCompressedWeight);
+      totalWeight += requestedWeightWithLostPrecision - decompressedEntryWeight;
+      e.setCompressedWeight(requestedCompressedWeight);
     }
   }
 
@@ -152,28 +147,22 @@ public abstract class AbstractEviction implements Eviction, EvictionMetrics {
     if (!isWeigherPresent()) {
       return;
     }
-    currentWeight -= getWeightFromEntry(e);
+    totalWeight -= getWeightFromEntry(e);
   }
 
-  /**
-   * Update the weight in the entry and update the weight calculation in
-   * this eviction segment. Since the weight limit might be reached, try to
-   * evict until within limits again.
-   */
+  private long getWeightFromEntry(Entry e) {
+    return decompressWeight(e.getCompressedWeight());
+  }
+
   @Override
-  public void updateWeight(final Entry e) {
+  public boolean updateWeight(Entry e) {
     if (!isWeigherPresent()) {
-      return;
+      return false;
     }
-    Entry[] evictionChunk = null;
     synchronized (lock) {
-      updateWeightInLock(e);
-      if (currentWeight <= (correctedMaxSizeOrWeight + evictionRunningWeight)) {
-        return;
-      }
-      evictionChunk = fillEvictionChunk();
+      updateAccumulatedWeightInLock(e);
+      return isEvictionNeeded(0);
     }
-    evictChunk(evictionChunk);
   }
 
   /** Safe GC overhead by reusing the chunk array. */
@@ -187,7 +176,7 @@ public abstract class AbstractEviction implements Eviction, EvictionMetrics {
     return ea;
   }
 
-  private void removeEventually(final Entry e) {
+  private void removeEventually(Entry e) {
     if (!e.isRemovedFromReplacementList()) {
       removeFromReplacementList(e);
       updateTotalWeightForRemove(e);
@@ -203,17 +192,16 @@ public abstract class AbstractEviction implements Eviction, EvictionMetrics {
   }
 
   @Override
-  public boolean submitWithoutEviction(final Entry e) {
+  public boolean submitWithoutEviction(Entry e) {
     synchronized (lock) {
       if (e.isNotYetInsertedInReplacementList()) {
         insertIntoReplacementList(e);
-        insertAndWeighInLock(e);
         newEntryCounter++;
       } else {
         removeEventually(e);
         updateTotalWeightForRemove(e);
       }
-      return isEvictionNeeded();
+      return isEvictionNeeded(1);
     }
   }
 
@@ -226,33 +214,42 @@ public abstract class AbstractEviction implements Eviction, EvictionMetrics {
    * We need to get rid of the getSize() > 0 here.
    * TODO: Add a parameter to the eviction process about how much entries should be freed?
    */
-  boolean isEvictionNeeded() {
+  boolean isEvictionNeeded(int spaceNeeded) {
     if (isWeigherPresent()) {
-      return currentWeight >= (correctedMaxSizeOrWeight + evictionRunningWeight);
+      return totalWeight + spaceNeeded > (correctedMaxSizeOrWeight + evictionRunningWeight);
     } else {
-      return getSize() >= (correctedMaxSizeOrWeight + evictionRunningCount);
+      return getSize() + spaceNeeded > (correctedMaxSizeOrWeight + evictionRunningCount);
     }
+  }
+
+  @Override
+  public void evictEventuallyBeforeInsert() {
+    evictEventually(1);
+  }
+
+  @Override
+  public void evictEventuallyBeforeInsertOnSegment(int hashCodeHint) {
+    evictEventuallyBeforeInsert();
   }
 
   @Override
   public void evictEventually() {
+    evictEventually(0);
+  }
+
+  private void evictEventually(int spaceNeeded) {
     Entry[] chunk;
     synchronized (lock) {
-      chunk = fillEvictionChunk();
+      chunk = fillEvictionChunk(spaceNeeded);
     }
     evictChunk(chunk);
   }
 
-  @Override
-  public void evictEventually(final int hashCodeHint) {
-    evictEventually();
-  }
-
-  private Entry[] fillEvictionChunk() {
-    if (!isEvictionNeeded()) {
+  private Entry[] fillEvictionChunk(int spaceNeeded) {
+    if (!isEvictionNeeded(spaceNeeded)) {
       return null;
     }
-    final Entry[] chunk = reuseChunkArray();
+    Entry[] chunk = reuseChunkArray();
     return refillChunk(chunk);
   }
 
@@ -282,14 +279,14 @@ public abstract class AbstractEviction implements Eviction, EvictionMetrics {
     return processCount;
   }
 
-  private int removeFromHash(final Entry[] chunk) {
+  private int removeFromHash(Entry[] chunk) {
     if (!noListenerCall) {
       return removeFromHashWithListener(chunk);
     }
     return removeFromHashWithoutListener(chunk);
   }
 
-  private int removeFromHashWithoutListener(final Entry[] chunk) {
+  private int removeFromHashWithoutListener(Entry[] chunk) {
     int processCount = 0;
     for (int i = 0; i < chunk.length; i++) {
       Entry e = chunk[i];
@@ -308,7 +305,7 @@ public abstract class AbstractEviction implements Eviction, EvictionMetrics {
     return processCount;
   }
 
-  private int removeFromHashWithListener(final Entry[] chunk) {
+  private int removeFromHashWithListener(Entry[] chunk) {
     int processCount = 0;
     for (int i = 0; i < chunk.length; i++) {
       Entry e = chunk[i];
@@ -332,7 +329,7 @@ public abstract class AbstractEviction implements Eviction, EvictionMetrics {
     return processCount;
   }
 
-  private void removeAllFromReplacementListOnEvict(final Entry[] chunk) {
+  private void removeAllFromReplacementListOnEvict(Entry[] chunk) {
     for (int i = 0; i < chunk.length; i++) {
       Entry e = chunk[i];
       if (e != null) {
@@ -387,8 +384,8 @@ public abstract class AbstractEviction implements Eviction, EvictionMetrics {
   }
 
   @Override
-  public long getCurrentWeight() {
-    return currentWeight;
+  public long getTotalWeight() {
+    return totalWeight;
   }
 
   @Override
@@ -416,7 +413,7 @@ public abstract class AbstractEviction implements Eviction, EvictionMetrics {
   public void close() { }
 
   @Override
-  public <T> T runLocked(final Job<T> j) {
+  public <T> T runLocked(Job<T> j) {
     synchronized (lock) {
       return j.call();
     }
@@ -450,34 +447,25 @@ public abstract class AbstractEviction implements Eviction, EvictionMetrics {
    * other cache operations while adaption happens.
    */
   @Override
-  public void changeCapacity(final long entryCountOrWeight) {
+  public void changeCapacity(long entryCountOrWeight) {
     if (entryCountOrWeight <= 0) {
       throw new IllegalArgumentException("Capacity of 0 is not supported.");
     }
     Entry[] chunk;
     synchronized (lock) {
-      if (entryCountOrWeight >= 0 && entryCountOrWeight < Long.MAX_VALUE) {
-        modifyCapacityLimits(entryCountOrWeight + 1);
-      } else {
-        modifyCapacityLimits(entryCountOrWeight);
-      }
-      synchronized (lock) {
-        evictChunkReuse = null;
-        chunk = fillEvictionChunk();
-      }
+      modifyCapacityLimits(entryCountOrWeight);
+      evictChunkReuse = null;
+      chunk = fillEvictionChunk(0);
     }
     while (chunk != null) {
       evictChunk(chunk);
       synchronized (lock) {
-        chunk = fillEvictionChunk();
+        chunk = fillEvictionChunk(0);
       }
-    }
-    synchronized (lock) {
-      modifyCapacityLimits(entryCountOrWeight);
     }
   }
 
-  private void modifyCapacityLimits(final long entryCountOrWeight) {
+  private void modifyCapacityLimits(long entryCountOrWeight) {
     if (isWeigherPresent()) {
       updateLimits(maxSize, entryCountOrWeight);
     } else {

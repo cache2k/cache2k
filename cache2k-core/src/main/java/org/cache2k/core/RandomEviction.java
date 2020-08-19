@@ -38,8 +38,8 @@ public class RandomEviction extends AbstractEviction {
   }
 
   @Override
-  public void updateWeight(Entry e) {
-
+  public boolean updateWeight(Entry e) {
+    return false;
   }
 
   @Override
