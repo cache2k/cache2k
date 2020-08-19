@@ -114,10 +114,10 @@ public class Cache2kBuilder<K, V> {
 
   private CacheType<K> keyType;
   private CacheType<V> valueType;
-  private Cache2kConfiguration<K,V> config = null;
+  private Cache2kConfiguration<K, V> config = null;
   private CacheManager manager = null;
 
-  private Cache2kBuilder(Cache2kConfiguration<K,V> cfg) {
+  private Cache2kBuilder(Cache2kConfiguration<K, V> cfg) {
     withConfig(cfg);
   }
 
@@ -154,7 +154,7 @@ public class Cache2kBuilder<K, V> {
     this.valueType = valueType;
   }
 
-  private void withConfig(Cache2kConfiguration<K,V> cfg) {
+  private void withConfig(Cache2kConfiguration<K, V> cfg) {
     config = cfg;
   }
 
@@ -546,7 +546,7 @@ public class Cache2kBuilder<K, V> {
    * @throws IllegalArgumentException if an identical listener is already added.
    * @param listener The listener to add
    */
-  public final Cache2kBuilder<K, V> addListener(CacheEntryOperationListener<K,V> listener) {
+  public final Cache2kBuilder<K, V> addListener(CacheEntryOperationListener<K, V> listener) {
     config().getListeners().add(wrapCustomizationInstance(listener));
     return this;
   }
@@ -558,7 +558,7 @@ public class Cache2kBuilder<K, V> {
    * @throws IllegalArgumentException if an identical listener is already added.
    * @param listener The listener to add
    */
-  public final Cache2kBuilder<K,V> addAsyncListener(CacheEntryOperationListener<K,V> listener) {
+  public final Cache2kBuilder<K, V> addAsyncListener(CacheEntryOperationListener<K, V> listener) {
     config().getAsyncListeners().add(wrapCustomizationInstance(listener));
     return this;
   }
@@ -688,7 +688,7 @@ public class Cache2kBuilder<K, V> {
    * of exceptions from the loader. A specified policy will be ignored if
    * {@link #expireAfterWrite} is set to 0.
    */
-  public final Cache2kBuilder<K,V> resiliencePolicy(ResiliencePolicy<K,V> v) {
+  public final Cache2kBuilder<K, V> resiliencePolicy(ResiliencePolicy<K, V> v) {
     config().setResiliencePolicy(wrapCustomizationInstance(v));
     return this;
   }
@@ -712,7 +712,7 @@ public class Cache2kBuilder<K, V> {
    * as soon as the capacity constraint is met. This is primarily used for
    * testing and evaluation purposes.
    */
-  public final Cache2kBuilder<K,V> strictEviction(boolean flag) {
+  public final Cache2kBuilder<K, V> strictEviction(boolean flag) {
     config().setStrictEviction(flag);
     return this;
   }
@@ -728,7 +728,7 @@ public class Cache2kBuilder<K, V> {
    * @see CacheLoader#load(Object)
    * @see ExpiryPolicy#calculateExpiryTime(Object, Object, long, CacheEntry)
    */
-  public final Cache2kBuilder<K,V> permitNullValues(boolean flag) {
+  public final Cache2kBuilder<K, V> permitNullValues(boolean flag) {
     config().setPermitNullValues(flag);
     return this;
   }
@@ -738,7 +738,7 @@ public class Cache2kBuilder<K, V> {
    * statistics that have significant overhead. Whether the values become accessible with JMX is
    * controlled by {@link #enableJmx(boolean)}.
    */
-  public final Cache2kBuilder<K,V> disableStatistics(boolean flag) {
+  public final Cache2kBuilder<K, V> disableStatistics(boolean flag) {
     config().setDisableStatistics(flag);
     return this;
   }
@@ -749,7 +749,7 @@ public class Cache2kBuilder<K, V> {
    * {@link #recordRefreshedTime(boolean)}.
    */
   @Deprecated
-  public final Cache2kBuilder<K,V> disableLastModificationTime(boolean flag) {
+  public final Cache2kBuilder<K, V> disableLastModificationTime(boolean flag) {
     return this;
   }
 
@@ -759,7 +759,7 @@ public class Cache2kBuilder<K, V> {
    *
    * @see MutableCacheEntry#getRefreshedTime()
    */
-  public final Cache2kBuilder<K,V> recordRefreshedTime(boolean flag) {
+  public final Cache2kBuilder<K, V> recordRefreshedTime(boolean flag) {
     config().setRecordRefreshedTime(flag);
     return this;
   }
@@ -772,7 +772,7 @@ public class Cache2kBuilder<K, V> {
    * <p>Typical interactive do not need to enable this. May improve concurrency for applications
    * that utilize all cores and cache operations account for most CPU cycles.
    */
-  public final Cache2kBuilder<K,V> boostConcurrency(boolean f) {
+  public final Cache2kBuilder<K, V> boostConcurrency(boolean f) {
     config().setBoostConcurrency(f);
     return this;
   }
@@ -782,7 +782,7 @@ public class Cache2kBuilder<K, V> {
    * JMX even there is no cache name specified with {@link #name(String)}, since a name will
    * be generated internally, thus enabling JMX by default for all caches is feasible.
    */
-  public final Cache2kBuilder<K,V> enableJmx(boolean f) {
+  public final Cache2kBuilder<K, V> enableJmx(boolean f) {
     config().setEnableJmx(f);
     return this;
   }
@@ -792,7 +792,7 @@ public class Cache2kBuilder<K, V> {
    * a cache is created dynamically and intended to be short lived. All extensions for monitoring
    * should respect this parameter.
    */
-  public final Cache2kBuilder<K,V> disableMonitoring(boolean f) {
+  public final Cache2kBuilder<K, V> disableMonitoring(boolean f) {
     config().setDisableMonitoring(f);
     return this;
   }
@@ -804,7 +804,7 @@ public class Cache2kBuilder<K, V> {
    * @see #loaderThreadCount(int)
    * @see #prefetchExecutor(Executor)
    */
-  public final Cache2kBuilder<K,V> loaderExecutor(Executor v) {
+  public final Cache2kBuilder<K, V> loaderExecutor(Executor v) {
     config().setLoaderExecutor(new CustomizationReferenceSupplier<Executor>(v));
     return this;
   }
@@ -820,7 +820,7 @@ public class Cache2kBuilder<K, V> {
    * @see #loaderThreadCount(int)
    * @see #loaderExecutor(Executor)
    */
-  public final Cache2kBuilder<K,V> prefetchExecutor(Executor v) {
+  public final Cache2kBuilder<K, V> prefetchExecutor(Executor v) {
     config().setPrefetchExecutor(new CustomizationReferenceSupplier<Executor>(v));
     return this;
   }
@@ -830,7 +830,7 @@ public class Cache2kBuilder<K, V> {
    * {@link ForkJoinPool#commonPool()} is used by default or an internal
    * executor is used that has unbounded thread capacity otherwise.
    */
-  public final Cache2kBuilder<K,V> executor(Executor v) {
+  public final Cache2kBuilder<K, V> executor(Executor v) {
     config().setExecutor(new CustomizationReferenceSupplier<Executor>(v));
     return this;
   }
@@ -841,7 +841,7 @@ public class Cache2kBuilder<K, V> {
    *
    * @see #addAsyncListener(CacheEntryOperationListener)
    */
-  public final Cache2kBuilder<K,V> asyncListenerExecutor(Executor v) {
+  public final Cache2kBuilder<K, V> asyncListenerExecutor(Executor v) {
     config().setAsyncListenerExecutor(new CustomizationReferenceSupplier<Executor>(v));
     return this;
   }
@@ -859,7 +859,7 @@ public class Cache2kBuilder<K, V> {
    * {@link #maximumWeight(long)} needs to be specified as well. Using a weigher has a slightly
    * performance impact on the update of existing entries.
    */
-  public final Cache2kBuilder<K, V> weigher(Weigher<K,V> v) {
+  public final Cache2kBuilder<K, V> weigher(Weigher<K, V> v) {
     config().setWeigher(new CustomizationReferenceSupplier<Weigher>(v));
     return this;
   }
@@ -888,7 +888,7 @@ public class Cache2kBuilder<K, V> {
    *
    * @return configuration objects with the parameters set in the builder.
    */
-  public final Cache2kConfiguration<K,V> toConfiguration() {
+  public final Cache2kConfiguration<K, V> toConfiguration() {
     return config();
   }
 
@@ -929,7 +929,7 @@ public class Cache2kBuilder<K, V> {
    */
   @SuppressWarnings("unchecked")
   public final IntCache<V> buildForIntKey() {
-    Cache2kConfiguration<K,V> cfg = config();
+    Cache2kConfiguration<K, V> cfg = config();
     if (cfg.getKeyType().getType() != Integer.class) {
       throw new IllegalArgumentException("Integer key type expected, was: " + cfg.getKeyType());
     }
@@ -951,7 +951,7 @@ public class Cache2kBuilder<K, V> {
    */
   @SuppressWarnings("unchecked")
   public final LongCache<V> buildForLongKey() {
-    Cache2kConfiguration<K,V> cfg = config();
+    Cache2kConfiguration<K, V> cfg = config();
     if (cfg.getKeyType().getType() != Long.class) {
       throw new IllegalArgumentException("Long key type expected, was: " + cfg.getKeyType());
     }

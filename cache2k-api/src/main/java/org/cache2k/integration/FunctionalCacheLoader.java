@@ -31,7 +31,7 @@ package org.cache2k.integration;
  * @author Jens Wilke
  * @see CacheLoader
  */
-public interface FunctionalCacheLoader<K,V> {
+public interface FunctionalCacheLoader<K, V> {
 
   /**
    * @see CacheLoader#load(Object)

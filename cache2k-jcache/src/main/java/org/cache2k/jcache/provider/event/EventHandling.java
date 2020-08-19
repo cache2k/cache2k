@@ -65,7 +65,7 @@ public interface EventHandling<K, V> {
   @SuppressWarnings("UnusedReturnValue")
   boolean deregisterListener(CacheEntryListenerConfiguration<K, V> cfg);
 
-  Collection<CacheEntryListenerConfiguration<K,V>> getAllListenerConfigurations();
+  Collection<CacheEntryListenerConfiguration<K, V>> getAllListenerConfigurations();
 
   void addInternalListenersToCache2kConfiguration(Cache2kConfiguration<K, V> cfg);
 

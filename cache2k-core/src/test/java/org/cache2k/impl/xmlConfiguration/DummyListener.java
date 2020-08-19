@@ -23,5 +23,5 @@ package org.cache2k.impl.xmlConfiguration;
 /**
  * @author Jens Wilke
  */
-public class DummyListener<K,V> extends BaseDummyListener<K,V> {
+public class DummyListener<K, V> extends BaseDummyListener<K, V> {
 }

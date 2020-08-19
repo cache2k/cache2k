@@ -217,7 +217,7 @@ public class Cache2kCoreProviderImpl implements Cache2kCoreProvider {
 
   @Override
   public <K, V> Cache<K, V> createCache(CacheManager m, Cache2kConfiguration<K, V> cfg) {
-    return new InternalCache2kBuilder<K,V>(cfg, m).build();
+    return new InternalCache2kBuilder<K, V>(cfg, m).build();
   }
 
   public String getVersion() {

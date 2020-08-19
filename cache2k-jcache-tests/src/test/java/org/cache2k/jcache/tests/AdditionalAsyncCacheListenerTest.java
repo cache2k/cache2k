@@ -151,7 +151,7 @@ public class AdditionalAsyncCacheListenerTest extends CacheTestSupport<Integer, 
 
     public void record(final EventType _expectedType, final Iterable<CacheEntryEvent<? extends K, ? extends V>> events) {
       for (CacheEntryEvent e0 : events) {
-        CacheEntryEvent<K,V> e = e0;
+        CacheEntryEvent<K, V> e = e0;
         assertEquals(_expectedType, e.getEventType());
         log.add(new RecordedEvent<K>(e.getEventType(), e.getKey()));
       }

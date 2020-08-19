@@ -95,18 +95,18 @@ public class Cache2kConfiguration<K, V> implements ConfigurationBean, Configurat
   private CustomizationSupplier<Executor> prefetchExecutor;
   private CustomizationSupplier<Executor> asyncListenerExecutor;
   private CustomizationSupplier<Executor> executor;
-  private CustomizationSupplier<ExpiryPolicy<K,V>> expiryPolicy;
-  private CustomizationSupplier<ResiliencePolicy<K,V>> resiliencePolicy;
-  private CustomizationSupplier<? extends FunctionalCacheLoader<K,V>> loader;
-  private CustomizationSupplier<CacheWriter<K,V>> writer;
-  private CustomizationSupplier<AdvancedCacheLoader<K,V>> advancedLoader;
-  private CustomizationSupplier<AsyncCacheLoader<K,V>> asyncLoader;
+  private CustomizationSupplier<ExpiryPolicy<K, V>> expiryPolicy;
+  private CustomizationSupplier<ResiliencePolicy<K, V>> resiliencePolicy;
+  private CustomizationSupplier<? extends FunctionalCacheLoader<K, V>> loader;
+  private CustomizationSupplier<CacheWriter<K, V>> writer;
+  private CustomizationSupplier<AdvancedCacheLoader<K, V>> advancedLoader;
+  private CustomizationSupplier<AsyncCacheLoader<K, V>> asyncLoader;
   private CustomizationSupplier<ExceptionPropagator<K>> exceptionPropagator;
   private CustomizationSupplier<TimeReference> timeReference;
   private CustomizationSupplier<Weigher> weigher;
 
-  private CustomizationCollection<CacheEntryOperationListener<K,V>> listeners;
-  private CustomizationCollection<CacheEntryOperationListener<K,V>> asyncListeners;
+  private CustomizationCollection<CacheEntryOperationListener<K, V>> listeners;
+  private CustomizationCollection<CacheEntryOperationListener<K, V>> asyncListeners;
   private CustomizationCollection<CacheClosedListener> closedListeners;
 
   private ConfigurationSectionContainer sections;
@@ -118,8 +118,8 @@ public class Cache2kConfiguration<K, V> implements ConfigurationBean, Configurat
    * @see Cache2kBuilder#keyType(Class)
    * @see Cache2kBuilder#valueType(Class)
    */
-  public static <K,V> Cache2kConfiguration<K, V> of(Class<K> keyType, Class<V> valueType) {
-    Cache2kConfiguration<K,V> c = new Cache2kConfiguration<K,V>();
+  public static <K, V> Cache2kConfiguration<K, V> of(Class<K> keyType, Class<V> valueType) {
+    Cache2kConfiguration<K, V> c = new Cache2kConfiguration<K, V>();
     c.setKeyType(keyType);
     c.setValueType(valueType);
     return c;
@@ -132,8 +132,8 @@ public class Cache2kConfiguration<K, V> implements ConfigurationBean, Configurat
    * @see Cache2kBuilder#keyType(CacheType)
    * @see Cache2kBuilder#valueType(CacheType)
    */
-  public static <K,V> Cache2kConfiguration<K, V> of(Class<K> keyType, CacheType<V> valueType) {
-    Cache2kConfiguration<K,V> c = new Cache2kConfiguration<K,V>();
+  public static <K, V> Cache2kConfiguration<K, V> of(Class<K> keyType, CacheType<V> valueType) {
+    Cache2kConfiguration<K, V> c = new Cache2kConfiguration<K, V>();
     c.setKeyType(keyType);
     c.setValueType(valueType);
     return c;
@@ -146,8 +146,8 @@ public class Cache2kConfiguration<K, V> implements ConfigurationBean, Configurat
    * @see Cache2kBuilder#keyType(Class)
    * @see Cache2kBuilder#valueType(Class)
    */
-  public static <K,V> Cache2kConfiguration<K, V> of(CacheType<K> keyType, Class<V> valueType) {
-    Cache2kConfiguration<K,V> c = new Cache2kConfiguration<K,V>();
+  public static <K, V> Cache2kConfiguration<K, V> of(CacheType<K> keyType, Class<V> valueType) {
+    Cache2kConfiguration<K, V> c = new Cache2kConfiguration<K, V>();
     c.setKeyType(keyType);
     c.setValueType(valueType);
     return c;
@@ -160,8 +160,8 @@ public class Cache2kConfiguration<K, V> implements ConfigurationBean, Configurat
    * @see Cache2kBuilder#keyType(CacheType)
    * @see Cache2kBuilder#valueType(CacheType)
    */
-  public static <K,V> Cache2kConfiguration<K, V> of(CacheType<K> keyType, CacheType<V> valueType) {
-    Cache2kConfiguration<K,V> c = new Cache2kConfiguration<K,V>();
+  public static <K, V> Cache2kConfiguration<K, V> of(CacheType<K> keyType, CacheType<V> valueType) {
+    Cache2kConfiguration<K, V> c = new Cache2kConfiguration<K, V>();
     c.setKeyType(keyType);
     c.setValueType(valueType);
     return c;
@@ -427,11 +427,11 @@ public class Cache2kConfiguration<K, V> implements ConfigurationBean, Configurat
     getSections().addAll(c);
   }
 
-  public CustomizationSupplier<? extends FunctionalCacheLoader<K,V>> getLoader() {
+  public CustomizationSupplier<? extends FunctionalCacheLoader<K, V>> getLoader() {
     return loader;
   }
 
-  public void setLoader(final CustomizationSupplier<? extends FunctionalCacheLoader<K,V>> v) {
+  public void setLoader(final CustomizationSupplier<? extends FunctionalCacheLoader<K, V>> v) {
     loader = v;
   }
 
@@ -517,7 +517,7 @@ public class Cache2kConfiguration<K, V> implements ConfigurationBean, Configurat
    *
    * @return Mutable collection of listeners
    */
-  public CustomizationCollection<CacheEntryOperationListener<K,V>> getListeners() {
+  public CustomizationCollection<CacheEntryOperationListener<K, V>> getListeners() {
     if (listeners == null) {
       listeners = new DefaultCustomizationCollection<CacheEntryOperationListener<K, V>>();
     }
@@ -536,7 +536,7 @@ public class Cache2kConfiguration<K, V> implements ConfigurationBean, Configurat
    * improve integration with bean configuration mechanisms that use the set method and
    * construct a set or list, like Springs' bean XML configuration.
    */
-  public void setListeners(Collection<CustomizationSupplier<CacheEntryOperationListener<K,V>>> c) {
+  public void setListeners(Collection<CustomizationSupplier<CacheEntryOperationListener<K, V>>> c) {
     getListeners().addAll(c);
   }
 
@@ -546,7 +546,7 @@ public class Cache2kConfiguration<K, V> implements ConfigurationBean, Configurat
    *
    * @return Mutable collection of listeners
    */
-  public CustomizationCollection<CacheEntryOperationListener<K,V>> getAsyncListeners() {
+  public CustomizationCollection<CacheEntryOperationListener<K, V>> getAsyncListeners() {
     if (asyncListeners == null) {
       asyncListeners = new DefaultCustomizationCollection<CacheEntryOperationListener<K, V>>();
     }
@@ -566,7 +566,7 @@ public class Cache2kConfiguration<K, V> implements ConfigurationBean, Configurat
    * construct a set or list, like Springs' bean XML configuration.
    */
   public void setAsyncListeners(
-    Collection<CustomizationSupplier<CacheEntryOperationListener<K,V>>> c) {
+    Collection<CustomizationSupplier<CacheEntryOperationListener<K, V>>> c) {
     getAsyncListeners().addAll(c);
   }
 

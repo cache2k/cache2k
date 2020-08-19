@@ -23,5 +23,5 @@ package org.cache2k.core.operation;
 /**
  * @author Jens Wilke
  */
-public interface LoadedEntry<K,V> extends ExaminationEntry<K,V> {
+public interface LoadedEntry<K, V> extends ExaminationEntry<K, V> {
 }

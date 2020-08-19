@@ -31,8 +31,8 @@ import javax.cache.configuration.MutableConfiguration;
  *
  * @author Jens Wilke
  */
-public final class ExtendedMutableConfiguration<K,V>
-  extends MutableConfiguration<K,V> implements ExtendedConfiguration<K,V> {
+public final class ExtendedMutableConfiguration<K, V>
+  extends MutableConfiguration<K, V> implements ExtendedConfiguration<K, V> {
 
   /**
    * The preferred way to construct a JCache based on a cache2k configuration.
@@ -43,18 +43,18 @@ public final class ExtendedMutableConfiguration<K,V>
    *
    * @see <a href="https://cache2k.org/docs/latest/user-guide.html#jcache">User Guide - JCache</a>
    */
-  public static <K,V> ExtendedMutableConfiguration<K,V> of(Cache2kBuilder<K,V> builder) {
+  public static <K, V> ExtendedMutableConfiguration<K, V> of(Cache2kBuilder<K, V> builder) {
     return of(builder.toConfiguration());
   }
 
-  public static <K,V> ExtendedMutableConfiguration<K,V> of(
-    Cache2kConfiguration<K,V> configuration) {
-    ExtendedMutableConfiguration<K,V> cfg = new ExtendedMutableConfiguration<K, V>();
+  public static <K, V> ExtendedMutableConfiguration<K, V> of(
+    Cache2kConfiguration<K, V> configuration) {
+    ExtendedMutableConfiguration<K, V> cfg = new ExtendedMutableConfiguration<K, V>();
     cfg.cache2kConfiguration = configuration;
     return cfg;
   }
 
-  private Cache2kConfiguration<K,V> cache2kConfiguration;
+  private Cache2kConfiguration<K, V> cache2kConfiguration;
 
   public Cache2kConfiguration<K, V> getCache2kConfiguration() {
     return cache2kConfiguration;

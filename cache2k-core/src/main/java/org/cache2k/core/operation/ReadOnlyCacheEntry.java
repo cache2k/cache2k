@@ -30,21 +30,21 @@ import org.cache2k.core.ExceptionWrapper;
  *
  * @author Jens Wilke
  */
-public class ReadOnlyCacheEntry<K, V> extends AbstractCacheEntry<K,V> implements ResultEntry<K, V> {
+public class ReadOnlyCacheEntry<K, V> extends AbstractCacheEntry<K, V> implements ResultEntry<K, V> {
 
   private K key;
   private V valueOrException;
   private long refreshTime;
 
   @SuppressWarnings("unchecked")
-  public static <K,V> ReadOnlyCacheEntry<K,V> of(CacheEntry<K,V> entry) {
+  public static <K, V> ReadOnlyCacheEntry<K, V> of(CacheEntry<K, V> entry) {
     if (entry instanceof ReadOnlyCacheEntry) {
       return (ReadOnlyCacheEntry) entry;
     }
-    return new ReadOnlyCacheEntry<K, V>((Entry<K,V>) entry);
+    return new ReadOnlyCacheEntry<K, V>((Entry<K, V>) entry);
   }
 
-  public ReadOnlyCacheEntry(Entry<K,V> entry) {
+  public ReadOnlyCacheEntry(Entry<K, V> entry) {
     setValues(entry);
   }
 

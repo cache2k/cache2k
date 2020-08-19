@@ -41,17 +41,17 @@ import java.util.NoSuchElementException;
  *
  * @author Jens Wilke
  */
-public class ConcurrentEntryIterator<K,V> implements Iterator<Entry<K,V>> {
+public class ConcurrentEntryIterator<K, V> implements Iterator<Entry<K, V>> {
 
   private HeapCache<K, V> cache;
   private Entry<K, V> lastEntry = null;
   private Entry<K, V> nextEntry = null;
   private long clearCount;
-  private Hash2<K,V> hash;
-  private Entry<K,V>[] hashArray;
+  private Hash2<K, V> hash;
+  private Entry<K, V>[] hashArray;
   private HashMap<K,K> seen = new HashMap<K, K>();
 
-  public ConcurrentEntryIterator(HeapCache<K,V> cache) {
+  public ConcurrentEntryIterator(HeapCache<K, V> cache) {
     this.cache = cache;
     hash = this.cache.hash;
     switchAndCheckAbort();
@@ -63,13 +63,13 @@ public class ConcurrentEntryIterator<K,V> implements Iterator<Entry<K,V>> {
   }
 
   @Override
-  public Entry<K,V> next() {
+  public Entry<K, V> next() {
     if (nextEntry != null) {
-      Entry<K,V> e = nextEntry;
+      Entry<K, V> e = nextEntry;
       nextEntry = null;
       return e;
     }
-    Entry<K,V> e = nextEntry();
+    Entry<K, V> e = nextEntry();
     if (e == null) {
       throw new NoSuchElementException("not available");
     }
@@ -98,8 +98,8 @@ public class ConcurrentEntryIterator<K,V> implements Iterator<Entry<K,V>> {
     seen.put(key, key);
   }
 
-  private Entry<K,V> nextEntry() {
-    Entry<K,V> e;
+  private Entry<K, V> nextEntry() {
+    Entry<K, V> e;
     if (hashArray == null) {
       return null;
     }
@@ -146,7 +146,7 @@ public class ConcurrentEntryIterator<K,V> implements Iterator<Entry<K,V>> {
     return clearCount != hash.getClearOrCloseCount();
   }
 
-  private Entry<K,V> checkIteratedOrNext(Entry<K,V> e) {
+  private Entry<K, V> checkIteratedOrNext(Entry<K, V> e) {
     do {
       K key = cache.extractKeyObj(e);
       boolean notYetIterated = !seen.containsKey(key);

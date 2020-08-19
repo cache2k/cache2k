@@ -34,7 +34,7 @@ import org.cache2k.processor.MutableCacheEntry;
  */
 public class EntryProcessorCacheWrapper<K, V> extends ForwardingCache<K, V> {
 
-  private Cache<K,V> cache;
+  private Cache<K, V> cache;
 
   public EntryProcessorCacheWrapper(Cache<K, V> _cache) {
     this.cache = _cache;

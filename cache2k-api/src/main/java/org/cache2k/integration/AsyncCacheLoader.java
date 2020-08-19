@@ -88,7 +88,7 @@ public interface AsyncCacheLoader<K, V> {
     /**
      * The existing cache entry or {@code null} if the no mapping exists.
      */
-    CacheEntry<K,V> getCurrentEntry();
+    CacheEntry<K, V> getCurrentEntry();
 
   }
 

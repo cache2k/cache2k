@@ -41,9 +41,9 @@ import java.util.List;
  * @author Jens Wilke
  */
 @SuppressWarnings("unchecked")
-public class ConfigurationBuilder<K,V> implements AutoCloseable {
+public class ConfigurationBuilder<K, V> implements AutoCloseable {
 
-  private MutableConfiguration<K,V> config;
+  private MutableConfiguration<K, V> config;
   private List<AutoCloseable> closable = new ArrayList<>();
   private CacheEntryListenerServer synchronousListenerServer;
   private CacheEntryListenerServer asynchronousListenerServer;
@@ -52,30 +52,30 @@ public class ConfigurationBuilder<K,V> implements AutoCloseable {
     this.config = config;
   }
 
-  public ConfigurationBuilder<K,V> loader(CacheLoader<K,V> loader) {
-    CacheLoaderServer<K,V> server = new CacheLoaderServer<>(0, loader);
+  public ConfigurationBuilder<K, V> loader(CacheLoader<K, V> loader) {
+    CacheLoaderServer<K, V> server = new CacheLoaderServer<>(0, loader);
     try {
       server.open();
     } catch (IOException ex) {
       throw new RuntimeException(ex);
     }
     closable.add(server);
-    CacheLoaderClient<K,V> client = new CacheLoaderClient<>(server.getInetAddress(), server.getPort());
+    CacheLoaderClient<K, V> client = new CacheLoaderClient<>(server.getInetAddress(), server.getPort());
     config.setCacheLoaderFactory(FactoryBuilder.factoryOf(client));
     return this;
   }
 
-  public ConfigurationBuilder<K,V> expiry(Factory<? extends ExpiryPolicy> p) {
+  public ConfigurationBuilder<K, V> expiry(Factory<? extends ExpiryPolicy> p) {
     config.setExpiryPolicyFactory(p);
     return this;
   }
 
-  public ConfigurationBuilder<K,V> syncListener(CacheEntryListener<K, V> cacheEventListener) {
+  public ConfigurationBuilder<K, V> syncListener(CacheEntryListener<K, V> cacheEventListener) {
     return listener(cacheEventListener, true);
   }
 
 
-  public ConfigurationBuilder<K,V> listener(CacheEntryListener<K, V> cacheEventListener, final boolean synchronous) {
+  public ConfigurationBuilder<K, V> listener(CacheEntryListener<K, V> cacheEventListener, final boolean synchronous) {
     if (synchronous) {
       if (synchronousListenerServer == null) {
         synchronousListenerServer = buildListenerServer(true);
@@ -98,7 +98,7 @@ public class ConfigurationBuilder<K,V> implements AutoCloseable {
     } catch (IOException ex) {
       throw new RuntimeException(ex);
     }
-    final CacheEntryListenerClient<K,V> client =
+    final CacheEntryListenerClient<K, V> client =
       new CacheEntryListenerClient<>(server.getInetAddress(), server.getPort());
     config.addCacheEntryListenerConfiguration(new CacheEntryListenerConfiguration<K, V>() {
       @Override

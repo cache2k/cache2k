@@ -111,7 +111,7 @@ import java.util.concurrent.TimeUnit;
  * @see <a href="https://cache2k.org/docs/latest/user-guide.html">cache2k User Guide</a>
  */
 @SuppressWarnings("UnusedDeclaration")
-public interface Cache<K, V> extends KeyValueStore<K,V>, Closeable {
+public interface Cache<K, V> extends KeyValueStore<K, V>, Closeable {
 
   /**
    * A configured or generated name of this cache instance. A cache in close state will still
@@ -807,7 +807,7 @@ public interface Cache<K, V> extends KeyValueStore<K,V>, Closeable {
    *
    * @see #keys()
    */
-  Iterable<CacheEntry<K,V>> entries();
+  Iterable<CacheEntry<K, V>> entries();
 
   /**
    * Removes all cache contents. This has the same semantics of calling
@@ -897,7 +897,7 @@ public interface Cache<K, V> extends KeyValueStore<K,V>, Closeable {
    *
    * @return {@code ConcurrentMap} wrapper for this cache instance
    */
-  ConcurrentMap<K,V> asMap();
+  ConcurrentMap<K, V> asMap();
 
   /**
    * Return cache statistics. The result is never {@code null} regardless of the settings

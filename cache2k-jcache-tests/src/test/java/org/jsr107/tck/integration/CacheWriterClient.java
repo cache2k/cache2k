@@ -44,7 +44,7 @@ import java.util.concurrent.ExecutionException;
  */
 public class CacheWriterClient<K, V> extends CacheClient implements CacheWriter<K, V> {
 
-    private CacheWriterServer<K,V> shortCircuitServer;
+    private CacheWriterServer<K, V> shortCircuitServer;
 
     /**
      * Constructs a {@link CacheWriterClient}.

@@ -27,5 +27,5 @@ import java.util.EventListener;
  *
  * @author Jens Wilke
  */
-public interface CacheEntryOperationListener<K,V> extends EventListener {
+public interface CacheEntryOperationListener<K, V> extends EventListener {
 }

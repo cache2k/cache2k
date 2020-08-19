@@ -52,7 +52,7 @@ public class StaticUtil {
    * Enforce the usage of wired cache by registering a dummy listener.
    */
   @SuppressWarnings("unchecked")
-  public static <K,V> Cache2kBuilder<K,V> enforceWiredCache(Cache2kBuilder<K,V> b) {
+  public static <K, V> Cache2kBuilder<K, V> enforceWiredCache(Cache2kBuilder<K, V> b) {
     return b.addListener(new CacheEntryRemovedListener() {
       @Override
       public void onEntryRemoved(final Cache c, final CacheEntry entry) {
@@ -81,14 +81,14 @@ public class StaticUtil {
     return w.getException();
   }
 
-  public static <K,V> CacheLoaderTest.CompletionWaiter load(Cache<K,V> c, K ...keys) {
+  public static <K, V> CacheLoaderTest.CompletionWaiter load(Cache<K, V> c, K ...keys) {
     CacheLoaderTest.CompletionWaiter w = new CacheLoaderTest.CompletionWaiter();
     c.loadAll(toIterable(keys), w);
     w.awaitCompletion();
     return w;
   }
 
-  public static <K,V> CacheLoaderTest.CompletionWaiter reload(Cache<K,V> c, K ...keys) {
+  public static <K, V> CacheLoaderTest.CompletionWaiter reload(Cache<K, V> c, K ...keys) {
     CacheLoaderTest.CompletionWaiter w = new CacheLoaderTest.CompletionWaiter();
     c.reloadAll(toIterable(keys), w);
     w.awaitCompletion();

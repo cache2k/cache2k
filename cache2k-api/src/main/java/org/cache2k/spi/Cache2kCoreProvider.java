@@ -70,7 +70,7 @@ public interface Cache2kCoreProvider {
   /**
    * Create a cache, apply external configuration before creating it.
    */
-  <K,V> Cache<K,V> createCache(CacheManager m, Cache2kConfiguration<K,V> cfg);
+  <K, V> Cache<K, V> createCache(CacheManager m, Cache2kConfiguration<K, V> cfg);
 
   /**
    * Return the effective default configuration for this manager. A different default

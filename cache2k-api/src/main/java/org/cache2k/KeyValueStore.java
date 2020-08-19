@@ -31,7 +31,7 @@ import java.util.Map;
  *
  * @author Jens Wilke
  */
-public interface KeyValueStore<K, V> extends AdvancedKeyValueSource<K,V> {
+public interface KeyValueStore<K, V> extends AdvancedKeyValueSource<K, V> {
 
   /**
    * Insert or update a value associated with the given key.

@@ -27,5 +27,5 @@ import org.cache2k.CacheEntry;
  *
  * @author Jens Wilke
  */
-public interface ResultEntry<K, V> extends CacheEntry<K,V>, ExaminationEntry<K,V> {
+public interface ResultEntry<K, V> extends CacheEntry<K, V>, ExaminationEntry<K, V> {
 }

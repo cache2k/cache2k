@@ -65,19 +65,19 @@ import java.util.concurrent.Executors;
  *
  * @author Jens Wilke
  */
-public class JCacheBuilder<K,V> {
+public class JCacheBuilder<K, V> {
 
   private final String name;
   private final JCacheManagerAdapter manager;
   private boolean cache2kConfigurationWasProvided = false;
-  private CompleteConfiguration<K,V> config;
-  private Cache2kConfiguration<K,V> cache2kConfiguration;
+  private CompleteConfiguration<K, V> config;
+  private Cache2kConfiguration<K, V> cache2kConfiguration;
   private JCacheConfiguration extraConfiguration = JCACHE_DEFAULTS;
   private CacheType<K> keyType;
   private CacheType<V> valueType;
   private ExpiryPolicy expiryPolicy;
-  private Cache<K,V> createdCache;
-  private EventHandling<K,V> eventHandling;
+  private Cache<K, V> createdCache;
+  private EventHandling<K, V> eventHandling;
   private boolean needsTouchyWrapper;
 
   public JCacheBuilder(String name, JCacheManagerAdapter manager) {
@@ -86,11 +86,11 @@ public class JCacheBuilder<K,V> {
   }
 
   @SuppressWarnings("unchecked")
-  public void setConfiguration(Configuration<K,V> cfg) {
+  public void setConfiguration(Configuration<K, V> cfg) {
     if (cfg instanceof CompleteConfiguration) {
-      config = (CompleteConfiguration<K,V>) cfg;
+      config = (CompleteConfiguration<K, V>) cfg;
       if (cfg instanceof ExtendedConfiguration) {
-        cache2kConfiguration = ((ExtendedConfiguration<K,V>) cfg).getCache2kConfiguration();
+        cache2kConfiguration = ((ExtendedConfiguration<K, V>) cfg).getCache2kConfiguration();
         if (cache2kConfiguration != null) {
           if (cache2kConfiguration.getName() != null &&
             !cache2kConfiguration.getName().equals(name)) {
@@ -126,7 +126,7 @@ public class JCacheBuilder<K,V> {
     }
   }
 
-  public Cache<K,V> build() {
+  public Cache<K, V> build() {
     setupTypes();
     setupDefaults();
     setupExceptionPropagator();
@@ -209,8 +209,8 @@ public class JCacheBuilder<K,V> {
     }));
   }
 
-  abstract class CloseableLoader extends AdvancedCacheLoader<K,V> implements Closeable {}
-  abstract class CloseableWriter extends CacheWriter<K,V> implements Closeable {}
+  abstract class CloseableLoader extends AdvancedCacheLoader<K, V> implements Closeable {}
+  abstract class CloseableWriter extends CacheWriter<K, V> implements Closeable {}
 
   /**
    * Configure loader and writer.
@@ -387,7 +387,7 @@ public class JCacheBuilder<K,V> {
     needsTouchyWrapper = true;
     cache2kConfiguration.setExpiryPolicy(
       new CustomizationReferenceSupplier<org.cache2k.expiry.ExpiryPolicy<K, V>>(
-        new TouchyJCacheAdapter.ExpiryPolicyAdapter<K,V>(expiryPolicy)));
+        new TouchyJCacheAdapter.ExpiryPolicyAdapter<K, V>(expiryPolicy)));
   }
 
   @SuppressWarnings("unchecked")
@@ -395,13 +395,13 @@ public class JCacheBuilder<K,V> {
     if ((config.getCacheEntryListenerConfigurations() == null ||
       !config.getCacheEntryListenerConfigurations().iterator().hasNext()) &&
       !extraConfiguration.isSupportOnlineListenerAttachment()) {
-      eventHandling = (EventHandling<K,V>) EventHandling.DISABLED;
+      eventHandling = (EventHandling<K, V>) EventHandling.DISABLED;
       return;
     }
-    EventHandlingImpl<K,V> eventHandling =
+    EventHandlingImpl<K, V> eventHandling =
       new EventHandlingImpl<K, V>(manager, Executors.newCachedThreadPool());
     eventHandling.addInternalListenersToCache2kConfiguration(cache2kConfiguration);
-    for (CacheEntryListenerConfiguration<K,V> cfg : config.getCacheEntryListenerConfigurations()) {
+    for (CacheEntryListenerConfiguration<K, V> cfg : config.getCacheEntryListenerConfigurations()) {
       eventHandling.registerListener(cfg);
     }
     this.eventHandling = eventHandling;
@@ -413,7 +413,7 @@ public class JCacheBuilder<K,V> {
     createdCache =
       new JCacheAdapter<K, V>(
         manager,
-        new InternalCache2kBuilder<K,V>(
+        new InternalCache2kBuilder<K, V>(
           cache2kConfiguration, manager.getCache2kManager()).buildAsIs(),
         keyType.getType(), valueType.getType(),
         config.isStoreByValue(),
@@ -438,7 +438,7 @@ public class JCacheBuilder<K,V> {
       ObjectTransformer<K, K> keyTransformer = createCopyTransformer(keyType);
       ObjectTransformer<V, V> valueTransformer = createCopyTransformer(valueType);
       createdCache =
-        new CopyCacheProxy<K,V>(
+        new CopyCacheProxy<K, V>(
           createdCache,
           keyTransformer,
           valueTransformer);

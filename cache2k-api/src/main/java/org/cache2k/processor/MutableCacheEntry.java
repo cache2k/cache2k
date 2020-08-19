@@ -152,7 +152,7 @@ public interface MutableCacheEntry<K, V> extends CacheEntry<K, V> {
    * <p>If a writer is registered, the
    * {@link org.cache2k.integration.CacheWriter#write(Object, Object)} is called.
    */
-  MutableCacheEntry<K,V> setValue(V v);
+  MutableCacheEntry<K, V> setValue(V v);
 
   /**
    * Removes an entry from the cache.
@@ -163,7 +163,7 @@ public interface MutableCacheEntry<K, V> extends CacheEntry<K, V> {
    *
    * @see <a href="https://github.com/jsr107/jsr107tck/issues/84">JSR107 TCK issue 84</a>
    */
-  MutableCacheEntry<K,V> remove();
+  MutableCacheEntry<K, V> remove();
 
   /**
    * Insert or update the entry and sets an exception. The exception will be
@@ -175,7 +175,7 @@ public interface MutableCacheEntry<K, V> extends CacheEntry<K, V> {
    *
    * @see org.cache2k.integration.ResiliencePolicy
    */
-  MutableCacheEntry<K,V> setException(Throwable ex);
+  MutableCacheEntry<K, V> setException(Throwable ex);
 
   /**
    * Set a new expiry time for the entry. If combined with {@link #setValue} the entry
@@ -186,7 +186,7 @@ public interface MutableCacheEntry<K, V> extends CacheEntry<K, V> {
    *
    * @param t Time in millis since epoch.
    */
-  MutableCacheEntry<K,V> setExpiryTime(long t);
+  MutableCacheEntry<K, V> setExpiryTime(long t);
 
   /**
    * Timestamp of the last refresh of the cached value. This is the start time
@@ -209,6 +209,6 @@ public interface MutableCacheEntry<K, V> extends CacheEntry<K, V> {
    * <p>If refresh ahead is enabled via {@link org.cache2k.Cache2kBuilder#refreshAhead(boolean)},
    * the next refresh time is controlled by the expiry time.
    */
-  MutableCacheEntry<K,V> setRefreshedTime(long t);
+  MutableCacheEntry<K, V> setRefreshedTime(long t);
 
 }

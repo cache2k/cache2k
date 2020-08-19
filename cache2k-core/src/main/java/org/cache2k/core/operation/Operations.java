@@ -100,12 +100,12 @@ public class Operations<K, V> {
     }
 
     @Override
-    public void mutate(Progress<K,V,Void> c, ExaminationEntry<K,V> e) {
+    public void mutate(Progress<K,V,Void> c, ExaminationEntry<K, V> e) {
       c.refresh();
     }
   };
 
-  public Semantic<K, V, ResultEntry<K,V>> getEntry(K key) {
+  public Semantic<K, V, ResultEntry<K, V>> getEntry(K key) {
     return GET_ENTRY;
   }
 
@@ -136,7 +136,7 @@ public class Operations<K, V> {
     }
   };
 
-  public Semantic<K, V, ResultEntry<K,V>> peekEntry(K key) {
+  public Semantic<K, V, ResultEntry<K, V>> peekEntry(K key) {
     return PEEK_ENTRY;
   }
 

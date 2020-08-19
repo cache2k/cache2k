@@ -75,7 +75,7 @@ public abstract class BaseCache<K, V> implements InternalCache<K, V> {
     return new Iterable<K>() {
       @Override
       public Iterator<K> iterator() {
-        final Iterator<CacheEntry<K,V>> it = BaseCache.this.iterator();
+        final Iterator<CacheEntry<K, V>> it = BaseCache.this.iterator();
         return new Iterator<K>() {
           @Override
           public boolean hasNext() {

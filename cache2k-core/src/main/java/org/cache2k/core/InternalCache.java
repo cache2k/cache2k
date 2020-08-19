@@ -94,7 +94,7 @@ public interface InternalCache<K, V>
    */
   InternalClock getClock();
 
-  CacheEntry<K,V> returnCacheEntry(ExaminationEntry<K,V> e);
+  CacheEntry<K, V> returnCacheEntry(ExaminationEntry<K, V> e);
 
   boolean isWeigherPresent();
 

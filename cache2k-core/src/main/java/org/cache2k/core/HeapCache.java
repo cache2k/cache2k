@@ -104,9 +104,9 @@ public class HeapCache<K, V> extends BaseCache<K, V> {
 
   protected String name;
   public CacheManagerImpl manager;
-  protected AdvancedCacheLoader<K,V> loader;
+  protected AdvancedCacheLoader<K, V> loader;
   protected InternalClock clock;
-  protected TimingHandler<K,V> timing = TimingHandler.ETERNAL;
+  protected TimingHandler<K, V> timing = TimingHandler.ETERNAL;
 
   /**
    * Structure lock of the cache. Every operation that needs a consistent structure
@@ -183,7 +183,7 @@ public class HeapCache<K, V> extends BaseCache<K, V> {
     }
   }
 
-  protected final Hash2<K,V> hash = createHashTable();
+  protected final Hash2<K, V> hash = createHashTable();
 
   private volatile boolean closing = true;
 
@@ -324,7 +324,7 @@ public class HeapCache<K, V> extends BaseCache<K, V> {
     return new ExclusiveExecutor(threadCount, getThreadNamePrefix());
   }
 
-  public void setTiming(TimingHandler<K,V> rh) {
+  public void setTiming(TimingHandler<K, V> rh) {
     timing = rh;
     if (!(rh instanceof TimingHandler.TimeAgnostic)) {
       setFeatureBit(UPDATE_TIME_NEEDED, true);
@@ -339,7 +339,7 @@ public class HeapCache<K, V> extends BaseCache<K, V> {
     exceptionPropagator = ep;
   }
 
-  public void setAdvancedLoader(AdvancedCacheLoader<K,V> al) {
+  public void setAdvancedLoader(AdvancedCacheLoader<K, V> al) {
     loader = al;
   }
 
@@ -488,15 +488,15 @@ public class HeapCache<K, V> extends BaseCache<K, V> {
    * Filter out non valid entries and wrap each entry with a cache
    * entry object.
    */
-  static class IteratorFilterEntry2Entry<K,V> implements Iterator<CacheEntry<K, V>> {
+  static class IteratorFilterEntry2Entry<K, V> implements Iterator<CacheEntry<K, V>> {
 
-    final HeapCache<K,V> cache;
-    final Iterator<Entry<K,V>> iterator;
+    final HeapCache<K, V> cache;
+    final Iterator<Entry<K, V>> iterator;
     Entry entry;
     CacheEntry<K, V> lastEntry;
     final boolean filter;
 
-    IteratorFilterEntry2Entry(HeapCache<K,V> c, Iterator<Entry<K,V>> it, boolean filter) {
+    IteratorFilterEntry2Entry(HeapCache<K, V> c, Iterator<Entry<K, V>> it, boolean filter) {
       cache = c;
       iterator = it;
       this.filter = filter;
@@ -573,7 +573,7 @@ public class HeapCache<K, V> extends BaseCache<K, V> {
 
   @Override
   public V get(K key) {
-    Entry<K,V> e = getEntryInternal(key);
+    Entry<K, V> e = getEntryInternal(key);
     if (e == null) {
       return null;
     }
@@ -603,7 +603,7 @@ public class HeapCache<K, V> extends BaseCache<K, V> {
   }
 
   @Override
-  public CacheEntry<K, V> returnCacheEntry(ExaminationEntry<K,V> entry) {
+  public CacheEntry<K, V> returnCacheEntry(ExaminationEntry<K, V> entry) {
     return returnCacheEntry(entry.getKey(), entry.getValueOrException());
   }
 
@@ -620,7 +620,7 @@ public class HeapCache<K, V> extends BaseCache<K, V> {
     };
   }
 
-  abstract static class BaseCacheEntry<K,V> extends AbstractCacheEntry<K,V> {
+  abstract static class BaseCacheEntry<K, V> extends AbstractCacheEntry<K, V> {
     @Override
     public Throwable getException() {
       return null;
@@ -644,7 +644,7 @@ public class HeapCache<K, V> extends BaseCache<K, V> {
     return getEntryInternal(key, hc, extractIntKeyValue(key, hc));
   }
 
-  protected Entry<K,V> getEntryInternal(K key, int hc, int val) {
+  protected Entry<K, V> getEntryInternal(K key, int hc, int val) {
     if (loader == null) {
       return peekEntryInternal(key, hc, val);
     }
@@ -881,7 +881,7 @@ public class HeapCache<K, V> extends BaseCache<K, V> {
    */
   @Override
   public V computeIfAbsent(K key, Callable<V> callable) {
-    Entry<K,V> e;
+    Entry<K, V> e;
     for (;;) {
       e = lookupOrNewEntry(key);
       if (e.hasFreshData(clock)) {
@@ -1054,7 +1054,7 @@ public class HeapCache<K, V> extends BaseCache<K, V> {
     if (loader == null) {
       return;
     }
-    Entry<K,V> e = lookupEntryNoHitRecord(key);
+    Entry<K, V> e = lookupEntryNoHitRecord(key);
     if (e != null && e.hasFreshData(clock)) {
       return;
     }
@@ -1208,7 +1208,7 @@ public class HeapCache<K, V> extends BaseCache<K, V> {
   public Set<K> checkAllPresent(Iterable<? extends K> keys) {
     Set<K> keysToLoad = new HashSet<K>();
     for (K k : keys) {
-      Entry<K,V> e = lookupEntryNoHitRecord(k);
+      Entry<K, V> e = lookupEntryNoHitRecord(k);
       if (e == null || !e.hasFreshData(clock)) {
         keysToLoad.add(k);
       }
@@ -1312,7 +1312,7 @@ public class HeapCache<K, V> extends BaseCache<K, V> {
    * needs to be done under the same lock, to allow a check of the consistency.
    */
   protected Entry<K, V> insertNewEntry(K key, int hc, int val) {
-    Entry<K,V> e = new Entry<K,V>(extractIntKeyObj(key), val);
+    Entry<K, V> e = new Entry<K, V>(extractIntKeyObj(key), val);
     Entry<K, V> e2;
     eviction.evictEventually(hc);
     OptimisticLock l = hash.getSegmentLock(hc);
@@ -1619,7 +1619,7 @@ public class HeapCache<K, V> extends BaseCache<K, V> {
     }
   }
 
-  private void expireOrScheduleFinalExpireEvent(Entry<K,V> e) {
+  private void expireOrScheduleFinalExpireEvent(Entry<K, V> e) {
     long nrt = e.getNextRefreshTime();
     long t = clock.millis();
     if (t >= Math.abs(nrt)) {
@@ -1675,8 +1675,8 @@ public class HeapCache<K, V> extends BaseCache<K, V> {
    * Returns all cache entries within the heap cache. Entries that
    * are expired or contain no valid data are not filtered out.
    */
-  public final ConcurrentEntryIterator<K,V> iterateAllHeapEntries() {
-    return new ConcurrentEntryIterator<K,V>(this);
+  public final ConcurrentEntryIterator<K, V> iterateAllHeapEntries() {
+    return new ConcurrentEntryIterator<K, V>(this);
   }
 
   /**
@@ -1688,7 +1688,7 @@ public class HeapCache<K, V> extends BaseCache<K, V> {
   public Map<K, V> getAll(Iterable<? extends K> inputKeys) {
     Map<K, ExaminationEntry<K, V>> map = new HashMap<K, ExaminationEntry<K, V>>();
     for (K k : inputKeys) {
-      Entry<K,V> e = getEntryInternal(k);
+      Entry<K, V> e = getEntryInternal(k);
       if (e != null) {
         map.put(extractKeyObj(e), ReadOnlyCacheEntry.of(e));
       }
@@ -1731,7 +1731,7 @@ public class HeapCache<K, V> extends BaseCache<K, V> {
     }
   }
 
-  Operations<K,V> spec() { return Operations.SINGLETON; }
+  Operations<K, V> spec() { return Operations.SINGLETON; }
 
   @Override
   protected <R> EntryAction<K, V, R> createEntryAction(K key, Entry<K, V> e, Semantic<K, V, R> op) {
@@ -2012,9 +2012,9 @@ public class HeapCache<K, V> extends BaseCache<K, V> {
     return e.hashCode;
   }
 
-  public K extractKeyObj(Entry<K,V> e) { return e.getKeyObj(); }
+  public K extractKeyObj(Entry<K, V> e) { return e.getKeyObj(); }
 
-  public Hash2<K,V> createHashTable() {
+  public Hash2<K, V> createHashTable() {
     return new Hash2<K, V>(this);
   }
 

@@ -35,7 +35,7 @@ import java.util.concurrent.atomic.AtomicLong;
  * @see OptimisticLock
  */
 @SuppressWarnings({"WeakerAccess", "rawtypes"})
-public class Hash2<K,V> {
+public class Hash2<K, V> {
 
   private static final int LOCK_SEGMENTS;
   private static final int LOCK_MASK;
@@ -60,7 +60,7 @@ public class Hash2<K,V> {
    */
   private long segmentMaxFill;
 
-  private Entry<K,V>[] entries;
+  private Entry<K, V>[] entries;
   private final OptimisticLock[] locks;
   private final AtomicLong[] segmentSize;
 
@@ -109,16 +109,16 @@ public class Hash2<K,V> {
   /**
    * Lookup the entry in the hash table and return it. First tries an optimistic read.
    */
-  public Entry<K,V> lookup(K key, int hash, int keyValue) {
+  public Entry<K, V> lookup(K key, int hash, int keyValue) {
     OptimisticLock[] locks = this.locks;
     int si = hash & LOCK_MASK;
     OptimisticLock l = locks[si];
     long stamp = l.tryOptimisticRead();
-    Entry<K,V>[] tab = entries;
+    Entry<K, V>[] tab = entries;
     if (tab == null) {
       throw new CacheClosedException(cache);
     }
-    Entry<K,V> e;
+    Entry<K, V> e;
     int n = tab.length;
     int mask = n - 1;
     int idx = hash & (mask);
@@ -164,10 +164,10 @@ public class Hash2<K,V> {
   /**
    * Insert an entry. Checks if an entry already exists.
    */
-  public Entry<K,V> insertWithinLock(Entry<K,V> e, int hash, int keyValue) {
+  public Entry<K, V> insertWithinLock(Entry<K, V> e, int hash, int keyValue) {
     K key = e.getKeyObj();
     int si = hash & LOCK_MASK;
-    Entry<K,V> f; Object ek; Entry<K,V>[] tab = entries;
+    Entry<K, V> f; Object ek; Entry<K, V>[] tab = entries;
     if (tab == null) {
       throw new CacheClosedException(cache);
     }
@@ -210,14 +210,14 @@ public class Hash2<K,V> {
    *
    * @return true, if entry was found and removed.
    */
-  public boolean remove(Entry<K,V> e) {
+  public boolean remove(Entry<K, V> e) {
     int hash = modifiedHashCode(e.hashCode);
     OptimisticLock[] locks = this.locks;
     int si = hash & LOCK_MASK;
     OptimisticLock l = locks[si];
     long stamp = l.writeLock();
     try {
-      Entry<K,V> f; Entry<K,V>[] tab = entries;
+      Entry<K, V> f; Entry<K, V>[] tab = entries;
       if (tab == null) {
         throw new CacheClosedException(cache);
       }
@@ -229,7 +229,7 @@ public class Hash2<K,V> {
         return true;
       }
       while (f != null) {
-        Entry<K,V> another = f.another;
+        Entry<K, V> another = f.another;
         if (another == e) {
           f.another = another.another;
           segmentSize[si].decrementAndGet();
@@ -243,9 +243,9 @@ public class Hash2<K,V> {
     return false;
   }
 
-  public boolean removeWithinLock(Entry<K,V> e, int hash) {
+  public boolean removeWithinLock(Entry<K, V> e, int hash) {
     int si = hash & LOCK_MASK;
-    Entry<K,V> f; Entry<K,V>[] tab = entries;
+    Entry<K, V> f; Entry<K, V>[] tab = entries;
     if (tab == null) {
       throw new CacheClosedException(cache);
     }
@@ -257,7 +257,7 @@ public class Hash2<K,V> {
       return true;
     }
     while (f != null) {
-      Entry<K,V> another = f.another;
+      Entry<K, V> another = f.another;
       if (another == e) {
         f.another = another.another;
         segmentSize[si].decrementAndGet();
@@ -321,12 +321,12 @@ public class Hash2<K,V> {
    */
   @SuppressWarnings("unchecked")
   void rehash() {
-    Entry<K,V>[] src = entries;
+    Entry<K, V>[] src = entries;
     if (src == null) {
       throw new CacheClosedException(cache);
     }
     int i, sl = src.length, n = sl * 2, mask = n - 1, idx;
-    Entry<K,V>[] tab = new Entry[n];
+    Entry<K, V>[] tab = new Entry[n];
     long count = 0; Entry next, e;
     for (i = 0; i < sl; i++) {
       e = src[i];
@@ -423,7 +423,7 @@ public class Hash2<K,V> {
   /**
    * Entry table for used by the iterator.
    */
-  public Entry<K,V>[] getEntries() {
+  public Entry<K, V>[] getEntries() {
     return entries;
   }
 

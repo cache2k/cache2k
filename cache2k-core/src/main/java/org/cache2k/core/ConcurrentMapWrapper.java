@@ -39,7 +39,7 @@ import java.util.concurrent.ConcurrentMap;
  * @author Jens Wilke
  */
 @SuppressWarnings("unchecked")
-public class ConcurrentMapWrapper<K,V> implements ConcurrentMap<K, V> {
+public class ConcurrentMapWrapper<K, V> implements ConcurrentMap<K, V> {
 
   private final boolean permitNull;
   private final Cache<K, V> cache;
@@ -190,7 +190,7 @@ public class ConcurrentMapWrapper<K,V> implements ConcurrentMap<K, V> {
     return new AbstractSet<K>() {
       @Override
       public Iterator<K> iterator() {
-        final Iterator<CacheEntry<K,V>> it = cache.entries().iterator();
+        final Iterator<CacheEntry<K, V>> it = cache.entries().iterator();
         return new Iterator<K>() {
 
           @Override
@@ -227,7 +227,7 @@ public class ConcurrentMapWrapper<K,V> implements ConcurrentMap<K, V> {
     return new AbstractSet<V>() {
       @Override
       public Iterator<V> iterator() {
-        final Iterator<CacheEntry<K,V>> it = cache.entries().iterator();
+        final Iterator<CacheEntry<K, V>> it = cache.entries().iterator();
         return new Iterator<V>() {
 
           @Override
@@ -259,7 +259,7 @@ public class ConcurrentMapWrapper<K,V> implements ConcurrentMap<K, V> {
     return new AbstractSet<Entry<K, V>>() {
       @Override
       public Iterator<Entry<K, V>> iterator() {
-        final Iterator<CacheEntry<K,V>> it = cache.entries().iterator();
+        final Iterator<CacheEntry<K, V>> it = cache.entries().iterator();
         return new Iterator<Entry<K, V>>() {
 
           @Override

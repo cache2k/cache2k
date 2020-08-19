@@ -32,7 +32,7 @@ import java.util.Random;
  *
  * @author Jens Wilke
  */
-public class DefaultResiliencePolicy<K,V> extends ResiliencePolicy<K,V> {
+public class DefaultResiliencePolicy<K, V> extends ResiliencePolicy<K, V> {
 
   /**
    * We use a common random instance. Since this is only called for an exception
@@ -123,7 +123,7 @@ public class DefaultResiliencePolicy<K,V> extends ResiliencePolicy<K,V> {
   @Override
   public long suppressExceptionUntil(final K key,
                                      final ExceptionInformation exceptionInformation,
-                                     final CacheEntry<K,V> cachedContent) {
+                                     final CacheEntry<K, V> cachedContent) {
     if (resilienceDuration == 0) {
       return 0;
     }

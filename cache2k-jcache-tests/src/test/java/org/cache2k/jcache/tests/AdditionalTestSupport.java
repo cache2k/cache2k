@@ -34,7 +34,7 @@ import java.util.Set;
 /**
  * @author Jens Wilke
  */
-public abstract class AdditionalTestSupport<K,V> extends TestSupport {
+public abstract class AdditionalTestSupport<K, V> extends TestSupport {
 
   private AutoCloseable builderResources;
 
@@ -42,8 +42,8 @@ public abstract class AdditionalTestSupport<K,V> extends TestSupport {
 
   @Before
   public void setUp() {
-    MutableConfiguration<K,V> config = newMutableConfiguration();
-    ConfigurationBuilder<K,V> builder = new ConfigurationBuilder<>(config);
+    MutableConfiguration<K, V> config = newMutableConfiguration();
+    ConfigurationBuilder<K, V> builder = new ConfigurationBuilder<>(config);
     builderResources = builder;
     extraSetup(builder);
     cache = getCacheManager().createCache(getTestCacheName(), config);
@@ -57,7 +57,7 @@ public abstract class AdditionalTestSupport<K,V> extends TestSupport {
 
   abstract protected MutableConfiguration<K, V> newMutableConfiguration();
 
-  protected void extraSetup(ConfigurationBuilder<K,V> builder) { }
+  protected void extraSetup(ConfigurationBuilder<K, V> builder) { }
 
   public static <T> Set<T> keys(T... keys) {
     return new HashSet<>(Arrays.asList(keys));

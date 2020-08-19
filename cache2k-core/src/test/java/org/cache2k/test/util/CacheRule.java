@@ -42,7 +42,7 @@ import java.util.concurrent.ConcurrentHashMap;
 /**
  * @author Jens Wilke
  */
-public class CacheRule<K,V> implements TestRule {
+public class CacheRule<K, V> implements TestRule {
 
   /**
    * Record classes that have shared caches, just to throw a better exception.
@@ -51,7 +51,7 @@ public class CacheRule<K,V> implements TestRule {
 
   /** It is a class rule and we want to share the cache between the methods */
   private boolean shared;
-  private Cache<K,V> cache;
+  private Cache<K, V> cache;
   private Description description;
   private CacheType<K> keyType;
   private CacheType<V> valueType;
@@ -76,13 +76,13 @@ public class CacheRule<K,V> implements TestRule {
       .loaderThreadCount(4);
   }
 
-  public CacheRule<K,V> config(Specialization<K,V> rb) {
+  public CacheRule<K, V> config(Specialization<K, V> rb) {
     checkAlready();
     configurationSpecialization.add(rb);
     return this;
   }
 
-  public CacheRule<K,V> enforceWiredCache() {
+  public CacheRule<K, V> enforceWiredCache() {
     checkAlready();
     configurationSpecialization.add(new Specialization() {
       @Override
@@ -102,7 +102,7 @@ public class CacheRule<K,V> implements TestRule {
   /**
    * Create a cache or return an existing cache.
    */
-  public Cache<K,V> cache() {
+  public Cache<K, V> cache() {
     if (cache == null) {
       provideCache();
     }
@@ -120,13 +120,13 @@ public class CacheRule<K,V> implements TestRule {
   /**
    * Create a cache with additional special configuration.
    */
-  public Cache<K,V> cache(Specialization<K,V> rb) {
+  public Cache<K, V> cache(Specialization<K, V> rb) {
     config(rb);
     provideCache();
     return cache;
   }
 
-  public void run(Context<K,V> rb) {
+  public void run(Context<K, V> rb) {
     config(rb);
     provideCache();
     rb.cache = cache;
@@ -136,7 +136,7 @@ public class CacheRule<K,V> implements TestRule {
   /**
    * Return cache, expects it to be build or set already.
    */
-  public Cache<K,V> getCache() {
+  public Cache<K, V> getCache() {
     if (cache == null) {
       throw new NullPointerException("cache not yet built");
     }
@@ -146,7 +146,7 @@ public class CacheRule<K,V> implements TestRule {
   /**
    * Set a pre built cache to be managed by this rule.
    */
-  public void setCache(Cache<K,V> c) {
+  public void setCache(Cache<K, V> c) {
     checkAlready();
     cache = c;
   }
@@ -248,13 +248,13 @@ public class CacheRule<K,V> implements TestRule {
     return b.build();
   }
 
-  public interface Specialization<K,V> {
-    void extend(Cache2kBuilder<K,V> b);
+  public interface Specialization<K, V> {
+    void extend(Cache2kBuilder<K, V> b);
   }
 
-  public static abstract class Context<K,V> implements Specialization<K,V>, Runnable {
+  public static abstract class Context<K, V> implements Specialization<K, V>, Runnable {
 
-    public Cache<K,V> cache;
+    public Cache<K, V> cache;
 
     /** Used to run the tests with the context object */
     public void run() { }

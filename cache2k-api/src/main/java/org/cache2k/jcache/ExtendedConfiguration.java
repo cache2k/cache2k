@@ -29,13 +29,13 @@ import javax.cache.configuration.CompleteConfiguration;
  *
  * @author Jens Wilke
  */
-public interface ExtendedConfiguration<K,V> extends CompleteConfiguration<K,V> {
+public interface ExtendedConfiguration<K, V> extends CompleteConfiguration<K, V> {
 
   /**
    * Retrieve the extended cache2k configuration.
    *
    * @return cache2k configuration or null, if not needed
    */
-  Cache2kConfiguration<K,V> getCache2kConfiguration();
+  Cache2kConfiguration<K, V> getCache2kConfiguration();
 
 }

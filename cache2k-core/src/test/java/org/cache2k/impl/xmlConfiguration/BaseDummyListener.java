@@ -27,7 +27,7 @@ import org.cache2k.event.CacheEntryRemovedListener;
 /**
  * @author Jens Wilke
  */
-public class BaseDummyListener<K,V> implements CacheEntryRemovedListener<K,V> {
+public class BaseDummyListener<K, V> implements CacheEntryRemovedListener<K, V> {
 
   @Override
   public void onEntryRemoved(final Cache<K, V> cache, final CacheEntry<K, V> entry) {

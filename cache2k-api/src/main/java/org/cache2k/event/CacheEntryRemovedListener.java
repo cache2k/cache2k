@@ -29,7 +29,7 @@ import org.cache2k.CacheEntry;
  *
  * @author Jens Wilke
  */
-public interface CacheEntryRemovedListener<K,V> extends CacheEntryOperationListener<K,V> {
+public interface CacheEntryRemovedListener<K, V> extends CacheEntryOperationListener<K, V> {
 
   /**
    * Called after the removal of a cache entry and after all cache writers ran successfully.
@@ -41,6 +41,6 @@ public interface CacheEntryRemovedListener<K,V> extends CacheEntryOperationListe
    * @param entry Entry containing the last data. It is only valid to access the object during the
    *                     call of this method. The object value may become invalid afterwards.
    */
-  void onEntryRemoved(Cache<K,V> cache, CacheEntry<K,V> entry);
+  void onEntryRemoved(Cache<K, V> cache, CacheEntry<K, V> entry);
 
 }

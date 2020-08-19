@@ -48,11 +48,11 @@ public class AtomicOperationsStressTest extends TestingBase {
     List l = new ArrayList();
     l.add(new Object[]{new BuilderAugmenter() {
       @Override
-      public <K, V> Cache2kBuilder<K,V> augment(final Cache2kBuilder<K, V> b) { return b; }
+      public <K, V> Cache2kBuilder<K, V> augment(final Cache2kBuilder<K, V> b) { return b; }
     }});
     l.add(new Object[]{new BuilderAugmenter() {
       @Override
-      public <K, V> Cache2kBuilder<K,V> augment(final Cache2kBuilder<K, V> b) {
+      public <K, V> Cache2kBuilder<K, V> augment(final Cache2kBuilder<K, V> b) {
         StaticUtil.enforceWiredCache(b); return b;
       }
     }});
@@ -166,7 +166,7 @@ public class AtomicOperationsStressTest extends TestingBase {
   }
 
   interface BuilderAugmenter {
-    <K,V> Cache2kBuilder<K,V> augment(Cache2kBuilder<K,V> b);
+    <K, V> Cache2kBuilder<K, V> augment(Cache2kBuilder<K, V> b);
   }
 
 }

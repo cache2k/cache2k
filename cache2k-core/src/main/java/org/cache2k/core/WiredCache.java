@@ -61,21 +61,21 @@ import java.util.concurrent.atomic.AtomicInteger;
  * @author Jens Wilke
  */
 public class WiredCache<K, V> extends BaseCache<K, V>
-  implements StorageAdapter.Parent, HeapCacheListener<K,V> {
+  implements StorageAdapter.Parent, HeapCacheListener<K, V> {
 
   @SuppressWarnings("unchecked")
   final Operations<K, V> ops = Operations.SINGLETON;
 
-  HeapCache<K,V> heapCache;
+  HeapCache<K, V> heapCache;
   StorageAdapter storage;
-  AdvancedCacheLoader<K,V> loader;
-  AsyncCacheLoader<K,V> asyncLoader;
+  AdvancedCacheLoader<K, V> loader;
+  AsyncCacheLoader<K, V> asyncLoader;
   CacheWriter<K, V> writer;
-  CacheEntryRemovedListener<K,V>[] syncEntryRemovedListeners;
-  CacheEntryCreatedListener<K,V>[] syncEntryCreatedListeners;
-  CacheEntryUpdatedListener<K,V>[] syncEntryUpdatedListeners;
-  CacheEntryExpiredListener<K,V>[] syncEntryExpiredListeners;
-  CacheEntryEvictedListener<K,V>[] syncEntryEvictedListeners;
+  CacheEntryRemovedListener<K, V>[] syncEntryRemovedListeners;
+  CacheEntryCreatedListener<K, V>[] syncEntryCreatedListeners;
+  CacheEntryUpdatedListener<K, V>[] syncEntryUpdatedListeners;
+  CacheEntryExpiredListener<K, V>[] syncEntryExpiredListeners;
+  CacheEntryEvictedListener<K, V>[] syncEntryEvictedListeners;
 
   private CommonMetrics.Updater metrics() {
     return heapCache.metrics;
@@ -151,7 +151,7 @@ public class WiredCache<K, V> extends BaseCache<K, V>
     if (!isLoaderPresent()) {
       return;
     }
-    Entry<K,V> e = heapCache.lookupEntryNoHitRecord(key);
+    Entry<K, V> e = heapCache.lookupEntryNoHitRecord(key);
     if (e != null && e.hasFreshData(getClock())) {
       return;
     }
@@ -365,7 +365,7 @@ public class WiredCache<K, V> extends BaseCache<K, V>
    * @param key the key
    * @param e the entry, optional, may be {@code null}
    */
-  private <R> void executeAsyncLoadOrRefresh(K key, Entry<K,V> e, Semantic<K,V,R> op,
+  private <R> void executeAsyncLoadOrRefresh(K key, Entry<K, V> e, Semantic<K,V,R> op,
                                              EntryAction.CompletedCallback<K,V,R> cb) {
     EntryAction<K,V,R> action = new MyEntryAction<R>(op, key, e, cb);
     action.start();
@@ -426,7 +426,7 @@ public class WiredCache<K, V> extends BaseCache<K, V>
     return heapCache.returnValue(v);
   }
 
-  V returnValue(Entry<K,V> e) {
+  V returnValue(Entry<K, V> e) {
     return returnValue(e.getValueOrException());
   }
 
@@ -692,7 +692,7 @@ public class WiredCache<K, V> extends BaseCache<K, V>
    */
   @Override
   public void onEvictionFromHeap(Entry<K, V> e) {
-    CacheEntry<K,V> currentEntry = heapCache.returnCacheEntry(e);
+    CacheEntry<K, V> currentEntry = heapCache.returnCacheEntry(e);
     if (syncEntryEvictedListeners != null) {
       for (CacheEntryEvictedListener<K, V> l : syncEntryEvictedListeners) {
         l.onEntryEvicted(this, currentEntry);
@@ -735,7 +735,7 @@ public class WiredCache<K, V> extends BaseCache<K, V>
     enqueueTimerAction(e, ops.expireEvent);
   }
 
-  private <R> void enqueueTimerAction(Entry<K,V> e, Semantic<K,V,R> op) {
+  private <R> void enqueueTimerAction(Entry<K, V> e, Semantic<K,V,R> op) {
     EntryAction<K,V,R> action = createFireAndForgetAction(e, op);
     getExecutor().execute(action);
   }

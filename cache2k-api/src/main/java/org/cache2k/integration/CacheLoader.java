@@ -72,7 +72,7 @@ import java.util.concurrent.Executor;
  * @see FunctionalCacheLoader
  * @see AsyncCacheLoader
  */
-public abstract class CacheLoader<K, V> implements FunctionalCacheLoader<K,V> {
+public abstract class CacheLoader<K, V> implements FunctionalCacheLoader<K, V> {
 
   /**
    * Retrieves or generates data based on the key.

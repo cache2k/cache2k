@@ -25,7 +25,7 @@ package org.cache2k;
  *
  * @author Jens Wilke
  */
-public abstract class AbstractCacheEntry<K,V> implements CacheEntry<K,V> {
+public abstract class AbstractCacheEntry<K, V> implements CacheEntry<K, V> {
 
   @SuppressWarnings("deprecation")
   @Override

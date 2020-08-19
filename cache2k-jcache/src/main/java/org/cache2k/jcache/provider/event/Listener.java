@@ -38,10 +38,10 @@ abstract class Listener<K, V> {
 
   CacheEntryListenerConfiguration<K, V> config;
   CacheEntryEventFilter<K, V> filter;
-  CacheEntryListener<K,V> entryListener;
+  CacheEntryListener<K, V> entryListener;
 
   Listener(CacheEntryListenerConfiguration<K, V> config,
-           CacheEntryEventFilter<K, V> filter, CacheEntryListener<K,V> entryListener) {
+           CacheEntryEventFilter<K, V> filter, CacheEntryListener<K, V> entryListener) {
     this.config = config;
     this.filter = filter;
     this.entryListener = entryListener;
@@ -66,7 +66,7 @@ abstract class Listener<K, V> {
       return EventType.CREATED;
     }
 
-    public void fire(EntryEvent<K,V> e) {
+    public void fire(EntryEvent<K, V> e) {
       if (filter != null && !filter.evaluate(e)) {
         return;
       }
@@ -90,7 +90,7 @@ abstract class Listener<K, V> {
       return EventType.UPDATED;
     }
 
-    public void fire(EntryEvent<K,V> e) {
+    public void fire(EntryEvent<K, V> e) {
       if (filter != null && !filter.evaluate(e)) {
         return;
       }
@@ -114,7 +114,7 @@ abstract class Listener<K, V> {
       return EventType.REMOVED;
     }
 
-    public void fire(EntryEvent<K,V> e) {
+    public void fire(EntryEvent<K, V> e) {
       if (filter != null && !filter.evaluate(e)) {
         return;
       }
@@ -138,7 +138,7 @@ abstract class Listener<K, V> {
       return EventType.EXPIRED;
     }
 
-    public void fire(EntryEvent<K,V> e) {
+    public void fire(EntryEvent<K, V> e) {
       if (filter != null && !filter.evaluate(e)) {
         return;
       }

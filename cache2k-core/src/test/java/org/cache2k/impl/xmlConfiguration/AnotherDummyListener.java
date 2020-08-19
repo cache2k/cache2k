@@ -28,7 +28,7 @@ import java.io.Serializable;
 /**
  * @author Jens Wilke
  */
-public class AnotherDummyListener<K,V> extends BaseDummyListener<K,V> {
+public class AnotherDummyListener<K, V> extends BaseDummyListener<K, V> {
 
   static public class Supplier
     implements CustomizationSupplier<AnotherDummyListener>, Serializable {

@@ -38,7 +38,7 @@ import java.util.concurrent.ExecutionException;
  */
 public class CacheLoaderClient<K, V> extends CacheClient implements CacheLoader<K, V> {
 
-  private CacheLoaderServer<K,V> loaderServer;
+  private CacheLoaderServer<K, V> loaderServer;
 
   /**
    * Constructs a {@link CacheLoaderClient}.

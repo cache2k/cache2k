@@ -34,7 +34,7 @@ import org.cache2k.CacheEntry;
  * @author Jens Wilke
  * @see CacheLoader
  */
-public abstract class AdvancedCacheLoader<K,V> {
+public abstract class AdvancedCacheLoader<K, V> {
 
   /**
    * Retrieves or generates data based on the key parameter.
@@ -53,6 +53,6 @@ public abstract class AdvancedCacheLoader<K,V> {
    * @throws Exception Unhandled exception from the loader. Exceptions are suppressed or
    *                   wrapped and rethrown via a {@link CacheLoaderException}
    */
-  public abstract V load(K key, long startTime, CacheEntry<K,V> currentEntry) throws Exception;
+  public abstract V load(K key, long startTime, CacheEntry<K, V> currentEntry) throws Exception;
 
 }

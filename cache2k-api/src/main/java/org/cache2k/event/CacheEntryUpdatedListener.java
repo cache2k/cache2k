@@ -29,7 +29,7 @@ import org.cache2k.CacheEntry;
  *
  * @author Jens Wilke
  */
-public interface CacheEntryUpdatedListener<K, V> extends CacheEntryOperationListener<K,V> {
+public interface CacheEntryUpdatedListener<K, V> extends CacheEntryOperationListener<K, V> {
 
   /**
    * Called after a mutation of a cache entry and after all cache writers ran successfully.
@@ -47,6 +47,6 @@ public interface CacheEntryUpdatedListener<K, V> extends CacheEntryOperationList
    *                     call of this method. The object value may become invalid afterwards.
    */
   void onEntryUpdated(
-    Cache<K,V> cache, CacheEntry<K, V> currentEntry, CacheEntry<K, V> entryWithNewData);
+    Cache<K, V> cache, CacheEntry<K, V> currentEntry, CacheEntry<K, V> entryWithNewData);
 
 }

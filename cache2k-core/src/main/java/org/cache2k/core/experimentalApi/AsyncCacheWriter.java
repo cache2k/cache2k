@@ -26,7 +26,7 @@ import java.util.concurrent.Executor;
 /**
  * @author Jens Wilke
  */
-public interface AsyncCacheWriter<K,V> {
+public interface AsyncCacheWriter<K, V> {
 
   void write(K key, V value, Callback callback, Executor ex);
 

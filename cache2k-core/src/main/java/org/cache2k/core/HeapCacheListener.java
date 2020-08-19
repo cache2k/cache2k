@@ -23,13 +23,13 @@ package org.cache2k.core;
 /**
  * @author Jens Wilke
  */
-public interface HeapCacheListener<K,V> {
+public interface HeapCacheListener<K, V> {
 
   HeapCacheListener NO_OPERATION = new NoOperation();
 
-  void onEvictionFromHeap(Entry<K,V> e);
+  void onEvictionFromHeap(Entry<K, V> e);
 
-  final class NoOperation<K,V> implements HeapCacheListener<K,V> {
+  final class NoOperation<K, V> implements HeapCacheListener<K, V> {
 
     @Override
     public void onEvictionFromHeap(final Entry<K, V> e) {

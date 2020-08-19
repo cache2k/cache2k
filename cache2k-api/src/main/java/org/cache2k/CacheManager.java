@@ -178,7 +178,7 @@ public abstract class CacheManager implements Closeable {
    * Return a known cache that must be created before via the {@link Cache2kBuilder}
    * or {@link #createCache(Cache2kConfiguration)}
    */
-  public abstract <K,V> Cache<K,V> getCache(String name);
+  public abstract <K, V> Cache<K, V> getCache(String name);
 
   /**
    * Create a new cache from the configuration. The recommended way is to use the
@@ -186,12 +186,12 @@ public abstract class CacheManager implements Closeable {
    *
    * <pre>{@code
    *    CacheManager manager = ...
-   *    Cache2kConfiguration<K,V> config = ...
-   *    Cache<K,V> cache = Cache2kBuilder.of(config).manager(manager).build();
+   *    Cache2kConfiguration<K, V> config = ...
+   *    Cache<K, V> cache = Cache2kBuilder.of(config).manager(manager).build();
    * }</pre>
    *
    */
-  public abstract <K,V> Cache<K,V> createCache(Cache2kConfiguration<K, V> cfg);
+  public abstract <K, V> Cache<K, V> createCache(Cache2kConfiguration<K, V> cfg);
 
   /** Clear all currently active caches in this cache manager */
   public abstract void clear();

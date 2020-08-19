@@ -66,7 +66,7 @@ public class JCacheAdapter<K, V> implements javax.cache.Cache<K, V> {
   protected final boolean readThrough;
   private final Class<K> keyType;
   private final Class<V> valueType;
-  private final EventHandling<K,V> eventHandling;
+  private final EventHandling<K, V> eventHandling;
   protected final AtomicLong iterationHitCorrectionCounter = new AtomicLong();
   protected volatile boolean jmxStatisticsEnabled = false;
   protected volatile boolean jmxEnabled = false;
@@ -74,7 +74,7 @@ public class JCacheAdapter<K, V> implements javax.cache.Cache<K, V> {
   public JCacheAdapter(JCacheManagerAdapter manager, Cache<K, V> cache,
                        Class<K> keyType, Class<V> valueType,
                        boolean storeByValue, boolean readThrough, boolean loaderConfigured,
-                       EventHandling<K,V> eventHandling) {
+                       EventHandling<K, V> eventHandling) {
     this.manager = manager;
     this.cache = (InternalCache<K, V>) cache;
     this.keyType = keyType;
@@ -339,9 +339,9 @@ public class JCacheAdapter<K, V> implements javax.cache.Cache<K, V> {
       cfg.setStatisticsEnabled(jmxStatisticsEnabled);
       cfg.setManagementEnabled(jmxEnabled);
       cfg.setStoreByValue(storeByValue);
-      Collection<CacheEntryListenerConfiguration<K,V>> listenerConfigurations =
+      Collection<CacheEntryListenerConfiguration<K, V>> listenerConfigurations =
         eventHandling.getAllListenerConfigurations();
-      for (CacheEntryListenerConfiguration<K,V> listenerConfig : listenerConfigurations) {
+      for (CacheEntryListenerConfiguration<K, V> listenerConfig : listenerConfigurations) {
         cfg.addCacheEntryListenerConfiguration(listenerConfig);
       }
       return (C) cfg;
@@ -456,7 +456,7 @@ public class JCacheAdapter<K, V> implements javax.cache.Cache<K, V> {
    * Iterate with the help of cache2k key iterator.
    */
   @Override
-  public Iterator<Entry<K,V>> iterator() {
+  public Iterator<Entry<K, V>> iterator() {
     checkClosed();
     final Iterator<K> keyIterator = cache.keys().iterator();
     return new Iterator<Entry<K, V>>() {

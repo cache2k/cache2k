@@ -239,7 +239,7 @@ public class CacheManagerImpl extends CacheManager {
 
   @SuppressWarnings("unchecked")
   @Override
-  public <K,V> Cache<K,V> getCache(String name) {
+  public <K, V> Cache<K, V> getCache(String name) {
     synchronized (lock) {
       Cache c = cacheNames.get(name);
       return c != null && c.isClosed() ? null : c;

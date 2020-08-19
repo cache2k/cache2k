@@ -118,9 +118,9 @@ public class JCacheManagerAdapter implements CacheManager {
       if (existingCache != null && !existingCache.isClosed()) {
         throw new CacheException("A cache2k instance is already existing with name: " + cacheName);
       }
-      JCacheBuilder<K,V> builder = new JCacheBuilder<K, V>(cacheName, this);
+      JCacheBuilder<K, V> builder = new JCacheBuilder<K, V>(cacheName, this);
       builder.setConfiguration(cfg);
-      Cache<K,V> cache = builder.build();
+      Cache<K, V> cache = builder.build();
       org.cache2k.Cache cache2k = cache.unwrap(org.cache2k.Cache.class);
       Map<org.cache2k.Cache, Cache> cloneC2k2jCache =
         new WeakHashMap<org.cache2k.Cache, Cache>(c2k2jCache);

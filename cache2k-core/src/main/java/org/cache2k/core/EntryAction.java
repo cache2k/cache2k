@@ -190,7 +190,7 @@ public abstract class EntryAction<K, V, R> extends Entry.PiggyBack implements
   }
 
   @SuppressWarnings("unchecked")
-  public EntryAction(HeapCache<K,V> heapCache, InternalCache<K,V> userCache,
+  public EntryAction(HeapCache<K, V> heapCache, InternalCache<K, V> userCache,
                      Semantic<K, V, R> op, K k, Entry<K, V> e, CompletedCallback cb) {
     super(null);
     this.heapCache = heapCache;
@@ -200,7 +200,7 @@ public abstract class EntryAction<K, V, R> extends Entry.PiggyBack implements
     if (e != null) {
       heapEntry = e;
     } else {
-      heapEntry = (Entry<K,V>) NON_FRESH_DUMMY;
+      heapEntry = (Entry<K, V>) NON_FRESH_DUMMY;
     }
     if (cb == null) {
       syncThread = Thread.currentThread();
@@ -210,7 +210,7 @@ public abstract class EntryAction<K, V, R> extends Entry.PiggyBack implements
   }
 
   @SuppressWarnings("unchecked")
-  public EntryAction(HeapCache<K,V> heapCache, InternalCache<K,V> userCache,
+  public EntryAction(HeapCache<K, V> heapCache, InternalCache<K, V> userCache,
                      Semantic<K, V, R> op, K k, Entry<K, V> e) {
     this(heapCache, userCache, op, k, e, null);
   }
@@ -280,7 +280,7 @@ public abstract class EntryAction<K, V, R> extends Entry.PiggyBack implements
   }
 
   @SuppressWarnings("unchecked")
-  protected abstract TimingHandler<K,V> timing();
+  protected abstract TimingHandler<K, V> timing();
 
   @Override
   public K getKey() {
@@ -900,7 +900,7 @@ public abstract class EntryAction<K, V, R> extends Entry.PiggyBack implements
   public void loadAndExpiryCalculatedExamineAgain() {
     valueDefinitelyLoaded = valueLoadedOrRevived = loadAndRestart = false;
     successfulLoad = true;
-    heapOrLoadedEntry = new LoadedEntry<K,V>() {
+    heapOrLoadedEntry = new LoadedEntry<K, V>() {
       @Override
       public K getKey() {
         return heapEntry.getKey();
@@ -1053,13 +1053,13 @@ public abstract class EntryAction<K, V, R> extends Entry.PiggyBack implements
       mutationReleaseLockAndStartTimer();
       return;
     }
-    CacheEntry<K,V> entryCopy = heapCache.returnCacheEntry(heapEntry);
+    CacheEntry<K, V> entryCopy = heapCache.returnCacheEntry(heapEntry);
     if (expiredImmediately) {
       sendExpiryEventsWhenExpiredDuringOperation(entryCopy);
     } else if (remove) {
       if (storageDataValid || heapDataValid) {
         if (entryRemovedListeners() != null) {
-          for (CacheEntryRemovedListener<K,V> l : entryRemovedListeners()) {
+          for (CacheEntryRemovedListener<K, V> l : entryRemovedListeners()) {
             try {
               l.onEntryRemoved(userCache, entryCopy);
             } catch (Throwable t) {
@@ -1071,9 +1071,9 @@ public abstract class EntryAction<K, V, R> extends Entry.PiggyBack implements
     } else {
       if (storageDataValid || heapDataValid) {
         if (entryUpdatedListeners() != null) {
-          CacheEntry<K,V> previousEntry =
+          CacheEntry<K, V> previousEntry =
             heapCache.returnCacheEntry(heapEntry.getKey(), oldValueOrException);
-          for (CacheEntryUpdatedListener<K,V> l : entryUpdatedListeners()) {
+          for (CacheEntryUpdatedListener<K, V> l : entryUpdatedListeners()) {
             try {
               l.onEntryUpdated(userCache, previousEntry, entryCopy);
             } catch (Throwable t) {
@@ -1083,7 +1083,7 @@ public abstract class EntryAction<K, V, R> extends Entry.PiggyBack implements
         }
       } else {
         if (entryCreatedListeners() != null) {
-          for (CacheEntryCreatedListener<K,V> l : entryCreatedListeners()) {
+          for (CacheEntryCreatedListener<K, V> l : entryCreatedListeners()) {
             try {
               l.onEntryCreated(userCache, entryCopy);
             } catch (Throwable t) {
@@ -1107,7 +1107,7 @@ public abstract class EntryAction<K, V, R> extends Entry.PiggyBack implements
    *
    * @param entryCopy copy of entry for sending to the listener
    */
-  private void sendExpiryEventsWhenExpiredDuringOperation(CacheEntry<K,V> entryCopy) {
+  private void sendExpiryEventsWhenExpiredDuringOperation(CacheEntry<K, V> entryCopy) {
     if (storageDataValid || heapDataValid) {
       if (entryExpiredListeners() != null) {
         sendExpiryEvents(entryCopy);
@@ -1116,7 +1116,7 @@ public abstract class EntryAction<K, V, R> extends Entry.PiggyBack implements
   }
 
   private void sendExpiryEvents(final CacheEntry<K, V> entryCopy) {
-    for (CacheEntryExpiredListener<K,V> l : entryExpiredListeners()) {
+    for (CacheEntryExpiredListener<K, V> l : entryExpiredListeners()) {
       try {
         l.onEntryExpired(userCache, entryCopy);
       } catch (Throwable t) {

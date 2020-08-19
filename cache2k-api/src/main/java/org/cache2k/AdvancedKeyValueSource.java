@@ -28,7 +28,7 @@ import java.util.Map;
  * @author Jens Wilke
  * @since 1.0
  */
-public interface AdvancedKeyValueSource<K,V> extends KeyValueSource<K,V> {
+public interface AdvancedKeyValueSource<K, V> extends KeyValueSource<K, V> {
 
   /**
    * Retrieves all values for the given keys. For a more detailed description see

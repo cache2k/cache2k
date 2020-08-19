@@ -27,7 +27,7 @@ import java.util.Collection;
  * @param <K> the type of keys
  * @param <V> the type of values
  */
-public class FailingCacheWriter<K,V> extends RecordingCacheWriter<K,V> {
+public class FailingCacheWriter<K, V> extends RecordingCacheWriter<K, V> {
 
     @Override
     public void write(Cache.Entry<? extends K, ? extends V> entry) {

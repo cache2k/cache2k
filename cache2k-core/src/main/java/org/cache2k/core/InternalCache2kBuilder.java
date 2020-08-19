@@ -111,11 +111,11 @@ public class InternalCache2kBuilder<K, V> {
    * Explicitly call the wiring methods.
    */
   @SuppressWarnings("unchecked")
-  private void configureViaSettersDirect(HeapCache<K,V> c) {
+  private void configureViaSettersDirect(HeapCache<K, V> c) {
     if (config.getLoader() != null) {
       Object obj =  c.createCustomization(config.getLoader());
       if (obj instanceof CacheLoader) {
-        final CacheLoader<K,V> loader = (CacheLoader) obj;
+        final CacheLoader<K, V> loader = (CacheLoader) obj;
         c.setAdvancedLoader(new AdvancedCacheLoader<K, V>() {
           @Override
           public V load(K key, long startTime, CacheEntry<K, V> currentEntry)
@@ -124,7 +124,7 @@ public class InternalCache2kBuilder<K, V> {
           }
         });
       } else {
-        final FunctionalCacheLoader<K,V> loader = (FunctionalCacheLoader) obj;
+        final FunctionalCacheLoader<K, V> loader = (FunctionalCacheLoader) obj;
         c.setAdvancedLoader(new AdvancedCacheLoader<K, V>() {
           @Override
           public V load(K key, long startTime, CacheEntry<K, V> currentEntry)
@@ -135,8 +135,8 @@ public class InternalCache2kBuilder<K, V> {
       }
     }
     if (config.getAdvancedLoader() != null) {
-      AdvancedCacheLoader<K,V> loader = c.createCustomization(config.getAdvancedLoader());
-      AdvancedCacheLoader<K,V> wrappedLoader = new WrappedAdvancedCacheLoader<K, V>(c, loader);
+      AdvancedCacheLoader<K, V> loader = c.createCustomization(config.getAdvancedLoader());
+      AdvancedCacheLoader<K, V> wrappedLoader = new WrappedAdvancedCacheLoader<K, V>(c, loader);
       c.setAdvancedLoader(wrappedLoader);
     }
     if (config.getExceptionPropagator() != null) {
@@ -145,11 +145,11 @@ public class InternalCache2kBuilder<K, V> {
     c.setCacheConfig(config);
   }
 
-  private static class WrappedAdvancedCacheLoader<K,V> extends AdvancedCacheLoader<K,V>
+  private static class WrappedAdvancedCacheLoader<K, V> extends AdvancedCacheLoader<K, V>
     implements Closeable {
 
-    HeapCache<K,V> heapCache;
-    private final AdvancedCacheLoader<K,V> forward;
+    HeapCache<K, V> heapCache;
+    private final AdvancedCacheLoader<K, V> forward;
 
     WrappedAdvancedCacheLoader(HeapCache<K, V> heapCache,
                                AdvancedCacheLoader<K, V> forward) {
@@ -271,7 +271,7 @@ public class InternalCache2kBuilder<K, V> {
       List<CacheEntryExpiredListener<K, V>> syncExpiredListeners =
         new ArrayList<CacheEntryExpiredListener<K, V>>();
       List<CacheEntryEvictedListener<K, V>> syncEvictedListeners =
-        new ArrayList<CacheEntryEvictedListener<K,V>>();
+        new ArrayList<CacheEntryEvictedListener<K, V>>();
       if (config.hasListeners()) {
         for (CustomizationSupplier<CacheEntryOperationListener<K, V>> f : config.getListeners()) {
           CacheEntryOperationListener<K, V> el =
@@ -472,9 +472,9 @@ public class InternalCache2kBuilder<K, V> {
     }
   }
 
-  static class AsyncCreatedListener<K,V> implements CacheEntryCreatedListener<K,V> {
+  static class AsyncCreatedListener<K, V> implements CacheEntryCreatedListener<K, V> {
     AsyncDispatcher<K> dispatcher;
-    CacheEntryCreatedListener<K,V> listener;
+    CacheEntryCreatedListener<K, V> listener;
 
     AsyncCreatedListener(AsyncDispatcher<K> dispatcher,
                          CacheEntryCreatedListener<K, V> listener) {
@@ -499,9 +499,9 @@ public class InternalCache2kBuilder<K, V> {
 
   }
 
-  private static class AsyncUpdatedListener<K,V> implements CacheEntryUpdatedListener<K,V> {
+  private static class AsyncUpdatedListener<K, V> implements CacheEntryUpdatedListener<K, V> {
     AsyncDispatcher<K> dispatcher;
-    CacheEntryUpdatedListener<K,V> listener;
+    CacheEntryUpdatedListener<K, V> listener;
 
     AsyncUpdatedListener(AsyncDispatcher<K> dispatcher,
                                 CacheEntryUpdatedListener<K, V> listener) {
@@ -527,9 +527,9 @@ public class InternalCache2kBuilder<K, V> {
 
   }
 
-  private static class AsyncRemovedListener<K,V> implements CacheEntryRemovedListener<K,V> {
+  private static class AsyncRemovedListener<K, V> implements CacheEntryRemovedListener<K, V> {
     AsyncDispatcher<K> dispatcher;
-    CacheEntryRemovedListener<K,V> listener;
+    CacheEntryRemovedListener<K, V> listener;
 
     AsyncRemovedListener(AsyncDispatcher<K> dispatcher,
                                 CacheEntryRemovedListener<K, V> listener) {
@@ -553,9 +553,9 @@ public class InternalCache2kBuilder<K, V> {
     }
   }
 
-  private static class AsyncExpiredListener<K,V> implements CacheEntryExpiredListener<K,V> {
+  private static class AsyncExpiredListener<K, V> implements CacheEntryExpiredListener<K, V> {
     AsyncDispatcher<K> dispatcher;
-    CacheEntryExpiredListener<K,V> listener;
+    CacheEntryExpiredListener<K, V> listener;
 
     AsyncExpiredListener(AsyncDispatcher<K> dispatcher,
                                 CacheEntryExpiredListener<K, V> listener) {
@@ -579,9 +579,9 @@ public class InternalCache2kBuilder<K, V> {
     }
   }
 
-  private static class AsyncEvictedListener<K,V> implements CacheEntryEvictedListener<K,V> {
+  private static class AsyncEvictedListener<K, V> implements CacheEntryEvictedListener<K, V> {
     AsyncDispatcher<K> dispatcher;
-    CacheEntryEvictedListener<K,V> listener;
+    CacheEntryEvictedListener<K, V> listener;
 
     AsyncEvictedListener(AsyncDispatcher<K> dispatcher,
                          CacheEntryEvictedListener<K, V> listener) {

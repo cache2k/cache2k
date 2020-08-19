@@ -54,7 +54,7 @@ public interface CacheConfigurationProvider {
    * @param mgr Manager the new cache will live in
    * @param cfg the cache configuration
    */
-  <K,V> void augmentConfiguration(CacheManager mgr, Cache2kConfiguration<K,V> cfg);
+  <K, V> void augmentConfiguration(CacheManager mgr, Cache2kConfiguration<K, V> cfg);
 
   /**
    * List of cache names found in the configuration.
