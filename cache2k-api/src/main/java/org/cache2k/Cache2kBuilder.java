@@ -100,15 +100,15 @@ public class Cache2kBuilder<K, V> {
    * @see #keyType(Class)
    * @see #valueType(Class)
    */
-  public static <K,T> Cache2kBuilder<K,T> of(Class<K> keyType, Class<T> valueType) {
-    return new Cache2kBuilder<K, T>(CacheTypeCapture.of(keyType), CacheTypeCapture.of(valueType));
+  public static <K, V> Cache2kBuilder<K, V> of(Class<K> keyType, Class<V> valueType) {
+    return new Cache2kBuilder<K, V>(CacheTypeCapture.of(keyType), CacheTypeCapture.of(valueType));
   }
 
   /**
    * Create a builder from the configuration.
    */
-  public static <K,T> Cache2kBuilder<K, T> of(Cache2kConfiguration<K, T> c) {
-    Cache2kBuilder<K,T> cb = new Cache2kBuilder<K, T>(c);
+  public static <K, V> Cache2kBuilder<K, V> of(Cache2kConfiguration<K, V> c) {
+    Cache2kBuilder<K, V> cb = new Cache2kBuilder<K, V>(c);
     return cb;
   }
 

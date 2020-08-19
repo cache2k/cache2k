@@ -258,7 +258,7 @@ public class CacheTypeCapture<T> implements CacheType<T> {
       this.componentType = componentType;
     }
 
-    static int countDimensions(CacheType td ) {
+    static int countDimensions(CacheType td) {
       int cnt = 0;
       while (td.isArray()) {
         td = td.getComponentType();

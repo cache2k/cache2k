@@ -714,7 +714,7 @@ public interface Cache<K, V> extends KeyValueStore<K, V>, Closeable {
    * @see org.cache2k.processor.MutableCacheEntry
    */
   <R> Map<K, EntryProcessingResult<R>> invokeAll(
-    Iterable<? extends K> keys, EntryProcessor<K , V, R> entryProcessor);
+    Iterable<? extends K> keys, EntryProcessor<K, V, R> entryProcessor);
 
   /**
    * Retrieve values from the cache associated with the provided keys. If the
