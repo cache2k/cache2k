@@ -49,7 +49,7 @@ public class ConcurrentEntryIterator<K, V> implements Iterator<Entry<K, V>> {
   private long clearCount;
   private Hash2<K, V> hash;
   private Entry<K, V>[] hashArray;
-  private HashMap<K,K> seen = new HashMap<K, K>();
+  private HashMap<K, K> seen = new HashMap<K, K>();
 
   public ConcurrentEntryIterator(HeapCache<K, V> cache) {
     this.cache = cache;
@@ -121,7 +121,7 @@ public class ConcurrentEntryIterator<K, V> implements Iterator<Entry<K, V>> {
           return e;
         }
       }
-      idx = (cache.extractModifiedHash(lastEntry) & (hashArray.length - 1) ) + 1;
+      idx = (cache.extractModifiedHash(lastEntry) & (hashArray.length - 1)) + 1;
     }
     for (;;) {
       if (idx >= hashArray.length) {

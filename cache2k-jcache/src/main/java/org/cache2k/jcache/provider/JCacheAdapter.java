@@ -366,7 +366,7 @@ public class JCacheAdapter<K, V> implements javax.cache.Cache<K, V> {
 
   @Override
   public <T> T invoke(
-    K key, javax.cache.processor.EntryProcessor<K,V,T> entryProcessor, Object... arguments)
+    K key, javax.cache.processor.EntryProcessor<K, V, T> entryProcessor, Object... arguments)
     throws EntryProcessorException {
     checkClosed();
     checkNullKey(key);
@@ -377,7 +377,7 @@ public class JCacheAdapter<K, V> implements javax.cache.Cache<K, V> {
 
   @Override
   public <T> Map<K, EntryProcessorResult<T>> invokeAll(
-    Set<? extends K> keys, final javax.cache.processor.EntryProcessor<K,V,T> entryProcessor,
+    Set<? extends K> keys, final javax.cache.processor.EntryProcessor<K, V, T> entryProcessor,
     final Object... arguments) {
     checkClosed();
     if (entryProcessor == null) {
@@ -465,7 +465,7 @@ public class JCacheAdapter<K, V> implements javax.cache.Cache<K, V> {
 
       @Override
       public boolean hasNext() {
-        while(keyIterator.hasNext()) {
+        while (keyIterator.hasNext()) {
           entry = cache.getEntry(keyIterator.next());
           if (entry.getException() == null) {
             return true;

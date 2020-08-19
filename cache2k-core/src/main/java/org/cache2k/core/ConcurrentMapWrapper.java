@@ -101,7 +101,7 @@ public class ConcurrentMapWrapper<K, V> implements ConcurrentMap<K, V> {
 
   @Override
   public int size() {
-    return ((InternalCache<?,?>) cache).getTotalEntryCount();
+    return ((InternalCache<?, ?>) cache).getTotalEntryCount();
   }
 
   @Override
@@ -307,7 +307,7 @@ public class ConcurrentMapWrapper<K, V> implements ConcurrentMap<K, V> {
   @Override
   public boolean equals(Object o) {
     if (o instanceof ConcurrentMapWrapper) {
-      return cache.equals(((ConcurrentMapWrapper<?,?>) o).cache);
+      return cache.equals(((ConcurrentMapWrapper<?, ?>) o).cache);
     }
     return false;
   }

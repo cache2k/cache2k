@@ -84,7 +84,7 @@ public class Operations<K, V> {
     }
   };
 
-  public final Semantic<K,V,Void> refresh = new Semantic.MightUpdate<K,V,Void>() {
+  public final Semantic<K, V, Void> refresh = new Semantic.MightUpdate<K, V, Void>() {
 
     /**
      * Only refresh if the entry is still existing. If an entry is deleted before the
@@ -100,7 +100,7 @@ public class Operations<K, V> {
     }
 
     @Override
-    public void mutate(Progress<K,V,Void> c, ExaminationEntry<K, V> e) {
+    public void mutate(Progress<K, V, Void> c, ExaminationEntry<K, V> e) {
       c.refresh();
     }
   };
@@ -346,8 +346,8 @@ public class Operations<K, V> {
       @Override
       public void examine(Progress<K, V, Boolean> c, ExaminationEntry<K, V> e) {
         if (c.isDataFreshOrMiss() &&
-          ( (value ==  e.getValueOrException()) ||
-            (value != null && value.equals(e.getValueOrException()))) ) {
+          ((value ==  e.getValueOrException()) ||
+            (value != null && value.equals(e.getValueOrException())))) {
           c.result(true);
           c.wantMutation();
         } else {
@@ -370,8 +370,8 @@ public class Operations<K, V> {
       @Override
       public void examine(Progress<K, V, Boolean> c, ExaminationEntry<K, V> e) {
         if (c.isDataFreshOrMiss() &&
-          ( (value == null && e.getValueOrException() == null) ||
-            value.equals(e.getValueOrException())) ) {
+          ((value == null && e.getValueOrException() == null) ||
+            value.equals(e.getValueOrException()))) {
           c.result(true);
           c.wantMutation();
         } else {
@@ -481,7 +481,7 @@ public class Operations<K, V> {
     };
   }
 
-  public final Semantic<K,V, Void> expireEvent = new ExpireEvent<K, V>();
+  public final Semantic<K, V, Void> expireEvent = new ExpireEvent<K, V>();
 
   public static class ExpireEvent<K, V> extends Semantic.MightUpdate<K, V, Void> {
 

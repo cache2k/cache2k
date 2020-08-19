@@ -30,7 +30,7 @@ import java.io.Serializable;
 /**
  * @author Jens Wilke
  */
-public class CacheConfigBean<T> implements Section<T,T> {
+public class CacheConfigBean<T> implements Section<T, T> {
 
   private Class<T> clazz;
   private String name;
@@ -47,12 +47,12 @@ public class CacheConfigBean<T> implements Section<T,T> {
 
   @SuppressWarnings("unchecked")
   @Override
-  public T mutableCopy(final T cfg) throws IOException, ClassNotFoundException {
+  public T mutableCopy(T cfg) throws IOException, ClassNotFoundException {
     return (T) Util.copyViaSerialization((Serializable) cfg);
   }
 
   @Override
-  public T build(final T mutableCfg) {
+  public T build(T mutableCfg) {
     return mutableCfg;
   }
 
@@ -67,11 +67,11 @@ public class CacheConfigBean<T> implements Section<T,T> {
   }
 
   @Override
-  public <S> void addSubSection(final T cfg, final S subSection) {
+  public <S> void addSubSection(T cfg, S subSection) {
   }
 
   @Override
-  public void validate(final T cfg) {
+  public void validate(T cfg) {
   }
 
 }

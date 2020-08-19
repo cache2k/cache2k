@@ -139,7 +139,7 @@ public abstract class MapValueConverterProxy<K, V, S>  implements Map<K, V> {
     return new AbstractSet<Entry<K, V>>() {
       @Override
       public Iterator<Entry<K, V>> iterator() {
-        final Iterator<Entry<K,S>> it = map.entrySet().iterator();
+        final Iterator<Entry<K, S>> it = map.entrySet().iterator();
         return new Iterator<Entry<K, V>>() {
           @Override
           public boolean hasNext() {

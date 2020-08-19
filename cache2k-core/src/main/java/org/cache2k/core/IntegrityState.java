@@ -57,7 +57,7 @@ public class IntegrityState {
       if (note != null) {
         failingTests.add(groupPrefix + '"' + check + "\" => " + note);
       } else {
-        failingTests.add(groupPrefix + '"' + check+ '"');
+        failingTests.add(groupPrefix + '"' + check + '"');
       }
       state |= 1 << bitNr;
     }

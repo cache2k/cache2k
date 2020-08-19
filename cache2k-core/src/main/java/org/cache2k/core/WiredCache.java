@@ -365,9 +365,9 @@ public class WiredCache<K, V> extends BaseCache<K, V>
    * @param key the key
    * @param e the entry, optional, may be {@code null}
    */
-  private <R> void executeAsyncLoadOrRefresh(K key, Entry<K, V> e, Semantic<K,V,R> op,
-                                             EntryAction.CompletedCallback<K,V,R> cb) {
-    EntryAction<K,V,R> action = new MyEntryAction<R>(op, key, e, cb);
+  private <R> void executeAsyncLoadOrRefresh(K key, Entry<K, V> e, Semantic<K, V, R> op,
+                                             EntryAction.CompletedCallback<K, V, R> cb) {
+    EntryAction<K, V, R> action = new MyEntryAction<R>(op, key, e, cb);
     action.start();
   }
 
@@ -735,8 +735,8 @@ public class WiredCache<K, V> extends BaseCache<K, V>
     enqueueTimerAction(e, ops.expireEvent);
   }
 
-  private <R> void enqueueTimerAction(Entry<K, V> e, Semantic<K,V,R> op) {
-    EntryAction<K,V,R> action = createFireAndForgetAction(e, op);
+  private <R> void enqueueTimerAction(Entry<K, V> e, Semantic<K, V, R> op) {
+    EntryAction<K, V, R> action = createFireAndForgetAction(e, op);
     getExecutor().execute(action);
   }
 
@@ -776,7 +776,7 @@ public class WiredCache<K, V> extends BaseCache<K, V>
   /**
    * Wire the entry action to the resources of this cache.
    */
-  class MyEntryAction<R> extends EntryAction<K,V, R> {
+  class MyEntryAction<R> extends EntryAction<K, V, R> {
 
     MyEntryAction(Semantic<K, V, R> op, K k, Entry<K, V> e) {
       super(WiredCache.this.heapCache, WiredCache.this, op, k, e);

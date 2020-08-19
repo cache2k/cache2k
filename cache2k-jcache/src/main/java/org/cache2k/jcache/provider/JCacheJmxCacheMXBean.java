@@ -30,7 +30,7 @@ import javax.cache.management.CacheMXBean;
  */
 public class JCacheJmxCacheMXBean implements CacheMXBean {
 
-  private Cache<?,?> cache;
+  private Cache<?, ?> cache;
 
   public JCacheJmxCacheMXBean(Cache cache) {
     this.cache = cache;
@@ -72,12 +72,12 @@ public class JCacheJmxCacheMXBean implements CacheMXBean {
   }
 
   @SuppressWarnings("unchecked")
-  private Configuration<?,?> configuration() {
+  private Configuration<?, ?> configuration() {
     return cache.getConfiguration(Configuration.class);
   }
 
   @SuppressWarnings("unchecked")
-  CompleteConfiguration<?,?> completeConfiguration() {
+  CompleteConfiguration<?, ?> completeConfiguration() {
     return cache.getConfiguration(CompleteConfiguration.class);
   }
 

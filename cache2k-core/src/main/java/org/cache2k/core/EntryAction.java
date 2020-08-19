@@ -63,7 +63,7 @@ public abstract class EntryAction<K, V, R> extends Entry.PiggyBack implements
 
   static final CompletedCallback NOOP_CALLBACK = new CompletedCallback() {
     @Override
-    public void entryActionCompleted(final EntryAction ea) {
+    public void entryActionCompleted(EntryAction ea) {
     }
   };
 
@@ -326,7 +326,7 @@ public abstract class EntryAction<K, V, R> extends Entry.PiggyBack implements
     if (nrt == Entry.EXPIRED_REFRESHED) {
       return true;
     }
-    if (nrt >=0 && nrt < Entry.DATA_VALID) {
+    if (nrt >= 0 && nrt < Entry.DATA_VALID) {
       return false;
     }
     return Math.abs(nrt) <= millis();
@@ -601,7 +601,7 @@ public abstract class EntryAction<K, V, R> extends Entry.PiggyBack implements
     if (e == NON_FRESH_DUMMY) {
       e = heapCache.lookupOrNewEntryNoHitRecord(key);
     }
-    for(;;) {
+    for (;;) {
       synchronized (e) {
         if (tryEnqueueOperationInCurrentlyProcessing(e)) {
           return true;
@@ -678,7 +678,7 @@ public abstract class EntryAction<K, V, R> extends Entry.PiggyBack implements
 
   private void onLoadSuccessIntern(V v) {
     if (v instanceof RefreshedTimeWrapper) {
-      RefreshedTimeWrapper wr = (RefreshedTimeWrapper<V>)v;
+      RefreshedTimeWrapper wr = (RefreshedTimeWrapper<V>) v;
       lastRefreshTime = wr.getRefreshTime();
       v = (V) wr.getValue();
     }
@@ -709,7 +709,7 @@ public abstract class EntryAction<K, V, R> extends Entry.PiggyBack implements
 
   @SuppressWarnings("unchecked")
   @Override
-  public void entryResult(final ExaminationEntry e) {
+  public void entryResult(ExaminationEntry e) {
     result = (R) heapCache.returnEntry(e);
   }
 
@@ -748,7 +748,7 @@ public abstract class EntryAction<K, V, R> extends Entry.PiggyBack implements
   }
 
   @Override
-  public void putAndSetExpiry(final V value, final long expiryTime, final long refreshTime) {
+  public void putAndSetExpiry(V value, long expiryTime, long refreshTime) {
     semanticCallback++;
     heapEntry.nextProcessingStep(MUTATE);
     newValueOrException = value;
@@ -1115,7 +1115,7 @@ public abstract class EntryAction<K, V, R> extends Entry.PiggyBack implements
     }
   }
 
-  private void sendExpiryEvents(final CacheEntry<K, V> entryCopy) {
+  private void sendExpiryEvents(CacheEntry<K, V> entryCopy) {
     for (CacheEntryExpiredListener<K, V> l : entryExpiredListeners()) {
       try {
         l.onEntryExpired(userCache, entryCopy);
@@ -1311,31 +1311,31 @@ public abstract class EntryAction<K, V, R> extends Entry.PiggyBack implements
   }
 
   public static class StorageReadException extends CustomizationException {
-    public StorageReadException(final Throwable cause) {
+    public StorageReadException(Throwable cause) {
       super(cause);
     }
   }
 
   public static class StorageWriteException extends CustomizationException {
-    public StorageWriteException(final Throwable cause) {
+    public StorageWriteException(Throwable cause) {
       super(cause);
     }
   }
 
   public static class ProcessingFailureException extends CustomizationException {
-    public ProcessingFailureException(final Throwable cause) {
+    public ProcessingFailureException(Throwable cause) {
       super(cause);
     }
   }
 
   public static class ListenerException extends CustomizationException {
-    public ListenerException(final Throwable cause) {
+    public ListenerException(Throwable cause) {
       super(cause);
     }
   }
 
-  public interface CompletedCallback<K,V,R> {
-    void entryActionCompleted(EntryAction<K,V,R> ea);
+  public interface CompletedCallback<K, V, R> {
+    void entryActionCompleted(EntryAction<K, V, R> ea);
   }
 
 }

@@ -113,7 +113,7 @@ public class StandardVariableExpander implements VariableExpander {
         if (lastCounter > 0 && lastCounter == forwardReference) {
           throw new ConfigurationException("Cyclic reference", lastTroublemaker);
         }
-      } while(forwardReference > 0);
+      } while (forwardReference > 0);
     }
 
     private void recurse(ParsedConfiguration cfg) {
@@ -129,7 +129,7 @@ public class StandardVariableExpander implements VariableExpander {
             p.setValue(v);
           }
           p.setExpanded(true);
-        } catch(NeedsExpansion ex) {
+        } catch (NeedsExpansion ex) {
           forwardReference++;
           lastTroublemaker = p;
         }

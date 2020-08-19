@@ -45,6 +45,6 @@ public interface VariableExpander {
     String get(ExpanderContext ctx, String variable);
   }
 
-  class NeedsExpansion extends RuntimeException {}
+  class NeedsExpansion extends RuntimeException { }
 
 }

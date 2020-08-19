@@ -158,9 +158,9 @@ public class EventHandlingImpl<K, V> implements EventHandling<K, V>, CacheClosed
         throw new IllegalArgumentException("configuration already registered");
       }
     }
-    Factory<CacheEntryEventFilter<? super K,? super V>> filterFactory =
+    Factory<CacheEntryEventFilter<? super K, ? super V>> filterFactory =
       cfg.getCacheEntryEventFilterFactory();
-    Factory<CacheEntryListener<? super K,? super V>> listenerFactory =
+    Factory<CacheEntryListener<? super K, ? super V>> listenerFactory =
       cfg.getCacheEntryListenerFactory();
     if (listenerFactory == null) {
       throw new IllegalArgumentException("listener factory missing");

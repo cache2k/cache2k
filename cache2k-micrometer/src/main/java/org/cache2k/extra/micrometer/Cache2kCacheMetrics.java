@@ -138,7 +138,7 @@ public class Cache2kCacheMetrics extends CacheMeterBinder {
         .register(registry);
 
       FunctionCounter.builder("cache.load", cache,
-        c -> { InternalCacheInfo info = c.getInfo(); return info.getLoadCount(); } )
+        c -> { InternalCacheInfo info = c.getInfo(); return info.getLoadCount(); })
         .tags(getTagsWithCacheName()).tags("result", "success")
         .description(
           "The number of times cache lookup methods have successfully loaded a new value")
@@ -160,7 +160,7 @@ public class Cache2kCacheMetrics extends CacheMeterBinder {
    * exported as tag {@code cache2kCacheManager}. cache2k does not use the Spring metrics
    * autoconfiguration, since it adds the cache metrics to micro meter by itself.
    */
-  private static Iterable<Tag> extendedTags(Cache<?,?> cache) {
+  private static Iterable<Tag> extendedTags(Cache<?, ?> cache) {
     InternalCache internalCache = cache.requestInterface(InternalCache.class);
     InternalCacheInfo info = internalCache.getInfo();
     return Tags.of(

@@ -35,11 +35,11 @@ import javax.cache.integration.CacheWriter;
  *
  * @author Jens Wilke
  */
-public class CopyCacheProxy<K, T> extends TransformingCacheProxy<K, T, K, T> {
+public class CopyCacheProxy<K, V> extends TransformingCacheProxy<K, V, K, V> {
 
   @SuppressWarnings("unchecked")
-  public CopyCacheProxy(Cache<K, T> cache, ObjectTransformer<K, K> keyTransformer,
-                        ObjectTransformer<T, T> valueTransformer) {
+  public CopyCacheProxy(Cache<K, V> cache, ObjectTransformer<K, K> keyTransformer,
+                        ObjectTransformer<V, V> valueTransformer) {
     super(cache, keyTransformer, valueTransformer, ObjectTransformer.IDENT_TRANSFORM,
       ObjectTransformer.IDENT_TRANSFORM);
   }
@@ -49,13 +49,13 @@ public class CopyCacheProxy<K, T> extends TransformingCacheProxy<K, T, K, T> {
    */
   @SuppressWarnings("unchecked")
   @Override
-  public <C extends Configuration<K, T>> C getConfiguration(Class<C> clazz) {
+  public <C extends Configuration<K, V>> C getConfiguration(Class<C> clazz) {
     final C c = cache.getConfiguration(clazz);
     if (c instanceof CompleteConfiguration) {
-      final CompleteConfiguration<K, T> cc = (CompleteConfiguration<K,T>) c;
-      return (C) new CompleteConfiguration<K, T>() {
+      final CompleteConfiguration<K, V> cc = (CompleteConfiguration<K, V>) c;
+      return (C) new CompleteConfiguration<K, V>() {
         @Override
-        public Iterable<CacheEntryListenerConfiguration<K, T>>
+        public Iterable<CacheEntryListenerConfiguration<K, V>>
         getCacheEntryListenerConfigurations() {
           return cc.getCacheEntryListenerConfigurations();
         }
@@ -81,12 +81,12 @@ public class CopyCacheProxy<K, T> extends TransformingCacheProxy<K, T, K, T> {
         }
 
         @Override
-        public Factory<CacheLoader<K, T>> getCacheLoaderFactory() {
+        public Factory<CacheLoader<K, V>> getCacheLoaderFactory() {
           return cc.getCacheLoaderFactory();
         }
 
         @Override
-        public Factory<CacheWriter<? super K, ? super T>> getCacheWriterFactory() {
+        public Factory<CacheWriter<? super K, ? super V>> getCacheWriterFactory() {
           return cc.getCacheWriterFactory();
         }
 
@@ -101,7 +101,7 @@ public class CopyCacheProxy<K, T> extends TransformingCacheProxy<K, T, K, T> {
         }
 
         @Override
-        public Class<T> getValueType() {
+        public Class<V> getValueType() {
           return cc.getValueType();
         }
 
@@ -111,14 +111,14 @@ public class CopyCacheProxy<K, T> extends TransformingCacheProxy<K, T, K, T> {
         }
       };
     } else if (c instanceof Configuration) {
-      return (C) new Configuration<K, T>() {
+      return (C) new Configuration<K, V>() {
         @Override
         public Class<K> getKeyType() {
           return c.getKeyType();
         }
 
         @Override
-        public Class<T> getValueType() {
+        public Class<V> getValueType() {
           return c.getValueType();
         }
 
@@ -136,7 +136,7 @@ public class CopyCacheProxy<K, T> extends TransformingCacheProxy<K, T, K, T> {
    */
   @Override
   public void registerCacheEntryListener(
-    CacheEntryListenerConfiguration<K, T> cacheEntryListenerConfiguration) {
+    CacheEntryListenerConfiguration<K, V> cacheEntryListenerConfiguration) {
     cache.registerCacheEntryListener(cacheEntryListenerConfiguration);
   }
 
@@ -145,7 +145,7 @@ public class CopyCacheProxy<K, T> extends TransformingCacheProxy<K, T, K, T> {
    */
   @Override
   public void deregisterCacheEntryListener(
-    CacheEntryListenerConfiguration<K, T> cacheEntryListenerConfiguration) {
+    CacheEntryListenerConfiguration<K, V> cacheEntryListenerConfiguration) {
     cache.deregisterCacheEntryListener(cacheEntryListenerConfiguration);
   }
 

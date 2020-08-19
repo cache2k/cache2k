@@ -209,8 +209,8 @@ public class JCacheBuilder<K, V> {
     }));
   }
 
-  abstract class CloseableLoader extends AdvancedCacheLoader<K, V> implements Closeable {}
-  abstract class CloseableWriter extends CacheWriter<K, V> implements Closeable {}
+  abstract class CloseableLoader extends AdvancedCacheLoader<K, V> implements Closeable { }
+  abstract class CloseableWriter extends CacheWriter<K, V> implements Closeable { }
 
   /**
    * Configure loader and writer.
@@ -328,19 +328,19 @@ public class JCacheBuilder<K, V> {
       final long millisDuration = d.getTimeUnit().toMillis(d.getDurationAmount());
       if (millisDuration == 0) {
         cache2kConfiguration.setExpiryPolicy(
-          new CustomizationReferenceSupplier<org.cache2k.expiry.ExpiryPolicy<K, V>>
-            (new org.cache2k.expiry.ExpiryPolicy<K, V>() {
+          new CustomizationReferenceSupplier<org.cache2k.expiry.ExpiryPolicy<K, V>>(
+            new org.cache2k.expiry.ExpiryPolicy<K, V>() {
           @Override
-          public long calculateExpiryTime
-            (K key, V value, long loadTime, CacheEntry<K, V> oldEntry) {
+          public long calculateExpiryTime(
+            K key, V value, long loadTime, CacheEntry<K, V> oldEntry) {
             return NO_CACHE;
           }
         }));
         return;
       }
       cache2kConfiguration.setExpiryPolicy(
-        new CustomizationReferenceSupplier<org.cache2k.expiry.ExpiryPolicy<K, V>>
-          (new org.cache2k.expiry.ExpiryPolicy<K, V>() {
+        new CustomizationReferenceSupplier<org.cache2k.expiry.ExpiryPolicy<K, V>>(
+          new org.cache2k.expiry.ExpiryPolicy<K, V>() {
         @Override
         public long calculateExpiryTime(K key, V value, long loadTime, CacheEntry<K, V> oldEntry) {
           if (value == null) {
@@ -357,8 +357,8 @@ public class JCacheBuilder<K, V> {
       final long millisDuration = d.getTimeUnit().toMillis(d.getDurationAmount());
       if (millisDuration == 0) {
         cache2kConfiguration.setExpiryPolicy(
-          new CustomizationReferenceSupplier<org.cache2k.expiry.ExpiryPolicy<K, V>>
-            (new org.cache2k.expiry.ExpiryPolicy<K, V>() {
+          new CustomizationReferenceSupplier<org.cache2k.expiry.ExpiryPolicy<K, V>>(
+            new org.cache2k.expiry.ExpiryPolicy<K, V>() {
           @Override
           public long calculateExpiryTime(
             K key, V value, long loadTime, CacheEntry<K, V> oldEntry) {
@@ -368,8 +368,8 @@ public class JCacheBuilder<K, V> {
         return;
       }
       cache2kConfiguration.setExpiryPolicy(
-        new CustomizationReferenceSupplier<org.cache2k.expiry.ExpiryPolicy<K, V>>
-          (new org.cache2k.expiry.ExpiryPolicy<K, V>() {
+        new CustomizationReferenceSupplier<org.cache2k.expiry.ExpiryPolicy<K, V>>(
+          new org.cache2k.expiry.ExpiryPolicy<K, V>() {
         @Override
         public long calculateExpiryTime(K key, V value, long loadTime, CacheEntry<K, V> oldEntry) {
           if (value == null) {
@@ -452,7 +452,7 @@ public class JCacheBuilder<K, V> {
       f.createCopyTransformer(type.getType(), manager.getClassLoader());
     if (keyTransformer == null) {
       keyTransformer =
-        (ObjectTransformer<T, T>) new RuntimeCopyTransformer(manager.getClassLoader());}
+        (ObjectTransformer<T, T>) new RuntimeCopyTransformer(manager.getClassLoader()); }
     return keyTransformer;
   }
 

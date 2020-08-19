@@ -65,13 +65,13 @@ public class ClockProPlusEviction extends AbstractEviction {
   private Entry handHot;
 
   private Ghost[] ghosts;
-  private Ghost ghostHead = new Ghost().shortCircuit();
+  private final Ghost ghostHead = new Ghost().shortCircuit();
   private int ghostSize = 0;
   private static final int GHOST_LOAD_PERCENT = 63;
 
-  public ClockProPlusEviction(final HeapCache heapCache, final HeapCacheListener listener,
-                              final long maxSize, final Weigher weigher, final long maxWeight,
-                              final boolean noChunking) {
+  public ClockProPlusEviction(HeapCache heapCache, HeapCacheListener listener,
+                              long maxSize, Weigher weigher, long maxWeight,
+                              boolean noChunking) {
     super(heapCache, listener, maxSize, weigher, maxWeight, noChunking);
 
     coldSize = 0;
@@ -146,7 +146,7 @@ public class ClockProPlusEviction extends AbstractEviction {
    * Track the entry on the ghost list and call the usual remove procedure.
    */
   @Override
-  public void removeFromReplacementListOnEvict(final Entry e) {
+  public void removeFromReplacementListOnEvict(Entry e) {
     insertCopyIntoGhosts(e);
     removeFromReplacementList(e);
   }
@@ -207,7 +207,7 @@ public class ClockProPlusEviction extends AbstractEviction {
        */
       ghostHits++;
     }
-    if (g != null || (coldSize == 0 && hotSize < getHotMax())){
+    if (g != null || (coldSize == 0 && hotSize < getHotMax())) {
       e.setHot(true);
       hotSize++;
       handHot = Entry.insertIntoTailCyclicList(handHot, e);
@@ -295,7 +295,7 @@ public class ClockProPlusEviction extends AbstractEviction {
   }
 
   @Override
-  public void checkIntegrity(final IntegrityState integrityState) {
+  public void checkIntegrity(IntegrityState integrityState) {
     integrityState.checkEquals("ghostSize == countGhostsInHash()", ghostSize, countGhostsInHash())
       .check("isWeigherPresent() || hotMax <= size",
         isWeigherPresent() || getHotMax() <= getMaxSize())
@@ -319,7 +319,7 @@ public class ClockProPlusEviction extends AbstractEviction {
       ", coldHits=" + (coldHits + sumUpListHits(handCold)) +
       ", hotHits=" + (hotHits + sumUpListHits(handHot)) +
       ", ghostHits=" + ghostHits +
-      ", coldRunCnt=" + coldRunCnt +// identical to the evictions anyways
+      ", coldRunCnt=" + coldRunCnt + // identical to the evictions anyways
       ", coldScanCnt=" + coldScanCnt +
       ", hotRunCnt=" + hotRunCnt +
       ", hotScanCnt=" + hotScanCnt;
@@ -366,7 +366,8 @@ public class ClockProPlusEviction extends AbstractEviction {
     Ghost[] tab = ghosts;
     int n = tab.length;
     int mask;
-    int idx;Ghost[] newTab = new Ghost[n * 2];
+    int idx;
+    Ghost[] newTab = new Ghost[n * 2];
     mask = newTab.length - 1;
     for (Ghost g : tab) {
       while (g != null) {
@@ -435,25 +436,25 @@ public class ClockProPlusEviction extends AbstractEviction {
       return next = prev = this;
     }
 
-    static void removeFromList(final Ghost e) {
+    static void removeFromList(Ghost e) {
       e.prev.next = e.next;
       e.next.prev = e.prev;
       e.next = e.prev = null;
     }
 
-    static void insertInList(final Ghost head, final Ghost e) {
+    static void insertInList(Ghost head, Ghost e) {
       e.prev = head;
       e.next = head.next;
       e.next.prev = e;
       head.next = e;
     }
 
-    static void moveToFront(final Ghost head, final Ghost e) {
+    static void moveToFront(Ghost head, Ghost e) {
       removeFromList(e);
       insertInList(head, e);
     }
 
-    static int listSize(final Ghost head) {
+    static int listSize(Ghost head) {
       int count = 0;
       Ghost e = head;
       while ((e = e.next) != head) { count++; }

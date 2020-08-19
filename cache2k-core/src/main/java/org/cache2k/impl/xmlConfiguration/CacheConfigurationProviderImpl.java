@@ -227,7 +227,7 @@ public class CacheConfigurationProviderImpl
         ctx.setPredefinedSectionTypes(VERSION_1_SECTION_TYPES);
       }
       applyDefaultConfigurationIfPresent(ctx, pc, defaultConfiguration);
-      ctx. setConfigurationPresent(true);
+      ctx.setConfigurationPresent(true);
       if (!ctx.getManagerConfiguration().isSkipCheckOnStartup()) {
         checkCacheConfigurationOnStartup(ctx, pc);
       }

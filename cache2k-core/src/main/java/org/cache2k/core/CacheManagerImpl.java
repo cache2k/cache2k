@@ -344,7 +344,7 @@ public class CacheManagerImpl extends CacheManager {
     }
     String text = "Exception(s) during shutdown";
     if (suppressedExceptions.size() > 1) {
-      text = " (" + (suppressedExceptions.size() - 1)+ " more suppressed exceptions)";
+      text = " (" + (suppressedExceptions.size() - 1) + " more suppressed exceptions)";
     }
     if (error != null) {
       throw new CacheInternalError(text, error);

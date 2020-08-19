@@ -29,7 +29,7 @@ import java.lang.reflect.Method;
  *
  * @author Jens Wilke
  */
-public class CloneCopyTransformer<T> extends CopyTransformer<T> {                                 ;
+public class CloneCopyTransformer<T> extends CopyTransformer<T> {
 
   Method cloneMethod;
 

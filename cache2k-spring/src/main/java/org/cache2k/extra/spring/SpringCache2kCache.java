@@ -33,7 +33,7 @@ import java.util.concurrent.Callable;
  */
 public class SpringCache2kCache implements Cache {
 
-  protected final org.cache2k.Cache<Object,Object> cache;
+  protected final org.cache2k.Cache<Object, Object> cache;
 
   /**
    * Create an adapter instance for the given cache2k instance.
@@ -41,7 +41,7 @@ public class SpringCache2kCache implements Cache {
    * @param cache the cache2k cache instance to adapt
    * values for this cache
    */
-  public SpringCache2kCache(org.cache2k.Cache<Object,Object> cache) {
+  public SpringCache2kCache(org.cache2k.Cache<Object, Object> cache) {
     Assert.notNull(cache, "Cache must not be null");
     this.cache = cache;
   }
@@ -52,13 +52,13 @@ public class SpringCache2kCache implements Cache {
   }
 
   @Override
-  public org.cache2k.Cache<Object,Object> getNativeCache() {
+  public org.cache2k.Cache<Object, Object> getNativeCache() {
     return cache;
   }
 
   @Override
   public ValueWrapper get(Object key) {
-    CacheEntry<Object,Object> entry = cache.getEntry(key);
+    CacheEntry<Object, Object> entry = cache.getEntry(key);
     if (entry == null) {
       return null;
     }

@@ -49,17 +49,17 @@ public abstract class BaseCache<K, V> implements InternalCache<K, V> {
 
   public abstract Executor getExecutor();
 
-  protected abstract <R> EntryAction<K,V,R> createFireAndForgetAction(
-    Entry<K, V> e, Semantic<K,V,R> op);
+  protected abstract <R> EntryAction<K, V, R> createFireAndForgetAction(
+    Entry<K, V> e, Semantic<K, V, R> op);
 
   /**
    *
    * @see HeapCache#getCompleteName() similar
    */
-  public static String nameQualifier(Cache<?,?> cache) {
+  public static String nameQualifier(Cache<?, ?> cache) {
     StringBuilder sb = new StringBuilder();
     sb.append('\'').append(cache.getName()).append('\'');
-    if (!cache.getCacheManager(). isDefaultManager()) {
+    if (!cache.getCacheManager().isDefaultManager()) {
       sb.append(", manager='").append(cache.getCacheManager().getName()).append('\'');
     }
     return sb.toString();
@@ -254,7 +254,7 @@ public abstract class BaseCache<K, V> implements InternalCache<K, V> {
       InternalCacheInfo fo = getLatestInfo();
       return fo.toString();
     } catch (CacheClosedException ex) {
-      return "Cache(name=" + BaseCache.nameQualifier (this) + ", closed=true)";
+      return "Cache(name=" + BaseCache.nameQualifier(this) + ", closed=true)";
     }
   }
 

@@ -32,7 +32,7 @@ package org.cache2k.impl.xmlConfiguration.generic;
  *           identical to {@code M} if it is beans
  * @author Jens Wilke
  */
-public interface Section<M,T> {
+public interface Section<M, T> {
 
   String getName();
 

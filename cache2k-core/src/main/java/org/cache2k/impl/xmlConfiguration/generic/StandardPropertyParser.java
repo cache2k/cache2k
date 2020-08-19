@@ -112,7 +112,7 @@ public class StandardPropertyParser implements PropertyParser {
     v = v.replace("_", "");
     long multiplier = 1;
     int pos = v.length();
-    while(--pos >= 0 && !Character.isDigit(v.charAt(pos)));
+    while (--pos >= 0 && !Character.isDigit(v.charAt(pos)));
     if (pos < v.length() - 1) {
       String unitSuffix = v.substring(pos + 1);
       Long newMultiplier = UNIT2LONG.get(unitSuffix);

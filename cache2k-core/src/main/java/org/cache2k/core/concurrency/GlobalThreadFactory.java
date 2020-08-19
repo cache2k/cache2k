@@ -32,7 +32,7 @@ import java.util.concurrent.ThreadFactory;
  */
 public class GlobalThreadFactory implements ThreadFactory {
 
-  private static final ConcurrentMap<String,String> NAMES_RUNNING =
+  private static final ConcurrentMap<String, String> NAMES_RUNNING =
     new ConcurrentHashMap<String, String>();
 
   private final String prefix;

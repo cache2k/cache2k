@@ -187,7 +187,7 @@ public final class TunableFactory {
       if (propName != null) {
         throw new CacheInternalError("error applying tuning setup, property=" + propName, ex);
       } else {
-        throw new CacheInternalError("error applying tuning setup" , ex);
+        throw new CacheInternalError("error applying tuning setup", ex);
       }
     }
   }

@@ -24,22 +24,14 @@
         "https://checkstyle.org/dtds/configuration_1_3.dtd">
 
 <!--
-  Checkstyle configuration that checks the sun coding conventions from:
-    - the Java Language Specification at
-      https://docs.oracle.com/javase/specs/jls/se11/html/index.html
-    - the Sun Code Conventions at https://www.oracle.com/java/technologies/javase/codeconventions-contents.html
-    - the Javadoc guidelines at
-      https://www.oracle.com/technical-resources/articles/java/javadoc-tool.html
-    - the JDK Api documentation https://docs.oracle.com/en/java/javase/11/
-    - some best practices
-  Checkstyle is very configurable. Be sure to read the documentation at
-  https://checkstyle.org (or in your downloaded distribution).
-  Most Checks are configurable, be sure to consult the documentation.
-  To completely disable a check, just comment it out or delete it from the file.
-  To suppress certain violations please review suppression filters.
-  Finally, it is worth reading the documentation.
--->
+  Checkstyle configuration for cache2k derived from the original Sun coding
+  style shipped with checkstyle.
 
+  At the moment, the style is quite relaxed, meaning less rules are enforced
+  as in the original Sun version.
+
+  TODO: Enable stricter Javadoc checks within API
+-->
 <module name="Checker">
   <!--
       If you set the basedir property below, then all reported file
@@ -154,17 +146,19 @@
     <!-- Checks for whitespace                               -->
     <!-- See https://checkstyle.org/config_whitespace.html -->
 
-    <!-- deferred <K,V>!!
+    <!-- deferred <K,V>!! -->
     <module name="EmptyForIteratorPad"/>
     <module name="GenericWhitespace"/>
     <module name="MethodParamPad"/>
     <module name="NoWhitespaceAfter"/>
     <module name="NoWhitespaceBefore"/>
-    <module name="OperatorWrap"/>
     <module name="ParenPad"/>
     <module name="TypecastParenPad"/>
     <module name="WhitespaceAfter"/>
     <module name="WhitespaceAround"/>
+
+    <!-- ops should be on a new line. we do it the other way around mostly
+    <module name="OperatorWrap"/>
     -->
 
     <!-- Modifier Checks                                    -->
@@ -197,7 +191,7 @@
     <!-- Miscellaneous other checks.                   -->
     <!-- See https://checkstyle.org/config_misc.html -->
     <module name="ArrayTypeStyle"/>
-    <!-- TODO: check for the reverse?
+    <!-- TODO: We avoid unnecessary final. Ho to heck for the opposite?
     <module name="FinalParameters"/>
     -->
     <!--

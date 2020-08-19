@@ -429,7 +429,7 @@ class TaskQueue {
    */
   void add(SimpleTimerTask task) {
     if (size + 1 == queue.length)
-      queue = Arrays.copyOf(queue, 2*queue.length);
+      queue = Arrays.copyOf(queue, 2 * queue.length);
 
     queue[++size] = task;
     fixUp(size);
@@ -476,14 +476,14 @@ class TaskQueue {
    * Returns true if the priority queue contains no elements.
    */
   boolean isEmpty() {
-    return size==0;
+    return size == 0;
   }
 
   /**
    * Removes all elements from the priority queue.
    */
   void clear() {
-    for (int i=1; i<=size; i++)
+    for (int i = 1; i <= size; i++)
       queue[i] = null;
 
     size = 0;
@@ -522,7 +522,7 @@ class TaskQueue {
     int j;
     while ((j = k << 1) <= size && j > 0) {
       if (j < size &&
-        queue[j].executionTime > queue[j+1].executionTime)
+        queue[j].executionTime > queue[j + 1].executionTime)
         j++; // j indexes smallest kid
       if (queue[k].executionTime <= queue[j].executionTime)
         break;
@@ -536,7 +536,7 @@ class TaskQueue {
    * assuming nothing about the order of the elements prior to the call.
    */
   void heapify() {
-    for (int i = size/2; i >= 1; i--)
+    for (int i = size / 2; i >= 1; i--)
       fixDown(i);
   }
 

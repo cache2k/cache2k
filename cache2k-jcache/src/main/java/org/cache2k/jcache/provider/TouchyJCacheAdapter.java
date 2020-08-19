@@ -242,7 +242,7 @@ public class TouchyJCacheAdapter<K, V> implements Cache<K, V> {
   @Override
   public V getAndPut(K key, V value) {
     checkClosed();
-    return cache.getAndPut(key,value);
+    return cache.getAndPut(key, value);
   }
 
   @Override
@@ -267,7 +267,7 @@ public class TouchyJCacheAdapter<K, V> implements Cache<K, V> {
     if (key == null) {
       throw new NullPointerException();
     }
-    EntryProcessor<K,V,Boolean> ep = new EntryProcessor<K, V, Boolean>() {
+    EntryProcessor<K, V, Boolean> ep = new EntryProcessor<K, V, Boolean>() {
       @Override
       public Boolean process(MutableCacheEntry<K, V> e) {
         if (!e.exists()) {
@@ -376,14 +376,14 @@ public class TouchyJCacheAdapter<K, V> implements Cache<K, V> {
   }
 
   @Override
-  public <T> T invoke(K key, javax.cache.processor.EntryProcessor<K,V, T> entryProcessor,
+  public <T> T invoke(K key, javax.cache.processor.EntryProcessor<K, V, T> entryProcessor,
                       Object... arguments) throws EntryProcessorException {
     return cache.invoke(key, wrapEntryProcessor(entryProcessor), arguments);
   }
 
   @Override
   public <T> Map<K, EntryProcessorResult<T>> invokeAll(Set<? extends K> keys,
-     javax.cache.processor.EntryProcessor<K,V,T> entryProcessor, Object... arguments) {
+     javax.cache.processor.EntryProcessor<K, V, T> entryProcessor, Object... arguments) {
     return cache.invokeAll(keys, wrapEntryProcessor(entryProcessor), arguments);
   }
 
@@ -444,12 +444,12 @@ public class TouchyJCacheAdapter<K, V> implements Cache<K, V> {
     };
   }
 
-  private <T> javax.cache.processor.EntryProcessor<K,V,T> wrapEntryProcessor(
-    final javax.cache.processor.EntryProcessor<K,V,T> ep) {
+  private <T> javax.cache.processor.EntryProcessor<K, V, T> wrapEntryProcessor(
+    final javax.cache.processor.EntryProcessor<K, V, T> ep) {
     if (ep == null) {
       throw new NullPointerException("processor is null");
     }
-    return new javax.cache.processor.EntryProcessor<K,V, T>() {
+    return new javax.cache.processor.EntryProcessor<K, V, T>() {
       boolean freshOrJustLoaded = false;
       @Override
       public T process(final MutableEntry<K, V> e0, Object... args)

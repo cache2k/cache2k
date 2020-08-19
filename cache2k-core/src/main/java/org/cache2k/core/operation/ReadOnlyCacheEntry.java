@@ -30,7 +30,8 @@ import org.cache2k.core.ExceptionWrapper;
  *
  * @author Jens Wilke
  */
-public class ReadOnlyCacheEntry<K, V> extends AbstractCacheEntry<K, V> implements ResultEntry<K, V> {
+public class ReadOnlyCacheEntry<K, V>
+  extends AbstractCacheEntry<K, V> implements ResultEntry<K, V> {
 
   private K key;
   private V valueOrException;

@@ -787,7 +787,7 @@ public class HeapCache<K, V> extends BaseCache<K, V> {
    */
   protected final void putValue(Entry e, V value) {
     if (!isUpdateTimeNeeded()) {
-      insertOrUpdateAndCalculateExpiry(e, value, 0, 0, 0 , INSERT_STAT_PUT);
+      insertOrUpdateAndCalculateExpiry(e, value, 0, 0, 0, INSERT_STAT_PUT);
     } else {
       long t = clock.millis();
       insertOrUpdateAndCalculateExpiry(e, value, t, t, t, INSERT_STAT_PUT);
@@ -1071,7 +1071,7 @@ public class HeapCache<K, V> extends BaseCache<K, V> {
 
   @Override
   public void prefetchAll(Iterable<? extends K> keys, CacheOperationCompletionListener l) {
-    final CacheOperationCompletionListener listener= l != null ? l : DUMMY_LOAD_COMPLETED_LISTENER;
+    final CacheOperationCompletionListener listener = l != null ? l : DUMMY_LOAD_COMPLETED_LISTENER;
     if (loader == null) {
       listener.onCompleted();
       return;
@@ -1108,7 +1108,7 @@ public class HeapCache<K, V> extends BaseCache<K, V> {
   @Override
   public void loadAll(Iterable<? extends K> keys, CacheOperationCompletionListener l) {
     checkLoaderPresent();
-    final CacheOperationCompletionListener listener= l != null ? l : DUMMY_LOAD_COMPLETED_LISTENER;
+    final CacheOperationCompletionListener listener = l != null ? l : DUMMY_LOAD_COMPLETED_LISTENER;
     Set<K> keysToLoad = checkAllPresent(keys);
     if (keysToLoad.isEmpty()) {
       listener.onCompleted();
@@ -1140,7 +1140,7 @@ public class HeapCache<K, V> extends BaseCache<K, V> {
   @Override
   public void reloadAll(Iterable<? extends K> keys, CacheOperationCompletionListener l) {
     checkLoaderPresent();
-    final CacheOperationCompletionListener listener= l != null ? l : DUMMY_LOAD_COMPLETED_LISTENER;
+    final CacheOperationCompletionListener listener = l != null ? l : DUMMY_LOAD_COMPLETED_LISTENER;
     Set<K> keySet = generateKeySet(keys);
     final AtomicInteger countDown = new AtomicInteger(keySet.size());
     for (K k : keySet) {

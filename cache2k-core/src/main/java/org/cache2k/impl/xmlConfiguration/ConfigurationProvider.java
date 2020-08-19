@@ -72,7 +72,7 @@ public class ConfigurationProvider {
       return;
     }
     ConfigurationWithSections configurationWithSections = (ConfigurationWithSections) cfg;
-    for(ParsedConfiguration parsedSection : parsedCfg.getSections()) {
+    for (ParsedConfiguration parsedSection : parsedCfg.getSections()) {
       String sectionType = ctx.getPredefinedSectionTypes().get(parsedSection.getName());
       if (sectionType == null) {
         sectionType = parsedSection.getType();
@@ -179,7 +179,7 @@ public class ConfigurationProvider {
       } catch (IllegalArgumentException ex) {
         throw new ConfigurationException(
           "Validation error '" +
-            bean.getClass().getSimpleName() +"': " + ex.getMessage(), parsedCfg);
+            bean.getClass().getSimpleName() + "': " + ex.getMessage(), parsedCfg);
       }
     }
     return bean;
