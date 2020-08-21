@@ -151,8 +151,12 @@ public class ExceptionWrapper<K> implements ExceptionInformation, CacheEntry<K, 
     throw getExceptionPropagator().propagateException(key, this);
   }
 
+  /**
+   * The exception wrapper instance is also used as {@link CacheEntry} directly and
+   * returned by {@link org.cache2k.Cache#getEntry(Object)}
+   */
   public String toString() {
-    return "ExceptionWrapper{" + exception.toString() + "}";
+    return "ExceptionWrapper{key=" + getKey() + ", exception=" + exception + "}";
   }
 
 }

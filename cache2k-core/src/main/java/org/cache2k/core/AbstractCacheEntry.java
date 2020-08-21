@@ -1,8 +1,8 @@
-package org.cache2k;
+package org.cache2k.core;
 
 /*
  * #%L
- * cache2k API
+ * cache2k implementation
  * %%
  * Copyright (C) 2000 - 2020 headissue GmbH, Munich
  * %%
@@ -20,23 +20,30 @@ package org.cache2k;
  * #L%
  */
 
+import org.cache2k.CacheEntry;
+
 /**
- * Allows to give cached values a weight and limit the cache capacity by total weight.
+ * Abstract class for cache entry providing suitable defaults.
  *
  * @author Jens Wilke
  */
-public interface Weigher<K, V> {
+public abstract class AbstractCacheEntry<K, V> implements CacheEntry<K, V> {
+
+  @SuppressWarnings("deprecation")
+  @Override
+  public long getLastModification() {
+    throw new UnsupportedOperationException();
+  }
 
   /**
-   * Returns a weight for the given cached value. This will be called after a value is
-   * inserted or updated.
-   *
-   * <p>The cache implementations may derive an approximate value which has less precision.
-   * The total weight in the statistics represents an approximation as well.
-   *
-   * @return a positive long value representing the relative weight in comparison to the other
-   * entries in the cache.
+   * Prints
    */
-  int weigh(K key, V value);
+  @Override
+  public final String toString() {
+    return "CacheEntry(" +
+      "key=" + getKey() +
+      ((getException() != null) ? ", exception=" + getException() + ", " : ", " +
+        "valueHashCode=" + getValue().hashCode() + ")");
+  }
 
 }

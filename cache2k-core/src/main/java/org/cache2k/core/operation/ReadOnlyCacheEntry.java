@@ -20,7 +20,7 @@ package org.cache2k.core.operation;
  * #L%
  */
 
-import org.cache2k.AbstractCacheEntry;
+import org.cache2k.core.AbstractCacheEntry;
 import org.cache2k.CacheEntry;
 import org.cache2k.core.Entry;
 import org.cache2k.core.ExceptionWrapper;

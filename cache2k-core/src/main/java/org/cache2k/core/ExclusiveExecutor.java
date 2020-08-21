@@ -48,7 +48,7 @@ public class ExclusiveExecutor implements Executor, Closeable {
   }
 
   @Override
-  public void execute(final Runnable cmd) {
+  public void execute(Runnable cmd) {
     threadPoolExecutor.execute(cmd);
   }
 

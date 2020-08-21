@@ -30,14 +30,14 @@ import static org.junit.Assert.*;
 /**
  * Basic sanity checks and examples.
  *
- * @author Jens Wilke; created: 2013-12-17
+ * @author Jens Wilke
  */
 @Category(FastTests.class)
 public class CacheTest {
 
   @Test
   public void testPeekAndPut() {
-    Cache<String,String> c =
+    Cache<String, String> c =
       Cache2kBuilder.of(String.class, String.class)
         .eternal(true)
         .build();
@@ -50,16 +50,16 @@ public class CacheTest {
   }
 
   @Test
-  public void testGetWithSource() {
-    CacheLoader<String,Integer> _lengthCountingSource = new CacheLoader<String, Integer>() {
+  public void testGetWithLoader() {
+    CacheLoader<String, Integer> lengthCountingSource = new CacheLoader<String, Integer>() {
       @Override
       public Integer load(String o) {
         return o.length();
       }
     };
-    Cache<String,Integer> c =
+    Cache<String, Integer> c =
       Cache2kBuilder.of(String.class, Integer.class)
-        .loader(_lengthCountingSource)
+        .loader(lengthCountingSource)
         .eternal(true)
         .build();
     int v = c.get("hallo");
@@ -71,7 +71,7 @@ public class CacheTest {
 
   @Test
   public void testGetEntry() {
-    Cache<String,String> c =
+    Cache<String, String> c =
       Cache2kBuilder.of(String.class, String.class)
         .eternal(true)
         .build();
@@ -86,7 +86,7 @@ public class CacheTest {
 
   @Test
   public void testContains() {
-    Cache<String,String> c =
+    Cache<String, String> c =
       Cache2kBuilder.of(String.class, String.class)
         .eternal(true)
         .build();
@@ -96,6 +96,16 @@ public class CacheTest {
     assertTrue(c.containsKey("something"));
     assertFalse(c.containsKey("dsaf"));
     c.close();
+  }
+
+  @Test
+  public void testEntryToString() {
+    Cache<Integer, Integer> c =
+      Cache2kBuilder.of(Integer.class, Integer.class)
+        .eternal(true)
+        .build();
+    c.put(1, 2);
+    assertEquals("CacheEntry(key=1, valueHashCode=2)", c.getEntry(1).toString());
   }
 
 }

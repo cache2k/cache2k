@@ -24,6 +24,7 @@ package org.cache2k;
  * Abstract class for cache entry providing suitable defaults.
  *
  * @author Jens Wilke
+ * @deprecated Will be removed in 2.0
  */
 public abstract class AbstractCacheEntry<K, V> implements CacheEntry<K, V> {
 
@@ -32,4 +33,5 @@ public abstract class AbstractCacheEntry<K, V> implements CacheEntry<K, V> {
   public long getLastModification() {
     throw new UnsupportedOperationException();
   }
+
 }

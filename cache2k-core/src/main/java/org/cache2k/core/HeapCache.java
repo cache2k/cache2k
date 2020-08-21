@@ -20,7 +20,6 @@ package org.cache2k.core;
  * #L%
  */
 
-import org.cache2k.AbstractCacheEntry;
 import org.cache2k.Cache;
 import org.cache2k.CacheEntry;
 import org.cache2k.CacheManager;
@@ -624,13 +623,6 @@ public class HeapCache<K, V> extends BaseCache<K, V> {
     @Override
     public Throwable getException() {
       return null;
-    }
-    @Override
-    public String toString() {
-      return "CacheEntry(" +
-        "key=" + getKey() +
-        ((getException() != null) ? ", exception=" + getException() + ", " : ", " +
-          "value=" + getValue());
     }
   }
 

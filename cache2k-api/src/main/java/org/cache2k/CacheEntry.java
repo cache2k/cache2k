@@ -89,7 +89,7 @@ public interface CacheEntry<K, V> {
    *
    * @throws UnsupportedOperationException always thrown
    * @deprecated permanently not supported any more, you may use
-   * {@link MutableCacheEntry#getRefreshedTime()}
+   * {@link MutableCacheEntry#getRefreshedTime()}, will be removed in 2.0
    */
   long getLastModification();
 
