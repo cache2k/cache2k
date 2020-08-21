@@ -52,32 +52,32 @@ import java.util.List;
  * Simple test to check that the support and the management object appear
  * and disappear.
  *
- * @author Jens Wilke; created: 2014-10-10
+ * @author Jens Wilke
  */
 @Category(FastTests.class)
 public class JmxSupportTest {
 
-  private static final MBeanServerConnection server =  ManagementFactory.getPlatformMBeanServer();
+  private static final MBeanServerConnection SERVER =  ManagementFactory.getPlatformMBeanServer();
 
   private ObjectName objectName;
 
   @Test
   public void testManagerPresent() throws Exception {
-    String _name = getClass().getName() + ".testManagerPresent";
-    CacheManager m = CacheManager.getInstance(_name);
-    MBeanInfo i = getCacheManagerInfo(_name);
+    String name = getClass().getName() + ".testManagerPresent";
+    CacheManager m = CacheManager.getInstance(name);
+    MBeanInfo i = getCacheManagerInfo(name);
     assertEquals(ManagerMXBeanImpl.class.getName(), i.getClassName());
     m.close();
   }
 
   @Test
   public void emptyCacheManager_healthOkay() throws Exception {
-    String _name = getClass().getName() + ".emptyCacheManager_healthOkay";
-    CacheManager m = CacheManager.getInstance(_name);
-    MBeanInfo i = getCacheManagerInfo(_name);
+    String name = getClass().getName() + ".emptyCacheManager_healthOkay";
+    CacheManager m = CacheManager.getInstance(name);
+    MBeanInfo i = getCacheManagerInfo(name);
     assertEquals(ManagerMXBeanImpl.class.getName(), i.getClassName());
-    String _health = (String) server.getAttribute(getCacheManagerObjectName(_name), "HealthStatus");
-    assertEquals("ok", _health);
+    String health = (String) SERVER.getAttribute(getCacheManagerObjectName(name), "HealthStatus");
+    assertEquals("ok", health);
     m.close();
   }
 
@@ -86,53 +86,54 @@ public class JmxSupportTest {
    */
   @Test
   public void multipleWarnings() throws Exception {
-    final String _MANAGER_NAME = getClass().getName() + ".multipleWarnings";
-    final String _CACHE_NAME_BAD_HASHING = "cacheWithBadHashing";
-    final String _CACHE_NAME_KEY_MUTATION = "cacheWithKeyMutation";
-    final String _CACHE_NAME_MULTIPLE_ISSUES = "cacheWithMultipleIssues";
-    final String _SUPPRESS1 =  "org.cache2k.Cache/" + _MANAGER_NAME + ":" + _CACHE_NAME_KEY_MUTATION;
-    final String _SUPPRESS2 =  "org.cache2k.Cache/" + _MANAGER_NAME + ":" + _CACHE_NAME_MULTIPLE_ISSUES;
-    Log.registerSuppression(_SUPPRESS1, new Log.SuppressionCounter());
-    Log.registerSuppression(_SUPPRESS2, new Log.SuppressionCounter());
-    CacheManager m = CacheManager.getInstance(_MANAGER_NAME);
-    Cache _cacheWithBadHashing = Cache2kBuilder.of(Object.class, Object.class)
+    final String managerName = getClass().getName() + ".multipleWarnings";
+    final String cacheNameBadHashing = "cacheWithBadHashing";
+    final String cacheNameKeyMutation = "cacheWithKeyMutation";
+    final String cacheNameMultipleIssues = "cacheWithMultipleIssues";
+    String suppress1 =  "org.cache2k.Cache/" + managerName + ":" + cacheNameKeyMutation;
+    String suppress2 =  "org.cache2k.Cache/" + managerName + ":" + cacheNameMultipleIssues;
+    Log.registerSuppression(suppress1, new Log.SuppressionCounter());
+    Log.registerSuppression(suppress2, new Log.SuppressionCounter());
+    CacheManager m = CacheManager.getInstance(managerName);
+    Cache cacheWithBadHashing = Cache2kBuilder.of(Object.class, Object.class)
       .manager(m)
-      .name(_CACHE_NAME_BAD_HASHING)
+      .name(cacheNameBadHashing)
       .eternal(true)
       .build();
-    Cache _cacheWithKeyMutation = Cache2kBuilder.of(Object.class, Object.class)
+    Cache cacheWithKeyMutation = Cache2kBuilder.of(Object.class, Object.class)
       .manager(m)
-      .name(_CACHE_NAME_KEY_MUTATION)
+      .name(cacheNameKeyMutation)
       .eternal(true)
       .entryCapacity(50)
       .build();
-    Cache _cacheWithMultipleIssues = Cache2kBuilder.of(Object.class, Object.class)
+    Cache cacheWithMultipleIssues = Cache2kBuilder.of(Object.class, Object.class)
       .manager(m)
-      .name(_CACHE_NAME_MULTIPLE_ISSUES)
+      .name(cacheNameMultipleIssues)
       .entryCapacity(50)
       .eternal(true)
       .build();
     for (int i = 0; i < 9; i++) {
-      _cacheWithBadHashing.put(new KeyForMutation(), 1);
+      cacheWithBadHashing.put(new KeyForMutation(), 1);
     }
     for (int i = 0; i < 100; i++) {
-      _cacheWithMultipleIssues.put(new KeyForMutation(), 1);
+      cacheWithMultipleIssues.put(new KeyForMutation(), 1);
     }
     for (int i = 0; i < 100; i++) {
       KeyForMutation v = new KeyForMutation();
-      _cacheWithKeyMutation.put(v, 1);
-      _cacheWithMultipleIssues.put(v, 1);
+      cacheWithKeyMutation.put(v, 1);
+      cacheWithMultipleIssues.put(v, 1);
       v.value = 1;
     }
-    String _health = (String) server.getAttribute(getCacheManagerObjectName(_MANAGER_NAME), "HealthStatus");
+    String health =
+      (String) SERVER.getAttribute(getCacheManagerObjectName(managerName), "HealthStatus");
     assertEquals(
       "FAILURE: [cacheWithKeyMutation] hash quality is 0 (threshold: 5); " +
       "FAILURE: [cacheWithMultipleIssues] hash quality is 0 (threshold: 5); " +
       "WARNING: [cacheWithBadHashing] hash quality is 7 (threshold: 20); " +
       "WARNING: [cacheWithKeyMutation] key mutation detected; " +
-      "WARNING: [cacheWithMultipleIssues] key mutation detected", _health);
-    Log.deregisterSuppression(_SUPPRESS1);
-    Log.deregisterSuppression(_SUPPRESS2);
+      "WARNING: [cacheWithMultipleIssues] key mutation detected", health);
+    Log.deregisterSuppression(suppress1);
+    Log.deregisterSuppression(suppress2);
     m.close();
   }
 
@@ -141,46 +142,47 @@ public class JmxSupportTest {
     public int hashCode() { return value; }
   }
 
-  static MBeanInfo getCacheManagerInfo(String _name) throws Exception {
-    ObjectName on = getCacheManagerObjectName(_name);
-    return server.getMBeanInfo(on);
+  static MBeanInfo getCacheManagerInfo(String name) throws Exception {
+    ObjectName on = getCacheManagerObjectName(name);
+    return SERVER.getMBeanInfo(on);
   }
 
-  private static ObjectName getCacheManagerObjectName(final String _name) throws MalformedObjectNameException {
-    if (needsQuoting(_name)) {
-      return new ObjectName("org.cache2k:type=CacheManager,name=\"" + _name + "\"");
+  private static ObjectName getCacheManagerObjectName(String name)
+    throws MalformedObjectNameException {
+    if (needsQuoting(name)) {
+      return new ObjectName("org.cache2k:type=CacheManager,name=\"" + name + "\"");
     } else {
-      return new ObjectName("org.cache2k:type=CacheManager,name=" + _name);
+      return new ObjectName("org.cache2k:type=CacheManager,name=" + name);
     }
   }
 
-  private static boolean needsQuoting(String _name) {
-    return _name.contains(",");
+  private static boolean needsQuoting(String name) {
+    return name.contains(",");
   }
 
   @Test(expected = InstanceNotFoundException.class)
   public void testManagerDestroyed() throws Exception {
-    String _name = getClass().getName() + ".testManagerDestroyed";
-    CacheManager m = CacheManager.getInstance(_name);
-    MBeanInfo i = getCacheManagerInfo(_name);
+    String name = getClass().getName() + ".testManagerDestroyed";
+    CacheManager m = CacheManager.getInstance(name);
+    MBeanInfo i = getCacheManagerInfo(name);
     assertEquals(ManagerMXBeanImpl.class.getName(), i.getClassName());
     m.close();
-    getCacheManagerInfo(_name);
+    getCacheManagerInfo(name);
   }
 
   @Test
   public void managerClear_noCache() throws Exception {
-    String _name = getClass().getName() + ".managerClear_noCache";
-    CacheManager m = CacheManager.getInstance(_name);
-    server.invoke(getCacheManagerObjectName(_name), "clear", new Object[0], new String[0]);
+    String name = getClass().getName() + ".managerClear_noCache";
+    CacheManager m = CacheManager.getInstance(name);
+    SERVER.invoke(getCacheManagerObjectName(name), "clear", new Object[0], new String[0]);
     m.close();
   }
 
   @Test
   public void managerAttributes() throws Exception {
-    String _name = getClass().getName() + ".managerAttributes";
-    CacheManager m = CacheManager.getInstance(_name);
-    objectName = getCacheManagerObjectName(_name);
+    String name = getClass().getName() + ".managerAttributes";
+    CacheManager m = CacheManager.getInstance(name);
+    objectName = getCacheManagerObjectName(name);
     checkAttribute("Version", ((CacheManagerImpl) m).getVersion());
     checkAttribute("BuildNumber", "not used");
     m.close();
@@ -188,39 +190,39 @@ public class JmxSupportTest {
 
   @Test
   public void testCacheCreated() throws Exception {
-    String _name = getClass().getName() + ".testCacheCreated";
+    String name = getClass().getName() + ".testCacheCreated";
     Cache c = Cache2kBuilder.of(Object.class, Object.class)
-      .name(_name)
+      .name(name)
       .eternal(true)
       .enableJmx(true)
       .build();
-    MBeanInfo i = getCacheInfo(_name);
+    MBeanInfo i = getCacheInfo(name);
     assertEquals(CacheMXBeanImpl.class.getName(), i.getClassName());
     c.close();
   }
 
   @Test(expected = InstanceNotFoundException.class)
   public void testCacheCreated_notFound() throws Exception {
-    String _name = getClass().getName() + ".testCacheCreated";
+    String name = getClass().getName() + ".testCacheCreated";
     Cache c = Cache2kBuilder.of(Object.class, Object.class)
-      .name(_name)
+      .name(name)
       .eternal(true)
       .build();
-    MBeanInfo i = getCacheInfo(_name);
+    MBeanInfo i = getCacheInfo(name);
     assertEquals(CacheMXBeanImpl.class.getName(), i.getClassName());
     c.close();
   }
 
   @Test
   public void testInitialProperties() throws Exception {
-    Date _beforeCreateion = new Date();
-    String _name = getClass().getName() + ".testInitialProperties";
-    Cache c = new Cache2kBuilder<Long, List<Collection<Long>>> () {}
-      .name(_name)
+    Date beforeCreateion = new Date();
+    String name = getClass().getName() + ".testInitialProperties";
+    Cache c = new Cache2kBuilder<Long, List<Collection<Long>>>() { }
+      .name(name)
       .eternal(true)
       .enableJmx(true)
       .build();
-    objectName = constructCacheObjectName(_name);
+    objectName = constructCacheObjectName(name);
     checkAttribute("KeyType", "Long");
     checkAttribute("ValueType", "java.util.List<java.util.Collection<Long>>");
     checkAttribute("Size", 0L);
@@ -248,31 +250,35 @@ public class JmxSupportTest {
     checkAttribute("Implementation", "LongHeapCache");
     checkAttribute("ClearedTime", null);
     checkAttribute("Alert", 0);
-    assertTrue("reasonable CreatedTime", ((Date) retrieve("CreatedTime")).compareTo(_beforeCreateion) >= 0);
-    assertTrue("reasonable InfoCreatedTime", ((Date) retrieve("InfoCreatedTime")).compareTo(_beforeCreateion) >= 0);
-    assertTrue("reasonable InfoCreatedDeltaMillis", ((Integer) retrieve("InfoCreatedDeltaMillis")) >= 0);
-    assertTrue("reasonable EvictionStatistics", retrieve("EvictionStatistics").toString().contains("impl="));
-    assertTrue("reasonable IntegrityDescriptor", retrieve("IntegrityDescriptor").toString().startsWith("0."));
+    assertTrue("reasonable CreatedTime",
+      ((Date) retrieve("CreatedTime")).compareTo(beforeCreateion) >= 0);
+    assertTrue("reasonable InfoCreatedTime",
+      ((Date) retrieve("InfoCreatedTime")).compareTo(beforeCreateion) >= 0);
+    assertTrue("reasonable InfoCreatedDeltaMillis",
+      ((Integer) retrieve("InfoCreatedDeltaMillis")) >= 0);
+    assertTrue("reasonable EvictionStatistics",
+      retrieve("EvictionStatistics").toString().contains("impl="));
+    assertTrue("reasonable IntegrityDescriptor",
+      retrieve("IntegrityDescriptor").toString().startsWith("0."));
     c.close();
   }
 
   @Test
   public void testWeigherWithSegmentation() throws Exception {
-    Date _beforeCreateion = new Date();
-    String _name = getClass().getName() + ".testInitialProperties";
-    Cache c = new Cache2kBuilder<Long, List<Collection<Long>>>() {}
-      .name(_name)
+    String name = getClass().getName() + ".testInitialProperties";
+    Cache c = new Cache2kBuilder<Long, List<Collection<Long>>>() { }
+      .name(name)
       .eternal(true)
       .enableJmx(true)
       .maximumWeight(123456789L)
       .weigher(new Weigher<Long, List<Collection<Long>>>() {
         @Override
-        public int weigh(final Long key, final List<Collection<Long>> value) {
+        public int weigh(Long key, List<Collection<Long>> value) {
           return 1;
         }
       })
       .build();
-    objectName = constructCacheObjectName(_name);
+    objectName = constructCacheObjectName(name);
     checkAttribute("KeyType", "Long");
     checkAttribute("ValueType", "java.util.List<java.util.Collection<Long>>");
     checkAttribute("Size", 0L);
@@ -280,18 +286,19 @@ public class JmxSupportTest {
     long v = (Long) retrieve("MaximumWeight");
     assertTrue(v >= 123456789L);
     checkAttribute("TotalWeight", 0L);
+    checkAttribute("EvictedWeight", 0L);
     c.close();
   }
 
   @Test
   public void testDisabled() throws Exception {
-    String _name = getClass().getName() + ".testInitialProperties";
-    Cache c = new Cache2kBuilder<Long, List<Collection<Long>>> () {}
-      .name(_name)
+    String name = getClass().getName() + ".testInitialProperties";
+    Cache c = new Cache2kBuilder<Long, List<Collection<Long>>>() { }
+      .name(name)
       .disableStatistics(true)
       .eternal(true)
       .build();
-    objectName = constructCacheObjectName(_name);
+    objectName = constructCacheObjectName(name);
     try {
       retrieve("Alert");
       fail("exception expected");
@@ -300,40 +307,42 @@ public class JmxSupportTest {
     c.close();
   }
 
-  private void checkAttribute(String _name, Object _expected) throws Exception {
-    Object v = retrieve(_name);
-    assertEquals("Value of attribute '" + _name + "'", _expected, v);
+  private void checkAttribute(String name, Object expected) throws Exception {
+    Object v = retrieve(name);
+    assertEquals("Value of attribute '" + name + "'", expected, v);
   }
 
-  private Object retrieve(final String _name) throws MBeanException, AttributeNotFoundException, InstanceNotFoundException, ReflectionException, IOException {
-    return server.getAttribute(objectName, _name);
+  private Object retrieve(String name)
+    throws MBeanException, AttributeNotFoundException, InstanceNotFoundException,
+    ReflectionException, IOException {
+    return SERVER.getAttribute(objectName, name);
   }
 
-  static MBeanInfo getCacheInfo(String _name) throws Exception {
+  static MBeanInfo getCacheInfo(String name) throws Exception {
     MBeanServer mbs = ManagementFactory.getPlatformMBeanServer();
-    ObjectName on = constructCacheObjectName(_name);
+    ObjectName on = constructCacheObjectName(name);
     return mbs.getMBeanInfo(on);
   }
 
-  static ObjectName constructCacheObjectName(final String _name) throws MalformedObjectNameException {
-    if (needsQuoting(_name)) {
-      return new ObjectName("org.cache2k:type=Cache,manager=default,name=\"" + _name + "\"");
+  static ObjectName constructCacheObjectName(String name) throws MalformedObjectNameException {
+    if (needsQuoting(name)) {
+      return new ObjectName("org.cache2k:type=Cache,manager=default,name=\"" + name + "\"");
     } else {
-      return new ObjectName("org.cache2k:type=Cache,manager=default,name=" + _name);
+      return new ObjectName("org.cache2k:type=Cache,manager=default,name=" + name);
     }
   }
 
   @Test(expected = InstanceNotFoundException.class)
   public void testCacheDestroyed() throws Exception {
-    String _name = getClass().getName() + ".testCacheDestroyed";
+    String name = getClass().getName() + ".testCacheDestroyed";
     Cache c = Cache2kBuilder.of(Object.class, Object.class)
-      .name(_name)
+      .name(name)
       .eternal(true)
       .build();
-    MBeanInfo i = getCacheInfo(_name);
+    MBeanInfo i = getCacheInfo(name);
     assertEquals(CacheMXBeanImpl.class.getName(), i.getClassName());
     c.close();
-    getCacheInfo(_name);
+    getCacheInfo(name);
   }
 
 }

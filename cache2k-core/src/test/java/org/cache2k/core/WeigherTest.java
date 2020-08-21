@@ -146,6 +146,7 @@ public class WeigherTest extends TestingBase {
     c.put(1, 1);
     assertEquals(1, countEntriesViaIteration());
     assertFalse("the other entry is removed", c.containsKey(2));
+    assertEquals(101, getInfo().getEvictedWeight());
   }
 
   @Test
@@ -221,6 +222,7 @@ public class WeigherTest extends TestingBase {
     c.put(1, 2);
     assertEquals(1, countEntriesViaIteration());
     assertTrue(c.containsKey(1));
+    assertEquals(1, getInfo().getEvictedWeight());
   }
 
   @Test

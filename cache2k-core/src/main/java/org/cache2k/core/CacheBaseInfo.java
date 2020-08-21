@@ -53,6 +53,7 @@ class CacheBaseInfo implements InternalCacheInfo {
   private long asyncLoadsStarted = -1;
   private long asyncLoadsInFlight = -1;
   private int loaderThreadsMaxActive = -1;
+  private long evictedWeight;
 
   /*
    * Consistent copies from heap cache. for 32 bit machines the access
@@ -84,6 +85,7 @@ class CacheBaseInfo implements InternalCacheInfo {
     maxSize = em.getMaxSize();
     maxWeight = em.getMaxWeight();
     totalWeight = em.getTotalWeight();
+    evictedWeight = em.getEvictedWeight();
     clearedTime = heapCache.clearedTime;
     keyMutationCnt = heapCache.keyMutationCnt;
     removedCnt = em.getRemovedCount();
@@ -147,6 +149,11 @@ class CacheBaseInfo implements InternalCacheInfo {
   @Override
   public long getTotalWeight() {
     return totalWeight;
+  }
+
+  @Override
+  public long getEvictedWeight() {
+    return evictedWeight;
   }
 
   @Override

@@ -141,6 +141,11 @@ public interface CacheInfoMXBean {
   long getEvictedCount();
 
   /**
+   * Accumulated number of weight evicted or deleted entries
+   */
+  long getEvictedWeight();
+
+  /**
    * The total number of insert or update operations.
    */
   long getPutCount();

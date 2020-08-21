@@ -55,6 +55,7 @@ public abstract class AbstractEviction implements Eviction, EvictionMetrics {
   private long virginRemovedCnt;
   private long evictedCount;
   private long totalWeight;
+  private long evictedWeight;
 
   private Entry[] evictChunkReuse;
 
@@ -101,7 +102,7 @@ public abstract class AbstractEviction implements Eviction, EvictionMetrics {
     return weigher != null;
   }
 
-  static long decompressWeight(int weight) {
+  static int decompressWeight(int weight) {
     return IntegerTo16BitFloatingPoint.expand(weight);
   }
 
@@ -147,10 +148,12 @@ public abstract class AbstractEviction implements Eviction, EvictionMetrics {
     if (!isWeigherPresent()) {
       return;
     }
-    totalWeight -= getWeightFromEntry(e);
+    int entryWeight = getWeightFromEntry(e);
+    totalWeight -= entryWeight;
+    evictedWeight += entryWeight;
   }
 
-  private long getWeightFromEntry(Entry e) {
+  private int getWeightFromEntry(Entry e) {
     return decompressWeight(e.getCompressedWeight());
   }
 
@@ -199,7 +202,6 @@ public abstract class AbstractEviction implements Eviction, EvictionMetrics {
         newEntryCounter++;
       } else {
         removeEventually(e);
-        updateTotalWeightForRemove(e);
       }
       return isEvictionNeeded(1);
     }
@@ -386,6 +388,11 @@ public abstract class AbstractEviction implements Eviction, EvictionMetrics {
   @Override
   public long getTotalWeight() {
     return totalWeight;
+  }
+
+  @Override
+  public long getEvictedWeight() {
+    return evictedWeight;
   }
 
   @Override

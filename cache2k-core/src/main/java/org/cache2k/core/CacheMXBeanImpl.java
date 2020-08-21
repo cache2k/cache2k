@@ -114,6 +114,11 @@ public class CacheMXBeanImpl implements CacheMXBean {
   }
 
   @Override
+  public long getEvictedWeight() {
+    return getInfo().getEvictedWeight();
+  }
+
+  @Override
   public long getKeyMutationCount() {
     return getInfo().getKeyMutationCount();
   }

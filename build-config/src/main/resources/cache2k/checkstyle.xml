@@ -119,7 +119,9 @@
     <module name="LocalFinalVariableName"/>
     <module name="LocalVariableName"/>
     <module name="MemberName"/>
+    <!-- test methods use _
     <module name="MethodName"/>
+    -->
     <!--
     <module name="PackageName"/>
     -->

@@ -325,4 +325,6 @@ public interface InternalCacheInfo {
    */
   int getLoaderThreadsMaxActive();
 
+  long getEvictedWeight();
+
 }

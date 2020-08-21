@@ -74,4 +74,7 @@ public interface EvictionMetrics {
   /** Fragment that the eviction wants to add to the {@link org.cache2k.Cache#toString()} output. */
   String getExtraStatistics();
 
+  /** Accumulated weight of evicted or deleted entries */
+  long getEvictedWeight();
+
 }
