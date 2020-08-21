@@ -46,7 +46,7 @@ public class WeigherTest extends TestingBase {
       .entryCapacity(-1)
       .weigher(new Weigher<Integer, Integer>() {
         @Override
-        public long weigh(final Integer key, final Integer value) {
+        public int weigh(Integer key, Integer value) {
           return 1;
         }
       })
@@ -69,7 +69,7 @@ public class WeigherTest extends TestingBase {
       .entryCapacity(-1)
       .weigher(new Weigher<Integer, Integer>() {
         @Override
-        public long weigh(final Integer key, final Integer value) {
+        public int weigh(Integer key, Integer value) {
           return 1;
         }
       })
@@ -94,7 +94,7 @@ public class WeigherTest extends TestingBase {
       .entryCapacity(-1)
       .weigher(new Weigher<Integer, Integer>() {
         @Override
-        public long weigh(final Integer key, final Integer value) {
+        public int weigh(Integer key, Integer value) {
           return 0;
         }
       })
@@ -113,7 +113,7 @@ public class WeigherTest extends TestingBase {
       .entryCapacity(-1)
       .weigher(new Weigher<Integer, Integer>() {
         @Override
-        public long weigh(final Integer key, final Integer value) {
+        public int weigh(Integer key, Integer value) {
           return 0;
         }
       })
@@ -130,7 +130,7 @@ public class WeigherTest extends TestingBase {
       .entryCapacity(-1)
       .weigher(new Weigher<Integer, Integer>() {
         @Override
-        public long weigh(final Integer key, final Integer value) {
+        public int weigh(Integer key, Integer value) {
           return value;
         }
       })
@@ -156,7 +156,7 @@ public class WeigherTest extends TestingBase {
       .entryCapacity(-1)
       .weigher(new Weigher<Integer, Integer>() {
         @Override
-        public long weigh(final Integer key, final Integer value) {
+        public int weigh(Integer key, Integer value) {
           return value;
         }
       })
@@ -182,7 +182,7 @@ public class WeigherTest extends TestingBase {
       .entryCapacity(-1)
       .weigher(new Weigher<Integer, Integer>() {
         @Override
-        public long weigh(final Integer key, final Integer value) {
+        public int weigh(Integer key, Integer value) {
           return value;
         }
       })
@@ -207,7 +207,7 @@ public class WeigherTest extends TestingBase {
       .entryCapacity(-1)
       .weigher(new Weigher<Integer, Integer>() {
         @Override
-        public long weigh(final Integer key, final Integer value) {
+        public int weigh(Integer key, Integer value) {
           return value;
         }
       })
@@ -231,7 +231,7 @@ public class WeigherTest extends TestingBase {
       .entryCapacity(-1)
       .weigher(new Weigher<Integer, Integer>() {
         @Override
-        public long weigh(final Integer key, final Integer value) {
+        public int weigh(Integer key, Integer value) {
           return 1;
         }
       })
@@ -252,7 +252,7 @@ public class WeigherTest extends TestingBase {
       .entryCapacity(-1)
       .weigher(new Weigher<Integer, Integer>() {
         @Override
-        public long weigh(final Integer key, final Integer value) {
+        public int weigh(Integer key, Integer value) {
           return value;
         }
       })

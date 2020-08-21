@@ -34,17 +34,17 @@ import org.junit.experimental.categories.Category;
 @Category(FastTests.class)
 public class ClockProEvictionWithWeigherTest extends ClockProEvictionTest {
 
-  protected Cache<Integer, Integer> provideCache(long _size) {
+  protected Cache<Integer, Integer> provideCache(long size) {
     return builder(Integer.class, Integer.class)
       .eternal(true)
       .entryCapacity(-1) // reset capacity, capacity is already set via builder()
       .weigher(new Weigher<Integer, Integer>() {
         @Override
-        public long weigh(final Integer key, final Integer value) {
+        public int weigh(final Integer key, final Integer value) {
           return 1;
         }
       })
-      .maximumWeight(_size)
+      .maximumWeight(size)
       .strictEviction(true)
       .build();
   }

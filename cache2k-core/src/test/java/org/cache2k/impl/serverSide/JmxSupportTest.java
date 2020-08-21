@@ -226,7 +226,7 @@ public class JmxSupportTest {
     checkAttribute("Size", 0L);
     checkAttribute("EntryCapacity", 2000L);
     checkAttribute("MaximumWeight", -1L);
-    checkAttribute("CurrentWeight", 0L);
+    checkAttribute("TotalWeight", 0L);
     checkAttribute("InsertCount", 0L);
     checkAttribute("MissCount", 0L);
     checkAttribute("RefreshCount", 0L);
@@ -267,7 +267,7 @@ public class JmxSupportTest {
       .maximumWeight(123456789L)
       .weigher(new Weigher<Long, List<Collection<Long>>>() {
         @Override
-        public long weigh(final Long key, final List<Collection<Long>> value) {
+        public int weigh(final Long key, final List<Collection<Long>> value) {
           return 1;
         }
       })
@@ -279,7 +279,7 @@ public class JmxSupportTest {
     checkAttribute("EntryCapacity", -1L);
     long v = (Long) retrieve("MaximumWeight");
     assertTrue(v >= 123456789L);
-    checkAttribute("CurrentWeight", 0L);
+    checkAttribute("TotalWeight", 0L);
     c.close();
   }
 

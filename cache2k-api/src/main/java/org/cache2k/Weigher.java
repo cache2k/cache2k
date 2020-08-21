@@ -34,6 +34,6 @@ public interface Weigher<K, V> {
    * @return a positive long value representing the relative weight in comparison to the other
    * entries in the cache.
    */
-  long weigh(K key, V value);
+  int weigh(K key, V value);
 
 }

@@ -102,18 +102,18 @@ public abstract class AbstractEviction implements Eviction, EvictionMetrics {
   }
 
   static long decompressWeight(int weight) {
-    return LongTo16BitFloatingPoint.toLong(weight);
+    return IntegerTo16BitFloatingPoint.expand(weight);
   }
 
-  static int compressWeight(long weight) {
-    return LongTo16BitFloatingPoint.fromLong(weight);
+  static int compressWeight(int weight) {
+    return IntegerTo16BitFloatingPoint.compress(weight);
   }
 
   /**
    * Exceptions have the minimum weight.
    */
-  private long calculateWeight(Entry e, Object v) {
-    long weight;
+  private int calculateWeight(Entry e, Object v) {
+    int weight;
     if (v instanceof ExceptionWrapper) {
       weight = 1;
     } else {
