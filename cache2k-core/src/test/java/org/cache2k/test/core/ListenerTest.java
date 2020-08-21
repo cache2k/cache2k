@@ -398,6 +398,37 @@ public class ListenerTest {
   }
 
   /**
+   * Call Cache.toString() within eviction listener.
+   * ToString will do a global cache lock. This is proof that eviction listener
+   * is only locking on the entry not parts of the cache structure.
+   */
+  @Test
+  public void syncEvictedToString() {
+    final AtomicInteger callCount = new AtomicInteger();
+    final CountDownLatch block = new CountDownLatch(1);
+    final Cache<Integer, Integer> c = target.cache(
+      new CacheRule.Specialization<Integer, Integer>() {
+        @Override
+        public void extend(Cache2kBuilder<Integer, Integer> b) {
+          b.addListener(new CacheEntryEvictedListener<Integer, Integer>() {
+            @Override
+            public void onEntryEvicted(Cache<Integer, Integer> c, CacheEntry<Integer, Integer> e) {
+              c.toString();
+              callCount.incrementAndGet();
+            }
+          })
+            .entryCapacity(2);
+        }
+      });
+    c.put(1, 2);
+    assertEquals(0, callCount.get());
+    c.put(2, 2);
+    assertEquals(0, callCount.get());
+    c.put(3, 2);
+    assertEquals(1, callCount.get());
+  }
+
+  /**
    * Check that we do not miss events.
    */
   @Test
