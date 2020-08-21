@@ -64,69 +64,29 @@ import java.util.concurrent.atomic.AtomicInteger;
 @Category(FastTests.class)
 public class ListenerTest {
 
-  /** Provide unique standard cache per method */
+  /**
+   * Provide unique standard cache per method
+   */
   @Rule
   public IntCacheRule target = new IntCacheRule();
 
   @Rule
   public Timeout globalTimeout = new Timeout((int) TestingParameters.MAX_FINISH_WAIT_MILLIS);
 
-  static abstract class CountSyncEvents extends CacheRule.Context<Integer,Integer> {
-
-    final AtomicInteger updated = new AtomicInteger();
-    final AtomicInteger removed = new AtomicInteger();
-    final AtomicInteger created = new AtomicInteger();
-    final AtomicInteger evicted = new AtomicInteger();
-    final AtomicInteger expired = new AtomicInteger();
-
-    private void checkCondition() {
-      assertTrue("Get a created event before something is removed, evicted or expired",
-        created.get() >= (evicted.get() + expired.get() + removed.get()));
-    }
-
-    @Override
-    public void extend(final Cache2kBuilder<Integer, Integer> b) {
-      b .addListener(new CacheEntryCreatedListener<Integer, Integer>() {
-        @Override
-        public void onEntryCreated(final Cache<Integer, Integer> c, final CacheEntry<Integer, Integer> e) {
-          created.incrementAndGet();
-        }
-        })
-        .addListener(new CacheEntryUpdatedListener<Integer, Integer>() {
-          @Override
-          public void onEntryUpdated(final Cache<Integer, Integer> cache, final CacheEntry<Integer, Integer> currentEntry, final CacheEntry<Integer, Integer> entryWithNewData) {
-            updated.incrementAndGet();
-          }
-        })
-        .addListener(new CacheEntryRemovedListener<Integer, Integer>() {
-          @Override
-          public void onEntryRemoved(final Cache<Integer, Integer> c, final CacheEntry<Integer, Integer> e) {
-            removed.incrementAndGet();
-            checkCondition();
-          }
-        })
-        .addListener(new CacheEntryEvictedListener<Integer, Integer>() {
-          @Override
-          public void onEntryEvicted(final Cache<Integer, Integer> cache, final CacheEntry<Integer, Integer> entry) {
-            evicted.incrementAndGet();
-            checkCondition();
-          }
-        })
-        .addListener(new CacheEntryExpiredListener<Integer, Integer>() {
-          @Override
-          public void onEntryExpired(final Cache<Integer, Integer> cache, final CacheEntry<Integer, Integer> entry) {
-            expired.incrementAndGet();
-            checkCondition();
-          }
-        });
-    }
+  /**
+   * containsKey would return true for an entry currently being evicted.
+   * A mutation operation would block. Check the internal entry state.
+   */
+  public static <K> boolean isEvicting(Cache<K, ?> c, K key) {
+    InternalCache<K, ?> ic = (InternalCache<K, ?>) c;
+    return ic.getEntryState(key).contains("lock=EVICT");
   }
 
   @Test
   public void evictedListenerCalled() {
     target.run(new CountSyncEvents() {
       @Override
-      public void extend(final Cache2kBuilder<Integer, Integer> b) {
+      public void extend(Cache2kBuilder<Integer, Integer> b) {
         super.extend(b);
         b.entryCapacity(1);
       }
@@ -150,7 +110,7 @@ public class ListenerTest {
   public void evictedListenerCalledOnChangeCapacity() {
     target.run(new CountSyncEvents() {
       @Override
-      public void extend(final Cache2kBuilder<Integer, Integer> b) {
+      public void extend(Cache2kBuilder<Integer, Integer> b) {
         super.extend(b);
         b.entryCapacity(10);
       }
@@ -185,16 +145,17 @@ public class ListenerTest {
   public void createdListenerNotCalledForImmediateExpiry() {
     target.run(new CountSyncEvents() {
       @Override
-      public void extend(final Cache2kBuilder<Integer, Integer> b) {
+      public void extend(Cache2kBuilder<Integer, Integer> b) {
         b.expireAfterWrite(0, TimeUnit.MILLISECONDS);
         b.loader(new CacheLoader<Integer, Integer>() {
           @Override
-          public Integer load(final Integer key) throws Exception {
+          public Integer load(Integer key) throws Exception {
             return key;
           }
         });
         super.extend(b);
       }
+
       @Override
       public void run() {
         assertEquals(0, created.get());
@@ -235,117 +196,126 @@ public class ListenerTest {
     });
   }
 
-  /** If the listener is not executed in separate thread, this would block */
+  /**
+   * If the listener is not executed in separate thread, this would block
+   */
   @Test
   public void asyncCreatedListenerCalled() {
-    final AtomicInteger _callCount = new AtomicInteger();
-    final CountDownLatch _fire = new CountDownLatch(1);
+    final AtomicInteger callCount = new AtomicInteger();
+    final CountDownLatch fire = new CountDownLatch(1);
     Cache<Integer, Integer> c = target.cache(new CacheRule.Specialization<Integer, Integer>() {
       @Override
-      public void extend(final Cache2kBuilder<Integer, Integer> b) {
-        b. addAsyncListener(new CacheEntryCreatedListener<Integer, Integer>() {
+      public void extend(Cache2kBuilder<Integer, Integer> b) {
+        b.addAsyncListener(new CacheEntryCreatedListener<Integer, Integer>() {
           @Override
-          public void onEntryCreated(final Cache<Integer, Integer> c, final CacheEntry<Integer, Integer> e) {
+          public void onEntryCreated(Cache<Integer, Integer> c, CacheEntry<Integer, Integer> e) {
             try {
-              _fire.await();
-            } catch (InterruptedException ignore) { }
-            _callCount.incrementAndGet();
-          }
-        });
-      }
-    });
-    c.put(1,2);
-    assertEquals(0, _callCount.get());
-    _fire.countDown();
-    ConcurrencyHelper.await(new Condition() {
-      @Override
-      public boolean check() throws Exception {
-        return _callCount.get() == 1;
-      }
-    });
-  }
-
-  /** If the listener is not executed in separate thread, this would block */
-  @Test
-  public void asyncUpdateListenerCalled() {
-    final AtomicInteger _callCount = new AtomicInteger();
-    final CountDownLatch _fire = new CountDownLatch(1);
-    Cache<Integer, Integer> c = target.cache(new CacheRule.Specialization<Integer, Integer>() {
-       @Override
-       public void extend(final Cache2kBuilder<Integer, Integer> b) {
-         b.addAsyncListener(new CacheEntryUpdatedListener<Integer, Integer>() {
-           @Override
-           public void onEntryUpdated(final Cache<Integer, Integer> cache,
-                                      final CacheEntry<Integer, Integer> currentEntry,
-                                      final CacheEntry<Integer, Integer> entryWithNewData) {
-             try {
-               _fire.await();
-             } catch (InterruptedException ignore) {
-             }
-             _callCount.incrementAndGet();
-           }
-         });
-       }
-     });
-    c.put(1, 2);
-    assertEquals(0, _callCount.get());
-    c.put(1, 2);
-    assertEquals(0, _callCount.get());
-    _fire.countDown();
-    ConcurrencyHelper.await(new Condition() {
-      @Override
-      public boolean check() throws Exception {
-        return _callCount.get() == 1;
-      }
-    });
-  }
-
-  /** If the listener is not executed in separate thread, this would block */
-  @Test
-  public void asyncRemovedListenerCalled() {
-    final AtomicInteger _callCount = new AtomicInteger();
-    final CountDownLatch _fire = new CountDownLatch(1);
-    Cache<Integer, Integer> c = target.cache(new CacheRule.Specialization<Integer, Integer>() {
-      @Override
-      public void extend(final Cache2kBuilder<Integer, Integer> b) {
-        b.addAsyncListener(new CacheEntryRemovedListener<Integer, Integer>() {
-          @Override
-          public void onEntryRemoved(final Cache<Integer, Integer> c, final CacheEntry<Integer, Integer> e) {
-            try {
-              _fire.await();
+              fire.await();
             } catch (InterruptedException ignore) {
             }
-            _callCount.incrementAndGet();
+            callCount.incrementAndGet();
           }
         });
       }
     });
     c.put(1, 2);
-    assertEquals(0, _callCount.get());
-    c.put(1, 2);
-    assertEquals(0, _callCount.get());
-    c.remove(1);
-    assertEquals(0, _callCount.get());
-    _fire.countDown();
+    assertEquals(0, callCount.get());
+    fire.countDown();
     ConcurrencyHelper.await(new Condition() {
       @Override
       public boolean check() throws Exception {
-        return _callCount.get() == 1;
+        return callCount.get() == 1;
       }
     });
   }
 
-  /** If the listener is not executed in separate thread, this would block */
+  /**
+   * If the listener is not executed in separate thread, this would block
+   */
+  @Test
+  public void asyncUpdateListenerCalled() {
+    final AtomicInteger callCount = new AtomicInteger();
+    final CountDownLatch fire = new CountDownLatch(1);
+    Cache<Integer, Integer> c = target.cache(new CacheRule.Specialization<Integer, Integer>() {
+      @Override
+      public void extend(Cache2kBuilder<Integer, Integer> b) {
+        b.addAsyncListener(new CacheEntryUpdatedListener<Integer, Integer>() {
+          @Override
+          public void onEntryUpdated(Cache<Integer, Integer> cache,
+                                     CacheEntry<Integer, Integer> currentEntry,
+                                     CacheEntry<Integer, Integer> entryWithNewData) {
+            try {
+              fire.await();
+            } catch (InterruptedException ignore) {
+            }
+            callCount.incrementAndGet();
+          }
+        });
+      }
+    });
+    c.put(1, 2);
+    assertEquals(0, callCount.get());
+    c.put(1, 2);
+    assertEquals(0, callCount.get());
+    fire.countDown();
+    ConcurrencyHelper.await(new Condition() {
+      @Override
+      public boolean check() throws Exception {
+        return callCount.get() == 1;
+      }
+    });
+  }
+
+  /**
+   * If the listener is not executed in separate thread, this would block
+   */
+  @Test
+  public void asyncRemovedListenerCalled() {
+    final AtomicInteger callCount = new AtomicInteger();
+    final CountDownLatch fire = new CountDownLatch(1);
+    Cache<Integer, Integer> c = target.cache(new CacheRule.Specialization<Integer, Integer>() {
+      @Override
+      public void extend(Cache2kBuilder<Integer, Integer> b) {
+        b.addAsyncListener(new CacheEntryRemovedListener<Integer, Integer>() {
+          @Override
+          public void onEntryRemoved(Cache<Integer, Integer> c, CacheEntry<Integer, Integer> e) {
+            try {
+              fire.await();
+            } catch (InterruptedException ignore) {
+            }
+            callCount.incrementAndGet();
+          }
+        });
+      }
+    });
+    c.put(1, 2);
+    assertEquals(0, callCount.get());
+    c.put(1, 2);
+    assertEquals(0, callCount.get());
+    c.remove(1);
+    assertEquals(0, callCount.get());
+    fire.countDown();
+    ConcurrencyHelper.await(new Condition() {
+      @Override
+      public boolean check() throws Exception {
+        return callCount.get() == 1;
+      }
+    });
+  }
+
+  /**
+   * If the listener is not executed in separate thread, this would block
+   */
   @Test
   public void asyncEvictedListenerCalled() {
     final AtomicInteger callCount = new AtomicInteger();
     final CountDownLatch block = new CountDownLatch(1);
     Cache<Integer, Integer> c = target.cache(new CacheRule.Specialization<Integer, Integer>() {
       @Override
-      public void extend(final Cache2kBuilder<Integer, Integer> b) {
+      public void extend(Cache2kBuilder<Integer, Integer> b) {
         b.addAsyncListener(new CacheEntryEvictedListener<Integer, Integer>() {
           @Override
-          public void onEntryEvicted(final Cache<Integer, Integer> c, final CacheEntry<Integer, Integer> e) {
+          public void onEntryEvicted(Cache<Integer, Integer> c, CacheEntry<Integer, Integer> e) {
             try {
               block.await();
             } catch (InterruptedException ignore) {
@@ -353,7 +323,7 @@ public class ListenerTest {
             callCount.incrementAndGet();
           }
         })
-        .entryCapacity(1);
+          .entryCapacity(1);
       }
     });
     c.put(1, 2);
@@ -378,12 +348,13 @@ public class ListenerTest {
   public void syncEvictedListenerDoesNotBlockCacheOps() {
     final AtomicInteger callCount = new AtomicInteger();
     final CountDownLatch block = new CountDownLatch(1);
-    final Cache<Integer, Integer> c = target.cache(new CacheRule.Specialization<Integer, Integer>() {
+    final Cache<Integer, Integer> c = target.cache(
+      new CacheRule.Specialization<Integer, Integer>() {
       @Override
-      public void extend(final Cache2kBuilder<Integer, Integer> b) {
+      public void extend(Cache2kBuilder<Integer, Integer> b) {
         b.addListener(new CacheEntryEvictedListener<Integer, Integer>() {
           @Override
-          public void onEntryEvicted(final Cache<Integer, Integer> c, final CacheEntry<Integer, Integer> e) {
+          public void onEntryEvicted(Cache<Integer, Integer> c, CacheEntry<Integer, Integer> e) {
             callCount.incrementAndGet();
             try {
               block.await();
@@ -403,7 +374,8 @@ public class ListenerTest {
       public void run() {
         try {
           c.put(3, 2);
-        } catch (CacheClosedException likelyIgnore) { }
+        } catch (CacheClosedException likelyIgnore) {
+        }
       }
     });
     t.start();
@@ -426,54 +398,52 @@ public class ListenerTest {
   }
 
   /**
-   * containsKey would return true for an entry currently being evicted.
-   * A mutation operation would block. Check the internal entry state.
+   * Check that we do not miss events.
    */
-  public static <K> boolean isEvicting(Cache<K, ?> c, K key) {
-    InternalCache<K, ?> ic = (InternalCache<K,?>) c;
-    return ic.getEntryState(key).contains("lock=EVICT");
-  }
-
-  /** Check that we do not miss events. */
   @Test
   public void manyAsyncUpdateListenerCalled() {
-    final AtomicInteger _callCount = new AtomicInteger();
-    final ConcurrentMap<Integer, Integer> _seenValues = new ConcurrentHashMap<Integer, Integer>();
+    final AtomicInteger callCount = new AtomicInteger();
+    final ConcurrentMap<Integer, Integer> seenValues = new ConcurrentHashMap<Integer, Integer>();
     Cache<Integer, Integer> c = target.cache(new CacheRule.Specialization<Integer, Integer>() {
       @Override
-      public void extend(final Cache2kBuilder<Integer, Integer> b) {
-        b .addAsyncListener(new CacheEntryUpdatedListener<Integer, Integer>() {
+      public void extend(Cache2kBuilder<Integer, Integer> b) {
+        b.addAsyncListener(
+          new CacheEntryUpdatedListener<Integer, Integer>() {
           @Override
-          public void onEntryUpdated(final Cache<Integer, Integer> cache, final CacheEntry<Integer, Integer> currentEntry, final CacheEntry<Integer, Integer> entryWithNewData) {
-            _seenValues.put(entryWithNewData.getValue(), entryWithNewData.getValue());
-            _callCount.incrementAndGet();
+          public void onEntryUpdated(Cache<Integer, Integer> cache,
+                                     CacheEntry<Integer, Integer> currentEntry,
+                                     CacheEntry<Integer, Integer> entryWithNewData) {
+            seenValues.put(entryWithNewData.getValue(), entryWithNewData.getValue());
+            callCount.incrementAndGet();
           }
         });
       }
     });
     c.put(1, 2);
-    assertEquals(0, _callCount.get());
-    final int _UPDATE_COUNT = 123;
-    for (int i = 0; i < _UPDATE_COUNT; i++) {
+    assertEquals(0, callCount.get());
+    final int updateCount = 123;
+    for (int i = 0; i < updateCount; i++) {
       c.put(1, i);
     }
     ConcurrencyHelper.await(new Condition() {
       @Override
       public boolean check() throws Exception {
-        return _callCount.get() == _UPDATE_COUNT;
+        return callCount.get() == updateCount;
       }
     });
-    assertEquals("Event dispatching is using copied events", 123, _seenValues.size());
+    assertEquals("Event dispatching is using copied events", 123, seenValues.size());
   }
 
   @Test(expected = Exception.class)
   public void updateListenerException() {
     Cache<Integer, Integer> c = target.cache(new CacheRule.Specialization<Integer, Integer>() {
       @Override
-      public void extend(final Cache2kBuilder<Integer, Integer> b) {
+      public void extend(Cache2kBuilder<Integer, Integer> b) {
         b.addListener(new CacheEntryUpdatedListener<Integer, Integer>() {
           @Override
-          public void onEntryUpdated(final Cache<Integer, Integer> cache, final CacheEntry<Integer, Integer> currentEntry, final CacheEntry<Integer, Integer> entryWithNewData) {
+          public void onEntryUpdated(Cache<Integer, Integer> cache,
+                                     CacheEntry<Integer, Integer> currentEntry,
+                                     CacheEntry<Integer, Integer> entryWithNewData) {
             throw new RuntimeException("ouch");
           }
         });
@@ -489,19 +459,19 @@ public class ListenerTest {
 
   @Test
   public void asyncUpdateListenerException() {
-    String _logName = getClass().getName() + ".asyncUpdateListenerException";
-    final Log.SuppressionCounter _suppressionCounter = new Log.SuppressionCounter();
-    Log.registerSuppression("org.cache2k.Cache/default:" + _logName, _suppressionCounter);
+    String logName = getClass().getName() + ".asyncUpdateListenerException";
+    final Log.SuppressionCounter suppressionCounter = new Log.SuppressionCounter();
+    Log.registerSuppression("org.cache2k.Cache/default:" + logName, suppressionCounter);
     Cache<Integer, Integer> c =
       Cache2kBuilder.of(Integer.class, Integer.class)
-        .name(_logName)
+        .name(logName)
         .eternal(true)
         .addAsyncListener(new CacheEntryUpdatedListener<Integer, Integer>() {
           @Override
           public void onEntryUpdated(
-            final Cache<Integer, Integer> cache,
-            final CacheEntry<Integer, Integer> currentEntry,
-            final CacheEntry<Integer, Integer> entryWithNewData) {
+            Cache<Integer, Integer> cache,
+            CacheEntry<Integer, Integer> currentEntry,
+            CacheEntry<Integer, Integer> entryWithNewData) {
             throw new RuntimeException("ouch");
           }
         })
@@ -511,7 +481,7 @@ public class ListenerTest {
     ConcurrencyHelper.await(new Condition() {
       @Override
       public boolean check() throws Exception {
-        return _suppressionCounter.getWarnCount() == 1;
+        return suppressionCounter.getWarnCount() == 1;
       }
     });
     c.close();
@@ -523,35 +493,37 @@ public class ListenerTest {
    */
   @Test
   public void asyncReallyExpiredAfterUpdate() {
-    final AtomicInteger _expireCallCount = new AtomicInteger();
-    final Cache<Integer, Integer> c = target.cache(new CacheRule.Specialization<Integer, Integer>() {
-       @Override
-       public void extend(final Cache2kBuilder<Integer, Integer> b) {
-         b.addAsyncListener(new CacheEntryExpiredListener<Integer, Integer>() {
-           @Override
-           public void onEntryExpired(final Cache<Integer, Integer> c, final CacheEntry<Integer, Integer> e) {
-             _expireCallCount.incrementAndGet();
-           }
-         })
-           .eternal(true)
-           .keepDataAfterExpired(false)
-           .expiryPolicy(new ExpiryPolicy<Integer, Integer>() {
-             @Override
-             public long calculateExpiryTime(final Integer key, final Integer value, final long loadTime, final CacheEntry<Integer, Integer> oldEntry) {
-               if (oldEntry != null) {
-                 return 0;
-               }
-               return ETERNAL;
-             }
-           });
-       }
-     });
+    final AtomicInteger expireCallCount = new AtomicInteger();
+    Cache<Integer, Integer> c = target.cache(new CacheRule.Specialization<Integer, Integer>() {
+      @Override
+      public void extend(Cache2kBuilder<Integer, Integer> b) {
+        b.addAsyncListener(new CacheEntryExpiredListener<Integer, Integer>() {
+          @Override
+          public void onEntryExpired(Cache<Integer, Integer> c, CacheEntry<Integer, Integer> e) {
+            expireCallCount.incrementAndGet();
+          }
+        })
+          .eternal(true)
+          .keepDataAfterExpired(false)
+          .expiryPolicy(new ExpiryPolicy<Integer, Integer>() {
+            @Override
+            public long calculateExpiryTime(Integer key, Integer value,
+                                            long loadTime,
+                                            CacheEntry<Integer, Integer> oldEntry) {
+              if (oldEntry != null) {
+                return 0;
+              }
+              return ETERNAL;
+            }
+          });
+      }
+    });
     c.put(1, 1);
     c.put(1, 2);
     ConcurrencyHelper.await(new Condition() {
       @Override
       public boolean check() throws Exception {
-        return _expireCallCount.get() == 1;
+        return expireCallCount.get() == 1;
       }
     });
     assertEquals(0, latestInfo(c).getSize());
@@ -563,21 +535,22 @@ public class ListenerTest {
    */
   @Test
   public void asyncExpiredAfterUpdate() {
-    final AtomicInteger _expireCallCount = new AtomicInteger();
-    final Cache<Integer, Integer> c = target.cache(new CacheRule.Specialization<Integer, Integer>() {
+    final AtomicInteger expireCallCount = new AtomicInteger();
+    Cache<Integer, Integer> c = target.cache(new CacheRule.Specialization<Integer, Integer>() {
       @Override
-      public void extend(final Cache2kBuilder<Integer, Integer> b) {
-        b .addAsyncListener(new CacheEntryExpiredListener<Integer, Integer>() {
-            @Override
-            public void onEntryExpired(final Cache<Integer, Integer> c, final CacheEntry<Integer, Integer> e) {
-              _expireCallCount.incrementAndGet();
-            }
-          })
+      public void extend(Cache2kBuilder<Integer, Integer> b) {
+        b.addAsyncListener(new CacheEntryExpiredListener<Integer, Integer>() {
+          @Override
+          public void onEntryExpired(Cache<Integer, Integer> c, CacheEntry<Integer, Integer> e) {
+            expireCallCount.incrementAndGet();
+          }
+        })
           .eternal(true)
           .keepDataAfterExpired(false)
           .expiryPolicy(new ExpiryPolicy<Integer, Integer>() {
             @Override
-            public long calculateExpiryTime(final Integer key, final Integer value, final long loadTime, final CacheEntry<Integer, Integer> oldEntry) {
+            public long calculateExpiryTime(Integer key, Integer value,
+                                            long loadTime, CacheEntry<Integer, Integer> oldEntry) {
               if (oldEntry != null) {
                 return loadTime;
               }
@@ -591,7 +564,7 @@ public class ListenerTest {
     ConcurrencyHelper.await(new Condition() {
       @Override
       public boolean check() throws Exception {
-        return _expireCallCount.get() == 1;
+        return expireCallCount.get() == 1;
       }
     });
     assertEquals(0, latestInfo(c).getSize());
@@ -604,21 +577,22 @@ public class ListenerTest {
    */
   @Test
   public void syncExpiredAfterUpdate() {
-    final AtomicInteger _expireCallCount = new AtomicInteger();
-    final Cache<Integer, Integer> c = target.cache(new CacheRule.Specialization<Integer, Integer>() {
+    final AtomicInteger expireCallCount = new AtomicInteger();
+    Cache<Integer, Integer> c = target.cache(new CacheRule.Specialization<Integer, Integer>() {
       @Override
-      public void extend(final Cache2kBuilder<Integer, Integer> b) {
-        b .addListener(new CacheEntryExpiredListener<Integer, Integer>() {
+      public void extend(Cache2kBuilder<Integer, Integer> b) {
+        b.addListener(new CacheEntryExpiredListener<Integer, Integer>() {
           @Override
-          public void onEntryExpired(final Cache<Integer, Integer> c, final CacheEntry<Integer, Integer> e) {
-            _expireCallCount.incrementAndGet();
+          public void onEntryExpired(Cache<Integer, Integer> c, CacheEntry<Integer, Integer> e) {
+            expireCallCount.incrementAndGet();
           }
         })
           .eternal(true)
           .keepDataAfterExpired(false)
           .expiryPolicy(new ExpiryPolicy<Integer, Integer>() {
             @Override
-            public long calculateExpiryTime(final Integer key, final Integer value, final long loadTime, final CacheEntry<Integer, Integer> oldEntry) {
+            public long calculateExpiryTime(Integer key, Integer value,
+                                            long loadTime, CacheEntry<Integer, Integer> oldEntry) {
               if (oldEntry != null) {
                 return loadTime;
               }
@@ -629,7 +603,7 @@ public class ListenerTest {
     });
     c.put(1, 1);
     c.put(1, 2);
-    assertEquals(1, _expireCallCount.get());
+    assertEquals(1, expireCallCount.get());
     assertEquals(0, latestInfo(c).getSize());
     assertEquals(1, latestInfo(c).getExpiredCount());
   }
@@ -639,7 +613,8 @@ public class ListenerTest {
     Cache2kBuilder.of(Integer.class, Integer.class)
       .addListener(new CacheEntryCreatedListener<Integer, Integer>() {
         @Override
-        public void onEntryCreated(final Cache<Integer, Integer> cache, final CacheEntry<Integer, Integer> entry) {
+        public void onEntryCreated(Cache<Integer, Integer> cache,
+                                   CacheEntry<Integer, Integer> entry) {
           System.err.println("inserted: " + entry.getValue());
         }
       });
@@ -647,24 +622,25 @@ public class ListenerTest {
 
   @Test
   public void customExecutor() {
-    final AtomicInteger _counter = new AtomicInteger();
+    final AtomicInteger counter = new AtomicInteger();
     Cache<Integer, Integer> c =
       Cache2kBuilder.of(Integer.class, Integer.class)
         .addAsyncListener(new CacheEntryCreatedListener<Integer, Integer>() {
           @Override
-          public void onEntryCreated(final Cache<Integer, Integer> cache, final CacheEntry<Integer, Integer> entry) {
+          public void onEntryCreated(Cache<Integer, Integer> cache,
+                                     CacheEntry<Integer, Integer> entry) {
           }
         })
         .asyncListenerExecutor(new Executor() {
           @Override
-          public void execute(final Runnable command) {
-            _counter.incrementAndGet();
+          public void execute(Runnable command) {
+            counter.incrementAndGet();
           }
         })
         .build();
-    c.put(1,2);
+    c.put(1, 2);
     c.close();
-    assertEquals(1, _counter.get());
+    assertEquals(1, counter.get());
   }
 
   /**
@@ -675,17 +651,17 @@ public class ListenerTest {
    */
   @Test
   public void expiredWhileInitialLoad() {
-    final long EXPIRE_AFTER_WRITE = 123;
+    final long expireAfterWrite = 123;
     final SimulatedClock clock = new SimulatedClock(1000, true);
     target.run(new CountSyncEvents() {
       @Override
-      public void extend(final Cache2kBuilder<Integer, Integer> b) {
+      public void extend(Cache2kBuilder<Integer, Integer> b) {
         b.timeReference(clock);
-        b.expireAfterWrite(EXPIRE_AFTER_WRITE, TimeUnit.MILLISECONDS);
+        b.expireAfterWrite(expireAfterWrite, TimeUnit.MILLISECONDS);
         b.loader(new CacheLoader<Integer, Integer>() {
           @Override
-          public Integer load(final Integer key) throws Exception {
-            clock.sleep(EXPIRE_AFTER_WRITE * 2);
+          public Integer load(Integer key) throws Exception {
+            clock.sleep(expireAfterWrite * 2);
             return key;
           }
         });
@@ -707,17 +683,17 @@ public class ListenerTest {
    */
   @Test
   public void expiredWhileReload() {
-    final long EXPIRE_AFTER_WRITE = 123;
+    final long expireAfterWrite = 123;
     final SimulatedClock clock = new SimulatedClock(1000, true);
     target.run(new CountSyncEvents() {
       @Override
-      public void extend(final Cache2kBuilder<Integer, Integer> b) {
+      public void extend(Cache2kBuilder<Integer, Integer> b) {
         b.timeReference(clock);
-        b.expireAfterWrite(EXPIRE_AFTER_WRITE, TimeUnit.MILLISECONDS);
+        b.expireAfterWrite(expireAfterWrite, TimeUnit.MILLISECONDS);
         b.loader(new CacheLoader<Integer, Integer>() {
           @Override
-          public Integer load(final Integer key) throws Exception {
-            clock.sleep(EXPIRE_AFTER_WRITE * 2);
+          public Integer load(Integer key) throws Exception {
+            clock.sleep(expireAfterWrite * 2);
             return key;
           }
         });
@@ -740,17 +716,17 @@ public class ListenerTest {
    */
   @Test
   public void expiredWhileReloadUpdate() {
-    final long EXPIRE_AFTER_WRITE = 60;
+    final long expireAfterWrite = 60;
     final SimulatedClock clock = new SimulatedClock(1000, true);
     target.run(new CountSyncEvents() {
       @Override
-      public void extend(final Cache2kBuilder<Integer, Integer> b) {
+      public void extend(Cache2kBuilder<Integer, Integer> b) {
         b.timeReference(clock);
-        b.expireAfterWrite(EXPIRE_AFTER_WRITE, TimeUnit.MILLISECONDS);
+        b.expireAfterWrite(expireAfterWrite, TimeUnit.MILLISECONDS);
         b.loader(new CacheLoader<Integer, Integer>() {
           @Override
-          public Integer load(final Integer key) throws Exception {
-            clock.sleep(EXPIRE_AFTER_WRITE / 3 * 2);
+          public Integer load(Integer key) throws Exception {
+            clock.sleep(expireAfterWrite / 3 * 2);
             return key;
           }
         });
@@ -761,13 +737,69 @@ public class ListenerTest {
       public void run() {
         cache.put(123, 5);
         try {
-          clock.sleep(EXPIRE_AFTER_WRITE / 3 * 2);
-        } catch (InterruptedException ignore) { }
+          clock.sleep(expireAfterWrite / 3 * 2);
+        } catch (InterruptedException ignore) {
+        }
         assertEquals("created", 1, created.get());
         TestingBase.reload(cache, 123);
         assertEquals("updated", 1, updated.get());
       }
     });
+  }
+
+  abstract static class CountSyncEvents extends CacheRule.Context<Integer, Integer> {
+
+    final AtomicInteger updated = new AtomicInteger();
+    final AtomicInteger removed = new AtomicInteger();
+    final AtomicInteger created = new AtomicInteger();
+    final AtomicInteger evicted = new AtomicInteger();
+    final AtomicInteger expired = new AtomicInteger();
+
+    private void checkCondition() {
+      assertTrue("Get a created event before something is removed, evicted or expired",
+        created.get() >= (evicted.get() + expired.get() + removed.get()));
+    }
+
+    @Override
+    public void extend(Cache2kBuilder<Integer, Integer> b) {
+      b.addListener(new CacheEntryCreatedListener<Integer, Integer>() {
+        @Override
+        public void onEntryCreated(Cache<Integer, Integer> c, CacheEntry<Integer, Integer> e) {
+          created.incrementAndGet();
+        }
+      })
+        .addListener(new CacheEntryUpdatedListener<Integer, Integer>() {
+          @Override
+          public void onEntryUpdated(Cache<Integer, Integer> cache,
+                                     CacheEntry<Integer, Integer> currentEntry,
+                                     CacheEntry<Integer, Integer> entryWithNewData) {
+            updated.incrementAndGet();
+          }
+        })
+        .addListener(new CacheEntryRemovedListener<Integer, Integer>() {
+          @Override
+          public void onEntryRemoved(Cache<Integer, Integer> c, CacheEntry<Integer, Integer> e) {
+            removed.incrementAndGet();
+            checkCondition();
+          }
+        })
+        .addListener(new CacheEntryEvictedListener<Integer, Integer>() {
+          @Override
+          public void onEntryEvicted(Cache<Integer, Integer> cache,
+                                     CacheEntry<Integer, Integer> entry) {
+            evicted.incrementAndGet();
+            checkCondition();
+          }
+        })
+        .addListener(new CacheEntryExpiredListener<Integer, Integer>() {
+          @Override
+          public void onEntryExpired(Cache<Integer, Integer> cache,
+                                     CacheEntry<Integer, Integer> entry) {
+            expired.incrementAndGet();
+            checkCondition();
+          }
+        });
+    }
   }
 
 }

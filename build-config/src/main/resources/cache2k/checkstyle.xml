@@ -136,6 +136,7 @@
       <property name="excludes" value="org.cache2k.core.util.Util.*"/>
       <property name="excludes" value="org.cache2k.core.Entry.ProcessingState.*"/>
       <property name="excludes" value="org.junit.Assert.*"/>
+      <property name="allowStaticMemberImports" value="true"/>
     </module>
     <module name="IllegalImport"/> <!-- defaults to sun.* packages -->
     <module name="RedundantImport"/>
