@@ -21,10 +21,8 @@ package org.cache2k.core;
  */
 
 import org.cache2k.Cache;
-import org.cache2k.Cache2kBuilder;
 import org.cache2k.test.util.TestingBase;
 import org.cache2k.testing.category.FastTests;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
@@ -39,129 +37,131 @@ import static org.junit.Assert.*;
 @Category(FastTests.class)
 public class ClockProEvictionTest extends TestingBase {
 
-  protected Cache<Integer, Integer> provideCache(long _size) {
+  protected Cache<Integer, Integer> provideCache(long size) {
     return builder(Integer.class, Integer.class)
       .eternal(true)
-      .entryCapacity(_size)
+      .entryCapacity(size)
       .build();
   }
 
   @Test
   public void test1() {
-    final int _SIZE = 1;
-    Cache<Integer, Integer> c = provideCache(_SIZE);
-    for (int i = 0; i < _SIZE * 2; i++) {
+    final int size = 1;
+    Cache<Integer, Integer> c = provideCache(size);
+    for (int i = 0; i < size * 2; i++) {
       c.put(i, i);
     }
-    for (int i = 0; i < _SIZE * 2; i++) {
+    for (int i = 0; i < size * 2; i++) {
       c.put(i, i);
     }
-    int _count = 0;
+    int count = 0;
     for (int k : c.keys()) {
-      _count++;
+      count++;
     }
-    assertEquals(_SIZE, _count);
+    assertEquals(size, count);
   }
 
   @Test
   public void test30() {
-    final int _SIZE = 30;
-    Cache<Integer, Integer> c = provideCache(_SIZE);
-    for (int i = 0; i < _SIZE * 2; i++) {
+    final int size = 30;
+    Cache<Integer, Integer> c = provideCache(size);
+    for (int i = 0; i < size * 2; i++) {
       c.put(i, i);
     }
-    for (int i = 0; i < _SIZE * 2; i++) {
+    for (int i = 0; i < size * 2; i++) {
       c.put(i, i);
     }
-    int _count = 0;
+    int count = 0;
     for (int k : c.keys()) {
-      _count++;
+      count++;
     }
-    assertEquals(_SIZE, _count);
+    assertEquals(size, count);
   }
 
   @Test
   public void testEvictCold() {
-    final int _SIZE = 30;
-    Cache<Integer, Integer> c = provideCache(_SIZE);
-    for (int i = 0; i < _SIZE / 2; i++) {
+    final int size = 30;
+    Cache<Integer, Integer> c = provideCache(size);
+    for (int i = 0; i < size / 2; i++) {
       c.put(i, i);
     }
-    for (int i = 0; i < _SIZE / 2; i++) {
+    for (int i = 0; i < size / 2; i++) {
       c.put(i, i);
     }
-    for (int i = 0; i < _SIZE * 2; i++) {
+    for (int i = 0; i < size * 2; i++) {
       c.put(i, i);
     }
-    int _count = 0;
+    int count = 0;
     for (int k : c.keys()) {
-      _count++;
+      count++;
     }
-    assertEquals(_SIZE, _count);
+    assertEquals(size, count);
   }
 
   public void testEvictHot() {
-    final int _SIZE = 30;
-    Cache<Integer, Integer> c = provideCache(_SIZE);
-    for (int i = 0; i < _SIZE / 2; i++) {
+    final int size = 30;
+    Cache<Integer, Integer> c = provideCache(size);
+    for (int i = 0; i < size / 2; i++) {
       c.put(i, i);
     }
-    for (int i = 0; i < _SIZE / 2; i++) {
+    for (int i = 0; i < size / 2; i++) {
       c.put(i, i);
     }
-    for (int i = 0; i < _SIZE * 2; i++) {
+    for (int i = 0; i < size * 2; i++) {
       c.put(i, i);
     }
-    for (int i = _SIZE / 2; i < _SIZE; i++) {
+    for (int i = size / 2; i < size; i++) {
       c.put(i, i);
     }
-    for (int i = _SIZE / 2; i < _SIZE; i++) {
+    for (int i = size / 2; i < size; i++) {
       c.put(i, i);
     }
-    for (int i = 0; i < _SIZE * 2; i++) {
+    for (int i = 0; i < size * 2; i++) {
       c.put(i, i);
     }
-    int _count = 0;
+    int count = 0;
     for (int k : c.keys()) {
-      _count++;
+      count++;
     }
-    assertEquals(_SIZE, _count);
+    assertEquals(size, count);
   }
 
   /**
    * Additional test to extend test coverage
    */
   public void testEvictHot2() {
-    final int _SIZE = 30;
-    Cache<Integer, Integer> c = provideCache(_SIZE);
-    for (int i = 0; i < _SIZE / 2; i++) {
+    final int size = 30;
+    Cache<Integer, Integer> c = provideCache(size);
+    for (int i = 0; i < size / 2; i++) {
       c.put(i, i);
     }
-    for (int i = 0; i < _SIZE / 2; i++) {
+    for (int i = 0; i < size / 2; i++) {
       c.put(i, i);
     }
-    for (int i = 0; i < _SIZE * 2; i++) {
+    for (int i = 0; i < size * 2; i++) {
       c.put(i, i);
     }
-    assertEquals(_SIZE, countEntriesViaIteration());
-    for (int i = _SIZE / 2; i < _SIZE; i++) {
+    assertEquals(size, countEntriesViaIteration());
+    for (int i = size / 2; i < size; i++) {
       c.put(i, i);
     }
-    for (int i = _SIZE / 2; i < _SIZE; i++) {
+    for (int i = size / 2; i < size; i++) {
       c.put(i, i);
     }
-    for (int i = 0; i < _SIZE / 3; i++) {
+    for (int i = 0; i < size / 3; i++) {
       c.put(i, i);
     }
-    for (int j = 0; j < 1 << ClockProPlusEviction.TUNABLE_CLOCK_PRO.hitCounterDecreaseShift + 1; j++) {
-      for (int i = 0; i < _SIZE / 4; i++) {
+    int hitCounterDecreaseShift =
+      ClockProPlusEviction.TUNABLE_CLOCK_PRO.hitCounterDecreaseShift;
+    for (int j = 0; j < 1 << hitCounterDecreaseShift + 1; j++) {
+      for (int i = 0; i < size / 4; i++) {
         c.put(i, i);
       }
     }
-    for (int i = 0; i < _SIZE * 2; i++) {
+    for (int i = 0; i < size * 2; i++) {
       c.put(i, i);
     }
-    assertEquals(_SIZE, countEntriesViaIteration());
+    assertEquals(size, countEntriesViaIteration());
   }
 
 }

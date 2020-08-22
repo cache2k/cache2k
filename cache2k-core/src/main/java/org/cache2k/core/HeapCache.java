@@ -708,7 +708,7 @@ public class HeapCache<K, V> extends BaseCache<K, V> {
       removed = hash.removeWithinLock(e, hc);
       e.setGone();
       if (removed) {
-        eviction.submitWithoutEviction(e);
+        eviction.submitWithoutTriggeringEviction(e);
       }
     } finally {
       l.unlockWrite(stamp);
@@ -1312,7 +1312,7 @@ public class HeapCache<K, V> extends BaseCache<K, V> {
     try {
       e2 = hash.insertWithinLock(e, hc, val);
       if (e == e2) {
-        eviction.submitWithoutEviction(e);
+        eviction.submitWithoutTriggeringEviction(e);
       }
     } finally {
       l.unlockWrite(stamp);

@@ -35,7 +35,7 @@ public interface Eviction {
    * However, eviction should not be triggered (which in turn triggers a hash table
    * update) since the hash segment lock is hold at the moment.
    */
-  boolean submitWithoutEviction(Entry e);
+  boolean submitWithoutTriggeringEviction(Entry e);
 
   /**
    * Updates the weight on the entry and recalculates the total weight if needed.

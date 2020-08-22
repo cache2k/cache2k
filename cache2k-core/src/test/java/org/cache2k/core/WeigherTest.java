@@ -22,6 +22,9 @@ package org.cache2k.core;
 
 import org.cache2k.Cache;
 import org.cache2k.Weigher;
+import org.cache2k.expiry.Expiry;
+import org.cache2k.processor.EntryProcessor;
+import org.cache2k.processor.MutableCacheEntry;
 import org.cache2k.test.util.TestingBase;
 import org.cache2k.testing.category.FastTests;
 import org.junit.Test;
@@ -271,6 +274,37 @@ public class WeigherTest extends TestingBase {
     reload(1);
     assertEquals(1, countEntriesViaIteration());
     assertFalse("the other entry is removed", c.containsKey(2));
+  }
+
+  /**
+   * Iterate through key range to target different eviction segments and
+   * trigger an eviction in it immediately.
+   */
+  @Test
+  public void evictOneEntryImmediately() {
+    int weight = 20;
+    Cache<Integer, Integer> c = builder(Integer.class, Integer.class)
+      .eternal(true)
+      .entryCapacity(-1)
+      .weigher(new Weigher<Integer, Integer>() {
+        @Override
+        public int weigh(Integer key, Integer value) {
+          return value;
+        }
+      })
+      .maximumWeight(weight)
+      .build();
+    for (int i = 0; i < 30; i++) {
+      c.invoke(i, new EntryProcessor<Integer, Integer, Object>() {
+        @Override
+        public Object process(MutableCacheEntry<Integer, Integer> entry) {
+          entry.setValue(123);
+          entry.setExpiryTime(Expiry.NOW);
+          return null;
+        }
+      });
+      c.put(i, weight + 1);
+    }
   }
 
 }

@@ -36,7 +36,6 @@ public class SegmentedEviction implements Eviction, EvictionMetrics {
     this.segments = segments;
   }
 
-
   @Override
   public boolean updateWeight(Entry e) {
     int hc = e.hashCode;
@@ -47,12 +46,12 @@ public class SegmentedEviction implements Eviction, EvictionMetrics {
   }
 
   @Override
-  public boolean submitWithoutEviction(Entry e) {
+  public boolean submitWithoutTriggeringEviction(Entry e) {
     int hc = e.hashCode;
     Eviction[] sgs = segments;
     int mask = sgs.length - 1;
     int idx = hc & mask;
-    return sgs[idx].submitWithoutEviction(e);
+    return sgs[idx].submitWithoutTriggeringEviction(e);
   }
 
   @Override

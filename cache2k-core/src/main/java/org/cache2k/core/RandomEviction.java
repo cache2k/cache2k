@@ -54,7 +54,7 @@ public class RandomEviction extends AbstractEviction {
   }
 
   @Override
-  protected Entry findEvictionCandidate(Entry previous) {
+  protected Entry findEvictionCandidate() {
     Entry[] h0 = heapCache.hash.getEntries();
     int idx = evictionIndex % (h0.length);
     Entry e;

@@ -256,7 +256,7 @@ public class ClockProPlusEviction extends AbstractEviction {
    * Runs cold hand an in turn hot hand to find eviction candidate.
    */
   @Override
-  protected Entry findEvictionCandidate(Entry previous) {
+  protected Entry findEvictionCandidate() {
     Entry hand = handCold;
     if (hotSize > getHotMax() || hand == null) {
       return runHandHot();
