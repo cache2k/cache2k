@@ -46,7 +46,6 @@ public interface Semantic<K, V, R> {
 
   /**
    * Perform the mutation. The mutation is done by calling the methods on {@link Progress}.
-   *
    */
   void mutate(Progress<K, V, R> c, ExaminationEntry<K, V> e);
 

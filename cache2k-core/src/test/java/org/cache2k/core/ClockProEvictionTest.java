@@ -98,6 +98,7 @@ public class ClockProEvictionTest extends TestingBase {
     assertEquals(size, count);
   }
 
+  @Test
   public void testEvictHot() {
     final int size = 30;
     Cache<Integer, Integer> c = provideCache(size);
@@ -129,6 +130,7 @@ public class ClockProEvictionTest extends TestingBase {
   /**
    * Additional test to extend test coverage
    */
+  @Test
   public void testEvictHot2() {
     final int size = 30;
     Cache<Integer, Integer> c = provideCache(size);

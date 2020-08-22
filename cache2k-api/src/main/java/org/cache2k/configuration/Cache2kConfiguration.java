@@ -66,19 +66,20 @@ import java.util.concurrent.Executor;
 public class Cache2kConfiguration<K, V> implements ConfigurationBean, ConfigurationWithSections {
 
   public static final long EXPIRY_NOT_ETERNAL = Long.MAX_VALUE - 1;
+  public static final long UNSET_LONG = -1;
 
   private boolean storeByReference;
   private String name;
   private CacheType<K> keyType;
   private CacheType<V> valueType;
-  private long entryCapacity = -1;
+  private long entryCapacity = UNSET_LONG;
   private boolean strictEviction = false;
   private boolean refreshAhead = false;
-  private long expireAfterWrite = -1;
-  private long retryInterval = -1;
-  private long maxRetryInterval = -1;
-  private long resilienceDuration = -1;
-  private long maximumWeight = -1;
+  private long expireAfterWrite = UNSET_LONG;
+  private long retryInterval = UNSET_LONG;
+  private long maxRetryInterval = UNSET_LONG;
+  private long resilienceDuration = UNSET_LONG;
+  private long maximumWeight = UNSET_LONG;
   private boolean keepDataAfterExpired = false;
   private boolean sharpExpiry = false;
   private boolean suppressExceptions = true;
