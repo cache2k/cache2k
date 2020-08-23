@@ -45,6 +45,20 @@ public class ClockProEvictionTest extends TestingBase {
   }
 
   @Test
+  public void testChunking() {
+    final int size = 100000;
+    Cache<Integer, Integer> c = provideCache(size);
+    for (int i = 0; i < size * 2; i++) {
+      c.put(i, 1);
+      if (getInternalCache().getTotalEntryCount() < i) {
+        assertTrue("at least two evicted", getInfo().getSize() < i - 2);
+        return;
+      }
+    }
+    fail("no eviction happened");
+  }
+
+  @Test
   public void test1() {
     final int size = 1;
     Cache<Integer, Integer> c = provideCache(size);

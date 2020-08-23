@@ -52,14 +52,41 @@ public class ChangeCapacityOrResizeTest extends TestingBase {
 
   @Test
   public void checkResizeBigCache() {
-    final long SIZE = 12003;
-    assertTrue(SIZE > AbstractEviction.MINIMUM_CAPACITY_FOR_CHUNKING);
-    Cache<Integer, Integer> cache = builder().entryCapacity(SIZE).build();
-    for (int i = 0; i < SIZE; i++) {
-      cache.put(i, i);
-    }
+    final long size = 12003;
+    assertTrue(size > AbstractEviction.MINIMUM_CAPACITY_FOR_CHUNKING);
+    Cache<Integer, Integer> cache = buildAndPopulate(size);
     ((InternalCache) cache).getEviction().changeCapacity(1);
     assertTrue("Size is low, but typically not 1", cache.asMap().size() < 1000);
+  }
+
+  private Cache<Integer, Integer> buildAndPopulate(long size) {
+    Cache<Integer, Integer> cache = builder().entryCapacity(size).build();
+    for (int i = 0; i < size; i++) {
+      cache.put(i, i);
+    }
+    return cache;
+  }
+
+  @Test
+  public void checkResizeSmallCache() {
+    final long size = AbstractEviction.MINIMUM_CAPACITY_FOR_CHUNKING - 1;
+    Cache<Integer, Integer> cache = buildAndPopulate(size);
+    ((InternalCache) cache).getEviction().changeCapacity(1);
+    assertEquals(1, cache.asMap().size());
+  }
+
+  @Test(expected = IllegalArgumentException.class)
+  public void resizeTo0() {
+    final long size = 1;
+    Cache<Integer, Integer> cache = buildAndPopulate(size);
+    ((InternalCache) cache).getEviction().changeCapacity(0);
+  }
+
+  @Test(expected = IllegalArgumentException.class)
+  public void resizeNegative() {
+    final long size = 1;
+    Cache<Integer, Integer> cache = buildAndPopulate(size);
+    ((InternalCache) cache).getEviction().changeCapacity(-4711);
   }
 
 }

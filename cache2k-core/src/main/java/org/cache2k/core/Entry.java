@@ -606,9 +606,11 @@ public class Entry<K, V> extends CompactEntry<K, V>
     if (Thread.holdsLock(this)) {
       if (getTask() != null) {
         sb.append(", timerState=").append(getTask());
+      } else {
+        sb.append(", noTimer");
       }
     } else {
-      sb.append(", timerState=NEEDS_LOCK");
+      sb.append(", timerState=?");
     }
     sb.append("}");
     return sb.toString();

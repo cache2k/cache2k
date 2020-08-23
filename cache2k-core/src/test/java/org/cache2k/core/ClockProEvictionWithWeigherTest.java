@@ -23,6 +23,7 @@ package org.cache2k.core;
 import org.cache2k.Cache;
 import org.cache2k.Weigher;
 import org.cache2k.testing.category.FastTests;
+import org.junit.Ignore;
 import org.junit.experimental.categories.Category;
 
 /**
@@ -31,7 +32,7 @@ import org.junit.experimental.categories.Category;
  *
  * @author Jens Wilke
  */
-@Category(FastTests.class)
+@Category(FastTests.class) @Ignore
 public class ClockProEvictionWithWeigherTest extends ClockProEvictionTest {
 
   protected Cache<Integer, Integer> provideCache(long size) {
@@ -45,7 +46,6 @@ public class ClockProEvictionWithWeigherTest extends ClockProEvictionTest {
         }
       })
       .maximumWeight(size)
-      .strictEviction(true)
       .build();
   }
 

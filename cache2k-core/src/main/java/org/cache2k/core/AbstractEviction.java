@@ -159,7 +159,7 @@ public abstract class AbstractEviction implements Eviction, EvictionMetrics {
     }
     synchronized (lock) {
       updateAccumulatedWeightInLock(e);
-      return isEvictionNeeded(0);
+      return isEvictionNeededOrEvictionRunning(0);
     }
   }
 
@@ -172,7 +172,20 @@ public abstract class AbstractEviction implements Eviction, EvictionMetrics {
       } else {
         removeEventually(e);
       }
-      return isEvictionNeeded(1);
+      boolean evictionNeeded = isEvictionNeeded(1);
+      boolean evictionRunning = evictionRunningCount > 0;
+      if (!evictionRunning) {
+        return evictionNeeded;
+      }
+      if (evictionNeeded && evictionRunning) {
+        try {
+          lock.wait();
+        } catch (InterruptedException ignore) {
+          Thread.currentThread().interrupt();
+        }
+        return isEvictionNeededOrEvictionRunning(1);
+      }
+      return evictionNeeded;
     }
   }
 
@@ -200,10 +213,18 @@ public abstract class AbstractEviction implements Eviction, EvictionMetrics {
    * We need to get rid of the getSize() > 0 here.
    * TODO: Add a parameter to the eviction process about how much entries should be freed?
    */
-  boolean isEvictionNeeded(int spaceNeeded) {
+  boolean isEvictionNeededOrEvictionRunning(int spaceNeeded) {
     if (evictionRunningCount > 0) {
       return false;
     }
+    return isEvictionNeeded(spaceNeeded);
+  }
+
+  /**
+   * Used by change capacity, because there is a slight chance that
+   * eviction is running on another thread
+   */
+  private boolean isEvictionNeeded(int spaceNeeded) {
     if (isWeigherPresent()) {
       return totalWeight + spaceNeeded > maxWeight;
     } else {
@@ -235,7 +256,7 @@ public abstract class AbstractEviction implements Eviction, EvictionMetrics {
   }
 
   private Entry[] fillEvictionChunk(int spaceNeeded) {
-    if (!isEvictionNeeded(spaceNeeded)) {
+    if (!isEvictionNeededOrEvictionRunning(spaceNeeded)) {
       return null;
     }
     Entry[] chunk = evictChunkReuse;
@@ -261,6 +282,7 @@ public abstract class AbstractEviction implements Eviction, EvictionMetrics {
         removeAllFromReplacementListOnEvict(chunk);
       }
       evictionRunningCount -= chunk.length;
+      lock.notifyAll();
     }
     return processCount;
   }
@@ -418,6 +440,9 @@ public abstract class AbstractEviction implements Eviction, EvictionMetrics {
       s +=
         ", maxWeight=" + maxWeight +
         ", totalWeight=" + totalWeight;
+    } else {
+      s +=
+        ", maxSize=" + maxSize;
     }
     return s;
   }
@@ -429,15 +454,18 @@ public abstract class AbstractEviction implements Eviction, EvictionMetrics {
    */
   @Override
   public void changeCapacity(long entryCountOrWeight) {
+    if (entryCountOrWeight < 0) {
+      throw new IllegalArgumentException("Negative capacity");
+    }
     if (entryCountOrWeight <= 0) {
-      throw new IllegalArgumentException("Capacity of 0 is not supported.");
+      throw new IllegalArgumentException("Capacity of 0 is not supported");
     }
     Entry[] chunk;
     synchronized (lock) {
       modifyCapacityLimits(entryCountOrWeight);
       chunk = fillEvictionChunk(0);
     }
-    while (chunk != null) {
+    while (chunk != null || isEvictionNeeded(0)) {
       evictChunk(chunk);
       synchronized (lock) {
         chunk = fillEvictionChunk(0);

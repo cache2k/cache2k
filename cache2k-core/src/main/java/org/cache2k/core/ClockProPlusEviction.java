@@ -233,6 +233,7 @@ public class ClockProPlusEviction extends AbstractEviction {
         lowestHits = hitCnt;
         coldCandidate = hand;
         if (hitCnt == 0) {
+          hand = hand.next;
           break;
         }
       }

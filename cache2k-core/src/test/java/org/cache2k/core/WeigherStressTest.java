@@ -25,7 +25,9 @@ import org.cache2k.Weigher;
 import org.cache2k.test.core.TestingParameters;
 import org.cache2k.test.util.TestingBase;
 import org.cache2k.test.util.ThreadingStressTester;
+import org.cache2k.testing.category.SlowTests;
 import org.junit.Test;
+import org.junit.experimental.categories.Category;
 
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -34,6 +36,7 @@ import static org.junit.Assert.*;
 /**
  * @author Jens Wilke
  */
+@Category(SlowTests.class)
 public class WeigherStressTest extends TestingBase {
 
   /**

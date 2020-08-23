@@ -418,10 +418,11 @@ public class InternalCache2kBuilder<K, V> {
     if (entryCapacity < 0) {
       return -1;
     }
-    long maxSize = entryCapacity / segmentCount;
     if (entryCapacity == Long.MAX_VALUE) {
-      maxSize = Long.MAX_VALUE;
-    } else if (entryCapacity % segmentCount > 0) {
+      return Long.MAX_VALUE;
+    }
+    long maxSize = entryCapacity / segmentCount;
+    if (entryCapacity % segmentCount > 0) {
       maxSize++;
     }
     return maxSize;
