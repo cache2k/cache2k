@@ -20,15 +20,29 @@ package org.cache2k.core;
  * #L%
  */
 
+import org.cache2k.configuration.Cache2kConfiguration;
 import org.cache2k.core.concurrency.Job;
 import org.cache2k.Weigher;
 
 /**
- * Basic eviction functionality.
+ * Base class for different eviction algorithms, implementing statistics counting and
+ * chunking.
+ *
+ * <p>Eviction happens in chunks, to do more work in one thread. Eviction may happen
+ * in different threads in parallel, in case lots of concurrent inserts triggers
+ * eviction. Theoretically it could be more effective to assign only one thread
+ * for eviction and exploit locality and make other threads carrying out insert
+ * wait to avoid overflowing the system. Since eviction listeners may be called
+ * as well, it is more general useful to run eviction in multiple threads in parallel if needed.
+ *
+ * <p>An eviction is basically: finding an eviction candidate based on the eviction
+ * algorithm {@link #findEvictionCandidate()}, mark entry for processing and call
+ * the eviction listener,
  *
  * @author Jens Wilke
  */
-@SuppressWarnings({"WeakerAccess", "SynchronizationOnLocalVariableOrMethodParameter", "unchecked"})
+@SuppressWarnings({"WeakerAccess", "SynchronizationOnLocalVariableOrMethodParameter", "unchecked",
+  "rawtypes"})
 public abstract class AbstractEviction implements Eviction, EvictionMetrics {
 
   public static final int MINIMAL_CHUNK_SIZE = 4;
@@ -42,9 +56,28 @@ public abstract class AbstractEviction implements Eviction, EvictionMetrics {
   private final boolean noListenerCall;
   private final boolean noChunking;
 
+  /**
+   * Number of entries being evicted in one go.
+   */
   private int chunkSize = 1;
+
+  /**
+   * Size limit in number of entries. Derived from {@link Cache2kConfiguration#getEntryCapacity()}
+   * May be changed during runtime. Guarded by lock.
+   */
   protected long maxSize;
+
+  /**
+   * Maximum allowed weight.
+   * May be changed during runtime. Guarded by lock.
+   */
   protected long maxWeight;
+
+  /**
+   * This passes on the working chunk array from the last eviction to safe garbage collection.
+   * May be changed during runtime. Guarded by lock.
+   */
+  private Entry[] evictChunkReuse;
 
   private int evictionRunningCount = 0;
   private long newEntryCounter;
@@ -54,8 +87,6 @@ public abstract class AbstractEviction implements Eviction, EvictionMetrics {
   private long evictedCount;
   private long totalWeight;
   private long evictedWeight;
-
-  private Entry[] evictChunkReuse;
 
   public AbstractEviction(HeapCache heapCache, HeapCacheListener listener,
                           long maxSize, Weigher weigher, long maxWeight,
@@ -79,17 +110,27 @@ public abstract class AbstractEviction implements Eviction, EvictionMetrics {
     }
   }
 
-  private static int calculateChunkSize(boolean noChunking, long maxSize) {
-    if (noChunking) {
-      return 1;
+  @Override
+  public boolean submitWithoutTriggeringEviction(Entry e) {
+    synchronized (lock) {
+      if (e.isNotYetInsertedInReplacementList()) {
+        insertIntoReplacementList(e);
+        newEntryCounter++;
+      } else {
+        removeEventually(e);
+      }
+      return isEvictionNeeded(1);
     }
+  }
+
+  private static int calculateChunkSize(boolean noChunking, long maxSize) {
+    if (noChunking) { return 1; }
     if (maxSize < MINIMUM_CAPACITY_FOR_CHUNKING && maxSize >= 0) {
       return 1;
-    } else {
-      return Math.min(
-        MAXIMAL_CHUNK_SIZE,
-        MINIMAL_CHUNK_SIZE + Runtime.getRuntime().availableProcessors() - 1);
     }
+    return Math.min(
+      MAXIMAL_CHUNK_SIZE,
+      MINIMAL_CHUNK_SIZE + Runtime.getRuntime().availableProcessors() - 1);
   }
 
   @Override
@@ -97,43 +138,17 @@ public abstract class AbstractEviction implements Eviction, EvictionMetrics {
     return weigher != null;
   }
 
-  static int decompressWeight(int weight) {
-    return IntegerTo16BitFloatingPoint.expand(weight);
-  }
-
-  static int compressWeight(int weight) {
-    return IntegerTo16BitFloatingPoint.compress(weight);
-  }
-
   /**
-   * Exceptions have the minimum weight.
+   * Call weigher with the value.
+   * Exceptions have the minimum weight. A weight of 0 is legal.
    */
   private int calculateWeight(Entry e, Object v) {
-    int weight;
-    if (v instanceof ExceptionWrapper) {
-      weight = 1;
-    } else {
-      weight = weigher.weigh(e.getKey(), v);
-    }
+    if (v instanceof ExceptionWrapper) { return 1; }
+    int weight = weigher.weigh(e.getKey(), v);
     if (weight < 0) {
       throw new IllegalArgumentException("weight must be positive.");
     }
     return weight;
-  }
-
-  /**
-   * To retrieve the consistent weight from the entry, we need to hold the
-   * eviction lock, since storage of weight is combined with hot marker.
-   */
-  protected void updateAccumulatedWeightInLock(Entry e) {
-    Object v = e.getValueOrException();
-    int requestedCompressedWeight = compressWeight(calculateWeight(e, v));
-    if (e.getCompressedWeight() != requestedCompressedWeight) {
-      long decompressedEntryWeight = decompressWeight(e.getCompressedWeight());
-      long requestedWeightWithLostPrecision = decompressWeight(requestedCompressedWeight);
-      totalWeight += requestedWeightWithLostPrecision - decompressedEntryWeight;
-      e.setCompressedWeight(requestedCompressedWeight);
-    }
   }
 
   /**
@@ -159,36 +174,40 @@ public abstract class AbstractEviction implements Eviction, EvictionMetrics {
     }
     synchronized (lock) {
       updateAccumulatedWeightInLock(e);
-      return isEvictionNeededOrEvictionRunning(0);
+      return isEvictionNeeded(0);
     }
   }
 
-  @Override
-  public boolean submitWithoutTriggeringEviction(Entry e) {
-    synchronized (lock) {
-      if (e.isNotYetInsertedInReplacementList()) {
-        insertIntoReplacementList(e);
-        newEntryCounter++;
-      } else {
-        removeEventually(e);
-      }
-      boolean evictionNeeded = isEvictionNeeded(1);
-      boolean evictionRunning = evictionRunningCount > 0;
-      if (!evictionRunning) {
-        return evictionNeeded;
-      }
-      if (evictionNeeded && evictionRunning) {
-        try {
-          lock.wait();
-        } catch (InterruptedException ignore) {
-          Thread.currentThread().interrupt();
-        }
-        return isEvictionNeededOrEvictionRunning(1);
-      }
-      return evictionNeeded;
+  /**
+   * Update total weight in this eviction segment. The total weight differs from
+   * the accumulated entry weight, since it is based on the stored decrompressed, compressed
+   * weight. We calculate based on the stored weight, because we don't want to call the
+   * weigher for deletion again, which may cause wrong counts.
+   */
+  protected void updateAccumulatedWeightInLock(Entry e) {
+    Object v = e.getValueOrException();
+    int requestedCompressedWeight = compressWeight(calculateWeight(e, v));
+    if (e.getCompressedWeight() != requestedCompressedWeight) {
+      long decompressedEntryWeight = decompressWeight(e.getCompressedWeight());
+      long requestedWeightWithLostPrecision = decompressWeight(requestedCompressedWeight);
+      totalWeight += requestedWeightWithLostPrecision - decompressedEntryWeight;
+      e.setCompressedWeight(requestedCompressedWeight);
     }
   }
 
+  private static int decompressWeight(int weight) {
+    return IntegerTo16BitFloatingPoint.expand(weight);
+  }
+
+  private static int compressWeight(int weight) {
+    return IntegerTo16BitFloatingPoint.compress(weight);
+  }
+
+  /**
+   * Remove and update statistics if not removed already.
+   * An entry may be removed if we race with {@link #removeAll} which is triggered
+   * by {@link org.cache2k.Cache#clear}
+   */
   private void removeEventually(Entry e) {
     if (!e.isRemovedFromReplacementList()) {
       removeFromReplacementList(e);
@@ -204,31 +223,11 @@ public abstract class AbstractEviction implements Eviction, EvictionMetrics {
     }
   }
 
-  /**
-   * Do we need to trigger an eviction? For chunks sizes more than 1 the eviction
-   * kicks in later.
-   *
-   * <p>Eviction happens one unit before the capacity is reached because this is called
-   * to make space on behalf of a new entry. Needs a redesign.
-   * We need to get rid of the getSize() > 0 here.
-   * TODO: Add a parameter to the eviction process about how much entries should be freed?
-   */
-  boolean isEvictionNeededOrEvictionRunning(int spaceNeeded) {
-    if (evictionRunningCount > 0) {
-      return false;
-    }
-    return isEvictionNeeded(spaceNeeded);
-  }
-
-  /**
-   * Used by change capacity, because there is a slight chance that
-   * eviction is running on another thread
-   */
   private boolean isEvictionNeeded(int spaceNeeded) {
     if (isWeigherPresent()) {
       return totalWeight + spaceNeeded > maxWeight;
     } else {
-      return getSize() + spaceNeeded > maxSize;
+      return getSize() + spaceNeeded > (maxSize - evictionRunningCount);
     }
   }
 
@@ -256,10 +255,12 @@ public abstract class AbstractEviction implements Eviction, EvictionMetrics {
   }
 
   private Entry[] fillEvictionChunk(int spaceNeeded) {
-    if (!isEvictionNeededOrEvictionRunning(spaceNeeded)) {
+    if (!isEvictionNeeded(spaceNeeded)) {
       return null;
     }
     Entry[] chunk = evictChunkReuse;
+    evictChunkReuse = null;
+    if (chunk == null) { chunk = new Entry[chunkSize]; }
     return refillChunk(chunk);
   }
 
@@ -282,7 +283,7 @@ public abstract class AbstractEviction implements Eviction, EvictionMetrics {
         removeAllFromReplacementListOnEvict(chunk);
       }
       evictionRunningCount -= chunk.length;
-      lock.notifyAll();
+      evictChunkReuse = chunk;
     }
     return processCount;
   }
@@ -294,6 +295,10 @@ public abstract class AbstractEviction implements Eviction, EvictionMetrics {
     return removeFromHashWithListener(chunk);
   }
 
+  /**
+   * If there is concurrent processing going on, we skip that entry.
+   * An entry may have been also already evicted in another task.
+   */
   private int removeFromHashWithoutListener(Entry[] chunk) {
     int processCount = 0;
     for (int i = 0; i < chunk.length; i++) {
@@ -310,6 +315,11 @@ public abstract class AbstractEviction implements Eviction, EvictionMetrics {
     return processCount;
   }
 
+  /**
+   * Same as {@link #removeFromHashWithListener(Entry[])}
+   * Before calling the listener, we need to lock the entry, to keep other
+   * operations or evictions in concurrent tasks away from it.
+   */
   private int removeFromHashWithListener(Entry[] chunk) {
     int processCount = 0;
     for (int i = 0; i < chunk.length; i++) {
@@ -421,17 +431,6 @@ public abstract class AbstractEviction implements Eviction, EvictionMetrics {
     }
   }
 
-  protected void removeFromReplacementListOnEvict(Entry e) { removeFromReplacementList(e); }
-
-  /**
-   * Find a candidate for eviction. The method may return the identical
-   * if called many times but not sufficient more candidates are available.
-   */
-  @SuppressWarnings("SameParameterValue")
-  protected abstract Entry findEvictionCandidate();
-  protected abstract void removeFromReplacementList(Entry e);
-  protected abstract void insertIntoReplacementList(Entry e);
-
   @Override
   public String getExtraStatistics() {
     String s = "impl=" + this.getClass().getSimpleName() +
@@ -480,5 +479,28 @@ public abstract class AbstractEviction implements Eviction, EvictionMetrics {
       updateLimits(entryCountOrWeight, maxWeight);
     }
   }
+
+  /**
+   * Place the entry as a new entry into the eviction data structures.
+   */
+  protected abstract void insertIntoReplacementList(Entry e);
+
+  /**
+   * Find a candidate for eviction. The method may return the identical
+   * if called many times but not sufficient more candidates are available.
+   * In any situation, subsequent calls must iterate all entries.
+   */
+  protected abstract Entry findEvictionCandidate();
+
+  /**
+   * Identical to {@link #removeFromReplacementList(Entry)} by default but
+   * allows the eviction algorithm to do additional bookkeeping of eviction history.
+   */
+  protected void removeFromReplacementListOnEvict(Entry e) { removeFromReplacementList(e); }
+
+  /**
+   * Remove entry from the eviction data structures, because it was evicted or deleted.
+   */
+  protected abstract void removeFromReplacementList(Entry e);
 
 }

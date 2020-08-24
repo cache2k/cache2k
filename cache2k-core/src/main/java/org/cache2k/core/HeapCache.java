@@ -1329,7 +1329,6 @@ public class HeapCache<K, V> extends BaseCache<K, V> {
    * <p>With completion of the method the entry content is no more visible. "Nulling" out the key
    * or value of the entry is incorrect, since there can be another thread which is just about to
    * return the entry contents.
-   *
    */
   public void removeEntryForEviction(Entry<K, V> e) {
     boolean f = hash.remove(e);
