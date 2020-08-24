@@ -399,7 +399,7 @@ public class InternalCache2kBuilder<K, V> {
     int segmentCount =
       determineSegmentCount(
         strictEviction, availableProcessors,
-        boostConcurrency, entryCapacity, segmentCountOverride);
+        boostConcurrency, entryCapacity, maximumWeight, segmentCountOverride);
     Eviction[] segments = new Eviction[segmentCount];
     long maxSize = determineMaxSize(entryCapacity, segmentCount);
     long maxWeight = determineMaxWeight(maximumWeight, segmentCount);
@@ -443,7 +443,16 @@ public class InternalCache2kBuilder<K, V> {
 
   static int determineSegmentCount(boolean strictEviction, int availableProcessors,
                                    boolean boostConcurrency, long entryCapacity,
-                                   int segmentCountOverride) {
+                                   long maxWeight, int segmentCountOverride) {
+    if (strictEviction) {
+      return 1;
+    }
+    if (entryCapacity >= 0 && entryCapacity < 1000) {
+      return 1;
+    }
+    if (maxWeight >= 0 && maxWeight < 1000) {
+      return 1;
+    }
     int segmentCount = 1;
     if (availableProcessors > 1) {
       segmentCount = 2;
@@ -456,12 +465,6 @@ public class InternalCache2kBuilder<K, V> {
     } else {
       int maxSegments = availableProcessors * 2;
       segmentCount = Math.min(segmentCount, maxSegments);
-    }
-    if (entryCapacity >= 0 && entryCapacity < 1000) {
-      segmentCount = 1;
-    }
-    if (strictEviction) {
-      segmentCount = 1;
     }
     return segmentCount;
   }

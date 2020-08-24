@@ -92,10 +92,20 @@ public class ClockProPlusEviction extends AbstractEviction {
     return cnt;
   }
 
+  long hotMax = Long.MAX_VALUE;
+
   public long getHotMax() {
-    return isWeigherPresent() ?
-      (getSize() * TUNABLE_CLOCK_PRO.hotMaxPercentage / 100) :
-      (getMaxSize() * TUNABLE_CLOCK_PRO.hotMaxPercentage / 100);
+    return hotMax;
+  }
+
+  /**
+   * Updates hot max based on current size. This is called when eviction
+   * kicks in so current size is the maximum size this cache should reach
+   * regardless whether we use entry capacity or weigher to limit the size.
+   */
+  @Override
+  protected void updateHotMax() {
+    hotMax = getSize() * TUNABLE_CLOCK_PRO.hotMaxPercentage / 100;
   }
 
   public long getGhostMax() {
@@ -223,7 +233,7 @@ public class ClockProPlusEviction extends AbstractEviction {
     Entry coldCandidate = hand;
     long lowestHits = Long.MAX_VALUE;
     long hotHits = this.hotHits;
-    int initialMaxScan = hotSize >> 2 + 1;
+    int initialMaxScan = (hotSize >> 2) + 1;
     int maxScan = initialMaxScan;
     long decrease =
       ((hand.hitCnt + hand.next.hitCnt) >> TUNABLE_CLOCK_PRO.hitCounterDecreaseShift) + 1;
@@ -298,8 +308,6 @@ public class ClockProPlusEviction extends AbstractEviction {
   @Override
   public void checkIntegrity(IntegrityState integrityState) {
     integrityState.checkEquals("ghostSize == countGhostsInHash()", ghostSize, countGhostsInHash())
-      .check("isWeigherPresent() || hotMax <= size",
-        isWeigherPresent() || getHotMax() <= getMaxSize())
       .check("checkCyclicListIntegrity(handHot)", Entry.checkCyclicListIntegrity(handHot))
       .check("checkCyclicListIntegrity(handCold)", Entry.checkCyclicListIntegrity(handCold))
       .checkEquals("getCyclicListEntryCount(handHot) == hotSize",

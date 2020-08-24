@@ -31,55 +31,55 @@ public class InternalCache2kBuilderTest {
 
   @Test
   public void determineSegmentCount_strictEviction() throws Exception {
-    int _segs = InternalCache2kBuilder.determineSegmentCount(true, 12, true, 1000000, 32);
+    int _segs = InternalCache2kBuilder.determineSegmentCount(true, 12, true, 1000000, 0, 32);
     assertEquals(1, _segs);
   }
 
   @Test
   public void determineSegmentCount_regularConcurrency() throws Exception {
-    int _segs = InternalCache2kBuilder.determineSegmentCount(false, 12, false, 1000000, 0);
+    int _segs = InternalCache2kBuilder.determineSegmentCount(false, 12, false, 1000000, 0, 0);
     assertEquals(2, _segs);
   }
 
   @Test
   public void determineSegmentCount_boostConcurrency() throws Exception {
-    int _segs = InternalCache2kBuilder.determineSegmentCount(false, 12, true, 1000000, 0);
+    int _segs = InternalCache2kBuilder.determineSegmentCount(false, 12, true, 1000000, 0, 0);
     assertEquals(16, _segs);
   }
 
   @Test
   public void determineSegmentCount_noSegmentationBelow1000Entries() throws Exception {
-    int _segs = InternalCache2kBuilder.determineSegmentCount(false, 12, true, 999, 0);
+    int _segs = InternalCache2kBuilder.determineSegmentCount(false, 12, true, 999, 0, 0);
     assertEquals(1, _segs);
   }
 
   @Test
   public void determineSegmentCount_override12() throws Exception {
-    int _segs = InternalCache2kBuilder.determineSegmentCount(false, 12, true, 1000000, 12);
+    int _segs = InternalCache2kBuilder.determineSegmentCount(false, 12, true, 1000000, 0, 12);
     assertEquals(16, _segs);
   }
 
   @Test
   public void determineSegmentCount_override1() throws Exception {
-    int _segs = InternalCache2kBuilder.determineSegmentCount(false, 12, true, 1000000, 1);
+    int _segs = InternalCache2kBuilder.determineSegmentCount(false, 12, true, 1000000, 0, 1);
     assertEquals(1, _segs);
   }
 
   @Test
   public void determineSegmentCount_override16() throws Exception {
-    int _segs = InternalCache2kBuilder.determineSegmentCount(false, 12, true, 1000000, 16);
+    int _segs = InternalCache2kBuilder.determineSegmentCount(false, 12, true, 1000000, 0, 16);
     assertEquals(16, _segs);
   }
 
   @Test
   public void determineSegmentCount_override17() throws Exception {
-    int _segs = InternalCache2kBuilder.determineSegmentCount(false, 12, true, 1000000, 17);
+    int _segs = InternalCache2kBuilder.determineSegmentCount(false, 12, true, 1000000, 0, 17);
     assertEquals(32, _segs);
   }
 
   @Test
   public void determineSegmentCount_override32() throws Exception {
-    int _segs = InternalCache2kBuilder.determineSegmentCount(false, 12, true, 1000000, 32);
+    int _segs = InternalCache2kBuilder.determineSegmentCount(false, 12, true, 1000000, 0, 32);
     assertEquals(32, _segs);
   }
 

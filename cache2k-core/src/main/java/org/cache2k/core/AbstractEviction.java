@@ -1,4 +1,4 @@
-package org.cache2k.core;
+ package org.cache2k.core;
 
 /*
  * #%L
@@ -77,7 +77,7 @@ public abstract class AbstractEviction implements Eviction, EvictionMetrics {
    * This passes on the working chunk array from the last eviction to safe garbage collection.
    * May be changed during runtime. Guarded by lock.
    */
-  private Entry[] evictChunkReuse;
+  private Entry[] evictChunkReuse = null;
 
   private int evictionRunningCount = 0;
   private long newEntryCounter;
@@ -103,8 +103,6 @@ public abstract class AbstractEviction implements Eviction, EvictionMetrics {
   private void updateLimits(long maxSize, long maxWeight) {
     this.maxSize = maxSize;
     this.maxWeight = maxWeight;
-    chunkSize = calculateChunkSize(noChunking, maxSize);
-    evictChunkReuse = new Entry[chunkSize];
     if (this.maxSize < 0 && this.maxWeight < 0) {
       throw new IllegalArgumentException("either maxWeight or entryCapacity must be specified");
     }
@@ -260,17 +258,18 @@ public abstract class AbstractEviction implements Eviction, EvictionMetrics {
     }
     Entry[] chunk = evictChunkReuse;
     evictChunkReuse = null;
-    if (chunk == null) { chunk = new Entry[chunkSize]; }
-    return refillChunk(chunk);
-  }
-
-  private Entry[] refillChunk(Entry[] chunk) {
+    if (evictionRunningCount == 0) {
+      updatesSizesAfterLimitReached();
+    }
     if (chunk == null) {
       chunk = new Entry[chunkSize];
     }
     evictionRunningCount += chunk.length;
     for (int i = 0; i < chunk.length; i++) {
       chunk[i] = findEvictionCandidate();
+      if (!(i == 0 || getSize() < chunkSize || chunk[i - 1] != chunk[i])) {
+        System.err.println("OOPS");
+      }
     }
     return chunk;
   }
@@ -286,6 +285,20 @@ public abstract class AbstractEviction implements Eviction, EvictionMetrics {
       evictChunkReuse = chunk;
     }
     return processCount;
+  }
+
+  /**
+   * Eviction was run successfully. Update internal sizes.
+   * This works regardless whether a max entry count is configured
+   * or a weigher is used.
+   */
+  private void updatesSizesAfterLimitReached() {
+    updateHotMax();
+    int targetChunkSize = calculateChunkSize(noChunking, getSize());
+    if (targetChunkSize != chunkSize) {
+      chunkSize = targetChunkSize;
+      evictChunkReuse = null;
+    }
   }
 
   private int removeFromHash(Entry[] chunk) {
@@ -502,5 +515,11 @@ public abstract class AbstractEviction implements Eviction, EvictionMetrics {
    * Remove entry from the eviction data structures, because it was evicted or deleted.
    */
   protected abstract void removeFromReplacementList(Entry e);
+
+  /**
+   * Gets called when eviction is needed. Used by the eviction algorithm to update
+   * the clock sizes.
+   */
+  protected void updateHotMax() { }
 
 }

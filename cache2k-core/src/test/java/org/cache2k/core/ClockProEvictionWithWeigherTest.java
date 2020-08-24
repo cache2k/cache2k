@@ -23,16 +23,16 @@ package org.cache2k.core;
 import org.cache2k.Cache;
 import org.cache2k.Weigher;
 import org.cache2k.testing.category.FastTests;
-import org.junit.Ignore;
 import org.junit.experimental.categories.Category;
 
 /**
  * Run simple access patterns that provide test coverage on the clock pro
- * eviction.
+ * eviction. Tests with weigher. A weigher returning a weight of 1 is expected
+ * to produce the identical results like working with entry counts.
  *
  * @author Jens Wilke
  */
-@Category(FastTests.class) @Ignore
+@Category(FastTests.class)
 public class ClockProEvictionWithWeigherTest extends ClockProEvictionTest {
 
   protected Cache<Integer, Integer> provideCache(long size) {

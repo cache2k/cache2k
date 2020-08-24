@@ -24,13 +24,16 @@ import org.cache2k.Cache;
 import org.cache2k.core.AbstractEviction;
 import org.cache2k.core.InternalCache;
 import org.cache2k.test.util.TestingBase;
+import org.cache2k.testing.category.FastTests;
 import org.junit.Test;
+import org.junit.experimental.categories.Category;
 
 import static org.junit.Assert.*;
 
 /**
  * @author Jens Wilke
  */
+@Category(FastTests.class)
 public class ChangeCapacityOrResizeTest extends TestingBase {
 
   @Test

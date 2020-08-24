@@ -26,6 +26,7 @@ import org.cache2k.testing.category.FastTests;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
+import static org.hamcrest.Matchers.greaterThan;
 import static org.junit.Assert.*;
 
 /**
@@ -46,16 +47,23 @@ public class ClockProEvictionTest extends TestingBase {
 
   @Test
   public void testChunking() {
-    final int size = 100000;
-    Cache<Integer, Integer> c = provideCache(size);
-    for (int i = 0; i < size * 2; i++) {
+    final int maxSize = 100000;
+    final int minChunkSize = 1;
+    Cache<Integer, Integer> c = provideCache(maxSize);
+    int evictionChunk = 1;
+    int previousSize = 0;
+    for (int i = 0; i < maxSize * 2; i++) {
       c.put(i, 1);
-      if (getInternalCache().getTotalEntryCount() < i) {
-        assertTrue("at least two evicted", getInfo().getSize() < i - 2);
-        return;
+      int size = c.asMap().size();
+      if (size < previousSize + 1) {
+        evictionChunk = Math.max((previousSize + 1) - size, evictionChunk);
       }
+      if (evictionChunk > minChunkSize) {
+        break;
+      }
+      previousSize = size;
     }
-    fail("no eviction happened");
+    assertThat("chunked eviction happened", evictionChunk, greaterThan(minChunkSize));
   }
 
   @Test
