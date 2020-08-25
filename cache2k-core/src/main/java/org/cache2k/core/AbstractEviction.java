@@ -267,9 +267,6 @@ public abstract class AbstractEviction implements Eviction, EvictionMetrics {
     evictionRunningCount += chunk.length;
     for (int i = 0; i < chunk.length; i++) {
       chunk[i] = findEvictionCandidate();
-      if (!(i == 0 || getSize() < chunkSize || chunk[i - 1] != chunk[i])) {
-        System.err.println("OOPS");
-      }
     }
     return chunk;
   }

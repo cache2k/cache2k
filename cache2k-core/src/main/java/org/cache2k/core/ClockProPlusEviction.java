@@ -281,11 +281,11 @@ public class ClockProPlusEviction extends AbstractEviction {
           evictFromHot = runHandHot();
         }
         coldHits += hand.hitCnt;
-        hand.hitCnt = 0;
         Entry e = hand;
         hand = Entry.removeFromCyclicList(e);
         coldSize--;
         e.setHot(true);
+        e.hitCnt = 0;
         hotSize++;
         handHot = Entry.insertIntoTailCyclicList(handHot, e);
         if (evictFromHot != null) {

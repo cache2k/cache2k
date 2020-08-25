@@ -20,67 +20,89 @@ package org.cache2k.core;
  * #L%
  */
 
+import org.cache2k.testing.category.FastTests;
 import org.junit.Test;
+import org.junit.experimental.categories.Category;
 
+import static org.cache2k.configuration.Cache2kConfiguration.UNSET_LONG;
 import static org.junit.Assert.*;
 
 /**
  * @author Jens Wilke
  */
+@Category(FastTests.class)
 public class InternalCache2kBuilderTest {
 
   @Test
-  public void determineSegmentCount_strictEviction() throws Exception {
-    int _segs = InternalCache2kBuilder.determineSegmentCount(true, 12, true, 1000000, 0, 32);
-    assertEquals(1, _segs);
+  public void determineSegmentCount_strictEviction() {
+    int segs = InternalCache2kBuilder.determineSegmentCount(
+      true, 12, true, 1000000,
+      UNSET_LONG, 32);
+    assertEquals(1, segs);
   }
 
   @Test
-  public void determineSegmentCount_regularConcurrency() throws Exception {
-    int _segs = InternalCache2kBuilder.determineSegmentCount(false, 12, false, 1000000, 0, 0);
-    assertEquals(2, _segs);
+  public void determineSegmentCount_regularConcurrency() {
+    int segs = InternalCache2kBuilder.determineSegmentCount(
+      false, 12, false, 1000000,
+      UNSET_LONG, 0);
+    assertEquals(2, segs);
   }
 
   @Test
-  public void determineSegmentCount_boostConcurrency() throws Exception {
-    int _segs = InternalCache2kBuilder.determineSegmentCount(false, 12, true, 1000000, 0, 0);
-    assertEquals(16, _segs);
+  public void determineSegmentCount_boostConcurrency() {
+    int segs = InternalCache2kBuilder.determineSegmentCount(
+      false, 12, true,
+      1000000, UNSET_LONG, 0);
+    assertEquals(16, segs);
   }
 
   @Test
-  public void determineSegmentCount_noSegmentationBelow1000Entries() throws Exception {
-    int _segs = InternalCache2kBuilder.determineSegmentCount(false, 12, true, 999, 0, 0);
-    assertEquals(1, _segs);
+  public void determineSegmentCount_noSegmentationBelow1000Entries() {
+    int segs = InternalCache2kBuilder.determineSegmentCount(
+      false, 12,  true,
+      999, UNSET_LONG, 0);
+    assertEquals(1, segs);
   }
 
   @Test
-  public void determineSegmentCount_override12() throws Exception {
-    int _segs = InternalCache2kBuilder.determineSegmentCount(false, 12, true, 1000000, 0, 12);
-    assertEquals(16, _segs);
+  public void determineSegmentCount_override12() {
+    int segs = InternalCache2kBuilder.determineSegmentCount(
+      false, 12, true,
+      1000000, UNSET_LONG, 12);
+    assertEquals(16, segs);
   }
 
   @Test
-  public void determineSegmentCount_override1() throws Exception {
-    int _segs = InternalCache2kBuilder.determineSegmentCount(false, 12, true, 1000000, 0, 1);
-    assertEquals(1, _segs);
+  public void determineSegmentCount_override1() {
+    int segs = InternalCache2kBuilder.determineSegmentCount(
+      false, 12, true,
+      1000000, UNSET_LONG, 1);
+    assertEquals(1, segs);
   }
 
   @Test
-  public void determineSegmentCount_override16() throws Exception {
-    int _segs = InternalCache2kBuilder.determineSegmentCount(false, 12, true, 1000000, 0, 16);
-    assertEquals(16, _segs);
+  public void determineSegmentCount_override16() {
+    int segs = InternalCache2kBuilder.determineSegmentCount(
+      false, 12, true,
+      1000000, UNSET_LONG, 16);
+    assertEquals(16, segs);
   }
 
   @Test
-  public void determineSegmentCount_override17() throws Exception {
-    int _segs = InternalCache2kBuilder.determineSegmentCount(false, 12, true, 1000000, 0, 17);
-    assertEquals(32, _segs);
+  public void determineSegmentCount_override17() {
+    int segs = InternalCache2kBuilder.determineSegmentCount(
+      false, 12, true, 1000000,
+      UNSET_LONG, 17);
+    assertEquals(32, segs);
   }
 
   @Test
-  public void determineSegmentCount_override32() throws Exception {
-    int _segs = InternalCache2kBuilder.determineSegmentCount(false, 12, true, 1000000, 0, 32);
-    assertEquals(32, _segs);
+  public void determineSegmentCount_override32() {
+    int segs = InternalCache2kBuilder.determineSegmentCount(
+      false, 12, true, 1000000,
+      UNSET_LONG, 32);
+    assertEquals(32, segs);
   }
 
 }

@@ -43,7 +43,7 @@ public class ChangeCapacityStressTest extends TestingBase {
   public void test() {
     final Random random = new Random(1802);
     final int count = 10000;
-    final long maximumSize = count / 2 * 999;
+    final long maximumSize = count / 2;
     final int threads = 4;
     final int perThread = count / threads;
     final Cache<Integer, Integer> c =
@@ -52,7 +52,7 @@ public class ChangeCapacityStressTest extends TestingBase {
       .build();
     final AtomicInteger offset = new AtomicInteger();
     final AtomicLong shrinkCount = new AtomicLong();
-    for (int i = 0; i < maximumSize; i++) {
+    for (int i = 0; i < maximumSize + 123; i++) {
       c.put(i, 1);
     }
     Runnable putAndCheck = new Runnable() {
@@ -79,16 +79,6 @@ public class ChangeCapacityStressTest extends TestingBase {
         long sizeBeforeCapacityChange = c.asMap().size();
         getInternalCache().getEviction().changeCapacity(newCapacity);
         long effectiveCapacity = getInfo().getHeapCapacity();
-         System.err.println(
-          "0: targetCap=" + newCapacity +
-          ", effectiveCap=" + effectiveCapacity +
-            ", sizeBefore=" + sizeBeforeCapacityChange +
-            ", size=" + getInternalCache().getTotalEntryCount());
-        /*
-        assertTrue(
-          "cache meeting cap limit",
-          getInternalCache().getTotalEntryCount() <= (effectiveCapacity));
-          */
       }
     };
     ThreadingStressTester tst = new ThreadingStressTester();
