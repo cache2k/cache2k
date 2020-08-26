@@ -24,6 +24,7 @@ import org.cache2k.Cache;
 import org.cache2k.test.util.TestingBase;
 import org.cache2k.test.util.ThreadingStressTester;
 import org.cache2k.testing.category.SlowTests;
+import org.hamcrest.Matchers;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
@@ -87,9 +88,10 @@ public class ChangeCapacityStressTest extends TestingBase {
     tst.setTestTimeMillis(5000);
     tst.run();
     long effectiveCapacity = getInfo().getHeapCapacity();
-    assertTrue(
+    assertThat(
       "cache meeting cap limit",
-      getInternalCache().getTotalEntryCount() <= (effectiveCapacity));
+      (long) getInternalCache().getTotalEntryCount(),
+      Matchers.lessThanOrEqualTo(effectiveCapacity));
     assertEquals(getInfo().getSize(), countEntriesViaIteration());
   }
 

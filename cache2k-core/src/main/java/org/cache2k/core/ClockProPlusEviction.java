@@ -68,6 +68,8 @@ public class ClockProPlusEviction extends AbstractEviction {
   private final Ghost ghostHead = new Ghost().shortCircuit();
   private int ghostSize = 0;
   private static final int GHOST_LOAD_PERCENT = 63;
+  private long hotMax = Long.MAX_VALUE;
+  private long ghostMax = Long.MAX_VALUE;
 
   public ClockProPlusEviction(HeapCache heapCache, HeapCacheListener listener,
                               long maxSize, Weigher weigher, long maxWeight,
@@ -92,10 +94,12 @@ public class ClockProPlusEviction extends AbstractEviction {
     return cnt;
   }
 
-  long hotMax = Long.MAX_VALUE;
-
   public long getHotMax() {
     return hotMax;
+  }
+
+  public long getGhostMax() {
+    return ghostMax;
   }
 
   /**
@@ -106,10 +110,7 @@ public class ClockProPlusEviction extends AbstractEviction {
   @Override
   protected void updateHotMax() {
     hotMax = getSize() * TUNABLE_CLOCK_PRO.hotMaxPercentage / 100;
-  }
-
-  public long getGhostMax() {
-    return getSize() / 2 + 1;
+    ghostMax = getSize() / 2 + 1;
   }
 
   @Override
@@ -325,6 +326,7 @@ public class ClockProPlusEviction extends AbstractEviction {
       ", hotSize=" + hotSize +
       ", hotMaxSize=" + getHotMax() +
       ", ghostSize=" + ghostSize +
+      ", ghostMaxSize=" + getGhostMax() +
       ", coldHits=" + (coldHits + sumUpListHits(handCold)) +
       ", hotHits=" + (hotHits + sumUpListHits(handHot)) +
       ", ghostHits=" + ghostHits +

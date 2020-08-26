@@ -57,6 +57,11 @@ public abstract class AbstractEviction implements Eviction, EvictionMetrics {
   private final boolean noChunking;
 
   /**
+   * Set when size is reached.
+   */
+  private long estimatedEntryCapacity = 0;
+
+  /**
    * Number of entries being evicted in one go.
    */
   private int chunkSize = 1;
@@ -225,7 +230,7 @@ public abstract class AbstractEviction implements Eviction, EvictionMetrics {
     if (isWeigherPresent()) {
       return totalWeight + spaceNeeded > maxWeight;
     } else {
-      return getSize() + spaceNeeded > (maxSize - evictionRunningCount);
+      return getSize() + spaceNeeded - evictionRunningCount > maxSize;
     }
   }
 
@@ -249,6 +254,13 @@ public abstract class AbstractEviction implements Eviction, EvictionMetrics {
     synchronized (lock) {
       chunk = fillEvictionChunk(spaceNeeded);
     }
+    int processCount = evictChunk(chunk);
+    if (processCount > 0 || chunkSize > 1) {
+      return;
+    }
+    synchronized (lock) {
+      chunk = fillEvictionChunk(spaceNeeded);
+    }
     evictChunk(chunk);
   }
 
@@ -256,11 +268,11 @@ public abstract class AbstractEviction implements Eviction, EvictionMetrics {
     if (!isEvictionNeeded(spaceNeeded)) {
       return null;
     }
-    Entry[] chunk = evictChunkReuse;
-    evictChunkReuse = null;
-    if (evictionRunningCount == 0) {
+    if (evictionRunningCount == 0 && estimatedEntryCapacity < getSize()) {
       updatesSizesAfterLimitReached();
     }
+    Entry[] chunk = evictChunkReuse;
+    evictChunkReuse = null;
     if (chunk == null) {
       chunk = new Entry[chunkSize];
     }
@@ -273,6 +285,10 @@ public abstract class AbstractEviction implements Eviction, EvictionMetrics {
 
   private int evictChunk(Entry[] chunk) {
     if (chunk == null) { return 0; }
+    Entry[] chunkCopy = new Entry[chunk.length];
+    for (int i = 0; i < chunk.length; i++) {
+      chunkCopy[i] = chunk[i];
+    }
     int processCount = removeFromHash(chunk);
     synchronized (lock) {
       if (processCount > 0) {
@@ -290,6 +306,7 @@ public abstract class AbstractEviction implements Eviction, EvictionMetrics {
    * or a weigher is used.
    */
   private void updatesSizesAfterLimitReached() {
+    estimatedEntryCapacity = getSize();
     updateHotMax();
     int targetChunkSize = calculateChunkSize(noChunking, getSize());
     if (targetChunkSize != chunkSize) {
@@ -453,6 +470,8 @@ public abstract class AbstractEviction implements Eviction, EvictionMetrics {
       s +=
         ", maxSize=" + maxSize;
     }
+    s +=
+      ", size=" + getSize();
     return s;
   }
 
@@ -474,10 +493,13 @@ public abstract class AbstractEviction implements Eviction, EvictionMetrics {
       modifyCapacityLimits(entryCountOrWeight);
       chunk = fillEvictionChunk(0);
     }
-    while (chunk != null || isEvictionNeeded(0)) {
+    while (chunk != null) {
       evictChunk(chunk);
       synchronized (lock) {
         chunk = fillEvictionChunk(0);
+        if (chunk == null) {
+          updatesSizesAfterLimitReached();
+        }
       }
     }
   }
