@@ -21,6 +21,8 @@ package org.cache2k.core;
  */
 
 import org.cache2k.core.concurrency.Job;
+import org.cache2k.core.eviction.Eviction;
+import org.cache2k.core.eviction.EvictionMetrics;
 
 /**
  * Forwards eviction operations to segments based on the hash code.

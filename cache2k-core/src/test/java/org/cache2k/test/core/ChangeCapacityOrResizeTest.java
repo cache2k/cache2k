@@ -21,7 +21,7 @@ package org.cache2k.test.core;
  */
 
 import org.cache2k.Cache;
-import org.cache2k.core.AbstractEviction;
+import org.cache2k.core.eviction.AbstractEviction;
 import org.cache2k.core.InternalCache;
 import org.cache2k.test.util.TestingBase;
 import org.cache2k.testing.category.FastTests;

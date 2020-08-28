@@ -21,6 +21,7 @@ package org.cache2k.core;
  */
 
 import org.cache2k.configuration.CacheType;
+import org.cache2k.core.eviction.Eviction;
 import org.cache2k.core.util.InternalClock;
 import org.cache2k.event.CacheEntryEvictedListener;
 import org.cache2k.event.CacheEntryExpiredListener;

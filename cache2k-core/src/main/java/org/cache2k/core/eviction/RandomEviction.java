@@ -1,4 +1,4 @@
-package org.cache2k.core;
+package org.cache2k.core.eviction;
 
 /*
  * #%L
@@ -21,6 +21,9 @@ package org.cache2k.core;
  */
 
 import org.cache2k.Weigher;
+import org.cache2k.core.Entry;
+import org.cache2k.core.HeapCacheListener;
+import org.cache2k.core.IntegrityState;
 
 /**
  * @author Jens Wilke
@@ -32,7 +35,7 @@ public class RandomEviction extends AbstractEviction {
   private long size = 0;
   private final Entry head = new Entry().shortCircuit();
 
-  public RandomEviction(HeapCache heapCache, HeapCacheListener listener,
+  public RandomEviction(HeapCacheForEviction heapCache, HeapCacheListener listener,
                         long maxSize, Weigher weigher, long maxWeight) {
     super(heapCache, listener, maxSize, weigher, maxWeight, false);
   }
@@ -55,7 +58,7 @@ public class RandomEviction extends AbstractEviction {
 
   @Override
   protected Entry findEvictionCandidate() {
-    Entry[] h0 = heapCache.hash.getEntries();
+    Entry[] h0 = heapCache.getHashEntries();
     int idx = evictionIndex % (h0.length);
     Entry e;
     while ((e = h0[idx]) == null) {
@@ -73,7 +76,6 @@ public class RandomEviction extends AbstractEviction {
 
   @Override
   public void checkIntegrity(IntegrityState integrityState) {
-
   }
 
   @Override
@@ -104,4 +106,5 @@ public class RandomEviction extends AbstractEviction {
   public long getSize() {
     return size;
   }
+
 }

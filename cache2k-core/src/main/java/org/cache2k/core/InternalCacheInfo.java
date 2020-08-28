@@ -20,6 +20,8 @@ package org.cache2k.core;
  * #L%
  */
 
+import org.cache2k.core.eviction.EvictionMetrics;
+
 import java.util.Collection;
 
 /**

@@ -1,4 +1,4 @@
-package org.cache2k.core;
+package org.cache2k.core.eviction;
 
 /*
  * #%L
@@ -20,6 +20,8 @@ package org.cache2k.core;
  * #L%
  */
 
+import org.cache2k.core.Entry;
+import org.cache2k.core.IntegrityState;
 import org.cache2k.core.concurrency.Job;
 
 /**

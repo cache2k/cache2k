@@ -1,4 +1,4 @@
- package org.cache2k.core;
+ package org.cache2k.core.eviction;
 
 /*
  * #%L
@@ -21,6 +21,10 @@
  */
 
 import org.cache2k.configuration.Cache2kConfiguration;
+import org.cache2k.core.Entry;
+import org.cache2k.core.ExceptionWrapper;
+import org.cache2k.core.HeapCacheListener;
+import org.cache2k.core.IntegerTo16BitFloatingPoint;
 import org.cache2k.core.concurrency.Job;
 import org.cache2k.Weigher;
 
@@ -50,7 +54,7 @@ public abstract class AbstractEviction implements Eviction, EvictionMetrics {
   public static final long MINIMUM_CAPACITY_FOR_CHUNKING = 1000;
 
   private final Weigher weigher;
-  protected final HeapCache heapCache;
+  protected final HeapCacheForEviction heapCache;
   private final Object lock = new Object();
   private final HeapCacheListener listener;
   private final boolean noListenerCall;
@@ -93,7 +97,7 @@ public abstract class AbstractEviction implements Eviction, EvictionMetrics {
   private long totalWeight;
   private long evictedWeight;
 
-  public AbstractEviction(HeapCache heapCache, HeapCacheListener listener,
+  public AbstractEviction(HeapCacheForEviction heapCache, HeapCacheListener listener,
                           long maxSize, Weigher weigher, long maxWeight,
                           boolean noChunking) {
     this.weigher = weigher;

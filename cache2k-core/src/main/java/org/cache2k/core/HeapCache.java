@@ -27,6 +27,9 @@ import org.cache2k.CacheOperationCompletionListener;
 import org.cache2k.configuration.Cache2kConfiguration;
 import org.cache2k.configuration.CacheType;
 import org.cache2k.configuration.CustomizationSupplier;
+import org.cache2k.core.eviction.Eviction;
+import org.cache2k.core.eviction.EvictionMetrics;
+import org.cache2k.core.eviction.HeapCacheForEviction;
 import org.cache2k.core.operation.ExaminationEntry;
 import org.cache2k.core.operation.ReadOnlyCacheEntry;
 import org.cache2k.core.operation.Semantic;
@@ -79,7 +82,8 @@ import static org.cache2k.core.util.Util.*;
  * @author Jens Wilke; created: 2013-07-09
  */
 @SuppressWarnings("rawtypes")
-public class HeapCache<K, V> extends BaseCache<K, V> {
+public class HeapCache<K, V> extends BaseCache<K, V>
+  implements HeapCacheForEviction<K, V> {
 
   static final CacheOperationCompletionListener DUMMY_LOAD_COMPLETED_LISTENER =
     new CacheOperationCompletionListener() {
@@ -1319,6 +1323,11 @@ public class HeapCache<K, V> extends BaseCache<K, V> {
     }
     hash.checkExpand(hc);
     return e2;
+  }
+
+  @Override
+  public Entry<K, V>[] getHashEntries() {
+    return hash.getEntries();
   }
 
   /**

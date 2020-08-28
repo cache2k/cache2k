@@ -1,4 +1,4 @@
-package org.cache2k.core;
+package org.cache2k.core.eviction;
 
 /*
  * #%L
@@ -21,6 +21,11 @@ package org.cache2k.core;
  */
 
 import org.cache2k.Weigher;
+import org.cache2k.core.Entry;
+import org.cache2k.core.HeapCache;
+import org.cache2k.core.HeapCacheListener;
+import org.cache2k.core.IntegrityState;
+import org.cache2k.core.eviction.AbstractEviction;
 import org.cache2k.core.util.TunableConstants;
 import org.cache2k.core.util.TunableFactory;
 
@@ -338,9 +343,9 @@ public class ClockProPlusEviction extends AbstractEviction {
 
   public static class Tunable extends TunableConstants {
 
-    int hotMaxPercentage = 97;
+    public int hotMaxPercentage = 97;
 
-    int hitCounterDecreaseShift = 6;
+    public int hitCounterDecreaseShift = 6;
 
   }
 

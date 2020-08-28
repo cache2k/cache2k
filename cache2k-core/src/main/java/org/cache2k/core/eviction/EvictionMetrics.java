@@ -1,4 +1,4 @@
-package org.cache2k.core;
+package org.cache2k.core.eviction;
 
 /*
  * #%L
@@ -19,6 +19,8 @@ package org.cache2k.core;
  * limitations under the License.
  * #L%
  */
+
+import org.cache2k.core.InternalCacheInfo;
 
 /**
  * Access to eviction metrics. Consistent reads are only possible while inside the eviction lock.
