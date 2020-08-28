@@ -22,6 +22,7 @@ package org.cache2k.core;
 
 import org.cache2k.core.concurrency.Job;
 import org.cache2k.core.eviction.Eviction;
+import org.cache2k.core.eviction.EvictionFactory;
 import org.cache2k.core.eviction.EvictionMetrics;
 
 /**
@@ -290,8 +291,8 @@ public class SegmentedEviction implements Eviction, EvictionMetrics {
   @Override
   public void changeCapacity(long entryCountOrWeight) {
     long limitPerSegment = isWeigherPresent() ?
-      InternalCache2kBuilder.determineMaxWeight(entryCountOrWeight, segments.length) :
-      InternalCache2kBuilder.determineMaxSize(entryCountOrWeight, segments.length);
+      EvictionFactory.determineMaxWeight(entryCountOrWeight, segments.length) :
+      EvictionFactory.determineMaxSize(entryCountOrWeight, segments.length);
     for (Eviction ev : segments) {
       ev.changeCapacity(limitPerSegment);
     }

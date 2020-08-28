@@ -22,10 +22,8 @@ package org.cache2k.core.eviction;
 
 import org.cache2k.Weigher;
 import org.cache2k.core.Entry;
-import org.cache2k.core.HeapCache;
 import org.cache2k.core.HeapCacheListener;
 import org.cache2k.core.IntegrityState;
-import org.cache2k.core.eviction.AbstractEviction;
 import org.cache2k.core.util.TunableConstants;
 import org.cache2k.core.util.TunableFactory;
 
@@ -76,7 +74,7 @@ public class ClockProPlusEviction extends AbstractEviction {
   private long hotMax = Long.MAX_VALUE;
   private long ghostMax = Long.MAX_VALUE;
 
-  public ClockProPlusEviction(HeapCache heapCache, HeapCacheListener listener,
+  public ClockProPlusEviction(HeapCacheForEviction heapCache, HeapCacheListener listener,
                               long maxSize, Weigher weigher, long maxWeight,
                               boolean noChunking) {
     super(heapCache, listener, maxSize, weigher, maxWeight, noChunking);

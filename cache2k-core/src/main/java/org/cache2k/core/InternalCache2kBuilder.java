@@ -22,11 +22,8 @@ package org.cache2k.core;
 
 import org.cache2k.Cache2kBuilder;
 import org.cache2k.CacheEntry;
-import org.cache2k.Weigher;
 import org.cache2k.configuration.CustomizationSupplier;
-import org.cache2k.core.eviction.AbstractEviction;
-import org.cache2k.core.eviction.ClockProPlusEviction;
-import org.cache2k.core.eviction.Eviction;
+import org.cache2k.core.eviction.EvictionFactory;
 import org.cache2k.core.operation.ExaminationEntry;
 import org.cache2k.core.util.ClockDefaultImpl;
 import org.cache2k.core.util.InternalClock;
@@ -368,109 +365,23 @@ public class InternalCache2kBuilder<K, V> {
         wc.syncEntryEvictedListeners =
           syncEvictedListeners.toArray(new CacheEntryEvictedListener[0]);
       }
-      bc.eviction = constructEviction(bc, wc, config);
+      bc.eviction = EVICTION_FACTORY.constructEviction(
+        bc, bc, wc, config, Runtime.getRuntime().availableProcessors());
       TimingHandler rh = TimingHandler.of(timeReference, config);
       bc.setTiming(rh);
       wc.init();
     } else {
       TimingHandler rh = TimingHandler.of(timeReference, config);
       bc.setTiming(rh);
-       bc.eviction = constructEviction(bc, HeapCacheListener.NO_OPERATION, config);
+      bc.eviction = EVICTION_FACTORY.constructEviction(
+        bc, bc, HeapCacheListener.NO_OPERATION, config, Runtime.getRuntime().availableProcessors());
       bc.init();
     }
     manager.sendCreatedEvent(cache, config);
     return cache;
   }
 
-  /**
-   * Construct segmented or queued eviction. For the moment hard coded.
-   * If capacity is at least 1000 we use 2 segments if 2 or more CPUs are available.
-   * Segmenting the eviction only improves for lots of concurrent inserts or evictions,
-   * there is no effect on read performance.
-   */
-  private Eviction constructEviction(HeapCache hc, HeapCacheListener l,
-                                     Cache2kConfiguration config) {
-    boolean strictEviction = config.isStrictEviction();
-    int availableProcessors = Runtime.getRuntime().availableProcessors();
-    boolean boostConcurrency = config.isBoostConcurrency();
-    long maximumWeight = config.getMaximumWeight();
-    long entryCapacity = config.getEntryCapacity();
-    if (entryCapacity < 0 && maximumWeight < 0) {
-      entryCapacity = 2000;
-    }
-    int segmentCountOverride = HeapCache.TUNABLE.segmentCountOverride;
-    int segmentCount =
-      determineSegmentCount(
-        strictEviction, availableProcessors,
-        boostConcurrency, entryCapacity, maximumWeight, segmentCountOverride);
-    Eviction[] segments = new Eviction[segmentCount];
-    long maxSize = determineMaxSize(entryCapacity, segmentCount);
-    long maxWeight = determineMaxWeight(maximumWeight, segmentCount);
-    Weigher weigher = (Weigher) hc.createCustomization(config.getWeigher());
-    for (int i = 0; i < segments.length; i++) {
-      Eviction ev = new ClockProPlusEviction(hc, l, maxSize, weigher, maxWeight, strictEviction);
-      segments[i] = ev;
-    }
-    if (segmentCount == 1) {
-      return segments[0];
-    }
-    return new SegmentedEviction(segments);
-  }
-
-  static long determineMaxSize(long entryCapacity, int segmentCount) {
-    if (entryCapacity < 0) {
-      return -1;
-    }
-    if (entryCapacity == Long.MAX_VALUE) {
-      return Long.MAX_VALUE;
-    }
-    long maxSize = entryCapacity / segmentCount;
-    if (entryCapacity % segmentCount > 0) {
-      maxSize++;
-    }
-    return maxSize;
-  }
-
-  static long determineMaxWeight(long maximumWeight, int segmentCount) {
-    if (maximumWeight < 0) {
-      return -1;
-    }
-    long maxWeight = maximumWeight / segmentCount;
-    if (maximumWeight == Long.MAX_VALUE) {
-      return Long.MAX_VALUE;
-    } else if (maximumWeight % segmentCount > 0) {
-      maxWeight++;
-    }
-    return maxWeight;
-  }
-
-  static int determineSegmentCount(boolean strictEviction, int availableProcessors,
-                                   boolean boostConcurrency, long entryCapacity,
-                                   long maxWeight, int segmentCountOverride) {
-    if (strictEviction) {
-      return 1;
-    }
-    if (entryCapacity >= 0 && entryCapacity < 1000) {
-      return 1;
-    }
-    if (maxWeight >= 0 && maxWeight < 1000) {
-      return 1;
-    }
-    int segmentCount = 1;
-    if (availableProcessors > 1) {
-      segmentCount = 2;
-      if (boostConcurrency) {
-        segmentCount = 2 << (31 - Integer.numberOfLeadingZeros(availableProcessors));
-      }
-    }
-    if (segmentCountOverride > 0) {
-      segmentCount = 1 << (32 - Integer.numberOfLeadingZeros(segmentCountOverride - 1));
-    } else {
-      int maxSegments = availableProcessors * 2;
-      segmentCount = Math.min(segmentCount, maxSegments);
-    }
-    return segmentCount;
-  }
+  static final EvictionFactory EVICTION_FACTORY = new EvictionFactory();
 
   private void checkConfiguration() {
     if (config.getExpireAfterWrite() == Cache2kConfiguration.EXPIRY_NOT_ETERNAL &&

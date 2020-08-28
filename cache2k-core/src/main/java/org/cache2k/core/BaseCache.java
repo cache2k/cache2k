@@ -45,7 +45,7 @@ import java.util.concurrent.Executor;
  *
  * @author Jens Wilke
  */
-public abstract class BaseCache<K, V> implements InternalCache<K, V> {
+public abstract class BaseCache<K, V> implements InternalCache<K, V>, CustomizationContext {
 
   public abstract Executor getExecutor();
 

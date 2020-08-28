@@ -20,6 +20,7 @@ package org.cache2k.core;
  * #L%
  */
 
+import org.cache2k.core.eviction.EvictionFactory;
 import org.cache2k.testing.category.FastTests;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -35,7 +36,7 @@ public class InternalCache2kBuilderTest {
 
   @Test
   public void determineSegmentCount_strictEviction() {
-    int segs = InternalCache2kBuilder.determineSegmentCount(
+    int segs = EvictionFactory.determineSegmentCount(
       true, 12, true, 1000000,
       UNSET_LONG, 32);
     assertEquals(1, segs);
@@ -43,7 +44,7 @@ public class InternalCache2kBuilderTest {
 
   @Test
   public void determineSegmentCount_regularConcurrency() {
-    int segs = InternalCache2kBuilder.determineSegmentCount(
+    int segs = EvictionFactory.determineSegmentCount(
       false, 12, false, 1000000,
       UNSET_LONG, 0);
     assertEquals(2, segs);
@@ -51,7 +52,7 @@ public class InternalCache2kBuilderTest {
 
   @Test
   public void determineSegmentCount_boostConcurrency() {
-    int segs = InternalCache2kBuilder.determineSegmentCount(
+    int segs = EvictionFactory.determineSegmentCount(
       false, 12, true,
       1000000, UNSET_LONG, 0);
     assertEquals(16, segs);
@@ -59,7 +60,7 @@ public class InternalCache2kBuilderTest {
 
   @Test
   public void determineSegmentCount_noSegmentationBelow1000Entries() {
-    int segs = InternalCache2kBuilder.determineSegmentCount(
+    int segs = EvictionFactory.determineSegmentCount(
       false, 12,  true,
       999, UNSET_LONG, 0);
     assertEquals(1, segs);
@@ -67,7 +68,7 @@ public class InternalCache2kBuilderTest {
 
   @Test
   public void determineSegmentCount_override12() {
-    int segs = InternalCache2kBuilder.determineSegmentCount(
+    int segs = EvictionFactory.determineSegmentCount(
       false, 12, true,
       1000000, UNSET_LONG, 12);
     assertEquals(16, segs);
@@ -75,7 +76,7 @@ public class InternalCache2kBuilderTest {
 
   @Test
   public void determineSegmentCount_override1() {
-    int segs = InternalCache2kBuilder.determineSegmentCount(
+    int segs = EvictionFactory.determineSegmentCount(
       false, 12, true,
       1000000, UNSET_LONG, 1);
     assertEquals(1, segs);
@@ -83,7 +84,7 @@ public class InternalCache2kBuilderTest {
 
   @Test
   public void determineSegmentCount_override16() {
-    int segs = InternalCache2kBuilder.determineSegmentCount(
+    int segs = EvictionFactory.determineSegmentCount(
       false, 12, true,
       1000000, UNSET_LONG, 16);
     assertEquals(16, segs);
@@ -91,7 +92,7 @@ public class InternalCache2kBuilderTest {
 
   @Test
   public void determineSegmentCount_override17() {
-    int segs = InternalCache2kBuilder.determineSegmentCount(
+    int segs = EvictionFactory.determineSegmentCount(
       false, 12, true, 1000000,
       UNSET_LONG, 17);
     assertEquals(32, segs);
@@ -99,7 +100,7 @@ public class InternalCache2kBuilderTest {
 
   @Test
   public void determineSegmentCount_override32() {
-    int segs = InternalCache2kBuilder.determineSegmentCount(
+    int segs = EvictionFactory.determineSegmentCount(
       false, 12, true, 1000000,
       UNSET_LONG, 32);
     assertEquals(32, segs);
