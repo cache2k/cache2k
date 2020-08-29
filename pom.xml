@@ -211,9 +211,9 @@
         <plugin>
           <groupId>org.apache.maven.plugins</groupId>
           <artifactId>maven-javadoc-plugin</artifactId>
-          <version>3.0.1</version>
-
+          <version>3.2.0</version>
           <configuration>
+            <source>8</source>
             <additionalJOption>-Xdoclint:all</additionalJOption>
             <additionalJOption>-Xdoclint:-missing</additionalJOption>
             <!-- no aggregation, we want to have docs on the API package alone -->
@@ -222,7 +222,9 @@
             -->
             <links>
               <link>https://docs.oracle.com/javase/8/docs/api/</link>
+              <!-- javadoc on Java 11 says, error fetching link. Unclear why.
               <link>https://cache2k.org/docs/jcache/1.1.0/apidocs/cache-api/</link>
+              -->
             </links>
             <quiet>true</quiet>
             <bottom>
