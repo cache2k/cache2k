@@ -114,6 +114,7 @@ public class ClockProPlusEviction extends AbstractEviction {
   protected void updateHotMax() {
     hotMax = getSize() * TUNABLE_CLOCK_PRO.hotMaxPercentage / 100;
     ghostMax = getSize() / 2 + 1;
+    trimGhostSize();
   }
 
   @Override
@@ -195,16 +196,28 @@ public class ClockProPlusEviction extends AbstractEviction {
       Ghost.moveToFront(ghostHead, g);
       return;
     }
-    if (ghostSize >= getGhostMax()) {
-      g = ghostHead.prev;
-      Ghost.removeFromList(g);
-      boolean f = removeGhost(g, g.hash);
-    } else {
+    g = trimGhostSize();
+    if (g == null) {
       g = new Ghost();
     }
     g.hash = hc;
     insertGhost(g, hc);
     Ghost.insertInList(ghostHead, g);
+  }
+
+  /**
+   * Reduce ghost size to fit maximum size.
+   *
+   * @return A removed ghost to reuse the object for insert
+   */
+  private Ghost trimGhostSize() {
+    Ghost g = null;
+    while (ghostSize >= getGhostMax()) {
+      g = ghostHead.prev;
+      Ghost.removeFromList(g);
+      boolean f = removeGhost(g, g.hash);
+    }
+    return g;
   }
 
   public long getSize() {
