@@ -28,6 +28,8 @@ import org.cache2k.core.spi.CacheLifeCycleListener;
 import org.cache2k.core.CacheManagerImpl;
 import org.cache2k.core.spi.CacheManagerLifeCycleListener;
 import org.cache2k.core.util.Log;
+import org.cache2k.core.util.TunableConstants;
+import org.cache2k.core.util.TunableFactory;
 
 import javax.management.InstanceAlreadyExistsException;
 import javax.management.InstanceNotFoundException;
@@ -52,11 +54,13 @@ public class JmxSupport implements CacheLifeCycleListener, CacheManagerLifeCycle
    * Check for JMX available. Might be not present on Android.
    */
   static {
-    boolean v;
-    try {
-      v = getPlatformMBeanServer() == null;
-    } catch (NoClassDefFoundError err) {
-      v = true;
+    boolean v = false;
+    if (TunableFactory.get(Tunable.class).enable) {
+      try {
+        v = getPlatformMBeanServer() == null;
+      } catch (NoClassDefFoundError err) {
+        v = true;
+      }
     }
     MANAGEMENT_UNAVAILABLE = v;
   }
@@ -164,6 +168,12 @@ public class JmxSupport implements CacheLifeCycleListener, CacheManagerLifeCycle
       return '"' + s + '"';
     }
     return s;
+  }
+
+  public static class Tunable extends TunableConstants {
+
+    public boolean enable = true;
+
   }
 
 }
