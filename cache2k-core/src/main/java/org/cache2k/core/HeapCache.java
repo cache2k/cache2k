@@ -2040,25 +2040,25 @@ public class HeapCache<K, V> extends BaseCache<K, V>
      * time delta, to ensure that the machine is not busy due to statistics generation.
       * Default: 333.
      */
-    public final int minimumStatisticsCreationDeltaMillis = 333;
+    public int minimumStatisticsCreationDeltaMillis = 333;
 
     /**
      *  Factor of the statistics creation time, that determines the time difference when new
      *  statistics are generated.
      */
-    public final int minimumStatisticsCreationTimeDeltaFactor = 123;
+    public int minimumStatisticsCreationTimeDeltaFactor = 123;
 
-    public final ThreadFactoryProvider threadFactoryProvider = new DefaultThreadFactoryProvider();
+    public ThreadFactoryProvider threadFactoryProvider = new DefaultThreadFactoryProvider();
 
     /**
      * Number of maximum loader threads, depending on the CPUs.
      */
-    public final int loaderThreadCountCpuFactor = 1;
+    public int loaderThreadCountCpuFactor = 1;
 
-    public final StandardCommonMetricsFactory commonMetricsFactory =
+    public StandardCommonMetricsFactory commonMetricsFactory =
       new StandardCommonMetricsFactory();
 
-    public final ExceptionPropagator exceptionPropagator = new StandardExceptionPropagator();
+    public ExceptionPropagator exceptionPropagator = new StandardExceptionPropagator();
 
     /**
      * Alert level error, when hash quality is below this threshold. Default 5.

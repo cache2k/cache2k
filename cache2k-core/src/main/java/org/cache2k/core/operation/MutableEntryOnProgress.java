@@ -74,7 +74,7 @@ class MutableEntryOnProgress<K, V> implements MutableCacheEntry<K, V> {
 
   @Override
   public boolean exists() {
-    triggerInstallationRead();
+    triggerInstallationRead(false);
     return exists;
   }
 
@@ -106,8 +106,14 @@ class MutableEntryOnProgress<K, V> implements MutableCacheEntry<K, V> {
     return this;
   }
 
+  /**
+   * Reset mutate if nothing exists in the cache
+   */
   @Override
   public MutableCacheEntry<K, V> remove() {
+    if (mutate) {
+      triggerInstallationRead(true);
+    }
     if (mutate && !originalExists) {
       mutate = false;
     } else {
@@ -125,27 +131,27 @@ class MutableEntryOnProgress<K, V> implements MutableCacheEntry<K, V> {
 
   @Override
   public V getValue() {
-    triggerLoadOrInstallationRead();
+    triggerLoadOrInstallationRead(false);
     checkAndThrowException(value);
     return value;
   }
 
-  private void triggerLoadOrInstallationRead() {
-    triggerInstallationRead();
-    if (!exists && !mutate && progress.isLoaderPresent()) {
+  private void triggerLoadOrInstallationRead(boolean ignoreMutate) {
+    triggerInstallationRead(ignoreMutate);
+    if (!exists && (ignoreMutate || !mutate) && progress.isLoaderPresent()) {
       throw new Operations.NeedsLoadRestartException();
     }
   }
 
-  private void triggerInstallationRead() {
-    if (!mutate && entry == null) {
+  private void triggerInstallationRead(boolean ignoreMutate) {
+    if ((ignoreMutate || !mutate) && entry == null) {
       throw new Operations.WantsDataRestartException();
     }
   }
 
   @Override
   public V getOldValue() {
-    triggerLoadOrInstallationRead();
+    triggerLoadOrInstallationRead(true);
     if (!originalExists || (entry instanceof LoadedEntry)) {
       return null;
     }
@@ -163,14 +169,14 @@ class MutableEntryOnProgress<K, V> implements MutableCacheEntry<K, V> {
 
   @Override
   public boolean wasExisting() {
-    triggerInstallationRead();
+    triggerInstallationRead(true);
     checkAndThrowException(value);
     return originalExists && !(entry instanceof LoadedEntry);
   }
 
   @Override
   public Throwable getException() {
-    triggerLoadOrInstallationRead();
+    triggerLoadOrInstallationRead(false);
     if (value instanceof ExceptionWrapper) {
       return ((ExceptionWrapper) value).getException();
     }
@@ -179,7 +185,7 @@ class MutableEntryOnProgress<K, V> implements MutableCacheEntry<K, V> {
 
   @Override
   public long getRefreshedTime() {
-    triggerInstallationRead();
+    triggerInstallationRead(false);
     if (refreshTime != NEUTRAL) {
       return refreshTime;
     }
@@ -215,11 +221,7 @@ class MutableEntryOnProgress<K, V> implements MutableCacheEntry<K, V> {
       progress.put(value);
       return;
     }
-    if (customExpiry) {
-      progress.expire(expiryTime);
-      return;
-    }
-    progress.noMutation();
+    progress.expire(expiryTime);
   }
 
 }

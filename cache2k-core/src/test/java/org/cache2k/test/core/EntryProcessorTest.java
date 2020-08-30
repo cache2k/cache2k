@@ -266,15 +266,32 @@ public class EntryProcessorTest {
   public void nomap_getRefreshTime() {
     Cache<Integer,Integer> c = target.cache();
     final long t0 = millis();
-
-    c.invoke(1, new EntryProcessor<Integer, Integer, Object>() {
+  c.invoke(1, new EntryProcessor<Integer, Integer, Object>() {
       @Override
       public Object process(final MutableCacheEntry<Integer, Integer> e) {
         assertThat(e.getCurrentTime(), greaterThanOrEqualTo(t0));
+        assertThat(e.getStartTime(), greaterThanOrEqualTo(t0));
         assertEquals(0, e.getRefreshedTime());
         return null;
       }
     });
+  }
+
+  @Test
+  public void getLastModification() {
+    Cache<Integer, Integer> c = target.cache();
+    try {
+      c.invoke(1, new EntryProcessor<Integer, Integer, Object>() {
+        @Override
+        public Object process(final MutableCacheEntry<Integer, Integer> e) {
+          e.getLastModification();
+          return null;
+        }
+      });
+      fail("exception expected");
+    } catch (EntryProcessingException ex) {
+      assertTrue(ex.getCause() instanceof UnsupportedOperationException);
+    }
   }
 
   @Test
@@ -580,6 +597,78 @@ public class EntryProcessorTest {
         return null;
       }
     });
+  }
+
+  @Test
+  public void remove_wasExisting() {
+    CacheWithLoader wl = cacheWithLoader();
+    wl.cache.put(KEY, KEY);
+    boolean f = wl.cache.invoke(KEY, new EntryProcessor<Integer, Integer, Boolean>() {
+      @Override
+      public Boolean process(final MutableCacheEntry<Integer, Integer> e) throws Exception {
+        e.remove();
+        return e.wasExisting();
+      }
+    });
+    assertTrue("wasExisting is true after remove", f);
+    assertFalse("removed", wl.cache.containsKey(KEY));
+  }
+
+  @Test
+  public void put_setValue_remove() {
+    CacheWithLoader wl = cacheWithLoader();
+    wl.cache.put(KEY, KEY);
+    wl.cache.invoke(KEY, new EntryProcessor<Integer, Integer, Void>() {
+      @Override
+      public Void process(final MutableCacheEntry<Integer, Integer> e) throws Exception {
+        e.setValue(VALUE);
+        e.remove();
+        return null;
+      }
+    });
+    assertFalse("removed", wl.cache.containsKey(KEY));
+  }
+
+  @Test
+  public void setValue_remove() {
+    CacheWithLoader wl = cacheWithLoader();
+    wl.cache.invoke(KEY, new EntryProcessor<Integer, Integer, Void>() {
+      @Override
+      public Void process(final MutableCacheEntry<Integer, Integer> e) throws Exception {
+        e.setValue(VALUE);
+        e.remove();
+        return null;
+      }
+    });
+    assertFalse("removed", wl.cache.containsKey(KEY));
+  }
+
+  @Test
+  public void put_setValue_wasExisting() {
+    CacheWithLoader wl = cacheWithLoader();
+    wl.cache.put(KEY, KEY);
+    boolean f = wl.cache.invoke(KEY, new EntryProcessor<Integer, Integer, Boolean>() {
+      @Override
+      public Boolean process(final MutableCacheEntry<Integer, Integer> e) throws Exception {
+        e.setValue(VALUE);
+        return e.wasExisting();
+      }
+    });
+    assertTrue("wasExisting is true after remove", f);
+  }
+
+  @Test
+  public void setValue_getOldValue() {
+    CacheWithLoader wl = cacheWithLoader();
+    wl.cache.put(KEY, KEY);
+    int v = wl.cache.invoke(KEY, new EntryProcessor<Integer, Integer, Integer>() {
+      @Override
+      public Integer process(MutableCacheEntry<Integer, Integer> e) throws Exception {
+        e.setValue(VALUE);
+        return e.getOldValue();
+      }
+    });
+    assertEquals(v, (int) KEY);
   }
 
   /**
