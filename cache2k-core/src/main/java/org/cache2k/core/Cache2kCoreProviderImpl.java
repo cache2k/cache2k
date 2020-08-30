@@ -70,6 +70,10 @@ public class Cache2kCoreProviderImpl implements Cache2kCoreProvider {
     sb.append("version=");
     sb.append(version);
     log.info(sb.toString());
+    String message = TunableFactory.get(Tunable.class).message;
+    if (message != null) {
+      log.info(message);
+    }
   }
 
   /**
@@ -235,6 +239,7 @@ public class Cache2kCoreProviderImpl implements Cache2kCoreProvider {
   public static class Tunable extends TunableConstants {
 
     public boolean enableExternalConfiguration = true;
+    public String message = null;
 
   }
 

@@ -40,6 +40,14 @@ public final class TunableFactory {
 
   static Log log = Log.getLog(TunableFactory.class);
 
+  /**
+   * Special defaults for GraalVM. This is the only defaults file we ship at the moment.
+   * Maybe we ship different platform defaults in the future. The file name might get
+   * extended with CPU architecture (aarch / amd64), VM vendor (android, graal, ...) etc.
+   */
+  public static final String DEFAULT_TUNING_GRAALVM_FILE_NAME =
+    "/org/cache2k/default-tuning-graalvm-nativeimage.properties";
+
   public static final String DEFAULT_TUNING_FILE_NAME = "/org/cache2k/default-tuning.properties";
 
   public static final String CUSTOM_TUNING_FILE_NAME =
@@ -54,13 +62,25 @@ public final class TunableFactory {
   private static Properties customProperties;
 
   /**
+   * Detect GraalVM nativeimage enable different tuning defaults.
+   */
+  private static boolean isGraalVMNativeImage() {
+    return System.getProperty("org.graalvm.nativeimage.kind") != null;
+  }
+
+  /**
    * Reload the tunable configuration from the system properties
    * and the configuration file.
    */
-  public static synchronized void reload() {
+  private static void load() {
     map = new HashMap<Class<?>, Object>();
     customProperties = loadFile(CUSTOM_TUNING_FILE_NAME);
-    defaultProperties = loadFile(DEFAULT_TUNING_FILE_NAME);
+    if (isGraalVMNativeImage()) {
+      defaultProperties = loadFile(DEFAULT_TUNING_GRAALVM_FILE_NAME);
+    }
+    if (defaultProperties == null) {
+      defaultProperties = loadFile(DEFAULT_TUNING_FILE_NAME);
+    }
   }
 
   static Properties loadFile(String fileName) {
@@ -113,7 +133,7 @@ public final class TunableFactory {
 
   private static <T extends TunableConstants> T getDefault(Class<T> c) {
     if (map == null) {
-      reload();
+      load();
     }
     @SuppressWarnings("unchecked")
     T cfg = (T) map.get(c);

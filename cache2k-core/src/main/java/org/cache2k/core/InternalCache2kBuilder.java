@@ -175,18 +175,6 @@ public class InternalCache2kBuilder<K, V> {
     }
   }
 
-  @SuppressWarnings("unchecked")
-  private HeapCache<K, V> constructImplementationAndFillParameters(Class<?> cls) {
-    if (!HeapCache.class.isAssignableFrom(cls)) {
-      throw new IllegalArgumentException("Specified impl not a cache" + cls.getName());
-    }
-    try {
-      return (HeapCache<K, V>) cls.newInstance();
-    } catch (Exception e) {
-      throw new IllegalArgumentException("Not able to instantiate cache implementation", e);
-    }
-  }
-
   public Cache<K, V> build() {
     Cache2kCoreProviderImpl.CACHE_CONFIGURATION_PROVIDER.augmentConfiguration(manager, config);
     return buildAsIs();
@@ -207,14 +195,15 @@ public class InternalCache2kBuilder<K, V> {
       config.setName(deriveNameFromStackTrace());
     }
     checkConfiguration();
-    Class<?> implClass = HeapCache.class;
+    InternalCache<K, V> cache;
     Class<?> keyType = config.getKeyType().getType();
     if (keyType == Integer.class) {
-      implClass = IntHeapCache.class;
+      cache = (InternalCache<K, V>) new IntHeapCache<V>();
     } else if (keyType == Long.class) {
-      implClass = LongHeapCache.class;
+      cache = (InternalCache<K, V>) new LongHeapCache<V>();
+    } else {
+      cache = new HeapCache<K, V>();
     }
-    InternalCache<K, V> cache = constructImplementationAndFillParameters(implClass);
     InternalClock timeReference =
       (InternalClock) cache.createCustomization(config.getTimeReference());
     if (timeReference == null) {

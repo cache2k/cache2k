@@ -27,19 +27,20 @@ package org.cache2k.core.concurrency;
  */
 public class Locks {
 
-  private static Class<? extends OptimisticLock> optimisticLockImplementation;
+  private static final boolean USE_OPTIMISTIC_LOCK;
+
+  static {
+    USE_OPTIMISTIC_LOCK = initializeOptimisticLock();
+  }
 
   /**
    * Returns a new lock implementation depending on the platform support.
    */
   public static OptimisticLock newOptimistic() {
-    if (optimisticLockImplementation == null) {
-      initializeOptimisticLock();
-    }
-    try {
-      return optimisticLockImplementation.newInstance();
-    } catch (Exception ex) {
-      throw new Error(ex);
+    if (USE_OPTIMISTIC_LOCK) {
+      return new OptimisticLockStamped();
+    } else {
+      return new NonOptimisticLock();
     }
   }
 
@@ -47,16 +48,15 @@ public class Locks {
    * Loading of StampedLock will throw an error, if not available.
    * Fallback to NonOptimisticLock in this case (in android).
    */
-  private static void initializeOptimisticLock() {
+  private static boolean initializeOptimisticLock() {
     try {
       if (System.getProperty(NonOptimisticLock.class.getName()) == null) {
         new OptimisticLockStamped();
-        optimisticLockImplementation = OptimisticLockStamped.class;
-        return;
+        return true;
       }
     } catch (NoClassDefFoundError ignore) {
     }
-    optimisticLockImplementation = NonOptimisticLock.class;
+    return false;
   }
 
 }
