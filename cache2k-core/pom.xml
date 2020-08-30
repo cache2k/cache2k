@@ -117,9 +117,13 @@
         <artifactId>license-maven-plugin</artifactId>
         <configuration>
           <licenseName>apache_v2</licenseName>
-          <!-- Don't add header to XML config files. -->
           <excludes>
+            <!-- Don't add header to XML config files. -->
             <exclude>test/resources/**</exclude>
+            <!-- Don't add header to property files, safe space -->
+            <exclude>**/*.properties</exclude>
+            <!-- Don't add header to JSON, which does not support comments -->
+            <exclude>**/*.json</exclude>
           </excludes>
         </configuration>
       </plugin>
