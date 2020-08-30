@@ -43,7 +43,16 @@ public abstract class Log {
 
   private static final Map<String, Log> LOGGERS = new HashMap<String, Log>();
 
-  private static LogFactory logFactory;
+  private static final LogFactory LOG_FACTORY;
+
+  /*
+   * Initialize used log implementation statically for GraalVM
+   */
+  static {
+    LOG_FACTORY = initializeLogFactory();
+    Log log = getLog(Log.class.getName());
+    log.debug("Using " + log.getClass().getSimpleName());
+  }
 
   public static Log getLog(Class<?> type) {
     return getLog(type.getName());
@@ -54,61 +63,50 @@ public abstract class Log {
     if (l != null) {
       return l;
     }
-    if (logFactory == null) {
+    if (LOG_FACTORY == null) {
       initializeLogFactory();
     }
-    l = logFactory.getLog(s);
+    l = LOG_FACTORY.getLog(s);
     LOGGERS.put(s, l);
     return l;
-  }
-
-  private static void log(String s) {
-    getLog(Log.class.getName()).debug(s);
   }
 
   /**
    * Finds a logger we can use. First we start with looking for a registered
    * service provider. Then apache commons logging. As a fallback we use JDK logging.
    */
-  private static void initializeLogFactory() {
+  private static LogFactory initializeLogFactory() {
     ServiceLoader<LogFactory> loader = ServiceLoader.load(LogFactory.class);
     for (LogFactory lf : loader) {
-      logFactory = lf;
-      log("New instance, using: " + logFactory.getClass().getName());
-      return;
+      return lf;
     }
     try {
       final org.slf4j.ILoggerFactory lf = org.slf4j.LoggerFactory.getILoggerFactory();
-      logFactory = new LogFactory() {
+      return new LogFactory() {
         @Override
         public Log getLog(String s) {
           return new Slf4jLogger(lf.getLogger(s));
         }
       };
-      log("New instance, using SLF4J logging");
-      return;
     } catch (NoClassDefFoundError ignore) {
     }
     try {
       final org.apache.commons.logging.LogFactory cl =
         org.apache.commons.logging.LogFactory.getFactory();
-      logFactory = new LogFactory() {
+      return new LogFactory() {
         @Override
         public Log getLog(String s) {
           return new CommonsLogger(cl.getInstance(s));
         }
       };
-      log("New instance, using commons logging");
-      return;
     } catch (NoClassDefFoundError ignore) {
     }
-    logFactory = new LogFactory() {
+    return new LogFactory() {
       @Override
       public Log getLog(String s) {
         return new JdkLogger(Logger.getLogger(s));
       }
     };
-    log("New instance, using JDK logging");
   }
 
   /**

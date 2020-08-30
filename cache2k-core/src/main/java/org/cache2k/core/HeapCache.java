@@ -2022,19 +2022,6 @@ public class HeapCache<K, V> extends BaseCache<K, V>
   public static class Tunable extends TunableConstants {
 
     /**
-     * Size of the hash table before inserting the first entry. Must be power
-     * of two. Default: 64.
-     */
-    @SuppressWarnings("CanBeFinal")
-    public int initialHashSize = 64;
-
-    /**
-     * Fill percentage limit. When this is reached the hash table will get
-     * expanded. Default: 64.
-     */
-    public int hashLoadPercent = 64;
-
-    /**
      * When sharp expiry is enabled, the expiry timer goes
      * before the actual expiry to switch back to a time checking
      * scheme when the cache is accessed. This prevents
@@ -2088,7 +2075,6 @@ public class HeapCache<K, V> extends BaseCache<K, V>
      * Invalid numbers will be replaced by the next higher power of two. Default is 0, no override.
      */
     public int segmentCountOverride = 0;
-
 
   }
 

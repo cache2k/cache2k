@@ -22,6 +22,7 @@ package org.cache2k.core;
 
 import org.cache2k.Cache;
 import org.cache2k.core.eviction.ClockProPlusEviction;
+import org.cache2k.core.util.TunableFactory;
 import org.cache2k.test.util.TestingBase;
 import org.cache2k.testing.category.FastTests;
 import org.junit.Test;
@@ -177,7 +178,7 @@ public class ClockProEvictionTest extends TestingBase {
       c.put(i, i);
     }
     int hitCounterDecreaseShift =
-      ClockProPlusEviction.TUNABLE_CLOCK_PRO.hitCounterDecreaseShift;
+      TunableFactory.get(ClockProPlusEviction.Tunable.class).hitCounterDecreaseShift;
     for (int j = 0; j < 1 << hitCounterDecreaseShift + 1; j++) {
       for (int i = 0; i < size / 4; i++) {
         c.put(i, i);

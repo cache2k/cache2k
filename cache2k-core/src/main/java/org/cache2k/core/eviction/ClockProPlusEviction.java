@@ -48,8 +48,6 @@ import org.cache2k.core.util.TunableFactory;
 @SuppressWarnings("WeakerAccess")
 public class ClockProPlusEviction extends AbstractEviction {
 
-  public static final Tunable TUNABLE_CLOCK_PRO = TunableFactory.get(Tunable.class);
-
   private long hotHits;
   private long coldHits;
   private long ghostHits;
@@ -70,9 +68,21 @@ public class ClockProPlusEviction extends AbstractEviction {
   private Ghost[] ghosts;
   private final Ghost ghostHead = new Ghost().shortCircuit();
   private int ghostSize = 0;
-  private static final int GHOST_LOAD_PERCENT = 63;
   private long hotMax = Long.MAX_VALUE;
   private long ghostMax = Long.MAX_VALUE;
+
+  private static final int GHOST_LOAD_PERCENT;
+  private static final int HOT_MAX_PERCENTAGE;
+  private static final int HIT_COUNTER_DECREASE_SHIFT;
+  private static final int GHOST_MAX_PERCENTAGE;
+
+  static {
+    Tunable tunable = TunableFactory.get(Tunable.class);
+    GHOST_LOAD_PERCENT = tunable.ghostLoadPercentage;
+    HOT_MAX_PERCENTAGE = tunable.hotMaxPercentage;
+    HIT_COUNTER_DECREASE_SHIFT = tunable.hitCounterDecreaseShift;
+    GHOST_MAX_PERCENTAGE = tunable.ghostMaxPercentage;
+  }
 
   public ClockProPlusEviction(HeapCacheForEviction heapCache, HeapCacheListener listener,
                               long maxSize, Weigher weigher, long maxWeight,
@@ -112,8 +122,8 @@ public class ClockProPlusEviction extends AbstractEviction {
    */
   @Override
   protected void updateHotMax() {
-    hotMax = getSize() * TUNABLE_CLOCK_PRO.hotMaxPercentage / 100;
-    ghostMax = getSize() / 2 + 1;
+    hotMax = getSize() * HOT_MAX_PERCENTAGE / 100;
+    ghostMax = getSize() * GHOST_MAX_PERCENTAGE / 100 + 1;
     trimGhostSize();
   }
 
@@ -253,7 +263,7 @@ public class ClockProPlusEviction extends AbstractEviction {
     int initialMaxScan = (hotSize >> 2) + 1;
     int maxScan = initialMaxScan;
     long decrease =
-      ((hand.hitCnt + hand.next.hitCnt) >> TUNABLE_CLOCK_PRO.hitCounterDecreaseShift) + 1;
+      ((hand.hitCnt + hand.next.hitCnt) >> HIT_COUNTER_DECREASE_SHIFT) + 1;
     while (maxScan-- > 0) {
       long hitCnt = hand.hitCnt;
       if (hitCnt < lowestHits) {
@@ -350,14 +360,6 @@ public class ClockProPlusEviction extends AbstractEviction {
       ", coldScanCnt=" + coldScanCnt +
       ", hotRunCnt=" + hotRunCnt +
       ", hotScanCnt=" + hotScanCnt;
-  }
-
-  public static class Tunable extends TunableConstants {
-
-    public int hotMaxPercentage = 97;
-
-    public int hitCounterDecreaseShift = 6;
-
   }
 
   private Ghost lookupGhost(int hash) {
@@ -487,6 +489,18 @@ public class ClockProPlusEviction extends AbstractEviction {
       while ((e = e.next) != head) { count++; }
       return count;
     }
+
+  }
+
+  public static class Tunable extends TunableConstants {
+
+    public int hotMaxPercentage = 97;
+
+    public int hitCounterDecreaseShift = 6;
+
+    public int ghostLoadPercentage = 63;
+
+    public int ghostMaxPercentage = 50;
 
   }
 

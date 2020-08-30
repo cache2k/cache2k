@@ -24,6 +24,7 @@ import org.cache2k.Cache;
 import org.cache2k.core.concurrency.Job;
 import org.cache2k.core.concurrency.Locks;
 import org.cache2k.core.concurrency.OptimisticLock;
+import org.cache2k.core.util.Log;
 
 import java.util.concurrent.atomic.AtomicLong;
 
@@ -37,9 +38,22 @@ import java.util.concurrent.atomic.AtomicLong;
 @SuppressWarnings({"WeakerAccess", "rawtypes"})
 public class Hash2<K, V> {
 
+  /**
+   * Size of the hash table before inserting the first entry. Must be power
+   * of two. Default: 64.
+   */
+  private static final int INITIAL_HASH_SIZE = 64;
+
+  /**
+   * Fill percentage limit. When this is reached the hash table will get
+   * expanded. Default: 64.
+   */
+  private static final int HASH_LOAD_PERCENT = 64;
+
   private static final int LOCK_SEGMENTS;
   private static final int LOCK_MASK;
 
+  /* GraalVM: This runs at runtime, see native-image.properties */
   static {
     int ncpu = Runtime.getRuntime().availableProcessors();
     LOCK_SEGMENTS = 2 << (31 - Integer.numberOfLeadingZeros(ncpu));
@@ -88,13 +102,13 @@ public class Hash2<K, V> {
 
   @SuppressWarnings("unchecked")
   private void initArray() {
-    int len = Math.max(HeapCache.TUNABLE.initialHashSize, LOCK_SEGMENTS * 4);
+    int len = Math.max(INITIAL_HASH_SIZE, LOCK_SEGMENTS * 4);
     entries = new Entry[len];
     calcMaxFill();
   }
 
   public long getEntryCapacity() {
-    return entries.length * 1L * HeapCache.TUNABLE.hashLoadPercent / 100;
+    return entries.length * 1L * HASH_LOAD_PERCENT / 100;
   }
 
   /** For testing */
@@ -421,7 +435,7 @@ public class Hash2<K, V> {
   }
 
   /**
-   * Entry table for used by the iterator.
+   * Entry table used by the iterator.
    */
   public Entry<K, V>[] getEntries() {
     return entries;
