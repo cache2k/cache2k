@@ -6,7 +6,7 @@
   <parent>
     <groupId>org.cache2k</groupId>
     <artifactId>cache2k-parent</artifactId>
-    <version>1.3.5.Beta</version>
+    <version>1.4-SNAPSHOT</version>
     <relativePath>../pom.xml</relativePath>
   </parent>
 
