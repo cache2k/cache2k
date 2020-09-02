@@ -47,6 +47,12 @@ import java.util.function.Function;
  */
 public class SpringCache2kCacheManager implements CacheManager {
 
+  /**
+   * Default name used for the cache2k cache manager controlled by the spring cache
+   * manager.
+   */
+  public static final String DEFAULT_SPRING_CACHE_MANAGER_NAME = "springDefault";
+
   private final org.cache2k.CacheManager manager;
 
   private final Map<String, SpringCache2kCache> name2cache = new ConcurrentHashMap<>();
@@ -58,13 +64,16 @@ public class SpringCache2kCacheManager implements CacheManager {
   private Function<Cache2kBuilder<?, ?>, Cache2kBuilder<?, ?>> defaultSetup = b -> b;
 
   /**
-   * Construct a spring cache manager, using the default cache2k cache manager instance.
+   * Construct a spring cache manager, using the cache2k cache manager with
+   * the name {@value DEFAULT_SPRING_CACHE_MANAGER_NAME}. It is recommended
+   * that the spring cache manager uses a cache2k cache manager exclusively and
+   * all caches are created only via the spring cache manager.
+   * (Behavior since cache2k version 1.4)
    *
    * @see org.cache2k.CacheManager
-   * @see org.cache2k.CacheManager#getInstance()
    */
   public SpringCache2kCacheManager() {
-    this(org.cache2k.CacheManager.getInstance());
+    this(DEFAULT_SPRING_CACHE_MANAGER_NAME);
   }
 
   /**
@@ -97,7 +106,7 @@ public class SpringCache2kCacheManager implements CacheManager {
    * Returns an existing cache or retrieves and wraps a cache from cache2k.
    */
   @Override
-  public SpringCache2kCache getCache(final String name) {
+  public SpringCache2kCache getCache(String name) {
     return name2cache.computeIfAbsent(name, n -> {
         if (!allowUnknownCache && !configuredCacheNames.contains(n)) {
           throw new IllegalArgumentException("Cache configuration missing for: " + n);
@@ -137,7 +146,7 @@ public class SpringCache2kCacheManager implements CacheManager {
     return this;
   }
 
-  SpringCache2kCache addCache(final Cache2kBuilder<?, ?> builder) {
+  private SpringCache2kCache addCache(Cache2kBuilder<?, ?> builder) {
     String name = builder.toConfiguration().getName();
     Assert.notNull(name, "Name must be set via Cache2kBuilder.name()");
     Assert.isTrue(builder.getManager() == manager,
@@ -158,7 +167,7 @@ public class SpringCache2kCacheManager implements CacheManager {
     cacheConfigurationList.forEach(this::addCache);
   }
 
-  void addCache(final Cache2kConfiguration<?, ?> cfg) {
+  private void addCache(Cache2kConfiguration<?, ?> cfg) {
     addCache(Cache2kBuilder.of(cfg).manager(manager));
   }
 
@@ -210,7 +219,7 @@ public class SpringCache2kCacheManager implements CacheManager {
    * Setting this to {@code true} will create a cache with a default configuration if the requested
    * cache name is not known. The default is {@code true}.
    */
-  public void setAllowUnknownCache(final boolean v) {
+  public void setAllowUnknownCache(boolean v) {
     allowUnknownCache = v;
   }
 
