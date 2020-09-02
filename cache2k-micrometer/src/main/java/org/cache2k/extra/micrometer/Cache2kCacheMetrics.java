@@ -157,12 +157,10 @@ public class Cache2kCacheMetrics extends CacheMeterBinder {
    * Additional tags. The base class adds tag {@code cache} for the cache name.
    * The Spring cache metrics autoconfiguration would set {@code cacheManager} to the bean name
    * of the cache manager. To avoid confusion, the name of the cache manager of cache2k is
-   * exported as tag {@code cache2kCacheManager}. cache2k does not use the Spring metrics
-   * autoconfiguration, since it adds the cache metrics to micro meter by itself.
+   * exported as tag {@code cache2kCacheManager}.
    */
   private static Iterable<Tag> extendedTags(Cache<?, ?> cache) {
     InternalCache internalCache = cache.requestInterface(InternalCache.class);
-    InternalCacheInfo info = internalCache.getInfo();
     return Tags.of(
       "cache2kCacheManager", internalCache.getCacheManager().getName(),
       "keyType=", internalCache.getKeyType().toString()

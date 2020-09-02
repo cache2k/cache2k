@@ -25,18 +25,23 @@ import io.micrometer.core.instrument.Metrics;
 import org.cache2k.Cache;
 import org.cache2k.configuration.Cache2kConfiguration;
 import org.cache2k.core.spi.CacheLifeCycleListener;
+import org.cache2k.core.util.TunableConstants;
+import org.cache2k.core.util.TunableFactory;
 
 /**
  * Bind to micrometer automatically if not disabled by configuration.
+ *
  *
  * @author Jens Wilke
  */
 public class MicroMeterSupport implements CacheLifeCycleListener {
 
   public static final String MICROMETER_REGISTRY_MANAGER_PROPERTY = "micrometer.registry";
+  private static final boolean REGISTER_AT_GLOBAL_REGISTRY =
+    TunableFactory.get(Tunable.class).registerAtGlobalRegistry;
 
   @Override
-  public void cacheCreated(final Cache c, final Cache2kConfiguration cfg) {
+  public void cacheCreated(Cache c, Cache2kConfiguration cfg) {
     if (cfg.isDisableMonitoring()) {
       return;
     }
@@ -44,6 +49,9 @@ public class MicroMeterSupport implements CacheLifeCycleListener {
       (MeterRegistry)
         c.getCacheManager().getProperties().get(MICROMETER_REGISTRY_MANAGER_PROPERTY);
     if (registry == null) {
+      if (!REGISTER_AT_GLOBAL_REGISTRY) {
+        return;
+      }
       registry = Metrics.globalRegistry;
     }
     Cache2kCacheMetrics.monitor(registry, c);
@@ -54,6 +62,16 @@ public class MicroMeterSupport implements CacheLifeCycleListener {
    * new feature.
    */
   @Override
-  public void cacheDestroyed(final Cache c) { }
+  public void cacheDestroyed(Cache c) { }
+
+  public static class Tunable extends TunableConstants {
+
+    /**
+     * If true every cache is registered at the global micrometer registry in
+     * case monitoring is not disabled.
+     */
+    public boolean registerAtGlobalRegistry = false;
+
+  }
 
 }

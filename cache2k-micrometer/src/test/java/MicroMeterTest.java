@@ -39,6 +39,12 @@ import org.junit.Test;
  */
 public class MicroMeterTest {
 
+  /* Enable global registry support before anything else */
+  static {
+    System.setProperty(
+      "org.cache2k.extra.micrometer.MicroMeterSupport.Tunable.registerAtGlobalRegistry", "true");
+  }
+
   @Test
   public void programmaticBind() {
     MeterRegistry registry = new SimpleMeterRegistry();
