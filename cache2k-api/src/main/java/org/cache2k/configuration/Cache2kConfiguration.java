@@ -266,7 +266,7 @@ public class Cache2kConfiguration<K, V> implements ConfigurationBean, Configurat
   }
 
   public boolean isEternal() {
-    return expireAfterWrite == -1 || expireAfterWrite == ExpiryTimeValues.ETERNAL;
+    return expireAfterWrite == UNSET_LONG || expireAfterWrite == ExpiryTimeValues.ETERNAL;
   }
 
   /**
@@ -291,7 +291,7 @@ public class Cache2kConfiguration<K, V> implements ConfigurationBean, Configurat
     if (millis == expireAfterWrite) {
       return;
     }
-    if (expireAfterWrite != -1) {
+    if (expireAfterWrite != UNSET_LONG) {
       if (millis == Expiry.ETERNAL) {
         throw new IllegalArgumentException(
           "eternal disabled or expiry was set, refusing to reset back to eternal");
@@ -359,7 +359,7 @@ public class Cache2kConfiguration<K, V> implements ConfigurationBean, Configurat
   /**
    * @see Cache2kBuilder#maximumWeight
    */
-  public void setMaximumWeight(final long v) {
+  public void setMaximumWeight(long v) {
     if (entryCapacity >= 0) {
       throw new IllegalArgumentException(
         "entryCapacity already set, setting maximumWeight is illegal");
@@ -405,7 +405,7 @@ public class Cache2kConfiguration<K, V> implements ConfigurationBean, Configurat
     return externalConfigurationPresent;
   }
 
-  public void setExternalConfigurationPresent(final boolean v) {
+  public void setExternalConfigurationPresent(boolean v) {
     externalConfigurationPresent = v;
   }
 
@@ -432,7 +432,7 @@ public class Cache2kConfiguration<K, V> implements ConfigurationBean, Configurat
     return loader;
   }
 
-  public void setLoader(final CustomizationSupplier<? extends FunctionalCacheLoader<K, V>> v) {
+  public void setLoader(CustomizationSupplier<? extends FunctionalCacheLoader<K, V>> v) {
     loader = v;
   }
 
@@ -443,7 +443,7 @@ public class Cache2kConfiguration<K, V> implements ConfigurationBean, Configurat
   /**
    * @see Cache2kBuilder#loader(AdvancedCacheLoader)
    */
-  public void setAdvancedLoader(final CustomizationSupplier<AdvancedCacheLoader<K, V>> v) {
+  public void setAdvancedLoader(CustomizationSupplier<AdvancedCacheLoader<K, V>> v) {
     advancedLoader = v;
   }
 
@@ -451,7 +451,7 @@ public class Cache2kConfiguration<K, V> implements ConfigurationBean, Configurat
     return asyncLoader;
   }
 
-  public void setAsyncLoader(final CustomizationSupplier<AsyncCacheLoader<K, V>> v) {
+  public void setAsyncLoader(CustomizationSupplier<AsyncCacheLoader<K, V>> v) {
     asyncLoader = v;
   }
 
@@ -462,7 +462,7 @@ public class Cache2kConfiguration<K, V> implements ConfigurationBean, Configurat
   /**
    * @see Cache2kBuilder#loaderThreadCount(int)
    */
-  public void setLoaderThreadCount(final int v) {
+  public void setLoaderThreadCount(int v) {
     loaderThreadCount = v;
   }
 
@@ -470,7 +470,7 @@ public class Cache2kConfiguration<K, V> implements ConfigurationBean, Configurat
     return expiryPolicy;
   }
 
-  public void setExpiryPolicy(final CustomizationSupplier<ExpiryPolicy<K, V>> v) {
+  public void setExpiryPolicy(CustomizationSupplier<ExpiryPolicy<K, V>> v) {
     expiryPolicy = v;
   }
 
@@ -481,7 +481,7 @@ public class Cache2kConfiguration<K, V> implements ConfigurationBean, Configurat
   /**
    * @see Cache2kBuilder#writer(CacheWriter)
    */
-  public void setWriter(final CustomizationSupplier<CacheWriter<K, V>> v) {
+  public void setWriter(CustomizationSupplier<CacheWriter<K, V>> v) {
     writer = v;
   }
 
@@ -492,7 +492,7 @@ public class Cache2kConfiguration<K, V> implements ConfigurationBean, Configurat
   /**
    * @see Cache2kBuilder#storeByReference(boolean)
    */
-  public void setStoreByReference(final boolean v) {
+  public void setStoreByReference(boolean v) {
     storeByReference = v;
   }
 
@@ -503,7 +503,7 @@ public class Cache2kConfiguration<K, V> implements ConfigurationBean, Configurat
   /**
    * @see Cache2kBuilder#exceptionPropagator(ExceptionPropagator)
    */
-  public void setExceptionPropagator(final CustomizationSupplier<ExceptionPropagator<K>> v) {
+  public void setExceptionPropagator(CustomizationSupplier<ExceptionPropagator<K>> v) {
     exceptionPropagator = v;
   }
 
@@ -608,7 +608,7 @@ public class Cache2kConfiguration<K, V> implements ConfigurationBean, Configurat
   /**
    * @see Cache2kBuilder#resiliencePolicy
    */
-  public void setResiliencePolicy(final CustomizationSupplier<ResiliencePolicy<K, V>> v) {
+  public void setResiliencePolicy(CustomizationSupplier<ResiliencePolicy<K, V>> v) {
     resiliencePolicy = v;
   }
 
@@ -619,7 +619,7 @@ public class Cache2kConfiguration<K, V> implements ConfigurationBean, Configurat
   /**
    * @see Cache2kBuilder#strictEviction(boolean)
    */
-  public void setStrictEviction(final boolean v) {
+  public void setStrictEviction(boolean v) {
     strictEviction = v;
   }
 
@@ -630,7 +630,7 @@ public class Cache2kConfiguration<K, V> implements ConfigurationBean, Configurat
   /**
    * @see Cache2kBuilder#permitNullValues(boolean)
    */
-  public void setPermitNullValues(final boolean v) {
+  public void setPermitNullValues(boolean v) {
     permitNullValues = v;
   }
 
@@ -641,7 +641,7 @@ public class Cache2kConfiguration<K, V> implements ConfigurationBean, Configurat
   /**
    * @see Cache2kBuilder#disableStatistics
    */
-  public void setDisableStatistics(final boolean v) {
+  public void setDisableStatistics(boolean v) {
     disableStatistics = v;
   }
 
@@ -658,7 +658,7 @@ public class Cache2kConfiguration<K, V> implements ConfigurationBean, Configurat
    * @see Cache2kBuilder#disableLastModificationTime
    */
   @Deprecated
-  public void setDisableLastModificationTime(final boolean v) { }
+  public void setDisableLastModificationTime(boolean v) { }
 
   public boolean isRecordRefreshedTime() {
     return recordRefreshedTime;
@@ -667,14 +667,14 @@ public class Cache2kConfiguration<K, V> implements ConfigurationBean, Configurat
   /**
    * @see Cache2kBuilder#recordRefreshedTime
    */
-  public void setRecordRefreshedTime(final boolean v) {
+  public void setRecordRefreshedTime(boolean v) {
     recordRefreshedTime = v;
   }
 
   /**
    * @see Cache2kBuilder#loaderExecutor(Executor)
    */
-  public void setLoaderExecutor(final CustomizationSupplier<Executor> v) {
+  public void setLoaderExecutor(CustomizationSupplier<Executor> v) {
     loaderExecutor = v;
   }
 
@@ -685,7 +685,7 @@ public class Cache2kConfiguration<K, V> implements ConfigurationBean, Configurat
   /**
    * @see Cache2kBuilder#prefetchExecutor(Executor)
    */
-  public void setPrefetchExecutor(final CustomizationSupplier<Executor> v) {
+  public void setPrefetchExecutor(CustomizationSupplier<Executor> v) {
     prefetchExecutor = v;
   }
 
@@ -696,7 +696,7 @@ public class Cache2kConfiguration<K, V> implements ConfigurationBean, Configurat
   /**
    * @see Cache2kBuilder#executor(Executor)
    */
-  public void setExecutor(final CustomizationSupplier<Executor> v) {
+  public void setExecutor(CustomizationSupplier<Executor> v) {
     executor = v;
   }
 
@@ -707,7 +707,7 @@ public class Cache2kConfiguration<K, V> implements ConfigurationBean, Configurat
   /**
    * @see Cache2kBuilder#asyncListenerExecutor(Executor)
    */
-  public void setAsyncListenerExecutor(final CustomizationSupplier<Executor> v) {
+  public void setAsyncListenerExecutor(CustomizationSupplier<Executor> v) {
     asyncListenerExecutor = v;
   }
 
@@ -718,7 +718,7 @@ public class Cache2kConfiguration<K, V> implements ConfigurationBean, Configurat
   /**
    * @see Cache2kBuilder#timeReference(TimeReference)
    */
-  public void setTimeReference(final CustomizationSupplier<TimeReference> v) {
+  public void setTimeReference(CustomizationSupplier<TimeReference> v) {
     timeReference = v;
   }
 
@@ -729,7 +729,7 @@ public class Cache2kConfiguration<K, V> implements ConfigurationBean, Configurat
   /**
    * @see Cache2kBuilder#weigher(Weigher)
    */
-  public void setWeigher(final CustomizationSupplier<Weigher> v) {
+  public void setWeigher(CustomizationSupplier<Weigher> v) {
     if (entryCapacity >= 0) {
       throw new IllegalArgumentException(
         "entryCapacity already set, specifying a weigher is illegal");
@@ -744,7 +744,7 @@ public class Cache2kConfiguration<K, V> implements ConfigurationBean, Configurat
   /**
    * @see Cache2kBuilder#boostConcurrency(boolean)
    */
-  public void setBoostConcurrency(final boolean v) {
+  public void setBoostConcurrency(boolean v) {
     boostConcurrency = v;
   }
 
@@ -755,7 +755,7 @@ public class Cache2kConfiguration<K, V> implements ConfigurationBean, Configurat
   /**
    * @see Cache2kBuilder#enableJmx(boolean)
    */
-  public void setEnableJmx(final boolean v) {
+  public void setEnableJmx(boolean v) {
     enableJmx = v;
   }
 
@@ -766,7 +766,7 @@ public class Cache2kConfiguration<K, V> implements ConfigurationBean, Configurat
   /**
    * @see Cache2kBuilder#disableMonitoring(boolean)
    */
-  public void setDisableMonitoring(final boolean disableMonitoring) {
+  public void setDisableMonitoring(boolean disableMonitoring) {
     this.disableMonitoring = disableMonitoring;
   }
 
