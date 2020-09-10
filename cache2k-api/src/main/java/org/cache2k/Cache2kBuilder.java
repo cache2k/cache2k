@@ -331,7 +331,7 @@ public class Cache2kBuilder<K, V> {
   /**
    * Expired data is kept in the cache until the entry is evicted. This consumes memory,
    * but if the data is accessed again the previous data can be used by the cache loader
-   * for optimizing (e.g. if-modified-since for a HTTP request). Default value: false
+   * for optimizing (e.g. if-modified-since for a HTTP request). Default value: {@code false}
    *
    * @see AdvancedCacheLoader
    */

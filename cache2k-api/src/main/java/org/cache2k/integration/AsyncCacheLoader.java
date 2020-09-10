@@ -20,6 +20,7 @@ package org.cache2k.integration;
  * #L%
  */
 
+import org.cache2k.Cache2kBuilder;
 import org.cache2k.CacheEntry;
 
 import java.util.EventListener;
@@ -86,7 +87,13 @@ public interface AsyncCacheLoader<K, V> {
     Executor getLoaderExecutor();
 
     /**
-     * The existing cache entry or {@code null} if the no mapping exists.
+     * Current entry in the cache. The entry is available if the load is caused
+     * by a reload or refresh. If expired before, {@code null} is returned.
+     * If {@link Cache2kBuilder#keepDataAfterExpired(boolean)} is enabled, also
+     * an expired entry is provided to the loader for optimization purposes.
+     * See also the description of
+     * {@link Cache2kBuilder#keepDataAfterExpired(boolean)} and
+     * {@link Cache2kBuilder#refreshAhead(boolean)}.
      */
     CacheEntry<K, V> getCurrentEntry();
 

@@ -202,6 +202,9 @@ public class ExpiryListenerTest extends TestingBase {
     assertEquals(2, loaderCount.get());
   }
 
+  /**
+   * Is expiry listener called before the load?
+   */
   @Test
   public void expireBeforeLoadSharp() {
     expireBeforeLoad(true);

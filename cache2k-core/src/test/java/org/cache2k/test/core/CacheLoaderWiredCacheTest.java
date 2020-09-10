@@ -24,17 +24,19 @@ import org.cache2k.Cache;
 import org.cache2k.Cache2kBuilder;
 import org.cache2k.CacheEntry;
 import org.cache2k.event.CacheEntryCreatedListener;
+import org.cache2k.expiry.ExpiryTimeValues;
+import org.cache2k.integration.AdvancedCacheLoader;
+import org.cache2k.integration.AsyncCacheLoader;
 import org.cache2k.integration.CacheLoader;
 import org.cache2k.testing.category.FastTests;
 import org.cache2k.test.util.CacheRule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.*;
 
 /**
  * Additional loader tests with listeners. Generally add always a dummy listener
@@ -77,6 +79,59 @@ public class CacheLoaderWiredCacheTest extends CacheLoaderTest {
     assertFalse(c.containsKey(2));
     assertTrue(c.containsKey(5));
     c.close();
+  }
+
+  /**
+   * @see CacheLoaderTest#advancedLoaderEntryNotSetIfExpired()
+   */
+  @Test
+  public void asyncLoaderEntryNotSetIfExpired() {
+    Cache<Integer, Integer> c = target.cache(new CacheRule.Context<Integer, Integer>() {
+      @Override
+      public void extend(Cache2kBuilder<Integer, Integer> b) {
+        b.loader(new AsyncCacheLoader<Integer, Integer>() {
+          @Override
+          public void load(Integer key, Context<Integer, Integer> context,
+                           Callback<Integer> callback) {
+            assertNull(context.getCurrentEntry());
+            callback.onLoadSuccess(key);
+          }
+        });
+      }
+    });
+    c.get(123);
+    c.expireAt(123, ExpiryTimeValues.NOW);
+    c.get(123);
+  }
+
+  /**
+   * @see CacheLoaderTest#advancedLoaderEntrySetIfExpiredWithKeepData()
+   */
+  @Test
+  public void asyncLoaderEntrySetIfExpiredWithKeepData() {
+    final AtomicBoolean expectEntry = new AtomicBoolean();
+    Cache<Integer, Integer> c = target.cache(new CacheRule.Context<Integer, Integer>() {
+      @Override
+      public void extend(Cache2kBuilder<Integer, Integer> b) {
+        b.keepDataAfterExpired(true);
+        b.loader(new AsyncCacheLoader<Integer, Integer>() {
+          @Override
+          public void load(Integer key, Context<Integer, Integer> context,
+                           Callback<Integer> callback) {
+            if (expectEntry.get()) {
+              assertNotNull(context.getCurrentEntry());
+            } else {
+              assertNull(context.getCurrentEntry());
+            }
+            callback.onLoadSuccess(key);
+          }
+        });
+      }
+    });
+    c.get(123);
+    c.expireAt(123, ExpiryTimeValues.NOW);
+    expectEntry.set(true);
+    c.get(123);
   }
 
 }

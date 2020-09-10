@@ -49,7 +49,7 @@ public class ClockProEvictionTest extends TestingBase {
 
   @Test
   public void testChunking() {
-    final int maxSize = 100000;
+    final int maxSize = 10000;
     final int minChunkSize = 1;
     Cache<Integer, Integer> c = provideCache(maxSize);
     int evictionChunk = 1;
