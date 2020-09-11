@@ -45,8 +45,20 @@ public class EvictionFactory {
     boolean boostConcurrency = config.isBoostConcurrency();
     long maximumWeight = config.getMaximumWeight();
     long entryCapacity = config.getEntryCapacity();
-    if (entryCapacity < 0 && maximumWeight < 0) {
-      entryCapacity = 2000;
+    Weigher weigher = (Weigher) customizationContext.createCustomization(config.getWeigher());
+    if (weigher != null) {
+      if (maximumWeight <= 0) {
+        throw new IllegalArgumentException(
+          "maximumWeight > 0 expected. Weigher requires to set maximumWeight");
+      }
+      entryCapacity = -1;
+    } else {
+      if (entryCapacity < 0) {
+        entryCapacity = 2000;
+      }
+      if (entryCapacity == 0) {
+        throw new IllegalArgumentException("entryCapacity of 0 is not supported.");
+      }
     }
     int segmentCountOverride = HeapCache.TUNABLE.segmentCountOverride;
     int segmentCount =
@@ -56,7 +68,6 @@ public class EvictionFactory {
     Eviction[] segments = new Eviction[segmentCount];
     long maxSize = EvictionFactory.determineMaxSize(entryCapacity, segmentCount);
     long maxWeight = EvictionFactory.determineMaxWeight(maximumWeight, segmentCount);
-    Weigher weigher = (Weigher) customizationContext.createCustomization(config.getWeigher());
     for (int i = 0; i < segments.length; i++) {
       Eviction ev = new ClockProPlusEviction(hc, l, maxSize, weigher, maxWeight, strictEviction);
       segments[i] = ev;
