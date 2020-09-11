@@ -1,4 +1,4 @@
-package org.cache2k.core;
+package org.cache2k.core.eviction;
 
 /*
  * #%L

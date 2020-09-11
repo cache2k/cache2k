@@ -106,15 +106,8 @@ public abstract class AbstractEviction implements Eviction, EvictionMetrics {
     noListenerCall = listener instanceof HeapCacheListener.NoOperation;
 
     this.noChunking = noChunking;
-    updateLimits(maxSize, maxWeight);
-  }
-
-  private void updateLimits(long maxSize, long maxWeight) {
     this.maxSize = maxSize;
     this.maxWeight = maxWeight;
-    if (this.maxSize < 0 && this.maxWeight < 0) {
-      throw new IllegalArgumentException("either maxWeight or entryCapacity must be specified");
-    }
   }
 
   @Override
@@ -187,7 +180,7 @@ public abstract class AbstractEviction implements Eviction, EvictionMetrics {
 
   /**
    * Update total weight in this eviction segment. The total weight differs from
-   * the accumulated entry weight, since it is based on the stored decrompressed, compressed
+   * the accumulated entry weight, since it is based on the stored decompressed, compressed
    * weight. We calculate based on the stored weight, because we don't want to call the
    * weigher for deletion again, which may cause wrong counts.
    */
@@ -253,19 +246,35 @@ public abstract class AbstractEviction implements Eviction, EvictionMetrics {
     evictEventually(0);
   }
 
+  /**
+   * Perform eviction, if needed.
+   *
+   * <p>We might do a second eviction attempt, if not within limits.
+   * An eviction might be skipped after the entry is elected for eviction
+   * from the eviction algorithm, if its currently processing.
+   *
+   * <p>If a weigher is present we might need to evict more than one entry.
+   */
   private void evictEventually(int spaceNeeded) {
     Entry[] chunk;
     synchronized (lock) {
       chunk = fillEvictionChunk(spaceNeeded);
     }
-    int processCount = evictChunk(chunk);
-    if (processCount > 0 || chunkSize > 1) {
-      return;
+    if (chunk == null) { return; }
+    boolean needsEviction = evictChunk(chunk, spaceNeeded);
+    if (!needsEviction) { return; }
+    long loop = 1;
+    if (weigher != null) {
+      synchronized (lock) {
+        loop = getSize();
+      }
     }
-    synchronized (lock) {
-      chunk = fillEvictionChunk(spaceNeeded);
+    while (needsEviction && loop-- > 0) {
+      synchronized (lock) {
+        chunk = fillEvictionChunk(spaceNeeded);
+      }
+      needsEviction = evictChunk(chunk, spaceNeeded);
     }
-    evictChunk(chunk);
   }
 
   private Entry[] fillEvictionChunk(int spaceNeeded) {
@@ -287,12 +296,8 @@ public abstract class AbstractEviction implements Eviction, EvictionMetrics {
     return chunk;
   }
 
-  private int evictChunk(Entry[] chunk) {
-    if (chunk == null) { return 0; }
-    Entry[] chunkCopy = new Entry[chunk.length];
-    for (int i = 0; i < chunk.length; i++) {
-      chunkCopy[i] = chunk[i];
-    }
+  private boolean evictChunk(Entry[] chunk, int spaceNeeded) {
+    if (chunk == null) { return false; }
     int processCount = removeFromHash(chunk);
     synchronized (lock) {
       if (processCount > 0) {
@@ -300,8 +305,8 @@ public abstract class AbstractEviction implements Eviction, EvictionMetrics {
       }
       evictionRunningCount -= chunk.length;
       evictChunkReuse = chunk;
+      return isEvictionNeeded(spaceNeeded);
     }
-    return processCount;
   }
 
   /**
@@ -347,7 +352,7 @@ public abstract class AbstractEviction implements Eviction, EvictionMetrics {
   }
 
   /**
-   * Same as {@link #removeFromHashWithListener(Entry[])}
+   * Same as {@link #removeFromHash(Entry[])}
    * Before calling the listener, we need to lock the entry, to keep other
    * operations or evictions in concurrent tasks away from it.
    */
@@ -487,10 +492,10 @@ public abstract class AbstractEviction implements Eviction, EvictionMetrics {
   @Override
   public void changeCapacity(long entryCountOrWeight) {
     if (entryCountOrWeight < 0) {
-      throw new IllegalArgumentException("Negative capacity");
+      throw new IllegalArgumentException("Negative capacity or weight");
     }
     if (entryCountOrWeight <= 0) {
-      throw new IllegalArgumentException("Capacity of 0 is not supported");
+      throw new IllegalArgumentException("Capacity or weight of 0 is not supported");
     }
     Entry[] chunk;
     synchronized (lock) {
@@ -498,7 +503,7 @@ public abstract class AbstractEviction implements Eviction, EvictionMetrics {
       chunk = fillEvictionChunk(0);
     }
     while (chunk != null) {
-      evictChunk(chunk);
+      evictChunk(chunk, 0);
       synchronized (lock) {
         chunk = fillEvictionChunk(0);
         if (chunk == null) {
@@ -510,9 +515,9 @@ public abstract class AbstractEviction implements Eviction, EvictionMetrics {
 
   private void modifyCapacityLimits(long entryCountOrWeight) {
     if (isWeigherPresent()) {
-      updateLimits(maxSize, entryCountOrWeight);
+      maxWeight = entryCountOrWeight;
     } else {
-      updateLimits(entryCountOrWeight, maxWeight);
+      maxSize = entryCountOrWeight;
     }
   }
 

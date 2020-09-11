@@ -1,4 +1,4 @@
-package org.cache2k.core;
+package org.cache2k.core.eviction;
 
 /*
  * #%L
@@ -90,7 +90,7 @@ public class WeigherTest extends TestingBase {
    * to the other caches.
    */
   @Test
-  public void minimumWeight() {
+  public void zeroWeight() {
     long size = 1;
     Cache<Integer, Integer> c = builder(Integer.class, Integer.class)
       .eternal(true)
@@ -126,34 +126,7 @@ public class WeigherTest extends TestingBase {
   }
 
   @Test
-  public void weightUpdated() {
-    int size = 2;
-    Cache<Integer, Integer> c = builder(Integer.class, Integer.class)
-      .eternal(true)
-      .entryCapacity(-1)
-      .weigher(new Weigher<Integer, Integer>() {
-        @Override
-        public int weigh(Integer key, Integer value) {
-          return value;
-        }
-      })
-      .maximumWeight(size)
-      .strictEviction(true)
-      .build();
-    c.put(1, 1);
-    c.put(2, 1);
-    assertEquals(2, countEntriesViaIteration());
-    c.put(2, 100);
-    assertEquals(1, countEntriesViaIteration());
-    assertTrue("the entry that is updated is never removed", c.containsKey(2));
-    c.put(1, 1);
-    assertEquals(1, countEntriesViaIteration());
-    assertFalse("the other entry is removed", c.containsKey(2));
-    assertEquals(101, getInfo().getEvictedWeight());
-  }
-
-  @Test
-  public void weightUpdatedBig() {
+  public void weightUpdatedBigRemoveMoreThanOne() {
     int size = 20000000;
     Cache<Integer, Integer> c = builder(Integer.class, Integer.class)
       .eternal(true)
@@ -167,9 +140,42 @@ public class WeigherTest extends TestingBase {
       .maximumWeight(size)
       .strictEviction(true)
       .build();
-    c.put(1, 1);
+    c.put(10, 1);
+    c.put(11, 1);
+    c.put(12, 1);
+    c.put(13, 1);
+    c.put(14, 1);
     c.put(2, 1);
-    assertEquals(2, countEntriesViaIteration());
+    assertEquals(6, countEntriesViaIteration());
+    c.put(2, size * 2);
+    assertEquals(1, countEntriesViaIteration());
+    assertTrue("the entry that is updated is never removed", c.containsKey(2));
+    c.put(1, 1);
+    assertEquals(1, countEntriesViaIteration());
+    assertFalse("the other entry is removed", c.containsKey(2));
+  }
+
+  @Test
+  public void insertBig() {
+    int size = 20000000;
+    Cache<Integer, Integer> c = builder(Integer.class, Integer.class)
+      .eternal(true)
+      .entryCapacity(-1)
+      .weigher(new Weigher<Integer, Integer>() {
+        @Override
+        public int weigh(Integer key, Integer value) {
+          return value;
+        }
+      })
+      .maximumWeight(size)
+      .strictEviction(true)
+      .build();
+    c.put(10, 1);
+    c.put(11, 1);
+    c.put(12, 1);
+    c.put(13, 1);
+    c.put(14, 1);
+    assertEquals(5, countEntriesViaIteration());
     c.put(2, size * 2);
     assertEquals(1, countEntriesViaIteration());
     assertTrue("the entry that is updated is never removed", c.containsKey(2));
