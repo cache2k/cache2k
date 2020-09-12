@@ -8,12 +8,12 @@
   <parent>
     <groupId>org.cache2k</groupId>
     <artifactId>cache2k-parent</artifactId>
-    <version>1.4.0.Final</version>
+    <version>mvn -Pandroid versions:commit</version>
     <relativePath>../pom.xml</relativePath>
   </parent>
 
   <artifactId>cache2k-base-bom</artifactId>
-  <version>1.4.0.Final</version>
+  <version>mvn -Pandroid versions:commit</version>
   <name>cache2k base BOM</name>
 
   <description>
