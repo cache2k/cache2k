@@ -52,16 +52,12 @@ For a detailed introduction continue with [Getting Started](docs/latest/user-gui
 
 ## News
 
+  * **Version 1.4.0.Final, 2020-09-12**: Eviction listener, GraalVM support, async loading, See [Version 1.4.0.Final release notes](1/4.0.Final.html)
   * **Version 1.2.4.Final, 2019-09-04**: Service release for stable version, See [Version 1.2.4.Final release notes](1/2.4.Final.html)
-  * **Version 1.3.1.Alpha, 2019-08-26**: First preview of version 1.4, See [Version 1.3.1.Alpha release notes](1/3.1.Alpha.html)
   * **Version 1.2.3.Final, 2019-08-08**: Service release for stable version, See [Version 1.2.3.Final release notes](1/2.3.Final.html)
   * **Version 1.2.2.Final, 2019-06-06**: Service release for stable version, See [Version 1.2.2.Final release notes](1/2.2.Final.html)
   * **Version 1.2.1.Final, 2019-03-08**: Service release for stable version, See [Version 1.2.1.Final release notes](1/2.1.Final.html)
   * **Version 1.2.0.Final, 2018-08-23**: Release of new stable version, See [Version 1.2.0.Final release notes](1/2.0.Final.html)
-  * **Version 1.1.4.Beta, 2018-08-14**: Preview. XSD Schema improvements, first release candidate for 1.2, See [Version 1.1.4.Beta release notes](1/1.4.Beta.html)
-  * **Version 1.1.3.Alpha, 2018-08-02**: Preview. Configuration infrastructure improvements, XSD Schema, See [Version 1.1.3.Alpha release notes](1/1.3.Alpha.html)
-  * **Version 1.1.2.Alpha, 2018-07-17**: Preview. Spring integration, JCache cache creation, IntCache optimization, See [Version 1.1.2.Alpha release notes](1/1.2.Alpha.html)
-  * **Version 1.1.1.Alpha, 2018-07-02**: Preview. new jar file structure, See [Version 1.1.1.Alpha release notes](1/1.1.Alpha.html)
   * **Version 1.0.2.Final, 2017-12-29**: Support JCache standard 1.1, See [Version 1.0.2.Final release notes](1/0.2.Final.html)
   * **Version 1.0.1.Final, 2017-08-14**: minor bugfix release, See [Version 1.0.1.Final release notes](1/0.1.Final.html)
   * **Version 1.0.0.Final, 2017-07-11**: Minor documentation tweaks, allow more chars in a cache name, See [Version 1.0.0.Final release notes](1/0.0.Final.html)
