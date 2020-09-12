@@ -225,7 +225,7 @@ public abstract class AbstractEviction implements Eviction, EvictionMetrics {
 
   private boolean isEvictionNeeded(int spaceNeeded) {
     if (isWeigherPresent()) {
-      return totalWeight + spaceNeeded > maxWeight;
+      return totalWeight + spaceNeeded > maxWeight && getSize() > 0;
     } else {
       return getSize() + spaceNeeded - evictionRunningCount > maxSize;
     }
@@ -520,6 +520,18 @@ public abstract class AbstractEviction implements Eviction, EvictionMetrics {
       maxSize = entryCountOrWeight;
     }
   }
+
+  @Override
+  public final long removeAll() {
+    long removedCount = removeAllFromReplacementList();
+    totalWeight = 0;
+    return removedCount;
+  }
+
+  /**
+   *
+   */
+  protected abstract long removeAllFromReplacementList();
 
   /**
    * Place the entry as a new entry into the eviction data structures.

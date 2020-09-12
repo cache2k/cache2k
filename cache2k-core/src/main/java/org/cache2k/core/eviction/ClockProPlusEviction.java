@@ -133,7 +133,7 @@ public class ClockProPlusEviction extends AbstractEviction {
   }
 
   @Override
-  public long removeAll() {
+  protected long removeAllFromReplacementList() {
     Entry e, head;
     int count = 0;
     e = head = handCold;

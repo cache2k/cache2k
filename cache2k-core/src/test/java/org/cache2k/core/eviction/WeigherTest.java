@@ -111,7 +111,7 @@ public class WeigherTest extends TestingBase {
 
   @Test
   public void unboundedWeight() {
-    Cache<Integer, Integer> c = builder(Integer.class, Integer.class)
+    builder(Integer.class, Integer.class)
       .eternal(true)
       .entryCapacity(-1)
       .weigher(new Weigher<Integer, Integer>() {
@@ -311,6 +311,25 @@ public class WeigherTest extends TestingBase {
       });
       c.put(i, weight + 1);
     }
+  }
+
+  @Test
+  public void insertAndClear() {
+    int weight = 20;
+    Cache<Integer, Integer> c = builder(Integer.class, Integer.class)
+      .eternal(true)
+      .entryCapacity(-1)
+      .weigher(new Weigher<Integer, Integer>() {
+        @Override
+        public int weigh(Integer key, Integer value) {
+          return value;
+        }
+      })
+      .maximumWeight(weight)
+      .build();
+    c.put(1, 20);
+    c.clear();
+    c.put(2, 10);
   }
 
 }

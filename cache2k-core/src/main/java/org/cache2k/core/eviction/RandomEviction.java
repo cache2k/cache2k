@@ -79,7 +79,7 @@ public class RandomEviction extends AbstractEviction {
   }
 
   @Override
-  public long removeAll() {
+  protected long removeAllFromReplacementList() {
     long count = 0;
     Entry head = this.head;
     Entry e = this.head.prev;
