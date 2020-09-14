@@ -46,7 +46,6 @@ class CacheBaseInfo implements InternalCacheInfo {
   private final long missCnt;
   private final long hitCnt;
   private final long correctedPutCnt;
-  private final CollisionInfo collisionInfo;
   private String extraStatistics;
   private final IntegrityState integrityState;
   private final long totalLoadCnt;
@@ -96,8 +95,6 @@ class CacheBaseInfo implements InternalCacheInfo {
     internalExceptionCnt = heapCache.internalExceptionCnt;
     evictionRunningCnt = em.getEvictionRunningCount();
     integrityState = heapCache.getIntegrityState();
-    collisionInfo = new CollisionInfo();
-    heapCache.hash.calcHashCollisionInfo(collisionInfo);
     extraStatistics = em.getExtraStatistics();
     if (extraStatistics.startsWith(", ")) {
       extraStatistics = extraStatistics.substring(2);
@@ -212,31 +209,11 @@ class CacheBaseInfo implements InternalCacheInfo {
   }
   @Override
   public String getHitRateString() { return percentString(getHitRate()); }
-
-  /** How many items will be accessed with collision */
-  @Override
-  public int getNoCollisionPercent() {
-    if (size == 0) {
-      return 100;
-    }
-    return
-      (int) ((size - collisionInfo.collisionCnt) * 100 / size);
-  }
-  @Override
-  public int getHashQuality() {
-    return hashQuality(getNoCollisionPercent(), getHashLongestSlotSize());
-  }
   @Override
   public double getMillisPerLoad() {
     return getLoadCount() == 0 ? 0 : (metrics.getLoadMillis() * 1D / getLoadCount()); }
   @Override
   public long getLoadMillis() { return metrics.getLoadMillis(); }
-  @Override
-  public int getHashCollisionCount() { return collisionInfo.collisionCnt; }
-  @Override
-  public int getHashCollisionSlotCount() { return collisionInfo.collisionSlotCnt; }
-  @Override
-  public int getHashLongestSlotSize() { return collisionInfo.longestCollisionSize; }
   @Override
   public String getIntegrityDescriptor() { return integrityState.getStateDescriptor(); }
   @Override
@@ -257,15 +234,6 @@ class CacheBaseInfo implements InternalCacheInfo {
     if (integrityState.getStateFlags() > 0) {
       l.add(new HealthBean(cache, "integrity",
         HealthInfoElement.FAILURE, "Integrity check error: " + integrityState.getStateFlags()));
-    }
-    if (getHashQuality() < ERROR_THRESHOLD) {
-      l.add(new HealthBean(cache, "hashing",
-        HealthInfoElement.FAILURE,
-        "hash quality is " + getHashQuality() + " (threshold: " + ERROR_THRESHOLD  + ")"));
-    } else if (getHashQuality() < WARNING_THRESHOLD) {
-      l.add(new HealthBean(cache, "hashing",
-        HealthInfoElement.WARNING,
-        "hash quality is " + getHashQuality() + " (threshold: " + WARNING_THRESHOLD + ")"));
     }
     if (getKeyMutationCount() > 0) {
       l.add(new HealthBean(cache, "keyMutation",
@@ -361,11 +329,6 @@ class CacheBaseInfo implements InternalCacheInfo {
       .append("cleared=").append(timestampToString(getClearedTime())).append(", ")
       .append("infoCreated=").append(timestampToString(getInfoCreatedTime())).append(", ")
       .append("infoCreationDeltaMs=").append(getInfoCreationDeltaMs()).append(", ")
-      .append("collisions=").append(getHashCollisionCount()).append(", ")
-      .append("collisionSlots=").append(getHashCollisionSlotCount()).append(", ")
-      .append("longestSlot=").append(getHashLongestSlotSize()).append(", ")
-      .append("hashQuality=").append(getHashQuality()).append(", ")
-      .append("noCollisionPercent=").append(getNoCollisionPercent()).append(", ")
       .append("impl=").append(getImplementation()).append(", ")
       .append(getExtraStatistics()).append(", ")
       .append("evictionRunning=").append(getEvictionRunningCount()).append(", ")

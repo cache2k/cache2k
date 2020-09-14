@@ -398,27 +398,6 @@ public class Hash2<K, V> {
     entries = null;
   }
 
-  public void calcHashCollisionInfo(CollisionInfo inf) {
-    for (Entry<K, V> e : entries) {
-      if (e != null) {
-        e = e.another;
-        if (e != null) {
-          inf.collisionSlotCnt++;
-          int size = 1;
-          while (e != null) {
-            inf.collisionCnt++;
-            e = e.another;
-            size++;
-          }
-          if (inf.longestCollisionSize < size) {
-            inf.longestCollisionSize = size;
-          }
-        }
-      }
-    }
-
-  }
-
   /**
    * Count the entries in the hash table, by scanning through the hash table.
    * This is used for integrity checks.

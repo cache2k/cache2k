@@ -127,9 +127,6 @@ public class JmxSupportTest {
     String health =
       (String) SERVER.getAttribute(getCacheManagerObjectName(managerName), "HealthStatus");
     assertEquals(
-      "FAILURE: [cacheWithKeyMutation] hash quality is 0 (threshold: 5); " +
-      "FAILURE: [cacheWithMultipleIssues] hash quality is 0 (threshold: 5); " +
-      "WARNING: [cacheWithBadHashing] hash quality is 7 (threshold: 20); " +
       "WARNING: [cacheWithKeyMutation] key mutation detected; " +
       "WARNING: [cacheWithMultipleIssues] key mutation detected", health);
     Log.deregisterSuppression(suppress1);
@@ -244,7 +241,7 @@ public class JmxSupportTest {
     checkAttribute("LoadExceptionCount", 0L);
     checkAttribute("SuppressedLoadExceptionCount", 0L);
     checkAttribute("HitRate", 0.0);
-    checkAttribute("HashQuality", 100);
+    checkAttribute("HashQuality", -1);
     checkAttribute("MillisPerLoad", 0.0);
     checkAttribute("TotalLoadMillis", 0L);
     checkAttribute("Implementation", "LongHeapCache");

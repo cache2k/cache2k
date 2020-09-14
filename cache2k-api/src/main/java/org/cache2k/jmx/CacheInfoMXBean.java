@@ -189,12 +189,9 @@ public interface CacheInfoMXBean {
   double getHitRate();
 
   /**
-   * A value between 0 and 100 to help evaluate the quality of the hashing function.
-   * 100 means perfect, there are no collisions. A value of 80 means that 80% of the entries are
-   * reachable without collision. The size of the longest collision list is also combined into this
-   * value, for example if the longest collision size is 20, then this value is 85 and below.
-   * This way this metrics can be used to detect bad hash function and hash collision attacks.
+   * Removed since version 1.6. Always -1.
    */
+  @Deprecated
   int getHashQuality();
 
   /**

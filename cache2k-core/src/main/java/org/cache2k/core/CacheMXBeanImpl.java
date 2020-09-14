@@ -165,7 +165,7 @@ public class CacheMXBeanImpl implements CacheMXBean {
 
   @Override
   public int getHashQuality() {
-    return getInfo().getHashQuality();
+    return -1;
   }
 
   @Override

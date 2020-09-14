@@ -228,39 +228,6 @@ public interface InternalCacheInfo {
   String getHitRateString();
 
   /**
-   * Percentage of cache entries in collision lists, not reached by the first comparison.
-   */
-  int getNoCollisionPercent();
-
-  /**
-   * Value between 0 and 100 to help evaluate the quality of the hashing function. 100 means
-   * perfect, there are no collisions. This metric takes into account the collision to size ratio,
-   * the longest collision size and the collisions to slot ratio. The value reads 0 if the longest
-   * collision size gets more then 20.
-   *
-   * <p>Exposed via JMX {@code getHashQuality}
-   */
-  int getHashQuality();
-
-  /**
-   * Number of hashcode collisions within the cache. E.g. the hashCode: 2, 3, 3, 4, 4, 4 will
-   * mean three collisions.
-   */
-  int getHashCollisionCount();
-
-  /**
-   * Number of collision slots within the cache. E.g. the hashCode: 2, 3, 3, 4, 4, 4 will mean two
-   * collision slots.
-   */
-  int getHashCollisionSlotCount();
-
-  /**
-   * Number of hashcode collisions within the cache. E.g. the hashCode: 2, 3, 3, 4, 4, 4 will
-   * mean three collisions.
-   */
-  int getHashLongestSlotSize();
-
-  /**
    * Average duration in milliseconds for each load operation.
    */
   double getMillisPerLoad();
