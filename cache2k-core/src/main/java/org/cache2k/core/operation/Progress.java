@@ -77,6 +77,11 @@ public interface Progress<K, V, R> {
   boolean isDataFreshOrMiss();
 
   /**
+   * Value was loaded before as part of this operation.
+   */
+  boolean wasLoaded();
+
+  /**
    * The entry gets locked for mutation. Last command of semantic method.
    * Calls {@link Semantic#examine(Progress, ExaminationEntry)} again after lock
    * is obtain to assess the the state again. Calls back on

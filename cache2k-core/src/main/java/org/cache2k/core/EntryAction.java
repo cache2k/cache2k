@@ -314,6 +314,11 @@ public abstract class EntryAction<K, V, R> extends Entry.PiggyBack implements
   }
 
   @Override
+  public boolean wasLoaded() {
+    return successfulLoad;
+  }
+
+  @Override
   public boolean isDataFresh() {
     doNotCountAccess = true;
     return successfulLoad || heapEntry.hasFreshData(heapCache.getClock());

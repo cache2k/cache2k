@@ -268,7 +268,7 @@ public class EntryProcessorTest {
   public void nomap_getRefreshTime() {
     Cache<Integer, Integer> c = target.cache();
     final long t0 = millis();
-  c.invoke(1, new EntryProcessor<Integer, Integer, Object>() {
+    c.invoke(1, new EntryProcessor<Integer, Integer, Object>() {
       @Override
       public Object process(MutableCacheEntry<Integer, Integer> e) {
         assertThat(e.getCurrentTime(), greaterThanOrEqualTo(t0));
@@ -311,7 +311,8 @@ public class EntryProcessorTest {
       @Override
       public Object process(MutableCacheEntry<Integer, Integer> e) {
         assertThat(e.getCurrentTime(), greaterThanOrEqualTo(t0));
-        assertThat("refresh time updated by put()", e.getRefreshedTime(), greaterThanOrEqualTo(t0));
+        assertThat("refresh time updated by put()", e.getRefreshedTime(),
+          greaterThanOrEqualTo(t0));
         e.setRefreshedTime(early);
         assertEquals(early, e.getRefreshedTime());
         return null;
@@ -336,6 +337,49 @@ public class EntryProcessorTest {
   }
 
   @Test
+  public void load_unconditional() {
+    CacheWithLoader cwl = cacheWithLoader();
+    Cache<Integer, Integer> c = cwl.cache;
+    c.invoke(1, new EntryProcessor<Integer, Integer, Object>() {
+      @Override
+      public Object process(MutableCacheEntry<Integer, Integer> e) {
+        e.reload();
+        assertEquals(1, (int) e.getValue());
+        return null;
+      }
+    });
+    c.get(2);
+    assertEquals(2, cwl.loader.getCount());
+    c.invoke(2, new EntryProcessor<Integer, Integer, Object>() {
+      @Override
+      public Object process(MutableCacheEntry<Integer, Integer> e) {
+        assertTrue(e.exists());
+        e.reload();
+        assertEquals(2, (int) e.getValue());
+        return null;
+      }
+    });
+    assertEquals(3, cwl.loader.getCount());
+  }
+
+  @Test
+  public void reload_exception() {
+    Cache<Integer, Integer> c = target.cache();
+    try {
+      c.invoke(1, new EntryProcessor<Integer, Integer, Object>() {
+        @Override
+        public Object process(MutableCacheEntry<Integer, Integer> e) {
+          e.reload();
+          return null;
+        }
+      });
+      fail("exception expected");
+    } catch (EntryProcessingException ex) {
+      assertTrue(ex.getCause() instanceof UnsupportedOperationException);
+    }
+  }
+
+  @Test
   public void load_getRefreshTime() {
     CacheWithLoader cwl = cacheWithLoader();
     Cache<Integer, Integer> c = cwl.cache;
@@ -345,7 +389,8 @@ public class EntryProcessorTest {
       @Override
       public Object process(MutableCacheEntry<Integer, Integer> e) {
         assertThat(e.getCurrentTime(), greaterThanOrEqualTo(t0));
-        assertThat("refresh time updated by put()", e.getRefreshedTime(), greaterThanOrEqualTo(t0));
+        assertThat("refresh time updated by put()",
+          e.getRefreshedTime(), greaterThanOrEqualTo(t0));
         return null;
       }
     });

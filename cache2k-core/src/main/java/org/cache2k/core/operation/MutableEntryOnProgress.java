@@ -136,6 +136,18 @@ class MutableEntryOnProgress<K, V> implements MutableCacheEntry<K, V> {
     return value;
   }
 
+  @Override
+  public MutableCacheEntry<K, V> reload() {
+    if (!progress.isLoaderPresent()) {
+      throw new UnsupportedOperationException("Loader is not configured");
+    }
+    if (!progress.wasLoaded()) {
+      triggerLoadOrInstallationRead(false);
+      throw new Operations.NeedsLoadRestartException();
+    }
+    return this;
+  }
+
   private void triggerLoadOrInstallationRead(boolean ignoreMutate) {
     triggerInstallationRead(ignoreMutate);
     if (!exists && (ignoreMutate || !mutate) && progress.isLoaderPresent()) {

@@ -155,6 +155,12 @@ public interface MutableCacheEntry<K, V> extends CacheEntry<K, V> {
   MutableCacheEntry<K, V> setValue(V v);
 
   /**
+   * Calls the loader unconditionally in this operation. Multiple calls to reload
+   * have no effect.
+   */
+  MutableCacheEntry<K, V> reload();
+
+  /**
    * Removes an entry from the cache.
    *
    * <p>In case a writer is registered, {@link org.cache2k.integration.CacheWriter#delete}
