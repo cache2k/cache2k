@@ -415,7 +415,7 @@ public class HeapCache<K, V> extends BaseCache<K, V>
     long removed = eviction.removeAll();
     clearRemovedCnt += removed;
     clearCnt++;
-    initializeHeapCache();
+    timing.cancelAll();
     hash.clearWhenLocked();
     clearedTime = clock.millis();
   }
@@ -424,7 +424,6 @@ public class HeapCache<K, V> extends BaseCache<K, V>
     if (startedTime == 0) {
       startedTime = clock.millis();
     }
-    timing.reset();
   }
 
   /**

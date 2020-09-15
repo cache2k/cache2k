@@ -112,16 +112,11 @@ public abstract class Timing<K, V>  {
   public void init(InternalCache<K, V> c) { }
 
   /**
-   * Cancel all timer events, and re-initialize timer
-   */
-  public void reset() { }
-
-  /**
    * Cancels all pending timer events.
    */
   public void cancelAll() { }
 
-  public void close() { cancelAll(); }
+  public void close() { }
 
   /**
    * Return effective expiry policy, or null
