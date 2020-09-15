@@ -44,15 +44,13 @@ public class StaticTiming<K, V> extends Timing<K, V> {
   final InternalClock clock;
   boolean sharpExpiry;
   boolean refreshAhead;
-  SimpleTimer[] timer;
-  int timerMask;
+  SimpleTimer timer;
   long expiryMillis;
   InternalCache cache;
   /**
    * Dirty counter, intentionally only 32 bit
    */
   int timerCancelCount = 0;
-  int purgeIndex = 0;
   ResiliencePolicy<K, V> resiliencePolicy;
   CustomizationSupplier<ResiliencePolicy<K, V>> resiliencePolicyFactory;
 
@@ -103,13 +101,6 @@ public class StaticTiming<K, V> extends Timing<K, V> {
     resiliencePolicy.init(ctx);
     refreshAhead = c.isRefreshAhead();
     sharpExpiry = c.isSharpExpiry();
-    int timerCount = 1;
-    if (c.isBoostConcurrency()) {
-      int ncpu = Runtime.getRuntime().availableProcessors();
-      timerCount = 2 << (31 - Integer.numberOfLeadingZeros(ncpu));
-    }
-    timer = new SimpleTimer[timerCount];
-    timerMask = timerCount - 1;
   }
 
   @Override
@@ -124,24 +115,15 @@ public class StaticTiming<K, V> extends Timing<K, V> {
   @Override
   public synchronized void reset() {
     cancelAll();
-    for (int i = 0; i <= timerMask; i++) {
-      if (timer[i] != null) {
-        continue;
-      }
-      timer[i] = new SimpleTimerImpl(clock, cache.getName(), true);
-    }
+    timer = new SimpleTimerImpl(clock, cache.getName(), true);
   }
 
   @Override
   public synchronized void cancelAll() {
-    SimpleTimer timer;
-    for (int i = 0; i <= timerMask; i++) {
-      if ((timer = this.timer[i]) == null) {
-        continue;
-      }
+    if (timer != null) {
       timer.cancel();
-      this.timer[i] = null;
     }
+    timer = null;
   }
 
   @Override
@@ -262,7 +244,7 @@ public class StaticTiming<K, V> extends Timing<K, V> {
   }
 
   void scheduleTask(long nextRefreshTime, Entry e) {
-    SimpleTimer timer = this.timer[e.hashCode & timerMask];
+    SimpleTimer timer = this.timer;
     if (timer != null) {
       try {
         timer.schedule(e.getTask(), nextRefreshTime);
@@ -277,8 +259,7 @@ public class StaticTiming<K, V> extends Timing<K, V> {
       timerCancelCount++;
       if (timerCancelCount >= PURGE_INTERVAL) {
         synchronized (timer) {
-          timer[purgeIndex].purge();
-          purgeIndex = (purgeIndex + 1) & timerMask;
+          timer.purge();
           timerCancelCount = 0;
         }
       }

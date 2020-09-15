@@ -259,27 +259,4 @@ public class TimingHandlerTest {
     assertTrue(Math.abs(t) < _SHARP_POINT_IN_TIME);
   }
 
-  /**
-   * Check that the maximize concurrency is routed through to the timing handler properly.
-   */
-  @Test
-  public void maximizeConcurrency() {
-    Cache<Integer, Integer> c = Cache2kBuilder.of(Integer.class, Integer.class)
-      .boostConcurrency(true)
-      .expireAfterWrite(5, TimeUnit.MINUTES)
-      .loader(new CacheLoader<Integer, Integer>() {
-        @Override
-        public Integer load(final Integer key) throws Exception {
-          return key + 123;
-        }
-      })
-      .build();
-    int _timerMask =
-      ((StaticTiming) c.requestInterface(HeapCache.class).getTiming()).timerMask;
-    if (Runtime.getRuntime().availableProcessors() >1) {
-      assertTrue(_timerMask > 0);
-    }
-    c.close();
-  }
-
 }
