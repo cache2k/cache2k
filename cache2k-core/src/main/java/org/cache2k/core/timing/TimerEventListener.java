@@ -1,4 +1,4 @@
-package org.cache2k.core;
+package org.cache2k.core.timing;
 
 /*
  * #%L
@@ -20,8 +20,11 @@ package org.cache2k.core;
  * #L%
  */
 
+import org.cache2k.core.Entry;
+import org.cache2k.core.InternalCache;
+
 /**
- * Notifications from the {@link TimingHandler} to the {@link InternalCache} upon timer
+ * Notifications from the {@link Timing} to the {@link InternalCache} upon timer
  * events. This interface is part of {@link InternalCache} at the moment, but maybe better
  * separated in the future.
  *

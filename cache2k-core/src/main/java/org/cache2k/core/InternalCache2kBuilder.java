@@ -25,6 +25,7 @@ import org.cache2k.CacheEntry;
 import org.cache2k.configuration.CustomizationSupplier;
 import org.cache2k.core.eviction.EvictionFactory;
 import org.cache2k.core.operation.ExaminationEntry;
+import org.cache2k.core.timing.Timing;
 import org.cache2k.core.util.ClockDefaultImpl;
 import org.cache2k.core.util.InternalClock;
 import org.cache2k.event.CacheEntryCreatedListener;
@@ -356,11 +357,11 @@ public class InternalCache2kBuilder<K, V> {
       }
       bc.eviction = EVICTION_FACTORY.constructEviction(
         bc, bc, wc, config, Runtime.getRuntime().availableProcessors());
-      TimingHandler rh = TimingHandler.of(timeReference, config);
+      Timing rh = Timing.of(timeReference, config);
       bc.setTiming(rh);
       wc.init();
     } else {
-      TimingHandler rh = TimingHandler.of(timeReference, config);
+      Timing rh = Timing.of(timeReference, config);
       bc.setTiming(rh);
       bc.eviction = EVICTION_FACTORY.constructEviction(
         bc, bc, HeapCacheListener.NO_OPERATION, config, Runtime.getRuntime().availableProcessors());

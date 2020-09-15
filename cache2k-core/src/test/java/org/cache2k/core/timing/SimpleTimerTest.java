@@ -1,4 +1,4 @@
-package org.cache2k.core.util;
+package org.cache2k.core.timing;
 
 /*
  * #%L
@@ -20,6 +20,7 @@ package org.cache2k.core.util;
  * #L%
  */
 
+import org.cache2k.core.util.SimulatedClock;
 import org.cache2k.testing.category.FastTests;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -39,8 +40,8 @@ public class SimpleTimerTest {
     long _START_TIME = 100;
     long _OFFSET = 1;
     int _SIZE = 123;
-    SimpleTimer t =
-      new SimpleTimer(
+    SimpleTimerImpl t =
+      new SimpleTimerImpl(
         new SimulatedClock(_START_TIME, true),
         SimpleTimerTest.class.getName(), true);
     MyTimerTask[] arr = new MyTimerTask[_SIZE];
@@ -66,7 +67,7 @@ public class SimpleTimerTest {
   public void misc() {
     long _START_TIME = 100;
     SimpleTimer st =
-      new SimpleTimer(
+      new SimpleTimerImpl(
         new SimulatedClock(_START_TIME, true),
         SimpleTimerTest.class.getName(), true);
     SimpleTimerTask t = new MyTimerTask();

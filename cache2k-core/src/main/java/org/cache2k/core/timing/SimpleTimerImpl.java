@@ -1,4 +1,4 @@
-package org.cache2k.core.util;
+package org.cache2k.core.timing;
 
 /*
  * #%L
@@ -19,6 +19,8 @@ package org.cache2k.core.util;
  * limitations under the License.
  * #L%
  */
+
+import org.cache2k.core.util.InternalClock;
 
 import java.util.Arrays;
 import java.util.concurrent.TimeUnit;
@@ -87,7 +89,7 @@ import java.util.concurrent.locks.ReentrantLock;
  * @see     Object#wait(long)
  * @since   1.3
  */
-public class SimpleTimer {
+public class SimpleTimerImpl implements SimpleTimer {
 
   private final Lock lock = new ReentrantLock();
   private final Condition condition = lock.newCondition();
@@ -137,7 +139,7 @@ public class SimpleTimer {
    * @throws NullPointerException if {@code name} is null
    * @since 1.5
    */
-  public SimpleTimer(InternalClock c, String name, boolean isDaemon) {
+  public SimpleTimerImpl(InternalClock c, String name, boolean isDaemon) {
     this.clock = c;
     thread = new TimerThread(clock, lock, condition, queue);
     if (!c.isJobSchedulable()) {
@@ -148,7 +150,7 @@ public class SimpleTimer {
     } else {
       reachedJob = clock.createJob(new InternalClock.TimeReachedEvent() {
         @Override
-        public void timeIsReached(final long millis) {
+        public void timeIsReached(long millis) {
           timeReachedEvent(millis);
         }
       });
@@ -168,7 +170,8 @@ public class SimpleTimer {
    *         cancelled, timer was cancelled, or timer thread terminated.
    * @throws NullPointerException if {@code task} is null
    */
-  public void schedule(SimpleTimerTask task, final long time) {
+  @Override
+  public void schedule(SimpleTimerTask task, long time) {
     if (time < 0) {
       throw new IllegalArgumentException("Illegal execution time.");
     }
@@ -192,6 +195,11 @@ public class SimpleTimer {
     }
   }
 
+  @Override
+  public void cancel(SimpleTimerTask t) {
+    t.cancel();
+  }
+
   /**
    * Terminates this timer, discarding any currently scheduled tasks.
    * Does not interfere with a currently executing task (if it exists).
@@ -206,6 +214,7 @@ public class SimpleTimer {
    * <p>This method may be called repeatedly; the second and subsequent
    * calls have no effect.
    */
+  @Override
   public void cancel() {
     lock.lock();
     try {
@@ -240,6 +249,7 @@ public class SimpleTimer {
    * @return the number of tasks removed from the queue.
    * @since 1.5
    */
+  @Override
   public int purge() {
     lock.lock();
     try {
@@ -259,7 +269,7 @@ public class SimpleTimer {
     }
   }
 
-  void timeReachedEvent(final long currentTime) {
+  void timeReachedEvent(long currentTime) {
     while (true) {
       SimpleTimerTask task;
       boolean fired = false;
@@ -319,7 +329,7 @@ class TimerThread extends Thread {
    * Otherwise, the Timer would never be garbage-collected and this
    * thread would never go away.
    */
-  private TaskQueue queue;
+  private final TaskQueue queue;
 
   private final InternalClock clock;
 

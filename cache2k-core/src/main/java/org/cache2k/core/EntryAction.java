@@ -23,6 +23,7 @@ package org.cache2k.core;
 import org.cache2k.CacheEntry;
 import org.cache2k.CacheException;
 import org.cache2k.core.operation.LoadedEntry;
+import org.cache2k.core.timing.Timing;
 import org.cache2k.expiry.ExpiryPolicy;
 import org.cache2k.event.CacheEntryExpiredListener;
 import org.cache2k.expiry.ExpiryTimeValues;
@@ -280,7 +281,7 @@ public abstract class EntryAction<K, V, R> extends Entry.PiggyBack implements
   }
 
   @SuppressWarnings("unchecked")
-  protected abstract TimingHandler<K, V> timing();
+  protected abstract Timing<K, V> timing();
 
   @Override
   public K getKey() {

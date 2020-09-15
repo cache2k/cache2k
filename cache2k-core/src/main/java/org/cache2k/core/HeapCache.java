@@ -39,6 +39,7 @@ import org.cache2k.core.concurrency.Job;
 import org.cache2k.core.concurrency.OptimisticLock;
 import org.cache2k.core.concurrency.ThreadFactoryProvider;
 
+import org.cache2k.core.timing.Timing;
 import org.cache2k.core.util.InternalClock;
 import org.cache2k.core.util.Log;
 import org.cache2k.core.util.TunableConstants;
@@ -109,7 +110,12 @@ public class HeapCache<K, V> extends BaseCache<K, V>
   public CacheManagerImpl manager;
   protected AdvancedCacheLoader<K, V> loader;
   protected InternalClock clock;
-  protected TimingHandler<K, V> timing = TimingHandler.ETERNAL;
+  protected Timing<K, V> timing = Timing.ETERNAL;
+
+  /** Used for tests */
+  public Timing<K, V> getTiming() {
+    return timing;
+  }
 
   /**
    * Structure lock of the cache. Every operation that needs a consistent structure
@@ -327,9 +333,9 @@ public class HeapCache<K, V> extends BaseCache<K, V>
     return new ExclusiveExecutor(threadCount, getThreadNamePrefix());
   }
 
-  public void setTiming(TimingHandler<K, V> rh) {
+  public void setTiming(Timing<K, V> rh) {
     timing = rh;
-    if (!(rh instanceof TimingHandler.TimeAgnostic)) {
+    if (!(rh instanceof Timing.AgnosticTimingHandler)) {
       setFeatureBit(UPDATE_TIME_NEEDED, true);
     }
   }
@@ -382,7 +388,7 @@ public class HeapCache<K, V> extends BaseCache<K, V>
     }
     synchronized (lock) {
       initializeHeapCache();
-      if (isRefreshAhead() && timing instanceof TimingHandler.TimeAgnostic) {
+      if (isRefreshAhead() && timing instanceof Timing.AgnosticTimingHandler) {
         throw new IllegalArgumentException("refresh ahead enabled, but no expiry variant defined");
       }
       closing = false;
@@ -1760,7 +1766,7 @@ public class HeapCache<K, V> extends BaseCache<K, V>
     }
 
     @Override
-    protected TimingHandler<K, V> timing() {
+    protected Timing<K, V> timing() {
       return timing;
     }
 

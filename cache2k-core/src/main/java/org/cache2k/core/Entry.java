@@ -22,7 +22,7 @@ package org.cache2k.core;
 
 import org.cache2k.CacheEntry;
 import org.cache2k.core.util.InternalClock;
-import org.cache2k.core.util.SimpleTimerTask;
+import org.cache2k.core.timing.SimpleTimerTask;
 import org.cache2k.expiry.ExpiryPolicy;
 import org.cache2k.core.operation.ExaminationEntry;
 import org.cache2k.core.storageApi.StorageEntry;

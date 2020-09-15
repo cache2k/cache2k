@@ -1,4 +1,4 @@
-package org.cache2k.core;
+package org.cache2k.core.timing;
 
 /*
  * #%L
@@ -22,6 +22,8 @@ package org.cache2k.core;
 
 import org.cache2k.Cache;
 import org.cache2k.Cache2kBuilder;
+import org.cache2k.core.DefaultResiliencePolicy;
+import org.cache2k.core.HeapCache;
 import org.cache2k.integration.ResiliencePolicy;
 import org.cache2k.testing.category.FastTests;
 import org.cache2k.test.util.IntCacheRule;
@@ -43,19 +45,19 @@ public class DefaultResiliencePolicyTest {
   @Rule public IntCacheRule target = new IntCacheRule();
 
   DefaultResiliencePolicy extractDefaultPolicy() {
-    TimingHandler h = extractHandler();
-    if (!(h instanceof TimingHandler.Static)) {
-      fail(TimingHandler.Static.class + " expected");
+    Timing h = extractHandler();
+    if (!(h instanceof StaticTiming)) {
+      fail(StaticTiming.class + " expected");
     }
-    ResiliencePolicy p = ((TimingHandler.Static) h).resiliencePolicy;
+    ResiliencePolicy p = ((StaticTiming) h).resiliencePolicy;
     if (!(p instanceof DefaultResiliencePolicy)) {
       fail(DefaultResiliencePolicy.class + " expected");
     }
     return (DefaultResiliencePolicy) p;
   }
 
-  TimingHandler extractHandler() {
-    return target.getCache().requestInterface(HeapCache.class).timing;
+  Timing extractHandler() {
+    return target.getCache().requestInterface(HeapCache.class).getTiming();
   }
 
   /**
@@ -69,7 +71,7 @@ public class DefaultResiliencePolicyTest {
       /* ... set loader ... */
       .build();
     target.setCache(c);
-    assertTrue(extractHandler() instanceof TimingHandler.EternalImmediate);
+    assertTrue(extractHandler() instanceof Timing.EternalImmediate);
   }
 
   /**
@@ -141,7 +143,7 @@ public class DefaultResiliencePolicyTest {
       /* ... set loader ... */
       .build();
     target.setCache(c);
-    assertTrue(extractHandler() instanceof TimingHandler.EternalImmediate);
+    assertTrue(extractHandler() instanceof Timing.EternalImmediate);
   }
 
   @Test
@@ -151,7 +153,7 @@ public class DefaultResiliencePolicyTest {
       /* ... set loader ... */
       .build();
     target.setCache(c);
-    assertTrue(extractHandler() instanceof TimingHandler.Immediate);
+    assertTrue(extractHandler() instanceof Timing.Immediate);
   }
 
   @Test

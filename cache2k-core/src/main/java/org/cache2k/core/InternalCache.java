@@ -26,6 +26,7 @@ import org.cache2k.configuration.CacheType;
 import org.cache2k.configuration.CustomizationSupplier;
 import org.cache2k.core.eviction.Eviction;
 import org.cache2k.core.operation.ExaminationEntry;
+import org.cache2k.core.timing.TimerEventListener;
 import org.cache2k.core.util.InternalClock;
 import org.cache2k.core.util.Log;
 import org.cache2k.core.storageApi.StorageAdapter;

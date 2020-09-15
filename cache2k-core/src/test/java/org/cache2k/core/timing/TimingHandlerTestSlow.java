@@ -1,4 +1,4 @@
-package org.cache2k.core;
+package org.cache2k.core.timing;
 
 /*
  * #%L
@@ -22,6 +22,7 @@ package org.cache2k.core;
 
 import org.cache2k.Cache;
 import org.cache2k.Cache2kBuilder;
+import org.cache2k.core.HeapCache;
 import org.cache2k.core.util.ClockDefaultImpl;
 import org.cache2k.core.util.InternalClock;
 import org.cache2k.core.util.TunableFactory;
@@ -45,7 +46,7 @@ public class TimingHandlerTestSlow {
   @Test
   public void purgeCalled() {
     int _SIZE = 1000;
-    int _PURGE_INTERVAL = TunableFactory.get(TimingHandler.Tunable.class).purgeInterval;
+    int _PURGE_INTERVAL = TunableFactory.get(Timing.Tunable.class).purgeInterval;
     Cache<Integer, Integer> c = Cache2kBuilder.of(Integer.class, Integer.class)
       .entryCapacity(_SIZE)
       .expireAfterWrite(5, TimeUnit.MINUTES)
@@ -61,7 +62,7 @@ public class TimingHandlerTestSlow {
     }
     assertEquals(10000, _PURGE_INTERVAL);
     int _timerCacnelCount =
-      ((TimingHandler.Static) c.requestInterface(HeapCache.class).timing).timerCancelCount;
+      ((StaticTiming) c.requestInterface(HeapCache.class).getTiming()).timerCancelCount;
     assertTrue("purge called", _timerCacnelCount < _PURGE_INTERVAL);
     c.close();
   }
