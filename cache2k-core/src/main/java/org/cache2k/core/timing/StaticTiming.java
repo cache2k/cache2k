@@ -47,10 +47,6 @@ public class StaticTiming<K, V> extends Timing<K, V> {
   SimpleTimer timer;
   long expiryMillis;
   InternalCache cache;
-  /**
-   * Dirty counter, intentionally only 32 bit
-   */
-  int timerCancelCount = 0;
   ResiliencePolicy<K, V> resiliencePolicy;
   CustomizationSupplier<ResiliencePolicy<K, V>> resiliencePolicyFactory;
 
@@ -255,14 +251,9 @@ public class StaticTiming<K, V> extends Timing<K, V> {
 
   public void cancelExpiryTimer(Entry<K, V> e) {
     Tasks tsk = (Tasks) e.getTask();
-    if (tsk != null && tsk.cancel()) {
-      timerCancelCount++;
-      if (timerCancelCount >= PURGE_INTERVAL) {
-        synchronized (timer) {
-          timer.purge();
-          timerCancelCount = 0;
-        }
-      }
+    SimpleTimer timer = this.timer;
+    if (tsk != null && timer != null) {
+      timer.cancel(tsk);
     }
     e.setTask(null);
   }

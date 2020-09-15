@@ -21,6 +21,8 @@ package org.cache2k.core.timing;
  */
 
 import org.cache2k.core.util.InternalClock;
+import org.cache2k.core.util.TunableConstants;
+import org.cache2k.core.util.TunableFactory;
 
 import java.util.Arrays;
 import java.util.concurrent.TimeUnit;
@@ -90,6 +92,13 @@ import java.util.concurrent.locks.ReentrantLock;
  * @since   1.3
  */
 public class SimpleTimerImpl implements SimpleTimer {
+
+  static final int PURGE_INTERVAL = TunableFactory.get(Tunable.class).purgeInterval;
+
+  /**
+   * Dirty counter, intentionally only 32 bit
+   */
+  int timerCancelCount = 0;
 
   private final Lock lock = new ReentrantLock();
   private final Condition condition = lock.newCondition();
@@ -197,7 +206,13 @@ public class SimpleTimerImpl implements SimpleTimer {
 
   @Override
   public void cancel(SimpleTimerTask t) {
-    t.cancel();
+    if (t.cancel()) {
+      timerCancelCount++;
+      if (timerCancelCount >= PURGE_INTERVAL) {
+        purge();
+        timerCancelCount = 0;
+      }
+    }
   }
 
   /**
@@ -307,7 +322,7 @@ public class SimpleTimerImpl implements SimpleTimer {
     }
   }
 
-/**
+  /**
  * This "helper class" implements the timer's task execution thread, which
  * waits for tasks on the timer queue, executions them when they fire,
  * reschedules repeating tasks, and removes cancelled tasks and spent
@@ -551,4 +566,14 @@ class TaskQueue {
   }
 
 }
+
+  public static class Tunable extends TunableConstants {
+
+    /**
+     * The number of cancelled timer tasks after that a purge is performed.
+     */
+    public int purgeInterval = 10000;
+
+  }
+
 }

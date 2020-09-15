@@ -49,7 +49,6 @@ public abstract class Timing<K, V>  {
   public static final Timing ETERNAL_IMMEDIATE = new EternalImmediate();
 
   private static final Timing IMMEDIATE = new Immediate();
-  static final int PURGE_INTERVAL = TunableFactory.get(Tunable.class).purgeInterval;
   static final long SAFETY_GAP_MILLIS = HeapCache.TUNABLE.sharpExpirySafetyGapMillis;
 
   /**
@@ -220,15 +219,6 @@ public abstract class Timing<K, V>  {
     public long suppressExceptionUntil(Entry<K, V> e, ExceptionInformation inf) {
       return 0;
     }
-  }
-
-  public static class Tunable extends TunableConstants {
-
-    /**
-     * The number of cancelled timer tasks after that a purge is performed.
-     */
-    public int purgeInterval = 10000;
-
   }
 
 }

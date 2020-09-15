@@ -43,28 +43,5 @@ public class TimingHandlerTestSlow {
 
   private static final InternalClock CLOCK = ClockDefaultImpl.INSTANCE;
 
-  @Test
-  public void purgeCalled() {
-    int _SIZE = 1000;
-    int _PURGE_INTERVAL = TunableFactory.get(Timing.Tunable.class).purgeInterval;
-    Cache<Integer, Integer> c = Cache2kBuilder.of(Integer.class, Integer.class)
-      .entryCapacity(_SIZE)
-      .expireAfterWrite(5, TimeUnit.MINUTES)
-      .loader(new CacheLoader<Integer, Integer>() {
-        @Override
-        public Integer load(final Integer key) throws Exception {
-          return key + 123;
-        }
-      })
-      .build();
-    for (int i = 0; i < _PURGE_INTERVAL + _SIZE + 125; i++) {
-      c.get(i);
-    }
-    assertEquals(10000, _PURGE_INTERVAL);
-    int _timerCacnelCount =
-      ((StaticTiming) c.requestInterface(HeapCache.class).getTiming()).timerCancelCount;
-    assertTrue("purge called", _timerCacnelCount < _PURGE_INTERVAL);
-    c.close();
-  }
 
 }
