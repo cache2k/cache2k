@@ -225,9 +225,6 @@ class CacheBaseInfo implements InternalCacheInfo {
   @Override
   public int getInfoCreationDeltaMs() { return infoCreationDeltaMs; }
 
-  static final int WARNING_THRESHOLD = HeapCache.TUNABLE.hashQualityWarningThreshold;
-  static final int ERROR_THRESHOLD = HeapCache.TUNABLE.hashQualityErrorThreshold;
-
   @Override
   public Collection<HealthInfoElement> getHealth() {
     List<HealthInfoElement> l = new ArrayList<HealthInfoElement>();

@@ -2066,16 +2066,6 @@ public class HeapCache<K, V> extends BaseCache<K, V>
     public ExceptionPropagator exceptionPropagator = new StandardExceptionPropagator();
 
     /**
-     * Alert level error, when hash quality is below this threshold. Default 5.
-     */
-    public int hashQualityWarningThreshold = 20;
-
-    /**
-     * Alert level error, when hash quality is below this threshold. Default 5.
-     */
-    public int hashQualityErrorThreshold = 5;
-
-    /**
      * Override parameter for segment count. Has to be power of two, e.g. 2, 4, 8, etc.
      * Invalid numbers will be replaced by the next higher power of two. Default is 0, no override.
      */
