@@ -21,15 +21,15 @@ package org.cache2k.core.util;
  */
 
 import org.cache2k.TimeReference;
-import org.cache2k.core.timing.Scheduler;
 
 /**
  * Abstraction for the system clock. A simulated clock implementation is used to
- * test timing related code in a faster way.
+ * test timing related code in a faster way. A simulated clock needs also to implement
+ * an {@link org.cache2k.core.timing.Scheduler} based on the other timing.
  *
  * @author Jens Wilke
  */
-public interface InternalClock extends TimeReference, Scheduler {
+public interface InternalClock extends TimeReference {
 
   /**
    * Returns the milliseconds since epoch. When using a simulated clock
@@ -46,11 +46,5 @@ public interface InternalClock extends TimeReference, Scheduler {
    * called to make time pass and make {@link #millis} return an increased number.
    */
   void sleep(long millis) throws InterruptedException;
-
-  /**
-   * The clock is capable to execute code when a certain time is reached and before
-   * the time advances further.
-   */
-  boolean isJobSchedulable();
 
 }

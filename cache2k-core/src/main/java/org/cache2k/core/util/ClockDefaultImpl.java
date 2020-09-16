@@ -33,11 +33,6 @@ public final class ClockDefaultImpl implements InternalClock {
   private ClockDefaultImpl() { }
 
   @Override
-  public boolean isJobSchedulable() {
-    return false;
-  }
-
-  @Override
   public long millis() {
     return System.currentTimeMillis();
   }
@@ -47,8 +42,4 @@ public final class ClockDefaultImpl implements InternalClock {
     Thread.sleep(millis);
   }
 
-  @Override
-  public void schedule(Runnable runnable, long millis) {
-    throw new UnsupportedOperationException();
-  }
 }

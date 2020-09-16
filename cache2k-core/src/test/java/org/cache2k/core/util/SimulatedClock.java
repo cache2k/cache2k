@@ -20,6 +20,8 @@ package org.cache2k.core.util;
  * #L%
  */
 
+import org.cache2k.core.timing.Scheduler;
+
 import java.util.Map;
 import java.util.TreeMap;
 import java.util.concurrent.Executor;
@@ -39,7 +41,7 @@ import java.util.concurrent.locks.ReentrantLock;
  *
  * @author Jens Wilke
  */
-public class SimulatedClock implements InternalClock {
+public class SimulatedClock implements InternalClock, Scheduler {
 
   private static final Executor DEFAULT_EXECUTOR = Executors.newSingleThreadExecutor();
 
@@ -101,11 +103,6 @@ public class SimulatedClock implements InternalClock {
    */
   public SimulatedClock(long initialMillis) {
     now = new AtomicLong(initialMillis);
-  }
-
-  @Override
-  public boolean isJobSchedulable() {
-    return true;
   }
 
   @Override

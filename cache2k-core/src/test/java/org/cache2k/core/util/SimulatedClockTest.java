@@ -31,7 +31,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
  */
 public class SimulatedClockTest {
 
-  private InternalClock clock = new SimulatedClock(100000);
+  private SimulatedClock clock = new SimulatedClock(100000);
 
   @Test(timeout = 10000)
   public void create() throws InterruptedException {

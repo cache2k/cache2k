@@ -52,10 +52,10 @@ public class SimpleTimerImpl extends SimpleTimer {
    */
   public SimpleTimerImpl(InternalClock c) {
     this.clock = c;
-    if (!c.isJobSchedulable()) {
-      scheduler = DefaultScheduler.INSTANCE;
+    if (c instanceof Scheduler) {
+      scheduler = (Scheduler) clock;
     } else {
-      scheduler = clock;
+      scheduler = DefaultScheduler.INSTANCE;
     }
   }
 
