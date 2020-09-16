@@ -323,7 +323,7 @@ public class HeapCache<K, V> extends BaseCache<K, V>
       new ThreadPoolExecutor.AbortPolicy());
   }
 
-  static final Executor SHARED_EXECUTOR = provideSharedExecutor();
+  public static final Executor SHARED_EXECUTOR = provideSharedExecutor();
 
   String getThreadNamePrefix() {
     return "cache2k-loader-" + compactFullName(manager, name);

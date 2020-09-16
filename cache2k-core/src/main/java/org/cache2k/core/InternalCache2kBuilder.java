@@ -65,13 +65,6 @@ public class InternalCache2kBuilder<K, V> {
 
   private static final AtomicLong DERIVED_NAME_COUNTER =
     new AtomicLong(System.currentTimeMillis() % 1234);
-  private static final ThreadPoolExecutor DEFAULT_ASYNC_LISTENER_EXECUTOR =
-    new ThreadPoolExecutor(
-      Runtime.getRuntime().availableProcessors(), Runtime.getRuntime().availableProcessors(),
-      21, TimeUnit.SECONDS,
-      new LinkedBlockingDeque<Runnable>(),
-      HeapCache.TUNABLE.threadFactoryProvider.newThreadFactory("cache2k-listener"),
-      new ThreadPoolExecutor.AbortPolicy());
 
   private final CacheManagerImpl manager;
   private final Cache2kConfiguration<K, V> config;
@@ -284,11 +277,11 @@ public class InternalCache2kBuilder<K, V> {
         }
       }
       if (config.hasAsyncListeners()) {
-        Executor executor = DEFAULT_ASYNC_LISTENER_EXECUTOR;
+        Executor asyncExecutor = bc.getExecutor();
         if (config.getAsyncListenerExecutor() != null) {
-          executor = cache.createCustomization(config.getAsyncListenerExecutor());
+          asyncExecutor = cache.createCustomization(config.getAsyncListenerExecutor());
         }
-        AsyncDispatcher<K> asyncDispatcher = new AsyncDispatcher<K>(wc, executor);
+        AsyncDispatcher<K> asyncDispatcher = new AsyncDispatcher<K>(wc, asyncExecutor);
         List<CacheEntryCreatedListener<K, V>> cll =
           new ArrayList<CacheEntryCreatedListener<K, V>>();
         List<CacheEntryUpdatedListener<K, V>> ull =
