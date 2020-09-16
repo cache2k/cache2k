@@ -32,18 +32,17 @@ import org.cache2k.TimeReference;
 public interface InternalClock extends TimeReference {
 
   /**
-   * Returns the milliseconds since epoch. When using a simulated clock
-   * either this method or {@link #sleep(long)} needs to be called to make time pass by and
-   * make this method return an increased number.
+   * Returns the milliseconds since epoch. In the simulated clock a call to this method
+   * would make time pass in small increments.
    */
   long millis();
 
   /**
-   * Wait for the specified amount of time in milliseconds. The value of 0 means that
-   * the thread may sleep some tiny amount of time or not at all.
+   * Wait for the specified amount of time in milliseconds.
    *
-   * <p>When using a simulated clock either this method or {@link #millis} needs to be
-   * called to make time pass and make {@link #millis} return an increased number.
+   * <p>The value of 0 means that the thread should pause and other processing should be
+   * done. In the simulated clock this would wait for concurrent processing and, if
+   * no processing is happening, advance the time to the next event.
    */
   void sleep(long millis) throws InterruptedException;
 

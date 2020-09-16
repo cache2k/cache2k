@@ -36,7 +36,7 @@ import java.util.concurrent.locks.ReentrantLock;
  * is delivering timer events whenever a scheduled time is passed.
  *
  * <p>In case the testing target is starting parallel tasks via an executor, those
- * can be wrapped via {@link #wrapExecutor(Executor)}. If an execution is pending
+ * need to be wrapped via {@link #wrapExecutor(Executor)}. If an execution is pending
  * the call to {@link #sleep} will not advance time but wait for the executions.
  *
  * @author Jens Wilke
