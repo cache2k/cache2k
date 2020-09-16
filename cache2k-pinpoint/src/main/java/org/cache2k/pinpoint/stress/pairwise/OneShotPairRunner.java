@@ -91,7 +91,8 @@ class OneShotPairRunner<R> {
   static class ExceptionInActorThread extends AssertionError {
 
     ExceptionInActorThread(final Throwable cause) {
-      super(cause.toString(), cause);
+      super(cause.toString());
+      initCause(cause);
     }
   }
 

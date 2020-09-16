@@ -1,4 +1,4 @@
-package org.cache2k.core.util;
+package org.cache2k.core.timing;
 
 /*
  * #%L
@@ -21,34 +21,28 @@ package org.cache2k.core.util;
  */
 
 /**
- * Default clock implementation just using {@link System#currentTimeMillis()} as
- * time reference.
- *
  * @author Jens Wilke
  */
-public final class ClockDefaultImpl implements InternalClock {
+public abstract class TimerStructure {
 
-  public static final ClockDefaultImpl INSTANCE = new ClockDefaultImpl();
+  /**
+   * Insert task.
+   *
+   * @return this is the earliest, update scheduler
+   */
+  public abstract boolean schedule(SimpleTimerTask task, long time);
 
-  private ClockDefaultImpl() { }
+  public abstract void cancel(SimpleTimerTask t);
 
-  @Override
-  public boolean isJobSchedulable() {
-    return false;
-  }
+  public abstract void cancel();
 
-  @Override
-  public long millis() {
-    return System.currentTimeMillis();
-  }
+  /**
+   * Execute tasks
+   *
+   * @return next execution time for scheduler, or 0
+   */
+  public abstract SimpleTimerTask removeNextToRun(long time);
 
-  @Override
-  public void sleep(long millis) throws InterruptedException {
-    Thread.sleep(millis);
-  }
+  public abstract long nextRun();
 
-  @Override
-  public void schedule(Runnable runnable, long millis) {
-    throw new UnsupportedOperationException();
-  }
 }

@@ -298,7 +298,8 @@ public abstract class EntryAction<K, V, R> extends Entry.PiggyBack implements
     if (mutationStartTime > 0) {
       return mutationStartTime;
     }
-    return mutationStartTime = millis();
+    mutationStartTime = millis();
+    return mutationStartTime;
   }
 
   @Override

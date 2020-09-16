@@ -37,13 +37,12 @@ public class SimulatedClockTest {
   public void create() throws InterruptedException {
     assertEquals(100000, clock.millis());
     final AtomicBoolean TRIGGER = new AtomicBoolean();
-    InternalClock.TimeReachedJob job = clock.createJob(new InternalClock.TimeReachedEvent() {
+    clock.schedule(new Runnable() {
       @Override
-      public void timeIsReached(final long millis) {
+      public void run() {
         TRIGGER.set(true);
       }
-    });
-    clock.schedule(job, 100005);
+    }, 100005);
     clock.sleep(10);
     assertTrue(TRIGGER.get());
   }

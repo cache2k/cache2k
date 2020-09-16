@@ -33,9 +33,9 @@ import java.sql.Timestamp;
  */
 public class TimeBox {
 
-  private InternalClock clock;
+  private final InternalClock clock;
   private long startTime = System.currentTimeMillis();
-  private long timeBox;
+  private final long timeBox;
 
   public static TimeBox millis(long t) {
     TimeBox b = new TimeBox(ClockDefaultImpl.INSTANCE, t);
@@ -46,7 +46,7 @@ public class TimeBox {
     return millis(t * 1000);
   }
 
-  public TimeBox(final InternalClock _clock, final long _timeBox) {
+  public TimeBox(InternalClock _clock, long _timeBox) {
     clock = _clock;
     startTime = _clock.millis();
     timeBox = _timeBox;
@@ -79,7 +79,7 @@ public class TimeBox {
 
   public static class PropagateAssertionError extends AssertionError {
 
-    public PropagateAssertionError(final long startTime, final long delta, final Throwable cause) {
+    public PropagateAssertionError(long startTime, long delta, Throwable cause) {
       super("Assertion failed at start time " + (new Timestamp(startTime)) + " + " +  delta, cause);
     }
 

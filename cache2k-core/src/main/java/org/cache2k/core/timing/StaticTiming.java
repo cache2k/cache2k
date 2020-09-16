@@ -106,11 +106,12 @@ public class StaticTiming<K, V> extends Timing<K, V> {
       resiliencePolicy = c.createCustomization(resiliencePolicyFactory);
     }
     resiliencePolicyFactory = null;
-    timer = new SimpleTimerImpl(clock, cache.getName(), true);
+    timer = new SimpleTimerImpl(clock);
   }
 
   @Override
   public synchronized void cancelAll() {
+    SimpleTimer timer = this.timer;
     if (timer != null) {
       timer.cancel();
     }
@@ -118,8 +119,11 @@ public class StaticTiming<K, V> extends Timing<K, V> {
 
   @Override
   public void close() {
-    cancelAll();
-    timer = null;
+    SimpleTimer timer = this.timer;
+    if (timer != null) {
+      timer.cancel();
+    }
+    this.timer = null;
   }
 
   @Override

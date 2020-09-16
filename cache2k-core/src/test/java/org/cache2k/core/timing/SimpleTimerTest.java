@@ -25,8 +25,6 @@ import org.cache2k.testing.category.FastTests;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
-import static org.junit.Assert.assertEquals;
-
 /**
  * Only test special cases not covered by normal testing.
  *
@@ -36,40 +34,10 @@ import static org.junit.Assert.assertEquals;
 public class SimpleTimerTest {
 
   @Test
-  public void purge() {
-    long _START_TIME = 100;
-    long _OFFSET = 1;
-    int _SIZE = 123;
-    SimpleTimerImpl t =
-      new SimpleTimerImpl(
-        new SimulatedClock(_START_TIME, true),
-        SimpleTimerTest.class.getName(), true);
-    MyTimerTask[] arr = new MyTimerTask[_SIZE];
-    for (int i = 0; i < _SIZE; i++) {
-      arr[i] = new MyTimerTask();
-      t.schedule(arr[i], _START_TIME + i + _OFFSET);
-      if (i%3 == 0) {
-        arr[i].cancel();
-      }
-    }
-    t.purge();
-    t.timeReachedEvent(_START_TIME + _SIZE + _OFFSET);
-    int count = 0;
-    for (int i = 0; i < _SIZE; i++) {
-      if (arr[i].executed) {
-        count++;
-      }
-    }
-    assertEquals(82, count);
-  }
-
-  @Test
   public void misc() {
-    long _START_TIME = 100;
+    long startTime = 100;
     SimpleTimer st =
-      new SimpleTimerImpl(
-        new SimulatedClock(_START_TIME, true),
-        SimpleTimerTest.class.getName(), true);
+      new SimpleTimerImpl(new SimulatedClock(startTime, true));
     SimpleTimerTask t = new MyTimerTask();
     try {
       st.schedule(t, -5);

@@ -21,6 +21,7 @@ package org.cache2k.core.util;
  */
 
 import org.cache2k.TimeReference;
+import org.cache2k.core.timing.Scheduler;
 
 /**
  * Abstraction for the system clock. A simulated clock implementation is used to
@@ -28,7 +29,7 @@ import org.cache2k.TimeReference;
  *
  * @author Jens Wilke
  */
-public interface InternalClock extends TimeReference {
+public interface InternalClock extends TimeReference, Scheduler {
 
   /**
    * Returns the milliseconds since epoch. When using a simulated clock
@@ -51,27 +52,5 @@ public interface InternalClock extends TimeReference {
    * the time advances further.
    */
   boolean isJobSchedulable();
-
-  /**
-   * Creates a job object for the specified event callback.
-   */
-  TimeReachedJob createJob(TimeReachedEvent ev);
-
-  /**
-   * Schedules or reschedules the timer event job to be run at the
-   * specified point in time.
-   */
-  void schedule(TimeReachedJob j, long millis);
-
-  /**
-   * Disable the job clearing used resources.
-   */
-  void disableJob(TimeReachedJob j);
-
-  interface TimeReachedEvent {
-    void timeIsReached(long millis);
-  }
-
-  interface TimeReachedJob { }
 
 }

@@ -1,4 +1,4 @@
-package org.cache2k.core.util;
+package org.cache2k.core.timing;
 
 /*
  * #%L
@@ -20,35 +20,13 @@ package org.cache2k.core.util;
  * #L%
  */
 
+import java.util.concurrent.Executor;
+
 /**
- * Default clock implementation just using {@link System#currentTimeMillis()} as
- * time reference.
- *
  * @author Jens Wilke
  */
-public final class ClockDefaultImpl implements InternalClock {
+public interface Scheduler {
 
-  public static final ClockDefaultImpl INSTANCE = new ClockDefaultImpl();
+  void schedule(Runnable runnable, long millis);
 
-  private ClockDefaultImpl() { }
-
-  @Override
-  public boolean isJobSchedulable() {
-    return false;
-  }
-
-  @Override
-  public long millis() {
-    return System.currentTimeMillis();
-  }
-
-  @Override
-  public void sleep(long millis) throws InterruptedException {
-    Thread.sleep(millis);
-  }
-
-  @Override
-  public void schedule(Runnable runnable, long millis) {
-    throw new UnsupportedOperationException();
-  }
 }
