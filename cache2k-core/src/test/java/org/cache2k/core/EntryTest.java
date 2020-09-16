@@ -63,9 +63,9 @@ public class EntryTest {
     Entry e = new Entry();
     synchronized (e) {
       e.setRefreshTime(Long.MAX_VALUE);
-      SimpleDateFormat df = new SimpleDateFormat("yyyy-MMM-dd HH:mm:ss");
+      SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
       df.setTimeZone(TimeZone.getTimeZone("GMT"));
-      assertEquals("2248-Sep-26 15:10:22", df.format(new Date(e.getRefreshTime())));
+      assertEquals("2248-09-26 15:10:22", df.format(new Date(e.getRefreshTime())));
     }
   }
 

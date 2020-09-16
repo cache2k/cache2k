@@ -37,7 +37,7 @@ public class SimpleTimerTest {
   public void misc() {
     long startTime = 100;
     SimpleTimer st =
-      new SimpleTimerImpl(new SimulatedClock(startTime, true));
+      new SimpleTimerImpl(new SimulatedClock(startTime));
     SimpleTimerTask t = new MyTimerTask();
     try {
       st.schedule(t, -5);

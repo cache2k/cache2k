@@ -815,7 +815,7 @@ public class Cache2kBuilder<K, V> {
    * {@link #loaderExecutor(Executor)} or a cache local pool is created.
    *
    * <p>The executor for refresh operations may reject execution when not enough resources
-   * are available. In this case the cache entry expires.
+   * are available. If a refresh is rejected, the cache entry expires normally.
    *
    * @see #loaderThreadCount(int)
    * @see #loaderExecutor(Executor)
@@ -836,8 +836,8 @@ public class Cache2kBuilder<K, V> {
   }
 
   /**
-   * Executor for asynchronous listeners. If no executor is specified, an internal
-   * executor is used that has unbounded thread capacity.
+   * Executor for asynchronous listeners. If not configured the common
+   * asynchronous executor is used as defined by {@link #executor(Executor)}
    *
    * @see #addAsyncListener(CacheEntryOperationListener)
    */

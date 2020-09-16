@@ -683,7 +683,7 @@ public class ListenerTest {
   @Test
   public void expiredWhileInitialLoad() {
     final long expireAfterWrite = 123;
-    final SimulatedClock clock = new SimulatedClock(1000, true);
+    final SimulatedClock clock = new SimulatedClock(1000);
     target.run(new CountSyncEvents() {
       @Override
       public void extend(Cache2kBuilder<Integer, Integer> b) {
@@ -715,7 +715,7 @@ public class ListenerTest {
   @Test
   public void expiredWhileReload() {
     final long expireAfterWrite = 123;
-    final SimulatedClock clock = new SimulatedClock(1000, true);
+    final SimulatedClock clock = new SimulatedClock(1000);
     target.run(new CountSyncEvents() {
       @Override
       public void extend(Cache2kBuilder<Integer, Integer> b) {
@@ -748,7 +748,7 @@ public class ListenerTest {
   @Test
   public void expiredWhileReloadUpdate() {
     final long expireAfterWrite = 60;
-    final SimulatedClock clock = new SimulatedClock(1000, true);
+    final SimulatedClock clock = new SimulatedClock(1000);
     target.run(new CountSyncEvents() {
       @Override
       public void extend(Cache2kBuilder<Integer, Integer> b) {

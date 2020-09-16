@@ -82,7 +82,7 @@ public class TestingBase {
   private static final ThreadLocal<SimulatedClock> THREAD_CLOCK = new ThreadLocal<SimulatedClock>() {
     @Override
     protected SimulatedClock initialValue() {
-      return new SimulatedClock(1000000, false);
+      return new SimulatedClock(1000000);
     }
   };
 
@@ -95,6 +95,7 @@ public class TestingBase {
       new ThreadPoolExecutor.AbortPolicy());
 
   private Executor loaderExecutor = new ExecutorWrapper();
+  private Executor asyncExecutor = HeapCache.SHARED_EXECUTOR;
 
   public Executor getLoaderExecutor() {
     return loaderExecutor;
@@ -179,6 +180,7 @@ public class TestingBase {
     }
     SimulatedClock c = THREAD_CLOCK.get();
     loaderExecutor = c.wrapExecutor(loaderExecutor);
+    asyncExecutor = c.wrapExecutor(asyncExecutor);
     setClock(c);
   }
 
@@ -215,7 +217,8 @@ public class TestingBase {
       .timeReference(getClock())
       .name(_cacheName)
       .entryCapacity(DEFAULT_MAX_SIZE)
-      .loaderExecutor(loaderExecutor);
+      .loaderExecutor(loaderExecutor)
+      .executor(asyncExecutor);
     applyAdditionalOptions(b);
     return b;
   }

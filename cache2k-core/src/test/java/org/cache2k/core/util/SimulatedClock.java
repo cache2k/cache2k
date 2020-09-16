@@ -20,10 +20,10 @@ package org.cache2k.core.util;
  * #L%
  */
 
-import java.io.Closeable;
 import java.util.Map;
 import java.util.TreeMap;
 import java.util.concurrent.Executor;
+import java.util.concurrent.Executors;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
@@ -39,7 +39,9 @@ import java.util.concurrent.locks.ReentrantLock;
  *
  * @author Jens Wilke
  */
-public class SimulatedClock implements InternalClock, Closeable {
+public class SimulatedClock implements InternalClock {
+
+  private static final Executor DEFAULT_EXECUTOR = Executors.newSingleThreadExecutor();
 
   private static final Log LOG = Log.getLog(SimulatedClock.class);
 
@@ -55,18 +57,8 @@ public class SimulatedClock implements InternalClock, Closeable {
   private final ReentrantLock structureLock = new ReentrantLock();
 
   /**
-   * Set to false on close to stop progress thread and avoid usage.
-   */
-  private volatile boolean running = true;
-
-  /**
-   * Unique number for each waiter object
-   */
-  private final AtomicLong waiterCounter = new AtomicLong();
-
-  /**
    * The tree sorts the timer events.
-   * Locked by: {@link #structureLock}.
+   * Guarded by: {@link #structureLock}.
    */
   private final TreeMap<Waiter, Waiter> tree = new TreeMap<Waiter, Waiter>();
 
@@ -91,34 +83,23 @@ public class SimulatedClock implements InternalClock, Closeable {
   private final Object parallelExecutionsWaiter = new Object();
 
   /**
-   * don't wrap executors to wait for concurrent task execution,
-   * also does not restart clock from 0 after {@link #reset()}
-   */
-  private final boolean skipWrapping;
-
-  /**
-   * Don't expect that we can wait for more than this millis.
-   */
-  private final long cutOffDeltaMillis = Long.MAX_VALUE >> 10;
-
-  /**
    * Scheduled jobs are executed some millis after the scheduled time was reached.
    * That is to simulate that time passes during execution and that it is not possible
    * to exactly execute at a point in time. Randomized by default.
    */
   private final int jobExecutionLagMillis = (int) (System.currentTimeMillis() % 2);
 
-  private Executor advanceExecutor = null;
+  /**
+   * Executor used to move the clock.
+   */
+  private Executor advanceExecutor = DEFAULT_EXECUTOR;
 
   /**
    * Create a clock with the initial time.
    *
    * @param initialMillis initial time in millis since epoch, can start 0 for easy debugging
-   * @param skipExecutorWrapping don't wrap executors to wait for concurrent task execution,
-   *                              also does not restart clock from 0 after {@link #reset()}
    */
-  public SimulatedClock(long initialMillis, boolean skipExecutorWrapping) {
-    skipWrapping = skipExecutorWrapping;
+  public SimulatedClock(long initialMillis) {
     now = new AtomicLong(initialMillis);
   }
 
@@ -130,11 +111,8 @@ public class SimulatedClock implements InternalClock, Closeable {
   @Override
   public void schedule(Runnable runnable, long requestedMillis) {
     long millis = requestedMillis + jobExecutionLagMillis;
-    if ((millis - now.get()) > cutOffDeltaMillis) {
-      return;
-    }
     Waiter waiter =
-      new Waiter(requestedMillis, millis, waiterCounter.getAndIncrement(), runnable);
+      new Waiter(requestedMillis, millis, runnable);
     structureLock.lock();
     try {
       tree.put(waiter, waiter);
@@ -163,29 +141,42 @@ public class SimulatedClock implements InternalClock, Closeable {
   }
 
   /**
-   * A sleep of {@code 0} waits an undefined amount of time and makes sure that the next timer
-   * events for the next upcoming millisecond are executed. A value greater then {@code 0}s
+   * A sleep of {@code 0} waits an undefined amount of time.
+   * . A value greater then {@code 0}s
    * advances the time just by the specified amount.
    */
   @Override
   public void sleep(long millis) throws InterruptedException {
-    if (!running) {
-      throw new IllegalStateException();
-    }
-    LOG.debug(now.get() + " sleep(" + millis + ")");
     if (millis == 0) {
-      if (tasksWaitingForExecution.get() > 0) {
-        return;
-      }
+      sleep0();
+      return;
     }
     long wakeupTime = millis() + millis;
     advanceAndWakeupWaiters(wakeupTime);
   }
 
-  public Executor wrapExecutor(Executor ex) {
-    if (skipWrapping) {
-      return ex;
+  /**
+   * Sleep(0) means sleep until something happens, so we
+   * wait for tasks to be executed or the next timer event.
+   */
+  private void sleep0() throws InterruptedException {
+    if (tasksWaitingForExecution.get() > 0) {
+      while (tasksWaitingForExecution.get() > 0) {
+        synchronized (parallelExecutionsWaiter) {
+          parallelExecutionsWaiter.wait(5);
+        }
+      }
+      return;
     }
+    long nextTime = advanceAndWakeupWaiters(0);
+    if (nextTime > 0) {
+      advanceAndWakeupWaiters(nextTime);
+      return;
+    }
+    advanceClock(now.get() + 1);
+  }
+
+  public Executor wrapExecutor(Executor ex) {
     return advanceExecutor = new WrappedExecutor(ex);
   }
 
@@ -203,16 +194,14 @@ public class SimulatedClock implements InternalClock, Closeable {
     }
   }
 
-  public void close() {
-    running = false;
-  }
-
   /**
+   * Move clock forward and notify waiters while doing so.
    *
+   * @param time time until waiters should be notified, inclusive
    * @return -1 if no more waiting or next waiter time
    */
   private long advanceAndWakeupWaiters(long time) {
-    while (running) {
+    while (true) {
       Waiter u;
       Map.Entry<Waiter, Waiter> e;
       structureLock.lock();
@@ -265,14 +254,11 @@ public class SimulatedClock implements InternalClock, Closeable {
 
     final long requestedWakeupTime;
     final long wakeupTime;
-    final long uniqueId;
     final Runnable event;
 
-    Waiter(long requestedWakeupTime, long wakeupTime,
-                  long uniqueId, Runnable event) {
+    Waiter(long requestedWakeupTime, long wakeupTime, Runnable event) {
       this.wakeupTime = wakeupTime;
       this.requestedWakeupTime = requestedWakeupTime;
-      this.uniqueId = uniqueId;
       this.event = event;
     }
 
@@ -281,7 +267,7 @@ public class SimulatedClock implements InternalClock, Closeable {
         try {
           event.run();
         } catch (Throwable t) {
-          LOG.warn("Error from time reached event", t);
+          LOG.warn("Error from scheduled event", t);
         }
       }
     }
@@ -298,7 +284,7 @@ public class SimulatedClock implements InternalClock, Closeable {
     }
 
     public String toString() {
-      return "Waiter#" + uniqueId + "{time=" +
+      return "Waiter#" + hashCode() + "{time=" +
         (wakeupTime == Long.MAX_VALUE ? "forever" : Long.toString(wakeupTime))
         + "}";
     }

@@ -51,7 +51,7 @@ import java.io.IOException;
 import java.sql.Timestamp;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.concurrent.Executors;
+import java.util.concurrent.Executor;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -1113,11 +1113,11 @@ public class ExpiryTest extends TestingBase {
     new ManualExpireFixture() {
       @Override
       protected void addLoader(final Cache2kBuilder<Integer, Integer> b) {
-        b.loaderExecutor(Executors.newSingleThreadExecutor());
         b.loader(new AsyncCacheLoader<Integer, Integer>() {
           @Override
           public void load(final Integer key, final Context<Integer, Integer> context, final Callback<Integer> callback) throws Exception {
-            context.getLoaderExecutor().execute(new Runnable() {
+            Executor executor = context.getLoaderExecutor();
+              executor.execute(new Runnable() {
               @Override
               public void run() {
                 try {
