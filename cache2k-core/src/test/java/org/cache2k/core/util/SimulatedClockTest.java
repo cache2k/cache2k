@@ -23,70 +23,93 @@ package org.cache2k.core.util;
 import static org.junit.Assert.*;
 import org.junit.Test;
 
-import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * @author Jens Wilke
  */
 public class SimulatedClockTest {
 
-  private SimulatedClock clock = new SimulatedClock(100000);
+  final SimulatedClock clock = new SimulatedClock(100000);
+  final AtomicInteger trigger = new AtomicInteger();
 
   @Test(timeout = 10000)
-  public void create() throws InterruptedException {
+  public void scheduleAndTrigger() throws InterruptedException {
     assertEquals(100000, clock.millis());
-    final AtomicBoolean TRIGGER = new AtomicBoolean();
+    final AtomicBoolean trigger = new AtomicBoolean();
     clock.schedule(new Runnable() {
       @Override
       public void run() {
-        TRIGGER.set(true);
+        trigger.set(true);
       }
     }, 100005);
     clock.sleep(10);
-    assertTrue(TRIGGER.get());
+    assertTrue(trigger.get());
+  }
+
+  @Test
+  public void sequenceSleep0() throws InterruptedException {
+    assertEquals(100000, clock.millis());
+    clock.schedule(new Event(0), 0);
+    clock.schedule(new Event(2), clock.millis() + 7);
+    clock.schedule(new Event(1), 123);
+    assertEquals(0, trigger.get());
+    clock.sleep(0);
+    assertEquals(1, trigger.get());
+    clock.sleep(0);
+    assertEquals(2, trigger.get());
+    clock.sleep(0);
+    assertEquals(3, trigger.get());
+    clock.sleep(0);
+    assertEquals(3, trigger.get());
+  }
+
+  @Test
+  public void sequenceSleepX() throws InterruptedException {
+    assertEquals(100000, clock.millis());
+    clock.schedule(new Event(0), 0);
+    clock.schedule(new Event(3), clock.millis() + 9);
+    clock.schedule(new Event(2), clock.millis() + 7);
+    clock.schedule(new Event(1), 123);
+    assertEquals(0, trigger.get());
+    clock.sleep(10);
+    assertEquals(4, trigger.get());
+  }
+
+  @Test(expected = AssertionError.class)
+  public void assertionPropagated() throws InterruptedException {
+    clock.schedule(new Runnable() {
+      @Override
+      public void run() {
+        fail("always");
+      }
+    }, 0);
+    clock.sleep(0);
+  }
+
+  class Event implements Runnable {
+
+    int expectedTrigger = -1;
+
+    Event(int expectedTrigger) {
+      this.expectedTrigger = expectedTrigger;
+    }
+
+    @Override
+    public void run() {
+      int count = trigger.getAndIncrement();
+      if (expectedTrigger >= 0) {
+        assertEquals("trigger sequence", expectedTrigger, count);
+      }
+    }
   }
 
   @Test(timeout = 10000)
-  public void waitSomeMillis() throws Exception {
-    clock.sleep(1);
-  }
-
-  @Test(timeout = 10000)
-  public void clockAdvancing() throws Exception {
+  public void clockAdvancing() {
     long t0 = clock.millis();
     while (clock.millis() == t0) { }
     assertTrue(clock.millis() > t0);
-  }
-
-  @Test(timeout = 10000)
-  public void wait123() throws Exception {
-    final CountDownLatch _wakeup = new CountDownLatch(2);
-    Thread t1 = new Thread() {
-      @Override
-      public void run() {
-        try {
-          clock.sleep( 7);
-          _wakeup.countDown();
-        } catch (InterruptedException ex) {
-          ex.printStackTrace();
-        }
-      }
-    };
-    t1.start();
-    Thread t2 = new Thread() {
-      @Override
-      public void run() {
-        try {
-          clock.sleep( 12);
-          _wakeup.countDown();
-        } catch (InterruptedException ex) {
-          ex.printStackTrace();
-        }
-      }
-    };
-    t2.start();
-    _wakeup.await();
   }
 
 }

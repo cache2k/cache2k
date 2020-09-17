@@ -45,8 +45,6 @@ public class SimulatedClock implements InternalClock, Scheduler {
 
   private static final Executor DEFAULT_EXECUTOR = Executors.newSingleThreadExecutor();
 
-  private static final Log LOG = Log.getLog(SimulatedClock.class);
-
   /**
    * Current time of the clock in millis.
    */
@@ -218,10 +216,20 @@ public class SimulatedClock implements InternalClock, Scheduler {
       } finally {
         structureLock.unlock();
       }
-      e.getKey().runAction();
+      runEvent(e.getKey());
     }
     eventuallyAdvanceClock(time);
     return -1;
+  }
+
+  private void runEvent(Event e) {
+    try {
+      e.action.run();
+    } catch (RuntimeException ex) {
+      throw ex;
+    } catch (Exception ex) {
+      throw new RuntimeException(ex);
+    }
   }
 
   /**
@@ -258,16 +266,6 @@ public class SimulatedClock implements InternalClock, Scheduler {
       this.time = time;
       this.requestedWakeupTime = requestedWakeupTime;
       this.action = action;
-    }
-
-    public void runAction() {
-      if (action != null) {
-        try {
-          action.run();
-        } catch (Throwable t) {
-          LOG.warn("Error from scheduled event", t);
-        }
-      }
     }
 
     @Override
