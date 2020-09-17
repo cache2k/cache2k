@@ -879,6 +879,38 @@ public class SlowExpiryTest extends TestingBase {
       });
   }
 
+  @Test
+  public void refresh_immediate() {
+    final int KEY = 1;
+    final CountingLoader _LOADER = new CountingLoader();
+    final Cache<Integer, Integer> c = builder(Integer.class, Integer.class)
+      .refreshAhead(true)
+      .sharpExpiry(true)
+      .eternal(true)
+      .keepDataAfterExpired(false)
+      .expiryPolicy(new ExpiryPolicy<Integer, Integer>() {
+        @Override
+        public long calculateExpiryTime(final Integer key, final Integer value, final long loadTime, final CacheEntry<Integer, Integer> oldEntry) {
+          if (oldEntry != null) {
+            return ETERNAL;
+          }
+          return REFRESH;
+        }
+      })
+      .loader(_LOADER)
+      .build();
+    int v = c.get(KEY);
+    if (isWiredCache()) {
+      assertEquals("loaded value always returned in WiredCache", 0, v);
+    }
+    await("Refresh is done", new Condition() {
+      @Override
+      public boolean check() {
+        return c.peek(KEY) == 1;
+      }
+    });
+  }
+
   /** Entry does not go into probation if eternal */
   @Test
   public void refresh_sharp_noKeep_eternalAfterRefresh() throws Exception {
@@ -900,8 +932,22 @@ public class SlowExpiryTest extends TestingBase {
       })
       .loader(_LOADER)
       .build();
-    int v = c.get(KEY);
-    assertEquals(0, v);
+    final AtomicInteger v = new AtomicInteger();
+    within(TestingParameters.MINIMAL_TICK_MILLIS)
+      .work(new Runnable() {
+        @Override
+        public void run() {
+         v.set(c.get(KEY));
+        }
+      }).check(new Runnable() {
+      @Override
+      public void run() {
+        assertEquals("loaded value expected when within time range", 0, v.get());
+      }
+    });
+    if (isWiredCache()) {
+      assertEquals("loaded value always returned in WiredCache", 0, v.get());
+    }
     await("Refresh is done", new Condition() {
       @Override
       public boolean check() {

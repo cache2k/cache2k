@@ -28,6 +28,7 @@ import org.cache2k.core.CanCheckIntegrity;
 import org.cache2k.core.HeapCache;
 import org.cache2k.core.InternalCache;
 import org.cache2k.core.InternalCacheInfo;
+import org.cache2k.core.WiredCache;
 import org.cache2k.core.util.ClockDefaultImpl;
 import org.cache2k.core.util.InternalClock;
 import org.cache2k.core.util.TunableFactory;
@@ -583,6 +584,23 @@ public class TestingBase {
 
   public static <T> Iterable<T> keys(T... keys) {
     return Arrays.asList(keys);
+  }
+
+  public boolean isHeapCache() {
+    provideCache();
+    return cache.requestInterface(HeapCache.class) != null;
+  }
+
+  public boolean isWiredCache() {
+    provideCache();
+    return cache.requestInterface(WiredCache.class) != null;
+  }
+
+  /**
+   * Execute concurrently
+   */
+  public void execute(Runnable action) {
+    loaderExecutor.execute(action);
   }
 
 }

@@ -21,6 +21,7 @@ package org.cache2k.test.core;
  */
 
 import org.cache2k.Cache2kBuilder;
+import org.cache2k.core.CacheClosedException;
 import org.cache2k.event.CacheEntryCreatedListener;
 import org.cache2k.expiry.ExpiryPolicy;
 import org.cache2k.expiry.ExpiryTimeValues;
@@ -364,7 +365,7 @@ public class ExpiryListenerTest extends TestingBase {
   @Test
   public void expiresDuringInsert() throws InterruptedException {
     final AtomicInteger gotExpired = new AtomicInteger();
-    final AtomicInteger gotCreated = new AtomicInteger();
+    final CountDownLatch gotCreated = new CountDownLatch(1);
     final long EXPIRY_MILLIS = TestingParameters.MINIMAL_TICK_MILLIS;
     final CountDownLatch waitInCreated = new CountDownLatch(1);
     final Cache<Integer, Integer> c = builder(Integer.class, Integer.class)
@@ -378,7 +379,7 @@ public class ExpiryListenerTest extends TestingBase {
         @Override
         public void onEntryCreated(final Cache<Integer, Integer> cache, final CacheEntry<Integer, Integer> entry) {
           assertEquals(123, (long) entry.getValue());
-          gotCreated.incrementAndGet();
+          gotCreated.countDown();
           try {
             waitInCreated.await();
           } catch (InterruptedException ex) {
@@ -395,30 +396,17 @@ public class ExpiryListenerTest extends TestingBase {
       })
       .build();
     final int ANY_KEY = 1;
-    final Thread t = new Thread(new Runnable() {
+    execute(new Runnable() {
       @Override
       public void run() {
-        c.get(ANY_KEY);
-      }
-    });
-    within(EXPIRY_MILLIS)
-      .work(new Runnable() {
-        @Override
-        public void run() {
-          t.start();
-          await(new Condition() {
-            @Override
-            public boolean check() {
-              return gotCreated.get() == 1;
-            }
-          });
+        try {
+          c.get(ANY_KEY);
+        } catch (CacheClosedException ignore) {
         }
-      }).check(new Runnable() {
-      @Override
-      public void run() {
-        assertTrue("entry is not visible", !c.containsKey(ANY_KEY));
       }
     });
+    gotCreated.await();
+    assertTrue("entry is not visible", !c.containsKey(ANY_KEY));
     sleep(EXPIRY_MILLIS);
     waitInCreated.countDown();
     await(new Condition() {
@@ -427,7 +415,6 @@ public class ExpiryListenerTest extends TestingBase {
         return gotExpired.get() > 0;
       }
     });
-    t.join();
   }
 
 }
