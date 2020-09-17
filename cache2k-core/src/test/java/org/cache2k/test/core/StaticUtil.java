@@ -56,7 +56,7 @@ public class StaticUtil {
   public static <K, V> Cache2kBuilder<K, V> enforceWiredCache(Cache2kBuilder<K, V> b) {
     return b.addListener(new CacheEntryRemovedListener() {
       @Override
-      public void onEntryRemoved(final Cache c, final CacheEntry entry) {
+      public void onEntryRemoved(Cache c, CacheEntry entry) {
 
       }
     });

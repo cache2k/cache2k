@@ -30,22 +30,27 @@ public class TimeStepper {
 
   private final InternalClock clock;
 
-  public TimeStepper(final InternalClock _clock) {
-    clock = _clock;
+  public TimeStepper(InternalClock clock) {
+    this.clock = clock;
   }
 
   /**
-   * Wait for the check become true.
+   * Wait for the check become true. With the simulated clock {@code sleep(0)} waits
+   * until the executors are finished or advanced the clock to next scheduled event time.
+   * In other words, for the simulated clock after {@code sleep(0)} always something
+   * has happened, so the loop execution is efficient, also it looks like a busy waiting
+   * loop. For testing with real clocks the {@code sleep(0)} waits and hopefully gives
+   * some CPU time to other tasks.
    */
-  public void await(String _description, final long _timeoutMillis, final Condition c) {
+  public void await(String description, long timeoutMillis, Condition c) {
     long t0 = clock.millis();
     try {
       while (!c.check()) {
-        if (t0 + _timeoutMillis < clock.millis()) {
-          if (_description != null) {
-            throw new TimeoutException("waiting for " + _timeoutMillis + " milliseconds for event '" + _description + "'");
+        if (t0 + timeoutMillis < clock.millis()) {
+          if (description != null) {
+            throw new TimeoutException("waiting for " + timeoutMillis + " milliseconds for event '" + description + "'");
           } else {
-            throw new TimeoutException("waiting for " + _timeoutMillis + " milliseconds");
+            throw new TimeoutException("waiting for " + timeoutMillis + " milliseconds");
           }
         }
         clock.sleep(0);
@@ -58,26 +63,26 @@ public class TimeStepper {
     }
   }
 
-  public void await(long _timeoutMillis, final Condition c) {
-    await(null, _timeoutMillis, c);
+  public void await(long timeoutMillis, Condition c) {
+    await(null, timeoutMillis, c);
   }
 
   /**
    * Wait for an event the maximum test time.
    */
-  public void await(String _description, final Condition c) {
-    await(_description, TestingParameters.MAX_FINISH_WAIT_MILLIS, c);
+  public void await(String description, Condition c) {
+    await(description, TestingParameters.MAX_FINISH_WAIT_MILLIS, c);
   }
 
   /**
    * Wait for an event the maximum test time, as defined at {@link TestingParameters#MAX_FINISH_WAIT_MILLIS}
    */
-  public void await(final Condition c) {
+  public void await(Condition c) {
     await(null, TestingParameters.MAX_FINISH_WAIT_MILLIS, c);
   }
 
   static class TimeoutException extends RuntimeException {
-    public TimeoutException(String message) {
+    TimeoutException(String message) {
       super(message);
     }
   }

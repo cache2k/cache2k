@@ -62,7 +62,7 @@ public class SimulatedClock implements InternalClock, Scheduler {
    * The tree sorts the timer events.
    * Guarded by: {@link #structureLock}.
    */
-  private final TreeMap<Waiter, Waiter> tree = new TreeMap<Waiter, Waiter>();
+  private final TreeMap<Event, Event> tree = new TreeMap<Event, Event>();
 
   /**
    * Every time we look on the clock we count this.
@@ -108,11 +108,11 @@ public class SimulatedClock implements InternalClock, Scheduler {
   @Override
   public void schedule(Runnable runnable, long requestedMillis) {
     long millis = requestedMillis + jobExecutionLagMillis;
-    Waiter waiter =
-      new Waiter(requestedMillis, millis, runnable);
+    Event event =
+      new Event(requestedMillis, millis, runnable);
     structureLock.lock();
     try {
-      tree.put(waiter, waiter);
+      tree.put(event, event);
     } finally {
       structureLock.unlock();
     }
@@ -121,7 +121,7 @@ public class SimulatedClock implements InternalClock, Scheduler {
   Runnable advance = new Runnable() {
     @Override
     public void run() {
-      advanceAndWakeupWaiters(now.get() + 1);
+      advanceAndRunEvents(now.get() + 1);
     }
   };
 
@@ -149,7 +149,7 @@ public class SimulatedClock implements InternalClock, Scheduler {
       return;
     }
     long wakeupTime = millis() + millis;
-    advanceAndWakeupWaiters(wakeupTime);
+    advanceAndRunEvents(wakeupTime);
   }
 
   /**
@@ -165,9 +165,9 @@ public class SimulatedClock implements InternalClock, Scheduler {
       }
       return;
     }
-    long nextTime = advanceAndWakeupWaiters(0);
-    if (nextTime > 0) {
-      advanceAndWakeupWaiters(nextTime);
+    long nextTime = advanceAndRunEvents(0);
+    if (nextTime >= 0) {
+      advanceAndRunEvents(nextTime);
       return;
     }
     advanceClock(now.get() + 1);
@@ -192,33 +192,33 @@ public class SimulatedClock implements InternalClock, Scheduler {
   }
 
   /**
-   * Move clock forward and notify waiters while doing so.
+   * Move clock forward and notify waiting events while doing so.
    *
-   * @param time time until waiters should be notified, inclusive
-   * @return -1 if no more waiting or next waiter time
+   * @param time time until events should be notified, inclusive
+   * @return -1 if no more waiting or next event time
    */
-  private long advanceAndWakeupWaiters(long time) {
+  private long advanceAndRunEvents(long time) {
     while (true) {
-      Waiter u;
-      Map.Entry<Waiter, Waiter> e;
+      Event u;
+      Map.Entry<Event, Event> e;
       structureLock.lock();
       try {
         e = tree.pollFirstEntry();
         if (e != null) {
           u = e.getKey();
-          if (u.wakeupTime > time) {
+          if (u.time > time) {
             tree.put(u, u);
             advanceClock(time);
-            return u.wakeupTime;
+            return u.time;
           }
         } else {
           break;
         }
-        advanceClock(u.wakeupTime);
+        advanceClock(u.time);
       } finally {
         structureLock.unlock();
       }
-      e.getKey().timeIsReached();
+      e.getKey().runAction();
     }
     advanceClock(time);
     return -1;
@@ -241,28 +241,28 @@ public class SimulatedClock implements InternalClock, Scheduler {
     structureLock.lock();
     try {
       return "clock{time=" + now + ", tasksWaitingForExecution=" +
-        tasksWaitingForExecution.get() + ", waiters=" + tree + "}";
+        tasksWaitingForExecution.get() + ", events=" + tree + "}";
     } finally {
       structureLock.unlock();
     }
   }
 
-  class Waiter implements Comparable<Waiter> {
+  static class Event implements Comparable<Event> {
 
     final long requestedWakeupTime;
-    final long wakeupTime;
-    final Runnable event;
+    final long time;
+    final Runnable action;
 
-    Waiter(long requestedWakeupTime, long wakeupTime, Runnable event) {
-      this.wakeupTime = wakeupTime;
+    Event(long requestedWakeupTime, long time, Runnable action) {
+      this.time = time;
       this.requestedWakeupTime = requestedWakeupTime;
-      this.event = event;
+      this.action = action;
     }
 
-    public void timeIsReached() {
-      if (event != null) {
+    public void runAction() {
+      if (action != null) {
         try {
-          event.run();
+          action.run();
         } catch (Throwable t) {
           LOG.warn("Error from scheduled event", t);
         }
@@ -270,19 +270,19 @@ public class SimulatedClock implements InternalClock, Scheduler {
     }
 
     @Override
-    public int compareTo(Waiter o) {
-      if (wakeupTime < o.wakeupTime) {
+    public int compareTo(Event o) {
+      if (time < o.time) {
         return -1;
       }
-      if (wakeupTime > o.wakeupTime) {
+      if (time > o.time) {
         return 1;
       }
       return 0;
     }
 
     public String toString() {
-      return "Waiter#" + hashCode() + "{time=" +
-        (wakeupTime == Long.MAX_VALUE ? "forever" : Long.toString(wakeupTime))
+      return "Event#" + hashCode() + "{time=" +
+        (time == Long.MAX_VALUE ? "forever" : Long.toString(time))
         + "}";
     }
   }
@@ -326,10 +326,7 @@ public class SimulatedClock implements InternalClock, Scheduler {
 
     @Override
     public String toString() {
-      return "WrappedExecutor{totalTasksWaitingInAssociatedClockInstance=" +
-        tasksWaitingForExecution.get() +
-        ", executor=" + executor +
-        '}';
+      return "WrappedExecutor{executor=" + executor + '}';
     }
   }
 

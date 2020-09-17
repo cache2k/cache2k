@@ -25,20 +25,21 @@ import org.cache2k.Cache2kBuilder;
 import org.cache2k.CacheEntry;
 import org.cache2k.event.CacheEntryExpiredListener;
 import org.cache2k.testing.category.FastTests;
+import org.junit.Ignore;
 import org.junit.experimental.categories.Category;
 
 /**
  * @author Jens Wilke
  */
-@Category(FastTests.class)
+@Category(FastTests.class) @Ignore("prune")
 public class ExpiryWithExpiryListenerTest extends ExpiryTest {
 
   @Override
-  protected <K, T> Cache2kBuilder<K, T> builder(final Class<K> k, final Class<T> t) {
+  protected <K, T> Cache2kBuilder<K, T> builder(Class<K> k, Class<T> t) {
     return
-      super.builder(k,t).addListener(new CacheEntryExpiredListener<K, T>() {
+      super.builder(k, t).addListener(new CacheEntryExpiredListener<K, T>() {
       @Override
-      public void onEntryExpired(final Cache<K, T> cache, final CacheEntry<K, T> entry) {
+      public void onEntryExpired(Cache<K, T> cache, CacheEntry<K, T> entry) {
 
       }
     });
