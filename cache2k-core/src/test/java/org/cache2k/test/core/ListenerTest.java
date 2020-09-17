@@ -223,7 +223,7 @@ public class ListenerTest {
     fire.countDown();
     ConcurrencyHelper.await(new Condition() {
       @Override
-      public boolean check() throws Exception {
+      public boolean check() {
         return callCount.get() == 1;
       }
     });
@@ -260,7 +260,7 @@ public class ListenerTest {
     fire.countDown();
     ConcurrencyHelper.await(new Condition() {
       @Override
-      public boolean check() throws Exception {
+      public boolean check() {
         return callCount.get() == 1;
       }
     });
@@ -297,7 +297,7 @@ public class ListenerTest {
     fire.countDown();
     ConcurrencyHelper.await(new Condition() {
       @Override
-      public boolean check() throws Exception {
+      public boolean check() {
         return callCount.get() == 1;
       }
     });
@@ -338,7 +338,7 @@ public class ListenerTest {
     block.countDown();
     ConcurrencyHelper.await(new Condition() {
       @Override
-      public boolean check() throws Exception {
+      public boolean check() {
         return callCount.get() >= 1;
       }
     });
@@ -381,7 +381,7 @@ public class ListenerTest {
     t.start();
     ConcurrencyHelper.await(new Condition() {
       @Override
-      public boolean check() throws Exception {
+      public boolean check() {
         return callCount.get() >= 1;
       }
     });
@@ -458,7 +458,7 @@ public class ListenerTest {
     }
     ConcurrencyHelper.await(new Condition() {
       @Override
-      public boolean check() throws Exception {
+      public boolean check() {
         return callCount.get() == updateCount;
       }
     });
@@ -511,7 +511,7 @@ public class ListenerTest {
     c.put(1, 2);
     ConcurrencyHelper.await(new Condition() {
       @Override
-      public boolean check() throws Exception {
+      public boolean check() {
         return suppressionCounter.getWarnCount() == 1;
       }
     });
@@ -553,7 +553,7 @@ public class ListenerTest {
     c.put(1, 2);
     ConcurrencyHelper.await(new Condition() {
       @Override
-      public boolean check() throws Exception {
+      public boolean check() {
         return expireCallCount.get() == 1;
       }
     });
@@ -594,7 +594,7 @@ public class ListenerTest {
     c.put(1, 2);
     ConcurrencyHelper.await(new Condition() {
       @Override
-      public boolean check() throws Exception {
+      public boolean check() {
         return expireCallCount.get() == 1;
       }
     });

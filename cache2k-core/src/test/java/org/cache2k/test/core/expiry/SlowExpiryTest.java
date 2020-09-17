@@ -317,7 +317,7 @@ public class SlowExpiryTest extends TestingBase {
     c.get(2);
     await("wait for expiry", new Condition() {
       @Override
-      public boolean check() throws Exception {
+      public boolean check() {
         return getInfo().getExpiredCount() > 0;
       }
     });
@@ -353,7 +353,7 @@ public class SlowExpiryTest extends TestingBase {
     }
     await("wait for expiry", new Condition() {
       @Override
-      public boolean check() throws Exception {
+      public boolean check() {
         return getInfo().getExpiredCount() >= COUNT;
       }
     });
@@ -380,7 +380,7 @@ public class SlowExpiryTest extends TestingBase {
     c.get(2);
     await(new Condition() {
       @Override
-      public boolean check() throws Exception {
+      public boolean check() {
         return getInfo().getExpiredCount() > 0;
       }
     });
@@ -406,7 +406,7 @@ public class SlowExpiryTest extends TestingBase {
     });
     await(new Condition() {
       @Override
-      public boolean check() throws Exception {
+      public boolean check() {
         return getInfo().getSuppressedExceptionCount() > 0;
       }
     });
@@ -475,7 +475,7 @@ public class SlowExpiryTest extends TestingBase {
     c.getAll(toIterable(1, 2, 3));
     await(new Condition() {
       @Override
-      public boolean check() throws Exception {
+      public boolean check() {
         return getInfo().getTimerEventCount() >= 3;
       }
     });
@@ -530,7 +530,7 @@ public class SlowExpiryTest extends TestingBase {
     assertEquals(3, getInfo().getLoadCount());
     await(new Condition() {
       @Override
-      public boolean check() throws Exception {
+      public boolean check() {
         return getInfo().getSize() == 0;
       }
     });
@@ -579,7 +579,7 @@ public class SlowExpiryTest extends TestingBase {
     c.getAll(toIterable(1, 2, 3));
     await(new Condition() {
       @Override
-      public boolean check() throws Exception {
+      public boolean check() {
         return getInfo().getSize() == 0;
       }
     });
@@ -646,7 +646,7 @@ public class SlowExpiryTest extends TestingBase {
     if (v == 0) {
       await("Get returns fresh", new Condition() {
         @Override
-        public boolean check() throws Exception {
+        public boolean check() {
           long t0 = millis();
           Integer v = c.get(KEY);
           long t1 = millis();
@@ -665,7 +665,7 @@ public class SlowExpiryTest extends TestingBase {
     long _ADDITIONAL_LOADS_BECAUSE_OF_REFRESH = 2;
     await("minimum loads", new Condition() {
       @Override
-      public boolean check() throws Exception {
+      public boolean check() {
         return getInfo().getLoadCount() >= _LOADS_TRIGGERED_BY_GET;
       }
     });
@@ -675,27 +675,27 @@ public class SlowExpiryTest extends TestingBase {
       lessThanOrEqualTo(_LOADS_TRIGGERED_BY_GET + _ADDITIONAL_LOADS_BECAUSE_OF_REFRESH));
     await("Timer triggered", new Condition() {
       @Override
-      public boolean check() throws Exception {
+      public boolean check() {
         return getInfo().getTimerEventCount() > 0;
       }
     });
     if (_keepData) {
       await("Refresh is done", new Condition() {
         @Override
-        public boolean check() throws Exception {
+        public boolean check() {
           return getInfo().getRefreshCount() > 0;
         }
       });
     }
     await("Expires finally", new Condition() {
       @Override
-      public boolean check() throws Exception {
+      public boolean check() {
         return getInfo().getExpiredCount() > 0;
       }
     });
     await("loader count identical", new Condition() {
       @Override
-      public boolean check() throws Exception {
+      public boolean check() {
         return getInfo().getLoadCount() == _LOADER.getCount();
       }
     });
@@ -786,13 +786,13 @@ public class SlowExpiryTest extends TestingBase {
             });
           await("Refresh is done", new Condition() {
             @Override
-            public boolean check() throws Exception {
+            public boolean check() {
               return getInfo().getRefreshCount() > 0;
             }
           });
           await("Entry disappears", new Condition() {
             @Override
-            public boolean check() throws Exception {
+            public boolean check() {
               return !c.containsKey(KEY);
             }
           });
@@ -857,13 +857,13 @@ public class SlowExpiryTest extends TestingBase {
             });
           await("Refresh is done", new Condition() {
             @Override
-            public boolean check() throws Exception {
+            public boolean check() {
               return getInfo().getRefreshCount() > 0;
             }
           });
           await("Entry disappears", new Condition() {
             @Override
-            public boolean check() throws Exception {
+            public boolean check() {
               return !c.containsKey(KEY);
             }
           });
@@ -904,13 +904,13 @@ public class SlowExpiryTest extends TestingBase {
     assertEquals(0, v);
     await("Refresh is done", new Condition() {
       @Override
-      public boolean check() throws Exception {
+      public boolean check() {
         return getInfo().getRefreshCount() > 0;
       }
     });
     await("Entry stays", new Condition() {
       @Override
-      public boolean check() throws Exception {
+      public boolean check() {
         return c.containsKey(KEY);
       }
     });
@@ -941,13 +941,13 @@ public class SlowExpiryTest extends TestingBase {
     assertEquals(0, v);
     await("Refresh is done", new Condition() {
       @Override
-      public boolean check() throws Exception {
+      public boolean check() {
         return getInfo().getRefreshCount() > 0;
       }
     });
     await("Entry stays", new Condition() {
       @Override
-      public boolean check() throws Exception {
+      public boolean check() {
         return c.containsKey(KEY);
       }
     });
@@ -993,13 +993,13 @@ public class SlowExpiryTest extends TestingBase {
     c.get(KEY);
     await(new Condition() {
       @Override
-      public boolean check() throws Exception {
+      public boolean check() {
         return getInfo().getTimerEventCount() == 2;
       }
     });
     await(new Condition() {
       @Override
-      public boolean check() throws Exception {
+      public boolean check() {
         return getInfo().getSize() == 0;
       }
     });
@@ -1023,13 +1023,13 @@ public class SlowExpiryTest extends TestingBase {
     c.reloadAll(toIterable(1), null);
     await(new Condition() {
       @Override
-      public boolean check() throws Exception {
+      public boolean check() {
         return getInfo().getLoadCount() > 0;
       }
     });
     await(new Condition() {
       @Override
-      public boolean check() throws Exception {
+      public boolean check() {
         return getInfo().getSize() == 0;
       }
     });
@@ -1044,7 +1044,7 @@ public class SlowExpiryTest extends TestingBase {
     c.expireAt(1, millis() + TestingParameters.MINIMAL_TICK_MILLIS);
     await(new Condition() {
       @Override
-      public boolean check() throws Exception {
+      public boolean check() {
         return !c.containsKey(1);
       }
     });
@@ -1066,7 +1066,7 @@ public class SlowExpiryTest extends TestingBase {
     c.expireAt(1, millis() + TestingParameters.MINIMAL_TICK_MILLIS);
     await(new Condition() {
       @Override
-      public boolean check() throws Exception {
+      public boolean check() {
         return c.get(1) == 4711;
       }
     });
@@ -1092,7 +1092,7 @@ public class SlowExpiryTest extends TestingBase {
     sleep(TestingParameters.MINIMAL_TICK_MILLIS * 21);
     await(new Condition() {
       @Override
-      public boolean check() throws Exception {
+      public boolean check() {
         return c.get(1) == 4711;
       }
     });
@@ -1114,7 +1114,7 @@ public class SlowExpiryTest extends TestingBase {
     c.expireAt(1, millis() + TestingParameters.MINIMAL_TICK_MILLIS);
     await(new Condition() {
       @Override
-      public boolean check() throws Exception {
+      public boolean check() {
         return getInfo().getRefreshCount() > 0;
       }
     });
@@ -1136,7 +1136,7 @@ public class SlowExpiryTest extends TestingBase {
     c.expireAt(1, 0);
     await(new Condition() {
       @Override
-      public boolean check() throws Exception {
+      public boolean check() {
         return c.get(1) == 4711;
       }
     });

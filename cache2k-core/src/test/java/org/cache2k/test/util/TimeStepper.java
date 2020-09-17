@@ -58,8 +58,6 @@ public class TimeStepper {
     } catch (InterruptedException ex) {
       Thread.currentThread().interrupt();
       throw new RuntimeException(ex);
-    } catch (Exception ex) {
-      throw new RuntimeException(ex);
     }
   }
 
@@ -81,6 +79,10 @@ public class TimeStepper {
     await(null, TestingParameters.MAX_FINISH_WAIT_MILLIS, c);
   }
 
+  /**
+   * Never make this an assertion error, because we do not want the
+   * timeout beeing suppressed at {@link TimeBox#check(Runnable)}
+   */
   static class TimeoutException extends RuntimeException {
     TimeoutException(String message) {
       super(message);

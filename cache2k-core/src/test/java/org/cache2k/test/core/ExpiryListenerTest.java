@@ -127,7 +127,7 @@ public class ExpiryListenerTest extends TestingBase {
     c.put(ANY_KEY, 4711);
     await(new Condition() {
       @Override
-      public boolean check() throws Exception {
+      public boolean check() {
         return listenerCallCount.get() > 0;
       }
     });
@@ -158,7 +158,7 @@ public class ExpiryListenerTest extends TestingBase {
     c.put(ANY_KEY, 4711);
     await(new Condition() {
       @Override
-      public boolean check() throws Exception {
+      public boolean check() {
         return listenerCallCount.get() > 0;
       }
     });
@@ -195,7 +195,7 @@ public class ExpiryListenerTest extends TestingBase {
     c.get(ANY_KEY);
     await(new Condition() {
       @Override
-      public boolean check() throws Exception {
+      public boolean check() {
         return eventCount.get() == 1;
       }
     });
@@ -252,7 +252,7 @@ public class ExpiryListenerTest extends TestingBase {
     final int ANY_KEY = 1;
     await(new Condition() {
       @Override
-      public boolean check() throws Exception {
+      public boolean check() {
         return c.get(ANY_KEY) == 0;
       }
     });
@@ -303,7 +303,7 @@ public class ExpiryListenerTest extends TestingBase {
     assertThat(_callCount.get(), lessThanOrEqualTo(1));
     await(new Condition() {
       @Override
-      public boolean check() throws Exception {
+      public boolean check() {
         return _callCount.get() == 1;
       }
     });
@@ -350,7 +350,7 @@ public class ExpiryListenerTest extends TestingBase {
       });
     await(new Condition() {
       @Override
-      public boolean check() throws Exception {
+      public boolean check() {
         return listenerCallCount.get() == 1;
       }
     });
@@ -408,7 +408,7 @@ public class ExpiryListenerTest extends TestingBase {
           t.start();
           await(new Condition() {
             @Override
-            public boolean check() throws Exception {
+            public boolean check() {
               return gotCreated.get() == 1;
             }
           });
@@ -423,7 +423,7 @@ public class ExpiryListenerTest extends TestingBase {
     waitInCreated.countDown();
     await(new Condition() {
       @Override
-      public boolean check() throws Exception {
+      public boolean check() {
         return gotExpired.get() > 0;
       }
     });

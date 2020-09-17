@@ -27,6 +27,6 @@ package org.cache2k.test.util;
  */
 public interface Condition {
 
-  boolean check() throws Exception;
+  boolean check();
 
 }

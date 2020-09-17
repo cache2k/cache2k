@@ -143,7 +143,7 @@ public class AllMutatorsExpireTest extends TestingBase {
       long t1 = millis();
       await(new Condition() {
         @Override
-        public boolean check() throws Exception {
+        public boolean check() {
           return !c.containsKey(KEY);
         }
       });
@@ -155,7 +155,7 @@ public class AllMutatorsExpireTest extends TestingBase {
     if (_opCnt.get() == 1) {
       await(new Condition() {
         @Override
-        public boolean check() throws Exception {
+        public boolean check() {
           return getInfo().getExpiredCount() == 1;
         }
       });
@@ -163,7 +163,7 @@ public class AllMutatorsExpireTest extends TestingBase {
     if (!pars.keepData && _opCnt.get() == 1) {
       await(new Condition() {
         @Override
-        public boolean check() throws Exception {
+        public boolean check() {
           return getInfo().getSize() == 0;
         }
       });
@@ -198,7 +198,7 @@ public class AllMutatorsExpireTest extends TestingBase {
     });
     await(new Condition() {
       @Override
-      public boolean check() throws Exception {
+      public boolean check() {
         return !c.containsKey(KEY);
       }
     });
@@ -207,7 +207,7 @@ public class AllMutatorsExpireTest extends TestingBase {
     if (_opCnt.get() == 1) {
       await(new Condition() {
         @Override
-        public boolean check() throws Exception {
+        public boolean check() {
           return getInfo().getExpiredCount() == 1;
         }
       });

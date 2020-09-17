@@ -108,8 +108,7 @@ public class SimulatedClock implements InternalClock, Scheduler {
   @Override
   public void schedule(Runnable runnable, long requestedMillis) {
     long millis = requestedMillis + jobExecutionLagMillis;
-    Event event =
-      new Event(requestedMillis, millis, runnable);
+    Event event = new Event(requestedMillis, millis, runnable);
     structureLock.lock();
     try {
       tree.put(event, event);
@@ -165,12 +164,12 @@ public class SimulatedClock implements InternalClock, Scheduler {
       }
       return;
     }
-    long nextTime = advanceAndRunEvents(0);
+    long nextTime = advanceAndRunEvents(-1);
     if (nextTime >= 0) {
       advanceAndRunEvents(nextTime);
       return;
     }
-    advanceClock(now.get() + 1);
+    eventuallyAdvanceClock(now.get() + 1);
   }
 
   public Executor wrapExecutor(Executor ex) {
@@ -194,8 +193,9 @@ public class SimulatedClock implements InternalClock, Scheduler {
   /**
    * Move clock forward and notify waiting events while doing so.
    *
-   * @param time time until events should be notified, inclusive
-   * @return -1 if no more waiting or next event time
+   * @param time time until events should be notified, inclusive.
+   *             -1 to execute no events and return next scheduled time
+   * @return next schedule time or -1 if no more events
    */
   private long advanceAndRunEvents(long time) {
     while (true) {
@@ -208,26 +208,27 @@ public class SimulatedClock implements InternalClock, Scheduler {
           u = e.getKey();
           if (u.time > time) {
             tree.put(u, u);
-            advanceClock(time);
+            eventuallyAdvanceClock(time);
             return u.time;
           }
         } else {
           break;
         }
-        advanceClock(u.time);
+        eventuallyAdvanceClock(u.time);
       } finally {
         structureLock.unlock();
       }
       e.getKey().runAction();
     }
-    advanceClock(time);
+    eventuallyAdvanceClock(time);
     return -1;
   }
 
   /**
-   * Update clock, but only move clock forward.
+   * Update clock. Make sure to move the clock only forward and
+   * update only if not moved forward by somebody else.
    */
-  private void advanceClock(long time) {
+  private void eventuallyAdvanceClock(long time) {
     long currentTime = now.get();
     while (currentTime < time) {
       if (now.compareAndSet(currentTime, time)) {
@@ -281,7 +282,7 @@ public class SimulatedClock implements InternalClock, Scheduler {
     }
 
     public String toString() {
-      return "Event#" + hashCode() + "{time=" +
+      return "Event#" + Integer.toString(hashCode(), 36) + "{time=" +
         (time == Long.MAX_VALUE ? "forever" : Long.toString(time))
         + "}";
     }

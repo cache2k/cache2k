@@ -1292,12 +1292,12 @@ public class ExpiryTest extends TestingBase {
         public void run() {
           assertEquals(1, getInfo().getSize());
           c.expireAt(1, ExpiryTimeValues.ETERNAL);
-          assertFalse(c.containsKey(1));
+          assertFalse("Keeps invisible, when expiry extended", c.containsKey(1));
           assertEquals(1, getInfo().getSize());
           assertEquals(1, getInfo().getRefreshCount());
           c.expireAt(1, ExpiryTimeValues.REFRESH);
           assertEquals(1, getInfo().getSize());
-          await(new Condition() {
+          await(LONG_DELTA / 2, new Condition() {
             @Override
             public boolean check() {
               return getInfo().getRefreshCount() == 2;
