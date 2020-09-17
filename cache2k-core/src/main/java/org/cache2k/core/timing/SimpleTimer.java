@@ -23,7 +23,7 @@ package org.cache2k.core.timing;
 /**
  * @author Jens Wilke
  */
-public abstract class SimpleTimer {
+public interface SimpleTimer {
 
   /**
    * Schedule the specified timer task for execution at the specified
@@ -34,16 +34,21 @@ public abstract class SimpleTimer {
    *         cancelled, timer was cancelled, or timer thread terminated.
    * @throws NullPointerException if {@code task} is null
    */
-  abstract void schedule(SimpleTimerTask task, long time);
+  void schedule(SimpleTimerTask task, long time);
 
   /**
    * Cancel a timer task.
    */
-  abstract void cancel(SimpleTimerTask t);
+  void cancel(SimpleTimerTask t);
 
   /**
    * Terminates all timer tasks currently pending.
    */
-  abstract void cancel();
+  void cancel();
+
+  /**
+   * Time tasks may lag behind.
+   */
+  long getLag();
 
 }

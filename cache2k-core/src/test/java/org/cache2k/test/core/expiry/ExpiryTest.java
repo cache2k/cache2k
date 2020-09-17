@@ -43,6 +43,7 @@ import org.cache2k.core.InternalCache;
 import org.cache2k.testing.category.FastTests;
 import org.cache2k.test.util.TimeBox;
 import org.hamcrest.Matchers;
+import org.junit.Ignore;
 import org.junit.experimental.categories.Category;
 import org.junit.Test;
 
@@ -1253,6 +1254,7 @@ public class ExpiryTest extends TestingBase {
         assertEquals("in cache if within delta time", 1, getInfo().getSize());
       }
     });
+
     c.expireAt(1, ExpiryTimeValues.NO_CACHE);
     assertEquals("empty after expired immediately", 0, getInfo().getSize());
   }
@@ -1364,6 +1366,29 @@ public class ExpiryTest extends TestingBase {
     Cache<Integer, Integer> c = cacheNoNullNoLoaderException();
     CacheEntry<?, ?> e = c.getEntry(1);
     assertNull(e);
+  }
+
+  @Test @Ignore
+  public void gatherEvents() {
+    final Cache<Integer, Integer> c = builder(Integer.class, Integer.class)
+      .expireAfterWrite(1, TimeUnit.MILLISECONDS)
+      .build();
+    within(312)
+      .work(new Runnable() {
+      @Override
+      public void run() {
+        for (int i = 0; i < 3; i++) {
+          c.put(i, i);
+        }
+      }
+    }).check(new Runnable() {
+      @Override
+      public void run() {
+        assertEquals(3, getCache().asMap().size());
+        sleep(30);
+        assertEquals(3, getCache().asMap().size());
+      }
+    });
   }
 
   /** Checks that nothing breaks here. */

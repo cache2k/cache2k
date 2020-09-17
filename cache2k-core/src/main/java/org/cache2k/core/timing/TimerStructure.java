@@ -43,6 +43,9 @@ public abstract class TimerStructure {
    */
   public abstract SimpleTimerTask removeNextToRun(long time);
 
+  /**
+   * Time of next run, or -1 if no more tasks are scheduled
+   */
   public abstract long nextRun();
 
 }

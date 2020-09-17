@@ -27,29 +27,22 @@ import java.util.concurrent.locks.ReentrantLock;
 
 /**
  */
-public class SimpleTimerImpl extends SimpleTimer {
+public class SimpleTimerImpl implements SimpleTimer {
 
   private final Lock lock = new ReentrantLock();
   private final InternalClock clock;
   private final Scheduler scheduler;
-
   private final TimerStructure structure = new QueueTimerStructure();
+  private long nextScheduled = Long.MAX_VALUE;
+  private long lag = 0;
 
-  private final Runnable reachedJob = new Runnable() {
+  private final Runnable timerAction = new Runnable() {
     @Override
     public void run() {
       timeReachedEvent(clock.millis());
     }
   };
 
-  /**
-   * Creates a new timer whose associated thread has the specified name,
-   * and may be specified to
-   * {@linkplain Thread#setDaemon run as a daemon}.
-   *
-   * @throws NullPointerException if {@code name} is null
-   * @since 1.5
-   */
   public SimpleTimerImpl(InternalClock c) {
     this.clock = c;
     if (c instanceof Scheduler) {
@@ -79,7 +72,7 @@ public class SimpleTimerImpl extends SimpleTimer {
     lock.lock();
     try {
       if (structure.schedule(task, time)) {
-        pacedSchedule(time);
+        reschedule(time);
       }
     } finally {
       lock.unlock();
@@ -97,6 +90,13 @@ public class SimpleTimerImpl extends SimpleTimer {
   }
 
   /**
+   * Lag to gather timer tasks processing. In milliseconds.
+   */
+  public long getLag() {
+    return lag;
+  }
+
+  /**
    * Terminates all timer tasks current pending.
    */
   @Override
@@ -109,7 +109,7 @@ public class SimpleTimerImpl extends SimpleTimer {
     }
   }
 
-  void timeReachedEvent(long currentTime) {
+  private void timeReachedEvent(long currentTime) {
     while (true) {
       SimpleTimerTask task;
       lock.lock();
@@ -125,19 +125,42 @@ public class SimpleTimerImpl extends SimpleTimer {
         lock.lock();
         try {
           nextTime = structure.nextRun();
+          schedule(currentTime, nextTime);
         } finally {
           lock.unlock();
-        }
-        if (nextTime > 0) {
-          pacedSchedule(nextTime);
         }
         break;
       }
     }
   }
 
-  void pacedSchedule(long nextWakeup) {
-    scheduler.schedule(reachedJob, nextWakeup);
+  /**
+   * Schedule the next time we process expired times. At least wait {@link #lag}.
+   *
+   * @param currentTime the current time for calculations
+   * @param requestedTime requested time for processing, or -1 if nothing needs to be scheduled
+   */
+  private void schedule(long currentTime, long requestedTime) {
+    if (requestedTime >= 0) {
+      long earliestTime = currentTime + lag;
+      nextScheduled = Math.max(earliestTime, requestedTime);
+      scheduler.schedule(timerAction, nextScheduled);
+    } else {
+      nextScheduled = Long.MAX_VALUE;
+    }
+  }
+
+  /**
+   * Reschedule processing. Called when processing needs to be done earlier.
+   * Don't schedule when within lag time.
+   * We don't cancel a scheduled task. The additional event does not hurt.
+   */
+  void reschedule(long nextWakeup) {
+    if (nextWakeup >= nextScheduled - lag) {
+      return;
+    }
+    nextScheduled = nextWakeup + lag;
+    scheduler.schedule(timerAction, nextScheduled);
   }
 
 }

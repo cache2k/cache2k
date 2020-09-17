@@ -462,11 +462,8 @@ public class Operations<K, V> {
       public void examine(Progress<K, V, Void> c, ExaminationEntry<K, V> e) {
         if (t == ExpiryTimeValues.NO_CACHE ||
           t == ExpiryTimeValues.REFRESH) {
-          if (c.isDataFreshOrRefreshing()) {
-            c.wantMutation();
-          } else {
-            c.noMutation();
-          }
+          c.isDataFreshOrRefreshing();
+          c.wantMutation();
         } else if (c.isDataFresh()) {
           c.wantMutation();
         } else {

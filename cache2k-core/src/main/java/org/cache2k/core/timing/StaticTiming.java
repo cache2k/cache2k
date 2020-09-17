@@ -26,6 +26,7 @@ import org.cache2k.configuration.CustomizationSupplier;
 import org.cache2k.core.DefaultResiliencePolicy;
 import org.cache2k.core.Entry;
 import org.cache2k.core.ExceptionWrapper;
+import org.cache2k.core.HeapCache;
 import org.cache2k.core.InternalCache;
 import org.cache2k.core.util.InternalClock;
 import org.cache2k.expiry.Expiry;
@@ -40,6 +41,8 @@ import org.cache2k.integration.ResiliencePolicy;
  * @author Jens Wilke
  */
 public class StaticTiming<K, V> extends Timing<K, V> {
+
+  static final long SAFETY_GAP_MILLIS = HeapCache.TUNABLE.sharpExpirySafetyGapMillis;
 
   final InternalClock clock;
   boolean sharpExpiry;
@@ -192,7 +195,7 @@ public class StaticTiming<K, V> extends Timing<K, V> {
       return expiredEventuallyStartBackgroundRefresh(e, expiryTime < 0);
     }
     if (expiryTime < 0) {
-      long timerTime = -expiryTime - SAFETY_GAP_MILLIS;
+      long timerTime = -expiryTime - SAFETY_GAP_MILLIS - timer.getLag();
       if (timerTime >= now) {
         e.setTask(new Tasks.ExpireTimerTask().to(cache, e));
         scheduleTask(timerTime, e);

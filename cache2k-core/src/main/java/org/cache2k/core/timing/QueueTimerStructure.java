@@ -127,7 +127,7 @@ public class QueueTimerStructure extends TimerStructure {
     SimpleTimerTask task;
     while (true) {
       if (queue.isEmpty()) {
-        return 0;
+        return -1;
       }
       task = queue.getMin();
       if (task.isCancelled()) {

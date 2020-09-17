@@ -49,7 +49,6 @@ public abstract class Timing<K, V>  {
   public static final Timing ETERNAL_IMMEDIATE = new EternalImmediate();
 
   private static final Timing IMMEDIATE = new Immediate();
-  static final long SAFETY_GAP_MILLIS = HeapCache.TUNABLE.sharpExpirySafetyGapMillis;
 
   /**
    * Instance of expiry calculator that extracts the expiry time from the value.
