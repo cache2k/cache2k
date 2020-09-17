@@ -195,16 +195,16 @@ public class StandardCommonMetrics implements CommonMetrics.Updater {
     REFRESH_HIT_UPDATER.incrementAndGet(this);
   }
 
-  static final AtomicLongFieldUpdater<StandardCommonMetrics> REFRESH_SUBMIT_FAILED_UPDATER =
-    AtomicLongFieldUpdater.newUpdater(StandardCommonMetrics.class, "refreshSubmitFailed");
-  private volatile long refreshSubmitFailed;
+  static final AtomicLongFieldUpdater<StandardCommonMetrics> REFRESH_REJECTED_UPDATER =
+    AtomicLongFieldUpdater.newUpdater(StandardCommonMetrics.class, "refreshRejected");
+  private volatile long refreshRejected;
   @Override
   public long getRefreshRejectedCount() {
-    return REFRESH_SUBMIT_FAILED_UPDATER.get(this);
+    return REFRESH_REJECTED_UPDATER.get(this);
   }
   @Override
-  public void refreshFailed() {
-    REFRESH_SUBMIT_FAILED_UPDATER.incrementAndGet(this);
+  public void refreshRejected() {
+    REFRESH_REJECTED_UPDATER.incrementAndGet(this);
   }
 
   @Override

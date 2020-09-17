@@ -175,7 +175,7 @@ public interface CommonMetrics {
 
     void refreshedHit();
 
-    void refreshFailed();
+    void refreshRejected();
 
     void goneSpin();
 
@@ -249,7 +249,7 @@ public interface CommonMetrics {
     }
 
     @Override
-    public void refreshFailed() {
+    public void refreshRejected() {
 
     }
 

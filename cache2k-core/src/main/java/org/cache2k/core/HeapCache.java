@@ -1583,11 +1583,10 @@ public class HeapCache<K, V> extends BaseCache<K, V>
       if (e.getTask() != task) { return; }
       try {
         prefetchExecutor.execute(createFireAndForgetAction(e, Operations.SINGLETON.refresh));
-        return;
-      } catch (RejectedExecutionException ignore) {
+      } catch (RejectedExecutionException ex) {
+        metrics.refreshRejected();
+        expireOrScheduleFinalExpireEvent(e);
       }
-      metrics.refreshFailed();
-      expireOrScheduleFinalExpireEvent(e);
     }
   }
 
