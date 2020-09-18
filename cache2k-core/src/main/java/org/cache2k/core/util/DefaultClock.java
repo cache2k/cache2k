@@ -26,11 +26,11 @@ package org.cache2k.core.util;
  *
  * @author Jens Wilke
  */
-public final class ClockDefaultImpl implements InternalClock {
+public final class DefaultClock implements InternalClock {
 
-  public static final ClockDefaultImpl INSTANCE = new ClockDefaultImpl();
+  public static final DefaultClock INSTANCE = new DefaultClock();
 
-  private ClockDefaultImpl() { }
+  private DefaultClock() { }
 
   @Override
   public long millis() {

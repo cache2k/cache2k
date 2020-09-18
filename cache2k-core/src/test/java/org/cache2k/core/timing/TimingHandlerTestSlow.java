@@ -20,20 +20,10 @@ package org.cache2k.core.timing;
  * #L%
  */
 
-import org.cache2k.Cache;
-import org.cache2k.Cache2kBuilder;
-import org.cache2k.core.HeapCache;
-import org.cache2k.core.util.ClockDefaultImpl;
+import org.cache2k.core.util.DefaultClock;
 import org.cache2k.core.util.InternalClock;
-import org.cache2k.core.util.TunableFactory;
-import org.cache2k.integration.CacheLoader;
 import org.cache2k.testing.category.SlowTests;
-import org.junit.Test;
 import org.junit.experimental.categories.Category;
-
-import java.util.concurrent.TimeUnit;
-
-import static org.junit.Assert.*;
 
 /**
  * @author Jens Wilke
@@ -41,7 +31,7 @@ import static org.junit.Assert.*;
 @Category(SlowTests.class)
 public class TimingHandlerTestSlow {
 
-  private static final InternalClock CLOCK = ClockDefaultImpl.INSTANCE;
+  private static final InternalClock CLOCK = DefaultClock.INSTANCE;
 
 
 }

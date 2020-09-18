@@ -24,9 +24,11 @@ import org.cache2k.core.timing.Scheduler;
 
 import java.util.Map;
 import java.util.TreeMap;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 import java.util.concurrent.RejectedExecutionException;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.locks.ReentrantLock;
@@ -42,6 +44,13 @@ import java.util.concurrent.locks.ReentrantLock;
  * @author Jens Wilke
  */
 public class SimulatedClock implements InternalClock, Scheduler {
+
+  static final ThreadLocal<Boolean> EXECUTOR_CONTEXT = new ThreadLocal<Boolean>() {
+    @Override
+    protected Boolean initialValue() {
+      return false;
+    }
+  };
 
   private static final Executor DEFAULT_EXECUTOR = Executors.newSingleThreadExecutor();
 
@@ -118,7 +127,7 @@ public class SimulatedClock implements InternalClock, Scheduler {
   Runnable advance = new Runnable() {
     @Override
     public void run() {
-      advanceAndRunEvents(now.get() + 1);
+      progressAndRunEvents(now.get() + 1);
     }
   };
 
@@ -141,12 +150,33 @@ public class SimulatedClock implements InternalClock, Scheduler {
    */
   @Override
   public void sleep(long millis) throws InterruptedException {
+    if (EXECUTOR_CONTEXT.get()) {
+      sleepInExecutor(millis);
+      return;
+    }
     if (millis == 0) {
       sleep0();
       return;
     }
     long wakeupTime = millis() + millis;
-    advanceAndRunEvents(wakeupTime);
+    progressAndRunEvents(wakeupTime);
+  }
+
+  /**
+   * When run from within an executor, don't make time progress.
+   * We wait until another thread (the testing thread) moves time forward.
+   * This is not heavily used. Tests we sleep in executors should be
+   * examined and may be replaced.
+   */
+  private void sleepInExecutor(long millis) throws InterruptedException {
+    final CountDownLatch latch = new CountDownLatch(1);
+    schedule(new Runnable() {
+      @Override
+      public void run() {
+        latch.countDown();
+      }
+    }, now.get() + millis);
+    latch.await(3, TimeUnit.MILLISECONDS);
   }
 
   /**
@@ -162,12 +192,12 @@ public class SimulatedClock implements InternalClock, Scheduler {
       }
       return;
     }
-    long nextTime = advanceAndRunEvents(-1);
+    long nextTime = progressAndRunEvents(-1);
     if (nextTime >= 0) {
-      advanceAndRunEvents(nextTime);
+      progressAndRunEvents(nextTime);
       return;
     }
-    eventuallyAdvanceClock(now.get() + 1);
+    tickEventually(now.get() + 1);
   }
 
   public Executor wrapExecutor(Executor ex) {
@@ -195,7 +225,7 @@ public class SimulatedClock implements InternalClock, Scheduler {
    *             -1 to execute no events and return next scheduled time
    * @return next schedule time or -1 if no more events
    */
-  private long advanceAndRunEvents(long time) {
+  private long progressAndRunEvents(long time) {
     while (true) {
       Event u;
       Map.Entry<Event, Event> e;
@@ -206,19 +236,19 @@ public class SimulatedClock implements InternalClock, Scheduler {
           u = e.getKey();
           if (u.time > time) {
             tree.put(u, u);
-            eventuallyAdvanceClock(time);
+            tickEventually(time);
             return u.time;
           }
         } else {
           break;
         }
-        eventuallyAdvanceClock(u.time);
+        tickEventually(u.time);
       } finally {
         structureLock.unlock();
       }
       runEvent(e.getKey());
     }
-    eventuallyAdvanceClock(time);
+    tickEventually(time);
     return -1;
   }
 
@@ -233,10 +263,11 @@ public class SimulatedClock implements InternalClock, Scheduler {
   }
 
   /**
-   * Update clock. Make sure to move the clock only forward and
-   * update only if not moved forward by somebody else.
+   * Update clock to the given time. Make sure to move the clock only forward and
+   * update only if not moved forward by somebody else. This is called
+   * with a time in the future, if nothing will happen in between.
    */
-  private void eventuallyAdvanceClock(long time) {
+  private void tickEventually(long time) {
     long currentTime = now.get();
     while (currentTime < time) {
       if (now.compareAndSet(currentTime, time)) {
@@ -310,6 +341,7 @@ public class SimulatedClock implements InternalClock, Scheduler {
         executor.execute(new Runnable() {
           @Override
           public void run() {
+            EXECUTOR_CONTEXT.set(true);
             try {
               r.run();
             } finally {

@@ -29,7 +29,7 @@ import org.cache2k.core.HeapCache;
 import org.cache2k.core.InternalCache;
 import org.cache2k.core.InternalCacheInfo;
 import org.cache2k.core.WiredCache;
-import org.cache2k.core.util.ClockDefaultImpl;
+import org.cache2k.core.util.DefaultClock;
 import org.cache2k.core.util.InternalClock;
 import org.cache2k.core.util.TunableFactory;
 import org.cache2k.core.util.SimulatedClock;
@@ -102,7 +102,7 @@ public class TestingBase {
     return loaderExecutor;
   }
 
-  private final static TimeStepper defaultStepper = new TimeStepper(ClockDefaultImpl.INSTANCE);
+  private final static TimeStepper defaultStepper = new TimeStepper(DefaultClock.INSTANCE);
   private TimeStepper stepper = defaultStepper;
   private InternalClock clock;
   private Statistics statistics;
@@ -420,7 +420,7 @@ public class TestingBase {
 
   public InternalClock getClock() {
     if (clock == null) {
-      setClock(ClockDefaultImpl.INSTANCE);
+      setClock(DefaultClock.INSTANCE);
     }
     return clock;
   }

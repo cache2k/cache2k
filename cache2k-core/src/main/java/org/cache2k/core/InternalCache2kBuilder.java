@@ -26,7 +26,7 @@ import org.cache2k.configuration.CustomizationSupplier;
 import org.cache2k.core.eviction.EvictionFactory;
 import org.cache2k.core.operation.ExaminationEntry;
 import org.cache2k.core.timing.Timing;
-import org.cache2k.core.util.ClockDefaultImpl;
+import org.cache2k.core.util.DefaultClock;
 import org.cache2k.core.util.InternalClock;
 import org.cache2k.event.CacheEntryCreatedListener;
 import org.cache2k.event.CacheEntryEvictedListener;
@@ -50,9 +50,6 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.Executor;
-import java.util.concurrent.LinkedBlockingDeque;
-import java.util.concurrent.ThreadPoolExecutor;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 
 /**
@@ -201,7 +198,7 @@ public class InternalCache2kBuilder<K, V> {
     InternalClock timeReference =
       (InternalClock) cache.createCustomization(config.getTimeReference());
     if (timeReference == null) {
-      timeReference = ClockDefaultImpl.INSTANCE;
+      timeReference = DefaultClock.INSTANCE;
     }
     HeapCache bc = (HeapCache) cache;
     bc.setCacheManager(manager);

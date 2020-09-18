@@ -20,7 +20,7 @@ package org.cache2k.test.util;
  * #L%
  */
 
-import org.cache2k.core.util.ClockDefaultImpl;
+import org.cache2k.core.util.DefaultClock;
 import org.cache2k.core.util.InternalClock;
 
 import java.sql.Timestamp;
@@ -38,7 +38,7 @@ public class TimeBox {
   private final long timeBox;
 
   public static TimeBox millis(long t) {
-    TimeBox b = new TimeBox(ClockDefaultImpl.INSTANCE, t);
+    TimeBox b = new TimeBox(DefaultClock.INSTANCE, t);
     return b;
   }
 

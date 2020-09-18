@@ -30,8 +30,7 @@ import org.cache2k.core.InternalCacheInfo;
 import org.cache2k.CacheOperationCompletionListener;
 
 import java.util.Arrays;
-import java.util.HashSet;
-import java.util.Set;
+import java.util.Random;
 
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
@@ -54,11 +53,9 @@ public class StaticUtil {
    */
   @SuppressWarnings("unchecked")
   public static <K, V> Cache2kBuilder<K, V> enforceWiredCache(Cache2kBuilder<K, V> b) {
-    return b.addListener(new CacheEntryRemovedListener() {
+    return b.addListener(new CacheEntryRemovedListener<K, V>() {
       @Override
-      public void onEntryRemoved(Cache c, CacheEntry entry) {
-
-      }
+      public void onEntryRemoved(Cache<K, V> cache, CacheEntry<K, V> entry) { }
     });
   }
 

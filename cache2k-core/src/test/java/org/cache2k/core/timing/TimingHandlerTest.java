@@ -20,15 +20,13 @@ package org.cache2k.core.timing;
  * #L%
  */
 
-import org.cache2k.Cache;
 import org.cache2k.Cache2kBuilder;
 import org.cache2k.CacheEntry;
 import org.cache2k.core.Entry;
 import org.cache2k.core.HeapCache;
-import org.cache2k.core.util.ClockDefaultImpl;
+import org.cache2k.core.util.DefaultClock;
 import org.cache2k.core.util.InternalClock;
 import org.cache2k.expiry.ExpiryPolicy;
-import org.cache2k.integration.CacheLoader;
 import org.cache2k.testing.category.FastTests;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -46,7 +44,7 @@ public class TimingHandlerTest {
 
   private final Entry ENTRY = new Entry();
   private final long NOW = 10000000;
-  private static final InternalClock CLOCK = ClockDefaultImpl.INSTANCE;
+  private static final InternalClock CLOCK = DefaultClock.INSTANCE;
 
   @Test
   public void eternalSpecified() {
