@@ -40,6 +40,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.Executor;
+import java.util.concurrent.TimeUnit;
 
 /**
  * Configuration for a cache2k cache.
@@ -78,6 +79,7 @@ public class Cache2kConfiguration<K, V> implements ConfigurationBean, Configurat
   private long expireAfterWrite = UNSET_LONG;
   private long retryInterval = UNSET_LONG;
   private long maxRetryInterval = UNSET_LONG;
+  private long timerLag = UNSET_LONG;
   private long resilienceDuration = UNSET_LONG;
   private long maximumWeight = UNSET_LONG;
   private boolean keepDataAfterExpired = false;
@@ -303,6 +305,17 @@ public class Cache2kConfiguration<K, V> implements ConfigurationBean, Configurat
     this.expireAfterWrite = millis;
   }
 
+  public long getTimerLag() {
+    return timerLag;
+  }
+
+  /**
+   * @see Cache2kBuilder#timerLag(long, TimeUnit)
+   */
+  public void setTimerLag(long timerLag) {
+    this.timerLag = timerLag;
+  }
+
   /**
    * @see Cache2kBuilder#retryInterval
    */
@@ -328,9 +341,6 @@ public class Cache2kConfiguration<K, V> implements ConfigurationBean, Configurat
    * @see Cache2kBuilder#maxRetryInterval
    */
   public void setMaxRetryInterval(long millis) {
-    if (entryCapacity >= 0) {
-
-    }
     maxRetryInterval = millis;
   }
 

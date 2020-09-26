@@ -26,6 +26,11 @@ import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
 /**
+ * Standard timer implementation. Due timer tasks are executed via a scheduler
+ * that runs approx. every second (lag time, configurable). There always only
+ * one pending scheduler job per timer.
+ *
+ * @author Jens Wilke
  */
 public class DefaultTimer implements Timer {
 
@@ -34,7 +39,11 @@ public class DefaultTimer implements Timer {
   private final Scheduler scheduler;
   private final TimerStructure structure = new QueueTimerStructure();
   private long nextScheduled = Long.MAX_VALUE;
-  private long lag = 567;
+  /**
+   * Lag time to gather timer tasks for more efficient execution.
+   * Default timer lag defined at {@link org.cache2k.core.HeapCache.Tunable#timerLagMillis}
+   */
+  private long lag;
 
   private final Runnable timerAction = new Runnable() {
     @Override
@@ -43,7 +52,8 @@ public class DefaultTimer implements Timer {
     }
   };
 
-  public DefaultTimer(InternalClock c) {
+  public DefaultTimer(InternalClock c, long lagMillis) {
+    lag = lagMillis;
     this.clock = c;
     if (c instanceof Scheduler) {
       scheduler = (Scheduler) clock;
@@ -131,14 +141,15 @@ public class DefaultTimer implements Timer {
 
   /**
    * Schedule the next time we process expired times. At least wait {@link #lag}.
+   * Also marks that no timer job is scheduled if run with -1 as time parameter.
    *
-   * @param currentTime the current time for calculations
-   * @param requestedTime requested time for processing, or -1 if nothing needs to be scheduled
+   * @param now the current time for calculations
+   * @param time requested time for processing, or -1 if nothing needs to be scheduled
    */
-  private void schedule(long currentTime, long requestedTime) {
-    if (requestedTime >= 0) {
-      long earliestTime = currentTime + lag;
-      nextScheduled = Math.max(earliestTime, requestedTime);
+  private void schedule(long now, long time) {
+    if (time >= 0) {
+      long earliestTime = now + lag;
+      nextScheduled = Math.max(earliestTime, time);
       scheduler.schedule(timerAction, nextScheduled);
     } else {
       nextScheduled = Long.MAX_VALUE;

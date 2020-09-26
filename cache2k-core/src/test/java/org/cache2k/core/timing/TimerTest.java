@@ -20,10 +20,15 @@ package org.cache2k.core.timing;
  * #L%
  */
 
+import org.cache2k.Cache2kBuilder;
 import org.cache2k.core.util.SimulatedClock;
 import org.cache2k.testing.category.FastTests;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
+
+import java.util.concurrent.TimeUnit;
+
+import static org.junit.Assert.assertEquals;
 
 /**
  * Only test special cases not covered by normal testing.
@@ -37,7 +42,7 @@ public class TimerTest {
   public void misc() {
     long startTime = 100;
     Timer st =
-      new DefaultTimer(new SimulatedClock(startTime));
+      new DefaultTimer(new SimulatedClock(startTime), 1);
     TimerTask t = new MyTimerTask();
     try {
       st.schedule(t, -5);
@@ -54,6 +59,14 @@ public class TimerTest {
       st.schedule(t, 15);
     } catch (IllegalStateException ex) {
     }
+  }
+
+  @Test
+  public void config() {
+    long lag = hashCode();
+    assertEquals("builder and config bean working", lag,
+      Cache2kBuilder.forUnknownTypes()
+      .timerLag(lag, TimeUnit.MILLISECONDS).toConfiguration().getTimerLag());
   }
 
   static class MyTimerTask extends TimerTask {

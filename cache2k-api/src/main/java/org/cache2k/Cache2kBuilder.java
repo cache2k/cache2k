@@ -402,11 +402,12 @@ public class Cache2kBuilder<K, V> {
   /**
    * Time duration after insert or updated an cache entry expires.
    * To switch off time based expiry use {@link #eternal(boolean)}. The expiry
-   * happens via a timer event and is lagging a few milliseconds. For exact
-   * expiry use an {@link ExpiryPolicy} and enable {@link #sharpExpiry(boolean)}.
+   * happens via a timer event and may lag approximately one second by default, see
+   * {@link #timerLag(long, TimeUnit)}. For exact expiry specify an
+   * {@link ExpiryPolicy} and enable {@link #sharpExpiry(boolean)}.
    *
-   * <p>If an {@link ExpiryPolicy} is specified, the maximum expiry duration
-   * is capped to the value specified here.
+   * <p>If an {@link ExpiryPolicy} is specified in combination to this value,
+   * the maximum expiry duration is capped to the value specified here.
    *
    * <p>A value of {@code 0} means every entry should expire immediately. This can be useful
    * to disable caching via configuration.
@@ -417,6 +418,15 @@ public class Cache2kBuilder<K, V> {
    */
   public final Cache2kBuilder<K, V> expireAfterWrite(long v, TimeUnit u) {
     config().setExpireAfterWrite(u.toMillis(v));
+    return this;
+  }
+
+  /**
+   * Change the maximum lag time for timer events. Timer events are used for
+   * expiry and refresh operations. The default is approximately one second.
+   */
+  public final Cache2kBuilder<K, V> timerLag(long v, TimeUnit u) {
+    config().setTimerLag(u.toMillis(v));
     return this;
   }
 
@@ -606,8 +616,9 @@ public class Cache2kBuilder<K, V> {
   }
 
   /**
-   * By default the expiry time is not exact, which means, a value might be visible a few
-   * milliseconds after the time of expiry. The time lag depends on the system load.
+   * By default the expiry time is not exact, which means, a value might be visible for up to
+   * a second longer after the requested time of expiry. The time lag depends on the system load
+   * and the parameter {@link #timerLag(long, TimeUnit)}
    * Switching to {@code true}, means that values will not be visible when the time is reached that
    * {@link ExpiryPolicy} returned. This has no effect on {@link #expireAfterWrite(long, TimeUnit)}.
    */

@@ -1188,6 +1188,30 @@ public class SlowExpiryTest extends TestingBase {
     });
   }
 
+  /**
+   * Check whether raising lag time has effect.
+   */
+  @Test
+  public void higherLag() {
+    final long lagMillis = HeapCache.TUNABLE.timerLagMillis + 74;
+    final Cache<Integer, Integer> c = builder(Integer.class, Integer.class)
+      .expireAfterWrite(1, TimeUnit.MILLISECONDS)
+      .timerLag(lagMillis, TimeUnit.MILLISECONDS)
+      .build();
+    within(lagMillis).work(new Runnable() {
+      @Override
+      public void run() {
+        c.put(1, 1);
+      }
+    }).check(new Runnable() {
+      @Override
+      public void run() {
+        sleep(lagMillis - 1);
+        assertTrue(c.containsKey(1));
+      }
+    });
+  }
+
   @Test
   public void neutralWhenModified() throws Exception {
     final long _EXPIRY = 100;

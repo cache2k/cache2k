@@ -28,8 +28,9 @@ import java.util.concurrent.Callable;
 /**
  * Listener called when an entry expires.
  *
- * <p>The listener is called by a timer event with a little delay after an entry logically
- * expired. An event may be delayed or suppressed if a long running operation is
+ * <p>The listener is called after an entry logically expired. The
+ * An event may be delayed
+ * or suppressed if a long running operation is
  * working on the, for example a load or a {@link Cache#computeIfAbsent(Object, Callable)}.
  * In case a load is triggered by the expiry an expiry event is send before the load
  * is started.

@@ -52,6 +52,7 @@ public class StaticTiming<K, V> extends Timing<K, V> {
   InternalCache cache;
   ResiliencePolicy<K, V> resiliencePolicy;
   CustomizationSupplier<ResiliencePolicy<K, V>> resiliencePolicyFactory;
+  long lagMillis;
 
   StaticTiming(InternalClock c, Cache2kConfiguration<K, V> cc) {
     clock = c;
@@ -100,6 +101,10 @@ public class StaticTiming<K, V> extends Timing<K, V> {
     resiliencePolicy.init(ctx);
     refreshAhead = c.isRefreshAhead();
     sharpExpiry = c.isSharpExpiry();
+    lagMillis = c.getTimerLag();
+    if (lagMillis == Cache2kConfiguration.UNSET_LONG) {
+      lagMillis = HeapCache.TUNABLE.timerLagMillis;
+    }
   }
 
   @Override
@@ -109,7 +114,7 @@ public class StaticTiming<K, V> extends Timing<K, V> {
       resiliencePolicy = c.createCustomization(resiliencePolicyFactory);
     }
     resiliencePolicyFactory = null;
-    timer = new DefaultTimer(clock);
+    timer = new DefaultTimer(clock, lagMillis);
   }
 
   @Override
@@ -153,9 +158,8 @@ public class StaticTiming<K, V> extends Timing<K, V> {
    */
   long expiredEventuallyStartBackgroundRefresh(Entry e, boolean sharpExpiry) {
     if (refreshAhead) {
-      TimerTask task = new Tasks.RefreshTimerTask<K, V>().to(cache, e);
-      e.setTask(task);
-      task.run();
+      e.setTask(new Tasks.RefreshTimerTask<K, V>().to(cache, e));
+      scheduleTask(0, e);
       return sharpExpiry ? Entry.EXPIRED_REFRESH_PENDING : Entry.DATA_VALID;
     }
     return Entry.EXPIRED;
