@@ -99,9 +99,17 @@ public class SimulatedClock implements InternalClock, Scheduler {
   private final int jobExecutionLagMillis = (int) (System.currentTimeMillis() % 2);
 
   /**
-   * Executor used to move the clock.
+   * Executor used to move the clock. If millis() moves the clock, we need
+   * to do that in a separate executor, because that may trigger timer events.
+   * Otherwise that can mean a deadlock since millis() is called within
+   * the cache when a lock is held.
    */
-  private Executor advanceExecutor = DEFAULT_EXECUTOR;
+  private final Executor advanceExecutor = wrapExecutor(DEFAULT_EXECUTOR);
+
+  /**
+   * Count timer events. Guarded by lock.
+   */
+  private int eventSequenceCount;
 
   /**
    * Create a clock with the initial time.
@@ -115,13 +123,22 @@ public class SimulatedClock implements InternalClock, Scheduler {
   @Override
   public void schedule(Runnable runnable, long requestedMillis) {
     long millis = requestedMillis + jobExecutionLagMillis;
-    Event event = new Event(requestedMillis, millis, runnable);
+    schedule(runnable, requestedMillis, millis);
+  }
+
+  private void schedule(Runnable runnable, long requestedMillis, long millis) {
     structureLock.lock();
     try {
+      Event event = new Event(eventSequenceCount++, requestedMillis, millis, runnable);
       tree.put(event, event);
     } finally {
       structureLock.unlock();
     }
+  }
+
+  @Override
+  public void execute(Runnable command) {
+    schedule(command, 0, 0);
   }
 
   Runnable advance = new Runnable() {
@@ -201,7 +218,7 @@ public class SimulatedClock implements InternalClock, Scheduler {
   }
 
   public Executor wrapExecutor(Executor ex) {
-    return advanceExecutor = new WrappedExecutor(ex);
+    return new WrappedExecutor(ex);
   }
 
   public void reset() {
@@ -280,7 +297,8 @@ public class SimulatedClock implements InternalClock, Scheduler {
   public String toString() {
     structureLock.lock();
     try {
-      return "clock{time=" + now + ", tasksWaitingForExecution=" +
+      return "clock#" + Integer.toString(hashCode(), 36) +
+        "{time=" + now + ", tasksWaitingForExecution=" +
         tasksWaitingForExecution.get() + ", events=" + tree + "}";
     } finally {
       structureLock.unlock();
@@ -289,11 +307,13 @@ public class SimulatedClock implements InternalClock, Scheduler {
 
   static class Event implements Comparable<Event> {
 
+    final int number;
     final long requestedWakeupTime;
     final long time;
     final Runnable action;
 
-    Event(long requestedWakeupTime, long time, Runnable action) {
+    Event(int sequenceNumber, long requestedWakeupTime, long time, Runnable action) {
+      this.number = sequenceNumber;
       this.time = time;
       this.requestedWakeupTime = requestedWakeupTime;
       this.action = action;
@@ -307,11 +327,11 @@ public class SimulatedClock implements InternalClock, Scheduler {
       if (time > o.time) {
         return 1;
       }
-      return 0;
+      return o.number - number;
     }
 
     public String toString() {
-      return "Event#" + Integer.toString(hashCode(), 36) + "{time=" +
+      return "Event#" + number + "{time=" +
         (time == Long.MAX_VALUE ? "forever" : Long.toString(time))
         + "}";
     }
@@ -357,7 +377,8 @@ public class SimulatedClock implements InternalClock, Scheduler {
 
     @Override
     public String toString() {
-      return "WrappedExecutor{executor=" + executor + '}';
+      return "WrappedExecutor{clock=" + Integer.toString(SimulatedClock.this.hashCode(), 36)
+        + ", executor=" + executor + '}';
     }
   }
 

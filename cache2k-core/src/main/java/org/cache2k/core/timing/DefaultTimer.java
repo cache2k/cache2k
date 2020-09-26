@@ -74,6 +74,10 @@ public class DefaultTimer implements Timer {
     if (!task.schedule()) {
       throw new IllegalStateException("Task already scheduled or cancelled");
     }
+    if (time == 0) {
+      scheduler.execute(task);
+      return;
+    }
     lock.lock();
     try {
       if (structure.schedule(task, time)) {
@@ -124,7 +128,7 @@ public class DefaultTimer implements Timer {
         lock.unlock();
       }
       if (task != null) {
-        task.run();
+        task.action();
       } else {
         long nextTime;
         lock.lock();

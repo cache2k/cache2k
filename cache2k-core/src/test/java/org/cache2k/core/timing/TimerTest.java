@@ -72,7 +72,7 @@ public class TimerTest {
   static class MyTimerTask extends TimerTask {
     volatile boolean executed = false;
     @Override
-    public void run() {
+    protected void action() {
       executed = true;
     }
   }

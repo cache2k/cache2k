@@ -136,7 +136,8 @@ public class TestingBase {
                      provideOptionalCache();
                      if (cache != null) {
                        try {
-                         System.err.println(loaderExecutor);
+                         System.err.println("loaderExecutor=" + loaderExecutor);
+                         System.err.println("asyncExecutor=" + asyncExecutor);
                          System.err.println(clock);
                          System.err.println(getInfo());
                        } catch (Throwable _getInfoException) {
@@ -552,7 +553,7 @@ public class TestingBase {
    */
   static class ExecutorWrapper implements Executor {
 
-    volatile Executor fallBackExecutor;
+    volatile Executor fallBackExecutor = null;
 
     Executor getFallBack() {
       if (fallBackExecutor == null) {
@@ -580,6 +581,13 @@ public class TestingBase {
       }
     }
 
+    @Override
+    public String toString() {
+      return "ExecutorWrapper{" +
+        "fallBackExecutor=" + fallBackExecutor +
+        ", shared=" + SHARED_EXECUTOR +
+        '}';
+    }
   }
 
   public static <T> Iterable<T> keys(T... keys) {

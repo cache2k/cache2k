@@ -27,7 +27,7 @@ import java.util.concurrent.atomic.AtomicIntegerFieldUpdater;
  *
  * @author Jens Wilke
  */
-public abstract class TimerTask {
+public abstract class TimerTask implements Runnable {
 
   /**
    * The state of this task, chosen from the constants below.
@@ -73,7 +73,18 @@ public abstract class TimerTask {
   /**
    * The action to be performed by this timer task.
    */
-  public abstract void run();
+  protected abstract void action();
+
+  /**
+   * For the special case of immediate execution this implements
+   * {@code Runnable}.
+   */
+  @Override
+  public void run() {
+    if (execute()) {
+      action();
+    }
+  }
 
   /**
    * Cancels this timer task.

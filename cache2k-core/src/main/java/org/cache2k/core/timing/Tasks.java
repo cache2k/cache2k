@@ -60,7 +60,7 @@ abstract class Tasks<K, V> extends TimerTask {
 
   public abstract void fire() throws Exception;
 
-  public final void run() {
+  protected final void action() {
     try {
       fire();
     } catch (CacheClosedException ignore) {

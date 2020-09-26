@@ -66,6 +66,16 @@ public class SimulatedClockTest {
   }
 
   @Test
+  public void sequence0Sleep0() throws InterruptedException {
+    assertEquals(100000, clock.millis());
+    clock.schedule(new Event(-1), 0);
+    clock.schedule(new Event(-1), 0);
+    clock.schedule(new Event(-1), 0);
+    clock.sleep(0);
+    assertEquals(3, trigger.get());
+  }
+
+  @Test
   public void sequenceSleepX() throws InterruptedException {
     assertEquals(100000, clock.millis());
     clock.schedule(new Event(0), 0);

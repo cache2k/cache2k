@@ -20,11 +20,19 @@ package org.cache2k.core.timing;
  * #L%
  */
 
+import java.util.concurrent.Executor;
+
 /**
  * @author Jens Wilke
  */
-public interface Scheduler {
+public interface Scheduler extends Executor {
 
   void schedule(Runnable runnable, long millis);
+
+  /**
+   * Run a task immediately, usually via the common ForkJoinPool.
+   */
+  @Override
+  void execute(Runnable command);
 
 }

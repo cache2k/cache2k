@@ -673,12 +673,14 @@ public class SlowExpiryTest extends TestingBase {
       greaterThanOrEqualTo(_LOADS_TRIGGERED_BY_GET));
     assertThat("maximum loads triggered", getInfo().getLoadCount(),
       lessThanOrEqualTo(_LOADS_TRIGGERED_BY_GET + _ADDITIONAL_LOADS_BECAUSE_OF_REFRESH));
-    await("Timer triggered", new Condition() {
-      @Override
-      public boolean check() {
-        return getInfo().getTimerEventCount() > 0;
-      }
-    });
+    if (_TICK_TIME > 0) {
+      await("Timer triggered", new Condition() {
+        @Override
+        public boolean check() {
+          return getInfo().getTimerEventCount() > 0;
+        }
+      });
+    }
     if (_keepData) {
       await("Refresh is done", new Condition() {
         @Override

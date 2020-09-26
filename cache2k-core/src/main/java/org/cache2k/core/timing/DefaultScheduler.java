@@ -20,28 +20,48 @@ package org.cache2k.core.timing;
  * #L%
  */
 
+import org.cache2k.core.HeapCache;
+
+import java.util.concurrent.Executor;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 
 /**
+ * All caches use the singleton scheduler {@link DefaultScheduler#INSTANCE}.
+ * A {@link ScheduledThreadPoolExecutor} executor is used with two threads to
+ * execute the tasks. The actual processing is done via the common ForkJoinPool to
+ * reach higher parallelism if many caches are active within a system.
+ *
  * @author Jens Wilke
  */
 public class DefaultScheduler implements Scheduler {
 
   public static final Scheduler INSTANCE = new DefaultScheduler();
 
-  private ScheduledExecutorService executor = new ScheduledThreadPoolExecutor(
-    1, new DaemonThreadFactory());
+  private Executor pooledExecutor = HeapCache.SHARED_EXECUTOR;
+  private ScheduledExecutorService scheduledExecutor = new ScheduledThreadPoolExecutor(
+    2, new DaemonThreadFactory());
 
   private DefaultScheduler() { }
 
   @Override
-  public void schedule(Runnable runnable, long millis) {
+  public void schedule(final Runnable task, long millis) {
+    Runnable wrap = new Runnable() {
+      @Override
+      public void run() {
+        pooledExecutor.execute(task);
+      }
+    };
     long delay = millis - System.currentTimeMillis();
     delay = Math.max(0, delay);
-    executor.schedule(runnable, delay, TimeUnit.MILLISECONDS);
+    scheduledExecutor.schedule(wrap, delay, TimeUnit.MILLISECONDS);
+  }
+
+  @Override
+  public void execute(Runnable command) {
+    pooledExecutor.execute(command);
   }
 
   static final class DaemonThreadFactory implements ThreadFactory {
