@@ -95,7 +95,7 @@ public class Cache2kConfiguration<K, V> implements ConfigurationBean, Configurat
   private boolean disableMonitoring = false;
 
   private CustomizationSupplier<Executor> loaderExecutor;
-  private CustomizationSupplier<Executor> prefetchExecutor;
+  private CustomizationSupplier<Executor> refreshExecutor;
   private CustomizationSupplier<Executor> asyncListenerExecutor;
   private CustomizationSupplier<Executor> executor;
   private CustomizationSupplier<ExpiryPolicy<K, V>> expiryPolicy;
@@ -688,15 +688,30 @@ public class Cache2kConfiguration<K, V> implements ConfigurationBean, Configurat
     loaderExecutor = v;
   }
 
+  /**
+   * @deprecated Use {@link #getRefreshExecutor()}
+   */
   public CustomizationSupplier<Executor> getPrefetchExecutor() {
-    return prefetchExecutor;
+    return refreshExecutor;
   }
 
   /**
    * @see Cache2kBuilder#prefetchExecutor(Executor)
+   * @deprecated use {@link #setRefreshExecutor(CustomizationSupplier)}
    */
   public void setPrefetchExecutor(CustomizationSupplier<Executor> v) {
-    prefetchExecutor = v;
+    refreshExecutor = v;
+  }
+
+  public CustomizationSupplier<Executor> getRefreshExecutor() {
+    return refreshExecutor;
+  }
+
+  /**
+   * @see Cache2kBuilder#refreshExecutor(Executor)
+   */
+  public void setRefreshExecutor(CustomizationSupplier<Executor> v) {
+    refreshExecutor = v;
   }
 
   public CustomizationSupplier<Executor> getExecutor() {

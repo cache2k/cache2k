@@ -595,11 +595,11 @@ public class Cache2kBuilder<K, V> {
    * once the loader is finished. In the case there are not enough loader threads available,
    * the value will expire immediately and the next {@code get()} request will trigger the load.
    *
-   * <p>Once refreshed, the entry is in a trial period. If it is not accessed until the next
+   * <p>Once refreshed, the entry is in a probation period. If it is not accessed until the next
    * expiry, no refresh will be done and the entry expires regularly. This means that the
-   * time an entry stays within the trial period is determined by the configured expiry time
+   * time an entry stays within the probation period is determined by the configured expiry time
    * or the {@code ExpiryPolicy}. In case an entry is not accessed any more it needs to
-   * reach the expiry time twice before removed from the cache.
+   * reach the expiry time twice before being removed from the cache.
    *
    * <p>The number of threads used to do the refresh are configured via
    * {@link #loaderThreadCount(int)}
@@ -636,7 +636,7 @@ public class Cache2kBuilder<K, V> {
    * <p>If a separate executor is defined the parameter has no effect.
    *
    * @see #loaderExecutor(Executor)
-   * @see #prefetchExecutor(Executor)
+   * @see #refreshExecutor(Executor)
    */
   public final Cache2kBuilder<K, V> loaderThreadCount(int v) {
     config().setLoaderThreadCount(v);
@@ -809,7 +809,7 @@ public class Cache2kBuilder<K, V> {
   }
 
   /**
-   * Thread pool / executor service to use for asynchronous load operations. If no executor is
+   * Thread pool / executor service to use for triggered load operations. If no executor is
    * specified the cache will create a thread pool, if needed.
    *
    * @see #loaderThreadCount(int)
@@ -833,6 +833,22 @@ public class Cache2kBuilder<K, V> {
    */
   public final Cache2kBuilder<K, V> prefetchExecutor(Executor v) {
     config().setPrefetchExecutor(new CustomizationReferenceSupplier<Executor>(v));
+    return this;
+  }
+
+  /**
+   * Thread pool / executor service to use for refresh ahead operations. If not
+   * specified the same refresh ahead operation will use the thread pool defined by
+   * {@link #loaderExecutor(Executor)} or a cache local pool is created.
+   *
+   * <p>The executor for refresh operations may reject execution when not enough resources
+   * are available. If a refresh is rejected, the cache entry expires normally.
+   *
+   * @see #loaderThreadCount(int)
+   * @see #loaderExecutor(Executor)
+   */
+  public final Cache2kBuilder<K, V> refreshExecutor(Executor v) {
+    config().setRefreshExecutor(new CustomizationReferenceSupplier<Executor>(v));
     return this;
   }
 

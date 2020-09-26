@@ -808,9 +808,7 @@ public abstract class EntryAction<K, V, R> extends Entry.PiggyBack implements
       }
     } else {
       try {
-        expiry = timing().calculateNextRefreshTime(
-          heapEntry, newValueOrException,
-          lastRefreshTime);
+        expiry = timing().calculateNextRefreshTime(heapEntry, newValueOrException, lastRefreshTime);
         if (newValueOrException == null && heapCache.isRejectNullValues() &&
           expiry != ExpiryTimeValues.NO_CACHE) {
           RuntimeException ouch = heapCache.returnNullValueDetectedException();
