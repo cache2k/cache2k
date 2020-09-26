@@ -821,15 +821,7 @@ public class Cache2kBuilder<K, V> {
   }
 
   /**
-   * Thread pool / executor service to use for refresh ahead and prefetch operations. If not
-   * specified the same refresh ahead operation will use the thread pool defined by
-   * {@link #loaderExecutor(Executor)} or a cache local pool is created.
-   *
-   * <p>The executor for refresh operations may reject execution when not enough resources
-   * are available. If a refresh is rejected, the cache entry expires normally.
-   *
-   * @see #loaderThreadCount(int)
-   * @see #loaderExecutor(Executor)
+   * @deprecated Use {@link #refreshExecutor(Executor)}
    */
   public final Cache2kBuilder<K, V> prefetchExecutor(Executor v) {
     config().setPrefetchExecutor(new CustomizationReferenceSupplier<Executor>(v));
