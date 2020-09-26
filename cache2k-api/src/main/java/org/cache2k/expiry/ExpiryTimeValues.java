@@ -42,27 +42,23 @@ public interface ExpiryTimeValues {
   long NEUTRAL = -1;
 
   /**
-   * Value should not be cached. In a read through configuration the value will be
-   * reloaded, when it is requested again.
+   * @deprecated Will be removed in version 2.0. The naming is misleading when refreshing is
+   * turned on. A value of 0 should only mean that the current entry value is expired.
+   * Use {@link #NOW}
    */
+  @Deprecated
   long NO_CACHE = 0;
 
   /**
-   * Identical to {@link #NO_CACHE}. More meaningful when used together with
-   * {@link org.cache2k.Cache#expireAt}. The value expires immediately. An immediate
-   * load is triggered if {@link org.cache2k.Cache2kBuilder#refreshAhead} is enabled.
+   * The value expires immediately.
    */
   long NOW = 0;
 
   /**
-   * An immediate load is triggered if {@link org.cache2k.Cache2kBuilder#refreshAhead} is enabled.
-   * If the refresh is not possible, for example because of no loader threads are available the
-   * value will expire.
+   * The value expires immediately. An immediate load is triggered if
+   * {@link org.cache2k.Cache2kBuilder#refreshAhead} is enabled.
    *
-   * <p>After the load operation is completed, the entry is in a special area and not accessible
-   * by direct cache operations, meaning {@code containsKey} returns false. After an operation which
-   * would regularly trigger a load (e.g. {@code get} or {@code loadAll}), the entry is present in
-   * the cache.
+   * <p>Will be removed in version 2.0. Maybe we add an explicit Cache.refresh + Cache.refreshAll
    */
   long REFRESH = 1;
 
