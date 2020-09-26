@@ -31,14 +31,14 @@ import org.junit.experimental.categories.Category;
  * @author Jens Wilke
  */
 @Category(FastTests.class)
-public class SimpleTimerTest {
+public class TimerTest {
 
   @Test
   public void misc() {
     long startTime = 100;
-    SimpleTimer st =
-      new SimpleTimerImpl(new SimulatedClock(startTime));
-    SimpleTimerTask t = new MyTimerTask();
+    Timer st =
+      new DefaultTimer(new SimulatedClock(startTime));
+    TimerTask t = new MyTimerTask();
     try {
       st.schedule(t, -5);
     } catch (IllegalArgumentException ex) {
@@ -49,14 +49,14 @@ public class SimpleTimerTest {
     } catch (IllegalStateException ex) {
     }
     t = new MyTimerTask();
-    st.cancel();
+    st.cancelAll();
     try {
       st.schedule(t, 15);
     } catch (IllegalStateException ex) {
     }
   }
 
-  static class MyTimerTask extends SimpleTimerTask {
+  static class MyTimerTask extends TimerTask {
     volatile boolean executed = false;
     @Override
     public void run() {

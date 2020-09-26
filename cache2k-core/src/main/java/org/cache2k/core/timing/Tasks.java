@@ -27,7 +27,7 @@ import org.cache2k.core.InternalCache;
 /**
  * @author Jens Wilke
  */
-abstract class Tasks<K, V> extends SimpleTimerTask {
+abstract class Tasks<K, V> extends TimerTask {
   private Entry<K, V> entry;
   private InternalCache<K, V> cache;
 

@@ -21,33 +21,32 @@ package org.cache2k.core.timing;
  */
 
 /**
+ * Timer for triggering expiry or refresh.
+ *
  * @author Jens Wilke
  */
-public interface SimpleTimer {
+public interface Timer {
 
   /**
    * Schedule the specified timer task for execution at the specified
    * time, in milliseconds.
    *
-   * @throws IllegalArgumentException if <tt>time</tt> is negative.
-   * @throws IllegalStateException if task was already scheduled or
-   *         cancelled, timer was cancelled, or timer thread terminated.
-   * @throws NullPointerException if {@code task} is null
+   * @param time the time when the task should be run. must be positive or 0.
    */
-  void schedule(SimpleTimerTask task, long time);
+  void schedule(TimerTask task, long time);
 
   /**
    * Cancel a timer task.
    */
-  void cancel(SimpleTimerTask t);
+  void cancel(TimerTask t);
 
   /**
    * Terminates all timer tasks currently pending.
    */
-  void cancel();
+  void cancelAll();
 
   /**
-   * Time tasks may lag behind.
+   * The lag time tasks may lag behind.
    */
   long getLag();
 

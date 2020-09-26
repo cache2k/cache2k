@@ -27,14 +27,14 @@ import java.util.concurrent.locks.ReentrantLock;
 
 /**
  */
-public class SimpleTimerImpl implements SimpleTimer {
+public class DefaultTimer implements Timer {
 
   private final Lock lock = new ReentrantLock();
   private final InternalClock clock;
   private final Scheduler scheduler;
   private final TimerStructure structure = new QueueTimerStructure();
   private long nextScheduled = Long.MAX_VALUE;
-  private long lag = 0;
+  private long lag = 567;
 
   private final Runnable timerAction = new Runnable() {
     @Override
@@ -43,7 +43,7 @@ public class SimpleTimerImpl implements SimpleTimer {
     }
   };
 
-  public SimpleTimerImpl(InternalClock c) {
+  public DefaultTimer(InternalClock c) {
     this.clock = c;
     if (c instanceof Scheduler) {
       scheduler = (Scheduler) clock;
@@ -55,14 +55,9 @@ public class SimpleTimerImpl implements SimpleTimer {
   /**
    * Schedule the specified timer task for execution at the specified
    * time, in milliseconds.
-   *
-   * @throws IllegalArgumentException if <tt>time</tt> is negative.
-   * @throws IllegalStateException if task was already scheduled or
-   *         cancelled, timer was cancelled, or timer thread terminated.
-   * @throws NullPointerException if {@code task} is null
    */
   @Override
-  public void schedule(SimpleTimerTask task, long time) {
+  public void schedule(TimerTask task, long time) {
     if (time < 0) {
       throw new IllegalArgumentException("Illegal execution time.");
     }
@@ -80,7 +75,7 @@ public class SimpleTimerImpl implements SimpleTimer {
   }
 
   @Override
-  public void cancel(SimpleTimerTask t) {
+  public void cancel(TimerTask t) {
     lock.lock();
     try {
       structure.cancel(t);
@@ -100,7 +95,7 @@ public class SimpleTimerImpl implements SimpleTimer {
    * Terminates all timer tasks current pending.
    */
   @Override
-  public void cancel() {
+  public void cancelAll() {
     lock.lock();
     try {
       structure.cancel();
@@ -111,7 +106,7 @@ public class SimpleTimerImpl implements SimpleTimer {
 
   private void timeReachedEvent(long currentTime) {
     while (true) {
-      SimpleTimerTask task;
+      TimerTask task;
       lock.lock();
       try {
         task = structure.removeNextToRun(currentTime);

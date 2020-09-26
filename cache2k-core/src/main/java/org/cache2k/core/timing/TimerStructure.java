@@ -30,9 +30,9 @@ public abstract class TimerStructure {
    *
    * @return this is the earliest, update scheduler
    */
-  public abstract boolean schedule(SimpleTimerTask task, long time);
+  public abstract boolean schedule(TimerTask task, long time);
 
-  public abstract void cancel(SimpleTimerTask t);
+  public abstract void cancel(TimerTask t);
 
   public abstract void cancel();
 
@@ -41,7 +41,7 @@ public abstract class TimerStructure {
    *
    * @return next execution time for scheduler, or 0
    */
-  public abstract SimpleTimerTask removeNextToRun(long time);
+  public abstract TimerTask removeNextToRun(long time);
 
   /**
    * Time of next run, or -1 if no more tasks are scheduled

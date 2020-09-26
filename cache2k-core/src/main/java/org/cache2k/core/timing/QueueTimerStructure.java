@@ -41,14 +41,14 @@ public class QueueTimerStructure extends TimerStructure {
   private long timerCancelCount = 0;
 
   @Override
-  public boolean schedule(SimpleTimerTask task, long time) {
+  public boolean schedule(TimerTask task, long time) {
     task.executionTime = time;
     queue.add(task);
     return queue.getMin() == task;
   }
 
   @Override
-  public void cancel(SimpleTimerTask t) {
+  public void cancel(TimerTask t) {
     if (t.cancel()) {
       timerCancelCount++;
       if (timerCancelCount >= PURGE_INTERVAL) {
@@ -98,8 +98,8 @@ public class QueueTimerStructure extends TimerStructure {
   }
 
   @Override
-  public SimpleTimerTask removeNextToRun(long now) {
-    SimpleTimerTask task;
+  public TimerTask removeNextToRun(long now) {
+    TimerTask task;
     while (true) {
       if (queue.isEmpty()) {
         return null;
@@ -124,7 +124,7 @@ public class QueueTimerStructure extends TimerStructure {
 
   @Override
   public long nextRun() {
-    SimpleTimerTask task;
+    TimerTask task;
     while (true) {
       if (queue.isEmpty()) {
         return -1;
@@ -154,7 +154,7 @@ public class QueueTimerStructure extends TimerStructure {
      * each node n in the heap, and each descendant of n, d,
      * n.nextExecutionTime <= d.nextExecutionTime.
      */
-    private SimpleTimerTask[] queue = new SimpleTimerTask[128];
+    private TimerTask[] queue = new TimerTask[128];
 
     /**
      * The number of tasks in the priority queue.  (The tasks are stored in
@@ -172,7 +172,7 @@ public class QueueTimerStructure extends TimerStructure {
     /**
      * Adds a new task to the priority queue.
      */
-    void add(SimpleTimerTask task) {
+    void add(TimerTask task) {
       if (size + 1 == queue.length)
         queue = Arrays.copyOf(queue, 2 * queue.length);
 
@@ -184,7 +184,7 @@ public class QueueTimerStructure extends TimerStructure {
      * Return the "head task" of the priority queue.  (The head task is an
      * task with the lowest nextExecutionTime.)
      */
-    SimpleTimerTask getMin() {
+    TimerTask getMin() {
       return queue[1];
     }
 
@@ -193,7 +193,7 @@ public class QueueTimerStructure extends TimerStructure {
      * head task, which is returned by getMin) to the number of tasks on the
      * queue, inclusive.
      */
-    SimpleTimerTask get(int i) {
+    TimerTask get(int i) {
       return queue[i];
     }
 
@@ -248,7 +248,7 @@ public class QueueTimerStructure extends TimerStructure {
         int j = k >> 1;
         if (queue[j].executionTime <= queue[k].executionTime)
           break;
-        SimpleTimerTask tmp = queue[j];  queue[j] = queue[k]; queue[k] = tmp;
+        TimerTask tmp = queue[j];  queue[j] = queue[k]; queue[k] = tmp;
         k = j;
       }
     }
@@ -271,7 +271,7 @@ public class QueueTimerStructure extends TimerStructure {
           j++; // j indexes smallest kid
         if (queue[k].executionTime <= queue[j].executionTime)
           break;
-        SimpleTimerTask tmp = queue[j];  queue[j] = queue[k]; queue[k] = tmp;
+        TimerTask tmp = queue[j];  queue[j] = queue[k]; queue[k] = tmp;
         k = j;
       }
     }

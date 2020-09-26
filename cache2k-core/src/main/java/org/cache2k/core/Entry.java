@@ -22,7 +22,7 @@ package org.cache2k.core;
 
 import org.cache2k.CacheEntry;
 import org.cache2k.core.util.InternalClock;
-import org.cache2k.core.timing.SimpleTimerTask;
+import org.cache2k.core.timing.TimerTask;
 import org.cache2k.expiry.ExpiryPolicy;
 import org.cache2k.core.operation.ExaminationEntry;
 import org.cache2k.core.storageApi.StorageEntry;
@@ -621,9 +621,9 @@ public class Entry<K, V> extends CompactEntry<K, V>
     return toString(null);
   }
 
-  public SimpleTimerTask getTask() {
-    if (misc instanceof SimpleTimerTask) {
-      return (SimpleTimerTask) misc;
+  public TimerTask getTask() {
+    if (misc instanceof TimerTask) {
+      return (TimerTask) misc;
     }
     TaskPiggyBack pb = getPiggyBack(TaskPiggyBack.class);
     if (pb != null) {
@@ -647,8 +647,8 @@ public class Entry<K, V> extends CompactEntry<K, V>
     return null;
   }
 
-  public void setTask(SimpleTimerTask v) {
-    if (misc == null || misc instanceof SimpleTimerTask) {
+  public void setTask(TimerTask v) {
+    if (misc == null || misc instanceof TimerTask) {
       misc = v;
       return;
     }
@@ -704,8 +704,8 @@ public class Entry<K, V> extends CompactEntry<K, V>
    */
   private PiggyBack existingPiggyBackForInserting() {
     Object misc = this.misc;
-    if (misc instanceof SimpleTimerTask) {
-      return new TaskPiggyBack((SimpleTimerTask) misc, null);
+    if (misc instanceof TimerTask) {
+      return new TaskPiggyBack((TimerTask) misc, null);
     }
     return (PiggyBack) misc;
   }
@@ -757,9 +757,9 @@ public class Entry<K, V> extends CompactEntry<K, V>
   }
 
   static class TaskPiggyBack extends PiggyBack {
-    SimpleTimerTask task;
+    TimerTask task;
 
-    TaskPiggyBack(SimpleTimerTask task, PiggyBack next) {
+    TaskPiggyBack(TimerTask task, PiggyBack next) {
       super(next);
       this.task = task;
     }

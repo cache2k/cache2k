@@ -47,7 +47,7 @@ public class StaticTiming<K, V> extends Timing<K, V> {
   final InternalClock clock;
   boolean sharpExpiry;
   boolean refreshAhead;
-  SimpleTimer timer;
+  Timer timer;
   long expiryMillis;
   InternalCache cache;
   ResiliencePolicy<K, V> resiliencePolicy;
@@ -109,22 +109,22 @@ public class StaticTiming<K, V> extends Timing<K, V> {
       resiliencePolicy = c.createCustomization(resiliencePolicyFactory);
     }
     resiliencePolicyFactory = null;
-    timer = new SimpleTimerImpl(clock);
+    timer = new DefaultTimer(clock);
   }
 
   @Override
   public synchronized void cancelAll() {
-    SimpleTimer timer = this.timer;
+    Timer timer = this.timer;
     if (timer != null) {
-      timer.cancel();
+      timer.cancelAll();
     }
   }
 
   @Override
   public void close() {
-    SimpleTimer timer = this.timer;
+    Timer timer = this.timer;
     if (timer != null) {
-      timer.cancel();
+      timer.cancelAll();
     }
     this.timer = null;
   }
@@ -153,8 +153,9 @@ public class StaticTiming<K, V> extends Timing<K, V> {
    */
   long expiredEventuallyStartBackgroundRefresh(Entry e, boolean sharpExpiry) {
     if (refreshAhead) {
-      e.setTask(new Tasks.RefreshTimerTask<K, V>().to(cache, e));
-      scheduleTask(0, e);
+      TimerTask task = new Tasks.RefreshTimerTask<K, V>().to(cache, e);
+      e.setTask(task);
+      task.run();
       return sharpExpiry ? Entry.EXPIRED_REFRESH_PENDING : Entry.DATA_VALID;
     }
     return Entry.EXPIRED;
@@ -247,7 +248,7 @@ public class StaticTiming<K, V> extends Timing<K, V> {
   }
 
   void scheduleTask(long nextRefreshTime, Entry e) {
-    SimpleTimer timer = this.timer;
+    Timer timer = this.timer;
     if (timer != null) {
       try {
         timer.schedule(e.getTask(), nextRefreshTime);
@@ -258,7 +259,7 @@ public class StaticTiming<K, V> extends Timing<K, V> {
 
   public void cancelExpiryTimer(Entry<K, V> e) {
     Tasks tsk = (Tasks) e.getTask();
-    SimpleTimer timer = this.timer;
+    Timer timer = this.timer;
     if (tsk != null && timer != null) {
       timer.cancel(tsk);
     }
