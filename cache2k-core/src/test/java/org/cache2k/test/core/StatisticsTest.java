@@ -23,7 +23,6 @@ package org.cache2k.test.core;
 import org.cache2k.test.util.IntCountingCacheSource;
 import org.cache2k.test.util.TestingBase;
 import org.cache2k.Cache;
-import org.cache2k.test.core.TestingParameters;
 import org.cache2k.testing.category.FastTests;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -203,13 +202,13 @@ public class StatisticsTest extends TestingBase {
             .expireAfterWrite(_EXPIRY_MILLIS, TimeUnit.MILLISECONDS).build();
     assertEquals("no miss yet", 0, g.getLoaderCalledCount());
     within(_EXPIRY_MILLIS)
-      .work(new Runnable() {
+      .perform(new Runnable() {
         @Override
         public void run() {
           c.get(1802);
         }
       })
-      .check(new Runnable() {
+      .expectMaybe(new Runnable() {
         @Override
         public void run() {
           assertEquals(1, getInfo().getMissCount());

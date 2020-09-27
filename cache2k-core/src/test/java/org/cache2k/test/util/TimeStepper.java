@@ -81,7 +81,7 @@ public class TimeStepper {
 
   /**
    * Never make this an assertion error, because we do not want the
-   * timeout beeing suppressed at {@link TimeBox#check(Runnable)}
+   * timeout being suppressed at {@link TimeBox#expectMaybe(Runnable)}
    */
   static class TimeoutException extends RuntimeException {
     TimeoutException(String message) {

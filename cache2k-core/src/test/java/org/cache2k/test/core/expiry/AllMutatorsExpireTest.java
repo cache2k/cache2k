@@ -126,12 +126,12 @@ public class AllMutatorsExpireTest extends TestingBase {
       .build();
     final AtomicInteger _opCnt = new AtomicInteger();
     within(expiryTime)
-      .work(new Runnable() {
+      .perform(new Runnable() {
         @Override
         public void run() {
           _opCnt.set(mutate(variant, c));
         }
-      }).check(new Runnable() {
+      }).expectMaybe(new Runnable() {
       @Override
       public void run() {
         assertTrue(c.containsKey(1));
@@ -185,12 +185,12 @@ public class AllMutatorsExpireTest extends TestingBase {
       .build();
     final AtomicInteger _opCnt = new AtomicInteger();
     within(expiryTime)
-      .work(new Runnable() {
+      .perform(new Runnable() {
         @Override
         public void run() {
           _opCnt.set(mutate(variant, c));
         }
-      }).check(new Runnable() {
+      }).expectMaybe(new Runnable() {
       @Override
       public void run() {
         assertTrue(c.containsKey(1));

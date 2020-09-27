@@ -34,8 +34,9 @@ import java.sql.Timestamp;
 public class TimeBox {
 
   private final InternalClock clock;
-  private long startTime = System.currentTimeMillis();
+  private long startTime;
   private final long timeBox;
+  private boolean outcomeUndefined = false;
 
   public static TimeBox millis(long t) {
     TimeBox b = new TimeBox(DefaultClock.INSTANCE, t);
@@ -56,7 +57,7 @@ public class TimeBox {
    * Immediately executes the runnable. This method serves the purpose to make the
    * code look more fluent.
    */
-  public TimeBox work(Runnable r) {
+  public TimeBox perform(Runnable r) {
     r.run();
     return this;
   }
@@ -65,15 +66,57 @@ public class TimeBox {
    * Execute the runnable. AssertionErrors will be suppressed if the execution
    * is not happening within the given time box.
    */
-  public void check(Runnable r) {
+  public Chain expectMaybe(Runnable r) {
+    AssertionError failedAssertion = null;
     try {
       r.run();
     } catch (AssertionError ex) {
-      long ms = clock.millis();
-      long delta = ms - startTime;
-      if (delta < timeBox) {
-        throw new PropagateAssertionError(startTime, delta, ex);
+      failedAssertion = ex;
+    }
+    long ms = clock.millis();
+    long delta = ms - startTime;
+    boolean withinTimeBox = delta < timeBox;
+    if (withinTimeBox) {
+      if (failedAssertion != null) {
+        throw new PropagateAssertionError(startTime, delta, failedAssertion);
       }
+    } else {
+      return new Noop();
+    }
+    return new Chain();
+  }
+
+  public class Chain {
+
+    public void concludesMaybe(Runnable r) {
+      r.run();
+    }
+
+    public TimeBox within(long timeBox) {
+      return new TimeBox(clock, timeBox);
+    }
+
+  }
+
+  public class Noop extends Chain {
+
+    @Override
+    public void concludesMaybe(Runnable r) {
+    }
+
+    @Override
+    public TimeBox within(long timeBox) {
+      return new TimeBox(null, 0) {
+        @Override
+        public TimeBox perform(Runnable r) {
+          return this;
+        }
+
+        @Override
+        public Chain expectMaybe(Runnable r) {
+          return Noop.this;
+        }
+      };
     }
   }
 

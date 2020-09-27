@@ -95,7 +95,7 @@ public class SlowExpiryTest extends TestingBase {
     final Cache<Integer, Integer> c = cb.build();
     cache = c;
     within(TIMESPAN)
-      .work(new Runnable() {
+      .perform(new Runnable() {
         @Override
         public void run() {
           for (int i = 1; i <= COUNT; i++) {
@@ -106,7 +106,7 @@ public class SlowExpiryTest extends TestingBase {
           }
         }
       })
-      .check(new Runnable() {
+      .expectMaybe(new Runnable() {
          @Override
          public void run() {
            assertEquals(COUNT, getInfo().getSize());
@@ -152,7 +152,7 @@ public class SlowExpiryTest extends TestingBase {
       .build();
     cache = c;
     within(TIMESPAN)
-      .work(new Runnable() {
+      .perform(new Runnable() {
         @Override
         public void run() {
           for (int i = 1; i <= COUNT; i++) {
@@ -167,7 +167,7 @@ public class SlowExpiryTest extends TestingBase {
           }
         }
       })
-      .check(new Runnable() {
+      .expectMaybe(new Runnable() {
                @Override
                public void run() {
                  assertEquals(COUNT, getInfo().getSize());
@@ -216,13 +216,13 @@ public class SlowExpiryTest extends TestingBase {
     assertEquals("no exception", 0, _exceptionCount);
     c.get(2); // value is fetched
     within(_EXCEPTION_EXPIRY_MILLIS)
-      .work(new Runnable() {
+      .perform(new Runnable() {
         @Override
         public void run() {
           c.get(2); // exception gets suppressed
         }
       })
-      .check(new Runnable() {
+      .expectMaybe(new Runnable() {
         @Override
         public void run() {
           InternalCacheInfo inf = getInfo();
@@ -489,13 +489,13 @@ public class SlowExpiryTest extends TestingBase {
       .keepDataAfterExpired(false)
       .build();
     within(TestingParameters.MINIMAL_TICK_MILLIS)
-      .work(new Runnable() {
+      .perform(new Runnable() {
         @Override
         public void run() {
           c.getAll(toIterable(1, 2, 3));
         }
       })
-      .check(new Runnable() {
+      .expectMaybe(new Runnable() {
                @Override
                public void run() {
                  assertTrue(c.containsKey(1));
@@ -513,13 +513,13 @@ public class SlowExpiryTest extends TestingBase {
       .keepDataAfterExpired(false)
       .build();
     within(_millis)
-      .work(new Runnable() {
+      .perform(new Runnable() {
         @Override
         public void run() {
           c.getAll(toIterable(1, 2, 3));
         }
       })
-      .check(new Runnable() {
+      .expectMaybe(new Runnable() {
          @Override
          public void run() {
            assertTrue(c.containsKey(1));
@@ -729,13 +729,13 @@ public class SlowExpiryTest extends TestingBase {
       })
       .build();
     within(_EXPIRY)
-      .work(new Runnable() {
+      .perform(new Runnable() {
         @Override
         public void run() {
           c.get(KEY);
         }
       })
-      .check(new Runnable() {
+      .expectMaybe(new Runnable() {
         @Override
         public void run() {
           c.containsKey(KEY);
@@ -769,17 +769,17 @@ public class SlowExpiryTest extends TestingBase {
       .loader(_LOADER)
       .build();
     within(MAX_FINISH_WAIT_MILLIS + _EXPIRY)
-      .work(new Runnable() {
+      .perform(new Runnable() {
         @Override
         public void run() {
           within(_EXPIRY)
-            .work(new Runnable() {
+            .perform(new Runnable() {
               @Override
               public void run() {
                 value = c.get(KEY);
               }
             })
-            .check(new Runnable() {
+            .expectMaybe(new Runnable() {
               @Override
               public void run() {
                 assertEquals(0, value);
@@ -800,7 +800,7 @@ public class SlowExpiryTest extends TestingBase {
           });
           value = c.get(KEY);
         }
-      }).check(new Runnable() {
+      }).expectMaybe(new Runnable() {
       @Override
       public void run() {
         assertEquals(1, value);
@@ -840,18 +840,18 @@ public class SlowExpiryTest extends TestingBase {
       .loader(_LOADER)
       .build();
     within(TestingParameters.MAX_FINISH_WAIT_MILLIS)
-      .work(new Runnable() {
+      .perform(new Runnable() {
         @Override
         public void run() {
           within(TestingParameters.MINIMAL_TICK_MILLIS)
-            .work(new Runnable() {
+            .perform(new Runnable() {
               @Override
               public void run() {
                 int v = c.get(KEY);
                 assertEquals(0, v);
               }
             })
-            .check(new Runnable() {
+            .expectMaybe(new Runnable() {
               @Override
               public void run() {
                 assertTrue(c.containsKey(KEY));
@@ -871,7 +871,7 @@ public class SlowExpiryTest extends TestingBase {
           });
         }
       })
-      .check(new Runnable() {
+      .expectMaybe(new Runnable() {
         @Override
         public void run() {
           int v = c.get(KEY);
@@ -936,12 +936,12 @@ public class SlowExpiryTest extends TestingBase {
       .build();
     final AtomicInteger v = new AtomicInteger();
     within(TestingParameters.MINIMAL_TICK_MILLIS)
-      .work(new Runnable() {
+      .perform(new Runnable() {
         @Override
         public void run() {
          v.set(c.get(KEY));
         }
-      }).check(new Runnable() {
+      }).expectMaybe(new Runnable() {
       @Override
       public void run() {
         assertEquals("loaded value expected when within time range", 0, v.get());
@@ -1171,7 +1171,7 @@ public class SlowExpiryTest extends TestingBase {
   @Test
   public void manualExpire_now_doesRefresh() {
     final Cache<Integer, Integer> c = builder(Integer.class, Integer.class)
-      .expireAfterWrite(5, TimeUnit.MINUTES)
+      .expireAfterWrite(TestingParameters.MAX_FINISH_WAIT_MILLIS, TimeUnit.MILLISECONDS)
       .refreshAhead(true)
       .loader(new CacheLoader<Integer, Integer>() {
         @Override
@@ -1188,6 +1188,8 @@ public class SlowExpiryTest extends TestingBase {
         return c.get(1) == 4711;
       }
     });
+    sleep(0);
+    assertEquals("no refresh for now", 0, getInfo().getRefreshCount());
   }
 
   /**
@@ -1200,12 +1202,12 @@ public class SlowExpiryTest extends TestingBase {
       .expireAfterWrite(1, TimeUnit.MILLISECONDS)
       .timerLag(lagMillis, TimeUnit.MILLISECONDS)
       .build();
-    within(lagMillis).work(new Runnable() {
+    within(lagMillis).perform(new Runnable() {
       @Override
       public void run() {
         c.put(1, 1);
       }
-    }).check(new Runnable() {
+    }).expectMaybe(new Runnable() {
       @Override
       public void run() {
         sleep(lagMillis - 1);
@@ -1230,7 +1232,7 @@ public class SlowExpiryTest extends TestingBase {
       })
       .build();
     within(_EXPIRY)
-      .work(new Runnable() {
+      .perform(new Runnable() {
         @Override
         public void run() {
           c.put(1,2);
@@ -1238,7 +1240,7 @@ public class SlowExpiryTest extends TestingBase {
           c.put(1,2);
         }
       })
-      .check(new Runnable() {
+      .expectMaybe(new Runnable() {
         @Override
         public void run() {
           assertTrue(c.containsKey(1));

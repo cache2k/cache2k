@@ -287,13 +287,13 @@ public class ExpiryListenerTest extends TestingBase {
       .build();
     final int ANY_KEY = 1;
     within(_EXPIRY_MILLIS)
-      .work(new Runnable() {
+      .perform(new Runnable() {
         @Override
         public void run() {
           c.put(ANY_KEY, 4711);
         }
       })
-      .check(new Runnable() {
+      .expectMaybe(new Runnable() {
         @Override
         public void run() {
           assertEquals(0, _callCount.get());
@@ -336,13 +336,13 @@ public class ExpiryListenerTest extends TestingBase {
       .build();
     final int ANY_KEY = 1;
     within(_EXPIRY_MILLIS)
-      .work(new Runnable() {
+      .perform(new Runnable() {
         @Override
         public void run() {
           c.get(ANY_KEY);
         }
       })
-      .check(new Runnable() {
+      .expectMaybe(new Runnable() {
         @Override
         public void run() {
           assertEquals(0, listenerCallCount.get());

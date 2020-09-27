@@ -370,7 +370,7 @@ public class ExpiryTest extends TestingBase {
     int v = c.peek(99);
     assertEquals(1, v);
     TimeBox.millis(TestingParameters.MINIMAL_TICK_MILLIS)
-      .work(new Runnable() {
+      .perform(new Runnable() {
         @Override
         public void run() {
           loadAndWait(new LoaderRunner() {
@@ -381,7 +381,7 @@ public class ExpiryTest extends TestingBase {
           });
         }
       })
-      .check(new Runnable() {
+      .expectMaybe(new Runnable() {
         @Override
         public void run() {
           try {
@@ -1235,13 +1235,13 @@ public class ExpiryTest extends TestingBase {
         }
       })
       .build();
-    within(LONG_DELTA).work(new Runnable() {
+    within(LONG_DELTA).perform(new Runnable() {
       @Override
       public void run() {
         c.put(1, 2);
         c.expireAt(1, -millis());
       }
-    }).check(new Runnable() {
+    }).expectMaybe(new Runnable() {
       @Override
       public void run() {
         assertFalse(c.containsKey(1));
@@ -1274,7 +1274,7 @@ public class ExpiryTest extends TestingBase {
       .build();
     c.put(1, 2);
     within(LONG_DELTA)
-      .work(new Runnable() {
+      .perform(new Runnable() {
         @Override
         public void run() {
           c.expireAt(1, -millis());
@@ -1286,8 +1286,7 @@ public class ExpiryTest extends TestingBase {
             }
           });
         }
-      })
-      .check(new Runnable() {
+      }).expectMaybe(new Runnable() {
         @Override
         public void run() {
           assertEquals(1, getInfo().getSize());
@@ -1297,14 +1296,18 @@ public class ExpiryTest extends TestingBase {
           assertEquals(1, getInfo().getRefreshCount());
           c.expireAt(1, ExpiryTimeValues.REFRESH);
           assertEquals(1, getInfo().getSize());
-          await(LONG_DELTA / 2, new Condition() {
-            @Override
-            public boolean check() {
-              return getInfo().getRefreshCount() == 2;
-            }
-          });
         }
-      });
+      }).concludesMaybe(new Runnable() {
+      @Override
+      public void run() {
+        await(new Condition() {
+          @Override
+          public boolean check() {
+            return getInfo().getRefreshCount() == 2;
+          }
+        });
+      }
+    });
   }
 
   @Test
@@ -1374,14 +1377,14 @@ public class ExpiryTest extends TestingBase {
       .expireAfterWrite(1, TimeUnit.MILLISECONDS)
       .build();
     within(312)
-      .work(new Runnable() {
+      .perform(new Runnable() {
       @Override
       public void run() {
         for (int i = 0; i < 3; i++) {
           c.put(i, i);
         }
       }
-    }).check(new Runnable() {
+    }).expectMaybe(new Runnable() {
       @Override
       public void run() {
         assertEquals(3, getCache().asMap().size());
