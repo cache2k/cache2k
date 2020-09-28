@@ -83,8 +83,7 @@ import static org.cache2k.core.util.Util.*;
  * @author Jens Wilke; created: 2013-07-09
  */
 @SuppressWarnings("rawtypes")
-public class HeapCache<K, V> extends BaseCache<K, V>
-  implements HeapCacheForEviction<K, V> {
+public class HeapCache<K, V> extends BaseCache<K, V>  implements HeapCacheForEviction<K, V> {
 
   static final CacheOperationCompletionListener DUMMY_LOAD_COMPLETED_LISTENER =
     new CacheOperationCompletionListener() {

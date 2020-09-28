@@ -21,6 +21,7 @@ package org.cache2k.test.core.expiry;
  */
 
 import org.cache2k.Cache2kBuilder;
+import org.cache2k.expiry.ExpiryTimeValues;
 import org.cache2k.integration.AsyncCacheLoader;
 import org.cache2k.test.core.BasicCacheTest;
 import org.cache2k.test.util.TestingBase;
@@ -574,10 +575,10 @@ public class SlowExpiryTest extends TestingBase {
   }
 
   @Test
-  public void testExpireNoKeepSharpExpiry() {
+  public void expireLoaded_sharp_noKeep() {
     Cache<Integer, Integer> c = cache = builder(Integer.class, Integer.class)
       .loader(new IntCountingCacheSource())
-      .expireAfterWrite(3, TimeUnit.MILLISECONDS)
+      .expireAfterWrite(TestingParameters.MINIMAL_TICK_MILLIS, TimeUnit.MILLISECONDS)
       .keepDataAfterExpired(false)
       .sharpExpiry(true)
       .build();
@@ -1111,9 +1112,28 @@ public class SlowExpiryTest extends TestingBase {
   }
 
   @Test
-  public void manualExpire_nowIsh_doesRefresh() {
+  public void expireAt_nowIsh_doesRefresh() {
+    expireAt_x_doesRefresh(millis() + TestingParameters.MINIMAL_TICK_MILLIS);
+  }
+
+  @Test
+  public void expireAt_now_doesRefresh() {
+    expireAt_x_doesRefresh(millis());
+  }
+
+  @Test
+  public void expireAt_refresh_doesRefresh() {
+    expireAt_x_doesRefresh(ExpiryTimeValues.REFRESH);
+  }
+
+  @Test
+  public void expireAt_1234_doesRefresh() {
+    expireAt_x_doesRefresh(1234);
+  }
+
+  private void expireAt_x_doesRefresh(long x) {
     final Cache<Integer, Integer> c = builder(Integer.class, Integer.class)
-      .expireAfterWrite(5, TimeUnit.MINUTES)
+      .expireAfterWrite(TestingParameters.MAX_FINISH_WAIT_MILLIS, TimeUnit.MILLISECONDS)
       .refreshAhead(true)
       .loader(new CacheLoader<Integer, Integer>() {
         @Override
@@ -1123,65 +1143,18 @@ public class SlowExpiryTest extends TestingBase {
       })
       .build();
     c.put(1, 2);
-    c.expireAt(1, millis() + TestingParameters.MINIMAL_TICK_MILLIS);
+    c.expireAt(1, x);
     await(new Condition() {
       @Override
       public boolean check() {
-        return c.get(1) == 4711;
+        return (!c.containsKey(1) && c.get(1) == 4711);
       }
     });
-  }
-
-  /**
-   * Refresh an entry immediately.
-   */
-  @Test
-  public void manualExpire_nowIsh_getLater_doesRefresh() throws Exception {
-    final Cache<Integer, Integer> c = builder(Integer.class, Integer.class)
-      .expireAfterWrite(5, TimeUnit.MINUTES)
-      .refreshAhead(true)
-      .loader(new CacheLoader<Integer, Integer>() {
-        @Override
-        public Integer load(Integer key) throws Exception {
-          return 4711;
-        }
-      })
-      .build();
-    c.put(1, 2);
-    c.expireAt(1, millis() + TestingParameters.MINIMAL_TICK_MILLIS);
-    sleep(TestingParameters.MINIMAL_TICK_MILLIS * 21);
-    await(new Condition() {
-      @Override
-      public boolean check() {
-        return c.get(1) == 4711;
-      }
-    });
+    assertEquals(1, getInfo().getRefreshCount());
   }
 
   @Test
-  public void manualExpire_nowIsh_doesTriggerRefresh() throws Exception {
-    Cache<Integer, Integer> c = builder(Integer.class, Integer.class)
-      .expireAfterWrite(5, TimeUnit.MINUTES)
-      .refreshAhead(true)
-      .loader(new CacheLoader<Integer, Integer>() {
-        @Override
-        public Integer load(Integer key) throws Exception {
-          return 4711;
-        }
-      })
-      .build();
-    c.put(1, 2);
-    c.expireAt(1, millis() + TestingParameters.MINIMAL_TICK_MILLIS);
-    await(new Condition() {
-      @Override
-      public boolean check() {
-        return getInfo().getRefreshCount() > 0;
-      }
-    });
-  }
-
-  @Test
-  public void manualExpire_now_doesRefresh() {
+  public void manualExpire_now_doesNotRefresh() {
     final Cache<Integer, Integer> c = builder(Integer.class, Integer.class)
       .expireAfterWrite(TestingParameters.MAX_FINISH_WAIT_MILLIS, TimeUnit.MILLISECONDS)
       .refreshAhead(true)
@@ -1194,21 +1167,18 @@ public class SlowExpiryTest extends TestingBase {
       .build();
     c.put(1, 2);
     c.expireAt(1, 0);
-    await(new Condition() {
-      @Override
-      public boolean check() {
-        return c.get(1) == 4711;
-      }
-    });
     sleep(0);
-    assertEquals("no refresh for now", 0, getInfo().getRefreshCount());
+    sleep(0);
+    sleep(0);
+    assertNull("no refresh (v1.6)", c.peek(1));
+    assertEquals("no refresh (v1.6)", 0, getInfo().getRefreshCount());
   }
 
   /**
    * Check whether raising lag time has effect.
    */
   @Test
-  public void higherLag() {
+  public void timerLag_raisedLag() {
     final long lagMillis = HeapCache.TUNABLE.timerLagMillis + 74;
     final Cache<Integer, Integer> c = builder(Integer.class, Integer.class)
       .expireAfterWrite(1, TimeUnit.MILLISECONDS)

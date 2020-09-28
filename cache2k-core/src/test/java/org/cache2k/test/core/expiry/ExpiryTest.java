@@ -1372,7 +1372,7 @@ public class ExpiryTest extends TestingBase {
   }
 
   @Test @Ignore
-  public void gatherEvents() {
+  public void expiryEventLags() {
     final Cache<Integer, Integer> c = builder(Integer.class, Integer.class)
       .expireAfterWrite(1, TimeUnit.MILLISECONDS)
       .build();
