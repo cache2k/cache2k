@@ -52,36 +52,37 @@ import static org.junit.Assert.*;
 @Category(SlowTests.class) @RunWith(Parameterized.class)
 public class AllMutatorsExpireTest extends TestingBase {
 
-  final static long EXPIRY_BEYOND_GAP = TunableFactory.get(HeapCache.Tunable.class).sharpExpirySafetyGapMillis + 3;
-  final static Integer KEY = 1;
-  final static Integer VALUE = 1;
+  static final long EXPIRY_BEYOND_GAP =
+    TunableFactory.get(HeapCache.Tunable.class).sharpExpirySafetyGapMillis + 3;
+  static final Integer KEY = 1;
+  static final Integer VALUE = 1;
 
   @Parameterized.Parameters(name = "{0}")
   public static Collection<Object[]> data() {
     List<Pars> parameterList = new ArrayList<Pars>();
     for (int variant = 0; variant <= 7; variant++) {
-      for (long _expiry : new long[]{0, TestingParameters.MINIMAL_TICK_MILLIS}) {
-        for (boolean _sharpExpiry : new boolean[]{false, true}) {
-          for (boolean _keepData :  new boolean[]{false, true}) {
+      for (long expiry : new long[]{0, TestingParameters.MINIMAL_TICK_MILLIS}) {
+        for (boolean sharpExpiry : new boolean[]{false, true}) {
+          for (boolean keepData :  new boolean[]{false, true}) {
             Pars p = new Pars();
             p.variant = variant;
-            p.expiryDurationMillis = _expiry;
-            p.sharpExpiry = _sharpExpiry;
-            p.keepData = _keepData;
+            p.expiryDurationMillis = expiry;
+            p.sharpExpiry = sharpExpiry;
+            p.keepData = keepData;
             parameterList.add(p);
           }
         }
       }
     }
     for (int variant = 0; variant <= 7; variant++) {
-      for (long _expiry : new long[]{EXPIRY_BEYOND_GAP}) {
-        for (boolean _sharpExpiry : new boolean[]{true}) {
-          for (boolean _keepData :  new boolean[]{false}) {
+      for (long expiry : new long[]{EXPIRY_BEYOND_GAP}) {
+        for (boolean sharpExpiry : new boolean[]{true}) {
+          for (boolean keepData :  new boolean[]{false}) {
             Pars p = new Pars();
             p.variant = variant;
-            p.expiryDurationMillis = _expiry;
-            p.sharpExpiry = _sharpExpiry;
-            p.keepData = _keepData;
+            p.expiryDurationMillis = expiry;
+            p.sharpExpiry = sharpExpiry;
+            p.keepData = keepData;
             parameterList.add(p);
           }
         }
@@ -104,7 +105,7 @@ public class AllMutatorsExpireTest extends TestingBase {
 
 
   @Test
-  public void test() throws Exception {
+  public void test() {
     if (pars.sharpExpiry) {
       putExpiresSharply(pars.expiryDurationMillis, pars.variant, pars.keepData);
     } else {
@@ -117,19 +118,20 @@ public class AllMutatorsExpireTest extends TestingBase {
       .name(getAndSetCacheName("putExpiresSharply"))
       .expiryPolicy(new ExpiryPolicy<Integer, Integer>() {
         @Override
-        public long calculateExpiryTime(final Integer key, final Integer value, final long loadTime, final CacheEntry<Integer, Integer> oldEntry) {
+        public long calculateExpiryTime(Integer key, Integer value, long loadTime,
+                                        CacheEntry<Integer, Integer> oldEntry) {
           return loadTime + expiryTime;
         }
       })
       .sharpExpiry(true)
       .keepDataAfterExpired(keepData)
       .build();
-    final AtomicInteger _opCnt = new AtomicInteger();
+    final AtomicInteger opCnt = new AtomicInteger();
     within(expiryTime)
       .perform(new Runnable() {
         @Override
         public void run() {
-          _opCnt.set(mutate(variant, c));
+          opCnt.set(mutate(variant, c));
         }
       }).expectMaybe(new Runnable() {
       @Override
@@ -138,7 +140,7 @@ public class AllMutatorsExpireTest extends TestingBase {
       }
     });
     sleep(expiryTime);
-    long _laggingMillis = 0;
+    long laggingMillis = 0;
     if (c.containsKey(KEY)) {
       long t1 = millis();
       await(new Condition() {
@@ -147,12 +149,12 @@ public class AllMutatorsExpireTest extends TestingBase {
           return !c.containsKey(KEY);
         }
       });
-      _laggingMillis = millis() - t1 + 1;
+      laggingMillis = millis() - t1 + 1;
     }
     assertFalse(c.containsKey(KEY));
     assertNull(c.peek(KEY));
     assertNull(c.peekEntry(KEY));
-    if (_opCnt.get() == 1) {
+    if (opCnt.get() == 1) {
       await(new Condition() {
         @Override
         public boolean check() {
@@ -160,7 +162,7 @@ public class AllMutatorsExpireTest extends TestingBase {
         }
       });
     }
-    if (!pars.keepData && _opCnt.get() == 1) {
+    if (!pars.keepData && opCnt.get() == 1) {
       await(new Condition() {
         @Override
         public boolean check() {
@@ -168,10 +170,10 @@ public class AllMutatorsExpireTest extends TestingBase {
         }
       });
     }
-    assertTrue("(flaky?) No lag, got delay: " + _laggingMillis, _laggingMillis == 0);
+    assertEquals("(flaky?) No lag, got delay: " + laggingMillis, 0, laggingMillis);
   }
 
-  private String getAndSetCacheName(final String methodName) {
+  private String getAndSetCacheName(String methodName) {
     return cacheName = this.getClass().getSimpleName() + "-" + methodName + "-" +
       pars.toString().replace('=', '-');
   }
@@ -183,12 +185,12 @@ public class AllMutatorsExpireTest extends TestingBase {
       .sharpExpiry(false)
       .keepDataAfterExpired(keepData)
       .build();
-    final AtomicInteger _opCnt = new AtomicInteger();
+    final AtomicInteger opCnt = new AtomicInteger();
     within(expiryTime)
       .perform(new Runnable() {
         @Override
         public void run() {
-          _opCnt.set(mutate(variant, c));
+          opCnt.set(mutate(variant, c));
         }
       }).expectMaybe(new Runnable() {
       @Override
@@ -204,7 +206,7 @@ public class AllMutatorsExpireTest extends TestingBase {
     });
     assertNull(c.peek(KEY));
     assertNull(c.peekEntry(KEY));
-    if (_opCnt.get() == 1) {
+    if (opCnt.get() == 1) {
       await(new Condition() {
         @Override
         public boolean check() {
@@ -214,7 +216,7 @@ public class AllMutatorsExpireTest extends TestingBase {
     }
   }
 
-  int mutate(final int variant, final Cache<Integer, Integer> c) {
+  int mutate(int variant, Cache<Integer, Integer> c) {
     int opCnt = 1;
     switch (variant) {
       case 0:
@@ -227,7 +229,7 @@ public class AllMutatorsExpireTest extends TestingBase {
         c.peekAndPut(KEY, VALUE);
         break;
       case 3:
-        c.put(1,1);
+        c.put(1, 1);
         c.peekAndReplace(KEY, VALUE);
         opCnt++;
         break;
@@ -244,7 +246,7 @@ public class AllMutatorsExpireTest extends TestingBase {
       case 6:
         c.invoke(KEY, new EntryProcessor<Integer, Integer, Object>() {
           @Override
-          public Object process(final MutableCacheEntry<Integer, Integer> e) throws Exception {
+          public Object process(MutableCacheEntry<Integer, Integer> e) {
             e.setValue(VALUE);
             return null;
           }
