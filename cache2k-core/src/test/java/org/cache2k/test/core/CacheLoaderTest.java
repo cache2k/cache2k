@@ -255,7 +255,7 @@ public class CacheLoaderTest extends TestingBase {
             @Override
             public long calculateExpiryTime(Integer key, Integer value, long loadTime,
                                             CacheEntry<Integer, Integer> oldEntry) {
-              return NO_CACHE;
+              return NOW;
             }
           });
       }

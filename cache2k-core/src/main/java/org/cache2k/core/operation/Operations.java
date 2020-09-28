@@ -460,7 +460,7 @@ public class Operations<K, V> {
 
       @Override
       public void examine(Progress<K, V, Void> c, ExaminationEntry<K, V> e) {
-        if (t == ExpiryTimeValues.NO_CACHE ||
+        if (t == ExpiryTimeValues.NOW ||
           t == ExpiryTimeValues.REFRESH) {
           c.isDataFreshOrRefreshing();
           c.wantMutation();
@@ -493,7 +493,7 @@ public class Operations<K, V> {
 
     @Override
     public void mutate(Progress<K, V, Void> c, ExaminationEntry<K, V> e) {
-      c.expire(ExpiryTimeValues.NO_CACHE);
+      c.expire(ExpiryTimeValues.NOW);
     }
   }
 

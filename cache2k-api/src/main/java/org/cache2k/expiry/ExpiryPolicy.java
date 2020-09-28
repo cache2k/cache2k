@@ -72,7 +72,7 @@ public interface ExpiryPolicy<K, V> extends ExpiryTimeValues {
    *
    * <p><b>{@code null} values:</b> If the loader returns a {@code null} value, the expiry
    * policy will be called, regardless of the {@link Cache2kBuilder#permitNullValues} setting.
-   * If the expiry policy returns a {@link #NO_CACHE} the entry will be removed. If the expiry
+   * If the expiry policy returns a {@link #NOW} the entry will be removed. If the expiry
    * policy returns a different time value, a {@code NullPointerException} will be propagated
    * if {@code null} values are not permitted.
    *
@@ -91,10 +91,10 @@ public interface ExpiryPolicy<K, V> extends ExpiryTimeValues {
    * @param oldEntry entry representing the current mapping, if there is a value present.
    *                  If the old entry holds an exception, this is {@code null}. Expired entries
    *                  will be passed in as well if still in the cache.
-   * @return time the time of expiry in millis since epoch. {@link #NO_CACHE} if it should not
+   * @return the time of expiry in millis since epoch. {@link #NOW} if it should not
    *         cached. If {@link Cache2kBuilder#refreshAhead} is enabled the return value
-   *         {@link #NO_CACHE} will remove the entry from the cache and trigger an immediate
-   *         refresh. The return value {@link #ETERNAL} means that there is no specific expiry time
+   *         {@link #NOW} will trigger an immediate refresh.
+   *         The return value {@link #ETERNAL} means that there is no specific expiry time
    *         known or needed. The effective expiry duration will never be longer than the configured
    *         expiry value via {@link Cache2kBuilder#expireAfterWrite(long, TimeUnit)}.
    *         If a negative value is returned, the negated value will be the expiry time

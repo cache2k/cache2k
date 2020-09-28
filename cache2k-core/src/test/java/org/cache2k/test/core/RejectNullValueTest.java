@@ -74,7 +74,7 @@ public class RejectNullValueTest {
         throw new RuntimeException("exception in the expiry policy");
       }
       if (key % 4 == 0 && value == null) {
-        return NO_CACHE;
+        return NOW;
       }
       return ETERNAL;
       }

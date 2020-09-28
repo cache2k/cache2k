@@ -944,7 +944,7 @@ public class EntryProcessorTest {
         Integer v = e.getValue();
         assertEquals(KEY, v);
         assertTrue(e.exists());
-        e.setExpiryTime(Expiry.NO_CACHE);
+        e.setExpiryTime(Expiry.NOW);
         return null;
       }
     });

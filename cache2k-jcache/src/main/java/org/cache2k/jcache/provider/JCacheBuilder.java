@@ -299,7 +299,7 @@ public class JCacheBuilder<K, V> {
         public long calculateExpiryTime(
           K key, V value, long loadTime, CacheEntry<K, V> oldEntry) {
           if (value == null) {
-            return NO_CACHE;
+            return NOW;
           }
           return ep.calculateExpiryTime(key, value, loadTime, oldEntry);
         }
@@ -316,7 +316,7 @@ public class JCacheBuilder<K, V> {
         @Override
         public long calculateExpiryTime(K key, V value, long loadTime, CacheEntry<K, V> oldEntry) {
           if (value == null) {
-            return NO_CACHE;
+            return NOW;
           }
           return ETERNAL;
         }
@@ -333,7 +333,7 @@ public class JCacheBuilder<K, V> {
           @Override
           public long calculateExpiryTime(
             K key, V value, long loadTime, CacheEntry<K, V> oldEntry) {
-            return NO_CACHE;
+            return NOW;
           }
         }));
         return;
@@ -344,7 +344,7 @@ public class JCacheBuilder<K, V> {
         @Override
         public long calculateExpiryTime(K key, V value, long loadTime, CacheEntry<K, V> oldEntry) {
           if (value == null) {
-            return NO_CACHE;
+            return NOW;
           }
           return loadTime + millisDuration;
         }
@@ -362,7 +362,7 @@ public class JCacheBuilder<K, V> {
           @Override
           public long calculateExpiryTime(
             K key, V value, long loadTime, CacheEntry<K, V> oldEntry) {
-            return NO_CACHE;
+            return NOW;
           }
         }));
         return;
@@ -373,7 +373,7 @@ public class JCacheBuilder<K, V> {
         @Override
         public long calculateExpiryTime(K key, V value, long loadTime, CacheEntry<K, V> oldEntry) {
           if (value == null) {
-            return NO_CACHE;
+            return NOW;
           }
           if (oldEntry == null) {
             return loadTime + millisDuration;

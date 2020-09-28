@@ -480,9 +480,9 @@ public class ExpiryTest extends TestingBase {
         public long calculateExpiryTime(Integer key, Integer value, long loadTime,
                                         CacheEntry<Integer, Integer> oldEntry) {
           if (oldEntry == null) {
-            return ExpiryPolicy.ETERNAL;
+            return ETERNAL;
           }
-          return ExpiryPolicy.NO_CACHE;
+          return NOW;
         }
       })
       .keepDataAfterExpired(false)
@@ -503,9 +503,9 @@ public class ExpiryTest extends TestingBase {
         public long calculateExpiryTime(Integer key, Integer value, long loadTime,
                                         CacheEntry<Integer, Integer> oldEntry) {
           if (oldEntry == null) {
-            return ExpiryPolicy.ETERNAL;
+            return ETERNAL;
           }
-          return ExpiryPolicy.NO_CACHE;
+          return NOW;
         }
       })
       .keepDataAfterExpired(false)
@@ -803,7 +803,7 @@ public class ExpiryTest extends TestingBase {
         @Override
         public long calculateExpiryTime(Integer key, Integer value, long loadTime,
                                         CacheEntry<Integer, Integer> oldEntry) {
-          return NO_CACHE;
+          return NOW;
         }
       })
       .resiliencePolicy(new ResiliencePolicy<Integer, Integer>() {
@@ -817,7 +817,7 @@ public class ExpiryTest extends TestingBase {
         @Override
         public long retryLoadAfter(Integer key, ExceptionInformation inf) {
           cacheRetryCount.set(inf.getRetryCount());
-          return NO_CACHE;
+          return NOW;
         }
       })
       .loader(new Every1ExceptionLoader())
@@ -1255,7 +1255,7 @@ public class ExpiryTest extends TestingBase {
       }
     });
 
-    c.expireAt(1, ExpiryTimeValues.NO_CACHE);
+    c.expireAt(1, ExpiryTimeValues.NOW);
     assertEquals("empty after expired immediately", 0, getInfo().getSize());
   }
 
@@ -1419,7 +1419,7 @@ public class ExpiryTest extends TestingBase {
           @Override
           public long calculateExpiryTime(Integer key, Integer value, long loadTime,
                                           CacheEntry<Integer, Integer> oldEntry) {
-            return value == null ? NO_CACHE : ETERNAL;
+            return value == null ? NOW : ETERNAL;
           }
         })
         .build();

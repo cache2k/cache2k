@@ -179,7 +179,7 @@ public class StaticTiming<K, V> extends Timing<K, V> {
   @Override
   public long stopStartTimer(long expiryTime, Entry e) {
     cancelExpiryTimer(e);
-    if (expiryTime == ExpiryTimeValues.NO_CACHE) {
+    if (expiryTime == ExpiryTimeValues.NOW) {
       return Entry.EXPIRED;
     }
     if (expiryTime == ExpiryTimeValues.NEUTRAL) {
