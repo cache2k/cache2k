@@ -73,6 +73,14 @@
         <scope>test</scope>
     </dependency>
 
+    <dependency>
+      <groupId>org.assertj</groupId>
+      <artifactId>assertj-core</artifactId>
+      <!-- TODO 2.0: update to 3.17.2 -->
+      <version>2.9.1</version>
+      <scope>test</scope>
+    </dependency>
+
     <!-- Provides NotThreadSafe annotation, used for sure fire -->
     <dependency>
         <groupId>net.jcip</groupId>
