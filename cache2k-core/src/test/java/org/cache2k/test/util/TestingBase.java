@@ -37,6 +37,7 @@ import org.cache2k.integration.CacheLoader;
 import org.cache2k.CacheOperationCompletionListener;
 import org.cache2k.test.core.CacheLoaderTest;
 import org.cache2k.test.core.Statistics;
+import org.cache2k.test.core.TestingParameters;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExternalResource;
@@ -219,6 +220,7 @@ public class TestingBase {
       .timeReference(getClock())
       .name(_cacheName)
       .entryCapacity(DEFAULT_MAX_SIZE)
+      .timerLag(TestingParameters.MINIMAL_TICK_MILLIS / 2, TimeUnit.MILLISECONDS)
       .loaderExecutor(loaderExecutor)
       .executor(asyncExecutor);
     applyAdditionalOptions(b);

@@ -145,8 +145,9 @@
             <trimStackTrace>false</trimStackTrace>
             <excludedGroups>org.cache2k.testing.category.StorageTests,org.cache2k.testing.category.TimingTests,org.cache2k.testing.category.ExclusiveTests</excludedGroups>
             <runOrder>random</runOrder>
+            <!-- some tests are waiting for timer events, more threads per core is useful -->
             <parallel>classes</parallel>
-            <threadCount>1</threadCount>
+            <threadCount>2</threadCount>
             <perCoreThreadCount>true</perCoreThreadCount>
             <systemPropertyVariables>
               <org.cache2k.core.HeapCache.Tunable.sharpExpirySafetyGapMillis>7654</org.cache2k.core.HeapCache.Tunable.sharpExpirySafetyGapMillis>
