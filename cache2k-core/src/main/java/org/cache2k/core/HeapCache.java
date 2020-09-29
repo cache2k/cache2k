@@ -175,18 +175,18 @@ public class HeapCache<K, V> extends BaseCache<K, V>  implements HeapCacheForEvi
     }
   }
 
-  protected volatile Executor prefetchExecutor = new LazyPrefetchExecutor();
+  protected volatile Executor refreshExecutor = new LazyRefreshExecutor();
 
   /**
    * Create executor only if needed.
    */
-  private class LazyPrefetchExecutor implements Executor {
+  private class LazyRefreshExecutor implements Executor {
     @Override
     public void execute(Runnable command) {
       synchronized (lock) {
         checkClosed();
         loaderExecutor.execute(command);
-        prefetchExecutor = loaderExecutor;
+        refreshExecutor = loaderExecutor;
       }
     }
   }
@@ -295,9 +295,9 @@ public class HeapCache<K, V> extends BaseCache<K, V>  implements HeapCacheForEvi
         loaderExecutor = provideDefaultLoaderExecutor(c.getLoaderThreadCount());
       }
     }
-    if (c.getPrefetchExecutor() != null) {
-      prefetchExecutor =
-        createCustomization((CustomizationSupplier<Executor>) c.getPrefetchExecutor());
+    if (c.getRefreshExecutor() != null) {
+      refreshExecutor =
+        createCustomization((CustomizationSupplier<Executor>) c.getRefreshExecutor());
     }
     if (c.getExecutor() != null) {
       executor = createCustomization((CustomizationSupplier<Executor>) c.getExecutor());
@@ -1045,8 +1045,8 @@ public class HeapCache<K, V> extends BaseCache<K, V>  implements HeapCacheForEvi
     }
   }
 
-  public Executor getPrefetchExecutor() {
-    return prefetchExecutor;
+  public Executor getRefreshExecutor() {
+    return refreshExecutor;
   }
 
   @Override
@@ -1059,7 +1059,7 @@ public class HeapCache<K, V> extends BaseCache<K, V>  implements HeapCacheForEvi
       return;
     }
     try {
-      getPrefetchExecutor().execute(new RunWithCatch(this) {
+      getRefreshExecutor().execute(new RunWithCatch(this) {
         @Override
         public void action() {
           getEntryInternal(key);
@@ -1094,7 +1094,7 @@ public class HeapCache<K, V> extends BaseCache<K, V>  implements HeapCacheForEvi
           }
         };
         try {
-          getPrefetchExecutor().execute(r);
+          getRefreshExecutor().execute(r);
           count.incrementAndGet();
         } catch (RejectedExecutionException ignore) { }
       }
@@ -1581,7 +1581,7 @@ public class HeapCache<K, V> extends BaseCache<K, V>  implements HeapCacheForEvi
     synchronized (e) {
       if (e.getTask() != task) { return; }
       try {
-        prefetchExecutor.execute(createFireAndForgetAction(e, Operations.SINGLETON.refresh));
+        refreshExecutor.execute(createFireAndForgetAction(e, Operations.SINGLETON.refresh));
       } catch (RejectedExecutionException ex) {
         metrics.refreshRejected();
         expireOrScheduleFinalExpireEvent(e);

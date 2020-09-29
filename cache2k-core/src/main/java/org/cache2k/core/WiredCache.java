@@ -158,7 +158,7 @@ public class WiredCache<K, V> extends BaseCache<K, V>
       return;
     }
     try {
-      heapCache.getPrefetchExecutor().execute(new HeapCache.RunWithCatch(this) {
+      heapCache.getRefreshExecutor().execute(new HeapCache.RunWithCatch(this) {
         @Override
         public void action() {
           load(key);
@@ -193,7 +193,7 @@ public class WiredCache<K, V> extends BaseCache<K, V>
           }
         };
         try {
-          heapCache.getPrefetchExecutor().execute(r);
+          heapCache.getRefreshExecutor().execute(r);
           count.incrementAndGet();
         } catch (RejectedExecutionException ignore) { }
       }
@@ -757,7 +757,7 @@ public class WiredCache<K, V> extends BaseCache<K, V>
         return;
       }
       try {
-        heapCache.prefetchExecutor.execute(createFireAndForgetAction(e, ops.refresh));
+        heapCache.refreshExecutor.execute(createFireAndForgetAction(e, ops.refresh));
       } catch (RejectedExecutionException ex) {
         metrics().refreshRejected();
         enqueueTimerAction(e, ops.expireEvent);
