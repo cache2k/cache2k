@@ -1278,7 +1278,9 @@ public class ExpiryTest extends TestingBase {
         @Override
         public void run() {
           c.expireAt(1, -millis());
-          assertFalse(c.containsKey(1));
+          assertFalse(
+            "entry not visible after expireAt, during refresh and after refresh",
+            c.containsKey(1));
           await(new Condition() {
             @Override
             public boolean check() {
@@ -1290,6 +1292,7 @@ public class ExpiryTest extends TestingBase {
         @Override
         public void run() {
           assertEquals(1, getInfo().getSize());
+          assertFalse("Still invisible", c.containsKey(1));
           c.expireAt(1, ExpiryTimeValues.ETERNAL);
           assertFalse("Keeps invisible, when expiry extended", c.containsKey(1));
           assertEquals(1, getInfo().getSize());
@@ -1371,12 +1374,13 @@ public class ExpiryTest extends TestingBase {
     assertNull(e);
   }
 
-  @Test @Ignore
+  @Test
   public void expiryEventLags() {
     final Cache<Integer, Integer> c = builder(Integer.class, Integer.class)
-      .expireAfterWrite(1, TimeUnit.MILLISECONDS)
+      .expireAfterWrite(TestingParameters.MINIMAL_TICK_MILLIS, TimeUnit.MILLISECONDS)
+      .timerLag(TestingParameters.MINIMAL_TICK_MILLIS * 2, TimeUnit.MILLISECONDS)
       .build();
-    within(312)
+    within(TestingParameters.MINIMAL_TICK_MILLIS * 2 - 1)
       .perform(new Runnable() {
       @Override
       public void run() {
@@ -1388,7 +1392,7 @@ public class ExpiryTest extends TestingBase {
       @Override
       public void run() {
         assertEquals(3, getCache().asMap().size());
-        sleep(30);
+        sleep(TestingParameters.MINIMAL_TICK_MILLIS);
         assertEquals(3, getCache().asMap().size());
       }
     });

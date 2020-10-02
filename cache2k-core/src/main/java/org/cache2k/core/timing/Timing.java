@@ -162,7 +162,7 @@ public abstract class Timing<K, V>  {
   }
 
   /**
-   * Start timer for expiring an entry on the separate refresh hash.
+   * Start probation timer.
    */
   public boolean startRefreshProbationTimer(Entry<K, V> e, long nextRefreshTime) {
     return true;

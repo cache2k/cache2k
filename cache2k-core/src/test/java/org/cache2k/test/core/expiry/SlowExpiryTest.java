@@ -999,19 +999,22 @@ public class SlowExpiryTest extends TestingBase {
       .loader(loader)
       .build();
     int v = c.get(key);
-    assertEquals(0, v);
+    if (isWiredCache()) {
+      assertEquals(0, v);
+    }
     await("Refresh is done", new Condition() {
       @Override
       public boolean check() {
         return getInfo().getRefreshCount() > 0;
       }
     });
-    await("Entry stays", new Condition() {
+    await("Entry visible since eternal", new Condition() {
       @Override
       public boolean check() {
         return c.containsKey(key);
       }
     });
+    debugEntry(key);
   }
 
   /**

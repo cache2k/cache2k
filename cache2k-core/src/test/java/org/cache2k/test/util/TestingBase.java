@@ -89,8 +89,14 @@ public class TestingBase {
   };
 
   private static final AtomicLong uniqueNameCounter = new AtomicLong();
+
+  /**
+   * Separate thread pool for testing. The thread pool is limited, so we know when some tests
+   * use an unexpected high amount of threads. The number of available threads should be
+   * changed with the number of parallelism we use for running the test. See {@code pom.xml}.
+   */
   public static final Executor SHARED_EXECUTOR =
-    new ThreadPoolExecutor(4, 4 * Runtime.getRuntime().availableProcessors(),
+    new ThreadPoolExecutor(4, 8 * Runtime.getRuntime().availableProcessors(),
       21, TimeUnit.SECONDS,
       new SynchronousQueue<Runnable>(),
       HeapCache.TUNABLE.threadFactoryProvider.newThreadFactory("test-loader-pool"),
