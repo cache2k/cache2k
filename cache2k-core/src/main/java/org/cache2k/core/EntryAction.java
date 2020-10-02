@@ -452,6 +452,7 @@ public abstract class EntryAction<K, V, R> extends Entry.PiggyBack implements
    */
   public void examineAgainAfterLock() {
     countMiss = false;
+    heapOrLoadedEntry = heapEntry;
     examine();
     return;
   }
