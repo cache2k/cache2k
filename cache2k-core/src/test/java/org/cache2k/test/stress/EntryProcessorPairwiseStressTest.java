@@ -21,12 +21,9 @@ package org.cache2k.test.stress;
  */
 
 import org.cache2k.Cache;
-import org.cache2k.pinpoint.stress.pairwise.ActorPairSuite;
 import org.cache2k.processor.EntryProcessor;
 import org.cache2k.processor.MutableCacheEntry;
-import org.cache2k.test.util.TestingBase;
 import org.cache2k.testing.category.SlowTests;
-import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
 import static org.junit.Assert.assertEquals;
@@ -35,13 +32,17 @@ import static org.junit.Assert.assertEquals;
  * @author Jens Wilke
  */
 @Category(SlowTests.class)
-public class EntryProcessorStressTest extends AtomicOperationsStressTest {
+public class EntryProcessorPairwiseStressTest extends AtomicOperationsPairwiseStressTest {
+
+  public EntryProcessorPairwiseStressTest(Object obj) {
+    super(obj);
+  }
 
   private static void increment(Cache<Integer, Integer> cache, int key, int count) {
     for (int i = 0; i < count; i++) {
       cache.invoke(key, new EntryProcessor<Integer, Integer, Object>() {
         @Override
-        public Object process(final MutableCacheEntry<Integer, Integer> e) throws Exception {
+        public Object process(MutableCacheEntry<Integer, Integer> e) throws Exception {
           int val = e.getValue();
           e.setValue(val + 1);
           return null;
@@ -50,18 +51,15 @@ public class EntryProcessorStressTest extends AtomicOperationsStressTest {
     }
   }
 
-  static class EntryProcessor_AtomicIncrement extends CacheKeyActorPair<Void, Integer, Integer> {
+  static class EntryProcessorAtomicIncrement extends CacheKeyActorPair<Void, Integer, Integer> {
     int countPerActor = 100;
     public void setup() {
       cache.put(key, 0); }
     public Void actor1() { increment(cache, key, countPerActor); return null; }
     public Void actor2() { increment(cache, key, countPerActor); return null; }
-    public void check(final Void r1, final Void r2) {
+    public void check(Void r1, Void r2) {
       assertEquals("result after concurrent increments", countPerActor * 2, (int) value());
     }
   }
 
-  public EntryProcessorStressTest(final Object obj) {
-    super(obj);
-  }
 }
