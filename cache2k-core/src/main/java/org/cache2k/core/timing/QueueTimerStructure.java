@@ -27,7 +27,7 @@ import java.util.Arrays;
  *
  * @author Jens Wilke
  */
-public class QueueTimerStructure extends TimerStructure {
+public class QueueTimerStructure implements TimerStructure {
 
   static final int PURGE_INTERVAL = 10000;
 
@@ -41,10 +41,9 @@ public class QueueTimerStructure extends TimerStructure {
   private long timerCancelCount = 0;
 
   @Override
-  public boolean schedule(TimerTask task, long time) {
+  public void schedule(TimerTask task, long time) {
     task.executionTime = time;
     queue.add(task);
-    return queue.getMin() == task;
   }
 
   @Override

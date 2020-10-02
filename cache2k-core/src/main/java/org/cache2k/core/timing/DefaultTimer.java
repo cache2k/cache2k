@@ -80,9 +80,8 @@ public class DefaultTimer implements Timer {
     }
     lock.lock();
     try {
-      if (structure.schedule(task, time)) {
-        reschedule(time);
-      }
+      structure.schedule(task, time);
+      rescheduleEventually(time);
     } finally {
       lock.unlock();
     }
@@ -165,7 +164,7 @@ public class DefaultTimer implements Timer {
    * Don't schedule when within lag time.
    * We don't cancel a scheduled task. The additional event does not hurt.
    */
-  void reschedule(long nextWakeup) {
+  void rescheduleEventually(long nextWakeup) {
     if (nextWakeup >= nextScheduled - lag) {
       return;
     }

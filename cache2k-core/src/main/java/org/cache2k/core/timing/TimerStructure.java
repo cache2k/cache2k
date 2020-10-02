@@ -23,29 +23,29 @@ package org.cache2k.core.timing;
 /**
  * @author Jens Wilke
  */
-public abstract class TimerStructure {
+public interface TimerStructure {
 
   /**
    * Insert task.
    *
    * @return this is the earliest, update scheduler
    */
-  public abstract boolean schedule(TimerTask task, long time);
+  void schedule(TimerTask task, long time);
 
-  public abstract void cancel(TimerTask t);
+  void cancel(TimerTask t);
 
-  public abstract void cancel();
+  void cancel();
 
   /**
    * Execute tasks
    *
    * @return next execution time for scheduler, or 0
    */
-  public abstract TimerTask removeNextToRun(long time);
+  TimerTask removeNextToRun(long time);
 
   /**
    * Time of next run, or -1 if no more tasks are scheduled
    */
-  public abstract long nextRun();
+  long nextRun();
 
 }
