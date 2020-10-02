@@ -1014,7 +1014,6 @@ public class SlowExpiryTest extends TestingBase {
         return c.containsKey(key);
       }
     });
-    debugEntry(key);
   }
 
   /**
