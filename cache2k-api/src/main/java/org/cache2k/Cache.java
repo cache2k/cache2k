@@ -336,7 +336,7 @@ public interface Cache<K, V> extends KeyValueStore<K, V>, Closeable {
    *
    * @param key key with which the specified value is to be associated
    * @param callable task that computes the value
-   * @return the associated value in the cache
+   * @return the cached value or the result of the compute operation if no mapping is present
    * @throws CacheLoaderException if a checked exception is thrown it is wrapped into a
    *         {@code CacheLoaderException}
    * @throws RuntimeException in case {@link Callable#call} yields a runtime exception,
@@ -502,8 +502,10 @@ public interface Cache<K, V> extends KeyValueStore<K, V>, Closeable {
    * if no entry is associated to the requested key.
    *
    * @param key key whose mapping is to be removed from the cache
-   * @return the previous value associated with <tt>key</tt>, or
-   *         <tt>null</tt> if there was no mapping for <tt>key</tt>.
+   * @return the previous value associated with the specified key, or
+   *         {@code null} if there was no mapping for the key.
+   *         (A {@code null} can also indicate that the cache
+   *         previously associated the value {@code null} with the key)
    * @throws NullPointerException if a specified key is null
    * @throws ClassCastException if the key is of an inappropriate type for
    *         the cache. This check is optional depending on the cache
@@ -550,14 +552,18 @@ public interface Cache<K, V> extends KeyValueStore<K, V>, Closeable {
   void remove(K key);
 
   /**
-   * Remove the mapping if the stored value is the equal to the comparison value.
+   * Remove the mapping if the stored value is equal to the comparison value.
+   *
+   * <p>If no mapping exists, this method will do nothing and return {@code false}, even
+   * if the tested value is {@code null}.
    *
    * @param key key whose mapping is to be removed from the cache
-   * @param expectedValue value that must match with the existing value in the cache
-   * @throws NullPointerException if a specified key is null
+   * @param expectedValue value that must match with the existing value in the cache.
+   *                      It is also possible to check whether the value is {@code null}.
+   * @throws NullPointerException if a specified key is {@code null}
    * @throws ClassCastException if the key is of an inappropriate type for
    *         this map
-   * @return true, if mapping was removed
+   * @return {@code true}, if mapping was removed
    */
   boolean removeIfEquals(K key, V expectedValue);
 
@@ -602,8 +608,10 @@ public interface Cache<K, V> extends KeyValueStore<K, V>, Closeable {
    *
    * @param key key with which the specified value is associated
    * @param value value to be associated with the specified key
-   * @return {@code true} if a mapping is present and the value was replaced.
-   *         {@code false} if no entry is present and no action was performed.
+   * @return the previous value associated with the specified key, or
+   *         {@code null} if there was no mapping for the key.
+   *         (A {@code null} return can also indicate that the cache
+   *         previously associated {@code null} with the key)
    * @throws ClassCastException if the class of the specified key or value
    *         prevents it from being stored in this cache.
    * @throws NullPointerException if the specified key is null or the
