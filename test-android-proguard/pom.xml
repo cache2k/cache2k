@@ -4,7 +4,7 @@
   <parent>
     <groupId>org.cache2k</groupId>
     <artifactId>cache2k-parent</artifactId>
-    <version>1.4.0.Final</version>
+    <version>1.4.1.Final</version>
   </parent>
 
   <properties>
@@ -12,7 +12,7 @@
   </properties>
 
   <artifactId>test-android-proguard</artifactId>
-  <version>1.4.0.Final</version>
+  <version>1.4.1.Final</version>
   <name>cache2k tests for Android with proguard configuration</name>
   <packaging>apk</packaging>
 
