@@ -61,10 +61,11 @@ public interface ActorPair<R> {
    * Useful for assertions based on success of each actor.
    */
   class SuccessTuple {
+
     private final boolean success1;
     private final boolean success2;
 
-    public SuccessTuple(final boolean success1, final boolean success2) {
+    public SuccessTuple(boolean success1, boolean success2) {
       this.success1 = success1;
       this.success2 = success2;
     }
@@ -84,5 +85,6 @@ public interface ActorPair<R> {
         ", success2=" + success2 +
         '}';
     }
+
   }
 }

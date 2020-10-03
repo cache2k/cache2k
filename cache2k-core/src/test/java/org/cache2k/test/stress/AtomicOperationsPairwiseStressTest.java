@@ -37,7 +37,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import static org.junit.runners.Parameterized.Parameters;
 
 /**
- * Concurrent test suite for (some) atomic operations
+ * Concurrent test suite for atomic operations
  *
  * @author Jens Wilke
  */
@@ -113,6 +113,92 @@ public class AtomicOperationsPairwiseStressTest extends PairwiseTestingBase {
       assertTrue(new SuccessTuple(r1, r2).isOneSucceeds());
       assertTrue(!r1 || value() == 10);
       assertTrue(!r2 || value() == 20);
+    }
+  }
+
+  static class Replace1 extends CacheKeyActorPair<Boolean, Integer, Integer> {
+    public void setup() {
+      cache.remove(key);
+    }
+    public Boolean actor1() {
+      cache.put(key, 10);
+      return true;
+    }
+    public Boolean actor2() {
+      return cache.replace(key, 20);
+    }
+    public void check(Boolean r1, Boolean r2) {
+      assertEquals(r2 ? 20 : 10, (int) value());
+    }
+  }
+
+  static class PeekAndRemove1 extends CacheKeyActorPair<Integer, Integer, Integer> {
+    public void setup() {
+      cache.put(key, 10);
+    }
+    public Integer actor1() {
+      return cache.peekAndRemove(key);
+    }
+    public Integer actor2() {
+      return cache.peekAndRemove(key);
+    }
+    public void check(Integer r1, Integer r2) {
+      assertNull(value());
+      assertTrue(r1 != null || r2 != null);
+      assertTrue(r1 != r2);
+      assertTrue(!(r1 == null) || r2 == 10);
+      assertTrue(!(r2 == null) || r1 == 10);
+    }
+  }
+
+  static class PeekAndRemove2 extends CacheKeyActorPair<Integer, Integer, Integer> {
+    public void setup() {
+      cache.remove(key);
+    }
+    public Integer actor1() {
+      cache.put(key, 10);
+      return null;
+    }
+    public Integer actor2() {
+      return cache.peekAndRemove(key);
+    }
+    public void check(Integer r1, Integer r2) {
+      assertTrue(!(r2 != null) || (r2 == 10 && value() == null));
+      assertTrue(!(r2 == null) || value() == 10);
+    }
+  }
+
+  static class ContainsAndRemove1 extends CacheKeyActorPair<Boolean, Integer, Integer> {
+    public void setup() {
+      cache.put(key, 10);
+    }
+    public Boolean actor1() {
+      return cache.containsAndRemove(key);
+    }
+    public Boolean actor2() {
+      return cache.containsAndRemove(key);
+    }
+    public void check(Boolean r1, Boolean r2) {
+      assertNull(value());
+      assertTrue(r1 != r2);
+      assertTrue(r1 || r2);
+    }
+  }
+
+  static class ContainsAndRemove2 extends CacheKeyActorPair<Boolean, Integer, Integer> {
+    public void setup() {
+      cache.remove(key);
+    }
+    public Boolean actor1() {
+      cache.put(key, 10);
+      return false;
+    }
+    public Boolean actor2() {
+      return cache.containsAndRemove(key);
+    }
+    public void check(Boolean r1, Boolean r2) {
+      assertTrue(!r2 || value() == null);
+      assertTrue(r2 || value() == 10);
     }
   }
 
