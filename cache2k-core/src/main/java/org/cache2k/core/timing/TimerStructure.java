@@ -21,6 +21,15 @@ package org.cache2k.core.timing;
  */
 
 /**
+ * Interface of the timer task data structure.
+ *
+ * <p>The interface allows different implementations for timer data structures, like
+ * tree, heap oder timer wheels. The interface is not 100% anstracted, since
+ * the implementation makes use of TimerTask internals (prev and next pointers).
+ *
+ * <p>The timer data structure is not supposed to be thread safe, it is called with
+ * proper locking from the timer code.
+ *
  * @author Jens Wilke
  */
 public interface TimerStructure {
@@ -30,7 +39,7 @@ public interface TimerStructure {
    * time have already be run.
    *
    * @return true if scheduled successfully, false if scheduling was not possible
-   *              because tasks have been run already
+   *              because the target time slot would be in the past
    */
   boolean schedule(TimerTask task, long time);
 
@@ -46,8 +55,11 @@ public interface TimerStructure {
 
   /**
    * Return a task that is supposed to execute at the given time or earlier.
-   * This also moves the clock hand of the timer structure. Once a time slot
-   * is reached and execution has started the structure does not except scheduling tasks
+   * This also moves the clock hand of the timer structure.
+   *
+   * <p>It may rarely happen that a subsequent method call has an earlier
+   * time, in case the operating system schedule delays a thread until the
+   * next scheduler event happens.
    *
    * @return a task or null, if no more tasks are scheduled for the given time
    */

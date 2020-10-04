@@ -25,6 +25,10 @@ package org.cache2k.core.timing;
  * can work with variable delta time per time slot and variable slots per wheel
  * level.
  *
+ * <p>This implementation is rather simple and has opportunities to improve performance.
+ * Probably the best results can be achieved for a pre allocated object structure for
+ * known delta and slot counts.
+ *
  * @author Jens Wilke
  */
 public class TimerWheels implements TimerStructure {
@@ -71,6 +75,9 @@ public class TimerWheels implements TimerStructure {
       atNoon(time);
     }
 
+    /**
+     * Called when we reach noon to reset the index hand.
+     */
     private void atNoon(long time) {
       index = 0;
       noon = time;
@@ -87,15 +94,27 @@ public class TimerWheels implements TimerStructure {
       }
     }
 
+    /**
+     * Reinitialize slots and discard higher hierarchies.
+     */
     private void cancel() {
       up = null;
       initArray(slots.length);
     }
 
+    /**
+     * Time, when all tasks for the given slot index can be executed.
+     */
     long executionTime(int i) {
       return noon + delta * i + delta - 1;
     }
 
+    /**
+     * Search for non empty time slot and return the time, when
+     * the slot can be executed. For simplicity we don't recurse
+     * into higher hierarchies, so this method is only called
+     * at the lowest hierarchy.
+     */
     long nextToRun() {
       for (int i = index; i < slots.length; i++) {
         if (!slots[i].isEmpty()) {
@@ -108,6 +127,12 @@ public class TimerWheels implements TimerStructure {
       return executionTime(slots.length);
     }
 
+    /**
+     * If execution time for the current slot is reached, return the tasks in it.
+     * We don't need to compare the actual time in the task.
+     * If all tasks are completed within the slot and the time is past the
+     * slot execution time, we move the slot index forward.
+     */
     public TimerTask removeNextToRun(long time) {
       long hand = executionTime(index);
       if (time >= hand) {
@@ -128,6 +153,10 @@ public class TimerWheels implements TimerStructure {
       return null;
     }
 
+    /**
+     * Move to the next time slot. If we completed a circle, refill from the
+     * upper hierarchy.
+     */
     private void moveHand() {
       index++;
       if (index >= slots.length) {
@@ -136,6 +165,10 @@ public class TimerWheels implements TimerStructure {
       }
     }
 
+    /**
+     * Refill this timer wheel from the upper hierarchy, sorting
+     * all tasks into their slots.
+     */
     private void refill() {
        TimerTask t;
        long limit = oneBeforeNextNoon;
@@ -146,6 +179,11 @@ public class TimerWheels implements TimerStructure {
        }
     }
 
+    /**
+     * If within bounds insert into this wheel or delegate to the
+     * next hierarchy level. This will create more levels until
+     * the time is covered by that hierarchy level.
+     */
     private boolean schedule(TimerTask t) {
       long hand = executionTime(index - 1);
       if (t.time <= hand) {
@@ -154,15 +192,17 @@ public class TimerWheels implements TimerStructure {
         insert(t);
         return true;
       } else {
-        return up().schedule(t);
+        Wheel up = this.up;
+        if (up == null) {
+          this.up = up = new Wheel(oneBeforeNextNoon + 1, delta * slots.length, slots.length);
+        }
+        return up.schedule(t);
       }
     }
 
-    private Wheel up() {
-      if (up != null) { return up; }
-      return up = new Wheel(oneBeforeNextNoon + 1, delta * slots.length, slots.length);
-    }
-
+    /**
+     * Insert into the proper time slot.
+     */
     private void insert(TimerTask t) {
       int idx = (int) ((t.time - noon) / delta);
       slots[idx].insert(t);
