@@ -501,12 +501,12 @@ public class Entry<K, V> extends CompactEntry<K, V>
   /**
    * The entry is not present in the heap any more and was evicted, expired or removed.
    */
-  public boolean isGone() {
+  public final boolean isGone() {
     long nrt = nextRefreshTime;
     return nrt >= GONE && nrt <= GONE_OTHER;
   }
 
-  public boolean needsTimeCheck() {
+  public final boolean needsTimeCheck() {
     return nextRefreshTime < 0;
   }
 
