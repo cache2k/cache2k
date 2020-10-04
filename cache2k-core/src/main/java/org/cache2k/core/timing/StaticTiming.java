@@ -200,7 +200,7 @@ public class StaticTiming<K, V> extends Timing<K, V> {
       return expiredEventuallyStartBackgroundRefresh(e, expiryTime < 0);
     }
     if (expiryTime < 0) {
-      long timerTime = -expiryTime - SAFETY_GAP_MILLIS - timer.getLag();
+      long timerTime = -expiryTime - SAFETY_GAP_MILLIS - timer.getLagMillis();
       if (timerTime >= now) {
         e.setTask(new Tasks.ExpireTimerTask().to(cache, e));
         scheduleTask(timerTime, e);

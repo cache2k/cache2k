@@ -412,7 +412,7 @@ public class ExpiryTest extends TestingBase {
     };
     Cache<Integer, Integer> c = cache = builder(Integer.class, Integer.class)
       .loader(g)
-      .expireAfterWrite(Long.MAX_VALUE / 2, TimeUnit.MILLISECONDS)
+      .expireAfterWrite(Long.MAX_VALUE / 10000, TimeUnit.MILLISECONDS)
       .retryInterval(Long.MAX_VALUE, TimeUnit.MILLISECONDS)
       .build();
     assertEquals("no miss", 0, g.getLoaderCalledCount());

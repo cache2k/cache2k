@@ -41,7 +41,7 @@ abstract class Tasks<K, V> extends TimerTask {
    * Null out references to avoid mem leaks, when timer is cancelled.
    */
   @Override
-  public boolean cancel() {
+  protected boolean cancel() {
     if (super.cancel()) {
       cache = null;
       entry = null;

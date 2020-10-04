@@ -348,10 +348,12 @@ public class BasicCacheTest extends TestingBase {
         .eternal(true)
         .build();
     c.put("nocache", new MyValueWithExpiryTime(0));
-    final long _DISTANT_FUTURE = Long.MAX_VALUE - 42;
+    final long _DISTANT_FUTURE = 500 * 365 * 24 * 60 * 60 * 1000;
     c.put("cache", new MyValueWithExpiryTime(_DISTANT_FUTURE));
+    c.put("cache2", new MyValueWithExpiryTime(Long.MAX_VALUE));
     assertNull(c.peek("nocache"));
     assertNotNull(c.peek("cache"));
+    assertNotNull(c.peek("cache2"));
   }
 
   static class MyValueWithExpiryTime implements ValueWithExpiryTime {

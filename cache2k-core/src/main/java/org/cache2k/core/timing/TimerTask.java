@@ -20,8 +20,6 @@ package org.cache2k.core.timing;
  * #L%
  */
 
-import java.util.concurrent.atomic.AtomicIntegerFieldUpdater;
-
 /**
  * Task for the simple timer
  *
@@ -29,45 +27,17 @@ import java.util.concurrent.atomic.AtomicIntegerFieldUpdater;
  */
 public abstract class TimerTask implements Runnable {
 
-  /**
-   * The state of this task, chosen from the constants below.
-   */
-  private volatile int state = VIRGIN;
+  private static final long UNSCHEDULED = -1;
+  long time = UNSCHEDULED;
+  TimerTask next, prev = null;
+  void insert(TimerTask t) { t.next = next; t.prev = this; next.prev = t; next = t; }
+  void remove() { prev.next = next; next.prev = prev; next = prev = null; }
+  void execute() { prev = this; }
+  boolean isEmpty() { return next == this; }
 
-  static final AtomicIntegerFieldUpdater<TimerTask> STATE_UPDATER =
-    AtomicIntegerFieldUpdater.newUpdater(TimerTask.class, "state");
-
-  /**
-   * This task has not yet been scheduled.
-   */
-  static final int VIRGIN = 0;
-
-  /**
-   * This task is scheduled for execution.  If it is a non-repeating task,
-   * it has not yet been executed.
-   */
-  static final int SCHEDULED   = 1;
-
-  /**
-   * This non-repeating task has already executed (or is currently
-   * executing) and has not been cancelled.
-   */
-  static final int EXECUTED    = 2;
-
-  /**
-   * This task has been cancelled (with a call to TimerTask.cancel).
-   */
-  static final int CANCELLED   = 3;
-
-  /**
-   * Execution time for this task.
-   */
-  volatile long executionTime;
-
-  /**
-   * Creates a new timer task.
-   */
-  protected TimerTask() {
+  static class Sentinel extends TimerTask {
+    { next = prev = this; }
+    @Override protected void action() { }
   }
 
   /**
@@ -75,45 +45,59 @@ public abstract class TimerTask implements Runnable {
    */
   protected abstract void action();
 
+  protected boolean cancel() {
+    if (next != null) {
+      remove();
+      return true;
+    }
+    return false;
+  }
+
   /**
    * For the special case of immediate execution this implements
    * {@code Runnable}.
    */
   @Override
   public void run() {
-    if (execute()) {
+    if (isExecuted()) {
       action();
     }
   }
 
-  /**
-   * Cancels this timer task.
-   */
-  public boolean cancel() {
-    return STATE_UPDATER.compareAndSet(this, SCHEDULED, CANCELLED);
+  public boolean isUnscheduled() {
+    return time == UNSCHEDULED;
   }
 
-  public boolean execute() {
-    return STATE_UPDATER.compareAndSet(this, SCHEDULED, EXECUTED);
-  }
-
-  public boolean schedule() {
-    return STATE_UPDATER.compareAndSet(this, VIRGIN, SCHEDULED);
+  public boolean isExecuted() {
+    return next == null && prev == this;
   }
 
   public boolean isCancelled() {
-    return state == CANCELLED;
+    return prev == null;
   }
 
   public boolean isScheduled() {
-    return state == SCHEDULED;
+    return time != UNSCHEDULED && !isCancelled();
+  }
+
+  public String getState() {
+    if (isUnscheduled()) {
+      return "unscheduled";
+    }
+    if (isCancelled()) {
+      return "cancelled";
+    }
+    if (isExecuted()) {
+      return "executed";
+    }
+    return "scheduled";
   }
 
   @Override
   public String toString() {
     return this.getClass().getSimpleName() + "{" +
-      "state=" + state +
-      ", executionTime=" + executionTime +
+      "state=" + getState() +
+      ", time=" + time +
       '}';
   }
 

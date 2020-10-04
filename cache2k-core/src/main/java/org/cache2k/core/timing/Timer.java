@@ -29,14 +29,15 @@ public interface Timer {
 
   /**
    * Schedule the specified timer task for execution at the specified
-   * time, in milliseconds.
+   * time, in milliseconds. If the execution time is reached already
+   * the task is executed immediately in a separate thread.
    *
    * @param time the time when the task should be run. must be positive or 0.
    */
   void schedule(TimerTask task, long time);
 
   /**
-   * Cancel a timer task.
+   * Cancel the timer task.
    */
   void cancel(TimerTask t);
 
@@ -48,6 +49,6 @@ public interface Timer {
   /**
    * The lag time tasks may lag behind.
    */
-  long getLag();
+  long getLagMillis();
 
 }

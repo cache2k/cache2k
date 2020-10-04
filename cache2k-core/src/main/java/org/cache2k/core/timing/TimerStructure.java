@@ -26,20 +26,30 @@ package org.cache2k.core.timing;
 public interface TimerStructure {
 
   /**
-   * Insert task.
+   * Insert task. Scheduling might be not possible if tasks for the requested
+   * time have already be run.
    *
-   * @return this is the earliest, update scheduler
+   * @return true if scheduled successfully, false if scheduling was not possible
+   *              because tasks have been run already
    */
-  void schedule(TimerTask task, long time);
+  boolean schedule(TimerTask task, long time);
 
+  /**
+   * Cancel this timer task
+   */
   void cancel(TimerTask t);
 
+  /**
+   * Cancel all tasks
+   */
   void cancel();
 
   /**
-   * Execute tasks
+   * Return a task that is supposed to execute at the given time or earlier.
+   * This also moves the clock hand of the timer structure. Once a time slot
+   * is reached and execution has started the structure does not except scheduling tasks
    *
-   * @return next execution time for scheduler, or 0
+   * @return a task or null, if no more tasks are scheduled for the given time
    */
   TimerTask removeNextToRun(long time);
 
