@@ -82,7 +82,7 @@ import static org.cache2k.core.util.Util.*;
  *
  * @author Jens Wilke; created: 2013-07-09
  */
-@SuppressWarnings("rawtypes")
+@SuppressWarnings({"rawtypes", "SynchronizationOnLocalVariableOrMethodParameter"})
 public class HeapCache<K, V> extends BaseCache<K, V>  implements HeapCacheForEviction<K, V> {
 
   static final CacheOperationCompletionListener DUMMY_LOAD_COMPLETED_LISTENER =
@@ -109,6 +109,7 @@ public class HeapCache<K, V> extends BaseCache<K, V>  implements HeapCacheForEvi
   public CacheManagerImpl manager;
   protected AdvancedCacheLoader<K, V> loader;
   protected InternalClock clock;
+  @SuppressWarnings("unchecked")
   protected Timing<K, V> timing = Timing.ETERNAL;
 
   /** Used for tests */
@@ -199,8 +200,10 @@ public class HeapCache<K, V> extends BaseCache<K, V>  implements HeapCacheForEvi
 
   protected CacheType valueType;
 
+  @SuppressWarnings("unchecked")
   protected ExceptionPropagator<K> exceptionPropagator = DEFAULT_EXCEPTION_PROPAGATOR;
 
+  @SuppressWarnings("unchecked")
   private Collection<CustomizationSupplier<CacheClosedListener>> cacheClosedListeners =
     Collections.EMPTY_LIST;
 
@@ -263,12 +266,10 @@ public class HeapCache<K, V> extends BaseCache<K, V>  implements HeapCacheForEvi
   }
 
   /** called from CacheBuilder */
+  @SuppressWarnings("unchecked")
   public void setCacheConfig(final Cache2kConfiguration c) {
     valueType = c.getValueType();
     keyType = c.getKeyType();
-    if (name != null) {
-      throw new IllegalStateException("already configured");
-    }
     setName(c.getName());
     setFeatureBit(KEEP_AFTER_EXPIRED, c.isKeepDataAfterExpired());
     setFeatureBit(REJECT_NULL_VALUES, !c.isPermitNullValues());
@@ -343,6 +344,7 @@ public class HeapCache<K, V> extends BaseCache<K, V>  implements HeapCacheForEvi
     this.clock = clock;
   }
 
+  @SuppressWarnings("unchecked")
   public void setExceptionPropagator(ExceptionPropagator ep) {
     exceptionPropagator = ep;
   }
@@ -355,9 +357,6 @@ public class HeapCache<K, V> extends BaseCache<K, V>  implements HeapCacheForEvi
    * Set the name and configure a logging, used within cache construction.
    */
   public void setName(String n) {
-    if (n == null) {
-      n = this.getClass().getSimpleName() + "#" + cacheCnt++;
-    }
     name = n;
   }
 
@@ -382,16 +381,11 @@ public class HeapCache<K, V> extends BaseCache<K, V>  implements HeapCacheForEvi
   }
 
   public void initWithoutTimerHandler() {
-    if (name == null) {
-      name = String.valueOf(cacheCnt++);
+    startedTime = clock.millis();
+    if (isRefreshAhead() && timing instanceof Timing.AgnosticTimingHandler) {
+      throw new IllegalArgumentException("refresh ahead enabled, but no expiry variant defined");
     }
-    synchronized (lock) {
-      initializeHeapCache();
-      if (isRefreshAhead() && timing instanceof Timing.AgnosticTimingHandler) {
-        throw new IllegalArgumentException("refresh ahead enabled, but no expiry variant defined");
-      }
-      closing = false;
-    }
+    closing = false;
   }
 
   public void checkClosed() {
@@ -417,12 +411,6 @@ public class HeapCache<K, V> extends BaseCache<K, V>  implements HeapCacheForEvi
     timing.cancelAll();
     hash.clearWhenLocked();
     clearedTime = clock.millis();
-  }
-
-  protected void initializeHeapCache() {
-    if (startedTime == 0) {
-      startedTime = clock.millis();
-    }
   }
 
   /**
@@ -486,6 +474,7 @@ public class HeapCache<K, V> extends BaseCache<K, V>  implements HeapCacheForEvi
     cacheClosedListeners = l;
   }
 
+  @SuppressWarnings("unchecked")
   @Override
   public Iterator<CacheEntry<K, V>> iterator() {
     return new IteratorFilterEntry2Entry(this, iterateAllHeapEntries(), true);
@@ -539,6 +528,7 @@ public class HeapCache<K, V> extends BaseCache<K, V>  implements HeapCacheForEvi
       return false;
     }
 
+    @SuppressWarnings("unchecked")
     @Override
     public CacheEntry<K, V> next() {
       if (entry == null && !hasNext()) {
@@ -615,6 +605,7 @@ public class HeapCache<K, V> extends BaseCache<K, V>  implements HeapCacheForEvi
   }
 
 
+  @SuppressWarnings("unchecked")
   public CacheEntry<K, V> returnCacheEntry(final K key, final V valueOrException) {
     if (valueOrException instanceof ExceptionWrapper) {
       return (ExceptionWrapper) valueOrException;
@@ -639,7 +630,7 @@ public class HeapCache<K, V> extends BaseCache<K, V>  implements HeapCacheForEvi
     return returnEntry(getEntryInternal(key));
   }
 
-  protected Entry getEntryInternal(K key) {
+  protected Entry<K, V> getEntryInternal(K key) {
     int hc = modifiedHash(key.hashCode());
     return getEntryInternal(key, hc, extractIntKeyValue(key, hc));
   }
@@ -648,7 +639,7 @@ public class HeapCache<K, V> extends BaseCache<K, V>  implements HeapCacheForEvi
     if (loader == null) {
       return peekEntryInternal(key, hc, val);
     }
-    Entry e;
+    Entry<K, V> e;
     for (;;) {
       e = lookupOrNewEntry(key, hc, val);
       if (e.hasFreshData(clock)) {
@@ -681,7 +672,7 @@ public class HeapCache<K, V> extends BaseCache<K, V>  implements HeapCacheForEvi
     return e;
   }
 
-  protected void finishLoadOrEviction(Entry e, long nextRefreshTime) {
+  protected void finishLoadOrEviction(Entry<K, V> e, long nextRefreshTime) {
     if (e.getProcessingState() != Entry.ProcessingState.REFRESH) {
       restartTimer(e, nextRefreshTime);
     } else {
@@ -690,12 +681,12 @@ public class HeapCache<K, V> extends BaseCache<K, V>  implements HeapCacheForEvi
     e.processingDone();
   }
 
-  private void restartTimer(Entry e, long nextRefreshTime) {
+  private void restartTimer(Entry<K, V> e, long nextRefreshTime) {
     e.setNextRefreshTime(timing.stopStartTimer(nextRefreshTime, e));
     checkIfImmediatelyExpired(e);
   }
 
-  private void checkIfImmediatelyExpired(Entry e) {
+  private void checkIfImmediatelyExpired(Entry<K, V> e) {
     if (e.isExpiredState()) {
       expireAndRemoveEventuallyAfterProcessing(e);
     }
@@ -707,7 +698,7 @@ public class HeapCache<K, V> extends BaseCache<K, V>  implements HeapCacheForEvi
    * in a parallel thread and may have already selected this
    * entry.
    */
-  protected boolean removeEntry(Entry e) {
+  protected boolean removeEntry(Entry<K, V> e) {
     int hc = extractModifiedHash(e);
     boolean removed;
     OptimisticLock l = hash.getSegmentLock(hc);
@@ -732,7 +723,7 @@ public class HeapCache<K, V> extends BaseCache<K, V>  implements HeapCacheForEvi
     int val = extractIntKeyValue(key, hc);
     boolean hasFreshData;
     V previousValue = null;
-    Entry e;
+    Entry<K, V> e;
     for (;;) {
       e = lookupOrNewEntry(key, hc, val);
       synchronized (e) {
@@ -743,7 +734,7 @@ public class HeapCache<K, V> extends BaseCache<K, V>  implements HeapCacheForEvi
         }
         hasFreshData = e.hasFreshData(clock);
         if (hasFreshData) {
-          previousValue = (V) e.getValueOrException();
+          previousValue = e.getValueOrException();
         } else {
           if (e.isVirgin()) {
             metrics.peekMiss();
@@ -759,7 +750,7 @@ public class HeapCache<K, V> extends BaseCache<K, V>  implements HeapCacheForEvi
 
   @Override
   public V peekAndReplace(K key, V value) {
-    Entry e;
+    Entry<K, V> e;
     for (;;) {
       e = lookupEntry(key);
       if (e == null) { break; }
@@ -770,7 +761,7 @@ public class HeapCache<K, V> extends BaseCache<K, V>  implements HeapCacheForEvi
           continue;
         }
         if (e.hasFreshData(clock)) {
-          V previousValue = (V) e.getValueOrException();
+          V previousValue = e.getValueOrException();
           putValue(e, value);
           return returnValue(previousValue);
         }
@@ -785,7 +776,7 @@ public class HeapCache<K, V> extends BaseCache<K, V>  implements HeapCacheForEvi
    * Update the value directly within entry lock. Since we did not start
    * entry processing we do not need to notify any waiting threads.
    */
-  protected final void putValue(Entry e, V value) {
+  protected final void putValue(Entry<K, V> e, V value) {
     if (!isUpdateTimeNeeded()) {
       insertOrUpdateAndCalculateExpiry(e, value, 0, 0, 0, INSERT_STAT_PUT);
     } else {
@@ -808,7 +799,7 @@ public class HeapCache<K, V> extends BaseCache<K, V>  implements HeapCacheForEvi
    * replace if value matches. if value not matches, return the existing entry or the dummy entry.
    */
   protected boolean replace(K key, boolean compare, V oldValue, V newValue) {
-    Entry e = lookupEntry(key);
+    Entry<K, V> e = lookupEntry(key);
     if (e == null) {
       metrics.peekMiss();
       return false;
@@ -840,7 +831,7 @@ public class HeapCache<K, V> extends BaseCache<K, V>  implements HeapCacheForEvi
   }
 
   protected final Entry<K, V> peekEntryInternal(K key, int hc, int val) {
-    Entry e = lookupEntry(key, hc, val);
+    Entry<K, V> e = lookupEntry(key, hc, val);
     if (e == null) {
       metrics.peekMiss();
       return null;
@@ -933,7 +924,7 @@ public class HeapCache<K, V> extends BaseCache<K, V>  implements HeapCacheForEvi
   @Override
   public boolean putIfAbsent(K key, V value) {
     for (;;) {
-      Entry e = lookupOrNewEntry(key);
+      Entry<K, V> e = lookupOrNewEntry(key);
       synchronized (e) {
         e.waitForProcessing();
         if (e.isGone()) {
@@ -953,7 +944,7 @@ public class HeapCache<K, V> extends BaseCache<K, V>  implements HeapCacheForEvi
   @Override
   public void put(K key, V value) {
     for (;;) {
-      Entry e = lookupOrNewEntry(key);
+      Entry<K, V> e = lookupOrNewEntry(key);
       synchronized (e) {
         e.waitForProcessing();
         if (e.isGone()) {
@@ -971,7 +962,7 @@ public class HeapCache<K, V> extends BaseCache<K, V>  implements HeapCacheForEvi
 
   @Override
   public boolean containsAndRemove(K key) {
-    Entry e = lookupEntryNoHitRecord(key);
+    Entry<K, V> e = lookupEntryNoHitRecord(key);
     if (e == null) {
       return false;
     }
@@ -991,7 +982,7 @@ public class HeapCache<K, V> extends BaseCache<K, V>  implements HeapCacheForEvi
    */
   @Override
   public boolean removeIfEquals(K key, V value) {
-    Entry e = lookupEntry(key);
+    Entry<K, V> e = lookupEntry(key);
     if (e == null) {
       metrics.peekMiss();
       return false;
@@ -1022,7 +1013,7 @@ public class HeapCache<K, V> extends BaseCache<K, V>  implements HeapCacheForEvi
   }
 
   public V peekAndRemove(K key) {
-    Entry e = lookupEntry(key);
+    Entry<K, V> e = lookupEntry(key);
     if (e == null) {
       metrics.peekMiss();
       return null;
@@ -1036,7 +1027,7 @@ public class HeapCache<K, V> extends BaseCache<K, V>  implements HeapCacheForEvi
       V value = null;
       boolean f = e.hasFreshData(clock);
       if (f) {
-        value = (V) e.getValueOrException();
+        value = e.getValueOrException();
       } else {
         metrics.peekHitNotFresh();
       }
@@ -1221,7 +1212,7 @@ public class HeapCache<K, V> extends BaseCache<K, V>  implements HeapCacheForEvi
    * without freshness checks.
    */
   protected void loadAndReplace(K key) {
-    Entry e;
+    Entry<K, V> e;
     for (;;) {
       e = lookupOrNewEntry(key);
       synchronized (e) {
@@ -1253,7 +1244,7 @@ public class HeapCache<K, V> extends BaseCache<K, V>  implements HeapCacheForEvi
   }
 
   protected Entry<K, V> lookupOrNewEntry(K key, int hc, int val) {
-    Entry e = lookupEntry(key, hc, val);
+    Entry<K, V> e = lookupEntry(key, hc, val);
     if (e == null) {
       return insertNewEntry(key, hc, val);
     }
@@ -1262,13 +1253,14 @@ public class HeapCache<K, V> extends BaseCache<K, V>  implements HeapCacheForEvi
 
   protected Entry<K, V> lookupOrNewEntryNoHitRecord(K key) {
     int hc = modifiedHash(key.hashCode());
-    Entry e = lookupEntryNoHitRecord(key, hc, extractIntKeyValue(key, hc));
+    Entry<K, V> e = lookupEntryNoHitRecord(key, hc, extractIntKeyValue(key, hc));
     if (e == null) {
       e = insertNewEntry(key, hc, extractIntKeyValue(key, hc));
     }
     return e;
   }
 
+  @SuppressWarnings("unchecked")
   protected V returnValue(V v) {
     if (v instanceof ExceptionWrapper) {
       ((ExceptionWrapper<K>) v).propagateException();
@@ -1276,6 +1268,7 @@ public class HeapCache<K, V> extends BaseCache<K, V>  implements HeapCacheForEvi
     return v;
   }
 
+  @SuppressWarnings("unchecked")
   protected V returnValue(Entry<K, V> e) {
     V v = e.getValueOrException();
     if (v instanceof ExceptionWrapper) {
@@ -1295,7 +1288,7 @@ public class HeapCache<K, V> extends BaseCache<K, V>  implements HeapCacheForEvi
   }
 
   protected final Entry<K, V> lookupEntry(K key, int hc, int val) {
-    Entry e = lookupEntryNoHitRecord(key, hc, val);
+    Entry<K, V> e = lookupEntryNoHitRecord(key, hc, val);
     if (e != null) {
       recordHit(e);
       return e;
@@ -1376,6 +1369,7 @@ public class HeapCache<K, V> extends BaseCache<K, V>  implements HeapCacheForEvi
     }
   }
 
+  @SuppressWarnings("unchecked")
   protected void load(Entry<K, V> e) {
     V v;
     long t0 = !isUpdateTimeNeeded() ? 0 : clock.millis();
@@ -1393,16 +1387,16 @@ public class HeapCache<K, V> extends BaseCache<K, V>  implements HeapCacheForEvi
         v = loader.load(extractKeyObj(e), t0, e);
       }
       if (v instanceof RefreshedTimeWrapper) {
-        RefreshedTimeWrapper wr = (RefreshedTimeWrapper) v;
+        RefreshedTimeWrapper<V> wr = (RefreshedTimeWrapper<V>) v;
         refreshTime = wr.getRefreshTime();
-        v = (V) wr.getValue();
+        v = wr.getValue();
       }
-    } catch (Throwable _ouch) {
+    } catch (Throwable ouch) {
       long t = t0;
       if (!metrics.isDisabled() && isUpdateTimeNeeded()) {
         t = clock.millis();
       }
-      loadGotException(e, t0, t, _ouch);
+      loadGotException(e, t0, t, ouch);
       return;
     }
     long t = t0;
@@ -1431,6 +1425,7 @@ public class HeapCache<K, V> extends BaseCache<K, V>  implements HeapCacheForEvi
     }
   }
 
+  @SuppressWarnings("unchecked")
   private void loadGotException(Entry<K, V> e, long t0, long t, Throwable wrappedException) {
     ExceptionWrapper<K> value =
       new ExceptionWrapper(extractKeyObj(e), wrappedException, t0, e, exceptionPropagator);
@@ -1469,6 +1464,7 @@ public class HeapCache<K, V> extends BaseCache<K, V>  implements HeapCacheForEvi
    * the expiry policy, one from the resilience policy. We propagate the more severe one from
    * the resilience policy.
    */
+  @SuppressWarnings("unchecked")
   private void resiliencePolicyException(Entry<K, V> e, long t0, long t, Throwable exception) {
     ExceptionWrapper<K> value =
       new ExceptionWrapper(extractKeyObj(e), exception, t0, e, exceptionPropagator);
@@ -1575,6 +1571,7 @@ public class HeapCache<K, V> extends BaseCache<K, V>  implements HeapCacheForEvi
     }
   }
 
+  @SuppressWarnings("unchecked")
   @Override
   public void timerEventRefresh(Entry<K, V> e, Object task) {
     metrics.timerEvent();
@@ -1638,7 +1635,7 @@ public class HeapCache<K, V> extends BaseCache<K, V>  implements HeapCacheForEvi
     }
   }
 
-  protected void expireEntry(Entry e) {
+  protected void expireEntry(Entry<K, V> e) {
     if (e.isGone() || e.isExpiredState()) {
       return;
     }
@@ -1652,7 +1649,7 @@ public class HeapCache<K, V> extends BaseCache<K, V>  implements HeapCacheForEvi
    *
    * @see #expireAndRemoveEventuallyAfterProcessing(Entry)
    */
-  private void expireAndRemoveEventually(Entry e) {
+  private void expireAndRemoveEventually(Entry<K, V> e) {
     if (isKeepAfterExpired() || e.isProcessing()) {
       metrics.expiredKept();
     } else {
@@ -1666,7 +1663,7 @@ public class HeapCache<K, V> extends BaseCache<K, V>  implements HeapCacheForEvi
    *
    * @see #expireAndRemoveEventually
    */
-  private void expireAndRemoveEventuallyAfterProcessing(Entry e) {
+  private void expireAndRemoveEventuallyAfterProcessing(Entry<K, V> e) {
     if (isKeepAfterExpired()) {
       metrics.expiredKept();
     } else {
@@ -1734,6 +1731,7 @@ public class HeapCache<K, V> extends BaseCache<K, V>  implements HeapCacheForEvi
     }
   }
 
+  @SuppressWarnings("unchecked")
   Operations<K, V> spec() { return Operations.SINGLETON; }
 
   @Override
@@ -1930,6 +1928,7 @@ public class HeapCache<K, V> extends BaseCache<K, V>  implements HeapCacheForEvi
       eviction.stop();
       try {
         T result = hash.runTotalLocked(new Job<T>() {
+          @SuppressWarnings("unchecked")
           @Override
           public T call() {
             if (checkClosed) { checkClosed(); }
@@ -2021,7 +2020,6 @@ public class HeapCache<K, V> extends BaseCache<K, V>  implements HeapCacheForEvi
     return new Hash2<K, V>(this);
   }
 
-  @SuppressWarnings({"ConstantConditions"})
   public static class Tunable extends TunableConstants {
 
     /**
