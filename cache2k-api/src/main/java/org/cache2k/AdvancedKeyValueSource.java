@@ -43,6 +43,8 @@ public interface AdvancedKeyValueSource<K, V> extends KeyValueSource<K, V> {
    * near future. For a more detailed description see the cache interface.
    *
    * @see Cache#prefetch(Object)
+   * @deprecated will be removed in 2.0, see
+   *             <a href="https://github.com/cache2k/cache2k/issues/156">Github issue</a>
    */
   void prefetch(K key);
 
@@ -51,6 +53,8 @@ public interface AdvancedKeyValueSource<K, V> extends KeyValueSource<K, V> {
    * near future. For a more detailed description see the cache interface.
    *
    * @see Cache#prefetchAll(Iterable, CacheOperationCompletionListener)
+   * @deprecated will be removed in 2.0, see
+   *             <a href="https://github.com/cache2k/cache2k/issues/156">Github issue</a>
    */
   void prefetchAll(Iterable<? extends K> keys, CacheOperationCompletionListener listener);
 

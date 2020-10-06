@@ -192,6 +192,8 @@ public interface Cache<K, V> extends KeyValueStore<K, V>, Closeable {
    * @param key the key that should be loaded, not {@code null}
    * @see Cache2kBuilder#loaderThreadCount(int)
    * @see Cache2kBuilder#prefetchExecutor(Executor)
+   * @deprecated will be removed in 2.0, see
+   *             <a href="https://github.com/cache2k/cache2k/issues/156">Github issue</a>
    */
   @Override
   void prefetch(K key);
@@ -213,6 +215,8 @@ public interface Cache<K, V> extends KeyValueStore<K, V>, Closeable {
    * @param keys the keys which should be loaded, not {@code null}
    * @param listener Listener interface that is invoked upon completion. May be {@code null} if no
    *          completion notification is needed.
+   * @deprecated will be removed in 2.0, see
+   *             <a href="https://github.com/cache2k/cache2k/issues/156">Github issue</a>
    */
   void prefetchAll(Iterable<? extends K> keys, CacheOperationCompletionListener listener);
 
