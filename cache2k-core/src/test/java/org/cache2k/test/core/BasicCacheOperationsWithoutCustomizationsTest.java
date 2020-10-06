@@ -62,6 +62,7 @@ import java.util.NoSuchElementException;
 import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.TimeUnit;
 
 import static org.cache2k.test.core.StaticUtil.toIterable;
@@ -72,27 +73,22 @@ import static org.hamcrest.Matchers.*;
  * Test basic cache operations on a shared cache in a simple configuration.
  * The cache may hold 1000 entries and has no expiry.
  */
+@SuppressWarnings({"rawtypes", "unchecked"})
 @Category(FastTests.class) @RunWith(Parameterized.class)
 public class BasicCacheOperationsWithoutCustomizationsTest {
 
-  final static Map<Pars, Cache> PARS2CACHE = new ConcurrentHashMap<Pars, Cache>();
+  static final ConcurrentMap<Pars, Cache> PARS2CACHE = new ConcurrentHashMap<Pars, Cache>();
 
   @SuppressWarnings("ThrowableInstanceNeverThrown")
-  final static Exception OUCH = new Exception("ouch");
-  final static Integer KEY = 1;
-  final static Integer OTHER_KEY = 2;
-  final static Integer VALUE = 1;
-  final static Integer OTHER_VALUE = 2;
+  static final Exception OUCH = new Exception("ouch");
+  static final Integer KEY = 1;
+  static final Integer OTHER_KEY = 2;
+  static final Integer VALUE = 1;
+  static final Integer OTHER_VALUE = 2;
 
-  final static long START_TIME = System.currentTimeMillis();
+  static final long START_TIME = System.currentTimeMillis();
 
   static Pars.Builder pars() { return new Pars.Builder(); }
-
-  static void extend(List<Object[]> l, Pars.Builder... parameters) {
-    for (Pars.Builder o : parameters) {
-      l.add(new Object[]{o.build()});
-    }
-  }
 
   @Parameterized.Parameters(name = "{0}")
   public static Collection<Object[]> data() {
@@ -128,7 +124,7 @@ public class BasicCacheOperationsWithoutCustomizationsTest {
     refreshTimeAvailable = pars.recordRefreshTime;
   }
 
-  protected Cache<Integer,Integer> createCache() {
+  protected Cache<Integer, Integer> createCache() {
     Cache2kBuilder b;
     if (pars.useObjectKey) {
       b = Cache2kBuilder.forUnknownTypes();
@@ -153,12 +149,12 @@ public class BasicCacheOperationsWithoutCustomizationsTest {
     if (pars.withExpiryListener) {
       b.addListener(new CacheEntryExpiredListener() {
         @Override
-        public void onEntryExpired(final Cache cache, final CacheEntry entry) {
+        public void onEntryExpired(Cache cache, CacheEntry entry) {
 
         }
       });
     }
-    Cache<Integer,Integer> c = b.build();
+    Cache<Integer, Integer> c = b.build();
     if (pars.withEntryProcessor) {
       c = new EntryProcessorCacheWrapper<Integer, Integer>(c);
     }
@@ -169,31 +165,32 @@ public class BasicCacheOperationsWithoutCustomizationsTest {
   }
 
   /**
-   * Wrap into a proxy and check the exceptions on the abstract cache and then use the forwarding cache.
+   * Wrap into a proxy and check the exceptions on the abstract cache and then use the
+   * forwarding cache.
    */
   protected Cache<Integer, Integer> wrapAbstractAndForwarding(final Cache<Integer, Integer> c) {
-    final Cache<Integer, Integer> _forwardingCache = new ForwardingCache<Integer, Integer>() {
+    final Cache<Integer, Integer> forwardingCache = new ForwardingCache<Integer, Integer>() {
       @Override
       protected Cache<Integer, Integer> delegate() {
         return c;
       }
     };
-    final Cache<Integer, Integer> _abstractCache = new AbstractCache<Integer, Integer>();
+    final Cache<Integer, Integer> abstractCache = new AbstractCache<Integer, Integer>();
     InvocationHandler h = new InvocationHandler() {
       @Override
-      public Object invoke(final Object _proxy, final Method _method, final Object[] _args) throws Throwable {
+      public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
         try {
-          _method.invoke(_abstractCache, _args);
-          if (!_method.getName().equals("toString")) {
-            fail("exception expected for method: " + _method);
+          method.invoke(abstractCache, args);
+          if (!method.getName().equals("toString")) {
+            fail("exception expected for method: " + method);
           }
-        } catch(InvocationTargetException ex) {
+        } catch (InvocationTargetException ex) {
           assertEquals("expected exception",
             UnsupportedOperationException.class, ex.getTargetException().getClass());
         }
         try {
-          return _method.invoke(_forwardingCache, _args);
-        } catch(InvocationTargetException ex) {
+          return method.invoke(forwardingCache, args);
+        } catch (InvocationTargetException ex) {
           throw ex.getTargetException();
         }
       }
@@ -230,8 +227,7 @@ public class BasicCacheOperationsWithoutCustomizationsTest {
 
   @After
   public void cleanupCache() {
-    assertTrue("Tests are not allowed to create private caches",
-      PARS2CACHE.get(pars) == cache);
+    assertSame("Tests are not allowed to create private caches", PARS2CACHE.get(pars), cache);
     cache.requestInterface(InternalCache.class).checkIntegrity();
     cache.clear();
   }
@@ -269,7 +265,7 @@ public class BasicCacheOperationsWithoutCustomizationsTest {
    */
 
   @Test
-  public void intital_Static_Stuff() {
+  public void initial_Static_Stuff() {
     assertFalse(cache.isClosed());
     assertNotNull(cache.getName());
     assertNotNull(cache.getCacheManager());
@@ -327,12 +323,12 @@ public class BasicCacheOperationsWithoutCustomizationsTest {
   void checkRefreshTime(CacheEntry<Integer, Integer> e) {
     long t = cache.invoke(e.getKey(), new EntryProcessor<Integer, Integer, Long>() {
       @Override
-      public Long process(final MutableCacheEntry<Integer, Integer> e) throws Exception {
+      public Long process(MutableCacheEntry<Integer, Integer> e) {
         return e.getRefreshedTime();
       }
     });
     if (refreshTimeAvailable) {
-      assertThat("Timestamp byond start", t, greaterThanOrEqualTo(START_TIME));
+      assertThat("Timestamp beyond start", t, greaterThanOrEqualTo(START_TIME));
     } else {
       assertEquals("No time set", 0, t);
     }
@@ -356,8 +352,8 @@ public class BasicCacheOperationsWithoutCustomizationsTest {
   public void put_Null() {
     cache.put(KEY, null);
     assertTrue(cache.containsKey(KEY));
-    assertEquals(null, cache.peek(KEY));
-    assertEquals(null, cache.get(KEY));
+    assertNull(cache.peek(KEY));
+    assertNull(cache.get(KEY));
   }
 
   @Test(expected = NullPointerException.class)
@@ -410,7 +406,7 @@ public class BasicCacheOperationsWithoutCustomizationsTest {
   public void computeIfAbsent() {
     Integer v = cache.computeIfAbsent(KEY, new Callable<Integer>() {
       @Override
-      public Integer call() throws Exception {
+      public Integer call() {
         return VALUE;
       }
     });
@@ -427,7 +423,7 @@ public class BasicCacheOperationsWithoutCustomizationsTest {
       .expectAllZero();
     v = cache.computeIfAbsent(KEY, new Callable<Integer>() {
       @Override
-      public Integer call() throws Exception {
+      public Integer call() {
         return OTHER_VALUE;
       }
     });
@@ -447,7 +443,7 @@ public class BasicCacheOperationsWithoutCustomizationsTest {
   public void computeIfAbsent_Null() {
     cache.computeIfAbsent(KEY, new Callable<Integer>() {
       @Override
-      public Integer call() throws Exception {
+      public Integer call() {
         return null;
       }
     });
@@ -481,7 +477,7 @@ public class BasicCacheOperationsWithoutCustomizationsTest {
     try {
       cache.computeIfAbsent(KEY, new Callable<Integer>() {
         @Override
-        public Integer call() throws Exception {
+        public Integer call() {
           throw new IllegalArgumentException("for testing");
         }
       });
@@ -774,8 +770,8 @@ public class BasicCacheOperationsWithoutCustomizationsTest {
     statistics()
       .getCount.expect(1)
       .missCount.expect(1)
-      .removeCount.expect(pars.keepDataAfterExpired && pars.withWiredCache ? 1: 0)
-      .expiredCount.expect(pars.keepDataAfterExpired && !pars.withWiredCache ? 1: 0)
+      .removeCount.expect(pars.keepDataAfterExpired && pars.withWiredCache ? 1 : 0)
+      .expiredCount.expect(pars.keepDataAfterExpired && !pars.withWiredCache ? 1 : 0)
       .expectAllZero();
   }
 
@@ -873,7 +869,7 @@ public class BasicCacheOperationsWithoutCustomizationsTest {
     cache.put(KEY, VALUE);
     CacheEntry<Integer, Integer> e = cache.peekEntry(KEY);
     try {
-      long t = cache.peekEntry(e.getKey()).getLastModification();
+      cache.peekEntry(e.getKey()).getLastModification();
       fail("expected UnsupportedOperationException");
     } catch (UnsupportedOperationException ex) {
     }
@@ -921,13 +917,13 @@ public class BasicCacheOperationsWithoutCustomizationsTest {
     cache.put(KEY, VALUE);
     CacheEntry<Integer, Integer> e = cache.getEntry(KEY);
     try {
-      long t = cache.peekEntry(e.getKey()).getLastModification();
+      cache.peekEntry(e.getKey()).getLastModification();
       fail("expected UnsupportedOperationException");
     } catch (UnsupportedOperationException ex) {
     }
   }
 
-  private static void entryHasException(final CacheEntry<Integer, Integer> e) {
+  private static void entryHasException(CacheEntry<Integer, Integer> e) {
     try {
       e.getValue();
       fail("exception expected");
@@ -992,7 +988,7 @@ public class BasicCacheOperationsWithoutCustomizationsTest {
     }
     Iterator<Map.Entry<Integer, Integer>> ei = m.entrySet().iterator();
     assertTrue(ei.hasNext());
-    Map.Entry<Integer,Integer> e = ei.next();
+    Map.Entry<Integer, Integer> e = ei.next();
     assertEquals(KEY, e.getKey());
     try {
       e.getValue();
@@ -1313,7 +1309,7 @@ public class BasicCacheOperationsWithoutCustomizationsTest {
     cache.put(KEY, VALUE);
     cache.put(OTHER_KEY, OTHER_VALUE);
     statistics().reset();
-    Map<Integer,Integer> map = new HashMap<Integer, Integer>();
+    Map<Integer, Integer> map = new HashMap<Integer, Integer>();
     for (CacheEntry<Integer, Integer> ce : cache.entries()) {
       map.put(ce.getKey(), ce.getValue());
     }
@@ -1351,7 +1347,7 @@ public class BasicCacheOperationsWithoutCustomizationsTest {
     cache.put(KEY, VALUE);
     boolean f = cache.invoke(KEY, new EntryProcessor<Integer, Integer, Boolean>() {
       @Override
-      public Boolean process(final MutableCacheEntry<Integer, Integer> e) throws Exception {
+      public Boolean process(MutableCacheEntry<Integer, Integer> e) {
         return e.exists();
       }
     });
@@ -1362,7 +1358,7 @@ public class BasicCacheOperationsWithoutCustomizationsTest {
   public void invoke_mutateWithExpiry() {
     cache.invoke(KEY, new EntryProcessor<Integer, Integer, Object>() {
       @Override
-      public Boolean process(final MutableCacheEntry<Integer, Integer> e) throws Exception {
+      public Boolean process(MutableCacheEntry<Integer, Integer> e) {
         e.setValue(VALUE);
         e.setExpiryTime(ExpiryTimeValues.ETERNAL);
         return null;
@@ -1375,7 +1371,7 @@ public class BasicCacheOperationsWithoutCustomizationsTest {
   public void invoke_mutateWithImmediateExpiry() {
     cache.invoke(KEY, new EntryProcessor<Integer, Integer, Object>() {
       @Override
-      public Boolean process(final MutableCacheEntry<Integer, Integer> e) throws Exception {
+      public Boolean process(MutableCacheEntry<Integer, Integer> e) {
         e.setValue(VALUE);
         e.setExpiryTime(ExpiryTimeValues.NOW);
         return null;
@@ -1384,7 +1380,7 @@ public class BasicCacheOperationsWithoutCustomizationsTest {
     assertFalse(cache.containsKey(KEY));
   }
 
-  final long MILLIS_IN_FUTURE = (2345 - 1970) * 365L * 24 * 60 * 60 * 1000;
+  static final long MILLIS_IN_FUTURE = (2345 - 1970) * 365L * 24 * 60 * 60 * 1000;
 
   @Test
   public void invoke_mutateWithRealExpiry() {
@@ -1392,7 +1388,7 @@ public class BasicCacheOperationsWithoutCustomizationsTest {
     try {
       cache.invoke(KEY, new EntryProcessor<Integer, Integer, Object>() {
         @Override
-        public Boolean process(final MutableCacheEntry<Integer, Integer> e) throws Exception {
+        public Boolean process(MutableCacheEntry<Integer, Integer> e) {
           e.setValue(VALUE);
           e.setExpiryTime(MILLIS_IN_FUTURE);
           return null;
@@ -1430,7 +1426,7 @@ public class BasicCacheOperationsWithoutCustomizationsTest {
     Map<Integer, EntryProcessingResult<Boolean>> res =
       cache.invokeAll(cache.keys(), new EntryProcessor<Integer, Integer, Boolean>() {
         @Override
-        public Boolean process(final MutableCacheEntry<Integer, Integer> e) throws Exception {
+        public Boolean process(MutableCacheEntry<Integer, Integer> e) {
           return e.exists();
         }
       });
@@ -1459,12 +1455,12 @@ public class BasicCacheOperationsWithoutCustomizationsTest {
     assertFalse(cache.keys().iterator().hasNext());
   }
 
-  @Test(expected=UnsupportedOperationException.class)
+  @Test(expected = UnsupportedOperationException.class)
   public void loadAll() {
     cache.loadAll(toIterable(KEY, OTHER_KEY), null);
   }
 
-  @Test(expected=UnsupportedOperationException.class)
+  @Test(expected = UnsupportedOperationException.class)
   public void reloadAll() {
     cache.reloadAll(toIterable(KEY, OTHER_KEY), null);
   }
@@ -1484,7 +1480,7 @@ public class BasicCacheOperationsWithoutCustomizationsTest {
     if (!(cache instanceof InternalCache)) {
       return;
     }
-    InternalCache c = (InternalCache) cache;
+    InternalCache<Integer, Integer> c = (InternalCache<Integer, Integer>) cache;
     String s = c.getEntryState(KEY);
     assertNull(s);
     cache.put(KEY, VALUE);
@@ -1499,27 +1495,29 @@ public class BasicCacheOperationsWithoutCustomizationsTest {
     }
     Integer k = KEY;
     assignException(k);
-    InternalCache c = (InternalCache) cache;
+    InternalCache<Integer, Integer> c = (InternalCache<Integer, Integer>) cache;
     String s = c.getEntryState(KEY);
     assertTrue(s.contains("exception="));
   }
 
-  private void assignException(final Integer key) {
+  private void assignException(Integer key) {
     cache.invoke(key, new EntryProcessor<Integer, Integer, Object>() {
       @Override
-      public Object process(final MutableCacheEntry<Integer, Integer> e) throws Exception {
+      public Object process(MutableCacheEntry<Integer, Integer> e) {
         e.setException(OUCH);
         return null;
       }
     });
   }
 
+  @SuppressWarnings("ConstantConditions")
   @Test
-  public void requstInterface() {
+  public void requestInterface() {
     assertNull(cache.requestInterface(Integer.class));
     assertTrue(cache.requestInterface(Map.class) instanceof Map);
   }
 
+  @SuppressWarnings("deprecation")
   @Test
   public void checkImpl() {
     InternalCache ic = cache.requestInterface(InternalCache.class);
@@ -1544,7 +1542,7 @@ public class BasicCacheOperationsWithoutCustomizationsTest {
     boolean withExpiryListener = false;
 
     @Override
-    public boolean equals(final Object o) {
+    public boolean equals(Object o) {
       if (this == o) return true;
       if (o == null || getClass() != o.getClass()) return false;
 
@@ -1592,6 +1590,7 @@ public class BasicCacheOperationsWithoutCustomizationsTest {
         ", withExpiryListener=" + withExpiryListener;
     }
 
+    @SuppressWarnings({"SameParameterValue"})
     static class Builder {
 
       Pars pars = new Pars();
@@ -1622,19 +1621,19 @@ public class BasicCacheOperationsWithoutCustomizationsTest {
         pars.keepDataAfterExpired = v; return this;
       }
 
-      public Builder withForwardingAndAbstract(final boolean v) {
+      public Builder withForwardingAndAbstract(boolean v) {
         pars.withForwardingAndAbstract = v; return this;
         }
 
-      public Builder withExpiryAfterWrite(final boolean v) {
+      public Builder withExpiryAfterWrite(boolean v) {
         pars.withExpiryAfterWrite = v; return this;
       }
 
-      public Builder useObjectKey(final boolean v) {
+      public Builder useObjectKey(boolean v) {
         pars.useObjectKey = v; return this;
       }
 
-      public Builder withExpiryListener(final boolean v) {
+      public Builder withExpiryListener(boolean v) {
         pars.withExpiryListener = v; return this;
       }
 
@@ -1659,21 +1658,22 @@ public class BasicCacheOperationsWithoutCustomizationsTest {
         }
 
       });
-      add(new Pars.Builder().withEntryProcessor(true).build());
-      add(new Pars.Builder().withEntryProcessor(true).withWiredCache(true).build());
-      add(new Pars.Builder().useObjectKey(true).build());
-      add(new Pars.Builder().useObjectKey(true).withWiredCache(true).build());
+      add(pars().withEntryProcessor(true).build());
+      add(pars().withEntryProcessor(true).withWiredCache(true).build());
+      add(pars().useObjectKey(true).build());
+      add(pars().useObjectKey(true).withWiredCache(true).build());
       add(pars().withForwardingAndAbstract(true).build());
       add(pars().withExpiryListener(true).build());
+      add(pars().strictEviction(true).build());
     }
 
   }
 
-  static abstract class VariantIterator<T> extends AbstractCollection<T> {
+  abstract static class VariantIterator<T> extends AbstractCollection<T> {
 
     private long variant = 0;
     private long shiftRight;
-    private Set<T> collection = new HashSet<T>();
+    private final Set<T> collection = new HashSet<T>();
 
     {
       while (shiftRight == 0) {
