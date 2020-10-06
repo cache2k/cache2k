@@ -76,6 +76,10 @@ public interface ExpiryPolicy<K, V> extends ExpiryTimeValues {
    * policy returns a different time value, a {@code NullPointerException} will be propagated
    * if {@code null} values are not permitted.
    *
+   * <p><b>Loader exceptions</b></p> The expiry policy is only called for a successful load
+   * operation. If the previous load operation resulted in an exception {@code oldEntry.getValue()}
+   * propagates the exception and {@code oldEntry.getException()} returns it.
+   *
    * <p><b>API rationale:</b> The recently loaded or inserted data is not passed in via a cache
    * entry object. Using a cache entry is desirable for API design reasons to have a thinner
    * interface. But the "real" entry can only be filled after the expiry policy is done, passing
@@ -91,6 +95,7 @@ public interface ExpiryPolicy<K, V> extends ExpiryTimeValues {
    * @param oldEntry entry representing the current mapping, if there is a value present.
    *                  If the old entry holds an exception, this is {@code null}. Expired entries
    *                  will be passed in as well if still in the cache.
+   *                 If a previous load threw an exception, the entry contains the exception.
    * @return the time of expiry in millis since epoch. {@link #NOW} if it should not
    *         cached. If {@link Cache2kBuilder#refreshAhead} is enabled the return value
    *         {@link #NOW} will trigger an immediate refresh.

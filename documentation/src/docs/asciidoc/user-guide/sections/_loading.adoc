@@ -52,17 +52,6 @@ contains additional details.
 Instead the abstract loader class, there is also a functional interface available for use with
 Java 8.
 
-=== Prefetching
-
-The cache can be instructed to load one or several values in the background with
-the `prefetch()` or `prefetchAll()` operations. This way data retrieval can be
-done in parallel and latencies can be reduced.
-
-The number of threads used for prefetching is configured by `loaderThreadCount`.
-
-The operation may have no effect if no loader is defined or if not enough threads
-are available.
-
 === Invalidating
 
 In case the data was updated in the external source, the current cache content
@@ -88,6 +77,8 @@ This variant is the better choice if outdated values are allowed to be visible i
 a temporary failure. An inconsistency is only allowed when a temporary failure occurs.
 
 `Cache.expireAt(key, Expiry.REFRESH)`::
+
+TODO 2.0: Will be removed for 2.0. Maybe gets extra method in the future.
 
 When invalidating an entry via `Cache.expireAt(key, Expiry.REFRESH)` the loader
 gets invoked instantly if refresh ahead is enabled. If the loader is invoked, the current value

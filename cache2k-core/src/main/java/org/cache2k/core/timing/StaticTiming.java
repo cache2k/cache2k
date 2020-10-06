@@ -20,6 +20,7 @@ package org.cache2k.core.timing;
  * #L%
  */
 
+import org.cache2k.CacheEntry;
 import org.cache2k.configuration.Cache2kConfiguration;
 import org.cache2k.configuration.CustomizationReferenceSupplier;
 import org.cache2k.configuration.CustomizationSupplier;
@@ -271,13 +272,13 @@ public class StaticTiming<K, V> extends Timing<K, V> {
   }
 
   static <K, T> long calcNextRefreshTime(
-    K key, T newObject, long now, Entry entry,
-    ExpiryPolicy<K, T> ec, long maxLinger, boolean sharpExpiryEnabled) {
+    K key, T newValue, long now, CacheEntry entry,
+    ExpiryPolicy<K, T> policy, long maxLinger, boolean sharpExpiryEnabled) {
     if (maxLinger == 0) {
       return 0;
     }
-    if (ec != null) {
-      long t = ec.calculateExpiryTime(key, newObject, now, entry);
+    if (policy != null) {
+      long t = policy.calculateExpiryTime(key, newValue, now, entry);
       return limitExpiryToMaxLinger(now, maxLinger, t, sharpExpiryEnabled);
     }
     if (maxLinger < ExpiryPolicy.ETERNAL) {

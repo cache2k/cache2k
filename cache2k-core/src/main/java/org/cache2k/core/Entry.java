@@ -103,7 +103,12 @@ class CompactEntry<K, V> {
     return ve.equals(v);
   }
 
-  @Deprecated
+  /**
+   * Should never be called under normal circumstances. For efficiency reasons the entry is
+   * handed to the expiry policy directly, before it is screened for an exception.
+   *
+   * @Deprecated May only be called as CacheEntry before screening for exceptions.
+   */
   public V getValue() {
     return valueOrException;
   }

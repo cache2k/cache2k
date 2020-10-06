@@ -266,6 +266,46 @@ public class ExpiryTest extends TestingBase {
     assertEquals("miss", 3, g.getLoaderCalledCount());
   }
 
+  @Test
+  public void loadExceptionEntryGetValueInExpiryPolicy() {
+    final AtomicBoolean success = new AtomicBoolean();
+    IntCountingCacheSource g = new IntCountingCacheSource() {
+      @Override
+      public Integer load(Integer o) {
+        incrementLoadCalledCount();
+        if (getLoaderCalledCount() == 1) {
+          throw new RuntimeException("ouch");
+        }
+        return o;
+      }
+    };
+    Cache<Integer, Integer> c = cache = builder(Integer.class, Integer.class)
+      .loader(g)
+      .expiryPolicy(new ExpiryPolicy<Integer, Integer>() {
+        @Override
+        public long calculateExpiryTime(Integer key, Integer value, long loadTime,
+                                        CacheEntry<Integer, Integer> oldEntry) {
+          if (oldEntry != null) {
+            try {
+              oldEntry.getValue();
+              fail("expect exception");
+            } catch (CacheLoaderException expected) {
+              success.set(true);
+            }
+          }
+          return 0;
+        }
+      })
+      .build();
+    try {
+      c.get(1);
+      fail("exception expected");
+    } catch (CacheLoaderException expected) {
+    }
+    reload(1);
+    assertTrue(success.get());
+  }
+
   /**
    * Switching to eternal means exceptions expire immediately.
    */

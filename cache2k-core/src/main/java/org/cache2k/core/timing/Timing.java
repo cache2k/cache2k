@@ -24,15 +24,11 @@ import org.cache2k.configuration.Cache2kConfiguration;
 import org.cache2k.CacheEntry;
 import org.cache2k.core.Entry;
 import org.cache2k.core.ExceptionWrapper;
-import org.cache2k.core.HeapCache;
 import org.cache2k.core.InternalCache;
 import org.cache2k.core.util.InternalClock;
 import org.cache2k.core.util.Util;
-import org.cache2k.expiry.Expiry;
 import org.cache2k.expiry.ExpiryPolicy;
 import org.cache2k.expiry.ValueWithExpiryTime;
-import org.cache2k.core.util.TunableConstants;
-import org.cache2k.core.util.TunableFactory;
 import org.cache2k.integration.ExceptionInformation;
 import org.cache2k.integration.ResiliencePolicy;
 
@@ -124,7 +120,7 @@ public abstract class Timing<K, V>  {
   /**
    * Calculates the expiry time for a value that was just loaded or inserted into the cache.
    *
-   * @param e The entry, filled with the previous value if there is a value present alreay.
+   * @param e The entry, filled with the previous value if there is a value present already.
    * @param v The new value or an exception wrapped in {@link ExceptionWrapper}
    * @param loadTime the time immediately before the load started
    * @return Point in time when the entry should expire. Meaning identical to

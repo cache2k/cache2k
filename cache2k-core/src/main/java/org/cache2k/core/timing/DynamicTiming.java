@@ -20,10 +20,12 @@ package org.cache2k.core.timing;
  * #L%
  */
 
+import org.cache2k.CacheEntry;
 import org.cache2k.configuration.Cache2kConfiguration;
 import org.cache2k.configuration.CustomizationReferenceSupplier;
 import org.cache2k.configuration.CustomizationSupplier;
 import org.cache2k.core.Entry;
+import org.cache2k.core.ExceptionWrapper;
 import org.cache2k.core.InternalCache;
 import org.cache2k.core.util.InternalClock;
 import org.cache2k.expiry.ExpiryPolicy;
@@ -74,21 +76,22 @@ class DynamicTiming<K, V> extends StaticTiming<K, V> {
     policyFactory = null;
   }
 
-  long calcNextRefreshTime(K key, V newObject, long now, Entry entry) {
+  long calcNextRefreshTime(K key, V newObject, long now, CacheEntry entry) {
     return calcNextRefreshTime(
       key, newObject, now, entry,
       expiryPolicy, expiryMillis, sharpExpiry);
   }
 
   public long calculateNextRefreshTime(Entry<K, V> entry, V newValue, long loadTime) {
-    long t;
     if (entry.isDataAvailable() || entry.isExpiredState()
       || entry.getNextRefreshTime() == Entry.EXPIRED_REFRESH_PENDING) {
-      t = calcNextRefreshTime(entry.getKey(), newValue, loadTime, entry);
+      CacheEntry currentEntry = entry;
+      Object obj = entry.getValueOrException();
+      if (obj instanceof ExceptionWrapper) { currentEntry = (CacheEntry) obj; }
+      return calcNextRefreshTime(entry.getKey(), newValue, loadTime, currentEntry);
     } else {
-      t = calcNextRefreshTime(entry.getKey(), newValue, loadTime, null);
+      return calcNextRefreshTime(entry.getKey(), newValue, loadTime, null);
     }
-    return t;
   }
 
   @Override
