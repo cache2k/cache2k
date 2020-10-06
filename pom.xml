@@ -101,9 +101,10 @@
             <useIncrementalCompilation>false</useIncrementalCompilation>
             <source>1.6</source>
             <target>1.6</target>
+            <!-- disable unchecked and deprecation warnings -->
             <compilerArgs>
-              <arg>-Xlint:deprecation</arg>
-              <arg>-Xlint:unchecked</arg>
+              <arg>-Xlint:-deprecation</arg>
+              <arg>-Xlint:-unchecked</arg>
             </compilerArgs>
           </configuration>
         </plugin>
