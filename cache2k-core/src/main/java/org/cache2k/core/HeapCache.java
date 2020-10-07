@@ -39,6 +39,7 @@ import org.cache2k.core.concurrency.Job;
 import org.cache2k.core.concurrency.OptimisticLock;
 import org.cache2k.core.concurrency.ThreadFactoryProvider;
 
+import org.cache2k.core.timing.TimeAgnosticTiming;
 import org.cache2k.core.timing.Timing;
 import org.cache2k.core.util.InternalClock;
 import org.cache2k.core.util.Log;
@@ -51,11 +52,13 @@ import org.cache2k.integration.ExceptionPropagator;
 import org.cache2k.integration.RefreshedTimeWrapper;
 import org.cache2k.processor.EntryProcessor;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Set;
@@ -83,7 +86,7 @@ import static org.cache2k.core.util.Util.*;
  * @author Jens Wilke; created: 2013-07-09
  */
 @SuppressWarnings({"rawtypes", "SynchronizationOnLocalVariableOrMethodParameter"})
-public class HeapCache<K, V> extends BaseCache<K, V>  implements HeapCacheForEviction<K, V> {
+public class HeapCache<K, V> extends BaseCache<K, V> implements HeapCacheForEviction<K, V> {
 
   static final CacheOperationCompletionListener DUMMY_LOAD_COMPLETED_LISTENER =
     new CacheOperationCompletionListener() {
@@ -98,8 +101,6 @@ public class HeapCache<K, V> extends BaseCache<K, V>  implements HeapCacheForEvi
     }
   };
 
-  static int cacheCnt = 0;
-
   public static final Tunable TUNABLE = TunableFactory.get(Tunable.class);
 
   public static final ExceptionPropagator DEFAULT_EXCEPTION_PROPAGATOR =
@@ -110,7 +111,7 @@ public class HeapCache<K, V> extends BaseCache<K, V>  implements HeapCacheForEvi
   protected AdvancedCacheLoader<K, V> loader;
   protected InternalClock clock;
   @SuppressWarnings("unchecked")
-  protected Timing<K, V> timing = Timing.ETERNAL;
+  protected Timing<K, V> timing = TimeAgnosticTiming.ETERNAL;
 
   /** Used for tests */
   public Timing<K, V> getTiming() {
@@ -203,9 +204,7 @@ public class HeapCache<K, V> extends BaseCache<K, V>  implements HeapCacheForEvi
   @SuppressWarnings("unchecked")
   protected ExceptionPropagator<K> exceptionPropagator = DEFAULT_EXCEPTION_PROPAGATOR;
 
-  @SuppressWarnings("unchecked")
-  private Collection<CustomizationSupplier<CacheClosedListener>> cacheClosedListeners =
-    Collections.EMPTY_LIST;
+  private Collection<CacheClosedListener> cacheClosedListeners = Collections.emptyList();
 
   private int featureBits = 0;
 
@@ -267,20 +266,21 @@ public class HeapCache<K, V> extends BaseCache<K, V>  implements HeapCacheForEvi
 
   /** called from CacheBuilder */
   @SuppressWarnings("unchecked")
-  public void setCacheConfig(final Cache2kConfiguration c) {
-    valueType = c.getValueType();
-    keyType = c.getKeyType();
-    setName(c.getName());
-    setFeatureBit(KEEP_AFTER_EXPIRED, c.isKeepDataAfterExpired());
-    setFeatureBit(REJECT_NULL_VALUES, !c.isPermitNullValues());
-    setFeatureBit(BACKGROUND_REFRESH, c.isRefreshAhead());
-    setFeatureBit(UPDATE_TIME_NEEDED, c.isRecordRefreshedTime());
-    setFeatureBit(RECORD_REFRESH_TIME, c.isRecordRefreshedTime());
+  public void setCacheConfig(CacheBuildContext<K, V> buildContext) {
+    final Cache2kConfiguration<K, V> cfg = buildContext.getConfiguration();
+    valueType = cfg.getValueType();
+    keyType = cfg.getKeyType();
+    setName(cfg.getName());
+    setFeatureBit(KEEP_AFTER_EXPIRED, cfg.isKeepDataAfterExpired());
+    setFeatureBit(REJECT_NULL_VALUES, !cfg.isPermitNullValues());
+    setFeatureBit(BACKGROUND_REFRESH, cfg.isRefreshAhead());
+    setFeatureBit(UPDATE_TIME_NEEDED, cfg.isRecordRefreshedTime());
+    setFeatureBit(RECORD_REFRESH_TIME, cfg.isRecordRefreshedTime());
 
     metrics = TUNABLE.commonMetricsFactory.create(new CommonMetricsFactory.Parameters() {
       @Override
       public boolean isDisabled() {
-        return c.isDisableStatistics();
+        return cfg.isDisableStatistics();
       }
 
       @Override
@@ -289,21 +289,22 @@ public class HeapCache<K, V> extends BaseCache<K, V>  implements HeapCacheForEvi
       }
     });
 
-    if (c.getLoaderExecutor() != null) {
-      loaderExecutor = createCustomization((CustomizationSupplier<Executor>) c.getLoaderExecutor());
+    if (cfg.getLoaderExecutor() != null) {
+      loaderExecutor = buildContext.createCustomization(cfg.getLoaderExecutor());
     } else {
-      if (c.getLoaderThreadCount() > 0) {
-        loaderExecutor = provideDefaultLoaderExecutor(c.getLoaderThreadCount());
+      if (cfg.getLoaderThreadCount() > 0) {
+        loaderExecutor = provideDefaultLoaderExecutor(cfg.getLoaderThreadCount());
       }
     }
-    if (c.getRefreshExecutor() != null) {
-      refreshExecutor =
-        createCustomization((CustomizationSupplier<Executor>) c.getRefreshExecutor());
-    }
-    if (c.getExecutor() != null) {
-      executor = createCustomization((CustomizationSupplier<Executor>) c.getExecutor());
-    } else {
-      executor = SHARED_EXECUTOR;
+    refreshExecutor =
+      buildContext.createCustomization(cfg.getRefreshExecutor(), new LazyRefreshExecutor());
+    executor = buildContext.createCustomization(cfg.getExecutor(), SHARED_EXECUTOR);
+    if (cfg.hasCacheClosedListeners()) {
+      List<CacheClosedListener> listeners = new ArrayList<CacheClosedListener>();
+      for (CustomizationSupplier<CacheClosedListener> sup : cfg.getCacheClosedListeners()) {
+        listeners.add(buildContext.createCustomization(sup));
+      }
+      cacheClosedListeners = listeners;
     }
   }
 
@@ -335,7 +336,7 @@ public class HeapCache<K, V> extends BaseCache<K, V>  implements HeapCacheForEvi
 
   public void setTiming(Timing<K, V> rh) {
     timing = rh;
-    if (!(rh instanceof Timing.AgnosticTimingHandler)) {
+    if (!(rh instanceof TimeAgnosticTiming)) {
       setFeatureBit(UPDATE_TIME_NEEDED, true);
     }
   }
@@ -376,13 +377,13 @@ public class HeapCache<K, V> extends BaseCache<K, V>  implements HeapCacheForEvi
   public CacheType getValueType() { return valueType; }
 
   public void init() {
-    timing.init(this);
+    timing.setTarget(this);
     initWithoutTimerHandler();
   }
 
   public void initWithoutTimerHandler() {
     startedTime = clock.millis();
-    if (isRefreshAhead() && timing instanceof Timing.AgnosticTimingHandler) {
+    if (isRefreshAhead() && timing instanceof TimeAgnosticTiming) {
       throw new IllegalArgumentException("refresh ahead enabled, but no expiry variant defined");
     }
     closing = false;
@@ -458,20 +459,16 @@ public class HeapCache<K, V> extends BaseCache<K, V>  implements HeapCacheForEvi
       @Override
       public Void call() {
         eviction.close();
-        timing.close();
+        timing.close(HeapCache.this);
         hash.close();
         closeCustomization(loader, "loader");
-        for (CustomizationSupplier<CacheClosedListener> s : cacheClosedListeners) {
-          createCustomization(s).onCacheClosed(userCache);
+        for (CacheClosedListener s : cacheClosedListeners) {
+          s.onCacheClosed(userCache);
         }
         manager.cacheDestroyed(userCache);
         return null;
       }
     }, false);
-  }
-
-  public void setCacheClosedListeners(Collection<CustomizationSupplier<CacheClosedListener>> l) {
-    cacheClosedListeners = l;
   }
 
   @SuppressWarnings("unchecked")

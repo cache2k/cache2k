@@ -22,10 +22,10 @@ package org.cache2k.core.timing;
 
 import org.cache2k.configuration.Cache2kConfiguration;
 import org.cache2k.CacheEntry;
+import org.cache2k.core.CacheBuildContext;
+import org.cache2k.core.CacheCloseContext;
 import org.cache2k.core.Entry;
 import org.cache2k.core.ExceptionWrapper;
-import org.cache2k.core.InternalCache;
-import org.cache2k.core.util.InternalClock;
 import org.cache2k.core.util.Util;
 import org.cache2k.expiry.ExpiryPolicy;
 import org.cache2k.expiry.ValueWithExpiryTime;
@@ -37,14 +37,8 @@ import org.cache2k.integration.ResiliencePolicy;
  *
  * @author Jens Wilke
  */
-@SuppressWarnings({"unchecked", "rawtypes"})
+@SuppressWarnings({"unchecked"})
 public abstract class Timing<K, V>  {
-
-  /** Used as default */
-  public static final Timing ETERNAL = new EternalTiming();
-  public static final Timing ETERNAL_IMMEDIATE = new EternalImmediate();
-
-  private static final Timing IMMEDIATE = new Immediate();
 
   /**
    * Instance of expiry calculator that extracts the expiry time from the value.
@@ -67,16 +61,17 @@ public abstract class Timing<K, V>  {
     return t == 0 || t == -1;
   }
 
-  public static <K, V> Timing<K, V> of(InternalClock clock, Cache2kConfiguration<K, V> cfg) {
+  public static <K, V> Timing<K, V> of(CacheBuildContext<K, V> buildContext) {
+    Cache2kConfiguration<K, V> cfg = buildContext.getConfiguration();
     if (cfg.getExpireAfterWrite() == 0
       && zeroOrUnspecified(cfg.getRetryInterval())) {
-      return IMMEDIATE;
+      return TimeAgnosticTiming.IMMEDIATE;
     }
     if (cfg.getExpiryPolicy() != null
       || (cfg.getValueType() != null
         && ValueWithExpiryTime.class.isAssignableFrom(cfg.getValueType().getType()))
       || cfg.getResiliencePolicy() != null) {
-      DynamicTiming<K, V> h = new DynamicTiming<K, V>(clock, cfg);
+      DynamicTiming<K, V> h = new DynamicTiming<K, V>(buildContext);
       return h;
     }
     if (cfg.getResilienceDuration() > 0 && !cfg.isSuppressExceptions()) {
@@ -86,36 +81,33 @@ public abstract class Timing<K, V>  {
     if (realDuration(cfg.getExpireAfterWrite())
       || realDuration(cfg.getRetryInterval())
       || realDuration(cfg.getResilienceDuration())) {
-      StaticTiming<K, V> h = new StaticTiming<K, V>(clock, cfg);
+      StaticTiming<K, V> h = new StaticTiming<K, V>(buildContext);
       return h;
     }
     if ((cfg.getExpireAfterWrite() == ExpiryPolicy.ETERNAL || cfg.getExpireAfterWrite() == -1)) {
       if (zeroOrUnspecified(cfg.getRetryInterval())) {
-        return ETERNAL_IMMEDIATE;
+        return TimeAgnosticTiming.ETERNAL_IMMEDIATE;
       }
       if (cfg.getRetryInterval() == ExpiryPolicy.ETERNAL) {
-        return ETERNAL;
+        return TimeAgnosticTiming.ETERNAL;
       }
     }
     throw new IllegalArgumentException("expiry time ambiguous");
   }
 
   /**
-   * Initialize timer, if needed.
+   * Set the target for timer events. Called during cache build before any timer
+   * tasks are created. For each cache instance there is a timing instance and both
+   * reference each other. We create timing first, then the cache.
    */
-  public void init(InternalCache<K, V> c) { }
+  public void setTarget(TimerEventListener<K, V> c) { }
 
   /**
    * Cancels all pending timer events.
    */
   public void cancelAll() { }
 
-  public void close() { }
-
-  /**
-   * Return effective expiry policy, or null
-   */
-  public ExpiryPolicy<K, V> getExpiryPolicy() { return null; }
+  public void close(CacheCloseContext closeContext) { }
 
   /**
    * Calculates the expiry time for a value that was just loaded or inserted into the cache.
@@ -173,47 +165,5 @@ public abstract class Timing<K, V>  {
    * Schedule second timer event for the expiry tie if sharp expiry is switched on.
    */
   public void scheduleFinalTimerForSharpExpiry(Entry<K, V> e) { }
-
-  /**
-   * Base class for all timing handlers that actually need not to know the current time.
-   */
-  public abstract static class AgnosticTimingHandler<K, V> extends Timing<K, V> { }
-
-  static class EternalImmediate<K, V> extends AgnosticTimingHandler<K, V> {
-
-    @Override
-    public long calculateNextRefreshTime(Entry<K, V> e, V v, long loadTime) {
-      return ExpiryPolicy.ETERNAL;
-    }
-
-    @Override
-    public long cacheExceptionUntil(Entry<K, V> e, ExceptionInformation inf) {
-      return 0;
-    }
-
-    @Override
-    public long suppressExceptionUntil(Entry<K, V> e, ExceptionInformation inf) {
-      return 0;
-    }
-
-  }
-
-  static class Immediate<K, V> extends AgnosticTimingHandler<K, V> {
-
-    @Override
-    public long calculateNextRefreshTime(Entry<K, V> e, V v, long loadTime) {
-      return 0;
-    }
-
-    @Override
-    public long cacheExceptionUntil(Entry<K, V> e, ExceptionInformation inf) {
-      return 0;
-    }
-
-    @Override
-    public long suppressExceptionUntil(Entry<K, V> e, ExceptionInformation inf) {
-      return 0;
-    }
-  }
 
 }

@@ -22,6 +22,7 @@ package org.cache2k.core;
 
 import org.cache2k.Cache2kBuilder;
 import org.cache2k.CacheEntry;
+import org.cache2k.CustomizationException;
 import org.cache2k.configuration.CustomizationSupplier;
 import org.cache2k.core.eviction.EvictionFactory;
 import org.cache2k.core.operation.ExaminationEntry;
@@ -58,13 +59,14 @@ import java.util.concurrent.atomic.AtomicLong;
  * @author Jens Wilke
  */
 @SuppressWarnings("rawtypes")
-public class InternalCache2kBuilder<K, V> {
+public class InternalCache2kBuilder<K, V> implements CacheBuildContext<K, V> {
 
   private static final AtomicLong DERIVED_NAME_COUNTER =
     new AtomicLong(System.currentTimeMillis() % 1234);
 
   private final CacheManagerImpl manager;
   private final Cache2kConfiguration<K, V> config;
+  private InternalClock clock;
 
   public InternalCache2kBuilder(Cache2kConfiguration<K, V> config,
                                 CacheManager manager) {
@@ -97,6 +99,35 @@ public class InternalCache2kBuilder<K, V> {
     throw new IllegalArgumentException("name missing and automatic generation failed");
   }
 
+  @Override
+  public InternalClock getClock() {
+    return clock;
+  }
+
+  @Override
+  public Cache2kConfiguration<K, V> getConfiguration() {
+    return config;
+  }
+
+  @Override
+  public CacheManager getCacheManager() {
+    return manager;
+  }
+
+  @Override
+  public <T> T createCustomization(CustomizationSupplier<T> supplier, T fallback) {
+    if (supplier == null) { return fallback; }
+    try {
+      return supplier.supply(getCacheManager());
+    } catch (Exception ex) {
+      throw new CustomizationException("Initialization of customization failed", ex);
+    }
+  }
+
+  public <T> T createCustomization(CustomizationSupplier<T> supplier) {
+    return createCustomization(supplier, null);
+  }
+
   /**
    * The generic wiring code is not working on android.
    * Explicitly call the wiring methods.
@@ -104,7 +135,7 @@ public class InternalCache2kBuilder<K, V> {
   @SuppressWarnings("unchecked")
   private void configureViaSettersDirect(HeapCache<K, V> c) {
     if (config.getLoader() != null) {
-      Object obj =  c.createCustomization(config.getLoader());
+      Object obj =  createCustomization(config.getLoader());
       if (obj instanceof CacheLoader) {
         final CacheLoader<K, V> loader = (CacheLoader) obj;
         c.setAdvancedLoader(new AdvancedCacheLoader<K, V>() {
@@ -126,14 +157,14 @@ public class InternalCache2kBuilder<K, V> {
       }
     }
     if (config.getAdvancedLoader() != null) {
-      AdvancedCacheLoader<K, V> loader = c.createCustomization(config.getAdvancedLoader());
+      AdvancedCacheLoader<K, V> loader = createCustomization(config.getAdvancedLoader());
       AdvancedCacheLoader<K, V> wrappedLoader = new WrappedAdvancedCacheLoader<K, V>(c, loader);
       c.setAdvancedLoader(wrappedLoader);
     }
     if (config.getExceptionPropagator() != null) {
-      c.setExceptionPropagator(c.createCustomization(config.getExceptionPropagator()));
+      c.setExceptionPropagator(createCustomization(config.getExceptionPropagator()));
     }
-    c.setCacheConfig(config);
+    c.setCacheConfig(this);
   }
 
   private static class WrappedAdvancedCacheLoader<K, V> extends AdvancedCacheLoader<K, V>
@@ -195,18 +226,14 @@ public class InternalCache2kBuilder<K, V> {
     } else {
       cache = new HeapCache<K, V>();
     }
-    InternalClock timeReference =
-      (InternalClock) cache.createCustomization(config.getTimeReference());
-    if (timeReference == null) {
-      timeReference = DefaultClock.INSTANCE;
+    clock = (InternalClock) createCustomization(config.getTimeReference());
+    if (clock == null) {
+      clock = DefaultClock.INSTANCE;
     }
     HeapCache bc = (HeapCache) cache;
     bc.setCacheManager(manager);
-    if (config.hasCacheClosedListeners()) {
-      bc.setCacheClosedListeners(config.getCacheClosedListeners());
-    }
     configureViaSettersDirect(bc);
-    bc.setClock(timeReference);
+    bc.setClock(clock);
 
     if (config.isRefreshAhead() && !(
           config.getAsyncLoader() != null ||
@@ -240,8 +267,8 @@ public class InternalCache2kBuilder<K, V> {
     bc.setName(name);
     if (wrap) {
       wc.loader = bc.loader;
-      wc.writer = (CacheWriter<K, V>) bc.createCustomization(config.getWriter());
-      wc.asyncLoader = (AsyncCacheLoader<K, V>) bc.createCustomization(config.getAsyncLoader());
+      wc.writer = (CacheWriter<K, V>) createCustomization(config.getWriter());
+      wc.asyncLoader = (AsyncCacheLoader<K, V>) createCustomization(config.getAsyncLoader());
       List<CacheEntryCreatedListener<K, V>> syncCreatedListeners =
         new ArrayList<CacheEntryCreatedListener<K, V>>();
       List<CacheEntryUpdatedListener<K, V>> syncUpdatedListeners =
@@ -255,7 +282,7 @@ public class InternalCache2kBuilder<K, V> {
       if (config.hasListeners()) {
         for (CustomizationSupplier<CacheEntryOperationListener<K, V>> f : config.getListeners()) {
           CacheEntryOperationListener<K, V> el =
-            (CacheEntryOperationListener<K, V>) bc.createCustomization(f);
+            (CacheEntryOperationListener<K, V>) createCustomization(f);
           if (el instanceof CacheEntryCreatedListener) {
             syncCreatedListeners.add((CacheEntryCreatedListener) el);
           }
@@ -276,7 +303,7 @@ public class InternalCache2kBuilder<K, V> {
       if (config.hasAsyncListeners()) {
         Executor asyncExecutor = bc.getExecutor();
         if (config.getAsyncListenerExecutor() != null) {
-          asyncExecutor = cache.createCustomization(config.getAsyncListenerExecutor());
+          asyncExecutor = createCustomization(config.getAsyncListenerExecutor());
         }
         AsyncDispatcher<K> asyncDispatcher = new AsyncDispatcher<K>(wc, asyncExecutor);
         List<CacheEntryCreatedListener<K, V>> cll =
@@ -292,7 +319,7 @@ public class InternalCache2kBuilder<K, V> {
         for (CustomizationSupplier<CacheEntryOperationListener<K, V>> f :
           config.getAsyncListeners()) {
           CacheEntryOperationListener<K, V> el =
-            (CacheEntryOperationListener<K, V>) bc.createCustomization(f);
+            (CacheEntryOperationListener<K, V>) createCustomization(f);
           if (el instanceof CacheEntryCreatedListener) {
             cll.add((CacheEntryCreatedListener) el);
           }
@@ -346,15 +373,15 @@ public class InternalCache2kBuilder<K, V> {
           syncEvictedListeners.toArray(new CacheEntryEvictedListener[0]);
       }
       bc.eviction = EVICTION_FACTORY.constructEviction(
-        bc, bc, wc, config, Runtime.getRuntime().availableProcessors());
-      Timing rh = Timing.of(timeReference, config);
+        this, bc, wc, config, Runtime.getRuntime().availableProcessors());
+      Timing rh = Timing.of(this);
       bc.setTiming(rh);
       wc.init();
     } else {
-      Timing rh = Timing.of(timeReference, config);
+      Timing rh = Timing.of(this);
       bc.setTiming(rh);
       bc.eviction = EVICTION_FACTORY.constructEviction(
-        bc, bc, HeapCacheListener.NO_OPERATION, config, Runtime.getRuntime().availableProcessors());
+        this, bc, HeapCacheListener.NO_OPERATION, config, Runtime.getRuntime().availableProcessors());
       bc.init();
     }
     manager.sendCreatedEvent(cache, config);

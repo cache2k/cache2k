@@ -21,15 +21,40 @@ package org.cache2k.core;
  */
 
 import org.cache2k.CacheManager;
+import org.cache2k.configuration.Cache2kConfiguration;
 import org.cache2k.configuration.CustomizationSupplier;
+import org.cache2k.core.util.InternalClock;
 
 /**
+ * Context information when a cache is build.
+ *
  * @author Jens Wilke
  */
-public interface CustomizationContext {
+public interface CacheBuildContext<K, V> {
 
+  /**
+   * The time reference for the cache.
+   */
+  InternalClock getClock();
+
+  /**
+   * Cache configuration.
+   */
+  Cache2kConfiguration<K, V> getConfiguration();
+
+  /**
+   * The cache manager.
+   */
   CacheManager getCacheManager();
 
-  <T> T createCustomization(CustomizationSupplier<T> f);
+  /**
+   * Create the customization
+   */
+  <T> T createCustomization(CustomizationSupplier<T> supplier);
+
+  /**
+   * Create the customization. Return fallback if supplier is null.
+   */
+  <T> T createCustomization(CustomizationSupplier<T> supplier, T fallback);
 
 }

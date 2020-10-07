@@ -23,8 +23,6 @@ package org.cache2k.core;
 import org.cache2k.Cache;
 import org.cache2k.CacheEntry;
 import org.cache2k.CacheException;
-import org.cache2k.CustomizationException;
-import org.cache2k.configuration.CustomizationSupplier;
 import org.cache2k.core.operation.Operations;
 import org.cache2k.jmx.CacheInfoMXBean;
 import org.cache2k.processor.EntryProcessingException;
@@ -45,7 +43,7 @@ import java.util.concurrent.Executor;
  *
  * @author Jens Wilke
  */
-public abstract class BaseCache<K, V> implements InternalCache<K, V>, CustomizationContext {
+public abstract class BaseCache<K, V> implements InternalCache<K, V>, CacheCloseContext {
 
   public abstract Executor getExecutor();
 
@@ -213,18 +211,6 @@ public abstract class BaseCache<K, V> implements InternalCache<K, V>, Customizat
     return execute(key, null, op);
   }
 
-
-  @Override
-  public <T> T createCustomization(CustomizationSupplier<T> f) {
-    if (f == null) {
-      return null;
-    }
-    try {
-      return f.supply(getCacheManager());
-    } catch (Exception ex) {
-      throw new CustomizationException("Initialization of customization failed", ex);
-    }
-  }
 
   @Override
   public void closeCustomization(Object customization, String customizationName) {

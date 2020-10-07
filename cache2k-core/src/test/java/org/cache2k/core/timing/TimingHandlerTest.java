@@ -22,6 +22,10 @@ package org.cache2k.core.timing;
 
 import org.cache2k.Cache2kBuilder;
 import org.cache2k.CacheEntry;
+import org.cache2k.CacheManager;
+import org.cache2k.configuration.Cache2kConfiguration;
+import org.cache2k.configuration.CustomizationSupplier;
+import org.cache2k.core.CacheBuildContext;
 import org.cache2k.core.Entry;
 import org.cache2k.core.HeapCache;
 import org.cache2k.core.util.DefaultClock;
@@ -46,42 +50,76 @@ public class TimingHandlerTest {
   private final long NOW = 10000000;
   private static final InternalClock CLOCK = DefaultClock.INSTANCE;
 
+  private <K, V> Timing<K, V> create(final InternalClock clock, final Cache2kConfiguration<K, V> cfg) {
+    return Timing.of(new CacheBuildContext<K, V>() {
+      @Override
+      public InternalClock getClock() {
+        return clock;
+      }
+
+      @Override
+      public Cache2kConfiguration<K, V> getConfiguration() {
+        return cfg;
+      }
+
+      @Override
+      public CacheManager getCacheManager() {
+        return null;
+      }
+
+      @Override
+      public <T> T createCustomization(CustomizationSupplier<T> supplier) {
+        return createCustomization(supplier, null);
+      }
+
+      @Override
+      public <T> T createCustomization(CustomizationSupplier<T> supplier, T fallback) {
+        if (supplier == null) { return fallback; }
+        try {
+          return supplier.supply(getCacheManager());
+        } catch (Exception e) {
+          return null;
+        }
+      }
+    });
+  }
+
   @Test
   public void eternalSpecified() {
-    Timing h = Timing.of(
+    Timing h = create(
       CLOCK,
       Cache2kBuilder.forUnknownTypes()
         .eternal(true)
         .toConfiguration()
     );
-    assertEquals(Timing.ETERNAL_IMMEDIATE.getClass(), h.getClass());
+    assertEquals(TimeAgnosticTiming.ETERNAL_IMMEDIATE.getClass(), h.getClass());
   }
 
   @Test
   public void eternalNotSpecified() {
-    Timing h = Timing.of(
+    Timing h = create(
       CLOCK,
       Cache2kBuilder.forUnknownTypes()
         .toConfiguration()
     );
-    assertEquals(Timing.ETERNAL_IMMEDIATE.getClass(), h.getClass());
+    assertEquals(TimeAgnosticTiming.ETERNAL_IMMEDIATE.getClass(), h.getClass());
   }
 
   @Test
   public void expireAfterWrite_overflow() {
-    Timing h = Timing.of(
+    Timing h = create(
       CLOCK,
       Cache2kBuilder.forUnknownTypes()
         .expireAfterWrite(Long.MAX_VALUE - 47, TimeUnit.SECONDS)
         .toConfiguration()
     );
-    assertEquals(Timing.ETERNAL_IMMEDIATE.getClass(), h.getClass());
+    assertEquals(TimeAgnosticTiming.ETERNAL_IMMEDIATE.getClass(), h.getClass());
   }
 
   @Test
   public void almostEternal_noOverflow() {
     long _BIG_VALUE = Long.MAX_VALUE - 47;
-    Timing h = Timing.of(
+    Timing h = create(
       CLOCK,
       Cache2kBuilder.forUnknownTypes()
         .expireAfterWrite(_BIG_VALUE, TimeUnit.MILLISECONDS)
@@ -96,7 +134,7 @@ public class TimingHandlerTest {
   @Test
   public void almostEternal_expiryPolicy_noOverflow() {
     long _BIG_VALUE = Long.MAX_VALUE - 47;
-    Timing h = Timing.of(
+    Timing h = create(
       CLOCK,
       Cache2kBuilder.forUnknownTypes()
         .expiryPolicy(new ExpiryPolicy() {
@@ -119,7 +157,7 @@ public class TimingHandlerTest {
    */
   @Test
   public void policy_sharp() {
-    Timing h = Timing.of(
+    Timing h = create(
       CLOCK,
       Cache2kBuilder.forUnknownTypes()
         .expiryPolicy(new ExpiryPolicy() {
@@ -141,7 +179,7 @@ public class TimingHandlerTest {
    */
   @Test
   public void expireAfterWrite_policy_limit() {
-    Timing h = Timing.of(
+    Timing h = create(
       CLOCK,
       Cache2kBuilder.forUnknownTypes()
         .expiryPolicy(new ExpiryPolicy() {
@@ -168,7 +206,7 @@ public class TimingHandlerTest {
   public void expireAfterWrite_policy_limit_sharp() {
     long _DURATION = 1000000;
     final long _SHARP_POINT_IN_TIME = NOW + 5000000;
-    Timing h = Timing.of(
+    Timing h = create(
       CLOCK,
       Cache2kBuilder.forUnknownTypes()
         .expiryPolicy(new ExpiryPolicy() {
@@ -200,7 +238,7 @@ public class TimingHandlerTest {
   public void expireAfterWrite_policy_limit_nonSharp() {
     long _DURATION = 1000000;
     final long _POINT_IN_TIME = NOW + 5000000;
-    Timing h = Timing.of(
+    Timing h = create(
       CLOCK,
       Cache2kBuilder.forUnknownTypes()
         .expiryPolicy(new ExpiryPolicy() {
@@ -236,7 +274,7 @@ public class TimingHandlerTest {
   public void expireAfterWrite_policy_limit_sharp_close() {
     long _DURATION = 100;
     final long _SHARP_POINT_IN_TIME = NOW + 5000;
-    Timing h = Timing.of(
+    Timing h = create(
       CLOCK,
       Cache2kBuilder.forUnknownTypes()
         .expiryPolicy(new ExpiryPolicy() {

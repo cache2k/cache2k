@@ -22,13 +22,12 @@ package org.cache2k.core.timing;
 
 import org.cache2k.CacheEntry;
 import org.cache2k.configuration.Cache2kConfiguration;
-import org.cache2k.configuration.CustomizationReferenceSupplier;
-import org.cache2k.configuration.CustomizationSupplier;
+import org.cache2k.core.CacheBuildContext;
+import org.cache2k.core.CacheCloseContext;
 import org.cache2k.core.DefaultResiliencePolicy;
 import org.cache2k.core.Entry;
 import org.cache2k.core.ExceptionWrapper;
 import org.cache2k.core.HeapCache;
-import org.cache2k.core.InternalCache;
 import org.cache2k.core.util.InternalClock;
 import org.cache2k.expiry.Expiry;
 import org.cache2k.expiry.ExpiryPolicy;
@@ -45,81 +44,80 @@ public class StaticTiming<K, V> extends Timing<K, V> {
 
   static final long SAFETY_GAP_MILLIS = HeapCache.TUNABLE.sharpExpirySafetyGapMillis;
 
-  final InternalClock clock;
-  boolean sharpExpiry;
-  boolean refreshAhead;
-  Timer timer;
-  long expiryMillis;
-  InternalCache cache;
-  ResiliencePolicy<K, V> resiliencePolicy;
-  CustomizationSupplier<ResiliencePolicy<K, V>> resiliencePolicyFactory;
-  long lagMillis;
+  protected final ResiliencePolicy<K, V> resiliencePolicy;
+  protected final InternalClock clock;
+  protected final boolean sharpExpiry;
+  protected final boolean refreshAhead;
+  protected final long expiryMillis;
+  protected final long lagMillis;
 
-  StaticTiming(InternalClock c, Cache2kConfiguration<K, V> cc) {
-    clock = c;
-    configure(cc);
-  }
+  private Timer timer;
+  private TimerEventListener<K, V> target;
 
-  void configure(final Cache2kConfiguration<K, V> c) {
+  StaticTiming(CacheBuildContext<K, V> buildContext) {
+    clock = buildContext.getClock();
+    Cache2kConfiguration<K, V> c = buildContext.getConfiguration();
     long expiryMillis = c.getExpireAfterWrite();
     if (expiryMillis == ExpiryPolicy.ETERNAL || expiryMillis < 0) {
       this.expiryMillis = ExpiryPolicy.ETERNAL;
     } else {
       this.expiryMillis = expiryMillis;
     }
+    refreshAhead = c.isRefreshAhead();
+    sharpExpiry = c.isSharpExpiry();
+    long lagMillisTmp = c.getTimerLag();
+    if (lagMillisTmp == Cache2kConfiguration.UNSET_LONG) {
+      lagMillis = HeapCache.TUNABLE.timerLagMillis;
+    } else {
+      lagMillis = lagMillisTmp;
+    }
+    timer = new DefaultTimer(clock, lagMillis);
+    resiliencePolicy = provideResiliencePolicy(buildContext);
+  }
+
+  ResiliencePolicy<K, V> provideResiliencePolicy(CacheBuildContext<K, V> buildContext) {
+    Cache2kConfiguration<K, V> c = buildContext.getConfiguration();
+    final long expireAfterWriteMillis = c.getExpireAfterWrite();
+    final long resilienceDuration = c.getResilienceDuration();
+    final boolean suppressException = c.isSuppressExceptions();
+    final long retryInterval = c.getRetryInterval();
+    final long maxRetryInterval = c.getMaxRetryInterval();
     ResiliencePolicy.Context ctx = new ResiliencePolicy.Context() {
       @Override
       public long getExpireAfterWriteMillis() {
-        return c.getExpireAfterWrite();
+        return expireAfterWriteMillis;
       }
 
       @Override
       public long getResilienceDurationMillis() {
-        return c.isSuppressExceptions() ? c.getResilienceDuration() : 0;
+        return suppressException ? resilienceDuration : 0;
       }
 
       @Override
       public long getRetryIntervalMillis() {
-        return c.getRetryInterval();
+        return retryInterval;
       }
 
       @Override
       public long getMaxRetryIntervalMillis() {
-        return c.getMaxRetryInterval();
+        return maxRetryInterval;
       }
     };
-    resiliencePolicyFactory = c.getResiliencePolicy();
-    if (resiliencePolicyFactory == null) {
-      resiliencePolicy = new DefaultResiliencePolicy<K, V>();
-    } else {
-      if (resiliencePolicyFactory instanceof CustomizationReferenceSupplier) {
-        try {
-          resiliencePolicy = resiliencePolicyFactory.supply(null);
-        } catch (Exception ignore) {
-        }
-      }
+    ResiliencePolicy<K, V> policy = buildContext.createCustomization(c.getResiliencePolicy());
+    if (policy == null) {
+      policy = new DefaultResiliencePolicy<K, V>();
     }
-    resiliencePolicy.init(ctx);
-    refreshAhead = c.isRefreshAhead();
-    sharpExpiry = c.isSharpExpiry();
-    lagMillis = c.getTimerLag();
-    if (lagMillis == Cache2kConfiguration.UNSET_LONG) {
-      lagMillis = HeapCache.TUNABLE.timerLagMillis;
-    }
+    policy.init(ctx);
+    return policy;
   }
 
   @Override
-  public synchronized void init(InternalCache<K, V> c) {
-    cache = c;
-    if (resiliencePolicy == null) {
-      resiliencePolicy = c.createCustomization(resiliencePolicyFactory);
-    }
-    resiliencePolicyFactory = null;
-    timer = new DefaultTimer(clock, lagMillis);
+  public void setTarget(TimerEventListener<K, V> target) {
+    this.target = target;
   }
 
   @Override
-  public synchronized void cancelAll() {
+  public void cancelAll() {
     Timer timer = this.timer;
     if (timer != null) {
       timer.cancelAll();
@@ -127,10 +125,11 @@ public class StaticTiming<K, V> extends Timing<K, V> {
   }
 
   @Override
-  public void close() {
+  public void close(CacheCloseContext closeContext) {
     Timer timer = this.timer;
     if (timer != null) {
       timer.cancelAll();
+      closeContext.closeCustomization(resiliencePolicy, "resiliencePolicy");
     }
     this.timer = null;
   }
@@ -142,8 +141,7 @@ public class StaticTiming<K, V> extends Timing<K, V> {
 
   @Override
   public long suppressExceptionUntil(Entry<K, V> e, ExceptionInformation inf) {
-    return resiliencePolicy.suppressExceptionUntil(
-      e.getKey(), inf, cache.returnCacheEntry(e));
+    return resiliencePolicy.suppressExceptionUntil(e.getKey(), inf, e.getTempCacheEntry());
   }
 
   @Override
@@ -157,9 +155,9 @@ public class StaticTiming<K, V> extends Timing<K, V> {
    * This will also start a refresh task, if the entry just was refreshed and it is
    * expired immediately. The refresh task will handle this and expire the entry.
    */
-  long expiredEventuallyStartBackgroundRefresh(Entry e, boolean sharpExpiry) {
+  long expiredEventuallyStartBackgroundRefresh(Entry<K, V> e, boolean sharpExpiry) {
     if (refreshAhead) {
-      e.setTask(new Tasks.RefreshTimerTask<K, V>().to(cache, e));
+      e.setTask(new Tasks.RefreshTimerTask<K, V>().to(target, e));
       scheduleTask(0, e);
       return sharpExpiry ? Entry.EXPIRED_REFRESH_PENDING : Entry.DATA_VALID;
     }
@@ -178,7 +176,7 @@ public class StaticTiming<K, V> extends Timing<K, V> {
    * @return adjusted value for nextRefreshTime.
    */
   @Override
-  public long stopStartTimer(long expiryTime, Entry e) {
+  public long stopStartTimer(long expiryTime, Entry<K, V> e) {
     cancelExpiryTimer(e);
     if (expiryTime == ExpiryTimeValues.NOW) {
       return Entry.EXPIRED;
@@ -203,7 +201,7 @@ public class StaticTiming<K, V> extends Timing<K, V> {
     if (expiryTime < 0) {
       long timerTime = -expiryTime - SAFETY_GAP_MILLIS - timer.getLagMillis();
       if (timerTime >= now) {
-        e.setTask(new Tasks.ExpireTimerTask().to(cache, e));
+        e.setTask(new Tasks.ExpireTimerTask<K, V>().to(target, e));
         scheduleTask(timerTime, e);
         expiryTime = -expiryTime;
       } else {
@@ -229,7 +227,7 @@ public class StaticTiming<K, V> extends Timing<K, V> {
     long absTime = Math.abs(nextRefreshTime);
     e.setRefreshProbationNextRefreshTime(absTime);
     e.setNextRefreshTime(Entry.EXPIRED_REFRESHED);
-    e.setTask(new Tasks.RefreshExpireTimerTask<K, V>().to(cache, e));
+    e.setTask(new Tasks.RefreshExpireTimerTask<K, V>().to(target, e));
     scheduleTask(absTime, e);
     return false;
   }
@@ -245,14 +243,14 @@ public class StaticTiming<K, V> extends Timing<K, V> {
    */
   void scheduleFinalExpireWithOptionalRefresh(Entry<K, V> e, long t) {
     if (refreshAhead) {
-      e.setTask(new Tasks.RefreshTimerTask().to(cache, e));
+      e.setTask(new Tasks.RefreshTimerTask<K, V>().to(target, e));
     } else {
-      e.setTask(new Tasks.ExpireTimerTask().to(cache, e));
+      e.setTask(new Tasks.ExpireTimerTask<K, V>().to(target, e));
     }
     scheduleTask(t, e);
   }
 
-  void scheduleTask(long nextRefreshTime, Entry e) {
+  void scheduleTask(long nextRefreshTime, Entry<K, V> e) {
     Timer timer = this.timer;
     if (timer != null) {
       try {
@@ -262,8 +260,9 @@ public class StaticTiming<K, V> extends Timing<K, V> {
     }
   }
 
+  @SuppressWarnings("unchecked")
   public void cancelExpiryTimer(Entry<K, V> e) {
-    Tasks tsk = (Tasks) e.getTask();
+    Tasks<K, V> tsk = (Tasks<K, V>) e.getTask();
     Timer timer = this.timer;
     if (tsk != null && timer != null) {
       timer.cancel(tsk);
@@ -271,9 +270,9 @@ public class StaticTiming<K, V> extends Timing<K, V> {
     e.setTask(null);
   }
 
-  static <K, T> long calcNextRefreshTime(
-    K key, T newValue, long now, CacheEntry entry,
-    ExpiryPolicy<K, T> policy, long maxLinger, boolean sharpExpiryEnabled) {
+  static <K, V> long calcNextRefreshTime(
+    K key, V newValue, long now, CacheEntry<K, V> entry,
+    ExpiryPolicy<K, V> policy, long maxLinger, boolean sharpExpiryEnabled) {
     if (maxLinger == 0) {
       return 0;
     }

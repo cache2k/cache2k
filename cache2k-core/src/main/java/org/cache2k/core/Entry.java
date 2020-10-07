@@ -228,6 +228,15 @@ public class Entry<K, V> extends CompactEntry<K, V>
   private static final long MODIFICATION_TIME_MASK = (1L << MODIFICATION_TIME_BITS) - 1;
 
   /**
+   * A cache entry which is used for a call to the expiry or refresh policies.
+   */
+  public CacheEntry<K, V> getTempCacheEntry() {
+    Object obj = getValueOrException();
+    if (obj instanceof ExceptionWrapper) { return (CacheEntry) obj; }
+    return this;
+  }
+
+  /**
    * Set modification time and marks entry as dirty. Bit 0 was used as dirty bit for the
    * storage attachment. Not used at the moment.
    */

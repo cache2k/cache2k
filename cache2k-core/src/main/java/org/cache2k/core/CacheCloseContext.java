@@ -1,4 +1,4 @@
-package org.cache2k.core.timing;
+package org.cache2k.core;
 
 /*
  * #%L
@@ -20,28 +20,27 @@ package org.cache2k.core.timing;
  * #L%
  */
 
-import org.cache2k.core.Entry;
-import org.cache2k.expiry.ExpiryPolicy;
-import org.cache2k.integration.ExceptionInformation;
+import org.cache2k.CacheManager;
 
 /**
  * @author Jens Wilke
  */
-class EternalTiming<K, V> extends Timing.AgnosticTimingHandler<K, V> {
+public interface CacheCloseContext {
 
-  @Override
-  public long calculateNextRefreshTime(Entry<K, V> e, V v, long loadTime) {
-    return ExpiryPolicy.ETERNAL;
-  }
+  /**
+   * The cache name
+   */
+  String getName();
 
-  @Override
-  public long cacheExceptionUntil(Entry<K, V> e, ExceptionInformation inf) {
-    return ExpiryPolicy.ETERNAL;
-  }
+  /**
+   * The cache manager
+   */
+  CacheManager getCacheManager();
 
-  @Override
-  public long suppressExceptionUntil(Entry<K, V> e, ExceptionInformation inf) {
-    return ExpiryPolicy.ETERNAL;
-  }
+  /**
+   * Call close on the customization if the {@link java.io.Closeable} interface
+   * is implemented
+   */
+  void closeCustomization(Object customization, String name);
 
 }

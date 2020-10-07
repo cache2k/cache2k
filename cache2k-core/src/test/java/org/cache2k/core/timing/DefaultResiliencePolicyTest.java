@@ -71,7 +71,7 @@ public class DefaultResiliencePolicyTest {
       /* ... set loader ... */
       .build();
     target.setCache(c);
-    assertTrue(extractHandler() instanceof Timing.EternalImmediate);
+    assertTrue(extractHandler() instanceof TimeAgnosticTiming.EternalImmediate);
   }
 
   /**
@@ -143,7 +143,7 @@ public class DefaultResiliencePolicyTest {
       /* ... set loader ... */
       .build();
     target.setCache(c);
-    assertTrue(extractHandler() instanceof Timing.EternalImmediate);
+    assertTrue(extractHandler() instanceof TimeAgnosticTiming.EternalImmediate);
   }
 
   @Test
@@ -153,7 +153,7 @@ public class DefaultResiliencePolicyTest {
       /* ... set loader ... */
       .build();
     target.setCache(c);
-    assertTrue(extractHandler() instanceof Timing.Immediate);
+    assertTrue(extractHandler() instanceof TimeAgnosticTiming.Immediate);
   }
 
   @Test

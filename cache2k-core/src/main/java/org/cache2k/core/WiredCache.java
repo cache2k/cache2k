@@ -585,7 +585,7 @@ public class WiredCache<K, V> extends BaseCache<K, V>
       storage.open();
     }
 
-    heapCache.timing.init(this);
+    heapCache.timing.setTarget(this);
     heapCache.initWithoutTimerHandler();
   }
 

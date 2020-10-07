@@ -22,17 +22,16 @@ package org.cache2k.core.timing;
 
 import org.cache2k.core.CacheClosedException;
 import org.cache2k.core.Entry;
-import org.cache2k.core.InternalCache;
 
 /**
  * @author Jens Wilke
  */
 abstract class Tasks<K, V> extends TimerTask {
   private Entry<K, V> entry;
-  private InternalCache<K, V> cache;
+  private TimerEventListener<K, V> target;
 
-  Tasks<K, V> to(InternalCache<K, V> c, Entry<K, V> e) {
-    cache = c;
+  Tasks<K, V> to(TimerEventListener<K, V> target, Entry<K, V> e) {
+    this.target = target;
     entry = e;
     return this;
   }
@@ -43,15 +42,15 @@ abstract class Tasks<K, V> extends TimerTask {
   @Override
   protected boolean cancel() {
     if (super.cancel()) {
-      cache = null;
+      target = null;
       entry = null;
       return true;
     }
     return false;
   }
 
-  protected InternalCache<K, V> getCache() {
-    return cache;
+  protected TimerEventListener<K, V> getTarget() {
+    return target;
   }
 
   protected Entry<K, V> getEntry() {
@@ -65,25 +64,24 @@ abstract class Tasks<K, V> extends TimerTask {
       fire();
     } catch (CacheClosedException ignore) {
     } catch (Throwable ex) {
-      cache.logAndCountInternalException("Timer execution exception", ex);
     }
   }
 
   static class RefreshTimerTask<K, V> extends Tasks<K, V> {
     public void fire() {
-      getCache().timerEventRefresh(getEntry(), this);
+      getTarget().timerEventRefresh(getEntry(), this);
     }
   }
 
   static class ExpireTimerTask<K, V> extends Tasks<K, V> {
     public void fire() {
-      getCache().timerEventExpireEntry(getEntry(), this);
+      getTarget().timerEventExpireEntry(getEntry(), this);
     }
   }
 
   static class RefreshExpireTimerTask<K, V> extends Tasks<K, V> {
     public void fire() {
-      getCache().timerEventProbationTerminated(getEntry(), this);
+      getTarget().timerEventProbationTerminated(getEntry(), this);
     }
   }
 

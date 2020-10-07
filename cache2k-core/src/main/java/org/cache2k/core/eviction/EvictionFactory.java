@@ -22,7 +22,7 @@ package org.cache2k.core.eviction;
 
 import org.cache2k.Weigher;
 import org.cache2k.configuration.Cache2kConfiguration;
-import org.cache2k.core.CustomizationContext;
+import org.cache2k.core.CacheBuildContext;
 import org.cache2k.core.HeapCache;
 import org.cache2k.core.HeapCacheListener;
 import org.cache2k.core.SegmentedEviction;
@@ -38,7 +38,7 @@ public class EvictionFactory {
    * Segmenting the eviction only improves for lots of concurrent inserts or evictions,
    * there is no effect on read performance.
    */
-  public Eviction constructEviction(CustomizationContext customizationContext,
+  public Eviction constructEviction(CacheBuildContext customizationContext,
                                     HeapCacheForEviction hc, HeapCacheListener l,
                                     Cache2kConfiguration config, int availableProcessors) {
     boolean strictEviction = config.isStrictEviction();

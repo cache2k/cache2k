@@ -79,19 +79,6 @@ public interface InternalCache<K, V>
   boolean isNullValuePermitted();
 
   /**
-   * Calls factory and wraps exceptions.
-   *
-   * @param f factory or null. If null, then null is returned.
-   */
-  <T> T createCustomization(CustomizationSupplier<T> f);
-
-  /**
-   * Call close on the customization if the {@link java.io.Closeable} interface
-   * is implemented
-   */
-  void closeCustomization(Object customization, String name);
-
-  /**
    * Time reference for the cache.
    */
   InternalClock getClock();
