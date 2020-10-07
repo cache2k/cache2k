@@ -816,11 +816,10 @@ public abstract class EntryAction<K, V, R> extends Entry.PiggyBack implements
           RuntimeException ouch = heapCache.returnNullValueDetectedException();
           if (valueDefinitelyLoaded) {
             decideForLoaderExceptionAfterExpiryCalculation(new CacheLoaderException(ouch));
-            return;
           } else {
             mutationAbort(ouch);
-            return;
           }
+          return;
         }
         heapEntry.resetSuppressedLoadExceptionInformation();
       } catch (Throwable ex) {
