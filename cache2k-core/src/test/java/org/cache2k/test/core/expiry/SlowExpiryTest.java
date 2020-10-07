@@ -853,17 +853,18 @@ public class SlowExpiryTest extends TestingBase {
       .perform(new Runnable() {
         @Override
         public void run() {
+          final AtomicInteger v = new AtomicInteger();
           within(TestingParameters.MINIMAL_TICK_MILLIS)
             .perform(new Runnable() {
               @Override
               public void run() {
-                int v = c.get(key);
-                assertEquals(0, v);
+                v.set(c.get(key));
               }
             })
             .expectMaybe(new Runnable() {
               @Override
               public void run() {
+                assertEquals(0, v.get());
                 assertTrue(c.containsKey(key));
               }
             });
