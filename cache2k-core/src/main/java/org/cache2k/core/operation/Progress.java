@@ -102,7 +102,7 @@ public interface Progress<K, V, R> {
   /**
    * Returns a cache entry as result. The entry will be copied before returning.
    */
-  void entryResult(ExaminationEntry e);
+  void entryResult(ExaminationEntry<K, V> e);
 
   /**
    * Exception propagator in effect.

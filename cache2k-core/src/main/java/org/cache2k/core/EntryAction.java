@@ -60,8 +60,10 @@ public abstract class EntryAction<K, V, R> extends Entry.PiggyBack implements
   AsyncCacheLoader.Context<K, V>,
   AsyncCacheLoader.Callback<V>, AsyncCacheWriter.Callback, Progress<K, V, R> {
 
+  @SuppressWarnings("rawtypes")
   public static final Entry NON_FRESH_DUMMY = new Entry();
 
+  @SuppressWarnings("rawtypes")
   static final CompletedCallback NOOP_CALLBACK = new CompletedCallback() {
     @Override
     public void entryActionCompleted(EntryAction ea) {
@@ -161,13 +163,13 @@ public abstract class EntryAction<K, V, R> extends Entry.PiggyBack implements
   /**
    * Callback on on completion, set if client request is async.
    */
-  CompletedCallback completedCallback;
+  CompletedCallback<K, V, R> completedCallback;
 
   /**
    * Linked list of actions waiting for execution after this one.
    * Guarded by the entry lock.
    */
-  private EntryAction nextAction = null;
+  private EntryAction<K, V, ?> nextAction = null;
 
   private int semanticCallback = 0;
 
@@ -181,6 +183,7 @@ public abstract class EntryAction<K, V, R> extends Entry.PiggyBack implements
    * to be executed next. Insert at the tail of the double linked
    * list. We are not part of the list.
    */
+  @SuppressWarnings("rawtypes")
   public void enqueueToExecute(EntryAction v) {
     EntryAction next;
     EntryAction target = this;
@@ -192,7 +195,7 @@ public abstract class EntryAction<K, V, R> extends Entry.PiggyBack implements
 
   @SuppressWarnings("unchecked")
   public EntryAction(HeapCache<K, V> heapCache, InternalCache<K, V> userCache,
-                     Semantic<K, V, R> op, K k, Entry<K, V> e, CompletedCallback cb) {
+                     Semantic<K, V, R> op, K k, Entry<K, V> e, CompletedCallback<K, V, R> cb) {
     super(null);
     this.heapCache = heapCache;
     this.userCache = userCache;
@@ -210,7 +213,6 @@ public abstract class EntryAction<K, V, R> extends Entry.PiggyBack implements
     }
   }
 
-  @SuppressWarnings("unchecked")
   public EntryAction(HeapCache<K, V> heapCache, InternalCache<K, V> userCache,
                      Semantic<K, V, R> op, K k, Entry<K, V> e) {
     this(heapCache, userCache, op, k, e, null);
@@ -280,7 +282,6 @@ public abstract class EntryAction<K, V, R> extends Entry.PiggyBack implements
     return null;
   }
 
-  @SuppressWarnings("unchecked")
   protected abstract Timing<K, V> timing();
 
   @Override
@@ -461,7 +462,6 @@ public abstract class EntryAction<K, V, R> extends Entry.PiggyBack implements
     countMiss = false;
     heapOrLoadedEntry = heapEntry;
     examine();
-    return;
   }
 
   /**
@@ -534,7 +534,6 @@ public abstract class EntryAction<K, V, R> extends Entry.PiggyBack implements
     return heapCache.isUpdateTimeNeeded() || !metrics().isDisabled();
   }
 
-  @SuppressWarnings("unchecked")
   @Override
   public void load() {
     semanticCallback++;
@@ -600,6 +599,7 @@ public abstract class EntryAction<K, V, R> extends Entry.PiggyBack implements
    * @return true, in case this is an async call and enqueued the operation
    *         in the running one
    */
+  @SuppressWarnings("SameParameterValue")
   private boolean lockForNoHit(int ps) {
     if (entryLocked) {
       heapEntry.nextProcessingStep(ps);
@@ -627,6 +627,7 @@ public abstract class EntryAction<K, V, R> extends Entry.PiggyBack implements
    * enqueue this operation in a waitlist that gets executed when
    * the processing has completed.
    */
+  @SuppressWarnings("rawtypes")
   private boolean tryEnqueueOperationInCurrentlyProcessing(Entry e) {
     if (e.isProcessing() && completedCallback != null) {
       EntryAction runningAction = e.getEntryAction();
@@ -644,6 +645,7 @@ public abstract class EntryAction<K, V, R> extends Entry.PiggyBack implements
    *
    * @return true if we got the entry lock, false if we need to spin
    */
+  @SuppressWarnings("rawtypes")
   private boolean waitForConcurrentProcessingOrStop(int ps, Entry e) {
     e.waitForProcessing();
     if (!e.isGone()) {
@@ -665,7 +667,6 @@ public abstract class EntryAction<K, V, R> extends Entry.PiggyBack implements
   /**
    * The load failed, resilience and refreshing needs to be triggered
    */
-  @SuppressWarnings("unchecked")
   @Override
   public void onLoadFailure(Throwable t) {
     checkEntryStateOnLoadCallback();
@@ -686,9 +687,9 @@ public abstract class EntryAction<K, V, R> extends Entry.PiggyBack implements
 
   private void onLoadSuccessIntern(V v) {
     if (v instanceof RefreshedTimeWrapper) {
-      RefreshedTimeWrapper wr = (RefreshedTimeWrapper<V>) v;
+      RefreshedTimeWrapper<V> wr = (RefreshedTimeWrapper<V>) v;
       lastRefreshTime = wr.getRefreshTime();
-      v = (V) wr.getValue();
+      v = wr.getValue();
     }
 
     newValueOrException = v;
@@ -697,7 +698,7 @@ public abstract class EntryAction<K, V, R> extends Entry.PiggyBack implements
 
   private void onLoadFailureIntern(Throwable t) {
     newValueOrException =
-      (V) new ExceptionWrapper(key, t, loadStartedTime, heapEntry, getExceptionPropagator());
+      (V) new ExceptionWrapper<K>(key, t, loadStartedTime, heapEntry, getExceptionPropagator());
     loadCompleted();
   }
 
@@ -717,7 +718,7 @@ public abstract class EntryAction<K, V, R> extends Entry.PiggyBack implements
 
   @SuppressWarnings("unchecked")
   @Override
-  public void entryResult(ExaminationEntry e) {
+  public void entryResult(ExaminationEntry<K, V> e) {
     result = (R) heapCache.returnEntry(e);
   }
 
@@ -781,7 +782,7 @@ public abstract class EntryAction<K, V, R> extends Entry.PiggyBack implements
     if (newValueOrException instanceof ExceptionWrapper) {
       try {
         expiry = 0;
-        ExceptionWrapper ew = (ExceptionWrapper) newValueOrException;
+        ExceptionWrapper<K> ew = (ExceptionWrapper<K>) newValueOrException;
         if ((heapEntry.isDataAvailable() || heapEntry.isExpiredState()) &&
           heapEntry.getException() == null) {
           expiry = timing().suppressExceptionUntil(heapEntry, ew);
@@ -798,7 +799,7 @@ public abstract class EntryAction<K, V, R> extends Entry.PiggyBack implements
           }
           expiry = timing().cacheExceptionUntil(heapEntry, ew);
         }
-        setUntilInExceptionWrapper(); ew = null;
+        setUntilInExceptionWrapper();
       } catch (Throwable ex) {
         if (valueDefinitelyLoaded) {
           resiliencePolicyException(new ResiliencePolicyException(ex));
@@ -869,7 +870,7 @@ public abstract class EntryAction<K, V, R> extends Entry.PiggyBack implements
    */
   private void setUntilInExceptionWrapper() {
     if (newValueOrException instanceof ExceptionWrapper) {
-      ExceptionWrapper ew = (ExceptionWrapper) newValueOrException;
+      ExceptionWrapper<K> ew = (ExceptionWrapper<K>) newValueOrException;
       if (expiry < 0) {
         newValueOrException = (V) new ExceptionWrapper<K>(ew, -expiry);
       } else if (expiry >= Entry.EXPIRY_TIME_MIN) {
