@@ -57,14 +57,12 @@ abstract class Tasks<K, V> extends TimerTask {
     return entry;
   }
 
-  public abstract void fire() throws Exception;
+  public abstract void fire();
 
   protected final void action() {
     try {
       fire();
-    } catch (CacheClosedException ignore) {
-    } catch (Throwable ex) {
-    }
+    } catch (CacheClosedException ignore) { }
   }
 
   static class RefreshTimerTask<K, V> extends Tasks<K, V> {
