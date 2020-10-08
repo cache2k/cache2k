@@ -26,6 +26,7 @@ import org.cache2k.configuration.CacheTypeCapture;
 import org.cache2k.configuration.CacheType;
 import org.cache2k.core.InternalCache;
 import org.cache2k.core.InternalCacheInfo;
+import org.cache2k.core.util.InternalClock;
 import org.cache2k.test.core.StaticUtil;
 import org.cache2k.test.core.Statistics;
 import org.junit.rules.TestRule;
@@ -60,12 +61,12 @@ public class CacheRule<K, V> implements TestRule {
 
   @SuppressWarnings("unchecked")
   protected CacheRule() {
-    Type[] _types =
+    Type[] types =
       ((ParameterizedType) this.getClass().getGenericSuperclass()).getActualTypeArguments();
     keyType =
-      (CacheType<K>) CacheTypeCapture.of(_types[0]).getBeanRepresentation();
+      (CacheType<K>) CacheTypeCapture.of(types[0]).getBeanRepresentation();
     valueType =
-      (CacheType<V>) CacheTypeCapture.of(_types[1]).getBeanRepresentation();
+      (CacheType<V>) CacheTypeCapture.of(types[1]).getBeanRepresentation();
   }
 
   protected Cache2kBuilder<K, V> getInitialBuilder() {
@@ -220,39 +221,47 @@ public class CacheRule<K, V> implements TestRule {
   void provideCache() {
     if (shared) {
       if (cache == null) {
-        cache = buildCache();
+        buildCache();
       }
       if (statistics != null) {
         statistics.reset();
       }
     } else {
-      cache = buildCache();
+      buildCache();
     }
   }
 
-  Cache<K, V> buildCache() {
-    String _name = description.getTestClass().getName();
+  void buildCache() {
     Cache2kBuilder b = getInitialBuilder();
     for (Specialization sp : configurationSpecialization) {
       sp.extend(b);
     }
+    String name = description.getTestClass().getName();
+    String requestedName = b.toConfiguration().getName();
     if (shared) {
       b.name(description.getTestClass());
-      sharedCache.put(_name, _name);
+      sharedCache.put(name, name);
     } else {
-      if (sharedCache.containsKey(_name)) {
-        throw new IllegalArgumentException("Shared cache usage: Method rule must be identical instance.");
+      if (requestedName == null) {
+        if (sharedCache.containsKey(name)) {
+          throw new IllegalArgumentException(
+            "Shared cache usage: Method rule must be identical instance.");
+        }
+        b.name(description.getTestClass(), description.getMethodName());
       }
-      b.name(description.getTestClass(), description.getMethodName());
     }
-    return b.build();
+    cache = b.build();
+  }
+
+  public InternalClock getClock() {
+    return cache.requestInterface(InternalCache.class).getClock();
   }
 
   public interface Specialization<K, V> {
     void extend(Cache2kBuilder<K, V> b);
   }
 
-  public static abstract class Context<K, V> implements Specialization<K, V>, Runnable {
+  public abstract static class Context<K, V> implements Specialization<K, V>, Runnable {
 
     public Cache<K, V> cache;
 

@@ -30,7 +30,6 @@ import org.cache2k.event.CacheEntryEvictedListener;
 import org.cache2k.expiry.ExpiryPolicy;
 import org.cache2k.integration.CacheLoader;
 import org.cache2k.test.util.CacheRule;
-import org.cache2k.test.util.ConcurrencyHelper;
 import org.cache2k.test.util.Condition;
 import org.cache2k.test.util.IntCacheRule;
 import org.cache2k.event.CacheEntryCreatedListener;
@@ -39,6 +38,7 @@ import org.cache2k.event.CacheEntryRemovedListener;
 import org.cache2k.event.CacheEntryUpdatedListener;
 import org.cache2k.core.util.Log;
 import org.cache2k.test.util.TestingBase;
+import org.cache2k.test.util.TimeStepper;
 import org.cache2k.testing.category.FastTests;
 import org.junit.Rule;
 import org.junit.Test;
@@ -221,12 +221,16 @@ public class ListenerTest {
     c.put(1, 2);
     assertEquals(0, callCount.get());
     fire.countDown();
-    ConcurrencyHelper.await(new Condition() {
+    await(new Condition() {
       @Override
       public boolean check() {
         return callCount.get() == 1;
       }
     });
+  }
+
+  public void await(Condition c) {
+    new TimeStepper(target.getClock()).await(c);
   }
 
   /**
@@ -258,7 +262,7 @@ public class ListenerTest {
     c.put(1, 2);
     assertEquals(0, callCount.get());
     fire.countDown();
-    ConcurrencyHelper.await(new Condition() {
+    await(new Condition() {
       @Override
       public boolean check() {
         return callCount.get() == 1;
@@ -295,7 +299,7 @@ public class ListenerTest {
     c.remove(1);
     assertEquals(0, callCount.get());
     fire.countDown();
-    ConcurrencyHelper.await(new Condition() {
+    await(new Condition() {
       @Override
       public boolean check() {
         return callCount.get() == 1;
@@ -336,7 +340,7 @@ public class ListenerTest {
     assertEquals(0, callCount.get());
 
     block.countDown();
-    ConcurrencyHelper.await(new Condition() {
+    await(new Condition() {
       @Override
       public boolean check() {
         return callCount.get() >= 1;
@@ -379,7 +383,7 @@ public class ListenerTest {
       }
     });
     t.start();
-    ConcurrencyHelper.await(new Condition() {
+    await(new Condition() {
       @Override
       public boolean check() {
         return callCount.get() >= 1;
@@ -456,7 +460,7 @@ public class ListenerTest {
     for (int i = 0; i < updateCount; i++) {
       c.put(1, i);
     }
-    ConcurrencyHelper.await(new Condition() {
+    await(new Condition() {
       @Override
       public boolean check() {
         return callCount.get() == updateCount;
@@ -490,26 +494,28 @@ public class ListenerTest {
 
   @Test
   public void asyncUpdateListenerException() {
-    String logName = getClass().getName() + ".asyncUpdateListenerException";
+    final String logName = getClass().getName() + ".asyncUpdateListenerException";
     final Log.SuppressionCounter suppressionCounter = new Log.SuppressionCounter();
     Log.registerSuppression("org.cache2k.Cache/default:" + logName, suppressionCounter);
-    Cache<Integer, Integer> c =
-      Cache2kBuilder.of(Integer.class, Integer.class)
-        .name(logName)
-        .eternal(true)
-        .addAsyncListener(new CacheEntryUpdatedListener<Integer, Integer>() {
-          @Override
-          public void onEntryUpdated(
-            Cache<Integer, Integer> cache,
-            CacheEntry<Integer, Integer> currentEntry,
-            CacheEntry<Integer, Integer> entryWithNewData) {
-            throw new RuntimeException("ouch");
-          }
-        })
-        .build();
+    Cache<Integer, Integer> c = target.cache(new CacheRule.Specialization<Integer, Integer>() {
+      @Override
+      public void extend(Cache2kBuilder<Integer, Integer> b) {
+        b.name(logName)
+          .eternal(true)
+          .addAsyncListener(new CacheEntryUpdatedListener<Integer, Integer>() {
+            @Override
+            public void onEntryUpdated(
+              Cache<Integer, Integer> cache,
+              CacheEntry<Integer, Integer> currentEntry,
+              CacheEntry<Integer, Integer> entryWithNewData) {
+              throw new RuntimeException("ouch");
+            }
+          });
+      }
+    });
     c.put(1, 2);
     c.put(1, 2);
-    ConcurrencyHelper.await(new Condition() {
+    await(new Condition() {
       @Override
       public boolean check() {
         return suppressionCounter.getWarnCount() == 1;
@@ -551,7 +557,7 @@ public class ListenerTest {
     });
     c.put(1, 1);
     c.put(1, 2);
-    ConcurrencyHelper.await(new Condition() {
+    await(new Condition() {
       @Override
       public boolean check() {
         return expireCallCount.get() == 1;
@@ -592,7 +598,7 @@ public class ListenerTest {
     });
     c.put(1, 1);
     c.put(1, 2);
-    ConcurrencyHelper.await(new Condition() {
+    await(new Condition() {
       @Override
       public boolean check() {
         return expireCallCount.get() == 1;

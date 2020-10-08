@@ -36,7 +36,7 @@ public class TimeStepper {
 
   /**
    * Wait for the check become true. With the simulated clock {@code sleep(0)} waits
-   * until the executors are finished or advanced the clock to next scheduled event time.
+   * until the executors are finished or the clock moves to next scheduled event time.
    * In other words, for the simulated clock after {@code sleep(0)} always something
    * has happened, so the loop execution is efficient, also it looks like a busy waiting
    * loop. For testing with real clocks the {@code sleep(0)} waits and hopefully gives
