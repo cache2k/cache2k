@@ -43,6 +43,7 @@ public interface TimerEventListener<K, V> {
   void timerEventExpireEntry(Entry<K, V> e, Object task);
 
   /**
+   * The entry should be refreshed.
    *
    *
    * @param e see {@link #timerEventExpireEntry(Entry, Object)}
