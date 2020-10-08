@@ -52,6 +52,7 @@ For a detailed introduction continue with [Getting Started](docs/latest/user-gui
 
 ## News
 
+  * **Version 1.6.0.Final, 2020-10-09**: Improved timer code for expiry, fixes and cleanup, See [Version 1.6.0.Final release notes](1/6.0.Final.html)
   * **Version 1.4.1.Final, 2020-10-02**: Critical bug fix, See [Version 1.4.1.Final release notes](1/4.1.Final.html)
   * **Version 1.4.0.Final, 2020-09-12**: Eviction listener, GraalVM support, async loading, See [Version 1.4.0.Final release notes](1/4.0.Final.html)
   * **Version 1.2.4.Final, 2019-09-04**: Service release for stable version, See [Version 1.2.4.Final release notes](1/2.4.Final.html)
