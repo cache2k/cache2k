@@ -20,14 +20,10 @@ package org.cache2k.core;
  * #L%
  */
 
-import org.cache2k.Cache;
-import org.cache2k.Cache2kBuilder;
-import org.cache2k.CacheManager;
 import org.cache2k.testing.category.FastTests;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
-import static org.hamcrest.CoreMatchers.containsString;
 import static org.junit.Assert.*;
 
 /**
@@ -46,7 +42,7 @@ public class CacheBaseInfoTest {
 
   @Test
   public void testHashQuality100_1() {
-    assertEquals(0, ( 1-Math.exp(-0.1 * 0)) * 100,0.1);
+    assertEquals(0, (1 - Math.exp(-0.1 * 0)) * 100, 0.1);
 
     assertEquals(100, CacheBaseInfo.hashQuality(100, 1));
   }

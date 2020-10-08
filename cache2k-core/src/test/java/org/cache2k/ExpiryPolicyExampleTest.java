@@ -29,12 +29,12 @@ import org.junit.Test;
  */
 public class ExpiryPolicyExampleTest {
 
-  Cache<String, String> routeToAirline = new Cache2kBuilder<String, String>() {}
+  Cache<String, String> routeToAirline = new Cache2kBuilder<String, String>() { }
     .name(this + "-routeToAirline")
     .eternal(true)
     .loader(new CacheLoader<String, String>() {
       @Override
-      public String load(final String key) throws Exception {
+      public String load(String key) {
         String[] port = key.split("-");
         return findFavoriteAirline(port[0], port[1]);
       }

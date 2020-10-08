@@ -1,4 +1,4 @@
-package org.cache2k.core;
+package org.cache2k.core.timing;
 
 /*
  * #%L
@@ -20,8 +20,7 @@ package org.cache2k.core;
  * #L%
  */
 
-import org.cache2k.Cache;
-import org.cache2k.Cache2kBuilder;
+import org.cache2k.core.DefaultResiliencePolicy;
 import org.cache2k.integration.ExceptionInformation;
 import org.cache2k.integration.ExceptionPropagator;
 import org.cache2k.integration.ResiliencePolicy;
@@ -29,14 +28,16 @@ import org.cache2k.testing.category.FastTests;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
-import java.util.concurrent.TimeUnit;
-
 import static org.junit.Assert.*;
 import static org.hamcrest.Matchers.*;
 
 /**
+ * Unit test with out cache for default resilience policy.
+ *
  * @author Jens Wilke
+ * @see DefaultResiliencePolicy
  */
+@SuppressWarnings({"rawtypes", "unchecked"})
 @Category(FastTests.class)
 public class DefaultResiliencePolicyUnitTest {
 
@@ -158,16 +159,16 @@ public class DefaultResiliencePolicyUnitTest {
     long min = Long.MAX_VALUE;
     long max = 0;
     long t0 = p.suppressExceptionUntil("key", b, null);
-    boolean _oneDifferent = false;
+    boolean oneDifferent = false;
     for (int i = 0; i < 100; i++) {
       long t = p.suppressExceptionUntil("key", b, null);
       if (t != t0) {
-        _oneDifferent = true;
+        oneDifferent = true;
       }
       min = Math.min(t, min);
       max = Math.max(t, max);
     }
-    assertTrue(_oneDifferent);
+    assertTrue(oneDifferent);
     assertThat((max - min), greaterThanOrEqualTo(50L / 2));
     assertThat((max - min), lessThanOrEqualTo(50L));
     assertThat(min, greaterThanOrEqualTo(50L));
@@ -254,16 +255,6 @@ public class DefaultResiliencePolicyUnitTest {
     assertEquals(500, t);
   }
 
-  @Test
-  public void testExample1() {
-    Cache<String, String> c = new Cache2kBuilder<String,String>() {}
-      .expireAfterWrite(10, TimeUnit.MINUTES)
-      .resilienceDuration(30, TimeUnit.SECONDS)
-      /** register loader, etc. */
-      .build();
-    c.close();
-  }
-
   static class CtxBean implements ResiliencePolicy.Context {
 
     long expireAfterWriteMillis;
@@ -271,14 +262,14 @@ public class DefaultResiliencePolicyUnitTest {
     long retryIntervalMillis;
     long maxRetryIntervalMillis;
 
-    public CtxBean(final long _expireAfterWriteMillis,
-                   final long _retryIntervalMillis,
-                   final long _maxRetryIntervalMillis,
-                   final long _resilienceDurationMillis) {
-      expireAfterWriteMillis = _expireAfterWriteMillis;
-      retryIntervalMillis = _retryIntervalMillis;
-      maxRetryIntervalMillis = _maxRetryIntervalMillis;
-      resilienceDurationMillis = _resilienceDurationMillis;
+    CtxBean(long expireAfterWriteMillis,
+            long retryIntervalMillis,
+            long maxRetryIntervalMillis,
+            long resilienceDurationMillis) {
+      this.expireAfterWriteMillis = expireAfterWriteMillis;
+      this.retryIntervalMillis = retryIntervalMillis;
+      this.maxRetryIntervalMillis = maxRetryIntervalMillis;
+      this.resilienceDurationMillis = resilienceDurationMillis;
     }
 
     @Override
@@ -343,24 +334,24 @@ public class DefaultResiliencePolicyUnitTest {
       return until;
     }
 
-    public void setException(final Throwable _exception) {
-      exception = _exception;
+    public void setException(Throwable exception) {
+      this.exception = exception;
     }
 
-    public void setLoadTime(final long _loadTime) {
-      loadTime = _loadTime;
+    public void setLoadTime(long loadTime) {
+      this.loadTime = loadTime;
     }
 
-    public void setRetryCount(final int _retryCount) {
-      retryCount = _retryCount;
+    public void setRetryCount(int retryCount) {
+      this.retryCount = retryCount;
     }
 
-    public void setSinceTime(final long _sinceTime) {
-      sinceTime = _sinceTime;
+    public void setSinceTime(long sinceTime) {
+      this.sinceTime = sinceTime;
     }
 
-    public void setUntil(final long _until) {
-      until = _until;
+    public void setUntil(long until) {
+      this.until = until;
     }
   }
 

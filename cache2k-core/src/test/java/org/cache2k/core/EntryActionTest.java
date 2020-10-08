@@ -38,10 +38,10 @@ public class EntryActionTest extends TestingBase {
   public void testAbort() {
     BaseCache<Integer, Integer> bc = (BaseCache<Integer, Integer>) builder().build();
     Semantic op = new Semantic<Integer, Integer, Object>() {
-      AtomicInteger count = new AtomicInteger();
+      final AtomicInteger count = new AtomicInteger();
 
       @Override
-      public void start(final Progress<Integer, Integer, Object> c) {
+      public void start(Progress<Integer, Integer, Object> c) {
         c.wantData();
       }
 
@@ -51,7 +51,8 @@ public class EntryActionTest extends TestingBase {
        * would result in no mutation.
        */
       @Override
-      public void examine(final Progress<Integer, Integer, Object> c, final ExaminationEntry<Integer, Integer> e) {
+      public void examine(Progress<Integer, Integer, Object> c,
+                          ExaminationEntry<Integer, Integer> e) {
         if (count.getAndIncrement() % 2 == 0) {
           c.wantMutation();
         } else {
@@ -60,12 +61,14 @@ public class EntryActionTest extends TestingBase {
       }
 
       @Override
-      public void mutate(final Progress<Integer, Integer, Object> c, final ExaminationEntry<Integer, Integer> e) {
+      public void mutate(Progress<Integer, Integer, Object> c,
+                         ExaminationEntry<Integer, Integer> e) {
         c.put(123);
       }
 
       @Override
-      public void loaded(final Progress<Integer, Integer, Object> c, final ExaminationEntry<Integer, Integer> e) {
+      public void loaded(Progress<Integer, Integer, Object> c,
+                         ExaminationEntry<Integer, Integer> e) {
 
       }
     };

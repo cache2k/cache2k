@@ -32,7 +32,7 @@ import org.junit.experimental.categories.Category;
 public class ExpiryWiredCacheTest extends ExpiryTest {
 
   @Override
-  protected <K, T> Cache2kBuilder<K, T> builder(final Class<K> k, final Class<T> t) {
+  protected <K, T> Cache2kBuilder<K, T> builder(Class<K> k, Class<T> t) {
     return StaticUtil.enforceWiredCache(super.builder(k, t));
   }
 

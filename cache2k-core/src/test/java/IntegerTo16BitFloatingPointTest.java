@@ -77,7 +77,8 @@ public class IntegerTo16BitFloatingPointTest {
   }
 
   void checkPair(long v1, long v2) {
-    assertEquals(v2, IntegerTo16BitFloatingPoint.expand(IntegerTo16BitFloatingPoint.compress((int) v1)));
+    assertEquals(v2,
+      IntegerTo16BitFloatingPoint.expand(IntegerTo16BitFloatingPoint.compress((int) v1)));
   }
 
   @Test

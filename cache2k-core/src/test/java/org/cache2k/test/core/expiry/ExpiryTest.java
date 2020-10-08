@@ -43,7 +43,6 @@ import org.cache2k.core.InternalCache;
 import org.cache2k.testing.category.FastTests;
 import org.cache2k.test.util.TimeBox;
 import org.hamcrest.Matchers;
-import org.junit.Ignore;
 import org.junit.experimental.categories.Category;
 import org.junit.Test;
 

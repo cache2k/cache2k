@@ -73,7 +73,7 @@ public class CacheWriterTest extends TestingBase {
       .writer(w)
       .loader(new CacheLoader<Integer, Integer>() {
         @Override
-        public Integer load(final Integer key) {
+        public Integer load(Integer key) {
           return key;
         }
       })
@@ -89,7 +89,7 @@ public class CacheWriterTest extends TestingBase {
       .writer(w)
       .loader(new CacheLoader<Integer, Integer>() {
         @Override
-        public Integer load(final Integer key) {
+        public Integer load(Integer key) {
           return key;
         }
       })
@@ -105,14 +105,14 @@ public class CacheWriterTest extends TestingBase {
       .writer(w)
       .loader(new CacheLoader<Integer, Integer>() {
         @Override
-        public Integer load(final Integer key) {
+        public Integer load(Integer key) {
           return key;
         }
       })
       .build();
     c.invoke(1, new EntryProcessor<Integer, Integer, Object>() {
       @Override
-      public Object process(final MutableCacheEntry<Integer, Integer> entry) {
+      public Object process(MutableCacheEntry<Integer, Integer> entry) {
         entry.getValue();
         return null;
       }
@@ -121,20 +121,20 @@ public class CacheWriterTest extends TestingBase {
   }
 
   @Test
-  public void testTiggeredLoadWithInvokeAndSetDoesCallWriter() {
+  public void testTriggeredLoadWithInvokeAndSetDoesCallWriter() {
     MyWriter w = new MyWriter();
     Cache<Integer, Integer> c = builder(Integer.class, Integer.class)
       .writer(w)
       .loader(new CacheLoader<Integer, Integer>() {
         @Override
-        public Integer load(final Integer key) {
+        public Integer load(Integer key) {
           return key;
         }
       })
       .build();
     c.invoke(1, new EntryProcessor<Integer, Integer, Object>() {
       @Override
-      public Object process(final MutableCacheEntry<Integer, Integer> entry) {
+      public Object process(MutableCacheEntry<Integer, Integer> entry) {
         entry.getValue();
         entry.setValue(123);
         return null;

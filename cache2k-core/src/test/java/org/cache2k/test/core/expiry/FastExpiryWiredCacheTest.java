@@ -32,7 +32,7 @@ import org.junit.experimental.categories.Category;
 public class FastExpiryWiredCacheTest extends FastExpiryTest {
 
   @Override
-  protected void applyAdditionalOptions(final Cache2kBuilder b) {
+  protected void applyAdditionalOptions(Cache2kBuilder b) {
     StaticUtil.enforceWiredCache(b);
   }
 

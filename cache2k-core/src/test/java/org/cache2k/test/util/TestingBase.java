@@ -77,18 +77,19 @@ import static org.junit.Assert.*;
 @SuppressWarnings("unchecked")
 public class TestingBase {
 
-  public final int DEFAULT_MAX_SIZE = 200;
+  public static final int DEFAULT_MAX_SIZE = 200;
 
   public static final int MINIMAL_LOADER_THREADS = 4;
 
-  private static final ThreadLocal<SimulatedClock> THREAD_CLOCK = new ThreadLocal<SimulatedClock>() {
+  private static final ThreadLocal<SimulatedClock> THREAD_CLOCK =
+    new ThreadLocal<SimulatedClock>() {
     @Override
     protected SimulatedClock initialValue() {
       return new SimulatedClock(1000000);
     }
   };
 
-  private static final AtomicLong uniqueNameCounter = new AtomicLong();
+  private static final AtomicLong UNIQUE_NAME_COUNTER = new AtomicLong();
 
   /**
    * Separate thread pool for testing. The thread pool is limited, so we know when some tests
@@ -109,8 +110,8 @@ public class TestingBase {
     return loaderExecutor;
   }
 
-  private final static TimeStepper defaultStepper = new TimeStepper(DefaultClock.INSTANCE);
-  private TimeStepper stepper = defaultStepper;
+  private static final TimeStepper TIME_STEPPER = new TimeStepper(DefaultClock.INSTANCE);
+  private TimeStepper stepper = TIME_STEPPER;
   private InternalClock clock;
   private Statistics statistics;
 
@@ -128,7 +129,7 @@ public class TestingBase {
     }
     ).around(new TestRule() {
              @Override
-             public Statement apply(final Statement base, final Description description) {
+             public Statement apply(final Statement base, Description description) {
                return new Statement() {
                  @Override
                  public void evaluate() throws Throwable {
@@ -162,7 +163,6 @@ public class TestingBase {
 
   protected String cacheName;
   protected Cache cache;
-  private static Class<?> defaultImplementation = null;
 
   static {
     if (System.getProperty("logOnInfo") == null) {
@@ -172,8 +172,6 @@ public class TestingBase {
       }
     }
   }
-
-  protected Class<?> getCacheImplementation() { return defaultImplementation; }
 
   public void setClock(InternalClock c) {
     if (clock != null) {
@@ -205,15 +203,15 @@ public class TestingBase {
   /**
    * Construct a simple build with int types.
    */
-  protected Cache2kBuilder<Integer,Integer> builder() {
+  protected Cache2kBuilder<Integer, Integer> builder() {
     return builder(Integer.class, Integer.class);
   }
 
-  protected <K,T> Cache2kBuilder<K,T> builder(Class<K> k, Class<T> t) {
+  protected <K, T> Cache2kBuilder<K, T> builder(Class<K> k, Class<T> t) {
     return builder(generateUniqueCacheName(this), k, t);
   }
 
-  protected <K,T> Cache2kBuilder<K,T> builder(String _cacheName, Class<K> k, Class<T> t) {
+  protected <K, T> Cache2kBuilder<K, T> builder(String cacheName, Class<K> k, Class<T> t) {
     provideCache();
     if (cache != null) {
       checkIntegrity();
@@ -221,10 +219,10 @@ public class TestingBase {
       cache.close();
       cache = null;
     }
-    cacheName = _cacheName;
-    Cache2kBuilder<K,T> b = Cache2kBuilder.of(k,t)
+    this.cacheName = cacheName;
+    Cache2kBuilder<K, T> b = Cache2kBuilder.of(k, t)
       .timeReference(getClock())
-      .name(_cacheName)
+      .name(cacheName)
       .entryCapacity(DEFAULT_MAX_SIZE)
       .timerLag(TestingParameters.MINIMAL_TICK_MILLIS / 2, TimeUnit.MILLISECONDS)
       .loaderExecutor(loaderExecutor)
@@ -239,35 +237,36 @@ public class TestingBase {
    */
   protected void applyAdditionalOptions(Cache2kBuilder b) { }
 
-  protected void applyMaxElements(Cache2kBuilder b, long _maxElements) {
-    b.entryCapacity(_maxElements);
+  protected void applyMaxElements(Cache2kBuilder b, long maxElements) {
+    b.entryCapacity(maxElements);
   }
 
   protected <K, T> Cache<K, T> freshCache(
-      Class<K> _keyClass, Class<T> _dataClass, CacheLoader g, long _maxElements, int _expiry) {
+      Class<K> keyClass, Class<T> dataClass, CacheLoader g, long maxElements, int expiry) {
     Cache2kBuilder<K, T> b =
-      builder(_keyClass, _dataClass).loader(g).refreshAhead(_expiry >= 0 && g != null);
-    if (_expiry < 0) {
+      builder(keyClass, dataClass).loader(g).refreshAhead(expiry >= 0 && g != null);
+    if (expiry < 0) {
       b.eternal(true);
     } else {
-      b.expireAfterWrite(_expiry, TimeUnit.SECONDS);
+      b.expireAfterWrite(expiry, TimeUnit.SECONDS);
     }
-    applyMaxElements(b, _maxElements);
+    applyMaxElements(b, maxElements);
     return cache = b.build();
   }
 
-  protected Cache<Integer, Integer> freshCache(CacheLoader<Integer, Integer> g, long _maxElements, int _expirySeconds) {
-    return freshCache(Integer.class, Integer.class, g, _maxElements, _expirySeconds);
+  protected Cache<Integer, Integer> freshCache(CacheLoader<Integer, Integer> g,
+                                               long maxElements, int expirySeconds) {
+    return freshCache(Integer.class, Integer.class, g, maxElements, expirySeconds);
   }
 
-  protected Cache<Integer, Integer> freshCache(CacheLoader<Integer, Integer> g, long _maxElements) {
-    return freshCache(g, _maxElements, 5 * 60);
+  protected Cache<Integer, Integer> freshCache(CacheLoader<Integer, Integer> g, long maxElements) {
+    return freshCache(g, maxElements, 5 * 60);
   }
 
   public void cleanup() {
     try {
-      boolean _debug = false;
-      if (_debug) {
+      boolean debug = false;
+      if (debug) {
         System.err.println("tearDown: " + cache);
         if (cache instanceof InternalCache) {
           InternalCache bc = (InternalCache) cache;
@@ -384,16 +383,16 @@ public class TestingBase {
   }
 
   private static String uniqueCounterSuffix() {
-    return Long.toString(uniqueNameCounter.incrementAndGet(), 36);
+    return Long.toString(UNIQUE_NAME_COUNTER.incrementAndGet(), 36);
   }
 
-  private static String deriveNameFromTestMethod(Object _testInstance) {
+  private static String deriveNameFromTestMethod(Object testInstance) {
     Exception ex = new Exception();
-    String _methodName = "default";
+    String methodName = "default";
     for (StackTraceElement e : ex.getStackTrace()) {
       Method m = null;
       try {
-        Class <?> c = Class.forName(e.getClassName());
+        Class c = Class.forName(e.getClassName());
         m = c.getMethod(e.getMethodName());
       } catch (Exception ignore) {
       } catch (NoClassDefFoundError ignore) {
@@ -403,10 +402,10 @@ public class TestingBase {
       }
       Annotation a = m.getAnnotation(Test.class);
       if (a != null) {
-        _methodName = "CACHE-" + _testInstance.getClass().getSimpleName() + "." + m.getName();
+        methodName = "CACHE-" + testInstance.getClass().getSimpleName() + "." + m.getName();
       }
     }
-    return _methodName;
+    return methodName;
   }
 
   public String generateUniqueCacheName(Object obj) {
@@ -416,7 +415,7 @@ public class TestingBase {
   public int countEntriesViaIteration() {
     provideCache();
     int cnt = 0;
-    for (CacheEntry e : ((Cache<?,?>) cache).entries()) {
+    for (CacheEntry e : ((Cache<?, ?>) cache).entries()) {
       cnt++;
     }
     return cnt;
@@ -441,24 +440,24 @@ public class TestingBase {
 
   public TimeStepper stepper() { return stepper; }
 
-  public void await(Condition _condition) {
-    stepper.await(_condition);
+  public void await(Condition condition) {
+    stepper.await(condition);
   }
 
-  public void await(String _description, Condition _condition) {
-    stepper.await(_description, _condition);
+  public void await(String description, Condition condition) {
+    stepper.await(description, condition);
   }
 
-  public void await(String _description, long _timeoutMillis, Condition _condition) {
-    stepper.await(_description, _timeoutMillis, _condition);
+  public void await(String description, long timeoutMillis, Condition condition) {
+    stepper.await(description, timeoutMillis, condition);
   }
 
-  public TimeBox within(long _millis) {
-    return new TimeBox(clock, _millis);
+  public TimeBox within(long millis) {
+    return new TimeBox(clock, millis);
   }
 
-  public void await(long _timeoutMillis, Condition _condition) {
-    stepper.await(_timeoutMillis, _condition);
+  public void await(long timeoutMillis, Condition condition) {
+    stepper.await(timeoutMillis, condition);
   }
 
   /**
@@ -467,9 +466,9 @@ public class TestingBase {
    *
    * @throws RuntimeException if interrupted
    */
-  public void sleep(long _millis) {
+  public void sleep(long millis) {
     try {
-      getClock().sleep(_millis);
+      getClock().sleep(millis);
     } catch (InterruptedException ex) {
       Thread.currentThread().interrupt();
       throw new RuntimeException("interrupted", ex);
@@ -484,7 +483,7 @@ public class TestingBase {
     }
 
     @Override
-    public Integer load(final Integer key) throws Exception {
+    public Integer load(Integer key) throws Exception {
       return counter.getAndIncrement();
     }
   }
@@ -493,12 +492,12 @@ public class TestingBase {
     AtomicInteger counter = new AtomicInteger();
     int[] ints;
 
-    public PatternLoader(final int... _ints) {
-      ints = _ints;
+    public PatternLoader(int... values) {
+      ints = values;
     }
 
     @Override
-    public Integer load(final Integer key) throws Exception {
+    public Integer load(Integer key) throws Exception {
       return ints[counter.getAndIncrement() % ints.length];
     }
   }
@@ -511,7 +510,7 @@ public class TestingBase {
     }
 
     @Override
-    public Integer load(final Integer key) throws Exception {
+    public Integer load(Integer key) throws Exception {
       counter.getAndIncrement();
       return key;
     }
@@ -569,10 +568,11 @@ public class TestingBase {
           new ThreadPoolExecutor(0, MINIMAL_LOADER_THREADS,
             21, TimeUnit.SECONDS,
             new SynchronousQueue<Runnable>(),
-            HeapCache.TUNABLE.threadFactoryProvider.newThreadFactory(Thread.currentThread().getName() + "-loader-pool"),
+            HeapCache.TUNABLE.threadFactoryProvider.newThreadFactory(
+              Thread.currentThread().getName() + "-loader-pool"),
             new RejectedExecutionHandler() {
               @Override
-              public void rejectedExecution(final Runnable r, final ThreadPoolExecutor executor) {
+              public void rejectedExecution(Runnable r, ThreadPoolExecutor executor) {
                 throw new Error("more threads are needed then expected");
               }
             });
@@ -581,7 +581,7 @@ public class TestingBase {
     }
 
     @Override
-    public void execute(final Runnable r) {
+    public void execute(Runnable r) {
       try {
         SHARED_EXECUTOR.execute(r);
       } catch (RejectedExecutionException e) {

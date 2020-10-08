@@ -192,16 +192,16 @@ public class StatisticsTest extends TestingBase {
   }
 
   public void testGetFetchAndRefresh(boolean keepData) throws Exception {
-    long _EXPIRY_MILLIS = TestingParameters.MINIMAL_TICK_MILLIS;
+    long expiryMillis = TestingParameters.MINIMAL_TICK_MILLIS;
     final IntCountingCacheSource g = new IntCountingCacheSource();
     final Cache<Integer, Integer> c =
         builder(Integer.class, Integer.class)
             .keepDataAfterExpired(keepData)
             .loader(g)
             .refreshAhead(true)
-            .expireAfterWrite(_EXPIRY_MILLIS, TimeUnit.MILLISECONDS).build();
+            .expireAfterWrite(expiryMillis, TimeUnit.MILLISECONDS).build();
     assertEquals("no miss yet", 0, g.getLoaderCalledCount());
-    within(_EXPIRY_MILLIS)
+    within(expiryMillis)
       .perform(new Runnable() {
         @Override
         public void run() {
@@ -217,7 +217,7 @@ public class StatisticsTest extends TestingBase {
           assertEquals(1, g.getLoaderCalledCount());
         }
     });
-    sleep(_EXPIRY_MILLIS * 3);
+    sleep(expiryMillis * 3);
     c.get(1802);
     if (g.getLoaderCalledCount() >= 3) {
       assertEquals(2, getInfo().getMissCount());
@@ -274,22 +274,22 @@ public class StatisticsTest extends TestingBase {
     c.get(1802); // hit, but needs fetch
   }
 
-  void testUsageCounter(int[] _accessPattern, int _size) throws Exception {
+  void testUsageCounter(int[] accessPattern, int size) throws Exception {
     IntCountingCacheSource g = new IntCountingCacheSource();
     final Cache<Integer, Integer> c =
         builder(Integer.class, Integer.class)
-            .entryCapacity(_size)
+            .entryCapacity(size)
             .loader(g)
             .eternal(true)
             .build();
-    for (int i = 0; i < _accessPattern.length; i++) {
-      int v = _accessPattern[i];
+    for (int i = 0; i < accessPattern.length; i++) {
+      int v = accessPattern[i];
       c.get(v);
 
     }
-    assertEquals(_accessPattern.length, getInfo().getGetCount());
+    assertEquals(accessPattern.length, getInfo().getGetCount());
     c.clear();
-    assertEquals(_accessPattern.length, getInfo().getGetCount());
+    assertEquals(accessPattern.length, getInfo().getGetCount());
   }
 
   int[] accessPattern1 = new int[]{

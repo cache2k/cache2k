@@ -66,14 +66,16 @@ public class IntegrationTest {
   @Test
   public void loaderByClassName() {
     Cache2kConfiguration cfg = cacheCfgWithLoader();
-    assertEquals("x.y.z", ((CustomizationSupplierByClassName) cfg.getLoader()).getClassName());
+    assertEquals("x.y.z",
+      ((CustomizationSupplierByClassName) cfg.getLoader()).getClassName());
   }
 
   @Test
   public void listenerByClassName() {
     Cache2kConfiguration cfg = cacheCfgWithLoader();
     assertEquals(2, cfg.getListeners().size());
-    assertEquals("a.b.c", ((CustomizationSupplierByClassName) cfg.getListeners().iterator().next()).getClassName());
+    assertEquals("a.b.c",
+     ((CustomizationSupplierByClassName) cfg.getListeners().iterator().next()).getClassName());
   }
 
   private Cache2kConfiguration cacheCfgWithLoader() {
@@ -100,13 +102,15 @@ public class IntegrationTest {
 
   @Test
   public void defaultIsApplied() {
-    assertEquals(5, new Cache2kBuilder<String, String>(){}.toConfiguration().getLoaderThreadCount());
+    assertEquals(5,
+      new Cache2kBuilder<String, String>() { }.toConfiguration().getLoaderThreadCount());
   }
 
   @Test
   public void defaultAndIndividualIsApplied() {
     Cache2kBuilder<String, String> b =
-      new Cache2kBuilder<String, String>(){}.name("IntegrationTest-defaultAndIndividualIsApplied");
+      new Cache2kBuilder<String, String>() { }
+      .name("IntegrationTest-defaultAndIndividualIsApplied");
     Cache2kConfiguration<String, String> cfg = b.toConfiguration();
     assertEquals(-1, cfg.getEntryCapacity());
     assertEquals(5, cfg.getLoaderThreadCount());
@@ -119,14 +123,14 @@ public class IntegrationTest {
 
   @Test(expected = IllegalArgumentException.class)
   public void failIfConfigurationIsMissing() {
-    new Cache2kBuilder<String, String>(){}
+    new Cache2kBuilder<String, String>() { }
     .manager(CacheManager.getInstance("empty"))
     .name("missingDummy").build();
   }
 
   @Test(expected = ConfigurationException.class)
   public void failIfNameIsMissing() {
-    new Cache2kBuilder<String, String>(){}
+    new Cache2kBuilder<String, String>() { }
       .manager(CacheManager.getInstance("empty"))
       .build();
   }
@@ -261,7 +265,10 @@ public class IntegrationTest {
       c.close();
       fail("expect exception");
     } catch (ConfigurationException ex) {
-      assertThat(ex.getMessage(), containsString("Value '2d' rejected: eternal enabled explicitly, refusing to enable expiry"));
+      assertThat(ex.getMessage(),
+        containsString(
+          "Value '2d' rejected: eternal enabled explicitly, " +
+            "refusing to enable expiry"));
     }
   }
 

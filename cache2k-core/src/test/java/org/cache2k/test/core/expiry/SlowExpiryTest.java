@@ -147,7 +147,7 @@ public class SlowExpiryTest extends TestingBase {
       .retryInterval(timespan, TimeUnit.MILLISECONDS)
       .loader(new CacheLoader<Integer, Integer>() {
         @Override
-        public Integer load(Integer key) throws Exception {
+        public Integer load(Integer key) {
           throw new RuntimeException("always");
         }
 
@@ -201,7 +201,7 @@ public class SlowExpiryTest extends TestingBase {
 
 
   @Test
-  public void testExceptionExpirySuppressTwiceWaitForExceptionExpiry() throws Exception {
+  public void testExceptionExpirySuppressTwiceWaitForExceptionExpiry() {
     final long exceptionExpiryMillis =  TestingParameters.MINIMAL_TICK_MILLIS;
     final BasicCacheTest.OccasionalExceptionSource src =
       new BasicCacheTest.PatternExceptionSource(false, true, false);
@@ -246,7 +246,7 @@ public class SlowExpiryTest extends TestingBase {
   }
 
   @Test
-  public void testExceptionExpiryNoSuppress() throws Exception {
+  public void testExceptionExpiryNoSuppress() {
     BasicCacheTest.OccasionalExceptionSource src = new BasicCacheTest.OccasionalExceptionSource();
     final Cache<Integer, Integer> c = builder(Integer.class, Integer.class)
         .expireAfterWrite(0, TimeUnit.MINUTES)
@@ -295,7 +295,7 @@ public class SlowExpiryTest extends TestingBase {
   }
 
   @Test
-  public void testSuppressExceptionImmediateExpiry() throws Exception {
+  public void testSuppressExceptionImmediateExpiry() {
     BasicCacheTest.OccasionalExceptionSource src = new BasicCacheTest.OccasionalExceptionSource();
     Cache<Integer, Integer> c = builder(Integer.class, Integer.class)
       .expireAfterWrite(0, TimeUnit.MINUTES)
@@ -310,7 +310,7 @@ public class SlowExpiryTest extends TestingBase {
   }
 
   @Test
-  public void testSuppressExceptionShortExpiry() throws Exception {
+  public void testSuppressExceptionShortExpiry() {
     BasicCacheTest.OccasionalExceptionSource src = new BasicCacheTest.OccasionalExceptionSource();
     Cache<Integer, Integer> c = builder(Integer.class, Integer.class)
       .expireAfterWrite(TestingParameters.MINIMAL_TICK_MILLIS, TimeUnit.MILLISECONDS)
@@ -336,7 +336,7 @@ public class SlowExpiryTest extends TestingBase {
    * the expiry happens during the calculation
    */
   @Test
-  public void testShortExpiryTimeDelayLoad() throws Exception {
+  public void testShortExpiryTimeDelayLoad() {
     boolean keepData = true;
     Cache<Integer, Integer> c = builder(Integer.class, Integer.class)
       .expireAfterWrite(1, TimeUnit.MILLISECONDS)
@@ -345,7 +345,7 @@ public class SlowExpiryTest extends TestingBase {
       .keepDataAfterExpired(keepData)
       .loader(new CacheLoader<Integer, Integer>() {
         @Override
-        public Integer load(Integer key) throws Exception {
+        public Integer load(Integer key) {
           sleep(2);
           return key;
         }

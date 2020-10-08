@@ -109,6 +109,7 @@ class CompactEntry<K, V> {
    *
    * @Deprecated May only be called as CacheEntry before screening for exceptions.
    */
+  @Deprecated
   public V getValue() {
     return valueOrException;
   }

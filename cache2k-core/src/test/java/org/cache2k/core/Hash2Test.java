@@ -30,6 +30,7 @@ import org.junit.experimental.categories.Category;
 /**
  * @author Jens Wilke
  */
+@SuppressWarnings("rawtypes")
 @Category(FastTests.class)
 public class Hash2Test {
 

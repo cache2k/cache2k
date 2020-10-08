@@ -63,7 +63,7 @@ public class ChangeCapacityStressTest extends TestingBase {
         int end = start + perThread;
         for (int i = start; i < end; i++) {
           c.put(i, 1);
-          boolean present = c.containsKey(i);
+          c.containsKey(i);
         }
       }
     };

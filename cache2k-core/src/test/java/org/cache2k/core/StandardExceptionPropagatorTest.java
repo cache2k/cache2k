@@ -35,11 +35,12 @@ import static org.junit.Assert.assertTrue;
  * @author Jens Wilke
  * @see StandardExceptionPropagator
  */
+@SuppressWarnings("unchecked")
 public class StandardExceptionPropagatorTest {
 
-  final static ExceptionPropagator STANDARD_PROPAGATOR = new StandardExceptionPropagator();
-  final String TIME_STRING = "2016-05-25 09:30:12.123";
-  final long SOME_TIME = Timestamp.valueOf(TIME_STRING).getTime();
+  static final ExceptionPropagator STANDARD_PROPAGATOR = new StandardExceptionPropagator();
+  static final String TIME_STRING = "2016-05-25 09:30:12.123";
+  static final long SOME_TIME = Timestamp.valueOf(TIME_STRING).getTime();
 
   @Test
   public void propagate_eternal() {

@@ -20,6 +20,7 @@ package org.cache2k.core;
  * #L%
  */
 
+import org.cache2k.CacheEntry;
 import org.cache2k.testing.category.FastTests;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -33,6 +34,7 @@ import static org.junit.Assert.*;
 /**
  * @author Jens Wilke
  */
+@SuppressWarnings({"rawtypes", "SynchronizationOnLocalVariableOrMethodParameter"})
 @Category(FastTests.class)
 public class EntryTest {
 
@@ -49,8 +51,8 @@ public class EntryTest {
 
   @Test
   public void testLastModified50YearsRange() {
-    long _50yearsMillis = 50L * 365 * 24 * 60 * 60 * 1000;
-    long t = System.currentTimeMillis() + _50yearsMillis;
+    long millis50years = 50L * 365 * 24 * 60 * 60 * 1000;
+    long t = System.currentTimeMillis() + millis50years;
     Entry e = new Entry();
     synchronized (e) {
       e.setRefreshTime(t);
@@ -108,34 +110,52 @@ public class EntryTest {
 
   @Test
   public void timeSpan32Bit() {
-    int _days = Integer.MAX_VALUE
+    int days = Integer.MAX_VALUE
       / 1000
       / 60
       / 60
       / 24;
-    assertEquals(24, _days);
+    assertEquals(24, days);
   }
 
   @Test
   public void getValue() {
-    new Entry().getValue();
+    Entry e = new Entry();
+    synchronized (e) {
+      CacheEntry ce = (CacheEntry) e;
+      assertTrue(ce.getValue().toString().contains("InitialValue"));
+      e.setValueOrException(null);
+      assertNull(ce.getValue());
+      e.setValueOrException(this);
+      assertSame(this, ce.getValue());
+      e.setValueOrException(new ExceptionWrapper<Integer>(null, 4711, null, null));
+      try {
+        ce.getValue();
+        fail("Entry.getValue() assertion expected");
+      } catch (AssertionError expected) {
+      }
+    }
   }
 
   @Test
   public void num2processingState() {
     assertEquals("DONE", Entry.num2processingStateText(Entry.ProcessingState.DONE));
     assertEquals("READ", Entry.num2processingStateText(Entry.ProcessingState.READ));
-    assertEquals("READ_COMPLETE", Entry.num2processingStateText(Entry.ProcessingState.READ_COMPLETE));
+    assertEquals("READ_COMPLETE",
+      Entry.num2processingStateText(Entry.ProcessingState.READ_COMPLETE));
     assertEquals("MUTATE", Entry.num2processingStateText(Entry.ProcessingState.MUTATE));
     assertEquals("LOAD", Entry.num2processingStateText(Entry.ProcessingState.LOAD));
     assertEquals("COMPUTE", Entry.num2processingStateText(Entry.ProcessingState.COMPUTE));
     assertEquals("REFRESH", Entry.num2processingStateText(Entry.ProcessingState.REFRESH));
     assertEquals("EXPIRY", Entry.num2processingStateText(Entry.ProcessingState.EXPIRY));
-    assertEquals("EXPIRY_COMPLETE", Entry.num2processingStateText(Entry.ProcessingState.EXPIRY_COMPLETE));
+    assertEquals("EXPIRY_COMPLETE",
+      Entry.num2processingStateText(Entry.ProcessingState.EXPIRY_COMPLETE));
     assertEquals("WRITE", Entry.num2processingStateText(Entry.ProcessingState.WRITE));
-    assertEquals("WRITE_COMPLETE", Entry.num2processingStateText(Entry.ProcessingState.WRITE_COMPLETE));
+    assertEquals("WRITE_COMPLETE",
+      Entry.num2processingStateText(Entry.ProcessingState.WRITE_COMPLETE));
     assertEquals("STORE", Entry.num2processingStateText(Entry.ProcessingState.STORE));
-    assertEquals("STORE_COMPLETE", Entry.num2processingStateText(Entry.ProcessingState.STORE_COMPLETE));
+    assertEquals("STORE_COMPLETE",
+      Entry.num2processingStateText(Entry.ProcessingState.STORE_COMPLETE));
     assertEquals("NOTIFY", Entry.num2processingStateText(Entry.ProcessingState.NOTIFY));
     assertEquals("PINNED", Entry.num2processingStateText(Entry.ProcessingState.PINNED));
     assertEquals("LAST", Entry.num2processingStateText(Entry.ProcessingState.LAST));

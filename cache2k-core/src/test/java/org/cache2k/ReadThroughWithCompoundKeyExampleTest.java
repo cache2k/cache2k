@@ -31,12 +31,12 @@ import org.junit.Test;
 @NotThreadSafe
 public class ReadThroughWithCompoundKeyExampleTest {
 
-  Cache<Route, String> routeToAirline = new Cache2kBuilder<Route, String>() {}
+  Cache<Route, String> routeToAirline = new Cache2kBuilder<Route, String>() { }
     .name(this + "-routeToAirline")
     .eternal(true)
     .loader(new CacheLoader<Route, String>() {
       @Override
-      public String load(final Route key) throws Exception {
+      public String load(Route key) {
         return findFavoriteAirline(key.getOrigin(), key.getDestination());
       }
     })
@@ -61,10 +61,10 @@ public class ReadThroughWithCompoundKeyExampleTest {
   }
 
   static final class Route {
-    private String origin;
-    private String destination;
+    private final String origin;
+    private final String destination;
 
-    public Route(final String origin, final String destination) {
+    Route(String origin, String destination) {
       this.destination = destination;
       this.origin = origin;
     }
@@ -78,12 +78,12 @@ public class ReadThroughWithCompoundKeyExampleTest {
     }
 
     @Override
-    public boolean equals(final Object other) {
+    public boolean equals(Object other) {
       if (this == other) return true;
       if (other == null || getClass() != other.getClass()) return false;
-      Route __route = (Route) other;
-      if (!origin.equals(__route.origin)) return false;
-      return destination.equals(__route.destination);
+      Route route = (Route) other;
+      if (!origin.equals(route.origin)) return false;
+      return destination.equals(route.destination);
     }
 
     @Override

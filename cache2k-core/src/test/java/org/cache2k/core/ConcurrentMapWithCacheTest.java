@@ -26,6 +26,8 @@ import org.cache2k.testing.category.FastTests;
 import org.junit.experimental.categories.Category;
 
 /**
+ * Test ConcurrentMap methods with cache.
+ *
  * @author Jens Wilke
  */
 @Category(FastTests.class)

@@ -34,8 +34,6 @@ import javax.management.MBeanInfo;
 import java.util.ArrayList;
 import java.util.Collection;
 
-import static org.junit.Assert.fail;
-
 import static org.junit.Assert.*;
 
 /**
@@ -60,20 +58,20 @@ public class LegalNamesTest {
 
   private char aChar;
 
-  public LegalNamesTest(final char _aChar) {
-    aChar = _aChar;
+  public LegalNamesTest(final char aChar) {
+    this.aChar = aChar;
   }
 
   @Test
   public void testCache() throws Exception {
-    String _name = LegalNamesTest.class.getName() + "-test-with-char-" + aChar;
+    String name = LegalNamesTest.class.getName() + "-test-with-char-" + aChar;
     Cache c = Cache2kBuilder.forUnknownTypes()
-      .name(_name)
+      .name(name)
       .enableJmx(true)
       .build();
     assertEquals("default", c.getCacheManager().getName());
     assertTrue(c.getCacheManager().isDefaultManager());
-    assertEquals(_name, c.getName());
+    assertEquals(name, c.getName());
     MBeanInfo inf = JmxSupportTest.getCacheManagerInfo(c.getCacheManager().getName());
     assertNotNull(inf);
     inf = JmxSupportTest.getCacheInfo(c.getName());

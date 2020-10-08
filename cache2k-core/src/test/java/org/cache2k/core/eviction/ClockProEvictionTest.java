@@ -21,7 +21,6 @@ package org.cache2k.core.eviction;
  */
 
 import org.cache2k.Cache;
-import org.cache2k.core.eviction.ClockProPlusEviction;
 import org.cache2k.core.util.TunableFactory;
 import org.cache2k.test.util.TestingBase;
 import org.cache2k.testing.category.FastTests;

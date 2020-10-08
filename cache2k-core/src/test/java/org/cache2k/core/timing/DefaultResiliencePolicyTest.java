@@ -66,7 +66,7 @@ public class DefaultResiliencePolicyTest {
    */
   @Test
   public void eternal() {
-    Cache<Integer, Integer> c = new Cache2kBuilder<Integer, Integer>() {}
+    Cache<Integer, Integer> c = new Cache2kBuilder<Integer, Integer>() { }
       .eternal(true)
       /* ... set loader ... */
       .build();
@@ -86,7 +86,7 @@ public class DefaultResiliencePolicyTest {
    */
   @Test
   public void eternal_duration30s() {
-    Cache<Integer, Integer> c = new Cache2kBuilder<Integer, Integer>() {}
+    Cache<Integer, Integer> c = new Cache2kBuilder<Integer, Integer>() { }
       .eternal(true)
       .resilienceDuration(30, TimeUnit.SECONDS)
       /* ... set loader ... */
@@ -100,7 +100,7 @@ public class DefaultResiliencePolicyTest {
 
   @Test
   public void eternal_duration30s_retry10s() {
-    Cache<Integer, Integer> c = new Cache2kBuilder<Integer, Integer>() {}
+    Cache<Integer, Integer> c = new Cache2kBuilder<Integer, Integer>() { }
       .eternal(true)
       .resilienceDuration(30, TimeUnit.SECONDS)
       .retryInterval(10, TimeUnit.SECONDS)
@@ -120,7 +120,7 @@ public class DefaultResiliencePolicyTest {
    */
   @Test
   public void eternal_retry10s() {
-    Cache<Integer, Integer> c = new Cache2kBuilder<Integer, Integer>() {}
+    Cache<Integer, Integer> c = new Cache2kBuilder<Integer, Integer>() { }
       .eternal(true)
       .retryInterval(10, TimeUnit.SECONDS)
       /* ... set loader ... */
@@ -137,7 +137,7 @@ public class DefaultResiliencePolicyTest {
    */
   @Test
   public void eternal_retry0s() {
-    Cache<Integer, Integer> c = new Cache2kBuilder<Integer, Integer>() {}
+    Cache<Integer, Integer> c = new Cache2kBuilder<Integer, Integer>() { }
       .eternal(true)
       .retryInterval(0, TimeUnit.SECONDS)
       /* ... set loader ... */
@@ -148,7 +148,7 @@ public class DefaultResiliencePolicyTest {
 
   @Test
   public void expiry0() {
-    Cache<Integer, Integer> c = new Cache2kBuilder<Integer, Integer>() {}
+    Cache<Integer, Integer> c = new Cache2kBuilder<Integer, Integer>() { }
       .expireAfterWrite(0, TimeUnit.MINUTES)
       /* ... set loader ... */
       .build();
@@ -158,7 +158,7 @@ public class DefaultResiliencePolicyTest {
 
   @Test
   public void expiry0_retry20s() {
-    Cache<Integer, Integer> c = new Cache2kBuilder<Integer, Integer>() {}
+    Cache<Integer, Integer> c = new Cache2kBuilder<Integer, Integer>() { }
       .expireAfterWrite(0, TimeUnit.MINUTES)
       .retryInterval(20, TimeUnit.SECONDS)
       .suppressExceptions(true) /* has no effect! */
@@ -173,7 +173,7 @@ public class DefaultResiliencePolicyTest {
 
   @Test
   public void expiry0_retry20s_resilience20m() {
-    Cache<Integer, Integer> c = new Cache2kBuilder<Integer, Integer>() {}
+    Cache<Integer, Integer> c = new Cache2kBuilder<Integer, Integer>() { }
       .expireAfterWrite(0, TimeUnit.MINUTES)
       .retryInterval(20, TimeUnit.SECONDS)
       .resilienceDuration(5, TimeUnit.MINUTES)
@@ -195,7 +195,7 @@ public class DefaultResiliencePolicyTest {
    */
   @Test
   public void expiry10m() {
-    Cache<Integer, Integer> c = new Cache2kBuilder<Integer, Integer>() {}
+    Cache<Integer, Integer> c = new Cache2kBuilder<Integer, Integer>() { }
       .expireAfterWrite(10, TimeUnit.MINUTES)
       /* ... set loader ... */
       .build();
@@ -208,7 +208,7 @@ public class DefaultResiliencePolicyTest {
 
   @Test
   public void expiry10m_duration30s() {
-    Cache<Integer, Integer> c = new Cache2kBuilder<Integer, Integer>() {}
+    Cache<Integer, Integer> c = new Cache2kBuilder<Integer, Integer>() { }
       .expireAfterWrite(10, TimeUnit.MINUTES)
       .resilienceDuration(30, TimeUnit.SECONDS)
       /* ... set loader ... */
@@ -222,7 +222,7 @@ public class DefaultResiliencePolicyTest {
 
   @Test
   public void expiry10m_retry10s() {
-    Cache<Integer, Integer> c = new Cache2kBuilder<Integer, Integer>() {}
+    Cache<Integer, Integer> c = new Cache2kBuilder<Integer, Integer>() { }
       .expireAfterWrite(10, TimeUnit.MINUTES)
       .retryInterval(10, TimeUnit.SECONDS)
       /* ... set loader ... */
@@ -236,7 +236,7 @@ public class DefaultResiliencePolicyTest {
 
   @Test(expected = IllegalArgumentException.class)
   public void noSuppress_duration10m() {
-    Cache<Integer, Integer> c = new Cache2kBuilder<Integer, Integer>() {}
+    Cache<Integer, Integer> c = new Cache2kBuilder<Integer, Integer>() { }
       .eternal(true)
       .resilienceDuration(10, TimeUnit.MINUTES)
       .suppressExceptions(false)

@@ -35,7 +35,7 @@ public class FastAllMutatorsExpireTest extends AllMutatorsExpireTest {
     enableFastClock();
   }
 
-  public FastAllMutatorsExpireTest(final Pars p) {
+  public FastAllMutatorsExpireTest(Pars p) {
     super(p);
   }
 
