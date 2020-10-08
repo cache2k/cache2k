@@ -4,7 +4,7 @@
   <groupId>org.cache2k</groupId>
   <artifactId>cache2k-parent</artifactId>
   <packaging>pom</packaging>
-  <version>1.6-SNAPSHOT</version>
+  <version>1.5.2.Beta</version>
   <name>cache2k parent</name>
 
   <description>A light weight and high performance Java caching library. Android and Java 6 compatible.</description>
