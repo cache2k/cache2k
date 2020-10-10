@@ -98,6 +98,7 @@
           <artifactId>maven-compiler-plugin</artifactId>
           <version>3.8.1</version>
           <configuration>
+            <useIncrementalCompilation>false</useIncrementalCompilation>
             <release>8</release>
           </configuration>
         </plugin>

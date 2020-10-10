@@ -72,7 +72,6 @@
             <!-- specify source/target for IDE integration -->
             <configuration>
               <release>11</release>
-              <!-- FIXME: test -->
               <compileSourceRoots>${project.basedir}/src/main/java11,${project.basedir}/src/main/java</compileSourceRoots>
             </configuration>
           </execution>
