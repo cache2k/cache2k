@@ -20,12 +20,11 @@ package org.cache2k.core;
  * #L%
  */
 
+import org.cache2k.core.util.Util;
 import org.cache2k.expiry.ExpiryTimeValues;
 import org.cache2k.integration.CacheLoaderException;
 import org.cache2k.integration.ExceptionInformation;
 import org.cache2k.integration.ExceptionPropagator;
-
-import java.sql.Timestamp;
 
 /**
  * Standard behavior of the exception propagator.
@@ -43,18 +42,11 @@ public final class StandardExceptionPropagator implements ExceptionPropagator {
       if (expiry == ExpiryTimeValues.ETERNAL) {
         txt = "expiry=ETERNAL, cause: ";
       } else {
-        txt = "expiry=" + formatMillis(expiry) + ", cause: ";
+        txt = "expiry=" + Util.formatMillis(expiry) + ", cause: ";
       }
     }
     return new CacheLoaderException(txt + exceptionInformation.getException(),
       exceptionInformation.getException());
-  }
-
-  /**
-   * Use the SQL timestamp for a compact time output. The time is formatted in the default timezone.
-   */
-  private String formatMillis(long t) {
-    return new Timestamp(t).toString();
   }
 
 }

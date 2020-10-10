@@ -266,8 +266,9 @@ public class SlowExpiryTest extends TestingBase {
     exceptionToString = exceptionToString.replaceAll("[0-9]", "#");
     exceptionToString = exceptionToString.replace(".##,", ".###,");
     exceptionToString = exceptionToString.replace(".#,", ".###,");
+    exceptionToString = exceptionToString.replace("##:##,", "##:##.###,");
     assertEquals("org.cache#k.integration.CacheLoaderException: " +
-      "expiry=####-##-## ##:##:##.###, cause: " +
+      "expiry=####-##-##T##:##:##.###, cause: " +
       "java.lang.RuntimeException: every # times", exceptionToString);
     exceptionCount = 0;
     try {

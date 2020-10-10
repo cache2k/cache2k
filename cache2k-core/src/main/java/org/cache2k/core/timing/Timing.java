@@ -143,8 +143,7 @@ public abstract class Timing<K, V>  {
    */
   public long stopStartTimer(long expiryTime, Entry<K, V> e) {
     if ((expiryTime > 0 && expiryTime < Long.MAX_VALUE) || expiryTime < 0) {
-      throw new IllegalArgumentException(
-        "Cache is not configured for variable expiry: " + Util.formatMillis(expiryTime));
+      throw new IllegalArgumentException("Cache is not configured for variable expiry");
     }
     return expiryTime == 0 ? Entry.EXPIRED : expiryTime;
   }

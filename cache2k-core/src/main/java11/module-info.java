@@ -22,7 +22,7 @@
  */
 module org.cache2k.core {
   requires org.cache2k.api;
-  requires java.sql;
+  requires java.xml;
   requires static java.logging;
   requires static org.slf4j;
   exports org.cache2k.core.api;

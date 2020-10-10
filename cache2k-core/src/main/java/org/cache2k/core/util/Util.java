@@ -22,7 +22,10 @@ package org.cache2k.core.util;
 
 import org.cache2k.CacheManager;
 
-import java.sql.Timestamp;
+import java.time.Instant;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
 
 /**
  * A set of utility stuff we need often.
@@ -37,7 +40,9 @@ public class Util {
    * Format milliseconds since epoch to a compact timestamp.
    */
   public static String formatMillis(long millis) {
-    return new Timestamp(millis).toString();
+    LocalDateTime t = Instant.ofEpochMilli(millis).atZone(ZoneId.systemDefault()).toLocalDateTime();
+    return DateTimeFormatter.ISO_LOCAL_DATE_TIME.format(t);
+
   }
 
   public static String compactFullName(CacheManager mgr, String cacheName) {
