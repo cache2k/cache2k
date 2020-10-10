@@ -3,8 +3,9 @@
 
   <parent>
     <groupId>org.cache2k</groupId>
-    <artifactId>cache2k-parent</artifactId>
+    <artifactId>cache2k-java11-parent</artifactId>
     <version>1.6-SNAPSHOT</version>
+    <relativePath>../cache2k-java11-parent/pom.xml</relativePath>
   </parent>
 
   <artifactId>cache2k-core</artifactId>
@@ -68,8 +69,7 @@
     <dependency>
       <groupId>org.assertj</groupId>
       <artifactId>assertj-core</artifactId>
-      <!-- TODO 2.0: update to 3.17.2 -->
-      <version>2.9.1</version>
+      <version>3.17.2</version>
       <scope>test</scope>
     </dependency>
 
@@ -110,45 +110,6 @@
       </resources>
 
     <plugins>
-      <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-compiler-plugin</artifactId>
-        <executions>
-          <!-- disable default phase due to fixed id and position in lifecycle -->
-          <execution>
-            <id>default-compile</id>
-            <phase>none</phase>
-            <!-- specify source/target for IDE integration -->
-            <configuration>
-              <release>11</release>
-              <!-- FIXME: test -->
-              <compileSourceRoots>${project.basedir}/src/main/java11,${project.basedir}/src/main/java</compileSourceRoots>
-            </configuration>
-          </execution>
-          <!-- Compile sources with Java 8 first. -->
-          <execution>
-            <id>java-8-compile</id>
-            <goals>
-              <goal>compile</goal>
-            </goals>
-            <configuration>
-              <release>8</release>
-            </configuration>
-          </execution>
-          <!-- Java 11 sources to generate and validate module-info.java -->
-          <execution>
-            <id>java-11-compile</id>
-            <goals>
-              <goal>compile</goal>
-            </goals>
-            <configuration>
-              <release>11</release>
-              <compileSourceRoots>${project.basedir}/src/main/java11</compileSourceRoots>
-            </configuration>
-          </execution>
-          <!-- compile sources as Java 8 to overwrite Java 9 class files, except module-info.java -->
-        </executions>
-      </plugin>
       <plugin>
         <groupId>org.codehaus.mojo</groupId>
         <artifactId>license-maven-plugin</artifactId>
