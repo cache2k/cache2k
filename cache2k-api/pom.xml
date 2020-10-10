@@ -47,6 +47,7 @@
       <!-- Add a module name for Jigsaw
            https://github.com/cache2k/cache2k/issues/109
       -->
+      <!-- fixme jars module-info
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-jar-plugin</artifactId>
@@ -58,6 +59,50 @@
           </archive>
         </configuration>
       </plugin>
+      -->
+
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-compiler-plugin</artifactId>
+        <executions>
+          <!-- disable default phase due to fixed id and position in lifecycle -->
+          <execution>
+            <id>default-compile</id>
+            <phase>none</phase>
+            <!-- specify source/target for IDE integration -->
+            <configuration>
+              <release>11</release>
+              <!-- FIXME: test -->
+              <compileSourceRoots>${project.basedir}/src/main/java11,${project.basedir}/src/main/java</compileSourceRoots>
+            </configuration>
+          </execution>
+          <!-- Compile sources with Java 8 -->
+          <execution>
+            <id>java-8-compile</id>
+            <goals>
+              <goal>compile</goal>
+            </goals>
+            <configuration>
+              <release>8</release>
+            </configuration>
+          </execution>
+          <!-- Compile additional sources with module-info.java.
+               This needs to be last, so javac verifies the packages
+               specified in module-info.java -->
+          <execution>
+            <id>java-11-compile</id>
+            <goals>
+              <goal>compile</goal>
+            </goals>
+            <configuration>
+              <release>11</release>
+              <compileSourceRoots>${project.basedir}/src/main/java11</compileSourceRoots>
+            </configuration>
+          </execution>
+          <!-- compile sources as Java 8 to overwrite Java 9 class files, except module-info.java -->
+        </executions>
+      </plugin>
+
 
       <!-- print a clirr report with:  mvn clirr:check -->
       <plugin>

@@ -2,7 +2,7 @@ package org.cache2k.test.core;
 
 /*
  * #%L
- * cache2k implementation
+ * cache2k core implementation
  * %%
  * Copyright (C) 2000 - 2020 headissue GmbH, Munich
  * %%
@@ -25,7 +25,6 @@ import org.cache2k.configuration.ConfigurationSection;
 import org.cache2k.configuration.CustomizationSupplier;
 import org.cache2k.configuration.CustomizationSupplierByClassName;
 import org.cache2k.event.CacheEntryOperationListener;
-import org.cache2k.jcache.JCacheConfiguration;
 import org.hamcrest.CoreMatchers;
 import org.junit.Test;
 
@@ -54,24 +53,6 @@ public class Cache2kConfigurationTest {
       CoreMatchers.containsString("DefaultCustomizationCollection"));
   }
 
-  @Test
-  public void checkSectionSetter() {
-    Cache2kConfiguration cfg = new Cache2kConfiguration();
-    cfg.setSections(Collections.singletonList(new JCacheConfiguration()));
-    assertEquals(1, cfg.getSections().size());
-    assertThat(
-      cfg.getSections().toString(),
-      CoreMatchers.containsString("ConfigurationSectionContainer"));
-    assertNull(cfg.getSections().getSection(DummySection.class));
-    assertTrue(cfg.getSections().iterator().hasNext());
-  }
-
-  @Test(expected = IllegalArgumentException.class)
-  public void checkNoDuplicateSection() {
-    Cache2kConfiguration cfg = new Cache2kConfiguration();
-    cfg.setSections(Collections.singletonList(new JCacheConfiguration()));
-    cfg.setSections(Collections.singletonList(new JCacheConfiguration()));
-  }
 
   interface DummySection extends ConfigurationSection { }
 

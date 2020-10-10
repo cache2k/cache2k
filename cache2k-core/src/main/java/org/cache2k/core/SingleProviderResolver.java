@@ -1,8 +1,8 @@
-package org.cache2k.spi;
+package org.cache2k.core;
 
 /*
  * #%L
- * cache2k API
+ * cache2k core implementation
  * %%
  * Copyright (C) 2000 - 2020 headissue GmbH, Munich
  * %%
@@ -20,17 +20,15 @@ package org.cache2k.spi;
  * #L%
  */
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.io.LineNumberReader;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.ServiceLoader;
 
 /**
- * Resolves a service provider by its interface. This is used for the cache2k
+ * Since v2 just delegates to the ServiceLoader. Maybe remove completely?
+ *
+ * <p>Resolves a service provider by its interface. This is used for the cache2k
  * internal providers.
  *
  * <p>This class is in principle similar to the {@link java.util.ServiceLoader}.
@@ -43,7 +41,7 @@ import java.util.ServiceLoader;
  * mechanism is not working. This is needed for OSGi environments to resolve the implementation
  * from the API package.
  *
- * @author Jens Wilke; created: 2014-06-19
+ * @author Jens Wilke
  * @see <a href="https://code.google.com/p/android/issues/detail?id=59658">
  *   android service loader issue</a>
  */
@@ -98,51 +96,22 @@ public class SingleProviderResolver {
     if (PROVIDERS.containsKey(c)) {
       return (T) PROVIDERS.get(c);
     }
-    try {
-      String className = readFile("org/cache2k/services/" + c.getName());
-      T obj = null;
-      if (className == null) {
-        ServiceLoader<T> sl = ServiceLoader.load(c);
-        Iterator<T> it = sl.iterator();
-        if (it.hasNext()) {
-          obj = it.next();
-        }
-      } else {
-        obj = (T) SingleProviderResolver.class.getClassLoader().loadClass(className).newInstance();
-      }
-      if (obj == null && defaultImpl != null) {
-        obj = defaultImpl.newInstance();
-      }
-      PROVIDERS.put(c, obj);
-      return obj;
-    } catch (Exception ex) {
-      Error err = new LinkageError("Error instantiating " + c.getName(), ex);
-      err.printStackTrace();
-      throw err;
+    T impl = null;
+    Iterator<T> it = ServiceLoader.load(c).iterator();
+    if (it.hasNext()) {
+      impl = it.next();
     }
-  }
-
-  /**
-   * Read the first line of a file in the classpath into a string.
-   */
-  private static String readFile(String name) throws IOException {
-    InputStream in = SingleProviderResolver.class.getClassLoader().getResourceAsStream(name);
-    if (in == null) {
-      return null;
-    }
-    try {
-      LineNumberReader r = new LineNumberReader(new InputStreamReader(in));
-      String l = r.readLine();
-      while (l != null) {
-        if (!l.startsWith("#")) {
-          return l;
-        }
-        l = r.readLine();
+    if (impl == null && defaultImpl != null) {
+      try {
+        impl = defaultImpl.getConstructor().newInstance();
+      } catch (Exception ex) {
+        Error err = new LinkageError("Error instantiating " + c.getName(), ex);
+        err.printStackTrace();
+        throw err;
       }
-    } finally {
-      in.close();
     }
-    return null;
+    PROVIDERS.put(c, impl);
+    return impl;
   }
 
 }

@@ -2,7 +2,7 @@ package org.cache2k.impl.xmlConfiguration.generic;
 
 /*
  * #%L
- * cache2k implementation
+ * cache2k core implementation
  * %%
  * Copyright (C) 2000 - 2020 headissue GmbH, Munich
  * %%
@@ -20,8 +20,6 @@ package org.cache2k.impl.xmlConfiguration.generic;
  * #L%
  */
 
-import org.xmlpull.v1.XmlPullParser;
-
 import java.io.InputStream;
 
 /**
@@ -35,12 +33,7 @@ public class FlexibleXmlTokenizerFactory implements TokenizerFactory {
   private final TokenizerFactory realTokenizer = detectUsableTokenizer();
 
   TokenizerFactory detectUsableTokenizer() {
-    try {
-      XmlPullParser.class.toString();
-      return new XppConfigTokenizer.Factory();
-    } catch (LinkageError ex) {
-      return new StaxConfigTokenizer.Factory();
-    }
+    return new StaxConfigTokenizer.Factory();
   }
 
   @Override

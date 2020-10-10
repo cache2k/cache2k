@@ -1,8 +1,8 @@
-package org.cache2k.jcache;
+package org.cache2k.core.api;
 
 /*
  * #%L
- * cache2k API
+ * cache2k core implementation
  * %%
  * Copyright (C) 2000 - 2020 headissue GmbH, Munich
  * %%
@@ -20,22 +20,8 @@ package org.cache2k.jcache;
  * #L%
  */
 
-import org.cache2k.configuration.Cache2kConfiguration;
-
-import javax.cache.configuration.CompleteConfiguration;
-
 /**
- * Extends the JCache complete configuration with an additional cache2k configuration.
- *
  * @author Jens Wilke
  */
-public interface ExtendedConfiguration<K, V> extends CompleteConfiguration<K, V> {
-
-  /**
-   * Retrieve the extended cache2k configuration.
-   *
-   * @return cache2k configuration or null, if not needed
-   */
-  Cache2kConfiguration<K, V> getCache2kConfiguration();
-
+public class Dummy {
 }

@@ -2,7 +2,7 @@ package org.cache2k.impl.xmlConfiguration;
 
 /*
  * #%L
- * cache2k implementation
+ * cache2k core implementation
  * %%
  * Copyright (C) 2000 - 2020 headissue GmbH, Munich
  * %%
@@ -34,7 +34,6 @@ import org.cache2k.impl.xmlConfiguration.generic.StandardVariableExpander;
 import org.cache2k.impl.xmlConfiguration.generic.TokenizerFactory;
 import org.cache2k.impl.xmlConfiguration.generic.Util;
 import org.cache2k.impl.xmlConfiguration.generic.VariableExpander;
-import org.cache2k.jcache.JCacheConfiguration;
 
 import java.io.InputStream;
 import java.util.ArrayList;
@@ -55,7 +54,7 @@ public class CacheConfigurationProviderImpl
   private static final String DEFAULT_CONFIGURATION_FILE = "cache2k.xml";
   private static final Map<String, String> VERSION_1_SECTION_TYPES = new HashMap<String, String>() {
     {
-      put("jcache", JCacheConfiguration.class.getName());
+      put("jcache", "org.cache2k.jcache.JCacheConfiguration");
       put("byClassName", CustomizationSupplierByClassName.class.getName());
     }
   };

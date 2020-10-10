@@ -1,8 +1,8 @@
-package org.cache2k;
+package org.cache2k.test.example;
 
 /*
  * #%L
- * cache2k implementation
+ * cache2k core implementation
  * %%
  * Copyright (C) 2000 - 2020 headissue GmbH, Munich
  * %%
@@ -20,15 +20,16 @@ package org.cache2k;
  * #L%
  */
 
+import org.cache2k.Cache;
+import org.cache2k.Cache2kBuilder;
 import org.cache2k.integration.CacheLoader;
 import org.junit.After;
 import org.junit.Test;
-import static org.junit.Assert.*;
 
 /**
  * @author Jens Wilke
  */
-public class ReadThroughExampleTest {
+public class ExpiryPolicyExampleTest {
 
   Cache<String, String> routeToAirline = new Cache2kBuilder<String, String>() { }
     .name(this + "-routeToAirline")
@@ -60,5 +61,4 @@ public class ReadThroughExampleTest {
   public void test() {
     lookupFavoirteAirline("MUC", "JFK");
   }
-
 }

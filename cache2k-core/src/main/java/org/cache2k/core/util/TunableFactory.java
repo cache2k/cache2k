@@ -2,7 +2,7 @@ package org.cache2k.core.util;
 
 /*
  * #%L
- * cache2k implementation
+ * cache2k core implementation
  * %%
  * Copyright (C) 2000 - 2020 headissue GmbH, Munich
  * %%
@@ -46,12 +46,12 @@ public final class TunableFactory {
    * extended with CPU architecture (aarch / amd64), VM vendor (android, graal, ...) etc.
    */
   public static final String DEFAULT_TUNING_GRAALVM_FILE_NAME =
-    "/org/cache2k/default-tuning-graalvm-nativeimage.properties";
+    "/org/cache2k/core/default-tuning-graalvm-nativeimage.properties";
 
-  public static final String DEFAULT_TUNING_FILE_NAME = "/org/cache2k/default-tuning.properties";
+  public static final String DEFAULT_TUNING_FILE_NAME = "/org/cache2k/core/default-tuning.properties";
 
   public static final String CUSTOM_TUNING_FILE_NAME =
-    "/org/cache2k/tuning.properties";
+    "/org/cache2k/core/tuning.properties";
 
   public static final String TUNE_MARKER = "org.cache2k.tuning";
 

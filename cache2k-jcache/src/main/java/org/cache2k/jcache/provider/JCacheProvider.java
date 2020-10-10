@@ -22,7 +22,7 @@ package org.cache2k.jcache.provider;
 
 import org.cache2k.core.Cache2kCoreProviderImpl;
 import org.cache2k.spi.Cache2kCoreProvider;
-import org.cache2k.spi.SingleProviderResolver;
+import org.cache2k.core.SingleProviderResolver;
 
 import javax.cache.CacheManager;
 import javax.cache.configuration.OptionalFeature;
@@ -47,8 +47,7 @@ import java.util.WeakHashMap;
  */
 public class JCacheProvider implements CachingProvider {
 
-  private final Cache2kCoreProvider forwardProvider =
-    SingleProviderResolver.resolveMandatory(Cache2kCoreProvider.class);
+  private final Cache2kCoreProvider forwardProvider = org.cache2k.CacheManager.PROVIDER;
 
   private final Map<ClassLoader, Map<URI, JCacheManagerAdapter>> classLoader2uri2cache =
       new WeakHashMap<ClassLoader, Map<URI, JCacheManagerAdapter>>();

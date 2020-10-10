@@ -22,10 +22,11 @@ package org.cache2k;
 
 import org.cache2k.configuration.Cache2kConfiguration;
 import org.cache2k.spi.Cache2kCoreProvider;
-import org.cache2k.spi.SingleProviderResolver;
 
 import java.io.Closeable;
+import java.util.Iterator;
 import java.util.Properties;
+import java.util.ServiceLoader;
 
 /**
  * A cache manager holds a set of caches. Caches within a cache manager share the
@@ -51,10 +52,19 @@ public abstract class CacheManager implements Closeable {
    */
   public static final String STANDARD_DEFAULT_MANAGER_NAME = "default";
 
-  protected static final Cache2kCoreProvider PROVIDER;
+  /**
+   * The singleton cache provider instance.
+   *
+   * @since 2
+   */
+  public static final Cache2kCoreProvider PROVIDER;
 
   static {
-    PROVIDER = SingleProviderResolver.resolveMandatory(Cache2kCoreProvider.class);
+    Iterator<Cache2kCoreProvider> it = ServiceLoader.load(Cache2kCoreProvider.class).iterator();
+    if (!it.hasNext()) {
+      throw new LinkageError("Cannot resolve cache2k core implementation");
+    }
+    PROVIDER = it.next();
   }
 
   /**

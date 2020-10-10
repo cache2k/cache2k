@@ -9,7 +9,7 @@
 
   <artifactId>cache2k-core</artifactId>
   <version>1.6-SNAPSHOT</version>
-  <name>cache2k implementation</name>
+  <name>cache2k core implementation</name>
 
   <description>
     A light weight and high performance Java caching library. Android and Java 6 compatible.
@@ -30,23 +30,15 @@
     <dependency>
       <groupId>commons-logging</groupId>
       <artifactId>commons-logging</artifactId>
-      <version>1.1.3</version>
+      <version>1.2</version>
       <optional>true</optional>
     </dependency>
 
     <dependency>
       <groupId>org.slf4j</groupId>
       <artifactId>slf4j-api</artifactId>
-      <version>1.7.21</version>
+      <version>1.7.30</version>
       <optional>true</optional>
-    </dependency>
-
-    <!-- XML pull parser is available on android -->
-    <dependency>
-        <groupId>xpp3</groupId>
-        <artifactId>xpp3</artifactId>
-        <version>1.1.4c</version>
-        <scope>provided</scope>
     </dependency>
 
     <!--
@@ -117,9 +109,46 @@
           </resource>
       </resources>
 
-
-
     <plugins>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-compiler-plugin</artifactId>
+        <executions>
+          <!-- disable default phase due to fixed id and position in lifecycle -->
+          <execution>
+            <id>default-compile</id>
+            <phase>none</phase>
+            <!-- specify source/target for IDE integration -->
+            <configuration>
+              <release>11</release>
+              <!-- FIXME: test -->
+              <compileSourceRoots>${project.basedir}/src/main/java11,${project.basedir}/src/main/java</compileSourceRoots>
+            </configuration>
+          </execution>
+          <!-- Compile sources with Java 8 first. -->
+          <execution>
+            <id>java-8-compile</id>
+            <goals>
+              <goal>compile</goal>
+            </goals>
+            <configuration>
+              <release>8</release>
+            </configuration>
+          </execution>
+          <!-- Java 11 sources to generate and validate module-info.java -->
+          <execution>
+            <id>java-11-compile</id>
+            <goals>
+              <goal>compile</goal>
+            </goals>
+            <configuration>
+              <release>11</release>
+              <compileSourceRoots>${project.basedir}/src/main/java11</compileSourceRoots>
+            </configuration>
+          </execution>
+          <!-- compile sources as Java 8 to overwrite Java 9 class files, except module-info.java -->
+        </executions>
+      </plugin>
       <plugin>
         <groupId>org.codehaus.mojo</groupId>
         <artifactId>license-maven-plugin</artifactId>

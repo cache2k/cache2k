@@ -2,7 +2,7 @@ package org.cache2k.impl.xmlConfiguration;
 
 /*
  * #%L
- * cache2k implementation
+ * cache2k core implementation
  * %%
  * Copyright (C) 2000 - 2020 headissue GmbH, Munich
  * %%
@@ -27,7 +27,6 @@ import org.cache2k.impl.xmlConfiguration.generic.ParsedConfiguration;
 import org.cache2k.impl.xmlConfiguration.generic.StandardVariableExpander;
 import org.cache2k.impl.xmlConfiguration.generic.StaxConfigTokenizer;
 import org.cache2k.impl.xmlConfiguration.generic.VariableExpander;
-import org.cache2k.impl.xmlConfiguration.generic.XppConfigTokenizer;
 import org.cache2k.testing.category.FastTests;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -49,7 +48,7 @@ public class ParseCompleteTest {
 
   ParsedConfiguration parse() throws Exception {
     InputStream is = this.getClass().getResourceAsStream("/config.xml");
-    ConfigurationTokenizer pp = new XppConfigTokenizer("/config.xml", is, null);
+    ConfigurationTokenizer pp = new StaxConfigTokenizer("/config.xml", is, null);
     return ConfigurationParser.parse(pp);
   }
 
@@ -78,7 +77,7 @@ public class ParseCompleteTest {
   @Test
   public void parseAndExpand() throws Exception {
     InputStream is = this.getClass().getResourceAsStream("/config.xml");
-    ConfigurationTokenizer pp = new XppConfigTokenizer("/config.xml", is, null);
+    ConfigurationTokenizer pp = new StaxConfigTokenizer("/config.xml", is, null);
     ParsedConfiguration cfg = ConfigurationParser.parse(pp);
     VariableExpander expander = new StandardVariableExpander();
     expander.expand(cfg);
@@ -105,7 +104,7 @@ public class ParseCompleteTest {
   public void cyclicReferenceProtection() throws Exception {
     String fileName = "/cyclic-variable.xml";
     InputStream is = this.getClass().getResourceAsStream(fileName);
-    ConfigurationTokenizer pp = new XppConfigTokenizer(fileName, is, null);
+    ConfigurationTokenizer pp = new StaxConfigTokenizer(fileName, is, null);
     ParsedConfiguration cfg = ConfigurationParser.parse(pp);
     VariableExpander expander = new StandardVariableExpander();
     expander.expand(cfg);
@@ -114,7 +113,7 @@ public class ParseCompleteTest {
   @Test
   public void parseViaStax() throws Exception {
     InputStream is = this.getClass().getResourceAsStream("/config.xml");
-    ConfigurationTokenizer pp = new XppConfigTokenizer("/config.xml", is, null);
+    ConfigurationTokenizer pp = new StaxConfigTokenizer("/config.xml", is, null);
     ParsedConfiguration cfg = ConfigurationParser.parse(pp);
     is = this.getClass().getResourceAsStream("/config.xml");
     pp = new StaxConfigTokenizer("/config.xml", is, null);

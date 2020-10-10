@@ -2,7 +2,7 @@ package org.cache2k.impl.xmlConfiguration;
 
 /*
  * #%L
- * cache2k implementation
+ * cache2k core implementation
  * %%
  * Copyright (C) 2000 - 2020 headissue GmbH, Munich
  * %%
@@ -30,6 +30,7 @@ import org.cache2k.impl.xmlConfiguration.generic.ConfigurationException;
 import org.cache2k.schema.Constants;
 import org.cache2k.testing.category.FastTests;
 import org.hamcrest.CoreMatchers;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
@@ -355,7 +356,7 @@ public class IntegrationTest {
     c.close();
   }
 
-  @Test
+  @Test @Ignore("move to JCache")
   public void readAllXml() {
     Cache c = new Cache2kBuilder<String, String>() { }
       .manager(CacheManager.getInstance("all"))
@@ -371,12 +372,12 @@ public class IntegrationTest {
         getClass().getResourceAsStream("/cache2k-all.xml"));
     SchemaFactory schemaFactory =
       SchemaFactory.newInstance(XMLConstants.W3C_XML_SCHEMA_NS_URI);
-    Schema schema = schemaFactory.newSchema(getClass().getResource(
+    Schema schema = schemaFactory.newSchema(Constants.class.getResource(
       Constants.CORE_SCHEMA_LOCATION));
     schema.newValidator().validate(cfg);
   }
 
-  @Test
+  @Test @Ignore("move to JCache")
   public void validateVariableExpansion() {
     Cache2kBuilder b = new Cache2kBuilder<String, String>() { }
       .manager(CacheManager.getInstance("all"))

@@ -7,7 +7,7 @@ package org.cache2k.jcache;
 
 /*
  * #%L
- * cache2k API
+ * cache2k JCache provider
  * %%
  * Copyright (C) 2000 - 2020 headissue GmbH, Munich
  * %%

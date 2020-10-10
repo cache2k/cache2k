@@ -2,7 +2,7 @@ package org.cache2k.core;
 
 /*
  * #%L
- * cache2k implementation
+ * cache2k core implementation
  * %%
  * Copyright (C) 2000 - 2020 headissue GmbH, Munich
  * %%
@@ -30,7 +30,6 @@ import org.cache2k.core.util.TunableConstants;
 import org.cache2k.core.util.TunableFactory;
 import org.cache2k.spi.Cache2kCoreProvider;
 import org.cache2k.spi.Cache2kExtensionProvider;
-import org.cache2k.spi.SingleProviderResolver;
 
 import java.util.Collections;
 import java.util.HashMap;

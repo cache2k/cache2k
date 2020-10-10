@@ -2,7 +2,7 @@ package org.cache2k.core.util;
 
 /*
  * #%L
- * cache2k implementation
+ * cache2k core implementation
  * %%
  * Copyright (C) 2000 - 2020 headissue GmbH, Munich
  * %%
@@ -88,19 +88,7 @@ public abstract class Log {
           return new Slf4jLogger(lf.getLogger(s));
         }
       };
-    } catch (NoClassDefFoundError ignore) {
-    }
-    try {
-      final org.apache.commons.logging.LogFactory cl =
-        org.apache.commons.logging.LogFactory.getFactory();
-      return new LogFactory() {
-        @Override
-        public Log getLog(String s) {
-          return new CommonsLogger(cl.getInstance(s));
-        }
-      };
-    } catch (NoClassDefFoundError ignore) {
-    }
+    } catch (NoClassDefFoundError ignore) { }
     return new LogFactory() {
       @Override
       public Log getLog(String s) {
@@ -136,55 +124,6 @@ public abstract class Log {
   public abstract void warn(String s);
 
   public abstract void warn(String s, Throwable ex);
-
-  private static class CommonsLogger extends Log {
-
-    org.apache.commons.logging.Log cLog;
-
-    private CommonsLogger(org.apache.commons.logging.Log cLog) {
-      this.cLog = cLog;
-    }
-
-    @Override
-    public boolean isDebugEnabled() {
-      return cLog.isDebugEnabled();
-    }
-
-    @Override
-    public boolean isInfoEnabled() {
-      return cLog.isInfoEnabled();
-    }
-
-    @Override
-    public void debug(String s) {
-      cLog.debug(s);
-    }
-
-    @Override
-    public void debug(String s, Throwable ex) {
-      cLog.debug(s, ex);
-    }
-
-    @Override
-    public void info(String s, Throwable ex) {
-      cLog.info(s);
-    }
-
-    @Override
-    public void info(String s) {
-      cLog.info(s);
-    }
-
-    @Override
-    public void warn(String s) {
-      cLog.warn(s);
-    }
-
-    @Override
-    public void warn(String s, Throwable ex) {
-      cLog.warn(s, ex);
-    }
-  }
 
   private static class Slf4jLogger extends Log {
 

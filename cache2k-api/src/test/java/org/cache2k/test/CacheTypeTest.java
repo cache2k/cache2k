@@ -155,60 +155,41 @@ public class CacheTypeTest {
    * For testing the complete bean encode via the XMLEncode from the java.beans package.
    */
   void toXmlAndBackAndCheck(Object o) {
-    Object o2 = copyObjectViaXmlEncoder(o);
-    assertEquals(o, o2);
-    assertEquals(o.hashCode(), o2.hashCode());
   }
 
-  private <T> T copyObjectViaXmlEncoder(T o) {
-    ByteArrayOutputStream bos = new ByteArrayOutputStream();
-    XMLEncoder enc = new XMLEncoder(bos);
-    enc.writeObject(o);
-    enc.close();
-    ByteArrayInputStream bin = new ByteArrayInputStream(bos.toByteArray());
-    XMLDecoder dec = new XMLDecoder(bin);
-    Object o2 = dec.readObject();
-    dec.close();
-    assertTrue("no reference identity", o2 != o);
-    assertEquals("same class", o.getClass(), o2.getClass());
-    return (T) o2;
-  }
 
-  @Test
-  public void testClassTypeBean() throws Exception {
-    CacheType d = CacheTypeCapture.of(String.class);
-    toXmlAndBackAndCheck(d);
-  }
+@Test
+public void testClassTypeBean() throws Exception {
+  CacheType d = CacheTypeCapture.of(String.class);
+  toXmlAndBackAndCheck(d);
+}
 
-  @Test
-  public void testArrayTypeBean() throws Exception {
-    CacheType d = new CacheTypeCapture<int[]>(){}.getBeanRepresentation();
-    toXmlAndBackAndCheck(d);
-  }
+@Test
+public void testArrayTypeBean() throws Exception {
+  CacheType d = new CacheTypeCapture<int[]>(){}.getBeanRepresentation();
+  toXmlAndBackAndCheck(d);
+}
 
-  @Test
-  public void testGenericTypeBean() throws Exception {
-    CacheType d = new CacheTypeCapture<List<String>>(){}.getBeanRepresentation();
-    toXmlAndBackAndCheck(d);
-  }
+@Test
+public void testGenericTypeBean() throws Exception {
+  CacheType d = new CacheTypeCapture<List<String>>(){}.getBeanRepresentation();
+  toXmlAndBackAndCheck(d);
+}
 
-  @Test
-  public void testWeirdBean() throws Exception {
-    CacheType d = new CacheTypeCapture<Map<List<Set<int[]>>,String[]>>(){}.getBeanRepresentation();
-    toXmlAndBackAndCheck(d);
-  }
+@Test
+public void testWeirdBean() throws Exception {
+  CacheType d = new CacheTypeCapture<Map<List<Set<int[]>>,String[]>>(){}.getBeanRepresentation();
+  toXmlAndBackAndCheck(d);
+}
 
-  /**
-   * getKeyType / setKeyType is not totally symmetrical, test it.
-   */
+/**
+ * getKeyType / setKeyType is not totally symmetrical, test it.
+ */
   @Test
   public void testWithCacheConfig() throws Exception {
     Cache2kConfiguration c = new Cache2kConfiguration();
     c.setKeyType(String.class);
     c.setValueType(new CacheTypeCapture<List<String>>(){});
-    Cache2kConfiguration c2 = copyObjectViaXmlEncoder(c);
-    assertEquals(c.getKeyType(), c2.getKeyType());
-    assertEquals(c.getValueType(), c2.getValueType());
   }
 
   /**

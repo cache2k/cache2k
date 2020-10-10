@@ -2,7 +2,7 @@ package org.cache2k.core;
 
 /*
  * #%L
- * cache2k implementation
+ * cache2k core implementation
  * %%
  * Copyright (C) 2000 - 2020 headissue GmbH, Munich
  * %%
@@ -23,7 +23,6 @@ package org.cache2k.core;
 import org.cache2k.Cache;
 import org.cache2k.CacheEntry;
 import org.cache2k.configuration.CacheType;
-import org.cache2k.configuration.CustomizationSupplier;
 import org.cache2k.core.eviction.Eviction;
 import org.cache2k.core.operation.ExaminationEntry;
 import org.cache2k.core.timing.TimerEventListener;
