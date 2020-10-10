@@ -1,8 +1,6 @@
-package org.cache2k.core;
-
 /*
  * #%L
- * cache2k core implementation
+ * cache2k JMX support
  * %%
  * Copyright (C) 2000 - 2020 headissue GmbH, Munich
  * %%
@@ -19,28 +17,15 @@ package org.cache2k.core;
  * limitations under the License.
  * #L%
  */
-
-import org.cache2k.CacheManager;
+import org.cache2k.extra.jmx.JmxSupport;
 
 /**
  * @author Jens Wilke
  */
-public interface CacheCloseContext {
-
-  /**
-   * The cache name
-   */
-  String getName();
-
-  /**
-   * The cache manager
-   */
-  CacheManager getCacheManager();
-
-  /**
-   * Call close on the customization if the {@link java.io.Closeable} interface
-   * is implemented
-   */
-  void closeCustomization(Object customization, String name);
-
+module cache2k.jmx {
+  requires java.management;
+  requires org.cache2k.api;
+  requires org.cache2k.core;
+  provides org.cache2k.core.spi.CacheLifeCycleListener with JmxSupport;
+  provides org.cache2k.core.spi.CacheManagerLifeCycleListener with JmxSupport;
 }

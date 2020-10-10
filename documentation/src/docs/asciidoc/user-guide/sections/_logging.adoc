@@ -9,7 +9,6 @@ cache2k supports different logging facades and the JDK standard logging. The sup
 include:
 
  - SLF4J
- - Apache Commons Logging
  - JDK standard logging
 
 The availability is evaluated in the above order and the first match is picked and used exclusively for
@@ -19,4 +18,4 @@ the desired results, without the need of additional configuration of the used lo
 === Wiring a Custom Log Target
 
 In case none of the above logging infrastructure can be used the service provider interface
-`org.cache2k.core.util.LogFactory` can be implemented and provided via the `ServiceLoader` mechanism.
+`org.cache2k.core.log.LogFactory` can be implemented and provided via the `ServiceLoader` mechanism.

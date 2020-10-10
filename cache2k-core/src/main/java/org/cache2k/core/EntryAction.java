@@ -22,6 +22,8 @@ package org.cache2k.core;
 
 import org.cache2k.CacheEntry;
 import org.cache2k.CacheException;
+import org.cache2k.core.api.CommonMetrics;
+import org.cache2k.core.api.InternalCache;
 import org.cache2k.core.operation.LoadedEntry;
 import org.cache2k.core.timing.Timing;
 import org.cache2k.expiry.ExpiryPolicy;

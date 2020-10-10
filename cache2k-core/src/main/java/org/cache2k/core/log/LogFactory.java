@@ -1,4 +1,4 @@
-package org.cache2k.core.util;
+package org.cache2k.core.log;
 
 /*
  * #%L
@@ -21,16 +21,13 @@ package org.cache2k.core.util;
  */
 
 /**
+ * Service provider interface to implement to reroute cache2k logging to
+ * another log implementation.
+ *
  * @author Jens Wilke
  */
-public interface ScheduledClock {
+public interface LogFactory {
 
-  boolean isJobSchedulable();
-
-  Job createJob(Runnable r);
-
-  void schedule(Job j, long millis);
-
-  interface Job { }
+  Log getLog(String s);
 
 }

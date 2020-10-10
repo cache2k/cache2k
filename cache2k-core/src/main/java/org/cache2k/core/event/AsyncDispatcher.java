@@ -20,7 +20,7 @@ package org.cache2k.core.event;
  * #L%
  */
 
-import org.cache2k.core.InternalCache;
+import org.cache2k.core.api.InternalCache;
 
 import java.util.LinkedList;
 import java.util.Map;

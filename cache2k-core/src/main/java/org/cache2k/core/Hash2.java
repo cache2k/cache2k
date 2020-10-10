@@ -24,7 +24,6 @@ import org.cache2k.Cache;
 import org.cache2k.core.concurrency.Job;
 import org.cache2k.core.concurrency.Locks;
 import org.cache2k.core.concurrency.OptimisticLock;
-import org.cache2k.core.util.Log;
 
 import java.util.concurrent.atomic.AtomicLong;
 

@@ -25,7 +25,7 @@ import org.cache2k.CacheManager;
 import org.cache2k.configuration.Cache2kConfiguration;
 import org.cache2k.core.spi.CacheConfigurationProvider;
 import org.cache2k.core.util.Cache2kVersion;
-import org.cache2k.core.util.Log;
+import org.cache2k.core.log.Log;
 import org.cache2k.core.util.TunableConstants;
 import org.cache2k.core.util.TunableFactory;
 import org.cache2k.spi.Cache2kCoreProvider;

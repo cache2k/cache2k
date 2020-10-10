@@ -20,7 +20,7 @@ package org.cache2k.core.eviction;
  * #L%
  */
 
-import org.cache2k.core.InternalCacheInfo;
+import org.cache2k.core.api.InternalCacheInfo;
 
 /**
  * Access to eviction metrics. Consistent reads are only possible while inside the eviction lock.

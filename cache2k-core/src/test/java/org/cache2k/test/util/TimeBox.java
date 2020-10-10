@@ -21,7 +21,7 @@ package org.cache2k.test.util;
  */
 
 import org.cache2k.core.util.DefaultClock;
-import org.cache2k.core.util.InternalClock;
+import org.cache2k.core.api.InternalClock;
 
 import java.sql.Timestamp;
 

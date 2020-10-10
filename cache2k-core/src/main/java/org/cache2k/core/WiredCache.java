@@ -21,9 +21,11 @@ package org.cache2k.core;
  */
 
 import org.cache2k.configuration.CacheType;
+import org.cache2k.core.api.CommonMetrics;
+import org.cache2k.core.api.InternalCacheInfo;
 import org.cache2k.core.eviction.Eviction;
 import org.cache2k.core.timing.Timing;
-import org.cache2k.core.util.InternalClock;
+import org.cache2k.core.api.InternalClock;
 import org.cache2k.event.CacheEntryEvictedListener;
 import org.cache2k.event.CacheEntryExpiredListener;
 import org.cache2k.integration.AdvancedCacheLoader;
@@ -41,7 +43,7 @@ import org.cache2k.core.operation.ExaminationEntry;
 import org.cache2k.core.operation.Progress;
 import org.cache2k.core.operation.Semantic;
 import org.cache2k.core.operation.Operations;
-import org.cache2k.core.util.Log;
+import org.cache2k.core.log.Log;
 import org.cache2k.core.storageApi.PurgeableStorage;
 import org.cache2k.core.storageApi.StorageAdapter;
 import org.cache2k.core.storageApi.StorageEntry;

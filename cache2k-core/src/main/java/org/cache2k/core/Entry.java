@@ -21,7 +21,7 @@ package org.cache2k.core;
  */
 
 import org.cache2k.CacheEntry;
-import org.cache2k.core.util.InternalClock;
+import org.cache2k.core.api.InternalClock;
 import org.cache2k.core.timing.TimerTask;
 import org.cache2k.expiry.ExpiryPolicy;
 import org.cache2k.core.operation.ExaminationEntry;

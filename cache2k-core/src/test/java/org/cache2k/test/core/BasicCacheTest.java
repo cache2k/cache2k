@@ -27,7 +27,7 @@ import org.cache2k.expiry.ExpiryPolicy;
 import org.cache2k.integration.CacheLoader;
 import org.cache2k.integration.CacheLoaderException;
 import org.cache2k.expiry.ValueWithExpiryTime;
-import org.cache2k.core.InternalCacheInfo;
+import org.cache2k.core.api.InternalCacheInfo;
 import org.cache2k.integration.ExceptionInformation;
 import org.cache2k.integration.ResiliencePolicy;
 import org.cache2k.processor.EntryProcessor;

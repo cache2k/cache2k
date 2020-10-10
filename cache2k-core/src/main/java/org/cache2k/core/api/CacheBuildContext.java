@@ -1,4 +1,4 @@
-package org.cache2k.core;
+package org.cache2k.core.api;
 
 /*
  * #%L
@@ -20,35 +20,40 @@ package org.cache2k.core;
  * #L%
  */
 
+import org.cache2k.CacheManager;
+import org.cache2k.configuration.Cache2kConfiguration;
+import org.cache2k.configuration.CustomizationSupplier;
+
 /**
- * Describes a single problem of a cache, for example a bad hash quality.
- * A collection of these element comprise the complete health information.
+ * Context information when a cache is build.
  *
  * @author Jens Wilke
  */
-public interface HealthInfoElement {
-
-  String WARNING = "WARNING";
-  String FAILURE = "FAILURE";
+public interface CacheBuildContext<K, V> {
 
   /**
-   * Compact unique id of the message.
+   * The time reference for the cache.
    */
-  String getId();
+  InternalClock getClock();
 
   /**
-   * Text message describing the problem.
+   * Cache configuration.
    */
-  String getMessage();
+  Cache2kConfiguration<K, V> getConfiguration();
 
   /**
-   * Either {@link #WARNING} or {@link #FAILURE}
+   * The cache manager.
    */
-  String getLevel();
+  CacheManager getCacheManager();
 
   /**
-   * Cache reporting the trouble.
+   * Create the customization
    */
-  InternalCache getCache();
+  <T> T createCustomization(CustomizationSupplier<T> supplier);
+
+  /**
+   * Create the customization. Return fallback if supplier is null.
+   */
+  <T> T createCustomization(CustomizationSupplier<T> supplier, T fallback);
 
 }

@@ -22,6 +22,7 @@ package org.cache2k.core;
 
 import org.cache2k.Cache;
 import org.cache2k.CacheEntry;
+import org.cache2k.core.api.InternalCache;
 import org.cache2k.processor.EntryProcessor;
 import org.cache2k.processor.MutableCacheEntry;
 

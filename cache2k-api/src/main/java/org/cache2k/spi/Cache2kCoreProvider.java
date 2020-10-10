@@ -81,4 +81,9 @@ public interface Cache2kCoreProvider {
    */
   Cache2kConfiguration getDefaultConfiguration(CacheManager m);
 
+  /**
+   * @since 2
+   */
+  String getVersion();
+
 }

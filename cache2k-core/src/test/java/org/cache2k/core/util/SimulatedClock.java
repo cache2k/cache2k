@@ -20,6 +20,7 @@ package org.cache2k.core.util;
  * #L%
  */
 
+import org.cache2k.core.api.InternalClock;
 import org.cache2k.core.timing.Scheduler;
 
 import java.util.Map;

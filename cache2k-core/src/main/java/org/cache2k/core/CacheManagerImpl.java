@@ -25,9 +25,10 @@ import org.cache2k.Cache2kBuilder;
 import org.cache2k.CacheException;
 import org.cache2k.CacheManager;
 import org.cache2k.configuration.Cache2kConfiguration;
+import org.cache2k.core.api.InternalCache;
 import org.cache2k.core.spi.CacheLifeCycleListener;
 import org.cache2k.core.spi.CacheManagerLifeCycleListener;
-import org.cache2k.core.util.Log;
+import org.cache2k.core.log.Log;
 import org.cache2k.spi.Cache2kCoreProvider;
 
 import java.lang.reflect.Array;
@@ -72,7 +73,7 @@ public class CacheManagerImpl extends CacheManager {
         li.add(it.next());
       } catch (ServiceConfigurationError ex) {
         Log.getLog(CacheManager.class.getName())
-          .debug("Error loading service '" + service + "'", ex);
+          .warn("Error loading service '" + service + "'", ex);
       }
     }
     final S[] a = (S[]) Array.newInstance(service, li.size());

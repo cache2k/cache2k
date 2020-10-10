@@ -1,3 +1,5 @@
+package org.cache2k.core;
+
 /*
  * #%L
  * cache2k core implementation
@@ -17,7 +19,7 @@
  * limitations under the License.
  * #L%
  */
-import org.cache2k.core.IntegerTo16BitFloatingPoint;
+
 import org.junit.Test;
 
 import java.util.Random;

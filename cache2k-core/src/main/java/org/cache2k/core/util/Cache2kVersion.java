@@ -20,6 +20,8 @@ package org.cache2k.core.util;
  * #L%
  */
 
+import org.cache2k.core.log.Log;
+
 import java.io.InputStream;
 import java.util.Properties;
 

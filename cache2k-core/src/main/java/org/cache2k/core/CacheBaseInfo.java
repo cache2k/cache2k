@@ -20,6 +20,10 @@ package org.cache2k.core;
  * #L%
  */
 
+import org.cache2k.core.api.CommonMetrics;
+import org.cache2k.core.api.HealthInfoElement;
+import org.cache2k.core.api.InternalCache;
+import org.cache2k.core.api.InternalCacheInfo;
 import org.cache2k.core.eviction.EvictionMetrics;
 
 import java.text.DecimalFormat;

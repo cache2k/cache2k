@@ -25,12 +25,11 @@ import org.cache2k.Cache2kBuilder;
 import org.cache2k.CacheEntry;
 import org.cache2k.CacheManager;
 import org.cache2k.event.CacheEntryRemovedListener;
-import org.cache2k.core.InternalCache;
-import org.cache2k.core.InternalCacheInfo;
+import org.cache2k.core.api.InternalCache;
+import org.cache2k.core.api.InternalCacheInfo;
 import org.cache2k.CacheOperationCompletionListener;
 
 import java.util.Arrays;
-import java.util.Random;
 
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;

@@ -22,8 +22,8 @@ package org.cache2k.core.timing;
 
 import org.cache2k.configuration.Cache2kConfiguration;
 import org.cache2k.CacheEntry;
-import org.cache2k.core.CacheBuildContext;
-import org.cache2k.core.CacheCloseContext;
+import org.cache2k.core.api.CacheBuildContext;
+import org.cache2k.core.api.CacheCloseContext;
 import org.cache2k.core.Entry;
 import org.cache2k.core.ExceptionWrapper;
 import org.cache2k.core.util.Util;

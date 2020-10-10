@@ -20,7 +20,7 @@ package org.cache2k.core.util;
  * #L%
  */
 
-import org.cache2k.configuration.Cache2kConfiguration;
+import org.cache2k.core.log.Log;
 import org.cache2k.testing.category.FastTests;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;

@@ -39,7 +39,7 @@ import org.cache2k.Cache;
 
 import org.cache2k.integration.CacheLoaderException;
 import org.cache2k.test.core.TestingParameters;
-import org.cache2k.core.InternalCacheInfo;
+import org.cache2k.core.api.InternalCacheInfo;
 
 import static org.cache2k.test.core.StaticUtil.*;
 import static org.junit.Assert.*;

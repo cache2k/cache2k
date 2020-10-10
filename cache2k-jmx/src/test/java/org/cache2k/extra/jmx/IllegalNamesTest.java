@@ -1,8 +1,8 @@
-package org.cache2k.impl.serverSide;
+package org.cache2k.extra.jmx;
 
 /*
  * #%L
- * cache2k core implementation
+ * cache2k JMX support
  * %%
  * Copyright (C) 2000 - 2020 headissue GmbH, Munich
  * %%

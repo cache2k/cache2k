@@ -22,7 +22,7 @@ package org.cache2k.core.eviction;
 
 import org.cache2k.Weigher;
 import org.cache2k.configuration.Cache2kConfiguration;
-import org.cache2k.core.CacheBuildContext;
+import org.cache2k.core.api.CacheBuildContext;
 import org.cache2k.core.HeapCache;
 import org.cache2k.core.HeapCacheListener;
 import org.cache2k.core.SegmentedEviction;

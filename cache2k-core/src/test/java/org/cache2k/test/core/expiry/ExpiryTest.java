@@ -39,7 +39,7 @@ import org.cache2k.Cache;
 import org.cache2k.Cache2kBuilder;
 import org.cache2k.CacheEntry;
 import org.cache2k.expiry.ExpiryPolicy;
-import org.cache2k.core.InternalCache;
+import org.cache2k.core.api.InternalCache;
 import org.cache2k.testing.category.FastTests;
 import org.cache2k.test.util.TimeBox;
 import org.hamcrest.Matchers;

@@ -21,7 +21,7 @@ package org.cache2k.core.timing;
  */
 
 import org.cache2k.core.Entry;
-import org.cache2k.core.InternalCache;
+import org.cache2k.core.api.InternalCache;
 
 /**
  * Notifications from the {@link Timing} to the {@link InternalCache} upon timer

@@ -1,8 +1,8 @@
-package org.cache2k.impl.serverSide;
+package org.cache2k.extra.jmx;
 
 /*
  * #%L
- * cache2k core implementation
+ * cache2k JMX support
  * %%
  * Copyright (C) 2000 - 2020 headissue GmbH, Munich
  * %%
@@ -21,9 +21,9 @@ package org.cache2k.impl.serverSide;
  */
 
 import org.cache2k.Cache;
-import org.cache2k.core.CacheManagerImpl;
-import org.cache2k.core.HealthInfoElement;
-import org.cache2k.core.InternalCache;
+import org.cache2k.CacheManager;
+import org.cache2k.core.api.HealthInfoElement;
+import org.cache2k.core.api.InternalCache;
 import org.cache2k.jmx.CacheManagerMXBean;
 
 import java.util.ArrayList;
@@ -36,9 +36,9 @@ import java.util.List;
 */
 public class ManagerMXBeanImpl implements CacheManagerMXBean {
 
-  private final CacheManagerImpl manager;
+  private final CacheManager manager;
 
-  public ManagerMXBeanImpl(CacheManagerImpl manager) {
+  public ManagerMXBeanImpl(CacheManager manager) {
     this.manager = manager;
   }
 
@@ -88,7 +88,7 @@ public class ManagerMXBeanImpl implements CacheManagerMXBean {
   }
 
   @Override
-  public String getVersion() { return manager.getVersion(); }
+  public String getVersion() { return CacheManager.PROVIDER.getVersion(); }
 
   @Override
   public String getBuildNumber() { return "not used"; }

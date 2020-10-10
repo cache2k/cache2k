@@ -1,4 +1,4 @@
-package org.cache2k.core.util;
+package org.cache2k.core.api;
 
 /*
  * #%L
@@ -20,14 +20,27 @@ package org.cache2k.core.util;
  * #L%
  */
 
-/**
- * Service provider interface to implement to reroute cache2k logging to
- * another log implementation.
- *
- * @author Jens Wilke; created: 2014-04-27
- */
-public interface LogFactory {
+import org.cache2k.CacheManager;
 
-  Log getLog(String s);
+/**
+ * @author Jens Wilke
+ */
+public interface CacheCloseContext {
+
+  /**
+   * The cache name
+   */
+  String getName();
+
+  /**
+   * The cache manager
+   */
+  CacheManager getCacheManager();
+
+  /**
+   * Call close on the customization if the {@link java.io.Closeable} interface
+   * is implemented
+   */
+  void closeCustomization(Object customization, String name);
 
 }

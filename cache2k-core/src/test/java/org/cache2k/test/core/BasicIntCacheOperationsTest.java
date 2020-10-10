@@ -22,8 +22,8 @@ package org.cache2k.test.core;
 
 import org.cache2k.Cache2kBuilder;
 import org.cache2k.IntCache;
-import org.cache2k.core.InternalCache;
-import org.cache2k.core.InternalCacheInfo;
+import org.cache2k.core.api.InternalCache;
+import org.cache2k.core.api.InternalCacheInfo;
 import org.cache2k.expiry.ExpiryTimeValues;
 import org.cache2k.testing.category.FastTests;
 import org.junit.After;

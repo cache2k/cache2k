@@ -17,26 +17,22 @@
  * limitations under the License.
  * #L%
  */
-import org.cache2k.impl.serverSide.JmxSupport;
-
 /**
  * @author Jens Wilke
  */
 module org.cache2k.core {
   requires org.cache2k.api;
   requires java.sql;
-  requires java.naming;
-  requires java.management;
   requires static java.logging;
   requires static org.slf4j;
   exports org.cache2k.core.api;
-  uses org.cache2k.core.util.LogFactory;
+  exports org.cache2k.core.spi;
+  exports org.cache2k.core.log;
+  uses org.cache2k.core.log.LogFactory;
   uses org.cache2k.core.spi.CacheConfigurationProvider;
   uses org.cache2k.core.spi.CacheLifeCycleListener;
   uses org.cache2k.core.spi.CacheManagerLifeCycleListener;
   uses org.cache2k.spi.Cache2kExtensionProvider;
   provides org.cache2k.spi.Cache2kCoreProvider with org.cache2k.core.Cache2kCoreProviderImpl;
   provides org.cache2k.core.spi.CacheConfigurationProvider with org.cache2k.impl.xmlConfiguration.CacheConfigurationProviderImpl;
-  provides org.cache2k.core.spi.CacheLifeCycleListener with JmxSupport;
-  provides org.cache2k.core.spi.CacheManagerLifeCycleListener with JmxSupport;
 }

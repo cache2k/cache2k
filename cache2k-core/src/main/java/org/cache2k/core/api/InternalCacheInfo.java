@@ -1,4 +1,4 @@
-package org.cache2k.core;
+package org.cache2k.core.api;
 
 /*
  * #%L
@@ -20,6 +20,10 @@ package org.cache2k.core;
  * #L%
  */
 
+import org.cache2k.core.HeapCache;
+import org.cache2k.core.api.CommonMetrics;
+import org.cache2k.core.api.HealthInfoElement;
+import org.cache2k.core.api.InternalCache;
 import org.cache2k.core.eviction.EvictionMetrics;
 
 import java.util.Collection;

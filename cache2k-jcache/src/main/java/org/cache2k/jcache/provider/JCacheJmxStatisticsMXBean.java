@@ -20,8 +20,8 @@ package org.cache2k.jcache.provider;
  * #L%
  */
 
-import org.cache2k.core.InternalCache;
-import org.cache2k.core.InternalCacheInfo;
+import org.cache2k.core.api.InternalCache;
+import org.cache2k.core.api.InternalCacheInfo;
 
 import javax.cache.management.CacheStatisticsMXBean;
 import java.util.concurrent.atomic.AtomicLong;

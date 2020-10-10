@@ -30,7 +30,7 @@ import org.cache2k.processor.EntryProcessingResult;
 import org.cache2k.CacheOperationCompletionListener;
 import org.cache2k.processor.MutableCacheEntry;
 import org.cache2k.core.EntryAction;
-import org.cache2k.core.InternalCache;
+import org.cache2k.core.api.InternalCache;
 
 import javax.cache.CacheManager;
 import javax.cache.configuration.CacheEntryListenerConfiguration;

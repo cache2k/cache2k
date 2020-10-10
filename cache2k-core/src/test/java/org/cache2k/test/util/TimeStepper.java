@@ -20,7 +20,7 @@ package org.cache2k.test.util;
  * #L%
  */
 
-import org.cache2k.core.util.InternalClock;
+import org.cache2k.core.api.InternalClock;
 import org.cache2k.test.core.TestingParameters;
 
 /**

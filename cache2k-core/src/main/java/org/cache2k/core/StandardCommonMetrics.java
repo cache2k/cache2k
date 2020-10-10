@@ -20,6 +20,8 @@ package org.cache2k.core;
  * #L%
  */
 
+import org.cache2k.core.api.CommonMetrics;
+
 import java.util.concurrent.atomic.AtomicLongFieldUpdater;
 
 /**

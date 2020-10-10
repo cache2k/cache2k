@@ -1,3 +1,5 @@
+package org.cache2k.core;
+
 /*
  * #%L
  * cache2k core implementation
@@ -17,6 +19,7 @@
  * limitations under the License.
  * #L%
  */
+
 import org.cache2k.Cache;
 import org.cache2k.Cache2kBuilder;
 import org.cache2k.testing.category.TimingTests;

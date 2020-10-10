@@ -1,8 +1,8 @@
-package org.cache2k.impl.serverSide;
+package org.cache2k.extra.jmx;
 
 /*
  * #%L
- * cache2k core implementation
+ * cache2k JMX support
  * %%
  * Copyright (C) 2000 - 2020 headissue GmbH, Munich
  * %%
@@ -27,8 +27,7 @@ import static org.junit.Assert.*;
 
 import org.cache2k.Weigher;
 import org.cache2k.core.CacheMXBeanImpl;
-import org.cache2k.core.CacheManagerImpl;
-import org.cache2k.core.util.Log;
+import org.cache2k.core.log.Log;
 import org.cache2k.testing.category.FastTests;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -180,7 +179,7 @@ public class JmxSupportTest {
     String name = getClass().getName() + ".managerAttributes";
     CacheManager m = CacheManager.getInstance(name);
     objectName = getCacheManagerObjectName(name);
-    checkAttribute("Version", ((CacheManagerImpl) m).getVersion());
+    checkAttribute("Version", CacheManager.PROVIDER.getVersion());
     checkAttribute("BuildNumber", "not used");
     m.close();
   }
@@ -194,8 +193,12 @@ public class JmxSupportTest {
       .enableJmx(true)
       .build();
     MBeanInfo i = getCacheInfo(name);
-    assertEquals(CacheMXBeanImpl.class.getName(), i.getClassName());
+    assertNotNull(i);
     c.close();
+    try {
+      i = getCacheInfo(name);
+      fail("exception expected");
+    } catch (InstanceNotFoundException expected) { }
   }
 
   @Test(expected = InstanceNotFoundException.class)
@@ -206,7 +209,6 @@ public class JmxSupportTest {
       .eternal(true)
       .build();
     MBeanInfo i = getCacheInfo(name);
-    assertEquals(CacheMXBeanImpl.class.getName(), i.getClassName());
     c.close();
   }
 

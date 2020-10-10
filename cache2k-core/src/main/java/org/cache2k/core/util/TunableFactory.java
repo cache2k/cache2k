@@ -21,6 +21,7 @@ package org.cache2k.core.util;
  */
 
 import org.cache2k.core.CacheInternalError;
+import org.cache2k.core.log.Log;
 
 import java.io.IOException;
 import java.io.InputStream;

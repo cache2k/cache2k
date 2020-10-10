@@ -20,7 +20,7 @@ package org.cache2k.core.timing;
  * #L%
  */
 
-import org.cache2k.core.util.InternalClock;
+import org.cache2k.core.api.InternalClock;
 
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;

@@ -1,4 +1,4 @@
-package org.cache2k.core;
+package org.cache2k.core.api;
 
 /*
  * #%L
@@ -23,11 +23,12 @@ package org.cache2k.core;
 import org.cache2k.Cache;
 import org.cache2k.CacheEntry;
 import org.cache2k.configuration.CacheType;
+import org.cache2k.core.CanCheckIntegrity;
+import org.cache2k.core.ConcurrentMapWrapper;
 import org.cache2k.core.eviction.Eviction;
 import org.cache2k.core.operation.ExaminationEntry;
 import org.cache2k.core.timing.TimerEventListener;
-import org.cache2k.core.util.InternalClock;
-import org.cache2k.core.util.Log;
+import org.cache2k.core.log.Log;
 import org.cache2k.core.storageApi.StorageAdapter;
 
 /**

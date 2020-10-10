@@ -21,7 +21,7 @@ package org.cache2k.core.timing;
  */
 
 import org.cache2k.core.util.DefaultClock;
-import org.cache2k.core.util.InternalClock;
+import org.cache2k.core.api.InternalClock;
 import org.cache2k.testing.category.SlowTests;
 import org.junit.experimental.categories.Category;
 

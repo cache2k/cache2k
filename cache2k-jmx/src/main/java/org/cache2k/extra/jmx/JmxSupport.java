@@ -1,8 +1,8 @@
-package org.cache2k.impl.serverSide;
+package org.cache2k.extra.jmx;
 
 /*
  * #%L
- * cache2k core implementation
+ * cache2k JMX support
  * %%
  * Copyright (C) 2000 - 2020 headissue GmbH, Munich
  * %%
@@ -25,11 +25,8 @@ import org.cache2k.CacheException;
 import org.cache2k.CacheManager;
 import org.cache2k.configuration.Cache2kConfiguration;
 import org.cache2k.core.spi.CacheLifeCycleListener;
-import org.cache2k.core.CacheManagerImpl;
 import org.cache2k.core.spi.CacheManagerLifeCycleListener;
-import org.cache2k.core.util.Log;
-import org.cache2k.core.util.TunableConstants;
-import org.cache2k.core.util.TunableFactory;
+import org.cache2k.core.log.Log;
 
 import javax.management.InstanceAlreadyExistsException;
 import javax.management.InstanceNotFoundException;
@@ -47,23 +44,7 @@ import java.lang.management.ManagementFactory;
 public class JmxSupport implements CacheLifeCycleListener, CacheManagerLifeCycleListener {
 
   private static final String REGISTERED_FLAG = JmxSupport.class.getName() + ".registered";
-  private static final boolean MANAGEMENT_UNAVAILABLE;
   private final Log log = Log.getLog(JmxSupport.class);
-
-  /*
-   * Check for JMX available. Might be not present on Android.
-   */
-  static {
-    boolean v = false;
-    if (TunableFactory.get(Tunable.class).enable) {
-      try {
-        v = getPlatformMBeanServer() == null;
-      } catch (NoClassDefFoundError err) {
-        v = true;
-      }
-    }
-    MANAGEMENT_UNAVAILABLE = v;
-  }
 
   /**
    * Register management bean for the cache.
@@ -73,7 +54,7 @@ public class JmxSupport implements CacheLifeCycleListener, CacheManagerLifeCycle
    */
   @Override
   public void cacheCreated(Cache c, Cache2kConfiguration cfg) {
-    if (MANAGEMENT_UNAVAILABLE || !cfg.isEnableJmx() || cfg.isDisableMonitoring()) {
+    if (!cfg.isEnableJmx() || cfg.isDisableMonitoring()) {
       return;
     }
     MBeanServer mbs = getPlatformMBeanServer();
@@ -89,9 +70,6 @@ public class JmxSupport implements CacheLifeCycleListener, CacheManagerLifeCycle
 
   @Override
   public void cacheDestroyed(Cache c) {
-    if (MANAGEMENT_UNAVAILABLE) {
-      return;
-    }
     MBeanServer mbs = getPlatformMBeanServer();
     String name = standardName(c.getCacheManager(), c);
     try {
@@ -104,11 +82,8 @@ public class JmxSupport implements CacheLifeCycleListener, CacheManagerLifeCycle
 
   @Override
   public void managerCreated(CacheManager m) {
-    if (MANAGEMENT_UNAVAILABLE) {
-      return;
-    }
     MBeanServer mbs = getPlatformMBeanServer();
-    ManagerMXBeanImpl mBean = new ManagerMXBeanImpl((CacheManagerImpl) m);
+    ManagerMXBeanImpl mBean = new ManagerMXBeanImpl(m);
     String name = managerName(m);
     try {
       mbs.registerMBean(mBean, new ObjectName(name));
@@ -123,9 +98,6 @@ public class JmxSupport implements CacheLifeCycleListener, CacheManagerLifeCycle
 
   @Override
   public void managerDestroyed(CacheManager m) {
-    if (MANAGEMENT_UNAVAILABLE) {
-      return;
-    }
     if (!m.getProperties().containsKey(REGISTERED_FLAG)) {
       return;
     }
@@ -161,19 +133,13 @@ public class JmxSupport implements CacheLifeCycleListener, CacheManagerLifeCycle
    * Names can be used as JMX values directly, but if containing a comma we need
    * to do quoting.
    *
-   * @see CacheManagerImpl#checkName(String)
+   * See {@code org.cache2k.core.CacheManagerImpl#checkName(String)}
    */
   private static String sanitizeNameAsJmxValue(String s) {
     if (s.indexOf(',') >= 0) {
       return '"' + s + '"';
     }
     return s;
-  }
-
-  public static class Tunable extends TunableConstants {
-
-    public boolean enable = true;
-
   }
 
 }

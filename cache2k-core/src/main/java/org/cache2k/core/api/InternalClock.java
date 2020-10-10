@@ -1,4 +1,4 @@
-package org.cache2k.core.util;
+package org.cache2k.core.api;
 
 /*
  * #%L
