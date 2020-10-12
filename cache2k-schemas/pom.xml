@@ -29,7 +29,7 @@
         <configuration>
           <archive>
             <manifestEntries>
-              <Automatic-Module-Name>org.cache2k.schema</Automatic-Module-Name>
+              <Automatic-Module-Name>org.cache2k.schemas</Automatic-Module-Name>
             </manifestEntries>
           </archive>
         </configuration>

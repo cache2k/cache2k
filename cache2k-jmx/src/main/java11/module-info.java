@@ -22,7 +22,7 @@ import org.cache2k.extra.jmx.JmxSupport;
 /**
  * @author Jens Wilke
  */
-module cache2k.jmx {
+module org.cache2k.jmx {
   requires java.management;
   requires org.cache2k.api;
   requires org.cache2k.core;

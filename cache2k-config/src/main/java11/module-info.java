@@ -22,7 +22,7 @@ import org.cache2k.extra.config.provider.CacheConfigurationProviderImpl;
 /**
  * @author Jens Wilke
  */
-module cache2k.config {
+module org.cache2k.config {
   requires java.xml;
   requires org.cache2k.api;
   requires org.cache2k.core;
