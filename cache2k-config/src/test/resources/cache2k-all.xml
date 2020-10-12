@@ -1,0 +1,149 @@
+<!--
+  #%L
+  cache2k config file support
+  %%
+  Copyright (C) 2000 - 2020 headissue GmbH, Munich
+  %%
+  Licensed under the Apache License, Version 2.0 (the "License");
+  you may not use this file except in compliance with the License.
+  You may obtain a copy of the License at
+  
+       http://www.apache.org/licenses/LICENSE-2.0
+  
+  Unless required by applicable law or agreed to in writing, software
+  distributed under the License is distributed on an "AS IS" BASIS,
+  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  See the License for the specific language governing permissions and
+  limitations under the License.
+  #L%
+  -->
+<cache2k xmlns:xsi='http://www.w3.org/2001/XMLSchema-instance'
+         xmlns='https://cache2k.org/schema/v1.x'
+         xsi:schemaLocation="https://cache2k.org/schema/v1.x ../../../../cache2k-schemas/src/main/resources/org/cache2k/schema/cache2k-core.xsd">
+
+  <!--
+       configuration that should contains almost every configuration value available to check
+       whether the XSD covers everything correctly.
+
+       TODO: run through an XML validator
+       TODO: correct dummy configuration values, so its actually applicable.
+  -->
+
+  <version>1.0</version>
+
+  <defaultManagerName>other</defaultManagerName>
+  <ignoreMissingCacheConfiguration>true</ignoreMissingCacheConfiguration>
+  <skipCheckOnStartup>false</skipCheckOnStartup>
+  
+  <properties>
+    <test>some stuff</test>
+    <smallSize>1153</smallSize>
+  </properties>
+
+  <defaults>
+    <cache>
+      <entryCapacity>12</entryCapacity>
+      <expireAfterWrite>12s</expireAfterWrite>
+      <keyType>Integer</keyType>
+      <valueType>java.math.BigDecimal</valueType>
+      <resilienceDuration>123s</resilienceDuration>
+      <storeByReference>false</storeByReference>
+      <permitNullValues>false</permitNullValues>
+      <disableStatistics>false</disableStatistics>
+      <recordRefreshedTime>true</recordRefreshedTime>
+      <boostConcurrency>true</boostConcurrency>
+      <eternal>false</eternal>
+      <loader>
+        <bean>
+          <type>org.cache2k.configuration.CustomizationSupplierByClassName</type>
+          <parameters>
+            <className>org.cache2k.extra.config.test.DummyLoader</className>
+          </parameters>
+        </bean>
+      </loader>
+      <listeners>
+        <byClassName>
+          <className>org.cache2k.extra.config.test.DummyListener</className>
+        </byClassName>
+        <bean>
+          <type>org.cache2k.extra.config.test.AnotherDummyListener$Supplier</type>
+        </bean>
+        <bean>
+          <type>org.cache2k.extra.config.test.AnotherDummyListener$Supplier</type>
+          <include>templateBean</include>
+          <parameters>
+            <value1>123</value1>
+            <xy>yx</xy>
+          </parameters>
+        </bean>
+        <!-- better structure:
+        <supplier>
+          <type>org.cache2k.impl.xmlConfiguration.AnotherDummyListener$Supplier</type>
+          <parameters>
+            <xy>123</xy>
+          </parameters>
+        </supplier>
+        -->
+      </listeners>
+      <sections>
+        <jcache>
+          <include>templateJCache1</include>
+          <copyAlwaysIfRequested>true</copyAlwaysIfRequested>
+          <enableManagement>true</enableManagement>
+          <supportOnlineListenerAttachment>true</supportOnlineListenerAttachment>
+          <enableStatistics>true</enableStatistics>
+        </jcache>
+      </sections>
+    </cache>
+  </defaults>
+
+  <templates>
+    <cache>
+      <name>hello</name>
+      <entryCapacity>1234</entryCapacity>
+    </cache>
+    <cache>
+      <name>another</name>
+      <sharpExpiry>true</sharpExpiry>
+      <eternal>true</eternal>
+    </cache>
+    <jcache>
+      <name>templateJCache1</name>
+      <enableStatistics>true</enableStatistics>
+    </jcache>
+  </templates>
+
+  <caches>
+    <cache>
+      <name>testWithInclude</name>
+      <include>hello</include>
+      <entryCapacity>1234</entryCapacity>
+      <expireAfterWrite>12</expireAfterWrite>
+    </cache>
+    <cache>
+      <name>testWithoutInclude</name>
+      <entryCapacity>1234</entryCapacity>
+      <expireAfterWrite>12</expireAfterWrite>
+      <sections>
+        <section>
+          <type>org.cache2k.jcache.JCacheConfiguration</type>
+          <include>templateJCache1</include>
+          <parameters>
+            <enableStatistics>true</enableStatistics>
+          </parameters>
+        </section>
+      </sections>
+    </cache>
+    <cache>
+      <name>jcache1</name>
+      <entryCapacity>${smallSize}</entryCapacity>
+      <maxRetryInterval>${sys.expectedNotToExist:-123s}</maxRetryInterval>
+      <sections>
+        <jcache>
+          <enableStatistics>true</enableStatistics>
+        </jcache>
+      </sections>
+    </cache>
+  </caches>
+
+</cache2k>

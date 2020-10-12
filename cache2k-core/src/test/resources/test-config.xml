@@ -1,6 +1,0 @@
-<testconfig>
-    <hello>some string</hello>
-    <booleanValue>true</booleanValue>
-    <intValue>4711</intValue>
-    <longValue>5432</longValue>
-</testconfig>

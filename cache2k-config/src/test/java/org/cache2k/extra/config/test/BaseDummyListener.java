@@ -1,6 +1,8 @@
+package org.cache2k.extra.config.test;
+
 /*
  * #%L
- * cache2k core implementation
+ * cache2k config file support
  * %%
  * Copyright (C) 2000 - 2020 headissue GmbH, Munich
  * %%
@@ -17,20 +19,19 @@
  * limitations under the License.
  * #L%
  */
+
+import org.cache2k.Cache;
+import org.cache2k.CacheEntry;
+import org.cache2k.event.CacheEntryRemovedListener;
+
 /**
  * @author Jens Wilke
  */
-module org.cache2k.core {
-  requires org.cache2k.api;
-  requires static java.logging;
-  requires static org.slf4j;
-  exports org.cache2k.core.api;
-  exports org.cache2k.core.spi;
-  exports org.cache2k.core.log;
-  uses org.cache2k.core.log.LogFactory;
-  uses org.cache2k.core.spi.CacheConfigurationProvider;
-  uses org.cache2k.core.spi.CacheLifeCycleListener;
-  uses org.cache2k.core.spi.CacheManagerLifeCycleListener;
-  uses org.cache2k.spi.Cache2kExtensionProvider;
-  provides org.cache2k.spi.Cache2kCoreProvider with org.cache2k.core.Cache2kCoreProviderImpl;
+public class BaseDummyListener<K, V> implements CacheEntryRemovedListener<K, V> {
+
+  @Override
+  public void onEntryRemoved(final Cache<K, V> cache, final CacheEntry<K, V> entry) {
+
+  }
+
 }

@@ -49,6 +49,7 @@
     <module>cache2k-api</module>
     <module>cache2k-core</module>
     <module>cache2k-jmx</module>
+    <module>cache2k-config</module>
     <module>cache2k-osgi-all</module>
     <module>cache2k-schemas</module>
     <!-- not deployed on OSS central -->

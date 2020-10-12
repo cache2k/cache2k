@@ -1,6 +1,8 @@
+package org.cache2k.extra.config.generic;
+
 /*
  * #%L
- * cache2k core implementation
+ * cache2k config file support
  * %%
  * Copyright (C) 2000 - 2020 headissue GmbH, Munich
  * %%
@@ -17,20 +19,27 @@
  * limitations under the License.
  * #L%
  */
+
+import java.io.InputStream;
+
 /**
+ * Use XmlPullParser for XML parsing if present (on Android) or fall back to Stax for
+ * standard Java environments.
+ *
  * @author Jens Wilke
  */
-module org.cache2k.core {
-  requires org.cache2k.api;
-  requires static java.logging;
-  requires static org.slf4j;
-  exports org.cache2k.core.api;
-  exports org.cache2k.core.spi;
-  exports org.cache2k.core.log;
-  uses org.cache2k.core.log.LogFactory;
-  uses org.cache2k.core.spi.CacheConfigurationProvider;
-  uses org.cache2k.core.spi.CacheLifeCycleListener;
-  uses org.cache2k.core.spi.CacheManagerLifeCycleListener;
-  uses org.cache2k.spi.Cache2kExtensionProvider;
-  provides org.cache2k.spi.Cache2kCoreProvider with org.cache2k.core.Cache2kCoreProviderImpl;
+public class FlexibleXmlTokenizerFactory implements TokenizerFactory {
+
+  private final TokenizerFactory realTokenizer = detectUsableTokenizer();
+
+  TokenizerFactory detectUsableTokenizer() {
+    return new StaxConfigTokenizer.Factory();
+  }
+
+  @Override
+  public ConfigurationTokenizer createTokenizer(String source, InputStream in, String encoding)
+    throws Exception {
+    return realTokenizer.createTokenizer(source, in, encoding);
+  }
+
 }

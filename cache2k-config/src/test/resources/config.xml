@@ -1,0 +1,135 @@
+<!--
+  #%L
+  cache2k config file support
+  %%
+  Copyright (C) 2000 - 2020 headissue GmbH, Munich
+  %%
+  Licensed under the Apache License, Version 2.0 (the "License");
+  you may not use this file except in compliance with the License.
+  You may obtain a copy of the License at
+  
+       http://www.apache.org/licenses/LICENSE-2.0
+  
+  Unless required by applicable law or agreed to in writing, software
+  distributed under the License is distributed on an "AS IS" BASIS,
+  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  See the License for the specific language governing permissions and
+  limitations under the License.
+  #L%
+  -->
+<cache2k>
+
+  <version>1.0</version>
+  <defaultManagerName>myApp</defaultManagerName>
+  <ignoreUnknownProperties>false</ignoreUnknownProperties>
+  <ignoreMissingConfiguration>false</ignoreMissingConfiguration>
+
+  <properties>
+    <!-- may be we add manager properties here later.
+    <manager>
+      <hello>123</hello>
+    </manager>
+    -->
+    <bigCacheCapacity>12000</bigCacheCapacity>
+    <homeDirectory>${env.HOME}</homeDirectory>
+    <forward>${top.caches.products.eviction.cValue}</forward>
+    <illegalScope>${CHACKA.farusimatasa}</illegalScope>
+    <noClose>${ENV.HOME</noClose>
+    <noScope>${snoopy}</noScope>
+    <noVariable>${.</noVariable>
+    <illegalVariable>${.asdf}</illegalVariable>
+    <vendor>${SYS.java.vendor}</vendor>
+  </properties>
+
+  <defaults>
+
+    <cache>
+      <suppressExceptions>true</suppressExceptions>
+    </cache>
+
+  </defaults>
+
+  <templates>
+
+    <cache>
+      <name>small-cache</name>
+      <entryCapacity>100</entryCapacity>
+    </cache>
+    <cache>
+      <name>expires</name>
+      <expireAfterWrite>6m</expireAfterWrite>
+    </cache>
+    <cache>
+      <name>moreResilient</name>
+      <resilienceDuration>10m</resilienceDuration>
+    </cache>
+
+  </templates>
+
+  <caches>
+
+    <cache>
+      <name>hallo</name>
+      <entryCapacity>${top.caches.products.entryCapacity}</entryCapacity>
+    </cache>
+
+    <cache>
+      <name>products</name>
+      <include>small-cache</include>
+      <entryCapacity>5</entryCapacity>
+      <sections>
+        <eviction>
+          <type>EvictionConfiguration</type>
+          <aValue>123</aValue>
+          <duplicateName>${cache.name}</duplicateName>
+          <directory>${top.properties.homeDirectory}</directory>
+          <bValue>${.aValue}</bValue>
+          <cValue>${eviction.aValue}</cValue>
+          <dValue>[${.aValue}]</dValue>
+          <eValue>${.aValue}-${cache.name}</eValue>
+          <sections>
+            <jcache>
+              <prop>123</prop>
+            </jcache>
+          </sections>
+        </eviction>
+        <jcache>
+          <type>org.cache2k.jcache.JCacheConfiguration</type>
+        </jcache>
+      </sections>
+    </cache>
+
+    <cache>
+      <name>flights</name>
+      <include>expires,moreResilient</include>
+      <entryCapacity>123</entryCapacity>
+    </cache>
+
+    <cache>
+      <name>withLoader</name>
+      <loader>
+        <supplyByClass>
+          <className>x.y.z</className>
+        </supplyByClass>
+      </loader>
+      <writer>
+        <bean>
+          <type>CustomizationSupplierByClass</type>
+          <className>x.y.z</className>
+        </bean>
+      </writer>
+      <listeners>
+        <bean>
+          <type>CustomizationSupplierByClass</type>
+          <className>x.y.z</className>
+        </bean>
+        <bean>
+          <type>CustomizationSupplierByClass</type>
+          <className>x.y.z</className>
+        </bean>
+      </listeners>
+    </cache>
+
+  </caches>
+
+</cache2k>

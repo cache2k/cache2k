@@ -164,14 +164,6 @@ public class TestingBase {
   protected String cacheName;
   protected Cache cache;
 
-  static {
-    if (System.getProperty("logOnInfo") == null) {
-      Logger log = LogManager.getLogManager().getLogger("");
-      for (Handler h : log.getHandlers()) {
-        h.setLevel(Level.WARNING);
-      }
-    }
-  }
 
   public void setClock(InternalClock c) {
     if (clock != null) {
