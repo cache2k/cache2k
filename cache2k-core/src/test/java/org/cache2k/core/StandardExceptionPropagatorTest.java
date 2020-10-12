@@ -20,11 +20,13 @@ package org.cache2k.core;
  * #L%
  */
 
+import static org.assertj.core.api.Assertions.assertThat;
 import org.cache2k.integration.ExceptionInformation;
 import org.cache2k.integration.ExceptionPropagator;
 import org.junit.Test;
 
-import java.sql.Timestamp;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
 
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
@@ -39,8 +41,9 @@ import static org.junit.Assert.assertTrue;
 public class StandardExceptionPropagatorTest {
 
   static final ExceptionPropagator STANDARD_PROPAGATOR = new StandardExceptionPropagator();
-  static final String TIME_STRING = "2016-05-25 09:30:12.123";
-  static final long SOME_TIME = Timestamp.valueOf(TIME_STRING).getTime();
+  static final String TIME_STRING = "2016-05-25T09:30:12.123";
+  static final long SOME_TIME = LocalDateTime.parse(TIME_STRING)
+    .atZone(ZoneId.systemDefault()).toInstant().toEpochMilli();
 
   @Test
   public void propagate_eternal() {
@@ -54,7 +57,7 @@ public class StandardExceptionPropagatorTest {
   public void propagate_sometime() {
     RuntimeException t = STANDARD_PROPAGATOR.propagateException(
       null, toInfo(new RuntimeException("serious thing"), SOME_TIME));
-    assertTrue(t.toString().contains("expiry=2016-05-25 09:30:12.123"));
+    assertThat(t.toString()).contains(("expiry=2016-05-25T09:30:12.123"));
   }
 
   @Test

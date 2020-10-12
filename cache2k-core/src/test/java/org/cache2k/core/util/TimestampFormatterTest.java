@@ -29,22 +29,30 @@ import static org.junit.Assert.assertEquals;
  */
 public class TimestampFormatterTest {
 
+  /**
+   * Replace the actual digits with hashes. The numeric result of the formatting depends on system
+   * time. The tests just check for the actual formatting and the handing of the milliseconds.
+   */
+  static String hashDigits(String s) {
+    return s.replaceAll("[0-9]", "#");
+  }
+
   @Test
   public void test() {
     long t0 = 0;
-    assertEquals("1970-01-01T10:00:00", Util.formatMillis(t0));
+    assertEquals("####-##-##T##:##:##", hashDigits(Util.formatMillis(t0)));
   }
 
   @Test
   public void testWithMillis() {
     long t0 = 123;
-    assertEquals("1970-01-01T10:00:00.123", Util.formatMillis(t0));
+    assertEquals("####-##-##T##:##:##.###", hashDigits(Util.formatMillis(t0)));
   }
 
   @Test
   public void testWithMillis2() {
     long t0 = 120;
-    assertEquals("1970-01-01T10:00:00.12", Util.formatMillis(t0));
+    assertEquals("####-##-##T##:##:##.##", hashDigits(Util.formatMillis(t0)));
   }
 
 }

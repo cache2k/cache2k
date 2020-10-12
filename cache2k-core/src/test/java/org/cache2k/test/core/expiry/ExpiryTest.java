@@ -47,7 +47,8 @@ import org.junit.experimental.categories.Category;
 import org.junit.Test;
 
 import java.io.Closeable;
-import java.sql.Timestamp;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.Executor;
@@ -1019,7 +1020,9 @@ public class ExpiryTest extends TestingBase {
     });
   }
 
-  static final long FUTURE_TIME = Timestamp.valueOf("2058-02-18 23:42:15").getTime();
+  static final long FUTURE_TIME =
+    LocalDateTime.parse("2058-02-18T23:42:15")
+      .atZone(ZoneId.of("UTC")).toInstant().toEpochMilli();
 
   @Test(expected = IllegalArgumentException.class)
   public void manualExpire_exception() {
