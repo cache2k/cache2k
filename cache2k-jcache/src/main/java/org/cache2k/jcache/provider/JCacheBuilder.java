@@ -28,10 +28,10 @@ import org.cache2k.core.Cache2kCoreProviderImpl;
 import org.cache2k.core.CacheManagerImpl;
 import org.cache2k.core.InternalCache2kBuilder;
 import org.cache2k.event.CacheClosedListener;
-import org.cache2k.integration.AdvancedCacheLoader;
-import org.cache2k.integration.CacheWriter;
-import org.cache2k.integration.ExceptionPropagator;
-import org.cache2k.integration.ExceptionInformation;
+import org.cache2k.io.AdvancedCacheLoader;
+import org.cache2k.io.CacheWriter;
+import org.cache2k.io.ExceptionPropagator;
+import org.cache2k.io.ExceptionInformation;
 import org.cache2k.jcache.ExtendedConfiguration;
 import org.cache2k.jcache.ExtendedMutableConfiguration;
 import org.cache2k.jcache.JCacheConfiguration;
@@ -209,8 +209,8 @@ public class JCacheBuilder<K, V> {
     }));
   }
 
-  abstract class CloseableLoader extends AdvancedCacheLoader<K, V> implements Closeable { }
-  abstract class CloseableWriter extends CacheWriter<K, V> implements Closeable { }
+  abstract class CloseableLoader implements AdvancedCacheLoader<K, V>, Closeable { }
+  abstract class CloseableWriter implements CacheWriter<K, V>, Closeable { }
 
   /**
    * Configure loader and writer.

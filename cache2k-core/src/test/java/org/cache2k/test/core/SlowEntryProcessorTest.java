@@ -21,21 +21,9 @@ package org.cache2k.test.core;
  */
 
 import org.cache2k.Cache;
-import org.cache2k.Cache2kBuilder;
-import org.cache2k.CacheEntry;
-import org.cache2k.expiry.Expiry;
-import org.cache2k.integration.CacheLoader;
-import org.cache2k.integration.CacheLoaderException;
-import org.cache2k.integration.CacheWriter;
-import org.cache2k.integration.ExceptionInformation;
-import org.cache2k.integration.ResiliencePolicy;
-import org.cache2k.processor.EntryProcessingException;
-import org.cache2k.processor.EntryProcessingResult;
 import org.cache2k.processor.EntryProcessor;
 import org.cache2k.processor.MutableCacheEntry;
-import org.cache2k.test.util.CacheRule;
 import org.cache2k.test.util.IntCacheRule;
-import org.cache2k.testing.category.FastTests;
 import org.cache2k.testing.category.SlowTests;
 import org.hamcrest.Matchers;
 import org.junit.Ignore;
@@ -43,14 +31,6 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
-import java.util.Map;
-import java.util.NoSuchElementException;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicInteger;
-import java.util.concurrent.atomic.AtomicLong;
-
-import static org.cache2k.test.core.StaticUtil.toIterable;
 import static org.junit.Assert.*;
 
 /**

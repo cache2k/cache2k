@@ -20,8 +20,8 @@ package org.cache2k;
  * #L%
  */
 
-import org.cache2k.integration.CacheLoaderException;
-import org.cache2k.integration.ExceptionPropagator;
+import org.cache2k.io.CacheLoaderException;
+import org.cache2k.io.ExceptionPropagator;
 import org.cache2k.processor.MutableCacheEntry;
 
 /**

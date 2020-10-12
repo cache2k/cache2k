@@ -1,4 +1,4 @@
-package org.cache2k.integration;
+package org.cache2k.io;
 
 /*
  * #%L
@@ -24,9 +24,6 @@ import org.cache2k.processor.MutableCacheEntry;
 import org.cache2k.Cache;
 import org.cache2k.Cache2kBuilder;
 
-import java.util.Map;
-import java.util.concurrent.Executor;
-
 /**
  * Retrieves or generates a value to load into the cache. Using a loader to automatically
  * populate the cache is called read through caching. If the cache is primarily used the
@@ -47,17 +44,11 @@ import java.util.concurrent.Executor;
  * one key at a time. For example, after {@link Cache#clear()} is called load operations for one
  * key may overlap.
  *
- * <p><b>Prefetching</b>: The method {@link Cache#prefetch(Object)} can be used to instruct the
- * cache to load multiple values in the background.
- *
  * <p><b>Refresh ahead</b>: By enabling {@link Cache2kBuilder#refreshAhead} the cache will
  * call the loader when an entry is expired, eagerly trying to keep the cache contents fresh.
  *
  * <p>The alternative loader interface {@link AdvancedCacheLoader} provides the loader
  * with the current cache value.
- *
- * <p>The {@linkplain FunctionalCacheLoader functional loader} interface can be used
- * if only a single method should be provided or with Java 8 lambdas or method references.
  *
  * <p>The {@link AsyncCacheLoader} interface can be used to provide a non blocking asynchronous
  * loader implementation.
@@ -69,12 +60,11 @@ import java.util.concurrent.Executor;
  * @see <a href="https://cache2k.org/docs/latest/user-guide.html#loading-read-through">
  *   Loading / Read-Through - cache2k User Guide</a>
  * @see AdvancedCacheLoader
- * @see FunctionalCacheLoader
  * @see AsyncCacheLoader
- * @deprecated Replaced with {@link org.cache2k.io.CacheLoader}
+ * @since 2
  */
-@Deprecated
-public abstract class CacheLoader<K, V> implements FunctionalCacheLoader<K, V> {
+@FunctionalInterface
+public interface CacheLoader<K, V> {
 
   /**
    * Retrieves or generates data based on the key.
@@ -94,28 +84,6 @@ public abstract class CacheLoader<K, V> implements FunctionalCacheLoader<K, V> {
    * @throws Exception Unhandled exception from the loader. Exceptions are suppressed or
    *                   wrapped and rethrown via a {@link CacheLoaderException}
    */
-  public abstract V load(K key) throws Exception;
-
-  /**
-   * Loads multiple values to the cache.
-   *
-   * <p>From inside this method it is illegal to call methods on the same cache. This
-   * may cause a deadlock.
-   *
-   * <p>The method is provided to complete the API. At the moment cache2k is not
-   * using it. Please see the road map.
-   *
-   * @param keys set of keys for the values to be loaded
-   * @param executor an executor for concurrent loading
-   * @return The loaded values. A key may map to {@code null} if the cache permits
-   *         {@code null} values.
-   * @throws Exception Unhandled exception from the loader. Exceptions are suppressed or
-   *                   wrapped and rethrown via a {@link CacheLoaderException}.
-   *                   If an exception happens the cache may retry the load with the
-   *                   single value load method.
-   */
-  public Map<K, V> loadAll(Iterable<? extends K> keys, Executor executor) throws Exception {
-    throw new UnsupportedOperationException();
-  }
+  V load(K key) throws Exception;
 
 }

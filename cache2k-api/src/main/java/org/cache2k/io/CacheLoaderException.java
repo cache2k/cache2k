@@ -1,4 +1,4 @@
-package org.cache2k.integration;
+package org.cache2k.io;
 
 /*
  * #%L
@@ -45,10 +45,9 @@ import org.cache2k.CustomizationException;
  * (fail fast principle).
  *
  * @author Jens Wilke
- * @deprecated Replaced with {@link org.cache2k.io.CacheLoaderException}
+ * @since 2
  */
-@Deprecated
-public class CacheLoaderException extends org.cache2k.io.CacheLoaderException {
+public class CacheLoaderException extends CustomizationException {
 
   public CacheLoaderException(String message) {
     super(message);

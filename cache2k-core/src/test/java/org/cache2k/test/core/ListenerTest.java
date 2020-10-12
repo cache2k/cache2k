@@ -28,7 +28,7 @@ import org.cache2k.core.api.InternalCache;
 import org.cache2k.core.util.SimulatedClock;
 import org.cache2k.event.CacheEntryEvictedListener;
 import org.cache2k.expiry.ExpiryPolicy;
-import org.cache2k.integration.CacheLoader;
+import org.cache2k.io.CacheLoader;
 import org.cache2k.test.util.CacheRule;
 import org.cache2k.test.util.Condition;
 import org.cache2k.test.util.IntCacheRule;

@@ -2,6 +2,7 @@
  * Loader and writer to integrate with external data sources.
  *
  * @author Jens Wilke
+ * @deprecated the package will be removed completely
  */
 package org.cache2k.integration;
 

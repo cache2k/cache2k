@@ -1,4 +1,4 @@
-package org.cache2k.integration;
+package org.cache2k.io;
 
 /*
  * #%L
@@ -33,11 +33,9 @@ import org.cache2k.CacheEntry;
  *
  * @author Jens Wilke
  * @see CacheLoader
- * @deprecated Replaced with {@link org.cache2k.io.AdvancedCacheLoader}
+ * @since 2
  */
-@Deprecated
-public abstract class AdvancedCacheLoader<K, V>
-  implements org.cache2k.io.AdvancedCacheLoader<K, V> {
+public interface AdvancedCacheLoader<K, V> {
 
   /**
    * Retrieves or generates data based on the key parameter.
@@ -56,7 +54,6 @@ public abstract class AdvancedCacheLoader<K, V>
    * @throws Exception Unhandled exception from the loader. Exceptions are suppressed or
    *                   wrapped and rethrown via a {@link CacheLoaderException}
    */
-  @Override
-  public abstract V load(K key, long startTime, CacheEntry<K, V> currentEntry) throws Exception;
+  V load(K key, long startTime, CacheEntry<K, V> currentEntry) throws Exception;
 
 }

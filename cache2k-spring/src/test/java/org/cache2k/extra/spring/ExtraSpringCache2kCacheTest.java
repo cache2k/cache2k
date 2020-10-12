@@ -22,8 +22,8 @@ package org.cache2k.extra.spring;
 
 import org.cache2k.Cache2kBuilder;
 import org.cache2k.CacheEntry;
-import org.cache2k.integration.AdvancedCacheLoader;
-import org.cache2k.integration.CacheLoaderException;
+import org.cache2k.io.AdvancedCacheLoader;
+import org.cache2k.io.CacheLoaderException;
 import org.junit.After;
 import org.junit.Test;
 

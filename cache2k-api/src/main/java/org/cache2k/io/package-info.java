@@ -1,8 +1,13 @@
-package org.cache2k.extra.config.test;
+/**
+ * Loader and writer to integrate with external data sources.
+ *
+ * @author Jens Wilke
+ */
+package org.cache2k.io;
 
 /*
  * #%L
- * cache2k config file support
+ * cache2k API
  * %%
  * Copyright (C) 2000 - 2020 headissue GmbH, Munich
  * %%
@@ -19,19 +24,3 @@ package org.cache2k.extra.config.test;
  * limitations under the License.
  * #L%
  */
-
-import org.cache2k.io.CacheLoader;
-
-/**
- * Just for testing the XML configuration
- *
- * @author Jens Wilke
- */
-public class DummyLoader implements CacheLoader {
-
-  @Override
-  public Object load(Object key) throws Exception {
-    return null;
-  }
-
-}

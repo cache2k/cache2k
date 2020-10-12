@@ -22,10 +22,11 @@ package org.cache2k.event;
 
 import org.cache2k.Cache;
 import org.cache2k.CacheEntry;
+import org.cache2k.io.CacheLoader;
 
 /**
  * A new entry is inserted into the cache, e.g. by {@link Cache#put(Object, Object)} or by
- * read through and the {@link org.cache2k.integration.CacheLoader}.
+ * read through and the {@link CacheLoader}.
  *
  * @author Jens Wilke
  */

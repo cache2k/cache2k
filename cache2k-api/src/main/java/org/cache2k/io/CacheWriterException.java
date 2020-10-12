@@ -1,8 +1,8 @@
-package org.cache2k.extra.config.test;
+package org.cache2k.io;
 
 /*
  * #%L
- * cache2k config file support
+ * cache2k API
  * %%
  * Copyright (C) 2000 - 2020 headissue GmbH, Munich
  * %%
@@ -20,18 +20,18 @@ package org.cache2k.extra.config.test;
  * #L%
  */
 
-import org.cache2k.io.CacheLoader;
+import org.cache2k.CustomizationException;
 
 /**
- * Just for testing the XML configuration
+ * Wraps an exception caused by a writer.
  *
  * @author Jens Wilke
+ * @since 2
  */
-public class DummyLoader implements CacheLoader {
+public class CacheWriterException extends CustomizationException {
 
-  @Override
-  public Object load(Object key) throws Exception {
-    return null;
+  public CacheWriterException(final Throwable cause) {
+    super(cause);
   }
 
 }

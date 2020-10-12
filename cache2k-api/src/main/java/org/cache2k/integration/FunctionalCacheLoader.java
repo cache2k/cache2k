@@ -21,17 +21,10 @@ package org.cache2k.integration;
  */
 
 /**
- * Functional cache loader interface to be used when only a single method is
- * used. See the {@link CacheLoader} for full documentations.
- *
- * <p>Rationale: Have a functional interface for Java 8 lambda usage, while
- * still maintain the abstract cache loader class that is extensible with
- * new methods for Java 6.
- *
- * @author Jens Wilke
- * @see CacheLoader
+ * @deprecated Replaced with {@link org.cache2k.io.CacheLoader}
  */
-public interface FunctionalCacheLoader<K, V> {
+@Deprecated
+public interface FunctionalCacheLoader<K, V> extends org.cache2k.io.CacheLoader<K, V> {
 
   /**
    * @see CacheLoader#load(Object)

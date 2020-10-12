@@ -20,17 +20,17 @@ package org.cache2k.test.core.expiry;
  * #L%
  */
 
-import org.cache2k.integration.AsyncCacheLoader;
+import org.cache2k.io.AsyncCacheLoader;
 import org.cache2k.test.core.BasicCacheTest;
 import org.cache2k.test.util.TestingBase;
 import org.cache2k.test.util.IntCountingCacheSource;
 import org.cache2k.core.ResiliencePolicyException;
 import org.cache2k.expiry.ExpiryTimeValues;
-import org.cache2k.integration.CacheLoader;
-import org.cache2k.integration.CacheLoaderException;
+import org.cache2k.io.CacheLoader;
+import org.cache2k.io.CacheLoaderException;
 import org.cache2k.CacheOperationCompletionListener;
-import org.cache2k.integration.ExceptionInformation;
-import org.cache2k.integration.ResiliencePolicy;
+import org.cache2k.io.ExceptionInformation;
+import org.cache2k.io.ResiliencePolicy;
 import org.cache2k.processor.EntryProcessor;
 import org.cache2k.processor.MutableCacheEntry;
 import org.cache2k.test.core.TestingParameters;
@@ -1471,7 +1471,7 @@ public class ExpiryTest extends TestingBase {
         .build();
   }
 
-  public static class Every1ExceptionLoader extends CacheLoader<Integer, Integer> {
+  public static class Every1ExceptionLoader implements CacheLoader<Integer, Integer> {
 
     public final Map<Integer, AtomicInteger> key2count = new HashMap<Integer, AtomicInteger>();
 

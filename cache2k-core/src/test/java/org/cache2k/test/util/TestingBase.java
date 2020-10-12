@@ -33,7 +33,7 @@ import org.cache2k.core.util.DefaultClock;
 import org.cache2k.core.api.InternalClock;
 import org.cache2k.core.util.TunableFactory;
 import org.cache2k.core.util.SimulatedClock;
-import org.cache2k.integration.CacheLoader;
+import org.cache2k.io.CacheLoader;
 import org.cache2k.CacheOperationCompletionListener;
 import org.cache2k.test.core.CacheLoaderTest;
 import org.cache2k.test.core.Statistics;
@@ -59,10 +59,6 @@ import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
-import java.util.logging.Handler;
-import java.util.logging.Level;
-import java.util.logging.LogManager;
-import java.util.logging.Logger;
 
 import static org.junit.Assert.*;
 
@@ -467,7 +463,7 @@ public class TestingBase {
     }
   }
 
-  public static class CountingLoader extends CacheLoader<Integer, Integer> {
+  public static class CountingLoader implements CacheLoader<Integer, Integer> {
     AtomicInteger counter = new AtomicInteger();
 
     public long getCount() {
@@ -480,7 +476,7 @@ public class TestingBase {
     }
   }
 
-  public static class PatternLoader extends CacheLoader<Integer, Integer> {
+  public static class PatternLoader implements CacheLoader<Integer, Integer> {
     AtomicInteger counter = new AtomicInteger();
     int[] ints;
 
@@ -494,7 +490,7 @@ public class TestingBase {
     }
   }
 
-  public static class IdentCountingLoader extends CacheLoader<Integer, Integer> {
+  public static class IdentCountingLoader implements CacheLoader<Integer, Integer> {
     AtomicInteger counter = new AtomicInteger();
 
     public long getCount() {
@@ -508,7 +504,7 @@ public class TestingBase {
     }
   }
 
-  public static class IdentIntSource extends CacheLoader<Integer, Integer> {
+  public static class IdentIntSource implements CacheLoader<Integer, Integer> {
 
     @Override
     public Integer load(Integer o) {

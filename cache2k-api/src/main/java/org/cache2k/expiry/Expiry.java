@@ -20,12 +20,14 @@ package org.cache2k.expiry;
  * #L%
  */
 
+import org.cache2k.io.ResiliencePolicy;
+
 /**
  * Utility methods and constants to use inside expire policy and friends.
  *
  * @author Jens Wilke
  * @see ExpiryPolicy
- * @see org.cache2k.integration.ResiliencePolicy
+ * @see ResiliencePolicy
  * @see org.cache2k.Cache#expireAt
  */
 public class Expiry implements ExpiryTimeValues {

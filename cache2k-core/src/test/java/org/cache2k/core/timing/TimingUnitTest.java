@@ -56,6 +56,11 @@ public class TimingUnitTest {
                                      final Cache2kConfiguration<K, V> cfg) {
     return Timing.of(new CacheBuildContext<K, V>() {
       @Override
+      public <T> T initCustomization(T customization) {
+        return customization;
+      }
+
+      @Override
       public InternalClock getClock() {
         return clock;
       }

@@ -21,8 +21,8 @@ package org.cache2k.core;
  */
 
 import static org.assertj.core.api.Assertions.assertThat;
-import org.cache2k.integration.ExceptionInformation;
-import org.cache2k.integration.ExceptionPropagator;
+import org.cache2k.io.ExceptionInformation;
+import org.cache2k.io.ExceptionPropagator;
 import org.junit.Test;
 
 import java.time.LocalDateTime;

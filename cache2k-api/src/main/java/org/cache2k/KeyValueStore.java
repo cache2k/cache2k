@@ -20,6 +20,9 @@ package org.cache2k;
  * #L%
  */
 
+import org.cache2k.io.CacheLoader;
+import org.cache2k.io.CacheWriter;
+
 import java.util.Map;
 
 /**
@@ -55,8 +58,8 @@ public interface KeyValueStore<K, V> extends AdvancedKeyValueSource<K, V> {
    *
    * <p>Rationale: It is intentional that this method does not return
    * a boolean or the previous entry. When operating in cache through
-   * configuration (which means {@link org.cache2k.integration.CacheWriter}
-   * {@link org.cache2k.integration.CacheLoader} is registered) a boolean
+   * configuration (which means {@link CacheWriter}
+   * {@link CacheLoader} is registered) a boolean
    * could mean two different things: the value was present in the cache or
    * the value was present in the system of authority. The purpose of this
    * interface is a reduced set of methods that cannot be misinterpreted.

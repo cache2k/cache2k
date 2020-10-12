@@ -22,9 +22,9 @@ package org.cache2k.core;
 
 import org.cache2k.core.util.Util;
 import org.cache2k.expiry.ExpiryTimeValues;
-import org.cache2k.integration.CacheLoaderException;
-import org.cache2k.integration.ExceptionInformation;
-import org.cache2k.integration.ExceptionPropagator;
+import org.cache2k.io.CacheLoaderException;
+import org.cache2k.io.ExceptionInformation;
+import org.cache2k.io.ExceptionPropagator;
 
 /**
  * Standard behavior of the exception propagator.

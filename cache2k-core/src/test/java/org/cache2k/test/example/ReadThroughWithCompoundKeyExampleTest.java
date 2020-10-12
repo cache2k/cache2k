@@ -23,7 +23,7 @@ package org.cache2k.test.example;
 import net.jcip.annotations.NotThreadSafe;
 import org.cache2k.Cache;
 import org.cache2k.Cache2kBuilder;
-import org.cache2k.integration.CacheLoader;
+import org.cache2k.io.CacheLoader;
 import org.junit.After;
 import org.junit.Test;
 

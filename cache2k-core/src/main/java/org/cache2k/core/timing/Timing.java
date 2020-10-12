@@ -26,11 +26,10 @@ import org.cache2k.core.api.CacheBuildContext;
 import org.cache2k.core.api.CacheCloseContext;
 import org.cache2k.core.Entry;
 import org.cache2k.core.ExceptionWrapper;
-import org.cache2k.core.util.Util;
 import org.cache2k.expiry.ExpiryPolicy;
 import org.cache2k.expiry.ValueWithExpiryTime;
-import org.cache2k.integration.ExceptionInformation;
-import org.cache2k.integration.ResiliencePolicy;
+import org.cache2k.io.ExceptionInformation;
+import org.cache2k.io.ResiliencePolicy;
 
 /**
  * Encapsulates logic for expiry times calculation and timer handling.

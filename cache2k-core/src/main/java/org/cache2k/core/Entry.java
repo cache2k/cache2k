@@ -26,7 +26,7 @@ import org.cache2k.core.timing.TimerTask;
 import org.cache2k.expiry.ExpiryPolicy;
 import org.cache2k.core.operation.ExaminationEntry;
 import org.cache2k.core.storageApi.StorageEntry;
-import org.cache2k.integration.ExceptionInformation;
+import org.cache2k.io.ExceptionInformation;
 
 import java.util.concurrent.atomic.AtomicLongFieldUpdater;
 

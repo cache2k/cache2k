@@ -21,8 +21,10 @@ package org.cache2k.core;
  */
 
 import org.cache2k.CacheEntry;
-import org.cache2k.integration.ExceptionInformation;
-import org.cache2k.integration.ResiliencePolicy;
+import org.cache2k.configuration.BuildContextAwareCustomization;
+import org.cache2k.configuration.Cache2kConfiguration;
+import org.cache2k.io.ExceptionInformation;
+import org.cache2k.io.ResiliencePolicy;
 
 import java.util.Random;
 
@@ -32,7 +34,8 @@ import java.util.Random;
  *
  * @author Jens Wilke
  */
-public class DefaultResiliencePolicy<K, V> extends ResiliencePolicy<K, V> {
+public class DefaultResiliencePolicy<K, V>
+  implements ResiliencePolicy<K, V>, BuildContextAwareCustomization<K, V> {
 
   /**
    * We use a common random instance. Since this is only called for an exception
@@ -66,7 +69,7 @@ public class DefaultResiliencePolicy<K, V> extends ResiliencePolicy<K, V> {
     return multiplier;
   }
 
-  public void setMultiplier(final double multiplier) {
+  public void setMultiplier(double multiplier) {
     this.multiplier = multiplier;
   }
 
@@ -74,7 +77,7 @@ public class DefaultResiliencePolicy<K, V> extends ResiliencePolicy<K, V> {
     return randomization;
   }
 
-  public void setRandomization(final double randomization) {
+  public void setRandomization(double randomization) {
     this.randomization = randomization;
   }
 
@@ -89,15 +92,16 @@ public class DefaultResiliencePolicy<K, V> extends ResiliencePolicy<K, V> {
   public long getRetryInterval() { return retryInterval; }
 
   @Override
-  public void init(final Context ctx) {
-    resilienceDuration = ctx.getResilienceDurationMillis();
-    maxRetryInterval = ctx.getMaxRetryIntervalMillis();
-    retryInterval = ctx.getRetryIntervalMillis();
+  public void initWithContext(BuildContext<K, V> context) {
+    Cache2kConfiguration<K, V> cfg = context.getConfiguration();
+    resilienceDuration = cfg.getResilienceDuration();
+    maxRetryInterval = cfg.getMaxRetryInterval();
+    retryInterval = cfg.getRetryInterval();
     if (resilienceDuration == -1) {
-      if (ctx.getExpireAfterWriteMillis() == ETERNAL) {
+      if (cfg.getExpireAfterWrite() == ETERNAL) {
         resilienceDuration = 0;
       } else {
-        resilienceDuration = ctx.getExpireAfterWriteMillis();
+        resilienceDuration = cfg.getExpireAfterWrite();
       }
     } else {
       if (maxRetryInterval == -1) {
@@ -121,9 +125,9 @@ public class DefaultResiliencePolicy<K, V> extends ResiliencePolicy<K, V> {
   }
 
   @Override
-  public long suppressExceptionUntil(final K key,
-                                     final ExceptionInformation exceptionInformation,
-                                     final CacheEntry<K, V> cachedContent) {
+  public long suppressExceptionUntil(K key,
+                                     ExceptionInformation exceptionInformation,
+                                     CacheEntry<K, V> cachedContent) {
     if (resilienceDuration == 0) {
       return 0;
     }
@@ -135,7 +139,7 @@ public class DefaultResiliencePolicy<K, V> extends ResiliencePolicy<K, V> {
     return Math.min(exceptionInformation.getLoadTime() + deltaMs, maxSuppressUntil);
   }
 
-  private long calculateRetryDelta(final ExceptionInformation exceptionInformation) {
+  private long calculateRetryDelta(ExceptionInformation exceptionInformation) {
     long delta = (long)
       (retryInterval * Math.pow(multiplier, exceptionInformation.getRetryCount()));
     delta += SHARED_RANDOM.nextDouble() * randomization * delta;
@@ -143,8 +147,8 @@ public class DefaultResiliencePolicy<K, V> extends ResiliencePolicy<K, V> {
   }
 
   @Override
-  public long retryLoadAfter(final K key,
-                             final ExceptionInformation exceptionInformation) {
+  public long retryLoadAfter(K key,
+                             ExceptionInformation exceptionInformation) {
     if (retryInterval == 0) {
       return 0;
     }

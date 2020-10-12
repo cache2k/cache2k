@@ -21,10 +21,11 @@ package org.cache2k;
  */
 
 import org.cache2k.expiry.ExpiryPolicy;
+import org.cache2k.io.CacheLoader;
 
 /**
  * Wraps an exception thrown from a cache customization such as the
- * {@link ExpiryPolicy} or {@link org.cache2k.integration.CacheLoader}.
+ * {@link ExpiryPolicy} or {@link CacheLoader}.
  *
  * @author Jens Wilke
  */

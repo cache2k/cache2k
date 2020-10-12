@@ -22,7 +22,7 @@ package org.cache2k.core.timing;
 
 import org.cache2k.core.Entry;
 import org.cache2k.expiry.ExpiryPolicy;
-import org.cache2k.integration.ExceptionInformation;
+import org.cache2k.io.ExceptionInformation;
 
 /**
  * Base class for all timing handlers that actually need not to know the current time.

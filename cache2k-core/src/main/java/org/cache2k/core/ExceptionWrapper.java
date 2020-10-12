@@ -21,8 +21,8 @@ package org.cache2k.core;
  */
 
  import org.cache2k.CacheEntry;
- import org.cache2k.integration.ExceptionInformation;
- import org.cache2k.integration.ExceptionPropagator;
+ import org.cache2k.io.ExceptionInformation;
+ import org.cache2k.io.ExceptionPropagator;
 
 /**
  * The exception wrapper is used in the value field of the entry, in case of an exception.

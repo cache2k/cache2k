@@ -1,4 +1,4 @@
-package org.cache2k.integration;
+package org.cache2k.io;
 
 /*
  * #%L
@@ -30,15 +30,9 @@ import org.cache2k.expiry.ExpiryTimeValues;
  * currently cached value if a previous load attempt did complete successful.
  *
  * @author Jens Wilke
+ * @since 2
  */
-public abstract class ResiliencePolicy<K, V> implements ExpiryTimeValues {
-
-  /**
-   * Called before any other call.
-   *
-   * @param context Additional context information
-   */
-  public void init(Context context) { }
+public interface ResiliencePolicy<K, V> extends ExpiryTimeValues {
 
   /**
    * Called after the loader threw an exception and a previous value is available.
@@ -65,7 +59,7 @@ public abstract class ResiliencePolicy<K, V> implements ExpiryTimeValues {
    *         If the returned time is after {@link ExceptionInformation#getLoadTime()}
    *         the exception will be suppressed for the ongoing operation.
    */
-  public abstract long suppressExceptionUntil(K key,
+  long suppressExceptionUntil(K key,
                               ExceptionInformation exceptionInformation,
                               CacheEntry<K, V> cachedContent);
 
@@ -73,47 +67,6 @@ public abstract class ResiliencePolicy<K, V> implements ExpiryTimeValues {
    * Called after the loader threw an exception and no previous value is available or
    * {@link #suppressExceptionUntil} returned zero.
    */
-  public abstract long retryLoadAfter(K key,
-                                      ExceptionInformation exceptionInformation);
-
-  /**
-   * Provides additional context information. At the moment, this interface provides the
-   * relevant configuration settings.
-   *
-   * <p>Compatibility: This interface is not intended for implementation
-   * or extension by a cache client and may get additional methods in minor releases.
-   */
-  public interface Context {
-
-    /**
-     * Expiry duration after entry mutation. -1 if not specified.
-     *
-     * @see org.cache2k.Cache2kBuilder#expireAfterWrite
-     */
-    long getExpireAfterWriteMillis();
-
-    /**
-     * Maximum time exceptions should be suppressed. -1 if not specified.
-     * 0 if no exception suppression is requested.
-     *
-     * @see org.cache2k.Cache2kBuilder#resilienceDuration
-     */
-    long getResilienceDurationMillis();
-
-    /**
-     * Retry interval after the first exception happened for a key. -1 if not specified.
-     *
-     * @see org.cache2k.Cache2kBuilder#retryInterval
-     */
-    long getRetryIntervalMillis();
-
-    /**
-     * Maximum retry interval. -1 if not specified.
-     *
-     * @see org.cache2k.Cache2kBuilder#maxRetryInterval
-     */
-    long getMaxRetryIntervalMillis();
-
-  }
+  long retryLoadAfter(K key, ExceptionInformation exceptionInformation);
 
 }

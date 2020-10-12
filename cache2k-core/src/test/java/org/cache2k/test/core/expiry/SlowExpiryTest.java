@@ -22,7 +22,7 @@ package org.cache2k.test.core.expiry;
 
 import org.cache2k.Cache2kBuilder;
 import org.cache2k.expiry.ExpiryTimeValues;
-import org.cache2k.integration.AsyncCacheLoader;
+import org.cache2k.io.AsyncCacheLoader;
 import org.cache2k.test.core.BasicCacheTest;
 import org.cache2k.test.util.TestingBase;
 import org.cache2k.test.util.IntCountingCacheSource;
@@ -30,14 +30,14 @@ import org.cache2k.CacheEntry;
 import org.cache2k.core.HeapCache;
 import org.cache2k.core.util.TunableFactory;
 import org.cache2k.expiry.ExpiryPolicy;
-import org.cache2k.integration.CacheLoader;
+import org.cache2k.io.CacheLoader;
 import org.cache2k.CacheOperationCompletionListener;
-import org.cache2k.integration.ExceptionInformation;
-import org.cache2k.integration.ResiliencePolicy;
+import org.cache2k.io.ExceptionInformation;
+import org.cache2k.io.ResiliencePolicy;
 import org.cache2k.test.util.Condition;
 import org.cache2k.Cache;
 
-import org.cache2k.integration.CacheLoaderException;
+import org.cache2k.io.CacheLoaderException;
 import org.cache2k.test.core.TestingParameters;
 import org.cache2k.core.api.InternalCacheInfo;
 
@@ -267,7 +267,7 @@ public class SlowExpiryTest extends TestingBase {
     exceptionToString = exceptionToString.replace(".##,", ".###,");
     exceptionToString = exceptionToString.replace(".#,", ".###,");
     exceptionToString = exceptionToString.replace("##:##,", "##:##.###,");
-    assertEquals("org.cache#k.integration.CacheLoaderException: " +
+    assertEquals("org.cache#k.io.CacheLoaderException: " +
       "expiry=####-##-##T##:##:##.###, cause: " +
       "java.lang.RuntimeException: every # times", exceptionToString);
     exceptionCount = 0;

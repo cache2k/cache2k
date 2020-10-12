@@ -50,9 +50,9 @@ import org.cache2k.core.log.Log;
 import org.cache2k.core.util.TunableConstants;
 import org.cache2k.core.util.TunableFactory;
 import org.cache2k.event.CacheClosedListener;
-import org.cache2k.integration.AdvancedCacheLoader;
-import org.cache2k.integration.CacheLoaderException;
-import org.cache2k.integration.ExceptionPropagator;
+import org.cache2k.io.AdvancedCacheLoader;
+import org.cache2k.io.CacheLoaderException;
+import org.cache2k.io.ExceptionPropagator;
 import org.cache2k.integration.RefreshedTimeWrapper;
 import org.cache2k.processor.EntryProcessor;
 

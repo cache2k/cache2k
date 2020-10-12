@@ -22,8 +22,8 @@ package org.cache2k.test.core;
 
 import org.cache2k.Cache;
 import org.cache2k.Cache2kBuilder;
-import org.cache2k.integration.CacheLoader;
-import org.cache2k.integration.CacheWriter;
+import org.cache2k.io.CacheLoader;
+import org.cache2k.io.CacheWriter;
 import org.cache2k.processor.EntryProcessor;
 import org.cache2k.processor.MutableCacheEntry;
 import org.cache2k.test.util.TestingBase;
@@ -44,7 +44,7 @@ import java.util.HashMap;
 public class CacheWriterTest extends TestingBase {
 
   public static final String EXCEPTION_TEXT =
-    "org.cache2k.integration.CacheWriterException: " +
+    "org.cache2k.io.CacheWriterException: " +
     "java.lang.Exception: test exception, value: 777";
 
   @Test
@@ -334,7 +334,7 @@ public class CacheWriterTest extends TestingBase {
     return getCache();
   }
 
-  public static class MyWriter extends CacheWriter<Integer, Integer> {
+  public static class MyWriter implements CacheWriter<Integer, Integer> {
 
     final HashMap<Integer, Integer> deletedCount = new HashMap<Integer, Integer>();
     final HashMap<Integer, Integer> count = new HashMap<Integer, Integer>();

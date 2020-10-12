@@ -24,7 +24,7 @@ import org.cache2k.Cache;
 import org.cache2k.Cache2kBuilder;
 import org.cache2k.core.DefaultResiliencePolicy;
 import org.cache2k.core.HeapCache;
-import org.cache2k.integration.ResiliencePolicy;
+import org.cache2k.io.ResiliencePolicy;
 import org.cache2k.testing.category.FastTests;
 import org.cache2k.test.util.IntCacheRule;
 import org.junit.Rule;

@@ -20,14 +20,14 @@ package org.cache2k.test.util;
  * #L%
  */
 
-import org.cache2k.integration.CacheLoader;
+import org.cache2k.io.CacheLoader;
 
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * @author Jens Wilke
  */
-public abstract class CacheSourceForTesting<K,T> extends CacheLoader<K, T> {
+public abstract class CacheSourceForTesting<K, V> implements CacheLoader<K, V> {
 
   private AtomicInteger callCount = new AtomicInteger();
 

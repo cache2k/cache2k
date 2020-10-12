@@ -20,7 +20,7 @@ package org.cache2k.core.operation;
  * #L%
  */
 
-import org.cache2k.integration.ExceptionPropagator;
+import org.cache2k.io.ExceptionPropagator;
 
 /**
  * Interface for cache operation semantics to control the progress of the processing.

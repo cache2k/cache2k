@@ -24,14 +24,14 @@ import org.cache2k.Cache;
 import org.cache2k.Cache2kBuilder;
 import org.cache2k.CacheEntry;
 import org.cache2k.expiry.Expiry;
-import org.cache2k.integration.AdvancedCacheLoader;
-import org.cache2k.integration.CacheLoader;
-import org.cache2k.integration.CacheLoaderException;
-import org.cache2k.integration.CacheWriter;
-import org.cache2k.integration.ExceptionInformation;
+import org.cache2k.io.AdvancedCacheLoader;
+import org.cache2k.io.CacheLoader;
+import org.cache2k.io.CacheLoaderException;
+import org.cache2k.io.CacheWriter;
+import org.cache2k.io.ExceptionInformation;
 import org.cache2k.integration.LoadDetail;
 import org.cache2k.integration.Loaders;
-import org.cache2k.integration.ResiliencePolicy;
+import org.cache2k.io.ResiliencePolicy;
 import org.cache2k.testing.category.FastTests;
 import org.cache2k.processor.EntryProcessingException;
 import org.cache2k.processor.EntryProcessor;
@@ -488,7 +488,7 @@ public class EntryProcessorTest {
     });
   }
 
-  public static class IdentCountingLoader extends CacheLoader<Integer, Integer> {
+  public static class IdentCountingLoader implements CacheLoader<Integer, Integer> {
 
     public static final int KEY_YIELDING_PERMANENT_EXCEPTION = 0xcafebabe;
     AtomicInteger counter = new AtomicInteger();
@@ -952,7 +952,7 @@ public class EntryProcessorTest {
     assertFalse("expires immediately", wl.cache.containsKey(KEY));
   }
 
-  static class CountingWriter  extends CacheWriter<Integer, Integer> {
+  static class CountingWriter implements CacheWriter<Integer, Integer> {
 
     AtomicLong writeCalled = new AtomicLong();
     AtomicLong deleteCalled = new AtomicLong();

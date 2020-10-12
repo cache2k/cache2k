@@ -23,6 +23,7 @@ package org.cache2k.core;
 import org.cache2k.Cache2kBuilder;
 import org.cache2k.CacheEntry;
 import org.cache2k.CustomizationException;
+import org.cache2k.configuration.BuildContextAwareCustomization;
 import org.cache2k.configuration.CustomizationSupplier;
 import org.cache2k.core.api.CacheBuildContext;
 import org.cache2k.core.api.InternalCache;
@@ -42,11 +43,10 @@ import org.cache2k.configuration.Cache2kConfiguration;
 import org.cache2k.CacheManager;
 import org.cache2k.core.event.AsyncDispatcher;
 import org.cache2k.core.event.AsyncEvent;
-import org.cache2k.integration.AdvancedCacheLoader;
-import org.cache2k.integration.AsyncCacheLoader;
-import org.cache2k.integration.CacheLoader;
-import org.cache2k.integration.CacheWriter;
-import org.cache2k.integration.FunctionalCacheLoader;
+import org.cache2k.io.AdvancedCacheLoader;
+import org.cache2k.io.AsyncCacheLoader;
+import org.cache2k.io.CacheLoader;
+import org.cache2k.io.CacheWriter;
 
 import java.io.Closeable;
 import java.io.IOException;
@@ -120,14 +120,40 @@ public class InternalCache2kBuilder<K, V> implements CacheBuildContext<K, V> {
   public <T> T createCustomization(CustomizationSupplier<T> supplier, T fallback) {
     if (supplier == null) { return fallback; }
     try {
-      return supplier.supply(getCacheManager());
+      return initCustomization(supplier.supply(getCacheManager()));
     } catch (Exception ex) {
       throw new CustomizationException("Initialization of customization failed", ex);
     }
   }
 
+  @Override
   public <T> T createCustomization(CustomizationSupplier<T> supplier) {
     return createCustomization(supplier, null);
+  }
+
+  @Override
+  public <T> T initCustomization(T customization) {
+    if (customization instanceof BuildContextAwareCustomization) {
+      BuildContextAwareCustomization.BuildContext initContext =
+        new BuildContextAwareCustomization.BuildContext<K, V>() {
+          @Override
+          public CacheManager getCacheManager() {
+            return InternalCache2kBuilder.this.getCacheManager();
+          }
+
+          @Override
+          public Cache2kConfiguration<K, V> getConfiguration() {
+            return InternalCache2kBuilder.this.getConfiguration();
+          }
+
+          @Override
+          public String getName() {
+            return getConfiguration().getName();
+          }
+        };
+      ((BuildContextAwareCustomization<K, V>) customization).initWithContext(initContext);
+    }
+    return customization;
   }
 
   /**
@@ -140,15 +166,6 @@ public class InternalCache2kBuilder<K, V> implements CacheBuildContext<K, V> {
       Object obj =  createCustomization(config.getLoader());
       if (obj instanceof CacheLoader) {
         final CacheLoader<K, V> loader = (CacheLoader) obj;
-        c.setAdvancedLoader(new AdvancedCacheLoader<K, V>() {
-          @Override
-          public V load(K key, long startTime, CacheEntry<K, V> currentEntry)
-            throws Exception {
-            return loader.load(key);
-          }
-        });
-      } else {
-        final FunctionalCacheLoader<K, V> loader = (FunctionalCacheLoader) obj;
         c.setAdvancedLoader(new AdvancedCacheLoader<K, V>() {
           @Override
           public V load(K key, long startTime, CacheEntry<K, V> currentEntry)
@@ -169,8 +186,8 @@ public class InternalCache2kBuilder<K, V> implements CacheBuildContext<K, V> {
     c.setCacheConfig(this);
   }
 
-  private static class WrappedAdvancedCacheLoader<K, V> extends AdvancedCacheLoader<K, V>
-    implements Closeable {
+  private static class WrappedAdvancedCacheLoader<K, V>
+    implements AdvancedCacheLoader<K, V>, Closeable {
 
     HeapCache<K, V> heapCache;
     private final AdvancedCacheLoader<K, V> forward;
@@ -383,7 +400,8 @@ public class InternalCache2kBuilder<K, V> implements CacheBuildContext<K, V> {
       Timing rh = Timing.of(this);
       bc.setTiming(rh);
       bc.eviction = EVICTION_FACTORY.constructEviction(
-        this, bc, HeapCacheListener.NO_OPERATION, config, Runtime.getRuntime().availableProcessors());
+        this, bc, HeapCacheListener.NO_OPERATION, config,
+        Runtime.getRuntime().availableProcessors());
       bc.init();
     }
     manager.sendCreatedEvent(cache, config);

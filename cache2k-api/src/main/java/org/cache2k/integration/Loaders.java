@@ -21,12 +21,16 @@ package org.cache2k.integration;
  */
 
 import org.cache2k.CacheEntry;
+import org.cache2k.io.AdvancedCacheLoader;
+import org.cache2k.io.CacheLoader;
 
 /**
  * Utility methods for cache loaders
  *
  * @author Jens Wilke
+ * @deprecated to be removed
  */
+@Deprecated
 public class Loaders {
 
   /**
@@ -34,7 +38,6 @@ public class Loaders {
    *
    * @see CacheLoader#load(Object)
    * @see AdvancedCacheLoader#load(Object, long, CacheEntry)
-   * @see FunctionalCacheLoader#load(Object)
    */
   @SuppressWarnings("unchecked")
   public static <V> LoadDetail<V> wrapRefreshedTime(V value, long refreshedTimeInMillis) {

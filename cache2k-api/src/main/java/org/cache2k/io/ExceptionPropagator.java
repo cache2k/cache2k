@@ -1,4 +1,4 @@
-package org.cache2k.integration;
+package org.cache2k.io;
 
 /*
  * #%L
@@ -31,9 +31,9 @@ package org.cache2k.integration;
  * available.
  *
  * @author Jens Wilke
- * @deprecated Replaced with {@link org.cache2k.io.ExceptionPropagator}
+ * @since 2
  */
-@Deprecated
+@FunctionalInterface
 public interface ExceptionPropagator<K> {
 
   /**

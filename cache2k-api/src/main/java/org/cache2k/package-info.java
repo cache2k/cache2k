@@ -3,8 +3,8 @@
  *
  * <p>A {@link org.cache2k.Cache} can be created the {@link org.cache2k.Cache2kBuilder}. Besides the
  * parameters that can be set via the builder, a cache can be further customized and extended via
- * a {@link org.cache2k.integration.CacheLoader}, {@link org.cache2k.integration.CacheWriter},
- * {@link org.cache2k.expiry.ExpiryPolicy} or {@link org.cache2k.integration.ResiliencePolicy}.
+ * a {@link org.cache2k.io.CacheLoader}, {@link org.cache2k.io.CacheWriter},
+ * {@link org.cache2k.expiry.ExpiryPolicy} or {@link org.cache2k.io.ResiliencePolicy}.
  *
  * @author Jens Wilke
  * @see <a href="https://cache2k.org>cache2k homepage</a>

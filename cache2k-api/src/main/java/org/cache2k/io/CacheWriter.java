@@ -1,4 +1,4 @@
-package org.cache2k.integration;
+package org.cache2k.io;
 
 /*
  * #%L
@@ -28,10 +28,9 @@ import org.cache2k.Cache;
  * {@link Cache#remove(Object)}  will cause a writer call.
  *
  * @author Jens Wilke
- * @deprecated Replaced with {@link org.cache2k.io.CacheWriter}
+ * @since 2
  */
-@Deprecated
-public abstract class CacheWriter<K, V> implements org.cache2k.io.CacheWriter<K, V> {
+public interface CacheWriter<K, V> {
 
   /**
    * Called when the value was updated or inserted into the cache.
@@ -45,7 +44,7 @@ public abstract class CacheWriter<K, V> implements org.cache2k.io.CacheWriter<K,
    * @throws Exception if an exception occurs, the cache update will not occur and this
    *         exception will be wrapped in a {@link CacheWriterException}
    */
-  public abstract void write(K key, V value) throws Exception;
+  void write(K key, V value) throws Exception;
 
   /**
    * Called when a mapping is removed from the cache. The removal was done by
@@ -56,7 +55,7 @@ public abstract class CacheWriter<K, V> implements org.cache2k.io.CacheWriter<K,
    * @throws Exception if an exception occurs, the cache update will not occur and this
    *         exception will be wrapped in a {@link CacheWriterException}
    */
-  public abstract void delete(K key) throws Exception;
+  void delete(K key) throws Exception;
 
 
 }

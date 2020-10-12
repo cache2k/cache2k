@@ -26,7 +26,9 @@ package org.cache2k.integration;
  * Don't use directly.
  *
  * @author Jens Wilke
+ * @deprecated to be removed
  */
+@Deprecated
 public final class RefreshedTimeWrapper<V> extends LoadDetail<V> {
 
   private final long refreshTime;

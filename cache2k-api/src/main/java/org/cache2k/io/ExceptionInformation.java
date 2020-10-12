@@ -1,4 +1,4 @@
-package org.cache2k.integration;
+package org.cache2k.io;
 
 /*
  * #%L
@@ -37,15 +37,13 @@ package org.cache2k.integration;
  * @see ExceptionPropagator
  * @see ResiliencePolicy
  * @author Jens Wilke
- * @deprecated replaced with {@link org.cache2k.io.ExceptionInformation}
+ * @since 2
  */
-@Deprecated
 public interface ExceptionInformation {
 
   /**
    * The exception propagator in effect.
    *
-   * @since 1.4
    */
   ExceptionPropagator getExceptionPropagator();
 

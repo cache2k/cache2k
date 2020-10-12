@@ -32,8 +32,8 @@ import org.cache2k.core.api.InternalClock;
 import org.cache2k.expiry.Expiry;
 import org.cache2k.expiry.ExpiryPolicy;
 import org.cache2k.expiry.ExpiryTimeValues;
-import org.cache2k.integration.ExceptionInformation;
-import org.cache2k.integration.ResiliencePolicy;
+import org.cache2k.io.ExceptionInformation;
+import org.cache2k.io.ResiliencePolicy;
 
 /**
  * Expiry time is constant
@@ -76,38 +76,11 @@ public class StaticTiming<K, V> extends Timing<K, V> {
   }
 
   ResiliencePolicy<K, V> provideResiliencePolicy(CacheBuildContext<K, V> buildContext) {
-    Cache2kConfiguration<K, V> c = buildContext.getConfiguration();
-    final long expireAfterWriteMillis = c.getExpireAfterWrite();
-    final long resilienceDuration = c.getResilienceDuration();
-    final boolean suppressException = c.isSuppressExceptions();
-    final long retryInterval = c.getRetryInterval();
-    final long maxRetryInterval = c.getMaxRetryInterval();
-    ResiliencePolicy.Context ctx = new ResiliencePolicy.Context() {
-      @Override
-      public long getExpireAfterWriteMillis() {
-        return expireAfterWriteMillis;
-      }
-
-      @Override
-      public long getResilienceDurationMillis() {
-        return suppressException ? resilienceDuration : 0;
-      }
-
-      @Override
-      public long getRetryIntervalMillis() {
-        return retryInterval;
-      }
-
-      @Override
-      public long getMaxRetryIntervalMillis() {
-        return maxRetryInterval;
-      }
-    };
-    ResiliencePolicy<K, V> policy = buildContext.createCustomization(c.getResiliencePolicy());
+    ResiliencePolicy<K, V> policy =
+      buildContext.createCustomization(buildContext.getConfiguration().getResiliencePolicy());
     if (policy == null) {
-      policy = new DefaultResiliencePolicy<K, V>();
+      policy = buildContext.initCustomization(new DefaultResiliencePolicy<K, V>());
     }
-    policy.init(ctx);
     return policy;
   }
 

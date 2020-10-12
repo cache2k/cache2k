@@ -20,12 +20,12 @@ package org.cache2k.jcache.provider;
  * #L%
  */
 
-import org.cache2k.integration.CacheLoader;
+import org.cache2k.io.CacheLoader;
 
 /**
  * Loader for testing that converts the integer key to a string.
  */
-public class ToStringLoader extends CacheLoader<Integer, String> {
+public class ToStringLoader implements CacheLoader<Integer, String> {
 
   @Override
   public String load(final Integer key) throws Exception {

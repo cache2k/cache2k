@@ -30,14 +30,15 @@ import org.cache2k.configuration.CustomizationSupplier;
 import org.cache2k.event.CacheClosedListener;
 import org.cache2k.expiry.ExpiryPolicy;
 import org.cache2k.event.CacheEntryOperationListener;
-import org.cache2k.integration.AdvancedCacheLoader;
-import org.cache2k.integration.AsyncCacheLoader;
-import org.cache2k.integration.CacheLoader;
-import org.cache2k.integration.CacheWriter;
-import org.cache2k.integration.ExceptionPropagator;
-import org.cache2k.integration.FunctionalCacheLoader;
+import org.cache2k.io.AdvancedCacheLoader;
+import org.cache2k.io.AsyncCacheLoader;
+import org.cache2k.io.CacheLoader;
+import org.cache2k.io.CacheWriter;
+import org.cache2k.io.ExceptionInformation;
+import org.cache2k.io.ExceptionPropagator;
 import org.cache2k.integration.LoadDetail;
-import org.cache2k.integration.ResiliencePolicy;
+import org.cache2k.io.ResiliencePolicy;
+import org.cache2k.io.CacheLoaderException;
 import org.cache2k.processor.MutableCacheEntry;
 
 import java.lang.reflect.ParameterizedType;
@@ -432,7 +433,54 @@ public class Cache2kBuilder<K, V> {
 
   /**
    * Sets customization for propagating loader exceptions. By default loader exceptions
-   * are wrapped into a {@link org.cache2k.integration.CacheLoaderException}.
+   * are wrapped into a {@link CacheLoaderException}.
+   */
+  public final Cache2kBuilder<K, V> exceptionPropagator(
+    final org.cache2k.integration.ExceptionPropagator<K> ep) {
+    ExceptionPropagator<K> newPropagator = new ExceptionPropagator<K>() {
+      @Override
+      public RuntimeException propagateException(K key, ExceptionInformation newInfo) {
+        org.cache2k.integration.ExceptionInformation oldInfo = new org.cache2k.integration.ExceptionInformation() {
+          @Override
+          public org.cache2k.integration.ExceptionPropagator getExceptionPropagator() {
+            return ep;
+          }
+
+          @Override
+          public Throwable getException() {
+            return newInfo.getException();
+          }
+
+          @Override
+          public int getRetryCount() {
+            return newInfo.getRetryCount();
+          }
+
+          @Override
+          public long getSinceTime() {
+            return newInfo.getSinceTime();
+          }
+
+          @Override
+          public long getLoadTime() {
+            return newInfo.getLoadTime();
+          }
+
+          @Override
+          public long getUntil() {
+            return newInfo.getUntil();
+          }
+        };
+        return ep.propagateException(key, oldInfo);
+      }
+    };
+    exceptionPropagator(newPropagator);
+    return this;
+  }
+
+  /**
+   * Sets customization for propagating loader exceptions. By default loader exceptions
+   * are wrapped into a {@link CacheLoaderException}.
    */
   public final Cache2kBuilder<K, V> exceptionPropagator(ExceptionPropagator<K> ep) {
     config().setExceptionPropagator(wrapCustomizationInstance(ep));
@@ -445,22 +493,61 @@ public class Cache2kBuilder<K, V> {
     return new CustomizationReferenceSupplier<T>(obj);
   }
 
-  /**
-   * Enables read through operation and sets a cache loader. Different loader types
-   * are available: {@link FunctionalCacheLoader}, {@link CacheLoader},
-   * {@link AdvancedCacheLoader}.
-   *
-   * @see CacheLoader for general discussion on cache loaders
-   */
-  public final Cache2kBuilder<K, V> loader(FunctionalCacheLoader<K, V> l) {
-    config().setLoader(wrapCustomizationInstance(l));
+  @Deprecated
+  public final Cache2kBuilder<K, V> loader(
+    final org.cache2k.integration.AsyncCacheLoader<K, V> oldLoader) {
+    AsyncCacheLoader<K, V> newLoader = new AsyncCacheLoader<K, V>() {
+      @Override
+      public void load(K key, Context<K, V> context, Callback<V> callback) throws Exception {
+        org.cache2k.integration.AsyncCacheLoader.Context<K, V> oldContext =
+          new org.cache2k.integration.AsyncCacheLoader.Context<K, V>() {
+            @Override
+            public long getLoadStartTime() {
+              return context.getLoadStartTime();
+            }
+
+            @Override
+            public K getKey() {
+              return context.getKey();
+            }
+
+            @Override
+            public Executor getExecutor() {
+              return context.getExecutor();
+            }
+
+            @Override
+            public Executor getLoaderExecutor() {
+              return context.getLoaderExecutor();
+            }
+
+            @Override
+            public CacheEntry<K, V> getCurrentEntry() {
+              return context.getCurrentEntry();
+            }
+          };
+        org.cache2k.integration.AsyncCacheLoader.Callback<V> oldCallback =
+          new org.cache2k.integration.AsyncCacheLoader.Callback<V>() {
+          @Override
+          public void onLoadSuccess(V value) {
+            callback.onLoadSuccess(value);
+          }
+
+          @Override
+          public void onLoadFailure(Throwable t) {
+            callback.onLoadFailure(t);
+          }
+        };
+        oldLoader.load(key, oldContext, oldCallback);
+      }
+    };
+    this.loader(newLoader);
     return this;
   }
 
   /**
    * Enables read through operation and sets a cache loader. Different loader types
-   * are available: {@link FunctionalCacheLoader}, {@link CacheLoader},
-   * {@link AdvancedCacheLoader}.
+   * are available: {@link CacheLoader}, {@link AdvancedCacheLoader}.
    *
    * @see CacheLoader for general discussion on cache loaders
    */
@@ -471,8 +558,7 @@ public class Cache2kBuilder<K, V> {
 
   /**
    * Enables read through operation and sets a cache loader. Different loader types
-   * are available: {@link FunctionalCacheLoader}, {@link CacheLoader},
-   * {@link AdvancedCacheLoader}.
+   * are available: {@link CacheLoader}, {@link AdvancedCacheLoader}.
    *
    * @see CacheLoader for general discussion on cache loaders
    */
@@ -483,11 +569,10 @@ public class Cache2kBuilder<K, V> {
 
   /**
    * Enables read through operation and sets a cache loader. Different loader types
-   * are available: {@link FunctionalCacheLoader}, {@link CacheLoader},
-   * {@link AdvancedCacheLoader}.
+   * are available: {@link CacheLoader}, {@link AdvancedCacheLoader},
+   * {@link AsyncCacheLoader}
    *
    * @see CacheLoader for general discussion on cache loaders
-   * @since 1.4
    */
   public final Cache2kBuilder<K, V> loader(AsyncCacheLoader<K, V> l) {
     config().setAsyncLoader(wrapCustomizationInstance(l));
@@ -501,18 +586,6 @@ public class Cache2kBuilder<K, V> {
    */
   @SuppressWarnings("unchecked")
   public final Cache2kBuilder<K, V> wrappingLoader(AdvancedCacheLoader<K, LoadDetail<V>> l) {
-    config().setAdvancedLoader((
-      CustomizationSupplier<AdvancedCacheLoader<K, V>>) (Object) wrapCustomizationInstance(l));
-    return this;
-  }
-
-  /**
-   * Enables read through operation and sets a cache loader
-   *
-   * @see CacheLoader for general discussion on cache loaders
-   */
-  @SuppressWarnings("unchecked")
-  public final Cache2kBuilder<K, V> wrappingLoader(FunctionalCacheLoader<K, LoadDetail<V>> l) {
     config().setAdvancedLoader((
       CustomizationSupplier<AdvancedCacheLoader<K, V>>) (Object) wrapCustomizationInstance(l));
     return this;

@@ -47,6 +47,11 @@ public interface CacheBuildContext<K, V> {
   CacheManager getCacheManager();
 
   /**
+   * Init customization, if needed
+   */
+  <T> T initCustomization(T customization);
+
+  /**
    * Create the customization
    */
   <T> T createCustomization(CustomizationSupplier<T> supplier);

@@ -26,8 +26,10 @@ import org.cache2k.CustomizationException;
  * Wraps an exception caused by a writer.
  *
  * @author Jens Wilke
+ * @deprecated Replaced with {@link org.cache2k.io.CacheWriterException}
  */
-public class CacheWriterException extends CustomizationException {
+@Deprecated
+public class CacheWriterException extends org.cache2k.io.CacheWriterException {
 
   public CacheWriterException(final Throwable cause) {
     super(cause);

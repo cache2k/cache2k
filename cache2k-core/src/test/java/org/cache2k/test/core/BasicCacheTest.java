@@ -24,12 +24,12 @@ import org.cache2k.Cache;
 import org.cache2k.CacheEntry;
 import org.cache2k.CacheException;
 import org.cache2k.expiry.ExpiryPolicy;
-import org.cache2k.integration.CacheLoader;
-import org.cache2k.integration.CacheLoaderException;
+import org.cache2k.io.CacheLoader;
+import org.cache2k.io.CacheLoaderException;
 import org.cache2k.expiry.ValueWithExpiryTime;
 import org.cache2k.core.api.InternalCacheInfo;
-import org.cache2k.integration.ExceptionInformation;
-import org.cache2k.integration.ResiliencePolicy;
+import org.cache2k.io.ExceptionInformation;
+import org.cache2k.io.ResiliencePolicy;
 import org.cache2k.processor.EntryProcessor;
 import org.cache2k.processor.MutableCacheEntry;
 import org.cache2k.test.util.TestingBase;
@@ -556,7 +556,7 @@ public class BasicCacheTest extends TestingBase {
     assertEquals(2, src.key2count.get(2).get());
   }
 
-  public static class MyResiliencePolicy extends ResiliencePolicy<String, String> {
+  public static class MyResiliencePolicy implements ResiliencePolicy<String, String> {
 
     public final Map<String, AtomicInteger> key2count = new HashMap<String, AtomicInteger>();
 
@@ -620,7 +620,7 @@ public class BasicCacheTest extends TestingBase {
     c.put("123", "boom");
   }
 
-  public static class AlwaysExceptionSource extends CacheLoader<Integer, Integer> {
+  public static class AlwaysExceptionSource implements CacheLoader<Integer, Integer> {
     @Override
     public Integer load(Integer o) {
       throw new RuntimeException("always");
@@ -630,7 +630,7 @@ public class BasicCacheTest extends TestingBase {
   /**
    * Throws an exception
    */
-  public static class OccasionalExceptionSource extends CacheLoader<Integer, Integer> {
+  public static class OccasionalExceptionSource implements CacheLoader<Integer, Integer> {
 
     public final Map<Integer, AtomicInteger> key2count = new HashMap<Integer, AtomicInteger>();
 
@@ -675,7 +675,7 @@ public class BasicCacheTest extends TestingBase {
 
   }
 
-  public static class AlwaysExceptionStringSource extends CacheLoader<String, String> {
+  public static class AlwaysExceptionStringSource implements CacheLoader<String, String> {
 
     @Override
     public String load(String o) {

@@ -20,13 +20,18 @@ package org.cache2k.core.timing;
  * #L%
  */
 
+import org.cache2k.Cache2kBuilder;
+import org.cache2k.CacheManager;
+import org.cache2k.configuration.BuildContextAwareCustomization;
+import org.cache2k.configuration.Cache2kConfiguration;
 import org.cache2k.core.DefaultResiliencePolicy;
-import org.cache2k.integration.ExceptionInformation;
-import org.cache2k.integration.ExceptionPropagator;
-import org.cache2k.integration.ResiliencePolicy;
+import org.cache2k.io.ExceptionInformation;
+import org.cache2k.io.ExceptionPropagator;
 import org.cache2k.testing.category.FastTests;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
+
+import java.util.concurrent.TimeUnit;
 
 import static org.junit.Assert.*;
 import static org.hamcrest.Matchers.*;
@@ -51,7 +56,7 @@ public class DefaultResiliencePolicyUnitTest {
 
   @Test
   public void testStandardProperties() {
-    DefaultResiliencePolicy p = new DefaultResiliencePolicy();
+    DefaultResiliencePolicy p = policy(builder());
     assertEquals(0.5, p.getRandomization(), 0.1);
     assertEquals(1.5, p.getMultiplier(), 0.1);
   }
@@ -66,9 +71,7 @@ public class DefaultResiliencePolicyUnitTest {
   }
 
   private DefaultResiliencePolicy getDefaultResiliencePolicy10000() {
-    ResiliencePolicy.Context ctx = new CtxBean(100000, -1, -1, -1);
-    DefaultResiliencePolicy p = new DefaultResiliencePolicy();
-    p.init(ctx);
+    DefaultResiliencePolicy p = policy(builder().expireAfterWrite(100000, TimeUnit.MILLISECONDS));
     return p;
   }
 
@@ -95,13 +98,38 @@ public class DefaultResiliencePolicyUnitTest {
    */
   @Test
   public void testWithExpiryAndResilienceDuration() {
-    ResiliencePolicy.Context ctx =
-      new CtxBean(240000, -1, -1, 30000);
-    DefaultResiliencePolicy p = new DefaultResiliencePolicy();
-    p.init(ctx);
+    DefaultResiliencePolicy p = policy(builder()
+      .expireAfterWrite(240000, TimeUnit.MILLISECONDS)
+      .resilienceDuration(30000, TimeUnit.MILLISECONDS)
+    );
     assertEquals(30000, p.getResilienceDuration());
     assertEquals(3000, p.getRetryInterval());
     assertEquals(30000, p.getMaxRetryInterval());
+  }
+
+  private static Cache2kBuilder builder() {
+    return Cache2kBuilder.forUnknownTypes();
+  }
+
+  private static DefaultResiliencePolicy policy(final Cache2kBuilder builder) {
+    DefaultResiliencePolicy policy = new DefaultResiliencePolicy();
+    policy.initWithContext(new BuildContextAwareCustomization.BuildContext() {
+      @Override
+      public CacheManager getCacheManager() {
+        return null;
+      }
+
+      @Override
+      public String getName() {
+        return null;
+      }
+
+      @Override
+      public Cache2kConfiguration getConfiguration() {
+        return builder.toConfiguration();
+      }
+    });
+    return policy;
   }
 
   /**
@@ -109,10 +137,10 @@ public class DefaultResiliencePolicyUnitTest {
    */
   @Test
   public void testWithExpiryAndResilienceDuration10Min30Sec() {
-    ResiliencePolicy.Context ctx =
-      new CtxBean(10 * 60 * 1000, -1, -1, 30000);
-    DefaultResiliencePolicy p = new DefaultResiliencePolicy();
-    p.init(ctx);
+    DefaultResiliencePolicy p = policy(builder()
+      .expireAfterWrite(10, TimeUnit.MINUTES)
+      .resilienceDuration(30, TimeUnit.SECONDS)
+    );
     assertEquals(30000, p.getResilienceDuration());
     assertEquals(3000, p.getRetryInterval());
     assertEquals(30000, p.getMaxRetryInterval());
@@ -123,10 +151,10 @@ public class DefaultResiliencePolicyUnitTest {
    */
   @Test
   public void testWithExpiryAndRetryInterval() {
-    ResiliencePolicy.Context ctx =
-      new CtxBean(240000, 10000, -1, -1);
-    DefaultResiliencePolicy p = new DefaultResiliencePolicy();
-    p.init(ctx);
+    DefaultResiliencePolicy p = policy(builder()
+      .expireAfterWrite(240000, TimeUnit.MILLISECONDS)
+      .retryInterval(10000, TimeUnit.MILLISECONDS)
+    );
     assertEquals(240000, p.getResilienceDuration());
     assertEquals(10000, p.getRetryInterval());
     assertEquals(10000, p.getMaxRetryInterval());
@@ -137,10 +165,10 @@ public class DefaultResiliencePolicyUnitTest {
    */
   @Test
   public void testWithExpiryAndMaxRetryInterval() {
-    ResiliencePolicy.Context ctx =
-      new CtxBean(240000, -1, 10000, -1);
-    DefaultResiliencePolicy p = new DefaultResiliencePolicy();
-    p.init(ctx);
+    DefaultResiliencePolicy p = policy(builder()
+      .expireAfterWrite(240000, TimeUnit.MILLISECONDS)
+      .maxRetryInterval(10000, TimeUnit.MILLISECONDS)
+    );
     assertEquals(240000, p.getResilienceDuration());
     assertEquals(10000, p.getRetryInterval());
     assertEquals(10000, p.getMaxRetryInterval());
@@ -148,11 +176,13 @@ public class DefaultResiliencePolicyUnitTest {
 
   @Test
   public void testRandomization() {
-    ResiliencePolicy.Context ctx =
-      new CtxBean(10000, 100, 500, 5000);
-    DefaultResiliencePolicy p = new DefaultResiliencePolicy();
+    DefaultResiliencePolicy p = policy(builder()
+      .expireAfterWrite(10000, TimeUnit.MILLISECONDS)
+      .retryInterval(100, TimeUnit.MILLISECONDS)
+      .maxRetryInterval(500, TimeUnit.MILLISECONDS)
+      .resilienceDuration(5000, TimeUnit.MILLISECONDS)
+    );
     p.setRandomization(0.5);
-    p.init(ctx);
     InfoBean b = new InfoBean();
     b.setLoadTime(0);
     b.setSinceTime(0);
@@ -176,13 +206,15 @@ public class DefaultResiliencePolicyUnitTest {
 
   @Test
   public void testCustomMultiplier() {
-    ResiliencePolicy.Context ctx =
-      new CtxBean(10000, 100, 500, 5000);
-    DefaultResiliencePolicy p = new DefaultResiliencePolicy();
+    DefaultResiliencePolicy p = policy(builder()
+      .expireAfterWrite(10000, TimeUnit.MILLISECONDS)
+      .retryInterval(100, TimeUnit.MILLISECONDS)
+      .maxRetryInterval(500, TimeUnit.MILLISECONDS)
+      .resilienceDuration(5000, TimeUnit.MILLISECONDS)
+    );
     p.setRandomization(0.0);
     assertEquals(0, p.getRandomization(), 0.1);
     p.setMultiplier(2);
-    p.init(ctx);
     InfoBean b = new InfoBean();
     b.setLoadTime(0);
     b.setSinceTime(0);
@@ -195,12 +227,14 @@ public class DefaultResiliencePolicyUnitTest {
 
   @Test
   public void testSuppress() {
-    ResiliencePolicy.Context ctx =
-      new CtxBean(10000, 100, 500, 5000);
-    DefaultResiliencePolicy p = new DefaultResiliencePolicy();
+    DefaultResiliencePolicy p = policy(builder()
+      .expireAfterWrite(10000, TimeUnit.MILLISECONDS)
+      .retryInterval(100, TimeUnit.MILLISECONDS)
+      .maxRetryInterval(500, TimeUnit.MILLISECONDS)
+      .resilienceDuration(5000, TimeUnit.MILLISECONDS)
+    );
     p.setRandomization(0.0);
     assertEquals(1.5, p.getMultiplier(), 0.1);
-    p.init(ctx);
     InfoBean b = new InfoBean();
     b.setLoadTime(0);
     b.setSinceTime(0);
@@ -230,12 +264,14 @@ public class DefaultResiliencePolicyUnitTest {
 
   @Test
   public void testCache() {
-    ResiliencePolicy.Context ctx =
-      new CtxBean(10000, 100, 500, 5000);
-    DefaultResiliencePolicy p = new DefaultResiliencePolicy();
+    DefaultResiliencePolicy p = policy(builder()
+      .expireAfterWrite(10000, TimeUnit.MILLISECONDS)
+      .retryInterval(100, TimeUnit.MILLISECONDS)
+      .maxRetryInterval(500, TimeUnit.MILLISECONDS)
+      .resilienceDuration(5000, TimeUnit.MILLISECONDS)
+    );
     p.setRandomization(0.0);
     assertEquals(1.5, p.getMultiplier(), 0.1);
-    p.init(ctx);
     InfoBean b = new InfoBean();
     b.setLoadTime(0);
     b.setSinceTime(0);
@@ -253,45 +289,6 @@ public class DefaultResiliencePolicyUnitTest {
     b.setLoadTime(0);
     t = p.retryLoadAfter("key", b);
     assertEquals(500, t);
-  }
-
-  static class CtxBean implements ResiliencePolicy.Context {
-
-    long expireAfterWriteMillis;
-    long resilienceDurationMillis;
-    long retryIntervalMillis;
-    long maxRetryIntervalMillis;
-
-    CtxBean(long expireAfterWriteMillis,
-            long retryIntervalMillis,
-            long maxRetryIntervalMillis,
-            long resilienceDurationMillis) {
-      this.expireAfterWriteMillis = expireAfterWriteMillis;
-      this.retryIntervalMillis = retryIntervalMillis;
-      this.maxRetryIntervalMillis = maxRetryIntervalMillis;
-      this.resilienceDurationMillis = resilienceDurationMillis;
-    }
-
-    @Override
-    public long getExpireAfterWriteMillis() {
-      return expireAfterWriteMillis;
-    }
-
-    @Override
-    public long getResilienceDurationMillis() {
-      return resilienceDurationMillis;
-    }
-
-    @Override
-    public long getRetryIntervalMillis() {
-      return retryIntervalMillis;
-    }
-
-    @Override
-    public long getMaxRetryIntervalMillis() {
-      return maxRetryIntervalMillis;
-    }
-
   }
 
   static class InfoBean implements ExceptionInformation {

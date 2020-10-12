@@ -21,9 +21,12 @@ package org.cache2k.processor;
  */
 
 import org.cache2k.CacheEntry;
-import org.cache2k.integration.CacheLoader;
-import org.cache2k.integration.CacheLoaderException;
-import org.cache2k.integration.ExceptionInformation;
+import org.cache2k.io.CacheLoader;
+import org.cache2k.io.CacheLoaderException;
+import org.cache2k.io.ExceptionInformation;
+import org.cache2k.io.AdvancedCacheLoader;
+import org.cache2k.io.CacheWriter;
+import org.cache2k.io.ResiliencePolicy;
 
 /**
  * A mutable entry is used inside the {@link EntryProcessor} to perform
@@ -127,7 +130,7 @@ public interface MutableCacheEntry<K, V> extends CacheEntry<K, V> {
    * (usually {@code System.currentTimeMillis()}.
    * The time is retrieved once when the entry processor is invoked and will not change afterwards.
    * If a load is triggered this value will be identical to
-   * {@link org.cache2k.integration.AdvancedCacheLoader#load(Object, long, CacheEntry)} and
+   * {@link AdvancedCacheLoader#load(Object, long, CacheEntry)} and
    * {@link ExceptionInformation#getLoadTime()}
    *
    * @deprecated Replaced with {@link #getStartTime()}
@@ -139,7 +142,7 @@ public interface MutableCacheEntry<K, V> extends CacheEntry<K, V> {
    * (usually {@code System.currentTimeMillis()}.
    * The time is retrieved once when the entry processor is invoked and will not change afterwards.
    * If a load is triggered this value will be identical to the {@code startTime}
-   * {@link org.cache2k.integration.AdvancedCacheLoader#load},
+   * {@link AdvancedCacheLoader#load},
    * {@link ExceptionInformation#getLoadTime()} or {
    * @link AsyncCacheLoader.Context#getLoadStartTime()}
    */
@@ -150,7 +153,7 @@ public interface MutableCacheEntry<K, V> extends CacheEntry<K, V> {
    * {@code exists} will return true and {@code getValue} will return the set value.
    *
    * <p>If a writer is registered, the
-   * {@link org.cache2k.integration.CacheWriter#write(Object, Object)} is called.
+   * {@link CacheWriter#write(Object, Object)} is called.
    */
   MutableCacheEntry<K, V> setValue(V v);
 
@@ -163,7 +166,7 @@ public interface MutableCacheEntry<K, V> extends CacheEntry<K, V> {
   /**
    * Removes an entry from the cache.
    *
-   * <p>In case a writer is registered, {@link org.cache2k.integration.CacheWriter#delete}
+   * <p>In case a writer is registered, {@link CacheWriter#delete}
    * is called. If a remove is performed on a not existing cache entry the writer
    * method will also be called.
    *
@@ -179,7 +182,7 @@ public interface MutableCacheEntry<K, V> extends CacheEntry<K, V> {
    * will be kept in the cache only if there is an expiry configured or
    * the resilience policy is allowing that.
    *
-   * @see org.cache2k.integration.ResiliencePolicy
+   * @see ResiliencePolicy
    */
   MutableCacheEntry<K, V> setException(Throwable ex);
 

@@ -25,7 +25,9 @@ package org.cache2k.integration;
  * to the cache. Use the utility methods in {@link Loaders}
  *
  * @author Jens Wilke
+ * @deprecated to be removed
  */
+@Deprecated
 public abstract class LoadDetail<V> {
 
   private Object value;

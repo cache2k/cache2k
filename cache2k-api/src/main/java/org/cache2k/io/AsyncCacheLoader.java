@@ -1,4 +1,4 @@
-package org.cache2k.integration;
+package org.cache2k.io;
 
 /*
  * #%L
@@ -30,11 +30,9 @@ import java.util.concurrent.Executor;
  * Alternative interface to {@link CacheLoader} for asynchronous operation.
  *
  * @author Jens Wilke
- * @since 1.4
+ * @since 2
  * @see CacheLoader
- * @deprecated Replaced with {@link org.cache2k.io.AsyncCacheLoader}
  */
-@Deprecated
 public interface AsyncCacheLoader<K, V> {
 
   /**

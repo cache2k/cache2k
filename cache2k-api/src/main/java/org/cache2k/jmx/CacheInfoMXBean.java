@@ -22,6 +22,7 @@ package org.cache2k.jmx;
 
 import org.cache2k.Cache2kBuilder;
 import org.cache2k.configuration.Cache2kConfiguration;
+import org.cache2k.io.CacheLoader;
 
 import java.util.Date;
 
@@ -173,7 +174,7 @@ public interface CacheInfoMXBean {
   long getKeyMutationCount();
 
   /**
-   * Number of exceptions thrown by the {@link org.cache2k.integration.CacheLoader}.
+   * Number of exceptions thrown by the {@link CacheLoader}.
    */
   long getLoadExceptionCount();
 
