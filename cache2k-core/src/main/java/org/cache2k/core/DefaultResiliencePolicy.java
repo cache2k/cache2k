@@ -27,7 +27,11 @@ import org.cache2k.configuration.CustomizationSupplier;
 import org.cache2k.io.ExceptionInformation;
 import org.cache2k.io.ResiliencePolicy;
 
+import java.time.Duration;
 import java.util.Random;
+
+import static org.cache2k.configuration.Cache2kConfiguration.ETERNAL_DURATION;
+import static org.cache2k.configuration.Cache2kConfiguration.UNSET_LONG;
 
 /**
  * Default resilience policy which implements a exponential back off and randomization
@@ -50,6 +54,7 @@ public class DefaultResiliencePolicy<K, V> implements ResiliencePolicy<K, V> {
 
   private double multiplier = 1.5;
   private double randomization = 0.5;
+
   private long resilienceDuration;
   private long maxRetryInterval;
   private long retryInterval;
@@ -57,27 +62,29 @@ public class DefaultResiliencePolicy<K, V> implements ResiliencePolicy<K, V> {
   /**
    * Construct a resilience policy with multiplier 1.5 and randomization 0.5.
    */
-  public DefaultResiliencePolicy() { }
-
   public DefaultResiliencePolicy(Cache2kConfiguration<K, V> cfg) {
-    resilienceDuration = cfg.getResilienceDuration();
-    maxRetryInterval = cfg.getMaxRetryInterval();
-    retryInterval = cfg.getRetryInterval();
-    if (resilienceDuration == -1) {
-      if (cfg.getExpireAfterWrite() == ETERNAL) {
+    resilienceDuration = toMillis(cfg.getResilienceDuration());
+    maxRetryInterval = toMillis(cfg.getMaxRetryInterval());
+    retryInterval = toMillis(cfg.getRetryInterval());
+    if (resilienceDuration == UNSET_LONG) {
+      if (cfg.getExpireAfterWrite() == ETERNAL_DURATION) {
         resilienceDuration = 0;
       } else {
-        resilienceDuration = cfg.getExpireAfterWrite();
+        if (cfg.getExpireAfterWrite() != null) {
+          resilienceDuration = cfg.getExpireAfterWrite().toMillis();
+        } else {
+          resilienceDuration = UNSET_LONG;
+        }
       }
     } else {
-      if (maxRetryInterval == -1) {
+      if (maxRetryInterval == UNSET_LONG) {
         maxRetryInterval = resilienceDuration;
       }
     }
-    if (maxRetryInterval == -1 && retryInterval == -1) {
+    if (maxRetryInterval == UNSET_LONG && retryInterval == UNSET_LONG) {
       maxRetryInterval = resilienceDuration;
     }
-    if (retryInterval == -1) {
+    if (retryInterval == UNSET_LONG) {
       retryInterval = resilienceDuration * RETRY_PERCENT_OF_RESILIENCE_DURATION / 100;
       retryInterval = Math.min(retryInterval, maxRetryInterval);
       retryInterval = Math.max(MIN_RETRY_INTERVAL, retryInterval);
@@ -90,12 +97,11 @@ public class DefaultResiliencePolicy<K, V> implements ResiliencePolicy<K, V> {
     }
   }
 
-  /**
-   * Construct a resilience policy with custom multiplier and randomization.
-   */
-  public DefaultResiliencePolicy(double multiplier, double randomization) {
-    this.multiplier = multiplier;
-    this.randomization = randomization;
+  static long toMillis(Duration d) {
+    if (d == null) {
+      return Cache2kConfiguration.UNSET_LONG;
+    }
+    return d.toMillis();
   }
 
   public double getMultiplier() {
@@ -114,13 +120,9 @@ public class DefaultResiliencePolicy<K, V> implements ResiliencePolicy<K, V> {
     this.randomization = randomization;
   }
 
-  public long getResilienceDuration() {
-    return resilienceDuration;
-  }
+  public long getResilienceDuration() { return resilienceDuration; }
 
-  public long getMaxRetryInterval() {
-    return maxRetryInterval;
-  }
+  public long getMaxRetryInterval() { return maxRetryInterval; }
 
   public long getRetryInterval() { return retryInterval; }
 
@@ -128,11 +130,8 @@ public class DefaultResiliencePolicy<K, V> implements ResiliencePolicy<K, V> {
   public long suppressExceptionUntil(K key,
                                      ExceptionInformation exceptionInformation,
                                      CacheEntry<K, V> cachedContent) {
-    if (resilienceDuration == 0) {
-      return 0;
-    }
-    if (resilienceDuration == Long.MAX_VALUE) {
-      return Long.MAX_VALUE;
+    if (resilienceDuration == 0 || resilienceDuration == Long.MAX_VALUE) {
+      return resilienceDuration;
     }
     long maxSuppressUntil = exceptionInformation.getSinceTime() + resilienceDuration;
     long deltaMs = calculateRetryDelta(exceptionInformation);

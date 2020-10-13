@@ -23,6 +23,8 @@ package org.cache2k.extra.config.generic;
 import org.cache2k.configuration.CacheType;
 import org.cache2k.configuration.CacheTypeCapture;
 
+import java.time.Duration;
+import java.time.temporal.ChronoUnit;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -89,6 +91,12 @@ public class StandardPropertyParser implements PropertyParser {
       @Override
       public Long parse(String v) {
         return parseLongWithUnitSuffix(v);
+      }
+    });
+    addParser(Duration.class, new ValueConverter<Duration>() {
+      @Override
+      public Duration parse(String v) {
+        return Duration.of(parseLongWithUnitSuffix(v), ChronoUnit.MILLIS);
       }
     });
     addParser(String.class, new ValueConverter<String>() {

@@ -57,19 +57,17 @@ public class StaticTiming<K, V> extends Timing<K, V> {
   StaticTiming(InternalBuildContext<K, V> buildContext) {
     clock = buildContext.getClock();
     Cache2kConfiguration<K, V> c = buildContext.getConfiguration();
-    long expiryMillis = c.getExpireAfterWrite();
-    if (expiryMillis == ExpiryPolicy.ETERNAL || expiryMillis < 0) {
+    if (c.getExpireAfterWrite() == null || c.getExpireAfterWrite() == Cache2kConfiguration.ETERNAL_DURATION) {
       this.expiryMillis = ExpiryPolicy.ETERNAL;
     } else {
-      this.expiryMillis = expiryMillis;
+      this.expiryMillis = c.getExpireAfterWrite().toMillis();
     }
     refreshAhead = c.isRefreshAhead();
     sharpExpiry = c.isSharpExpiry();
-    long lagMillisTmp = c.getTimerLag();
-    if (lagMillisTmp == Cache2kConfiguration.UNSET_LONG) {
+    if (c.getTimerLag() == null) {
       lagMillis = HeapCache.TUNABLE.timerLagMillis;
     } else {
-      lagMillis = lagMillisTmp;
+      lagMillis = c.getTimerLag().toMillis();
     }
     timer = new DefaultTimer(clock, lagMillis);
     resiliencePolicy = provideResiliencePolicy(buildContext);

@@ -119,10 +119,10 @@ public class IntegrationTest {
     Cache2kConfiguration<String, String> cfg = b.toConfiguration();
     assertEquals(-1, cfg.getEntryCapacity());
     assertEquals(5, cfg.getLoaderThreadCount());
-    assertEquals(-1, cfg.getExpireAfterWrite());
+    assertNull(cfg.getExpireAfterWrite());
     Cache<String, String> c = b.build();
     assertEquals(-1, cfg.getEntryCapacity());
-    assertEquals(47000, cfg.getExpireAfterWrite());
+    assertEquals(47000, cfg.getExpireAfterWrite().toMillis());
     c.close();
   }
 

@@ -43,6 +43,7 @@ import org.cache2k.processor.MutableCacheEntry;
 
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
+import java.time.Duration;
 import java.util.concurrent.Executor;
 import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.TimeUnit;
@@ -418,7 +419,7 @@ public class Cache2kBuilder<K, V> {
    *   cache2k user guide - Expiry and Refresh</a>
    */
   public final Cache2kBuilder<K, V> expireAfterWrite(long v, TimeUnit u) {
-    config().setExpireAfterWrite(u.toMillis(v));
+    config().setExpireAfterWrite(toDuration(v, u));
     return this;
   }
 
@@ -427,8 +428,12 @@ public class Cache2kBuilder<K, V> {
    * expiry and refresh operations. The default is approximately one second.
    */
   public final Cache2kBuilder<K, V> timerLag(long v, TimeUnit u) {
-    config().setTimerLag(u.toMillis(v));
+    config().setTimerLag(toDuration(v, u));
     return this;
+  }
+
+  private static Duration toDuration(long v, TimeUnit u) {
+    return Duration.ofMillis(u.toMillis(v));
   }
 
   /**
@@ -736,7 +741,7 @@ public class Cache2kBuilder<K, V> {
    * retry attempt is made. If not specified, 10% of {@link #maxRetryInterval}.
    */
   public final Cache2kBuilder<K, V> retryInterval(long v, TimeUnit u) {
-    config().setRetryInterval(u.toMillis(v));
+    config().setRetryInterval(toDuration(v, u));
     return this;
   }
 
@@ -749,7 +754,7 @@ public class Cache2kBuilder<K, V> {
    * <p>By default identical to {@link #resilienceDuration}
    */
   public final Cache2kBuilder<K, V> maxRetryInterval(long v, TimeUnit u) {
-    config().setMaxRetryInterval(u.toMillis(v));
+    config().setMaxRetryInterval(toDuration(v, u));
     return this;
   }
 
@@ -763,7 +768,7 @@ public class Cache2kBuilder<K, V> {
    * is switched off, this setting has no effect.
    */
   public final Cache2kBuilder<K, V> resilienceDuration(long v, TimeUnit u) {
-    config().setResilienceDuration(u.toMillis(v));
+    config().setResilienceDuration(toDuration(v, u));
     return this;
   }
 

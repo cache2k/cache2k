@@ -31,6 +31,8 @@ import org.cache2k.expiry.ValueWithExpiryTime;
 import org.cache2k.io.ExceptionInformation;
 import org.cache2k.io.ResiliencePolicy;
 
+import java.time.Duration;
+
 /**
  * Encapsulates logic for expiry times calculation and timer handling.
  *
@@ -52,8 +54,16 @@ public abstract class Timing<K, V>  {
       }
     };
 
+  static boolean realDuration(Duration d) {
+    return d != null && !Duration.ZERO.equals(d) && d != Cache2kConfiguration.ETERNAL_DURATION;
+  }
+
   static boolean realDuration(long t) {
     return t > 0 && t < Long.MAX_VALUE;
+  }
+
+  static boolean zeroOrUnspecified(Duration t) {
+    return t == null || t.equals(Duration.ZERO);
   }
 
   static boolean zeroOrUnspecified(long t) {
@@ -62,7 +72,7 @@ public abstract class Timing<K, V>  {
 
   public static <K, V> Timing<K, V> of(InternalBuildContext<K, V> buildContext) {
     Cache2kConfiguration<K, V> cfg = buildContext.getConfiguration();
-    if (cfg.getExpireAfterWrite() == 0
+    if (Duration.ZERO.equals(cfg.getExpireAfterWrite())
       && zeroOrUnspecified(cfg.getRetryInterval())) {
       return TimeAgnosticTiming.IMMEDIATE;
     }
@@ -73,7 +83,7 @@ public abstract class Timing<K, V>  {
       DynamicTiming<K, V> h = new DynamicTiming<K, V>(buildContext);
       return h;
     }
-    if (cfg.getResilienceDuration() > 0 && !cfg.isSuppressExceptions()) {
+    if (!zeroOrUnspecified(cfg.getResilienceDuration()) && !cfg.isSuppressExceptions()) {
       throw new IllegalArgumentException(
         "Ambiguous: exceptions suppression is switched off, but resilience duration is specified");
     }
@@ -83,11 +93,12 @@ public abstract class Timing<K, V>  {
       StaticTiming<K, V> h = new StaticTiming<K, V>(buildContext);
       return h;
     }
-    if ((cfg.getExpireAfterWrite() == ExpiryPolicy.ETERNAL || cfg.getExpireAfterWrite() == -1)) {
+    if ((cfg.getExpireAfterWrite() == Cache2kConfiguration.ETERNAL_DURATION
+      || cfg.getExpireAfterWrite() == null)) {
       if (zeroOrUnspecified(cfg.getRetryInterval())) {
         return TimeAgnosticTiming.ETERNAL_IMMEDIATE;
       }
-      if (cfg.getRetryInterval() == ExpiryPolicy.ETERNAL) {
+      if (cfg.getRetryInterval() == Cache2kConfiguration.ETERNAL_DURATION) {
         return TimeAgnosticTiming.ETERNAL;
       }
     }

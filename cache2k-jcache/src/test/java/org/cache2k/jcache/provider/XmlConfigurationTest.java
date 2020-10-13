@@ -97,7 +97,7 @@ public class XmlConfigurationTest {
     mc.setTypes(String.class, BigDecimal.class);
     javax.cache.Cache<String, BigDecimal> c = cm.createCache("withExpiry", mc);
     assertFalse(mc.getCache2kConfiguration().isEternal());
-    assertEquals(2000, mc.getCache2kConfiguration().getExpireAfterWrite());
+    assertEquals(2000, mc.getCache2kConfiguration().getExpireAfterWrite().toMillis());
     c.close();
   }
 

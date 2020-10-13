@@ -25,9 +25,7 @@ import org.cache2k.TimeReference;
 import org.cache2k.Weigher;
 import org.cache2k.event.CacheClosedListener;
 import org.cache2k.event.CacheEntryOperationListener;
-import org.cache2k.expiry.Expiry;
 import org.cache2k.expiry.ExpiryPolicy;
-import org.cache2k.expiry.ExpiryTimeValues;
 import org.cache2k.io.AdvancedCacheLoader;
 import org.cache2k.io.AsyncCacheLoader;
 import org.cache2k.io.CacheLoader;
@@ -35,6 +33,8 @@ import org.cache2k.io.CacheWriter;
 import org.cache2k.io.ExceptionPropagator;
 import org.cache2k.io.ResiliencePolicy;
 
+import java.time.Duration;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -66,7 +66,12 @@ import java.util.concurrent.TimeUnit;
 @SuppressWarnings("unused")
 public class Cache2kConfiguration<K, V> implements ConfigurationBean, ConfigurationWithSections {
 
-  public static final long EXPIRY_NOT_ETERNAL = Long.MAX_VALUE - 1;
+  /**
+   * The maximum duration after the duration is considered as eternal for the purposes
+   * of caching.
+   */
+  public static final Duration ETERNAL_DURATION = Duration.ofMillis(Long.MAX_VALUE);
+  public static final Duration EXPIRY_NOT_ETERNAL = Duration.ofMillis(Long.MAX_VALUE - 1);
   public static final long UNSET_LONG = -1;
 
   private boolean storeByReference;
@@ -76,11 +81,11 @@ public class Cache2kConfiguration<K, V> implements ConfigurationBean, Configurat
   private long entryCapacity = UNSET_LONG;
   private boolean strictEviction = false;
   private boolean refreshAhead = false;
-  private long expireAfterWrite = UNSET_LONG;
-  private long retryInterval = UNSET_LONG;
-  private long maxRetryInterval = UNSET_LONG;
-  private long timerLag = UNSET_LONG;
-  private long resilienceDuration = UNSET_LONG;
+  private Duration expireAfterWrite = null;
+  private Duration retryInterval = null;
+  private Duration maxRetryInterval = null;
+  private Duration resilienceDuration = null;
+  private Duration timerLag = null;
   private long maximumWeight = UNSET_LONG;
   private boolean keepDataAfterExpired = false;
   private boolean sharpExpiry = false;
@@ -268,7 +273,7 @@ public class Cache2kConfiguration<K, V> implements ConfigurationBean, Configurat
   }
 
   public boolean isEternal() {
-    return expireAfterWrite == UNSET_LONG || expireAfterWrite == ExpiryTimeValues.ETERNAL;
+    return expireAfterWrite == null || expireAfterWrite == ETERNAL_DURATION;
   }
 
   /**
@@ -276,86 +281,90 @@ public class Cache2kConfiguration<K, V> implements ConfigurationBean, Configurat
    */
   public void setEternal(boolean v) {
     if (v) {
-      setExpireAfterWrite(ExpiryTimeValues.ETERNAL);
+      setExpireAfterWrite(ETERNAL_DURATION);
     } else {
       setExpireAfterWrite(EXPIRY_NOT_ETERNAL);
     }
   }
 
-  public long getExpireAfterWrite() {
+  public Duration getExpireAfterWrite() {
     return expireAfterWrite;
   }
 
   /**
    * @see Cache2kBuilder#expireAfterWrite
    */
-  public void setExpireAfterWrite(long millis) {
-    if (millis == expireAfterWrite) {
+  public void setExpireAfterWrite(Duration v) {
+    v = durationCeiling(v);
+    if (v.isNegative()) {
+      throw new IllegalArgumentException("Duration must be positive");
+    }
+    if (v == expireAfterWrite || v.equals(expireAfterWrite)) {
       return;
     }
-    if (expireAfterWrite != UNSET_LONG) {
-      if (millis == Expiry.ETERNAL) {
+    if (expireAfterWrite != null) {
+      if (v == ETERNAL_DURATION) {
         throw new IllegalArgumentException(
           "eternal disabled or expiry was set, refusing to reset back to eternal");
       }
-      if (expireAfterWrite == Expiry.ETERNAL) {
+      if (expireAfterWrite == ETERNAL_DURATION) {
         throw new IllegalArgumentException("eternal enabled explicitly, refusing to enable expiry");
       }
     }
-    this.expireAfterWrite = millis;
+    this.expireAfterWrite = v;
   }
 
-  public long getTimerLag() {
+  public Duration getTimerLag() {
     return timerLag;
   }
 
   /**
    * @see Cache2kBuilder#timerLag(long, TimeUnit)
    */
-  public void setTimerLag(long timerLag) {
-    this.timerLag = timerLag;
+  public void setTimerLag(Duration v) {
+    this.timerLag = durationCeiling(v);
   }
 
   /**
    * @see Cache2kBuilder#retryInterval
    */
-  public long getRetryInterval() {
+  public Duration getRetryInterval() {
     return retryInterval;
   }
 
   /**
    * @see Cache2kBuilder#retryInterval
    */
-  public void setRetryInterval(long millis) {
-    retryInterval = millis;
+  public void setRetryInterval(Duration v) {
+    retryInterval = durationCeiling(v);
   }
 
   /**
    * @see Cache2kBuilder#maxRetryInterval
    */
-  public long getMaxRetryInterval() {
+  public Duration getMaxRetryInterval() {
     return maxRetryInterval;
   }
 
   /**
    * @see Cache2kBuilder#maxRetryInterval
    */
-  public void setMaxRetryInterval(long millis) {
-    maxRetryInterval = millis;
+  public void setMaxRetryInterval(Duration v) {
+    maxRetryInterval = durationCeiling(v);
   }
 
   /**
    * @see Cache2kBuilder#resilienceDuration
    */
-  public long getResilienceDuration() {
+  public Duration getResilienceDuration() {
     return resilienceDuration;
   }
 
   /**
    * @see Cache2kBuilder#resilienceDuration
    */
-  public void setResilienceDuration(long millis) {
-    resilienceDuration = millis;
+  public void setResilienceDuration(Duration v) {
+    resilienceDuration = durationCeiling(v);
   }
 
   public boolean isKeepDataAfterExpired() {
@@ -769,5 +778,12 @@ public class Cache2kConfiguration<K, V> implements ConfigurationBean, Configurat
     this.disableMonitoring = disableMonitoring;
   }
 
+
+  private Duration durationCeiling(Duration v) {
+    if (v != null && ETERNAL_DURATION.compareTo(v) <= 0) {
+      v = ETERNAL_DURATION;
+    }
+    return v;
+  }
 
 }

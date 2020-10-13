@@ -86,7 +86,8 @@ public interface ExpiryPolicy<K, V> extends ExpiryTimeValues, Customization {
    * interface. But the "real" entry can only be filled after the expiry policy is done, passing
    * in an entry object would mean to build a temporary object, increasing GC load. Second, the
    * properties that are needed by the implementation are available directly. The downside, OTOH,
-   * 4-arity breaks Java 8 lambdas.
+   * 4-arity breaks Java 8 lambdas. <b>Time values:</b> For performance reasons the long type
+   * is used to represent the time and not an object. Also it allows a simple offset calculation.
    *
    * @param key the cache key used for inserting or loading
    * @param value the value to be cached. May be {@code null} if the loader returns {@code null},
