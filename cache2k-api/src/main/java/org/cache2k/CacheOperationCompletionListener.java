@@ -28,8 +28,9 @@ import java.util.EventListener;
  *
  * @author Jens Wilke
  * @see Cache#loadAll(Iterable, CacheOperationCompletionListener)
- * @see AdvancedKeyValueSource#prefetchAll(Iterable, CacheOperationCompletionListener)
+ * @deprecated to be removed in 2.2
  */
+@Deprecated
 public interface CacheOperationCompletionListener extends EventListener {
 
   /**

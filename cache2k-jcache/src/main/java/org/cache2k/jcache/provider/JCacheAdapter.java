@@ -50,6 +50,7 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Set;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicLong;
 
 /**
@@ -110,8 +111,45 @@ public class JCacheAdapter<K, V> implements javax.cache.Cache<K, V> {
   }
 
   @Override
-  public void loadAll(final Set<? extends K> keys, boolean replaceExistingValues,
-                      final CompletionListener completionListener) {
+  public void loadAll(Set<? extends K> keys, boolean replaceExistingValues,
+                      CompletionListener completionListener) {
+    checkClosed();
+    if (!loaderConfigured) {
+      if (completionListener != null) {
+        completionListener.onCompletion();
+      }
+      return;
+    }
+    CompletableFuture<Void> future;
+    if (replaceExistingValues) {
+      future = cache.reloadAll(keys);
+    } else {
+      future = cache.loadAll(keys);
+    }
+    future.handle((unused, throwable) -> {
+      if (throwable == null) {
+        try {
+          for (K k : keys) {
+            cache.peek(k);
+          }
+          completionListener.onCompletion();
+        } catch (CacheLoaderException ex) {
+          throwable = ex;
+        }
+      }
+      Exception exception;
+      if (throwable instanceof Exception) {
+        exception = (Exception) throwable;
+      } else {
+        exception = new RuntimeException(throwable);
+      }
+      completionListener.onException(exception);
+      return null;
+    });
+  }
+
+  public void loadAllXy(Set<? extends K> keys, boolean replaceExistingValues,
+                        CompletionListener completionListener) {
     checkClosed();
     if (!loaderConfigured) {
       if (completionListener != null) {
@@ -334,7 +372,7 @@ public class JCacheAdapter<K, V> implements javax.cache.Cache<K, V> {
   @Override
   public <C extends Configuration<K, V>> C getConfiguration(Class<C> type) {
     if (CompleteConfiguration.class.isAssignableFrom(type)) {
-      MutableConfiguration<K, V> cfg = new MutableConfiguration<K, V>();
+      MutableConfiguration<K, V> cfg = new MutableConfiguration<>();
       cfg.setTypes(keyType, valueType);
       cfg.setStatisticsEnabled(jmxStatisticsEnabled);
       cfg.setManagementEnabled(jmxEnabled);
@@ -377,33 +415,27 @@ public class JCacheAdapter<K, V> implements javax.cache.Cache<K, V> {
 
   @Override
   public <T> Map<K, EntryProcessorResult<T>> invokeAll(
-    Set<? extends K> keys, final javax.cache.processor.EntryProcessor<K, V, T> entryProcessor,
-    final Object... arguments) {
+    Set<? extends K> keys, javax.cache.processor.EntryProcessor<K, V, T> entryProcessor,
+    Object... arguments) {
     checkClosed();
     if (entryProcessor == null) {
       throw new NullPointerException("processor is null");
     }
-    EntryProcessor<K, V, T> p = new EntryProcessor<K, V, T>() {
-      @Override
-      public T process(MutableCacheEntry<K, V> e) {
-        MutableEntryAdapter me = new MutableEntryAdapter(e);
-        T result = entryProcessor.process(me, arguments);
-        return result;
-      }
+    EntryProcessor<K, V, T> p = e -> {
+      MutableEntryAdapter me = new MutableEntryAdapter(e);
+      T result = entryProcessor.process(me, arguments);
+      return result;
     };
     Map<K, EntryProcessingResult<T>> result = cache.invokeAll(keys, p);
-    Map<K, EntryProcessorResult<T>> mappedResult = new HashMap<K, EntryProcessorResult<T>>();
+    Map<K, EntryProcessorResult<T>> mappedResult = new HashMap<>();
     for (Map.Entry<K, EntryProcessingResult<T>> e : result.entrySet()) {
-      final EntryProcessingResult<T> pr = e.getValue();
-      EntryProcessorResult<T> epr = new EntryProcessorResult<T>() {
-        @Override
-        public T get() throws EntryProcessorException {
-          Throwable t = pr.getException();
-          if (t != null) {
-            throw new EntryProcessorException(t);
-          }
-          return pr.getResult();
+      EntryProcessingResult<T> pr = e.getValue();
+      EntryProcessorResult<T> epr = () -> {
+        Throwable t = pr.getException();
+        if (t != null) {
+          throw new EntryProcessorException(t);
         }
+        return pr.getResult();
       };
       mappedResult.put(e.getKey(), epr);
     }
@@ -458,7 +490,7 @@ public class JCacheAdapter<K, V> implements javax.cache.Cache<K, V> {
   @Override
   public Iterator<Entry<K, V>> iterator() {
     checkClosed();
-    final Iterator<K> keyIterator = cache.keys().iterator();
+    Iterator<K> keyIterator = cache.keys().iterator();
     return new Iterator<Entry<K, V>>() {
 
       CacheEntry<K, V> entry;

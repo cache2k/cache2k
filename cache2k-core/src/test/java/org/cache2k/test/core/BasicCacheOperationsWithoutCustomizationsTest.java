@@ -1457,12 +1457,12 @@ public class BasicCacheOperationsWithoutCustomizationsTest {
 
   @Test(expected = UnsupportedOperationException.class)
   public void loadAll() {
-    cache.loadAll(toIterable(KEY, OTHER_KEY), null);
+    cache.loadAll(toIterable(KEY, OTHER_KEY));
   }
 
   @Test(expected = UnsupportedOperationException.class)
   public void reloadAll() {
-    cache.reloadAll(toIterable(KEY, OTHER_KEY), null);
+    cache.reloadAll(toIterable(KEY, OTHER_KEY));
   }
 
   @Test

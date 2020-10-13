@@ -36,6 +36,7 @@ import org.cache2k.processor.MutableCacheEntry;
 import java.io.Closeable;
 import java.util.Map;
 import java.util.concurrent.Callable;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.Executor;
 import java.util.concurrent.TimeUnit;
@@ -668,7 +669,9 @@ public interface Cache<K, V> extends KeyValueStore<K, V>, Closeable {
    * @param listener Listener interface that is invoked upon completion. May be {@code null} if no
    *          completion notification is needed.
    * @throws UnsupportedOperationException if no loader is defined
+   * @deprecated to be removed in 2.2
    */
+  @Deprecated
   void loadAll(Iterable<? extends K> keys, CacheOperationCompletionListener listener);
 
   /**
@@ -688,8 +691,48 @@ public interface Cache<K, V> extends KeyValueStore<K, V>, Closeable {
    * @param listener Listener interface that is invoked upon completion. May be {@code null} if no
    *          completion notification is needed.
    * @throws UnsupportedOperationException if no loader is defined
+   * @deprecated to be removed in 2.2
    */
+  @Deprecated
   void reloadAll(Iterable<? extends K> keys, CacheOperationCompletionListener listener);
+
+  /**
+   * Asynchronously loads the given set of keys into the cache. Only missing or expired
+   * values will be loaded.
+   *
+   * <p>The cache uses multiple threads to load the values in parallel. If thread resources
+   * are not sufficient, meaning the used executor is throwing
+   * {@link java.util.concurrent.RejectedExecutionException} the calling thread is used to produce
+   * back pressure.
+   *
+   * <p>If no loader is defined, the method will throw an immediate exception.
+   *
+   * <p>After the load is completed, the completion listener will be called, if provided.
+   *
+   * @param keys The keys to be loaded
+   * @return future getting notified on completion
+   * @throws UnsupportedOperationException if no loader is defined
+   */
+  CompletableFuture<Void> loadAll(Iterable<? extends K> keys);
+
+  /**
+   * Asynchronously loads the given set of keys into the cache. Always invokes load for all keys
+   * and replaces values already in the cache.
+   *
+   * <p>The cache uses multiple threads to load the values in parallel. If thread resources
+   * are not sufficient, meaning the used executor is throwing
+   * {@link java.util.concurrent.RejectedExecutionException} the calling thread is used to produce
+   * back pressure.
+   *
+   * <p>If no loader is defined, the method will throw an immediate exception.
+   *
+   * <p>After the load is completed, the completion listener will be called, if provided.
+   *
+   * @param keys The keys to be loaded
+   * @return future getting notified on completion
+   * @throws UnsupportedOperationException if no loader is defined
+   */
+  CompletableFuture<Void> reloadAll(Iterable<? extends K> keys);
 
   /**
    * Invoke a user defined function on a cache entry.
@@ -886,7 +929,7 @@ public interface Cache<K, V> extends KeyValueStore<K, V>, Closeable {
   /**
    * Request an alternative interface for this cache instance.
    */
-  <X> X requestInterface(Class<X> type);
+  <T> T requestInterface(Class<T> type);
 
   /**
    * Returns a map interface for operating with this cache. Operations on the map

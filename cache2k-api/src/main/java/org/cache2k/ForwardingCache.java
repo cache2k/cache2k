@@ -26,6 +26,7 @@ import org.cache2k.processor.EntryProcessor;
 
 import java.util.Map;
 import java.util.concurrent.Callable;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentMap;
 
 /**
@@ -155,6 +156,16 @@ public abstract class ForwardingCache<K, V> implements Cache<K, V> {
   @Override
   public void reloadAll(Iterable<? extends K> keys, CacheOperationCompletionListener listener) {
     delegate().reloadAll(keys, listener);
+  }
+
+  @Override
+  public CompletableFuture<Void> loadAll(Iterable<? extends K> keys) {
+    return delegate().loadAll(keys);
+  }
+
+  @Override
+  public CompletableFuture<Void> reloadAll(Iterable<? extends K> keys) {
+    return delegate().reloadAll(keys);
   }
 
   @Override

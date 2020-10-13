@@ -26,6 +26,7 @@ import org.cache2k.processor.EntryProcessor;
 
 import java.util.Map;
 import java.util.concurrent.Callable;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentMap;
 
 /**
@@ -148,6 +149,16 @@ public class AbstractCache<K, V> implements Cache<K, V> {
 
   @Override
   public void reloadAll(Iterable<? extends K> keys, CacheOperationCompletionListener listener) {
+    throw new UnsupportedOperationException();
+  }
+
+  @Override
+  public CompletableFuture<Void> loadAll(Iterable<? extends K> keys) {
+    throw new UnsupportedOperationException();
+  }
+
+  @Override
+  public CompletableFuture<Void> reloadAll(Iterable<? extends K> keys) {
     throw new UnsupportedOperationException();
   }
 

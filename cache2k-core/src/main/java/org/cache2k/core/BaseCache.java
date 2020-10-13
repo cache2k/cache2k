@@ -23,6 +23,7 @@ package org.cache2k.core;
 import org.cache2k.Cache;
 import org.cache2k.CacheEntry;
 import org.cache2k.CacheException;
+import org.cache2k.CacheOperationCompletionListener;
 import org.cache2k.core.api.CacheCloseContext;
 import org.cache2k.core.api.InternalCache;
 import org.cache2k.core.api.InternalCacheInfo;
@@ -38,6 +39,7 @@ import java.io.Closeable;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.Executor;
 
@@ -47,6 +49,33 @@ import java.util.concurrent.Executor;
  * @author Jens Wilke
  */
 public abstract class BaseCache<K, V> implements InternalCache<K, V>, CacheCloseContext {
+
+  @Override
+  public CompletableFuture<Void> reloadAll(Iterable<? extends K> keys) {
+    CompletionWrapper w = new CompletionWrapper();
+    reloadAll(keys, w);
+    return w.future;
+  }
+
+  @Override
+  public CompletableFuture<Void> loadAll(Iterable<? extends K> keys) {
+    CompletionWrapper w = new CompletionWrapper();
+    loadAll(keys, w);
+    return w.future;
+  }
+
+  static class CompletionWrapper implements CacheOperationCompletionListener {
+    final CompletableFuture<Void> future = new CompletableFuture<>();
+    @Override
+    public void onCompleted() {
+      future.complete(null);
+    }
+
+    @Override
+    public void onException(Throwable exception) {
+      future.completeExceptionally(exception);
+    }
+  }
 
   public abstract Executor getExecutor();
 

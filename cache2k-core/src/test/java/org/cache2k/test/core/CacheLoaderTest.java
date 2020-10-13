@@ -45,6 +45,7 @@ import org.junit.rules.Timeout;
 import java.io.IOException;
 import java.util.Collections;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
@@ -52,6 +53,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
+import static java.util.Arrays.asList;
 import static org.junit.Assert.*;
 import static org.hamcrest.Matchers.*;
 import static org.cache2k.test.core.StaticUtil.*;
@@ -108,7 +110,7 @@ public class CacheLoaderTest extends TestingBase {
   }
 
   @Test
-  public void testSeparateLoaderExecutor() {
+  public void testSeparateLoaderExecutor() throws ExecutionException, InterruptedException {
     final AtomicInteger executionCount = new AtomicInteger(0);
     Cache<Integer, Integer> c = target.cache(new CacheRule.Specialization<Integer, Integer>() {
       @Override
@@ -132,13 +134,8 @@ public class CacheLoaderTest extends TestingBase {
     assertEquals((Integer) 20, c.get(10));
     assertEquals(0, executionCount.get());
     CompletionWaiter waiter = new CompletionWaiter();
-    c.loadAll(toIterable(1, 2, 3), waiter);
-    waiter.awaitCompletion();
+    c.loadAll(asList(1, 2, 3)).get();
     assertEquals("executor is used", 3, executionCount.get());
-    waiter = new CompletionWaiter();
-    c.prefetchAll(toIterable(6, 7, 8), waiter);
-    waiter.awaitCompletion();
-    assertEquals("prefetch uses executor, too", 6, executionCount.get());
   }
 
   @Test
@@ -308,7 +305,7 @@ public class CacheLoaderTest extends TestingBase {
   }
 
   @Test
-  public void testReloadAll() {
+  public void testReloadAll() throws ExecutionException, InterruptedException {
     final AtomicInteger countLoad = new AtomicInteger();
     Cache<Integer, Integer> c = target.cache(new CacheRule.Specialization<Integer, Integer>() {
       @Override
@@ -323,11 +320,10 @@ public class CacheLoaderTest extends TestingBase {
     });
     c.get(5);
     CompletionWaiter w = new CompletionWaiter();
-    c.reloadAll(toIterable(5, 6), w);
-    w.awaitCompletion();
+    c.reloadAll(asList(5, 6)).get();
     assertEquals(3, countLoad.get());
-    c.reloadAll(toIterable(5, 6), null);
-    c.reloadAll(Collections.EMPTY_SET, null);
+    c.reloadAll(toIterable(5, 6));
+    c.reloadAll(Collections.EMPTY_SET);
   }
 
   @Test
