@@ -646,14 +646,6 @@
       </build>
     </profile>
 
-    <profile>
-      <id>android</id>
-      <modules>
-        <module>test-android</module>
-        <module>test-android-proguard</module>
-      </modules>
-    </profile>
-
   </profiles>
 
 </project>
