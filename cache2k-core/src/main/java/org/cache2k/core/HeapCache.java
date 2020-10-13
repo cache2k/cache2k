@@ -40,7 +40,6 @@ import org.cache2k.core.operation.Semantic;
 import org.cache2k.core.operation.Operations;
 import org.cache2k.core.concurrency.DefaultThreadFactoryProvider;
 import org.cache2k.core.concurrency.Job;
-import org.cache2k.core.concurrency.OptimisticLock;
 import org.cache2k.core.concurrency.ThreadFactoryProvider;
 
 import org.cache2k.core.timing.TimeAgnosticTiming;
@@ -74,6 +73,7 @@ import java.util.concurrent.SynchronousQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.locks.StampedLock;
 
 import static org.cache2k.core.util.Util.*;
 
@@ -702,7 +702,7 @@ public class HeapCache<K, V> extends BaseCache<K, V> implements HeapCacheForEvic
   protected boolean removeEntry(Entry<K, V> e) {
     int hc = extractModifiedHash(e);
     boolean removed;
-    OptimisticLock l = hash.getSegmentLock(hc);
+    StampedLock l = hash.getSegmentLock(hc);
     long stamp = l.writeLock();
     try {
       removed = hash.removeWithinLock(e, hc);
@@ -1253,7 +1253,7 @@ public class HeapCache<K, V> extends BaseCache<K, V> implements HeapCacheForEvic
     Entry<K, V> e = new Entry<K, V>(extractIntKeyObj(key), val);
     Entry<K, V> e2;
     eviction.evictEventuallyBeforeInsertOnSegment(hc);
-    OptimisticLock l = hash.getSegmentLock(hc);
+    StampedLock l = hash.getSegmentLock(hc);
     long stamp = l.writeLock();
     try {
       e2 = hash.insertWithinLock(e, hc, val);

@@ -22,17 +22,15 @@ package org.cache2k.core;
 
 import org.cache2k.Cache;
 import org.cache2k.core.concurrency.Job;
-import org.cache2k.core.concurrency.Locks;
-import org.cache2k.core.concurrency.OptimisticLock;
 
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.locks.StampedLock;
 
 /**
  * Simple concurrent hash table implementation using optimistic locking
  * for the segments locks.
  *
  * @author Jens Wilke
- * @see OptimisticLock
  */
 @SuppressWarnings({"WeakerAccess", "rawtypes"})
 public class Hash2<K, V> {
@@ -74,7 +72,7 @@ public class Hash2<K, V> {
   private long segmentMaxFill;
 
   private Entry<K, V>[] entries;
-  private final OptimisticLock[] locks;
+  private final StampedLock[] locks;
   private final AtomicLong[] segmentSize;
 
   private final Cache cache;
@@ -88,9 +86,9 @@ public class Hash2<K, V> {
   }
 
   {
-    locks = new OptimisticLock[LOCK_SEGMENTS];
+    locks = new StampedLock[LOCK_SEGMENTS];
     for (int i = 0; i < LOCK_SEGMENTS; i++) {
-      locks[i] = Locks.newOptimistic();
+      locks[i] = new StampedLock();
     }
     segmentSize = new AtomicLong[LOCK_SEGMENTS];
     for (int i = 0; i < LOCK_SEGMENTS; i++) {
@@ -123,9 +121,9 @@ public class Hash2<K, V> {
    * Lookup the entry in the hash table and return it. First tries an optimistic read.
    */
   public Entry<K, V> lookup(K key, int hash, int keyValue) {
-    OptimisticLock[] locks = this.locks;
+    StampedLock[] locks = this.locks;
     int si = hash & LOCK_MASK;
-    OptimisticLock l = locks[si];
+    StampedLock l = locks[si];
     long stamp = l.tryOptimisticRead();
     Entry<K, V>[] tab = entries;
     if (tab == null) {
@@ -214,7 +212,7 @@ public class Hash2<K, V> {
     }
   }
 
-  public OptimisticLock getSegmentLock(int hash) {
+  public StampedLock getSegmentLock(int hash) {
     return locks[hash & LOCK_MASK];
   }
 
@@ -225,9 +223,9 @@ public class Hash2<K, V> {
    */
   public boolean remove(Entry<K, V> e) {
     int hash = modifiedHashCode(e.hashCode);
-    OptimisticLock[] locks = this.locks;
+    StampedLock[] locks = this.locks;
     int si = hash & LOCK_MASK;
-    OptimisticLock l = locks[si];
+    StampedLock l = locks[si];
     long stamp = l.writeLock();
     try {
       Entry<K, V> f; Entry<K, V>[] tab = entries;
@@ -302,11 +300,11 @@ public class Hash2<K, V> {
    * Acquire all segment locks and return an array with the lock stamps.
    */
   private long[] lockAll() {
-    OptimisticLock[] locks = this.locks;
+    StampedLock[] locks = this.locks;
     int sn = locks.length;
     long[] stamps = new long[this.locks.length];
     for (int i = 0; i < sn; i++) {
-      OptimisticLock l = locks[i];
+      StampedLock l = locks[i];
       stamps[i] = l.writeLock();
     }
     return stamps;
@@ -318,7 +316,7 @@ public class Hash2<K, V> {
    * @param stamps array with the lock stamps.
    */
   private void unlockAll(long[] stamps) {
-    OptimisticLock[] locks = this.locks;
+    StampedLock[] locks = this.locks;
     int sn = locks.length;
     for (int i = 0; i < sn; i++) {
       locks[i].unlockWrite(stamps[i]);
