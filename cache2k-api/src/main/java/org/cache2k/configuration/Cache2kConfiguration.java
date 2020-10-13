@@ -33,7 +33,6 @@ import org.cache2k.io.AsyncCacheLoader;
 import org.cache2k.io.CacheLoader;
 import org.cache2k.io.CacheWriter;
 import org.cache2k.io.ExceptionPropagator;
-import org.cache2k.integration.FunctionalCacheLoader;
 import org.cache2k.io.ResiliencePolicy;
 
 import java.util.ArrayList;

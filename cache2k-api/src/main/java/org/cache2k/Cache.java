@@ -743,9 +743,7 @@ public interface Cache<K, V> extends KeyValueStore<K, V>, Closeable {
    * to be most specific. If the loader has permanent failures this method may
    * throw an exception immediately.
    *
-   * <p>The operation is not performed atomically. This operation may call different
-   * loader methods either {@link org.cache2k.io.BulkCacheLoader#loadAll(Iterable, Executor)} or
-   *  {@link CacheLoader#load(Object)}.
+   * <p>The operation is not performed atomically.
    *
    * <p>Performance: A better technique is using {@link Cache#prefetchAll}
    * and then {@link Cache#get(Object)} to request the the values.
