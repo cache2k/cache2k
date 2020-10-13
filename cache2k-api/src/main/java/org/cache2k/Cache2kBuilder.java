@@ -90,7 +90,7 @@ public class Cache2kBuilder<K, V> {
    * or to set the type information later via the builder methods {@link #keyType} or
    * {@link #valueType}.
    */
-  @SuppressWarnings("unchecked")
+  @SuppressWarnings({"unchecked", "rawtypes"})
   public static Cache2kBuilder forUnknownTypes() {
     return new Cache2kBuilder(null, null);
   }
@@ -682,7 +682,6 @@ public class Cache2kBuilder<K, V> {
    *
    * @see CacheLoader
    * @see #loaderThreadCount(int)
-   * @see #prefetchExecutor(Executor)
    */
   public final Cache2kBuilder<K, V> refreshAhead(boolean f) {
     config().setRefreshAhead(f);
@@ -887,18 +886,9 @@ public class Cache2kBuilder<K, V> {
    * specified the cache will create a thread pool, if needed.
    *
    * @see #loaderThreadCount(int)
-   * @see #prefetchExecutor(Executor)
    */
   public final Cache2kBuilder<K, V> loaderExecutor(Executor v) {
     config().setLoaderExecutor(new CustomizationReferenceSupplier<Executor>(v));
-    return this;
-  }
-
-  /**
-   * @deprecated Use {@link #refreshExecutor(Executor)}
-   */
-  public final Cache2kBuilder<K, V> prefetchExecutor(Executor v) {
-    config().setPrefetchExecutor(new CustomizationReferenceSupplier<Executor>(v));
     return this;
   }
 
@@ -1005,50 +995,6 @@ public class Cache2kBuilder<K, V> {
    */
   public final Cache<K, V> build() {
     return CacheManager.PROVIDER.createCache(manager, config());
-  }
-
-  /**
-   * Builds a cache with the specified configuration parameters.
-   * The behavior is identical to {@link #build()} except that it checks that
-   * the key type is {@code Integer} and casts the created cache to the specialized
-   * interface.
-   *
-   * @throws IllegalArgumentException if a cache of the same name is already active in the
-   *         cache manager
-   * @throws IllegalArgumentException if key type is unexpected
-   * @throws IllegalArgumentException if a configuration entry for the named cache is required but
-   *         not present
-   * @deprecated Will be removed in version 2.0
-   */
-  @SuppressWarnings("unchecked")
-  public final IntCache<V> buildForIntKey() {
-    Cache2kConfiguration<K, V> cfg = config();
-    if (cfg.getKeyType().getType() != Integer.class) {
-      throw new IllegalArgumentException("Integer key type expected, was: " + cfg.getKeyType());
-    }
-    return (IntCache<V>) CacheManager.PROVIDER.createCache(manager, config());
-  }
-
-  /**
-   * Builds a cache with the specified configuration parameters.
-   * The behavior is identical to {@link #build()} except that it checks that
-   * the key type is {@code Integer} and casts the created cache to the specialized
-   * interface.
-   *
-   * @throws IllegalArgumentException if a cache of the same name is already active in the
-   *         cache manager
-   * @throws IllegalArgumentException if key type is unexpected
-   * @throws IllegalArgumentException if a configuration entry for the named cache is required but
-   *         not present
-   * @deprecated Will be removed in version 2.0
-   */
-  @SuppressWarnings("unchecked")
-  public final LongCache<V> buildForLongKey() {
-    Cache2kConfiguration<K, V> cfg = config();
-    if (cfg.getKeyType().getType() != Long.class) {
-      throw new IllegalArgumentException("Long key type expected, was: " + cfg.getKeyType());
-    }
-    return (LongCache<V>) CacheManager.PROVIDER.createCache(manager, config());
   }
 
 }

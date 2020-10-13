@@ -108,12 +108,6 @@ public class ExceptionWrapper<K> implements ExceptionInformation, CacheEntry<K, 
     return null;
   }
 
-  @SuppressWarnings("deprecation")
-  @Override
-  public long getLastModification() {
-    throw new UnsupportedOperationException();
-  }
-
   @Override
   public ExceptionPropagator getExceptionPropagator() { return propagator; }
 

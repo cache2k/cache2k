@@ -65,7 +65,7 @@ public class SlowEntryProcessorTest {
         return null;
       }
     });
-    assertThat(c.peekEntry(KEY).getLastModification(), Matchers.lessThanOrEqualTo((t0 + c.peek(KEY))));
+    assertThat(c.invoke(KEY, e -> e.getRefreshedTime()), Matchers.lessThanOrEqualTo((t0 + c.peek(KEY))));
   }
 
 }

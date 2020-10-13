@@ -417,18 +417,6 @@ public class Cache2kBuilderTest {
   }
 
   @Test(expected = IllegalArgumentException.class)
-  public void buildIntKey() {
-    Cache2kBuilder _builder = Cache2kBuilder.of(String.class, String.class);
-    _builder.buildForIntKey();
-  }
-
-  @Test(expected = IllegalArgumentException.class)
-  public void buildLongKey() {
-    Cache2kBuilder _builder = Cache2kBuilder.of(String.class, String.class);
-    _builder.buildForLongKey();
-  }
-
-  @Test(expected = IllegalArgumentException.class)
   public void refreshAheadButNoLoader() {
     Cache c = Cache2kBuilder.forUnknownTypes()
       .refreshAhead(true)

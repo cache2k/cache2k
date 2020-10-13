@@ -227,8 +227,6 @@ public class InternalCache2kBuilder<K, V> implements InternalBuildContext<K, V> 
     Class<?> keyType = config.getKeyType().getType();
     if (keyType == Integer.class) {
       cache = (InternalCache<K, V>) new IntHeapCache<V>();
-    } else if (keyType == Long.class) {
-      cache = (InternalCache<K, V>) new LongHeapCache<V>();
     } else {
       cache = new HeapCache<K, V>();
     }
@@ -255,13 +253,7 @@ public class InternalCache2kBuilder<K, V> implements InternalBuildContext<K, V> 
 
     WiredCache<K, V> wc = null;
     if (wrap) {
-      if (keyType == Integer.class) {
-        wc = (WiredCache<K, V>) new IntWiredCache<V>();
-      } else if (keyType == Long.class) {
-        wc = (WiredCache<K, V>) new LongWiredCache<V>();
-      } else {
-        wc = new WiredCache<K, V>();
-      }
+      wc = new WiredCache<K, V>();
       wc.heapCache = bc;
       cache = wc;
     }

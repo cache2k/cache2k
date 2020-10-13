@@ -38,7 +38,6 @@ import java.util.Map;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.Executor;
 import java.util.concurrent.TimeUnit;
 
 /* Credits
@@ -175,51 +174,6 @@ public interface Cache<K, V> extends KeyValueStore<K, V>, Closeable {
    *          return different instances of the entry object.
    */
   CacheEntry<K, V> getEntry(K key);
-
-  /**
-   * Notifies the cache about the intention to retrieve the value for this key in the
-   * near future.
-   *
-   * <p>The method will return immediately and the cache will load
-   * the value asynchronously if not yet present in the cache. Prefetching
-   * is done via a separate thread pool if specified via
-   * {@link Cache2kBuilder#prefetchExecutor(Executor)}.
-   *
-   * <p>If no {@link CacheLoader} is defined the method will do nothing.
-   *
-   * <p>This method doesn't throw an exception in case the loader produced
-   * an exception. Exceptions will be propagated when the value is accessed.
-   *
-   * @param key the key that should be loaded, not {@code null}
-   * @see Cache2kBuilder#loaderThreadCount(int)
-   * @see Cache2kBuilder#prefetchExecutor(Executor)
-   * @deprecated will be removed in 2.0, see
-   *             <a href="https://github.com/cache2k/cache2k/issues/156">Github issue</a>
-   */
-  @Override
-  void prefetch(K key);
-
-  /**
-   * Notifies the cache about the intention to retrieve the value for this key in the
-   * near future.
-   *
-   * <p>The method will return immediately and the cache will load
-   * the value asynchronously if not yet present in the cache. Prefetching
-   * is done via a separate thread pool if specified via
-   * {@link Cache2kBuilder#prefetchExecutor(Executor)}.
-   *
-   * <p>If no {@link CacheLoader} is defined the method will do nothing.
-   *
-   * <p>Exceptions from the loader will not be propagated via the listener.
-   * Exceptions will be propagated when the respective value is accessed.
-   *
-   * @param keys the keys which should be loaded, not {@code null}
-   * @param listener Listener interface that is invoked upon completion. May be {@code null} if no
-   *          completion notification is needed.
-   * @deprecated will be removed in 2.0, see
-   *             <a href="https://github.com/cache2k/cache2k/issues/156">Github issue</a>
-   */
-  void prefetchAll(Iterable<? extends K> keys, CacheOperationCompletionListener listener);
 
   /**
    * Returns the value associated to the given key.
@@ -787,9 +741,6 @@ public interface Cache<K, V> extends KeyValueStore<K, V>, Closeable {
    * throw an exception immediately.
    *
    * <p>The operation is not performed atomically.
-   *
-   * <p>Performance: A better technique is using {@link Cache#prefetchAll}
-   * and then {@link Cache#get(Object)} to request the the values.
    *
    * @throws NullPointerException if one of the specified keys is null
    * @throws CacheLoaderException in case the loader has permanent failures.

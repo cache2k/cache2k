@@ -280,23 +280,6 @@ public class EntryProcessorTest {
   }
 
   @Test
-  public void getLastModification() {
-    Cache<Integer, Integer> c = target.cache();
-    try {
-      c.invoke(1, new EntryProcessor<Integer, Integer, Object>() {
-        @Override
-        public Object process(MutableCacheEntry<Integer, Integer> e) {
-          e.getLastModification();
-          return null;
-        }
-      });
-      fail("exception expected");
-    } catch (EntryProcessingException ex) {
-      assertTrue(ex.getCause() instanceof UnsupportedOperationException);
-    }
-  }
-
-  @Test
   public void getCurrentTime_getRefreshTime_setRefreshTime_setValue() {
     Cache<Integer, Integer> c = target.cache(new CacheRule.Specialization<Integer, Integer>() {
       @Override

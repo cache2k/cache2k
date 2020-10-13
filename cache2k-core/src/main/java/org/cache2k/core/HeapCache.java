@@ -1042,62 +1042,6 @@ public class HeapCache<K, V> extends BaseCache<K, V> implements HeapCacheForEvic
   }
 
   @Override
-  public void prefetch(final K key) {
-    if (loader == null) {
-      return;
-    }
-    Entry<K, V> e = lookupEntryNoHitRecord(key);
-    if (e != null && e.hasFreshData(clock)) {
-      return;
-    }
-    try {
-      getRefreshExecutor().execute(new RunWithCatch(this) {
-        @Override
-        public void action() {
-          getEntryInternal(key);
-        }
-      });
-    } catch (RejectedExecutionException ignore) {
-    }
-  }
-
-  @Override
-  public void prefetchAll(Iterable<? extends K> keys, CacheOperationCompletionListener l) {
-    final CacheOperationCompletionListener listener = l != null ? l : DUMMY_LOAD_COMPLETED_LISTENER;
-    if (loader == null) {
-      listener.onCompleted();
-      return;
-    }
-    Set<K> keysToLoad = checkAllPresent(keys);
-    final AtomicInteger count = new AtomicInteger(2);
-    try {
-      for (K k : keysToLoad) {
-        final K key = k;
-        Runnable r = new RunWithCatch(this) {
-          @Override
-          public void action() {
-            try {
-              getEntryInternal(key);
-            } finally {
-              if (count.decrementAndGet() == 0) {
-                listener.onCompleted();
-              }
-            }
-          }
-        };
-        try {
-          getRefreshExecutor().execute(r);
-          count.incrementAndGet();
-        } catch (RejectedExecutionException ignore) { }
-      }
-    } finally {
-      if (count.addAndGet(-2) == 0) {
-        listener.onCompleted();
-      }
-    }
-  }
-
-  @Override
   public void loadAll(Iterable<? extends K> keys, CacheOperationCompletionListener l) {
     checkLoaderPresent();
     final CacheOperationCompletionListener listener = l != null ? l : DUMMY_LOAD_COMPLETED_LISTENER;

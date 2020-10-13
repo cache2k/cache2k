@@ -158,7 +158,7 @@ public class CacheLoaderTest extends TestingBase {
             getLoaderExecutor().execute(command);
           }
         });
-        b.prefetchExecutor(new Executor() {
+        b.refreshExecutor(new Executor() {
           @Override
           public void execute(Runnable command) {
             prefetchExecutionCount.incrementAndGet();
@@ -174,11 +174,6 @@ public class CacheLoaderTest extends TestingBase {
     c.loadAll(toIterable(1, 2, 3), waiter);
     waiter.awaitCompletion();
     assertEquals("executor is used", 3, executionCount.get());
-    waiter = new CompletionWaiter();
-    c.prefetchAll(toIterable(6, 7, 8), waiter);
-    waiter.awaitCompletion();
-    assertEquals("prefetch does not use loader executor", 3, executionCount.get());
-    assertEquals("extra executor for prefetch used", 3, prefetchExecutionCount.get());
   }
 
   @Test
@@ -326,130 +321,6 @@ public class CacheLoaderTest extends TestingBase {
     c.reloadAll(Collections.EMPTY_SET);
   }
 
-  @Test
-  public void prefetch_noLoader() {
-    Cache<Integer, Integer> c = target.cache();
-    c.prefetchAll(toIterable(1, 2, 3), null);
-    assertEquals(0, latestInfo(c).getAsyncLoadsStarted());
-  }
-
-  @Test
-  public void noPrefetchWhenPresent() {
-    Cache<Integer, Integer> c = cacheWithLoader();
-    c.put(123, 3);
-    c.prefetch(123);
-    assertTrue(latestInfo(c).getAsyncLoadsStarted() == 0);
-  }
-
-  @Test
-  public void prefetch() {
-    final Cache<Integer, Integer> c = cacheWithLoader();
-    c.prefetch(1);
-    assertTrue(isLoadStarted(c));
-    await(new Condition() {
-      @Override
-      public boolean check() {
-        return c.containsKey(1);
-      }
-    });
-  }
-
-  @Test
-  public void prefetchAll() {
-    final Cache<Integer, Integer> c = cacheWithLoader();
-    c.prefetchAll(toIterable(1, 2, 3), null);
-    assertTrue(isLoadStarted(c));
-    await(new Condition() {
-      @Override
-      public boolean check() {
-        return c.containsKey(1);
-      }
-    });
-  }
-
-  @Test
-  public void prefetch_noLoader_listener() {
-    Cache<Integer, Integer> c = target.cache();
-    CompletionWaiter w = new CompletionWaiter();
-    c.prefetchAll(toIterable(1), w);
-    w.awaitCompletion();
-  }
-
-  @Test
-  public void prefetch_listener() {
-    Cache<Integer, Integer> c = cacheWithLoader();
-    CompletionWaiter w = new CompletionWaiter();
-    c.prefetchAll(toIterable(1), w);
-    assertTrue(isLoadStarted(c));
-    w.awaitCompletion();
-    assertTrue(c.containsKey(1));
-  }
-
-  @Test
-  public void prefetch_present_listener() {
-    Cache<Integer, Integer> c = cacheWithLoader();
-    CompletionWaiter w = new CompletionWaiter();
-    c.put(1, 1);
-    c.prefetchAll(toIterable(1), w);
-    w.awaitCompletion();
-    assertTrue(c.containsKey(1));
-    assertTrue(latestInfo(c).getAsyncLoadsStarted() == 0);
-  }
-
-  @Test
-  public void prefetchAll_noLoader_listener() {
-    Cache<Integer, Integer> c = target.cache();
-    CompletionWaiter w = new CompletionWaiter();
-    c.prefetchAll(toIterable(1), w);
-    w.awaitCompletion();
-  }
-
-  @Test
-  public void prefetchAll_listener() {
-    Cache<Integer, Integer> c = cacheWithLoader();
-    CompletionWaiter w = new CompletionWaiter();
-    c.prefetchAll(toIterable(1), w);
-    assertTrue(isLoadStarted(c));
-    w.awaitCompletion();
-    assertTrue(c.containsKey(1));
-  }
-
-  @Test
-  public void prefetchAll_present_listener() {
-    Cache<Integer, Integer> c = cacheWithLoader();
-    CompletionWaiter w = new CompletionWaiter();
-    c.put(1, 1);
-    c.prefetchAll(toIterable(1), w);
-    w.awaitCompletion();
-    assertTrue(c.containsKey(1));
-    assertTrue(latestInfo(c).getAsyncLoadsStarted() == 0);
-  }
-
-  @Test
-  public void prefetchAll_partiallyPresent_listener() {
-    Cache<Integer, Integer> c = cacheWithLoader();
-    CompletionWaiter w = new CompletionWaiter();
-    c.put(1, 1);
-    c.put(2, 2);
-    c.prefetchAll(toIterable(1, 2, 3, 4), w);
-    assertTrue(isLoadStarted(c));
-    w.awaitCompletion();
-    assertTrue(c.containsKey(3));
-    assertThat("expect 2 started loads, since 1 is in the cache",
-      latestInfo(c).getAsyncLoadsStarted(),
-      allOf(greaterThanOrEqualTo(2L), lessThanOrEqualTo(3L)));
-  }
-
-  @Test
-  public void prefetchWith10Caches() {
-    for (int i = 0; i < 10; i++) {
-      Cache<Integer, Integer> c = cacheWithLoader();
-      c.prefetch(123);
-      assertTrue("Iteration " + i, isLoadStarted(c));
-      target.closeCache();
-    }
-  }
-
   /**
    * getAsyncLoadsStarted uses the task count from the executor which is not
    * exact. We use is since we only want to know whether the loader will
@@ -467,16 +338,6 @@ public class CacheLoaderTest extends TestingBase {
       }
     });
     return true;
-  }
-
-  @Test
-  public void testNoPrefetchAll() {
-    Cache<Integer, Integer> c = cacheWithLoader();
-    c.put(1, 1);
-    c.put(2, 2);
-    c.put(3, 3);
-    c.prefetchAll(toIterable(1, 2, 3), null);
-    assertTrue(latestInfo(c).getAsyncLoadsStarted() == 0);
   }
 
   /**
@@ -1120,7 +981,8 @@ public class CacheLoaderTest extends TestingBase {
       public void extend(Cache2kBuilder<Integer, Integer> b) {
         b.loader(new AdvancedCacheLoader<Integer, Integer>() {
           @Override
-          public Integer load(Integer key, long startTime, CacheEntry<Integer, Integer> currentEntry) throws Exception {
+          public Integer load(Integer key, long startTime,
+                              CacheEntry<Integer, Integer> currentEntry) {
             assertNull(currentEntry);
             return key;
           }

@@ -659,17 +659,6 @@ public class Cache2kConfiguration<K, V> implements ConfigurationBean, Configurat
     return loaderExecutor;
   }
 
-  @Deprecated
-  public boolean isDisableLastModificationTime() {
-    return false;
-  }
-
-  /**
-   * @see Cache2kBuilder#disableLastModificationTime
-   */
-  @Deprecated
-  public void setDisableLastModificationTime(boolean v) { }
-
   public boolean isRecordRefreshedTime() {
     return recordRefreshedTime;
   }
@@ -686,21 +675,6 @@ public class Cache2kConfiguration<K, V> implements ConfigurationBean, Configurat
    */
   public void setLoaderExecutor(CustomizationSupplier<Executor> v) {
     loaderExecutor = v;
-  }
-
-  /**
-   * @deprecated Use {@link #getRefreshExecutor()}
-   */
-  public CustomizationSupplier<Executor> getPrefetchExecutor() {
-    return refreshExecutor;
-  }
-
-  /**
-   * @see Cache2kBuilder#prefetchExecutor(Executor)
-   * @deprecated use {@link #setRefreshExecutor(CustomizationSupplier)}
-   */
-  public void setPrefetchExecutor(CustomizationSupplier<Executor> v) {
-    refreshExecutor = v;
   }
 
   public CustomizationSupplier<Executor> getRefreshExecutor() {

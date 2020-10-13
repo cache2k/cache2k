@@ -252,12 +252,6 @@ public class Entry<K, V> extends CompactEntry<K, V>
     return (refreshTimeAndState & MODIFICATION_TIME_MASK) >> MODIFICATION_TIME_SHIFT;
   }
 
-  @SuppressWarnings("deprecation")
-  @Override @Deprecated
-  public long getLastModification() {
-    throw new UnsupportedOperationException();
-  }
-
   /**
    * Different possible processing states. The code only uses fetch now, rest is preparation.
    * We don't use enums, since enums produce object garbage.

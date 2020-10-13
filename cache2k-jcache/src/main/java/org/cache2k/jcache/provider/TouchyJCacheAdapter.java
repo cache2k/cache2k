@@ -308,12 +308,6 @@ public class TouchyJCacheAdapter<K, V> implements Cache<K, V> {
     public Throwable getException() {
       return null;
     }
-
-    @SuppressWarnings("deprecation")
-    @Override
-    public long getLastModification() {
-      return 0;
-    }
   };
 
   @SuppressWarnings("unchecked")

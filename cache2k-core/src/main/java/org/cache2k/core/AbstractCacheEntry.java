@@ -29,12 +29,6 @@ import org.cache2k.CacheEntry;
  */
 public abstract class AbstractCacheEntry<K, V> implements CacheEntry<K, V> {
 
-  @SuppressWarnings("deprecation")
-  @Override
-  public long getLastModification() {
-    throw new UnsupportedOperationException();
-  }
-
   /**
    * Prints
    */

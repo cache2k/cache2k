@@ -150,62 +150,6 @@ public class WiredCache<K, V> extends BaseCache<K, V>
     return execute(key, ops.peekEntry(key));
   }
 
-  @Override
-  public void prefetch(final K key) {
-    if (!isLoaderPresent()) {
-      return;
-    }
-    Entry<K, V> e = heapCache.lookupEntryNoHitRecord(key);
-    if (e != null && e.hasFreshData(getClock())) {
-      return;
-    }
-    try {
-      heapCache.getRefreshExecutor().execute(new HeapCache.RunWithCatch(this) {
-        @Override
-        public void action() {
-          load(key);
-        }
-      });
-    } catch (RejectedExecutionException ignore) { }
-  }
-
-  @Override
-  public void prefetchAll(Iterable<? extends K> keys, CacheOperationCompletionListener l) {
-    final CacheOperationCompletionListener listener =
-      l != null ? l : HeapCache.DUMMY_LOAD_COMPLETED_LISTENER;
-    if (!isLoaderPresent()) {
-      listener.onCompleted();
-      return;
-    }
-    final AtomicInteger count = new AtomicInteger(2);
-    try {
-      Set<K> keysToLoad = heapCache.checkAllPresent(keys);
-      for (K k : keysToLoad) {
-        final K key = k;
-        Runnable r = new HeapCache.RunWithCatch(this) {
-          @Override
-          public void action() {
-            try {
-              load(key);
-            } finally {
-              if (count.decrementAndGet() == 0) {
-                listener.onCompleted();
-              }
-            }
-          }
-        };
-        try {
-          heapCache.getRefreshExecutor().execute(r);
-          count.incrementAndGet();
-        } catch (RejectedExecutionException ignore) { }
-      }
-    } finally {
-      if (count.addAndGet(-2) == 0) {
-        listener.onCompleted();
-      }
-    }
-  }
-
   private void load(K key) {
     Entry<K, V> e = lookupQuick(key);
     if (e != null && e.hasFreshData(getClock())) {

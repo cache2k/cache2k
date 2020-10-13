@@ -59,16 +59,6 @@ public abstract class ForwardingCache<K, V> implements Cache<K, V> {
   }
 
   @Override
-  public void prefetch(K key) {
-    delegate().prefetch(key);
-  }
-
-  @Override
-  public void prefetchAll(Iterable<? extends K> keys, CacheOperationCompletionListener listener) {
-    delegate().prefetchAll(keys, listener);
-  }
-
-  @Override
   public V peek(K key) {
     return delegate().peek(key);
   }

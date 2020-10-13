@@ -25,8 +25,8 @@ import org.cache2k.Cache;
 import org.cache2k.Cache2kBuilder;
 import org.cache2k.CacheEntry;
 import org.cache2k.ForwardingCache;
-import org.cache2k.IntCache;
 import org.cache2k.core.CacheClosedException;
+import org.cache2k.core.IntHeapCache;
 import org.cache2k.core.api.InternalCache;
 import org.cache2k.core.api.InternalCacheInfo;
 import org.cache2k.event.CacheEntryExpiredListener;
@@ -864,17 +864,6 @@ public class BasicCacheOperationsWithoutCustomizationsTest {
     assertEquals(OUCH, e.getException());
   }
 
-  @Test
-  public void peekEntry_lastModification() {
-    cache.put(KEY, VALUE);
-    CacheEntry<Integer, Integer> e = cache.peekEntry(KEY);
-    try {
-      cache.peekEntry(e.getKey()).getLastModification();
-      fail("expected UnsupportedOperationException");
-    } catch (UnsupportedOperationException ex) {
-    }
-  }
-
   /*
    * getEntry
    */
@@ -910,17 +899,6 @@ public class BasicCacheOperationsWithoutCustomizationsTest {
     assertEquals(KEY, e.getKey());
     entryHasException(e);
     assertEquals(OUCH, e.getException());
-  }
-
-  @Test
-  public void getEntry_lastModification() {
-    cache.put(KEY, VALUE);
-    CacheEntry<Integer, Integer> e = cache.getEntry(KEY);
-    try {
-      cache.peekEntry(e.getKey()).getLastModification();
-      fail("expected UnsupportedOperationException");
-    } catch (UnsupportedOperationException ex) {
-    }
   }
 
   private static void entryHasException(CacheEntry<Integer, Integer> e) {
@@ -1466,16 +1444,6 @@ public class BasicCacheOperationsWithoutCustomizationsTest {
   }
 
   @Test
-  public void prefetch() {
-    cache.prefetch(KEY);
-  }
-
-  @Test
-  public void prefetchAll()  {
-    cache.prefetchAll(toIterable(KEY, OTHER_KEY), null);
-  }
-
-  @Test
   public void getEntryState() {
     if (!(cache instanceof InternalCache)) {
       return;
@@ -1515,17 +1483,6 @@ public class BasicCacheOperationsWithoutCustomizationsTest {
   public void requestInterface() {
     assertNull(cache.requestInterface(Integer.class));
     assertTrue(cache.requestInterface(Map.class) instanceof Map);
-  }
-
-  @SuppressWarnings("deprecation")
-  @Test
-  public void checkImpl() {
-    InternalCache ic = cache.requestInterface(InternalCache.class);
-    if (pars.useObjectKey) {
-      assertThat(ic, not(instanceOf(IntCache.class)));
-    } else {
-      assertThat(ic, instanceOf(IntCache.class));
-    }
   }
 
   static class Pars {

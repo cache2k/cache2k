@@ -53,16 +53,6 @@ public class AbstractCache<K, V> implements Cache<K, V> {
   }
 
   @Override
-  public void prefetch(K key) {
-    throw new UnsupportedOperationException();
-  }
-
-  @Override
-  public void prefetchAll(Iterable<? extends K> keys, CacheOperationCompletionListener listener) {
-    throw new UnsupportedOperationException();
-  }
-
-  @Override
   public V peek(K key) {
     throw new UnsupportedOperationException();
   }

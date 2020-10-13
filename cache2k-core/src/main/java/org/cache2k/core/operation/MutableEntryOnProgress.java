@@ -210,12 +210,6 @@ class MutableEntryOnProgress<K, V> implements MutableCacheEntry<K, V> {
     return this;
   }
 
-  @SuppressWarnings("deprecation")
-  @Override
-  public long getLastModification() {
-    throw new UnsupportedOperationException();
-  }
-
   public boolean isMutationNeeded() {
     return mutate || customExpiry;
   }

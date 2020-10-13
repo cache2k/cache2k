@@ -246,7 +246,7 @@ public class JmxSupportTest {
     checkAttribute("HashQuality", -1);
     checkAttribute("MillisPerLoad", 0.0);
     checkAttribute("TotalLoadMillis", 0L);
-    checkAttribute("Implementation", "LongHeapCache");
+    checkAttribute("Implementation", "HeapCache");
     checkAttribute("ClearedTime", null);
     checkAttribute("Alert", 0);
     assertTrue("reasonable CreatedTime",
