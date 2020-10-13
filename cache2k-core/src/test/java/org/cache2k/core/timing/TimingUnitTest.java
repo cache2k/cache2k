@@ -25,7 +25,7 @@ import org.cache2k.CacheEntry;
 import org.cache2k.CacheManager;
 import org.cache2k.configuration.Cache2kConfiguration;
 import org.cache2k.configuration.CustomizationSupplier;
-import org.cache2k.core.api.CacheBuildContext;
+import org.cache2k.core.api.InternalBuildContext;
 import org.cache2k.core.Entry;
 import org.cache2k.core.HeapCache;
 import org.cache2k.core.util.DefaultClock;
@@ -54,12 +54,7 @@ public class TimingUnitTest {
 
   private <K, V> Timing<K, V> create(final InternalClock clock,
                                      final Cache2kConfiguration<K, V> cfg) {
-    return Timing.of(new CacheBuildContext<K, V>() {
-      @Override
-      public <T> T initCustomization(T customization) {
-        return customization;
-      }
-
+    return Timing.of(new InternalBuildContext<K, V>() {
       @Override
       public InternalClock getClock() {
         return clock;
@@ -74,17 +69,10 @@ public class TimingUnitTest {
       public CacheManager getCacheManager() {
         return null;
       }
-
       @Override
       public <T> T createCustomization(CustomizationSupplier<T> supplier) {
-        return createCustomization(supplier, null);
-      }
-
-      @Override
-      public <T> T createCustomization(CustomizationSupplier<T> supplier, T fallback) {
-        if (supplier == null) { return fallback; }
         try {
-          return supplier.supply(getCacheManager());
+          return supplier.supply(null);
         } catch (Exception e) {
           return null;
         }

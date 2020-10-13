@@ -440,7 +440,8 @@ public class Cache2kBuilder<K, V> {
     ExceptionPropagator<K> newPropagator = new ExceptionPropagator<K>() {
       @Override
       public RuntimeException propagateException(K key, ExceptionInformation newInfo) {
-        org.cache2k.integration.ExceptionInformation oldInfo = new org.cache2k.integration.ExceptionInformation() {
+        org.cache2k.integration.ExceptionInformation oldInfo =
+          new org.cache2k.integration.ExceptionInformation() {
           @Override
           public org.cache2k.integration.ExceptionPropagator getExceptionPropagator() {
             return ep;

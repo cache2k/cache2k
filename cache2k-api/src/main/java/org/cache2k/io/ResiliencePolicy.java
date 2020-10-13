@@ -21,6 +21,7 @@ package org.cache2k.io;
  */
 
 import org.cache2k.CacheEntry;
+import org.cache2k.Customization;
 import org.cache2k.expiry.ExpiryPolicy;
 import org.cache2k.expiry.ExpiryTimeValues;
 
@@ -32,7 +33,7 @@ import org.cache2k.expiry.ExpiryTimeValues;
  * @author Jens Wilke
  * @since 2
  */
-public interface ResiliencePolicy<K, V> extends ExpiryTimeValues {
+public interface ResiliencePolicy<K, V> extends ExpiryTimeValues, Customization {
 
   /**
    * Called after the loader threw an exception and a previous value is available.

@@ -20,8 +20,6 @@ package org.cache2k.configuration;
  * #L%
  */
 
-import org.cache2k.CacheManager;
-
 import java.io.Serializable;
 
 /**
@@ -33,25 +31,18 @@ import java.io.Serializable;
  * there may be suppliers which are used within the program that are intentionally not
  * serializable, such as {@link CustomizationReferenceSupplier}.
  *
+ * @param <T> the type for the customization. Typically extends {@link org.cache2k.Customization},
+ *           but can be {@link java.util.concurrent.Executor} as well
  * @author Jens Wilke
  */
+  @FunctionalInterface
 public interface CustomizationSupplier<T> {
 
   /**
    * Create or return an existing customization instance.
    *
-   * <p>Developer note: The interface lacks context where the customization is used,
-   * e.g. the cache name. With the cache name, different customizations could share
-   * data or expose themselves
-   *
-   * @param manager The manager can be used to retrieve the class loader or
-   *                additional properties needed to configure the customization.
-   * @throws Exception the method may throw arbitrary exceptions. The exception
-   *                   is wrapped into a {@link org.cache2k.CacheException} and
-   *                   rethrown. When the creation of a customization fails, the
-   *                   cache will not be usable.
    * @return created customization, never {@code null}
    */
-  T supply(CacheManager manager) throws Exception;
+  T supply(CacheBuildContext buildContext);
 
 }

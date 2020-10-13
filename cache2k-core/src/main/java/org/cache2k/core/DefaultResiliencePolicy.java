@@ -21,8 +21,9 @@ package org.cache2k.core;
  */
 
 import org.cache2k.CacheEntry;
-import org.cache2k.configuration.BuildContextAwareCustomization;
+import org.cache2k.configuration.CacheBuildContext;
 import org.cache2k.configuration.Cache2kConfiguration;
+import org.cache2k.configuration.CustomizationSupplier;
 import org.cache2k.io.ExceptionInformation;
 import org.cache2k.io.ResiliencePolicy;
 
@@ -34,8 +35,9 @@ import java.util.Random;
  *
  * @author Jens Wilke
  */
-public class DefaultResiliencePolicy<K, V>
-  implements ResiliencePolicy<K, V>, BuildContextAwareCustomization<K, V> {
+public class DefaultResiliencePolicy<K, V> implements ResiliencePolicy<K, V> {
+
+  public static final Supplier SUPPLIER = new Supplier();
 
   /**
    * We use a common random instance. Since this is only called for an exception
@@ -56,6 +58,37 @@ public class DefaultResiliencePolicy<K, V>
    * Construct a resilience policy with multiplier 1.5 and randomization 0.5.
    */
   public DefaultResiliencePolicy() { }
+
+  public DefaultResiliencePolicy(Cache2kConfiguration<K, V> cfg) {
+    resilienceDuration = cfg.getResilienceDuration();
+    maxRetryInterval = cfg.getMaxRetryInterval();
+    retryInterval = cfg.getRetryInterval();
+    if (resilienceDuration == -1) {
+      if (cfg.getExpireAfterWrite() == ETERNAL) {
+        resilienceDuration = 0;
+      } else {
+        resilienceDuration = cfg.getExpireAfterWrite();
+      }
+    } else {
+      if (maxRetryInterval == -1) {
+        maxRetryInterval = resilienceDuration;
+      }
+    }
+    if (maxRetryInterval == -1 && retryInterval == -1) {
+      maxRetryInterval = resilienceDuration;
+    }
+    if (retryInterval == -1) {
+      retryInterval = resilienceDuration * RETRY_PERCENT_OF_RESILIENCE_DURATION / 100;
+      retryInterval = Math.min(retryInterval, maxRetryInterval);
+      retryInterval = Math.max(MIN_RETRY_INTERVAL, retryInterval);
+    }
+    if (retryInterval > maxRetryInterval) {
+      maxRetryInterval = retryInterval;
+    }
+    if (maxRetryInterval > resilienceDuration && resilienceDuration != 0) {
+      resilienceDuration = maxRetryInterval;
+    }
+  }
 
   /**
    * Construct a resilience policy with custom multiplier and randomization.
@@ -92,39 +125,6 @@ public class DefaultResiliencePolicy<K, V>
   public long getRetryInterval() { return retryInterval; }
 
   @Override
-  public void initWithContext(BuildContext<K, V> context) {
-    Cache2kConfiguration<K, V> cfg = context.getConfiguration();
-    resilienceDuration = cfg.getResilienceDuration();
-    maxRetryInterval = cfg.getMaxRetryInterval();
-    retryInterval = cfg.getRetryInterval();
-    if (resilienceDuration == -1) {
-      if (cfg.getExpireAfterWrite() == ETERNAL) {
-        resilienceDuration = 0;
-      } else {
-        resilienceDuration = cfg.getExpireAfterWrite();
-      }
-    } else {
-      if (maxRetryInterval == -1) {
-        maxRetryInterval = resilienceDuration;
-      }
-    }
-    if (maxRetryInterval == -1 && retryInterval == -1) {
-      maxRetryInterval = resilienceDuration;
-    }
-    if (retryInterval == -1) {
-      retryInterval = resilienceDuration * RETRY_PERCENT_OF_RESILIENCE_DURATION / 100;
-      retryInterval = Math.min(retryInterval, maxRetryInterval);
-      retryInterval = Math.max(MIN_RETRY_INTERVAL, retryInterval);
-    }
-    if (retryInterval > maxRetryInterval) {
-      maxRetryInterval = retryInterval;
-    }
-    if (maxRetryInterval > resilienceDuration && resilienceDuration != 0) {
-      resilienceDuration = maxRetryInterval;
-    }
-  }
-
-  @Override
   public long suppressExceptionUntil(K key,
                                      ExceptionInformation exceptionInformation,
                                      CacheEntry<K, V> cachedContent) {
@@ -156,6 +156,13 @@ public class DefaultResiliencePolicy<K, V>
       return Long.MAX_VALUE;
     }
     return exceptionInformation.getLoadTime() + calculateRetryDelta(exceptionInformation);
+  }
+
+  public static class Supplier<K, V> implements CustomizationSupplier<ResiliencePolicy<K, V>> {
+    @Override
+    public ResiliencePolicy<K, V> supply(CacheBuildContext buildContext) {
+      return new DefaultResiliencePolicy<>(buildContext.getConfiguration());
+    }
   }
 
 }

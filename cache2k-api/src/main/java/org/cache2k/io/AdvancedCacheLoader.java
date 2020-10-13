@@ -22,6 +22,7 @@ package org.cache2k.io;
 
 import org.cache2k.Cache2kBuilder;
 import org.cache2k.CacheEntry;
+import org.cache2k.Customization;
 
 /**
  * Retrieves or generates a value to load into the cache. The advanced loader interface
@@ -35,7 +36,7 @@ import org.cache2k.CacheEntry;
  * @see CacheLoader
  * @since 2
  */
-public interface AdvancedCacheLoader<K, V> {
+public interface AdvancedCacheLoader<K, V> extends Customization {
 
   /**
    * Retrieves or generates data based on the key parameter.

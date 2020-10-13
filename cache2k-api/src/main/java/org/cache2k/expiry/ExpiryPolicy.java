@@ -22,6 +22,7 @@ package org.cache2k.expiry;
 
 import org.cache2k.Cache2kBuilder;
 import org.cache2k.CacheEntry;
+import org.cache2k.Customization;
 
 import java.util.concurrent.TimeUnit;
 
@@ -45,7 +46,7 @@ import java.util.concurrent.TimeUnit;
  * @see Cache2kBuilder#refreshAhead(boolean)
  * @see Cache2kBuilder#expireAfterWrite(long, TimeUnit)
  */
-public interface ExpiryPolicy<K, V> extends ExpiryTimeValues {
+public interface ExpiryPolicy<K, V> extends ExpiryTimeValues, Customization {
 
   /**
    * Returns the time of expiry in milliseconds since epoch.

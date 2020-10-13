@@ -20,7 +20,7 @@ package org.cache2k.extra.config.test;
  * #L%
  */
 
-import org.cache2k.CacheManager;
+import org.cache2k.configuration.CacheBuildContext;
 import org.cache2k.configuration.CustomizationSupplier;
 
 /**
@@ -31,7 +31,7 @@ public class NotSerializable implements CustomizationSupplier {
   private int xy;
 
   @Override
-  public Object supply(final CacheManager manager) throws Exception {
+  public Object supply(CacheBuildContext context) {
     return null;
   }
 

@@ -23,9 +23,9 @@ package org.cache2k.core;
 import org.cache2k.Cache2kBuilder;
 import org.cache2k.CacheEntry;
 import org.cache2k.CustomizationException;
-import org.cache2k.configuration.BuildContextAwareCustomization;
+import org.cache2k.configuration.CacheBuildContext;
 import org.cache2k.configuration.CustomizationSupplier;
-import org.cache2k.core.api.CacheBuildContext;
+import org.cache2k.core.api.InternalBuildContext;
 import org.cache2k.core.api.InternalCache;
 import org.cache2k.core.eviction.EvictionFactory;
 import org.cache2k.core.operation.ExaminationEntry;
@@ -61,7 +61,7 @@ import java.util.concurrent.atomic.AtomicLong;
  * @author Jens Wilke
  */
 @SuppressWarnings("rawtypes")
-public class InternalCache2kBuilder<K, V> implements CacheBuildContext<K, V> {
+public class InternalCache2kBuilder<K, V> implements InternalBuildContext<K, V> {
 
   private static final AtomicLong DERIVED_NAME_COUNTER =
     new AtomicLong(System.currentTimeMillis() % 1234);
@@ -117,43 +117,30 @@ public class InternalCache2kBuilder<K, V> implements CacheBuildContext<K, V> {
   }
 
   @Override
-  public <T> T createCustomization(CustomizationSupplier<T> supplier, T fallback) {
-    if (supplier == null) { return fallback; }
+  public <T> T createCustomization(CustomizationSupplier<T> supplier) {
+    if (supplier == null) { return null; }
     try {
-      return initCustomization(supplier.supply(getCacheManager()));
+      CacheBuildContext ctx = new CacheBuildContext() {
+        @Override
+        public CacheManager getCacheManager() {
+          return InternalCache2kBuilder.this.getCacheManager();
+        }
+
+        @Override
+        public String getName() {
+          return InternalCache2kBuilder.this.getConfiguration().getName();
+        }
+
+        @SuppressWarnings("unchecked")
+        @Override
+        public <K, V> Cache2kConfiguration<K, V> getConfiguration() {
+          return (Cache2kConfiguration<K, V>) InternalCache2kBuilder.this.getConfiguration();
+        }
+      };
+      return supplier.supply(ctx);
     } catch (Exception ex) {
       throw new CustomizationException("Initialization of customization failed", ex);
     }
-  }
-
-  @Override
-  public <T> T createCustomization(CustomizationSupplier<T> supplier) {
-    return createCustomization(supplier, null);
-  }
-
-  @Override
-  public <T> T initCustomization(T customization) {
-    if (customization instanceof BuildContextAwareCustomization) {
-      BuildContextAwareCustomization.BuildContext initContext =
-        new BuildContextAwareCustomization.BuildContext<K, V>() {
-          @Override
-          public CacheManager getCacheManager() {
-            return InternalCache2kBuilder.this.getCacheManager();
-          }
-
-          @Override
-          public Cache2kConfiguration<K, V> getConfiguration() {
-            return InternalCache2kBuilder.this.getConfiguration();
-          }
-
-          @Override
-          public String getName() {
-            return getConfiguration().getName();
-          }
-        };
-      ((BuildContextAwareCustomization<K, V>) customization).initWithContext(initContext);
-    }
-    return customization;
   }
 
   /**
@@ -245,10 +232,7 @@ public class InternalCache2kBuilder<K, V> implements CacheBuildContext<K, V> {
     } else {
       cache = new HeapCache<K, V>();
     }
-    clock = (InternalClock) createCustomization(config.getTimeReference());
-    if (clock == null) {
-      clock = DefaultClock.INSTANCE;
-    }
+    clock = (InternalClock) createCustomization(config.getTimeReference(), DefaultClock.INSTANCE);
     HeapCache bc = (HeapCache) cache;
     bc.setCacheManager(manager);
     configureViaSettersDirect(bc);

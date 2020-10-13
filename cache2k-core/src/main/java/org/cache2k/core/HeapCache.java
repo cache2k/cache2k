@@ -27,7 +27,7 @@ import org.cache2k.CacheOperationCompletionListener;
 import org.cache2k.configuration.Cache2kConfiguration;
 import org.cache2k.configuration.CacheType;
 import org.cache2k.configuration.CustomizationSupplier;
-import org.cache2k.core.api.CacheBuildContext;
+import org.cache2k.core.api.InternalBuildContext;
 import org.cache2k.core.api.CommonMetrics;
 import org.cache2k.core.api.InternalCache;
 import org.cache2k.core.api.InternalCacheInfo;
@@ -270,7 +270,7 @@ public class HeapCache<K, V> extends BaseCache<K, V> implements HeapCacheForEvic
 
   /** called from CacheBuilder */
   @SuppressWarnings("unchecked")
-  public void setCacheConfig(CacheBuildContext<K, V> buildContext) {
+  public void setCacheConfig(InternalBuildContext<K, V> buildContext) {
     final Cache2kConfiguration<K, V> cfg = buildContext.getConfiguration();
     valueType = cfg.getValueType();
     keyType = cfg.getKeyType();

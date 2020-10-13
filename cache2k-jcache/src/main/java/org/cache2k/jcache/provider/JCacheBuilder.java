@@ -285,25 +285,6 @@ public class JCacheBuilder<K, V> {
    */
   private void setupExpiryPolicy() {
     if (cache2kConfiguration.getExpiryPolicy() != null) {
-      org.cache2k.expiry.ExpiryPolicy<K, V> ep0;
-      try {
-        ep0 = cache2kConfiguration.getExpiryPolicy().supply(manager.getCache2kManager());
-      } catch (Exception ex) {
-        throw new CacheException("couldn't initialize expiry policy", ex);
-      }
-      final org.cache2k.expiry.ExpiryPolicy<K, V> ep = ep0;
-      cache2kConfiguration.setExpiryPolicy(
-        new CustomizationReferenceSupplier<org.cache2k.expiry.ExpiryPolicy<K, V>>(
-        new org.cache2k.expiry.ExpiryPolicy<K, V>() {
-        @Override
-        public long calculateExpiryTime(
-          K key, V value, long loadTime, CacheEntry<K, V> oldEntry) {
-          if (value == null) {
-            return NOW;
-          }
-          return ep.calculateExpiryTime(key, value, loadTime, oldEntry);
-        }
-      }));
       return;
     }
     if (config.getExpiryPolicyFactory() != null) {

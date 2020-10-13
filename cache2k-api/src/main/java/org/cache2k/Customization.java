@@ -21,10 +21,18 @@ package org.cache2k;
  */
 
 /**
- * Marker interface for different time sources. The actual clock API is not part of the
- * public cache2k API, since this is primarily used for testing and may change between versions.
+ * Base interface for all cache customizations. Customizations are code that get attached
+ * to a cache which extend and modify its behavior. Typical exceptions are
+ * {@link org.cache2k.io.CacheLoader} and the {@link org.cache2k.expiry.ExpiryPolicy}.
+ *
+ * <p>A customization may implement the interface
+ * {@link org.cache2k.configuration.BuildContextAwareCustomization} if it needs access
+ * to configuration values ore the cache manager properties.
+ *
+ * <p>A customization may implement {@link java.io.Closeable} to be notified upon
+ * cache shutdown.
  *
  * @author Jens Wilke
  */
-public interface TimeReference extends Customization {
+public interface Customization {
 }

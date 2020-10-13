@@ -22,7 +22,7 @@ package org.cache2k.core.timing;
 
 import org.cache2k.Cache2kBuilder;
 import org.cache2k.CacheManager;
-import org.cache2k.configuration.BuildContextAwareCustomization;
+import org.cache2k.configuration.CacheBuildContext;
 import org.cache2k.configuration.Cache2kConfiguration;
 import org.cache2k.core.DefaultResiliencePolicy;
 import org.cache2k.io.ExceptionInformation;
@@ -112,23 +112,7 @@ public class DefaultResiliencePolicyUnitTest {
   }
 
   private static DefaultResiliencePolicy policy(final Cache2kBuilder builder) {
-    DefaultResiliencePolicy policy = new DefaultResiliencePolicy();
-    policy.initWithContext(new BuildContextAwareCustomization.BuildContext() {
-      @Override
-      public CacheManager getCacheManager() {
-        return null;
-      }
-
-      @Override
-      public String getName() {
-        return null;
-      }
-
-      @Override
-      public Cache2kConfiguration getConfiguration() {
-        return builder.toConfiguration();
-      }
-    });
+    DefaultResiliencePolicy policy = new DefaultResiliencePolicy(builder.toConfiguration());
     return policy;
   }
 

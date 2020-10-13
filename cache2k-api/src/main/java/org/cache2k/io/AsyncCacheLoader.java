@@ -22,6 +22,7 @@ package org.cache2k.io;
 
 import org.cache2k.Cache2kBuilder;
 import org.cache2k.CacheEntry;
+import org.cache2k.Customization;
 
 import java.util.EventListener;
 import java.util.concurrent.Executor;
@@ -33,7 +34,7 @@ import java.util.concurrent.Executor;
  * @since 2
  * @see CacheLoader
  */
-public interface AsyncCacheLoader<K, V> {
+public interface AsyncCacheLoader<K, V> extends Customization {
 
   /**
    * Starts an asynchronous load operation.

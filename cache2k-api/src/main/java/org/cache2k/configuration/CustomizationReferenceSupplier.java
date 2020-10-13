@@ -20,8 +20,6 @@ package org.cache2k.configuration;
  * #L%
  */
 
-import org.cache2k.CacheManager;
-
 /**
  * A reference to the customization to be used is set while building the cache.
  * The reference is returned. The class loader is ignored.
@@ -30,14 +28,14 @@ import org.cache2k.CacheManager;
  */
 public final class CustomizationReferenceSupplier<T> implements CustomizationSupplier<T> {
 
-  private T object;
+  private final T object;
 
   /**
    * Construct a customization factory that returns always the same object instance.
    *
    * @param obj reference to a customization. Not null.
    */
-  public CustomizationReferenceSupplier(final T obj) {
+  public CustomizationReferenceSupplier(T obj) {
     if (obj == null) {
       throw new NullPointerException("object reference missing");
     }
@@ -45,12 +43,12 @@ public final class CustomizationReferenceSupplier<T> implements CustomizationSup
   }
 
   @Override
-  public T supply(final CacheManager ignored) {
+  public T supply(CacheBuildContext ignored) {
     return object;
   }
 
   @Override
-  public boolean equals(final Object other) {
+  public boolean equals(Object other) {
     if (this == other) {
       return true;
     }

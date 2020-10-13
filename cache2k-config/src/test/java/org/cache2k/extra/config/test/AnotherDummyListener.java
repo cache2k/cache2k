@@ -20,7 +20,7 @@ package org.cache2k.extra.config.test;
  * #L%
  */
 
-import org.cache2k.CacheManager;
+import org.cache2k.configuration.CacheBuildContext;
 import org.cache2k.configuration.CustomizationSupplier;
 
 import java.io.Serializable;
@@ -30,11 +30,11 @@ import java.io.Serializable;
  */
 public class AnotherDummyListener<K, V> extends BaseDummyListener<K, V> {
 
-  static public class Supplier
+  public static  class Supplier
     implements CustomizationSupplier<AnotherDummyListener>, Serializable {
 
     @Override
-    public AnotherDummyListener supply(final CacheManager manager) throws Exception {
+    public AnotherDummyListener supply(CacheBuildContext buildContext) {
       return new AnotherDummyListener();
     }
 
@@ -45,7 +45,7 @@ public class AnotherDummyListener<K, V> extends BaseDummyListener<K, V> {
       return xy;
     }
 
-    public void setXy(final String v) {
+    public void setXy(String v) {
       xy = v;
     }
 
@@ -53,7 +53,7 @@ public class AnotherDummyListener<K, V> extends BaseDummyListener<K, V> {
       return value1;
     }
 
-    public void setValue1(final String v) {
+    public void setValue1(String v) {
       value1 = v;
     }
   }

@@ -1,8 +1,8 @@
-package org.cache2k.core.api;
+package org.cache2k.configuration;
 
 /*
  * #%L
- * cache2k core implementation
+ * cache2k API
  * %%
  * Copyright (C) 2000 - 2020 headissue GmbH, Munich
  * %%
@@ -21,44 +21,31 @@ package org.cache2k.core.api;
  */
 
 import org.cache2k.CacheManager;
-import org.cache2k.configuration.Cache2kConfiguration;
-import org.cache2k.configuration.CustomizationSupplier;
 
 /**
- * Context information when a cache is build.
+ * Access to configuration and cache manager properties during the construction of
+ * the cache object.
  *
  * @author Jens Wilke
  */
-public interface CacheBuildContext<K, V> {
+public interface CacheBuildContext {
 
   /**
-   * The time reference for the cache.
-   */
-  InternalClock getClock();
-
-  /**
-   * Cache configuration.
-   */
-  Cache2kConfiguration<K, V> getConfiguration();
-
-  /**
-   * The cache manager.
+   * Assigned cache manager. This can be useful to retrieve resources
+   * via the properties {@link CacheManager#getProperties()}
    */
   CacheManager getCacheManager();
 
   /**
-   * Init customization, if needed
+   * The cache name. Always identical to {@link Cache2kConfiguration#getName()}
    */
-  <T> T initCustomization(T customization);
+  String getName();
 
   /**
-   * Create the customization
+   * The effective cache configuration. The data is only valid within the call.
+   * Customizations must copy the relevant configuration parameters and not hold a
+   * reference to the configuration object.
    */
-  <T> T createCustomization(CustomizationSupplier<T> supplier);
-
-  /**
-   * Create the customization. Return fallback if supplier is null.
-   */
-  <T> T createCustomization(CustomizationSupplier<T> supplier, T fallback);
+  <K, V> Cache2kConfiguration<K, V> getConfiguration();
 
 }

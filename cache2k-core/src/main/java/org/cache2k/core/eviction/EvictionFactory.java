@@ -22,7 +22,7 @@ package org.cache2k.core.eviction;
 
 import org.cache2k.Weigher;
 import org.cache2k.configuration.Cache2kConfiguration;
-import org.cache2k.core.api.CacheBuildContext;
+import org.cache2k.core.api.InternalBuildContext;
 import org.cache2k.core.HeapCache;
 import org.cache2k.core.HeapCacheListener;
 import org.cache2k.core.SegmentedEviction;
@@ -38,15 +38,16 @@ public class EvictionFactory {
    * Segmenting the eviction only improves for lots of concurrent inserts or evictions,
    * there is no effect on read performance.
    */
-  public Eviction constructEviction(CacheBuildContext customizationContext,
+  public Eviction constructEviction(InternalBuildContext customizationContext,
                                     HeapCacheForEviction hc, HeapCacheListener l,
                                     Cache2kConfiguration config, int availableProcessors) {
     boolean strictEviction = config.isStrictEviction();
     boolean boostConcurrency = config.isBoostConcurrency();
     long maximumWeight = config.getMaximumWeight();
     long entryCapacity = config.getEntryCapacity();
-    Weigher weigher = (Weigher) customizationContext.createCustomization(config.getWeigher());
-    if (weigher != null) {
+    Weigher weigher = null;
+    if (config.getWeigher() != null) {
+      weigher = (Weigher) customizationContext.createCustomization(config.getWeigher());
       if (maximumWeight <= 0) {
         throw new IllegalArgumentException(
           "maximumWeight > 0 expected. Weigher requires to set maximumWeight");

@@ -20,6 +20,8 @@ package org.cache2k.io;
  * #L%
  */
 
+import org.cache2k.Customization;
+
 /**
  * In read through mode exceptions are cached. Every time an entry is requested from the
  * cache a new exception is generated that wraps the original loader exception in a
@@ -34,7 +36,7 @@ package org.cache2k.io;
  * @since 2
  */
 @FunctionalInterface
-public interface ExceptionPropagator<K> {
+public interface ExceptionPropagator<K> extends Customization {
 
   /**
    * Generate runtime exception to throw. The original exception is passed in as information.

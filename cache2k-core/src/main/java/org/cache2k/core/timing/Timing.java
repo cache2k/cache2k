@@ -22,7 +22,7 @@ package org.cache2k.core.timing;
 
 import org.cache2k.configuration.Cache2kConfiguration;
 import org.cache2k.CacheEntry;
-import org.cache2k.core.api.CacheBuildContext;
+import org.cache2k.core.api.InternalBuildContext;
 import org.cache2k.core.api.CacheCloseContext;
 import org.cache2k.core.Entry;
 import org.cache2k.core.ExceptionWrapper;
@@ -60,7 +60,7 @@ public abstract class Timing<K, V>  {
     return t == 0 || t == -1;
   }
 
-  public static <K, V> Timing<K, V> of(CacheBuildContext<K, V> buildContext) {
+  public static <K, V> Timing<K, V> of(InternalBuildContext<K, V> buildContext) {
     Cache2kConfiguration<K, V> cfg = buildContext.getConfiguration();
     if (cfg.getExpireAfterWrite() == 0
       && zeroOrUnspecified(cfg.getRetryInterval())) {

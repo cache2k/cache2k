@@ -21,6 +21,7 @@ package org.cache2k.io;
  */
 
 import org.cache2k.Cache;
+import org.cache2k.Customization;
 
 /**
  * Writer for write-through configurations. Any mutation of the cache via the
@@ -30,7 +31,7 @@ import org.cache2k.Cache;
  * @author Jens Wilke
  * @since 2
  */
-public interface CacheWriter<K, V> {
+public interface CacheWriter<K, V> extends Customization {
 
   /**
    * Called when the value was updated or inserted into the cache.

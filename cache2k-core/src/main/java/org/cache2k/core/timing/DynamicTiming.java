@@ -22,7 +22,7 @@ package org.cache2k.core.timing;
 
 import org.cache2k.CacheEntry;
 import org.cache2k.configuration.Cache2kConfiguration;
-import org.cache2k.core.api.CacheBuildContext;
+import org.cache2k.core.api.InternalBuildContext;
 import org.cache2k.core.api.CacheCloseContext;
 import org.cache2k.core.Entry;
 import org.cache2k.expiry.ExpiryPolicy;
@@ -37,13 +37,13 @@ class DynamicTiming<K, V> extends StaticTiming<K, V> {
 
   private final ExpiryPolicy<K, V> expiryPolicy;
 
-  DynamicTiming(CacheBuildContext<K, V> buildContext) {
+  DynamicTiming(InternalBuildContext<K, V> buildContext) {
     super(buildContext);
     expiryPolicy = constructPolicy(buildContext);
   }
 
   @SuppressWarnings("unchecked")
-  private static <K, V> ExpiryPolicy<K, V> constructPolicy(CacheBuildContext<K, V> buildContext) {
+  private static <K, V> ExpiryPolicy<K, V> constructPolicy(InternalBuildContext<K, V> buildContext) {
     Cache2kConfiguration<K, V> cfg = buildContext.getConfiguration();
     if (cfg.getValueType() != null &&
       ValueWithExpiryTime.class.isAssignableFrom(cfg.getValueType().getType()) &&

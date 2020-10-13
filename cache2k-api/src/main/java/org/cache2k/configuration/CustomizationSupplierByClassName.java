@@ -20,8 +20,6 @@ package org.cache2k.configuration;
  * #L%
  */
 
-import org.cache2k.CacheManager;
-
 /**
  * Creates a new instance of the customization based on the class name and the class loader
  * in effect by the cache.
@@ -69,8 +67,13 @@ public final class CustomizationSupplierByClassName<T>
 
   @SuppressWarnings("unchecked")
   @Override
-  public T supply(CacheManager manager) throws Exception {
-    return (T) manager.getClassLoader().loadClass(className).newInstance();
+  public T supply(CacheBuildContext ctx) {
+    try {
+      return (T) ctx.getCacheManager().getClassLoader()
+        .loadClass(className).getConstructor().newInstance();
+    } catch (Exception e) {
+      throw new LinkageError("error loading customization class", e);
+    }
   }
 
   @Override
