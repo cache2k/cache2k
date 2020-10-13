@@ -50,12 +50,10 @@
     <module>cache2k-core</module>
     <module>cache2k-jmx</module>
     <module>cache2k-config</module>
-    <module>cache2k-osgi-all</module>
     <module>cache2k-schemas</module>
     <!-- not deployed on OSS central -->
     <module>test-parent</module>
     <module>cache2k-jcache-tests</module>
-    <module>test-osgi</module>
     <module>test-init</module>
     <module>documentation</module>
     <module>cache2k-testing</module>
