@@ -26,24 +26,9 @@ import java.util.Map;
 import java.util.ServiceLoader;
 
 /**
- * Since v2 just delegates to the ServiceLoader. Maybe remove completely?
- *
- * <p>Resolves a service provider by its interface. This is used for the cache2k
- * internal providers.
- *
- * <p>This class is in principle similar to the {@link java.util.ServiceLoader}.
- * The design is a little bit simpler, because there is always one provider for each
- * interface. The java own {@code ServiceLoader} has troubles in Android, because the
- * the {@code META-INF} contents are not merged automatically when building an Android
- * application.
- *
- * <p>The implementation falls back to the normal {@code ServiceLoader} mechanism, if the custom
- * mechanism is not working. This is needed for OSGi environments to resolve the implementation
- * from the API package.
+ * Loads singletons of service provider implementations.
  *
  * @author Jens Wilke
- * @see <a href="https://code.google.com/p/android/issues/detail?id=59658">
- *   android service loader issue</a>
  */
 public class SingleProviderResolver {
 

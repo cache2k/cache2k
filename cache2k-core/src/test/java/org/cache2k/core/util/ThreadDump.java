@@ -27,11 +27,11 @@ import java.lang.management.ThreadMXBean;
 /**
  * Thread dump generation, inspired from: http://crunchify.com/how-to-generate-java-thread-dump-programmatically/
  *
- * @author Jens Wilke; created: 2014-09-13
+ * @author Jens Wilke
  */
 public class ThreadDump {
 
-  public static String generateThredDump() {
+  public static String generateThreadDump() {
     final StringBuilder sb = new StringBuilder();
     final ThreadMXBean _threadMXBean = ManagementFactory.getThreadMXBean();
     final ThreadInfo[] _infos =

@@ -1296,7 +1296,6 @@ public class ExpiryTest extends TestingBase {
         assertEquals("in cache if within delta time", 1, getInfo().getSize());
       }
     });
-
     c.expireAt(1, ExpiryTimeValues.NOW);
     assertEquals("empty after expired immediately", 0, getInfo().getSize());
   }

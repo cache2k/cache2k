@@ -71,6 +71,9 @@ public class Cache2kConfiguration<K, V> implements ConfigurationBean, Configurat
    * of caching.
    */
   public static final Duration ETERNAL_DURATION = Duration.ofMillis(Long.MAX_VALUE);
+  /**
+   * Marker duration that {@code setEternal(false)} was set.
+   */
   public static final Duration EXPIRY_NOT_ETERNAL = Duration.ofMillis(Long.MAX_VALUE - 1);
   public static final long UNSET_LONG = -1;
 

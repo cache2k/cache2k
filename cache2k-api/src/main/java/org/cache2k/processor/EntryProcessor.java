@@ -62,6 +62,7 @@ package org.cache2k.processor;
  * @see org.cache2k.Cache#invoke
  * @see org.cache2k.Cache#invokeAll
  */
+@FunctionalInterface
 public interface EntryProcessor<K, V, R> {
 
   /**

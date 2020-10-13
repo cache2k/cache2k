@@ -28,25 +28,6 @@
       <version>${project.version}</version>
     </dependency>
 
-
-    <!--
-      slf4j api is included in test scope by maven and it is the first pick. add simple log output to see log output.
-     -->
-    <!-- FIXME: does not work
-    <dependency>
-      <groupId>org.slf4j</groupId>
-      <artifactId>slf4j-api</artifactId>
-      <version>1.7.30</version>
-      <scope>test</scope>
-    </dependency>
-    <dependency>
-      <groupId>org.slf4j</groupId>
-      <artifactId>slf4j-simple</artifactId>
-      <version>1.7.30</version>
-      <scope>test</scope>
-    </dependency>
-    -->
-
     <dependency>
         <groupId>org.cache2k</groupId>
         <artifactId>cache2k-testing</artifactId>
