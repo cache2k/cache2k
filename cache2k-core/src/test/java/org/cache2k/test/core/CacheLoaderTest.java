@@ -817,6 +817,49 @@ public class CacheLoaderTest extends TestingBase {
   }
 
   @Test
+  public void testAsyncLoaderWithExecutorWithAsync2() {
+    testAsyncLoaderWithExecutorWithAsync();
+  }
+
+  @Test
+  public void testAsyncLoaderWithExecutorWithAsync3() {
+    testAsyncLoaderWithExecutorWithAsync();
+  }
+
+  @Test
+  public void testAsyncLoaderWithExecutorWithAsyncCopy() {
+    Cache<Integer, Integer> c = target.cache(new CacheRule.Specialization<Integer, Integer>() {
+      @Override
+      public void extend(Cache2kBuilder<Integer, Integer> b) {
+        b.loader(new AsyncCacheLoader<Integer, Integer>() {
+          @Override
+          public void load(final Integer key, Context<Integer, Integer> ctx,
+                           final Callback<Integer> callback) {
+            ctx.getLoaderExecutor().execute(new Runnable() {
+              @Override
+              public void run() {
+                callback.onLoadSuccess(key);
+              }
+            });
+          }
+        });
+      }
+    });
+    CompletionWaiter w = new CompletionWaiter();
+    c.loadAll(TestingBase.keys(1, 2, 1802), w);
+    w.awaitCompletion();
+    assertNotNull(c.peek(1802));
+    assertEquals(1, (int) c.peek(1));
+    Object o1 = c.peek(1802);
+    assertTrue(c.peek(1802) == o1);
+    w = new CompletionWaiter();
+    c.reloadAll(TestingBase.keys(1802, 4, 5), w);
+    w.awaitCompletion();
+    assertNotNull(c.peek(1802));
+    assertTrue(c.peek(1802) != o1);
+  }
+
+  @Test
   public void testAsyncLoaderDoubleCallback() {
     final AtomicInteger loaderCalled = new AtomicInteger();
     final AtomicInteger loaderExecuted = new AtomicInteger();

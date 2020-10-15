@@ -28,6 +28,7 @@ import java.util.List;
 import java.util.concurrent.BrokenBarrierException;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.CyclicBarrier;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadFactory;
@@ -261,6 +262,31 @@ public class ThreadingStressTester {
    */
   public final void addTask(Runnable r) {
     tasks.add(r);
+  }
+
+  public final void addExceptionalTask(ExceptionalRunnable r) {
+    addTask(new Runnable() {
+      @Override
+      public void run() {
+        try {
+          r.run();
+        } catch (InterruptedException ex) {
+          if (isDoNotInterrupt()) {
+            throw new RuntimeException(ex);
+          } else {
+            Thread.currentThread().interrupt();
+          }
+        } catch (Exception ex) {
+          throw new RuntimeException(ex);
+        }
+      }
+    });
+  }
+
+  public final void addExceptionalTask(int multipleCount, ExceptionalRunnable r) {
+    for (int i = 0; i < multipleCount; i++) {
+      addExceptionalTask(r);
+    }
   }
 
   /**
@@ -571,6 +597,11 @@ public class ThreadingStressTester {
       super(cause);
     }
 
+  }
+
+  @FunctionalInterface
+  public static interface ExceptionalRunnable {
+    public void run() throws Exception;
   }
 
 }
