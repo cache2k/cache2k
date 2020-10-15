@@ -125,11 +125,11 @@ public abstract class Log {
 
   public abstract void warn(String s, Throwable ex);
 
-  private static class Slf4jLogger extends Log {
+  public static class Slf4jLogger extends Log {
 
     org.slf4j.Logger logger;
 
-    private Slf4jLogger(org.slf4j.Logger logger) {
+    public Slf4jLogger(org.slf4j.Logger logger) {
       this.logger = logger;
     }
 
@@ -174,11 +174,11 @@ public abstract class Log {
     }
   }
 
-  private static class JdkLogger extends Log {
+  public static class JdkLogger extends Log {
 
     Logger logger;
 
-    private JdkLogger(Logger logger) {
+    public JdkLogger(Logger logger) {
       this.logger = logger;
     }
 

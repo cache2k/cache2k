@@ -20,10 +20,13 @@ package org.cache2k.core;
  * #L%
  */
 
+import org.assertj.core.api.Assertions;
 import org.cache2k.Cache;
 import org.cache2k.Cache2kBuilder;
 import org.cache2k.CacheManager;
 import static org.junit.Assert.*;
+
+import org.cache2k.core.log.Log;
 import org.junit.Test;
 
 /**
@@ -53,6 +56,12 @@ public class CacheManagerInitTest {
     Cache c = Cache2kBuilder.forUnknownTypes().name("xy").build();
     assertNotSame(cm1, c.getCacheManager());
     c.close();
+  }
+
+  @Test
+  public void slf4jInUse() {
+    Log l = Log.getLog(CacheManagerInitTest.class);
+    Assertions.assertThat(l).isInstanceOf(Log.Slf4jLogger.class);
   }
 
 }
