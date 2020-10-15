@@ -34,6 +34,7 @@ import java.util.concurrent.Executor;
  * @since 2
  * @see CacheLoader
  */
+@FunctionalInterface
 public interface AsyncCacheLoader<K, V> extends Customization {
 
   /**
