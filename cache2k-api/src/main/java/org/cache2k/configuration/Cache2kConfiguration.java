@@ -82,25 +82,29 @@ public class Cache2kConfiguration<K, V> implements ConfigurationBean, Configurat
   private CacheType<K> keyType;
   private CacheType<V> valueType;
   private long entryCapacity = UNSET_LONG;
-  private boolean strictEviction = false;
-  private boolean refreshAhead = false;
   private Duration expireAfterWrite = null;
   private Duration retryInterval = null;
   private Duration maxRetryInterval = null;
   private Duration resilienceDuration = null;
   private Duration timerLag = null;
   private long maximumWeight = UNSET_LONG;
+  private int loaderThreadCount;
+
   private boolean keepDataAfterExpired = false;
   private boolean sharpExpiry = false;
-  private boolean suppressExceptions = true;
-  private int loaderThreadCount;
+  private boolean strictEviction = false;
+  private boolean refreshAhead = false;
   private boolean permitNullValues = false;
-  private boolean disableStatistics = false;
   private boolean recordRefreshedTime = false;
-  private boolean externalConfigurationPresent = false;
   private boolean boostConcurrency = false;
   private boolean enableJmx = false;
+
+  private boolean disableStatistics = false;
   private boolean disableMonitoring = false;
+
+  private boolean suppressExceptions = true;
+
+  private boolean externalConfigurationPresent = false;
 
   private CustomizationSupplier<Executor> loaderExecutor;
   private CustomizationSupplier<Executor> refreshExecutor;
