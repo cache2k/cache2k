@@ -2,7 +2,7 @@ package org.cache2k.extra.config.test;
 
 /*
  * #%L
- * cache2k config file support
+ * cache2k JCache provider
  * %%
  * Copyright (C) 2000 - 2020 headissue GmbH, Munich
  * %%

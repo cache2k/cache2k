@@ -1,8 +1,8 @@
-package org.cache2k.test.core;
+package org.cache2k.tests.api;
 
 /*
  * #%L
- * cache2k core implementation
+ * cache2k tests on public API
  * %%
  * Copyright (C) 2000 - 2020 headissue GmbH, Munich
  * %%
@@ -52,8 +52,5 @@ public class Cache2kConfigurationTest {
       cfg.getCacheClosedListeners().toString(),
       CoreMatchers.containsString("DefaultCustomizationCollection"));
   }
-
-
-  interface DummySection extends ConfigurationSection { }
 
 }

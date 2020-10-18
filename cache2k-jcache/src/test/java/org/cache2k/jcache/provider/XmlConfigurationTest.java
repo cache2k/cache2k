@@ -24,18 +24,28 @@ import org.cache2k.Cache;
 import org.cache2k.Cache2kBuilder;
 import org.cache2k.CacheManager;
 import org.cache2k.configuration.Cache2kConfiguration;
+import org.cache2k.configuration.ConfigurationSection;
 import org.cache2k.jcache.ExtendedMutableConfiguration;
 import org.cache2k.jcache.JCacheConfiguration;
 import org.cache2k.jcache.provider.generic.storeByValueSimulation.CopyCacheProxy;
+import org.cache2k.schema.Constants;
+import org.hamcrest.CoreMatchers;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import javax.cache.Caching;
 import javax.cache.configuration.MutableConfiguration;
 import javax.cache.integration.CompletionListenerFuture;
 import javax.cache.spi.CachingProvider;
+import javax.xml.XMLConstants;
+import javax.xml.transform.Source;
+import javax.xml.transform.stream.StreamSource;
+import javax.xml.validation.Schema;
+import javax.xml.validation.SchemaFactory;
 import java.math.BigDecimal;
 import java.net.URI;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -172,6 +182,60 @@ public class XmlConfigurationTest {
     javax.cache.Cache<Integer, String> _cache =
       _manager.getCache("withCache2kLoaderWithReadThrough");
     assertNotNull(_cache.get(123));
+  }
+
+  @Test
+  public void readAllXml() {
+    Cache c = new Cache2kBuilder<String, String>() { }
+      .manager(CacheManager.getInstance("all"))
+      .name("hello")
+      .build();
+    c.close();
+  }
+
+  @Test
+  public void validateCoreXsd() throws Exception {
+    Source cfg =
+      new StreamSource(
+        getClass().getResourceAsStream("/cache2k-all.xml"));
+    SchemaFactory schemaFactory =
+      SchemaFactory.newInstance(XMLConstants.W3C_XML_SCHEMA_NS_URI);
+    Schema schema = schemaFactory.newSchema(Constants.class.getResource(
+      Constants.CORE_SCHEMA_LOCATION));
+    schema.newValidator().validate(cfg);
+  }
+
+  @Test
+  public void validateVariableExpansion() {
+    Cache2kBuilder b = new Cache2kBuilder<String, String>() { }
+      .manager(CacheManager.getInstance("all"))
+      .name("jcache1");
+    Cache2kConfiguration cfg = b.toConfiguration();
+    Cache c = b.build();
+    assertEquals(1153, cfg.getEntryCapacity());
+    assertEquals(123000, cfg.getMaxRetryInterval().toMillis());
+    c.close();
+  }
+
+  @Test
+  public void checkSectionSetter() {
+    Cache2kConfiguration cfg = new Cache2kConfiguration();
+    cfg.setSections(Collections.singletonList(new JCacheConfiguration()));
+    assertEquals(1, cfg.getSections().size());
+    assertThat(
+      cfg.getSections().toString(),
+      CoreMatchers.containsString("ConfigurationSectionContainer"));
+    assertNull(cfg.getSections().getSection(DummySection.class));
+    assertTrue(cfg.getSections().iterator().hasNext());
+  }
+
+  interface DummySection extends ConfigurationSection { }
+
+  @Test(expected = IllegalArgumentException.class)
+  public void checkNoDuplicateSection() {
+    Cache2kConfiguration cfg = new Cache2kConfiguration();
+    cfg.setSections(Collections.singletonList(new JCacheConfiguration()));
+    cfg.setSections(Collections.singletonList(new JCacheConfiguration()));
   }
 
 }

@@ -20,18 +20,13 @@ package org.cache2k.extra.config.test;
  * #L%
  */
 
-import org.cache2k.io.CacheLoader;
-
 /**
- * Just for testing the XML configuration
+ * Just a marker class the remark that a test of an XML that sets
+ * all config parameters can be found in module cache2k-jcache
+ * XmlConfigurationTest. We cannot test it here because we need the
+ * jcache classes and jcache depends on config.
  *
  * @author Jens Wilke
  */
-public class DummyLoader implements CacheLoader {
-
-  @Override
-  public Object load(Object key) throws Exception {
-    return null;
-  }
-
+public class TestForAllParametersInJCacheTest {
 }

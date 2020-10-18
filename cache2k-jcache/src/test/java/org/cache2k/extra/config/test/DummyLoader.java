@@ -2,7 +2,7 @@ package org.cache2k.extra.config.test;
 
 /*
  * #%L
- * cache2k config file support
+ * cache2k JCache provider
  * %%
  * Copyright (C) 2000 - 2020 headissue GmbH, Munich
  * %%
@@ -20,8 +20,18 @@ package org.cache2k.extra.config.test;
  * #L%
  */
 
+import org.cache2k.io.CacheLoader;
+
 /**
+ * Just for testing the XML configuration
+ *
  * @author Jens Wilke
  */
-public class DummyListener<K, V> extends BaseDummyListener<K, V> {
+public class DummyLoader implements CacheLoader {
+
+  @Override
+  public Object load(Object key) throws Exception {
+    return null;
+  }
+
 }

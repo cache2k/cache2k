@@ -28,10 +28,11 @@
           <execution>
             <id>default-compile</id>
             <phase>none</phase>
-            <!-- specify source/target for IDE integration -->
+            <!-- specify source/target for IDE integration
+                 Needs to be Java 11 and not 8 to also edit the java11 source dir.
+            -->
             <configuration>
               <release>11</release>
-              <compileSourceRoots>${project.basedir}/src/main/java11,${project.basedir}/src/main/java</compileSourceRoots>
             </configuration>
           </execution>
           <!-- Compile sources with Java 8 first. -->

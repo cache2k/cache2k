@@ -73,7 +73,7 @@ public class AsyncLoaderStressTest extends TestingBase {
   /**
    * Issue a reload and check whether the updated value is visible afterwards.
    */
-  @Test @Ignore("interrupts don't get through")
+  @Test @Ignore("Java 11 bug, interrupts don't get through")
   public void testVisibility2() {
     Cache<Integer, Integer> c =
       builder()

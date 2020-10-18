@@ -31,11 +31,20 @@
       <groupId>${project.groupId}</groupId>
       <artifactId>cache2k-core</artifactId>
       <version>${project.version}</version>
+      <!--
+      TODO 2.x: cache2k-jcache just on public API?
+      ideally JCache uses just the public API and no internals.
+      this adds cache2k-core transitively to the compile scope of
+      JCache projects. Not nice.
+      <scope>runtime</scope>
+      -->
     </dependency>
+    <!-- FIXME: maybe remove dependency here and move cache2k-all.xml test to config -->
     <dependency>
       <groupId>${project.groupId}</groupId>
       <artifactId>cache2k-config</artifactId>
       <version>${project.version}</version>
+      <scope>runtime</scope>
     </dependency>
     <dependency>
       <groupId>javax.cache</groupId>
@@ -47,6 +56,12 @@
     <dependency>
       <groupId>org.cache2k</groupId>
       <artifactId>cache2k-testing</artifactId>
+      <version>${project.version}</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.cache2k</groupId>
+      <artifactId>cache2k-schemas</artifactId>
       <version>${project.version}</version>
       <scope>test</scope>
     </dependency>

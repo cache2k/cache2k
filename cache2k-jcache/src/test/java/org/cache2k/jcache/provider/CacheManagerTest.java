@@ -87,7 +87,7 @@ public class CacheManagerTest {
     c.close();
   }
 
-  @Test @Ignore("not yet")
+  @Test
   public void create_config_cache2k_types() {
     CachingProvider p = Caching.getCachingProvider();
     CacheManager cm = p.getCacheManager();

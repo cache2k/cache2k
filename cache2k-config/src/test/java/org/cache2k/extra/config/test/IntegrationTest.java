@@ -360,37 +360,4 @@ public class IntegrationTest {
     c.close();
   }
 
-  @Test @Ignore("move to JCache")
-  public void readAllXml() {
-    Cache c = new Cache2kBuilder<String, String>() { }
-      .manager(CacheManager.getInstance("all"))
-      .name("hello")
-      .build();
-    c.close();
-  }
-
-  @Test
-  public void validateCoreXsd() throws Exception {
-    Source cfg =
-      new StreamSource(
-        getClass().getResourceAsStream("/cache2k-all.xml"));
-    SchemaFactory schemaFactory =
-      SchemaFactory.newInstance(XMLConstants.W3C_XML_SCHEMA_NS_URI);
-    Schema schema = schemaFactory.newSchema(Constants.class.getResource(
-      Constants.CORE_SCHEMA_LOCATION));
-    schema.newValidator().validate(cfg);
-  }
-
-  @Test @Ignore("move to JCache")
-  public void validateVariableExpansion() {
-    Cache2kBuilder b = new Cache2kBuilder<String, String>() { }
-      .manager(CacheManager.getInstance("all"))
-      .name("jcache1");
-    Cache2kConfiguration cfg = b.toConfiguration();
-    Cache c = b.build();
-    assertEquals(1153, cfg.getEntryCapacity());
-    assertEquals(123000, cfg.getMaxRetryInterval());
-    c.close();
-  }
-
 }

@@ -76,7 +76,7 @@ public class CacheManagerClassLoadingTest {
    * was loaded by that class loader. equals() needs to work and class loaders needs to be
    * identical
    */
-  @Test @Ignore("investigate V2")
+  @Test
   public void testCorrectClassLoaderForValue() throws Exception {
     SpecialClassLoader loader = new SpecialClassLoader();
     CachingProvider provider = Caching.getCachingProvider();
