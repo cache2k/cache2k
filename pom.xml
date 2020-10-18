@@ -55,6 +55,7 @@
     <module>test-parent</module>
     <module>cache2k-jcache-tests</module>
     <module>test-init</module>
+    <module>test-init-java11</module>
     <module>documentation</module>
     <module>cache2k-testing</module>
     <module>build-config</module>
