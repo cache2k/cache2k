@@ -633,7 +633,7 @@ public interface Cache<K, V> extends KeyValueStore<K, V>, Closeable {
    * and replaces values already in the cache.
    *
    * <p>The cache uses multiple threads to load the values in parallel. If thread resources
-   * are not sufficient, meaning the used executor is throwing
+   * are not sufficient, meaning if the used executor is throwing
    * {@link java.util.concurrent.RejectedExecutionException} the calling thread is used to produce
    * back pressure.
    *

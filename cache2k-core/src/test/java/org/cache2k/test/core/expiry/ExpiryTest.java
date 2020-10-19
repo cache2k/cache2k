@@ -20,6 +20,7 @@ package org.cache2k.test.core.expiry;
  * #L%
  */
 
+import org.assertj.core.api.Assertions;
 import org.cache2k.io.AsyncCacheLoader;
 import org.cache2k.test.core.BasicCacheTest;
 import org.cache2k.test.util.TestingBase;
@@ -41,7 +42,6 @@ import org.cache2k.CacheEntry;
 import org.cache2k.expiry.ExpiryPolicy;
 import org.cache2k.core.api.InternalCache;
 import org.cache2k.testing.category.FastTests;
-import org.cache2k.test.util.TimeBox;
 import org.hamcrest.Matchers;
 import org.junit.experimental.categories.Category;
 import org.junit.Test;
@@ -51,6 +51,7 @@ import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
@@ -58,6 +59,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 
+import static java.util.Arrays.asList;
 import static org.junit.Assert.*;
 import static org.hamcrest.Matchers.*;
 
@@ -409,16 +411,14 @@ public class ExpiryTest extends TestingBase {
     c.put(99, 1);
     int v = c.peek(99);
     assertEquals(1, v);
-    TimeBox.millis(TestingParameters.MINIMAL_TICK_MILLIS)
+    within(TestingParameters.MINIMAL_TICK_MILLIS)
       .perform(new Runnable() {
         @Override
         public void run() {
-          loadAndWait(new LoaderRunner() {
-            @Override
-            public void run(CacheOperationCompletionListener l) {
-              c.reloadAll(toIterable(99), l);
-            }
-          });
+          Assertions.assertThatCode(() -> c.reloadAll(asList(99)).get())
+            .isInstanceOf(ExecutionException.class)
+            .getCause()
+            .isInstanceOf(CacheLoaderException.class);
         }
       })
       .expectMaybe(new Runnable() {

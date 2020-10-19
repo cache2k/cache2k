@@ -72,7 +72,6 @@ import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.SynchronousQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.StampedLock;
 
 import static org.cache2k.core.util.Util.*;
@@ -1046,30 +1045,10 @@ public class HeapCache<K, V> extends BaseCache<K, V> implements HeapCacheForEvic
     checkLoaderPresent();
     final CacheOperationCompletionListener listener = l != null ? l : DUMMY_LOAD_COMPLETED_LISTENER;
     Set<K> keysToLoad = checkAllPresent(keys);
-    if (keysToLoad.isEmpty()) {
-      listener.onCompleted();
-      return;
-    }
-    final AtomicInteger countDown = new AtomicInteger(keysToLoad.size());
+    if (keysToLoad.isEmpty()) { listener.onCompleted(); return; }
+    final OperationCompletion completion = new OperationCompletion(keysToLoad, listener);
     for (K k : keysToLoad) {
-      final K key = k;
-      Runnable r = new RunWithCatch(this) {
-        @Override
-        public void action() {
-          try {
-            getEntryInternal(key);
-          } finally {
-            if (countDown.decrementAndGet() == 0) {
-              listener.onCompleted();
-            }
-          }
-        }
-      };
-      try {
-        loaderExecutor.execute(r);
-      } catch (RejectedExecutionException ex) {
-        r.run();
-      }
+      executeLoader(completion, k, () -> getEntryInternal(k).getException());
     }
   }
 
@@ -1077,28 +1056,28 @@ public class HeapCache<K, V> extends BaseCache<K, V> implements HeapCacheForEvic
   public void reloadAll(Iterable<? extends K> keys, CacheOperationCompletionListener l) {
     checkLoaderPresent();
     final CacheOperationCompletionListener listener = l != null ? l : DUMMY_LOAD_COMPLETED_LISTENER;
-    Set<K> keySet = generateKeySet(keys);
-    final AtomicInteger countDown = new AtomicInteger(keySet.size());
-    for (K k : keySet) {
-      final K key = k;
-      Runnable r = new RunWithCatch(this) {
-        @Override
-        public void action() {
-          try {
-            loadAndReplace(key);
-          } finally {
-            if (countDown.decrementAndGet() == 0) {
-              listener.onCompleted();
-            }
-          }
-        }
-      };
-      try {
-        loaderExecutor.execute(r);
-      } catch (RejectedExecutionException ex) {
-        r.run();
-      }
+    Set<K> keysToLoad = generateKeySet(keys);
+    final OperationCompletion completion = new OperationCompletion(keysToLoad, listener);
+    for (K k : keysToLoad) {
+      executeLoader(completion, k, () -> loadAndReplace(k).getException());
+    }
+  }
 
+  void executeLoader(OperationCompletion<K> completion, K key, Callable<Throwable> action) {
+    Runnable r = () -> {
+      Throwable exception;
+      try {
+        exception = action.call();;
+      } catch (Throwable internalException) {
+        internalExceptionCnt++;
+        exception = internalException;
+      }
+      completion.complete(key, exception);
+    };
+    try {
+      loaderExecutor.execute(r);
+    } catch (RejectedExecutionException ex) {
+      r.run();
     }
   }
 
@@ -1156,7 +1135,7 @@ public class HeapCache<K, V> extends BaseCache<K, V> implements HeapCacheForEvic
    * Always fetch the value from the source. That is a copy of getEntryInternal
    * without freshness checks.
    */
-  protected void loadAndReplace(K key) {
+  protected Entry<K, V> loadAndReplace(K key) {
     Entry<K, V> e;
     for (;;) {
       e = lookupOrNewEntry(key);
@@ -1177,6 +1156,7 @@ public class HeapCache<K, V> extends BaseCache<K, V> implements HeapCacheForEvic
     } finally {
       e.ensureAbort(finished);
     }
+    return e;
   }
 
   /**

@@ -20,6 +20,7 @@ package org.cache2k.test.core;
  * #L%
  */
 
+import static org.assertj.core.api.Assertions.assertThat;
 import org.cache2k.expiry.ExpiryPolicy;
 import org.cache2k.expiry.ExpiryTimeValues;
 import org.cache2k.integration.FunctionalCacheLoader;
@@ -54,8 +55,8 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static java.util.Arrays.asList;
+import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.junit.Assert.*;
-import static org.hamcrest.Matchers.*;
 import static org.cache2k.test.core.StaticUtil.*;
 
 /**
@@ -86,8 +87,9 @@ public class CacheLoaderTest extends TestingBase {
     Cache<Integer, Integer> c = target.cache(new CacheRule.Specialization<Integer, Integer>() {
       @Override
       public void extend(Cache2kBuilder<Integer, Integer> b) {
-        assertThat("minimum thread count",
-          b.toConfiguration().getLoaderThreadCount(), greaterThanOrEqualTo(2));
+        assertThat(b.toConfiguration().getLoaderThreadCount())
+          .describedAs("minim thread count")
+          .isGreaterThanOrEqualTo(2);
       }
     });
   }
@@ -213,6 +215,85 @@ public class CacheLoaderTest extends TestingBase {
     assertTrue(c.containsKey(5));
   }
 
+  static class MarkerException extends RuntimeException { }
+  static class AlwaysFailException extends MarkerException { }
+
+  /**
+   * Test all aspects of when a loader throws an exception permanently.
+   */
+  @Test
+  public void loadExceptionSyncLoader() {
+    Cache<Integer, Integer> c = target.cache(b -> b
+      .loader(k -> { throw new AlwaysFailException(); }));
+    loadExceptionChecks(c);
+  }
+
+  @Test
+  public void loadExceptionAsyncSyncLoaderImmediateFail() {
+    Cache<Integer, Integer> c = target.cache(b -> b
+      .loader(new AsyncCacheLoader<Integer, Integer>() {
+        @Override
+        public void load(Integer key, Context<Integer, Integer> context, Callback<Integer> callback) throws Exception {
+          throw new AlwaysFailException();
+        }
+      }));
+    loadExceptionChecks(c);
+  }
+
+  @Test
+  public void loadExceptionAsyncSyncLoaderDelayedFail() {
+    Cache<Integer, Integer> c = target.cache(b -> b
+      .loader(new AsyncCacheLoader<Integer, Integer>() {
+        @Override
+        public void load(Integer key,
+                         Context<Integer, Integer> context, Callback<Integer> callback) {
+          context.getExecutor().execute(() -> {
+            callback.onLoadFailure(new AlwaysFailException());
+          });
+        }
+      }));
+    loadExceptionChecks(c);
+  }
+
+  private void loadExceptionChecks(Cache<Integer, Integer> c) {
+    final Integer key = 6;
+    assertThatCode(() -> c.get(5))
+      .as("get() propagates loader exception")
+      .isInstanceOf(CacheLoaderException.class)
+      .getCause().isInstanceOf(AlwaysFailException.class);
+    assertThatCode(() -> c.loadAll(asList(key)).get())
+      .as("loadAll().get() single value propagates loader exception")
+      .isInstanceOf(ExecutionException.class)
+      .getCause()
+      .isInstanceOf(CacheLoaderException.class)
+      .getCause().isInstanceOf(AlwaysFailException.class);
+    assertThatCode(() -> c.loadAll(asList(key, 7, 8)).get())
+      .as("loadAll().get() propagates loader exception")
+      .isInstanceOf(ExecutionException.class)
+      .getCause()
+      .isInstanceOf(CacheLoaderException.class)
+      .as("contains number of exceptions")
+      .hasMessageContaining("3")
+      .getCause().isInstanceOf(AlwaysFailException.class);
+    assertThatCode(() -> c.reloadAll(asList(key, 7, 8)).get())
+      .as("reloadAll().get() propagates loader exception")
+      .isInstanceOf(ExecutionException.class)
+      .getCause()
+      .isInstanceOf(CacheLoaderException.class)
+      .as("contains number of exceptions")
+      .hasMessageContaining("3")
+      .hasMessageContaining("finished with 3 exceptions out of 3 operations, " +
+        "one propagated as cause")
+      .getCause().isInstanceOf(AlwaysFailException.class);
+    assertThat(c.peek(key))
+      .as("expect nothing loaded and no exception present on entry")
+      .isNull();
+    c.put(key, 123);
+    assertThat(c.peek(key))
+      .as("entry value can be set")
+      .isEqualTo(123);
+  }
+
   @Test
   public void testLoadNull_Reject() {
     Cache<Integer, Integer> c = target.cache(new CacheRule.Specialization<Integer, Integer>() {
@@ -314,7 +395,7 @@ public class CacheLoaderTest extends TestingBase {
       }
     });
     c.get(5);
-    CompletionWaiter w = new CompletionWaiter();
+    assertEquals(1, countLoad.get());
     c.reloadAll(asList(5, 6)).get();
     assertEquals(3, countLoad.get());
     c.reloadAll(toIterable(5, 6));
@@ -673,14 +754,11 @@ public class CacheLoaderTest extends TestingBase {
         });
       }
     });
-    try {
-      c.get(1);
-      fail("exception expected");
-    } catch (CacheLoaderException ex) {
-      assertTrue(ex.getCause() instanceof ExpectedException);
-    }
+    assertThatCode(() -> c.get(1))
+      .getRootCause().isInstanceOf(ExpectedException.class);
     assertNotNull("exception cached", c.peekEntry(1).getException());
-    reload(c, 1);
+    assertThatCode(() -> c.reloadAll(asList(1)).get())
+      .getRootCause().isInstanceOf(ExpectedException.class);
   }
 
   /**
@@ -706,78 +784,9 @@ public class CacheLoaderTest extends TestingBase {
       fail("exception expected");
     } catch (CacheLoaderException expected) {
       assertTrue(expected.getCause() instanceof ExpectedException);
-    } catch (Throwable other) {
-      assertNull("unexpected exception", other);
     }
     c.put(1, 1);
     assertNotNull(c.get(1));
-  }
-
-  /**
-   * Check that exception isn't blocking anything. At the moment loader exceptions
-   * for {@link Cache#loadAll(Iterable, CacheOperationCompletionListener)} are not
-   * propagated.
-   */
-  @Test
-  public void testAsyncLoaderLoadYieldsException() {
-    boolean exceptionNotPropagated = true;
-    final AtomicInteger loaderCalled = new AtomicInteger();
-    Cache<Integer, Integer> c = target.cache(new CacheRule.Specialization<Integer, Integer>() {
-      @Override
-      public void extend(Cache2kBuilder<Integer, Integer> b) {
-        b.loader(new AsyncCacheLoader<Integer, Integer>() {
-          @Override
-          public void load(Integer key, Context<Integer, Integer> ctx, Callback<Integer> callback) {
-            loaderCalled.incrementAndGet();
-            throw new ExpectedException();
-          }
-        });
-      }
-    });
-    try {
-      Throwable expected = load(c, 1).getException();
-      if (exceptionNotPropagated) {
-        assertNull(expected);
-      } else {
-        assertNotNull("exception expected", expected);
-        assertTrue(expected.getCause() instanceof ExpectedException);
-      }
-    } catch (AssertionError err) {
-      throw err;
-    } catch (Throwable other) {
-      assertNull("unexpected exception", other);
-    }
-    c.put(1, 1);
-    assertNotNull(c.get(1));
-  }
-
-  /**
-   * Check that non runtime exceptions from the async loader are wrapped.
-   */
-  @Test
-  public void testAsyncLoaderExceptionWrapped() {
-    final AtomicInteger loaderCalled = new AtomicInteger();
-    Cache<Integer, Integer> c = target.cache(new CacheRule.Specialization<Integer, Integer>() {
-      @Override
-      public void extend(Cache2kBuilder<Integer, Integer> b) {
-        b.loader(new AsyncCacheLoader<Integer, Integer>() {
-          @Override
-          public void load(Integer key,
-                           Context<Integer, Integer> ctx, Callback<Integer> callback)
-            throws Exception {
-            loaderCalled.incrementAndGet();
-            throw new IOException("test exception");
-          }
-        });
-      }
-    });
-    try {
-      Integer v = c.get(1);
-      fail("exception expected");
-    } catch (CacheLoaderException expected) {
-    } catch (Throwable other) {
-      assertNull("unexpected exception", other);
-    }
   }
 
   @Test
@@ -817,17 +826,7 @@ public class CacheLoaderTest extends TestingBase {
   }
 
   @Test
-  public void testAsyncLoaderWithExecutorWithAsync2() {
-    testAsyncLoaderWithExecutorWithAsync();
-  }
-
-  @Test
-  public void testAsyncLoaderWithExecutorWithAsync3() {
-    testAsyncLoaderWithExecutorWithAsync();
-  }
-
-  @Test
-  public void testAsyncLoaderWithExecutorWithAsyncCopy() {
+  public void testAsyncLoaderWithExecutorWithAsyncCopy() throws Exception {
     Cache<Integer, Integer> c = target.cache(new CacheRule.Specialization<Integer, Integer>() {
       @Override
       public void extend(Cache2kBuilder<Integer, Integer> b) {
@@ -842,19 +841,17 @@ public class CacheLoaderTest extends TestingBase {
               }
             });
           }
-        });
+        })
+          .resilienceDuration(1, TimeUnit.SECONDS)
+          .retryInterval(1, TimeUnit.SECONDS);
       }
     });
-    CompletionWaiter w = new CompletionWaiter();
-    c.loadAll(TestingBase.keys(1, 2, 1802), w);
-    w.awaitCompletion();
+    c.loadAll(TestingBase.keys(1, 2, 1802)).get();
     assertNotNull(c.peek(1802));
     assertEquals(1, (int) c.peek(1));
     Object o1 = c.peek(1802);
     assertTrue(c.peek(1802) == o1);
-    w = new CompletionWaiter();
-    c.reloadAll(TestingBase.keys(1802, 4, 5), w);
-    w.awaitCompletion();
+    c.reloadAll(TestingBase.keys(1802, 4, 5)).get();
     assertNotNull(c.peek(1802));
     assertTrue(c.peek(1802) != o1);
   }

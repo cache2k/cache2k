@@ -150,18 +150,6 @@ public class WiredCache<K, V> extends BaseCache<K, V>
     return execute(key, ops.peekEntry(key));
   }
 
-  private void load(K key) {
-    Entry<K, V> e = lookupQuick(key);
-    if (e != null && e.hasFreshData(getClock())) {
-      return;
-    }
-    load(key, e);
-  }
-
-  private void load(K key, Entry<K, V> e) {
-    execute(key, e, ops.get(key));
-  }
-
   @Override
   public boolean containsKey(K key) {
     return execute(key, ops.contains(key));
@@ -232,15 +220,11 @@ public class WiredCache<K, V> extends BaseCache<K, V>
    */
   private void loadAllWithAsyncLoader(final CacheOperationCompletionListener listener,
                                       Set<K> keysToLoad) {
-    final AtomicInteger countDown = new AtomicInteger(keysToLoad.size());
-    EntryAction.CompletedCallback cb = new EntryAction.CompletedCallback() {
+    OperationCompletion<K> completion = new OperationCompletion<>(keysToLoad, listener);
+    EntryAction.CompletedCallback<K, V, Void> cb = new EntryAction.CompletedCallback<K, V, Void>() {
       @Override
-      public void entryActionCompleted(EntryAction ea) {
-        int v = countDown.decrementAndGet();
-        if (v == 0) {
-          listener.onCompleted();
-          return;
-        }
+      public void entryActionCompleted(EntryAction<K, V, Void> ea) {
+        completion.complete(ea.getKey(), extractException(ea));
       }
     };
     for (K k : keysToLoad) {
@@ -251,28 +235,14 @@ public class WiredCache<K, V> extends BaseCache<K, V>
 
   private void loadAllWithSyncLoader(final CacheOperationCompletionListener listener,
                                      Set<K> keysToLoad) {
-    final AtomicInteger countDown = new AtomicInteger(keysToLoad.size());
-    for (K k : keysToLoad) {
-      final K key = k;
-      Runnable r = new HeapCache.RunWithCatch(this) {
-        @Override
-        public void action() {
-          try {
-            load(key);
-          } finally {
-            int v = countDown.decrementAndGet();
-            if (v == 0) {
-              listener.onCompleted();
-              return;
-            }
-          }
-        }
-      };
-      try {
-        heapCache.loaderExecutor.execute(r);
-      } catch (RejectedExecutionException ex) {
-        r.run();
-      }
+    final OperationCompletion<K> completion = new OperationCompletion<K>(keysToLoad, listener);
+    for (K key : keysToLoad) {
+      heapCache.executeLoader(completion, key, () -> {
+        execute(key, null, ops.get(key));
+        EntryAction<K, V, V> action = createEntryAction(key, null, ops.get(key));
+        action.start();
+        return extractException(action);
+      });
     }
   }
 
@@ -290,20 +260,40 @@ public class WiredCache<K, V> extends BaseCache<K, V>
   }
 
   private void reloadAllWithAsyncLoader(final CacheOperationCompletionListener listener,
-                                        Set<K> keySet) {
-    final AtomicInteger countDown = new AtomicInteger(keySet.size());
-    EntryAction.CompletedCallback cb = new EntryAction.CompletedCallback() {
+                                      Set<K> keysToLoad) {
+    OperationCompletion<K> completion = new OperationCompletion<>(keysToLoad, listener);
+    EntryAction.CompletedCallback<K, V, Void> cb = new EntryAction.CompletedCallback<K, V, Void>() {
       @Override
-      public void entryActionCompleted(EntryAction ea) {
-        if (countDown.decrementAndGet() == 0) {
-          listener.onCompleted();
-        }
+      public void entryActionCompleted(EntryAction<K, V, Void> ea) {
+        completion.complete(ea.getKey(), extractException(ea));
       }
     };
-    for (K k : keySet) {
+    for (K k : keysToLoad) {
       K key = k;
       executeAsyncLoadOrRefresh(key, null, ops.unconditionalLoad, cb);
     }
+  }
+
+  private void reloadAllWithSyncLoader(final CacheOperationCompletionListener listener,
+                                     Set<K> keysToLoad) {
+    final OperationCompletion<K> completion = new OperationCompletion<>(keysToLoad, listener);
+    for (K key : keysToLoad) {
+      heapCache.executeLoader(completion, key, () -> {
+        EntryAction<K, V, V> action = createEntryAction(key, null, ops.unconditionalLoad);
+        action.start();
+        return extractException(action);
+      });
+    }
+  }
+
+  private Throwable extractException(EntryAction<K, V, ?> action) {
+    if (action.exceptionToPropagate != null) {
+      return action.exceptionToPropagate;
+    }
+    if (action.result instanceof ExceptionWrapper) {
+      return ((ExceptionWrapper<?>) action.result).getException();
+    }
+    return null;
   }
 
   /**
@@ -326,32 +316,6 @@ public class WiredCache<K, V> extends BaseCache<K, V>
   @Override
   public Executor getExecutor() {
     return heapCache.getExecutor();
-  }
-
-  private void reloadAllWithSyncLoader(final CacheOperationCompletionListener listener,
-                                       Set<K> keySet) {
-    final AtomicInteger countDown = new AtomicInteger(keySet.size());
-    for (K k : keySet) {
-      final K key = k;
-      Runnable r = new HeapCache.RunWithCatch(this) {
-        @SuppressWarnings("unchecked")
-        @Override
-        public void action() {
-          try {
-            execute(key, (Semantic<K, V, Void>) ops.unconditionalLoad);
-          } finally {
-            if (countDown.decrementAndGet() == 0) {
-              listener.onCompleted();
-            }
-          }
-        }
-      };
-      try {
-        heapCache.loaderExecutor.execute(r);
-      } catch (RejectedExecutionException ex) {
-        r.run();
-      }
-    }
   }
 
   private void checkLoaderPresent() {

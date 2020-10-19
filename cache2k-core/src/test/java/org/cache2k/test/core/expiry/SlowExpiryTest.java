@@ -20,6 +20,7 @@ package org.cache2k.test.core.expiry;
  * #L%
  */
 
+import org.assertj.core.api.Assertions;
 import org.cache2k.Cache2kBuilder;
 import org.cache2k.expiry.ExpiryTimeValues;
 import org.cache2k.io.AsyncCacheLoader;
@@ -41,6 +42,8 @@ import org.cache2k.io.CacheLoaderException;
 import org.cache2k.test.core.TestingParameters;
 import org.cache2k.core.api.InternalCacheInfo;
 
+import static java.util.Arrays.asList;
+import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.cache2k.test.core.StaticUtil.*;
 import static org.junit.Assert.*;
 import static org.hamcrest.Matchers.*;
@@ -49,6 +52,7 @@ import org.cache2k.testing.category.SlowTests;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
+import java.util.Arrays;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -428,15 +432,7 @@ public class SlowExpiryTest extends TestingBase {
       .suppressExceptions(true)
       .loader(src)
       .build();
-    c.get(2);
-    syncLoad(new LoaderStarter() {
-      @Override
-      public void startLoad(CacheOperationCompletionListener l) {
-        c.reloadAll(toIterable(2), l);
-      }
-    });
-    assertEquals(0, getInfo().getSuppressedExceptionCount());
-    assertEquals(2, getInfo().getLoadCount());
+    neverSuppressBody(c);
   }
 
   @Test
@@ -459,15 +455,21 @@ public class SlowExpiryTest extends TestingBase {
       .suppressExceptions(true)
       .loader(src)
       .build();
-    c.get(2);
-    syncLoad(new LoaderStarter() {
-      @Override
-      public void startLoad(CacheOperationCompletionListener l) {
-        c.reloadAll(toIterable(2), l);
-      }
-    });
+    neverSuppressBody(c);
+  }
+
+  private void neverSuppressBody(Cache<Integer, Integer> c) {
+    final int key = 2;
+    c.get(key);
+    assertThatCode(() -> c.reloadAll(asList(key)).get())
+      .getCause().isInstanceOf(CacheLoaderException.class);
     assertEquals(0, getInfo().getSuppressedExceptionCount());
     assertEquals(2, getInfo().getLoadCount());
+    assertNull("Nothing stored, since retry time is 0", c.peek(key));
+    assertThatCode(() -> c.get(key))
+      .doesNotThrowAnyException();
+    assertEquals(0, getInfo().getSuppressedExceptionCount());
+    assertEquals(3, getInfo().getLoadCount());
   }
 
   @Test
@@ -487,7 +489,6 @@ public class SlowExpiryTest extends TestingBase {
       }
     });
   }
-
   @Test
   public void testExpireNoKeepAsserts() {
     final Cache<Integer, Integer> c = cache = builder(Integer.class, Integer.class)
@@ -1154,7 +1155,12 @@ public class SlowExpiryTest extends TestingBase {
         return (!c.containsKey(1) && c.get(1) == 4711);
       }
     });
-    assertEquals(1, getInfo().getRefreshCount());
+    await(new Condition() {
+      @Override
+      public boolean check() {
+        return getInfo().getRefreshCount() == 1;
+      }
+    });
   }
 
   @Test
