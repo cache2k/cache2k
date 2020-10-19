@@ -1088,6 +1088,9 @@ public class CacheLoaderTest extends TestingBase {
           Thread.currentThread().interrupt();
         }
       }
+      if (exception != null) {
+        throw new RuntimeException(exception);
+      }
     }
 
     public Throwable getException() {
