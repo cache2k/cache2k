@@ -21,17 +21,9 @@ package org.cache2k.integration;
  */
 
 /**
- * In read through mode exceptions are cached. Every time an entry is requested from the
- * cache a new exception is generated that wraps the original loader exception in a
- * {@link CacheLoaderException}. This behavior can be modified by registering a custom
- * exception propagator.
- *
- * <p>Exceptions should not be thrown directly but wrapped. Using this customization it
- * is possible to change the exception type or the message according to the information
- * available.
- *
  * @author Jens Wilke
- * @deprecated Replaced with {@link org.cache2k.io.ExceptionPropagator}
+ * @deprecated Replaced with {@link org.cache2k.io.ExceptionPropagator},
+ *   to be removed in version 2.2
  */
 @Deprecated
 public interface ExceptionPropagator<K> {

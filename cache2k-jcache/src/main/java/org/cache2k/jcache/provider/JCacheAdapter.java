@@ -127,67 +127,13 @@ public class JCacheAdapter<K, V> implements javax.cache.Cache<K, V> {
       future = cache.loadAll(keys);
     }
     future.handle((unused, throwable) -> {
-      if (throwable == null) {
-        try {
-          for (K k : keys) {
-            cache.peek(k);
-          }
-          completionListener.onCompletion();
-        } catch (CacheLoaderException ex) {
-          throwable = ex;
-        }
-      }
-      Exception exception;
-      if (throwable instanceof Exception) {
-        exception = (Exception) throwable;
+      if (throwable != null) {
+        completionListener.onException(new CacheLoaderException(throwable));
       } else {
-        exception = new RuntimeException(throwable);
-      }
-      completionListener.onException(exception);
-      return null;
-    });
-  }
-
-  public void loadAllXy(Set<? extends K> keys, boolean replaceExistingValues,
-                        CompletionListener completionListener) {
-    checkClosed();
-    if (!loaderConfigured) {
-      if (completionListener != null) {
         completionListener.onCompletion();
       }
-      return;
-    }
-    CacheOperationCompletionListener l = null;
-    if (completionListener != null) {
-      l = new CacheOperationCompletionListener() {
-        @Override
-        public void onCompleted() {
-          try {
-            for (K k : keys) {
-              cache.peek(k);
-            }
-          } catch (CacheLoaderException ex) {
-            completionListener.onException(ex);
-            return;
-          }
-          completionListener.onCompletion();
-        }
-
-        @Override
-        public void onException(Throwable exception) {
-          if (exception instanceof Exception) {
-            completionListener.onException((Exception) exception);
-          } else {
-            completionListener.onException(new CacheLoaderException(exception));
-          }
-        }
-      };
-    }
-    if (replaceExistingValues) {
-      cache.reloadAll(keys, l);
-    } else {
-      cache.loadAll(keys, l);
-    }
+      return null;
+    });
   }
 
   @Override

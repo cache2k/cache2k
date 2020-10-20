@@ -23,10 +23,9 @@ package org.cache2k.integration;
 import org.cache2k.CustomizationException;
 
 /**
- * Wraps an exception caused by a writer.
- *
  * @author Jens Wilke
- * @deprecated Replaced with {@link org.cache2k.io.CacheWriterException}
+ * @deprecated Replaced with {@link org.cache2k.io.CacheWriterException},
+ *             to be removed in version 2.2
  */
 @Deprecated
 public class CacheWriterException extends org.cache2k.io.CacheWriterException {

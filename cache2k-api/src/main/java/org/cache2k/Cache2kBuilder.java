@@ -34,7 +34,7 @@ import org.cache2k.io.AdvancedCacheLoader;
 import org.cache2k.io.AsyncCacheLoader;
 import org.cache2k.io.CacheLoader;
 import org.cache2k.io.CacheWriter;
-import org.cache2k.io.ExceptionInformation;
+import org.cache2k.io.LoadExceptionInfo;
 import org.cache2k.io.ExceptionPropagator;
 import org.cache2k.integration.LoadDetail;
 import org.cache2k.io.ResiliencePolicy;
@@ -444,7 +444,7 @@ public class Cache2kBuilder<K, V> {
     final org.cache2k.integration.ExceptionPropagator<K> ep) {
     ExceptionPropagator<K> newPropagator = new ExceptionPropagator<K>() {
       @Override
-      public RuntimeException propagateException(K key, ExceptionInformation newInfo) {
+      public RuntimeException propagateEntryLoadException(LoadExceptionInfo<K> newInfo) {
         org.cache2k.integration.ExceptionInformation oldInfo =
           new org.cache2k.integration.ExceptionInformation() {
           @Override
@@ -477,7 +477,7 @@ public class Cache2kBuilder<K, V> {
             return newInfo.getUntil();
           }
         };
-        return ep.propagateException(key, oldInfo);
+        return ep.propagateException(newInfo.getKey(), oldInfo);
       }
     };
     exceptionPropagator(newPropagator);
@@ -870,6 +870,8 @@ public class Cache2kBuilder<K, V> {
    * When {@code true} expose statistics via JMX. Disabled by default. It is possible to enable
    * JMX even there is no cache name specified with {@link #name(String)}, since a name will
    * be generated internally, thus enabling JMX by default for all caches is feasible.
+   * As of version 2, JMX support moved to an optional module {@code cache2k-jmx}.
+   * If this is not included in the classpath/modulepath, this option has no effect.
    */
   public final Cache2kBuilder<K, V> enableJmx(boolean f) {
     config().setEnableJmx(f);
@@ -877,9 +879,10 @@ public class Cache2kBuilder<K, V> {
   }
 
   /**
-   * Disables reporting of cache metrics to monitoring systems. This should be enabled, e.g. if
-   * a cache is created dynamically and intended to be short lived. All extensions for monitoring
-   * should respect this parameter.
+   * Disables reporting of cache metrics to monitoring systems or management.
+   * This should be enabled, e.g. if a cache is created dynamically and
+   * intended to be short lived. All extensions for monitoring or management
+   * respect this parameter.
    */
   public final Cache2kBuilder<K, V> disableMonitoring(boolean f) {
     config().setDisableMonitoring(f);

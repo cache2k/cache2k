@@ -28,7 +28,7 @@ import org.cache2k.io.CacheLoader;
 import org.cache2k.io.CacheLoaderException;
 import org.cache2k.expiry.ValueWithExpiryTime;
 import org.cache2k.core.api.InternalCacheInfo;
-import org.cache2k.io.ExceptionInformation;
+import org.cache2k.io.LoadExceptionInfo;
 import org.cache2k.io.ResiliencePolicy;
 import org.cache2k.processor.EntryProcessor;
 import org.cache2k.processor.MutableCacheEntry;
@@ -580,13 +580,13 @@ public class BasicCacheTest extends TestingBase {
     }
 
     @Override
-    public long retryLoadAfter(final String key, final ExceptionInformation exceptionInformation) {
-      return calculateExpiryTime(key, exceptionInformation.getException(), exceptionInformation.getLoadTime());
+    public long retryLoadAfter(final String key, final LoadExceptionInfo loadExceptionInfo) {
+      return calculateExpiryTime(key, loadExceptionInfo.getException(), loadExceptionInfo.getLoadTime());
     }
 
     @Override
-    public long suppressExceptionUntil(final String key, final ExceptionInformation exceptionInformation, final CacheEntry<String, String> cachedContent) {
-      return calculateExpiryTime(key, exceptionInformation.getException(), exceptionInformation.getLoadTime());
+    public long suppressExceptionUntil(final String key, final LoadExceptionInfo loadExceptionInfo, final CacheEntry<String, String> cachedContent) {
+      return calculateExpiryTime(key, loadExceptionInfo.getException(), loadExceptionInfo.getLoadTime());
     }
   }
 

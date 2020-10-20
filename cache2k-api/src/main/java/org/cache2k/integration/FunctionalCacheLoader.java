@@ -21,7 +21,8 @@ package org.cache2k.integration;
  */
 
 /**
- * @deprecated Replaced with {@link org.cache2k.io.CacheLoader}
+ * @deprecated Replaced with {@link org.cache2k.io.CacheLoader},
+ *   to be removed in version 2.2
  */
 @Deprecated
 public interface FunctionalCacheLoader<K, V> extends org.cache2k.io.CacheLoader<K, V> {

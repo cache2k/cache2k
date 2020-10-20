@@ -27,12 +27,8 @@ import java.util.EventListener;
 import java.util.concurrent.Executor;
 
 /**
- * Alternative interface to {@link CacheLoader} for asynchronous operation.
- *
- * @author Jens Wilke
- * @since 1.4
- * @see CacheLoader
- * @deprecated Replaced with {@link org.cache2k.io.AsyncCacheLoader}
+ * @deprecated Replaced with {@link org.cache2k.io.AsyncCacheLoader},
+ *   to be removed in version 2.2
  */
 @Deprecated
 public interface AsyncCacheLoader<K, V> {

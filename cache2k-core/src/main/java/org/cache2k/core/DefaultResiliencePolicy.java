@@ -24,7 +24,7 @@ import org.cache2k.CacheEntry;
 import org.cache2k.configuration.CacheBuildContext;
 import org.cache2k.configuration.Cache2kConfiguration;
 import org.cache2k.configuration.CustomizationSupplier;
-import org.cache2k.io.ExceptionInformation;
+import org.cache2k.io.LoadExceptionInfo;
 import org.cache2k.io.ResiliencePolicy;
 
 import java.time.Duration;
@@ -128,33 +128,33 @@ public class DefaultResiliencePolicy<K, V> implements ResiliencePolicy<K, V> {
 
   @Override
   public long suppressExceptionUntil(K key,
-                                     ExceptionInformation exceptionInformation,
+                                     LoadExceptionInfo loadExceptionInfo,
                                      CacheEntry<K, V> cachedContent) {
     if (resilienceDuration == 0 || resilienceDuration == Long.MAX_VALUE) {
       return resilienceDuration;
     }
-    long maxSuppressUntil = exceptionInformation.getSinceTime() + resilienceDuration;
-    long deltaMs = calculateRetryDelta(exceptionInformation);
-    return Math.min(exceptionInformation.getLoadTime() + deltaMs, maxSuppressUntil);
+    long maxSuppressUntil = loadExceptionInfo.getSinceTime() + resilienceDuration;
+    long deltaMs = calculateRetryDelta(loadExceptionInfo);
+    return Math.min(loadExceptionInfo.getLoadTime() + deltaMs, maxSuppressUntil);
   }
 
-  private long calculateRetryDelta(ExceptionInformation exceptionInformation) {
+  private long calculateRetryDelta(LoadExceptionInfo loadExceptionInfo) {
     long delta = (long)
-      (retryInterval * Math.pow(multiplier, exceptionInformation.getRetryCount()));
+      (retryInterval * Math.pow(multiplier, loadExceptionInfo.getRetryCount()));
     delta += SHARED_RANDOM.nextDouble() * randomization * delta;
     return Math.min(delta, maxRetryInterval);
   }
 
   @Override
   public long retryLoadAfter(K key,
-                             ExceptionInformation exceptionInformation) {
+                             LoadExceptionInfo loadExceptionInfo) {
     if (retryInterval == 0) {
       return 0;
     }
     if (retryInterval == Long.MAX_VALUE) {
       return Long.MAX_VALUE;
     }
-    return exceptionInformation.getLoadTime() + calculateRetryDelta(exceptionInformation);
+    return loadExceptionInfo.getLoadTime() + calculateRetryDelta(loadExceptionInfo);
   }
 
   public static class Supplier<K, V> implements CustomizationSupplier<ResiliencePolicy<K, V>> {

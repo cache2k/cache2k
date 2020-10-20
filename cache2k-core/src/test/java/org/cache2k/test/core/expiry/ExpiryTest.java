@@ -30,7 +30,7 @@ import org.cache2k.expiry.ExpiryTimeValues;
 import org.cache2k.io.CacheLoader;
 import org.cache2k.io.CacheLoaderException;
 import org.cache2k.CacheOperationCompletionListener;
-import org.cache2k.io.ExceptionInformation;
+import org.cache2k.io.LoadExceptionInfo;
 import org.cache2k.io.ResiliencePolicy;
 import org.cache2k.processor.EntryProcessor;
 import org.cache2k.processor.MutableCacheEntry;
@@ -572,13 +572,13 @@ public class ExpiryTest extends TestingBase {
       })
       .resiliencePolicy(new ResiliencePolicy<Integer, Integer>() {
         @Override
-        public long suppressExceptionUntil(Integer key, ExceptionInformation exceptionInformation,
+        public long suppressExceptionUntil(Integer key, LoadExceptionInfo exceptionInformation,
                                            CacheEntry<Integer, Integer> cachedContent) {
           fail("not reached");
           return 0;
         }
         @Override
-        public long retryLoadAfter(Integer key, ExceptionInformation exceptionInformation) {
+        public long retryLoadAfter(Integer key, LoadExceptionInfo exceptionInformation) {
           throw new NullPointerException("test");
         }
       })
@@ -607,7 +607,7 @@ public class ExpiryTest extends TestingBase {
       })
       .resiliencePolicy(new ResiliencePolicy<Integer, Integer>() {
         @Override
-        public long suppressExceptionUntil(Integer key, ExceptionInformation inf,
+        public long suppressExceptionUntil(Integer key, LoadExceptionInfo inf,
                                            CacheEntry<Integer, Integer> cachedContent) {
           assertTrue(inf.getException() instanceof IllegalStateException);
           assertEquals(key, cachedContent.getValue());
@@ -617,7 +617,7 @@ public class ExpiryTest extends TestingBase {
         }
 
         @Override
-        public long retryLoadAfter(Integer key, ExceptionInformation inf) {
+        public long retryLoadAfter(Integer key, LoadExceptionInfo inf) {
           cacheRetryCount.set(inf.getRetryCount());
           if (inf.getRetryCount() == 0) {
             assertEquals(inf.getSinceTime(), inf.getLoadTime());
@@ -669,7 +669,7 @@ public class ExpiryTest extends TestingBase {
       })
       .resiliencePolicy(new ResiliencePolicy<Integer, Integer>() {
         @Override
-        public long suppressExceptionUntil(Integer key, ExceptionInformation inf,
+        public long suppressExceptionUntil(Integer key, LoadExceptionInfo inf,
                                            CacheEntry<Integer, Integer> cachedContent) {
           assertTrue(inf.getException() instanceof IllegalStateException);
           assertEquals(key, cachedContent.getValue());
@@ -679,7 +679,7 @@ public class ExpiryTest extends TestingBase {
         }
 
         @Override
-        public long retryLoadAfter(Integer key, ExceptionInformation inf) {
+        public long retryLoadAfter(Integer key, LoadExceptionInfo inf) {
           cacheRetryCount.set(inf.getRetryCount());
           if (inf.getRetryCount() == 0) {
             assertEquals(inf.getSinceTime(), inf.getLoadTime());
@@ -730,14 +730,14 @@ public class ExpiryTest extends TestingBase {
       })
       .resiliencePolicy(new ResiliencePolicy<Integer, Integer>() {
         @Override
-        public long suppressExceptionUntil(Integer key, ExceptionInformation inf,
+        public long suppressExceptionUntil(Integer key, LoadExceptionInfo inf,
                                            CacheEntry<Integer, Integer> cachedContent) {
           suppressRetryCount.set(inf.getRetryCount());
           return inf.getLoadTime() + 1;
         }
 
         @Override
-        public long retryLoadAfter(Integer key, ExceptionInformation inf) {
+        public long retryLoadAfter(Integer key, LoadExceptionInfo inf) {
           cacheRetryCount.set(inf.getRetryCount());
           return 0;
         }
@@ -778,14 +778,14 @@ public class ExpiryTest extends TestingBase {
       .keepDataAfterExpired(true)
       .resiliencePolicy(new ResiliencePolicy<Integer, Integer>() {
         @Override
-        public long suppressExceptionUntil(Integer key, ExceptionInformation exceptionInformation,
+        public long suppressExceptionUntil(Integer key, LoadExceptionInfo exceptionInformation,
                                            CacheEntry<Integer, Integer> cachedContent) {
           policyCalled.incrementAndGet();
           return 1000;
         }
 
         @Override
-        public long retryLoadAfter(Integer key, ExceptionInformation exceptionInformation) {
+        public long retryLoadAfter(Integer key, LoadExceptionInfo exceptionInformation) {
           policyCalled.incrementAndGet();
           return 0;
         }
@@ -812,14 +812,14 @@ public class ExpiryTest extends TestingBase {
       .keepDataAfterExpired(true)
       .resiliencePolicy(new ResiliencePolicy<Integer, Integer>() {
         @Override
-        public long suppressExceptionUntil(Integer key, ExceptionInformation exceptionInformation,
+        public long suppressExceptionUntil(Integer key, LoadExceptionInfo exceptionInformation,
                                            CacheEntry<Integer, Integer> cachedContent) {
           policyCalled.incrementAndGet();
           return exceptionInformation.getLoadTime() + 1;
         }
 
         @Override
-        public long retryLoadAfter(Integer key, ExceptionInformation exceptionInformation) {
+        public long retryLoadAfter(Integer key, LoadExceptionInfo exceptionInformation) {
           policyCalled.incrementAndGet();
           return 0;
         }
@@ -848,14 +848,14 @@ public class ExpiryTest extends TestingBase {
       })
       .resiliencePolicy(new ResiliencePolicy<Integer, Integer>() {
         @Override
-        public long suppressExceptionUntil(Integer key, ExceptionInformation inf,
+        public long suppressExceptionUntil(Integer key, LoadExceptionInfo inf,
                                            CacheEntry<Integer, Integer> cachedContent) {
           suppressRetryCount.set(inf.getRetryCount());
           return ETERNAL;
         }
 
         @Override
-        public long retryLoadAfter(Integer key, ExceptionInformation inf) {
+        public long retryLoadAfter(Integer key, LoadExceptionInfo inf) {
           cacheRetryCount.set(inf.getRetryCount());
           return NOW;
         }

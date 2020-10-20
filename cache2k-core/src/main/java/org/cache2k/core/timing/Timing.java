@@ -28,7 +28,7 @@ import org.cache2k.core.Entry;
 import org.cache2k.core.ExceptionWrapper;
 import org.cache2k.expiry.ExpiryPolicy;
 import org.cache2k.expiry.ValueWithExpiryTime;
-import org.cache2k.io.ExceptionInformation;
+import org.cache2k.io.LoadExceptionInfo;
 import org.cache2k.io.ResiliencePolicy;
 
 import java.time.Duration;
@@ -135,14 +135,14 @@ public abstract class Timing<K, V>  {
    *
    * @see ResiliencePolicy#suppressExceptionUntil
    */
-  public abstract long suppressExceptionUntil(Entry<K, V> e, ExceptionInformation inf);
+  public abstract long suppressExceptionUntil(Entry<K, V> e, LoadExceptionInfo inf);
 
   /**
    * Delegated to the resilience policy
    *
    * @see ResiliencePolicy#retryLoadAfter
    */
-  public abstract long cacheExceptionUntil(Entry<K, V> e, ExceptionInformation inf);
+  public abstract long cacheExceptionUntil(Entry<K, V> e, LoadExceptionInfo inf);
 
   /**
    * Convert expiry value to the entry field value, essentially maps 0 to {@link Entry#EXPIRED}

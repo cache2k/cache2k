@@ -32,7 +32,7 @@ import org.cache2k.core.api.InternalClock;
 import org.cache2k.expiry.Expiry;
 import org.cache2k.expiry.ExpiryPolicy;
 import org.cache2k.expiry.ExpiryTimeValues;
-import org.cache2k.io.ExceptionInformation;
+import org.cache2k.io.LoadExceptionInfo;
 import org.cache2k.io.ResiliencePolicy;
 
 /**
@@ -111,12 +111,12 @@ public class StaticTiming<K, V> extends Timing<K, V> {
   }
 
   @Override
-  public long suppressExceptionUntil(Entry<K, V> e, ExceptionInformation inf) {
+  public long suppressExceptionUntil(Entry<K, V> e, LoadExceptionInfo inf) {
     return resiliencePolicy.suppressExceptionUntil(e.getKey(), inf, e.getTempCacheEntry());
   }
 
   @Override
-  public long cacheExceptionUntil(Entry<K, V> e, ExceptionInformation inf) {
+  public long cacheExceptionUntil(Entry<K, V> e, LoadExceptionInfo inf) {
     return resiliencePolicy.retryLoadAfter(e.getKey(), inf);
   }
 

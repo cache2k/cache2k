@@ -31,7 +31,7 @@ import org.cache2k.event.CacheClosedListener;
 import org.cache2k.io.AdvancedCacheLoader;
 import org.cache2k.io.CacheWriter;
 import org.cache2k.io.ExceptionPropagator;
-import org.cache2k.io.ExceptionInformation;
+import org.cache2k.io.LoadExceptionInfo;
 import org.cache2k.jcache.ExtendedConfiguration;
 import org.cache2k.jcache.ExtendedMutableConfiguration;
 import org.cache2k.jcache.JCacheConfiguration;
@@ -44,7 +44,6 @@ import org.cache2k.jcache.provider.generic.storeByValueSimulation.RuntimeCopyTra
 import org.cache2k.jcache.provider.generic.storeByValueSimulation.SimpleObjectCopyFactory;
 
 import javax.cache.Cache;
-import javax.cache.CacheException;
 import javax.cache.configuration.CacheEntryListenerConfiguration;
 import javax.cache.configuration.CompleteConfiguration;
 import javax.cache.configuration.Configuration;
@@ -201,10 +200,10 @@ public class JCacheBuilder<K, V> {
     cache2kConfiguration.setExceptionPropagator(
       new CustomizationReferenceSupplier<ExceptionPropagator<K>>(new ExceptionPropagator<K>() {
       @Override
-      public RuntimeException propagateException(
-        Object key, ExceptionInformation exceptionInformation) {
+      public RuntimeException propagateEntryLoadException(
+        LoadExceptionInfo loadExceptionInfo) {
         return new CacheLoaderException(
-          "propagate previous loader exception", exceptionInformation.getException());
+          "propagate previous loader exception", loadExceptionInfo.getException());
       }
     }));
   }

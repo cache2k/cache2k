@@ -57,17 +57,17 @@ public interface ResiliencePolicy<K, V> extends ExpiryTimeValues, Customization 
    *         a time before the current time means the exception will not be suppressed. A
    *         {@link ExpiryPolicy#ETERNAL} means the exception will be
    *         suppressed and the recent content will be returned eternally.
-   *         If the returned time is after {@link ExceptionInformation#getLoadTime()}
+   *         If the returned time is after {@link LoadExceptionInfo#getLoadTime()}
    *         the exception will be suppressed for the ongoing operation.
    */
   long suppressExceptionUntil(K key,
-                              ExceptionInformation exceptionInformation,
+                              LoadExceptionInfo loadExceptionInfo,
                               CacheEntry<K, V> cachedContent);
 
   /**
    * Called after the loader threw an exception and no previous value is available or
    * {@link #suppressExceptionUntil} returned zero.
    */
-  long retryLoadAfter(K key, ExceptionInformation exceptionInformation);
+  long retryLoadAfter(K key, LoadExceptionInfo loadExceptionInfo);
 
 }

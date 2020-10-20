@@ -28,7 +28,7 @@ import org.cache2k.io.AdvancedCacheLoader;
 import org.cache2k.io.CacheLoader;
 import org.cache2k.io.CacheLoaderException;
 import org.cache2k.io.CacheWriter;
-import org.cache2k.io.ExceptionInformation;
+import org.cache2k.io.LoadExceptionInfo;
 import org.cache2k.integration.LoadDetail;
 import org.cache2k.integration.Loaders;
 import org.cache2k.io.ResiliencePolicy;
@@ -1026,13 +1026,13 @@ public class EntryProcessorTest {
     final AtomicLong retryLoadAfter = new AtomicLong();
     final ResiliencePolicy<Integer, Integer> policy = new ResiliencePolicy<Integer, Integer>() {
       @Override
-      public long suppressExceptionUntil(Integer key, ExceptionInformation exceptionInformation,
+      public long suppressExceptionUntil(Integer key, LoadExceptionInfo exceptionInformation,
                                          CacheEntry<Integer, Integer> cachedContent) {
         return 0;
       }
 
       @Override
-      public long retryLoadAfter(Integer key, ExceptionInformation exceptionInformation) {
+      public long retryLoadAfter(Integer key, LoadExceptionInfo exceptionInformation) {
         retryLoadAfter.incrementAndGet();
         return ETERNAL;
       }

@@ -20,7 +20,6 @@ package org.cache2k.test.core.expiry;
  * #L%
  */
 
-import org.assertj.core.api.Assertions;
 import org.cache2k.Cache2kBuilder;
 import org.cache2k.expiry.ExpiryTimeValues;
 import org.cache2k.io.AsyncCacheLoader;
@@ -33,7 +32,7 @@ import org.cache2k.core.util.TunableFactory;
 import org.cache2k.expiry.ExpiryPolicy;
 import org.cache2k.io.CacheLoader;
 import org.cache2k.CacheOperationCompletionListener;
-import org.cache2k.io.ExceptionInformation;
+import org.cache2k.io.LoadExceptionInfo;
 import org.cache2k.io.ResiliencePolicy;
 import org.cache2k.test.util.Condition;
 import org.cache2k.Cache;
@@ -52,7 +51,6 @@ import org.cache2k.testing.category.SlowTests;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
-import java.util.Arrays;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -442,13 +440,13 @@ public class SlowExpiryTest extends TestingBase {
       .expireAfterWrite(TestingParameters.MAX_FINISH_WAIT_MILLIS, TimeUnit.MINUTES)
       .resiliencePolicy(new ResiliencePolicy<Integer, Integer>() {
         @Override
-        public long suppressExceptionUntil(Integer key, ExceptionInformation exceptionInformation,
+        public long suppressExceptionUntil(Integer key, LoadExceptionInfo exceptionInformation,
                                            CacheEntry<Integer, Integer> cachedContent) {
           return exceptionInformation.getLoadTime();
         }
 
         @Override
-        public long retryLoadAfter(Integer key, ExceptionInformation exceptionInformation) {
+        public long retryLoadAfter(Integer key, LoadExceptionInfo exceptionInformation) {
           return 0;
         }
       })

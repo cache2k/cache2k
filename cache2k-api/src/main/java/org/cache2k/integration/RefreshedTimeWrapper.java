@@ -21,12 +21,8 @@ package org.cache2k.integration;
  */
 
 /**
- * Instruct the cache to use a different refresh time than the current time
- * for a loaded value. Use {@link Loaders#wrapRefreshedTime(Object, long)}.
- * Don't use directly.
- *
  * @author Jens Wilke
- * @deprecated to be removed
+ * @deprecated to be removed in version 2.2
  */
 @Deprecated
 public final class RefreshedTimeWrapper<V> extends LoadDetail<V> {

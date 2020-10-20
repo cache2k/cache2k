@@ -25,10 +25,8 @@ import org.cache2k.io.AdvancedCacheLoader;
 import org.cache2k.io.CacheLoader;
 
 /**
- * Utility methods for cache loaders
- *
  * @author Jens Wilke
- * @deprecated to be removed
+ * @deprecated to be removed in version 2.2
  */
 @Deprecated
 public class Loaders {

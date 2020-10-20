@@ -22,6 +22,7 @@ package org.cache2k;
 
 import org.cache2k.io.CacheLoaderException;
 import org.cache2k.io.ExceptionPropagator;
+import org.cache2k.io.LoadExceptionInfo;
 import org.cache2k.processor.MutableCacheEntry;
 
 /**
@@ -70,6 +71,7 @@ public interface CacheEntry<K, V> {
    * the exception could not be suppressed. {@code null} if no exception
    * happened or it was suppressed. If {@code null} then {@link #getValue}
    * returns a value and does not throw an exception.
+   * If not {@code null} the entry may be cast to {@link LoadExceptionInfo}
    */
   Throwable getException();
 

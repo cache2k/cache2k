@@ -21,11 +21,8 @@ package org.cache2k.integration;
  */
 
 /**
- * A loaded value may be wrapped by the loader to transport auxiliary information
- * to the cache. Use the utility methods in {@link Loaders}
- *
  * @author Jens Wilke
- * @deprecated to be removed
+ * @deprecated to be removed in version 2.2
  */
 @Deprecated
 public abstract class LoadDetail<V> {

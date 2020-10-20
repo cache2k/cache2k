@@ -26,7 +26,7 @@ import org.cache2k.core.timing.TimerTask;
 import org.cache2k.expiry.ExpiryPolicy;
 import org.cache2k.core.operation.ExaminationEntry;
 import org.cache2k.core.storageApi.StorageEntry;
-import org.cache2k.io.ExceptionInformation;
+import org.cache2k.io.LoadExceptionInfo;
 
 import java.util.concurrent.atomic.AtomicLongFieldUpdater;
 
@@ -105,7 +105,7 @@ class CompactEntry<K, V> {
 
   /**
    * Should never be called under normal circumstances. For efficiency reasons the entry is
-   * handed to the expiry policy directly, before it is screened for an exception.
+   * handed to the expiry policy directly, only in case its not an exception wrapper.
    *
    * @Deprecated May only be called as CacheEntry before screening for exceptions.
    */
@@ -719,7 +719,7 @@ public class Entry<K, V> extends CompactEntry<K, V>
     return (PiggyBack) misc;
   }
 
-  public void setSuppressedLoadExceptionInformation(ExceptionInformation w) {
+  public void setSuppressedLoadExceptionInformation(LoadExceptionInfo w) {
     LoadExceptionPiggyBack inf = getPiggyBack(LoadExceptionPiggyBack.class);
     if (inf != null) {
       inf.info = w;
@@ -738,7 +738,7 @@ public class Entry<K, V> extends CompactEntry<K, V>
     }
   }
 
-  public ExceptionInformation getSuppressedLoadExceptionInformation() {
+  public LoadExceptionInfo getSuppressedLoadExceptionInformation() {
     LoadExceptionPiggyBack inf = getPiggyBack(LoadExceptionPiggyBack.class);
     return inf != null ? inf.info : null;
   }
@@ -775,9 +775,9 @@ public class Entry<K, V> extends CompactEntry<K, V>
   }
 
   static class LoadExceptionPiggyBack extends PiggyBack {
-    ExceptionInformation info;
+    LoadExceptionInfo info;
 
-    LoadExceptionPiggyBack(ExceptionInformation info, PiggyBack next) {
+    LoadExceptionPiggyBack(LoadExceptionInfo info, PiggyBack next) {
       super(next);
       this.info = info;
     }

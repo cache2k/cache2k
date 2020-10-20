@@ -21,7 +21,7 @@ package org.cache2k.core;
  */
 
  import org.cache2k.CacheEntry;
- import org.cache2k.io.ExceptionInformation;
+ import org.cache2k.io.LoadExceptionInfo;
  import org.cache2k.io.ExceptionPropagator;
 
 /**
@@ -35,7 +35,7 @@ package org.cache2k.core;
  * @author Jens Wilke
  */
 @SuppressWarnings("rawtypes")
-public class ExceptionWrapper<K> implements ExceptionInformation, CacheEntry<K, Void> {
+public class ExceptionWrapper<K> implements LoadExceptionInfo<K> {
 
   private final Throwable exception;
   private final long loadTime;
@@ -76,13 +76,13 @@ public class ExceptionWrapper<K> implements ExceptionInformation, CacheEntry<K, 
                           ExceptionPropagator<K> p) {
     this(key, exception, loadTime,
       (e.getValueOrException() instanceof ExceptionWrapper) ?
-        (ExceptionInformation) e.getValueOrException() :
+        (LoadExceptionInfo) e.getValueOrException() :
         e.getSuppressedLoadExceptionInformation(),
       p);
   }
 
   public ExceptionWrapper(K key, Throwable exception,
-                          long loadTime, ExceptionInformation w,
+                          long loadTime, LoadExceptionInfo w,
                           ExceptionPropagator<K> p) {
     propagator = p;
     this.exception = exception;
@@ -100,12 +100,6 @@ public class ExceptionWrapper<K> implements ExceptionInformation, CacheEntry<K, 
 
   public K getKey() {
     return key;
-  }
-
-  @Override
-  public Void getValue() {
-    propagateException();
-    return null;
   }
 
   @Override
@@ -134,15 +128,6 @@ public class ExceptionWrapper<K> implements ExceptionInformation, CacheEntry<K, 
   @Override
   public long getSinceTime() {
     return since;
-  }
-
-  /**
-   * Propagate the exception based by the information here. Used when it is tried to
-   * access the value.
-   */
-  @SuppressWarnings("unchecked")
-  public void propagateException() {
-    throw getExceptionPropagator().propagateException(key, this);
   }
 
   /**

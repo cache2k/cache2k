@@ -1048,7 +1048,7 @@ public class HeapCache<K, V> extends BaseCache<K, V> implements HeapCacheForEvic
     if (keysToLoad.isEmpty()) { listener.onCompleted(); return; }
     final OperationCompletion completion = new OperationCompletion(keysToLoad, listener);
     for (K k : keysToLoad) {
-      executeLoader(completion, k, () -> getEntryInternal(k).getException());
+      executeLoader(completion, k, () -> extractException(getEntryInternal(k)));
     }
   }
 
@@ -1059,8 +1059,13 @@ public class HeapCache<K, V> extends BaseCache<K, V> implements HeapCacheForEvic
     Set<K> keysToLoad = generateKeySet(keys);
     final OperationCompletion completion = new OperationCompletion(keysToLoad, listener);
     for (K k : keysToLoad) {
-      executeLoader(completion, k, () -> loadAndReplace(k).getException());
+      executeLoader(completion, k, () -> extractException(loadAndReplace(k)));
     }
+  }
+
+  /** null is legal, if loaded value is immediate*/
+  Throwable extractException(Entry<K, V> e) {
+    return e != null ? e.getException() : null;
   }
 
   void executeLoader(OperationCompletion<K> completion, K key, Callable<Throwable> action) {
@@ -1188,7 +1193,7 @@ public class HeapCache<K, V> extends BaseCache<K, V> implements HeapCacheForEvic
   @SuppressWarnings("unchecked")
   protected V returnValue(V v) {
     if (v instanceof ExceptionWrapper) {
-      ((ExceptionWrapper<K>) v).propagateException();
+      throw ((ExceptionWrapper<K>) v).generateExceptionToPropagate();
     }
     return v;
   }
@@ -1197,7 +1202,7 @@ public class HeapCache<K, V> extends BaseCache<K, V> implements HeapCacheForEvic
   protected V returnValue(Entry<K, V> e) {
     V v = e.getValueOrException();
     if (v instanceof ExceptionWrapper) {
-      ((ExceptionWrapper<K>) v).propagateException();
+      throw ((ExceptionWrapper<K>) v).generateExceptionToPropagate();
     }
     return v;
   }

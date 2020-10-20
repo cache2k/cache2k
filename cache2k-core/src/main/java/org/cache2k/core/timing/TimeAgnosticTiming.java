@@ -22,7 +22,7 @@ package org.cache2k.core.timing;
 
 import org.cache2k.core.Entry;
 import org.cache2k.expiry.ExpiryPolicy;
-import org.cache2k.io.ExceptionInformation;
+import org.cache2k.io.LoadExceptionInfo;
 
 /**
  * Base class for all timing handlers that actually need not to know the current time.
@@ -42,12 +42,12 @@ public abstract class TimeAgnosticTiming<K, V> extends Timing<K, V> {
     }
 
     @Override
-    public long cacheExceptionUntil(Entry<K, V> e, ExceptionInformation inf) {
+    public long cacheExceptionUntil(Entry<K, V> e, LoadExceptionInfo inf) {
       return 0;
     }
 
     @Override
-    public long suppressExceptionUntil(Entry<K, V> e, ExceptionInformation inf) {
+    public long suppressExceptionUntil(Entry<K, V> e, LoadExceptionInfo inf) {
       return 0;
     }
 
@@ -61,12 +61,12 @@ public abstract class TimeAgnosticTiming<K, V> extends Timing<K, V> {
     }
 
     @Override
-    public long cacheExceptionUntil(Entry<K, V> e, ExceptionInformation inf) {
+    public long cacheExceptionUntil(Entry<K, V> e, LoadExceptionInfo inf) {
       return 0;
     }
 
     @Override
-    public long suppressExceptionUntil(Entry<K, V> e, ExceptionInformation inf) {
+    public long suppressExceptionUntil(Entry<K, V> e, LoadExceptionInfo inf) {
       return 0;
     }
   }
@@ -79,12 +79,12 @@ public abstract class TimeAgnosticTiming<K, V> extends Timing<K, V> {
     }
 
     @Override
-    public long cacheExceptionUntil(Entry<K, V> e, ExceptionInformation inf) {
+    public long cacheExceptionUntil(Entry<K, V> e, LoadExceptionInfo inf) {
       return ExpiryPolicy.ETERNAL;
     }
 
     @Override
-    public long suppressExceptionUntil(Entry<K, V> e, ExceptionInformation inf) {
+    public long suppressExceptionUntil(Entry<K, V> e, LoadExceptionInfo inf) {
       return ExpiryPolicy.ETERNAL;
     }
 

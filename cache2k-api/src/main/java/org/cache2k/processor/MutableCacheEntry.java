@@ -23,7 +23,7 @@ package org.cache2k.processor;
 import org.cache2k.CacheEntry;
 import org.cache2k.io.CacheLoader;
 import org.cache2k.io.CacheLoaderException;
-import org.cache2k.io.ExceptionInformation;
+import org.cache2k.io.LoadExceptionInfo;
 import org.cache2k.io.AdvancedCacheLoader;
 import org.cache2k.io.CacheWriter;
 import org.cache2k.io.ResiliencePolicy;
@@ -131,7 +131,7 @@ public interface MutableCacheEntry<K, V> extends CacheEntry<K, V> {
    * The time is retrieved once when the entry processor is invoked and will not change afterwards.
    * If a load is triggered this value will be identical to
    * {@link AdvancedCacheLoader#load(Object, long, CacheEntry)} and
-   * {@link ExceptionInformation#getLoadTime()}
+   * {@link LoadExceptionInfo#getLoadTime()}
    *
    * @deprecated Replaced with {@link #getStartTime()}
    */
@@ -143,7 +143,7 @@ public interface MutableCacheEntry<K, V> extends CacheEntry<K, V> {
    * The time is retrieved once when the entry processor is invoked and will not change afterwards.
    * If a load is triggered this value will be identical to the {@code startTime}
    * {@link AdvancedCacheLoader#load},
-   * {@link ExceptionInformation#getLoadTime()} or {
+   * {@link LoadExceptionInfo#getLoadTime()} or {
    * @link AsyncCacheLoader.Context#getLoadStartTime()}
    */
   long getStartTime();

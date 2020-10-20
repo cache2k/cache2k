@@ -24,16 +24,8 @@ import org.cache2k.Cache2kBuilder;
 import org.cache2k.CacheEntry;
 
 /**
- * Retrieves or generates a value to load into the cache. The advanced loader interface
- * contains the current time and the previous cache entry. The previous cache entry
- * can be used for a more intelligent loading strategy, e.g. for HTTP based loading with
- * the {@code If-Modified-Since} header.
- *
- * <p>For general documentation on the loader, please see {@link CacheLoader}.
- *
- * @author Jens Wilke
- * @see CacheLoader
- * @deprecated Replaced with {@link org.cache2k.io.AdvancedCacheLoader}
+ * @deprecated Replaced with {@link org.cache2k.io.AdvancedCacheLoader},
+ *   to be removed in version 2.2
  */
 @Deprecated
 public abstract class AdvancedCacheLoader<K, V>

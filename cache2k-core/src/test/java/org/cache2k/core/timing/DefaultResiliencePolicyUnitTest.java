@@ -21,11 +21,8 @@ package org.cache2k.core.timing;
  */
 
 import org.cache2k.Cache2kBuilder;
-import org.cache2k.CacheManager;
-import org.cache2k.configuration.CacheBuildContext;
-import org.cache2k.configuration.Cache2kConfiguration;
 import org.cache2k.core.DefaultResiliencePolicy;
-import org.cache2k.io.ExceptionInformation;
+import org.cache2k.io.LoadExceptionInfo;
 import org.cache2k.io.ExceptionPropagator;
 import org.cache2k.testing.category.FastTests;
 import org.junit.Test;
@@ -275,13 +272,16 @@ public class DefaultResiliencePolicyUnitTest {
     assertEquals(500, t);
   }
 
-  static class InfoBean implements ExceptionInformation {
+  static class InfoBean implements LoadExceptionInfo {
 
     int retryCount;
     Throwable exception;
     long loadTime;
     long sinceTime;
     long until;
+
+    @Override
+    public Object getKey() { return null; }
 
     @Override
     public ExceptionPropagator getExceptionPropagator() { return null; }

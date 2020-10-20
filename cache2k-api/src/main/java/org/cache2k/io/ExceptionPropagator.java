@@ -35,16 +35,22 @@ import org.cache2k.Customization;
  * @author Jens Wilke
  * @since 2
  */
-@FunctionalInterface
 public interface ExceptionPropagator<K> extends Customization {
 
   /**
-   * Generate runtime exception to throw. The original exception is passed in as information.
-   * Every returned exception should be filled with a stack trace based on the current
-   * method call. This is done by the exception constructor automatically.
+   * Called when an entry with exception is accessed.
+   * Potentially wraps and rethrows the original exception.
    *
-   * @param exceptionInformation information when the original exception occurred.
+   * <p>The default implementation wraps the exception into a {@link CacheLoaderException}
+   * and contains some id or timestamp of the original exception to show that we might
+   * through multiple exceptions on each entry access for a single loader exception.
+   *
+   * <p>API rationale: We create an exception instead of doing a {@code throw} in the
+   * exception propagator, to keep the control flow obvious in the calling method.
+   *
+   * @param loadExceptionInfo information of original exception and
+   *                             when the original exception occurred.
    */
-  RuntimeException propagateException(K key, ExceptionInformation exceptionInformation);
+  RuntimeException propagateEntryLoadException(LoadExceptionInfo<K> loadExceptionInfo);
 
 }

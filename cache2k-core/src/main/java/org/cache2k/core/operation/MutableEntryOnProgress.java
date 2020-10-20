@@ -175,7 +175,7 @@ class MutableEntryOnProgress<K, V> implements MutableCacheEntry<K, V> {
   @SuppressWarnings("unchecked")
   private void checkAndThrowException(V value) {
     if (value instanceof ExceptionWrapper) {
-      ((ExceptionWrapper<K>) value).propagateException();
+      throw ((ExceptionWrapper<K>) value).generateExceptionToPropagate();
     }
   }
 

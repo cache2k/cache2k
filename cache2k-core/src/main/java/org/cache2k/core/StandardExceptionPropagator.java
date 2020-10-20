@@ -23,7 +23,7 @@ package org.cache2k.core;
 import org.cache2k.core.util.Util;
 import org.cache2k.expiry.ExpiryTimeValues;
 import org.cache2k.io.CacheLoaderException;
-import org.cache2k.io.ExceptionInformation;
+import org.cache2k.io.LoadExceptionInfo;
 import org.cache2k.io.ExceptionPropagator;
 
 /**
@@ -34,9 +34,8 @@ import org.cache2k.io.ExceptionPropagator;
 public final class StandardExceptionPropagator implements ExceptionPropagator {
 
   @Override
-  public RuntimeException propagateException(Object key,
-                                             ExceptionInformation exceptionInformation) {
-    long expiry = exceptionInformation.getUntil();
+  public RuntimeException propagateEntryLoadException(LoadExceptionInfo loadExceptionInfo) {
+    long expiry = loadExceptionInfo.getUntil();
     String txt = "";
     if (expiry > 0) {
       if (expiry == ExpiryTimeValues.ETERNAL) {
@@ -45,8 +44,8 @@ public final class StandardExceptionPropagator implements ExceptionPropagator {
         txt = "expiry=" + Util.formatMillis(expiry) + ", cause: ";
       }
     }
-    return new CacheLoaderException(txt + exceptionInformation.getException(),
-      exceptionInformation.getException());
+    return new CacheLoaderException(txt + loadExceptionInfo.getException(),
+      loadExceptionInfo.getException());
   }
 
 }

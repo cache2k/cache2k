@@ -23,10 +23,6 @@ package org.cache2k.integration;
 import org.cache2k.Cache;
 
 /**
- * Writer for write-through configurations. Any mutation of the cache via the
- * {@link Cache}  interface, e.g.  {@link Cache#put(Object, Object)} or
- * {@link Cache#remove(Object)}  will cause a writer call.
- *
  * @author Jens Wilke
  * @deprecated Replaced with {@link org.cache2k.io.CacheWriter}
  */

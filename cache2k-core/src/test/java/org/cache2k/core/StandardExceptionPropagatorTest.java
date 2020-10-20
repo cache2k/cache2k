@@ -21,7 +21,7 @@ package org.cache2k.core;
  */
 
 import static org.assertj.core.api.Assertions.assertThat;
-import org.cache2k.io.ExceptionInformation;
+import org.cache2k.io.LoadExceptionInfo;
 import org.cache2k.io.ExceptionPropagator;
 import org.junit.Test;
 
@@ -48,27 +48,29 @@ public class StandardExceptionPropagatorTest {
   @Test
   public void propagate_eternal() {
     System.currentTimeMillis();
-    RuntimeException t = STANDARD_PROPAGATOR.propagateException(
-      null, toInfo(new RuntimeException("serious thing"), Long.MAX_VALUE));
+    RuntimeException t = STANDARD_PROPAGATOR.propagateEntryLoadException(
+      toInfo(new RuntimeException("serious thing"), Long.MAX_VALUE));
     assertTrue(t.toString().contains("expiry=ETERNAL"));
   }
 
   @Test
   public void propagate_sometime() {
-    RuntimeException t = STANDARD_PROPAGATOR.propagateException(
-      null, toInfo(new RuntimeException("serious thing"), SOME_TIME));
+    RuntimeException t = STANDARD_PROPAGATOR.propagateEntryLoadException(
+      toInfo(new RuntimeException("serious thing"), SOME_TIME));
     assertThat(t.toString()).contains(("expiry=2016-05-25T09:30:12.123"));
   }
 
   @Test
   public void propagate_notime() {
-    RuntimeException t = STANDARD_PROPAGATOR.propagateException(
-      null, toInfo(new RuntimeException("serious thing"), 0));
+    RuntimeException t = STANDARD_PROPAGATOR.propagateEntryLoadException(
+      toInfo(new RuntimeException("serious thing"), 0));
     assertFalse(t.toString().contains("expiry="));
   }
 
-  private ExceptionInformation toInfo(final Throwable ex, final long t) {
-    return new ExceptionInformation() {
+  private LoadExceptionInfo toInfo(final Throwable ex, final long t) {
+    return new LoadExceptionInfo() {
+      @Override
+      public Object getKey() { return null; }
       @Override
       public ExceptionPropagator getExceptionPropagator() { return null; }
 
