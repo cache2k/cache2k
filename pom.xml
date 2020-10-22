@@ -52,7 +52,7 @@
     <module>cache2k-config</module>
     <module>cache2k-schemas</module>
     <!-- not deployed on OSS central -->
-    <module>cache2k-tests</module>
+    <module>cache2k-testsuite</module>
     <module>test-parent</module>
     <module>cache2k-jcache-tests</module>
     <module>test-init</module>

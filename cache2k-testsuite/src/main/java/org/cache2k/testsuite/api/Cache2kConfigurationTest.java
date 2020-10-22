@@ -1,8 +1,8 @@
-package org.cache2k.tests.api;
+package org.cache2k.testsuite.api;
 
 /*
  * #%L
- * cache2k tests on public API
+ * cache2k testsuite on public API
  * %%
  * Copyright (C) 2000 - 2020 headissue GmbH, Munich
  * %%
@@ -25,8 +25,10 @@ import org.cache2k.configuration.ConfigurationSection;
 import org.cache2k.configuration.CustomizationSupplier;
 import org.cache2k.configuration.CustomizationSupplierByClassName;
 import org.cache2k.event.CacheEntryOperationListener;
+import org.cache2k.testing.category.FastTests;
 import org.hamcrest.CoreMatchers;
 import org.junit.Test;
+import org.junit.experimental.categories.Category;
 
 import java.util.Collections;
 
@@ -35,6 +37,7 @@ import static org.junit.Assert.*;
 /**
  * @author Jens Wilke
  */
+@Category(FastTests.class)
 public class Cache2kConfigurationTest {
 
   @Test

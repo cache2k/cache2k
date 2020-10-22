@@ -1,8 +1,8 @@
-package org.cache2k.tests.api;
+package org.cache2k.testsuite.api;
 
 /*
  * #%L
- * cache2k tests on public API
+ * cache2k testsuite on public API
  * %%
  * Copyright (C) 2000 - 2020 headissue GmbH, Munich
  * %%

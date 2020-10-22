@@ -1,8 +1,8 @@
-package org.cache2k.tests.api;
+package org.cache2k.testsuite.api;
 
 /*
  * #%L
- * cache2k tests on public API
+ * cache2k testsuite on public API
  * %%
  * Copyright (C) 2000 - 2020 headissue GmbH, Munich
  * %%
@@ -25,11 +25,14 @@ import static org.cache2k.expiry.Expiry.*;
 import static org.junit.Assert.*;
 
 import org.cache2k.expiry.Expiry;
+import org.cache2k.testing.category.FastTests;
 import org.junit.Test;
+import org.junit.experimental.categories.Category;
 
 /**
  * @author Jens Wilke
  */
+@Category(FastTests.class)
 public class ExpiryTest {
 
   @Test
