@@ -1,4 +1,4 @@
-package org.cache2k.jmx;
+package org.cache2k.management;
 
 /*
  * #%L
@@ -20,18 +20,37 @@ package org.cache2k.jmx;
  * #L%
  */
 
+import org.cache2k.Cache;
+
 /**
- * Adds actions to the cache mx bean.
+ * General functions to control and tune a cache.
+ *
+ * <p>Outlook: CacheControl may get ability to control expiry and refresh behavior
  *
  * @author Jens Wilke
  */
-@SuppressWarnings("unused")
-public interface CacheMXBean extends CacheInfoMXBean {
+public interface CacheControl {
 
   /**
-   * Clears the cache contents.
+   * Clears the cache contents. Identical to {@link Cache#clear()}
    */
   void clear();
+
+  /**
+   * End cache operations. Identical to {@link Cache#close()}
+   */
+  void close();
+
+  /**
+   * A combination of {@link Cache#clear} and {@link Cache#close} potentially
+   * wiping all stored data of this cache.
+   *
+   * <p>This method is to future proof the API, when a persistence feature is added.
+   * In this case the method will stop cache operations and remove all stored external data.
+   *
+   * <p>Rationale: The corresponding method in JSR107 is {@code CacheManager.destroyCache()}.
+   */
+  void destroy();
 
   /**
    * Change the maximum capacity of the cache. If a weigher is present

@@ -1,8 +1,8 @@
-package org.cache2k.jmx;
+package org.cache2k.extra.jmx;
 
 /*
  * #%L
- * cache2k API
+ * cache2k JMX support
  * %%
  * Copyright (C) 2000 - 2020 headissue GmbH, Munich
  * %%
@@ -20,27 +20,26 @@ package org.cache2k.jmx;
  * #L%
  */
 
+import org.cache2k.core.api.InternalCache;
+import org.cache2k.core.api.InternalCacheInfo;
+import org.cache2k.core.common.AbstractCacheStatistics;
+
 /**
- * Bean representing a cache manager.
+ * Provide updating statistics.
  *
  * @author Jens Wilke
  */
-@SuppressWarnings("unused")
-public interface CacheManagerMXBean {
+public class UpdatingCacheStatistics extends AbstractCacheStatistics implements CacheStatisticsMXBean {
+  private InternalCache cache;
 
-  /**
-   * "ok" if no issues are to report, otherwise it starts with "WARNING:" or
-   * "FAILURE:" and a more descriptive text.
-   */
-  String getHealthStatus();
+  public UpdatingCacheStatistics(InternalCache cache) {
+    this.cache = cache;
+  }
 
-  /**
-   * Clear all associated caches.
-   */
-  void clear();
-
-  String getVersion();
-
-  String getBuildNumber();
+  /** Request new info all the */
+  @Override
+  protected InternalCacheInfo info() {
+    return cache.getInfo();
+  }
 
 }

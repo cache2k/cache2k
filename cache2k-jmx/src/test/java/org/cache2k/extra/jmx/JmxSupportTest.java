@@ -20,13 +20,13 @@ package org.cache2k.extra.jmx;
  * #L%
  */
 
+import org.assertj.core.api.Assertions;
 import org.cache2k.Cache;
 import org.cache2k.Cache2kBuilder;
 import org.cache2k.CacheManager;
-import static org.junit.Assert.*;
 
 import org.cache2k.Weigher;
-import org.cache2k.core.CacheMXBeanImpl;
+import org.cache2k.core.common.BaseCacheManagement;
 import org.cache2k.core.log.Log;
 import org.cache2k.testing.category.FastTests;
 import org.junit.Test;
@@ -46,6 +46,9 @@ import java.lang.management.ManagementFactory;
 import java.util.Collection;
 import java.util.Date;
 import java.util.List;
+
+import static org.assertj.core.api.Assertions.assertThatCode;
+import static org.junit.Assert.*;
 
 /**
  * Simple test to check that the support and the management object appear
@@ -145,11 +148,14 @@ public class JmxSupportTest {
 
   private static ObjectName getCacheManagerObjectName(String name)
     throws MalformedObjectNameException {
+    return new ObjectName("org.cache2k:type=CacheManager,name=" + maybeQuote(name));
+  }
+
+  private static String maybeQuote(String name) {
     if (needsQuoting(name)) {
-      return new ObjectName("org.cache2k:type=CacheManager,name=\"" + name + "\"");
-    } else {
-      return new ObjectName("org.cache2k:type=CacheManager,name=" + name);
+      return "\"" + name + "\"";
     }
+    return name;
   }
 
   private static boolean needsQuoting(String name) {
@@ -228,6 +234,11 @@ public class JmxSupportTest {
     checkAttribute("EntryCapacity", 2000L);
     checkAttribute("MaximumWeight", -1L);
     checkAttribute("TotalWeight", 0L);
+    checkAttribute("Implementation", "HeapCache");
+    checkAttribute("ClearedTime", null);
+    assertTrue("reasonable CreatedTime",
+      ((Date) retrieve("CreatedTime")).compareTo(beforeCreateion) >= 0);
+    objectName = constructCacheStatisticsObjectName(name);
     checkAttribute("InsertCount", 0L);
     checkAttribute("MissCount", 0L);
     checkAttribute("RefreshCount", 0L);
@@ -237,37 +248,57 @@ public class JmxSupportTest {
     checkAttribute("EvictedCount", 0L);
     checkAttribute("PutCount", 0L);
     checkAttribute("RemoveCount", 0L);
-    checkAttribute("ClearedEntriesCount", 0L);
-    checkAttribute("ClearCount", 0L);
+    checkAttribute("ClearedCount", 0L);
+    checkAttribute("ClearCallsCount", 0L);
     checkAttribute("KeyMutationCount", 0L);
     checkAttribute("LoadExceptionCount", 0L);
     checkAttribute("SuppressedLoadExceptionCount", 0L);
     checkAttribute("HitRate", 0.0);
-    checkAttribute("HashQuality", -1);
     checkAttribute("MillisPerLoad", 0.0);
     checkAttribute("TotalLoadMillis", 0L);
-    checkAttribute("Implementation", "HeapCache");
-    checkAttribute("ClearedTime", null);
-    checkAttribute("Alert", 0);
-    assertTrue("reasonable CreatedTime",
-      ((Date) retrieve("CreatedTime")).compareTo(beforeCreateion) >= 0);
-    assertTrue("reasonable InfoCreatedTime",
-      ((Date) retrieve("InfoCreatedTime")).compareTo(beforeCreateion) >= 0);
-    assertTrue("reasonable InfoCreatedDeltaMillis",
-      ((Integer) retrieve("InfoCreatedDeltaMillis")) >= 0);
-    assertTrue("reasonable EvictionStatistics",
-      retrieve("EvictionStatistics").toString().contains("impl="));
-    assertTrue("reasonable IntegrityDescriptor",
-      retrieve("IntegrityDescriptor").toString().startsWith("0."));
     c.close();
   }
 
   @Test
+  public void testDisabledStatistics() throws Exception {
+    String name = getClass().getName() + ".testDisabledStatistics";
+    Cache c = new Cache2kBuilder<Long, List<Collection<Long>>>() { }
+      .name(name)
+      .disableStatistics(true)
+      .enableJmx(true)
+      .build();
+    objectName = constructCacheObjectName(name);
+    checkAttribute("KeyType", "Long");
+    objectName = constructCacheStatisticsObjectName(name);
+    assertThatCode(() -> retrieve("HitRate"))
+      .isInstanceOf(InstanceNotFoundException.class);
+    c.clear();
+  }
+
+  @Test
+  public void testDisableMonitoring() throws Exception {
+    String name = getClass().getName() + ".testDisabledMonitoring";
+    Cache c = new Cache2kBuilder<Long, List<Collection<Long>>>() { }
+      .name(name)
+      .enableJmx(true)
+      .disableMonitoring(true)
+      .build();
+    objectName = constructCacheObjectName(name);
+    assertThatCode(() -> retrieve("KeyType"))
+      .isInstanceOf(InstanceNotFoundException.class);
+    objectName = constructCacheStatisticsObjectName(name);
+    assertThatCode(() -> retrieve("HitRate"))
+      .isInstanceOf(InstanceNotFoundException.class);
+    c.clear();
+  }
+
+  @Test
   public void testWeigherWithSegmentation() throws Exception {
-    String name = getClass().getName() + ".testInitialProperties";
+    String name = getClass().getName() + ".testWeigherWithSegmentation";
     Cache c = new Cache2kBuilder<Long, List<Collection<Long>>>() { }
       .name(name)
       .eternal(true)
+      .disableStatistics(false)
       .enableJmx(true)
       .maximumWeight(123456789L)
       .weigher(new Weigher<Long, List<Collection<Long>>>() {
@@ -285,7 +316,8 @@ public class JmxSupportTest {
     long v = (Long) retrieve("MaximumWeight");
     assertTrue(v >= 123456789L);
     checkAttribute("TotalWeight", 0L);
-    checkAttribute("EvictedWeight", 0L);
+    objectName = constructCacheStatisticsObjectName(name);
+    checkAttribute("EvictedOrRemovedWeight", 0L);
     c.close();
   }
 
@@ -324,11 +356,13 @@ public class JmxSupportTest {
   }
 
   static ObjectName constructCacheObjectName(String name) throws MalformedObjectNameException {
-    if (needsQuoting(name)) {
-      return new ObjectName("org.cache2k:type=Cache,manager=default,name=\"" + name + "\"");
-    } else {
-      return new ObjectName("org.cache2k:type=Cache,manager=default,name=" + name);
-    }
+    return new ObjectName("org.cache2k:type=Cache,manager=default,name=" + maybeQuote(name));
+  }
+
+  static ObjectName constructCacheStatisticsObjectName(String name)
+    throws MalformedObjectNameException {
+    return new ObjectName("org.cache2k:type=CacheStatistics,manager=default," +
+      "name=" + maybeQuote(name));
   }
 
   @Test(expected = InstanceNotFoundException.class)
@@ -339,7 +373,7 @@ public class JmxSupportTest {
       .eternal(true)
       .build();
     MBeanInfo i = getCacheInfo(name);
-    assertEquals(CacheMXBeanImpl.class.getName(), i.getClassName());
+    assertEquals(BaseCacheManagement.class.getName(), i.getClassName());
     c.close();
     getCacheInfo(name);
   }

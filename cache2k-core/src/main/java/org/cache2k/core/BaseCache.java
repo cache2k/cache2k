@@ -27,8 +27,11 @@ import org.cache2k.CacheOperationCompletionListener;
 import org.cache2k.core.api.CacheCloseContext;
 import org.cache2k.core.api.InternalCache;
 import org.cache2k.core.api.InternalCacheInfo;
+import org.cache2k.core.common.BaseCacheManagement;
 import org.cache2k.core.operation.Operations;
-import org.cache2k.jmx.CacheInfoMXBean;
+import org.cache2k.management.CacheControl;
+import org.cache2k.management.CacheInfo;
+import org.cache2k.management.CacheManagement;
 import org.cache2k.processor.EntryProcessingException;
 import org.cache2k.processor.EntryProcessor;
 import org.cache2k.processor.EntryProcessingResult;
@@ -153,7 +156,12 @@ public abstract class BaseCache<K, V> implements InternalCache<K, V>, CacheClose
   public <X> X requestInterface(Class<X> type) {
     if (type.equals(ConcurrentMap.class) ||
       type.equals(Map.class)) {
-      return (X) new ConcurrentMapWrapper<K, V>(this);
+      return (X) asMap();
+    }
+    if (type.isAssignableFrom(CacheControl.class) ||
+      type.isAssignableFrom(CacheInfo.class) ||
+      type.isAssignableFrom(CacheManagement.class)) {
+      return (X) new BaseCacheManagement(this);
     }
     if (type.isAssignableFrom(this.getClass())) {
       return (X) this;
@@ -257,11 +265,6 @@ public abstract class BaseCache<K, V> implements InternalCache<K, V>, CacheClose
     }
   }
 
-  @Override
-  public void clearAndClose() {
-    close();
-  }
-
   /**
    * Return status information. The status collection is time consuming, so this
    * is an expensive operation.
@@ -274,11 +277,6 @@ public abstract class BaseCache<K, V> implements InternalCache<K, V>, CacheClose
     } catch (CacheClosedException ex) {
       return "Cache(name=" + BaseCache.nameQualifier(this) + ", closed=true)";
     }
-  }
-
-  @Override
-  public CacheInfoMXBean getStatistics() {
-    return new CacheMXBeanImpl(this);
   }
 
 }

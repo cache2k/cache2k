@@ -24,7 +24,6 @@ import org.cache2k.Cache;
 import org.cache2k.CacheManager;
 import org.cache2k.core.api.HealthInfoElement;
 import org.cache2k.core.api.InternalCache;
-import org.cache2k.jmx.CacheManagerMXBean;
 
 import java.util.ArrayList;
 import java.util.Collections;

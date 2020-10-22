@@ -20,10 +20,6 @@ package org.cache2k.core.api;
  * #L%
  */
 
-import org.cache2k.core.HeapCache;
-import org.cache2k.core.api.CommonMetrics;
-import org.cache2k.core.api.HealthInfoElement;
-import org.cache2k.core.api.InternalCache;
 import org.cache2k.core.eviction.EvictionMetrics;
 
 import java.util.Collection;
@@ -119,8 +115,6 @@ public interface InternalCacheInfo {
 
   /**
    * The cache produced an exception by itself that should have been prevented.
-   *
-   * @see HeapCache#internalExceptionCnt
    */
   long getInternalExceptionCount();
 

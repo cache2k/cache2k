@@ -20,7 +20,6 @@ package org.cache2k;
  * #L%
  */
 
-import org.cache2k.jmx.CacheInfoMXBean;
 import org.cache2k.processor.EntryProcessingResult;
 import org.cache2k.processor.EntryProcessor;
 
@@ -199,11 +198,6 @@ public class AbstractCache<K, V> implements Cache<K, V> {
   }
 
   @Override
-  public void clearAndClose() {
-    throw new UnsupportedOperationException();
-  }
-
-  @Override
   public void close() {
     throw new UnsupportedOperationException();
   }
@@ -219,17 +213,12 @@ public class AbstractCache<K, V> implements Cache<K, V> {
   }
 
   @Override
-  public <X> X requestInterface(Class<X> type) {
-    throw new UnsupportedOperationException();
-  }
-
-  @Override
   public ConcurrentMap<K, V> asMap() {
     throw new UnsupportedOperationException();
   }
 
   @Override
-  public CacheInfoMXBean getStatistics() {
+  public <X> X requestInterface(Class<X> type) {
     throw new UnsupportedOperationException();
   }
 

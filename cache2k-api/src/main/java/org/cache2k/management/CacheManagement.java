@@ -1,6 +1,8 @@
+package org.cache2k.management;
+
 /*
  * #%L
- * cache2k core implementation
+ * cache2k API
  * %%
  * Copyright (C) 2000 - 2020 headissue GmbH, Munich
  * %%
@@ -17,21 +19,28 @@
  * limitations under the License.
  * #L%
  */
+
+import org.cache2k.Cache;
+
 /**
+ * Combined interface for introspection and control functions of a cache relevant
+ * for management and monitoring.
+ *
  * @author Jens Wilke
  */
-module org.cache2k.core {
-  requires org.cache2k.api;
-  requires static java.logging;
-  requires static org.slf4j;
-  exports org.cache2k.core.api;
-  exports org.cache2k.core.spi;
-  exports org.cache2k.core.log;
-  exports org.cache2k.core.common;
-  uses org.cache2k.core.log.LogFactory;
-  uses org.cache2k.core.spi.CacheConfigurationProvider;
-  uses org.cache2k.core.spi.CacheLifeCycleListener;
-  uses org.cache2k.core.spi.CacheManagerLifeCycleListener;
-  uses org.cache2k.spi.Cache2kExtensionProvider;
-  provides org.cache2k.spi.Cache2kCoreProvider with org.cache2k.core.Cache2kCoreProviderImpl;
+public interface CacheManagement extends CacheControl, CacheInfo {
+
+  /**
+   * Request an management interface of the given cache.
+   */
+  static CacheManagement of(Cache<?, ?> cache) {
+    return cache.requestInterface(CacheManagement.class);
+  }
+
+  /**
+   * Returns a snapshot of cache statistics if this cache supports
+   * statistics.
+   */
+  CacheStatistics sampleStatistics();
+
 }

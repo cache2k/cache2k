@@ -20,7 +20,6 @@ package org.cache2k;
  * #L%
  */
 
-import org.cache2k.jmx.CacheInfoMXBean;
 import org.cache2k.processor.EntryProcessingResult;
 import org.cache2k.processor.EntryProcessor;
 
@@ -205,11 +204,6 @@ public abstract class ForwardingCache<K, V> implements Cache<K, V> {
   }
 
   @Override
-  public void clearAndClose() {
-    delegate().clearAndClose();
-  }
-
-  @Override
   public void close() {
     delegate().close();
   }
@@ -240,11 +234,6 @@ public abstract class ForwardingCache<K, V> implements Cache<K, V> {
   @Override
   public ConcurrentMap<K, V> asMap() {
     return delegate().asMap();
-  }
-
-  @Override
-  public CacheInfoMXBean getStatistics() {
-    return delegate().getStatistics();
   }
 
 }

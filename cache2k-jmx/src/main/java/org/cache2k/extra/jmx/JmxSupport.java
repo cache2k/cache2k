@@ -24,9 +24,11 @@ import org.cache2k.Cache;
 import org.cache2k.CacheException;
 import org.cache2k.CacheManager;
 import org.cache2k.configuration.Cache2kConfiguration;
+import org.cache2k.core.api.InternalCache;
 import org.cache2k.core.spi.CacheLifeCycleListener;
 import org.cache2k.core.spi.CacheManagerLifeCycleListener;
 import org.cache2k.core.log.Log;
+import org.cache2k.management.CacheManagement;
 
 import javax.management.InstanceAlreadyExistsException;
 import javax.management.InstanceNotFoundException;
@@ -58,9 +60,22 @@ public class JmxSupport implements CacheLifeCycleListener, CacheManagerLifeCycle
       return;
     }
     MBeanServer mbs = getPlatformMBeanServer();
-    String name = standardName(c.getCacheManager(), c);
+    InternalCache internalCache = (InternalCache) c.requestInterface(InternalCache.class);
+    CacheManagement management = new CacheManagementJmxImpl(internalCache);
+    String name = createCacheManagementName(c.getCacheManager(), c);
     try {
-      mbs.registerMBean(c.getStatistics(), new ObjectName(name));
+      mbs.registerMBean(management, new ObjectName(name));
+    } catch (InstanceAlreadyExistsException existing) {
+      log.debug("register failure, cache: " + c.getName(), existing);
+    } catch (Exception e) {
+      throw new CacheException("register JMX bean, ObjectName: " + name, e);
+    }
+    if (!management.isStatisticsEnabled()) {
+      return;
+    }
+    name = createCacheStatisticsName(c.getCacheManager(), c);
+    try {
+      mbs.registerMBean(new UpdatingCacheStatistics(internalCache), new ObjectName(name));
     } catch (InstanceAlreadyExistsException existing) {
       log.debug("register failure, cache: " + c.getName(), existing);
     } catch (Exception e) {
@@ -71,7 +86,14 @@ public class JmxSupport implements CacheLifeCycleListener, CacheManagerLifeCycle
   @Override
   public void cacheDestroyed(Cache c) {
     MBeanServer mbs = getPlatformMBeanServer();
-    String name = standardName(c.getCacheManager(), c);
+    String name = createCacheManagementName(c.getCacheManager(), c);
+    try {
+      mbs.unregisterMBean(new ObjectName(name));
+    } catch (InstanceNotFoundException ignore) {
+    } catch (Exception e) {
+      throw new CacheException("unregister JMX bean, ObjectName: " + name, e);
+    }
+    name = createCacheStatisticsName(c.getCacheManager(), c);
     try {
       mbs.unregisterMBean(new ObjectName(name));
     } catch (InstanceNotFoundException ignore) {
@@ -121,10 +143,18 @@ public class JmxSupport implements CacheLifeCycleListener, CacheManagerLifeCycle
         ",name=" + sanitizeNameAsJmxValue(cm.getName());
   }
 
-  private String standardName(CacheManager cm, Cache c) {
+  private String createCacheManagementName(CacheManager cm, Cache c) {
     return
       "org.cache2k" + ":" +
         "type=Cache" +
+        ",manager=" + sanitizeNameAsJmxValue(cm.getName()) +
+        ",name=" + sanitizeNameAsJmxValue(c.getName());
+  }
+
+  private String createCacheStatisticsName(CacheManager cm, Cache c) {
+    return
+      "org.cache2k" + ":" +
+        "type=CacheStatistics" +
         ",manager=" + sanitizeNameAsJmxValue(cm.getName()) +
         ",name=" + sanitizeNameAsJmxValue(c.getName());
   }

@@ -74,7 +74,7 @@ public class EntryActionTest extends TestingBase {
     };
     bc.execute(1, op);
     assertFalse(bc.containsKey(1));
-    assertTrue(bc.getStatistics().getSize() == 0);
+    assertTrue(bc.asMap().size() == 0);
     bc.put(1, 987);
     bc.execute(1, op);
     assertEquals("unchanged", 987, (int) bc.peek(1));

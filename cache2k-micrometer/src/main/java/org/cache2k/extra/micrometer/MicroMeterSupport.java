@@ -29,14 +29,19 @@ import org.cache2k.core.util.TunableConstants;
 import org.cache2k.core.util.TunableFactory;
 
 /**
- * Bind to micrometer automatically if not disabled by configuration.
+ * Binds to micrometer. Binding is omitted if monitoring is disabled.
  *
+ * <p>The binding is done when the cache manager property
+ * {@link #MICROMETER_REGISTRY_MANAGER_PROPERTY} is set with the registry to
+ * use. Alternatively, binding to the global registry can be enabled
+ * via tunables.
  *
  * @author Jens Wilke
  */
 public class MicroMeterSupport implements CacheLifeCycleListener {
 
-  public static final String MICROMETER_REGISTRY_MANAGER_PROPERTY = "micrometer.registry";
+  public static final String MICROMETER_REGISTRY_MANAGER_PROPERTY =
+    MicroMeterSupport.class.getName() + ".registry";
   private static final boolean REGISTER_AT_GLOBAL_REGISTRY =
     TunableFactory.get(Tunable.class).registerAtGlobalRegistry;
 

@@ -21,6 +21,7 @@ package org.cache2k.core;
  */
 
 import org.cache2k.Cache;
+import org.cache2k.management.CacheInfo;
 import org.cache2k.test.util.TestingBase;
 import org.cache2k.test.util.ThreadingStressTester;
 import org.cache2k.testing.category.SlowTests;
@@ -70,7 +71,7 @@ public class ChangeCapacityStressTest extends TestingBase {
     Runnable changeCapacity = new Runnable() {
       @Override
       public void run() {
-        long currentCapacity = c.getStatistics().getEntryCapacity();
+        long currentCapacity = CacheInfo.of(c).getEntryCapacity();
         long newCapacity = currentCapacity
           + maximumSize / 5 - random.nextInt((int) maximumSize / 2);
         newCapacity = Math.max(maximumSize / 4, newCapacity);

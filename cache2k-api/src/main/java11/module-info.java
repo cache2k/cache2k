@@ -27,9 +27,9 @@ module org.cache2k.api {
   exports org.cache2k.expiry;
   exports org.cache2k.integration;
   exports org.cache2k.io;
-  exports org.cache2k.jmx;
   exports org.cache2k.processor;
   exports org.cache2k.spi;
+  exports org.cache2k.management;
   uses org.cache2k.spi.Cache2kCoreProvider;
   uses org.cache2k.spi.Cache2kExtensionProvider;
 }

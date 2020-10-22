@@ -1,4 +1,3 @@
-
 package org.cache2k;
 
 /*
@@ -27,7 +26,6 @@ import org.cache2k.io.CacheLoader;
 import org.cache2k.io.CacheWriter;
 import org.cache2k.io.CacheLoaderException;
 import org.cache2k.io.CacheWriterException;
-import org.cache2k.jmx.CacheInfoMXBean;
 import org.cache2k.processor.EntryProcessingException;
 import org.cache2k.processor.EntryProcessor;
 import org.cache2k.processor.EntryProcessingResult;
@@ -826,21 +824,7 @@ public interface Cache<K, V> extends KeyValueStore<K, V>, Closeable {
   void clear();
 
   /**
-   * This is currently identical to {@link Cache#close()}.
-   *
-   * <p>This method is to future proof the API, when a persistence feature is added.
-   * In this case the method will stop cache operations and remove all stored external data.
-   *
-   * <p>Rationale: The corresponding method in JSR107 is {@code CacheManager.destroyCache()}.
-   * Decided to put it on the cache interface, because: An application can finish its operation on
-   * a cache with one API call; to destroy all the cached data the cache must read the configuration
-   * and build its internal representation, which leads to a "half activated" cache; the additional
-   * call may lead to a race conditions.
-   */
-  void clearAndClose();
-
-  /**
-   * Free all resources and remove the cache from the CacheManager.
+   * Release resources in the local VM and remove the cache from the CacheManager.
    *
    * <p>The method is designed to free resources and finish operations as gracefully and fast
    * as possible. Some cache operations take an unpredictable long time such as the call of
@@ -848,14 +832,10 @@ public interface Cache<K, V> extends KeyValueStore<K, V>, Closeable {
    * in use when this method returns.
    *
    * <p>After close, subsequent cache operations will throw a {@link IllegalStateException}.
-   * Cache operations currently in progress, may or may not terminated with an exception.
+   * Cache operations currently in progress, may or may not be terminated with an exception.
    * A subsequent call to close will not throw an exception.
    *
    * <p>If all caches need to be closed it is more effective to use {@link CacheManager#close()}
-   *
-   * <p>The next releases of cache2k may store cache entries between restarts. If an application
-   * will never use the cached content again, the method {@link #clearAndClose()} should be used
-   * instead.
    */
   void close();
 
@@ -902,13 +882,5 @@ public interface Cache<K, V> extends KeyValueStore<K, V>, Closeable {
    * @return {@code ConcurrentMap} wrapper for this cache instance
    */
   ConcurrentMap<K, V> asMap();
-
-  /**
-   * Return cache statistics. The result is never {@code null} regardless of the settings
-   * {@link Cache2kBuilder#enableJmx(boolean)} or {@link Cache2kBuilder#disableStatistics(boolean)}
-   *
-   * @since 1.4
-   */
-  CacheInfoMXBean getStatistics();
 
 }

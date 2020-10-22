@@ -1,6 +1,8 @@
+package org.cache2k.extra.jmx;
+
 /*
  * #%L
- * cache2k core implementation
+ * cache2k JMX support
  * %%
  * Copyright (C) 2000 - 2020 headissue GmbH, Munich
  * %%
@@ -17,21 +19,28 @@
  * limitations under the License.
  * #L%
  */
+
 /**
+ * Bean representing a cache manager.
+ *
  * @author Jens Wilke
  */
-module org.cache2k.core {
-  requires org.cache2k.api;
-  requires static java.logging;
-  requires static org.slf4j;
-  exports org.cache2k.core.api;
-  exports org.cache2k.core.spi;
-  exports org.cache2k.core.log;
-  exports org.cache2k.core.common;
-  uses org.cache2k.core.log.LogFactory;
-  uses org.cache2k.core.spi.CacheConfigurationProvider;
-  uses org.cache2k.core.spi.CacheLifeCycleListener;
-  uses org.cache2k.core.spi.CacheManagerLifeCycleListener;
-  uses org.cache2k.spi.Cache2kExtensionProvider;
-  provides org.cache2k.spi.Cache2kCoreProvider with org.cache2k.core.Cache2kCoreProviderImpl;
+@SuppressWarnings("unused")
+public interface CacheManagerMXBean {
+
+  /**
+   * "ok" if no issues are to report, otherwise it starts with "WARNING:" or
+   * "FAILURE:" and a more descriptive text.
+   */
+  String getHealthStatus();
+
+  /**
+   * Clear all associated caches.
+   */
+  void clear();
+
+  String getVersion();
+
+  String getBuildNumber();
+
 }
