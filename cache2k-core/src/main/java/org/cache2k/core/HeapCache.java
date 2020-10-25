@@ -1441,7 +1441,7 @@ public class HeapCache<K, V> extends BaseCache<K, V> implements HeapCacheForEvic
   static final byte INSERT_STAT_PUT = 2;
 
   public RuntimeException returnNullValueDetectedException() {
-    return new NullPointerException("null value not allowed");
+    return new NullPointerException("Null values in the cache are not permitted.");
   }
 
   protected final void insert(Entry<K, V> e, V value, long t0, long t, long refreshTime,

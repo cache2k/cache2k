@@ -363,6 +363,11 @@ public abstract class EntryAction<K, V, R> extends Entry.PiggyBack implements
   }
 
   @Override
+  public boolean isEntryLocked() {
+    return entryLocked;
+  }
+
+  @Override
   public void run() {
     try {
       start();

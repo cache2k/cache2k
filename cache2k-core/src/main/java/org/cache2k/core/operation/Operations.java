@@ -211,7 +211,7 @@ public class Operations<K, V> {
     }
   };
 
-  public Semantic<K, V, V> peekAndReplace(K key, final V value) {
+  public Semantic<K, V, V> peekAndReplace(K key, V value) {
     return new Semantic.MightUpdate<K, V, V>() {
 
       @Override
@@ -232,7 +232,7 @@ public class Operations<K, V> {
     };
   }
 
-  public Semantic<K, V, V> peekAndPut(K key, final V value) {
+  public Semantic<K, V, V> peekAndPut(K key, V value) {
     return new Semantic.Update<K, V, V>() {
 
       @Override
@@ -246,7 +246,7 @@ public class Operations<K, V> {
     };
   }
 
-  public Semantic<K, V, V> computeIfAbsent(K key, final Callable<V> function) {
+  public Semantic<K, V, V> computeIfAbsent(K key, Callable<V> function) {
     return new Semantic.MightUpdate<K, V, V>() {
 
       @Override
@@ -275,7 +275,7 @@ public class Operations<K, V> {
     };
   }
 
-  public Semantic<K, V, V> put(K key, final V value) {
+  public Semantic<K, V, V> put(K key, V value) {
     return new Semantic.InsertOrUpdate<K, V, V>() {
 
       @Override
@@ -291,7 +291,7 @@ public class Operations<K, V> {
    *
    * @see org.cache2k.Cache#putIfAbsent(Object, Object)
    */
-  public Semantic<K, V, Boolean> putIfAbsent(K key, final V value) {
+  public Semantic<K, V, Boolean> putIfAbsent(K key, V value) {
     return new Semantic.MightUpdate<K, V, Boolean>() {
 
       @Override
@@ -318,7 +318,7 @@ public class Operations<K, V> {
    *
    * @see org.cache2k.Cache#replace(Object, Object)
    */
-  public Semantic<K, V, Boolean> replace(K key, final V value) {
+  public Semantic<K, V, Boolean> replace(K key, V value) {
     return new Semantic.MightUpdate<K, V, Boolean>() {
 
       @Override
@@ -340,7 +340,7 @@ public class Operations<K, V> {
     };
   }
 
-  public Semantic<K, V, Boolean> replace(K key, final V value, final V newValue) {
+  public Semantic<K, V, Boolean> replace(K key, V value, V newValue) {
     return new Semantic.MightUpdate<K, V, Boolean>() {
 
       @Override
@@ -364,7 +364,7 @@ public class Operations<K, V> {
     };
   }
 
-  public Semantic<K, V, Boolean> remove(K key, final V value) {
+  public Semantic<K, V, Boolean> remove(K key, V value) {
     return new Semantic.MightUpdate<K, V, Boolean>() {
 
       @Override
@@ -388,38 +388,49 @@ public class Operations<K, V> {
     };
   }
 
-  public <R> Semantic<K, V, R> invoke(final K key, final EntryProcessor<K, V, R> processor) {
+  public <R> Semantic<K, V, R> invoke(K key, EntryProcessor<K, V, R> processor) {
     return new Semantic.Base<K, V, R>() {
 
-      private MutableEntryOnProgress<K, V> mutableEntryOnProgress;
+      private MutableEntryOnProgress<K, V> mutableEntryResult;
       private boolean needsLoad;
+      /** Triggers wantData and wantMutate which leads to a lock */
+      private boolean needsLock;
 
       @Override
       public void start(Progress<K, V, R> c) {
-        mutableEntryOnProgress = new MutableEntryOnProgress<K, V>(key, c, null);
+        MutableEntryOnProgress<K, V> mutableEntry =
+          new MutableEntryOnProgress<K, V>(key, c, null);
         try {
-          R result = processor.process(mutableEntryOnProgress);
+          R result = processor.process(mutableEntry);
           c.result(result);
         } catch (WantsDataRestartException rs) {
+          c.wantData();
+          return;
+        } catch (NeedsLockRestartException ex) {
+          needsLock = true;
           c.wantData();
           return;
         } catch (Throwable t) {
           c.failure(new EntryProcessingException(t));
           return;
         }
-        if (mutableEntryOnProgress.isMutationNeeded()) {
-          c.wantMutation();
-        } else {
-          c.noMutation();
-        }
+        maybeMutate(c, mutableEntry);
       }
 
       @Override
       public void examine(Progress<K, V, R> c, ExaminationEntry<K, V> e) {
-        mutableEntryOnProgress = new MutableEntryOnProgress<K, V>(key, c, e);
+        if (needsLock) {
+          c.wantMutation();
+          return;
+        }
+        MutableEntryOnProgress<K, V> mutableEntry =
+          new MutableEntryOnProgress<K, V>(key, c, e);
         try {
-          R result = processor.process(mutableEntryOnProgress);
+          R result = processor.process(mutableEntry);
           c.result(result);
+        } catch (NeedsLockRestartException ex) {
+          c.wantMutation();
+          return;
         } catch (NeedsLoadRestartException rs) {
           needsLoad = true;
           c.wantMutation();
@@ -428,7 +439,12 @@ public class Operations<K, V> {
           c.failure(new EntryProcessingException(t));
           return;
         }
-        if (mutableEntryOnProgress.isMutationNeeded()) {
+        maybeMutate(c, mutableEntry);
+      }
+
+      private void maybeMutate(Progress<K, V, R> c, MutableEntryOnProgress<K, V> mutableEntry) {
+        if (mutableEntry.isMutationNeeded()) {
+          mutableEntryResult = mutableEntry;
           c.wantMutation();
         } else {
           c.noMutation();
@@ -442,7 +458,25 @@ public class Operations<K, V> {
           c.loadAndRestart();
           return;
         }
-        mutableEntryOnProgress.sendMutationCommand();
+        if (mutableEntryResult == null) {
+          mutableEntryResult =
+            new MutableEntryOnProgress<K, V>(key, c, e);
+          try {
+            R result = processor.process(mutableEntryResult);
+            c.result(result);
+          } catch (NeedsLoadRestartException ex) {
+            c.loadAndRestart();
+            return;
+          } catch (Throwable t) {
+            c.failure(new EntryProcessingException(t));
+            return;
+          }
+          if (!mutableEntryResult.isMutationNeeded()) {
+            c.noMutation();
+            return;
+          }
+        }
+        mutableEntryResult.sendMutationCommand();
       }
 
       /** No operation, result is set by the entry processor */
@@ -455,7 +489,9 @@ public class Operations<K, V> {
 
   public static class NeedsLoadRestartException extends RestartException { }
 
-  public Semantic<K, V, Void> expire(K key, final long t) {
+  public static class NeedsLockRestartException extends RestartException { }
+
+  public Semantic<K, V, Void> expire(K key, long t) {
     return new Semantic.MightUpdate<K, V, Void>() {
 
       @Override

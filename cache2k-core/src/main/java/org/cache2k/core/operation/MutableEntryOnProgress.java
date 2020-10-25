@@ -57,7 +57,7 @@ class MutableEntryOnProgress<K, V> implements MutableCacheEntry<K, V> {
     this.progress = progress;
     this.key = key;
     if (entry != null && progress.isDataFreshOrMiss()) {
-      value = this.entry.getValueOrException();
+      value = entry.getValueOrException();
       originalExists = exists = true;
     }
   }
@@ -80,6 +80,7 @@ class MutableEntryOnProgress<K, V> implements MutableCacheEntry<K, V> {
 
   @Override
   public MutableCacheEntry<K, V> setValue(V v) {
+    if (entry != null) { lock(); }
     mutate = true;
     exists = true;
     remove = false;
@@ -90,6 +91,7 @@ class MutableEntryOnProgress<K, V> implements MutableCacheEntry<K, V> {
   @SuppressWarnings("unchecked")
   @Override
   public MutableCacheEntry<K, V> setException(Throwable ex) {
+    if (entry != null) { lock(); }
     mutate = true;
     exists = true;
     remove = false;
@@ -101,6 +103,7 @@ class MutableEntryOnProgress<K, V> implements MutableCacheEntry<K, V> {
 
   @Override
   public MutableCacheEntry<K, V> setExpiryTime(long t) {
+    if (entry != null) { lock(); }
     customExpiry = true;
     expiryTime = t;
     return this;
@@ -111,12 +114,11 @@ class MutableEntryOnProgress<K, V> implements MutableCacheEntry<K, V> {
    */
   @Override
   public MutableCacheEntry<K, V> remove() {
-    if (mutate) {
-      triggerInstallationRead(true);
-    }
+    triggerInstallationRead(true);
     if (mutate && !originalExists) {
       mutate = false;
     } else {
+      if (entry != null) { lock(); }
       mutate = remove = true;
     }
     exists = false;
@@ -159,6 +161,16 @@ class MutableEntryOnProgress<K, V> implements MutableCacheEntry<K, V> {
     if ((ignoreMutate || !mutate) && entry == null) {
       throw new Operations.WantsDataRestartException();
     }
+  }
+
+  /**
+   * Locks the entry.
+   *
+   * @throws UnsupportedOperationException if lock is not supported
+   */
+  private void lock() {
+    if (progress.isEntryLocked()) { return; }
+    throw new Operations.NeedsLockRestartException();
   }
 
   @Override

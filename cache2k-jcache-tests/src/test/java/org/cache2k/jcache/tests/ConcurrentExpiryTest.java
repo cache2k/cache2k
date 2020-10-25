@@ -194,25 +194,22 @@ public class ConcurrentExpiryTest extends AdditionalTestSupport<Integer, String>
       @Override
       public Object process(final MutableEntry<Integer, String> entry, final Object... arguments)
         throws EntryProcessorException {
-        // we pass here three times
         entry.setValue(entry.getValue());
-        if (count.incrementAndGet() == 2) {
-          // entry is locked now. current semantics of cache2k
-          // run through this twice
-          listenerCallBeforeOp.set(expireListenerCalled.get());
-          try {
-            Thread.sleep(expireAfterWrite * 3);
-          } catch (InterruptedException ex) {
-            throw new EntryProcessorException(ex);
-          }
-          entry.setValue("xy");
-          assertTrue("no expiry called yet", deltaListenerCall() == 0);
+        // entry is locked now. current semantics of cache2k
+        // run through this twice
+        listenerCallBeforeOp.set(expireListenerCalled.get());
+        try {
+          Thread.sleep(expireAfterWrite * 3);
+        } catch (InterruptedException ex) {
+          throw new EntryProcessorException(ex);
         }
+        entry.setValue("xy");
+        assertTrue("no expiry called yet", deltaListenerCall() == 0);
         return null;
       }
     });
     assertTrue("Expired while invoke", deltaListenerCall() > 0);
-    while(deltaListenerCall() >= 2) {}
+    while(deltaListenerCall() >= 2) { }
   }
 
 }

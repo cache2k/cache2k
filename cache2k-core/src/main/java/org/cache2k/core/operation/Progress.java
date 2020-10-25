@@ -77,6 +77,11 @@ public interface Progress<K, V, R> {
   boolean isDataFreshOrMiss();
 
   /**
+   * Concurrent modifications are locked out
+   */
+  boolean isEntryLocked();
+
+  /**
    * Value was loaded before as part of this operation.
    */
   boolean wasLoaded();

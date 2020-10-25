@@ -158,6 +158,7 @@ public class EntryProcessorTest {
     };
     Object result = c.invoke(key, p);
     assertNull(result);
+    assertTrue(reached.get());
   }
 
   @Test
@@ -206,7 +207,7 @@ public class EntryProcessorTest {
   }
 
   @Test
-  public void test_Initial_Set() {
+  public void initial_Set() {
     Cache<Integer, Integer> c = target.cache();
     EntryProcessor p = new EntryProcessor() {
       @Override
@@ -377,6 +378,29 @@ public class EntryProcessorTest {
         return null;
       }
     });
+  }
+
+  /**
+   * Corner case. The load is triggered since remove resets the state, which is an optimization.
+   * After the load, remove() will avoid the mutation again, so nothing is inserted and
+   * the final value is null.
+   */
+  @Test
+  public void exists_set_remove_get() {
+    CacheWithLoader cwl = cacheWithLoader();
+    Cache<Integer, Integer> c = cwl.cache;
+    final long t0 = millis();
+    assertEquals(0, cwl.loader.getCount());
+    Integer result =
+      c.invoke(1, e -> {
+        e.exists();
+        e.setValue(4711);
+        e.remove();
+        return e.getValue();
+      });
+    assertEquals(1, cwl.loader.getCount());
+    assertNull(result);
+    assertFalse(c.containsKey(1));
   }
 
   @Test
@@ -779,18 +803,11 @@ public class EntryProcessorTest {
   public void exception_after_mutation() {
     Cache<Integer, Integer> c = target.cache();
     target.statistics();
-    final AtomicLong passCount = new AtomicLong();
     try {
-      c.invoke(123, new EntryProcessor<Integer, Integer, Void>() {
-      @Override
-      public Void process(MutableCacheEntry<Integer, Integer> e) {
+      c.invoke(123, (EntryProcessor<Integer, Integer, Void>) e -> {
         e.setValue(e.getValue());
-        if (passCount.incrementAndGet() == 2) {
-          throw new RuntimeException("exception in entry processor");
-        }
-        return null;
-        }
-    });
+        throw new RuntimeException("exception in entry processor");
+        });
       fail("expect exception");
     } catch (EntryProcessingException expected) { }
     target.statistics()
@@ -798,6 +815,24 @@ public class EntryProcessorTest {
       .missCount.expect(1)
       .loadCount.expect(0)
       .expectAllZero();
+    c.put(123, 123);
+  }
+
+  @Test
+  public void remove_after_mutation() {
+    Cache<Integer, Integer> c = target.cache();
+    target.statistics();
+    c.invoke(123, (EntryProcessor<Integer, Integer, Void>) e -> {
+      e.setValue(e.getValue());
+      e.remove();
+      return null;
+    });
+    target.statistics()
+      .getCount.expect(1)
+      .missCount.expect(1)
+      .loadCount.expect(0)
+      .expectAllZero();
+    assertNull(c.get(123));
     c.put(123, 123);
   }
 
@@ -1080,8 +1115,8 @@ public class EntryProcessorTest {
       "passed 3 times: initial, after installation read, after mutation lock",
       3, count0.get());
     assertEquals(
-      "passed 2 times: after installation read, after mutation lock",
-      2, count1.get());
+      "passed 1 times: after installation read, after mutation lock",
+      1, count1.get());
   }
 
 }
