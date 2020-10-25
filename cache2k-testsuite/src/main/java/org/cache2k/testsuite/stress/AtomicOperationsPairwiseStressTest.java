@@ -1,8 +1,8 @@
-package org.cache2k.test.stress;
+package org.cache2k.testsuite.stress;
 
 /*
  * #%L
- * cache2k core implementation
+ * cache2k testsuite on public API
  * %%
  * Copyright (C) 2000 - 2020 headissue GmbH, Munich
  * %%
@@ -21,10 +21,10 @@ package org.cache2k.test.stress;
  */
 
 import org.cache2k.Cache2kBuilder;
-import org.cache2k.test.core.StaticUtil;
 import static org.junit.Assert.*;
 
 import org.cache2k.testing.category.SlowTests;
+import org.cache2k.testsuite.support.StaticUtil;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;

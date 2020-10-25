@@ -1,8 +1,8 @@
-package org.cache2k.test.stress;
+package org.cache2k.testsuite.stress;
 
 /*
  * #%L
- * cache2k core implementation
+ * cache2k testsuite on public API
  * %%
  * Copyright (C) 2000 - 2020 headissue GmbH, Munich
  * %%
@@ -21,9 +21,9 @@ package org.cache2k.test.stress;
  */
 
 import org.cache2k.Cache2kBuilder;
-import org.cache2k.io.CacheLoader;
-import org.cache2k.test.core.StaticUtil;
 import org.cache2k.testing.category.SlowTests;
+import org.cache2k.testsuite.support.Loaders;
+import org.cache2k.testsuite.support.StaticUtil;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
@@ -50,13 +50,13 @@ public class LoadingPairwiseStressTest extends PairwiseTestingBase {
     l.add(new Object[]{new BuilderAugmenter() {
       @Override
       public <K, V> Cache2kBuilder<K, V> augment(Cache2kBuilder<K, V> b) {
-        return b.loader((CacheLoader<K, V>) new IdentCountingLoader());
+        return b.loader(Loaders.identLoader());
       }
     } });
     l.add(new Object[]{new BuilderAugmenter() {
       @Override
       public <K, V> Cache2kBuilder<K, V> augment(Cache2kBuilder<K, V> b) {
-        b.loader((CacheLoader<K, V>) new IdentCountingLoader());
+        b.loader(Loaders.identLoader());
         StaticUtil.enforceWiredCache(b); return b;
       }
     } });

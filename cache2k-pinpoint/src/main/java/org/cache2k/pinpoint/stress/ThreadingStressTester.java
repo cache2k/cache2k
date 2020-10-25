@@ -1,8 +1,8 @@
-package org.cache2k.test.util;
+package org.cache2k.pinpoint.stress;
 
 /*
  * #%L
- * cache2k core implementation
+ * cache2k pinpoint
  * %%
  * Copyright (C) 2000 - 2020 headissue GmbH, Munich
  * %%
@@ -20,15 +20,12 @@ package org.cache2k.test.util;
  * #L%
  */
 
-import org.cache2k.test.core.TestingParameters;
-
 import java.io.PrintStream;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.BrokenBarrierException;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.CyclicBarrier;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadFactory;
@@ -73,11 +70,11 @@ public class ThreadingStressTester {
 
   private long stopTime;
 
-  private long oneShotTimeoutMillis = TestingParameters.MAX_FINISH_WAIT_MILLIS + 10 * 1000;
+  private long oneShotTimeoutMillis = 30 * 1000;
 
   private long testTimeMillis = 1000 * 1;
 
-  private long timeoutAfterInterruptMillis = TestingParameters.MAX_FINISH_WAIT_MILLIS;
+  private long timeoutAfterInterruptMillis = 30 * 1000;
 
   private boolean doNotInterrupt = false;
 
@@ -98,12 +95,7 @@ public class ThreadingStressTester {
     }
   };
 
-  private Runnable onError = new Runnable() {
-    @Override
-    public void run() {
-
-    }
-  };
+  private Runnable onError = () -> { };
 
   public Class[] getIgnoredExceptions() {
     return ignoredExceptions;
@@ -201,7 +193,7 @@ public class ThreadingStressTester {
   /**
    * Test timeout in milliseconds. This is the maximum time the runner waits for the
    * tasks. Reaching the timeout is a failure and an exception is thrown.
-   * Default is {@link TestingParameters#MAX_FINISH_WAIT_MILLIS} plus 10 seconds.
+   * Default is 30 seconds.
    */
   public final void setOneShotTimeoutMillis(long oneShotTimeoutMillis) {
     this.oneShotTimeoutMillis = oneShotTimeoutMillis;
@@ -231,7 +223,7 @@ public class ThreadingStressTester {
 
   /**
    * Timeout to wait for threads stopping after an interrupt signal is sent.
-   * Default is {@link TestingParameters#MAX_FINISH_WAIT_MILLIS}.
+   * Default is 30 seconds.
    */
   public void setTimeoutAfterInterruptMillis(final long v) {
     timeoutAfterInterruptMillis = v;

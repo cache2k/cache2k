@@ -1,8 +1,8 @@
-package org.cache2k.test.stress;
+package org.cache2k.testsuite.stress;
 
 /*
  * #%L
- * cache2k core implementation
+ * cache2k testsuite on public API
  * %%
  * Copyright (C) 2000 - 2020 headissue GmbH, Munich
  * %%

@@ -42,7 +42,7 @@ public interface ActorPair<R> {
   R actor1();
 
   /**
-   * First actor executed concurrently with actor2.
+   * Second actor executed concurrently with actor1.
    *
    * @return outcome of the actor
    */

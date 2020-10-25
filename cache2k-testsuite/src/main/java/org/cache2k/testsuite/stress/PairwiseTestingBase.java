@@ -1,8 +1,8 @@
-package org.cache2k.test.stress;
+package org.cache2k.testsuite.stress;
 
 /*
  * #%L
- * cache2k core implementation
+ * cache2k testsuite on public API
  * %%
  * Copyright (C) 2000 - 2020 headissue GmbH, Munich
  * %%
@@ -23,7 +23,7 @@ package org.cache2k.test.stress;
 import org.cache2k.Cache;
 import org.cache2k.Cache2kBuilder;
 import org.cache2k.pinpoint.stress.pairwise.ActorPairSuite;
-import org.cache2k.test.util.TestingBase;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import java.util.ArrayList;
@@ -32,7 +32,8 @@ import java.util.List;
 /**
  * @author Jens Wilke
  */
-public class PairwiseTestingBase extends TestingBase {
+@Ignore("Ignore base class with IDE tests")
+public class PairwiseTestingBase {
 
   private final BuilderAugmenter augmenter;
 
@@ -43,8 +44,8 @@ public class PairwiseTestingBase extends TestingBase {
   @SuppressWarnings("unchecked")
   @Test
   public void test() {
-    Cache<Integer, Integer> c = augmenter.augment(builder(Integer.class, Integer.class))
-      .build();
+    Cache<Integer, Integer> c =
+      augmenter.augment(Cache2kBuilder.of(Integer.class, Integer.class)).build();
     ActorPairSuite suite = new ActorPairSuite();
     suite.maxParallel(5);
     int count = 0;

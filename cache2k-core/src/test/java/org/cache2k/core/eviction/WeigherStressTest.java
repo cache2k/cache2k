@@ -24,7 +24,7 @@ import org.cache2k.Cache;
 import org.cache2k.Weigher;
 import org.cache2k.test.core.TestingParameters;
 import org.cache2k.test.util.TestingBase;
-import org.cache2k.test.util.ThreadingStressTester;
+import org.cache2k.pinpoint.stress.ThreadingStressTester;
 import org.cache2k.testing.category.SlowTests;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;

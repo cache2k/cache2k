@@ -31,9 +31,10 @@ import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
+import java.util.concurrent.atomic.LongAdder;
 
 /**
- * Executes the actor pairs in parallem for a configurable amount of time.
+ * Executes actor pairs in parallel for a configurable amount of time.
  * Any exception within the actor methods will be propagated.
  *
  * @author Jens Wilke
@@ -48,6 +49,7 @@ public class ActorPairSuite {
   private final CountDownLatch finishLatch = new CountDownLatch(1);
   private final Random random = new Random(1802);
   private final List<Throwable> exceptions = new CopyOnWriteArrayList<Throwable>();
+  private final LongAdder runCount = new LongAdder();
   private long finishTime;
 
   private int maxParallel = 2;
@@ -111,19 +113,13 @@ public class ActorPairSuite {
     if (maxParallel > pairs.size()) {
       maxParallel = pairs.size();
     }
-    finishTime =
-    runMillis == Long.MAX_VALUE ? Long.MAX_VALUE :
-      System.currentTimeMillis() + runMillis;
+    finishTime = runMillis == Long.MAX_VALUE ?
+      Long.MAX_VALUE : System.currentTimeMillis() + runMillis;
     for (ActorPair p : pairs) {
       pairRunners.add(new OneShotPairRunner<Object>(p));
     }
     for (int i = 0; i < maxParallel; i++) {
-      executor.execute(new Runnable() {
-        @Override
-        public void run() {
-          runLoop();
-        }
-      });
+      executor.execute(() -> runLoop());
     }
     try {
       finishLatch.await();
@@ -133,7 +129,8 @@ public class ActorPairSuite {
 
   private void checkForExceptions() {
     if (!exceptions.isEmpty()) {
-      throw new ActorPairSuiteError(exceptions.size(), exceptions.get(0));
+      throw new ActorPairSuiteError(
+        exceptions.size(), runCount.longValue(), exceptions.get(0));
     }
   }
 
@@ -153,6 +150,7 @@ public class ActorPairSuite {
       } catch (Throwable t) {
         exceptions.add(t);
       }
+      runCount.increment();
       running.remove(runner);
     } while (!stopRunning());
     if (running.isEmpty()) {
@@ -167,9 +165,9 @@ public class ActorPairSuite {
 
   public static class ActorPairSuiteError extends AssertionError {
 
-    public ActorPairSuiteError(int numExceptions, Throwable firstException) {
+    public ActorPairSuiteError(int numExceptions, long runCount, Throwable firstException) {
       super(
-        numExceptions + " errors in suite, first exception: " + firstException,
+        numExceptions + " errors of " + runCount + ", first exception: " + firstException,
         firstException);
     }
 

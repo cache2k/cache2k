@@ -141,7 +141,7 @@ public interface MutableCacheEntry<K, V> extends CacheEntry<K, V> {
    * Current time as provided by the internal time source
    * (usually {@code System.currentTimeMillis()}.
    * The time is retrieved once when the entry processor is invoked and will not change afterwards.
-   * If a load is triggered this value will be identical to the {@code startTime}
+   * If a load is triggered this value will be identical to the {@code startTime} in
    * {@link AdvancedCacheLoader#load},
    * {@link LoadExceptionInfo#getLoadTime()} or {
    * @link AsyncCacheLoader.Context#getLoadStartTime()}
