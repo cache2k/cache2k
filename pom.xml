@@ -627,9 +627,17 @@
               <groups>org.cache2k.testing.category.SlowTests</groups>
               <parallel>classes</parallel>
               <perCoreThreadCount>true</perCoreThreadCount>
+              <threadCount>4</threadCount>
+              <!-- use forks
+              <forkCount>4C</forkCount>
+              <reuseForks>true</reuseForks>
               <threadCount>1</threadCount>
+              <perCoreThreadCount>false</perCoreThreadCount>
+              -->
               <!-- Reduce heap memory to detect leaks. -->
+              <!--
               <argLine>-Xmx128m -XX:+HeapDumpOnOutOfMemoryError -XX:OnOutOfMemoryError="kill -3 %p"</argLine>
+              -->
               <!-- make this test more verbose to investigate a VM crash
               <argLine>-Xmx128m -XX:+HeapDumpOnOutOfMemoryError -XX:+PrintGCDetails -XX:OnOutOfMemoryError="kill -3 %p"</argLine>
               <argLine>-XX:+HeapDumpOnOutOfMemoryError -XX:+PrintGC -XX:+PrintCompilation</argLine>
@@ -640,7 +648,7 @@
                    the safety gap.
               -->
               <systemPropertyVariables>
-                <org.cache2k.core.HeapCache.Tunable.sharpExpirySafetyGapMillis>1765</org.cache2k.core.HeapCache.Tunable.sharpExpirySafetyGapMillis>
+                <org.cache2k.core.HeapCache.Tunable.sharpExpirySafetyGapMillis>1234</org.cache2k.core.HeapCache.Tunable.sharpExpirySafetyGapMillis>
               </systemPropertyVariables>
             </configuration>
           </plugin>

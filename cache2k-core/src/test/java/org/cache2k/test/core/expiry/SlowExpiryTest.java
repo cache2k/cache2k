@@ -487,6 +487,7 @@ public class SlowExpiryTest extends TestingBase {
       }
     });
   }
+
   @Test
   public void testExpireNoKeepAsserts() {
     final Cache<Integer, Integer> c = cache = builder(Integer.class, Integer.class)
