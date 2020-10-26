@@ -24,6 +24,7 @@ import org.cache2k.CacheEntry;
 import org.cache2k.CacheException;
 import org.cache2k.core.api.CommonMetrics;
 import org.cache2k.core.api.InternalCache;
+import org.cache2k.core.api.InternalClock;
 import org.cache2k.core.timing.Timing;
 import org.cache2k.expiry.ExpiryPolicy;
 import org.cache2k.event.CacheEntryExpiredListener;
@@ -325,7 +326,23 @@ public abstract class EntryAction<K, V, R> extends Entry.PiggyBack implements
   @Override
   public boolean isDataFresh() {
     doNotCountAccess = true;
-    return heapEntry.hasFreshData(getMutationStartTime());
+    return hasFreshData();
+  }
+
+  /**
+   * Same as {@link Entry#hasFreshData(InternalClock)} but keep time identically
+   * once checked to ensure timing based decisions do not change during the
+   * the processing.
+   */
+  protected boolean hasFreshData() {
+    long nrt = heapEntry.getNextRefreshTime();
+    if (nrt >= Entry.DATA_VALID) {
+      return true;
+    }
+    if (Entry.needsTimeCheck(nrt)) {
+      return getMutationStartTime() < -nrt;
+    }
+    return false;
   }
 
   @Override
@@ -348,13 +365,12 @@ public abstract class EntryAction<K, V, R> extends Entry.PiggyBack implements
     long nrt = heapEntry.getNextRefreshTime();
     return
       nrt == Entry.EXPIRED_REFRESHED ||
-      nrt == Entry.EXPIRED_REFRESH_PENDING ||
-      heapEntry.hasFreshData(getMutationStartTime());
+      nrt == Entry.EXPIRED_REFRESH_PENDING || hasFreshData();
   }
 
   @Override
   public boolean isDataFreshOrMiss() {
-    if (heapEntry.hasFreshData(getMutationStartTime())) {
+    if (hasFreshData()) {
       return true;
     }
     countMiss = true;

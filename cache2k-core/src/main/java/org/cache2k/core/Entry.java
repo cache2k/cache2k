@@ -472,23 +472,18 @@ public class Entry<K, V> extends CompactEntry<K, V>
    * Entry has a valid value and is fresh / not expired. This predicate may depend on
    * the clock, if the expiry of an entry was not yet detected by the cache, e.g.
    * the internal expiry event is not yet delivered.
+   *
+   * <p>Logic duplicates in {@link EntryAction#hasFreshData()}
+   *
+   * @see EntryAction#hasFreshData()
    */
   public final boolean hasFreshData(InternalClock t) {
-    if (nextRefreshTime >= DATA_VALID) {
+    long nrt = nextRefreshTime;
+    if (nrt >= DATA_VALID) {
       return true;
     }
-    if (needsTimeCheck()) {
-      return t.millis() < -nextRefreshTime;
-    }
-    return false;
-  }
-
-  public final boolean hasFreshData(long millis) {
-    if (nextRefreshTime >= DATA_VALID) {
-      return true;
-    }
-    if (needsTimeCheck()) {
-      return millis < -nextRefreshTime;
+    if (needsTimeCheck(nrt)) {
+      return t.millis() < -nrt;
     }
     return false;
   }
@@ -526,6 +521,10 @@ public class Entry<K, V> extends CompactEntry<K, V>
   }
 
   public final boolean needsTimeCheck() {
+    return needsTimeCheck(nextRefreshTime);
+  }
+
+  public static boolean needsTimeCheck(long nextRefreshTime) {
     return nextRefreshTime < 0;
   }
 
