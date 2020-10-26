@@ -844,9 +844,9 @@ public class Cache2kBuilder<K, V> {
 
   /**
    * Enables that time of an refresh (means update or freshness check of a value) is
-   * available at {@link MutableCacheEntry#getRefreshedTime()}.
+   * available at {@link MutableCacheEntry#getModificationTime()}.
    *
-   * @see MutableCacheEntry#getRefreshedTime()
+   * @see MutableCacheEntry#getModificationTime()
    */
   public final Cache2kBuilder<K, V> recordRefreshedTime(boolean flag) {
     config().setRecordRefreshedTime(flag);

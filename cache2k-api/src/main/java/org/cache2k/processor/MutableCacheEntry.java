@@ -85,9 +85,9 @@ public interface MutableCacheEntry<K, V> extends CacheEntry<K, V> {
   Throwable getException();
 
   /**
-   * True if a mapping exists in the cache, never invokes the loader / cache source.
+   * {@code True} if a mapping exists in the cache, never invokes the loader.
    *
-   * <p>After this method returns true, a call to {@code getValue} will always
+   * <p>After this method returns {@code true}, a call to {@code getValue} will always
    * return the cached value and never invoke the loader. The potential expiry
    * of the value is only checked once and the return values of this method and
    * {@code getValue} will be consistent.
@@ -98,44 +98,6 @@ public interface MutableCacheEntry<K, V> extends CacheEntry<K, V> {
    *                          executed again.
    */
   boolean exists();
-
-  /**
-   * The current value in the cache. Identical to {@link #getValue()}, but not modified
-   * after a mutation method is called. Intended for fluent operation.
-   *
-   * <p>If read through operation is enabled and the entry is not yet existing
-   * in the cache, the call to this method triggers a call to the cache loader.
-   *
-   * @throws RestartException If the information is not yet available and the cache
-   *                          needs to do an asynchronous operation to supply it.
-   *                          After completion, the entry processor will be
-   *                          executed again.
-   */
-  V getOldValue();
-
-  /**
-   * True if a mapping exists in the cache, never invokes the loader / cache source.
-   * Identical to {@link #exists()}, but not modified
-   * after a mutation method is called. Intended for fluent operation.
-   *
-   * @throws RestartException If the information is not yet available and the cache
-   *                          needs to do an asynchronous operation to supply it.
-   *                          After completion, the entry processor will be
-   *                          executed again.
-   */
-  boolean wasExisting();
-
-  /**
-   * Current time as provided by the internal time source
-   * (usually {@code System.currentTimeMillis()}.
-   * The time is retrieved once when the entry processor is invoked and will not change afterwards.
-   * If a load is triggered this value will be identical to
-   * {@link AdvancedCacheLoader#load(Object, long, CacheEntry)} and
-   * {@link LoadExceptionInfo#getLoadTime()}
-   *
-   * @deprecated Replaced with {@link #getStartTime()}
-   */
-  long getCurrentTime();
 
   /**
    * Current time as provided by the internal time source
@@ -198,26 +160,21 @@ public interface MutableCacheEntry<K, V> extends CacheEntry<K, V> {
   MutableCacheEntry<K, V> setExpiryTime(long t);
 
   /**
-   * Timestamp of the last refresh of the cached value. This is the start time
+   * Timestamp of the last update of the cached value. This is the start time
    * (before the loader was called) of a successful load operation, or the time
    * the value was modified directly via {@link org.cache2k.Cache#put} or other sorts
    * of mutation. Does not trigger a load.
-   *
-   * <p>Rationale: We call it "refreshed" time since we don't know whether the value
-   * actually changed. If a load produces the same value as before the entry is refreshed but
-   * effectively not updated or modified. The past tense means its the time of the last refresh and
-   * is not the upcoming refresh.
    */
-  long getRefreshedTime();
+  long getModificationTime();
 
   /**
-   * If {@link #setValue(Object)} is used, this sets an alternative refreshed time for
+   * If {@link #setValue(Object)} is used, this sets an alternative time for
    * expiry calculations. The entry refreshed time is not updated, if the entry is
    * not mutated.
    *
    * <p>If refresh ahead is enabled via {@link org.cache2k.Cache2kBuilder#refreshAhead(boolean)},
    * the next refresh time is controlled by the expiry time.
    */
-  MutableCacheEntry<K, V> setRefreshedTime(long t);
+  MutableCacheEntry<K, V> setModificationTime(long t);
 
 }

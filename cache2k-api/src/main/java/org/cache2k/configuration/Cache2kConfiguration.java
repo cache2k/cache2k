@@ -34,7 +34,6 @@ import org.cache2k.io.ExceptionPropagator;
 import org.cache2k.io.ResiliencePolicy;
 
 import java.time.Duration;
-import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;

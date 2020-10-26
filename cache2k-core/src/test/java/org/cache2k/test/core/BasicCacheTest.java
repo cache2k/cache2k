@@ -486,7 +486,7 @@ public class BasicCacheTest extends TestingBase {
           assertNull("exception suppressed", e.getException());
           assertTrue("entry present", e.exists());
           assertThat("refresh time of entry, not when exception happened",
-            e.getRefreshedTime(),
+            e.getModificationTime(),
             lessThanOrEqualTo(refreshedBefore));
           return null;
         }
@@ -508,7 +508,7 @@ public class BasicCacheTest extends TestingBase {
       @Override
       public Long process(final MutableCacheEntry<Integer, Integer> e) throws Exception {
         assertTrue("entry present", e.exists());
-        assertThat(e.getRefreshedTime(), greaterThanOrEqualTo(t));
+        assertThat(e.getModificationTime(), greaterThanOrEqualTo(t));
         return null;
       }
     });
@@ -518,7 +518,7 @@ public class BasicCacheTest extends TestingBase {
     return c.invoke(key, new EntryProcessor<Integer, Integer, Long>() {
       @Override
       public Long process(final MutableCacheEntry<Integer, Integer> e) throws Exception {
-        return e.getRefreshedTime();
+        return e.getModificationTime();
       }
     });
   }

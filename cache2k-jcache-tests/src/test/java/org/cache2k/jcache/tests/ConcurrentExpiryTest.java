@@ -189,7 +189,6 @@ public class ConcurrentExpiryTest extends AdditionalTestSupport<Integer, String>
   @Test
   public void testExpireWhileInvoke() throws Exception {
     cache.put(1, "hello");
-    final AtomicInteger count = new AtomicInteger();
     cache.invoke(1, new EntryProcessor<Integer, String, Object>() {
       @Override
       public Object process(final MutableEntry<Integer, String> entry, final Object... arguments)
@@ -208,8 +207,7 @@ public class ConcurrentExpiryTest extends AdditionalTestSupport<Integer, String>
         return null;
       }
     });
-    assertTrue("Expired while invoke", deltaListenerCall() > 0);
-    while(deltaListenerCall() >= 2) { }
+    assertEquals("Expired while invoke", 1, deltaListenerCall());
   }
 
 }

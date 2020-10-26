@@ -399,7 +399,7 @@ public class Operations<K, V> {
       @Override
       public void start(Progress<K, V, R> c) {
         MutableEntryOnProgress<K, V> mutableEntry =
-          new MutableEntryOnProgress<K, V>(key, c, null);
+          new MutableEntryOnProgress<K, V>(key, c, null, false);
         try {
           R result = processor.process(mutableEntry);
           c.result(result);
@@ -424,7 +424,7 @@ public class Operations<K, V> {
           return;
         }
         MutableEntryOnProgress<K, V> mutableEntry =
-          new MutableEntryOnProgress<K, V>(key, c, e);
+          new MutableEntryOnProgress<K, V>(key, c, e, false);
         try {
           R result = processor.process(mutableEntry);
           c.result(result);
@@ -460,7 +460,7 @@ public class Operations<K, V> {
         }
         if (mutableEntryResult == null) {
           mutableEntryResult =
-            new MutableEntryOnProgress<K, V>(key, c, e);
+            new MutableEntryOnProgress<K, V>(key, c, e, true);
           try {
             R result = processor.process(mutableEntryResult);
             c.result(result);

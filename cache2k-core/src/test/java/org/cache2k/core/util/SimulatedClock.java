@@ -121,6 +121,10 @@ public class SimulatedClock implements InternalClock, Scheduler {
     now = new AtomicLong(initialMillis);
   }
 
+  public SimulatedClock() {
+    this(1000000);
+  }
+
   @Override
   public void schedule(Runnable runnable, long requestedMillis) {
     long millis = requestedMillis + jobExecutionLagMillis;

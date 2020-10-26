@@ -75,7 +75,7 @@ public interface EntryProcessor<K, V, R> {
    *
    * <p><b>Caveat about modification time and expiry:</b> The point in time of the last
    * modification, in case the entry is modified, is after the method completes.
-   * It is possible to set an alternative time with {@link MutableCacheEntry#setRefreshedTime(long)}
+   * It is possible to set an alternative time with {@link MutableCacheEntry#setModificationTime(long)}
    *
    * <p>The cache is only modified, if the method completes without exception.
    *

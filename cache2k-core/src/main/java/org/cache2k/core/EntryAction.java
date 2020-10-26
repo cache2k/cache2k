@@ -24,7 +24,6 @@ import org.cache2k.CacheEntry;
 import org.cache2k.CacheException;
 import org.cache2k.core.api.CommonMetrics;
 import org.cache2k.core.api.InternalCache;
-import org.cache2k.core.operation.LoadedEntry;
 import org.cache2k.core.timing.Timing;
 import org.cache2k.expiry.ExpiryPolicy;
 import org.cache2k.event.CacheEntryExpiredListener;
@@ -326,7 +325,7 @@ public abstract class EntryAction<K, V, R> extends Entry.PiggyBack implements
   @Override
   public boolean isDataFresh() {
     doNotCountAccess = true;
-    return successfulLoad || heapEntry.hasFreshData(heapCache.getClock());
+    return heapEntry.hasFreshData(getMutationStartTime());
   }
 
   @Override
@@ -339,7 +338,7 @@ public abstract class EntryAction<K, V, R> extends Entry.PiggyBack implements
     if (nrt >= 0 && nrt < Entry.DATA_VALID) {
       return false;
     }
-    return Math.abs(nrt) <= millis();
+    return Math.abs(nrt) <= getMutationStartTime();
   }
 
   @Override
@@ -350,12 +349,12 @@ public abstract class EntryAction<K, V, R> extends Entry.PiggyBack implements
     return
       nrt == Entry.EXPIRED_REFRESHED ||
       nrt == Entry.EXPIRED_REFRESH_PENDING ||
-      heapEntry.hasFreshData(heapCache.getClock());
+      heapEntry.hasFreshData(getMutationStartTime());
   }
 
   @Override
   public boolean isDataFreshOrMiss() {
-    if (successfulLoad || heapEntry.hasFreshData(heapCache.getClock())) {
+    if (heapEntry.hasFreshData(getMutationStartTime())) {
       return true;
     }
     countMiss = true;
@@ -433,6 +432,7 @@ public abstract class EntryAction<K, V, R> extends Entry.PiggyBack implements
 
   public void examine() {
     int callbackCount = semanticCallback;
+    mutationStartTime = 0;
     operation.examine(this, heapOrLoadedEntry);
   }
 
@@ -452,7 +452,7 @@ public abstract class EntryAction<K, V, R> extends Entry.PiggyBack implements
     if (!entryLocked) {
       if (lockForNoHit(MUTATE)) { return; }
       if (wantData) {
-        examineAgainAfterLock();
+        reexamineAfterLock();
         return;
       }
     } else {
@@ -465,9 +465,10 @@ public abstract class EntryAction<K, V, R> extends Entry.PiggyBack implements
    * Entry state may have changed between the first examination and obtaining
    * the entry lock. Examine again.
    */
-  public void examineAgainAfterLock() {
+  public void reexamineAfterLock() {
     countMiss = false;
     heapOrLoadedEntry = heapEntry;
+    mutationStartTime = 0;
     examine();
   }
 
@@ -475,7 +476,8 @@ public abstract class EntryAction<K, V, R> extends Entry.PiggyBack implements
    * Check whether we are executed on an expired entry before the
    * timer event for the expiry was received. In case expiry listeners
    * are present, we want to make sure that an expiry is sent before
-   * a mutation (especially load) happens.
+   * a mutation happens, which was eventually triggered the fact that the
+   * entry expired.
    */
   public void checkExpiryBeforeMutation() {
     if (entryExpiredListeners() == null) {
@@ -483,16 +485,18 @@ public abstract class EntryAction<K, V, R> extends Entry.PiggyBack implements
       return;
     }
     long nrt = heapEntry.getNextRefreshTime();
-    if (nrt < 0 && millis() >= -nrt) {
+    if (nrt >= 0) {
+      continueWithMutation();
+      return;
+    }
+    long millis = getMutationStartTime();
+    if (millis >= -nrt) {
       boolean justExpired = false;
       synchronized (heapEntry) {
-        nrt = heapEntry.getNextRefreshTime();
-        if (nrt < 0 && millis() >= -nrt) {
-          justExpired = true;
-          heapEntry.setNextRefreshTime(Entry.EXPIRED);
-          timing().stopStartTimer(0, heapEntry);
-          heapDataValid = false;
-        }
+        justExpired = true;
+        heapEntry.setNextRefreshTime(Entry.EXPIRED);
+        timing().stopStartTimer(0, heapEntry);
+        heapDataValid = false;
       }
       if (justExpired) {
         existingEntryExpiredBeforeMutationSendExpiryEvents();
@@ -913,7 +917,7 @@ public abstract class EntryAction<K, V, R> extends Entry.PiggyBack implements
   public void loadAndExpiryCalculatedExamineAgain() {
     valueDefinitelyLoaded = valueLoadedOrRevived = loadAndRestart = false;
     successfulLoad = true;
-    heapOrLoadedEntry = new LoadedEntry<K, V>() {
+    heapOrLoadedEntry = new ExaminationEntry<K, V>() {
       @Override
       public K getKey() {
         return heapEntry.getKey();
