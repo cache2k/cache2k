@@ -21,7 +21,6 @@ package org.cache2k.configuration;
  */
 
 import org.cache2k.Cache2kBuilder;
-import org.cache2k.TimeReference;
 import org.cache2k.Weigher;
 import org.cache2k.event.CacheClosedListener;
 import org.cache2k.event.CacheEntryOperationListener;
@@ -116,7 +115,6 @@ public class Cache2kConfiguration<K, V> implements ConfigurationBean, Configurat
   private CustomizationSupplier<AdvancedCacheLoader<K, V>> advancedLoader;
   private CustomizationSupplier<AsyncCacheLoader<K, V>> asyncLoader;
   private CustomizationSupplier<ExceptionPropagator<K>> exceptionPropagator;
-  private CustomizationSupplier<TimeReference> timeReference;
   private CustomizationSupplier<Weigher> weigher;
 
   private CustomizationCollection<CacheEntryOperationListener<K, V>> listeners;
@@ -723,17 +721,6 @@ public class Cache2kConfiguration<K, V> implements ConfigurationBean, Configurat
    */
   public void setAsyncListenerExecutor(CustomizationSupplier<Executor> v) {
     asyncListenerExecutor = v;
-  }
-
-  public CustomizationSupplier<TimeReference> getTimeReference() {
-    return timeReference;
-  }
-
-  /**
-   * @see Cache2kBuilder#timeReference(TimeReference)
-   */
-  public void setTimeReference(CustomizationSupplier<TimeReference> v) {
-    timeReference = v;
   }
 
   public CustomizationSupplier<Weigher> getWeigher() {

@@ -58,13 +58,17 @@ public class ConfigurationSectionContainer extends AbstractCollection<Configurat
    * Retrieve a single section from the container.
    */
   @SuppressWarnings("unchecked")
-  public <T extends ConfigurationSection> T getSection(Class<T> sectionType) {
+  public <T extends ConfigurationSection> T getSection(Class<T> sectionType, T defaultFallback) {
     for (ConfigurationSection s : sections) {
       if (sectionType.equals(s.getClass())) {
         return (T) s;
       }
     }
-    return null;
+    return defaultFallback;
+  }
+
+  public <T extends ConfigurationSection> T getSection(Class<T> sectionType) {
+    return getSection(sectionType, null);
   }
 
   @Override

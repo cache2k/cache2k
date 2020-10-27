@@ -21,6 +21,7 @@ package org.cache2k.core.timing;
  */
 
 import org.cache2k.core.HeapCache;
+import org.cache2k.core.api.Scheduler;
 
 import java.util.concurrent.Executor;
 import java.util.concurrent.ScheduledExecutorService;

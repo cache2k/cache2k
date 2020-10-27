@@ -1,4 +1,4 @@
-package org.cache2k.core.timing;
+package org.cache2k.core.api;
 
 /*
  * #%L
@@ -23,14 +23,24 @@ package org.cache2k.core.timing;
 import java.util.concurrent.Executor;
 
 /**
+ * Simple interface the cache uses to schedule tasks for timer
+ * jobs that are handling expiry or triggering a refresh.
+ *
  * @author Jens Wilke
  */
 public interface Scheduler extends Executor {
 
+  /**
+   * Schedule a task to be run at the given time
+   */
   void schedule(Runnable runnable, long millis);
 
   /**
    * Run a task immediately, usually via the common ForkJoinPool.
+   * This is used for tasks that are due in the past and should
+   * executed as soon as possible. Since this is intended to run on the
+   * same executor then the scheduled tasks this method is provided
+   * here.
    */
   @Override
   void execute(Runnable command);

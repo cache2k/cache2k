@@ -21,7 +21,7 @@ package org.cache2k.core.util;
  */
 
 import org.cache2k.core.api.InternalClock;
-import org.cache2k.core.timing.Scheduler;
+import org.cache2k.core.api.Scheduler;
 
 import java.util.Map;
 import java.util.TreeMap;

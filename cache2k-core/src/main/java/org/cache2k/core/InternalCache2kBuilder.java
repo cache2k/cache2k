@@ -25,6 +25,7 @@ import org.cache2k.CacheEntry;
 import org.cache2k.CustomizationException;
 import org.cache2k.configuration.CacheBuildContext;
 import org.cache2k.configuration.CustomizationSupplier;
+import org.cache2k.core.api.CoreConfiguration;
 import org.cache2k.core.api.InternalBuildContext;
 import org.cache2k.core.api.InternalCache;
 import org.cache2k.core.eviction.EvictionFactory;
@@ -230,7 +231,9 @@ public class InternalCache2kBuilder<K, V> implements InternalBuildContext<K, V> 
     } else {
       cache = new HeapCache<K, V>();
     }
-    clock = (InternalClock) createCustomization(config.getTimeReference(), DefaultClock.INSTANCE);
+    CoreConfiguration coreConfig =
+      config.getSections().getSection(CoreConfiguration.class, CoreConfiguration.DEFAULT);
+    clock = createCustomization(coreConfig.getTimeReference(), DefaultClock.INSTANCE);
     HeapCache bc = (HeapCache) cache;
     bc.setCacheManager(manager);
     configureViaSettersDirect(bc);

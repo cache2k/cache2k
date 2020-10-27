@@ -938,14 +938,6 @@ public class Cache2kBuilder<K, V> {
   }
 
   /**
-   * Clock to be used by the cache as time reference.
-   */
-  public final Cache2kBuilder<K, V> timeReference(TimeReference v) {
-    config().setTimeReference(new CustomizationReferenceSupplier<TimeReference>(v));
-    return this;
-  }
-
-  /**
    * Set the weigher to be used to calculate the entry weight. The parameter
    * {@link #maximumWeight(long)} needs to be specified as well. Using a weigher has a slightly
    * performance impact on the update of existing entries.

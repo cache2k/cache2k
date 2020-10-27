@@ -20,16 +20,17 @@ package org.cache2k.core.api;
  * #L%
  */
 
-import org.cache2k.TimeReference;
-
 /**
  * Abstraction for the system clock. A simulated clock implementation is used to
  * test timing related code in a faster way. A simulated clock needs also to implement
- * an {@link org.cache2k.core.timing.Scheduler} based on the other timing.
+ * an {@link Scheduler} based on the other timing.
+ *
+ * <p>Simulated clocks need to implement {@link Scheduler} as well to trigger
+ * timed tasked.
  *
  * @author Jens Wilke
  */
-public interface InternalClock extends TimeReference {
+public interface InternalClock {
 
   /**
    * Returns the milliseconds since epoch. In the simulated clock a call to this method
