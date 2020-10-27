@@ -873,11 +873,10 @@ public interface Cache<K, V> extends KeyValueStore<K, V>, Closeable {
    * cache. A map is considered identical when from the same cache instance. This is not compatible
    * to the general {@code Map} contract.
    *
+   * <p>Operations on the map do not invoke the loader.
+   *
    * <p>Multiple calls to this method return a new object instance which is a wrapper of the cache
    * instance. Calling this method is a cheap operation.
-   *
-   * <p>The current {@code ConcurrentMap} implementation is minimalistic and not optimized for all
-   * usage aspects. Calling the cache methods directly could be more effective.
    *
    * @return {@code ConcurrentMap} wrapper for this cache instance
    */

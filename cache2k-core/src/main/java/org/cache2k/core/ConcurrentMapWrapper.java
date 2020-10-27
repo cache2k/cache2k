@@ -32,6 +32,8 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentMap;
+import java.util.function.BiFunction;
+import java.util.function.Function;
 
 /**
  * ConcurrentMap interface wrapper on top of a cache. The map interface does not cause calls to
@@ -152,7 +154,7 @@ public class ConcurrentMapWrapper<K, V> implements ConcurrentMap<K, V> {
     EntryProcessor<K, V, V> p = new EntryProcessor<K, V, V>() {
       @Override
       public V process(MutableCacheEntry<K, V> e) {
-        V result = e.getValue();
+        V result = e.exists() ? e.getValue() : null;
         e.setValue(value);
         return result;
       }
@@ -168,7 +170,7 @@ public class ConcurrentMapWrapper<K, V> implements ConcurrentMap<K, V> {
     EntryProcessor<K, V, V> p = new EntryProcessor<K, V, V>() {
       @Override
       public V process(MutableCacheEntry<K, V> e) {
-        V result = e.getValue();
+        V result = e.exists() ? e.getValue() : null;
         e.remove();
         return result;
       }
@@ -302,6 +304,59 @@ public class ConcurrentMapWrapper<K, V> implements ConcurrentMap<K, V> {
         return ConcurrentMapWrapper.this.size();
       }
     };
+  }
+
+  @Override
+  public V computeIfAbsent(K key, Function<? super K, ? extends V> mappingFunction) {
+    return cache.invoke(key, entry -> {
+      V value = null;
+      if (!entry.exists()) {
+        entry.lock();
+        value = mappingFunction.apply(key);
+        if (value != null) {
+          entry.setValue(value);
+        }
+      } else {
+        return entry.getValue();
+      }
+      return value;
+    });
+  }
+
+  @Override
+  public V computeIfPresent(K key,
+                            BiFunction<? super K, ? super V, ? extends V> remappingFunction) {
+    return cache.invoke(key, entry -> {
+      V value = null;
+      if (entry.exists()) {
+        entry.lock();
+        value = remappingFunction.apply(key, entry.getValue());
+        if (value != null) {
+          entry.setValue(value);
+        } else {
+          entry.remove();
+        }
+      }
+      return value;
+    });
+  }
+
+  @Override
+  public V compute(K key, BiFunction<? super K, ? super V, ? extends V> remappingFunction) {
+    return cache.invoke(key, entry -> {
+      V value = null;
+      if (entry.exists()) {
+        value = entry.getValue();
+      }
+      entry.lock();
+      value = remappingFunction.apply(key, value);
+      if (value != null) {
+        entry.setValue(value);
+      } else {
+        entry.remove();
+      }
+      return value;
+    });
   }
 
   /** This is the object identity of the cache */

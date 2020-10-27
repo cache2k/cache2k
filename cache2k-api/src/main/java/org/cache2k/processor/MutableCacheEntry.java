@@ -125,6 +125,20 @@ public interface MutableCacheEntry<K, V> extends CacheEntry<K, V> {
   long getStartTime();
 
   /**
+   * Locks the entry for mutation. Code following this method will be
+   * executed once and atomically w.r.t. other operations changing an entry
+   * with the same key.
+   *
+   * @throws RestartException If the information is not yet available and the cache
+   *                          needs to do an operation to supply it. After completion,
+   *                          the entry processor will be executed again.
+   * @throws UnsupportedOperationException In case locking is not supported by this
+   *                                       cache configuration.
+   *
+   */
+  MutableCacheEntry<K, V> lock();
+
+  /**
    * Insert or updates the cache value assigned to this key.
    *
    * <p>After calling this method the values of {@code exists} and {@code getValue}
@@ -146,7 +160,7 @@ public interface MutableCacheEntry<K, V> extends CacheEntry<K, V> {
    *                          needs to do an operation to supply it. After completion,
    *                          the entry processor will be executed again.
    */
-  MutableCacheEntry<K, V> reload();
+  MutableCacheEntry<K, V> load();
 
   /**
    * Removes an entry from the cache.

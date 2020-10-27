@@ -27,6 +27,8 @@ import org.cache2k.processor.MutableCacheEntry;
 import static org.cache2k.expiry.ExpiryTimeValues.NEUTRAL;
 
 /**
+ * Mutable entry on top of the progress interface.
+ *
  * @author Jens Wilke
  */
 class MutableEntryOnProgress<K, V> implements MutableCacheEntry<K, V> {
@@ -74,7 +76,7 @@ class MutableEntryOnProgress<K, V> implements MutableCacheEntry<K, V> {
 
   @Override
   public boolean exists() {
-    triggerInstallationRead(false);
+    triggerInstallationRead();
     return originalExists;
   }
 
@@ -112,7 +114,7 @@ class MutableEntryOnProgress<K, V> implements MutableCacheEntry<K, V> {
    */
   @Override
   public MutableCacheEntry<K, V> remove() {
-    triggerInstallationRead(true);
+    triggerInstallationRead();
     if (mutate && !originalExists) {
       mutate = false;
     } else {
@@ -131,13 +133,13 @@ class MutableEntryOnProgress<K, V> implements MutableCacheEntry<K, V> {
   @Override
   public V getValue() {
     dataRead = true;
-    triggerLoadOrInstallationRead(false);
+    triggerLoadOrInstallationRead();
     checkAndThrowException(originalOrLoadedValue);
     return originalOrLoadedValue;
   }
 
   @Override
-  public MutableCacheEntry<K, V> reload() {
+  public MutableCacheEntry<K, V> load() {
     if (dataRead) {
       throw new IllegalStateException(
         "getValue()/getException()/getModificationTime() called before reload");
@@ -146,21 +148,21 @@ class MutableEntryOnProgress<K, V> implements MutableCacheEntry<K, V> {
       throw new UnsupportedOperationException("Loader is not configured");
     }
     if (!progress.wasLoaded()) {
-      triggerLoadOrInstallationRead(false);
+      triggerLoadOrInstallationRead();
       throw new Operations.NeedsLoadRestartException();
     }
     return this;
   }
 
-  private void triggerLoadOrInstallationRead(boolean ignoreMutate) {
-    triggerInstallationRead(ignoreMutate);
-    if (!originalExists && !progress.wasLoaded() && (ignoreMutate || !mutate) && progress.isLoaderPresent()) {
+  private void triggerLoadOrInstallationRead() {
+    triggerInstallationRead();
+    if (!originalExists && !progress.wasLoaded() && progress.isLoaderPresent()) {
       throw new Operations.NeedsLoadRestartException();
     }
   }
 
-  private void triggerInstallationRead(boolean ignoreMutate) {
-    if ((ignoreMutate || !mutate) && entry == null) {
+  private void triggerInstallationRead() {
+    if (entry == null) {
       throw new Operations.WantsDataRestartException();
     }
   }
@@ -170,8 +172,8 @@ class MutableEntryOnProgress<K, V> implements MutableCacheEntry<K, V> {
    *
    * @throws UnsupportedOperationException if lock is not supported
    */
-  private void lock() {
-    if (mutationRequested) { return; }
+  public MutableCacheEntry<K, V> lock() {
+    if (mutationRequested) { return this; }
     throw new Operations.NeedsLockRestartException();
   }
 
@@ -190,7 +192,7 @@ class MutableEntryOnProgress<K, V> implements MutableCacheEntry<K, V> {
 
   @Override
   public LoadExceptionInfo<K> getExceptionInfo() {
-    triggerLoadOrInstallationRead(false);
+    triggerLoadOrInstallationRead();
     dataRead = true;
     if (originalOrLoadedValue instanceof ExceptionWrapper) {
       return (ExceptionWrapper<K>) originalOrLoadedValue;
@@ -200,7 +202,7 @@ class MutableEntryOnProgress<K, V> implements MutableCacheEntry<K, V> {
 
   @Override
   public long getModificationTime() {
-    triggerInstallationRead(false);
+    triggerInstallationRead();
     dataRead = true;
     return originalExists || progress.wasLoaded() ? entry.getRefreshTime() : 0;
   }

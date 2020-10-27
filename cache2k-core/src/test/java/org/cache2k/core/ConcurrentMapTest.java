@@ -315,6 +315,51 @@ public class ConcurrentMapTest {
   }
 
   @Test
+  public void computeIfAbsent() {
+    String value = map.computeIfAbsent(123, integer -> "foo");
+    assertEquals("foo", value);
+    assertEquals("foo", map.get(123));
+    value = map.computeIfAbsent(123, integer -> "bar");
+    assertEquals("foo", value);
+    assertEquals("foo", map.get(123));
+  }
+
+  @Test
+  public void computeIfPresent() {
+    String value = map.computeIfPresent(123, (integer, s) -> "foo");
+    assertNull(value);
+    assertNull(map.get(123));
+    map.put(123, "foo");
+    value = map.computeIfPresent(123, (integer, s) -> "bar");
+    assertEquals("bar", value);
+    assertEquals("bar", map.get(123));
+    value = map.computeIfPresent(123, (integer, s) -> null);
+    assertNull(value);
+    assertNull(map.get(123));
+    assertFalse(map.containsValue(123));
+  }
+
+  @Test
+  public void compute() {
+    String value = map.compute(123, (integer, s) -> "" + s);
+    assertEquals("null", value);
+    map.put(123, "foo");
+    value = map.compute(123, (integer, s) -> {
+      assertEquals("foo", s);
+      return "bar";
+    });
+    assertEquals("bar", value);
+    assertEquals("bar", map.get(123));
+    value = map.compute(123, (integer, s) -> {
+      assertEquals("bar", s);
+      return null;
+    });
+    assertNull(value);
+    assertNull(map.get(123));
+    assertFalse(map.containsValue(123));
+  }
+
+  @Test
   public void test_hashCode() {
     assertTrue(map.hashCode() == map.hashCode());
   }

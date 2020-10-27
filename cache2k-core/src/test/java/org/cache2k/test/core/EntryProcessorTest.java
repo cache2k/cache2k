@@ -327,7 +327,7 @@ public class EntryProcessorTest {
     c.invoke(1, new EntryProcessor<Integer, Integer, Object>() {
       @Override
       public Object process(MutableCacheEntry<Integer, Integer> e) {
-        e.reload();
+        e.load();
         assertEquals(1, (int) e.getValue());
         return null;
       }
@@ -338,7 +338,7 @@ public class EntryProcessorTest {
       @Override
       public Object process(MutableCacheEntry<Integer, Integer> e) {
         assertTrue(e.exists());
-        e.reload();
+        e.load();
         assertEquals(2, (int) e.getValue());
         return null;
       }
@@ -353,7 +353,7 @@ public class EntryProcessorTest {
       c.invoke(1, new EntryProcessor<Integer, Integer, Object>() {
         @Override
         public Object process(MutableCacheEntry<Integer, Integer> e) {
-          e.reload();
+          e.load();
           return null;
         }
       });
