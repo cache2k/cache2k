@@ -24,6 +24,7 @@ import org.cache2k.core.AbstractCacheEntry;
 import org.cache2k.CacheEntry;
 import org.cache2k.core.Entry;
 import org.cache2k.core.ExceptionWrapper;
+import org.cache2k.io.LoadExceptionInfo;
 
 /**
  *
@@ -60,9 +61,9 @@ public class ReadOnlyCacheEntry<K, V>
   }
 
   @Override
-  public Throwable getException() {
+  public LoadExceptionInfo<K> getExceptionInfo() {
     if (valueOrException instanceof ExceptionWrapper) {
-      return ((ExceptionWrapper) valueOrException).getException();
+      return ((ExceptionWrapper<K>) valueOrException);
     }
     return null;
   }

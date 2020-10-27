@@ -299,7 +299,6 @@ public class EntryProcessorTest {
         assertThat("refresh time updated by put()", e.getModificationTime(),
           greaterThanOrEqualTo(t0));
         e.setModificationTime(early);
-        assertEquals(early, e.getModificationTime());
         return null;
       }
     });
@@ -556,7 +555,7 @@ public class EntryProcessorTest {
       public Void process(MutableCacheEntry<Integer, Integer> e) {
         Integer v = e.getValue();
         assertEquals(KEY, v);
-        assertTrue(e.exists());
+        assertFalse(e.exists());
         return null;
       }
     });
@@ -573,7 +572,7 @@ public class EntryProcessorTest {
       public Void process(MutableCacheEntry<Integer, Integer> e) {
         Throwable t = e.getException();
         assertNull(t);
-        assertTrue(e.exists());
+        assertFalse(e.exists());
         Integer v = e.getValue();
         assertEquals(KEY, v);
         return null;
@@ -590,10 +589,9 @@ public class EntryProcessorTest {
       public Void process(MutableCacheEntry<Integer, Integer> e) {
         Integer v = e.getValue();
         assertEquals(KEY, v);
-        assertTrue(e.exists());
+        assertFalse(e.exists());
         e.remove();
         assertFalse(e.exists());
-        assertNull(e.getValue());
         return null;
       }
     });
@@ -799,7 +797,7 @@ public class EntryProcessorTest {
       public Void process(MutableCacheEntry<Integer, Integer> e) {
         Integer v = e.getValue();
         assertEquals(KEY, v);
-        assertTrue(e.exists());
+        assertFalse(e.exists());
         e.setValue(4711);
         return null;
       }
@@ -817,7 +815,7 @@ public class EntryProcessorTest {
       public Void process(MutableCacheEntry<Integer, Integer> e) {
         Integer v = e.getValue();
         assertEquals(KEY, v);
-        assertTrue(e.exists());
+        assertFalse(e.exists());
         e.setException(new NoSuchElementException());
         return null;
       }
@@ -833,12 +831,8 @@ public class EntryProcessorTest {
       @Override
       public Void process(MutableCacheEntry<Integer, Integer> e) {
         e.setException(new NoSuchElementException());
-        assertTrue(e.getException() instanceof  NoSuchElementException);
-        try {
-          e.getValue();
-          fail("exception expected");
-        } catch (CacheLoaderException ex) {
-        }
+        assertNull(e.getException());
+        assertNull(e.getValue());
         return null;
       }
     });
@@ -892,7 +886,7 @@ public class EntryProcessorTest {
       public Void process(MutableCacheEntry<Integer, Integer> e) {
         Integer v = e.getValue();
         assertEquals(KEY, v);
-        assertTrue(e.exists());
+        assertFalse(e.exists());
         e.setExpiryTime(Expiry.NOW);
         return null;
       }

@@ -58,7 +58,7 @@ public class ConcurrentMapWrapper<K, V> implements ConcurrentMap<K, V> {
    * We cannot use {@link Cache#putIfAbsent(Object, Object)} since the map returns the value.
    */
   @Override
-  public V putIfAbsent(K key, final V value) {
+  public V putIfAbsent(K key, V value) {
     return cache.invoke(key, new EntryProcessor<K, V, V>() {
       @Override
       public V process(MutableCacheEntry<K, V> e) {
@@ -85,7 +85,7 @@ public class ConcurrentMapWrapper<K, V> implements ConcurrentMap<K, V> {
   }
 
   @Override
-  public V replace(K key, final V value) {
+  public V replace(K key, V value) {
     EntryProcessor<K, V, V> p = new EntryProcessor<K, V, V>() {
       @Override
       public V process(MutableCacheEntry<K, V> e) {
@@ -148,7 +148,7 @@ public class ConcurrentMapWrapper<K, V> implements ConcurrentMap<K, V> {
   }
 
   @Override
-  public V put(K key, final V value) {
+  public V put(K key, V value) {
     EntryProcessor<K, V, V> p = new EntryProcessor<K, V, V>() {
       @Override
       public V process(MutableCacheEntry<K, V> e) {
@@ -191,7 +191,7 @@ public class ConcurrentMapWrapper<K, V> implements ConcurrentMap<K, V> {
     return new AbstractSet<K>() {
       @Override
       public Iterator<K> iterator() {
-        final Iterator<CacheEntry<K, V>> it = cache.entries().iterator();
+        Iterator<CacheEntry<K, V>> it = cache.entries().iterator();
         return new Iterator<K>() {
 
           @Override
@@ -228,7 +228,7 @@ public class ConcurrentMapWrapper<K, V> implements ConcurrentMap<K, V> {
     return new AbstractSet<V>() {
       @Override
       public Iterator<V> iterator() {
-        final Iterator<CacheEntry<K, V>> it = cache.entries().iterator();
+        Iterator<CacheEntry<K, V>> it = cache.entries().iterator();
         return new Iterator<V>() {
 
           @Override
@@ -260,7 +260,7 @@ public class ConcurrentMapWrapper<K, V> implements ConcurrentMap<K, V> {
     return new AbstractSet<Entry<K, V>>() {
       @Override
       public Iterator<Entry<K, V>> iterator() {
-        final Iterator<CacheEntry<K, V>> it = cache.entries().iterator();
+        Iterator<CacheEntry<K, V>> it = cache.entries().iterator();
         return new Iterator<Entry<K, V>>() {
 
           @Override
@@ -270,7 +270,7 @@ public class ConcurrentMapWrapper<K, V> implements ConcurrentMap<K, V> {
 
           @Override
           public Entry<K, V> next() {
-            final CacheEntry<K, V> e = it.next();
+            CacheEntry<K, V> e = it.next();
 
             return new Entry<K, V>() {
               @Override

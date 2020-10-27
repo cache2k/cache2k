@@ -504,6 +504,8 @@ public class JCacheAdapter<K, V> implements javax.cache.Cache<K, V> {
   private class MutableEntryAdapter implements MutableEntry<K, V> {
 
     private final MutableCacheEntry<K, V> entry;
+    private boolean removed;
+    private V value;
 
     MutableEntryAdapter(MutableCacheEntry<K, V> e) {
       entry = e;
@@ -511,17 +513,21 @@ public class JCacheAdapter<K, V> implements javax.cache.Cache<K, V> {
 
     @Override
     public boolean exists() {
-      return entry.exists();
+      return !removed && (value != null || entry.exists());
     }
 
     @Override
     public void remove() {
+      removed = true;
+      value = null;
       entry.remove();
     }
 
     @Override
     public void setValue(V value) {
       checkNullValue(value);
+      this.value = value;
+      removed = false;
       entry.setValue(value);
     }
 
@@ -532,6 +538,12 @@ public class JCacheAdapter<K, V> implements javax.cache.Cache<K, V> {
 
     @Override
     public V getValue() {
+      if (value != null) {
+        return value;
+      }
+      if (removed) {
+        return null;
+      }
       if (!readThrough && !exists()) {
         return null;
       }

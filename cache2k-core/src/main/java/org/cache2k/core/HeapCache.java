@@ -53,6 +53,7 @@ import org.cache2k.io.AdvancedCacheLoader;
 import org.cache2k.io.CacheLoaderException;
 import org.cache2k.io.ExceptionPropagator;
 import org.cache2k.integration.RefreshedTimeWrapper;
+import org.cache2k.io.LoadExceptionInfo;
 import org.cache2k.processor.EntryProcessor;
 
 import java.util.ArrayList;
@@ -623,6 +624,8 @@ public class HeapCache<K, V> extends BaseCache<K, V> implements HeapCacheForEvic
     public Throwable getException() {
       return null;
     }
+    @Override
+    public LoadExceptionInfo getExceptionInfo() { return null; }
   }
 
   @Override
@@ -1362,7 +1365,7 @@ public class HeapCache<K, V> extends BaseCache<K, V> implements HeapCacheForEvic
     long nextRefreshTime = 0;
     boolean suppressException = false;
     try {
-      if ((e.isDataAvailable() || e.isExpiredState()) && e.getException() == null) {
+      if ((e.isDataAvailable() || e.isExpiredState()) && !e.hasException()) {
         nextRefreshTime = timing.suppressExceptionUntil(e, value);
       }
       if (nextRefreshTime > t0) {

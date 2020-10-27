@@ -37,8 +37,8 @@ public interface EntryProcessingResult<R> {
   R getResult();
 
   /**
-   * Original exception of entry processing or null if no exception occurred. If this is null,
-   * #getResult will throw no exception.
+   * Original exception of entry processing or {@code null} if no exception occurred.
+   * If this is {@code null}, {@link #getResult} will throw no exception.
    */
   Throwable getException();
 

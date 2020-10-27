@@ -67,6 +67,9 @@ public interface LoadExceptionInfo<K> extends CacheEntry<K, Void> {
   @Override
   Throwable getException();
 
+  @Override
+  default LoadExceptionInfo<K> getExceptionInfo() { return this; }
+
   /**
    * Generate the exception to propagate with the exception propagator
    */

@@ -22,6 +22,7 @@ package org.cache2k.jcache.provider;
 
 import org.cache2k.CacheEntry;
 import org.cache2k.expiry.ExpiryTimeValues;
+import org.cache2k.io.LoadExceptionInfo;
 import org.cache2k.processor.EntryProcessor;
 import org.cache2k.processor.MutableCacheEntry;
 
@@ -306,6 +307,11 @@ public class TouchyJCacheAdapter<K, V> implements Cache<K, V> {
 
     @Override
     public Throwable getException() {
+      return null;
+    }
+
+    @Override
+    public LoadExceptionInfo getExceptionInfo() {
       return null;
     }
   };

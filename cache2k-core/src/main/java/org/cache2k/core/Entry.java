@@ -37,7 +37,7 @@ import static org.cache2k.core.util.Util.*;
  *
  * @author Jens Wilke
  */
-class CompactEntry<K, V> {
+class CompactEntry<K, V> implements CacheEntry<K, V> {
 
   private static class InitialValueInEntryNeverReturned { }
 
@@ -89,10 +89,16 @@ class CompactEntry<K, V> {
     this.valueOrException = valueOrException;
   }
 
-  public Throwable getException() {
-    V v = valueOrException;
-    if (v instanceof ExceptionWrapper) { return ((ExceptionWrapper) v).getException(); }
+  @Override
+  public LoadExceptionInfo<K> getExceptionInfo() {
+    if (valueOrException instanceof ExceptionWrapper) {
+      return ((ExceptionWrapper<K>) valueOrException);
+    }
     return null;
+  }
+
+  public boolean hasException() {
+    return valueOrException instanceof ExceptionWrapper;
   }
 
   public boolean equalsValue(V v) {
@@ -155,7 +161,7 @@ class CompactEntry<K, V> {
  */
 @SuppressWarnings("unchecked")
 public class Entry<K, V> extends CompactEntry<K, V>
-  implements CacheEntry<K, V>, StorageEntry, ExaminationEntry<K, V> {
+  implements StorageEntry, ExaminationEntry<K, V> {
 
   /**
    * A value greater as means it is a time value.

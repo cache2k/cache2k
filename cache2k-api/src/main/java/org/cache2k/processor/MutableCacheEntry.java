@@ -39,6 +39,8 @@ import org.cache2k.io.ResiliencePolicy;
  * <p>One instance is only usable by a single thread and for
  * one call of {@link EntryProcessor#process(MutableCacheEntry)}.
  *
+ * <p>Planed extensions: getExpiryTime, peekValue/peekException....
+ *
  * @see EntryProcessor
  * @author Jens Wilke
  */
@@ -62,27 +64,40 @@ public interface MutableCacheEntry<K, V> extends CacheEntry<K, V> {
    * since the same effect can be achieved by the combination of {@link #exists()}
    * and {@link #getValue()}.
    *
-   * @throws RestartException If the information is not yet available and the cache
-   *                          needs to do an asynchronous operation to supply it.
-   *                          After completion, the entry processor will be
-   *                          executed again.
    * @throws CacheLoaderException if loading produced an exception
+   * @throws RestartException If the information is not yet available and the cache
+   *                          needs to do an operation to supply it. After completion,
+   *                          the entry processor will be executed again.
    * @see CacheLoader
    */
   @Override
   V getValue();
 
   /**
-   * The exception happened when the value was loaded and
-   * the exception could not be suppressed. {@code null} if no exception
-   * happened or it was suppressed. If {@code null} then {@link #getValue}
-   * returns a value and does not throw an exception.
+   * {@inheritDoc}
    *
    * <p>If a loader is present and the entry is not yet loaded or expired, a
    * load is triggered.
+   *
+   * @throws RestartException If the information is not yet available and the cache
+   *                          needs to do an operation to supply it. After completion,
+   *                          the entry processor will be executed again.
    */
   @Override
   Throwable getException();
+
+  /**
+   * {@inheritDoc}
+   *
+   * <p>If a loader is present and the entry is not yet loaded or expired, a
+   * load is triggered.
+   *
+   * @throws RestartException If the information is not yet available and the cache
+   *                          needs to do an operation to supply it. After completion,
+   *                          the entry processor will be executed again.
+   */
+  @Override
+  LoadExceptionInfo<K> getExceptionInfo();
 
   /**
    * {@code True} if a mapping exists in the cache, never invokes the loader.
@@ -93,9 +108,8 @@ public interface MutableCacheEntry<K, V> extends CacheEntry<K, V> {
    * {@code getValue} will be consistent.
    *
    * @throws RestartException If the information is not yet available and the cache
-   *                          needs to do an asynchronous operation to supply it.
-   *                          After completion, the entry processor will be
-   *                          executed again.
+   *                          needs to do an operation to supply it. After completion,
+   *                          the entry processor will be executed again.
    */
   boolean exists();
 
@@ -111,8 +125,11 @@ public interface MutableCacheEntry<K, V> extends CacheEntry<K, V> {
   long getStartTime();
 
   /**
-   * Insert or updates the cache value assigned to this key. After calling this method
-   * {@code exists} will return true and {@code getValue} will return the set value.
+   * Insert or updates the cache value assigned to this key.
+   *
+   * <p>After calling this method the values of {@code exists} and {@code getValue}
+   * will not change. This behavior is different from JSR107/JCache. This definition
+   * reduces complexity and is more useful than the JSR107 behavior.
    *
    * <p>If a writer is registered, the
    * {@link CacheWriter#write(Object, Object)} is called.
@@ -122,6 +139,12 @@ public interface MutableCacheEntry<K, V> extends CacheEntry<K, V> {
   /**
    * Calls the loader unconditionally in this operation. Multiple calls to reload
    * have no effect.
+   *
+   * @throws IllegalStateException if {@link #getValue()} was called before reload
+   * @throws UnsupportedOperationException if no loader is defined
+   * @throws RestartException If the information is not yet available and the cache
+   *                          needs to do an operation to supply it. After completion,
+   *                          the entry processor will be executed again.
    */
   MutableCacheEntry<K, V> reload();
 
@@ -131,6 +154,10 @@ public interface MutableCacheEntry<K, V> extends CacheEntry<K, V> {
    * <p>In case a writer is registered, {@link CacheWriter#delete}
    * is called. If a remove is performed on a not existing cache entry the writer
    * method will also be called.
+   *
+   * <p>After calling this method the values of {@code exists} and {@code getValue}
+   * will not change. This behavior is different from JSR107/JCache. This definition
+   * reduces complexity and is more useful than the JSR107 behavior.
    *
    * @see <a href="https://github.com/jsr107/jsr107tck/issues/84">JSR107 TCK issue 84</a>
    */
@@ -144,6 +171,9 @@ public interface MutableCacheEntry<K, V> extends CacheEntry<K, V> {
    * will be kept in the cache only if there is an expiry configured or
    * the resilience policy is allowing that.
    *
+   * @throws RestartException If the information is not yet available and the cache
+   *                          needs to do an operation to supply it. After completion,
+   *                          the entry processor will be executed again.
    * @see ResiliencePolicy
    */
   MutableCacheEntry<K, V> setException(Throwable ex);
@@ -156,6 +186,9 @@ public interface MutableCacheEntry<K, V> extends CacheEntry<K, V> {
    * <p>Special time values are defined and described at {@link org.cache2k.expiry.ExpiryTimeValues}
    *
    * @param t Time in millis since epoch.
+   * @throws RestartException If the information is not yet available and the cache
+   *                          needs to do an operation to supply it. After completion,
+   *                          the entry processor will be executed again.
    */
   MutableCacheEntry<K, V> setExpiryTime(long t);
 
@@ -164,6 +197,10 @@ public interface MutableCacheEntry<K, V> extends CacheEntry<K, V> {
    * (before the loader was called) of a successful load operation, or the time
    * the value was modified directly via {@link org.cache2k.Cache#put} or other sorts
    * of mutation. Does not trigger a load.
+   *
+   * @throws RestartException If the information is not yet available and the cache
+   *                          needs to do an operation to supply it. After completion,
+   *                          the entry processor will be executed again.
    */
   long getModificationTime();
 
@@ -174,6 +211,10 @@ public interface MutableCacheEntry<K, V> extends CacheEntry<K, V> {
    *
    * <p>If refresh ahead is enabled via {@link org.cache2k.Cache2kBuilder#refreshAhead(boolean)},
    * the next refresh time is controlled by the expiry time.
+   *
+   * @throws RestartException If the information is not yet available and the cache
+   *                          needs to do an operation to supply it. After completion,
+   *                          the entry processor will be executed again.
    */
   MutableCacheEntry<K, V> setModificationTime(long t);
 

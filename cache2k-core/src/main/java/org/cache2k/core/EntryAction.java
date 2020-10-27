@@ -361,7 +361,6 @@ public abstract class EntryAction<K, V, R> extends Entry.PiggyBack implements
   @Override
   public boolean isDataFreshOrRefreshing() {
     doNotCountAccess = true;
-    if (successfulLoad) { return true; }
     long nrt = heapEntry.getNextRefreshTime();
     return
       nrt == Entry.EXPIRED_REFRESHED ||
@@ -370,9 +369,7 @@ public abstract class EntryAction<K, V, R> extends Entry.PiggyBack implements
 
   @Override
   public boolean isDataFreshOrMiss() {
-    if (hasFreshData()) {
-      return true;
-    }
+    if (hasFreshData()) { return true; }
     countMiss = true;
     return false;
   }
@@ -811,7 +808,7 @@ public abstract class EntryAction<K, V, R> extends Entry.PiggyBack implements
         expiry = 0;
         ExceptionWrapper<K> ew = (ExceptionWrapper<K>) newValueOrException;
         if ((heapEntry.isDataAvailable() || heapEntry.isExpiredState()) &&
-          heapEntry.getException() == null) {
+          !heapEntry.hasException()) {
           expiry = timing().suppressExceptionUntil(heapEntry, ew);
         }
         if (expiry > loadStartedTime) {

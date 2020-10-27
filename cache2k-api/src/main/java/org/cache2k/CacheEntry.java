@@ -71,8 +71,17 @@ public interface CacheEntry<K, V> {
    * the exception could not be suppressed. {@code null} if no exception
    * happened or it was suppressed. If {@code null} then {@link #getValue}
    * returns a value and does not throw an exception.
-   * If not {@code null} the entry may be cast to {@link LoadExceptionInfo}
    */
-  Throwable getException();
+  default Throwable getException() {
+    LoadExceptionInfo<K> info = getExceptionInfo();
+    return info != null ? info.getException() : null;
+  }
+
+  /**
+   * Detailed information of latest exception from the loader or {@code null}
+   * if no exception happened or it was suppressed. If {@code null}
+   * then {@link #getValue} returns a value and does not throw an exception.
+   */
+  LoadExceptionInfo<K> getExceptionInfo();
 
 }
