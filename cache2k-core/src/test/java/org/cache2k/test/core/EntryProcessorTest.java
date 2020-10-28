@@ -20,6 +20,7 @@ package org.cache2k.test.core;
  * #L%
  */
 
+import org.assertj.core.api.Assertions;
 import org.cache2k.Cache;
 import org.cache2k.Cache2kBuilder;
 import org.cache2k.CacheEntry;
@@ -35,6 +36,7 @@ import org.cache2k.io.LoadExceptionInfo;
 import org.cache2k.integration.LoadDetail;
 import org.cache2k.integration.Loaders;
 import org.cache2k.io.ResiliencePolicy;
+import org.cache2k.management.CacheManagement;
 import org.cache2k.testing.category.FastTests;
 import org.cache2k.processor.EntryProcessingException;
 import org.cache2k.processor.EntryProcessor;
@@ -53,6 +55,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 
+import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.junit.Assert.*;
 import static org.hamcrest.Matchers.*;
 import static org.cache2k.test.core.StaticUtil.*;
@@ -348,7 +351,7 @@ public class EntryProcessorTest {
   }
 
   @Test
-  public void reload_exception() {
+  public void load_unsupported() {
     Cache<Integer, Integer> c = target.cache();
     try {
       c.invoke(1, new EntryProcessor<Integer, Integer, Object>() {
@@ -381,13 +384,29 @@ public class EntryProcessorTest {
     });
   }
 
+  @Test
+  public void getValue_load() {
+    CacheWithLoader cwl = cacheWithLoader();
+    Cache<Integer, Integer> c = cwl.cache;
+    c.put(1, 1);
+    assertThatCode(() -> {
+      c.invoke(1, e -> {
+        e.getValue();
+        e.load();
+        return null;
+      });
+    }).isInstanceOf(EntryProcessingException.class)
+      .getCause()
+      .isInstanceOf(IllegalStateException.class);
+  }
+
   /**
    * Corner case. The load is triggered since remove resets the state, which is an optimization.
    * After the load, remove() will avoid the mutation again, so nothing is inserted and
    * the final value is null.
    */
-  @Test
-  public void exists_set_remove_get() {
+  @Test(expected = EntryProcessingException.class)
+  public void exists_set_remove_get_yields_exception() {
     CacheWithLoader cwl = cacheWithLoader();
     Cache<Integer, Integer> c = cwl.cache;
     assertEquals(0, cwl.loader.getCount());
@@ -398,9 +417,7 @@ public class EntryProcessorTest {
         e.remove();
         return e.getValue() + 1801;
       });
-    assertEquals(1, cwl.loader.getCount());
-    assertNull(result);
-    assertTrue("Contains loaded value", c.containsKey(1));
+    fail("exception expected");
   }
 
   @Test
@@ -827,8 +844,8 @@ public class EntryProcessorTest {
     assertFalse("exception expires immediately", wl.cache.containsKey(KEY));
   }
 
-  @Test
-  public void setException_getException_getValue() {
+  @Test(expected = EntryProcessingException.class)
+  public void setException_getException_getValue_exception() {
     CacheWithLoader wl = cacheWithLoader();
     wl.cache.invoke(KEY, new EntryProcessor<Integer, Integer, Void>() {
       @Override
@@ -839,7 +856,7 @@ public class EntryProcessorTest {
         return null;
       }
     });
-    assertFalse(wl.cache.containsKey(KEY));
+    fail("excepton expected");
   }
 
   /**
@@ -1075,6 +1092,49 @@ public class EntryProcessorTest {
     assertEquals(
       "passed 1 times: after installation read, after mutation lock",
       1, count1.get());
+  }
+
+  @Test
+  public void lock() {
+    Cache<Integer, Integer> c = target.cache();
+    int key = 123;
+    c.invoke(key, entry -> entry.lock());
+    assertFalse(c.containsKey(key));
+    assertEquals(0, CacheManagement.of(c).getSize());
+    c.invoke(key, entry -> {
+      entry.exists();
+      entry.lock();
+      return null;
+    });
+    assertFalse(c.containsKey(key));
+    assertEquals(0, CacheManagement.of(c).getSize());
+    c.invoke(key, entry -> {
+      entry.setValue(4711);
+      entry.exists();
+      entry.lock();
+      return null;
+    });
+    assertTrue(c.containsKey(key));
+    assertEquals(1, CacheManagement.of(c).getSize());
+    c.invoke(key, entry -> {
+      entry.lock();
+      entry.getValue();
+      entry.setValue(4711);
+      return null;
+    });
+  }
+
+  @Test
+  public void getExceptionInfo() {
+    CacheWithLoader cl = cacheWithLoader();
+    LoadExceptionInfo<Integer> info =
+    cl.cache.invoke(IdentCountingLoader.KEY_YIELDING_PERMANENT_EXCEPTION,
+      entry -> {
+        entry.load();
+        return entry.getExceptionInfo();
+      });
+    assertNotNull(info);
+    assertEquals("exception not cached", 0, info.getUntil());
   }
 
 }

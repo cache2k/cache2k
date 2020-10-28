@@ -66,7 +66,7 @@ public class BaseCacheManagement implements CacheManagement {
 
   @Override
   public long getSize() {
-    return getInfo().getSize();
+    return cache.getTotalEntryCount();
   }
 
   @Override

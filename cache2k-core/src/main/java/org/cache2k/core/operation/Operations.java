@@ -464,15 +464,8 @@ public class Operations<K, V> {
           try {
             R result = processor.process(mutableEntryResult);
             c.result(result);
-          } catch (NeedsLoadRestartException ex) {
-            c.loadAndRestart();
-            return;
           } catch (Throwable t) {
             c.failure(new EntryProcessingException(t));
-            return;
-          }
-          if (!mutableEntryResult.isMutationNeeded()) {
-            c.noMutation();
             return;
           }
         }

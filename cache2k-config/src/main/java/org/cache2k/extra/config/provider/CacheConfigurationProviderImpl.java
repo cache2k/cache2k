@@ -52,7 +52,7 @@ public class CacheConfigurationProviderImpl
   extends ConfigurationProvider implements CacheConfigurationProvider {
 
   private static final String DEFAULT_CONFIGURATION_FILE = "cache2k.xml";
-  private static final Map<String, String> VERSION_1_SECTION_TYPES = new HashMap<String, String>() {
+  private static final Map<String, String> VERSION_1_2_SECTION_TYPES = new HashMap<String, String>() {
     {
       put("jcache", "org.cache2k.jcache.JCacheConfiguration");
       put("byClassName", CustomizationSupplierByClassName.class.getName());
@@ -221,9 +221,9 @@ public class CacheConfigurationProviderImpl
       defaultConfiguration.setExternalConfigurationPresent(true);
       ctx.setTemplates(extractTemplates(pc));
       apply(ctx, pc, ctx.getManagerConfiguration());
-      if (ctx.getManagerConfiguration().getVersion() != null &&
-        ctx.getManagerConfiguration().getVersion().startsWith("1.")) {
-        ctx.setPredefinedSectionTypes(VERSION_1_SECTION_TYPES);
+      final String version = ctx.getManagerConfiguration().getVersion();
+      if (version != null && (version.startsWith("1.") || version.startsWith("2."))) {
+        ctx.setPredefinedSectionTypes(VERSION_1_2_SECTION_TYPES);
       }
       applyDefaultConfigurationIfPresent(ctx, pc, defaultConfiguration);
       ctx.setConfigurationPresent(true);

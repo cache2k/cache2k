@@ -20,7 +20,7 @@
 <cache2k xmlns:xsi='http://www.w3.org/2001/XMLSchema-instance'
          xmlns='https://cache2k.org/schema/v1.x'
          xsi:schemaLocation="https://cache2k.org/schema/v1.x  ../../../../cache2k-schemas/src/main/resources/org/cache2k/schema/cache2k-core.xsd">
-  <version>1.0</version>
+  <version>2.0</version>
   <ignoreMissingCacheConfiguration>true</ignoreMissingCacheConfiguration>
   <ignoreAnonymousCache>true</ignoreAnonymousCache>
 

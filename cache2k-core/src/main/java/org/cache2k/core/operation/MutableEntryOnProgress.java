@@ -142,7 +142,7 @@ class MutableEntryOnProgress<K, V> implements MutableCacheEntry<K, V> {
   public MutableCacheEntry<K, V> load() {
     if (dataRead) {
       throw new IllegalStateException(
-        "getValue()/getException()/getModificationTime() called before reload");
+        "getValue()/getException()/getModificationTime() called before load");
     }
     if (!progress.isLoaderPresent()) {
       throw new UnsupportedOperationException("Loader is not configured");
@@ -157,6 +157,9 @@ class MutableEntryOnProgress<K, V> implements MutableCacheEntry<K, V> {
   private void triggerLoadOrInstallationRead() {
     triggerInstallationRead();
     if (!originalExists && !progress.wasLoaded() && progress.isLoaderPresent()) {
+      if (mutationRequested) {
+        throw new IllegalStateException("getValue() after mutation not supported");
+      }
       throw new Operations.NeedsLoadRestartException();
     }
   }
@@ -169,7 +172,7 @@ class MutableEntryOnProgress<K, V> implements MutableCacheEntry<K, V> {
 
   /**
    * Locks the entry.
-   *
+  ``       *
    * @throws UnsupportedOperationException if lock is not supported
    */
   public MutableCacheEntry<K, V> lock() {

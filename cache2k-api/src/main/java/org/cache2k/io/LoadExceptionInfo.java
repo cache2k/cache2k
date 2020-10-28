@@ -67,6 +67,9 @@ public interface LoadExceptionInfo<K> extends CacheEntry<K, Void> {
   @Override
   Throwable getException();
 
+  /**
+   * Returns ourselves. Useful because this implements {@link CacheEntry}
+   */
   @Override
   default LoadExceptionInfo<K> getExceptionInfo() { return this; }
 
