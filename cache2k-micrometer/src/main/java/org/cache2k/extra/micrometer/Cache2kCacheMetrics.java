@@ -30,7 +30,8 @@ import io.micrometer.core.instrument.binder.cache.CacheMeterBinder;
 import org.cache2k.Cache;
 import org.cache2k.configuration.CacheType;
 import org.cache2k.core.api.InternalCache;
-import org.cache2k.core.api.InternalCacheInfo;
+import org.cache2k.management.CacheManagement;
+import org.cache2k.management.CacheStatistics;
 
 import java.util.concurrent.TimeUnit;
 
@@ -41,7 +42,7 @@ import java.util.concurrent.TimeUnit;
  */
 public class Cache2kCacheMetrics extends CacheMeterBinder {
 
-  private final InternalCache<?, ?> cache;
+  private final CacheManagement mgm;
 
   /**
    * Creates a new {@link Cache2kCacheMetrics} instance.
@@ -51,7 +52,7 @@ public class Cache2kCacheMetrics extends CacheMeterBinder {
    */
   public Cache2kCacheMetrics(Cache<?, ?> cache, Iterable<Tag> tags) {
     super(cache, cache.getName(), Tags.concat(tags, extendedTags(cache)));
-    this.cache = cache.requestInterface(InternalCache.class);
+    mgm = CacheManagement.of(cache);
   }
 
   /**
@@ -84,18 +85,21 @@ public class Cache2kCacheMetrics extends CacheMeterBinder {
 
   @Override
   protected Long size() {
-    return cache.getInfo().getSize();
+    return mgm.getSize();
   }
 
   @Override
   protected long hitCount() {
-    InternalCacheInfo info = cache.getInfo();
-    return info.getGetCount() - info.getMissCount();
+    CacheStatistics stats = stats();
+    if (stats == null) { return 0; }
+    return stats.getGetCount() - stats.getMissCount();
   }
 
   @Override
   protected Long missCount() {
-    return cache.getInfo().getMissCount();
+    CacheStatistics stats = stats();
+    if (stats == null) { return null; }
+    return stats.getMissCount();
   }
 
   /**
@@ -106,13 +110,20 @@ public class Cache2kCacheMetrics extends CacheMeterBinder {
    */
   @Override
   protected Long evictionCount() {
-    InternalCacheInfo inf = cache.getInfo();
-    return inf.getEvictedCount() + inf.getExpiredCount() + inf.getRemoveCount();
+    CacheStatistics stats = stats();
+    if (stats == null) { return null; }
+    return stats.getEvictedCount() + stats.getExpiredCount() + stats.getRemoveCount();
   }
 
   @Override
   protected long putCount() {
-    return cache.getInfo().getPutCount();
+    CacheStatistics stats = stats();
+    if (stats == null) { return 0; }
+    return stats.getPutCount();
+  }
+
+  private CacheStatistics stats() {
+    return mgm.sampleStatistics();
   }
 
   /**
@@ -122,29 +133,30 @@ public class Cache2kCacheMetrics extends CacheMeterBinder {
    */
   @Override
   protected void bindImplementationSpecificMetrics(MeterRegistry registry) {
-    if (cache.isWeigherPresent()) {
-      Gauge.builder("cache.currentWeight", cache,
-        c -> c.getInfo().getTotalWeight())
+    if (mgm.isWeigherPresent()) {
+      Gauge.builder("cache.currentWeight", mgm,
+        mgm -> mgm.getTotalWeight())
         .tags(getTagsWithCacheName())
         .description("The sum of weights of all cached entries.")
         .register(registry);
     }
 
-    if (cache.isLoaderPresent()) {
-      TimeGauge.builder("cache.load.duration", cache, TimeUnit.NANOSECONDS,
-        c -> ((double) c.getInfo().getLoadMillis()) * 1000)
+    if (mgm.isLoaderPresent()) {
+      TimeGauge.builder("cache.load.duration", mgm, TimeUnit.MILLISECONDS,
+        mgm -> (mgm.sampleStatistics().getMillisPerLoad()))
         .tags(getTagsWithCacheName())
         .description("The time the cache has spent loading new values")
         .register(registry);
 
-      FunctionCounter.builder("cache.load", cache,
-        c -> { InternalCacheInfo info = c.getInfo(); return info.getLoadCount(); })
+      FunctionCounter.builder("cache.load", mgm,
+        mgm -> mgm.sampleStatistics().getLoadCount())
         .tags(getTagsWithCacheName()).tags("result", "success")
         .description(
           "The number of times cache lookup methods have successfully loaded a new value")
         .register(registry);
 
-      FunctionCounter.builder("cache.load", cache, c -> c.getInfo().getLoadExceptionCount())
+      FunctionCounter.builder("cache.load", mgm,
+        mgm -> mgm.sampleStatistics().getLoadExceptionCount())
         .tags(getTagsWithCacheName()).tags("result", "failure")
         .description(
           "The number of times cache lookup methods threw an exception while loading a new value")

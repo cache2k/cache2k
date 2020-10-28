@@ -135,6 +135,9 @@ public class BaseCacheManagement implements CacheManagement {
 
   @Override
   public CacheStatistics sampleStatistics() {
+    if (!isStatisticsEnabled()) {
+      return null;
+    }
     InternalCacheInfo info = getInfo();
     return new AbstractCacheStatistics() {
       @Override

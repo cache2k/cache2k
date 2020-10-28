@@ -38,8 +38,8 @@ public interface CacheManagement extends CacheControl, CacheInfo {
   }
 
   /**
-   * Returns a snapshot of cache statistics if this cache supports
-   * statistics.
+   * Returns a snapshot of cache statistics if this cache supports statistics
+   * or {@code null} otherwise.
    */
   CacheStatistics sampleStatistics();
 

@@ -64,7 +64,7 @@ public class MicroMeterTest {
       Metrics.globalRegistry.get("cache.puts")
         .tag("cache", cache.getName()).meters();
       fail("exception expected");
-    } catch (MeterNotFoundException expected) {}
+    } catch (MeterNotFoundException expected) { }
   }
 
   @Test
@@ -113,6 +113,83 @@ public class MicroMeterTest {
     } catch (MeterNotFoundException expected) { }
     assertTrue(registry.get("cache.puts").
       tag("cache", cache.getName()).functionCounter().count() >= 0);
+  }
+
+  @Test
+  public void checkBasicMetrics() throws InterruptedException {
+    MeterRegistry registry = new SimpleMeterRegistry();
+    Cache cache = Cache2kBuilder.forUnknownTypes().build();
+    Cache2kCacheMetrics.monitor(registry, cache);
+    cache.put(1, 1);
+    cache.put(2, 1);
+    cache.put(3, 1);
+    cache.put(2, 1234);
+    cache.get(1);
+    cache.get(2);
+    cache.get(1234);
+    cache.remove(3);
+    Thread.sleep(1000);
+    assertEquals(4, (int) registry.get("cache.puts").functionCounter().count());
+    assertEquals(2, (int) registry.get("cache.size").gauge().value());
+    assertEquals(1, (int) registry.get("cache.evictions").functionCounter().count());
+    assertEquals(2, (int) registry.get("cache.gets")
+      .tag("result", "hit").functionCounter().count());
+    assertEquals(1, (int) registry.get("cache.gets")
+      .tag("result", "miss").functionCounter().count());
+    cache.close();
+  }
+
+  @Test
+  public void checkLoaderMetrics() throws InterruptedException {
+    MeterRegistry registry = new SimpleMeterRegistry();
+    Cache cache = Cache2kBuilder.forUnknownTypes()
+      .loader(key -> key)
+      .build();
+    Cache2kCacheMetrics.monitor(registry, cache);
+    cache.get(1);
+    cache.get(2);
+    cache.get(3);
+    cache.peek(4);
+    cache.get(3);
+    Thread.sleep(1000);
+    assertEquals(0, (int) registry.get("cache.puts").functionCounter().count());
+    assertEquals(3, (int) registry.get("cache.size").gauge().value());
+    assertEquals(0, (int) registry.get("cache.evictions").functionCounter().count());
+    assertEquals(1, (int) registry.get("cache.gets")
+      .tag("result", "hit").functionCounter().count());
+    assertEquals(4, (int) registry.get("cache.gets")
+      .tag("result", "miss").functionCounter().count());
+    assertEquals(3, (int) registry.get("cache.load")
+      .tag("result", "success").functionCounter().count());
+    assertEquals(0, (int) registry.get("cache.load")
+      .tag("result", "failure").functionCounter().count());
+    assertEquals(0, registry.get("cache.load.duration").gauge().value(), 0.5);
+    cache.close();
+  }
+
+  @Test
+  public void checkBasicMetricsWithDisabledStatistics() throws InterruptedException {
+    MeterRegistry registry = new SimpleMeterRegistry();
+    Cache cache = Cache2kBuilder.forUnknownTypes()
+      .disableStatistics(true)
+      .build();
+    Cache2kCacheMetrics.monitor(registry, cache);
+    cache.put(1, 1);
+    cache.put(2, 1);
+    cache.put(3, 1);
+    cache.put(2, 1234);
+    cache.get(1);
+    cache.get(2);
+    cache.get(1234);
+    cache.remove(3);
+    assertEquals(0, (int) registry.get("cache.puts").functionCounter().count());
+    assertEquals(2, (int) registry.get("cache.size").gauge().value());
+    assertEquals(0, (int) registry.get("cache.gets")
+      .tag("result", "hit").functionCounter().count());
+    assertTrue("Meter cache.evictions not present",
+      registry.getMeters().stream()
+      .map(meter -> meter.getId().getName()).noneMatch(s -> s.equals("cache.evictions")));
+    cache.close();
   }
 
 }
