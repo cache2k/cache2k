@@ -34,7 +34,7 @@ import org.cache2k.io.ExceptionPropagator;
 public final class StandardExceptionPropagator implements ExceptionPropagator {
 
   @Override
-  public RuntimeException propagateEntryLoadException(LoadExceptionInfo loadExceptionInfo) {
+  public RuntimeException propagateException(LoadExceptionInfo loadExceptionInfo) {
     long expiry = loadExceptionInfo.getUntil();
     String txt = "";
     if (expiry > 0) {

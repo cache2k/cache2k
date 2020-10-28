@@ -444,7 +444,7 @@ public class Cache2kBuilder<K, V> {
     final org.cache2k.integration.ExceptionPropagator<K> ep) {
     ExceptionPropagator<K> newPropagator = new ExceptionPropagator<K>() {
       @Override
-      public RuntimeException propagateEntryLoadException(LoadExceptionInfo<K> newInfo) {
+      public RuntimeException propagateException(LoadExceptionInfo<K> newInfo) {
         org.cache2k.integration.ExceptionInformation oldInfo =
           new org.cache2k.integration.ExceptionInformation() {
           @Override

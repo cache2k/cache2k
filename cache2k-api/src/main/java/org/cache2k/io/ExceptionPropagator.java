@@ -32,13 +32,23 @@ import org.cache2k.Customization;
  * is possible to change the exception type or the message according to the information
  * available.
  *
+ * <p>The propagator is only used when a value is accessed. It is not used when a cache
+ * operation is triggered explicitly which might cause an exception, e.g.
+ * {@link org.cache2k.Cache#loadAll(Iterable)}
+ *
+ * <p>Rationale: Although exceptions are propagated at many places, this happens for each exception
+ * once. This class addresses the situation where a single exception is possibly rethrown
+ * many times. More customization might be wanted, and, it would be very cumbersome
+ * to wrap any value access of the cache API in a {@code try ... catch}.
+ *
  * @author Jens Wilke
  * @since 2
  */
+@FunctionalInterface
 public interface ExceptionPropagator<K> extends Customization {
 
   /**
-   * Called when an entry with exception is accessed.
+   * Called when an entry value with exception is accessed.
    * Potentially wraps and rethrows the original exception.
    *
    * <p>The default implementation wraps the exception into a {@link CacheLoaderException}
@@ -51,6 +61,6 @@ public interface ExceptionPropagator<K> extends Customization {
    * @param loadExceptionInfo information of original exception and
    *                             when the original exception occurred.
    */
-  RuntimeException propagateEntryLoadException(LoadExceptionInfo<K> loadExceptionInfo);
+  RuntimeException propagateException(LoadExceptionInfo<K> loadExceptionInfo);
 
 }

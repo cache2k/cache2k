@@ -74,7 +74,7 @@ public interface LoadExceptionInfo<K> extends CacheEntry<K, Void> {
    * Generate the exception to propagate with the exception propagator
    */
   default RuntimeException generateExceptionToPropagate() {
-    return getExceptionPropagator().propagateEntryLoadException(this);
+    return getExceptionPropagator().propagateException(this);
   }
 
   /**
