@@ -39,6 +39,6 @@ public interface ExaminationEntry<K, V> {
   /** Associated value or the {@link org.cache2k.core.ExceptionWrapper} */
   V getValueOrException();
 
-  long getRefreshTime();
+  long getModificationTime();
 
 }

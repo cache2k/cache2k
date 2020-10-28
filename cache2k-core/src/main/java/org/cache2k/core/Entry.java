@@ -254,7 +254,7 @@ public class Entry<K, V> extends CompactEntry<K, V>
   }
 
   @Override
-  public long getRefreshTime() {
+  public long getModificationTime() {
     return (refreshTimeAndState & MODIFICATION_TIME_MASK) >> MODIFICATION_TIME_SHIFT;
   }
 
@@ -575,7 +575,7 @@ public class Entry<K, V> extends CompactEntry<K, V>
    */
   @Override
   public long getCreatedOrUpdated() {
-    return getRefreshTime();
+    return getModificationTime();
   }
 
   /**
@@ -613,7 +613,7 @@ public class Entry<K, V> extends CompactEntry<K, V>
     } else {
       sb.append(", value=null");
     }
-    long t = getRefreshTime();
+    long t = getModificationTime();
     if (t > 0) {
       sb.append(", refresh=").append(formatMillis(t));
     }

@@ -375,11 +375,6 @@ public abstract class EntryAction<K, V, R> extends Entry.PiggyBack implements
   }
 
   @Override
-  public boolean isEntryLocked() {
-    return entryLocked;
-  }
-
-  @Override
   public void run() {
     try {
       start();
@@ -614,7 +609,7 @@ public abstract class EntryAction<K, V, R> extends Entry.PiggyBack implements
     metrics().refreshedHit();
     Entry<K, V> e = heapEntry;
     newValueOrException = e.getValueOrException();
-    lastRefreshTime = e.getRefreshTime();
+    lastRefreshTime = e.getModificationTime();
     expiry = nrt;
     expiryCalculated();
   }
@@ -773,7 +768,7 @@ public abstract class EntryAction<K, V, R> extends Entry.PiggyBack implements
     heapEntry.nextProcessingStep(EXPIRE);
     newValueOrException = heapEntry.getValueOrException();
     if (heapCache.isUpdateTimeNeeded()) {
-      lastRefreshTime = heapEntry.getRefreshTime();
+      lastRefreshTime = heapEntry.getModificationTime();
     }
     expiry = expiryTime;
     setUntilInExceptionWrapper();
@@ -814,7 +809,7 @@ public abstract class EntryAction<K, V, R> extends Entry.PiggyBack implements
         if (expiry > loadStartedTime) {
           suppressException = true;
           newValueOrException = heapEntry.getValueOrException();
-          lastRefreshTime = heapEntry.getRefreshTime();
+          lastRefreshTime = heapEntry.getModificationTime();
           metrics().suppressedException();
           heapEntry.setSuppressedLoadExceptionInformation(ew);
         } else {
@@ -942,7 +937,7 @@ public abstract class EntryAction<K, V, R> extends Entry.PiggyBack implements
       }
 
       @Override
-      public long getRefreshTime() {
+      public long getModificationTime() {
         return lastRefreshTime;
       }
 

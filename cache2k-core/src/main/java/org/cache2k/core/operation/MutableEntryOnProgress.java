@@ -207,7 +207,7 @@ class MutableEntryOnProgress<K, V> implements MutableCacheEntry<K, V> {
   public long getModificationTime() {
     triggerInstallationRead();
     dataRead = true;
-    return originalExists || progress.wasLoaded() ? entry.getRefreshTime() : 0;
+    return originalExists || progress.wasLoaded() ? entry.getModificationTime() : 0;
   }
 
   @Override

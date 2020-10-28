@@ -35,7 +35,6 @@ import org.cache2k.core.eviction.Eviction;
 import org.cache2k.core.eviction.EvictionMetrics;
 import org.cache2k.core.eviction.HeapCacheForEviction;
 import org.cache2k.core.operation.ExaminationEntry;
-import org.cache2k.core.operation.ReadOnlyCacheEntry;
 import org.cache2k.core.operation.Semantic;
 import org.cache2k.core.operation.Operations;
 import org.cache2k.core.concurrency.DefaultThreadFactoryProvider;
@@ -87,7 +86,7 @@ import static org.cache2k.core.util.Util.*;
  * locks on each entry for operations on it. Though, mutation operations that happen on a
  * single entry get serialized.
  *
- * @author Jens Wilke; created: 2013-07-09
+ * @author Jens Wilke
  */
 @SuppressWarnings({"rawtypes", "SynchronizationOnLocalVariableOrMethodParameter"})
 public class HeapCache<K, V> extends BaseCache<K, V> implements HeapCacheForEviction<K, V> {
@@ -1619,14 +1618,14 @@ public class HeapCache<K, V> extends BaseCache<K, V> implements HeapCacheForEvic
    * which has produced an exception is requested from the map.
    */
   public Map<K, V> getAll(Iterable<? extends K> inputKeys) {
-    Map<K, ExaminationEntry<K, V>> map = new HashMap<K, ExaminationEntry<K, V>>();
+    Map<K, V> map = new HashMap<>();
     for (K k : inputKeys) {
       Entry<K, V> e = getEntryInternal(k);
       if (e != null) {
-        map.put(extractKeyObj(e), ReadOnlyCacheEntry.of(e));
+        map.put(extractKeyObj(e), e.getValueOrException());
       }
     }
-    return convertValueMap(map);
+    return convertValueMap2(map);
   }
 
   public Map<K, V> convertValueMap(Map<K, ExaminationEntry<K, V>> map) {
@@ -1634,6 +1633,15 @@ public class HeapCache<K, V> extends BaseCache<K, V> implements HeapCacheForEvic
       @Override
       protected V convert(ExaminationEntry<K, V> v) {
         return returnValue(v.getValueOrException());
+      }
+    };
+  }
+
+  public Map<K, V> convertValueMap2(Map<K, V> map) {
+    return new MapValueConverterProxy<K, V, V>(map) {
+      @Override
+      protected V convert(V v) {
+        return returnValue(v);
       }
     };
   }
@@ -1648,14 +1656,14 @@ public class HeapCache<K, V> extends BaseCache<K, V> implements HeapCacheForEvic
   }
 
   public Map<K, V> peekAll(Iterable<? extends K> inputKeys) {
-    Map<K, ExaminationEntry<K, V>> map = new HashMap<K, ExaminationEntry<K, V>>();
+    Map<K, V> map = new HashMap<>();
     for (K k : inputKeys) {
       ExaminationEntry<K, V> e = peekEntryInternal(k);
       if (e != null) {
-        map.put(k, e);
+        map.put(k, e.getValueOrException());
       }
     }
-    return convertValueMap(map);
+    return convertValueMap2(map);
   }
 
   public void putAll(Map<? extends K, ? extends V> valueMap) {
