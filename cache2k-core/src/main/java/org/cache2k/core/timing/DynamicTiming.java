@@ -22,8 +22,8 @@ package org.cache2k.core.timing;
 
 import org.cache2k.CacheEntry;
 import org.cache2k.configuration.Cache2kConfiguration;
-import org.cache2k.core.api.InternalBuildContext;
-import org.cache2k.core.api.CacheCloseContext;
+import org.cache2k.core.api.InternalCacheBuildContext;
+import org.cache2k.core.api.InternalCacheCloseContext;
 import org.cache2k.core.Entry;
 import org.cache2k.expiry.ExpiryPolicy;
 import org.cache2k.expiry.ValueWithExpiryTime;
@@ -37,13 +37,13 @@ class DynamicTiming<K, V> extends StaticTiming<K, V> {
 
   private final ExpiryPolicy<K, V> expiryPolicy;
 
-  DynamicTiming(InternalBuildContext<K, V> buildContext) {
+  DynamicTiming(InternalCacheBuildContext<K, V> buildContext) {
     super(buildContext);
     expiryPolicy = constructPolicy(buildContext);
   }
 
   @SuppressWarnings("unchecked")
-  private static <K, V> ExpiryPolicy<K, V> constructPolicy(InternalBuildContext<K, V> buildContext) {
+  private static <K, V> ExpiryPolicy<K, V> constructPolicy(InternalCacheBuildContext<K, V> buildContext) {
     Cache2kConfiguration<K, V> cfg = buildContext.getConfiguration();
     if (cfg.getValueType() != null &&
       ValueWithExpiryTime.class.isAssignableFrom(cfg.getValueType().getType()) &&
@@ -69,7 +69,7 @@ class DynamicTiming<K, V> extends StaticTiming<K, V> {
   }
 
   @Override
-  public synchronized void close(CacheCloseContext closeContext) {
+  public synchronized void close(InternalCacheCloseContext closeContext) {
     super.cancelAll();
     closeContext.closeCustomization(expiryPolicy, "expiryPolicy");
   }

@@ -24,7 +24,6 @@ import org.cache2k.Cache;
 import org.cache2k.CacheEntry;
 import org.cache2k.CacheException;
 import org.cache2k.CacheOperationCompletionListener;
-import org.cache2k.core.api.CacheCloseContext;
 import org.cache2k.core.api.InternalCache;
 import org.cache2k.core.api.InternalCacheInfo;
 import org.cache2k.core.common.BaseCacheControl;
@@ -51,7 +50,7 @@ import java.util.concurrent.Executor;
  *
  * @author Jens Wilke
  */
-public abstract class BaseCache<K, V> implements InternalCache<K, V>, CacheCloseContext {
+public abstract class BaseCache<K, V> implements InternalCache<K, V> {
 
   @Override
   public CompletableFuture<Void> reloadAll(Iterable<? extends K> keys) {

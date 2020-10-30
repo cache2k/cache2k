@@ -37,7 +37,7 @@ import org.cache2k.core.storageApi.StorageAdapter;
  * @author Jens Wilke
  */
 public interface InternalCache<K, V>
-  extends Cache<K, V>, CanCheckIntegrity, TimerEventListener<K, V> {
+  extends Cache<K, V>, CanCheckIntegrity, TimerEventListener<K, V>, InternalCacheCloseContext {
 
   CommonMetrics getCommonMetrics();
 

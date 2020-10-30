@@ -25,7 +25,9 @@ import org.cache2k.Cache2kBuilder;
 import org.cache2k.CacheException;
 import org.cache2k.CacheManager;
 import org.cache2k.configuration.Cache2kConfiguration;
+import org.cache2k.core.api.InternalCacheCloseContext;
 import org.cache2k.core.api.InternalCache;
+import org.cache2k.core.api.InternalCacheBuildContext;
 import org.cache2k.core.spi.CacheLifeCycleListener;
 import org.cache2k.core.spi.CacheManagerLifeCycleListener;
 import org.cache2k.core.log.Log;
@@ -123,15 +125,15 @@ public class CacheManagerImpl extends CacheManager {
     return CACHE_LIFE_CYCLE_LISTENERS;
   }
 
-  public void sendCreatedEvent(Cache c, final Cache2kConfiguration configuration) {
+  public <K, V> void sendCreatedEvent(Cache c, InternalCacheBuildContext<K, V> ctx) {
     for (CacheLifeCycleListener e : CACHE_LIFE_CYCLE_LISTENERS) {
-      e.cacheCreated(c, configuration);
+      e.cacheCreated(c, ctx);
     }
   }
 
-  private void sendDestroyedEvent(Cache c) {
+  public <K, V> void sendClosedEvent(Cache<K, V> c, InternalCacheCloseContext ctx) {
     for (CacheLifeCycleListener e : CACHE_LIFE_CYCLE_LISTENERS) {
-      e.cacheDestroyed(c);
+      e.cacheClosed(c, ctx);
     }
   }
 
@@ -183,10 +185,9 @@ public class CacheManagerImpl extends CacheManager {
   }
 
   /** Called from the cache during close() */
-  public void cacheDestroyed(Cache c) {
+  public void cacheClosed(Cache c) {
     synchronized (lock) {
       cacheNames.remove(c.getName());
-      sendDestroyedEvent(c);
     }
   }
 

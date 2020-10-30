@@ -21,7 +21,8 @@ package org.cache2k.core.spi;
  */
 
 import org.cache2k.Cache;
-import org.cache2k.configuration.Cache2kConfiguration;
+import org.cache2k.core.api.InternalCacheCloseContext;
+import org.cache2k.core.api.InternalCacheBuildContext;
 
 /**
  * Interface to implement additional service providers that get notified
@@ -31,8 +32,8 @@ import org.cache2k.configuration.Cache2kConfiguration;
  */
 public interface CacheLifeCycleListener {
 
-  void cacheCreated(Cache c, Cache2kConfiguration cfg);
+  <K, V> void cacheCreated(Cache<K, V> cache, InternalCacheBuildContext<K, V> ctx);
 
-  void cacheDestroyed(Cache c);
+ <K, V> void cacheClosed(Cache<K, V> cache, InternalCacheCloseContext ctx);
 
 }

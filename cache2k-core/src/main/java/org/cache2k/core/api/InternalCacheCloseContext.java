@@ -1,8 +1,8 @@
-package org.cache2k.configuration;
+package org.cache2k.core.api;
 
 /*
  * #%L
- * cache2k API
+ * cache2k core implementation
  * %%
  * Copyright (C) 2000 - 2020 headissue GmbH, Munich
  * %%
@@ -20,14 +20,27 @@ package org.cache2k.configuration;
  * #L%
  */
 
+import org.cache2k.CacheManager;
+
 /**
- * Supports adding configuration sections via the builder pattern.
- * Sections are added via {@link org.cache2k.Cache2kBuilder#with}
- *
  * @author Jens Wilke
  */
-public interface ConfigurationSectionBuilder<T extends ConfigurationSection> {
+public interface InternalCacheCloseContext {
 
-  T buildConfigurationSection();
+  /**
+   * The cache name
+   */
+  String getName();
+
+  /**
+   * The cache manager
+   */
+  CacheManager getCacheManager();
+
+  /**
+   * Call close on the customization if the {@link java.io.Closeable} interface
+   * is implemented
+   */
+  void closeCustomization(Object customization, String name);
 
 }

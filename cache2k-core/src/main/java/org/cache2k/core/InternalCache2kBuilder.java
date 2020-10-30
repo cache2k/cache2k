@@ -23,10 +23,9 @@ package org.cache2k.core;
 import org.cache2k.Cache2kBuilder;
 import org.cache2k.CacheEntry;
 import org.cache2k.CustomizationException;
-import org.cache2k.configuration.CacheBuildContext;
 import org.cache2k.configuration.CustomizationSupplier;
 import org.cache2k.core.api.CoreConfiguration;
-import org.cache2k.core.api.InternalBuildContext;
+import org.cache2k.core.api.InternalCacheBuildContext;
 import org.cache2k.core.api.InternalCache;
 import org.cache2k.core.eviction.EvictionFactory;
 import org.cache2k.core.operation.ExaminationEntry;
@@ -62,7 +61,7 @@ import java.util.concurrent.atomic.AtomicLong;
  * @author Jens Wilke
  */
 @SuppressWarnings("rawtypes")
-public class InternalCache2kBuilder<K, V> implements InternalBuildContext<K, V> {
+public class InternalCache2kBuilder<K, V> implements InternalCacheBuildContext<K, V> {
 
   private static final AtomicLong DERIVED_NAME_COUNTER =
     new AtomicLong(System.currentTimeMillis() % 1234);
@@ -103,6 +102,11 @@ public class InternalCache2kBuilder<K, V> implements InternalBuildContext<K, V> 
   }
 
   @Override
+  public String getName() {
+    return config.getName();
+  }
+
+  @Override
   public InternalClock getClock() {
     return clock;
   }
@@ -121,24 +125,7 @@ public class InternalCache2kBuilder<K, V> implements InternalBuildContext<K, V> 
   public <T> T createCustomization(CustomizationSupplier<T> supplier) {
     if (supplier == null) { return null; }
     try {
-      CacheBuildContext ctx = new CacheBuildContext() {
-        @Override
-        public CacheManager getCacheManager() {
-          return InternalCache2kBuilder.this.getCacheManager();
-        }
-
-        @Override
-        public String getName() {
-          return InternalCache2kBuilder.this.getConfiguration().getName();
-        }
-
-        @SuppressWarnings("unchecked")
-        @Override
-        public <K, V> Cache2kConfiguration<K, V> getConfiguration() {
-          return (Cache2kConfiguration<K, V>) InternalCache2kBuilder.this.getConfiguration();
-        }
-      };
-      return supplier.supply(ctx);
+      return supplier.supply(this);
     } catch (Exception ex) {
       throw new CustomizationException("Initialization of customization failed", ex);
     }
@@ -383,7 +370,7 @@ public class InternalCache2kBuilder<K, V> implements InternalBuildContext<K, V> 
         Runtime.getRuntime().availableProcessors());
       bc.init();
     }
-    manager.sendCreatedEvent(cache, config);
+    manager.sendCreatedEvent(cache, this);
     return cache;
   }
 

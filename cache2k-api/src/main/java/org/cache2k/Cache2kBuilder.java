@@ -788,10 +788,8 @@ public class Cache2kBuilder<K, V> {
    * @see org.cache2k.configuration.ConfigurationWithSections
    */
   public final Cache2kBuilder<K, V> with(
-    ConfigurationSectionBuilder<? extends ConfigurationSection>... sectionBuilders) {
-    for (ConfigurationSectionBuilder<? extends ConfigurationSection> b : sectionBuilders) {
-      config().getSections().add(b.buildConfigurationSection());
-    }
+    ConfigurationSectionBuilder<? extends ConfigurationSection> sectionBuilder) {
+    config().getSections().add(sectionBuilder.buildConfigurationSection());
     return this;
   }
 

@@ -21,7 +21,8 @@ package org.cache2k.jcache.provider;
  */
 
 import org.cache2k.Cache;
-import org.cache2k.configuration.Cache2kConfiguration;
+import org.cache2k.core.api.InternalCacheBuildContext;
+import org.cache2k.core.api.InternalCacheCloseContext;
 import org.cache2k.core.spi.CacheLifeCycleListener;
 
 import javax.management.InstanceNotFoundException;
@@ -30,7 +31,7 @@ import javax.management.ObjectName;
 import java.lang.management.ManagementFactory;
 
 /**
- * @author Jens Wilke; created: 2015-04-29
+ * @author Jens Wilke
  */
 @SuppressWarnings("WeakerAccess")
 public class JCacheJmxSupport implements CacheLifeCycleListener {
@@ -38,13 +39,12 @@ public class JCacheJmxSupport implements CacheLifeCycleListener {
   private final MBeanServer mBeanServer = ManagementFactory.getPlatformMBeanServer();
 
   @Override
-  public void cacheCreated(Cache c, final Cache2kConfiguration cfg) {
-  }
+  public <K, V> void cacheCreated(Cache<K, V> cache, InternalCacheBuildContext<K, V> ctx) { }
 
   @Override
-  public void cacheDestroyed(Cache c) {
-    disableStatistics(c);
-    disableJmx(c);
+  public <K, V> void cacheClosed(Cache<K, V> cache, InternalCacheCloseContext ctx) {
+    disableStatistics(cache);
+    disableJmx(cache);
   }
 
   public void enableStatistics(JCacheAdapter c) {

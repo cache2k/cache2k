@@ -58,4 +58,5 @@ public class CoreConfiguration implements SingletonConfigurationSection {
       return config;
     }
   }
+
 }

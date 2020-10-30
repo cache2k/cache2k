@@ -24,7 +24,9 @@ import org.cache2k.Cache;
 import org.cache2k.CacheException;
 import org.cache2k.CacheManager;
 import org.cache2k.configuration.Cache2kConfiguration;
+import org.cache2k.core.api.InternalCacheCloseContext;
 import org.cache2k.core.api.InternalCache;
+import org.cache2k.core.api.InternalCacheBuildContext;
 import org.cache2k.core.spi.CacheLifeCycleListener;
 import org.cache2k.core.spi.CacheManagerLifeCycleListener;
 import org.cache2k.core.log.Log;
@@ -55,7 +57,8 @@ public class JmxSupport implements CacheLifeCycleListener, CacheManagerLifeCycle
    * anyway since the cache size or the clear operation might be of interest.
    */
   @Override
-  public void cacheCreated(Cache c, Cache2kConfiguration cfg) {
+  public <K, V> void cacheCreated(Cache<K, V> c, InternalCacheBuildContext<K, V> ctx) {
+    Cache2kConfiguration cfg = ctx.getConfiguration();
     if (!cfg.isEnableJmx() || cfg.isDisableMonitoring()) {
       return;
     }
@@ -84,7 +87,7 @@ public class JmxSupport implements CacheLifeCycleListener, CacheManagerLifeCycle
   }
 
   @Override
-  public void cacheDestroyed(Cache c) {
+  public <K, V> void cacheClosed(Cache<K, V> c, InternalCacheCloseContext ctx) {
     MBeanServer mbs = getPlatformMBeanServer();
     String name = createCacheControlName(c.getCacheManager(), c);
     try {

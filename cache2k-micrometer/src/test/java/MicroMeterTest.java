@@ -24,26 +24,18 @@ import io.micrometer.core.instrument.search.MeterNotFoundException;
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import org.cache2k.Cache;
 import org.cache2k.Cache2kBuilder;
-import org.cache2k.CacheManager;
 import org.cache2k.extra.micrometer.Cache2kCacheMetrics;
 import static org.junit.Assert.*;
 
-import org.cache2k.extra.micrometer.MicroMeterSupport;
+import org.cache2k.extra.micrometer.MicrometerConfiguration;
 import org.junit.Test;
 
 /**
  * Does test the various bind option.
- * TODO: test that metrics are exported correctly
  *
  * @author Jens Wilke
  */
 public class MicroMeterTest {
-
-  /* Enable global registry support before anything else */
-  static {
-    System.setProperty(
-      "org.cache2k.extra.micrometer.MicroMeterSupport.Tunable.registerAtGlobalRegistry", "true");
-  }
 
   @Test
   public void programmaticBind() {
@@ -54,10 +46,28 @@ public class MicroMeterTest {
     cache.close();
   }
 
+  /**
+   * Tests a feature of micrometer. Registering twice has no effect.
+   * Metrics registered first stay and subsequent are discarded.
+   */
+  @Test
+  public void doubleBind() {
+    MeterRegistry registry = new SimpleMeterRegistry();
+    Cache cache = Cache2kBuilder.forUnknownTypes().build();
+    Cache2kCacheMetrics.monitor(registry, cache);
+    Object counter = registry.get("cache.puts").functionCounter();
+    Cache2kCacheMetrics.monitor(registry, cache);
+    assertSame(counter, registry.get("cache.puts").functionCounter());
+    cache.close();
+  }
+
   @Test
   public void notBoundToGlobalRegistryWhenDisabled() {
     Cache cache = Cache2kBuilder.forUnknownTypes()
       .name("bindToGlobalRegistryWhenDisabled")
+      .with(new MicrometerConfiguration.Builder()
+        .useGlobalRegistry()
+      )
       .disableMonitoring(true)
       .build();
     try {
@@ -71,6 +81,9 @@ public class MicroMeterTest {
   public void bindToGlobalRegistryWhenEnabled() {
     Cache cache = Cache2kBuilder.forUnknownTypes()
       .name("bindToGlobalRegistryWhenEnabled")
+      .with(new MicrometerConfiguration.Builder()
+        .useGlobalRegistry()
+      )
       .disableMonitoring(false)
       .build();
     assertTrue(Metrics.globalRegistry.get("cache.puts")
@@ -79,18 +92,11 @@ public class MicroMeterTest {
   }
 
   @Test
-  public void bindToGlobalRegistryWhenEnabledByDefault() {
+  public void bindWhenStatisticsEnabled() {
     Cache cache = Cache2kBuilder.forUnknownTypes()
-      .name("bindToGlobalRegistryWhenEnabledByDefault")
-      .build();
-    assertTrue(Metrics.globalRegistry.get("cache.puts")
-      .tag("cache", cache.getName())
-      .functionCounter().count() >= 0);
-  }
-
-  @Test
-  public void bindWhenStatisticsDisabled() {
-    Cache cache = Cache2kBuilder.forUnknownTypes()
+      .with(new MicrometerConfiguration.Builder()
+        .useGlobalRegistry()
+      )
       .disableStatistics(true)
       .name("bindWhenStatisticsDisabled")
       .build();
@@ -100,12 +106,12 @@ public class MicroMeterTest {
   }
 
   @Test
-  public void bindToRegistryInCacheManager() {
-    CacheManager mgm = CacheManager.getInstance("another");
+  public void bindToSpecificRegistry() {
     MeterRegistry registry = new SimpleMeterRegistry();
-    mgm.getProperties().put(MicroMeterSupport.MICROMETER_REGISTRY_MANAGER_PROPERTY, registry);
     Cache cache = Cache2kBuilder.forUnknownTypes()
-      .manager(mgm)
+      .with(new MicrometerConfiguration.Builder()
+        .meterRegistry(registry)
+      )
       .build();
     try {
       Metrics.globalRegistry.get("cache.puts").tag("cache", cache.getName()).meters();

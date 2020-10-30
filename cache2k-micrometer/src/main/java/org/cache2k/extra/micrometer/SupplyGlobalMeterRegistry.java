@@ -1,8 +1,8 @@
-package org.cache2k.core.api;
+package org.cache2k.extra.micrometer;
 
 /*
  * #%L
- * cache2k core implementation
+ * cache2k micrometer monitoring support
  * %%
  * Copyright (C) 2000 - 2020 headissue GmbH, Munich
  * %%
@@ -20,27 +20,21 @@ package org.cache2k.core.api;
  * #L%
  */
 
-import org.cache2k.CacheManager;
+import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.core.instrument.Metrics;
+import org.cache2k.configuration.CacheBuildContext;
+import org.cache2k.configuration.CustomizationSupplier;
 
 /**
  * @author Jens Wilke
  */
-public interface CacheCloseContext {
+public final class SupplyGlobalMeterRegistry implements CustomizationSupplier<MeterRegistry> {
 
-  /**
-   * The cache name
-   */
-  String getName();
+  public static final SupplyGlobalMeterRegistry INSTANCE = new SupplyGlobalMeterRegistry();
 
-  /**
-   * The cache manager
-   */
-  CacheManager getCacheManager();
-
-  /**
-   * Call close on the customization if the {@link java.io.Closeable} interface
-   * is implemented
-   */
-  void closeCustomization(Object customization, String name);
+  @Override
+  public MeterRegistry supply(CacheBuildContext buildContext) {
+    return Metrics.globalRegistry;
+  }
 
 }

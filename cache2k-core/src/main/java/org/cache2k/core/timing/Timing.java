@@ -22,8 +22,8 @@ package org.cache2k.core.timing;
 
 import org.cache2k.configuration.Cache2kConfiguration;
 import org.cache2k.CacheEntry;
-import org.cache2k.core.api.InternalBuildContext;
-import org.cache2k.core.api.CacheCloseContext;
+import org.cache2k.core.api.InternalCacheBuildContext;
+import org.cache2k.core.api.InternalCacheCloseContext;
 import org.cache2k.core.Entry;
 import org.cache2k.core.ExceptionWrapper;
 import org.cache2k.expiry.ExpiryPolicy;
@@ -70,7 +70,7 @@ public abstract class Timing<K, V>  {
     return t == 0 || t == -1;
   }
 
-  public static <K, V> Timing<K, V> of(InternalBuildContext<K, V> buildContext) {
+  public static <K, V> Timing<K, V> of(InternalCacheBuildContext<K, V> buildContext) {
     Cache2kConfiguration<K, V> cfg = buildContext.getConfiguration();
     if (Duration.ZERO.equals(cfg.getExpireAfterWrite())
       && zeroOrUnspecified(cfg.getRetryInterval())) {
@@ -117,7 +117,7 @@ public abstract class Timing<K, V>  {
    */
   public void cancelAll() { }
 
-  public void close(CacheCloseContext closeContext) { }
+  public void close(InternalCacheCloseContext closeContext) { }
 
   /**
    * Calculates the expiry time for a value that was just loaded or inserted into the cache.

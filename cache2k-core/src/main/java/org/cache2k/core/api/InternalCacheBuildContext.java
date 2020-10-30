@@ -22,6 +22,7 @@ package org.cache2k.core.api;
 
 import org.cache2k.CacheManager;
 import org.cache2k.configuration.Cache2kConfiguration;
+import org.cache2k.configuration.CacheBuildContext;
 import org.cache2k.configuration.CustomizationSupplier;
 
 /**
@@ -29,7 +30,7 @@ import org.cache2k.configuration.CustomizationSupplier;
  *
  * @author Jens Wilke
  */
-public interface InternalBuildContext<K, V> {
+public interface InternalCacheBuildContext<K, V> extends CacheBuildContext {
 
   /**
    * The time reference for the cache.

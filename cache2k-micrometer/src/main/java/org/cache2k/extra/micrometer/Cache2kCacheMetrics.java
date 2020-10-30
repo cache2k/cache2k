@@ -36,7 +36,9 @@ import org.cache2k.management.CacheStatistics;
 import java.util.concurrent.TimeUnit;
 
 /**
- * Micrometer support for cache2k
+ * Micrometer support for cache2k. Metrics will be bound automatically upon
+ * cache creation if enabled by the configuration. Alternatively, metrics can
+ * be bound to a registry programmatically via {@link #monitor(MeterRegistry, Cache, String...)}.
  *
  * @author Jens Wilke
  */
