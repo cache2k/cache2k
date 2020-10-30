@@ -20,7 +20,6 @@ package org.cache2k.test.core;
  * #L%
  */
 
-import org.assertj.core.api.Assertions;
 import org.cache2k.Cache;
 import org.cache2k.Cache2kBuilder;
 import org.cache2k.CacheEntry;
@@ -36,7 +35,7 @@ import org.cache2k.io.LoadExceptionInfo;
 import org.cache2k.integration.LoadDetail;
 import org.cache2k.integration.Loaders;
 import org.cache2k.io.ResiliencePolicy;
-import org.cache2k.management.CacheManagement;
+import org.cache2k.management.CacheControl;
 import org.cache2k.testing.category.FastTests;
 import org.cache2k.processor.EntryProcessingException;
 import org.cache2k.processor.EntryProcessor;
@@ -1100,14 +1099,14 @@ public class EntryProcessorTest {
     int key = 123;
     c.invoke(key, entry -> entry.lock());
     assertFalse(c.containsKey(key));
-    assertEquals(0, CacheManagement.of(c).getSize());
+    assertEquals(0, CacheControl.of(c).getSize());
     c.invoke(key, entry -> {
       entry.exists();
       entry.lock();
       return null;
     });
     assertFalse(c.containsKey(key));
-    assertEquals(0, CacheManagement.of(c).getSize());
+    assertEquals(0, CacheControl.of(c).getSize());
     c.invoke(key, entry -> {
       entry.setValue(4711);
       entry.exists();
@@ -1115,7 +1114,7 @@ public class EntryProcessorTest {
       return null;
     });
     assertTrue(c.containsKey(key));
-    assertEquals(1, CacheManagement.of(c).getSize());
+    assertEquals(1, CacheControl.of(c).getSize());
     c.invoke(key, entry -> {
       entry.lock();
       entry.getValue();

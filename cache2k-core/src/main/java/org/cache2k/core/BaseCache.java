@@ -27,11 +27,11 @@ import org.cache2k.CacheOperationCompletionListener;
 import org.cache2k.core.api.CacheCloseContext;
 import org.cache2k.core.api.InternalCache;
 import org.cache2k.core.api.InternalCacheInfo;
-import org.cache2k.core.common.BaseCacheManagement;
+import org.cache2k.core.common.BaseCacheControl;
 import org.cache2k.core.operation.Operations;
-import org.cache2k.management.CacheControl;
+import org.cache2k.management.CacheOperation;
 import org.cache2k.management.CacheInfo;
-import org.cache2k.management.CacheManagement;
+import org.cache2k.management.CacheControl;
 import org.cache2k.processor.EntryProcessingException;
 import org.cache2k.processor.EntryProcessor;
 import org.cache2k.processor.EntryProcessingResult;
@@ -158,10 +158,10 @@ public abstract class BaseCache<K, V> implements InternalCache<K, V>, CacheClose
       type.equals(Map.class)) {
       return (X) asMap();
     }
-    if (type.isAssignableFrom(CacheControl.class) ||
+    if (type.isAssignableFrom(CacheOperation.class) ||
       type.isAssignableFrom(CacheInfo.class) ||
-      type.isAssignableFrom(CacheManagement.class)) {
-      return (X) new BaseCacheManagement(this);
+      type.isAssignableFrom(CacheControl.class)) {
+      return (X) new BaseCacheControl(this);
     }
     if (type.isAssignableFrom(this.getClass())) {
       return (X) this;

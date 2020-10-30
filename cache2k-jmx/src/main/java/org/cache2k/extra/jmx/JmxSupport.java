@@ -28,7 +28,7 @@ import org.cache2k.core.api.InternalCache;
 import org.cache2k.core.spi.CacheLifeCycleListener;
 import org.cache2k.core.spi.CacheManagerLifeCycleListener;
 import org.cache2k.core.log.Log;
-import org.cache2k.management.CacheManagement;
+import org.cache2k.management.CacheControl;
 
 import javax.management.InstanceAlreadyExistsException;
 import javax.management.InstanceNotFoundException;
@@ -61,8 +61,8 @@ public class JmxSupport implements CacheLifeCycleListener, CacheManagerLifeCycle
     }
     MBeanServer mbs = getPlatformMBeanServer();
     InternalCache internalCache = (InternalCache) c.requestInterface(InternalCache.class);
-    CacheManagement management = new CacheManagementJmxImpl(internalCache);
-    String name = createCacheManagementName(c.getCacheManager(), c);
+    CacheControl management = new CacheControlMXBeanImpl(internalCache);
+    String name = createCacheControlName(c.getCacheManager(), c);
     try {
       mbs.registerMBean(management, new ObjectName(name));
     } catch (InstanceAlreadyExistsException existing) {
@@ -75,7 +75,7 @@ public class JmxSupport implements CacheLifeCycleListener, CacheManagerLifeCycle
     }
     name = createCacheStatisticsName(c.getCacheManager(), c);
     try {
-      mbs.registerMBean(new UpdatingCacheStatistics(internalCache), new ObjectName(name));
+      mbs.registerMBean(new CacheStatisticsMXBeanImpl(internalCache), new ObjectName(name));
     } catch (InstanceAlreadyExistsException existing) {
       log.debug("register failure, cache: " + c.getName(), existing);
     } catch (Exception e) {
@@ -86,7 +86,7 @@ public class JmxSupport implements CacheLifeCycleListener, CacheManagerLifeCycle
   @Override
   public void cacheDestroyed(Cache c) {
     MBeanServer mbs = getPlatformMBeanServer();
-    String name = createCacheManagementName(c.getCacheManager(), c);
+    String name = createCacheControlName(c.getCacheManager(), c);
     try {
       mbs.unregisterMBean(new ObjectName(name));
     } catch (InstanceNotFoundException ignore) {
@@ -105,7 +105,7 @@ public class JmxSupport implements CacheLifeCycleListener, CacheManagerLifeCycle
   @Override
   public void managerCreated(CacheManager m) {
     MBeanServer mbs = getPlatformMBeanServer();
-    ManagerMXBeanImpl mBean = new ManagerMXBeanImpl(m);
+    CacheManagerMXBeanImpl mBean = new CacheManagerMXBeanImpl(m);
     String name = managerName(m);
     try {
       mbs.registerMBean(mBean, new ObjectName(name));
@@ -143,7 +143,7 @@ public class JmxSupport implements CacheLifeCycleListener, CacheManagerLifeCycle
         ",name=" + sanitizeNameAsJmxValue(cm.getName());
   }
 
-  private String createCacheManagementName(CacheManager cm, Cache c) {
+  private String createCacheControlName(CacheManager cm, Cache c) {
     return
       "org.cache2k" + ":" +
         "type=Cache" +

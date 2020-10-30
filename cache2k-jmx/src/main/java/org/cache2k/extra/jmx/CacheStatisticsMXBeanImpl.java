@@ -29,10 +29,12 @@ import org.cache2k.core.common.AbstractCacheStatistics;
  *
  * @author Jens Wilke
  */
-public class UpdatingCacheStatistics extends AbstractCacheStatistics implements CacheStatisticsMXBean {
+public class CacheStatisticsMXBeanImpl
+  extends AbstractCacheStatistics implements CacheStatisticsMXBean {
+
   private InternalCache cache;
 
-  public UpdatingCacheStatistics(InternalCache cache) {
+  public CacheStatisticsMXBeanImpl(InternalCache cache) {
     this.cache = cache;
   }
 

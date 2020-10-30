@@ -20,13 +20,12 @@ package org.cache2k.extra.jmx;
  * #L%
  */
 
-import org.assertj.core.api.Assertions;
 import org.cache2k.Cache;
 import org.cache2k.Cache2kBuilder;
 import org.cache2k.CacheManager;
 
 import org.cache2k.Weigher;
-import org.cache2k.core.common.BaseCacheManagement;
+import org.cache2k.core.common.BaseCacheControl;
 import org.cache2k.core.log.Log;
 import org.cache2k.testing.category.FastTests;
 import org.junit.Test;
@@ -68,7 +67,7 @@ public class JmxSupportTest {
     String name = getClass().getName() + ".testManagerPresent";
     CacheManager m = CacheManager.getInstance(name);
     MBeanInfo i = getCacheManagerInfo(name);
-    assertEquals(ManagerMXBeanImpl.class.getName(), i.getClassName());
+    assertEquals(CacheManagerMXBeanImpl.class.getName(), i.getClassName());
     m.close();
   }
 
@@ -77,7 +76,7 @@ public class JmxSupportTest {
     String name = getClass().getName() + ".emptyCacheManager_healthOkay";
     CacheManager m = CacheManager.getInstance(name);
     MBeanInfo i = getCacheManagerInfo(name);
-    assertEquals(ManagerMXBeanImpl.class.getName(), i.getClassName());
+    assertEquals(CacheManagerMXBeanImpl.class.getName(), i.getClassName());
     String health = (String) SERVER.getAttribute(getCacheManagerObjectName(name), "HealthStatus");
     assertEquals("ok", health);
     m.close();
@@ -167,7 +166,7 @@ public class JmxSupportTest {
     String name = getClass().getName() + ".testManagerDestroyed";
     CacheManager m = CacheManager.getInstance(name);
     MBeanInfo i = getCacheManagerInfo(name);
-    assertEquals(ManagerMXBeanImpl.class.getName(), i.getClassName());
+    assertEquals(CacheManagerMXBeanImpl.class.getName(), i.getClassName());
     m.close();
     getCacheManagerInfo(name);
   }
@@ -373,7 +372,7 @@ public class JmxSupportTest {
       .eternal(true)
       .build();
     MBeanInfo i = getCacheInfo(name);
-    assertEquals(BaseCacheManagement.class.getName(), i.getClassName());
+    assertEquals(BaseCacheControl.class.getName(), i.getClassName());
     c.close();
     getCacheInfo(name);
   }

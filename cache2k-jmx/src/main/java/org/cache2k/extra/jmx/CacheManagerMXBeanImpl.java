@@ -33,11 +33,11 @@ import java.util.List;
 /**
 * @author Jens Wilke
 */
-public class ManagerMXBeanImpl implements CacheManagerMXBean {
+public class CacheManagerMXBeanImpl implements CacheManagerMXBean {
 
   private final CacheManager manager;
 
-  public ManagerMXBeanImpl(CacheManager manager) {
+  public CacheManagerMXBeanImpl(CacheManager manager) {
     this.manager = manager;
   }
 

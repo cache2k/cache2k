@@ -1,8 +1,8 @@
-package org.cache2k.management;
+package org.cache2k.extra.jmx;
 
 /*
  * #%L
- * cache2k API
+ * cache2k JMX support
  * %%
  * Copyright (C) 2000 - 2020 headissue GmbH, Munich
  * %%
@@ -20,27 +20,20 @@ package org.cache2k.management;
  * #L%
  */
 
-import org.cache2k.Cache;
+import org.cache2k.core.api.InternalCache;
+import org.cache2k.core.common.BaseCacheControl;
 
 /**
- * Combined interface for introspection and control functions of a cache relevant
- * for management and monitoring.
+ * Use the implementation from core and decorate with the JMX bean
+ * interface.
  *
  * @author Jens Wilke
  */
-public interface CacheManagement extends CacheControl, CacheInfo {
+public class CacheControlMXBeanImpl
+  extends BaseCacheControl implements CacheControlMXBean {
 
-  /**
-   * Request an management interface of the given cache.
-   */
-  static CacheManagement of(Cache<?, ?> cache) {
-    return cache.requestInterface(CacheManagement.class);
+  public CacheControlMXBeanImpl(InternalCache cache) {
+    super(cache);
   }
-
-  /**
-   * Returns a snapshot of cache statistics if this cache supports statistics
-   * or {@code null} otherwise.
-   */
-  CacheStatistics sampleStatistics();
 
 }

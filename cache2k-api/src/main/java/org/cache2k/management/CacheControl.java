@@ -23,42 +23,24 @@ package org.cache2k.management;
 import org.cache2k.Cache;
 
 /**
- * General functions to control and tune a cache.
- *
- * <p>Outlook: CacheControl may get ability to control expiry and refresh behavior
+ * Combined interface for introspection and control functions of a cache relevant
+ * for management and monitoring.
  *
  * @author Jens Wilke
  */
-public interface CacheControl {
+public interface CacheControl extends CacheOperation, CacheInfo {
 
   /**
-   * Clears the cache contents. Identical to {@link Cache#clear()}
+   * Request an management interface of the given cache.
    */
-  void clear();
+  static CacheControl of(Cache<?, ?> cache) {
+    return cache.requestInterface(CacheControl.class);
+  }
 
   /**
-   * End cache operations. Identical to {@link Cache#close()}
+   * Returns a snapshot of cache statistics if this cache supports statistics
+   * or {@code null} otherwise.
    */
-  void close();
-
-  /**
-   * A combination of {@link Cache#clear} and {@link Cache#close} potentially
-   * wiping all stored data of this cache.
-   *
-   * <p>This method is to future proof the API, when a persistence feature is added.
-   * In this case the method will stop cache operations and remove all stored external data.
-   *
-   * <p>Rationale: The corresponding method in JSR107 is {@code CacheManager.destroyCache()}.
-   */
-  void destroy();
-
-  /**
-   * Change the maximum capacity of the cache. If a weigher is present
-   * this is the maximum weight of all cache entries, otherwise the maximum count
-   * of cache entries. The capacity is not allowed to be 0.
-   *
-   * @see org.cache2k.Weigher
-   */
-  void changeCapacity(long entryCountOrWeight);
+  CacheStatistics sampleStatistics();
 
 }

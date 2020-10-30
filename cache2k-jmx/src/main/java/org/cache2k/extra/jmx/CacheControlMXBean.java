@@ -20,7 +20,7 @@ package org.cache2k.extra.jmx;
  * #L%
  */
 
-import org.cache2k.management.CacheControl;
+import org.cache2k.management.CacheOperation;
 import org.cache2k.management.CacheInfo;
 
 /**
@@ -28,5 +28,5 @@ import org.cache2k.management.CacheInfo;
  *
  * @author Jens Wilke
  */
-public interface CacheManagementMXBean extends CacheControl, CacheInfo {
+public interface CacheControlMXBean extends CacheOperation, CacheInfo {
 }

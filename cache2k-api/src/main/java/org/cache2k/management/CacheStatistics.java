@@ -25,7 +25,7 @@ import org.cache2k.io.CacheLoader;
 
 /**
  * Set of metrics for cache statistics. The cache statistics are exported
- * to JMX or can be retrieved via {@link CacheManagement#sampleStatistics()}
+ * to JMX or can be retrieved via {@link CacheControl#sampleStatistics()}
  *
  * @author Jens Wilke
  */

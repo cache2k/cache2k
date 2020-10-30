@@ -32,7 +32,7 @@ import java.util.Date;
  *
  * <p>This interface is exposed as JMX bean if JMX support is enabled or can be
  * requested via {@link #of}. Alternatively use the combined interface
- * {@link CacheManagement}.
+ * {@link CacheControl}.
  *
  * <p>It is intentionally that there is no way to retrieve the original
  * configuration after creation.
@@ -44,7 +44,7 @@ public interface CacheInfo {
   /**
    * Request an instance for the given cache.
    */
-  static CacheInfo of(Cache<?, ?> cache) { return CacheManagement.of(cache); }
+  static CacheInfo of(Cache<?, ?> cache) { return CacheControl.of(cache); }
 
   String getName();
 

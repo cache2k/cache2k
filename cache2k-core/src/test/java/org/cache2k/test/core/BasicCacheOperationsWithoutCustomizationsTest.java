@@ -31,7 +31,7 @@ import org.cache2k.core.api.InternalCacheInfo;
 import org.cache2k.event.CacheEntryExpiredListener;
 import org.cache2k.expiry.ExpiryTimeValues;
 import org.cache2k.io.CacheLoaderException;
-import org.cache2k.management.CacheManagement;
+import org.cache2k.management.CacheControl;
 import org.cache2k.processor.EntryProcessingResult;
 import org.cache2k.processor.EntryProcessor;
 import org.cache2k.processor.MutableCacheEntry;
@@ -235,7 +235,7 @@ public class BasicCacheOperationsWithoutCustomizationsTest {
   @AfterClass
   public static void tearDown() {
     for (Cache c : PARS2CACHE.values()) {
-      CacheManagement.of(c).destroy();
+      CacheControl.of(c).destroy();
       c.close();
       assertTrue(c.isClosed());
       assertNotNull("getName working in closed state", c.getName());

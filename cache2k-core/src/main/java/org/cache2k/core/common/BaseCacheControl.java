@@ -23,22 +23,22 @@ package org.cache2k.core.common;
 import org.cache2k.core.api.CommonMetrics;
 import org.cache2k.core.api.InternalCache;
 import org.cache2k.core.api.InternalCacheInfo;
-import org.cache2k.management.CacheManagement;
+import org.cache2k.management.CacheControl;
 import org.cache2k.management.CacheStatistics;
 
 import java.util.Date;
 
 /**
- * Provide cache management on top of internal cache.
- * This gets reused in the JMX extension.
+ * Provide cache control on top of internal cache.
+ * This gets reused by the JMX extension.
  *
  * @author Jens Wilke
  */
-public class BaseCacheManagement implements CacheManagement {
+public class BaseCacheControl implements CacheControl {
 
   private final InternalCache cache;
 
-  public BaseCacheManagement(InternalCache cache) {
+  public BaseCacheControl(InternalCache cache) {
     this.cache = cache;
   }
 

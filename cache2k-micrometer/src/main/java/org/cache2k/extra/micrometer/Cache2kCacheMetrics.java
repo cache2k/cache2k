@@ -30,7 +30,7 @@ import io.micrometer.core.instrument.binder.cache.CacheMeterBinder;
 import org.cache2k.Cache;
 import org.cache2k.configuration.CacheType;
 import org.cache2k.core.api.InternalCache;
-import org.cache2k.management.CacheManagement;
+import org.cache2k.management.CacheControl;
 import org.cache2k.management.CacheStatistics;
 
 import java.util.concurrent.TimeUnit;
@@ -42,7 +42,7 @@ import java.util.concurrent.TimeUnit;
  */
 public class Cache2kCacheMetrics extends CacheMeterBinder {
 
-  private final CacheManagement mgm;
+  private final CacheControl control;
 
   /**
    * Creates a new {@link Cache2kCacheMetrics} instance.
@@ -52,7 +52,7 @@ public class Cache2kCacheMetrics extends CacheMeterBinder {
    */
   public Cache2kCacheMetrics(Cache<?, ?> cache, Iterable<Tag> tags) {
     super(cache, cache.getName(), Tags.concat(tags, extendedTags(cache)));
-    mgm = CacheManagement.of(cache);
+    control = CacheControl.of(cache);
   }
 
   /**
@@ -85,7 +85,7 @@ public class Cache2kCacheMetrics extends CacheMeterBinder {
 
   @Override
   protected Long size() {
-    return mgm.getSize();
+    return control.getSize();
   }
 
   @Override
@@ -123,7 +123,7 @@ public class Cache2kCacheMetrics extends CacheMeterBinder {
   }
 
   private CacheStatistics stats() {
-    return mgm.sampleStatistics();
+    return control.sampleStatistics();
   }
 
   /**
@@ -133,29 +133,29 @@ public class Cache2kCacheMetrics extends CacheMeterBinder {
    */
   @Override
   protected void bindImplementationSpecificMetrics(MeterRegistry registry) {
-    if (mgm.isWeigherPresent()) {
-      Gauge.builder("cache.currentWeight", mgm,
+    if (control.isWeigherPresent()) {
+      Gauge.builder("cache.currentWeight", control,
         mgm -> mgm.getTotalWeight())
         .tags(getTagsWithCacheName())
         .description("The sum of weights of all cached entries.")
         .register(registry);
     }
 
-    if (mgm.isLoaderPresent()) {
-      TimeGauge.builder("cache.load.duration", mgm, TimeUnit.MILLISECONDS,
+    if (control.isLoaderPresent()) {
+      TimeGauge.builder("cache.load.duration", control, TimeUnit.MILLISECONDS,
         mgm -> (mgm.sampleStatistics().getMillisPerLoad()))
         .tags(getTagsWithCacheName())
         .description("The time the cache has spent loading new values")
         .register(registry);
 
-      FunctionCounter.builder("cache.load", mgm,
+      FunctionCounter.builder("cache.load", control,
         mgm -> mgm.sampleStatistics().getLoadCount())
         .tags(getTagsWithCacheName()).tags("result", "success")
         .description(
           "The number of times cache lookup methods have successfully loaded a new value")
         .register(registry);
 
-      FunctionCounter.builder("cache.load", mgm,
+      FunctionCounter.builder("cache.load", control,
         mgm -> mgm.sampleStatistics().getLoadExceptionCount())
         .tags(getTagsWithCacheName()).tags("result", "failure")
         .description(
