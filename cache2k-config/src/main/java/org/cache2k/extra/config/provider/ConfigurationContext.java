@@ -20,8 +20,8 @@ package org.cache2k.extra.config.provider;
  * #L%
  */
 
-import org.cache2k.configuration.Cache2kConfiguration;
-import org.cache2k.configuration.Cache2kManagerConfiguration;
+import org.cache2k.config.Cache2kConfig;
+import org.cache2k.config.Cache2kManagerConfig;
 import org.cache2k.extra.config.generic.ParsedConfiguration;
 
 import java.util.Map;
@@ -34,19 +34,19 @@ import java.util.Map;
  */
 public class ConfigurationContext {
 
-  private final Cache2kManagerConfiguration managerConfiguration =
-    new Cache2kManagerConfiguration();
+  private final Cache2kManagerConfig managerConfiguration =
+    new Cache2kManagerConfig();
   private boolean configurationPresent = false;
   private ClassLoader classLoader;
-  private Cache2kConfiguration<?, ?> defaultManagerConfiguration;
+  private Cache2kConfig<?, ?> defaultManagerConfiguration;
   private Map<String, String> predefinedSectionTypes;
   private ParsedConfiguration templates;
 
-  public Cache2kConfiguration<?, ?> getDefaultManagerConfiguration() {
+  public Cache2kConfig<?, ?> getDefaultManagerConfiguration() {
     return defaultManagerConfiguration;
   }
 
-  public void setDefaultManagerConfiguration(final Cache2kConfiguration<?, ?> v) {
+  public void setDefaultManagerConfiguration(final Cache2kConfig<?, ?> v) {
     defaultManagerConfiguration = v;
   }
 
@@ -82,7 +82,7 @@ public class ConfigurationContext {
     templates = v;
   }
 
-  public Cache2kManagerConfiguration getManagerConfiguration() {
+  public Cache2kManagerConfig getManagerConfiguration() {
     return managerConfiguration;
   }
 

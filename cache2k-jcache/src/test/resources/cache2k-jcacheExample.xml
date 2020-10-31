@@ -36,7 +36,7 @@
              the section may contain unrestricted elements.
          -->
         <section>
-          <type>org.cache2k.jcache.JCacheConfiguration</type>
+          <type>org.cache2k.jcache.JCacheConfig</type>
           <copyAlwaysIfRequested>true</copyAlwaysIfRequested>
         </section>
       </sections>

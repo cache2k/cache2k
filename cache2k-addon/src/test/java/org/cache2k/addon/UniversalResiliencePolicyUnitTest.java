@@ -97,7 +97,7 @@ public class UniversalResiliencePolicyUnitTest {
   public void testWithExpiryAndResilienceDuration() {
     UniversalResiliencePolicy p = policy(builder()
       .expireAfterWrite(240000, TimeUnit.MILLISECONDS)
-      .with(UniversalResilienceConfiguration.class, b -> b
+      .section(UniversalResilienceConfig.class, b -> b
         .resilienceDuration(30000, TimeUnit.MILLISECONDS)
       )
     );
@@ -111,7 +111,7 @@ public class UniversalResiliencePolicyUnitTest {
   }
 
   private static UniversalResiliencePolicy policy(final Cache2kBuilder builder) {
-    UniversalResiliencePolicy policy = new UniversalResiliencePolicy(builder.toConfiguration());
+    UniversalResiliencePolicy policy = new UniversalResiliencePolicy(builder.config());
     return policy;
   }
 
@@ -122,8 +122,8 @@ public class UniversalResiliencePolicyUnitTest {
   public void testWithExpiryAndResilienceDuration10Min30Sec() {
     UniversalResiliencePolicy p = policy(builder()
       .expireAfterWrite(10, TimeUnit.MINUTES)
-      .with(
-        UniversalResilienceConfiguration.class, b -> b
+      .section(
+        UniversalResilienceConfig.class, b -> b
           .resilienceDuration(30, TimeUnit.SECONDS)
       )
     );
@@ -139,7 +139,7 @@ public class UniversalResiliencePolicyUnitTest {
   public void testWithExpiryAndRetryInterval() {
     UniversalResiliencePolicy p = policy(builder()
       .expireAfterWrite(240000, TimeUnit.MILLISECONDS)
-      .with(UniversalResilienceConfiguration.class, b -> b
+      .section(UniversalResilienceConfig.class, b -> b
         .retryInterval(10000, TimeUnit.MILLISECONDS)
       )
     );
@@ -155,7 +155,7 @@ public class UniversalResiliencePolicyUnitTest {
   public void testWithExpiryAndMaxRetryInterval() {
     UniversalResiliencePolicy p = policy(builder()
       .expireAfterWrite(240000, TimeUnit.MILLISECONDS)
-      .with(UniversalResilienceConfiguration.class, b -> b
+      .section(UniversalResilienceConfig.class, b -> b
         .maxRetryInterval(10000, TimeUnit.MILLISECONDS)
       )
     );
@@ -168,7 +168,7 @@ public class UniversalResiliencePolicyUnitTest {
   public void testRandomization() {
     UniversalResiliencePolicy p = policy(builder()
       .expireAfterWrite(10000, TimeUnit.MILLISECONDS)
-      .with(UniversalResilienceConfiguration.class, b -> b
+      .section(UniversalResilienceConfig.class, b -> b
         .retryInterval(100, TimeUnit.MILLISECONDS)
         .maxRetryInterval(500, TimeUnit.MILLISECONDS)
         .resilienceDuration(5000, TimeUnit.MILLISECONDS)
@@ -200,7 +200,7 @@ public class UniversalResiliencePolicyUnitTest {
   public void testCustomMultiplier() {
     UniversalResiliencePolicy p = policy(builder()
       .expireAfterWrite(10000, TimeUnit.MILLISECONDS)
-      .with(UniversalResilienceConfiguration.class, b -> b
+      .section(UniversalResilienceConfig.class, b -> b
         .retryInterval(100, TimeUnit.MILLISECONDS)
         .maxRetryInterval(500, TimeUnit.MILLISECONDS)
         .resilienceDuration(5000, TimeUnit.MILLISECONDS)
@@ -223,7 +223,7 @@ public class UniversalResiliencePolicyUnitTest {
   public void testSuppress() {
     UniversalResiliencePolicy p = policy(builder()
       .expireAfterWrite(10000, TimeUnit.MILLISECONDS)
-      .with(UniversalResilienceConfiguration.class, b -> b
+      .section(UniversalResilienceConfig.class, b -> b
         .retryInterval(100, TimeUnit.MILLISECONDS)
         .maxRetryInterval(500, TimeUnit.MILLISECONDS)
         .resilienceDuration(5000, TimeUnit.MILLISECONDS)
@@ -262,7 +262,7 @@ public class UniversalResiliencePolicyUnitTest {
   public void testCache() {
     UniversalResiliencePolicy p = policy(builder()
       .expireAfterWrite(10000, TimeUnit.MILLISECONDS)
-      .with(UniversalResilienceConfiguration.class, b -> b
+      .section(UniversalResilienceConfig.class, b -> b
         .retryInterval(100, TimeUnit.MILLISECONDS)
         .maxRetryInterval(500, TimeUnit.MILLISECONDS)
         .resilienceDuration(5000, TimeUnit.MILLISECONDS)

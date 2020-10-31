@@ -21,7 +21,7 @@ package org.cache2k.extra.spring;
  */
 
 import org.cache2k.Cache2kBuilder;
-import org.cache2k.configuration.Cache2kConfiguration;
+import org.cache2k.config.Cache2kConfig;
 import org.springframework.cache.CacheManager;
 import org.springframework.util.Assert;
 
@@ -147,7 +147,7 @@ public class SpringCache2kCacheManager implements CacheManager {
   }
 
   private SpringCache2kCache addCache(Cache2kBuilder<?, ?> builder) {
-    String name = builder.toConfiguration().getName();
+    String name = builder.config().getName();
     Assert.notNull(name, "Name must be set via Cache2kBuilder.name()");
     Assert.isTrue(builder.getManager() == manager,
       "Manager must be identical in builder.");
@@ -163,11 +163,11 @@ public class SpringCache2kCacheManager implements CacheManager {
    * be used together with Springs' own XML bean configuration. If a cache name
    * is configured also with a cache2k XML configuration, the configuration is merged.
    */
-  public void setCaches(Collection<Cache2kConfiguration<?, ?>> cacheConfigurationList) {
+  public void setCaches(Collection<Cache2kConfig<?, ?>> cacheConfigurationList) {
     cacheConfigurationList.forEach(this::addCache);
   }
 
-  private void addCache(Cache2kConfiguration<?, ?> cfg) {
+  private void addCache(Cache2kConfig<?, ?> cfg) {
     addCache(Cache2kBuilder.of(cfg).manager(manager));
   }
 
@@ -234,7 +234,7 @@ public class SpringCache2kCacheManager implements CacheManager {
   @SuppressWarnings("unchecked")
   SpringCache2kCache buildAndWrap(Cache2kBuilder<?, ?> builder) {
     org.cache2k.Cache nativeCache = builder.build();
-    Cache2kConfiguration<?, ?> cfg = builder.toConfiguration();
+    Cache2kConfig<?, ?> cfg = builder.config();
     boolean loaderPresent = cfg.getLoader() != null || cfg.getAdvancedLoader() != null;
     return loaderPresent ?
       new SpringLoadingCache2kCache(nativeCache) : new SpringCache2kCache(nativeCache);

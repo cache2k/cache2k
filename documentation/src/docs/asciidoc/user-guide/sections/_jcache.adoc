@@ -204,7 +204,7 @@ Event listeners:: Registered listeners of both configurations will be used.
 === Control Custom JCache Semantics
 
 The cache2k JCache implementation has additional options that control its semantics. These options are available in
-the `JCacheConfiguration` configuration section, which is provided by the `cache2k-jcache-api` module.
+the `JCacheConfig` configuration section, which is provided by the `cache2k-jcache-api` module.
 
 Example usage:
 

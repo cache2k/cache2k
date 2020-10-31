@@ -23,23 +23,16 @@ package org.cache2k.extra.config.test;
 import org.cache2k.Cache;
 import org.cache2k.Cache2kBuilder;
 import org.cache2k.CacheManager;
-import org.cache2k.configuration.Cache2kConfiguration;
-import org.cache2k.configuration.CustomizationSupplierByClassName;
-import org.cache2k.core.spi.CacheConfigurationProvider;
+import org.cache2k.config.Cache2kConfig;
+import org.cache2k.config.CustomizationSupplierByClassName;
+import org.cache2k.core.spi.CacheConfigProvider;
 import org.cache2k.extra.config.provider.CacheConfigurationProviderImpl;
 import org.cache2k.extra.config.generic.ConfigurationException;
-import org.cache2k.schema.Constants;
 import org.cache2k.testing.category.FastTests;
 import org.hamcrest.CoreMatchers;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
-import javax.xml.XMLConstants;
-import javax.xml.transform.Source;
-import javax.xml.transform.stream.StreamSource;
-import javax.xml.validation.Schema;
-import javax.xml.validation.SchemaFactory;
 import java.io.Serializable;
 
 import static org.junit.Assert.*;
@@ -54,7 +47,7 @@ import static org.hamcrest.CoreMatchers.*;
 @Category(FastTests.class)
 public class IntegrationTest {
 
-  static final CacheConfigurationProvider PROVIDER = new CacheConfigurationProviderImpl();
+  static final CacheConfigProvider PROVIDER = new CacheConfigurationProviderImpl();
 
   @Test
   public void listNames() {
@@ -70,26 +63,26 @@ public class IntegrationTest {
 
   @Test
   public void loaderByClassName() {
-    Cache2kConfiguration cfg = cacheCfgWithLoader();
+    Cache2kConfig cfg = cacheCfgWithLoader();
     assertEquals("x.y.z",
       ((CustomizationSupplierByClassName) cfg.getLoader()).getClassName());
   }
 
   @Test
   public void listenerByClassName() {
-    Cache2kConfiguration cfg = cacheCfgWithLoader();
+    Cache2kConfig cfg = cacheCfgWithLoader();
     assertEquals(2, cfg.getListeners().size());
     assertEquals("a.b.c",
      ((CustomizationSupplierByClassName) cfg.getListeners().iterator().next()).getClassName());
   }
 
-  private Cache2kConfiguration cacheCfgWithLoader() {
+  private Cache2kConfig cacheCfgWithLoader() {
     CacheManager mgr = CacheManager.getInstance("customizationExample");
-    Cache2kConfiguration cfg = Cache2kBuilder.forUnknownTypes()
+    Cache2kConfig cfg = Cache2kBuilder.forUnknownTypes()
       .manager(mgr)
-      .name("withLoader").toConfiguration();
+      .name("withLoader").config();
     assertNull("no loader yet, default configuration returned", cfg.getLoader());
-    PROVIDER.augmentConfiguration(mgr, cfg);
+    PROVIDER.augmentConfig(mgr, cfg);
     assertNotNull("loader defined", cfg.getLoader());
     return cfg;
   }
@@ -108,7 +101,7 @@ public class IntegrationTest {
   @Test
   public void defaultIsApplied() {
     assertEquals(5,
-      new Cache2kBuilder<String, String>() { }.toConfiguration().getLoaderThreadCount());
+      new Cache2kBuilder<String, String>() { }.config().getLoaderThreadCount());
   }
 
   @Test
@@ -116,7 +109,7 @@ public class IntegrationTest {
     Cache2kBuilder<String, String> b =
       new Cache2kBuilder<String, String>() { }
       .name("IntegrationTest-defaultAndIndividualIsApplied");
-    Cache2kConfiguration<String, String> cfg = b.toConfiguration();
+    Cache2kConfig<String, String> cfg = b.config();
     assertEquals(-1, cfg.getEntryCapacity());
     assertEquals(5, cfg.getLoaderThreadCount());
     assertNull(cfg.getExpireAfterWrite());
@@ -333,11 +326,11 @@ public class IntegrationTest {
       .name("anyCache")
       .build();
     c.close();
-    Cache2kConfiguration<String, String> cfg =
+    Cache2kConfig<String, String> cfg =
       new Cache2kBuilder<String, String>() { }
       .manager(CacheManager.getInstance("onlyDefault"))
       .name("anyCache")
-      .toConfiguration();
+      .config();
     assertEquals(1234, cfg.getEntryCapacity());
     assertTrue(cfg.isExternalConfigurationPresent());
   }

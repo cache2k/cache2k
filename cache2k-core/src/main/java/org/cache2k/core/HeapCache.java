@@ -24,9 +24,9 @@ import org.cache2k.Cache;
 import org.cache2k.CacheEntry;
 import org.cache2k.CacheManager;
 import org.cache2k.CacheOperationCompletionListener;
-import org.cache2k.configuration.Cache2kConfiguration;
-import org.cache2k.configuration.CacheType;
-import org.cache2k.configuration.CustomizationSupplier;
+import org.cache2k.config.Cache2kConfig;
+import org.cache2k.config.CacheType;
+import org.cache2k.config.CustomizationSupplier;
 import org.cache2k.core.api.InternalCacheBuildContext;
 import org.cache2k.core.api.CommonMetrics;
 import org.cache2k.core.api.InternalCache;
@@ -270,15 +270,15 @@ public class HeapCache<K, V> extends BaseCache<K, V> implements HeapCacheForEvic
   /** called from CacheBuilder */
   @SuppressWarnings("unchecked")
   public void setCacheConfig(InternalCacheBuildContext<K, V> buildContext) {
-    final Cache2kConfiguration<K, V> cfg = buildContext.getConfiguration();
+    final Cache2kConfig<K, V> cfg = buildContext.getConfiguration();
     valueType = cfg.getValueType();
     keyType = cfg.getKeyType();
     setName(cfg.getName());
     setFeatureBit(KEEP_AFTER_EXPIRED, cfg.isKeepDataAfterExpired());
     setFeatureBit(REJECT_NULL_VALUES, !cfg.isPermitNullValues());
     setFeatureBit(BACKGROUND_REFRESH, cfg.isRefreshAhead());
-    setFeatureBit(UPDATE_TIME_NEEDED, cfg.isRecordRefreshedTime());
-    setFeatureBit(RECORD_REFRESH_TIME, cfg.isRecordRefreshedTime());
+    setFeatureBit(UPDATE_TIME_NEEDED, cfg.isRecordModificationTime());
+    setFeatureBit(RECORD_REFRESH_TIME, cfg.isRecordModificationTime());
 
     metrics = TUNABLE.commonMetricsFactory.create(new CommonMetricsFactory.Parameters() {
       @Override

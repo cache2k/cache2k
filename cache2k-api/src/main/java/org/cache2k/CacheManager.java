@@ -20,7 +20,7 @@ package org.cache2k;
  * #L%
  */
 
-import org.cache2k.configuration.Cache2kConfiguration;
+import org.cache2k.config.Cache2kConfig;
 import org.cache2k.spi.Cache2kCoreProvider;
 
 import java.io.Closeable;
@@ -174,7 +174,7 @@ public abstract class CacheManager implements Closeable {
 
   /**
    * Returns all open caches associated with this cache manager. A cache returned by the iteration
-   * was created via {@link #createCache(Cache2kConfiguration)} or
+   * was created via {@link #createCache(Cache2kConfig)} or
    * {@link Cache2kBuilder#build()} and is not closed yet.
    */
   public abstract Iterable<Cache> getActiveCaches();
@@ -186,7 +186,7 @@ public abstract class CacheManager implements Closeable {
 
   /**
    * Return a known cache that must be created before via the {@link Cache2kBuilder}
-   * or {@link #createCache(Cache2kConfiguration)}
+   * or {@link #createCache(Cache2kConfig)}
    */
   public abstract <K, V> Cache<K, V> getCache(String name);
 
@@ -201,7 +201,7 @@ public abstract class CacheManager implements Closeable {
    * }</pre>
    *
    */
-  public abstract <K, V> Cache<K, V> createCache(Cache2kConfiguration<K, V> cfg);
+  public abstract <K, V> Cache<K, V> createCache(Cache2kConfig<K, V> cfg);
 
   /** Clear all currently active caches in this cache manager */
   public abstract void clear();

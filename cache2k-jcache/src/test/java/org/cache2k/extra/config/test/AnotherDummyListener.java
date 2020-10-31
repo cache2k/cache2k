@@ -20,8 +20,8 @@ package org.cache2k.extra.config.test;
  * #L%
  */
 
-import org.cache2k.configuration.CacheBuildContext;
-import org.cache2k.configuration.CustomizationSupplier;
+import org.cache2k.config.CacheBuildContext;
+import org.cache2k.config.CustomizationSupplier;
 
 import java.io.Serializable;
 

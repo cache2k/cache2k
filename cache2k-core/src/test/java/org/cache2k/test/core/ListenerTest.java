@@ -24,7 +24,7 @@ import org.cache2k.Cache;
 import org.cache2k.Cache2kBuilder;
 import org.cache2k.CacheEntry;
 import org.cache2k.core.CacheClosedException;
-import org.cache2k.core.api.CoreConfiguration;
+import org.cache2k.core.api.CoreConfig;
 import org.cache2k.core.api.InternalCache;
 import org.cache2k.core.util.SimulatedClock;
 import org.cache2k.event.CacheEntryEvictedListener;
@@ -694,7 +694,7 @@ public class ListenerTest {
     target.run(new CountSyncEvents() {
       @Override
       public void extend(Cache2kBuilder<Integer, Integer> b) {
-        b.with(CoreConfiguration.class, b2 -> b2
+        b.section(CoreConfig.class, b2 -> b2
           .timerReference(clock)
         );
         b.expireAfterWrite(expireAfterWrite, TimeUnit.MILLISECONDS);
@@ -728,7 +728,7 @@ public class ListenerTest {
     target.run(new CountSyncEvents() {
       @Override
       public void extend(Cache2kBuilder<Integer, Integer> b) {
-        b.with(CoreConfiguration.class, b2 -> b2
+        b.section(CoreConfig.class, b2 -> b2
           .timerReference(clock)
         );
         b.expireAfterWrite(expireAfterWrite, TimeUnit.MILLISECONDS);
@@ -764,7 +764,7 @@ public class ListenerTest {
       @Override
       public void extend(Cache2kBuilder<Integer, Integer> builder) {
         builder
-          .with(CoreConfiguration.class, b2 -> b2
+          .section(CoreConfig.class, b2 -> b2
             .timerReference(clock)
           )
           .expireAfterWrite(expireAfterWrite, TimeUnit.MILLISECONDS)

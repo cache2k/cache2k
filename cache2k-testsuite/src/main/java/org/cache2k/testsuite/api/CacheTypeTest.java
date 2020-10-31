@@ -20,9 +20,9 @@ package org.cache2k.testsuite.api;
  * #L%
  */
 
-import org.cache2k.configuration.Cache2kConfiguration;
-import org.cache2k.configuration.CacheTypeCapture;
-import org.cache2k.configuration.CacheType;
+import org.cache2k.config.Cache2kConfig;
+import org.cache2k.config.CacheTypeCapture;
+import org.cache2k.config.CacheType;
 import org.cache2k.testing.category.FastTests;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -202,10 +202,10 @@ public class CacheTypeTest {
  */
   @Test
   public void testWithCacheConfig() throws Exception {
-    Cache2kConfiguration c = new Cache2kConfiguration();
+    Cache2kConfig c = new Cache2kConfig();
     c.setKeyType(String.class);
     c.setValueType(new CacheTypeCapture<List<String>>(){});
-    Cache2kConfiguration c2 = copyObjectViaXmlEncoder(c);
+    Cache2kConfig c2 = copyObjectViaXmlEncoder(c);
     assertEquals(c.getKeyType(), c2.getKeyType());
     assertEquals(c.getValueType(), c2.getValueType());
   }

@@ -21,12 +21,10 @@ package test;
  */
 
 import org.assertj.core.api.Assertions;
-import org.cache2k.Cache;
 import org.cache2k.Cache2kBuilder;
-import org.cache2k.CacheManager;
+
 import static org.junit.Assert.*;
 
-import org.cache2k.configuration.Cache2kConfiguration;
 import org.cache2k.core.log.Log;
 import org.junit.Test;
 
@@ -40,7 +38,7 @@ public class InitTest {
     Cache2kBuilder b = Cache2kBuilder.forUnknownTypes();
     b.name("testCache");
     b.build();
-    assertEquals(1802, b.toConfiguration().getEntryCapacity());
+    assertEquals(1802, b.config().getEntryCapacity());
   }
 
   @Test

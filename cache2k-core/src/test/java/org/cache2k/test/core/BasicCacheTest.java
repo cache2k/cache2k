@@ -32,7 +32,6 @@ import org.cache2k.io.LoadExceptionInfo;
 import org.cache2k.io.ResiliencePolicy;
 import org.cache2k.processor.EntryProcessor;
 import org.cache2k.processor.MutableCacheEntry;
-import org.cache2k.test.core.expiry.ExpiryTest;
 import org.cache2k.test.util.TestingBase;
 import org.cache2k.testing.category.FastTests;
 import org.junit.Test;
@@ -473,7 +472,7 @@ public class BasicCacheTest extends TestingBase {
           return Long.MAX_VALUE;
         }
       })
-      .recordRefreshedTime(true)
+      .recordModificationTime(true)
       .keepDataAfterExpired(true)
       .loader(src)
       .build();

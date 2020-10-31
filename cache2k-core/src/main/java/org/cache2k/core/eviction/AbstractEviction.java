@@ -20,7 +20,7 @@
  * #L%
  */
 
-import org.cache2k.configuration.Cache2kConfiguration;
+import org.cache2k.config.Cache2kConfig;
 import org.cache2k.core.Entry;
 import org.cache2k.core.ExceptionWrapper;
 import org.cache2k.core.HeapCacheListener;
@@ -71,7 +71,7 @@ public abstract class AbstractEviction implements Eviction, EvictionMetrics {
   private int chunkSize = 1;
 
   /**
-   * Size limit in number of entries. Derived from {@link Cache2kConfiguration#getEntryCapacity()}
+   * Size limit in number of entries. Derived from {@link Cache2kConfig#getEntryCapacity()}
    * May be changed during runtime. Guarded by lock.
    */
   protected long maxSize;

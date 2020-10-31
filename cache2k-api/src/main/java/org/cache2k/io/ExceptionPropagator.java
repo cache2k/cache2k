@@ -45,7 +45,7 @@ import org.cache2k.Customization;
  * @since 2
  */
 @FunctionalInterface
-public interface ExceptionPropagator<K> extends Customization {
+public interface ExceptionPropagator<K> extends Customization<K, Void> {
 
   /**
    * Called when an entry value with exception is accessed.

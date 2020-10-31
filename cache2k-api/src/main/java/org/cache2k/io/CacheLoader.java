@@ -65,7 +65,7 @@ import org.cache2k.Cache2kBuilder;
  * @since 2
  */
 @FunctionalInterface
-public interface CacheLoader<K, V> extends Customization {
+public interface CacheLoader<K, V> extends Customization<K, V> {
 
   /**
    * Retrieves or generates data based on the key.

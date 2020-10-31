@@ -23,8 +23,8 @@ package org.cache2k.core;
 import org.cache2k.Cache2kBuilder;
 import org.cache2k.CacheEntry;
 import org.cache2k.CustomizationException;
-import org.cache2k.configuration.CustomizationSupplier;
-import org.cache2k.core.api.CoreConfiguration;
+import org.cache2k.config.CustomizationSupplier;
+import org.cache2k.core.api.CoreConfig;
 import org.cache2k.core.api.InternalCacheBuildContext;
 import org.cache2k.core.api.InternalCache;
 import org.cache2k.core.eviction.EvictionFactory;
@@ -39,7 +39,7 @@ import org.cache2k.event.CacheEntryOperationListener;
 import org.cache2k.event.CacheEntryRemovedListener;
 import org.cache2k.event.CacheEntryUpdatedListener;
 import org.cache2k.Cache;
-import org.cache2k.configuration.Cache2kConfiguration;
+import org.cache2k.config.Cache2kConfig;
 import org.cache2k.CacheManager;
 import org.cache2k.core.event.AsyncDispatcher;
 import org.cache2k.core.event.AsyncEvent;
@@ -67,10 +67,10 @@ public class InternalCache2kBuilder<K, V> implements InternalCacheBuildContext<K
     new AtomicLong(System.currentTimeMillis() % 1234);
 
   private final CacheManagerImpl manager;
-  private final Cache2kConfiguration<K, V> config;
+  private final Cache2kConfig<K, V> config;
   private InternalClock clock;
 
-  public InternalCache2kBuilder(Cache2kConfiguration<K, V> config,
+  public InternalCache2kBuilder(Cache2kConfig<K, V> config,
                                 CacheManager manager) {
     this.config = config;
     this.manager = (CacheManagerImpl) (manager == null ? CacheManager.getInstance() : manager);
@@ -112,7 +112,7 @@ public class InternalCache2kBuilder<K, V> implements InternalCacheBuildContext<K
   }
 
   @Override
-  public Cache2kConfiguration<K, V> getConfiguration() {
+  public Cache2kConfig<K, V> getConfiguration() {
     return config;
   }
 
@@ -192,7 +192,7 @@ public class InternalCache2kBuilder<K, V> implements InternalCacheBuildContext<K
   }
 
   public Cache<K, V> build() {
-    Cache2kCoreProviderImpl.CACHE_CONFIGURATION_PROVIDER.augmentConfiguration(manager, config);
+    Cache2kCoreProviderImpl.CACHE_CONFIGURATION_PROVIDER.augmentConfig(manager, config);
     return buildAsIs();
   }
 
@@ -218,8 +218,8 @@ public class InternalCache2kBuilder<K, V> implements InternalCacheBuildContext<K
     } else {
       cache = new HeapCache<K, V>();
     }
-    CoreConfiguration coreConfig =
-      config.getSections().getSection(CoreConfiguration.class, CoreConfiguration.DEFAULT);
+    CoreConfig coreConfig =
+      config.getSections().getSection(CoreConfig.class, CoreConfig.DEFAULT);
     clock = createCustomization(coreConfig.getTimeReference(), DefaultClock.INSTANCE);
     HeapCache bc = (HeapCache) cache;
     bc.setCacheManager(manager);
@@ -376,7 +376,7 @@ public class InternalCache2kBuilder<K, V> implements InternalCacheBuildContext<K
   static final EvictionFactory EVICTION_FACTORY = new EvictionFactory();
 
   private void checkConfiguration() {
-    if (config.getExpireAfterWrite() == Cache2kConfiguration.EXPIRY_NOT_ETERNAL &&
+    if (config.getExpireAfterWrite() == Cache2kConfig.EXPIRY_NOT_ETERNAL &&
         config.getExpiryPolicy() == null) {
       throw new IllegalArgumentException("not eternal is set, but expire value is missing");
     }

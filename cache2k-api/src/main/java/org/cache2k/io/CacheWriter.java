@@ -31,7 +31,7 @@ import org.cache2k.Customization;
  * @author Jens Wilke
  * @since 2
  */
-public interface CacheWriter<K, V> extends Customization {
+public interface CacheWriter<K, V> extends Customization<K, V> {
 
   /**
    * Called when the value was updated or inserted into the cache.

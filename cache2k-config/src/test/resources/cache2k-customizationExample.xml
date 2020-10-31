@@ -41,18 +41,18 @@
       <name>withLoader</name>
       <loader>
         <bean>
-          <type>org.cache2k.configuration.CustomizationSupplierByClassName</type>
+          <type>org.cache2k.config.CustomizationSupplierByClassName</type>
           <!-- The bean just holds the class name, must not be valid. Will fail when we create a cache. -->
           <className>x.y.z</className>
         </bean>
       </loader>
       <listeners>
         <listener>
-          <type>org.cache2k.configuration.CustomizationSupplierByClassName</type>
+          <type>org.cache2k.config.CustomizationSupplierByClassName</type>
           <className>a.b.c</className>
         </listener>
         <listener>
-          <type>org.cache2k.configuration.CustomizationSupplierByClassName</type>
+          <type>org.cache2k.config.CustomizationSupplierByClassName</type>
           <className>x.y.z</className>
         </listener>
       </listeners>

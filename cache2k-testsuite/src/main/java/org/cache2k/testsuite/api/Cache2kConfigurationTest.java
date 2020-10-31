@@ -20,10 +20,9 @@ package org.cache2k.testsuite.api;
  * #L%
  */
 
-import org.cache2k.configuration.Cache2kConfiguration;
-import org.cache2k.configuration.ConfigurationSection;
-import org.cache2k.configuration.CustomizationSupplier;
-import org.cache2k.configuration.CustomizationSupplierByClassName;
+import org.cache2k.config.Cache2kConfig;
+import org.cache2k.config.CustomizationSupplier;
+import org.cache2k.config.CustomizationSupplierByClassName;
 import org.cache2k.event.CacheEntryOperationListener;
 import org.cache2k.testing.category.FastTests;
 import org.hamcrest.CoreMatchers;
@@ -43,7 +42,7 @@ public class Cache2kConfigurationTest {
   @Test
   public void checkListenerSetters() {
     CustomizationSupplier sup = new CustomizationSupplierByClassName<CacheEntryOperationListener>("xy");
-    Cache2kConfiguration cfg = new Cache2kConfiguration();
+    Cache2kConfig cfg = new Cache2kConfig();
     cfg.setAsyncListeners(Collections.singletonList(sup));
     assertEquals(1, cfg.getAsyncListeners().size());
     cfg.setListeners(Collections.singletonList(sup));

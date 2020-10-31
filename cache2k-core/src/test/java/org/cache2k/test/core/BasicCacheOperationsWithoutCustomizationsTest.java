@@ -20,7 +20,6 @@ package org.cache2k.test.core;
  * #L%
  */
 
-import org.assertj.core.api.Assertions;
 import org.cache2k.AbstractCache;
 import org.cache2k.Cache;
 import org.cache2k.Cache2kBuilder;
@@ -139,7 +138,7 @@ public class BasicCacheOperationsWithoutCustomizationsTest {
       .entryCapacity(1000)
       .permitNullValues(true)
       .keepDataAfterExpired(pars.keepDataAfterExpired)
-      .recordRefreshedTime(pars.recordRefreshTime)
+      .recordModificationTime(pars.recordRefreshTime)
       .disableStatistics(pars.disableStatistics);
     if (pars.keepExceptions) {
         b.resiliencePolicy(new ResiliencePolicy() {

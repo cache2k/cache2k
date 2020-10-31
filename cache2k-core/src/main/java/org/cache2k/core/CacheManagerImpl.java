@@ -24,7 +24,7 @@ import org.cache2k.Cache;
 import org.cache2k.Cache2kBuilder;
 import org.cache2k.CacheException;
 import org.cache2k.CacheManager;
-import org.cache2k.configuration.Cache2kConfiguration;
+import org.cache2k.config.Cache2kConfig;
 import org.cache2k.core.api.InternalCacheCloseContext;
 import org.cache2k.core.api.InternalCache;
 import org.cache2k.core.api.InternalCacheBuildContext;
@@ -249,7 +249,7 @@ public class CacheManagerImpl extends CacheManager {
   }
 
   @Override
-  public <K, V> Cache<K, V> createCache(final Cache2kConfiguration<K, V> cfg) {
+  public <K, V> Cache<K, V> createCache(final Cache2kConfig<K, V> cfg) {
     return Cache2kBuilder.of(cfg).manager(this).build();
   }
 

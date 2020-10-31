@@ -21,17 +21,17 @@ package org.cache2k.addon;
  */
 
 import org.cache2k.CacheEntry;
-import org.cache2k.configuration.Cache2kConfiguration;
-import org.cache2k.configuration.CacheBuildContext;
-import org.cache2k.configuration.CustomizationWithConfigurationSupplier;
+import org.cache2k.config.Cache2kConfig;
+import org.cache2k.config.CacheBuildContext;
+import org.cache2k.config.CustomizationSupplierWithConfig;
 import org.cache2k.io.LoadExceptionInfo;
 import org.cache2k.io.ResiliencePolicy;
 
 import java.time.Duration;
 import java.util.Random;
 
-import static org.cache2k.configuration.Cache2kConfiguration.ETERNAL_DURATION;
-import static org.cache2k.configuration.Cache2kConfiguration.UNSET_LONG;
+import static org.cache2k.config.Cache2kConfig.ETERNAL_DURATION;
+import static org.cache2k.config.Cache2kConfig.UNSET_LONG;
 
 /**
  * Resilience policy which implements a exponential back off and randomization
@@ -45,8 +45,8 @@ public class UniversalResiliencePolicy<K, V> implements ResiliencePolicy<K, V> {
   public static final <K, V> Supplier<K, V> supplier() {
     return SUPPLIER;
   }
-  private static final UniversalResilienceConfiguration EMPTY =
-    new UniversalResilienceConfiguration();
+  private static final UniversalResilienceConfig EMPTY =
+    new UniversalResilienceConfig();
 
   /**
    * We use a common random instance. Since this is only called for an exception
@@ -68,9 +68,9 @@ public class UniversalResiliencePolicy<K, V> implements ResiliencePolicy<K, V> {
   /**
    * Construct a resilience policy with multiplier 1.5 and randomization 0.5.
    */
-  public UniversalResiliencePolicy(Cache2kConfiguration<K, V> cfgRoot) {
-    UniversalResilienceConfiguration cfg =
-      cfgRoot.getSections().getSection(UniversalResilienceConfiguration.class);
+  public UniversalResiliencePolicy(Cache2kConfig<K, V> cfgRoot) {
+    UniversalResilienceConfig cfg =
+      cfgRoot.getSections().getSection(UniversalResilienceConfig.class);
     if (cfg == null) { cfg = EMPTY; }
     suppressExceptions = cfg.isSuppressExceptions();
     resilienceDuration = toMillis(cfg.getResilienceDuration());
@@ -117,7 +117,7 @@ public class UniversalResiliencePolicy<K, V> implements ResiliencePolicy<K, V> {
 
   static long toMillis(Duration d) {
     if (d == null) {
-      return Cache2kConfiguration.UNSET_LONG;
+      return Cache2kConfig.UNSET_LONG;
     }
     return d.toMillis();
   }
@@ -172,15 +172,15 @@ public class UniversalResiliencePolicy<K, V> implements ResiliencePolicy<K, V> {
   }
 
   public static class Supplier<K, V>
-    implements CustomizationWithConfigurationSupplier<UniversalResiliencePolicy<K, V>,
-    UniversalResilienceConfiguration> {
+    implements CustomizationSupplierWithConfig
+      <K, V, UniversalResiliencePolicy<K, V>, UniversalResilienceConfig> {
     @Override
     public UniversalResiliencePolicy<K, V> supply(CacheBuildContext buildContext) {
       return new UniversalResiliencePolicy<>(buildContext.getConfiguration());
     }
     @Override
-    public UniversalResilienceConfiguration configuration() {
-      return new UniversalResilienceConfiguration();
+    public Class<UniversalResilienceConfig> getConfigClass() {
+      return UniversalResilienceConfig.class;
     }
   }
 

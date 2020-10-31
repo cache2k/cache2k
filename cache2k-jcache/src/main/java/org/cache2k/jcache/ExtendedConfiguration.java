@@ -20,7 +20,7 @@ package org.cache2k.jcache;
  * #L%
  */
 
-import org.cache2k.configuration.Cache2kConfiguration;
+import org.cache2k.config.Cache2kConfig;
 
 import javax.cache.configuration.CompleteConfiguration;
 
@@ -36,6 +36,6 @@ public interface ExtendedConfiguration<K, V> extends CompleteConfiguration<K, V>
    *
    * @return cache2k configuration or null, if not needed
    */
-  Cache2kConfiguration<K, V> getCache2kConfiguration();
+  Cache2kConfig<K, V> getCache2kConfiguration();
 
 }

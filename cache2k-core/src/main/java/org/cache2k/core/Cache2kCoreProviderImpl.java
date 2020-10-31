@@ -22,8 +22,8 @@ package org.cache2k.core;
 
 import org.cache2k.Cache;
 import org.cache2k.CacheManager;
-import org.cache2k.configuration.Cache2kConfiguration;
-import org.cache2k.core.spi.CacheConfigurationProvider;
+import org.cache2k.config.Cache2kConfig;
+import org.cache2k.core.spi.CacheConfigProvider;
 import org.cache2k.core.util.Cache2kVersion;
 import org.cache2k.core.log.Log;
 import org.cache2k.core.util.TunableConstants;
@@ -44,11 +44,11 @@ import java.util.WeakHashMap;
  */
 public class Cache2kCoreProviderImpl implements Cache2kCoreProvider {
 
-  public static final CacheConfigurationProvider CACHE_CONFIGURATION_PROVIDER =
+  public static final CacheConfigProvider CACHE_CONFIGURATION_PROVIDER =
     TunableFactory.get(Tunable.class).enableExternalConfiguration ?
     SingleProviderResolver.resolve(
-      CacheConfigurationProvider.class, DummyConfigurationProvider.class) :
-      new DummyConfigurationProvider();
+      CacheConfigProvider.class, DummyConfigProvider.class) :
+      new DummyConfigProvider();
 
   private final Object lock = new Object();
   private volatile Map<ClassLoader, String> loader2defaultName = Collections.emptyMap();
@@ -223,7 +223,7 @@ public class Cache2kCoreProviderImpl implements Cache2kCoreProvider {
   }
 
   @Override
-  public <K, V> Cache<K, V> createCache(CacheManager m, Cache2kConfiguration<K, V> cfg) {
+  public <K, V> Cache<K, V> createCache(CacheManager m, Cache2kConfig<K, V> cfg) {
     return new InternalCache2kBuilder<K, V>(cfg, m).build();
   }
 
@@ -231,8 +231,8 @@ public class Cache2kCoreProviderImpl implements Cache2kCoreProvider {
     return version;
   }
 
-  public Cache2kConfiguration getDefaultConfiguration(CacheManager mgr) {
-    return CACHE_CONFIGURATION_PROVIDER.getDefaultConfiguration(mgr);
+  public Cache2kConfig getDefaultConfig(CacheManager mgr) {
+    return CACHE_CONFIGURATION_PROVIDER.getDefaultConfig(mgr);
   }
 
   public static class Tunable extends TunableConstants {

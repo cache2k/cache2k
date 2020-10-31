@@ -21,9 +21,9 @@ package org.cache2k.jcache.provider;
  */
 
 import org.cache2k.CacheEntry;
-import org.cache2k.configuration.Cache2kConfiguration;
-import org.cache2k.configuration.CacheType;
-import org.cache2k.configuration.CustomizationReferenceSupplier;
+import org.cache2k.config.Cache2kConfig;
+import org.cache2k.config.CacheType;
+import org.cache2k.config.CustomizationReferenceSupplier;
 import org.cache2k.core.Cache2kCoreProviderImpl;
 import org.cache2k.core.CacheManagerImpl;
 import org.cache2k.core.InternalCache2kBuilder;
@@ -34,7 +34,7 @@ import org.cache2k.io.ExceptionPropagator;
 import org.cache2k.io.LoadExceptionInfo;
 import org.cache2k.jcache.ExtendedConfiguration;
 import org.cache2k.jcache.ExtendedMutableConfiguration;
-import org.cache2k.jcache.JCacheConfiguration;
+import org.cache2k.jcache.JCacheConfig;
 import org.cache2k.jcache.provider.event.EventHandling;
 import org.cache2k.jcache.provider.event.EventHandlingImpl;
 import org.cache2k.jcache.provider.generic.storeByValueSimulation.CopyCacheProxy;
@@ -70,8 +70,8 @@ public class JCacheBuilder<K, V> {
   private final JCacheManagerAdapter manager;
   private boolean cache2kConfigurationWasProvided = false;
   private CompleteConfiguration<K, V> config;
-  private Cache2kConfiguration<K, V> cache2kConfiguration;
-  private JCacheConfiguration extraConfiguration = JCACHE_DEFAULTS;
+  private Cache2kConfig<K, V> cache2kConfiguration;
+  private JCacheConfig extraConfiguration = JCACHE_DEFAULTS;
   private CacheType<K> keyType;
   private CacheType<V> valueType;
   private ExpiryPolicy expiryPolicy;
@@ -106,19 +106,19 @@ public class JCacheBuilder<K, V> {
     }
     if (cache2kConfiguration == null) {
       cache2kConfiguration =
-        CacheManagerImpl.PROVIDER.getDefaultConfiguration(manager.getCache2kManager());
+        CacheManagerImpl.PROVIDER.getDefaultConfig(manager.getCache2kManager());
       if (cfg instanceof ExtendedMutableConfiguration) {
         ((ExtendedMutableConfiguration) cfg).setCache2kConfiguration(cache2kConfiguration);
       }
     }
     cache2kConfiguration.setName(name);
-    Cache2kCoreProviderImpl.CACHE_CONFIGURATION_PROVIDER.augmentConfiguration(
+    Cache2kCoreProviderImpl.CACHE_CONFIGURATION_PROVIDER.augmentConfig(
       manager.getCache2kManager(), cache2kConfiguration);
     cache2kConfigurationWasProvided |= cache2kConfiguration.isExternalConfigurationPresent();
     if (cache2kConfigurationWasProvided) {
       extraConfiguration = CACHE2K_DEFAULTS;
-      JCacheConfiguration extraConfigurationSpecified =
-        cache2kConfiguration.getSections().getSection(JCacheConfiguration.class);
+      JCacheConfig extraConfigurationSpecified =
+        cache2kConfiguration.getSections().getSection(JCacheConfig.class);
       if (extraConfigurationSpecified != null) {
         extraConfiguration = extraConfigurationSpecified;
       }
@@ -146,7 +146,7 @@ public class JCacheBuilder<K, V> {
     return config.isManagementEnabled() || extraConfiguration.isEnableManagement();
   }
 
-  JCacheConfiguration getExtraConfiguration() {
+  JCacheConfig getExtraConfiguration() {
     return extraConfiguration;
   }
 
@@ -439,20 +439,20 @@ public class JCacheBuilder<K, V> {
   /**
    * Defaults to use if no cache2k configuration is provided.
    */
-  private static final JCacheConfiguration JCACHE_DEFAULTS =
-    new JCacheConfiguration().builder()
+  private static final JCacheConfig JCACHE_DEFAULTS =
+    new JCacheConfig().builder()
       .copyAlwaysIfRequested(true)
       .supportOnlineListenerAttachment(true)
-      .buildConfigurationSection();
+      .config();
 
   /**
    * Defaults to use if cache2k configuration is provided but no
    * extra JCacheConfiguration section is added.
    */
-  private static final JCacheConfiguration CACHE2K_DEFAULTS =
-    new JCacheConfiguration().builder()
+  private static final JCacheConfig CACHE2K_DEFAULTS =
+    new JCacheConfig().builder()
       .copyAlwaysIfRequested(false)
       .supportOnlineListenerAttachment(false)
-      .buildConfigurationSection();
+      .config();
 
 }

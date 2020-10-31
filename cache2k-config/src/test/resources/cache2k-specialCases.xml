@@ -64,11 +64,11 @@
     <cache><name>duplicateListener</name>
       <listeners>
         <listener>
-          <type>org.cache2k.configuration.CustomizationSupplierByClassName</type>
+          <type>org.cache2k.config.CustomizationSupplierByClassName</type>
           <className>a.b.c</className>
         </listener>
         <listener>
-          <type>org.cache2k.configuration.CustomizationSupplierByClassName</type>
+          <type>org.cache2k.config.CustomizationSupplierByClassName</type>
           <className>a.b.c</className>
         </listener>
       </listeners>

@@ -23,8 +23,8 @@ package org.cache2k.core.timing;
 import org.cache2k.Cache2kBuilder;
 import org.cache2k.CacheEntry;
 import org.cache2k.CacheManager;
-import org.cache2k.configuration.Cache2kConfiguration;
-import org.cache2k.configuration.CustomizationSupplier;
+import org.cache2k.config.Cache2kConfig;
+import org.cache2k.config.CustomizationSupplier;
 import org.cache2k.core.api.InternalCacheBuildContext;
 import org.cache2k.core.Entry;
 import org.cache2k.core.HeapCache;
@@ -53,7 +53,7 @@ public class TimingUnitTest {
   private static final InternalClock CLOCK = DefaultClock.INSTANCE;
 
   private <K, V> Timing<K, V> create(final InternalClock clock,
-                                     final Cache2kConfiguration<K, V> cfg) {
+                                     final Cache2kConfig<K, V> cfg) {
     return Timing.of(new InternalCacheBuildContext<K, V>() {
       @Override
       public InternalClock getClock() {
@@ -61,7 +61,7 @@ public class TimingUnitTest {
       }
 
       @Override
-      public Cache2kConfiguration<K, V> getConfiguration() {
+      public Cache2kConfig<K, V> getConfiguration() {
         return cfg;
       }
 
@@ -92,7 +92,7 @@ public class TimingUnitTest {
       CLOCK,
       Cache2kBuilder.forUnknownTypes()
         .eternal(true)
-        .toConfiguration()
+        .config()
     );
     assertEquals(TimeAgnosticTiming.ETERNAL_IMMEDIATE.getClass(), h.getClass());
   }
@@ -102,7 +102,7 @@ public class TimingUnitTest {
     Timing h = create(
       CLOCK,
       Cache2kBuilder.forUnknownTypes()
-        .toConfiguration()
+        .config()
     );
     assertEquals(TimeAgnosticTiming.ETERNAL_IMMEDIATE.getClass(), h.getClass());
   }
@@ -113,7 +113,7 @@ public class TimingUnitTest {
       CLOCK,
       Cache2kBuilder.forUnknownTypes()
         .expireAfterWrite(Long.MAX_VALUE - 47, TimeUnit.SECONDS)
-        .toConfiguration()
+        .config()
     );
     assertEquals(TimeAgnosticTiming.ETERNAL_IMMEDIATE.getClass(), h.getClass());
   }
@@ -125,7 +125,7 @@ public class TimingUnitTest {
       CLOCK,
       Cache2kBuilder.forUnknownTypes()
         .expireAfterWrite(bigValue, TimeUnit.MILLISECONDS)
-        .toConfiguration()
+        .config()
     );
     long t = h.calculateNextRefreshTime(ENTRY, null, 0);
     assertEquals(bigValue, t);
@@ -147,7 +147,7 @@ public class TimingUnitTest {
           }
         })
         .expireAfterWrite(bigValue, TimeUnit.MILLISECONDS)
-        .toConfiguration()
+        .config()
     );
     long t = h.calculateNextRefreshTime(ENTRY, null, 0);
     assertEquals(bigValue, t);
@@ -171,7 +171,7 @@ public class TimingUnitTest {
           }
         })
         .sharpExpiry(true)
-        .toConfiguration()
+        .config()
     );
     Entry e = new Entry();
     long t = h.calculateNextRefreshTime(e, null, NOW);
@@ -194,7 +194,7 @@ public class TimingUnitTest {
           }
         })
         .expireAfterWrite(5, TimeUnit.MINUTES)
-        .toConfiguration()
+        .config()
     );
     Entry e = new Entry();
     long t = h.calculateNextRefreshTime(e, null, NOW);
@@ -222,7 +222,7 @@ public class TimingUnitTest {
           }
         })
         .expireAfterWrite(duration, TimeUnit.MILLISECONDS)
-        .toConfiguration()
+        .config()
     );
     Entry e = new Entry();
     long t = h.calculateNextRefreshTime(e, null, NOW);
@@ -256,7 +256,7 @@ public class TimingUnitTest {
           }
         })
         .expireAfterWrite(duration, TimeUnit.MILLISECONDS)
-        .toConfiguration()
+        .config()
     );
     Entry e = new Entry();
     long t = h.calculateNextRefreshTime(e, null, NOW);
@@ -294,7 +294,7 @@ public class TimingUnitTest {
           }
         })
         .expireAfterWrite(duration, TimeUnit.MILLISECONDS)
-        .toConfiguration()
+        .config()
     );
     Entry e = new Entry();
     long  later = sharpPointInTime - duration - 1;

@@ -20,7 +20,7 @@ package org.cache2k.core.timing;
  * #L%
  */
 
-import org.cache2k.configuration.Cache2kConfiguration;
+import org.cache2k.config.Cache2kConfig;
 import org.cache2k.CacheEntry;
 import org.cache2k.core.api.InternalCacheBuildContext;
 import org.cache2k.core.api.InternalCacheCloseContext;
@@ -55,7 +55,7 @@ public abstract class Timing<K, V>  {
     };
 
   static boolean realDuration(Duration d) {
-    return d != null && !Duration.ZERO.equals(d) && d != Cache2kConfiguration.ETERNAL_DURATION;
+    return d != null && !Duration.ZERO.equals(d) && d != Cache2kConfig.ETERNAL_DURATION;
   }
 
   static boolean realDuration(long t) {
@@ -71,7 +71,7 @@ public abstract class Timing<K, V>  {
   }
 
   public static <K, V> Timing<K, V> of(InternalCacheBuildContext<K, V> buildContext) {
-    Cache2kConfiguration<K, V> cfg = buildContext.getConfiguration();
+    Cache2kConfig<K, V> cfg = buildContext.getConfiguration();
     if (Duration.ZERO.equals(cfg.getExpireAfterWrite())) {
       return TimeAgnosticTiming.IMMEDIATE;
     }
@@ -86,7 +86,7 @@ public abstract class Timing<K, V>  {
       StaticTiming<K, V> h = new StaticTiming<K, V>(buildContext);
       return h;
     }
-    if ((cfg.getExpireAfterWrite() == Cache2kConfiguration.ETERNAL_DURATION
+    if ((cfg.getExpireAfterWrite() == Cache2kConfig.ETERNAL_DURATION
       || cfg.getExpireAfterWrite() == null)) {
       return TimeAgnosticTiming.ETERNAL_IMMEDIATE;
     }

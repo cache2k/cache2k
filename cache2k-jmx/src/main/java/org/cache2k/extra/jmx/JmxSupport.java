@@ -23,7 +23,7 @@ package org.cache2k.extra.jmx;
 import org.cache2k.Cache;
 import org.cache2k.CacheException;
 import org.cache2k.CacheManager;
-import org.cache2k.configuration.Cache2kConfiguration;
+import org.cache2k.config.Cache2kConfig;
 import org.cache2k.core.api.InternalCacheCloseContext;
 import org.cache2k.core.api.InternalCache;
 import org.cache2k.core.api.InternalCacheBuildContext;
@@ -53,12 +53,12 @@ public class JmxSupport implements CacheLifeCycleListener, CacheManagerLifeCycle
   /**
    * Register management bean for the cache.
    * Bean is registered in case JMX is enabled. If statistics are disabled,
-   * via{@link Cache2kConfiguration#setDisableStatistics(boolean)} this is registered
+   * via{@link Cache2kConfig#setDisableStatistics(boolean)} this is registered
    * anyway since the cache size or the clear operation might be of interest.
    */
   @Override
   public <K, V> void cacheCreated(Cache<K, V> c, InternalCacheBuildContext<K, V> ctx) {
-    Cache2kConfiguration cfg = ctx.getConfiguration();
+    Cache2kConfig cfg = ctx.getConfiguration();
     if (!cfg.isEnableJmx() || cfg.isDisableMonitoring()) {
       return;
     }

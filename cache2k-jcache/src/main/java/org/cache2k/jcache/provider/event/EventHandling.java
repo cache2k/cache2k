@@ -20,7 +20,7 @@ package org.cache2k.jcache.provider.event;
  * #L%
  */
 
-import org.cache2k.configuration.Cache2kConfiguration;
+import org.cache2k.config.Cache2kConfig;
 
 import javax.cache.configuration.CacheEntryListenerConfiguration;
 import java.util.Collection;
@@ -55,7 +55,7 @@ public interface EventHandling<K, V> {
     }
 
     @Override
-    public void addInternalListenersToCache2kConfiguration(final Cache2kConfiguration cfg) {
+    public void addInternalListenersToCache2kConfiguration(final Cache2kConfig cfg) {
 
     }
   };
@@ -67,6 +67,6 @@ public interface EventHandling<K, V> {
 
   Collection<CacheEntryListenerConfiguration<K, V>> getAllListenerConfigurations();
 
-  void addInternalListenersToCache2kConfiguration(Cache2kConfiguration<K, V> cfg);
+  void addInternalListenersToCache2kConfiguration(Cache2kConfig<K, V> cfg);
 
 }

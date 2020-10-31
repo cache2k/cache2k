@@ -17,6 +17,7 @@
  * limitations under the License.
  * #L%
  */
+import org.cache2k.core.spi.CacheConfigProvider;
 import org.cache2k.extra.config.provider.CacheConfigurationProviderImpl;
 
 /**
@@ -26,6 +27,6 @@ module org.cache2k.config {
   requires java.xml;
   requires org.cache2k.api;
   requires org.cache2k.core;
-  provides org.cache2k.core.spi.CacheConfigurationProvider with CacheConfigurationProviderImpl;
+  provides CacheConfigProvider with CacheConfigurationProviderImpl;
 
 }

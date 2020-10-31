@@ -22,9 +22,9 @@ package org.cache2k.jcache.provider.event;
 
 import org.cache2k.Cache;
 import org.cache2k.CacheEntry;
-import org.cache2k.configuration.Cache2kConfiguration;
-import org.cache2k.configuration.CustomizationSupplier;
-import org.cache2k.configuration.CustomizationReferenceSupplier;
+import org.cache2k.config.Cache2kConfig;
+import org.cache2k.config.CustomizationSupplier;
+import org.cache2k.config.CustomizationReferenceSupplier;
 import org.cache2k.event.CacheClosedListener;
 import org.cache2k.event.CacheEntryOperationListener;
 import org.cache2k.jcache.provider.JCacheManagerAdapter;
@@ -210,7 +210,7 @@ public class EventHandlingImpl<K, V> implements EventHandling<K, V>, CacheClosed
   }
 
   @Override
-  public void addInternalListenersToCache2kConfiguration(Cache2kConfiguration<K, V> cfg) {
+  public void addInternalListenersToCache2kConfiguration(Cache2kConfig<K, V> cfg) {
     Collection<CustomizationSupplier<CacheEntryOperationListener<K, V>>> listeners =
       cfg.getListeners();
     listeners.add(new CustomizationReferenceSupplier<CacheEntryOperationListener<K, V>>(

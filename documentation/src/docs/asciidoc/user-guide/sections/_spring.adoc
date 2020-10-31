@@ -107,7 +107,7 @@ file name is derived from the manager name.
 
 === Spring Bean XML Configuration
 
-For completeness, together with the `Cache2kConfiguration` bean, it is also possible to use the Spring bean XML configuration.
+For completeness, together with the `Cache2kConfig` bean, it is also possible to use the Spring bean XML configuration.
 
 === Null Value Support
 

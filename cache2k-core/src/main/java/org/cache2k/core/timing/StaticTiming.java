@@ -21,7 +21,7 @@ package org.cache2k.core.timing;
  */
 
 import org.cache2k.CacheEntry;
-import org.cache2k.configuration.Cache2kConfiguration;
+import org.cache2k.config.Cache2kConfig;
 import org.cache2k.core.ZeroResiliencePolicy;
 import org.cache2k.core.api.InternalCacheBuildContext;
 import org.cache2k.core.api.InternalCacheCloseContext;
@@ -56,8 +56,8 @@ public class StaticTiming<K, V> extends Timing<K, V> {
 
   StaticTiming(InternalCacheBuildContext<K, V> buildContext) {
     clock = buildContext.getClock();
-    Cache2kConfiguration<K, V> c = buildContext.getConfiguration();
-    if (c.getExpireAfterWrite() == null || c.getExpireAfterWrite() == Cache2kConfiguration.ETERNAL_DURATION) {
+    Cache2kConfig<K, V> c = buildContext.getConfiguration();
+    if (c.getExpireAfterWrite() == null || c.getExpireAfterWrite() == Cache2kConfig.ETERNAL_DURATION) {
       this.expiryMillis = ExpiryPolicy.ETERNAL;
     } else {
       this.expiryMillis = c.getExpireAfterWrite().toMillis();

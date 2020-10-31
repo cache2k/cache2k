@@ -22,7 +22,7 @@ package org.cache2k.core.api;
 
 import org.cache2k.Cache;
 import org.cache2k.CacheEntry;
-import org.cache2k.configuration.CacheType;
+import org.cache2k.config.CacheType;
 import org.cache2k.core.CanCheckIntegrity;
 import org.cache2k.core.ConcurrentMapWrapper;
 import org.cache2k.core.eviction.Eviction;

@@ -21,7 +21,7 @@ package org.cache2k.core.eviction;
  */
 
 import org.cache2k.Weigher;
-import org.cache2k.configuration.Cache2kConfiguration;
+import org.cache2k.config.Cache2kConfig;
 import org.cache2k.core.api.InternalCacheBuildContext;
 import org.cache2k.core.HeapCache;
 import org.cache2k.core.HeapCacheListener;
@@ -40,7 +40,7 @@ public class EvictionFactory {
    */
   public Eviction constructEviction(InternalCacheBuildContext customizationContext,
                                     HeapCacheForEviction hc, HeapCacheListener l,
-                                    Cache2kConfiguration config, int availableProcessors) {
+                                    Cache2kConfig config, int availableProcessors) {
     boolean strictEviction = config.isStrictEviction();
     boolean boostConcurrency = config.isBoostConcurrency();
     long maximumWeight = config.getMaximumWeight();

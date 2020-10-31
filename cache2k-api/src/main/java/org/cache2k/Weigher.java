@@ -25,7 +25,7 @@ package org.cache2k;
  *
  * @author Jens Wilke
  */
-public interface Weigher<K, V> extends Customization {
+public interface Weigher<K, V> extends Customization<K, V> {
 
   /**
    * Returns a weight for the given cached value. This will be called after a value is

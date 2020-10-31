@@ -126,7 +126,7 @@ public class CacheManagerAndCacheLifeCycleTest {
   public void createCache() {
     String _uniqueName = this.getClass().getName() + ".createCache";
     CacheManager cm = CacheManager.getInstance(_uniqueName);
-    Cache c = cm.createCache(Cache2kBuilder.forUnknownTypes().name("dummy").toConfiguration());
+    Cache c = cm.createCache(Cache2kBuilder.forUnknownTypes().name("dummy").config());
     assertEquals("dummy", c.getName());
     assertSame(cm, c.getCacheManager());
     cm.close();

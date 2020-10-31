@@ -25,7 +25,7 @@ import org.cache2k.testing.category.FastTests;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
-import static org.cache2k.configuration.Cache2kConfiguration.UNSET_LONG;
+import static org.cache2k.config.Cache2kConfig.UNSET_LONG;
 import static org.junit.Assert.*;
 
 /**

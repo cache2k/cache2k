@@ -20,8 +20,8 @@ package org.cache2k.extra.config.generic;
  * #L%
  */
 
-import org.cache2k.configuration.CacheType;
-import org.cache2k.configuration.CacheTypeCapture;
+import org.cache2k.config.CacheType;
+import org.cache2k.config.CacheTypeCapture;
 
 import java.time.Duration;
 import java.time.temporal.ChronoUnit;

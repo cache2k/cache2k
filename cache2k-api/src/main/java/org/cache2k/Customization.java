@@ -21,6 +21,8 @@ package org.cache2k;
  */
 
 /**
+ * A customization dealing with cached data.
+ *
  * Base interface for all cache customizations. Customizations are code that get attached
  * to a cache which extend and modify its behavior. Typical exceptions are
  * {@link org.cache2k.io.CacheLoader} and the {@link org.cache2k.expiry.ExpiryPolicy}.
@@ -30,5 +32,5 @@ package org.cache2k;
  *
  * @author Jens Wilke
  */
-public interface Customization {
+public interface Customization<K, V> {
 }

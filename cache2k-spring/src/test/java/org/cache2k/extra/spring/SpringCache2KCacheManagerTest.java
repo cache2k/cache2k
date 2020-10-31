@@ -89,7 +89,7 @@ public class SpringCache2KCacheManagerTest {
     assertEquals(1, m.getCacheNames().size());
     assertEquals(1, m.getCacheMap().size());
     m.setCaches(Collections.singletonList(
-      Cache2kBuilder.forUnknownTypes().name("other").toConfiguration()));
+      Cache2kBuilder.forUnknownTypes().name("other").config()));
     assertEquals(2, m.getCacheNames().size());
   }
 

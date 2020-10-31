@@ -27,7 +27,7 @@ import org.cache2k.Cache2kBuilder;
 import org.cache2k.extra.micrometer.Cache2kCacheMetrics;
 import static org.junit.Assert.*;
 
-import org.cache2k.extra.micrometer.MicrometerConfiguration;
+import org.cache2k.extra.micrometer.MicrometerConfig;
 import org.junit.Test;
 
 /**
@@ -65,7 +65,7 @@ public class MicroMeterTest {
   public void notBoundToGlobalRegistryWhenDisabled() {
     Cache cache = Cache2kBuilder.forUnknownTypes()
       .name("bindToGlobalRegistryWhenDisabled")
-      .with(MicrometerConfiguration.class, b -> b
+      .section(MicrometerConfig.class, b -> b
         .useGlobalRegistry()
       )
       .disableMonitoring(true)
@@ -81,7 +81,7 @@ public class MicroMeterTest {
   public void bindToGlobalRegistryWhenEnabled() {
     Cache cache = Cache2kBuilder.forUnknownTypes()
       .name("bindToGlobalRegistryWhenEnabled")
-      .with(MicrometerConfiguration.class, b -> b
+      .section(MicrometerConfig.class, b -> b
         .useGlobalRegistry()
       )
       .disableMonitoring(false)
@@ -94,7 +94,7 @@ public class MicroMeterTest {
   @Test
   public void bindWhenStatisticsEnabled() {
     Cache cache = Cache2kBuilder.forUnknownTypes()
-      .with(MicrometerConfiguration.class, b -> b
+      .section(MicrometerConfig.class, b -> b
         .useGlobalRegistry()
       )
       .disableStatistics(true)
@@ -109,7 +109,7 @@ public class MicroMeterTest {
   public void bindToSpecificRegistry() {
     MeterRegistry registry = new SimpleMeterRegistry();
     Cache cache = Cache2kBuilder.forUnknownTypes()
-      .with(MicrometerConfiguration.class, b -> b
+      .section(MicrometerConfig.class, b -> b
         .meterRegistry(registry)
       )
       .build();

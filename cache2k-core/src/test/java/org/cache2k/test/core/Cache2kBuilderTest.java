@@ -23,8 +23,8 @@ package org.cache2k.test.core;
 import org.cache2k.Cache;
 import org.cache2k.Cache2kBuilder;
 import org.cache2k.CacheManager;
-import org.cache2k.configuration.CacheTypeCapture;
-import org.cache2k.core.api.CoreConfiguration;
+import org.cache2k.config.CacheTypeCapture;
+import org.cache2k.core.api.CoreConfig;
 import org.cache2k.core.api.InternalCache;
 import org.cache2k.core.StandardExceptionPropagator;
 import org.cache2k.core.log.Log;
@@ -63,7 +63,7 @@ public class Cache2kBuilderTest {
   @Test
   public void forUnknownTypes_genericTyping() {
     Cache<Object, Object> cache = Cache2kBuilder.forUnknownTypes()
-      .with(CoreConfiguration.class, b -> b
+      .section(CoreConfig.class, b -> b
         .timerReference(new SimulatedClock())
       )
       .loader(key -> key)
@@ -408,14 +408,14 @@ public class Cache2kBuilderTest {
   public void cacheNameUnique() {
     Cache2kBuilder _builder = Cache2kBuilder.forUnknownTypes();
     _builder.name("hello", this.getClass(), "field");
-    assertEquals("hello~org.cache2k.test.core.Cache2kBuilderTest.field", _builder.toConfiguration().getName());
+    assertEquals("hello~org.cache2k.test.core.Cache2kBuilderTest.field", _builder.config().getName());
   }
 
   @Test
   public void cacheNameUniqueNull() {
     Cache2kBuilder _builder = Cache2kBuilder.forUnknownTypes();
     _builder.name(null, this.getClass(), "field");
-    assertEquals("org.cache2k.test.core.Cache2kBuilderTest.field", _builder.toConfiguration().getName());
+    assertEquals("org.cache2k.test.core.Cache2kBuilderTest.field", _builder.config().getName());
   }
 
   @Test(expected = NullPointerException.class)
@@ -428,14 +428,14 @@ public class Cache2kBuilderTest {
   public void set_ExceptionPropagator() {
     Cache2kBuilder _builder = Cache2kBuilder.forUnknownTypes();
     _builder.exceptionPropagator(new StandardExceptionPropagator());
-    assertNotNull(_builder.toConfiguration().getExceptionPropagator());
+    assertNotNull(_builder.config().getExceptionPropagator());
   }
 
   @Test
   public void set_storeByReference() {
     Cache2kBuilder _builder = Cache2kBuilder.forUnknownTypes();
     _builder.storeByReference(true);
-    assertTrue(_builder.toConfiguration().isStoreByReference());
+    assertTrue(_builder.config().isStoreByReference());
   }
 
   @Test(expected = IllegalArgumentException.class)

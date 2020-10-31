@@ -20,7 +20,7 @@ package org.cache2k.core;
  * #L%
  */
 
-import org.cache2k.configuration.CacheType;
+import org.cache2k.config.CacheType;
 import org.cache2k.core.api.CommonMetrics;
 import org.cache2k.core.api.InternalCacheInfo;
 import org.cache2k.core.eviction.Eviction;

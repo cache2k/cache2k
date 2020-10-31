@@ -26,7 +26,7 @@ import org.cache2k.CacheEntry;
 import org.cache2k.CacheManager;
 import org.cache2k.core.CanCheckIntegrity;
 import org.cache2k.core.HeapCache;
-import org.cache2k.core.api.CoreConfiguration;
+import org.cache2k.core.api.CoreConfig;
 import org.cache2k.core.api.InternalCache;
 import org.cache2k.core.api.InternalCacheInfo;
 import org.cache2k.core.WiredCache;
@@ -210,7 +210,7 @@ public class TestingBase {
     }
     this.cacheName = cacheName;
     Cache2kBuilder<K, T> b = Cache2kBuilder.of(k, t)
-      .with(CoreConfiguration.class, b2 -> b2
+      .section(CoreConfig.class, b2 -> b2
         .timerReference(getClock())
       )
       .name(cacheName)

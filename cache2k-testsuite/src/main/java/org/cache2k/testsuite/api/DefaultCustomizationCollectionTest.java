@@ -20,10 +20,10 @@ package org.cache2k.testsuite.api;
  * #L%
  */
 
-import org.cache2k.configuration.CustomizationCollection;
-import org.cache2k.configuration.CustomizationSupplier;
-import org.cache2k.configuration.CustomizationSupplierByClassName;
-import org.cache2k.configuration.DefaultCustomizationCollection;
+import org.cache2k.config.CustomizationCollection;
+import org.cache2k.config.CustomizationSupplier;
+import org.cache2k.config.CustomizationSupplierByClassName;
+import org.cache2k.config.DefaultCustomizationCollection;
 import org.cache2k.testing.category.FastTests;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;

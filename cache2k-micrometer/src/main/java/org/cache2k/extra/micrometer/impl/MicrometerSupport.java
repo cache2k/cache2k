@@ -22,12 +22,12 @@ package org.cache2k.extra.micrometer.impl;
 
 import io.micrometer.core.instrument.MeterRegistry;
 import org.cache2k.Cache;
-import org.cache2k.configuration.Cache2kConfiguration;
+import org.cache2k.config.Cache2kConfig;
 import org.cache2k.core.api.InternalCacheBuildContext;
 import org.cache2k.core.api.InternalCacheCloseContext;
 import org.cache2k.core.spi.CacheLifeCycleListener;
 import org.cache2k.extra.micrometer.Cache2kCacheMetrics;
-import org.cache2k.extra.micrometer.MicrometerConfiguration;
+import org.cache2k.extra.micrometer.MicrometerConfig;
 
 /**
  * Automatically binds to the micrometer registry supplied by the configuration.
@@ -39,9 +39,9 @@ public class MicrometerSupport implements CacheLifeCycleListener {
 
   @Override
   public <K, V> void cacheCreated(Cache<K, V> c, InternalCacheBuildContext<K, V> ctx) {
-    Cache2kConfiguration<K, V> cfg = ctx.getConfiguration();
+    Cache2kConfig<K, V> cfg = ctx.getConfiguration();
     if (cfg.isDisableMonitoring()) { return; }
-    MicrometerConfiguration ourCfg = cfg.getSections().getSection(MicrometerConfiguration.class);
+    MicrometerConfig ourCfg = cfg.getSections().getSection(MicrometerConfig.class);
     if (ourCfg == null) { return; }
     MeterRegistry registry = ctx.createCustomization(ourCfg.getMeterRegistry());
     if (registry == null) { return; }

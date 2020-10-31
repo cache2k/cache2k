@@ -50,7 +50,7 @@ public class UniversalResiliencePolicyTest {
   }
 
   private <K, V> void supplyResilience(Cache2kBuilder<K, V> b) {
-    b.toConfiguration().setResiliencePolicy(
+    b.config().setResiliencePolicy(
       buildContext -> {
         policy = UniversalResiliencePolicy.supplier().supply(buildContext);
         return (ResiliencePolicy<K, V>) policy;
@@ -70,6 +70,22 @@ public class UniversalResiliencePolicyTest {
       /* ... set loader ... */
       .build();
     assertNull(policy);
+  }
+
+  @Test
+  public void configVariants() {
+    cache = new Cache2kBuilder<Integer, Integer>() { }
+      /* set supplier and add config section in two commands */
+      .set(cfg -> cfg.setResiliencePolicy(UniversalResiliencePolicy.supplier()))
+      .section(UniversalResilienceConfig.class, builder -> builder
+        .resilienceDuration(0, TimeUnit.MILLISECONDS)
+      )
+      /* set supplier and add config section in single command */
+      .customize((cfg, sup) -> cfg.setResiliencePolicy(sup),
+        UniversalResiliencePolicy.supplier(), builder -> builder
+          .resilienceDuration(0, TimeUnit.MILLISECONDS)
+      )
+      .build();
   }
 
   /**
@@ -97,7 +113,7 @@ public class UniversalResiliencePolicyTest {
     cache = new Cache2kBuilder<Integer, Integer>() { }
       .apply(this::supplyResilience)
       .expiryPolicy((key, value, loadTime, oldEntry) -> 0)
-      .with(UniversalResilienceConfiguration.class, b -> b
+      .section(UniversalResilienceConfig.class, b -> b
         .resilienceDuration(30, TimeUnit.SECONDS)
       )
       /* ... set loader ... */
@@ -131,7 +147,7 @@ public class UniversalResiliencePolicyTest {
     cache = new Cache2kBuilder<Integer, Integer>() { }
       .apply(this::supplyResilience)
       .expireAfterWrite(10, TimeUnit.MINUTES)
-      .with(UniversalResilienceConfiguration.class, b -> b
+      .section(UniversalResilienceConfig.class, b -> b
         .resilienceDuration(30, TimeUnit.SECONDS)
       )
       /* ... set loader ... */
@@ -146,7 +162,7 @@ public class UniversalResiliencePolicyTest {
     Cache<Integer, Integer> c = new Cache2kBuilder<Integer, Integer>() { }
       .expireAfterWrite(10, TimeUnit.MINUTES)
       .apply(this::supplyResilience)
-      .with(UniversalResilienceConfiguration.class, b -> b
+      .section(UniversalResilienceConfig.class, b -> b
         .retryInterval(10, TimeUnit.SECONDS)
       )
       /* ... set loader ... */
@@ -171,7 +187,7 @@ public class UniversalResiliencePolicyTest {
     cache = new Cache2kBuilder<Integer, Integer>() { }
       .eternal(true)
       .apply(this::supplyResilience)
-      .with(UniversalResilienceConfiguration.class, b -> b
+      .section(UniversalResilienceConfig.class, b -> b
         .resilienceDuration(30, TimeUnit.SECONDS)
       )
       /* ... set loader ... */
@@ -196,7 +212,7 @@ public class UniversalResiliencePolicyTest {
     cache = new Cache2kBuilder<Integer, Integer>() { }
       .eternal(true)
       .apply(this::supplyResilience)
-      .with(UniversalResilienceConfiguration.class, b -> b
+      .section(UniversalResilienceConfig.class, b -> b
         .resilienceDuration(30, TimeUnit.SECONDS)
         .retryInterval(10, TimeUnit.SECONDS)
       )
@@ -217,7 +233,7 @@ public class UniversalResiliencePolicyTest {
     cache = new Cache2kBuilder<Integer, Integer>() { }
       .eternal(true)
       .apply(this::supplyResilience)
-      .with(UniversalResilienceConfiguration.class, b -> b
+      .section(UniversalResilienceConfig.class, b -> b
         .retryInterval(10, TimeUnit.SECONDS)
       )
       /* ... set loader ... */
@@ -232,7 +248,7 @@ public class UniversalResiliencePolicyTest {
     Cache<Integer, Integer> c = new Cache2kBuilder<Integer, Integer>() { }
       .apply(this::supplyResilience)
       .eternal(true)
-      .with(UniversalResilienceConfiguration.class, b -> b
+      .section(UniversalResilienceConfig.class, b -> b
         .resilienceDuration(10, TimeUnit.MINUTES)
         .suppressExceptions(false)
       )

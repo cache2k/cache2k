@@ -21,9 +21,9 @@ package org.cache2k.core.api;
  */
 
 import org.cache2k.CacheManager;
-import org.cache2k.configuration.Cache2kConfiguration;
-import org.cache2k.configuration.CacheBuildContext;
-import org.cache2k.configuration.CustomizationSupplier;
+import org.cache2k.config.Cache2kConfig;
+import org.cache2k.config.CacheBuildContext;
+import org.cache2k.config.CustomizationSupplier;
 
 /**
  * Context information when a cache is build.
@@ -40,7 +40,7 @@ public interface InternalCacheBuildContext<K, V> extends CacheBuildContext {
   /**
    * Cache configuration.
    */
-  Cache2kConfiguration<K, V> getConfiguration();
+  Cache2kConfig<K, V> getConfiguration();
 
   /**
    * The cache manager.

@@ -33,7 +33,7 @@ import org.cache2k.expiry.ExpiryTimeValues;
  * @author Jens Wilke
  * @since 2
  */
-public interface ResiliencePolicy<K, V> extends ExpiryTimeValues, Customization {
+public interface ResiliencePolicy<K, V> extends ExpiryTimeValues, Customization<K, V> {
 
   /**
    * Called after the loader threw an exception and a previous value is available.

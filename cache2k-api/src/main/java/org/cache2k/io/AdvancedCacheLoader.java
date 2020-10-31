@@ -36,7 +36,7 @@ import org.cache2k.Customization;
  * @see CacheLoader
  * @since 2
  */
-public interface AdvancedCacheLoader<K, V> extends Customization {
+public interface AdvancedCacheLoader<K, V> extends Customization<K, V> {
 
   /**
    * Retrieves or generates data based on the key parameter.

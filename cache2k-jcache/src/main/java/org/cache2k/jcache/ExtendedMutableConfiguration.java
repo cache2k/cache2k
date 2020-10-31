@@ -21,7 +21,7 @@ package org.cache2k.jcache;
  */
 
 import org.cache2k.Cache2kBuilder;
-import org.cache2k.configuration.Cache2kConfiguration;
+import org.cache2k.config.Cache2kConfig;
 
 import javax.cache.configuration.Factory;
 import javax.cache.configuration.MutableConfiguration;
@@ -44,23 +44,23 @@ public final class ExtendedMutableConfiguration<K, V>
    * @see <a href="https://cache2k.org/docs/latest/user-guide.html#jcache">User Guide - JCache</a>
    */
   public static <K, V> ExtendedMutableConfiguration<K, V> of(Cache2kBuilder<K, V> builder) {
-    return of(builder.toConfiguration());
+    return of(builder.config());
   }
 
   public static <K, V> ExtendedMutableConfiguration<K, V> of(
-    Cache2kConfiguration<K, V> configuration) {
+    Cache2kConfig<K, V> configuration) {
     ExtendedMutableConfiguration<K, V> cfg = new ExtendedMutableConfiguration<K, V>();
     cfg.cache2kConfiguration = configuration;
     return cfg;
   }
 
-  private Cache2kConfiguration<K, V> cache2kConfiguration;
+  private Cache2kConfig<K, V> cache2kConfiguration;
 
-  public Cache2kConfiguration<K, V> getCache2kConfiguration() {
+  public Cache2kConfig<K, V> getCache2kConfiguration() {
     return cache2kConfiguration;
   }
 
-  public void setCache2kConfiguration(final Cache2kConfiguration<K, V> cache2kConfiguration) {
+  public void setCache2kConfiguration(final Cache2kConfig<K, V> cache2kConfiguration) {
     this.cache2kConfiguration = cache2kConfiguration;
   }
 

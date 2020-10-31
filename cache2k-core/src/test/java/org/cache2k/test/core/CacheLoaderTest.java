@@ -87,7 +87,7 @@ public class CacheLoaderTest extends TestingBase {
     Cache<Integer, Integer> c = target.cache(new CacheRule.Specialization<Integer, Integer>() {
       @Override
       public void extend(Cache2kBuilder<Integer, Integer> b) {
-        assertThat(b.toConfiguration().getLoaderThreadCount())
+        assertThat(b.config().getLoaderThreadCount())
           .describedAs("minim thread count")
           .isGreaterThanOrEqualTo(2);
       }

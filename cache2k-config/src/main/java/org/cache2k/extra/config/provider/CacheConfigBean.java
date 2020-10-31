@@ -20,7 +20,7 @@ package org.cache2k.extra.config.provider;
  * #L%
  */
 
-import org.cache2k.configuration.SingletonConfigurationSection;
+import org.cache2k.config.ConfigSection;
 import org.cache2k.extra.config.generic.Section;
 import org.cache2k.extra.config.generic.Util;
 
@@ -58,7 +58,7 @@ public class CacheConfigBean<T> implements Section<T, T> {
 
   @Override
   public boolean isOccurringOnce() {
-    return SingletonConfigurationSection.class.isAssignableFrom(clazz);
+    return ConfigSection.class.isAssignableFrom(clazz);
   }
 
   @Override

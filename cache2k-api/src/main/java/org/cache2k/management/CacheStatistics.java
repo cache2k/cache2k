@@ -20,7 +20,7 @@ package org.cache2k.management;
  * #L%
  */
 
-import org.cache2k.configuration.Cache2kConfiguration;
+import org.cache2k.config.Cache2kConfig;
 import org.cache2k.io.CacheLoader;
 
 /**
@@ -102,7 +102,7 @@ public interface CacheStatistics {
    * <p>This can mean that the cache entry is removed or just marked as expired
    * in case that the keep value option is enabled.
    *
-   * @see Cache2kConfiguration#setKeepDataAfterExpired(boolean)
+   * @see Cache2kConfig#setKeepDataAfterExpired(boolean)
    */
   long getExpiredCount();
 

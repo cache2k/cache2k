@@ -20,14 +20,15 @@ package org.cache2k;
  * #L%
  */
 
-import org.cache2k.configuration.Cache2kConfiguration;
-import org.cache2k.configuration.CacheTypeCapture;
-import org.cache2k.configuration.CacheType;
-import org.cache2k.configuration.ConfigurationSection;
-import org.cache2k.configuration.ConfigurationSectionBuilder;
-import org.cache2k.configuration.CustomizationReferenceSupplier;
-import org.cache2k.configuration.CustomizationSupplier;
-import org.cache2k.configuration.SingletonConfigurationSection;
+import org.cache2k.config.Cache2kConfig;
+import org.cache2k.config.CacheTypeCapture;
+import org.cache2k.config.CacheType;
+import org.cache2k.config.ConfigBuilder;
+import org.cache2k.config.CustomizationSupplierWithConfig;
+import org.cache2k.config.SectionBuilder;
+import org.cache2k.config.CustomizationReferenceSupplier;
+import org.cache2k.config.CustomizationSupplier;
+import org.cache2k.config.ConfigSection;
 import org.cache2k.event.CacheClosedListener;
 import org.cache2k.expiry.ExpiryPolicy;
 import org.cache2k.event.CacheEntryOperationListener;
@@ -42,13 +43,13 @@ import org.cache2k.io.ResiliencePolicy;
 import org.cache2k.io.CacheLoaderException;
 import org.cache2k.processor.MutableCacheEntry;
 
-import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.time.Duration;
 import java.util.concurrent.Executor;
 import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.TimeUnit;
+import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 
 /**
@@ -81,10 +82,13 @@ import java.util.function.Consumer;
  * <p>To create a cache without type parameters or {@code Cache<Object,Object>}, use
  * {@link Cache2kBuilder#forUnknownTypes()}.
  *
+ * <p>This builder can also be used to alter and build a configuration object that
+ * can be retrieved with {@link #config()}
+ *
  * @author Jens Wilke
  * @since 1.0
  */
-public class Cache2kBuilder<K, V> {
+public class Cache2kBuilder<K, V> implements ConfigBuilder<Cache2kConfig<K, V>> {
 
   private static final String MSG_NO_TYPES =
     "Use Cache2kBuilder.forUnknownTypes(), to construct a builder with no key and value types";
@@ -112,17 +116,17 @@ public class Cache2kBuilder<K, V> {
   /**
    * Create a builder from the configuration.
    */
-  public static <K, V> Cache2kBuilder<K, V> of(Cache2kConfiguration<K, V> c) {
+  public static <K, V> Cache2kBuilder<K, V> of(Cache2kConfig<K, V> c) {
     Cache2kBuilder<K, V> cb = new Cache2kBuilder<K, V>(c);
     return cb;
   }
 
   private CacheType<K> keyType;
   private CacheType<V> valueType;
-  private Cache2kConfiguration<K, V> config = null;
+  private Cache2kConfig<K, V> config = null;
   private CacheManager manager = null;
 
-  private Cache2kBuilder(Cache2kConfiguration<K, V> cfg) {
+  private Cache2kBuilder(Cache2kConfig<K, V> cfg) {
     withConfig(cfg);
   }
 
@@ -159,17 +163,20 @@ public class Cache2kBuilder<K, V> {
     this.valueType = valueType;
   }
 
-  private void withConfig(Cache2kConfiguration<K, V> cfg) {
+  private void withConfig(Cache2kConfig<K, V> cfg) {
     config = cfg;
   }
 
+  /**
+   * Bind to default manager if not set before. Read in default configuration.
+   */
   @SuppressWarnings("unchecked")
-  private Cache2kConfiguration<K, V> config() {
+  private Cache2kConfig<K, V> cfg() {
     if (config == null) {
       if (manager == null) {
         manager = CacheManager.getInstance();
       }
-      config = CacheManager.PROVIDER.getDefaultConfiguration(manager);
+      config = CacheManager.PROVIDER.getDefaultConfig(manager);
       if (keyType != null) {
         config.setKeyType(keyType);
       }
@@ -207,7 +214,7 @@ public class Cache2kBuilder<K, V> {
   @SuppressWarnings("unchecked")
   public final <K2> Cache2kBuilder<K2, V> keyType(Class<K2> t) {
     Cache2kBuilder<K2, V> me = (Cache2kBuilder<K2, V>) this;
-    me.config().setKeyType(t);
+    me.cfg().setKeyType(t);
     return me;
   }
 
@@ -220,7 +227,7 @@ public class Cache2kBuilder<K, V> {
   @SuppressWarnings("unchecked")
   public final <V2> Cache2kBuilder<K, V2> valueType(Class<V2> t) {
     Cache2kBuilder<K, V2> me = (Cache2kBuilder<K, V2>) this;
-    me.config().setValueType(t);
+    me.cfg().setValueType(t);
     return me;
   }
 
@@ -234,7 +241,7 @@ public class Cache2kBuilder<K, V> {
   @SuppressWarnings("unchecked")
   public final <K2> Cache2kBuilder<K2, V> keyType(CacheType<K2> t) {
     Cache2kBuilder<K2, V> me = (Cache2kBuilder<K2, V>) this;
-    me.config().setKeyType(t);
+    me.cfg().setKeyType(t);
     return me;
   }
 
@@ -247,7 +254,7 @@ public class Cache2kBuilder<K, V> {
   @SuppressWarnings("unchecked")
   public final <V2> Cache2kBuilder<K, V2> valueType(CacheType<V2> t) {
     Cache2kBuilder<K, V2> me = (Cache2kBuilder<K, V2>) this;
-    me.config().setValueType(t);
+    me.cfg().setValueType(t);
     return me;
   }
 
@@ -269,7 +276,7 @@ public class Cache2kBuilder<K, V> {
     if (uniqueName == null) {
       return name(clazz, fieldName);
     }
-    config().setName(uniqueName + '~' + clazz.getName() + "." + fieldName);
+    cfg().setName(uniqueName + '~' + clazz.getName() + "." + fieldName);
     return this;
   }
 
@@ -285,7 +292,7 @@ public class Cache2kBuilder<K, V> {
     if (fieldName == null) {
       throw new NullPointerException();
     }
-    config().setName(clazz.getName() + "." + fieldName);
+    cfg().setName(clazz.getName() + "." + fieldName);
     return this;
   }
 
@@ -297,7 +304,7 @@ public class Cache2kBuilder<K, V> {
    * @see #name(String)
    */
   public final Cache2kBuilder<K, V> name(Class<?> clazz) {
-    config().setName(clazz.getName());
+    cfg().setName(clazz.getName());
     return this;
   }
 
@@ -329,7 +336,7 @@ public class Cache2kBuilder<K, V> {
    * @see Cache#getName()
    */
   public final Cache2kBuilder<K, V> name(String v) {
-    config().setName(v);
+    cfg().setName(v);
     return this;
   }
 
@@ -341,7 +348,7 @@ public class Cache2kBuilder<K, V> {
    * @see AdvancedCacheLoader
    */
   public final Cache2kBuilder<K, V> keepDataAfterExpired(boolean v) {
-    config().setKeepDataAfterExpired(v);
+    cfg().setKeepDataAfterExpired(v);
     return this;
   }
 
@@ -356,7 +363,7 @@ public class Cache2kBuilder<K, V> {
    * will usually run stable without tuning or setting a reasonable size.
    */
   public final Cache2kBuilder<K, V> entryCapacity(long v) {
-    config().setEntryCapacity(v);
+    cfg().setEntryCapacity(v);
     return this;
   }
 
@@ -372,14 +379,10 @@ public class Cache2kBuilder<K, V> {
    * not expire. When eternal was set explicitly it cannot be reset to another value afterwards.
    * This should protect against misconfiguration.
    *
-   * <p>Exceptions: If set to eternal with default setting and if there is no
-   * explicit expiry configured for exceptions with {@link #retryInterval(long, TimeUnit)},
-   * exceptions will not be cached and expire immediately.
-   *
    * @throws IllegalArgumentException in case a previous setting is reset
    */
   public final Cache2kBuilder<K, V> eternal(boolean v) {
-    config().setEternal(v);
+    cfg().setEternal(v);
     return this;
   }
 
@@ -401,7 +404,7 @@ public class Cache2kBuilder<K, V> {
    *   cache2k user guide - Expiry and Refresh</a>
    */
   public final Cache2kBuilder<K, V> expireAfterWrite(long v, TimeUnit u) {
-    config().setExpireAfterWrite(toDuration(v, u));
+    cfg().setExpireAfterWrite(toDuration(v, u));
     return this;
   }
 
@@ -410,7 +413,7 @@ public class Cache2kBuilder<K, V> {
    * expiry and refresh operations. The default is approximately one second.
    */
   public final Cache2kBuilder<K, V> timerLag(long v, TimeUnit u) {
-    config().setTimerLag(toDuration(v, u));
+    cfg().setTimerLag(toDuration(v, u));
     return this;
   }
 
@@ -471,7 +474,7 @@ public class Cache2kBuilder<K, V> {
    * are wrapped into a {@link CacheLoaderException}.
    */
   public final Cache2kBuilder<K, V> exceptionPropagator(ExceptionPropagator<K> ep) {
-    config().setExceptionPropagator(wrapCustomizationInstance(ep));
+    cfg().setExceptionPropagator(wrapCustomizationInstance(ep));
     return this;
   }
 
@@ -540,7 +543,7 @@ public class Cache2kBuilder<K, V> {
    * @see CacheLoader for general discussion on cache loaders
    */
   public final Cache2kBuilder<K, V> loader(CacheLoader<K, V> l) {
-    config().setLoader(wrapCustomizationInstance(l));
+    cfg().setLoader(wrapCustomizationInstance(l));
     return this;
   }
 
@@ -551,7 +554,7 @@ public class Cache2kBuilder<K, V> {
    * @see CacheLoader for general discussion on cache loaders
    */
   public final Cache2kBuilder<K, V> loader(AdvancedCacheLoader<K, V> l) {
-    config().setAdvancedLoader(wrapCustomizationInstance(l));
+    cfg().setAdvancedLoader(wrapCustomizationInstance(l));
     return this;
   }
 
@@ -563,7 +566,7 @@ public class Cache2kBuilder<K, V> {
    * @see CacheLoader for general discussion on cache loaders
    */
   public final Cache2kBuilder<K, V> loader(AsyncCacheLoader<K, V> l) {
-    config().setAsyncLoader(wrapCustomizationInstance(l));
+    cfg().setAsyncLoader(wrapCustomizationInstance(l));
     return this;
   }
 
@@ -574,7 +577,7 @@ public class Cache2kBuilder<K, V> {
    */
   @SuppressWarnings("unchecked")
   public final Cache2kBuilder<K, V> wrappingLoader(AdvancedCacheLoader<K, LoadDetail<V>> l) {
-    config().setAdvancedLoader((
+    cfg().setAdvancedLoader((
       CustomizationSupplier<AdvancedCacheLoader<K, V>>) (Object) wrapCustomizationInstance(l));
     return this;
   }
@@ -586,7 +589,7 @@ public class Cache2kBuilder<K, V> {
    */
   @SuppressWarnings("unchecked")
   public final Cache2kBuilder<K, V> wrappingLoader(CacheLoader<K, LoadDetail<V>> l) {
-    config().setAdvancedLoader((
+    cfg().setAdvancedLoader((
       CustomizationSupplier<AdvancedCacheLoader<K, V>>) (Object) wrapCustomizationInstance(l));
     return this;
   }
@@ -596,7 +599,7 @@ public class Cache2kBuilder<K, V> {
    * called synchronously upon cache mutations. By default write through is not enabled.
    */
   public final Cache2kBuilder<K, V> writer(CacheWriter<K, V> w) {
-    config().setWriter(wrapCustomizationInstance(w));
+    cfg().setWriter(wrapCustomizationInstance(w));
     return this;
   }
 
@@ -605,7 +608,7 @@ public class Cache2kBuilder<K, V> {
    * integration.
    */
   public final Cache2kBuilder<K, V> addCacheClosedListener(CacheClosedListener listener) {
-    config().getCacheClosedListeners().add(wrapCustomizationInstance(listener));
+    cfg().getCacheClosedListeners().add(wrapCustomizationInstance(listener));
     return this;
   }
 
@@ -618,7 +621,7 @@ public class Cache2kBuilder<K, V> {
    * @param listener The listener to add
    */
   public final Cache2kBuilder<K, V> addListener(CacheEntryOperationListener<K, V> listener) {
-    config().getListeners().add(wrapCustomizationInstance(listener));
+    cfg().getListeners().add(wrapCustomizationInstance(listener));
     return this;
   }
 
@@ -630,7 +633,7 @@ public class Cache2kBuilder<K, V> {
    * @param listener The listener to add
    */
   public final Cache2kBuilder<K, V> addAsyncListener(CacheEntryOperationListener<K, V> listener) {
-    config().getAsyncListeners().add(wrapCustomizationInstance(listener));
+    cfg().getAsyncListeners().add(wrapCustomizationInstance(listener));
     return this;
   }
 
@@ -640,12 +643,9 @@ public class Cache2kBuilder<K, V> {
    * <p>If this is specified the maximum expiry time is still limited to the value in
    * {@link #expireAfterWrite}. If {@link #expireAfterWrite(long, java.util.concurrent.TimeUnit)}
    * is set to 0 then expiry calculation is not used, all entries expire immediately.
-   *
-   * <p>If no maximum expiry is specified via {@link #expireAfterWrite} at least the
-   * {@link #resilienceDuration} needs to be specified, if resilience should be enabled.
    */
   public final Cache2kBuilder<K, V> expiryPolicy(ExpiryPolicy<K, V> c) {
-    config().setExpiryPolicy(wrapCustomizationInstance(c));
+    cfg().setExpiryPolicy(wrapCustomizationInstance(c));
     return this;
   }
 
@@ -671,7 +671,7 @@ public class Cache2kBuilder<K, V> {
    * @see #loaderThreadCount(int)
    */
   public final Cache2kBuilder<K, V> refreshAhead(boolean f) {
-    config().setRefreshAhead(f);
+    cfg().setRefreshAhead(f);
     return this;
   }
 
@@ -683,7 +683,7 @@ public class Cache2kBuilder<K, V> {
    * {@link ExpiryPolicy} returned. This has no effect on {@link #expireAfterWrite(long, TimeUnit)}.
    */
   public final Cache2kBuilder<K, V> sharpExpiry(boolean f) {
-    config().setSharpExpiry(f);
+    cfg().setSharpExpiry(f);
     return this;
   }
 
@@ -699,7 +699,7 @@ public class Cache2kBuilder<K, V> {
    * @see #refreshExecutor(Executor)
    */
   public final Cache2kBuilder<K, V> loaderThreadCount(int v) {
-    config().setLoaderThreadCount(v);
+    cfg().setLoaderThreadCount(v);
     return this;
   }
 
@@ -714,7 +714,7 @@ public class Cache2kBuilder<K, V> {
    * used by application developers to future proof the applications with upcoming versions.
    */
   public final Cache2kBuilder<K, V> storeByReference(boolean v) {
-    config().setStoreByReference(v);
+    cfg().setStoreByReference(v);
     return this;
   }
 
@@ -724,35 +724,13 @@ public class Cache2kBuilder<K, V> {
    * {@link #expireAfterWrite} is set to 0.
    */
   public final Cache2kBuilder<K, V> resiliencePolicy(ResiliencePolicy<K, V> v) {
-    config().setResiliencePolicy(wrapCustomizationInstance(v));
+    cfg().setResiliencePolicy(wrapCustomizationInstance(v));
     return this;
   }
 
   public final Cache2kBuilder<K, V> resiliencePolicy(
     CustomizationSupplier<? extends ResiliencePolicy<K, V>> v) {
-    config().setResiliencePolicy(v);
-    return this;
-  }
-
-  public final Cache2kBuilder<K, V> with(
-    ConfigurationSectionBuilder<? extends ConfigurationSection> sectionBuilder) {
-    config().getSections().add(sectionBuilder.buildConfigurationSection());
-    return this;
-  }
-
-  public final <B extends ConfigurationSectionBuilder<T>, T extends SingletonConfigurationSection<T, B>> Cache2kBuilder<K, V>
-  with(Class<T> configSectionClass, Consumer<B> configAction) {
-    T section =
-      config().getSections().getSection(configSectionClass);
-    if (section == null) {
-      try {
-        section = configSectionClass.getConstructor().newInstance();
-      } catch (Exception e) {
-        throw new Error("config bean needs working default constructor", e);
-      }
-      config().getSections().add(section);
-    }
-    configAction.accept(section.builder());
+    cfg().setResiliencePolicy(v);
     return this;
   }
 
@@ -763,7 +741,7 @@ public class Cache2kBuilder<K, V> {
    * testing and evaluation purposes.
    */
   public final Cache2kBuilder<K, V> strictEviction(boolean flag) {
-    config().setStrictEviction(flag);
+    cfg().setStrictEviction(flag);
     return this;
   }
 
@@ -779,7 +757,7 @@ public class Cache2kBuilder<K, V> {
    * @see ExpiryPolicy#calculateExpiryTime(Object, Object, long, CacheEntry)
    */
   public final Cache2kBuilder<K, V> permitNullValues(boolean flag) {
-    config().setPermitNullValues(flag);
+    cfg().setPermitNullValues(flag);
     return this;
   }
 
@@ -789,17 +767,7 @@ public class Cache2kBuilder<K, V> {
    * controlled by {@link #enableJmx(boolean)}.
    */
   public final Cache2kBuilder<K, V> disableStatistics(boolean flag) {
-    config().setDisableStatistics(flag);
-    return this;
-  }
-
-  /**
-   * Deprecated since version 1.2. Method has no effect and will be removed in future releases.
-   * Time recording is disabled by default and needs to be enabled via
-   * {@link #recordRefreshedTime(boolean)}.
-   */
-  @Deprecated
-  public final Cache2kBuilder<K, V> disableLastModificationTime(boolean flag) {
+    cfg().setDisableStatistics(flag);
     return this;
   }
 
@@ -809,8 +777,8 @@ public class Cache2kBuilder<K, V> {
    *
    * @see MutableCacheEntry#getModificationTime()
    */
-  public final Cache2kBuilder<K, V> recordRefreshedTime(boolean flag) {
-    config().setRecordRefreshedTime(flag);
+  public final Cache2kBuilder<K, V> recordModificationTime(boolean flag) {
+    cfg().setRecordModificationTime(flag);
     return this;
   }
 
@@ -823,7 +791,7 @@ public class Cache2kBuilder<K, V> {
    * that utilize all cores and cache operations account for most CPU cycles.
    */
   public final Cache2kBuilder<K, V> boostConcurrency(boolean f) {
-    config().setBoostConcurrency(f);
+    cfg().setBoostConcurrency(f);
     return this;
   }
 
@@ -835,7 +803,7 @@ public class Cache2kBuilder<K, V> {
    * If this is not included in the classpath/modulepath, this option has no effect.
    */
   public final Cache2kBuilder<K, V> enableJmx(boolean f) {
-    config().setEnableJmx(f);
+    cfg().setEnableJmx(f);
     return this;
   }
 
@@ -846,7 +814,7 @@ public class Cache2kBuilder<K, V> {
    * respect this parameter.
    */
   public final Cache2kBuilder<K, V> disableMonitoring(boolean f) {
-    config().setDisableMonitoring(f);
+    cfg().setDisableMonitoring(f);
     return this;
   }
 
@@ -857,7 +825,7 @@ public class Cache2kBuilder<K, V> {
    * @see #loaderThreadCount(int)
    */
   public final Cache2kBuilder<K, V> loaderExecutor(Executor v) {
-    config().setLoaderExecutor(new CustomizationReferenceSupplier<Executor>(v));
+    cfg().setLoaderExecutor(new CustomizationReferenceSupplier<Executor>(v));
     return this;
   }
 
@@ -873,7 +841,7 @@ public class Cache2kBuilder<K, V> {
    * @see #loaderExecutor(Executor)
    */
   public final Cache2kBuilder<K, V> refreshExecutor(Executor v) {
-    config().setRefreshExecutor(new CustomizationReferenceSupplier<Executor>(v));
+    cfg().setRefreshExecutor(new CustomizationReferenceSupplier<Executor>(v));
     return this;
   }
 
@@ -883,7 +851,7 @@ public class Cache2kBuilder<K, V> {
    * executor is used that has unbounded thread capacity otherwise.
    */
   public final Cache2kBuilder<K, V> executor(Executor v) {
-    config().setExecutor(new CustomizationReferenceSupplier<Executor>(v));
+    cfg().setExecutor(new CustomizationReferenceSupplier<Executor>(v));
     return this;
   }
 
@@ -894,7 +862,7 @@ public class Cache2kBuilder<K, V> {
    * @see #addAsyncListener(CacheEntryOperationListener)
    */
   public final Cache2kBuilder<K, V> asyncListenerExecutor(Executor v) {
-    config().setAsyncListenerExecutor(new CustomizationReferenceSupplier<Executor>(v));
+    cfg().setAsyncListenerExecutor(new CustomizationReferenceSupplier<Executor>(v));
     return this;
   }
 
@@ -904,7 +872,7 @@ public class Cache2kBuilder<K, V> {
    * performance impact on the update of existing entries.
    */
   public final Cache2kBuilder<K, V> weigher(Weigher<K, V> v) {
-    config().setWeigher(new CustomizationReferenceSupplier<Weigher>(v));
+    cfg().setWeigher(new CustomizationReferenceSupplier<Weigher>(v));
     return this;
   }
 
@@ -919,7 +887,7 @@ public class Cache2kBuilder<K, V> {
    * The maximum weight setting cannot be used together with {@link #entryCapacity(long)}.
    */
   public final Cache2kBuilder<K, V> maximumWeight(long v) {
-    config().setMaximumWeight(v);
+    cfg().setMaximumWeight(v);
     return this;
   }
 
@@ -933,6 +901,63 @@ public class Cache2kBuilder<K, V> {
   }
 
   /**
+   * Adds a configuration section or alters an existing section.
+   *
+   * @param configSectionClass type of the config section that is created or altered
+   * @param builderAction lambda that alters the config section via its builder
+   * @param <B> type of the builder for the config section
+   * @param <T> the type of the config section
+   * @return
+   */
+  public final <B extends SectionBuilder<T>, T extends ConfigSection<T, B>> Cache2kBuilder<K, V>
+  section(Class<T> configSectionClass, Consumer<B> builderAction) {
+    T section =
+      cfg().getSections().getSection(configSectionClass);
+    if (section == null) {
+      try {
+        section = configSectionClass.getConstructor().newInstance();
+      } catch (Exception e) {
+        throw new Error("config bean needs working default constructor", e);
+      }
+      cfg().getSections().add(section);
+    }
+    builderAction.accept(section.builder());
+    return this;
+  }
+
+  /**
+   * Execute on the underlying configuration object. This can be used to
+   * set customization suppliers, like {@link Cache2kConfig#setExecutor(CustomizationSupplier)}
+   * instead of instances.
+   */
+  public Cache2kBuilder<K, V> set(Consumer<Cache2kConfig<K, V>> configAction) {
+    configAction.accept(config());
+    return this;
+  }
+
+  /**
+   * Set a customization supplier that consumes a configuration section and
+   * set the parameters on that configuration section via a builder.
+   *
+   * @param configAction lambda that sets the supplier
+   * @param supplier the supplier
+   * @param builderAction lambda that configures the supplier via the
+   *                      builder associated to its config section
+   */
+  public <T extends Customization<K, V>,
+          B extends SectionBuilder<CFG>,
+          CFG extends ConfigSection<CFG, B>,
+          SUP extends CustomizationSupplierWithConfig<K, V, T, CFG>>
+    Cache2kBuilder<K, V> customize(
+      BiConsumer<Cache2kConfig<K, V>, SUP> configAction,
+      SUP supplier,
+      Consumer<B> builderAction) {
+    configAction.accept(config(), supplier);
+    section(supplier.getConfigClass(), builderAction);
+    return this;
+  }
+
+  /**
    * Returns the configuration object this builder operates on. Changes to the configuration also
    * will influence the created cache when {@link #build()} is called. The method does not
    * return the effective configuration if additional external/XML configuration is present, since
@@ -941,8 +966,9 @@ public class Cache2kBuilder<K, V> {
    *
    * @return configuration objects with the parameters set in the builder.
    */
-  public final Cache2kConfiguration<K, V> toConfiguration() {
-    return config();
+  @Override
+  public final Cache2kConfig<K, V> config() {
+    return cfg();
   }
 
   /**
@@ -964,7 +990,7 @@ public class Cache2kBuilder<K, V> {
    *         not present
    */
   public final Cache<K, V> build() {
-    return CacheManager.PROVIDER.createCache(manager, config());
+    return CacheManager.PROVIDER.createCache(manager, cfg());
   }
 
 }

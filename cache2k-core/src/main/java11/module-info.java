@@ -17,6 +17,8 @@
  * limitations under the License.
  * #L%
  */
+import org.cache2k.core.spi.CacheConfigProvider;
+
 /**
  * @author Jens Wilke
  */
@@ -29,7 +31,7 @@ module org.cache2k.core {
   exports org.cache2k.core.log;
   exports org.cache2k.core.common;
   uses org.cache2k.core.log.LogFactory;
-  uses org.cache2k.core.spi.CacheConfigurationProvider;
+  uses CacheConfigProvider;
   uses org.cache2k.core.spi.CacheLifeCycleListener;
   uses org.cache2k.core.spi.CacheManagerLifeCycleListener;
   uses org.cache2k.spi.Cache2kExtensionProvider;

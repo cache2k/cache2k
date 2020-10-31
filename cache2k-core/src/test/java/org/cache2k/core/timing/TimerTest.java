@@ -22,7 +22,7 @@ package org.cache2k.core.timing;
 
 import org.assertj.core.api.Condition;
 import org.cache2k.Cache2kBuilder;
-import org.cache2k.configuration.Cache2kConfiguration;
+import org.cache2k.config.Cache2kConfig;
 import org.cache2k.core.api.InternalClock;
 import org.cache2k.core.api.Scheduler;
 import org.cache2k.core.util.SimulatedClock;
@@ -301,13 +301,13 @@ public class TimerTest {
     long lag = hashCode();
     assertEquals("builder and config bean working", lag,
       Cache2kBuilder.forUnknownTypes()
-      .timerLag(lag, TimeUnit.MILLISECONDS).toConfiguration().getTimerLag().toMillis());
+      .timerLag(lag, TimeUnit.MILLISECONDS).config().getTimerLag().toMillis());
     assertEquals("eternal / overflow", Long.MAX_VALUE,
       Cache2kBuilder.forUnknownTypes()
-        .timerLag(Long.MAX_VALUE, TimeUnit.SECONDS).toConfiguration().getTimerLag().toMillis());
-    assertSame("eternal / overflow", Cache2kConfiguration.ETERNAL_DURATION,
+        .timerLag(Long.MAX_VALUE, TimeUnit.SECONDS).config().getTimerLag().toMillis());
+    assertSame("eternal / overflow", Cache2kConfig.ETERNAL_DURATION,
       Cache2kBuilder.forUnknownTypes()
-        .timerLag(Long.MAX_VALUE, TimeUnit.SECONDS).toConfiguration().getTimerLag());
+        .timerLag(Long.MAX_VALUE, TimeUnit.SECONDS).config().getTimerLag());
   }
 
   static long taskIdCounter = 0;

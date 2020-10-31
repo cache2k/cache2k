@@ -22,8 +22,8 @@ package org.cache2k.extra.micrometer;
 
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.Metrics;
-import org.cache2k.configuration.CacheBuildContext;
-import org.cache2k.configuration.CustomizationSupplier;
+import org.cache2k.config.CacheBuildContext;
+import org.cache2k.config.CustomizationSupplier;
 
 /**
  * @author Jens Wilke

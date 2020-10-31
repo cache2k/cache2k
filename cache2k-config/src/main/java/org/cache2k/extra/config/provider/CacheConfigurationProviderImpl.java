@@ -22,9 +22,9 @@ package org.cache2k.extra.config.provider;
 
 import org.cache2k.CacheException;
 import org.cache2k.CacheManager;
-import org.cache2k.configuration.Cache2kConfiguration;
-import org.cache2k.configuration.CustomizationSupplierByClassName;
-import org.cache2k.core.spi.CacheConfigurationProvider;
+import org.cache2k.config.Cache2kConfig;
+import org.cache2k.config.CustomizationSupplierByClassName;
+import org.cache2k.core.spi.CacheConfigProvider;
 import org.cache2k.extra.config.generic.ConfigurationException;
 import org.cache2k.extra.config.generic.ConfigurationParser;
 import org.cache2k.extra.config.generic.ConfigurationTokenizer;
@@ -49,14 +49,14 @@ import java.util.Map;
  */
 @SuppressWarnings("rawtypes")
 public class CacheConfigurationProviderImpl
-  extends ConfigurationProvider implements CacheConfigurationProvider {
+  extends ConfigurationProvider implements CacheConfigProvider {
 
   private static final String DEFAULT_CONFIGURATION_FILE = "cache2k.xml";
   private static final Map<String, String> VERSION_1_2_SECTION_TYPES = new HashMap<String, String>() {
     {
-      put("jcache", "org.cache2k.jcache.JCacheConfiguration");
+      put("jcache", "org.cache2k.jcache.JCacheConfig");
       put("byClassName", CustomizationSupplierByClassName.class.getName());
-      put("resilience", "org.cache2k.addon.UniversalResilienceConfiguration");
+      put("resilience", "org.cache2k.addon.UniversalResilienceConfig");
     }
   };
 
@@ -85,8 +85,8 @@ public class CacheConfigurationProviderImpl
   }
 
   @Override
-  public Cache2kConfiguration getDefaultConfiguration(CacheManager mgr) {
-    Cache2kConfiguration cfg = getManagerContext(mgr).getDefaultManagerConfiguration();
+  public Cache2kConfig getDefaultConfig(CacheManager mgr) {
+    Cache2kConfig cfg = getManagerContext(mgr).getDefaultManagerConfiguration();
     try {
       return Util.copyViaSerialization(cfg);
     } catch (Exception ex) {
@@ -96,7 +96,7 @@ public class CacheConfigurationProviderImpl
   }
 
   @Override
-  public <K, V> void augmentConfiguration(CacheManager mgr, Cache2kConfiguration<K, V> cfg) {
+  public <K, V> void augmentConfig(CacheManager mgr, Cache2kConfig<K, V> cfg) {
     ConfigurationContext ctx =  getManagerContext(mgr);
     if (!ctx.isConfigurationPresent()) {
       return;
@@ -179,7 +179,7 @@ public class CacheConfigurationProviderImpl
       return;
     }
     for (ParsedConfiguration cacheConfig : cachesSection.getSections()) {
-      apply(ctx, cacheConfig, new Cache2kConfiguration());
+      apply(ctx, cacheConfig, new Cache2kConfig());
     }
   }
 
@@ -215,7 +215,7 @@ public class CacheConfigurationProviderImpl
     ParsedConfiguration pc = readManagerConfigurationWithExceptionHandling(cl, fileName);
     ConfigurationContext ctx = new ConfigurationContext();
     ctx.setClassLoader(cl);
-    Cache2kConfiguration defaultConfiguration = new Cache2kConfiguration();
+    Cache2kConfig defaultConfiguration = new Cache2kConfig();
     ctx.setDefaultManagerConfiguration(defaultConfiguration);
     ctx.getManagerConfiguration().setDefaultManagerName(managerName);
     if (pc != null) {
@@ -251,7 +251,7 @@ public class CacheConfigurationProviderImpl
 
   private void applyDefaultConfigurationIfPresent(ConfigurationContext ctx,
                                                   ParsedConfiguration pc,
-                                                  Cache2kConfiguration defaultConfiguration) {
+                                                  Cache2kConfig defaultConfiguration) {
     ParsedConfiguration defaults = pc.getSection("defaults");
     if (defaults != null) {
       defaults = defaults.getSection("cache");

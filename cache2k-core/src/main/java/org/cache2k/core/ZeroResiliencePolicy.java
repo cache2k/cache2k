@@ -21,8 +21,6 @@ package org.cache2k.core;
  */
 
 import org.cache2k.CacheEntry;
-import org.cache2k.configuration.CustomizationReferenceSupplier;
-import org.cache2k.configuration.CustomizationSupplier;
 import org.cache2k.io.LoadExceptionInfo;
 import org.cache2k.io.ResiliencePolicy;
 

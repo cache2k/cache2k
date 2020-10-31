@@ -22,8 +22,8 @@ package org.cache2k.test.util;
 
 import org.cache2k.Cache;
 import org.cache2k.Cache2kBuilder;
-import org.cache2k.configuration.CacheTypeCapture;
-import org.cache2k.configuration.CacheType;
+import org.cache2k.config.CacheTypeCapture;
+import org.cache2k.config.CacheType;
 import org.cache2k.core.api.InternalCache;
 import org.cache2k.core.api.InternalCacheInfo;
 import org.cache2k.core.api.InternalClock;
@@ -238,7 +238,7 @@ public class CacheRule<K, V> implements TestRule {
       sp.extend(b);
     }
     String name = description.getTestClass().getName();
-    String requestedName = b.toConfiguration().getName();
+    String requestedName = b.config().getName();
     if (shared) {
       b.name(description.getTestClass());
       sharedCache.put(name, name);

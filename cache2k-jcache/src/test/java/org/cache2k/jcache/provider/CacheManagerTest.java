@@ -23,9 +23,8 @@ package org.cache2k.jcache.provider;
 import org.cache2k.Cache2kBuilder;
 import org.cache2k.core.WiredCache;
 import org.cache2k.jcache.ExtendedMutableConfiguration;
-import org.cache2k.jcache.JCacheConfiguration;
+import org.cache2k.jcache.JCacheConfig;
 import org.cache2k.jcache.provider.generic.storeByValueSimulation.CopyCacheProxy;
-import org.junit.Ignore;
 import org.junit.Test;
 import static org.junit.Assert.*;
 
@@ -94,7 +93,7 @@ public class CacheManagerTest {
     ExtendedMutableConfiguration<String, BigDecimal> mc = new ExtendedMutableConfiguration<String, BigDecimal>();
     mc.setCache2kConfiguration(
       new Cache2kBuilder<String, BigDecimal>(){}
-        .toConfiguration()
+        .config()
     );
     Cache<String, BigDecimal> c = cm.createCache("aCache", mc);
     assertEquals("aCache", c.getName());
@@ -125,7 +124,7 @@ public class CacheManagerTest {
       new Cache2kBuilder<Long, Double>() { }
         .entryCapacity(10000)
         .expireAfterWrite(5, TimeUnit.MINUTES)
-        .with(JCacheConfiguration.class, b -> b
+        .section(JCacheConfig.class, b -> b
           .copyAlwaysIfRequested(true)
         )
     ));

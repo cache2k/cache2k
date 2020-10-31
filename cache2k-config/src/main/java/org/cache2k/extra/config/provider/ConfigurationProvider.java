@@ -20,10 +20,10 @@ package org.cache2k.extra.config.provider;
  * #L%
  */
 
-import org.cache2k.configuration.ConfigurationSection;
-import org.cache2k.configuration.ConfigurationWithSections;
-import org.cache2k.configuration.SingletonConfigurationSection;
-import org.cache2k.configuration.ValidatingConfigurationBean;
+import org.cache2k.config.Cache2kConfig;
+import org.cache2k.config.ConfigWithSections;
+import org.cache2k.config.ConfigSection;
+import org.cache2k.config.ValidatingConfigBean;
 import org.cache2k.extra.config.generic.BeanPropertyMutator;
 import org.cache2k.extra.config.generic.ConfigurationException;
 import org.cache2k.extra.config.generic.ConfigurationTokenizer;
@@ -68,10 +68,10 @@ public class ConfigurationProvider {
       }
     }
     applyPropertyValues(parsedCfg, cfg);
-    if (!(cfg instanceof ConfigurationWithSections)) {
+    if (!(cfg instanceof ConfigWithSections)) {
       return;
     }
-    ConfigurationWithSections configurationWithSections = (ConfigurationWithSections) cfg;
+    ConfigWithSections configurationWithSections = (ConfigWithSections) cfg;
     for (ParsedConfiguration parsedSection : parsedCfg.getSections()) {
       String sectionType = ctx.getPredefinedSectionTypes().get(parsedSection.getName());
       if (sectionType == null) {
@@ -123,7 +123,7 @@ public class ConfigurationProvider {
 
   /**
    * Get appropriate collection e.g.
-   * {@link org.cache2k.configuration.Cache2kConfiguration#getListeners()} create the bean
+   * {@link Cache2kConfig#getListeners()} create the bean
    * and add it to the collection.
    *
    * @return True, if applied, false if there is no getter for a collection.
@@ -173,9 +173,9 @@ public class ConfigurationProvider {
     }
     ParsedConfiguration parameters = parsedCfg.getSection("parameters");
     apply(ctx, parameters != null ? parameters : parsedCfg, bean);
-    if (bean instanceof ValidatingConfigurationBean) {
+    if (bean instanceof ValidatingConfigBean) {
       try {
-        ((ValidatingConfigurationBean) bean).validate();
+        ((ValidatingConfigBean) bean).validate();
       } catch (IllegalArgumentException ex) {
         throw new ConfigurationException(
           "Validation error '" +
@@ -198,17 +198,17 @@ public class ConfigurationProvider {
   private boolean handleSection(
     ConfigurationContext ctx,
     Class<?> type,
-    ConfigurationWithSections cfg,
+    ConfigWithSections cfg,
     ParsedConfiguration sc) {
     String containerName = sc.getContainer();
     if (!"sections".equals(containerName)) {
       return false;
     }
-    @SuppressWarnings("unchecked") ConfigurationSection sectionBean =
-      cfg.getSections().getSection((Class<ConfigurationSection>) type);
-    if (!(sectionBean instanceof SingletonConfigurationSection)) {
+    @SuppressWarnings("unchecked") ConfigSection sectionBean =
+      cfg.getSections().getSection((Class<ConfigSection>) type);
+    if (!(sectionBean instanceof ConfigSection)) {
       try {
-        sectionBean = (ConfigurationSection)  type.newInstance();
+        sectionBean = (ConfigSection) type.newInstance();
       } catch (Exception ex) {
         throw new ConfigurationException("Cannot instantiate section class: " + ex, sc);
       }

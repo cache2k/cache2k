@@ -23,7 +23,7 @@ package org.cache2k.test.core;
 import org.cache2k.Cache;
 import org.cache2k.Cache2kBuilder;
 import org.cache2k.CacheEntry;
-import org.cache2k.core.api.CoreConfiguration;
+import org.cache2k.core.api.CoreConfig;
 import org.cache2k.core.util.SimulatedClock;
 import org.cache2k.event.CacheEntryExpiredListener;
 import org.cache2k.expiry.Expiry;
@@ -290,7 +290,7 @@ public class EntryProcessorTest {
     Cache<Integer, Integer> c = target.cache(new CacheRule.Specialization<Integer, Integer>() {
       @Override
       public void extend(Cache2kBuilder<Integer, Integer> b) {
-        b.recordRefreshedTime(true);
+        b.recordModificationTime(true);
       }
     });
     final long t0 = millis();
@@ -426,7 +426,7 @@ public class EntryProcessorTest {
     Cache<Integer, Integer> c = target.cache(new CacheRule.Specialization<Integer, Integer>() {
       @Override
       public void extend(Cache2kBuilder<Integer, Integer> b) {
-        b.recordRefreshedTime(true)
+        b.recordModificationTime(true)
          .wrappingLoader(new AdvancedCacheLoader<Integer, LoadDetail<Integer>>() {
           @Override
           public LoadDetail<Integer> load(Integer key, long startTime,
@@ -453,7 +453,7 @@ public class EntryProcessorTest {
     Cache<Integer, Integer> c = target.cache(new CacheRule.Specialization<Integer, Integer>() {
       @Override
       public void extend(Cache2kBuilder<Integer, Integer> b) {
-        b.recordRefreshedTime(true)
+        b.recordModificationTime(true)
          .wrappingLoader(new AdvancedCacheLoader<Integer, LoadDetail<Integer>>() {
           @Override
           public LoadDetail<Integer> load(Integer key, long startTime,
@@ -544,7 +544,7 @@ public class EntryProcessorTest {
       @Override
       public void extend(Cache2kBuilder<Integer, Integer> b) {
         b.loader(c.loader);
-        b.recordRefreshedTime(true);
+        b.recordModificationTime(true);
       }
     });
     return c;
@@ -727,7 +727,7 @@ public class EntryProcessorTest {
       target.cache(new CacheRule.Specialization<Integer, Integer>() {
         @Override
         public void extend(Cache2kBuilder<Integer, Integer> b) {
-          b .with(CoreConfiguration.class, b2 -> b2
+          b .section(CoreConfig.class, b2 -> b2
               .timerReference(new SimulatedClock())
             )
             .sharpExpiry(true)

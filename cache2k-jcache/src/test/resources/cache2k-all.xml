@@ -49,12 +49,12 @@
       <storeByReference>false</storeByReference>
       <permitNullValues>false</permitNullValues>
       <disableStatistics>false</disableStatistics>
-      <recordRefreshedTime>true</recordRefreshedTime>
+      <recordModificationTime>true</recordModificationTime>
       <boostConcurrency>true</boostConcurrency>
       <eternal>false</eternal>
       <loader>
         <bean>
-          <type>org.cache2k.configuration.CustomizationSupplierByClassName</type>
+          <type>org.cache2k.config.CustomizationSupplierByClassName</type>
           <parameters>
             <className>org.cache2k.extra.config.test.DummyLoader</className>
           </parameters>
@@ -128,7 +128,7 @@
       <expireAfterWrite>12</expireAfterWrite>
       <sections>
         <section>
-          <type>org.cache2k.jcache.JCacheConfiguration</type>
+          <type>org.cache2k.jcache.JCacheConfig</type>
           <include>templateJCache1</include>
           <parameters>
             <enableStatistics>true</enableStatistics>

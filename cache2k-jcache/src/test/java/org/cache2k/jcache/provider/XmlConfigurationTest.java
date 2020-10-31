@@ -23,14 +23,13 @@ package org.cache2k.jcache.provider;
 import org.cache2k.Cache;
 import org.cache2k.Cache2kBuilder;
 import org.cache2k.CacheManager;
-import org.cache2k.configuration.Cache2kConfiguration;
-import org.cache2k.configuration.ConfigurationSection;
+import org.cache2k.config.Cache2kConfig;
+import org.cache2k.config.MultiConfigSection;
 import org.cache2k.jcache.ExtendedMutableConfiguration;
-import org.cache2k.jcache.JCacheConfiguration;
+import org.cache2k.jcache.JCacheConfig;
 import org.cache2k.jcache.provider.generic.storeByValueSimulation.CopyCacheProxy;
 import org.cache2k.schema.Constants;
 import org.hamcrest.CoreMatchers;
-import org.junit.Ignore;
 import org.junit.Test;
 
 import javax.cache.Caching;
@@ -44,7 +43,6 @@ import javax.xml.validation.Schema;
 import javax.xml.validation.SchemaFactory;
 import java.math.BigDecimal;
 import java.net.URI;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
@@ -66,11 +64,11 @@ public class XmlConfigurationTest {
       new Cache2kBuilder<String, String>(){}
         .manager(CacheManager.getInstance(MANAGER_NAME))
         .name("withSection");
-    Cache2kConfiguration<String, String> cfg = b.toConfiguration();
+    Cache2kConfig<String, String> cfg = b.config();
     Cache<String, String> c = b.build();
-    assertEquals("default is false", false, new JCacheConfiguration().isCopyAlwaysIfRequested());
-    assertNotNull("section present", cfg.getSections().getSection(JCacheConfiguration.class));
-    assertEquals("config applied", true, cfg.getSections().getSection(JCacheConfiguration.class).isCopyAlwaysIfRequested());
+    assertEquals("default is false", false, new JCacheConfig().isCopyAlwaysIfRequested());
+    assertNotNull("section present", cfg.getSections().getSection(JCacheConfig.class));
+    assertEquals("config applied", true, cfg.getSections().getSection(JCacheConfig.class).isCopyAlwaysIfRequested());
     c.close();
   }
 
@@ -80,11 +78,11 @@ public class XmlConfigurationTest {
       new Cache2kBuilder<String, String>(){}
         .manager(CacheManager.getInstance(MANAGER_NAME))
         .name("withJCacheSection");
-    Cache2kConfiguration<String, String> cfg = b.toConfiguration();
+    Cache2kConfig<String, String> cfg = b.config();
     Cache<String, String> c = b.build();
-    assertEquals("default is false", false, new JCacheConfiguration().isCopyAlwaysIfRequested());
-    assertNotNull("section present", cfg.getSections().getSection(JCacheConfiguration.class));
-    assertEquals("config applied", true, cfg.getSections().getSection(JCacheConfiguration.class).isCopyAlwaysIfRequested());
+    assertEquals("default is false", false, new JCacheConfig().isCopyAlwaysIfRequested());
+    assertNotNull("section present", cfg.getSections().getSection(JCacheConfig.class));
+    assertEquals("config applied", true, cfg.getSections().getSection(JCacheConfig.class).isCopyAlwaysIfRequested());
     c.close();
   }
 
@@ -210,7 +208,7 @@ public class XmlConfigurationTest {
     Cache2kBuilder b = new Cache2kBuilder<String, String>() { }
       .manager(CacheManager.getInstance("all"))
       .name("jcache1");
-    Cache2kConfiguration cfg = b.toConfiguration();
+    Cache2kConfig cfg = b.config();
     Cache c = b.build();
     assertEquals(1153, cfg.getEntryCapacity());
     assertEquals(123000, cfg.getExpireAfterWrite().toMillis());
@@ -219,23 +217,23 @@ public class XmlConfigurationTest {
 
   @Test
   public void checkSectionSetter() {
-    Cache2kConfiguration cfg = new Cache2kConfiguration();
-    cfg.setSections(Collections.singletonList(new JCacheConfiguration()));
+    Cache2kConfig cfg = new Cache2kConfig();
+    cfg.setSections(Collections.singletonList(new JCacheConfig()));
     assertEquals(1, cfg.getSections().size());
     assertThat(
       cfg.getSections().toString(),
-      CoreMatchers.containsString("ConfigurationSectionContainer"));
+      CoreMatchers.containsString("SectionContainer"));
     assertNull(cfg.getSections().getSection(DummySection.class));
     assertTrue(cfg.getSections().iterator().hasNext());
   }
 
-  interface DummySection extends ConfigurationSection { }
+  interface DummySection extends MultiConfigSection { }
 
   @Test(expected = IllegalArgumentException.class)
   public void checkNoDuplicateSection() {
-    Cache2kConfiguration cfg = new Cache2kConfiguration();
-    cfg.setSections(Collections.singletonList(new JCacheConfiguration()));
-    cfg.setSections(Collections.singletonList(new JCacheConfiguration()));
+    Cache2kConfig cfg = new Cache2kConfig();
+    cfg.setSections(Collections.singletonList(new JCacheConfig()));
+    cfg.setSections(Collections.singletonList(new JCacheConfig()));
   }
 
 }
