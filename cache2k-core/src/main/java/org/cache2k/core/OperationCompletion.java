@@ -66,7 +66,12 @@ public class OperationCompletion<K> {
           ", one propagated as cause", exception));
     }
   }
-  CacheException wrap(String txt, Throwable t) { return new CacheLoaderException(txt, t); }
+  CacheException wrap(String txt, Throwable t) {
+    if (txt == null) {
+      return new CacheLoaderException(t);
+    }
+    return new CacheLoaderException(txt, t);
+  }
 
   static final AtomicIntegerFieldUpdater<OperationCompletion> BULK_OP_COUNT =
     AtomicIntegerFieldUpdater.newUpdater(OperationCompletion.class, "countDown");

@@ -26,6 +26,7 @@ import org.cache2k.expiry.ExpiryTimeValues;
 import org.cache2k.integration.FunctionalCacheLoader;
 import org.cache2k.io.AsyncCacheLoader;
 import org.cache2k.io.CacheLoaderException;
+import org.cache2k.test.core.expiry.ExpiryTest;
 import org.cache2k.test.util.CacheRule;
 import org.cache2k.test.util.Condition;
 import org.cache2k.io.AdvancedCacheLoader;
@@ -739,6 +740,7 @@ public class CacheLoaderTest extends TestingBase {
       @Override
       public void extend(Cache2kBuilder<Integer, Integer> b) {
         b.expireAfterWrite(TestingParameters.MAX_FINISH_WAIT_MILLIS, TimeUnit.MILLISECONDS);
+        b.resiliencePolicy(new ExpiryTest.EnableExceptionCaching());
         b.loader(new AsyncCacheLoader<Integer, Integer>() {
           @Override
           public void load(Integer key, Context<Integer, Integer> ctx, Callback<Integer> callback) {

@@ -58,11 +58,13 @@ public class DefaultResiliencePolicy<K, V> implements ResiliencePolicy<K, V> {
   private long resilienceDuration;
   private long maxRetryInterval;
   private long retryInterval;
+  private boolean suppressExceptions;
 
   /**
    * Construct a resilience policy with multiplier 1.5 and randomization 0.5.
    */
   public DefaultResiliencePolicy(Cache2kConfiguration<K, V> cfg) {
+    suppressExceptions = cfg.isSuppressExceptions();
     resilienceDuration = toMillis(cfg.getResilienceDuration());
     maxRetryInterval = toMillis(cfg.getMaxRetryInterval());
     retryInterval = toMillis(cfg.getRetryInterval());
@@ -94,6 +96,14 @@ public class DefaultResiliencePolicy<K, V> implements ResiliencePolicy<K, V> {
     }
     if (maxRetryInterval > resilienceDuration && resilienceDuration != 0) {
       resilienceDuration = maxRetryInterval;
+    }
+    if (resilienceDuration != UNSET_LONG && !suppressExceptions) {
+      throw new IllegalArgumentException(
+        "exception suppression disabled " +
+        "but resilience duration set");
+    }
+    if (!suppressExceptions) {
+      resilienceDuration = 0;
     }
   }
 
@@ -146,8 +156,7 @@ public class DefaultResiliencePolicy<K, V> implements ResiliencePolicy<K, V> {
   }
 
   @Override
-  public long retryLoadAfter(K key,
-                             LoadExceptionInfo loadExceptionInfo) {
+  public long retryLoadAfter(K key, LoadExceptionInfo loadExceptionInfo) {
     if (retryInterval == 0) {
       return 0;
     }

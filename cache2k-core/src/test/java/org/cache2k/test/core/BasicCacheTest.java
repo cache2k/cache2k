@@ -32,6 +32,7 @@ import org.cache2k.io.LoadExceptionInfo;
 import org.cache2k.io.ResiliencePolicy;
 import org.cache2k.processor.EntryProcessor;
 import org.cache2k.processor.MutableCacheEntry;
+import org.cache2k.test.core.expiry.ExpiryTest;
 import org.cache2k.test.util.TestingBase;
 import org.cache2k.testing.category.FastTests;
 import org.junit.Test;
@@ -459,9 +460,19 @@ public class BasicCacheTest extends TestingBase {
   public void testTimestampIsSetForException() {
     OccasionalExceptionSource src = new OccasionalExceptionSource();
     Cache<Integer, Integer> c = builder(Integer.class, Integer.class)
-      .expireAfterWrite(0, TimeUnit.MINUTES)
-      .retryInterval(8, TimeUnit.MINUTES)
-      .resilienceDuration(33, TimeUnit.HOURS)
+      .expiryPolicy((key, value, loadTime, oldEntry) -> 0)
+      .resiliencePolicy(new ResiliencePolicy<Integer, Integer>() {
+        @Override
+        public long suppressExceptionUntil(Integer key, LoadExceptionInfo loadExceptionInfo,
+                                           CacheEntry<Integer, Integer> cachedContent) {
+          return Long.MAX_VALUE;
+        }
+
+        @Override
+        public long retryLoadAfter(Integer key, LoadExceptionInfo loadExceptionInfo) {
+          return Long.MAX_VALUE;
+        }
+      })
       .recordRefreshedTime(true)
       .keepDataAfterExpired(true)
       .loader(src)
@@ -527,7 +538,18 @@ public class BasicCacheTest extends TestingBase {
   public void testExceptionExpirySuppressTwice() {
     OccasionalExceptionSource src = new PatternExceptionSource(false, true, true);
     Cache<Integer, Integer> c = builder(Integer.class, Integer.class)
-      .expireAfterWrite(0, TimeUnit.MINUTES)
+      .expiryPolicy((key, value, loadTime, oldEntry) -> 0)
+      .resiliencePolicy(new ResiliencePolicy<Integer, Integer>() {
+        @Override
+        public long suppressExceptionUntil(Integer key, LoadExceptionInfo loadExceptionInfo, CacheEntry<Integer, Integer> cachedContent) {
+          return Long.MAX_VALUE;
+        }
+
+        @Override
+        public long retryLoadAfter(Integer key, LoadExceptionInfo loadExceptionInfo) {
+          return Long.MAX_VALUE;
+        }
+      })
       .retryInterval(8, TimeUnit.MINUTES)
       .resilienceDuration(33, TimeUnit.HOURS)
       .keepDataAfterExpired(true)

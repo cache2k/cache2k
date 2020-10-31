@@ -84,7 +84,7 @@ public class SlowExpiryTest extends TestingBase {
     final long timespan =  TestingParameters.MINIMAL_TICK_MILLIS;
     Cache2kBuilder<Integer, Integer> cb = builder(cacheName, Integer.class, Integer.class)
       .refreshAhead(true)
-      .retryInterval(timespan, TimeUnit.MILLISECONDS);
+      .resiliencePolicy(new ExpiryTest.EnableExceptionCaching(timespan));
     if (asyncLoader) {
       cb.loader(new AsyncCacheLoader<Integer, Integer>() {
         @Override
@@ -146,13 +146,9 @@ public class SlowExpiryTest extends TestingBase {
     final long timespan =  TestingParameters.MINIMAL_TICK_MILLIS;
     final Cache<Integer, Integer> c = builder(cacheName, Integer.class, Integer.class)
       .refreshAhead(true)
-      .retryInterval(timespan, TimeUnit.MILLISECONDS)
-      .loader(new CacheLoader<Integer, Integer>() {
-        @Override
-        public Integer load(Integer key) {
-          throw new RuntimeException("always");
-        }
-
+      .resiliencePolicy(new ExpiryTest.EnableExceptionCaching(timespan))
+      .loader(key -> {
+        throw new RuntimeException("always");
       })
       .build();
     cache = c;
@@ -201,42 +197,38 @@ public class SlowExpiryTest extends TestingBase {
     assertEquals(0, getInfo().getSize());
   }
 
-
   @Test
   public void testExceptionExpirySuppressTwiceWaitForExceptionExpiry() {
     final long exceptionExpiryMillis =  TestingParameters.MINIMAL_TICK_MILLIS;
     final BasicCacheTest.OccasionalExceptionSource src =
       new BasicCacheTest.PatternExceptionSource(false, true, false);
     final Cache<Integer, Integer> c = builder(Integer.class, Integer.class)
-        .expireAfterWrite(0, TimeUnit.MINUTES)
-        .retryInterval(exceptionExpiryMillis, TimeUnit.MILLISECONDS)
-        .resilienceDuration(33, TimeUnit.MINUTES)
+        .expiryPolicy((key, value1, loadTime, oldEntry) -> 0)
+        .resiliencePolicy(new ResiliencePolicy<Integer, Integer>() {
+          @Override
+          public long suppressExceptionUntil(Integer key, LoadExceptionInfo loadExceptionInfo,
+                                             CacheEntry<Integer, Integer> cachedContent) {
+            return loadExceptionInfo.getLoadTime() + exceptionExpiryMillis;
+          }
+
+          @Override
+          public long retryLoadAfter(Integer key, LoadExceptionInfo loadExceptionInfo) {
+            return 0;
+          }
+        })
         .keepDataAfterExpired(true)
         .loader(src)
         .build();
-    int exceptionCount = 0;
-    try {
-      c.get(1);
-    } catch (CacheLoaderException e) {
-      exceptionCount++;
-    }
-    assertEquals("no exception", 0, exceptionCount);
-    c.get(2); // value is fetched
+    c.get(2);
     within(exceptionExpiryMillis)
-      .perform(new Runnable() {
-        @Override
-        public void run() {
-          c.get(2); // exception gets suppressed
-        }
+      .perform(() -> {
+        c.get(2); // exception gets suppressed
       })
-      .expectMaybe(new Runnable() {
-        @Override
-        public void run() {
-          InternalCacheInfo inf = getInfo();
-          assertEquals(1, inf.getSuppressedExceptionCount());
-          assertEquals(1, inf.getLoadExceptionCount());
-          assertNotNull(src.key2count.get(2));
-        }
+      .expectMaybe(() -> {
+        InternalCacheInfo inf = getInfo();
+        assertEquals(1, inf.getSuppressedExceptionCount());
+        assertEquals(1, inf.getLoadExceptionCount());
+        assertNotNull(src.key2count.get(2));
       });
     await(TestingParameters.MAX_FINISH_WAIT_MILLIS, new Condition() {
       @Override
@@ -251,9 +243,9 @@ public class SlowExpiryTest extends TestingBase {
   public void testExceptionExpiryNoSuppress() {
     BasicCacheTest.OccasionalExceptionSource src = new BasicCacheTest.OccasionalExceptionSource();
     final Cache<Integer, Integer> c = builder(Integer.class, Integer.class)
-        .expireAfterWrite(0, TimeUnit.MINUTES)
-        .retryInterval(TestingParameters.MINIMAL_TICK_MILLIS, TimeUnit.MILLISECONDS)
-        .suppressExceptions(false)
+        .expiryPolicy((key, value1, loadTime, oldEntry) -> 0)
+        .resiliencePolicy(
+          new ExpiryTest.EnableExceptionCaching(TestingParameters.MINIMAL_TICK_MILLIS))
         .loader(src)
         .build();
     int exceptionCount = 0;
@@ -301,9 +293,19 @@ public class SlowExpiryTest extends TestingBase {
   public void testSuppressExceptionImmediateExpiry() {
     BasicCacheTest.OccasionalExceptionSource src = new BasicCacheTest.OccasionalExceptionSource();
     Cache<Integer, Integer> c = builder(Integer.class, Integer.class)
-      .expireAfterWrite(0, TimeUnit.MINUTES)
-      .retryInterval(TestingParameters.MINIMAL_TICK_MILLIS, TimeUnit.MILLISECONDS)
-      .resilienceDuration(Long.MAX_VALUE, TimeUnit.MILLISECONDS)
+      .expiryPolicy((key, value1, loadTime, oldEntry) -> 0)
+      .resiliencePolicy(new ResiliencePolicy<Integer, Integer>() {
+        @Override
+        public long suppressExceptionUntil(Integer key, LoadExceptionInfo loadExceptionInfo,
+                                           CacheEntry<Integer, Integer> cachedContent) {
+          return Long.MAX_VALUE;
+        }
+
+        @Override
+        public long retryLoadAfter(Integer key, LoadExceptionInfo loadExceptionInfo) {
+          return 0;
+        }
+      })
       .keepDataAfterExpired(true)
       .loader(src)
       .build();
@@ -317,8 +319,18 @@ public class SlowExpiryTest extends TestingBase {
     BasicCacheTest.OccasionalExceptionSource src = new BasicCacheTest.OccasionalExceptionSource();
     Cache<Integer, Integer> c = builder(Integer.class, Integer.class)
       .expireAfterWrite(TestingParameters.MINIMAL_TICK_MILLIS, TimeUnit.MILLISECONDS)
-      .retryInterval(TestingParameters.MINIMAL_TICK_MILLIS, TimeUnit.MILLISECONDS)
-      .resilienceDuration(Long.MAX_VALUE, TimeUnit.MILLISECONDS)
+      .resiliencePolicy(new ResiliencePolicy<Integer, Integer>() {
+        @Override
+        public long suppressExceptionUntil(Integer key, LoadExceptionInfo loadExceptionInfo,
+                                           CacheEntry<Integer, Integer> cachedContent) {
+          return loadExceptionInfo.getLoadTime() + TestingParameters.MINIMAL_TICK_MILLIS;
+        }
+
+        @Override
+        public long retryLoadAfter(Integer key, LoadExceptionInfo loadExceptionInfo) {
+          return loadExceptionInfo.getLoadTime() + TestingParameters.MINIMAL_TICK_MILLIS;
+        }
+      })
       .keepDataAfterExpired(true)
       .loader(src)
       .build();
@@ -401,8 +413,18 @@ public class SlowExpiryTest extends TestingBase {
     BasicCacheTest.OccasionalExceptionSource src = new BasicCacheTest.OccasionalExceptionSource();
     final Cache<Integer, Integer> c = builder(Integer.class, Integer.class)
       .expireAfterWrite(TestingParameters.MAX_FINISH_WAIT_MILLIS, TimeUnit.MINUTES)
-      .retryInterval(TestingParameters.MINIMAL_TICK_MILLIS, TimeUnit.MILLISECONDS)
-      .suppressExceptions(true)
+      .resiliencePolicy(new ResiliencePolicy<Integer, Integer>() {
+        @Override
+        public long suppressExceptionUntil(Integer key, LoadExceptionInfo loadExceptionInfo,
+                                           CacheEntry<Integer, Integer> cachedContent) {
+          return Long.MAX_VALUE;
+        }
+
+        @Override
+        public long retryLoadAfter(Integer key, LoadExceptionInfo loadExceptionInfo) {
+          return loadExceptionInfo.getLoadTime() + TestingParameters.MINIMAL_TICK_MILLIS;
+        }
+      })
       .loader(src)
       .build();
     c.get(2);
@@ -1255,6 +1277,27 @@ public class SlowExpiryTest extends TestingBase {
       })
       .build();
     c.put(1, 2);
+  }
+
+  @Test
+  public void expiryPolicy_dontCache_load_exception() {
+    Cache<Integer, Integer> c = builder(Integer.class, Integer.class)
+      .sharpExpiry(true)
+      .expiryPolicy((key, value, loadTime, oldEntry) -> loadTime + 100)
+      .loader(key -> { throw new RuntimeException(); })
+      .build();
+    try {
+      c.get(123);
+      fail();
+    } catch (CacheLoaderException ex1) {
+      try {
+        c.get(123);
+        fail();
+      } catch (CacheLoaderException ex2) {
+        assertNotSame(ex1.getCause(), ex2.getCause());
+        assertTrue(ex1.getCause() instanceof RuntimeException);
+      }
+    }
   }
 
 }

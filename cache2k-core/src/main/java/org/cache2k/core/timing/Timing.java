@@ -72,8 +72,12 @@ public abstract class Timing<K, V>  {
 
   public static <K, V> Timing<K, V> of(InternalCacheBuildContext<K, V> buildContext) {
     Cache2kConfiguration<K, V> cfg = buildContext.getConfiguration();
+    if (Duration.ZERO.equals(cfg.getExpireAfterWrite())) {
+      return TimeAgnosticTiming.IMMEDIATE;
+    }
     if (Duration.ZERO.equals(cfg.getExpireAfterWrite())
-      && zeroOrUnspecified(cfg.getRetryInterval())) {
+      && zeroOrUnspecified(cfg.getRetryInterval())
+      && cfg.getResiliencePolicy() == null) {
       return TimeAgnosticTiming.IMMEDIATE;
     }
     if (cfg.getExpiryPolicy() != null

@@ -22,9 +22,9 @@ package org.cache2k.core.timing;
 
 import org.cache2k.CacheEntry;
 import org.cache2k.configuration.Cache2kConfiguration;
+import org.cache2k.core.ZeroResiliencePolicy;
 import org.cache2k.core.api.InternalCacheBuildContext;
 import org.cache2k.core.api.InternalCacheCloseContext;
-import org.cache2k.core.DefaultResiliencePolicy;
 import org.cache2k.core.Entry;
 import org.cache2k.core.ExceptionWrapper;
 import org.cache2k.core.HeapCache;
@@ -77,8 +77,7 @@ public class StaticTiming<K, V> extends Timing<K, V> {
   ResiliencePolicy<K, V> provideResiliencePolicy(InternalCacheBuildContext<K, V> buildContext) {
     ResiliencePolicy<K, V> policy =
       buildContext.createCustomization(buildContext.getConfiguration().getResiliencePolicy(),
-        DefaultResiliencePolicy.SUPPLIER
-      );
+        (ResiliencePolicy<K, V>) ZeroResiliencePolicy.INSTANCE);
     return policy;
   }
 

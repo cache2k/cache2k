@@ -21,6 +21,7 @@ package org.cache2k.test.core.expiry;
  */
 
 import org.assertj.core.api.Assertions;
+import org.cache2k.io.AdvancedCacheLoader;
 import org.cache2k.io.AsyncCacheLoader;
 import org.cache2k.test.core.BasicCacheTest;
 import org.cache2k.test.util.TestingBase;
@@ -43,6 +44,7 @@ import org.cache2k.expiry.ExpiryPolicy;
 import org.cache2k.core.api.InternalCache;
 import org.cache2k.testing.category.FastTests;
 import org.hamcrest.Matchers;
+import org.junit.Ignore;
 import org.junit.experimental.categories.Category;
 import org.junit.Test;
 
@@ -283,6 +285,7 @@ public class ExpiryTest extends TestingBase {
     };
     Cache<Integer, Integer> c = cache = builder(Integer.class, Integer.class)
       .loader(g)
+      .resiliencePolicy(new EnableExceptionCaching(Long.MAX_VALUE))
       .expiryPolicy(new ExpiryPolicy<Integer, Integer>() {
         @Override
         public long calculateExpiryTime(Integer key, Integer value, long loadTime,
@@ -305,6 +308,114 @@ public class ExpiryTest extends TestingBase {
     } catch (CacheLoaderException expected) {
     }
     reload(1);
+    assertTrue(success.get());
+  }
+
+  @Test
+  public void loadExceptionEntryGetValueInAdvancedLoader() {
+    final AtomicBoolean success = new AtomicBoolean();
+    AtomicInteger loadCount = new AtomicInteger();
+    Cache<Integer, Integer> c = cache = builder(Integer.class, Integer.class)
+      .loader(new AdvancedCacheLoader<Integer, Integer>() {
+        @Override
+        public Integer load(Integer key, long startTime,
+                            CacheEntry<Integer, Integer> currentEntry) {
+          if (currentEntry == null) {
+            if (loadCount.incrementAndGet() == 1) {
+              throw new RuntimeException("ouch");
+            }
+            return key;
+          }
+          if (currentEntry != null) {
+            try {
+              currentEntry.getValue();
+              fail("expect exception");
+            } catch (CacheLoaderException expected) {
+              success.set(true);
+            }
+          }
+          return 0;
+        }
+      })
+      .resiliencePolicy(new EnableExceptionCaching(Long.MAX_VALUE))
+      .build();
+    try {
+      c.get(1);
+      fail("exception expected");
+    } catch (CacheLoaderException expected) {
+    }
+    reload(1);
+    assertTrue(success.get());
+  }
+
+  @Test
+  public void loadExceptionKeepDataEntryGetValueInAdvancedLoader() {
+    final AtomicBoolean success = new AtomicBoolean();
+    AtomicInteger loadCount = new AtomicInteger();
+    Cache<Integer, Integer> c = cache = builder(Integer.class, Integer.class)
+      .loader(new AdvancedCacheLoader<Integer, Integer>() {
+        @Override
+        public Integer load(Integer key, long startTime,
+                            CacheEntry<Integer, Integer> currentEntry) {
+          if (currentEntry == null) {
+            if (loadCount.incrementAndGet() == 1) {
+              throw new RuntimeException("ouch");
+            }
+            return key;
+          }
+          if (currentEntry != null) {
+            try {
+              currentEntry.getValue();
+              fail("expect exception");
+            } catch (CacheLoaderException expected) {
+              success.set(true);
+            }
+          }
+          return 0;
+        }
+      })
+      .keepDataAfterExpired(true)
+      .build();
+    try {
+      c.get(1);
+      fail("exception expected");
+    } catch (CacheLoaderException expected) {
+    }
+    reload(1);
+    assertTrue(success.get());
+  }
+
+  @Test @Ignore
+  public void loadExceptionKeepDataEntryGetValueThrowsInAdvancedLoader()
+    throws ExecutionException, InterruptedException {
+    final AtomicBoolean success = new AtomicBoolean();
+    AtomicInteger loadCount = new AtomicInteger();
+    Cache<Integer, Integer> c = cache = builder(Integer.class, Integer.class)
+      .loader(new AdvancedCacheLoader<Integer, Integer>() {
+        @Override
+        public Integer load(Integer key, long startTime,
+                            CacheEntry<Integer, Integer> currentEntry) {
+          if (currentEntry == null) {
+            if (loadCount.incrementAndGet() == 1) {
+              throw new RuntimeException("ouch");
+            }
+            return key;
+          }
+          if (currentEntry != null) {
+            currentEntry.getValue();
+          }
+          return 0;
+        }
+      })
+      .keepDataAfterExpired(true)
+      .build();
+    try {
+      c.get(1);
+      fail("exception expected");
+    } catch (CacheLoaderException expected) {
+      System.err.println(expected);
+    }
+    c.reloadAll(asList(1)).get();
     assertTrue(success.get());
   }
 
@@ -364,7 +475,7 @@ public class ExpiryTest extends TestingBase {
     final Cache<Integer, Integer> c = cache = builder(Integer.class, Integer.class)
       .loader(g)
       .eternal(true)
-      .retryInterval(TestingParameters.MINIMAL_TICK_MILLIS, TimeUnit.MILLISECONDS)
+      .resiliencePolicy(new EnableExceptionCaching(TestingParameters.MINIMAL_TICK_MILLIS))
       .build();
     try {
       c.get(99);
@@ -387,6 +498,31 @@ public class ExpiryTest extends TestingBase {
     });
   }
 
+  public static class EnableExceptionCaching implements ResiliencePolicy<Integer, Integer> {
+
+    private long retryMillis;
+
+    public EnableExceptionCaching(long retryMillis) {
+      this.retryMillis = retryMillis;
+    }
+
+    public EnableExceptionCaching() { this(Long.MAX_VALUE); }
+
+    @Override
+    public long suppressExceptionUntil(Integer key, LoadExceptionInfo loadExceptionInfo,
+                                       CacheEntry<Integer, Integer> cachedContent) {
+      return 0;
+    }
+
+    @Override
+    public long retryLoadAfter(Integer key, LoadExceptionInfo loadExceptionInfo) {
+      if (retryMillis == Long.MAX_VALUE) {
+        return retryMillis;
+      }
+      return loadExceptionInfo.getLoadTime() + retryMillis;
+    }
+  }
+
   /**
    * Don't suppress exceptions eternally if resilience policy is enabled by specifying
    * a retry interval.
@@ -406,7 +542,7 @@ public class ExpiryTest extends TestingBase {
     final Cache<Integer, Integer> c = cache = builder(Integer.class, Integer.class)
       .loader(g)
       .eternal(true)
-      .retryInterval(TestingParameters.MINIMAL_TICK_MILLIS, TimeUnit.MILLISECONDS)
+      .resiliencePolicy(new EnableExceptionCaching(TestingParameters.MINIMAL_TICK_MILLIS))
       .build();
     c.put(99, 1);
     int v = c.peek(99);
@@ -453,7 +589,17 @@ public class ExpiryTest extends TestingBase {
     Cache<Integer, Integer> c = cache = builder(Integer.class, Integer.class)
       .loader(g)
       .expireAfterWrite(Long.MAX_VALUE / 10000, TimeUnit.MILLISECONDS)
-      .retryInterval(Long.MAX_VALUE, TimeUnit.MILLISECONDS)
+      .resiliencePolicy(new ResiliencePolicy<Integer, Integer>() {
+        @Override
+        public long suppressExceptionUntil(Integer key, LoadExceptionInfo loadExceptionInfo, CacheEntry<Integer, Integer> cachedContent) {
+          return 0;
+        }
+
+        @Override
+        public long retryLoadAfter(Integer key, LoadExceptionInfo loadExceptionInfo) {
+          return Long.MAX_VALUE;
+        }
+      })
       .build();
     assertEquals("no miss", 0, g.getLoaderCalledCount());
     c.get(1802);
@@ -1209,7 +1355,7 @@ public class ExpiryTest extends TestingBase {
   }
 
   @Test
-  public void  manualExpire_refresh_pastTime() throws Exception {
+  public void manualExpire_refresh_pastTime() throws Exception {
     new ManualExpireFixture() {
       @Override
       void test() throws Exception {

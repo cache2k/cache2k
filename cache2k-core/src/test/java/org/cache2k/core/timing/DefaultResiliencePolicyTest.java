@@ -22,6 +22,7 @@ package org.cache2k.core.timing;
 
 import org.cache2k.Cache;
 import org.cache2k.Cache2kBuilder;
+import org.cache2k.CustomizationException;
 import org.cache2k.core.DefaultResiliencePolicy;
 import org.cache2k.core.HeapCache;
 import org.cache2k.io.ResiliencePolicy;
@@ -87,6 +88,7 @@ public class DefaultResiliencePolicyTest {
   @Test
   public void eternal_duration30s() {
     Cache<Integer, Integer> c = new Cache2kBuilder<Integer, Integer>() { }
+      .apply(this::supplyDefaultResilience)
       .eternal(true)
       .resilienceDuration(30, TimeUnit.SECONDS)
       /* ... set loader ... */
@@ -101,6 +103,7 @@ public class DefaultResiliencePolicyTest {
   @Test
   public void eternal_duration30s_retry10s() {
     Cache<Integer, Integer> c = new Cache2kBuilder<Integer, Integer>() { }
+      .apply(this::supplyDefaultResilience)
       .eternal(true)
       .resilienceDuration(30, TimeUnit.SECONDS)
       .retryInterval(10, TimeUnit.SECONDS)
@@ -121,6 +124,7 @@ public class DefaultResiliencePolicyTest {
   @Test
   public void eternal_retry10s() {
     Cache<Integer, Integer> c = new Cache2kBuilder<Integer, Integer>() { }
+      .apply(this::supplyDefaultResilience)
       .eternal(true)
       .retryInterval(10, TimeUnit.SECONDS)
       /* ... set loader ... */
@@ -130,20 +134,6 @@ public class DefaultResiliencePolicyTest {
     assertEquals(0, p.getResilienceDuration());
     assertEquals(TimeUnit.SECONDS.toMillis(10), p.getMaxRetryInterval());
     assertEquals(TimeUnit.SECONDS.toMillis(10), p.getRetryInterval());
-  }
-
-  /**
-   * This is values=eternal, exceptions=immediate.
-   */
-  @Test
-  public void eternal_retry0s() {
-    Cache<Integer, Integer> c = new Cache2kBuilder<Integer, Integer>() { }
-      .eternal(true)
-      .retryInterval(0, TimeUnit.SECONDS)
-      /* ... set loader ... */
-      .build();
-    target.setCache(c);
-    assertTrue(extractHandler() instanceof TimeAgnosticTiming.EternalImmediate);
   }
 
   @Test
@@ -159,21 +149,20 @@ public class DefaultResiliencePolicyTest {
   @Test
   public void expiry0_retry20s() {
     Cache<Integer, Integer> c = new Cache2kBuilder<Integer, Integer>() { }
+      .apply(this::supplyDefaultResilience)
       .expireAfterWrite(0, TimeUnit.MINUTES)
       .retryInterval(20, TimeUnit.SECONDS)
       .suppressExceptions(true) /* has no effect! */
       /* ... set loader ... */
       .build();
     target.setCache(c);
-    DefaultResiliencePolicy p = extractDefaultPolicy();
-    assertEquals("no exception suppression", 0, p.getResilienceDuration());
-    assertEquals(TimeUnit.SECONDS.toMillis(20), p.getMaxRetryInterval());
-    assertEquals(TimeUnit.SECONDS.toMillis(20), p.getRetryInterval());
+    assertTrue(extractHandler() instanceof TimeAgnosticTiming.Immediate);
   }
 
   @Test
   public void expiry0_retry20s_resilience20m() {
     Cache<Integer, Integer> c = new Cache2kBuilder<Integer, Integer>() { }
+      .apply(this::supplyDefaultResilience)
       .expireAfterWrite(0, TimeUnit.MINUTES)
       .retryInterval(20, TimeUnit.SECONDS)
       .resilienceDuration(5, TimeUnit.MINUTES)
@@ -181,10 +170,13 @@ public class DefaultResiliencePolicyTest {
       /* ... set loader ... */
       .build();
     target.setCache(c);
+    assertTrue(extractHandler() instanceof TimeAgnosticTiming.Immediate);
+    /*
     DefaultResiliencePolicy p = extractDefaultPolicy();
     assertEquals(TimeUnit.MINUTES.toMillis(5), p.getResilienceDuration());
     assertEquals(TimeUnit.MINUTES.toMillis(5), p.getMaxRetryInterval());
     assertEquals(TimeUnit.SECONDS.toMillis(20), p.getRetryInterval());
+     */
   }
 
   /**
@@ -196,6 +188,7 @@ public class DefaultResiliencePolicyTest {
   @Test
   public void expiry10m() {
     Cache<Integer, Integer> c = new Cache2kBuilder<Integer, Integer>() { }
+      .apply(this::supplyDefaultResilience)
       .expireAfterWrite(10, TimeUnit.MINUTES)
       /* ... set loader ... */
       .build();
@@ -209,6 +202,7 @@ public class DefaultResiliencePolicyTest {
   @Test
   public void expiry10m_duration30s() {
     Cache<Integer, Integer> c = new Cache2kBuilder<Integer, Integer>() { }
+      .apply(this::supplyDefaultResilience)
       .expireAfterWrite(10, TimeUnit.MINUTES)
       .resilienceDuration(30, TimeUnit.SECONDS)
       /* ... set loader ... */
@@ -220,9 +214,14 @@ public class DefaultResiliencePolicyTest {
     assertEquals(TimeUnit.SECONDS.toMillis(3), p.getRetryInterval());
   }
 
+  private <K, V> void supplyDefaultResilience(Cache2kBuilder<K, V> b) {
+    b.toConfiguration().setResiliencePolicy(DefaultResiliencePolicy.SUPPLIER);
+  }
+
   @Test
   public void expiry10m_retry10s() {
     Cache<Integer, Integer> c = new Cache2kBuilder<Integer, Integer>() { }
+      .apply(this::supplyDefaultResilience)
       .expireAfterWrite(10, TimeUnit.MINUTES)
       .retryInterval(10, TimeUnit.SECONDS)
       /* ... set loader ... */
@@ -234,9 +233,10 @@ public class DefaultResiliencePolicyTest {
     assertEquals(TimeUnit.SECONDS.toMillis(10), p.getRetryInterval());
   }
 
-  @Test(expected = IllegalArgumentException.class)
+  @Test(expected = CustomizationException.class)
   public void noSuppress_duration10m() {
     Cache<Integer, Integer> c = new Cache2kBuilder<Integer, Integer>() { }
+      .apply(this::supplyDefaultResilience)
       .eternal(true)
       .resilienceDuration(10, TimeUnit.MINUTES)
       .suppressExceptions(false)
