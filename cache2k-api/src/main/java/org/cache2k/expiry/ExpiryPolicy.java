@@ -39,7 +39,6 @@ import java.util.concurrent.TimeUnit;
  * be automatically refreshed.
  *
  * @author Jens Wilke
- * @since 0.20
  * @see <a href="https://cache2k.org/docs/latest/user-guide.html#expiry-and-refresh">
  *   cache2k user guide - Expiry and Refresh</a>
  * @see Cache2kBuilder#expiryPolicy(ExpiryPolicy)

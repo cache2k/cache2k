@@ -53,7 +53,7 @@ public interface ResiliencePolicy<K, V> extends ExpiryTimeValues, Customization 
    *
    * @param cachedContent The entry representing the currently cached content.
    *                      It is possible that this data is already expired.
-   * @return Time in millis in the future when the content should expire again. A 0 or
+   * @return Time in millis in the future when the content should expire again. A zero or
    *         a time before the current time means the exception will not be suppressed. A
    *         {@link ExpiryPolicy#ETERNAL} means the exception will be
    *         suppressed and the recent content will be returned eternally.

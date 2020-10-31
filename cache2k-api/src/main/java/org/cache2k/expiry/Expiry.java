@@ -77,14 +77,14 @@ public class Expiry implements ExpiryTimeValues {
    * Combine a refresh time span and an expiry at a specified point in time.
    *
    * <p>If the expiry time is far ahead of time the refresh time span takes
-   * precedence. If the point in time is close by this time takes precedence.
+   * precedence. If the point in time is near, this time takes precedence.
    * If the refresh time is too close to the requested point an earlier refresh
-   * time is used to keep maximum distance to the requested point time, which is
+   * time is used to keep maximum distance to the requested point in time, which is
    * {@code abs(pointInTime) - refreshAfter}
    *
    * <p>Rationale: Usually the expiry is allowed to lag behind. This is okay
    * when a normal expiry interval is used. If sharp expiry is requested an
-   * old value may not be visible at or after the expiry time. Refresh ahead
+   * old value may not be visible at and after the expiry time. Refresh ahead
    * implies lagging expiry, since the refresh is triggered when the value would
    * usually expire. The two concepts can be combined in the expiry policy, e.g.
    * using an interval for triggering refresh ahead and requesting a sharp expiry

@@ -601,7 +601,9 @@ public interface Cache<K, V> extends KeyValueStore<K, V>, Closeable {
    * @param millis Time in milliseconds since epoch when the entry should expire.
    *               Also see {@link ExpiryTimeValues}
    * @throws IllegalArgumentException if no expiry was enabled during cache setup.
+   * @deprecated To be removed in 2.2. Use {@link #invoke(Object, EntryProcessor)}
    */
+  @Deprecated
   void expireAt(K key, long millis);
 
   /**

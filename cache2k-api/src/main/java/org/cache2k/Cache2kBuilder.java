@@ -47,6 +47,7 @@ import java.time.Duration;
 import java.util.concurrent.Executor;
 import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Consumer;
 
 /**
  * Builder to create a {@link Cache} instance. The usage is:
@@ -957,6 +958,15 @@ public class Cache2kBuilder<K, V> {
    */
   public final Cache2kBuilder<K, V> maximumWeight(long v) {
     config().setMaximumWeight(v);
+    return this;
+  }
+
+  /**
+   * Call the consumer with this builder. This can be used to apply configuration
+   * fragments within the fluent configuration scheme.
+   */
+  public final Cache2kBuilder<K, V> apply(Consumer<Cache2kBuilder<K, V>> consumer) {
+    consumer.accept(this);
     return this;
   }
 
