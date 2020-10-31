@@ -200,7 +200,7 @@ public class ExpiryTest extends TestingBase {
     Cache<Integer, Integer> c = cache = builder(Integer.class, Integer.class)
       .loader(g)
       .eternal(true)
-      .retryInterval(Long.MAX_VALUE, TimeUnit.MILLISECONDS)
+      .resiliencePolicy(new EnableExceptionCaching())
       .build();
     assertEquals("no miss", 0, g.getLoaderCalledCount());
     c.get(1802);

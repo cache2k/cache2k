@@ -1,8 +1,8 @@
-package org.cache2k.core.timing;
+package org.cache2k.addon;
 
 /*
  * #%L
- * cache2k core implementation
+ * cache2k addon
  * %%
  * Copyright (C) 2000 - 2020 headissue GmbH, Munich
  * %%
@@ -21,27 +21,27 @@ package org.cache2k.core.timing;
  */
 
 import org.cache2k.Cache2kBuilder;
-import org.cache2k.core.DefaultResiliencePolicy;
-import org.cache2k.io.LoadExceptionInfo;
 import org.cache2k.io.ExceptionPropagator;
+import org.cache2k.io.LoadExceptionInfo;
 import org.cache2k.testing.category.FastTests;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
 import java.util.concurrent.TimeUnit;
 
-import static org.junit.Assert.*;
-import static org.hamcrest.Matchers.*;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 /**
  * Unit test with out cache for default resilience policy.
  *
  * @author Jens Wilke
- * @see DefaultResiliencePolicy
+ * @see UniversalResiliencePolicy
  */
 @SuppressWarnings({"rawtypes", "unchecked"})
 @Category(FastTests.class)
-public class DefaultResiliencePolicyUnitTest {
+public class UniversalResiliencePolicyUnitTest {
 
   @Test
   public void testBackoffPower() {
@@ -53,7 +53,7 @@ public class DefaultResiliencePolicyUnitTest {
 
   @Test
   public void testStandardProperties() {
-    DefaultResiliencePolicy p = policy(builder());
+    UniversalResiliencePolicy p = policy(builder());
     assertEquals(0.5, p.getRandomization(), 0.1);
     assertEquals(1.5, p.getMultiplier(), 0.1);
   }
@@ -63,12 +63,12 @@ public class DefaultResiliencePolicyUnitTest {
    */
   @Test
   public void testDefaultSuppressDuration() {
-    DefaultResiliencePolicy p = getDefaultResiliencePolicy10000();
+    UniversalResiliencePolicy p = getDefaultResiliencePolicy10000();
     assertEquals(100000, p.getResilienceDuration());
   }
 
-  private DefaultResiliencePolicy getDefaultResiliencePolicy10000() {
-    DefaultResiliencePolicy p = policy(builder().expireAfterWrite(100000, TimeUnit.MILLISECONDS));
+  private UniversalResiliencePolicy getDefaultResiliencePolicy10000() {
+    UniversalResiliencePolicy p = policy(builder().expireAfterWrite(100000, TimeUnit.MILLISECONDS));
     return p;
   }
 
@@ -77,7 +77,7 @@ public class DefaultResiliencePolicyUnitTest {
    */
   @Test
   public void testDefaultMaxRetryInterval() {
-    DefaultResiliencePolicy p = getDefaultResiliencePolicy10000();
+    UniversalResiliencePolicy p = getDefaultResiliencePolicy10000();
     assertEquals(100000, p.getMaxRetryInterval());
   }
 
@@ -86,7 +86,7 @@ public class DefaultResiliencePolicyUnitTest {
    */
   @Test
   public void testDefaultRetryInterval() {
-    DefaultResiliencePolicy p = getDefaultResiliencePolicy10000();
+    UniversalResiliencePolicy p = getDefaultResiliencePolicy10000();
     assertEquals(10000, p.getRetryInterval());
   }
 
@@ -95,21 +95,23 @@ public class DefaultResiliencePolicyUnitTest {
    */
   @Test
   public void testWithExpiryAndResilienceDuration() {
-    DefaultResiliencePolicy p = policy(builder()
+    UniversalResiliencePolicy p = policy(builder()
       .expireAfterWrite(240000, TimeUnit.MILLISECONDS)
-      .resilienceDuration(30000, TimeUnit.MILLISECONDS)
+      .with(UniversalResilienceConfiguration.class, b -> b
+        .resilienceDuration(30000, TimeUnit.MILLISECONDS)
+      )
     );
     assertEquals(30000, p.getResilienceDuration());
     assertEquals(3000, p.getRetryInterval());
     assertEquals(30000, p.getMaxRetryInterval());
   }
 
-  private static Cache2kBuilder builder() {
+  private static Cache2kBuilder<?, ?> builder() {
     return Cache2kBuilder.forUnknownTypes();
   }
 
-  private static DefaultResiliencePolicy policy(final Cache2kBuilder builder) {
-    DefaultResiliencePolicy policy = new DefaultResiliencePolicy(builder.toConfiguration());
+  private static UniversalResiliencePolicy policy(final Cache2kBuilder builder) {
+    UniversalResiliencePolicy policy = new UniversalResiliencePolicy(builder.toConfiguration());
     return policy;
   }
 
@@ -118,9 +120,12 @@ public class DefaultResiliencePolicyUnitTest {
    */
   @Test
   public void testWithExpiryAndResilienceDuration10Min30Sec() {
-    DefaultResiliencePolicy p = policy(builder()
+    UniversalResiliencePolicy p = policy(builder()
       .expireAfterWrite(10, TimeUnit.MINUTES)
-      .resilienceDuration(30, TimeUnit.SECONDS)
+      .with(
+        UniversalResilienceConfiguration.class, b -> b
+          .resilienceDuration(30, TimeUnit.SECONDS)
+      )
     );
     assertEquals(30000, p.getResilienceDuration());
     assertEquals(3000, p.getRetryInterval());
@@ -132,9 +137,11 @@ public class DefaultResiliencePolicyUnitTest {
    */
   @Test
   public void testWithExpiryAndRetryInterval() {
-    DefaultResiliencePolicy p = policy(builder()
+    UniversalResiliencePolicy p = policy(builder()
       .expireAfterWrite(240000, TimeUnit.MILLISECONDS)
-      .retryInterval(10000, TimeUnit.MILLISECONDS)
+      .with(UniversalResilienceConfiguration.class, b -> b
+        .retryInterval(10000, TimeUnit.MILLISECONDS)
+      )
     );
     assertEquals(240000, p.getResilienceDuration());
     assertEquals(10000, p.getRetryInterval());
@@ -146,9 +153,11 @@ public class DefaultResiliencePolicyUnitTest {
    */
   @Test
   public void testWithExpiryAndMaxRetryInterval() {
-    DefaultResiliencePolicy p = policy(builder()
+    UniversalResiliencePolicy p = policy(builder()
       .expireAfterWrite(240000, TimeUnit.MILLISECONDS)
-      .maxRetryInterval(10000, TimeUnit.MILLISECONDS)
+      .with(UniversalResilienceConfiguration.class, b -> b
+        .maxRetryInterval(10000, TimeUnit.MILLISECONDS)
+      )
     );
     assertEquals(240000, p.getResilienceDuration());
     assertEquals(10000, p.getRetryInterval());
@@ -157,11 +166,13 @@ public class DefaultResiliencePolicyUnitTest {
 
   @Test
   public void testRandomization() {
-    DefaultResiliencePolicy p = policy(builder()
+    UniversalResiliencePolicy p = policy(builder()
       .expireAfterWrite(10000, TimeUnit.MILLISECONDS)
-      .retryInterval(100, TimeUnit.MILLISECONDS)
-      .maxRetryInterval(500, TimeUnit.MILLISECONDS)
-      .resilienceDuration(5000, TimeUnit.MILLISECONDS)
+      .with(UniversalResilienceConfiguration.class, b -> b
+        .retryInterval(100, TimeUnit.MILLISECONDS)
+        .maxRetryInterval(500, TimeUnit.MILLISECONDS)
+        .resilienceDuration(5000, TimeUnit.MILLISECONDS)
+      )
     );
     p.setRandomization(0.5);
     InfoBean b = new InfoBean();
@@ -180,18 +191,20 @@ public class DefaultResiliencePolicyUnitTest {
       max = Math.max(t, max);
     }
     assertTrue(oneDifferent);
-    assertThat((max - min), greaterThanOrEqualTo(50L / 2));
-    assertThat((max - min), lessThanOrEqualTo(50L));
-    assertThat(min, greaterThanOrEqualTo(50L));
+    assertThat(max - min).isGreaterThanOrEqualTo(50L / 2);
+    assertThat(max - min).isLessThanOrEqualTo(50L);
+    assertThat(min).isGreaterThanOrEqualTo(50L);
   }
 
   @Test
   public void testCustomMultiplier() {
-    DefaultResiliencePolicy p = policy(builder()
+    UniversalResiliencePolicy p = policy(builder()
       .expireAfterWrite(10000, TimeUnit.MILLISECONDS)
-      .retryInterval(100, TimeUnit.MILLISECONDS)
-      .maxRetryInterval(500, TimeUnit.MILLISECONDS)
-      .resilienceDuration(5000, TimeUnit.MILLISECONDS)
+      .with(UniversalResilienceConfiguration.class, b -> b
+        .retryInterval(100, TimeUnit.MILLISECONDS)
+        .maxRetryInterval(500, TimeUnit.MILLISECONDS)
+        .resilienceDuration(5000, TimeUnit.MILLISECONDS)
+      )
     );
     p.setRandomization(0.0);
     assertEquals(0, p.getRandomization(), 0.1);
@@ -208,11 +221,13 @@ public class DefaultResiliencePolicyUnitTest {
 
   @Test
   public void testSuppress() {
-    DefaultResiliencePolicy p = policy(builder()
+    UniversalResiliencePolicy p = policy(builder()
       .expireAfterWrite(10000, TimeUnit.MILLISECONDS)
-      .retryInterval(100, TimeUnit.MILLISECONDS)
-      .maxRetryInterval(500, TimeUnit.MILLISECONDS)
-      .resilienceDuration(5000, TimeUnit.MILLISECONDS)
+      .with(UniversalResilienceConfiguration.class, b -> b
+        .retryInterval(100, TimeUnit.MILLISECONDS)
+        .maxRetryInterval(500, TimeUnit.MILLISECONDS)
+        .resilienceDuration(5000, TimeUnit.MILLISECONDS)
+      )
     );
     p.setRandomization(0.0);
     assertEquals(1.5, p.getMultiplier(), 0.1);
@@ -245,11 +260,13 @@ public class DefaultResiliencePolicyUnitTest {
 
   @Test
   public void testCache() {
-    DefaultResiliencePolicy p = policy(builder()
+    UniversalResiliencePolicy p = policy(builder()
       .expireAfterWrite(10000, TimeUnit.MILLISECONDS)
-      .retryInterval(100, TimeUnit.MILLISECONDS)
-      .maxRetryInterval(500, TimeUnit.MILLISECONDS)
-      .resilienceDuration(5000, TimeUnit.MILLISECONDS)
+      .with(UniversalResilienceConfiguration.class, b -> b
+        .retryInterval(100, TimeUnit.MILLISECONDS)
+        .maxRetryInterval(500, TimeUnit.MILLISECONDS)
+        .resilienceDuration(5000, TimeUnit.MILLISECONDS)
+      )
     );
     p.setRandomization(0.0);
     assertEquals(1.5, p.getMultiplier(), 0.1);

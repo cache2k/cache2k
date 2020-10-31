@@ -26,7 +26,6 @@ import org.cache2k.core.api.CommonMetrics;
 import org.cache2k.core.api.InternalCache;
 import org.cache2k.core.api.InternalClock;
 import org.cache2k.core.timing.Timing;
-import org.cache2k.expiry.ExpiryPolicy;
 import org.cache2k.event.CacheEntryExpiredListener;
 import org.cache2k.expiry.ExpiryTimeValues;
 import org.cache2k.io.AdvancedCacheLoader;
@@ -42,9 +41,6 @@ import org.cache2k.core.experimentalApi.AsyncCacheWriter;
 import org.cache2k.core.operation.ExaminationEntry;
 import org.cache2k.core.operation.Progress;
 import org.cache2k.core.operation.Semantic;
-import org.cache2k.core.storageApi.StorageCallback;
-import org.cache2k.core.storageApi.StorageAdapter;
-import org.cache2k.core.storageApi.StorageEntry;
 import org.cache2k.integration.RefreshedTimeWrapper;
 
 import java.util.concurrent.Executor;
@@ -109,10 +105,6 @@ public abstract class EntryAction<K, V, R> extends Entry.PiggyBack implements
    * Also true if entry contains data in refresh probation.
    */
   boolean heapDataValid = false;
-  boolean storageDataValid = false;
-
-  boolean storageRead = false;
-  boolean storageMiss = false;
 
   boolean heapMiss = false;
 
@@ -1087,7 +1079,7 @@ public abstract class EntryAction<K, V, R> extends Entry.PiggyBack implements
     if (expiredImmediately) {
       sendExpiryEventsWhenExpiredDuringOperation(entryCopy);
     } else if (remove) {
-      if (storageDataValid || heapDataValid) {
+      if (heapDataValid) {
         if (entryRemovedListeners() != null) {
           for (CacheEntryRemovedListener<K, V> l : entryRemovedListeners()) {
             try {
@@ -1099,7 +1091,7 @@ public abstract class EntryAction<K, V, R> extends Entry.PiggyBack implements
         }
       }
     } else {
-      if (storageDataValid || heapDataValid) {
+      if (heapDataValid) {
         if (entryUpdatedListeners() != null) {
           CacheEntry<K, V> previousEntry =
             heapCache.returnCacheEntry(heapEntry.getKey(), oldValueOrException);
@@ -1138,7 +1130,7 @@ public abstract class EntryAction<K, V, R> extends Entry.PiggyBack implements
    * @param entryCopy copy of entry for sending to the listener
    */
   private void sendExpiryEventsWhenExpiredDuringOperation(CacheEntry<K, V> entryCopy) {
-    if (storageDataValid || heapDataValid) {
+    if (heapDataValid) {
       if (entryExpiredListeners() != null) {
         sendExpiryEvents(entryCopy);
       }

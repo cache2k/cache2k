@@ -56,6 +56,7 @@ public class CacheConfigurationProviderImpl
     {
       put("jcache", "org.cache2k.jcache.JCacheConfiguration");
       put("byClassName", CustomizationSupplierByClassName.class.getName());
+      put("resilience", "org.cache2k.addon.UniversalResilienceConfiguration");
     }
   };
 

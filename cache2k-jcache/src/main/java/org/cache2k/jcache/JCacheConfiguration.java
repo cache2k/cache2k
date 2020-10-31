@@ -34,7 +34,8 @@ import javax.cache.configuration.CompleteConfiguration;
  * @see <a href="https://cache2k.org/docs/latest/user-guide.html#jcache">
  *   JSR107 / JCache - cache2k User Guide</a>
  */
-public class JCacheConfiguration implements SingletonConfigurationSection {
+public class JCacheConfiguration
+  implements SingletonConfigurationSection<JCacheConfiguration, JCacheConfiguration.Builder> {
 
   private boolean copyAlwaysIfRequested = false;
   private boolean supportOnlineListenerAttachment = false;
@@ -97,9 +98,18 @@ public class JCacheConfiguration implements SingletonConfigurationSection {
     enableReadThrough = f;
   }
 
+  @Override
+  public Builder builder() {
+    return new Builder(this);
+  }
+
   public static class Builder implements ConfigurationSectionBuilder<JCacheConfiguration> {
 
-    private final JCacheConfiguration config = new JCacheConfiguration();
+    private final JCacheConfiguration config;
+
+    private Builder(JCacheConfiguration config) {
+      this.config = config;
+    }
 
     /**
      * When {@code true}, copy keys and values when entering and leaving

@@ -25,10 +25,6 @@ package org.cache2k;
  * to a cache which extend and modify its behavior. Typical exceptions are
  * {@link org.cache2k.io.CacheLoader} and the {@link org.cache2k.expiry.ExpiryPolicy}.
  *
- * <p>A customization may implement the interface
- * {@link org.cache2k.configuration.BuildContextAwareCustomization} if it needs access
- * to configuration values ore the cache manager properties.
- *
  * <p>A customization may implement {@link java.io.Closeable} to be notified upon
  * cache shutdown.
  *

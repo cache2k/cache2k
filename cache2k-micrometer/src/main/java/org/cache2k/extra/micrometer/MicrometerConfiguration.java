@@ -29,27 +29,50 @@ import org.cache2k.configuration.SingletonConfigurationSection;
 /**
  * @author Jens Wilke
  */
-public class MicrometerConfiguration implements SingletonConfigurationSection {
+public class MicrometerConfiguration
+  implements SingletonConfigurationSection
+    <MicrometerConfiguration, MicrometerConfiguration.Builder> {
 
   private CustomizationSupplier<MeterRegistry> meterRegistry;
 
+  /**
+   * See {@link Builder#meterRegistry(MeterRegistry)}
+   */
   public CustomizationSupplier<MeterRegistry> getMeterRegistry() {
     return meterRegistry;
   }
 
+  /**
+   * See {@link Builder#meterRegistry(MeterRegistry)}
+   */
   public void setMeterRegistry(CustomizationSupplier<MeterRegistry> meterRegistry) {
     this.meterRegistry = meterRegistry;
   }
 
+  @Override
+  public MicrometerConfiguration.Builder builder() {
+    return new Builder(this);
+  }
+
   public static final class Builder implements ConfigurationSectionBuilder<MicrometerConfiguration> {
 
-    private final MicrometerConfiguration config = new MicrometerConfiguration();
+    private final MicrometerConfiguration config;
 
+    private Builder(MicrometerConfiguration config) {
+      this.config = config;
+    }
+
+    /**
+     * Set the meter registry to use for the cache instance.
+     */
     public Builder meterRegistry(MeterRegistry registry) {
       config.setMeterRegistry(new CustomizationReferenceSupplier<>(registry));
       return this;
     }
 
+    /**
+     * Bind this cache instance to the global meter registry.
+     */
     public Builder useGlobalRegistry() {
       config.setMeterRegistry(SupplyGlobalMeterRegistry.INSTANCE);
       return this;

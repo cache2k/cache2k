@@ -27,6 +27,7 @@ import org.cache2k.configuration.ConfigurationSection;
 import org.cache2k.configuration.ConfigurationSectionBuilder;
 import org.cache2k.configuration.CustomizationReferenceSupplier;
 import org.cache2k.configuration.CustomizationSupplier;
+import org.cache2k.configuration.SingletonConfigurationSection;
 import org.cache2k.event.CacheClosedListener;
 import org.cache2k.expiry.ExpiryPolicy;
 import org.cache2k.event.CacheEntryOperationListener;
@@ -41,6 +42,7 @@ import org.cache2k.io.ResiliencePolicy;
 import org.cache2k.io.CacheLoaderException;
 import org.cache2k.processor.MutableCacheEntry;
 
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.time.Duration;
@@ -93,7 +95,7 @@ public class Cache2kBuilder<K, V> {
    * {@link #valueType}.
    */
   @SuppressWarnings({"unchecked", "rawtypes"})
-  public static Cache2kBuilder forUnknownTypes() {
+  public static Cache2kBuilder<Object, Object> forUnknownTypes() {
     return new Cache2kBuilder(null, null);
   }
 
@@ -380,27 +382,6 @@ public class Cache2kBuilder<K, V> {
     config().setEternal(v);
     return this;
   }
-
-  /**
-   * Suppress an exception from the cache loader, if there is previous data.
-   * When a load was not successful, the operation is retried at shorter interval then
-   * the normal expiry, see {@link #retryInterval(long, TimeUnit)}.
-   *
-   * <p>Exception suppression is only active when entries expire (eternal is not true) or the
-   * explicit configuration of the timing parameters for resilience, e.g.
-   * {@link #resilienceDuration(long, TimeUnit)}. Check the user guide chapter for details.
-   *
-   * <p>Exception suppression is enabled by default. Setting this to {@code false}, will disable
-   * exceptions suppression (aka resilience).
-   *
-   * @see <a href="https://cache2k.org/docs/latest/user-guide.html#resilience-and-exceptions">
-   *   cache2k user guide - Exceptions and Resilience</a>
-   */
-  public final Cache2kBuilder<K, V> suppressExceptions(boolean v) {
-    config().setSuppressExceptions(v);
-    return this;
-  }
-
 
   /**
    * Time duration after insert or updated an cache entry expires.
@@ -738,42 +719,6 @@ public class Cache2kBuilder<K, V> {
   }
 
   /**
-   * If a loader exception happens, this is the time interval after a
-   * retry attempt is made. If not specified, 10% of {@link #maxRetryInterval}.
-   */
-  public final Cache2kBuilder<K, V> retryInterval(long v, TimeUnit u) {
-    config().setRetryInterval(toDuration(v, u));
-    return this;
-  }
-
-  /**
-   * If a loader exception happens, this is the maximum time interval after a
-   * retry attempt is made. For retries an exponential backoff algorithm is used.
-   * It starts with the retry time and then increases the time to the maximum
-   * according to an exponential pattern.
-   *
-   * <p>By default identical to {@link #resilienceDuration}
-   */
-  public final Cache2kBuilder<K, V> maxRetryInterval(long v, TimeUnit u) {
-    config().setMaxRetryInterval(toDuration(v, u));
-    return this;
-  }
-
-  /**
-   * Time span the cache will suppress loader exceptions if a value is available from
-   * a previous load. After the time span is passed the cache will start propagating
-   * loader exceptions. If {@link #suppressExceptions} is switched off, this setting
-   * has no effect.
-   *
-   * <p>Defaults to {@link #expireAfterWrite}. If {@link #suppressExceptions}
-   * is switched off, this setting has no effect.
-   */
-  public final Cache2kBuilder<K, V> resilienceDuration(long v, TimeUnit u) {
-    config().setResilienceDuration(toDuration(v, u));
-    return this;
-  }
-
-  /**
    * Sets a custom resilience policy to control the cache behavior in the presence
    * of exceptions from the loader. A specified policy will be ignored if
    * {@link #expireAfterWrite} is set to 0.
@@ -783,14 +728,31 @@ public class Cache2kBuilder<K, V> {
     return this;
   }
 
-  /**
-   * Add a new configuration sub section.
-   *
-   * @see org.cache2k.configuration.ConfigurationWithSections
-   */
+  public final Cache2kBuilder<K, V> resiliencePolicy(
+    CustomizationSupplier<? extends ResiliencePolicy<K, V>> v) {
+    config().setResiliencePolicy(v);
+    return this;
+  }
+
   public final Cache2kBuilder<K, V> with(
     ConfigurationSectionBuilder<? extends ConfigurationSection> sectionBuilder) {
     config().getSections().add(sectionBuilder.buildConfigurationSection());
+    return this;
+  }
+
+  public final <B extends ConfigurationSectionBuilder<T>, T extends SingletonConfigurationSection<T, B>> Cache2kBuilder<K, V>
+  with(Class<T> configSectionClass, Consumer<B> configAction) {
+    T section =
+      config().getSections().getSection(configSectionClass);
+    if (section == null) {
+      try {
+        section = configSectionClass.getConstructor().newInstance();
+      } catch (Exception e) {
+        throw new Error("config bean needs working default constructor", e);
+      }
+      config().getSections().add(section);
+    }
+    configAction.accept(section.builder());
     return this;
   }
 

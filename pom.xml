@@ -51,6 +51,7 @@
     <module>cache2k-jmx</module>
     <module>cache2k-config</module>
     <module>cache2k-schemas</module>
+    <module>cache2k-addon</module>
     <!-- not deployed on OSS central -->
     <module>cache2k-testsuite</module>
     <module>test-parent</module>

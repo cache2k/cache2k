@@ -65,7 +65,6 @@ public interface InternalCacheInfo {
    */
   long getTotalWeight();
 
-
   /**
    * Total counted hits on the heap cache data. The counter is increased when an entry is present
    * in the cache, regardless whether the value is valid or not.

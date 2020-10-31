@@ -75,11 +75,6 @@ public abstract class Timing<K, V>  {
     if (Duration.ZERO.equals(cfg.getExpireAfterWrite())) {
       return TimeAgnosticTiming.IMMEDIATE;
     }
-    if (Duration.ZERO.equals(cfg.getExpireAfterWrite())
-      && zeroOrUnspecified(cfg.getRetryInterval())
-      && cfg.getResiliencePolicy() == null) {
-      return TimeAgnosticTiming.IMMEDIATE;
-    }
     if (cfg.getExpiryPolicy() != null
       || (cfg.getValueType() != null
         && ValueWithExpiryTime.class.isAssignableFrom(cfg.getValueType().getType()))
@@ -87,24 +82,13 @@ public abstract class Timing<K, V>  {
       DynamicTiming<K, V> h = new DynamicTiming<K, V>(buildContext);
       return h;
     }
-    if (!zeroOrUnspecified(cfg.getResilienceDuration()) && !cfg.isSuppressExceptions()) {
-      throw new IllegalArgumentException(
-        "Ambiguous: exceptions suppression is switched off, but resilience duration is specified");
-    }
-    if (realDuration(cfg.getExpireAfterWrite())
-      || realDuration(cfg.getRetryInterval())
-      || realDuration(cfg.getResilienceDuration())) {
+    if (realDuration(cfg.getExpireAfterWrite())) {
       StaticTiming<K, V> h = new StaticTiming<K, V>(buildContext);
       return h;
     }
     if ((cfg.getExpireAfterWrite() == Cache2kConfiguration.ETERNAL_DURATION
       || cfg.getExpireAfterWrite() == null)) {
-      if (zeroOrUnspecified(cfg.getRetryInterval())) {
-        return TimeAgnosticTiming.ETERNAL_IMMEDIATE;
-      }
-      if (cfg.getRetryInterval() == Cache2kConfiguration.ETERNAL_DURATION) {
-        return TimeAgnosticTiming.ETERNAL;
-      }
+      return TimeAgnosticTiming.ETERNAL_IMMEDIATE;
     }
     throw new IllegalArgumentException("expiry time ambiguous");
   }

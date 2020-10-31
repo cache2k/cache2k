@@ -210,7 +210,7 @@ public class TestingBase {
     }
     this.cacheName = cacheName;
     Cache2kBuilder<K, T> b = Cache2kBuilder.of(k, t)
-      .with(new CoreConfiguration.Builder()
+      .with(CoreConfiguration.class, b2 -> b2
         .timerReference(getClock())
       )
       .name(cacheName)
@@ -261,9 +261,6 @@ public class TestingBase {
         System.err.println("tearDown: " + cache);
         if (cache instanceof InternalCache) {
           InternalCache bc = (InternalCache) cache;
-          if (bc.getStorage() != null) {
-            System.err.println("tearDown, storage: " + bc.getStorage());
-          }
         }
       }
       if (cache != null && !cache.isClosed()) {

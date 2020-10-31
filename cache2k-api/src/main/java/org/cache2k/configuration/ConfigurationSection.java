@@ -25,5 +25,10 @@ package org.cache2k.configuration;
  *
  * @author Jens Wilke
  */
-public interface ConfigurationSection extends ConfigurationBean {
+public interface ConfigurationSection
+  <SELF extends ConfigurationSection, B extends ConfigurationSectionBuilder<SELF>>
+  extends ConfigurationBean {
+
+  B builder();
+
 }

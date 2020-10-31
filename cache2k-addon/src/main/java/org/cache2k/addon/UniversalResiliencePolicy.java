@@ -1,8 +1,8 @@
-package org.cache2k.core;
+package org.cache2k.addon;
 
 /*
  * #%L
- * cache2k core implementation
+ * cache2k addon
  * %%
  * Copyright (C) 2000 - 2020 headissue GmbH, Munich
  * %%
@@ -21,9 +21,9 @@ package org.cache2k.core;
  */
 
 import org.cache2k.CacheEntry;
-import org.cache2k.configuration.CacheBuildContext;
 import org.cache2k.configuration.Cache2kConfiguration;
-import org.cache2k.configuration.CustomizationSupplier;
+import org.cache2k.configuration.CacheBuildContext;
+import org.cache2k.configuration.CustomizationWithConfigurationSupplier;
 import org.cache2k.io.LoadExceptionInfo;
 import org.cache2k.io.ResiliencePolicy;
 
@@ -34,14 +34,19 @@ import static org.cache2k.configuration.Cache2kConfiguration.ETERNAL_DURATION;
 import static org.cache2k.configuration.Cache2kConfiguration.UNSET_LONG;
 
 /**
- * Default resilience policy which implements a exponential back off and randomization
+ * Resilience policy which implements a exponential back off and randomization
  * of the retry intervals.
  *
  * @author Jens Wilke
  */
-public class DefaultResiliencePolicy<K, V> implements ResiliencePolicy<K, V> {
+public class UniversalResiliencePolicy<K, V> implements ResiliencePolicy<K, V> {
 
-  public static final Supplier SUPPLIER = new Supplier();
+  private static final Supplier SUPPLIER = new Supplier();
+  public static final <K, V> Supplier<K, V> supplier() {
+    return SUPPLIER;
+  }
+  private static final UniversalResilienceConfiguration EMPTY =
+    new UniversalResilienceConfiguration();
 
   /**
    * We use a common random instance. Since this is only called for an exception
@@ -50,7 +55,7 @@ public class DefaultResiliencePolicy<K, V> implements ResiliencePolicy<K, V> {
   static final Random SHARED_RANDOM = new Random();
 
   static final int RETRY_PERCENT_OF_RESILIENCE_DURATION = 10;
-  static final int MIN_RETRY_INTERVAL = 1000;
+  static final int MIN_RETRY_INTERVAL = 0;
 
   private double multiplier = 1.5;
   private double randomization = 0.5;
@@ -63,17 +68,20 @@ public class DefaultResiliencePolicy<K, V> implements ResiliencePolicy<K, V> {
   /**
    * Construct a resilience policy with multiplier 1.5 and randomization 0.5.
    */
-  public DefaultResiliencePolicy(Cache2kConfiguration<K, V> cfg) {
+  public UniversalResiliencePolicy(Cache2kConfiguration<K, V> cfgRoot) {
+    UniversalResilienceConfiguration cfg =
+      cfgRoot.getSections().getSection(UniversalResilienceConfiguration.class);
+    if (cfg == null) { cfg = EMPTY; }
     suppressExceptions = cfg.isSuppressExceptions();
     resilienceDuration = toMillis(cfg.getResilienceDuration());
     maxRetryInterval = toMillis(cfg.getMaxRetryInterval());
     retryInterval = toMillis(cfg.getRetryInterval());
     if (resilienceDuration == UNSET_LONG) {
-      if (cfg.getExpireAfterWrite() == ETERNAL_DURATION) {
+      if (cfgRoot.getExpireAfterWrite() == ETERNAL_DURATION) {
         resilienceDuration = 0;
       } else {
-        if (cfg.getExpireAfterWrite() != null) {
-          resilienceDuration = cfg.getExpireAfterWrite().toMillis();
+        if (cfgRoot.getExpireAfterWrite() != null) {
+          resilienceDuration = cfgRoot.getExpireAfterWrite().toMillis();
         } else {
           resilienceDuration = UNSET_LONG;
         }
@@ -157,19 +165,22 @@ public class DefaultResiliencePolicy<K, V> implements ResiliencePolicy<K, V> {
 
   @Override
   public long retryLoadAfter(K key, LoadExceptionInfo loadExceptionInfo) {
-    if (retryInterval == 0) {
-      return 0;
-    }
-    if (retryInterval == Long.MAX_VALUE) {
-      return Long.MAX_VALUE;
+    if (retryInterval == 0 || retryInterval == Long.MAX_VALUE) {
+      return retryInterval;
     }
     return loadExceptionInfo.getLoadTime() + calculateRetryDelta(loadExceptionInfo);
   }
 
-  public static class Supplier<K, V> implements CustomizationSupplier<ResiliencePolicy<K, V>> {
+  public static class Supplier<K, V>
+    implements CustomizationWithConfigurationSupplier<UniversalResiliencePolicy<K, V>,
+    UniversalResilienceConfiguration> {
     @Override
-    public ResiliencePolicy<K, V> supply(CacheBuildContext buildContext) {
-      return new DefaultResiliencePolicy<>(buildContext.getConfiguration());
+    public UniversalResiliencePolicy<K, V> supply(CacheBuildContext buildContext) {
+      return new UniversalResiliencePolicy<>(buildContext.getConfiguration());
+    }
+    @Override
+    public UniversalResilienceConfiguration configuration() {
+      return new UniversalResilienceConfiguration();
     }
   }
 

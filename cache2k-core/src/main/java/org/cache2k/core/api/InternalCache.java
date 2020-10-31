@@ -29,7 +29,6 @@ import org.cache2k.core.eviction.Eviction;
 import org.cache2k.core.operation.ExaminationEntry;
 import org.cache2k.core.timing.TimerEventListener;
 import org.cache2k.core.log.Log;
-import org.cache2k.core.storageApi.StorageAdapter;
 
 /**
  * Interface to extended cache functions for the internal components.
@@ -43,8 +42,6 @@ public interface InternalCache<K, V>
 
   /** used from the cache manager */
   Log getLog();
-
-  StorageAdapter getStorage();
 
   CacheType getKeyType();
 
@@ -88,7 +85,6 @@ public interface InternalCache<K, V>
   boolean isWeigherPresent();
 
   boolean isLoaderPresent();
-
 
   Eviction getEviction();
 

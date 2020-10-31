@@ -44,7 +44,6 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.rules.Timeout;
 
-import java.io.IOException;
 import java.util.Collections;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
@@ -843,9 +842,7 @@ public class CacheLoaderTest extends TestingBase {
               }
             });
           }
-        })
-          .resilienceDuration(1, TimeUnit.SECONDS)
-          .retryInterval(1, TimeUnit.SECONDS);
+        });
       }
     });
     c.loadAll(TestingBase.keys(1, 2, 1802)).get();

@@ -122,10 +122,10 @@ public class CacheManagerTest {
     CachingProvider p = Caching.getCachingProvider();
     CacheManager cm = p.getCacheManager();
     Cache<Long, Double> cache = cm.createCache("aCache", ExtendedMutableConfiguration.of(
-      new Cache2kBuilder<Long, Double>(){}
+      new Cache2kBuilder<Long, Double>() { }
         .entryCapacity(10000)
         .expireAfterWrite(5, TimeUnit.MINUTES)
-        .with(new JCacheConfiguration.Builder()
+        .with(JCacheConfiguration.class, b -> b
           .copyAlwaysIfRequested(true)
         )
     ));

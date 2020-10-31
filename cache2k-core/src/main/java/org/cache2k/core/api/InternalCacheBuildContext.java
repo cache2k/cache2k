@@ -50,7 +50,7 @@ public interface InternalCacheBuildContext<K, V> extends CacheBuildContext {
   /**
    * Create the customization. Return fallback if supplier is null.
    */
-  default <T> T createCustomization(CustomizationSupplier<T> supplier, T fallback) {
+  default <T> T createCustomization(CustomizationSupplier<? extends T> supplier, T fallback) {
     if (supplier == null) { return fallback; }
     return createCustomization(supplier);
   }
@@ -60,8 +60,8 @@ public interface InternalCacheBuildContext<K, V> extends CacheBuildContext {
    */
   <T> T createCustomization(CustomizationSupplier<T> supplier);
 
-  default <T> T createCustomization(CustomizationSupplier<T> supplier,
-                                    CustomizationSupplier<T> fallback) {
+  default <T> T createCustomization(CustomizationSupplier<? extends T> supplier,
+                                    CustomizationSupplier<? extends T> fallback) {
     if (supplier == null) { return createCustomization(fallback); }
     return createCustomization(supplier);
   }

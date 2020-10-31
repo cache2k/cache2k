@@ -21,6 +21,7 @@ package org.cache2k.test.core;
  */
 
 import org.cache2k.Cache2kBuilder;
+import org.cache2k.test.core.expiry.ExpiryTest;
 import org.cache2k.testing.category.FastTests;
 import org.cache2k.test.util.CacheRule;
 import org.junit.experimental.categories.Category;
@@ -38,7 +39,7 @@ public class ExceptionPropagatorWiredCacheTest extends ExceptionPropagatorTest {
       @Override
       public void extend(final Cache2kBuilder<Integer, Integer> b) {
         StaticUtil.enforceWiredCache(b);
-        b.retryInterval(Long.MAX_VALUE, TimeUnit.MILLISECONDS);
+        b.resiliencePolicy(new ExpiryTest.EnableExceptionCaching());
       }
     });
   }

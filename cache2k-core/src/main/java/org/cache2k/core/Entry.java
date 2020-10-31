@@ -25,7 +25,6 @@ import org.cache2k.core.api.InternalClock;
 import org.cache2k.core.timing.TimerTask;
 import org.cache2k.expiry.ExpiryPolicy;
 import org.cache2k.core.operation.ExaminationEntry;
-import org.cache2k.core.storageApi.StorageEntry;
 import org.cache2k.io.LoadExceptionInfo;
 
 import java.util.concurrent.atomic.AtomicLongFieldUpdater;
@@ -161,7 +160,7 @@ class CompactEntry<K, V> implements CacheEntry<K, V> {
  */
 @SuppressWarnings("unchecked")
 public class Entry<K, V> extends CompactEntry<K, V>
-  implements StorageEntry, ExaminationEntry<K, V> {
+  implements ExaminationEntry<K, V> {
 
   /**
    * A value greater as means it is a time value.
@@ -566,26 +565,6 @@ public class Entry<K, V> extends CompactEntry<K, V>
     } else if (nextRefreshTime > EXPIRY_TIME_MIN) {
       return nextRefreshTime;
     }
-    return 0;
-  }
-  /**
-   * Used for the storage interface.
-   *
-   * @see StorageEntry
-   */
-  @Override
-  public long getCreatedOrUpdated() {
-    return getModificationTime();
-  }
-
-  /**
-   * Used for the storage interface.
-   *
-   * @see StorageEntry
-   * @deprecated  Always returns 0, only to fulfill the {@link StorageEntry} interface
-   */
-  @Override
-  public long getEntryExpiryTime() {
     return 0;
   }
 

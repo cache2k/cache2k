@@ -46,7 +46,6 @@
       <expireAfterWrite>12s</expireAfterWrite>
       <keyType>Integer</keyType>
       <valueType>java.math.BigDecimal</valueType>
-      <resilienceDuration>123s</resilienceDuration>
       <storeByReference>false</storeByReference>
       <permitNullValues>false</permitNullValues>
       <disableStatistics>false</disableStatistics>
@@ -86,6 +85,9 @@
         -->
       </listeners>
       <sections>
+        <resilience>
+          <resilienceDuration>123s</resilienceDuration>
+        </resilience>
         <jcache>
           <include>templateJCache1</include>
           <copyAlwaysIfRequested>true</copyAlwaysIfRequested>
@@ -137,7 +139,7 @@
     <cache>
       <name>jcache1</name>
       <entryCapacity>${smallSize}</entryCapacity>
-      <maxRetryInterval>${sys.expectedNotToExist:-123s}</maxRetryInterval>
+      <expireAfterWrite>${sys.expectedNotToExist:-123s}</expireAfterWrite>
       <sections>
         <jcache>
           <enableStatistics>true</enableStatistics>

@@ -81,9 +81,6 @@ public class Cache2kConfiguration<K, V> implements ConfigurationBean, Configurat
   private CacheType<V> valueType;
   private long entryCapacity = UNSET_LONG;
   private Duration expireAfterWrite = null;
-  private Duration retryInterval = null;
-  private Duration maxRetryInterval = null;
-  private Duration resilienceDuration = null;
   private Duration timerLag = null;
   private long maximumWeight = UNSET_LONG;
   private int loaderThreadCount;
@@ -100,8 +97,6 @@ public class Cache2kConfiguration<K, V> implements ConfigurationBean, Configurat
   private boolean disableStatistics = false;
   private boolean disableMonitoring = false;
 
-  private boolean suppressExceptions = true;
-
   private boolean externalConfigurationPresent = false;
 
   private CustomizationSupplier<Executor> loaderExecutor;
@@ -109,7 +104,7 @@ public class Cache2kConfiguration<K, V> implements ConfigurationBean, Configurat
   private CustomizationSupplier<Executor> asyncListenerExecutor;
   private CustomizationSupplier<Executor> executor;
   private CustomizationSupplier<ExpiryPolicy<K, V>> expiryPolicy;
-  private CustomizationSupplier<ResiliencePolicy<K, V>> resiliencePolicy;
+  private CustomizationSupplier<? extends ResiliencePolicy<K, V>> resiliencePolicy;
   private CustomizationSupplier<CacheLoader<K, V>> loader;
   private CustomizationSupplier<CacheWriter<K, V>> writer;
   private CustomizationSupplier<AdvancedCacheLoader<K, V>> advancedLoader;
@@ -329,48 +324,6 @@ public class Cache2kConfiguration<K, V> implements ConfigurationBean, Configurat
     this.timerLag = durationCeiling(v);
   }
 
-  /**
-   * @see Cache2kBuilder#retryInterval
-   */
-  public Duration getRetryInterval() {
-    return retryInterval;
-  }
-
-  /**
-   * @see Cache2kBuilder#retryInterval
-   */
-  public void setRetryInterval(Duration v) {
-    retryInterval = durationCeiling(v);
-  }
-
-  /**
-   * @see Cache2kBuilder#maxRetryInterval
-   */
-  public Duration getMaxRetryInterval() {
-    return maxRetryInterval;
-  }
-
-  /**
-   * @see Cache2kBuilder#maxRetryInterval
-   */
-  public void setMaxRetryInterval(Duration v) {
-    maxRetryInterval = durationCeiling(v);
-  }
-
-  /**
-   * @see Cache2kBuilder#resilienceDuration
-   */
-  public Duration getResilienceDuration() {
-    return resilienceDuration;
-  }
-
-  /**
-   * @see Cache2kBuilder#resilienceDuration
-   */
-  public void setResilienceDuration(Duration v) {
-    resilienceDuration = durationCeiling(v);
-  }
-
   public boolean isKeepDataAfterExpired() {
     return keepDataAfterExpired;
   }
@@ -406,17 +359,6 @@ public class Cache2kConfiguration<K, V> implements ConfigurationBean, Configurat
    */
   public void setSharpExpiry(boolean v) {
     this.sharpExpiry = v;
-  }
-
-  public boolean isSuppressExceptions() {
-    return suppressExceptions;
-  }
-
-  /**
-   * @see Cache2kBuilder#suppressExceptions(boolean)
-   */
-  public void setSuppressExceptions(boolean v) {
-    this.suppressExceptions = v;
   }
 
   /**
@@ -624,14 +566,14 @@ public class Cache2kConfiguration<K, V> implements ConfigurationBean, Configurat
     getCacheClosedListeners().addAll(c);
   }
 
-  public CustomizationSupplier<ResiliencePolicy<K, V>> getResiliencePolicy() {
+  public CustomizationSupplier<? extends ResiliencePolicy<K, V>> getResiliencePolicy() {
     return resiliencePolicy;
   }
 
   /**
    * @see Cache2kBuilder#resiliencePolicy
    */
-  public void setResiliencePolicy(CustomizationSupplier<ResiliencePolicy<K, V>> v) {
+  public void setResiliencePolicy(CustomizationSupplier<? extends ResiliencePolicy<K, V>> v) {
     resiliencePolicy = v;
   }
 
@@ -770,7 +712,6 @@ public class Cache2kConfiguration<K, V> implements ConfigurationBean, Configurat
   public void setDisableMonitoring(boolean disableMonitoring) {
     this.disableMonitoring = disableMonitoring;
   }
-
 
   private Duration durationCeiling(Duration v) {
     if (v != null && ETERNAL_DURATION.compareTo(v) <= 0) {

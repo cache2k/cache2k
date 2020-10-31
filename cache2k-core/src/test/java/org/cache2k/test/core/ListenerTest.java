@@ -694,7 +694,7 @@ public class ListenerTest {
     target.run(new CountSyncEvents() {
       @Override
       public void extend(Cache2kBuilder<Integer, Integer> b) {
-        b.with(new CoreConfiguration.Builder()
+        b.with(CoreConfiguration.class, b2 -> b2
           .timerReference(clock)
         );
         b.expireAfterWrite(expireAfterWrite, TimeUnit.MILLISECONDS);
@@ -728,7 +728,7 @@ public class ListenerTest {
     target.run(new CountSyncEvents() {
       @Override
       public void extend(Cache2kBuilder<Integer, Integer> b) {
-        b.with(new CoreConfiguration.Builder()
+        b.with(CoreConfiguration.class, b2 -> b2
           .timerReference(clock)
         );
         b.expireAfterWrite(expireAfterWrite, TimeUnit.MILLISECONDS);
@@ -762,19 +762,20 @@ public class ListenerTest {
     final SimulatedClock clock = new SimulatedClock(1000);
     target.run(new CountSyncEvents() {
       @Override
-      public void extend(Cache2kBuilder<Integer, Integer> b) {
-        b.with(new CoreConfiguration.Builder()
-          .timerReference(clock)
-        );
-        b.expireAfterWrite(expireAfterWrite, TimeUnit.MILLISECONDS);
-        b.loader(new CacheLoader<Integer, Integer>() {
-          @Override
-          public Integer load(Integer key) throws Exception {
-            clock.sleep(expireAfterWrite / 3 * 2);
-            return key;
-          }
-        });
-        super.extend(b);
+      public void extend(Cache2kBuilder<Integer, Integer> builder) {
+        builder
+          .with(CoreConfiguration.class, b2 -> b2
+            .timerReference(clock)
+          )
+          .expireAfterWrite(expireAfterWrite, TimeUnit.MILLISECONDS)
+          .loader(new CacheLoader<Integer, Integer>() {
+            @Override
+            public Integer load(Integer key) throws Exception {
+              clock.sleep(expireAfterWrite / 3 * 2);
+              return key;
+            }
+          });
+        super.extend(builder);
       }
 
       @Override

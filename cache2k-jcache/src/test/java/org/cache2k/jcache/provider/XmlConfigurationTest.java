@@ -213,7 +213,7 @@ public class XmlConfigurationTest {
     Cache2kConfiguration cfg = b.toConfiguration();
     Cache c = b.build();
     assertEquals(1153, cfg.getEntryCapacity());
-    assertEquals(123000, cfg.getMaxRetryInterval().toMillis());
+    assertEquals(123000, cfg.getExpireAfterWrite().toMillis());
     c.close();
   }
 

@@ -78,7 +78,7 @@ public class ConfigurationProvider {
         sectionType = parsedSection.getType();
       }
       if (sectionType == null) {
-        throw new ConfigurationException("type missing or unknown", parsedSection);
+        throw new ConfigurationException("section type missing or unknown", parsedSection);
       }
       Class<?> type;
       try {

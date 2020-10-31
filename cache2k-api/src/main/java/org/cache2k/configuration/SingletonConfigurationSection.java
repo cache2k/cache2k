@@ -25,5 +25,7 @@ package org.cache2k.configuration;
  *
  * @author Jens Wilke
  */
-public interface SingletonConfigurationSection extends ConfigurationSection {
+public interface SingletonConfigurationSection
+  <SELF extends SingletonConfigurationSection, B extends ConfigurationSectionBuilder<SELF>>
+  extends ConfigurationSection<SELF, B> {
 }

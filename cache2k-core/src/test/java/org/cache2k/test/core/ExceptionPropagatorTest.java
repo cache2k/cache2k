@@ -24,6 +24,7 @@ import org.cache2k.Cache;
 import org.cache2k.Cache2kBuilder;
 import org.cache2k.core.StandardExceptionPropagatorTest;
 import org.cache2k.io.CacheLoaderException;
+import org.cache2k.test.core.expiry.ExpiryTest;
 import org.cache2k.test.util.CacheRule;
 import org.cache2k.testing.category.FastTests;
 import org.cache2k.processor.EntryProcessingException;
@@ -54,7 +55,7 @@ public class ExceptionPropagatorTest {
     new IntCacheRule().config(new CacheRule.Specialization<Integer, Integer>() {
       @Override
       public void extend(final Cache2kBuilder<Integer, Integer> b) {
-        b.retryInterval(Long.MAX_VALUE, TimeUnit.MILLISECONDS);
+        b.resiliencePolicy(new ExpiryTest.EnableExceptionCaching());
       }
     });
 

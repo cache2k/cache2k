@@ -30,7 +30,8 @@ import org.cache2k.configuration.SingletonConfigurationSection;
  *
  * @author Jens Wilke
  */
-public class CoreConfiguration implements SingletonConfigurationSection {
+public class CoreConfiguration
+  implements SingletonConfigurationSection<CoreConfiguration, CoreConfiguration.Builder> {
 
   public static final CoreConfiguration DEFAULT = new CoreConfiguration();
 
@@ -44,9 +45,18 @@ public class CoreConfiguration implements SingletonConfigurationSection {
     this.timeReference = timeReference;
   }
 
+  @Override
+  public Builder builder() {
+    return new Builder(this);
+  }
+
   public static class Builder implements ConfigurationSectionBuilder<CoreConfiguration> {
 
-    private final CoreConfiguration config = new CoreConfiguration();
+    private final CoreConfiguration config;
+
+    private Builder(CoreConfiguration config) {
+      this.config = config;
+    }
 
     public Builder timerReference(InternalClock clock) {
       config.setTimeReference(new CustomizationReferenceSupplier<>(clock));

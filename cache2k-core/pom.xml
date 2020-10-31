@@ -36,7 +36,8 @@
     </dependency>
 
     <!--
-      slf4j api is included in test scope by maven and it is the first pick. add simple log output to see log output.
+      slf4j api is included in test scope by maven and it is the first pick.
+      add simple log output to see log output.
      -->
     <dependency>
       <groupId>org.slf4j</groupId>

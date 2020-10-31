@@ -727,7 +727,7 @@ public class EntryProcessorTest {
       target.cache(new CacheRule.Specialization<Integer, Integer>() {
         @Override
         public void extend(Cache2kBuilder<Integer, Integer> b) {
-          b .with(new CoreConfiguration.Builder()
+          b .with(CoreConfiguration.class, b2 -> b2
               .timerReference(new SimulatedClock())
             )
             .sharpExpiry(true)
@@ -983,7 +983,17 @@ public class EntryProcessorTest {
     Cache<Integer, Integer> c = target.cache(new CacheRule.Specialization<Integer, Integer>() {
       @Override
       public void extend(Cache2kBuilder<Integer, Integer> b) {
-        b.retryInterval(Long.MAX_VALUE, TimeUnit.MILLISECONDS);
+        b.resiliencePolicy(new ResiliencePolicy<Integer, Integer>() {
+          @Override
+          public long suppressExceptionUntil(Integer key, LoadExceptionInfo loadExceptionInfo, CacheEntry<Integer, Integer> cachedContent) {
+            return Long.MAX_VALUE;
+          }
+
+          @Override
+          public long retryLoadAfter(Integer key, LoadExceptionInfo loadExceptionInfo) {
+            return Long.MAX_VALUE;
+          }
+        });
       }
     });
     c.invoke(KEY, new EntryProcessor<Integer, Integer, Object>() {

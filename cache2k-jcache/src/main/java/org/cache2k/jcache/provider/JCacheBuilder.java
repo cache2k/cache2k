@@ -440,7 +440,7 @@ public class JCacheBuilder<K, V> {
    * Defaults to use if no cache2k configuration is provided.
    */
   private static final JCacheConfiguration JCACHE_DEFAULTS =
-    new JCacheConfiguration.Builder()
+    new JCacheConfiguration().builder()
       .copyAlwaysIfRequested(true)
       .supportOnlineListenerAttachment(true)
       .buildConfigurationSection();
@@ -450,7 +450,7 @@ public class JCacheBuilder<K, V> {
    * extra JCacheConfiguration section is added.
    */
   private static final JCacheConfiguration CACHE2K_DEFAULTS =
-    new JCacheConfiguration.Builder()
+    new JCacheConfiguration().builder()
       .copyAlwaysIfRequested(false)
       .supportOnlineListenerAttachment(false)
       .buildConfigurationSection();

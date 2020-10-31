@@ -240,7 +240,6 @@ public class InternalCache2kBuilder<K, V> implements InternalCacheBuildContext<K
       config.getWriter() != null ||
       config.getAsyncLoader() != null;
 
-
     WiredCache<K, V> wc = null;
     if (wrap) {
       wc = new WiredCache<K, V>();

@@ -550,8 +550,6 @@ public class BasicCacheTest extends TestingBase {
           return Long.MAX_VALUE;
         }
       })
-      .retryInterval(8, TimeUnit.MINUTES)
-      .resilienceDuration(33, TimeUnit.HOURS)
       .keepDataAfterExpired(true)
       .loader(src)
       .build();

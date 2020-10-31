@@ -35,7 +35,6 @@ import org.cache2k.processor.EntryProcessingException;
 import org.cache2k.processor.EntryProcessor;
 import org.cache2k.processor.EntryProcessingResult;
 import org.cache2k.core.operation.Semantic;
-import org.cache2k.core.storageApi.StorageAdapter;
 
 import java.io.Closeable;
 import java.util.HashMap;
@@ -174,9 +173,6 @@ public abstract class BaseCache<K, V> implements InternalCache<K, V> {
   }
 
   @Override
-  public StorageAdapter getStorage() { return null; }
-
-  @Override
   public <R> Map<K, EntryProcessingResult<R>> invokeAll(Iterable<? extends K> keys,
                                                         EntryProcessor<K, V, R> entryProcessor) {
     Map<K, EntryProcessingResult<R>> m = new HashMap<K, EntryProcessingResult<R>>();
@@ -249,7 +245,6 @@ public abstract class BaseCache<K, V> implements InternalCache<K, V> {
   protected <R> R execute(K key, Semantic<K, V, R> op) {
     return execute(key, null, op);
   }
-
 
   @Override
   public void closeCustomization(Object customization, String customizationName) {

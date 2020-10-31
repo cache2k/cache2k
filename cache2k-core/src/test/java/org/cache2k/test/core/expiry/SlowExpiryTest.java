@@ -355,8 +355,6 @@ public class SlowExpiryTest extends TestingBase {
     boolean keepData = true;
     Cache<Integer, Integer> c = builder(Integer.class, Integer.class)
       .expireAfterWrite(1, TimeUnit.MILLISECONDS)
-      .retryInterval(TestingParameters.MINIMAL_TICK_MILLIS, TimeUnit.MILLISECONDS)
-      .resilienceDuration(Long.MAX_VALUE, TimeUnit.MILLISECONDS)
       .keepDataAfterExpired(keepData)
       .loader(new CacheLoader<Integer, Integer>() {
         @Override
@@ -392,8 +390,6 @@ public class SlowExpiryTest extends TestingBase {
     BasicCacheTest.OccasionalExceptionSource src = new BasicCacheTest.OccasionalExceptionSource();
     Cache<Integer, Integer> c = builder(Integer.class, Integer.class)
       .expireAfterWrite(TestingParameters.MINIMAL_TICK_MILLIS, TimeUnit.MILLISECONDS)
-      .retryInterval(TestingParameters.MINIMAL_TICK_MILLIS, TimeUnit.MILLISECONDS)
-      .suppressExceptions(true)
       .keepDataAfterExpired(false)
       .loader(src)
       .build();
@@ -448,8 +444,6 @@ public class SlowExpiryTest extends TestingBase {
     BasicCacheTest.OccasionalExceptionSource src = new BasicCacheTest.OccasionalExceptionSource();
     final Cache<Integer, Integer> c = builder(Integer.class, Integer.class)
       .expireAfterWrite(TestingParameters.MAX_FINISH_WAIT_MILLIS, TimeUnit.MINUTES)
-      .retryInterval(0, TimeUnit.MILLISECONDS)
-      .suppressExceptions(true)
       .loader(src)
       .build();
     neverSuppressBody(c);
@@ -472,7 +466,6 @@ public class SlowExpiryTest extends TestingBase {
           return 0;
         }
       })
-      .suppressExceptions(true)
       .loader(src)
       .build();
     neverSuppressBody(c);

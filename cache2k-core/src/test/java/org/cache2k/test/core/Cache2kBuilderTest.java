@@ -24,9 +24,11 @@ import org.cache2k.Cache;
 import org.cache2k.Cache2kBuilder;
 import org.cache2k.CacheManager;
 import org.cache2k.configuration.CacheTypeCapture;
+import org.cache2k.core.api.CoreConfiguration;
 import org.cache2k.core.api.InternalCache;
 import org.cache2k.core.StandardExceptionPropagator;
 import org.cache2k.core.log.Log;
+import org.cache2k.core.util.SimulatedClock;
 import org.cache2k.event.CacheClosedListener;
 import org.cache2k.integration.FunctionalCacheLoader;
 import org.cache2k.testing.category.FastTests;
@@ -51,6 +53,26 @@ import static org.hamcrest.CoreMatchers.*;
 public class Cache2kBuilderTest {
 
   private static final String CLASSNAME = Cache2kBuilderTest.class.getName();
+
+  /**
+   * The method could return a raw type {@code <?, ?>} or <@code <Object, Object>}
+   * Only the last options works well for all scenarios.
+   * Version 1.x used a raw type. This does not work for configuration sections,
+   * because we use the generics support then.
+   */
+  @Test
+  public void forUnknownTypes_genericTyping() {
+    Cache<Object, Object> cache = Cache2kBuilder.forUnknownTypes()
+      .with(CoreConfiguration.class, b -> b
+        .timerReference(new SimulatedClock())
+      )
+      .loader(key -> key)
+      .build();
+    cache.put(123, 555);
+    cache.put("123", "314");
+    Cache raw = cache;
+    raw.close();
+  }
 
   @Test
   public void managerName() {
@@ -106,7 +128,7 @@ public class Cache2kBuilderTest {
    */
   @Test
   public void noTypesCastStringInt() {
-    Cache<String, Integer> c = (Cache<String,Integer>)
+    Cache<String, Integer> c = (Cache<String, Integer>) (Cache)
       Cache2kBuilder.forUnknownTypes().eternal(true).build();
     c.put("hallo", 234);
     c.close();
@@ -181,7 +203,7 @@ public class Cache2kBuilderTest {
   @Test
   public void noTypesAndCast() {
     Cache<Long, List<String>> c =
-      (Cache<Long, List<String>>)
+      (Cache<Long, List<String>>) (Cache)
         Cache2kBuilder.forUnknownTypes()
           .eternal(true)
           .build();
@@ -201,7 +223,7 @@ public class Cache2kBuilderTest {
   @Test
   public void cacheNameForAnnotationDefault() {
     Cache<Long, List<String>> c =
-      (Cache<Long, List<String>>)
+      (Cache<Long, List<String>>) (Cache)
         Cache2kBuilder.forUnknownTypes()
           .eternal(true)
           .name("package.name.ClassName.methodName(package.ParameterType,package.ParameterType")

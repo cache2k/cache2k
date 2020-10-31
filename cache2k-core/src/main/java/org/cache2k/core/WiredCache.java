@@ -40,13 +40,9 @@ import org.cache2k.CacheManager;
 import org.cache2k.io.CacheWriter;
 import org.cache2k.CacheOperationCompletionListener;
 import org.cache2k.core.operation.ExaminationEntry;
-import org.cache2k.core.operation.Progress;
 import org.cache2k.core.operation.Semantic;
 import org.cache2k.core.operation.Operations;
 import org.cache2k.core.log.Log;
-import org.cache2k.core.storageApi.PurgeableStorage;
-import org.cache2k.core.storageApi.StorageAdapter;
-import org.cache2k.core.storageApi.StorageEntry;
 
 import java.util.HashMap;
 import java.util.Iterator;
@@ -64,13 +60,12 @@ import java.util.concurrent.RejectedExecutionException;
  * @author Jens Wilke
  */
 public class WiredCache<K, V> extends BaseCache<K, V>
-  implements StorageAdapter.Parent, HeapCacheListener<K, V> {
+  implements HeapCacheListener<K, V> {
 
   @SuppressWarnings("unchecked")
   final Operations<K, V> ops = Operations.SINGLETON;
 
   HeapCache<K, V> heapCache;
-  StorageAdapter storage;
   AdvancedCacheLoader<K, V> loader;
   AsyncCacheLoader<K, V> asyncLoader;
   CacheWriter<K, V> writer;
@@ -379,9 +374,6 @@ public class WiredCache<K, V> extends BaseCache<K, V>
 
   @Override
   public int getTotalEntryCount() {
-    if (storage != null) {
-      return (int) storage.getTotalEntryCount();
-    }
     return heapCache.getTotalEntryCount();
   }
 
@@ -396,15 +388,8 @@ public class WiredCache<K, V> extends BaseCache<K, V>
   @SuppressWarnings("unchecked")
   @Override
   public Iterator<CacheEntry<K, V>> iterator() {
-    Iterator<CacheEntry<K, V>> tor;
-    if (storage == null) {
-      tor = new HeapCache.IteratorFilterEntry2Entry(
-        heapCache, heapCache.iterateAllHeapEntries(), true);
-    } else {
-      tor = new HeapCache.IteratorFilterEntry2Entry(
-        heapCache, storage.iterateAll(), false);
-    }
-    final Iterator<CacheEntry<K, V>> it = tor;
+    final Iterator<CacheEntry<K, V>> it = new HeapCache.IteratorFilterEntry2Entry(
+      heapCache, heapCache.iterateAllHeapEntries(), true);
     Iterator<CacheEntry<K, V>> adapted = new Iterator<CacheEntry<K, V>>() {
 
       CacheEntry<K, V> entry;
@@ -487,13 +472,6 @@ public class WiredCache<K, V> extends BaseCache<K, V>
   }
 
   public void init() {
-    if (storage == null  && heapCache.eviction.getMetrics().getMaxSize() == 0) {
-      throw new IllegalArgumentException("maxElements must be >0");
-    }
-    if (storage != null) {
-      storage.open();
-    }
-
     heapCache.timing.setTarget(this);
     heapCache.initWithoutTimerHandler();
   }
@@ -502,18 +480,11 @@ public class WiredCache<K, V> extends BaseCache<K, V>
   public void cancelTimerJobs() {
     synchronized (lockObject()) {
       heapCache.cancelTimerJobs();
-      if (storage != null) {
-        storage.cancelTimerJobs();
-      }
     }
   }
 
   @Override
   public void clear() {
-    if (storage != null) {
-      storage.clear();
-      return;
-    }
     heapCache.clear();
   }
 
@@ -525,19 +496,6 @@ public class WiredCache<K, V> extends BaseCache<K, V>
       return;
     }
     Future<Void> waitForStorage = null;
-    if (storage != null) {
-      waitForStorage = storage.shutdown();
-    }
-    if (waitForStorage != null) {
-      try {
-        waitForStorage.get();
-      } catch (Exception ex) {
-        StorageAdapter.rethrow("shutdown", ex);
-      }
-    }
-    synchronized (lockObject()) {
-      storage = null;
-    }
     heapCache.closePart2(this);
     closeCustomization(writer, "writer");
     if (syncEntryCreatedListeners != null) {
@@ -572,30 +530,8 @@ public class WiredCache<K, V> extends BaseCache<K, V>
   }
 
   @Override
-  public void resetStorage(StorageAdapter current, StorageAdapter replacement) {
-    synchronized (lockObject()) {
-      storage = replacement;
-    }
-  }
-
-  @Override
   public Eviction getEviction() {
     return heapCache.getEviction();
-  }
-
-  @Override
-  public StorageAdapter getStorage() {
-    return storage;
-  }
-
-  /**
-   * Insert a cache entry for the given key and run action under the entry
-   * lock. If the cache entry has fresh data, we do not run the action.
-   * Called from storage. The entry referenced by the key is expired and
-   * will be purged.
-   */
-  public void lockAndRunForPurge(K key, PurgeableStorage.PurgeAction action) {
-    throw new UnsupportedOperationException();
   }
 
   /**
@@ -610,7 +546,6 @@ public class WiredCache<K, V> extends BaseCache<K, V>
       }
     }
   }
-
 
   @Override
   protected <R> EntryAction<K, V, R> createEntryAction(K key, Entry<K, V> e, Semantic<K, V, R> op) {

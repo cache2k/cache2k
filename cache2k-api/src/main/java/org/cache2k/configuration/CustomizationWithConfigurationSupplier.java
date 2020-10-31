@@ -1,8 +1,8 @@
-package org.cache2k.core.storageApi;
+package org.cache2k.configuration;
 
 /*
  * #%L
- * cache2k core implementation
+ * cache2k API
  * %%
  * Copyright (C) 2000 - 2020 headissue GmbH, Munich
  * %%
@@ -23,11 +23,8 @@ package org.cache2k.core.storageApi;
 /**
  * @author Jens Wilke
  */
-public interface StorageCallback {
+public interface CustomizationWithConfigurationSupplier<T, CFG> extends CustomizationSupplier<T> {
 
-  void onReadSuccess(StorageEntry e);
-  void onReadFailure(Throwable t);
-  void onStoreSuccess(boolean entryRemoved);
-  void onStoreFailure(Throwable t);
+  CFG configuration();
 
 }
