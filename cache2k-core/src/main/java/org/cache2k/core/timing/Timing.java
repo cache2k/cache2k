@@ -49,7 +49,7 @@ public abstract class Timing<K, V>  {
       @Override
       public long calculateExpiryTime(
         Object key, ValueWithExpiryTime value, long loadTime,
-        CacheEntry<Object, ValueWithExpiryTime> oldEntry) {
+        CacheEntry<Object, ValueWithExpiryTime> currentEntry) {
         return value.getCacheExpiryTime();
       }
     };

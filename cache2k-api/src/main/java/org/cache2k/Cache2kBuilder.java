@@ -50,7 +50,6 @@ import java.time.Duration;
 import java.util.concurrent.Executor;
 import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.TimeUnit;
-import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
@@ -497,7 +496,7 @@ public class Cache2kBuilder<K, V>
           new org.cache2k.integration.AsyncCacheLoader.Context<K, V>() {
             @Override
             public long getLoadStartTime() {
-              return context.getLoadStartTime();
+              return context.getStartTime();
             }
 
             @Override

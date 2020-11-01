@@ -142,7 +142,7 @@ public class TimingUnitTest {
         .expiryPolicy(new ExpiryPolicy() {
           @Override
           public long calculateExpiryTime(Object key, Object value, long loadTime,
-                                          CacheEntry oldEntry) {
+                                          CacheEntry currentEntry) {
             return ETERNAL;
           }
         })
@@ -166,7 +166,7 @@ public class TimingUnitTest {
         .expiryPolicy(new ExpiryPolicy() {
           @Override
           public long calculateExpiryTime(Object key, Object value, long loadTime,
-                                          CacheEntry oldEntry) {
+                                          CacheEntry currentEntry) {
             return loadTime + 1;
           }
         })
@@ -189,7 +189,7 @@ public class TimingUnitTest {
         .expiryPolicy(new ExpiryPolicy() {
           @Override
           public long calculateExpiryTime(Object key, Object value, long loadTime,
-                                          CacheEntry oldEntry) {
+                                          CacheEntry currentEntry) {
             return ETERNAL;
           }
         })
@@ -217,7 +217,7 @@ public class TimingUnitTest {
         .expiryPolicy(new ExpiryPolicy() {
           @Override
           public long calculateExpiryTime(Object key, Object value, long loadTime,
-                                          CacheEntry oldEntry) {
+                                          CacheEntry currentEntry) {
             return -sharpPointInTime;
           }
         })
@@ -251,7 +251,7 @@ public class TimingUnitTest {
         .expiryPolicy(new ExpiryPolicy() {
           @Override
           public long calculateExpiryTime(Object key, Object value, long loadTime,
-                                          CacheEntry oldEntry) {
+                                          CacheEntry currentEntry) {
             return pointInTime;
           }
         })
@@ -289,7 +289,7 @@ public class TimingUnitTest {
         .expiryPolicy(new ExpiryPolicy() {
           @Override
           public long calculateExpiryTime(Object key, Object value, long loadTime,
-                                          CacheEntry oldEntry) {
+                                          CacheEntry currentEntry) {
             return -sharpPointInTime;
           }
         })

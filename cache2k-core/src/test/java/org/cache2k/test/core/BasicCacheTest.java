@@ -316,7 +316,7 @@ public class BasicCacheTest extends TestingBase {
     public final AtomicInteger oldEntrySeen = new AtomicInteger();
     @Override
     public long calculateExpiryTime(String _key, String _value, long _loadTime,
-                                    CacheEntry<String, String> _oldEntry) {
+                                    CacheEntry<String, String> currentEntry) {
       AtomicInteger _count;
       synchronized (key2count) {
         _count = key2count.get(_key);
@@ -327,7 +327,7 @@ public class BasicCacheTest extends TestingBase {
         _count.incrementAndGet();
       }
 
-      if (_oldEntry != null) {
+      if (currentEntry != null) {
         oldEntrySeen.incrementAndGet();
       }
 
@@ -464,7 +464,7 @@ public class BasicCacheTest extends TestingBase {
         @Override
         public long suppressExceptionUntil(Integer key,
                                            LoadExceptionInfo<Integer> loadExceptionInfo,
-                                           CacheEntry<Integer, Integer> cachedContent) {
+                                           CacheEntry<Integer, Integer> cachedEntry) {
           return Long.MAX_VALUE;
         }
 
@@ -541,7 +541,7 @@ public class BasicCacheTest extends TestingBase {
       .expiryPolicy((key, value, loadTime, oldEntry) -> 0)
       .resiliencePolicy(new ResiliencePolicy<Integer, Integer>() {
         @Override
-        public long suppressExceptionUntil(Integer key, LoadExceptionInfo<Integer> loadExceptionInfo, CacheEntry<Integer, Integer> cachedContent) {
+        public long suppressExceptionUntil(Integer key, LoadExceptionInfo<Integer> loadExceptionInfo, CacheEntry<Integer, Integer> cachedEntry) {
           return Long.MAX_VALUE;
         }
 
@@ -606,7 +606,7 @@ public class BasicCacheTest extends TestingBase {
 
     @Override
     public long suppressExceptionUntil(String key, LoadExceptionInfo<String> loadExceptionInfo,
-                                       CacheEntry<String, String> cachedContent) {
+                                       CacheEntry<String, String> cachedEntry) {
       return calculateExpiryTime(key, loadExceptionInfo.getException(), loadExceptionInfo.getLoadTime());
     }
   }
@@ -706,7 +706,7 @@ public class BasicCacheTest extends TestingBase {
 
   public static class ExpiryPolicyThrowsException implements ExpiryPolicy<String, String> {
     @Override
-    public long calculateExpiryTime(String _key, String _value, long _loadTime, CacheEntry<String, String> _oldEntry) {
+    public long calculateExpiryTime(String _key, String _value, long _loadTime, CacheEntry<String, String> currentEntry) {
       if (_value != null && _value.startsWith("boo")) {
         throw new RuntimeException("got value: " + _value);
       }

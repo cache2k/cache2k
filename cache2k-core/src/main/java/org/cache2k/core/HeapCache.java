@@ -1365,7 +1365,7 @@ public class HeapCache<K, V> extends BaseCache<K, V> implements HeapCacheForEvic
     long nextRefreshTime = 0;
     boolean suppressException = false;
     try {
-      if ((e.isDataAvailable() || e.isExpiredState()) && !e.hasException()) {
+      if (e.isValidOrExpiredAndNoException()) {
         nextRefreshTime = timing.suppressExceptionUntil(e, value);
       }
       if (nextRefreshTime > t0) {

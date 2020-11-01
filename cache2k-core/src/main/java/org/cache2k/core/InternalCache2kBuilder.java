@@ -162,6 +162,9 @@ public class InternalCache2kBuilder<K, V> implements InternalCacheBuildContext<K
     c.setCacheConfig(this);
   }
 
+  /**
+   * Starting with 2.0 we don't send an entry with an exception to the loader.
+   */
   private static class WrappedAdvancedCacheLoader<K, V>
     implements AdvancedCacheLoader<K, V>, Closeable {
 
@@ -184,11 +187,10 @@ public class InternalCache2kBuilder<K, V> implements InternalCacheBuildContext<K
     @SuppressWarnings("unchecked")
     @Override
     public V load(K key, long startTime, CacheEntry<K, V> currentEntry) throws Exception {
-      if (currentEntry == null) {
+      if (currentEntry == null || currentEntry.getExceptionInfo() != null) {
         return forward.load(key, startTime, null);
       }
-      return forward.load(key, startTime,
-        heapCache.returnCacheEntry((ExaminationEntry<K, V>) currentEntry));
+      return forward.load(key, startTime, currentEntry);
     }
   }
 

@@ -294,7 +294,7 @@ public class JCacheBuilder<K, V> {
         new CustomizationReferenceSupplier<org.cache2k.expiry.ExpiryPolicy<K, V>>(
           new org.cache2k.expiry.ExpiryPolicy<K, V>() {
         @Override
-        public long calculateExpiryTime(K key, V value, long loadTime, CacheEntry<K, V> oldEntry) {
+        public long calculateExpiryTime(K key, V value, long loadTime, CacheEntry<K, V> currentEntry) {
           if (value == null) {
             return NOW;
           }
@@ -312,7 +312,7 @@ public class JCacheBuilder<K, V> {
             new org.cache2k.expiry.ExpiryPolicy<K, V>() {
           @Override
           public long calculateExpiryTime(
-            K key, V value, long loadTime, CacheEntry<K, V> oldEntry) {
+            K key, V value, long loadTime, CacheEntry<K, V> currentEntry) {
             return NOW;
           }
         }));
@@ -322,7 +322,7 @@ public class JCacheBuilder<K, V> {
         new CustomizationReferenceSupplier<org.cache2k.expiry.ExpiryPolicy<K, V>>(
           new org.cache2k.expiry.ExpiryPolicy<K, V>() {
         @Override
-        public long calculateExpiryTime(K key, V value, long loadTime, CacheEntry<K, V> oldEntry) {
+        public long calculateExpiryTime(K key, V value, long loadTime, CacheEntry<K, V> currentEntry) {
           if (value == null) {
             return NOW;
           }
@@ -341,7 +341,7 @@ public class JCacheBuilder<K, V> {
             new org.cache2k.expiry.ExpiryPolicy<K, V>() {
           @Override
           public long calculateExpiryTime(
-            K key, V value, long loadTime, CacheEntry<K, V> oldEntry) {
+            K key, V value, long loadTime, CacheEntry<K, V> currentEntry) {
             return NOW;
           }
         }));
@@ -351,11 +351,11 @@ public class JCacheBuilder<K, V> {
         new CustomizationReferenceSupplier<org.cache2k.expiry.ExpiryPolicy<K, V>>(
           new org.cache2k.expiry.ExpiryPolicy<K, V>() {
         @Override
-        public long calculateExpiryTime(K key, V value, long loadTime, CacheEntry<K, V> oldEntry) {
+        public long calculateExpiryTime(K key, V value, long loadTime, CacheEntry<K, V> currentEntry) {
           if (value == null) {
             return NOW;
           }
-          if (oldEntry == null) {
+          if (currentEntry == null) {
             return loadTime + millisDuration;
           } else {
             return NEUTRAL;

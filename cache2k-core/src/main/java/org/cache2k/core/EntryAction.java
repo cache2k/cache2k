@@ -284,7 +284,7 @@ public abstract class EntryAction<K, V, R> extends Entry.PiggyBack implements
   }
 
   @Override
-  public long getLoadStartTime() {
+  public long getStartTime() {
     return getMutationStartTime();
   }
 
@@ -299,10 +299,7 @@ public abstract class EntryAction<K, V, R> extends Entry.PiggyBack implements
 
   @Override
   public CacheEntry<K, V> getCurrentEntry() {
-    if (heapEntry.isVirgin()) {
-      return null;
-    }
-    return heapCache.returnEntry(heapEntry);
+    return heapEntry.isValidOrExpiredAndNoException() ? heapEntry : null;
   }
 
   @Override
@@ -794,8 +791,7 @@ public abstract class EntryAction<K, V, R> extends Entry.PiggyBack implements
       try {
         expiry = 0;
         ExceptionWrapper<K> ew = (ExceptionWrapper<K>) newValueOrException;
-        if ((heapEntry.isDataAvailable() || heapEntry.isExpiredState()) &&
-          !heapEntry.hasException()) {
+        if (heapEntry.isValidOrExpiredAndNoException()) {
           expiry = timing().suppressExceptionUntil(heapEntry, ew);
         }
         if (expiry > loadStartedTime) {

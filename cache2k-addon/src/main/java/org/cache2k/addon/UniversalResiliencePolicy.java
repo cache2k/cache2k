@@ -154,7 +154,7 @@ public class UniversalResiliencePolicy<K, V> implements ResiliencePolicy<K, V> {
   @Override
   public long suppressExceptionUntil(K key,
                                      LoadExceptionInfo<K> loadExceptionInfo,
-                                     CacheEntry<K, V> cachedContent) {
+                                     CacheEntry<K, V> cachedEntry) {
     if (resilienceDuration == 0 || resilienceDuration == Long.MAX_VALUE) {
       return resilienceDuration;
     }

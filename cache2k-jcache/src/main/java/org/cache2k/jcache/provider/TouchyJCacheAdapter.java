@@ -565,12 +565,12 @@ public class TouchyJCacheAdapter<K, V> implements Cache<K, V> {
     }
 
     @Override
-    public long calculateExpiryTime(K key, V value, long loadTime, CacheEntry<K, V> oldEntry) {
+    public long calculateExpiryTime(K key, V value, long loadTime, CacheEntry<K, V> currentEntry) {
       if (value == null) {
         return NOW;
       }
       Duration d;
-      if (oldEntry == null || oldEntry.getException() != null) {
+      if (currentEntry == null || currentEntry.getException() != null) {
         d = policy.getExpiryForCreation();
       } else {
         d = policy.getExpiryForUpdate();

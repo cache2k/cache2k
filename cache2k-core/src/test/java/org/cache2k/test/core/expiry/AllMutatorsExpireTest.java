@@ -119,7 +119,7 @@ public class AllMutatorsExpireTest extends TestingBase {
       .expiryPolicy(new ExpiryPolicy<Integer, Integer>() {
         @Override
         public long calculateExpiryTime(Integer key, Integer value, long loadTime,
-                                        CacheEntry<Integer, Integer> oldEntry) {
+                                        CacheEntry<Integer, Integer> currentEntry) {
           return loadTime + expiryTime;
         }
       })

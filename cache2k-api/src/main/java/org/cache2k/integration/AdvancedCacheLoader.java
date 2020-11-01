@@ -37,9 +37,10 @@ public abstract class AdvancedCacheLoader<K, V>
    * @param key The non-null key to provide the value for.
    * @param startTime Time in millis, retrieved before the call.
    * @param currentEntry Current entry in the cache. The entry is available if the load is caused
-   *                     by a reload or refresh. If expired before, {@code null} is returned.
+   *                     by a reload or refresh. If expired before, this is null {@code null}.
    *                     If {@link Cache2kBuilder#keepDataAfterExpired(boolean)} is enabled, also
    *                     an expired entry is provided to the loader for optimization purposes.
+   *                     If the previous load had thrown an excetion, this is {@code null}.
    *                     See also the description of
    *                     {@link Cache2kBuilder#keepDataAfterExpired(boolean)} and
    *                     {@link Cache2kBuilder#refreshAhead(boolean)}.

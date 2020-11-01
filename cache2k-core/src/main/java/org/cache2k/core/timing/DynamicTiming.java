@@ -65,7 +65,8 @@ class DynamicTiming<K, V> extends StaticTiming<K, V> {
   public long calculateNextRefreshTime(Entry<K, V> entry, V newValue, long loadTime) {
     if (entry.isDataAvailable() || entry.isExpiredState()
       || entry.getNextRefreshTime() == Entry.EXPIRED_REFRESH_PENDING) {
-      return calcNextRefreshTime(entry.getKey(), newValue, loadTime, entry.getTempCacheEntry());
+      return calcNextRefreshTime(entry.getKey(), newValue, loadTime,
+        entry.getInspectionEntry());
     } else {
       return calcNextRefreshTime(entry.getKey(), newValue, loadTime, null);
     }

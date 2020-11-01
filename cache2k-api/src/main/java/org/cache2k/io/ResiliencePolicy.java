@@ -42,7 +42,7 @@ public interface ResiliencePolicy<K, V> extends ExpiryTimeValues, Customization<
   ResiliencePolicy<?, ?> DISABLED_POLICY = new ResiliencePolicy<Object, Object>() {
     @Override
     public long suppressExceptionUntil(Object key, LoadExceptionInfo<Object> loadExceptionInfo,
-                                       CacheEntry<Object, Object> cachedContent) {
+                                       CacheEntry<Object, Object> cachedEntry) {
       return 0;
     }
 
@@ -77,8 +77,9 @@ public interface ResiliencePolicy<K, V> extends ExpiryTimeValues, Customization<
    * <p>If the exception is not suppressed, it will wrapped into a {@link CacheLoaderException}
    * and propagated to the cache client. This is customizable by the {@link ExceptionPropagator}.
    *
-   * @param cachedContent The entry representing the currently cached content.
-   *                      It is possible that this data is already expired.
+   * @param cachedEntry The entry representing the currently cached content.
+   *                    It is possible that this data is already expired.
+   *                    Never contains an exception.
    * @return Time in millis in the future when the content should expire again. A zero or
    *         a time before the current time means the exception will not be suppressed. A
    *         {@link ExpiryPolicy#ETERNAL} means the exception will be
@@ -88,7 +89,7 @@ public interface ResiliencePolicy<K, V> extends ExpiryTimeValues, Customization<
    */
   long suppressExceptionUntil(K key,
                               LoadExceptionInfo<K> loadExceptionInfo,
-                              CacheEntry<K, V> cachedContent);
+                              CacheEntry<K, V> cachedEntry);
 
   /**
    * Called after the loader threw an exception and no previous value is available or

@@ -987,7 +987,7 @@ public class EntryProcessorTest {
           @Override
           public long suppressExceptionUntil(Integer key,
                                              LoadExceptionInfo<Integer> loadExceptionInfo,
-                                             CacheEntry<Integer, Integer> cachedContent) {
+                                             CacheEntry<Integer, Integer> cachedEntry) {
             return Long.MAX_VALUE;
           }
 
@@ -1021,7 +1021,7 @@ public class EntryProcessorTest {
       @Override
       public long suppressExceptionUntil(Integer key,
                                          LoadExceptionInfo<Integer> exceptionInformation,
-                                         CacheEntry<Integer, Integer> cachedContent) {
+                                         CacheEntry<Integer, Integer> cachedEntry) {
         return 0;
       }
 

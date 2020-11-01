@@ -65,7 +65,7 @@ public interface AsyncCacheLoader<K, V> extends Customization<K, V> {
     /**
      * Time in millis since epoch of start of load operation
      */
-    long getLoadStartTime();
+    long getStartTime();
 
     /**
      * Cache key for the load request. Although the key is a call parameter

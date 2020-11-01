@@ -327,7 +327,7 @@ public class CacheLoaderTest extends TestingBase {
           .expiryPolicy(new ExpiryPolicy<Integer, Integer>() {
             @Override
             public long calculateExpiryTime(Integer key, Integer value, long loadTime,
-                                            CacheEntry<Integer, Integer> oldEntry) {
+                                            CacheEntry<Integer, Integer> currentEntry) {
               return NOW;
             }
           });
@@ -747,8 +747,7 @@ public class CacheLoaderTest extends TestingBase {
             if (cnt == 0) {
               assertNull(ctx.getCurrentEntry());
             } else {
-              assertNull(ctx.getCurrentEntry().getValue());
-              assertNotNull(ctx.getCurrentEntry().getException());
+              assertNull(ctx.getCurrentEntry());
             }
             callback.onLoadFailure(new ExpectedException());
           }

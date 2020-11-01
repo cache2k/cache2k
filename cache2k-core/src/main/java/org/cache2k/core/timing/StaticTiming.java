@@ -104,7 +104,7 @@ public class StaticTiming<K, V> extends Timing<K, V> {
 
   @Override
   public long suppressExceptionUntil(Entry<K, V> e, LoadExceptionInfo inf) {
-    return resiliencePolicy.suppressExceptionUntil(e.getKey(), inf, e.getTempCacheEntry());
+    return resiliencePolicy.suppressExceptionUntil(e.getKey(), inf, e.getInspectionEntry());
   }
 
   @Override

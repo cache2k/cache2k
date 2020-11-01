@@ -143,7 +143,7 @@ public class BasicCacheOperationsWithoutCustomizationsTest {
     if (pars.keepExceptions) {
         b.resiliencePolicy(new ResiliencePolicy() {
         @Override
-        public long suppressExceptionUntil(Object key, LoadExceptionInfo loadExceptionInfo, CacheEntry cachedContent) {
+        public long suppressExceptionUntil(Object key, LoadExceptionInfo loadExceptionInfo, CacheEntry cachedEntry) {
           return 0;
         }
 

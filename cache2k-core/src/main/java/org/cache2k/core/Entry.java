@@ -234,11 +234,11 @@ public class Entry<K, V> extends CompactEntry<K, V>
   private static final long MODIFICATION_TIME_MASK = (1L << MODIFICATION_TIME_BITS) - 1;
 
   /**
-   * A cache entry which is used for a call to the expiry or refresh policies.
+   * Used as current entry for expiry policy, loader or resilience policy suppress.
    */
-  public CacheEntry<K, V> getTempCacheEntry() {
+  public CacheEntry<K, V> getInspectionEntry() {
     Object obj = getValueOrException();
-    if (obj instanceof ExceptionWrapper) { return (CacheEntry) obj; }
+    if (obj instanceof ExceptionWrapper) { return null; }
     return this;
   }
 
@@ -471,6 +471,13 @@ public class Entry<K, V> extends CompactEntry<K, V>
 
   public final boolean isDataAvailableOrProbation() {
     return isDataAvailable() || nextRefreshTime == Entry.EXPIRED_REFRESHED;
+  }
+
+  /**
+   * Use this entry as currentEntry in expiry policy, loader and resilience policy
+   */
+  public final boolean isValidOrExpiredAndNoException() {
+    return (isDataAvailable() || isExpiredState()) && !hasException();
   }
 
   /**
