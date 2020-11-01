@@ -30,7 +30,7 @@ import org.cache2k.core.api.InternalCacheBuildContext;
 import org.cache2k.core.spi.CacheLifeCycleListener;
 import org.cache2k.core.spi.CacheManagerLifeCycleListener;
 import org.cache2k.core.log.Log;
-import org.cache2k.management.CacheControl;
+import org.cache2k.operation.CacheControl;
 
 import javax.management.InstanceAlreadyExistsException;
 import javax.management.InstanceNotFoundException;

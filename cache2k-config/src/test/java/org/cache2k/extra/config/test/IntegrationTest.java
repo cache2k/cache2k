@@ -26,7 +26,7 @@ import org.cache2k.CacheManager;
 import org.cache2k.config.Cache2kConfig;
 import org.cache2k.config.CustomizationSupplierByClassName;
 import org.cache2k.core.spi.CacheConfigProvider;
-import org.cache2k.extra.config.provider.CacheConfigurationProviderImpl;
+import org.cache2k.extra.config.provider.CacheConfigProviderImpl;
 import org.cache2k.extra.config.generic.ConfigurationException;
 import org.cache2k.testing.category.FastTests;
 import org.hamcrest.CoreMatchers;
@@ -47,7 +47,7 @@ import static org.hamcrest.CoreMatchers.*;
 @Category(FastTests.class)
 public class IntegrationTest {
 
-  static final CacheConfigProvider PROVIDER = new CacheConfigurationProviderImpl();
+  static final CacheConfigProvider PROVIDER = new CacheConfigProviderImpl();
 
   @Test
   public void listNames() {

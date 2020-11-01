@@ -21,7 +21,7 @@ package org.cache2k.core;
  */
 
 import org.cache2k.Cache;
-import org.cache2k.management.CacheInfo;
+import org.cache2k.operation.CacheInfo;
 import org.cache2k.test.util.TestingBase;
 import org.cache2k.pinpoint.stress.ThreadingStressTester;
 import org.cache2k.testing.category.SlowTests;

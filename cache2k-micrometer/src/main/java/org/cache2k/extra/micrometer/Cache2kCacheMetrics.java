@@ -30,8 +30,8 @@ import io.micrometer.core.instrument.binder.cache.CacheMeterBinder;
 import org.cache2k.Cache;
 import org.cache2k.config.CacheType;
 import org.cache2k.core.api.InternalCache;
-import org.cache2k.management.CacheControl;
-import org.cache2k.management.CacheStatistics;
+import org.cache2k.operation.CacheControl;
+import org.cache2k.operation.CacheStatistics;
 
 import java.util.concurrent.TimeUnit;
 

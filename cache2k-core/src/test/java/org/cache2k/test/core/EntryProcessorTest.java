@@ -35,7 +35,7 @@ import org.cache2k.io.LoadExceptionInfo;
 import org.cache2k.integration.LoadDetail;
 import org.cache2k.integration.Loaders;
 import org.cache2k.io.ResiliencePolicy;
-import org.cache2k.management.CacheControl;
+import org.cache2k.operation.CacheControl;
 import org.cache2k.test.core.expiry.ExpiryTest;
 import org.cache2k.testing.category.FastTests;
 import org.cache2k.processor.EntryProcessingException;

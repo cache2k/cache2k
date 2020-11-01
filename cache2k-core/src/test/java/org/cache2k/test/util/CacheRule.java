@@ -27,7 +27,7 @@ import org.cache2k.config.CacheType;
 import org.cache2k.core.api.InternalCache;
 import org.cache2k.core.api.InternalCacheInfo;
 import org.cache2k.core.api.InternalClock;
-import org.cache2k.management.CacheControl;
+import org.cache2k.operation.CacheControl;
 import org.cache2k.test.core.StaticUtil;
 import org.cache2k.test.core.Statistics;
 import org.junit.rules.TestRule;

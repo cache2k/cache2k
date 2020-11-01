@@ -20,7 +20,7 @@ package org.cache2k.extra.jmx;
  * #L%
  */
 
-import org.cache2k.management.CacheStatistics;
+import org.cache2k.operation.CacheStatistics;
 
 /**
  * @author Jens Wilke

@@ -3,7 +3,7 @@
  *
  * @author Jens Wilke
  */
-package org.cache2k.management;
+package org.cache2k.operation;
 
 /*
  * #%L

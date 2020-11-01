@@ -21,7 +21,7 @@ package org.cache2k.core.common;
  */
 
 import org.cache2k.core.api.InternalCacheInfo;
-import org.cache2k.management.CacheStatistics;
+import org.cache2k.operation.CacheStatistics;
 
 /**
  * Extract statistics from {@link InternalCacheInfo}

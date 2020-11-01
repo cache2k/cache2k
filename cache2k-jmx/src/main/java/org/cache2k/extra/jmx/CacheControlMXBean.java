@@ -20,8 +20,8 @@ package org.cache2k.extra.jmx;
  * #L%
  */
 
-import org.cache2k.management.CacheOperation;
-import org.cache2k.management.CacheInfo;
+import org.cache2k.operation.CacheOperation;
+import org.cache2k.operation.CacheInfo;
 
 /**
  * Combined interface of basic cache information and cache control.

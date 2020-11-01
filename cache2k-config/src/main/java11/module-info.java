@@ -18,7 +18,7 @@
  * #L%
  */
 import org.cache2k.core.spi.CacheConfigProvider;
-import org.cache2k.extra.config.provider.CacheConfigurationProviderImpl;
+import org.cache2k.extra.config.provider.CacheConfigProviderImpl;
 
 /**
  * @author Jens Wilke
@@ -27,6 +27,6 @@ module org.cache2k.config {
   requires java.xml;
   requires org.cache2k.api;
   requires org.cache2k.core;
-  provides CacheConfigProvider with CacheConfigurationProviderImpl;
+  provides CacheConfigProvider with CacheConfigProviderImpl;
 
 }

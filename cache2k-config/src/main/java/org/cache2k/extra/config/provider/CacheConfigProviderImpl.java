@@ -48,7 +48,7 @@ import java.util.Map;
  * @author Jens Wilke
  */
 @SuppressWarnings("rawtypes")
-public class CacheConfigurationProviderImpl
+public class CacheConfigProviderImpl
   extends ConfigurationProvider implements CacheConfigProvider {
 
   private static final String DEFAULT_CONFIGURATION_FILE = "cache2k.xml";
