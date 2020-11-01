@@ -28,9 +28,9 @@ import org.cache2k.config.CustomizationSupplier;
 /**
  * @author Jens Wilke
  */
-public final class SupplyGlobalMeterRegistry implements CustomizationSupplier<MeterRegistry> {
+public final class GlobalRegistrySupplier implements CustomizationSupplier<MeterRegistry> {
 
-  public static final SupplyGlobalMeterRegistry INSTANCE = new SupplyGlobalMeterRegistry();
+  public static final GlobalRegistrySupplier INSTANCE = new GlobalRegistrySupplier();
 
   @Override
   public MeterRegistry supply(CacheBuildContext buildContext) {

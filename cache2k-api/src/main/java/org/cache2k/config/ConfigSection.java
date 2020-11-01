@@ -21,13 +21,14 @@ package org.cache2k.config;
  */
 
 /**
- * A configuration section that may appear only once.
+ * A configuration section. Additional sections can be added to the main configuration
+ * via {@link Cache2kConfig#getSections()}. Each section might contain sections as well.
+ * Each section type is allowed to appear only once in the configuration.
  *
  * @author Jens Wilke
  */
 public interface ConfigSection
-  <SELF extends ConfigSection, B extends SectionBuilder<SELF>>
-  extends ConfigBean {
+  <SELF extends ConfigSection, B extends SectionBuilder<SELF>> extends ConfigBean {
 
   B builder();
 

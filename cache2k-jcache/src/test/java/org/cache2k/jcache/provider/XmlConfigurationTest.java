@@ -24,7 +24,6 @@ import org.cache2k.Cache;
 import org.cache2k.Cache2kBuilder;
 import org.cache2k.CacheManager;
 import org.cache2k.config.Cache2kConfig;
-import org.cache2k.config.MultiConfigSection;
 import org.cache2k.jcache.ExtendedMutableConfiguration;
 import org.cache2k.jcache.JCacheConfig;
 import org.cache2k.jcache.provider.generic.storeByValueSimulation.CopyCacheProxy;
@@ -223,11 +222,8 @@ public class XmlConfigurationTest {
     assertThat(
       cfg.getSections().toString(),
       CoreMatchers.containsString("SectionContainer"));
-    assertNull(cfg.getSections().getSection(DummySection.class));
     assertTrue(cfg.getSections().iterator().hasNext());
   }
-
-  interface DummySection extends MultiConfigSection { }
 
   @Test(expected = IllegalArgumentException.class)
   public void checkNoDuplicateSection() {

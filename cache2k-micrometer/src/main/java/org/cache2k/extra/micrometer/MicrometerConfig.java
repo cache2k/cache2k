@@ -74,7 +74,7 @@ public class MicrometerConfig
      * Bind this cache instance to the global meter registry.
      */
     public Builder useGlobalRegistry() {
-      config.setMeterRegistry(SupplyGlobalMeterRegistry.INSTANCE);
+      config.setMeterRegistry(GlobalRegistrySupplier.INSTANCE);
       return this;
     }
 

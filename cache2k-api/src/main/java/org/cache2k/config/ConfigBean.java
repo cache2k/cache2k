@@ -31,4 +31,5 @@ import java.io.Serializable;
  * @author Jens Wilke
  */
 public interface ConfigBean extends Serializable {
+
 }

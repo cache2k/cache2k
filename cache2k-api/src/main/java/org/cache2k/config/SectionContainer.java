@@ -22,9 +22,10 @@ package org.cache2k.config;
 
 import java.io.Serializable;
 import java.util.AbstractCollection;
-import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.Iterator;
+import java.util.Map;
 
 /**
  * Container for configuration objects. The container preserves the order of the sections
@@ -36,7 +37,7 @@ import java.util.Iterator;
 public class SectionContainer extends AbstractCollection<ConfigSection>
   implements Collection<ConfigSection>, Serializable {
 
-  private final Collection<ConfigSection> sections = new ArrayList<ConfigSection>();
+  private final Map<Class<? extends ConfigSection>, ConfigSection> class2section = new HashMap<>();
 
   /**
    * Add a new configuration section to the container.
@@ -44,27 +45,22 @@ public class SectionContainer extends AbstractCollection<ConfigSection>
    * @throws IllegalArgumentException if same type is already present and a singleton
    * @return always {@code true}
    */
+  @Override
   public boolean add(ConfigSection section) {
-    if (!(section instanceof MultiConfigSection)) {
-      if (getSection(section.getClass()) !=  null) {
-        throw new IllegalArgumentException(
-          "Section of same type already inserted: " + section.getClass().getName());
-      }
+    if (getSection(section.getClass()) !=  null) {
+      throw new IllegalArgumentException(
+        "Section of same type already inserted: " + section.getClass().getName());
     }
-    return sections.add(section);
+    class2section.put(section.getClass(), section);
+    return true;
   }
 
   /**
    * Retrieve a single section from the container.
    */
-  @SuppressWarnings("unchecked")
   public <T extends ConfigSection> T getSection(Class<T> sectionType, T defaultFallback) {
-    for (ConfigSection s : sections) {
-      if (sectionType.equals(s.getClass())) {
-        return (T) s;
-      }
-    }
-    return defaultFallback;
+    ConfigSection section = class2section.get(sectionType);
+    return section != null ? sectionType.cast(section) : defaultFallback;
   }
 
   public <T extends ConfigSection> T getSection(Class<T> sectionType) {
@@ -73,16 +69,16 @@ public class SectionContainer extends AbstractCollection<ConfigSection>
 
   @Override
   public Iterator<ConfigSection> iterator() {
-    return sections.iterator();
+    return class2section.values().iterator();
   }
 
   @Override
   public int size() {
-    return sections.size();
+    return class2section.size();
   }
 
   public String toString() {
-    return getClass().getSimpleName() + sections.toString();
+    return getClass().getSimpleName() + class2section.values().toString();
   }
 
 }
